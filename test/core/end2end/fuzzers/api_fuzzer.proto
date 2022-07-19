@@ -16,6 +16,8 @@ syntax = "proto3";
 
 package api_fuzzer;
 
+import "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto";
+
 message Empty {}
 
 message ByteSlice {
@@ -162,9 +164,9 @@ message Batch {
 }
 
 message Action {
+    reserved 2;
     oneof type {
         Empty poll_cq = 1;
-        uint32 advance_time = 2;
         CreateChannel create_channel = 3;
         Empty close_channel = 4;
         CreateServer create_server = 5;
@@ -190,4 +192,5 @@ message Action {
 
 message Msg {
     repeated Action actions = 1;
+    fuzzing_event_engine.Actions event_engine_actions = 2;
 }

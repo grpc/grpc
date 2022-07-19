@@ -17,6 +17,7 @@
 import argparse
 import collections
 from doctest import SKIP
+import multiprocessing
 import os
 import re
 import subprocess
@@ -46,7 +47,7 @@ EXTERNAL_DEPS = {
         'absl/base',
     # TODO(ctiller) remove this
     'absl/base/internal/endian.h':
-        'absl-base',
+        'absl/base',
     'absl/base/thread_annotations.h':
         'absl/base:core_headers',
     'absl/container/flat_hash_map.h':
@@ -55,6 +56,10 @@ EXTERNAL_DEPS = {
         'absl/container:flat_hash_set',
     'absl/container/inlined_vector.h':
         'absl/container:inlined_vector',
+    'absl/cleanup/cleanup.h':
+        'absl/cleanup',
+    'absl/functional/any_invocable.h':
+        'absl/functional:any_invocable',
     'absl/functional/bind_front.h':
         'absl/functional:bind_front',
     'absl/functional/function_ref.h':
@@ -127,6 +132,8 @@ EXTERNAL_DEPS = {
         'opencensus-trace-propagation',
     'opencensus/tags/context_util.h':
         'opencensus-tags-context_util',
+    'openssl/base.h':
+        'libssl',
     'openssl/bio.h':
         'libssl',
     'openssl/bn.h':
@@ -135,6 +142,8 @@ EXTERNAL_DEPS = {
         'libcrypto',
     'openssl/crypto.h':
         'libcrypto',
+    'openssl/digest.h':
+        'libssl',
     'openssl/engine.h':
         'libcrypto',
     'openssl/err.h':
@@ -159,6 +168,8 @@ EXTERNAL_DEPS = {
         'libcrypto',
     're2/re2.h':
         're2',
+    'upb/arena.h':
+        'upb_lib',
     'upb/def.h':
         'upb_lib',
     'upb/json_encode.h':
@@ -178,6 +189,8 @@ EXTERNAL_DEPS = {
 }
 
 INTERNAL_DEPS = {
+    'google/api/expr/v1alpha1/syntax.upb.h':
+        'google_type_expr_upb',
     'google/rpc/status.upb.h':
         'google_rpc_status_upb',
     'google/protobuf/any.upb.h':
@@ -224,13 +237,15 @@ INTERNAL_DEPS = {
         'xds_type_upb',
 }
 
-SKIP_DEPS = {'google/api/expr/v1alpha1/syntax.upb.h'}
-
 
 class FakeSelects:
 
     def config_setting_group(self, **kwargs):
         pass
+
+
+num_cc_libraries = 0
+num_opted_out_cc_libraries = 0
 
 
 def grpc_cc_library(name,
@@ -242,7 +257,14 @@ def grpc_cc_library(name,
                     deps=[],
                     external_deps=[],
                     **kwargs):
-    if select_deps or 'nofixdeps' in tags or 'grpc-autodeps' not in tags:
+    global args
+    global num_cc_libraries
+    global num_opted_out_cc_libraries
+    num_cc_libraries += 1
+    if select_deps or 'nofixdeps' in tags:
+        if args.whats_left and not select_deps and 'nofixdeps' not in tags:
+            num_opted_out_cc_libraries += 1
+            print("Not opted in: {}".format(name))
         no_update.add(name)
     scores[name] = len(public_hdrs + hdrs)
     # avoid_dep is the internal way of saying prefer something else
@@ -332,6 +354,10 @@ parser.add_argument('--score',
                     default='edit_distance',
                     help='scoring function to use: one of ' +
                     ', '.join(SCORERS.keys()))
+parser.add_argument('--whats_left',
+                    action='store_true',
+                    default=False,
+                    help='show what is left to opt in')
 args = parser.parse_args()
 
 exec(
@@ -351,48 +377,56 @@ exec(
         'filegroup': lambda name, **kwargs: None,
     }, {})
 
+if args.whats_left:
+    print("{}/{} libraries are opted in".format(
+        num_cc_libraries - num_opted_out_cc_libraries, num_cc_libraries))
+
 
 # Keeps track of all possible sets of dependencies that could satify the
 # problem. (models the list monad in Haskell!)
 class Choices:
 
     def __init__(self):
-        self.choices = set()
-        self.choices.add(frozenset())
+        self.to_add = []
+        self.to_remove = []
 
     def add_one_of(self, choices):
         if not choices:
             return
-        new_choices = set()
-        for append_choice in choices:
-            for choice in self.choices:
-                new_choices.add(choice.union([append_choice]))
-        self.choices = new_choices
+        self.to_add.append(tuple(choices))
 
     def add(self, choice):
         self.add_one_of([choice])
 
     def remove(self, remove):
-        new_choices = set()
-        for choice in self.choices:
-            new_choices.add(choice.difference([remove]))
-        self.choices = new_choices
+        self.to_remove.append(remove)
 
     def best(self, scorer):
+        choices = set()
+        choices.add(frozenset())
+
+        for add in sorted(set(self.to_add), key=lambda x: (len(x), x)):
+            new_choices = set()
+            for append_choice in add:
+                for choice in choices:
+                    new_choices.add(choice.union([append_choice]))
+            choices = new_choices
+        for remove in sorted(set(self.to_remove)):
+            new_choices = set()
+            for choice in choices:
+                new_choices.add(choice.difference([remove]))
+            choices = new_choices
+
         best = None
         final_scorer = lambda x: (total_avoidness(x), scorer(x), total_score(x))
-        for choice in self.choices:
+        for choice in choices:
             if best is None or final_scorer(choice) < final_scorer(best):
                 best = choice
         return best
 
 
-error = False
-for library in sorted(consumes.keys()):
-    if library in no_update:
-        continue
-    if args.targets and library not in args.targets:
-        continue
+def make_library(library):
+    error = False
     hdrs = sorted(consumes[library])
     deps = Choices()
     external_deps = Choices()
@@ -460,10 +494,8 @@ for library in sorted(consumes.keys()):
             # assume a system include
             continue
 
-        if hdr in SKIP_DEPS:
-            continue
-
-        print("# ERROR: can't categorize header: %s" % hdr)
+        print("# ERROR: can't categorize header: %s used by %s" %
+              (hdr, library))
         error = True
 
     if library in needs_codegen_base_src:
@@ -476,6 +508,25 @@ for library in sorted(consumes.keys()):
     external_deps = sorted(
         external_deps.best(lambda x: SCORERS[args.score]
                            (x, original_external_deps[library])))
+
+    return (library, error, deps, external_deps)
+
+
+update_libraries = []
+for library in sorted(consumes.keys()):
+    if library in no_update:
+        continue
+    if args.targets and library not in args.targets:
+        continue
+    update_libraries.append(library)
+with multiprocessing.Pool(processes=multiprocessing.cpu_count()) as p:
+    updated_libraries = p.map(make_library, update_libraries, 1)
+
+error = False
+for library, lib_error, deps, external_deps in updated_libraries:
+    if lib_error:
+        error = True
+        continue
     target = ':' + library
     buildozer_set_list('external_deps', external_deps, target, via='deps')
     buildozer_set_list('deps', deps, target)

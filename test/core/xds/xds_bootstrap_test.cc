@@ -697,7 +697,7 @@ TEST(XdsBootstrapTest, CertificateProvidersFakePluginParsingSuccess) {
   Json json = Json::Parse(json_str, &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
   XdsBootstrap bootstrap(std::move(json), &error);
-  ASSERT_TRUE(error == GRPC_ERROR_NONE) << grpc_error_std_string(error);
+  ASSERT_TRUE(GRPC_ERROR_IS_NONE(error)) << grpc_error_std_string(error);
   const CertificateProviderStore::PluginDefinition& fake_plugin =
       bootstrap.certificate_providers().at("fake_plugin");
   ASSERT_EQ(fake_plugin.plugin_name, "fake");
@@ -727,7 +727,7 @@ TEST(XdsBootstrapTest, CertificateProvidersFakePluginEmptyConfig) {
   Json json = Json::Parse(json_str, &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
   XdsBootstrap bootstrap(std::move(json), &error);
-  ASSERT_TRUE(error == GRPC_ERROR_NONE) << grpc_error_std_string(error);
+  ASSERT_TRUE(GRPC_ERROR_IS_NONE(error)) << grpc_error_std_string(error);
   const CertificateProviderStore::PluginDefinition& fake_plugin =
       bootstrap.certificate_providers().at("fake_plugin");
   ASSERT_EQ(fake_plugin.plugin_name, "fake");

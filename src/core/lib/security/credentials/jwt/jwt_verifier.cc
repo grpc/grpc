@@ -21,24 +21,49 @@
 #include "src/core/lib/security/credentials/jwt/jwt_verifier.h"
 
 #include <limits.h>
+#include <stdlib.h>
 #include <string.h>
 
+#include <map>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include <openssl/bio.h>
 #include <openssl/bn.h>
+#include <openssl/crypto.h>
+#include <openssl/evp.h>
 #include <openssl/pem.h>
 #include <openssl/rsa.h>
+#include <openssl/x509.h>
 
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
+
+#include <grpc/grpc.h>
+#include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-#include <grpc/support/sync.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
+#include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/http/httpcli_ssl_credentials.h"
+#include "src/core/lib/http/parser.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/polling_entity.h"
+#include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/slice/b64.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/slice/slice_refcount.h"
+#include "src/core/lib/uri/uri_parser.h"
 #include "src/core/tsi/ssl_types.h"
 
 using grpc_core::Json;
@@ -88,7 +113,7 @@ static Json parse_json_part_from_jwt(const char* str, size_t len) {
   absl::string_view string = grpc_core::StringViewFromSlice(slice);
   grpc_error_handle error = GRPC_ERROR_NONE;
   Json json = Json::Parse(string, &error);
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     gpr_log(GPR_ERROR, "JSON parse error: %s",
             grpc_error_std_string(error).c_str());
     GRPC_ERROR_UNREF(error);
@@ -413,7 +438,7 @@ static Json json_from_http(const grpc_http_response* response) {
   grpc_error_handle error = GRPC_ERROR_NONE;
   Json json = Json::Parse(
       absl::string_view(response->body, response->body_length), &error);
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     gpr_log(GPR_ERROR, "Invalid JSON found in response.");
     return Json();  // JSON null
   }

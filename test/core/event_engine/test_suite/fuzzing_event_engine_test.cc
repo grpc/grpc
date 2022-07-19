@@ -14,10 +14,14 @@
 
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 
+#include <chrono>
 #include <thread>
+
+#include "absl/time/clock.h"
 
 #include <grpc/grpc.h>
 
+#include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/event_engine/test_suite/event_engine_test.h"
 
 namespace grpc_event_engine {
@@ -27,14 +31,19 @@ namespace {
 class ThreadedFuzzingEventEngine : public FuzzingEventEngine {
  public:
   ThreadedFuzzingEventEngine()
-      : FuzzingEventEngine([]() {
-          Options options;
-          options.final_tick_length = absl::Milliseconds(10);
-          return options;
-        }()),
+      : FuzzingEventEngine(
+            []() {
+              Options options;
+              options.final_tick_length = std::chrono::milliseconds(10);
+              return options;
+            }(),
+            fuzzing_event_engine::Actions()),
         main_([this]() {
           while (!done_.load()) {
-            absl::SleepFor(absl::Milliseconds(10));
+            auto tick_start = absl::Now();
+            while (absl::Now() - tick_start < absl::Milliseconds(10)) {
+              absl::SleepFor(absl::Milliseconds(1));
+            }
             Tick();
           }
         }) {}
@@ -55,9 +64,11 @@ class ThreadedFuzzingEventEngine : public FuzzingEventEngine {
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
-  SetEventEngineFactory([]() {
-    return absl::make_unique<
-        grpc_event_engine::experimental::ThreadedFuzzingEventEngine>();
-  });
+  SetEventEngineFactories(
+      []() {
+        return absl::make_unique<
+            grpc_event_engine::experimental::ThreadedFuzzingEventEngine>();
+      },
+      nullptr);
   return RUN_ALL_TESTS();
 }

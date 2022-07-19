@@ -197,13 +197,25 @@ grpc_objc_ios_unit_test(
     ],
 )
 
+grpc_objc_ios_unit_test(
+    name = "InteropTestsLocalCleartext",
+    deps = [
+        ":InteropTestsLocalCleartext-lib",
+    ],
+)
+
+grpc_objc_ios_unit_test(
+    name = "InteropTestsLocalSSL",
+    deps = [
+        ":InteropTestsLocalSSL-lib",
+    ],
+)
+
 ios_unit_test(
-    name = "InteropTests",
+    name = "InteropTestsRemote",
     minimum_os_version = "9.0",
     test_host = ":ios-host",
     deps = [
-        ":InteropTestsLocalCleartext-lib",
-        ":InteropTestsLocalSSL-lib",
         ":InteropTestsRemote-lib",
     ],
 )

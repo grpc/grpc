@@ -131,6 +131,12 @@ class PythonArtifact:
             # building the native extension is the most time-consuming part of the build
             environ['GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS'] = str(inner_jobs)
 
+        # This is necessary due to https://github.com/pypa/wheel/issues/406.
+        # distutils incorrectly generates a universal2 artifact that only contains
+        # x86_64 libraries.
+        if self.platform == "macos" and self.arch == "x64":
+            environ["GRPC_UNIVERSAL2_REPAIR"] = "true"
+
         if self.platform == 'linux_extra':
             # Crosscompilation build for armv7 (e.g. Raspberry Pi)
             environ['PYTHON'] = '/opt/python/{}/bin/python3'.format(
@@ -480,6 +486,7 @@ def targets():
         PythonArtifact('windows', 'x64', 'Python310', presubmit=True),
         RubyArtifact('linux', 'x86-mingw32', presubmit=True),
         RubyArtifact('linux', 'x64-mingw32', presubmit=True),
+        RubyArtifact('linux', 'x64-mingw-ucrt', presubmit=True),
         RubyArtifact('linux', 'x86_64-linux', presubmit=True),
         RubyArtifact('linux', 'x86-linux', presubmit=True),
         RubyArtifact('linux', 'x86_64-darwin', presubmit=True),

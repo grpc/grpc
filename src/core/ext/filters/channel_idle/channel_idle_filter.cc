@@ -96,7 +96,7 @@ struct MaxAgeFilter::Config {
      connection storms. Note that the MAX_CONNECTION_AGE option without jitter
      would not create connection storms by itself, but if there happened to be a
      connection storm it could cause it to repeat at a fixed period. */
-  static Config FromChannelArgs(ChannelArgs args) {
+  static Config FromChannelArgs(const ChannelArgs& args) {
     const Duration args_max_age =
         args.GetDurationFromIntMillis(GRPC_ARG_MAX_CONNECTION_AGE_MS)
             .value_or(kDefaultMaxConnectionAge);
@@ -118,14 +118,14 @@ struct MaxAgeFilter::Config {
 };
 
 absl::StatusOr<ClientIdleFilter> ClientIdleFilter::Create(
-    ChannelArgs args, ChannelFilter::Args filter_args) {
+    const ChannelArgs& args, ChannelFilter::Args filter_args) {
   ClientIdleFilter filter(filter_args.channel_stack(),
                           GetClientIdleTimeout(args));
   return absl::StatusOr<ClientIdleFilter>(std::move(filter));
 }
 
 absl::StatusOr<MaxAgeFilter> MaxAgeFilter::Create(
-    ChannelArgs args, ChannelFilter::Args filter_args) {
+    const ChannelArgs& args, ChannelFilter::Args filter_args) {
   MaxAgeFilter filter(filter_args.channel_stack(),
                       Config::FromChannelArgs(args));
   return absl::StatusOr<MaxAgeFilter>(std::move(filter));
@@ -216,7 +216,7 @@ ArenaPromise<ServerMetadataHandle> ChannelIdleFilter::MakeCallPromise(
 
 bool ChannelIdleFilter::StartTransportOp(grpc_transport_op* op) {
   // Catch the disconnect_with_error transport op.
-  if (op->disconnect_with_error != GRPC_ERROR_NONE) Shutdown();
+  if (!GRPC_ERROR_IS_NONE(op->disconnect_with_error)) Shutdown();
   // Pass the op to the next filter.
   return false;
 }

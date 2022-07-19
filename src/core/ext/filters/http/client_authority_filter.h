@@ -38,7 +38,7 @@ class ClientAuthorityFilter final : public ChannelFilter {
  public:
   static const grpc_channel_filter kFilter;
 
-  static absl::StatusOr<ClientAuthorityFilter> Create(ChannelArgs args,
+  static absl::StatusOr<ClientAuthorityFilter> Create(const ChannelArgs& args,
                                                       ChannelFilter::Args);
 
   // Construct a promise for one call.

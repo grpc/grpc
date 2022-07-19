@@ -281,11 +281,6 @@ class WriteContext {
 
   void FlushSettings() {
     if (t_->dirtied_local_settings && !t_->sent_local_settings) {
-      t_->flow_control.SetSentInitialWindow(
-          t_->settings[GRPC_LOCAL_SETTINGS]
-                      [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]);
-      grpc_chttp2_act_on_flowctl_action(t_->flow_control.MakeAction(), t_,
-                                        nullptr);
       grpc_slice_buffer_add(
           &t_->outbuf, grpc_chttp2_settings_create(
                            t_->settings[GRPC_SENT_SETTINGS],
@@ -334,7 +329,7 @@ class WriteContext {
   void UpdateStreamsNoLongerStalled() {
     grpc_chttp2_stream* s;
     while (grpc_chttp2_list_pop_stalled_by_transport(t_, &s)) {
-      if (t_->closed_with_error == GRPC_ERROR_NONE &&
+      if (GRPC_ERROR_IS_NONE(t_->closed_with_error) &&
           grpc_chttp2_list_add_writable_stream(t_, s)) {
         if (!s->refcount->refs.RefIfNonZero()) {
           grpc_chttp2_list_remove_writable_stream(t_, s);
@@ -418,7 +413,7 @@ class DataSendContext {
                      s_->send_trailing_metadata->empty();
     grpc_chttp2_encode_data(s_->id, &s_->flow_controlled_buffer, send_bytes,
                             is_last_frame_, &s_->stats.outgoing, &t_->outbuf);
-    s_->flow_control.SentData(send_bytes);
+    sfc_upd_.SentData(send_bytes);
     s_->sending_bytes += send_bytes;
   }
 
@@ -438,6 +433,8 @@ class DataSendContext {
   WriteContext* write_context_;
   grpc_chttp2_transport* t_;
   grpc_chttp2_stream* s_;
+  grpc_core::chttp2::StreamFlowControl::OutgoingUpdateContext sfc_upd_{
+      &s_->flow_control};
   const size_t sending_bytes_before_;
   bool is_last_frame_ = false;
 };
@@ -447,11 +444,9 @@ class StreamWriteContext {
   StreamWriteContext(WriteContext* write_context, grpc_chttp2_stream* s)
       : write_context_(write_context), t_(write_context->transport()), s_(s) {
     GRPC_CHTTP2_IF_TRACING(
-        gpr_log(GPR_INFO, "W:%p %s[%d] im-(sent,send)=(%d,%d) announce=%d", t_,
+        gpr_log(GPR_INFO, "W:%p %s[%d] im-(sent,send)=(%d,%d)", t_,
                 t_->is_client ? "CLIENT" : "SERVER", s->id,
-                s->sent_initial_metadata, s->send_initial_metadata != nullptr,
-                (int)(s->flow_control.local_window_delta() -
-                      s->flow_control.announced_window_delta())));
+                s->sent_initial_metadata, s->send_initial_metadata != nullptr));
   }
 
   void FlushInitialMetadata() {
@@ -496,6 +491,8 @@ class StreamWriteContext {
   }
 
   void FlushWindowUpdates() {
+    if (s_->read_closed) return;
+
     /* send any window updates */
     const uint32_t stream_announce = s_->flow_control.MaybeSendUpdate();
     if (stream_announce == 0) return;

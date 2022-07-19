@@ -26,8 +26,6 @@
 
 #include <grpc/support/log.h>
 
-// IWYU pragma: no_include <ext/alloc_traits.h>
-
 namespace grpc_core {
 
 ServiceConfigParser ServiceConfigParser::Builder::Build() {
@@ -50,7 +48,7 @@ void ServiceConfigParser::Builder::RegisterParser(
 }
 
 ServiceConfigParser::ParsedConfigVector
-ServiceConfigParser::ParseGlobalParameters(const grpc_channel_args* args,
+ServiceConfigParser::ParseGlobalParameters(const ChannelArgs& args,
                                            const Json& json,
                                            grpc_error_handle* error) const {
   ParsedConfigVector parsed_global_configs;
@@ -59,7 +57,7 @@ ServiceConfigParser::ParseGlobalParameters(const grpc_channel_args* args,
     grpc_error_handle parser_error = GRPC_ERROR_NONE;
     auto parsed_config =
         registered_parsers_[i]->ParseGlobalParams(args, json, &parser_error);
-    if (parser_error != GRPC_ERROR_NONE) {
+    if (!GRPC_ERROR_IS_NONE(parser_error)) {
       error_list.push_back(parser_error);
     }
     parsed_global_configs.push_back(std::move(parsed_config));
@@ -71,7 +69,7 @@ ServiceConfigParser::ParseGlobalParameters(const grpc_channel_args* args,
 }
 
 ServiceConfigParser::ParsedConfigVector
-ServiceConfigParser::ParsePerMethodParameters(const grpc_channel_args* args,
+ServiceConfigParser::ParsePerMethodParameters(const ChannelArgs& args,
                                               const Json& json,
                                               grpc_error_handle* error) const {
   ParsedConfigVector parsed_method_configs;
@@ -80,7 +78,7 @@ ServiceConfigParser::ParsePerMethodParameters(const grpc_channel_args* args,
     grpc_error_handle parser_error = GRPC_ERROR_NONE;
     auto parsed_config =
         registered_parsers_[i]->ParsePerMethodParams(args, json, &parser_error);
-    if (parser_error != GRPC_ERROR_NONE) {
+    if (!GRPC_ERROR_IS_NONE(parser_error)) {
       error_list.push_back(parser_error);
     }
     parsed_method_configs.push_back(std::move(parsed_config));

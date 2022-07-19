@@ -61,6 +61,11 @@ UPB_INLINE const upb_MessageDef *envoy_config_route_v3_WeightedCluster_ClusterWe
   return upb_DefPool_FindMessageByName(s, "envoy.config.route.v3.WeightedCluster.ClusterWeight.TypedPerFilterConfigEntry");
 }
 
+UPB_INLINE const upb_MessageDef *envoy_config_route_v3_ClusterSpecifierPlugin_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_route_v3_route_components_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.route.v3.ClusterSpecifierPlugin");
+}
+
 UPB_INLINE const upb_MessageDef *envoy_config_route_v3_RouteMatch_getmsgdef(upb_DefPool *s) {
   _upb_DefPool_LoadDefInit(s, &envoy_config_route_v3_route_components_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "envoy.config.route.v3.RouteMatch");
@@ -234,6 +239,11 @@ UPB_INLINE const upb_MessageDef *envoy_config_route_v3_RateLimit_Action_RequestH
 UPB_INLINE const upb_MessageDef *envoy_config_route_v3_RateLimit_Action_RemoteAddress_getmsgdef(upb_DefPool *s) {
   _upb_DefPool_LoadDefInit(s, &envoy_config_route_v3_route_components_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "envoy.config.route.v3.RateLimit.Action.RemoteAddress");
+}
+
+UPB_INLINE const upb_MessageDef *envoy_config_route_v3_RateLimit_Action_MaskedRemoteAddress_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_route_v3_route_components_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.route.v3.RateLimit.Action.MaskedRemoteAddress");
 }
 
 UPB_INLINE const upb_MessageDef *envoy_config_route_v3_RateLimit_Action_GenericKey_getmsgdef(upb_DefPool *s) {

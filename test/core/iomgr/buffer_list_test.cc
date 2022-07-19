@@ -28,7 +28,7 @@
 static void TestShutdownFlushesListVerifier(void* arg,
                                             grpc_core::Timestamps* /*ts*/,
                                             grpc_error_handle error) {
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   GPR_ASSERT(arg != nullptr);
   gpr_atm* done = reinterpret_cast<gpr_atm*>(arg);
   gpr_atm_rel_store(done, static_cast<gpr_atm>(1));
@@ -60,7 +60,7 @@ static void TestShutdownFlushesList() {
 static void TestVerifierCalledOnAckVerifier(void* arg,
                                             grpc_core::Timestamps* ts,
                                             grpc_error_handle error) {
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   GPR_ASSERT(arg != nullptr);
   GPR_ASSERT(ts->acked_time.time.clock_type == GPR_CLOCK_REALTIME);
   GPR_ASSERT(ts->acked_time.time.tv_sec == 123);

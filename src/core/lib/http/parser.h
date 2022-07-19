@@ -21,6 +21,9 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
+#include <stdint.h>
+
 #include <grpc/slice.h>
 
 #include "src/core/lib/debug/trace.h"

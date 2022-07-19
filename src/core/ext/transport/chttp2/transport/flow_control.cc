@@ -47,8 +47,6 @@ namespace chttp2 {
 TestOnlyTransportTargetWindowEstimatesMocker*
     g_test_only_transport_target_window_estimates_mocker;
 
-bool g_test_only_transport_flow_control_window_check;
-
 namespace {
 
 constexpr const int64_t kMaxWindowUpdateSize = (1u << 31) - 1;
@@ -130,87 +128,39 @@ uint32_t TransportFlowControl::MaybeSendUpdate(bool writing_anyway) {
   return 0;
 }
 
-absl::Status TransportFlowControl::ValidateRecvData(
-    int64_t incoming_frame_size) {
-  if (incoming_frame_size > announced_window_) {
-    return absl::InternalError(absl::StrFormat(
-        "frame of size %" PRId64 " overflows local window of %" PRId64,
-        incoming_frame_size, announced_window_));
-  }
-  return absl::OkStatus();
-}
-
-void TransportFlowControl::CommitRecvData(int64_t incoming_frame_size) {
-  announced_window_ -= incoming_frame_size;
-}
-
 StreamFlowControl::StreamFlowControl(TransportFlowControl* tfc) : tfc_(tfc) {}
 
-absl::Status StreamFlowControl::RecvData(int64_t incoming_frame_size) {
-  absl::Status error = tfc_->ValidateRecvData(incoming_frame_size);
-  if (!error.ok()) return error;
+absl::Status StreamFlowControl::IncomingUpdateContext::RecvData(
+    int64_t incoming_frame_size) {
+  return tfc_upd_.RecvData(incoming_frame_size, [this, incoming_frame_size]() {
+    int64_t acked_stream_window =
+        sfc_->announced_window_delta_ + sfc_->tfc_->acked_init_window();
+    if (incoming_frame_size > acked_stream_window) {
+      return absl::InternalError(absl::StrFormat(
+          "frame of size %" PRId64 " overflows local window of %" PRId64,
+          incoming_frame_size, acked_stream_window));
+    }
 
-  int64_t acked_stream_window =
-      announced_window_delta_ + tfc_->acked_init_window();
-  if (incoming_frame_size > acked_stream_window) {
+    tfc_upd_.UpdateAnnouncedWindowDelta(&sfc_->announced_window_delta_,
+                                        -incoming_frame_size);
+    sfc_->min_progress_size_ -=
+        std::min(sfc_->min_progress_size_, incoming_frame_size);
+    return absl::OkStatus();
+  });
+}
+
+absl::Status TransportFlowControl::IncomingUpdateContext::RecvData(
+    int64_t incoming_frame_size, absl::FunctionRef<absl::Status()> stream) {
+  if (incoming_frame_size > tfc_->announced_window_) {
     return absl::InternalError(absl::StrFormat(
         "frame of size %" PRId64 " overflows local window of %" PRId64,
-        incoming_frame_size, acked_stream_window));
+        incoming_frame_size, tfc_->announced_window_));
   }
-
-  UpdateAnnouncedWindowDelta(tfc_, -incoming_frame_size);
-  local_window_delta_ -= incoming_frame_size;
-  min_progress_size_ -=
-      std::min(static_cast<int64_t>(min_progress_size_), incoming_frame_size);
-  tfc_->CommitRecvData(incoming_frame_size);
+  absl::Status error = stream();
+  if (!error.ok()) return error;
+  tfc_->announced_window_ -= incoming_frame_size;
   return absl::OkStatus();
 }
-
-uint32_t StreamFlowControl::MaybeSendUpdate() {
-  // If a recently sent settings frame caused the stream's flow control window
-  // to go in the negative (or < min_progress_size_), update the delta.
-  // In this case, we want to make sure that bytes are still flowing.
-  UpdateProgress(min_progress_size_);
-  if (local_window_delta_ > announced_window_delta_) {
-    uint32_t announce = static_cast<uint32_t>(
-        Clamp(local_window_delta_ - announced_window_delta_, int64_t(0),
-              kMaxWindowUpdateSize));
-    UpdateAnnouncedWindowDelta(tfc_, announce);
-    return announce;
-  }
-  return 0;
-}
-
-void StreamFlowControl::UpdateProgress(uint32_t min_progress_size) {
-  uint32_t max_recv_bytes;
-
-  min_progress_size_ = min_progress_size;
-
-  /* clamp max recv hint to an allowable size */
-  if (min_progress_size >= kMaxWindowDelta) {
-    max_recv_bytes = kMaxWindowDelta;
-  } else {
-    max_recv_bytes = static_cast<uint32_t>(min_progress_size);
-  }
-
-  /* add some small lookahead to keep pipelines flowing */
-  GPR_DEBUG_ASSERT(max_recv_bytes <=
-                   kMaxWindowUpdateSize - tfc_->sent_init_window());
-  if (local_window_delta_ < max_recv_bytes) {
-    uint32_t add_max_recv_bytes =
-        static_cast<uint32_t>(max_recv_bytes - local_window_delta_);
-    local_window_delta_ += add_max_recv_bytes;
-  }
-}
-
-absl::Status TransportFlowControl::RecvData(int64_t incoming_frame_size) {
-  absl::Status error = ValidateRecvData(incoming_frame_size);
-  if (error.ok()) return error;
-  CommitRecvData(incoming_frame_size);
-  return absl::OkStatus();
-}
-
-void TransportFlowControl::RecvUpdate(uint32_t size) { remote_window_ += size; }
 
 int64_t TransportFlowControl::target_window() const {
   // See comment above announced_stream_total_over_incoming_window_ for the
@@ -313,29 +263,51 @@ FlowControlAction TransportFlowControl::PeriodicUpdate() {
   return UpdateAction(action);
 }
 
-FlowControlAction StreamFlowControl::UpdateAction(FlowControlAction action) {
-  const uint32_t sent_init_window = tfc_->sent_init_window();
-  if (local_window_delta_ > announced_window_delta_ &&
-      announced_window_delta_ + sent_init_window <= sent_init_window / 2) {
-    action.set_send_stream_update(
-        FlowControlAction::Urgency::UPDATE_IMMEDIATELY);
-  } else if (local_window_delta_ > announced_window_delta_) {
-    action.set_send_stream_update(FlowControlAction::Urgency::QUEUE_UPDATE);
-  }
+uint32_t StreamFlowControl::MaybeSendUpdate() {
+  TransportFlowControl::IncomingUpdateContext tfc_upd(tfc_);
+  const uint32_t announce = DesiredAnnounceSize();
+  pending_size_ = absl::nullopt;
+  tfc_upd.UpdateAnnouncedWindowDelta(&announced_window_delta_, announce);
+  GPR_ASSERT(DesiredAnnounceSize() == 0);
+  tfc_upd.MakeAction();
+  return announce;
+}
 
+uint32_t StreamFlowControl::DesiredAnnounceSize() const {
+  int64_t desired_window_delta = [this]() {
+    if (min_progress_size_ == 0) {
+      if (pending_size_.has_value() &&
+          announced_window_delta_ < -*pending_size_) {
+        return -*pending_size_;
+      } else {
+        return announced_window_delta_;
+      }
+    } else {
+      return std::min(min_progress_size_, kMaxWindowDelta);
+    }
+  }();
+  return Clamp(desired_window_delta - announced_window_delta_, int64_t(0),
+               kMaxWindowUpdateSize);
+}
+
+FlowControlAction StreamFlowControl::UpdateAction(FlowControlAction action) {
+  const int64_t desired_announce_size = DesiredAnnounceSize();
+  if (desired_announce_size > 0) {
+    if ((min_progress_size_ > 0 && announced_window_delta_ < 0) ||
+        desired_announce_size >= 8192) {
+      action.set_send_stream_update(
+          FlowControlAction::Urgency::UPDATE_IMMEDIATELY);
+    } else {
+      action.set_send_stream_update(FlowControlAction::Urgency::QUEUE_UPDATE);
+    }
+  }
   return action;
 }
 
-void StreamFlowControl::UpdateAnnouncedWindowDelta(TransportFlowControl* tfc,
-                                                   int64_t change) {
-  tfc->PreUpdateAnnouncedWindowOverIncomingWindow(announced_window_delta_);
-  announced_window_delta_ += change;
-  tfc->PostUpdateAnnouncedWindowOverIncomingWindow(announced_window_delta_);
-}
-
-void StreamFlowControl::SentData(int64_t outgoing_frame_size) {
-  tfc_->StreamSentData(outgoing_frame_size);
-  remote_window_delta_ -= outgoing_frame_size;
+void StreamFlowControl::IncomingUpdateContext::SetPendingSize(
+    int64_t pending_size) {
+  GPR_ASSERT(pending_size >= 0);
+  sfc_->pending_size_ = pending_size;
 }
 
 }  // namespace chttp2

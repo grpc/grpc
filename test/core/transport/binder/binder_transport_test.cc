@@ -155,23 +155,23 @@ bool MetadataEquivalent(Metadata a, Metadata b) {
 // initial_metadata, and message_data.
 MATCHER_P4(TransactionMatches, flag, method_ref, initial_metadata, message_data,
            "") {
-  if (arg.GetFlags() != flag) return false;
+  if (arg->GetFlags() != flag) return false;
   if (flag & kFlagPrefix) {
-    if (arg.GetMethodRef() != method_ref) {
+    if (arg->GetMethodRef() != method_ref) {
       printf("METHOD REF NOT EQ: %s %s\n",
-             std::string(arg.GetMethodRef()).c_str(),
+             std::string(arg->GetMethodRef()).c_str(),
              std::string(method_ref).c_str());
       return false;
     }
-    if (!MetadataEquivalent(arg.GetPrefixMetadata(), initial_metadata)) {
+    if (!MetadataEquivalent(arg->GetPrefixMetadata(), initial_metadata)) {
       printf("METADATA NOT EQUIVALENT: %s %s\n",
-             MetadataString(arg.GetPrefixMetadata()).c_str(),
+             MetadataString(arg->GetPrefixMetadata()).c_str(),
              MetadataString(initial_metadata).c_str());
       return false;
     }
   }
   if (flag & kFlagMessageData) {
-    if (arg.GetMessageData() != message_data) return false;
+    if (arg->GetMessageData() != message_data) return false;
   }
   return true;
 }

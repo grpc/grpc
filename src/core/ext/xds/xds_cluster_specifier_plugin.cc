@@ -28,6 +28,7 @@
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "upb/json_encode.h"
+#include "upb/status.h"
 #include "upb/upb.hpp"
 
 #include <grpc/support/log.h>
@@ -81,7 +82,7 @@ XdsRouteLookupClusterSpecifierPlugin::GenerateLoadBalancingPolicyConfig(
   grpc_error_handle error = GRPC_ERROR_NONE;
   rls_policy["routeLookupConfig"] =
       Json::Parse(reinterpret_cast<char*>(buf), &error);
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   Json::Object cds_policy;
   cds_policy["cds_experimental"] = Json::Object();
   Json::Array child_policy;
@@ -98,15 +99,13 @@ XdsRouteLookupClusterSpecifierPlugin::GenerateLoadBalancingPolicyConfig(
   // somehow such that we automatically validate the resulting config against
   // the gRPC LB policy registry instead of requiring each plugin to do that
   // itself.
-  LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(lb_policy_config,
-                                                        &parse_error);
-  if (parse_error != GRPC_ERROR_NONE) {
-    absl::Status status = absl::InvalidArgumentError(absl::StrCat(
+  auto config =
+      LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(lb_policy_config);
+  if (!config.ok()) {
+    return absl::InvalidArgumentError(absl::StrCat(
         kXdsRouteLookupClusterSpecifierPluginConfigName,
         " ClusterSpecifierPlugin returned invalid LB policy config: ",
-        grpc_error_std_string(parse_error)));
-    GRPC_ERROR_UNREF(parse_error);
-    return status;
+        config.status().message()));
   }
   return lb_policy_config.Dump();
 }

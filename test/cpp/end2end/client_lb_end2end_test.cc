@@ -156,11 +156,13 @@ class FakeResolverResponseGeneratorWrapper {
       const std::vector<int>& ports, const char* service_config_json = nullptr,
       const char* attribute_key = nullptr,
       std::unique_ptr<grpc_core::ServerAddress::AttributeInterface> attribute =
-          nullptr) {
+          nullptr,
+      const grpc_core::ChannelArgs& per_address_args =
+          grpc_core::ChannelArgs()) {
     grpc_core::ExecCtx exec_ctx;
     response_generator_->SetResponse(
         BuildFakeResults(ipv6_only_, ports, service_config_json, attribute_key,
-                         std::move(attribute)));
+                         std::move(attribute), per_address_args));
   }
 
   void SetNextResolutionUponError(const std::vector<int>& ports) {
@@ -184,7 +186,9 @@ class FakeResolverResponseGeneratorWrapper {
       const char* service_config_json = nullptr,
       const char* attribute_key = nullptr,
       std::unique_ptr<grpc_core::ServerAddress::AttributeInterface> attribute =
-          nullptr) {
+          nullptr,
+      const grpc_core::ChannelArgs& per_address_args =
+          grpc_core::ChannelArgs()) {
     grpc_core::Resolver::Result result;
     result.addresses = grpc_core::ServerAddressList();
     for (const int& port : ports) {
@@ -200,7 +204,7 @@ class FakeResolverResponseGeneratorWrapper {
         attributes[attribute_key] = attribute->Copy();
       }
       result.addresses->emplace_back(address.addr, address.len,
-                                     nullptr /* args */, std::move(attributes));
+                                     per_address_args, std::move(attributes));
     }
     if (result.addresses->empty()) {
       result.resolution_note = "fake resolver empty address list";
@@ -208,7 +212,7 @@ class FakeResolverResponseGeneratorWrapper {
     if (service_config_json != nullptr) {
       grpc_error_handle error = GRPC_ERROR_NONE;
       result.service_config = grpc_core::ServiceConfigImpl::Create(
-          nullptr, service_config_json, &error);
+          grpc_core::ChannelArgs(), service_config_json, &error);
       GPR_ASSERT(*result.service_config != nullptr);
     }
     return result;
@@ -302,7 +306,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
     }  // else, default to pick first
     args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
                     response_generator.Get());
-    return grpc::CreateCustomChannel("fake:///", creds_, args);
+    return grpc::CreateCustomChannel("fake:default.example.com", creds_, args);
   }
 
   Status SendRpc(
@@ -358,8 +362,27 @@ class ClientLbEnd2endTest : public ::testing::Test {
     EXPECT_EQ(expected_status, status.error_code())
         << location.file() << ":" << location.line();
     EXPECT_THAT(status.error_message(),
-                ::testing::ContainsRegex(expected_message_regex))
+                ::testing::MatchesRegex(expected_message_regex))
         << location.file() << ":" << location.line();
+  }
+
+  void SendRpcsUntil(
+      const grpc_core::DebugLocation& debug_location,
+      const std::unique_ptr<grpc::testing::EchoTestService::Stub>& stub,
+      std::function<bool(const Status&)> continue_predicate,
+      int timeout_ms = 15000) {
+    absl::Time deadline = absl::InfiniteFuture();
+    if (timeout_ms != 0) {
+      deadline = absl::Now() +
+                 (absl::Milliseconds(timeout_ms) * grpc_test_slowdown_factor());
+    }
+    while (true) {
+      Status status = SendRpc(stub);
+      if (!continue_predicate(status)) return;
+      EXPECT_LE(absl::Now(), deadline)
+          << debug_location.file() << ":" << debug_location.line();
+      if (absl::Now() >= deadline) break;
+    }
   }
 
   struct ServerData {
@@ -413,6 +436,13 @@ class ClientLbEnd2endTest : public ::testing::Test {
       server_->Shutdown(grpc_timeout_milliseconds_to_deadline(0));
       thread_->join();
       started_ = false;
+    }
+
+    void StopListeningAndSendGoaways() {
+      grpc_core::ExecCtx exec_ctx;
+      auto* server = grpc_core::Server::FromC(server_->c_server());
+      server->StopListening();
+      server->SendGoaways();
     }
 
     void SetServingStatus(const std::string& service, bool serving) {
@@ -573,6 +603,78 @@ TEST_F(ClientLbEnd2endTest, ChannelIdleness) {
   response_generator.SetNextResolution(GetServersPorts());
   CheckRpcSendOk(DEBUG_LOCATION, stub);
   EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_READY);
+}
+
+TEST_F(ClientLbEnd2endTest, AuthorityOverrideOnChannel) {
+  StartServers(1);
+  // Set authority via channel arg.
+  auto response_generator = BuildResolverResponseGenerator();
+  ChannelArguments args;
+  args.SetString(GRPC_ARG_DEFAULT_AUTHORITY, "foo.example.com");
+  auto channel = BuildChannel("", response_generator, args);
+  auto stub = BuildStub(channel);
+  response_generator.SetNextResolution(GetServersPorts());
+  // Send an RPC.
+  EchoRequest request;
+  request.mutable_param()->set_echo_host_from_authority_header(true);
+  EchoResponse response;
+  Status status = SendRpc(stub, &response, /*timeout_ms=*/1000,
+                          /*wait_for_ready=*/false, &request);
+  EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
+                           << " message=" << status.error_message();
+  // Check that the right authority was seen by the server.
+  EXPECT_EQ("foo.example.com", response.param().host());
+}
+
+TEST_F(ClientLbEnd2endTest, AuthorityOverrideFromResolver) {
+  StartServers(1);
+  auto response_generator = BuildResolverResponseGenerator();
+  auto channel = BuildChannel("", response_generator);
+  auto stub = BuildStub(channel);
+  // Inject resolver result that sets the per-address authority to a
+  // different value.
+  response_generator.SetNextResolution(
+      GetServersPorts(), /*service_config_json=*/nullptr,
+      /*attribute_key=*/nullptr, /*attribute=*/nullptr,
+      grpc_core::ChannelArgs().Set(GRPC_ARG_DEFAULT_AUTHORITY,
+                                   "foo.example.com"));
+  // Send an RPC.
+  EchoRequest request;
+  request.mutable_param()->set_echo_host_from_authority_header(true);
+  EchoResponse response;
+  Status status = SendRpc(stub, &response, /*timeout_ms=*/1000,
+                          /*wait_for_ready=*/false, &request);
+  EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
+                           << " message=" << status.error_message();
+  // Check that the right authority was seen by the server.
+  EXPECT_EQ("foo.example.com", response.param().host());
+}
+
+TEST_F(ClientLbEnd2endTest, AuthorityOverridePrecedence) {
+  StartServers(1);
+  // Set authority via channel arg.
+  auto response_generator = BuildResolverResponseGenerator();
+  ChannelArguments args;
+  args.SetString(GRPC_ARG_DEFAULT_AUTHORITY, "foo.example.com");
+  auto channel = BuildChannel("", response_generator, args);
+  auto stub = BuildStub(channel);
+  // Inject resolver result that sets the per-address authority to a
+  // different value.
+  response_generator.SetNextResolution(
+      GetServersPorts(), /*service_config_json=*/nullptr,
+      /*attribute_key=*/nullptr, /*attribute=*/nullptr,
+      grpc_core::ChannelArgs().Set(GRPC_ARG_DEFAULT_AUTHORITY,
+                                   "bar.example.com"));
+  // Send an RPC.
+  EchoRequest request;
+  request.mutable_param()->set_echo_host_from_authority_header(true);
+  EchoResponse response;
+  Status status = SendRpc(stub, &response, /*timeout_ms=*/1000,
+                          /*wait_for_ready=*/false, &request);
+  EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
+                           << " message=" << status.error_message();
+  // Check that the right authority was seen by the server.
+  EXPECT_EQ("foo.example.com", response.param().host());
 }
 
 //
@@ -748,69 +850,11 @@ TEST_F(PickFirstTest, ResetConnectionBackoff) {
 
 TEST_F(ClientLbEnd2endTest,
        ResetConnectionBackoffNextAttemptStartsImmediately) {
-  // A connection attempt injector that allows us to control timing of a
-  // connection attempt.
-  class ConnectionInjector : public ConnectionAttemptInjector {
-   public:
-    explicit ConnectionInjector(int port) : port_(port) {}
-
-    void InterceptNextAttempt(grpc_core::CondVar* cv) {
-      grpc_core::MutexLock lock(&mu_);
-      cv_ = cv;
-    }
-
-    void WaitForAttemptToStart(grpc_core::CondVar* cv) {
-      grpc_core::MutexLock lock(&mu_);
-      while (queued_attempt_ == nullptr) {
-        cv->Wait(&mu_);
-      }
-    }
-
-    void ResumeAttempt() {
-      grpc_core::ExecCtx exec_ctx;
-      std::unique_ptr<QueuedAttempt> attempt;
-      {
-        grpc_core::MutexLock lock(&mu_);
-        attempt = std::move(queued_attempt_);
-      }
-      attempt->Resume();
-    }
-
-    void HandleConnection(grpc_closure* closure, grpc_endpoint** ep,
-                          grpc_pollset_set* interested_parties,
-                          const grpc_channel_args* channel_args,
-                          const grpc_resolved_address* addr,
-                          grpc_core::Timestamp deadline) override {
-      const int port = grpc_sockaddr_get_port(addr);
-      gpr_log(GPR_INFO, "==> HandleConnection(): port=%d", port);
-      if (port == port_) {
-        grpc_core::MutexLock lock(&mu_);
-        if (cv_ != nullptr) {
-          gpr_log(GPR_INFO, "*** INTERCEPTING CONNECTION ATTEMPT");
-          GPR_ASSERT(queued_attempt_ == nullptr);
-          queued_attempt_ = absl::make_unique<QueuedAttempt>(
-              closure, ep, interested_parties, channel_args, addr, deadline);
-          cv_->Signal();
-          cv_ = nullptr;
-          return;
-        }
-      }
-      AttemptConnection(closure, ep, interested_parties, channel_args, addr,
-                        deadline);
-    }
-
-   private:
-    const int port_;
-
-    grpc_core::Mutex mu_;
-    grpc_core::CondVar* cv_ = nullptr;
-    std::unique_ptr<QueuedAttempt> queued_attempt_ ABSL_GUARDED_BY(mu_);
-  };
-  // Get an unused port and start connection injector.
-  const int port = grpc_pick_unused_port_or_die();
-  ConnectionInjector injector(port);
+  // Start connection injector.
+  ConnectionHoldInjector injector;
   injector.Start();
   // Create client.
+  const int port = grpc_pick_unused_port_or_die();
   ChannelArguments args;
   const int kInitialBackOffMs = 5000 * grpc_test_slowdown_factor();
   args.SetInt(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS, kInitialBackOffMs);
@@ -819,11 +863,10 @@ TEST_F(ClientLbEnd2endTest,
   auto stub = BuildStub(channel);
   response_generator.SetNextResolution({port});
   // Intercept initial connection attempt.
-  grpc_core::CondVar cv1;
-  injector.InterceptNextAttempt(&cv1);
+  auto hold1 = injector.AddHold(port);
   gpr_log(GPR_INFO, "=== TRIGGERING INITIAL CONNECTION ATTEMPT");
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel->GetState(/*try_to_connect=*/true));
-  injector.WaitForAttemptToStart(&cv1);
+  hold1->Wait();
   EXPECT_EQ(GRPC_CHANNEL_CONNECTING,
             channel->GetState(/*try_to_connect=*/false));
   // Reset backoff.
@@ -831,20 +874,19 @@ TEST_F(ClientLbEnd2endTest,
   experimental::ChannelResetConnectionBackoff(channel.get());
   // Intercept next attempt.  Do this before resuming the first attempt,
   // just in case the client makes progress faster than this thread.
-  grpc_core::CondVar cv2;
-  injector.InterceptNextAttempt(&cv2);
+  auto hold2 = injector.AddHold(port);
   // Fail current attempt and wait for next one to start.
   gpr_log(GPR_INFO, "=== RESUMING INITIAL ATTEMPT");
   const gpr_timespec t0 = gpr_now(GPR_CLOCK_MONOTONIC);
-  injector.ResumeAttempt();
+  hold1->Resume();
   gpr_log(GPR_INFO, "=== WAITING FOR SECOND ATTEMPT");
   // This WaitForStateChange() call just makes sure we're doing some polling.
   EXPECT_TRUE(channel->WaitForStateChange(GRPC_CHANNEL_CONNECTING,
                                           grpc_timeout_seconds_to_deadline(1)));
-  injector.WaitForAttemptToStart(&cv2);
+  hold2->Wait();
   const gpr_timespec t1 = gpr_now(GPR_CLOCK_MONOTONIC);
   gpr_log(GPR_INFO, "=== RESUMING SECOND ATTEMPT");
-  injector.ResumeAttempt();
+  hold2->Resume();
   // Elapsed time should be very short, much less than kInitialBackOffMs.
   const grpc_core::Duration waited =
       grpc_core::Duration::FromTimespec(gpr_time_sub(t1, t0));
@@ -855,88 +897,8 @@ TEST_F(ClientLbEnd2endTest,
 TEST_F(
     PickFirstTest,
     TriesAllSubchannelsBeforeReportingTransientFailureWithSubchannelSharing) {
-  // A connection attempt injector that allows us to control timing of
-  // connection attempts.
-  class ConnectionInjector : public ConnectionAttemptInjector {
-   private:
-    grpc_core::Mutex mu_;  // Needs to be declared up front.
-
-   public:
-    class Hold {
-     public:
-      Hold(ConnectionInjector* injector, int port)
-          : injector_(injector), port_(port) {}
-
-      int port() const { return port_; }
-
-      void set_queued_attempt(std::unique_ptr<QueuedAttempt> queued_attempt)
-          ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ConnectionInjector::mu_) {
-        queued_attempt_ = std::move(queued_attempt);
-        cv_.Signal();
-      }
-
-      void Wait() {
-        grpc_core::MutexLock lock(&injector_->mu_);
-        while (queued_attempt_ == nullptr) {
-          cv_.Wait(&injector_->mu_);
-        }
-      }
-
-      void Resume() {
-        grpc_core::ExecCtx exec_ctx;
-        std::unique_ptr<QueuedAttempt> attempt;
-        {
-          grpc_core::MutexLock lock(&injector_->mu_);
-          attempt = std::move(queued_attempt_);
-        }
-        attempt->Resume();
-      }
-
-     private:
-      ConnectionInjector* injector_;
-      const int port_;
-      std::unique_ptr<QueuedAttempt> queued_attempt_
-          ABSL_GUARDED_BY(&ConnectionInjector::mu_);
-      grpc_core::CondVar cv_;
-    };
-
-    std::unique_ptr<Hold> AddHold(int port) {
-      grpc_core::MutexLock lock(&mu_);
-      auto hold = absl::make_unique<Hold>(this, port);
-      holds_.push_back(hold.get());
-      return hold;
-    }
-
-    void HandleConnection(grpc_closure* closure, grpc_endpoint** ep,
-                          grpc_pollset_set* interested_parties,
-                          const grpc_channel_args* channel_args,
-                          const grpc_resolved_address* addr,
-                          grpc_core::Timestamp deadline) override {
-      const int port = grpc_sockaddr_get_port(addr);
-      gpr_log(GPR_INFO, "==> HandleConnection(): port=%d", port);
-      {
-        grpc_core::MutexLock lock(&mu_);
-        for (auto it = holds_.begin(); it != holds_.end(); ++it) {
-          Hold* hold = *it;
-          if (port == hold->port()) {
-            gpr_log(GPR_INFO, "*** INTERCEPTING CONNECTION ATTEMPT");
-            hold->set_queued_attempt(absl::make_unique<QueuedAttempt>(
-                closure, ep, interested_parties, channel_args, addr, deadline));
-            holds_.erase(it);
-            return;
-          }
-        }
-      }
-      // Anything we're not holding should proceed normally.
-      AttemptConnection(closure, ep, interested_parties, channel_args, addr,
-                        deadline);
-    }
-
-   private:
-    std::vector<Hold*> holds_;
-  };
   // Start connection injector.
-  ConnectionInjector injector;
+  ConnectionHoldInjector injector;
   injector.Start();
   // Get 5 unused ports.  Each channel will have 2 unique ports followed
   // by a common port.
@@ -1680,15 +1642,6 @@ TEST_F(RoundRobinTest, TransientFailure) {
   response_generator.SetNextResolution(GetServersPorts());
   EXPECT_TRUE(WaitForChannelReady(channel.get()));
   // Now kill the servers.  The channel should transition to TRANSIENT_FAILURE.
-  // TODO(roth): This test should ideally check that even when the
-  // subchannels are in state CONNECTING for an extended period of time,
-  // we will still report TRANSIENT_FAILURE.  Unfortunately, we don't
-  // currently have a good way to get a subchannel to report CONNECTING
-  // for a long period of time, since the servers in this test framework
-  // are on the loopback interface, which will immediately return a
-  // "Connection refused" error, so the subchannels will only be in
-  // CONNECTING state very briefly.  When we have time, see if we can
-  // find a way to fix this.
   for (size_t i = 0; i < servers_.size(); ++i) {
     servers_[i]->Shutdown();
   }
@@ -1696,20 +1649,16 @@ TEST_F(RoundRobinTest, TransientFailure) {
     return state == GRPC_CHANNEL_TRANSIENT_FAILURE;
   };
   EXPECT_TRUE(WaitForChannelState(channel.get(), predicate));
+  CheckRpcSendFailure(
+      DEBUG_LOCATION, stub, StatusCode::UNAVAILABLE,
+      "connections to all backends failing; last error: "
+      "(UNKNOWN: Failed to connect to remote host: Connection refused|"
+      "UNAVAILABLE: Failed to connect to remote host: FD shutdown)");
 }
 
 TEST_F(RoundRobinTest, TransientFailureAtStartup) {
   // Create channel and return servers that don't exist.  Channel should
   // quickly transition into TRANSIENT_FAILURE.
-  // TODO(roth): This test should ideally check that even when the
-  // subchannels are in state CONNECTING for an extended period of time,
-  // we will still report TRANSIENT_FAILURE.  Unfortunately, we don't
-  // currently have a good way to get a subchannel to report CONNECTING
-  // for a long period of time, since the servers in this test framework
-  // are on the loopback interface, which will immediately return a
-  // "Connection refused" error, so the subchannels will only be in
-  // CONNECTING state very briefly.  When we have time, see if we can
-  // find a way to fix this.
   auto response_generator = BuildResolverResponseGenerator();
   auto channel = BuildChannel("round_robin", response_generator);
   auto stub = BuildStub(channel);
@@ -1725,94 +1674,110 @@ TEST_F(RoundRobinTest, TransientFailureAtStartup) {
     return state == GRPC_CHANNEL_TRANSIENT_FAILURE;
   };
   EXPECT_TRUE(WaitForChannelState(channel.get(), predicate, true));
+  CheckRpcSendFailure(
+      DEBUG_LOCATION, stub, StatusCode::UNAVAILABLE,
+      "connections to all backends failing; last error: "
+      "(UNKNOWN: Failed to connect to remote host: Connection refused|"
+      "UNAVAILABLE: Failed to connect to remote host: FD shutdown)");
+}
+
+TEST_F(RoundRobinTest, StaysInTransientFailureInSubsequentConnecting) {
+  // Start connection injector.
+  ConnectionHoldInjector injector;
+  injector.Start();
+  // Get port.
+  const int port = grpc_pick_unused_port_or_die();
+  // Create channel.
+  auto response_generator = BuildResolverResponseGenerator();
+  auto channel = BuildChannel("round_robin", response_generator);
+  auto stub = BuildStub(channel);
+  response_generator.SetNextResolution({port});
+  // Allow first connection attempt to fail normally, and wait for
+  // channel to report TRANSIENT_FAILURE.
+  gpr_log(GPR_INFO, "=== WAITING FOR CHANNEL TO REPORT TF ===");
+  auto predicate = [](grpc_connectivity_state state) {
+    return state == GRPC_CHANNEL_TRANSIENT_FAILURE;
+  };
+  EXPECT_TRUE(
+      WaitForChannelState(channel.get(), predicate, /*try_to_connect=*/true));
+  // Wait for next connection attempt to start.
+  auto hold = injector.AddHold(port);
+  hold->Wait();
+  // Now the subchannel should be reporting CONNECTING.  Make sure the
+  // channel is still in TRANSIENT_FAILURE and is still reporting the
+  // right status.
+  EXPECT_EQ(GRPC_CHANNEL_TRANSIENT_FAILURE, channel->GetState(false));
+  // Send a few RPCs, just to give the channel a chance to propagate a
+  // new picker, in case it was going to incorrectly do so.
+  gpr_log(GPR_INFO, "=== EXPECTING RPCs TO FAIL ===");
+  for (size_t i = 0; i < 5; ++i) {
+    CheckRpcSendFailure(
+        DEBUG_LOCATION, stub, StatusCode::UNAVAILABLE,
+        "connections to all backends failing; last error: "
+        "(UNKNOWN: Failed to connect to remote host: Connection refused|"
+        "UNAVAILABLE: Failed to connect to remote host: FD shutdown)");
+  }
+  // Clean up.
+  hold->Resume();
+}
+
+TEST_F(RoundRobinTest, ReportsLatestStatusInTransientFailure) {
+  // Start connection injector.
+  ConnectionHoldInjector injector;
+  injector.Start();
+  // Get port.
+  const std::vector<int> ports = {grpc_pick_unused_port_or_die(),
+                                  grpc_pick_unused_port_or_die()};
+  // Create channel.
+  auto response_generator = BuildResolverResponseGenerator();
+  auto channel = BuildChannel("round_robin", response_generator);
+  auto stub = BuildStub(channel);
+  response_generator.SetNextResolution(ports);
+  // Allow first connection attempts to fail normally, and check that
+  // the RPC fails with the right status message.
+  CheckRpcSendFailure(
+      DEBUG_LOCATION, stub, StatusCode::UNAVAILABLE,
+      "connections to all backends failing; last error: "
+      "(UNKNOWN: Failed to connect to remote host: Connection refused|"
+      "UNAVAILABLE: Failed to connect to remote host: FD shutdown)");
+  // Now intercept the next connection attempt for each port.
+  auto hold1 = injector.AddHold(ports[0]);
+  auto hold2 = injector.AddHold(ports[1]);
+  hold1->Wait();
+  hold2->Wait();
+  // Inject a custom failure message.
+  hold1->Wait();
+  hold1->Fail(GRPC_ERROR_CREATE_FROM_STATIC_STRING("Survey says... Bzzzzt!"));
+  // Wait until RPC fails with the right message.
+  absl::Time deadline =
+      absl::Now() + (absl::Seconds(5) * grpc_test_slowdown_factor());
+  while (true) {
+    Status status = SendRpc(stub);
+    EXPECT_EQ(StatusCode::UNAVAILABLE, status.error_code());
+    if (status.error_message() ==
+        "connections to all backends failing; last error: "
+        "UNKNOWN: Survey says... Bzzzzt!") {
+      break;
+    }
+    EXPECT_THAT(
+        status.error_message(),
+        ::testing::MatchesRegex(
+            "connections to all backends failing; last error: "
+            "(UNKNOWN: Failed to connect to remote host: Connection refused|"
+            "UNAVAILABLE: Failed to connect to remote host: FD shutdown)"));
+    EXPECT_LT(absl::Now(), deadline);
+    if (absl::Now() >= deadline) break;
+  }
+  // Clean up.
+  hold2->Resume();
 }
 
 TEST_F(RoundRobinTest, DoesNotFailRpcsUponDisconnection) {
-  // A connection attempt injector that allows us to control timing.
-  class ConnectionInjector : public ConnectionAttemptInjector {
-   public:
-    explicit ConnectionInjector(int port) : port_(port) {}
-
-    void InterceptNextAttempt() {
-      grpc_core::MutexLock lock(&mu_);
-      intercept_next_attempt_ = true;
-    }
-
-    void WaitForAttemptToStart() {
-      grpc_core::MutexLock lock(&mu_);
-      while (queued_attempt_ == nullptr) {
-        start_cond_.Wait(&mu_);
-      }
-    }
-
-    void ResumeAttempt() {
-      grpc_core::ExecCtx exec_ctx;
-      std::unique_ptr<QueuedAttempt> attempt;
-      {
-        grpc_core::MutexLock lock(&mu_);
-        attempt = std::move(queued_attempt_);
-      }
-      attempt->Resume();
-    }
-
-    void WaitForAttemptComplete() {
-      grpc_core::MutexLock lock(&mu_);
-      while (!attempt_complete_) {
-        complete_cond_.Wait(&mu_);
-      }
-    }
-
-    void HandleConnection(grpc_closure* closure, grpc_endpoint** ep,
-                          grpc_pollset_set* interested_parties,
-                          const grpc_channel_args* channel_args,
-                          const grpc_resolved_address* addr,
-                          grpc_core::Timestamp deadline) override {
-      const int port = grpc_sockaddr_get_port(addr);
-      gpr_log(GPR_INFO, "==> HandleConnection(): port=%d", port);
-      if (port == port_) {
-        grpc_core::MutexLock lock(&mu_);
-        if (intercept_next_attempt_) {
-          gpr_log(GPR_INFO, "*** INTERCEPTING CONNECTION ATTEMPT");
-          original_closure_ = closure;
-          closure = GRPC_CLOSURE_INIT(&closure_, OnComplete, this, nullptr);
-          intercept_next_attempt_ = false;
-          queued_attempt_ = absl::make_unique<QueuedAttempt>(
-              closure, ep, interested_parties, channel_args, addr, deadline);
-          start_cond_.Signal();
-          return;
-        }
-      }
-      AttemptConnection(closure, ep, interested_parties, channel_args, addr,
-                        deadline);
-    }
-
-   private:
-    static void OnComplete(void* arg, grpc_error_handle error) {
-      auto* self = static_cast<ConnectionInjector*>(arg);
-      {
-        grpc_core::MutexLock lock(&self->mu_);
-        self->attempt_complete_ = true;
-        self->complete_cond_.Signal();
-      }
-      grpc_core::Closure::Run(DEBUG_LOCATION, self->original_closure_,
-                              GRPC_ERROR_REF(error));
-    }
-
-    const int port_;
-
-    grpc_core::Mutex mu_;
-    bool intercept_next_attempt_ ABSL_GUARDED_BY(mu_) = false;
-    grpc_core::CondVar start_cond_;
-    std::unique_ptr<QueuedAttempt> queued_attempt_ ABSL_GUARDED_BY(mu_);
-    grpc_closure* original_closure_ = nullptr;
-    grpc_closure closure_;
-    grpc_core::CondVar complete_cond_;
-    bool attempt_complete_ ABSL_GUARDED_BY(mu_) = false;
-  };
+  // Start connection injector.
+  ConnectionHoldInjector injector;
+  injector.Start();
   // Start server.
   StartServers(1);
-  ConnectionInjector injector(servers_[0]->port_);
-  injector.Start();
   // Create channel.
   auto response_generator = BuildResolverResponseGenerator();
   auto channel = BuildChannel("round_robin", response_generator);
@@ -1839,7 +1804,8 @@ TEST_F(RoundRobinTest, DoesNotFailRpcsUponDisconnection) {
   // Channel should now be READY.
   ASSERT_EQ(GRPC_CHANNEL_READY, channel->GetState(false));
   // Tell injector to intercept the next connection attempt.
-  injector.InterceptNextAttempt();
+  auto hold1 =
+      injector.AddHold(servers_[0]->port_, /*intercept_completion=*/true);
   // Now kill the server.  The subchannel should report IDLE and be
   // immediately reconnected to, but this should not cause any test
   // failures.
@@ -1852,14 +1818,14 @@ TEST_F(RoundRobinTest, DoesNotFailRpcsUponDisconnection) {
   servers_[0]->Shutdown();
   // Wait for next attempt to start.
   gpr_log(GPR_ERROR, "=== WAITING FOR RECONNECTION ATTEMPT ===");
-  injector.WaitForAttemptToStart();
+  hold1->Wait();
   // Start server and allow attempt to continue.
   gpr_log(GPR_ERROR, "=== RESTARTING SERVER ===");
   StartServer(0);
-  injector.ResumeAttempt();
+  hold1->Resume();
   // Wait for next attempt to complete.
   gpr_log(GPR_ERROR, "=== WAITING FOR RECONNECTION ATTEMPT TO COMPLETE ===");
-  injector.WaitForAttemptComplete();
+  hold1->WaitForCompletion();
   // Now shut down the thread.
   gpr_log(GPR_ERROR, "=== SHUTTING DOWN CLIENT THREAD ===");
   shutdown.store(true);
@@ -1885,25 +1851,32 @@ TEST_F(RoundRobinTest, SingleReconnect) {
   for (size_t i = 0; i < servers_.size(); ++i) {
     EXPECT_EQ(1, servers_[i]->service_.request_count());
   }
-  const auto pre_death = servers_[0]->service_.request_count();
   // Kill the first server.
-  servers_[0]->Shutdown();
-  // Client request still succeed. May need retrying if RR had returned a pick
-  // before noticing the change in the server's connectivity.
-  while (true) {
-    Status status = SendRpc(stub);
-    if (status.ok()) break;
-    EXPECT_EQ(StatusCode::UNAVAILABLE, status.error_code());
-    EXPECT_EQ("", status.error_message());
-  }
-  // Send a bunch of RPCs that should succeed.
+  servers_[0]->StopListeningAndSendGoaways();
+  // Wait for client to notice that the backend is down.  We know that's
+  // happened when we see kNumServers RPCs that do not go to backend 0.
+  ResetCounters();
+  SendRpcsUntil(DEBUG_LOCATION, stub,
+                [&, num_rpcs_not_on_backend_0 = 0](Status status) mutable {
+                  EXPECT_TRUE(status.ok())
+                      << "code=" << status.error_code()
+                      << " message=" << status.error_message();
+                  if (servers_[0]->service_.request_count() == 1) {
+                    num_rpcs_not_on_backend_0 = 0;
+                  } else {
+                    ++num_rpcs_not_on_backend_0;
+                  }
+                  ResetCounters();
+                  return num_rpcs_not_on_backend_0 < kNumServers;
+                });
+  // Send a bunch of RPCs.
   for (int i = 0; i < 10 * kNumServers; ++i) {
     CheckRpcSendOk(DEBUG_LOCATION, stub);
   }
-  const auto post_death = servers_[0]->service_.request_count();
   // No requests have gone to the deceased server.
-  EXPECT_EQ(pre_death, post_death);
+  EXPECT_EQ(0UL, servers_[0]->service_.request_count());
   // Bring the first server back up.
+  servers_[0]->Shutdown();
   StartServer(0);
   // Requests should start arriving at the first server either right away (if
   // the server managed to start before the RR policy retried the subchannel) or
@@ -2555,7 +2528,7 @@ TEST_F(ClientLbAddressTest, Basic) {
   for (const int port : GetServersPorts()) {
     expected.emplace_back(
         absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", port,
-                     " args={} attributes={", kAttributeKey, "=foo}"));
+                     " attributes={", kAttributeKey, "=foo}"));
   }
   EXPECT_EQ(addresses_seen(), expected);
 }

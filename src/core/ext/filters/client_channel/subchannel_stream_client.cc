@@ -27,12 +27,12 @@
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/transport/error_utils.h"
 
@@ -56,7 +56,8 @@ SubchannelStreamClient::SubchannelStreamClient(
       interested_parties_(interested_parties),
       tracer_(tracer),
       call_allocator_(
-          ResourceQuotaFromChannelArgs(connected_subchannel_->args())
+          connected_subchannel_->args()
+              .GetObject<ResourceQuota>()
               ->memory_quota()
               ->CreateMemoryAllocator(
                   (tracer != nullptr) ? tracer : "SubchannelStreamClient")),
@@ -146,7 +147,7 @@ void SubchannelStreamClient::OnRetryTimer(void* arg, grpc_error_handle error) {
   {
     MutexLock lock(&self->mu_);
     self->retry_timer_callback_pending_ = false;
-    if (self->event_handler_ != nullptr && error == GRPC_ERROR_NONE &&
+    if (self->event_handler_ != nullptr && GRPC_ERROR_IS_NONE(error) &&
         self->call_state_ == nullptr) {
       if (GPR_UNLIKELY(self->tracer_ != nullptr)) {
         gpr_log(GPR_INFO,
@@ -218,7 +219,7 @@ void SubchannelStreamClient::CallState::StartCallLocked() {
                     this, grpc_schedule_on_exec_ctx);
   call_->SetAfterCallStackDestroy(&after_call_stack_destruction_);
   // Check if creation failed.
-  if (error != GRPC_ERROR_NONE ||
+  if (!GRPC_ERROR_IS_NONE(error) ||
       subchannel_stream_client_->event_handler_ == nullptr) {
     gpr_log(GPR_ERROR,
             "SubchannelStreamClient %p CallState %p: error creating "
@@ -240,7 +241,7 @@ void SubchannelStreamClient::CallState::StartCallLocked() {
   send_initial_metadata_.Set(
       HttpPathMetadata(),
       subchannel_stream_client_->event_handler_->GetPathLocked());
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   payload_.send_initial_metadata.send_initial_metadata =
       &send_initial_metadata_;
   payload_.send_initial_metadata.send_initial_metadata_flags = 0;
@@ -420,7 +421,7 @@ void SubchannelStreamClient::CallState::RecvTrailingMetadataReady(
   grpc_status_code status =
       self->recv_trailing_metadata_.get(GrpcStatusMetadata())
           .value_or(GRPC_STATUS_UNKNOWN);
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     grpc_error_get_status(error, Timestamp::InfFuture(), &status,
                           nullptr /* slice */, nullptr /* http_error */,
                           nullptr /* error_string */);

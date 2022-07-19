@@ -30,7 +30,7 @@ class GoogleCallCredentials(grpc.AuthMetadataPlugin):
         self._credentials = credentials
         # Hack to determine if these are JWT creds and we need to pass
         # additional_claims when getting a token
-        self._is_jwt = 'additional_claims' in inspect.getargspec(  # pylint: disable=deprecated-method
+        self._is_jwt = 'additional_claims' in inspect.getfullargspec(
             credentials.get_access_token).args
 
     def __call__(self, context, callback):

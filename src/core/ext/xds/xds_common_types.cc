@@ -24,7 +24,6 @@
 #include <map>
 #include <utility>
 
-#include "absl/container/inlined_vector.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -66,7 +65,7 @@ bool CommonTlsContext::CertificateValidationContext::Empty() const {
 
 std::string CommonTlsContext::CertificateProviderPluginInstance::ToString()
     const {
-  absl::InlinedVector<std::string, 2> contents;
+  std::vector<std::string> contents;
   if (!instance_name.empty()) {
     contents.push_back(absl::StrFormat("instance_name=%s", instance_name));
   }
@@ -86,7 +85,7 @@ bool CommonTlsContext::CertificateProviderPluginInstance::Empty() const {
 //
 
 std::string CommonTlsContext::ToString() const {
-  absl::InlinedVector<std::string, 2> contents;
+  std::vector<std::string> contents;
   if (!tls_certificate_provider_instance.Empty()) {
     contents.push_back(
         absl::StrFormat("tls_certificate_provider_instance=%s",
@@ -230,7 +229,7 @@ grpc_error_handle CertificateValidationContextParse(
     grpc_error_handle error = CertificateProviderPluginInstanceParse(
         context, ca_certificate_provider_instance,
         &certificate_validation_context->ca_certificate_provider_instance);
-    if (error != GRPC_ERROR_NONE) errors.push_back(error);
+    if (!GRPC_ERROR_IS_NONE(error)) errors.push_back(error);
   }
   if (envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_verify_certificate_spki(
           certificate_validation_context_proto, nullptr) != nullptr) {
@@ -290,7 +289,7 @@ grpc_error_handle CommonTlsContext::Parse(
       grpc_error_handle error = CertificateValidationContextParse(
           context, default_validation_context,
           &common_tls_context->certificate_validation_context);
-      if (error != GRPC_ERROR_NONE) errors.push_back(error);
+      if (!GRPC_ERROR_IS_NONE(error)) errors.push_back(error);
     }
     // If after parsing default_validation_context,
     // common_tls_context->certificate_validation_context.ca_certificate_provider_instance
@@ -309,7 +308,7 @@ grpc_error_handle CommonTlsContext::Parse(
           context, validation_context_certificate_provider_instance,
           &common_tls_context->certificate_validation_context
                .ca_certificate_provider_instance);
-      if (error != GRPC_ERROR_NONE) errors.push_back(error);
+      if (!GRPC_ERROR_IS_NONE(error)) errors.push_back(error);
     }
   } else {
     auto* validation_context =
@@ -319,7 +318,7 @@ grpc_error_handle CommonTlsContext::Parse(
       grpc_error_handle error = CertificateValidationContextParse(
           context, validation_context,
           &common_tls_context->certificate_validation_context);
-      if (error != GRPC_ERROR_NONE) errors.push_back(error);
+      if (!GRPC_ERROR_IS_NONE(error)) errors.push_back(error);
     } else if (
         envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_has_validation_context_sds_secret_config(
             common_tls_context_proto)) {
@@ -334,7 +333,7 @@ grpc_error_handle CommonTlsContext::Parse(
     grpc_error_handle error = CertificateProviderPluginInstanceParse(
         context, tls_certificate_provider_instance,
         &common_tls_context->tls_certificate_provider_instance);
-    if (error != GRPC_ERROR_NONE) errors.push_back(error);
+    if (!GRPC_ERROR_IS_NONE(error)) errors.push_back(error);
   } else {
     // Fall back onto 'tls_certificate_certificate_provider_instance'. Note that
     // this way of fetching identity certificates is deprecated and will be
@@ -347,7 +346,7 @@ grpc_error_handle CommonTlsContext::Parse(
       grpc_error_handle error = CertificateProviderInstanceParse(
           context, tls_certificate_certificate_provider_instance,
           &common_tls_context->tls_certificate_provider_instance);
-      if (error != GRPC_ERROR_NONE) errors.push_back(error);
+      if (!GRPC_ERROR_IS_NONE(error)) errors.push_back(error);
     } else {
       if (envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_has_tls_certificates(
               common_tls_context_proto)) {

@@ -143,6 +143,11 @@ static uint32_t read_frame_size(const grpc_slice_buffer* sb) {
   return load32_little_endian(frame_size_buffer);
 }
 
+uint32_t tsi_fake_zero_copy_grpc_protector_next_frame_size(
+    const grpc_slice_buffer* protected_slices) {
+  return read_frame_size(protected_slices);
+}
+
 static void tsi_fake_frame_reset(tsi_fake_frame* frame, int needs_draining) {
   frame->offset = 0;
   frame->needs_draining = needs_draining;
@@ -432,7 +437,7 @@ static tsi_result fake_zero_copy_grpc_protector_protect(
 
 static tsi_result fake_zero_copy_grpc_protector_unprotect(
     tsi_zero_copy_grpc_protector* self, grpc_slice_buffer* protected_slices,
-    grpc_slice_buffer* unprotected_slices) {
+    grpc_slice_buffer* unprotected_slices, int* min_progress_size) {
   if (self == nullptr || unprotected_slices == nullptr ||
       protected_slices == nullptr) {
     return TSI_INVALID_ARGUMENT;
@@ -461,6 +466,13 @@ static tsi_result fake_zero_copy_grpc_protector_unprotect(
         unprotected_slices);
     impl->parsed_frame_size = 0;
     grpc_slice_buffer_reset_and_unref_internal(&impl->header_sb);
+  }
+  if (min_progress_size != nullptr) {
+    if (impl->parsed_frame_size > TSI_FAKE_FRAME_HEADER_SIZE) {
+      *min_progress_size = impl->parsed_frame_size - impl->protected_sb.length;
+    } else {
+      *min_progress_size = 1;
+    }
   }
   return TSI_OK;
 }

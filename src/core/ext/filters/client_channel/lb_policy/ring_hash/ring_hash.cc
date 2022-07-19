@@ -16,6 +16,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h"
+
 #include <inttypes.h>
 #include <stdlib.h>
 
@@ -25,6 +27,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -36,6 +39,7 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
@@ -43,7 +47,6 @@
 #include "xxhash.h"
 
 #include <grpc/impl/codegen/connectivity_state.h>
-#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
@@ -53,6 +56,7 @@
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/subchannel_interface.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -61,10 +65,10 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
+#include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/iomgr/work_serializer.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -79,56 +83,60 @@ UniqueTypeName RequestHashAttributeName() {
 }
 
 // Helper Parser method
-void ParseRingHashLbConfig(const Json& json, size_t* min_ring_size,
-                           size_t* max_ring_size,
-                           std::vector<grpc_error_handle>* error_list) {
-  *min_ring_size = 1024;
-  *max_ring_size = 8388608;
+absl::StatusOr<RingHashConfig> ParseRingHashLbConfig(const Json& json) {
   if (json.type() != Json::Type::OBJECT) {
-    error_list->push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "ring_hash_experimental should be of type object"));
-    return;
+    return absl::InvalidArgumentError(
+        "ring_hash_experimental should be of type object");
   }
+  RingHashConfig config;
+  std::vector<std::string> errors;
   const Json::Object& ring_hash = json.object_value();
   auto ring_hash_it = ring_hash.find("min_ring_size");
   if (ring_hash_it != ring_hash.end()) {
     if (ring_hash_it->second.type() != Json::Type::NUMBER) {
-      error_list->push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:min_ring_size error: should be of type number"));
+      errors.emplace_back(
+          "field:min_ring_size error: should be of type number");
     } else {
-      *min_ring_size = gpr_parse_nonnegative_int(
+      config.min_ring_size = gpr_parse_nonnegative_int(
           ring_hash_it->second.string_value().c_str());
     }
   }
   ring_hash_it = ring_hash.find("max_ring_size");
   if (ring_hash_it != ring_hash.end()) {
     if (ring_hash_it->second.type() != Json::Type::NUMBER) {
-      error_list->push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:max_ring_size error: should be of type number"));
+      errors.emplace_back(
+          "field:max_ring_size error: should be of type number");
     } else {
-      *max_ring_size = gpr_parse_nonnegative_int(
+      config.max_ring_size = gpr_parse_nonnegative_int(
           ring_hash_it->second.string_value().c_str());
     }
   }
-  if (*min_ring_size == 0 || *min_ring_size > 8388608 || *max_ring_size == 0 ||
-      *max_ring_size > 8388608 || *min_ring_size > *max_ring_size) {
-    error_list->push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+  if (config.min_ring_size == 0 || config.min_ring_size > 8388608 ||
+      config.max_ring_size == 0 || config.max_ring_size > 8388608 ||
+      config.min_ring_size > config.max_ring_size) {
+    errors.emplace_back(
         "field:max_ring_size and or min_ring_size error: "
         "values need to be in the range of 1 to 8388608 "
         "and max_ring_size cannot be smaller than "
-        "min_ring_size"));
+        "min_ring_size");
   }
+  if (!errors.empty()) {
+    return absl::InvalidArgumentError(
+        absl::StrCat("errors parsing ring hash LB config: [",
+                     absl::StrJoin(errors, "; "), "]"));
+  }
+  return config;
 }
 
 namespace {
 
-constexpr char kRingHash[] = "ring_hash_experimental";
+constexpr absl::string_view kRingHash = "ring_hash_experimental";
 
 class RingHashLbConfig : public LoadBalancingPolicy::Config {
  public:
   RingHashLbConfig(size_t min_ring_size, size_t max_ring_size)
       : min_ring_size_(min_ring_size), max_ring_size_(max_ring_size) {}
-  const char* name() const override { return kRingHash; }
+  absl::string_view name() const override { return kRingHash; }
   size_t min_ring_size() const { return min_ring_size_; }
   size_t max_ring_size() const { return max_ring_size_; }
 
@@ -145,7 +153,7 @@ class RingHash : public LoadBalancingPolicy {
  public:
   explicit RingHash(Args args);
 
-  const char* name() const override { return kRingHash; }
+  absl::string_view name() const override { return kRingHash; }
 
   void UpdateLocked(UpdateArgs args) override;
   void ResetBackoffLocked() override;
@@ -209,7 +217,7 @@ class RingHash : public LoadBalancingPolicy {
       : public SubchannelList<RingHashSubchannelList, RingHashSubchannelData> {
    public:
     RingHashSubchannelList(RingHash* policy, ServerAddressList addresses,
-                           const grpc_channel_args& args)
+                           const ChannelArgs& args)
         : SubchannelList(policy,
                          (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)
                               ? "RingHashSubchannelList"
@@ -269,6 +277,12 @@ class RingHash : public LoadBalancingPolicy {
     // The index of the subchannel currently doing an internally
     // triggered connection attempt, if any.
     absl::optional<size_t> internally_triggered_connection_index_;
+
+    // TODO(roth): If we ever change the helper UpdateState() API to not
+    // need the status reported for TRANSIENT_FAILURE state (because
+    // it's not currently actually used for anything outside of the picker),
+    // then we will no longer need this data member.
+    absl::Status last_failure_;
   };
 
   class Ring : public RefCounted<Ring> {
@@ -333,7 +347,7 @@ class RingHash : public LoadBalancingPolicy {
 
       RefCountedPtr<RingHash> ring_hash_lb_;
       grpc_closure closure_;
-      absl::InlinedVector<RefCountedPtr<SubchannelInterface>, 10> subchannels_;
+      std::vector<RefCountedPtr<SubchannelInterface>> subchannels_;
     };
 
     RefCountedPtr<RingHash> parent_;
@@ -379,8 +393,9 @@ RingHash::Ring::Ring(RingHash* parent,
     AddressWeight address_weight;
     address_weight.address =
         grpc_sockaddr_to_string(&sd->address().address(), false).value();
-    if (weight_attribute != nullptr) {
-      GPR_ASSERT(weight_attribute->weight() != 0);
+    // Weight should never be zero, but ignore it just in case, since
+    // that value would screw up the ring-building algorithm.
+    if (weight_attribute != nullptr && weight_attribute->weight() > 0) {
       address_weight.weight = weight_attribute->weight();
     }
     sum += address_weight.weight;
@@ -409,7 +424,7 @@ RingHash::Ring::Ring(RingHash* parent,
       std::ceil(min_normalized_weight * min_ring_size) / min_normalized_weight,
       static_cast<double>(max_ring_size));
   // Reserve memory for the entire ring up front.
-  const uint64_t ring_size = std::ceil(scale);
+  const size_t ring_size = std::ceil(scale);
   ring_.reserve(ring_size);
   // Populate the hash ring by walking through the (host, weight) pairs in
   // normalized_host_weights, and generating (scale * weight) hashes for each
@@ -473,12 +488,12 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
   // Ported from https://github.com/RJ/ketama/blob/master/libketama/ketama.c
   // (ketama_get_server) NOTE: The algorithm depends on using signed integers
   // for lowp, highp, and first_index. Do not change them!
-  int64_t lowp = 0;
-  int64_t highp = ring.size();
-  int64_t first_index = 0;
+  size_t lowp = 0;
+  size_t highp = ring.size();
+  size_t first_index = 0;
   while (true) {
     first_index = (lowp + highp) / 2;
-    if (first_index == static_cast<int64_t>(ring.size())) {
+    if (first_index == ring.size()) {
       first_index = 0;
       break;
     }
@@ -644,8 +659,17 @@ void RingHash::RingHashSubchannelList::UpdateRingHashConnectivityStateLocked(
     state = GRPC_CHANNEL_TRANSIENT_FAILURE;
     start_connection_attempt = true;
   }
-  // Pass along status only in TRANSIENT_FAILURE.
-  if (state != GRPC_CHANNEL_TRANSIENT_FAILURE) status = absl::OkStatus();
+  // In TRANSIENT_FAILURE, report the last reported failure.
+  // Otherwise, report OK.
+  if (state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+    if (!status.ok()) {
+      last_failure_ = absl::UnavailableError(absl::StrCat(
+          "no reachable subchannels; last error: ", status.ToString()));
+    }
+    status = last_failure_;
+  } else {
+    status = absl::OkStatus();
+  }
   // Generate new picker and return it to the channel.
   // Note that we use our own picker regardless of connectivity state.
   p->channel_control_helper()->UpdateState(
@@ -711,10 +735,9 @@ void RingHash::RingHashSubchannelData::ProcessConnectivityChangeLocked(
   }
   GPR_ASSERT(subchannel() != nullptr);
   // If this is not the initial state notification and the new state is
-  // TRANSIENT_FAILURE or IDLE, re-resolve and attempt to reconnect.
-  // Note that we don't want to do this on the initial state
-  // notification, because that would result in an endless loop of
-  // re-resolution.
+  // TRANSIENT_FAILURE or IDLE, re-resolve.
+  // Note that we don't want to do this on the initial state notification,
+  // because that would result in an endless loop of re-resolution.
   if (old_state.has_value() && (new_state == GRPC_CHANNEL_TRANSIENT_FAILURE ||
                                 new_state == GRPC_CHANNEL_IDLE)) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)) {
@@ -754,9 +777,7 @@ void RingHash::RingHashSubchannelData::ProcessConnectivityChangeLocked(
   // Update the RH policy's connectivity state, creating new picker and new
   // ring.
   subchannel_list()->UpdateRingHashConnectivityStateLocked(
-      Index(), connection_attempt_complete,
-      absl::UnavailableError(absl::StrCat(
-          "no reachable subchannels; last error: ", status.ToString())));
+      Index(), connection_attempt_complete, status);
 }
 
 //
@@ -801,16 +822,7 @@ void RingHash::UpdateLocked(UpdateArgs args) {
       gpr_log(GPR_INFO, "[RH %p] received update with %" PRIuPTR " addresses",
               this, args.addresses->size());
     }
-    // Filter out any address with weight 0.
-    addresses.reserve(args.addresses->size());
-    for (ServerAddress& address : *args.addresses) {
-      const ServerAddressWeightAttribute* weight_attribute =
-          static_cast<const ServerAddressWeightAttribute*>(address.GetAttribute(
-              ServerAddressWeightAttribute::kServerAddressWeightAttributeKey));
-      if (weight_attribute == nullptr || weight_attribute->weight() > 0) {
-        addresses.emplace_back(std::move(address));
-      }
-    }
+    addresses = *std::move(args.addresses);
   } else {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)) {
       gpr_log(GPR_INFO, "[RH %p] received update with addresses error: %s",
@@ -826,7 +838,7 @@ void RingHash::UpdateLocked(UpdateArgs args) {
             this, latest_pending_subchannel_list_.get());
   }
   latest_pending_subchannel_list_ = MakeOrphanable<RingHashSubchannelList>(
-      this, std::move(addresses), *args.args);
+      this, std::move(addresses), args.args);
   // If we have no existing list or the new list is empty, immediately
   // promote the new list.
   // Otherwise, do nothing; the new list will be promoted when the
@@ -869,21 +881,14 @@ class RingHashFactory : public LoadBalancingPolicyFactory {
     return MakeOrphanable<RingHash>(std::move(args));
   }
 
-  const char* name() const override { return kRingHash; }
+  absl::string_view name() const override { return kRingHash; }
 
-  RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
-      const Json& json, grpc_error_handle* error) const override {
-    size_t min_ring_size;
-    size_t max_ring_size;
-    std::vector<grpc_error_handle> error_list;
-    ParseRingHashLbConfig(json, &min_ring_size, &max_ring_size, &error_list);
-    if (error_list.empty()) {
-      return MakeRefCounted<RingHashLbConfig>(min_ring_size, max_ring_size);
-    } else {
-      *error = GRPC_ERROR_CREATE_FROM_VECTOR(
-          "ring_hash_experimental LB policy config", &error_list);
-      return nullptr;
-    }
+  absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
+  ParseLoadBalancingConfig(const Json& json) const override {
+    auto config = ParseRingHashLbConfig(json);
+    if (!config.ok()) return config.status();
+    return MakeRefCounted<RingHashLbConfig>(config->min_ring_size,
+                                            config->max_ring_size);
   }
 };
 

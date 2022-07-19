@@ -21,7 +21,6 @@
 #include "src/core/ext/filters/load_reporting/server_load_reporting_filter.h"
 
 #include <limits.h>
-#include <netinet/in.h>
 #include <stdint.h>
 
 #include <functional>
@@ -76,7 +75,7 @@ constexpr char kEncodedIpv6AddressLengthString[] = "32";
 constexpr char kEmptyAddressLengthString[] = "00";
 
 absl::StatusOr<ServerLoadReportingFilter> ServerLoadReportingFilter::Create(
-    ChannelArgs channel_args, ChannelFilter::Args) {
+    const ChannelArgs& channel_args, ChannelFilter::Args) {
   // Find and record the peer_identity.
   ServerLoadReportingFilter filter;
   const auto* auth_context = channel_args.GetObject<grpc_auth_context>();

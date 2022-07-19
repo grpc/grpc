@@ -16,7 +16,10 @@
  *
  */
 
+#include <gtest/gtest.h>
+
 #include "src/core/lib/iomgr/port.h"
+#include "test/core/util/test_config.h"
 
 // This test won't work except with posix sockets enabled
 #ifdef GRPC_POSIX_SOCKET_TCP
@@ -44,7 +47,6 @@
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
 
 #define SSL_CERT_PATH "src/core/tsi/test_creds/server1.pem"
 #define SSL_KEY_PATH "src/core/tsi/test_creds/server1.key"
@@ -148,18 +150,18 @@ static int alpn_select_cb(SSL* /*ssl*/, const uint8_t** out, uint8_t* out_len,
     const size_t length = static_cast<size_t>(*inp++);
     if (length == strlen("grpc-exp") && strncmp(inp, "grpc-exp", length) == 0) {
       grpc_exp_seen = true;
-      GPR_ASSERT(!h2_seen);
+      EXPECT_FALSE(h2_seen);
     }
     if (length == strlen("h2") && strncmp(inp, "h2", length) == 0) {
       h2_seen = true;
-      GPR_ASSERT(grpc_exp_seen);
+      EXPECT_TRUE(grpc_exp_seen);
     }
     inp += length;
   }
 
-  GPR_ASSERT(inp == in_end);
-  GPR_ASSERT(grpc_exp_seen);
-  GPR_ASSERT(h2_seen);
+  EXPECT_EQ(inp, in_end);
+  EXPECT_TRUE(grpc_exp_seen);
+  EXPECT_TRUE(h2_seen);
 
   return SSL_TLSEXT_ERR_OK;
 }
@@ -258,7 +260,7 @@ static void server_thread(void* arg) {
   // Establish a SSL* and accept at SSL layer.
   SSL* ssl = SSL_new(ctx);
   SSL_set_info_callback(ssl, ssl_server_info_callback);
-  GPR_ASSERT(ssl);
+  ASSERT_TRUE(ssl);
   SSL_set_fd(ssl, client);
   if (SSL_accept(ssl) <= 0) {
     ERR_print_errors_fp(stderr);
@@ -302,26 +304,27 @@ static bool client_ssl_test(char* server_alpn_preferred) {
       sleep(1);
     }
   }
-  GPR_ASSERT(server_socket > 0 && port > 0);
+  EXPECT_GT(server_socket, 0);
+  EXPECT_GT(port, 0);
 
   // Launch the TLS server thread.
   SslLibraryInfo ssl_library_info;
   server_args args = {server_socket, server_alpn_preferred, &ssl_library_info};
   bool ok;
   grpc_core::Thread thd("grpc_client_ssl_test", server_thread, &args, &ok);
-  GPR_ASSERT(ok);
+  EXPECT_TRUE(ok);
   thd.Start();
   ssl_library_info.Await();
 
   // Load key pair and establish client SSL credentials.
   grpc_ssl_pem_key_cert_pair pem_key_cert_pair;
   grpc_slice ca_slice, cert_slice, key_slice;
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
-                               grpc_load_file(SSL_CA_PATH, 1, &ca_slice)));
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
-                               grpc_load_file(SSL_CERT_PATH, 1, &cert_slice)));
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
-                               grpc_load_file(SSL_KEY_PATH, 1, &key_slice)));
+  EXPECT_TRUE(GRPC_LOG_IF_ERROR("load_file",
+                                grpc_load_file(SSL_CA_PATH, 1, &ca_slice)));
+  EXPECT_TRUE(GRPC_LOG_IF_ERROR("load_file",
+                                grpc_load_file(SSL_CERT_PATH, 1, &cert_slice)));
+  EXPECT_TRUE(GRPC_LOG_IF_ERROR("load_file",
+                                grpc_load_file(SSL_KEY_PATH, 1, &key_slice)));
   const char* ca_cert =
       reinterpret_cast<const char*> GRPC_SLICE_START_PTR(ca_slice);
   pem_key_cert_pair.private_key =
@@ -343,12 +346,13 @@ static bool client_ssl_test(char* server_alpn_preferred) {
   grpc_args.args = &ssl_name_override;
   grpc_channel* channel =
       grpc_channel_create(target.c_str(), ssl_creds, &grpc_args);
-  GPR_ASSERT(channel);
+  EXPECT_TRUE(channel);
 
   // Initially the channel will be idle, the
   // grpc_channel_check_connectivity_state triggers an attempt to connect.
-  GPR_ASSERT(grpc_channel_check_connectivity_state(
-                 channel, 1 /* try_to_connect */) == GRPC_CHANNEL_IDLE);
+  EXPECT_EQ(
+      grpc_channel_check_connectivity_state(channel, 1 /* try_to_connect */),
+      GRPC_CHANNEL_IDLE);
 
   // Wait a bounded number of times for the channel to be ready. When the
   // channel is ready, the initial TLS handshake will have successfully
@@ -362,7 +366,7 @@ static bool client_ssl_test(char* server_alpn_preferred) {
         channel, state, grpc_timeout_seconds_to_deadline(3), cq, nullptr);
     gpr_timespec cq_deadline = grpc_timeout_seconds_to_deadline(5);
     grpc_event ev = grpc_completion_queue_next(cq, cq_deadline, nullptr);
-    GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
+    EXPECT_EQ(ev.type, GRPC_OP_COMPLETE);
     state =
         grpc_channel_check_connectivity_state(channel, 0 /* try_to_connect */);
   }
@@ -384,24 +388,24 @@ static bool client_ssl_test(char* server_alpn_preferred) {
   return success;
 }
 
-int main(int argc, char* argv[]) {
-  grpc::testing::TestEnvironment env(&argc, argv);
+TEST(ClientSslTest, MainTest) {
   // Handshake succeeeds when the server has grpc-exp as the ALPN preference.
-  GPR_ASSERT(client_ssl_test(const_cast<char*>("grpc-exp")));
+  ASSERT_TRUE(client_ssl_test(const_cast<char*>("grpc-exp")));
   // Handshake succeeeds when the server has h2 as the ALPN preference. This
   // covers legacy gRPC servers which don't support grpc-exp.
-  GPR_ASSERT(client_ssl_test(const_cast<char*>("h2")));
+  ASSERT_TRUE(client_ssl_test(const_cast<char*>("h2")));
   // Handshake fails when the server uses a fake protocol as its ALPN
   // preference. This validates the client is correctly validating ALPN returns
   // and sanity checks the client_ssl_test.
-  GPR_ASSERT(!client_ssl_test(const_cast<char*>("foo")));
+  ASSERT_FALSE(client_ssl_test(const_cast<char*>("foo")));
   // Clean up the SSL libraries.
   EVP_cleanup();
-  return 0;
 }
 
-#else /* GRPC_POSIX_SOCKET_TCP */
-
-int main(int argc, char** argv) { return 1; }
-
 #endif /* GRPC_POSIX_SOCKET_TCP */
+
+int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(&argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}

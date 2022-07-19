@@ -117,7 +117,7 @@ static void test_request_response_with_metadata_and_payload(
   grpc_end2end_test_fixture f =
       begin_test(config, "test_request_response_with_metadata_and_payload",
                  nullptr, nullptr);
-  cq_verifier* cqv = cq_verifier_create(f.cq);
+  grpc_core::CqVerifier cqv(f.cq);
   grpc_op ops[6];
   grpc_op* op;
   grpc_metadata_array initial_metadata_recv;
@@ -184,8 +184,8 @@ static void test_request_response_with_metadata_and_payload(
       grpc_server_request_call(f.server, &s, &call_details,
                                &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(101), true);
+  cqv.Verify();
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -204,8 +204,8 @@ static void test_request_response_with_metadata_and_payload(
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(102), true);
+  cqv.Verify();
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -232,9 +232,9 @@ static void test_request_response_with_metadata_and_payload(
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(103), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(103), true);
+  cqv.Expect(tag(1), true);
+  cqv.Verify();
 
   GPR_ASSERT(status == GRPC_STATUS_OK);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
@@ -256,8 +256,6 @@ static void test_request_response_with_metadata_and_payload(
 
   grpc_call_unref(c);
   grpc_call_unref(s);
-
-  cq_verifier_destroy(cqv);
 
   grpc_byte_buffer_destroy(request_payload);
   grpc_byte_buffer_destroy(response_payload);

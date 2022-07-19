@@ -90,7 +90,7 @@ static void test_pingpong_streaming(grpc_end2end_test_config config,
       begin_test(config, "test_pingpong_streaming", nullptr, nullptr);
   grpc_call* c;
   grpc_call* s;
-  cq_verifier* cqv = cq_verifier_create(f.cq);
+  grpc_core::CqVerifier cqv(f.cq);
   grpc_op ops[6];
   grpc_op* op;
   grpc_metadata_array initial_metadata_recv;
@@ -149,8 +149,8 @@ static void test_pingpong_streaming(grpc_end2end_test_config config,
       grpc_server_request_call(f.server, &s, &call_details,
                                &request_metadata_recv, f.cq, f.cq, tag(100));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  CQ_EXPECT_COMPLETION(cqv, tag(100), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(100), true);
+  cqv.Verify();
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -198,8 +198,8 @@ static void test_pingpong_streaming(grpc_end2end_test_config config,
     error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
                                   tag(102), nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
-    CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
-    cq_verify(cqv);
+    cqv.Expect(tag(102), true);
+    cqv.Verify();
 
     memset(ops, 0, sizeof(ops));
     op = ops;
@@ -211,9 +211,9 @@ static void test_pingpong_streaming(grpc_end2end_test_config config,
     error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
                                   tag(103), nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
-    CQ_EXPECT_COMPLETION(cqv, tag(103), 1);
-    CQ_EXPECT_COMPLETION(cqv, tag(2), 1);
-    cq_verify(cqv);
+    cqv.Expect(tag(103), true);
+    cqv.Expect(tag(2), true);
+    cqv.Verify();
 
     grpc_byte_buffer_destroy(request_payload);
     grpc_byte_buffer_destroy(response_payload);
@@ -248,16 +248,14 @@ static void test_pingpong_streaming(grpc_end2end_test_config config,
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(3), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(104), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(1), true);
+  cqv.Expect(tag(3), true);
+  cqv.Expect(tag(101), true);
+  cqv.Expect(tag(104), true);
+  cqv.Verify();
 
   grpc_call_unref(c);
   grpc_call_unref(s);
-
-  cq_verifier_destroy(cqv);
 
   grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);

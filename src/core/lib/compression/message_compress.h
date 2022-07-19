@@ -21,9 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/slice_buffer.h>
-
-#include "src/core/lib/compression/compression_internal.h"
+#include <grpc/impl/codegen/compression_types.h>
+#include <grpc/slice.h>
 
 /* compress 'input' to 'output' using 'algorithm'.
    On success, appends compressed slices to output and returns 1.

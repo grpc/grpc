@@ -180,19 +180,19 @@ TEST(SockAddrUtilsTest, SockAddrToString) {
 
   SetIPv6ScopeId(&input6, 2);
   EXPECT_EQ(grpc_sockaddr_to_string(&input6, false).value(),
-            "[2001:db8::1%252]:12345");
+            "[2001:db8::1%2]:12345");
   EXPECT_EQ(grpc_sockaddr_to_string(&input6, true).value(),
-            "[2001:db8::1%252]:12345");
+            "[2001:db8::1%2]:12345");
   EXPECT_EQ(grpc_sockaddr_to_uri(&input6).value(),
-            "ipv6:%5B2001:db8::1%25252%5D:12345");
+            "ipv6:%5B2001:db8::1%252%5D:12345");
 
   SetIPv6ScopeId(&input6, 101);
   EXPECT_EQ(grpc_sockaddr_to_string(&input6, false).value(),
-            "[2001:db8::1%25101]:12345");
+            "[2001:db8::1%101]:12345");
   EXPECT_EQ(grpc_sockaddr_to_string(&input6, true).value(),
-            "[2001:db8::1%25101]:12345");
+            "[2001:db8::1%101]:12345");
   EXPECT_EQ(grpc_sockaddr_to_uri(&input6).value(),
-            "ipv6:%5B2001:db8::1%2525101%5D:12345");
+            "ipv6:%5B2001:db8::1%25101%5D:12345");
 
   grpc_resolved_address input6x = MakeAddr6(kMapped, sizeof(kMapped));
   EXPECT_EQ(grpc_sockaddr_to_string(&input6x, false).value(),
@@ -300,16 +300,14 @@ TEST(SockAddrUtilsTest, SockAddrSetGetPort) {
 void VerifySocketAddressMatch(const std::string& ip_address,
                               const std::string& subnet, uint32_t mask_bits,
                               bool success) {
-  grpc_resolved_address addr;
-  ASSERT_EQ(grpc_string_to_sockaddr(&addr, ip_address.c_str(), false),
-            GRPC_ERROR_NONE);
   // Setting the port has no effect on the match.
-  grpc_sockaddr_set_port(&addr, 12345);
-  grpc_resolved_address subnet_addr;
-  ASSERT_EQ(grpc_string_to_sockaddr(&subnet_addr, subnet.c_str(), false),
-            GRPC_ERROR_NONE);
-  grpc_sockaddr_mask_bits(&subnet_addr, mask_bits);
-  EXPECT_EQ(grpc_sockaddr_match_subnet(&addr, &subnet_addr, mask_bits), success)
+  auto addr = grpc_core::StringToSockaddr(ip_address, /*port=*/12345);
+  ASSERT_TRUE(addr.ok()) << addr.status();
+  auto subnet_addr = grpc_core::StringToSockaddr(subnet, /*port=*/0);
+  ASSERT_TRUE(subnet_addr.ok()) << subnet_addr.status();
+  grpc_sockaddr_mask_bits(&*subnet_addr, mask_bits);
+  EXPECT_EQ(grpc_sockaddr_match_subnet(&*addr, &*subnet_addr, mask_bits),
+            success)
       << "IP=" << ip_address << " Subnet=" << subnet << " Mask=" << mask_bits;
 }
 

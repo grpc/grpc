@@ -65,7 +65,6 @@ ChannelStackBuilderImpl::Build() {
   }
 
   // and initialize it
-  const grpc_channel_args* c_args = final_args.ToC();
   grpc_error_handle error = grpc_channel_stack_init(
       1,
       [](void* p, grpc_error_handle) {
@@ -73,11 +72,10 @@ ChannelStackBuilderImpl::Build() {
         grpc_channel_stack_destroy(stk);
         gpr_free(stk);
       },
-      channel_stack, stack->data(), stack->size(), c_args, name(),
-      channel_stack);
-  grpc_channel_args_destroy(c_args);
+      channel_stack, stack->data(), stack->size(), final_args.ToC().get(),
+      name(), channel_stack);
 
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     grpc_channel_stack_destroy(channel_stack);
     gpr_free(channel_stack);
     auto status = grpc_error_to_absl_status(error);

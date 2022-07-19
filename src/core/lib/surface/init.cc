@@ -186,7 +186,6 @@ void grpc_shutdown_internal_locked(void)
     grpc_iomgr_shutdown();
     gpr_timers_global_destroy();
     grpc_tracer_shutdown();
-    grpc_stats_shutdown();
     grpc_core::Fork::GlobalShutdown();
   }
   grpc_core::ApplicationCallbackExecCtx::GlobalShutdown();

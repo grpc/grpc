@@ -1,0 +1,40 @@
+actions {
+  set_min_progress_size {
+    size: 33554432
+  }
+}
+actions {
+  stream_write {
+    size: 33554432
+  }
+}
+actions {
+  perform_send_from_remote {
+  }
+}
+actions {
+}
+actions {
+  read_send_from_remote {
+  }
+}
+actions {
+  read_send_to_remote {
+  }
+}
+actions {
+  perform_send_from_remote {
+  }
+}
+actions {
+  periodic_update {
+  }
+}
+actions {
+  read_send_from_remote {
+  }
+}
+actions {
+  perform_send_from_remote {
+  }
+}
