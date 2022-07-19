@@ -921,7 +921,8 @@ TEST_F(RetryParserTest, InvalidRetryPolicyRequiredFieldsMissing) {
                   ".*field:maxAttempts error:required field missing"
                   ".*field:initialBackoff error:does not exist"
                   ".*field:maxBackoff error:does not exist"
-                  ".*field:backoffMultiplier error:required field missing")); }
+                  ".*field:backoffMultiplier error:required field missing"));
+}
 
 TEST_F(RetryParserTest, InvalidRetryPolicyMaxAttemptsWrongType) {
   const char* test_json =
