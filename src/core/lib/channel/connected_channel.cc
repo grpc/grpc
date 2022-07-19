@@ -305,6 +305,7 @@ class ClientConnectedCallPromise {
     Poll<ServerMetadataHandle> PollOnce() {
       GPR_ASSERT(!finished_);
       if (!absl::exchange(requested_metadata_, true)) {
+        call_context_->IncrementRefCount("child_stream");
         stream_.reset(static_cast<grpc_stream*>(
             GetContext<Arena>()->Alloc(transport_->vtable->sizeof_stream)));
         grpc_transport_init_stream(transport_, stream_.get(),
@@ -502,6 +503,8 @@ class ClientConnectedCallPromise {
       call_context_->Unref("push");
     }
 
+    void StreamDestroyed() { call_context_->Unref("child_stream"); }
+
    private:
     struct Idle {};
     struct Closed {};
@@ -573,6 +576,8 @@ class ClientConnectedCallPromise {
     grpc_transport_stream_op_batch recv_message_;
     grpc_transport_stream_op_batch_payload batch_payload_{
         GetContext<grpc_call_context_element>()};
+    grpc_closure stream_destroyed =
+        MakeMemberClosure<Impl, &Impl::StreamDestroyed>(this);
   };
 
   Impl* impl_;

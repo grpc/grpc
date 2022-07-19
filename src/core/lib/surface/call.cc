@@ -2192,6 +2192,9 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
       send_initial_metadata_->Set(HttpAuthorityMetadata(),
                                   std::move(*args->authority));
     }
+    if (auto* channelz_channel = channel()->channelz_node()) {
+      channelz_channel->RecordCallStarted();
+    }
   }
 
   ~ClientPromiseBasedCall() override {
@@ -2479,6 +2482,14 @@ void ClientPromiseBasedCall::Finish(ServerMetadataHandle trailing_metadata) {
   completed_ = true;
   is_trailers_only_ =
       !absl::holds_alternative<Pending>(server_initial_metadata_.Wait()());
+  if (auto* channelz_channel = channel()->channelz_node()) {
+    if (trailing_metadata->get(GrpcStatusMetadata())
+            .value_or(GRPC_STATUS_UNKNOWN) == GRPC_STATUS_OK) {
+      channelz_channel->RecordCallSucceeded();
+    } else {
+      channelz_channel->RecordCallFailed();
+    }
+  }
   if (auto* status_request =
           absl::get_if<grpc_op::grpc_op_data::grpc_op_recv_status_on_client>(
               &recv_status_on_client_)) {
