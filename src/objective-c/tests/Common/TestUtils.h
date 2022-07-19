@@ -28,9 +28,13 @@ FOUNDATION_EXPORT const NSTimeInterval GRPCInteropTestTimeoutDefault;
 typedef void (^GRPCTestWaiter)(XCTestCase *testCase, NSArray<XCTestExpectation *> *expectations,
                                NSTimeInterval timeout);
 
+// Block typedef for asserting a given expression value with optional retry.
+typedef void (^GRPCTestAssert)(BOOL expressionValue, NSString *message);
+
 // Block typedef for a test run. Test run should call waiter to wait for a group of expectations
-// with timeout.
-typedef void (^GRPCTestRunBlock)(GRPCTestWaiter waiterBlock);
+// with timeout. Test run can also optionally invoke assertBlock to report assertion failure.
+// Failed assertion will be retried up to maximum retry.
+typedef void (^GRPCTestRunBlock)(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock);
 
 /**
  * Common utility to fetch plain text local interop server address.
