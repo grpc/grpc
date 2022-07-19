@@ -40,6 +40,12 @@
 
 GPR_GLOBAL_CONFIG_DEFINE_BOOL(grpc_experimental_smooth_memory_presure, false,
                               "smooth the value of memory pressure over time");
+GPR_GLOBAL_CONFIG_DEFINE_BOOL(
+    grpc_experimental_enable_periodic_resource_quota_reclamation, false,
+    "Enable experimental feature to reclaim resource quota periodically");
+GPR_GLOBAL_CONFIG_DEFINE_INT32(
+    grpc_experimental_max_quota_buffer_size, 1024 * 1024,
+    "Maximum size for one memory allocators buffer size against a quota");
 
 namespace grpc_core {
 
@@ -253,11 +259,16 @@ absl::optional<size_t> GrpcMemoryAllocatorImpl::TryReserve(
 
 void GrpcMemoryAllocatorImpl::MaybeDonateBack() {
   size_t free = free_bytes_.load(std::memory_order_relaxed);
-  const size_t kReduceToSize = kMaxQuotaBufferSize / 2;
-  while (true) {
-    if (free <= kReduceToSize) return;
-    size_t ret = free - kReduceToSize;
-    if (free_bytes_.compare_exchange_weak(free, kReduceToSize,
+  while (free > 0) {
+    size_t ret = 0;
+    if (max_quota_buffer_size() > 0 && free > max_quota_buffer_size() / 2) {
+      ret = std::max(ret, free - max_quota_buffer_size() / 2);
+    }
+    if (periodic_donate_back()) {
+      ret = std::max(ret, free > 8192 ? free / 2 : free);
+    }
+    const size_t new_free = free - ret;
+    if (free_bytes_.compare_exchange_weak(free, new_free,
                                           std::memory_order_acq_rel,
                                           std::memory_order_acquire)) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {

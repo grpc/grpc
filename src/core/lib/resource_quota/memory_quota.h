@@ -45,6 +45,9 @@
 #include "src/core/lib/transport/pid_controller.h"
 
 GPR_GLOBAL_CONFIG_DECLARE_BOOL(grpc_experimental_smooth_memory_presure);
+GPR_GLOBAL_CONFIG_DECLARE_BOOL(
+    grpc_experimental_enable_periodic_resource_quota_reclamation);
+GPR_GLOBAL_CONFIG_DECLARE_INT32(grpc_experimental_max_quota_buffer_size);
 
 namespace grpc_core {
 
@@ -86,7 +89,6 @@ enum class ReclamationPass {
   kDestructive = 3,
 };
 static constexpr size_t kNumReclamationPasses = 4;
-static constexpr size_t kMaxQuotaBufferSize = 1024 * 1024;
 
 // For each reclamation function run we construct a ReclamationSweep.
 // When this object is finally destroyed (it may be moved several times first),
@@ -328,7 +330,9 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
     // from  0 to non-zero, then we have more to do, otherwise, we're actually
     // done.
     size_t prev_free = free_bytes_.fetch_add(n, std::memory_order_release);
-    if (prev_free + n > kMaxQuotaBufferSize) {
+    if ((max_quota_buffer_size() > 0 &&
+         prev_free + n > max_quota_buffer_size()) ||
+        (periodic_donate_back() && donate_back_.Tick([](Duration) {}))) {
       // Try to immediately return some free'ed memory back to the total quota.
       MaybeDonateBack();
     }
@@ -357,13 +361,20 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
   absl::string_view name() const { return name_; }
 
  private:
+  static bool periodic_donate_back() {
+    static const bool value = GPR_GLOBAL_CONFIG_GET(
+        grpc_experimental_enable_periodic_resource_quota_reclamation);
+    return value;
+  }
+  static size_t max_quota_buffer_size() {
+    static const size_t value =
+        GPR_GLOBAL_CONFIG_GET(grpc_experimental_max_quota_buffer_size);
+    return value;
+  }
   // Primitive reservation function.
   absl::optional<size_t> TryReserve(MemoryRequest request) GRPC_MUST_USE_RESULT;
-  // This function may be invoked during a memory release operation. If the
-  // total free_bytes in this allocator/local cache exceeds
-  // kMaxQuotaBufferSize / 2, donate the excess free_bytes in this cache back
-  // to the total quota immediately. This helps prevent free bytes in any
-  // particular allocator from growing too large.
+  // This function may be invoked during a memory release operation.
+  // It will try to return half of our free pool to the quota.
   void MaybeDonateBack();
   // Replenish bytes from the quota, without blocking, possibly entering
   // overcommit.
@@ -388,6 +399,8 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
   // Amount of memory taken from the quota by this allocator.
   std::atomic<size_t> taken_bytes_{sizeof(GrpcMemoryAllocatorImpl)};
   std::atomic<bool> registered_reclaimer_{false};
+  // We try to donate back some memory periodically to the central quota.
+  PeriodicUpdate donate_back_{Duration::Seconds(10)};
   Mutex reclaimer_mu_;
   bool shutdown_ ABSL_GUARDED_BY(reclaimer_mu_) = false;
   // Indices into the various reclaimer queues, used so that we can cancel

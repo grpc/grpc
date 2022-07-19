@@ -89,7 +89,10 @@ TEST(PeriodicUpdate, ThreadTest) {
     threads.push_back(std::thread([&]() {
       while (count.load() < 10) {
         ExecCtx exec_ctx;
-        upd->Tick([&] { count.fetch_add(1); });
+        upd->Tick([&](Duration d) {
+          EXPECT_GT(d, Duration::Seconds(1));
+          count.fetch_add(1);
+        });
       }
     }));
   }
