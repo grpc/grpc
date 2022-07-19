@@ -292,10 +292,14 @@ class ClientConnectedCallPromise {
             GetContext<Arena>()->New<grpc_transport_stream_op_batch>();
         cancel_op->cancel_stream = true;
         cancel_op->payload = &batch_payload_;
+        auto* stream = stream_.get();
+        cancel_op->on_complete =
+            NewClosure([stream = std::move(stream_)](grpc_error_handle) {});
         batch_payload_.cancel_stream.cancel_error = GRPC_ERROR_CANCELLED;
-        grpc_transport_perform_stream_op(transport_, stream_.get(), cancel_op);
+        grpc_transport_perform_stream_op(transport_, stream, cancel_op);
+      } else {
+        stream_.reset();
       }
-      stream_.reset();
     }
 
     Poll<ServerMetadataHandle> PollOnce() {

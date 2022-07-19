@@ -137,6 +137,20 @@ grpc_closure MakeMemberClosure(T* p) {
       nullptr);
   return out;
 }
+
+template <typename F>
+grpc_closure* NewClosure(F f) {
+  struct Closure : public grpc_closure {
+    explicit Closure(F f) : f(std::move(f)) {}
+    F f;
+    static void Run(void* arg, grpc_error_handle error) {
+      static_cast<Closure*>(arg)->f(error);
+    }
+  };
+  Closure* c = new Closure(std::move(f));
+  GRPC_CLOSURE_INIT(c, Closure::Run, c, nullptr);
+  return c;
+}
 }  // namespace grpc_core
 
 namespace closure_impl {
