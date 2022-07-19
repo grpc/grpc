@@ -58,6 +58,7 @@ EvaluateArgs::PerChannelArgs::Address ParseEndpointUri(
   if (!resolved_address.ok()) {
     gpr_log(GPR_DEBUG, "Address \"%s\" is not IPv4/IPv6. Error: %s",
             uri->path().c_str(), resolved_address.status().ToString().c_str());
+    memset(&address.address, 0, sizeof(address.address));
   } else {
     address.address = *resolved_address;
   }
