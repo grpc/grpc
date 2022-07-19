@@ -286,7 +286,17 @@ class ClientConnectedCallPromise {
       }
     }
 
-    void DropStream() { stream_.reset(); }
+    void DropStream() {
+      if (!finished_) {
+        auto* cancel_op =
+            GetContext<Arena>()->New<grpc_transport_stream_op_batch>();
+        cancel_op->cancel_stream = true;
+        cancel_op->payload = &batch_payload_;
+        batch_payload_.cancel_stream.cancel_error = GRPC_ERROR_CANCELLED;
+        grpc_transport_perform_stream_op(transport_, stream_.get(), cancel_op);
+      }
+      stream_.reset();
+    }
 
     Poll<ServerMetadataHandle> PollOnce() {
       GPR_ASSERT(!finished_);
