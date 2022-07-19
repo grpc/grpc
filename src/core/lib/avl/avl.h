@@ -63,17 +63,20 @@ class AVL {
   bool operator<(const AVL& other) const { return QsortCompare(other) < 0; }
 
   int QsortCompare(const AVL& other) const {
+    if (root_.get() == other.root_.get()) return 0;
     Iterator a(root_);
     Iterator b(other.root_);
     for (;;) {
       Node* p = a.current();
       Node* q = b.current();
-      if (p == nullptr) {
-        return q == nullptr ? 0 : -1;
+      if (p != q) {
+        if (p == nullptr) return -1;
+        if (q == nullptr) return 1;
+        const int kv = grpc_core::QsortCompare(p->kv, q->kv);
+        if (kv != 0) return kv;
+      } else if (p == nullptr) {
+        return 0;
       }
-      if (q == nullptr) return 1;
-      const int kv = grpc_core::QsortCompare(p->kv, q->kv);
-      if (kv != 0) return kv;
       a.MoveNext();
       b.MoveNext();
     }
