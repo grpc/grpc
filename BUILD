@@ -2442,6 +2442,7 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/synchronization",
+        "absl/utility",
     ],
     deps = [
         "event_engine_base_hdrs",

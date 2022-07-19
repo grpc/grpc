@@ -17,13 +17,16 @@
 #include "src/core/lib/event_engine/iomgr_engine/ev_poll_posix.h"
 
 #include <stdint.h>
+#include <stdlib.h>
 
 #include <algorithm>
 #include <atomic>
+#include <list>
 #include <memory>
 
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
+#include "absl/utility/utility.h"
 
 #include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/support/log.h>
@@ -32,11 +35,11 @@
 
 #include "src/core/lib/event_engine/iomgr_engine/event_poller.h"
 #include "src/core/lib/event_engine/iomgr_engine/iomgr_engine_closure.h"
+#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_SOCKET_EV_POLL
 
-#include <assert.h>
 #include <errno.h>
 #include <limits.h>
 #include <poll.h>
@@ -48,11 +51,8 @@
 
 #include "absl/synchronization/mutex.h"
 
-#include <grpc/event_engine/event_engine.h>
 #include <grpc/support/alloc.h>
 
-#include "src/core/lib/event_engine/iomgr_engine/event_poller.h"
-#include "src/core/lib/event_engine/iomgr_engine/iomgr_engine_closure.h"
 #include "src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix.h"
 #include "src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix_default.h"
 #include "src/core/lib/gprpp/fork.h"
