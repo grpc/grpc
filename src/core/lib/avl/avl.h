@@ -59,13 +59,10 @@ class AVL {
 
   bool SameIdentity(const AVL& avl) const { return root_ == avl.root_; }
 
-  bool operator==(const AVL& other) const { return QsortCompare(other) == 0; }
-  bool operator<(const AVL& other) const { return QsortCompare(other) < 0; }
-
-  int QsortCompare(const AVL& other) const {
-    if (root_.get() == other.root_.get()) return 0;
-    Iterator a(root_);
-    Iterator b(other.root_);
+  friend int QsortCompare(const AVL& left, const AVL& right) {
+    if (left.root_.get() == right.root_.get()) return 0;
+    Iterator a(left.root_);
+    Iterator b(right.root_);
     for (;;) {
       Node* p = a.current();
       Node* q = b.current();
@@ -80,6 +77,14 @@ class AVL {
       a.MoveNext();
       b.MoveNext();
     }
+  }
+
+  bool operator==(const AVL& other) const {
+    return QsortCompare(*this, other) == 0;
+  }
+
+  bool operator<(const AVL& other) const {
+    return QsortCompare(*this, other) < 0;
   }
 
  private:
