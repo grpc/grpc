@@ -962,13 +962,10 @@ const XdsListenerResource::FilterChainData* FindFilterChainDataForSourceType(
   if (!SplitHostPort(source_uri->path(), &host, &port)) {
     return nullptr;
   }
-  grpc_resolved_address source_addr;
-  grpc_error_handle error = grpc_string_to_sockaddr(
-      &source_addr, host.c_str(), 0 /* port doesn't matter here */);
-  if (!GRPC_ERROR_IS_NONE(error)) {
-    gpr_log(GPR_DEBUG, "Could not parse string to socket address: %s",
-            host.c_str());
-    GRPC_ERROR_UNREF(error);
+  auto source_addr = StringToSockaddr(host, 0);  // Port doesn't matter here.
+  if (!source_addr.ok()) {
+    gpr_log(GPR_DEBUG, "Could not parse \"%s\" as socket address: %s",
+            host.c_str(), source_addr.status().ToString().c_str());
     return nullptr;
   }
   // Use kAny only if kSameIporLoopback and kExternal are empty
@@ -982,20 +979,20 @@ const XdsListenerResource::FilterChainData* FindFilterChainDataForSourceType(
     return FindFilterChainDataForSourceIp(
         source_types_array[static_cast<int>(
             XdsListenerResource::FilterChainMap::ConnectionSourceType::kAny)],
-        &source_addr, port);
+        &*source_addr, port);
   }
-  if (IsLoopbackIp(&source_addr) || host == destination_ip) {
+  if (IsLoopbackIp(&*source_addr) || host == destination_ip) {
     return FindFilterChainDataForSourceIp(
         source_types_array[static_cast<int>(
             XdsListenerResource::FilterChainMap::ConnectionSourceType::
                 kSameIpOrLoopback)],
-        &source_addr, port);
+        &*source_addr, port);
   } else {
     return FindFilterChainDataForSourceIp(
         source_types_array[static_cast<int>(
             XdsListenerResource::FilterChainMap::ConnectionSourceType::
                 kExternal)],
-        &source_addr, port);
+        &*source_addr, port);
   }
 }
 
@@ -1013,13 +1010,11 @@ const XdsListenerResource::FilterChainData* FindFilterChainDataForDestinationIp(
   if (!SplitHostPort(destination_uri->path(), &host, &port)) {
     return nullptr;
   }
-  grpc_resolved_address destination_addr;
-  grpc_error_handle error = grpc_string_to_sockaddr(
-      &destination_addr, host.c_str(), 0 /* port doesn't matter here */);
-  if (!GRPC_ERROR_IS_NONE(error)) {
-    gpr_log(GPR_DEBUG, "Could not parse string to socket address: %s",
-            host.c_str());
-    GRPC_ERROR_UNREF(error);
+  auto destination_addr =
+      StringToSockaddr(host, 0);  // Port doesn't matter here.
+  if (!destination_addr.ok()) {
+    gpr_log(GPR_DEBUG, "Could not parse \"%s\" as socket address: %s",
+            host.c_str(), destination_addr.status().ToString().c_str());
     return nullptr;
   }
   const XdsListenerResource::FilterChainMap::DestinationIp* best_match =
@@ -1037,7 +1032,7 @@ const XdsListenerResource::FilterChainData* FindFilterChainDataForDestinationIp(
             entry.prefix_range->prefix_len) {
       continue;
     }
-    if (grpc_sockaddr_match_subnet(&destination_addr,
+    if (grpc_sockaddr_match_subnet(&*destination_addr,
                                    &entry.prefix_range->address,
                                    entry.prefix_range->prefix_len)) {
       best_match = &entry;
