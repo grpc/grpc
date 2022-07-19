@@ -85,10 +85,10 @@ grpc_cc_binary(
         ":memstats",
         "//:gpr",
         "//:grpc",
+        "//:grpc++",
+        "//src/proto/grpc/testing:benchmark_service_proto",
         "//test/core/end2end:ssl_test_data",
         "//test/core/util:grpc_test_util",
-        "//src/proto/grpc/testing:benchmark_service_proto",
-        "//:grpc++",
     ],
 )
 
@@ -110,10 +110,10 @@ grpc_cc_binary(
         ":memstats",
         "//:gpr",
         "//:grpc",
+        "//:grpc++",
+        "//src/proto/grpc/testing:benchmark_service_proto",
         "//test/core/end2end:ssl_test_data",
         "//test/core/util:grpc_test_util",
-        "//src/proto/grpc/testing:benchmark_service_proto",
-        "//:grpc++",
     ],
 )
 
@@ -121,10 +121,10 @@ grpc_cc_test(
     name = "memory_usage_test",
     srcs = ["memory_usage_test.cc"],
     data = [
+        ":memory_usage_callback_client",
+        ":memory_usage_callback_server",
         ":memory_usage_client",
         ":memory_usage_server",
-        ":memory_usage_callback_client",
-        ":memory_usage_callback_server"
     ],
     external_deps = [
         "absl/algorithm:container",
