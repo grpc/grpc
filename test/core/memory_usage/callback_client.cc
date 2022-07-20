@@ -56,7 +56,7 @@
 ABSL_FLAG(std::string, target, "", "Target host:port");
 ABSL_FLAG(bool, secure, false, "Use SSL Credentials");
 
-void UnaryCall() {
+std::unique_ptr<grpc::testing::BenchmarkService::Stub> CreateStubForTest(){
   // Set the authentication mechanism.
   std::shared_ptr<grpc::ChannelCredentials> creds =
       grpc::InsecureChannelCredentials();
@@ -70,6 +70,11 @@ void UnaryCall() {
       CreateChannel(absl::GetFlag(FLAGS_target), creds);
   std::unique_ptr<grpc::testing::BenchmarkService::Stub> stub =
       grpc::testing::BenchmarkService::NewStub(channel);
+  return stub;
+}
+
+void UnaryCall() {
+  std::unique_ptr<grpc::testing::BenchmarkService::Stub> stub = CreateStubForTest();
 
   // Start a call.
   struct CallParams {
@@ -88,6 +93,28 @@ void UnaryCall() {
                            });
 }
 
+void GetBeforeSnapshot() {
+  std::unique_ptr<grpc::testing::BenchmarkService::Stub> stub = CreateStubForTest();
+
+  // Start a call.
+  struct CallParams {
+    grpc::ClientContext context;
+    grpc::testing::SimpleRequest request;
+    grpc::testing::MemorySize response;
+  };
+  CallParams* params = new CallParams();
+  stub->async()->GetBeforeSnapshot(&params->context, &params->request,
+                           &params->response, [params](const grpc::Status& status) {
+                             if (status.ok()) {
+                                gpr_log(GPR_INFO, "After: %ld", params->response.rss());
+                                gpr_log(GPR_INFO, "GetBeforeSnapshot succeeded.");
+                             } else {
+                                gpr_log(GPR_ERROR, "GetBeforeSnapshot failed.");
+                             }
+                           });
+}
+
+
 int main(int argc, char** argv) {
   absl::ParseCommandLine(argc, argv);
   char* fake_argv[1];
@@ -101,6 +128,7 @@ int main(int argc, char** argv) {
   gpr_log(GPR_INFO, "Client Target: %s", absl::GetFlag(FLAGS_target).c_str());
 
   UnaryCall();
+  GetBeforeSnapshot();
   gpr_log(GPR_INFO, "Client Done");
   return 0;
 }

@@ -41,4 +41,10 @@ service BenchmarkService {
   // Two-sided unbounded streaming between server to client
   // Both sides send the content of their own choice to the other
   rpc StreamingBothWays(stream SimpleRequest) returns (stream SimpleResponse);
+
+  //Get the memory usage of process before server is made
+  rpc GetBeforeSnapshot(SimpleRequest) returns (MemorySize); 
+
+  //Get the memory usage of process at peak usage
+  rpc GetPeakSnapshot(SimpleRequest) returns (MemorySize);
 }
