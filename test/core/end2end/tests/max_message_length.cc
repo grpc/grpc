@@ -19,6 +19,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "absl/strings/match.h"
+
 #include <grpc/byte_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -765,9 +767,8 @@ static void test_max_receive_message_length_on_compressed_response(
     GPR_ASSERT(status == GRPC_STATUS_OK);
   } else {
     GPR_ASSERT(status == GRPC_STATUS_RESOURCE_EXHAUSTED);
-    GPR_ASSERT(grpc_slice_str_cmp(
-                   details, "Received message larger than max (29 vs. 5)") ==
-               0);
+    GPR_ASSERT(absl::StartsWith(grpc_core::StringViewFromSlice(details),
+                                "Received message larger than max"));
   }
   grpc_slice_unref(details);
   grpc_slice_unref(response_payload_slice);
