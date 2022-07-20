@@ -2312,6 +2312,7 @@ grpc_cc_library(
         "src/core/lib/event_engine/iomgr_engine/iomgr_engine_closure.h",
     ],
     external_deps = [
+        "absl/functional:any_invocable",
         "absl/status",
         "absl/utility",
     ],
