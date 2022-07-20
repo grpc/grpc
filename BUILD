@@ -2481,6 +2481,31 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "windows_event_engine",
+    srcs = ["src/core/lib/event_engine/windows/windows_engine.cc"],
+    hdrs = ["src/core/lib/event_engine/windows/windows_engine.h"],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/container:flat_hash_set",
+        "absl/functional:any_invocable",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+    ],
+    deps = [
+        "event_engine_base_hdrs",
+        "event_engine_common",
+        "event_engine_trace",
+        "gpr_base",
+        "grpc_trace",
+        "iomgr_ee_thread_pool",
+        "iomgr_ee_timer",
+        "iomgr_ee_timer_manager",
+        "time",
+    ],
+)
+
+grpc_cc_library(
     name = "event_engine_common",
     srcs = [
         "src/core/lib/event_engine/resolved_address.cc",
@@ -2526,15 +2551,11 @@ grpc_cc_library(
 grpc_cc_library(
     name = "default_event_engine_factory",
     srcs = ["src/core/lib/event_engine/default_event_engine_factory.cc"],
-    hdrs = [
-        "src/core/lib/event_engine/default_event_engine_factory.h",
-    ],
-    external_deps = ["absl/memory"],
-    deps = [
-        "event_engine_base_hdrs",
-        "gpr_platform",
-        "iomgr_event_engine",
-    ],
+    hdrs = ["src/core/lib/event_engine/default_event_engine_factory.h"],
+    deps = selects.with_or({
+        ("//:windows", "//:windows_msvc"): ["windows_event_engine"],
+        "//conditions:default": ["iomgr_event_engine"],
+    }),
 )
 
 grpc_cc_library(
@@ -2887,7 +2908,6 @@ grpc_cc_library(
         "config",
         "cpp_impl_of",
         "debug_location",
-        "default_event_engine_factory",
         "default_event_engine_factory_hdrs",
         "dual_ref_counted",
         "error",

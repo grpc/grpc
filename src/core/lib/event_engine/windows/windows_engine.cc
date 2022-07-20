@@ -13,22 +13,24 @@
 // limitations under the License.
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/event_engine/iomgr_engine/iomgr_engine.h"
+#include "src/core/lib/event_engine/windows/windows_engine.h"
 
-#include <algorithm>
-#include <string>
-#include <utility>
+#include <memory>
 
-#include "absl/container/flat_hash_set.h"
-#include "absl/functional/any_invocable.h"
-#include "absl/strings/str_cat.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
+#include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/support/log.h>
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/event_engine/slice_buffer.h>
 
-#include "src/core/lib/debug/trace.h"
-#include "src/core/lib/event_engine/iomgr_engine/timer.h"
+#include "src/core/lib/event_engine/handle_containers.h"
+#include "src/core/lib/event_engine/iomgr_engine/thread_pool.h"
+#include "src/core/lib/event_engine/iomgr_engine/timer_manager.h"
 #include "src/core/lib/event_engine/trace.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
 
 namespace grpc_event_engine {
@@ -44,7 +46,8 @@ std::string HandleToString(EventEngine::TaskHandle handle) {
 }  // namespace
 
 // DO NOT SUBMIT(hork): generalize for reuse in Windows
-grpc_core::Timestamp IomgrEventEngine::ToTimestamp(EventEngine::Duration when) {
+grpc_core::Timestamp WindowsEventEngine::ToTimestamp(
+    EventEngine::Duration when) {
   return timer_manager_.Now() +
          std::max(grpc_core::Duration::Milliseconds(1),
                   grpc_core::Duration::NanosecondsRoundUp(when.count())) +
@@ -52,15 +55,15 @@ grpc_core::Timestamp IomgrEventEngine::ToTimestamp(EventEngine::Duration when) {
 }
 
 // DO NOT SUBMIT(hork): generalize the handle ops for reuse in Windows
-struct IomgrEventEngine::ClosureData final : public EventEngine::Closure {
+struct WindowsEventEngine::Closure final : public EventEngine::Closure {
   absl::AnyInvocable<void()> cb;
   iomgr_engine::Timer timer;
-  IomgrEventEngine* engine;
+  WindowsEventEngine* engine;
   EventEngine::TaskHandle handle;
 
   void Run() override {
-    GRPC_EVENT_ENGINE_TRACE("IomgrEventEngine:%p executing callback:%s", engine,
-                            HandleToString(handle).c_str());
+    GRPC_EVENT_ENGINE_TRACE("WindowsEventEngine:%p executing callback:%s",
+                            engine, HandleToString(handle).c_str());
     {
       grpc_core::MutexLock lock(&engine->mu_);
       engine->known_handles_.erase(handle);
@@ -70,53 +73,53 @@ struct IomgrEventEngine::ClosureData final : public EventEngine::Closure {
   }
 };
 
-IomgrEventEngine::IomgrEventEngine() {}
+WindowsEventEngine::WindowsEventEngine() {}
 
-IomgrEventEngine::~IomgrEventEngine() {
+WindowsEventEngine::~WindowsEventEngine() {
   grpc_core::MutexLock lock(&mu_);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {
     for (auto handle : known_handles_) {
       gpr_log(GPR_ERROR,
-              "(event_engine) IomgrEventEngine:%p uncleared TaskHandle at "
-              "shutdown:%s",
-              this, HandleToString(handle).c_str());
+              "WindowsEventEngine:%p uncleared TaskHandle at shutdown:%s", this,
+              HandleToString(handle).c_str());
     }
   }
   GPR_ASSERT(GPR_LIKELY(known_handles_.empty()));
 }
 
-bool IomgrEventEngine::Cancel(EventEngine::TaskHandle handle) {
+// DO NOT SUBMIT(hork): identical to iomgr EventEngine. Dedupe.
+bool WindowsEventEngine::Cancel(EventEngine::TaskHandle handle) {
   grpc_core::MutexLock lock(&mu_);
   if (!known_handles_.contains(handle)) return false;
-  auto* cd = reinterpret_cast<ClosureData*>(handle.keys[0]);
+  auto* cd = reinterpret_cast<Closure*>(handle.keys[0]);
   bool r = timer_manager_.TimerCancel(&cd->timer);
   known_handles_.erase(handle);
   if (r) delete cd;
   return r;
 }
 
-EventEngine::TaskHandle IomgrEventEngine::RunAfter(
+EventEngine::TaskHandle WindowsEventEngine::RunAfter(
     Duration when, absl::AnyInvocable<void()> closure) {
   return RunAfterInternal(when, std::move(closure));
 }
 
-EventEngine::TaskHandle IomgrEventEngine::RunAfter(
+EventEngine::TaskHandle WindowsEventEngine::RunAfter(
     Duration when, EventEngine::Closure* closure) {
   return RunAfterInternal(when, [closure]() { closure->Run(); });
 }
 
-void IomgrEventEngine::Run(absl::AnyInvocable<void()> closure) {
+void WindowsEventEngine::Run(absl::AnyInvocable<void()> closure) {
   thread_pool_.Add(std::move(closure));
 }
 
-void IomgrEventEngine::Run(EventEngine::Closure* closure) {
+void WindowsEventEngine::Run(EventEngine::Closure* closure) {
   thread_pool_.Add([closure]() { closure->Run(); });
 }
 
-EventEngine::TaskHandle IomgrEventEngine::RunAfterInternal(
+EventEngine::TaskHandle WindowsEventEngine::RunAfterInternal(
     Duration when, absl::AnyInvocable<void()> cb) {
   auto when_ts = ToTimestamp(when);
-  auto* cd = new ClosureData;
+  auto* cd = new Closure;
   cd->cb = std::move(cb);
   cd->engine = this;
   EventEngine::TaskHandle handle{reinterpret_cast<intptr_t>(cd),
@@ -124,26 +127,28 @@ EventEngine::TaskHandle IomgrEventEngine::RunAfterInternal(
   grpc_core::MutexLock lock(&mu_);
   known_handles_.insert(handle);
   cd->handle = handle;
-  GRPC_EVENT_ENGINE_TRACE("IomgrEventEngine:%p scheduling callback:%s", this,
+  GRPC_EVENT_ENGINE_TRACE("WindowsEventEngine:%p scheduling callback:%s", this,
                           HandleToString(handle).c_str());
   timer_manager_.TimerInit(&cd->timer, when_ts, cd);
   return handle;
 }
 
-std::unique_ptr<EventEngine::DNSResolver> IomgrEventEngine::GetDNSResolver(
+std::unique_ptr<EventEngine::DNSResolver> WindowsEventEngine::GetDNSResolver(
     EventEngine::DNSResolver::ResolverOptions const& /*options*/) {
   GPR_ASSERT(false && "unimplemented");
 }
 
-bool IomgrEventEngine::IsWorkerThread() {
+bool WindowsEventEngine::IsWorkerThread() {
   GPR_ASSERT(false && "unimplemented");
 }
 
-bool IomgrEventEngine::CancelConnect(EventEngine::ConnectionHandle /*handle*/) {
+// DO NOT SUBMIT - client & listener implementation
+
+bool WindowsEventEngine::CancelConnect(EventEngine::ConnectionHandle /*handle*/) {
   GPR_ASSERT(false && "unimplemented");
 }
 
-EventEngine::ConnectionHandle IomgrEventEngine::Connect(
+EventEngine::ConnectionHandle WindowsEventEngine::Connect(
     OnConnectCallback /*on_connect*/, const ResolvedAddress& /*addr*/,
     const EndpointConfig& /*args*/, MemoryAllocator /*memory_allocator*/,
     Duration /*deadline*/) {
@@ -151,7 +156,7 @@ EventEngine::ConnectionHandle IomgrEventEngine::Connect(
 }
 
 absl::StatusOr<std::unique_ptr<EventEngine::Listener>>
-IomgrEventEngine::CreateListener(
+WindowsEventEngine::CreateListener(
     Listener::AcceptCallback /*on_accept*/,
     absl::AnyInvocable<void(absl::Status)> /*on_shutdown*/,
     const EndpointConfig& /*config*/,

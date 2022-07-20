@@ -81,17 +81,16 @@ grpc_cc_test(
     deps = ["//test/core/event_engine/test_suite:timer"],
 )
 
-# TODO(hork): remove this target when IomgrEventEngine supports clients & listeners on all platforms.
 grpc_cc_test(
-    name = "windows_iomgr_event_engine_test",
-    srcs = ["iomgr_event_engine_test.cc"],
+    name = "windows_event_engine_test",
+    srcs = ["windows_event_engine_test.cc"],
     tags = [
         "bazel_only",
         "no_linux",
         "no_mac",
     ],
     uses_polling = False,
-    deps = ["//test/core/event_engine/test_suite:client"],
+    deps = ["//test/core/event_engine/test_suite:timer"],
 )
 
 grpc_cc_test(
