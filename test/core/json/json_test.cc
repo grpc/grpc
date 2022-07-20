@@ -23,6 +23,8 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "absl/strings/match.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -102,7 +104,7 @@ MATCHER(ContainsInvalidUtf8,
   grpc_error_handle error = GRPC_ERROR_NONE;
   const Json json = Json::Parse(arg, &error);
   return (error.code() == absl::StatusCode::kUnknown) &&
-         (error.message().find("JSON parsing failed") != std::string::npos);
+         (absl::StrContains(error.message(), "JSON parsing failed"));
 }
 
 TEST(Json, Utf8) {
