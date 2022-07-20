@@ -106,7 +106,8 @@ run_test() {
     --client_image="${CLIENT_IMAGE_NAME}:v1.48.x" \
     --testing_version="${TESTING_VERSION}" \
     --xml_output_file="${TEST_XML_OUTPUT_DIR}/${test_name}/sponge_log.xml" \
-    ${@:2}
+    ${@:2} \
+    |& tee "${TEST_XML_OUTPUT_DIR}/${test_name}/sponge_log.log"
 }
 
 run_alpha_test() {
