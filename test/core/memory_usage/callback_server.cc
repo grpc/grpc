@@ -80,8 +80,8 @@ int main(int argc, char** argv) {
   signal(SIGINT, sigint_handler);
   std::string server_address = absl::GetFlag(FLAGS_bind);
   if (server_address.empty()) {
-    server_address =
-        grpc_core::JoinHostPort("::", grpc_pick_unused_port_or_die());
+    gpr_log(GPR_ERROR, "Server: No port entered");
+    return 1;
   }
   gpr_log(GPR_INFO, "Server port: %s", server_address.c_str());
 

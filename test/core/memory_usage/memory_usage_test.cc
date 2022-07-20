@@ -139,7 +139,8 @@ int main(int argc, char** argv) {
         "--bind", grpc_core::JoinHostPort("::", port)};
     Subprocess svr(server_flags);
 
-    // Wait one second before starting client to avoid race conditions
+    // Wait one second before starting client to avoid possible race condition
+    // of client sending an RPC before the server is set up
     gpr_sleep_until(grpc_timeout_seconds_to_deadline(1));
 
     /* start the client */

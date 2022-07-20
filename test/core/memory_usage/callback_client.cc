@@ -53,7 +53,7 @@
 #include "test/core/util/subprocess.h"
 #include "test/core/util/test_config.h"
 
-ABSL_FLAG(std::string, target, "localhost:443", "Target host:port");
+ABSL_FLAG(std::string, target, "", "Target host:port");
 ABSL_FLAG(bool, secure, false, "Use SSL Credentials");
 
 void UnaryCall() {
@@ -94,6 +94,10 @@ int main(int argc, char** argv) {
   GPR_ASSERT(argc >= 1);
   fake_argv[0] = argv[0];
   grpc::testing::TestEnvironment env(&argc, argv);
+  if (absl::GetFlag(FLAGS_target).empty()) {
+    gpr_log(GPR_ERROR, "Client: No target port entered");
+    return 1;
+  }
   gpr_log(GPR_INFO, "Client Target: %s", absl::GetFlag(FLAGS_target).c_str());
 
   UnaryCall();
