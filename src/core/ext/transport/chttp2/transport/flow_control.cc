@@ -222,6 +222,10 @@ TransportFlowControl::TargetInitialWindowSizeBasedOnMemoryPressureAndBdp()
     const {
   const double bdp = bdp_estimator_.EstimateBdp() * 2.0;
   const double memory_pressure = memory_owner_->InstantaneousPressure();
+  // Linear interpolation between two values.
+  // Given a line segment between the two points (t_min, a), and (t_max, b),
+  // and a value t such that t_min <= t <= t_max, return the value on the line
+  // segment at t.
   auto lerp = [](double t, double t_min, double t_max, double a, double b) {
     return a + (b - a) * (t - t_min) / (t_max - t_min);
   };
