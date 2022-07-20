@@ -21,8 +21,10 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <memory>
 #include <string>
 
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include "absl/strings/str_cat.h"
@@ -217,6 +219,152 @@ TEST(HpackEncoderTest, TestBasicHeaders) {
          "b", "c");
 
   delete g_compressor;
+}
+
+grpc_slice EncodeHeaderIntoBytes(
+    const verify_params& params,
+    const std::vector<std::pair<std::string, std::string>>& header_fields) {
+  std::unique_ptr<grpc_core::HPackCompressor> compressor =
+      std::make_unique<grpc_core::HPackCompressor>();
+
+  auto arena = grpc_core::MakeScopedArena(1024, g_memory_allocator);
+  grpc_metadata_batch b(arena.get());
+
+  for (const auto& field : header_fields) {
+    b.Append(field.first,
+             grpc_core::Slice::FromStaticString(field.second.c_str()),
+             CrashOnAppendError);
+  }
+
+  grpc_transport_one_way_stats stats = {};
+  grpc_core::HPackCompressor::EncodeHeaderOptions hopt{
+      0xdeadbeef,                      /* stream_id */
+      params.eof,                      /* is_eof */
+      params.use_true_binary_metadata, /* use_true_binary_metadata */
+      16384,                           /* max_frame_size */
+      &stats                           /* stats */
+  };
+  grpc_slice_buffer output;
+  grpc_slice_buffer_init(&output);
+
+  compressor->EncodeHeaders(hopt, b, &output);
+  verify_frames(output, params.eof);
+
+  grpc_slice ret = grpc_slice_merge(output.slices, output.count);
+  grpc_slice_buffer_destroy_internal(&output);
+
+  return ret;
+}
+
+MATCHER(HasLiteralHeaderFieldNewNameFlagIncrementalIndexing, "") {
+  constexpr size_t kHttp2FrameHeaderSize = 9u;
+  constexpr uint8_t kLiteralHeaderFieldNewNameFlagIncrementalIndexing = 0x40;
+  return (GRPC_SLICE_START_PTR(arg)[kHttp2FrameHeaderSize] ==
+          kLiteralHeaderFieldNewNameFlagIncrementalIndexing);
+}
+
+MATCHER(HasLiteralHeaderFieldNewNameFlagNoIndexing, "") {
+  constexpr size_t kHttp2FrameHeaderSize = 9u;
+  constexpr uint8_t kLiteralHeaderFieldNewNameFlagNoIndexing = 0x00;
+  return (GRPC_SLICE_START_PTR(arg)[kHttp2FrameHeaderSize] ==
+          kLiteralHeaderFieldNewNameFlagNoIndexing);
+}
+
+TEST(HpackEncoderTest, GrpcTraceBinMetadataIndexing) {
+  grpc_core::ExecCtx exec_ctx;
+  const verify_params params = {
+      false,
+      false,
+  };
+
+  const grpc_slice encoded_header = EncodeHeaderIntoBytes(
+      params, {{grpc_core::GrpcTraceBinMetadata::key().data(), "value"}});
+  EXPECT_THAT(encoded_header,
+              HasLiteralHeaderFieldNewNameFlagIncrementalIndexing());
+
+  grpc_slice_unref_internal(encoded_header);
+}
+
+TEST(HpackEncoderTest, GrpcTraceBinMetadataNoIndexing) {
+  grpc_core::ExecCtx exec_ctx;
+  const verify_params params = {
+      false,
+      false,
+  };
+
+  /// needs to be greater than `HPackEncoderTable::MaxEntrySize()`
+  constexpr size_t long_value_size = 70000u;
+  const grpc_slice encoded_header = EncodeHeaderIntoBytes(
+      params, {{grpc_core::GrpcTraceBinMetadata::key().data(),
+                std::string(long_value_size, 'a')}});
+  EXPECT_THAT(encoded_header, HasLiteralHeaderFieldNewNameFlagNoIndexing());
+
+  grpc_slice_unref_internal(encoded_header);
+}
+
+TEST(HpackEncoderTest, TestGrpcTagsBinMetadataIndexing) {
+  grpc_core::ExecCtx exec_ctx;
+  const verify_params params = {
+      false,
+      false,
+  };
+
+  const grpc_slice encoded_header = EncodeHeaderIntoBytes(
+      params,
+      {{grpc_core::GrpcTagsBinMetadata::key().data(), std::string("value")}});
+  EXPECT_THAT(encoded_header,
+              HasLiteralHeaderFieldNewNameFlagIncrementalIndexing());
+
+  grpc_slice_unref_internal(encoded_header);
+}
+
+TEST(HpackEncoderTest, TestGrpcTagsBinMetadataNoIndexing) {
+  grpc_core::ExecCtx exec_ctx;
+  verify_params params = {
+      false,
+      false,
+  };
+
+  /// needs to be greater than `HPackEncoderTable::MaxEntrySize()`
+  constexpr size_t long_value_size = 70000u;
+  const grpc_slice encoded_header = EncodeHeaderIntoBytes(
+      params, {{grpc_core::GrpcTagsBinMetadata::key().data(),
+                std::string(long_value_size, 'a')}});
+  EXPECT_THAT(encoded_header, HasLiteralHeaderFieldNewNameFlagNoIndexing());
+
+  grpc_slice_unref_internal(encoded_header);
+}
+
+TEST(HpackEncoderTest, UserAgentMetadataIndexing) {
+  grpc_core::ExecCtx exec_ctx;
+  const verify_params params = {
+      false,
+      false,
+  };
+
+  const grpc_slice encoded_header = EncodeHeaderIntoBytes(
+      params, {{grpc_core::UserAgentMetadata::key().data(), "value"}});
+  EXPECT_THAT(encoded_header,
+              HasLiteralHeaderFieldNewNameFlagIncrementalIndexing());
+
+  grpc_slice_unref_internal(encoded_header);
+}
+
+TEST(HpackEncoderTest, UserAgentMetadataNoIndexing) {
+  grpc_core::ExecCtx exec_ctx;
+  const verify_params params = {
+      false,
+      false,
+  };
+
+  /// needs to be greater than `HPackEncoderTable::MaxEntrySize()`
+  constexpr size_t long_value_size = 70000u;
+  const grpc_slice encoded_header = EncodeHeaderIntoBytes(
+      params, {{grpc_core::UserAgentMetadata::key().data(),
+                std::string(long_value_size, 'a')}});
+  EXPECT_THAT(encoded_header, HasLiteralHeaderFieldNewNameFlagNoIndexing());
+
+  grpc_slice_unref_internal(encoded_header);
 }
 
 static void verify_continuation_headers(const char* key, const char* value,
