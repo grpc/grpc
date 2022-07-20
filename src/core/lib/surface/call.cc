@@ -2432,7 +2432,7 @@ void ClientPromiseBasedCall::UpdateOnce() {
             absl::get_if<ServerMetadata**>(&r)) {
       recv_metadata(**server_initial_metadata);
     } else if (completed_) {
-      grpc_core::ServerMetadata no_metadata{GetContext<Arena>()};
+      ServerMetadata no_metadata{GetContext<Arena>()};
       recv_metadata(&no_metadata);
     }
   }
