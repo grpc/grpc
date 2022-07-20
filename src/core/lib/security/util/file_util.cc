@@ -23,9 +23,6 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/tmpfile.h"
-#include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/load_file.h"
-#include "src/core/lib/slice/slice_internal.h"
 
 namespace grpc_core {
 
