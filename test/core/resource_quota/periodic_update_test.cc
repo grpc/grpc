@@ -90,7 +90,7 @@ TEST(PeriodicUpdate, ThreadTest) {
       while (count.load() < 10) {
         ExecCtx exec_ctx;
         upd->Tick([&](Duration d) {
-          EXPECT_GT(d, Duration::Seconds(1));
+          EXPECT_GE(d, Duration::Seconds(1));
           count.fetch_add(1);
         });
       }
