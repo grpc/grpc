@@ -26,7 +26,6 @@
 
 #include <algorithm>
 #include <map>
-#include <type_traits>
 #include <vector>
 
 #include "absl/strings/match.h"
