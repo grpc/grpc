@@ -195,7 +195,7 @@ TEST(PressureTrackerTest, Decays) {
     exec_ctx.TestOnlySetNow(step_time());
     if (tracker.AddSampleAndGetEstimate(0.0) < 0.1) break;
   }
-  ASSERT_LE(cur_ms, got_full + 100000);
+  ASSERT_LE(cur_ms, got_full + 200000);
 }
 
 TEST(PressureTrackerTest, ManyThreads) {
