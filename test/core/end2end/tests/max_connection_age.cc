@@ -17,15 +17,25 @@
  */
 
 #include <limits.h>
+#include <stdint.h>
 #include <string.h>
 
+#include <memory>
+
+#include "absl/memory/memory.h"
+
+#include <grpc/grpc.h>
+#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
 #include <grpc/support/log.h>
-#include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/time.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
+#include "test/core/util/test_config.h"
 
 #define MAX_CONNECTION_AGE_MS 500
 #define MAX_CONNECTION_AGE_GRACE_MS 1000
