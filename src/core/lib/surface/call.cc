@@ -2426,6 +2426,12 @@ void ClientPromiseBasedCall::UpdateOnce() {
       PublishMetadataArray(absl::exchange(recv_initial_metadata_, nullptr),
                            **server_initial_metadata);
       FinishCompletion(&recv_initial_metadata_completion_);
+    } else if (completed_) {
+      grpc_core::ServerMetadata no_metadata{GetContext<Arena>()};
+      incoming_compression_algorithm_ = GRPC_COMPRESS_NONE;
+      PublishMetadataArray(absl::exchange(recv_initial_metadata_, nullptr),
+                           &no_metadata);
+      FinishCompletion(&recv_initial_metadata_completion_);
     }
   }
   if (outstanding_send_.has_value()) {
@@ -2460,6 +2466,9 @@ void ClientPromiseBasedCall::UpdateOnce() {
         *recv_message_ = nullptr;
       }
       FinishCompletion(&recv_message_completion_);
+    } else if (completed_) {
+      *recv_message_ = nullptr;
+      FinishCompletion(&recv_message_completion_);
     }
   }
   if (promise_.has_value()) {
@@ -2480,6 +2489,9 @@ void ClientPromiseBasedCall::UpdateOnce() {
 void ClientPromiseBasedCall::Finish(ServerMetadataHandle trailing_metadata) {
   promise_ = ArenaPromise<ServerMetadataHandle>();
   completed_ = true;
+  if (recv_initial_metadata_ != nullptr) {
+    ForceImmediateRepoll();
+  }
   is_trailers_only_ =
       !absl::holds_alternative<Pending>(server_initial_metadata_.Wait()());
   if (auto* channelz_channel = channel()->channelz_node()) {

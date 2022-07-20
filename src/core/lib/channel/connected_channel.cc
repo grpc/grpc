@@ -287,7 +287,9 @@ class ClientConnectedCallPromise {
     }
 
     void DropStream() {
-      if (!finished_) {
+      if (stream_ == nullptr) {
+        return;
+      } else if (!finished_) {
         auto* cancel_op =
             GetContext<Arena>()->New<grpc_transport_stream_op_batch>();
         cancel_op->cancel_stream = true;
