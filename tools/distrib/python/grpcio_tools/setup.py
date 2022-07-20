@@ -88,7 +88,7 @@ def check_linker_need_libatomic():
     code_test = (b'#include <atomic>\n' +
                  b'int main() { return std::atomic<int64_t>{}; }')
     cxx = os.environ.get('CXX', 'c++')
-    cpp_test = subprocess.Popen([cxx, '-x', 'c++', '-std=c++11', '-'],
+    cpp_test = subprocess.Popen([cxx, '-x', 'c++', '-std=c++14', '-'],
                                 stdin=PIPE,
                                 stdout=PIPE,
                                 stderr=PIPE)
@@ -98,7 +98,7 @@ def check_linker_need_libatomic():
     # Double-check to see if -latomic actually can solve the problem.
     # https://github.com/grpc/grpc/issues/22491
     cpp_test = subprocess.Popen(
-        [cxx, '-x', 'c++', '-std=c++11', '-', '-latomic'],
+        [cxx, '-x', 'c++', '-std=c++14', '-', '-latomic'],
         stdin=PIPE,
         stdout=PIPE,
         stderr=PIPE)
@@ -134,7 +134,7 @@ class BuildExt(build_ext.build_ext):
 EXTRA_ENV_COMPILE_ARGS = os.environ.get('GRPC_PYTHON_CFLAGS', None)
 EXTRA_ENV_LINK_ARGS = os.environ.get('GRPC_PYTHON_LDFLAGS', None)
 if EXTRA_ENV_COMPILE_ARGS is None:
-    EXTRA_ENV_COMPILE_ARGS = '-std=c++11'
+    EXTRA_ENV_COMPILE_ARGS = '-std=c++14'
     if 'win32' in sys.platform:
         if sys.version_info < (3, 5):
             # We use define flags here and don't directly add to DEFINE_MACROS below to
@@ -290,7 +290,7 @@ setuptools.setup(name='grpcio-tools',
                  packages=setuptools.find_packages('.'),
                  python_requires='>=3.6',
                  install_requires=[
-                     'protobuf>=3.5.0.post1, < 4.0dev',
+                     'protobuf>=3.12.0, < 4.0dev',
                      'grpcio>={version}'.format(version=grpc_version.VERSION),
                      'setuptools',
                  ],

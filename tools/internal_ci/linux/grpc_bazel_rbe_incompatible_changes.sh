@@ -24,5 +24,4 @@ export USE_BAZEL_VERSION=latest
 # Use bazelisk instead of our usual //tools/bazel wrapper
 mv bazelisk-linux-amd64 github/grpc/tools/bazel
 
-EXTRA_FLAGS="--config=opt --cache_test_results=no"
-github/grpc/tools/internal_ci/linux/grpc_bazel_on_foundry_base.sh "${EXTRA_FLAGS}"
+github/grpc/tools/internal_ci/linux/grpc_bazel_rbe.sh --config=opt --cache_test_results=no

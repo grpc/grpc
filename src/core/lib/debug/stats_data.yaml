@@ -63,12 +63,6 @@
   doc: How many times could a polling wakeup be satisfied by keeping the waking
        thread awake?
        (only valid for epoll1 right now)
-# polling
-- counter: syscall_epoll_ctl
-  doc: Number of epoll_ctl calls made (only valid for epollex right now)
-- counter: pollset_fd_cache_hits
-  doc: Number of epoll_ctl calls skipped because the fd was cached as
-       already being added.  (only valid for epollex right now)
 # stats system
 - counter: histogram_slow_lookups
   doc: Number of times histogram increments went through the slow
@@ -179,6 +173,8 @@
   doc: Number of HTTP2 writes initiated due to 'transport_flow_control'
 - counter: http2_initiate_write_due_to_send_settings
   doc: Number of HTTP2 writes initiated due to 'send_settings'
+- counter: http2_initiate_write_due_to_settings_ack
+  doc: Number of HTTP2 writes initiated due to 'settings_ack'
 - counter: http2_initiate_write_due_to_bdp_estimator_ping
   doc: Number of HTTP2 writes initiated due to 'bdp_estimator_ping'
 - counter: http2_initiate_write_due_to_flow_control_unstalled_by_setting

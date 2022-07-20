@@ -27,6 +27,7 @@
 #include "absl/strings/str_format.h"
 
 #include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -34,6 +35,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/http/httpcli.h"
+#include "src/core/lib/security/credentials/credentials.h"
 #include "test/core/util/port_server_client.h"
 
 typedef struct freereq {
@@ -91,7 +93,7 @@ void grpc_free_port_using_server(int port) {
                             grpc_schedule_on_exec_ctx),
         &rsp,
         grpc_core::RefCountedPtr<grpc_channel_credentials>(
-            nullptr /* insecure credentials */));
+            grpc_insecure_credentials_create()));
     http_request->Start();
     grpc_core::ExecCtx::Get()->Flush();
     gpr_mu_lock(pr.mu);
@@ -133,7 +135,7 @@ static void got_port_from_server(void* arg, grpc_error_handle error) {
   int failed = 0;
   grpc_http_response* response = &pr->response;
 
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     failed = 1;
     gpr_log(GPR_DEBUG, "failed port pick from server: retrying [%s]",
             grpc_error_std_string(error).c_str());
@@ -175,7 +177,7 @@ static void got_port_from_server(void* arg, grpc_error_handle error) {
                             grpc_schedule_on_exec_ctx),
         &pr->response,
         grpc_core::RefCountedPtr<grpc_channel_credentials>(
-            nullptr /* insecure credentials */));
+            grpc_insecure_credentials_create()));
     pr->http_request->Start();
     return;
   }
@@ -222,7 +224,7 @@ int grpc_pick_port_using_server(void) {
                             grpc_schedule_on_exec_ctx),
         &pr.response,
         grpc_core::RefCountedPtr<grpc_channel_credentials>(
-            nullptr /*insecure credentials*/));
+            grpc_insecure_credentials_create()));
     http_request->Start();
     grpc_core::ExecCtx::Get()->Flush();
     gpr_mu_lock(pr.mu);

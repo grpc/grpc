@@ -93,7 +93,7 @@ TEST(ServerRequestCallTest, ShortDeadlineDoesNotCauseOkayFalse) {
       response.set_message("foobar");
       // A bit of sleep to make sure the deadline elapses.
       gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                                   gpr_time_from_millis(50, GPR_TIMESPAN)));
+                                   gpr_time_from_seconds(1, GPR_TIMESPAN)));
       {
         std::lock_guard<std::mutex> lock(mu);
         if (shutting_down) {
@@ -157,7 +157,7 @@ TEST(ServerRequestCallTest, ShortDeadlineDoesNotCauseOkayFalse) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

@@ -20,24 +20,30 @@
 
 #include "src/core/ext/filters/http/message_compress/message_decompress_filter.h"
 
-#include <assert.h>
+#include <stdint.h>
 #include <string.h>
+
+#include <new>
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
+#include "absl/types/optional.h"
 
-#include <grpc/compression.h>
-#include <grpc/slice_buffer.h>
-#include <grpc/support/alloc.h>
+#include <grpc/impl/codegen/compression_types.h>
+#include <grpc/status.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/message_size/message_size_filter.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/compression/message_compress.h"
-#include "src/core/lib/gpr/string.h"
-#include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_string_helpers.h"
+#include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/iomgr/call_combiner.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
 namespace {
@@ -45,7 +51,8 @@ namespace {
 class ChannelData {
  public:
   explicit ChannelData(const grpc_channel_element_args* args)
-      : max_recv_size_(GetMaxRecvSizeFromChannelArgs(args->channel_args)),
+      : max_recv_size_(GetMaxRecvSizeFromChannelArgs(
+            ChannelArgs::FromC(args->channel_args))),
         message_size_service_config_parser_index_(
             MessageSizeParser::ParserIndex()) {}
 
@@ -69,9 +76,6 @@ class CallData {
                       OnRecvInitialMetadataReady, this,
                       grpc_schedule_on_exec_ctx);
     // Initialize state for recv_message_ready callback
-    grpc_slice_buffer_init(&recv_slices_);
-    GRPC_CLOSURE_INIT(&on_recv_message_next_done_, OnRecvMessageNextDone, this,
-                      grpc_schedule_on_exec_ctx);
     GRPC_CLOSURE_INIT(&on_recv_message_ready_, OnRecvMessageReady, this,
                       grpc_schedule_on_exec_ctx);
     // Initialize state for recv_trailing_metadata_ready callback
@@ -88,8 +92,6 @@ class CallData {
     }
   }
 
-  ~CallData() { grpc_slice_buffer_destroy_internal(&recv_slices_); }
-
   void DecompressStartTransportStreamOpBatch(
       grpc_call_element* elem, grpc_transport_stream_op_batch* batch);
 
@@ -99,10 +101,6 @@ class CallData {
   // Methods for processing a receive message event
   void MaybeResumeOnRecvMessageReady();
   static void OnRecvMessageReady(void* arg, grpc_error_handle error);
-  static void OnRecvMessageNextDone(void* arg, grpc_error_handle error);
-  grpc_error_handle PullSliceFromRecvMessage();
-  void ContinueReadingRecvMessage();
-  void FinishRecvMessage();
   void ContinueRecvMessageReadyCallback(grpc_error_handle error);
 
   // Methods for processing a recv_trailing_metadata event
@@ -120,17 +118,10 @@ class CallData {
   bool seen_recv_message_ready_ = false;
   int max_recv_message_length_;
   grpc_compression_algorithm algorithm_ = GRPC_COMPRESS_NONE;
+  absl::optional<SliceBuffer>* recv_message_ = nullptr;
+  uint32_t* recv_message_flags_ = nullptr;
   grpc_closure on_recv_message_ready_;
   grpc_closure* original_recv_message_ready_ = nullptr;
-  grpc_closure on_recv_message_next_done_;
-  OrphanablePtr<ByteStream>* recv_message_ = nullptr;
-  // recv_slices_ holds the slices read from the original recv_message stream.
-  // It is initialized during construction and reset when a new stream is
-  // created using it.
-  grpc_slice_buffer recv_slices_;
-  std::aligned_storage<sizeof(SliceBufferByteStream),
-                       alignof(SliceBufferByteStream)>::type
-      recv_replacement_stream_;
   // Fields for handling recv_trailing_metadata_ready callback
   bool seen_recv_trailing_metadata_ready_ = false;
   grpc_closure on_recv_trailing_metadata_ready_;
@@ -140,7 +131,7 @@ class CallData {
 
 void CallData::OnRecvInitialMetadataReady(void* arg, grpc_error_handle error) {
   CallData* calld = static_cast<CallData*>(arg);
-  if (error == GRPC_ERROR_NONE) {
+  if (GRPC_ERROR_IS_NONE(error)) {
     calld->algorithm_ =
         calld->recv_initial_metadata_->get(GrpcEncodingMetadata())
             .value_or(GRPC_COMPRESS_NONE);
@@ -163,7 +154,7 @@ void CallData::MaybeResumeOnRecvMessageReady() {
 
 void CallData::OnRecvMessageReady(void* arg, grpc_error_handle error) {
   CallData* calld = static_cast<CallData*>(arg);
-  if (error == GRPC_ERROR_NONE) {
+  if (GRPC_ERROR_IS_NONE(error)) {
     if (calld->original_recv_initial_metadata_ready_ != nullptr) {
       calld->seen_recv_message_ready_ = true;
       GRPC_CALL_COMBINER_STOP(calld->call_combiner_,
@@ -174,99 +165,44 @@ void CallData::OnRecvMessageReady(void* arg, grpc_error_handle error) {
     if (calld->algorithm_ != GRPC_COMPRESS_NONE) {
       // recv_message can be NULL if trailing metadata is received instead of
       // message, or it's possible that the message was not compressed.
-      if (*calld->recv_message_ == nullptr ||
-          (*calld->recv_message_)->length() == 0 ||
-          ((*calld->recv_message_)->flags() & GRPC_WRITE_INTERNAL_COMPRESS) ==
-              0) {
+      if (!calld->recv_message_->has_value() ||
+          (*calld->recv_message_)->Length() == 0 ||
+          ((*calld->recv_message_flags_ & GRPC_WRITE_INTERNAL_COMPRESS) == 0)) {
         return calld->ContinueRecvMessageReadyCallback(GRPC_ERROR_NONE);
       }
       if (calld->max_recv_message_length_ >= 0 &&
-          (*calld->recv_message_)->length() >
+          (*calld->recv_message_)->Length() >
               static_cast<uint32_t>(calld->max_recv_message_length_)) {
-        GPR_DEBUG_ASSERT(calld->error_ == GRPC_ERROR_NONE);
+        GPR_DEBUG_ASSERT(GRPC_ERROR_IS_NONE(calld->error_));
         calld->error_ = grpc_error_set_int(
             GRPC_ERROR_CREATE_FROM_CPP_STRING(
                 absl::StrFormat("Received message larger than max (%u vs. %d)",
-                                (*calld->recv_message_)->length(),
+                                (*calld->recv_message_)->Length(),
                                 calld->max_recv_message_length_)),
             GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_RESOURCE_EXHAUSTED);
         return calld->ContinueRecvMessageReadyCallback(
             GRPC_ERROR_REF(calld->error_));
       }
-      grpc_slice_buffer_destroy_internal(&calld->recv_slices_);
-      grpc_slice_buffer_init(&calld->recv_slices_);
-      return calld->ContinueReadingRecvMessage();
+      SliceBuffer decompressed_slices;
+      if (grpc_msg_decompress(calld->algorithm_,
+                              (*calld->recv_message_)->c_slice_buffer(),
+                              decompressed_slices.c_slice_buffer()) == 0) {
+        GPR_DEBUG_ASSERT(GRPC_ERROR_IS_NONE(calld->error_));
+        calld->error_ = GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+            "Unexpected error decompressing data for algorithm with "
+            "enum value ",
+            calld->algorithm_));
+      } else {
+        *calld->recv_message_flags_ =
+            (*calld->recv_message_flags_ & (~GRPC_WRITE_INTERNAL_COMPRESS)) |
+            GRPC_WRITE_INTERNAL_TEST_ONLY_WAS_COMPRESSED;
+        (*calld->recv_message_)->Swap(&decompressed_slices);
+      }
+      return calld->ContinueRecvMessageReadyCallback(
+          GRPC_ERROR_REF(calld->error_));
     }
   }
   calld->ContinueRecvMessageReadyCallback(GRPC_ERROR_REF(error));
-}
-
-void CallData::ContinueReadingRecvMessage() {
-  while ((*recv_message_)
-             ->Next((*recv_message_)->length() - recv_slices_.length,
-                    &on_recv_message_next_done_)) {
-    grpc_error_handle error = PullSliceFromRecvMessage();
-    if (error != GRPC_ERROR_NONE) {
-      return ContinueRecvMessageReadyCallback(error);
-    }
-    // We have read the entire message.
-    if (recv_slices_.length == (*recv_message_)->length()) {
-      return FinishRecvMessage();
-    }
-  }
-}
-
-grpc_error_handle CallData::PullSliceFromRecvMessage() {
-  grpc_slice incoming_slice;
-  grpc_error_handle error = (*recv_message_)->Pull(&incoming_slice);
-  if (error == GRPC_ERROR_NONE) {
-    grpc_slice_buffer_add(&recv_slices_, incoming_slice);
-  }
-  return error;
-}
-
-void CallData::OnRecvMessageNextDone(void* arg, grpc_error_handle error) {
-  CallData* calld = static_cast<CallData*>(arg);
-  if (error != GRPC_ERROR_NONE) {
-    return calld->ContinueRecvMessageReadyCallback(GRPC_ERROR_REF(error));
-  }
-  error = calld->PullSliceFromRecvMessage();
-  if (error != GRPC_ERROR_NONE) {
-    return calld->ContinueRecvMessageReadyCallback(error);
-  }
-  if (calld->recv_slices_.length == (*calld->recv_message_)->length()) {
-    calld->FinishRecvMessage();
-  } else {
-    calld->ContinueReadingRecvMessage();
-  }
-}
-
-void CallData::FinishRecvMessage() {
-  grpc_slice_buffer decompressed_slices;
-  grpc_slice_buffer_init(&decompressed_slices);
-  if (grpc_msg_decompress(algorithm_, &recv_slices_, &decompressed_slices) ==
-      0) {
-    GPR_DEBUG_ASSERT(error_ == GRPC_ERROR_NONE);
-    error_ = GRPC_ERROR_CREATE_FROM_CPP_STRING(
-        absl::StrCat("Unexpected error decompressing data for algorithm with "
-                     "enum value ",
-                     algorithm_));
-    grpc_slice_buffer_destroy_internal(&decompressed_slices);
-  } else {
-    uint32_t recv_flags =
-        ((*recv_message_)->flags() & (~GRPC_WRITE_INTERNAL_COMPRESS)) |
-        GRPC_WRITE_INTERNAL_TEST_ONLY_WAS_COMPRESSED;
-    // Swap out the original receive byte stream with our new one and send the
-    // batch down.
-    // Initializing recv_replacement_stream_ with decompressed_slices removes
-    // all the slices from decompressed_slices leaving it empty.
-    new (&recv_replacement_stream_)
-        SliceBufferByteStream(&decompressed_slices, recv_flags);
-    recv_message_->reset(
-        reinterpret_cast<SliceBufferByteStream*>(&recv_replacement_stream_));
-    recv_message_ = nullptr;
-  }
-  ContinueRecvMessageReadyCallback(GRPC_ERROR_REF(error_));
 }
 
 void CallData::ContinueRecvMessageReadyCallback(grpc_error_handle error) {
@@ -320,6 +256,7 @@ void CallData::DecompressStartTransportStreamOpBatch(
   // Handle recv_message
   if (batch->recv_message) {
     recv_message_ = batch->payload->recv_message.recv_message;
+    recv_message_flags_ = batch->payload->recv_message.flags;
     original_recv_message_ready_ =
         batch->payload->recv_message.recv_message_ready;
     batch->payload->recv_message.recv_message_ready = &on_recv_message_ready_;
@@ -380,6 +317,7 @@ const grpc_channel_filter MessageDecompressFilter = {
     DecompressDestroyCallElem,
     sizeof(ChannelData),
     DecompressInitChannelElem,
+    grpc_channel_stack_no_post_init,
     DecompressDestroyChannelElem,
     grpc_channel_next_get_info,
     "message_decompress"};

@@ -20,8 +20,12 @@
 
 #include "src/core/ext/filters/client_channel/proxy_mapper_registry.h"
 
+#include <algorithm>
 #include <memory>
+#include <utility>
 #include <vector>
+
+#include "absl/types/optional.h"
 
 namespace grpc_core {
 
@@ -60,30 +64,30 @@ void ProxyMapperRegistry::Register(
   }
 }
 
-bool ProxyMapperRegistry::MapName(const char* server_uri,
-                                  const grpc_channel_args* args,
-                                  char** name_to_resolve,
-                                  grpc_channel_args** new_args) {
+absl::optional<std::string> ProxyMapperRegistry::MapName(
+    absl::string_view server_uri, ChannelArgs* args) {
   Init();
+  ChannelArgs args_backup = *args;
   for (const auto& mapper : *g_proxy_mapper_list) {
-    if (mapper->MapName(server_uri, args, name_to_resolve, new_args)) {
-      return true;
-    }
+    *args = args_backup;
+    auto r = mapper->MapName(server_uri, args);
+    if (r.has_value()) return r;
   }
-  return false;
+  *args = args_backup;
+  return absl::nullopt;
 }
 
-bool ProxyMapperRegistry::MapAddress(const grpc_resolved_address& address,
-                                     const grpc_channel_args* args,
-                                     grpc_resolved_address** new_address,
-                                     grpc_channel_args** new_args) {
+absl::optional<grpc_resolved_address> ProxyMapperRegistry::MapAddress(
+    const grpc_resolved_address& address, ChannelArgs* args) {
   Init();
+  ChannelArgs args_backup = *args;
   for (const auto& mapper : *g_proxy_mapper_list) {
-    if (mapper->MapAddress(address, args, new_address, new_args)) {
-      return true;
-    }
+    *args = args_backup;
+    auto r = mapper->MapAddress(address, args);
+    if (r.has_value()) return r;
   }
-  return false;
+  *args = args_backup;
+  return absl::nullopt;
 }
 
 }  // namespace grpc_core

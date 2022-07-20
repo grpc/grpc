@@ -31,10 +31,23 @@
 #include <stdbool.h>
 
 #include "python/descriptor.h"
-#include "python/python.h"
-#include "upb/table_internal.h"
+#include "python/python_api.h"
 
-#define PYUPB_MODULE_NAME "google.protobuf.pyext._message"
+// begin:github_only
+#define PYUPB_PROTOBUF_PUBLIC_PACKAGE "google.protobuf"
+#define PYUPB_PROTOBUF_INTERNAL_PACKAGE "google.protobuf.internal"
+#define PYUPB_DESCRIPTOR_PROTO_PACKAGE "google.protobuf"
+#define PYUPB_DESCRIPTOR_MODULE "google.protobuf.descriptor_pb2"
+#define PYUPB_MODULE_NAME "google._upb._message"
+// end:github_only
+
+// begin:google_only
+// #define PYUPB_PROTOBUF_PUBLIC_PACKAGE "google3.net.proto2.python.public"
+// #define PYUPB_PROTOBUF_INTERNAL_PACKAGE "google3.net.proto2.python.internal"
+// #define PYUPB_DESCRIPTOR_PROTO_PACKAGE "proto2"
+// #define PYUPB_DESCRIPTOR_MODULE "google3.net.proto2.proto.descriptor_pb2"
+// #define PYUPB_MODULE_NAME "google3.third_party.upb.python._message"
+// end:google_only
 
 #define PYUPB_RETURN_OOM return PyErr_SetNone(PyExc_MemoryError), NULL
 
@@ -93,6 +106,10 @@ typedef struct {
   // From repeated.c
   PyTypeObject* repeated_composite_container_type;
   PyTypeObject* repeated_scalar_container_type;
+
+  // From unknown_fields.c
+  PyTypeObject* unknown_fields_type;
+  PyObject* unknown_field_type;
 } PyUpb_ModuleState;
 
 // Returns the global state object from the current interpreter. The current
@@ -193,7 +210,7 @@ PyObject* PyUpb_Forbidden_New(PyObject* cls, PyObject* args, PyObject* kwds);
 static inline void PyUpb_Dealloc(void* self) {
   PyTypeObject* tp = Py_TYPE(self);
   assert(PyType_GetFlags(tp) & Py_TPFLAGS_HEAPTYPE);
-  freefunc tp_free = PyType_GetSlot(tp, Py_tp_free);
+  freefunc tp_free = (freefunc)PyType_GetSlot(tp, Py_tp_free);
   tp_free(self);
   Py_DECREF(tp);
 }

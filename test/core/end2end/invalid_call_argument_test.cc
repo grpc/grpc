@@ -40,7 +40,7 @@ struct test_state {
   grpc_call* call;
   gpr_timespec deadline;
   grpc_completion_queue* cq;
-  cq_verifier* cqv;
+  std::unique_ptr<grpc_core::CqVerifier> cqv;
   grpc_op ops[6];
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
@@ -62,7 +62,7 @@ static void prepare_test(int is_client) {
   grpc_metadata_array_init(&g_state.trailing_metadata_recv);
   g_state.deadline = grpc_timeout_seconds_to_deadline(5);
   g_state.cq = grpc_completion_queue_create_for_next(nullptr);
-  g_state.cqv = cq_verifier_create(g_state.cq);
+  g_state.cqv = absl::make_unique<grpc_core::CqVerifier>(g_state.cq);
   g_state.details = grpc_empty_slice();
   memset(g_state.ops, 0, sizeof(g_state.ops));
 
@@ -111,30 +111,27 @@ static void prepare_test(int is_client) {
                                         &g_state.call_details,
                                         &g_state.server_initial_metadata_recv,
                                         g_state.cq, g_state.cq, tag(101)));
-    CQ_EXPECT_COMPLETION(g_state.cqv, tag(101), 1);
-    CQ_EXPECT_COMPLETION(g_state.cqv, tag(1), 1);
-    cq_verify(g_state.cqv);
+    g_state.cqv->Expect(tag(101), true);
+    g_state.cqv->Expect(tag(1), true);
+    g_state.cqv->Verify();
   }
 }
 
 static void cleanup_test() {
-  grpc_completion_queue* shutdown_cq;
   grpc_call_unref(g_state.call);
-  cq_verifier_destroy(g_state.cqv);
   grpc_channel_destroy(g_state.chan);
   grpc_slice_unref(g_state.details);
   grpc_metadata_array_destroy(&g_state.initial_metadata_recv);
   grpc_metadata_array_destroy(&g_state.trailing_metadata_recv);
 
   if (!g_state.is_client) {
-    shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
     grpc_call_unref(g_state.server_call);
-    grpc_server_shutdown_and_notify(g_state.server, shutdown_cq, tag(1000));
-    GPR_ASSERT(grpc_completion_queue_pluck(shutdown_cq, tag(1000),
-                                           grpc_timeout_seconds_to_deadline(5),
-                                           nullptr)
-                   .type == GRPC_OP_COMPLETE);
-    grpc_completion_queue_destroy(shutdown_cq);
+    grpc_server_shutdown_and_notify(g_state.server, g_state.cq, tag(1000));
+    grpc_event ev;
+    do {
+      ev = grpc_completion_queue_next(
+          g_state.cq, grpc_timeout_seconds_to_deadline(5), nullptr);
+    } while (ev.type != GRPC_OP_COMPLETE || ev.tag != tag(1000));
     grpc_server_destroy(g_state.server);
     grpc_call_details_destroy(&g_state.call_details);
     grpc_metadata_array_destroy(&g_state.server_initial_metadata_recv);
@@ -190,8 +187,8 @@ static void test_send_initial_metadata_more_than_once() {
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(g_state.call, g_state.ops,
                                                    (size_t)(op - g_state.ops),
                                                    tag(1), nullptr));
-  CQ_EXPECT_COMPLETION(g_state.cqv, tag(1), 0);
-  cq_verify(g_state.cqv);
+  g_state.cqv->Expect(tag(1), false);
+  g_state.cqv->Verify();
 
   op = g_state.ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
@@ -319,8 +316,8 @@ static void test_receive_initial_metadata_twice_at_client() {
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(g_state.call, g_state.ops,
                                                    (size_t)(op - g_state.ops),
                                                    tag(1), nullptr));
-  CQ_EXPECT_COMPLETION(g_state.cqv, tag(1), 0);
-  cq_verify(g_state.cqv);
+  g_state.cqv->Expect(tag(1), false);
+  g_state.cqv->Verify();
   op = g_state.ops;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
   op->data.recv_initial_metadata.recv_initial_metadata =
@@ -415,8 +412,8 @@ static void test_recv_status_on_client_twice() {
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(g_state.call, g_state.ops,
                                                    (size_t)(op - g_state.ops),
                                                    tag(1), nullptr));
-  CQ_EXPECT_COMPLETION(g_state.cqv, tag(1), 1);
-  cq_verify(g_state.cqv);
+  g_state.cqv->Expect(tag(1), true);
+  g_state.cqv->Verify();
 
   op = g_state.ops;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
@@ -639,7 +636,7 @@ static void test_multiple_ops_in_a_single_batch() {
 }
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   test_invalid_initial_metadata_reserved_key();
   test_non_null_reserved_on_start_batch();

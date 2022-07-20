@@ -21,11 +21,23 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
+
+#include <utility>
+
+#include "absl/strings/string_view.h"
+
+#include <grpc/grpc_security.h>
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/support/alloc.h>
+
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/resource_quota/arena.h"
-#include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/security/credentials/credentials.h"  // IWYU pragma: keep
 
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_auth_context_refcount;
 
@@ -42,6 +54,8 @@ struct grpc_auth_property_array {
 };
 
 void grpc_auth_property_reset(grpc_auth_property* property);
+
+#define GRPC_AUTH_CONTEXT_ARG "grpc.auth_context"
 
 // This type is forward declared as a C struct and we cannot define it as a
 // class. Otherwise, compiler will complain about type mismatch due to
@@ -71,6 +85,12 @@ struct grpc_auth_context
       }
       gpr_free(properties_.array);
     }
+  }
+
+  static absl::string_view ChannelArgName() { return GRPC_AUTH_CONTEXT_ARG; }
+  static int ChannelArgsCompare(const grpc_auth_context* a,
+                                const grpc_auth_context* b) {
+    return QsortCompare(a, b);
   }
 
   const grpc_auth_context* chained() const { return chained_.get(); }
@@ -142,7 +162,6 @@ grpc_server_security_context* grpc_server_security_context_create(
 void grpc_server_security_context_destroy(void* ctx);
 
 /* --- Channel args for auth context --- */
-#define GRPC_AUTH_CONTEXT_ARG "grpc.auth_context"
 
 grpc_arg grpc_auth_context_to_arg(grpc_auth_context* c);
 grpc_auth_context* grpc_auth_context_from_arg(const grpc_arg* arg);

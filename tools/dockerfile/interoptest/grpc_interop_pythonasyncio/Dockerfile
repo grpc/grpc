@@ -13,7 +13,7 @@
 # limitations under the License.
 
 FROM debian:11
-  
+
 #=================
 # Basic C core dependencies
 
@@ -28,9 +28,7 @@ RUN apt-get update && apt-get install -y \
 # GCC
 RUN apt-get update && apt-get install -y \
   gcc \
-  gcc-multilib \
   g++ \
-  g++-multilib  \
   && apt-get clean
 
 # libc6
@@ -57,7 +55,6 @@ RUN apt-get update && apt-get install -y \
 
 
 RUN mkdir /var/local/jenkins
-
 
 
 RUN apt-get update && apt-get install -y python3 python3-pip python3-all-dev

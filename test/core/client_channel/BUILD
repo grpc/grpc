@@ -19,10 +19,35 @@ grpc_package(name = "test/core/client_channel")
 licenses(["notice"])
 
 grpc_cc_test(
+    name = "client_channel_test",
+    srcs = ["client_channel_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    deps = [
+        "//:channel_args",
+        "//:grpc_client_channel",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "certificate_provider_registry_test",
     srcs = ["certificate_provider_registry_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "http_proxy_mapper_test",
+    srcs = ["http_proxy_mapper_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_polling = False,
     deps = [
         "//:gpr",
         "//:grpc",
@@ -37,6 +62,7 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",

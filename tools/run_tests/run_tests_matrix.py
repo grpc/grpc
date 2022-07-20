@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright 2015 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -210,11 +210,34 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
                                 ['--report_multi_target'],
                                 inner_jobs=inner_jobs)
 
+    # ARM64 Linux C# tests
+    test_jobs += _generate_jobs(languages=['csharp'],
+                                configs=['dbg', 'opt'],
+                                platforms=['linux'],
+                                arch='arm64',
+                                compiler='default',
+                                labels=['basictests_arm64'],
+                                extra_args=extra_args +
+                                ['--report_multi_target'],
+                                inner_jobs=inner_jobs)
+
     test_jobs += _generate_jobs(languages=['python'],
                                 configs=['opt'],
                                 platforms=['linux', 'macos', 'windows'],
                                 iomgr_platforms=['native'],
                                 labels=['basictests', 'multilang'],
+                                extra_args=extra_args +
+                                ['--report_multi_target'],
+                                inner_jobs=inner_jobs)
+
+    # ARM64 Linux Python tests
+    test_jobs += _generate_jobs(languages=['python'],
+                                configs=['opt'],
+                                platforms=['linux'],
+                                arch='arm64',
+                                compiler='default',
+                                iomgr_platforms=['native'],
+                                labels=['basictests_arm64'],
                                 extra_args=extra_args +
                                 ['--report_multi_target'],
                                 inner_jobs=inner_jobs)
@@ -234,6 +257,17 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
                                 configs=['dbg', 'opt'],
                                 platforms=['linux', 'macos'],
                                 labels=['basictests', 'multilang'],
+                                extra_args=extra_args +
+                                ['--report_multi_target'],
+                                inner_jobs=inner_jobs)
+
+    # ARM64 Linux Ruby and PHP tests
+    test_jobs += _generate_jobs(languages=['ruby', 'php7'],
+                                configs=['dbg', 'opt'],
+                                platforms=['linux'],
+                                arch='arm64',
+                                compiler='default',
+                                labels=['basictests_arm64'],
                                 extra_args=extra_args +
                                 ['--report_multi_target'],
                                 inner_jobs=inner_jobs)
@@ -266,7 +300,7 @@ def _create_portability_test_jobs(extra_args=[],
 
     # portability C and C++ on x64
     for compiler in [
-            'gcc5', 'gcc10.2_openssl102', 'gcc11', 'gcc_musl', 'clang4',
+            'gcc6', 'gcc10.2_openssl102', 'gcc11', 'gcc_musl', 'clang6',
             'clang13'
     ]:
         test_jobs += _generate_jobs(languages=['c', 'c++'],
@@ -295,7 +329,7 @@ def _create_portability_test_jobs(extra_args=[],
                                 configs=['dbg'],
                                 platforms=['windows'],
                                 arch='default',
-                                compiler='cmake_vs2015',
+                                compiler='cmake_vs2017',
                                 labels=['portability', 'corelang'],
                                 extra_args=extra_args,
                                 inner_jobs=inner_jobs)

@@ -29,7 +29,7 @@
 #define UPB_DEF_H_
 
 #include "google/protobuf/descriptor.upb.h"
-#include "upb/table_internal.h"
+#include "upb/internal/table.h"
 #include "upb/upb.h"
 
 /* Must be last. */
@@ -116,6 +116,8 @@ const upb_OneofDef* upb_FieldDef_RealContainingOneof(const upb_FieldDef* f);
 uint32_t upb_FieldDef_Index(const upb_FieldDef* f);
 bool upb_FieldDef_IsSubMessage(const upb_FieldDef* f);
 bool upb_FieldDef_IsString(const upb_FieldDef* f);
+bool upb_FieldDef_IsOptional(const upb_FieldDef* f);
+bool upb_FieldDef_IsRequired(const upb_FieldDef* f);
 bool upb_FieldDef_IsRepeated(const upb_FieldDef* f);
 bool upb_FieldDef_IsPrimitive(const upb_FieldDef* f);
 bool upb_FieldDef_IsMap(const upb_FieldDef* f);
@@ -164,11 +166,11 @@ const upb_FieldDef* upb_OneofDef_LookupNumber(const upb_OneofDef* o,
 #define kUpb_Any_TypeFieldNumber 1
 #define kUpb_Any_ValueFieldNumber 2
 
-/* Well-known field tag numbers for timestamp messages. */
+/* Well-known field tag numbers for duration messages. */
 #define kUpb_Duration_SecondsFieldNumber 1
 #define kUpb_Duration_NanosFieldNumber 2
 
-/* Well-known field tag numbers for duration messages. */
+/* Well-known field tag numbers for timestamp messages. */
 #define kUpb_Timestamp_SecondsFieldNumber 1
 #define kUpb_Timestamp_NanosFieldNumber 2
 
@@ -208,6 +210,11 @@ UPB_INLINE const upb_FieldDef* upb_MessageDef_FindFieldByName(
 
 UPB_INLINE bool upb_MessageDef_IsMapEntry(const upb_MessageDef* m) {
   return google_protobuf_MessageOptions_map_entry(upb_MessageDef_Options(m));
+}
+
+UPB_INLINE bool upb_MessageDef_IsMessageSet(const upb_MessageDef* m) {
+  return google_protobuf_MessageOptions_message_set_wire_format(
+      upb_MessageDef_Options(m));
 }
 
 /* Nested entities. */
@@ -317,6 +324,7 @@ const google_protobuf_MethodOptions* upb_MethodDef_Options(
     const upb_MethodDef* m);
 bool upb_MethodDef_HasOptions(const upb_MethodDef* m);
 const char* upb_MethodDef_FullName(const upb_MethodDef* m);
+int upb_MethodDef_Index(const upb_MethodDef* m);
 const char* upb_MethodDef_Name(const upb_MethodDef* m);
 const upb_ServiceDef* upb_MethodDef_Service(const upb_MethodDef* m);
 const upb_MessageDef* upb_MethodDef_InputType(const upb_MethodDef* m);
@@ -389,7 +397,15 @@ typedef struct _upb_DefPool_Init {
   upb_StringView descriptor; /* Serialized descriptor. */
 } _upb_DefPool_Init;
 
-bool _upb_DefPool_LoadDefInit(upb_DefPool* s, const _upb_DefPool_Init* init);
+// Should only be directly called by tests.  This variant lets us suppress
+// the use of compiled-in tables, forcing a rebuild of the tables at runtime.
+bool _upb_DefPool_LoadDefInitEx(upb_DefPool* s, const _upb_DefPool_Init* init,
+                                bool rebuild_minitable);
+
+UPB_INLINE bool _upb_DefPool_LoadDefInit(upb_DefPool* s,
+                                         const _upb_DefPool_Init* init) {
+  return _upb_DefPool_LoadDefInitEx(s, init, false);
+}
 
 #include "upb/port_undef.inc"
 

@@ -20,27 +20,23 @@
 
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 
-#include <assert.h>
-#include <string.h>
-
+#include <algorithm>
 #include <cstdint>
+#include <memory>
 
-#include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
-#include "src/core/ext/transport/chttp2/transport/hpack_encoder_table.h"
+#include "absl/utility/utility.h"
 
-/* This is here for grpc_is_binary_header
- * TODO(murgatroid99): Remove this
- */
-#include <grpc/grpc.h>
 #include <grpc/slice.h>
-#include <grpc/support/alloc.h>
+#include <grpc/slice_buffer.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
+#include "src/core/ext/transport/chttp2/transport/frame.h"
+#include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
+#include "src/core/ext/transport/chttp2/transport/hpack_encoder_table.h"
 #include "src/core/ext/transport/chttp2/transport/varint.h"
 #include "src/core/lib/debug/stats.h"
-#include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_string_helpers.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/validate_metadata.h"
 #include "src/core/lib/transport/timeout_encoding.h"
 
@@ -481,13 +477,15 @@ void HPackCompressor::Framer::Encode(HttpStatusMetadata, uint32_t status) {
 void HPackCompressor::Framer::Encode(HttpMethodMetadata,
                                      HttpMethodMetadata::ValueType method) {
   switch (method) {
-    case HttpMethodMetadata::ValueType::kGet:
-      EmitIndexed(2);  // :method: GET
-      break;
     case HttpMethodMetadata::ValueType::kPost:
       EmitIndexed(3);  // :method: POST
       break;
+    case HttpMethodMetadata::ValueType::kGet:
+      EmitIndexed(2);  // :method: GET
+      break;
     case HttpMethodMetadata::ValueType::kPut:
+      // Right now, we only emit PUT as a method for testing purposes, so it's
+      // fine to not index it.
       EmitLitHdrWithNonBinaryStringKeyNotIdx(Slice::FromStaticString(":method"),
                                              Slice::FromStaticString("PUT"));
       break;

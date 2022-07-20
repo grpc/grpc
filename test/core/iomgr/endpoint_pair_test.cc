@@ -60,7 +60,7 @@ static void destroy_pollset(void* p, grpc_error_handle /*error*/) {
 
 int main(int argc, char** argv) {
   grpc_closure destroyed;
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   {
     grpc_core::ExecCtx exec_ctx;

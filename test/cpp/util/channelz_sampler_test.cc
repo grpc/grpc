@@ -165,7 +165,7 @@ TEST(ChannelzSamplerTest, SimpleTest) {
 }
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   std::string me = argv[0];
   auto lslash = me.rfind('/');

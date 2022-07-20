@@ -58,7 +58,8 @@ static void drain_cq(grpc_completion_queue *cq) {
   [super setUp];
 
   char *argv[] = {(char *)"CoreCronetEnd2EndTests"};
-  grpc_test_init(1, argv);
+  int argc = 1;
+  grpc_test_init(&argc, argv);
 
   grpc_init();
   configureCronet(/*enable_netlog=*/false);
@@ -135,7 +136,7 @@ unsigned int parse_h2_length(const char *field) {
   stream_engine *cronetEngine = [Cronet getGlobalEngine];
   grpc_channel *client = grpc_cronet_secure_channel_create(cronetEngine, addr.c_str(), NULL, NULL);
 
-  cq_verifier *cqv = cq_verifier_create(cq);
+  grpc_core::CqVerifier cqv(cq);
   grpc_op ops[6];
   grpc_op *op;
   grpc_metadata_array initial_metadata_recv;
@@ -215,8 +216,8 @@ unsigned int parse_h2_length(const char *field) {
     close(sl);
   });
 
-  CQ_EXPECT_COMPLETION(cqv, (void *)1, 1);
-  cq_verify(cqv);
+  cqv.Expect((void *)1, true);
+  cqv.Verify();
 
   GPR_ASSERT(status == GRPC_STATUS_UNAVAILABLE);
 
@@ -227,8 +228,6 @@ unsigned int parse_h2_length(const char *field) {
   grpc_call_details_destroy(&call_details);
 
   grpc_call_unref(c);
-
-  cq_verifier_destroy(cqv);
 
   grpc_byte_buffer_destroy(request_payload);
   grpc_byte_buffer_destroy(response_payload_recv);
@@ -265,7 +264,7 @@ unsigned int parse_h2_length(const char *field) {
   stream_engine *cronetEngine = [Cronet getGlobalEngine];
   grpc_channel *client = grpc_cronet_secure_channel_create(cronetEngine, addr.c_str(), args, NULL);
 
-  cq_verifier *cqv = cq_verifier_create(cq);
+  grpc_core::CqVerifier cqv(cq);
   grpc_op ops[6];
   grpc_op *op;
   grpc_metadata_array initial_metadata_recv;
@@ -390,8 +389,8 @@ unsigned int parse_h2_length(const char *field) {
   error = grpc_call_start_batch(c, ops, (size_t)(op - ops), (void *)1, NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, (void *)1, 1);
-  cq_verify(cqv);
+  cqv.Expect((void *)1, true);
+  cqv.Verify();
 
   grpc_slice_unref(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);
@@ -400,8 +399,6 @@ unsigned int parse_h2_length(const char *field) {
   grpc_call_details_destroy(&call_details);
 
   grpc_call_unref(c);
-
-  cq_verifier_destroy(cqv);
 
   grpc_byte_buffer_destroy(request_payload);
   grpc_byte_buffer_destroy(response_payload_recv);

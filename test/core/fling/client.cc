@@ -148,6 +148,7 @@ int main(int argc, char** argv) {
   double start, stop;
   unsigned i;
 
+  int fake_argc = 1;
   char* fake_argv[1];
 
   int payload_size = 1;
@@ -162,7 +163,7 @@ int main(int argc, char** argv) {
 
   GPR_ASSERT(argc >= 1);
   fake_argv[0] = argv[0];
-  grpc::testing::TestEnvironment env(1, fake_argv);
+  grpc::testing::TestEnvironment env(&fake_argc, fake_argv);
 
   grpc_init();
 

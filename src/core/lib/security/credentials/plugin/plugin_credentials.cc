@@ -20,24 +20,25 @@
 
 #include "src/core/lib/security/credentials/plugin/plugin_credentials.h"
 
-#include <string.h>
-
 #include <atomic>
+#include <type_traits>
 
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
-#include <grpc/grpc.h>
+#include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/sync.h>
 
-#include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/promise.h"
-#include "src/core/lib/security/credentials/plugin/plugin_credentials.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/validate_metadata.h"
+#include "src/core/lib/transport/metadata_batch.h"
 
 grpc_core::TraceFlag grpc_plugin_credentials_trace(false, "plugin_credentials");
 
@@ -60,7 +61,12 @@ std::string grpc_plugin_credentials::debug_string() {
   return debug_str;
 }
 
-absl::StatusOr<grpc_core::ClientInitialMetadata>
+grpc_core::UniqueTypeName grpc_plugin_credentials::type() const {
+  static grpc_core::UniqueTypeName::Factory kFactory("Plugin");
+  return kFactory.Create();
+}
+
+absl::StatusOr<grpc_core::ClientMetadataHandle>
 grpc_plugin_credentials::PendingRequest::ProcessPluginResult(
     const grpc_metadata* md, size_t num_md, grpc_status_code status,
     const char* error_details) {
@@ -96,12 +102,12 @@ grpc_plugin_credentials::PendingRequest::ProcessPluginResult(
             });
       }
       if (!error.ok()) return std::move(error);
-      return grpc_core::ClientInitialMetadata(std::move(md_));
+      return grpc_core::ClientMetadataHandle(std::move(md_));
     }
   }
 }
 
-grpc_core::Poll<absl::StatusOr<grpc_core::ClientInitialMetadata>>
+grpc_core::Poll<absl::StatusOr<grpc_core::ClientMetadataHandle>>
 grpc_plugin_credentials::PendingRequest::PollAsyncResult() {
   if (!ready_.load(std::memory_order_acquire)) {
     return grpc_core::Pending{};
@@ -137,9 +143,9 @@ void grpc_plugin_credentials::PendingRequest::RequestMetadataReady(
   r->waker_.Wakeup();
 }
 
-grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientInitialMetadata>>
+grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientMetadataHandle>>
 grpc_plugin_credentials::GetRequestMetadata(
-    grpc_core::ClientInitialMetadata initial_metadata,
+    grpc_core::ClientMetadataHandle initial_metadata,
     const grpc_call_credentials::GetRequestMetadataArgs* args) {
   if (plugin_.get_metadata == nullptr) {
     return grpc_core::Immediate(std::move(initial_metadata));
@@ -197,7 +203,7 @@ grpc_plugin_credentials::GetRequestMetadata(
 grpc_plugin_credentials::grpc_plugin_credentials(
     grpc_metadata_credentials_plugin plugin,
     grpc_security_level min_security_level)
-    : grpc_call_credentials(plugin.type, min_security_level), plugin_(plugin) {}
+    : grpc_call_credentials(min_security_level), plugin_(plugin) {}
 
 grpc_call_credentials* grpc_metadata_credentials_create_from_plugin(
     grpc_metadata_credentials_plugin plugin,

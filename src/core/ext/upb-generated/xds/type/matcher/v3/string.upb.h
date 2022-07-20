@@ -56,11 +56,15 @@ UPB_INLINE xds_type_matcher_v3_StringMatcher* xds_type_matcher_v3_StringMatcher_
   return ret;
 }
 UPB_INLINE char* xds_type_matcher_v3_StringMatcher_serialize(const xds_type_matcher_v3_StringMatcher* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &xds_type_matcher_v3_StringMatcher_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &xds_type_matcher_v3_StringMatcher_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* xds_type_matcher_v3_StringMatcher_serialize_ex(const xds_type_matcher_v3_StringMatcher* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &xds_type_matcher_v3_StringMatcher_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &xds_type_matcher_v3_StringMatcher_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 typedef enum {
   xds_type_matcher_v3_StringMatcher_match_pattern_exact = 1,
@@ -70,35 +74,74 @@ typedef enum {
   xds_type_matcher_v3_StringMatcher_match_pattern_contains = 7,
   xds_type_matcher_v3_StringMatcher_match_pattern_NOT_SET = 0
 } xds_type_matcher_v3_StringMatcher_match_pattern_oneofcases;
-UPB_INLINE xds_type_matcher_v3_StringMatcher_match_pattern_oneofcases xds_type_matcher_v3_StringMatcher_match_pattern_case(const xds_type_matcher_v3_StringMatcher* msg) { return (xds_type_matcher_v3_StringMatcher_match_pattern_oneofcases)*UPB_PTR_AT(msg, UPB_SIZE(12, 24), int32_t); }
-
-UPB_INLINE bool xds_type_matcher_v3_StringMatcher_has_exact(const xds_type_matcher_v3_StringMatcher *msg) { return _upb_getoneofcase(msg, UPB_SIZE(12, 24)) == 1; }
-UPB_INLINE upb_StringView xds_type_matcher_v3_StringMatcher_exact(const xds_type_matcher_v3_StringMatcher *msg) { return UPB_READ_ONEOF(msg, upb_StringView, UPB_SIZE(4, 8), UPB_SIZE(12, 24), 1, upb_StringView_FromString("")); }
-UPB_INLINE bool xds_type_matcher_v3_StringMatcher_has_prefix(const xds_type_matcher_v3_StringMatcher *msg) { return _upb_getoneofcase(msg, UPB_SIZE(12, 24)) == 2; }
-UPB_INLINE upb_StringView xds_type_matcher_v3_StringMatcher_prefix(const xds_type_matcher_v3_StringMatcher *msg) { return UPB_READ_ONEOF(msg, upb_StringView, UPB_SIZE(4, 8), UPB_SIZE(12, 24), 2, upb_StringView_FromString("")); }
-UPB_INLINE bool xds_type_matcher_v3_StringMatcher_has_suffix(const xds_type_matcher_v3_StringMatcher *msg) { return _upb_getoneofcase(msg, UPB_SIZE(12, 24)) == 3; }
-UPB_INLINE upb_StringView xds_type_matcher_v3_StringMatcher_suffix(const xds_type_matcher_v3_StringMatcher *msg) { return UPB_READ_ONEOF(msg, upb_StringView, UPB_SIZE(4, 8), UPB_SIZE(12, 24), 3, upb_StringView_FromString("")); }
-UPB_INLINE bool xds_type_matcher_v3_StringMatcher_has_safe_regex(const xds_type_matcher_v3_StringMatcher *msg) { return _upb_getoneofcase(msg, UPB_SIZE(12, 24)) == 5; }
-UPB_INLINE const struct xds_type_matcher_v3_RegexMatcher* xds_type_matcher_v3_StringMatcher_safe_regex(const xds_type_matcher_v3_StringMatcher *msg) { return UPB_READ_ONEOF(msg, const struct xds_type_matcher_v3_RegexMatcher*, UPB_SIZE(4, 8), UPB_SIZE(12, 24), 5, NULL); }
+UPB_INLINE xds_type_matcher_v3_StringMatcher_match_pattern_oneofcases xds_type_matcher_v3_StringMatcher_match_pattern_case(const xds_type_matcher_v3_StringMatcher* msg) {
+  return (xds_type_matcher_v3_StringMatcher_match_pattern_oneofcases)*UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t);
+}
+UPB_INLINE bool xds_type_matcher_v3_StringMatcher_has_exact(const xds_type_matcher_v3_StringMatcher* msg) {
+  return _upb_getoneofcase(msg, UPB_SIZE(4, 4)) == 1;
+}
+UPB_INLINE void xds_type_matcher_v3_StringMatcher_clear_exact(const xds_type_matcher_v3_StringMatcher* msg) {
+  UPB_WRITE_ONEOF(msg, upb_StringView, UPB_SIZE(8, 8), upb_StringView_FromDataAndSize(NULL, 0), UPB_SIZE(4, 4), xds_type_matcher_v3_StringMatcher_match_pattern_NOT_SET);
+}
+UPB_INLINE upb_StringView xds_type_matcher_v3_StringMatcher_exact(const xds_type_matcher_v3_StringMatcher* msg) {
+  return UPB_READ_ONEOF(msg, upb_StringView, UPB_SIZE(8, 8), UPB_SIZE(4, 4), 1, upb_StringView_FromString(""));
+}
+UPB_INLINE bool xds_type_matcher_v3_StringMatcher_has_prefix(const xds_type_matcher_v3_StringMatcher* msg) {
+  return _upb_getoneofcase(msg, UPB_SIZE(4, 4)) == 2;
+}
+UPB_INLINE void xds_type_matcher_v3_StringMatcher_clear_prefix(const xds_type_matcher_v3_StringMatcher* msg) {
+  UPB_WRITE_ONEOF(msg, upb_StringView, UPB_SIZE(8, 8), upb_StringView_FromDataAndSize(NULL, 0), UPB_SIZE(4, 4), xds_type_matcher_v3_StringMatcher_match_pattern_NOT_SET);
+}
+UPB_INLINE upb_StringView xds_type_matcher_v3_StringMatcher_prefix(const xds_type_matcher_v3_StringMatcher* msg) {
+  return UPB_READ_ONEOF(msg, upb_StringView, UPB_SIZE(8, 8), UPB_SIZE(4, 4), 2, upb_StringView_FromString(""));
+}
+UPB_INLINE bool xds_type_matcher_v3_StringMatcher_has_suffix(const xds_type_matcher_v3_StringMatcher* msg) {
+  return _upb_getoneofcase(msg, UPB_SIZE(4, 4)) == 3;
+}
+UPB_INLINE void xds_type_matcher_v3_StringMatcher_clear_suffix(const xds_type_matcher_v3_StringMatcher* msg) {
+  UPB_WRITE_ONEOF(msg, upb_StringView, UPB_SIZE(8, 8), upb_StringView_FromDataAndSize(NULL, 0), UPB_SIZE(4, 4), xds_type_matcher_v3_StringMatcher_match_pattern_NOT_SET);
+}
+UPB_INLINE upb_StringView xds_type_matcher_v3_StringMatcher_suffix(const xds_type_matcher_v3_StringMatcher* msg) {
+  return UPB_READ_ONEOF(msg, upb_StringView, UPB_SIZE(8, 8), UPB_SIZE(4, 4), 3, upb_StringView_FromString(""));
+}
+UPB_INLINE bool xds_type_matcher_v3_StringMatcher_has_safe_regex(const xds_type_matcher_v3_StringMatcher* msg) {
+  return _upb_getoneofcase(msg, UPB_SIZE(4, 4)) == 5;
+}
+UPB_INLINE void xds_type_matcher_v3_StringMatcher_clear_safe_regex(const xds_type_matcher_v3_StringMatcher* msg) {
+  UPB_WRITE_ONEOF(msg, struct xds_type_matcher_v3_RegexMatcher*, UPB_SIZE(8, 8), 0, UPB_SIZE(4, 4), xds_type_matcher_v3_StringMatcher_match_pattern_NOT_SET);
+}
+UPB_INLINE const struct xds_type_matcher_v3_RegexMatcher* xds_type_matcher_v3_StringMatcher_safe_regex(const xds_type_matcher_v3_StringMatcher* msg) {
+  return UPB_READ_ONEOF(msg, const struct xds_type_matcher_v3_RegexMatcher*, UPB_SIZE(8, 8), UPB_SIZE(4, 4), 5, NULL);
+}
+UPB_INLINE void xds_type_matcher_v3_StringMatcher_clear_ignore_case(const xds_type_matcher_v3_StringMatcher* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), bool) = 0;
+}
 UPB_INLINE bool xds_type_matcher_v3_StringMatcher_ignore_case(const xds_type_matcher_v3_StringMatcher* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), bool);
 }
-UPB_INLINE bool xds_type_matcher_v3_StringMatcher_has_contains(const xds_type_matcher_v3_StringMatcher *msg) { return _upb_getoneofcase(msg, UPB_SIZE(12, 24)) == 7; }
-UPB_INLINE upb_StringView xds_type_matcher_v3_StringMatcher_contains(const xds_type_matcher_v3_StringMatcher *msg) { return UPB_READ_ONEOF(msg, upb_StringView, UPB_SIZE(4, 8), UPB_SIZE(12, 24), 7, upb_StringView_FromString("")); }
+UPB_INLINE bool xds_type_matcher_v3_StringMatcher_has_contains(const xds_type_matcher_v3_StringMatcher* msg) {
+  return _upb_getoneofcase(msg, UPB_SIZE(4, 4)) == 7;
+}
+UPB_INLINE void xds_type_matcher_v3_StringMatcher_clear_contains(const xds_type_matcher_v3_StringMatcher* msg) {
+  UPB_WRITE_ONEOF(msg, upb_StringView, UPB_SIZE(8, 8), upb_StringView_FromDataAndSize(NULL, 0), UPB_SIZE(4, 4), xds_type_matcher_v3_StringMatcher_match_pattern_NOT_SET);
+}
+UPB_INLINE upb_StringView xds_type_matcher_v3_StringMatcher_contains(const xds_type_matcher_v3_StringMatcher* msg) {
+  return UPB_READ_ONEOF(msg, upb_StringView, UPB_SIZE(8, 8), UPB_SIZE(4, 4), 7, upb_StringView_FromString(""));
+}
 
 UPB_INLINE void xds_type_matcher_v3_StringMatcher_set_exact(xds_type_matcher_v3_StringMatcher *msg, upb_StringView value) {
-  UPB_WRITE_ONEOF(msg, upb_StringView, UPB_SIZE(4, 8), value, UPB_SIZE(12, 24), 1);
+  UPB_WRITE_ONEOF(msg, upb_StringView, UPB_SIZE(8, 8), value, UPB_SIZE(4, 4), 1);
 }
 UPB_INLINE void xds_type_matcher_v3_StringMatcher_set_prefix(xds_type_matcher_v3_StringMatcher *msg, upb_StringView value) {
-  UPB_WRITE_ONEOF(msg, upb_StringView, UPB_SIZE(4, 8), value, UPB_SIZE(12, 24), 2);
+  UPB_WRITE_ONEOF(msg, upb_StringView, UPB_SIZE(8, 8), value, UPB_SIZE(4, 4), 2);
 }
 UPB_INLINE void xds_type_matcher_v3_StringMatcher_set_suffix(xds_type_matcher_v3_StringMatcher *msg, upb_StringView value) {
-  UPB_WRITE_ONEOF(msg, upb_StringView, UPB_SIZE(4, 8), value, UPB_SIZE(12, 24), 3);
+  UPB_WRITE_ONEOF(msg, upb_StringView, UPB_SIZE(8, 8), value, UPB_SIZE(4, 4), 3);
 }
 UPB_INLINE void xds_type_matcher_v3_StringMatcher_set_safe_regex(xds_type_matcher_v3_StringMatcher *msg, struct xds_type_matcher_v3_RegexMatcher* value) {
-  UPB_WRITE_ONEOF(msg, struct xds_type_matcher_v3_RegexMatcher*, UPB_SIZE(4, 8), value, UPB_SIZE(12, 24), 5);
+  UPB_WRITE_ONEOF(msg, struct xds_type_matcher_v3_RegexMatcher*, UPB_SIZE(8, 8), value, UPB_SIZE(4, 4), 5);
 }
-UPB_INLINE struct xds_type_matcher_v3_RegexMatcher* xds_type_matcher_v3_StringMatcher_mutable_safe_regex(xds_type_matcher_v3_StringMatcher *msg, upb_Arena *arena) {
+UPB_INLINE struct xds_type_matcher_v3_RegexMatcher* xds_type_matcher_v3_StringMatcher_mutable_safe_regex(xds_type_matcher_v3_StringMatcher* msg, upb_Arena* arena) {
   struct xds_type_matcher_v3_RegexMatcher* sub = (struct xds_type_matcher_v3_RegexMatcher*)xds_type_matcher_v3_StringMatcher_safe_regex(msg);
   if (sub == NULL) {
     sub = (struct xds_type_matcher_v3_RegexMatcher*)_upb_Message_New(&xds_type_matcher_v3_RegexMatcher_msginit, arena);
@@ -111,7 +154,7 @@ UPB_INLINE void xds_type_matcher_v3_StringMatcher_set_ignore_case(xds_type_match
   *UPB_PTR_AT(msg, UPB_SIZE(0, 0), bool) = value;
 }
 UPB_INLINE void xds_type_matcher_v3_StringMatcher_set_contains(xds_type_matcher_v3_StringMatcher *msg, upb_StringView value) {
-  UPB_WRITE_ONEOF(msg, upb_StringView, UPB_SIZE(4, 8), value, UPB_SIZE(12, 24), 7);
+  UPB_WRITE_ONEOF(msg, upb_StringView, UPB_SIZE(8, 8), value, UPB_SIZE(4, 4), 7);
 }
 
 /* xds.type.matcher.v3.ListStringMatcher */
@@ -139,25 +182,35 @@ UPB_INLINE xds_type_matcher_v3_ListStringMatcher* xds_type_matcher_v3_ListString
   return ret;
 }
 UPB_INLINE char* xds_type_matcher_v3_ListStringMatcher_serialize(const xds_type_matcher_v3_ListStringMatcher* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &xds_type_matcher_v3_ListStringMatcher_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &xds_type_matcher_v3_ListStringMatcher_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* xds_type_matcher_v3_ListStringMatcher_serialize_ex(const xds_type_matcher_v3_ListStringMatcher* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &xds_type_matcher_v3_ListStringMatcher_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &xds_type_matcher_v3_ListStringMatcher_msginit, options, arena, &ptr, len);
+  return ptr;
 }
-UPB_INLINE bool xds_type_matcher_v3_ListStringMatcher_has_patterns(const xds_type_matcher_v3_ListStringMatcher *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(0, 0)); }
-UPB_INLINE const xds_type_matcher_v3_StringMatcher* const* xds_type_matcher_v3_ListStringMatcher_patterns(const xds_type_matcher_v3_ListStringMatcher *msg, size_t *len) { return (const xds_type_matcher_v3_StringMatcher* const*)_upb_array_accessor(msg, UPB_SIZE(0, 0), len); }
+UPB_INLINE bool xds_type_matcher_v3_ListStringMatcher_has_patterns(const xds_type_matcher_v3_ListStringMatcher* msg) {
+  return _upb_has_submsg_nohasbit(msg, UPB_SIZE(0, 0));
+}
+UPB_INLINE void xds_type_matcher_v3_ListStringMatcher_clear_patterns(const xds_type_matcher_v3_ListStringMatcher* msg) {
+  _upb_array_detach(msg, UPB_SIZE(0, 0));
+}
+UPB_INLINE const xds_type_matcher_v3_StringMatcher* const* xds_type_matcher_v3_ListStringMatcher_patterns(const xds_type_matcher_v3_ListStringMatcher* msg, size_t* len) {
+  return (const xds_type_matcher_v3_StringMatcher* const*)_upb_array_accessor(msg, UPB_SIZE(0, 0), len);
+}
 
-UPB_INLINE xds_type_matcher_v3_StringMatcher** xds_type_matcher_v3_ListStringMatcher_mutable_patterns(xds_type_matcher_v3_ListStringMatcher *msg, size_t *len) {
+UPB_INLINE xds_type_matcher_v3_StringMatcher** xds_type_matcher_v3_ListStringMatcher_mutable_patterns(xds_type_matcher_v3_ListStringMatcher* msg, size_t* len) {
   return (xds_type_matcher_v3_StringMatcher**)_upb_array_mutable_accessor(msg, UPB_SIZE(0, 0), len);
 }
-UPB_INLINE xds_type_matcher_v3_StringMatcher** xds_type_matcher_v3_ListStringMatcher_resize_patterns(xds_type_matcher_v3_ListStringMatcher *msg, size_t len, upb_Arena *arena) {
+UPB_INLINE xds_type_matcher_v3_StringMatcher** xds_type_matcher_v3_ListStringMatcher_resize_patterns(xds_type_matcher_v3_ListStringMatcher* msg, size_t len, upb_Arena* arena) {
   return (xds_type_matcher_v3_StringMatcher**)_upb_Array_Resize_accessor2(msg, UPB_SIZE(0, 0), len, UPB_SIZE(2, 3), arena);
 }
-UPB_INLINE struct xds_type_matcher_v3_StringMatcher* xds_type_matcher_v3_ListStringMatcher_add_patterns(xds_type_matcher_v3_ListStringMatcher *msg, upb_Arena *arena) {
+UPB_INLINE struct xds_type_matcher_v3_StringMatcher* xds_type_matcher_v3_ListStringMatcher_add_patterns(xds_type_matcher_v3_ListStringMatcher* msg, upb_Arena* arena) {
   struct xds_type_matcher_v3_StringMatcher* sub = (struct xds_type_matcher_v3_StringMatcher*)_upb_Message_New(&xds_type_matcher_v3_StringMatcher_msginit, arena);
-  bool ok = _upb_Array_Append_accessor2(
-      msg, UPB_SIZE(0, 0), UPB_SIZE(2, 3), &sub, arena);
+  bool ok = _upb_Array_Append_accessor2(msg, UPB_SIZE(0, 0), UPB_SIZE(2, 3), &sub, arena);
   if (!ok) return NULL;
   return sub;
 }

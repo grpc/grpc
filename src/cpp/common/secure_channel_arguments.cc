@@ -16,10 +16,13 @@
  *
  */
 
-#include <grpc/grpc_security.h>
-#include <grpcpp/support/channel_arguments.h>
+#include <memory>
+#include <string>
+#include <vector>
 
-#include "src/core/lib/channel/channel_args.h"
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpcpp/support/channel_arguments.h>
+#include <grpcpp/support/config.h>
 
 namespace grpc {
 

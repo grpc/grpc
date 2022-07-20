@@ -31,6 +31,7 @@ grpc_cc_test(
     language = "C++",
     # TODO(https://github.com/grpc/grpc/issues/24627): Disable this on Windows
     tags = ["no_windows"],
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -38,11 +39,14 @@ grpc_cc_test(
     ],
 )
 
+# TODO(hork): solidify fork support requirements for EventEngines
 grpc_cc_test(
     name = "fork_test",
     srcs = ["fork_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     tags = ["no_windows"],
+    uses_event_engine = True,  # engines should behave appropriately on Fork
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -57,6 +61,7 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -72,17 +77,7 @@ grpc_cc_test(
     ],
     language = "C++",
     tags = ["no_windows"],  # TODO(jtattermusch): fix the failure on windows
-    uses_polling = False,
-    deps = [
-        "//:gpr",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
-    name = "manual_constructor_test",
-    srcs = ["manual_constructor_test.cc"],
-    language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -95,6 +90,7 @@ grpc_cc_test(
     srcs = ["bitset_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:bitset",
@@ -107,6 +103,7 @@ grpc_cc_test(
     srcs = ["match_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:match",
@@ -119,6 +116,7 @@ grpc_cc_test(
     srcs = ["overload_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:overload",
@@ -134,6 +132,7 @@ grpc_cc_test(
         "absl/types:optional",
     ],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:table",
@@ -144,7 +143,9 @@ grpc_cc_test(
 grpc_cc_test(
     name = "host_port_test",
     srcs = ["host_port_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -156,8 +157,10 @@ grpc_cc_test(
     name = "mpscq_test",
     srcs = ["mpscq_test.cc"],
     exec_properties = LARGE_MACHINE,
+    external_deps = ["gtest"],
     language = "C++",
     tags = ["no_windows"],  # LARGE_MACHINE is not configured for windows RBE
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -222,7 +225,9 @@ grpc_cc_test(
 grpc_cc_test(
     name = "thd_test",
     srcs = ["thd_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -237,6 +242,7 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -252,6 +258,7 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -266,6 +273,7 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -274,22 +282,11 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "capture_test",
-    srcs = ["capture_test.cc"],
-    external_deps = ["gtest"],
-    language = "c++",
-    uses_polling = False,
-    deps = [
-        "//:capture",
-        "//test/core/util:grpc_suppressions",
-    ],
-)
-
-grpc_cc_test(
     name = "cpp_impl_of_test",
     srcs = ["cpp_impl_of_test.cc"],
     external_deps = ["gtest"],
     language = "c++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:cpp_impl_of",
@@ -302,6 +299,7 @@ grpc_cc_test(
     srcs = ["chunked_vector_test.cc"],
     external_deps = ["gtest"],
     language = "c++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:chunked_vector",
@@ -318,6 +316,7 @@ grpc_proto_fuzzer(
     language = "C++",
     proto = "chunked_vector_fuzzer.proto",
     tags = ["no_windows"],
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:chunked_vector",
@@ -331,9 +330,57 @@ grpc_cc_test(
     srcs = ["time_test.cc"],
     external_deps = ["gtest"],
     language = "c++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:time",
         "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_cc_test(
+    name = "single_set_ptr_test",
+    srcs = ["single_set_ptr_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:single_set_ptr",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_cc_test(
+    name = "unique_type_name_test",
+    srcs = ["unique_type_name_test.cc"],
+    external_deps = [
+        "gtest",
+        "absl/strings:str_format",
+    ],
+    language = "c++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:unique_type_name",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_cc_test(
+    name = "work_serializer_test",
+    srcs = ["work_serializer_test.cc"],
+    exec_properties = LARGE_MACHINE,
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    tags = [
+        "no_windows",  # LARGE_MACHINE is not configured for windows RBE
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
     ],
 )

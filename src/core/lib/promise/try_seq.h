@@ -17,12 +17,12 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <tuple>
+#include <type_traits>
 #include <utility>
 
+#include "absl/meta/type_traits.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "absl/types/variant.h"
 
 #include "src/core/lib/promise/detail/basic_seq.h"
 #include "src/core/lib/promise/detail/status.h"
@@ -90,6 +90,22 @@ struct TrySeqTraitsWithSfinae<
   template <typename Result, typename RunNext>
   static Poll<Result> CheckResultAndRunNext(T prior, RunNext run_next) {
     if (!IsStatusOk(prior)) return Result(std::move(prior));
+    return run_next(std::move(prior));
+  }
+};
+template <>
+struct TrySeqTraitsWithSfinae<absl::Status> {
+  using UnwrappedType = void;
+  using WrappedType = absl::Status;
+  template <typename Next>
+  static auto CallFactory(Next* next, absl::Status&&)
+      -> decltype(next->Once()) {
+    return next->Once();
+  }
+  template <typename Result, typename RunNext>
+  static Poll<Result> CheckResultAndRunNext(absl::Status prior,
+                                            RunNext run_next) {
+    if (!prior.ok()) return Result(std::move(prior));
     return run_next(std::move(prior));
   }
 };

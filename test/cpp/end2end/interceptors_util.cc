@@ -20,6 +20,8 @@
 
 #include "absl/memory/memory.h"
 
+#include "test/core/util/test_config.h"
+
 namespace grpc {
 namespace testing {
 
@@ -157,6 +159,7 @@ void MakeAsyncCQBidiStreamingCall(const std::shared_ptr<Channel>& /*channel*/) {
 void MakeCallbackCall(const std::shared_ptr<Channel>& channel) {
   auto stub = grpc::testing::EchoTestService::NewStub(channel);
   ClientContext ctx;
+  ctx.set_deadline(grpc_timeout_milliseconds_to_deadline(20000));
   EchoRequest req;
   std::mutex mu;
   std::condition_variable cv;

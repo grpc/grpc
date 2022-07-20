@@ -25,11 +25,17 @@
 #include <stdio.h>
 
 #include <chrono>
-#include <ctime>
+#include <cstring>
 #include <iterator>
+#include <set>
+#include <tuple>
+
+#include <google/protobuf/duration.pb.h>
 
 #include "opencensus/stats/internal/set_aggregation_window.h"
 #include "opencensus/tags/tag_key.h"
+
+#include <grpc/support/log.h>
 
 #include "src/cpp/server/load_reporter/constants.h"
 #include "src/cpp/server/load_reporter/get_cpu_stats.h"

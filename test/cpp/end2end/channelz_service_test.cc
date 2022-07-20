@@ -139,12 +139,6 @@ std::string ReadFile(const char* file_path) {
   return file_contents;
 }
 
-grpc_core::PemKeyCertPairList ReadTlsIdentityPair(const char* key_path,
-                                                  const char* cert_path) {
-  return grpc_core::PemKeyCertPairList{
-      grpc_core::PemKeyCertPair(ReadFile(key_path), ReadFile(cert_path))};
-}
-
 std::shared_ptr<grpc::ChannelCredentials> GetChannelCredentials(
     CredentialsType type, ChannelArguments* args) {
   if (type == CredentialsType::kInsecure) {
@@ -211,6 +205,13 @@ class ChannelzServerTest : public ::testing::TestWithParam<CredentialsType> {
         GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE, 1024);
     proxy_builder.RegisterService(&proxy_service_);
     proxy_server_ = proxy_builder.BuildAndStart();
+  }
+
+  void TearDown() override {
+    for (auto& backend : backends_) {
+      backend.server->Shutdown(grpc_timeout_milliseconds_to_deadline(0));
+    }
+    proxy_server_->Shutdown(grpc_timeout_milliseconds_to_deadline(0));
   }
 
   // Sets the proxy up to have an arbitrary number of backends.
@@ -931,7 +932,7 @@ INSTANTIATE_TEST_SUITE_P(ChannelzServer, ChannelzServerTest,
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

@@ -16,12 +16,17 @@
 
 #include <grpc/support/port_platform.h>
 
+// IWYU pragma: no_include <bits/struct_stat.h>
+
+#include <string.h>
+
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
+
 #ifdef GPR_POSIX_STAT
 
 #include <errno.h>
 #include <sys/stat.h>
-#include <sys/types.h>
-#include <unistd.h>
 
 #include <grpc/support/log.h>
 

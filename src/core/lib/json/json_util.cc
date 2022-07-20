@@ -20,9 +20,12 @@
 
 #include "src/core/lib/json/json_util.h"
 
+#include <string.h>
+
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/json/json_object_loader.h"
 
 namespace grpc_core {

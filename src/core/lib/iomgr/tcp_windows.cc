@@ -31,6 +31,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/iocp_windows.h"
 #include "src/core/lib/iomgr/sockaddr.h"
@@ -88,11 +89,11 @@ static grpc_error_handle enable_socket_low_latency(SOCKET sock) {
 grpc_error_handle grpc_tcp_prepare_socket(SOCKET sock) {
   grpc_error_handle err;
   err = grpc_tcp_set_non_block(sock);
-  if (err != GRPC_ERROR_NONE) return err;
+  if (!GRPC_ERROR_IS_NONE(err)) return err;
   err = set_dualstack(sock);
-  if (err != GRPC_ERROR_NONE) return err;
+  if (!GRPC_ERROR_IS_NONE(err)) return err;
   err = enable_socket_low_latency(sock);
-  if (err != GRPC_ERROR_NONE) return err;
+  if (!GRPC_ERROR_IS_NONE(err)) return err;
   return GRPC_ERROR_NONE;
 }
 
@@ -185,7 +186,7 @@ static void on_read(void* tcpp, grpc_error_handle error) {
 
   (void)GRPC_ERROR_REF(error);
 
-  if (error == GRPC_ERROR_NONE) {
+  if (GRPC_ERROR_IS_NONE(error)) {
     if (info->wsa_error != 0 && !tcp->shutting_down) {
       char* utf8_message = gpr_format_message(info->wsa_error);
       error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(utf8_message);
@@ -237,7 +238,7 @@ static void on_read(void* tcpp, grpc_error_handle error) {
 #define DEFAULT_TARGET_READ_SIZE 8192
 #define MAX_WSABUF_COUNT 16
 static void win_read(grpc_endpoint* ep, grpc_slice_buffer* read_slices,
-                     grpc_closure* cb, bool urgent) {
+                     grpc_closure* cb, bool urgent, int /*min_progress_size*/) {
   grpc_tcp* tcp = (grpc_tcp*)ep;
   grpc_winsocket* handle = tcp->socket;
   grpc_winsocket_callback_info* info = &handle->read_info;
@@ -330,7 +331,7 @@ static void on_write(void* tcpp, grpc_error_handle error) {
   tcp->write_cb = NULL;
   gpr_mu_unlock(&tcp->mu);
 
-  if (error == GRPC_ERROR_NONE) {
+  if (GRPC_ERROR_IS_NONE(error)) {
     if (info->wsa_error != 0) {
       error = GRPC_WSA_ERROR(info->wsa_error, "WSASend");
     } else {
@@ -344,7 +345,7 @@ static void on_write(void* tcpp, grpc_error_handle error) {
 
 /* Initiates a write. */
 static void win_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                      grpc_closure* cb, void* arg) {
+                      grpc_closure* cb, void* arg, int /*max_frame_size*/) {
   grpc_tcp* tcp = (grpc_tcp*)ep;
   grpc_winsocket* socket = tcp->socket;
   grpc_winsocket_callback_info* info = &socket->write_info;
@@ -517,12 +518,14 @@ grpc_endpoint* grpc_tcp_create(grpc_winsocket* socket,
   GRPC_CLOSURE_INIT(&tcp->on_write, on_write, tcp, grpc_schedule_on_exec_ctx);
   grpc_resolved_address resolved_local_addr;
   resolved_local_addr.len = sizeof(resolved_local_addr.addr);
+  absl::StatusOr<std::string> addr_uri;
   if (getsockname(tcp->socket->socket,
                   reinterpret_cast<sockaddr*>(resolved_local_addr.addr),
-                  &resolved_local_addr.len) < 0) {
+                  &resolved_local_addr.len) < 0 ||
+      !(addr_uri = grpc_sockaddr_to_uri(&resolved_local_addr)).ok()) {
     tcp->local_address = "";
   } else {
-    tcp->local_address = grpc_sockaddr_to_uri(&resolved_local_addr);
+    tcp->local_address = grpc_sockaddr_to_uri(&resolved_local_addr).value();
   }
   tcp->peer_string = std::string(peer_string);
   grpc_slice_buffer_init(&tcp->last_read_buffer);

@@ -21,11 +21,15 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
+#include <stdint.h>
+
 #include <map>
 #include <memory>
+#include <string>
+#include <vector>
 
-#include "absl/container/inlined_vector.h"
-#include "absl/strings/str_format.h"
+#include "absl/memory/memory.h"
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/useful.h"
@@ -64,15 +68,13 @@ class ServerAddress {
   };
 
   // Takes ownership of args.
-  ServerAddress(const grpc_resolved_address& address, grpc_channel_args* args,
+  ServerAddress(const grpc_resolved_address& address, const ChannelArgs& args,
                 std::map<const char*, std::unique_ptr<AttributeInterface>>
                     attributes = {});
   ServerAddress(const void* address, size_t address_len,
-                grpc_channel_args* args,
+                const ChannelArgs& args,
                 std::map<const char*, std::unique_ptr<AttributeInterface>>
                     attributes = {});
-
-  ~ServerAddress() { grpc_channel_args_destroy(args_); }
 
   // Copyable.
   ServerAddress(const ServerAddress& other);
@@ -87,7 +89,7 @@ class ServerAddress {
   int Cmp(const ServerAddress& other) const;
 
   const grpc_resolved_address& address() const { return address_; }
-  const grpc_channel_args* args() const { return args_; }
+  const ChannelArgs& args() const { return args_; }
 
   const AttributeInterface* GetAttribute(const char* key) const;
 
@@ -96,11 +98,14 @@ class ServerAddress {
   ServerAddress WithAttribute(const char* key,
                               std::unique_ptr<AttributeInterface> value) const;
 
+  // TODO(ctiller): Prior to making this a public API we should ensure that the
+  // channel args are not part of the generated string, lest we make that debug
+  // format load-bearing via Hyrum's law.
   std::string ToString() const;
 
  private:
   grpc_resolved_address address_;
-  grpc_channel_args* args_;
+  ChannelArgs args_;
   std::map<const char*, std::unique_ptr<AttributeInterface>> attributes_;
 };
 
@@ -108,7 +113,7 @@ class ServerAddress {
 // ServerAddressList
 //
 
-typedef absl::InlinedVector<ServerAddress, 1> ServerAddressList;
+using ServerAddressList = std::vector<ServerAddress>;
 
 //
 // ServerAddressWeightAttribute
@@ -131,9 +136,7 @@ class ServerAddressWeightAttribute : public ServerAddress::AttributeInterface {
     return QsortCompare(weight_, other_locality_attr->weight_);
   }
 
-  std::string ToString() const override {
-    return absl::StrFormat("%d", weight_);
-  }
+  std::string ToString() const override;
 
  private:
   uint32_t weight_;

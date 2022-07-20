@@ -30,7 +30,7 @@ IncludeCategories:
   # not-grpc headers follow
   # first, non system headers that are included like <> - these are all
   # local carveouts, and get sorted below c++ but before non grpc "" files
-  - Regex: '^<(openssl/|uv\.h|ares\.h|address_sorting/|gmock/|gtest/|zlib|benchmark/|google/)'
+  - Regex: '^<(openssl/|uv\.h|ares\.h|address_sorting/|gmock/|gtest/|zlib|zconf|benchmark/|google/)'
     Priority: 30
   # first C system headers - they have a . in the filename
   - Regex: '^<.*\.'

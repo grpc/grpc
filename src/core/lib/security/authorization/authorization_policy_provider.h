@@ -17,12 +17,26 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/strings/string_view.h"
+
+#include <grpc/grpc_security.h>
+#include <grpc/impl/codegen/grpc_types.h>
+
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/security/authorization/authorization_engine.h"
 
 struct grpc_authorization_policy_provider
     : public grpc_core::DualRefCounted<grpc_authorization_policy_provider> {
  public:
+  static absl::string_view ChannelArgName() {
+    return GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER;
+  }
+  static int ChannelArgsCompare(const grpc_authorization_policy_provider* a,
+                                const grpc_authorization_policy_provider* b) {
+    return QsortCompare(a, b);
+  }
   struct AuthorizationEngines {
     grpc_core::RefCountedPtr<grpc_core::AuthorizationEngine> allow_engine;
     grpc_core::RefCountedPtr<grpc_core::AuthorizationEngine> deny_engine;

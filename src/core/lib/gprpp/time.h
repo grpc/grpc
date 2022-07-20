@@ -19,11 +19,12 @@
 
 #include <stdint.h>
 
-#include <cstdint>
 #include <limits>
 #include <ostream>
 #include <string>
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gpr/time_precise.h"
@@ -120,7 +121,7 @@ class Timestamp {
 // Duration represents a span of time.
 class Duration {
  public:
-  constexpr Duration() : millis_(0) {}
+  constexpr Duration() noexcept : millis_(0) {}
 
   static Duration FromTimespec(gpr_timespec t);
   static Duration FromSecondsAndNanoseconds(int64_t seconds, int32_t nanos);
@@ -207,9 +208,17 @@ class Duration {
   constexpr int64_t millis() const { return millis_; }
   double seconds() const { return static_cast<double>(millis_) / 1000.0; }
 
+  // NOLINTNEXTLINE: google-explicit-constructor
+  operator grpc_event_engine::experimental::EventEngine::Duration() const;
+
   gpr_timespec as_timespec() const;
 
   std::string ToString() const;
+
+  // Returns the duration in the JSON form corresponding to a
+  // google.protobuf.Duration proto, as defined here:
+  // https://developers.google.com/protocol-buffers/docs/proto3#json
+  std::string ToJsonString() const;
 
  private:
   explicit constexpr Duration(int64_t millis) : millis_(millis) {}

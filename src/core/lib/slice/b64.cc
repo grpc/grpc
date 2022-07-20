@@ -27,7 +27,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/slice/slice_refcount.h"
 
 /* --- Constants. --- */
 

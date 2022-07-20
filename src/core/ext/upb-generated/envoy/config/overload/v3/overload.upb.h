@@ -88,31 +88,46 @@ UPB_INLINE envoy_config_overload_v3_ResourceMonitor* envoy_config_overload_v3_Re
   return ret;
 }
 UPB_INLINE char* envoy_config_overload_v3_ResourceMonitor_serialize(const envoy_config_overload_v3_ResourceMonitor* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_overload_v3_ResourceMonitor_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_overload_v3_ResourceMonitor_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_config_overload_v3_ResourceMonitor_serialize_ex(const envoy_config_overload_v3_ResourceMonitor* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_overload_v3_ResourceMonitor_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_overload_v3_ResourceMonitor_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 typedef enum {
   envoy_config_overload_v3_ResourceMonitor_config_type_typed_config = 3,
   envoy_config_overload_v3_ResourceMonitor_config_type_NOT_SET = 0
 } envoy_config_overload_v3_ResourceMonitor_config_type_oneofcases;
-UPB_INLINE envoy_config_overload_v3_ResourceMonitor_config_type_oneofcases envoy_config_overload_v3_ResourceMonitor_config_type_case(const envoy_config_overload_v3_ResourceMonitor* msg) { return (envoy_config_overload_v3_ResourceMonitor_config_type_oneofcases)*UPB_PTR_AT(msg, UPB_SIZE(12, 24), int32_t); }
-
-UPB_INLINE upb_StringView envoy_config_overload_v3_ResourceMonitor_name(const envoy_config_overload_v3_ResourceMonitor* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_StringView);
+UPB_INLINE envoy_config_overload_v3_ResourceMonitor_config_type_oneofcases envoy_config_overload_v3_ResourceMonitor_config_type_case(const envoy_config_overload_v3_ResourceMonitor* msg) {
+  return (envoy_config_overload_v3_ResourceMonitor_config_type_oneofcases)*UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t);
 }
-UPB_INLINE bool envoy_config_overload_v3_ResourceMonitor_has_typed_config(const envoy_config_overload_v3_ResourceMonitor *msg) { return _upb_getoneofcase(msg, UPB_SIZE(12, 24)) == 3; }
-UPB_INLINE const struct google_protobuf_Any* envoy_config_overload_v3_ResourceMonitor_typed_config(const envoy_config_overload_v3_ResourceMonitor *msg) { return UPB_READ_ONEOF(msg, const struct google_protobuf_Any*, UPB_SIZE(8, 16), UPB_SIZE(12, 24), 3, NULL); }
+UPB_INLINE void envoy_config_overload_v3_ResourceMonitor_clear_name(const envoy_config_overload_v3_ResourceMonitor* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
+}
+UPB_INLINE upb_StringView envoy_config_overload_v3_ResourceMonitor_name(const envoy_config_overload_v3_ResourceMonitor* msg) {
+  return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView);
+}
+UPB_INLINE bool envoy_config_overload_v3_ResourceMonitor_has_typed_config(const envoy_config_overload_v3_ResourceMonitor* msg) {
+  return _upb_getoneofcase(msg, UPB_SIZE(0, 0)) == 3;
+}
+UPB_INLINE void envoy_config_overload_v3_ResourceMonitor_clear_typed_config(const envoy_config_overload_v3_ResourceMonitor* msg) {
+  UPB_WRITE_ONEOF(msg, struct google_protobuf_Any*, UPB_SIZE(12, 24), 0, UPB_SIZE(0, 0), envoy_config_overload_v3_ResourceMonitor_config_type_NOT_SET);
+}
+UPB_INLINE const struct google_protobuf_Any* envoy_config_overload_v3_ResourceMonitor_typed_config(const envoy_config_overload_v3_ResourceMonitor* msg) {
+  return UPB_READ_ONEOF(msg, const struct google_protobuf_Any*, UPB_SIZE(12, 24), UPB_SIZE(0, 0), 3, NULL);
+}
 
 UPB_INLINE void envoy_config_overload_v3_ResourceMonitor_set_name(envoy_config_overload_v3_ResourceMonitor *msg, upb_StringView value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_StringView) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView) = value;
 }
 UPB_INLINE void envoy_config_overload_v3_ResourceMonitor_set_typed_config(envoy_config_overload_v3_ResourceMonitor *msg, struct google_protobuf_Any* value) {
-  UPB_WRITE_ONEOF(msg, struct google_protobuf_Any*, UPB_SIZE(8, 16), value, UPB_SIZE(12, 24), 3);
+  UPB_WRITE_ONEOF(msg, struct google_protobuf_Any*, UPB_SIZE(12, 24), value, UPB_SIZE(0, 0), 3);
 }
-UPB_INLINE struct google_protobuf_Any* envoy_config_overload_v3_ResourceMonitor_mutable_typed_config(envoy_config_overload_v3_ResourceMonitor *msg, upb_Arena *arena) {
+UPB_INLINE struct google_protobuf_Any* envoy_config_overload_v3_ResourceMonitor_mutable_typed_config(envoy_config_overload_v3_ResourceMonitor* msg, upb_Arena* arena) {
   struct google_protobuf_Any* sub = (struct google_protobuf_Any*)envoy_config_overload_v3_ResourceMonitor_typed_config(msg);
   if (sub == NULL) {
     sub = (struct google_protobuf_Any*)_upb_Message_New(&google_protobuf_Any_msginit, arena);
@@ -147,11 +162,18 @@ UPB_INLINE envoy_config_overload_v3_ThresholdTrigger* envoy_config_overload_v3_T
   return ret;
 }
 UPB_INLINE char* envoy_config_overload_v3_ThresholdTrigger_serialize(const envoy_config_overload_v3_ThresholdTrigger* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_overload_v3_ThresholdTrigger_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_overload_v3_ThresholdTrigger_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_config_overload_v3_ThresholdTrigger_serialize_ex(const envoy_config_overload_v3_ThresholdTrigger* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_overload_v3_ThresholdTrigger_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_overload_v3_ThresholdTrigger_msginit, options, arena, &ptr, len);
+  return ptr;
+}
+UPB_INLINE void envoy_config_overload_v3_ThresholdTrigger_clear_value(const envoy_config_overload_v3_ThresholdTrigger* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), double) = 0;
 }
 UPB_INLINE double envoy_config_overload_v3_ThresholdTrigger_value(const envoy_config_overload_v3_ThresholdTrigger* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), double);
@@ -186,14 +208,24 @@ UPB_INLINE envoy_config_overload_v3_ScaledTrigger* envoy_config_overload_v3_Scal
   return ret;
 }
 UPB_INLINE char* envoy_config_overload_v3_ScaledTrigger_serialize(const envoy_config_overload_v3_ScaledTrigger* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_overload_v3_ScaledTrigger_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_overload_v3_ScaledTrigger_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_config_overload_v3_ScaledTrigger_serialize_ex(const envoy_config_overload_v3_ScaledTrigger* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_overload_v3_ScaledTrigger_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_overload_v3_ScaledTrigger_msginit, options, arena, &ptr, len);
+  return ptr;
+}
+UPB_INLINE void envoy_config_overload_v3_ScaledTrigger_clear_scaling_threshold(const envoy_config_overload_v3_ScaledTrigger* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), double) = 0;
 }
 UPB_INLINE double envoy_config_overload_v3_ScaledTrigger_scaling_threshold(const envoy_config_overload_v3_ScaledTrigger* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), double);
+}
+UPB_INLINE void envoy_config_overload_v3_ScaledTrigger_clear_saturation_threshold(const envoy_config_overload_v3_ScaledTrigger* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 8), double) = 0;
 }
 UPB_INLINE double envoy_config_overload_v3_ScaledTrigger_saturation_threshold(const envoy_config_overload_v3_ScaledTrigger* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(8, 8), double);
@@ -231,34 +263,56 @@ UPB_INLINE envoy_config_overload_v3_Trigger* envoy_config_overload_v3_Trigger_pa
   return ret;
 }
 UPB_INLINE char* envoy_config_overload_v3_Trigger_serialize(const envoy_config_overload_v3_Trigger* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_overload_v3_Trigger_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_overload_v3_Trigger_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_config_overload_v3_Trigger_serialize_ex(const envoy_config_overload_v3_Trigger* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_overload_v3_Trigger_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_overload_v3_Trigger_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 typedef enum {
   envoy_config_overload_v3_Trigger_trigger_oneof_threshold = 2,
   envoy_config_overload_v3_Trigger_trigger_oneof_scaled = 3,
   envoy_config_overload_v3_Trigger_trigger_oneof_NOT_SET = 0
 } envoy_config_overload_v3_Trigger_trigger_oneof_oneofcases;
-UPB_INLINE envoy_config_overload_v3_Trigger_trigger_oneof_oneofcases envoy_config_overload_v3_Trigger_trigger_oneof_case(const envoy_config_overload_v3_Trigger* msg) { return (envoy_config_overload_v3_Trigger_trigger_oneof_oneofcases)*UPB_PTR_AT(msg, UPB_SIZE(12, 24), int32_t); }
-
-UPB_INLINE upb_StringView envoy_config_overload_v3_Trigger_name(const envoy_config_overload_v3_Trigger* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_StringView);
+UPB_INLINE envoy_config_overload_v3_Trigger_trigger_oneof_oneofcases envoy_config_overload_v3_Trigger_trigger_oneof_case(const envoy_config_overload_v3_Trigger* msg) {
+  return (envoy_config_overload_v3_Trigger_trigger_oneof_oneofcases)*UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t);
 }
-UPB_INLINE bool envoy_config_overload_v3_Trigger_has_threshold(const envoy_config_overload_v3_Trigger *msg) { return _upb_getoneofcase(msg, UPB_SIZE(12, 24)) == 2; }
-UPB_INLINE const envoy_config_overload_v3_ThresholdTrigger* envoy_config_overload_v3_Trigger_threshold(const envoy_config_overload_v3_Trigger *msg) { return UPB_READ_ONEOF(msg, const envoy_config_overload_v3_ThresholdTrigger*, UPB_SIZE(8, 16), UPB_SIZE(12, 24), 2, NULL); }
-UPB_INLINE bool envoy_config_overload_v3_Trigger_has_scaled(const envoy_config_overload_v3_Trigger *msg) { return _upb_getoneofcase(msg, UPB_SIZE(12, 24)) == 3; }
-UPB_INLINE const envoy_config_overload_v3_ScaledTrigger* envoy_config_overload_v3_Trigger_scaled(const envoy_config_overload_v3_Trigger *msg) { return UPB_READ_ONEOF(msg, const envoy_config_overload_v3_ScaledTrigger*, UPB_SIZE(8, 16), UPB_SIZE(12, 24), 3, NULL); }
+UPB_INLINE void envoy_config_overload_v3_Trigger_clear_name(const envoy_config_overload_v3_Trigger* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
+}
+UPB_INLINE upb_StringView envoy_config_overload_v3_Trigger_name(const envoy_config_overload_v3_Trigger* msg) {
+  return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView);
+}
+UPB_INLINE bool envoy_config_overload_v3_Trigger_has_threshold(const envoy_config_overload_v3_Trigger* msg) {
+  return _upb_getoneofcase(msg, UPB_SIZE(0, 0)) == 2;
+}
+UPB_INLINE void envoy_config_overload_v3_Trigger_clear_threshold(const envoy_config_overload_v3_Trigger* msg) {
+  UPB_WRITE_ONEOF(msg, envoy_config_overload_v3_ThresholdTrigger*, UPB_SIZE(12, 24), 0, UPB_SIZE(0, 0), envoy_config_overload_v3_Trigger_trigger_oneof_NOT_SET);
+}
+UPB_INLINE const envoy_config_overload_v3_ThresholdTrigger* envoy_config_overload_v3_Trigger_threshold(const envoy_config_overload_v3_Trigger* msg) {
+  return UPB_READ_ONEOF(msg, const envoy_config_overload_v3_ThresholdTrigger*, UPB_SIZE(12, 24), UPB_SIZE(0, 0), 2, NULL);
+}
+UPB_INLINE bool envoy_config_overload_v3_Trigger_has_scaled(const envoy_config_overload_v3_Trigger* msg) {
+  return _upb_getoneofcase(msg, UPB_SIZE(0, 0)) == 3;
+}
+UPB_INLINE void envoy_config_overload_v3_Trigger_clear_scaled(const envoy_config_overload_v3_Trigger* msg) {
+  UPB_WRITE_ONEOF(msg, envoy_config_overload_v3_ScaledTrigger*, UPB_SIZE(12, 24), 0, UPB_SIZE(0, 0), envoy_config_overload_v3_Trigger_trigger_oneof_NOT_SET);
+}
+UPB_INLINE const envoy_config_overload_v3_ScaledTrigger* envoy_config_overload_v3_Trigger_scaled(const envoy_config_overload_v3_Trigger* msg) {
+  return UPB_READ_ONEOF(msg, const envoy_config_overload_v3_ScaledTrigger*, UPB_SIZE(12, 24), UPB_SIZE(0, 0), 3, NULL);
+}
 
 UPB_INLINE void envoy_config_overload_v3_Trigger_set_name(envoy_config_overload_v3_Trigger *msg, upb_StringView value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_StringView) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView) = value;
 }
 UPB_INLINE void envoy_config_overload_v3_Trigger_set_threshold(envoy_config_overload_v3_Trigger *msg, envoy_config_overload_v3_ThresholdTrigger* value) {
-  UPB_WRITE_ONEOF(msg, envoy_config_overload_v3_ThresholdTrigger*, UPB_SIZE(8, 16), value, UPB_SIZE(12, 24), 2);
+  UPB_WRITE_ONEOF(msg, envoy_config_overload_v3_ThresholdTrigger*, UPB_SIZE(12, 24), value, UPB_SIZE(0, 0), 2);
 }
-UPB_INLINE struct envoy_config_overload_v3_ThresholdTrigger* envoy_config_overload_v3_Trigger_mutable_threshold(envoy_config_overload_v3_Trigger *msg, upb_Arena *arena) {
+UPB_INLINE struct envoy_config_overload_v3_ThresholdTrigger* envoy_config_overload_v3_Trigger_mutable_threshold(envoy_config_overload_v3_Trigger* msg, upb_Arena* arena) {
   struct envoy_config_overload_v3_ThresholdTrigger* sub = (struct envoy_config_overload_v3_ThresholdTrigger*)envoy_config_overload_v3_Trigger_threshold(msg);
   if (sub == NULL) {
     sub = (struct envoy_config_overload_v3_ThresholdTrigger*)_upb_Message_New(&envoy_config_overload_v3_ThresholdTrigger_msginit, arena);
@@ -268,9 +322,9 @@ UPB_INLINE struct envoy_config_overload_v3_ThresholdTrigger* envoy_config_overlo
   return sub;
 }
 UPB_INLINE void envoy_config_overload_v3_Trigger_set_scaled(envoy_config_overload_v3_Trigger *msg, envoy_config_overload_v3_ScaledTrigger* value) {
-  UPB_WRITE_ONEOF(msg, envoy_config_overload_v3_ScaledTrigger*, UPB_SIZE(8, 16), value, UPB_SIZE(12, 24), 3);
+  UPB_WRITE_ONEOF(msg, envoy_config_overload_v3_ScaledTrigger*, UPB_SIZE(12, 24), value, UPB_SIZE(0, 0), 3);
 }
-UPB_INLINE struct envoy_config_overload_v3_ScaledTrigger* envoy_config_overload_v3_Trigger_mutable_scaled(envoy_config_overload_v3_Trigger *msg, upb_Arena *arena) {
+UPB_INLINE struct envoy_config_overload_v3_ScaledTrigger* envoy_config_overload_v3_Trigger_mutable_scaled(envoy_config_overload_v3_Trigger* msg, upb_Arena* arena) {
   struct envoy_config_overload_v3_ScaledTrigger* sub = (struct envoy_config_overload_v3_ScaledTrigger*)envoy_config_overload_v3_Trigger_scaled(msg);
   if (sub == NULL) {
     sub = (struct envoy_config_overload_v3_ScaledTrigger*)_upb_Message_New(&envoy_config_overload_v3_ScaledTrigger_msginit, arena);
@@ -305,25 +359,35 @@ UPB_INLINE envoy_config_overload_v3_ScaleTimersOverloadActionConfig* envoy_confi
   return ret;
 }
 UPB_INLINE char* envoy_config_overload_v3_ScaleTimersOverloadActionConfig_serialize(const envoy_config_overload_v3_ScaleTimersOverloadActionConfig* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_overload_v3_ScaleTimersOverloadActionConfig_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_overload_v3_ScaleTimersOverloadActionConfig_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_config_overload_v3_ScaleTimersOverloadActionConfig_serialize_ex(const envoy_config_overload_v3_ScaleTimersOverloadActionConfig* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_overload_v3_ScaleTimersOverloadActionConfig_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_overload_v3_ScaleTimersOverloadActionConfig_msginit, options, arena, &ptr, len);
+  return ptr;
 }
-UPB_INLINE bool envoy_config_overload_v3_ScaleTimersOverloadActionConfig_has_timer_scale_factors(const envoy_config_overload_v3_ScaleTimersOverloadActionConfig *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(0, 0)); }
-UPB_INLINE const envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer* const* envoy_config_overload_v3_ScaleTimersOverloadActionConfig_timer_scale_factors(const envoy_config_overload_v3_ScaleTimersOverloadActionConfig *msg, size_t *len) { return (const envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer* const*)_upb_array_accessor(msg, UPB_SIZE(0, 0), len); }
+UPB_INLINE bool envoy_config_overload_v3_ScaleTimersOverloadActionConfig_has_timer_scale_factors(const envoy_config_overload_v3_ScaleTimersOverloadActionConfig* msg) {
+  return _upb_has_submsg_nohasbit(msg, UPB_SIZE(0, 0));
+}
+UPB_INLINE void envoy_config_overload_v3_ScaleTimersOverloadActionConfig_clear_timer_scale_factors(const envoy_config_overload_v3_ScaleTimersOverloadActionConfig* msg) {
+  _upb_array_detach(msg, UPB_SIZE(0, 0));
+}
+UPB_INLINE const envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer* const* envoy_config_overload_v3_ScaleTimersOverloadActionConfig_timer_scale_factors(const envoy_config_overload_v3_ScaleTimersOverloadActionConfig* msg, size_t* len) {
+  return (const envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer* const*)_upb_array_accessor(msg, UPB_SIZE(0, 0), len);
+}
 
-UPB_INLINE envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer** envoy_config_overload_v3_ScaleTimersOverloadActionConfig_mutable_timer_scale_factors(envoy_config_overload_v3_ScaleTimersOverloadActionConfig *msg, size_t *len) {
+UPB_INLINE envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer** envoy_config_overload_v3_ScaleTimersOverloadActionConfig_mutable_timer_scale_factors(envoy_config_overload_v3_ScaleTimersOverloadActionConfig* msg, size_t* len) {
   return (envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer**)_upb_array_mutable_accessor(msg, UPB_SIZE(0, 0), len);
 }
-UPB_INLINE envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer** envoy_config_overload_v3_ScaleTimersOverloadActionConfig_resize_timer_scale_factors(envoy_config_overload_v3_ScaleTimersOverloadActionConfig *msg, size_t len, upb_Arena *arena) {
+UPB_INLINE envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer** envoy_config_overload_v3_ScaleTimersOverloadActionConfig_resize_timer_scale_factors(envoy_config_overload_v3_ScaleTimersOverloadActionConfig* msg, size_t len, upb_Arena* arena) {
   return (envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer**)_upb_Array_Resize_accessor2(msg, UPB_SIZE(0, 0), len, UPB_SIZE(2, 3), arena);
 }
-UPB_INLINE struct envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer* envoy_config_overload_v3_ScaleTimersOverloadActionConfig_add_timer_scale_factors(envoy_config_overload_v3_ScaleTimersOverloadActionConfig *msg, upb_Arena *arena) {
+UPB_INLINE struct envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer* envoy_config_overload_v3_ScaleTimersOverloadActionConfig_add_timer_scale_factors(envoy_config_overload_v3_ScaleTimersOverloadActionConfig* msg, upb_Arena* arena) {
   struct envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer* sub = (struct envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer*)_upb_Message_New(&envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer_msginit, arena);
-  bool ok = _upb_Array_Append_accessor2(
-      msg, UPB_SIZE(0, 0), UPB_SIZE(2, 3), &sub, arena);
+  bool ok = _upb_Array_Append_accessor2(msg, UPB_SIZE(0, 0), UPB_SIZE(2, 3), &sub, arena);
   if (!ok) return NULL;
   return sub;
 }
@@ -353,34 +417,56 @@ UPB_INLINE envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer* 
   return ret;
 }
 UPB_INLINE char* envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer_serialize(const envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer_serialize_ex(const envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 typedef enum {
   envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer_overload_adjust_min_timeout = 2,
   envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer_overload_adjust_min_scale = 3,
   envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer_overload_adjust_NOT_SET = 0
 } envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer_overload_adjust_oneofcases;
-UPB_INLINE envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer_overload_adjust_oneofcases envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer_overload_adjust_case(const envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer* msg) { return (envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer_overload_adjust_oneofcases)*UPB_PTR_AT(msg, UPB_SIZE(8, 16), int32_t); }
-
+UPB_INLINE envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer_overload_adjust_oneofcases envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer_overload_adjust_case(const envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer* msg) {
+  return (envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer_overload_adjust_oneofcases)*UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t);
+}
+UPB_INLINE void envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer_clear_timer(const envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t) = 0;
+}
 UPB_INLINE int32_t envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer_timer(const envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t);
 }
-UPB_INLINE bool envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer_has_min_timeout(const envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer *msg) { return _upb_getoneofcase(msg, UPB_SIZE(8, 16)) == 2; }
-UPB_INLINE const struct google_protobuf_Duration* envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer_min_timeout(const envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer *msg) { return UPB_READ_ONEOF(msg, const struct google_protobuf_Duration*, UPB_SIZE(4, 8), UPB_SIZE(8, 16), 2, NULL); }
-UPB_INLINE bool envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer_has_min_scale(const envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer *msg) { return _upb_getoneofcase(msg, UPB_SIZE(8, 16)) == 3; }
-UPB_INLINE const struct envoy_type_v3_Percent* envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer_min_scale(const envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer *msg) { return UPB_READ_ONEOF(msg, const struct envoy_type_v3_Percent*, UPB_SIZE(4, 8), UPB_SIZE(8, 16), 3, NULL); }
+UPB_INLINE bool envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer_has_min_timeout(const envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer* msg) {
+  return _upb_getoneofcase(msg, UPB_SIZE(4, 4)) == 2;
+}
+UPB_INLINE void envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer_clear_min_timeout(const envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer* msg) {
+  UPB_WRITE_ONEOF(msg, struct google_protobuf_Duration*, UPB_SIZE(8, 8), 0, UPB_SIZE(4, 4), envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer_overload_adjust_NOT_SET);
+}
+UPB_INLINE const struct google_protobuf_Duration* envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer_min_timeout(const envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer* msg) {
+  return UPB_READ_ONEOF(msg, const struct google_protobuf_Duration*, UPB_SIZE(8, 8), UPB_SIZE(4, 4), 2, NULL);
+}
+UPB_INLINE bool envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer_has_min_scale(const envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer* msg) {
+  return _upb_getoneofcase(msg, UPB_SIZE(4, 4)) == 3;
+}
+UPB_INLINE void envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer_clear_min_scale(const envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer* msg) {
+  UPB_WRITE_ONEOF(msg, struct envoy_type_v3_Percent*, UPB_SIZE(8, 8), 0, UPB_SIZE(4, 4), envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer_overload_adjust_NOT_SET);
+}
+UPB_INLINE const struct envoy_type_v3_Percent* envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer_min_scale(const envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer* msg) {
+  return UPB_READ_ONEOF(msg, const struct envoy_type_v3_Percent*, UPB_SIZE(8, 8), UPB_SIZE(4, 4), 3, NULL);
+}
 
 UPB_INLINE void envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer_set_timer(envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer *msg, int32_t value) {
   *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t) = value;
 }
 UPB_INLINE void envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer_set_min_timeout(envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer *msg, struct google_protobuf_Duration* value) {
-  UPB_WRITE_ONEOF(msg, struct google_protobuf_Duration*, UPB_SIZE(4, 8), value, UPB_SIZE(8, 16), 2);
+  UPB_WRITE_ONEOF(msg, struct google_protobuf_Duration*, UPB_SIZE(8, 8), value, UPB_SIZE(4, 4), 2);
 }
-UPB_INLINE struct google_protobuf_Duration* envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer_mutable_min_timeout(envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer *msg, upb_Arena *arena) {
+UPB_INLINE struct google_protobuf_Duration* envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer_mutable_min_timeout(envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer* msg, upb_Arena* arena) {
   struct google_protobuf_Duration* sub = (struct google_protobuf_Duration*)envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer_min_timeout(msg);
   if (sub == NULL) {
     sub = (struct google_protobuf_Duration*)_upb_Message_New(&google_protobuf_Duration_msginit, arena);
@@ -390,9 +476,9 @@ UPB_INLINE struct google_protobuf_Duration* envoy_config_overload_v3_ScaleTimers
   return sub;
 }
 UPB_INLINE void envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer_set_min_scale(envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer *msg, struct envoy_type_v3_Percent* value) {
-  UPB_WRITE_ONEOF(msg, struct envoy_type_v3_Percent*, UPB_SIZE(4, 8), value, UPB_SIZE(8, 16), 3);
+  UPB_WRITE_ONEOF(msg, struct envoy_type_v3_Percent*, UPB_SIZE(8, 8), value, UPB_SIZE(4, 4), 3);
 }
-UPB_INLINE struct envoy_type_v3_Percent* envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer_mutable_min_scale(envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer *msg, upb_Arena *arena) {
+UPB_INLINE struct envoy_type_v3_Percent* envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer_mutable_min_scale(envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer* msg, upb_Arena* arena) {
   struct envoy_type_v3_Percent* sub = (struct envoy_type_v3_Percent*)envoy_config_overload_v3_ScaleTimersOverloadActionConfig_ScaleTimer_min_scale(msg);
   if (sub == NULL) {
     sub = (struct envoy_type_v3_Percent*)_upb_Message_New(&envoy_type_v3_Percent_msginit, arena);
@@ -427,43 +513,61 @@ UPB_INLINE envoy_config_overload_v3_OverloadAction* envoy_config_overload_v3_Ove
   return ret;
 }
 UPB_INLINE char* envoy_config_overload_v3_OverloadAction_serialize(const envoy_config_overload_v3_OverloadAction* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_overload_v3_OverloadAction_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_overload_v3_OverloadAction_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_config_overload_v3_OverloadAction_serialize_ex(const envoy_config_overload_v3_OverloadAction* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_overload_v3_OverloadAction_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_overload_v3_OverloadAction_msginit, options, arena, &ptr, len);
+  return ptr;
+}
+UPB_INLINE void envoy_config_overload_v3_OverloadAction_clear_name(const envoy_config_overload_v3_OverloadAction* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
 }
 UPB_INLINE upb_StringView envoy_config_overload_v3_OverloadAction_name(const envoy_config_overload_v3_OverloadAction* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView);
 }
-UPB_INLINE bool envoy_config_overload_v3_OverloadAction_has_triggers(const envoy_config_overload_v3_OverloadAction *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(16, 32)); }
-UPB_INLINE const envoy_config_overload_v3_Trigger* const* envoy_config_overload_v3_OverloadAction_triggers(const envoy_config_overload_v3_OverloadAction *msg, size_t *len) { return (const envoy_config_overload_v3_Trigger* const*)_upb_array_accessor(msg, UPB_SIZE(16, 32), len); }
-UPB_INLINE bool envoy_config_overload_v3_OverloadAction_has_typed_config(const envoy_config_overload_v3_OverloadAction *msg) { return _upb_hasbit(msg, 1); }
+UPB_INLINE bool envoy_config_overload_v3_OverloadAction_has_triggers(const envoy_config_overload_v3_OverloadAction* msg) {
+  return _upb_has_submsg_nohasbit(msg, UPB_SIZE(12, 24));
+}
+UPB_INLINE void envoy_config_overload_v3_OverloadAction_clear_triggers(const envoy_config_overload_v3_OverloadAction* msg) {
+  _upb_array_detach(msg, UPB_SIZE(12, 24));
+}
+UPB_INLINE const envoy_config_overload_v3_Trigger* const* envoy_config_overload_v3_OverloadAction_triggers(const envoy_config_overload_v3_OverloadAction* msg, size_t* len) {
+  return (const envoy_config_overload_v3_Trigger* const*)_upb_array_accessor(msg, UPB_SIZE(12, 24), len);
+}
+UPB_INLINE bool envoy_config_overload_v3_OverloadAction_has_typed_config(const envoy_config_overload_v3_OverloadAction* msg) {
+  return _upb_hasbit(msg, 1);
+}
+UPB_INLINE void envoy_config_overload_v3_OverloadAction_clear_typed_config(const envoy_config_overload_v3_OverloadAction* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(16, 32), const upb_Message*) = NULL;
+}
 UPB_INLINE const struct google_protobuf_Any* envoy_config_overload_v3_OverloadAction_typed_config(const envoy_config_overload_v3_OverloadAction* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(12, 24), const struct google_protobuf_Any*);
+  return *UPB_PTR_AT(msg, UPB_SIZE(16, 32), const struct google_protobuf_Any*);
 }
 
 UPB_INLINE void envoy_config_overload_v3_OverloadAction_set_name(envoy_config_overload_v3_OverloadAction *msg, upb_StringView value) {
   *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView) = value;
 }
-UPB_INLINE envoy_config_overload_v3_Trigger** envoy_config_overload_v3_OverloadAction_mutable_triggers(envoy_config_overload_v3_OverloadAction *msg, size_t *len) {
-  return (envoy_config_overload_v3_Trigger**)_upb_array_mutable_accessor(msg, UPB_SIZE(16, 32), len);
+UPB_INLINE envoy_config_overload_v3_Trigger** envoy_config_overload_v3_OverloadAction_mutable_triggers(envoy_config_overload_v3_OverloadAction* msg, size_t* len) {
+  return (envoy_config_overload_v3_Trigger**)_upb_array_mutable_accessor(msg, UPB_SIZE(12, 24), len);
 }
-UPB_INLINE envoy_config_overload_v3_Trigger** envoy_config_overload_v3_OverloadAction_resize_triggers(envoy_config_overload_v3_OverloadAction *msg, size_t len, upb_Arena *arena) {
-  return (envoy_config_overload_v3_Trigger**)_upb_Array_Resize_accessor2(msg, UPB_SIZE(16, 32), len, UPB_SIZE(2, 3), arena);
+UPB_INLINE envoy_config_overload_v3_Trigger** envoy_config_overload_v3_OverloadAction_resize_triggers(envoy_config_overload_v3_OverloadAction* msg, size_t len, upb_Arena* arena) {
+  return (envoy_config_overload_v3_Trigger**)_upb_Array_Resize_accessor2(msg, UPB_SIZE(12, 24), len, UPB_SIZE(2, 3), arena);
 }
-UPB_INLINE struct envoy_config_overload_v3_Trigger* envoy_config_overload_v3_OverloadAction_add_triggers(envoy_config_overload_v3_OverloadAction *msg, upb_Arena *arena) {
+UPB_INLINE struct envoy_config_overload_v3_Trigger* envoy_config_overload_v3_OverloadAction_add_triggers(envoy_config_overload_v3_OverloadAction* msg, upb_Arena* arena) {
   struct envoy_config_overload_v3_Trigger* sub = (struct envoy_config_overload_v3_Trigger*)_upb_Message_New(&envoy_config_overload_v3_Trigger_msginit, arena);
-  bool ok = _upb_Array_Append_accessor2(
-      msg, UPB_SIZE(16, 32), UPB_SIZE(2, 3), &sub, arena);
+  bool ok = _upb_Array_Append_accessor2(msg, UPB_SIZE(12, 24), UPB_SIZE(2, 3), &sub, arena);
   if (!ok) return NULL;
   return sub;
 }
 UPB_INLINE void envoy_config_overload_v3_OverloadAction_set_typed_config(envoy_config_overload_v3_OverloadAction *msg, struct google_protobuf_Any* value) {
   _upb_sethas(msg, 1);
-  *UPB_PTR_AT(msg, UPB_SIZE(12, 24), struct google_protobuf_Any*) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(16, 32), struct google_protobuf_Any*) = value;
 }
-UPB_INLINE struct google_protobuf_Any* envoy_config_overload_v3_OverloadAction_mutable_typed_config(envoy_config_overload_v3_OverloadAction *msg, upb_Arena *arena) {
+UPB_INLINE struct google_protobuf_Any* envoy_config_overload_v3_OverloadAction_mutable_typed_config(envoy_config_overload_v3_OverloadAction* msg, upb_Arena* arena) {
   struct google_protobuf_Any* sub = (struct google_protobuf_Any*)envoy_config_overload_v3_OverloadAction_typed_config(msg);
   if (sub == NULL) {
     sub = (struct google_protobuf_Any*)_upb_Message_New(&google_protobuf_Any_msginit, arena);
@@ -498,11 +602,18 @@ UPB_INLINE envoy_config_overload_v3_BufferFactoryConfig* envoy_config_overload_v
   return ret;
 }
 UPB_INLINE char* envoy_config_overload_v3_BufferFactoryConfig_serialize(const envoy_config_overload_v3_BufferFactoryConfig* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_overload_v3_BufferFactoryConfig_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_overload_v3_BufferFactoryConfig_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_config_overload_v3_BufferFactoryConfig_serialize_ex(const envoy_config_overload_v3_BufferFactoryConfig* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_overload_v3_BufferFactoryConfig_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_overload_v3_BufferFactoryConfig_msginit, options, arena, &ptr, len);
+  return ptr;
+}
+UPB_INLINE void envoy_config_overload_v3_BufferFactoryConfig_clear_minimum_account_to_track_power_of_two(const envoy_config_overload_v3_BufferFactoryConfig* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), uint32_t) = 0;
 }
 UPB_INLINE uint32_t envoy_config_overload_v3_BufferFactoryConfig_minimum_account_to_track_power_of_two(const envoy_config_overload_v3_BufferFactoryConfig* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), uint32_t);
@@ -537,30 +648,58 @@ UPB_INLINE envoy_config_overload_v3_OverloadManager* envoy_config_overload_v3_Ov
   return ret;
 }
 UPB_INLINE char* envoy_config_overload_v3_OverloadManager_serialize(const envoy_config_overload_v3_OverloadManager* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_overload_v3_OverloadManager_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_overload_v3_OverloadManager_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_config_overload_v3_OverloadManager_serialize_ex(const envoy_config_overload_v3_OverloadManager* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_overload_v3_OverloadManager_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_overload_v3_OverloadManager_msginit, options, arena, &ptr, len);
+  return ptr;
 }
-UPB_INLINE bool envoy_config_overload_v3_OverloadManager_has_refresh_interval(const envoy_config_overload_v3_OverloadManager *msg) { return _upb_hasbit(msg, 1); }
+UPB_INLINE bool envoy_config_overload_v3_OverloadManager_has_refresh_interval(const envoy_config_overload_v3_OverloadManager* msg) {
+  return _upb_hasbit(msg, 1);
+}
+UPB_INLINE void envoy_config_overload_v3_OverloadManager_clear_refresh_interval(const envoy_config_overload_v3_OverloadManager* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const upb_Message*) = NULL;
+}
 UPB_INLINE const struct google_protobuf_Duration* envoy_config_overload_v3_OverloadManager_refresh_interval(const envoy_config_overload_v3_OverloadManager* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const struct google_protobuf_Duration*);
 }
-UPB_INLINE bool envoy_config_overload_v3_OverloadManager_has_resource_monitors(const envoy_config_overload_v3_OverloadManager *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(12, 24)); }
-UPB_INLINE const envoy_config_overload_v3_ResourceMonitor* const* envoy_config_overload_v3_OverloadManager_resource_monitors(const envoy_config_overload_v3_OverloadManager *msg, size_t *len) { return (const envoy_config_overload_v3_ResourceMonitor* const*)_upb_array_accessor(msg, UPB_SIZE(12, 24), len); }
-UPB_INLINE bool envoy_config_overload_v3_OverloadManager_has_actions(const envoy_config_overload_v3_OverloadManager *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(16, 32)); }
-UPB_INLINE const envoy_config_overload_v3_OverloadAction* const* envoy_config_overload_v3_OverloadManager_actions(const envoy_config_overload_v3_OverloadManager *msg, size_t *len) { return (const envoy_config_overload_v3_OverloadAction* const*)_upb_array_accessor(msg, UPB_SIZE(16, 32), len); }
-UPB_INLINE bool envoy_config_overload_v3_OverloadManager_has_buffer_factory_config(const envoy_config_overload_v3_OverloadManager *msg) { return _upb_hasbit(msg, 2); }
+UPB_INLINE bool envoy_config_overload_v3_OverloadManager_has_resource_monitors(const envoy_config_overload_v3_OverloadManager* msg) {
+  return _upb_has_submsg_nohasbit(msg, UPB_SIZE(8, 16));
+}
+UPB_INLINE void envoy_config_overload_v3_OverloadManager_clear_resource_monitors(const envoy_config_overload_v3_OverloadManager* msg) {
+  _upb_array_detach(msg, UPB_SIZE(8, 16));
+}
+UPB_INLINE const envoy_config_overload_v3_ResourceMonitor* const* envoy_config_overload_v3_OverloadManager_resource_monitors(const envoy_config_overload_v3_OverloadManager* msg, size_t* len) {
+  return (const envoy_config_overload_v3_ResourceMonitor* const*)_upb_array_accessor(msg, UPB_SIZE(8, 16), len);
+}
+UPB_INLINE bool envoy_config_overload_v3_OverloadManager_has_actions(const envoy_config_overload_v3_OverloadManager* msg) {
+  return _upb_has_submsg_nohasbit(msg, UPB_SIZE(12, 24));
+}
+UPB_INLINE void envoy_config_overload_v3_OverloadManager_clear_actions(const envoy_config_overload_v3_OverloadManager* msg) {
+  _upb_array_detach(msg, UPB_SIZE(12, 24));
+}
+UPB_INLINE const envoy_config_overload_v3_OverloadAction* const* envoy_config_overload_v3_OverloadManager_actions(const envoy_config_overload_v3_OverloadManager* msg, size_t* len) {
+  return (const envoy_config_overload_v3_OverloadAction* const*)_upb_array_accessor(msg, UPB_SIZE(12, 24), len);
+}
+UPB_INLINE bool envoy_config_overload_v3_OverloadManager_has_buffer_factory_config(const envoy_config_overload_v3_OverloadManager* msg) {
+  return _upb_hasbit(msg, 2);
+}
+UPB_INLINE void envoy_config_overload_v3_OverloadManager_clear_buffer_factory_config(const envoy_config_overload_v3_OverloadManager* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(16, 32), const upb_Message*) = NULL;
+}
 UPB_INLINE const envoy_config_overload_v3_BufferFactoryConfig* envoy_config_overload_v3_OverloadManager_buffer_factory_config(const envoy_config_overload_v3_OverloadManager* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(8, 16), const envoy_config_overload_v3_BufferFactoryConfig*);
+  return *UPB_PTR_AT(msg, UPB_SIZE(16, 32), const envoy_config_overload_v3_BufferFactoryConfig*);
 }
 
 UPB_INLINE void envoy_config_overload_v3_OverloadManager_set_refresh_interval(envoy_config_overload_v3_OverloadManager *msg, struct google_protobuf_Duration* value) {
   _upb_sethas(msg, 1);
   *UPB_PTR_AT(msg, UPB_SIZE(4, 8), struct google_protobuf_Duration*) = value;
 }
-UPB_INLINE struct google_protobuf_Duration* envoy_config_overload_v3_OverloadManager_mutable_refresh_interval(envoy_config_overload_v3_OverloadManager *msg, upb_Arena *arena) {
+UPB_INLINE struct google_protobuf_Duration* envoy_config_overload_v3_OverloadManager_mutable_refresh_interval(envoy_config_overload_v3_OverloadManager* msg, upb_Arena* arena) {
   struct google_protobuf_Duration* sub = (struct google_protobuf_Duration*)envoy_config_overload_v3_OverloadManager_refresh_interval(msg);
   if (sub == NULL) {
     sub = (struct google_protobuf_Duration*)_upb_Message_New(&google_protobuf_Duration_msginit, arena);
@@ -569,37 +708,35 @@ UPB_INLINE struct google_protobuf_Duration* envoy_config_overload_v3_OverloadMan
   }
   return sub;
 }
-UPB_INLINE envoy_config_overload_v3_ResourceMonitor** envoy_config_overload_v3_OverloadManager_mutable_resource_monitors(envoy_config_overload_v3_OverloadManager *msg, size_t *len) {
-  return (envoy_config_overload_v3_ResourceMonitor**)_upb_array_mutable_accessor(msg, UPB_SIZE(12, 24), len);
+UPB_INLINE envoy_config_overload_v3_ResourceMonitor** envoy_config_overload_v3_OverloadManager_mutable_resource_monitors(envoy_config_overload_v3_OverloadManager* msg, size_t* len) {
+  return (envoy_config_overload_v3_ResourceMonitor**)_upb_array_mutable_accessor(msg, UPB_SIZE(8, 16), len);
 }
-UPB_INLINE envoy_config_overload_v3_ResourceMonitor** envoy_config_overload_v3_OverloadManager_resize_resource_monitors(envoy_config_overload_v3_OverloadManager *msg, size_t len, upb_Arena *arena) {
-  return (envoy_config_overload_v3_ResourceMonitor**)_upb_Array_Resize_accessor2(msg, UPB_SIZE(12, 24), len, UPB_SIZE(2, 3), arena);
+UPB_INLINE envoy_config_overload_v3_ResourceMonitor** envoy_config_overload_v3_OverloadManager_resize_resource_monitors(envoy_config_overload_v3_OverloadManager* msg, size_t len, upb_Arena* arena) {
+  return (envoy_config_overload_v3_ResourceMonitor**)_upb_Array_Resize_accessor2(msg, UPB_SIZE(8, 16), len, UPB_SIZE(2, 3), arena);
 }
-UPB_INLINE struct envoy_config_overload_v3_ResourceMonitor* envoy_config_overload_v3_OverloadManager_add_resource_monitors(envoy_config_overload_v3_OverloadManager *msg, upb_Arena *arena) {
+UPB_INLINE struct envoy_config_overload_v3_ResourceMonitor* envoy_config_overload_v3_OverloadManager_add_resource_monitors(envoy_config_overload_v3_OverloadManager* msg, upb_Arena* arena) {
   struct envoy_config_overload_v3_ResourceMonitor* sub = (struct envoy_config_overload_v3_ResourceMonitor*)_upb_Message_New(&envoy_config_overload_v3_ResourceMonitor_msginit, arena);
-  bool ok = _upb_Array_Append_accessor2(
-      msg, UPB_SIZE(12, 24), UPB_SIZE(2, 3), &sub, arena);
+  bool ok = _upb_Array_Append_accessor2(msg, UPB_SIZE(8, 16), UPB_SIZE(2, 3), &sub, arena);
   if (!ok) return NULL;
   return sub;
 }
-UPB_INLINE envoy_config_overload_v3_OverloadAction** envoy_config_overload_v3_OverloadManager_mutable_actions(envoy_config_overload_v3_OverloadManager *msg, size_t *len) {
-  return (envoy_config_overload_v3_OverloadAction**)_upb_array_mutable_accessor(msg, UPB_SIZE(16, 32), len);
+UPB_INLINE envoy_config_overload_v3_OverloadAction** envoy_config_overload_v3_OverloadManager_mutable_actions(envoy_config_overload_v3_OverloadManager* msg, size_t* len) {
+  return (envoy_config_overload_v3_OverloadAction**)_upb_array_mutable_accessor(msg, UPB_SIZE(12, 24), len);
 }
-UPB_INLINE envoy_config_overload_v3_OverloadAction** envoy_config_overload_v3_OverloadManager_resize_actions(envoy_config_overload_v3_OverloadManager *msg, size_t len, upb_Arena *arena) {
-  return (envoy_config_overload_v3_OverloadAction**)_upb_Array_Resize_accessor2(msg, UPB_SIZE(16, 32), len, UPB_SIZE(2, 3), arena);
+UPB_INLINE envoy_config_overload_v3_OverloadAction** envoy_config_overload_v3_OverloadManager_resize_actions(envoy_config_overload_v3_OverloadManager* msg, size_t len, upb_Arena* arena) {
+  return (envoy_config_overload_v3_OverloadAction**)_upb_Array_Resize_accessor2(msg, UPB_SIZE(12, 24), len, UPB_SIZE(2, 3), arena);
 }
-UPB_INLINE struct envoy_config_overload_v3_OverloadAction* envoy_config_overload_v3_OverloadManager_add_actions(envoy_config_overload_v3_OverloadManager *msg, upb_Arena *arena) {
+UPB_INLINE struct envoy_config_overload_v3_OverloadAction* envoy_config_overload_v3_OverloadManager_add_actions(envoy_config_overload_v3_OverloadManager* msg, upb_Arena* arena) {
   struct envoy_config_overload_v3_OverloadAction* sub = (struct envoy_config_overload_v3_OverloadAction*)_upb_Message_New(&envoy_config_overload_v3_OverloadAction_msginit, arena);
-  bool ok = _upb_Array_Append_accessor2(
-      msg, UPB_SIZE(16, 32), UPB_SIZE(2, 3), &sub, arena);
+  bool ok = _upb_Array_Append_accessor2(msg, UPB_SIZE(12, 24), UPB_SIZE(2, 3), &sub, arena);
   if (!ok) return NULL;
   return sub;
 }
 UPB_INLINE void envoy_config_overload_v3_OverloadManager_set_buffer_factory_config(envoy_config_overload_v3_OverloadManager *msg, envoy_config_overload_v3_BufferFactoryConfig* value) {
   _upb_sethas(msg, 2);
-  *UPB_PTR_AT(msg, UPB_SIZE(8, 16), envoy_config_overload_v3_BufferFactoryConfig*) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(16, 32), envoy_config_overload_v3_BufferFactoryConfig*) = value;
 }
-UPB_INLINE struct envoy_config_overload_v3_BufferFactoryConfig* envoy_config_overload_v3_OverloadManager_mutable_buffer_factory_config(envoy_config_overload_v3_OverloadManager *msg, upb_Arena *arena) {
+UPB_INLINE struct envoy_config_overload_v3_BufferFactoryConfig* envoy_config_overload_v3_OverloadManager_mutable_buffer_factory_config(envoy_config_overload_v3_OverloadManager* msg, upb_Arena* arena) {
   struct envoy_config_overload_v3_BufferFactoryConfig* sub = (struct envoy_config_overload_v3_BufferFactoryConfig*)envoy_config_overload_v3_OverloadManager_buffer_factory_config(msg);
   if (sub == NULL) {
     sub = (struct envoy_config_overload_v3_BufferFactoryConfig*)_upb_Message_New(&envoy_config_overload_v3_BufferFactoryConfig_msginit, arena);

@@ -116,7 +116,7 @@ if [ "$(is_msys)" ]; then
 fi
 
 ROOT=$(pwd)
-export CFLAGS="-I$ROOT/include -std=gnu99 -fno-wrapv $CFLAGS"
+export CFLAGS="-I$ROOT/include -fno-wrapv $CFLAGS"
 export GRPC_PYTHON_BUILD_WITH_CYTHON=1
 export LANG=en_US.UTF-8
 
@@ -168,6 +168,14 @@ pip_install_dir() {
   cd "$PWD"
 }
 
+pip_install_dir_and_deps() {
+  PWD=$(pwd)
+  cd "$1"
+  ($VENV_PYTHON setup.py build_ext -c "$TOOLCHAIN" || true)
+  $VENV_PYTHON -m pip install .
+  cd "$PWD"
+}
+
 # Install gevent
 if [[ "$VENV" == "py36" ]]; then
   # TODO(https://github.com/grpc/grpc/issues/15411) unpin this
@@ -187,7 +195,7 @@ fi
 pip_install_dir "$ROOT"
 
 $VENV_PYTHON "$ROOT/tools/distrib/python/make_grpcio_tools.py"
-pip_install_dir "$ROOT/tools/distrib/python/grpcio_tools"
+pip_install_dir_and_deps "$ROOT/tools/distrib/python/grpcio_tools"
 
 # Build/install Channelz
 $VENV_PYTHON "$ROOT/src/python/grpcio_channelz/setup.py" preprocess

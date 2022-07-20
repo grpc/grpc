@@ -20,14 +20,8 @@
 
 #include "src/core/ext/xds/google_mesh_ca_certificate_provider_factory.h"
 
-#include <sstream>
-#include <type_traits>
+#include <algorithm>
 
-#include "absl/strings/str_cat.h"
-
-#include <grpc/support/string_util.h>
-
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json_util.h"
 

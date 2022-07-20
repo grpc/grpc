@@ -19,8 +19,15 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/filters/fault_injection/service_config_parser.h"
-#include "src/core/lib/channel/channel_stack.h"
+#include <stddef.h>
+
+#include "absl/status/statusor.h"
+
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_fwd.h"
+#include "src/core/lib/channel/promise_based_filter.h"
+#include "src/core/lib/promise/arena_promise.h"
+#include "src/core/lib/transport/transport.h"
 
 // Channel arg key for enabling parsing fault injection via method config.
 #define GRPC_ARG_PARSE_FAULT_INJECTION_METHOD_CONFIG \
@@ -32,7 +39,28 @@ namespace grpc_core {
 // of the ordinary channel stack. The fault injection filter fetches fault
 // injection policy from the method config of service config returned by the
 // resolver, and enforces the fault injection policy.
-extern const grpc_channel_filter FaultInjectionFilterVtable;
+class FaultInjectionFilter : public ChannelFilter {
+ public:
+  static const grpc_channel_filter kFilter;
+
+  static absl::StatusOr<FaultInjectionFilter> Create(
+      const ChannelArgs& args, ChannelFilter::Args filter_args);
+
+  // Construct a promise for one call.
+  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
+      CallArgs call_args, NextPromiseFactory next_promise_factory) override;
+
+ private:
+  explicit FaultInjectionFilter(ChannelFilter::Args filter_args);
+
+  class InjectionDecision;
+  InjectionDecision MakeInjectionDecision(
+      const ClientMetadataHandle& initial_metadata);
+
+  // The relative index of instances of the same filter.
+  size_t index_;
+  const size_t service_config_parser_index_;
+};
 
 }  // namespace grpc_core
 

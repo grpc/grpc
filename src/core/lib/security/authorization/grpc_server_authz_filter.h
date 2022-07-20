@@ -17,9 +17,20 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/channel/channel_stack.h"
+#include "absl/status/statusor.h"
+
+#include <grpc/grpc_security.h>
+
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/promise_based_filter.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/security/authorization/authorization_policy_provider.h"
+#include "src/core/lib/security/authorization/evaluate_args.h"
+#include "src/core/lib/security/context/security_context.h"
+#include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
 
@@ -27,19 +38,18 @@ class GrpcServerAuthzFilter final : public ChannelFilter {
  public:
   static const grpc_channel_filter kFilterVtable;
 
-  static absl::StatusOr<GrpcServerAuthzFilter> Create(
-      const grpc_channel_args* args, ChannelFilter::Args);
+  static absl::StatusOr<GrpcServerAuthzFilter> Create(const ChannelArgs& args,
+                                                      ChannelFilter::Args);
 
-  ArenaPromise<TrailingMetadata> MakeCallPromise(
-      ClientInitialMetadata initial_metadata,
-      NextPromiseFactory next_promise_factory) override;
+  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
+      CallArgs call_args, NextPromiseFactory next_promise_factory) override;
 
  private:
   GrpcServerAuthzFilter(
       RefCountedPtr<grpc_auth_context> auth_context, grpc_endpoint* endpoint,
       RefCountedPtr<grpc_authorization_policy_provider> provider);
 
-  bool IsAuthorized(const ClientInitialMetadata& initial_metadata);
+  bool IsAuthorized(const ClientMetadataHandle& initial_metadata);
 
   RefCountedPtr<grpc_auth_context> auth_context_;
   EvaluateArgs::PerChannelArgs per_channel_evaluate_args_;

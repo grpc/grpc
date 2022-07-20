@@ -29,7 +29,7 @@
 #endif
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   // This test assumes that the ipv6 loopback is available
   // in all environments in which grpc tests run in.

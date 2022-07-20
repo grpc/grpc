@@ -20,8 +20,21 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
+
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/grpc_security_constants.h>
+#include <grpc/support/log.h>
+
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/security/security_connector/ssl/ssl_security_connector.h"
+#include "src/core/tsi/ssl_transport_security.h"
 
 class grpc_ssl_credentials : public grpc_channel_credentials {
  public:
@@ -34,8 +47,11 @@ class grpc_ssl_credentials : public grpc_channel_credentials {
   grpc_core::RefCountedPtr<grpc_channel_security_connector>
   create_security_connector(
       grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
-      const char* target, const grpc_channel_args* args,
-      grpc_channel_args** new_args) override;
+      const char* target, grpc_core::ChannelArgs* args) override;
+
+  static grpc_core::UniqueTypeName Type();
+
+  grpc_core::UniqueTypeName type() const override { return Type(); }
 
   // TODO(mattstev): Plumb to wrapped languages. Until then, setting the TLS
   // version should be done for testing purposes only.
@@ -74,7 +90,11 @@ class grpc_ssl_server_credentials final : public grpc_server_credentials {
   ~grpc_ssl_server_credentials() override;
 
   grpc_core::RefCountedPtr<grpc_server_security_connector>
-  create_security_connector(const grpc_channel_args* /* args */) override;
+  create_security_connector(const grpc_core::ChannelArgs& /* args */) override;
+
+  static grpc_core::UniqueTypeName Type();
+
+  grpc_core::UniqueTypeName type() const override { return Type(); }
 
   bool has_cert_config_fetcher() const {
     return certificate_config_fetcher_.cb != nullptr;

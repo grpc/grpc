@@ -18,27 +18,41 @@
 
 #include "src/core/ext/xds/xds_cluster.h"
 
-#include "absl/container/inlined_vector.h"
+#include <stddef.h>
+
+#include <type_traits>
+#include <utility>
+
+#include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "envoy/config/cluster/v3/circuit_breaker.upb.h"
 #include "envoy/config/cluster/v3/cluster.upb.h"
 #include "envoy/config/cluster/v3/cluster.upbdefs.h"
+#include "envoy/config/cluster/v3/outlier_detection.upb.h"
 #include "envoy/config/core/v3/address.upb.h"
 #include "envoy/config/core/v3/base.upb.h"
 #include "envoy/config/core/v3/config_source.upb.h"
 #include "envoy/config/endpoint/v3/endpoint.upb.h"
 #include "envoy/config/endpoint/v3/endpoint_components.upb.h"
 #include "envoy/extensions/clusters/aggregate/v3/cluster.upb.h"
+#include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
 #include "google/protobuf/any.upb.h"
+#include "google/protobuf/duration.upb.h"
 #include "google/protobuf/wrappers.upb.h"
+#include "upb/text_encode.h"
+#include "upb/upb.h"
 
-#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 
-#include "src/core/lib/gpr/env.h"
-#include "src/core/lib/gpr/string.h"
+#include "src/core/ext/xds/xds_common_types.h"
+#include "src/core/ext/xds/xds_resource_type.h"
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/host_port.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/error.h"
 
 namespace grpc_core {
 
@@ -47,7 +61,7 @@ namespace grpc_core {
 //
 
 std::string XdsClusterResource::ToString() const {
-  absl::InlinedVector<std::string, 8> contents;
+  std::vector<std::string> contents;
   switch (cluster_type) {
     case EDS:
       contents.push_back("cluster_type=EDS");
@@ -120,7 +134,7 @@ grpc_error_handle UpstreamTlsContextParse(
     if (common_tls_context_proto != nullptr) {
       grpc_error_handle error = CommonTlsContext::Parse(
           context, common_tls_context_proto, common_tls_context);
-      if (error != GRPC_ERROR_NONE) {
+      if (!GRPC_ERROR_IS_NONE(error)) {
         return grpc_error_add_child(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                                         "Error parsing UpstreamTlsContext"),
                                     error);
@@ -203,19 +217,6 @@ grpc_error_handle CdsLogicalDnsParse(
   return GRPC_ERROR_NONE;
 }
 
-// TODO(donnadionne): Check to see if cluster types aggregate_cluster and
-// logical_dns are enabled, this will be
-// removed once the cluster types are fully integration-tested and enabled by
-// default.
-bool XdsAggregateAndLogicalDnsClusterEnabled() {
-  char* value = gpr_getenv(
-      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
-  bool parsed_value;
-  bool parse_succeeded = gpr_parse_bool_value(value, &parsed_value);
-  gpr_free(value);
-  return parse_succeeded && parsed_value;
-}
-
 grpc_error_handle CdsResourceParse(
     const XdsEncodingContext& context,
     const envoy_config_cluster_v3_Cluster* cluster, bool /*is_v2*/,
@@ -247,14 +248,11 @@ grpc_error_handle CdsResourceParse(
     if (service_name.size != 0) {
       cds_update->eds_service_name = UpbStringToStdString(service_name);
     }
-  } else if (!XdsAggregateAndLogicalDnsClusterEnabled()) {
-    errors.push_back(
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("DiscoveryType is not valid."));
   } else if (envoy_config_cluster_v3_Cluster_type(cluster) ==
              envoy_config_cluster_v3_Cluster_LOGICAL_DNS) {
     cds_update->cluster_type = XdsClusterResource::ClusterType::LOGICAL_DNS;
     grpc_error_handle error = CdsLogicalDnsParse(cluster, cds_update);
-    if (error != GRPC_ERROR_NONE) errors.push_back(error);
+    if (!GRPC_ERROR_IS_NONE(error)) errors.push_back(error);
   } else {
     if (!envoy_config_cluster_v3_Cluster_has_cluster_type(cluster)) {
       errors.push_back(
@@ -355,7 +353,7 @@ grpc_error_handle CdsResourceParse(
   if (transport_socket != nullptr) {
     grpc_error_handle error = UpstreamTlsContextParse(
         context, transport_socket, &cds_update->common_tls_context);
-    if (error != GRPC_ERROR_NONE) {
+    if (!GRPC_ERROR_IS_NONE(error)) {
       errors.push_back(
           grpc_error_add_child(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                                    "Error parsing security configuration"),
@@ -398,6 +396,109 @@ grpc_error_handle CdsResourceParse(
       }
     }
   }
+  // As long as outlier detection field is present in the cluster update,
+  // we will end up with a outlier detection in the cluster resource which will
+  // lead to the creation of outlier detection in discovery mechanism.  Values
+  // for outlier detection will be based on fields received and
+  // default values.
+  if (XdsOutlierDetectionEnabled() &&
+      envoy_config_cluster_v3_Cluster_has_outlier_detection(cluster)) {
+    OutlierDetectionConfig outlier_detection_update;
+    const envoy_config_cluster_v3_OutlierDetection* outlier_detection =
+        envoy_config_cluster_v3_Cluster_outlier_detection(cluster);
+    const google_protobuf_Duration* duration =
+        envoy_config_cluster_v3_OutlierDetection_interval(outlier_detection);
+    if (duration != nullptr) {
+      outlier_detection_update.interval = ParseDuration(duration);
+    }
+    duration = envoy_config_cluster_v3_OutlierDetection_base_ejection_time(
+        outlier_detection);
+    if (duration != nullptr) {
+      outlier_detection_update.base_ejection_time = ParseDuration(duration);
+    }
+    duration = envoy_config_cluster_v3_OutlierDetection_max_ejection_time(
+        outlier_detection);
+    if (duration != nullptr) {
+      outlier_detection_update.max_ejection_time = ParseDuration(duration);
+    }
+    const google_protobuf_UInt32Value* max_ejection_percent =
+        envoy_config_cluster_v3_OutlierDetection_max_ejection_percent(
+            outlier_detection);
+    if (max_ejection_percent != nullptr) {
+      outlier_detection_update.max_ejection_percent =
+          google_protobuf_UInt32Value_value(max_ejection_percent);
+    }
+    const google_protobuf_UInt32Value* enforcing_success_rate =
+        envoy_config_cluster_v3_OutlierDetection_enforcing_success_rate(
+            outlier_detection);
+    if (enforcing_success_rate != nullptr) {
+      uint32_t enforcement_percentage =
+          google_protobuf_UInt32Value_value(enforcing_success_rate);
+      if (enforcement_percentage != 0) {
+        OutlierDetectionConfig::SuccessRateEjection success_rate_ejection;
+        success_rate_ejection.enforcement_percentage = enforcement_percentage;
+        const google_protobuf_UInt32Value* minimum_hosts =
+            envoy_config_cluster_v3_OutlierDetection_success_rate_minimum_hosts(
+                outlier_detection);
+        if (minimum_hosts != nullptr) {
+          success_rate_ejection.minimum_hosts =
+              google_protobuf_UInt32Value_value(minimum_hosts);
+        }
+        const google_protobuf_UInt32Value* request_volume =
+            envoy_config_cluster_v3_OutlierDetection_success_rate_request_volume(
+                outlier_detection);
+        if (request_volume != nullptr) {
+          success_rate_ejection.request_volume =
+              google_protobuf_UInt32Value_value(request_volume);
+        }
+        const google_protobuf_UInt32Value* stdev_factor =
+            envoy_config_cluster_v3_OutlierDetection_success_rate_stdev_factor(
+                outlier_detection);
+        if (stdev_factor != nullptr) {
+          success_rate_ejection.stdev_factor =
+              google_protobuf_UInt32Value_value(stdev_factor);
+        }
+        outlier_detection_update.success_rate_ejection = success_rate_ejection;
+      }
+    }
+    const google_protobuf_UInt32Value* enforcing_failure_percentage =
+        envoy_config_cluster_v3_OutlierDetection_enforcing_failure_percentage(
+            outlier_detection);
+    if (enforcing_failure_percentage != nullptr) {
+      uint32_t enforcement_percentage =
+          google_protobuf_UInt32Value_value(enforcing_failure_percentage);
+      if (enforcement_percentage != 0) {
+        OutlierDetectionConfig::FailurePercentageEjection
+            failure_percentage_ejection;
+        failure_percentage_ejection.enforcement_percentage =
+            enforcement_percentage;
+        const google_protobuf_UInt32Value* minimum_hosts =
+            envoy_config_cluster_v3_OutlierDetection_failure_percentage_minimum_hosts(
+                outlier_detection);
+        if (minimum_hosts != nullptr) {
+          failure_percentage_ejection.minimum_hosts =
+              google_protobuf_UInt32Value_value(minimum_hosts);
+        }
+        const google_protobuf_UInt32Value* request_volume =
+            envoy_config_cluster_v3_OutlierDetection_failure_percentage_request_volume(
+                outlier_detection);
+        if (request_volume != nullptr) {
+          failure_percentage_ejection.request_volume =
+              google_protobuf_UInt32Value_value(request_volume);
+        }
+        const google_protobuf_UInt32Value* threshold =
+            envoy_config_cluster_v3_OutlierDetection_failure_percentage_threshold(
+                outlier_detection);
+        if (threshold != nullptr) {
+          failure_percentage_ejection.threshold =
+              google_protobuf_UInt32Value_value(threshold);
+        }
+        outlier_detection_update.failure_percentage_ejection =
+            failure_percentage_ejection;
+      }
+    }
+    cds_update->outlier_detection = outlier_detection_update;
+  }
   return GRPC_ERROR_CREATE_FROM_VECTOR("errors parsing CDS resource", &errors);
 }
 
@@ -432,7 +533,7 @@ absl::StatusOr<XdsResourceType::DecodeResult> XdsClusterResourceType::Decode(
   auto cluster_data = absl::make_unique<ResourceDataSubclass>();
   grpc_error_handle error =
       CdsResourceParse(context, resource, is_v2, &cluster_data->resource);
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     std::string error_str = grpc_error_std_string(error);
     GRPC_ERROR_UNREF(error);
     if (GRPC_TRACE_FLAG_ENABLED(*context.tracer)) {

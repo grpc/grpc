@@ -26,6 +26,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc {
@@ -179,7 +180,7 @@ TEST(BackOffTest, JitterBackOff) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   int ret = RUN_ALL_TESTS();
   grpc_shutdown();

@@ -70,7 +70,7 @@ def exponential_retryer_with_timeout(
 def constant_retryer(*,
                      wait_fixed: timedelta,
                      attempts: int = 0,
-                     timeout: timedelta = None,
+                     timeout: Optional[timedelta] = None,
                      retry_on_exceptions: Optional[Sequence[Any]] = None,
                      logger: Optional[logging.Logger] = None,
                      log_level: Optional[int] = logging.DEBUG) -> Retrying:

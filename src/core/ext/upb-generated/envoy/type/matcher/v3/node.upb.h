@@ -55,24 +55,40 @@ UPB_INLINE envoy_type_matcher_v3_NodeMatcher* envoy_type_matcher_v3_NodeMatcher_
   return ret;
 }
 UPB_INLINE char* envoy_type_matcher_v3_NodeMatcher_serialize(const envoy_type_matcher_v3_NodeMatcher* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_type_matcher_v3_NodeMatcher_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_type_matcher_v3_NodeMatcher_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_type_matcher_v3_NodeMatcher_serialize_ex(const envoy_type_matcher_v3_NodeMatcher* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_type_matcher_v3_NodeMatcher_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_type_matcher_v3_NodeMatcher_msginit, options, arena, &ptr, len);
+  return ptr;
 }
-UPB_INLINE bool envoy_type_matcher_v3_NodeMatcher_has_node_id(const envoy_type_matcher_v3_NodeMatcher *msg) { return _upb_hasbit(msg, 1); }
+UPB_INLINE bool envoy_type_matcher_v3_NodeMatcher_has_node_id(const envoy_type_matcher_v3_NodeMatcher* msg) {
+  return _upb_hasbit(msg, 1);
+}
+UPB_INLINE void envoy_type_matcher_v3_NodeMatcher_clear_node_id(const envoy_type_matcher_v3_NodeMatcher* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const upb_Message*) = NULL;
+}
 UPB_INLINE const struct envoy_type_matcher_v3_StringMatcher* envoy_type_matcher_v3_NodeMatcher_node_id(const envoy_type_matcher_v3_NodeMatcher* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const struct envoy_type_matcher_v3_StringMatcher*);
 }
-UPB_INLINE bool envoy_type_matcher_v3_NodeMatcher_has_node_metadatas(const envoy_type_matcher_v3_NodeMatcher *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(8, 16)); }
-UPB_INLINE const struct envoy_type_matcher_v3_StructMatcher* const* envoy_type_matcher_v3_NodeMatcher_node_metadatas(const envoy_type_matcher_v3_NodeMatcher *msg, size_t *len) { return (const struct envoy_type_matcher_v3_StructMatcher* const*)_upb_array_accessor(msg, UPB_SIZE(8, 16), len); }
+UPB_INLINE bool envoy_type_matcher_v3_NodeMatcher_has_node_metadatas(const envoy_type_matcher_v3_NodeMatcher* msg) {
+  return _upb_has_submsg_nohasbit(msg, UPB_SIZE(8, 16));
+}
+UPB_INLINE void envoy_type_matcher_v3_NodeMatcher_clear_node_metadatas(const envoy_type_matcher_v3_NodeMatcher* msg) {
+  _upb_array_detach(msg, UPB_SIZE(8, 16));
+}
+UPB_INLINE const struct envoy_type_matcher_v3_StructMatcher* const* envoy_type_matcher_v3_NodeMatcher_node_metadatas(const envoy_type_matcher_v3_NodeMatcher* msg, size_t* len) {
+  return (const struct envoy_type_matcher_v3_StructMatcher* const*)_upb_array_accessor(msg, UPB_SIZE(8, 16), len);
+}
 
 UPB_INLINE void envoy_type_matcher_v3_NodeMatcher_set_node_id(envoy_type_matcher_v3_NodeMatcher *msg, struct envoy_type_matcher_v3_StringMatcher* value) {
   _upb_sethas(msg, 1);
   *UPB_PTR_AT(msg, UPB_SIZE(4, 8), struct envoy_type_matcher_v3_StringMatcher*) = value;
 }
-UPB_INLINE struct envoy_type_matcher_v3_StringMatcher* envoy_type_matcher_v3_NodeMatcher_mutable_node_id(envoy_type_matcher_v3_NodeMatcher *msg, upb_Arena *arena) {
+UPB_INLINE struct envoy_type_matcher_v3_StringMatcher* envoy_type_matcher_v3_NodeMatcher_mutable_node_id(envoy_type_matcher_v3_NodeMatcher* msg, upb_Arena* arena) {
   struct envoy_type_matcher_v3_StringMatcher* sub = (struct envoy_type_matcher_v3_StringMatcher*)envoy_type_matcher_v3_NodeMatcher_node_id(msg);
   if (sub == NULL) {
     sub = (struct envoy_type_matcher_v3_StringMatcher*)_upb_Message_New(&envoy_type_matcher_v3_StringMatcher_msginit, arena);
@@ -81,16 +97,15 @@ UPB_INLINE struct envoy_type_matcher_v3_StringMatcher* envoy_type_matcher_v3_Nod
   }
   return sub;
 }
-UPB_INLINE struct envoy_type_matcher_v3_StructMatcher** envoy_type_matcher_v3_NodeMatcher_mutable_node_metadatas(envoy_type_matcher_v3_NodeMatcher *msg, size_t *len) {
+UPB_INLINE struct envoy_type_matcher_v3_StructMatcher** envoy_type_matcher_v3_NodeMatcher_mutable_node_metadatas(envoy_type_matcher_v3_NodeMatcher* msg, size_t* len) {
   return (struct envoy_type_matcher_v3_StructMatcher**)_upb_array_mutable_accessor(msg, UPB_SIZE(8, 16), len);
 }
-UPB_INLINE struct envoy_type_matcher_v3_StructMatcher** envoy_type_matcher_v3_NodeMatcher_resize_node_metadatas(envoy_type_matcher_v3_NodeMatcher *msg, size_t len, upb_Arena *arena) {
+UPB_INLINE struct envoy_type_matcher_v3_StructMatcher** envoy_type_matcher_v3_NodeMatcher_resize_node_metadatas(envoy_type_matcher_v3_NodeMatcher* msg, size_t len, upb_Arena* arena) {
   return (struct envoy_type_matcher_v3_StructMatcher**)_upb_Array_Resize_accessor2(msg, UPB_SIZE(8, 16), len, UPB_SIZE(2, 3), arena);
 }
-UPB_INLINE struct envoy_type_matcher_v3_StructMatcher* envoy_type_matcher_v3_NodeMatcher_add_node_metadatas(envoy_type_matcher_v3_NodeMatcher *msg, upb_Arena *arena) {
+UPB_INLINE struct envoy_type_matcher_v3_StructMatcher* envoy_type_matcher_v3_NodeMatcher_add_node_metadatas(envoy_type_matcher_v3_NodeMatcher* msg, upb_Arena* arena) {
   struct envoy_type_matcher_v3_StructMatcher* sub = (struct envoy_type_matcher_v3_StructMatcher*)_upb_Message_New(&envoy_type_matcher_v3_StructMatcher_msginit, arena);
-  bool ok = _upb_Array_Append_accessor2(
-      msg, UPB_SIZE(8, 16), UPB_SIZE(2, 3), &sub, arena);
+  bool ok = _upb_Array_Append_accessor2(msg, UPB_SIZE(8, 16), UPB_SIZE(2, 3), &sub, arena);
   if (!ok) return NULL;
   return sub;
 }

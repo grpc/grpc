@@ -22,56 +22,6 @@ cd "$(dirname "$0")/../../.."
 
 cd src/csharp
 
-# Create fake grpc_csharp_ext artifacts
-mkdir -p nativelibs
-pushd nativelibs
-
-if [[ "$(uname)" != "Linux" ]]
-then
-   mkdir -p csharp_ext_linux_x64
-   touch csharp_ext_linux_x64/libgrpc_csharp_ext.so
-   touch csharp_ext_linux_x64/libgrpc_csharp_ext.dbginfo.so
-
-   mkdir -p csharp_ext_linux_x86
-   touch csharp_ext_linux_x86/libgrpc_csharp_ext.so
-
-   mkdir -p csharp_ext_linux_aarch64
-   touch csharp_ext_linux_aarch64/libgrpc_csharp_ext.so
-   touch csharp_ext_linux_aarch64/libgrpc_csharp_ext.dbginfo.so
-
-   mkdir -p csharp_ext_linux_android_armeabi-v7a
-   touch csharp_ext_linux_android_armeabi-v7a/libgrpc_csharp_ext.so
-
-   mkdir -p csharp_ext_linux_android_arm64-v8a
-   touch csharp_ext_linux_android_arm64-v8a/libgrpc_csharp_ext.so
-
-   mkdir -p csharp_ext_linux_android_x86
-   touch csharp_ext_linux_android_x86/libgrpc_csharp_ext.so
-fi
-
-if [[ "$(uname)" != "Darwin" ]]
-then
-    mkdir -p csharp_ext_macos_x64
-    touch csharp_ext_macos_x64/libgrpc_csharp_ext.dylib
-
-    mkdir -p csharp_ext_macos_ios
-    touch csharp_ext_macos_ios/libgrpc_csharp_ext.a
-    touch csharp_ext_macos_ios/libgrpc.a
-fi
-
-if [[ "$(uname)" != "WindowsNT" ]]
-then
-    mkdir -p csharp_ext_windows_x64
-    touch csharp_ext_windows_x64/grpc_csharp_ext.dll
-    touch csharp_ext_windows_x64/grpc_csharp_ext.pdb
-
-    mkdir -p csharp_ext_windows_x86
-    touch csharp_ext_windows_x86/grpc_csharp_ext.dll
-    touch csharp_ext_windows_x86/grpc_csharp_ext.pdb
-fi
-
-popd
-
 # Create fake protoc artifacts
 mkdir -p protoc_plugins
 pushd protoc_plugins

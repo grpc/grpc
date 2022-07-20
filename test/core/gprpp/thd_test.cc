@@ -23,6 +23,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <gtest/gtest.h>
+
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
@@ -70,7 +72,7 @@ static void test1(void) {
   for (auto& th : thds) {
     th.Join();
   }
-  GPR_ASSERT(t.n == 0);
+  ASSERT_EQ(t.n, 0);
   gpr_mu_destroy(&t.mu);
   gpr_cv_destroy(&t.done_cv);
 }
@@ -83,7 +85,7 @@ static void test2(void) {
   for (auto& th : thds) {
     bool ok;
     th = grpc_core::Thread("grpc_thread_body2_test", &thd_body2, nullptr, &ok);
-    GPR_ASSERT(ok);
+    ASSERT_TRUE(ok);
     th.Start();
   }
   for (auto& th : thds) {
@@ -93,9 +95,13 @@ static void test2(void) {
 
 /* ------------------------------------------------- */
 
-int main(int argc, char* argv[]) {
-  grpc::testing::TestEnvironment env(argc, argv);
+TEST(ThdTest, MainTest) {
   test1();
   test2();
-  return 0;
+}
+
+int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(&argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }

@@ -22,9 +22,10 @@
 
 #include "src/core/lib/debug/stats_data.h"
 
+#include <inttypes.h>
+
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 
 const char* grpc_stats_counter_name[GRPC_STATS_COUNTER_COUNT] = {
     "client_calls_created",
@@ -41,8 +42,6 @@ const char* grpc_stats_counter_name[GRPC_STATS_COUNTER_COUNT] = {
     "pollset_kick_wakeup_fd",
     "pollset_kick_wakeup_cv",
     "pollset_kick_own_thread",
-    "syscall_epoll_ctl",
-    "pollset_fd_cache_hits",
     "histogram_slow_lookups",
     "syscall_write",
     "syscall_read",
@@ -75,6 +74,7 @@ const char* grpc_stats_counter_name[GRPC_STATS_COUNTER_COUNT] = {
     "http2_initiate_write_due_to_stream_flow_control",
     "http2_initiate_write_due_to_transport_flow_control",
     "http2_initiate_write_due_to_send_settings",
+    "http2_initiate_write_due_to_settings_ack",
     "http2_initiate_write_due_to_bdp_estimator_ping",
     "http2_initiate_write_due_to_flow_control_unstalled_by_setting",
     "http2_initiate_write_due_to_flow_control_unstalled_by_update",
@@ -147,9 +147,6 @@ const char* grpc_stats_counter_doc[GRPC_STATS_COUNTER_COUNT] = {
     "polling wakeup (only valid for epoll1 right now)",
     "How many times could a polling wakeup be satisfied by keeping the waking "
     "thread awake? (only valid for epoll1 right now)",
-    "Number of epoll_ctl calls made (only valid for epollex right now)",
-    "Number of epoll_ctl calls skipped because the fd was cached as already "
-    "being added.  (only valid for epollex right now)",
     "Number of times histogram increments went through the slow (binary "
     "search) path",
     "Number of write syscalls (or equivalent - eg sendmsg) made by this "
@@ -186,6 +183,7 @@ const char* grpc_stats_counter_doc[GRPC_STATS_COUNTER_COUNT] = {
     "Number of HTTP2 writes initiated due to 'stream_flow_control'",
     "Number of HTTP2 writes initiated due to 'transport_flow_control'",
     "Number of HTTP2 writes initiated due to 'send_settings'",
+    "Number of HTTP2 writes initiated due to 'settings_ack'",
     "Number of HTTP2 writes initiated due to 'bdp_estimator_ping'",
     "Number of HTTP2 writes initiated due to "
     "'flow_control_unstalled_by_setting'",
@@ -281,7 +279,6 @@ const char* grpc_stats_histogram_doc[GRPC_STATS_HISTOGRAM_COUNT] = {
     "Number of streams whose payload was written per TCP write",
     "Number of streams terminated per TCP write",
     "Number of flow control updates written per TCP write",
-    // NOLINTNEXTLINE(bugprone-suspicious-missing-comma)
     "How many completion queues were checked looking for a CQ that had "
     "requested the incoming call",
 };

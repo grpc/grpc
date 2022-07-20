@@ -51,26 +51,48 @@ UPB_INLINE envoy_admin_v3_Memory* envoy_admin_v3_Memory_parse_ex(const char* buf
   return ret;
 }
 UPB_INLINE char* envoy_admin_v3_Memory_serialize(const envoy_admin_v3_Memory* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_admin_v3_Memory_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_admin_v3_Memory_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_admin_v3_Memory_serialize_ex(const envoy_admin_v3_Memory* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_admin_v3_Memory_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_admin_v3_Memory_msginit, options, arena, &ptr, len);
+  return ptr;
+}
+UPB_INLINE void envoy_admin_v3_Memory_clear_allocated(const envoy_admin_v3_Memory* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), uint64_t) = 0;
 }
 UPB_INLINE uint64_t envoy_admin_v3_Memory_allocated(const envoy_admin_v3_Memory* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), uint64_t);
 }
+UPB_INLINE void envoy_admin_v3_Memory_clear_heap_size(const envoy_admin_v3_Memory* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 8), uint64_t) = 0;
+}
 UPB_INLINE uint64_t envoy_admin_v3_Memory_heap_size(const envoy_admin_v3_Memory* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(8, 8), uint64_t);
+}
+UPB_INLINE void envoy_admin_v3_Memory_clear_pageheap_unmapped(const envoy_admin_v3_Memory* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(16, 16), uint64_t) = 0;
 }
 UPB_INLINE uint64_t envoy_admin_v3_Memory_pageheap_unmapped(const envoy_admin_v3_Memory* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(16, 16), uint64_t);
 }
+UPB_INLINE void envoy_admin_v3_Memory_clear_pageheap_free(const envoy_admin_v3_Memory* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(24, 24), uint64_t) = 0;
+}
 UPB_INLINE uint64_t envoy_admin_v3_Memory_pageheap_free(const envoy_admin_v3_Memory* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(24, 24), uint64_t);
 }
+UPB_INLINE void envoy_admin_v3_Memory_clear_total_thread_cache(const envoy_admin_v3_Memory* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(32, 32), uint64_t) = 0;
+}
 UPB_INLINE uint64_t envoy_admin_v3_Memory_total_thread_cache(const envoy_admin_v3_Memory* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(32, 32), uint64_t);
+}
+UPB_INLINE void envoy_admin_v3_Memory_clear_total_physical_bytes(const envoy_admin_v3_Memory* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(40, 40), uint64_t) = 0;
 }
 UPB_INLINE uint64_t envoy_admin_v3_Memory_total_physical_bytes(const envoy_admin_v3_Memory* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(40, 40), uint64_t);

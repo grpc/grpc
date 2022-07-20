@@ -19,8 +19,11 @@
 
 #include <stdlib.h>
 
-#include <algorithm>
+#include <algorithm>  // IWYU pragma: keep
 #include <memory>
+#include <utility>
+
+#include "src/core/lib/gpr/useful.h"
 
 namespace grpc_core {
 
@@ -32,8 +35,12 @@ class AVL {
   AVL Add(K key, V value) const {
     return AVL(AddKey(root_, std::move(key), std::move(value)));
   }
-  AVL Remove(const K& key) const { return AVL(RemoveKey(root_, key)); }
-  const V* Lookup(const K& key) const {
+  template <typename SomethingLikeK>
+  AVL Remove(const SomethingLikeK& key) const {
+    return AVL(RemoveKey(root_, key));
+  }
+  template <typename SomethingLikeK>
+  const V* Lookup(const SomethingLikeK& key) const {
     NodePtr n = Get(root_, key);
     return n ? &n->kv.second : nullptr;
   }
@@ -50,10 +57,39 @@ class AVL {
     ForEachImpl(root_.get(), std::forward<F>(f));
   }
 
-  bool SameIdentity(AVL avl) const { return root_ == avl.root_; }
+  bool SameIdentity(const AVL& avl) const { return root_ == avl.root_; }
+
+  friend int QsortCompare(const AVL& left, const AVL& right) {
+    if (left.root_.get() == right.root_.get()) return 0;
+    Iterator a(left.root_);
+    Iterator b(right.root_);
+    for (;;) {
+      Node* p = a.current();
+      Node* q = b.current();
+      if (p != q) {
+        if (p == nullptr) return -1;
+        if (q == nullptr) return 1;
+        const int kv = QsortCompare(p->kv, q->kv);
+        if (kv != 0) return kv;
+      } else if (p == nullptr) {
+        return 0;
+      }
+      a.MoveNext();
+      b.MoveNext();
+    }
+  }
+
+  bool operator==(const AVL& other) const {
+    return QsortCompare(*this, other) == 0;
+  }
+
+  bool operator<(const AVL& other) const {
+    return QsortCompare(*this, other) < 0;
+  }
 
  private:
   struct Node;
+
   typedef std::shared_ptr<Node> NodePtr;
   struct Node : public std::enable_shared_from_this<Node> {
     Node(K k, V v, NodePtr l, NodePtr r, long h)
@@ -67,6 +103,54 @@ class AVL {
     const long height;
   };
   NodePtr root_;
+
+  class IteratorStack {
+   public:
+    void Push(Node* n) {
+      nodes_[depth_] = n;
+      ++depth_;
+    }
+
+    Node* Pop() {
+      --depth_;
+      return nodes_[depth_];
+    }
+
+    Node* Back() const { return nodes_[depth_ - 1]; }
+
+    bool Empty() const { return depth_ == 0; }
+
+   private:
+    size_t depth_{0};
+    // 32 is the maximum depth we can accept, and corresponds to ~4billion nodes
+    // - which ought to suffice our use cases.
+    Node* nodes_[32];
+  };
+
+  class Iterator {
+   public:
+    explicit Iterator(const NodePtr& root) {
+      auto* n = root.get();
+      while (n != nullptr) {
+        stack_.Push(n);
+        n = n->left.get();
+      }
+    }
+    Node* current() const { return stack_.Empty() ? nullptr : stack_.Back(); }
+    void MoveNext() {
+      auto* n = stack_.Pop();
+      if (n->right != nullptr) {
+        n = n->right.get();
+        while (n != nullptr) {
+          stack_.Push(n);
+          n = n->left.get();
+        }
+      }
+    }
+
+   private:
+    IteratorStack stack_;
+  };
 
   explicit AVL(NodePtr root) : root_(std::move(root)) {}
 
@@ -86,7 +170,8 @@ class AVL {
                                   1 + std::max(Height(left), Height(right)));
   }
 
-  static NodePtr Get(const NodePtr& node, const K& key) {
+  template <typename SomethingLikeK>
+  static NodePtr Get(const NodePtr& node, const SomethingLikeK& key) {
     if (node == nullptr) {
       return nullptr;
     }
@@ -198,7 +283,8 @@ class AVL {
     return node;
   }
 
-  static NodePtr RemoveKey(const NodePtr& node, const K& key) {
+  template <typename SomethingLikeK>
+  static NodePtr RemoveKey(const NodePtr& node, const SomethingLikeK& key) {
     if (node == nullptr) {
       return nullptr;
     }
@@ -246,6 +332,7 @@ class AVL<K, void> {
 
  private:
   struct Node;
+
   typedef std::shared_ptr<Node> NodePtr;
   struct Node : public std::enable_shared_from_this<Node> {
     Node(K k, NodePtr l, NodePtr r, long h)

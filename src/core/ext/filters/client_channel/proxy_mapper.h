@@ -21,9 +21,13 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/impl/codegen/grpc_types.h>
+#include <string>
 
-#include "src/core/lib/iomgr/resolve_address.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
+
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 
 namespace grpc_core {
 
@@ -32,21 +36,16 @@ class ProxyMapperInterface {
   virtual ~ProxyMapperInterface() = default;
 
   /// Determines the proxy name to resolve for \a server_uri.
-  /// If no proxy is needed, returns false.
-  /// Otherwise, sets \a name_to_resolve, optionally sets \a new_args,
-  /// and returns true.
-  virtual bool MapName(const char* server_uri, const grpc_channel_args* args,
-                       char** name_to_resolve,
-                       grpc_channel_args** new_args) = 0;
+  /// If no proxy is needed, returns nullopt.
+  /// Otherwise, updates \a args and returns the name to resolve.
+  virtual absl::optional<std::string> MapName(absl::string_view server_uri,
+                                              ChannelArgs* args) = 0;
 
   /// Determines the proxy address to use to contact \a address.
-  /// If no proxy is needed, returns false.
-  /// Otherwise, sets \a new_address, optionally sets \a new_args, and
-  /// returns true.
-  virtual bool MapAddress(const grpc_resolved_address& address,
-                          const grpc_channel_args* args,
-                          grpc_resolved_address** new_address,
-                          grpc_channel_args** new_args) = 0;
+  /// If no proxy is needed, returns nullopt.
+  /// Otherwise, updates \a args, and returns a new address.
+  virtual absl::optional<grpc_resolved_address> MapAddress(
+      const grpc_resolved_address& address, ChannelArgs* args) = 0;
 };
 
 }  // namespace grpc_core

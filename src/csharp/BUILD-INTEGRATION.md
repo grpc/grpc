@@ -42,10 +42,9 @@ that the *users* of your library do not fetch the tools package:
  Studio, edit the project file and add this attribute. [This is a bug in NuGet
  client](https://github.com/NuGet/Home/issues/4125).
 
- * "Classic" .csproj with `packages.config` (Visual Studio, Mono): This is
- handled automatically by NuGet. See the attribute added by Visual Studio to the
- [packages.config](../../examples/csharp/HelloworldLegacyCsproj/Greeter/packages.config#L6)
- file in the HelloworldLegacyCsproj/Greeter example.
+* "Classic" .csproj with `packages.config` (Visual Studio before 2017, old versions of Mono):
+ This is handled automatically by NuGet after you set the `developmentDependency="true"`
+ attribute on the `<package>` tag in `packages.config`.
 
 If building a NuGet package from your library with the nuget command line tool
 from a .nuspec file, then the spec file may (and probably should) reference the
@@ -344,7 +343,7 @@ The following metadata are recognized on the `<Protobuf>` items.
 | Name           | Default   | Value                | Synopsis                         |
 |----------------|-----------|----------------------|----------------------------------|
 | Access         | `public`  | `public`, `internal`               | Generated class access           |
-| AdditionalProtocArguments | | arbitrary cmdline arguments | Extra command line flags passed to `protoc` command |
+| AdditionalProtocArguments | | arbitrary cmdline arguments | Extra command line flags passed to `protoc` command. To specify multiple arguments use semi-colons (;) to separate them. See example below |
 | ProtoCompile   | `true`    | `true`, `false`                    | Pass files to protoc?            |
 | ProtoRoot      | See notes | A directory                        | Common root for set of files     |
 | CompileOutputs | `true`    | `true`, `false`                    | C#-compile generated files?      |
@@ -389,6 +388,23 @@ Normally this option should not be used as it's values are already controlled by
 and "GrpcServices" metadata, but it might be useful in situations where you want
 to explicitly pass some otherwise unsupported (e.g. experimental) options to the
 `grpc_csharp_plugin`.
+
+__Specifying multiple values in properties__
+
+Some properties allow you to specify multiple values in a list. The items in a list need to
+be separated by semi-colons (;). This is the syntax that MsBuild uses for lists.
+
+The properties that can have lists of items are: __OutputOptions__, __AdditionalProtocArguments__, __GrpcOutputOptions__
+
+Example: to specify two additional arguments: ```--plugin=protoc-gen-myplugin=D:\myplugin.exe --myplugin_out=.```
+
+```xml
+  <ItemGroup>
+    <Protobuf Include="proto_root/**/*.proto" ProtoRoot="proto_root"
+              OutputDir="%(RelativeDir)" CompileOutputs="false"
+              AdditionalProtocArguments="--plugin=protoc-gen-myplugin=D:\myplugin.exe;--myplugin_out=." />
+  </ItemGroup>
+```
 
 `grpc_csharp_plugin` command line options
 ---------

@@ -32,9 +32,26 @@ grpc_proto_fuzzer(
     ],
 )
 
+grpc_proto_fuzzer(
+    name = "flow_control_fuzzer",
+    srcs = ["flow_control_fuzzer.cc"],
+    corpus = "flow_control_fuzzer_corpus",
+    language = "C++",
+    proto = "flow_control_fuzzer.proto",
+    tags = ["no_windows"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:chttp2_flow_control",
+        "//:gpr",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
 grpc_cc_test(
     name = "alpn_test",
     srcs = ["alpn_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     deps = [
         "//:gpr",
@@ -46,7 +63,9 @@ grpc_cc_test(
 grpc_cc_test(
     name = "bin_decoder_test",
     srcs = ["bin_decoder_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -58,7 +77,9 @@ grpc_cc_test(
 grpc_cc_test(
     name = "bin_encoder_test",
     srcs = ["bin_encoder_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -74,6 +95,7 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -84,11 +106,24 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "flow_control_test",
-    size = "large",
     srcs = ["flow_control_test.cc"],
     external_deps = [
         "gtest",
     ],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:chttp2_flow_control",
+        "//:resource_quota",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_cc_test(
+    name = "graceful_shutdown_test",
+    srcs = ["graceful_shutdown_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     deps = [
         "//:gpr",
@@ -101,7 +136,9 @@ grpc_cc_test(
 grpc_cc_test(
     name = "hpack_encoder_test",
     srcs = ["hpack_encoder_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -115,6 +152,7 @@ grpc_cc_test(
     srcs = ["hpack_parser_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -128,6 +166,7 @@ grpc_cc_test(
     srcs = ["hpack_parser_table_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -139,6 +178,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "stream_map_test",
     srcs = ["stream_map_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     deps = [
         "//:gpr",
@@ -194,7 +234,9 @@ grpc_cc_test(
 grpc_cc_test(
     name = "varint_test",
     srcs = ["varint_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",

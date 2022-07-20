@@ -562,7 +562,7 @@ class ChannelzSampler final {
 };
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
   std::ofstream output_file(absl::GetFlag(FLAGS_output_json));
   for (int i = 0; i < absl::GetFlag(FLAGS_sampling_times); ++i) {

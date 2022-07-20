@@ -23,10 +23,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <inttypes.h>
-
-#include "src/core/lib/iomgr/exec_ctx.h"
-
 typedef enum {
   GRPC_STATS_COUNTER_CLIENT_CALLS_CREATED,
   GRPC_STATS_COUNTER_SERVER_CALLS_CREATED,
@@ -42,8 +38,6 @@ typedef enum {
   GRPC_STATS_COUNTER_POLLSET_KICK_WAKEUP_FD,
   GRPC_STATS_COUNTER_POLLSET_KICK_WAKEUP_CV,
   GRPC_STATS_COUNTER_POLLSET_KICK_OWN_THREAD,
-  GRPC_STATS_COUNTER_SYSCALL_EPOLL_CTL,
-  GRPC_STATS_COUNTER_POLLSET_FD_CACHE_HITS,
   GRPC_STATS_COUNTER_HISTOGRAM_SLOW_LOOKUPS,
   GRPC_STATS_COUNTER_SYSCALL_WRITE,
   GRPC_STATS_COUNTER_SYSCALL_READ,
@@ -76,6 +70,7 @@ typedef enum {
   GRPC_STATS_COUNTER_HTTP2_INITIATE_WRITE_DUE_TO_STREAM_FLOW_CONTROL,
   GRPC_STATS_COUNTER_HTTP2_INITIATE_WRITE_DUE_TO_TRANSPORT_FLOW_CONTROL,
   GRPC_STATS_COUNTER_HTTP2_INITIATE_WRITE_DUE_TO_SEND_SETTINGS,
+  GRPC_STATS_COUNTER_HTTP2_INITIATE_WRITE_DUE_TO_SETTINGS_ACK,
   GRPC_STATS_COUNTER_HTTP2_INITIATE_WRITE_DUE_TO_BDP_ESTIMATOR_PING,
   GRPC_STATS_COUNTER_HTTP2_INITIATE_WRITE_DUE_TO_FLOW_CONTROL_UNSTALLED_BY_SETTING,
   GRPC_STATS_COUNTER_HTTP2_INITIATE_WRITE_DUE_TO_FLOW_CONTROL_UNSTALLED_BY_UPDATE,
@@ -206,10 +201,6 @@ typedef enum {
   GRPC_STATS_INC_COUNTER(GRPC_STATS_COUNTER_POLLSET_KICK_WAKEUP_CV)
 #define GRPC_STATS_INC_POLLSET_KICK_OWN_THREAD() \
   GRPC_STATS_INC_COUNTER(GRPC_STATS_COUNTER_POLLSET_KICK_OWN_THREAD)
-#define GRPC_STATS_INC_SYSCALL_EPOLL_CTL() \
-  GRPC_STATS_INC_COUNTER(GRPC_STATS_COUNTER_SYSCALL_EPOLL_CTL)
-#define GRPC_STATS_INC_POLLSET_FD_CACHE_HITS() \
-  GRPC_STATS_INC_COUNTER(GRPC_STATS_COUNTER_POLLSET_FD_CACHE_HITS)
 #define GRPC_STATS_INC_HISTOGRAM_SLOW_LOOKUPS() \
   GRPC_STATS_INC_COUNTER(GRPC_STATS_COUNTER_HISTOGRAM_SLOW_LOOKUPS)
 #define GRPC_STATS_INC_SYSCALL_WRITE() \
@@ -287,6 +278,9 @@ typedef enum {
 #define GRPC_STATS_INC_HTTP2_INITIATE_WRITE_DUE_TO_SEND_SETTINGS() \
   GRPC_STATS_INC_COUNTER(                                          \
       GRPC_STATS_COUNTER_HTTP2_INITIATE_WRITE_DUE_TO_SEND_SETTINGS)
+#define GRPC_STATS_INC_HTTP2_INITIATE_WRITE_DUE_TO_SETTINGS_ACK() \
+  GRPC_STATS_INC_COUNTER(                                         \
+      GRPC_STATS_COUNTER_HTTP2_INITIATE_WRITE_DUE_TO_SETTINGS_ACK)
 #define GRPC_STATS_INC_HTTP2_INITIATE_WRITE_DUE_TO_BDP_ESTIMATOR_PING() \
   GRPC_STATS_INC_COUNTER(                                               \
       GRPC_STATS_COUNTER_HTTP2_INITIATE_WRITE_DUE_TO_BDP_ESTIMATOR_PING)
@@ -398,43 +392,43 @@ typedef enum {
   GRPC_STATS_INC_COUNTER(GRPC_STATS_COUNTER_CQ_EV_QUEUE_TRANSIENT_POP_FAILURES)
 #define GRPC_STATS_INC_CALL_INITIAL_SIZE(value) \
   grpc_stats_inc_call_initial_size((int)(value))
-void grpc_stats_inc_call_initial_size(int value);
+void grpc_stats_inc_call_initial_size(int x);
 #define GRPC_STATS_INC_POLL_EVENTS_RETURNED(value) \
   grpc_stats_inc_poll_events_returned((int)(value))
-void grpc_stats_inc_poll_events_returned(int value);
+void grpc_stats_inc_poll_events_returned(int x);
 #define GRPC_STATS_INC_TCP_WRITE_SIZE(value) \
   grpc_stats_inc_tcp_write_size((int)(value))
-void grpc_stats_inc_tcp_write_size(int value);
+void grpc_stats_inc_tcp_write_size(int x);
 #define GRPC_STATS_INC_TCP_WRITE_IOV_SIZE(value) \
   grpc_stats_inc_tcp_write_iov_size((int)(value))
-void grpc_stats_inc_tcp_write_iov_size(int value);
+void grpc_stats_inc_tcp_write_iov_size(int x);
 #define GRPC_STATS_INC_TCP_READ_SIZE(value) \
   grpc_stats_inc_tcp_read_size((int)(value))
-void grpc_stats_inc_tcp_read_size(int value);
+void grpc_stats_inc_tcp_read_size(int x);
 #define GRPC_STATS_INC_TCP_READ_OFFER(value) \
   grpc_stats_inc_tcp_read_offer((int)(value))
-void grpc_stats_inc_tcp_read_offer(int value);
+void grpc_stats_inc_tcp_read_offer(int x);
 #define GRPC_STATS_INC_TCP_READ_OFFER_IOV_SIZE(value) \
   grpc_stats_inc_tcp_read_offer_iov_size((int)(value))
-void grpc_stats_inc_tcp_read_offer_iov_size(int value);
+void grpc_stats_inc_tcp_read_offer_iov_size(int x);
 #define GRPC_STATS_INC_HTTP2_SEND_MESSAGE_SIZE(value) \
   grpc_stats_inc_http2_send_message_size((int)(value))
-void grpc_stats_inc_http2_send_message_size(int value);
+void grpc_stats_inc_http2_send_message_size(int x);
 #define GRPC_STATS_INC_HTTP2_SEND_INITIAL_METADATA_PER_WRITE(value) \
   grpc_stats_inc_http2_send_initial_metadata_per_write((int)(value))
-void grpc_stats_inc_http2_send_initial_metadata_per_write(int value);
+void grpc_stats_inc_http2_send_initial_metadata_per_write(int x);
 #define GRPC_STATS_INC_HTTP2_SEND_MESSAGE_PER_WRITE(value) \
   grpc_stats_inc_http2_send_message_per_write((int)(value))
-void grpc_stats_inc_http2_send_message_per_write(int value);
+void grpc_stats_inc_http2_send_message_per_write(int x);
 #define GRPC_STATS_INC_HTTP2_SEND_TRAILING_METADATA_PER_WRITE(value) \
   grpc_stats_inc_http2_send_trailing_metadata_per_write((int)(value))
-void grpc_stats_inc_http2_send_trailing_metadata_per_write(int value);
+void grpc_stats_inc_http2_send_trailing_metadata_per_write(int x);
 #define GRPC_STATS_INC_HTTP2_SEND_FLOWCTL_PER_WRITE(value) \
   grpc_stats_inc_http2_send_flowctl_per_write((int)(value))
-void grpc_stats_inc_http2_send_flowctl_per_write(int value);
+void grpc_stats_inc_http2_send_flowctl_per_write(int x);
 #define GRPC_STATS_INC_SERVER_CQS_CHECKED(value) \
   grpc_stats_inc_server_cqs_checked((int)(value))
-void grpc_stats_inc_server_cqs_checked(int value);
+void grpc_stats_inc_server_cqs_checked(int x);
 #else
 #define GRPC_STATS_INC_CLIENT_CALLS_CREATED()
 #define GRPC_STATS_INC_SERVER_CALLS_CREATED()
@@ -450,8 +444,6 @@ void grpc_stats_inc_server_cqs_checked(int value);
 #define GRPC_STATS_INC_POLLSET_KICK_WAKEUP_FD()
 #define GRPC_STATS_INC_POLLSET_KICK_WAKEUP_CV()
 #define GRPC_STATS_INC_POLLSET_KICK_OWN_THREAD()
-#define GRPC_STATS_INC_SYSCALL_EPOLL_CTL()
-#define GRPC_STATS_INC_POLLSET_FD_CACHE_HITS()
 #define GRPC_STATS_INC_HISTOGRAM_SLOW_LOOKUPS()
 #define GRPC_STATS_INC_SYSCALL_WRITE()
 #define GRPC_STATS_INC_SYSCALL_READ()
@@ -484,6 +476,7 @@ void grpc_stats_inc_server_cqs_checked(int value);
 #define GRPC_STATS_INC_HTTP2_INITIATE_WRITE_DUE_TO_STREAM_FLOW_CONTROL()
 #define GRPC_STATS_INC_HTTP2_INITIATE_WRITE_DUE_TO_TRANSPORT_FLOW_CONTROL()
 #define GRPC_STATS_INC_HTTP2_INITIATE_WRITE_DUE_TO_SEND_SETTINGS()
+#define GRPC_STATS_INC_HTTP2_INITIATE_WRITE_DUE_TO_SETTINGS_ACK()
 #define GRPC_STATS_INC_HTTP2_INITIATE_WRITE_DUE_TO_BDP_ESTIMATOR_PING()
 #define GRPC_STATS_INC_HTTP2_INITIATE_WRITE_DUE_TO_FLOW_CONTROL_UNSTALLED_BY_SETTING()
 #define GRPC_STATS_INC_HTTP2_INITIATE_WRITE_DUE_TO_FLOW_CONTROL_UNSTALLED_BY_UPDATE()

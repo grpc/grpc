@@ -15,18 +15,18 @@
 #include "upb/port_def.inc"
 
 static const upb_MiniTable_Field envoy_admin_v3_Memory__fields[6] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 4, kUpb_FieldMode_Scalar | (upb_FieldRep_8Byte << upb_FieldRep_Shift)},
-  {2, UPB_SIZE(8, 8), 0, 0, 4, kUpb_FieldMode_Scalar | (upb_FieldRep_8Byte << upb_FieldRep_Shift)},
-  {3, UPB_SIZE(16, 16), 0, 0, 4, kUpb_FieldMode_Scalar | (upb_FieldRep_8Byte << upb_FieldRep_Shift)},
-  {4, UPB_SIZE(24, 24), 0, 0, 4, kUpb_FieldMode_Scalar | (upb_FieldRep_8Byte << upb_FieldRep_Shift)},
-  {5, UPB_SIZE(32, 32), 0, 0, 4, kUpb_FieldMode_Scalar | (upb_FieldRep_8Byte << upb_FieldRep_Shift)},
-  {6, UPB_SIZE(40, 40), 0, 0, 4, kUpb_FieldMode_Scalar | (upb_FieldRep_8Byte << upb_FieldRep_Shift)},
+  {1, UPB_SIZE(0, 0), UPB_SIZE(0, 0), kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(8, 8), UPB_SIZE(0, 0), kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(16, 16), UPB_SIZE(0, 0), kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
+  {4, UPB_SIZE(24, 24), UPB_SIZE(0, 0), kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
+  {5, UPB_SIZE(32, 32), UPB_SIZE(0, 0), kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
+  {6, UPB_SIZE(40, 40), UPB_SIZE(0, 0), kUpb_NoSub, 4, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy_admin_v3_Memory_msginit = {
   NULL,
   &envoy_admin_v3_Memory__fields[0],
-  UPB_SIZE(48, 48), 6, upb_ExtMode_NonExtendable, 6, 255, 0,
+  UPB_SIZE(48, 48), 6, kUpb_ExtMode_NonExtendable, 6, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[1] = {

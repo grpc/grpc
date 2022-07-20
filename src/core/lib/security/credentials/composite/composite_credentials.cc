@@ -21,39 +21,49 @@
 #include "src/core/lib/security/credentials/composite/composite_credentials.h"
 
 #include <cstring>
-#include <new>
 #include <vector>
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
+#include "absl/strings/string_view.h"
 
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/iomgr/polling_entity.h"
+#include "src/core/lib/promise/detail/basic_seq.h"
+#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/transport/transport.h"
 
-namespace grpc_core {
-const char kCredentialsTypeComposite[] = "composite";
-}  // namespace grpc_core
+//
+// grpc_composite_channel_credentials
+//
+
+grpc_core::UniqueTypeName grpc_composite_channel_credentials::type() const {
+  static grpc_core::UniqueTypeName::Factory kFactory("Composite");
+  return kFactory.Create();
+}
 
 /* -- Composite call credentials. -- */
 
-grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientInitialMetadata>>
+grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientMetadataHandle>>
 grpc_composite_call_credentials::GetRequestMetadata(
-    grpc_core::ClientInitialMetadata initial_metadata,
+    grpc_core::ClientMetadataHandle initial_metadata,
     const grpc_call_credentials::GetRequestMetadataArgs* args) {
   auto self = Ref();
   return TrySeqIter(
       inner_.begin(), inner_.end(), std::move(initial_metadata),
       [self, args](const grpc_core::RefCountedPtr<grpc_call_credentials>& creds,
-                   grpc_core::ClientInitialMetadata initial_metadata) {
+                   grpc_core::ClientMetadataHandle initial_metadata) {
         return creds->GetRequestMetadata(std::move(initial_metadata), args);
       });
+}
+
+grpc_core::UniqueTypeName grpc_composite_call_credentials::Type() {
+  static grpc_core::UniqueTypeName::Factory kFactory("Composite");
+  return kFactory.Create();
 }
 
 std::string grpc_composite_call_credentials::debug_string() {
@@ -89,12 +99,11 @@ void grpc_composite_call_credentials::push_to_inner(
 
 grpc_composite_call_credentials::grpc_composite_call_credentials(
     grpc_core::RefCountedPtr<grpc_call_credentials> creds1,
-    grpc_core::RefCountedPtr<grpc_call_credentials> creds2)
-    : grpc_call_credentials(GRPC_CALL_CREDENTIALS_TYPE_COMPOSITE) {
+    grpc_core::RefCountedPtr<grpc_call_credentials> creds2) {
   const bool creds1_is_composite =
-      strcmp(creds1->type(), GRPC_CALL_CREDENTIALS_TYPE_COMPOSITE) == 0;
+      creds1->type() == grpc_composite_call_credentials::Type();
   const bool creds2_is_composite =
-      strcmp(creds2->type(), GRPC_CALL_CREDENTIALS_TYPE_COMPOSITE) == 0;
+      creds2->type() == grpc_composite_call_credentials::Type();
   const size_t size = get_creds_array_size(creds1.get(), creds1_is_composite) +
                       get_creds_array_size(creds2.get(), creds2_is_composite);
   inner_.reserve(size);
@@ -137,18 +146,16 @@ grpc_call_credentials* grpc_composite_call_credentials_create(
 grpc_core::RefCountedPtr<grpc_channel_security_connector>
 grpc_composite_channel_credentials::create_security_connector(
     grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
-    const char* target, const grpc_channel_args* args,
-    grpc_channel_args** new_args) {
+    const char* target, grpc_core::ChannelArgs* args) {
   GPR_ASSERT(inner_creds_ != nullptr && call_creds_ != nullptr);
   /* If we are passed a call_creds, create a call composite to pass it
      downstream. */
   if (call_creds != nullptr) {
     return inner_creds_->create_security_connector(
         composite_call_credentials_create(call_creds_, std::move(call_creds)),
-        target, args, new_args);
+        target, args);
   } else {
-    return inner_creds_->create_security_connector(call_creds_, target, args,
-                                                   new_args);
+    return inner_creds_->create_security_connector(call_creds_, target, args);
   }
 }
 

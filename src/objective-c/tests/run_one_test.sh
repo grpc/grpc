@@ -79,12 +79,14 @@ fi
 
 XCODEBUILD_FILTER_OUTPUT_SCRIPT="./xcodebuild_filter_output.sh"
 
+TEST_DEFS="HOST_PORT_LOCAL=localhost:$PLAIN_PORT \
+HOST_PORT_LOCALSSL=localhost:$TLS_PORT \
+HOST_PORT_REMOTE=grpc-test.sandbox.googleapis.com \
+GCC_OPTIMIZATION_LEVEL=s"
+
 time xcodebuild \
     -workspace Tests.xcworkspace \
     -scheme $SCHEME \
-    -destination "$DESTINATION" \
-    HOST_PORT_LOCALSSL=localhost:$TLS_PORT \
-    HOST_PORT_LOCAL=localhost:$PLAIN_PORT \
-    HOST_PORT_REMOTE=grpc-test.sandbox.googleapis.com \
-    GCC_OPTIMIZATION_LEVEL=s \
+    -destination "${DESTINATION}" \
+    GCC_PREPROCESSOR_DEFINITIONS='$GCC_PREPROCESSOR_DEFINITIONS'" $TEST_DEFS" \
     test | "${XCODEBUILD_FILTER_OUTPUT_SCRIPT}"

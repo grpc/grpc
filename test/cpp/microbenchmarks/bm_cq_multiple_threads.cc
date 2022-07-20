@@ -46,7 +46,6 @@ static bool g_active;
 namespace grpc {
 namespace testing {
 static grpc_completion_queue* g_cq;
-static grpc_event_engine_vtable g_vtable;
 
 static void pollset_shutdown(grpc_pollset* /*ps*/, grpc_closure* closure) {
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, GRPC_ERROR_NONE);
@@ -91,34 +90,31 @@ static grpc_error_handle pollset_work(grpc_pollset* ps,
   return GRPC_ERROR_NONE;
 }
 
-static const grpc_event_engine_vtable* init_engine_vtable(bool) {
-  memset(&g_vtable, 0, sizeof(g_vtable));
+static grpc_event_engine_vtable make_engine_vtable(const char* name) {
+  grpc_event_engine_vtable vtable;
+  memset(&vtable, 0, sizeof(vtable));
 
-  g_vtable.pollset_size = sizeof(grpc_pollset);
-  g_vtable.pollset_init = pollset_init;
-  g_vtable.pollset_shutdown = pollset_shutdown;
-  g_vtable.pollset_destroy = pollset_destroy;
-  g_vtable.pollset_work = pollset_work;
-  g_vtable.pollset_kick = pollset_kick;
-  g_vtable.is_any_background_poller_thread = [] { return false; };
-  g_vtable.add_closure_to_background_poller = [](grpc_closure* /*closure*/,
-                                                 grpc_error_handle /*error*/) {
+  vtable.pollset_size = sizeof(grpc_pollset);
+  vtable.pollset_init = pollset_init;
+  vtable.pollset_shutdown = pollset_shutdown;
+  vtable.pollset_destroy = pollset_destroy;
+  vtable.pollset_work = pollset_work;
+  vtable.pollset_kick = pollset_kick;
+  vtable.is_any_background_poller_thread = [] { return false; };
+  vtable.add_closure_to_background_poller = [](grpc_closure* /*closure*/,
+                                               grpc_error_handle /*error*/) {
     return false;
   };
-  g_vtable.shutdown_background_closure = [] {};
-  g_vtable.shutdown_engine = [] {};
+  vtable.shutdown_background_closure = [] {};
+  vtable.shutdown_engine = [] {};
+  vtable.check_engine_available = [](bool) { return true; };
+  vtable.init_engine = [] {};
+  vtable.name = name;
 
-  return &g_vtable;
+  return vtable;
 }
 
 static void setup() {
-  // This test should only ever be run with a non or any polling engine
-  // Override the polling engine for the non-polling engine
-  // and add a custom polling engine
-  grpc_register_event_engine_factory("none", init_engine_vtable, false);
-  grpc_register_event_engine_factory("bm_cq_multiple_threads",
-                                     init_engine_vtable, true);
-
   grpc_init();
   GPR_ASSERT(strcmp(grpc_get_poll_strategy_name(), "none") == 0 ||
              strcmp(grpc_get_poll_strategy_name(), "bm_cq_multiple_threads") ==
@@ -209,6 +205,13 @@ static void BM_Cq_Throughput(benchmark::State& state) {
 
 BENCHMARK(BM_Cq_Throughput)->ThreadRange(1, 16)->UseRealTime();
 
+namespace {
+const grpc_event_engine_vtable g_none_vtable =
+    grpc::testing::make_engine_vtable("none");
+const grpc_event_engine_vtable g_bm_vtable =
+    grpc::testing::make_engine_vtable("bm_cq_multiple_threads");
+}  // namespace
+
 }  // namespace testing
 }  // namespace grpc
 
@@ -219,7 +222,12 @@ void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 }  // namespace benchmark
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  // This test should only ever be run with a non or any polling engine
+  // Override the polling engine for the non-polling engine
+  // and add a custom polling engine
+  grpc_register_event_engine_factory(&grpc::testing::g_none_vtable, false);
+  grpc_register_event_engine_factory(&grpc::testing::g_bm_vtable, true);
+  grpc::testing::TestEnvironment env(&argc, argv);
   gpr_mu_init(&g_mu);
   gpr_cv_init(&g_cv);
   ::benchmark::Initialize(&argc, argv);

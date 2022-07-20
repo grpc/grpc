@@ -19,18 +19,15 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <unordered_map>
-#include <vector>
+#include <stddef.h>
 
-#include <grpc/impl/codegen/grpc_types.h>
-#include <grpc/support/string_util.h>
+#include "absl/strings/string_view.h"
 
+#include <grpc/slice.h>
+
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/json/json.h"
 #include "src/core/lib/service_config/service_config_parser.h"
-#include "src/core/lib/slice/slice_internal.h"
 
 // The main purpose of the code here is to parse the service config in
 // JSON form, which will look like this:
@@ -56,12 +53,22 @@
 //   ]
 // }
 
+#define GRPC_ARG_SERVICE_CONFIG_OBJ "grpc.internal.service_config_obj"
+
 namespace grpc_core {
 
 // TODO(roth): Consider stripping this down further to the completely minimal
 // interface requied to be exposed as part of the resolver API.
 class ServiceConfig : public RefCounted<ServiceConfig> {
  public:
+  static absl::string_view ChannelArgName() {
+    return GRPC_ARG_SERVICE_CONFIG_OBJ;
+  }
+  static int ChannelArgsCompare(const ServiceConfig* a,
+                                const ServiceConfig* b) {
+    return QsortCompare(a, b);
+  }
+
   virtual absl::string_view json_string() const = 0;
 
   /// Retrieves the global parsed config at index \a index. The

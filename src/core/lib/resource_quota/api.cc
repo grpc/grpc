@@ -16,10 +16,24 @@
 
 #include "src/core/lib/resource_quota/api.h"
 
+#include <stdint.h>
+
+#include <atomic>
+#include <memory>
+#include <string>
+#include <utility>
+
+#include "absl/strings/str_cat.h"
+
 #include <grpc/grpc.h>
 
-#include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_args_preconditioning.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
+#include "src/core/lib/resource_quota/thread_quota.h"
 
 namespace grpc_core {
 
@@ -30,30 +44,13 @@ ResourceQuotaRefPtr ResourceQuotaFromChannelArgs(
       ->Ref();
 }
 
-namespace {
-grpc_arg MakeArg(ResourceQuota* quota) {
-  return grpc_channel_arg_pointer_create(
-      const_cast<char*>(GRPC_ARG_RESOURCE_QUOTA), quota,
-      grpc_resource_quota_arg_vtable());
-}
-
-const grpc_channel_args* EnsureResourceQuotaInChannelArgs(
-    const grpc_channel_args* args) {
-  const grpc_arg* existing =
-      grpc_channel_args_find(args, GRPC_ARG_RESOURCE_QUOTA);
-  if (existing != nullptr && existing->type == GRPC_ARG_POINTER &&
-      existing->value.pointer.p != nullptr) {
-    return grpc_channel_args_copy(args);
-  }
+ChannelArgs EnsureResourceQuotaInChannelArgs(const ChannelArgs& args) {
+  if (args.GetObject<ResourceQuota>() != nullptr) return args;
   // If there's no existing quota, add it to the default one - shared between
   // all channel args declared thusly. This prevents us from accidentally not
   // sharing subchannels due to their channel args not specifying a quota.
-  const char* remove[] = {GRPC_ARG_RESOURCE_QUOTA};
-  auto new_arg = MakeArg(ResourceQuota::Default().get());
-  return grpc_channel_args_copy_and_add_and_remove(args, remove, 1, &new_arg,
-                                                   1);
+  return args.SetObject(ResourceQuota::Default());
 }
-}  // namespace
 
 void RegisterResourceQuota(CoreConfiguration::Builder* builder) {
   builder->channel_args_preconditioning()->RegisterStage(
@@ -63,16 +60,7 @@ void RegisterResourceQuota(CoreConfiguration::Builder* builder) {
 }  // namespace grpc_core
 
 extern "C" const grpc_arg_pointer_vtable* grpc_resource_quota_arg_vtable() {
-  static const grpc_arg_pointer_vtable vtable = {
-      // copy
-      [](void* p) -> void* {
-        return static_cast<grpc_core::ResourceQuota*>(p)->Ref().release();
-      },
-      // destroy
-      [](void* p) { static_cast<grpc_core::ResourceQuota*>(p)->Unref(); },
-      // compare
-      [](void* p, void* q) { return grpc_core::QsortCompare(p, q); }};
-  return &vtable;
+  return grpc_core::ChannelArgTypeTraits<grpc_core::ResourceQuota>::VTable();
 }
 
 extern "C" grpc_resource_quota* grpc_resource_quota_create(const char* name) {

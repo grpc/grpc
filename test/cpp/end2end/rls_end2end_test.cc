@@ -60,11 +60,11 @@
 #include "test/core/util/test_config.h"
 #include "test/core/util/test_lb_policies.h"
 #include "test/cpp/end2end/counted_service.h"
+#include "test/cpp/end2end/rls_server.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/test_config.h"
 
 using ::grpc::lookup::v1::RouteLookupRequest;
-using ::grpc::lookup::v1::RouteLookupResponse;
 
 namespace grpc {
 namespace testing {
@@ -87,92 +87,6 @@ const char* kConstantKey = "constant_key";
 const char* kConstantValue = "constant_value";
 
 using BackendService = CountedService<TestServiceImpl>;
-using RlsService =
-    CountedService<grpc::lookup::v1::RouteLookupService::Service>;
-
-class RlsServiceImpl : public RlsService {
- public:
-  grpc::Status RouteLookup(grpc::ServerContext* context,
-                           const RouteLookupRequest* request,
-                           RouteLookupResponse* response) override {
-    gpr_log(GPR_INFO, "RLS: Received request: %s",
-            request->DebugString().c_str());
-    // RLS server should see call creds.
-    EXPECT_THAT(context->client_metadata(),
-                ::testing::Contains(
-                    ::testing::Pair(kCallCredsMdKey, kCallCredsMdValue)));
-    IncreaseRequestCount();
-    EXPECT_EQ(request->target_type(), "grpc");
-    // See if we have a configured response for this request.
-    ResponseData res;
-    {
-      grpc::internal::MutexLock lock(&mu_);
-      auto it = responses_.find(*request);
-      if (it == responses_.end()) {
-        gpr_log(GPR_INFO, "RLS: no matching request, returning INTERNAL");
-        unmatched_requests_.push_back(*request);
-        return Status(StatusCode::INTERNAL, "no response entry");
-      }
-      res = it->second;
-    }
-    // Configured response found, so use it.
-    if (res.response_delay > grpc_core::Duration::Zero()) {
-      gpr_sleep_until(
-          grpc_timeout_milliseconds_to_deadline(res.response_delay.millis()));
-    }
-    IncreaseResponseCount();
-    *response = res.response;
-    gpr_log(GPR_INFO, "RLS: returning configured response: %s",
-            response->DebugString().c_str());
-    return Status::OK;
-  }
-
-  void Start() {}
-
-  void Shutdown() {}
-
-  void SetResponse(RouteLookupRequest request, RouteLookupResponse response,
-                   grpc_core::Duration response_delay = grpc_core::Duration()) {
-    grpc::internal::MutexLock lock(&mu_);
-    responses_[std::move(request)] = {std::move(response), response_delay};
-  }
-
-  void RemoveResponse(const RouteLookupRequest& request) {
-    grpc::internal::MutexLock lock(&mu_);
-    responses_.erase(request);
-  }
-
-  std::vector<RouteLookupRequest> GetUnmatchedRequests() {
-    grpc::internal::MutexLock lock(&mu_);
-    return std::move(unmatched_requests_);
-  }
-
- private:
-  // Sorting thunk for RouteLookupRequest.
-  struct RlsRequestLessThan {
-    bool operator()(const RouteLookupRequest& req1,
-                    const RouteLookupRequest& req2) const {
-      std::map<absl::string_view, absl::string_view> key_map1(
-          req1.key_map().begin(), req1.key_map().end());
-      std::map<absl::string_view, absl::string_view> key_map2(
-          req2.key_map().begin(), req2.key_map().end());
-      if (key_map1 < key_map2) return true;
-      if (req1.reason() < req2.reason()) return true;
-      if (req1.stale_header_data() < req2.stale_header_data()) return true;
-      return false;
-    }
-  };
-
-  struct ResponseData {
-    RouteLookupResponse response;
-    grpc_core::Duration response_delay;
-  };
-
-  grpc::internal::Mutex mu_;
-  std::map<RouteLookupRequest, ResponseData, RlsRequestLessThan> responses_
-      ABSL_GUARDED_BY(&mu_);
-  std::vector<RouteLookupRequest> unmatched_requests_ ABSL_GUARDED_BY(&mu_);
-};
 
 // Subclass of TestServiceImpl that increments a request counter for
 // every call to the Echo Rpc.
@@ -265,7 +179,12 @@ class RlsEnd2endTest : public ::testing::Test {
     grpc_core::LocalhostResolves(&localhost_resolves_to_ipv4,
                                  &localhost_resolves_to_ipv6);
     ipv6_only_ = !localhost_resolves_to_ipv4 && localhost_resolves_to_ipv6;
-    rls_server_ = absl::make_unique<ServerThread<RlsServiceImpl>>("rls");
+    rls_server_ = absl::make_unique<ServerThread<RlsServiceImpl>>(
+        "rls", [](grpc::ServerContext* ctx) {
+          EXPECT_THAT(ctx->client_metadata(),
+                      ::testing::Contains(
+                          ::testing::Pair(kCallCredsMdKey, kCallCredsMdValue)));
+        });
     rls_server_->Start();
     resolver_response_generator_ =
         absl::make_unique<FakeResolverResponseGeneratorWrapper>();
@@ -314,26 +233,6 @@ class RlsEnd2endTest : public ::testing::Test {
   std::string TargetStringForPort(int port) {
     if (ipv6_only_) return absl::StrCat("ipv6:[::1]:", port);
     return absl::StrCat("ipv4:127.0.0.1:", port);
-  }
-
-  static RouteLookupRequest BuildRlsRequest(
-      std::map<std::string, std::string> key,
-      RouteLookupRequest::Reason reason = RouteLookupRequest::REASON_MISS,
-      const char* stale_header_data = "") {
-    RouteLookupRequest request;
-    request.set_target_type("grpc");
-    request.mutable_key_map()->insert(key.begin(), key.end());
-    request.set_reason(reason);
-    request.set_stale_header_data(stale_header_data);
-    return request;
-  }
-
-  static RouteLookupResponse BuildRlsResponse(std::vector<std::string> targets,
-                                              const char* header_data = "") {
-    RouteLookupResponse response;
-    response.mutable_targets()->Add(targets.begin(), targets.end());
-    response.set_header_data(header_data);
-    return response;
   }
 
   struct RpcOptions {
@@ -395,9 +294,15 @@ class RlsEnd2endTest : public ::testing::Test {
   }
 
   void CheckRpcSendFailure(const grpc_core::DebugLocation& location,
+                           StatusCode expected_code,
+                           absl::string_view expected_message,
                            const RpcOptions& rpc_options = RpcOptions()) {
     Status status = SendRpc(rpc_options);
     ASSERT_FALSE(status.ok()) << location.file() << ":" << location.line();
+    EXPECT_EQ(expected_code, status.error_code())
+        << location.file() << ":" << location.line();
+    EXPECT_EQ(expected_message, status.error_message())
+        << location.file() << ":" << location.line();
   }
 
   class ServiceConfigBuilder {
@@ -481,7 +386,7 @@ class RlsEnd2endTest : public ::testing::Test {
       return absl::StrCat(
           "{"
           "  \"loadBalancingConfig\":[{"
-          "    \"rls\":{",
+          "    \"rls_experimental\":{",
           absl::StrJoin(rls_config_parts, ","),
           "    }"
           "  }]"
@@ -938,7 +843,8 @@ TEST_F(RlsEnd2endTest, FailedRlsRequestWithoutDefaultTarget) {
   // Now start the real test.
   // Send an RPC before we give the RLS server a response.
   // The RLS request will fail, and thus so will the data plane RPC.
-  CheckRpcSendFailure(DEBUG_LOCATION,
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                      "RLS request failed: INTERNAL: no response entry",
                       RpcOptions().set_metadata({{"key1", kTestValue}}));
   EXPECT_THAT(
       rls_server_->service_.GetUnmatchedRequests(),
@@ -1249,7 +1155,8 @@ TEST_F(RlsEnd2endTest, ExpiredCacheEntry) {
   gpr_sleep_until(grpc_timeout_seconds_to_deadline(2));
   // Send another RPC.  This should trigger a second RLS request, but
   // that fails, so the RPC fails.
-  CheckRpcSendFailure(DEBUG_LOCATION,
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                      "RLS request failed: INTERNAL: no response entry",
                       RpcOptions().set_metadata({{"key1", kTestValue}}));
   EXPECT_EQ(rls_server_->service_.request_count(), 2);
   EXPECT_EQ(rls_server_->service_.response_count(), 1);
@@ -1349,6 +1256,37 @@ TEST_F(RlsEnd2endTest, MultipleTargets) {
   rls_server_->service_.SetResponse(
       BuildRlsRequest({{kTestKey, kTestValue}}),
       BuildRlsResponse(
+          // Second target will report TRANSIENT_FAILURE, but should
+          // never be used.
+          {TargetStringForPort(backends_[0]->port_), "invalid_target"}));
+  CheckRpcSendOk(DEBUG_LOCATION,
+                 RpcOptions().set_metadata({{"key1", kTestValue}}));
+  EXPECT_EQ(rls_server_->service_.request_count(), 1);
+  EXPECT_EQ(rls_server_->service_.response_count(), 1);
+  EXPECT_EQ(backends_[0]->service_.request_count(), 1);
+}
+
+TEST_F(RlsEnd2endTest, MultipleTargetsFirstInTransientFailure) {
+  StartBackends(1);
+  SetNextResolution(
+      MakeServiceConfigBuilder()
+          .AddKeyBuilder(absl::StrFormat("\"names\":[{"
+                                         "  \"service\":\"%s\","
+                                         "  \"method\":\"%s\""
+                                         "}],"
+                                         "\"headers\":["
+                                         "  {"
+                                         "    \"key\":\"%s\","
+                                         "    \"names\":["
+                                         "      \"key1\""
+                                         "    ]"
+                                         "  }"
+                                         "]",
+                                         kServiceValue, kMethodValue, kTestKey))
+          .Build());
+  rls_server_->service_.SetResponse(
+      BuildRlsRequest({{kTestKey, kTestValue}}),
+      BuildRlsResponse(
           // First target will report TRANSIENT_FAILURE.
           {"invalid_target", TargetStringForPort(backends_[0]->port_)}));
   CheckRpcSendOk(DEBUG_LOCATION,
@@ -1409,7 +1347,8 @@ TEST_F(RlsEnd2endTest, ConnectivityStateIdle) {
           .Build());
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(/*try_to_connect=*/false));
   // RLS server not given any responses, so the request will fail.
-  CheckRpcSendFailure(DEBUG_LOCATION);
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                      "RLS request failed: INTERNAL: no response entry");
   // No child policies, so should be IDLE.
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(/*try_to_connect=*/false));
 }
@@ -1434,8 +1373,10 @@ TEST_F(RlsEnd2endTest, ConnectivityStateTransientFailure) {
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(/*try_to_connect=*/false));
   rls_server_->service_.SetResponse(BuildRlsRequest({{kTestKey, kTestValue}}),
                                     BuildRlsResponse({"invalid_target"}));
-  CheckRpcSendFailure(DEBUG_LOCATION,
-                      RpcOptions().set_metadata({{"key1", kTestValue}}));
+  CheckRpcSendFailure(
+      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+      "empty address list: no address in fixed_address_lb policy",
+      RpcOptions().set_metadata({{"key1", kTestValue}}));
   EXPECT_EQ(rls_server_->service_.request_count(), 1);
   EXPECT_EQ(rls_server_->service_.response_count(), 1);
   EXPECT_EQ(GRPC_CHANNEL_TRANSIENT_FAILURE,
@@ -1477,6 +1418,6 @@ TEST_F(RlsEnd2endTest, RlsAuthorityDeathTest) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   return RUN_ALL_TESTS();
 }

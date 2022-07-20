@@ -119,7 +119,7 @@ void InvokeResolverComponentTestsRunner(
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
   grpc_init();
   GPR_ASSERT(!absl::GetFlag(FLAGS_test_bin_name).empty());

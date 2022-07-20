@@ -62,11 +62,12 @@ static void drain_cq(grpc_completion_queue* cq) {
 
 static void shutdown_server(grpc_end2end_test_fixture* f) {
   if (!f->server) return;
-  grpc_server_shutdown_and_notify(f->server, f->shutdown_cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(f->shutdown_cq, tag(1000),
-                                         grpc_timeout_seconds_to_deadline(5),
-                                         nullptr)
-                 .type == GRPC_OP_COMPLETE);
+  grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
+  grpc_event ev;
+  do {
+    ev = grpc_completion_queue_next(f->cq, grpc_timeout_seconds_to_deadline(5),
+                                    nullptr);
+  } while (ev.type != GRPC_OP_COMPLETE || ev.tag != tag(1000));
   grpc_server_destroy(f->server);
   f->server = nullptr;
 }
@@ -84,7 +85,6 @@ static void end_test(grpc_end2end_test_fixture* f) {
   grpc_completion_queue_shutdown(f->cq);
   drain_cq(f->cq);
   grpc_completion_queue_destroy(f->cq);
-  grpc_completion_queue_destroy(f->shutdown_cq);
 }
 
 /* Cancel and do nothing */
@@ -93,7 +93,6 @@ static void test_cancel_in_a_vacuum(grpc_end2end_test_config config,
   grpc_call* c;
   grpc_end2end_test_fixture f =
       begin_test(config, "test_cancel_in_a_vacuum", mode, nullptr, nullptr);
-  cq_verifier* v_client = cq_verifier_create(f.cq);
 
   gpr_timespec deadline = five_seconds_from_now();
   c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
@@ -105,7 +104,6 @@ static void test_cancel_in_a_vacuum(grpc_end2end_test_config config,
 
   grpc_call_unref(c);
 
-  cq_verifier_destroy(v_client);
   end_test(&f);
   config.tear_down_data(&f);
 }

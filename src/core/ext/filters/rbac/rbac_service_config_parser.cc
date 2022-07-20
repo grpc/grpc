@@ -18,10 +18,22 @@
 
 #include "src/core/ext/filters/rbac/rbac_service_config_parser.h"
 
+#include <stdint.h>
+
+#include <map>
+#include <string>
+
+#include "absl/memory/memory.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
+#include "absl/types/optional.h"
+
+#include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/json/json_util.h"
+#include "src/core/lib/matchers/matchers.h"
 #include "src/core/lib/transport/error_utils.h"
 
 namespace grpc_core {
@@ -570,13 +582,12 @@ std::vector<Rbac> ParseRbacArray(const Json::Array& policies_json_array,
 }  // namespace
 
 std::unique_ptr<ServiceConfigParser::ParsedConfig>
-RbacServiceConfigParser::ParsePerMethodParams(const grpc_channel_args* args,
+RbacServiceConfigParser::ParsePerMethodParams(const ChannelArgs& args,
                                               const Json& json,
                                               grpc_error_handle* error) {
-  GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
+  GPR_DEBUG_ASSERT(error != nullptr && GRPC_ERROR_IS_NONE(*error));
   // Only parse rbac policy if the channel arg is present
-  if (!grpc_channel_args_find_bool(args, GRPC_ARG_PARSE_RBAC_METHOD_CONFIG,
-                                   false)) {
+  if (!args.GetBool(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG).value_or(false)) {
     return nullptr;
   }
   std::vector<Rbac> rbac_policies;
@@ -587,7 +598,7 @@ RbacServiceConfigParser::ParsePerMethodParams(const grpc_channel_args* args,
     rbac_policies = ParseRbacArray(*policies_json_array, &error_list);
   }
   *error = GRPC_ERROR_CREATE_FROM_VECTOR("Rbac parser", &error_list);
-  if (*error != GRPC_ERROR_NONE || rbac_policies.empty()) {
+  if (!GRPC_ERROR_IS_NONE(*error) || rbac_policies.empty()) {
     return nullptr;
   }
   return absl::make_unique<RbacMethodParsedConfig>(std::move(rbac_policies));

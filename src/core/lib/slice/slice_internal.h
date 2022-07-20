@@ -21,17 +21,18 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <string.h>
+#include <stdint.h>
+
+#include <cstddef>
+#include <string>
 
 #include "absl/strings/string_view.h"
 
 #include <grpc/slice.h>
-#include <grpc/slice_buffer.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/murmur_hash.h"
 #include "src/core/lib/gprpp/memory.h"
-#include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/slice/slice_refcount.h"
 
 void grpc_slice_buffer_reset_and_unref_internal(grpc_slice_buffer* sb);

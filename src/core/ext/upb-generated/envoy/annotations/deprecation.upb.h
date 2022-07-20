@@ -30,14 +30,46 @@ extern const upb_MiniTable google_protobuf_EnumValueOptions_msginit;
 extern const upb_MiniTable google_protobuf_FieldOptions_msginit;
 
 
-UPB_INLINE bool envoy_annotations_has_disallowed_by_default(const struct google_protobuf_FieldOptions *msg) { return _upb_Message_Getext(msg, &envoy_annotations_disallowed_by_default_ext) != NULL; }
-UPB_INLINE bool envoy_annotations_disallowed_by_default(const struct google_protobuf_FieldOptions *msg) { const upb_Message_Extension *ext = _upb_Message_Getext(msg, &envoy_annotations_disallowed_by_default_ext); return ext ? *UPB_PTR_AT(&ext->data, 0, bool) : false; }
-UPB_INLINE bool envoy_annotations_has_deprecated_at_minor_version(const struct google_protobuf_FieldOptions *msg) { return _upb_Message_Getext(msg, &envoy_annotations_deprecated_at_minor_version_ext) != NULL; }
-UPB_INLINE upb_StringView envoy_annotations_deprecated_at_minor_version(const struct google_protobuf_FieldOptions *msg) { const upb_Message_Extension *ext = _upb_Message_Getext(msg, &envoy_annotations_deprecated_at_minor_version_ext); return ext ? *UPB_PTR_AT(&ext->data, 0, upb_StringView) : upb_StringView_FromString(""); }
-UPB_INLINE bool envoy_annotations_has_disallowed_by_default_enum(const struct google_protobuf_EnumValueOptions *msg) { return _upb_Message_Getext(msg, &envoy_annotations_disallowed_by_default_enum_ext) != NULL; }
-UPB_INLINE bool envoy_annotations_disallowed_by_default_enum(const struct google_protobuf_EnumValueOptions *msg) { const upb_Message_Extension *ext = _upb_Message_Getext(msg, &envoy_annotations_disallowed_by_default_enum_ext); return ext ? *UPB_PTR_AT(&ext->data, 0, bool) : false; }
-UPB_INLINE bool envoy_annotations_has_deprecated_at_minor_version_enum(const struct google_protobuf_EnumValueOptions *msg) { return _upb_Message_Getext(msg, &envoy_annotations_deprecated_at_minor_version_enum_ext) != NULL; }
-UPB_INLINE upb_StringView envoy_annotations_deprecated_at_minor_version_enum(const struct google_protobuf_EnumValueOptions *msg) { const upb_Message_Extension *ext = _upb_Message_Getext(msg, &envoy_annotations_deprecated_at_minor_version_enum_ext); return ext ? *UPB_PTR_AT(&ext->data, 0, upb_StringView) : upb_StringView_FromString(""); }
+UPB_INLINE bool envoy_annotations_has_disallowed_by_default(const struct google_protobuf_FieldOptions* msg) {
+  return _upb_Message_Getext(msg, &envoy_annotations_disallowed_by_default_ext) != NULL;
+}
+UPB_INLINE void envoy_annotations_clear_disallowed_by_default(struct google_protobuf_FieldOptions* msg) {
+  _upb_Message_Clearext(msg, &envoy_annotations_disallowed_by_default_ext);
+}
+UPB_INLINE bool envoy_annotations_disallowed_by_default(const struct google_protobuf_FieldOptions* msg) {
+  const upb_Message_Extension* ext = _upb_Message_Getext(msg, &envoy_annotations_disallowed_by_default_ext);
+  return ext ? *UPB_PTR_AT(&ext->data, 0, bool) : false;
+}
+UPB_INLINE bool envoy_annotations_has_deprecated_at_minor_version(const struct google_protobuf_FieldOptions* msg) {
+  return _upb_Message_Getext(msg, &envoy_annotations_deprecated_at_minor_version_ext) != NULL;
+}
+UPB_INLINE void envoy_annotations_clear_deprecated_at_minor_version(struct google_protobuf_FieldOptions* msg) {
+  _upb_Message_Clearext(msg, &envoy_annotations_deprecated_at_minor_version_ext);
+}
+UPB_INLINE upb_StringView envoy_annotations_deprecated_at_minor_version(const struct google_protobuf_FieldOptions* msg) {
+  const upb_Message_Extension* ext = _upb_Message_Getext(msg, &envoy_annotations_deprecated_at_minor_version_ext);
+  return ext ? *UPB_PTR_AT(&ext->data, 0, upb_StringView) : upb_StringView_FromString("");
+}
+UPB_INLINE bool envoy_annotations_has_disallowed_by_default_enum(const struct google_protobuf_EnumValueOptions* msg) {
+  return _upb_Message_Getext(msg, &envoy_annotations_disallowed_by_default_enum_ext) != NULL;
+}
+UPB_INLINE void envoy_annotations_clear_disallowed_by_default_enum(struct google_protobuf_EnumValueOptions* msg) {
+  _upb_Message_Clearext(msg, &envoy_annotations_disallowed_by_default_enum_ext);
+}
+UPB_INLINE bool envoy_annotations_disallowed_by_default_enum(const struct google_protobuf_EnumValueOptions* msg) {
+  const upb_Message_Extension* ext = _upb_Message_Getext(msg, &envoy_annotations_disallowed_by_default_enum_ext);
+  return ext ? *UPB_PTR_AT(&ext->data, 0, bool) : false;
+}
+UPB_INLINE bool envoy_annotations_has_deprecated_at_minor_version_enum(const struct google_protobuf_EnumValueOptions* msg) {
+  return _upb_Message_Getext(msg, &envoy_annotations_deprecated_at_minor_version_enum_ext) != NULL;
+}
+UPB_INLINE void envoy_annotations_clear_deprecated_at_minor_version_enum(struct google_protobuf_EnumValueOptions* msg) {
+  _upb_Message_Clearext(msg, &envoy_annotations_deprecated_at_minor_version_enum_ext);
+}
+UPB_INLINE upb_StringView envoy_annotations_deprecated_at_minor_version_enum(const struct google_protobuf_EnumValueOptions* msg) {
+  const upb_Message_Extension* ext = _upb_Message_Getext(msg, &envoy_annotations_deprecated_at_minor_version_enum_ext);
+  return ext ? *UPB_PTR_AT(&ext->data, 0, upb_StringView) : upb_StringView_FromString("");
+}
 extern const upb_MiniTable_File envoy_annotations_deprecation_proto_upb_file_layout;
 
 #ifdef __cplusplus

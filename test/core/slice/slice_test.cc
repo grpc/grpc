@@ -27,6 +27,8 @@
 
 #include <gtest/gtest.h>
 
+#include "absl/memory/memory.h"
+
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>

@@ -20,6 +20,8 @@
 
 #include "src/core/lib/transport/status_conversion.h"
 
+#include "src/core/lib/iomgr/exec_ctx.h"
+
 grpc_http2_error_code grpc_status_to_http2_error(grpc_status_code status) {
   switch (status) {
     case GRPC_STATUS_OK:

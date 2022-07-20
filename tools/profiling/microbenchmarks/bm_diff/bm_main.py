@@ -147,7 +147,6 @@ def main(args):
         text = note + '\n\n' + text
     print('%s' % text)
     check_on_pr.check_on_pr('Benchmark', '```\n%s\n```' % text)
-    check_on_pr.label_significance_on_pr('perf-change', significance)
 
 
 if __name__ == '__main__':

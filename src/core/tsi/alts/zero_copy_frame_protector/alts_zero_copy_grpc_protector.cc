@@ -174,7 +174,7 @@ static tsi_result alts_zero_copy_grpc_protector_protect(
 
 static tsi_result alts_zero_copy_grpc_protector_unprotect(
     tsi_zero_copy_grpc_protector* self, grpc_slice_buffer* protected_slices,
-    grpc_slice_buffer* unprotected_slices) {
+    grpc_slice_buffer* unprotected_slices, int* min_progress_size) {
   if (self == nullptr || unprotected_slices == nullptr ||
       protected_slices == nullptr) {
     gpr_log(GPR_ERROR,
@@ -213,6 +213,14 @@ static tsi_result alts_zero_copy_grpc_protector_unprotect(
     if (status != TSI_OK) {
       grpc_slice_buffer_reset_and_unref_internal(&protector->protected_sb);
       return status;
+    }
+  }
+  if (min_progress_size != nullptr) {
+    if (protector->parsed_frame_size > kZeroCopyFrameLengthFieldSize) {
+      *min_progress_size =
+          protector->parsed_frame_size - protector->protected_sb.length;
+    } else {
+      *min_progress_size = 1;
     }
   }
   return TSI_OK;

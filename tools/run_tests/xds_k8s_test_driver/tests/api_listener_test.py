@@ -19,6 +19,7 @@ from google.protobuf import json_format
 
 from framework import xds_k8s_testcase
 from framework import xds_url_map_testcase
+from framework.helpers import skips
 
 logger = logging.getLogger(__name__)
 flags.adopt_module_key_flags(xds_k8s_testcase)
@@ -27,11 +28,20 @@ flags.adopt_module_key_flags(xds_k8s_testcase)
 _XdsTestServer = xds_k8s_testcase.XdsTestServer
 _XdsTestClient = xds_k8s_testcase.XdsTestClient
 _DumpedXdsConfig = xds_url_map_testcase.DumpedXdsConfig
+_Lang = skips.Lang
 
 _TD_CONFIG_RETRY_WAIT_SEC = 2
 
 
 class ApiListenerTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
+
+    @staticmethod
+    def is_supported(config: skips.TestConfig) -> bool:
+        if config.client_lang == _Lang.PYTHON:
+            # gRPC Python versions prior to v1.43.x don't support handling empty
+            # RDS update.
+            return config.version_gte('v1.43.x')
+        return True
 
     def test_api_listener(self) -> None:
         with self.subTest('00_create_health_check'):
@@ -49,14 +59,16 @@ class ApiListenerTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
         with self.subTest('04_create_default_forwarding_rule'):
             self.td.create_forwarding_rule(self.server_xds_port)
 
+        test_server: _XdsTestServer
         with self.subTest('05_start_test_server'):
-            test_server: _XdsTestServer = self.startTestServers()[0]
+            test_server = self.startTestServers()[0]
 
         with self.subTest('06_add_server_backends_to_backend_services'):
             self.setupServerBackends()
 
+        test_client: _XdsTestClient
         with self.subTest('07_start_test_client'):
-            test_client: _XdsTestClient = self.startTestClient(test_server)
+            test_client = self.startTestClient(test_server)
 
         with self.subTest('08_test_client_xds_config_exists'):
             self.assertXdsConfigExists(test_client)
@@ -91,9 +103,9 @@ class ApiListenerTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
             dumped_config = _DumpedXdsConfig(
                 json_format.MessageToDict(raw_config))
             previous_route_config_version = dumped_config.rds_version
-            logger.info(
-                'received client config from CSDS with two url maps, dump config: %s, rds version: %s',
-                dumped_config, previous_route_config_version)
+            logger.info(('received client config from CSDS with two url maps, '
+                         'dump config: %s, rds version: %s'), dumped_config,
+                        previous_route_config_version)
 
         with self.subTest('14_delete_one_url_map_target_proxy_forwarding_rule'):
             self.td.delete_forwarding_rule()

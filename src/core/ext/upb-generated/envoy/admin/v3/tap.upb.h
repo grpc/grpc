@@ -53,16 +53,28 @@ UPB_INLINE envoy_admin_v3_TapRequest* envoy_admin_v3_TapRequest_parse_ex(const c
   return ret;
 }
 UPB_INLINE char* envoy_admin_v3_TapRequest_serialize(const envoy_admin_v3_TapRequest* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_admin_v3_TapRequest_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_admin_v3_TapRequest_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_admin_v3_TapRequest_serialize_ex(const envoy_admin_v3_TapRequest* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_admin_v3_TapRequest_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_admin_v3_TapRequest_msginit, options, arena, &ptr, len);
+  return ptr;
+}
+UPB_INLINE void envoy_admin_v3_TapRequest_clear_config_id(const envoy_admin_v3_TapRequest* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
 }
 UPB_INLINE upb_StringView envoy_admin_v3_TapRequest_config_id(const envoy_admin_v3_TapRequest* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView);
 }
-UPB_INLINE bool envoy_admin_v3_TapRequest_has_tap_config(const envoy_admin_v3_TapRequest *msg) { return _upb_hasbit(msg, 1); }
+UPB_INLINE bool envoy_admin_v3_TapRequest_has_tap_config(const envoy_admin_v3_TapRequest* msg) {
+  return _upb_hasbit(msg, 1);
+}
+UPB_INLINE void envoy_admin_v3_TapRequest_clear_tap_config(const envoy_admin_v3_TapRequest* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(12, 24), const upb_Message*) = NULL;
+}
 UPB_INLINE const struct envoy_config_tap_v3_TapConfig* envoy_admin_v3_TapRequest_tap_config(const envoy_admin_v3_TapRequest* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(12, 24), const struct envoy_config_tap_v3_TapConfig*);
 }
@@ -74,7 +86,7 @@ UPB_INLINE void envoy_admin_v3_TapRequest_set_tap_config(envoy_admin_v3_TapReque
   _upb_sethas(msg, 1);
   *UPB_PTR_AT(msg, UPB_SIZE(12, 24), struct envoy_config_tap_v3_TapConfig*) = value;
 }
-UPB_INLINE struct envoy_config_tap_v3_TapConfig* envoy_admin_v3_TapRequest_mutable_tap_config(envoy_admin_v3_TapRequest *msg, upb_Arena *arena) {
+UPB_INLINE struct envoy_config_tap_v3_TapConfig* envoy_admin_v3_TapRequest_mutable_tap_config(envoy_admin_v3_TapRequest* msg, upb_Arena* arena) {
   struct envoy_config_tap_v3_TapConfig* sub = (struct envoy_config_tap_v3_TapConfig*)envoy_admin_v3_TapRequest_tap_config(msg);
   if (sub == NULL) {
     sub = (struct envoy_config_tap_v3_TapConfig*)_upb_Message_New(&envoy_config_tap_v3_TapConfig_msginit, arena);

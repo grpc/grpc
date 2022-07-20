@@ -17,6 +17,16 @@ Server should accept these arguments:
     *   When set to true it uses XdsServerCredentials with the test server for security test cases.
         In case of secure mode, port and maintenance_port should be different.
 
+In addition, when handling requests, if the initial request metadata contains the `rpc-behavior` key, it should modify its handling of the request as follows:
+
+ - If the value matches `sleep-<int>`, the server should wait the specified number of seconds before resuming behavior matching and RPC processing.
+ - If the value matches `keep-open`, the server should never respond to the request and behavior matching ends.
+ - If the value matches `error-code-<int>`, the server should respond with the specified status code and behavior matching ends.
+ - If the value matches `success-on-retry-attempt-<int>`, and the value of the `grpc-previous-rpc-attempts` metadata field is equal to the specified number, the normal RPC processing should resume and behavior matching ends.
+ - A value can have a prefix `hostname=<string>` followed by a space. In that case, the rest of the value should only be applied if the specified hostname matches the server's hostname.
+
+The `rpc-behavior` header value can have multiple options separated by commas. In that case, the value should be split by commas and the options should be applied in the order specified. If a request has multiple `rpc-behavior` metadata values, each one should be processed that way in order.
+
 ## Client
 
 The base behavior of the xDS test client is to send a constant QPS of unary
@@ -735,3 +745,38 @@ the forwarding rule port `80` and the URL map host rule `myservice`.
 1. No traffic goes to backends when configuring the target URI
 `xds:///myservice`, the forwarding rule port `80` and the host rule 
 `myservice::80`.
+
+### outlier_detection
+This test verifies that the client applies the outlier detection configuration
+and temporarily drops traffic to a server that fails requests.
+
+Client parameters:
+
+1.  --num_channels=1
+2.  --qps=100
+
+Load balancer configuration:
+
+1.  One MIG with five backends, with a `backendService` configuration with the
+    following `outlierDetection` entry
+    ```json
+    {
+      "interval": {
+        "seconds": 2,
+        "nanos": 0
+      },
+      "successRateRequestVolume": 20
+    }
+    ```
+Assert:
+
+1.  The test driver asserts that traffic is equally distribted among the
+five backends, and all requests end with the `OK` status.
+2.  The test driver chooses one of the five backends to fail requests, and
+configures the client to send the metadata
+`rpc-behavior: hostname=<chosen backend> error-code-2`. The driver asserts
+that during some 10-second interval, all traffic goes to the other four
+backends and all requests end with the `OK` status.
+3.  The test driver removes the client configuration to send metadata. The
+driver asserts that during some 10-second interval, traffic is equally
+distributed among the five backends, and all requests end with the `OK` status.

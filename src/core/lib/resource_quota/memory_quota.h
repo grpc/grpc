@@ -17,21 +17,35 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <algorithm>
+#include <stdint.h>
+
 #include <atomic>
 #include <cstddef>
 #include <limits>
 #include <memory>
-#include <queue>
-#include <vector>
+#include <string>
+#include <utility>
+
+#include "absl/base/thread_annotations.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 
 #include <grpc/event_engine/memory_allocator.h>
-#include <grpc/slice.h>
+#include <grpc/event_engine/memory_request.h>
+#include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/global_config_generic.h"
 #include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/lib/resource_quota/periodic_update.h"
+
+GPR_GLOBAL_CONFIG_DECLARE_BOOL(
+    grpc_experimental_enable_periodic_resource_quota_reclamation);
+GPR_GLOBAL_CONFIG_DECLARE_INT32(grpc_experimental_max_quota_buffer_size);
 
 namespace grpc_core {
 
@@ -280,11 +294,6 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
       std::shared_ptr<BasicMemoryQuota> memory_quota, std::string name);
   ~GrpcMemoryAllocatorImpl() override;
 
-  // Rebind - Swaps the underlying quota for this allocator, taking care to
-  // make sure memory allocated is moved to allocations against the new quota.
-  void Rebind(std::shared_ptr<BasicMemoryQuota> memory_quota)
-      ABSL_LOCKS_EXCLUDED(memory_quota_mu_);
-
   // Reserve bytes from the quota.
   // If we enter overcommit, reclamation will begin concurrently.
   // Returns the number of bytes reserved.
@@ -295,14 +304,21 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
     // Add the released memory to our free bytes counter... if this increases
     // from  0 to non-zero, then we have more to do, otherwise, we're actually
     // done.
-    if (free_bytes_.fetch_add(n, std::memory_order_release) != 0) return;
+    size_t prev_free = free_bytes_.fetch_add(n, std::memory_order_release);
+    if ((max_quota_buffer_size() > 0 &&
+         prev_free + n > max_quota_buffer_size()) ||
+        (periodic_donate_back() && donate_back_.Tick())) {
+      // Try to immediately return some free'ed memory back to the total quota.
+      MaybeDonateBack();
+    }
+    if (prev_free != 0) return;
     MaybeRegisterReclaimer();
   }
 
   // Post a reclamation function.
   template <typename F>
   void PostReclaimer(ReclamationPass pass, F fn) {
-    MutexLock lock(&memory_quota_mu_);
+    MutexLock lock(&reclaimer_mu_);
     GPR_ASSERT(!shutdown_);
     InsertReclaimer(static_cast<size_t>(pass), std::move(fn));
   }
@@ -312,7 +328,6 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
 
   // Read the instantaneous memory pressure
   double InstantaneousPressure() const {
-    MutexLock lock(&memory_quota_mu_);
     return memory_quota_->InstantaneousPressureAndMaxRecommendedAllocationSize()
         .first;
   }
@@ -321,43 +336,53 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
   absl::string_view name() const { return name_; }
 
  private:
+  static bool periodic_donate_back() {
+    static const bool value = GPR_GLOBAL_CONFIG_GET(
+        grpc_experimental_enable_periodic_resource_quota_reclamation);
+    return value;
+  }
+  static size_t max_quota_buffer_size() {
+    static const size_t value =
+        GPR_GLOBAL_CONFIG_GET(grpc_experimental_max_quota_buffer_size);
+    return value;
+  }
   // Primitive reservation function.
   absl::optional<size_t> TryReserve(MemoryRequest request) GRPC_MUST_USE_RESULT;
+  // This function may be invoked during a memory release operation.
+  // It will try to return half of our free pool to the quota.
+  void MaybeDonateBack();
   // Replenish bytes from the quota, without blocking, possibly entering
   // overcommit.
-  void Replenish() ABSL_LOCKS_EXCLUDED(memory_quota_mu_);
+  void Replenish();
   // If we have not already, register a reclamation function against the quota
   // to sweep any free memory back to that quota.
-  void MaybeRegisterReclaimer() ABSL_LOCKS_EXCLUDED(memory_quota_mu_);
-  void MaybeRegisterReclaimerLocked()
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(memory_quota_mu_);
+  void MaybeRegisterReclaimer() ABSL_LOCKS_EXCLUDED(reclaimer_mu_);
   template <typename F>
   void InsertReclaimer(size_t pass, F fn)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(memory_quota_mu_) {
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(reclaimer_mu_) {
     reclamation_handles_[pass] =
         memory_quota_->reclaimer_queue(pass)->Insert(std::move(fn));
   }
 
+  // Backing resource quota.
+  const std::shared_ptr<BasicMemoryQuota> memory_quota_;
   // Amount of memory this allocator has cached for its own use: to avoid quota
   // contention, each MemoryAllocator can keep some memory in addition to what
   // it is immediately using, and the quota can pull it back under memory
   // pressure.
   std::atomic<size_t> free_bytes_{0};
-  // Mutex guarding the backing resource quota.
-  mutable Mutex memory_quota_mu_;
-  // Backing resource quota.
-  std::shared_ptr<BasicMemoryQuota> memory_quota_
-      ABSL_GUARDED_BY(memory_quota_mu_);
   // Amount of memory taken from the quota by this allocator.
-  size_t taken_bytes_ ABSL_GUARDED_BY(memory_quota_mu_) =
-      sizeof(GrpcMemoryAllocatorImpl);
-  bool shutdown_ ABSL_GUARDED_BY(memory_quota_mu_) = false;
-  bool registered_reclaimer_ ABSL_GUARDED_BY(memory_quota_mu_) = false;
+  std::atomic<size_t> taken_bytes_{sizeof(GrpcMemoryAllocatorImpl)};
+  std::atomic<bool> registered_reclaimer_{false};
+  // We try to donate back some memory periodically to the central quota.
+  PeriodicUpdate donate_back_{Duration::Seconds(10)};
+  Mutex reclaimer_mu_;
+  bool shutdown_ ABSL_GUARDED_BY(reclaimer_mu_) = false;
   // Indices into the various reclaimer queues, used so that we can cancel
   // reclamation should we shutdown or get rebound.
   OrphanablePtr<ReclaimerQueue::Handle>
       reclamation_handles_[kNumReclamationPasses] ABSL_GUARDED_BY(
-          memory_quota_mu_);
+          reclaimer_mu_);
   // Name of this allocator.
   std::string name_;
 };
@@ -382,9 +407,6 @@ class MemoryOwner final : public MemoryAllocator {
   void PostReclaimer(ReclamationPass pass, F fn) {
     impl()->PostReclaimer(pass, std::move(fn));
   }
-
-  // Rebind to a different quota.
-  void Rebind(MemoryQuota* quota);
 
   // Instantaneous memory pressure in the underlying quota.
   double InstantaneousPressure() const {

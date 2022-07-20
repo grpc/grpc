@@ -391,8 +391,8 @@ static void on_handshaker_service_resp_recv(void* arg,
     return;
   }
   bool success = true;
-  if (error != GRPC_ERROR_NONE) {
-    gpr_log(GPR_ERROR,
+  if (!GRPC_ERROR_IS_NONE(error)) {
+    gpr_log(GPR_INFO,
             "ALTS handshaker on_handshaker_service_resp_recv error: %s",
             grpc_error_std_string(error).c_str());
     success = false;
@@ -447,7 +447,7 @@ static tsi_result alts_tsi_handshaker_continue_handshaker_next(
       GPR_ASSERT(handshaker->client == nullptr);
       handshaker->client = client;
       if (handshaker->shutdown) {
-        gpr_log(GPR_ERROR, "TSI handshake shutdown");
+        gpr_log(GPR_INFO, "TSI handshake shutdown");
         return TSI_HANDSHAKE_SHUTDOWN;
       }
     }
@@ -532,7 +532,7 @@ static tsi_result handshaker_next(
   {
     grpc_core::MutexLock lock(&handshaker->mu);
     if (handshaker->shutdown) {
-      gpr_log(GPR_ERROR, "TSI handshake shutdown");
+      gpr_log(GPR_INFO, "TSI handshake shutdown");
       return TSI_HANDSHAKE_SHUTDOWN;
     }
   }

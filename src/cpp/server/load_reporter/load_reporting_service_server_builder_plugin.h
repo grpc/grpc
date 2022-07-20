@@ -21,7 +21,14 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <memory>
+#include <string>
+
+#include <grpcpp/grpcpp.h>
 #include <grpcpp/impl/server_builder_plugin.h>
+#include <grpcpp/server_builder.h>
+#include <grpcpp/support/channel_arguments.h>
+#include <grpcpp/support/config.h>
 
 #include "src/cpp/server/load_reporter/load_reporter_async_service_impl.h"
 

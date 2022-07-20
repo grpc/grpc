@@ -35,6 +35,10 @@ _QPS = flags.DEFINE_integer('qps', default=25, help='Queries per second')
 _PRINT_RESPONSE = flags.DEFINE_bool("print_response",
                                     default=False,
                                     help="Client prints responses")
+_CONFIG_MESH = flags.DEFINE_bool(
+    "config_mesh",
+    default=None,
+    help="Optional. Supplied to bootstrap generator to indicate AppNet mesh.")
 _REUSE_NAMESPACE = flags.DEFINE_bool("reuse_namespace",
                                      default=True,
                                      help="Use existing namespace if exists")
@@ -69,7 +73,6 @@ def main(argv):
         gcp_service_account=gcp_service_account,
         xds_server_uri=xds_flags.XDS_SERVER_URI.value,
         network=xds_flags.NETWORK.value,
-        config_scope=xds_flags.CONFIG_SCOPE.value,
         stats_port=xds_flags.CLIENT_PORT.value,
         reuse_namespace=_REUSE_NAMESPACE.value)
 
@@ -94,7 +97,8 @@ def main(argv):
             server_target=f'xds:///{server_xds_host}:{server_xds_port}',
             qps=_QPS.value,
             print_response=_PRINT_RESPONSE.value,
-            secure_mode=_SECURE.value)
+            secure_mode=_SECURE.value,
+            config_mesh=_CONFIG_MESH.value)
 
     elif _CMD.value == 'cleanup':
         logger.info('Cleanup client')

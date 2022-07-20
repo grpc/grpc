@@ -43,7 +43,7 @@ static const grpc_core::Duration k25Days =
     grpc_core::Duration::Hours(kHoursIn25Days);
 
 static void cb(void* arg, grpc_error_handle error) {
-  cb_called[reinterpret_cast<intptr_t>(arg)][error == GRPC_ERROR_NONE]++;
+  cb_called[reinterpret_cast<intptr_t>(arg)][GRPC_ERROR_IS_NONE(error)]++;
 }
 
 static void add_test(void) {
@@ -233,7 +233,7 @@ int main(int argc, char** argv) {
 
   /* Tests with default g_start_time */
   {
-    grpc::testing::TestEnvironment env(argc, argv);
+    grpc::testing::TestEnvironment env(&argc, argv);
     grpc_core::ExecCtx exec_ctx;
     grpc_set_default_iomgr_platform();
     grpc_iomgr_platform_init();
@@ -245,7 +245,7 @@ int main(int argc, char** argv) {
 
   /* Begin long running service tests */
   {
-    grpc::testing::TestEnvironment env(argc, argv);
+    grpc::testing::TestEnvironment env(&argc, argv);
     /* Set g_start_time back 25 days. */
     /* We set g_start_time here in case there are any initialization
         dependencies that use g_start_time. */

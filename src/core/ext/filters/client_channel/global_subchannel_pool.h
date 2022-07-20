@@ -23,7 +23,10 @@
 
 #include <map>
 
+#include "absl/base/thread_annotations.h"
+
 #include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
 
 namespace grpc_core {

@@ -53,25 +53,37 @@ UPB_INLINE envoy_config_core_v3_EventServiceConfig* envoy_config_core_v3_EventSe
   return ret;
 }
 UPB_INLINE char* envoy_config_core_v3_EventServiceConfig_serialize(const envoy_config_core_v3_EventServiceConfig* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_core_v3_EventServiceConfig_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_core_v3_EventServiceConfig_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_config_core_v3_EventServiceConfig_serialize_ex(const envoy_config_core_v3_EventServiceConfig* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_core_v3_EventServiceConfig_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_core_v3_EventServiceConfig_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 typedef enum {
   envoy_config_core_v3_EventServiceConfig_config_source_specifier_grpc_service = 1,
   envoy_config_core_v3_EventServiceConfig_config_source_specifier_NOT_SET = 0
 } envoy_config_core_v3_EventServiceConfig_config_source_specifier_oneofcases;
-UPB_INLINE envoy_config_core_v3_EventServiceConfig_config_source_specifier_oneofcases envoy_config_core_v3_EventServiceConfig_config_source_specifier_case(const envoy_config_core_v3_EventServiceConfig* msg) { return (envoy_config_core_v3_EventServiceConfig_config_source_specifier_oneofcases)*UPB_PTR_AT(msg, UPB_SIZE(4, 8), int32_t); }
-
-UPB_INLINE bool envoy_config_core_v3_EventServiceConfig_has_grpc_service(const envoy_config_core_v3_EventServiceConfig *msg) { return _upb_getoneofcase(msg, UPB_SIZE(4, 8)) == 1; }
-UPB_INLINE const struct envoy_config_core_v3_GrpcService* envoy_config_core_v3_EventServiceConfig_grpc_service(const envoy_config_core_v3_EventServiceConfig *msg) { return UPB_READ_ONEOF(msg, const struct envoy_config_core_v3_GrpcService*, UPB_SIZE(0, 0), UPB_SIZE(4, 8), 1, NULL); }
+UPB_INLINE envoy_config_core_v3_EventServiceConfig_config_source_specifier_oneofcases envoy_config_core_v3_EventServiceConfig_config_source_specifier_case(const envoy_config_core_v3_EventServiceConfig* msg) {
+  return (envoy_config_core_v3_EventServiceConfig_config_source_specifier_oneofcases)*UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t);
+}
+UPB_INLINE bool envoy_config_core_v3_EventServiceConfig_has_grpc_service(const envoy_config_core_v3_EventServiceConfig* msg) {
+  return _upb_getoneofcase(msg, UPB_SIZE(0, 0)) == 1;
+}
+UPB_INLINE void envoy_config_core_v3_EventServiceConfig_clear_grpc_service(const envoy_config_core_v3_EventServiceConfig* msg) {
+  UPB_WRITE_ONEOF(msg, struct envoy_config_core_v3_GrpcService*, UPB_SIZE(4, 8), 0, UPB_SIZE(0, 0), envoy_config_core_v3_EventServiceConfig_config_source_specifier_NOT_SET);
+}
+UPB_INLINE const struct envoy_config_core_v3_GrpcService* envoy_config_core_v3_EventServiceConfig_grpc_service(const envoy_config_core_v3_EventServiceConfig* msg) {
+  return UPB_READ_ONEOF(msg, const struct envoy_config_core_v3_GrpcService*, UPB_SIZE(4, 8), UPB_SIZE(0, 0), 1, NULL);
+}
 
 UPB_INLINE void envoy_config_core_v3_EventServiceConfig_set_grpc_service(envoy_config_core_v3_EventServiceConfig *msg, struct envoy_config_core_v3_GrpcService* value) {
-  UPB_WRITE_ONEOF(msg, struct envoy_config_core_v3_GrpcService*, UPB_SIZE(0, 0), value, UPB_SIZE(4, 8), 1);
+  UPB_WRITE_ONEOF(msg, struct envoy_config_core_v3_GrpcService*, UPB_SIZE(4, 8), value, UPB_SIZE(0, 0), 1);
 }
-UPB_INLINE struct envoy_config_core_v3_GrpcService* envoy_config_core_v3_EventServiceConfig_mutable_grpc_service(envoy_config_core_v3_EventServiceConfig *msg, upb_Arena *arena) {
+UPB_INLINE struct envoy_config_core_v3_GrpcService* envoy_config_core_v3_EventServiceConfig_mutable_grpc_service(envoy_config_core_v3_EventServiceConfig* msg, upb_Arena* arena) {
   struct envoy_config_core_v3_GrpcService* sub = (struct envoy_config_core_v3_GrpcService*)envoy_config_core_v3_EventServiceConfig_grpc_service(msg);
   if (sub == NULL) {
     sub = (struct envoy_config_core_v3_GrpcService*)_upb_Message_New(&envoy_config_core_v3_GrpcService_msginit, arena);

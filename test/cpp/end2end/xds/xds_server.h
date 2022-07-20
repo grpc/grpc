@@ -37,6 +37,7 @@
 #include "src/proto/grpc/testing/xds/v3/ads.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/discovery.grpc.pb.h"
+#include "src/proto/grpc/testing/xds/v3/discovery.pb.h"
 #include "src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/listener.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/lrs.grpc.pb.h"
@@ -91,6 +92,11 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
   ::envoy::service::discovery::v3::AggregatedDiscoveryService::Service*
   v3_rpc_service() {
     return &v3_rpc_service_;
+  }
+
+  void set_wrap_resources(bool wrap_resources) {
+    grpc_core::MutexLock lock(&ads_mu_);
+    wrap_resources_ = wrap_resources;
   }
 
   // Sets a resource to a particular value, overwriting any previous value.
@@ -176,6 +182,11 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
     return clients_;
   }
 
+  void ForceADSFailure(Status status) {
+    grpc_core::MutexLock lock(&ads_mu_);
+    forced_ads_failure_ = std::move(status);
+  }
+
  private:
   // A queue of resource type/name pairs that have changed since the client
   // subscribed to them.
@@ -233,6 +244,17 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
     Status StreamAggregatedResources(ServerContext* context,
                                      Stream* stream) override {
       gpr_log(GPR_INFO, "ADS[%p]: StreamAggregatedResources starts", this);
+      {
+        grpc_core::MutexLock lock(&parent_->ads_mu_);
+        if (parent_->forced_ads_failure_.has_value()) {
+          gpr_log(GPR_INFO,
+                  "ADS[%p]: StreamAggregatedResources forcing early failure "
+                  "with status code: %d, message: %s",
+                  this, parent_->forced_ads_failure_.value().error_code(),
+                  parent_->forced_ads_failure_.value().error_message().c_str());
+          return parent_->forced_ads_failure_.value();
+        }
+      }
       parent_->AddClient(context->peer());
       if (is_v2_) {
         parent_->seen_v2_client_ = true;
@@ -455,6 +477,11 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
             if (is_v2_) {
               resource->set_type_url(request.type_url());
             }
+            if (parent_->wrap_resources_) {
+              envoy::service::discovery::v3::Resource resource_wrapper;
+              *resource_wrapper.mutable_resource() = std::move(*resource);
+              resource->PackFrom(resource_wrapper);
+            }
           }
         } else {
           gpr_log(GPR_INFO,
@@ -521,9 +548,10 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
       while (stream->Read(&request)) {
         if (!seen_first_request) {
           EXPECT_TRUE(request.has_node());
-          ASSERT_FALSE(request.node().client_features().empty());
-          EXPECT_EQ(request.node().client_features(0),
-                    "envoy.lb.does_not_support_overprovisioning");
+          EXPECT_THAT(request.node().client_features(),
+                      ::testing::UnorderedElementsAre(
+                          "envoy.lb.does_not_support_overprovisioning",
+                          "xds.config.resource-in-sotw"));
           CheckBuildVersion(request);
           seen_first_request = true;
         }
@@ -660,6 +688,8 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
   //   yet been destroyed by UnsetResource()).
   // - There is at least one subscription for the resource.
   ResourceMap resource_map_ ABSL_GUARDED_BY(ads_mu_);
+  absl::optional<Status> forced_ads_failure_ ABSL_GUARDED_BY(ads_mu_);
+  bool wrap_resources_ ABSL_GUARDED_BY(ads_mu_) = false;
 
   grpc_core::Mutex clients_mu_;
   std::set<std::string> clients_ ABSL_GUARDED_BY(clients_mu_);
@@ -708,6 +738,7 @@ class LrsServiceImpl : public std::enable_shared_from_this<LrsServiceImpl> {
     template <class ClusterStats>
     explicit ClientStats(const ClusterStats& cluster_stats)
         : cluster_name_(cluster_stats.cluster_name()),
+          eds_service_name_(cluster_stats.cluster_service_name()),
           total_dropped_requests_(cluster_stats.total_dropped_requests()) {
       for (const auto& input_locality_stats :
            cluster_stats.upstream_locality_stats()) {
@@ -722,6 +753,7 @@ class LrsServiceImpl : public std::enable_shared_from_this<LrsServiceImpl> {
     }
 
     const std::string& cluster_name() const { return cluster_name_; }
+    const std::string& eds_service_name() const { return eds_service_name_; }
 
     const std::map<std::string, LocalityStats>& locality_stats() const {
       return locality_stats_;
@@ -740,6 +772,7 @@ class LrsServiceImpl : public std::enable_shared_from_this<LrsServiceImpl> {
 
    private:
     std::string cluster_name_;
+    std::string eds_service_name_;
     std::map<std::string, LocalityStats> locality_stats_;
     uint64_t total_dropped_requests_ = 0;
     std::map<std::string, uint64_t> dropped_requests_;

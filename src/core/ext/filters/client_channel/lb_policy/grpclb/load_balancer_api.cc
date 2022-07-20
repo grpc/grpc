@@ -20,10 +20,20 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h"
 
+#include <string.h>
+
+#include <algorithm>
+
 #include "google/protobuf/duration.upb.h"
 #include "google/protobuf/timestamp.upb.h"
+#include "upb/upb.h"
 
-#include <grpc/support/alloc.h>
+#include <grpc/impl/codegen/gpr_types.h>
+#include <grpc/support/log.h>
+#include <grpc/support/time.h>
+
+#include "src/core/lib/gprpp/memory.h"
+#include "src/proto/grpc/lb/v1/load_balancer.upb.h"
 
 namespace grpc_core {
 

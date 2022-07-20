@@ -24,17 +24,18 @@
 #include <grpc/grpc_security.h>
 
 #include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
 
 // Helper function to construct service URL for jwt call creds.
 std::string MakeJwtServiceUrl(
-    const ClientInitialMetadata& initial_metadata,
+    const ClientMetadataHandle& initial_metadata,
     const grpc_call_credentials::GetRequestMetadataArgs* args);
 
 // Helper function to construct context for plugin call creds.
 grpc_auth_metadata_context MakePluginAuthMetadataContext(
-    const ClientInitialMetadata& initial_metadata,
+    const ClientMetadataHandle& initial_metadata,
     const grpc_call_credentials::GetRequestMetadataArgs* args);
 
 }  // namespace grpc_core

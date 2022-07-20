@@ -55,20 +55,37 @@ UPB_INLINE envoy_type_v3_TokenBucket* envoy_type_v3_TokenBucket_parse_ex(const c
   return ret;
 }
 UPB_INLINE char* envoy_type_v3_TokenBucket_serialize(const envoy_type_v3_TokenBucket* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_type_v3_TokenBucket_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_type_v3_TokenBucket_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_type_v3_TokenBucket_serialize_ex(const envoy_type_v3_TokenBucket* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_type_v3_TokenBucket_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_type_v3_TokenBucket_msginit, options, arena, &ptr, len);
+  return ptr;
+}
+UPB_INLINE void envoy_type_v3_TokenBucket_clear_max_tokens(const envoy_type_v3_TokenBucket* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 4), uint32_t) = 0;
 }
 UPB_INLINE uint32_t envoy_type_v3_TokenBucket_max_tokens(const envoy_type_v3_TokenBucket* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(4, 4), uint32_t);
 }
-UPB_INLINE bool envoy_type_v3_TokenBucket_has_tokens_per_fill(const envoy_type_v3_TokenBucket *msg) { return _upb_hasbit(msg, 1); }
+UPB_INLINE bool envoy_type_v3_TokenBucket_has_tokens_per_fill(const envoy_type_v3_TokenBucket* msg) {
+  return _upb_hasbit(msg, 1);
+}
+UPB_INLINE void envoy_type_v3_TokenBucket_clear_tokens_per_fill(const envoy_type_v3_TokenBucket* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 8), const upb_Message*) = NULL;
+}
 UPB_INLINE const struct google_protobuf_UInt32Value* envoy_type_v3_TokenBucket_tokens_per_fill(const envoy_type_v3_TokenBucket* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(8, 8), const struct google_protobuf_UInt32Value*);
 }
-UPB_INLINE bool envoy_type_v3_TokenBucket_has_fill_interval(const envoy_type_v3_TokenBucket *msg) { return _upb_hasbit(msg, 2); }
+UPB_INLINE bool envoy_type_v3_TokenBucket_has_fill_interval(const envoy_type_v3_TokenBucket* msg) {
+  return _upb_hasbit(msg, 2);
+}
+UPB_INLINE void envoy_type_v3_TokenBucket_clear_fill_interval(const envoy_type_v3_TokenBucket* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(12, 16), const upb_Message*) = NULL;
+}
 UPB_INLINE const struct google_protobuf_Duration* envoy_type_v3_TokenBucket_fill_interval(const envoy_type_v3_TokenBucket* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(12, 16), const struct google_protobuf_Duration*);
 }
@@ -80,7 +97,7 @@ UPB_INLINE void envoy_type_v3_TokenBucket_set_tokens_per_fill(envoy_type_v3_Toke
   _upb_sethas(msg, 1);
   *UPB_PTR_AT(msg, UPB_SIZE(8, 8), struct google_protobuf_UInt32Value*) = value;
 }
-UPB_INLINE struct google_protobuf_UInt32Value* envoy_type_v3_TokenBucket_mutable_tokens_per_fill(envoy_type_v3_TokenBucket *msg, upb_Arena *arena) {
+UPB_INLINE struct google_protobuf_UInt32Value* envoy_type_v3_TokenBucket_mutable_tokens_per_fill(envoy_type_v3_TokenBucket* msg, upb_Arena* arena) {
   struct google_protobuf_UInt32Value* sub = (struct google_protobuf_UInt32Value*)envoy_type_v3_TokenBucket_tokens_per_fill(msg);
   if (sub == NULL) {
     sub = (struct google_protobuf_UInt32Value*)_upb_Message_New(&google_protobuf_UInt32Value_msginit, arena);
@@ -93,7 +110,7 @@ UPB_INLINE void envoy_type_v3_TokenBucket_set_fill_interval(envoy_type_v3_TokenB
   _upb_sethas(msg, 2);
   *UPB_PTR_AT(msg, UPB_SIZE(12, 16), struct google_protobuf_Duration*) = value;
 }
-UPB_INLINE struct google_protobuf_Duration* envoy_type_v3_TokenBucket_mutable_fill_interval(envoy_type_v3_TokenBucket *msg, upb_Arena *arena) {
+UPB_INLINE struct google_protobuf_Duration* envoy_type_v3_TokenBucket_mutable_fill_interval(envoy_type_v3_TokenBucket* msg, upb_Arena* arena) {
   struct google_protobuf_Duration* sub = (struct google_protobuf_Duration*)envoy_type_v3_TokenBucket_fill_interval(msg);
   if (sub == NULL) {
     sub = (struct google_protobuf_Duration*)_upb_Message_New(&google_protobuf_Duration_msginit, arena);

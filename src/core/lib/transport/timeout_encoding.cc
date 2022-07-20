@@ -20,14 +20,10 @@
 
 #include "src/core/lib/transport/timeout_encoding.h"
 
-#include <stdio.h>
-#include <string.h>
-
-#include <cstdint>
+#include "absl/base/attributes.h"
 
 #include <grpc/support/log.h>
-
-#include "src/core/lib/gpr/string.h"
+#include <grpc/support/time.h>
 
 namespace grpc_core {
 

@@ -24,14 +24,14 @@ static const upb_MiniTable_Sub envoy_config_trace_v3_SkyWalkingConfig_submsgs[2]
 };
 
 static const upb_MiniTable_Field envoy_config_trace_v3_SkyWalkingConfig__fields[2] = {
-  {1, UPB_SIZE(4, 8), 1, 0, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
-  {2, UPB_SIZE(8, 16), 2, 1, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {1, UPB_SIZE(4, 8), UPB_SIZE(1, 1), 0, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(8, 16), UPB_SIZE(2, 2), 1, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy_config_trace_v3_SkyWalkingConfig_msginit = {
   &envoy_config_trace_v3_SkyWalkingConfig_submsgs[0],
   &envoy_config_trace_v3_SkyWalkingConfig__fields[0],
-  UPB_SIZE(16, 24), 2, upb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_trace_v3_ClientConfig_submsgs[1] = {
@@ -39,16 +39,16 @@ static const upb_MiniTable_Sub envoy_config_trace_v3_ClientConfig_submsgs[1] = {
 };
 
 static const upb_MiniTable_Field envoy_config_trace_v3_ClientConfig__fields[4] = {
-  {1, UPB_SIZE(4, 8), 0, 0, 9, kUpb_FieldMode_Scalar | (upb_FieldRep_StringView << upb_FieldRep_Shift)},
-  {2, UPB_SIZE(12, 24), 0, 0, 9, kUpb_FieldMode_Scalar | (upb_FieldRep_StringView << upb_FieldRep_Shift)},
-  {3, UPB_SIZE(24, 48), UPB_SIZE(-33, -65), 0, 9, kUpb_FieldMode_Scalar | (upb_FieldRep_StringView << upb_FieldRep_Shift)},
-  {4, UPB_SIZE(20, 40), 1, 0, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {1, UPB_SIZE(16, 24), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(24, 40), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(8, 8), UPB_SIZE(-5, -5), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {4, UPB_SIZE(32, 56), UPB_SIZE(1, 1), 0, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy_config_trace_v3_ClientConfig_msginit = {
   &envoy_config_trace_v3_ClientConfig_submsgs[0],
   &envoy_config_trace_v3_ClientConfig__fields[0],
-  UPB_SIZE(40, 80), 4, upb_ExtMode_NonExtendable, 4, 255, 0,
+  UPB_SIZE(40, 64), 4, kUpb_ExtMode_NonExtendable, 4, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[2] = {

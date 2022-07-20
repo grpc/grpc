@@ -20,18 +20,19 @@
 
 #include "src/core/lib/channel/connected_channel.h"
 
-#include <stdarg.h>
-#include <stdio.h>
-#include <string.h>
-
-#include <grpc/byte_buffer.h>
-#include <grpc/slice_buffer.h>
+#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/gpr/string.h"
-#include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/gpr/alloc.h"
+#include "src/core/lib/iomgr/call_combiner.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/lib/transport/transport_fwd.h"
 
 #define MAX_BUFFER_LENGTH 8192
 
@@ -184,7 +185,8 @@ static grpc_error_handle connected_channel_init_channel_elem(
     grpc_channel_element* elem, grpc_channel_element_args* args) {
   channel_data* cd = static_cast<channel_data*>(elem->channel_data);
   GPR_ASSERT(args->is_last);
-  cd->transport = nullptr;
+  cd->transport = grpc_channel_args_find_pointer<grpc_transport>(
+      args->channel_args, GRPC_ARG_TRANSPORT);
   return GRPC_ERROR_NONE;
 }
 
@@ -211,36 +213,25 @@ const grpc_channel_filter grpc_connected_filter = {
     connected_channel_destroy_call_elem,
     sizeof(channel_data),
     connected_channel_init_channel_elem,
+    [](grpc_channel_stack* channel_stack, grpc_channel_element* elem) {
+      /* HACK(ctiller): increase call stack size for the channel to make space
+         for channel data. We need a cleaner (but performant) way to do this,
+         and I'm not sure what that is yet.
+         This is only "safe" because call stacks place no additional data after
+         the last call element, and the last call element MUST be the connected
+         channel. */
+      channel_stack->call_stack_size += grpc_transport_stream_size(
+          static_cast<channel_data*>(elem->channel_data)->transport);
+    },
     connected_channel_destroy_channel_elem,
     connected_channel_get_channel_info,
     "connected",
 };
 
-static void bind_transport(grpc_channel_stack* channel_stack,
-                           grpc_channel_element* elem, void* t) {
-  channel_data* cd = static_cast<channel_data*>(elem->channel_data);
-  GPR_ASSERT(elem->filter == &grpc_connected_filter);
-  GPR_ASSERT(cd->transport == nullptr);
-  cd->transport = static_cast<grpc_transport*>(t);
-
-  /* HACK(ctiller): increase call stack size for the channel to make space
-     for channel data. We need a cleaner (but performant) way to do this,
-     and I'm not sure what that is yet.
-     This is only "safe" because call stacks place no additional data after
-     the last call element, and the last call element MUST be the connected
-     channel. */
-  channel_stack->call_stack_size +=
-      grpc_transport_stream_size(static_cast<grpc_transport*>(t));
-}
-
 bool grpc_add_connected_filter(grpc_core::ChannelStackBuilder* builder) {
   grpc_transport* t = builder->transport();
   GPR_ASSERT(t != nullptr);
-  builder->AppendFilter(
-      &grpc_connected_filter,
-      [t](grpc_channel_stack* stk, grpc_channel_element* elem) {
-        bind_transport(stk, elem, t);
-      });
+  builder->AppendFilter(&grpc_connected_filter);
   return true;
 }
 

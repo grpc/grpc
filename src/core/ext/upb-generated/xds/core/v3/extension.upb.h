@@ -53,16 +53,28 @@ UPB_INLINE xds_core_v3_TypedExtensionConfig* xds_core_v3_TypedExtensionConfig_pa
   return ret;
 }
 UPB_INLINE char* xds_core_v3_TypedExtensionConfig_serialize(const xds_core_v3_TypedExtensionConfig* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &xds_core_v3_TypedExtensionConfig_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &xds_core_v3_TypedExtensionConfig_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* xds_core_v3_TypedExtensionConfig_serialize_ex(const xds_core_v3_TypedExtensionConfig* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &xds_core_v3_TypedExtensionConfig_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &xds_core_v3_TypedExtensionConfig_msginit, options, arena, &ptr, len);
+  return ptr;
+}
+UPB_INLINE void xds_core_v3_TypedExtensionConfig_clear_name(const xds_core_v3_TypedExtensionConfig* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
 }
 UPB_INLINE upb_StringView xds_core_v3_TypedExtensionConfig_name(const xds_core_v3_TypedExtensionConfig* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView);
 }
-UPB_INLINE bool xds_core_v3_TypedExtensionConfig_has_typed_config(const xds_core_v3_TypedExtensionConfig *msg) { return _upb_hasbit(msg, 1); }
+UPB_INLINE bool xds_core_v3_TypedExtensionConfig_has_typed_config(const xds_core_v3_TypedExtensionConfig* msg) {
+  return _upb_hasbit(msg, 1);
+}
+UPB_INLINE void xds_core_v3_TypedExtensionConfig_clear_typed_config(const xds_core_v3_TypedExtensionConfig* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(12, 24), const upb_Message*) = NULL;
+}
 UPB_INLINE const struct google_protobuf_Any* xds_core_v3_TypedExtensionConfig_typed_config(const xds_core_v3_TypedExtensionConfig* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(12, 24), const struct google_protobuf_Any*);
 }
@@ -74,7 +86,7 @@ UPB_INLINE void xds_core_v3_TypedExtensionConfig_set_typed_config(xds_core_v3_Ty
   _upb_sethas(msg, 1);
   *UPB_PTR_AT(msg, UPB_SIZE(12, 24), struct google_protobuf_Any*) = value;
 }
-UPB_INLINE struct google_protobuf_Any* xds_core_v3_TypedExtensionConfig_mutable_typed_config(xds_core_v3_TypedExtensionConfig *msg, upb_Arena *arena) {
+UPB_INLINE struct google_protobuf_Any* xds_core_v3_TypedExtensionConfig_mutable_typed_config(xds_core_v3_TypedExtensionConfig* msg, upb_Arena* arena) {
   struct google_protobuf_Any* sub = (struct google_protobuf_Any*)xds_core_v3_TypedExtensionConfig_typed_config(msg);
   if (sub == NULL) {
     sub = (struct google_protobuf_Any*)_upb_Message_New(&google_protobuf_Any_msginit, arena);

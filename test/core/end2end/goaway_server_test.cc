@@ -28,6 +28,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
+#include "src/core/lib/event_engine/event_engine_factory.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/resolve_address_impl.h"
 #include "src/core/lib/iomgr/sockaddr.h"
@@ -46,8 +47,7 @@ static grpc_ares_request* (*iomgr_dns_lookup_ares)(
     const char* dns_server, const char* addr, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     std::unique_ptr<grpc_core::ServerAddressList>* addresses,
-    std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses,
-    char** service_config_json, int query_timeout_ms);
+    int query_timeout_ms);
 
 static void (*iomgr_cancel_ares_request)(grpc_ares_request* request);
 
@@ -59,60 +59,82 @@ static void set_resolve_port(int port) {
 
 namespace {
 
+using ::grpc_event_engine::experimental::GetDefaultEventEngine;
+
 grpc_core::DNSResolver* g_default_dns_resolver;
 
 class TestDNSResolver : public grpc_core::DNSResolver {
  public:
-  class TestDNSRequest : public grpc_core::DNSResolver::Request {
-   public:
-    explicit TestDNSRequest(
-        std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
-            on_done)
-        : on_done_(std::move(on_done)) {}
-
-    void Start() override {
-      gpr_mu_lock(&g_mu);
-      if (g_resolve_port < 0) {
-        gpr_mu_unlock(&g_mu);
-        new grpc_core::DNSCallbackExecCtxScheduler(
-            std::move(on_done_), absl::UnknownError("Forced Failure"));
-      } else {
-        std::vector<grpc_resolved_address> addrs;
-        grpc_resolved_address addr;
-        grpc_sockaddr_in* sa = reinterpret_cast<grpc_sockaddr_in*>(&addr);
-        sa->sin_family = GRPC_AF_INET;
-        sa->sin_addr.s_addr = 0x100007f;
-        sa->sin_port = grpc_htons(static_cast<uint16_t>(g_resolve_port));
-        addr.len = static_cast<socklen_t>(sizeof(*sa));
-        addrs.push_back(addr);
-        gpr_mu_unlock(&g_mu);
-        new grpc_core::DNSCallbackExecCtxScheduler(std::move(on_done_),
-                                                   std::move(addrs));
-      }
-    }
-
-    void Orphan() override { Unref(); }
-
-   private:
-    std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
-        on_done_;
-  };
-
-  grpc_core::OrphanablePtr<grpc_core::DNSResolver::Request> ResolveName(
-      absl::string_view name, absl::string_view default_port,
-      grpc_pollset_set* interested_parties,
+  TaskHandle LookupHostname(
       std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
-          on_done) override {
+          on_resolved,
+      absl::string_view name, absl::string_view default_port,
+      grpc_core::Duration timeout, grpc_pollset_set* interested_parties,
+      absl::string_view name_server) override {
     if (name != "test") {
-      return g_default_dns_resolver->ResolveName(
-          name, default_port, interested_parties, std::move(on_done));
+      return g_default_dns_resolver->LookupHostname(
+          std::move(on_resolved), name, default_port, timeout,
+          interested_parties, name_server);
     }
-    return grpc_core::MakeOrphanable<TestDNSRequest>(std::move(on_done));
+    MakeDNSRequest(std::move(on_resolved));
+    return kNullHandle;
   }
 
-  absl::StatusOr<std::vector<grpc_resolved_address>> ResolveNameBlocking(
+  absl::StatusOr<std::vector<grpc_resolved_address>> LookupHostnameBlocking(
       absl::string_view name, absl::string_view default_port) override {
-    return g_default_dns_resolver->ResolveNameBlocking(name, default_port);
+    return g_default_dns_resolver->LookupHostnameBlocking(name, default_port);
+  }
+
+  TaskHandle LookupSRV(
+      std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
+          on_resolved,
+      absl::string_view /* name */, grpc_core::Duration /* timeout */,
+      grpc_pollset_set* /* interested_parties */,
+      absl::string_view /* name_server */) override {
+    GetDefaultEventEngine()->Run([on_resolved] {
+      on_resolved(absl::UnimplementedError(
+          "The Testing DNS resolver does not support looking up SRV records"));
+    });
+    return {-1, -1};
+  };
+
+  TaskHandle LookupTXT(
+      std::function<void(absl::StatusOr<std::string>)> on_resolved,
+      absl::string_view /* name */, grpc_core::Duration /* timeout */,
+      grpc_pollset_set* /* interested_parties */,
+      absl::string_view /* name_server */) override {
+    // Not supported
+    GetDefaultEventEngine()->Run([on_resolved] {
+      on_resolved(absl::UnimplementedError(
+          "The Testing DNS resolver does not support looking up TXT records"));
+    });
+    return {-1, -1};
+  };
+
+  bool Cancel(TaskHandle /*handle*/) override { return false; }
+
+ private:
+  void MakeDNSRequest(
+      std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
+          on_done) {
+    gpr_mu_lock(&g_mu);
+    if (g_resolve_port < 0) {
+      gpr_mu_unlock(&g_mu);
+      new grpc_core::DNSCallbackExecCtxScheduler(
+          std::move(on_done), absl::UnknownError("Forced Failure"));
+    } else {
+      std::vector<grpc_resolved_address> addrs;
+      grpc_resolved_address addr;
+      grpc_sockaddr_in* sa = reinterpret_cast<grpc_sockaddr_in*>(&addr);
+      sa->sin_family = GRPC_AF_INET;
+      sa->sin_addr.s_addr = 0x100007f;
+      sa->sin_port = grpc_htons(static_cast<uint16_t>(g_resolve_port));
+      addr.len = static_cast<socklen_t>(sizeof(*sa));
+      addrs.push_back(addr);
+      gpr_mu_unlock(&g_mu);
+      new grpc_core::DNSCallbackExecCtxScheduler(std::move(on_done),
+                                                 std::move(addrs));
+    }
   }
 };
 
@@ -122,12 +144,12 @@ static grpc_ares_request* my_dns_lookup_ares(
     const char* dns_server, const char* addr, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     std::unique_ptr<grpc_core::ServerAddressList>* addresses,
-    std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses,
-    char** service_config_json, int query_timeout_ms) {
+    int query_timeout_ms) {
   if (0 != strcmp(addr, "test")) {
-    return iomgr_dns_lookup_ares(
-        dns_server, addr, default_port, interested_parties, on_done, addresses,
-        balancer_addresses, service_config_json, query_timeout_ms);
+    // A records should suffice
+    return iomgr_dns_lookup_ares(dns_server, addr, default_port,
+                                 interested_parties, on_done, addresses,
+                                 query_timeout_ms);
   }
 
   grpc_error_handle error = GRPC_ERROR_NONE;
@@ -142,7 +164,7 @@ static grpc_ares_request* my_dns_lookup_ares(
     sa.sin_family = GRPC_AF_INET;
     sa.sin_addr.s_addr = 0x100007f;
     sa.sin_port = grpc_htons(static_cast<uint16_t>(g_resolve_port));
-    (*addresses)->emplace_back(&sa, sizeof(sa), nullptr);
+    (*addresses)->emplace_back(&sa, sizeof(sa), grpc_core::ChannelArgs());
     gpr_mu_unlock(&g_mu);
   }
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, error);
@@ -157,20 +179,19 @@ static void my_cancel_ares_request(grpc_ares_request* request) {
 
 int main(int argc, char** argv) {
   grpc_completion_queue* cq;
-  cq_verifier* cqv;
   grpc_op ops[6];
   grpc_op* op;
 
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
 
   gpr_mu_init(&g_mu);
   grpc_init();
   g_default_dns_resolver = grpc_core::GetDNSResolver();
   auto* resolver = new TestDNSResolver();
   grpc_core::SetDNSResolver(resolver);
-  iomgr_dns_lookup_ares = grpc_dns_lookup_ares;
+  iomgr_dns_lookup_ares = grpc_dns_lookup_hostname_ares;
   iomgr_cancel_ares_request = grpc_cancel_ares_request;
-  grpc_dns_lookup_ares = my_dns_lookup_ares;
+  grpc_dns_lookup_hostname_ares = my_dns_lookup_ares;
   grpc_cancel_ares_request = my_cancel_ares_request;
 
   int was_cancelled1;
@@ -195,7 +216,7 @@ int main(int argc, char** argv) {
   grpc_call_details_init(&request_details2);
 
   cq = grpc_completion_queue_create_for_next(nullptr);
-  cqv = cq_verifier_create(cq);
+  grpc_core::CqVerifier cqv(cq);
 
   /* reserve two ports */
   int port1 = grpc_pick_unused_port_or_die();
@@ -276,9 +297,9 @@ int main(int argc, char** argv) {
   set_resolve_port(port1);
 
   /* first call should now start */
-  CQ_EXPECT_COMPLETION(cqv, tag(0x101), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(0x301), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(0x101), true);
+  cqv.Expect(tag(0x301), true);
+  cqv.Verify();
 
   GPR_ASSERT(GRPC_CHANNEL_READY ==
              grpc_channel_check_connectivity_state(chan, 0));
@@ -301,9 +322,9 @@ int main(int argc, char** argv) {
    * we should see a connectivity change and then nothing */
   set_resolve_port(-1);
   grpc_server_shutdown_and_notify(server1, cq, tag(0xdead1));
-  CQ_EXPECT_COMPLETION(cqv, tag(0x9999), 1);
-  cq_verify(cqv);
-  cq_verify_empty(cqv);
+  cqv.Expect(tag(0x9999), true);
+  cqv.Verify();
+  cqv.VerifyEmpty();
 
   /* and a new call: should go through to server2 when we start it */
   grpc_call* call2 =
@@ -353,9 +374,9 @@ int main(int argc, char** argv) {
                                       &request_metadata2, cq, cq, tag(0x401)));
 
   /* second call should now start */
-  CQ_EXPECT_COMPLETION(cqv, tag(0x201), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(0x401), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(0x201), true);
+  cqv.Expect(tag(0x401), true);
+  cqv.Verify();
 
   /* listen for close on the server call to probe for finishing */
   memset(ops, 0, sizeof(ops));
@@ -370,19 +391,19 @@ int main(int argc, char** argv) {
 
   /* shutdown second server: we should see nothing */
   grpc_server_shutdown_and_notify(server2, cq, tag(0xdead2));
-  cq_verify_empty(cqv);
+  cqv.VerifyEmpty();
 
   grpc_call_cancel(call1, nullptr);
   grpc_call_cancel(call2, nullptr);
 
   /* now everything else should finish */
-  CQ_EXPECT_COMPLETION(cqv, tag(0x102), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(0x202), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(0x302), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(0x402), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(0xdead1), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(0xdead2), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(0x102), true);
+  cqv.Expect(tag(0x202), true);
+  cqv.Expect(tag(0x302), true);
+  cqv.Expect(tag(0x402), true);
+  cqv.Expect(tag(0xdead1), true);
+  cqv.Expect(tag(0xdead2), true);
+  cqv.Verify();
 
   grpc_call_unref(call1);
   grpc_call_unref(call2);
@@ -401,7 +422,6 @@ int main(int argc, char** argv) {
   grpc_call_details_destroy(&request_details2);
   grpc_slice_unref(details2);
 
-  cq_verifier_destroy(cqv);
   grpc_completion_queue_destroy(cq);
 
   grpc_core::SetDNSResolver(g_default_dns_resolver);

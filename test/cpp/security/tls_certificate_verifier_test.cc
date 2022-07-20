@@ -33,6 +33,7 @@ namespace {
 
 using ::grpc::experimental::ExternalCertificateVerifier;
 using ::grpc::experimental::HostNameCertificateVerifier;
+using ::grpc::experimental::NoOpCertificateVerifier;
 using ::grpc::experimental::TlsCustomVerificationCheckRequest;
 
 }  // namespace
@@ -87,6 +88,17 @@ TEST(TlsCertificateVerifierTest, AsyncCertificateVerifierFails) {
   };
   grpc::Status sync_status;
   EXPECT_FALSE(verifier->Verify(&cpp_request, callback, &sync_status));
+}
+
+TEST(TlsCertificateVerifierTest, NoOpCertificateVerifierSucceeds) {
+  grpc_tls_custom_verification_check_request request;
+  memset(&request, 0, sizeof(request));
+  auto verifier = std::make_shared<NoOpCertificateVerifier>();
+  TlsCustomVerificationCheckRequest cpp_request(&request);
+  grpc::Status sync_status;
+  verifier->Verify(&cpp_request, nullptr, &sync_status);
+  EXPECT_TRUE(sync_status.ok())
+      << sync_status.error_code() << " " << sync_status.error_message();
 }
 
 TEST(TlsCertificateVerifierTest, HostNameCertificateVerifierSucceeds) {
@@ -155,7 +167,7 @@ TEST(TlsCertificateVerifierTest,
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   int ret = RUN_ALL_TESTS();
   return ret;
 }

@@ -21,8 +21,32 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
+
+#include <atomic>
+#include <string>
+#include <utility>
+
+#include "absl/container/inlined_vector.h"
+#include "absl/status/statusor.h"
+
+#include <grpc/grpc_security.h>
+#include <grpc/grpc_security_constants.h>
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/status.h>
+
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/unique_type_name.h"
+#include "src/core/lib/promise/activity.h"
+#include "src/core/lib/promise/arena_promise.h"
+#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/security/credentials/call_creds_util.h"
 #include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/slice/slice_refcount.h"
+#include "src/core/lib/transport/transport.h"
 
 extern grpc_core::TraceFlag grpc_plugin_credentials_trace;
 
@@ -35,17 +59,19 @@ struct grpc_plugin_credentials final : public grpc_call_credentials {
                                    grpc_security_level min_security_level);
   ~grpc_plugin_credentials() override;
 
-  grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientInitialMetadata>>
-  GetRequestMetadata(grpc_core::ClientInitialMetadata initial_metadata,
+  grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientMetadataHandle>>
+  GetRequestMetadata(grpc_core::ClientMetadataHandle initial_metadata,
                      const GetRequestMetadataArgs* args) override;
 
   std::string debug_string() override;
+
+  grpc_core::UniqueTypeName type() const override;
 
  private:
   class PendingRequest : public grpc_core::RefCounted<PendingRequest> {
    public:
     PendingRequest(grpc_core::RefCountedPtr<grpc_plugin_credentials> creds,
-                   grpc_core::ClientInitialMetadata initial_metadata,
+                   grpc_core::ClientMetadataHandle initial_metadata,
                    const grpc_call_credentials::GetRequestMetadataArgs* args)
         : call_creds_(std::move(creds)),
           context_(
@@ -60,11 +86,11 @@ struct grpc_plugin_credentials final : public grpc_call_credentials {
       }
     }
 
-    absl::StatusOr<grpc_core::ClientInitialMetadata> ProcessPluginResult(
+    absl::StatusOr<grpc_core::ClientMetadataHandle> ProcessPluginResult(
         const grpc_metadata* md, size_t num_md, grpc_status_code status,
         const char* error_details);
 
-    grpc_core::Poll<absl::StatusOr<grpc_core::ClientInitialMetadata>>
+    grpc_core::Poll<absl::StatusOr<grpc_core::ClientMetadataHandle>>
     PollAsyncResult();
 
     static void RequestMetadataReady(void* request, const grpc_metadata* md,
@@ -80,7 +106,7 @@ struct grpc_plugin_credentials final : public grpc_call_credentials {
         grpc_core::Activity::current()->MakeNonOwningWaker()};
     grpc_core::RefCountedPtr<grpc_plugin_credentials> call_creds_;
     grpc_auth_metadata_context context_;
-    grpc_core::ClientInitialMetadata md_;
+    grpc_core::ClientMetadataHandle md_;
     // final status
     absl::InlinedVector<grpc_metadata, 2> metadata_;
     std::string error_details_;

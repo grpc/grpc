@@ -21,6 +21,8 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "absl/strings/str_format.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -30,9 +32,11 @@
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/gprpp/time_util.h"
 #include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/http/httpcli_ssl_credentials.h"
 #include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/security/credentials/credentials.h"
 #include "test/core/http/httpcli_test_util.h"
 #include "test/core/util/fake_udp_and_tcp_server.h"
 #include "test/core/util/port.h"
@@ -138,7 +142,7 @@ void OnFinish(void* arg, grpc_error_handle error) {
   const char* expect =
       "<html><head><title>Hello world!</title></head>"
       "<body><p>This is a test</p></body></html>";
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   grpc_http_response response = request_state->response;
   gpr_log(GPR_INFO, "response status=%d error=%s", response.status,
           grpc_error_std_string(error).c_str());
@@ -154,7 +158,7 @@ void OnFinishExpectFailure(void* arg, grpc_error_handle error) {
   grpc_http_response response = request_state->response;
   gpr_log(GPR_INFO, "response status=%d error=%s", response.status,
           grpc_error_std_string(error).c_str());
-  GPR_ASSERT(error != GRPC_ERROR_NONE);
+  GPR_ASSERT(!GRPC_ERROR_IS_NONE(error));
   request_state->test->RunAndKick(
       [request_state]() { request_state->done = true; });
 }
@@ -281,7 +285,7 @@ TEST_F(HttpsCliTest, CancelGetDuringSSLHandshake) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   // launch the test server later, so that --gtest_list_tests works
   g_argc = argc;
   g_argv = argv;

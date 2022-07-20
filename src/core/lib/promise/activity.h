@@ -17,14 +17,11 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <stddef.h>
 #include <stdint.h>
 
 #include <algorithm>
 #include <atomic>
-#include <functional>
 #include <memory>
-#include <type_traits>
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
@@ -64,13 +61,13 @@ class Wakeable {
 class Waker {
  public:
   explicit Waker(Wakeable* wakeable) : wakeable_(wakeable) {}
-  Waker() : wakeable_(&unwakeable_) {}
-  ~Waker() { wakeable_->Drop(); }
+  Waker() : Waker(nullptr) {}
+  ~Waker() {
+    if (wakeable_ != nullptr) wakeable_->Drop();
+  }
   Waker(const Waker&) = delete;
   Waker& operator=(const Waker&) = delete;
-  Waker(Waker&& other) noexcept : wakeable_(other.wakeable_) {
-    other.wakeable_ = &unwakeable_;
-  }
+  Waker(Waker&& other) noexcept : wakeable_(other.Take()) {}
   Waker& operator=(Waker&& other) noexcept {
     std::swap(wakeable_, other.wakeable_);
     return *this;
@@ -78,8 +75,7 @@ class Waker {
 
   // Wake the underlying activity.
   void Wakeup() {
-    wakeable_->Wakeup();
-    wakeable_ = &unwakeable_;
+    if (auto* wakeable = Take()) wakeable->Wakeup();
   }
 
   template <typename H>
@@ -92,14 +88,9 @@ class Waker {
   }
 
  private:
-  class Unwakeable final : public Wakeable {
-   public:
-    void Wakeup() final {}
-    void Drop() final {}
-  };
+  Wakeable* Take() { return absl::exchange(wakeable_, nullptr); }
 
   Wakeable* wakeable_;
-  static Unwakeable unwakeable_;
 };
 
 // An Activity tracks execution of a single promise.
@@ -150,13 +141,16 @@ class Activity : public Orphanable {
   // Set the current activity at construction, clean it up at destruction.
   class ScopedActivity {
    public:
-    explicit ScopedActivity(Activity* activity) {
-      GPR_ASSERT(g_current_activity_ == nullptr);
+    explicit ScopedActivity(Activity* activity)
+        : prior_activity_(g_current_activity_) {
       g_current_activity_ = activity;
     }
-    ~ScopedActivity() { g_current_activity_ = nullptr; }
+    ~ScopedActivity() { g_current_activity_ = prior_activity_; }
     ScopedActivity(const ScopedActivity&) = delete;
     ScopedActivity& operator=(const ScopedActivity&) = delete;
+
+   private:
+    Activity* const prior_activity_;
   };
 
  private:

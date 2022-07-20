@@ -19,13 +19,19 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
+
+#include <memory>
+#include <string>
 #include <unordered_map>
 #include <vector>
 
-#include <grpc/impl/codegen/grpc_types.h>
-#include <grpc/support/string_util.h>
+#include "absl/strings/string_view.h"
 
-#include "src/core/lib/gprpp/ref_counted.h"
+#include <grpc/slice.h>
+#include <grpc/support/log.h>
+
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json.h"
@@ -63,12 +69,12 @@ class ServiceConfigImpl final : public ServiceConfig {
  public:
   /// Creates a new service config from parsing \a json_string.
   /// Returns null on parse error.
-  static RefCountedPtr<ServiceConfig> Create(const grpc_channel_args* args,
+  static RefCountedPtr<ServiceConfig> Create(const ChannelArgs& args,
                                              absl::string_view json_string,
                                              grpc_error_handle* error);
 
-  ServiceConfigImpl(const grpc_channel_args* args, std::string json_string,
-                    Json json, grpc_error_handle* error);
+  ServiceConfigImpl(const ChannelArgs& args, std::string json_string, Json json,
+                    grpc_error_handle* error);
   ~ServiceConfigImpl() override;
 
   absl::string_view json_string() const override { return json_string_; }
@@ -90,8 +96,8 @@ class ServiceConfigImpl final : public ServiceConfig {
 
  private:
   // Helper functions for parsing the method configs.
-  grpc_error_handle ParsePerMethodParams(const grpc_channel_args* args);
-  grpc_error_handle ParseJsonMethodConfig(const grpc_channel_args* args,
+  grpc_error_handle ParsePerMethodParams(const ChannelArgs& args);
+  grpc_error_handle ParseJsonMethodConfig(const ChannelArgs& args,
                                           const Json& json);
 
   // Returns a path string for the JSON name object specified by json.
@@ -115,8 +121,7 @@ class ServiceConfigImpl final : public ServiceConfig {
       nullptr;
   // Storage for all the vectors that are being used in
   // parsed_method_configs_table_.
-  absl::InlinedVector<std::unique_ptr<ServiceConfigParser::ParsedConfigVector>,
-                      32>
+  std::vector<std::unique_ptr<ServiceConfigParser::ParsedConfigVector>>
       parsed_method_config_vectors_storage_;
 };
 

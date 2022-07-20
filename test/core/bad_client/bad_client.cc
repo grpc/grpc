@@ -18,6 +18,7 @@
 
 #include "test/core/bad_client/bad_client.h"
 
+#include <limits.h>
 #include <stdio.h>
 
 #include <grpc/support/alloc.h>
@@ -120,7 +121,8 @@ void grpc_run_client_side_validator(grpc_bad_client_arg* arg, uint32_t flags,
                     grpc_schedule_on_exec_ctx);
 
   /* Write data */
-  grpc_endpoint_write(sfd->client, &outgoing, &done_write_closure, nullptr);
+  grpc_endpoint_write(sfd->client, &outgoing, &done_write_closure, nullptr,
+                      /*max_frame_size=*/INT_MAX);
   grpc_core::ExecCtx::Get()->Flush();
 
   /* Await completion, unless the request is large and write may not finish
@@ -149,7 +151,7 @@ void grpc_run_client_side_validator(grpc_bad_client_arg* arg, uint32_t flags,
         GRPC_CLOSURE_INIT(&read_done_closure, set_read_done, &read_done_event,
                           grpc_schedule_on_exec_ctx);
         grpc_endpoint_read(sfd->client, &incoming, &read_done_closure,
-                           /*urgent=*/true);
+                           /*urgent=*/true, /*min_progress_size=*/1);
         grpc_core::ExecCtx::Get()->Flush();
         do {
           GPR_ASSERT(gpr_time_cmp(deadline, gpr_now(deadline.clock_type)) > 0);
@@ -212,11 +214,11 @@ void grpc_run_bad_client_test(
                                   GRPC_BAD_CLIENT_REGISTERED_HOST,
                                   GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER, 0);
   grpc_server_start(a.server);
-  const grpc_channel_args* channel_args = grpc_core::CoreConfiguration::Get()
-                                              .channel_args_preconditioning()
-                                              .PreconditionChannelArgs(nullptr);
-  transport = grpc_create_chttp2_transport(channel_args, sfd.server, false);
-  grpc_channel_args_destroy(channel_args);
+  transport =
+      grpc_create_chttp2_transport(grpc_core::CoreConfiguration::Get()
+                                       .channel_args_preconditioning()
+                                       .PreconditionChannelArgs(nullptr),
+                                   sfd.server, false);
   server_setup_transport(&a, transport);
   grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
 
@@ -282,9 +284,12 @@ grpc_bad_client_arg connection_preface_arg = {
 
 bool rst_stream_client_validator(grpc_slice_buffer* incoming, void* /*arg*/) {
   // Get last frame from incoming slice buffer.
+  constexpr int kExpectedFrameLength = 13;
+  if (incoming->length < kExpectedFrameLength) return false;
   grpc_slice_buffer last_frame_buffer;
   grpc_slice_buffer_init(&last_frame_buffer);
-  grpc_slice_buffer_trim_end(incoming, 13, &last_frame_buffer);
+  grpc_slice_buffer_trim_end(incoming, kExpectedFrameLength,
+                             &last_frame_buffer);
   GPR_ASSERT(last_frame_buffer.count == 1);
   grpc_slice last_frame = last_frame_buffer.slices[0];
 
@@ -317,7 +322,7 @@ void server_verifier_request_call(grpc_server* server,
   grpc_call_error error;
   grpc_call* s;
   grpc_call_details call_details;
-  cq_verifier* cqv = cq_verifier_create(cq);
+  grpc_core::CqVerifier cqv(cq);
   grpc_metadata_array request_metadata_recv;
 
   grpc_call_details_init(&call_details);
@@ -326,8 +331,8 @@ void server_verifier_request_call(grpc_server* server,
   error = grpc_server_request_call(server, &s, &call_details,
                                    &request_metadata_recv, cq, cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(101), true);
+  cqv.Verify();
 
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.host, "localhost"));
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo/bar"));
@@ -335,5 +340,4 @@ void server_verifier_request_call(grpc_server* server,
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
   grpc_call_unref(s);
-  cq_verifier_destroy(cqv);
 }

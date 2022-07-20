@@ -62,7 +62,9 @@ grpc_cc_library(
 grpc_cc_test(
     name = "auth_context_test",
     srcs = ["auth_context_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -126,7 +128,9 @@ grpc_cc_test(
 grpc_cc_test(
     name = "json_token_test",
     srcs = ["json_token_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -138,7 +142,9 @@ grpc_cc_test(
 grpc_cc_test(
     name = "jwt_verifier_test",
     srcs = ["jwt_verifier_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -150,6 +156,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "secure_endpoint_test",
     srcs = ["secure_endpoint_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     deps = [
         "//:gpr",
@@ -162,6 +169,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "security_connector_test",
     srcs = ["security_connector_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     deps = [
         "//:gpr",
@@ -171,8 +179,8 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "linux_system_roots_test",
-    srcs = ["linux_system_roots_test.cc"],
+    name = "system_roots_test",
+    srcs = ["system_roots_test.cc"],
     data = [
         "//test/core/security/etc:bundle.pem",
         "//test/core/security/etc:test_roots/cert1.pem",
@@ -193,6 +201,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "ssl_credentials_test",
     srcs = ["ssl_credentials_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     deps = [
         "//:gpr",
@@ -239,6 +248,7 @@ grpc_cc_binary(
 grpc_cc_test(
     name = "check_gcp_environment_linux_test",
     srcs = ["check_gcp_environment_linux_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     deps = [
         "//:gpr",
@@ -251,6 +261,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "check_gcp_environment_windows_test",
     srcs = ["check_gcp_environment_windows_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     deps = [
         "//:gpr",
@@ -263,6 +274,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "grpc_alts_credentials_options_test",
     srcs = ["grpc_alts_credentials_options_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     deps = [
         "//:gpr",
@@ -274,6 +286,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "alts_security_connector_test",
     srcs = ["alts_security_connector_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     deps = [
         "//:gpr",
@@ -320,6 +333,19 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:server1.key",
         "//src/core/tsi/test_creds:server1.pem",
     ],
+    external_deps = ["gtest"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc_secure",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "grpc_tls_credentials_options_comparator_test",
+    srcs = ["grpc_tls_credentials_options_comparator_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
     deps = [

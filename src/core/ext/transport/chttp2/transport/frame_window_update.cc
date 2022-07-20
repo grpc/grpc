@@ -20,12 +20,14 @@
 
 #include "src/core/ext/transport/chttp2/transport/frame_window_update.h"
 
+#include <stddef.h>
+
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 
 grpc_slice grpc_chttp2_window_update_create(
@@ -95,13 +97,9 @@ grpc_error_handle grpc_chttp2_window_update_parser_parse(
 
     if (t->incoming_stream_id != 0) {
       if (s != nullptr) {
-        s->flow_control->RecvUpdate(received_update);
-        if (grpc_core::chttp2::
-                g_test_only_transport_flow_control_window_check &&
-            s->flow_control->remote_window_delta() >
-                grpc_core::chttp2::kMaxWindowDelta) {
-          GPR_ASSERT(false);
-        }
+        grpc_core::chttp2::StreamFlowControl::OutgoingUpdateContext(
+            &s->flow_control)
+            .RecvUpdate(received_update);
         if (grpc_chttp2_list_remove_stalled_by_stream(t, s)) {
           grpc_chttp2_mark_stream_writable(t, s);
           grpc_chttp2_initiate_write(
@@ -109,10 +107,10 @@ grpc_error_handle grpc_chttp2_window_update_parser_parse(
         }
       }
     } else {
-      bool was_zero = t->flow_control->remote_window() <= 0;
-      t->flow_control->RecvUpdate(received_update);
-      bool is_zero = t->flow_control->remote_window() <= 0;
-      if (was_zero && !is_zero) {
+      grpc_core::chttp2::TransportFlowControl::OutgoingUpdateContext upd(
+          &t->flow_control);
+      upd.RecvUpdate(received_update);
+      if (upd.Finish() == grpc_core::chttp2::StallEdge::kUnstalled) {
         grpc_chttp2_initiate_write(
             t, GRPC_CHTTP2_INITIATE_WRITE_TRANSPORT_FLOW_CONTROL_UNSTALLED);
       }

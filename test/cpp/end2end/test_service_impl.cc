@@ -232,6 +232,11 @@ ServerUnaryReactor* CallbackTestServiceImpl::Echo(
       internal::MaybeEchoDeadline(ctx_, req_, resp_);
       if (service_->host_) {
         resp_->mutable_param()->set_host(*service_->host_);
+      } else if (req_->has_param() &&
+                 req_->param().echo_host_from_authority_header()) {
+        auto authority = ctx_->ExperimentalGetAuthority();
+        std::string authority_str(authority.data(), authority.size());
+        resp_->mutable_param()->set_host(std::move(authority_str));
       }
       if (req_->has_param() && req_->param().client_cancel_after_us()) {
         {

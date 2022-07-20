@@ -18,23 +18,25 @@
 
 #include <string.h>
 
+#include <gtest/gtest.h>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 #include "test/core/util/test_config.h"
 
-static void test_malloc_aligned() {
+TEST(AllocTest, MallocAligned) {
   for (size_t size = 1; size <= 256; ++size) {
     void* ptr = gpr_malloc_aligned(size, 16);
-    GPR_ASSERT(ptr != nullptr);
-    GPR_ASSERT(((intptr_t)ptr & 0xf) == 0);
+    ASSERT_NE(ptr, nullptr);
+    ASSERT_EQ(((intptr_t)ptr & 0xf), 0);
     memset(ptr, 0, size);
     gpr_free_aligned(ptr);
   }
 }
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
-  test_malloc_aligned();
-  return 0;
+  grpc::testing::TestEnvironment env(&argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }

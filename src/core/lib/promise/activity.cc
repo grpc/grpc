@@ -16,7 +16,7 @@
 
 #include "src/core/lib/promise/activity.h"
 
-#include "absl/base/attributes.h"
+#include <stddef.h>
 
 #include "src/core/lib/gprpp/atomic_utils.h"
 
@@ -26,7 +26,6 @@ namespace grpc_core {
 // GLOBALS
 
 GPR_THREAD_LOCAL(Activity*) Activity::g_current_activity_{nullptr};
-Waker::Unwakeable Waker::unwakeable_;
 
 namespace promise_detail {
 

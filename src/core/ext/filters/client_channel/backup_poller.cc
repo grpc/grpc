@@ -20,22 +20,24 @@
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
 
-#include <grpc/grpc.h>
+#include <inttypes.h>
+
+#include "absl/status/status.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
-#include "src/core/ext/filters/client_channel/client_channel.h"
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/global_config.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/pollset.h"
+#include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/timer.h"
-#include "src/core/lib/surface/channel.h"
-#include "src/core/lib/surface/completion_queue.h"
 
 #define DEFAULT_POLL_INTERVAL_MS 5000
 
@@ -117,7 +119,7 @@ static void g_poller_unref() {
 
 static void run_poller(void* arg, grpc_error_handle error) {
   backup_poller* p = static_cast<backup_poller*>(arg);
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     if (error != GRPC_ERROR_CANCELLED) {
       GRPC_LOG_IF_ERROR("run_poller", GRPC_ERROR_REF(error));
     }

@@ -20,15 +20,20 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h"
 
-#include <string.h>
+#include <new>
 
-#include <grpc/support/atm.h>
+#include "absl/types/optional.h"
+
 #include <grpc/support/log.h>
 
-#include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h"
+#include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/lib/transport/transport.h"
 
 static grpc_error_handle clr_init_channel_elem(
     grpc_channel_element* /*elem*/, grpc_channel_element_args* /*args*/) {
@@ -56,7 +61,7 @@ struct call_data {
 
 static void on_complete_for_send(void* arg, grpc_error_handle error) {
   call_data* calld = static_cast<call_data*>(arg);
-  if (error == GRPC_ERROR_NONE) {
+  if (GRPC_ERROR_IS_NONE(error)) {
     calld->send_initial_metadata_succeeded = true;
   }
   grpc_core::Closure::Run(DEBUG_LOCATION, calld->original_on_complete_for_send,
@@ -65,7 +70,7 @@ static void on_complete_for_send(void* arg, grpc_error_handle error) {
 
 static void recv_initial_metadata_ready(void* arg, grpc_error_handle error) {
   call_data* calld = static_cast<call_data*>(arg);
-  if (error == GRPC_ERROR_NONE) {
+  if (GRPC_ERROR_IS_NONE(error)) {
     calld->recv_initial_metadata_succeeded = true;
   }
   grpc_core::Closure::Run(DEBUG_LOCATION,
@@ -140,6 +145,7 @@ const grpc_channel_filter grpc_client_load_reporting_filter = {
     clr_destroy_call_elem,
     0,  // sizeof(channel_data)
     clr_init_channel_elem,
+    grpc_channel_stack_no_post_init,
     clr_destroy_channel_elem,
     grpc_channel_next_get_info,
     "client_load_reporting"};

@@ -33,17 +33,6 @@ bash -c "tools/bazel --version && cp tools/bazel-*.exe /c/bazel/bazel.exe"
 set PATH=C:\bazel;%PATH%
 bazel --version
 
-@rem Generate a random UUID and store in "bazel_invocation_ids" artifact file
-powershell -Command "[guid]::NewGuid().ToString()" >%KOKORO_ARTIFACTS_DIR%/bazel_invocation_ids
-set /p BAZEL_INVOCATION_ID=<%KOKORO_ARTIFACTS_DIR%/bazel_invocation_ids
+python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path bazel_rbe
 
-bazel --bazelrc=tools/remote_build/windows.bazelrc --output_user_root=T:\_bazel_output test --invocation_id="%BAZEL_INVOCATION_ID%" %BAZEL_FLAGS% --workspace_status_command=tools/remote_build/workspace_status_kokoro.bat //test/...
-set BAZEL_EXITCODE=%errorlevel%
-
-if not "%UPLOAD_TEST_RESULTS%"=="" (
-  @rem Sleep to let ResultStore finish writing results before querying
-  sleep 60
-  python3 tools/run_tests/python_utils/upload_rbe_results.py || exit /b 1
-)
-
-exit /b %BAZEL_EXITCODE%
+call bazel_rbe/bazel_wrapper.bat --bazelrc=tools/remote_build/windows.bazelrc --output_user_root=T:\_bazel_output test %BAZEL_FLAGS% -- //test/... || exit /b 1

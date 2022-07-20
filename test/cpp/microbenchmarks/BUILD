@@ -28,6 +28,20 @@ grpc_cc_test(
     deps = ["//test/core/util:grpc_test_util"],
 )
 
+grpc_cc_test(
+    name = "bm_channel_args",
+    srcs = ["bm_channel_args.cc"],
+    external_deps = [
+        "benchmark",
+        "absl/container:btree",
+    ],
+    deps = [
+        "//:channel_args",
+        "//:grpc++",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
 grpc_cc_library(
     name = "helpers",
     testonly = 1,
@@ -101,6 +115,7 @@ grpc_cc_test(
         "no_windows",
         "notsan",
     ],
+    uses_event_engine = False,
     uses_polling = False,
     deps = [":helpers"],
 )
@@ -113,6 +128,7 @@ grpc_cc_test(
         "no_mac",
         "no_windows",
     ],
+    uses_event_engine = False,
     uses_polling = False,
     deps = [":helpers"],
 )
@@ -125,6 +141,7 @@ grpc_cc_test(
         "no_mac",
         "no_windows",
     ],
+    uses_event_engine = False,
     uses_polling = False,
     deps = [":helpers"],
 )
@@ -137,6 +154,7 @@ grpc_cc_test(
         "no_mac",
         "no_windows",
     ],
+    uses_event_engine = False,
     uses_polling = False,
     deps = [":helpers"],
 )
@@ -160,6 +178,7 @@ grpc_cc_test(
         "no_mac",
         "no_windows",
     ],
+    uses_event_engine = False,
     uses_polling = False,
     deps = [":helpers"],
 )
@@ -244,6 +263,7 @@ grpc_cc_test(
         "no_mac",
         "no_windows",
     ],
+    uses_event_engine = False,
     uses_polling = False,
     deps = [":helpers"],
 )
@@ -280,20 +300,6 @@ grpc_cc_test(
         "no_mac",
         "no_windows",
     ],
-    deps = [":helpers"],
-)
-
-grpc_cc_test(
-    name = "bm_threadpool",
-    size = "large",
-    srcs = ["bm_threadpool.cc"],
-    args = grpc_benchmark_args(),
-    tags = [
-        "manual",
-        "no_windows",
-        "notap",
-    ],
-    uses_polling = False,
     deps = [":helpers"],
 )
 

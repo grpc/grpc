@@ -161,6 +161,11 @@ class TestMultipleServiceImpl : public RpcService {
     internal::MaybeEchoDeadline(context, request, response);
     if (host_) {
       response->mutable_param()->set_host(*host_);
+    } else if (request->has_param() &&
+               request->param().echo_host_from_authority_header()) {
+      auto authority = context->ExperimentalGetAuthority();
+      std::string authority_str(authority.data(), authority.size());
+      response->mutable_param()->set_host(std::move(authority_str));
     }
     if (request->has_param() && request->param().client_cancel_after_us()) {
       {

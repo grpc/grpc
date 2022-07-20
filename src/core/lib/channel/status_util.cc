@@ -20,6 +20,8 @@
 
 #include "src/core/lib/channel/status_util.h"
 
+#include <string.h>
+
 #include "src/core/lib/gpr/useful.h"
 
 struct status_string_entry {

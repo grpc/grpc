@@ -22,5 +22,4 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
 export DOCKERFILE_DIR=tools/dockerfile/test/bazel
 export DOCKER_RUN_SCRIPT=$BAZEL_SCRIPT
-export OUTPUT_DIR=reports
 exec tools/run_tests/dockerize/build_and_run_docker.sh

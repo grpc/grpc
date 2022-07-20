@@ -55,29 +55,46 @@ UPB_INLINE xds_core_v3_Resource* xds_core_v3_Resource_parse_ex(const char* buf, 
   return ret;
 }
 UPB_INLINE char* xds_core_v3_Resource_serialize(const xds_core_v3_Resource* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &xds_core_v3_Resource_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &xds_core_v3_Resource_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* xds_core_v3_Resource_serialize_ex(const xds_core_v3_Resource* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &xds_core_v3_Resource_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &xds_core_v3_Resource_msginit, options, arena, &ptr, len);
+  return ptr;
 }
-UPB_INLINE bool xds_core_v3_Resource_has_name(const xds_core_v3_Resource *msg) { return _upb_hasbit(msg, 1); }
+UPB_INLINE bool xds_core_v3_Resource_has_name(const xds_core_v3_Resource* msg) {
+  return _upb_hasbit(msg, 1);
+}
+UPB_INLINE void xds_core_v3_Resource_clear_name(const xds_core_v3_Resource* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const upb_Message*) = NULL;
+}
 UPB_INLINE const struct xds_core_v3_ResourceName* xds_core_v3_Resource_name(const xds_core_v3_Resource* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(12, 24), const struct xds_core_v3_ResourceName*);
+  return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const struct xds_core_v3_ResourceName*);
+}
+UPB_INLINE void xds_core_v3_Resource_clear_version(const xds_core_v3_Resource* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 16), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
 }
 UPB_INLINE upb_StringView xds_core_v3_Resource_version(const xds_core_v3_Resource* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView);
+  return *UPB_PTR_AT(msg, UPB_SIZE(8, 16), upb_StringView);
 }
-UPB_INLINE bool xds_core_v3_Resource_has_resource(const xds_core_v3_Resource *msg) { return _upb_hasbit(msg, 2); }
+UPB_INLINE bool xds_core_v3_Resource_has_resource(const xds_core_v3_Resource* msg) {
+  return _upb_hasbit(msg, 2);
+}
+UPB_INLINE void xds_core_v3_Resource_clear_resource(const xds_core_v3_Resource* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(16, 32), const upb_Message*) = NULL;
+}
 UPB_INLINE const struct google_protobuf_Any* xds_core_v3_Resource_resource(const xds_core_v3_Resource* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(16, 32), const struct google_protobuf_Any*);
 }
 
 UPB_INLINE void xds_core_v3_Resource_set_name(xds_core_v3_Resource *msg, struct xds_core_v3_ResourceName* value) {
   _upb_sethas(msg, 1);
-  *UPB_PTR_AT(msg, UPB_SIZE(12, 24), struct xds_core_v3_ResourceName*) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), struct xds_core_v3_ResourceName*) = value;
 }
-UPB_INLINE struct xds_core_v3_ResourceName* xds_core_v3_Resource_mutable_name(xds_core_v3_Resource *msg, upb_Arena *arena) {
+UPB_INLINE struct xds_core_v3_ResourceName* xds_core_v3_Resource_mutable_name(xds_core_v3_Resource* msg, upb_Arena* arena) {
   struct xds_core_v3_ResourceName* sub = (struct xds_core_v3_ResourceName*)xds_core_v3_Resource_name(msg);
   if (sub == NULL) {
     sub = (struct xds_core_v3_ResourceName*)_upb_Message_New(&xds_core_v3_ResourceName_msginit, arena);
@@ -87,13 +104,13 @@ UPB_INLINE struct xds_core_v3_ResourceName* xds_core_v3_Resource_mutable_name(xd
   return sub;
 }
 UPB_INLINE void xds_core_v3_Resource_set_version(xds_core_v3_Resource *msg, upb_StringView value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 16), upb_StringView) = value;
 }
 UPB_INLINE void xds_core_v3_Resource_set_resource(xds_core_v3_Resource *msg, struct google_protobuf_Any* value) {
   _upb_sethas(msg, 2);
   *UPB_PTR_AT(msg, UPB_SIZE(16, 32), struct google_protobuf_Any*) = value;
 }
-UPB_INLINE struct google_protobuf_Any* xds_core_v3_Resource_mutable_resource(xds_core_v3_Resource *msg, upb_Arena *arena) {
+UPB_INLINE struct google_protobuf_Any* xds_core_v3_Resource_mutable_resource(xds_core_v3_Resource* msg, upb_Arena* arena) {
   struct google_protobuf_Any* sub = (struct google_protobuf_Any*)xds_core_v3_Resource_resource(msg);
   if (sub == NULL) {
     sub = (struct google_protobuf_Any*)_upb_Message_New(&google_protobuf_Any_msginit, arena);

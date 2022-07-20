@@ -54,30 +54,51 @@ UPB_INLINE xds_core_v3_ContextParams* xds_core_v3_ContextParams_parse_ex(const c
   return ret;
 }
 UPB_INLINE char* xds_core_v3_ContextParams_serialize(const xds_core_v3_ContextParams* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &xds_core_v3_ContextParams_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &xds_core_v3_ContextParams_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* xds_core_v3_ContextParams_serialize_ex(const xds_core_v3_ContextParams* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &xds_core_v3_ContextParams_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &xds_core_v3_ContextParams_msginit, options, arena, &ptr, len);
+  return ptr;
 }
-UPB_INLINE bool xds_core_v3_ContextParams_has_params(const xds_core_v3_ContextParams *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(0, 0)); }
-UPB_INLINE size_t xds_core_v3_ContextParams_params_size(const xds_core_v3_ContextParams *msg) {return _upb_msg_map_size(msg, UPB_SIZE(0, 0)); }
-UPB_INLINE bool xds_core_v3_ContextParams_params_get(const xds_core_v3_ContextParams *msg, upb_StringView key, upb_StringView *val) { return _upb_msg_map_get(msg, UPB_SIZE(0, 0), &key, 0, val, 0); }
-UPB_INLINE const xds_core_v3_ContextParams_ParamsEntry* xds_core_v3_ContextParams_params_next(const xds_core_v3_ContextParams *msg, size_t* iter) { return (const xds_core_v3_ContextParams_ParamsEntry*)_upb_msg_map_next(msg, UPB_SIZE(0, 0), iter); }
+UPB_INLINE bool xds_core_v3_ContextParams_has_params(const xds_core_v3_ContextParams* msg) {
+  return _upb_has_submsg_nohasbit(msg, UPB_SIZE(0, 0));
+}
+UPB_INLINE void xds_core_v3_ContextParams_clear_params(const xds_core_v3_ContextParams* msg) {
+  _upb_array_detach(msg, UPB_SIZE(0, 0));
+}
+UPB_INLINE size_t xds_core_v3_ContextParams_params_size(const xds_core_v3_ContextParams* msg) {
+  return _upb_msg_map_size(msg, UPB_SIZE(0, 0));
+}
+UPB_INLINE bool xds_core_v3_ContextParams_params_get(const xds_core_v3_ContextParams* msg, upb_StringView key, upb_StringView* val) {
+  return _upb_msg_map_get(msg, UPB_SIZE(0, 0), &key, 0, val, 0);
+}
+UPB_INLINE const xds_core_v3_ContextParams_ParamsEntry* xds_core_v3_ContextParams_params_next(const xds_core_v3_ContextParams* msg, size_t* iter) {
+  return (const xds_core_v3_ContextParams_ParamsEntry*)_upb_msg_map_next(msg, UPB_SIZE(0, 0), iter);
+}
 
-UPB_INLINE void xds_core_v3_ContextParams_params_clear(xds_core_v3_ContextParams *msg) { _upb_msg_map_clear(msg, UPB_SIZE(0, 0)); }
-UPB_INLINE bool xds_core_v3_ContextParams_params_set(xds_core_v3_ContextParams *msg, upb_StringView key, upb_StringView val, upb_Arena *a) { return _upb_msg_map_set(msg, UPB_SIZE(0, 0), &key, 0, &val, 0, a); }
-UPB_INLINE bool xds_core_v3_ContextParams_params_delete(xds_core_v3_ContextParams *msg, upb_StringView key) { return _upb_msg_map_delete(msg, UPB_SIZE(0, 0), &key, 0); }
-UPB_INLINE xds_core_v3_ContextParams_ParamsEntry* xds_core_v3_ContextParams_params_nextmutable(xds_core_v3_ContextParams *msg, size_t* iter) { return (xds_core_v3_ContextParams_ParamsEntry*)_upb_msg_map_next(msg, UPB_SIZE(0, 0), iter); }
+UPB_INLINE void xds_core_v3_ContextParams_params_clear(xds_core_v3_ContextParams* msg) { _upb_msg_map_clear(msg, UPB_SIZE(0, 0)); }
+UPB_INLINE bool xds_core_v3_ContextParams_params_set(xds_core_v3_ContextParams* msg, upb_StringView key, upb_StringView val, upb_Arena* a) {
+  return _upb_msg_map_set(msg, UPB_SIZE(0, 0), &key, 0, &val, 0, a);
+}
+UPB_INLINE bool xds_core_v3_ContextParams_params_delete(xds_core_v3_ContextParams* msg, upb_StringView key) {
+  return _upb_msg_map_delete(msg, UPB_SIZE(0, 0), &key, 0);
+}
+UPB_INLINE xds_core_v3_ContextParams_ParamsEntry* xds_core_v3_ContextParams_params_nextmutable(xds_core_v3_ContextParams* msg, size_t* iter) {
+  return (xds_core_v3_ContextParams_ParamsEntry*)_upb_msg_map_next(msg, UPB_SIZE(0, 0), iter);
+}
 
 /* xds.core.v3.ContextParams.ParamsEntry */
 
-UPB_INLINE upb_StringView xds_core_v3_ContextParams_ParamsEntry_key(const xds_core_v3_ContextParams_ParamsEntry *msg) {
+UPB_INLINE upb_StringView xds_core_v3_ContextParams_ParamsEntry_key(const xds_core_v3_ContextParams_ParamsEntry* msg) {
   upb_StringView ret;
   _upb_msg_map_key(msg, &ret, 0);
   return ret;
 }
-UPB_INLINE upb_StringView xds_core_v3_ContextParams_ParamsEntry_value(const xds_core_v3_ContextParams_ParamsEntry *msg) {
+UPB_INLINE upb_StringView xds_core_v3_ContextParams_ParamsEntry_value(const xds_core_v3_ContextParams_ParamsEntry* msg) {
   upb_StringView ret;
   _upb_msg_map_value(msg, &ret, 0);
   return ret;

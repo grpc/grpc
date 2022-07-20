@@ -124,8 +124,12 @@ class ReflectionClientTest(unittest.TestCase):
         service_name = self._SERVICE_NAMES[0]
         service_desc = self.desc_pool.FindServiceByName(service_name)
 
+        # FindMethodByName sometimes raises a KeyError, and sometimes returns None.
+        # See https://github.com/protocolbuffers/protobuf/issues/9592
         with self.assertRaises(KeyError):
-            service_desc.FindMethodByName(_INVALID_SYMBOL_NAME)
+            res = service_desc.FindMethodByName(_INVALID_SYMBOL_NAME)
+            if res is None:
+                raise KeyError()
 
     def testFindExtensionNotImplemented(self):
         """

@@ -18,17 +18,28 @@
 
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.h"
 
+#include <string.h>
+
+#include <string>
+#include <utility>
+
+#include "absl/strings/string_view.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/gprpp/stat.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/security/credentials/tls/tls_utils.h"
-#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
 
 namespace grpc_core {
+
+//
+// ExternalCertificateVerifier
+//
 
 bool ExternalCertificateVerifier::Verify(
     grpc_tls_custom_verification_check_request* request,
@@ -56,6 +67,11 @@ bool ExternalCertificateVerifier::Verify(
   return is_done;
 }
 
+UniqueTypeName ExternalCertificateVerifier::type() const {
+  static UniqueTypeName::Factory kFactory("External");
+  return kFactory.Create();
+}
+
 void ExternalCertificateVerifier::OnVerifyDone(
     grpc_tls_custom_verification_check_request* request, void* callback_arg,
     grpc_status_code status, const char* error_details) {
@@ -79,6 +95,19 @@ void ExternalCertificateVerifier::OnVerifyDone(
     callback(return_status);
   }
 }
+
+//
+// NoOpCertificateVerifier
+//
+
+UniqueTypeName NoOpCertificateVerifier::type() const {
+  static UniqueTypeName::Factory kFactory("NoOp");
+  return kFactory.Create();
+}
+
+//
+// HostNameCertificateVerifier
+//
 
 bool HostNameCertificateVerifier::Verify(
     grpc_tls_custom_verification_check_request* request,
@@ -134,13 +163,19 @@ bool HostNameCertificateVerifier::Verify(
     const char* common_name = request->peer_info.common_name;
     // We are using the target name sent from the client as a matcher to match
     // against identity name on the peer cert.
-    if (VerifySubjectAlternativeName(common_name, std::string(target_host))) {
+    if (common_name != nullptr &&
+        VerifySubjectAlternativeName(common_name, std::string(target_host))) {
       return true;  // synchronous check
     }
   }
   *sync_status = absl::Status(absl::StatusCode::kUnauthenticated,
                               "Hostname Verification Check failed.");
   return true;  // synchronous check
+}
+
+UniqueTypeName HostNameCertificateVerifier::type() const {
+  static UniqueTypeName::Factory kFactory("Hostname");
+  return kFactory.Create();
 }
 
 }  // namespace grpc_core
@@ -184,6 +219,11 @@ grpc_tls_certificate_verifier* grpc_tls_certificate_verifier_external_create(
     grpc_tls_certificate_verifier_external* external_verifier) {
   grpc_core::ExecCtx exec_ctx;
   return new grpc_core::ExternalCertificateVerifier(external_verifier);
+}
+
+grpc_tls_certificate_verifier* grpc_tls_certificate_verifier_no_op_create() {
+  grpc_core::ExecCtx exec_ctx;
+  return new grpc_core::NoOpCertificateVerifier();
 }
 
 grpc_tls_certificate_verifier*

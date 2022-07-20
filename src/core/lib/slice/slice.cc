@@ -22,12 +22,13 @@
 
 #include <string.h>
 
+#include <new>
+
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/memory.h"
-#include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_refcount_base.h"
 

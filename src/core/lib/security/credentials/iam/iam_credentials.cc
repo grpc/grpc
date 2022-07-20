@@ -20,20 +20,26 @@
 
 #include "src/core/lib/security/credentials/iam/iam_credentials.h"
 
+#include <stdlib.h>
+
+#include <utility>
+
 #include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
 
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/sync.h>
 
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/surface/api_trace.h"
+#include "src/core/lib/transport/metadata_batch.h"
 
-grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientInitialMetadata>>
+grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientMetadataHandle>>
 grpc_google_iam_credentials::GetRequestMetadata(
-    grpc_core::ClientInitialMetadata initial_metadata,
+    grpc_core::ClientMetadataHandle initial_metadata,
     const grpc_call_credentials::GetRequestMetadataArgs*) {
   if (token_.has_value()) {
     initial_metadata->Append(
@@ -48,14 +54,18 @@ grpc_google_iam_credentials::GetRequestMetadata(
 
 grpc_google_iam_credentials::grpc_google_iam_credentials(
     const char* token, const char* authority_selector)
-    : grpc_call_credentials(GRPC_CALL_CREDENTIALS_TYPE_IAM),
-      token_(token == nullptr ? absl::optional<grpc_core::Slice>()
+    : token_(token == nullptr ? absl::optional<grpc_core::Slice>()
                               : grpc_core::Slice::FromCopiedString(token)),
       authority_selector_(
           grpc_core::Slice::FromCopiedString(authority_selector)),
       debug_string_(absl::StrFormat(
           "GoogleIAMCredentials{Token:%s,AuthoritySelector:%s}",
           token != nullptr ? "present" : "absent", authority_selector)) {}
+
+grpc_core::UniqueTypeName grpc_google_iam_credentials::Type() {
+  static grpc_core::UniqueTypeName::Factory kFactory("Iam");
+  return kFactory.Create();
+}
 
 grpc_call_credentials* grpc_google_iam_credentials_create(
     const char* token, const char* authority_selector, void* reserved) {

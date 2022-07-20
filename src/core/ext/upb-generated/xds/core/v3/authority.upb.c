@@ -15,13 +15,13 @@
 #include "upb/port_def.inc"
 
 static const upb_MiniTable_Field xds_core_v3_Authority__fields[1] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 9, kUpb_FieldMode_Scalar | (upb_FieldRep_StringView << upb_FieldRep_Shift)},
+  {1, UPB_SIZE(0, 0), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable xds_core_v3_Authority_msginit = {
   NULL,
   &xds_core_v3_Authority__fields[0],
-  UPB_SIZE(8, 16), 1, upb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 16), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[1] = {

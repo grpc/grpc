@@ -25,8 +25,6 @@
 #include "opencensus/stats/stats.h"
 #include "opencensus/tags/tag_key.h"
 
-#include <grpcpp/opencensus.h>
-
 namespace grpc {
 
 // The tag keys set when recording RPC stats.

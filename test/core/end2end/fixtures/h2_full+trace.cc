@@ -55,7 +55,6 @@ static grpc_end2end_test_fixture chttp2_create_fixture_fullstack(
 
   f.fixture_data = ffd;
   f.cq = grpc_completion_queue_create_for_next(nullptr);
-  f.shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
 
   return f;
 }
@@ -125,7 +124,7 @@ int main(int argc, char** argv) {
   setvbuf(stderr, NULL, _IOLBF, 1024);
 #endif
 
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_end2end_tests_pre_init();
   grpc_init();
 

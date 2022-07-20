@@ -12,30 +12,31 @@
 
 #include "upb/port_def.inc"
 
-static const upb_MiniTable_Sub grpc_gcp_RpcProtocolVersions_submsgs[1] = {
+static const upb_MiniTable_Sub grpc_gcp_RpcProtocolVersions_submsgs[2] = {
+  {.submsg = &grpc_gcp_RpcProtocolVersions_Version_msginit},
   {.submsg = &grpc_gcp_RpcProtocolVersions_Version_msginit},
 };
 
 static const upb_MiniTable_Field grpc_gcp_RpcProtocolVersions__fields[2] = {
-  {1, UPB_SIZE(4, 8), 1, 0, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
-  {2, UPB_SIZE(8, 16), 2, 0, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {1, UPB_SIZE(4, 8), UPB_SIZE(1, 1), 0, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(8, 16), UPB_SIZE(2, 2), 1, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable grpc_gcp_RpcProtocolVersions_msginit = {
   &grpc_gcp_RpcProtocolVersions_submsgs[0],
   &grpc_gcp_RpcProtocolVersions__fields[0],
-  UPB_SIZE(16, 24), 2, upb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Field grpc_gcp_RpcProtocolVersions_Version__fields[2] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 13, kUpb_FieldMode_Scalar | (upb_FieldRep_4Byte << upb_FieldRep_Shift)},
-  {2, UPB_SIZE(4, 4), 0, 0, 13, kUpb_FieldMode_Scalar | (upb_FieldRep_4Byte << upb_FieldRep_Shift)},
+  {1, UPB_SIZE(0, 0), UPB_SIZE(0, 0), kUpb_NoSub, 13, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(4, 4), UPB_SIZE(0, 0), kUpb_NoSub, 13, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable grpc_gcp_RpcProtocolVersions_Version_msginit = {
   NULL,
   &grpc_gcp_RpcProtocolVersions_Version__fields[0],
-  UPB_SIZE(8, 8), 2, upb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(8, 8), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[2] = {

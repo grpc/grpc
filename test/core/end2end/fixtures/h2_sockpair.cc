@@ -54,7 +54,7 @@ static void server_setup_transport(void* ts, grpc_transport* transport) {
   grpc_core::Server* core_server = grpc_core::Server::FromC(f->server);
   grpc_error_handle error = core_server->SetupTransport(
       transport, nullptr, core_server->channel_args(), nullptr);
-  if (error == GRPC_ERROR_NONE) {
+  if (GRPC_ERROR_IS_NONE(error)) {
     grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
   } else {
     GRPC_ERROR_UNREF(error);
@@ -70,26 +70,17 @@ typedef struct {
 static void client_setup_transport(void* ts, grpc_transport* transport) {
   sp_client_setup* cs = static_cast<sp_client_setup*>(ts);
 
-  grpc_arg authority_arg = grpc_channel_arg_string_create(
-      const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
-      const_cast<char*>("test-authority"));
-  const grpc_channel_args* args =
-      grpc_channel_args_copy_and_add(cs->client_args, &authority_arg, 1);
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  cs->f->client = grpc_channel_create_internal(
-      "socketpair-target", args, GRPC_CLIENT_DIRECT_CHANNEL, transport, &error);
-  grpc_channel_args_destroy(args);
-  if (cs->f->client != nullptr) {
+  auto args = grpc_core::ChannelArgs::FromC(cs->client_args)
+                  .Set(GRPC_ARG_DEFAULT_AUTHORITY, "test-authority");
+  auto channel = grpc_core::Channel::Create(
+      "socketpair-target", args, GRPC_CLIENT_DIRECT_CHANNEL, transport);
+  if (channel.ok()) {
+    cs->f->client = channel->release()->c_ptr();
     grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
   } else {
-    intptr_t integer;
-    grpc_status_code status = GRPC_STATUS_INTERNAL;
-    if (grpc_error_get_int(error, GRPC_ERROR_INT_GRPC_STATUS, &integer)) {
-      status = static_cast<grpc_status_code>(integer);
-    }
-    GRPC_ERROR_UNREF(error);
-    cs->f->client =
-        grpc_lame_client_channel_create(nullptr, status, "lame channel");
+    cs->f->client = grpc_lame_client_channel_create(
+        nullptr, static_cast<grpc_status_code>(channel.status().code()),
+        "lame channel");
     grpc_transport_destroy(transport);
   }
 }
@@ -103,7 +94,6 @@ static grpc_end2end_test_fixture chttp2_create_fixture_socketpair(
   memset(&f, 0, sizeof(f));
   f.fixture_data = fixture_data;
   f.cq = grpc_completion_queue_create_for_next(nullptr);
-  f.shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
   fixture_data->ep = grpc_iomgr_create_endpoint_pair("fixture", nullptr);
   return f;
 }
@@ -114,15 +104,15 @@ static void chttp2_init_client_socketpair(
   auto* fixture_data = static_cast<custom_fixture_data*>(f->fixture_data);
   grpc_transport* transport;
   sp_client_setup cs;
-  client_args = grpc_core::CoreConfiguration::Get()
-                    .channel_args_preconditioning()
-                    .PreconditionChannelArgs(client_args);
-  cs.client_args = client_args;
+  auto client_channel_args = grpc_core::CoreConfiguration::Get()
+                                 .channel_args_preconditioning()
+                                 .PreconditionChannelArgs(client_args);
+  cs.client_args = client_channel_args.ToC().release();
   cs.f = f;
-  transport =
-      grpc_create_chttp2_transport(client_args, fixture_data->ep.client, true);
+  transport = grpc_create_chttp2_transport(client_channel_args,
+                                           fixture_data->ep.client, true);
   client_setup_transport(&cs, transport);
-  grpc_channel_args_destroy(client_args);
+  grpc_channel_args_destroy(cs.client_args);
   GPR_ASSERT(f->client);
 }
 
@@ -135,12 +125,11 @@ static void chttp2_init_server_socketpair(
   f->server = grpc_server_create(server_args, nullptr);
   grpc_server_register_completion_queue(f->server, f->cq, nullptr);
   grpc_server_start(f->server);
-  server_args = grpc_core::CoreConfiguration::Get()
-                    .channel_args_preconditioning()
-                    .PreconditionChannelArgs(server_args);
-  transport =
-      grpc_create_chttp2_transport(server_args, fixture_data->ep.server, false);
-  grpc_channel_args_destroy(server_args);
+  auto server_channel_args = grpc_core::CoreConfiguration::Get()
+                                 .channel_args_preconditioning()
+                                 .PreconditionChannelArgs(server_args);
+  transport = grpc_create_chttp2_transport(server_channel_args,
+                                           fixture_data->ep.server, false);
   server_setup_transport(f, transport);
 }
 
@@ -159,7 +148,7 @@ static grpc_end2end_test_config configs[] = {
 int main(int argc, char** argv) {
   size_t i;
 
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_end2end_tests_pre_init();
   grpc_init();
 

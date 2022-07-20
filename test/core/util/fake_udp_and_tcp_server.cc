@@ -22,7 +22,6 @@
 #include "absl/strings/str_cat.h"
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/event_engine/sockaddr.h"
 #include "test/core/util/port.h"
 
 #ifdef GPR_WINDOWS
@@ -85,13 +84,13 @@ FakeUdpAndTcpServer::FakeUdpAndTcpServer(
   }
   grpc_error_handle set_non_block_error;
   set_non_block_error = grpc_tcp_set_non_block(udp_socket_);
-  if (set_non_block_error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(set_non_block_error)) {
     gpr_log(GPR_ERROR, "Failed to configure non-blocking socket: %s",
             grpc_error_std_string(set_non_block_error).c_str());
     GPR_ASSERT(0);
   }
   set_non_block_error = grpc_tcp_set_non_block(accept_socket_);
-  if (set_non_block_error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(set_non_block_error)) {
     gpr_log(GPR_ERROR, "Failed to configure non-blocking socket: %s",
             grpc_error_std_string(set_non_block_error).c_str());
     GPR_ASSERT(0);
@@ -120,7 +119,7 @@ FakeUdpAndTcpServer::FakeUdpAndTcpServer(
   grpc_resolved_address resolved_addr;
   memcpy(resolved_addr.addr, &addr, sizeof(addr));
   resolved_addr.len = sizeof(addr);
-  std::string addr_str = grpc_sockaddr_to_string(&resolved_addr, false);
+  std::string addr_str = grpc_sockaddr_to_string(&resolved_addr, false).value();
   gpr_log(GPR_INFO, "Fake UDP and TCP server listening on %s",
           addr_str.c_str());
   if (bind(udp_socket_, reinterpret_cast<const sockaddr*>(&addr),
@@ -245,7 +244,7 @@ void FakeUdpAndTcpServer::RunServerLoop() {
 #ifdef GPR_WINDOWS
       grpc_error_handle set_non_block_error;
       set_non_block_error = grpc_tcp_set_non_block(p);
-      if (set_non_block_error != GRPC_ERROR_NONE) {
+      if (!GRPC_ERROR_IS_NONE(set_non_block_error)) {
         gpr_log(GPR_ERROR, "Failed to configure non-blocking socket: %s",
                 grpc_error_std_string(set_non_block_error).c_str());
         GPR_ASSERT(0);

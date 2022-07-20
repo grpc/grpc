@@ -117,6 +117,11 @@ class ServerContextTestSpouse;
 class DefaultReactorTestPeer;
 }  // namespace testing
 
+namespace experimental {
+class OrcaServerInterceptor;
+class CallMetricRecorder;
+}  // namespace experimental
+
 /// Base class of ServerContext.
 class ServerContextBase {
  public:
@@ -283,6 +288,19 @@ class ServerContextBase {
   /// Applications never need to call this method.
   grpc_call* c_call() { return call_.call; }
 
+  /// Get the \a CallMetricRecorder object for the current RPC.
+  /// Use it to record metrics during your RPC to send back to the
+  /// client in order to make load balancing decisions. This will
+  /// return nullptr if the feature hasn't been enabled using
+  /// \a EnableCallMetricRecording.
+  experimental::CallMetricRecorder* ExperimentalGetCallMetricRecorder() {
+    return call_metric_recorder_;
+  }
+
+  /// EXPERIMENTAL API
+  /// Returns the call's authority.
+  grpc::string_ref ExperimentalGetAuthority() const;
+
  protected:
   /// Async only. Has to be called before the rpc starts.
   /// Returns the tag in completion queue when the rpc finishes.
@@ -388,6 +406,7 @@ class ServerContextBase {
   friend class grpc::ClientContext;
   friend class grpc::GenericServerContext;
   friend class grpc::GenericCallbackServerContext;
+  friend class grpc::experimental::OrcaServerInterceptor;
 
   /// Prevent copying.
   ServerContextBase(const ServerContextBase&);
@@ -429,6 +448,8 @@ class ServerContextBase {
     }
   }
 
+  void CreateCallMetricRecorder();
+
   struct CallWrapper {
     ~CallWrapper();
 
@@ -466,6 +487,7 @@ class ServerContextBase {
   grpc::experimental::ServerRpcInfo* rpc_info_ = nullptr;
   RpcAllocatorState* message_allocator_state_ = nullptr;
   ContextAllocator* context_allocator_ = nullptr;
+  experimental::CallMetricRecorder* call_metric_recorder_ = nullptr;
 
   class Reactor : public grpc::ServerUnaryReactor {
    public:

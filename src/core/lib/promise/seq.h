@@ -19,8 +19,6 @@
 
 #include <utility>
 
-#include "absl/types/variant.h"
-
 #include "src/core/lib/promise/detail/basic_seq.h"
 #include "src/core/lib/promise/poll.h"
 

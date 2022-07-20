@@ -13,14 +13,14 @@
 #include "upb/port_def.inc"
 
 static const upb_MiniTable_Field google_protobuf_Duration__fields[2] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 3, kUpb_FieldMode_Scalar | (upb_FieldRep_8Byte << upb_FieldRep_Shift)},
-  {2, UPB_SIZE(8, 8), 0, 0, 5, kUpb_FieldMode_Scalar | (upb_FieldRep_4Byte << upb_FieldRep_Shift)},
+  {1, UPB_SIZE(8, 8), UPB_SIZE(0, 0), kUpb_NoSub, 3, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(0, 0), UPB_SIZE(0, 0), kUpb_NoSub, 5, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable google_protobuf_Duration_msginit = {
   NULL,
   &google_protobuf_Duration__fields[0],
-  UPB_SIZE(16, 16), 2, upb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 16), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[1] = {

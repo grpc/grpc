@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.4.1)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
 
 # https://github.com/abseil/abseil-cpp/issues/626
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DABSL_NO_XRAY_ATTRIBUTES=1")

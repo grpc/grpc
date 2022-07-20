@@ -21,6 +21,7 @@
 #include <cassert>
 #include <new>
 #include <tuple>
+#include <type_traits>
 #include <utility>
 
 #include "absl/meta/type_traits.h"
@@ -29,13 +30,12 @@
 
 #include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
+#include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/detail/switch.h"
 #include "src/core/lib/promise/poll.h"
 
 namespace grpc_core {
 namespace promise_detail {
-template <typename F>
-class PromiseLike;
 
 // Helper for SeqState to evaluate some common types to all partial
 // specializations.

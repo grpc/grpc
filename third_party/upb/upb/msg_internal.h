@@ -39,8 +39,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "upb/extension_registry.h"
+#include "upb/internal/table.h"
 #include "upb/msg.h"
-#include "upb/table_internal.h"
 #include "upb/upb.h"
 
 /* Must be last. */
@@ -49,6 +50,18 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/** upb_*Int* conversion routines ********************************************/
+
+UPB_INLINE int32_t _upb_Int32_FromI(int v) { return (int32_t)v; }
+
+UPB_INLINE int64_t _upb_Int64_FromLL(long long v) { return (int64_t)v; }
+
+UPB_INLINE uint32_t _upb_UInt32_FromU(unsigned v) { return (uint32_t)v; }
+
+UPB_INLINE uint64_t _upb_UInt64_FromULL(unsigned long long v) {
+  return (uint64_t)v;
+}
 
 /** upb_MiniTable *************************************************************/
 
@@ -60,43 +73,40 @@ typedef struct {
   uint32_t number;
   uint16_t offset;
   int16_t presence;       // If >0, hasbit_index.  If <0, ~oneof_index
-  uint16_t submsg_index;  // undefined if descriptortype != MESSAGE/GROUP/ENUM
+  uint16_t submsg_index;  // kUpb_NoSub if descriptortype != MESSAGE/GROUP/ENUM
   uint8_t descriptortype;
   uint8_t mode; /* upb_FieldMode | upb_LabelFlags |
-                   (upb_FieldRep << upb_FieldRep_Shift) */
+                   (upb_FieldRep << kUpb_FieldRep_Shift) */
 } upb_MiniTable_Field;
+
+#define kUpb_NoSub ((uint16_t)-1)
 
 typedef enum {
   kUpb_FieldMode_Map = 0,
   kUpb_FieldMode_Array = 1,
   kUpb_FieldMode_Scalar = 2,
-
-  kUpb_FieldMode_Mask = 3, /* Mask to isolate the mode from upb_FieldRep. */
 } upb_FieldMode;
 
+// Mask to isolate the upb_FieldMode from field.mode.
+#define kUpb_FieldMode_Mask 3
+
 /* Extra flags on the mode field. */
-enum upb_LabelFlags {
-  upb_LabelFlags_IsPacked = 4,
-  upb_LabelFlags_IsExtension = 8,
-};
+typedef enum {
+  kUpb_LabelFlags_IsPacked = 4,
+  kUpb_LabelFlags_IsExtension = 8,
+} upb_LabelFlags;
 
-/* Representation in the message.  Derivable from descriptortype and mode, but
- * fast access helps the serializer. */
-enum upb_FieldRep {
-  upb_FieldRep_1Byte = 0,
-  upb_FieldRep_4Byte = 1,
-  upb_FieldRep_8Byte = 2,
-  upb_FieldRep_StringView = 3,
+// Note: we sort by this number when calculating layout order.
+typedef enum {
+  kUpb_FieldRep_1Byte = 0,
+  kUpb_FieldRep_4Byte = 1,
+  kUpb_FieldRep_StringView = 2,
+  kUpb_FieldRep_Pointer = 3,
+  kUpb_FieldRep_8Byte = 4,
 
-#if UINTPTR_MAX == 0xffffffff
-  upb_FieldRep_Pointer = upb_FieldRep_4Byte,
-#else
-  upb_FieldRep_Pointer = upb_FieldRep_8Byte,
-#endif
-
-  upb_FieldRep_Shift =
-      6, /* Bit offset of the rep in upb_MiniTable_Field.mode */
-};
+  kUpb_FieldRep_Shift = 5,  // Bit offset of the rep in upb_MiniTable_Field.mode
+  kUpb_FieldRep_Max = kUpb_FieldRep_8Byte,
+} upb_FieldRep;
 
 UPB_INLINE upb_FieldMode upb_FieldMode_Get(const upb_MiniTable_Field* field) {
   return (upb_FieldMode)(field->mode & 3);
@@ -130,36 +140,28 @@ typedef struct {
   int value_count;
 } upb_MiniTable_Enum;
 
-UPB_INLINE bool upb_MiniTable_Enum_CheckValue(const upb_MiniTable_Enum* e,
-                                              int32_t val) {
-  uint32_t uval = (uint32_t)val;
-  if (uval < 64) return e->mask & (1 << uval);
-  // OPT: binary search long lists?
-  int n = e->value_count;
-  for (int i = 0; i < n; i++) {
-    if (e->values[i] == val) return true;
-  }
-  return false;
-}
-
 typedef union {
   const struct upb_MiniTable* submsg;
   const upb_MiniTable_Enum* subenum;
 } upb_MiniTable_Sub;
 
 typedef enum {
-  upb_ExtMode_NonExtendable = 0,  // Non-extendable message.
-  upb_ExtMode_Extendable = 1,     // Normal extendable message.
-  upb_ExtMode_IsMessageSet = 2,   // MessageSet message.
-  upb_ExtMode_IsMessageSet_ITEM =
+  kUpb_ExtMode_NonExtendable = 0,  // Non-extendable message.
+  kUpb_ExtMode_Extendable = 1,     // Normal extendable message.
+  kUpb_ExtMode_IsMessageSet = 2,   // MessageSet message.
+  kUpb_ExtMode_IsMessageSet_ITEM =
       3,  // MessageSet item (temporary only, see decode.c)
+
+  // During table building we steal a bit to indicate that the message is a map
+  // entry.  *Only* used during table building!
+  kUpb_ExtMode_IsMapEntry = 4,
 } upb_ExtMode;
 
 /* MessageSet wire format is:
  *   message MessageSet {
  *     repeated group Item = 1 {
  *       required int32 type_id = 2;
- *       required string message = 3;
+ *       required bytes message = 3;
  *     }
  *   }
  */
@@ -213,8 +215,7 @@ UPB_INLINE uint64_t upb_MiniTable_requiredmask(const upb_MiniTable* l) {
   return ((1ULL << n) - 1) << 1;
 }
 
-/** upb_ExtensionRegistry
- * ****************************************************************/
+/** upb_ExtensionRegistry *****************************************************/
 
 /* Adds the given extension info for message type |l| and field number |num|
  * into the registry. Returns false if this message type and field number were
@@ -229,8 +230,7 @@ const upb_MiniTable_Extension* _upb_extreg_get(const upb_ExtensionRegistry* r,
                                                const upb_MiniTable* l,
                                                uint32_t num);
 
-/** upb_Message
- * *******************************************************************/
+/** upb_Message ***************************************************************/
 
 /* Internal members of a upb_Message that track unknown fields and/or
  * extensions. We can change this without breaking binary compatibility.  We put
@@ -276,7 +276,7 @@ UPB_INLINE size_t upb_msg_sizeof(const upb_MiniTable* l) {
 UPB_INLINE upb_Message* _upb_Message_New_inl(const upb_MiniTable* l,
                                              upb_Arena* a) {
   size_t size = upb_msg_sizeof(l);
-  void* mem = upb_Arena_Malloc(a, size);
+  void* mem = upb_Arena_Malloc(a, size + sizeof(upb_Message_Internal));
   upb_Message* msg;
   if (UPB_UNLIKELY(!mem)) return NULL;
   msg = UPB_PTR_AT(mem, sizeof(upb_Message_Internal), upb_Message);
@@ -303,8 +303,7 @@ void _upb_Message_DiscardUnknown_shallow(upb_Message* msg);
 bool _upb_Message_AddUnknown(upb_Message* msg, const char* data, size_t len,
                              upb_Arena* arena);
 
-/** upb_Message_Extension
- * ***************************************************************/
+/** upb_Message_Extension *****************************************************/
 
 /* The internal representation of an extension is self-describing: it contains
  * enough information that we can serialize it to binary format without needing
@@ -326,7 +325,7 @@ typedef struct {
 /* Adds the given extension data to the given message. |ext| is copied into the
  * message instance. This logically replaces any previously-added extension with
  * this number */
-upb_Message_Extension* _upb_Message_Getorcreateext(
+upb_Message_Extension* _upb_Message_GetOrCreateExtension(
     upb_Message* msg, const upb_MiniTable_Extension* ext, upb_Arena* arena);
 
 /* Returns an array of extensions for this message. Note: the array is
@@ -470,6 +469,10 @@ UPB_INLINE bool _upb_Array_Resize(upb_Array* arr, size_t size,
   if (!_upb_array_reserve(arr, size, arena)) return false;
   arr->len = size;
   return true;
+}
+
+UPB_INLINE void _upb_array_detach(const void* msg, size_t ofs) {
+  *UPB_PTR_AT(msg, ofs, upb_Array*) = NULL;
 }
 
 UPB_INLINE const void* _upb_array_accessor(const void* msg, size_t ofs,
@@ -665,15 +668,31 @@ UPB_INLINE void* _upb_map_next(const upb_Map* map, size_t* iter) {
   return (void*)str_tabent(&it);
 }
 
-UPB_INLINE bool _upb_Map_Set(upb_Map* map, const void* key, size_t key_size,
-                             void* val, size_t val_size, upb_Arena* a) {
+typedef enum {
+  // LINT.IfChange
+  _kUpb_MapInsertStatus_Inserted = 0,
+  _kUpb_MapInsertStatus_Replaced = 1,
+  _kUpb_MapInsertStatus_OutOfMemory = 2,
+  // LINT.ThenChange(//depot/google3/third_party/upb/upb/map.h)
+} _upb_MapInsertStatus;
+
+UPB_INLINE _upb_MapInsertStatus _upb_Map_Insert(upb_Map* map, const void* key,
+                                                size_t key_size, void* val,
+                                                size_t val_size, upb_Arena* a) {
   upb_StringView strkey = _upb_map_tokey(key, key_size);
   upb_value tabval = {0};
-  if (!_upb_map_tovalue(val, val_size, &tabval, a)) return false;
+  if (!_upb_map_tovalue(val, val_size, &tabval, a)) {
+    return _kUpb_MapInsertStatus_OutOfMemory;
+  }
 
   /* TODO(haberman): add overwrite operation to minimize number of lookups. */
-  upb_strtable_remove2(&map->table, strkey.data, strkey.size, NULL);
-  return upb_strtable_insert(&map->table, strkey.data, strkey.size, tabval, a);
+  bool removed =
+      upb_strtable_remove2(&map->table, strkey.data, strkey.size, NULL);
+  if (!upb_strtable_insert(&map->table, strkey.data, strkey.size, tabval, a)) {
+    return _kUpb_MapInsertStatus_OutOfMemory;
+  }
+  return removed ? _kUpb_MapInsertStatus_Replaced
+                 : _kUpb_MapInsertStatus_Inserted;
 }
 
 UPB_INLINE bool _upb_Map_Delete(upb_Map* map, const void* key,
@@ -715,7 +734,8 @@ UPB_INLINE bool _upb_msg_map_set(upb_Message* msg, size_t ofs, const void* key,
   if (!*map) {
     *map = _upb_Map_New(arena, key_size, val_size);
   }
-  return _upb_Map_Set(*map, key, key_size, val, val_size, arena);
+  return _upb_Map_Insert(*map, key, key_size, val, val_size, arena) !=
+         _kUpb_MapInsertStatus_OutOfMemory;
 }
 
 UPB_INLINE bool _upb_msg_map_delete(upb_Message* msg, size_t ofs,
@@ -761,8 +781,7 @@ UPB_INLINE void _upb_msg_map_set_value(void* msg, const void* val,
   }
 }
 
-/** _upb_mapsorter
- * *************************************************************/
+/** _upb_mapsorter ************************************************************/
 
 /* _upb_mapsorter sorts maps and provides ordered iteration over the entries.
  * Since maps can be recursive (map values can be messages which contain other

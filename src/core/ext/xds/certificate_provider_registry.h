@@ -21,7 +21,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <string>
+#include <memory>
+
+#include "absl/strings/string_view.h"
 
 #include "src/core/ext/xds/certificate_provider_factory.h"
 

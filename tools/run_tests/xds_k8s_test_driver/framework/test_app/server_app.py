@@ -19,7 +19,6 @@ modules.
 """
 import functools
 import logging
-import threading
 from typing import Iterator, List, Optional
 
 from framework.infrastructure import gcp
@@ -158,28 +157,29 @@ class KubernetesServerRunner(base_runner.KubernetesBaseRunner):
     DEFAULT_MAINTENANCE_PORT = 8080
     DEFAULT_SECURE_MODE_MAINTENANCE_PORT = 8081
 
-    def __init__(self,
-                 k8s_namespace,
-                 *,
-                 deployment_name,
-                 image_name,
-                 td_bootstrap_image,
-                 gcp_api_manager: gcp.api.GcpApiManager,
-                 gcp_project: str,
-                 gcp_service_account: str,
-                 service_account_name=None,
-                 service_name=None,
-                 neg_name=None,
-                 xds_server_uri=None,
-                 network='default',
-                 deployment_template='server.deployment.yaml',
-                 service_account_template='service-account.yaml',
-                 service_template='server.service.yaml',
-                 reuse_service=False,
-                 reuse_namespace=False,
-                 namespace_template=None,
-                 debug_use_port_forwarding=False,
-                 enable_workload_identity=True):
+    def __init__(  # pylint: disable=too-many-locals
+            self,
+            k8s_namespace,
+            *,
+            deployment_name,
+            image_name,
+            td_bootstrap_image,
+            gcp_api_manager: gcp.api.GcpApiManager,
+            gcp_project: str,
+            gcp_service_account: str,
+            service_account_name=None,
+            service_name=None,
+            neg_name=None,
+            xds_server_uri=None,
+            network='default',
+            deployment_template='server.deployment.yaml',
+            service_account_template='service-account.yaml',
+            service_template='server.service.yaml',
+            reuse_service=False,
+            reuse_namespace=False,
+            namespace_template=None,
+            debug_use_port_forwarding=False,
+            enable_workload_identity=True):
         super().__init__(k8s_namespace, namespace_template, reuse_namespace)
 
         # Settings
@@ -223,7 +223,8 @@ class KubernetesServerRunner(base_runner.KubernetesBaseRunner):
         self.service: Optional[k8s.V1Service] = None
         self.port_forwarders: List[k8s.PortForwarder] = []
 
-    def run(self,
+    def run(  # pylint: disable=arguments-differ
+            self,
             *,
             test_port=DEFAULT_TEST_PORT,
             maintenance_port=None,
@@ -343,7 +344,7 @@ class KubernetesServerRunner(base_runner.KubernetesBaseRunner):
                               pod_name=pod_name))
         return servers
 
-    def cleanup(self, *, force=False, force_namespace=False):
+    def cleanup(self, *, force=False, force_namespace=False):  # pylint: disable=arguments-differ
         if self.port_forwarders:
             for port_forwarder in self.port_forwarders:
                 port_forwarder.close()

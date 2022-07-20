@@ -159,7 +159,7 @@ INSTANTIATE_TEST_SUITE_P(
     ::testing::internal::ParamGenerator<std::string>(new ExampleGenerator));
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
   ::testing::InitGoogleTest(&argc, argv);
 

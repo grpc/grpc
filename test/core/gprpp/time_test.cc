@@ -35,6 +35,8 @@ TEST(TimestampTest, Infinities) {
 TEST(TimestampTest, ToString) {
   EXPECT_EQ(Timestamp::FromMillisecondsAfterProcessEpoch(42).ToString(),
             "@42ms");
+  EXPECT_EQ(Timestamp::InfFuture().ToString(), "@∞");
+  EXPECT_EQ(Timestamp::InfPast().ToString(), "@-∞");
 }
 
 TEST(DurationTest, Empty) { EXPECT_EQ(Duration(), Duration::Zero()); }
@@ -76,6 +78,12 @@ TEST(DurationTest, Infinities) {
 TEST(DurationTest, FromTimespan) {
   EXPECT_EQ(Duration::FromTimespec(gpr_time_from_millis(1234, GPR_TIMESPAN)),
             Duration::Milliseconds(1234));
+}
+
+TEST(DurationTest, ToString) {
+  EXPECT_EQ(Duration::Milliseconds(42).ToString(), "42ms");
+  EXPECT_EQ(Duration::Infinity().ToString(), "∞");
+  EXPECT_EQ(Duration::NegativeInfinity().ToString(), "-∞");
 }
 
 }  // namespace testing

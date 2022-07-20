@@ -33,8 +33,8 @@ TEST_F(EventEngineSmokeTest, SetDefaultEventEngineFactoryLinks) {
       std::unique_ptr<grpc_event_engine::experimental::EventEngine>()>
       factory;
   EXPECT_CALL(factory, Call()).Times(1);
-  auto stdfn_fact = factory.AsStdFunction();
-  grpc_event_engine::experimental::SetDefaultEventEngineFactory(&stdfn_fact);
+  grpc_event_engine::experimental::SetDefaultEventEngineFactory(
+      factory.AsStdFunction());
   EXPECT_EQ(nullptr, grpc_event_engine::experimental::CreateEventEngine());
 }
 
@@ -42,7 +42,7 @@ TEST_F(EventEngineSmokeTest, SetDefaultEventEngineFactoryLinks) {
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   auto result = RUN_ALL_TESTS();
   grpc_shutdown();

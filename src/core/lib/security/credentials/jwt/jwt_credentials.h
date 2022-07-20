@@ -21,15 +21,29 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stdint.h>
+
 #include <string>
 
+#include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
 #include "absl/time/time.h"
+#include "absl/types/optional.h"
 
+#include <grpc/grpc_security.h>
+#include <grpc/impl/codegen/gpr_types.h>
+#include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/unique_type_name.h"
+#include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/jwt/json_token.h"
+#include "src/core/lib/slice/slice.h"
+#include "src/core/lib/transport/transport.h"
 
 class grpc_service_account_jwt_access_credentials
     : public grpc_call_credentials {
@@ -38,8 +52,8 @@ class grpc_service_account_jwt_access_credentials
                                               gpr_timespec token_lifetime);
   ~grpc_service_account_jwt_access_credentials() override;
 
-  grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientInitialMetadata>>
-  GetRequestMetadata(grpc_core::ClientInitialMetadata initial_metadata,
+  grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientMetadataHandle>>
+  GetRequestMetadata(grpc_core::ClientMetadataHandle initial_metadata,
                      const GetRequestMetadataArgs* args) override;
 
   const gpr_timespec& jwt_lifetime() const { return jwt_lifetime_; }
@@ -51,6 +65,10 @@ class grpc_service_account_jwt_access_credentials
         absl::FormatTime(absl::FromUnixMicros(
             static_cast<int64_t>(gpr_timespec_to_micros(jwt_lifetime_)))));
   };
+
+  static grpc_core::UniqueTypeName Type();
+
+  grpc_core::UniqueTypeName type() const override { return Type(); }
 
  private:
   int cmp_impl(const grpc_call_credentials* other) const override {

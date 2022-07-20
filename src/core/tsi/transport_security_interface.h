@@ -45,6 +45,8 @@ typedef enum {
   TSI_ASYNC = 13,
   TSI_HANDSHAKE_SHUTDOWN = 14,
   TSI_CLOSE_NOTIFY = 15,  // Indicates that the connection should be closed.
+  TSI_DRAIN_BUFFER = 16,  // Indicates that the buffer used to store handshake
+                          // data should be drained.
 } tsi_result;
 
 typedef enum {

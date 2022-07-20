@@ -23,6 +23,7 @@
 #include <gmock/gmock.h>
 
 #include "src/core/ext/xds/certificate_provider_registry.h"
+#include "src/core/lib/gprpp/unique_type_name.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
@@ -42,6 +43,18 @@ class FakeCertificateProvider : public grpc_tls_certificate_provider {
     // never called
     GPR_ASSERT(0);
     return nullptr;
+  }
+
+  UniqueTypeName type() const override {
+    static UniqueTypeName::Factory kFactory("fake");
+    return kFactory.Create();
+  }
+
+ private:
+  int CompareImpl(const grpc_tls_certificate_provider* other) const override {
+    // TODO(yashykt): Maybe do something better here.
+    return QsortCompare(static_cast<const grpc_tls_certificate_provider*>(this),
+                        other);
   }
 };
 
@@ -162,7 +175,7 @@ TEST_F(CertificateProviderStoreTest, Multithreaded) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   auto result = RUN_ALL_TESTS();
   return result;
 }

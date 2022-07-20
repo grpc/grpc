@@ -26,8 +26,10 @@ typedef struct envoy_config_listener_v3_UdpListenerConfig envoy_config_listener_
 typedef struct envoy_config_listener_v3_ActiveRawUdpListenerConfig envoy_config_listener_v3_ActiveRawUdpListenerConfig;
 extern const upb_MiniTable envoy_config_listener_v3_UdpListenerConfig_msginit;
 extern const upb_MiniTable envoy_config_listener_v3_ActiveRawUdpListenerConfig_msginit;
+struct envoy_config_core_v3_TypedExtensionConfig;
 struct envoy_config_core_v3_UdpSocketConfig;
 struct envoy_config_listener_v3_QuicProtocolOptions;
+extern const upb_MiniTable envoy_config_core_v3_TypedExtensionConfig_msginit;
 extern const upb_MiniTable envoy_config_core_v3_UdpSocketConfig_msginit;
 extern const upb_MiniTable envoy_config_listener_v3_QuicProtocolOptions_msginit;
 
@@ -58,26 +60,49 @@ UPB_INLINE envoy_config_listener_v3_UdpListenerConfig* envoy_config_listener_v3_
   return ret;
 }
 UPB_INLINE char* envoy_config_listener_v3_UdpListenerConfig_serialize(const envoy_config_listener_v3_UdpListenerConfig* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_listener_v3_UdpListenerConfig_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_listener_v3_UdpListenerConfig_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_config_listener_v3_UdpListenerConfig_serialize_ex(const envoy_config_listener_v3_UdpListenerConfig* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_listener_v3_UdpListenerConfig_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_listener_v3_UdpListenerConfig_msginit, options, arena, &ptr, len);
+  return ptr;
 }
-UPB_INLINE bool envoy_config_listener_v3_UdpListenerConfig_has_downstream_socket_config(const envoy_config_listener_v3_UdpListenerConfig *msg) { return _upb_hasbit(msg, 1); }
+UPB_INLINE bool envoy_config_listener_v3_UdpListenerConfig_has_downstream_socket_config(const envoy_config_listener_v3_UdpListenerConfig* msg) {
+  return _upb_hasbit(msg, 1);
+}
+UPB_INLINE void envoy_config_listener_v3_UdpListenerConfig_clear_downstream_socket_config(const envoy_config_listener_v3_UdpListenerConfig* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const upb_Message*) = NULL;
+}
 UPB_INLINE const struct envoy_config_core_v3_UdpSocketConfig* envoy_config_listener_v3_UdpListenerConfig_downstream_socket_config(const envoy_config_listener_v3_UdpListenerConfig* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const struct envoy_config_core_v3_UdpSocketConfig*);
 }
-UPB_INLINE bool envoy_config_listener_v3_UdpListenerConfig_has_quic_options(const envoy_config_listener_v3_UdpListenerConfig *msg) { return _upb_hasbit(msg, 2); }
+UPB_INLINE bool envoy_config_listener_v3_UdpListenerConfig_has_quic_options(const envoy_config_listener_v3_UdpListenerConfig* msg) {
+  return _upb_hasbit(msg, 2);
+}
+UPB_INLINE void envoy_config_listener_v3_UdpListenerConfig_clear_quic_options(const envoy_config_listener_v3_UdpListenerConfig* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 16), const upb_Message*) = NULL;
+}
 UPB_INLINE const struct envoy_config_listener_v3_QuicProtocolOptions* envoy_config_listener_v3_UdpListenerConfig_quic_options(const envoy_config_listener_v3_UdpListenerConfig* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(8, 16), const struct envoy_config_listener_v3_QuicProtocolOptions*);
+}
+UPB_INLINE bool envoy_config_listener_v3_UdpListenerConfig_has_udp_packet_packet_writer_config(const envoy_config_listener_v3_UdpListenerConfig* msg) {
+  return _upb_hasbit(msg, 3);
+}
+UPB_INLINE void envoy_config_listener_v3_UdpListenerConfig_clear_udp_packet_packet_writer_config(const envoy_config_listener_v3_UdpListenerConfig* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(12, 24), const upb_Message*) = NULL;
+}
+UPB_INLINE const struct envoy_config_core_v3_TypedExtensionConfig* envoy_config_listener_v3_UdpListenerConfig_udp_packet_packet_writer_config(const envoy_config_listener_v3_UdpListenerConfig* msg) {
+  return *UPB_PTR_AT(msg, UPB_SIZE(12, 24), const struct envoy_config_core_v3_TypedExtensionConfig*);
 }
 
 UPB_INLINE void envoy_config_listener_v3_UdpListenerConfig_set_downstream_socket_config(envoy_config_listener_v3_UdpListenerConfig *msg, struct envoy_config_core_v3_UdpSocketConfig* value) {
   _upb_sethas(msg, 1);
   *UPB_PTR_AT(msg, UPB_SIZE(4, 8), struct envoy_config_core_v3_UdpSocketConfig*) = value;
 }
-UPB_INLINE struct envoy_config_core_v3_UdpSocketConfig* envoy_config_listener_v3_UdpListenerConfig_mutable_downstream_socket_config(envoy_config_listener_v3_UdpListenerConfig *msg, upb_Arena *arena) {
+UPB_INLINE struct envoy_config_core_v3_UdpSocketConfig* envoy_config_listener_v3_UdpListenerConfig_mutable_downstream_socket_config(envoy_config_listener_v3_UdpListenerConfig* msg, upb_Arena* arena) {
   struct envoy_config_core_v3_UdpSocketConfig* sub = (struct envoy_config_core_v3_UdpSocketConfig*)envoy_config_listener_v3_UdpListenerConfig_downstream_socket_config(msg);
   if (sub == NULL) {
     sub = (struct envoy_config_core_v3_UdpSocketConfig*)_upb_Message_New(&envoy_config_core_v3_UdpSocketConfig_msginit, arena);
@@ -90,12 +115,25 @@ UPB_INLINE void envoy_config_listener_v3_UdpListenerConfig_set_quic_options(envo
   _upb_sethas(msg, 2);
   *UPB_PTR_AT(msg, UPB_SIZE(8, 16), struct envoy_config_listener_v3_QuicProtocolOptions*) = value;
 }
-UPB_INLINE struct envoy_config_listener_v3_QuicProtocolOptions* envoy_config_listener_v3_UdpListenerConfig_mutable_quic_options(envoy_config_listener_v3_UdpListenerConfig *msg, upb_Arena *arena) {
+UPB_INLINE struct envoy_config_listener_v3_QuicProtocolOptions* envoy_config_listener_v3_UdpListenerConfig_mutable_quic_options(envoy_config_listener_v3_UdpListenerConfig* msg, upb_Arena* arena) {
   struct envoy_config_listener_v3_QuicProtocolOptions* sub = (struct envoy_config_listener_v3_QuicProtocolOptions*)envoy_config_listener_v3_UdpListenerConfig_quic_options(msg);
   if (sub == NULL) {
     sub = (struct envoy_config_listener_v3_QuicProtocolOptions*)_upb_Message_New(&envoy_config_listener_v3_QuicProtocolOptions_msginit, arena);
     if (!sub) return NULL;
     envoy_config_listener_v3_UdpListenerConfig_set_quic_options(msg, sub);
+  }
+  return sub;
+}
+UPB_INLINE void envoy_config_listener_v3_UdpListenerConfig_set_udp_packet_packet_writer_config(envoy_config_listener_v3_UdpListenerConfig *msg, struct envoy_config_core_v3_TypedExtensionConfig* value) {
+  _upb_sethas(msg, 3);
+  *UPB_PTR_AT(msg, UPB_SIZE(12, 24), struct envoy_config_core_v3_TypedExtensionConfig*) = value;
+}
+UPB_INLINE struct envoy_config_core_v3_TypedExtensionConfig* envoy_config_listener_v3_UdpListenerConfig_mutable_udp_packet_packet_writer_config(envoy_config_listener_v3_UdpListenerConfig* msg, upb_Arena* arena) {
+  struct envoy_config_core_v3_TypedExtensionConfig* sub = (struct envoy_config_core_v3_TypedExtensionConfig*)envoy_config_listener_v3_UdpListenerConfig_udp_packet_packet_writer_config(msg);
+  if (sub == NULL) {
+    sub = (struct envoy_config_core_v3_TypedExtensionConfig*)_upb_Message_New(&envoy_config_core_v3_TypedExtensionConfig_msginit, arena);
+    if (!sub) return NULL;
+    envoy_config_listener_v3_UdpListenerConfig_set_udp_packet_packet_writer_config(msg, sub);
   }
   return sub;
 }
@@ -125,11 +163,15 @@ UPB_INLINE envoy_config_listener_v3_ActiveRawUdpListenerConfig* envoy_config_lis
   return ret;
 }
 UPB_INLINE char* envoy_config_listener_v3_ActiveRawUdpListenerConfig_serialize(const envoy_config_listener_v3_ActiveRawUdpListenerConfig* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_listener_v3_ActiveRawUdpListenerConfig_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_listener_v3_ActiveRawUdpListenerConfig_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_config_listener_v3_ActiveRawUdpListenerConfig_serialize_ex(const envoy_config_listener_v3_ActiveRawUdpListenerConfig* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_listener_v3_ActiveRawUdpListenerConfig_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_listener_v3_ActiveRawUdpListenerConfig_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 
 

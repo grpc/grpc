@@ -135,12 +135,13 @@ static void resolve_address_must_succeed(const char* target) {
   args_struct args;
   args_init(&args);
   poll_pollset_until_request_done(&args);
-  auto r = grpc_core::GetDNSResolver()->ResolveName(
-      target, "1" /* port number */, args.pollset_set,
+  grpc_core::GetDNSResolver()->LookupHostname(
       [&args](absl::StatusOr<std::vector<grpc_resolved_address>> result) {
         MustSucceed(&args, std::move(result));
-      });
-  r->Start();
+      },
+      target, /*port number=*/"1", grpc_core::kDefaultDNSRequestTimeout,
+      args.pollset_set,
+      /*name_server=*/"");
   grpc_core::ExecCtx::Get()->Flush();
   args_finish(&args);
 }
@@ -199,7 +200,7 @@ int main(int argc, char** argv) {
     gpr_log(GPR_ERROR, "--resolver_type was not set to ares or native");
     abort();
   }
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
 
   {

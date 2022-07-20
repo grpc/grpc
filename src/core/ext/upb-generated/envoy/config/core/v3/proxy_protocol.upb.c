@@ -14,13 +14,13 @@
 #include "upb/port_def.inc"
 
 static const upb_MiniTable_Field envoy_config_core_v3_ProxyProtocolConfig__fields[1] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 5, kUpb_FieldMode_Scalar | (upb_FieldRep_4Byte << upb_FieldRep_Shift)},
+  {1, UPB_SIZE(0, 0), UPB_SIZE(0, 0), kUpb_NoSub, 5, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy_config_core_v3_ProxyProtocolConfig_msginit = {
   NULL,
   &envoy_config_core_v3_ProxyProtocolConfig__fields[0],
-  UPB_SIZE(8, 8), 1, upb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[1] = {

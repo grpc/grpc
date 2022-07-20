@@ -25,45 +25,32 @@ namespace {
 auto* g_memory_allocator = new MemoryAllocator(
     ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
 
-class TestChannelArgs {
- public:
-  explicit TestChannelArgs(const char* default_authority)
-      : arg_(grpc_channel_arg_string_create(
-            const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
-            const_cast<char*>(default_authority))),
-        args_{1, &arg_} {}
-
-  const grpc_channel_args* args() const { return &args_; }
-
- private:
-  grpc_arg arg_;
-  grpc_channel_args args_;
-};
+ChannelArgs TestChannelArgs(absl::string_view default_authority) {
+  return ChannelArgs().Set(GRPC_ARG_DEFAULT_AUTHORITY, default_authority);
+}
 
 TEST(ClientAuthorityFilterTest, DefaultFails) {
   EXPECT_FALSE(
-      ClientAuthorityFilter::Create(nullptr, ChannelFilter::Args()).ok());
+      ClientAuthorityFilter::Create(ChannelArgs(), ChannelFilter::Args()).ok());
 }
 
 TEST(ClientAuthorityFilterTest, WithArgSucceeds) {
-  EXPECT_EQ(
-      ClientAuthorityFilter::Create(
-          TestChannelArgs("foo.test.google.au").args(), ChannelFilter::Args())
-          .status(),
-      absl::OkStatus());
+  EXPECT_EQ(ClientAuthorityFilter::Create(TestChannelArgs("foo.test.google.au"),
+                                          ChannelFilter::Args())
+                .status(),
+            absl::OkStatus());
 }
 
 TEST(ClientAuthorityFilterTest, NonStringArgFails) {
-  grpc_arg arg = grpc_channel_arg_integer_create(
-      const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), 123);
-  grpc_channel_args args = {1, &arg};
-  EXPECT_FALSE(
-      ClientAuthorityFilter::Create(&args, ChannelFilter::Args()).ok());
+  EXPECT_FALSE(ClientAuthorityFilter::Create(
+                   ChannelArgs().Set(GRPC_ARG_DEFAULT_AUTHORITY, 123),
+                   ChannelFilter::Args())
+                   .ok());
 }
 
 TEST(ClientAuthorityFilterTest, PromiseCompletesImmediatelyAndSetsAuthority) {
   auto filter = *ClientAuthorityFilter::Create(
-      TestChannelArgs("foo.test.google.au").args(), ChannelFilter::Args());
+      TestChannelArgs("foo.test.google.au"), ChannelFilter::Args());
   auto arena = MakeScopedArena(1024, g_memory_allocator);
   grpc_metadata_batch initial_metadata_batch(arena.get());
   grpc_metadata_batch trailing_metadata_batch(arena.get());
@@ -71,25 +58,31 @@ TEST(ClientAuthorityFilterTest, PromiseCompletesImmediatelyAndSetsAuthority) {
   // TODO(ctiller): use Activity here, once it's ready.
   TestContext<Arena> context(arena.get());
   auto promise = filter.MakeCallPromise(
-      ClientInitialMetadata::TestOnlyWrap(&initial_metadata_batch),
-      [&](ClientInitialMetadata initial_metadata) {
-        EXPECT_EQ(initial_metadata->get_pointer(HttpAuthorityMetadata())
+      CallArgs{
+          ClientMetadataHandle::TestOnlyWrap(&initial_metadata_batch),
+          nullptr,
+      },
+      [&](CallArgs call_args) {
+        EXPECT_EQ(call_args.client_initial_metadata
+                      ->get_pointer(HttpAuthorityMetadata())
                       ->as_string_view(),
                   "foo.test.google.au");
         seen = true;
-        return ArenaPromise<TrailingMetadata>([&]() -> Poll<TrailingMetadata> {
-          return TrailingMetadata::TestOnlyWrap(&trailing_metadata_batch);
-        });
+        return ArenaPromise<ServerMetadataHandle>(
+            [&]() -> Poll<ServerMetadataHandle> {
+              return ServerMetadataHandle::TestOnlyWrap(
+                  &trailing_metadata_batch);
+            });
       });
   auto result = promise();
-  EXPECT_TRUE(absl::get_if<TrailingMetadata>(&result) != nullptr);
+  EXPECT_TRUE(absl::get_if<ServerMetadataHandle>(&result) != nullptr);
   EXPECT_TRUE(seen);
 }
 
 TEST(ClientAuthorityFilterTest,
      PromiseCompletesImmediatelyAndDoesNotClobberAlreadySetsAuthority) {
   auto filter = *ClientAuthorityFilter::Create(
-      TestChannelArgs("foo.test.google.au").args(), ChannelFilter::Args());
+      TestChannelArgs("foo.test.google.au"), ChannelFilter::Args());
   auto arena = MakeScopedArena(1024, g_memory_allocator);
   grpc_metadata_batch initial_metadata_batch(arena.get());
   grpc_metadata_batch trailing_metadata_batch(arena.get());
@@ -99,18 +92,24 @@ TEST(ClientAuthorityFilterTest,
   // TODO(ctiller): use Activity here, once it's ready.
   TestContext<Arena> context(arena.get());
   auto promise = filter.MakeCallPromise(
-      ClientInitialMetadata::TestOnlyWrap(&initial_metadata_batch),
-      [&](ClientInitialMetadata initial_metadata) {
-        EXPECT_EQ(initial_metadata->get_pointer(HttpAuthorityMetadata())
+      CallArgs{
+          ClientMetadataHandle::TestOnlyWrap(&initial_metadata_batch),
+          nullptr,
+      },
+      [&](CallArgs call_args) {
+        EXPECT_EQ(call_args.client_initial_metadata
+                      ->get_pointer(HttpAuthorityMetadata())
                       ->as_string_view(),
                   "bar.test.google.au");
         seen = true;
-        return ArenaPromise<TrailingMetadata>([&]() -> Poll<TrailingMetadata> {
-          return TrailingMetadata::TestOnlyWrap(&trailing_metadata_batch);
-        });
+        return ArenaPromise<ServerMetadataHandle>(
+            [&]() -> Poll<ServerMetadataHandle> {
+              return ServerMetadataHandle::TestOnlyWrap(
+                  &trailing_metadata_batch);
+            });
       });
   auto result = promise();
-  EXPECT_TRUE(absl::get_if<TrailingMetadata>(&result) != nullptr);
+  EXPECT_TRUE(absl::get_if<ServerMetadataHandle>(&result) != nullptr);
   EXPECT_TRUE(seen);
 }
 

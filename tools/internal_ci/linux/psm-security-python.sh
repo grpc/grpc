@@ -32,6 +32,7 @@ readonly LANGUAGE_NAME="Python"
 #   SERVER_IMAGE_NAME: Test server Docker image name
 #   CLIENT_IMAGE_NAME: Test client Docker image name
 #   GIT_COMMIT: SHA-1 of git commit being built
+#   TESTING_VERSION: version branch under test, f.e. v1.42.x, master
 # Arguments:
 #   None
 # Outputs:
@@ -58,10 +59,9 @@ build_test_app_docker_images() {
   docker push "${CLIENT_IMAGE_NAME}:${GIT_COMMIT}"
   docker push "${SERVER_IMAGE_NAME}:${GIT_COMMIT}"
 
-  if [[ -n $KOKORO_JOB_NAME ]]; then
-    branch_name=$(echo "$KOKORO_JOB_NAME" | sed -E 's|^grpc/core/([^/]+)/.*|\1|')
-    tag_and_push_docker_image "${CLIENT_IMAGE_NAME}" "${GIT_COMMIT}" "${branch_name}"
-    tag_and_push_docker_image "${SERVER_IMAGE_NAME}" "${GIT_COMMIT}" "${branch_name}"
+  if is_version_branch "${TESTING_VERSION}"; then
+    tag_and_push_docker_image "${CLIENT_IMAGE_NAME}" "${GIT_COMMIT}" "${TESTING_VERSION}"
+    tag_and_push_docker_image "${SERVER_IMAGE_NAME}" "${GIT_COMMIT}" "${TESTING_VERSION}"
   fi
 }
 
@@ -104,6 +104,8 @@ build_docker_images_if_needed() {
 #   SERVER_IMAGE_NAME: Test server Docker image name
 #   CLIENT_IMAGE_NAME: Test client Docker image name
 #   GIT_COMMIT: SHA-1 of git commit being built
+#   TESTING_VERSION: version branch under test: used by the framework to determine the supported PSM
+#                    features.
 # Arguments:
 #   Test case name
 # Outputs:
@@ -114,19 +116,13 @@ run_test() {
   # Test driver usage:
   # https://github.com/grpc/grpc/tree/master/tools/run_tests/xds_k8s_test_driver#basic-usage
   local test_name="${1:?Usage: run_test test_name}"
-
-  # testing_version is used by the framework to determine the supported PSM
-  # features. It's captured from Kokoro job name of the Core repo, which takes
-  # 2 forms:
-  #   grpc/core/master/linux/...
-  #   grpc/core/v1.42.x/branch/linux/...
   set -x
   python3 -m "tests.${test_name}" \
     --flagfile="${TEST_DRIVER_FLAGFILE}" \
     --kube_context="${KUBE_CONTEXT}" \
     --server_image="${SERVER_IMAGE_NAME}:${GIT_COMMIT}" \
     --client_image="${CLIENT_IMAGE_NAME}:${GIT_COMMIT}" \
-    --testing_version=$(echo "$KOKORO_JOB_NAME" | sed -E 's|^grpc/core/([^/]+)/.*|\1|') \
+    --testing_version="${TESTING_VERSION}" \
     --xml_output_file="${TEST_XML_OUTPUT_DIR}/${test_name}/sponge_log.xml" \
     --force_cleanup \
     --nocheck_local_certs
@@ -174,6 +170,7 @@ main() {
   cd "${TEST_DRIVER_FULL_DIR}"
   run_test baseline_test
   run_test security_test
+  run_test authz_test
 }
 
 main "$@"

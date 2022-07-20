@@ -21,10 +21,14 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
+#include <stdint.h>
+
 #include <grpc/slice.h>
 
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
+#include "src/core/lib/iomgr/error.h"
 
 typedef enum {
   GRPC_CHTTP2_SPS_ID0,

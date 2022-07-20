@@ -24,6 +24,9 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gpr/tls.h"
+#include "src/core/lib/gprpp/sync.h"
+
 namespace {
 void* GetNdkBinderHandle() {
   // TODO(mingcl): Consider using RTLD_NOLOAD to check if it is already loaded
@@ -37,6 +40,53 @@ void* GetNdkBinderHandle() {
   }
   return handle;
 }
+
+JavaVM* g_jvm = nullptr;
+grpc_core::Mutex g_jvm_mu;
+
+// Whether the thread has already attached to JVM (this is to prevent
+// repeated attachment in `AttachJvm()`)
+GPR_THREAD_LOCAL(bool) g_is_jvm_attached = false;
+
+void SetJvm(JNIEnv* env) {
+  // OK to lock here since this function will only be called once for each
+  // connection.
+  grpc_core::MutexLock lock(&g_jvm_mu);
+  if (g_jvm != nullptr) {
+    return;
+  }
+  JavaVM* jvm = nullptr;
+  jint error = env->GetJavaVM(&jvm);
+  if (error != JNI_OK) {
+    gpr_log(GPR_ERROR, "Failed to get JVM");
+  }
+  g_jvm = jvm;
+  gpr_log(GPR_INFO, "JVM cached");
+}
+
+// `SetJvm` need to be called in the process before `AttachJvm`. This is always
+// the case because one of `AIBinder_fromJavaBinder`/`AIBinder_toJavaBinder`
+// will be called before we actually uses the binder. Return `false` if not able
+// to attach to JVM. Return `true` if JVM is attached (or already attached).
+bool AttachJvm() {
+  if (g_is_jvm_attached) {
+    return true;
+  }
+  // Note: The following code would be run at most once per thread.
+  grpc_core::MutexLock lock(&g_jvm_mu);
+  if (g_jvm == nullptr) {
+    gpr_log(GPR_ERROR, "JVM not cached yet");
+    return false;
+  }
+  JNIEnv* env_unused;
+  // Note that attach a thread that is already attached is a no-op, so it is
+  // fine to call this again if the thread has already been attached by other.
+  g_jvm->AttachCurrentThread(&env_unused, /* thr_args= */ nullptr);
+  gpr_log(GPR_INFO, "JVM attached successfully");
+  g_is_jvm_attached = true;
+  return true;
+}
+
 }  // namespace
 
 namespace grpc_binder {
@@ -67,6 +117,7 @@ void* AIBinder_getUserData(AIBinder* binder) {
 uid_t AIBinder_getCallingUid() { FORWARD(AIBinder_getCallingUid)(); }
 
 AIBinder* AIBinder_fromJavaBinder(JNIEnv* env, jobject binder) {
+  SetJvm(env);
   FORWARD(AIBinder_fromJavaBinder)(env, binder);
 }
 
@@ -97,6 +148,9 @@ void AIBinder_decStrong(AIBinder* binder) {
 binder_status_t AIBinder_transact(AIBinder* binder, transaction_code_t code,
                                   AParcel** in, AParcel** out,
                                   binder_flags_t flags) {
+  if (!AttachJvm()) {
+    gpr_log(GPR_ERROR, "failed to attach JVM. AIBinder_transact might fail.");
+  }
   FORWARD(AIBinder_transact)(binder, code, in, out, flags);
 }
 
@@ -155,6 +209,7 @@ binder_status_t AIBinder_prepareTransaction(AIBinder* binder, AParcel** in) {
 }
 
 jobject AIBinder_toJavaBinder(JNIEnv* env, AIBinder* binder) {
+  SetJvm(env);
   FORWARD(AIBinder_toJavaBinder)(env, binder);
 }
 

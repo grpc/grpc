@@ -85,6 +85,7 @@ grpc_cc_library(
         "//:gpr",
         "//:grpc_base",
         "//:grpc_common",
+        "//test/core/event_engine:test_init",
     ],
 )
 
@@ -113,7 +114,9 @@ grpc_cc_library(
 grpc_cc_test(
     name = "cmdline_test",
     srcs = ["cmdline_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         ":grpc_test_util",
@@ -141,7 +144,9 @@ grpc_cc_library(
 grpc_cc_test(
     name = "histogram_test",
     srcs = ["histogram_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         ":grpc_test_util",
@@ -152,11 +157,6 @@ grpc_cc_test(
 sh_library(
     name = "fuzzer_one_entry_runner",
     srcs = ["fuzzer_one_entry_runner.sh"],
-)
-
-sh_library(
-    name = "run_with_poller_sh",
-    srcs = ["run_with_poller.sh"],
 )
 
 grpc_cc_library(
@@ -173,7 +173,8 @@ grpc_cc_library(
     ],
     language = "C++",
     deps = [
-        "//:grpc_common",
+        "//:examine_stack",
+        "//:gpr_platform",
     ],
 )
 
@@ -189,6 +190,7 @@ grpc_cc_test(
     language = "C++",
     # TODO(https://github.com/grpc/grpc/issues/24627): Disable this on Windows
     tags = ["no_windows"],
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         ":grpc_test_util",

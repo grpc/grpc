@@ -21,7 +21,15 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <memory>
+#include <string>
+
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
+
 #include "src/core/ext/filters/client_channel/proxy_mapper.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 
 namespace grpc_core {
 
@@ -36,13 +44,11 @@ class ProxyMapperRegistry {
   static void Register(bool at_start,
                        std::unique_ptr<ProxyMapperInterface> mapper);
 
-  static bool MapName(const char* server_uri, const grpc_channel_args* args,
-                      char** name_to_resolve, grpc_channel_args** new_args);
+  static absl::optional<std::string> MapName(absl::string_view server_uri,
+                                             ChannelArgs* args);
 
-  static bool MapAddress(const grpc_resolved_address& address,
-                         const grpc_channel_args* args,
-                         grpc_resolved_address** new_address,
-                         grpc_channel_args** new_args);
+  static absl::optional<grpc_resolved_address> MapAddress(
+      const grpc_resolved_address& address, ChannelArgs* args);
 };
 
 }  // namespace grpc_core

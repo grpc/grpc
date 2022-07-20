@@ -21,9 +21,13 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stdint.h>
+
+#include <string>
 #include <vector>
 
 #include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
 
