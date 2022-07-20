@@ -97,8 +97,8 @@ TEST(Json, Utf16) {
 }
 
 MATCHER(ContainsInvalidUtf8,
-        absl::StrCat(negation ? "Does" : "Does not",
-                     " contain invalid UTF-8 characters.")) {
+        absl::StrCat(negation ? "Contains" : "Does not contain",
+                     " invalid UTF-8 characters.")) {
   grpc_error_handle error = GRPC_ERROR_NONE;
   const Json json = Json::Parse(arg, &error);
   return (error.code() == absl::StatusCode::kUnknown) &&
