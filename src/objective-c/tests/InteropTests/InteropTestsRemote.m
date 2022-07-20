@@ -83,7 +83,7 @@ static GRPCProtoMethod *kUnaryCallMethod;
 }
 
 - (void)testMetadataForV2Call {
-  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock) {
+  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
     XCTestExpectation *expectation = [self expectationWithDescription:@"RPC unauthorized."];
 
     RMTSimpleRequest *request = [RMTSimpleRequest message];
@@ -136,7 +136,7 @@ static GRPCProtoMethod *kUnaryCallMethod;
 }
 
 - (void)testMetadataForV1Call {
-  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock) {
+  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
     XCTestExpectation *expectation = [self expectationWithDescription:@"RPC unauthorized."];
 
     RMTSimpleRequest *request = [RMTSimpleRequest message];
@@ -183,7 +183,7 @@ static GRPCProtoMethod *kUnaryCallMethod;
 }
 
 - (void)testErrorDebugInformation {
-  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock) {
+  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
     XCTestExpectation *expectation = [self expectationWithDescription:@"RPC unauthorized."];
 
     RMTSimpleRequest *request = [RMTSimpleRequest message];

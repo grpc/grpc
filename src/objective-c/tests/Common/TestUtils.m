@@ -74,6 +74,14 @@ static NSUInteger GRPCGetTestFlakeRepeats() {
   return repeats;
 }
 
+// Helper function to assert failure via XCTest
+static void GRPCAssertFail(NSString *message) {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wnonnull"
+  _XCTPrimitiveFail(nil, @"%@", message);
+#pragma GCC diagnostic pop
+}
+
 void GRPCResetCallConnections() {
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
@@ -97,20 +105,33 @@ BOOL GRPCTestRunWithFlakeRepeats(GRPCTestRunBlock testBlock) {
   NSInteger runs = 0;
 
   while (runs < repeats) {
-    __block XCTWaiterResult result;
     GRPCResetCallConnections();
 
-    testBlock(^(XCTestCase *testCase, NSArray<XCTestExpectation *> *expectations,
-                NSTimeInterval timeout) {
-      if (runs < repeats - 1) {
-        result = [XCTWaiter waitForExpectations:expectations timeout:timeout];
-      } else {
+    const BOOL isLastRun = (runs == repeats - 1);
+    __block XCTWaiterResult result;
+    __block BOOL assertionSuccess = YES;
+
+    GRPCTestWaiter waiterBlock = ^(XCTestCase *testCase, NSArray<XCTestExpectation *> *expectations,
+                                   NSTimeInterval timeout) {
+      if (isLastRun) {
         XCTWaiter *waiter = [[XCTWaiter alloc] initWithDelegate:testCase];
         result = [waiter waitForExpectations:expectations timeout:timeout];
+      } else {
+        result = [XCTWaiter waitForExpectations:expectations timeout:timeout];
       }
-    });
+    };
 
-    if (result == XCTWaiterResultCompleted) {
+    GRPCTestAssert assertBlock = ^(BOOL expressionValue, NSString *message) {
+      BOOL result = !!(expressionValue);
+      assertionSuccess = assertionSuccess && result;
+      if (isLastRun && !result) {
+        GRPCAssertFail(message);
+      }
+    };
+
+    testBlock(waiterBlock, assertBlock);
+
+    if (result == XCTWaiterResultCompleted && assertionSuccess) {
       return YES;
     }
     runs += 1;
