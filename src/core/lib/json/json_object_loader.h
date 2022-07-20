@@ -313,7 +313,7 @@ void LoadObject(const Json& json, const Element* elements, size_t num_elements,
 
 // Adaptor type - takes a compile time computed list of elements and implements
 // LoaderInterface by calling LoadObject.
-template <typename T, size_t kElemCount>
+template <typename T, size_t kElemCount, typename Hidden = void>
 class FinishedJsonObjectLoader final : public LoaderInterface {
  public:
   explicit FinishedJsonObjectLoader(const Vec<Element, kElemCount>& elements)
@@ -321,6 +321,24 @@ class FinishedJsonObjectLoader final : public LoaderInterface {
 
   void LoadInto(const Json& json, void* dst, ErrorList* errors) const override {
     LoadObject(json, elements_.data(), elements_.size(), dst, errors);
+  }
+
+ private:
+  GPR_NO_UNIQUE_ADDRESS Vec<Element, kElemCount> elements_;
+};
+
+// Specialization for when the object has a JsonPostLoad function exposed.
+template <typename T, size_t kElemCount>
+class FinishedJsonObjectLoader<T, kElemCount,
+                               absl::void_t<decltype(&T::JsonPostLoad)>>
+    final : public LoaderInterface {
+ public:
+  explicit FinishedJsonObjectLoader(const Vec<Element, kElemCount>& elements)
+      : elements_(elements) {}
+
+  void LoadInto(const Json& json, void* dst, ErrorList* errors) const override {
+    LoadObject(json, elements_.data(), elements_.size(), dst, errors);
+    static_cast<T*>(dst)->JsonPostLoad(json, errors);
   }
 
  private:

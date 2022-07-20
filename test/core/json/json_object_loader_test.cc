@@ -75,6 +75,27 @@ struct TestStruct3 {
   }
 };
 
+struct TestPostLoadStruct1 {
+  int32_t a = 0;
+  int32_t b = 1;
+  uint32_t c = 2;
+  std::string x;
+  Duration d;
+
+  static const JsonLoaderInterface* JsonLoader() {
+    static const auto loader = JsonObjectLoader<TestPostLoadStruct1>()
+                                   .Field("a", &TestPostLoadStruct1::a)
+                                   .OptionalField("b", &TestPostLoadStruct1::b)
+                                   .OptionalField("c", &TestPostLoadStruct1::c)
+                                   .Field("x", &TestPostLoadStruct1::x)
+                                   .OptionalField("d", &TestPostLoadStruct1::d)
+                                   .Finish();
+    return &loader;
+  }
+
+  void JsonPostLoad(const Json& source, ErrorList* errors) { ++a; }
+};
+
 TEST(JsonObjectLoaderTest, LoadTestStruct1) {
   {
     ErrorList errors;
@@ -103,6 +124,20 @@ TEST(JsonObjectLoaderTest, LoadTestStruct1) {
               "field:.a error:does not exist.\n"
               "field:.b error:is not a number.\n"
               "field:.x error:is not a string.");
+  }
+}
+
+TEST(JsonObjectLoaderTest, LoadPostLoadTestStruct1) {
+  {
+    ErrorList errors;
+    auto s = Parse<TestPostLoadStruct1>(
+        "{\"a\":1,\"b\":2,\"c\":3,\"x\":\"foo\",\"d\":\"1.3s\"}", &errors);
+    EXPECT_EQ(s.a, 2);
+    EXPECT_EQ(s.b, 2);
+    EXPECT_EQ(s.c, 3);
+    EXPECT_EQ(s.x, "foo");
+    EXPECT_EQ(s.d, Duration::Milliseconds(1300));
+    EXPECT_EQ(errors.errors().size(), 0);
   }
 }
 
