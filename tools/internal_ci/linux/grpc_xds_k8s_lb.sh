@@ -158,7 +158,7 @@ main() {
   # Run tests
   cd "${TEST_DRIVER_FULL_DIR}"
   local failed_tests=0
-  run_alpha_test subsetting_test || (( failed_tests++ ))
+  # run_alpha_test subsetting_test || (( failed_tests++ ))
   test_suites=("api_listener_test" "failover_test" "round_robin_test" "affinity_test")
   for test in "${test_suites[@]}"; do
     run_test $test || (( failed_tests++ ))
