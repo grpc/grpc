@@ -46,6 +46,9 @@ GPR_GLOBAL_CONFIG_DEFINE_BOOL(
 GPR_GLOBAL_CONFIG_DEFINE_INT32(
     grpc_experimental_max_quota_buffer_size, 1024 * 1024,
     "Maximum size for one memory allocators buffer size against a quota");
+GPR_GLOBAL_CONFIG_DEFINE_INT32(
+    grpc_experimental_resource_quota_set_point, 60,
+    "Ask the resource quota to target this percentage of total quota usage.");
 
 namespace grpc_core {
 
@@ -486,6 +489,9 @@ BasicMemoryQuota::InstantaneousPressureAndMaxRecommendedAllocationSize() {
 namespace memory_quota_detail {
 
 double PressureTracker::AddSampleAndGetEstimate(double sample) {
+  static const double kSetPoint =
+      GPR_GLOBAL_CONFIG_GET(grpc_experimental_resource_quota_set_point) / 100.0;
+
   double max_so_far = max_this_round_.load(std::memory_order_relaxed);
   if (sample > max_so_far) {
     max_this_round_.compare_exchange_weak(max_so_far, sample,
@@ -506,7 +512,7 @@ double PressureTracker::AddSampleAndGetEstimate(double sample) {
       // Under very high memory pressure we... just max things out.
       report = pid_.Update(1e99, 1.0);
     } else {
-      report = pid_.Update(current_estimate - 0.8, dt.seconds());
+      report = pid_.Update(current_estimate - kSetPoint, dt.seconds());
     }
     if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
       gpr_log(GPR_INFO, "RQ: pressure:%lf report:%lf error_integral:%lf",
