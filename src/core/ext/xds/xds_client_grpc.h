@@ -21,6 +21,7 @@
 
 #include <memory>
 
+#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/impl/codegen/grpc_types.h>
@@ -30,7 +31,6 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 
 namespace grpc_core {
@@ -38,10 +38,8 @@ namespace grpc_core {
 class GrpcXdsClient : public XdsClient {
  public:
   // Factory function to get or create the global XdsClient instance.
-  // If *error is not GRPC_ERROR_NONE upon return, then there was
-  // an error initializing the client.
-  static RefCountedPtr<XdsClient> GetOrCreate(const ChannelArgs& args,
-                                              grpc_error_handle* error);
+  static absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GetOrCreate(
+      const ChannelArgs& args, const char* reason);
 
   // Do not instantiate directly -- use GetOrCreate() instead.
   GrpcXdsClient(std::unique_ptr<XdsBootstrap> bootstrap,

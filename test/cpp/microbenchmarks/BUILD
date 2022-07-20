@@ -28,6 +28,20 @@ grpc_cc_test(
     deps = ["//test/core/util:grpc_test_util"],
 )
 
+grpc_cc_test(
+    name = "bm_channel_args",
+    srcs = ["bm_channel_args.cc"],
+    external_deps = [
+        "benchmark",
+        "absl/container:btree",
+    ],
+    deps = [
+        "//:channel_args",
+        "//:grpc++",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
 grpc_cc_library(
     name = "helpers",
     testonly = 1,

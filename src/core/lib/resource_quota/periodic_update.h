@@ -22,7 +22,6 @@
 #include <atomic>
 
 #include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 
 namespace grpc_core {
 
@@ -60,7 +59,7 @@ class PeriodicUpdate {
   // this is fine because they'll observe an ignorable negative value.
 
   const Duration period_;
-  Timestamp period_start_ = ExecCtx::Get()->Now();
+  Timestamp period_start_ = Timestamp::ProcessEpoch();
   int64_t expected_updates_per_period_ = 1;
   std::atomic<int64_t> updates_remaining_{1};
 };

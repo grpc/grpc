@@ -457,14 +457,14 @@ static dispatch_once_t initGlobalInterceptorFactory;
 }
 
 - (void)setUp {
-  self.continueAfterFailure = NO;
+  self.continueAfterFailure = YES;
   [GRPCCall resetHostSettings];
   GRPCResetCallConnections();
   XCTAssertNotNil([[self class] host]);
 }
 
 - (void)testEmptyUnaryRPC {
-  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiter) {
+  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiter, GRPCTestAssert assertBlock) {
     RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
     __weak XCTestExpectation *expectation = [self expectationWithDescription:@"EmptyUnary"];
 
@@ -489,7 +489,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
 }
 
 - (void)testEmptyUnaryRPCWithV2API {
-  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock) {
+  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
     RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
     __weak XCTestExpectation *expectReceive =
         [self expectationWithDescription:@"EmptyUnaryWithV2API received message"];
@@ -533,7 +533,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
 
 // Test that responses can be dispatched even if we do not run main run-loop
 - (void)testAsyncDispatchWithV2API {
-  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock) {
+  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
     RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
 
     XCTestExpectation *receiveExpect = [self expectationWithDescription:@"receiveExpect"];
@@ -583,7 +583,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
 }
 
 - (void)testLargeUnaryRPC {
-  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock) {
+  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
     RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
     __weak XCTestExpectation *expectation = [self expectationWithDescription:@"LargeUnary"];
 
@@ -619,7 +619,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
     return;
   }
 
-  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock) {
+  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
     RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
 
     XCTestExpectation *expectComplete = [self expectationWithDescription:@"call complete"];
@@ -693,7 +693,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
 }
 
 - (void)testLargeUnaryRPCWithV2API {
-  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock) {
+  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
     RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
     __weak XCTestExpectation *expectReceive =
         [self expectationWithDescription:@"LargeUnaryWithV2API received message"];
@@ -746,7 +746,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
 }
 
 - (void)testConcurrentRPCsWithErrorsWithV2API {
-  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter _Nonnull waiterBlock) {
+  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
     RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
     NSMutableArray *completeExpectations = [NSMutableArray array];
     NSMutableArray *calls = [NSMutableArray array];
@@ -862,7 +862,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
 }
 
 - (void)testPacketCoalescing {
-  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock) {
+  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
     RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
     __weak XCTestExpectation *expectation = [self expectationWithDescription:@"LargeUnary"];
 
@@ -907,7 +907,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
 }
 
 - (void)test4MBResponsesAreAccepted {
-  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock) {
+  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
     RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
     __weak XCTestExpectation *expectation = [self expectationWithDescription:@"MaxResponseSize"];
 
@@ -932,7 +932,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
 }
 
 - (void)testResponsesOverMaxSizeFailWithActionableMessage {
-  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock) {
+  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
     RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
     __weak XCTestExpectation *expectation =
         [self expectationWithDescription:@"ResponseOverMaxSize"];
@@ -966,7 +966,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
 }
 
 - (void)testResponsesOver4MBAreAcceptedIfOptedIn {
-  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock) {
+  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
     RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
     __weak XCTestExpectation *expectation =
         [self expectationWithDescription:@"HigherResponseSizeLimit"];
@@ -993,7 +993,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
 }
 
 - (void)testClientStreamingRPC {
-  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock) {
+  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
     RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
     __weak XCTestExpectation *expectation = [self expectationWithDescription:@"ClientStreaming"];
 
@@ -1035,7 +1035,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
 }
 
 - (void)testServerStreamingRPC {
-  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock) {
+  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
     RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
     __weak XCTestExpectation *expectation = [self expectationWithDescription:@"ServerStreaming"];
 
@@ -1050,37 +1050,50 @@ static dispatch_once_t initGlobalInterceptorFactory;
 
     __block int index = 0;
     __weak RMTTestService *weakService = service;
-    [service streamingOutputCallWithRequest:request
-                               eventHandler:^(BOOL done, RMTStreamingOutputCallResponse *response,
-                                              NSError *error) {
-                                 if (weakService == nil) {
-                                   return;
-                                 }
-                                 XCTAssertNil(error, @"Finished with unexpected error: %@", error);
-                                 XCTAssertTrue(done || response,
-                                               @"Event handler called without an event.");
+    [service
+        streamingOutputCallWithRequest:request
+                          eventHandler:^(BOOL done, RMTStreamingOutputCallResponse *response,
+                                         NSError *error) {
+                            if (weakService == nil) {
+                              return;
+                            }
 
-                                 if (response) {
-                                   XCTAssertLessThan(index, 4, @"More than 4 responses received.");
-                                   id expected = [RMTStreamingOutputCallResponse
-                                       messageWithPayloadSize:expectedSizes[index]];
-                                   XCTAssertEqualObjects(response, expected);
-                                   index += 1;
-                                 }
+                            assertBlock(
+                                error == nil,
+                                [NSString
+                                    stringWithFormat:@"Finished with unexpected error: %@", error]);
+                            assertBlock(done || response,
+                                        @"Event handler called without an event.");
 
-                                 if (done) {
-                                   XCTAssertEqual(index, 4, @"Received %i responses instead of 4.",
-                                                  index);
-                                   [expectation fulfill];
-                                 }
-                               }];
+                            if (response) {
+                              assertBlock(index < 4, @"More than 4 responses received.");
+
+                              id expected = [RMTStreamingOutputCallResponse
+                                  messageWithPayloadSize:expectedSizes[index]];
+                              assertBlock(
+                                  [response isEqual:expected],
+                                  [NSString
+                                      stringWithFormat:@"response %@ not equal to expected %@",
+                                                       response, expected]);
+
+                              index += 1;
+                            }
+
+                            if (done) {
+                              assertBlock(
+                                  index == 4,
+                                  [NSString stringWithFormat:@"Received %@ responses instead of 4.",
+                                                             @(index)]);
+                              [expectation fulfill];
+                            }
+                          }];
 
     waiterBlock(self, @[ expectation ], GRPCInteropTestTimeoutDefault);
   });
 }
 
 - (void)testPingPongRPC {
-  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock) {
+  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
     RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
     __weak XCTestExpectation *expectation = [self expectationWithDescription:@"PingPong"];
 
@@ -1103,15 +1116,25 @@ static dispatch_once_t initGlobalInterceptorFactory;
                               if (weakService == nil) {
                                 return;
                               }
-                              XCTAssertNil(error, @"Finished with unexpected error: %@", error);
-                              XCTAssertTrue(done || response,
-                                            @"Event handler called without an event.");
+
+                              assertBlock(
+                                  error == nil,
+                                  [NSString stringWithFormat:@"Finished with unexpected error: %@",
+                                                             error]);
+                              assertBlock(done || response,
+                                          @"Event handler called without an event.");
 
                               if (response) {
-                                XCTAssertLessThan(index, 4, @"More than 4 responses received.");
+                                assertBlock(index < 4, @"More than 4 responses received.");
+
                                 id expected = [RMTStreamingOutputCallResponse
                                     messageWithPayloadSize:responses[index]];
-                                XCTAssertEqualObjects(response, expected);
+                                assertBlock(
+                                    [response isEqual:expected],
+                                    [NSString
+                                        stringWithFormat:@"response %@ not equal to expected %@",
+                                                         response, expected]);
+
                                 index += 1;
                                 if (index < 4) {
                                   id request = [RMTStreamingOutputCallRequest
@@ -1124,8 +1147,11 @@ static dispatch_once_t initGlobalInterceptorFactory;
                               }
 
                               if (done) {
-                                XCTAssertEqual(index, 4, @"Received %i responses instead of 4.",
-                                               index);
+                                assertBlock(
+                                    index == 4,
+                                    [NSString
+                                        stringWithFormat:@"Received %@ responses instead of 4.",
+                                                         @(index)]);
                                 [expectation fulfill];
                               }
                             }];
@@ -1134,7 +1160,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
 }
 
 - (void)testPingPongRPCWithV2API {
-  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock) {
+  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
     RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
     __weak XCTestExpectation *expectation = [self expectationWithDescription:@"PingPongWithV2API"];
 
@@ -1152,43 +1178,46 @@ static dispatch_once_t initGlobalInterceptorFactory;
     options.PEMRootCertificates = [[self class] PEMRootCertificates];
     options.hostNameOverride = [[self class] hostNameOverride];
 
-    __weak RMTTestService *weakService = service;
-    __block GRPCStreamingProtoCall *call = [service
-        fullDuplexCallWithResponseHandler:[[InteropTestsBlockCallbacks alloc]
-                                              initWithInitialMetadataCallback:nil
-                                              messageCallback:^(id message) {
-                                                if (weakService == nil) {
-                                                  return;
-                                                }
-                                                XCTAssertLessThan(
-                                                    index, 4, @"More than 4 responses received.");
-                                                id expected = [RMTStreamingOutputCallResponse
-                                                    messageWithPayloadSize:responses[index]];
-                                                XCTAssertEqualObjects(message, expected);
-                                                index += 1;
-                                                if (index < 4) {
-                                                  id request = [RMTStreamingOutputCallRequest
-                                                      messageWithPayloadSize:requests[index]
-                                                       requestedResponseSize:responses[index]];
-                                                  [call writeMessage:request];
-                                                } else {
-                                                  [call finish];
-                                                }
-                                              }
-                                              closeCallback:^(NSDictionary *trailingMetadata,
-                                                              NSError *error) {
-                                                if (weakService == nil) {
-                                                  return;
-                                                }
-                                                XCTAssertNil(error,
-                                                             @"Finished with unexpected error: %@",
-                                                             error);
-                                                XCTAssertEqual(
-                                                    index, 4,
-                                                    @"Received %i responses instead of 4.", index);
-                                                [expectation fulfill];
-                                              }]
+    __weak __block GRPCStreamingProtoCall *weakCall;
+    GRPCStreamingProtoCall *call = [service
+        fullDuplexCallWithResponseHandler:
+            [[InteropTestsBlockCallbacks alloc] initWithInitialMetadataCallback:nil
+                messageCallback:^(id message) {
+                  GRPCStreamingProtoCall *localCall = weakCall;
+                  if (localCall == nil) {
+                    return;
+                  }
+                  assertBlock(index < 4, @"More than 4 responses received.");
+
+                  id expected =
+                      [RMTStreamingOutputCallResponse messageWithPayloadSize:responses[index]];
+                  assertBlock([message isEqual:expected],
+                              [NSString stringWithFormat:@"message %@ not equal to expected %@",
+                                                         message, expected]);
+                  index += 1;
+                  if (index < 4) {
+                    id request =
+                        [RMTStreamingOutputCallRequest messageWithPayloadSize:requests[index]
+                                                        requestedResponseSize:responses[index]];
+                    [localCall writeMessage:request];
+                  } else {
+                    [localCall finish];
+                  }
+                }
+                closeCallback:^(NSDictionary *trailingMetadata, NSError *error) {
+                  if (weakCall == nil) {
+                    return;
+                  }
+                  assertBlock(
+                      error == nil,
+                      [NSString stringWithFormat:@"Finished with unexpected error: %@", error]);
+                  assertBlock(
+                      index == 4,
+                      [NSString stringWithFormat:@"Received %@ responses instead of 4.", @(index)]);
+                  [expectation fulfill];
+                }]
                               callOptions:options];
+    weakCall = call;
     [call start];
     [call writeMessage:request];
 
@@ -1197,7 +1226,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
 }
 
 - (void)testPingPongRPCWithFlowControl {
-  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock) {
+  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
     RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
     __weak XCTestExpectation *expectation = [self expectationWithDescription:@"PingPongWithV2API"];
 
@@ -1217,58 +1246,65 @@ static dispatch_once_t initGlobalInterceptorFactory;
     options.flowControlEnabled = YES;
     __block int writeMessageCount = 0;
 
-    __weak RMTTestService *weakService = service;
-    __block GRPCStreamingProtoCall *call = [service
-        fullDuplexCallWithResponseHandler:[[InteropTestsBlockCallbacks alloc]
-                                              initWithInitialMetadataCallback:nil
-                                              messageCallback:^(id message) {
-                                                if (weakService == nil) {
-                                                  return;
-                                                }
-                                                XCTAssertLessThan(
-                                                    index, 4, @"More than 4 responses received.");
-                                                id expected = [RMTStreamingOutputCallResponse
-                                                    messageWithPayloadSize:responses[index]];
-                                                XCTAssertEqualObjects(message, expected);
-                                                index += 1;
-                                                if (index < 4) {
-                                                  id request = [RMTStreamingOutputCallRequest
-                                                      messageWithPayloadSize:requests[index]
-                                                       requestedResponseSize:responses[index]];
-                                                  [call writeMessage:request];
-                                                  [call receiveNextMessage];
-                                                } else {
-                                                  [call finish];
-                                                }
-                                              }
-                                              closeCallback:^(NSDictionary *trailingMetadata,
-                                                              NSError *error) {
-                                                if (weakService == nil) {
-                                                  return;
-                                                }
-                                                XCTAssertNil(error,
-                                                             @"Finished with unexpected error: %@",
-                                                             error);
-                                                XCTAssertEqual(
-                                                    index, 4,
-                                                    @"Received %i responses instead of 4.", index);
-                                                [expectation fulfill];
-                                              }
-                                              writeMessageCallback:^{
-                                                writeMessageCount++;
-                                              }]
+    __weak __block GRPCStreamingProtoCall *weakCall;
+    GRPCStreamingProtoCall *call = [service
+        fullDuplexCallWithResponseHandler:
+            [[InteropTestsBlockCallbacks alloc] initWithInitialMetadataCallback:nil
+                messageCallback:^(id message) {
+                  GRPCStreamingProtoCall *localCall = weakCall;
+                  if (localCall == nil) {
+                    return;
+                  }
+
+                  assertBlock((index < 4), @"More than 4 responses received.");
+                  id expected =
+                      [RMTStreamingOutputCallResponse messageWithPayloadSize:responses[index]];
+                  assertBlock(
+                      [message isEqual:expected],
+                      [NSString stringWithFormat:@"message %@ not equal to %@", message, expected]);
+
+                  index += 1;
+                  if (index < 4) {
+                    id request =
+                        [RMTStreamingOutputCallRequest messageWithPayloadSize:requests[index]
+                                                        requestedResponseSize:responses[index]];
+                    [localCall writeMessage:request];
+                    [localCall receiveNextMessage];
+                  } else {
+                    [localCall finish];
+                  }
+                }
+                closeCallback:^(NSDictionary *trailingMetadata, NSError *error) {
+                  if (weakCall == nil) {
+                    return;
+                  }
+
+                  assertBlock(
+                      error == nil,
+                      [NSString stringWithFormat:@"Finished with unexpected error: %@", error]);
+                  assertBlock(
+                      index == 4,
+                      [NSString stringWithFormat:@"Received %i responses instead of 4.", index]);
+                  [expectation fulfill];
+                }
+                writeMessageCallback:^{
+                  writeMessageCount++;
+                }]
                               callOptions:options];
+    weakCall = call;
     [call start];
     [call receiveNextMessage];
     [call writeMessage:request];
 
     waiterBlock(self, @[ expectation ], GRPCInteropTestTimeoutDefault);
-    XCTAssertEqual(writeMessageCount, 4);
+    assertBlock(
+        writeMessageCount == 4,
+        [NSString stringWithFormat:@"writeMessageCount %@ not equal to 4", @(writeMessageCount)]);
   });
 }
 
 - (void)testEmptyStreamRPC {
-  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter _Nonnull waiterBlock) {
+  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
     RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
     __weak XCTestExpectation *expectation = [self expectationWithDescription:@"EmptyStream"];
     __weak RMTTestService *weakService = service;
@@ -1288,7 +1324,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
 }
 
 - (void)testCancelAfterBeginRPC {
-  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock) {
+  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
     RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
     __weak XCTestExpectation *expectation = [self expectationWithDescription:@"CancelAfterBegin"];
 
@@ -1319,14 +1355,14 @@ static dispatch_once_t initGlobalInterceptorFactory;
 }
 
 - (void)testCancelAfterBeginRPCWithV2API {
-  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock) {
+  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
     RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
     __weak XCTestExpectation *expectation =
         [self expectationWithDescription:@"CancelAfterBeginWithV2API"];
 
     // A buffered pipe to which we never write any value acts as a writer that just hangs.
     __weak RMTTestService *weakService = service;
-    __block GRPCStreamingProtoCall *call = [service
+    GRPCStreamingProtoCall *call = [service
         streamingInputCallWithResponseHandler:[[InteropTestsBlockCallbacks alloc]
                                                   initWithInitialMetadataCallback:nil
                                                   messageCallback:^(id message) {
@@ -1353,7 +1389,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
 }
 
 - (void)testCancelAfterFirstResponseRPC {
-  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock) {
+  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
     RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
     __weak XCTestExpectation *expectation =
         [self expectationWithDescription:@"CancelAfterFirstResponse"];
@@ -1395,7 +1431,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
 }
 
 - (void)testCancelAfterFirstResponseRPCWithV2API {
-  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock) {
+  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
     RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
     __weak XCTestExpectation *completionExpectation =
         [self expectationWithDescription:@"Call completed."];
@@ -1414,28 +1450,30 @@ static dispatch_once_t initGlobalInterceptorFactory;
     id request = [RMTStreamingOutputCallRequest messageWithPayloadSize:@21782
                                                  requestedResponseSize:@31415];
 
-    __weak RMTTestService *weakService = service;
-    __block GRPCStreamingProtoCall *call = [service
+    __weak __block GRPCStreamingProtoCall *weakCall;
+    GRPCStreamingProtoCall *call = [service
         fullDuplexCallWithResponseHandler:[[InteropTestsBlockCallbacks alloc]
                                               initWithInitialMetadataCallback:nil
                                               messageCallback:^(id message) {
-                                                if (weakService == nil) {
+                                                GRPCStreamingProtoCall *localCall = weakCall;
+                                                if (localCall == nil) {
                                                   return;
                                                 }
                                                 XCTAssertFalse(receivedResponse);
                                                 receivedResponse = YES;
-                                                [call cancel];
+                                                [localCall cancel];
                                                 [responseExpectation fulfill];
                                               }
                                               closeCallback:^(NSDictionary *trailingMetadata,
                                                               NSError *error) {
-                                                if (weakService == nil) {
+                                                if (weakCall == nil) {
                                                   return;
                                                 }
                                                 XCTAssertEqual(error.code, GRPC_STATUS_CANCELLED);
                                                 [completionExpectation fulfill];
                                               }]
                               callOptions:options];
+    weakCall = call;
     [call start];
     [call writeMessage:request];
     waiterBlock(self, @[ completionExpectation, responseExpectation ],
@@ -1444,7 +1482,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
 }
 
 - (void)testCancelAfterFirstRequestWithV2API {
-  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock) {
+  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
     RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
     __weak XCTestExpectation *completionExpectation =
         [self expectationWithDescription:@"Call completed."];
@@ -1460,7 +1498,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
                                                  requestedResponseSize:@31415];
 
     __weak RMTTestService *weakService = service;
-    __block GRPCStreamingProtoCall *call = [service
+    GRPCStreamingProtoCall *call = [service
         fullDuplexCallWithResponseHandler:[[InteropTestsBlockCallbacks alloc]
                                               initWithInitialMetadataCallback:nil
                                               messageCallback:^(id message) {
@@ -1486,7 +1524,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
 }
 
 - (void)testRPCAfterClosingOpenConnections {
-  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock) {
+  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
     RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
     __weak XCTestExpectation *expectation =
         [self expectationWithDescription:@"RPC after closing connection"];
@@ -1529,7 +1567,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
     return;
   }
 
-  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock) {
+  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
     RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
     __weak XCTestExpectation *expectation = [self expectationWithDescription:@"LargeUnary"];
 
@@ -1563,7 +1601,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
 }
 
 - (void)testKeepaliveWithV2API {
-  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock) {
+  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
     RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
     if ([[self class] transport] == gGRPCCoreCronetID) {
       // Cronet does not support keepalive
@@ -1586,7 +1624,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
     options.keepaliveTimeout = 0;
 
     __weak RMTTestService *weakService = service;
-    __block GRPCStreamingProtoCall *call = [service
+    GRPCStreamingProtoCall *call = [service
         fullDuplexCallWithResponseHandler:
             [[InteropTestsBlockCallbacks alloc]
                 initWithInitialMetadataCallback:nil
@@ -1612,7 +1650,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
 }
 
 - (void)testDefaultInterceptor {
-  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock) {
+  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
     RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
     __weak XCTestExpectation *expectation =
         [self expectationWithDescription:@"testDefaultInterceptor"];
@@ -1632,43 +1670,50 @@ static dispatch_once_t initGlobalInterceptorFactory;
     options.hostNameOverride = [[self class] hostNameOverride];
     options.interceptorFactories = @[ [[DefaultInterceptorFactory alloc] init] ];
 
-    __weak RMTTestService *weakService = service;
-    __block GRPCStreamingProtoCall *call = [service
-        fullDuplexCallWithResponseHandler:[[InteropTestsBlockCallbacks alloc]
-                                              initWithInitialMetadataCallback:nil
-                                              messageCallback:^(id message) {
-                                                if (weakService == nil) {
-                                                  return;
-                                                }
-                                                XCTAssertLessThan(
-                                                    index, 4, @"More than 4 responses received.");
-                                                id expected = [RMTStreamingOutputCallResponse
-                                                    messageWithPayloadSize:responses[index]];
-                                                XCTAssertEqualObjects(message, expected);
-                                                index += 1;
-                                                if (index < 4) {
-                                                  id request = [RMTStreamingOutputCallRequest
-                                                      messageWithPayloadSize:requests[index]
-                                                       requestedResponseSize:responses[index]];
-                                                  [call writeMessage:request];
-                                                } else {
-                                                  [call finish];
-                                                }
-                                              }
-                                              closeCallback:^(NSDictionary *trailingMetadata,
-                                                              NSError *error) {
-                                                if (weakService == nil) {
-                                                  return;
-                                                }
-                                                XCTAssertNil(error,
-                                                             @"Finished with unexpected error: %@",
-                                                             error);
-                                                XCTAssertEqual(
-                                                    index, 4,
-                                                    @"Received %i responses instead of 4.", index);
-                                                [expectation fulfill];
-                                              }]
+    __weak __block GRPCStreamingProtoCall *weakCall;
+    GRPCStreamingProtoCall *call = [service
+        fullDuplexCallWithResponseHandler:
+            [[InteropTestsBlockCallbacks alloc] initWithInitialMetadataCallback:nil
+                messageCallback:^(id message) {
+                  GRPCStreamingProtoCall *localCall = weakCall;
+                  if (localCall == nil) {
+                    return;
+                  }
+                  assertBlock(index < 4, @"More than 4 responses received.");
+
+                  id expected =
+                      [RMTStreamingOutputCallResponse messageWithPayloadSize:responses[index]];
+                  assertBlock([message isEqual:expected],
+                              [NSString stringWithFormat:@"message %@ not equal to expected %@",
+                                                         message, expected]);
+
+                  index += 1;
+                  if (index < 4) {
+                    id request =
+                        [RMTStreamingOutputCallRequest messageWithPayloadSize:requests[index]
+                                                        requestedResponseSize:responses[index]];
+                    [localCall writeMessage:request];
+                  } else {
+                    [localCall finish];
+                  }
+                }
+                closeCallback:^(NSDictionary *trailingMetadata, NSError *error) {
+                  if (weakCall == nil) {
+                    return;
+                  }
+
+                  assertBlock(
+                      index == 4,
+                      [NSString stringWithFormat:@"Received %@ responses instead of 4.", @(index)]);
+
+                  assertBlock(
+                      error == nil,
+                      [NSString stringWithFormat:@"Finished with unexpected error: %@", error]);
+
+                  [expectation fulfill];
+                }]
                               callOptions:options];
+    weakCall = call;
     [call start];
     [call writeMessage:request];
 
@@ -1677,7 +1722,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
 }
 
 - (void)testLoggingInterceptor {
-  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock) {
+  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
     RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
     __weak XCTestExpectation *expectation =
         [self expectationWithDescription:@"testLoggingInterceptor"];
@@ -1749,65 +1794,75 @@ static dispatch_once_t initGlobalInterceptorFactory;
     options.interceptorFactories = @[ factory ];
 
     __block int writeMessageCount = 0;
+    __block __weak GRPCStreamingProtoCall *weakCall;
+    GRPCStreamingProtoCall *call = [service
+        fullDuplexCallWithResponseHandler:
+            [[InteropTestsBlockCallbacks alloc] initWithInitialMetadataCallback:nil
+                messageCallback:^(id message) {
+                  GRPCStreamingProtoCall *localCall = weakCall;
+                  if (localCall == nil) {
+                    return;
+                  }
+                  assertBlock((messageIndex < 4), @"More than 4 responses received.");
 
-    __weak RMTTestService *weakService = service;
-    __block GRPCStreamingProtoCall *call =
-        [service fullDuplexCallWithResponseHandler:
-                     [[InteropTestsBlockCallbacks alloc] initWithInitialMetadataCallback:nil
-                         messageCallback:^(id message) {
-                           if (weakService == nil) {
-                             return;
-                           }
-                           XCTAssertLessThan(messageIndex, 4, @"More than 4 responses received.");
-                           id expected = [RMTStreamingOutputCallResponse
-                               messageWithPayloadSize:responses[messageIndex]];
-                           XCTAssertEqualObjects(message, expected);
-                           messageIndex += 1;
-                           if (messageIndex < 4) {
-                             id request = [RMTStreamingOutputCallRequest
-                                 messageWithPayloadSize:requests[messageIndex]
-                                  requestedResponseSize:responses[messageIndex]];
-                             [call writeMessage:request];
-                             [call receiveNextMessage];
-                           } else {
-                             [call finish];
-                           }
-                         }
-                         closeCallback:^(NSDictionary *trailingMetadata, NSError *error) {
-                           if (weakService == nil) {
-                             return;
-                           }
-                           XCTAssertNil(error, @"Finished with unexpected error: %@", error);
-                           XCTAssertEqual(messageIndex, 4, @"Received %i responses instead of 4.",
-                                          messageIndex);
-                           [expectation fulfill];
-                         }
-                         writeMessageCallback:^{
-                           writeMessageCount++;
-                         }]
-                                       callOptions:options];
+                  id expected = [RMTStreamingOutputCallResponse
+                      messageWithPayloadSize:responses[messageIndex]];
+                  assertBlock([message isEqual:expected],
+                              [NSString stringWithFormat:@"message %@ not equal to expected %@",
+                                                         message, expected]);
+                  messageIndex += 1;
+                  if (messageIndex < 4) {
+                    id request = [RMTStreamingOutputCallRequest
+                        messageWithPayloadSize:requests[messageIndex]
+                         requestedResponseSize:responses[messageIndex]];
+                    [localCall writeMessage:request];
+                    [localCall receiveNextMessage];
+                  } else {
+                    [localCall finish];
+                  }
+                }
+                closeCallback:^(NSDictionary *trailingMetadata, NSError *error) {
+                  if (weakCall == nil) {
+                    return;
+                  }
+                  assertBlock(
+                      error == nil,
+                      [NSString stringWithFormat:@"Finished with unexpected error: %@", error]);
+                  assertBlock(messageIndex == 4,
+                              [NSString stringWithFormat:@"Received %@ responses instead of 4.",
+                                                         @(messageIndex)]);
+                  [expectation fulfill];
+                }
+                writeMessageCallback:^{
+                  writeMessageCount++;
+                }]
+                              callOptions:options];
+
+    weakCall = call;
     [call start];
     [call receiveNextMessage];
     [call writeMessage:request];
 
     waiterBlock(self, @[ expectation ], GRPCInteropTestTimeoutDefault);
 
-    XCTAssertEqual(startCount, 1);
-    XCTAssertEqual(writeDataCount, 4);
-    XCTAssertEqual(finishCount, 1);
-    XCTAssertEqual(receiveNextMessageCount, 4);
-    XCTAssertEqual(responseHeaderCount, 1);
-    XCTAssertEqual(responseDataCount, 4);
-    XCTAssertEqual(responseCloseCount, 1);
-    XCTAssertEqual(didWriteDataCount, 4);
-    XCTAssertEqual(writeMessageCount, 4);
+    assertBlock(startCount == 1, [NSString stringWithFormat:@"%@", @(startCount)]);
+    assertBlock(writeDataCount == 4, [NSString stringWithFormat:@"%@", @(writeDataCount)]);
+    assertBlock(finishCount == 1, [NSString stringWithFormat:@"%@", @(finishCount)]);
+    assertBlock(receiveNextMessageCount == 4,
+                [NSString stringWithFormat:@"%@", @(receiveNextMessageCount)]);
+    assertBlock(responseHeaderCount == 1,
+                [NSString stringWithFormat:@"%@", @(responseHeaderCount)]);
+    assertBlock(responseDataCount == 4, [NSString stringWithFormat:@"%@", @(responseDataCount)]);
+    assertBlock(responseCloseCount == 1, [NSString stringWithFormat:@"%@", @(responseCloseCount)]);
+    assertBlock(didWriteDataCount == 4, [NSString stringWithFormat:@"%@", @(didWriteDataCount)]);
+    assertBlock(writeMessageCount == 4, [NSString stringWithFormat:@"%@", @(writeMessageCount)]);
   });
 }
 
 // Chain a default interceptor and a hook interceptor which, after one write, cancels the call
 // under the hood but forward further data to the user.
 - (void)testHijackingInterceptor {
-  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock) {
+  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
     RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
     NSUInteger kCancelAfterWrites = 1;
     __weak XCTestExpectation *expectUserCallComplete =
@@ -1886,57 +1941,68 @@ static dispatch_once_t initGlobalInterceptorFactory;
     options.hostNameOverride = [[self class] hostNameOverride];
     options.interceptorFactories = @[ [[DefaultInterceptorFactory alloc] init], factory ];
 
-    __weak RMTTestService *weakService = service;
-    __block GRPCStreamingProtoCall *call = [service
+    __weak __block GRPCStreamingProtoCall *weakCall;
+    GRPCStreamingProtoCall *call = [service
         fullDuplexCallWithResponseHandler:
             [[InteropTestsBlockCallbacks alloc] initWithInitialMetadataCallback:nil
                 messageCallback:^(id message) {
-                  if (weakService == nil) {
+                  GRPCStreamingProtoCall *localCall = weakCall;
+                  if (localCall == nil) {
                     return;
                   }
-                  XCTAssertLessThan(index, 4, @"More than 4 responses received.");
+
+                  assertBlock(index < 4, @"More than 4 responses received.");
+
                   id expected =
                       [RMTStreamingOutputCallResponse messageWithPayloadSize:responses[index]];
-                  XCTAssertEqualObjects(message, expected);
+                  assertBlock([message isEqual:expected],
+                              [NSString stringWithFormat:@"message %@ not equal to expected %@",
+                                                         message, expected]);
                   index += 1;
                   if (index < 4) {
                     id request =
                         [RMTStreamingOutputCallRequest messageWithPayloadSize:requests[index]
                                                         requestedResponseSize:responses[index]];
-                    [call writeMessage:request];
-                    [call receiveNextMessage];
+                    [localCall writeMessage:request];
+                    [localCall receiveNextMessage];
                   } else {
                     [self waitForExpectations:@[ expectResponseCallbackComplete ]
                                       timeout:GRPCInteropTestTimeoutDefault];
-                    [call finish];
+                    [localCall finish];
                   }
                 }
                 closeCallback:^(NSDictionary *trailingMetadata, NSError *error) {
-                  if (weakService == nil) {
+                  if (weakCall == nil) {
                     return;
                   }
-                  XCTAssertNil(error, @"Finished with unexpected error: %@", error);
-                  XCTAssertEqual(index, 4, @"Received %i responses instead of 4.", index);
+                  assertBlock(
+                      error == nil,
+                      [NSString stringWithFormat:@"Finished with unexpected error: %@", error]);
+                  assertBlock(
+                      index == 4,
+                      [NSString stringWithFormat:@"Received %@ responses instead of 4.", @(index)]);
+
                   [expectUserCallComplete fulfill];
                 }]
                               callOptions:options];
+    weakCall = call;
     [call start];
     [call receiveNextMessage];
     [call writeMessage:request];
 
     waiterBlock(self, @[ expectUserCallComplete ], GRPCInteropTestTimeoutDefault);
-
-    XCTAssertEqual(startCount, 1);
-    XCTAssertEqual(writeDataCount, 4);
-    XCTAssertEqual(finishCount, 1);
-    XCTAssertEqual(responseHeaderCount, 1);
-    XCTAssertEqual(responseDataCount, 1);
-    XCTAssertEqual(responseCloseCount, 1);
+    assertBlock(startCount == 1, [NSString stringWithFormat:@"%@", @(startCount)]);
+    assertBlock(writeDataCount == 4, [NSString stringWithFormat:@"%@", @(writeDataCount)]);
+    assertBlock(finishCount == 1, [NSString stringWithFormat:@"%@", @(finishCount)]);
+    assertBlock(responseHeaderCount == 1,
+                [NSString stringWithFormat:@"%@", @(responseHeaderCount)]);
+    assertBlock(responseDataCount == 1, [NSString stringWithFormat:@"%@", @(responseDataCount)]);
+    assertBlock(responseCloseCount == 1, [NSString stringWithFormat:@"%@", @(responseCloseCount)]);
   });
 }
 
 - (void)testGlobalInterceptor {
-  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock) {
+  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
     RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
     __weak XCTestExpectation *expectation =
         [self expectationWithDescription:@"testGlobalInterceptor"];
@@ -2007,55 +2073,58 @@ static dispatch_once_t initGlobalInterceptorFactory;
     globalInterceptorFactory.enabled = YES;
 
     __block int writeMessageCount = 0;
-    __weak RMTTestService *weakService = service;
+    __weak __block GRPCStreamingProtoCall *weakCall;
     __block GRPCStreamingProtoCall *call = [service
-        fullDuplexCallWithResponseHandler:[[InteropTestsBlockCallbacks alloc]
-                                              initWithInitialMetadataCallback:nil
-                                              messageCallback:^(id message) {
-                                                if (weakService == nil) {
-                                                  return;
-                                                }
-                                                XCTAssertLessThan(
-                                                    index, 4, @"More than 4 responses received.");
-                                                index += 1;
-                                                if (index < 4) {
-                                                  id request = [RMTStreamingOutputCallRequest
-                                                      messageWithPayloadSize:requests[index]
-                                                       requestedResponseSize:responses[index]];
-                                                  [call writeMessage:request];
-                                                  [call receiveNextMessage];
-                                                } else {
-                                                  [call finish];
-                                                }
-                                              }
-                                              closeCallback:^(NSDictionary *trailingMetadata,
-                                                              NSError *error) {
-                                                if (weakService == nil) {
-                                                  return;
-                                                }
-                                                XCTAssertNil(error,
-                                                             @"Finished with unexpected error: %@",
-                                                             error);
-                                                [expectation fulfill];
-                                              }
-                                              writeMessageCallback:^{
-                                                writeMessageCount++;
-                                              }]
+        fullDuplexCallWithResponseHandler:
+            [[InteropTestsBlockCallbacks alloc] initWithInitialMetadataCallback:nil
+                messageCallback:^(id message) {
+                  GRPCStreamingProtoCall *localCall = weakCall;
+                  if (localCall == nil) {
+                    return;
+                  }
+                  assertBlock(index < 4, @"More than 4 responses received.");
+
+                  index += 1;
+                  if (index < 4) {
+                    id request =
+                        [RMTStreamingOutputCallRequest messageWithPayloadSize:requests[index]
+                                                        requestedResponseSize:responses[index]];
+                    [localCall writeMessage:request];
+                    [localCall receiveNextMessage];
+                  } else {
+                    [localCall finish];
+                  }
+                }
+                closeCallback:^(NSDictionary *trailingMetadata, NSError *error) {
+                  if (weakCall == nil) {
+                    return;
+                  }
+                  assertBlock(
+                      error == nil,
+                      [NSString stringWithFormat:@"Finished with unexpected error: %@", error]);
+                  [expectation fulfill];
+                }
+                writeMessageCallback:^{
+                  writeMessageCount++;
+                }]
                               callOptions:options];
+    weakCall = call;
     [call start];
     [call receiveNextMessage];
     [call writeMessage:request];
     waiterBlock(self, @[ expectation ], GRPCInteropTestTimeoutDefault);
 
-    XCTAssertEqual(startCount, 1);
-    XCTAssertEqual(writeDataCount, 4);
-    XCTAssertEqual(finishCount, 1);
-    XCTAssertEqual(receiveNextMessageCount, 4);
-    XCTAssertEqual(responseHeaderCount, 1);
-    XCTAssertEqual(responseDataCount, 4);
-    XCTAssertEqual(responseCloseCount, 1);
-    XCTAssertEqual(didWriteDataCount, 4);
-    XCTAssertEqual(writeMessageCount, 4);
+    assertBlock(startCount == 1, [NSString stringWithFormat:@"%@", @(startCount)]);
+    assertBlock(writeDataCount == 4, [NSString stringWithFormat:@"%@", @(writeDataCount)]);
+    assertBlock(finishCount == 1, [NSString stringWithFormat:@"%@", @(finishCount)]);
+    assertBlock(receiveNextMessageCount == 4,
+                [NSString stringWithFormat:@"%@", @(receiveNextMessageCount)]);
+    assertBlock(responseHeaderCount == 1,
+                [NSString stringWithFormat:@"%@", @(responseHeaderCount)]);
+    assertBlock(responseDataCount == 4, [NSString stringWithFormat:@"%@", @(responseDataCount)]);
+    assertBlock(responseCloseCount == 1, [NSString stringWithFormat:@"%@", @(responseCloseCount)]);
+    assertBlock(didWriteDataCount == 4, [NSString stringWithFormat:@"%@", @(didWriteDataCount)]);
+    assertBlock(writeMessageCount == 4, [NSString stringWithFormat:@"%@", @(writeMessageCount)]);
     globalInterceptorFactory.enabled = NO;
   });
 }
@@ -2080,7 +2149,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
 }
 
 - (void)testInterceptorAndGlobalInterceptor {
-  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock) {
+  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
     RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
     __weak XCTestExpectation *expectation =
         [self expectationWithDescription:@"testInterceptorAndGlobalInterceptor"];
@@ -2204,12 +2273,13 @@ static dispatch_once_t initGlobalInterceptorFactory;
     globalInterceptorFactory.enabled = YES;
 
     __block int writeMessageCount = 0;
-    __weak RMTTestService *weakService = service;
-    __block GRPCStreamingProtoCall *call = [service
+    __weak __block GRPCStreamingProtoCall *weakCall;
+    GRPCStreamingProtoCall *call = [service
         fullDuplexCallWithResponseHandler:[[InteropTestsBlockCallbacks alloc]
                                               initWithInitialMetadataCallback:nil
                                               messageCallback:^(id message) {
-                                                if (weakService == nil) {
+                                                GRPCStreamingProtoCall *localCall = weakCall;
+                                                if (localCall == nil) {
                                                   return;
                                                 }
                                                 index += 1;
@@ -2217,15 +2287,15 @@ static dispatch_once_t initGlobalInterceptorFactory;
                                                   id request = [RMTStreamingOutputCallRequest
                                                       messageWithPayloadSize:requests[index]
                                                        requestedResponseSize:responses[index]];
-                                                  [call writeMessage:request];
-                                                  [call receiveNextMessage];
+                                                  [localCall writeMessage:request];
+                                                  [localCall receiveNextMessage];
                                                 } else {
-                                                  [call finish];
+                                                  [localCall finish];
                                                 }
                                               }
                                               closeCallback:^(NSDictionary *trailingMetadata,
                                                               NSError *error) {
-                                                if (weakService == nil) {
+                                                if (weakCall == nil) {
                                                   return;
                                                 }
                                                 [expectation fulfill];
@@ -2234,29 +2304,37 @@ static dispatch_once_t initGlobalInterceptorFactory;
                                                 writeMessageCount++;
                                               }]
                               callOptions:options];
+    weakCall = call;
     [call start];
     [call receiveNextMessage];
     [call writeMessage:request];
 
     waiterBlock(self, @[ expectation ], GRPCInteropTestTimeoutDefault);
-
-    XCTAssertEqual(startCount, 1);
-    XCTAssertEqual(writeDataCount, 4);
-    XCTAssertEqual(finishCount, 1);
-    XCTAssertEqual(receiveNextMessageCount, 4);
-    XCTAssertEqual(responseHeaderCount, 1);
-    XCTAssertEqual(responseDataCount, 4);
-    XCTAssertEqual(responseCloseCount, 1);
-    XCTAssertEqual(didWriteDataCount, 4);
-    XCTAssertEqual(globalStartCount, 1);
-    XCTAssertEqual(globalWriteDataCount, 4);
-    XCTAssertEqual(globalFinishCount, 1);
-    XCTAssertEqual(globalReceiveNextMessageCount, 4);
-    XCTAssertEqual(globalResponseHeaderCount, 1);
-    XCTAssertEqual(globalResponseDataCount, 4);
-    XCTAssertEqual(globalResponseCloseCount, 1);
-    XCTAssertEqual(globalDidWriteDataCount, 4);
-    XCTAssertEqual(writeMessageCount, 4);
+    assertBlock(startCount == 1, [NSString stringWithFormat:@"%@", @(startCount)]);
+    assertBlock(writeDataCount == 4, [NSString stringWithFormat:@"%@", @(writeDataCount)]);
+    assertBlock(finishCount == 1, [NSString stringWithFormat:@"%@", @(finishCount)]);
+    assertBlock(receiveNextMessageCount == 4,
+                [NSString stringWithFormat:@"%@", @(receiveNextMessageCount)]);
+    assertBlock(responseHeaderCount == 1,
+                [NSString stringWithFormat:@"%@", @(responseHeaderCount)]);
+    assertBlock(responseDataCount == 4, [NSString stringWithFormat:@"%@", @(responseDataCount)]);
+    assertBlock(responseCloseCount == 1, [NSString stringWithFormat:@"%@", @(responseCloseCount)]);
+    assertBlock(didWriteDataCount == 4, [NSString stringWithFormat:@"%@", @(didWriteDataCount)]);
+    assertBlock(globalStartCount == 1, [NSString stringWithFormat:@"%@", @(globalStartCount)]);
+    assertBlock(globalWriteDataCount == 4,
+                [NSString stringWithFormat:@"%@", @(globalWriteDataCount)]);
+    assertBlock(globalFinishCount == 1, [NSString stringWithFormat:@"%@", @(globalFinishCount)]);
+    assertBlock(globalReceiveNextMessageCount == 4,
+                [NSString stringWithFormat:@"%@", @(globalReceiveNextMessageCount)]);
+    assertBlock(globalResponseHeaderCount == 1,
+                [NSString stringWithFormat:@"%@", @(globalResponseHeaderCount)]);
+    assertBlock(globalResponseDataCount == 4,
+                [NSString stringWithFormat:@"%@", @(globalResponseDataCount)]);
+    assertBlock(globalResponseCloseCount == 1,
+                [NSString stringWithFormat:@"%@", @(globalResponseCloseCount)]);
+    assertBlock(globalDidWriteDataCount == 4,
+                [NSString stringWithFormat:@"%@", @(globalDidWriteDataCount)]);
+    assertBlock(writeMessageCount == 4, [NSString stringWithFormat:@"%@", @(writeMessageCount)]);
     globalInterceptorFactory.enabled = NO;
   });
 }
