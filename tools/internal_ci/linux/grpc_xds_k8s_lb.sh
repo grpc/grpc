@@ -97,6 +97,8 @@ run_test() {
   # Test driver usage:
   # https://github.com/grpc/grpc/tree/master/tools/run_tests/xds_k8s_test_driver#basic-usage
   local test_name="${1:?Usage: run_test test_name}"
+  local test_dir="${TEST_XML_OUTPUT_DIR}/${test_name}"
+  mkdir -pv "${test_dir}"
   set -x
   python3 -m "tests.${test_name}" \
     --flagfile="${TEST_DRIVER_FLAGFILE}" \
@@ -105,9 +107,9 @@ run_test() {
     --server_image="${SERVER_IMAGE_NAME}:v1.48.x" \
     --client_image="${CLIENT_IMAGE_NAME}:v1.48.x" \
     --testing_version="${TESTING_VERSION}" \
-    --xml_output_file="${TEST_XML_OUTPUT_DIR}/${test_name}/sponge_log.xml" \
+    --xml_output_file="${test_dir}/sponge_log.xml" \
     ${@:2} \
-    |& tee "${TEST_XML_OUTPUT_DIR}/${test_name}/sponge_log.log"
+    |& tee "${test_dir}/sponge_log.log"
 }
 
 run_alpha_test() {
