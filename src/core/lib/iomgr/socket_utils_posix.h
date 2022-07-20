@@ -59,7 +59,7 @@ struct PosixTcpOptions {
   int keep_alive_timeout_ms = 0;
   bool expand_wildcard_addrs = false;
   bool allow_reuse_port = false;
-  grpc_core::RefCountedPtr<grpc_core::ResourceQuota> resource_quota;
+  RefCountedPtr<ResourceQuota> resource_quota;
   struct grpc_socket_mutator* socket_mutator = nullptr;
   PosixTcpOptions() = default;
   // Move ctor
@@ -110,7 +110,7 @@ struct PosixTcpOptions {
   }
 
  private:
-  void CopyIntegerOptions(const grpc_core::PosixTcpOptions& other) {
+  void CopyIntegerOptions(const PosixTcpOptions& other) {
     tcp_read_chunk_size = other.tcp_read_chunk_size;
     tcp_min_read_chunk_size = other.tcp_min_read_chunk_size;
     tcp_max_read_chunk_size = other.tcp_max_read_chunk_size;
