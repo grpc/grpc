@@ -229,6 +229,31 @@ TransportFlowControl::TargetInitialWindowSizeBasedOnMemoryPressureAndBdp()
   auto lerp = [](double t, double t_min, double t_max, double a, double b) {
     return a + (b - a) * (t - t_min) / (t_max - t_min);
   };
+  // We split memory pressure into three broad regions:
+  // 1. Low memory pressure, the "anything goes" case - we assume no memory
+  //    pressure concerns and advertise a huge window to keep things flowing.
+  // 2. Moderate memory pressure, the "adjust to BDP" case - we linearly ramp
+  //    down window size to 2*BDP - which should still allow bytes to flow, but
+  //    is arguably more considered.
+  // 3. High memory pressure - past 50% we linearly ramp down window size from
+  //    BDP to 0 - at which point senders effectively must request to send bytes
+  //    to us.
+  //
+  //          ▲
+  //          │
+  // 16mb ────┤---------x----
+  //          │              -----
+  //  BDP ────┤                   ----x---
+  //          │                           ----
+  //          │                               -----
+  //          │                                    ----
+  //          │                                        -----
+  //          │                                             ---x
+  //          ├─────────┬─────────────┬────────────────────────┬─────►
+  //          │Anything │Adjust to    │Drop to zero            │
+  //          │Goes     │BDP          │                        │
+  //          0%        20%           50%                      100% memory
+  //                                                                pressure
   const double kAnythingGoesPressure = 0.2;
   const double kAdjustedToBdpPressure = 0.5;
   const double kAnythingGoesWindow = std::max(double(1 << 24), bdp);
