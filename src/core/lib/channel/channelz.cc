@@ -25,7 +25,6 @@
 #include <algorithm>
 #include <atomic>
 #include <memory>
-#include <type_traits>
 
 #include "absl/status/statusor.h"
 #include "absl/strings/escaping.h"

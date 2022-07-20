@@ -21,7 +21,6 @@
 #include <stdint.h>
 
 #include <set>
-#include <type_traits>
 #include <utility>
 
 #include "absl/memory/memory.h"

@@ -19,6 +19,7 @@
 #include <string.h>
 
 #include <algorithm>
+#include <type_traits>
 
 #include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
