@@ -23,6 +23,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/meta/type_traits.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/string_view.h"
 

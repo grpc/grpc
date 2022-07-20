@@ -17,7 +17,6 @@
 #include "src/core/lib/json/json_object_loader.h"
 
 #include <algorithm>
-#include <cstddef>
 #include <utility>
 
 #include "absl/strings/ascii.h"
