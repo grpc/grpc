@@ -480,8 +480,7 @@ TEST(TcpServerPosixTest, MainTest) {
     test_no_op_with_port_and_start();
 
     if (getifaddrs(&ifa) != 0 || ifa == nullptr) {
-      gpr_log(GPR_ERROR, "getifaddrs: %s", strerror(errno));
-      ASSERT_TRUE(false);
+      FAIL() << "getifaddrs: " << strerror(errno);
     }
     dst_addrs->naddrs = 0;
     for (ifa_it = ifa; ifa_it != nullptr && dst_addrs->naddrs < MAX_ADDRS;
