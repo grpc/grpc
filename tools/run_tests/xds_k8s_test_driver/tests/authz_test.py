@@ -55,6 +55,8 @@ class AuthzTest(xds_k8s_testcase.SecurityXdsKubernetesTestCase):
             return config.version_gte('v1.44.x')
         elif config.client_lang in _Lang.GO | _Lang.JAVA:
             return config.version_gte('v1.42.x')
+        elif config.client_lang == _Lang.NODE:
+            return False
         return True
 
     def setUp(self):

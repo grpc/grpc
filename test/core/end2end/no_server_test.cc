@@ -36,7 +36,7 @@ void run_test(bool wait_for_ready) {
   grpc_init();
 
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
-  cq_verifier* cqv = cq_verifier_create(cq);
+  grpc_core::CqVerifier cqv(cq);
 
   grpc_core::RefCountedPtr<grpc_core::FakeResolverResponseGenerator>
       response_generator =
@@ -83,8 +83,8 @@ void run_test(bool wait_for_ready) {
   }
 
   /* verify that all tags get completed */
-  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(1), true);
+  cqv.Verify();
 
   gpr_log(GPR_INFO, "call status: %d", status);
   if (wait_for_ready) {
@@ -104,7 +104,6 @@ void run_test(bool wait_for_ready) {
   grpc_completion_queue_destroy(cq);
   grpc_call_unref(call);
   grpc_channel_destroy(chan);
-  cq_verifier_destroy(cqv);
 
   grpc_shutdown();
 }

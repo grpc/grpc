@@ -143,7 +143,7 @@ static void test_retry_cancel_with_multiple_send_batches(
   grpc_end2end_test_fixture f =
       begin_test(config, name.c_str(), &client_args, nullptr);
 
-  cq_verifier* cqv = cq_verifier_create(f.cq);
+  grpc_core::CqVerifier cqv(f.cq);
 
   gpr_timespec deadline = n_seconds_from_now(3);
   c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
@@ -210,11 +210,11 @@ static void test_retry_cancel_with_multiple_send_batches(
   GPR_ASSERT(GRPC_CALL_OK == mode.initiate_cancel(c, nullptr));
 
   // Client ops should now complete.
-  CQ_EXPECT_COMPLETION(cqv, tag(1), false);
-  CQ_EXPECT_COMPLETION(cqv, tag(2), false);
-  CQ_EXPECT_COMPLETION(cqv, tag(3), false);
-  CQ_EXPECT_COMPLETION(cqv, tag(4), true);
-  cq_verify(cqv);
+  cqv.Expect(tag(1), false);
+  cqv.Expect(tag(2), false);
+  cqv.Expect(tag(3), false);
+  cqv.Expect(tag(4), true);
+  cqv.Verify();
 
   gpr_log(GPR_INFO, "status=%d expected=%d", status, mode.expect_status);
   GPR_ASSERT(status == mode.expect_status);
@@ -226,8 +226,6 @@ static void test_retry_cancel_with_multiple_send_batches(
   grpc_byte_buffer_destroy(response_payload_recv);
 
   grpc_call_unref(c);
-
-  cq_verifier_destroy(cqv);
 
   end_test(&f);
   config.tear_down_data(&f);

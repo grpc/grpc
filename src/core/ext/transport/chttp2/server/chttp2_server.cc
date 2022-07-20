@@ -71,8 +71,8 @@
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
-#include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/api.h"
+#include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/insecure/insecure_credentials.h"
@@ -469,8 +469,8 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
       // handshaker may have handed off the connection to some external
       // code, so we can just clean up here without creating a transport.
       if (args->endpoint != nullptr) {
-        grpc_transport* transport = grpc_create_chttp2_transport(
-            args->args.ToC().get(), args->endpoint, false);
+        grpc_transport* transport =
+            grpc_create_chttp2_transport(args->args, args->endpoint, false);
         grpc_error_handle channel_init_err =
             self->connection_->listener_->server_->SetupTransport(
                 transport, self->accepting_pollset_, args->args,
@@ -939,7 +939,8 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
       resolved_or =
           grpc_resolve_unix_abstract_domain_address(parsed_addr_unprefixed);
     } else {
-      resolved_or = GetDNSResolver()->ResolveNameBlocking(parsed_addr, "https");
+      resolved_or =
+          GetDNSResolver()->LookupHostnameBlocking(parsed_addr, "https");
     }
     if (!resolved_or.ok()) {
       return absl_status_to_grpc_error(resolved_or.status());
@@ -1087,7 +1088,7 @@ void grpc_server_add_channel_from_fd(grpc_server* server, int fd,
       grpc_event_engine::experimental::ChannelArgsEndpointConfig(server_args),
       name);
   grpc_transport* transport = grpc_create_chttp2_transport(
-      server_args.ToC().get(), server_endpoint, false /* is_client */
+      server_args, server_endpoint, false /* is_client */
   );
   grpc_error_handle error =
       core_server->SetupTransport(transport, nullptr, server_args, nullptr);

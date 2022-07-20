@@ -49,7 +49,7 @@ static void run_test(const char* target, size_t nops) {
   grpc_call_error error;
   gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
-  cq_verifier* cqv = cq_verifier_create(cq);
+  grpc_core::CqVerifier cqv(cq);
 
   grpc_op ops[6];
   grpc_op* op;
@@ -98,8 +98,8 @@ static void run_test(const char* target, size_t nops) {
   error = grpc_call_start_batch(c, ops, nops, tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(1), true);
+  cqv.Verify();
 
   GPR_ASSERT(status != GRPC_STATUS_OK);
 
@@ -110,7 +110,6 @@ static void run_test(const char* target, size_t nops) {
 
   grpc_channel_destroy(channel);
   grpc_completion_queue_destroy(cq);
-  cq_verifier_destroy(cqv);
   grpc_channel_credentials_release(ssl_creds);
 }
 

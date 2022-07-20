@@ -108,6 +108,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "status_conversion_test",
     srcs = ["status_conversion_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,

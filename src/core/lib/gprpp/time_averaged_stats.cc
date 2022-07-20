@@ -18,10 +18,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/event_engine/iomgr_engine/time_averaged_stats.h"
+#include "src/core/lib/gprpp/time_averaged_stats.h"
 
-namespace grpc_event_engine {
-namespace iomgr_engine {
+namespace grpc_core {
 
 TimeAveragedStats::TimeAveragedStats(double init_avg, double regress_weight,
                                      double persistence_factor)
@@ -58,5 +57,4 @@ double TimeAveragedStats::UpdateAverage() {
   return aggregate_weighted_avg_;
 }
 
-}  // namespace iomgr_engine
-}  // namespace grpc_event_engine
+}  // namespace grpc_core

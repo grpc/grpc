@@ -186,11 +186,10 @@ static void start_rpc(int target_port, grpc_status_code expected_status,
   grpc_metadata_array trailing_metadata_recv;
   grpc_status_code status;
   grpc_call_error error;
-  cq_verifier* cqv;
   grpc_slice details;
 
   state.cq = grpc_completion_queue_create_for_next(nullptr);
-  cqv = cq_verifier_create(state.cq);
+  grpc_core::CqVerifier cqv(state.cq);
   state.target = grpc_core::JoinHostPort("127.0.0.1", target_port);
 
   grpc_channel_credentials* creds = grpc_insecure_credentials_create();
@@ -239,8 +238,8 @@ static void start_rpc(int target_port, grpc_status_code expected_status,
 
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(1), true);
+  cqv.Verify();
 
   GPR_ASSERT(status == expected_status);
   if (expected_detail != nullptr) {
@@ -251,7 +250,6 @@ static void start_rpc(int target_port, grpc_status_code expected_status,
   grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
   grpc_slice_unref(details);
-  cq_verifier_destroy(cqv);
 }
 
 static void cleanup_rpc() {

@@ -80,6 +80,7 @@ grpc_cc_library(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//:grpc_http_filters",
         "//test/core/util:grpc_test_util",
     ],
 )
