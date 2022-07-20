@@ -183,18 +183,32 @@ TEST(PressureTrackerTest, Decays) {
     return Timestamp::ProcessEpoch() + Duration::Seconds(1) +
            Duration::Milliseconds(cur_ms);
   };
-  while (true) {
+  // At start pressure is zero and we should be reading zero back.
+  {
     ExecCtx exec_ctx;
     exec_ctx.TestOnlySetNow(step_time());
-    if (tracker.AddSampleAndGetEstimate(1.0) > 0.99) break;
+    EXPECT_EQ(tracker.AddSampleAndGetEstimate(0.0), 0.0);
   }
-  ASSERT_LE(cur_ms, 10000);
+  // If memory pressure goes to 100% or higher, we should *immediately* snap to
+  // reporting 100%.
+  {
+    ExecCtx exec_ctx;
+    exec_ctx.TestOnlySetNow(step_time());
+    EXPECT_EQ(tracker.AddSampleAndGetEstimate(1.0), 1.0);
+  }
+  // Once memory pressure reduces, we should *eventually* get back to reporting
+  // close to zero, and monotonically decrease.
   const int got_full = cur_ms;
+  double last_reported = 1.0;
   while (true) {
     ExecCtx exec_ctx;
     exec_ctx.TestOnlySetNow(step_time());
-    if (tracker.AddSampleAndGetEstimate(0.0) < 0.1) break;
+    double new_reported = tracker.AddSampleAndGetEstimate(0.0);
+    EXPECT_LE(new_reported, last_reported);
+    last_reported = new_reported;
+    if (new_reported < 0.1) break;
   }
+  // Verify the above happened in a somewhat reasonable time.
   ASSERT_LE(cur_ms, got_full + 200000);
 }
 
