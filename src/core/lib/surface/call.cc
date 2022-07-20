@@ -2416,22 +2416,23 @@ void ClientPromiseBasedCall::UpdateOnce() {
   }
   if (server_initial_metadata_ready_.has_value()) {
     Poll<ServerMetadata**> r = (*server_initial_metadata_ready_)();
+    auto recv_metadata =
+        [&](ServerMetadata* metadata) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu()) {
+          incoming_compression_algorithm_ =
+              metadata->Take(GrpcEncodingMetadata())
+                  .value_or(GRPC_COMPRESS_NONE);
+          server_initial_metadata_ready_.reset();
+          GPR_ASSERT(recv_initial_metadata_ != nullptr);
+          PublishMetadataArray(absl::exchange(recv_initial_metadata_, nullptr),
+                               metadata);
+          FinishCompletion(&recv_initial_metadata_completion_);
+        };
     if (ServerMetadata*** server_initial_metadata =
             absl::get_if<ServerMetadata**>(&r)) {
-      incoming_compression_algorithm_ = (**server_initial_metadata)
-                                            ->Take(GrpcEncodingMetadata())
-                                            .value_or(GRPC_COMPRESS_NONE);
-      server_initial_metadata_ready_.reset();
-      GPR_ASSERT(recv_initial_metadata_ != nullptr);
-      PublishMetadataArray(absl::exchange(recv_initial_metadata_, nullptr),
-                           **server_initial_metadata);
-      FinishCompletion(&recv_initial_metadata_completion_);
+      recv_metadata(**server_initial_metadata);
     } else if (completed_) {
       grpc_core::ServerMetadata no_metadata{GetContext<Arena>()};
-      incoming_compression_algorithm_ = GRPC_COMPRESS_NONE;
-      PublishMetadataArray(absl::exchange(recv_initial_metadata_, nullptr),
-                           &no_metadata);
-      FinishCompletion(&recv_initial_metadata_completion_);
+      recv_metadata(&no_metadata);
     }
   }
   if (outstanding_send_.has_value()) {
@@ -2467,6 +2468,7 @@ void ClientPromiseBasedCall::UpdateOnce() {
       }
       FinishCompletion(&recv_message_completion_);
     } else if (completed_) {
+      outstanding_recv_.reset();
       *recv_message_ = nullptr;
       FinishCompletion(&recv_message_completion_);
     }
