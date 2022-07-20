@@ -99,9 +99,9 @@ void test_succeeds(void) {
   /* create a phony server */
   svr_fd = socket(AF_INET, SOCK_STREAM, 0);
   ASSERT_GE(svr_fd, 0);
-  ASSERT_EQ(0,
-            bind(svr_fd, (struct sockaddr*)addr, (socklen_t)resolved_addr.len));
-  ASSERT_EQ(0, listen(svr_fd, 1));
+  ASSERT_EQ(bind(svr_fd, (struct sockaddr*)addr, (socklen_t)resolved_addr.len),
+            0);
+  ASSERT_EQ(listen(svr_fd, 1), 0);
 
   gpr_mu_lock(g_mu);
   connections_complete_before = g_connections_complete;
@@ -218,9 +218,9 @@ void test_connect_cancellation_succeeds(void) {
   /* create a phony server */
   svr_fd = socket(AF_INET, SOCK_STREAM, 0);
   ASSERT_GE(svr_fd, 0);
-  ASSERT_EQ(0,
-            bind(svr_fd, (struct sockaddr*)addr, (socklen_t)resolved_addr.len));
-  ASSERT_EQ(0, listen(svr_fd, 1));
+  ASSERT_EQ(bind(svr_fd, (struct sockaddr*)addr, (socklen_t)resolved_addr.len),
+            0);
+  ASSERT_EQ(listen(svr_fd, 1), 0);
 
   // connect to it. accept() is not called on the bind socket. So the connection
   // should appear to be stuck giving ample time to try to cancel it.

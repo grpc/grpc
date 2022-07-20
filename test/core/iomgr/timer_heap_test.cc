@@ -278,7 +278,7 @@ static void shrink_test(void) {
     check_valid(&pq);
   }
 
-  ASSERT_EQ(0, pq.timer_count);
+  ASSERT_EQ(pq.timer_count, 0);
   ASSERT_GE(pq.timer_capacity, 16);
   ASSERT_LT(pq.timer_capacity, 32);
 

@@ -149,17 +149,17 @@ void destruction_test(void) {
       grpc_core::Timestamp::FromMillisecondsAfterProcessEpoch(2));
   ASSERT_EQ(grpc_timer_check(nullptr), GRPC_TIMERS_FIRED);
   grpc_core::ExecCtx::Get()->Flush();
-  ASSERT_EQ(1, cb_called[4][1]);
+  ASSERT_EQ(cb_called[4][1], 1);
   grpc_timer_cancel(&timers[0]);
   grpc_timer_cancel(&timers[3]);
   grpc_core::ExecCtx::Get()->Flush();
-  ASSERT_EQ(1, cb_called[0][0]);
-  ASSERT_EQ(1, cb_called[3][0]);
+  ASSERT_EQ(cb_called[0][0], 1);
+  ASSERT_EQ(cb_called[3][0], 1);
 
   grpc_timer_list_shutdown();
   grpc_core::ExecCtx::Get()->Flush();
-  ASSERT_EQ(1, cb_called[1][0]);
-  ASSERT_EQ(1, cb_called[2][0]);
+  ASSERT_EQ(cb_called[1][0], 1);
+  ASSERT_EQ(cb_called[2][0], 1);
 }
 
 /* Cleans up a list with pending timers that simulate long-running-services.
@@ -213,21 +213,21 @@ void long_running_service_cleanup_test(void) {
   ASSERT_EQ(grpc_timer_check(nullptr), GRPC_TIMERS_FIRED);
   grpc_core::ExecCtx::Get()->Flush();
   GPR_ASSERT(0 == cb_called[0][0]);  // Timer 0 not called
-  ASSERT_EQ(0, cb_called[0][1]);
-  ASSERT_EQ(0, cb_called[1][0]);
+  ASSERT_EQ(cb_called[0][1], 0);
+  ASSERT_EQ(cb_called[1][0], 0);
   GPR_ASSERT(1 == cb_called[1][1]);  // Timer 1 fired
   GPR_ASSERT(0 == cb_called[2][0]);  // Timer 2 not called
-  ASSERT_EQ(0, cb_called[2][1]);
+  ASSERT_EQ(cb_called[2][1], 0);
   GPR_ASSERT(0 == cb_called[3][0]);  // Timer 3 not called
-  ASSERT_EQ(0, cb_called[3][1]);
+  ASSERT_EQ(cb_called[3][1], 0);
 
   grpc_timer_list_shutdown();
   grpc_core::ExecCtx::Get()->Flush();
   /* Timers 0, 2, and 3 were fired with an error during cleanup */
-  ASSERT_EQ(1, cb_called[0][0]);
-  ASSERT_EQ(0, cb_called[1][0]);
-  ASSERT_EQ(1, cb_called[2][0]);
-  ASSERT_EQ(1, cb_called[3][0]);
+  ASSERT_EQ(cb_called[0][0], 1);
+  ASSERT_EQ(cb_called[1][0], 0);
+  ASSERT_EQ(cb_called[2][0], 1);
+  ASSERT_EQ(cb_called[3][0], 1);
 }
 
 TEST(TimerListTest, MainTest) {

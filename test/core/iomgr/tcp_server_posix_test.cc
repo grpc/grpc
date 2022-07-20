@@ -206,9 +206,9 @@ static void test_no_op_with_port(void) {
   resolved_addr.len = static_cast<socklen_t>(sizeof(struct sockaddr_in));
   addr->sin_family = AF_INET;
   int port = -1;
-  ASSERT_TRUE(grpc_tcp_server_add_port(s, &resolved_addr, &port) ==
-                  GRPC_ERROR_NONE &&
-              port > 0);
+  ASSERT_EQ(grpc_tcp_server_add_port(s, &resolved_addr, &port),
+            GRPC_ERROR_NONE);
+  ASSERT_GT(port, 0);
 
   grpc_tcp_server_unref(s);
 }
@@ -230,9 +230,9 @@ static void test_no_op_with_port_and_start(void) {
   memset(&resolved_addr, 0, sizeof(resolved_addr));
   resolved_addr.len = static_cast<socklen_t>(sizeof(struct sockaddr_in));
   addr->sin_family = AF_INET;
-  ASSERT_TRUE(grpc_tcp_server_add_port(s, &resolved_addr, &port) ==
-                  GRPC_ERROR_NONE &&
-              port > 0);
+  ASSERT_EQ(grpc_tcp_server_add_port(s, &resolved_addr, &port),
+            GRPC_ERROR_NONE);
+  ASSERT_GT(port, 0);
 
   std::vector<grpc_pollset*> empty_pollset;
   grpc_tcp_server_start(s, &empty_pollset, on_connect, nullptr);
@@ -352,9 +352,9 @@ static void test_connect(size_t num_connects,
   ASSERT_GT(svr1_port, 0);
   gpr_log(GPR_INFO, "Picked unused port %d", svr1_port);
   grpc_sockaddr_set_port(&resolved_addr1, svr1_port);
-  ASSERT_TRUE(grpc_tcp_server_add_port(s, &resolved_addr1, &port) ==
-                  GRPC_ERROR_NONE &&
-              port == svr1_port);
+  ASSERT_EQ(grpc_tcp_server_add_port(s, &resolved_addr1, &port),
+            GRPC_ERROR_NONE);
+  ASSERT_EQ(port, svr1_port);
 
   /* Bad port_index. */
   ASSERT_EQ(grpc_tcp_server_port_fd_count(s, 2), 0);

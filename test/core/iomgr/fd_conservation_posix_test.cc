@@ -40,7 +40,7 @@ TEST(FdConservationPosixTest, MainTest) {
        verify we can create and destroy many more than this number
        of descriptors */
     rlim.rlim_cur = rlim.rlim_max = 10;
-    ASSERT_EQ(0, setrlimit(RLIMIT_NOFILE, &rlim));
+    ASSERT_EQ(setrlimit(RLIMIT_NOFILE, &rlim), 0);
     for (i = 0; i < 100; i++) {
       p = grpc_iomgr_create_endpoint_pair("test", nullptr);
       grpc_endpoint_destroy(p.client);
