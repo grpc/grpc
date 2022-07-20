@@ -218,9 +218,6 @@ class PollEventHandle : public EventHandle {
 
 namespace {
 
-bool kPollPollerSupported = false;
-gpr_once g_init_poll_poller = GPR_ONCE_INIT;
-
 // Only used when GRPC_ENABLE_FORK_SUPPORT=1
 std::list<PollPoller*> fork_poller_list;
 
@@ -289,7 +286,7 @@ int PollDeadlineToMillisTimeout(grpc_core::Timestamp millis) {
   }
 }
 
-void InitPollPollerPosix();
+bool InitPollPollerPosix();
 
 // Called by the child process's post-fork handler to close open fds,
 // including the global epoll fd of each poller. This allows gRPC to shutdown in
@@ -321,16 +318,15 @@ void ResetEventManagerOnFork() {
 
 // It is possible that GLIBC has epoll but the underlying kernel doesn't.
 // Create epoll_fd to make sure epoll support is available
-void InitPollPollerPosix() {
+bool InitPollPollerPosix() {
   if (!grpc_event_engine::iomgr_engine::SupportsWakeupFd()) {
-    kPollPollerSupported = false;
-    return;
+    return false;
   }
-  kPollPollerSupported = true;
   if (grpc_core::Fork::Enabled()) {
     gpr_mu_init(&fork_fd_list_mu);
     grpc_core::Fork::SetResetChildPollingEngineFunc(ResetEventManagerOnFork);
   }
+  return true;
 }
 
 }  // namespace
@@ -803,7 +799,7 @@ void PollPoller::Shutdown() {
 }
 
 PollPoller* GetPollPoller(Scheduler* scheduler, bool use_phony_poll) {
-  gpr_once_init(&g_init_poll_poller, []() { InitPollPollerPosix(); });
+  static bool kPollPollerSupported = InitPollPollerPosix();
   if (kPollPollerSupported) {
     return new PollPoller(scheduler, use_phony_poll);
   }
