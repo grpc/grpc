@@ -19,6 +19,7 @@
 #include <functional>
 #include <utility>
 
+#include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/utility/utility.h"
 
@@ -35,7 +36,8 @@ class IomgrEngineClosure final
     : public grpc_event_engine::experimental::EventEngine::Closure {
  public:
   IomgrEngineClosure() = default;
-  IomgrEngineClosure(std::function<void(absl::Status)>&& cb, bool is_permanent)
+  IomgrEngineClosure(absl::AnyInvocable<void(absl::Status)> cb,
+                     bool is_permanent)
       : cb_(std::move(cb)),
         is_permanent_(is_permanent),
         status_(absl::OkStatus()) {}
@@ -51,19 +53,19 @@ class IomgrEngineClosure final
   // This closure clean doesn't itself up after execution. It is expected to be
   // cleaned up by the caller at the appropriate time.
   static IomgrEngineClosure* ToPermanentClosure(
-      std::function<void(absl::Status)>&& cb) {
+      absl::AnyInvocable<void(absl::Status)> cb) {
     return new IomgrEngineClosure(std::move(cb), true);
   }
 
   // This closure clean's itself up after execution. It is expected to be
   // used only in tests.
   static IomgrEngineClosure* TestOnlyToClosure(
-      std::function<void(absl::Status)>&& cb) {
+      absl::AnyInvocable<void(absl::Status)> cb) {
     return new IomgrEngineClosure(std::move(cb), false);
   }
 
  private:
-  std::function<void(absl::Status)> cb_;
+  absl::AnyInvocable<void(absl::Status)> cb_;
   bool is_permanent_ = false;
   absl::Status status_;
 };
