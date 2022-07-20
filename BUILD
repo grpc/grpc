@@ -6966,7 +6966,10 @@ grpc_cc_library(
     name = "json_object_loader",
     srcs = ["src/core/lib/json/json_object_loader.cc"],
     hdrs = ["src/core/lib/json/json_object_loader.h"],
-    external_deps = ["absl/strings"],
+    external_deps = [
+        "absl/meta:type_traits",
+        "absl/strings",
+    ],
     deps = [
         "gpr_base",
         "json",
