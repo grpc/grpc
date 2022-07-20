@@ -16,7 +16,6 @@
 #define GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_IOMGR_ENGINE_CLOSURE_H
 #include <grpc/support/port_platform.h>
 
-#include <functional>
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
