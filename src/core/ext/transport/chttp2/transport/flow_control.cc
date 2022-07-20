@@ -44,7 +44,8 @@ grpc_core::TraceFlag grpc_flowctl_trace(false, "flowctl");
 
 GPR_GLOBAL_CONFIG_DEFINE_BOOL(
     grpc_experimental_broad_flow_control_range, false,
-    "use an enlarged memory pressure range for scaling flow control");
+    "Use an enlarged memory pressure range for scaling flow control when using "
+    "a resource quota.");
 
 namespace grpc_core {
 namespace chttp2 {
