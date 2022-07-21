@@ -1916,9 +1916,10 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
 
     uint8_t index() const { return index_; }
     uint8_t TakeIndex() { return absl::exchange(index_, kNullIndex); }
+    bool has_value() const { return index_ != kNullIndex; }
 
     std::string ToString() const {
-      return index_ == kNullIndex ? "<null>"
+      return index_ == kNullIndex ? "null"
                                   : std::to_string(static_cast<int>(index_));
     }
 
@@ -2402,18 +2403,42 @@ grpc_call_error ClientPromiseBasedCall::StartBatch(const grpc_op* ops,
 
 void ClientPromiseBasedCall::UpdateOnce() {
   if (grpc_call_trace.enabled()) {
-    gpr_log(GPR_INFO,
-            "%sUpdateOnce: "
-            "server_initial_metadata_ready=%s(c=%s) outstanding_send=%s(c=%s) "
-            "outstanding_recv=%s(c=%s) has_promise=%s",
-            CallDebugId().c_str(),
-            server_initial_metadata_ready_.has_value() ? "true" : "false",
-            recv_initial_metadata_completion_.ToString().c_str(),
-            outstanding_send_.has_value() ? "true" : "false",
-            send_message_completion_.ToString().c_str(),
-            outstanding_recv_.has_value() ? "true" : "false",
-            recv_message_completion_.ToString().c_str(),
-            promise_.has_value() ? "true" : "false");
+    auto present_and_completion_text =
+        [](const char* caption, bool has,
+           const Completion& completion) -> std::string {
+      if (has) {
+        if (completion.has_value()) {
+          return absl::StrCat(caption, ":",
+                              static_cast<int>(completion.index()), " ");
+        } else {
+          return absl::StrCat(caption,
+                              ":!!BUG:operation is present, no completion!! ");
+        }
+      } else {
+        if (!completion.has_value()) {
+          return "";
+        } else {
+          return absl::StrCat(
+              caption, ":!!BUG:operation is not present, has completion: ",
+              static_cast<int>(completion.index()), "!! ");
+        }
+      }
+    };
+    gpr_log(
+        GPR_INFO, "%sUpdateOnce: %s%s%shas_promise=%s", CallDebugId().c_str(),
+        present_and_completion_text("server_initial_metadata_ready",
+                                    server_initial_metadata_ready_.has_value(),
+                                    recv_initial_metadata_completion_)
+            .c_str(),
+        present_and_completion_text("outstanding_send",
+                                    outstanding_send_.has_value(),
+                                    send_message_completion_)
+            .c_str(),
+        present_and_completion_text("outstanding_recv",
+                                    outstanding_recv_.has_value(),
+                                    recv_message_completion_)
+            .c_str(),
+        promise_.has_value() ? "true" : "false");
   }
   if (server_initial_metadata_ready_.has_value()) {
     Poll<ServerMetadata**> r = (*server_initial_metadata_ready_)();
