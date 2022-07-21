@@ -280,9 +280,8 @@ class ClientConnectedCallPromise {
           client_initial_metadata_(
               std::move(call_args.client_initial_metadata)) {
       if (grpc_call_trace.enabled()) {
-        gpr_log(GPR_INFO,
-                "ClientConnectedCallPromise::ClientConnectedCallPromise: "
-                "intitial_metadata=%s",
+        gpr_log(GPR_INFO, "%sInitImpl: intitial_metadata=%s",
+                Activity::current()->DebugTag().c_str(),
                 client_initial_metadata_->DebugString().c_str());
       }
     }
@@ -307,7 +306,31 @@ class ClientConnectedCallPromise {
 
     Poll<ServerMetadataHandle> PollOnce() {
       GPR_ASSERT(!finished_);
+
+      auto push_recv_message = [this] {
+        recv_message_state_ = PendingReceiveMessage{};
+        auto& pending_recv_message =
+            absl::get<PendingReceiveMessage>(recv_message_state_);
+        memset(&recv_message_, 0, sizeof(recv_message_));
+        recv_message_.payload = &batch_payload_;
+        recv_message_.on_complete = nullptr;
+        recv_message_.recv_message = true;
+        batch_payload_.recv_message.recv_message =
+            &pending_recv_message.payload;
+        batch_payload_.recv_message.flags = &pending_recv_message.flags;
+        batch_payload_.recv_message.call_failed_before_recv_message = nullptr;
+        batch_payload_.recv_message.recv_message_ready =
+            &recv_message_batch_done_;
+        recv_message_waker_ = Activity::current()->MakeOwningWaker();
+        push_recv_message_ = true;
+        SchedulePush();
+      };
+
       if (!absl::exchange(requested_metadata_, true)) {
+        if (grpc_call_trace.enabled()) {
+          gpr_log(GPR_INFO, "%sPollConnectedChannel: requesting metadata",
+                  Activity::current()->DebugTag().c_str());
+        }
         call_context_->IncrementRefCount("child_stream");
         stream_.reset(static_cast<grpc_stream*>(
             GetContext<Arena>()->Alloc(transport_->vtable->sizeof_stream)));
@@ -386,29 +409,28 @@ class ClientConnectedCallPromise {
         }
       }
       if (absl::holds_alternative<Idle>(recv_message_state_)) {
-        recv_message_state_ = PendingReceiveMessage{};
-        auto& pending_recv_message =
-            absl::get<PendingReceiveMessage>(recv_message_state_);
-        memset(&recv_message_, 0, sizeof(recv_message_));
-        recv_message_.payload = &batch_payload_;
-        recv_message_.on_complete = nullptr;
-        recv_message_.recv_message = true;
-        batch_payload_.recv_message.recv_message =
-            &pending_recv_message.payload;
-        batch_payload_.recv_message.flags = &pending_recv_message.flags;
-        batch_payload_.recv_message.call_failed_before_recv_message = nullptr;
-        batch_payload_.recv_message.recv_message_ready =
-            &recv_message_batch_done_;
-        recv_message_waker_ = Activity::current()->MakeOwningWaker();
-        push_recv_message_ = true;
-        SchedulePush();
+        if (grpc_call_trace.enabled()) {
+          gpr_log(GPR_INFO, "%sPollConnectedChannel: requesting message",
+                  Activity::current()->DebugTag().c_str());
+        }
+        push_recv_message();
       }
       if (auto* message =
               absl::get_if<absl::optional<Message>>(&recv_message_state_)) {
         if (message->has_value()) {
+          if (grpc_call_trace.enabled()) {
+            gpr_log(GPR_INFO,
+                    "%sPollConnectedChannel: received message; pushing up",
+                    Activity::current()->DebugTag().c_str());
+          }
           recv_message_state_ =
               server_to_client_messages_->Push(std::move(**message));
         } else {
+          if (grpc_call_trace.enabled()) {
+            gpr_log(GPR_INFO,
+                    "%sPollConnectedChannel: received no message, closing pipe",
+                    Activity::current()->DebugTag().c_str());
+          }
           recv_message_state_ = Closed{};
           absl::exchange(server_to_client_messages_, nullptr)->Close();
         }
@@ -418,10 +440,19 @@ class ClientConnectedCallPromise {
         auto r = (*push)();
         if (bool* result = absl::get_if<bool>(&r)) {
           if (*result) {
-            recv_message_state_ = absl::optional<Message>();
-            push_recv_message_ = true;
-            SchedulePush();
+            if (grpc_call_trace.enabled()) {
+              gpr_log(GPR_INFO,
+                      "%sPollConnectedChannel: pushed message; requesting next",
+                      Activity::current()->DebugTag().c_str());
+            }
+            push_recv_message();
           } else {
+            if (grpc_call_trace.enabled()) {
+              gpr_log(GPR_INFO,
+                      "%sPollConnectedChannel: failed to push message; marking "
+                      "closed",
+                      Activity::current()->DebugTag().c_str());
+            }
             recv_message_state_ = Closed{};
           }
         }
@@ -465,8 +496,21 @@ class ClientConnectedCallPromise {
     }
 
     void RecvMessageBatchDone(grpc_error_handle error) {
-      if (error != GRPC_ERROR_NONE) return;
-      if (absl::holds_alternative<Closed>(recv_message_state_)) return;
+      if (error != GRPC_ERROR_NONE) {
+        if (grpc_call_trace.enabled()) {
+          gpr_log(GPR_INFO, "%sRecvMessageBatchDone: error=%s",
+                  recv_message_waker_.ActivityDebugTag().c_str(),
+                  grpc_error_std_string(error).c_str());
+        }
+        return;
+      }
+      if (absl::holds_alternative<Closed>(recv_message_state_)) {
+        if (grpc_call_trace.enabled()) {
+          gpr_log(GPR_INFO, "%sRecvMessageBatchDone: already closed, ignoring",
+                  recv_message_waker_.ActivityDebugTag().c_str());
+        }
+        return;
+      }
       auto pending = MatchMutable(
           &recv_message_state_, [](Idle*) -> PendingReceiveMessage { abort(); },
           [](PendingReceiveMessage* p) -> PendingReceiveMessage {
@@ -478,9 +522,20 @@ class ClientConnectedCallPromise {
             abort();
           });
       if (pending.payload.has_value()) {
+        if (grpc_call_trace.enabled()) {
+          gpr_log(GPR_INFO,
+                  "%sRecvMessageBatchDone: received payload of %" PRIdPTR
+                  " bytes",
+                  recv_message_waker_.ActivityDebugTag().c_str(),
+                  pending.payload->Length());
+        }
         recv_message_state_ = absl::optional<Message>(
             Message(std::move(*pending.payload), pending.flags));
       } else {
+        if (grpc_call_trace.enabled()) {
+          gpr_log(GPR_INFO, "%sRecvMessageBatchDone: received no payload",
+                  recv_message_waker_.ActivityDebugTag().c_str());
+        }
         recv_message_state_ = absl::optional<Message>();
       }
       recv_message_waker_.Wakeup();

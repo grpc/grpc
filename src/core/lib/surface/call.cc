@@ -1951,9 +1951,7 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
   void CToMetadata(grpc_metadata* metadata, size_t count,
                    grpc_metadata_batch* batch);
 
-  std::string CallDebugId() const {
-    return absl::StrFormat("CLIENT_CALL[%p]: ", this);
-  }
+  std::string ActivityDebugTag() const override { return DebugTag(); }
 
  private:
   union CompletionInfo {
@@ -2006,6 +2004,11 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
       Unref();
     }
 
+    std::string ActivityDebugTag() const override {
+      MutexLock lock(&mu_);
+      return call_ == nullptr ? "<unknown>" : call_->DebugTag();
+    }
+
     void Drop() override { Unref(); }
 
    private:
@@ -2016,7 +2019,7 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
       }
     }
 
-    Mutex mu_;
+    mutable Mutex mu_;
     std::atomic<size_t> refs_{2};
     PromiseBasedCall* call_ ABSL_GUARDED_BY(mu_);
   };
@@ -2111,7 +2114,7 @@ PromiseBasedCall::Completion PromiseBasedCall::StartCompletion(
     void* tag, bool is_closure, const grpc_op* ops, size_t num_ops) {
   Completion c(BatchSlotForOp(ops[0].op));
   if (grpc_call_trace.enabled()) {
-    gpr_log(GPR_INFO, "%sStartCompletion %s tag=%p", CallDebugId().c_str(),
+    gpr_log(GPR_INFO, "%sStartCompletion %s tag=%p", DebugTag().c_str(),
             c.ToString().c_str(), tag);
   }
   grpc_cq_begin_op(cq(), tag);
@@ -2122,7 +2125,7 @@ PromiseBasedCall::Completion PromiseBasedCall::StartCompletion(
 PromiseBasedCall::Completion PromiseBasedCall::PauseCompletion(
     const Completion& completion) {
   if (grpc_call_trace.enabled()) {
-    gpr_log(GPR_INFO, "%sPauseCompletion %s", CallDebugId().c_str(),
+    gpr_log(GPR_INFO, "%sPauseCompletion %s", DebugTag().c_str(),
             completion.ToString().c_str());
   }
   completion_info_[completion.index()].pending.refs++;
@@ -2131,7 +2134,7 @@ PromiseBasedCall::Completion PromiseBasedCall::PauseCompletion(
 
 void PromiseBasedCall::FailCompletion(const Completion& completion) {
   if (grpc_call_trace.enabled()) {
-    gpr_log(GPR_INFO, "%sFailCompletion %s", CallDebugId().c_str(),
+    gpr_log(GPR_INFO, "%sFailCompletion %s", DebugTag().c_str(),
             completion.ToString().c_str());
   }
   completion_info_[completion.index()].pending.success = false;
@@ -2141,7 +2144,7 @@ void PromiseBasedCall::FinishCompletion(Completion* completion) {
   if (grpc_call_trace.enabled()) {
     int refs = completion_info_[completion->index()].pending.refs;
     bool success = completion_info_[completion->index()].pending.success;
-    gpr_log(GPR_INFO, "%sFinishCompletion %s %s", CallDebugId().c_str(),
+    gpr_log(GPR_INFO, "%sFinishCompletion %s %s", DebugTag().c_str(),
             completion->ToString().c_str(),
             (refs == 1 ? (success ? std::string("done") : std::string("failed"))
                        : absl::StrFormat("paused:remaining=%d", refs - 1))
@@ -2220,6 +2223,10 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
 
   grpc_call_error StartBatch(const grpc_op* ops, size_t nops, void* notify_tag,
                              bool is_notify_tag_closure) override;
+
+  std::string DebugTag() const override {
+    return absl::StrFormat("CLIENT_CALL[%p]: ", this);
+  }
 
  private:
   void UpdateOnce() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu()) override;
@@ -2425,7 +2432,7 @@ void ClientPromiseBasedCall::UpdateOnce() {
       }
     };
     gpr_log(
-        GPR_INFO, "%sUpdateOnce: %s%s%shas_promise=%s", CallDebugId().c_str(),
+        GPR_INFO, "%sUpdateOnce: %s%s%shas_promise=%s", DebugTag().c_str(),
         present_and_completion_text("server_initial_metadata_ready",
                                     server_initial_metadata_ready_.has_value(),
                                     recv_initial_metadata_completion_)
@@ -2473,6 +2480,18 @@ void ClientPromiseBasedCall::UpdateOnce() {
       FinishCompletion(&send_message_completion_);
     }
   }
+  if (promise_.has_value()) {
+    Poll<ServerMetadataHandle> r = promise_();
+    if (grpc_call_trace.enabled()) {
+      gpr_log(GPR_INFO, "%sUpdateOnce: promise returns %s", DebugTag().c_str(),
+              PollToString(r, [](const ServerMetadataHandle& h) {
+                return h->DebugString();
+              }).c_str());
+    }
+    if (auto* result = absl::get_if<ServerMetadataHandle>(&r)) {
+      Finish(std::move(*result));
+    }
+  }
   if (incoming_compression_algorithm_.has_value() &&
       outstanding_recv_.has_value()) {
     Poll<absl::optional<Message>> r = (*outstanding_recv_)();
@@ -2489,27 +2508,34 @@ void ClientPromiseBasedCall::UpdateOnce() {
         }
         grpc_slice_buffer_move_into(message.payload()->c_slice_buffer(),
                                     &(*recv_message_)->data.raw.slice_buffer);
+        if (grpc_call_trace.enabled()) {
+          gpr_log(
+              GPR_INFO,
+              "%sUpdateOnce: outstanding_recv finishes: received a %" PRIdPTR
+              " byte message",
+              DebugTag().c_str(),
+              (*recv_message_)->data.raw.slice_buffer.length);
+        }
       } else {
+        if (grpc_call_trace.enabled()) {
+          gpr_log(
+              GPR_INFO,
+              "%sUpdateOnce: outstanding_recv finishes: received end-of-stream",
+              DebugTag().c_str());
+        }
         *recv_message_ = nullptr;
       }
       FinishCompletion(&recv_message_completion_);
     } else if (completed_) {
+      if (grpc_call_trace.enabled()) {
+        gpr_log(GPR_INFO,
+                "%sUpdateOnce: outstanding_recv finishes: promise has "
+                "completed without queuing a message, forcing end-of-stream",
+                DebugTag().c_str());
+      }
       outstanding_recv_.reset();
       *recv_message_ = nullptr;
       FinishCompletion(&recv_message_completion_);
-    }
-  }
-  if (promise_.has_value()) {
-    Poll<ServerMetadataHandle> r = promise_();
-    if (grpc_call_trace.enabled()) {
-      gpr_log(GPR_INFO, "%sUpdateOnce: promise returns %s",
-              CallDebugId().c_str(),
-              PollToString(r, [](const ServerMetadataHandle& h) {
-                return h->DebugString();
-              }).c_str());
-    }
-    if (auto* result = absl::get_if<ServerMetadataHandle>(&r)) {
-      Finish(std::move(*result));
     }
   }
 }

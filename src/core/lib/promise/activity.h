@@ -43,6 +43,8 @@
 
 namespace grpc_core {
 
+class Activity;
+
 // A Wakeable object is used by queues to wake activities.
 class Wakeable {
  public:
@@ -51,6 +53,9 @@ class Wakeable {
   virtual void Wakeup() = 0;
   // Drop this wakeable without waking up the underlying activity.
   virtual void Drop() = 0;
+
+  // Return the underlying activity debug tag, or "<unknown>" if not available.
+  virtual std::string ActivityDebugTag() const = 0;
 
  protected:
   inline ~Wakeable() {}
@@ -85,6 +90,10 @@ class Waker {
 
   bool operator==(const Waker& other) const noexcept {
     return wakeable_ == other.wakeable_;
+  }
+
+  std::string ActivityDebugTag() {
+    return wakeable_ == nullptr ? "<unknown>" : wakeable_->ActivityDebugTag();
   }
 
  private:
@@ -131,6 +140,9 @@ class Activity : public Orphanable {
   // pointer to this activity. This is more suitable for wakeups that may not be
   // delivered until long after the activity should be destroyed.
   virtual Waker MakeNonOwningWaker() = 0;
+
+  // Some descriptive text to add to log messages to identify this activity.
+  virtual std::string DebugTag() const;
 
  protected:
   // Check if this activity is the current activity executing on the current
@@ -282,6 +294,8 @@ class FreestandingActivity : public Activity, private Wakeable {
   }
 
   Mutex* mu() ABSL_LOCK_RETURNED(mu_) { return &mu_; }
+
+  std::string ActivityDebugTag() const override { return DebugTag(); }
 
  private:
   class Handle;

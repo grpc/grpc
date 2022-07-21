@@ -143,6 +143,8 @@ class BaseCallData : public Activity, private Wakeable {
   Waker MakeNonOwningWaker() final;
   Waker MakeOwningWaker() final;
 
+  std::string ActivityDebugTag() const override { return DebugTag(); }
+
   void Finalize(const grpc_call_final_info* final_info) {
     finalization_.Run(final_info);
   }

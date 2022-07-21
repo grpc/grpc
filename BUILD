@@ -1507,6 +1507,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/status",
+        "absl/strings:str_format",
         "absl/types:optional",
         "absl/types:variant",
         "absl/utility",

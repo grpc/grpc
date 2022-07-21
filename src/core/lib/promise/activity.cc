@@ -18,6 +18,8 @@
 
 #include <stddef.h>
 
+#include "absl/strings/str_format.h"
+
 #include "src/core/lib/gprpp/atomic_utils.h"
 
 namespace grpc_core {
@@ -74,6 +76,11 @@ class FreestandingActivity::Handle final : public Wakeable {
 
   void Drop() override { Unref(); }
 
+  std::string ActivityDebugTag() const override {
+    MutexLock lock(&mu_);
+    return activity_ == nullptr ? "<unknown>" : activity_->DebugTag();
+  }
+
  private:
   // Unref the Handle (not the activity).
   void Unref() {
@@ -85,7 +92,7 @@ class FreestandingActivity::Handle final : public Wakeable {
   // Two initial refs: one for the waiter that caused instantiation, one for the
   // activity.
   std::atomic<size_t> refs_{2};
-  Mutex mu_ ABSL_ACQUIRED_AFTER(activity_->mu_);
+  mutable Mutex mu_ ABSL_ACQUIRED_AFTER(activity_->mu_);
   FreestandingActivity* activity_ ABSL_GUARDED_BY(mu_);
 };
 
@@ -117,4 +124,9 @@ Waker FreestandingActivity::MakeNonOwningWaker() {
 }
 
 }  // namespace promise_detail
+
+std::string Activity::DebugTag() const {
+  return absl::StrFormat("ACTIVITY[%p]", this);
+}
+
 }  // namespace grpc_core
