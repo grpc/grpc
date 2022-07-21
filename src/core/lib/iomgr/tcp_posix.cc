@@ -32,6 +32,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/resource.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -97,8 +98,6 @@ typedef size_t msg_iovlen_type;
 
 extern grpc_core::TraceFlag grpc_tcp_trace;
 
-static constexpr int kMaxPerSendmsgBytes = 2 * 1024 * 1024;
-
 GPR_GLOBAL_CONFIG_DECLARE_BOOL(grpc_experimental_enable_tcp_frame_size_tuning);
 
 namespace grpc_core {
@@ -117,7 +116,7 @@ class TcpZerocopySendRecord {
   //   array that will be used for a zerocopy enabled sendmsg().
   msg_iovlen_type PopulateIovs(size_t* unwind_slice_idx,
                                size_t* unwind_byte_idx, size_t* sending_length,
-                               iovec* iov, int max_allowed_length);
+                               iovec* iov);
 
   // A sendmsg() may not be able to send the bytes that we requested at this
   // time, returning EAGAIN (possibly due to backpressure). In this case,
@@ -476,6 +475,17 @@ using grpc_core::TcpZerocopySendRecord;
 
 namespace {
 
+int GetRLimitMemLockMax() {
+  static int kRlimitMemLock = []() -> int {
+    struct rlimit limit;
+    if (getrlimit(RLIMIT_MEMLOCK, &limit)) {
+      return -1;
+    }
+    return static_cast<int>(limit.rlim_max);
+  }();
+  return kRlimitMemLock;
+}
+
 bool ExperimentalTcpFrameSizeTuningEnabled() {
   static const bool kEnableTcpFrameSizeTuning =
       GPR_GLOBAL_CONFIG_GET(grpc_experimental_enable_tcp_frame_size_tuning);
@@ -499,8 +509,6 @@ struct grpc_tcp {
 
   int min_read_chunk_size;
   int max_read_chunk_size;
-
-  int max_per_sendmsg_length;
 
   /* garbage after the last read */
   grpc_slice_buffer last_read_buffer;
@@ -1472,31 +1480,22 @@ void tcp_shutdown_buffer_list(grpc_tcp* tcp) {
 msg_iovlen_type TcpZerocopySendRecord::PopulateIovs(size_t* unwind_slice_idx,
                                                     size_t* unwind_byte_idx,
                                                     size_t* sending_length,
-                                                    iovec* iov,
-                                                    int max_allowed_length) {
-  size_t slice_rem_length;
+                                                    iovec* iov) {
   msg_iovlen_type iov_size;
   *unwind_slice_idx = out_offset_.slice_idx;
   *unwind_byte_idx = out_offset_.byte_idx;
-  for (iov_size = 0; out_offset_.slice_idx != buf_.count &&
-                     iov_size != MAX_WRITE_IOVEC && max_allowed_length > 0;
+  for (iov_size = 0;
+       out_offset_.slice_idx != buf_.count && iov_size != MAX_WRITE_IOVEC;
        iov_size++) {
     iov[iov_size].iov_base =
         GRPC_SLICE_START_PTR(buf_.slices[out_offset_.slice_idx]) +
         out_offset_.byte_idx;
-    slice_rem_length = GRPC_SLICE_LENGTH(buf_.slices[out_offset_.slice_idx]) -
-                       out_offset_.byte_idx;
-    if (max_allowed_length >= slice_rem_length) {
-      ++(out_offset_.slice_idx);
-      out_offset_.byte_idx = 0;
-      iov[iov_size].iov_len = slice_rem_length;
-      max_allowed_length -= slice_rem_length;
-    } else {
-      out_offset_.byte_idx += max_allowed_length;
-      iov[iov_size].iov_len = max_allowed_length;
-      max_allowed_length = 0;
-    }
+    iov[iov_size].iov_len =
+        GRPC_SLICE_LENGTH(buf_.slices[out_offset_.slice_idx]) -
+        out_offset_.byte_idx;
     *sending_length += iov[iov_size].iov_len;
+    ++(out_offset_.slice_idx);
+    out_offset_.byte_idx = 0;
   }
   GPR_DEBUG_ASSERT(iov_size > 0);
   return iov_size;
@@ -1507,13 +1506,8 @@ void TcpZerocopySendRecord::UpdateOffsetForBytesSent(size_t sending_length,
   size_t trailing = sending_length - actually_sent;
   while (trailing > 0) {
     size_t slice_length;
-    if (out_offset_.byte_idx > 0) {
-      slice_length = out_offset_.byte_idx;
-      out_offset_.byte_idx = 0;
-    } else {
-      out_offset_.slice_idx--;
-      slice_length = GRPC_SLICE_LENGTH(buf_.slices[out_offset_.slice_idx]);
-    }
+    out_offset_.slice_idx--;
+    slice_length = GRPC_SLICE_LENGTH(buf_.slices[out_offset_.slice_idx]);
     if (slice_length > trailing) {
       out_offset_.byte_idx = slice_length - trailing;
       break;
@@ -1541,9 +1535,8 @@ static bool do_tcp_flush_zerocopy(grpc_tcp* tcp, TcpZerocopySendRecord* record,
   iovec iov[MAX_WRITE_IOVEC];
   while (true) {
     sending_length = 0;
-    iov_size =
-        record->PopulateIovs(&unwind_slice_idx, &unwind_byte_idx,
-                             &sending_length, iov, tcp->max_per_sendmsg_length);
+    iov_size = record->PopulateIovs(&unwind_slice_idx, &unwind_byte_idx,
+                                    &sending_length, iov);
     msg.msg_name = nullptr;
     msg.msg_namelen = 0;
     msg.msg_iov = iov;
@@ -1579,16 +1572,19 @@ static bool do_tcp_flush_zerocopy(grpc_tcp* tcp, TcpZerocopySendRecord* record,
         cont) {
       // If cont, is true it implies that we received an ENOBUFS error but
       // there are no un-acked z-copy records. This situation may arise because
-      // The output queue for a network interface was full. This generally
-      // indicates that the interface has stopped sending, but may be caused by
-      // transient congestion (source: https://linux.die.net/man/2/sendmsg)
-      // In this case, we reduce the max sendmsg length by half and retry.
-      // This should increase the likely hood of a sendmsg succeeding the next
-      // time around.
+      // the RLIMIT_MEMLOCK limit on the machine may be very small. This limit
+      // controls the max number of bytes a process can pin to RAM. Tx0cp
+      // respects this limit and if a sendmsg tries to send more than this
+      // limit, the kernel may return ENOBUFS error. Print a warning message
+      // here to allow help with debugging. Grpc should not attempt to raise
+      // the rlimit value.
       if (cont) {
-        tcp->max_per_sendmsg_length = std::max(
-            static_cast<int>(tcp->tcp_zerocopy_send_ctx.threshold_bytes()),
-            tcp->max_per_sendmsg_length / 2);
+        gpr_log(GPR_ERROR,
+                "Tx0cp tried to send %d bytes but encountered an ENOBUFS error "
+                "possibly because RLIMIT_MEMLOCK is too small. Current value "
+                "of RLIMIT_MEMLOCK is %d. Consider increasing the "
+                "RLIMI_MEMLOCK value.",
+                record->Length(), GetRLimitMemLockMax());
       }
       grpc_fd_set_writable(tcp->em_fd);
     }
@@ -1609,9 +1605,6 @@ static bool do_tcp_flush_zerocopy(grpc_tcp* tcp, TcpZerocopySendRecord* record,
       }
     }
     tcp->bytes_counter += sent_length;
-    // After a successfull send, we simply reset the max sendmsg length to its
-    // default original value.
-    tcp->max_per_sendmsg_length = record->Length();
     record->UpdateOffsetForBytesSent(sending_length,
                                      static_cast<size_t>(sent_length));
     if (record->AllSlicesSent()) {
@@ -1832,8 +1825,6 @@ static void tcp_write(grpc_endpoint* ep, grpc_slice_buffer* buf,
     // Either not enough bytes, or couldn't allocate a zerocopy context.
     tcp->outgoing_buffer = buf;
     tcp->outgoing_byte_idx = 0;
-  } else {
-    tcp->max_per_sendmsg_length = zerocopy_send_record->Length();
   }
   tcp->outgoing_buffer_arg = arg;
   if (arg) {
@@ -2014,7 +2005,6 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   tcp->outgoing_buffer_arg = nullptr;
   tcp->frame_size_tuning_enabled = ExperimentalTcpFrameSizeTuningEnabled();
   tcp->min_progress_size = 1;
-  tcp->max_per_sendmsg_length = kMaxPerSendmsgBytes;
   if (tcp_tx_zerocopy_enabled && !tcp->tcp_zerocopy_send_ctx.memory_limited()) {
 #ifdef GRPC_LINUX_ERRQUEUE
     const int enable = 1;
