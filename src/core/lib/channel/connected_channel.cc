@@ -273,7 +273,7 @@ class ClientConnectedCallPromise {
    public:
     Impl(grpc_transport* transport, CallArgs call_args)
         : transport_(transport),
-          stream_(nullptr, StreamDeleter(transport)),
+          stream_(nullptr, StreamDeleter(this)),
           server_initial_metadata_latch_(call_args.server_initial_metadata),
           client_to_server_messages_(call_args.client_to_server_messages),
           server_to_client_messages_(call_args.server_to_client_messages),
@@ -571,15 +571,15 @@ class ClientConnectedCallPromise {
 
     class StreamDeleter {
      public:
-      explicit StreamDeleter(grpc_transport* transport)
-          : transport_(transport) {}
+      explicit StreamDeleter(Impl* impl) : impl_(impl) {}
       void operator()(grpc_stream* stream) const {
         if (stream == nullptr) return;
-        grpc_transport_destroy_stream(transport_, stream, nullptr);
+        grpc_transport_destroy_stream(impl_->transport_, stream,
+                                      &impl_->stream_destroyed_);
       }
 
      private:
-      grpc_transport* transport_;
+      Impl* impl_;
     };
     using StreamPtr = std::unique_ptr<grpc_stream, StreamDeleter>;
 
@@ -636,7 +636,7 @@ class ClientConnectedCallPromise {
     grpc_transport_stream_op_batch recv_message_;
     grpc_transport_stream_op_batch_payload batch_payload_{
         GetContext<grpc_call_context_element>()};
-    grpc_closure stream_destroyed =
+    grpc_closure stream_destroyed_ =
         MakeMemberClosure<Impl, &Impl::StreamDestroyed>(this);
   };
 

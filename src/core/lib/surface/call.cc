@@ -1836,6 +1836,10 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
         delete this;
       }
 
+      std::string ActivityDebugTag() const override {
+        return call_->DebugTag();
+      }
+
      private:
       PromiseBasedCall* call_;
     };
@@ -2509,12 +2513,11 @@ void ClientPromiseBasedCall::UpdateOnce() {
         grpc_slice_buffer_move_into(message.payload()->c_slice_buffer(),
                                     &(*recv_message_)->data.raw.slice_buffer);
         if (grpc_call_trace.enabled()) {
-          gpr_log(
-              GPR_INFO,
-              "%sUpdateOnce: outstanding_recv finishes: received a %" PRIdPTR
-              " byte message",
-              DebugTag().c_str(),
-              (*recv_message_)->data.raw.slice_buffer.length);
+          gpr_log(GPR_INFO,
+                  "%sUpdateOnce: outstanding_recv finishes: received %" PRIdPTR
+                  " byte message",
+                  DebugTag().c_str(),
+                  (*recv_message_)->data.raw.slice_buffer.length);
         }
       } else {
         if (grpc_call_trace.enabled()) {
