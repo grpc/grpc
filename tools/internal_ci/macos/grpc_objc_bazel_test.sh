@@ -100,7 +100,7 @@ objc_bazel_tests/bazel_wrapper \
   $BAZEL_FLAGS \
   --test_env HOST_PORT_LOCAL=localhost:$PLAIN_PORT \
   --test_env HOST_PORT_LOCALSSL=localhost:$TLS_PORT \
-  --test_env FLAKE_TEST_REPEATS=3 \
+  --test_env FLAKE_TEST_REPEATS=10 \
   -- \
   "${EXAMPLE_TARGETS[@]}" \
   "${TEST_TARGETS[@]}"
