@@ -37,13 +37,13 @@ _REPLICA_COUNT = 5
 
 
 class OutlierDetectionTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
-    '''
+    """
     Implementation of https://github.com/grpc/grpc/blob/master/doc/xds-test-descriptions.md#outlier_detection
 
     This test verifies that the client applies the outlier detection
     configuration and temporarily drops traffic to a server that fails
     requests.
-    '''
+    """
 
     @staticmethod
     def is_supported(config: skips.TestConfig) -> bool:
