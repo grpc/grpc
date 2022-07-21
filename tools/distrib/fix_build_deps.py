@@ -372,7 +372,9 @@ parser.add_argument('--whats_left',
                     help='show what is left to opt in')
 args = parser.parse_args()
 
-for dirname in ["", "test/core/uri", "test/core/util", "test/core/event_engine"]:
+for dirname in [
+        "", "test/core/uri", "test/core/util", "test/core/event_engine"
+]:
     parsing_path = dirname
     exec(
         open('%sBUILD' % (dirname + '/' if dirname else ''), 'r').read(), {
@@ -477,7 +479,8 @@ def make_library(library):
 
         if hdr in INTERNAL_DEPS:
             dep = INTERNAL_DEPS[hdr]
-            if not dep.startswith('//'): dep = '//:' + dep
+            if not dep.startswith('//'):
+                dep = '//:' + dep
             deps.add(dep)
             continue
 
