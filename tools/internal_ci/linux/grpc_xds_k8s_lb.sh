@@ -99,10 +99,6 @@ run_test() {
   local test_name="${1:?Usage: run_test test_name}"
   local test_dir="${TEST_XML_OUTPUT_DIR}/${test_name}"
   mkdir -pv "${test_dir}"
-  echo "I'm a pod 1 c1 log" > "${test_dir}/${test_name}.pod-1.c-1.sponge_log.log"
-  echo "I'm a pod 1 c2 log" > "${test_dir}/${test_name}.pod-1.c-2.sponge_log.log"
-  echo "I'm a pod 2 c1 log" > "${test_dir}/${test_name}.pod-2.c-1.sponge_log.log"
-  echo "I'm a pod 2 c2 log" > "${test_dir}/${test_name}.pod-2.c-2.sponge_log.log"
   set -x
   python3 -m "tests.${test_name}" \
     --flagfile="${TEST_DRIVER_FLAGFILE}" \
@@ -170,11 +166,16 @@ main() {
   for test in "${test_suites[@]}"; do
     run_test $test || (( failed_tests++ ))
   done
+  mkdir "${KOKORO_ARTIFACTS_DIR}/llll"
+  echo "I'm a pod 1 c1 log" > "${KOKORO_ARTIFACTS_DIR}/llll/pod-1.c-1.log"
+  echo "I'm a pod 1 c2 log" > "${KOKORO_ARTIFACTS_DIR}/llll/pod-1.c-2.log"
+  echo "I'm a pod 2 c1 log" > "${KOKORO_ARTIFACTS_DIR}/llll/pod-2.c-1.log"
+  echo "I'm a pod 2 c2 log" > "${KOKORO_ARTIFACTS_DIR}/llll/pod-2.c-2.log"
+  zip -r "${KOKORO_ARTIFACTS_DIR}/undeclared_outputs.zip" "${KOKORO_ARTIFACTS_DIR}/llll/*"
   echo "Failed test suites: ${failed_tests}"
   if (( failed_tests > 0 )); then
     exit 1
   fi
-
 }
 
 main "$@"
