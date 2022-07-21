@@ -18,6 +18,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <fstream>
 
 #include <gtest/gtest.h>
 
@@ -55,6 +56,7 @@
 
 ABSL_FLAG(std::string, target, "", "Target host:port");
 ABSL_FLAG(bool, secure, false, "Use SSL Credentials");
+ABSL_FLAG(int, server_pid, 99999, "Server's pid");
 
 std::unique_ptr<grpc::testing::BenchmarkService::Stub> CreateStubForTest(){
   // Set the authentication mechanism.
@@ -73,6 +75,78 @@ std::unique_ptr<grpc::testing::BenchmarkService::Stub> CreateStubForTest(){
   return stub;
 }
 
+
+
+long GetSnapshot(bool before) {
+  std::unique_ptr<grpc::testing::BenchmarkService::Stub> stub = CreateStubForTest();
+
+  // Start a call.
+  struct CallParams {
+    grpc::ClientContext context;
+    grpc::testing::SimpleRequest request;
+    grpc::testing::MemorySize response;
+  };
+  CallParams* params = new CallParams();
+
+  if(before){
+    stub->async()->GetBeforeSnapshot(&params->context, &params->request,
+                           &params->response, [params](const grpc::Status& status) {
+                             if (status.ok()) {
+                                gpr_log(GPR_INFO, "Before: %ld", params->response.rss());
+                                gpr_log(GPR_INFO, "GetBeforeSnapshot succeeded.");
+                             } else {
+                                gpr_log(GPR_ERROR, "GetBeforeSnapshot failed.");
+                             }
+                           });
+  }
+  else{
+    stub->async()->GetPeakSnapshot(&params->context, &params->request,
+                           &params->response, [params](const grpc::Status& status) {
+                             if (status.ok()) {
+                                gpr_log(GPR_INFO, "Peak: %ld", params->response.rss());
+                                gpr_log(GPR_INFO, "GetAfterSnapshot succeeded.");
+                             } else {
+                                gpr_log(GPR_ERROR, "GetAfterSnapshot failed.");
+                             }
+                           });
+  }
+  return params->response.rss();
+}
+
+long PIDMemory() {
+  //Add required include statements
+  double vm_usage     = 0.0;
+  double resident_set = 0.0;
+
+  // 'file' stat seems to give the most reliable results
+  //
+  std::ifstream stat_stream(absl::StrCat("/proc/", absl::GetFlag(FLAGS_server_pid),"/stat"), std::ios_base::in);
+
+  // dummy vars for leading entries in stat that we don't care about
+  //
+  std::string pid, comm, state, ppid, pgrp, session, tty_nr;
+  std::string tpgid, flags, minflt, cminflt, majflt, cmajflt;
+  std::string utime, stime, cutime, cstime, priority, nice;
+  std::string O, itrealvalue, starttime;
+
+  // the two fields we want
+  //
+  unsigned long vsize;
+  long rss;
+
+  stat_stream >> pid >> comm >> state >> ppid >> pgrp >> session >> tty_nr
+              >> tpgid >> flags >> minflt >> cminflt >> majflt >> cmajflt
+              >> utime >> stime >> cutime >> cstime >> priority >> nice
+              >> O >> itrealvalue >> starttime >> vsize >> rss; // don't care about the rest
+
+  stat_stream.close();
+
+  long page_size_kb = sysconf(_SC_PAGE_SIZE) / 1024; // in case x86-64 is configured to use 2MB pages
+  vm_usage     = vsize / 1024.0;
+  resident_set = rss * page_size_kb;
+  return resident_set;
+}
+
 void UnaryCall() {
   std::unique_ptr<grpc::testing::BenchmarkService::Stub> stub = CreateStubForTest();
 
@@ -87,33 +161,12 @@ void UnaryCall() {
                            &params->response, [](const grpc::Status& status) {
                              if (status.ok()) {
                                gpr_log(GPR_INFO, "UnaryCall RPC succeeded.");
+                               GetSnapshot(false);
                              } else {
                                gpr_log(GPR_ERROR, "UnaryCall RPC failed.");
                              }
                            });
 }
-
-void GetBeforeSnapshot() {
-  std::unique_ptr<grpc::testing::BenchmarkService::Stub> stub = CreateStubForTest();
-
-  // Start a call.
-  struct CallParams {
-    grpc::ClientContext context;
-    grpc::testing::SimpleRequest request;
-    grpc::testing::MemorySize response;
-  };
-  CallParams* params = new CallParams();
-  stub->async()->GetBeforeSnapshot(&params->context, &params->request,
-                           &params->response, [params](const grpc::Status& status) {
-                             if (status.ok()) {
-                                gpr_log(GPR_INFO, "After: %ld", params->response.rss());
-                                gpr_log(GPR_INFO, "GetBeforeSnapshot succeeded.");
-                             } else {
-                                gpr_log(GPR_ERROR, "GetBeforeSnapshot failed.");
-                             }
-                           });
-}
-
 
 int main(int argc, char** argv) {
   absl::ParseCommandLine(argc, argv);
@@ -127,8 +180,17 @@ int main(int argc, char** argv) {
   }
   gpr_log(GPR_INFO, "Client Target: %s", absl::GetFlag(FLAGS_target).c_str());
 
+  long method_attempt = PIDMemory();
+  gpr_log(GPR_INFO, "Method: %ld", method_attempt);
+  long before_server_create = GetSnapshot(true);
   UnaryCall();
-  GetBeforeSnapshot();
+  
+  //gpr_log(GPR_INFO, "Before haha: %ld", before_server_create);
+  //long after_server_usage = GetSnapshot(false);
   gpr_log(GPR_INFO, "Client Done");
+  ///Thoughts: Mutex around a finished counter, maybe a while statements to wait until it reaches 100, and then ask for peak?
+  //Issue right now: can't use size value in main cause it hasnt be changed yet
+  //Does server receive them in order
+  //make it synchoncous or use notifications? let test PID first
   return 0;
 }
