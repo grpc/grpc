@@ -30,6 +30,7 @@
 #include <utility>
 
 #include "absl/status/status.h"
+#include "absl/strings/str_join.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
 #include "absl/utility/utility.h"
@@ -307,6 +308,12 @@ class ClientConnectedCallPromise {
     Poll<ServerMetadataHandle> PollOnce() {
       GPR_ASSERT(!finished_);
 
+      if (grpc_call_trace.enabled()) {
+        gpr_log(GPR_INFO, "%sPollConnectedChannel: %s",
+                Activity::current()->DebugTag().c_str(),
+                ActiveOpsString().c_str());
+      }
+
       auto push_recv_message = [this] {
         recv_message_state_ = PendingReceiveMessage{};
         auto& pending_recv_message =
@@ -460,9 +467,18 @@ class ClientConnectedCallPromise {
       if (absl::exchange(queued_initial_metadata_, false)) {
         server_initial_metadata_latch_->Set(server_initial_metadata_.get());
       }
-      if (absl::exchange(queued_trailing_metadata_, false)) {
+      if (!absl::holds_alternative<PipeSender<Message>::PushType>(
+              recv_message_state_) &&
+          absl::exchange(queued_trailing_metadata_, false)) {
+        if (grpc_call_trace.enabled()) {
+          gpr_log(GPR_INFO,
+                  "%sPollConnectedChannel: finished request, returning: {%s}; "
+                  "active_ops: %s",
+                  Activity::current()->DebugTag().c_str(),
+                  server_trailing_metadata_->DebugString().c_str(),
+                  ActiveOpsString().c_str());
+        }
         finished_ = true;
-        stream_.reset();
         return ServerMetadataHandle(std::move(server_trailing_metadata_));
       }
       return Pending{};
@@ -587,6 +603,66 @@ class ClientConnectedCallPromise {
       if (absl::exchange(scheduled_push_, true)) return;
       call_context_->IncrementRefCount("push");
       ExecCtx::Run(DEBUG_LOCATION, &push_, GRPC_ERROR_NONE);
+    }
+
+    std::string ActiveOpsString() const {
+      std::vector<std::string> ops;
+      // Pushes
+      std::vector<std::string> pushes;
+      if (push_metadata_) pushes.push_back("metadata");
+      if (push_send_message_) pushes.push_back("send_message");
+      if (push_recv_message_) pushes.push_back("recv_message");
+      if (!pushes.empty()) {
+        ops.push_back(
+            absl::StrCat(scheduled_push_ ? "push:" : "unscheduled-push:",
+                         absl::StrJoin(pushes, ",")));
+      } else if (scheduled_push_) {
+        ops.push_back("push:nothing");
+      }
+      // Results from transport
+      std::vector<std::string> queued;
+      if (queued_initial_metadata_) queued.push_back("initial_metadata");
+      if (queued_trailing_metadata_) queued.push_back("trailing_metadata");
+      if (!queued.empty()) {
+        ops.push_back(absl::StrCat("queued:", absl::StrJoin(queued, ",")));
+      }
+      // Send message
+      std::string send_message_state = SendMessageString();
+      if (send_message_state != "WAITING") {
+        ops.push_back(absl::StrCat("send_message:", send_message_state));
+      }
+      // Receive message
+      std::string recv_message_state = RecvMessageString();
+      if (recv_message_state != "IDLE") {
+        ops.push_back(absl::StrCat("recv_message:", recv_message_state));
+      }
+      return absl::StrJoin(ops, " ");
+    }
+
+    std::string SendMessageString() const {
+      return Match(
+          send_message_state_, [](Idle) -> std::string { return "IDLE"; },
+          [](Closed) -> std::string { return "CLOSED"; },
+          [](const PipeReceiver<Message>::NextType&) -> std::string {
+            return "WAITING";
+          },
+          [](const Message&) -> std::string { return "SENDING"; });
+    }
+
+    std::string RecvMessageString() const {
+      return Match(
+          recv_message_state_, [](Idle) -> std::string { return "IDLE"; },
+          [](Closed) -> std::string { return "CLOSED"; },
+          [](const PendingReceiveMessage&) -> std::string { return "WAITING"; },
+          [](const absl::optional<Message>& message) -> std::string {
+            return absl::StrCat(
+                "READY:", message.has_value()
+                              ? absl::StrCat(message->payload()->Length(), "b")
+                              : "EOS");
+          },
+          [](const PipeSender<Message>::PushType&) -> std::string {
+            return "PUSHING";
+          });
     }
 
     bool requested_metadata_ = false;

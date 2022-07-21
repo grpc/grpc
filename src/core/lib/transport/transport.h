@@ -117,6 +117,7 @@ class Message {
 
   uint32_t flags() const { return flags_; }
   SliceBuffer* payload() { return &payload_; }
+  const SliceBuffer* payload() const { return &payload_; }
 
  private:
   SliceBuffer payload_;
