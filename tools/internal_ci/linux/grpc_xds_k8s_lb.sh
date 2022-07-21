@@ -173,7 +173,9 @@ main() {
   echo "pod 2 c1 log" > "${a_dir}/pod-2.c-1.log"
   echo "pod 2 c2 log" > "${a_dir}/pod-2.c-2.log"
   ls -la "${a_dir}"
-  zip -r "${KOKORO_ARTIFACTS_DIR}/undeclared_outputs.zip" "${a_dir}"
+  pushd "${a_dir}"
+  zip -r "${KOKORO_ARTIFACTS_DIR}/undeclared_outputs.zip" *
+  popd
   echo "Failed test suites: ${failed_tests}"
   if (( failed_tests > 0 )); then
     exit 1
