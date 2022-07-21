@@ -466,7 +466,7 @@ void XdsClusterImplLb::ShutdownLocked() {
   // the child.
   picker_.reset();
   drop_stats_.reset();
-  xds_client_.reset();
+  xds_client_.reset(DEBUG_LOCATION, "XdsClusterImpl");
 }
 
 void XdsClusterImplLb::ExitIdleLocked() {
@@ -691,7 +691,8 @@ class XdsClusterImplLbFactory : public LoadBalancingPolicyFactory {
  public:
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
       LoadBalancingPolicy::Args args) const override {
-    auto xds_client = args.args.GetObjectRef<GrpcXdsClient>();
+    auto xds_client = args.args.GetObjectRef<GrpcXdsClient>(DEBUG_LOCATION,
+                                                            "XdsClusterImplLb");
     if (xds_client == nullptr) {
       gpr_log(GPR_ERROR,
               "XdsClient not present in channel args -- cannot instantiate "

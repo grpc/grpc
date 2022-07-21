@@ -41,19 +41,6 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/match.h"
 
-namespace {
-
-int PointerCompare(void* a_ptr, const grpc_arg_pointer_vtable* a_vtable,
-                   void* b_ptr, const grpc_arg_pointer_vtable* b_vtable) {
-  int c = grpc_core::QsortCompare(a_ptr, b_ptr);
-  if (c == 0) return 0;
-  c = grpc_core::QsortCompare(a_vtable, b_vtable);
-  if (c != 0) return c;
-  return a_vtable->cmp(a_ptr, b_ptr);
-}
-
-}  // namespace
-
 namespace grpc_core {
 
 ChannelArgs::Pointer::Pointer(void* p, const grpc_arg_pointer_vtable* vtable)
@@ -78,18 +65,6 @@ const grpc_arg_pointer_vtable* ChannelArgs::Pointer::EmptyVTable() {
       [](void* p1, void* p2) -> int { return QsortCompare(p1, p2); },
   };
   return &vtable;
-}
-
-bool ChannelArgs::Pointer::operator==(const Pointer& rhs) const {
-  return PointerCompare(p_, vtable_, rhs.p_, rhs.vtable_) == 0;
-}
-
-bool ChannelArgs::Pointer::operator<(const Pointer& rhs) const {
-  return PointerCompare(p_, vtable_, rhs.p_, rhs.vtable_) < 0;
-}
-
-bool ChannelArgs::Pointer::operator!=(const Pointer& rhs) const {
-  return !(*this == rhs);
 }
 
 ChannelArgs::ChannelArgs() = default;
@@ -411,8 +386,9 @@ static int cmp_arg(const grpc_arg* a, const grpc_arg* b) {
     case GRPC_ARG_INTEGER:
       return grpc_core::QsortCompare(a->value.integer, b->value.integer);
     case GRPC_ARG_POINTER:
-      return PointerCompare(a->value.pointer.p, a->value.pointer.vtable,
-                            b->value.pointer.p, b->value.pointer.vtable);
+      return grpc_core::channel_args_detail::PointerCompare(
+          a->value.pointer.p, a->value.pointer.vtable, b->value.pointer.p,
+          b->value.pointer.vtable);
   }
   GPR_UNREACHABLE_CODE(return 0);
 }

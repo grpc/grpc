@@ -23,7 +23,6 @@
 #include <algorithm>
 #include <atomic>
 #include <limits>
-#include <type_traits>
 #include <utility>
 
 #include <grpc/support/cpu.h>
