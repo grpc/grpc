@@ -464,7 +464,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
 }
 
 - (void)testEmptyUnaryRPC {
-  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiter, GRPCTestAssert assertBlock) {
+  GRPCTestRunWithFlakeRepeats(self, ^(GRPCTestWaiter waiter, GRPCTestAssert assertBlock) {
     RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
     __weak XCTestExpectation *expectation = [self expectationWithDescription:@"EmptyUnary"];
 
@@ -484,12 +484,12 @@ static dispatch_once_t initGlobalInterceptorFactory;
 
                             [expectation fulfill];
                           }];
-    waiter(self, @[ expectation ], GRPCInteropTestTimeoutDefault);
+    waiter(@[ expectation ], GRPCInteropTestTimeoutDefault);
   });
 }
 
 - (void)testEmptyUnaryRPCWithV2API {
-  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
+  GRPCTestRunWithFlakeRepeats(self, ^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
     RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
     __weak XCTestExpectation *expectReceive =
         [self expectationWithDescription:@"EmptyUnaryWithV2API received message"];
@@ -527,13 +527,13 @@ static dispatch_once_t initGlobalInterceptorFactory;
                                  }]
                  callOptions:options];
     [call start];
-    waiterBlock(self, @[ expectReceive, expectComplete ], GRPCInteropTestTimeoutDefault);
+    waiterBlock(@[ expectReceive, expectComplete ], GRPCInteropTestTimeoutDefault);
   });
 }
 
 // Test that responses can be dispatched even if we do not run main run-loop
 - (void)testAsyncDispatchWithV2API {
-  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
+  GRPCTestRunWithFlakeRepeats(self, ^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
     RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
 
     XCTestExpectation *receiveExpect = [self expectationWithDescription:@"receiveExpect"];
@@ -576,14 +576,14 @@ static dispatch_once_t initGlobalInterceptorFactory;
 
     [call start];
 
-    waiterBlock(self, @[ receiveExpect, closeExpect ], GRPCInteropTestTimeoutDefault);
+    waiterBlock(@[ receiveExpect, closeExpect ], GRPCInteropTestTimeoutDefault);
     XCTAssertTrue(messageReceived);
     XCTAssertTrue(done);
   });
 }
 
 - (void)testLargeUnaryRPC {
-  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
+  GRPCTestRunWithFlakeRepeats(self, ^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
     RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
     __weak XCTestExpectation *expectation = [self expectationWithDescription:@"LargeUnary"];
 
@@ -609,7 +609,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
 
                             [expectation fulfill];
                           }];
-    waiterBlock(self, @[ expectation ], GRPCInteropTestTimeoutDefault);
+    waiterBlock(@[ expectation ], GRPCInteropTestTimeoutDefault);
   });
 }
 
@@ -619,7 +619,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
     return;
   }
 
-  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
+  GRPCTestRunWithFlakeRepeats(self, ^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
     RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
 
     XCTestExpectation *expectComplete = [self expectationWithDescription:@"call complete"];
@@ -688,12 +688,12 @@ static dispatch_once_t initGlobalInterceptorFactory;
     [[service unaryCallWithMessage:request responseHandler:handlerMainQueue
                        callOptions:options] start];
 
-    waiterBlock(self, @[ expectComplete, expectCompleteMainQueue ], GRPCInteropTestTimeoutDefault);
+    waiterBlock(@[ expectComplete, expectCompleteMainQueue ], GRPCInteropTestTimeoutDefault);
   });
 }
 
 - (void)testLargeUnaryRPCWithV2API {
-  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
+  GRPCTestRunWithFlakeRepeats(self, ^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
     RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
     __weak XCTestExpectation *expectReceive =
         [self expectationWithDescription:@"LargeUnaryWithV2API received message"];
@@ -741,12 +741,12 @@ static dispatch_once_t initGlobalInterceptorFactory;
                                  }]
                  callOptions:options];
     [call start];
-    waiterBlock(self, @[ expectReceive, expectComplete ], GRPCInteropTestTimeoutDefault);
+    waiterBlock(@[ expectReceive, expectComplete ], GRPCInteropTestTimeoutDefault);
   });
 }
 
 - (void)testConcurrentRPCsWithErrorsWithV2API {
-  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
+  GRPCTestRunWithFlakeRepeats(self, ^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
     RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
     NSMutableArray *completeExpectations = [NSMutableArray array];
     NSMutableArray *calls = [NSMutableArray array];
@@ -805,7 +805,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
       [call start];
     }
 
-    waiterBlock(self, completeExpectations, GRPCInteropTestTimeoutDefault);
+    waiterBlock(completeExpectations, GRPCInteropTestTimeoutDefault);
   });
 }
 
@@ -862,7 +862,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
 }
 
 - (void)testPacketCoalescing {
-  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
+  GRPCTestRunWithFlakeRepeats(self, ^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
     RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
     __weak XCTestExpectation *expectation = [self expectationWithDescription:@"LargeUnary"];
 
@@ -901,13 +901,13 @@ static dispatch_once_t initGlobalInterceptorFactory;
                             }
                           }];
 
-    waiterBlock(self, @[ expectation ], GRPCInteropTestTimeoutDefault);
+    waiterBlock(@[ expectation ], GRPCInteropTestTimeoutDefault);
     [GRPCCall enableOpBatchLog:NO];
   });
 }
 
 - (void)test4MBResponsesAreAccepted {
-  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
+  GRPCTestRunWithFlakeRepeats(self, ^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
     RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
     __weak XCTestExpectation *expectation = [self expectationWithDescription:@"MaxResponseSize"];
 
@@ -927,12 +927,12 @@ static dispatch_once_t initGlobalInterceptorFactory;
                             [expectation fulfill];
                           }];
 
-    waiterBlock(self, @[ expectation ], GRPCInteropTestTimeoutDefault);
+    waiterBlock(@[ expectation ], GRPCInteropTestTimeoutDefault);
   });
 }
 
 - (void)testResponsesOverMaxSizeFailWithActionableMessage {
-  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
+  GRPCTestRunWithFlakeRepeats(self, ^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
     RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
     __weak XCTestExpectation *expectation =
         [self expectationWithDescription:@"ResponseOverMaxSize"];
@@ -961,12 +961,12 @@ static dispatch_once_t initGlobalInterceptorFactory;
                                 @"Received message larger than max (4194305 vs. 4194304)");
                             [expectation fulfill];
                           }];
-    waiterBlock(self, @[ expectation ], GRPCInteropTestTimeoutDefault);
+    waiterBlock(@[ expectation ], GRPCInteropTestTimeoutDefault);
   });
 }
 
 - (void)testResponsesOver4MBAreAcceptedIfOptedIn {
-  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
+  GRPCTestRunWithFlakeRepeats(self, ^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
     RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
     __weak XCTestExpectation *expectation =
         [self expectationWithDescription:@"HigherResponseSizeLimit"];
@@ -987,13 +987,13 @@ static dispatch_once_t initGlobalInterceptorFactory;
                             [expectation fulfill];
                           }];
 
-    waiterBlock(self, @[ expectation ], GRPCInteropTestTimeoutDefault);
+    waiterBlock(@[ expectation ], GRPCInteropTestTimeoutDefault);
     XCTAssertNil(callError, @"Finished with unexpected error: %@", callError);
   });
 }
 
 - (void)testClientStreamingRPC {
-  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
+  GRPCTestRunWithFlakeRepeats(self, ^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
     RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
     __weak XCTestExpectation *expectation = [self expectationWithDescription:@"ClientStreaming"];
 
@@ -1030,12 +1030,12 @@ static dispatch_once_t initGlobalInterceptorFactory;
                                        [expectation fulfill];
                                      }];
 
-    waiterBlock(self, @[ expectation ], GRPCInteropTestTimeoutDefault);
+    waiterBlock(@[ expectation ], GRPCInteropTestTimeoutDefault);
   });
 }
 
 - (void)testServerStreamingRPC {
-  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
+  GRPCTestRunWithFlakeRepeats(self, ^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
     RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
     __weak XCTestExpectation *expectation = [self expectationWithDescription:@"ServerStreaming"];
 
@@ -1088,12 +1088,12 @@ static dispatch_once_t initGlobalInterceptorFactory;
                             }
                           }];
 
-    waiterBlock(self, @[ expectation ], GRPCInteropTestTimeoutDefault);
+    waiterBlock(@[ expectation ], GRPCInteropTestTimeoutDefault);
   });
 }
 
 - (void)testPingPongRPC {
-  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
+  GRPCTestRunWithFlakeRepeats(self, ^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
     RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
     __weak XCTestExpectation *expectation = [self expectationWithDescription:@"PingPong"];
 
@@ -1155,12 +1155,12 @@ static dispatch_once_t initGlobalInterceptorFactory;
                                 [expectation fulfill];
                               }
                             }];
-    waiterBlock(self, @[ expectation ], GRPCInteropTestTimeoutDefault);
+    waiterBlock(@[ expectation ], GRPCInteropTestTimeoutDefault);
   });
 }
 
 - (void)testPingPongRPCWithV2API {
-  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
+  GRPCTestRunWithFlakeRepeats(self, ^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
     RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
     __weak XCTestExpectation *expectation = [self expectationWithDescription:@"PingPongWithV2API"];
 
@@ -1221,12 +1221,12 @@ static dispatch_once_t initGlobalInterceptorFactory;
     [call start];
     [call writeMessage:request];
 
-    waiterBlock(self, @[ expectation ], GRPCInteropTestTimeoutDefault);
+    waiterBlock(@[ expectation ], GRPCInteropTestTimeoutDefault);
   });
 }
 
 - (void)testPingPongRPCWithFlowControl {
-  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
+  GRPCTestRunWithFlakeRepeats(self, ^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
     RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
     __weak XCTestExpectation *expectation = [self expectationWithDescription:@"PingPongWithV2API"];
 
@@ -1296,7 +1296,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
     [call receiveNextMessage];
     [call writeMessage:request];
 
-    waiterBlock(self, @[ expectation ], GRPCInteropTestTimeoutDefault);
+    waiterBlock(@[ expectation ], GRPCInteropTestTimeoutDefault);
     assertBlock(
         writeMessageCount == 4,
         [NSString stringWithFormat:@"writeMessageCount %@ not equal to 4", @(writeMessageCount)]);
@@ -1304,7 +1304,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
 }
 
 - (void)testEmptyStreamRPC {
-  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
+  GRPCTestRunWithFlakeRepeats(self, ^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
     RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
     __weak XCTestExpectation *expectation = [self expectationWithDescription:@"EmptyStream"];
     __weak RMTTestService *weakService = service;
@@ -1319,12 +1319,12 @@ static dispatch_once_t initGlobalInterceptorFactory;
                               XCTAssert(done, @"Unexpected response: %@", response);
                               [expectation fulfill];
                             }];
-    waiterBlock(self, @[ expectation ], GRPCInteropTestTimeoutDefault);
+    waiterBlock(@[ expectation ], GRPCInteropTestTimeoutDefault);
   });
 }
 
 - (void)testCancelAfterBeginRPC {
-  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
+  GRPCTestRunWithFlakeRepeats(self, ^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
     RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
     __weak XCTestExpectation *expectation = [self expectationWithDescription:@"CancelAfterBegin"];
 
@@ -1350,12 +1350,12 @@ static dispatch_once_t initGlobalInterceptorFactory;
     [call cancel];
     XCTAssertEqual(call.state, GRXWriterStateFinished);
 
-    waiterBlock(self, @[ expectation ], GRPCInteropTestTimeoutDefault);
+    waiterBlock(@[ expectation ], GRPCInteropTestTimeoutDefault);
   });
 }
 
 - (void)testCancelAfterBeginRPCWithV2API {
-  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
+  GRPCTestRunWithFlakeRepeats(self, ^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
     RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
     __weak XCTestExpectation *expectation =
         [self expectationWithDescription:@"CancelAfterBeginWithV2API"];
@@ -1384,12 +1384,12 @@ static dispatch_once_t initGlobalInterceptorFactory;
     [call start];
     [call cancel];
 
-    waiterBlock(self, @[ expectation ], GRPCInteropTestTimeoutDefault);
+    waiterBlock(@[ expectation ], GRPCInteropTestTimeoutDefault);
   });
 }
 
 - (void)testCancelAfterFirstResponseRPC {
-  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
+  GRPCTestRunWithFlakeRepeats(self, ^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
     RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
     __weak XCTestExpectation *expectation =
         [self expectationWithDescription:@"CancelAfterFirstResponse"];
@@ -1426,12 +1426,12 @@ static dispatch_once_t initGlobalInterceptorFactory;
                                    }
                                  }];
     [call start];
-    waiterBlock(self, @[ expectation ], GRPCInteropTestTimeoutDefault);
+    waiterBlock(@[ expectation ], GRPCInteropTestTimeoutDefault);
   });
 }
 
 - (void)testCancelAfterFirstResponseRPCWithV2API {
-  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
+  GRPCTestRunWithFlakeRepeats(self, ^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
     RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
     __weak XCTestExpectation *completionExpectation =
         [self expectationWithDescription:@"Call completed."];
@@ -1476,13 +1476,12 @@ static dispatch_once_t initGlobalInterceptorFactory;
     weakCall = call;
     [call start];
     [call writeMessage:request];
-    waiterBlock(self, @[ completionExpectation, responseExpectation ],
-                GRPCInteropTestTimeoutDefault);
+    waiterBlock(@[ completionExpectation, responseExpectation ], GRPCInteropTestTimeoutDefault);
   });
 }
 
 - (void)testCancelAfterFirstRequestWithV2API {
-  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
+  GRPCTestRunWithFlakeRepeats(self, ^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
     RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
     __weak XCTestExpectation *completionExpectation =
         [self expectationWithDescription:@"Call completed."];
@@ -1519,12 +1518,12 @@ static dispatch_once_t initGlobalInterceptorFactory;
     [call start];
     [call writeMessage:request];
     [call cancel];
-    waiterBlock(self, @[ completionExpectation ], GRPCInteropTestTimeoutDefault);
+    waiterBlock(@[ completionExpectation ], GRPCInteropTestTimeoutDefault);
   });
 }
 
 - (void)testRPCAfterClosingOpenConnections {
-  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
+  GRPCTestRunWithFlakeRepeats(self, ^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
     RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
     __weak XCTestExpectation *expectation =
         [self expectationWithDescription:@"RPC after closing connection"];
@@ -1556,7 +1555,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
                                         }];
                      }];
 
-    waiterBlock(self, @[ expectation ], GRPCInteropTestTimeoutDefault);
+    waiterBlock(@[ expectation ], GRPCInteropTestTimeoutDefault);
   });
 }
 
@@ -1567,7 +1566,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
     return;
   }
 
-  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
+  GRPCTestRunWithFlakeRepeats(self, ^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
     RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
     __weak XCTestExpectation *expectation = [self expectationWithDescription:@"LargeUnary"];
 
@@ -1596,12 +1595,12 @@ static dispatch_once_t initGlobalInterceptorFactory;
                             [expectation fulfill];
                           }];
 
-    waiterBlock(self, @[ expectation ], GRPCInteropTestTimeoutDefault);
+    waiterBlock(@[ expectation ], GRPCInteropTestTimeoutDefault);
   });
 }
 
 - (void)testKeepaliveWithV2API {
-  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
+  GRPCTestRunWithFlakeRepeats(self, ^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
     RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
     if ([[self class] transport] == gGRPCCoreCronetID) {
       // Cronet does not support keepalive
@@ -1644,13 +1643,13 @@ static dispatch_once_t initGlobalInterceptorFactory;
     [call writeMessage:request];
     [call start];
 
-    waiterBlock(self, @[ expectation ], kTestTimeout);
+    waiterBlock(@[ expectation ], kTestTimeout);
     [call finish];
   });
 }
 
 - (void)testDefaultInterceptor {
-  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
+  GRPCTestRunWithFlakeRepeats(self, ^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
     RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
     __weak XCTestExpectation *expectation =
         [self expectationWithDescription:@"testDefaultInterceptor"];
@@ -1717,12 +1716,12 @@ static dispatch_once_t initGlobalInterceptorFactory;
     [call start];
     [call writeMessage:request];
 
-    waiterBlock(self, @[ expectation ], GRPCInteropTestTimeoutDefault);
+    waiterBlock(@[ expectation ], GRPCInteropTestTimeoutDefault);
   });
 }
 
 - (void)testLoggingInterceptor {
-  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
+  GRPCTestRunWithFlakeRepeats(self, ^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
     RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
     __weak XCTestExpectation *expectation =
         [self expectationWithDescription:@"testLoggingInterceptor"];
@@ -1843,7 +1842,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
     [call receiveNextMessage];
     [call writeMessage:request];
 
-    waiterBlock(self, @[ expectation ], GRPCInteropTestTimeoutDefault);
+    waiterBlock(@[ expectation ], GRPCInteropTestTimeoutDefault);
 
     assertBlock(startCount == 1, [NSString stringWithFormat:@"%@", @(startCount)]);
     assertBlock(writeDataCount == 4, [NSString stringWithFormat:@"%@", @(writeDataCount)]);
@@ -1862,7 +1861,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
 // Chain a default interceptor and a hook interceptor which, after one write, cancels the call
 // under the hood but forward further data to the user.
 - (void)testHijackingInterceptor {
-  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
+  GRPCTestRunWithFlakeRepeats(self, ^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
     RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
     NSUInteger kCancelAfterWrites = 1;
     __weak XCTestExpectation *expectUserCallComplete =
@@ -1990,7 +1989,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
     [call receiveNextMessage];
     [call writeMessage:request];
 
-    waiterBlock(self, @[ expectUserCallComplete ], GRPCInteropTestTimeoutDefault);
+    waiterBlock(@[ expectUserCallComplete ], GRPCInteropTestTimeoutDefault);
     assertBlock(startCount == 1, [NSString stringWithFormat:@"%@", @(startCount)]);
     assertBlock(writeDataCount == 4, [NSString stringWithFormat:@"%@", @(writeDataCount)]);
     assertBlock(finishCount == 1, [NSString stringWithFormat:@"%@", @(finishCount)]);
@@ -2002,7 +2001,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
 }
 
 - (void)testGlobalInterceptor {
-  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
+  GRPCTestRunWithFlakeRepeats(self, ^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
     RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
     __weak XCTestExpectation *expectation =
         [self expectationWithDescription:@"testGlobalInterceptor"];
@@ -2112,7 +2111,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
     [call start];
     [call receiveNextMessage];
     [call writeMessage:request];
-    waiterBlock(self, @[ expectation ], GRPCInteropTestTimeoutDefault);
+    waiterBlock(@[ expectation ], GRPCInteropTestTimeoutDefault);
 
     assertBlock(startCount == 1, [NSString stringWithFormat:@"%@", @(startCount)]);
     assertBlock(writeDataCount == 4, [NSString stringWithFormat:@"%@", @(writeDataCount)]);
@@ -2149,7 +2148,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
 }
 
 - (void)testInterceptorAndGlobalInterceptor {
-  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
+  GRPCTestRunWithFlakeRepeats(self, ^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
     RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
     __weak XCTestExpectation *expectation =
         [self expectationWithDescription:@"testInterceptorAndGlobalInterceptor"];
@@ -2309,7 +2308,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
     [call receiveNextMessage];
     [call writeMessage:request];
 
-    waiterBlock(self, @[ expectation ], GRPCInteropTestTimeoutDefault);
+    waiterBlock(@[ expectation ], GRPCInteropTestTimeoutDefault);
     assertBlock(startCount == 1, [NSString stringWithFormat:@"%@", @(startCount)]);
     assertBlock(writeDataCount == 4, [NSString stringWithFormat:@"%@", @(writeDataCount)]);
     assertBlock(finishCount == 1, [NSString stringWithFormat:@"%@", @(finishCount)]);
