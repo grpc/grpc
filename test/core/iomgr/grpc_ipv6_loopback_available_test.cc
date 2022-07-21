@@ -16,8 +16,6 @@
  *
  */
 
-#include <gtest/gtest.h>
-
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
@@ -30,15 +28,12 @@
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #endif
 
-TEST(GrpcIpv6LoopbackAvailableTest, MainTest) {
-  // This test assumes that the ipv6 loopback is available
-  // in all environments in which grpc tests run in.
-  ASSERT_TRUE(grpc_ipv6_loopback_available());
-}
-
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
-  ::testing::InitGoogleTest(&argc, argv);
-  grpc::testing::TestGrpcScope grpc_scope;
-  return RUN_ALL_TESTS();
+  grpc_init();
+  // This test assumes that the ipv6 loopback is available
+  // in all environments in which grpc tests run in.
+  GPR_ASSERT(grpc_ipv6_loopback_available());
+  grpc_shutdown();
+  return 0;
 }

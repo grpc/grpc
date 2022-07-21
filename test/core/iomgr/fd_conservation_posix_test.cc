@@ -18,8 +18,6 @@
 
 #include <sys/resource.h>
 
-#include <gtest/gtest.h>
-
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
@@ -27,11 +25,12 @@
 #include "src/core/lib/iomgr/iomgr.h"
 #include "test/core/util/test_config.h"
 
-TEST(FdConservationPosixTest, MainTest) {
+int main(int argc, char** argv) {
   int i;
   struct rlimit rlim;
   grpc_endpoint_pair p;
 
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   {
     grpc_core::ExecCtx exec_ctx;
@@ -40,7 +39,7 @@ TEST(FdConservationPosixTest, MainTest) {
        verify we can create and destroy many more than this number
        of descriptors */
     rlim.rlim_cur = rlim.rlim_max = 10;
-    ASSERT_EQ(setrlimit(RLIMIT_NOFILE, &rlim), 0);
+    GPR_ASSERT(0 == setrlimit(RLIMIT_NOFILE, &rlim));
     for (i = 0; i < 100; i++) {
       p = grpc_iomgr_create_endpoint_pair("test", nullptr);
       grpc_endpoint_destroy(p.client);
@@ -50,10 +49,5 @@ TEST(FdConservationPosixTest, MainTest) {
   }
 
   grpc_shutdown();
-}
-
-int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(&argc, argv);
-  ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
+  return 0;
 }
