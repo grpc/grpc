@@ -23,6 +23,7 @@
 #include <vector>
 
 #include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 
 #include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
 #include "src/core/lib/resolver/server_address.h"
