@@ -434,7 +434,7 @@ def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], da
         data = data,
         testonly = testonly,
         linkshared = linkshared,
-        deps = deps + _get_external_deps(external_deps),
+        deps = deps + _get_external_deps(external_deps) + ["//test/core/util:grpc_suppressions"],
         copts = GRPC_DEFAULT_COPTS + copts,
         linkopts = if_not_windows(["-pthread"]) + linkopts,
         tags = tags,
