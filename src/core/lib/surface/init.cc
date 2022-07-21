@@ -120,7 +120,6 @@ static void do_basic_init(void) {
   g_init_mu = new grpc_core::Mutex();
   g_shutting_down_cv = new grpc_core::CondVar();
   grpc_register_built_in_plugins();
-  grpc_cq_global_init();
   grpc_core::grpc_executor_global_init();
   gpr_time_init();
 }
