@@ -288,9 +288,12 @@ class ClientConnectedCallPromise {
     }
 
     void DropStream() {
-      if (stream_ == nullptr) {
-        return;
-      } else if (!finished_) {
+      if (grpc_call_trace.enabled()) {
+        gpr_log(GPR_INFO, "%sDropStream: %s",
+                Activity::current()->DebugTag().c_str(),
+                ActiveOpsString().c_str());
+      }
+      if (!finished_) {
         auto* cancel_op =
             GetContext<Arena>()->New<grpc_transport_stream_op_batch>();
         cancel_op->cancel_stream = true;
@@ -415,13 +418,6 @@ class ClientConnectedCallPromise {
           SchedulePush();
         }
       }
-      if (absl::holds_alternative<Idle>(recv_message_state_)) {
-        if (grpc_call_trace.enabled()) {
-          gpr_log(GPR_INFO, "%sPollConnectedChannel: requesting message",
-                  Activity::current()->DebugTag().c_str());
-        }
-        push_recv_message();
-      }
       if (auto* message =
               absl::get_if<absl::optional<Message>>(&recv_message_state_)) {
         if (message->has_value()) {
@@ -442,28 +438,6 @@ class ClientConnectedCallPromise {
           absl::exchange(server_to_client_messages_, nullptr)->Close();
         }
       }
-      if (auto* push = absl::get_if<PipeSender<Message>::PushType>(
-              &recv_message_state_)) {
-        auto r = (*push)();
-        if (bool* result = absl::get_if<bool>(&r)) {
-          if (*result) {
-            if (grpc_call_trace.enabled()) {
-              gpr_log(GPR_INFO,
-                      "%sPollConnectedChannel: pushed message; requesting next",
-                      Activity::current()->DebugTag().c_str());
-            }
-            push_recv_message();
-          } else {
-            if (grpc_call_trace.enabled()) {
-              gpr_log(GPR_INFO,
-                      "%sPollConnectedChannel: failed to push message; marking "
-                      "closed",
-                      Activity::current()->DebugTag().c_str());
-            }
-            recv_message_state_ = Closed{};
-          }
-        }
-      }
       if (absl::exchange(queued_initial_metadata_, false)) {
         server_initial_metadata_latch_->Set(server_initial_metadata_.get());
       }
@@ -480,6 +454,46 @@ class ClientConnectedCallPromise {
         }
         finished_ = true;
         return ServerMetadataHandle(std::move(server_trailing_metadata_));
+      }
+      if (absl::holds_alternative<Idle>(recv_message_state_)) {
+        if (grpc_call_trace.enabled()) {
+          gpr_log(GPR_INFO, "%sPollConnectedChannel: requesting message",
+                  Activity::current()->DebugTag().c_str());
+        }
+        push_recv_message();
+      }
+      if (auto* push = absl::get_if<PipeSender<Message>::PushType>(
+              &recv_message_state_)) {
+        auto r = (*push)();
+        if (bool* result = absl::get_if<bool>(&r)) {
+          if (*result) {
+            if (!finished_) {
+              if (grpc_call_trace.enabled()) {
+                gpr_log(
+                    GPR_INFO,
+                    "%sPollConnectedChannel: pushed message; requesting next",
+                    Activity::current()->DebugTag().c_str());
+              }
+              push_recv_message();
+            } else {
+              if (grpc_call_trace.enabled()) {
+                gpr_log(GPR_INFO,
+                        "%sPollConnectedChannel: pushed message and finished; "
+                        "marking closed",
+                        Activity::current()->DebugTag().c_str());
+              }
+              recv_message_state_ = Closed{};
+            }
+          } else {
+            if (grpc_call_trace.enabled()) {
+              gpr_log(GPR_INFO,
+                      "%sPollConnectedChannel: failed to push message; marking "
+                      "closed",
+                      Activity::current()->DebugTag().c_str());
+            }
+            recv_message_state_ = Closed{};
+          }
+        }
       }
       return Pending{};
     }
@@ -607,6 +621,7 @@ class ClientConnectedCallPromise {
 
     std::string ActiveOpsString() const {
       std::vector<std::string> ops;
+      if (finished_) ops.push_back("FINISHED");
       // Pushes
       std::vector<std::string> pushes;
       if (push_metadata_) pushes.push_back("metadata");
