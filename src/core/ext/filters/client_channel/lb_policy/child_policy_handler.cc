@@ -18,6 +18,7 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 
+#include <cstring>
 #include <memory>
 #include <string>
 
@@ -229,8 +230,7 @@ void ChildPolicyHandler::UpdateLocked(UpdateArgs args) {
     if (GRPC_TRACE_FLAG_ENABLED(*tracer_)) {
       gpr_log(GPR_INFO,
               "[child_policy_handler %p] creating new %schild policy %s", this,
-              child_policy_ == nullptr ? "" : "pending ",
-              std::string(args.config->name()).c_str());
+              child_policy_ == nullptr ? "" : "pending ", args.config->name());
     }
     auto& lb_policy =
         child_policy_ == nullptr ? child_policy_ : pending_child_policy_;
@@ -274,7 +274,7 @@ void ChildPolicyHandler::ResetBackoffLocked() {
 }
 
 OrphanablePtr<LoadBalancingPolicy> ChildPolicyHandler::CreateChildPolicy(
-    absl::string_view child_policy_name, const ChannelArgs& args) {
+    const char* child_policy_name, const ChannelArgs& args) {
   Helper* helper = new Helper(Ref(DEBUG_LOCATION, "Helper"));
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.work_serializer = work_serializer();
@@ -284,15 +284,14 @@ OrphanablePtr<LoadBalancingPolicy> ChildPolicyHandler::CreateChildPolicy(
   OrphanablePtr<LoadBalancingPolicy> lb_policy =
       CreateLoadBalancingPolicy(child_policy_name, std::move(lb_policy_args));
   if (GPR_UNLIKELY(lb_policy == nullptr)) {
-    gpr_log(GPR_ERROR, "could not create LB policy \"%s\"",
-            std::string(child_policy_name).c_str());
+    gpr_log(GPR_ERROR, "could not create LB policy \"%s\"", child_policy_name);
     return nullptr;
   }
   helper->set_child(lb_policy.get());
   if (GRPC_TRACE_FLAG_ENABLED(*tracer_)) {
     gpr_log(GPR_INFO,
             "[child_policy_handler %p] created new LB policy \"%s\" (%p)", this,
-            std::string(child_policy_name).c_str(), lb_policy.get());
+            child_policy_name, lb_policy.get());
   }
   channel_control_helper()->AddTraceEvent(
       ChannelControlHelper::TRACE_INFO,
@@ -305,12 +304,12 @@ OrphanablePtr<LoadBalancingPolicy> ChildPolicyHandler::CreateChildPolicy(
 bool ChildPolicyHandler::ConfigChangeRequiresNewPolicyInstance(
     LoadBalancingPolicy::Config* old_config,
     LoadBalancingPolicy::Config* new_config) const {
-  return old_config->name() != new_config->name();
+  return strcmp(old_config->name(), new_config->name()) != 0;
 }
 
 OrphanablePtr<LoadBalancingPolicy>
 ChildPolicyHandler::CreateLoadBalancingPolicy(
-    absl::string_view name, LoadBalancingPolicy::Args args) const {
+    const char* name, LoadBalancingPolicy::Args args) const {
   return LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
       name, std::move(args));
 }

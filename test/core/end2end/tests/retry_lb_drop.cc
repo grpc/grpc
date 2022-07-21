@@ -49,13 +49,13 @@
 namespace grpc_core {
 namespace {
 
-constexpr absl::string_view kDropPolicyName = "drop_lb";
+const char* kDropPolicyName = "drop_lb";
 
 class DropPolicy : public LoadBalancingPolicy {
  public:
   explicit DropPolicy(Args args) : LoadBalancingPolicy(std::move(args)) {}
 
-  absl::string_view name() const override { return kDropPolicyName; }
+  const char* name() const override { return kDropPolicyName; }
 
   void UpdateLocked(UpdateArgs) override {
     channel_control_helper()->UpdateState(GRPC_CHANNEL_READY, absl::Status(),
@@ -77,7 +77,7 @@ class DropPolicy : public LoadBalancingPolicy {
 
 class DropLbConfig : public LoadBalancingPolicy::Config {
  public:
-  absl::string_view name() const override { return kDropPolicyName; }
+  const char* name() const override { return kDropPolicyName; }
 };
 
 class DropPolicyFactory : public LoadBalancingPolicyFactory {
@@ -87,10 +87,10 @@ class DropPolicyFactory : public LoadBalancingPolicyFactory {
     return MakeOrphanable<DropPolicy>(std::move(args));
   }
 
-  absl::string_view name() const override { return kDropPolicyName; }
+  const char* name() const override { return kDropPolicyName; }
 
-  absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
-  ParseLoadBalancingConfig(const Json& /*json*/) const override {
+  RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
+      const Json& /*json*/, grpc_error_handle* /*error*/) const override {
     return MakeRefCounted<DropLbConfig>();
   }
 };
