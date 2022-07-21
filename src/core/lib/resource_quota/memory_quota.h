@@ -240,8 +240,8 @@ class PressureTracker {
   std::atomic<double> max_this_round_{0.0};
   std::atomic<double> report_{0.0};
   PidController pid_{PidController::Args()
-                         .set_gain_p(0.01)
-                         .set_gain_i(0.001)
+                         .set_gain_p(0.05)
+                         .set_gain_i(0.005)
                          .set_integral_range(100.0)
                          .set_min_control_value(0.0)
                          .set_max_control_value(1.0)};
