@@ -358,7 +358,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
     if language.upper() == "C":
         copts = copts + if_not_windows(["-std=c11"])
 
-    core_deps = deps + _get_external_deps(external_deps)
+    core_deps = deps + _get_external_deps(external_deps) + ["//test/core/util:grpc_suppressions"]
 
     # Test args for all tests
     test_args = {

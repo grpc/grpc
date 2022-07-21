@@ -44,7 +44,6 @@ grpc_proto_fuzzer(
     deps = [
         "//:chttp2_flow_control",
         "//:gpr",
-        "//test/core/util:grpc_suppressions",
     ],
 )
 
@@ -116,7 +115,6 @@ grpc_cc_test(
     deps = [
         "//:chttp2_flow_control",
         "//:resource_quota",
-        "//test/core/util:grpc_suppressions",
     ],
 )
 
