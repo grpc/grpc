@@ -60,7 +60,7 @@ class Subprocess {
     process_ = gpr_subprocess_create(args_c.size(), args_c.data());
   }
 
-  int GetPID() {return gpr_subprocess_pid(process_);}
+  int GetPID() {return gpr_subprocess_get_process_id(process_);}
   int Join() { return gpr_subprocess_join(process_); }
   void Interrupt() { gpr_subprocess_interrupt(process_); }
 

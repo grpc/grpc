@@ -113,36 +113,26 @@ long GetSnapshot(bool before) {
   return params->response.rss();
 }
 
-long PIDMemory() {
-  //Add required include statements
-  double vm_usage     = 0.0;
+long ServerMemory() {
   double resident_set = 0.0;
-
-  // 'file' stat seems to give the most reliable results
-  //
   std::ifstream stat_stream(absl::StrCat("/proc/", absl::GetFlag(FLAGS_server_pid),"/stat"), std::ios_base::in);
 
-  // dummy vars for leading entries in stat that we don't care about
-  //
+  //Temporary variables for irrelevant leading entries in stats
   std::string pid, comm, state, ppid, pgrp, session, tty_nr;
   std::string tpgid, flags, minflt, cminflt, majflt, cmajflt;
   std::string utime, stime, cutime, cstime, priority, nice;
-  std::string O, itrealvalue, starttime;
-
-  // the two fields we want
-  //
-  unsigned long vsize;
+  std::string O, itrealvalue, starttime, vsize;
+  
+  //Get rss to find memory usage
   long rss;
-
   stat_stream >> pid >> comm >> state >> ppid >> pgrp >> session >> tty_nr
               >> tpgid >> flags >> minflt >> cminflt >> majflt >> cmajflt
               >> utime >> stime >> cutime >> cstime >> priority >> nice
-              >> O >> itrealvalue >> starttime >> vsize >> rss; // don't care about the rest
-
+              >> O >> itrealvalue >> starttime >> vsize >> rss;
   stat_stream.close();
 
-  long page_size_kb = sysconf(_SC_PAGE_SIZE) / 1024; // in case x86-64 is configured to use 2MB pages
-  vm_usage     = vsize / 1024.0;
+  // Calculations in case x86-64 is configured to use 2MB pages
+  long page_size_kb = sysconf(_SC_PAGE_SIZE) / 1024;
   resident_set = rss * page_size_kb;
   return resident_set;
 }
@@ -180,11 +170,11 @@ int main(int argc, char** argv) {
   }
   gpr_log(GPR_INFO, "Client Target: %s", absl::GetFlag(FLAGS_target).c_str());
 
-  long method_attempt = PIDMemory();
-  gpr_log(GPR_INFO, "Method: %ld", method_attempt);
+  
   long before_server_create = GetSnapshot(true);
   UnaryCall();
-  
+  long method_attempt = ServerMemory();
+  gpr_log(GPR_INFO, "Method: %ld", method_attempt);
   //gpr_log(GPR_INFO, "Before haha: %ld", before_server_create);
   //long after_server_usage = GetSnapshot(false);
   gpr_log(GPR_INFO, "Client Done");
