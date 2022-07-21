@@ -859,6 +859,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "useful",
     hdrs = ["src/core/lib/gpr/useful.h"],
+    external_deps = [
+        "absl/strings",
+        "absl/types:variant",
+    ],
     language = "c++",
     deps = ["gpr_platform"],
 )
@@ -2190,7 +2194,10 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/avl/avl.h",
     ],
-    deps = ["gpr_platform"],
+    deps = [
+        "gpr_platform",
+        "useful",
+    ],
 )
 
 grpc_cc_library(
@@ -2308,6 +2315,7 @@ grpc_cc_library(
         "src/core/lib/event_engine/iomgr_engine/iomgr_engine_closure.h",
     ],
     external_deps = [
+        "absl/functional:any_invocable",
         "absl/status",
         "absl/utility",
     ],
@@ -3175,6 +3183,7 @@ grpc_cc_library(
     deps = [
         "avl",
         "channel_stack_type",
+        "debug_location",
         "dual_ref_counted",
         "gpr_base",
         "grpc_codegen",
@@ -4036,6 +4045,7 @@ grpc_cc_library(
         "channel_args_preconditioning",
         "channel_fwd",
         "config",
+        "debug_location",
         "exec_ctx",
         "gpr_base",
         "grpc_base",
@@ -5957,6 +5967,8 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/memory",
+        "absl/status",
+        "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
         "absl/types:optional",

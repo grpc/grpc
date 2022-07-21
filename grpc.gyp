@@ -305,6 +305,7 @@
         'absl/synchronization:synchronization',
         'absl/time:time',
         'absl/types:optional',
+        'absl/types:variant',
       ],
       'sources': [
         'src/core/lib/gpr/alloc.cc',
@@ -366,7 +367,6 @@
         'absl/meta:type_traits',
         'absl/status:statusor',
         'absl/types:span',
-        'absl/types:variant',
         'absl/utility:utility',
         'gpr',
         'address_sorting',
@@ -1131,7 +1131,6 @@
         'absl/meta:type_traits',
         'absl/status:statusor',
         'absl/types:span',
-        'absl/types:variant',
         'absl/utility:utility',
         'gpr',
         'address_sorting',
