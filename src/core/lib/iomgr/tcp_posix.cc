@@ -478,7 +478,7 @@ namespace {
 int GetRLimitMemLockMax() {
   static int kRlimitMemLock = []() -> int {
     struct rlimit limit;
-    if (getrlimit(RLIMIT_MEMLOCK, &limit)) {
+    if (getrlimit(RLIMIT_MEMLOCK, &limit) != 0) {
       return -1;
     }
     return static_cast<int>(limit.rlim_max);
