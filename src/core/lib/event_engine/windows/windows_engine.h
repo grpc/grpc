@@ -31,6 +31,7 @@
 #include "src/core/lib/event_engine/iomgr_engine/timer_manager.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/event_engine/windows/iocp.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -107,6 +108,8 @@ class WindowsEventEngine : public EventEngine {
 
   iomgr_engine::TimerManager timer_manager_;
   iomgr_engine::ThreadPool thread_pool_{2};
+
+  IOCP iocp_;
 };
 
 }  // namespace experimental

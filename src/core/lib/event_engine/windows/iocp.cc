@@ -1,0 +1,131 @@
+// Copyright 2022 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+#include <grpc/support/port_platform.h>
+
+#include "src/core/lib/event_engine/windows/iocp.h"
+
+#include <chrono>
+
+#include "absl/strings/str_format.h"
+
+#include <grpc/support/alloc.h>
+#include <grpc/support/log_windows.h>
+
+#include "src/core/lib/event_engine/windows/socket.h"
+
+namespace grpc_event_engine {
+namespace experimental {
+
+IOCP::IOCP(EventEngine* event_engine) noexcept
+    : event_engine_(event_engine),
+      iocp_handle_(CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL,
+                                          (ULONG_PTR)NULL, 0)) {
+  GPR_ASSERT(iocp_handle_);
+  WSASocketFlagsInit();
+}
+
+// DO NOT SUBMIT(hork): should this attempt to shutdown as well, or expect that
+// to be done already?
+IOCP::~IOCP() { Shutdown(); }
+
+WrappedSocket* IOCP::Watch(SOCKET socket) {
+  WinWrappedSocket* wrapped_socket =
+      new WinWrappedSocket(socket, event_engine_);
+  HANDLE ret =
+      CreateIoCompletionPort(reinterpret_cast<HANDLE>(socket), iocp_handle_,
+                             reinterpret_cast<uintptr_t>(wrapped_socket), 0);
+  if (!ret) {
+    char* utf8_message = gpr_format_message(WSAGetLastError());
+    gpr_log(GPR_ERROR, "Unable to add socket to iocp: %s", utf8_message);
+    gpr_free(utf8_message);
+    __debugbreak();
+    abort();
+  }
+  GPR_ASSERT(ret == iocp_handle_);
+  // DO NOT SUBMIT(hork): should we register any iomgr objects?
+  return wrapped_socket;
+}
+
+// DO NOT SUBMIT(hork): this seems unsafe, can Shutdown be called from multiple
+// threads simultaneously? CloseHandle could be called multiple times.
+void IOCP::Shutdown() {
+  while (outstanding_kicks_.load() > 0) {
+    Work(std::chrono::hours(42));
+  }
+  GPR_ASSERT(CloseHandle(iocp_handle_));
+}
+
+absl::Status IOCP::Work(EventEngine::Duration timeout) {
+  DWORD bytes = 0;
+  ULONG_PTR completion_key;
+  LPOVERLAPPED overlapped;
+  // DO NOT SUBMIT(hork): are we tracking stats the same way? Probably
+  // GRPC_STATS_INC_SYSCALL_POLL();
+  BOOL success = GetQueuedCompletionStatus(
+      iocp_handle_, &bytes, &completion_key, &overlapped,
+      static_cast<DWORD>(
+          std::chrono::duration_cast<std::chrono::milliseconds>(timeout)
+              .count()));
+  if (success == 0 && overlapped == NULL) {
+    return absl::DeadlineExceededError(
+        absl::StrFormat("IOCP::%p: Received no completions", this));
+  }
+  GPR_ASSERT(completion_key && overlapped);
+  if (overlapped == &kick_overlap_) {
+    outstanding_kicks_.fetch_sub(1);
+    if (completion_key == (ULONG_PTR)&kick_token_) {
+      return absl::AbortedError(
+          absl::StrFormat("IOCP::%p: Awoken from a kick", this));
+    }
+    gpr_log(GPR_ERROR, "Unknown custom completion key: %p", completion_key);
+    abort();
+  }
+  WinWrappedSocket* socket =
+      reinterpret_cast<WinWrappedSocket*>(completion_key);
+  WinWrappedSocket::OpInfo* info = socket->GetOpInfoForOverlapped(overlapped);
+  GPR_ASSERT(info != nullptr);
+  if (socket->IsShutdown()) {
+    info->SetError();
+  } else {
+    info->GetOverlappedResult();
+  }
+  info->SetReady();
+  return absl::OkStatus();
+}
+
+void IOCP::Kick() {
+  outstanding_kicks_.fetch_add(1);
+  GPR_ASSERT(PostQueuedCompletionStatus(
+      iocp_handle_, 0, reinterpret_cast<ULONG_PTR>(&kick_token_),
+      &kick_overlap_));
+}
+
+void IOCP::WSASocketFlagsInit() {
+  wsa_socket_flags_ = WSA_FLAG_OVERLAPPED;
+  /* WSA_FLAG_NO_HANDLE_INHERIT may be not supported on the older Windows
+     versions, see
+     https://msdn.microsoft.com/en-us/library/windows/desktop/ms742212(v=vs.85).aspx
+     for details. */
+  SOCKET sock = WSASocket(AF_INET6, SOCK_STREAM, IPPROTO_TCP, NULL, 0,
+                          wsa_socket_flags_ | WSA_FLAG_NO_HANDLE_INHERIT);
+  if (sock != INVALID_SOCKET) {
+    /* Windows 7, Windows 2008 R2 with SP1 or later */
+    wsa_socket_flags_ |= WSA_FLAG_NO_HANDLE_INHERIT;
+    closesocket(sock);
+  }
+}
+
+
+}  // namespace experimental
+}  // namespace grpc_event_engine

@@ -2502,6 +2502,33 @@ grpc_cc_library(
         "iomgr_ee_timer",
         "iomgr_ee_timer_manager",
         "time",
+        "windows_iocp",
+    ],
+)
+
+grpc_cc_library(
+    name = "windows_iocp",
+    srcs = [
+        "src/core/lib/event_engine/windows/iocp.cc",
+        "src/core/lib/event_engine/windows/socket.cc",
+    ],
+    hdrs = [
+        "src/core/lib/event_engine/windows/event_poller.h",
+        "src/core/lib/event_engine/windows/iocp.h",
+        "src/core/lib/event_engine/windows/socket.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/functional:any_invocable",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/memory",
+    ],
+    deps = [
+        "gpr_platform",
+        "gpr_base",
+        "time",
     ],
 )
 

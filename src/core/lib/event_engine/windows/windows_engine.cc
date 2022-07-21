@@ -30,6 +30,7 @@
 #include "src/core/lib/event_engine/iomgr_engine/thread_pool.h"
 #include "src/core/lib/event_engine/iomgr_engine/timer_manager.h"
 #include "src/core/lib/event_engine/trace.h"
+#include "src/core/lib/event_engine/windows/iocp.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
 
@@ -73,7 +74,11 @@ struct WindowsEventEngine::Closure final : public EventEngine::Closure {
   }
 };
 
-WindowsEventEngine::WindowsEventEngine() {}
+WindowsEventEngine::WindowsEventEngine() : iocp_(this) {
+  WSADATA wsaData;
+  int status = WSAStartup(MAKEWORD(2, 0), &wsaData);
+  GPR_ASSERT(status == 0);
+}
 
 WindowsEventEngine::~WindowsEventEngine() {
   grpc_core::MutexLock lock(&mu_);
@@ -85,6 +90,7 @@ WindowsEventEngine::~WindowsEventEngine() {
     }
   }
   GPR_ASSERT(GPR_LIKELY(known_handles_.empty()));
+  GPR_ASSERT(WSACleanup() == 0);
 }
 
 // DO NOT SUBMIT(hork): identical to iomgr EventEngine. Dedupe.
@@ -144,23 +150,27 @@ bool WindowsEventEngine::IsWorkerThread() {
 
 // DO NOT SUBMIT - client & listener implementation
 
-bool WindowsEventEngine::CancelConnect(EventEngine::ConnectionHandle /*handle*/) {
+bool WindowsEventEngine::CancelConnect(
+    EventEngine::ConnectionHandle handle) {
+
   GPR_ASSERT(false && "unimplemented");
 }
 
 EventEngine::ConnectionHandle WindowsEventEngine::Connect(
-    OnConnectCallback /*on_connect*/, const ResolvedAddress& /*addr*/,
-    const EndpointConfig& /*args*/, MemoryAllocator /*memory_allocator*/,
-    Duration /*deadline*/) {
+    OnConnectCallback on_connect, const ResolvedAddress& addr,
+    const EndpointConfig& args, MemoryAllocator memory_allocator,
+    Duration deadline) {
+  
   GPR_ASSERT(false && "unimplemented");
 }
 
 absl::StatusOr<std::unique_ptr<EventEngine::Listener>>
 WindowsEventEngine::CreateListener(
-    Listener::AcceptCallback /*on_accept*/,
-    absl::AnyInvocable<void(absl::Status)> /*on_shutdown*/,
-    const EndpointConfig& /*config*/,
-    std::unique_ptr<MemoryAllocatorFactory> /*memory_allocator_factory*/) {
+    Listener::AcceptCallback on_accept,
+    absl::AnyInvocable<void(absl::Status)> on_shutdown,
+    const EndpointConfig& config,
+    std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory) {
+
   GPR_ASSERT(false && "unimplemented");
 }
 
