@@ -99,7 +99,10 @@ run_test() {
   local test_name="${1:?Usage: run_test test_name}"
   local test_dir="${TEST_XML_OUTPUT_DIR}/${test_name}"
   mkdir -pv "${test_dir}"
-  echo "I'm a pod log" > "${test_dir}/pod.log"
+  echo "I'm a pod 1 c1 log" > "${test_dir}/${test_name}.pod-1.c-1.sponge_log.log"
+  echo "I'm a pod 1 c2 log" > "${test_dir}/${test_name}.pod-1.c-2.sponge_log.log"
+  echo "I'm a pod 2 c1 log" > "${test_dir}/${test_name}.pod-2.c-1.sponge_log.log"
+  echo "I'm a pod 2 c2 log" > "${test_dir}/${test_name}.pod-2.c-2.sponge_log.log"
   set -x
   python3 -m "tests.${test_name}" \
     --flagfile="${TEST_DRIVER_FLAGFILE}" \
