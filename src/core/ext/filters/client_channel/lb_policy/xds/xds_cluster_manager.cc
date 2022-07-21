@@ -30,7 +30,6 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
-#include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/impl/codegen/connectivity_state.h>
@@ -68,8 +67,7 @@ TraceFlag grpc_xds_cluster_manager_lb_trace(false, "xds_cluster_manager_lb");
 
 namespace {
 
-constexpr absl::string_view kXdsClusterManager =
-    "xds_cluster_manager_experimental";
+constexpr char kXdsClusterManager[] = "xds_cluster_manager_experimental";
 
 // Config for xds_cluster_manager LB policy.
 class XdsClusterManagerLbConfig : public LoadBalancingPolicy::Config {
@@ -80,7 +78,7 @@ class XdsClusterManagerLbConfig : public LoadBalancingPolicy::Config {
   explicit XdsClusterManagerLbConfig(ClusterMap cluster_map)
       : cluster_map_(std::move(cluster_map)) {}
 
-  absl::string_view name() const override { return kXdsClusterManager; }
+  const char* name() const override { return kXdsClusterManager; }
 
   const ClusterMap& cluster_map() const { return cluster_map_; }
 
@@ -93,7 +91,7 @@ class XdsClusterManagerLb : public LoadBalancingPolicy {
  public:
   explicit XdsClusterManagerLb(Args args);
 
-  absl::string_view name() const override { return kXdsClusterManager; }
+  const char* name() const override { return kXdsClusterManager; }
 
   void UpdateLocked(UpdateArgs args) override;
   void ExitIdleLocked() override;
@@ -624,80 +622,89 @@ class XdsClusterManagerLbFactory : public LoadBalancingPolicyFactory {
     return MakeOrphanable<XdsClusterManagerLb>(std::move(args));
   }
 
-  absl::string_view name() const override { return kXdsClusterManager; }
+  const char* name() const override { return kXdsClusterManager; }
 
-  absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
-  ParseLoadBalancingConfig(const Json& json) const override {
+  RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
+      const Json& json, grpc_error_handle* error) const override {
+    GPR_DEBUG_ASSERT(error != nullptr && GRPC_ERROR_IS_NONE(*error));
     if (json.type() == Json::Type::JSON_NULL) {
       // xds_cluster_manager was mentioned as a policy in the deprecated
       // loadBalancingPolicy field or in the client API.
-      return absl::InvalidArgumentError(
+      *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "field:loadBalancingPolicy error:xds_cluster_manager policy requires "
           "configuration.  Please use loadBalancingConfig field of service "
           "config instead.");
+      return nullptr;
     }
-    std::vector<std::string> errors;
+    std::vector<grpc_error_handle> error_list;
     XdsClusterManagerLbConfig::ClusterMap cluster_map;
     std::set<std::string /*cluster_name*/> clusters_to_be_used;
     auto it = json.object_value().find("children");
     if (it == json.object_value().end()) {
-      errors.emplace_back("field:children error:required field not present");
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "field:children error:required field not present"));
     } else if (it->second.type() != Json::Type::OBJECT) {
-      errors.emplace_back("field:children error:type should be object");
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "field:children error:type should be object"));
     } else {
       for (const auto& p : it->second.object_value()) {
         const std::string& child_name = p.first;
         if (child_name.empty()) {
-          errors.emplace_back("field:children error: name cannot be empty");
+          error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+              "field:children element error: name cannot be empty"));
           continue;
         }
-        auto config = ParseChildConfig(p.second);
-        if (!config.ok()) {
-          errors.emplace_back(
-              absl::StrCat("field:children name:", child_name,
-                           " error:", config.status().message()));
+        RefCountedPtr<LoadBalancingPolicy::Config> child_config;
+        std::vector<grpc_error_handle> child_errors =
+            ParseChildConfig(p.second, &child_config);
+        if (!child_errors.empty()) {
+          error_list.push_back(GRPC_ERROR_CREATE_FROM_VECTOR_AND_CPP_STRING(
+              absl::StrCat("field:children name:", child_name), &child_errors));
         } else {
-          cluster_map[child_name] = std::move(*config);
+          cluster_map[child_name] = std::move(child_config);
           clusters_to_be_used.insert(child_name);
         }
       }
     }
     if (cluster_map.empty()) {
-      errors.emplace_back("no valid children configured");
+      error_list.push_back(
+          GRPC_ERROR_CREATE_FROM_STATIC_STRING("no valid children configured"));
     }
-    if (!errors.empty()) {
-      return absl::InvalidArgumentError(absl::StrCat(
-          "errors parsing xds_cluster_manager_experimental LB policy config: [",
-          absl::StrJoin(errors, "; "), "]"));
+    if (!error_list.empty()) {
+      *error = GRPC_ERROR_CREATE_FROM_VECTOR(
+          "xds_cluster_manager_experimental LB policy config", &error_list);
+      return nullptr;
     }
     return MakeRefCounted<XdsClusterManagerLbConfig>(std::move(cluster_map));
   }
 
  private:
-  static absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
-  ParseChildConfig(const Json& json) {
+  static std::vector<grpc_error_handle> ParseChildConfig(
+      const Json& json,
+      RefCountedPtr<LoadBalancingPolicy::Config>* child_config) {
+    std::vector<grpc_error_handle> error_list;
     if (json.type() != Json::Type::OBJECT) {
-      return absl::InvalidArgumentError("value should be of type object");
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "value should be of type object"));
+      return error_list;
     }
-    RefCountedPtr<LoadBalancingPolicy::Config> child_config;
-    std::vector<std::string> errors;
     auto it = json.object_value().find("childPolicy");
     if (it == json.object_value().end()) {
-      errors.emplace_back("did not find childPolicy");
+      error_list.push_back(
+          GRPC_ERROR_CREATE_FROM_STATIC_STRING("did not find childPolicy"));
     } else {
-      auto config =
-          LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(it->second);
-      if (!config.ok()) {
-        errors.emplace_back(absl::StrCat("field:childPolicy error:",
-                                         config.status().message()));
-      } else {
-        child_config = std::move(*config);
+      grpc_error_handle parse_error = GRPC_ERROR_NONE;
+      *child_config = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
+          it->second, &parse_error);
+      if (*child_config == nullptr) {
+        GPR_DEBUG_ASSERT(!GRPC_ERROR_IS_NONE(parse_error));
+        std::vector<grpc_error_handle> child_errors;
+        child_errors.push_back(parse_error);
+        error_list.push_back(
+            GRPC_ERROR_CREATE_FROM_VECTOR("field:childPolicy", &child_errors));
       }
     }
-    if (!errors.empty()) {
-      return absl::InvalidArgumentError(absl::StrJoin(errors, "; "));
-    }
-    return child_config;
+    return error_list;
   }
 };
 
