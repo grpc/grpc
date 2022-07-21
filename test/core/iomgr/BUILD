@@ -42,7 +42,6 @@ grpc_cc_test(
     name = "combiner_test",
     srcs = ["combiner_test.cc"],
     exec_properties = LARGE_MACHINE,
-    external_deps = ["gtest"],
     language = "C++",
     tags = ["no_windows"],  # LARGE_MACHINE is not configured for windows RBE
     deps = [
@@ -55,7 +54,6 @@ grpc_cc_test(
 grpc_cc_test(
     name = "endpoint_pair_test",
     srcs = ["endpoint_pair_test.cc"],
-    external_deps = ["gtest"],
     language = "C++",
     deps = [
         ":endpoint_tests",
@@ -85,7 +83,6 @@ grpc_cc_test(
 grpc_cc_test(
     name = "fd_conservation_posix_test",
     srcs = ["fd_conservation_posix_test.cc"],
-    external_deps = ["gtest"],
     language = "C++",
     tags = ["no_windows"],
     deps = [
@@ -98,7 +95,6 @@ grpc_cc_test(
 grpc_cc_test(
     name = "fd_posix_test",
     srcs = ["fd_posix_test.cc"],
-    external_deps = ["gtest"],
     language = "C++",
     tags = ["no_windows"],
     deps = [
@@ -111,7 +107,6 @@ grpc_cc_test(
 grpc_cc_test(
     name = "grpc_ipv6_loopback_available_test",
     srcs = ["grpc_ipv6_loopback_available_test.cc"],
-    external_deps = ["gtest"],
     language = "C++",
     deps = [
         "//:gpr",
@@ -123,7 +118,6 @@ grpc_cc_test(
 grpc_cc_test(
     name = "load_file_test",
     srcs = ["load_file_test.cc"],
-    external_deps = ["gtest"],
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,
@@ -141,10 +135,7 @@ grpc_cc_test(
         "--resolver=ares",
     ],
     external_deps = [
-        "absl/flags:flag",
-        "absl/flags:parse",
         "absl/strings",
-        "gtest",
     ],
     language = "C++",
     tags = ["no_windows"],
@@ -162,10 +153,7 @@ grpc_cc_test(
         "--resolver=native",
     ],
     external_deps = [
-        "absl/flags:flag",
-        "absl/flags:parse",
         "absl/strings",
-        "gtest",
     ],
     language = "C++",
     tags = ["no_windows"],
@@ -213,7 +201,6 @@ grpc_cc_test(
 grpc_cc_test(
     name = "socket_utils_test",
     srcs = ["socket_utils_test.cc"],
-    external_deps = ["gtest"],
     language = "C++",
     tags = ["no_windows"],
     deps = [
@@ -226,7 +213,6 @@ grpc_cc_test(
 grpc_cc_test(
     name = "tcp_client_posix_test",
     srcs = ["tcp_client_posix_test.cc"],
-    external_deps = ["gtest"],
     language = "C++",
     tags = ["no_windows"],
     deps = [
@@ -239,7 +225,6 @@ grpc_cc_test(
 grpc_cc_test(
     name = "tcp_posix_test",
     srcs = ["tcp_posix_test.cc"],
-    external_deps = ["gtest"],
     language = "C++",
     tags = [
         "no_mac",  # TODO(jtattermusch): Reenable once https://github.com/grpc/grpc/issues/21282 is fixed.
@@ -256,7 +241,6 @@ grpc_cc_test(
 grpc_cc_test(
     name = "buffer_list_test",
     srcs = ["buffer_list_test.cc"],
-    external_deps = ["gtest"],
     language = "C++",
     deps = [
         "//:gpr",
@@ -268,7 +252,6 @@ grpc_cc_test(
 grpc_cc_test(
     name = "tcp_server_posix_test",
     srcs = ["tcp_server_posix_test.cc"],
-    external_deps = ["gtest"],
     language = "C++",
     tags = ["no_windows"],
     deps = [
@@ -281,7 +264,6 @@ grpc_cc_test(
 grpc_cc_test(
     name = "timer_heap_test",
     srcs = ["timer_heap_test.cc"],
-    external_deps = ["gtest"],
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,
@@ -295,7 +277,6 @@ grpc_cc_test(
 grpc_cc_test(
     name = "timer_list_test",
     srcs = ["timer_list_test.cc"],
-    external_deps = ["gtest"],
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,

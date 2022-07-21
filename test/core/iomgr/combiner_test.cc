@@ -18,8 +18,6 @@
 
 #include "src/core/lib/iomgr/combiner.h"
 
-#include <gtest/gtest.h>
-
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -28,7 +26,7 @@
 #include "src/core/lib/gprpp/thd.h"
 #include "test/core/util/test_config.h"
 
-TEST(CombinerTest, TestNoOp) {
+static void test_no_op(void) {
   gpr_log(GPR_DEBUG, "test_no_op");
   grpc_core::ExecCtx exec_ctx;
   GRPC_COMBINER_UNREF(grpc_combiner_create(), "test_no_op");
@@ -38,7 +36,7 @@ static void set_event_to_true(void* value, grpc_error_handle /*error*/) {
   gpr_event_set(static_cast<gpr_event*>(value), reinterpret_cast<void*>(1));
 }
 
-TEST(CombinerTest, TestExecuteOne) {
+static void test_execute_one(void) {
   gpr_log(GPR_DEBUG, "test_execute_one");
 
   grpc_core::Combiner* lock = grpc_combiner_create();
@@ -48,8 +46,8 @@ TEST(CombinerTest, TestExecuteOne) {
   lock->Run(GRPC_CLOSURE_CREATE(set_event_to_true, &done, nullptr),
             GRPC_ERROR_NONE);
   grpc_core::ExecCtx::Get()->Flush();
-  ASSERT_NE(gpr_event_wait(&done, grpc_timeout_seconds_to_deadline(5)),
-            nullptr);
+  GPR_ASSERT(gpr_event_wait(&done, grpc_timeout_seconds_to_deadline(5)) !=
+             nullptr);
   GRPC_COMBINER_UNREF(lock, "test_execute_one");
 }
 
@@ -66,7 +64,7 @@ typedef struct {
 
 static void check_one(void* a, grpc_error_handle /*error*/) {
   ex_args* args = static_cast<ex_args*>(a);
-  ASSERT_EQ(*args->ctr, args->value - 1);
+  GPR_ASSERT(*args->ctr == args->value - 1);
   *args->ctr = args->value;
   gpr_free(a);
 }
@@ -92,7 +90,7 @@ static void execute_many_loop(void* a) {
                   GRPC_ERROR_NONE);
 }
 
-TEST(CombinerTest, TestExecuteMany) {
+static void test_execute_many(void) {
   gpr_log(GPR_DEBUG, "test_execute_many");
 
   grpc_core::Combiner* lock = grpc_combiner_create();
@@ -106,8 +104,8 @@ TEST(CombinerTest, TestExecuteMany) {
     thds[i].Start();
   }
   for (size_t i = 0; i < GPR_ARRAY_SIZE(thds); i++) {
-    ASSERT_NE(gpr_event_wait(&ta[i].done, gpr_inf_future(GPR_CLOCK_REALTIME)),
-              nullptr);
+    GPR_ASSERT(gpr_event_wait(&ta[i].done,
+                              gpr_inf_future(GPR_CLOCK_REALTIME)) != nullptr);
     thds[i].Join();
   }
   grpc_core::ExecCtx exec_ctx;
@@ -125,7 +123,7 @@ static void add_finally(void* arg, grpc_error_handle /*error*/) {
       GRPC_CLOSURE_CREATE(in_finally, arg, nullptr), GRPC_ERROR_NONE);
 }
 
-TEST(CombinerTest, TestExecuteFinally) {
+static void test_execute_finally(void) {
   gpr_log(GPR_DEBUG, "test_execute_finally");
 
   grpc_core::Combiner* lock = grpc_combiner_create();
@@ -133,15 +131,19 @@ TEST(CombinerTest, TestExecuteFinally) {
   gpr_event_init(&got_in_finally);
   lock->Run(GRPC_CLOSURE_CREATE(add_finally, lock, nullptr), GRPC_ERROR_NONE);
   grpc_core::ExecCtx::Get()->Flush();
-  ASSERT_NE(
-      gpr_event_wait(&got_in_finally, grpc_timeout_seconds_to_deadline(5)),
-      nullptr);
+  GPR_ASSERT(gpr_event_wait(&got_in_finally,
+                            grpc_timeout_seconds_to_deadline(5)) != nullptr);
   GRPC_COMBINER_UNREF(lock, "test_execute_finally");
 }
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
-  ::testing::InitGoogleTest(&argc, argv);
-  grpc::testing::TestGrpcScope grpc_scope;
-  return RUN_ALL_TESTS();
+  grpc_init();
+  test_no_op();
+  test_execute_one();
+  test_execute_finally();
+  test_execute_many();
+  grpc_shutdown();
+
+  return 0;
 }

@@ -22,10 +22,6 @@
 
 #include <string>
 
-#include <gtest/gtest.h>
-
-#include "absl/flags/flag.h"
-#include "absl/flags/parse.h"
 #include "absl/strings/str_format.h"
 
 #include <grpc/grpc.h>
@@ -71,7 +67,7 @@ void args_init(args_struct* args) {
 }
 
 void args_finish(args_struct* args) {
-  ASSERT_TRUE(gpr_event_wait(&args->ev, test_deadline()));
+  GPR_ASSERT(gpr_event_wait(&args->ev, test_deadline()));
   args->thd.Join();
   // Don't need to explicitly destruct args->thd since
   // args is actually going to be destructed, not just freed
@@ -106,7 +102,7 @@ static void actually_poll(void* argsp) {
           deadline - grpc_core::ExecCtx::Get()->Now();
       gpr_log(GPR_DEBUG, "done=%d, time_left=%" PRId64, args->done,
               time_left.millis());
-      ASSERT_GE(time_left, grpc_core::Duration::Zero());
+      GPR_ASSERT(time_left >= grpc_core::Duration::Zero());
       grpc_pollset_worker* worker = nullptr;
       GRPC_LOG_IF_ERROR(
           "pollset_work",
@@ -125,8 +121,8 @@ namespace {
 
 void MustSucceed(args_struct* args,
                  absl::StatusOr<std::vector<grpc_resolved_address>> result) {
-  ASSERT_TRUE(result.ok());
-  ASSERT_FALSE(result->empty());
+  GPR_ASSERT(result.ok());
+  GPR_ASSERT(!result->empty());
   grpc_core::MutexLockForGprMu lock(args->mu);
   args->done = true;
   GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, nullptr));
@@ -165,7 +161,7 @@ static void test_named_and_numeric_scope_ids(void) {
       break;
     }
   }
-  ASSERT_GT(strlen(arbitrary_interface_name), 0);
+  GPR_ASSERT(strlen(arbitrary_interface_name) > 0);
   // Test resolution of an ipv6 address with a named scope ID
   gpr_log(GPR_DEBUG, "test resolution with a named scope ID");
   std::string target_with_named_scope_id =
@@ -179,30 +175,34 @@ static void test_named_and_numeric_scope_ids(void) {
   resolve_address_must_succeed(target_with_numeric_scope_id.c_str());
 }
 
-ABSL_FLAG(std::string, resolver, "", "Resolver type (ares or native)");
-
-TEST(ResolveAddressUsingAresResolverPosixTest, MainTest) {
+int main(int argc, char** argv) {
   // First set the resolver type based off of --resolver
-  std::string resolver_type = absl::GetFlag(FLAGS_resolver);
+  const char* resolver_type = nullptr;
+  gpr_cmdline* cl = gpr_cmdline_create("resolve address test");
+  gpr_cmdline_add_string(cl, "resolver", "Resolver type (ares or native)",
+                         &resolver_type);
   // In case that there are more than one argument on the command line,
   // --resolver will always be the first one, so only parse the first argument
   // (other arguments may be unknown to cl)
+  gpr_cmdline_parse(cl, argc > 2 ? 2 : argc, argv);
   grpc_core::UniquePtr<char> resolver =
       GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
   if (strlen(resolver.get()) != 0) {
     gpr_log(GPR_INFO, "Warning: overriding resolver setting of %s",
             resolver.get());
   }
-  if (resolver_type == "native") {
+  if (resolver_type != nullptr && gpr_stricmp(resolver_type, "native") == 0) {
     GPR_GLOBAL_CONFIG_SET(grpc_dns_resolver, "native");
-  } else if (resolver_type == "ares") {
+  } else if (resolver_type != nullptr &&
+             gpr_stricmp(resolver_type, "ares") == 0) {
     GPR_GLOBAL_CONFIG_SET(grpc_dns_resolver, "ares");
   } else {
-    gpr_log(GPR_ERROR, "--resolver was not set to ares or native");
-    ASSERT_TRUE(false);
+    gpr_log(GPR_ERROR, "--resolver_type was not set to ares or native");
+    abort();
   }
-
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
+
   {
     grpc_core::ExecCtx exec_ctx;
     test_named_and_numeric_scope_ids();
@@ -212,12 +212,8 @@ TEST(ResolveAddressUsingAresResolverPosixTest, MainTest) {
     grpc_core::UniquePtr<char> resolver =
         GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
   }
-  grpc_shutdown();
-}
+  gpr_cmdline_destroy(cl);
 
-int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(&argc, argv);
-  ::testing::InitGoogleTest(&argc, argv);
-  absl::ParseCommandLine(argc, argv);
-  return RUN_ALL_TESTS();
+  grpc_shutdown();
+  return 0;
 }
