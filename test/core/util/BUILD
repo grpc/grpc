@@ -74,17 +74,40 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/debugging:failure_signal_handler",
-        "absl/debugging:symbolize",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
         "absl/strings:str_format",
     ],
     language = "C++",
     deps = [
-        ":build",
-        ":grpc_suppressions",
-        ":stack_tracer",
-        "//:gpr",
+        "build",
+        "stack_tracer",
+        "//:arena",
+        "//:channel_args_preconditioning",
+        "//:config",
+        "//:debug_location",
+        "//:gpr_base",
+        "//:grpc",
+        "//:grpc_authorization_base",
         "//:grpc_base",
-        "//:grpc_common",
+        "//:grpc_security_base",
+        "//:grpc_sockaddr",
+        "//:grpc_trace",
+        "//:httpcli",
+        "//:iomgr_fwd",
+        "//:iomgr_port",
+        "//:iomgr_timer",
+        "//:memory_quota",
+        "//:orphanable",
+        "//:ref_counted_ptr",
+        "//:resolved_address",
+        "//:resource_quota",
+        "//:slice",
+        "//:slice_refcount",
+        "//:time",
+        "//:uri_parser",
+        "//:useful",
         "//test/core/event_engine:test_init",
     ],
 )
@@ -93,10 +116,18 @@ grpc_cc_library(
     name = "grpc_test_util",
     srcs = ["tls_utils.cc"],
     hdrs = ["tls_utils.h"],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/strings",
+    ],
     language = "C++",
     deps = [
-        ":grpc_test_util_base",
+        "grpc_test_util_base",
+        "//:gpr_base",
         "//:grpc",
+        "//:grpc_base",
+        "//:grpc_public_hdrs",
+        "//:tsi_ssl_credentials",
     ],
 )
 
@@ -105,6 +136,7 @@ grpc_cc_library(
     srcs = [],
     hdrs = [],
     language = "C++",
+    tags = ["nofixdeps"],
     deps = [
         ":grpc_test_util_base",
         "//:grpc_unsecure",
@@ -119,8 +151,9 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        ":grpc_test_util",
-        "//:gpr",
+        "grpc_test_util_base",
+        "//:gpr_base",
+        "//:useful",
     ],
 )
 
@@ -133,7 +166,10 @@ grpc_cc_library(
         "gtest",
     ],
     linkstatic = True,
-    tags = ["no_windows"],
+    tags = [
+        "no_windows",
+        "nofixdeps",
+    ],
     deps = [
         ":grpc_test_util",
         "//:grpc",
@@ -149,8 +185,8 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        ":grpc_test_util",
-        "//:gpr",
+        "grpc_test_util_base",
+        "//:gpr_base",
     ],
 )
 
@@ -184,7 +220,7 @@ grpc_cc_test(
         "stack_tracer_test.cc",
     ],
     external_deps = [
-        "absl/debugging:symbolize",
+        "absl/strings",
         "gtest",
     ],
     language = "C++",
@@ -193,8 +229,9 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        ":grpc_test_util",
-        ":stack_tracer",
+        "grpc_test_util_base",
+        "stack_tracer",
+        "//:gpr_base",
     ],
 )
 
@@ -203,8 +240,27 @@ grpc_cc_library(
     testonly = 1,
     srcs = ["test_lb_policies.cc"],
     hdrs = ["test_lb_policies.h"],
+    external_deps = [
+        "absl/memory",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/types:variant",
+    ],
     deps = [
+        "//:gpr_base",
         "//:grpc",
+        "//:grpc_backend_metric_data",
+        "//:grpc_base",
+        "//:grpc_client_channel",
+        "//:json",
+        "//:json_util",
+        "//:orphanable",
+        "//:ref_counted_ptr",
+        "//:resolved_address",
+        "//:server_address",
+        "//:time",
+        "//:uri_parser",
     ],
 )
 
@@ -213,14 +269,18 @@ grpc_cc_library(
     srcs = ["fake_udp_and_tcp_server.cc"],
     hdrs = ["fake_udp_and_tcp_server.h"],
     external_deps = [
+        "absl/memory",
+        "absl/status:statusor",
         "absl/strings",
-        "absl/strings:str_format",
     ],
     language = "C++",
     deps = [
-        ":grpc_test_util",
-        "//:gpr",
+        "grpc_test_util_base",
+        "//:gpr_base",
         "//:grpc",
+        "//:grpc_base",
+        "//:resolved_address",
+        "//:sockaddr_utils",
     ],
 )
 
