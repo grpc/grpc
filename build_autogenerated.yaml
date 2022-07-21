@@ -3263,6 +3263,18 @@ targets:
   - linux
   - posix
   - mac
+- name: fd_conservation_posix_test
+  build: test
+  language: c
+  headers: []
+  src:
+  - test/core/iomgr/fd_conservation_posix_test.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: fling_stream_test
   build: test
   language: c
@@ -3367,6 +3379,28 @@ targets:
   - test/core/surface/public_headers_must_be_c89.c
   deps:
   - grpc_test_util
+- name: tcp_posix_test
+  build: test
+  language: c
+  headers:
+  - test/core/iomgr/endpoint_tests.h
+  src:
+  - test/core/iomgr/endpoint_tests.cc
+  - test/core/iomgr/tcp_posix_test.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+- name: test_core_iomgr_timer_list_test
+  build: test
+  language: c
+  headers: []
+  src:
+  - test/core/iomgr/timer_list_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: activity_test
   gtest: true
   build: test
@@ -5282,19 +5316,6 @@ targets:
   - test/core/tsi/transport_security_test_lib.cc
   deps:
   - grpc_test_util
-- name: fd_conservation_posix_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/iomgr/fd_conservation_posix_test.cc
-  deps:
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
 - name: fd_posix_test
   gtest: true
   build: test
@@ -8294,20 +8315,6 @@ targets:
   - linux
   - posix
   - mac
-- name: tcp_posix_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - test/core/iomgr/endpoint_tests.h
-  src:
-  - test/core/iomgr/endpoint_tests.cc
-  - test/core/iomgr/tcp_posix_test.cc
-  deps:
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
 - name: tcp_server_posix_test
   gtest: true
   build: test
@@ -8645,16 +8652,6 @@ targets:
   headers: []
   src:
   - test/core/iomgr/timer_heap_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: test_core_iomgr_timer_list_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/iomgr/timer_list_test.cc
   deps:
   - grpc_test_util
   uses_polling: false

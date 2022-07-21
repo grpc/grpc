@@ -85,7 +85,6 @@ grpc_cc_test(
 grpc_cc_test(
     name = "fd_conservation_posix_test",
     srcs = ["fd_conservation_posix_test.cc"],
-    external_deps = ["gtest"],
     language = "C++",
     tags = ["no_windows"],
     deps = [
@@ -239,7 +238,6 @@ grpc_cc_test(
 grpc_cc_test(
     name = "tcp_posix_test",
     srcs = ["tcp_posix_test.cc"],
-    external_deps = ["gtest"],
     language = "C++",
     tags = [
         "no_mac",  # TODO(jtattermusch): Reenable once https://github.com/grpc/grpc/issues/21282 is fixed.
@@ -295,7 +293,6 @@ grpc_cc_test(
 grpc_cc_test(
     name = "timer_list_test",
     srcs = ["timer_list_test.cc"],
-    external_deps = ["gtest"],
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,
