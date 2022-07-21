@@ -102,3 +102,19 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "tcp_posix_socket_utils_test",
+    srcs = ["tcp_posix_socket_utils_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:event_engine_common",
+        "//:iomgr_ee_tcp_posix_socket_utils",
+        "//:socket_mutator",
+        "//test/core/util:grpc_suppressions",
+        "//test/core/util:grpc_test_util",
+    ],
+)

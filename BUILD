@@ -2456,6 +2456,32 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "iomgr_ee_tcp_posix_socket_utils",
+    srcs = [
+        "src/core/lib/event_engine/iomgr_engine/tcp_posix_socket_utils.cc",
+    ],
+    hdrs = [
+        "src/core/lib/event_engine/iomgr_engine/tcp_posix_socket_utils.h",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+    ],
+    deps = [
+        "event_engine_base_hdrs",
+        "gpr_base",
+        "gpr_platform",
+        "grpc_codegen",
+        "memory_quota",
+        "resource_quota",
+        "iomgr_port",
+        "sockaddr_utils",
+        "socket_mutator",
+        "useful",
+    ],
+)
+
+grpc_cc_library(
     name = "iomgr_event_engine",
     srcs = ["src/core/lib/event_engine/iomgr_engine/iomgr_engine.cc"],
     hdrs = ["src/core/lib/event_engine/iomgr_engine/iomgr_engine.h"],
@@ -2627,6 +2653,24 @@ grpc_cc_library(
         "bitset",
         "gpr_base",
         "slice",
+    ],
+)
+
+grpc_cc_library(
+    name = "socket_mutator",
+    srcs = [
+        "src/core/lib/iomgr/socket_mutator.cc",
+    ],
+    hdrs = [
+        "src/core/lib/iomgr/socket_mutator.h",
+    ],
+    deps = [
+        "channel_args",
+        "grpc_codegen",
+        "gpr_base",
+        "gpr_codegen",
+        "gpr_platform",
+        "useful",
     ],
 )
 
