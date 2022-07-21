@@ -166,12 +166,14 @@ main() {
   for test in "${test_suites[@]}"; do
     run_test $test || (( failed_tests++ ))
   done
-  mkdir "${KOKORO_ARTIFACTS_DIR}/llll"
-  echo "I'm a pod 1 c1 log" > "${KOKORO_ARTIFACTS_DIR}/llll/pod-1.c-1.log"
-  echo "I'm a pod 1 c2 log" > "${KOKORO_ARTIFACTS_DIR}/llll/pod-1.c-2.log"
-  echo "I'm a pod 2 c1 log" > "${KOKORO_ARTIFACTS_DIR}/llll/pod-2.c-1.log"
-  echo "I'm a pod 2 c2 log" > "${KOKORO_ARTIFACTS_DIR}/llll/pod-2.c-2.log"
-  zip -r "${KOKORO_ARTIFACTS_DIR}/undeclared_outputs.zip" "${KOKORO_ARTIFACTS_DIR}/llll/*"
+  local a_dir="${KOKORO_ARTIFACTS_DIR}/llll"
+  mkdir -p "${a_dir}"
+  echo "pod 1 c1 log" > "${a_dir}/pod-1.c-1.log"
+  echo "pod 1 c2 log" > "${a_dir}/pod-1.c-2.log"
+  echo "pod 2 c1 log" > "${a_dir}/pod-2.c-1.log"
+  echo "pod 2 c2 log" > "${a_dir}/pod-2.c-2.log"
+  ls -la "${a_dir}"
+  zip -r "${KOKORO_ARTIFACTS_DIR}/undeclared_outputs.zip" "${a_dir}/*"
   echo "Failed test suites: ${failed_tests}"
   if (( failed_tests > 0 )); then
     exit 1
