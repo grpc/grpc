@@ -17,7 +17,7 @@
 // ---------------------------------------------------------------------------
 // DO NOT SUBMIT(hork): I forked this from the iomgr_engine due to some slight
 // differences in types. Both are being actively worked on, so the idea is to
-// develop in parallel and unify once things settle.
+// develop in parallel and netogiate a reunification once things settle.
 // ---------------------------------------------------------------------------
 
 #include <grpc/support/port_platform.h>

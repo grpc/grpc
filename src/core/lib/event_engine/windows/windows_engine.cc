@@ -30,6 +30,7 @@
 #include "src/core/lib/event_engine/iomgr_engine/thread_pool.h"
 #include "src/core/lib/event_engine/iomgr_engine/timer_manager.h"
 #include "src/core/lib/event_engine/trace.h"
+#include "src/core/lib/event_engine/utils.h"
 #include "src/core/lib/event_engine/windows/iocp.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
@@ -37,25 +38,6 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-namespace {
-
-// DO NOT SUBMIT(hork): generalize for reuse in Windows
-std::string HandleToString(EventEngine::TaskHandle handle) {
-  return absl::StrCat("{", handle.keys[0], ",", handle.keys[1], "}");
-}
-
-}  // namespace
-
-// DO NOT SUBMIT(hork): generalize for reuse in Windows
-grpc_core::Timestamp WindowsEventEngine::ToTimestamp(
-    EventEngine::Duration when) {
-  return timer_manager_.Now() +
-         std::max(grpc_core::Duration::Milliseconds(1),
-                  grpc_core::Duration::NanosecondsRoundUp(when.count())) +
-         grpc_core::Duration::Milliseconds(1);
-}
-
-// DO NOT SUBMIT(hork): generalize the handle ops for reuse in Windows
 struct WindowsEventEngine::Closure final : public EventEngine::Closure {
   absl::AnyInvocable<void()> cb;
   iomgr_engine::Timer timer;
@@ -124,7 +106,7 @@ void WindowsEventEngine::Run(EventEngine::Closure* closure) {
 
 EventEngine::TaskHandle WindowsEventEngine::RunAfterInternal(
     Duration when, absl::AnyInvocable<void()> cb) {
-  auto when_ts = ToTimestamp(when);
+  auto when_ts = ToTimestamp(timer_manager_.Now(), when);
   auto* cd = new Closure;
   cd->cb = std::move(cb);
   cd->engine = this;
@@ -150,9 +132,7 @@ bool WindowsEventEngine::IsWorkerThread() {
 
 // DO NOT SUBMIT - client & listener implementation
 
-bool WindowsEventEngine::CancelConnect(
-    EventEngine::ConnectionHandle handle) {
-
+bool WindowsEventEngine::CancelConnect(EventEngine::ConnectionHandle handle) {
   GPR_ASSERT(false && "unimplemented");
 }
 
@@ -160,7 +140,6 @@ EventEngine::ConnectionHandle WindowsEventEngine::Connect(
     OnConnectCallback on_connect, const ResolvedAddress& addr,
     const EndpointConfig& args, MemoryAllocator memory_allocator,
     Duration deadline) {
-  
   GPR_ASSERT(false && "unimplemented");
 }
 
@@ -170,7 +149,6 @@ WindowsEventEngine::CreateListener(
     absl::AnyInvocable<void(absl::Status)> on_shutdown,
     const EndpointConfig& config,
     std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory) {
-
   GPR_ASSERT(false && "unimplemented");
 }
 

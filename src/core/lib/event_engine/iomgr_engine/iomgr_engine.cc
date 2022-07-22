@@ -29,29 +29,12 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/iomgr_engine/timer.h"
 #include "src/core/lib/event_engine/trace.h"
+#include "src/core/lib/event_engine/utils.h"
 #include "src/core/lib/gprpp/time.h"
 
 namespace grpc_event_engine {
 namespace experimental {
 
-namespace {
-
-// DO NOT SUBMIT(hork): generalize for reuse in Windows
-std::string HandleToString(EventEngine::TaskHandle handle) {
-  return absl::StrCat("{", handle.keys[0], ",", handle.keys[1], "}");
-}
-
-}  // namespace
-
-// DO NOT SUBMIT(hork): generalize for reuse in Windows
-grpc_core::Timestamp IomgrEventEngine::ToTimestamp(EventEngine::Duration when) {
-  return timer_manager_.Now() +
-         std::max(grpc_core::Duration::Milliseconds(1),
-                  grpc_core::Duration::NanosecondsRoundUp(when.count())) +
-         grpc_core::Duration::Milliseconds(1);
-}
-
-// DO NOT SUBMIT(hork): generalize the handle ops for reuse in Windows
 struct IomgrEventEngine::ClosureData final : public EventEngine::Closure {
   absl::AnyInvocable<void()> cb;
   iomgr_engine::Timer timer;
@@ -115,7 +98,7 @@ void IomgrEventEngine::Run(EventEngine::Closure* closure) {
 
 EventEngine::TaskHandle IomgrEventEngine::RunAfterInternal(
     Duration when, absl::AnyInvocable<void()> cb) {
-  auto when_ts = ToTimestamp(when);
+  auto when_ts = ToTimestamp(timer_manager_.Now(), when);
   auto* cd = new ClosureData;
   cd->cb = std::move(cb);
   cd->engine = this;

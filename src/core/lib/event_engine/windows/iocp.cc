@@ -36,9 +36,8 @@ IOCP::IOCP(EventEngine* event_engine) noexcept
   WSASocketFlagsInit();
 }
 
-// DO NOT SUBMIT(hork): should this attempt to shutdown as well, or expect that
-// to be done already?
-IOCP::~IOCP() { Shutdown(); }
+// Shutdown must be called prior to deletion
+IOCP::~IOCP() {}
 
 WrappedSocket* IOCP::Watch(SOCKET socket) {
   WinWrappedSocket* wrapped_socket =
@@ -54,7 +53,6 @@ WrappedSocket* IOCP::Watch(SOCKET socket) {
     abort();
   }
   GPR_ASSERT(ret == iocp_handle_);
-  // DO NOT SUBMIT(hork): should we register any iomgr objects?
   return wrapped_socket;
 }
 
@@ -74,8 +72,6 @@ absl::Status IOCP::Work(EventEngine::Duration timeout) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {
     gpr_log(GPR_DEBUG, "IOCP::%p doing work", this);
   }
-  // DO NOT SUBMIT(hork): are we tracking stats the same way? Probably
-  // GRPC_STATS_INC_SYSCALL_POLL();
   BOOL success = GetQueuedCompletionStatus(
       iocp_handle_, &bytes, &completion_key, &overlapped,
       static_cast<DWORD>(

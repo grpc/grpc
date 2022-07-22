@@ -29,14 +29,9 @@ WinWrappedSocket::WinWrappedSocket(SOCKET socket,
     : socket_(socket),
       event_engine_(event_engine),
       read_info_(OpInfo(this)),
-      write_info_(OpInfo(this)) {
-  // DO NOT SUBMIT(hork): register iomgr object?
-}
+      write_info_(OpInfo(this)) {}
 
-WinWrappedSocket::~WinWrappedSocket() {
-  // DO NOT SUBMIT(hork): deregister iomgr object?
-  // DO NOT SUBMIT(hork): check_destroyable?
-}
+WinWrappedSocket::~WinWrappedSocket() {}
 
 SOCKET WinWrappedSocket::Socket() { return socket_; }
 
@@ -44,14 +39,16 @@ void WinWrappedSocket::MaybeShutdown(absl::Status why) {
   grpc_core::MutexLock lock(&mu_);
   // if already shutdown, return early. Otherwise, set the shutdown flag.
   if (is_shutdown_) {
-    // DO NOT SUBMIT(hork): trace flag
-    gpr_log(GPR_DEBUG, "WinWrappedSocket::%p already shutting down", this);
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {
+      gpr_log(GPR_DEBUG, "WinWrappedSocket::%p already shutting down", this);
+    }
     return;
   }
   is_shutdown_ = true;
-  // DO NOT SUBMIT(hork): trace flag
-  gpr_log(GPR_DEBUG, "WinWrappedSocket::%p shutting down now. Reason: %s", this,
-          why.ToString().c_str());
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {
+    gpr_log(GPR_DEBUG, "WinWrappedSocket::%p shutting down now. Reason: %s",
+            this, why.ToString().c_str());
+  }
   // Grab the function pointer for DisconnectEx for that specific socket.
   // It may change depending on the interface.
   GUID guid = WSAID_DISCONNECTEX;

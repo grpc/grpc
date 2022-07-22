@@ -89,8 +89,6 @@ class WinWrappedSocket final : public WrappedSocket {
   SOCKET socket_;
   grpc_core::Mutex mu_;
   bool is_shutdown_ ABSL_GUARDED_BY(mu_) = false;
-  // DO NOT SUBMIT(hork): is this needed?
-  // std::atomic<bool> added_to_iocp_{false};
   EventEngine* event_engine_;
   OpInfo read_info_ ABSL_GUARDED_BY(mu_);
   OpInfo write_info_ ABSL_GUARDED_BY(mu_);

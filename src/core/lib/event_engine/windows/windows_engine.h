@@ -101,7 +101,6 @@ class WindowsEventEngine : public EventEngine {
   struct Closure;
   EventEngine::TaskHandle RunAfterInternal(Duration when,
                                            absl::AnyInvocable<void()> cb);
-  grpc_core::Timestamp ToTimestamp(EventEngine::Duration when);
   grpc_core::Mutex mu_;
   TaskHandleSet known_handles_ ABSL_GUARDED_BY(mu_);
   std::atomic<intptr_t> aba_token_{0};

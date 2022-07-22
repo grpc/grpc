@@ -2456,6 +2456,17 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "event_engine_utils",
+    srcs = ["src/core/lib/event_engine/utils.cc"],
+    hdrs = ["src/core/lib/event_engine/utils.h"],
+    deps = [
+        "event_engine_base_hdrs",
+        "gpr_platform",
+        "time",
+    ],
+)
+
+grpc_cc_library(
     name = "iomgr_event_engine",
     srcs = ["src/core/lib/event_engine/iomgr_engine/iomgr_engine.cc"],
     hdrs = ["src/core/lib/event_engine/iomgr_engine/iomgr_engine.h"],
@@ -2471,6 +2482,7 @@ grpc_cc_library(
         "event_engine_base_hdrs",
         "event_engine_common",
         "event_engine_trace",
+        "event_engine_utils",
         "gpr_base",
         "grpc_trace",
         "iomgr_ee_thread_pool",
@@ -2496,6 +2508,7 @@ grpc_cc_library(
         "event_engine_base_hdrs",
         "event_engine_common",
         "event_engine_trace",
+        "event_engine_utils",
         "gpr_base",
         "grpc_trace",
         "iomgr_ee_thread_pool",
@@ -2527,8 +2540,8 @@ grpc_cc_library(
     ],
     deps = [
         "event_engine_trace",
-        "gpr_platform",
         "gpr_base",
+        "gpr_platform",
         "grpc_trace",
         "time",
     ],

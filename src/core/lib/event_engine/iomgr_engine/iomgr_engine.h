@@ -107,7 +107,6 @@ class IomgrEventEngine final : public EventEngine {
   struct ClosureData;
   EventEngine::TaskHandle RunAfterInternal(Duration when,
                                            absl::AnyInvocable<void()> cb);
-  grpc_core::Timestamp ToTimestamp(EventEngine::Duration when);
 
   iomgr_engine::TimerManager timer_manager_;
   iomgr_engine::ThreadPool thread_pool_{2};
