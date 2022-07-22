@@ -14,8 +14,6 @@
 #include <grpc/support/port_platform.h>
 
 #ifdef GPR_WINDOWS
-#include "src/core/lib/event_engine/windows/iocp.h"
-
 #include <chrono>
 
 #include "absl/strings/str_format.h"
@@ -24,6 +22,7 @@
 #include <grpc/support/log_windows.h>
 
 #include "src/core/lib/event_engine/trace.h"
+#include "src/core/lib/event_engine/windows/iocp.h"
 #include "src/core/lib/event_engine/windows/socket.h"
 
 namespace grpc_event_engine {

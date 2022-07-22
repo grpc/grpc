@@ -14,13 +14,13 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/event_engine/default_event_engine_factory.h"
+
 #include <memory>
 
 #include "absl/memory/memory.h"
 
 #include <grpc/event_engine/event_engine.h>
-
-#include "src/core/lib/event_engine/default_event_engine_factory.h"
 
 #ifdef GPR_WINDOWS
 #include "src/core/lib/event_engine/windows/windows_engine.h"

@@ -18,7 +18,8 @@
 #include "test/core/util/test_config.h"
 
 #ifndef GPR_WINDOWS
-#error "This test should only be run on a Windows machine. Investigate your bad build configuration."
+#error \
+    "This test should only be run on a Windows machine. Investigate your bad build configuration."
 #endif
 
 int main(int argc, char** argv) {

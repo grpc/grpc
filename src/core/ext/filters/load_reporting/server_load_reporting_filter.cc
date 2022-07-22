@@ -22,6 +22,7 @@
 
 #include <limits.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 #include <functional>
 #include <string>

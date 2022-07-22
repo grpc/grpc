@@ -2459,6 +2459,7 @@ grpc_cc_library(
     name = "event_engine_utils",
     srcs = ["src/core/lib/event_engine/utils.cc"],
     hdrs = ["src/core/lib/event_engine/utils.h"],
+    external_deps = ["absl/strings"],
     deps = [
         "event_engine_base_hdrs",
         "gpr_platform",
@@ -2488,7 +2489,6 @@ grpc_cc_library(
         "iomgr_ee_thread_pool",
         "iomgr_ee_timer",
         "iomgr_ee_timer_manager",
-        "time",
     ],
 )
 
@@ -2538,8 +2538,6 @@ grpc_cc_library(
         "event_engine_trace",
         "gpr_base",
         "gpr_platform",
-        "slice",
-        "status_helper",
         "time",
     ],
 )

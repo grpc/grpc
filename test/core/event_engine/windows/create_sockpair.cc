@@ -14,15 +14,14 @@
 #include <grpc/support/port_platform.h>
 #ifdef GPR_WINDOWS
 
-#include "test/core/event_engine/windows/create_sockpair.h"
-
 #include <winsock2.h>
 #include <ws2tcpip.h>
 
 #include "absl/status/status.h"
 
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/event_engine/windows/socket.h"
+#include "src/core/lib/iomgr/error.h"
+#include "test/core/event_engine/windows/create_sockpair.h"
 
 namespace grpc_event_engine {
 namespace experimental {

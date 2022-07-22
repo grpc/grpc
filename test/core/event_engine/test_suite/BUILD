@@ -80,7 +80,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:iomgr_event_engine",
-        "//test/core/event_engine/test_suite:timer"
+        "//test/core/event_engine/test_suite:timer",
     ],
 )
 
@@ -95,8 +95,8 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:windows_event_engine",
-        "//test/core/event_engine/test_suite:timer"
-        ],
+        "//test/core/event_engine/test_suite:timer",
+    ],
 )
 
 grpc_cc_test(

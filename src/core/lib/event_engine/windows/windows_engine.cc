@@ -15,8 +15,6 @@
 
 #ifdef GPR_WINDOWS
 
-#include "src/core/lib/event_engine/windows/windows_engine.h"
-
 #include <memory>
 
 #include "absl/status/status.h"
@@ -34,6 +32,7 @@
 #include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/event_engine/utils.h"
 #include "src/core/lib/event_engine/windows/iocp.h"
+#include "src/core/lib/event_engine/windows/windows_engine.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
 
@@ -157,4 +156,4 @@ WindowsEventEngine::CreateListener(
 
 }  // namespace experimental
 }  // namespace grpc_event_engine
-#endif // GPR_WINDOWS
+#endif  // GPR_WINDOWS
