@@ -68,8 +68,6 @@ static grpc_error_handle enable_socket_low_latency(SOCKET sock) {
 }
 
 absl::Status PrepareSocket(SOCKET sock) {
-  // DO NOT SUBMIT(hork): cribbed from tcp_windows. this needs to live somewhere
-  // in prod code
   absl::Status err;
   err = grpc_tcp_set_non_block(sock);
   if (!GRPC_ERROR_IS_NONE(err)) return err;
@@ -85,8 +83,6 @@ absl::Status PrepareSocket(SOCKET sock) {
 }  // namespace
 
 void CreateSockpair(SOCKET sockpair[2], DWORD flags) {
-  //  DO NOT SUBMIT(hork): cribbed from endpoint_pair_windows.cc. This will
-  //  probably be more broadly useful elsewhere.
   SOCKET svr_sock = INVALID_SOCKET;
   SOCKET lst_sock = INVALID_SOCKET;
   SOCKET cli_sock = INVALID_SOCKET;

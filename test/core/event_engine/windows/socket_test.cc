@@ -48,9 +48,12 @@ TEST_F(SocketTest, ManualReadEventTriggeredWithoutIO) {
   wrapped_client_socket.NotifyOnWrite([] { FAIL() << "No Write expected"; });
   ASSERT_FALSE(read_called);
   wrapped_client_socket.SetReadable();
-  // DO NOT SUBMIT(hork): set a deadline here
+  absl::Time deadline = absl::Now() + absl::Seconds(10);
   while (!read_called) {
-    absl::SleepFor(absl::Milliseconds(10));
+    absl::SleepFor(absl::Milliseconds(42));
+    if (deadline < absl::Now()) {
+        FAIL() << "Deadline exceeded";
+    }
   }
   ASSERT_TRUE(read_called);
 }

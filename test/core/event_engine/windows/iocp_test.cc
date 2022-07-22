@@ -67,7 +67,7 @@ TEST_F(IOCPTest, ClientReceivesNotificationOfServerSendViaIOCP) {
     ASSERT_EQ(last_error, WSA_IO_PENDING);
     wrapped_client_socket->NotifyOnRead([wrapped_client_socket, &read_called,
                                          &read_wsabuf, &bytes_rcvd]() {
-      gpr_log(GPR_DEBUG, "DO NOT SUBMIT: Notified on read");
+      gpr_log(GPR_DEBUG, "Notified on read");
       EXPECT_GE(wrapped_client_socket->read_info()->bytes_transferred(), 10);
       EXPECT_STREQ(read_wsabuf.buf, "hello!");
       read_called = true;
@@ -93,7 +93,7 @@ TEST_F(IOCPTest, ClientReceivesNotificationOfServerSendViaIOCP) {
       gpr_free(utf8_message);
     }
     wrapped_server_socket->NotifyOnWrite([&write_called] {
-      gpr_log(GPR_DEBUG, "DO NOT SUBMIT: Notified on write");
+      gpr_log(GPR_DEBUG, "Notified on write");
       write_called = true;
     });
   }
@@ -101,9 +101,12 @@ TEST_F(IOCPTest, ClientReceivesNotificationOfServerSendViaIOCP) {
   ASSERT_TRUE(iocp.Work(std::chrono::seconds(10)).ok());
   // Working for WSARecv
   ASSERT_TRUE(iocp.Work(std::chrono::seconds(10)).ok());
-  // DO NOT SUBMIT(hork): set a deadline here
+  absl::Time deadline = absl::Now() + absl::Seconds(10);
   while (!read_called || !write_called) {
     absl::SleepFor(absl::Milliseconds(10));
+    if (deadline < absl::Now()) {
+      FAIL() << "Deadline exceeded";
+    }
   }
   ASSERT_TRUE(read_called);
   ASSERT_TRUE(write_called);
