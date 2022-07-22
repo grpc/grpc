@@ -165,6 +165,7 @@ grpc_cc_test(
         ":histogram",
         ":interarrival",
         "//test/cpp/util:test_config",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 

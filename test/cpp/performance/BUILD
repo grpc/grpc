@@ -31,5 +31,6 @@ grpc_cc_test(
         "//:grpc++",
         "//src/proto/grpc/testing:echo_proto",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )

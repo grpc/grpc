@@ -30,6 +30,23 @@ grpc_cc_library(
     ],
 )
 
+TEST_UTILS_THAT_USE_GRPC_H_SOURCES = [
+    "port.cc",
+    "port_isolated_runtime_environment.cc",
+    "port_server_client.cc",
+    "reconnect_server.cc",
+    "test_config.cc",
+    "test_tcp_server.cc",
+]
+
+TEST_UTILS_THAT_USE_GRPC_H_HEADERS = [
+    "port.h",
+    "reconnect_server.h",
+    "port_server_client.h",
+    "test_config.h",
+    "test_tcp_server.h",
+]
+
 grpc_cc_library(
     name = "grpc_test_util_base",
     srcs = [
@@ -40,16 +57,10 @@ grpc_cc_library(
         "mock_endpoint.cc",
         "parse_hexstring.cc",
         "passthru_endpoint.cc",
-        "port.cc",
-        "port_isolated_runtime_environment.cc",
-        "port_server_client.cc",
-        "reconnect_server.cc",
         "resolve_localhost_ip46.cc",
         "slice_splitter.cc",
         "subprocess_posix.cc",
         "subprocess_windows.cc",
-        "test_config.cc",
-        "test_tcp_server.cc",
         "tracer_util.cc",
     ],
     hdrs = [
@@ -62,16 +73,82 @@ grpc_cc_library(
         "mock_endpoint.h",
         "parse_hexstring.h",
         "passthru_endpoint.h",
-        "port.h",
-        "port_server_client.h",
-        "reconnect_server.h",
         "resolve_localhost_ip46.h",
         "slice_splitter.h",
         "subprocess.h",
-        "test_config.h",
-        "test_tcp_server.h",
         "tracer_util.h",
     ],
+    external_deps = [
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/strings:str_format",
+    ],
+    language = "C++",
+    deps = [
+        "//:arena",
+        "//:debug_location",
+        "//:gpr_base",
+        "//:grpc_authorization_base",
+        "//:grpc_base",
+        "//:grpc_security_base",
+        "//:grpc_sockaddr",
+        "//:grpc_trace",
+        "//:iomgr_fwd",
+        "//:iomgr_timer",
+        "//:memory_quota",
+        "//:ref_counted_ptr",
+        "//:resolved_address",
+        "//:resource_quota",
+        "//:slice",
+        "//:slice_refcount",
+        "//:time",
+        "//:useful",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_test_util",
+    srcs = TEST_UTILS_THAT_USE_GRPC_H_SOURCES + ["tls_utils.cc"],
+    hdrs = TEST_UTILS_THAT_USE_GRPC_H_HEADERS + ["tls_utils.h"],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/debugging:failure_signal_handler",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/strings:str_format",
+    ],
+    language = "C++",
+    deps = [
+        "build",
+        "stack_tracer",
+        "//:channel_args_preconditioning",
+        "//:config",
+        "//:gpr_base",
+        "//:grpc",
+        "//:grpc_base",
+        "//:grpc_public_hdrs",
+        "//:grpc_security_base",
+        "//:grpc_sockaddr",
+        "//:grpc_trace",
+        "//:httpcli",
+        "//:iomgr_port",
+        "//:orphanable",
+        "//:ref_counted_ptr",
+        "//:resolved_address",
+        "//:slice",
+        "//:slice_refcount",
+        "//:time",
+        "//:tsi_ssl_credentials",
+        "//:uri_parser",
+        "//test/core/event_engine:test_init",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_test_util_unsecure",
+    srcs = TEST_UTILS_THAT_USE_GRPC_H_SOURCES,
+    hdrs = TEST_UTILS_THAT_USE_GRPC_H_HEADERS,
     external_deps = [
         "absl/debugging:failure_signal_handler",
         "absl/status",
@@ -83,62 +160,22 @@ grpc_cc_library(
     deps = [
         "build",
         "stack_tracer",
-        "//:arena",
         "//:channel_args_preconditioning",
         "//:config",
-        "//:debug_location",
         "//:gpr_base",
-        "//:grpc",
-        "//:grpc_authorization_base",
         "//:grpc_base",
         "//:grpc_security_base",
         "//:grpc_sockaddr",
-        "//:grpc_trace",
+        "//:grpc_unsecure",
         "//:httpcli",
-        "//:iomgr_fwd",
         "//:iomgr_port",
-        "//:iomgr_timer",
-        "//:memory_quota",
         "//:orphanable",
         "//:ref_counted_ptr",
         "//:resolved_address",
-        "//:resource_quota",
-        "//:slice",
-        "//:slice_refcount",
         "//:time",
         "//:uri_parser",
-        "//:useful",
         "//test/core/event_engine:test_init",
     ],
-)
-
-grpc_cc_library(
-    name = "grpc_test_util",
-    srcs = ["tls_utils.cc"],
-    hdrs = ["tls_utils.h"],
-    external_deps = [
-        "absl/base:core_headers",
-        "absl/strings",
-    ],
-    language = "C++",
-    deps = [
-        "grpc_test_util_base",
-        "//:gpr_base",
-        "//:grpc",
-        "//:grpc_base",
-        "//:grpc_public_hdrs",
-        "//:grpc_trace",
-        "//:slice",
-        "//:slice_refcount",
-        "//:tsi_ssl_credentials",
-    ],
-)
-
-grpc_cc_library(
-    name = "grpc_test_util_unsecure",
-    srcs = [],
-    hdrs = [],
-    language = "C++",
 )
 
 grpc_cc_test(
@@ -149,6 +186,7 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "grpc_test_util",
         "grpc_test_util_base",
         "//:gpr_base",
         "//:useful",
@@ -182,7 +220,9 @@ grpc_cc_test(
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,
+    tags = ["nofixdeps"],
     deps = [
+        "grpc_test_util",
         "grpc_test_util_base",
         "//:gpr_base",
     ],
@@ -227,7 +267,7 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "grpc_test_util_base",
+        "grpc_test_util",
         "stack_tracer",
         "//:gpr_base",
     ],
@@ -273,7 +313,7 @@ grpc_cc_library(
     ],
     language = "C++",
     deps = [
-        "grpc_test_util_base",
+        "grpc_test_util_unsecure",
         "//:gpr_base",
         "//:grpc",
         "//:grpc_base",
