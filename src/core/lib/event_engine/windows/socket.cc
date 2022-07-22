@@ -18,6 +18,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log_windows.h>
 
+#include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/gprpp/sync.h"
 
 namespace grpc_event_engine {
@@ -126,6 +127,13 @@ bool WinWrappedSocket::IsShutdown() { return is_shutdown_; }
 
 WinWrappedSocket::OpInfo* WinWrappedSocket::GetOpInfoForOverlapped(
     OVERLAPPED* overlapped) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {
+    gpr_log(GPR_DEBUG,
+            "WinWrappedSocket::%p looking for matching OVERLAPPED::%p. "
+            "read(%p) write(%p)",
+            this, overlapped, &read_info_.overlapped_,
+            &write_info_.overlapped_);
+  }
   if (overlapped == &read_info_.overlapped_) return &read_info_;
   if (overlapped == &write_info_.overlapped_) return &write_info_;
   return nullptr;

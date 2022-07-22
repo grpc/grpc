@@ -22,6 +22,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log_windows.h>
 
+#include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/event_engine/windows/socket.h"
 
 namespace grpc_event_engine {
@@ -70,6 +71,9 @@ absl::Status IOCP::Work(EventEngine::Duration timeout) {
   DWORD bytes = 0;
   ULONG_PTR completion_key;
   LPOVERLAPPED overlapped;
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {
+    gpr_log(GPR_DEBUG, "IOCP::%p doing work", this);
+  }
   // DO NOT SUBMIT(hork): are we tracking stats the same way? Probably
   // GRPC_STATS_INC_SYSCALL_POLL();
   BOOL success = GetQueuedCompletionStatus(
@@ -78,11 +82,17 @@ absl::Status IOCP::Work(EventEngine::Duration timeout) {
           std::chrono::duration_cast<std::chrono::milliseconds>(timeout)
               .count()));
   if (success == 0 && overlapped == NULL) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {
+      gpr_log(GPR_DEBUG, "IOCP::%p deadline exceeded", this);
+    }
     return absl::DeadlineExceededError(
         absl::StrFormat("IOCP::%p: Received no completions", this));
   }
   GPR_ASSERT(completion_key && overlapped);
   if (overlapped == &kick_overlap_) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {
+      gpr_log(GPR_DEBUG, "IOCP::%p kicked", this);
+    }
     outstanding_kicks_.fetch_sub(1);
     if (completion_key == (ULONG_PTR)&kick_token_) {
       return absl::AbortedError(
@@ -90,6 +100,10 @@ absl::Status IOCP::Work(EventEngine::Duration timeout) {
     }
     gpr_log(GPR_ERROR, "Unknown custom completion key: %p", completion_key);
     abort();
+  }
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {
+    gpr_log(GPR_DEBUG, "IOCP::%p got event on OVERLAPPED::%p", this,
+            overlapped);
   }
   WinWrappedSocket* socket =
       reinterpret_cast<WinWrappedSocket*>(completion_key);
@@ -111,6 +125,8 @@ void IOCP::Kick() {
       &kick_overlap_));
 }
 
+DWORD IOCP::GetDefaultSocketFlags() { return wsa_socket_flags_; }
+
 void IOCP::WSASocketFlagsInit() {
   wsa_socket_flags_ = WSA_FLAG_OVERLAPPED;
   /* WSA_FLAG_NO_HANDLE_INHERIT may be not supported on the older Windows
@@ -125,7 +141,6 @@ void IOCP::WSASocketFlagsInit() {
     closesocket(sock);
   }
 }
-
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

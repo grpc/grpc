@@ -41,6 +41,8 @@ class IOCP final : public EventPoller {
   void Shutdown() override;
   absl::Status Work(EventEngine::Duration timeout) override;
   void Kick() override;
+  // Return the set of default flags
+  DWORD GetDefaultSocketFlags();
 
  private:
   // Initialize default flags via checking platform support

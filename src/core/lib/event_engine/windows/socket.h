@@ -38,6 +38,10 @@ class WinWrappedSocket final : public WrappedSocket {
     void SetError();
     // Retrieve results of overlapped operation (via Winsock API)
     void GetOverlappedResult();
+    // DO NOT SUBMIT(hork): leaky abstraction
+    OVERLAPPED* overlapped() { return &overlapped_; }
+    DWORD bytes_transferred() const { return bytes_transferred_; }
+    int wsa_error() const { return wsa_error_; }
 
    private:
     friend class WinWrappedSocket;
@@ -71,6 +75,13 @@ class WinWrappedSocket final : public WrappedSocket {
   // Return the appropriate OpInfo for a given OVERLAPPED
   // Returns nullptr if the overlapped does not match either read or write ops.
   OpInfo* GetOpInfoForOverlapped(OVERLAPPED* overlapped);
+  // -------------------------------------------------
+  // DO NOT SUBMIT(hork): We need access to these for WSA* ops in TCP code.
+  // Maybe we can encapsulate these calls inside of the OpInfo class. Would need
+  // to rename it.
+  OpInfo* read_info() { return &read_info_; }
+  OpInfo* write_info() { return &write_info_; }
+  // -------------------------------------------------
 
  private:
   void NotifyOnReady(OpInfo& info, absl::AnyInvocable<void()> callback);

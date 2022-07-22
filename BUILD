@@ -2526,8 +2526,10 @@ grpc_cc_library(
         "absl/memory",
     ],
     deps = [
+        "event_engine_trace",
         "gpr_platform",
         "gpr_base",
+        "grpc_trace",
         "time",
     ],
 )
