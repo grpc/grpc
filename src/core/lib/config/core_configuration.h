@@ -106,16 +106,19 @@ class CoreConfiguration {
     delete config_.exchange(p, std::memory_order_release);
   }
 
+  // Rebuild core configuration with currently registered builders.
+  // Tests can call this to restore core configuration before
+  // BuildSpecialConfiguration() was called.
+  static void RebuildConfiguration() {
+    delete config_.exchange(nullptr, std::memory_order_acquire);
+    BuildNewAndMaybeSet();
+  }
+
   // Attach a registration function globally.
   // Each registration function is called *in addition to*
-  // BuildCoreConfiguration for the default core configuration. When using
-  // BuildSpecialConfiguration, one can use CallRegisteredBuilders to call them.
+  // BuildCoreConfiguration for the default core configuration.
   // Must be called before a configuration is built.
   static void RegisterBuilder(std::function<void(Builder*)> builder);
-
-  // Call all registered builders.
-  // See RegisterBuilder for why you might want to call this.
-  static void CallRegisteredBuilders(Builder* builder);
 
   // Drop the core configuration. Users must ensure no other threads are
   // accessing the configuration.
