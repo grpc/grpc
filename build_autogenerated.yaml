@@ -8322,6 +8322,20 @@ targets:
   - absl/types:variant
   - absl/utility:utility
   uses_polling: false
+- name: tcp_posix_socket_utils_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/event_engine/iomgr_engine/tcp_posix_socket_utils.h
+  - src/core/lib/iomgr/socket_mutator.h
+  src:
+  - src/core/lib/event_engine/iomgr_engine/tcp_posix_socket_utils.cc
+  - src/core/lib/iomgr/socket_mutator.cc
+  - test/core/event_engine/iomgr_event_engine/tcp_posix_socket_utils_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: test_core_event_engine_iomgr_event_engine_timer_heap_test
   gtest: true
   build: test
