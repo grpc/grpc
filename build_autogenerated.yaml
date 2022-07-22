@@ -1805,6 +1805,7 @@ libs:
   - absl/debugging:failure_signal_handler
   - absl/debugging:stacktrace
   - absl/debugging:symbolize
+  - grpc
   - grpc_unsecure
 - name: grpc_unsecure
   build: all
@@ -4761,11 +4762,56 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/event_engine/test_init.h
+  - test/core/util/build.h
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/port.h
+  - test/core/util/port_server_client.h
+  - test/core/util/reconnect_server.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/stack_tracer.h
+  - test/core/util/subprocess.h
+  - test/core/util/test_config.h
+  - test/core/util/test_tcp_server.h
+  - test/core/util/tracer_util.h
   src:
+  - test/core/event_engine/test_init.cc
+  - test/core/util/build.cc
+  - test/core/util/cmdline.cc
   - test/core/util/cmdline_test.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/port.cc
+  - test/core/util/port_isolated_runtime_environment.cc
+  - test/core/util/port_server_client.cc
+  - test/core/util/reconnect_server.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/stack_tracer.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/test_config.cc
+  - test/core/util/test_tcp_server.cc
+  - test/core/util/tracer_util.cc
   deps:
-  - grpc_test_util
+  - absl/debugging:failure_signal_handler
+  - absl/debugging:stacktrace
+  - absl/debugging:symbolize
+  - grpc
   uses_polling: false
 - name: codegen_test_full
   gtest: true
@@ -5126,11 +5172,56 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/event_engine/test_init.h
+  - test/core/util/build.h
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/port.h
+  - test/core/util/port_server_client.h
+  - test/core/util/reconnect_server.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/stack_tracer.h
+  - test/core/util/subprocess.h
+  - test/core/util/test_config.h
+  - test/core/util/test_tcp_server.h
+  - test/core/util/tracer_util.h
   src:
   - test/core/event_engine/endpoint_config_test.cc
+  - test/core/event_engine/test_init.cc
+  - test/core/util/build.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/port.cc
+  - test/core/util/port_isolated_runtime_environment.cc
+  - test/core/util/port_server_client.cc
+  - test/core/util/reconnect_server.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/stack_tracer.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/test_config.cc
+  - test/core/util/test_tcp_server.cc
+  - test/core/util/tracer_util.cc
   deps:
-  - grpc_test_util
+  - absl/debugging:failure_signal_handler
+  - absl/debugging:stacktrace
+  - absl/debugging:symbolize
+  - grpc
   uses_polling: false
 - name: env_test
   gtest: true
@@ -6092,11 +6183,56 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/event_engine/test_init.h
+  - test/core/util/build.h
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/port.h
+  - test/core/util/port_server_client.h
+  - test/core/util/reconnect_server.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/stack_tracer.h
+  - test/core/util/subprocess.h
+  - test/core/util/test_config.h
+  - test/core/util/test_tcp_server.h
+  - test/core/util/tracer_util.h
   src:
+  - test/core/event_engine/test_init.cc
+  - test/core/util/build.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
   - test/core/util/histogram_test.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/port.cc
+  - test/core/util/port_isolated_runtime_environment.cc
+  - test/core/util/port_server_client.cc
+  - test/core/util/reconnect_server.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/stack_tracer.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/test_config.cc
+  - test/core/util/test_tcp_server.cc
+  - test/core/util/tracer_util.cc
   deps:
-  - grpc_test_util
+  - absl/debugging:failure_signal_handler
+  - absl/debugging:stacktrace
+  - absl/debugging:symbolize
+  - grpc
   uses_polling: false
 - name: host_port_test
   gtest: true
@@ -8091,11 +8227,56 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/event_engine/test_init.h
+  - test/core/util/build.h
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/port.h
+  - test/core/util/port_server_client.h
+  - test/core/util/reconnect_server.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/stack_tracer.h
+  - test/core/util/subprocess.h
+  - test/core/util/test_config.h
+  - test/core/util/test_tcp_server.h
+  - test/core/util/tracer_util.h
   src:
   - test/core/event_engine/smoke_test.cc
+  - test/core/event_engine/test_init.cc
+  - test/core/util/build.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/port.cc
+  - test/core/util/port_isolated_runtime_environment.cc
+  - test/core/util/port_server_client.cc
+  - test/core/util/reconnect_server.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/stack_tracer.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/test_config.cc
+  - test/core/util/test_tcp_server.cc
+  - test/core/util/tracer_util.cc
   deps:
-  - grpc_test_util
+  - absl/debugging:failure_signal_handler
+  - absl/debugging:stacktrace
+  - absl/debugging:symbolize
+  - grpc
 - name: sockaddr_resolver_test
   gtest: true
   build: test
@@ -8152,11 +8333,56 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/event_engine/test_init.h
+  - test/core/util/build.h
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/port.h
+  - test/core/util/port_server_client.h
+  - test/core/util/reconnect_server.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/stack_tracer.h
+  - test/core/util/subprocess.h
+  - test/core/util/test_config.h
+  - test/core/util/test_tcp_server.h
+  - test/core/util/tracer_util.h
   src:
+  - test/core/event_engine/test_init.cc
+  - test/core/util/build.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/port.cc
+  - test/core/util/port_isolated_runtime_environment.cc
+  - test/core/util/port_server_client.cc
+  - test/core/util/reconnect_server.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/stack_tracer.cc
   - test/core/util/stack_tracer_test.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/test_config.cc
+  - test/core/util/test_tcp_server.cc
+  - test/core/util/tracer_util.cc
   deps:
-  - grpc_test_util
+  - absl/debugging:failure_signal_handler
+  - absl/debugging:stacktrace
+  - absl/debugging:symbolize
+  - grpc
   platforms:
   - linux
   - posix
@@ -8529,11 +8755,56 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/event_engine/test_init.h
+  - test/core/util/build.h
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/port.h
+  - test/core/util/port_server_client.h
+  - test/core/util/reconnect_server.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/stack_tracer.h
+  - test/core/util/subprocess.h
+  - test/core/util/test_config.h
+  - test/core/util/test_tcp_server.h
+  - test/core/util/tracer_util.h
   src:
   - test/core/event_engine/slice_buffer_test.cc
+  - test/core/event_engine/test_init.cc
+  - test/core/util/build.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/port.cc
+  - test/core/util/port_isolated_runtime_environment.cc
+  - test/core/util/port_server_client.cc
+  - test/core/util/reconnect_server.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/stack_tracer.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/test_config.cc
+  - test/core/util/test_tcp_server.cc
+  - test/core/util/tracer_util.cc
   deps:
-  - grpc_test_util
+  - absl/debugging:failure_signal_handler
+  - absl/debugging:stacktrace
+  - absl/debugging:symbolize
+  - grpc
 - name: test_core_gpr_time_test
   gtest: true
   build: test
@@ -9147,11 +9418,56 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/event_engine/test_init.h
+  - test/core/util/build.h
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/port.h
+  - test/core/util/port_server_client.h
+  - test/core/util/reconnect_server.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/stack_tracer.h
+  - test/core/util/subprocess.h
+  - test/core/util/test_config.h
+  - test/core/util/test_tcp_server.h
+  - test/core/util/tracer_util.h
   src:
+  - test/core/event_engine/test_init.cc
   - test/core/uri/uri_parser_test.cc
+  - test/core/util/build.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/port.cc
+  - test/core/util/port_isolated_runtime_environment.cc
+  - test/core/util/port_server_client.cc
+  - test/core/util/reconnect_server.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/stack_tracer.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/test_config.cc
+  - test/core/util/test_tcp_server.cc
+  - test/core/util/tracer_util.cc
   deps:
-  - grpc_test_util
+  - absl/debugging:failure_signal_handler
+  - absl/debugging:stacktrace
+  - absl/debugging:symbolize
+  - grpc
 - name: useful_test
   gtest: true
   build: test
