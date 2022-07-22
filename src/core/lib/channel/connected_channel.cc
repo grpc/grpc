@@ -249,6 +249,7 @@ class ClientStream : public Orphanable {
         client_to_server_messages_(call_args.client_to_server_messages),
         server_to_client_messages_(call_args.server_to_client_messages),
         client_initial_metadata_(std::move(call_args.client_initial_metadata)) {
+    call_context_->IncrementRefCount("client_stream");
     GRPC_STREAM_REF_INIT(
         &stream_refcount_, 1,
         [](void* p, grpc_error_handle) {

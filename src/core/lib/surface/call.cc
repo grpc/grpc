@@ -2283,6 +2283,7 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
   bool Completed() override;
   void Orphan() override {
     MutexLock lock(mu());
+    ScopedContext ctx(this);
     if (!completed_) Finish(ServerMetadataHandle(absl::CancelledError()));
   }
   bool is_trailers_only() const override {
