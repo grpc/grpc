@@ -472,7 +472,7 @@ def make_library(library):
 
         if hdr == 'grpc/grpc.h' and not library.startswith('//:'):
             # not the root build including grpc.h ==> //:grpc
-            deps.add('//:grpc')
+            deps.add_one_of(['//:grpc', '//:grpc_unsecure'])
             continue
 
         if hdr in INTERNAL_DEPS:
