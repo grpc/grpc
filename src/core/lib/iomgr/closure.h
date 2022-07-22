@@ -144,7 +144,9 @@ grpc_closure* NewClosure(F f) {
     explicit Closure(F f) : f(std::move(f)) {}
     F f;
     static void Run(void* arg, grpc_error_handle error) {
-      static_cast<Closure*>(arg)->f(error);
+      auto self = static_cast<Closure*>(arg);
+      self->f(error);
+      delete self;
     }
   };
   Closure* c = new Closure(std::move(f));

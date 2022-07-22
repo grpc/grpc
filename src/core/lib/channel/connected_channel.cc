@@ -343,7 +343,6 @@ class ClientStream : public Orphanable {
         gpr_log(GPR_INFO, "%sPollConnectedChannel: requesting metadata",
                 Activity::current()->DebugTag().c_str());
       }
-      IncrementRefCount("child_stream");
       stream_.reset(static_cast<grpc_stream*>(
           GetContext<Arena>()->Alloc(transport_->vtable->sizeof_stream)));
       grpc_transport_init_stream(transport_, stream_.get(), &stream_refcount_,
