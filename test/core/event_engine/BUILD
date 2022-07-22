@@ -31,7 +31,7 @@ grpc_cc_test(
         "//:gpr_platform",
         "//:grpc",
         "//:grpc_base",
-        "//test/core/util:grpc_test_util_base",
+        "//test/core/util:grpc_test_util_unsecure",
     ],
 )
 
@@ -43,7 +43,7 @@ grpc_cc_test(
         "//:event_engine_base_hdrs",
         "//:gpr_platform",
         "//:grpc",
-        "//test/core/util:grpc_test_util_base",
+        "//test/core/util:grpc_test_util_unsecure",
     ],
 )
 
@@ -56,7 +56,7 @@ grpc_cc_test(
         "//:gpr_platform",
         "//:grpc",
         "//:slice",
-        "//test/core/util:grpc_test_util_base",
+        "//test/core/util:grpc_test_util_unsecure",
     ],
 )
 
