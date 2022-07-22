@@ -24,6 +24,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "absl/functional/any_invocable.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
@@ -45,7 +46,6 @@
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/server.h"
-#include "src/core/lib/transport/transport.h"
 
 extern grpc_core::TraceFlag grpc_call_trace;
 

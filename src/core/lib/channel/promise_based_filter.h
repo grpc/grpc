@@ -26,6 +26,7 @@
 
 #include <atomic>
 #include <new>
+#include <string>
 #include <utility>
 
 #include "absl/container/inlined_vector.h"

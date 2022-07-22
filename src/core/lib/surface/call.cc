@@ -20,6 +20,7 @@
 
 #include "src/core/lib/surface/call.h"
 
+#include <inttypes.h>
 #include <limits.h>
 #include <stdlib.h>
 

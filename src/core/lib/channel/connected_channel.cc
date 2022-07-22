@@ -20,16 +20,19 @@
 
 #include "src/core/lib/channel/connected_channel.h"
 
+#include <inttypes.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include <algorithm>
 #include <memory>
 #include <string>
-#include <type_traits>
 #include <utility>
+#include <vector>
 
 #include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
@@ -47,6 +50,7 @@
 #include "src/core/lib/gpr/alloc.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/match.h"
+#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
