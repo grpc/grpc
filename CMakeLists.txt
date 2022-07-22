@@ -2514,27 +2514,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_library(grpc_test_util_unsecure
-  test/core/event_engine/test_init.cc
-  test/core/util/build.cc
-  test/core/util/cmdline.cc
-  test/core/util/fuzzer_util.cc
-  test/core/util/grpc_profiler.cc
-  test/core/util/histogram.cc
-  test/core/util/mock_endpoint.cc
-  test/core/util/parse_hexstring.cc
-  test/core/util/passthru_endpoint.cc
-  test/core/util/port.cc
-  test/core/util/port_isolated_runtime_environment.cc
-  test/core/util/port_server_client.cc
-  test/core/util/reconnect_server.cc
-  test/core/util/resolve_localhost_ip46.cc
-  test/core/util/slice_splitter.cc
-  test/core/util/stack_tracer.cc
-  test/core/util/subprocess_posix.cc
-  test/core/util/subprocess_windows.cc
-  test/core/util/test_config.cc
-  test/core/util/test_tcp_server.cc
-  test/core/util/tracer_util.cc
 )
 
 set_target_properties(grpc_test_util_unsecure PROPERTIES
@@ -2568,11 +2547,6 @@ target_include_directories(grpc_test_util_unsecure
 )
 target_link_libraries(grpc_test_util_unsecure
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl::failure_signal_handler
-  absl::stacktrace
-  absl::symbolize
-  grpc
-  grpc_unsecure
 )
 if(_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
   target_link_libraries(grpc_test_util_unsecure "-framework CoreFoundation")
@@ -3027,6 +3001,27 @@ add_library(benchmark_helpers
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
+  test/core/event_engine/test_init.cc
+  test/core/util/build.cc
+  test/core/util/cmdline.cc
+  test/core/util/fuzzer_util.cc
+  test/core/util/grpc_profiler.cc
+  test/core/util/histogram.cc
+  test/core/util/mock_endpoint.cc
+  test/core/util/parse_hexstring.cc
+  test/core/util/passthru_endpoint.cc
+  test/core/util/port.cc
+  test/core/util/port_isolated_runtime_environment.cc
+  test/core/util/port_server_client.cc
+  test/core/util/reconnect_server.cc
+  test/core/util/resolve_localhost_ip46.cc
+  test/core/util/slice_splitter.cc
+  test/core/util/stack_tracer.cc
+  test/core/util/subprocess_posix.cc
+  test/core/util/subprocess_windows.cc
+  test/core/util/test_config.cc
+  test/core/util/test_tcp_server.cc
+  test/core/util/tracer_util.cc
   test/cpp/microbenchmarks/helpers.cc
 )
 
@@ -3067,7 +3062,11 @@ target_include_directories(benchmark_helpers
 target_link_libraries(benchmark_helpers
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::failure_signal_handler
+  absl::stacktrace
+  absl::symbolize
   ${_gRPC_BENCHMARK_LIBRARIES}
+  grpc
   grpc++_unsecure
   grpc_test_util_unsecure
   grpc++_test_config
@@ -5262,6 +5261,27 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(address_sorting_test_unsecure
+    test/core/event_engine/test_init.cc
+    test/core/util/build.cc
+    test/core/util/cmdline.cc
+    test/core/util/fuzzer_util.cc
+    test/core/util/grpc_profiler.cc
+    test/core/util/histogram.cc
+    test/core/util/mock_endpoint.cc
+    test/core/util/parse_hexstring.cc
+    test/core/util/passthru_endpoint.cc
+    test/core/util/port.cc
+    test/core/util/port_isolated_runtime_environment.cc
+    test/core/util/port_server_client.cc
+    test/core/util/reconnect_server.cc
+    test/core/util/resolve_localhost_ip46.cc
+    test/core/util/slice_splitter.cc
+    test/core/util/stack_tracer.cc
+    test/core/util/subprocess_posix.cc
+    test/core/util/subprocess_windows.cc
+    test/core/util/test_config.cc
+    test/core/util/test_tcp_server.cc
+    test/core/util/tracer_util.cc
     test/cpp/naming/address_sorting_test.cc
     test/cpp/util/byte_buffer_proto_helper.cc
     test/cpp/util/string_ref_helper.cc
@@ -5292,6 +5312,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(address_sorting_test_unsecure
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
+    absl::failure_signal_handler
+    absl::stacktrace
+    absl::symbolize
+    grpc
     grpc++_unsecure
     grpc_test_util_unsecure
     grpc++_test_config
@@ -5359,6 +5383,27 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(alarm_test
+    test/core/event_engine/test_init.cc
+    test/core/util/build.cc
+    test/core/util/cmdline.cc
+    test/core/util/fuzzer_util.cc
+    test/core/util/grpc_profiler.cc
+    test/core/util/histogram.cc
+    test/core/util/mock_endpoint.cc
+    test/core/util/parse_hexstring.cc
+    test/core/util/passthru_endpoint.cc
+    test/core/util/port.cc
+    test/core/util/port_isolated_runtime_environment.cc
+    test/core/util/port_server_client.cc
+    test/core/util/reconnect_server.cc
+    test/core/util/resolve_localhost_ip46.cc
+    test/core/util/slice_splitter.cc
+    test/core/util/stack_tracer.cc
+    test/core/util/subprocess_posix.cc
+    test/core/util/subprocess_windows.cc
+    test/core/util/test_config.cc
+    test/core/util/test_tcp_server.cc
+    test/core/util/tracer_util.cc
     test/cpp/common/alarm_test.cc
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
@@ -5386,6 +5431,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(alarm_test
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
+    absl::failure_signal_handler
+    absl::stacktrace
+    absl::symbolize
+    grpc
     grpc++_unsecure
     grpc_test_util_unsecure
   )
@@ -15224,6 +15273,27 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
+    test/core/event_engine/test_init.cc
+    test/core/util/build.cc
+    test/core/util/cmdline.cc
+    test/core/util/fuzzer_util.cc
+    test/core/util/grpc_profiler.cc
+    test/core/util/histogram.cc
+    test/core/util/mock_endpoint.cc
+    test/core/util/parse_hexstring.cc
+    test/core/util/passthru_endpoint.cc
+    test/core/util/port.cc
+    test/core/util/port_isolated_runtime_environment.cc
+    test/core/util/port_server_client.cc
+    test/core/util/reconnect_server.cc
+    test/core/util/resolve_localhost_ip46.cc
+    test/core/util/slice_splitter.cc
+    test/core/util/stack_tracer.cc
+    test/core/util/subprocess_posix.cc
+    test/core/util/subprocess_windows.cc
+    test/core/util/test_config.cc
+    test/core/util/test_tcp_server.cc
+    test/core/util/tracer_util.cc
     test/cpp/server/server_builder_test.cc
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
@@ -15251,6 +15321,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(server_builder_test
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
+    absl::failure_signal_handler
+    absl::stacktrace
+    absl::symbolize
+    grpc
     grpc++_unsecure
     grpc_test_util_unsecure
   )
@@ -15278,6 +15352,27 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
+    test/core/event_engine/test_init.cc
+    test/core/util/build.cc
+    test/core/util/cmdline.cc
+    test/core/util/fuzzer_util.cc
+    test/core/util/grpc_profiler.cc
+    test/core/util/histogram.cc
+    test/core/util/mock_endpoint.cc
+    test/core/util/parse_hexstring.cc
+    test/core/util/passthru_endpoint.cc
+    test/core/util/port.cc
+    test/core/util/port_isolated_runtime_environment.cc
+    test/core/util/port_server_client.cc
+    test/core/util/reconnect_server.cc
+    test/core/util/resolve_localhost_ip46.cc
+    test/core/util/slice_splitter.cc
+    test/core/util/stack_tracer.cc
+    test/core/util/subprocess_posix.cc
+    test/core/util/subprocess_windows.cc
+    test/core/util/test_config.cc
+    test/core/util/test_tcp_server.cc
+    test/core/util/tracer_util.cc
     test/cpp/server/server_builder_with_socket_mutator_test.cc
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
@@ -15305,6 +15400,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(server_builder_with_socket_mutator_test
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
+    absl::failure_signal_handler
+    absl::stacktrace
+    absl::symbolize
+    grpc
     grpc++_unsecure
     grpc_test_util_unsecure
   )
@@ -15579,6 +15678,27 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
+    test/core/event_engine/test_init.cc
+    test/core/util/build.cc
+    test/core/util/cmdline.cc
+    test/core/util/fuzzer_util.cc
+    test/core/util/grpc_profiler.cc
+    test/core/util/histogram.cc
+    test/core/util/mock_endpoint.cc
+    test/core/util/parse_hexstring.cc
+    test/core/util/passthru_endpoint.cc
+    test/core/util/port.cc
+    test/core/util/port_isolated_runtime_environment.cc
+    test/core/util/port_server_client.cc
+    test/core/util/reconnect_server.cc
+    test/core/util/resolve_localhost_ip46.cc
+    test/core/util/slice_splitter.cc
+    test/core/util/stack_tracer.cc
+    test/core/util/subprocess_posix.cc
+    test/core/util/subprocess_windows.cc
+    test/core/util/test_config.cc
+    test/core/util/test_tcp_server.cc
+    test/core/util/tracer_util.cc
     test/cpp/server/server_request_call_test.cc
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
@@ -15606,6 +15726,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(server_request_call_test
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
+    absl::failure_signal_handler
+    absl::stacktrace
+    absl::symbolize
+    grpc
     grpc++_unsecure
     grpc_test_util_unsecure
   )
@@ -18867,27 +18991,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
-    test/core/event_engine/test_init.cc
-    test/core/util/build.cc
-    test/core/util/cmdline.cc
-    test/core/util/fuzzer_util.cc
-    test/core/util/grpc_profiler.cc
-    test/core/util/histogram.cc
-    test/core/util/mock_endpoint.cc
-    test/core/util/parse_hexstring.cc
-    test/core/util/passthru_endpoint.cc
-    test/core/util/port.cc
-    test/core/util/port_isolated_runtime_environment.cc
-    test/core/util/port_server_client.cc
-    test/core/util/reconnect_server.cc
-    test/core/util/resolve_localhost_ip46.cc
-    test/core/util/slice_splitter.cc
-    test/core/util/stack_tracer.cc
-    test/core/util/subprocess_posix.cc
-    test/core/util/subprocess_windows.cc
-    test/core/util/test_config.cc
-    test/core/util/test_tcp_server.cc
-    test/core/util/tracer_util.cc
     test/cpp/performance/writes_per_rpc_test.cc
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
@@ -18915,10 +19018,8 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(writes_per_rpc_test
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
-    absl::failure_signal_handler
-    absl::stacktrace
-    absl::symbolize
     grpc++
+    grpc_test_util
   )
 
 
