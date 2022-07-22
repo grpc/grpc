@@ -93,7 +93,7 @@ class MetadataHandle {
   // This bit determines whether the pointer is allocated by a metadata
   // allocator or some other system. If it's held by a metadata allocator, we'll
   // release it back when we're done with it.
-  bool allocated_by_allocator_;
+  bool allocated_by_allocator_ = false;
 };
 
 // Within a call arena we need metadata at least four times - (client,server) x

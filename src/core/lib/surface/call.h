@@ -72,38 +72,27 @@ typedef struct grpc_call_create_args {
 } grpc_call_create_args;
 
 namespace grpc_core {
+class PromiseBasedCall;
+
 // TODO(ctiller): move more call things into this type
 class CallContext {
  public:
-  CallContext(grpc_iomgr_cb_func on_destroyed, void* on_destroyed_arg) {
-    GRPC_STREAM_REF_INIT(&stream_refcount_, 1, on_destroyed, on_destroyed_arg,
-                         "call_context");
-  }
+  explicit CallContext(PromiseBasedCall* call) : call_(call) {}
+
+  // Run some action in the call activity context. This is needed to adapt some
+  // legacy systems to promises, and will likely disappear once that conversion
+  // is complete.
+  void InContext(absl::AnyInvocable<void()> fn);
 
   // TODO(ctiller): remove this once transport APIs are promise based
-  void IncrementRefCount(const char* reason = "CallContext") {
-#ifndef NDEBUG
-    grpc_stream_ref(&stream_refcount_, reason);
-#else
-    grpc_stream_ref(&stream_refcount_);
-#endif
-  }
+  void IncrementRefCount(const char* reason = "call_context");
 
   // TODO(ctiller): remove this once transport APIs are promise based
-  void Unref(const char* reason = "CallContext") {
-#ifndef NDEBUG
-    grpc_stream_unref(&stream_refcount_, reason);
-#else
-    grpc_stream_unref(&stream_refcount_);
-#endif
-  }
-
-  // TODO(ctiller): remove this once transport APIs are promise based
-  grpc_stream_refcount* c_stream_refcount() { return &stream_refcount_; }
+  void Unref(const char* reason = "call_context");
 
  private:
   // TODO(ctiller): remove this once transport APIs are promise based
-  grpc_stream_refcount stream_refcount_;
+  PromiseBasedCall* const call_;
 };
 
 template <>

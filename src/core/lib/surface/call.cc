@@ -1805,16 +1805,29 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
 
   // Implementation of call refcounting: move this to DualRefCounted once we
   // don't need to maintain FilterStackCall compatibility
-  void ExternalRef() final { external_refs_.Ref(); }
+  void ExternalRef() final {
+    refs_.fetch_add(MakeRefPair(1, 0), std::memory_order_relaxed);
+  }
   void ExternalUnref() final {
-    if (external_refs_.Unref()) {
-      call_context_.Unref("orphan");
+    const uint64_t prev_ref_pair =
+        refs_.fetch_add(MakeRefPair(-1, 1), std::memory_order_acq_rel);
+    const uint32_t strong_refs = GetStrongRefs(prev_ref_pair);
+    if (GPR_UNLIKELY(strong_refs == 1)) {
+      Orphan();
+    }
+    // Now drop the weak ref.
+    InternalUnref("external_ref");
+  }
+  void InternalRef(const char*) final {
+    refs_.fetch_add(MakeRefPair(0, 1), std::memory_order_relaxed);
+  }
+  void InternalUnref(const char*) final {
+    const uint64_t prev_ref_pair =
+        refs_.fetch_sub(MakeRefPair(0, 1), std::memory_order_acq_rel);
+    if (GPR_UNLIKELY(prev_ref_pair == MakeRefPair(0, 1))) {
+      DeleteThis();
     }
   }
-  void InternalRef(const char* reason) final {
-    call_context_.IncrementRefCount(reason);
-  }
-  void InternalUnref(const char* reason) final { call_context_.Unref(reason); }
 
   // Activity methods
   void ForceImmediateRepoll() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) override;
@@ -1865,6 +1878,13 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
     });
   }
   void Drop() override { InternalUnref("wakeup"); }
+
+  void InContext(absl::AnyInvocable<void()> fn) {
+    ScopedContext activity_context(this);
+    MutexLock lock(&mu_);
+    fn();
+    Update();
+  }
 
   grpc_compression_algorithm test_only_compression_algorithm() override {
     abort();
@@ -1992,8 +2012,7 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
       // Note that activity refcount can drop to zero, but we could win the lock
       // against DropActivity, so we need to only increase activities refcount
       // if it is non-zero.
-      if (call_ &&
-          call_->call_context_.c_stream_refcount()->refs.RefIfNonZero()) {
+      if (call_ && call_->RefIfNonZero()) {
         PromiseBasedCall* call = call_;
         mu_.Unlock();
         // Activity still exists and we have a reference: wake it up, which will
@@ -2034,10 +2053,31 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
     call->DeleteThis();
   }
 
+  // First 32 bits are strong refs, next 32 bits are weak refs.
+  static uint64_t MakeRefPair(uint32_t strong, uint32_t weak) {
+    return (static_cast<uint64_t>(strong) << 32) + static_cast<int64_t>(weak);
+  }
+  static uint32_t GetStrongRefs(uint64_t ref_pair) {
+    return static_cast<uint32_t>(ref_pair >> 32);
+  }
+  static uint32_t GetWeakRefs(uint64_t ref_pair) {
+    return static_cast<uint32_t>(ref_pair & 0xffffffffu);
+  }
+
+  bool RefIfNonZero() {
+    uint64_t prev_ref_pair = refs_.load(std::memory_order_acquire);
+    do {
+      const uint32_t strong_refs = GetStrongRefs(prev_ref_pair);
+      if (strong_refs == 0) return false;
+    } while (!refs_.compare_exchange_weak(
+        prev_ref_pair, prev_ref_pair + MakeRefPair(1, 0),
+        std::memory_order_acq_rel, std::memory_order_acquire));
+    return true;
+  }
+
   mutable Mutex mu_;
-  RefCount external_refs_{
-      1, grpc_call_refcount_trace.enabled() ? "client_call" : nullptr};
-  CallContext call_context_{OnDestroy, this};
+  std::atomic<uint64_t> refs_{MakeRefPair(1, 0)};
+  CallContext call_context_{this};
   bool keep_polling_ ABSL_GUARDED_BY(mu()) = false;
 
   /* Contexts for various subsystems (security, tracing, ...). */
@@ -2186,6 +2226,29 @@ void PromiseBasedCall::SetCompletionQueue(grpc_completion_queue* cq) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+// CallContext
+
+void CallContext::InContext(absl::AnyInvocable<void()> fn) {
+  call_->InternalRef("in_context");
+  if (Activity::current() == call_) {
+    fn();
+    call_->InternalUnref("in_context");
+  } else {
+    grpc_event_engine::experimental::GetDefaultEventEngine()->Run(
+        [call = call_, fn = std::move(fn)]() mutable {
+          call->InContext(std::move(fn));
+          call->InternalUnref("in_context");
+        });
+  }
+}
+
+void CallContext::IncrementRefCount(const char* reason) {
+  call_->InternalRef(reason);
+}
+
+void CallContext::Unref(const char* reason) { call_->InternalUnref(reason); }
+
+///////////////////////////////////////////////////////////////////////////////
 // ClientPromiseBasedCall
 
 class ClientPromiseBasedCall final : public PromiseBasedCall {
@@ -2210,6 +2273,9 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
     ScopedContext context(this);
     send_initial_metadata_.reset();
     recv_status_on_client_ = absl::monostate();
+    promise_ = ArenaPromise<ServerMetadataHandle>();
+    auto c2s = std::move(client_to_server_messages_);
+    auto s2c = std::move(server_to_client_messages_);
   }
 
   absl::string_view GetServerAuthority() const override { abort(); }
