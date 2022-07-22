@@ -42,7 +42,6 @@
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/profiling/timers.h"
@@ -53,7 +52,6 @@
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/surface/completion_queue.h"
 
 /* (generated) built in registry of plugins */
 extern void grpc_register_built_in_plugins(void);
