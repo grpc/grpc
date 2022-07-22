@@ -762,6 +762,11 @@ libs:
   - src/core/lib/event_engine/iomgr_engine/timer_manager.h
   - src/core/lib/event_engine/promise.h
   - src/core/lib/event_engine/trace.h
+  - src/core/lib/event_engine/utils.h
+  - src/core/lib/event_engine/windows/event_poller.h
+  - src/core/lib/event_engine/windows/iocp.h
+  - src/core/lib/event_engine/windows/socket.h
+  - src/core/lib/event_engine/windows/windows_engine.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/chunked_vector.h
@@ -1449,6 +1454,10 @@ libs:
   - src/core/lib/event_engine/slice.cc
   - src/core/lib/event_engine/slice_buffer.cc
   - src/core/lib/event_engine/trace.cc
+  - src/core/lib/event_engine/utils.cc
+  - src/core/lib/event_engine/windows/iocp.cc
+  - src/core/lib/event_engine/windows/socket.cc
+  - src/core/lib/event_engine/windows/windows_engine.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/gprpp/time_averaged_stats.cc
@@ -1982,6 +1991,11 @@ libs:
   - src/core/lib/event_engine/iomgr_engine/timer_manager.h
   - src/core/lib/event_engine/promise.h
   - src/core/lib/event_engine/trace.h
+  - src/core/lib/event_engine/utils.h
+  - src/core/lib/event_engine/windows/event_poller.h
+  - src/core/lib/event_engine/windows/iocp.h
+  - src/core/lib/event_engine/windows/socket.h
+  - src/core/lib/event_engine/windows/windows_engine.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/chunked_vector.h
@@ -2310,6 +2324,10 @@ libs:
   - src/core/lib/event_engine/slice.cc
   - src/core/lib/event_engine/slice_buffer.cc
   - src/core/lib/event_engine/trace.cc
+  - src/core/lib/event_engine/utils.cc
+  - src/core/lib/event_engine/windows/iocp.cc
+  - src/core/lib/event_engine/windows/socket.cc
+  - src/core/lib/event_engine/windows/windows_engine.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/gprpp/time_averaged_stats.cc
@@ -3426,6 +3444,18 @@ targets:
   - test/core/end2end/no_server_test.cc
   deps:
   - grpc_test_util
+- name: pollset_windows_starvation_test
+  build: test
+  language: c
+  headers: []
+  src:
+  - test/core/iomgr/pollset_windows_starvation_test.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - windows
 - name: public_headers_must_be_c89
   build: test
   language: c
@@ -6305,6 +6335,22 @@ targets:
   deps:
   - grpc++_test_config
   - grpc++_test_util
+- name: iocp_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/event_engine/windows/create_sockpair.h
+  src:
+  - test/core/event_engine/windows/create_sockpair.cc
+  - test/core/event_engine/windows/iocp_test.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - windows
+  uses_polling: false
 - name: iomgr_event_engine_test
   gtest: true
   build: test
@@ -8114,6 +8160,22 @@ targets:
   - test/core/address_utils/sockaddr_utils_test.cc
   deps:
   - grpc_test_util
+- name: socket_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/event_engine/windows/create_sockpair.h
+  src:
+  - test/core/event_engine/windows/create_sockpair.cc
+  - test/core/event_engine/windows/socket_test.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - windows
+  uses_polling: false
 - name: spinlock_test
   gtest: true
   build: test

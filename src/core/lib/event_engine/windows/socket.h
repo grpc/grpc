@@ -11,12 +11,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 #ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_WINDOWS_SOCKET_H
 #define GRPC_SRC_CORE_LIB_EVENT_ENGINE_WINDOWS_SOCKET_H
 
 #include <grpc/support/port_platform.h>
-
+#ifdef GPR_WINDOWS
 #include "absl/base/thread_annotations.h"
 #include "absl/functional/any_invocable.h"
 
@@ -99,4 +98,5 @@ class WinWrappedSocket final : public WrappedSocket {
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
+#endif  // GPR_WINDOWS
 #endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_WINDOWS_SOCKET_H

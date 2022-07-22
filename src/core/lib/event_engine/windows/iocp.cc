@@ -13,6 +13,7 @@
 // limitations under the License.
 #include <grpc/support/port_platform.h>
 
+#ifdef GPR_WINDOWS
 #include "src/core/lib/event_engine/windows/iocp.h"
 
 #include <chrono>
@@ -144,3 +145,5 @@ DWORD IOCP::WSASocketFlagsInit() {
 
 }  // namespace experimental
 }  // namespace grpc_event_engine
+
+#endif  // GPR_WINDOWS

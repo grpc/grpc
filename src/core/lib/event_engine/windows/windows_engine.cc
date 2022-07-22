@@ -13,6 +13,8 @@
 // limitations under the License.
 #include <grpc/support/port_platform.h>
 
+#ifdef GPR_WINDOWS
+
 #include "src/core/lib/event_engine/windows/windows_engine.h"
 
 #include <memory>
@@ -155,3 +157,4 @@ WindowsEventEngine::CreateListener(
 
 }  // namespace experimental
 }  // namespace grpc_event_engine
+#endif // GPR_WINDOWS

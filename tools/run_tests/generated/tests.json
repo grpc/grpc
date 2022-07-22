@@ -470,6 +470,28 @@
     "benchmark": false,
     "ci_platforms": [
       "linux",
+      "posix",
+      "windows"
+    ],
+    "cpu_cost": 1.0,
+    "exclude_configs": [],
+    "exclude_iomgrs": [],
+    "flaky": false,
+    "gtest": false,
+    "language": "c",
+    "name": "pollset_windows_starvation_test",
+    "platforms": [
+      "linux",
+      "posix",
+      "windows"
+    ],
+    "uses_polling": true
+  },
+  {
+    "args": [],
+    "benchmark": false,
+    "ci_platforms": [
+      "linux",
       "mac",
       "posix",
       "windows"
@@ -4214,6 +4236,28 @@
     "benchmark": false,
     "ci_platforms": [
       "linux",
+      "posix",
+      "windows"
+    ],
+    "cpu_cost": 1.0,
+    "exclude_configs": [],
+    "exclude_iomgrs": [],
+    "flaky": false,
+    "gtest": true,
+    "language": "c++",
+    "name": "iocp_test",
+    "platforms": [
+      "linux",
+      "posix",
+      "windows"
+    ],
+    "uses_polling": false
+  },
+  {
+    "args": [],
+    "benchmark": false,
+    "ci_platforms": [
+      "linux",
       "mac",
       "posix",
       "windows"
@@ -6324,6 +6368,28 @@
       "windows"
     ],
     "uses_polling": true
+  },
+  {
+    "args": [],
+    "benchmark": false,
+    "ci_platforms": [
+      "linux",
+      "posix",
+      "windows"
+    ],
+    "cpu_cost": 1.0,
+    "exclude_configs": [],
+    "exclude_iomgrs": [],
+    "flaky": false,
+    "gtest": true,
+    "language": "c++",
+    "name": "socket_test",
+    "platforms": [
+      "linux",
+      "posix",
+      "windows"
+    ],
+    "uses_polling": false
   },
   {
     "args": [],

@@ -16,6 +16,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#ifdef GPR_WINDOWS
+
 #include "absl/status/status.h"
 
 #include <grpc/event_engine/event_engine.h>
@@ -58,4 +60,5 @@ class IOCP final : public EventPoller {
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
+#endif  // GPR_WINDOWS
 #endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_WINDOWS_IOCP_H
