@@ -176,13 +176,7 @@ pip_install_dir_and_deps() {
   cd "$PWD"
 }
 
-# Install gevent
-if [[ "$VENV" == "py36" ]]; then
-  # TODO(https://github.com/grpc/grpc/issues/15411) unpin this
-  pip_install gevent==1.3.b1
-else
-  pip_install -U gevent
-fi
+pip_install -U gevent
 
 pip_install --upgrade cython
 pip_install --upgrade six protobuf
