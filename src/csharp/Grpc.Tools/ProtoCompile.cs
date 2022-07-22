@@ -219,7 +219,7 @@ namespace Grpc.Tools
                     // The filename and line logged by the plugins may not be useful to the
                     // end user as they are not the location in the proto file but rather
                     // in the source code for the plugin. Log them anyway as they may help in
-                    // diagnositics.
+                    // diagnostics.
                     int.TryParse(match.Groups["LINE"].Value, out var line);
                     log.LogWarning(
                         subcategory: null,
@@ -248,7 +248,7 @@ namespace Grpc.Tools
                     // The filename and line logged by the plugins may not be useful to the
                     // end user as they are not the location in the proto file but rather
                     // in the source code for the plugin. Log them anyway as they may help in
-                    // diagnositics.
+                    // diagnostics.
                     int.TryParse(match.Groups["LINE"].Value, out var line);
                     log.LogError(
                         subcategory: null,
