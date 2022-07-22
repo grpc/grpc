@@ -52,7 +52,7 @@
 
 class ServerCallbackImpl final
     : public grpc::testing::BenchmarkService::CallbackService {
-  public:
+ public:
   ServerCallbackImpl(MemStats before_server_memory)
       : before_server_create(before_server_memory) {}
 
@@ -60,7 +60,7 @@ class ServerCallbackImpl final
       grpc::CallbackServerContext* context,
       const grpc::testing::SimpleRequest* request,
       grpc::testing::SimpleResponse* response) override {
-    gpr_log(GPR_INFO, "RPC CALL RECEIVED");
+    gpr_log(GPR_INFO, "UnaryCall RPC CALL RECEIVED");
     auto* reactor = context->DefaultReactor();
     reactor->Finish(grpc::Status::OK);
     return reactor;
@@ -75,20 +75,9 @@ class ServerCallbackImpl final
     reactor->Finish(grpc::Status::OK);
     return reactor;
   }
-  grpc::ServerUnaryReactor* GetPeakSnapshot(
-      grpc::CallbackServerContext* context,
-      const grpc::testing::SimpleRequest* request,
-      grpc::testing::MemorySize* response) override {
-    gpr_log(GPR_INFO, "PeakSnapshot RPC CALL RECEIVED");
-    MemStats after_server_create = MemStats::Snapshot();
-    response->set_rss(after_server_create.rss);
-    auto* reactor = context->DefaultReactor();
-    reactor->Finish(grpc::Status::OK);
-    return reactor;
-  }
 
-  private:
-    MemStats before_server_create;
+ private:
+  MemStats before_server_create;
 };
 
 /* We have some sort of deadlock, so let's not exit gracefully for now.
@@ -112,10 +101,13 @@ int main(int argc, char** argv) {
     return 1;
   }
   gpr_log(GPR_INFO, "Server port: %s", server_address.c_str());
+
+  // Get initial process memory usage before creating server
   MemStats before_server_create = MemStats::Snapshot();
-  gpr_log(GPR_INFO, "Mem: %ld", before_server_create.rss);
+  gpr_log(GPR_INFO, "Server Before Mem: %ld", before_server_create.rss);
   ServerCallbackImpl callback_server(before_server_create);
   grpc::ServerBuilder builder;
+
   // Set the authentication mechanism.
   std::shared_ptr<grpc::ServerCredentials> creds =
       grpc::InsecureServerCredentials();

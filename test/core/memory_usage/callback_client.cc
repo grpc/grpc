@@ -18,6 +18,7 @@
 
 #include <stdio.h>
 #include <string.h>
+
 #include <fstream>
 
 #include <gtest/gtest.h>
@@ -58,7 +59,7 @@ ABSL_FLAG(std::string, target, "", "Target host:port");
 ABSL_FLAG(bool, secure, false, "Use SSL Credentials");
 ABSL_FLAG(int, server_pid, 99999, "Server's pid");
 
-std::unique_ptr<grpc::testing::BenchmarkService::Stub> CreateStubForTest(){
+std::unique_ptr<grpc::testing::BenchmarkService::Stub> CreateStubForTest() {
   // Set the authentication mechanism.
   std::shared_ptr<grpc::ChannelCredentials> creds =
       grpc::InsecureChannelCredentials();
@@ -75,70 +76,9 @@ std::unique_ptr<grpc::testing::BenchmarkService::Stub> CreateStubForTest(){
   return stub;
 }
 
-
-
-long GetSnapshot(bool before) {
-  std::unique_ptr<grpc::testing::BenchmarkService::Stub> stub = CreateStubForTest();
-
-  // Start a call.
-  struct CallParams {
-    grpc::ClientContext context;
-    grpc::testing::SimpleRequest request;
-    grpc::testing::MemorySize response;
-  };
-  CallParams* params = new CallParams();
-
-  if(before){
-    stub->async()->GetBeforeSnapshot(&params->context, &params->request,
-                           &params->response, [params](const grpc::Status& status) {
-                             if (status.ok()) {
-                                gpr_log(GPR_INFO, "Before: %ld", params->response.rss());
-                                gpr_log(GPR_INFO, "GetBeforeSnapshot succeeded.");
-                             } else {
-                                gpr_log(GPR_ERROR, "GetBeforeSnapshot failed.");
-                             }
-                           });
-  }
-  else{
-    stub->async()->GetPeakSnapshot(&params->context, &params->request,
-                           &params->response, [params](const grpc::Status& status) {
-                             if (status.ok()) {
-                                gpr_log(GPR_INFO, "Peak: %ld", params->response.rss());
-                                gpr_log(GPR_INFO, "GetAfterSnapshot succeeded.");
-                             } else {
-                                gpr_log(GPR_ERROR, "GetAfterSnapshot failed.");
-                             }
-                           });
-  }
-  return params->response.rss();
-}
-
-long ServerMemory() {
-  double resident_set = 0.0;
-  std::ifstream stat_stream(absl::StrCat("/proc/", absl::GetFlag(FLAGS_server_pid),"/stat"), std::ios_base::in);
-
-  //Temporary variables for irrelevant leading entries in stats
-  std::string pid, comm, state, ppid, pgrp, session, tty_nr;
-  std::string tpgid, flags, minflt, cminflt, majflt, cmajflt;
-  std::string utime, stime, cutime, cstime, priority, nice;
-  std::string O, itrealvalue, starttime, vsize;
-  
-  //Get rss to find memory usage
-  long rss;
-  stat_stream >> pid >> comm >> state >> ppid >> pgrp >> session >> tty_nr
-              >> tpgid >> flags >> minflt >> cminflt >> majflt >> cmajflt
-              >> utime >> stime >> cutime >> cstime >> priority >> nice
-              >> O >> itrealvalue >> starttime >> vsize >> rss;
-  stat_stream.close();
-
-  // Calculations in case x86-64 is configured to use 2MB pages
-  long page_size_kb = sysconf(_SC_PAGE_SIZE) / 1024;
-  resident_set = rss * page_size_kb;
-  return resident_set;
-}
-
 void UnaryCall() {
-  std::unique_ptr<grpc::testing::BenchmarkService::Stub> stub = CreateStubForTest();
+  std::unique_ptr<grpc::testing::BenchmarkService::Stub> stub =
+      CreateStubForTest();
 
   // Start a call.
   struct CallParams {
@@ -151,11 +91,63 @@ void UnaryCall() {
                            &params->response, [](const grpc::Status& status) {
                              if (status.ok()) {
                                gpr_log(GPR_INFO, "UnaryCall RPC succeeded.");
-                               GetSnapshot(false);
                              } else {
                                gpr_log(GPR_ERROR, "UnaryCall RPC failed.");
                              }
                            });
+}
+
+// Get memory usage of server's process before the server is made
+long GetBeforeSnapshot() {
+  std::unique_ptr<grpc::testing::BenchmarkService::Stub> stub =
+      CreateStubForTest();
+
+  // Start a call.
+  struct CallParams {
+    grpc::ClientContext context;
+    grpc::testing::SimpleRequest request;
+    grpc::testing::MemorySize response;
+  };
+  CallParams* params = new CallParams();
+  stub->async()->GetBeforeSnapshot(
+      &params->context, &params->request, &params->response,
+      [params](const grpc::Status& status) {
+        if (status.ok()) {
+          gpr_log(GPR_INFO, "Before: %ld", params->response.rss());
+          gpr_log(GPR_INFO, "GetBeforeSnapshot succeeded.");
+        } else {
+          gpr_log(GPR_ERROR, "GetBeforeSnapshot failed.");
+        }
+      });
+  return params->response.rss();
+}
+
+// Get current memory usage of server without having to send an RPC by using
+// server's pid
+long GetServerMemory() {
+  double resident_set = 0.0;
+  std::ifstream stat_stream(
+      absl::StrCat("/proc/", absl::GetFlag(FLAGS_server_pid), "/stat"),
+      std::ios_base::in);
+
+  // Temporary variables for irrelevant leading entries in stats
+  std::string pid, comm, state, ppid, pgrp, session, tty_nr;
+  std::string tpgid, flags, minflt, cminflt, majflt, cmajflt;
+  std::string utime, stime, cutime, cstime, priority, nice;
+  std::string O, itrealvalue, starttime, vsize;
+
+  // Get rss to find memory usage
+  long rss;
+  stat_stream >> pid >> comm >> state >> ppid >> pgrp >> session >> tty_nr >>
+      tpgid >> flags >> minflt >> cminflt >> majflt >> cmajflt >> utime >>
+      stime >> cutime >> cstime >> priority >> nice >> O >> itrealvalue >>
+      starttime >> vsize >> rss;
+  stat_stream.close();
+
+  // Calculations in case x86-64 is configured to use 2MB pages
+  long page_size_kb = sysconf(_SC_PAGE_SIZE) / 1024;
+  resident_set = rss * page_size_kb;
+  return resident_set;
 }
 
 int main(int argc, char** argv) {
@@ -170,17 +162,16 @@ int main(int argc, char** argv) {
   }
   gpr_log(GPR_INFO, "Client Target: %s", absl::GetFlag(FLAGS_target).c_str());
 
-  
-  long before_server_create = GetSnapshot(true);
+  // Getting memory usage
+  long before_server_memory = GetBeforeSnapshot();
+  MemStats before_client_memory = MemStats::Snapshot();
+  gpr_log(GPR_INFO, "Before Client Mem: %ld", before_client_memory.rss);
   UnaryCall();
-  long method_attempt = ServerMemory();
-  gpr_log(GPR_INFO, "Method: %ld", method_attempt);
-  //gpr_log(GPR_INFO, "Before haha: %ld", before_server_create);
-  //long after_server_usage = GetSnapshot(false);
+  long peak_server_memory = GetServerMemory();
+  MemStats peak_client_memory = MemStats::Snapshot();
+  gpr_log(GPR_INFO, "Peak Client Mem: %ld", peak_client_memory.rss);
+  gpr_log(GPR_INFO, "Peak Server Mem: %ld", GetServerMemory());
   gpr_log(GPR_INFO, "Client Done");
-  ///Thoughts: Mutex around a finished counter, maybe a while statements to wait until it reaches 100, and then ask for peak?
-  //Issue right now: can't use size value in main cause it hasnt be changed yet
-  //Does server receive them in order
-  //make it synchoncous or use notifications? let test PID first
+
   return 0;
 }

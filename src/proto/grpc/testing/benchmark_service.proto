@@ -44,7 +44,4 @@ service BenchmarkService {
 
   //Get the memory usage of process before server is made
   rpc GetBeforeSnapshot(SimpleRequest) returns (MemorySize); 
-
-  //Get the memory usage of process at peak usage
-  rpc GetPeakSnapshot(SimpleRequest) returns (MemorySize);
 }
