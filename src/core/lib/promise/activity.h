@@ -22,6 +22,7 @@
 #include <algorithm>
 #include <atomic>
 #include <memory>
+#include <string>
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
