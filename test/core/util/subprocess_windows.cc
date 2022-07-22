@@ -124,8 +124,7 @@ void gpr_subprocess_interrupt(gpr_subprocess* p) {
   return;
 }
 
-int gpr_subprocess_get_process_id(gpr_subprocess* p)
-{
+int gpr_subprocess_get_process_id(gpr_subprocess* p) {
   return p->pi.dwProcessId
 }
 
