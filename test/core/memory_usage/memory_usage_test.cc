@@ -139,11 +139,11 @@ int RunChannelBenchmark(char* root) {
 int RunBenchmark(char* root, absl::string_view benchmark,
                  std::vector<std::string> server_scenario_flags,
                  std::vector<std::string> client_scenario_flags) {
-  if (benchmark == "call")
+  if (benchmark == "call") {
     return RunCallBenchmark(root, server_scenario_flags, client_scenario_flags);
-  else if (benchmark == "channel")
+  } else if (benchmark == "channel") {
     return RunChannelBenchmark(root);
-  else {
+  } else {
     gpr_log(GPR_INFO, "Not a valid benchmark name");
     return 4;
   }
