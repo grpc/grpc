@@ -136,7 +136,7 @@ std::string GetCensusSafeClientIpString(
     }
     return client_ip;
   } else {
-    GPR_UNREACHABLE_CODE();
+    GPR_UNREACHABLE_CODE(abort());
   }
 }
 
@@ -155,7 +155,7 @@ std::string MakeClientIpAndLrToken(
       prefix = kEncodedIpv6AddressLengthString;
       break;
     default:
-      GPR_UNREACHABLE_CODE();
+      GPR_UNREACHABLE_CODE(abort());
   }
   return absl::StrCat(prefix, client_ip, lr_token);
 }

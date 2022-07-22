@@ -2594,7 +2594,11 @@ grpc_cc_library(
     name = "default_event_engine_factory",
     srcs = ["src/core/lib/event_engine/default_event_engine_factory.cc"],
     hdrs = ["src/core/lib/event_engine/default_event_engine_factory.h"],
-    deps = selects.with_or({
+    external_deps = ["absl/memory"],
+    deps = [
+        "event_engine_base_hdrs",
+        "gpr_platform",
+    ] + selects.with_or({
         ("//:windows", "//:windows_msvc"): ["windows_event_engine"],
         "//conditions:default": ["iomgr_event_engine"],
     }),
