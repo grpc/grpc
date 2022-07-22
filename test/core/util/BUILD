@@ -218,9 +218,9 @@ grpc_cc_test(
     srcs = ["histogram_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
+    tags = ["nofixdeps"],
     uses_event_engine = False,
     uses_polling = False,
-    tags = ["nofixdeps"],
     deps = [
         "grpc_test_util",
         "grpc_test_util_base",

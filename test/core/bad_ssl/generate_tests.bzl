@@ -58,7 +58,7 @@ def grpc_bad_ssl_tests():
             ],
             deps = [
                 "//test/core/util:grpc_test_util",
-            "//test/core/util:grpc_test_util_base",
+                "//test/core/util:grpc_test_util_base",
                 "//:gpr",
                 "//:grpc",
                 "//test/core/end2end:cq_verifier",
