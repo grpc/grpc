@@ -15,9 +15,13 @@
 #define GRPC_SRC_CORE_LIB_EVENT_ENGINE_WINDOWS_EVENT_POLLER_H
 
 // ---------------------------------------------------------------------------
-// DO NOT SUBMIT(hork): I forked this from the iomgr_engine due to some slight
+// TODO(hork): I forked this from the iomgr_engine due to some slight
 // differences in types. Both are being actively worked on, so the idea is to
 // develop in parallel and netogiate a reunification once things settle.
+//
+// This is most valuable if WrappedSocket/EventHandler and EventPoller can be
+// treated generally by the same TCP code. If not, unification might not be that
+// valuable.
 // ---------------------------------------------------------------------------
 
 #include <grpc/support/port_platform.h>

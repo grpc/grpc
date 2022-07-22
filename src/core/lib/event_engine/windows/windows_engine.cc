@@ -38,6 +38,10 @@
 namespace grpc_event_engine {
 namespace experimental {
 
+// TODO(hork): The iomgr timer and execution engine can be reused. It should
+// be separated out from the iomgr_engine and instantiated as components. It is
+// effectively copied below.
+
 struct WindowsEventEngine::Closure final : public EventEngine::Closure {
   absl::AnyInvocable<void()> cb;
   iomgr_engine::Timer timer;
@@ -75,7 +79,6 @@ WindowsEventEngine::~WindowsEventEngine() {
   GPR_ASSERT(WSACleanup() == 0);
 }
 
-// DO NOT SUBMIT(hork): identical to iomgr EventEngine. Dedupe.
 bool WindowsEventEngine::Cancel(EventEngine::TaskHandle handle) {
   grpc_core::MutexLock lock(&mu_);
   if (!known_handles_.contains(handle)) return false;
@@ -129,8 +132,6 @@ std::unique_ptr<EventEngine::DNSResolver> WindowsEventEngine::GetDNSResolver(
 bool WindowsEventEngine::IsWorkerThread() {
   GPR_ASSERT(false && "unimplemented");
 }
-
-// DO NOT SUBMIT - client & listener implementation
 
 bool WindowsEventEngine::CancelConnect(EventEngine::ConnectionHandle handle) {
   GPR_ASSERT(false && "unimplemented");

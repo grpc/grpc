@@ -32,13 +32,15 @@ class WinWrappedSocket final : public WrappedSocket {
    public:
     explicit OpInfo(WinWrappedSocket* win_socket) noexcept;
     // Signal an IOCP result has returned
-    // This method will execute the callback inline if one is set.
+    // If a callback is already primed for notification, it will be executed via
+    // the WinWrappedSocket's EventEngine. Otherwise, a "pending iocp" flag will
+    // be set.
     void SetReady();
     // Set error results for a completed op
     void SetError();
     // Retrieve results of overlapped operation (via Winsock API)
     void GetOverlappedResult();
-    // DO NOT SUBMIT(hork): leaky abstraction
+    // TODO(hork): consider alternatives to this leaky abstraction
     OVERLAPPED* overlapped() { return &overlapped_; }
     DWORD bytes_transferred() const { return bytes_transferred_; }
     int wsa_error() const { return wsa_error_; }
@@ -76,7 +78,7 @@ class WinWrappedSocket final : public WrappedSocket {
   // Returns nullptr if the overlapped does not match either read or write ops.
   OpInfo* GetOpInfoForOverlapped(OVERLAPPED* overlapped);
   // -------------------------------------------------
-  // DO NOT SUBMIT(hork): We need access to these for WSA* ops in TCP code.
+  // TODO(hork): We need access to these for WSA* ops in TCP code.
   // Maybe we can encapsulate these calls inside of the OpInfo class. Would need
   // to rename it.
   OpInfo* read_info() { return &read_info_; }
