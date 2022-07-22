@@ -21,7 +21,6 @@
 #include "src/core/lib/transport/connectivity_state.h"
 
 #include <string>
-#include <type_traits>
 
 #include <grpc/support/log.h>
 

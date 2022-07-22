@@ -18,10 +18,15 @@
 
 #include "test/core/util/resolve_localhost_ip46.h"
 
-#include <grpc/support/log.h>
+#include <vector>
 
-#include "src/core/lib/iomgr/port.h"
+#include "absl/status/statusor.h"
+
+#include <grpc/support/log.h>
+#include <grpc/support/sync.h>
+
 #include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 
 namespace grpc_core {

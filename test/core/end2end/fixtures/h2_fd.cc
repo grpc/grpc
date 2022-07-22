@@ -16,6 +16,9 @@
  *
  */
 
+#include "absl/status/status.h"
+
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/port.h"
 
 // This test won't work except with posix sockets enabled

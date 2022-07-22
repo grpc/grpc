@@ -19,13 +19,16 @@
 #ifndef GRPC_TEST_CORE_END2END_CQ_VERIFIER_H
 #define GRPC_TEST_CORE_END2END_CQ_VERIFIER_H
 
-#include <stdbool.h>
+#include <string>
+#include <vector>
+
+#include "absl/types/variant.h"
 
 #include <grpc/grpc.h>
+#include <grpc/slice.h>
 
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/time.h"
-#include "test/core/util/test_config.h"
 
 namespace grpc_core {
 

@@ -14,36 +14,48 @@
 // limitations under the License.
 //
 
-#include <stdio.h>
+#include <inttypes.h>
 #include <string.h>
+
+#include <algorithm>
+#include <memory>
+#include <utility>
+#include <vector>
+
+#include "absl/memory/memory.h"
+#include "absl/status/status.h"
 
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
+#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/time.h>
 
+#include "src/core/ext/filters/client_channel/lb_policy.h"
+#include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/json/json.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
-#include "test/core/end2end/tests/cancel_test_helpers.h"
+#include "test/core/util/test_config.h"
 #include "test/core/util/test_lb_policies.h"
 
 namespace grpc_core {
 namespace {
 
-constexpr absl::string_view kDropPolicyName = "drop_lb";
+const char* kDropPolicyName = "drop_lb";
 
 class DropPolicy : public LoadBalancingPolicy {
  public:
   explicit DropPolicy(Args args) : LoadBalancingPolicy(std::move(args)) {}
 
-  absl::string_view name() const override { return kDropPolicyName; }
+  const char* name() const override { return kDropPolicyName; }
 
   void UpdateLocked(UpdateArgs) override {
     channel_control_helper()->UpdateState(GRPC_CHANNEL_READY, absl::Status(),
@@ -65,7 +77,7 @@ class DropPolicy : public LoadBalancingPolicy {
 
 class DropLbConfig : public LoadBalancingPolicy::Config {
  public:
-  absl::string_view name() const override { return kDropPolicyName; }
+  const char* name() const override { return kDropPolicyName; }
 };
 
 class DropPolicyFactory : public LoadBalancingPolicyFactory {
@@ -75,10 +87,10 @@ class DropPolicyFactory : public LoadBalancingPolicyFactory {
     return MakeOrphanable<DropPolicy>(std::move(args));
   }
 
-  absl::string_view name() const override { return kDropPolicyName; }
+  const char* name() const override { return kDropPolicyName; }
 
-  absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
-  ParseLoadBalancingConfig(const Json& /*json*/) const override {
+  RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
+      const Json& /*json*/, grpc_error_handle* /*error*/) const override {
     return MakeRefCounted<DropLbConfig>();
   }
 };
