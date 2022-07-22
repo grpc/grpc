@@ -16,27 +16,36 @@
 
 #include "test/core/util/test_lb_policies.h"
 
+#include <stdint.h>
+
+#include <algorithm>
+#include <memory>
 #include <string>
 
+#include "absl/memory/memory.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/variant.h"
+
+#include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.h"
+#include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
+#include "src/core/ext/filters/client_channel/subchannel_interface.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/channelz.h"
-#include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/iomgr/closure.h"
-#include "src/core/lib/iomgr/combiner.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_util.h"
-#include "src/core/lib/transport/connectivity_state.h"
+#include "src/core/lib/uri/uri_parser.h"
 
 namespace grpc_core {
 
@@ -51,7 +60,7 @@ class ForwardingLoadBalancingPolicy : public LoadBalancingPolicy {
  public:
   ForwardingLoadBalancingPolicy(
       std::unique_ptr<ChannelControlHelper> delegating_helper, Args args,
-      absl::string_view delegate_policy_name, intptr_t initial_refcount = 1)
+      const char* delegate_policy_name, intptr_t initial_refcount = 1)
       : LoadBalancingPolicy(std::move(args), initial_refcount) {
     Args delegate_args;
     delegate_args.work_serializer = work_serializer();
@@ -83,12 +92,12 @@ class ForwardingLoadBalancingPolicy : public LoadBalancingPolicy {
 // TestPickArgsLb
 //
 
-constexpr absl::string_view kTestPickArgsLbPolicyName = "test_pick_args_lb";
+constexpr char kTestPickArgsLbPolicyName[] = "test_pick_args_lb";
 
 class TestPickArgsLb : public ForwardingLoadBalancingPolicy {
  public:
   TestPickArgsLb(Args args, TestPickArgsCallback cb,
-                 absl::string_view delegate_policy_name)
+                 const char* delegate_policy_name)
       : ForwardingLoadBalancingPolicy(
             absl::make_unique<Helper>(RefCountedPtr<TestPickArgsLb>(this), cb),
             std::move(args), delegate_policy_name,
@@ -96,7 +105,7 @@ class TestPickArgsLb : public ForwardingLoadBalancingPolicy {
 
   ~TestPickArgsLb() override = default;
 
-  absl::string_view name() const override { return kTestPickArgsLbPolicyName; }
+  const char* name() const override { return kTestPickArgsLbPolicyName; }
 
  private:
   class Picker : public SubchannelPicker {
@@ -158,13 +167,13 @@ class TestPickArgsLb : public ForwardingLoadBalancingPolicy {
 
 class TestPickArgsLbConfig : public LoadBalancingPolicy::Config {
  public:
-  absl::string_view name() const override { return kTestPickArgsLbPolicyName; }
+  const char* name() const override { return kTestPickArgsLbPolicyName; }
 };
 
 class TestPickArgsLbFactory : public LoadBalancingPolicyFactory {
  public:
   explicit TestPickArgsLbFactory(TestPickArgsCallback cb,
-                                 absl::string_view delegate_policy_name)
+                                 const char* delegate_policy_name)
       : cb_(std::move(cb)), delegate_policy_name_(delegate_policy_name) {}
 
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
@@ -173,16 +182,16 @@ class TestPickArgsLbFactory : public LoadBalancingPolicyFactory {
                                           delegate_policy_name_);
   }
 
-  absl::string_view name() const override { return kTestPickArgsLbPolicyName; }
+  const char* name() const override { return kTestPickArgsLbPolicyName; }
 
-  absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
-  ParseLoadBalancingConfig(const Json& /*json*/) const override {
+  RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
+      const Json& /*json*/, grpc_error_handle* /*error*/) const override {
     return MakeRefCounted<TestPickArgsLbConfig>();
   }
 
  private:
   TestPickArgsCallback cb_;
-  std::string delegate_policy_name_;
+  const char* delegate_policy_name_;
 };
 
 //
@@ -208,7 +217,7 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
 
   ~InterceptRecvTrailingMetadataLoadBalancingPolicy() override = default;
 
-  absl::string_view name() const override {
+  const char* name() const override {
     return kInterceptRecvTrailingMetadataLbPolicyName;
   }
 
@@ -296,7 +305,7 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
 
 class InterceptTrailingConfig : public LoadBalancingPolicy::Config {
  public:
-  absl::string_view name() const override {
+  const char* name() const override {
     return kInterceptRecvTrailingMetadataLbPolicyName;
   }
 };
@@ -312,12 +321,12 @@ class InterceptTrailingFactory : public LoadBalancingPolicyFactory {
         std::move(args), cb_);
   }
 
-  absl::string_view name() const override {
+  const char* name() const override {
     return kInterceptRecvTrailingMetadataLbPolicyName;
   }
 
-  absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
-  ParseLoadBalancingConfig(const Json& /*json*/) const override {
+  RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
+      const Json& /*json*/, grpc_error_handle* /*error*/) const override {
     return MakeRefCounted<InterceptTrailingConfig>();
   }
 
@@ -344,7 +353,7 @@ class AddressTestLoadBalancingPolicy : public ForwardingLoadBalancingPolicy {
 
   ~AddressTestLoadBalancingPolicy() override = default;
 
-  absl::string_view name() const override { return kAddressTestLbPolicyName; }
+  const char* name() const override { return kAddressTestLbPolicyName; }
 
  private:
   class Helper : public ChannelControlHelper {
@@ -387,7 +396,7 @@ class AddressTestLoadBalancingPolicy : public ForwardingLoadBalancingPolicy {
 
 class AddressTestConfig : public LoadBalancingPolicy::Config {
  public:
-  absl::string_view name() const override { return kAddressTestLbPolicyName; }
+  const char* name() const override { return kAddressTestLbPolicyName; }
 };
 
 class AddressTestFactory : public LoadBalancingPolicyFactory {
@@ -399,10 +408,10 @@ class AddressTestFactory : public LoadBalancingPolicyFactory {
     return MakeOrphanable<AddressTestLoadBalancingPolicy>(std::move(args), cb_);
   }
 
-  absl::string_view name() const override { return kAddressTestLbPolicyName; }
+  const char* name() const override { return kAddressTestLbPolicyName; }
 
-  absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
-  ParseLoadBalancingConfig(const Json& /*json*/) const override {
+  RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
+      const Json& /*json*/, grpc_error_handle* /*error*/) const override {
     return MakeRefCounted<AddressTestConfig>();
   }
 
@@ -421,7 +430,7 @@ class FixedAddressConfig : public LoadBalancingPolicy::Config {
   explicit FixedAddressConfig(std::string address)
       : address_(std::move(address)) {}
 
-  absl::string_view name() const override { return kFixedAddressLbPolicyName; }
+  const char* name() const override { return kFixedAddressLbPolicyName; }
 
   const std::string& address() const { return address_; }
 
@@ -441,7 +450,7 @@ class FixedAddressLoadBalancingPolicy : public ForwardingLoadBalancingPolicy {
 
   ~FixedAddressLoadBalancingPolicy() override = default;
 
-  absl::string_view name() const override { return kFixedAddressLbPolicyName; }
+  const char* name() const override { return kFixedAddressLbPolicyName; }
 
   void UpdateLocked(UpdateArgs args) override {
     auto* config = static_cast<FixedAddressConfig*>(args.config.get());
@@ -508,20 +517,17 @@ class FixedAddressFactory : public LoadBalancingPolicyFactory {
     return MakeOrphanable<FixedAddressLoadBalancingPolicy>(std::move(args));
   }
 
-  absl::string_view name() const override { return kFixedAddressLbPolicyName; }
+  const char* name() const override { return kFixedAddressLbPolicyName; }
 
-  absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
-  ParseLoadBalancingConfig(const Json& json) const override {
+  RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
+      const Json& json, grpc_error_handle* error) const override {
     std::vector<grpc_error_handle> error_list;
     std::string address;
     ParseJsonObjectField(json.object_value(), "address", &address, &error_list);
     if (!error_list.empty()) {
-      grpc_error_handle error = GRPC_ERROR_CREATE_FROM_VECTOR(
+      *error = GRPC_ERROR_CREATE_FROM_VECTOR(
           "errors parsing fixed_address_lb config", &error_list);
-      absl::Status status =
-          absl::InvalidArgumentError(grpc_error_std_string(error));
-      GRPC_ERROR_UNREF(error);
-      return status;
+      return nullptr;
     }
     return MakeRefCounted<FixedAddressConfig>(std::move(address));
   }
@@ -536,7 +542,7 @@ constexpr char kOobBackendMetricTestLbPolicyName[] =
 
 class OobBackendMetricTestConfig : public LoadBalancingPolicy::Config {
  public:
-  absl::string_view name() const override {
+  const char* name() const override {
     return kOobBackendMetricTestLbPolicyName;
   }
 };
@@ -556,7 +562,7 @@ class OobBackendMetricTestLoadBalancingPolicy
 
   ~OobBackendMetricTestLoadBalancingPolicy() override = default;
 
-  absl::string_view name() const override {
+  const char* name() const override {
     return kOobBackendMetricTestLbPolicyName;
   }
 
@@ -632,12 +638,12 @@ class OobBackendMetricTestFactory : public LoadBalancingPolicyFactory {
         std::move(args), cb_);
   }
 
-  absl::string_view name() const override {
+  const char* name() const override {
     return kOobBackendMetricTestLbPolicyName;
   }
 
-  absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
-  ParseLoadBalancingConfig(const Json& /*json*/) const override {
+  RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
+      const Json& /*json*/, grpc_error_handle* /*error*/) const override {
     return MakeRefCounted<OobBackendMetricTestConfig>();
   }
 
@@ -647,8 +653,8 @@ class OobBackendMetricTestFactory : public LoadBalancingPolicyFactory {
 
 }  // namespace
 
-void RegisterTestPickArgsLoadBalancingPolicy(
-    TestPickArgsCallback cb, absl::string_view delegate_policy_name) {
+void RegisterTestPickArgsLoadBalancingPolicy(TestPickArgsCallback cb,
+                                             const char* delegate_policy_name) {
   LoadBalancingPolicyRegistry::Builder::RegisterLoadBalancingPolicyFactory(
       absl::make_unique<TestPickArgsLbFactory>(std::move(cb),
                                                delegate_policy_name));

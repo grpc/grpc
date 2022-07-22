@@ -25,8 +25,6 @@
 #include <vector>
 
 #include "absl/memory/memory.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
 
@@ -90,13 +88,14 @@ ClientChannelServiceConfigParser::ParseGlobalParams(const ChannelArgs& /*args*/,
   RefCountedPtr<LoadBalancingPolicy::Config> parsed_lb_config;
   auto it = json.object_value().find("loadBalancingConfig");
   if (it != json.object_value().end()) {
-    auto config =
-        LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(it->second);
-    if (!config.ok()) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
-          "field:loadBalancingConfig error:", config.status().message())));
-    } else {
-      parsed_lb_config = std::move(*config);
+    grpc_error_handle parse_error = GRPC_ERROR_NONE;
+    parsed_lb_config = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
+        it->second, &parse_error);
+    if (!GRPC_ERROR_IS_NONE(parse_error)) {
+      std::vector<grpc_error_handle> lb_errors;
+      lb_errors.push_back(parse_error);
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_VECTOR(
+          "field:loadBalancingConfig", &lb_errors));
     }
   }
   // Parse deprecated LB policy.

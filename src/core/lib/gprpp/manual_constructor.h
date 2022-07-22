@@ -25,7 +25,6 @@
 
 #include <stddef.h>
 
-#include <type_traits>
 #include <utility>
 
 #include "src/core/lib/gprpp/construct_destruct.h"

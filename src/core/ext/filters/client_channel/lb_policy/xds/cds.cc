@@ -28,7 +28,6 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
-#include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
@@ -75,7 +74,7 @@ TraceFlag grpc_cds_lb_trace(false, "cds_lb");
 
 namespace {
 
-constexpr absl::string_view kCds = "cds_experimental";
+constexpr char kCds[] = "cds_experimental";
 
 constexpr int kMaxAggregateClusterRecursionDepth = 16;
 
@@ -84,7 +83,7 @@ class CdsLbConfig : public LoadBalancingPolicy::Config {
  public:
   explicit CdsLbConfig(std::string cluster) : cluster_(std::move(cluster)) {}
   const std::string& cluster() const { return cluster_; }
-  absl::string_view name() const override { return kCds; }
+  const char* name() const override { return kCds; }
 
  private:
   std::string cluster_;
@@ -95,7 +94,7 @@ class CdsLb : public LoadBalancingPolicy {
  public:
   CdsLb(RefCountedPtr<XdsClient> xds_client, Args args);
 
-  absl::string_view name() const override { return kCds; }
+  const char* name() const override { return kCds; }
 
   void UpdateLocked(UpdateArgs args) override;
   void ResetBackoffLocked() override;
@@ -517,9 +516,11 @@ void CdsLb::OnClusterChanged(const std::string& name,
               this, json_str.c_str());
     }
     grpc_error_handle error = GRPC_ERROR_NONE;
-    auto config = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(json);
-    if (!config.ok()) {
-      OnError(name, absl::UnavailableError(config.status().message()));
+    RefCountedPtr<LoadBalancingPolicy::Config> config =
+        LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(json, &error);
+    if (!GRPC_ERROR_IS_NONE(error)) {
+      OnError(name, absl::UnavailableError(grpc_error_std_string(error)));
+      GRPC_ERROR_UNREF(error);
       return;
     }
     // Create child policy if not already present.
@@ -529,7 +530,7 @@ void CdsLb::OnClusterChanged(const std::string& name,
       args.args = args_;
       args.channel_control_helper = absl::make_unique<Helper>(Ref());
       child_policy_ = LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
-          (*config)->name(), std::move(args));
+          config->name(), std::move(args));
       if (child_policy_ == nullptr) {
         OnError(name, absl::UnavailableError("failed to create child policy"));
         return;
@@ -538,12 +539,12 @@ void CdsLb::OnClusterChanged(const std::string& name,
                                        interested_parties());
       if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
         gpr_log(GPR_INFO, "[cdslb %p] created child policy %s (%p)", this,
-                std::string((*config)->name()).c_str(), child_policy_.get());
+                config->name(), child_policy_.get());
       }
     }
     // Update child policy.
     UpdateArgs args;
-    args.config = std::move(*config);
+    args.config = std::move(config);
     if (xds_certificate_provider_ != nullptr) {
       args.args = args_.SetObject(xds_certificate_provider_);
     } else {
@@ -723,32 +724,35 @@ class CdsLbFactory : public LoadBalancingPolicyFactory {
     return MakeOrphanable<CdsLb>(std::move(xds_client), std::move(args));
   }
 
-  absl::string_view name() const override { return kCds; }
+  const char* name() const override { return kCds; }
 
-  absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
-  ParseLoadBalancingConfig(const Json& json) const override {
+  RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
+      const Json& json, grpc_error_handle* error) const override {
+    GPR_DEBUG_ASSERT(error != nullptr && GRPC_ERROR_IS_NONE(*error));
     if (json.type() == Json::Type::JSON_NULL) {
       // xds was mentioned as a policy in the deprecated loadBalancingPolicy
       // field or in the client API.
-      return absl::InvalidArgumentError(
+      *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "field:loadBalancingPolicy error:cds policy requires configuration. "
           "Please use loadBalancingConfig field of service config instead.");
+      return nullptr;
     }
-    std::vector<std::string> errors;
+    std::vector<grpc_error_handle> error_list;
     // cluster name.
     std::string cluster;
     auto it = json.object_value().find("cluster");
     if (it == json.object_value().end()) {
-      errors.emplace_back("required field 'cluster' not present");
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "required field 'cluster' not present"));
     } else if (it->second.type() != Json::Type::STRING) {
-      errors.emplace_back("field:cluster error:type should be string");
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "field:cluster error:type should be string"));
     } else {
       cluster = it->second.string_value();
     }
-    if (!errors.empty()) {
-      return absl::InvalidArgumentError(
-          absl::StrCat("errors parsing CDS LB policy config: [",
-                       absl::StrJoin(errors, "; "), "]"));
+    if (!error_list.empty()) {
+      *error = GRPC_ERROR_CREATE_FROM_VECTOR("Cds Parser", &error_list);
+      return nullptr;
     }
     return MakeRefCounted<CdsLbConfig>(std::move(cluster));
   }

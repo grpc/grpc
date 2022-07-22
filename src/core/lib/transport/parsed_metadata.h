@@ -21,7 +21,6 @@
 
 #include <cstdint>
 #include <string>
-#include <type_traits>
 #include <utility>
 
 #include "absl/functional/function_ref.h"

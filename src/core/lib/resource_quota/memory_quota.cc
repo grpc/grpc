@@ -21,7 +21,6 @@
 #include <algorithm>
 #include <atomic>
 #include <tuple>
-#include <type_traits>
 
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"

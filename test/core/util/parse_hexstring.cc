@@ -18,6 +18,9 @@
 
 #include "test/core/util/parse_hexstring.h"
 
+#include <stddef.h>
+#include <stdint.h>
+
 #include <grpc/support/log.h>
 
 grpc_slice parse_hexstring(const char* hexstring) {

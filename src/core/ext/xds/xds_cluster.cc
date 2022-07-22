@@ -20,7 +20,6 @@
 
 #include <stddef.h>
 
-#include <type_traits>
 #include <utility>
 
 #include "absl/memory/memory.h"

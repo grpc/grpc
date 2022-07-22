@@ -24,6 +24,7 @@
 #include <utility>
 
 #include "absl/strings/str_cat.h"
+#include "absl/types/variant.h"
 
 #include <grpc/grpc.h>
 

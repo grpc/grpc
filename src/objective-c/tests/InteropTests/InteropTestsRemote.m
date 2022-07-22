@@ -83,7 +83,7 @@ static GRPCProtoMethod *kUnaryCallMethod;
 }
 
 - (void)testMetadataForV2Call {
-  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
+  GRPCTestRunWithFlakeRepeats(self, ^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
     XCTestExpectation *expectation = [self expectationWithDescription:@"RPC unauthorized."];
 
     RMTSimpleRequest *request = [RMTSimpleRequest message];
@@ -131,12 +131,12 @@ static GRPCProtoMethod *kUnaryCallMethod;
     [call writeData:[request data]];
     [call finish];
 
-    waiterBlock(self, @[ expectation ], GRPCInteropTestTimeoutDefault);
+    waiterBlock(@[ expectation ], GRPCInteropTestTimeoutDefault);
   });
 }
 
 - (void)testMetadataForV1Call {
-  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
+  GRPCTestRunWithFlakeRepeats(self, ^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
     XCTestExpectation *expectation = [self expectationWithDescription:@"RPC unauthorized."];
 
     RMTSimpleRequest *request = [RMTSimpleRequest message];
@@ -178,12 +178,12 @@ static GRPCProtoMethod *kUnaryCallMethod;
 
     [call startWithWriteable:responsesWriteable];
 
-    waiterBlock(self, @[ expectation ], GRPCInteropTestTimeoutDefault);
+    waiterBlock(@[ expectation ], GRPCInteropTestTimeoutDefault);
   });
 }
 
 - (void)testErrorDebugInformation {
-  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
+  GRPCTestRunWithFlakeRepeats(self, ^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
     XCTestExpectation *expectation = [self expectationWithDescription:@"RPC unauthorized."];
 
     RMTSimpleRequest *request = [RMTSimpleRequest message];
@@ -223,7 +223,7 @@ static GRPCProtoMethod *kUnaryCallMethod;
 
     [call startWithWriteable:responsesWriteable];
 
-    waiterBlock(self, @[ expectation ], GRPCInteropTestTimeoutDefault);
+    waiterBlock(@[ expectation ], GRPCInteropTestTimeoutDefault);
   });
 }
 
