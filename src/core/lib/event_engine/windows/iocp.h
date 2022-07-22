@@ -42,18 +42,17 @@ class IOCP final : public EventPoller {
   absl::Status Work(EventEngine::Duration timeout) override;
   void Kick() override;
   // Return the set of default flags
-  DWORD GetDefaultSocketFlags();
+  static DWORD GetDefaultSocketFlags();
 
  private:
   // Initialize default flags via checking platform support
-  void WSASocketFlagsInit();
+  static DWORD WSASocketFlagsInit();
 
   EventEngine* event_engine_;
   HANDLE iocp_handle_;
   OVERLAPPED kick_overlap_;
   ULONG kick_token_;
   std::atomic<int> outstanding_kicks_{0};
-  DWORD wsa_socket_flags_;
 };
 
 }  // namespace experimental

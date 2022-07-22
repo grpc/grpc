@@ -2,7 +2,7 @@
 
 build --client_env=CC=clang
 build --copt=-DGRPC_BAZEL_BUILD
-build --cxxopt='-std=c++14'
+#build --cxxopt='-std=c++14'
 build --action_env=GRPC_BAZEL_RUNTIME=1
 build --define=use_fast_cpp_protos=true
 
@@ -29,6 +29,9 @@ build:asan --copt=-DADDRESS_SANITIZER  # used by absl
 build:asan --linkopt=-fsanitize=address
 build:asan --action_env=ASAN_OPTIONS=detect_leaks=1:color=always
 build:asan --action_env=LSAN_OPTIONS=suppressions=test/core/util/lsan_suppressions.txt:report_objects=1
+
+build:msvc_asan --copt='/fsanitize=address'
+build:msvc_asan --linkopt='/fsanitize=address'
 
 build:fuzzer_asan --strip=never
 build:fuzzer_asan --define=grpc_build_fuzzers=true
