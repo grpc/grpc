@@ -23,6 +23,7 @@
 #include <vector>
 
 #include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 
 #include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
 #include "src/core/lib/resolver/server_address.h"
@@ -41,7 +42,8 @@ using TestPickArgsCallback = std::function<void(const PickArgsSeen&)>;
 // Registers an LB policy called "test_pick_args_lb" that passes the args
 // passed to SubchannelPicker::Pick() to cb.
 void RegisterTestPickArgsLoadBalancingPolicy(
-    TestPickArgsCallback cb, const char* delegate_policy_name = "pick_first");
+    TestPickArgsCallback cb,
+    absl::string_view delegate_policy_name = "pick_first");
 
 struct TrailingMetadataArgsSeen {
   absl::Status status;

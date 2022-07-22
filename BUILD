@@ -1869,6 +1869,7 @@ grpc_cc_library(
         "map",
         "orphanable",
         "periodic_update",
+        "pid_controller",
         "poll",
         "race",
         "ref_counted_ptr",
@@ -1887,6 +1888,7 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/resource_quota/periodic_update.h",
     ],
+    external_deps = ["absl/functional:function_ref"],
     deps = [
         "exec_ctx",
         "gpr_platform",

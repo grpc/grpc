@@ -23,6 +23,8 @@
 
 #include "absl/memory/memory.h"
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
@@ -38,7 +40,6 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
@@ -47,7 +48,7 @@
 namespace grpc_core {
 namespace {
 
-const char* kFailPolicyName = "fail_lb";
+constexpr absl::string_view kFailPolicyName = "fail_lb";
 
 std::atomic<int> g_num_lb_picks;
 
@@ -55,7 +56,7 @@ class FailPolicy : public LoadBalancingPolicy {
  public:
   explicit FailPolicy(Args args) : LoadBalancingPolicy(std::move(args)) {}
 
-  const char* name() const override { return kFailPolicyName; }
+  absl::string_view name() const override { return kFailPolicyName; }
 
   void UpdateLocked(UpdateArgs) override {
     absl::Status status = absl::AbortedError("LB pick failed");
@@ -84,7 +85,7 @@ class FailPolicy : public LoadBalancingPolicy {
 
 class FailLbConfig : public LoadBalancingPolicy::Config {
  public:
-  const char* name() const override { return kFailPolicyName; }
+  absl::string_view name() const override { return kFailPolicyName; }
 };
 
 class FailPolicyFactory : public LoadBalancingPolicyFactory {
@@ -94,10 +95,10 @@ class FailPolicyFactory : public LoadBalancingPolicyFactory {
     return MakeOrphanable<FailPolicy>(std::move(args));
   }
 
-  const char* name() const override { return kFailPolicyName; }
+  absl::string_view name() const override { return kFailPolicyName; }
 
-  RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
-      const Json& /*json*/, grpc_error_handle* /*error*/) const override {
+  absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
+  ParseLoadBalancingConfig(const Json& /*json*/) const override {
     return MakeRefCounted<FailLbConfig>();
   }
 };
