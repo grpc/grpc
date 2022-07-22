@@ -19,9 +19,13 @@
 #include <inttypes.h>
 #include <unistd.h>
 
+#include <string>
+
 #include "absl/strings/str_format.h"
 
-#include <grpc/support/string_util.h>
+#include <grpc/grpc.h>
+#include <grpc/grpc_security_constants.h>
+#include <grpc/support/time.h>
 
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/fixtures/local_util.h"

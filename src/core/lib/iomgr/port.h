@@ -20,6 +20,9 @@
 
 #include <grpc/support/port_platform.h>
 
+// IWYU pragma: no_include <features.h>
+// IWYU pragma: no_include <linux/version.h>
+
 /* This needs to be separate from the other conditions because it needs to
  * apply to custom sockets too */
 #ifdef GPR_WINDOWS

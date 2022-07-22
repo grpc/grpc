@@ -16,20 +16,25 @@
  *
  */
 
-#include <stdio.h>
+#include <stdint.h>
 #include <string.h>
 
+#include "absl/strings/match.h"
+
 #include <grpc/byte_buffer.h>
-#include <grpc/support/alloc.h>
+#include <grpc/grpc.h>
+#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_string_helpers.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
+#include "test/core/util/test_config.h"
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
@@ -765,9 +770,8 @@ static void test_max_receive_message_length_on_compressed_response(
     GPR_ASSERT(status == GRPC_STATUS_OK);
   } else {
     GPR_ASSERT(status == GRPC_STATUS_RESOURCE_EXHAUSTED);
-    GPR_ASSERT(grpc_slice_str_cmp(
-                   details, "Received message larger than max (29 vs. 5)") ==
-               0);
+    GPR_ASSERT(absl::StartsWith(grpc_core::StringViewFromSlice(details),
+                                "Received message larger than max"));
   }
   grpc_slice_unref(details);
   grpc_slice_unref(response_payload_slice);
