@@ -3935,6 +3935,7 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/transport/pid_controller.h
   - test/core/promise/test_context.h
   src:
   - src/core/ext/upb-generated/google/protobuf/any.upb.c
@@ -3959,9 +3960,11 @@ targets:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/lib/transport/pid_controller.cc
   - test/core/promise/arena_promise_test.cc
   deps:
   - absl/functional:any_invocable
+  - absl/functional:function_ref
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/utility:utility
@@ -4571,6 +4574,7 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/transport/pid_controller.h
   src:
   - src/core/ext/upb-generated/google/protobuf/any.upb.c
   - src/core/ext/upb-generated/google/rpc/status.upb.c
@@ -4594,9 +4598,11 @@ targets:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/lib/transport/pid_controller.cc
   - test/core/gprpp/chunked_vector_test.cc
   deps:
   - absl/functional:any_invocable
+  - absl/functional:function_ref
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/utility:utility
@@ -5592,6 +5598,7 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/transport/pid_controller.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
   - src/core/ext/upb-generated/google/protobuf/any.upb.c
@@ -5616,10 +5623,12 @@ targets:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/lib/transport/pid_controller.cc
   - test/core/promise/for_each_test.cc
   deps:
   - absl/container:flat_hash_set
   - absl/functional:any_invocable
+  - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
@@ -6659,6 +6668,7 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/transport/pid_controller.h
   src:
   - src/core/ext/upb-generated/google/protobuf/any.upb.c
   - src/core/ext/upb-generated/google/rpc/status.upb.c
@@ -6679,9 +6689,11 @@ targets:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/lib/transport/pid_controller.cc
   - test/core/resource_quota/memory_quota_stress_test.cc
   deps:
   - absl/functional:any_invocable
+  - absl/functional:function_ref
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/utility:utility
@@ -6734,6 +6746,7 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/transport/pid_controller.h
   - test/core/resource_quota/call_checker.h
   src:
   - src/core/ext/upb-generated/google/protobuf/any.upb.c
@@ -6755,9 +6768,11 @@ targets:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/lib/transport/pid_controller.cc
   - test/core/resource_quota/memory_quota_test.cc
   deps:
   - absl/functional:any_invocable
+  - absl/functional:function_ref
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/utility:utility
@@ -7160,6 +7175,7 @@ targets:
   - test/core/resource_quota/periodic_update_test.cc
   deps:
   - absl/functional:any_invocable
+  - absl/functional:function_ref
   - absl/status:statusor
   - gpr
   - upb
@@ -7225,6 +7241,7 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/transport/pid_controller.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
   - src/core/ext/upb-generated/google/protobuf/any.upb.c
@@ -7249,9 +7266,11 @@ targets:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/lib/transport/pid_controller.cc
   - test/core/promise/pipe_test.cc
   deps:
   - absl/functional:any_invocable
+  - absl/functional:function_ref
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/utility:utility
@@ -7598,6 +7617,7 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/transport/pid_controller.h
   src:
   - src/core/ext/upb-generated/google/protobuf/any.upb.c
   - src/core/ext/upb-generated/google/rpc/status.upb.c
@@ -7620,9 +7640,11 @@ targets:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/lib/transport/pid_controller.cc
   - test/core/resource_quota/resource_quota_test.cc
   deps:
   - absl/functional:any_invocable
+  - absl/functional:function_ref
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/utility:utility
