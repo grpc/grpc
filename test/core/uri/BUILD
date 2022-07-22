@@ -46,6 +46,6 @@ grpc_cc_test(
     deps = [
         "//:grpc",
         "//:uri_parser",
-        "//test/core/util:grpc_test_util_unsecure",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
