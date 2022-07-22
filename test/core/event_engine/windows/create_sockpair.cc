@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #include <grpc/support/port_platform.h>
+#ifdef GPR_WINDOWS
 
 #include "test/core/event_engine/windows/create_sockpair.h"
 
@@ -21,66 +22,10 @@
 #include "absl/status/status.h"
 
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/event_engine/windows/socket.h"
 
-// DO NOT SUBMIT(hork): cribbed from tcp_windows, it should not live here
-// permanently
-#if defined(__MSYS__) && defined(GPR_ARCH_64)
-/* Nasty workaround for nasty bug when using the 64 bits msys compiler
-   in conjunction with Microsoft Windows headers. */
-#define GRPC_FIONBIO _IOW('f', 126, uint32_t)
-#else
-#define GRPC_FIONBIO FIONBIO
-#endif
-
-namespace {
-
-grpc_error_handle grpc_tcp_set_non_block(SOCKET sock) {
-  int status;
-  uint32_t param = 1;
-  DWORD ret;
-  status = WSAIoctl(sock, GRPC_FIONBIO, &param, sizeof(param), NULL, 0, &ret,
-                    NULL, NULL);
-  return status == 0
-             ? GRPC_ERROR_NONE
-             : GRPC_WSA_ERROR(WSAGetLastError(), "WSAIoctl(GRPC_FIONBIO)");
-}
-
-static grpc_error_handle set_dualstack(SOCKET sock) {
-  int status;
-  DWORD param = 0;
-  status = setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY, (const char*)&param,
-                      sizeof(param));
-  return status == 0
-             ? GRPC_ERROR_NONE
-             : GRPC_WSA_ERROR(WSAGetLastError(), "setsockopt(IPV6_V6ONLY)");
-}
-
-static grpc_error_handle enable_socket_low_latency(SOCKET sock) {
-  int status;
-  BOOL param = TRUE;
-  status = ::setsockopt(sock, IPPROTO_TCP, TCP_NODELAY,
-                        reinterpret_cast<char*>(&param), sizeof(param));
-  if (status == SOCKET_ERROR) {
-    status = WSAGetLastError();
-  }
-  return status == 0 ? GRPC_ERROR_NONE
-                     : GRPC_WSA_ERROR(status, "setsockopt(TCP_NODELAY)");
-}
-
-absl::Status PrepareSocket(SOCKET sock) {
-  absl::Status err;
-  err = grpc_tcp_set_non_block(sock);
-  if (!GRPC_ERROR_IS_NONE(err)) return err;
-  // DO NOT SUBMIT(hork): WinServer does not support dual stack. How is iomgr
-  // working?
-  //   err = set_dualstack(sock);
-  //   if (!GRPC_ERROR_IS_NONE(err)) return err;
-  err = enable_socket_low_latency(sock);
-  if (!GRPC_ERROR_IS_NONE(err)) return err;
-  return GRPC_ERROR_NONE;
-}
-
-}  // namespace
+namespace grpc_event_engine {
+namespace experimental {
 
 void CreateSockpair(SOCKET sockpair[2], DWORD flags) {
   SOCKET svr_sock = INVALID_SOCKET;
@@ -115,3 +60,8 @@ void CreateSockpair(SOCKET sockpair[2], DWORD flags) {
   sockpair[0] = svr_sock;
   sockpair[1] = cli_sock;
 }
+
+}  // namespace experimental
+}  // namespace grpc_event_engine
+
+#endif  // GPR_WINDOWS

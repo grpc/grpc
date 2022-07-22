@@ -2533,10 +2533,13 @@ grpc_cc_library(
         "absl/strings:str_format",
     ],
     deps = [
+        "error",
         "event_engine_base_hdrs",
         "event_engine_trace",
         "gpr_base",
         "gpr_platform",
+        "slice",
+        "status_helper",
         "time",
     ],
 )

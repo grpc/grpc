@@ -60,6 +60,8 @@ class WrappedSocket {
   virtual ~WrappedSocket() = default;
 };
 
+// A low-level poller that watches for socket events and dispatches
+// notifications.
 class EventPoller {
  public:
   // Return an opaque WrappedSocket to perform actions on the provided socket.
@@ -68,19 +70,19 @@ class EventPoller {
   // only when no other poller method is in progress. For instance, it is
   // not safe to call this method, while a thread is blocked on Work(...).
   // A graceful way to terminate the poller could be to:
-  // 1. First orphan all created WrappedSockets.
-  // 2. Send a Kick() to the thread executing Work(...) and wait for the
-  //    thread to return.
+  // 1. First shut down all created WrappedSockets.
+  // 2. Send a Kick() to the threads executing Work(...) and wait for the
+  //    threads to return.
   // 3. Call Shutdown() on the poller.
   virtual void Shutdown() = 0;
-  // Poll all the underlying sockets for the specified period
-  // Any IOCP events will either:
-  // - find a closure already-primed notification and execute the callback
-  //   inline, or
-  // - set a flag to ensure that when some caller registers for notification,
-  //   they will execute the callback immediately themselves
+  // Poll all watched sockets for the specified period.
+  // Implementations should deal with socket events in the following ways:
+  // - if a closure is already-primed for notification, execute the callback
+  // - if no closure is primed, set a flag to ensure that when some caller
+  //   registers for notification, they will trigger execution of the callback
+  //   immediately themselves
   virtual absl::Status Work(EventEngine::Duration timeout) = 0;
-  // Trigger the thread executing Work(..) to break out as soon as possible.
+  // Trigger the threads executing Work(..) to break out as soon as possible.
   // This function is useful in tests. It may also be used to break a thread
   // out of Work(...) before calling Shutdown() on the poller.
   virtual void Kick() = 0;

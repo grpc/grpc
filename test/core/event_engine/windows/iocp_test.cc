@@ -30,9 +30,10 @@
 #include "test/core/event_engine/windows/create_sockpair.h"
 
 namespace {
+using ::grpc_event_engine::experimental::CreateSockpair;
+using ::grpc_event_engine::experimental::IOCP;
 using ::grpc_event_engine::experimental::WindowsEventEngine;
 using ::grpc_event_engine::experimental::WinWrappedSocket;
-using ::grpc_event_engine::experimental::IOCP;
 }  // namespace
 
 class IOCPTest : public testing::Test {};

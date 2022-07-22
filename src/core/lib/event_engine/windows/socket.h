@@ -39,7 +39,8 @@ class WinWrappedSocket final : public WrappedSocket {
     void SetError();
     // Retrieve results of overlapped operation (via Winsock API)
     void GetOverlappedResult();
-    // TODO(hork): consider alternatives to this leaky abstraction
+    // TODO(hork): consider if the socket can be TOLD to do an operation instead
+    // of leaking these internals.
     OVERLAPPED* overlapped() { return &overlapped_; }
     DWORD bytes_transferred() const { return bytes_transferred_; }
     int wsa_error() const { return wsa_error_; }
@@ -94,6 +95,9 @@ class WinWrappedSocket final : public WrappedSocket {
   OpInfo read_info_ ABSL_GUARDED_BY(mu_);
   OpInfo write_info_ ABSL_GUARDED_BY(mu_);
 };
+
+// Attempt to configure default socket settings
+absl::Status PrepareSocket(SOCKET sock);
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

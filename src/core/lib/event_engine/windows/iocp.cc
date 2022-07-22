@@ -57,8 +57,6 @@ WrappedSocket* IOCP::Watch(SOCKET socket) {
   return wrapped_socket;
 }
 
-// DO NOT SUBMIT(hork): this seems unsafe, can Shutdown be called from multiple
-// threads simultaneously? CloseHandle could be called multiple times.
 void IOCP::Shutdown() {
   while (outstanding_kicks_.load() > 0) {
     Work(std::chrono::hours(42));
