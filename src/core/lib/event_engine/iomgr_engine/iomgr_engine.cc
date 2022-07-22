@@ -28,6 +28,8 @@
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/iomgr_engine/timer.h"
+#include "src/core/lib/event_engine/iomgr_engine/windows/windows_connect.h"
+#include "src/core/lib/event_engine/iomgr_engine/windows/windows_create_listener.h"
 #include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/gprpp/time.h"
 
@@ -141,18 +143,33 @@ bool IomgrEventEngine::CancelConnect(EventEngine::ConnectionHandle /*handle*/) {
 }
 
 EventEngine::ConnectionHandle IomgrEventEngine::Connect(
-    OnConnectCallback /*on_connect*/, const ResolvedAddress& /*addr*/,
-    const EndpointConfig& /*args*/, MemoryAllocator /*memory_allocator*/,
-    Duration /*deadline*/) {
+    OnConnectCallback on_connect, const ResolvedAddress& addr,
+    const EndpointConfig& args, MemoryAllocator memory_allocator,
+    Duration deadline) {
+#ifdef GPR_WINDOWS
+  return WindowsClientConnect(on_connect, addr, args, memory_allocator,
+                              deadline);
+#endif
+  (void)on_connect;
+  (void)addr;
+  (void)args;
+  (void)memory_allocator;
+  (void)deadline;
   GPR_ASSERT(false && "unimplemented");
 }
 
 absl::StatusOr<std::unique_ptr<EventEngine::Listener>>
 IomgrEventEngine::CreateListener(
-    Listener::AcceptCallback /*on_accept*/,
-    absl::AnyInvocable<void(absl::Status)> /*on_shutdown*/,
-    const EndpointConfig& /*config*/,
-    std::unique_ptr<MemoryAllocatorFactory> /*memory_allocator_factory*/) {
+    Listener::AcceptCallback on_accept,
+    std::function<void(absl::Status)> on_shutdown, const EndpointConfig& config,
+    std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory) {
+#ifdef GPR_WINDOWS
+  return WindowsCreateListener(on_accept, on_shutdown, config, memory_allocator_factory);
+#endif
+  (void)on_accept;
+  (void)on_shutdown;
+  (void)config;
+  (void)memory_allocator_factory;
   GPR_ASSERT(false && "unimplemented");
 }
 
