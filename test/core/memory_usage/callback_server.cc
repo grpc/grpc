@@ -53,7 +53,7 @@
 class ServerCallbackImpl final
     : public grpc::testing::BenchmarkService::CallbackService {
  public:
-  ServerCallbackImpl(MemStats before_server_memory)
+  explicit ServerCallbackImpl(MemStats before_server_memory)
       : before_server_create(before_server_memory) {}
 
   grpc::ServerUnaryReactor* UnaryCall(
