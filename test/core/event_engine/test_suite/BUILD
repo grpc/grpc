@@ -78,7 +78,10 @@ grpc_cc_test(
     name = "iomgr_event_engine_test",
     srcs = ["iomgr_event_engine_test.cc"],
     uses_polling = False,
-    deps = ["//test/core/event_engine/test_suite:timer"],
+    deps = [
+        "//:iomgr_event_engine",
+        "//test/core/event_engine/test_suite:timer"
+    ],
 )
 
 grpc_cc_test(
@@ -90,7 +93,10 @@ grpc_cc_test(
         "no_mac",
     ],
     uses_polling = False,
-    deps = ["//test/core/event_engine/test_suite:timer"],
+    deps = [
+        "//:windows_event_engine",
+        "//test/core/event_engine/test_suite:timer"
+        ],
 )
 
 grpc_cc_test(
