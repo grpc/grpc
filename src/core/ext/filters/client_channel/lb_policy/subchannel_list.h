@@ -178,6 +178,10 @@ class SubchannelData {
 template <typename SubchannelListType, typename SubchannelDataType>
 class SubchannelList : public InternallyRefCounted<SubchannelListType> {
  public:
+  // Starts watching the connectivity state of all subchannels.
+  // Must be called immediately after instantiation.
+  void StartWatchingLocked();
+
   // The number of subchannels in the list.
   size_t num_subchannels() const { return subchannels_.size(); }
 
@@ -393,10 +397,6 @@ SubchannelList<SubchannelListType, SubchannelDataType>::SubchannelList(
     subchannels_.emplace_back();
     subchannels_.back().Init(this, std::move(address), std::move(subchannel));
   }
-  // Start watching subchannel connectivity state.
-  for (auto& sd : subchannels_) {
-    sd->StartConnectivityWatchLocked();
-  }
 }
 
 template <typename SubchannelListType, typename SubchannelDataType>
@@ -407,6 +407,14 @@ SubchannelList<SubchannelListType, SubchannelDataType>::~SubchannelList() {
   }
   for (auto& sd : subchannels_) {
     sd.Destroy();
+  }
+}
+
+template <typename SubchannelListType, typename SubchannelDataType>
+void SubchannelList<SubchannelListType,
+                    SubchannelDataType>::StartWatchingLocked() {
+  for (auto& sd : subchannels_) {
+    sd->StartConnectivityWatchLocked();
   }
 }
 

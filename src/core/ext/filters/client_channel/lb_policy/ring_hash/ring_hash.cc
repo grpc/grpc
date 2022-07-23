@@ -838,6 +838,7 @@ void RingHash::UpdateLocked(UpdateArgs args) {
   }
   latest_pending_subchannel_list_ = MakeOrphanable<RingHashSubchannelList>(
       this, std::move(addresses), args.args);
+  latest_pending_subchannel_list_->StartWatchingLocked();
   // If we have no existing list or the new list is empty, immediately
   // promote the new list.
   // Otherwise, do nothing; the new list will be promoted when the
