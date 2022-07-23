@@ -1001,8 +1001,6 @@
     <file baseinstalldir="/" name="src/core/lib/gpr/sync_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/time.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/time_posix.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/time_precise.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/time_precise.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/time_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/tls.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/tmpfile.h" role="src" />

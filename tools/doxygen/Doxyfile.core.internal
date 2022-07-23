@@ -1793,8 +1793,6 @@ src/core/lib/gpr/sync_posix.cc \
 src/core/lib/gpr/sync_windows.cc \
 src/core/lib/gpr/time.cc \
 src/core/lib/gpr/time_posix.cc \
-src/core/lib/gpr/time_precise.cc \
-src/core/lib/gpr/time_precise.h \
 src/core/lib/gpr/time_windows.cc \
 src/core/lib/gpr/tls.h \
 src/core/lib/gpr/tmpfile.h \

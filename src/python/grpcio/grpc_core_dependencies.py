@@ -483,7 +483,6 @@ CORE_SOURCE_FILES = [
     'src/core/lib/gpr/sync_windows.cc',
     'src/core/lib/gpr/time.cc',
     'src/core/lib/gpr/time_posix.cc',
-    'src/core/lib/gpr/time_precise.cc',
     'src/core/lib/gpr/time_windows.cc',
     'src/core/lib/gpr/tmpfile_msys.cc',
     'src/core/lib/gpr/tmpfile_posix.cc',

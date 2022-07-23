@@ -204,7 +204,6 @@ libs:
   - src/core/lib/gpr/spinlock.h
   - src/core/lib/gpr/string.h
   - src/core/lib/gpr/string_windows.h
-  - src/core/lib/gpr/time_precise.h
   - src/core/lib/gpr/tls.h
   - src/core/lib/gpr/tmpfile.h
   - src/core/lib/gpr/useful.h
@@ -251,7 +250,6 @@ libs:
   - src/core/lib/gpr/sync_windows.cc
   - src/core/lib/gpr/time.cc
   - src/core/lib/gpr/time_posix.cc
-  - src/core/lib/gpr/time_precise.cc
   - src/core/lib/gpr/time_windows.cc
   - src/core/lib/gpr/tmpfile_msys.cc
   - src/core/lib/gpr/tmpfile_posix.cc
@@ -3544,7 +3542,6 @@ targets:
   - src/core/lib/gpr/spinlock.h
   - src/core/lib/gpr/string.h
   - src/core/lib/gpr/string_windows.h
-  - src/core/lib/gpr/time_precise.h
   - src/core/lib/gpr/tls.h
   - src/core/lib/gpr/tmpfile.h
   - src/core/lib/gpr/useful.h
@@ -3610,7 +3607,6 @@ targets:
   - src/core/lib/gpr/sync_windows.cc
   - src/core/lib/gpr/time.cc
   - src/core/lib/gpr/time_posix.cc
-  - src/core/lib/gpr/time_precise.cc
   - src/core/lib/gpr/time_windows.cc
   - src/core/lib/gpr/tmpfile_msys.cc
   - src/core/lib/gpr/tmpfile_posix.cc
@@ -6428,7 +6424,6 @@ targets:
   - src/core/lib/gpr/spinlock.h
   - src/core/lib/gpr/string.h
   - src/core/lib/gpr/string_windows.h
-  - src/core/lib/gpr/time_precise.h
   - src/core/lib/gpr/tls.h
   - src/core/lib/gpr/tmpfile.h
   - src/core/lib/gpr/useful.h
@@ -6494,7 +6489,6 @@ targets:
   - src/core/lib/gpr/sync_windows.cc
   - src/core/lib/gpr/time.cc
   - src/core/lib/gpr/time_posix.cc
-  - src/core/lib/gpr/time_precise.cc
   - src/core/lib/gpr/time_windows.cc
   - src/core/lib/gpr/tmpfile_msys.cc
   - src/core/lib/gpr/tmpfile_posix.cc
@@ -6908,7 +6902,6 @@ targets:
   - src/core/lib/gpr/spinlock.h
   - src/core/lib/gpr/string.h
   - src/core/lib/gpr/string_windows.h
-  - src/core/lib/gpr/time_precise.h
   - src/core/lib/gpr/tls.h
   - src/core/lib/gpr/tmpfile.h
   - src/core/lib/gpr/useful.h
@@ -6972,7 +6965,6 @@ targets:
   - src/core/lib/gpr/sync_windows.cc
   - src/core/lib/gpr/time.cc
   - src/core/lib/gpr/time_posix.cc
-  - src/core/lib/gpr/time_precise.cc
   - src/core/lib/gpr/time_windows.cc
   - src/core/lib/gpr/tmpfile_msys.cc
   - src/core/lib/gpr/tmpfile_posix.cc
@@ -7999,7 +7991,6 @@ targets:
   - src/core/lib/gpr/spinlock.h
   - src/core/lib/gpr/string.h
   - src/core/lib/gpr/string_windows.h
-  - src/core/lib/gpr/time_precise.h
   - src/core/lib/gpr/tls.h
   - src/core/lib/gpr/tmpfile.h
   - src/core/lib/gpr/useful.h
@@ -8047,7 +8038,6 @@ targets:
   - src/core/lib/gpr/sync_windows.cc
   - src/core/lib/gpr/time.cc
   - src/core/lib/gpr/time_posix.cc
-  - src/core/lib/gpr/time_precise.cc
   - src/core/lib/gpr/time_windows.cc
   - src/core/lib/gpr/tmpfile_msys.cc
   - src/core/lib/gpr/tmpfile_posix.cc
@@ -8357,7 +8347,6 @@ targets:
   - src/core/lib/gpr/spinlock.h
   - src/core/lib/gpr/string.h
   - src/core/lib/gpr/string_windows.h
-  - src/core/lib/gpr/time_precise.h
   - src/core/lib/gpr/tls.h
   - src/core/lib/gpr/tmpfile.h
   - src/core/lib/gpr/useful.h
@@ -8409,7 +8398,6 @@ targets:
   - src/core/lib/gpr/sync_windows.cc
   - src/core/lib/gpr/time.cc
   - src/core/lib/gpr/time_posix.cc
-  - src/core/lib/gpr/time_precise.cc
   - src/core/lib/gpr/time_windows.cc
   - src/core/lib/gpr/tmpfile_msys.cc
   - src/core/lib/gpr/tmpfile_posix.cc
@@ -8459,7 +8447,6 @@ targets:
   - src/core/lib/gpr/spinlock.h
   - src/core/lib/gpr/string.h
   - src/core/lib/gpr/string_windows.h
-  - src/core/lib/gpr/time_precise.h
   - src/core/lib/gpr/tls.h
   - src/core/lib/gpr/tmpfile.h
   - src/core/lib/gpr/useful.h
@@ -8510,7 +8497,6 @@ targets:
   - src/core/lib/gpr/sync_windows.cc
   - src/core/lib/gpr/time.cc
   - src/core/lib/gpr/time_posix.cc
-  - src/core/lib/gpr/time_precise.cc
   - src/core/lib/gpr/time_windows.cc
   - src/core/lib/gpr/tmpfile_msys.cc
   - src/core/lib/gpr/tmpfile_posix.cc
@@ -8577,7 +8563,6 @@ targets:
   - src/core/lib/gpr/spinlock.h
   - src/core/lib/gpr/string.h
   - src/core/lib/gpr/string_windows.h
-  - src/core/lib/gpr/time_precise.h
   - src/core/lib/gpr/tls.h
   - src/core/lib/gpr/tmpfile.h
   - src/core/lib/gpr/useful.h
@@ -8625,7 +8610,6 @@ targets:
   - src/core/lib/gpr/sync_windows.cc
   - src/core/lib/gpr/time.cc
   - src/core/lib/gpr/time_posix.cc
-  - src/core/lib/gpr/time_precise.cc
   - src/core/lib/gpr/time_windows.cc
   - src/core/lib/gpr/tmpfile_msys.cc
   - src/core/lib/gpr/tmpfile_posix.cc
@@ -8767,7 +8751,6 @@ targets:
   - src/core/lib/gpr/spinlock.h
   - src/core/lib/gpr/string.h
   - src/core/lib/gpr/string_windows.h
-  - src/core/lib/gpr/time_precise.h
   - src/core/lib/gpr/tls.h
   - src/core/lib/gpr/tmpfile.h
   - src/core/lib/gpr/useful.h
@@ -8818,7 +8801,6 @@ targets:
   - src/core/lib/gpr/sync_windows.cc
   - src/core/lib/gpr/time.cc
   - src/core/lib/gpr/time_posix.cc
-  - src/core/lib/gpr/time_precise.cc
   - src/core/lib/gpr/time_windows.cc
   - src/core/lib/gpr/tmpfile_msys.cc
   - src/core/lib/gpr/tmpfile_posix.cc

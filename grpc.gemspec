@@ -1019,8 +1019,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/gpr/sync_windows.cc )
   s.files += %w( src/core/lib/gpr/time.cc )
   s.files += %w( src/core/lib/gpr/time_posix.cc )
-  s.files += %w( src/core/lib/gpr/time_precise.cc )
-  s.files += %w( src/core/lib/gpr/time_precise.h )
   s.files += %w( src/core/lib/gpr/time_windows.cc )
   s.files += %w( src/core/lib/gpr/tls.h )
   s.files += %w( src/core/lib/gpr/tmpfile.h )

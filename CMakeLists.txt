@@ -1517,7 +1517,6 @@ add_library(gpr
   src/core/lib/gpr/sync_windows.cc
   src/core/lib/gpr/time.cc
   src/core/lib/gpr/time_posix.cc
-  src/core/lib/gpr/time_precise.cc
   src/core/lib/gpr/time_windows.cc
   src/core/lib/gpr/tmpfile_msys.cc
   src/core/lib/gpr/tmpfile_posix.cc
@@ -5152,7 +5151,6 @@ add_executable(activity_test
   src/core/lib/gpr/sync_windows.cc
   src/core/lib/gpr/time.cc
   src/core/lib/gpr/time_posix.cc
-  src/core/lib/gpr/time_precise.cc
   src/core/lib/gpr/time_windows.cc
   src/core/lib/gpr/tmpfile_msys.cc
   src/core/lib/gpr/tmpfile_posix.cc
@@ -12398,7 +12396,6 @@ add_executable(latch_test
   src/core/lib/gpr/sync_windows.cc
   src/core/lib/gpr/time.cc
   src/core/lib/gpr/time_posix.cc
-  src/core/lib/gpr/time_precise.cc
   src/core/lib/gpr/time_windows.cc
   src/core/lib/gpr/tmpfile_msys.cc
   src/core/lib/gpr/tmpfile_posix.cc
@@ -13293,7 +13290,6 @@ add_executable(observable_test
   src/core/lib/gpr/sync_windows.cc
   src/core/lib/gpr/time.cc
   src/core/lib/gpr/time_posix.cc
-  src/core/lib/gpr/time_precise.cc
   src/core/lib/gpr/time_windows.cc
   src/core/lib/gpr/tmpfile_msys.cc
   src/core/lib/gpr/tmpfile_posix.cc
@@ -15874,7 +15870,6 @@ add_executable(single_set_ptr_test
   src/core/lib/gpr/sync_windows.cc
   src/core/lib/gpr/time.cc
   src/core/lib/gpr/time_posix.cc
-  src/core/lib/gpr/time_precise.cc
   src/core/lib/gpr/time_windows.cc
   src/core/lib/gpr/tmpfile_msys.cc
   src/core/lib/gpr/tmpfile_posix.cc
@@ -16809,7 +16804,6 @@ add_executable(test_core_event_engine_iomgr_event_engine_timer_heap_test
   src/core/lib/gpr/sync_windows.cc
   src/core/lib/gpr/time.cc
   src/core/lib/gpr/time_posix.cc
-  src/core/lib/gpr/time_precise.cc
   src/core/lib/gpr/time_windows.cc
   src/core/lib/gpr/tmpfile_msys.cc
   src/core/lib/gpr/tmpfile_posix.cc
@@ -16904,7 +16898,6 @@ add_executable(test_core_event_engine_iomgr_event_engine_timer_list_test
   src/core/lib/gpr/sync_windows.cc
   src/core/lib/gpr/time.cc
   src/core/lib/gpr/time_posix.cc
-  src/core/lib/gpr/time_precise.cc
   src/core/lib/gpr/time_windows.cc
   src/core/lib/gpr/tmpfile_msys.cc
   src/core/lib/gpr/tmpfile_posix.cc
@@ -17067,7 +17060,6 @@ add_executable(test_core_gprpp_time_test
   src/core/lib/gpr/sync_windows.cc
   src/core/lib/gpr/time.cc
   src/core/lib/gpr/time_posix.cc
-  src/core/lib/gpr/time_precise.cc
   src/core/lib/gpr/time_windows.cc
   src/core/lib/gpr/tmpfile_msys.cc
   src/core/lib/gpr/tmpfile_posix.cc
@@ -17480,7 +17472,6 @@ add_executable(thread_quota_test
   src/core/lib/gpr/sync_windows.cc
   src/core/lib/gpr/time.cc
   src/core/lib/gpr/time_posix.cc
-  src/core/lib/gpr/time_precise.cc
   src/core/lib/gpr/time_windows.cc
   src/core/lib/gpr/tmpfile_msys.cc
   src/core/lib/gpr/tmpfile_posix.cc
