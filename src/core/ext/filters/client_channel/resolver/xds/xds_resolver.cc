@@ -678,10 +678,8 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
           &entry.route.action);
   if (route_action == nullptr) {
     CallConfig call_config;
-    call_config.error =
-        grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                               "Matching route has inappropriate action"),
-                           GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
+    call_config.status =
+        absl::UnavailableError("Matching route has inappropriate action");
     return call_config;
   }
   std::string cluster_name;

@@ -2159,7 +2159,9 @@ grpc_error_handle ClientChannel::CallData::ApplyServiceConfigToCallLocked(
     // Use the ConfigSelector to determine the config for the call.
     ConfigSelector::CallConfig call_config =
         config_selector->GetCallConfig({&path_, initial_metadata, arena_});
-    if (!GRPC_ERROR_IS_NONE(call_config.error)) return call_config.error;
+    if (!call_config.status.ok()) {
+      return absl_status_to_grpc_error(call_config.status);
+    }
     // Create a ClientChannelServiceConfigCallData for the call.  This stores
     // a ref to the ServiceConfig and caches the right set of parsed configs
     // to use for the call.  The ClientChannelServiceConfigCallData will store
