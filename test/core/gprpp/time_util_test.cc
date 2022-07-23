@@ -19,11 +19,18 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <chrono>
+
 #include <gtest/gtest.h>
 
 #include "absl/time/time.h"
 
 #include <grpc/support/time.h>
+
+namespace {
+using ::std::chrono::steady_clock;
+using ::std::chrono::time_point;
+}  // namespace
 
 TEST(TimeUtilTest, ToGprTimeSpecFromAbslDurationWithRegularValues) {
   std::vector<int> times = {-10, -1, 0, 1, 10};
@@ -125,6 +132,58 @@ TEST(TimeUtilTest, ToAbslTimeWithInfinites) {
             grpc_core::ToAbslTime(gpr_inf_past(GPR_CLOCK_REALTIME)));
   EXPECT_EQ(absl::UnixEpoch(),
             grpc_core::ToAbslTime(gpr_time_0(GPR_CLOCK_REALTIME)));
+}
+
+TEST(TimeUtilTest, ToGprTimeSpecFromTimePointWithRegularValues) {
+  std::vector<int> times = {0, 10, 100000000};
+  for (int t : times) {
+    EXPECT_EQ(0, gpr_time_cmp(gpr_time_from_nanos(t, GPR_CLOCK_REALTIME),
+                              grpc_core::ToGprTimeSpec(time_point<steady_clock>(
+                                  std::chrono::nanoseconds(t)))));
+    EXPECT_EQ(0, gpr_time_cmp(gpr_time_from_micros(t, GPR_CLOCK_REALTIME),
+                              grpc_core::ToGprTimeSpec(time_point<steady_clock>(
+                                  std::chrono::microseconds(t)))));
+    EXPECT_EQ(0, gpr_time_cmp(gpr_time_from_millis(t, GPR_CLOCK_REALTIME),
+                              grpc_core::ToGprTimeSpec(time_point<steady_clock>(
+                                  std::chrono::milliseconds(t)))));
+    EXPECT_EQ(0, gpr_time_cmp(gpr_time_from_seconds(t, GPR_CLOCK_REALTIME),
+                              grpc_core::ToGprTimeSpec(time_point<steady_clock>(
+                                  std::chrono::seconds(t)))));
+  }
+}
+
+TEST(TimeUtilTest, ToGprTimeSpecFromTimePointWithInfinites) {
+  EXPECT_EQ(0, gpr_time_cmp(
+                   gpr_inf_future(GPR_CLOCK_REALTIME),
+                   grpc_core::ToGprTimeSpec(time_point<steady_clock>::max())));
+  EXPECT_EQ(0, gpr_time_cmp(
+                   gpr_inf_past(GPR_CLOCK_REALTIME),
+                   grpc_core::ToGprTimeSpec(time_point<steady_clock>::min())));
+}
+
+TEST(TimeUtilTest, ToTimePointWithRegularValues) {
+  std::vector<int> times = {0, 10, 100000000};
+  for (int t : times) {
+    EXPECT_EQ(
+        time_point<steady_clock>(std::chrono::nanoseconds(t)),
+        grpc_core::ToTimePoint(gpr_time_from_nanos(t, GPR_CLOCK_REALTIME)));
+    EXPECT_EQ(
+        time_point<steady_clock>(std::chrono::microseconds(t)),
+        grpc_core::ToTimePoint(gpr_time_from_micros(t, GPR_CLOCK_REALTIME)));
+    EXPECT_EQ(
+        time_point<steady_clock>(std::chrono::milliseconds(t)),
+        grpc_core::ToTimePoint(gpr_time_from_millis(t, GPR_CLOCK_REALTIME)));
+    EXPECT_EQ(
+        time_point<steady_clock>(std::chrono::seconds(t)),
+        grpc_core::ToTimePoint(gpr_time_from_seconds(t, GPR_CLOCK_REALTIME)));
+  }
+}
+
+TEST(TimeUtilTest, ToTimePointWithInfinites) {
+  EXPECT_EQ(time_point<steady_clock>::min(),
+            grpc_core::ToTimePoint(gpr_inf_past(GPR_CLOCK_REALTIME)));
+  EXPECT_EQ(time_point<steady_clock>::max(),
+            grpc_core::ToTimePoint(gpr_inf_future(GPR_CLOCK_REALTIME)));
 }
 
 int main(int argc, char** argv) {

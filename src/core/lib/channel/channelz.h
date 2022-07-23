@@ -351,13 +351,13 @@ class SocketNode : public BaseNode {
   std::atomic<int64_t> messages_received_{0};
   std::atomic<int64_t> keepalives_sent_{0};
   std::atomic<std::chrono::time_point<std::chrono::steady_clock>>
-      last_local_stream_created_cycle_;
+      last_local_stream_created_time_;
   std::atomic<std::chrono::time_point<std::chrono::steady_clock>>
-      last_remote_stream_created_cycle_;
+      last_remote_stream_created_time_;
   std::atomic<std::chrono::time_point<std::chrono::steady_clock>>
-      last_message_sent_cycle_;
+      last_message_sent_time_;
   std::atomic<std::chrono::time_point<std::chrono::steady_clock>>
-      last_message_received_cycle_;
+      last_message_received_time_;
   std::string local_;
   std::string remote_;
   RefCountedPtr<Security> const security_;
