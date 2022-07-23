@@ -117,13 +117,13 @@ CertificateProviderInstanceParse(
     const envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProviderInstance*
         certificate_provider_instance_proto) {
   CommonTlsContext::CertificateProviderPluginInstance
-  certificate_provider_plugin_instance = {
-      UpbStringToStdString(
-          envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProviderInstance_instance_name(
-              certificate_provider_instance_proto)),
-      UpbStringToStdString(
-          envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProviderInstance_certificate_name(
-              certificate_provider_instance_proto))};
+      certificate_provider_plugin_instance = {
+          UpbStringToStdString(
+              envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProviderInstance_instance_name(
+                  certificate_provider_instance_proto)),
+          UpbStringToStdString(
+              envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProviderInstance_certificate_name(
+                  certificate_provider_instance_proto))};
   if (context.certificate_provider_definition_map->find(
           certificate_provider_plugin_instance.instance_name) ==
       context.certificate_provider_definition_map->end()) {
@@ -140,13 +140,13 @@ CertificateProviderPluginInstanceParse(
     const envoy_extensions_transport_sockets_tls_v3_CertificateProviderPluginInstance*
         certificate_provider_plugin_instance_proto) {
   CommonTlsContext::CertificateProviderPluginInstance
-  certificate_provider_plugin_instance = {
-      UpbStringToStdString(
-          envoy_extensions_transport_sockets_tls_v3_CertificateProviderPluginInstance_instance_name(
-              certificate_provider_plugin_instance_proto)),
-      UpbStringToStdString(
-          envoy_extensions_transport_sockets_tls_v3_CertificateProviderPluginInstance_certificate_name(
-              certificate_provider_plugin_instance_proto))};
+      certificate_provider_plugin_instance = {
+          UpbStringToStdString(
+              envoy_extensions_transport_sockets_tls_v3_CertificateProviderPluginInstance_instance_name(
+                  certificate_provider_plugin_instance_proto)),
+          UpbStringToStdString(
+              envoy_extensions_transport_sockets_tls_v3_CertificateProviderPluginInstance_certificate_name(
+                  certificate_provider_plugin_instance_proto))};
   if (context.certificate_provider_definition_map->find(
           certificate_provider_plugin_instance.instance_name) ==
       context.certificate_provider_definition_map->end()) {
@@ -163,8 +163,7 @@ CertificateValidationContextParse(
     const envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext*
         certificate_validation_context_proto) {
   std::vector<std::string> errors;
-  CommonTlsContext::CertificateValidationContext
-      certificate_validation_context;
+  CommonTlsContext::CertificateValidationContext certificate_validation_context;
   size_t len = 0;
   auto* subject_alt_names_matchers =
       envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_match_subject_alt_names(
@@ -319,7 +318,7 @@ absl::StatusOr<CommonTlsContext> CommonTlsContext::Parse(
       } else {
         common_tls_context.certificate_validation_context
             .ca_certificate_provider_instance =
-                std::move(*certificate_provider_instance);
+            std::move(*certificate_provider_instance);
       }
     }
   } else {
@@ -327,8 +326,8 @@ absl::StatusOr<CommonTlsContext> CommonTlsContext::Parse(
         envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_validation_context(
             common_tls_context_proto);
     if (validation_context != nullptr) {
-      auto certificate_validation_context = CertificateValidationContextParse(
-          context, validation_context);
+      auto certificate_validation_context =
+          CertificateValidationContextParse(context, validation_context);
       if (!certificate_validation_context.ok()) {
         errors.emplace_back(certificate_validation_context.status().message());
       } else {

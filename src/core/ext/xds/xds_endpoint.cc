@@ -303,10 +303,10 @@ absl::StatusOr<XdsEndpointResource> EdsResourceParse(
         eds_resource.priorities[parsed_locality->priority].localities;
     auto it = locality_map.find(parsed_locality->locality.name.get());
     if (it != locality_map.end()) {
-      errors.emplace_back(absl::StrCat(
-          "duplicate locality ",
-          parsed_locality->locality.name->AsHumanReadableString(),
-          " found in priority ", parsed_locality->priority));
+      errors.emplace_back(
+          absl::StrCat("duplicate locality ",
+                       parsed_locality->locality.name->AsHumanReadableString(),
+                       " found in priority ", parsed_locality->priority));
     } else {
       locality_map.emplace(parsed_locality->locality.name.get(),
                            std::move(parsed_locality->locality));

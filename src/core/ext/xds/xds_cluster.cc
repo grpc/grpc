@@ -124,8 +124,7 @@ absl::StatusOr<CommonTlsContext> UpstreamTlsContextParse(
             encoded_upstream_tls_context.data,
             encoded_upstream_tls_context.size, context.arena);
     if (upstream_tls_context == nullptr) {
-      return absl::InvalidArgumentError(
-          "Can't decode upstream tls context.");
+      return absl::InvalidArgumentError("Can't decode upstream tls context.");
     }
     auto* common_tls_context_proto =
         envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_common_tls_context(
@@ -150,9 +149,8 @@ absl::StatusOr<CommonTlsContext> UpstreamTlsContextParse(
   return common_tls_context;
 }
 
-absl::Status CdsLogicalDnsParse(
-    const envoy_config_cluster_v3_Cluster* cluster,
-    XdsClusterResource* cds_update) {
+absl::Status CdsLogicalDnsParse(const envoy_config_cluster_v3_Cluster* cluster,
+                                XdsClusterResource* cds_update) {
   const auto* load_assignment =
       envoy_config_cluster_v3_Cluster_load_assignment(cluster);
   if (load_assignment == nullptr) {
@@ -342,9 +340,8 @@ absl::StatusOr<XdsClusterResource> CdsResourceParse(
     auto common_tls_context =
         UpstreamTlsContextParse(context, transport_socket);
     if (!common_tls_context.ok()) {
-      errors.emplace_back(
-          absl::StrCat("Error parsing security configuration: ",
-                       common_tls_context.status().message()));
+      errors.emplace_back(absl::StrCat("Error parsing security configuration: ",
+                                       common_tls_context.status().message()));
     } else {
       cds_update.common_tls_context = std::move(*common_tls_context);
     }

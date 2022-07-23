@@ -389,9 +389,9 @@ ClusterSpecifierPluginParse(
   return cluster_specifier_plugin_map;
 }
 
-absl::Status RoutePathMatchParse(
-    const envoy_config_route_v3_RouteMatch* match,
-    XdsRouteConfigResource::Route* route, bool* ignore_route) {
+absl::Status RoutePathMatchParse(const envoy_config_route_v3_RouteMatch* match,
+                                 XdsRouteConfigResource::Route* route,
+                                 bool* ignore_route) {
   auto* case_sensitive_ptr =
       envoy_config_route_v3_RouteMatch_case_sensitive(match);
   bool case_sensitive = true;
@@ -637,9 +637,9 @@ ParseTypedPerFilterConfig(
         filter_impl->GenerateFilterConfigOverride(
             google_protobuf_Any_value(any), context.arena);
     if (!filter_config.ok()) {
-      return absl::InvalidArgumentError(absl::StrCat(
-          "filter config for type ", type->type,
-          " failed to parse: ", filter_config.status().message()));
+      return absl::InvalidArgumentError(
+          absl::StrCat("filter config for type ", type->type,
+                       " failed to parse: ", filter_config.status().message()));
     }
     typed_per_filter_config[std::string(key)] = std::move(*filter_config);
   }
@@ -824,7 +824,7 @@ absl::StatusOr<XdsRouteConfigResource::Route::RouteAction> RouteActionParse(
     }
     if (it->second.empty()) *ignore_route = true;
     route.action.emplace<XdsRouteConfigResource::Route::RouteAction::
-                              kClusterSpecifierPluginIndex>(
+                             kClusterSpecifierPluginIndex>(
         std::move(plugin_name));
   } else {
     // No cluster or weighted_clusters or plugin found in RouteAction, ignore
@@ -1082,8 +1082,7 @@ absl::StatusOr<XdsRouteConfigResource> XdsRouteConfigResource::Parse(
     // For plugins not used in route action, delete from the update to prevent
     // further use.
     for (auto& unused_plugin : cluster_specifier_plugins) {
-      rds_update.cluster_specifier_plugin_map.erase(
-          std::string(unused_plugin));
+      rds_update.cluster_specifier_plugin_map.erase(std::string(unused_plugin));
     }
   }
   return rds_update;

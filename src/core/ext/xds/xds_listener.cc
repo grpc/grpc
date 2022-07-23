@@ -353,9 +353,8 @@ HttpConnectionManagerParse(
       }
       auto filter_type = ExtractExtensionTypeName(context, any);
       if (!filter_type.ok()) {
-        errors.emplace_back(
-            absl::StrCat("filter name ", name, ": ",
-                         filter_type.status().message()));
+        errors.emplace_back(absl::StrCat("filter name ", name, ": ",
+                                         filter_type.status().message()));
         continue;
       }
       const XdsHttpFilterImpl* filter_impl =
@@ -474,9 +473,9 @@ HttpConnectionManagerParse(
   }
   // Return result.
   if (!errors.empty()) {
-    return absl::InvalidArgumentError(absl::StrCat(
-        "Errors parsing HttpConnectionManager config: [",
-        absl::StrJoin(errors, "; "), "]"));
+    return absl::InvalidArgumentError(
+        absl::StrCat("Errors parsing HttpConnectionManager config: [",
+                     absl::StrJoin(errors, "; "), "]"));
   }
   return http_connection_manager;
 }
@@ -532,13 +531,11 @@ DownstreamTlsContextParse(
       envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_common_tls_context(
           downstream_tls_context_proto);
   if (common_tls_context != nullptr) {
-    auto common_context =
-        CommonTlsContext::Parse(context, common_tls_context);
+    auto common_context = CommonTlsContext::Parse(context, common_tls_context);
     if (!common_context.ok()) {
       errors.emplace_back(common_context.status().message());
     } else {
-      downstream_tls_context.common_tls_context =
-          std::move(*common_context);
+      downstream_tls_context.common_tls_context = std::move(*common_context);
     }
   }
   auto* require_client_certificate =
@@ -551,15 +548,13 @@ DownstreamTlsContextParse(
   auto* require_sni =
       envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_require_sni(
           downstream_tls_context_proto);
-  if (require_sni != nullptr &&
-      google_protobuf_BoolValue_value(require_sni)) {
+  if (require_sni != nullptr && google_protobuf_BoolValue_value(require_sni)) {
     errors.emplace_back("require_sni: unsupported");
   }
   if (envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_ocsp_staple_policy(
           downstream_tls_context_proto) !=
       envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_LENIENT_STAPLING) {
-    errors.emplace_back(
-        "ocsp_staple_policy: Only LENIENT_STAPLING supported");
+    errors.emplace_back("ocsp_staple_policy: Only LENIENT_STAPLING supported");
   }
 
   if (downstream_tls_context.common_tls_context
@@ -581,9 +576,9 @@ DownstreamTlsContextParse(
   }
   // Return result.
   if (!errors.empty()) {
-    return absl::InvalidArgumentError(absl::StrCat(
-        "Errors parsing DownstreamTlsContext: [",
-        absl::StrJoin(errors, "; "), "]"));
+    return absl::InvalidArgumentError(
+        absl::StrCat("Errors parsing DownstreamTlsContext: [",
+                     absl::StrJoin(errors, "; "), "]"));
   }
   return downstream_tls_context;
 }
@@ -630,8 +625,8 @@ absl::StatusOr<FilterChain::FilterChainMatch> FilterChainMatchParse(
   for (size_t i = 0; i < size; i++) {
     auto cidr_range = CidrRangeParse(prefix_ranges[i]);
     if (!cidr_range.ok()) {
-      errors.emplace_back(absl::StrCat(
-          "prefix range ", i, ": ", cidr_range.status().message()));
+      errors.emplace_back(absl::StrCat("prefix range ", i, ": ",
+                                       cidr_range.status().message()));
       continue;
     }
     filter_chain_match.prefix_ranges.push_back(std::move(*cidr_range));
@@ -647,8 +642,8 @@ absl::StatusOr<FilterChain::FilterChainMatch> FilterChainMatchParse(
   for (size_t i = 0; i < size; i++) {
     auto cidr_range = CidrRangeParse(source_prefix_ranges[i]);
     if (!cidr_range.ok()) {
-      errors.emplace_back(absl::StrCat(
-          "source prefix range ", i, ": ", cidr_range.status().message()));
+      errors.emplace_back(absl::StrCat("source prefix range ", i, ": ",
+                                       cidr_range.status().message()));
       continue;
     }
     filter_chain_match.source_prefix_ranges.push_back(std::move(*cidr_range));
@@ -677,9 +672,9 @@ absl::StatusOr<FilterChain::FilterChainMatch> FilterChainMatchParse(
   }
   // Return result.
   if (!errors.empty()) {
-    return absl::InvalidArgumentError(absl::StrCat(
-        "errors parsing filter chain match: [",
-        absl::StrJoin(errors, "; "), "]"));
+    return absl::InvalidArgumentError(
+        absl::StrCat("errors parsing filter chain match: [",
+                     absl::StrJoin(errors, "; "), "]"));
   }
   return filter_chain_match;
 }
@@ -723,8 +718,7 @@ absl::StatusOr<FilterChain> FilterChainParse(
           "type.googleapis.com/"
           "envoy.extensions.filters.network.http_connection_manager.v3."
           "HttpConnectionManager") {
-        errors.emplace_back(
-            absl::StrCat("Unsupported filter type ", type_url));
+        errors.emplace_back(absl::StrCat("Unsupported filter type ", type_url));
       } else {
         const upb_StringView encoded_http_connection_manager =
             google_protobuf_Any_value(typed_config);
