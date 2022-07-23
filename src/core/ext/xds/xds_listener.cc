@@ -58,7 +58,6 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/json/json.h"
-#include "src/core/lib/transport/error_utils.h"
 
 namespace grpc_core {
 
@@ -629,7 +628,7 @@ absl::StatusOr<FilterChain::FilterChainMatch> FilterChainMatchParse(
                                        cidr_range.status().message()));
       continue;
     }
-    filter_chain_match.prefix_ranges.push_back(std::move(*cidr_range));
+    filter_chain_match.prefix_ranges.push_back(*cidr_range);
   }
   filter_chain_match.source_type =
       static_cast<XdsListenerResource::FilterChainMap::ConnectionSourceType>(
@@ -646,7 +645,7 @@ absl::StatusOr<FilterChain::FilterChainMatch> FilterChainMatchParse(
                                        cidr_range.status().message()));
       continue;
     }
-    filter_chain_match.source_prefix_ranges.push_back(std::move(*cidr_range));
+    filter_chain_match.source_prefix_ranges.push_back(*cidr_range);
   }
   auto* source_ports = envoy_config_listener_v3_FilterChainMatch_source_ports(
       filter_chain_match_proto, &size);

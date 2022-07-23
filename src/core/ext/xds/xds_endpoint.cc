@@ -27,6 +27,7 @@
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
+#include "absl/types/optional.h"
 #include "envoy/config/core/v3/address.upb.h"
 #include "envoy/config/core/v3/base.upb.h"
 #include "envoy/config/core/v3/health_check.upb.h"
@@ -44,9 +45,6 @@
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/resolved_address.h"
-#include "src/core/lib/transport/error_utils.h"
 
 namespace grpc_core {
 
