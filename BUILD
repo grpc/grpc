@@ -6942,13 +6942,12 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/status",
+        "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
     ],
-    deps = [
-        "error",
-        "gpr_base",
-    ],
+    deps = ["gpr_base"],
 )
 
 grpc_cc_library(

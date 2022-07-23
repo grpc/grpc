@@ -2620,11 +2620,9 @@ TEST(CredentialsTest,
 
 TEST(CredentialsTest, TestUrlExternalAccountCredsSuccessFormatText) {
   ExecCtx exec_ctx;
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  Json credential_source = Json::Parse(
-      valid_url_external_account_creds_options_credential_source_format_text,
-      &error);
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  auto credential_source = Json::Parse(
+      valid_url_external_account_creds_options_credential_source_format_text);
+  GPR_ASSERT(credential_source.ok());
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
@@ -2632,7 +2630,7 @@ TEST(CredentialsTest, TestUrlExternalAccountCredsSuccessFormatText) {
       "",                                 // service_account_impersonation_url;
       "https://foo.com:5555/token",       // token_url;
       "https://foo.com:5555/token_info",  // token_info_url;
-      credential_source,                  // credential_source;
+      *credential_source,                 // credential_source;
       "quota_project_id",                 // quota_project_id;
       "client_id",                        // client_id;
       "client_secret",                    // client_secret;
@@ -2658,11 +2656,9 @@ TEST(CredentialsTest,
   std::map<std::string, std::string> emd = {
       {"authorization", "Bearer token_exchange_access_token"}};
   ExecCtx exec_ctx;
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  Json credential_source = Json::Parse(
-      valid_url_external_account_creds_options_credential_source_with_qurey_params_format_text,
-      &error);
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  auto credential_source = Json::Parse(
+      valid_url_external_account_creds_options_credential_source_with_qurey_params_format_text);
+  GPR_ASSERT(credential_source.ok());
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
@@ -2670,7 +2666,7 @@ TEST(CredentialsTest,
       "",                                 // service_account_impersonation_url;
       "https://foo.com:5555/token",       // token_url;
       "https://foo.com:5555/token_info",  // token_info_url;
-      credential_source,                  // credential_source;
+      *credential_source,                 // credential_source;
       "quota_project_id",                 // quota_project_id;
       "client_id",                        // client_id;
       "client_secret",                    // client_secret;
@@ -2693,11 +2689,9 @@ TEST(CredentialsTest,
 
 TEST(CredentialsTest, TestUrlExternalAccountCredsSuccessFormatJson) {
   ExecCtx exec_ctx;
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  Json credential_source = Json::Parse(
-      valid_url_external_account_creds_options_credential_source_format_json,
-      &error);
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  auto credential_source = Json::Parse(
+      valid_url_external_account_creds_options_credential_source_format_json);
+  GPR_ASSERT(credential_source.ok());
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
@@ -2705,7 +2699,7 @@ TEST(CredentialsTest, TestUrlExternalAccountCredsSuccessFormatJson) {
       "",                                 // service_account_impersonation_url;
       "https://foo.com:5555/token",       // token_url;
       "https://foo.com:5555/token_info",  // token_info_url;
-      credential_source,                  // credential_source;
+      *credential_source,                 // credential_source;
       "quota_project_id",                 // quota_project_id;
       "client_id",                        // client_id;
       "client_secret",                    // client_secret;
@@ -2728,10 +2722,9 @@ TEST(CredentialsTest, TestUrlExternalAccountCredsSuccessFormatJson) {
 
 TEST(CredentialsTest,
      TestUrlExternalAccountCredsFailureInvalidCredentialSourceUrl) {
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  Json credential_source = Json::Parse(
-      invalid_url_external_account_creds_options_credential_source, &error);
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  Json credential_source =
+      Json::Parse(invalid_url_external_account_creds_options_credential_source);
+  GPR_ASSERT(credential_source.ok());
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
@@ -2739,7 +2732,7 @@ TEST(CredentialsTest,
       "",                                 // service_account_impersonation_url;
       "https://foo.com:5555/token",       // token_url;
       "https://foo.com:5555/token_info",  // token_info_url;
-      credential_source,                  // credential_source;
+      *credential_source,                 // credential_source;
       "quota_project_id",                 // quota_project_id;
       "client_id",                        // client_id;
       "client_secret",                    // client_secret;
@@ -2756,14 +2749,11 @@ TEST(CredentialsTest,
 
 TEST(CredentialsTest, TestFileExternalAccountCredsSuccessFormatText) {
   ExecCtx exec_ctx;
-  grpc_error_handle error = GRPC_ERROR_NONE;
   char* subject_token_path = write_tmp_jwt_file("test_subject_token");
-  Json credential_source = Json::Parse(
-      absl::StrFormat(
-          "{\"file\":\"%s\"}",
-          absl::StrReplaceAll(subject_token_path, {{"\\", "\\\\"}})),
-      &error);
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  auto credential_source = Json::Parse(absl::StrFormat(
+      "{\"file\":\"%s\"}",
+      absl::StrReplaceAll(subject_token_path, {{"\\", "\\\\"}})));
+  GPR_ASSERT(credential_source.ok());
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
@@ -2771,7 +2761,7 @@ TEST(CredentialsTest, TestFileExternalAccountCredsSuccessFormatText) {
       "",                                 // service_account_impersonation_url;
       "https://foo.com:5555/token",       // token_url;
       "https://foo.com:5555/token_info",  // token_info_url;
-      credential_source,                  // credential_source;
+      *credential_source,                 // credential_source;
       "quota_project_id",                 // quota_project_id;
       "client_id",                        // client_id;
       "client_secret",                    // client_secret;
@@ -2796,22 +2786,19 @@ TEST(CredentialsTest, TestFileExternalAccountCredsSuccessFormatText) {
 
 TEST(CredentialsTest, TestFileExternalAccountCredsSuccessFormatJson) {
   ExecCtx exec_ctx;
-  grpc_error_handle error = GRPC_ERROR_NONE;
   char* subject_token_path =
       write_tmp_jwt_file("{\"access_token\":\"test_subject_token\"}");
-  Json credential_source = Json::Parse(
-      absl::StrFormat(
-          "{\n"
-          "\"file\":\"%s\",\n"
-          "\"format\":\n"
-          "{\n"
-          "\"type\":\"json\",\n"
-          "\"subject_token_field_name\":\"access_token\"\n"
-          "}\n"
-          "}",
-          absl::StrReplaceAll(subject_token_path, {{"\\", "\\\\"}})),
-      &error);
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  auto credential_source = Json::Parse(absl::StrFormat(
+      "{\n"
+      "\"file\":\"%s\",\n"
+      "\"format\":\n"
+      "{\n"
+      "\"type\":\"json\",\n"
+      "\"subject_token_field_name\":\"access_token\"\n"
+      "}\n"
+      "}",
+      absl::StrReplaceAll(subject_token_path, {{"\\", "\\\\"}})));
+  GPR_ASSERT(credential_source.ok());
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
@@ -2819,7 +2806,7 @@ TEST(CredentialsTest, TestFileExternalAccountCredsSuccessFormatJson) {
       "",                                 // service_account_impersonation_url;
       "https://foo.com:5555/token",       // token_url;
       "https://foo.com:5555/token_info",  // token_info_url;
-      credential_source,                  // credential_source;
+      *credential_source,                 // credential_source;
       "quota_project_id",                 // quota_project_id;
       "client_id",                        // client_id;
       "client_secret",                    // client_secret;
@@ -2844,10 +2831,8 @@ TEST(CredentialsTest, TestFileExternalAccountCredsSuccessFormatJson) {
 
 TEST(CredentialsTest, TestFileExternalAccountCredsFailureFileNotFound) {
   ExecCtx exec_ctx;
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  Json credential_source =
-      Json::Parse("{\"file\":\"non_exisiting_file\"}", &error);
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  auto credential_source = Json::Parse("{\"file\":\"non_exisiting_file\"}");
+  GPR_ASSERT(credential_source.ok());
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
@@ -2855,7 +2840,7 @@ TEST(CredentialsTest, TestFileExternalAccountCredsFailureFileNotFound) {
       "",                                 // service_account_impersonation_url;
       "https://foo.com:5555/token",       // token_url;
       "https://foo.com:5555/token_info",  // token_info_url;
-      credential_source,                  // credential_source;
+      *credential_source,                 // credential_source;
       "quota_project_id",                 // quota_project_id;
       "client_id",                        // client_id;
       "client_secret",                    // client_secret;
@@ -2881,21 +2866,18 @@ TEST(CredentialsTest, TestFileExternalAccountCredsFailureFileNotFound) {
 
 TEST(CredentialsTest, TestFileExternalAccountCredsFailureInvalidJsonContent) {
   ExecCtx exec_ctx;
-  grpc_error_handle error = GRPC_ERROR_NONE;
   char* subject_token_path = write_tmp_jwt_file("not_a_valid_json_file");
-  Json credential_source = Json::Parse(
-      absl::StrFormat(
-          "{\n"
-          "\"file\":\"%s\",\n"
-          "\"format\":\n"
-          "{\n"
-          "\"type\":\"json\",\n"
-          "\"subject_token_field_name\":\"access_token\"\n"
-          "}\n"
-          "}",
-          absl::StrReplaceAll(subject_token_path, {{"\\", "\\\\"}})),
-      &error);
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  auto credential_source = Json::Parse(absl::StrFormat(
+      "{\n"
+      "\"file\":\"%s\",\n"
+      "\"format\":\n"
+      "{\n"
+      "\"type\":\"json\",\n"
+      "\"subject_token_field_name\":\"access_token\"\n"
+      "}\n"
+      "}",
+      absl::StrReplaceAll(subject_token_path, {{"\\", "\\\\"}})));
+  GPR_ASSERT(credential_source.ok());
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
@@ -2903,7 +2885,7 @@ TEST(CredentialsTest, TestFileExternalAccountCredsFailureInvalidJsonContent) {
       "",                                 // service_account_impersonation_url;
       "https://foo.com:5555/token",       // token_url;
       "https://foo.com:5555/token_info",  // token_info_url;
-      credential_source,                  // credential_source;
+      *credential_source,                 // credential_source;
       "quota_project_id",                 // quota_project_id;
       "client_id",                        // client_id;
       "client_secret",                    // client_secret;
@@ -2931,10 +2913,9 @@ TEST(CredentialsTest, TestFileExternalAccountCredsFailureInvalidJsonContent) {
 
 TEST(CredentialsTest, TestAwsExternalAccountCredsSuccess) {
   ExecCtx exec_ctx;
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  Json credential_source = Json::Parse(
-      valid_aws_external_account_creds_options_credential_source, &error);
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  Json credential_source =
+      Json::Parse(valid_aws_external_account_creds_options_credential_source);
+  GPR_ASSERT(credential_source.ok());
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
@@ -2942,7 +2923,7 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsSuccess) {
       "",                                 // service_account_impersonation_url;
       "https://foo.com:5555/token",       // token_url;
       "https://foo.com:5555/token_info",  // token_info_url;
-      credential_source,                  // credential_source;
+      *credential_source,                 // credential_source;
       "quota_project_id",                 // quota_project_id;
       "client_id",                        // client_id;
       "client_secret",                    // client_secret;
@@ -2965,11 +2946,9 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsSuccess) {
 
 TEST(CredentialsTest, TestAwsImdsv2ExternalAccountCredsSuccess) {
   ExecCtx exec_ctx;
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  Json credential_source = Json::Parse(
-      valid_aws_imdsv2_external_account_creds_options_credential_source,
-      &error);
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  auto credential_source = Json::Parse(
+      valid_aws_imdsv2_external_account_creds_options_credential_source);
+  GPR_ASSERT(credential_source.ok());
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
@@ -2977,7 +2956,7 @@ TEST(CredentialsTest, TestAwsImdsv2ExternalAccountCredsSuccess) {
       "",                                 // service_account_impersonation_url;
       "https://foo.com:5555/token",       // token_url;
       "https://foo.com:5555/token_info",  // token_info_url;
-      credential_source,                  // credential_source;
+      *credential_source,                 // credential_source;
       "quota_project_id",                 // quota_project_id;
       "client_id",                        // client_id;
       "client_secret",                    // client_secret;
@@ -3002,10 +2981,9 @@ TEST(CredentialsTest, TestAwsImdsv2ExternalAccountCredsSuccess) {
 TEST(CredentialsTest, TestAwsExternalAccountCredsSuccessPathRegionEnvKeysUrl) {
   ExecCtx exec_ctx;
   gpr_setenv("AWS_REGION", "test_regionz");
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  Json credential_source = Json::Parse(
-      valid_aws_external_account_creds_options_credential_source, &error);
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  auto credential_source =
+      Json::Parse(valid_aws_external_account_creds_options_credential_source);
+  GPR_ASSERT(credential_source.ok());
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
@@ -3013,7 +2991,7 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsSuccessPathRegionEnvKeysUrl) {
       "",                                 // service_account_impersonation_url;
       "https://foo.com:5555/token",       // token_url;
       "https://foo.com:5555/token_info",  // token_info_url;
-      credential_source,                  // credential_source;
+      *credential_source,                 // credential_source;
       "quota_project_id",                 // quota_project_id;
       "client_id",                        // client_id;
       "client_secret",                    // client_secret;
@@ -3039,10 +3017,9 @@ TEST(CredentialsTest,
      TestAwsExternalAccountCredsSuccessPathDefaultRegionEnvKeysUrl) {
   ExecCtx exec_ctx;
   gpr_setenv("AWS_DEFAULT_REGION", "test_regionz");
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  Json credential_source = Json::Parse(
-      valid_aws_external_account_creds_options_credential_source, &error);
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  auto credential_source =
+      Json::Parse(valid_aws_external_account_creds_options_credential_source);
+  GPR_ASSERT(credential_source.ok());
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
@@ -3050,7 +3027,7 @@ TEST(CredentialsTest,
       "",                                 // service_account_impersonation_url;
       "https://foo.com:5555/token",       // token_url;
       "https://foo.com:5555/token_info",  // token_info_url;
-      credential_source,                  // credential_source;
+      *credential_source,                 // credential_source;
       "quota_project_id",                 // quota_project_id;
       "client_id",                        // client_id;
       "client_secret",                    // client_secret;
@@ -3078,10 +3055,9 @@ TEST(CredentialsTest,
   // Make sure that AWS_REGION gets used over AWS_DEFAULT_REGION
   gpr_setenv("AWS_REGION", "test_regionz");
   gpr_setenv("AWS_DEFAULT_REGION", "ERROR_REGION");
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  Json credential_source = Json::Parse(
-      valid_aws_external_account_creds_options_credential_source, &error);
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  auto credential_source =
+      Json::Parse(valid_aws_external_account_creds_options_credential_source);
+  GPR_ASSERT(credential_source.ok());
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
@@ -3089,7 +3065,7 @@ TEST(CredentialsTest,
       "",                                 // service_account_impersonation_url;
       "https://foo.com:5555/token",       // token_url;
       "https://foo.com:5555/token_info",  // token_info_url;
-      credential_source,                  // credential_source;
+      *credential_source,                 // credential_source;
       "quota_project_id",                 // quota_project_id;
       "client_id",                        // client_id;
       "client_secret",                    // client_secret;
@@ -3117,10 +3093,9 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsSuccessPathRegionUrlKeysEnv) {
   gpr_setenv("AWS_ACCESS_KEY_ID", "test_access_key_id");
   gpr_setenv("AWS_SECRET_ACCESS_KEY", "test_secret_access_key");
   gpr_setenv("AWS_SESSION_TOKEN", "test_token");
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  Json credential_source = Json::Parse(
-      valid_aws_external_account_creds_options_credential_source, &error);
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  auto credential_source =
+      Json::Parse(valid_aws_external_account_creds_options_credential_source);
+  GPR_ASSERT(credential_source.ok());
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
@@ -3128,7 +3103,7 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsSuccessPathRegionUrlKeysEnv) {
       "",                                 // service_account_impersonation_url;
       "https://foo.com:5555/token",       // token_url;
       "https://foo.com:5555/token_info",  // token_info_url;
-      credential_source,                  // credential_source;
+      *credential_source,                 // credential_source;
       "quota_project_id",                 // quota_project_id;
       "client_id",                        // client_id;
       "client_secret",                    // client_secret;
@@ -3158,10 +3133,9 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsSuccessPathRegionEnvKeysEnv) {
   gpr_setenv("AWS_ACCESS_KEY_ID", "test_access_key_id");
   gpr_setenv("AWS_SECRET_ACCESS_KEY", "test_secret_access_key");
   gpr_setenv("AWS_SESSION_TOKEN", "test_token");
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  Json credential_source = Json::Parse(
-      valid_aws_external_account_creds_options_credential_source, &error);
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  auto credential_source =
+      Json::Parse(valid_aws_external_account_creds_options_credential_source);
+  GPR_ASSERT(credential_source.ok());
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
@@ -3169,7 +3143,7 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsSuccessPathRegionEnvKeysEnv) {
       "",                                 // service_account_impersonation_url;
       "https://foo.com:5555/token",       // token_url;
       "https://foo.com:5555/token_info",  // token_info_url;
-      credential_source,                  // credential_source;
+      *credential_source,                 // credential_source;
       "quota_project_id",                 // quota_project_id;
       "client_id",                        // client_id;
       "client_secret",                    // client_secret;
@@ -3203,10 +3177,9 @@ TEST(CredentialsTest,
   gpr_setenv("AWS_ACCESS_KEY_ID", "test_access_key_id");
   gpr_setenv("AWS_SECRET_ACCESS_KEY", "test_secret_access_key");
   gpr_setenv("AWS_SESSION_TOKEN", "test_token");
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  Json credential_source = Json::Parse(
-      valid_aws_external_account_creds_options_credential_source, &error);
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  auto credential_source =
+      Json::Parse(valid_aws_external_account_creds_options_credential_source);
+  GPR_ASSERT(credential_source.ok());
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
@@ -3214,7 +3187,7 @@ TEST(CredentialsTest,
       "",                                 // service_account_impersonation_url;
       "https://foo.com:5555/token",       // token_url;
       "https://foo.com:5555/token_info",  // token_info_url;
-      credential_source,                  // credential_source;
+      *credential_source,                 // credential_source;
       "quota_project_id",                 // quota_project_id;
       "client_id",                        // client_id;
       "client_secret",                    // client_secret;
@@ -3248,10 +3221,9 @@ TEST(CredentialsTest,
   gpr_setenv("AWS_ACCESS_KEY_ID", "test_access_key_id");
   gpr_setenv("AWS_SECRET_ACCESS_KEY", "test_secret_access_key");
   gpr_setenv("AWS_SESSION_TOKEN", "test_token");
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  Json credential_source = Json::Parse(
-      valid_aws_external_account_creds_options_credential_source, &error);
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  auto credential_source =
+      Json::Parse(valid_aws_external_account_creds_options_credential_source);
+  GPR_ASSERT(credential_source.ok());
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
@@ -3259,7 +3231,7 @@ TEST(CredentialsTest,
       "",                                 // service_account_impersonation_url;
       "https://foo.com:5555/token",       // token_url;
       "https://foo.com:5555/token_info",  // token_info_url;
-      credential_source,                  // credential_source;
+      *credential_source,                 // credential_source;
       "quota_project_id",                 // quota_project_id;
       "client_id",                        // client_id;
       "client_secret",                    // client_secret;
@@ -3287,11 +3259,9 @@ TEST(CredentialsTest,
 
 TEST(CredentialsTest,
      TestAwsExternalAccountCredsFailureUnmatchedEnvironmentId) {
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  Json credential_source = Json::Parse(
-      invalid_aws_external_account_creds_options_credential_source_unmatched_environment_id,
-      &error);
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  auto credential_source = Json::Parse(
+      invalid_aws_external_account_creds_options_credential_source_unmatched_environment_id);
+  GPR_ASSERT(credential_source.ok());
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
@@ -3299,7 +3269,7 @@ TEST(CredentialsTest,
       "",                                 // service_account_impersonation_url;
       "https://foo.com:5555/token",       // token_url;
       "https://foo.com:5555/token_info",  // token_info_url;
-      credential_source,                  // credential_source;
+      *credential_source,                 // credential_source;
       "quota_project_id",                 // quota_project_id;
       "client_id",                        // client_id;
       "client_secret",                    // client_secret;
@@ -3317,11 +3287,9 @@ TEST(CredentialsTest,
 
 TEST(CredentialsTest, TestAwsExternalAccountCredsFailureInvalidRegionUrl) {
   ExecCtx exec_ctx;
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  Json credential_source = Json::Parse(
-      invalid_aws_external_account_creds_options_credential_source_invalid_region_url,
-      &error);
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  auto credential_source = Json::Parse(
+      invalid_aws_external_account_creds_options_credential_source_invalid_region_url);
+  GPR_ASSERT(credential_source.ok());
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
@@ -3329,7 +3297,7 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsFailureInvalidRegionUrl) {
       "",                                 // service_account_impersonation_url;
       "https://foo.com:5555/token",       // token_url;
       "https://foo.com:5555/token_info",  // token_info_url;
-      credential_source,                  // credential_source;
+      *credential_source,                 // credential_source;
       "quota_project_id",                 // quota_project_id;
       "client_id",                        // client_id;
       "client_secret",                    // client_secret;
@@ -3357,11 +3325,9 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsFailureInvalidRegionUrl) {
 
 TEST(CredentialsTest, TestAwsExternalAccountCredsFailureInvalidUrl) {
   ExecCtx exec_ctx;
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  Json credential_source = Json::Parse(
-      invalid_aws_external_account_creds_options_credential_source_invalid_url,
-      &error);
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  auto credential_source = Json::Parse(
+      invalid_aws_external_account_creds_options_credential_source_invalid_url);
+  GPR_ASSERT(credential_source.ok());
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
@@ -3369,7 +3335,7 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsFailureInvalidUrl) {
       "",                                 // service_account_impersonation_url;
       "https://foo.com:5555/token",       // token_url;
       "https://foo.com:5555/token_info",  // token_info_url;
-      credential_source,                  // credential_source;
+      *credential_source,                 // credential_source;
       "quota_project_id",                 // quota_project_id;
       "client_id",                        // client_id;
       "client_secret",                    // client_secret;
@@ -3396,11 +3362,9 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsFailureInvalidUrl) {
 
 TEST(CredentialsTest, TestAwsExternalAccountCredsFailureMissingRoleName) {
   ExecCtx exec_ctx;
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  Json credential_source = Json::Parse(
-      invalid_aws_external_account_creds_options_credential_source_missing_role_name,
-      &error);
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  auto credential_source = Json::Parse(
+      invalid_aws_external_account_creds_options_credential_source_missing_role_name);
+  GPR_ASSERT(credential_source.ok());
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
@@ -3408,7 +3372,7 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsFailureMissingRoleName) {
       "",                                 // service_account_impersonation_url;
       "https://foo.com:5555/token",       // token_url;
       "https://foo.com:5555/token_info",  // token_info_url;
-      credential_source,                  // credential_source;
+      *credential_source,                 // credential_source;
       "quota_project_id",                 // quota_project_id;
       "client_id",                        // client_id;
       "client_secret",                    // client_secret;
@@ -3437,11 +3401,9 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsFailureMissingRoleName) {
 TEST(CredentialsTest,
      TestAwsExternalAccountCredsFailureInvalidRegionalCredVerificationUrl) {
   ExecCtx exec_ctx;
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  Json credential_source = Json::Parse(
-      invalid_aws_external_account_creds_options_credential_source_invalid_regional_cred_verification_url,
-      &error);
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  auto credential_source = Json::Parse(
+      invalid_aws_external_account_creds_options_credential_source_invalid_regional_cred_verification_url);
+  GPR_ASSERT(credential_source.ok());
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
@@ -3449,7 +3411,7 @@ TEST(CredentialsTest,
       "",                                 // service_account_impersonation_url;
       "https://foo.com:5555/token",       // token_url;
       "https://foo.com:5555/token_info",  // token_info_url;
-      credential_source,                  // credential_source;
+      *credential_source,                 // credential_source;
       "quota_project_id",                 // quota_project_id;
       "client_id",                        // client_id;
       "client_secret",                    // client_secret;

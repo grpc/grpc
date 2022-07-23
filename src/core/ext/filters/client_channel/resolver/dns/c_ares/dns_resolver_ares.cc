@@ -253,16 +253,19 @@ bool ValueInJsonArray(const Json::Array& array, const char* value) {
 
 std::string ChooseServiceConfig(char* service_config_choice_json,
                                 grpc_error_handle* error) {
-  Json json = Json::Parse(service_config_choice_json, error);
-  if (!GRPC_ERROR_IS_NONE(*error)) return "";
-  if (json.type() != Json::Type::ARRAY) {
+  auto json = Json::Parse(service_config_choice_json);
+  if (!json.ok()) {
+    *error = absl_status_to_grpc_error(json.status());
+    return "";
+  }
+  if (json->type() != Json::Type::ARRAY) {
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Service Config Choices, error: should be of type array");
     return "";
   }
   const Json* service_config = nullptr;
   std::vector<grpc_error_handle> error_list;
-  for (const Json& choice : json.array_value()) {
+  for (const Json& choice : json->array_value()) {
     if (choice.type() != Json::Type::OBJECT) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "Service Config Choice, error: should be of type object"));

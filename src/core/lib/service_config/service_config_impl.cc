@@ -42,10 +42,13 @@ RefCountedPtr<ServiceConfig> ServiceConfigImpl::Create(
     const ChannelArgs& args, absl::string_view json_string,
     grpc_error_handle* error) {
   GPR_DEBUG_ASSERT(error != nullptr);
-  Json json = Json::Parse(json_string, error);
-  if (!GRPC_ERROR_IS_NONE(*error)) return nullptr;
+  auto json = Json::Parse(json_string);
+  if (!json.ok()) {
+    *error = GRPC_ERROR_CREATE_FROM_CPP_STRING(json.status().message());
+    return nullptr;
+  }
   return MakeRefCounted<ServiceConfigImpl>(args, std::string(json_string),
-                                           std::move(json), error);
+                                           std::move(*json), error);
 }
 
 ServiceConfigImpl::ServiceConfigImpl(const ChannelArgs& args,
