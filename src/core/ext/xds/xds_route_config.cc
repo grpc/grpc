@@ -69,11 +69,9 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/matchers/matchers.h"
-#include "src/core/lib/transport/error_utils.h"
 
 namespace grpc_core {
 

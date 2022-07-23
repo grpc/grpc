@@ -43,7 +43,6 @@
 #include "src/core/ext/xds/xds_resource_type_impl.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/matchers/matchers.h"
 
 namespace grpc_core {
