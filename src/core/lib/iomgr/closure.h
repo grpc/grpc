@@ -54,13 +54,24 @@ typedef void (*grpc_iomgr_cb_func)(void* arg, grpc_error_handle error);
 
 /** A closure over a grpc_iomgr_cb_func. */
 struct grpc_closure {
+  grpc_closure() : next_data{} {}
+  grpc_closure(const grpc_closure& other)
+      : next_data{},
+        cb(other.cb),
+        cb_arg(other.cb_arg),
+        error_data(other.error_data) {}
+  grpc_closure& operator=(const grpc_closure& other) {
+    cb = other.cb;
+    cb_arg = other.cb_arg;
+    error_data = other.error_data;
+    return *this;
+  }
+
   /** Once queued, next indicates the next queued closure; before then, scratch
    *  space */
   union {
     grpc_closure* next;
-    grpc_core::ManualConstructor<
-        grpc_core::MultiProducerSingleConsumerQueue::Node>
-        mpscq_node;
+    grpc_core::MultiProducerSingleConsumerQueue::Node mpscq_node;
     uintptr_t scratch;
   } next_data;
 
