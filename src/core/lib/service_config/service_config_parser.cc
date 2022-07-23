@@ -21,7 +21,6 @@
 #include <stdlib.h>
 
 #include <string>
-#include <type_traits>
 
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
