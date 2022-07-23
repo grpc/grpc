@@ -349,6 +349,10 @@ class MainLoop {
     }
     void Drop() override { delete this; }
 
+    std::string ActivityDebugTag() const override {
+      return "WakeCall(" + std::to_string(id_) + ")";
+    }
+
    private:
     MainLoop* const main_loop_;
     uint32_t id_;
