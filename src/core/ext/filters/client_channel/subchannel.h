@@ -22,6 +22,7 @@
 #include <stddef.h>
 
 #include <deque>
+#include <chrono>
 #include <map>
 #include <string>
 
@@ -39,7 +40,6 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/context.h"
-#include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -99,7 +99,7 @@ class SubchannelCall {
     RefCountedPtr<ConnectedSubchannel> connected_subchannel;
     grpc_polling_entity* pollent;
     Slice path;
-    gpr_cycle_counter start_time;
+    std::chrono::time_point<std::chrono::steady_clock> start_time;
     Timestamp deadline;
     Arena* arena;
     grpc_call_context_element* context;

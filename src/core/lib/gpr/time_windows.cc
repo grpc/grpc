@@ -22,6 +22,7 @@
 
 #ifdef GPR_WINDOWS_TIME
 
+#include <chrono>
 #include <limits.h>
 #include <process.h>
 #include <sys/timeb.h>
@@ -29,7 +30,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gpr/time_precise.h"
 
 static LARGE_INTEGER g_start_time = []() {
   LARGE_INTEGER x;

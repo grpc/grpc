@@ -19,6 +19,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <chrono>
 #include <vector>
 
 #include <grpc/impl/codegen/grpc_types.h>
@@ -26,7 +27,6 @@
 
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/context.h"
-#include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -49,7 +49,7 @@ class DynamicFilters : public RefCounted<DynamicFilters> {
       RefCountedPtr<DynamicFilters> channel_stack;
       grpc_polling_entity* pollent;
       grpc_slice path;
-      gpr_cycle_counter start_time;
+      std::chrono::time_point<std::chrono::steady_clock> start_time;
       Timestamp deadline;
       Arena* arena;
       grpc_call_context_element* context;

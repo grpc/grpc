@@ -28,62 +28,34 @@
 #include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/time_util.h"
+
 namespace grpc_core {
 
 namespace {
 
 std::atomic<int64_t> g_process_epoch_seconds;
-std::atomic<gpr_cycle_counter> g_process_epoch_cycles;
 
-GPR_ATTRIBUTE_NOINLINE std::pair<int64_t, gpr_cycle_counter> InitTime() {
-  gpr_cycle_counter cycles_start = 0;
-  gpr_cycle_counter cycles_end = 0;
+GPR_ATTRIBUTE_NOINLINE int64_t InitTime() {
   int64_t process_epoch_seconds = 0;
 
   // Check the current time... if we end up with zero, try again after 100ms.
   // If it doesn't advance after sleeping for 1100ms, crash the process.
   for (int i = 0; i < 11; i++) {
-    cycles_start = gpr_get_cycle_counter();
     gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
-    cycles_end = gpr_get_cycle_counter();
     process_epoch_seconds = now.tv_sec - 1;
     if (process_epoch_seconds != 0) {
       break;
     }
     gpr_sleep_until(gpr_time_add(now, gpr_time_from_millis(100, GPR_TIMESPAN)));
   }
-
-  // Time does not seem to be increasing from zero...
-  GPR_ASSERT(process_epoch_seconds != 0);
-  int64_t expected = 0;
-  gpr_cycle_counter process_epoch_cycles = (cycles_start + cycles_end) / 2;
-  GPR_ASSERT(process_epoch_cycles != 0);
-  if (!g_process_epoch_seconds.compare_exchange_strong(
-          expected, process_epoch_seconds, std::memory_order_relaxed,
-          std::memory_order_relaxed)) {
-    process_epoch_seconds = expected;
-    do {
-      process_epoch_cycles =
-          g_process_epoch_cycles.load(std::memory_order_relaxed);
-    } while (process_epoch_cycles == 0);
-  } else {
-    g_process_epoch_cycles.store(process_epoch_cycles,
-                                 std::memory_order_relaxed);
-  }
-  return std::make_pair(process_epoch_seconds, process_epoch_cycles);
+  return process_epoch_seconds;
 }
 
 gpr_timespec StartTime() {
   int64_t sec = g_process_epoch_seconds.load(std::memory_order_relaxed);
-  if (GPR_UNLIKELY(sec == 0)) sec = InitTime().first;
+  if (GPR_UNLIKELY(sec == 0)) sec = InitTime();
   return {sec, 0, GPR_CLOCK_MONOTONIC};
-}
-
-gpr_cycle_counter StartCycleCounter() {
-  gpr_cycle_counter cycles =
-      g_process_epoch_cycles.load(std::memory_order_relaxed);
-  if (GPR_UNLIKELY(cycles == 0)) cycles = InitTime().second;
-  return cycles;
 }
 
 gpr_timespec MillisecondsAsTimespec(int64_t millis, gpr_clock_type clock_type) {
@@ -144,14 +116,16 @@ Timestamp Timestamp::FromTimespecRoundDown(gpr_timespec ts) {
           gpr_convert_clock_type(ts, GPR_CLOCK_MONOTONIC), StartTime())));
 }
 
-Timestamp Timestamp::FromCycleCounterRoundUp(gpr_cycle_counter c) {
+Timestamp Timestamp::FromTimePointRoundUp(
+    std::chrono::time_point<std::chrono::steady_clock> c) {
   return Timestamp::FromMillisecondsAfterProcessEpoch(
-      TimespanToMillisRoundUp(gpr_cycle_counter_sub(c, StartCycleCounter())));
+      TimespanToMillisRoundUp(ToGprTimeSpec(c)));
 }
 
-Timestamp Timestamp::FromCycleCounterRoundDown(gpr_cycle_counter c) {
+Timestamp Timestamp::FromTimePointRoundDown(
+    std::chrono::time_point<std::chrono::steady_clock> c) {
   return Timestamp::FromMillisecondsAfterProcessEpoch(
-      TimespanToMillisRoundDown(gpr_cycle_counter_sub(c, StartCycleCounter())));
+      TimespanToMillisRoundDown(ToGprTimeSpec(c)));
 }
 
 gpr_timespec Timestamp::as_timespec(gpr_clock_type clock_type) const {

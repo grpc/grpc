@@ -544,12 +544,12 @@ INSTANTIATE_TEST_SUITE_P(
     &XdsTestType::Name);
 
 MATCHER_P2(AdjustedClockInRange, t1, t2, "equals time") {
-  gpr_cycle_counter cycle_now = gpr_get_cycle_counter();
-  grpc_core::Timestamp cycle_time =
-      grpc_core::Timestamp::FromCycleCounterRoundDown(cycle_now);
-  grpc_core::Timestamp time_spec =
+  grpc_core::Timestamp chrono_now =
+      grpc_core::Timestamp::FromTimePointRoundDown(
+          std::chrono::steady_clock::now());
+  grpc_core::Timestamp time_spec_now =
       grpc_core::Timestamp::FromTimespecRoundDown(gpr_now(GPR_CLOCK_MONOTONIC));
-  grpc_core::Timestamp now = arg + (time_spec - cycle_time);
+  grpc_core::Timestamp now = arg + (time_spec_now - chrono_now);
   bool ok = true;
   ok &= ::testing::ExplainMatchResult(::testing::Ge(t1), now, result_listener);
   ok &= ::testing::ExplainMatchResult(::testing::Lt(t2), now, result_listener);

@@ -39,6 +39,7 @@
 #include "src/core/lib/channel/channelz_registry.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/time_util.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/uri/uri_parser.h"
@@ -79,8 +80,8 @@ void CallCountingHelper::RecordCallStarted() {
   AtomicCounterData& data =
       per_cpu_counter_data_storage_[ExecCtx::Get()->starting_cpu()];
   data.calls_started.fetch_add(1, std::memory_order_relaxed);
-  data.last_call_started_cycle.store(gpr_get_cycle_counter(),
-                                     std::memory_order_relaxed);
+  data.last_call_started_time.store(std::chrono::steady_clock::now(),
+                                    std::memory_order_relaxed);
 }
 
 void CallCountingHelper::RecordCallFailed() {
@@ -103,11 +104,11 @@ void CallCountingHelper::CollectData(CounterData* out) {
             std::memory_order_relaxed);
     out->calls_failed += per_cpu_counter_data_storage_[core].calls_failed.load(
         std::memory_order_relaxed);
-    const gpr_cycle_counter last_call =
-        per_cpu_counter_data_storage_[core].last_call_started_cycle.load(
+    const std::chrono::time_point<std::chrono::steady_clock> last_call =
+        per_cpu_counter_data_storage_[core].last_call_started_time.load(
             std::memory_order_relaxed);
-    if (last_call > out->last_call_started_cycle) {
-      out->last_call_started_cycle = last_call;
+    if (last_call > out->last_call_started_time) {
+      out->last_call_started_time = last_call;
     }
   }
 }
@@ -118,8 +119,7 @@ void CallCountingHelper::PopulateCallCounts(Json::Object* json) {
   if (data.calls_started != 0) {
     (*json)["callsStarted"] = std::to_string(data.calls_started);
     gpr_timespec ts = gpr_convert_clock_type(
-        gpr_cycle_counter_to_time(data.last_call_started_cycle),
-        GPR_CLOCK_REALTIME);
+        ToGprTimeSpec(data.last_call_started_time), GPR_CLOCK_REALTIME);
     (*json)["lastCallStartedTimestamp"] = gpr_format_timespec(ts);
   }
   if (data.calls_succeeded != 0) {
@@ -463,25 +463,25 @@ SocketNode::SocketNode(std::string local, std::string remote, std::string name,
 
 void SocketNode::RecordStreamStartedFromLocal() {
   streams_started_.fetch_add(1, std::memory_order_relaxed);
-  last_local_stream_created_cycle_.store(gpr_get_cycle_counter(),
+  last_local_stream_created_cycle_.store(std::chrono::steady_clock::now(),
                                          std::memory_order_relaxed);
 }
 
 void SocketNode::RecordStreamStartedFromRemote() {
   streams_started_.fetch_add(1, std::memory_order_relaxed);
-  last_remote_stream_created_cycle_.store(gpr_get_cycle_counter(),
+  last_remote_stream_created_cycle_.store(std::chrono::steady_clock::now(),
                                           std::memory_order_relaxed);
 }
 
 void SocketNode::RecordMessagesSent(uint32_t num_sent) {
   messages_sent_.fetch_add(num_sent, std::memory_order_relaxed);
-  last_message_sent_cycle_.store(gpr_get_cycle_counter(),
+  last_message_sent_cycle_.store(std::chrono::steady_clock::now(),
                                  std::memory_order_relaxed);
 }
 
 void SocketNode::RecordMessageReceived() {
   messages_received_.fetch_add(1, std::memory_order_relaxed);
-  last_message_received_cycle_.store(gpr_get_cycle_counter(),
+  last_message_received_cycle_.store(std::chrono::steady_clock::now(),
                                      std::memory_order_relaxed);
 }
 
@@ -492,20 +492,20 @@ Json SocketNode::RenderJson() {
   int64_t streams_started = streams_started_.load(std::memory_order_relaxed);
   if (streams_started != 0) {
     data["streamsStarted"] = std::to_string(streams_started);
-    gpr_cycle_counter last_local_stream_created_cycle =
-        last_local_stream_created_cycle_.load(std::memory_order_relaxed);
-    if (last_local_stream_created_cycle != 0) {
-      ts = gpr_convert_clock_type(
-          gpr_cycle_counter_to_time(last_local_stream_created_cycle),
-          GPR_CLOCK_REALTIME);
+    std::chrono::time_point<std::chrono::steady_clock>
+        last_local_stream_created_cycle =
+            last_local_stream_created_cycle_.load(std::memory_order_relaxed);
+    if (last_local_stream_created_cycle !=
+        std::chrono::time_point<std::chrono::steady_clock>::min()) {
+      ts = ToGprTimeSpec(last_local_stream_created_cycle);
       data["lastLocalStreamCreatedTimestamp"] = gpr_format_timespec(ts);
     }
-    gpr_cycle_counter last_remote_stream_created_cycle =
-        last_remote_stream_created_cycle_.load(std::memory_order_relaxed);
-    if (last_remote_stream_created_cycle != 0) {
-      ts = gpr_convert_clock_type(
-          gpr_cycle_counter_to_time(last_remote_stream_created_cycle),
-          GPR_CLOCK_REALTIME);
+    std::chrono::time_point<std::chrono::steady_clock>
+        last_remote_stream_created_cycle =
+            last_remote_stream_created_cycle_.load(std::memory_order_relaxed);
+    if (last_remote_stream_created_cycle !=
+        std::chrono::time_point<std::chrono::steady_clock>::min()) {
+      ts = ToGprTimeSpec(last_remote_stream_created_cycle);
       data["lastRemoteStreamCreatedTimestamp"] = gpr_format_timespec(ts);
     }
   }
@@ -521,20 +521,16 @@ Json SocketNode::RenderJson() {
   int64_t messages_sent = messages_sent_.load(std::memory_order_relaxed);
   if (messages_sent != 0) {
     data["messagesSent"] = std::to_string(messages_sent);
-    ts = gpr_convert_clock_type(
-        gpr_cycle_counter_to_time(
-            last_message_sent_cycle_.load(std::memory_order_relaxed)),
-        GPR_CLOCK_REALTIME);
+    ts =
+        ToGprTimeSpec(last_message_sent_cycle_.load(std::memory_order_relaxed));
     data["lastMessageSentTimestamp"] = gpr_format_timespec(ts);
   }
   int64_t messages_received =
       messages_received_.load(std::memory_order_relaxed);
   if (messages_received != 0) {
     data["messagesReceived"] = std::to_string(messages_received);
-    ts = gpr_convert_clock_type(
-        gpr_cycle_counter_to_time(
-            last_message_received_cycle_.load(std::memory_order_relaxed)),
-        GPR_CLOCK_REALTIME);
+    ts = ToGprTimeSpec(
+        last_message_received_cycle_.load(std::memory_order_relaxed));
     data["lastMessageReceivedTimestamp"] = gpr_format_timespec(ts);
   }
   int64_t keepalives_sent = keepalives_sent_.load(std::memory_order_relaxed);

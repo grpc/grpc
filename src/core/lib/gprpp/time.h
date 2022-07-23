@@ -19,6 +19,7 @@
 
 #include <stdint.h>
 
+#include <chrono>
 #include <limits>
 #include <ostream>
 #include <string>
@@ -27,7 +28,6 @@
 #include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gpr/useful.h"
 
 namespace grpc_core {
@@ -66,9 +66,10 @@ class Timestamp {
   static Timestamp FromTimespecRoundDown(gpr_timespec t);
   static Timestamp FromTimespecRoundUp(gpr_timespec t);
 
-  // Construct a Timestamp from a gpr_cycle_counter.
-  static Timestamp FromCycleCounterRoundUp(gpr_cycle_counter c);
-  static Timestamp FromCycleCounterRoundDown(gpr_cycle_counter c);
+  static Timestamp FromTimePointRoundUp(
+      std::chrono::time_point<std::chrono::steady_clock> c);
+  static Timestamp FromTimePointRoundDown(
+      std::chrono::time_point<std::chrono::steady_clock> c);
 
   static constexpr Timestamp FromMillisecondsAfterProcessEpoch(int64_t millis) {
     return Timestamp(millis);

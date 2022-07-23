@@ -48,6 +48,7 @@
 
 #include <stddef.h>
 
+#include <chrono>
 #include <functional>
 
 #include <grpc/impl/codegen/gpr_types.h>
@@ -59,7 +60,6 @@
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
@@ -82,7 +82,8 @@ struct grpc_call_element_args {
   const void* server_transport_data;
   grpc_call_context_element* context;
   const grpc_slice& path;
-  gpr_cycle_counter start_time;  // Note: not populated in subchannel stack.
+  std::chrono::time_point<std::chrono::steady_clock>
+      start_time;  // Note: not populated in subchannel stack.
   grpc_core::Timestamp deadline;
   grpc_core::Arena* arena;
   grpc_core::CallCombiner* call_combiner;

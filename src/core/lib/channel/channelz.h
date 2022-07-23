@@ -24,6 +24,7 @@
 #include <stddef.h>
 
 #include <atomic>
+#include <chrono>
 #include <cstdint>
 #include <map>
 #include <set>
@@ -39,7 +40,6 @@
 #include <grpc/slice.h>
 
 #include "src/core/lib/channel/channel_trace.h"
-#include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -143,16 +143,19 @@ class CallCountingHelper {
         : calls_started(that.calls_started.load(std::memory_order_relaxed)),
           calls_succeeded(that.calls_succeeded.load(std::memory_order_relaxed)),
           calls_failed(that.calls_failed.load(std::memory_order_relaxed)),
-          last_call_started_cycle(
-              that.last_call_started_cycle.load(std::memory_order_relaxed)) {}
+          last_call_started_time(
+              that.last_call_started_time.load(std::memory_order_relaxed)) {}
 
     std::atomic<int64_t> calls_started{0};
     std::atomic<int64_t> calls_succeeded{0};
     std::atomic<int64_t> calls_failed{0};
-    std::atomic<gpr_cycle_counter> last_call_started_cycle{0};
+    std::atomic<std::chrono::time_point<std::chrono::steady_clock>>
+        last_call_started_time;
     // Make sure the size is exactly one cache line.
-    uint8_t padding[GPR_CACHELINE_SIZE - 3 * sizeof(std::atomic<intptr_t>) -
-                    sizeof(std::atomic<gpr_cycle_counter>)];
+    uint8_t padding
+        [GPR_CACHELINE_SIZE - 3 * sizeof(std::atomic<intptr_t>) -
+         sizeof(
+             std::atomic<std::chrono::time_point<std::chrono::steady_clock>>)];
   };
   // TODO(soheilhy,veblush): Revist this after abseil integration.
   // This has a problem when using abseil inlined_vector because it
@@ -165,7 +168,7 @@ class CallCountingHelper {
     int64_t calls_started = 0;
     int64_t calls_succeeded = 0;
     int64_t calls_failed = 0;
-    gpr_cycle_counter last_call_started_cycle = 0;
+    std::chrono::time_point<std::chrono::steady_clock> last_call_started_time;
   };
 
   // collects the sharded data into one CounterData struct.
@@ -347,10 +350,14 @@ class SocketNode : public BaseNode {
   std::atomic<int64_t> messages_sent_{0};
   std::atomic<int64_t> messages_received_{0};
   std::atomic<int64_t> keepalives_sent_{0};
-  std::atomic<gpr_cycle_counter> last_local_stream_created_cycle_{0};
-  std::atomic<gpr_cycle_counter> last_remote_stream_created_cycle_{0};
-  std::atomic<gpr_cycle_counter> last_message_sent_cycle_{0};
-  std::atomic<gpr_cycle_counter> last_message_received_cycle_{0};
+  std::atomic<std::chrono::time_point<std::chrono::steady_clock>>
+      last_local_stream_created_cycle_;
+  std::atomic<std::chrono::time_point<std::chrono::steady_clock>>
+      last_remote_stream_created_cycle_;
+  std::atomic<std::chrono::time_point<std::chrono::steady_clock>>
+      last_message_sent_cycle_;
+  std::atomic<std::chrono::time_point<std::chrono::steady_clock>>
+      last_message_received_cycle_;
   std::string local_;
   std::string remote_;
   RefCountedPtr<Security> const security_;

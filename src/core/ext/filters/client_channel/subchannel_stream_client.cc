@@ -21,6 +21,7 @@
 #include <inttypes.h>
 #include <stdio.h>
 
+#include <chrono>
 #include <string>
 #include <utility>
 
@@ -28,7 +29,6 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
@@ -206,8 +206,8 @@ void SubchannelStreamClient::CallState::StartCallLocked() {
       subchannel_stream_client_->connected_subchannel_,
       &pollent_,
       Slice::FromStaticString("/grpc.health.v1.Health/Watch"),
-      gpr_get_cycle_counter(),  // start_time
-      Timestamp::InfFuture(),   // deadline
+      std::chrono::steady_clock::now(),  // start_time
+      Timestamp::InfFuture(),            // deadline
       arena_.get(),
       context_,
       &call_combiner_,

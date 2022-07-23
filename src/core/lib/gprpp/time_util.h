@@ -31,11 +31,22 @@ gpr_timespec ToGprTimeSpec(absl::Duration duration);
 // Converts absl::Time to gpr_timespec(GPR_CLOCK_REALTIME)
 gpr_timespec ToGprTimeSpec(absl::Time time);
 
+// Converts to gpr_timespec(GPR_CLOCK_REALTIME)
+gpr_timespec ToGprTimeSpec(
+    std::chrono::time_point<std::chrono::steady_clock> time);
+
+// Converts to gpr_timespec(GPR_CLOCK_TIMESPAN)
+gpr_timespec ToGprTimeSpec(std::chrono::duration<int64_t, std::nano> d);
+
 // Converts gpr_timespec(GPR_TIMESPAN) to absl::Duration
 absl::Duration ToAbslDuration(gpr_timespec ts);
 
 // Converts gpr_timespec(GPR_CLOCK_[MONOTONIC|REALTIME|PRECISE]) to absl::Time
 absl::Time ToAbslTime(gpr_timespec ts);
+
+// Converts tgpr_timespec(GPR_CLOCK_REALTIME) to
+// std::chrono::time_point<std::chrono::steady_clock>
+std::chrono::time_point<std::chrono::steady_clock> ToTimePoint(gpr_timespec ts);
 
 }  // namespace grpc_core
 

@@ -31,6 +31,7 @@
 #include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/channel/channelz_registry.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/time_util.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/surface/channel.h"
@@ -50,7 +51,7 @@ class CallCountingHelperPeer {
   gpr_timespec last_call_started_time() const {
     CallCountingHelper::CounterData data;
     node_->CollectData(&data);
-    return gpr_cycle_counter_to_time(data.last_call_started_cycle);
+    return ToGprTimeSpec(data.last_call_started_time);
   }
 
  private:

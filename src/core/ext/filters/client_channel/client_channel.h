@@ -50,7 +50,6 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/channel/context.h"
-#include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -505,7 +504,8 @@ class ClientChannel::LoadBalancedCall
 
   CallTracer::CallAttemptTracer* call_attempt_tracer_;
 
-  gpr_cycle_counter lb_call_start_time_ = gpr_get_cycle_counter();
+  std::chrono::time_point<std::chrono::steady_clock> lb_call_start_time_ =
+      std::chrono::steady_clock::now();
 
   // Set when we get a cancel_stream op.
   grpc_error_handle cancel_error_ = GRPC_ERROR_NONE;

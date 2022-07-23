@@ -18,7 +18,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gpr/time_precise.h"
+#include <chrono>
+
+#include "src/core/lib/gprpp/time_util.h"
 
 #ifdef GPR_POSIX_TIME
 
@@ -62,15 +64,13 @@ static gpr_timespec gpr_from_timespec(struct timespec ts,
 static const clockid_t clockid_for_gpr_clock[] = {CLOCK_MONOTONIC,
                                                   CLOCK_REALTIME};
 
-void gpr_time_init(void) { gpr_precise_clock_init(); }
+void gpr_time_init(void) {}
 
 static gpr_timespec now_impl(gpr_clock_type clock_type) {
   struct timespec now;
   GPR_ASSERT(clock_type != GPR_TIMESPAN);
   if (clock_type == GPR_CLOCK_PRECISE) {
-    gpr_timespec ret;
-    gpr_precise_clock_now(&ret);
-    return ret;
+    return grpc_core::ToGprTimeSpec(std::chrono::steady_clock::now());
   } else {
 #if defined(GPR_BACKWARDS_COMPATIBILITY_MODE) && defined(__linux__)
     /* avoid ABI problems by invoking syscalls directly */
@@ -95,7 +95,7 @@ static double g_time_scale = []() {
 }();
 static uint64_t g_time_start = mach_absolute_time();
 
-void gpr_time_init(void) { gpr_precise_clock_init(); }
+void gpr_time_init(void) {}
 
 static gpr_timespec now_impl(gpr_clock_type clock) {
   gpr_timespec now;
@@ -118,7 +118,7 @@ static gpr_timespec now_impl(gpr_clock_type clock) {
       now.tv_nsec = (int32_t)(now_dbl - ((double)now.tv_sec) * 1e9);
       break;
     case GPR_CLOCK_PRECISE:
-      gpr_precise_clock_now(&now);
+      now = grpc_core::ToGprTimeSpec(std::chrono::steady_clock::now());
       break;
     case GPR_TIMESPAN:
       abort();

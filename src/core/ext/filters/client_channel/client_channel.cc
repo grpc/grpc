@@ -68,6 +68,7 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/gprpp/time_util.h"
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/polling_entity.h"
@@ -84,7 +85,6 @@
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/metadata_batch.h"
-
 //
 // Client channel filter
 //
@@ -199,7 +199,7 @@ class ClientChannel::CallData {
   grpc_deadline_state deadline_state_;
 
   grpc_slice path_;  // Request path.
-  gpr_cycle_counter call_start_time_;
+  std::chrono::time_point<std::chrono::steady_clock> call_start_time_;
   Timestamp deadline_;
   Arena* arena_;
   grpc_call_stack* owning_call_;
@@ -332,10 +332,11 @@ class DynamicTerminationFilter::CallData {
     auto* calld = static_cast<CallData*>(elem->call_data);
     auto* chand = static_cast<DynamicTerminationFilter*>(elem->channel_data);
     ClientChannel* client_channel = chand->chand_;
-    grpc_call_element_args args = {calld->owning_call_,  nullptr,
-                                   calld->call_context_, calld->path_,
-                                   /*start_time=*/0,     calld->deadline_,
-                                   calld->arena_,        calld->call_combiner_};
+    grpc_call_element_args args = {
+        calld->owning_call_, nullptr, calld->call_context_, calld->path_,
+        /*start_time=*/
+        std::chrono::time_point<std::chrono::steady_clock>::min(),
+        calld->deadline_, calld->arena_, calld->call_combiner_};
     auto* service_config_call_data =
         static_cast<ClientChannelServiceConfigCallData*>(
             calld->call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
@@ -2180,7 +2181,7 @@ grpc_error_handle ClientChannel::CallData::ApplyServiceConfigToCallLocked(
       if (chand->deadline_checking_enabled_ &&
           method_params->timeout() != Duration::Zero()) {
         const Timestamp per_method_deadline =
-            Timestamp::FromCycleCounterRoundUp(call_start_time_) +
+            Timestamp::FromTimePointRoundUp(call_start_time_) +
             method_params->timeout();
         if (per_method_deadline < deadline_) {
           deadline_ = per_method_deadline;
@@ -2576,7 +2577,7 @@ void ClientChannel::LoadBalancedCall::Orphan() {
   // Compute latency and report it to the tracer.
   if (call_attempt_tracer_ != nullptr) {
     gpr_timespec latency =
-        gpr_cycle_counter_sub(gpr_get_cycle_counter(), lb_call_start_time_);
+        ToGprTimeSpec(std::chrono::steady_clock::now() - lb_call_start_time_);
     call_attempt_tracer_->RecordEnd(latency);
   }
   Unref();
@@ -2950,7 +2951,8 @@ void ClientChannel::LoadBalancedCall::RecordCallCompletion(
 
 void ClientChannel::LoadBalancedCall::CreateSubchannelCall() {
   SubchannelCall::Args call_args = {
-      std::move(connected_subchannel_), pollent_, path_.Ref(), /*start_time=*/0,
+      std::move(connected_subchannel_), pollent_, path_.Ref(),
+      /*start_time=*/std::chrono::time_point<std::chrono::steady_clock>::min(),
       deadline_, arena_,
       // TODO(roth): When we implement hedging support, we will probably
       // need to use a separate call context for each subchannel call.

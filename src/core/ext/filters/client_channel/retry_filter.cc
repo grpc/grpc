@@ -2337,9 +2337,15 @@ OrphanablePtr<ClientChannel::LoadBalancedCall>
 RetryFilter::CallData::CreateLoadBalancedCall(
     ConfigSelector::CallDispatchController* call_dispatch_controller,
     bool is_transparent_retry) {
-  grpc_call_element_args args = {owning_call_, nullptr,          call_context_,
-                                 path_,        /*start_time=*/0, deadline_,
-                                 arena_,       call_combiner_};
+  grpc_call_element_args args = {
+      owning_call_,
+      nullptr,
+      call_context_,
+      path_,
+      /*start_time=*/std::chrono::time_point<std::chrono::steady_clock>::min(),
+      deadline_,
+      arena_,
+      call_combiner_};
   return chand_->client_channel_->CreateLoadBalancedCall(
       args, pollent_,
       // This callback holds a ref to the CallStackDestructionBarrier

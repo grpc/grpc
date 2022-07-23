@@ -55,11 +55,11 @@
 #include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/alloc.h"
-#include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gprpp/cpp_impl_of.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/gprpp/time_util.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/polling_entity.h"
@@ -349,7 +349,8 @@ class FilterStackCall final : public Call {
   grpc_completion_queue* cq_;
   grpc_polling_entity pollent_;
   RefCountedPtr<Channel> channel_;
-  gpr_cycle_counter start_time_ = gpr_get_cycle_counter();
+  std::chrono::time_point<std::chrono::steady_clock> start_time_ =
+      std::chrono::steady_clock::now();
 
   /** has grpc_call_unref been called */
   bool destroy_called_ = false;
@@ -662,7 +663,7 @@ void FilterStackCall::DestroyCall(void* call, grpc_error_handle /*error*/) {
                         &(c->final_info_.error_string));
   c->status_error_.set(GRPC_ERROR_NONE);
   c->final_info_.stats.latency =
-      gpr_cycle_counter_sub(gpr_get_cycle_counter(), c->start_time_);
+      ToGprTimeSpec(std::chrono::steady_clock::now() - c->start_time_);
   grpc_call_stack_destroy(c->call_stack(), &c->final_info_,
                           GRPC_CLOSURE_INIT(&c->release_call_, ReleaseCall, c,
                                             grpc_schedule_on_exec_ctx));

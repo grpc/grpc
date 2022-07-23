@@ -29,7 +29,6 @@
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/fork.h"

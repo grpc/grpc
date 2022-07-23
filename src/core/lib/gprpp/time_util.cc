@@ -21,6 +21,8 @@
 #include <stdint.h>
 #include <time.h>
 
+#include <chrono>
+
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
@@ -54,6 +56,42 @@ gpr_timespec ToGprTimeSpec(absl::Time time) {
   }
 }
 
+gpr_timespec ToGprTimeSpec(
+    std::chrono::time_point<std::chrono::steady_clock> time) {
+  if (time == std::chrono::time_point<std::chrono::steady_clock>::max()) {
+    return gpr_inf_future(GPR_CLOCK_REALTIME);
+  }
+  if (time == std::chrono::time_point<std::chrono::steady_clock>::min()) {
+    return gpr_inf_past(GPR_CLOCK_REALTIME);
+  }
+  gpr_timespec out;
+  auto secs = std::chrono::time_point_cast<std::chrono::seconds>(time);
+  out.tv_sec = secs.time_since_epoch().count();
+  out.tv_nsec = (std::chrono::time_point_cast<std::chrono::nanoseconds>(time) -
+                 std::chrono::time_point_cast<std::chrono::nanoseconds>(secs))
+                    .count();
+  out.clock_type = GPR_CLOCK_REALTIME;
+  return out;
+}
+
+// Converts to gpr_timespec(GPR_CLOCK_TIMESPAN)
+gpr_timespec ToGprTimeSpec(std::chrono::duration<int64_t, std::nano> d) {
+  if (d == std::chrono::duration<int64_t, std::nano>::max()) {
+    return gpr_inf_future(GPR_TIMESPAN);
+  }
+  if (d == std::chrono::duration<int64_t, std::nano>::min()) {
+    return gpr_inf_past(GPR_TIMESPAN);
+  }
+  gpr_timespec out;
+  out.clock_type = GPR_TIMESPAN;
+  auto sec = std::chrono::duration_cast<std::chrono::seconds>(d);
+  out.tv_sec = sec.count();
+  out.tv_nsec = (std::chrono::duration_cast<std::chrono::nanoseconds>(d) -
+                 std::chrono::duration_cast<std::chrono::nanoseconds>(sec))
+                    .count();
+  return out;
+}
+
 absl::Duration ToAbslDuration(gpr_timespec ts) {
   GPR_ASSERT(ts.clock_type == GPR_TIMESPAN);
   if (gpr_time_cmp(ts, gpr_inf_future(GPR_TIMESPAN)) == 0) {
@@ -75,6 +113,21 @@ absl::Time ToAbslTime(gpr_timespec ts) {
   } else {
     return absl::UnixEpoch() + absl::Seconds(rts.tv_sec) +
            absl::Nanoseconds(rts.tv_nsec);
+  }
+}
+
+std::chrono::time_point<std::chrono::steady_clock> ToTimePoint(
+    gpr_timespec ts) {
+  GPR_ASSERT(ts.clock_type != GPR_TIMESPAN);
+  gpr_timespec rts = gpr_convert_clock_type(ts, GPR_CLOCK_REALTIME);
+  if (gpr_time_cmp(rts, gpr_inf_future(GPR_CLOCK_REALTIME)) == 0) {
+    return std::chrono::time_point<std::chrono::steady_clock>::max();
+  } else if (gpr_time_cmp(rts, gpr_inf_past(GPR_CLOCK_REALTIME)) == 0) {
+    return std::chrono::time_point<std::chrono::steady_clock>::min();
+  } else {
+    return std::chrono::time_point<std::chrono::steady_clock>(
+        std::chrono::seconds(rts.tv_sec) +
+        std::chrono::nanoseconds(rts.tv_nsec));
   }
 }
 
