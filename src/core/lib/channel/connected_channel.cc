@@ -268,6 +268,7 @@ class ClientStream : public Orphanable {
 
   void Orphan() override {
     if (grpc_call_trace.enabled()) {
+      MutexLock lock(&mu_);
       gpr_log(GPR_INFO, "%sDropStream: %s",
               Activity::current()->DebugTag().c_str(),
               ActiveOpsString().c_str());
@@ -312,6 +313,7 @@ class ClientStream : public Orphanable {
   }
 
   Poll<ServerMetadataHandle> PollOnce() {
+    MutexLock lock(&mu_);
     GPR_ASSERT(!finished_);
 
     if (grpc_call_trace.enabled()) {
@@ -320,7 +322,7 @@ class ClientStream : public Orphanable {
               ActiveOpsString().c_str());
     }
 
-    auto push_recv_message = [this] {
+    auto push_recv_message = [this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
       recv_message_state_ = PendingReceiveMessage{};
       auto& pending_recv_message =
           absl::get<PendingReceiveMessage>(recv_message_state_);
@@ -503,15 +505,21 @@ class ClientStream : public Orphanable {
 
   void RecvInitialMetadataReady(grpc_error_handle error) {
     GPR_ASSERT(error == GRPC_ERROR_NONE);
-    queued_initial_metadata_ = true;
-    initial_metadata_waker_.Wakeup();
+    {
+      MutexLock lock(&mu_);
+      queued_initial_metadata_ = true;
+      initial_metadata_waker_.Wakeup();
+    }
     Unref("initial_metadata_ready");
   }
 
   void RecvTrailingMetadataReady(grpc_error_handle error) {
     GPR_ASSERT(error == GRPC_ERROR_NONE);
-    queued_trailing_metadata_ = true;
-    trailing_metadata_waker_.Wakeup();
+    {
+      MutexLock lock(&mu_);
+      queued_trailing_metadata_ = true;
+      trailing_metadata_waker_.Wakeup();
+    }
     Unref("trailing_metadata_ready");
   }
 
@@ -521,58 +529,65 @@ class ClientStream : public Orphanable {
   }
 
   void SendMessageBatchDone(grpc_error_handle error) {
-    if (error != GRPC_ERROR_NONE) {
-      send_message_state_ = Closed{};
+    {
+      MutexLock lock(&mu_);
+      if (error != GRPC_ERROR_NONE) {
+        send_message_state_ = Closed{};
+      }
+      if (!absl::holds_alternative<Closed>(send_message_state_)) {
+        send_message_state_ = Idle{};
+      }
+      send_message_waker_.Wakeup();
     }
-    if (!absl::holds_alternative<Closed>(send_message_state_)) {
-      send_message_state_ = Idle{};
-    }
-    send_message_waker_.Wakeup();
     Unref("send_message");
   }
 
   void RecvMessageBatchDone(grpc_error_handle error) {
-    if (error != GRPC_ERROR_NONE) {
-      if (grpc_call_trace.enabled()) {
-        gpr_log(GPR_INFO, "%sRecvMessageBatchDone: error=%s",
-                recv_message_waker_.ActivityDebugTag().c_str(),
-                grpc_error_std_string(error).c_str());
-      }
-    } else if (absl::holds_alternative<Closed>(recv_message_state_)) {
-      if (grpc_call_trace.enabled()) {
-        gpr_log(GPR_INFO, "%sRecvMessageBatchDone: already closed, ignoring",
-                recv_message_waker_.ActivityDebugTag().c_str());
-      }
-    } else {
-      auto pending = MatchMutable(
-          &recv_message_state_, [](Idle*) -> PendingReceiveMessage { abort(); },
-          [](PendingReceiveMessage* p) -> PendingReceiveMessage {
-            return std::move(*p);
-          },
-          [](absl::optional<Message>*) -> PendingReceiveMessage { abort(); },
-          [](Closed*) -> PendingReceiveMessage { abort(); },
-          [](PipeSender<Message>::PushType*) -> PendingReceiveMessage {
-            abort();
-          });
-      if (pending.payload.has_value()) {
+    {
+      MutexLock lock(&mu_);
+      if (error != GRPC_ERROR_NONE) {
         if (grpc_call_trace.enabled()) {
-          gpr_log(GPR_INFO,
-                  "%sRecvMessageBatchDone: received payload of %" PRIdPTR
-                  " bytes",
+          gpr_log(GPR_INFO, "%sRecvMessageBatchDone: error=%s",
                   recv_message_waker_.ActivityDebugTag().c_str(),
-                  pending.payload->Length());
+                  grpc_error_std_string(error).c_str());
         }
-        recv_message_state_ = absl::optional<Message>(
-            Message(std::move(*pending.payload), pending.flags));
-      } else {
+      } else if (absl::holds_alternative<Closed>(recv_message_state_)) {
         if (grpc_call_trace.enabled()) {
-          gpr_log(GPR_INFO, "%sRecvMessageBatchDone: received no payload",
+          gpr_log(GPR_INFO, "%sRecvMessageBatchDone: already closed, ignoring",
                   recv_message_waker_.ActivityDebugTag().c_str());
         }
-        recv_message_state_ = absl::optional<Message>();
+      } else {
+        auto pending = MatchMutable(
+            &recv_message_state_,
+            [](Idle*) -> PendingReceiveMessage { abort(); },
+            [](PendingReceiveMessage* p) -> PendingReceiveMessage {
+              return std::move(*p);
+            },
+            [](absl::optional<Message>*) -> PendingReceiveMessage { abort(); },
+            [](Closed*) -> PendingReceiveMessage { abort(); },
+            [](PipeSender<Message>::PushType*) -> PendingReceiveMessage {
+              abort();
+            });
+        if (pending.payload.has_value()) {
+          if (grpc_call_trace.enabled()) {
+            gpr_log(GPR_INFO,
+                    "%sRecvMessageBatchDone: received payload of %" PRIdPTR
+                    " bytes",
+                    recv_message_waker_.ActivityDebugTag().c_str(),
+                    pending.payload->Length());
+          }
+          recv_message_state_ = absl::optional<Message>(
+              Message(std::move(*pending.payload), pending.flags));
+        } else {
+          if (grpc_call_trace.enabled()) {
+            gpr_log(GPR_INFO, "%sRecvMessageBatchDone: received no payload",
+                    recv_message_waker_.ActivityDebugTag().c_str());
+          }
+          recv_message_state_ = absl::optional<Message>();
+        }
       }
+      recv_message_waker_.Wakeup();
     }
-    recv_message_waker_.Wakeup();
     Unref("recv_message");
   }
 
@@ -630,7 +645,7 @@ class ClientStream : public Orphanable {
     ExecCtx::Run(DEBUG_LOCATION, &push_, GRPC_ERROR_NONE);
   }
 
-  std::string ActiveOpsString() const {
+  std::string ActiveOpsString() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     std::vector<std::string> ops;
     if (finished_) ops.push_back("FINISHED");
     // Pushes
@@ -665,7 +680,7 @@ class ClientStream : public Orphanable {
     return absl::StrJoin(ops, " ");
   }
 
-  std::string SendMessageString() const {
+  std::string SendMessageString() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     return Match(
         send_message_state_, [](Idle) -> std::string { return "IDLE"; },
         [](Closed) -> std::string { return "CLOSED"; },
@@ -675,7 +690,7 @@ class ClientStream : public Orphanable {
         [](const Message&) -> std::string { return "SENDING"; });
   }
 
-  std::string RecvMessageString() const {
+  std::string RecvMessageString() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     return Match(
         recv_message_state_, [](Idle) -> std::string { return "IDLE"; },
         [](Closed) -> std::string { return "CLOSED"; },
@@ -691,19 +706,20 @@ class ClientStream : public Orphanable {
         });
   }
 
+  Mutex mu_;
   bool requested_metadata_ = false;
   bool push_metadata_ = false;
   bool push_send_message_ = false;
   bool push_recv_message_ = false;
   bool scheduled_push_ = false;
-  bool queued_initial_metadata_ = false;
-  bool queued_trailing_metadata_ = false;
+  bool queued_initial_metadata_ ABSL_GUARDED_BY(mu_) = false;
+  bool queued_trailing_metadata_ ABSL_GUARDED_BY(mu_) = false;
   bool finished_ = false;
   CallContext* const call_context_{GetContext<CallContext>()};
-  Waker initial_metadata_waker_;
-  Waker trailing_metadata_waker_;
-  Waker send_message_waker_;
-  Waker recv_message_waker_;
+  Waker initial_metadata_waker_ ABSL_GUARDED_BY(mu_);
+  Waker trailing_metadata_waker_ ABSL_GUARDED_BY(mu_);
+  Waker send_message_waker_ ABSL_GUARDED_BY(mu_);
+  Waker recv_message_waker_ ABSL_GUARDED_BY(mu_);
   grpc_transport* const transport_;
   grpc_stream_refcount stream_refcount_;
   StreamPtr stream_;
@@ -711,14 +727,14 @@ class ClientStream : public Orphanable {
   PipeReceiver<Message>* client_to_server_messages_;
   PipeSender<Message>* server_to_client_messages_;
   absl::variant<Idle, Closed, PipeReceiver<Message>::NextType, Message>
-      send_message_state_;
+      send_message_state_ ABSL_GUARDED_BY(mu_);
   struct PendingReceiveMessage {
     absl::optional<SliceBuffer> payload;
     uint32_t flags;
   };
   absl::variant<Idle, PendingReceiveMessage, absl::optional<Message>, Closed,
                 PipeSender<Message>::PushType>
-      recv_message_state_;
+      recv_message_state_ ABSL_GUARDED_BY(mu_);
   grpc_closure recv_initial_metadata_ready_ =
       MakeMemberClosure<ClientStream, &ClientStream::RecvInitialMetadataReady>(
           this, DEBUG_LOCATION);
