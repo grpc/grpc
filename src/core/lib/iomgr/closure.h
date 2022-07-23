@@ -199,11 +199,7 @@ inline bool grpc_closure_list_append(grpc_closure_list* closure_list,
     GRPC_ERROR_UNREF(error);
     return false;
   }
-#ifdef GRPC_ERROR_IS_ABSEIL_STATUS
   closure->error_data.error = grpc_core::internal::StatusAllocHeapPtr(error);
-#else
-  closure->error_data.error = reinterpret_cast<intptr_t>(error);
-#endif
   return grpc_closure_list_append(closure_list, closure);
 }
 
@@ -212,13 +208,8 @@ inline void grpc_closure_list_fail_all(grpc_closure_list* list,
                                        grpc_error_handle forced_failure) {
   for (grpc_closure* c = list->head; c != nullptr; c = c->next_data.next) {
     if (c->error_data.error == 0) {
-#ifdef GRPC_ERROR_IS_ABSEIL_STATUS
       c->error_data.error =
           grpc_core::internal::StatusAllocHeapPtr(forced_failure);
-#else
-      c->error_data.error =
-          reinterpret_cast<intptr_t>(GRPC_ERROR_REF(forced_failure));
-#endif
     }
   }
   GRPC_ERROR_UNREF(forced_failure);

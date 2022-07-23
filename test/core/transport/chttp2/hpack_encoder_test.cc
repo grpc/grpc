@@ -23,6 +23,8 @@
 
 #include <string>
 
+#include <gtest/gtest.h>
+
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
@@ -39,14 +41,11 @@
 #include "test/core/util/slice_splitter.h"
 #include "test/core/util/test_config.h"
 
-#define TEST(x) run_test(x, #x)
-
 static auto* g_memory_allocator = new grpc_core::MemoryAllocator(
     grpc_core::ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
         "test"));
 
 grpc_core::HPackCompressor* g_compressor;
-int g_failure = 0;
 
 typedef struct {
   bool eof;
@@ -101,35 +100,35 @@ static void verify_frames(grpc_slice_buffer& output, bool header_is_eof) {
       gpr_log(GPR_ERROR, "expected first frame to be of type header");
       gpr_log(GPR_ERROR, "EXPECT: 0x%x", GRPC_CHTTP2_FRAME_HEADER);
       gpr_log(GPR_ERROR, "GOT:    0x%x", type);
-      g_failure = 1;
+      EXPECT_TRUE(false);
     } else if (first_frame && header_is_eof &&
                !(flags & GRPC_CHTTP2_DATA_FLAG_END_STREAM)) {
       gpr_log(GPR_ERROR, "missing END_STREAM flag in HEADER frame");
-      g_failure = 1;
+      EXPECT_TRUE(false);
     }
     if (is_closed &&
         (type == GRPC_CHTTP2_FRAME_DATA || type == GRPC_CHTTP2_FRAME_HEADER)) {
       gpr_log(GPR_ERROR,
               "stream is closed; new frame headers and data are not allowed");
-      g_failure = 1;
+      EXPECT_TRUE(false);
     }
     if (end_header && (type == GRPC_CHTTP2_FRAME_HEADER ||
                        type == GRPC_CHTTP2_FRAME_CONTINUATION)) {
       gpr_log(GPR_ERROR,
               "frame header is ended; new headers and continuations are not "
               "allowed");
-      g_failure = 1;
+      EXPECT_TRUE(false);
     }
     if (in_header &&
         (type == GRPC_CHTTP2_FRAME_DATA || type == GRPC_CHTTP2_FRAME_HEADER)) {
       gpr_log(GPR_ERROR,
               "parsing frame header; new headers and data are not allowed");
-      g_failure = 1;
+      EXPECT_TRUE(false);
     }
     if (flags & ~(GRPC_CHTTP2_DATA_FLAG_END_STREAM |
                   GRPC_CHTTP2_DATA_FLAG_END_HEADERS)) {
       gpr_log(GPR_ERROR, "unexpected frame flags: 0x%x", flags);
-      g_failure = 1;
+      EXPECT_TRUE(false);
     }
 
     // Update state
@@ -143,7 +142,7 @@ static void verify_frames(grpc_slice_buffer& output, bool header_is_eof) {
       is_closed = true;
       if (type == GRPC_CHTTP2_FRAME_CONTINUATION) {
         gpr_log(GPR_ERROR, "unexpected END_STREAM flag in CONTINUATION frame");
-        g_failure = 1;
+        EXPECT_TRUE(false);
       }
     }
   }
@@ -198,14 +197,17 @@ static void verify(const verify_params params, const char* expected,
     gpr_log(GPR_ERROR, "GOT:    %s", got_str);
     gpr_free(expect_str);
     gpr_free(got_str);
-    g_failure = 1;
+    EXPECT_TRUE(false);
   }
 
   grpc_slice_unref_internal(merged);
   grpc_slice_unref_internal(expect);
 }
 
-static void test_basic_headers() {
+TEST(HpackEncoderTest, TestBasicHeaders) {
+  grpc_core::ExecCtx exec_ctx;
+  g_compressor = new grpc_core::HPackCompressor();
+
   verify_params params = {
       false,
       false,
@@ -213,6 +215,8 @@ static void test_basic_headers() {
   verify(params, "000005 0104 deadbeef 00 0161 0161", 1, "a", "a");
   verify(params, "00000a 0104 deadbeef 00 0161 0161 00 0162 0163", 2, "a", "a",
          "b", "c");
+
+  delete g_compressor;
 }
 
 static void verify_continuation_headers(const char* key, const char* value,
@@ -236,7 +240,10 @@ static void verify_continuation_headers(const char* key, const char* value,
   grpc_slice_buffer_destroy_internal(&output);
 }
 
-static void test_continuation_headers() {
+TEST(HpackEncoderTest, TestContinuationHeaders) {
+  grpc_core::ExecCtx exec_ctx;
+  g_compressor = new grpc_core::HPackCompressor();
+
   char value[200];
   memset(value, 'a', 200);
   value[199] = 0;  // null terminator
@@ -246,22 +253,14 @@ static void test_continuation_headers() {
   memset(value2, 'b', 400);
   value2[399] = 0;  // null terminator
   verify_continuation_headers("key2", value2, true);
-}
 
-static void run_test(void (*test)(), const char* name) {
-  gpr_log(GPR_INFO, "RUN TEST: %s", name);
-  grpc_core::ExecCtx exec_ctx;
-  g_compressor = new grpc_core::HPackCompressor();
-  test();
   delete g_compressor;
 }
 
 int main(int argc, char** argv) {
-  grpc_test_only_set_slice_hash_seed(0);
   grpc::testing::TestEnvironment env(&argc, argv);
-  grpc_init();
-  TEST(test_basic_headers);
-  TEST(test_continuation_headers);
-  grpc_shutdown();
-  return g_failure;
+  ::testing::InitGoogleTest(&argc, argv);
+  grpc::testing::TestGrpcScope grpc_scope;
+  grpc_test_only_set_slice_hash_seed(0);
+  return RUN_ALL_TESTS();
 }

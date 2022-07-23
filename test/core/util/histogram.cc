@@ -22,7 +22,6 @@
 
 #include <math.h>
 #include <stddef.h>
-#include <string.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>

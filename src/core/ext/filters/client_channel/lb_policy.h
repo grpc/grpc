@@ -24,7 +24,6 @@
 
 #include <memory>
 #include <string>
-#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -44,8 +43,8 @@
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
-#include "src/core/lib/iomgr/work_serializer.h"
 #include "src/core/lib/resolver/server_address.h"
 
 namespace grpc_core {
@@ -306,7 +305,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     ~Config() override = default;
 
     // Returns the load balancing policy name
-    virtual const char* name() const = 0;
+    virtual absl::string_view name() const = 0;
   };
 
   /// Data passed to the UpdateLocked() method when new addresses and
@@ -350,7 +349,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   LoadBalancingPolicy& operator=(const LoadBalancingPolicy&) = delete;
 
   /// Returns the name of the LB policy.
-  virtual const char* name() const = 0;
+  virtual absl::string_view name() const = 0;
 
   /// Updates the policy with new data from the resolver.  Will be invoked
   /// immediately after LB policy is constructed, and then again whenever

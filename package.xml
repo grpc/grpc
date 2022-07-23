@@ -286,6 +286,8 @@
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/admin/v3/clusters.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/admin/v3/config_dump.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/admin/v3/config_dump.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/admin/v3/config_dump_shared.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/admin/v3/config_dump_shared.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/admin/v3/init_dump.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/admin/v3/init_dump.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/admin/v3/listeners.upb.c" role="src" />
@@ -392,6 +394,8 @@
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/trace/v3/lightstep.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/trace/v3/opencensus.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/trace/v3/opencensus.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/trace/v3/opentelemetry.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/trace/v3/opentelemetry.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/trace/v3/service.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/trace/v3/service.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/trace/v3/skywalking.upb.c" role="src" />
@@ -472,6 +476,8 @@
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/type/v3/percent.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/type/v3/range.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/type/v3/range.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/type/v3/ratelimit_strategy.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/type/v3/ratelimit_strategy.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/type/v3/ratelimit_unit.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/type/v3/ratelimit_unit.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/type/v3/semantic_version.upb.c" role="src" />
@@ -574,6 +580,8 @@
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/admin/v3/clusters.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/admin/v3/config_dump.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/admin/v3/config_dump.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/admin/v3/config_dump_shared.upbdefs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/admin/v3/config_dump_shared.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/admin/v3/init_dump.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/admin/v3/init_dump.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/admin/v3/listeners.upbdefs.c" role="src" />
@@ -680,6 +688,8 @@
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/config/trace/v3/lightstep.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/config/trace/v3/opencensus.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/config/trace/v3/opencensus.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/config/trace/v3/opentelemetry.upbdefs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/config/trace/v3/opentelemetry.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/config/trace/v3/service.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/config/trace/v3/service.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/config/trace/v3/skywalking.upbdefs.c" role="src" />
@@ -756,6 +766,8 @@
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/type/v3/percent.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/type/v3/range.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/type/v3/range.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/type/v3/ratelimit_strategy.upbdefs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/type/v3/ratelimit_strategy.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/type/v3/ratelimit_unit.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/type/v3/ratelimit_unit.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/type/v3/semantic_version.upbdefs.c" role="src" />
@@ -937,6 +949,7 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/channel_args_endpoint_config.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/channel_args_endpoint_config.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/default_event_engine_factory.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/default_event_engine_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/event_engine.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/event_engine_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/handle_containers.h" role="src" />
@@ -944,8 +957,6 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/iomgr_engine/iomgr_engine.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/iomgr_engine/thread_pool.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/iomgr_engine/thread_pool.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/event_engine/iomgr_engine/time_averaged_stats.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/event_engine/iomgr_engine/time_averaged_stats.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/iomgr_engine/timer.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/iomgr_engine/timer.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/iomgr_engine/timer_heap.cc" role="src" />
@@ -1040,9 +1051,13 @@
     <file baseinstalldir="/" name="src/core/lib/gprpp/thd_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/time.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/time.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/time_averaged_stats.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/time_averaged_stats.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/time_util.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/time_util.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/unique_type_name.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/work_serializer.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/work_serializer.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/http/format_request.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/http/format_request.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/http/httpcli.cc" role="src" />
@@ -1074,7 +1089,6 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/error.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/error_cfstream.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/error_cfstream.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/error_internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/ev_apple.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/ev_apple.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/ev_epoll1_linux.cc" role="src" />
@@ -1168,8 +1182,6 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_server_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_windows.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/time_averaged_stats.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/time_averaged_stats.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/timer.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/timer.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/timer_generic.cc" role="src" />
@@ -1187,8 +1199,6 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_pipe.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_posix.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/work_serializer.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/work_serializer.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json_reader.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json_util.cc" role="src" />
@@ -1234,6 +1244,8 @@
     <file baseinstalldir="/" name="src/core/lib/resource_quota/arena.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/memory_quota.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/memory_quota.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/resource_quota/periodic_update.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/resource_quota/periodic_update.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/resource_quota.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/resource_quota.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/thread_quota.cc" role="src" />

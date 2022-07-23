@@ -28,6 +28,7 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
@@ -56,9 +57,9 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
+#include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/pollset_set.h"
-#include "src/core/lib/iomgr/work_serializer.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/matchers/matchers.h"
 #include "src/core/lib/resolver/server_address.h"
@@ -74,7 +75,7 @@ TraceFlag grpc_cds_lb_trace(false, "cds_lb");
 
 namespace {
 
-constexpr char kCds[] = "cds_experimental";
+constexpr absl::string_view kCds = "cds_experimental";
 
 constexpr int kMaxAggregateClusterRecursionDepth = 16;
 
@@ -83,7 +84,7 @@ class CdsLbConfig : public LoadBalancingPolicy::Config {
  public:
   explicit CdsLbConfig(std::string cluster) : cluster_(std::move(cluster)) {}
   const std::string& cluster() const { return cluster_; }
-  const char* name() const override { return kCds; }
+  absl::string_view name() const override { return kCds; }
 
  private:
   std::string cluster_;
@@ -94,7 +95,7 @@ class CdsLb : public LoadBalancingPolicy {
  public:
   CdsLb(RefCountedPtr<XdsClient> xds_client, Args args);
 
-  const char* name() const override { return kCds; }
+  absl::string_view name() const override { return kCds; }
 
   void UpdateLocked(UpdateArgs args) override;
   void ResetBackoffLocked() override;
@@ -516,11 +517,9 @@ void CdsLb::OnClusterChanged(const std::string& name,
               this, json_str.c_str());
     }
     grpc_error_handle error = GRPC_ERROR_NONE;
-    RefCountedPtr<LoadBalancingPolicy::Config> config =
-        LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(json, &error);
-    if (!GRPC_ERROR_IS_NONE(error)) {
-      OnError(name, absl::UnavailableError(grpc_error_std_string(error)));
-      GRPC_ERROR_UNREF(error);
+    auto config = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(json);
+    if (!config.ok()) {
+      OnError(name, absl::UnavailableError(config.status().message()));
       return;
     }
     // Create child policy if not already present.
@@ -530,7 +529,7 @@ void CdsLb::OnClusterChanged(const std::string& name,
       args.args = args_;
       args.channel_control_helper = absl::make_unique<Helper>(Ref());
       child_policy_ = LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
-          config->name(), std::move(args));
+          (*config)->name(), std::move(args));
       if (child_policy_ == nullptr) {
         OnError(name, absl::UnavailableError("failed to create child policy"));
         return;
@@ -539,12 +538,12 @@ void CdsLb::OnClusterChanged(const std::string& name,
                                        interested_parties());
       if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
         gpr_log(GPR_INFO, "[cdslb %p] created child policy %s (%p)", this,
-                config->name(), child_policy_.get());
+                std::string((*config)->name()).c_str(), child_policy_.get());
       }
     }
     // Update child policy.
     UpdateArgs args;
-    args.config = std::move(config);
+    args.config = std::move(*config);
     if (xds_certificate_provider_ != nullptr) {
       args.args = args_.SetObject(xds_certificate_provider_);
     } else {
@@ -713,7 +712,8 @@ class CdsLbFactory : public LoadBalancingPolicyFactory {
  public:
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
       LoadBalancingPolicy::Args args) const override {
-    auto xds_client = args.args.GetObjectRef<GrpcXdsClient>();
+    auto xds_client =
+        args.args.GetObjectRef<GrpcXdsClient>(DEBUG_LOCATION, "CdsLb");
     if (xds_client == nullptr) {
       gpr_log(GPR_ERROR,
               "XdsClient not present in channel args -- cannot instantiate "
@@ -723,35 +723,32 @@ class CdsLbFactory : public LoadBalancingPolicyFactory {
     return MakeOrphanable<CdsLb>(std::move(xds_client), std::move(args));
   }
 
-  const char* name() const override { return kCds; }
+  absl::string_view name() const override { return kCds; }
 
-  RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
-      const Json& json, grpc_error_handle* error) const override {
-    GPR_DEBUG_ASSERT(error != nullptr && GRPC_ERROR_IS_NONE(*error));
+  absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
+  ParseLoadBalancingConfig(const Json& json) const override {
     if (json.type() == Json::Type::JSON_NULL) {
       // xds was mentioned as a policy in the deprecated loadBalancingPolicy
       // field or in the client API.
-      *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      return absl::InvalidArgumentError(
           "field:loadBalancingPolicy error:cds policy requires configuration. "
           "Please use loadBalancingConfig field of service config instead.");
-      return nullptr;
     }
-    std::vector<grpc_error_handle> error_list;
+    std::vector<std::string> errors;
     // cluster name.
     std::string cluster;
     auto it = json.object_value().find("cluster");
     if (it == json.object_value().end()) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "required field 'cluster' not present"));
+      errors.emplace_back("required field 'cluster' not present");
     } else if (it->second.type() != Json::Type::STRING) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:cluster error:type should be string"));
+      errors.emplace_back("field:cluster error:type should be string");
     } else {
       cluster = it->second.string_value();
     }
-    if (!error_list.empty()) {
-      *error = GRPC_ERROR_CREATE_FROM_VECTOR("Cds Parser", &error_list);
-      return nullptr;
+    if (!errors.empty()) {
+      return absl::InvalidArgumentError(
+          absl::StrCat("errors parsing CDS LB policy config: [",
+                       absl::StrJoin(errors, "; "), "]"));
     }
     return MakeRefCounted<CdsLbConfig>(std::move(cluster));
   }
