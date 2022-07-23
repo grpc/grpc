@@ -3063,6 +3063,8 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/memory",
+        "absl/status",
+        "absl/status:statusor",
         "absl/strings",
     ],
     language = "c++",

@@ -38,6 +38,7 @@
 #include <openssl/rsa.h>
 #include <openssl/x509.h>
 
+#include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 

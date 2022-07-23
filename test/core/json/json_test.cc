@@ -78,7 +78,7 @@ void RunSuccessTest(const char* input, const Json& expected,
   auto json = Json::Parse(input);
   ASSERT_TRUE(json.ok()) << json.status();
   ValidateValue(*json, expected);
-  std::string output = json.Dump();
+  std::string output = json->Dump();
   EXPECT_EQ(output, expected_output);
 }
 
