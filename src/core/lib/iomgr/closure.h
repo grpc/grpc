@@ -121,20 +121,28 @@ inline grpc_closure* grpc_closure_init(grpc_closure* closure,
 
 namespace grpc_core {
 template <typename T, void (T::*cb)(grpc_error_handle)>
-grpc_closure MakeMemberClosure(T* p) {
+grpc_closure MakeMemberClosure(T* p, DebugLocation location = DebugLocation()) {
   grpc_closure out;
   GRPC_CLOSURE_INIT(
       &out, [](void* p, grpc_error_handle e) { (static_cast<T*>(p)->*cb)(e); },
       p, nullptr);
+#ifndef NDEBUG
+  out.file_created = location.file();
+  out.line_created = location.line();
+#endif
   return out;
 }
 
 template <typename T, void (T::*cb)()>
-grpc_closure MakeMemberClosure(T* p) {
+grpc_closure MakeMemberClosure(T* p, DebugLocation location = DebugLocation()) {
   grpc_closure out;
   GRPC_CLOSURE_INIT(
       &out, [](void* p, grpc_error_handle) { (static_cast<T*>(p)->*cb)(); }, p,
       nullptr);
+#ifndef NDEBUG
+  out.file_created = location.file();
+  out.line_created = location.line();
+#endif
   return out;
 }
 

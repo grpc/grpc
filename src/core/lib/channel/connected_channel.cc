@@ -333,6 +333,7 @@ class ClientStream : public Orphanable {
       batch_payload_.recv_message.call_failed_before_recv_message = nullptr;
       batch_payload_.recv_message.recv_message_ready =
           &recv_message_batch_done_;
+      IncrementRefCount("recv_message");
       recv_message_waker_ = Activity::current()->MakeOwningWaker();
       push_recv_message_ = true;
       SchedulePush();
@@ -382,6 +383,8 @@ class ClientStream : public Orphanable {
           &recv_trailing_metadata_ready_;
       push_metadata_ = true;
       IncrementRefCount("metadata_batch_done");
+      IncrementRefCount("initial_metadata_ready");
+      IncrementRefCount("trailing_metadata_ready");
       initial_metadata_waker_ = Activity::current()->MakeOwningWaker();
       trailing_metadata_waker_ = Activity::current()->MakeOwningWaker();
       SchedulePush();
@@ -413,6 +416,7 @@ class ClientStream : public Orphanable {
           // DO NOT SUBMIT: figure this field out
           batch_payload_.send_trailing_metadata.sent = nullptr;
         }
+        IncrementRefCount("send_message");
         send_message_waker_ = Activity::current()->MakeOwningWaker();
         push_send_message_ = true;
         SchedulePush();
@@ -501,12 +505,14 @@ class ClientStream : public Orphanable {
     GPR_ASSERT(error == GRPC_ERROR_NONE);
     queued_initial_metadata_ = true;
     initial_metadata_waker_.Wakeup();
+    Unref("initial_metadata_ready");
   }
 
   void RecvTrailingMetadataReady(grpc_error_handle error) {
     GPR_ASSERT(error == GRPC_ERROR_NONE);
     queued_trailing_metadata_ = true;
     trailing_metadata_waker_.Wakeup();
+    Unref("trailing_metadata_ready");
   }
 
   void MetadataBatchDone(grpc_error_handle error) {
@@ -522,6 +528,7 @@ class ClientStream : public Orphanable {
       send_message_state_ = Idle{};
     }
     send_message_waker_.Wakeup();
+    Unref("send_message");
   }
 
   void RecvMessageBatchDone(grpc_error_handle error) {
@@ -531,43 +538,42 @@ class ClientStream : public Orphanable {
                 recv_message_waker_.ActivityDebugTag().c_str(),
                 grpc_error_std_string(error).c_str());
       }
-      return;
-    }
-    if (absl::holds_alternative<Closed>(recv_message_state_)) {
+    } else if (absl::holds_alternative<Closed>(recv_message_state_)) {
       if (grpc_call_trace.enabled()) {
         gpr_log(GPR_INFO, "%sRecvMessageBatchDone: already closed, ignoring",
                 recv_message_waker_.ActivityDebugTag().c_str());
       }
-      return;
-    }
-    auto pending = MatchMutable(
-        &recv_message_state_, [](Idle*) -> PendingReceiveMessage { abort(); },
-        [](PendingReceiveMessage* p) -> PendingReceiveMessage {
-          return std::move(*p);
-        },
-        [](absl::optional<Message>*) -> PendingReceiveMessage { abort(); },
-        [](Closed*) -> PendingReceiveMessage { abort(); },
-        [](PipeSender<Message>::PushType*) -> PendingReceiveMessage {
-          abort();
-        });
-    if (pending.payload.has_value()) {
-      if (grpc_call_trace.enabled()) {
-        gpr_log(GPR_INFO,
-                "%sRecvMessageBatchDone: received payload of %" PRIdPTR
-                " bytes",
-                recv_message_waker_.ActivityDebugTag().c_str(),
-                pending.payload->Length());
-      }
-      recv_message_state_ = absl::optional<Message>(
-          Message(std::move(*pending.payload), pending.flags));
     } else {
-      if (grpc_call_trace.enabled()) {
-        gpr_log(GPR_INFO, "%sRecvMessageBatchDone: received no payload",
-                recv_message_waker_.ActivityDebugTag().c_str());
+      auto pending = MatchMutable(
+          &recv_message_state_, [](Idle*) -> PendingReceiveMessage { abort(); },
+          [](PendingReceiveMessage* p) -> PendingReceiveMessage {
+            return std::move(*p);
+          },
+          [](absl::optional<Message>*) -> PendingReceiveMessage { abort(); },
+          [](Closed*) -> PendingReceiveMessage { abort(); },
+          [](PipeSender<Message>::PushType*) -> PendingReceiveMessage {
+            abort();
+          });
+      if (pending.payload.has_value()) {
+        if (grpc_call_trace.enabled()) {
+          gpr_log(GPR_INFO,
+                  "%sRecvMessageBatchDone: received payload of %" PRIdPTR
+                  " bytes",
+                  recv_message_waker_.ActivityDebugTag().c_str(),
+                  pending.payload->Length());
+        }
+        recv_message_state_ = absl::optional<Message>(
+            Message(std::move(*pending.payload), pending.flags));
+      } else {
+        if (grpc_call_trace.enabled()) {
+          gpr_log(GPR_INFO, "%sRecvMessageBatchDone: received no payload",
+                  recv_message_waker_.ActivityDebugTag().c_str());
+        }
+        recv_message_state_ = absl::optional<Message>();
       }
-      recv_message_state_ = absl::optional<Message>();
     }
     recv_message_waker_.Wakeup();
+    Unref("recv_message");
   }
 
   void Push() {
@@ -715,31 +721,33 @@ class ClientStream : public Orphanable {
       recv_message_state_;
   grpc_closure recv_initial_metadata_ready_ =
       MakeMemberClosure<ClientStream, &ClientStream::RecvInitialMetadataReady>(
-          this);
+          this, DEBUG_LOCATION);
   grpc_closure recv_trailing_metadata_ready_ =
       MakeMemberClosure<ClientStream, &ClientStream::RecvTrailingMetadataReady>(
-          this);
-  grpc_closure push_ =
-      MakeMemberClosure<ClientStream, &ClientStream::Push>(this);
+          this, DEBUG_LOCATION);
+  grpc_closure push_ = MakeMemberClosure<ClientStream, &ClientStream::Push>(
+      this, DEBUG_LOCATION);
   ClientMetadataHandle client_initial_metadata_;
   ClientMetadataHandle client_trailing_metadata_;
   ServerMetadataHandle server_initial_metadata_;
   ServerMetadataHandle server_trailing_metadata_;
   grpc_transport_stream_op_batch metadata_;
   grpc_closure metadata_batch_done_ =
-      MakeMemberClosure<ClientStream, &ClientStream::MetadataBatchDone>(this);
+      MakeMemberClosure<ClientStream, &ClientStream::MetadataBatchDone>(
+          this, DEBUG_LOCATION);
   grpc_transport_stream_op_batch send_message_;
   grpc_closure send_message_batch_done_ =
       MakeMemberClosure<ClientStream, &ClientStream::SendMessageBatchDone>(
-          this);
+          this, DEBUG_LOCATION);
   grpc_closure recv_message_batch_done_ =
       MakeMemberClosure<ClientStream, &ClientStream::RecvMessageBatchDone>(
-          this);
+          this, DEBUG_LOCATION);
   grpc_transport_stream_op_batch recv_message_;
   grpc_transport_stream_op_batch_payload batch_payload_{
       GetContext<grpc_call_context_element>()};
   grpc_closure stream_destroyed_ =
-      MakeMemberClosure<ClientStream, &ClientStream::StreamDestroyed>(this);
+      MakeMemberClosure<ClientStream, &ClientStream::StreamDestroyed>(
+          this, DEBUG_LOCATION);
 };
 
 class ClientConnectedCallPromise {
