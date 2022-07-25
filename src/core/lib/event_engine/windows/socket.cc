@@ -186,11 +186,9 @@ absl::Status PrepareSocket(SOCKET sock) {
   absl::Status err;
   err = grpc_tcp_set_non_block(sock);
   if (!GRPC_ERROR_IS_NONE(err)) return err;
-  // DO NOT SUBMIT(hork): WinServer does not support dual stack. How is iomgr
-  // working?
-  //   err = set_dualstack(sock);
-  //   if (!GRPC_ERROR_IS_NONE(err)) return err;
   err = enable_socket_low_latency(sock);
+  if (!GRPC_ERROR_IS_NONE(err)) return err;
+  err = set_dualstack(sock);
   if (!GRPC_ERROR_IS_NONE(err)) return err;
   return GRPC_ERROR_NONE;
 }

@@ -53,8 +53,22 @@ void CreateSockpair(SOCKET sockpair[2], DWORD flags) {
   GPR_ASSERT(svr_sock != INVALID_SOCKET);
 
   closesocket(lst_sock);
-  GPR_ASSERT(PrepareSocket(cli_sock).ok());
-  GPR_ASSERT(PrepareSocket(svr_sock).ok());
+  // TODO(hork): see if we can migrate this to IPv6, or break up the socket prep
+  // stages.
+  // Historical note: This method creates an ipv4 sockpair, which cannot
+  // be made dual stack. This was silently preventing TCP_NODELAY from being
+  // enabled, but not causing an unrecoverable error. So this is left as a
+  // logged status. WSAEINVAL is expected.
+  auto status = PrepareSocket(cli_sock);
+  if (!status.ok()) {
+    gpr_log(GPR_DEBUG, "Error preparing client socket: %s",
+            status.ToString().c_str());
+  }
+  status = PrepareSocket(svr_sock);
+  if (!status.ok()) {
+    gpr_log(GPR_DEBUG, "Error preparing server socket: %s",
+            status.ToString().c_str());
+  }
 
   sockpair[0] = svr_sock;
   sockpair[1] = cli_sock;
