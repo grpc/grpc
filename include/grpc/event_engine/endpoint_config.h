@@ -36,9 +36,15 @@ class EndpointConfig {
   /// Returns the Setting for a specified key, or \a absl::monostate if there is
   /// no such entry. Caller does not take ownership of the resulting value.
   virtual Setting Get(absl::string_view key) const = 0;
+  // If the key points to an integer config, an integer value gets returned.
+  // Otherwise it returns an absl::nullopt_t
   virtual absl::optional<int> GetInt(absl::string_view key) const = 0;
+  // If the key points to an string config, an string value gets returned.
+  // Otherwise it returns an absl::nullopt_t
   virtual absl::optional<std::string> GetString(
       absl::string_view key) const = 0;
+  // If the key points to an void* config, a void* pointer value gets returned.
+  // Otherwise it returns an absl::nullopt_t
   virtual absl::optional<void*> GetPointer(absl::string_view key) const = 0;
 };
 
