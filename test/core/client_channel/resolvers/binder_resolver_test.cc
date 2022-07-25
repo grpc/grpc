@@ -50,8 +50,7 @@ class BinderResolverTest : public ::testing::Test {
   }
   ~BinderResolverTest() override {}
   static void SetUpTestSuite() {
-    grpc_core::CoreConfiguration::Reset();
-    grpc_core::CoreConfiguration::BuildSpecialConfiguration(
+    mocker_ = std::make_unique<grpc_core::CoreConfiguration::Mocker>(
         [](grpc_core::CoreConfiguration::Builder* builder) {
           BuildCoreConfiguration(builder);
           if (!builder->resolver_registry()->HasResolverFactory("binder")) {
@@ -69,7 +68,10 @@ class BinderResolverTest : public ::testing::Test {
             .LookupResolverFactory("binder") == nullptr) {
     }
   }
-  static void TearDownTestSuite() { grpc_shutdown(); }
+  static void TearDownTestSuite() {
+    grpc_shutdown();
+    mocker_.reset();
+  }
 
   void SetUp() override { ASSERT_TRUE(factory_); }
 
@@ -133,7 +135,11 @@ class BinderResolverTest : public ::testing::Test {
 
  private:
   grpc_core::ResolverFactory* factory_;
+  static std::unique_ptr<grpc_core::CoreConfiguration::Mocker> mocker_;
 };
+
+std::unique_ptr<grpc_core::CoreConfiguration::Mocker>
+    BinderResolverTest::mocker_;
 
 }  // namespace
 

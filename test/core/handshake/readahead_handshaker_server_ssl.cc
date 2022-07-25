@@ -79,7 +79,7 @@ class ReadAheadHandshakerFactory : public HandshakerFactory {
 }  // namespace grpc_core
 
 TEST(HandshakeServerWithReadaheadHandshakerTest, MainTest) {
-  grpc_core::CoreConfiguration::BuildSpecialConfiguration(
+  grpc_core::CoreConfiguration::Mocker mocker(
       [](grpc_core::CoreConfiguration::Builder* builder) {
         BuildCoreConfiguration(builder);
         builder->handshaker_registry()->RegisterHandshakerFactory(
