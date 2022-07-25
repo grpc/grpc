@@ -62,6 +62,10 @@ void IOCP::Shutdown() {
 }
 
 absl::Status IOCP::Work(grpc_core::Duration timeout) {
+  static const absl::Status kDeadlineExceeded = absl::DeadlineExceededError(
+      absl::StrFormat("IOCP::%p: Received no completions", this));
+  static const absl::Status kKicked =
+      absl::AbortedError(absl::StrFormat("IOCP::%p: Awoken from a kick", this));
   DWORD bytes = 0;
   ULONG_PTR completion_key;
   LPOVERLAPPED overlapped;
@@ -75,8 +79,7 @@ absl::Status IOCP::Work(grpc_core::Duration timeout) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {
       gpr_log(GPR_DEBUG, "IOCP::%p deadline exceeded", this);
     }
-    return absl::DeadlineExceededError(
-        absl::StrFormat("IOCP::%p: Received no completions", this));
+    return kDeadlineExceeded;
   }
   GPR_ASSERT(completion_key && overlapped);
   if (overlapped == &kick_overlap_) {
@@ -85,8 +88,7 @@ absl::Status IOCP::Work(grpc_core::Duration timeout) {
     }
     outstanding_kicks_.fetch_sub(1);
     if (completion_key == (ULONG_PTR)&kick_token_) {
-      return absl::AbortedError(
-          absl::StrFormat("IOCP::%p: Awoken from a kick", this));
+      return kKicked;
     }
     gpr_log(GPR_ERROR, "Unknown custom completion key: %p", completion_key);
     abort();
