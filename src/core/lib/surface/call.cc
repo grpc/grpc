@@ -1836,6 +1836,7 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
     InternalRef("wakeup");
 #if defined(__has_feature)
 #if __has_feature(address_sanitizer)
+#define GRPC_CALL_USES_ASAN_WAKER
     class AsanWaker final : public Wakeable {
      public:
       explicit AsanWaker(PromiseBasedCall* call) : call_(call) {}
@@ -1858,9 +1859,10 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
       PromiseBasedCall* call_;
     };
     return Waker(new AsanWaker(this));
-#else
-    return Waker(this);
 #endif
+#endif
+#ifndef GRPC_CALL_USES_ASAN_WAKER
+    return Waker(this);
 #endif
   }
   Waker MakeNonOwningWaker() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) override;
