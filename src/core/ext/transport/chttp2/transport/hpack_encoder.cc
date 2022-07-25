@@ -25,7 +25,6 @@
 #include <memory>
 
 #include "absl/utility/utility.h"
-#include "hpack_constants.h"
 
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
