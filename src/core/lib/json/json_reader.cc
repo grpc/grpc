@@ -148,7 +148,7 @@ bool JsonReader::StringAddChar(uint32_t c) {
       utf8_bytes_remaining_ = 1;
     } else if ((c & 0xf0) == 0xe0) {
       utf8_bytes_remaining_ = 2;
-    } else if ((c & 0xf8) == 0xf0) {
+    } else if ((c & 0xf8) == 0xf0 && c <= 0xf4) {
       utf8_bytes_remaining_ = 3;
     } else {
       return false;
