@@ -19,6 +19,7 @@
 #include <string>
 
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 #include "absl/types/variant.h"
 
 namespace grpc_event_engine {
@@ -35,6 +36,10 @@ class EndpointConfig {
   /// Returns the Setting for a specified key, or \a absl::monostate if there is
   /// no such entry. Caller does not take ownership of the resulting value.
   virtual Setting Get(absl::string_view key) const = 0;
+  virtual absl::optional<int> GetInt(absl::string_view key) const = 0;
+  virtual absl::optional<std::string> GetString(
+      absl::string_view key) const = 0;
+  virtual absl::optional<void*> GetPointer(absl::string_view key) const = 0;
 };
 
 }  // namespace experimental

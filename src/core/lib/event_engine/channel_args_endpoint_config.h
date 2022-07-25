@@ -36,6 +36,9 @@ class ChannelArgsEndpointConfig : public EndpointConfig {
   ChannelArgsEndpointConfig& operator=(const ChannelArgsEndpointConfig& other) =
       default;
   EndpointConfig::Setting Get(absl::string_view key) const override;
+  absl::optional<int> GetInt(absl::string_view key) const override;
+  absl::optional<std::string> GetString(absl::string_view key) const override;
+  absl::optional<void*> GetPointer(absl::string_view key) const override;
 
  private:
   grpc_core::ChannelArgs args_;
