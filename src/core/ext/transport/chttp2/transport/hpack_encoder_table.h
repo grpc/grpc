@@ -32,9 +32,10 @@ namespace grpc_core {
 // sizes.
 class HPackEncoderTable {
  public:
+  using EntrySize = uint16_t;
+
   HPackEncoderTable() : elem_size_(hpack_constants::kInitialTableEntries) {}
 
-  using EntrySize = uint16_t;
   static constexpr size_t MaxEntrySize() {
     return std::numeric_limits<EntrySize>::max();
   }
