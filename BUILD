@@ -2468,6 +2468,16 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "event_engine_poller",
+    hdrs = ["src/core/lib/event_engine/poller.h"],
+)
+
+grpc_cc_library(
+    name = "event_engine_socket_notifier",
+    hdrs = ["src/core/lib/event_engine/socket_notifier.h"],
+)
+
+grpc_cc_library(
     name = "iomgr_event_engine",
     srcs = ["src/core/lib/event_engine/iomgr_engine/iomgr_engine.cc"],
     hdrs = ["src/core/lib/event_engine/iomgr_engine/iomgr_engine.h"],
@@ -2521,7 +2531,6 @@ grpc_cc_library(
         "src/core/lib/event_engine/windows/socket.cc",
     ],
     hdrs = [
-        "src/core/lib/event_engine/windows/event_poller.h",
         "src/core/lib/event_engine/windows/iocp.h",
         "src/core/lib/event_engine/windows/socket.h",
     ],
@@ -2535,6 +2544,8 @@ grpc_cc_library(
     deps = [
         "error",
         "event_engine_base_hdrs",
+        "event_engine_poller",
+        "event_engine_socket_notifier",
         "event_engine_trace",
         "gpr_base",
         "gpr_platform",

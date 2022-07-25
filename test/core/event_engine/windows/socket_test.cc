@@ -33,7 +33,7 @@ namespace {
 using ::grpc_event_engine::experimental::CreateSockpair;
 using ::grpc_event_engine::experimental::IOCP;
 using ::grpc_event_engine::experimental::WindowsEventEngine;
-using ::grpc_event_engine::experimental::WinWrappedSocket;
+using ::grpc_event_engine::experimental::WinSocket;
 }  // namespace
 
 class SocketTest : public testing::Test {};
@@ -42,8 +42,8 @@ TEST_F(SocketTest, ManualReadEventTriggeredWithoutIO) {
   auto engine = absl::make_unique<WindowsEventEngine>();
   SOCKET sockpair[2];
   CreateSockpair(sockpair, IOCP::GetDefaultSocketFlags());
-  WinWrappedSocket wrapped_client_socket(sockpair[0], engine.get());
-  WinWrappedSocket wrapped_server_socket(sockpair[1], engine.get());
+  WinSocket wrapped_client_socket(sockpair[0], engine.get());
+  WinSocket wrapped_server_socket(sockpair[1], engine.get());
   bool read_called = false;
   wrapped_client_socket.NotifyOnRead([&read_called]() { read_called = true; });
   wrapped_client_socket.NotifyOnWrite([] { FAIL() << "No Write expected"; });

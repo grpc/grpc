@@ -21,20 +21,22 @@
 #include "absl/base/thread_annotations.h"
 #include "absl/functional/any_invocable.h"
 
-#include "src/core/lib/event_engine/windows/event_poller.h"
+#include <grpc/event_engine/event_engine.h>
+
+#include "src/core/lib/event_engine/socket_notifier.h"
 #include "src/core/lib/gprpp/sync.h"
 
 namespace grpc_event_engine {
 namespace experimental {
 
-class WinWrappedSocket final : public WrappedSocket {
+class WinSocket final : public SocketNotifier {
  public:
   class OpInfo {
    public:
-    explicit OpInfo(WinWrappedSocket* win_socket) noexcept;
+    explicit OpInfo(WinSocket* win_socket) noexcept;
     // Signal an IOCP result has returned
     // If a callback is already primed for notification, it will be executed via
-    // the WinWrappedSocket's EventEngine. Otherwise, a "pending iocp" flag will
+    // the WinSocket's EventEngine. Otherwise, a "pending iocp" flag will
     // be set.
     void SetReady();
     // Set error results for a completed op
@@ -48,8 +50,8 @@ class WinWrappedSocket final : public WrappedSocket {
     int wsa_error() const { return wsa_error_; }
 
    private:
-    friend class WinWrappedSocket;
-    WinWrappedSocket* win_socket_;
+    friend class WinSocket;
+    WinSocket* win_socket_;
     OVERLAPPED overlapped_;
     bool has_pending_iocp_{false};
     DWORD bytes_transferred_;
@@ -57,9 +59,8 @@ class WinWrappedSocket final : public WrappedSocket {
     absl::AnyInvocable<void()> callback;
   };
 
-  WinWrappedSocket(SOCKET socket, EventEngine* event_engine) noexcept;
-  ~WinWrappedSocket();
-  SOCKET Socket() override;
+  WinSocket(SOCKET socket, EventEngine* event_engine) noexcept;
+  ~WinSocket();
   // Schedule a shutdown of the socket operations. Will call the pending
   // operations to abort them. We need to do that this way because of the
   // various callsites of that function, which happens to be in various
@@ -70,7 +71,6 @@ class WinWrappedSocket final : public WrappedSocket {
   //    the callback now.
   //  - The IOCP hasn't completed yet, and we're queuing it for later.
   void NotifyOnRead(absl::AnyInvocable<void()> on_read) override;
-  // Same semantics as NotifyOnRead
   void NotifyOnWrite(absl::AnyInvocable<void()> on_write) override;
   void SetReadable() override;
   void SetWritable() override;
@@ -86,6 +86,8 @@ class WinWrappedSocket final : public WrappedSocket {
   OpInfo* read_info() { return &read_info_; }
   OpInfo* write_info() { return &write_info_; }
   // -------------------------------------------------
+  // Accessor method for underlying socket
+  SOCKET socket();
 
  private:
   void NotifyOnReady(OpInfo& info, absl::AnyInvocable<void()> callback);

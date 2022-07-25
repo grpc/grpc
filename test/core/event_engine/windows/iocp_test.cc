@@ -33,7 +33,7 @@ namespace {
 using ::grpc_event_engine::experimental::CreateSockpair;
 using ::grpc_event_engine::experimental::IOCP;
 using ::grpc_event_engine::experimental::WindowsEventEngine;
-using ::grpc_event_engine::experimental::WinWrappedSocket;
+using ::grpc_event_engine::experimental::WinSocket;
 }  // namespace
 
 class IOCPTest : public testing::Test {};
@@ -43,10 +43,10 @@ TEST_F(IOCPTest, ClientReceivesNotificationOfServerSendViaIOCP) {
   IOCP iocp(engine.get());
   SOCKET sockpair[2];
   CreateSockpair(sockpair, iocp.GetDefaultSocketFlags());
-  WinWrappedSocket* wrapped_client_socket =
-      static_cast<WinWrappedSocket*>(iocp.Watch(sockpair[0]));
-  WinWrappedSocket* wrapped_server_socket =
-      static_cast<WinWrappedSocket*>(iocp.Watch(sockpair[1]));
+  WinSocket* wrapped_client_socket =
+      static_cast<WinSocket*>(iocp.Watch(sockpair[0]));
+  WinSocket* wrapped_server_socket =
+      static_cast<WinSocket*>(iocp.Watch(sockpair[1]));
   bool read_called = false;
   bool write_called = false;
   DWORD flags = 0;
@@ -60,7 +60,7 @@ TEST_F(IOCPTest, ClientReceivesNotificationOfServerSendViaIOCP) {
     memset(wrapped_client_socket->read_info()->overlapped(), 0,
            sizeof(OVERLAPPED));
     int status =
-        WSARecv(wrapped_client_socket->Socket(), &read_wsabuf, 1, &bytes_rcvd,
+        WSARecv(wrapped_client_socket->socket(), &read_wsabuf, 1, &bytes_rcvd,
                 &flags, wrapped_client_socket->read_info()->overlapped(), NULL);
     // Expecting error 997, WSA_IO_PENDING
     EXPECT_EQ(status, -1);
@@ -84,7 +84,7 @@ TEST_F(IOCPTest, ClientReceivesNotificationOfServerSendViaIOCP) {
     memset(wrapped_server_socket->write_info()->overlapped(), 0,
            sizeof(OVERLAPPED));
     int status =
-        WSASend(wrapped_server_socket->Socket(), &write_wsabuf, 1, &bytes_sent,
+        WSASend(wrapped_server_socket->socket(), &write_wsabuf, 1, &bytes_sent,
                 0, wrapped_server_socket->write_info()->overlapped(), NULL);
     EXPECT_EQ(status, 0);
     if (status != 0) {
@@ -99,9 +99,9 @@ TEST_F(IOCPTest, ClientReceivesNotificationOfServerSendViaIOCP) {
     });
   }
   // Working for WSASend
-  ASSERT_TRUE(iocp.Work(std::chrono::seconds(10)).ok());
+  ASSERT_TRUE(iocp.Work(grpc_core::Duration::Seconds(10)).ok());
   // Working for WSARecv
-  ASSERT_TRUE(iocp.Work(std::chrono::seconds(10)).ok());
+  ASSERT_TRUE(iocp.Work(grpc_core::Duration::Seconds(10)).ok());
   absl::Time deadline = absl::Now() + absl::Seconds(10);
   while (!read_called || !write_called) {
     absl::SleepFor(absl::Milliseconds(10));

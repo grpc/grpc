@@ -14,7 +14,6 @@
 #include <grpc/support/port_platform.h>
 
 #ifdef GPR_WINDOWS
-#include <chrono>
 
 #include "absl/strings/str_format.h"
 
@@ -39,9 +38,8 @@ IOCP::IOCP(EventEngine* event_engine) noexcept
 // Shutdown must be called prior to deletion
 IOCP::~IOCP() {}
 
-WrappedSocket* IOCP::Watch(SOCKET socket) {
-  WinWrappedSocket* wrapped_socket =
-      new WinWrappedSocket(socket, event_engine_);
+WinSocket* IOCP::Watch(SOCKET socket) {
+  WinSocket* wrapped_socket = new WinSocket(socket, event_engine_);
   HANDLE ret =
       CreateIoCompletionPort(reinterpret_cast<HANDLE>(socket), iocp_handle_,
                              reinterpret_cast<uintptr_t>(wrapped_socket), 0);
@@ -58,12 +56,12 @@ WrappedSocket* IOCP::Watch(SOCKET socket) {
 
 void IOCP::Shutdown() {
   while (outstanding_kicks_.load() > 0) {
-    Work(std::chrono::hours(42));
+    Work(grpc_core::Duration::Hours(42));
   }
   GPR_ASSERT(CloseHandle(iocp_handle_));
 }
 
-absl::Status IOCP::Work(EventEngine::Duration timeout) {
+absl::Status IOCP::Work(grpc_core::Duration timeout) {
   DWORD bytes = 0;
   ULONG_PTR completion_key;
   LPOVERLAPPED overlapped;
@@ -72,9 +70,7 @@ absl::Status IOCP::Work(EventEngine::Duration timeout) {
   }
   BOOL success = GetQueuedCompletionStatus(
       iocp_handle_, &bytes, &completion_key, &overlapped,
-      static_cast<DWORD>(
-          std::chrono::duration_cast<std::chrono::milliseconds>(timeout)
-              .count()));
+      static_cast<DWORD>(timeout.millis()));
   if (success == 0 && overlapped == NULL) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {
       gpr_log(GPR_DEBUG, "IOCP::%p deadline exceeded", this);
@@ -99,9 +95,8 @@ absl::Status IOCP::Work(EventEngine::Duration timeout) {
     gpr_log(GPR_DEBUG, "IOCP::%p got event on OVERLAPPED::%p", this,
             overlapped);
   }
-  WinWrappedSocket* socket =
-      reinterpret_cast<WinWrappedSocket*>(completion_key);
-  WinWrappedSocket::OpInfo* info = socket->GetOpInfoForOverlapped(overlapped);
+  WinSocket* socket = reinterpret_cast<WinSocket*>(completion_key);
+  WinSocket::OpInfo* info = socket->GetOpInfoForOverlapped(overlapped);
   GPR_ASSERT(info != nullptr);
   if (socket->IsShutdown()) {
     info->SetError();

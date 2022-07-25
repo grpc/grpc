@@ -33,29 +33,29 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-WinWrappedSocket::WinWrappedSocket(SOCKET socket,
+WinSocket::WinSocket(SOCKET socket,
                                    EventEngine* event_engine) noexcept
     : socket_(socket),
       event_engine_(event_engine),
       read_info_(OpInfo(this)),
       write_info_(OpInfo(this)) {}
 
-WinWrappedSocket::~WinWrappedSocket() {}
+WinSocket::~WinSocket() {}
 
-SOCKET WinWrappedSocket::Socket() { return socket_; }
+SOCKET WinSocket::socket() { return socket_; }
 
-void WinWrappedSocket::MaybeShutdown(absl::Status why) {
+void WinSocket::MaybeShutdown(absl::Status why) {
   grpc_core::MutexLock lock(&mu_);
   // if already shutdown, return early. Otherwise, set the shutdown flag.
   if (is_shutdown_) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {
-      gpr_log(GPR_DEBUG, "WinWrappedSocket::%p already shutting down", this);
+      gpr_log(GPR_DEBUG, "WinSocket::%p already shutting down", this);
     }
     return;
   }
   is_shutdown_ = true;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {
-    gpr_log(GPR_DEBUG, "WinWrappedSocket::%p shutting down now. Reason: %s",
+    gpr_log(GPR_DEBUG, "WinSocket::%p shutting down now. Reason: %s",
             this, why.ToString().c_str());
   }
   // Grab the function pointer for DisconnectEx for that specific socket.
@@ -78,7 +78,7 @@ void WinWrappedSocket::MaybeShutdown(absl::Status why) {
   closesocket(socket_);
 }
 
-void WinWrappedSocket::NotifyOnReady(OpInfo& info,
+void WinSocket::NotifyOnReady(OpInfo& info,
                                      absl::AnyInvocable<void()> callback) {
   grpc_core::MutexLock lock(&mu_);
   if (info.has_pending_iocp_) {
@@ -89,18 +89,18 @@ void WinWrappedSocket::NotifyOnReady(OpInfo& info,
   }
 }
 
-void WinWrappedSocket::NotifyOnRead(absl::AnyInvocable<void()> on_read) {
+void WinSocket::NotifyOnRead(absl::AnyInvocable<void()> on_read) {
   NotifyOnReady(read_info_, std::move(on_read));
 }
 
-void WinWrappedSocket::NotifyOnWrite(absl::AnyInvocable<void()> on_write) {
+void WinSocket::NotifyOnWrite(absl::AnyInvocable<void()> on_write) {
   NotifyOnReady(write_info_, std::move(on_write));
 }
 
-WinWrappedSocket::OpInfo::OpInfo(WinWrappedSocket* win_socket) noexcept
+WinSocket::OpInfo::OpInfo(WinSocket* win_socket) noexcept
     : win_socket_(win_socket) {}
 
-void WinWrappedSocket::OpInfo::SetReady() {
+void WinSocket::OpInfo::SetReady() {
   grpc_core::MutexLock lock(&win_socket_->mu_);
   GPR_ASSERT(!has_pending_iocp_);
   if (callback) {
@@ -111,31 +111,31 @@ void WinWrappedSocket::OpInfo::SetReady() {
   }
 }
 
-void WinWrappedSocket::OpInfo::SetError() {
+void WinSocket::OpInfo::SetError() {
   bytes_transferred_ = 0;
   wsa_error_ = WSA_OPERATION_ABORTED;
 }
 
-void WinWrappedSocket::OpInfo::GetOverlappedResult() {
+void WinSocket::OpInfo::GetOverlappedResult() {
   DWORD flags = 0;
   DWORD bytes;
-  BOOL success = WSAGetOverlappedResult(win_socket_->Socket(), &overlapped_,
+  BOOL success = WSAGetOverlappedResult(win_socket_->socket(), &overlapped_,
                                         &bytes, FALSE, &flags);
   bytes_transferred_ = bytes;
   wsa_error_ = success ? 0 : WSAGetLastError();
 }
 
-void WinWrappedSocket::SetReadable() { read_info_.SetReady(); }
+void WinSocket::SetReadable() { read_info_.SetReady(); }
 
-void WinWrappedSocket::SetWritable() { write_info_.SetReady(); }
+void WinSocket::SetWritable() { write_info_.SetReady(); }
 
-bool WinWrappedSocket::IsShutdown() { return is_shutdown_; }
+bool WinSocket::IsShutdown() { return is_shutdown_; }
 
-WinWrappedSocket::OpInfo* WinWrappedSocket::GetOpInfoForOverlapped(
+WinSocket::OpInfo* WinSocket::GetOpInfoForOverlapped(
     OVERLAPPED* overlapped) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {
     gpr_log(GPR_DEBUG,
-            "WinWrappedSocket::%p looking for matching OVERLAPPED::%p. "
+            "WinSocket::%p looking for matching OVERLAPPED::%p. "
             "read(%p) write(%p)",
             this, overlapped, &read_info_.overlapped_,
             &write_info_.overlapped_);

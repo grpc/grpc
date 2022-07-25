@@ -22,12 +22,13 @@
 
 #include <grpc/event_engine/event_engine.h>
 
-#include "src/core/lib/event_engine/windows/event_poller.h"
+#include "src/core/lib/event_engine/poller.h"
+#include "src/core/lib/event_engine/windows/socket.h"
 
 namespace grpc_event_engine {
 namespace experimental {
 
-class IOCP final : public EventPoller {
+class IOCP final : public Poller {
  public:
   explicit IOCP(EventEngine* event_engine) noexcept;
   ~IOCP();
@@ -38,11 +39,12 @@ class IOCP final : public EventPoller {
   IOCP(IOCP&& other) = delete;
   IOCP& operator=(IOCP&& other) = delete;
 
-  // overloaded methods
-  WrappedSocket* Watch(SOCKET socket) override;
+  // interface methods
   void Shutdown() override;
-  absl::Status Work(EventEngine::Duration timeout) override;
+  absl::Status Work(grpc_core::Duration timeout) override;
   void Kick() override;
+
+  WinSocket* Watch(SOCKET socket);
   // Return the set of default flags
   static DWORD GetDefaultSocketFlags();
 
