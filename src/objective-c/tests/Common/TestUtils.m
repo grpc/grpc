@@ -74,14 +74,6 @@ static NSUInteger GRPCGetTestFlakeRepeats() {
   return repeats;
 }
 
-// Helper function to assert failure via XCTest
-static void GRPCAssertFail(NSString *message) {
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wnonnull"
-  _XCTPrimitiveFail(nil, @"%@", message);
-#pragma GCC diagnostic pop
-}
-
 void GRPCResetCallConnections() {
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
@@ -100,7 +92,7 @@ void GRPCPrintInteropTestServerDebugInfo() {
         NSStringize(HOST_PORT_REMOTE));
 }
 
-BOOL GRPCTestRunWithFlakeRepeats(GRPCTestRunBlock testBlock) {
+BOOL GRPCTestRunWithFlakeRepeats(XCTestCase *testCase, GRPCTestRunBlock testBlock) {
   NSInteger repeats = GRPCGetTestFlakeRepeats();
   NSInteger runs = 0;
 
@@ -111,21 +103,21 @@ BOOL GRPCTestRunWithFlakeRepeats(GRPCTestRunBlock testBlock) {
     __block XCTWaiterResult result;
     __block BOOL assertionSuccess = YES;
 
-    GRPCTestWaiter waiterBlock = ^(XCTestCase *testCase, NSArray<XCTestExpectation *> *expectations,
-                                   NSTimeInterval timeout) {
-      if (isLastRun) {
-        XCTWaiter *waiter = [[XCTWaiter alloc] initWithDelegate:testCase];
-        result = [waiter waitForExpectations:expectations timeout:timeout];
-      } else {
-        result = [XCTWaiter waitForExpectations:expectations timeout:timeout];
-      }
-    };
+    GRPCTestWaiter waiterBlock =
+        ^(NSArray<XCTestExpectation *> *expectations, NSTimeInterval timeout) {
+          if (isLastRun) {
+            XCTWaiter *waiter = [[XCTWaiter alloc] initWithDelegate:testCase];
+            result = [waiter waitForExpectations:expectations timeout:timeout];
+          } else {
+            result = [XCTWaiter waitForExpectations:expectations timeout:timeout];
+          }
+        };
 
     GRPCTestAssert assertBlock = ^(BOOL expressionValue, NSString *message) {
       BOOL result = !!(expressionValue);
       assertionSuccess = assertionSuccess && result;
       if (isLastRun && !result) {
-        GRPCAssertFail(message);
+        _XCTPrimitiveFail(testCase, @"%@", message);
       }
     };
 

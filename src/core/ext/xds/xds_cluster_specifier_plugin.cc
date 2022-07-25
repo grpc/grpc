@@ -99,15 +99,13 @@ XdsRouteLookupClusterSpecifierPlugin::GenerateLoadBalancingPolicyConfig(
   // somehow such that we automatically validate the resulting config against
   // the gRPC LB policy registry instead of requiring each plugin to do that
   // itself.
-  LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(lb_policy_config,
-                                                        &parse_error);
-  if (!GRPC_ERROR_IS_NONE(parse_error)) {
-    absl::Status status = absl::InvalidArgumentError(absl::StrCat(
+  auto config =
+      LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(lb_policy_config);
+  if (!config.ok()) {
+    return absl::InvalidArgumentError(absl::StrCat(
         kXdsRouteLookupClusterSpecifierPluginConfigName,
         " ClusterSpecifierPlugin returned invalid LB policy config: ",
-        grpc_error_std_string(parse_error)));
-    GRPC_ERROR_UNREF(parse_error);
-    return status;
+        config.status().message()));
   }
   return lb_policy_config.Dump();
 }

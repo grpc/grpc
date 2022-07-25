@@ -63,7 +63,7 @@ void alts_handshaker_client_check_fields_for_testing(
 void alts_handshaker_client_set_fields_for_testing(
     alts_handshaker_client* client, alts_tsi_handshaker* handshaker,
     tsi_handshaker_on_next_done_cb cb, void* user_data,
-    grpc_byte_buffer* recv_buffer, grpc_status_code status);
+    grpc_byte_buffer* recv_buffer, bool inject_read_failure);
 
 void alts_handshaker_client_set_vtable_for_testing(
     alts_handshaker_client* client, alts_handshaker_client_vtable* vtable);
