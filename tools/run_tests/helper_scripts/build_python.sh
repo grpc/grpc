@@ -155,7 +155,7 @@ pip_install() {
 # Pin setuptools to < 60.0.0 to restore the distutil installation, see:
 # https://github.com/pypa/setuptools/pull/2896
 export SETUPTOOLS_USE_DISTUTILS=stdlib
-pip_install --upgrade pip==21.3.1
+pip_install --upgrade pip==22.2
 pip_install --upgrade setuptools==59.6.0
 
 # pip-installs the directory specified. Used because on MSYS the vanilla Windows
