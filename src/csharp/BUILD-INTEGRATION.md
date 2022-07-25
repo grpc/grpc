@@ -91,6 +91,14 @@ button](https://stackoverflow.com/a/9770061). Click on it, and choose "Add as
 link". If you do not select this option, Visual Studio will copy files to the
 project directory instead.
 
+Alternatively, you can also specify `AdditionalImportDirs` to give the location of proto files outside
+the project. Eg.
+
+```xml
+  <Protobuf Include="protos/*.proto" ProtoRoot="protos"
+      AdditionalImportDirs="/folder/ouside/project/protos/myapis/" ... />
+```
+
 #### My .proto files have same filename in different folders
 
 Starting from Grpc.Tools version 2.31, protocol buffers compilation preserves original folder structure for generated files. Eg.
@@ -352,6 +360,7 @@ The following metadata are recognized on the `<Protobuf>` items.
 | GrpcOutputDir  | See notes | A directory                        | Directory for generated gRPC stubs    |
 | GrpcOutputOptions | | arbitrary options                  | Extra options passed to gRPC codegen as `--grpc_opt=opt1,opt2` |
 | GrpcServices   | `both`    | `none`, `client`, `server`, `both` | Generated gRPC stubs             |
+| AdditionalImportDirs | See notes | Directories                        | Additional directories for to find files |
 
 __Notes__
 
@@ -389,12 +398,17 @@ and "GrpcServices" metadata, but it might be useful in situations where you want
 to explicitly pass some otherwise unsupported (e.g. experimental) options to the
 `grpc_csharp_plugin`.
 
+* __AdditionalImportDirs__
+Pass additional directories to include proto files.  These may be directories _outside_ of the 
+project directory. These directories are passed to the code generator via the `-I/--proto_path` option
+together with `Protobuf_StandardImportsPath` and `ProtoRoot` directories.
+
 __Specifying multiple values in properties__
 
 Some properties allow you to specify multiple values in a list. The items in a list need to
 be separated by semi-colons (;). This is the syntax that MsBuild uses for lists.
 
-The properties that can have lists of items are: __OutputOptions__, __AdditionalProtocArguments__, __GrpcOutputOptions__
+The properties that can have lists of items are: __OutputOptions__, __AdditionalProtocArguments__, __GrpcOutputOptions__, __AdditionalImportDirs__
 
 Example: to specify two additional arguments: ```--plugin=protoc-gen-myplugin=D:\myplugin.exe --myplugin_out=.```
 
