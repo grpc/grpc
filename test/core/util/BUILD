@@ -313,7 +313,7 @@ grpc_cc_library(
     ],
     language = "C++",
     deps = [
-        "grpc_test_util_unsecure",
+        "grpc_test_util",
         "//:gpr_base",
         "//:grpc",
         "//:grpc_base",
