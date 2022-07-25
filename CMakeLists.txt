@@ -5758,7 +5758,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc++
     grpc_test_util
-    grpc_test_util_unsecure
   )
 
 
@@ -7261,7 +7260,6 @@ target_include_directories(cancel_ares_query_test
 target_link_libraries(cancel_ares_query_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util_unsecure
   grpc++_test_config
   grpc++_test_util
 )
@@ -10655,7 +10653,6 @@ target_include_directories(google_c2p_resolver_test
 target_link_libraries(google_c2p_resolver_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util_unsecure
   grpc++_test_util
 )
 
@@ -12273,7 +12270,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(httpcli_test
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
-    grpc_test_util_unsecure
     grpc++_test_util
   )
 
@@ -12313,7 +12309,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(httpscli_test
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
-    grpc_test_util_unsecure
     grpc++_test_util
   )
 
@@ -15341,7 +15336,6 @@ target_link_libraries(resolve_address_using_ares_resolver_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc_test_util_unsecure
   grpc++_test_config
 )
 
@@ -15391,7 +15385,6 @@ target_link_libraries(resolve_address_using_native_resolver_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc_test_util_unsecure
   grpc++_test_config
 )
 
