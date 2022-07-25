@@ -16,23 +16,30 @@
  *
  */
 
-#include <stdio.h>
+#include <stdint.h>
 #include <string.h>
+
+#include <string>
 
 #include <gtest/gtest.h>
 
-#include <grpc/support/alloc.h>
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/grpc_security_constants.h>
+#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gpr/tmpfile.h"
+#include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/global_config_generic.h"
 #include "src/core/lib/gprpp/host_port.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/load_file.h"
-#include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/ssl_utils_config.h"
 #include "test/core/end2end/cq_verifier.h"
-#include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
@@ -132,7 +139,7 @@ void do_round_trip(grpc_completion_queue* cq, grpc_server* server,
                    bool expect_session_reuse) {
   grpc_channel* client = client_create(server_addr, cache);
 
-  cq_verifier* cqv = cq_verifier_create(cq);
+  grpc_core::CqVerifier cqv(cq);
   grpc_op ops[6];
   grpc_op* op;
   grpc_metadata_array initial_metadata_recv;
@@ -186,8 +193,8 @@ void do_round_trip(grpc_completion_queue* cq, grpc_server* server,
   error = grpc_server_request_call(server, &s, &call_details,
                                    &request_metadata_recv, cq, cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(101), true);
+  cqv.Verify();
 
   grpc_auth_context* auth = grpc_call_auth_context(s);
   grpc_auth_property_iterator it = grpc_auth_context_find_properties_by_name(
@@ -223,9 +230,9 @@ void do_round_trip(grpc_completion_queue* cq, grpc_server* server,
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(103), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(103), true);
+  cqv.Expect(tag(1), true);
+  cqv.Verify();
 
   grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
@@ -234,8 +241,6 @@ void do_round_trip(grpc_completion_queue* cq, grpc_server* server,
 
   grpc_call_unref(c);
   grpc_call_unref(s);
-
-  cq_verifier_destroy(cqv);
 
   grpc_channel_destroy(client);
 }

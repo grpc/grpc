@@ -24,7 +24,6 @@
 #include <map>
 #include <memory>
 #include <string>
-#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -74,10 +73,10 @@
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/pollset_set.h"
-#include "src/core/lib/iomgr/work_serializer.h"
 #include "src/core/lib/resolver/resolver.h"
 #include "src/core/lib/resolver/resolver_factory.h"
 #include "src/core/lib/resolver/resolver_registry.h"
@@ -787,24 +786,22 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
 
 void XdsResolver::StartLocked() {
   grpc_error_handle error = GRPC_ERROR_NONE;
-  xds_client_ = GrpcXdsClient::GetOrCreate(args_, &error);
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  auto xds_client = GrpcXdsClient::GetOrCreate(args_, "xds resolver");
+  if (!xds_client.ok()) {
     gpr_log(GPR_ERROR,
             "Failed to create xds client -- channel will remain in "
             "TRANSIENT_FAILURE: %s",
-            grpc_error_std_string(error).c_str());
-    std::string error_message;
-    grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION, &error_message);
-    absl::Status status = absl::UnavailableError(
-        absl::StrCat("Failed to create XdsClient: ", error_message));
+            xds_client.status().ToString().c_str());
+    absl::Status status = absl::UnavailableError(absl::StrCat(
+        "Failed to create XdsClient: ", xds_client.status().message()));
     Result result;
     result.addresses = status;
     result.service_config = std::move(status);
     result.args = args_;
     result_handler_->ReportResult(std::move(result));
-    GRPC_ERROR_UNREF(error);
     return;
   }
+  xds_client_ = std::move(*xds_client);
   std::string resource_name_fragment(absl::StripPrefix(uri_.path(), "/"));
   if (!uri_.authority().empty()) {
     // target_uri.authority is set case
@@ -876,7 +873,7 @@ void XdsResolver::ShutdownLocked() {
     grpc_pollset_set_del_pollset_set(
         static_cast<GrpcXdsClient*>(xds_client_.get())->interested_parties(),
         interested_parties_);
-    xds_client_.reset();
+    xds_client_.reset(DEBUG_LOCATION, "xds resolver");
   }
 }
 
@@ -974,7 +971,11 @@ void XdsResolver::OnError(absl::string_view context, absl::Status status) {
   Result result;
   result.addresses = status;
   result.service_config = std::move(status);
-  result.args = args_.SetObject(xds_client_);
+  // Need to explicitly convert to the right RefCountedPtr<> type for
+  // use with ChannelArgs::SetObject().
+  RefCountedPtr<GrpcXdsClient> xds_client =
+      xds_client_->Ref(DEBUG_LOCATION, "xds resolver result");
+  result.args = args_.SetObject(std::move(xds_client));
   result_handler_->ReportResult(std::move(result));
 }
 
@@ -1066,7 +1067,12 @@ void XdsResolver::GenerateResult() {
                 ? std::string((*result.service_config)->json_string()).c_str()
                 : result.service_config.status().ToString().c_str());
   }
-  result.args = args_.SetObject(xds_client_).SetObject(config_selector);
+  // Need to explicitly convert to the right RefCountedPtr<> type for
+  // use with ChannelArgs::SetObject().
+  RefCountedPtr<GrpcXdsClient> xds_client =
+      xds_client_->Ref(DEBUG_LOCATION, "xds resolver result");
+  result.args =
+      args_.SetObject(std::move(xds_client)).SetObject(config_selector);
   result_handler_->ReportResult(std::move(result));
 }
 

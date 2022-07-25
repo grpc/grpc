@@ -21,7 +21,6 @@
 
 #include <initializer_list>
 #include <new>
-#include <type_traits>
 #include <utility>
 
 #include "absl/meta/type_traits.h"

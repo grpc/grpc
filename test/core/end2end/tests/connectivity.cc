@@ -16,6 +16,9 @@
  *
  */
 
+#include <stdint.h>
+
+#include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
@@ -23,6 +26,7 @@
 #include "src/core/lib/gprpp/thd.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
+#include "test/core/util/test_config.h"
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
@@ -58,7 +62,7 @@ static void child_thread(void* arg) {
 static void test_connectivity(grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f = config.create_fixture(nullptr, nullptr);
   grpc_connectivity_state state;
-  cq_verifier* cqv = cq_verifier_create(f.cq);
+  grpc_core::CqVerifier cqv(f.cq);
   child_events ce;
 
   grpc_channel_args client_args;
@@ -104,8 +108,8 @@ static void test_connectivity(grpc_end2end_test_config config) {
                                         f.cq, tag(2));
 
   /* and now the watch should trigger */
-  CQ_EXPECT_COMPLETION(cqv, tag(2), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(2), true);
+  cqv.Verify();
   state = grpc_channel_check_connectivity_state(f.client, 0);
   GPR_ASSERT(state == GRPC_CHANNEL_TRANSIENT_FAILURE ||
              state == GRPC_CHANNEL_CONNECTING);
@@ -114,8 +118,8 @@ static void test_connectivity(grpc_end2end_test_config config) {
   grpc_channel_watch_connectivity_state(f.client, GRPC_CHANNEL_CONNECTING,
                                         grpc_timeout_seconds_to_deadline(3),
                                         f.cq, tag(3));
-  CQ_EXPECT_COMPLETION(cqv, tag(3), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(3), true);
+  cqv.Verify();
   state = grpc_channel_check_connectivity_state(f.client, 0);
   GPR_ASSERT(state == GRPC_CHANNEL_TRANSIENT_FAILURE ||
              state == GRPC_CHANNEL_CONNECTING);
@@ -132,8 +136,8 @@ static void test_connectivity(grpc_end2end_test_config config) {
   while (state != GRPC_CHANNEL_READY) {
     grpc_channel_watch_connectivity_state(
         f.client, state, grpc_timeout_seconds_to_deadline(3), f.cq, tag(4));
-    CQ_EXPECT_COMPLETION(cqv, tag(4), 1);
-    cq_verify(cqv);
+    cqv.Expect(tag(4), true);
+    cqv.Verify();
     state = grpc_channel_check_connectivity_state(f.client, 0);
     GPR_ASSERT(state == GRPC_CHANNEL_READY ||
                state == GRPC_CHANNEL_CONNECTING ||
@@ -150,9 +154,9 @@ static void test_connectivity(grpc_end2end_test_config config) {
 
   grpc_server_shutdown_and_notify(f.server, f.cq, tag(0xdead));
 
-  CQ_EXPECT_COMPLETION(cqv, tag(5), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(0xdead), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(5), true);
+  cqv.Expect(tag(0xdead), true);
+  cqv.Verify();
   state = grpc_channel_check_connectivity_state(f.client, 0);
   GPR_ASSERT(state == GRPC_CHANNEL_TRANSIENT_FAILURE ||
              state == GRPC_CHANNEL_CONNECTING || state == GRPC_CHANNEL_IDLE);
@@ -167,8 +171,6 @@ static void test_connectivity(grpc_end2end_test_config config) {
   grpc_completion_queue_destroy(f.cq);
 
   config.tear_down_data(&f);
-
-  cq_verifier_destroy(cqv);
 }
 
 static void cb_watch_connectivity(grpc_completion_queue_functor* functor,

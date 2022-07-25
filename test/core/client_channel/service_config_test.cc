@@ -47,11 +47,7 @@ namespace testing {
 #define GRPC_ARG_DISABLE_PARSING "disable_parsing"
 
 // A regular expression to enter referenced or child errors.
-#ifdef GRPC_ERROR_IS_ABSEIL_STATUS
 #define CHILD_ERROR_TAG ".*children.*"
-#else
-#define CHILD_ERROR_TAG ".*referenced_errors.*"
-#endif
 
 class TestParsedConfig1 : public ServiceConfigParser::ParsedConfig {
  public:
@@ -538,7 +534,7 @@ TEST_F(ClientChannelParserTest, ValidLoadBalancingConfigPickFirst) {
       static_cast<internal::ClientChannelGlobalParsedConfig*>(
           svc_cfg->GetGlobalParsedConfig(0));
   auto lb_config = parsed_config->parsed_lb_config();
-  EXPECT_STREQ(lb_config->name(), "pick_first");
+  EXPECT_EQ(lb_config->name(), "pick_first");
 }
 
 TEST_F(ClientChannelParserTest, ValidLoadBalancingConfigRoundRobin) {
@@ -550,7 +546,7 @@ TEST_F(ClientChannelParserTest, ValidLoadBalancingConfigRoundRobin) {
   auto parsed_config = static_cast<internal::ClientChannelGlobalParsedConfig*>(
       svc_cfg->GetGlobalParsedConfig(0));
   auto lb_config = parsed_config->parsed_lb_config();
-  EXPECT_STREQ(lb_config->name(), "round_robin");
+  EXPECT_EQ(lb_config->name(), "round_robin");
 }
 
 TEST_F(ClientChannelParserTest, ValidLoadBalancingConfigGrpclb) {
@@ -564,7 +560,7 @@ TEST_F(ClientChannelParserTest, ValidLoadBalancingConfigGrpclb) {
       static_cast<internal::ClientChannelGlobalParsedConfig*>(
           svc_cfg->GetGlobalParsedConfig(0));
   auto lb_config = parsed_config->parsed_lb_config();
-  EXPECT_STREQ(lb_config->name(), "grpclb");
+  EXPECT_EQ(lb_config->name(), "grpclb");
 }
 
 TEST_F(ClientChannelParserTest, ValidLoadBalancingConfigXds) {
@@ -587,7 +583,7 @@ TEST_F(ClientChannelParserTest, ValidLoadBalancingConfigXds) {
       static_cast<internal::ClientChannelGlobalParsedConfig*>(
           svc_cfg->GetGlobalParsedConfig(0));
   auto lb_config = parsed_config->parsed_lb_config();
-  EXPECT_STREQ(lb_config->name(), "xds_cluster_resolver_experimental");
+  EXPECT_EQ(lb_config->name(), "xds_cluster_resolver_experimental");
 }
 
 TEST_F(ClientChannelParserTest, UnknownLoadBalancingConfig) {
@@ -599,8 +595,8 @@ TEST_F(ClientChannelParserTest, UnknownLoadBalancingConfig) {
       ::testing::ContainsRegex("Service config parsing error" CHILD_ERROR_TAG
                                "Global Params" CHILD_ERROR_TAG
                                "Client channel global parser" CHILD_ERROR_TAG
-                               "field:loadBalancingConfig" CHILD_ERROR_TAG
-                               "No known policies in list: unknown"));
+                               "field:loadBalancingConfig "
+                               "error:No known policies in list: unknown"));
   GRPC_ERROR_UNREF(error);
 }
 
@@ -617,9 +613,9 @@ TEST_F(ClientChannelParserTest, InvalidGrpclbLoadBalancingConfig) {
                   "Service config parsing error" CHILD_ERROR_TAG
                   "Global Params" CHILD_ERROR_TAG
                   "Client channel global parser" CHILD_ERROR_TAG
-                  "field:loadBalancingConfig" CHILD_ERROR_TAG
-                  "GrpcLb Parser" CHILD_ERROR_TAG
-                  "field:childPolicy" CHILD_ERROR_TAG "type should be array"));
+                  "field:loadBalancingConfig error:"
+                  "errors parsing grpclb LB policy config: \\["
+                  "error parsing childPolicy field: type should be array\\]"));
   GRPC_ERROR_UNREF(error);
 }
 

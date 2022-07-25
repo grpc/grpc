@@ -68,10 +68,10 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/pollset_set.h"
-#include "src/core/lib/iomgr/work_serializer.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/resolver/resolver_registry.h"
@@ -862,17 +862,9 @@ class ClientChannel::ClientChannelControlHelper
           args.GetOwnedString(GRPC_ARG_HEALTH_CHECK_SERVICE_NAME);
     }
     // Construct channel args for subchannel.
-    // TODO(roth): add a test that default authority overrides work as intended.
-    ChannelArgs subchannel_args =
-        args.UnionWith(address.args())
-            .SetObject(chand_->subchannel_pool_)
-            // If we haven't already set the default authority arg, add it from
-            // the channel.
-            .SetIfUnset(GRPC_ARG_DEFAULT_AUTHORITY, chand_->default_authority_)
-            // Remove channel args that should not affect subchannel uniqueness.
-            .Remove(GRPC_ARG_HEALTH_CHECK_SERVICE_NAME)
-            .Remove(GRPC_ARG_INHIBIT_HEALTH_CHECKING)
-            .Remove(GRPC_ARG_CHANNELZ_CHANNEL_NODE);
+    ChannelArgs subchannel_args = ClientChannel::MakeSubchannelArgs(
+        args, address.args(), chand_->subchannel_pool_,
+        chand_->default_authority_);
     // Create subchannel.
     RefCountedPtr<Subchannel> subchannel =
         chand_->client_channel_factory_->CreateSubchannel(address.address(),
@@ -1078,6 +1070,29 @@ ClientChannel::CreateLoadBalancedCall(
       call_dispatch_controller, is_transparent_retry));
 }
 
+ChannelArgs ClientChannel::MakeSubchannelArgs(
+    const ChannelArgs& channel_args, const ChannelArgs& address_args,
+    const RefCountedPtr<SubchannelPoolInterface>& subchannel_pool,
+    const std::string& channel_default_authority) {
+  // Note that we start with the channel-level args and then apply the
+  // per-address args, so that if a value is present in both, the one
+  // in the channel-level args is used.  This is particularly important
+  // for the GRPC_ARG_DEFAULT_AUTHORITY arg, which we want to allow
+  // resolvers to set on a per-address basis only if the application
+  // did not explicitly set it at the channel level.
+  return channel_args.UnionWith(address_args)
+      .SetObject(subchannel_pool)
+      // If we haven't already set the default authority arg (i.e., it
+      // was not explicitly set by the application nor overridden by
+      // the resolver), add it from the channel's default.
+      .SetIfUnset(GRPC_ARG_DEFAULT_AUTHORITY, channel_default_authority)
+      // Remove channel args that should not affect subchannel
+      // uniqueness.
+      .Remove(GRPC_ARG_HEALTH_CHECK_SERVICE_NAME)
+      .Remove(GRPC_ARG_INHIBIT_HEALTH_CHECKING)
+      .Remove(GRPC_ARG_CHANNELZ_CHANNEL_NODE);
+}
+
 namespace {
 
 RefCountedPtr<LoadBalancingPolicy::Config> ChooseLbPolicy(
@@ -1120,9 +1135,8 @@ RefCountedPtr<LoadBalancingPolicy::Config> ChooseLbPolicy(
   Json config_json = Json::Array{Json::Object{
       {std::string(*policy_name), Json::Object{}},
   }};
-  grpc_error_handle parse_error = GRPC_ERROR_NONE;
-  auto lb_policy_config = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
-      config_json, &parse_error);
+  auto lb_policy_config =
+      LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(config_json);
   // The policy name came from one of three places:
   // - The deprecated loadBalancingPolicy field in the service config,
   //   in which case the code in ClientChannelServiceConfigParser
@@ -1132,9 +1146,8 @@ RefCountedPtr<LoadBalancingPolicy::Config> ChooseLbPolicy(
   // - A channel arg, in which case we check that the specified policy exists
   //   and accepts an empty config. If not, we revert to using pick_first
   //   lb_policy
-  GPR_ASSERT(lb_policy_config != nullptr);
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(parse_error));
-  return lb_policy_config;
+  GPR_ASSERT(lb_policy_config.ok());
+  return std::move(*lb_policy_config);
 }
 
 }  // namespace
@@ -1233,9 +1246,9 @@ void ClientChannel::OnResolverResultChangedLocked(Resolver::Result result) {
     // If either has changed, apply the global parameters now.
     if (service_config_changed || config_selector_changed) {
       // Update service config in control plane.
-      UpdateServiceConfigInControlPlaneLocked(std::move(service_config),
-                                              std::move(config_selector),
-                                              lb_policy_config->name());
+      UpdateServiceConfigInControlPlaneLocked(
+          std::move(service_config), std::move(config_selector),
+          std::string(lb_policy_config->name()));
     } else if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_trace)) {
       gpr_log(GPR_INFO, "chand=%p: service config not changed", this);
     }

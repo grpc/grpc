@@ -172,6 +172,5 @@ int main(int argc, char** argv) {
   gpr_log(GPR_INFO, "Peak Client Mem: %ld", peak_client_memory.rss);
   gpr_log(GPR_INFO, "Peak Server Mem: %ld", GetServerMemory());
   gpr_log(GPR_INFO, "Client Done");
-
   return 0;
 }

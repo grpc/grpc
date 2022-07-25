@@ -31,6 +31,7 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
@@ -63,14 +64,15 @@
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/pollset_set.h"
-#include "src/core/lib/iomgr/work_serializer.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/resolver/resolver.h"
 #include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/transport/connectivity_state.h"
+#include "src/core/lib/transport/error_utils.h"
 
 #define GRPC_EDS_DEFAULT_FALLBACK_TIMEOUT 10000
 
@@ -82,7 +84,8 @@ const char* kXdsLocalityNameAttributeKey = "xds_locality_name";
 
 namespace {
 
-constexpr char kXdsClusterResolver[] = "xds_cluster_resolver_experimental";
+constexpr absl::string_view kXdsClusterResolver =
+    "xds_cluster_resolver_experimental";
 
 // Config for EDS LB policy.
 class XdsClusterResolverLbConfig : public LoadBalancingPolicy::Config {
@@ -116,7 +119,8 @@ class XdsClusterResolverLbConfig : public LoadBalancingPolicy::Config {
       : discovery_mechanisms_(std::move(discovery_mechanisms)),
         xds_lb_policy_(std::move(xds_lb_policy)) {}
 
-  const char* name() const override { return kXdsClusterResolver; }
+  absl::string_view name() const override { return kXdsClusterResolver; }
+
   const std::vector<DiscoveryMechanism>& discovery_mechanisms() const {
     return discovery_mechanisms_;
   }
@@ -133,7 +137,7 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
  public:
   XdsClusterResolverLb(RefCountedPtr<XdsClient> xds_client, Args args);
 
-  const char* name() const override { return kXdsClusterResolver; }
+  absl::string_view name() const override { return kXdsClusterResolver; }
 
   void UpdateLocked(UpdateArgs args) override;
   void ResetBackoffLocked() override;
@@ -224,16 +228,44 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
       // in methods of this class rather than in lambdas to work around an MSVC
       // bug.
       void OnResourceChangedHelper(XdsEndpointResource update) {
+        std::string resolution_note;
+        if (update.priorities.empty()) {
+          resolution_note = absl::StrCat(
+              "EDS resource ", discovery_mechanism_->GetEdsResourceName(),
+              " contains no localities");
+        } else {
+          std::set<std::string> empty_localities;
+          for (const auto& priority : update.priorities) {
+            for (const auto& p : priority.localities) {
+              if (p.second.endpoints.empty()) {
+                empty_localities.insert(p.first->AsHumanReadableString());
+              }
+            }
+          }
+          if (!empty_localities.empty()) {
+            resolution_note = absl::StrCat(
+                "EDS resource ", discovery_mechanism_->GetEdsResourceName(),
+                " contains empty localities: [",
+                absl::StrJoin(empty_localities, "; "), "]");
+          }
+        }
         discovery_mechanism_->parent()->OnEndpointChanged(
-            discovery_mechanism_->index(), std::move(update));
+            discovery_mechanism_->index(), std::move(update),
+            std::move(resolution_note));
       }
       void OnErrorHelper(absl::Status status) {
-        discovery_mechanism_->parent()->OnError(discovery_mechanism_->index(),
-                                                status);
+        discovery_mechanism_->parent()->OnError(
+            discovery_mechanism_->index(),
+            absl::StrCat("EDS watcher error for resource ",
+                         discovery_mechanism_->GetEdsResourceName(), " (",
+                         status.ToString(), ")"));
       }
       void OnResourceDoesNotExistHelper() {
         discovery_mechanism_->parent()->OnResourceDoesNotExist(
-            discovery_mechanism_->index());
+            discovery_mechanism_->index(),
+            absl::StrCat("EDS resource ",
+                         discovery_mechanism_->GetEdsResourceName(),
+                         " does not exist"));
       }
       RefCountedPtr<EdsDiscoveryMechanism> discovery_mechanism_;
     };
@@ -288,6 +320,11 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
     // access protected member in base class.
     friend class ResolverResultHandler;
 
+    absl::string_view GetDnsHostname() const {
+      auto& config = parent()->config_->discovery_mechanisms()[index()];
+      return config.dns_hostname;
+    }
+
     OrphanablePtr<Resolver> resolver_;
   };
 
@@ -295,6 +332,8 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
     OrphanablePtr<DiscoveryMechanism> discovery_mechanism;
     // Most recent update reported by the discovery mechanism.
     absl::optional<XdsEndpointResource> latest_update;
+    // Last resolution note reported by the discovery mechanism, if any.
+    std::string resolution_note;
     // State used to retain child policy names for priority policy.
     std::vector<size_t /*child_number*/> priority_child_numbers;
     size_t next_available_child_number = 0;
@@ -335,9 +374,10 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
 
   void ShutdownLocked() override;
 
-  void OnEndpointChanged(size_t index, XdsEndpointResource update);
-  void OnError(size_t index, absl::Status status);
-  void OnResourceDoesNotExist(size_t index);
+  void OnEndpointChanged(size_t index, XdsEndpointResource update,
+                         std::string resolution_note);
+  void OnError(size_t index, std::string resolution_note);
+  void OnResourceDoesNotExist(size_t index, std::string resolution_note);
 
   void MaybeDestroyChildPolicyLocked();
 
@@ -345,6 +385,7 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
   OrphanablePtr<LoadBalancingPolicy> CreateChildPolicyLocked(
       const ChannelArgs& args);
   ServerAddressList CreateChildPolicyAddressesLocked();
+  std::string CreateChildPolicyResolutionNoteLocked();
   RefCountedPtr<Config> CreateChildPolicyConfigLocked();
   ChannelArgs CreateChildPolicyArgsLocked(const ChannelArgs& args_in);
 
@@ -440,17 +481,16 @@ void XdsClusterResolverLb::EdsDiscoveryMechanism::Orphan() {
 //
 
 void XdsClusterResolverLb::LogicalDNSDiscoveryMechanism::Start() {
-  std::string target =
-      parent()->config_->discovery_mechanisms()[index()].dns_hostname;
+  std::string target;
   ChannelArgs args = parent()->args_;
   auto* fake_resolver_response_generator =
       args.GetPointer<FakeResolverResponseGenerator>(
           GRPC_ARG_XDS_LOGICAL_DNS_CLUSTER_FAKE_RESOLVER_RESPONSE_GENERATOR);
   if (fake_resolver_response_generator != nullptr) {
-    target = absl::StrCat("fake:", target);
+    target = absl::StrCat("fake:", GetDnsHostname());
     args = args.SetObject(fake_resolver_response_generator->Ref());
   } else {
-    target = absl::StrCat("dns:", target);
+    target = absl::StrCat("dns:", GetDnsHostname());
   }
   resolver_ = CoreConfiguration::Get().resolver_registry().CreateResolver(
       target.c_str(), args, parent()->interested_parties(),
@@ -458,7 +498,9 @@ void XdsClusterResolverLb::LogicalDNSDiscoveryMechanism::Start() {
       absl::make_unique<ResolverResultHandler>(
           Ref(DEBUG_LOCATION, "LogicalDNSDiscoveryMechanism")));
   if (resolver_ == nullptr) {
-    parent()->OnResourceDoesNotExist(index());
+    parent()->OnResourceDoesNotExist(
+        index(),
+        absl::StrCat("error creating DNS resolver for ", GetDnsHostname()));
     return;
   }
   resolver_->StartLocked();
@@ -488,14 +530,18 @@ void XdsClusterResolverLb::LogicalDNSDiscoveryMechanism::Orphan() {
 
 void XdsClusterResolverLb::LogicalDNSDiscoveryMechanism::ResolverResultHandler::
     ReportResult(Resolver::Result result) {
+  XdsClusterResolverLb* lb_policy = discovery_mechanism_->parent();
+  size_t index = discovery_mechanism_->index();
   if (!result.addresses.ok()) {
-    discovery_mechanism_->parent()->OnError(discovery_mechanism_->index(),
-                                            result.addresses.status());
+    if (result.resolution_note.empty()) {
+      result.resolution_note = absl::StrCat(
+          "DNS resolution failed for ", discovery_mechanism_->GetDnsHostname(),
+          " (", result.addresses.status().ToString(), ")");
+    }
+    lb_policy->OnError(index, result.resolution_note);
     return;
   }
   // Convert resolver result to EDS update.
-  // TODO(roth): Figure out a way to pass resolution_note through to the
-  // child policy.
   XdsEndpointResource update;
   XdsEndpointResource::Priority::Locality locality;
   locality.name = MakeRefCounted<XdsLocalityName>("", "", "");
@@ -504,8 +550,8 @@ void XdsClusterResolverLb::LogicalDNSDiscoveryMechanism::ResolverResultHandler::
   XdsEndpointResource::Priority priority;
   priority.localities.emplace(locality.name.get(), std::move(locality));
   update.priorities.emplace_back(std::move(priority));
-  discovery_mechanism_->parent()->OnEndpointChanged(
-      discovery_mechanism_->index(), std::move(update));
+  lb_policy->OnEndpointChanged(index, std::move(update),
+                               std::move(result.resolution_note));
 }
 
 //
@@ -615,13 +661,14 @@ void XdsClusterResolverLb::ExitIdleLocked() {
 }
 
 void XdsClusterResolverLb::OnEndpointChanged(size_t index,
-                                             XdsEndpointResource update) {
+                                             XdsEndpointResource update,
+                                             std::string resolution_note) {
   if (shutting_down_) return;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_cluster_resolver_trace)) {
     gpr_log(GPR_INFO,
             "[xds_cluster_resolver_lb %p] Received update from xds client"
-            " for discovery mechanism %" PRIuPTR "",
-            this, index);
+            " for discovery mechanism %" PRIuPTR " (resolution_note=\"%s\")",
+            this, index, resolution_note.c_str());
   }
   DiscoveryMechanismEntry& discovery_entry = discovery_mechanisms_[index];
   // We need at least one priority for each discovery mechanism, just so that we
@@ -694,6 +741,7 @@ void XdsClusterResolverLb::OnEndpointChanged(size_t index,
   }
   // Save update.
   discovery_entry.latest_update = std::move(update);
+  discovery_entry.resolution_note = std::move(resolution_note);
   discovery_entry.priority_child_numbers = std::move(priority_child_numbers);
   // If any discovery mechanism has not received its first update,
   // wait until that happens before creating the child policy.
@@ -711,27 +759,28 @@ void XdsClusterResolverLb::OnEndpointChanged(size_t index,
   UpdateChildPolicyLocked();
 }
 
-void XdsClusterResolverLb::OnError(size_t index, absl::Status status) {
+void XdsClusterResolverLb::OnError(size_t index, std::string resolution_note) {
   gpr_log(GPR_ERROR,
           "[xds_cluster_resolver_lb %p] discovery mechanism %" PRIuPTR
-          " xds watcher reported error: %s",
-          this, index, status.ToString().c_str());
+          " reported error: %s",
+          this, index, resolution_note.c_str());
   if (shutting_down_) return;
   if (!discovery_mechanisms_[index].latest_update.has_value()) {
-    // Call OnEndpointChanged with an empty update just like
-    // OnResourceDoesNotExist.
-    OnEndpointChanged(index, XdsEndpointResource());
+    // Call OnEndpointChanged() with an empty update just like
+    // OnResourceDoesNotExist().
+    OnEndpointChanged(index, XdsEndpointResource(), std::move(resolution_note));
   }
 }
 
-void XdsClusterResolverLb::OnResourceDoesNotExist(size_t index) {
+void XdsClusterResolverLb::OnResourceDoesNotExist(size_t index,
+                                                  std::string resolution_note) {
   gpr_log(GPR_ERROR,
           "[xds_cluster_resolver_lb %p] discovery mechanism %" PRIuPTR
-          " resource does not exist",
-          this, index);
+          " resource does not exist: %s",
+          this, index, resolution_note.c_str());
   if (shutting_down_) return;
-  // Call OnEndpointChanged with an empty update.
-  OnEndpointChanged(index, XdsEndpointResource());
+  // Call OnEndpointChanged() with an empty update.
+  OnEndpointChanged(index, XdsEndpointResource(), std::move(resolution_note));
 }
 
 //
@@ -778,6 +827,16 @@ ServerAddressList XdsClusterResolverLb::CreateChildPolicyAddressesLocked() {
     }
   }
   return addresses;
+}
+
+std::string XdsClusterResolverLb::CreateChildPolicyResolutionNoteLocked() {
+  std::vector<absl::string_view> resolution_notes;
+  for (const auto& discovery_entry : discovery_mechanisms_) {
+    if (!discovery_entry.resolution_note.empty()) {
+      resolution_notes.push_back(discovery_entry.resolution_note);
+    }
+  }
+  return absl::StrJoin(resolution_notes, "; ");
 }
 
 RefCountedPtr<LoadBalancingPolicy::Config>
@@ -920,17 +979,15 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
         "[xds_cluster_resolver_lb %p] generated config for child policy: %s",
         this, json_str.c_str());
   }
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  RefCountedPtr<LoadBalancingPolicy::Config> config =
-      LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(json, &error);
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  auto config = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(json);
+  if (!config.ok()) {
     // This should never happen, but if it does, we basically have no
     // way to fix it, so we put the channel in TRANSIENT_FAILURE.
     gpr_log(GPR_ERROR,
             "[xds_cluster_resolver_lb %p] error parsing generated child policy "
             "config -- "
             "will put channel in TRANSIENT_FAILURE: %s",
-            this, grpc_error_std_string(error).c_str());
+            this, config.status().ToString().c_str());
     absl::Status status = absl::InternalError(
         "xds_cluster_resolver LB policy: error parsing generated child policy "
         "config");
@@ -939,7 +996,7 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
         absl::make_unique<TransientFailurePicker>(status));
     return nullptr;
   }
-  return config;
+  return std::move(*config);
 }
 
 void XdsClusterResolverLb::UpdateChildPolicyLocked() {
@@ -948,6 +1005,7 @@ void XdsClusterResolverLb::UpdateChildPolicyLocked() {
   update_args.config = CreateChildPolicyConfigLocked();
   if (update_args.config == nullptr) return;
   update_args.addresses = CreateChildPolicyAddressesLocked();
+  update_args.resolution_note = CreateChildPolicyResolutionNoteLocked();
   update_args.args = CreateChildPolicyArgsLocked(args_);
   if (child_policy_ == nullptr) {
     child_policy_ = CreateChildPolicyLocked(update_args.args);
@@ -1002,7 +1060,8 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
  public:
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
       LoadBalancingPolicy::Args args) const override {
-    auto xds_client = args.args.GetObjectRef<GrpcXdsClient>();
+    auto xds_client = args.args.GetObjectRef<GrpcXdsClient>(
+        DEBUG_LOCATION, "XdsClusterResolverLbFactory");
     if (xds_client == nullptr) {
       gpr_log(GPR_ERROR,
               "XdsClient not present in channel args -- cannot instantiate "
@@ -1013,19 +1072,17 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
                                                           std::move(args));
   }
 
-  const char* name() const override { return kXdsClusterResolver; }
+  absl::string_view name() const override { return kXdsClusterResolver; }
 
-  RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
-      const Json& json, grpc_error_handle* error) const override {
-    GPR_DEBUG_ASSERT(error != nullptr && GRPC_ERROR_IS_NONE(*error));
+  absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
+  ParseLoadBalancingConfig(const Json& json) const override {
     if (json.type() == Json::Type::JSON_NULL) {
       // xds_cluster_resolver was mentioned as a policy in the deprecated
       // loadBalancingPolicy field or in the client API.
-      *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      return absl::InvalidArgumentError(
           "field:loadBalancingPolicy error:xds_cluster_resolver policy "
           "requires configuration. "
           "Please use loadBalancingConfig field of service config instead.");
-      return nullptr;
     }
     std::vector<grpc_error_handle> error_list;
     std::vector<XdsClusterResolverLbConfig::DiscoveryMechanism>
@@ -1087,10 +1144,11 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
           policy_it = policy.find("RING_HASH");
           if (policy_it != policy.end()) {
             xds_lb_policy = array[i];
-            size_t min_ring_size;
-            size_t max_ring_size;
-            ParseRingHashLbConfig(policy_it->second, &min_ring_size,
-                                  &max_ring_size, &error_list);
+            auto config = ParseRingHashLbConfig(policy_it->second);
+            if (!config.ok()) {
+              error_list.emplace_back(
+                  absl_status_to_grpc_error(config.status()));
+            }
           }
         }
       }
@@ -1100,9 +1158,11 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
       return MakeRefCounted<XdsClusterResolverLbConfig>(
           std::move(discovery_mechanisms), std::move(xds_lb_policy));
     } else {
-      *error = GRPC_ERROR_CREATE_FROM_VECTOR(
+      grpc_error_handle error = GRPC_ERROR_CREATE_FROM_VECTOR(
           "xds_cluster_resolver_experimental LB policy config", &error_list);
-      return nullptr;
+      absl::Status status = grpc_error_to_absl_status(error);
+      GRPC_ERROR_UNREF(error);
+      return status;
     }
   }
 
@@ -1224,6 +1284,10 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
                              &grpc_lb_xds_cluster_resolver_trace),
           xds_client_(std::move(xds_client)) {}
 
+    ~XdsClusterResolverChildHandler() override {
+      xds_client_.reset(DEBUG_LOCATION, "XdsClusterResolverChildHandler");
+    }
+
     bool ConfigChangeRequiresNewPolicyInstance(
         LoadBalancingPolicy::Config* old_config,
         LoadBalancingPolicy::Config* new_config) const override {
@@ -1238,8 +1302,11 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
     }
 
     OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
-        const char* /*name*/, LoadBalancingPolicy::Args args) const override {
-      return MakeOrphanable<XdsClusterResolverLb>(xds_client_, std::move(args));
+        absl::string_view /*name*/,
+        LoadBalancingPolicy::Args args) const override {
+      return MakeOrphanable<XdsClusterResolverLb>(
+          xds_client_->Ref(DEBUG_LOCATION, "XdsClusterResolverLb"),
+          std::move(args));
     }
 
    private:

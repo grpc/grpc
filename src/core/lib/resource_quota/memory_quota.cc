@@ -21,7 +21,6 @@
 #include <algorithm>
 #include <atomic>
 #include <tuple>
-#include <type_traits>
 
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
@@ -29,6 +28,7 @@
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/global_config_env.h"
 #include "src/core/lib/gprpp/mpscq.h"
 #include "src/core/lib/promise/exec_ctx_wakeup_scheduler.h"
 #include "src/core/lib/promise/loop.h"
@@ -36,6 +36,18 @@
 #include "src/core/lib/promise/race.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/resource_quota/trace.h"
+
+GPR_GLOBAL_CONFIG_DEFINE_BOOL(grpc_experimental_smooth_memory_presure, false,
+                              "smooth the value of memory pressure over time");
+GPR_GLOBAL_CONFIG_DEFINE_BOOL(
+    grpc_experimental_enable_periodic_resource_quota_reclamation, false,
+    "Enable experimental feature to reclaim resource quota periodically");
+GPR_GLOBAL_CONFIG_DEFINE_INT32(
+    grpc_experimental_max_quota_buffer_size, 1024 * 1024,
+    "Maximum size for one memory allocators buffer size against a quota");
+GPR_GLOBAL_CONFIG_DEFINE_INT32(
+    grpc_experimental_resource_quota_set_point, 60,
+    "Ask the resource quota to target this percentage of total quota usage.");
 
 namespace grpc_core {
 
@@ -249,11 +261,16 @@ absl::optional<size_t> GrpcMemoryAllocatorImpl::TryReserve(
 
 void GrpcMemoryAllocatorImpl::MaybeDonateBack() {
   size_t free = free_bytes_.load(std::memory_order_relaxed);
-  const size_t kReduceToSize = kMaxQuotaBufferSize / 2;
-  while (true) {
-    if (free <= kReduceToSize) return;
-    size_t ret = free - kReduceToSize;
-    if (free_bytes_.compare_exchange_weak(free, kReduceToSize,
+  while (free > 0) {
+    size_t ret = 0;
+    if (max_quota_buffer_size() > 0 && free > max_quota_buffer_size() / 2) {
+      ret = std::max(ret, free - max_quota_buffer_size() / 2);
+    }
+    if (periodic_donate_back()) {
+      ret = std::max(ret, free > 8192 ? free / 2 : free);
+    }
+    const size_t new_free = free - ret;
+    if (free_bytes_.compare_exchange_weak(free, new_free,
                                           std::memory_order_acq_rel,
                                           std::memory_order_acquire)) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
@@ -447,7 +464,9 @@ void BasicMemoryQuota::Return(size_t amount) {
 }
 
 std::pair<double, size_t>
-BasicMemoryQuota::InstantaneousPressureAndMaxRecommendedAllocationSize() const {
+BasicMemoryQuota::InstantaneousPressureAndMaxRecommendedAllocationSize() {
+  static const bool kSmoothMemoryPressure =
+      GPR_GLOBAL_CONFIG_GET(grpc_experimental_smooth_memory_presure);
   double free = free_bytes_.load();
   if (free < 0) free = 0;
   size_t quota_size = quota_size_.load();
@@ -456,8 +475,54 @@ BasicMemoryQuota::InstantaneousPressureAndMaxRecommendedAllocationSize() const {
   double pressure = (size - free) / size;
   if (pressure < 0.0) pressure = 0.0;
   if (pressure > 1.0) pressure = 1.0;
+  if (kSmoothMemoryPressure) {
+    pressure = pressure_tracker_.AddSampleAndGetEstimate(pressure);
+  }
   return std::make_pair(pressure, quota_size / 16);
 }
+
+//
+// PressureTracker
+//
+
+namespace memory_quota_detail {
+
+double PressureTracker::AddSampleAndGetEstimate(double sample) {
+  static const double kSetPoint =
+      GPR_GLOBAL_CONFIG_GET(grpc_experimental_resource_quota_set_point) / 100.0;
+
+  double max_so_far = max_this_round_.load(std::memory_order_relaxed);
+  if (sample > max_so_far) {
+    max_this_round_.compare_exchange_weak(max_so_far, sample,
+                                          std::memory_order_relaxed,
+                                          std::memory_order_relaxed);
+  }
+  // If memory pressure is almost done, immediately hit the brakes and report
+  // full memory usage.
+  if (sample >= 0.99) {
+    report_.store(1.0, std::memory_order_relaxed);
+  }
+  update_.Tick([&](Duration dt) {
+    // Reset the round tracker with the new sample.
+    const double current_estimate =
+        max_this_round_.exchange(sample, std::memory_order_relaxed);
+    double report;
+    if (current_estimate > 0.99) {
+      // Under very high memory pressure we... just max things out.
+      report = pid_.Update(1e99, 1.0);
+    } else {
+      report = pid_.Update(current_estimate - kSetPoint, dt.seconds());
+    }
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
+      gpr_log(GPR_INFO, "RQ: pressure:%lf report:%lf error_integral:%lf",
+              current_estimate, report, pid_.error_integral());
+    }
+    report_.store(report, std::memory_order_relaxed);
+  });
+  return report_.load(std::memory_order_relaxed);
+}
+
+}  // namespace memory_quota_detail
 
 //
 // MemoryQuota

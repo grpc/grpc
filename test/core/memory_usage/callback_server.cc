@@ -55,7 +55,7 @@ class ServerCallbackImpl final
  public:
   explicit ServerCallbackImpl(MemStats before_server_memory)
       : before_server_create(before_server_memory) {}
-
+      
   grpc::ServerUnaryReactor* UnaryCall(
       grpc::CallbackServerContext* context,
       const grpc::testing::SimpleRequest* request,
