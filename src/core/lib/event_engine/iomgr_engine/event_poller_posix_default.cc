@@ -14,14 +14,43 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/strings/str_split.h"
+#include "absl/strings/string_view.h"
+
 #include "src/core/lib/event_engine/iomgr_engine/ev_epoll1_linux.h"
+#include "src/core/lib/event_engine/iomgr_engine/ev_poll_posix.h"
 #include "src/core/lib/event_engine/iomgr_engine/event_poller.h"
+#include "src/core/lib/gprpp/global_config.h"
+#include "src/core/lib/gprpp/memory.h"
+
+GPR_GLOBAL_CONFIG_DECLARE_STRING(grpc_poll_strategy);
 
 namespace grpc_event_engine {
 namespace iomgr_engine {
 
+namespace {
+
+bool PollStrategyMatches(absl::string_view strategy, absl::string_view want) {
+  return strategy == "all" || strategy == want;
+}
+
+}  // namespace
+
 EventPoller* GetDefaultPoller(Scheduler* scheduler) {
-  EventPoller* poller = GetEpoll1Poller(scheduler);
+  grpc_core::UniquePtr<char> poll_strategy =
+      GPR_GLOBAL_CONFIG_GET(grpc_poll_strategy);
+  EventPoller* poller = nullptr;
+  auto strings = absl::StrSplit(poll_strategy.get(), ',');
+  for (auto it = strings.begin(); it != strings.end() && poller == nullptr;
+       it++) {
+    if (PollStrategyMatches(*it, "epoll1")) {
+      poller = GetEpoll1Poller(scheduler);
+    } else if (PollStrategyMatches(*it, "poll")) {
+      poller = GetPollPoller(scheduler, /*use_phony_poll=*/false);
+    } else if (PollStrategyMatches(*it, "none")) {
+      poller = GetPollPoller(scheduler, /*use_phony_poll=*/true);
+    }
+  }
   return poller;
 }
 

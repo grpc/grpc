@@ -305,7 +305,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     ~Config() override = default;
 
     // Returns the load balancing policy name
-    virtual const char* name() const = 0;
+    virtual absl::string_view name() const = 0;
   };
 
   /// Data passed to the UpdateLocked() method when new addresses and
@@ -349,7 +349,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   LoadBalancingPolicy& operator=(const LoadBalancingPolicy&) = delete;
 
   /// Returns the name of the LB policy.
-  virtual const char* name() const = 0;
+  virtual absl::string_view name() const = 0;
 
   /// Updates the policy with new data from the resolver.  Will be invoked
   /// immediately after LB policy is constructed, and then again whenever
