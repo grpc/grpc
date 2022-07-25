@@ -23,6 +23,9 @@
 
 #include <cstddef>
 
+#include "absl/strings/string_view.h"
+#include "absl/types/variant.h"
+
 /** useful utilities that don't belong anywhere else */
 
 namespace grpc_core {
@@ -96,6 +99,32 @@ int QsortCompare(const T& a, const T& b) {
   if (a < b) return -1;
   if (b < a) return 1;
   return 0;
+}
+
+template <typename... X>
+int QsortCompare(const absl::variant<X...>& a, const absl::variant<X...>& b) {
+  const int index = QsortCompare(a.index(), b.index());
+  if (index != 0) return index;
+  return absl::visit(
+      [&](const auto& x) {
+        return QsortCompare(x, absl::get<absl::remove_cvref_t<decltype(x)>>(b));
+      },
+      a);
+}
+
+inline int QsortCompare(absl::string_view a, absl::string_view b) {
+  return a.compare(b);
+}
+
+inline int QsortCompare(const std::string& a, const std::string& b) {
+  return a.compare(b);
+}
+
+template <typename A, typename B>
+int QsortCompare(const std::pair<A, B>& a, const std::pair<A, B>& b) {
+  const int first = QsortCompare(a.first, b.first);
+  if (first != 0) return first;
+  return QsortCompare(a.second, b.second);
 }
 
 template <typename T>

@@ -58,6 +58,11 @@ class Epoll1Poller : public EventPoller {
   absl::Status ProcessEpollEvents(int max_epoll_events_to_handle,
                                   std::vector<EventHandle*>& pending_events);
   absl::Status DoEpollWait(grpc_core::Timestamp deadline);
+  struct HandlesList {
+    Epoll1EventHandle* handle;
+    Epoll1EventHandle* next;
+    Epoll1EventHandle* prev;
+  };
   friend class Epoll1EventHandle;
 #ifdef GRPC_LINUX_EPOLL
   struct EpollSet {

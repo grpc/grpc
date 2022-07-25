@@ -281,6 +281,7 @@ libs:
   - absl/synchronization:synchronization
   - absl/time:time
   - absl/types:optional
+  - absl/types:variant
 - name: grpc
   build: all
   language: c
@@ -1690,7 +1691,6 @@ libs:
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/types:span
-  - absl/types:variant
   - absl/utility:utility
   - gpr
   - libssl
@@ -2488,7 +2488,6 @@ libs:
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/types:span
-  - absl/types:variant
   - absl/utility:utility
   - gpr
   - address_sorting
@@ -3936,6 +3935,7 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/transport/pid_controller.h
   - test/core/promise/test_context.h
   src:
   - src/core/ext/upb-generated/google/protobuf/any.upb.c
@@ -3960,12 +3960,13 @@ targets:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/lib/transport/pid_controller.cc
   - test/core/promise/arena_promise_test.cc
   deps:
   - absl/functional:any_invocable
+  - absl/functional:function_ref
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:variant
   - absl/utility:utility
   - gpr
   - upb
@@ -4045,9 +4046,12 @@ targets:
   language: c++
   headers:
   - src/core/lib/avl/avl.h
+  - src/core/lib/gpr/useful.h
   src:
   - test/core/avl/avl_test.cc
-  deps: []
+  deps:
+  - absl/strings:strings
+  - absl/types:variant
   uses_polling: false
 - name: aws_request_signer_test
   gtest: true
@@ -4269,7 +4273,9 @@ targets:
   - src/core/lib/gprpp/bitset.h
   src:
   - test/core/gprpp/bitset_test.cc
-  deps: []
+  deps:
+  - absl/strings:strings
+  - absl/types:variant
   uses_polling: false
 - name: byte_buffer_test
   gtest: true
@@ -4319,6 +4325,7 @@ targets:
   - absl/meta:type_traits
   - absl/status:status
   - absl/status:statusor
+  - absl/strings:strings
   - absl/types:variant
   uses_polling: false
 - name: cancel_ares_query_test
@@ -4567,6 +4574,7 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/transport/pid_controller.h
   src:
   - src/core/ext/upb-generated/google/protobuf/any.upb.c
   - src/core/ext/upb-generated/google/rpc/status.upb.c
@@ -4590,12 +4598,13 @@ targets:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/lib/transport/pid_controller.cc
   - test/core/gprpp/chunked_vector_test.cc
   deps:
   - absl/functional:any_invocable
+  - absl/functional:function_ref
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:variant
   - absl/utility:utility
   - gpr
   - upb
@@ -5188,6 +5197,7 @@ targets:
   language: c++
   headers:
   - src/core/lib/event_engine/iomgr_engine/ev_epoll1_linux.h
+  - src/core/lib/event_engine/iomgr_engine/ev_poll_posix.h
   - src/core/lib/event_engine/iomgr_engine/event_poller.h
   - src/core/lib/event_engine/iomgr_engine/event_poller_posix_default.h
   - src/core/lib/event_engine/iomgr_engine/iomgr_engine_closure.h
@@ -5198,6 +5208,7 @@ targets:
   - src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix_default.h
   src:
   - src/core/lib/event_engine/iomgr_engine/ev_epoll1_linux.cc
+  - src/core/lib/event_engine/iomgr_engine/ev_poll_posix.cc
   - src/core/lib/event_engine/iomgr_engine/event_poller_posix_default.cc
   - src/core/lib/event_engine/iomgr_engine/lockfree_event.cc
   - src/core/lib/event_engine/iomgr_engine/wakeup_fd_eventfd.cc
@@ -5292,7 +5303,6 @@ targets:
   - absl/functional:any_invocable
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:variant
   - absl/utility:utility
   - gpr
   - upb
@@ -5532,7 +5542,6 @@ targets:
   - absl/functional:function_ref
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:variant
   - absl/utility:utility
   - gpr
   - upb
@@ -5591,6 +5600,7 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/transport/pid_controller.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
   - src/core/ext/upb-generated/google/protobuf/any.upb.c
@@ -5615,14 +5625,15 @@ targets:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/lib/transport/pid_controller.cc
   - test/core/promise/for_each_test.cc
   deps:
   - absl/container:flat_hash_set
   - absl/functional:any_invocable
+  - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:variant
   - absl/utility:utility
   - gpr
   - upb
@@ -6350,6 +6361,7 @@ targets:
   - test/core/promise/join_test.cc
   deps:
   - absl/meta:type_traits
+  - absl/strings:strings
   - absl/types:variant
   - absl/utility:utility
   uses_polling: false
@@ -6658,6 +6670,7 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/transport/pid_controller.h
   src:
   - src/core/ext/upb-generated/google/protobuf/any.upb.c
   - src/core/ext/upb-generated/google/rpc/status.upb.c
@@ -6678,12 +6691,13 @@ targets:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/lib/transport/pid_controller.cc
   - test/core/resource_quota/memory_quota_stress_test.cc
   deps:
   - absl/functional:any_invocable
+  - absl/functional:function_ref
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:variant
   - absl/utility:utility
   - gpr
   - upb
@@ -6734,6 +6748,7 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/transport/pid_controller.h
   - test/core/resource_quota/call_checker.h
   src:
   - src/core/ext/upb-generated/google/protobuf/any.upb.c
@@ -6755,12 +6770,13 @@ targets:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/lib/transport/pid_controller.cc
   - test/core/resource_quota/memory_quota_test.cc
   deps:
   - absl/functional:any_invocable
+  - absl/functional:function_ref
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:variant
   - absl/utility:utility
   - gpr
   - upb
@@ -7161,6 +7177,7 @@ targets:
   - test/core/resource_quota/periodic_update_test.cc
   deps:
   - absl/functional:any_invocable
+  - absl/functional:function_ref
   - absl/status:statusor
   - gpr
   - upb
@@ -7226,6 +7243,7 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/transport/pid_controller.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
   - src/core/ext/upb-generated/google/protobuf/any.upb.c
@@ -7250,12 +7268,13 @@ targets:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/lib/transport/pid_controller.cc
   - test/core/promise/pipe_test.cc
   deps:
   - absl/functional:any_invocable
+  - absl/functional:function_ref
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:variant
   - absl/utility:utility
   - gpr
   - upb
@@ -7600,6 +7619,7 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/transport/pid_controller.h
   src:
   - src/core/ext/upb-generated/google/protobuf/any.upb.c
   - src/core/ext/upb-generated/google/rpc/status.upb.c
@@ -7622,12 +7642,13 @@ targets:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/lib/transport/pid_controller.cc
   - test/core/resource_quota/resource_quota_test.cc
   deps:
   - absl/functional:any_invocable
+  - absl/functional:function_ref
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:variant
   - absl/utility:utility
   - gpr
   - upb
@@ -8059,6 +8080,7 @@ targets:
   - absl/synchronization:synchronization
   - absl/time:time
   - absl/types:optional
+  - absl/types:variant
   uses_polling: false
 - name: sleep_test
   gtest: true
@@ -8319,7 +8341,9 @@ targets:
   - test/core/gprpp/table_test.cc
   deps:
   - absl/meta:type_traits
+  - absl/strings:strings
   - absl/types:optional
+  - absl/types:variant
   - absl/utility:utility
   uses_polling: false
 - name: test_core_event_engine_iomgr_event_engine_timer_heap_test
@@ -8422,6 +8446,7 @@ targets:
   - absl/synchronization:synchronization
   - absl/time:time
   - absl/types:optional
+  - absl/types:variant
   uses_polling: false
 - name: test_core_event_engine_iomgr_event_engine_timer_list_test
   gtest: true
@@ -8522,6 +8547,7 @@ targets:
   - absl/synchronization:synchronization
   - absl/time:time
   - absl/types:optional
+  - absl/types:variant
   uses_polling: false
 - name: test_core_event_engine_slice_buffer_test
   gtest: true
@@ -8635,6 +8661,7 @@ targets:
   - absl/synchronization:synchronization
   - absl/time:time
   - absl/types:optional
+  - absl/types:variant
   uses_polling: false
 - name: test_core_security_credentials_test
   gtest: true
@@ -8825,6 +8852,7 @@ targets:
   - absl/synchronization:synchronization
   - absl/time:time
   - absl/types:optional
+  - absl/types:variant
   uses_polling: false
 - name: thread_stress_test
   gtest: true
@@ -9076,6 +9104,7 @@ targets:
   - absl/meta:type_traits
   - absl/status:status
   - absl/status:statusor
+  - absl/strings:strings
   - absl/types:variant
   - absl/utility:utility
   uses_polling: false
@@ -9123,6 +9152,7 @@ targets:
   deps:
   - absl/strings:str_format
   - absl/strings:strings
+  - absl/types:variant
   uses_polling: false
 - name: unknown_frame_bad_client_test
   gtest: true
@@ -9154,7 +9184,9 @@ targets:
   - src/core/lib/gpr/useful.h
   src:
   - test/core/gpr/useful_test.cc
-  deps: []
+  deps:
+  - absl/strings:strings
+  - absl/types:variant
   uses_polling: false
 - name: varint_test
   gtest: true

@@ -17,11 +17,23 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <list>
+#include <stdlib.h>
 
+#include <memory>
+
+#include "absl/strings/string_view.h"
+
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/grpc_security.h>
+
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/security/authorization/evaluate_args.h"
 #include "src/core/lib/security/context/security_context.h"
+#include "src/core/lib/slice/slice.h"
+#include "src/core/lib/transport/metadata_batch.h"
 #include "test/core/util/mock_authorization_endpoint.h"
 
 namespace grpc_core {

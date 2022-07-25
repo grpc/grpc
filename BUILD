@@ -859,6 +859,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "useful",
     hdrs = ["src/core/lib/gpr/useful.h"],
+    external_deps = [
+        "absl/strings",
+        "absl/types:variant",
+    ],
     language = "c++",
     deps = ["gpr_platform"],
 )
@@ -1861,6 +1865,7 @@ grpc_cc_library(
         "map",
         "orphanable",
         "periodic_update",
+        "pid_controller",
         "poll",
         "race",
         "ref_counted_ptr",
@@ -1879,6 +1884,7 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/resource_quota/periodic_update.h",
     ],
+    external_deps = ["absl/functional:function_ref"],
     deps = [
         "exec_ctx",
         "gpr_platform",
@@ -2187,7 +2193,10 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/avl/avl.h",
     ],
-    deps = ["gpr_platform"],
+    deps = [
+        "gpr_platform",
+        "useful",
+    ],
 )
 
 grpc_cc_library(
@@ -2305,6 +2314,7 @@ grpc_cc_library(
         "src/core/lib/event_engine/iomgr_engine/iomgr_engine_closure.h",
     ],
     external_deps = [
+        "absl/functional:any_invocable",
         "absl/status",
         "absl/utility",
     ],
@@ -2433,6 +2443,34 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "iomgr_ee_poller_posix_poll",
+    srcs = [
+        "src/core/lib/event_engine/iomgr_engine/ev_poll_posix.cc",
+    ],
+    hdrs = [
+        "src/core/lib/event_engine/iomgr_engine/ev_poll_posix.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/synchronization",
+        "absl/utility",
+    ],
+    deps = [
+        "gpr_base",
+        "gpr_codegen",
+        "iomgr_ee_closure",
+        "iomgr_ee_event_poller",
+        "iomgr_ee_wakeup_fd_posix",
+        "iomgr_ee_wakeup_fd_posix_default",
+        "iomgr_port",
+        "time",
+    ],
+)
+
+grpc_cc_library(
     name = "iomgr_ee_poller_posix_default",
     srcs = [
         "src/core/lib/event_engine/iomgr_engine/event_poller_posix_default.cc",
@@ -2440,10 +2478,12 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/event_engine/iomgr_engine/event_poller_posix_default.h",
     ],
+    external_deps = ["absl/strings"],
     deps = [
-        "gpr_platform",
+        "gpr_base",
         "iomgr_ee_event_poller",
         "iomgr_ee_poller_posix_epoll1",
+        "iomgr_ee_poller_posix_poll",
     ],
 )
 

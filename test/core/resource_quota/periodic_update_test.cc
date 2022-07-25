@@ -42,9 +42,10 @@ TEST(PeriodicUpdateTest, SimpleTest) {
     start = exec_ctx.Now();
   }
   // Wait until the first period has elapsed.
-  while (true) {
+  bool done = false;
+  while (!done) {
     ExecCtx exec_ctx;
-    if (upd->Tick()) break;
+    upd->Tick([&](Duration) { done = true; });
   }
   // Ensure that took at least 1 second.
   {
@@ -54,9 +55,10 @@ TEST(PeriodicUpdateTest, SimpleTest) {
   }
   // Do ten more update cycles
   for (int i = 0; i < 10; i++) {
-    while (true) {
+    done = false;
+    while (!done) {
       ExecCtx exec_ctx;
-      if (upd->Tick()) break;
+      upd->Tick([&](Duration) { done = true; });
     }
     // Ensure the time taken was between 1 and 1.5 seconds - we make a little
     // allowance for the presumed inaccuracy of this type.
@@ -87,7 +89,10 @@ TEST(PeriodicUpdate, ThreadTest) {
     threads.push_back(std::thread([&]() {
       while (count.load() < 10) {
         ExecCtx exec_ctx;
-        if (upd->Tick()) count.fetch_add(1);
+        upd->Tick([&](Duration d) {
+          EXPECT_GE(d, Duration::Seconds(1));
+          count.fetch_add(1);
+        });
       }
     }));
   }

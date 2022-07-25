@@ -21,6 +21,8 @@
 
 #include <atomic>
 
+#include "absl/functional/function_ref.h"
+
 #include "src/core/lib/gprpp/time.h"
 
 namespace grpc_core {
@@ -36,20 +38,20 @@ class PeriodicUpdate {
  public:
   explicit PeriodicUpdate(Duration period) : period_(period) {}
 
-  // Tick the update, return true if we think the period expired.
-  GRPC_MUST_USE_RESULT bool Tick() {
+  // Tick the update, call f and return true if we think the period expired.
+  bool Tick(absl::FunctionRef<void(Duration)> f) {
     // Atomically decrement the remaining ticks counter.
     // If we hit 0 our estimate of period length has expired.
     // See the comment next to the data members for a description of thread
     // safety.
     if (updates_remaining_.fetch_sub(1, std::memory_order_acquire) == 1) {
-      return MaybeEndPeriod();
+      return MaybeEndPeriod(f);
     }
     return false;
   }
 
  private:
-  GRPC_MUST_USE_RESULT bool MaybeEndPeriod();
+  bool MaybeEndPeriod(absl::FunctionRef<void(Duration)> f);
 
   // Thread safety:
   // When updates_remaining_ reaches 0 the thread that decremented becomes
