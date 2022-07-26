@@ -26,6 +26,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/slice.h>
@@ -33,7 +35,6 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/service_config/service_config.h"
 #include "src/core/lib/service_config/service_config_parser.h"
@@ -68,13 +69,11 @@ namespace grpc_core {
 class ServiceConfigImpl final : public ServiceConfig {
  public:
   /// Creates a new service config from parsing \a json_string.
-  /// Returns null on parse error.
-  static RefCountedPtr<ServiceConfig> Create(const ChannelArgs& args,
-                                             absl::string_view json_string,
-                                             grpc_error_handle* error);
+  static absl::StatusOr<RefCountedPtr<ServiceConfig>> Create(
+      const ChannelArgs& args, absl::string_view json_string);
 
   ServiceConfigImpl(const ChannelArgs& args, std::string json_string, Json json,
-                    grpc_error_handle* error);
+                    absl::Status* status);
   ~ServiceConfigImpl() override;
 
   absl::string_view json_string() const override { return json_string_; }
@@ -96,14 +95,13 @@ class ServiceConfigImpl final : public ServiceConfig {
 
  private:
   // Helper functions for parsing the method configs.
-  grpc_error_handle ParsePerMethodParams(const ChannelArgs& args);
-  grpc_error_handle ParseJsonMethodConfig(const ChannelArgs& args,
-                                          const Json& json);
+  absl::Status ParsePerMethodParams(const ChannelArgs& args);
+  absl::Status ParseJsonMethodConfig(const ChannelArgs& args, const Json& json,
+                                     size_t index);
 
   // Returns a path string for the JSON name object specified by json.
   // Sets *error on error.
-  static std::string ParseJsonMethodName(const Json& json,
-                                         grpc_error_handle* error);
+  static absl::StatusOr<std::string> ParseJsonMethodName(const Json& json);
 
   std::string json_string_;
   Json json_;

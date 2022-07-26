@@ -29,8 +29,6 @@
 #include <utility>
 #include <vector>
 
-#include <google/protobuf/repeated_ptr_field.h>
-
 #include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -79,6 +77,8 @@
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/util/passthru_endpoint.h"
+
+// IWYU pragma: no_include <google/protobuf/repeated_ptr_field.h>
 
 // Applicable when simulating channel actions. Prevents overflows.
 static constexpr uint64_t kMaxWaitMs =

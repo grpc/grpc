@@ -178,9 +178,9 @@ class SubchannelData {
 template <typename SubchannelListType, typename SubchannelDataType>
 class SubchannelList : public InternallyRefCounted<SubchannelListType> {
  public:
-  // We use ManualConstructor here to support SubchannelDataType classes
-  // that are not copyable.
-  using SubchannelVector = std::vector<ManualConstructor<SubchannelDataType>>;
+  // Starts watching the connectivity state of all subchannels.
+  // Must be called immediately after instantiation.
+  void StartWatchingLocked();
 
   // The number of subchannels in the list.
   size_t num_subchannels() const { return subchannels_.size(); }
@@ -225,7 +225,9 @@ class SubchannelList : public InternallyRefCounted<SubchannelListType> {
   const char* tracer_;
 
   // The list of subchannels.
-  SubchannelVector subchannels_;
+  // We use ManualConstructor here to support SubchannelDataType classes
+  // that are not copyable.
+  std::vector<ManualConstructor<SubchannelDataType>> subchannels_;
 
   // Is this list shutting down? This may be true due to the shutdown of the
   // policy itself or because a newer update has arrived while this one hadn't
@@ -395,10 +397,6 @@ SubchannelList<SubchannelListType, SubchannelDataType>::SubchannelList(
     subchannels_.emplace_back();
     subchannels_.back().Init(this, std::move(address), std::move(subchannel));
   }
-  // Start watching subchannel connectivity state.
-  for (auto& sd : subchannels_) {
-    sd->StartConnectivityWatchLocked();
-  }
 }
 
 template <typename SubchannelListType, typename SubchannelDataType>
@@ -409,6 +407,14 @@ SubchannelList<SubchannelListType, SubchannelDataType>::~SubchannelList() {
   }
   for (auto& sd : subchannels_) {
     sd.Destroy();
+  }
+}
+
+template <typename SubchannelListType, typename SubchannelDataType>
+void SubchannelList<SubchannelListType,
+                    SubchannelDataType>::StartWatchingLocked() {
+  for (auto& sd : subchannels_) {
+    sd->StartConnectivityWatchLocked();
   }
 }
 
