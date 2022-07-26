@@ -34,6 +34,7 @@
 
 #include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
+#include "test/core/memory_usage/memstats.h"
 #include "test/core/util/test_config.h"
 
 class ServerCallbackImpl final

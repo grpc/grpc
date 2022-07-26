@@ -23,6 +23,7 @@
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
 #include "absl/strings/string_view.h"
+#include "absl/strings/str_cat.h"
 
 #include <grpc/support/log.h>
 #include <grpcpp/grpcpp.h>
@@ -31,6 +32,7 @@
 
 #include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
+#include "test/core/memory_usage/memstats.h"
 #include "test/core/util/test_config.h"
 
 ABSL_FLAG(std::string, target, "", "Target host:port");
