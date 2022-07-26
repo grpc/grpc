@@ -373,7 +373,8 @@ parser.add_argument('--whats_left',
 args = parser.parse_args()
 
 for dirname in [
-        "", "test/core/uri", "test/core/util", "test/core/end2end", "test/core/event_engine"
+        "", "test/core/uri", "test/core/util", "test/core/end2end",
+        "test/core/event_engine"
 ]:
     parsing_path = dirname
     exec(
