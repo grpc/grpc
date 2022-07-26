@@ -99,7 +99,7 @@ MATCHER(ContainsInvalidUtf8,
         absl::StrCat(negation ? "Contains" : "Does not contain",
                      " invalid UTF-8 characters.")) {
   auto json = Json::Parse(arg);
-  return json.status().code() == absl::StatusCode::kUnknown &&
+  return json.status().code() == absl::StatusCode::kInvalidArgument &&
          absl::StrContains(json.status().message(), "JSON parsing failed");
 }
 
