@@ -1082,7 +1082,7 @@ class OutlierDetectionLbFactory : public LoadBalancingPolicyFactory {
     }
     ParseJsonObjectFieldAsDuration(json.object_value(), "interval",
                                    &outlier_detection_config.interval,
-                                   &error_list);
+                                   &error_list, /*required=*/false);
     ParseJsonObjectFieldAsDuration(json.object_value(), "baseEjectionTime",
                                    &outlier_detection_config.base_ejection_time,
                                    &error_list, /*required=*/false);

@@ -934,10 +934,6 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
         if (discovery_entry.config().outlier_detection_lb_config.has_value()) {
           outlier_detection_config =
               discovery_entry.config().outlier_detection_lb_config.value();
-        } else {
-          // outlier detection will be a no-op
-          outlier_detection_config["interval"] =
-              Duration::Infinity().ToJsonString();
         }
         outlier_detection_config["childPolicy"] = Json::Array{Json::Object{
             {"xds_cluster_impl_experimental",
