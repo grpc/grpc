@@ -227,5 +227,3 @@ pip_install coverage==4.4 oauth2client==4.1.0 \
 $VENV_PYTHON "$ROOT/src/python/grpcio_tests/setup.py" preprocess
 $VENV_PYTHON "$ROOT/src/python/grpcio_tests/setup.py" build_package_protos
 pip_install_dir "$ROOT/src/python/grpcio_tests"
-$VENV_PYTHON -m pip freeze
-exit 1
