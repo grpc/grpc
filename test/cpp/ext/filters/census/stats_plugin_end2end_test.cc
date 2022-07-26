@@ -655,6 +655,7 @@ TEST_F(StatsPluginEnd2EndTest, TestAllSpansAreExported) {
     grpc::Status status = stub_->Echo(&context, request, &response);
     EXPECT_TRUE(status.ok());
   }
+  absl::SleepFor(absl::Milliseconds(500));
   ::opencensus::trace::exporter::SpanExporterTestPeer::ExportForTesting();
   traces_recorder_->StopRecording();
   auto recorded_spans = traces_recorder_->GetAndClearSpans();
