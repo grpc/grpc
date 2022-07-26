@@ -48,8 +48,6 @@
 #include "src/core/ext/filters/rbac/rbac_service_config_parser.h"
 #include "src/core/ext/xds/upb_utils.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/json/json.h"
 
 namespace grpc_core {
@@ -473,8 +471,7 @@ absl::StatusOr<Json> ParseHttpRbacToJson(
               "RBAC PoliciesEntry key:",
               UpbStringToStdString(
                   envoy_config_rbac_v3_RBAC_PoliciesEntry_key(entry)),
-              " error:",
-              policy.status().message()));
+              " error:", policy.status().message()));
         } else {
           policies_object.emplace(
               UpbStringToStdString(
