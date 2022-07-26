@@ -15,6 +15,8 @@
 
 #ifdef GPR_WINDOWS
 
+#include <chrono>
+
 #include "absl/strings/str_format.h"
 
 #include <grpc/support/alloc.h>
@@ -23,6 +25,7 @@
 #include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/event_engine/windows/iocp.h"
 #include "src/core/lib/event_engine/windows/socket.h"
+#include "src/core/lib/event_engine/utils.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -56,12 +59,12 @@ WinSocket* IOCP::Watch(SOCKET socket) {
 
 void IOCP::Shutdown() {
   while (outstanding_kicks_.load() > 0) {
-    Work(grpc_core::Duration::Hours(42));
+    Work(std::chrono::hours(42));
   }
   GPR_ASSERT(CloseHandle(iocp_handle_));
 }
 
-absl::Status IOCP::Work(grpc_core::Duration timeout) {
+Poller::WorkResult IOCP::Work(EventEngine::Duration timeout) {
   static const absl::Status kDeadlineExceeded = absl::DeadlineExceededError(
       absl::StrFormat("IOCP::%p: Received no completions", this));
   static const absl::Status kKicked =
@@ -74,12 +77,12 @@ absl::Status IOCP::Work(grpc_core::Duration timeout) {
   }
   BOOL success = GetQueuedCompletionStatus(
       iocp_handle_, &bytes, &completion_key, &overlapped,
-      static_cast<DWORD>(timeout.millis()));
+      static_cast<DWORD>(Milliseconds(timeout)));
   if (success == 0 && overlapped == NULL) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {
       gpr_log(GPR_DEBUG, "IOCP::%p deadline exceeded", this);
     }
-    return kDeadlineExceeded;
+    return Poller::DeadlineExceeded{};
   }
   GPR_ASSERT(completion_key && overlapped);
   if (overlapped == &kick_overlap_) {
@@ -88,7 +91,7 @@ absl::Status IOCP::Work(grpc_core::Duration timeout) {
     }
     outstanding_kicks_.fetch_sub(1);
     if (completion_key == (ULONG_PTR)&kick_token_) {
-      return kKicked;
+      return Poller::Kicked{};
     }
     gpr_log(GPR_ERROR, "Unknown custom completion key: %p", completion_key);
     abort();
@@ -105,8 +108,7 @@ absl::Status IOCP::Work(grpc_core::Duration timeout) {
   } else {
     info->GetOverlappedResult();
   }
-  info->SetReady();
-  return absl::OkStatus();
+  return Events{info->closure()};
 }
 
 void IOCP::Kick() {

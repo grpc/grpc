@@ -20,18 +20,24 @@
 
 #include "absl/status/status.h"
 #include "absl/time/time.h"
+#include "absl/types/variant.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/log_windows.h>
 
+#include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/windows/socket.h"
 #include "src/core/lib/event_engine/windows/windows_engine.h"
 #include "src/core/lib/iomgr/error.h"
+#include "test/core/event_engine/windows/basic_closure.h"
 #include "test/core/event_engine/windows/create_sockpair.h"
 
 namespace {
+using ::grpc_event_engine::experimental::BasicClosure;
 using ::grpc_event_engine::experimental::CreateSockpair;
+using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::IOCP;
+using ::grpc_event_engine::experimental::Poller;
 using ::grpc_event_engine::experimental::WindowsEventEngine;
 using ::grpc_event_engine::experimental::WinSocket;
 }  // namespace
@@ -50,6 +56,8 @@ TEST_F(IOCPTest, ClientReceivesNotificationOfServerSendViaIOCP) {
   bool read_called = false;
   bool write_called = false;
   DWORD flags = 0;
+  BasicClosure* on_read;
+  BasicClosure* on_write;
   {
     // When the client gets some data, ensure it matches what we expect.
     WSABUF read_wsabuf;
@@ -66,13 +74,14 @@ TEST_F(IOCPTest, ClientReceivesNotificationOfServerSendViaIOCP) {
     EXPECT_EQ(status, -1);
     int last_error = WSAGetLastError();
     ASSERT_EQ(last_error, WSA_IO_PENDING);
-    wrapped_client_socket->NotifyOnRead([wrapped_client_socket, &read_called,
-                                         &read_wsabuf, &bytes_rcvd]() {
+    on_read = new BasicClosure([wrapped_client_socket, &read_called,
+                                &read_wsabuf, &bytes_rcvd]() {
       gpr_log(GPR_DEBUG, "Notified on read");
       EXPECT_GE(wrapped_client_socket->read_info()->bytes_transferred(), 10);
       EXPECT_STREQ(read_wsabuf.buf, "hello!");
       read_called = true;
     });
+    wrapped_client_socket->NotifyOnRead(on_read);
   }
   {
     // Have the server send a message to the client
@@ -93,15 +102,25 @@ TEST_F(IOCPTest, ClientReceivesNotificationOfServerSendViaIOCP) {
       gpr_log(GPR_INFO, "Error sending data: (%d) %s", error_num, utf8_message);
       gpr_free(utf8_message);
     }
-    wrapped_server_socket->NotifyOnWrite([&write_called] {
+    on_write = new BasicClosure([&write_called] {
       gpr_log(GPR_DEBUG, "Notified on write");
       write_called = true;
     });
+    wrapped_server_socket->NotifyOnWrite(on_write);
   }
   // Working for WSASend
-  ASSERT_TRUE(iocp.Work(grpc_core::Duration::Seconds(10)).ok());
+  auto work_result = iocp.Work(grpc_core::Duration::Seconds(10));
+  ASSERT_TRUE(absl::holds_alternative<Poller::Events>(work_result));
+  Poller::Events closures = absl::get<Poller::Events>(work_result);
+  ASSERT_EQ(closures.size(), 1);
+  engine->Run(closures[0]);
   // Working for WSARecv
-  ASSERT_TRUE(iocp.Work(grpc_core::Duration::Seconds(10)).ok());
+  work_result = iocp.Work(grpc_core::Duration::Seconds(10));
+  ASSERT_TRUE(absl::holds_alternative<Poller::Events>(work_result));
+  closures = absl::get<Poller::Events>(work_result);
+  ASSERT_EQ(closures.size(), 1);
+  engine->Run(closures[0]);
+  // wait for the callbacks to run
   absl::Time deadline = absl::Now() + absl::Seconds(10);
   while (!read_called || !write_called) {
     absl::SleepFor(absl::Milliseconds(10));
@@ -112,6 +131,8 @@ TEST_F(IOCPTest, ClientReceivesNotificationOfServerSendViaIOCP) {
   ASSERT_TRUE(read_called);
   ASSERT_TRUE(write_called);
 
+  delete on_read;
+  delete on_write;
   delete wrapped_client_socket;
   delete wrapped_server_socket;
 }

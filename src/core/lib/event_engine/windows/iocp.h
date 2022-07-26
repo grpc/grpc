@@ -40,8 +40,8 @@ class IOCP final : public Poller {
   IOCP& operator=(IOCP&& other) = delete;
 
   // interface methods
-  void Shutdown() override;
-  absl::Status Work(grpc_core::Duration timeout) override;
+  void Shutdown();
+  WorkResult Work(EventEngine::Duration timeout) override;
   void Kick() override;
 
   WinSocket* Watch(SOCKET socket);

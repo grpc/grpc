@@ -18,6 +18,7 @@
 #include <stdint.h>
 
 #include <algorithm>
+#include <chrono>
 
 #include "absl/strings/str_cat.h"
 
@@ -38,6 +39,10 @@ grpc_core::Timestamp ToTimestamp(grpc_core::Timestamp now,
          std::max(grpc_core::Duration::Milliseconds(1),
                   grpc_core::Duration::NanosecondsRoundUp(delta.count())) +
          grpc_core::Duration::Milliseconds(1);
+}
+
+size_t Milliseconds(EventEngine::Duration d) {
+  return std::chrono::duration_cast<std::chrono::milliseconds>(d).count();
 }
 
 }  // namespace experimental

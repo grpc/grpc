@@ -16,9 +16,10 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "absl/status/status.h"
+#include "absl/container/inlined_vector.h"
+#include "absl/types/variant.h"
 
-#include "src/core/lib/gprpp/time.h"
+#include <grpc/event_engine/event_engine.h>
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -29,19 +30,22 @@ namespace experimental {
 // Work(...).
 class Poller {
  public:
+  // This initial vector size may need to be tuned
+  using Events = absl::InlinedVector<EventEngine::Closure*, 5>;
+  struct DeadlineExceeded {};
+  struct Kicked {};
+  using WorkResult = absl::variant<Events, DeadlineExceeded, Kicked>;
+
   virtual ~Poller() = default;
-  // Poll for events, executing or dispatching them as appropriate.
+  // Poll once for events, returning a collection of Closures to be executed.
   //
   // Returns:
   //  * absl::AbortedError if it was Kicked.
   //  * absl::DeadlineExceeded if timeout occurred
-  //  * absl::OkStatus otherwise
-  virtual absl::Status Work(grpc_core::Duration timeout) = 0;
+  //  * A collection of closures to execute, otherwise
+  virtual WorkResult Work(EventEngine::Duration timeout) = 0;
   // Trigger the threads executing Work(..) to break out as soon as possible.
   virtual void Kick() = 0;
-  // Shut down the poller.
-  // There must be no threads calling Work(...).
-  virtual void Shutdown() = 0;
 };
 
 }  // namespace experimental

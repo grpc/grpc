@@ -78,22 +78,22 @@ void WinSocket::MaybeShutdown(absl::Status why) {
 }
 
 void WinSocket::NotifyOnReady(OpInfo& info,
-                              absl::AnyInvocable<void()> callback) {
+                              EventEngine::Closure* closure) {
   grpc_core::MutexLock lock(&mu_);
   if (info.has_pending_iocp_) {
     info.has_pending_iocp_ = false;
-    event_engine_->Run(std::move(callback));
+    event_engine_->Run(closure);
   } else {
-    info.callback = std::move(callback);
+    info.SetClosure(closure);
   }
 }
 
-void WinSocket::NotifyOnRead(absl::AnyInvocable<void()> on_read) {
-  NotifyOnReady(read_info_, std::move(on_read));
+void WinSocket::NotifyOnRead(EventEngine::Closure* on_read) {
+  NotifyOnReady(read_info_, on_read);
 }
 
-void WinSocket::NotifyOnWrite(absl::AnyInvocable<void()> on_write) {
-  NotifyOnReady(write_info_, std::move(on_write));
+void WinSocket::NotifyOnWrite(EventEngine::Closure* on_write) {
+  NotifyOnReady(write_info_, on_write);
 }
 
 WinSocket::OpInfo::OpInfo(WinSocket* win_socket) noexcept
@@ -102,9 +102,8 @@ WinSocket::OpInfo::OpInfo(WinSocket* win_socket) noexcept
 void WinSocket::OpInfo::SetReady() {
   grpc_core::MutexLock lock(&win_socket_->mu_);
   GPR_ASSERT(!has_pending_iocp_);
-  if (callback) {
-    win_socket_->event_engine_->Run(std::move(callback));
-    callback = nullptr;
+  if (closure_) {
+    win_socket_->event_engine_->Run(closure_);
   } else {
     has_pending_iocp_ = true;
   }

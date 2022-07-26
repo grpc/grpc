@@ -48,32 +48,34 @@ class WinSocket final : public SocketNotifier {
     OVERLAPPED* overlapped() { return &overlapped_; }
     DWORD bytes_transferred() const { return bytes_transferred_; }
     int wsa_error() const { return wsa_error_; }
+    void SetClosure(EventEngine::Closure* closure) { closure_ = closure; }
+    EventEngine::Closure* closure() { return closure_; }
 
    private:
     friend class WinSocket;
     WinSocket* win_socket_;
     OVERLAPPED overlapped_;
+    EventEngine::Closure* closure_;
     bool has_pending_iocp_{false};
     DWORD bytes_transferred_;
     int wsa_error_;
-    absl::AnyInvocable<void()> callback;
   };
 
   WinSocket(SOCKET socket, EventEngine* event_engine) noexcept;
   ~WinSocket();
+  // Calling NotifyOnRead means either of two things:
+  //  - The IOCP already completed in the background, and we need to call
+  //    the callback now.
+  //  - The IOCP hasn't completed yet, and we're queuing it for later.
+  void NotifyOnRead(EventEngine::Closure* on_read) override;
+  void NotifyOnWrite(EventEngine::Closure* on_write) override;
+  void SetReadable() override;
+  void SetWritable() override;
   // Schedule a shutdown of the socket operations. Will call the pending
   // operations to abort them. We need to do that this way because of the
   // various callsites of that function, which happens to be in various
   // mutex hold states, and that'd be unsafe to call them directly.
   void MaybeShutdown(absl::Status why) override;
-  // Calling NotifyOnRead means either of two things:
-  //  - The IOCP already completed in the background, and we need to call
-  //    the callback now.
-  //  - The IOCP hasn't completed yet, and we're queuing it for later.
-  void NotifyOnRead(absl::AnyInvocable<void()> on_read) override;
-  void NotifyOnWrite(absl::AnyInvocable<void()> on_write) override;
-  void SetReadable() override;
-  void SetWritable() override;
   bool IsShutdown() override;
 
   // Return the appropriate OpInfo for a given OVERLAPPED
@@ -90,7 +92,7 @@ class WinSocket final : public SocketNotifier {
   SOCKET socket();
 
  private:
-  void NotifyOnReady(OpInfo& info, absl::AnyInvocable<void()> callback);
+  void NotifyOnReady(OpInfo& info, EventEngine::Closure* callback);
 
   SOCKET socket_;
   grpc_core::Mutex mu_;

@@ -27,9 +27,11 @@
 
 #include "src/core/lib/event_engine/windows/windows_engine.h"
 #include "src/core/lib/iomgr/error.h"
+#include "test/core/event_engine/windows/basic_closure.h"
 #include "test/core/event_engine/windows/create_sockpair.h"
 
 namespace {
+using ::grpc_event_engine::experimental::BasicClosure;
 using ::grpc_event_engine::experimental::CreateSockpair;
 using ::grpc_event_engine::experimental::IOCP;
 using ::grpc_event_engine::experimental::WindowsEventEngine;
@@ -45,8 +47,10 @@ TEST_F(SocketTest, ManualReadEventTriggeredWithoutIO) {
   WinSocket wrapped_client_socket(sockpair[0], engine.get());
   WinSocket wrapped_server_socket(sockpair[1], engine.get());
   bool read_called = false;
-  wrapped_client_socket.NotifyOnRead([&read_called]() { read_called = true; });
-  wrapped_client_socket.NotifyOnWrite([] { FAIL() << "No Write expected"; });
+  BasicClosure on_read([&read_called]() { read_called = true; });
+  wrapped_client_socket.NotifyOnRead(&on_read);
+  BasicClosure on_write([] { FAIL() << "No Write expected"; });
+  wrapped_client_socket.NotifyOnWrite(&on_write);
   ASSERT_FALSE(read_called);
   wrapped_client_socket.SetReadable();
   absl::Time deadline = absl::Now() + absl::Seconds(10);

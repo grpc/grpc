@@ -31,12 +31,12 @@ class SocketNotifier {
   // becomes readable.
   // If the socket is already readable, the callback will be executed as soon as
   // possible.
-  virtual void NotifyOnRead(absl::AnyInvocable<void()> on_read) = 0;
+  virtual void NotifyOnRead(EventEngine::Closure* on_read) = 0;
   // Schedule on_write to be invoked when the underlying socket
   // becomes writable.
   // If the socket is already writable, the callback will be executed as soon as
   // possible.
-  virtual void NotifyOnWrite(absl::AnyInvocable<void()> on_write) = 0;
+  virtual void NotifyOnWrite(EventEngine::Closure* on_write) = 0;
   // Set a readable event on the underlying socket.
   virtual void SetReadable() = 0;
   // Set a writable event on the underlying socket.

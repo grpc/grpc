@@ -16,10 +16,21 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test")
 
 licenses(["notice"])
 
+grpc_cc_library(
+    name = "basic_closure",
+    hdrs = ["basic_closure.h"],
+    external_deps = [
+        "absl/functional:any_invocable",
+    ],
+)
+
 grpc_cc_test(
     name = "iocp_test",
     srcs = ["iocp_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "gtest",
+        "absl/types:variant",
+    ],
     language = "C++",
     tags = [
         "no_linux",
@@ -28,9 +39,11 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "basic_closure",
         "create_sockpair",
         "//:gpr_platform",
-        "//:windows_event_engine",
+        "//:windows_iocp",
+        "//:event_engine_utils",
         "//test/core/util:grpc_suppressions",
         "//test/core/util:grpc_test_util",
     ],
@@ -48,6 +61,7 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "basic_closure",
         "create_sockpair",
         "//:gpr_platform",
         "//:windows_event_engine",
