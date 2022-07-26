@@ -24,6 +24,8 @@
 
 #include "absl/memory/memory.h"
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
@@ -39,7 +41,6 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
@@ -49,13 +50,13 @@
 namespace grpc_core {
 namespace {
 
-const char* kDropPolicyName = "drop_lb";
+constexpr absl::string_view kDropPolicyName = "drop_lb";
 
 class DropPolicy : public LoadBalancingPolicy {
  public:
   explicit DropPolicy(Args args) : LoadBalancingPolicy(std::move(args)) {}
 
-  const char* name() const override { return kDropPolicyName; }
+  absl::string_view name() const override { return kDropPolicyName; }
 
   void UpdateLocked(UpdateArgs) override {
     channel_control_helper()->UpdateState(GRPC_CHANNEL_READY, absl::Status(),
@@ -77,7 +78,7 @@ class DropPolicy : public LoadBalancingPolicy {
 
 class DropLbConfig : public LoadBalancingPolicy::Config {
  public:
-  const char* name() const override { return kDropPolicyName; }
+  absl::string_view name() const override { return kDropPolicyName; }
 };
 
 class DropPolicyFactory : public LoadBalancingPolicyFactory {
@@ -87,10 +88,10 @@ class DropPolicyFactory : public LoadBalancingPolicyFactory {
     return MakeOrphanable<DropPolicy>(std::move(args));
   }
 
-  const char* name() const override { return kDropPolicyName; }
+  absl::string_view name() const override { return kDropPolicyName; }
 
-  RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
-      const Json& /*json*/, grpc_error_handle* /*error*/) const override {
+  absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
+  ParseLoadBalancingConfig(const Json& /*json*/) const override {
     return MakeRefCounted<DropLbConfig>();
   }
 };
