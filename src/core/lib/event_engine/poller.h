@@ -16,6 +16,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/status/status.h"
+
 #include "src/core/lib/gprpp/time.h"
 
 namespace grpc_event_engine {
