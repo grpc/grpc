@@ -114,6 +114,9 @@ class Executor {
   gpr_spinlock adding_thread_lock_;
 };
 
+// Global initializer for executor
+void grpc_executor_global_init();
+
 }  // namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_IOMGR_EXECUTOR_H */
