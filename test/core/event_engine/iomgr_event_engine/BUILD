@@ -31,7 +31,6 @@ grpc_cc_test(
     deps = [
         "//:bitset",
         "//:iomgr_ee_timer",
-        "//test/core/util:grpc_suppressions",
     ],
 )
 
@@ -44,7 +43,6 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:iomgr_ee_timer",
-        "//test/core/util:grpc_suppressions",
     ],
 )
 
@@ -63,7 +61,6 @@ grpc_cc_test(
         "//:iomgr_ee_event_poller",
         "//:iomgr_ee_poller_posix_default",
         "//:iomgr_event_engine",
-        "//test/core/util:grpc_suppressions",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -80,7 +77,6 @@ grpc_cc_test(
         "//:iomgr_ee_event_poller",
         "//:iomgr_ee_lockfree_event",
         "//:iomgr_event_engine",
-        "//test/core/util:grpc_suppressions",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -98,7 +94,6 @@ grpc_cc_test(
     deps = [
         "//:iomgr_ee_wakeup_fd_posix_eventfd",
         "//:iomgr_ee_wakeup_fd_posix_pipe",
-        "//test/core/util:grpc_suppressions",
         "//test/core/util:grpc_test_util",
     ],
 )

@@ -999,12 +999,13 @@ ClientChannel::ClientChannel(grpc_channel_element_args* args,
       channel_args_.GetString(GRPC_ARG_SERVICE_CONFIG);
   if (!service_config_json.has_value()) service_config_json = "{}";
   *error = GRPC_ERROR_NONE;
-  default_service_config_ =
-      ServiceConfigImpl::Create(channel_args_, *service_config_json, error);
-  if (!GRPC_ERROR_IS_NONE(*error)) {
-    default_service_config_.reset();
+  auto service_config =
+      ServiceConfigImpl::Create(channel_args_, *service_config_json);
+  if (!service_config.ok()) {
+    *error = absl_status_to_grpc_error(service_config.status());
     return;
   }
+  default_service_config_ = std::move(*service_config);
   // Get URI to resolve, using proxy mapper if needed.
   absl::optional<std::string> server_uri =
       channel_args_.GetOwnedString(GRPC_ARG_SERVER_URI);

@@ -2444,6 +2444,34 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "iomgr_ee_poller_posix_poll",
+    srcs = [
+        "src/core/lib/event_engine/iomgr_engine/ev_poll_posix.cc",
+    ],
+    hdrs = [
+        "src/core/lib/event_engine/iomgr_engine/ev_poll_posix.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/synchronization",
+        "absl/utility",
+    ],
+    deps = [
+        "gpr_base",
+        "gpr_codegen",
+        "iomgr_ee_closure",
+        "iomgr_ee_event_poller",
+        "iomgr_ee_wakeup_fd_posix",
+        "iomgr_ee_wakeup_fd_posix_default",
+        "iomgr_port",
+        "time",
+    ],
+)
+
+grpc_cc_library(
     name = "iomgr_ee_poller_posix_default",
     srcs = [
         "src/core/lib/event_engine/iomgr_engine/event_poller_posix_default.cc",
@@ -2451,10 +2479,12 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/event_engine/iomgr_engine/event_poller_posix_default.h",
     ],
+    external_deps = ["absl/strings"],
     deps = [
-        "gpr_platform",
+        "gpr_base",
         "iomgr_ee_event_poller",
         "iomgr_ee_poller_posix_epoll1",
+        "iomgr_ee_poller_posix_poll",
     ],
 )
 
@@ -3092,11 +3122,14 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/service_config/service_config_parser.h",
     ],
-    external_deps = ["absl/strings"],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+    ],
     language = "c++",
     deps = [
         "channel_args",
-        "error",
         "gpr_base",
         "json",
     ],
@@ -3516,6 +3549,8 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/memory",
+        "absl/status",
+        "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
         "absl/types:optional",
@@ -3971,6 +4006,7 @@ grpc_cc_library(
         "iomgr_timer",
         "json",
         "json_util",
+        "match",
         "orphanable",
         "protobuf_any_upb",
         "protobuf_duration_upb",
@@ -4967,6 +5003,7 @@ grpc_cc_library(
         "grpc_trace",
         "grpc_xds_client",
         "iomgr_fwd",
+        "match",
         "orphanable",
         "ref_counted_ptr",
         "server_address",
@@ -6424,6 +6461,8 @@ grpc_cc_library(
     hdrs = GRPCXX_HDRS,
     external_deps = [
         "absl/base:core_headers",
+        "absl/status",
+        "absl/status:statusor",
         "absl/strings",
         "absl/synchronization",
         "absl/memory",
@@ -6468,6 +6507,8 @@ grpc_cc_library(
     hdrs = GRPCXX_HDRS,
     external_deps = [
         "absl/base:core_headers",
+        "absl/status",
+        "absl/status:statusor",
         "absl/strings",
         "absl/synchronization",
         "absl/memory",

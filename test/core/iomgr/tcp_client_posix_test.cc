@@ -16,9 +16,12 @@
  *
  */
 
+#include <gtest/gtest.h>
+
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/port.h"
+#include "test/core/util/test_config.h"
 
 // This test won't work except with posix sockets enabled
 #ifdef GRPC_POSIX_SOCKET_TCP_CLIENT
@@ -40,7 +43,6 @@
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/resource_quota/api.h"
-#include "test/core/util/test_config.h"
 
 static grpc_pollset_set* g_pollset_set;
 static gpr_mu* g_mu;
@@ -57,15 +59,15 @@ static void finish_connection() {
   gpr_mu_lock(g_mu);
   g_connections_complete++;
   grpc_core::ExecCtx exec_ctx;
-  GPR_ASSERT(
+  ASSERT_TRUE(
       GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, nullptr)));
 
   gpr_mu_unlock(g_mu);
 }
 
 static void must_succeed(void* /*arg*/, grpc_error_handle error) {
-  GPR_ASSERT(g_connecting != nullptr);
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  ASSERT_NE(g_connecting, nullptr);
+  ASSERT_TRUE(GRPC_ERROR_IS_NONE(error));
   grpc_endpoint_shutdown(g_connecting, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                                            "must_succeed called"));
   grpc_endpoint_destroy(g_connecting);
@@ -74,8 +76,8 @@ static void must_succeed(void* /*arg*/, grpc_error_handle error) {
 }
 
 static void must_fail(void* /*arg*/, grpc_error_handle error) {
-  GPR_ASSERT(g_connecting == nullptr);
-  GPR_ASSERT(!GRPC_ERROR_IS_NONE(error));
+  ASSERT_EQ(g_connecting, nullptr);
+  ASSERT_FALSE(GRPC_ERROR_IS_NONE(error));
   finish_connection();
 }
 
@@ -96,18 +98,19 @@ void test_succeeds(void) {
 
   /* create a phony server */
   svr_fd = socket(AF_INET, SOCK_STREAM, 0);
-  GPR_ASSERT(svr_fd >= 0);
-  GPR_ASSERT(
-      0 == bind(svr_fd, (struct sockaddr*)addr, (socklen_t)resolved_addr.len));
-  GPR_ASSERT(0 == listen(svr_fd, 1));
+  ASSERT_GE(svr_fd, 0);
+  ASSERT_EQ(bind(svr_fd, (struct sockaddr*)addr, (socklen_t)resolved_addr.len),
+            0);
+  ASSERT_EQ(listen(svr_fd, 1), 0);
 
   gpr_mu_lock(g_mu);
   connections_complete_before = g_connections_complete;
   gpr_mu_unlock(g_mu);
 
   /* connect to it */
-  GPR_ASSERT(getsockname(svr_fd, (struct sockaddr*)addr,
-                         (socklen_t*)&resolved_addr.len) == 0);
+  ASSERT_EQ(getsockname(svr_fd, (struct sockaddr*)addr,
+                        (socklen_t*)&resolved_addr.len),
+            0);
   GRPC_CLOSURE_INIT(&done, must_succeed, nullptr, grpc_schedule_on_exec_ctx);
   grpc_core::ChannelArgs args = grpc_core::CoreConfiguration::Get()
                                     .channel_args_preconditioning()
@@ -121,14 +124,14 @@ void test_succeeds(void) {
     r = accept(svr_fd, reinterpret_cast<struct sockaddr*>(addr),
                reinterpret_cast<socklen_t*>(&resolved_addr.len));
   } while (r == -1 && errno == EINTR);
-  GPR_ASSERT(r >= 0);
+  ASSERT_GE(r, 0);
   close(r);
 
   gpr_mu_lock(g_mu);
 
   while (g_connections_complete == connections_complete_before) {
     grpc_pollset_worker* worker = nullptr;
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+    ASSERT_TRUE(GRPC_LOG_IF_ERROR(
         "pollset_work",
         grpc_pollset_work(g_pollset, &worker,
                           grpc_core::Timestamp::FromTimespecRoundUp(
@@ -141,7 +144,7 @@ void test_succeeds(void) {
   gpr_mu_unlock(g_mu);
 
   // A cancellation attempt should fail because connect already succeeded.
-  GPR_ASSERT(grpc_tcp_client_cancel_connect(connection_handle) == false);
+  ASSERT_EQ(grpc_tcp_client_cancel_connect(connection_handle), false);
 
   gpr_log(GPR_ERROR, "---- finished test_succeeds() ----");
 }
@@ -181,7 +184,7 @@ void test_fails(void) {
         polling_deadline = grpc_core::Timestamp::ProcessEpoch();
         ABSL_FALLTHROUGH_INTENDED;
       case GRPC_TIMERS_CHECKED_AND_EMPTY:
-        GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        ASSERT_TRUE(GRPC_LOG_IF_ERROR(
             "pollset_work",
             grpc_pollset_work(g_pollset, &worker, polling_deadline)));
         break;
@@ -194,7 +197,7 @@ void test_fails(void) {
   gpr_mu_unlock(g_mu);
 
   // A cancellation attempt should fail because connect already failed.
-  GPR_ASSERT(grpc_tcp_client_cancel_connect(connection_handle) == false);
+  ASSERT_EQ(grpc_tcp_client_cancel_connect(connection_handle), false);
 
   gpr_log(GPR_ERROR, "---- finished test_fails() ----");
 }
@@ -214,15 +217,16 @@ void test_connect_cancellation_succeeds(void) {
 
   /* create a phony server */
   svr_fd = socket(AF_INET, SOCK_STREAM, 0);
-  GPR_ASSERT(svr_fd >= 0);
-  GPR_ASSERT(
-      0 == bind(svr_fd, (struct sockaddr*)addr, (socklen_t)resolved_addr.len));
-  GPR_ASSERT(0 == listen(svr_fd, 1));
+  ASSERT_GE(svr_fd, 0);
+  ASSERT_EQ(bind(svr_fd, (struct sockaddr*)addr, (socklen_t)resolved_addr.len),
+            0);
+  ASSERT_EQ(listen(svr_fd, 1), 0);
 
   // connect to it. accept() is not called on the bind socket. So the connection
   // should appear to be stuck giving ample time to try to cancel it.
-  GPR_ASSERT(getsockname(svr_fd, (struct sockaddr*)addr,
-                         (socklen_t*)&resolved_addr.len) == 0);
+  ASSERT_EQ(getsockname(svr_fd, (struct sockaddr*)addr,
+                        (socklen_t*)&resolved_addr.len),
+            0);
   GRPC_CLOSURE_INIT(&done, must_succeed, nullptr, grpc_schedule_on_exec_ctx);
   grpc_core::ChannelArgs args = grpc_core::CoreConfiguration::Get()
                                     .channel_args_preconditioning()
@@ -230,8 +234,8 @@ void test_connect_cancellation_succeeds(void) {
   int64_t connection_handle = grpc_tcp_client_connect(
       &done, &g_connecting, g_pollset_set, args.ToC().get(), &resolved_addr,
       grpc_core::Timestamp::InfFuture());
-  GPR_ASSERT(connection_handle > 0);
-  GPR_ASSERT(grpc_tcp_client_cancel_connect(connection_handle) == true);
+  ASSERT_GT(connection_handle, 0);
+  ASSERT_EQ(grpc_tcp_client_cancel_connect(connection_handle), true);
   close(svr_fd);
   gpr_log(GPR_ERROR, "---- finished test_connect_cancellation_succeeds() ----");
 }
@@ -266,7 +270,7 @@ void test_fails_bad_addr_no_leak(void) {
         polling_deadline = grpc_core::Timestamp::ProcessEpoch();
         ABSL_FALLTHROUGH_INTENDED;
       case GRPC_TIMERS_CHECKED_AND_EMPTY:
-        GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        ASSERT_TRUE(GRPC_LOG_IF_ERROR(
             "pollset_work",
             grpc_pollset_work(g_pollset, &worker, polling_deadline)));
         break;
@@ -283,9 +287,8 @@ static void destroy_pollset(void* p, grpc_error_handle /*error*/) {
   grpc_pollset_destroy(static_cast<grpc_pollset*>(p));
 }
 
-int main(int argc, char** argv) {
+TEST(TcpClientPosixTest, MainTest) {
   grpc_closure destroyed;
-  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
 
   {
@@ -307,11 +310,12 @@ int main(int argc, char** argv) {
 
   grpc_shutdown();
   gpr_free(g_pollset);
-  return 0;
 }
 
-#else /* GRPC_POSIX_SOCKET_TCP_CLIENT */
-
-int main(int argc, char** argv) { return 1; }
-
 #endif /* GRPC_POSIX_SOCKET_CLIENT */
+
+int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(&argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}

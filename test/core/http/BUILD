@@ -70,6 +70,7 @@ grpc_cc_library(
         "//:gpr",
         "//test/core/end2end:ssl_test_data",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -132,6 +133,7 @@ grpc_cc_test(
         "//:grpc",
         "//test/core/end2end:ssl_test_data",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -145,5 +147,6 @@ grpc_cc_test(
         "//:grpc",
         "//test/core/end2end:ssl_test_data",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )

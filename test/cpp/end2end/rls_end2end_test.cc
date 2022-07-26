@@ -145,13 +145,9 @@ class FakeResolverResponseGeneratorWrapper {
   static grpc_core::Resolver::Result BuildFakeResults(
       absl::string_view service_config_json) {
     grpc_core::Resolver::Result result;
-    grpc_error_handle error = GRPC_ERROR_NONE;
-    result.service_config = grpc_core::ServiceConfigImpl::Create(
-        result.args, service_config_json, &error);
-    EXPECT_EQ(error, GRPC_ERROR_NONE)
-        << "JSON: " << service_config_json
-        << "Error: " << grpc_error_std_string(error);
-    EXPECT_NE(*result.service_config, nullptr);
+    result.service_config =
+        grpc_core::ServiceConfigImpl::Create(result.args, service_config_json);
+    EXPECT_TRUE(result.service_config.ok()) << result.service_config.status();
     return result;
   }
 
