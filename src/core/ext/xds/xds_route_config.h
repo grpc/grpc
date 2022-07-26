@@ -19,7 +19,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <stddef.h>
 #include <stdint.h>
 
 #include <algorithm>
@@ -122,6 +121,14 @@ struct XdsRouteConfigResource {
         std::string ToString() const;
       };
 
+      struct ClusterName {
+        std::string cluster_name;
+
+        bool operator==(const ClusterName& other) const {
+          return cluster_name == other.cluster_name;
+        }
+      };
+
       struct ClusterWeight {
         std::string name;
         uint32_t weight;
@@ -134,14 +141,21 @@ struct XdsRouteConfigResource {
         std::string ToString() const;
       };
 
+      struct ClusterSpecifierPluginName {
+        std::string cluster_specifier_plugin_name;
+
+        bool operator==(const ClusterSpecifierPluginName& other) const {
+          return cluster_specifier_plugin_name ==
+                 other.cluster_specifier_plugin_name;
+        }
+      };
+
       std::vector<HashPolicy> hash_policies;
       absl::optional<RetryPolicy> retry_policy;
 
       // Action for this route.
-      static constexpr size_t kClusterIndex = 0;
-      static constexpr size_t kWeightedClustersIndex = 1;
-      static constexpr size_t kClusterSpecifierPluginIndex = 2;
-      absl::variant<std::string, std::vector<ClusterWeight>, std::string>
+      absl::variant<ClusterName, std::vector<ClusterWeight>,
+                    ClusterSpecifierPluginName>
           action;
       // Storing the timeout duration from route action:
       // RouteAction.max_stream_duration.grpc_timeout_header_max or

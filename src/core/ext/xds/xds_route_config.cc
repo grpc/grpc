@@ -69,6 +69,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/error.h"
@@ -250,19 +251,23 @@ std::string XdsRouteConfigResource::Route::RouteAction::ToString() const {
   if (retry_policy.has_value()) {
     contents.push_back(absl::StrCat("retry_policy=", retry_policy->ToString()));
   }
-  if (action.index() == kClusterIndex) {
-    contents.push_back(
-        absl::StrFormat("Cluster name: %s", absl::get<kClusterIndex>(action)));
-  } else if (action.index() == kWeightedClustersIndex) {
-    auto& action_weighted_clusters = absl::get<kWeightedClustersIndex>(action);
-    for (const ClusterWeight& cluster_weight : action_weighted_clusters) {
-      contents.push_back(cluster_weight.ToString());
-    }
-  } else if (action.index() == kClusterSpecifierPluginIndex) {
-    contents.push_back(
-        absl::StrFormat("Cluster specifier plugin name: %s",
-                        absl::get<kClusterSpecifierPluginIndex>(action)));
-  }
+  Match(
+      action,
+      [&contents](const ClusterName& cluster_name) {
+        contents.push_back(
+            absl::StrFormat("Cluster name: %s", cluster_name.cluster_name));
+      },
+      [&contents](const std::vector<ClusterWeight>& weighted_clusters) {
+        for (const ClusterWeight& cluster_weight : weighted_clusters) {
+          contents.push_back(cluster_weight.ToString());
+        }
+      },
+      [&contents](
+          const ClusterSpecifierPluginName& cluster_specifier_plugin_name) {
+        contents.push_back(absl::StrFormat(
+            "Cluster specifier plugin name: %s",
+            cluster_specifier_plugin_name.cluster_specifier_plugin_name));
+      });
   if (max_stream_duration.has_value()) {
     contents.push_back(max_stream_duration->ToString());
   }
@@ -743,9 +748,8 @@ grpc_error_handle RouteActionParse(
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "RouteAction cluster contains empty cluster name.");
     }
-    route->action
-        .emplace<XdsRouteConfigResource::Route::RouteAction::kClusterIndex>(
-            std::move(cluster_name));
+    route->action = XdsRouteConfigResource::Route::RouteAction::ClusterName{
+        std::move(cluster_name)};
   } else if (envoy_config_route_v3_RouteAction_has_weighted_clusters(
                  route_action)) {
     std::vector<XdsRouteConfigResource::Route::RouteAction::ClusterWeight>
@@ -825,9 +829,9 @@ grpc_error_handle RouteActionParse(
                        plugin_name));
     }
     if (it->second.empty()) *ignore_route = true;
-    route->action.emplace<XdsRouteConfigResource::Route::RouteAction::
-                              kClusterSpecifierPluginIndex>(
-        std::move(plugin_name));
+    route->action =
+        XdsRouteConfigResource::Route::RouteAction::ClusterSpecifierPluginName{
+            std::move(plugin_name)};
   } else {
     // No cluster or weighted_clusters or plugin found in RouteAction, ignore
     // this route.
@@ -1048,12 +1052,12 @@ grpc_error_handle XdsRouteConfigResource::Parse(
           route_action.retry_policy = virtual_host_retry_policy;
         }
         // Mark off plugins used in route action.
-        std::string* cluster_specifier_action =
+        auto* cluster_specifier_action =
             absl::get_if<XdsRouteConfigResource::Route::RouteAction::
-                             kClusterSpecifierPluginIndex>(
-                &route_action.action);
+                             ClusterSpecifierPluginName>(&route_action.action);
         if (cluster_specifier_action != nullptr) {
-          cluster_specifier_plugins.erase(*cluster_specifier_action);
+          cluster_specifier_plugins.erase(
+              cluster_specifier_action->cluster_specifier_plugin_name);
         }
       } else if (envoy_config_route_v3_Route_has_non_forwarding_action(
                      routes[j])) {
