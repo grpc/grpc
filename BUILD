@@ -2243,10 +2243,11 @@ grpc_cc_library(
     external_deps = [
         "absl/container:inlined_vector",
         "absl/status:statusor",
+        "absl/types:variant",
     ],
     deps = [
+        "event_engine_base_hdrs",
         "gpr_platform",
-        "grpc_base",
     ],
 )
 
