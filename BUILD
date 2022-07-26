@@ -2236,6 +2236,17 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "event_engine_poller",
+    hdrs = [
+        "src/core/lib/event_engine/poller.h",
+    ],
+    external_deps = [
+        "absl/container:inlined_vector",
+    ],
+    deps = [],
+)
+
+grpc_cc_library(
     name = "iomgr_ee_timer",
     srcs = [
         "src/core/lib/event_engine/iomgr_engine/timer.cc",
