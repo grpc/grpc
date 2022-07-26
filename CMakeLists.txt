@@ -4641,6 +4641,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(inproc_callback_test
+  test/core/end2end/fixtures/local_util.cc
   test/core/end2end/inproc_callback_test.cc
 )
 
@@ -4660,7 +4661,7 @@ target_include_directories(inproc_callback_test
 
 target_link_libraries(inproc_callback_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  end2end_tests
+  grpc_test_util
 )
 
 
@@ -4723,7 +4724,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(multiple_server_queues_test
-  test/core/end2end/cq_verifier.cc
   test/core/end2end/multiple_server_queues_test.cc
 )
 
@@ -11530,6 +11530,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(h2_ssl_session_reuse_test
+  test/core/end2end/cq_verifier.cc
   test/core/end2end/h2_ssl_session_reuse_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -11557,7 +11558,7 @@ target_include_directories(h2_ssl_session_reuse_test
 target_link_libraries(h2_ssl_session_reuse_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  end2end_tests
+  grpc_test_util
 )
 
 

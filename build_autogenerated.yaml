@@ -3467,11 +3467,14 @@ targets:
 - name: inproc_callback_test
   build: test
   language: c
-  headers: []
+  headers:
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/local_util.h
   src:
+  - test/core/end2end/fixtures/local_util.cc
   - test/core/end2end/inproc_callback_test.cc
   deps:
-  - end2end_tests
+  - grpc_test_util
   uses_polling: false
 - name: invalid_call_argument_test
   build: test
@@ -3495,10 +3498,8 @@ targets:
 - name: multiple_server_queues_test
   build: test
   language: c
-  headers:
-  - test/core/end2end/cq_verifier.h
+  headers: []
   src:
-  - test/core/end2end/cq_verifier.cc
   - test/core/end2end/multiple_server_queues_test.cc
   deps:
   - grpc_test_util
@@ -6915,11 +6916,13 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/end2end/cq_verifier.h
   src:
+  - test/core/end2end/cq_verifier.cc
   - test/core/end2end/h2_ssl_session_reuse_test.cc
   deps:
-  - end2end_tests
+  - grpc_test_util
 - name: handshake_server_with_readahead_handshaker_test
   gtest: true
   build: test

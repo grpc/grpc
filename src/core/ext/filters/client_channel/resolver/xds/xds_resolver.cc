@@ -87,7 +87,6 @@
 #include "src/core/lib/service_config/service_config_call_data.h"
 #include "src/core/lib/service_config/service_config_impl.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/uri/uri_parser.h"
 
@@ -302,7 +301,7 @@ class XdsResolver : public Resolver {
   class XdsConfigSelector : public ConfigSelector {
    public:
     XdsConfigSelector(RefCountedPtr<XdsResolver> resolver,
-                      grpc_error_handle* error);
+                      absl::Status* status);
     ~XdsConfigSelector() override;
 
     const char* name() const override { return "XdsConfigSelector"; }
@@ -343,11 +342,10 @@ class XdsResolver : public Resolver {
     class RouteListIterator;
 
     void MaybeAddCluster(const std::string& name);
-    grpc_error_handle CreateMethodConfig(
+    absl::StatusOr<RefCountedPtr<ServiceConfig>> CreateMethodConfig(
         const XdsRouteConfigResource::Route& route,
         const XdsRouteConfigResource::Route::RouteAction::ClusterWeight*
-            cluster_weight,
-        RefCountedPtr<ServiceConfig>* method_config);
+            cluster_weight);
 
     RefCountedPtr<XdsResolver> resolver_;
     RouteTable route_table_;
@@ -438,7 +436,7 @@ class XdsResolver::XdsConfigSelector::RouteListIterator
 //
 
 XdsResolver::XdsConfigSelector::XdsConfigSelector(
-    RefCountedPtr<XdsResolver> resolver, grpc_error_handle* error)
+    RefCountedPtr<XdsResolver> resolver, absl::Status* status)
     : resolver_(std::move(resolver)) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
     gpr_log(GPR_INFO, "[xds_resolver %p] creating XdsConfigSelector %p",
@@ -478,8 +476,12 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
           // cluster name
           [&](const XdsRouteConfigResource::Route::RouteAction::ClusterName&
                   cluster_name) {
-            *error = CreateMethodConfig(route_entry.route, nullptr,
-                                        &route_entry.method_config);
+            auto result = CreateMethodConfig(route_entry.route, nullptr);
+            if (!result.ok()) {
+              *status = result.status();
+              return;
+            }
+            route_entry.method_config = std::move(*result);
             MaybeAddCluster(
                 absl::StrCat("cluster:", cluster_name.cluster_name));
           },
@@ -490,9 +492,13 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
             uint32_t end = 0;
             for (const auto& weighted_cluster : weighted_clusters) {
               Route::ClusterWeightState cluster_weight_state;
-              *error = CreateMethodConfig(route_entry.route, &weighted_cluster,
-                                          &cluster_weight_state.method_config);
-              if (!GRPC_ERROR_IS_NONE(*error)) return;
+              auto result =
+                  CreateMethodConfig(route_entry.route, &weighted_cluster);
+              if (!result.ok()) {
+                *status = result.status();
+                return;
+              }
+              cluster_weight_state.method_config = std::move(*result);
               end += weighted_cluster.weight;
               cluster_weight_state.range_end = end;
               cluster_weight_state.cluster = weighted_cluster.name;
@@ -504,12 +510,17 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
           // ClusterSpecifierPlugin
           [&](const XdsRouteConfigResource::Route::RouteAction::
                   ClusterSpecifierPluginName& cluster_specifier_plugin_name) {
-            *error = CreateMethodConfig(route_entry.route, nullptr,
-                                        &route_entry.method_config);
+            auto result = CreateMethodConfig(route_entry.route, nullptr);
+            if (!result.ok()) {
+              *status = result.status();
+              return;
+            }
+            route_entry.method_config = std::move(*result);
             MaybeAddCluster(absl::StrCat(
                 "cluster_specifier_plugin:",
                 cluster_specifier_plugin_name.cluster_specifier_plugin_name));
           });
+      if (!status->ok()) return;
     }
   }
   // Populate filter list.
@@ -537,11 +548,11 @@ XdsResolver::XdsConfigSelector::~XdsConfigSelector() {
   resolver_->MaybeRemoveUnusedClusters();
 }
 
-grpc_error_handle XdsResolver::XdsConfigSelector::CreateMethodConfig(
+absl::StatusOr<RefCountedPtr<ServiceConfig>>
+XdsResolver::XdsConfigSelector::CreateMethodConfig(
     const XdsRouteConfigResource::Route& route,
     const XdsRouteConfigResource::Route::RouteAction::ClusterWeight*
-        cluster_weight,
-    RefCountedPtr<ServiceConfig>* method_config) {
+        cluster_weight) {
   std::vector<std::string> fields;
   const auto& route_action =
       absl::get<XdsRouteConfigResource::Route::RouteAction>(route.action);
@@ -590,21 +601,17 @@ grpc_error_handle XdsResolver::XdsConfigSelector::CreateMethodConfig(
                         route_action.max_stream_duration->ToJsonString()));
   }
   // Handle xDS HTTP filters.
-  XdsRouting::GeneratePerHttpFilterConfigsResult result =
-      XdsRouting::GeneratePerHTTPFilterConfigs(
-          resolver_->current_listener_.http_connection_manager.http_filters,
-          resolver_->current_virtual_host_, route, cluster_weight,
-          resolver_->args_);
-  if (!GRPC_ERROR_IS_NONE(result.error)) {
-    return result.error;
-  }
-  for (const auto& p : result.per_filter_configs) {
+  auto result = XdsRouting::GeneratePerHTTPFilterConfigs(
+      resolver_->current_listener_.http_connection_manager.http_filters,
+      resolver_->current_virtual_host_, route, cluster_weight,
+      resolver_->args_);
+  if (!result.ok()) return result.status();
+  for (const auto& p : result->per_filter_configs) {
     fields.emplace_back(absl::StrCat("    \"", p.first, "\": [\n",
                                      absl::StrJoin(p.second, ",\n"),
                                      "\n    ]"));
   }
   // Construct service config.
-  grpc_error_handle error = GRPC_ERROR_NONE;
   if (!fields.empty()) {
     std::string json = absl::StrCat(
         "{\n"
@@ -616,15 +623,9 @@ grpc_error_handle XdsResolver::XdsConfigSelector::CreateMethodConfig(
         absl::StrJoin(fields, ",\n"),
         "\n  } ]\n"
         "}");
-    auto method_config_or =
-        ServiceConfigImpl::Create(result.args, json.c_str());
-    if (!method_config_or.ok()) {
-      error = absl_status_to_grpc_error(method_config_or.status());
-    } else {
-      *method_config = std::move(*method_config_or);
-    }
+    return ServiceConfigImpl::Create(result->args, json.c_str());
   }
-  return error;
+  return nullptr;
 }
 
 ChannelArgs XdsResolver::XdsConfigSelector::ModifyChannelArgs(
@@ -682,10 +683,8 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
           &entry.route.action);
   if (route_action == nullptr) {
     CallConfig call_config;
-    call_config.error =
-        grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                               "Matching route has inappropriate action"),
-                           GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
+    call_config.status =
+        absl::UnavailableError("Matching route has inappropriate action");
     return call_config;
   }
   std::string cluster_name;
@@ -1050,12 +1049,11 @@ void XdsResolver::GenerateResult() {
   if (current_virtual_host_.routes.empty()) return;
   // First create XdsConfigSelector, which may add new entries to the cluster
   // state map, and then CreateServiceConfig for LB policies.
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  auto config_selector = MakeRefCounted<XdsConfigSelector>(Ref(), &error);
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  absl::Status status;
+  auto config_selector = MakeRefCounted<XdsConfigSelector>(Ref(), &status);
+  if (!status.ok()) {
     OnError("could not create ConfigSelector",
-            absl::UnavailableError(grpc_error_std_string(error)));
-    GRPC_ERROR_UNREF(error);
+            absl::UnavailableError(status.message()));
     return;
   }
   Result result;
