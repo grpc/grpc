@@ -91,7 +91,7 @@ long GetBeforeSnapshot() {
       &params->context, &params->request, &params->response,
       [params](const grpc::Status& status) {
         if (status.ok()) {
-          gpr_log(GPR_INFO, "Before: %ld", params->response.rss());
+          gpr_log(GPR_INFO, "Server Before RPC: %ld", params->response.rss());
           gpr_log(GPR_INFO, "GetBeforeSnapshot succeeded.");
         } else {
           gpr_log(GPR_ERROR, "GetBeforeSnapshot failed.");
@@ -116,7 +116,9 @@ int main(int argc, char** argv) {
   long before_server_memory = GetBeforeSnapshot();
   long before_client_memory = GetMemUsage();
 
-  UnaryCall();
+  for(int i=0; i<1000; ++i)
+    UnaryCall();
+  gpr_sleep_until(grpc_timeout_seconds_to_deadline(1));
 
   // Getting peak memory usage
   long peak_server_memory = GetMemUsage(absl::GetFlag(FLAGS_server_pid));
@@ -124,6 +126,7 @@ int main(int argc, char** argv) {
   gpr_log(GPR_INFO, "Before Client Mem: %ld", before_client_memory);
   gpr_log(GPR_INFO, "Peak Client Mem: %ld", peak_client_memory);
   gpr_log(GPR_INFO, "Peak Server Mem: %ld", peak_server_memory);
+  
   gpr_log(GPR_INFO, "Client Done");
   return 0;
 }
