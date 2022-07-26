@@ -306,6 +306,11 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
       return false;
     }
 
+    void DisableEjection() {
+      Uneject();
+      multiplier_ = 0;
+    }
+
    private:
     std::unique_ptr<Bucket> current_bucket_ = absl::make_unique<Bucket>();
     std::unique_ptr<Bucket> backup_bucket_ = absl::make_unique<Bucket>();
@@ -644,6 +649,9 @@ void OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
                   "[outlier_detection_lb %p] adding map entry for %s (%p)",
                   this, address_key.c_str(), subchannel_state.get());
         }
+      } else if (!config_->CountingEnabled()) {
+        // If counting is not enabled, reset state.
+        subchannel_state->DisableEjection();
       }
       current_addresses.emplace(address_key);
     }

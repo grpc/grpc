@@ -1297,8 +1297,30 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
           static_cast<XdsClusterResolverLbConfig*>(old_config);
       XdsClusterResolverLbConfig* new_xds_cluster_resolver_config =
           static_cast<XdsClusterResolverLbConfig*>(new_config);
-      return old_xds_cluster_resolver_config->discovery_mechanisms() !=
-             new_xds_cluster_resolver_config->discovery_mechanisms();
+      if (old_xds_cluster_resolver_config->discovery_mechanisms().size() !=
+          new_xds_cluster_resolver_config->discovery_mechanisms().size()) {
+        return true;
+      }
+      for (size_t i = 0;
+           i < old_xds_cluster_resolver_config->discovery_mechanisms().size();
+           ++i) {
+        auto& old_discovery_mechanism =
+            old_xds_cluster_resolver_config->discovery_mechanisms()[i];
+        auto& new_discovery_mechanism =
+            new_xds_cluster_resolver_config->discovery_mechanisms()[i];
+        if (old_discovery_mechanism.type != new_discovery_mechanism.type ||
+            old_discovery_mechanism.cluster_name !=
+                new_discovery_mechanism.cluster_name ||
+            old_discovery_mechanism.eds_service_name !=
+                new_discovery_mechanism.eds_service_name ||
+            old_discovery_mechanism.dns_hostname !=
+                new_discovery_mechanism.dns_hostname ||
+            !(old_discovery_mechanism.lrs_load_reporting_server ==
+              new_discovery_mechanism.lrs_load_reporting_server)) {
+          return true;
+        }
+      }
+      return false;
     }
 
     OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
