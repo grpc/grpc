@@ -226,4 +226,5 @@ pip_install coverage==4.4 oauth2client==4.1.0 \
             googleapis-common-protos>=1.5.5 rsa==4.0
 $VENV_PYTHON "$ROOT/src/python/grpcio_tests/setup.py" preprocess
 $VENV_PYTHON "$ROOT/src/python/grpcio_tests/setup.py" build_package_protos
+find "$ROOT/src/python/grpcio_tests/" -name '*_pb2.py' | xargs cat
 pip_install_dir "$ROOT/src/python/grpcio_tests"
