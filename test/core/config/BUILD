@@ -28,6 +28,5 @@ grpc_cc_test(
     deps = [
         "//:config",
         "//:grpc",
-        "//test/core/util:grpc_suppressions",
     ],
 )

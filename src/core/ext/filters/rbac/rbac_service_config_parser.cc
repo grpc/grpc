@@ -26,12 +26,12 @@
 #include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/types/optional.h"
 
-#include <grpc/support/log.h>
-
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json_util.h"
 #include "src/core/lib/matchers/matchers.h"
 #include "src/core/lib/transport/error_utils.h"
@@ -581,11 +581,9 @@ std::vector<Rbac> ParseRbacArray(const Json::Array& policies_json_array,
 
 }  // namespace
 
-std::unique_ptr<ServiceConfigParser::ParsedConfig>
+absl::StatusOr<std::unique_ptr<ServiceConfigParser::ParsedConfig>>
 RbacServiceConfigParser::ParsePerMethodParams(const ChannelArgs& args,
-                                              const Json& json,
-                                              grpc_error_handle* error) {
-  GPR_DEBUG_ASSERT(error != nullptr && GRPC_ERROR_IS_NONE(*error));
+                                              const Json& json) {
   // Only parse rbac policy if the channel arg is present
   if (!args.GetBool(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG).value_or(false)) {
     return nullptr;
@@ -597,10 +595,16 @@ RbacServiceConfigParser::ParsePerMethodParams(const ChannelArgs& args,
                            &policies_json_array, &error_list)) {
     rbac_policies = ParseRbacArray(*policies_json_array, &error_list);
   }
-  *error = GRPC_ERROR_CREATE_FROM_VECTOR("Rbac parser", &error_list);
-  if (!GRPC_ERROR_IS_NONE(*error) || rbac_policies.empty()) {
-    return nullptr;
+  grpc_error_handle error =
+      GRPC_ERROR_CREATE_FROM_VECTOR("Rbac parser", &error_list);
+  if (!GRPC_ERROR_IS_NONE(error)) {
+    absl::Status status = absl::InvalidArgumentError(
+        absl::StrCat("error parsing RBAC method parameters: ",
+                     grpc_error_std_string(error)));
+    GRPC_ERROR_UNREF(error);
+    return status;
   }
+  if (rbac_policies.empty()) return nullptr;
   return absl::make_unique<RbacMethodParsedConfig>(std::move(rbac_policies));
 }
 

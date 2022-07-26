@@ -210,10 +210,9 @@ class FakeResolverResponseGeneratorWrapper {
       result.resolution_note = "fake resolver empty address list";
     }
     if (service_config_json != nullptr) {
-      grpc_error_handle error = GRPC_ERROR_NONE;
       result.service_config = grpc_core::ServiceConfigImpl::Create(
-          grpc_core::ChannelArgs(), service_config_json, &error);
-      GPR_ASSERT(*result.service_config != nullptr);
+          grpc_core::ChannelArgs(), service_config_json);
+      GPR_ASSERT(result.service_config.ok());
     }
     return result;
   }
