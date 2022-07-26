@@ -2636,6 +2636,7 @@ TEST(CredentialsTest, TestUrlExternalAccountCredsSuccessFormatText) {
       "client_secret",                    // client_secret;
       "",                                 // workforce_pool_user_project;
   };
+  grpc_error_handle error = GRPC_ERROR_NONE;
   auto creds = UrlExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
   GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
@@ -2672,6 +2673,7 @@ TEST(CredentialsTest,
       "client_secret",                    // client_secret;
       "",                                 // workforce_pool_user_project;
   };
+  grpc_error_handle error = GRPC_ERROR_NONE;
   auto creds = UrlExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
   GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
@@ -2705,6 +2707,7 @@ TEST(CredentialsTest, TestUrlExternalAccountCredsSuccessFormatJson) {
       "client_secret",                    // client_secret;
       "",                                 // workforce_pool_user_project;
   };
+  grpc_error_handle error = GRPC_ERROR_NONE;
   auto creds = UrlExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
   GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
@@ -2722,7 +2725,7 @@ TEST(CredentialsTest, TestUrlExternalAccountCredsSuccessFormatJson) {
 
 TEST(CredentialsTest,
      TestUrlExternalAccountCredsFailureInvalidCredentialSourceUrl) {
-  Json credential_source =
+  auto credential_source =
       Json::Parse(invalid_url_external_account_creds_options_credential_source);
   GPR_ASSERT(credential_source.ok());
   ExternalAccountCredentials::Options options = {
@@ -2738,6 +2741,7 @@ TEST(CredentialsTest,
       "client_secret",                    // client_secret;
       "",                                 // workforce_pool_user_project;
   };
+  grpc_error_handle error = GRPC_ERROR_NONE;
   auto creds = UrlExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds == nullptr);
   std::string actual_error;
@@ -2767,6 +2771,7 @@ TEST(CredentialsTest, TestFileExternalAccountCredsSuccessFormatText) {
       "client_secret",                    // client_secret;
       "",                                 // workforce_pool_user_project;
   };
+  grpc_error_handle error = GRPC_ERROR_NONE;
   auto creds = FileExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
   GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
@@ -2812,6 +2817,7 @@ TEST(CredentialsTest, TestFileExternalAccountCredsSuccessFormatJson) {
       "client_secret",                    // client_secret;
       "",                                 // workforce_pool_user_project;
   };
+  grpc_error_handle error = GRPC_ERROR_NONE;
   auto creds = FileExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
   GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
@@ -2846,6 +2852,7 @@ TEST(CredentialsTest, TestFileExternalAccountCredsFailureFileNotFound) {
       "client_secret",                    // client_secret;
       "",                                 // workforce_pool_user_project;
   };
+  grpc_error_handle error = GRPC_ERROR_NONE;
   auto creds = FileExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
   GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
@@ -2891,6 +2898,7 @@ TEST(CredentialsTest, TestFileExternalAccountCredsFailureInvalidJsonContent) {
       "client_secret",                    // client_secret;
       "",                                 // workforce_pool_user_project;
   };
+  grpc_error_handle error = GRPC_ERROR_NONE;
   auto creds = FileExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
   GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
@@ -2913,7 +2921,7 @@ TEST(CredentialsTest, TestFileExternalAccountCredsFailureInvalidJsonContent) {
 
 TEST(CredentialsTest, TestAwsExternalAccountCredsSuccess) {
   ExecCtx exec_ctx;
-  Json credential_source =
+  auto credential_source =
       Json::Parse(valid_aws_external_account_creds_options_credential_source);
   GPR_ASSERT(credential_source.ok());
   ExternalAccountCredentials::Options options = {
@@ -2929,6 +2937,7 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsSuccess) {
       "client_secret",                    // client_secret;
       "",                                 // workforce_pool_user_project;
   };
+  grpc_error_handle error = GRPC_ERROR_NONE;
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
   GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
@@ -2962,6 +2971,7 @@ TEST(CredentialsTest, TestAwsImdsv2ExternalAccountCredsSuccess) {
       "client_secret",                    // client_secret;
       "",                                 // workforce_pool_user_project;
   };
+  grpc_error_handle error = GRPC_ERROR_NONE;
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
   GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
@@ -2997,6 +3007,7 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsSuccessPathRegionEnvKeysUrl) {
       "client_secret",                    // client_secret;
       "",                                 // workforce_pool_user_project;
   };
+  grpc_error_handle error = GRPC_ERROR_NONE;
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
   GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
@@ -3033,6 +3044,7 @@ TEST(CredentialsTest,
       "client_secret",                    // client_secret;
       "",                                 // workforce_pool_user_project;
   };
+  grpc_error_handle error = GRPC_ERROR_NONE;
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
   GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
@@ -3071,6 +3083,7 @@ TEST(CredentialsTest,
       "client_secret",                    // client_secret;
       "",                                 // workforce_pool_user_project;
   };
+  grpc_error_handle error = GRPC_ERROR_NONE;
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
   GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
@@ -3109,6 +3122,7 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsSuccessPathRegionUrlKeysEnv) {
       "client_secret",                    // client_secret;
       "",                                 // workforce_pool_user_project;
   };
+  grpc_error_handle error = GRPC_ERROR_NONE;
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
   GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
@@ -3149,6 +3163,7 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsSuccessPathRegionEnvKeysEnv) {
       "client_secret",                    // client_secret;
       "",                                 // workforce_pool_user_project;
   };
+  grpc_error_handle error = GRPC_ERROR_NONE;
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
   GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
@@ -3193,6 +3208,7 @@ TEST(CredentialsTest,
       "client_secret",                    // client_secret;
       "",                                 // workforce_pool_user_project;
   };
+  grpc_error_handle error = GRPC_ERROR_NONE;
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
   GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
@@ -3237,6 +3253,7 @@ TEST(CredentialsTest,
       "client_secret",                    // client_secret;
       "",                                 // workforce_pool_user_project;
   };
+  grpc_error_handle error = GRPC_ERROR_NONE;
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
   GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
@@ -3275,6 +3292,7 @@ TEST(CredentialsTest,
       "client_secret",                    // client_secret;
       "",                                 // workforce_pool_user_project;
   };
+  grpc_error_handle error = GRPC_ERROR_NONE;
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds == nullptr);
   std::string expected_error = "environment_id does not match.";
@@ -3303,6 +3321,7 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsFailureInvalidRegionUrl) {
       "client_secret",                    // client_secret;
       "",                                 // workforce_pool_user_project;
   };
+  grpc_error_handle error = GRPC_ERROR_NONE;
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
   GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
@@ -3341,6 +3360,7 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsFailureInvalidUrl) {
       "client_secret",                    // client_secret;
       "",                                 // workforce_pool_user_project;
   };
+  grpc_error_handle error = GRPC_ERROR_NONE;
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
   GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
@@ -3378,6 +3398,7 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsFailureMissingRoleName) {
       "client_secret",                    // client_secret;
       "",                                 // workforce_pool_user_project;
   };
+  grpc_error_handle error = GRPC_ERROR_NONE;
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
   GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
@@ -3417,6 +3438,7 @@ TEST(CredentialsTest,
       "client_secret",                    // client_secret;
       "",                                 // workforce_pool_user_project;
   };
+  grpc_error_handle error = GRPC_ERROR_NONE;
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
   GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
