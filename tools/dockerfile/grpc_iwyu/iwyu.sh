@@ -47,6 +47,7 @@ export ENABLED_MODULES='
   src/core/lib
   src/cpp
   test/core/end2end
+  test/core/memory_usage
   test/core/promise
   test/core/resource_quota
   test/core/uri
