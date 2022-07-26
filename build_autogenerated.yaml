@@ -760,10 +760,11 @@ libs:
   - src/core/lib/event_engine/iomgr_engine/timer.h
   - src/core/lib/event_engine/iomgr_engine/timer_heap.h
   - src/core/lib/event_engine/iomgr_engine/timer_manager.h
+  - src/core/lib/event_engine/poller.h
   - src/core/lib/event_engine/promise.h
+  - src/core/lib/event_engine/socket_notifier.h
   - src/core/lib/event_engine/trace.h
   - src/core/lib/event_engine/utils.h
-  - src/core/lib/event_engine/windows/event_poller.h
   - src/core/lib/event_engine/windows/iocp.h
   - src/core/lib/event_engine/windows/socket.h
   - src/core/lib/event_engine/windows/windows_engine.h
@@ -1989,10 +1990,11 @@ libs:
   - src/core/lib/event_engine/iomgr_engine/timer.h
   - src/core/lib/event_engine/iomgr_engine/timer_heap.h
   - src/core/lib/event_engine/iomgr_engine/timer_manager.h
+  - src/core/lib/event_engine/poller.h
   - src/core/lib/event_engine/promise.h
+  - src/core/lib/event_engine/socket_notifier.h
   - src/core/lib/event_engine/trace.h
   - src/core/lib/event_engine/utils.h
-  - src/core/lib/event_engine/windows/event_poller.h
   - src/core/lib/event_engine/windows/iocp.h
   - src/core/lib/event_engine/windows/socket.h
   - src/core/lib/event_engine/windows/windows_engine.h

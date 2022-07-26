@@ -33,8 +33,7 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-WinSocket::WinSocket(SOCKET socket,
-                                   EventEngine* event_engine) noexcept
+WinSocket::WinSocket(SOCKET socket, EventEngine* event_engine) noexcept
     : socket_(socket),
       event_engine_(event_engine),
       read_info_(OpInfo(this)),
@@ -55,8 +54,8 @@ void WinSocket::MaybeShutdown(absl::Status why) {
   }
   is_shutdown_ = true;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {
-    gpr_log(GPR_DEBUG, "WinSocket::%p shutting down now. Reason: %s",
-            this, why.ToString().c_str());
+    gpr_log(GPR_DEBUG, "WinSocket::%p shutting down now. Reason: %s", this,
+            why.ToString().c_str());
   }
   // Grab the function pointer for DisconnectEx for that specific socket.
   // It may change depending on the interface.
@@ -79,7 +78,7 @@ void WinSocket::MaybeShutdown(absl::Status why) {
 }
 
 void WinSocket::NotifyOnReady(OpInfo& info,
-                                     absl::AnyInvocable<void()> callback) {
+                              absl::AnyInvocable<void()> callback) {
   grpc_core::MutexLock lock(&mu_);
   if (info.has_pending_iocp_) {
     info.has_pending_iocp_ = false;
@@ -131,8 +130,7 @@ void WinSocket::SetWritable() { write_info_.SetReady(); }
 
 bool WinSocket::IsShutdown() { return is_shutdown_; }
 
-WinSocket::OpInfo* WinSocket::GetOpInfoForOverlapped(
-    OVERLAPPED* overlapped) {
+WinSocket::OpInfo* WinSocket::GetOpInfoForOverlapped(OVERLAPPED* overlapped) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {
     gpr_log(GPR_DEBUG,
             "WinSocket::%p looking for matching OVERLAPPED::%p. "

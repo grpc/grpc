@@ -118,5 +118,4 @@ class WindowsEventEngine : public EventEngine {
 
 #endif  // GPR_WINDOWS
 
-
 #endif  // GRPC_CORE_LIB_EVENT_ENGINE_WINDOWS_WINDOWS_ENGINE_H
