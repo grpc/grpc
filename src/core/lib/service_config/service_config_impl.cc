@@ -48,7 +48,7 @@ absl::StatusOr<RefCountedPtr<ServiceConfig>> ServiceConfigImpl::Create(
   if (!json.ok()) return json.status();
   absl::Status status;
   auto service_config = MakeRefCounted<ServiceConfigImpl>(
-      args, std::string(json_string), std::move(json), &status);
+      args, std::string(json_string), std::move(*json), &status);
   if (!status.ok()) return status;
   return service_config;
 }

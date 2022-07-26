@@ -258,7 +258,7 @@ TEST(JwtVerifierTest, InvalidClaimsFailure) {
 
 TEST(JwtVerifierTest, BadAudienceClaimsFailure) {
   grpc_jwt_claims* claims;
-  auto json = Json::Parse(invalid_claims);
+  auto json = Json::Parse(claims_without_time_constraint);
   ASSERT_TRUE(json.ok()) << json.status();
   ASSERT_EQ(json->type(), Json::Type::OBJECT);
   grpc_core::ExecCtx exec_ctx;
@@ -271,7 +271,7 @@ TEST(JwtVerifierTest, BadAudienceClaimsFailure) {
 
 TEST(JwtVerifierTest, BadSubjectClaimsFailure) {
   grpc_jwt_claims* claims;
-  auto json = Json::Parse(invalid_claims);
+  auto json = Json::Parse(claims_with_bad_subject);
   ASSERT_TRUE(json.ok()) << json.status();
   ASSERT_EQ(json->type(), Json::Type::OBJECT);
   grpc_core::ExecCtx exec_ctx;
