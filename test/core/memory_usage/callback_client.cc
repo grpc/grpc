@@ -24,7 +24,6 @@
 #include "absl/algorithm/container.h"
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
-#include "util/logging.h"
 
 #include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
