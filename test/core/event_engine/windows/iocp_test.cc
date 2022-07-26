@@ -32,6 +32,8 @@
 #include "test/core/event_engine/windows/basic_closure.h"
 #include "test/core/event_engine/windows/create_sockpair.h"
 
+// DO NOT SUBMIT(hork): get sanitizers working
+
 namespace {
 using ::grpc_event_engine::experimental::BasicClosure;
 using ::grpc_event_engine::experimental::CreateSockpair;
@@ -44,7 +46,7 @@ using ::grpc_event_engine::experimental::WinSocket;
 
 class IOCPTest : public testing::Test {};
 
-TEST_F(IOCPTest, ClientReceivesNotificationOfServerSendViaIOCP) {
+TEST_F(IOCPTest, ClientReceivesNotificationOfServerSend) {
   auto engine = absl::make_unique<WindowsEventEngine>();
   IOCP iocp(engine.get());
   SOCKET sockpair[2];
@@ -108,13 +110,13 @@ TEST_F(IOCPTest, ClientReceivesNotificationOfServerSendViaIOCP) {
     });
     wrapped_server_socket->NotifyOnWrite(on_write);
   }
-  // Working for WSASend
+  // Doing work for WSASend
   auto work_result = iocp.Work(grpc_core::Duration::Seconds(10));
   ASSERT_TRUE(absl::holds_alternative<Poller::Events>(work_result));
   Poller::Events closures = absl::get<Poller::Events>(work_result);
   ASSERT_EQ(closures.size(), 1);
   engine->Run(closures[0]);
-  // Working for WSARecv
+  // Doing work for WSARecv
   work_result = iocp.Work(grpc_core::Duration::Seconds(10));
   ASSERT_TRUE(absl::holds_alternative<Poller::Events>(work_result));
   closures = absl::get<Poller::Events>(work_result);
@@ -128,6 +130,7 @@ TEST_F(IOCPTest, ClientReceivesNotificationOfServerSendViaIOCP) {
       FAIL() << "Deadline exceeded";
     }
   }
+  // redundant, but self-documenting
   ASSERT_TRUE(read_called);
   ASSERT_TRUE(write_called);
 
@@ -210,12 +213,13 @@ TEST_F(IOCPTest, KickWorks) {
   auto engine = absl::make_unique<WindowsEventEngine>();
   IOCP iocp(engine.get());
   bool kicked;
-  engine->Run([&iocp, &kicked]{
+  engine->Run([&iocp, &kicked] {
     Poller::WorkResult result = iocp.Work(std::chrono::seconds(30));
     ASSERT_TRUE(absl::holds_alternative<Poller::Kicked>(result));
     kicked = true;
   });
   engine->Run([&iocp] {
+    // give the worker thread a chance to start
     absl::SleepFor(absl::Milliseconds(42));
     iocp.Kick();
   });
@@ -228,6 +232,39 @@ TEST_F(IOCPTest, KickWorks) {
     }
   }
   ASSERT_TRUE(kicked);
+}
+
+TEST_F(IOCPTest, KickThenShutdownCasusesNextWorkerToBeKicked) {
+  // This documents the existing poller's behavior of maintaining a kick count,
+  // but it's unclear if it's going to be needed.
+  // TODO(hork): evaluate if a kick count is going to be useful.
+  auto engine = absl::make_unique<WindowsEventEngine>();
+  IOCP iocp(engine.get());
+  // kick twice
+  iocp.Kick();
+  iocp.Kick();
+  // Assert the next two WorkResults are kicks
+  auto result = iocp.Work(std::chrono::milliseconds(1));
+  ASSERT_TRUE(absl::holds_alternative<Poller::Kicked>(result));
+  result = iocp.Work(std::chrono::milliseconds(1));
+  ASSERT_TRUE(absl::holds_alternative<Poller::Kicked>(result));
+  // followed by a DeadlineExceeded
+  result = iocp.Work(std::chrono::milliseconds(1));
+  ASSERT_TRUE(absl::holds_alternative<Poller::DeadlineExceeded>(result));
+}
+
+TEST_F(IOCPTest, CrashOnWatchingAClosedSocket) {
+  auto engine = absl::make_unique<WindowsEventEngine>();
+  IOCP iocp(engine.get());
+  SOCKET sockpair[2];
+  CreateSockpair(sockpair, iocp.GetDefaultSocketFlags());
+  closesocket(sockpair[0]);
+  ASSERT_DEATH(
+      {
+        WinSocket* wrapped_client_socket =
+            static_cast<WinSocket*>(iocp.Watch(sockpair[0]));
+      },
+      "");
 }
 
 int main(int argc, char** argv) {
