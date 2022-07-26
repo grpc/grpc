@@ -29,6 +29,9 @@ source tools/internal_ci/helper_scripts/prepare_ccache_symlinks_rc
 "${PYTHON}" -m pip install --upgrade wheel
 "${PYTHON}" -m pip install --upgrade pip==22.2
 
+"${PYTHON}" -m pip debug --verbose
+exit 1
+
 if [ "$GRPC_SKIP_PIP_CYTHON_UPGRADE" == "" ]
 then
   # Install Cython to avoid source wheel build failure.
