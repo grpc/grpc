@@ -33,7 +33,6 @@
 #include "absl/strings/strip.h"
 
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/matchers/matchers.h"
 

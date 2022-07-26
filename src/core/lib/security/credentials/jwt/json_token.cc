@@ -25,11 +25,15 @@
 
 #include <map>
 #include <string>
+#include <utility>
 
 #include <openssl/bio.h>
 #include <openssl/evp.h>
 #include <openssl/pem.h>
 #include <openssl/rsa.h>
+
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
