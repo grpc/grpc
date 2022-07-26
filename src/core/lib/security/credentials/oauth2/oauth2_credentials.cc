@@ -184,7 +184,8 @@ grpc_oauth2_token_fetcher_credentials_parse_server_response(
     const char* token_type = nullptr;
     const char* expires_in = nullptr;
     Json::Object::const_iterator it;
-    auto json = Json::Parse(null_terminated_body);
+    auto json = Json::Parse(
+        null_terminated_body != nullptr ? null_terminated_body : "");
     if (!json.ok()) {
       gpr_log(GPR_ERROR, "Could not parse JSON from %s: %s",
               null_terminated_body, json.status().ToString().c_str());
