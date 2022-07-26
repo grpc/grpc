@@ -11,8 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef GRPC_CORE_LIB_EVENT_ENGINE_WINDOWS_SOCKET_NOTIFIER_H
-#define GRPC_CORE_LIB_EVENT_ENGINE_WINDOWS_SOCKET_NOTIFIER_H
+#ifndef GRPC_CORE_LIB_EVENT_ENGINE_SOCKET_NOTIFIER_H
+#define GRPC_CORE_LIB_EVENT_ENGINE_SOCKET_NOTIFIER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -51,4 +51,4 @@ class SocketNotifier {
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_CORE_LIB_EVENT_ENGINE_WINDOWS_SOCKET_NOTIFIER_H
+#endif  // GRPC_CORE_LIB_EVENT_ENGINE_SOCKET_NOTIFIER_H

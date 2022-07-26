@@ -2470,11 +2470,20 @@ grpc_cc_library(
 grpc_cc_library(
     name = "event_engine_poller",
     hdrs = ["src/core/lib/event_engine/poller.h"],
+    deps = [
+        "gpr_public_hdrs",
+        "time",
+    ],
 )
 
 grpc_cc_library(
     name = "event_engine_socket_notifier",
     hdrs = ["src/core/lib/event_engine/socket_notifier.h"],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "absl/status",
+    ],
+    deps = ["gpr_platform"],
 )
 
 grpc_cc_library(
@@ -2538,7 +2547,6 @@ grpc_cc_library(
         "absl/base:core_headers",
         "absl/functional:any_invocable",
         "absl/status",
-        "absl/strings",
         "absl/strings:str_format",
     ],
     deps = [
@@ -2549,7 +2557,6 @@ grpc_cc_library(
         "event_engine_trace",
         "gpr_base",
         "gpr_platform",
-        "time",
     ],
 )
 

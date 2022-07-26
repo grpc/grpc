@@ -23,12 +23,13 @@ namespace experimental {
 
 // A generic cross-platform "poller" concept.
 // Concrete implementations will likely manage a set of sockets/file
-// descriptors/etc, allowing threads to drive polling and event processing via Work(...).
+// descriptors/etc, allowing threads to drive polling and event processing via
+// Work(...).
 class Poller {
  public:
   virtual ~Poller() = default;
-  // Poll for events, executing or dispatching them as appropriate. 
-  // 
+  // Poll for events, executing or dispatching them as appropriate.
+  //
   // Returns:
   //  * absl::AbortedError if it was Kicked.
   //  * absl::DeadlineExceeded if timeout occurred
@@ -36,7 +37,7 @@ class Poller {
   virtual absl::Status Work(grpc_core::Duration timeout) = 0;
   // Trigger the threads executing Work(..) to break out as soon as possible.
   virtual void Kick() = 0;
-  // Shut down the poller. 
+  // Shut down the poller.
   // There must be no threads calling Work(...).
   virtual void Shutdown() = 0;
 };

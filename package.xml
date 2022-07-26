@@ -964,15 +964,16 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/iomgr_engine/timer_manager.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/iomgr_engine/timer_manager.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/memory_allocator.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/poller.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/promise.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/resolved_address.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/slice.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/slice_buffer.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/socket_notifier.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/trace.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/trace.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/utils.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/utils.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/event_engine/windows/event_poller.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/windows/iocp.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/windows/iocp.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/windows/socket.cc" role="src" />
