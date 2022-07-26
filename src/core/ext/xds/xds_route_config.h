@@ -42,7 +42,6 @@
 #include "src/core/ext/xds/xds_resource_type_impl.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/matchers/matchers.h"
 
 namespace grpc_core {
@@ -52,6 +51,10 @@ bool XdsRbacEnabled();
 struct XdsRouteConfigResource {
   using TypedPerFilterConfig =
       std::map<std::string, XdsHttpFilterImpl::FilterConfig>;
+
+  using ClusterSpecifierPluginMap =
+      std::map<std::string /*cluster_specifier_plugin_name*/,
+               std::string /*LB policy config*/>;
 
   struct RetryPolicy {
     internal::StatusCodeSet retry_on;
@@ -199,9 +202,7 @@ struct XdsRouteConfigResource {
   };
 
   std::vector<VirtualHost> virtual_hosts;
-  std::map<std::string /*cluster_specifier_plugin_name*/,
-           std::string /*LB policy config*/>
-      cluster_specifier_plugin_map;
+  ClusterSpecifierPluginMap cluster_specifier_plugin_map;
 
   bool operator==(const XdsRouteConfigResource& other) const {
     return virtual_hosts == other.virtual_hosts &&
@@ -209,10 +210,9 @@ struct XdsRouteConfigResource {
   }
   std::string ToString() const;
 
-  static grpc_error_handle Parse(
+  static absl::StatusOr<XdsRouteConfigResource> Parse(
       const XdsEncodingContext& context,
-      const envoy_config_route_v3_RouteConfiguration* route_config,
-      XdsRouteConfigResource* rds_update);
+      const envoy_config_route_v3_RouteConfiguration* route_config);
 };
 
 class XdsRouteConfigResourceType
