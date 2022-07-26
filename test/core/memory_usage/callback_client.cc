@@ -37,7 +37,7 @@ ABSL_FLAG(std::string, target, "", "Target host:port");
 ABSL_FLAG(bool, secure, false, "Use SSL Credentials");
 ABSL_FLAG(int, server_pid, 99999, "Server's pid");
 
-std::unique_ptr<grpc::testing::BenchmarkService::Stub> CreateStubForTest() {
+std::shared_ptr<grpc::Channel> CreateChannelForTest(int index) {
   // Set the authentication mechanism.
   std::shared_ptr<grpc::ChannelCredentials> creds =
       grpc::InsecureChannelCredentials();
@@ -45,18 +45,22 @@ std::unique_ptr<grpc::testing::BenchmarkService::Stub> CreateStubForTest() {
     // TODO (chennancy) Add in secure credentials
     gpr_log(GPR_INFO, "Supposed to be secure, is not yet");
   }
+  
+  //Channel args to prevent connection from closing after RPC is done
+  grpc::ChannelArguments channel_args;
+  channel_args.SetInt(GRPC_ARG_MAX_CONNECTION_IDLE_MS, INT_MAX);
+  channel_args.SetInt(GRPC_ARG_MAX_CONNECTION_AGE_MS, INT_MAX);
+  //Arg to bypass mechanism that combines channels on the serverside if they have the same channel args. Allows for one channel per connection
+  channel_args.SetInt("grpc.memory_usage_counter", index);
 
   // Create a channel to the server and a stub
   std::shared_ptr<grpc::Channel> channel =
-      CreateChannel(absl::GetFlag(FLAGS_target), creds);
-  std::unique_ptr<grpc::testing::BenchmarkService::Stub> stub =
-      grpc::testing::BenchmarkService::NewStub(channel);
-  return stub;
+      CreateCustomChannel(absl::GetFlag(FLAGS_target), creds, channel_args);
+  return channel;
 }
 
-void UnaryCall() {
-  std::unique_ptr<grpc::testing::BenchmarkService::Stub> stub =
-      CreateStubForTest();
+void UnaryCall(std::shared_ptr<grpc::Channel> channel) {
+  std::unique_ptr<grpc::testing::BenchmarkService::Stub> stub = grpc::testing::BenchmarkService::NewStub(channel);
 
   // Start a call.
   struct CallParams {
@@ -76,9 +80,8 @@ void UnaryCall() {
 }
 
 // Get memory usage of server's process before the server is made
-long GetBeforeSnapshot() {
-  std::unique_ptr<grpc::testing::BenchmarkService::Stub> stub =
-      CreateStubForTest();
+void GetBeforeSnapshot(std::shared_ptr<grpc::Channel> channel, long& before_server_memory) {
+  std::unique_ptr<grpc::testing::BenchmarkService::Stub> stub = grpc::testing::BenchmarkService::NewStub(channel);
 
   // Start a call.
   struct CallParams {
@@ -89,15 +92,15 @@ long GetBeforeSnapshot() {
   CallParams* params = new CallParams();
   stub->async()->GetBeforeSnapshot(
       &params->context, &params->request, &params->response,
-      [params](const grpc::Status& status) {
+      [params, &before_server_memory](const grpc::Status& status) {
         if (status.ok()) {
+          before_server_memory=params->response.rss();
           gpr_log(GPR_INFO, "Server Before RPC: %ld", params->response.rss());
           gpr_log(GPR_INFO, "GetBeforeSnapshot succeeded.");
         } else {
           gpr_log(GPR_ERROR, "GetBeforeSnapshot failed.");
         }
       });
-  return params->response.rss();
 }
 
 int main(int argc, char** argv) {
@@ -113,20 +116,27 @@ int main(int argc, char** argv) {
   gpr_log(GPR_INFO, "Client Target: %s", absl::GetFlag(FLAGS_target).c_str());
 
   // Getting initial memory usage
-  long before_server_memory = GetBeforeSnapshot();
+  std::shared_ptr<grpc::Channel> get_memory_channel= CreateChannelForTest(0);
+  long before_server_memory;
+  GetBeforeSnapshot(get_memory_channel, before_server_memory);
   long before_client_memory = GetMemUsage();
 
-  for(int i=0; i<1000; ++i)
-    UnaryCall();
-  gpr_sleep_until(grpc_timeout_seconds_to_deadline(1));
+  for(int i=0; i<500; ++i){
+    std::shared_ptr<grpc::Channel> channel= CreateChannelForTest(i);
+    UnaryCall(channel);
+  }
+  gpr_sleep_until(grpc_timeout_seconds_to_deadline(10));
 
   // Getting peak memory usage
   long peak_server_memory = GetMemUsage(absl::GetFlag(FLAGS_server_pid));
   long peak_client_memory = GetMemUsage();
+  gpr_log(GPR_INFO, "Before Server Mem: %ld", before_server_memory);
   gpr_log(GPR_INFO, "Before Client Mem: %ld", before_client_memory);
   gpr_log(GPR_INFO, "Peak Client Mem: %ld", peak_client_memory);
   gpr_log(GPR_INFO, "Peak Server Mem: %ld", peak_server_memory);
-  
+  gpr_log(GPR_INFO, "Server Difference: %ld", peak_server_memory-before_server_memory);
+  gpr_log(GPR_INFO, "Client Difference: %ld", peak_client_memory-before_client_memory);
+
   gpr_log(GPR_INFO, "Client Done");
   return 0;
 }
