@@ -26,7 +26,6 @@
 #include "absl/flags/parse.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
-#include "util/logging.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>

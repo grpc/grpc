@@ -26,7 +26,6 @@
 #include "absl/algorithm/container.h"
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
-#include "util/logging.h"
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
