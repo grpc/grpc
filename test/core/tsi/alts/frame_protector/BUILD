@@ -21,6 +21,7 @@ grpc_package(name = "test/core/tsi/alts/frame_protector")
 grpc_cc_test(
     name = "alts_counter_test",
     srcs = ["alts_counter_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     deps = [
         "//:gpr",
@@ -33,6 +34,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "alts_crypter_test",
     srcs = ["alts_crypter_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     deps = [
         "//:gpr",
@@ -45,6 +47,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "alts_frame_protector_test",
     srcs = ["alts_frame_protector_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     deps = [
         "//:gpr",
@@ -58,6 +61,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "frame_handler_test",
     srcs = ["frame_handler_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     deps = [
         "//:gpr",

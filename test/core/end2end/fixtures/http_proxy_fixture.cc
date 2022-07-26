@@ -21,37 +21,46 @@
 #include <limits.h>
 #include <string.h>
 
+#include <algorithm>
+#include <memory>
+#include <string>
+#include <vector>
+
+#include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 
 #include <grpc/grpc.h>
+#include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/channel/channel_args_preconditioning.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/thd.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/tcp_server.h"
-#include "src/core/lib/iomgr/timer.h"
-#include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/slice/b64.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/slice/slice_refcount.h"
 #include "test/core/util/port.h"
 
 struct grpc_end2end_http_proxy {
@@ -532,8 +541,8 @@ static void on_read_request_done_locked(void* arg, grpc_error_handle error) {
   }
   // Resolve address.
   absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or =
-      grpc_core::GetDNSResolver()->ResolveNameBlocking(conn->http_request.path,
-                                                       "80");
+      grpc_core::GetDNSResolver()->LookupHostnameBlocking(
+          conn->http_request.path, "80");
   if (!addresses_or.ok()) {
     proxy_connection_failed(conn, SETUP_FAILED, "HTTP proxy DNS lookup",
                             GRPC_ERROR_REF(error));
@@ -546,14 +555,13 @@ static void on_read_request_done_locked(void* arg, grpc_error_handle error) {
       grpc_core::ExecCtx::Get()->Now() + grpc_core::Duration::Seconds(10);
   GRPC_CLOSURE_INIT(&conn->on_server_connect_done, on_server_connect_done, conn,
                     grpc_schedule_on_exec_ctx);
-  const grpc_channel_args* args = grpc_core::CoreConfiguration::Get()
-                                      .channel_args_preconditioning()
-                                      .PreconditionChannelArgs(nullptr)
-                                      .ToC();
+  auto args = grpc_core::CoreConfiguration::Get()
+                  .channel_args_preconditioning()
+                  .PreconditionChannelArgs(nullptr)
+                  .ToC();
   grpc_tcp_client_connect(&conn->on_server_connect_done, &conn->server_endpoint,
-                          conn->pollset_set, args, &(*addresses_or)[0],
+                          conn->pollset_set, args.get(), &(*addresses_or)[0],
                           deadline);
-  grpc_channel_args_destroy(args);
 }
 
 static void on_read_request_done(void* arg, grpc_error_handle error) {
@@ -627,7 +635,8 @@ grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(
   proxy->channel_args = grpc_core::CoreConfiguration::Get()
                             .channel_args_preconditioning()
                             .PreconditionChannelArgs(args)
-                            .ToC();
+                            .ToC()
+                            .release();
   grpc_error_handle error =
       grpc_tcp_server_create(nullptr, proxy->channel_args, &proxy->server);
   GPR_ASSERT(GRPC_ERROR_IS_NONE(error));

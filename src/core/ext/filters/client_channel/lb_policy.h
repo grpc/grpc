@@ -24,7 +24,6 @@
 
 #include <memory>
 #include <string>
-#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -35,7 +34,6 @@
 #include "absl/types/variant.h"
 
 #include <grpc/impl/codegen/connectivity_state.h>
-#include <grpc/impl/codegen/grpc_types.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
 #include "src/core/ext/filters/client_channel/subchannel_interface.h"
@@ -45,8 +43,8 @@
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
-#include "src/core/lib/iomgr/work_serializer.h"
 #include "src/core/lib/resolver/server_address.h"
 
 namespace grpc_core {
@@ -279,7 +277,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
     /// Creates a new subchannel with the specified channel args.
     virtual RefCountedPtr<SubchannelInterface> CreateSubchannel(
-        ServerAddress address, const grpc_channel_args& args) = 0;
+        ServerAddress address, const ChannelArgs& args) = 0;
 
     /// Sets the connectivity state and returns a new picker to be used
     /// by the client channel.
@@ -307,7 +305,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     ~Config() override = default;
 
     // Returns the load balancing policy name
-    virtual const char* name() const = 0;
+    virtual absl::string_view name() const = 0;
   };
 
   /// Data passed to the UpdateLocked() method when new addresses and
@@ -327,16 +325,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
     // TODO(roth): Before making this a public API, find a better
     // abstraction for representing channel args.
-    const grpc_channel_args* args = nullptr;
-
-    // TODO(roth): Remove everything below once channel args is
-    // converted to a copyable and movable C++ object.
-    UpdateArgs() = default;
-    ~UpdateArgs() { grpc_channel_args_destroy(args); }
-    UpdateArgs(const UpdateArgs& other);
-    UpdateArgs(UpdateArgs&& other) noexcept;
-    UpdateArgs& operator=(const UpdateArgs& other);
-    UpdateArgs& operator=(UpdateArgs&& other) noexcept;
+    ChannelArgs args;
   };
 
   /// Args used to instantiate an LB policy.
@@ -349,10 +338,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     std::unique_ptr<ChannelControlHelper> channel_control_helper;
     /// Channel args.
     // TODO(roth): Find a better channel args representation for this API.
-    // TODO(roth): Clarify ownership semantics here -- currently, this
-    // does not take ownership of args, which is the opposite of how we
-    // handle them in UpdateArgs.
-    const grpc_channel_args* args = nullptr;
+    ChannelArgs args;
   };
 
   explicit LoadBalancingPolicy(Args args, intptr_t initial_refcount = 1);
@@ -363,7 +349,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   LoadBalancingPolicy& operator=(const LoadBalancingPolicy&) = delete;
 
   /// Returns the name of the LB policy.
-  virtual const char* name() const = 0;
+  virtual absl::string_view name() const = 0;
 
   /// Updates the policy with new data from the resolver.  Will be invoked
   /// immediately after LB policy is constructed, and then again whenever
@@ -421,6 +407,8 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     return work_serializer_;
   }
 
+  const ChannelArgs& channel_args() const { return channel_args_; }
+
   // Note: LB policies MUST NOT call any method on the helper from their
   // constructor.
   ChannelControlHelper* channel_control_helper() const {
@@ -437,6 +425,9 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   grpc_pollset_set* interested_parties_;
   /// Channel control helper.
   std::unique_ptr<ChannelControlHelper> channel_control_helper_;
+  /// Channel args passed in.
+  // TODO(roth): Rework Args so that we don't need to capture channel args here.
+  ChannelArgs channel_args_;
 };
 
 }  // namespace grpc_core

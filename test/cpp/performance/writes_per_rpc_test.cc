@@ -29,6 +29,7 @@
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/endpoint_pair.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -52,10 +53,9 @@ static void ApplyCommonServerBuilderConfig(ServerBuilder* b) {
   b->SetMaxSendMessageSize(INT_MAX);
 }
 
-static void ApplyCommonChannelArguments(ChannelArguments* c) {
-  c->SetInt(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, INT_MAX);
-  c->SetInt(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH, INT_MAX);
-  c->SetResourceQuota(ResourceQuota());
+static void ApplyCommonChannelArguments(grpc_core::ChannelArgs* c) {
+  *c = c->Set(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, INT_MAX)
+           .Set(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH, INT_MAX);
 }
 
 class EndpointPairFixture {
@@ -73,33 +73,34 @@ class EndpointPairFixture {
     {
       grpc_core::Server* core_server =
           grpc_core::Server::FromC(server_->c_server());
-      const grpc_channel_args* server_args = core_server->channel_args();
       grpc_transport* transport = grpc_create_chttp2_transport(
-          server_args, endpoints.server, false /* is_client */);
+          core_server->channel_args(), endpoints.server, false /* is_client */);
       for (grpc_pollset* pollset : core_server->pollsets()) {
         grpc_endpoint_add_to_pollset(endpoints.server, pollset);
       }
 
       GPR_ASSERT(GRPC_LOG_IF_ERROR(
-          "SetupTransport", core_server->SetupTransport(transport, nullptr,
-                                                        server_args, nullptr)));
+          "SetupTransport",
+          core_server->SetupTransport(transport, nullptr,
+                                      core_server->channel_args(), nullptr)));
       grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
     }
 
     /* create channel */
     {
-      ChannelArguments args;
-      args.SetString(GRPC_ARG_DEFAULT_AUTHORITY, "test.authority");
+      grpc_core::ChannelArgs args =
+          grpc_core::CoreConfiguration::Get()
+              .channel_args_preconditioning()
+              .PreconditionChannelArgs(nullptr)
+              .Set(GRPC_ARG_DEFAULT_AUTHORITY, "test.authority");
       ApplyCommonChannelArguments(&args);
 
-      grpc_channel_args c_args = args.c_channel_args();
       grpc_transport* transport =
-          grpc_create_chttp2_transport(&c_args, endpoints.client, true);
+          grpc_create_chttp2_transport(args, endpoints.client, true);
       GPR_ASSERT(transport);
       grpc_channel* channel =
-          grpc_core::Channel::Create("target",
-                                     grpc_core::ChannelArgs::FromC(&c_args),
-                                     GRPC_CLIENT_DIRECT_CHANNEL, transport)
+          grpc_core::Channel::Create("target", args, GRPC_CLIENT_DIRECT_CHANNEL,
+                                     transport)
               ->release()
               ->c_ptr();
       grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);

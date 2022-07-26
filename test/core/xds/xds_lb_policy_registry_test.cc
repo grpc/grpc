@@ -274,10 +274,10 @@ class CustomLbPolicyFactory : public LoadBalancingPolicyFactory {
     return nullptr;
   }
 
-  const char* name() const override { return "test.CustomLb"; }
+  absl::string_view name() const override { return "test.CustomLb"; }
 
-  RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
-      const Json& /* json */, grpc_error_handle* /* error */) const override {
+  absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
+  ParseLoadBalancingConfig(const Json& /*json*/) const override {
     return nullptr;
   }
 };

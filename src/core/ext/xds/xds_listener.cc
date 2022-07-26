@@ -21,7 +21,6 @@
 #include <stdint.h>
 
 #include <set>
-#include <type_traits>
 #include <utility>
 
 #include "absl/memory/memory.h"
@@ -567,9 +566,9 @@ grpc_error_handle CidrRangeParse(
     XdsListenerResource::FilterChainMap::CidrRange* cidr_range) {
   std::string address_prefix = UpbStringToStdString(
       envoy_config_core_v3_CidrRange_address_prefix(cidr_range_proto));
-  grpc_error_handle error =
-      grpc_string_to_sockaddr(&cidr_range->address, address_prefix.c_str(), 0);
-  if (!GRPC_ERROR_IS_NONE(error)) return error;
+  auto address = StringToSockaddr(address_prefix, /*port=*/0);
+  if (!address.ok()) return absl_status_to_grpc_error(address.status());
+  cidr_range->address = *address;
   cidr_range->prefix_len = 0;
   auto* prefix_len_proto =
       envoy_config_core_v3_CidrRange_prefix_len(cidr_range_proto);

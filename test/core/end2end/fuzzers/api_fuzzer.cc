@@ -16,24 +16,53 @@
  *
  */
 
+#include <stdint.h>
 #include <string.h>
 
+#include <algorithm>
+#include <atomic>
+#include <functional>
+#include <initializer_list>
 #include <memory>
+#include <new>
+#include <string>
+#include <utility>
+#include <vector>
 
+#include "absl/memory/memory.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
+
+#include <grpc/byte_buffer.h>
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+#include <grpc/support/time.h>
 
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/event_engine/event_engine_factory.h"
 #include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/executor.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/timer_manager.h"
@@ -41,11 +70,15 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/server.h"
+#include "src/core/lib/transport/transport_fwd.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/end2end/fuzzers/api_fuzzer.pb.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
+#include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/util/passthru_endpoint.h"
+
+// IWYU pragma: no_include <google/protobuf/repeated_ptr_field.h>
 
 // Applicable when simulating channel actions. Prevents overflows.
 static constexpr uint64_t kMaxWaitMs =
@@ -90,7 +123,8 @@ static void finish_resolve(void* arg, grpc_error_handle error) {
     grpc_resolved_address fake_resolved_address;
     GPR_ASSERT(
         grpc_parse_ipv4_hostport("1.2.3.4:5", &fake_resolved_address, false));
-    (*r->addresses)->emplace_back(fake_resolved_address, nullptr);
+    (*r->addresses)
+        ->emplace_back(fake_resolved_address, grpc_core::ChannelArgs());
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_done, GRPC_ERROR_NONE);
   } else {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_done,
@@ -103,6 +137,8 @@ static void finish_resolve(void* arg, grpc_error_handle error) {
 }
 
 namespace {
+
+using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 
 class FuzzerDNSResolver : public grpc_core::DNSResolver {
  public:
@@ -147,20 +183,48 @@ class FuzzerDNSResolver : public grpc_core::DNSResolver {
     return instance;
   }
 
-  TaskHandle ResolveName(
-      absl::string_view name, absl::string_view /* default_port */,
-      grpc_pollset_set* /* interested_parties */,
+  TaskHandle LookupHostname(
       std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
-          on_done) override {
-    new FuzzerDNSRequest(name, std::move(on_done));
+          on_resolved,
+      absl::string_view name, absl::string_view /* default_port */,
+      grpc_core::Duration /* timeout */,
+      grpc_pollset_set* /* interested_parties */,
+      absl::string_view /* name_server */) override {
+    new FuzzerDNSRequest(name, std::move(on_resolved));
     return kNullHandle;
   }
 
-  absl::StatusOr<std::vector<grpc_resolved_address>> ResolveNameBlocking(
+  absl::StatusOr<std::vector<grpc_resolved_address>> LookupHostnameBlocking(
       absl::string_view /* name */,
       absl::string_view /* default_port */) override {
     GPR_ASSERT(0);
   }
+
+  TaskHandle LookupSRV(
+      std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
+          on_resolved,
+      absl::string_view /* name */, grpc_core::Duration /* timeout */,
+      grpc_pollset_set* /* interested_parties */,
+      absl::string_view /* name_server */) override {
+    GetDefaultEventEngine()->Run([on_resolved] {
+      on_resolved(absl::UnimplementedError(
+          "The Fuzzing DNS resolver does not support looking up SRV records"));
+    });
+    return {-1, -1};
+  };
+
+  TaskHandle LookupTXT(
+      std::function<void(absl::StatusOr<std::string>)> on_resolved,
+      absl::string_view /* name */, grpc_core::Duration /* timeout */,
+      grpc_pollset_set* /* interested_parties */,
+      absl::string_view /* name_server */) override {
+    // Not supported
+    GetDefaultEventEngine()->Run([on_resolved] {
+      on_resolved(absl::UnimplementedError(
+          "The Fuzing DNS resolver does not support looking up TXT records"));
+    });
+    return {-1, -1};
+  };
 
   // FuzzerDNSResolver does not support cancellation.
   bool Cancel(TaskHandle /*handle*/) override { return false; }
@@ -172,8 +236,7 @@ grpc_ares_request* my_dns_lookup_ares(
     const char* /*dns_server*/, const char* addr, const char* /*default_port*/,
     grpc_pollset_set* /*interested_parties*/, grpc_closure* on_done,
     std::unique_ptr<grpc_core::ServerAddressList>* addresses,
-    std::unique_ptr<grpc_core::ServerAddressList>* /*balancer_addresses*/,
-    char** /*service_config_json*/, int /*query_timeout*/) {
+    int /*query_timeout*/) {
   addr_req* r = new addr_req();
   r->addr = gpr_strdup(addr);
   r->on_done = on_done;
@@ -770,7 +833,7 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
     grpc_core::Executor::SetThreadingAll(false);
   }
   grpc_core::SetDNSResolver(FuzzerDNSResolver::GetOrCreate());
-  grpc_dns_lookup_ares = my_dns_lookup_ares;
+  grpc_dns_lookup_hostname_ares = my_dns_lookup_ares;
   grpc_cancel_ares_request = my_cancel_ares_request;
 
   GPR_ASSERT(g_channel == nullptr);

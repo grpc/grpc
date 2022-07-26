@@ -61,7 +61,8 @@ class ClusterTypeTest : public XdsEnd2endTest {
       GPR_ASSERT(lb_uri.ok());
       grpc_resolved_address address;
       GPR_ASSERT(grpc_parse_uri(*lb_uri, &address));
-      addresses.emplace_back(address.addr, address.len, nullptr);
+      addresses.emplace_back(address.addr, address.len,
+                             grpc_core::ChannelArgs());
     }
     return addresses;
   }
@@ -652,9 +653,8 @@ TEST_P(AggregateClusterTest, ReconfigEdsWhileLogicalDnsChildFails) {
   }
   // When an RPC fails, we know the channel has seen the update.
   constexpr char kErrorMessage[] =
-      // TODO(roth): Figure out how to get some sort of resolution note
-      // included here as part of https://github.com/grpc/grpc/issues/22883.
-      "empty address list: ";
+      "empty address list: DNS resolution failed for server.example.com:443 "
+      "\\(UNAVAILABLE: injected error\\)";
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE, kErrorMessage);
   // Send an EDS update that moves locality1 to priority 0.
   args1 = EdsResourceArgs({
@@ -668,7 +668,8 @@ TEST_P(AggregateClusterTest, ReconfigEdsWhileLogicalDnsChildFails) {
   WaitForBackend(DEBUG_LOCATION, 0, [&](const RpcResult& result) {
     if (!result.status.ok()) {
       EXPECT_EQ(result.status.error_code(), StatusCode::UNAVAILABLE);
-      EXPECT_EQ(result.status.error_message(), kErrorMessage);
+      EXPECT_THAT(result.status.error_message(),
+                  ::testing::MatchesRegex(kErrorMessage));
     }
   });
 }

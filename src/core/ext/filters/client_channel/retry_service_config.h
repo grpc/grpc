@@ -27,8 +27,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
-#include <grpc/impl/codegen/grpc_types.h>
-
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/time.h"
@@ -91,11 +90,11 @@ class RetryServiceConfigParser : public ServiceConfigParser::Parser {
   absl::string_view name() const override { return parser_name(); }
 
   std::unique_ptr<ServiceConfigParser::ParsedConfig> ParseGlobalParams(
-      const grpc_channel_args* /*args*/, const Json& json,
+      const ChannelArgs& /*args*/, const Json& json,
       grpc_error_handle* error) override;
 
   std::unique_ptr<ServiceConfigParser::ParsedConfig> ParsePerMethodParams(
-      const grpc_channel_args* args, const Json& json,
+      const ChannelArgs& args, const Json& json,
       grpc_error_handle* error) override;
 
   static size_t ParserIndex();
