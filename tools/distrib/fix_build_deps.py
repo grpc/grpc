@@ -373,7 +373,8 @@ parser.add_argument('--whats_left',
 args = parser.parse_args()
 
 for dirname in [
-        "", "test/core/uri", "test/core/util", "test/core/event_engine"
+        "", "test/core/uri", "test/core/util", "test/core/end2end",
+        "test/core/event_engine"
 ]:
     parsing_path = dirname
     exec(
@@ -389,6 +390,7 @@ for dirname in [
             'grpc_cc_test': grpc_cc_library,
             'grpc_fuzzer': grpc_cc_library,
             'select': lambda d: d["//conditions:default"],
+            'grpc_end2end_tests': lambda: None,
             'grpc_upb_proto_library': lambda name, **kwargs: None,
             'grpc_upb_proto_reflection_library': lambda name, **kwargs: None,
             'grpc_generate_one_off_targets': lambda: None,
