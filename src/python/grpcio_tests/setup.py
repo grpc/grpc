@@ -13,6 +13,10 @@
 # limitations under the License.
 """A setup module for the gRPC Python package."""
 
+import google.protobuf
+
+print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA {}".format(google.protobuf.__version__))
+
 import multiprocessing
 import os
 import os.path
@@ -37,13 +41,13 @@ PACKAGE_DIRECTORIES = {
 }
 
 INSTALL_REQUIRES = (
-    'coverage>=4.0', 'grpcio>={version}'.format(version=grpc_version.VERSION),
+    'grpcio>={version}'.format(version=grpc_version.VERSION),
     'grpcio-channelz>={version}'.format(version=grpc_version.VERSION),
     'grpcio-status>={version}'.format(version=grpc_version.VERSION),
     'grpcio-tools>={version}'.format(version=grpc_version.VERSION),
     'grpcio-health-checking>={version}'.format(version=grpc_version.VERSION),
-    'oauth2client>=1.4.7', 'protobuf>=3.12.0', 'six>=1.10',
-    'google-auth>=1.17.2', 'requests>=2.14.2')
+    'protobuf>=3.20.0,<4.0.9', 'six>=1.10',
+    'requests>=2.14.2')
 
 if not PY3:
     INSTALL_REQUIRES += ('futures>=2.2.0', 'enum34>=1.0.4')
