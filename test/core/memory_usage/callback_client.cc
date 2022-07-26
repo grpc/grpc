@@ -16,19 +16,21 @@
  *
  */
 
-#include <grpc/support/log.h>
-#include <grpcpp/grpcpp.h>
-#include <grpcpp/security/credentials.h>
-#include <grpcpp/support/status.h>
 #include <memory>
 #include <string>
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
-#include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
-#include "test/core/util/test_config.h"
 #include "absl/strings/string_view.h"
+
+#include <grpc/support/log.h>
+#include <grpcpp/grpcpp.h>
+#include <grpcpp/security/credentials.h>
+#include <grpcpp/support/status.h>
+
+#include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
+#include "test/core/util/test_config.h"
 
 ABSL_FLAG(std::string, target, "", "Target host:port");
 ABSL_FLAG(bool, secure, false, "Use SSL Credentials");

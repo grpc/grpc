@@ -15,9 +15,9 @@
 #ifndef TEST_H
 #define TEST_H
 
+#include <bits/types/struct_rusage.h>
 #include <stdlib.h>
 #include <sys/resource.h>
-#include <bits/types/struct_rusage.h>
 
 struct MemStats {
   long rss;  // Resident set size, in kb

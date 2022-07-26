@@ -16,22 +16,25 @@
  *
  */
 
-#include <grpc/support/log.h>
-#include <grpcpp/grpcpp.h>
-#include <grpcpp/security/server_credentials.h>
-#include <grpcpp/support/server_callback.h>
-#include <grpcpp/support/status.h>
 #include <signal.h>
 #include <unistd.h>
+
 #include <memory>
 #include <string>
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
-#include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
-#include "test/core/util/test_config.h"
 #include "absl/strings/string_view.h"
+
+#include <grpc/support/log.h>
+#include <grpcpp/grpcpp.h>
+#include <grpcpp/security/server_credentials.h>
+#include <grpcpp/support/server_callback.h>
+#include <grpcpp/support/status.h>
+
+#include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
+#include "test/core/util/test_config.h"
 
 class ServerCallbackImpl final
     : public grpc::testing::BenchmarkService::CallbackService {
