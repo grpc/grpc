@@ -26,6 +26,8 @@
 #include <vector>
 
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/types/optional.h"
 
@@ -41,6 +43,7 @@
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/service_config/service_config_call_data.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/channel_init.h"
@@ -72,11 +75,9 @@ const MessageSizeParsedConfig* MessageSizeParsedConfig::GetFromCallContext(
 // MessageSizeParser
 //
 
-std::unique_ptr<ServiceConfigParser::ParsedConfig>
+absl::StatusOr<std::unique_ptr<ServiceConfigParser::ParsedConfig>>
 MessageSizeParser::ParsePerMethodParams(const ChannelArgs& /*args*/,
-                                        const Json& json,
-                                        grpc_error_handle* error) {
-  GPR_DEBUG_ASSERT(error != nullptr && GRPC_ERROR_IS_NONE(*error));
+                                        const Json& json) {
   std::vector<grpc_error_handle> error_list;
   // Max request size.
   int max_request_message_bytes = -1;
@@ -113,8 +114,13 @@ MessageSizeParser::ParsePerMethodParams(const ChannelArgs& /*args*/,
     }
   }
   if (!error_list.empty()) {
-    *error = GRPC_ERROR_CREATE_FROM_VECTOR("Message size parser", &error_list);
-    return nullptr;
+    grpc_error_handle error =
+        GRPC_ERROR_CREATE_FROM_VECTOR("Message size parser", &error_list);
+    absl::Status status = absl::InvalidArgumentError(
+        absl::StrCat("error parsing message size method parameters: ",
+                     grpc_error_std_string(error)));
+    GRPC_ERROR_UNREF(error);
+    return status;
   }
   return absl::make_unique<MessageSizeParsedConfig>(max_request_message_bytes,
                                                     max_response_message_bytes);

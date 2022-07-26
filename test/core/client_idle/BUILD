@@ -29,6 +29,5 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:idle_filter_state",
-        "//test/core/util:grpc_suppressions",
     ],
 )

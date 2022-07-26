@@ -290,6 +290,7 @@ void RoundRobin::UpdateLocked(UpdateArgs args) {
   }
   latest_pending_subchannel_list_ = MakeOrphanable<RoundRobinSubchannelList>(
       this, std::move(addresses), args.args);
+  latest_pending_subchannel_list_->StartWatchingLocked();
   // If the new list is empty, immediately promote it to
   // subchannel_list_ and report TRANSIENT_FAILURE.
   if (latest_pending_subchannel_list_->num_subchannels() == 0) {

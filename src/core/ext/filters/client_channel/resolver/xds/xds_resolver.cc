@@ -70,6 +70,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"
+#include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
@@ -472,45 +473,43 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
             resolver_->current_listener_.http_connection_manager
                 .http_max_stream_duration;
       }
-      if (route_action->action.index() ==
-          XdsRouteConfigResource::Route::RouteAction::kClusterIndex) {
-        *error = CreateMethodConfig(route_entry.route, nullptr,
-                                    &route_entry.method_config);
-        MaybeAddCluster(absl::StrCat(
-            "cluster:",
-            absl::get<
-                XdsRouteConfigResource::Route::RouteAction::kClusterIndex>(
-                route_action->action)));
-      } else if (route_action->action.index() ==
-                 XdsRouteConfigResource::Route::RouteAction::
-                     kWeightedClustersIndex) {
-        auto& action_weighted_clusters = absl::get<
-            XdsRouteConfigResource::Route::RouteAction::kWeightedClustersIndex>(
-            route_action->action);
-        uint32_t end = 0;
-        for (const auto& weighted_cluster : action_weighted_clusters) {
-          Route::ClusterWeightState cluster_weight_state;
-          *error = CreateMethodConfig(route_entry.route, &weighted_cluster,
-                                      &cluster_weight_state.method_config);
-          if (!GRPC_ERROR_IS_NONE(*error)) return;
-          end += weighted_cluster.weight;
-          cluster_weight_state.range_end = end;
-          cluster_weight_state.cluster = weighted_cluster.name;
-          route_entry.weighted_cluster_state.push_back(
-              std::move(cluster_weight_state));
-          MaybeAddCluster(absl::StrCat("cluster:", weighted_cluster.name));
-        }
-      } else if (route_action->action.index() ==
-                 XdsRouteConfigResource::Route::RouteAction::
-                     kClusterSpecifierPluginIndex) {
-        // cluster_specifier_plugin case:
-        *error = CreateMethodConfig(route_entry.route, nullptr,
-                                    &route_entry.method_config);
-        MaybeAddCluster(absl::StrCat(
-            "cluster_specifier_plugin:",
-            absl::get<XdsRouteConfigResource::Route::RouteAction::
-                          kClusterSpecifierPluginIndex>(route_action->action)));
-      }
+      Match(
+          route_action->action,
+          // cluster name
+          [&](const XdsRouteConfigResource::Route::RouteAction::ClusterName&
+                  cluster_name) {
+            *error = CreateMethodConfig(route_entry.route, nullptr,
+                                        &route_entry.method_config);
+            MaybeAddCluster(
+                absl::StrCat("cluster:", cluster_name.cluster_name));
+          },
+          // WeightedClusters
+          [&](const std::vector<
+              XdsRouteConfigResource::Route::RouteAction::ClusterWeight>&
+                  weighted_clusters) {
+            uint32_t end = 0;
+            for (const auto& weighted_cluster : weighted_clusters) {
+              Route::ClusterWeightState cluster_weight_state;
+              *error = CreateMethodConfig(route_entry.route, &weighted_cluster,
+                                          &cluster_weight_state.method_config);
+              if (!GRPC_ERROR_IS_NONE(*error)) return;
+              end += weighted_cluster.weight;
+              cluster_weight_state.range_end = end;
+              cluster_weight_state.cluster = weighted_cluster.name;
+              route_entry.weighted_cluster_state.push_back(
+                  std::move(cluster_weight_state));
+              MaybeAddCluster(absl::StrCat("cluster:", weighted_cluster.name));
+            }
+          },
+          // ClusterSpecifierPlugin
+          [&](const XdsRouteConfigResource::Route::RouteAction::
+                  ClusterSpecifierPluginName& cluster_specifier_plugin_name) {
+            *error = CreateMethodConfig(route_entry.route, nullptr,
+                                        &route_entry.method_config);
+            MaybeAddCluster(absl::StrCat(
+                "cluster_specifier_plugin:",
+                cluster_specifier_plugin_name.cluster_specifier_plugin_name));
+          });
     }
   }
   // Populate filter list.
@@ -617,8 +616,13 @@ grpc_error_handle XdsResolver::XdsConfigSelector::CreateMethodConfig(
         absl::StrJoin(fields, ",\n"),
         "\n  } ]\n"
         "}");
-    *method_config =
-        ServiceConfigImpl::Create(result.args, json.c_str(), &error);
+    auto method_config_or =
+        ServiceConfigImpl::Create(result.args, json.c_str());
+    if (!method_config_or.ok()) {
+      error = absl_status_to_grpc_error(method_config_or.status());
+    } else {
+      *method_config = std::move(*method_config_or);
+    }
   }
   return error;
 }
@@ -686,50 +690,54 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
   }
   std::string cluster_name;
   RefCountedPtr<ServiceConfig> method_config;
-  if (route_action->action.index() ==
-      XdsRouteConfigResource::Route::RouteAction::kClusterIndex) {
-    cluster_name = absl::StrCat(
-        "cluster:",
-        absl::get<XdsRouteConfigResource::Route::RouteAction::kClusterIndex>(
-            route_action->action));
-    method_config = entry.method_config;
-  } else if (route_action->action.index() ==
-             XdsRouteConfigResource::Route::RouteAction::
-                 kWeightedClustersIndex) {
-    const uint32_t key =
-        rand() %
-        entry.weighted_cluster_state[entry.weighted_cluster_state.size() - 1]
-            .range_end;
-    // Find the index in weighted clusters corresponding to key.
-    size_t mid = 0;
-    size_t start_index = 0;
-    size_t end_index = entry.weighted_cluster_state.size() - 1;
-    size_t index = 0;
-    while (end_index > start_index) {
-      mid = (start_index + end_index) / 2;
-      if (entry.weighted_cluster_state[mid].range_end > key) {
-        end_index = mid;
-      } else if (entry.weighted_cluster_state[mid].range_end < key) {
-        start_index = mid + 1;
-      } else {
-        index = mid + 1;
-        break;
-      }
-    }
-    if (index == 0) index = start_index;
-    GPR_ASSERT(entry.weighted_cluster_state[index].range_end > key);
-    cluster_name =
-        absl::StrCat("cluster:", entry.weighted_cluster_state[index].cluster);
-    method_config = entry.weighted_cluster_state[index].method_config;
-  } else if (route_action->action.index() ==
-             XdsRouteConfigResource::Route::RouteAction::
-                 kClusterSpecifierPluginIndex) {
-    cluster_name = absl::StrCat(
-        "cluster_specifier_plugin:",
-        absl::get<XdsRouteConfigResource::Route::RouteAction::
-                      kClusterSpecifierPluginIndex>(route_action->action));
-    method_config = entry.method_config;
-  }
+  Match(
+      route_action->action,
+      // cluster name
+      [&](const XdsRouteConfigResource::Route::RouteAction::ClusterName&
+              action_cluster_name) {
+        cluster_name =
+            absl::StrCat("cluster:", action_cluster_name.cluster_name);
+        method_config = entry.method_config;
+      },
+      // WeightedClusters
+      [&](const std::vector<
+          XdsRouteConfigResource::Route::RouteAction::ClusterWeight>&
+          /*weighted_clusters*/) {
+        const uint32_t key =
+            rand() %
+            entry
+                .weighted_cluster_state[entry.weighted_cluster_state.size() - 1]
+                .range_end;
+        // Find the index in weighted clusters corresponding to key.
+        size_t mid = 0;
+        size_t start_index = 0;
+        size_t end_index = entry.weighted_cluster_state.size() - 1;
+        size_t index = 0;
+        while (end_index > start_index) {
+          mid = (start_index + end_index) / 2;
+          if (entry.weighted_cluster_state[mid].range_end > key) {
+            end_index = mid;
+          } else if (entry.weighted_cluster_state[mid].range_end < key) {
+            start_index = mid + 1;
+          } else {
+            index = mid + 1;
+            break;
+          }
+        }
+        if (index == 0) index = start_index;
+        GPR_ASSERT(entry.weighted_cluster_state[index].range_end > key);
+        cluster_name = absl::StrCat(
+            "cluster:", entry.weighted_cluster_state[index].cluster);
+        method_config = entry.weighted_cluster_state[index].method_config;
+      },
+      // ClusterSpecifierPlugin
+      [&](const XdsRouteConfigResource::Route::RouteAction::
+              ClusterSpecifierPluginName& cluster_specifier_plugin_name) {
+        cluster_name = absl::StrCat(
+            "cluster_specifier_plugin:",
+            cluster_specifier_plugin_name.cluster_specifier_plugin_name);
+        method_config = entry.method_config;
+      });
   auto it = clusters_.find(cluster_name);
   GPR_ASSERT(it != clusters_.end());
   // Generate a hash.
@@ -990,9 +998,8 @@ void XdsResolver::OnResourceDoesNotExist(std::string context) {
   current_virtual_host_.routes.clear();
   Result result;
   result.addresses.emplace();
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  result.service_config = ServiceConfigImpl::Create(args_, "{}", &error);
-  GPR_ASSERT(*result.service_config != nullptr);
+  result.service_config = ServiceConfigImpl::Create(args_, "{}");
+  GPR_ASSERT(result.service_config.ok());
   result.resolution_note = std::move(context);
   result.args = args_;
   result_handler_->ReportResult(std::move(result));
@@ -1036,14 +1043,7 @@ XdsResolver::CreateServiceConfig() {
       "  ]\n"
       "}");
   std::string json = absl::StrJoin(config_parts, "");
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  absl::StatusOr<RefCountedPtr<ServiceConfig>> result =
-      ServiceConfigImpl::Create(args_, json.c_str(), &error);
-  if (!GRPC_ERROR_IS_NONE(error)) {
-    result = grpc_error_to_absl_status(error);
-    GRPC_ERROR_UNREF(error);
-  }
-  return result;
+  return ServiceConfigImpl::Create(args_, json.c_str());
 }
 
 void XdsResolver::GenerateResult() {
