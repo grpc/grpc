@@ -16,12 +16,16 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/event_engine/event_engine.h>
-
 #include "absl/container/inlined_vector.h"
+
+#include <grpc/event_engine/event_engine.h>
 
 namespace grpc_event_engine {
 namespace experimental {
+
+namespace {
+constexpr size_t kInitialSize = 5;
+}  // namespace
 
 // A generic cross-platform "poller" concept.
 // Concrete implementations will likely manage a set of sockets/file
@@ -36,8 +40,8 @@ class Poller {
   //  * absl::AbortedError if it was Kicked.
   //  * absl::DeadlineExceeded if timeout occurred
   //  * A collection of closures to execute, otherwise
-  virtual absl::InlinedVector<EventEngine::Closure*> Work(
-      grpc_core::Duration timeout) = 0;
+  virtual absl::InlinedVector<EventEngine::Closure*, kInitialSize> Work(
+      EventEngine::Duration timeout) = 0;
   // Trigger the threads executing Work(..) to break out as soon as possible.
   virtual void Kick() = 0;
 };
