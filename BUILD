@@ -587,6 +587,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/status",
+        "absl/status:statusor",
         "absl/synchronization",
         "absl/container:inlined_vector",
         "absl/strings",
