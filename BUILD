@@ -2515,22 +2515,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "event_engine_poller",
-    hdrs = [
-        "src/core/lib/event_engine/poller.h",
-    ],
-    external_deps = [
-        "absl/container:inlined_vector",
-        "absl/status:statusor",
-        "absl/types:variant",
-    ],
-    deps = [
-        "event_engine_base_hdrs",
-        "gpr_platform",
-    ],
-)
-
-grpc_cc_library(
     name = "event_engine_socket_notifier",
     hdrs = ["src/core/lib/event_engine/socket_notifier.h"],
     external_deps = [

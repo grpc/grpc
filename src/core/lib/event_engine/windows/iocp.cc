@@ -23,9 +23,9 @@
 #include <grpc/support/log_windows.h>
 
 #include "src/core/lib/event_engine/trace.h"
+#include "src/core/lib/event_engine/utils.h"
 #include "src/core/lib/event_engine/windows/iocp.h"
 #include "src/core/lib/event_engine/windows/socket.h"
-#include "src/core/lib/event_engine/utils.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -108,7 +108,10 @@ Poller::WorkResult IOCP::Work(EventEngine::Duration timeout) {
   } else {
     info->GetOverlappedResult();
   }
-  return Events{info->closure()};
+  if (info->closure() != nullptr) return Events{info->closure()};
+  // No callback registered. Set ready and return an empty set
+  info->SetReady();
+  return Events{};
 }
 
 void IOCP::Kick() {

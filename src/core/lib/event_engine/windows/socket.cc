@@ -97,7 +97,7 @@ void WinSocket::NotifyOnWrite(EventEngine::Closure* on_write) {
 }
 
 WinSocket::OpInfo::OpInfo(WinSocket* win_socket) noexcept
-    : win_socket_(win_socket) {}
+    : win_socket_(win_socket), closure_(nullptr) {}
 
 void WinSocket::OpInfo::SetReady() {
   grpc_core::MutexLock lock(&win_socket_->mu_);

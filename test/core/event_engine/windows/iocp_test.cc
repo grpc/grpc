@@ -137,6 +137,99 @@ TEST_F(IOCPTest, ClientReceivesNotificationOfServerSendViaIOCP) {
   delete wrapped_server_socket;
 }
 
+TEST_F(IOCPTest, IocpWorkTimeoutDueToNoNotificationRegistered) {
+  auto engine = absl::make_unique<WindowsEventEngine>();
+  IOCP iocp(engine.get());
+  SOCKET sockpair[2];
+  CreateSockpair(sockpair, iocp.GetDefaultSocketFlags());
+  WinSocket* wrapped_client_socket =
+      static_cast<WinSocket*>(iocp.Watch(sockpair[0]));
+  bool read_called = false;
+  DWORD flags = 0;
+  BasicClosure* on_read;
+  {
+    // Set the client to receive asynchronously
+    // Prepare a notification callback, but don't register it yet.
+    WSABUF read_wsabuf;
+    read_wsabuf.len = 2048;
+    char read_char_buffer[2048];
+    read_wsabuf.buf = read_char_buffer;
+    DWORD bytes_rcvd;
+    memset(wrapped_client_socket->read_info()->overlapped(), 0,
+           sizeof(OVERLAPPED));
+    int status =
+        WSARecv(wrapped_client_socket->socket(), &read_wsabuf, 1, &bytes_rcvd,
+                &flags, wrapped_client_socket->read_info()->overlapped(), NULL);
+    // Expecting error 997, WSA_IO_PENDING
+    EXPECT_EQ(status, -1);
+    int last_error = WSAGetLastError();
+    ASSERT_EQ(last_error, WSA_IO_PENDING);
+    on_read = new BasicClosure([wrapped_client_socket, &read_called,
+                                &read_wsabuf, &bytes_rcvd]() {
+      gpr_log(GPR_DEBUG, "Notified on read");
+      EXPECT_GE(wrapped_client_socket->read_info()->bytes_transferred(), 10);
+      EXPECT_STREQ(read_wsabuf.buf, "hello!");
+      read_called = true;
+    });
+  }
+  {
+    // Have the server send a message to the client. No need to track via IOCP
+    WSABUF write_wsabuf;
+    char write_char_buffer[2048] = "hello!";
+    write_wsabuf.len = 2048;
+    write_wsabuf.buf = write_char_buffer;
+    DWORD bytes_sent;
+    OVERLAPPED write_overlapped;
+    memset(&write_overlapped, 0, sizeof(OVERLAPPED));
+    int status = WSASend(sockpair[1], &write_wsabuf, 1, &bytes_sent, 0,
+                         &write_overlapped, NULL);
+    EXPECT_EQ(status, 0);
+  }
+  // IOCP::Work without any notification callbacks should return no Events.
+  auto work_result = iocp.Work(grpc_core::Duration::Seconds(2));
+  ASSERT_TRUE(absl::holds_alternative<Poller::Events>(work_result));
+  Poller::Events closures = absl::get<Poller::Events>(work_result);
+  ASSERT_EQ(closures.size(), 0);
+  // register the closure, which should trigger it immediately.
+  wrapped_client_socket->NotifyOnRead(on_read);
+  // wait for the callbacks to run
+  absl::Time deadline = absl::Now() + absl::Seconds(10);
+  while (!read_called) {
+    absl::SleepFor(absl::Milliseconds(10));
+    if (deadline < absl::Now()) {
+      FAIL() << "Deadline exceeded";
+    }
+  }
+  ASSERT_TRUE(read_called);
+
+  delete on_read;
+  delete wrapped_client_socket;
+}
+
+TEST_F(IOCPTest, KickWorks) {
+  auto engine = absl::make_unique<WindowsEventEngine>();
+  IOCP iocp(engine.get());
+  bool kicked;
+  engine->Run([&iocp, &kicked]{
+    Poller::WorkResult result = iocp.Work(std::chrono::seconds(30));
+    ASSERT_TRUE(absl::holds_alternative<Poller::Kicked>(result));
+    kicked = true;
+  });
+  engine->Run([&iocp] {
+    absl::SleepFor(absl::Milliseconds(42));
+    iocp.Kick();
+  });
+  // wait for the callbacks to run
+  absl::Time deadline = absl::Now() + absl::Seconds(10);
+  while (!kicked) {
+    absl::SleepFor(absl::Milliseconds(10));
+    if (deadline < absl::Now()) {
+      FAIL() << "Deadline exceeded";
+    }
+  }
+  ASSERT_TRUE(kicked);
+}
+
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc_init();
