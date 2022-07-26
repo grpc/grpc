@@ -40,8 +40,9 @@ class Poller {
   //  * absl::AbortedError if it was Kicked.
   //  * absl::DeadlineExceeded if timeout occurred
   //  * A collection of closures to execute, otherwise
-  virtual absl::InlinedVector<EventEngine::Closure*, kInitialSize> Work(
-      EventEngine::Duration timeout) = 0;
+  virtual absl::StatusOr<
+      absl::InlinedVector<EventEngine::Closure*, kInitialSize>>
+  Work(EventEngine::Duration timeout) = 0;
   // Trigger the threads executing Work(..) to break out as soon as possible.
   virtual void Kick() = 0;
 };
