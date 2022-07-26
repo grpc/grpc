@@ -3103,7 +3103,6 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "config",
-        "error",
         "gpr_base",
         "grpc_service_config",
         "json",
