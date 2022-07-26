@@ -34,6 +34,7 @@ constexpr size_t kInitialSize = 5;
 // Work(...).
 class Poller {
  public:
+  using Events = absl::InlinedVector<EventEngine::Closure*, kInitialSize>;
   virtual ~Poller() = default;
   // Poll once for events, returning a collection of Closures to be executed.
   //
@@ -41,9 +42,7 @@ class Poller {
   //  * absl::AbortedError if it was Kicked.
   //  * absl::DeadlineExceeded if timeout occurred
   //  * A collection of closures to execute, otherwise
-  virtual absl::StatusOr<
-      absl::InlinedVector<EventEngine::Closure*, kInitialSize>>
-  Work(EventEngine::Duration timeout) = 0;
+  virtual absl::StatusOr<Events> Work(EventEngine::Duration timeout) = 0;
   // Trigger the threads executing Work(..) to break out as soon as possible.
   virtual void Kick() = 0;
 };
