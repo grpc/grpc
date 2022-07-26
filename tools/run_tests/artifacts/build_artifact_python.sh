@@ -29,9 +29,6 @@ source tools/internal_ci/helper_scripts/prepare_ccache_symlinks_rc
 "${PYTHON}" -m pip install --upgrade wheel
 "${PYTHON}" -m pip install --upgrade pip==22.2
 
-"${PYTHON}" -m pip debug --verbose
-exit 1
-
 if [ "$GRPC_SKIP_PIP_CYTHON_UPGRADE" == "" ]
 then
   # Install Cython to avoid source wheel build failure.
@@ -202,6 +199,7 @@ then
   fi
 
   "${PYTHON}" -m pip install grpcio --no-index --find-links "file://$ARTIFACT_DIR/"
+  "${PYTHON}" -m pip freeze
   "${PYTHON}" -m pip install grpcio-tools --no-index --find-links "file://$ARTIFACT_DIR/"
 
   # Note(lidiz) setuptools's "sdist" command creates a source tarball, which
