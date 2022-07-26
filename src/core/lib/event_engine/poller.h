@@ -17,6 +17,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "absl/container/inlined_vector.h"
+#include "absl/status/statusor.h"
 
 #include <grpc/event_engine/event_engine.h>
 
