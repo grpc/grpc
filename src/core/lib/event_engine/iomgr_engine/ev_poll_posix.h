@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_EV_EPOLL1_LINUX_H
-#define GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_EV_EPOLL1_LINUX_H
+#ifndef GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_EV_POLL_POSIX_H
+#define GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_EV_POLL_POSIX_H
+
 #include <grpc/support/port_platform.h>
 
-#include <list>
+#include <atomic>
 #include <memory>
 #include <vector>
 
@@ -28,23 +29,17 @@
 #include "src/core/lib/event_engine/iomgr_engine/event_poller.h"
 #include "src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix.h"
 #include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/iomgr/port.h"
-
-#ifdef GRPC_LINUX_EPOLL
-#include <sys/epoll.h>
-#endif
-
-#define MAX_EPOLL_EVENTS 100
 
 namespace grpc_event_engine {
 namespace iomgr_engine {
 
-class Epoll1EventHandle;
+class PollEventHandle;
 
-// Definition of epoll1 based poller.
-class Epoll1Poller : public EventPoller {
+// Definition of poll based poller.
+class PollPoller : public EventPoller {
  public:
-  explicit Epoll1Poller(Scheduler* scheduler);
+  explicit PollPoller(Scheduler* scheduler);
+  PollPoller(Scheduler* scheduler, bool use_phony_poll);
   EventHandle* CreateHandle(int fd, absl::string_view name,
                             bool track_err) override;
   absl::Status Work(grpc_core::Timestamp deadline,
@@ -52,49 +47,43 @@ class Epoll1Poller : public EventPoller {
   void Kick() override;
   Scheduler* GetScheduler() { return scheduler_; }
   void Shutdown() override;
-  ~Epoll1Poller() override;
+  ~PollPoller() override;
 
  private:
-  absl::Status ProcessEpollEvents(int max_epoll_events_to_handle,
-                                  std::vector<EventHandle*>& pending_events);
-  absl::Status DoEpollWait(grpc_core::Timestamp deadline);
+  void Ref() { ref_count_.fetch_add(1, std::memory_order_relaxed); }
+  void Unref() {
+    if (ref_count_.fetch_sub(1, std::memory_order_acq_rel) == 1) {
+      delete this;
+    }
+  }
+  void KickExternal(bool ext);
+  void PollerHandlesListAddHandle(PollEventHandle* handle)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  void PollerHandlesListRemoveHandle(PollEventHandle* handle)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  friend class PollEventHandle;
   struct HandlesList {
-    Epoll1EventHandle* handle;
-    Epoll1EventHandle* next;
-    Epoll1EventHandle* prev;
+    PollEventHandle* handle;
+    PollEventHandle* next;
+    PollEventHandle* prev;
   };
-  friend class Epoll1EventHandle;
-#ifdef GRPC_LINUX_EPOLL
-  struct EpollSet {
-    int epfd;
-
-    // The epoll_events after the last call to epoll_wait()
-    struct epoll_event events[MAX_EPOLL_EVENTS];
-
-    // The number of epoll_events after the last call to epoll_wait()
-    int num_events;
-
-    // Index of the first event in epoll_events that has to be processed. This
-    // field is only valid if num_events > 0
-    int cursor;
-  };
-#else
-  struct EpollSet {};
-#endif
   absl::Mutex mu_;
   Scheduler* scheduler_;
-  // A singleton epoll set
-  EpollSet g_epoll_set_;
+  std::atomic<int> ref_count_{1};
+  bool use_phony_poll_;
   bool was_kicked_ ABSL_GUARDED_BY(mu_);
-  std::list<EventHandle*> free_epoll1_handles_list_ ABSL_GUARDED_BY(mu_);
+  bool was_kicked_ext_ ABSL_GUARDED_BY(mu_);
+  int num_poll_handles_ ABSL_GUARDED_BY(mu_);
+  PollEventHandle* poll_handles_list_head_ ABSL_GUARDED_BY(mu_) = nullptr;
   std::unique_ptr<WakeupFd> wakeup_fd_;
 };
 
-// Return an instance of a epoll1 based poller tied to the specified event
-// engine.
-Epoll1Poller* GetEpoll1Poller(Scheduler* scheduler);
+// Return an instance of a poll based poller tied to the specified scheduler.
+// It use_phony_poll is true, it implies that the poller is declared non-polling
+// and any attempt to schedule a blocking poll will result in a crash failure.
+PollPoller* GetPollPoller(Scheduler* scheduler, bool use_phony_poll);
 
 }  // namespace iomgr_engine
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_EV_EPOLL1_LINUX_H
+#endif  // GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_EV_POLL_POSIX_H

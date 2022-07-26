@@ -2443,6 +2443,34 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "iomgr_ee_poller_posix_poll",
+    srcs = [
+        "src/core/lib/event_engine/iomgr_engine/ev_poll_posix.cc",
+    ],
+    hdrs = [
+        "src/core/lib/event_engine/iomgr_engine/ev_poll_posix.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/synchronization",
+        "absl/utility",
+    ],
+    deps = [
+        "gpr_base",
+        "gpr_codegen",
+        "iomgr_ee_closure",
+        "iomgr_ee_event_poller",
+        "iomgr_ee_wakeup_fd_posix",
+        "iomgr_ee_wakeup_fd_posix_default",
+        "iomgr_port",
+        "time",
+    ],
+)
+
+grpc_cc_library(
     name = "iomgr_ee_poller_posix_default",
     srcs = [
         "src/core/lib/event_engine/iomgr_engine/event_poller_posix_default.cc",
@@ -2450,10 +2478,12 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/event_engine/iomgr_engine/event_poller_posix_default.h",
     ],
+    external_deps = ["absl/strings"],
     deps = [
-        "gpr_platform",
+        "gpr_base",
         "iomgr_ee_event_poller",
         "iomgr_ee_poller_posix_epoll1",
+        "iomgr_ee_poller_posix_poll",
     ],
 )
 
