@@ -35,6 +35,7 @@ grpc_cc_test(
     tags = [
         "no_linux",
         "no_mac",
+        "no_test_ios",
     ],
     uses_event_engine = False,
     uses_polling = False,
@@ -44,7 +45,6 @@ grpc_cc_test(
         "//:gpr_platform",
         "//:windows_iocp",
         "//:event_engine_utils",
-        "//test/core/util:grpc_suppressions",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -57,6 +57,7 @@ grpc_cc_test(
     tags = [
         "no_linux",
         "no_mac",
+        "no_test_ios",
     ],
     uses_event_engine = False,
     uses_polling = False,
@@ -65,7 +66,6 @@ grpc_cc_test(
         "create_sockpair",
         "//:gpr_platform",
         "//:windows_event_engine",
-        "//test/core/util:grpc_suppressions",
         "//test/core/util:grpc_test_util",
     ],
 )
