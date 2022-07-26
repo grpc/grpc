@@ -3093,6 +3093,8 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/memory",
+        "absl/status",
+        "absl/status:statusor",
         "absl/strings",
     ],
     language = "c++",
@@ -3119,11 +3121,14 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/service_config/service_config_parser.h",
     ],
-    external_deps = ["absl/strings"],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+    ],
     language = "c++",
     deps = [
         "channel_args",
-        "error",
         "gpr_base",
         "json",
     ],
@@ -3543,6 +3548,8 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/memory",
+        "absl/status",
+        "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
         "absl/types:optional",
@@ -6453,6 +6460,8 @@ grpc_cc_library(
     hdrs = GRPCXX_HDRS,
     external_deps = [
         "absl/base:core_headers",
+        "absl/status",
+        "absl/status:statusor",
         "absl/strings",
         "absl/synchronization",
         "absl/memory",
@@ -6497,6 +6506,8 @@ grpc_cc_library(
     hdrs = GRPCXX_HDRS,
     external_deps = [
         "absl/base:core_headers",
+        "absl/status",
+        "absl/status:statusor",
         "absl/strings",
         "absl/synchronization",
         "absl/memory",

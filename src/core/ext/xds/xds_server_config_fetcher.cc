@@ -1169,10 +1169,8 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
             absl::StrJoin(fields, ",\n"),
             "\n  } ]\n"
             "}");
-        grpc_error_handle error = GRPC_ERROR_NONE;
         config_selector_route.method_config =
-            ServiceConfigImpl::Create(result.args, json.c_str(), &error);
-        GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+            ServiceConfigImpl::Create(result.args, json.c_str()).value();
       }
     }
   }
