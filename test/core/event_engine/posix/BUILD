@@ -17,7 +17,7 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 licenses(["notice"])
 
 grpc_package(
-    name = "test/core/event_engine/iomgr_event_engine",
+    name = "test/core/event_engine/posix_event_engine",
     visibility = "public",
 )  # Useful for third party devs to test their io manager implementation.
 
@@ -60,7 +60,7 @@ grpc_cc_test(
         "//:iomgr_ee_closure",
         "//:iomgr_ee_event_poller",
         "//:iomgr_ee_poller_posix_default",
-        "//:iomgr_event_engine",
+        "//:posix_event_engine",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -76,7 +76,7 @@ grpc_cc_test(
         "//:iomgr_ee_closure",
         "//:iomgr_ee_event_poller",
         "//:iomgr_ee_lockfree_event",
-        "//:iomgr_event_engine",
+        "//:posix_event_engine",
         "//test/core/util:grpc_test_util",
     ],
 )

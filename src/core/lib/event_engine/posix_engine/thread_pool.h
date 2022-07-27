@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_THREAD_POOL_H
-#define GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_THREAD_POOL_H
+#ifndef GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_THREAD_POOL_H
+#define GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_THREAD_POOL_H
 
 #include <grpc/support/port_platform.h>
 
@@ -68,4 +68,4 @@ class ThreadPool final {
 }  // namespace posix_engine
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_THREAD_POOL_H
+#endif  // GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_THREAD_POOL_H

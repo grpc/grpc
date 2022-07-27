@@ -30,7 +30,7 @@ namespace posix_engine {
 ThreadPool::Thread::Thread(ThreadPool* pool)
     : pool_(pool),
       thd_(
-          "iomgr_eventengine_pool",
+          "posix_eventengine_pool",
           [](void* th) { static_cast<ThreadPool::Thread*>(th)->ThreadFunc(); },
           this) {
   thd_.Start();

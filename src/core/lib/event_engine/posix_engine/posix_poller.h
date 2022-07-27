@@ -1,4 +1,4 @@
-// Copyright 2022 The gRPC Authors
+// Copyright 2022 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,35 +11,30 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_WAKEUP_FD_EVENTFD_H
-#define GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_WAKEUP_FD_EVENTFD_H
+#ifndef GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_POLLER_H
+#define GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_POLLER_H
 
 #include <grpc/support/port_platform.h>
 
-#include <memory>
-
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-
-#include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h"
+#include "src/core/lib/event_engine/poller.h"
 
 namespace grpc_event_engine {
 namespace posix_engine {
 
-class EventFdWakeupFd : public WakeupFd {
+// Interface for posix pollers
+class PosixPoller : public experimental::Poller {
  public:
-  EventFdWakeupFd() : WakeupFd() {}
-  ~EventFdWakeupFd() override;
-  absl::Status ConsumeWakeup() override;
-  absl::Status Wakeup() override;
-  static absl::StatusOr<std::unique_ptr<WakeupFd>> CreateEventFdWakeupFd();
-  static bool IsSupported();
+  virtual ~Poller() = default;
+  virtual absl::Status Work(grpc_core::Duration timeout) = 0;
+  virtual void Kick() = 0;
+  virtual void Shutdown() = 0;
 
- private:
-  absl::Status Init();
-};
+  // Return an opaque handle to perform actions on the provided file descriptor.
+  virtual EventHandle* CreateHandle(int fd, absl::string_view name,
+                                    bool track_err) = 0;
+}
 
 }  // namespace posix_engine
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_WAKEUP_FD_EVENTFD_H
+#endif  // GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_POLLER_H

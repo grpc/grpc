@@ -11,8 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_IOMGR_ENGINE_H
-#define GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_IOMGR_ENGINE_H
+#ifndef GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_ENGINE_H
+#define GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_ENGINE_H
 #include <grpc/support/port_platform.h>
 
 #include <stdint.h>
@@ -39,13 +39,13 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-// An iomgr-based EventEngine implementation.
+// An iomgr-based Posix EventEngine implementation.
 // All methods require an ExecCtx to already exist on the thread's stack.
 class PosixEventEngine final : public EventEngine {
  public:
-  class IomgrEndpoint : public EventEngine::Endpoint {
+  class PosixEndpoint : public EventEngine::Endpoint {
    public:
-    ~IomgrEndpoint() override;
+    ~PosixEndpoint() override;
     void Read(absl::AnyInvocable<void(absl::Status)> on_read,
               SliceBuffer* buffer, const ReadArgs* args) override;
     void Write(absl::AnyInvocable<void(absl::Status)> on_writable,
@@ -53,15 +53,15 @@ class PosixEventEngine final : public EventEngine {
     const ResolvedAddress& GetPeerAddress() const override;
     const ResolvedAddress& GetLocalAddress() const override;
   };
-  class IomgrListener : public EventEngine::Listener {
+  class PosixListener : public EventEngine::Listener {
    public:
-    ~IomgrListener() override;
+    ~PosixListener() override;
     absl::StatusOr<int> Bind(const ResolvedAddress& addr) override;
     absl::Status Start() override;
   };
-  class IomgrDNSResolver : public EventEngine::DNSResolver {
+  class PosixDNSResolver : public EventEngine::DNSResolver {
    public:
-    ~IomgrDNSResolver() override;
+    ~PosixDNSResolver() override;
     LookupTaskHandle LookupHostname(LookupHostnameCallback on_resolve,
                                     absl::string_view name,
                                     absl::string_view default_port,
@@ -118,4 +118,4 @@ class PosixEventEngine final : public EventEngine {
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_IOMGR_ENGINE_H
+#endif  // GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_ENGINE_H

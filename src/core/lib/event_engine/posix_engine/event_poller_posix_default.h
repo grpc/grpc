@@ -11,35 +11,23 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_WAKEUP_FD_PIPE_H
-#define GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_WAKEUP_FD_PIPE_H
+
+#ifndef GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_EVENT_POLLER_POSIX_DEFAULT_H
+#define GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_EVENT_POLLER_POSIX_DEFAULT_H
 
 #include <grpc/support/port_platform.h>
-
-#include <memory>
-
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-
-#include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h"
 
 namespace grpc_event_engine {
 namespace posix_engine {
 
-class PipeWakeupFd : public WakeupFd {
- public:
-  PipeWakeupFd() : WakeupFd() {}
-  ~PipeWakeupFd() override;
-  absl::Status ConsumeWakeup() override;
-  absl::Status Wakeup() override;
-  static absl::StatusOr<std::unique_ptr<WakeupFd>> CreatePipeWakeupFd();
-  static bool IsSupported();
+class EventPoller;
+class Scheduler;
 
- private:
-  absl::Status Init();
-};
+// Return an instance of an event poller which is tied to the specified
+// scheduler.
+EventPoller* GetDefaultPoller(Scheduler* scheduler);
 
 }  // namespace posix_engine
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_WAKEUP_FD_PIPE_H
+#endif  // GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_EVENT_POLLER_POSIX_DEFAULT_H

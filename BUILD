@@ -2525,7 +2525,7 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "iomgr_event_engine",
+    name = "posix_event_engine",
     srcs = ["src/core/lib/event_engine/posix_engine/posix_engine.cc"],
     hdrs = ["src/core/lib/event_engine/posix_engine/posix_engine.h"],
     external_deps = [
@@ -2650,7 +2650,7 @@ grpc_cc_library(
     select_deps = [{
         "//:windows": ["windows_event_engine"],
         "//:windows_msvc": ["windows_event_engine"],
-        "//conditions:default": ["iomgr_event_engine"],
+        "//conditions:default": ["posix_event_engine"],
     }],
     deps = [
         "event_engine_base_hdrs",

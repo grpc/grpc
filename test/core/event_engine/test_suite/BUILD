@@ -75,11 +75,11 @@ grpc_cc_library(
 # -- EventEngine implementations --
 
 grpc_cc_test(
-    name = "iomgr_event_engine_test",
-    srcs = ["iomgr_event_engine_test.cc"],
+    name = "posix_event_engine_test",
+    srcs = ["posix_event_engine_test.cc"],
     uses_polling = False,
     deps = [
-        "//:iomgr_event_engine",
+        "//:posix_event_engine",
         "//test/core/event_engine/test_suite:timer",
     ],
 )

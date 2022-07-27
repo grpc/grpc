@@ -4106,7 +4106,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "iomgr_event_engine_test",
+    "name": "posix_event_engine_test",
     "platforms": [
       "linux",
       "mac",
@@ -6806,7 +6806,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "test_core_event_engine_iomgr_event_engine_timer_heap_test",
+    "name": "test_core_event_engine_posix_event_engine_timer_heap_test",
     "platforms": [
       "linux",
       "mac",
@@ -6830,7 +6830,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "test_core_event_engine_iomgr_event_engine_timer_list_test",
+    "name": "test_core_event_engine_posix_event_engine_timer_list_test",
     "platforms": [
       "linux",
       "mac",
