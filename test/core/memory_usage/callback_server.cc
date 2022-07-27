@@ -40,7 +40,7 @@
 class ServerCallbackImpl final
     : public grpc::testing::BenchmarkService::CallbackService {
  public:
-  explicit ServerCallbackImpl(MemStats before_server_memory)
+  explicit ServerCallbackImpl(long before_server_memory)
       : before_server_create(before_server_memory) {}
 
   grpc::ServerUnaryReactor* UnaryCall(
@@ -57,14 +57,14 @@ class ServerCallbackImpl final
       const grpc::testing::SimpleRequest* request,
       grpc::testing::MemorySize* response) override {
     gpr_log(GPR_INFO, "BeforeSnapshot RPC CALL RECEIVED");
-    response->set_rss(before_server_create.rss);
+    response->set_rss(before_server_create);
     auto* reactor = context->DefaultReactor();
     reactor->Finish(grpc::Status::OK);
     return reactor;
   }
 
  private:
-  MemStats before_server_create;
+  long before_server_create;
 };
 
 /* We have some sort of deadlock, so let's not exit gracefully for now.
@@ -90,8 +90,8 @@ int main(int argc, char** argv) {
   gpr_log(GPR_INFO, "Server port: %s", server_address.c_str());
 
   // Get initial process memory usage before creating server
-  MemStats before_server_create = MemStats::Snapshot();
-  gpr_log(GPR_INFO, "Server Before Mem: %ld", before_server_create.rss);
+  long before_server_create = GetMemUsage();
+  gpr_log(GPR_INFO, "Server Before Mem: %ld", before_server_create);
   ServerCallbackImpl callback_server(before_server_create);
   grpc::ServerBuilder builder;
 

@@ -104,34 +104,6 @@ long GetBeforeSnapshot() {
   return params->response.rss();
 }
 
-// Get current memory usage of server without having to send an RPC by using
-// server's pid
-long GetServerMemory() {
-  double resident_set = 0.0;
-  std::ifstream stat_stream(
-      absl::StrCat("/proc/", absl::GetFlag(FLAGS_server_pid), "/stat"),
-      std::ios_base::in);
-
-  // Temporary variables for irrelevant leading entries in stats
-  std::string pid, comm, state, ppid, pgrp, session, tty_nr;
-  std::string tpgid, flags, minflt, cminflt, majflt, cmajflt;
-  std::string utime, stime, cutime, cstime, priority, nice;
-  std::string O, itrealvalue, starttime, vsize;
-
-  // Get rss to find memory usage
-  long rss;
-  stat_stream >> pid >> comm >> state >> ppid >> pgrp >> session >> tty_nr >>
-      tpgid >> flags >> minflt >> cminflt >> majflt >> cmajflt >> utime >>
-      stime >> cutime >> cstime >> priority >> nice >> O >> itrealvalue >>
-      starttime >> vsize >> rss;
-  stat_stream.close();
-
-  // Calculations in case x86-64 is configured to use 2MB pages
-  long page_size_kb = sysconf(_SC_PAGE_SIZE) / 1024;
-  resident_set = rss * page_size_kb;
-  return resident_set;
-}
-
 int main(int argc, char** argv) {
   absl::ParseCommandLine(argc, argv);
   char* fake_argv[1];
@@ -144,15 +116,18 @@ int main(int argc, char** argv) {
   }
   gpr_log(GPR_INFO, "Client Target: %s", absl::GetFlag(FLAGS_target).c_str());
 
-  // Getting memory usage
+  // Getting initial memory usage
   long before_server_memory = GetBeforeSnapshot();
-  MemStats before_client_memory = MemStats::Snapshot();
-  gpr_log(GPR_INFO, "Before Client Mem: %ld", before_client_memory.rss);
+  long before_client_memory = GetMemUsage();
+
   UnaryCall();
-  long peak_server_memory = GetServerMemory();
-  MemStats peak_client_memory = MemStats::Snapshot();
-  gpr_log(GPR_INFO, "Peak Client Mem: %ld", peak_client_memory.rss);
-  gpr_log(GPR_INFO, "Peak Server Mem: %ld", GetServerMemory());
+
+  // Getting peak memory usage
+  long peak_server_memory = GetMemUsage(absl::GetFlag(FLAGS_server_pid));
+  long peak_client_memory = GetMemUsage();
+  gpr_log(GPR_INFO, "Before Client Mem: %ld", before_client_memory);
+  gpr_log(GPR_INFO, "Peak Client Mem: %ld", peak_client_memory);
+  gpr_log(GPR_INFO, "Peak Server Mem: %ld", peak_server_memory);
   gpr_log(GPR_INFO, "Client Done");
   return 0;
 }

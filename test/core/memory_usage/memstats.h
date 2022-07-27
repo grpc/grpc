@@ -18,15 +18,53 @@
 #include <stdlib.h>
 #include <sys/resource.h>
 
+#include <fstream>
+#include <iostream>
+
+#include "absl/strings/str_cat.h"
+
 // IWYU pragma: no_include <bits/types/struct_rusage.h>
+
+// Get the memory usage of either the calling process or another process using
+// the pid
+long GetMemUsage(absl::optional<int> pid = absl::nullopt) {
+  // Default is getting memory usage for self (calling process)
+  std::string path = "/proc/self/stat";
+  if (pid != absl::nullopt) {
+    path = absl::StrCat("/proc/", pid.value(), "/stat");
+  }
+  std::ifstream stat_stream(path, std::ios_base::in);
+
+  double resident_set = 0.0;
+  // Temporary variables for irrelevant leading entries in stats
+  std::string temp_pid, comm, state, ppid, pgrp, session, tty_nr;
+  std::string tpgid, flags, minflt, cminflt, majflt, cmajflt;
+  std::string utime, stime, cutime, cstime, priority, nice;
+  std::string O, itrealvalue, starttime, vsize;
+
+  // Get rss to find memory usage
+  long rss;
+  stat_stream >> temp_pid >> comm >> state >> ppid >> pgrp >> session >>
+      tty_nr >> tpgid >> flags >> minflt >> cminflt >> majflt >> cmajflt >>
+      utime >> stime >> cutime >> cstime >> priority >> nice >> O >>
+      itrealvalue >> starttime >> vsize >> rss;
+  stat_stream.close();
+
+  // pid does not connect to an existing process
+  if (state == "") {
+    printf("PID does not exist");
+    return 0;
+  }
+
+  // Calculations in case x86-64 is configured to use 2MB pages
+  long page_size_kb = sysconf(_SC_PAGE_SIZE) / 1024;
+  resident_set = rss * page_size_kb;
+  return resident_set;
+}
 
 struct MemStats {
   long rss;  // Resident set size, in kb
-  static MemStats Snapshot() {
-    struct rusage usage;
-    if (0 != getrusage(RUSAGE_SELF, &usage)) abort();
-    return MemStats{usage.ru_maxrss};
-  }
+  static MemStats Snapshot() { return MemStats{GetMemUsage()}; }
 };
 
 #endif
