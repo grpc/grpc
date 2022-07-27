@@ -22,9 +22,9 @@
 
 #include <grpc/event_engine/event_engine.h>
 
+#include "src/core/lib/event_engine/executor/executor.h"
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/windows/win_socket.h"
-#include "src/core/lib/event_engine/executor/executor.h"
 
 namespace grpc_event_engine {
 namespace experimental {

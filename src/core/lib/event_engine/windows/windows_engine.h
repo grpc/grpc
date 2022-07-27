@@ -82,7 +82,6 @@ class WindowsEventEngine : public EventEngine {
       std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory)
       override;
 
-
   ConnectionHandle Connect(OnConnectCallback on_connect,
                            const ResolvedAddress& addr,
                            const EndpointConfig& args,

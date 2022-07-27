@@ -31,11 +31,10 @@
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/event_engine/slice_buffer.h>
 
+#include "src/core/lib/event_engine/executor/threaded_executor.h"
 #include "src/core/lib/event_engine/handle_containers.h"
 #include "src/core/lib/event_engine/posix_engine/timer_manager.h"
 #include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/event_engine/executor/threaded_executor.h"
-
 
 namespace grpc_event_engine {
 namespace experimental {
