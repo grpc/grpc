@@ -64,6 +64,20 @@ using ::grpc_event_engine::iomgr_engine::WakeupFd;
 namespace grpc_event_engine {
 namespace iomgr_engine {
 
+class Epoll1EventHandle;
+
+class Epoll1ExecActionsClosure final
+    : public grpc_event_engine::experimental::EventEngine::Closure {
+ public:
+  explicit Epoll1ExecActionsClosure(Epoll1EventHandle* handle)
+      : handle_(handle) {}
+  ~Epoll1ExecActionsClosure() final = default;
+  void Run() override;
+
+ private:
+  Epoll1EventHandle* handle_;
+};
+
 class Epoll1EventHandle : public EventHandle {
  public:
   Epoll1EventHandle(int fd, Epoll1Poller* poller)
@@ -80,8 +94,7 @@ class Epoll1EventHandle : public EventHandle {
     write_closure_->InitEvent();
     error_closure_->InitEvent();
     pending_actions_ = 0;
-    exec_actions_closure_ = IomgrEngineClosure::ToPermanentClosure(
-        [this](absl::Status /*status*/) { this->ExecutePendingActions(); });
+    exec_actions_closure_ = new Epoll1ExecActionsClosure(this);
   }
   Epoll1Poller* Poller() { return poller_; }
   EventEngine::Closure* SetPendingActions(bool pending_read, bool pending_write,
@@ -93,9 +106,12 @@ class Epoll1EventHandle : public EventHandle {
     if (pending_error) {
       pending_actions_ |= (1 << 3);
     }
-    return pending_read || pending_write || pending_error
-               ? exec_actions_closure_
-               : nullptr;
+    if (pending_read || pending_write || pending_error) {
+      Ref();
+      // The closure will get executed and will call Unref() on the handle.
+      return exec_actions_closure_;
+    }
+    return nullptr;
   }
   int WrappedFd() override { return fd_; }
   void OrphanHandle(IomgrEngineClosure* on_done, int* release_fd,
@@ -120,26 +136,40 @@ class Epoll1EventHandle : public EventHandle {
     }
     pending_actions_ = 0;
   }
+  void Ref() { ref_count_.fetch_add(1, std::memory_order_relaxed); }
+  void Unref() {
+    if (ref_count_.fetch_sub(1, std::memory_order_acq_rel) == 1) {
+      delete exec_actions_closure_;
+      delete this;
+    }
+  }
   absl::Mutex* mu() { return &mu_; }
   LockfreeEvent* ReadClosure() { return read_closure_.get(); }
   LockfreeEvent* WriteClosure() { return write_closure_.get(); }
   LockfreeEvent* ErrorClosure() { return error_closure_.get(); }
   Epoll1Poller::HandlesList& ForkFdListPos() { return list_; }
-  ~Epoll1EventHandle() override { exec_actions_closure_->Unref(); };
+  ~Epoll1EventHandle() override = default;
 
  private:
   void HandleShutdownInternal(absl::Status why, bool releasing_fd);
   // See Epoll1Poller::ShutdownHandle for explanation on why a mutex is
   // required.
   absl::Mutex mu_;
+  std::atomic<int> ref_count_{1};
   int fd_;
   int pending_actions_;
   Epoll1Poller::HandlesList list_;
   Epoll1Poller* poller_;
-  IomgrEngineClosure* exec_actions_closure_;
+  Epoll1ExecActionsClosure* exec_actions_closure_;
   std::unique_ptr<LockfreeEvent> read_closure_;
   std::unique_ptr<LockfreeEvent> write_closure_;
   std::unique_ptr<LockfreeEvent> error_closure_;
+};
+
+void Epoll1ExecActionsClosure::Run() {
+  handle_->ExecutePendingActions();
+  // Unref - for the Ref taken in SetPendingActions.
+  handle_->Unref();
 };
 
 namespace {
@@ -378,7 +408,7 @@ Epoll1Poller::~Epoll1Poller() {
       Epoll1EventHandle* handle = reinterpret_cast<Epoll1EventHandle*>(
           free_epoll1_handles_list_.front());
       free_epoll1_handles_list_.pop_front();
-      delete handle;
+      handle->Unref();
     }
   }
 }

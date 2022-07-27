@@ -74,6 +74,19 @@ static const int kPolloutCheck = POLLOUT | POLLHUP | POLLERR;
 namespace grpc_event_engine {
 namespace iomgr_engine {
 
+class PollEventHandle;
+
+class PollExecActionsClosure final
+    : public grpc_event_engine::experimental::EventEngine::Closure {
+ public:
+  explicit PollExecActionsClosure(PollEventHandle* handle) : handle_(handle) {}
+  ~PollExecActionsClosure() final = default;
+  void Run() override;
+
+ private:
+  PollEventHandle* handle_;
+};
+
 class PollEventHandle : public EventHandle {
  public:
   PollEventHandle(int fd, PollPoller* poller)
@@ -97,8 +110,7 @@ class PollEventHandle : public EventHandle {
     poller_->Ref();
     absl::MutexLock lock(&poller_->mu_);
     poller_->PollerHandlesListAddHandle(this);
-    exec_actions_closure_ = IomgrEngineClosure::ToPermanentClosure(
-        [this](absl::Status /*status*/) { this->ExecutePendingActions(); });
+    exec_actions_closure_ = new PollExecActionsClosure(this);
   }
   PollPoller* Poller() { return poller_; }
   EventEngine::Closure* SetPendingActions(bool pending_read,
@@ -108,6 +120,9 @@ class PollEventHandle : public EventHandle {
       pending_actions_ |= (1 << 2);
     }
     if (pending_read || pending_write) {
+      // The closure is going to be executed. We'll Unref this handle after
+      // the closure finishes.
+      Ref();
       return exec_actions_closure_;
     }
     return nullptr;
@@ -187,7 +202,7 @@ class PollEventHandle : public EventHandle {
         scheduler_->Run(on_done_);
       }
       poller_->Unref();
-      exec_actions_closure_->Unref();
+      delete exec_actions_closure_;
       delete this;
     }
   }
@@ -222,14 +237,19 @@ class PollEventHandle : public EventHandle {
   bool pollhup_;
   int watch_mask_;
   absl::Status shutdown_error_;
-  IomgrEngineClosure* exec_actions_closure_;
+  PollExecActionsClosure* exec_actions_closure_;
   IomgrEngineClosure* on_done_;
   IomgrEngineClosure* read_closure_;
   IomgrEngineClosure* write_closure_;
 };
 
-namespace {
+void PollExecActionsClosure::Run() {
+  handle_->ExecutePendingActions();
+  // Unref - for the Ref taken in SetPendingActions.
+  handle_->Unref();
+};
 
+namespace {
 // Only used when GRPC_ENABLE_FORK_SUPPORT=1
 std::list<PollPoller*> fork_poller_list;
 
@@ -561,11 +581,13 @@ uint32_t PollEventHandle::BeginPollLocked(uint32_t read_mask,
 
 EventEngine::Closure* PollEventHandle::EndPollLocked(int got_read,
                                                      int got_write) {
-  auto closure = SetPendingActions(got_read, got_write);
+  EventEngine::Closure* closure = nullptr;
   if (is_orphaned_ && !IsWatched()) {
     CloseFd();
+  } else if (!is_orphaned_) {
+    closure = SetPendingActions(got_read, got_write);
   }
-  return !is_orphaned_ && (got_read || got_write) ? closure : nullptr;
+  return closure;
 }
 
 void PollPoller::KickExternal(bool ext) {

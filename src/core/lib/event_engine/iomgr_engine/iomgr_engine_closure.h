@@ -43,32 +43,8 @@ class IomgrEngineClosure final
   ~IomgrEngineClosure() final = default;
   void SetStatus(absl::Status status) { status_ = status; }
   void Run() override {
-    if (is_permanent_) {
-      // Take a ref to protect against premature deletion of this closure by
-      // cb_;
-      Ref();
-    }
     cb_(absl::exchange(status_, absl::OkStatus()));
-    // For the ref taken at the beginning of this function. If it is a temporary
-    // closure, it will get deleted immediately.
-    Unref();
-  }
-
-  // Ref/Unref methods should only be called on permanent closures.
-  // Ref-counting methods are needed to allow external code to control the
-  // life-time of a permanent closure.
-  //
-  // For safe operation, any external code which provides a permanent
-  // IomgrEngineClosure to the NotifyOn*** or OrphanHandle methods of an
-  // grpc_event_engine::iomgr_engine::EventHandle object should perform the
-  // following steps:
-  //  1. First take a Ref() on the closure
-  //  2. Provide it to the desired NotifyOn*** or OrphanHandle method.
-  //  3. Ensure that the any-invocable which was used to create the closure
-  //     calls Unref() in its body.
-  void Ref() { ref_count_.fetch_add(1, std::memory_order_relaxed); }
-  void Unref() {
-    if (ref_count_.fetch_sub(1, std::memory_order_acq_rel) == 1) {
+    if (!is_permanent_) {
       delete this;
     }
   }
@@ -90,7 +66,6 @@ class IomgrEngineClosure final
 
  private:
   absl::AnyInvocable<void(absl::Status)> cb_;
-  std::atomic<int> ref_count_{1};
   bool is_permanent_ = false;
   absl::Status status_;
 };
