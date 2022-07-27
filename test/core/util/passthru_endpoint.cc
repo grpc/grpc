@@ -18,20 +18,33 @@
 
 #include "test/core/util/passthru_endpoint.h"
 
-#include <inttypes.h>
 #include <string.h>
 
+#include <algorithm>
+#include <functional>
+#include <memory>
 #include <string>
 
 #include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
 
+#include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
+#include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
+#include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/slice/slice_refcount.h"
+
+struct passthru_endpoint;
 
 typedef struct passthru_endpoint passthru_endpoint;
 

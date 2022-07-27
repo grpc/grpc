@@ -28,8 +28,10 @@ grpc_cc_test(
     language = "C++",
     uses_polling = False,
     deps = [
+        "//:gpr_platform",
         "//:grpc",
-        "//test/core/util:grpc_test_util",
+        "//:grpc_base",
+        "//test/core/util:grpc_test_util_unsecure",
     ],
 )
 
@@ -38,8 +40,10 @@ grpc_cc_test(
     srcs = ["smoke_test.cc"],
     external_deps = ["gtest"],
     deps = [
+        "//:event_engine_base_hdrs",
+        "//:gpr_platform",
         "//:grpc",
-        "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_unsecure",
     ],
 )
 
@@ -48,8 +52,11 @@ grpc_cc_test(
     srcs = ["slice_buffer_test.cc"],
     external_deps = ["gtest"],
     deps = [
+        "//:event_engine_base_hdrs",
+        "//:gpr_platform",
         "//:grpc",
-        "//test/core/util:grpc_test_util",
+        "//:slice",
+        "//test/core/util:grpc_test_util_unsecure",
     ],
 )
 
@@ -57,7 +64,9 @@ grpc_cc_library(
     name = "test_init",
     srcs = ["test_init.cc"],
     hdrs = ["test_init.h"],
+    external_deps = ["absl/strings"],
     deps = [
+        "//:gpr_base",
         "//:grpc_base",
     ],
 )

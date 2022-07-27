@@ -67,6 +67,7 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/surface/api_trace.h"
+#include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 using grpc_core::Json;
@@ -313,8 +314,14 @@ static grpc_error_handle create_default_creds_from_path(
   }
   error = grpc_load_file(creds_path.c_str(), 0, &creds_data);
   if (!GRPC_ERROR_IS_NONE(error)) goto end;
-  json = Json::Parse(grpc_core::StringViewFromSlice(creds_data), &error);
-  if (!GRPC_ERROR_IS_NONE(error)) goto end;
+  {
+    auto json_or = Json::Parse(grpc_core::StringViewFromSlice(creds_data));
+    if (!json_or.ok()) {
+      error = absl_status_to_grpc_error(json_or.status());
+      goto end;
+    }
+    json = std::move(*json_or);
+  }
   if (json.type() != Json::Type::OBJECT) {
     error = grpc_error_set_str(
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Failed to parse JSON"),

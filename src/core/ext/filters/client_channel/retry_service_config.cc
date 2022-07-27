@@ -28,6 +28,8 @@
 #include <vector>
 
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
 
 #include <grpc/impl/codegen/grpc_types.h>
@@ -38,6 +40,7 @@
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json_util.h"
 
 // As per the retry design, we do not allow more than 5 retry attempts.
@@ -138,18 +141,22 @@ grpc_error_handle ParseRetryThrottling(const Json& json,
 
 }  // namespace
 
-std::unique_ptr<ServiceConfigParser::ParsedConfig>
+absl::StatusOr<std::unique_ptr<ServiceConfigParser::ParsedConfig>>
 RetryServiceConfigParser::ParseGlobalParams(const ChannelArgs& /*args*/,
-                                            const Json& json,
-                                            grpc_error_handle* error) {
-  GPR_DEBUG_ASSERT(error != nullptr && GRPC_ERROR_IS_NONE(*error));
+                                            const Json& json) {
   auto it = json.object_value().find("retryThrottling");
   if (it == json.object_value().end()) return nullptr;
   intptr_t max_milli_tokens = 0;
   intptr_t milli_token_ratio = 0;
-  *error =
+  grpc_error_handle error =
       ParseRetryThrottling(it->second, &max_milli_tokens, &milli_token_ratio);
-  if (!GRPC_ERROR_IS_NONE(*error)) return nullptr;
+  if (!GRPC_ERROR_IS_NONE(error)) {
+    absl::Status status = absl::InvalidArgumentError(
+        absl::StrCat("error parsing retry global parameters: ",
+                     grpc_error_std_string(error)));
+    GRPC_ERROR_UNREF(error);
+    return status;
+  }
   return absl::make_unique<RetryGlobalConfig>(max_milli_tokens,
                                               milli_token_ratio);
 }
@@ -286,11 +293,9 @@ grpc_error_handle ParseRetryPolicy(
 
 }  // namespace
 
-std::unique_ptr<ServiceConfigParser::ParsedConfig>
+absl::StatusOr<std::unique_ptr<ServiceConfigParser::ParsedConfig>>
 RetryServiceConfigParser::ParsePerMethodParams(const ChannelArgs& args,
-                                               const Json& json,
-                                               grpc_error_handle* error) {
-  GPR_DEBUG_ASSERT(error != nullptr && GRPC_ERROR_IS_NONE(*error));
+                                               const Json& json) {
   // Parse retry policy.
   auto it = json.object_value().find("retryPolicy");
   if (it == json.object_value().end()) return nullptr;
@@ -300,10 +305,16 @@ RetryServiceConfigParser::ParsePerMethodParams(const ChannelArgs& args,
   float backoff_multiplier = 0;
   StatusCodeSet retryable_status_codes;
   absl::optional<Duration> per_attempt_recv_timeout;
-  *error = ParseRetryPolicy(args, it->second, &max_attempts, &initial_backoff,
-                            &max_backoff, &backoff_multiplier,
-                            &retryable_status_codes, &per_attempt_recv_timeout);
-  if (!GRPC_ERROR_IS_NONE(*error)) return nullptr;
+  grpc_error_handle error = ParseRetryPolicy(
+      args, it->second, &max_attempts, &initial_backoff, &max_backoff,
+      &backoff_multiplier, &retryable_status_codes, &per_attempt_recv_timeout);
+  if (!GRPC_ERROR_IS_NONE(error)) {
+    absl::Status status = absl::InvalidArgumentError(
+        absl::StrCat("error parsing retry method parameters: ",
+                     grpc_error_std_string(error)));
+    GRPC_ERROR_UNREF(error);
+    return status;
+  }
   return absl::make_unique<RetryMethodConfig>(
       max_attempts, initial_backoff, max_backoff, backoff_multiplier,
       retryable_status_codes, per_attempt_recv_timeout);

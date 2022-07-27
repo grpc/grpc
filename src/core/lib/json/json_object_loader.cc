@@ -19,17 +19,20 @@
 #include <algorithm>
 #include <utility>
 
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/ascii.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_join.h"
 
 namespace grpc_core {
 
 void ErrorList::AddError(absl::string_view error) {
-  std::string message = "field:";
-  for (const auto& field : fields_) {
-    message += field;
-  }
-  errors_.emplace_back(absl::StrCat(message, " error:", error));
+  std::string fields = absl::StrJoin(fields_, "");
+  errors_.emplace_back(absl::StrCat(
+      "field:",
+      absl::string_view(fields).substr(1),  // Skip leading '.' in field names
+      " error:", error));
 }
 
 void ErrorList::PushField(absl::string_view ext) {
@@ -38,15 +41,22 @@ void ErrorList::PushField(absl::string_view ext) {
 
 void ErrorList::PopField() { fields_.pop_back(); }
 
+absl::Status ErrorList::status() const {
+  if (errors_.empty()) return absl::OkStatus();
+  return absl::InvalidArgumentError(absl::StrCat(
+      "errors validating JSON: [", absl::StrJoin(errors_, "; "), "]"));
+}
+
 namespace json_detail {
 
 void LoadScalar::LoadInto(const Json& json, void* dst,
                           ErrorList* errors) const {
-  const Json::Type expected_type =
-      IsNumber() ? Json::Type::NUMBER : Json::Type::STRING;
-  if (json.type() != expected_type) {
+  // We accept either STRING or NUMBER for numeric values, as per
+  // https://developers.google.com/protocol-buffers/docs/proto3#json.
+  if (json.type() != Json::Type::STRING &&
+      (!IsNumber() || json.type() != Json::Type::NUMBER)) {
     errors->AddError(
-        absl::StrCat("is not a ", IsNumber() ? "number." : "string."));
+        absl::StrCat("is not a ", IsNumber() ? "number" : "string"));
     return;
   }
   return LoadInto(json.string_value(), dst, errors);
@@ -100,10 +110,15 @@ void LoadString::LoadInto(const std::string& value, void* dst,
   *static_cast<std::string*>(dst) = value;
 }
 
+void LoadUnprocessedJson::LoadInto(const Json& value, void* dst,
+                                   ErrorList*) const {
+  *static_cast<Json*>(dst) = value;
+}
+
 void LoadVector::LoadInto(const Json& json, void* dst,
                           ErrorList* errors) const {
   if (json.type() != Json::Type::ARRAY) {
-    errors->AddError("is not an array.");
+    errors->AddError("is not an array");
     return;
   }
   const auto& array = json.array_value();
@@ -115,7 +130,7 @@ void LoadVector::LoadInto(const Json& json, void* dst,
 
 void LoadMap::LoadInto(const Json& json, void* dst, ErrorList* errors) const {
   if (json.type() != Json::Type::OBJECT) {
-    errors->AddError("is not an object.");
+    errors->AddError("is not an object");
     return;
   }
   for (const auto& pair : json.object_value()) {
@@ -127,7 +142,7 @@ void LoadMap::LoadInto(const Json& json, void* dst, ErrorList* errors) const {
 void LoadObject(const Json& json, const Element* elements, size_t num_elements,
                 void* dst, ErrorList* errors) {
   if (json.type() != Json::Type::OBJECT) {
-    errors->AddError("is not an object.");
+    errors->AddError("is not an object");
     return;
   }
   for (size_t i = 0; i < num_elements; ++i) {
@@ -136,7 +151,7 @@ void LoadObject(const Json& json, const Element* elements, size_t num_elements,
     const auto& it = json.object_value().find(element.name);
     if (it == json.object_value().end()) {
       if (element.optional) continue;
-      errors->AddError("does not exist.");
+      errors->AddError("does not exist");
       continue;
     }
     char* field_dst = static_cast<char*>(dst) + element.member_offset;

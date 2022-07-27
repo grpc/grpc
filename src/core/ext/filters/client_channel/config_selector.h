@@ -24,6 +24,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/impl/codegen/grpc_types.h>
@@ -35,7 +36,6 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/service_config/service_config.h"
 #include "src/core/lib/service_config/service_config_call_data.h"
@@ -73,7 +73,7 @@ class ConfigSelector : public RefCounted<ConfigSelector> {
 
   struct CallConfig {
     // Can be set to indicate the call should be failed.
-    grpc_error_handle error = GRPC_ERROR_NONE;
+    absl::Status status;
     // The per-method parsed configs that will be passed to
     // ServiceConfigCallData.
     const ServiceConfigParser::ParsedConfigVector* method_configs = nullptr;

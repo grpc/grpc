@@ -24,6 +24,8 @@
 #include <vector>
 
 #include "absl/meta/type_traits.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/string_view.h"
 
@@ -39,21 +41,25 @@
 //     int a;
 //     int b;
 //   };
-// We add a member to Foo to declare how to load the object from JSON:
+// We add a static JsonLoader() method to Foo to declare how to load the
+// object from JSON, and an optional JsonPostLoad() method to do any
+// necessary post-processing:
 //   struct Foo {
 //     int a;
 //     int b;
 //     static const JsonLoaderInterface* JsonLoader() {
+//       // Note: Field names must be string constants; they are not copied.
 //       static const auto loader = JsonObjectLoader<Foo>()
 //           .Field("a", &Foo::a)
 //           .Field("b", &Foo::b)
 //           .Finish();
 //       return &loader;
 //     }
+//     // Optional; omit if no post-processing needed.
+//     void JsonPostLoad(const Json& source, ErrorList* errors) { ++a; }
 //   };
 // Now we can load Foo objects from JSON:
-//   ErrorList errors;
-//   Foo foo = LoadFromJson<Foo>(json, &errors);
+//   absl::StatusOr<Foo> foo = LoadFromJson<Foo>(json);
 namespace grpc_core {
 
 // A list of errors that occurred during JSON parsing.
@@ -67,8 +73,8 @@ class ErrorList {
   // Record that we've encountered an error.
   void AddError(absl::string_view error) GPR_ATTRIBUTE_NOINLINE;
 
-  // Return the list of errors.
-  const std::vector<std::string>& errors() const { return errors_; }
+  // Returns the resulting status of parsing.
+  absl::Status status() const;
 
   // Return true if there are no errors.
   bool ok() const { return errors_.empty(); }
@@ -153,7 +159,7 @@ class TypedLoadNumber : public LoadNumber {
   void LoadInto(const std::string& value, void* dst,
                 ErrorList* errors) const override {
     if (!absl::SimpleAtoi(value, static_cast<T*>(dst))) {
-      errors->AddError("failed to parse number.");
+      errors->AddError("failed to parse number");
     }
   }
 };
@@ -195,6 +201,12 @@ class LoadMap : public LoaderInterface {
                        ErrorList* errors) const = 0;
 };
 
+// Loads an unprocessed JSON value.
+class LoadUnprocessedJson : public LoaderInterface {
+ public:
+  void LoadInto(const Json& json, void* dst, ErrorList* errors) const override;
+};
+
 // Fetch a LoaderInterface for some type.
 template <typename T>
 const LoaderInterface* LoaderForType();
@@ -224,6 +236,8 @@ template <>
 class AutoLoader<Duration> final : public LoadDuration {};
 template <>
 class AutoLoader<std::string> final : public LoadString {};
+template <>
+class AutoLoader<Json> final : public LoadUnprocessedJson {};
 
 // Specializations of AutoLoader for vectors.
 template <typename T>
@@ -255,6 +269,8 @@ class AutoLoader<std::map<std::string, T>> final : public LoadMap {
 template <typename T>
 const LoaderInterface* LoaderForType() {
   static const AutoLoader<T> loader;
+  static_assert(std::is_trivially_destructible<decltype(loader)>::value,
+                "AutoLoader type is not trivially destructible");
   return &loader;
 }
 
@@ -268,9 +284,7 @@ struct Element {
         member_offset(static_cast<uint16_t>(
             reinterpret_cast<uintptr_t>(&(static_cast<A*>(nullptr)->*p)))),
         optional(optional),
-        name{} {
-    strcpy(this->name, name);
-  }
+        name(name) {}
   // The loader for this field.
   const LoaderInterface* loader;
   // Offset into the destination object to store the field.
@@ -278,7 +292,7 @@ struct Element {
   // Is this field optional?
   bool optional;
   // The name of the field.
-  char name[13];
+  const char *name;
 };
 
 // Vec<T, kSize> provides a constant array type that can be appended to by
@@ -394,9 +408,11 @@ using JsonObjectLoader = json_detail::JsonObjectLoader<T>;
 using JsonLoaderInterface = json_detail::LoaderInterface;
 
 template <typename T>
-T LoadFromJson(const Json& json, ErrorList* error_list) {
+absl::StatusOr<T> LoadFromJson(const Json& json) {
+  ErrorList error_list;
   T result;
-  json_detail::LoaderForType<T>()->LoadInto(json, &result, error_list);
+  json_detail::LoaderForType<T>()->LoadInto(json, &result, &error_list);
+  if (!error_list.ok()) return error_list.status();
   return result;
 }
 
