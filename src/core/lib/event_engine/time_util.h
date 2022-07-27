@@ -16,7 +16,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <chrono>
+#include <stdint.h>
 
 #include <grpc/event_engine/event_engine.h>
 
