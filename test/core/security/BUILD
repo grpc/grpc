@@ -29,6 +29,7 @@ grpc_fuzzer(
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -47,6 +48,7 @@ grpc_fuzzer(
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -70,6 +72,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -83,6 +86,7 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc_cel_engine",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -95,6 +99,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -108,6 +113,7 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc_secure",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -122,6 +128,7 @@ grpc_cc_test(
         "//:grpc_authorization_base",
         "//:grpc_secure",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -136,6 +143,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -150,6 +158,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -163,6 +172,7 @@ grpc_cc_test(
         "//:grpc",
         "//test/core/iomgr:endpoint_tests",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -175,6 +185,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -195,6 +206,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -207,6 +219,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -218,6 +231,7 @@ grpc_cc_binary(
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -231,6 +245,7 @@ grpc_cc_binary(
         "//:grpc",
         "//:grpc++",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -242,6 +257,7 @@ grpc_cc_binary(
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -255,6 +271,7 @@ grpc_cc_test(
         "//:gpr_base",
         "//:grpc",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -268,6 +285,7 @@ grpc_cc_test(
         "//:gpr_base",
         "//:grpc",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -280,6 +298,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -294,6 +313,7 @@ grpc_cc_test(
         "//:grpc_base",
         "//:grpc_secure",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -318,6 +338,7 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc_secure",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -340,6 +361,7 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc_secure",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -353,6 +375,7 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc_secure",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -366,6 +389,7 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc_secure",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -388,6 +412,7 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc_secure",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -401,6 +426,7 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc_secure",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -415,6 +441,7 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc_secure",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -429,6 +456,7 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc_secure",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -442,6 +470,7 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc_secure",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -455,6 +484,7 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc_authorization_provider",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -468,6 +498,7 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc_rbac_engine",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -481,6 +512,7 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc_rbac_engine",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -499,6 +531,7 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc_authorization_provider",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -514,5 +547,6 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc_secure",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )

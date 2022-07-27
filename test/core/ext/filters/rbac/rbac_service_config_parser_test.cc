@@ -40,12 +40,11 @@ TEST(RbacServiceConfigParsingTest, EmptyRbacPolicy) {
       "    } ]"
       "  } ]\n"
       "}";
-  grpc_error_handle error = GRPC_ERROR_NONE;
   ChannelArgs args = ChannelArgs().Set(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG, 1);
-  auto svc_cfg = ServiceConfigImpl::Create(args, test_json, &error);
-  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
+  auto service_config = ServiceConfigImpl::Create(args, test_json);
+  ASSERT_TRUE(service_config.ok()) << service_config.status();
   const auto* vector_ptr =
-      svc_cfg->GetMethodParsedConfigVector(grpc_empty_slice());
+      (*service_config)->GetMethodParsedConfigVector(grpc_empty_slice());
   ASSERT_NE(vector_ptr, nullptr);
   auto* parsed_rbac_config = static_cast<RbacMethodParsedConfig*>(
       ((*vector_ptr)[RbacServiceConfigParser::ParserIndex()]).get());
@@ -69,11 +68,10 @@ TEST(RbacServiceConfigParsingTest, MissingChannelArg) {
       "    } ]"
       "  } ]\n"
       "}";
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  auto svc_cfg = ServiceConfigImpl::Create(ChannelArgs(), test_json, &error);
-  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
+  auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
+  ASSERT_TRUE(service_config.ok()) << service_config.status();
   const auto* vector_ptr =
-      svc_cfg->GetMethodParsedConfigVector(grpc_empty_slice());
+      (*service_config)->GetMethodParsedConfigVector(grpc_empty_slice());
   ASSERT_NE(vector_ptr, nullptr);
   auto* parsed_rbac_config = static_cast<RbacMethodParsedConfig*>(
       ((*vector_ptr)[RbacServiceConfigParser::ParserIndex()]).get());
@@ -91,12 +89,11 @@ TEST(RbacServiceConfigParsingTest, EmptyRbacPolicyArray) {
       "    \"rbacPolicy\": []"
       "  } ]\n"
       "}";
-  grpc_error_handle error = GRPC_ERROR_NONE;
   ChannelArgs args = ChannelArgs().Set(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG, 1);
-  auto svc_cfg = ServiceConfigImpl::Create(args, test_json, &error);
-  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
+  auto service_config = ServiceConfigImpl::Create(args, test_json);
+  ASSERT_TRUE(service_config.ok()) << service_config.status();
   const auto* vector_ptr =
-      svc_cfg->GetMethodParsedConfigVector(grpc_empty_slice());
+      (*service_config)->GetMethodParsedConfigVector(grpc_empty_slice());
   ASSERT_NE(vector_ptr, nullptr);
   auto* parsed_rbac_config = static_cast<RbacMethodParsedConfig*>(
       ((*vector_ptr)[RbacServiceConfigParser::ParserIndex()]).get());
@@ -114,12 +111,11 @@ TEST(RbacServiceConfigParsingTest, MultipleRbacPolicies) {
       "    \"rbacPolicy\": [ {}, {}, {} ]"
       "  } ]\n"
       "}";
-  grpc_error_handle error = GRPC_ERROR_NONE;
   ChannelArgs args = ChannelArgs().Set(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG, 1);
-  auto svc_cfg = ServiceConfigImpl::Create(args, test_json, &error);
-  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
+  auto service_config = ServiceConfigImpl::Create(args, test_json);
+  ASSERT_TRUE(service_config.ok()) << service_config.status();
   const auto* vector_ptr =
-      svc_cfg->GetMethodParsedConfigVector(grpc_empty_slice());
+      (*service_config)->GetMethodParsedConfigVector(grpc_empty_slice());
   ASSERT_NE(vector_ptr, nullptr);
   auto* parsed_rbac_config = static_cast<RbacMethodParsedConfig*>(
       ((*vector_ptr)[RbacServiceConfigParser::ParserIndex()]).get());
@@ -142,14 +138,14 @@ TEST(RbacServiceConfigParsingTest, BadRbacPolicyType) {
       "    \"rbacPolicy\": 1234"
       "  } ]\n"
       "}";
-  grpc_error_handle error = GRPC_ERROR_NONE;
   ChannelArgs args = ChannelArgs().Set(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG, 1);
-  auto svc_cfg = ServiceConfigImpl::Create(args, test_json, &error);
+  auto service_config = ServiceConfigImpl::Create(args, test_json);
+  EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_THAT(
-      grpc_error_std_string(error),
+      std::string(service_config.status().message()),
       ::testing::ContainsRegex("Rbac parser" CHILD_ERROR_TAG
-                               "field:rbacPolicy error:type should be ARRAY"));
-  GRPC_ERROR_UNREF(error);
+                               "field:rbacPolicy error:type should be ARRAY"))
+      << service_config.status();
 }
 
 TEST(RbacServiceConfigParsingTest, BadRulesType) {
@@ -162,15 +158,15 @@ TEST(RbacServiceConfigParsingTest, BadRulesType) {
       "    \"rbacPolicy\": [{\"rules\":1}]"
       "  } ]\n"
       "}";
-  grpc_error_handle error = GRPC_ERROR_NONE;
   ChannelArgs args = ChannelArgs().Set(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG, 1);
-  auto svc_cfg = ServiceConfigImpl::Create(args, test_json, &error);
+  auto service_config = ServiceConfigImpl::Create(args, test_json);
+  EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_THAT(
-      grpc_error_std_string(error),
+      std::string(service_config.status().message()),
       ::testing::ContainsRegex("Rbac parser" CHILD_ERROR_TAG
                                "rbacPolicy\\[0\\]" CHILD_ERROR_TAG
-                               "field:rules error:type should be OBJECT"));
-  GRPC_ERROR_UNREF(error);
+                               "field:rules error:type should be OBJECT"))
+      << service_config.status();
 }
 
 TEST(RbacServiceConfigParsingTest, BadActionAndPolicyType) {
@@ -188,16 +184,16 @@ TEST(RbacServiceConfigParsingTest, BadActionAndPolicyType) {
       "    } ]\n"
       "  } ]\n"
       "}";
-  grpc_error_handle error = GRPC_ERROR_NONE;
   ChannelArgs args = ChannelArgs().Set(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG, 1);
-  auto svc_cfg = ServiceConfigImpl::Create(args, test_json, &error);
+  auto service_config = ServiceConfigImpl::Create(args, test_json);
+  EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_THAT(
-      grpc_error_std_string(error),
+      std::string(service_config.status().message()),
       ::testing::ContainsRegex("Rbac parser" CHILD_ERROR_TAG
                                "rbacPolicy\\[0\\]" CHILD_ERROR_TAG
                                "field:action error:type should be NUMBER.*"
-                               "field:policies error:type should be OBJECT"));
-  GRPC_ERROR_UNREF(error);
+                               "field:policies error:type should be OBJECT"))
+      << service_config.status();
 }
 
 TEST(RbacServiceConfigParsingTest, MissingPermissionAndPrincipals) {
@@ -218,17 +214,17 @@ TEST(RbacServiceConfigParsingTest, MissingPermissionAndPrincipals) {
       "    } ]\n"
       "  } ]\n"
       "}";
-  grpc_error_handle error = GRPC_ERROR_NONE;
   ChannelArgs args = ChannelArgs().Set(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG, 1);
-  auto svc_cfg = ServiceConfigImpl::Create(args, test_json, &error);
+  auto service_config = ServiceConfigImpl::Create(args, test_json);
+  EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_THAT(
-      grpc_error_std_string(error),
+      std::string(service_config.status().message()),
       ::testing::ContainsRegex("Rbac parser" CHILD_ERROR_TAG
                                "rbacPolicy\\[0\\]" CHILD_ERROR_TAG
                                "policies key:'policy'" CHILD_ERROR_TAG
                                "field:permissions error:does not exist.*"
-                               "field:principals error:does not exist"));
-  GRPC_ERROR_UNREF(error);
+                               "field:principals error:does not exist"))
+      << service_config.status();
 }
 
 TEST(RbacServiceConfigParsingTest, EmptyPrincipalAndPermission) {
@@ -251,17 +247,17 @@ TEST(RbacServiceConfigParsingTest, EmptyPrincipalAndPermission) {
       "    } ]\n"
       "  } ]\n"
       "}";
-  grpc_error_handle error = GRPC_ERROR_NONE;
   ChannelArgs args = ChannelArgs().Set(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG, 1);
-  auto svc_cfg = ServiceConfigImpl::Create(args, test_json, &error);
+  auto service_config = ServiceConfigImpl::Create(args, test_json);
+  EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_THAT(
-      grpc_error_std_string(error),
+      std::string(service_config.status().message()),
       ::testing::ContainsRegex(
           "Rbac parser" CHILD_ERROR_TAG "rbacPolicy\\[0\\]" CHILD_ERROR_TAG
           "policies key:'policy'" CHILD_ERROR_TAG
           "permissions\\[0\\]" CHILD_ERROR_TAG "No valid rule found.*"
-          "principals\\[0\\]" CHILD_ERROR_TAG "No valid id found"));
-  GRPC_ERROR_UNREF(error);
+          "principals\\[0\\]" CHILD_ERROR_TAG "No valid id found"))
+      << service_config.status();
 }
 
 TEST(RbacServiceConfigParsingTest, VariousPermissionsAndPrincipalsTypes) {
@@ -308,12 +304,11 @@ TEST(RbacServiceConfigParsingTest, VariousPermissionsAndPrincipalsTypes) {
       "    } ]\n"
       "  } ]\n"
       "}";
-  grpc_error_handle error = GRPC_ERROR_NONE;
   ChannelArgs args = ChannelArgs().Set(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG, 1);
-  auto svc_cfg = ServiceConfigImpl::Create(args, test_json, &error);
-  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
+  auto service_config = ServiceConfigImpl::Create(args, test_json);
+  ASSERT_TRUE(service_config.ok()) << service_config.status();
   const auto* vector_ptr =
-      svc_cfg->GetMethodParsedConfigVector(grpc_empty_slice());
+      (*service_config)->GetMethodParsedConfigVector(grpc_empty_slice());
   ASSERT_NE(vector_ptr, nullptr);
   auto* parsed_rbac_config = static_cast<RbacMethodParsedConfig*>(
       ((*vector_ptr)[RbacServiceConfigParser::ParserIndex()]).get());
@@ -365,11 +360,11 @@ TEST(RbacServiceConfigParsingTest, VariousPermissionsAndPrincipalsBadTypes) {
       "    } ]\n"
       "  } ]\n"
       "}";
-  grpc_error_handle error = GRPC_ERROR_NONE;
   ChannelArgs args = ChannelArgs().Set(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG, 1);
-  auto svc_cfg = ServiceConfigImpl::Create(args, test_json, &error);
+  auto service_config = ServiceConfigImpl::Create(args, test_json);
+  EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_THAT(
-      grpc_error_std_string(error),
+      std::string(service_config.status().message()),
       ::testing::ContainsRegex(
           "Rbac parser" CHILD_ERROR_TAG "rbacPolicy\\[0\\]" CHILD_ERROR_TAG
           "policies key:'policy'" CHILD_ERROR_TAG
@@ -414,8 +409,8 @@ TEST(RbacServiceConfigParsingTest, VariousPermissionsAndPrincipalsBadTypes) {
           "principals\\[9\\]" CHILD_ERROR_TAG
           "field:metadata error:type should be OBJECT.*"
           "principals\\[10\\]" CHILD_ERROR_TAG
-          "field:notId error:type should be OBJECT.*"));
-  GRPC_ERROR_UNREF(error);
+          "field:notId error:type should be OBJECT.*"))
+      << service_config.status();
 }
 
 TEST(RbacServiceConfigParsingTest, HeaderMatcherVariousTypes) {
@@ -449,12 +444,11 @@ TEST(RbacServiceConfigParsingTest, HeaderMatcherVariousTypes) {
       "    } ]\n"
       "  } ]\n"
       "}";
-  grpc_error_handle error = GRPC_ERROR_NONE;
   ChannelArgs args = ChannelArgs().Set(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG, 1);
-  auto svc_cfg = ServiceConfigImpl::Create(args, test_json, &error);
-  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
+  auto service_config = ServiceConfigImpl::Create(args, test_json);
+  ASSERT_TRUE(service_config.ok()) << service_config.status();
   const auto* vector_ptr =
-      svc_cfg->GetMethodParsedConfigVector(grpc_empty_slice());
+      (*service_config)->GetMethodParsedConfigVector(grpc_empty_slice());
   ASSERT_NE(vector_ptr, nullptr);
   auto* parsed_rbac_config = static_cast<RbacMethodParsedConfig*>(
       ((*vector_ptr)[RbacServiceConfigParser::ParserIndex()]).get());
@@ -492,11 +486,11 @@ TEST(RbacServiceConfigParsingTest, HeaderMatcherBadTypes) {
       "    } ]\n"
       "  } ]\n"
       "}";
-  grpc_error_handle error = GRPC_ERROR_NONE;
   ChannelArgs args = ChannelArgs().Set(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG, 1);
-  auto svc_cfg = ServiceConfigImpl::Create(args, test_json, &error);
+  auto service_config = ServiceConfigImpl::Create(args, test_json);
+  EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_THAT(
-      grpc_error_std_string(error),
+      std::string(service_config.status().message()),
       ::testing::ContainsRegex(
           "Rbac parser" CHILD_ERROR_TAG "rbacPolicy\\[0\\]" CHILD_ERROR_TAG
           "policies key:'policy'" CHILD_ERROR_TAG
@@ -514,8 +508,8 @@ TEST(RbacServiceConfigParsingTest, HeaderMatcherBadTypes) {
           "permissions\\[5\\]" CHILD_ERROR_TAG "header" CHILD_ERROR_TAG
           "field:suffixMatch error:type should be STRING.*"
           "permissions\\[6\\]" CHILD_ERROR_TAG "header" CHILD_ERROR_TAG
-          "field:containsMatch error:type should be STRING.*"));
-  GRPC_ERROR_UNREF(error);
+          "field:containsMatch error:type should be STRING.*"))
+      << service_config.status();
 }
 
 TEST(RbacServiceConfigParsingTest, StringMatcherVariousTypes) {
@@ -546,12 +540,11 @@ TEST(RbacServiceConfigParsingTest, StringMatcherVariousTypes) {
       "    } ]\n"
       "  } ]\n"
       "}";
-  grpc_error_handle error = GRPC_ERROR_NONE;
   ChannelArgs args = ChannelArgs().Set(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG, 1);
-  auto svc_cfg = ServiceConfigImpl::Create(args, test_json, &error);
-  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
+  auto service_config = ServiceConfigImpl::Create(args, test_json);
+  ASSERT_TRUE(service_config.ok()) << service_config.status();
   const auto* vector_ptr =
-      svc_cfg->GetMethodParsedConfigVector(grpc_empty_slice());
+      (*service_config)->GetMethodParsedConfigVector(grpc_empty_slice());
   ASSERT_NE(vector_ptr, nullptr);
   auto* parsed_rbac_config = static_cast<RbacMethodParsedConfig*>(
       ((*vector_ptr)[RbacServiceConfigParser::ParserIndex()]).get());
@@ -587,11 +580,11 @@ TEST(RbacServiceConfigParsingTest, StringMatcherBadTypes) {
       "    } ]\n"
       "  } ]\n"
       "}";
-  grpc_error_handle error = GRPC_ERROR_NONE;
   ChannelArgs args = ChannelArgs().Set(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG, 1);
-  auto svc_cfg = ServiceConfigImpl::Create(args, test_json, &error);
+  auto service_config = ServiceConfigImpl::Create(args, test_json);
+  EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_THAT(
-      grpc_error_std_string(error),
+      std::string(service_config.status().message()),
       ::testing::ContainsRegex("Rbac parser" CHILD_ERROR_TAG
                                "rbacPolicy\\[0\\]" CHILD_ERROR_TAG
                                "policies key:'policy'" CHILD_ERROR_TAG
@@ -610,8 +603,8 @@ TEST(RbacServiceConfigParsingTest, StringMatcherBadTypes) {
                                "field:safeRegex error:type should be OBJECT.*"
                                "permissions\\[4\\]" CHILD_ERROR_TAG
                                "requestedServerName" CHILD_ERROR_TAG
-                               "field:contains error:type should be STRING.*"));
-  GRPC_ERROR_UNREF(error);
+                               "field:contains error:type should be STRING.*"))
+      << service_config.status();
 }
 
 }  // namespace

@@ -217,16 +217,15 @@ static Json parse_json_part_from_jwt(const char* str, size_t len) {
   grpc_slice slice = grpc_base64_decode(b64, 1);
   gpr_free(b64);
   EXPECT_FALSE(GRPC_SLICE_IS_EMPTY(slice));
-  grpc_error_handle error = GRPC_ERROR_NONE;
   absl::string_view string = grpc_core::StringViewFromSlice(slice);
-  Json json = Json::Parse(string, &error);
-  if (!GRPC_ERROR_IS_NONE(error)) {
-    gpr_log(GPR_ERROR, "JSON parse error: %s",
-            grpc_error_std_string(error).c_str());
-    GRPC_ERROR_UNREF(error);
-  }
+  auto json = Json::Parse(string);
   grpc_slice_unref(slice);
-  return json;
+  if (!json.ok()) {
+    gpr_log(GPR_ERROR, "JSON parse error: %s",
+            json.status().ToString().c_str());
+    return Json();
+  }
+  return std::move(*json);
 }
 
 static void check_jwt_header(const Json& header) {

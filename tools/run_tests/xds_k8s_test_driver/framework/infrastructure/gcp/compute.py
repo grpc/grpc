@@ -430,28 +430,29 @@ class ComputeV1(gcp.api.GcpProjectApiResource):  # pylint: disable=too-many-publ
             self,
             request,
             *,
-            test_success_fn=None,
             timeout_sec=_WAIT_FOR_OPERATION_SEC):
         operation = request.execute(num_retries=self._GCP_API_RETRIES)
-        logger.debug('Response %s', operation)
+        logger.debug('Operation %s', operation)
+        return self._wait(operation['name'], timeout_sec)
+
+    def _wait(self,
+              operation_id: str,
+              timeout_sec: int = _WAIT_FOR_OPERATION_SEC) -> dict:
+        logger.info('Waiting %s sec for compute operation id: %s', timeout_sec,
+                    operation_id)
 
         # TODO(sergiitk) try using wait() here
         # https://googleapis.github.io/google-api-python-client/docs/dyn/compute_v1.globalOperations.html#wait
-        operation_request = self.api.globalOperations().get(
-            project=self.project, operation=operation['name'])
+        op_request = self.api.globalOperations().get(project=self.project,
+                                                     operation=operation_id)
+        operation = self.wait_for_operation(
+            operation_request=op_request,
+            test_success_fn=self._operation_status_done,
+            timeout_sec=timeout_sec)
 
-        if test_success_fn is None:
-            test_success_fn = self._operation_status_done
-
-        logger.debug('Waiting for global operation %s, timeout %s sec',
-                     operation['name'], timeout_sec)
-        response = self.wait_for_operation(operation_request=operation_request,
-                                           test_success_fn=test_success_fn,
-                                           timeout_sec=timeout_sec)
-
-        if 'error' in response:
-            logger.debug('Waiting for global operation failed, response: %r',
-                         response)
-            raise Exception(f'Operation {operation["name"]} did not complete '
-                            f'within {timeout_sec}s, error={response["error"]}')
-        return response
+        logger.debug('Completed operation: %s', operation)
+        if 'error' in operation:
+            # This shouldn't normally happen: gcp library raises on errors.
+            raise Exception(f'Compute operation {operation_id} '
+                            f'failed: {operation}')
+        return operation

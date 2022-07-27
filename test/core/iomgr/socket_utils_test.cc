@@ -26,6 +26,8 @@
 #include <netinet/ip.h>
 #include <string.h>
 
+#include <gtest/gtest.h>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
@@ -102,25 +104,25 @@ static const grpc_socket_mutator_vtable mutator_vtable2 = {
 
 static void test_with_vtable(const grpc_socket_mutator_vtable* vtable) {
   int sock = socket(PF_INET, SOCK_STREAM, 0);
-  GPR_ASSERT(sock > 0);
+  ASSERT_GT(sock, 0);
 
   struct test_socket_mutator mutator;
   grpc_socket_mutator_init(&mutator.base, vtable);
 
   mutator.option_value = IPTOS_LOWDELAY;
-  GPR_ASSERT(GRPC_LOG_IF_ERROR(
+  ASSERT_TRUE(GRPC_LOG_IF_ERROR(
       "set_socket_with_mutator",
       grpc_set_socket_with_mutator(sock, GRPC_FD_CLIENT_CONNECTION_USAGE,
                                    (grpc_socket_mutator*)&mutator)));
 
   mutator.option_value = IPTOS_THROUGHPUT;
-  GPR_ASSERT(GRPC_LOG_IF_ERROR(
+  ASSERT_TRUE(GRPC_LOG_IF_ERROR(
       "set_socket_with_mutator",
       grpc_set_socket_with_mutator(sock, GRPC_FD_CLIENT_CONNECTION_USAGE,
                                    (grpc_socket_mutator*)&mutator)));
 
   mutator.option_value = IPTOS_RELIABILITY;
-  GPR_ASSERT(GRPC_LOG_IF_ERROR(
+  ASSERT_TRUE(GRPC_LOG_IF_ERROR(
       "set_socket_with_mutator",
       grpc_set_socket_with_mutator(sock, GRPC_FD_CLIENT_CONNECTION_USAGE,
                                    (grpc_socket_mutator*)&mutator)));
@@ -129,40 +131,43 @@ static void test_with_vtable(const grpc_socket_mutator_vtable* vtable) {
   auto err = grpc_set_socket_with_mutator(
       sock, GRPC_FD_CLIENT_CONNECTION_USAGE,
       reinterpret_cast<grpc_socket_mutator*>(&mutator));
-  GPR_ASSERT(!GRPC_ERROR_IS_NONE(err));
+  ASSERT_FALSE(GRPC_ERROR_IS_NONE(err));
   GRPC_ERROR_UNREF(err);
 }
 
-int main(int argc, char** argv) {
+TEST(SocketUtilsTest, MainTest) {
   int sock;
-  grpc::testing::TestEnvironment env(&argc, argv);
 
   sock = socket(PF_INET, SOCK_STREAM, 0);
-  GPR_ASSERT(sock > 0);
+  ASSERT_GT(sock, 0);
 
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("set_socket_nonblocking",
-                               grpc_set_socket_nonblocking(sock, 1)));
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("set_socket_nonblocking",
-                               grpc_set_socket_nonblocking(sock, 0)));
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("set_socket_cloexec",
-                               grpc_set_socket_cloexec(sock, 1)));
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("set_socket_cloexec",
-                               grpc_set_socket_cloexec(sock, 0)));
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("set_socket_reuse_addr",
-                               grpc_set_socket_reuse_addr(sock, 1)));
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("set_socket_reuse_addr",
-                               grpc_set_socket_reuse_addr(sock, 0)));
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("set_socket_low_latency",
-                               grpc_set_socket_low_latency(sock, 1)));
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("set_socket_low_latency",
-                               grpc_set_socket_low_latency(sock, 0)));
+  ASSERT_TRUE(GRPC_LOG_IF_ERROR("set_socket_nonblocking",
+                                grpc_set_socket_nonblocking(sock, 1)));
+  ASSERT_TRUE(GRPC_LOG_IF_ERROR("set_socket_nonblocking",
+                                grpc_set_socket_nonblocking(sock, 0)));
+  ASSERT_TRUE(GRPC_LOG_IF_ERROR("set_socket_cloexec",
+                                grpc_set_socket_cloexec(sock, 1)));
+  ASSERT_TRUE(GRPC_LOG_IF_ERROR("set_socket_cloexec",
+                                grpc_set_socket_cloexec(sock, 0)));
+  ASSERT_TRUE(GRPC_LOG_IF_ERROR("set_socket_reuse_addr",
+                                grpc_set_socket_reuse_addr(sock, 1)));
+  ASSERT_TRUE(GRPC_LOG_IF_ERROR("set_socket_reuse_addr",
+                                grpc_set_socket_reuse_addr(sock, 0)));
+  ASSERT_TRUE(GRPC_LOG_IF_ERROR("set_socket_low_latency",
+                                grpc_set_socket_low_latency(sock, 1)));
+  ASSERT_TRUE(GRPC_LOG_IF_ERROR("set_socket_low_latency",
+                                grpc_set_socket_low_latency(sock, 0)));
 
   test_with_vtable(&mutator_vtable);
   test_with_vtable(&mutator_vtable2);
 
   close(sock);
+}
 
-  return 0;
+int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(&argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }
 
 #else /* GRPC_POSIX_SOCKET_UTILS_COMMON */
