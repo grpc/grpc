@@ -24,24 +24,21 @@ grpc_package(
 grpc_cc_library(
     name = "common_closures",
     hdrs = ["common_closures.h"],
-    external_deps = [
-        "absl/functional:any_invocable",
+    external_deps = ["absl/functional:any_invocable"],
+    deps = [
+        "//:event_engine_base_hdrs",
+        "//:gpr_platform",
     ],
 )
 
 grpc_cc_test(
     name = "common_closures_test",
     srcs = ["common_closures_test.cc"],
-    external_deps = [
-        "absl/functional:any_invocable",
-        "gtest",
-    ],
+    external_deps = ["gtest"],
     deps = [
         "common_closures",
         "//:gpr_platform",
-        "//:grpc",
         "//:grpc_base",
-        "//test/core/util:grpc_test_util_unsecure",
     ],
 )
 
