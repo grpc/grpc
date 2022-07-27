@@ -22,14 +22,15 @@ grpc_cc_library(
     name = "memstats",
     testonly = 1,
     srcs = [
+        "memstats.cc",
         "memstats.h",
-        "memstats.cc"],
+    ],
     hdrs = ["memstats.h"],
     external_deps = [
-        "absl/types:optional"
+        "absl/types:optional",
     ],
     deps = [
-        "//:gpr"
+        "//:gpr",
     ],
 )
 

@@ -15,9 +15,12 @@
 #include "test/core/memory_usage/memstats.h"
 
 #include <unistd.h>
+
 #include <fstream>
-#include <iostream>
+#include <string>
+
 #include "absl/strings/str_cat.h"
+
 #include <grpc/support/log.h>
 
 long GetMemUsage(absl::optional<int> pid) {
@@ -44,7 +47,7 @@ long GetMemUsage(absl::optional<int> pid) {
   stat_stream.close();
 
   // pid does not connect to an existing process
-  GPR_ASSERT(state != "");
+  GPR_ASSERT(!state.empty());
   /*if (state == "") {
     printf("PID does not exist\n");
     return 0;
