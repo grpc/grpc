@@ -21,6 +21,8 @@
 
 #include <grpc/event_engine/event_engine.h>
 
+#include "test/core/util/test_config.h"
+
 namespace grpc_event_engine {
 namespace experimental {
 

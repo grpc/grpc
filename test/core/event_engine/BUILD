@@ -39,6 +39,7 @@ grpc_cc_test(
         "common_closures",
         "//:gpr_platform",
         "//:grpc_base",
+        "//test/core/util:grpc_test_util_unsecure",
     ],
 )
 
