@@ -11,8 +11,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef GRPC_TEST_CORE_EVENT_ENGINE_WINDOWS_SELF_DELETING_CLOSURE_H
-#define GRPC_TEST_CORE_EVENT_ENGINE_WINDOWS_SELF_DELETING_CLOSURE_H
+
+#ifndef GRPC_TEST_CORE_EVENT_ENGINE_UTIL_H
+#define GRPC_TEST_CORE_EVENT_ENGINE_UTIL_H
 
 #include <grpc/support/port_platform.h>
 
@@ -23,11 +24,30 @@
 namespace grpc_event_engine {
 namespace experimental {
 
+class BasicClosure : public EventEngine::Closure {
+ public:
+  explicit BasicClosure(absl::AnyInvocable<void()> cb) : cb_(std::move(cb)) {}
+  void Run() { cb_(); }
+
+ private:
+  absl::AnyInvocable<void()> cb_;
+};
+
 class SelfDeletingClosure : public EventEngine::Closure {
  public:
+  // Creates a SelfDeletingClosure.
+  // The closure will be deleted after Run is called.
   static Closure* Create(absl::AnyInvocable<void()> cb) {
-    return new SelfDeletingClosure(std::move(cb));
+    return new SelfDeletingClosure(std::move(cb), nullptr);
   }
+  // Creates a SelfDeletingClosure with a custom destructor.
+  static Closure* Create(absl::AnyInvocable<void()> cb,
+                         absl::AnyInvocable<void()> dest_cb) {
+    return new SelfDeletingClosure(std::move(cb), std::move(dest_cb));
+  }
+  virtual ~SelfDeletingClosure() {
+    if (dest_cb_) dest_cb_();
+  };
 
   void Run() {
     cb_();
@@ -35,12 +55,14 @@ class SelfDeletingClosure : public EventEngine::Closure {
   }
 
  private:
-  explicit SelfDeletingClosure(absl::AnyInvocable<void()> cb)
-      : cb_(std::move(cb)) {}
+  explicit SelfDeletingClosure(absl::AnyInvocable<void()> cb,
+                               absl::AnyInvocable<void()> dest_cb)
+      : cb_(std::move(cb)), dest_cb_(std::move(dest_cb)) {}
   absl::AnyInvocable<void()> cb_;
+  absl::AnyInvocable<void()> dest_cb_;
 };
 
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_TEST_CORE_EVENT_ENGINE_WINDOWS_SELF_DELETING_CLOSURE_H
+#endif  // GRPC_TEST_CORE_EVENT_ENGINE_UTIL_H

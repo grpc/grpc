@@ -33,9 +33,14 @@ class Promise {
   // The getter will wait until the setter has been called, and will return the
   // value passed during Set.
   T& Get() {
+    return WaitWithTimeout(absl::Hours(1));
+  }
+  // The getter will wait with timeout until the setter has been called, and
+  // will return the value passed during Set.
+  T& WaitWithTimeout(absl::Duration d) {
     grpc_core::MutexLock lock(&mu_);
     if (!set_) {
-      cv_.Wait(&mu_);
+      cv_.WaitWithTimeout(&mu_, d);
     }
     return val_;
   }

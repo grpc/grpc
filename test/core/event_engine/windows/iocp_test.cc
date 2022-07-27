@@ -31,9 +31,8 @@
 #include "src/core/lib/event_engine/windows/socket.h"
 #include "src/core/lib/event_engine/windows/windows_engine.h"
 #include "src/core/lib/iomgr/error.h"
-#include "test/core/event_engine/windows/basic_closure.h"
+#include "test/core/event_engine/common_closures.h"
 #include "test/core/event_engine/windows/create_sockpair.h"
-#include "test/core/event_engine/windows/self_deleting_closure.h"
 
 // DO NOT SUBMIT(hork): get sanitizers working
 

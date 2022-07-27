@@ -21,6 +21,30 @@ grpc_package(
     visibility = "tests",
 )
 
+grpc_cc_library(
+    name = "common_closures",
+    hdrs = ["common_closures.h"],
+    external_deps = [
+        "absl/functional:any_invocable",
+    ],
+)
+
+grpc_cc_test(
+    name = "common_closures_test",
+    srcs = ["common_closures_test.cc"],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "gtest",
+    ],
+    deps = [
+        "common_closures",
+        "//:gpr_platform",
+        "//:grpc",
+        "//:grpc_base",
+        "//test/core/util:grpc_test_util_unsecure",
+    ],
+)
+
 grpc_cc_test(
     name = "endpoint_config_test",
     srcs = ["endpoint_config_test.cc"],
