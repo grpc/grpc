@@ -1743,13 +1743,14 @@ src/core/lib/event_engine/default_event_engine_factory.cc \
 src/core/lib/event_engine/default_event_engine_factory.h \
 src/core/lib/event_engine/event_engine.cc \
 src/core/lib/event_engine/event_engine_factory.h \
+src/core/lib/event_engine/executor/executor.h \
+src/core/lib/event_engine/executor/threaded_executor.cc \
+src/core/lib/event_engine/executor/threaded_executor.h \
 src/core/lib/event_engine/handle_containers.h \
 src/core/lib/event_engine/memory_allocator.cc \
 src/core/lib/event_engine/poller.h \
 src/core/lib/event_engine/posix_engine/posix_engine.cc \
 src/core/lib/event_engine/posix_engine/posix_engine.h \
-src/core/lib/event_engine/thread_pool.cc \
-src/core/lib/event_engine/thread_pool.h \
 src/core/lib/event_engine/posix_engine/timer.cc \
 src/core/lib/event_engine/posix_engine/timer.h \
 src/core/lib/event_engine/posix_engine/timer_heap.cc \
@@ -1761,6 +1762,8 @@ src/core/lib/event_engine/resolved_address.cc \
 src/core/lib/event_engine/slice.cc \
 src/core/lib/event_engine/slice_buffer.cc \
 src/core/lib/event_engine/socket_notifier.h \
+src/core/lib/event_engine/thread_pool.cc \
+src/core/lib/event_engine/thread_pool.h \
 src/core/lib/event_engine/trace.cc \
 src/core/lib/event_engine/trace.h \
 src/core/lib/event_engine/utils.cc \

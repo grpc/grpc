@@ -2255,9 +2255,7 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/event_engine/executor/executor.h",
     ],
-    external_deps = [
-        "absl/functional:any_invocable",
-    ],
+    external_deps = ["absl/functional:any_invocable"],
     deps = [
         "event_engine_base_hdrs",
         "gpr_platform",
@@ -2272,9 +2270,7 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/event_engine/executor/threaded_executor.h",
     ],
-    external_deps = [
-        "absl/functional:any_invocable",
-    ],
+    external_deps = ["absl/functional:any_invocable"],
     deps = [
         "event_engine_base_hdrs",
         "event_engine_executor",
