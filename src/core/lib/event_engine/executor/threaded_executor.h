@@ -29,10 +29,10 @@ namespace experimental {
 
 class ThreadedExecutor : public Executor {
  public:
-  ThreadedExecutor(int reserve_threads);
-  ~ThreadedExecutor() = default;
-  void Run(EventEngine::Closure* closure);
-  void Run(absl::AnyInvocable<void()> closure);
+  explicit ThreadedExecutor(int reserve_threads);
+  ~ThreadedExecutor() override = default;
+  void Run(EventEngine::Closure* closure) override;
+  void Run(absl::AnyInvocable<void()> closure) override;
 
  private:
   ThreadPool thread_pool_;
