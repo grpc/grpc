@@ -28,6 +28,7 @@ grpc_cc_library(
     deps = [
         "//:event_engine_base_hdrs",
         "//:gpr_platform",
+        "//test/core/util:grpc_test_util_unsecure",
     ],
 )
 
@@ -39,7 +40,6 @@ grpc_cc_test(
         "common_closures",
         "//:gpr_platform",
         "//:grpc_base",
-        "//test/core/util:grpc_test_util_unsecure",
     ],
 )
 
