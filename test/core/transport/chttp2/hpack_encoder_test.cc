@@ -194,13 +194,10 @@ grpc_slice EncodeHeaderIntoBytes(
 static void verify(
     bool is_eof, const char* expected,
     const std::vector<std::pair<std::string, std::string>>& header_fields) {
-  const grpc_slice merged = EncodeHeaderIntoBytes(is_eof, header_fields);
-  const grpc_slice expect = parse_hexstring(expected);
+  const grpc_core::Slice merged(EncodeHeaderIntoBytes(is_eof, header_fields));
+  const grpc_core::Slice expect(parse_hexstring(expected));
 
   EXPECT_EQ(merged, expect);
-
-  grpc_slice_unref_internal(merged);
-  grpc_slice_unref_internal(expect);
 }
 
 TEST(HpackEncoderTest, TestBasicHeaders) {
