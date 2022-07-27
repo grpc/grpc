@@ -52,7 +52,6 @@
 
 #include "src/core/ext/xds/upb_utils.h"
 #include "src/core/ext/xds/xds_client.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json.h"
 
 // IWYU pragma: no_include "upb/msg_internal.h"
