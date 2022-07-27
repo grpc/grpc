@@ -34,7 +34,6 @@
 #include "absl/types/optional.h"
 
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/status.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/xds/upb_utils.h"
@@ -47,7 +46,6 @@
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 #define GRPC_XDS_INITIAL_CONNECT_BACKOFF_SECONDS 1
@@ -973,9 +971,9 @@ void XdsClient::ChannelState::AdsCallState::OnRecvMessage(
       state.nonce = result.nonce;
       // If we got an error, set state.error so that we'll NACK the update.
       if (!result.errors.empty()) {
-        state.status = absl::UnavailableError(absl::StrCat(
-            "xDS response validation errors: [",
-            absl::StrJoin(result.errors, "; "), "]"));
+        state.status = absl::UnavailableError(
+            absl::StrCat("xDS response validation errors: [",
+                         absl::StrJoin(result.errors, "; "), "]"));
         gpr_log(GPR_ERROR,
                 "[xds_client %p] xds server %s: ADS response invalid for "
                 "resource "
