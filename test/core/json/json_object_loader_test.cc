@@ -36,6 +36,7 @@ struct TestStruct1 {
   uint32_t c = 2;
   std::string x;
   Duration d;
+  Json j;
 
   static const JsonLoaderInterface* JsonLoader() {
     static const auto loader = JsonObjectLoader<TestStruct1>()
@@ -44,6 +45,7 @@ struct TestStruct1 {
                                    .OptionalField("c", &TestStruct1::c)
                                    .Field("x", &TestStruct1::x)
                                    .OptionalField("d", &TestStruct1::d)
+                                   .OptionalField("j", &TestStruct1::j)
                                    .Finish();
     return &loader;
   }
@@ -101,13 +103,15 @@ struct TestPostLoadStruct1 {
 TEST(JsonObjectLoaderTest, LoadTestStruct1) {
   {
     auto s = Parse<TestStruct1>(
-        "{\"a\":1,\"b\":\"2\",\"c\":3,\"x\":\"foo\",\"d\":\"1.3s\"}");
+        "{\"a\":1,\"b\":\"2\",\"c\":3,\"x\":\"foo\",\"d\":\"1.3s\","
+        "\"j\":{\"foo\":\"bar\"}}");
     ASSERT_TRUE(s.ok()) << s.status();
     EXPECT_EQ(s->a, 1);
     EXPECT_EQ(s->b, 2);
     EXPECT_EQ(s->c, 3);
     EXPECT_EQ(s->x, "foo");
     EXPECT_EQ(s->d, Duration::Milliseconds(1300));
+    EXPECT_EQ(s->j.Dump(), "{\"foo\":\"bar\"}");
   }
   {
     auto s = Parse<TestStruct1>("{\"a\":7, \"x\":\"bar\"}");

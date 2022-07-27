@@ -110,6 +110,11 @@ void LoadString::LoadInto(const std::string& value, void* dst,
   *static_cast<std::string*>(dst) = value;
 }
 
+void LoadUnprocessedJson::LoadInto(const Json& value, void* dst,
+                                   ErrorList*) const {
+  *static_cast<Json*>(dst) = value;
+}
+
 void LoadVector::LoadInto(const Json& json, void* dst,
                           ErrorList* errors) const {
   if (json.type() != Json::Type::ARRAY) {
