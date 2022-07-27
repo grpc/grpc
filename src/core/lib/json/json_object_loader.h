@@ -24,6 +24,8 @@
 #include <vector>
 
 #include "absl/meta/type_traits.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/string_view.h"
 
@@ -57,8 +59,7 @@
 //     void JsonPostLoad(const Json& source, ErrorList* errors) { ++a; }
 //   };
 // Now we can load Foo objects from JSON:
-//   ErrorList errors;
-//   Foo foo = LoadFromJson<Foo>(json, &errors);
+//   absl::StatusOr<Foo> foo = LoadFromJson<Foo>(json);
 namespace grpc_core {
 
 // A list of errors that occurred during JSON parsing.
@@ -72,8 +73,8 @@ class ErrorList {
   // Record that we've encountered an error.
   void AddError(absl::string_view error) GPR_ATTRIBUTE_NOINLINE;
 
-  // Return the list of errors.
-  const std::vector<std::string>& errors() const { return errors_; }
+  // Returns the resulting status of parsing.
+  absl::Status status() const;
 
   // Return true if there are no errors.
   bool ok() const { return errors_.empty(); }
@@ -399,9 +400,11 @@ using JsonObjectLoader = json_detail::JsonObjectLoader<T>;
 using JsonLoaderInterface = json_detail::LoaderInterface;
 
 template <typename T>
-T LoadFromJson(const Json& json, ErrorList* error_list) {
+absl::StatusOr<T> LoadFromJson(const Json& json) {
+  ErrorList error_list;
   T result;
-  json_detail::LoaderForType<T>()->LoadInto(json, &result, error_list);
+  json_detail::LoaderForType<T>()->LoadInto(json, &result, &error_list);
+  if (!error_list.ok()) return error_list.status();
   return result;
 }
 

@@ -22,12 +22,12 @@ namespace grpc_core {
 namespace {
 
 template <typename T>
-T Parse(const std::string& json, ErrorList* errors) {
+absl::StatusOr<T> Parse(const std::string& json) {
   grpc_error_handle error = GRPC_ERROR_NONE;
   auto parsed = Json::Parse(json, &error);
   EXPECT_EQ(error, GRPC_ERROR_NONE)
       << " parsing: " << json << "  error: " << grpc_error_std_string(error);
-  return LoadFromJson<T>(parsed, errors);
+  return LoadFromJson<T>(parsed);
 }
 
 struct TestStruct1 {
@@ -98,113 +98,107 @@ struct TestPostLoadStruct1 {
 
 TEST(JsonObjectLoaderTest, LoadTestStruct1) {
   {
-    ErrorList errors;
     auto s = Parse<TestStruct1>(
-        "{\"a\":1,\"b\":2,\"c\":3,\"x\":\"foo\",\"d\":\"1.3s\"}", &errors);
-    EXPECT_EQ(s.a, 1);
-    EXPECT_EQ(s.b, 2);
-    EXPECT_EQ(s.c, 3);
-    EXPECT_EQ(s.x, "foo");
-    EXPECT_EQ(s.d, Duration::Milliseconds(1300));
-    EXPECT_EQ(errors.errors().size(), 0);
+        "{\"a\":1,\"b\":2,\"c\":3,\"x\":\"foo\",\"d\":\"1.3s\"}");
+    ASSERT_TRUE(s.ok()) << s.status();
+    EXPECT_EQ(s->a, 1);
+    EXPECT_EQ(s->b, 2);
+    EXPECT_EQ(s->c, 3);
+    EXPECT_EQ(s->x, "foo");
+    EXPECT_EQ(s->d, Duration::Milliseconds(1300));
   }
   {
-    ErrorList errors;
-    auto s = Parse<TestStruct1>("{\"a\":7, \"x\":\"bar\"}", &errors);
-    EXPECT_EQ(s.a, 7);
-    EXPECT_EQ(s.b, 1);
-    EXPECT_EQ(s.c, 2);
-    EXPECT_EQ(s.x, "bar");
-    EXPECT_EQ(errors.errors().size(), 0);
+    auto s = Parse<TestStruct1>("{\"a\":7, \"x\":\"bar\"}");
+    ASSERT_TRUE(s.ok()) << s.status();
+    EXPECT_EQ(s->a, 7);
+    EXPECT_EQ(s->b, 1);
+    EXPECT_EQ(s->c, 2);
+    EXPECT_EQ(s->x, "bar");
   }
   {
-    ErrorList errors;
-    auto s = Parse<TestStruct1>("{\"b\":\"foo\",\"x\":42}", &errors);
-    EXPECT_EQ(absl::StrJoin(errors.errors(), "\n"),
-              "field:.a error:does not exist.\n"
-              "field:.b error:is not a number.\n"
-              "field:.x error:is not a string.");
+    auto s = Parse<TestStruct1>("{\"b\":\"foo\",\"x\":42}");
+    EXPECT_EQ(s.status().code(), absl::StatusCode::kInvalidArgument);
+    EXPECT_EQ(s.status().message(),
+              "errors validating JSON: ["
+              "field:a error:does not exist; "
+              "field:b error:is not a number; "
+              "field:x error:is not a string]") << s.status();
   }
 }
 
 TEST(JsonObjectLoaderTest, LoadPostLoadTestStruct1) {
   {
-    ErrorList errors;
     auto s = Parse<TestPostLoadStruct1>(
-        "{\"a\":1,\"b\":2,\"c\":3,\"x\":\"foo\",\"d\":\"1.3s\"}", &errors);
-    EXPECT_EQ(s.a, 2);
-    EXPECT_EQ(s.b, 2);
-    EXPECT_EQ(s.c, 3);
-    EXPECT_EQ(s.x, "foo");
-    EXPECT_EQ(s.d, Duration::Milliseconds(1300));
-    EXPECT_EQ(errors.errors().size(), 0);
+        "{\"a\":1,\"b\":2,\"c\":3,\"x\":\"foo\",\"d\":\"1.3s\"}");
+    ASSERT_TRUE(s.ok()) << s.status();
+    EXPECT_EQ(s->a, 2);
+    EXPECT_EQ(s->b, 2);
+    EXPECT_EQ(s->c, 3);
+    EXPECT_EQ(s->x, "foo");
+    EXPECT_EQ(s->d, Duration::Milliseconds(1300));
   }
 }
 
 TEST(JsonObjectLoaderTest, LoadTestStruct2) {
   {
-    ErrorList errors;
     auto s = Parse<TestStruct2>(
-        "{\"a\":[{\"a\":1,\"b\":2,\"c\":3,\"x\":\"foo\"}],\"b\":[1,2,3]}",
-        &errors);
-    EXPECT_EQ(s.a.size(), 1);
-    EXPECT_EQ(s.a[0].a, 1);
-    EXPECT_EQ(s.a[0].b, 2);
-    EXPECT_EQ(s.a[0].c, 3);
-    EXPECT_EQ(s.a[0].x, "foo");
-    EXPECT_EQ(s.b.size(), 3);
-    EXPECT_EQ(s.b[0], 1);
-    EXPECT_EQ(s.b[1], 2);
-    EXPECT_EQ(s.b[2], 3);
-    EXPECT_EQ(errors.errors().size(), 0);
+        "{\"a\":[{\"a\":1,\"b\":2,\"c\":3,\"x\":\"foo\"}],\"b\":[1,2,3]}");
+    ASSERT_TRUE(s.ok()) << s.status();
+    EXPECT_EQ(s->a.size(), 1);
+    EXPECT_EQ(s->a[0].a, 1);
+    EXPECT_EQ(s->a[0].b, 2);
+    EXPECT_EQ(s->a[0].c, 3);
+    EXPECT_EQ(s->a[0].x, "foo");
+    EXPECT_EQ(s->b.size(), 3);
+    EXPECT_EQ(s->b[0], 1);
+    EXPECT_EQ(s->b[1], 2);
+    EXPECT_EQ(s->b[2], 3);
   }
   {
-    ErrorList errors;
     auto s = Parse<TestStruct2>(
-        "{\"a\":[{\"a\":7, \"x\":\"bar\"}],\"b\":[1,2,3]}", &errors);
-    EXPECT_EQ(s.a.size(), 1);
-    EXPECT_EQ(s.a[0].a, 7);
-    EXPECT_EQ(s.a[0].b, 1);
-    EXPECT_EQ(s.a[0].c, 2);
-    EXPECT_EQ(s.a[0].x, "bar");
-    EXPECT_EQ(s.b.size(), 3);
-    EXPECT_EQ(s.b[0], 1);
-    EXPECT_EQ(s.b[1], 2);
-    EXPECT_EQ(s.b[2], 3);
-    EXPECT_EQ(errors.errors().size(), 0);
+        "{\"a\":[{\"a\":7, \"x\":\"bar\"}],\"b\":[1,2,3]}");
+    ASSERT_TRUE(s.ok()) << s.status();
+    EXPECT_EQ(s->a.size(), 1);
+    EXPECT_EQ(s->a[0].a, 7);
+    EXPECT_EQ(s->a[0].b, 1);
+    EXPECT_EQ(s->a[0].c, 2);
+    EXPECT_EQ(s->a[0].x, "bar");
+    EXPECT_EQ(s->b.size(), 3);
+    EXPECT_EQ(s->b[0], 1);
+    EXPECT_EQ(s->b[1], 2);
+    EXPECT_EQ(s->b[2], 3);
   }
   {
-    ErrorList errors;
     auto s = Parse<TestStruct2>(
-        "{\"a\":[{\"a\":\"7\", \"x\":\"bar\"}],\"b\":[1,\"2\",3]}", &errors);
-    EXPECT_EQ(absl::StrJoin(errors.errors(), "\n"),
-              "field:.a[0].a error:is not a number.\n"
-              "field:.b[1] error:is not a number.");
+        "{\"a\":[{\"a\":\"7\", \"x\":\"bar\"}],\"b\":[1,\"2\",3]}");
+    EXPECT_EQ(s.status().code(), absl::StatusCode::kInvalidArgument);
+    EXPECT_EQ(s.status().message(),
+              "errors validating JSON: ["
+              "field:a[0].a error:is not a number; "
+              "field:b[1] error:is not a number]") << s.status();
   }
 }
 
 TEST(JsonObjectLoaderTest, LoadTestStruct3) {
   {
-    ErrorList errors;
     auto s = Parse<TestStruct3>(
         "{\"a\":{\"k1\":{\"a\":7, \"x\":\"bar\"}, "
         "\"k2\":{\"a\":1,\"b\":2,\"c\":3,\"x\":\"foo\"}}, "
-        "\"b\":{\"k1\":1,\"k2\":2,\"k3\":3}}",
-        &errors);
-    EXPECT_EQ(s.a.size(), 2);
-    EXPECT_EQ(s.a["k1"].a, 7);
-    EXPECT_EQ(s.a["k1"].b, 1);
-    EXPECT_EQ(s.a["k1"].c, 2);
-    EXPECT_EQ(s.a["k1"].x, "bar");
-    EXPECT_EQ(s.a["k2"].a, 1);
-    EXPECT_EQ(s.a["k2"].b, 2);
-    EXPECT_EQ(s.a["k2"].c, 3);
-    EXPECT_EQ(s.a["k2"].x, "foo");
-    EXPECT_EQ(s.b.size(), 3);
-    EXPECT_EQ(s.b["k1"], 1);
-    EXPECT_EQ(s.b["k2"], 2);
-    EXPECT_EQ(s.b["k3"], 3);
-    EXPECT_EQ(errors.errors().size(), 0);
+        "\"b\":{\"k1\":1,\"k2\":2,\"k3\":3}}");
+    ASSERT_TRUE(s.ok()) << s.status();
+    EXPECT_EQ(s->a.size(), 2);
+    EXPECT_EQ(s->a["k1"].a, 7);
+    EXPECT_EQ(s->a["k1"].b, 1);
+    EXPECT_EQ(s->a["k1"].c, 2);
+    EXPECT_EQ(s->a["k1"].x, "bar");
+    EXPECT_EQ(s->a["k2"].a, 1);
+    EXPECT_EQ(s->a["k2"].b, 2);
+    EXPECT_EQ(s->a["k2"].c, 3);
+    EXPECT_EQ(s->a["k2"].x, "foo");
+    EXPECT_EQ(s->b.size(), 3);
+    EXPECT_EQ(s->b["k1"], 1);
+    EXPECT_EQ(s->b["k2"], 2);
+    EXPECT_EQ(s->b["k3"], 3);
   }
 }
 
