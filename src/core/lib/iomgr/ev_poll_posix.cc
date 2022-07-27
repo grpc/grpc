@@ -615,7 +615,6 @@ static uint32_t fd_begin_poll(grpc_fd* fd, grpc_pollset* pollset,
 
   /* if we are shutdown, then don't add to the watcher set */
   if (fd->shutdown) {
-    watcher->fd = nullptr;
     watcher->pollset = nullptr;
     watcher->worker = nullptr;
     gpr_mu_unlock(&fd->mu);
@@ -1030,7 +1029,8 @@ static grpc_error_handle pollset_work(grpc_pollset* pollset,
         }
 
         for (i = 1; i < pfd_count; i++) {
-          if (watchers[i].fd == nullptr) {
+          if (watchers[i].pollset == nullptr) {
+            watchers[i].fd = nullptr;
             fd_end_poll(&watchers[i], 0, 0);
           } else {
             // Wake up all the file descriptors, if we have an invalid one
@@ -1040,6 +1040,9 @@ static grpc_error_handle pollset_work(grpc_pollset* pollset,
         }
       } else if (r == 0) {
         for (i = 1; i < pfd_count; i++) {
+          if (watchers[i].pollset == nullptr) {
+            watchers[i].fd = nullptr;
+          }
           fd_end_poll(&watchers[i], 0, 0);
         }
       } else {
@@ -1051,8 +1054,13 @@ static grpc_error_handle pollset_work(grpc_pollset* pollset,
               &error, grpc_wakeup_fd_consume_wakeup(&worker.wakeup_fd->fd));
         }
         for (i = 1; i < pfd_count; i++) {
-          if (watchers[i].fd == nullptr) {
+          if (watchers[i].pollset == nullptr) {
+            grpc_fd* fd = watchers[i].fd;
+            watchers[i].fd = nullptr;
             fd_end_poll(&watchers[i], 0, 0);
+            if (pfds[i].revents & POLLHUP) {
+              gpr_atm_no_barrier_store(&fd->pollhup, 1);
+            }
           } else {
             if (GRPC_TRACE_FLAG_ENABLED(grpc_polling_trace)) {
               gpr_log(GPR_INFO, "%p got_event: %d r:%d w:%d [%d]", pollset,
