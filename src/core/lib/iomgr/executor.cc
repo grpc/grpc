@@ -448,6 +448,4 @@ void Executor::SetThreadingDefault(bool enable) {
   executors[static_cast<size_t>(ExecutorType::DEFAULT)]->SetThreading(enable);
 }
 
-void grpc_executor_global_init() {}
-
 }  // namespace grpc_core

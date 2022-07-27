@@ -36,13 +36,11 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/fork.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/profiling/timers.h"
@@ -53,7 +51,6 @@
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/surface/completion_queue.h"
 
 /* (generated) built in registry of plugins */
 extern void grpc_register_built_in_plugins(void);
@@ -120,8 +117,6 @@ static void do_basic_init(void) {
   g_init_mu = new grpc_core::Mutex();
   g_shutting_down_cv = new grpc_core::CondVar();
   grpc_register_built_in_plugins();
-  grpc_cq_global_init();
-  grpc_core::grpc_executor_global_init();
   gpr_time_init();
 }
 
@@ -153,7 +148,6 @@ void grpc_init(void) {
     }
     grpc_core::Fork::GlobalInit();
     grpc_fork_handlers_auto_register();
-    grpc_stats_init();
     grpc_core::ApplicationCallbackExecCtx::GlobalInit();
     grpc_iomgr_init();
     gpr_timers_global_init();

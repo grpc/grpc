@@ -413,16 +413,23 @@ void AwsExternalAccountCredentials::OnRetrieveSigningKeysInternal(
   }
   absl::string_view response_body(ctx_->response.body,
                                   ctx_->response.body_length);
-  Json json = Json::Parse(response_body, &error);
-  if (!GRPC_ERROR_IS_NONE(error) || json.type() != Json::Type::OBJECT) {
+  auto json = Json::Parse(response_body);
+  if (!json.ok()) {
     FinishRetrieveSubjectToken(
-        "", GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                "Invalid retrieve signing keys response.", &error, 1));
-    GRPC_ERROR_UNREF(error);
+        "", GRPC_ERROR_CREATE_FROM_CPP_STRING(
+                absl::StrCat("Invalid retrieve signing keys response: ",
+                             json.status().ToString())));
     return;
   }
-  auto it = json.object_value().find("AccessKeyId");
-  if (it != json.object_value().end() &&
+  if (json->type() != Json::Type::OBJECT) {
+    FinishRetrieveSubjectToken("",
+                               GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                   "Invalid retrieve signing keys response: "
+                                   "JSON type is not object"));
+    return;
+  }
+  auto it = json->object_value().find("AccessKeyId");
+  if (it != json->object_value().end() &&
       it->second.type() == Json::Type::STRING) {
     access_key_id_ = it->second.string_value();
   } else {
@@ -431,8 +438,8 @@ void AwsExternalAccountCredentials::OnRetrieveSigningKeysInternal(
                 "Missing or invalid AccessKeyId in %s.", response_body)));
     return;
   }
-  it = json.object_value().find("SecretAccessKey");
-  if (it != json.object_value().end() &&
+  it = json->object_value().find("SecretAccessKey");
+  if (it != json->object_value().end() &&
       it->second.type() == Json::Type::STRING) {
     secret_access_key_ = it->second.string_value();
   } else {
@@ -441,8 +448,8 @@ void AwsExternalAccountCredentials::OnRetrieveSigningKeysInternal(
                 "Missing or invalid SecretAccessKey in %s.", response_body)));
     return;
   }
-  it = json.object_value().find("Token");
-  if (it != json.object_value().end() &&
+  it = json->object_value().find("Token");
+  if (it != json->object_value().end() &&
       it->second.type() == Json::Type::STRING) {
     token_ = it->second.string_value();
   } else {

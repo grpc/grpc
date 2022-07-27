@@ -999,12 +999,13 @@ ClientChannel::ClientChannel(grpc_channel_element_args* args,
       channel_args_.GetString(GRPC_ARG_SERVICE_CONFIG);
   if (!service_config_json.has_value()) service_config_json = "{}";
   *error = GRPC_ERROR_NONE;
-  default_service_config_ =
-      ServiceConfigImpl::Create(channel_args_, *service_config_json, error);
-  if (!GRPC_ERROR_IS_NONE(*error)) {
-    default_service_config_.reset();
+  auto service_config =
+      ServiceConfigImpl::Create(channel_args_, *service_config_json);
+  if (!service_config.ok()) {
+    *error = absl_status_to_grpc_error(service_config.status());
     return;
   }
+  default_service_config_ = std::move(*service_config);
   // Get URI to resolve, using proxy mapper if needed.
   absl::optional<std::string> server_uri =
       channel_args_.GetOwnedString(GRPC_ARG_SERVER_URI);
@@ -2159,7 +2160,9 @@ grpc_error_handle ClientChannel::CallData::ApplyServiceConfigToCallLocked(
     // Use the ConfigSelector to determine the config for the call.
     ConfigSelector::CallConfig call_config =
         config_selector->GetCallConfig({&path_, initial_metadata, arena_});
-    if (!GRPC_ERROR_IS_NONE(call_config.error)) return call_config.error;
+    if (!call_config.status.ok()) {
+      return absl_status_to_grpc_error(call_config.status);
+    }
     // Create a ClientChannelServiceConfigCallData for the call.  This stores
     // a ref to the ServiceConfig and caches the right set of parsed configs
     // to use for the call.  The ClientChannelServiceConfigCallData will store

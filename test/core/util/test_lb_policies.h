@@ -17,7 +17,16 @@
 #ifndef GRPC_TEST_CORE_UTIL_TEST_LB_POLICIES_H
 #define GRPC_TEST_CORE_UTIL_TEST_LB_POLICIES_H
 
-#include "src/core/ext/filters/client_channel/lb_policy.h"
+#include <functional>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
+
+#include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
+#include "src/core/lib/resolver/server_address.h"
 
 namespace grpc_core {
 

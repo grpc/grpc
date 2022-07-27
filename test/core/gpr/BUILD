@@ -162,6 +162,5 @@ grpc_cc_test(
     deps = [
         "//:gpr_platform",
         "//:useful",
-        "//test/core/util:grpc_suppressions",
     ],
 )

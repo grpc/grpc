@@ -19,31 +19,31 @@
 #include "test/core/end2end/cq_verifier.h"
 
 #include <inttypes.h>
-#include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
-#include <list>
+#include <algorithm>
 #include <string>
+#include <utility>
 #include <vector>
 
+#include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 
 #include <grpc/byte_buffer.h>
-#include <grpc/byte_buffer_reader.h>
+#include <grpc/compression.h>
 #include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
+#include <grpc/slice_buffer.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/compression/message_compress.h"
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/surface/event_string.h"
+#include "test/core/util/test_config.h"
 
 // a set of metadata we expect to find on an event
 typedef struct metadata {

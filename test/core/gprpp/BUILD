@@ -94,7 +94,6 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:bitset",
-        "//test/core/util:grpc_suppressions",
     ],
 )
 
@@ -107,7 +106,6 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:match",
-        "//test/core/util:grpc_suppressions",
     ],
 )
 
@@ -120,7 +118,6 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:overload",
-        "//test/core/util:grpc_suppressions",
     ],
 )
 
@@ -136,7 +133,6 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:table",
-        "//test/core/util:grpc_suppressions",
     ],
 )
 
@@ -290,7 +286,6 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:cpp_impl_of",
-        "//test/core/util:grpc_suppressions",
     ],
 )
 
@@ -305,7 +300,6 @@ grpc_cc_test(
         "//:chunked_vector",
         "//:gpr_base",
         "//:resource_quota",
-        "//test/core/util:grpc_suppressions",
     ],
 )
 
@@ -334,7 +328,6 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:time",
-        "//test/core/util:grpc_suppressions",
     ],
 )
 
@@ -347,7 +340,6 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:single_set_ptr",
-        "//test/core/util:grpc_suppressions",
     ],
 )
 
@@ -363,7 +355,6 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:unique_type_name",
-        "//test/core/util:grpc_suppressions",
     ],
 )
 

@@ -19,7 +19,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <stddef.h>
 #include <stdint.h>
 
 #include <algorithm>
@@ -43,7 +42,6 @@
 #include "src/core/ext/xds/xds_resource_type_impl.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/matchers/matchers.h"
 
 namespace grpc_core {
@@ -53,6 +51,10 @@ bool XdsRbacEnabled();
 struct XdsRouteConfigResource {
   using TypedPerFilterConfig =
       std::map<std::string, XdsHttpFilterImpl::FilterConfig>;
+
+  using ClusterSpecifierPluginMap =
+      std::map<std::string /*cluster_specifier_plugin_name*/,
+               std::string /*LB policy config*/>;
 
   struct RetryPolicy {
     internal::StatusCodeSet retry_on;
@@ -122,6 +124,14 @@ struct XdsRouteConfigResource {
         std::string ToString() const;
       };
 
+      struct ClusterName {
+        std::string cluster_name;
+
+        bool operator==(const ClusterName& other) const {
+          return cluster_name == other.cluster_name;
+        }
+      };
+
       struct ClusterWeight {
         std::string name;
         uint32_t weight;
@@ -134,14 +144,21 @@ struct XdsRouteConfigResource {
         std::string ToString() const;
       };
 
+      struct ClusterSpecifierPluginName {
+        std::string cluster_specifier_plugin_name;
+
+        bool operator==(const ClusterSpecifierPluginName& other) const {
+          return cluster_specifier_plugin_name ==
+                 other.cluster_specifier_plugin_name;
+        }
+      };
+
       std::vector<HashPolicy> hash_policies;
       absl::optional<RetryPolicy> retry_policy;
 
       // Action for this route.
-      static constexpr size_t kClusterIndex = 0;
-      static constexpr size_t kWeightedClustersIndex = 1;
-      static constexpr size_t kClusterSpecifierPluginIndex = 2;
-      absl::variant<std::string, std::vector<ClusterWeight>, std::string>
+      absl::variant<ClusterName, std::vector<ClusterWeight>,
+                    ClusterSpecifierPluginName>
           action;
       // Storing the timeout duration from route action:
       // RouteAction.max_stream_duration.grpc_timeout_header_max or
@@ -185,9 +202,7 @@ struct XdsRouteConfigResource {
   };
 
   std::vector<VirtualHost> virtual_hosts;
-  std::map<std::string /*cluster_specifier_plugin_name*/,
-           std::string /*LB policy config*/>
-      cluster_specifier_plugin_map;
+  ClusterSpecifierPluginMap cluster_specifier_plugin_map;
 
   bool operator==(const XdsRouteConfigResource& other) const {
     return virtual_hosts == other.virtual_hosts &&
@@ -195,10 +210,9 @@ struct XdsRouteConfigResource {
   }
   std::string ToString() const;
 
-  static grpc_error_handle Parse(
+  static absl::StatusOr<XdsRouteConfigResource> Parse(
       const XdsEncodingContext& context,
-      const envoy_config_route_v3_RouteConfiguration* route_config,
-      XdsRouteConfigResource* rds_update);
+      const envoy_config_route_v3_RouteConfiguration* route_config);
 };
 
 class XdsRouteConfigResourceType
