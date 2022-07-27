@@ -46,6 +46,7 @@
 //     int a;
 //     int b;
 //     static const JsonLoaderInterface* JsonLoader() {
+//       // Note: Field names must be string constants; they are not copied.
 //       static const auto loader = JsonObjectLoader<Foo>()
 //           .Field("a", &Foo::a)
 //           .Field("b", &Foo::b)
@@ -274,9 +275,7 @@ struct Element {
         member_offset(static_cast<uint16_t>(
             reinterpret_cast<uintptr_t>(&(static_cast<A*>(nullptr)->*p)))),
         optional(optional),
-        name{} {
-    strcpy(this->name, name);
-  }
+        name(name) {}
   // The loader for this field.
   const LoaderInterface* loader;
   // Offset into the destination object to store the field.
@@ -284,7 +283,7 @@ struct Element {
   // Is this field optional?
   bool optional;
   // The name of the field.
-  char name[13];
+  const char *name;
 };
 
 // Vec<T, kSize> provides a constant array type that can be appended to by
