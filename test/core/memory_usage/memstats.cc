@@ -48,10 +48,6 @@ long GetMemUsage(absl::optional<int> pid) {
 
   // pid does not connect to an existing process
   GPR_ASSERT(!state.empty());
-  /*if (state == "") {
-    printf("PID does not exist\n");
-    return 0;
-  }*/
 
   // Calculations in case x86-64 is configured to use 2MB pages
   long page_size_kb = sysconf(_SC_PAGE_SIZE) / 1024;

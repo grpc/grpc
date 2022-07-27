@@ -31,6 +31,10 @@ grpc_cc_library(
     ],
     deps = [
         "//:gpr",
+<<<<<<< HEAD
+=======
+        "//test/core/util:grpc_test_util_base"
+>>>>>>> cfd6c7b01d (Updating build file)
     ],
 )
 
