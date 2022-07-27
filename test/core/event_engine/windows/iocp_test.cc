@@ -27,9 +27,9 @@
 #include <grpc/grpc.h>
 #include <grpc/support/log_windows.h>
 
+#include "src/core/lib/event_engine/executor/threaded_executor.h"
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/windows/win_socket.h"
-#include "src/core/lib/event_engine/windows/windows_engine.h"
 #include "src/core/lib/iomgr/error.h"
 #include "test/core/event_engine/common_closures.h"
 #include "test/core/event_engine/windows/create_sockpair.h"
@@ -43,15 +43,15 @@ using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::IOCP;
 using ::grpc_event_engine::experimental::Poller;
 using ::grpc_event_engine::experimental::SelfDeletingClosure;
-using ::grpc_event_engine::experimental::WindowsEventEngine;
+using ::grpc_event_engine::experimental::ThreadedExecutor;
 using ::grpc_event_engine::experimental::WinSocket;
 }  // namespace
 
 class IOCPTest : public testing::Test {};
 
 TEST_F(IOCPTest, ClientReceivesNotificationOfServerSend) {
-  auto engine = absl::make_unique<WindowsEventEngine>();
-  IOCP iocp(engine.get());
+  ThreadedExecutor executor{2};
+  IOCP iocp(&executor);
   SOCKET sockpair[2];
   CreateSockpair(sockpair, iocp.GetDefaultSocketFlags());
   WinSocket* wrapped_client_socket =
@@ -114,17 +114,17 @@ TEST_F(IOCPTest, ClientReceivesNotificationOfServerSend) {
     wrapped_server_socket->NotifyOnWrite(on_write);
   }
   // Doing work for WSASend
-  auto work_result = iocp.Work(grpc_core::Duration::Seconds(10));
+  auto work_result = iocp.Work(std::chrono::seconds(10));
   ASSERT_TRUE(absl::holds_alternative<Poller::Events>(work_result));
   Poller::Events closures = absl::get<Poller::Events>(work_result);
   ASSERT_EQ(closures.size(), 1);
-  engine->Run(closures[0]);
+  executor.Run(closures[0]);
   // Doing work for WSARecv
-  work_result = iocp.Work(grpc_core::Duration::Seconds(10));
+  work_result = iocp.Work(std::chrono::seconds(10));
   ASSERT_TRUE(absl::holds_alternative<Poller::Events>(work_result));
   closures = absl::get<Poller::Events>(work_result);
   ASSERT_EQ(closures.size(), 1);
-  engine->Run(closures[0]);
+  executor.Run(closures[0]);
   // wait for the callbacks to run
   absl::Time deadline = absl::Now() + absl::Seconds(10);
   while (!read_called || !write_called) {
@@ -146,8 +146,8 @@ TEST_F(IOCPTest, ClientReceivesNotificationOfServerSend) {
 }
 
 TEST_F(IOCPTest, IocpWorkTimeoutDueToNoNotificationRegistered) {
-  auto engine = absl::make_unique<WindowsEventEngine>();
-  IOCP iocp(engine.get());
+  ThreadedExecutor executor{2};
+  IOCP iocp(&executor);
   SOCKET sockpair[2];
   CreateSockpair(sockpair, iocp.GetDefaultSocketFlags());
   WinSocket* wrapped_client_socket =
@@ -194,7 +194,7 @@ TEST_F(IOCPTest, IocpWorkTimeoutDueToNoNotificationRegistered) {
     EXPECT_EQ(status, 0);
   }
   // IOCP::Work without any notification callbacks should return no Events.
-  auto work_result = iocp.Work(grpc_core::Duration::Seconds(2));
+  auto work_result = iocp.Work(std::chrono::seconds(2));
   ASSERT_TRUE(absl::holds_alternative<Poller::Events>(work_result));
   Poller::Events closures = absl::get<Poller::Events>(work_result);
   ASSERT_EQ(closures.size(), 0);
@@ -216,15 +216,15 @@ TEST_F(IOCPTest, IocpWorkTimeoutDueToNoNotificationRegistered) {
 }
 
 TEST_F(IOCPTest, KickWorks) {
-  auto engine = absl::make_unique<WindowsEventEngine>();
-  IOCP iocp(engine.get());
+  ThreadedExecutor executor{2};
+  IOCP iocp(&executor);
   bool kicked;
-  engine->Run([&iocp, &kicked] {
+  executor.Run([&iocp, &kicked] {
     Poller::WorkResult result = iocp.Work(std::chrono::seconds(30));
     ASSERT_TRUE(absl::holds_alternative<Poller::Kicked>(result));
     kicked = true;
   });
-  engine->Run([&iocp] {
+  executor.Run([&iocp] {
     // give the worker thread a chance to start
     absl::SleepFor(absl::Milliseconds(42));
     iocp.Kick();
@@ -244,8 +244,8 @@ TEST_F(IOCPTest, KickThenShutdownCasusesNextWorkerToBeKicked) {
   // This documents the existing poller's behavior of maintaining a kick count,
   // but it's unclear if it's going to be needed.
   // TODO(hork): evaluate if a kick count is going to be useful.
-  auto engine = absl::make_unique<WindowsEventEngine>();
-  IOCP iocp(engine.get());
+  ThreadedExecutor executor{2};
+  IOCP iocp(&executor);
   // kick twice
   iocp.Kick();
   iocp.Kick();
@@ -260,8 +260,8 @@ TEST_F(IOCPTest, KickThenShutdownCasusesNextWorkerToBeKicked) {
 }
 
 TEST_F(IOCPTest, CrashOnWatchingAClosedSocket) {
-  auto engine = absl::make_unique<WindowsEventEngine>();
-  IOCP iocp(engine.get());
+  ThreadedExecutor executor{2};
+  IOCP iocp(&executor);
   SOCKET sockpair[2];
   CreateSockpair(sockpair, iocp.GetDefaultSocketFlags());
   closesocket(sockpair[0]);
@@ -286,16 +286,16 @@ TEST_F(IOCPTest, StressTestThousandsOfSockets) {
   for (int thread_n = 0; thread_n < thread_count; thread_n++) {
     threads.emplace_back([thread_n, sockets_per_thread, &read_count,
                           &write_count] {
-      auto engine = absl::make_unique<WindowsEventEngine>();
-      IOCP iocp(engine.get());
+      ThreadedExecutor executor{2};
+      IOCP iocp(&executor);
       // Start a looping worker thread with a moderate timeout
-      std::thread iocp_worker([&iocp, engine = engine.get()] {
+      std::thread iocp_worker([&iocp, &executor] {
         Poller::WorkResult result;
         do {
           result = iocp.Work(std::chrono::seconds(1));
           if (absl::holds_alternative<Poller::Events>(result)) {
             for (auto& event : absl::get<Poller::Events>(result)) {
-              engine->Run(event);
+              executor.Run(event);
             }
           }
         } while (!absl::holds_alternative<Poller::DeadlineExceeded>(result));

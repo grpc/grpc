@@ -17,6 +17,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log_windows.h>
 
+#include "src/core/lib/event_engine/executor/executor.h"
 #include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/event_engine/windows/win_socket.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -33,9 +34,9 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-WinSocket::WinSocket(SOCKET socket, EventEngine* event_engine) noexcept
+WinSocket::WinSocket(SOCKET socket, Executor* executor) noexcept
     : socket_(socket),
-      event_engine_(event_engine),
+      executor_(executor),
       read_info_(OpState(this)),
       write_info_(OpState(this)) {}
 
@@ -81,12 +82,12 @@ void WinSocket::NotifyOnReady(OpState& info, EventEngine::Closure* closure) {
   grpc_core::MutexLock lock(&mu_);
   if (IsShutdown()) {
     info.SetError(WSAESHUTDOWN);
-    event_engine_->Run(closure);
+    executor_->Run(closure);
     return;
   };
   if (info.has_pending_iocp_) {
     info.has_pending_iocp_ = false;
-    event_engine_->Run(closure);
+    executor_->Run(closure);
   } else {
     info.closure_ = closure;
   }
@@ -107,7 +108,7 @@ void WinSocket::OpState::SetReady() {
   grpc_core::MutexLock lock(&win_socket_->mu_);
   GPR_ASSERT(!has_pending_iocp_);
   if (closure_) {
-    win_socket_->event_engine_->Run(closure_);
+    win_socket_->executor_->Run(closure_);
   } else {
     has_pending_iocp_ = true;
   }

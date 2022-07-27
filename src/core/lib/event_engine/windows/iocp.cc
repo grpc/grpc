@@ -30,8 +30,8 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-IOCP::IOCP(EventEngine* event_engine) noexcept
-    : event_engine_(event_engine),
+IOCP::IOCP(Executor* executor) noexcept
+    : executor_(executor),
       iocp_handle_(CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL,
                                           (ULONG_PTR)NULL, 0)) {
   GPR_ASSERT(iocp_handle_);
@@ -42,7 +42,7 @@ IOCP::IOCP(EventEngine* event_engine) noexcept
 IOCP::~IOCP() {}
 
 WinSocket* IOCP::Watch(SOCKET socket) {
-  WinSocket* wrapped_socket = new WinSocket(socket, event_engine_);
+  WinSocket* wrapped_socket = new WinSocket(socket, executor_);
   HANDLE ret =
       CreateIoCompletionPort(reinterpret_cast<HANDLE>(socket), iocp_handle_,
                              reinterpret_cast<uintptr_t>(wrapped_socket), 0);

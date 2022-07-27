@@ -2278,8 +2278,8 @@ grpc_cc_library(
     deps = [
         "event_engine_base_hdrs",
         "event_engine_executor",
-        "gpr_platform",
         "event_engine_thread_pool",
+        "gpr_platform",
     ],
 )
 
@@ -2623,6 +2623,7 @@ grpc_cc_library(
     deps = [
         "error",
         "event_engine_base_hdrs",
+        "event_engine_executor",
         "event_engine_poller",
         "event_engine_socket_notifier",
         "event_engine_trace",

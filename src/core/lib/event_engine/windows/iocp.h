@@ -24,13 +24,14 @@
 
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/windows/win_socket.h"
+#include "src/core/lib/event_engine/executor/executor.h"
 
 namespace grpc_event_engine {
 namespace experimental {
 
 class IOCP final : public Poller {
  public:
-  explicit IOCP(EventEngine* event_engine) noexcept;
+  explicit IOCP(Executor* executor) noexcept;
   ~IOCP();
   // Not copyable
   IOCP(const IOCP&) = delete;
@@ -52,7 +53,7 @@ class IOCP final : public Poller {
   // Initialize default flags via checking platform support
   static DWORD WSASocketFlagsInit();
 
-  EventEngine* event_engine_;
+  Executor* executor_;
   HANDLE iocp_handle_;
   OVERLAPPED kick_overlap_;
   ULONG kick_token_;

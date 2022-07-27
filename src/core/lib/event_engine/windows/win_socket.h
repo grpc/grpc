@@ -23,6 +23,7 @@
 
 #include <grpc/event_engine/event_engine.h>
 
+#include "src/core/lib/event_engine/executor/executor.h"
 #include "src/core/lib/event_engine/socket_notifier.h"
 #include "src/core/lib/gprpp/sync.h"
 
@@ -37,7 +38,7 @@ class WinSocket final : public SocketNotifier {
     explicit OpState(WinSocket* win_socket) noexcept;
     // Signal a result has returned
     // If a callback is already primed for notification, it will be executed via
-    // the WinSocket's EventEngine. Otherwise, a "pending iocp" flag will
+    // the WinSocket's Executor. Otherwise, a "pending iocp" flag will
     // be set.
     void SetReady();
     // Set error results for a completed op
@@ -63,7 +64,7 @@ class WinSocket final : public SocketNotifier {
     int wsa_error_;
   };
 
-  WinSocket(SOCKET socket, EventEngine* event_engine) noexcept;
+  WinSocket(SOCKET socket, Executor* executor) noexcept;
   ~WinSocket();
   // Calling NotifyOnRead means either of two things:
   //  - The IOCP already completed in the background, and we need to call
@@ -99,7 +100,7 @@ class WinSocket final : public SocketNotifier {
   SOCKET socket_;
   grpc_core::Mutex mu_;
   bool is_shutdown_ ABSL_GUARDED_BY(mu_) = false;
-  EventEngine* event_engine_;
+  Executor* executor_;
   OpState read_info_ ABSL_GUARDED_BY(mu_);
   OpState write_info_ ABSL_GUARDED_BY(mu_);
 };

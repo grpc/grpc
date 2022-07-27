@@ -110,7 +110,6 @@ class WindowsEventEngine : public EventEngine {
 
   posix_engine::TimerManager timer_manager_;
   ThreadedExecutor executor_{2};
-
   IOCP iocp_;
 };
 
