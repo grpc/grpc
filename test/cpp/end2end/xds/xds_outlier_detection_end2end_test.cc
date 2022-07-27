@@ -1287,10 +1287,10 @@ TEST_P(OutlierDetectionTest, DisableOutlierDetectionWhileAddressesAreEjected) {
                  WaitForBackendOptions(), rpc_options1);
   // Cause an error and wait for 1 outlier detection interval to pass to cause
   // the backend to be ejected.
-  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::CANCELLED, "",
-                      RpcOptions()
-                          .set_metadata(std::move(metadata))
-                          .set_server_expected_error(StatusCode::CANCELLED));
+  CheckRpcSendFailure(
+      DEBUG_LOCATION, StatusCode::CANCELLED, "",
+      RpcOptions().set_metadata(metadata).set_server_expected_error(
+          StatusCode::CANCELLED));
   gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(100));
   ResetBackendCounters();
   // 1 backend is ejected all traffic going to the ejected backend should now
