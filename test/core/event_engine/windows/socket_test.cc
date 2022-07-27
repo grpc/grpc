@@ -61,6 +61,32 @@ TEST_F(SocketTest, ManualReadEventTriggeredWithoutIO) {
     }
   }
   ASSERT_TRUE(read_called);
+  wrapped_client_socket.MaybeShutdown(absl::CancelledError("done"));
+  wrapped_server_socket.MaybeShutdown(absl::CancelledError("done"));
+}
+
+TEST_F(SocketTest, NotificationCalledImmediatelyOnShutdownWinSocket) {
+  auto engine = absl::make_unique<WindowsEventEngine>();
+  SOCKET sockpair[2];
+  CreateSockpair(sockpair, IOCP::GetDefaultSocketFlags());
+  WinSocket wrapped_client_socket(sockpair[0], engine.get());
+  wrapped_client_socket.MaybeShutdown(absl::CancelledError("testing"));
+  bool read_called = false;
+  BasicClosure closure([&wrapped_client_socket, &read_called] {
+    ASSERT_EQ(wrapped_client_socket.read_info()->bytes_transferred(), 0);
+    ASSERT_EQ(wrapped_client_socket.read_info()->wsa_error(), WSAESHUTDOWN);
+    read_called = true;
+  });
+  wrapped_client_socket.NotifyOnRead(&closure);
+  absl::Time deadline = absl::Now() + absl::Seconds(3);
+  while (!read_called) {
+    absl::SleepFor(absl::Milliseconds(42));
+    if (deadline < absl::Now()) {
+      FAIL() << "Deadline exceeded";
+    }
+  }
+  ASSERT_TRUE(read_called);
+  closesocket(sockpair[1]);
 }
 
 int main(int argc, char** argv) {

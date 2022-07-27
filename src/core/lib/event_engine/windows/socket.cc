@@ -36,10 +36,12 @@ namespace experimental {
 WinSocket::WinSocket(SOCKET socket, EventEngine* event_engine) noexcept
     : socket_(socket),
       event_engine_(event_engine),
-      read_info_(OpInfo(this)),
-      write_info_(OpInfo(this)) {}
+      read_info_(OpState(this)),
+      write_info_(OpState(this)) {}
 
-WinSocket::~WinSocket() {}
+WinSocket::~WinSocket() {
+  GPR_ASSERT(is_shutdown_);
+}
 
 SOCKET WinSocket::socket() { return socket_; }
 
@@ -77,14 +79,18 @@ void WinSocket::MaybeShutdown(absl::Status why) {
   closesocket(socket_);
 }
 
-void WinSocket::NotifyOnReady(OpInfo& info,
-                              EventEngine::Closure* closure) {
+void WinSocket::NotifyOnReady(OpState& info, EventEngine::Closure* closure) {
   grpc_core::MutexLock lock(&mu_);
+  if (IsShutdown()) {
+    info.SetError(WSAESHUTDOWN);
+    event_engine_->Run(closure);
+    return;
+  };
   if (info.has_pending_iocp_) {
     info.has_pending_iocp_ = false;
     event_engine_->Run(closure);
   } else {
-    info.SetClosure(closure);
+    info.closure_ = closure;
   }
 }
 
@@ -96,10 +102,10 @@ void WinSocket::NotifyOnWrite(EventEngine::Closure* on_write) {
   NotifyOnReady(write_info_, on_write);
 }
 
-WinSocket::OpInfo::OpInfo(WinSocket* win_socket) noexcept
+WinSocket::OpState::OpState(WinSocket* win_socket) noexcept
     : win_socket_(win_socket), closure_(nullptr) {}
 
-void WinSocket::OpInfo::SetReady() {
+void WinSocket::OpState::SetReady() {
   grpc_core::MutexLock lock(&win_socket_->mu_);
   GPR_ASSERT(!has_pending_iocp_);
   if (closure_) {
@@ -109,12 +115,12 @@ void WinSocket::OpInfo::SetReady() {
   }
 }
 
-void WinSocket::OpInfo::SetError() {
+void WinSocket::OpState::SetError(int wsa_error) {
   bytes_transferred_ = 0;
-  wsa_error_ = WSA_OPERATION_ABORTED;
+  wsa_error_ = wsa_error;
 }
 
-void WinSocket::OpInfo::GetOverlappedResult() {
+void WinSocket::OpState::GetOverlappedResult() {
   DWORD flags = 0;
   DWORD bytes;
   BOOL success = WSAGetOverlappedResult(win_socket_->socket(), &overlapped_,
@@ -127,9 +133,11 @@ void WinSocket::SetReadable() { read_info_.SetReady(); }
 
 void WinSocket::SetWritable() { write_info_.SetReady(); }
 
-bool WinSocket::IsShutdown() { return is_shutdown_; }
+bool WinSocket::IsShutdown() {
+  return is_shutdown_;
+}
 
-WinSocket::OpInfo* WinSocket::GetOpInfoForOverlapped(OVERLAPPED* overlapped) {
+WinSocket::OpState* WinSocket::GetOpInfoForOverlapped(OVERLAPPED* overlapped) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {
     gpr_log(GPR_DEBUG,
             "WinSocket::%p looking for matching OVERLAPPED::%p. "

@@ -101,10 +101,10 @@ Poller::WorkResult IOCP::Work(EventEngine::Duration timeout) {
             overlapped);
   }
   WinSocket* socket = reinterpret_cast<WinSocket*>(completion_key);
-  WinSocket::OpInfo* info = socket->GetOpInfoForOverlapped(overlapped);
+  WinSocket::OpState* info = socket->GetOpInfoForOverlapped(overlapped);
   GPR_ASSERT(info != nullptr);
   if (socket->IsShutdown()) {
-    info->SetError();
+    info->SetError(WSAESHUTDOWN);
   } else {
     info->GetOverlappedResult();
   }

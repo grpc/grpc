@@ -31,32 +31,34 @@ namespace experimental {
 
 class WinSocket final : public SocketNotifier {
  public:
-  class OpInfo {
+  // State related to a Read or Write socket operation
+  class OpState {
    public:
-    explicit OpInfo(WinSocket* win_socket) noexcept;
-    // Signal an IOCP result has returned
+    explicit OpState(WinSocket* win_socket) noexcept;
+    // Signal a result has returned
     // If a callback is already primed for notification, it will be executed via
     // the WinSocket's EventEngine. Otherwise, a "pending iocp" flag will
     // be set.
     void SetReady();
     // Set error results for a completed op
-    void SetError();
+    void SetError(int wsa_error);
     // Retrieve results of overlapped operation (via Winsock API)
     void GetOverlappedResult();
-    // TODO(hork): consider if the socket can be TOLD to do an operation instead
-    // of leaking these internals.
+    // OVERLAPPED, needed for Winsock API calls
     OVERLAPPED* overlapped() { return &overlapped_; }
+    // Data from the previous operation, set via GetOverlappedResult
     DWORD bytes_transferred() const { return bytes_transferred_; }
+    // Previous error if set.
     int wsa_error() const { return wsa_error_; }
-    void SetClosure(EventEngine::Closure* closure) { closure_ = closure; }
     EventEngine::Closure* closure() { return closure_; }
 
    private:
     friend class WinSocket;
-    WinSocket* win_socket_;
+
     OVERLAPPED overlapped_;
-    EventEngine::Closure* closure_;
-    bool has_pending_iocp_{false};
+    WinSocket* win_socket_ = nullptr;
+    EventEngine::Closure* closure_ = nullptr;
+    bool has_pending_iocp_ = false;
     DWORD bytes_transferred_;
     int wsa_error_;
   };
@@ -78,28 +80,28 @@ class WinSocket final : public SocketNotifier {
   void MaybeShutdown(absl::Status why) override;
   bool IsShutdown() override;
 
-  // Return the appropriate OpInfo for a given OVERLAPPED
+  // Return the appropriate OpState for a given OVERLAPPED
   // Returns nullptr if the overlapped does not match either read or write ops.
-  OpInfo* GetOpInfoForOverlapped(OVERLAPPED* overlapped);
+  OpState* GetOpInfoForOverlapped(OVERLAPPED* overlapped);
   // -------------------------------------------------
   // TODO(hork): We need access to these for WSA* ops in TCP code.
-  // Maybe we can encapsulate these calls inside of the OpInfo class. Would need
+  // Maybe we can encapsulate these calls inside of the OpState class. Would need
   // to rename it.
-  OpInfo* read_info() { return &read_info_; }
-  OpInfo* write_info() { return &write_info_; }
+  OpState* read_info() { return &read_info_; }
+  OpState* write_info() { return &write_info_; }
   // -------------------------------------------------
   // Accessor method for underlying socket
   SOCKET socket();
 
  private:
-  void NotifyOnReady(OpInfo& info, EventEngine::Closure* callback);
+  void NotifyOnReady(OpState& info, EventEngine::Closure* callback);
 
   SOCKET socket_;
   grpc_core::Mutex mu_;
   bool is_shutdown_ ABSL_GUARDED_BY(mu_) = false;
   EventEngine* event_engine_;
-  OpInfo read_info_ ABSL_GUARDED_BY(mu_);
-  OpInfo write_info_ ABSL_GUARDED_BY(mu_);
+  OpState read_info_ ABSL_GUARDED_BY(mu_);
+  OpState write_info_ ABSL_GUARDED_BY(mu_);
 };
 
 // Attempt to configure default socket settings
