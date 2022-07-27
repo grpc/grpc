@@ -39,9 +39,7 @@ WinSocket::WinSocket(SOCKET socket, EventEngine* event_engine) noexcept
       read_info_(OpState(this)),
       write_info_(OpState(this)) {}
 
-WinSocket::~WinSocket() {
-  GPR_ASSERT(is_shutdown_);
-}
+WinSocket::~WinSocket() { GPR_ASSERT(is_shutdown_); }
 
 SOCKET WinSocket::socket() { return socket_; }
 
@@ -133,9 +131,7 @@ void WinSocket::SetReadable() { read_info_.SetReady(); }
 
 void WinSocket::SetWritable() { write_info_.SetReady(); }
 
-bool WinSocket::IsShutdown() {
-  return is_shutdown_;
-}
+bool WinSocket::IsShutdown() { return is_shutdown_; }
 
 WinSocket::OpState* WinSocket::GetOpInfoForOverlapped(OVERLAPPED* overlapped) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {

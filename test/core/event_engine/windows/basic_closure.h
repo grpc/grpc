@@ -26,7 +26,7 @@ namespace experimental {
 
 class BasicClosure : public EventEngine::Closure {
  public:
-  BasicClosure(absl::AnyInvocable<void()> cb) : cb_(std::move(cb)) {}
+  explicit BasicClosure(absl::AnyInvocable<void()> cb) : cb_(std::move(cb)) {}
   void Run() { cb_(); }
 
  private:

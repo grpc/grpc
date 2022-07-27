@@ -85,8 +85,8 @@ class WinSocket final : public SocketNotifier {
   OpState* GetOpInfoForOverlapped(OVERLAPPED* overlapped);
   // -------------------------------------------------
   // TODO(hork): We need access to these for WSA* ops in TCP code.
-  // Maybe we can encapsulate these calls inside of the OpState class. Would need
-  // to rename it.
+  // Maybe we can encapsulate these calls inside of the OpState class. Would
+  // need to rename it.
   OpState* read_info() { return &read_info_; }
   OpState* write_info() { return &write_info_; }
   // -------------------------------------------------
@@ -110,6 +110,6 @@ absl::Status PrepareSocket(SOCKET sock);
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif  // GPR_WINDOWS
+#endif
 
 #endif  // GRPC_CORE_LIB_EVENT_ENGINE_WINDOWS_SOCKET_H

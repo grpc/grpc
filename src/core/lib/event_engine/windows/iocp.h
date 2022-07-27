@@ -62,6 +62,6 @@ class IOCP final : public Poller {
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif  // GPR_WINDOWS
+#endif
 
 #endif  // GRPC_CORE_LIB_EVENT_ENGINE_WINDOWS_IOCP_H

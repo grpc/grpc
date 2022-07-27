@@ -35,7 +35,8 @@ class SelfDeletingClosure : public EventEngine::Closure {
   }
 
  private:
-  SelfDeletingClosure(absl::AnyInvocable<void()> cb) : cb_(std::move(cb)) {}
+  explicit SelfDeletingClosure(absl::AnyInvocable<void()> cb)
+      : cb_(std::move(cb)) {}
   absl::AnyInvocable<void()> cb_;
 };
 
