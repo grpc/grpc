@@ -34,7 +34,6 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json.h"
 #include "src/proto/grpc/lookup/v1/rls_config.upb.h"
 #include "src/proto/grpc/lookup/v1/rls_config.upbdefs.h"
@@ -93,7 +92,6 @@ XdsRouteLookupClusterSpecifierPlugin::GenerateLoadBalancingPolicyConfig(
   Json::Array policies;
   policies.emplace_back(std::move(policy));
   Json lb_policy_config(std::move(policies));
-  grpc_error_handle parse_error = GRPC_ERROR_NONE;
   // TODO(roth): If/when we ever add a second plugin, refactor this code
   // somehow such that we automatically validate the resulting config against
   // the gRPC LB policy registry instead of requiring each plugin to do that
