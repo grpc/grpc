@@ -153,7 +153,7 @@ class PollEventHandle : public EventHandle {
     absl::MutexLock lock(&mu_);
     return is_shutdown_;
   };
-  void ExecutePendingActions() {
+  inline void ExecutePendingActions() {
     int kick = 0;
     {
       absl::MutexLock lock(&mu_);

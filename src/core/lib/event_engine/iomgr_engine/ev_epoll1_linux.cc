@@ -108,7 +108,7 @@ class Epoll1EventHandle : public EventHandle {
   void SetWritable() override;
   void SetHasError() override;
   bool IsHandleShutdown() override;
-  void ExecutePendingActions() {
+  inline void ExecutePendingActions() {
     if (pending_actions_ & 1UL) {
       read_closure_->SetReady();
     }
