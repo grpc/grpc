@@ -34,8 +34,8 @@ static constexpr uint32_t EntriesForBytes(uint32_t bytes) noexcept {
   return (bytes + kEntryOverhead - 1) / kEntryOverhead;
 }
 
-static constexpr std::size_t SizeForEntry(std::size_t key_length,
-                                          std::size_t value_length) noexcept {
+static constexpr size_t SizeForEntry(size_t key_length,
+                                     size_t value_length) noexcept {
   return key_length + value_length + kEntryOverhead;
 }
 

@@ -523,7 +523,7 @@ void HPackCompressor::Framer::EncodeIndexedKeyWithBinaryValue(
 
 void HPackCompressor::Framer::EncodeRepeatingSliceValue(
     const absl::string_view& key, const Slice& slice, uint32_t* index,
-    std::size_t max_compression_size) {
+    size_t max_compression_size) {
   if (hpack_constants::SizeForEntry(key.size(), slice.size()) >
       max_compression_size) {
     EmitLitHdrWithBinaryStringKeyNotIdx(Slice::FromStaticString(key),

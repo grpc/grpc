@@ -157,7 +157,7 @@ class HPackCompressor {
 
     void EncodeRepeatingSliceValue(
         const absl::string_view& key, const Slice& slice, uint32_t* index,
-        std::size_t max_compression_size = HPackEncoderTable::MaxEntrySize());
+        size_t max_compression_size = HPackEncoderTable::MaxEntrySize());
 
     size_t CurrentFrameSize() const;
     void Add(Slice slice);
