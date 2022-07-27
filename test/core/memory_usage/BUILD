@@ -26,11 +26,15 @@ grpc_cc_library(
         "memstats.cc"],
     hdrs = ["memstats.h"],
     external_deps = [
-        "absl/types:optional"
+        "absl/types:optional",
+    ],
+    tags = [
+        "bazel_only",
+        "no_mac",
+        "no_windows",
     ],
     deps = [
         "//:gpr",
-        "//test/core/util:grpc_test_util_base",
     ],
 )
 
