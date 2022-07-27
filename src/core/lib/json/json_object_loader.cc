@@ -51,9 +51,10 @@ namespace json_detail {
 
 void LoadScalar::LoadInto(const Json& json, void* dst,
                           ErrorList* errors) const {
-  const Json::Type expected_type =
-      IsNumber() ? Json::Type::NUMBER : Json::Type::STRING;
-  if (json.type() != expected_type) {
+  // We accept either STRING or NUMBER for numeric values, as per
+  // https://developers.google.com/protocol-buffers/docs/proto3#json.
+  if (json.type() != Json::Type::STRING &&
+      (!IsNumber() || json.type() != Json::Type::NUMBER)) {
     errors->AddError(
         absl::StrCat("is not a ", IsNumber() ? "number" : "string"));
     return;

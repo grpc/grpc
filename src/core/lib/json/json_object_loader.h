@@ -79,6 +79,8 @@ class ErrorList {
   // Return true if there are no errors.
   bool ok() const { return errors_.empty(); }
 
+  bool IsAtRoot() const { return fields_.empty(); }
+
  private:
   std::vector<std::string> errors_;
   std::vector<std::string> fields_;
@@ -159,7 +161,7 @@ class TypedLoadNumber : public LoadNumber {
   void LoadInto(const std::string& value, void* dst,
                 ErrorList* errors) const override {
     if (!absl::SimpleAtoi(value, static_cast<T*>(dst))) {
-      errors->AddError("failed to parse number.");
+      errors->AddError("failed to parse number");
     }
   }
 };

@@ -99,7 +99,7 @@ struct TestPostLoadStruct1 {
 TEST(JsonObjectLoaderTest, LoadTestStruct1) {
   {
     auto s = Parse<TestStruct1>(
-        "{\"a\":1,\"b\":2,\"c\":3,\"x\":\"foo\",\"d\":\"1.3s\"}");
+        "{\"a\":1,\"b\":\"2\",\"c\":3,\"x\":\"foo\",\"d\":\"1.3s\"}");
     ASSERT_TRUE(s.ok()) << s.status();
     EXPECT_EQ(s->a, 1);
     EXPECT_EQ(s->b, 2);
@@ -116,12 +116,13 @@ TEST(JsonObjectLoaderTest, LoadTestStruct1) {
     EXPECT_EQ(s->x, "bar");
   }
   {
-    auto s = Parse<TestStruct1>("{\"b\":\"foo\",\"x\":42}");
+    auto s = Parse<TestStruct1>("{\"b\":[1],\"c\":\"foo\",\"x\":42}");
     EXPECT_EQ(s.status().code(), absl::StatusCode::kInvalidArgument);
     EXPECT_EQ(s.status().message(),
               "errors validating JSON: ["
               "field:a error:does not exist; "
               "field:b error:is not a number; "
+              "field:c error:failed to parse number; "
               "field:x error:is not a string]") << s.status();
   }
 }
@@ -170,11 +171,11 @@ TEST(JsonObjectLoaderTest, LoadTestStruct2) {
   }
   {
     auto s = Parse<TestStruct2>(
-        "{\"a\":[{\"a\":\"7\", \"x\":\"bar\"}],\"b\":[1,\"2\",3]}");
+        "{\"a\":[{\"a\":\"foo\", \"x\":\"bar\"}],\"b\":[1,{},3]}");
     EXPECT_EQ(s.status().code(), absl::StatusCode::kInvalidArgument);
     EXPECT_EQ(s.status().message(),
               "errors validating JSON: ["
-              "field:a[0].a error:is not a number; "
+              "field:a[0].a error:failed to parse number; "
               "field:b[1] error:is not a number]") << s.status();
   }
 }
