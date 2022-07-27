@@ -15,6 +15,8 @@
 #define GRPC_CORE_LIB_EVENT_ENGINE_PROMISE_H
 #include <grpc/support/port_platform.h>
 
+#include "absl/time/time.h"
+
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/sync.h"
@@ -32,9 +34,7 @@ class Promise {
  public:
   // The getter will wait until the setter has been called, and will return the
   // value passed during Set.
-  T& Get() {
-    return WaitWithTimeout(absl::Hours(1));
-  }
+  T& Get() { return WaitWithTimeout(absl::Hours(1)); }
   // The getter will wait with timeout until the setter has been called, and
   // will return the value passed during Set.
   T& WaitWithTimeout(absl::Duration d) {

@@ -22,8 +22,8 @@
 
 #include "src/core/lib/event_engine/event_engine_factory.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
-#include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
 #include "src/core/lib/event_engine/posix_engine/lockfree_event.h"
+#include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
 #include "src/core/lib/gprpp/sync.h"
 
 using ::grpc_event_engine::posix_engine::Scheduler;
