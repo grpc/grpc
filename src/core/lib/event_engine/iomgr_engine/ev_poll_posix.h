@@ -19,17 +19,16 @@
 
 #include <atomic>
 #include <memory>
-#include <vector>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "absl/synchronization/mutex.h"
+
+#include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/event_engine/iomgr_engine/event_poller.h"
 #include "src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix.h"
 #include "src/core/lib/event_engine/poller.h"
-#include "src/core/lib/gprpp/time.h"
 
 namespace grpc_event_engine {
 namespace iomgr_engine {

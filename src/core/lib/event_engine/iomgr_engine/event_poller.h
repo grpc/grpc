@@ -16,8 +16,6 @@
 #define GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_EVENT_POLLER_H
 #include <grpc/support/port_platform.h>
 
-#include <vector>
-
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 
@@ -25,7 +23,6 @@
 
 #include "src/core/lib/event_engine/iomgr_engine/iomgr_engine_closure.h"
 #include "src/core/lib/event_engine/poller.h"
-#include "src/core/lib/gprpp/time.h"
 
 namespace grpc_event_engine {
 namespace iomgr_engine {
