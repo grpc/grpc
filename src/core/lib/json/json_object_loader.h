@@ -79,8 +79,6 @@ class ErrorList {
   // Return true if there are no errors.
   bool ok() const { return errors_.empty(); }
 
-  bool IsAtRoot() const { return fields_.empty(); }
-
  private:
   std::vector<std::string> errors_;
   std::vector<std::string> fields_;
