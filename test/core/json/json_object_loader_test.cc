@@ -23,11 +23,9 @@ namespace {
 
 template <typename T>
 absl::StatusOr<T> Parse(const std::string& json) {
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  auto parsed = Json::Parse(json, &error);
-  EXPECT_EQ(error, GRPC_ERROR_NONE)
-      << " parsing: " << json << "  error: " << grpc_error_std_string(error);
-  return LoadFromJson<T>(parsed);
+  auto parsed = Json::Parse(json);
+  if (!parsed.ok()) return parsed.status();
+  return LoadFromJson<T>(*parsed);
 }
 
 struct TestStruct1 {
