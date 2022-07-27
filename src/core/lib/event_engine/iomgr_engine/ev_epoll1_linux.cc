@@ -30,6 +30,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/event_engine/poller.h"
+#include "src/core/lib/event_engine/time_util.h"
 #include "src/core/lib/iomgr/port.h"
 
 // This polling engine is only relevant on linux kernels supporting epoll
@@ -243,28 +244,6 @@ void ForkPollerListRemovePoller(Epoll1Poller* poller) {
     gpr_mu_lock(&fork_fd_list_mu);
     fork_poller_list.remove(poller);
     gpr_mu_unlock(&fork_fd_list_mu);
-  }
-}
-
-grpc_core::Timestamp ToTimestamp(EventEngine::Duration when) {
-  return grpc_core::Timestamp::FromTimespecRoundDown(
-             gpr_now(GPR_CLOCK_MONOTONIC)) +
-         std::max(grpc_core::Duration::Milliseconds(1),
-                  grpc_core::Duration::NanosecondsRoundUp(when.count())) +
-         grpc_core::Duration::Milliseconds(1);
-}
-
-int PollDeadlineToMillisTimeout(grpc_core::Timestamp millis) {
-  if (millis == grpc_core::Timestamp::InfFuture()) return -1;
-  grpc_core::Timestamp now =
-      grpc_core::Timestamp::FromTimespecRoundDown(gpr_now(GPR_CLOCK_MONOTONIC));
-  int64_t delta = (millis - now).millis();
-  if (delta > INT_MAX) {
-    return INT_MAX;
-  } else if (delta < 0) {
-    return 0;
-  } else {
-    return static_cast<int>(delta);
   }
 }
 
@@ -485,12 +464,12 @@ bool Epoll1Poller::ProcessEpollEvents(int max_epoll_events_to_handle,
 //  Do epoll_wait and store the events in g_epoll_set.events field. This does
 //  not "process" any of the events yet; that is done in ProcessEpollEvents().
 //  See ProcessEpollEvents() function for more details.
-int Epoll1Poller::DoEpollWait(grpc_core::Timestamp deadline) {
+int Epoll1Poller::DoEpollWait(EventEngine::Duration timeout) {
   int r;
-  int timeout = PollDeadlineToMillisTimeout(deadline);
   do {
     r = epoll_wait(g_epoll_set_.epfd, g_epoll_set_.events, MAX_EPOLL_EVENTS,
-                   timeout);
+                   static_cast<int>(
+                       grpc_event_engine::experimental::Milliseconds(timeout)));
   } while (r < 0 && errno == EINTR);
   if (r < 0) {
     gpr_log(GPR_ERROR,
@@ -539,9 +518,8 @@ void Epoll1EventHandle::SetHasError() { error_closure_->SetReady(); }
 
 Poller::WorkResult Epoll1Poller::Work(EventEngine::Duration timeout) {
   Poller::Events pending_events;
-  grpc_core::Timestamp deadline = ToTimestamp(timeout);
   if (g_epoll_set_.cursor == g_epoll_set_.num_events) {
-    if (DoEpollWait(deadline) == 0) {
+    if (DoEpollWait(timeout) == 0) {
       return Poller::DeadlineExceeded{};
     }
   }

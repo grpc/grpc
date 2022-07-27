@@ -58,7 +58,8 @@ class Epoll1Poller : public EventPoller {
  private:
   bool ProcessEpollEvents(int max_epoll_events_to_handle,
                           Poller::Events& pending_events);
-  int DoEpollWait(grpc_core::Timestamp deadline);
+  int DoEpollWait(
+      grpc_event_engine::experimental::EventEngine::Duration timeout);
   struct HandlesList {
     Epoll1EventHandle* handle;
     Epoll1EventHandle* next;

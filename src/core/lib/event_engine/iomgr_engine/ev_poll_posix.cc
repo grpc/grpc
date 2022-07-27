@@ -56,6 +56,7 @@
 
 #include "src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix.h"
 #include "src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix_default.h"
+#include "src/core/lib/event_engine/time_util.h"
 #include "src/core/lib/gprpp/fork.h"
 #include "src/core/lib/gprpp/global_config.h"
 #include "src/core/lib/gprpp/time.h"
@@ -304,19 +305,12 @@ void ForkPollerListRemovePoller(PollPoller* poller) {
   }
 }
 
-grpc_core::Timestamp ToTimestamp(EventEngine::Duration when) {
-  return grpc_core::Timestamp::FromTimespecRoundDown(
-             gpr_now(GPR_CLOCK_MONOTONIC)) +
-         std::max(grpc_core::Duration::Milliseconds(1),
-                  grpc_core::Duration::NanosecondsRoundUp(when.count())) +
-         grpc_core::Duration::Milliseconds(1);
-}
-
-int PollDeadlineToMillisTimeout(grpc_core::Timestamp millis) {
-  if (millis == grpc_core::Timestamp::InfFuture()) return -1;
+// Returns the number of milliseconds elapsed between now and start timestamp.
+int PollElapsedTimeToMillis(grpc_core::Timestamp start) {
+  if (start == grpc_core::Timestamp::InfFuture()) return -1;
   grpc_core::Timestamp now =
       grpc_core::Timestamp::FromTimespecRoundDown(gpr_now(GPR_CLOCK_MONOTONIC));
-  int64_t delta = (millis - now).millis();
+  int64_t delta = (now - start).millis();
   if (delta > INT_MAX) {
     return INT_MAX;
   } else if (delta < 0) {
@@ -668,20 +662,21 @@ Poller::WorkResult PollPoller::Work(EventEngine::Duration timeout) {
   bool was_kicked_ext = false;
   PollEventHandle* watcher_space[inline_elements];
   Poller::Events pending_events;
-  grpc_core::Timestamp deadline = ToTimestamp(timeout);
+  int timeout_ms =
+      static_cast<int>(grpc_event_engine::experimental::Milliseconds(timeout));
   mu_.Lock();
   // Start polling, and keep doing so while we're being asked to
   // re-evaluate our pollers (this allows poll() based pollers to
   // ensure they don't miss wakeups).
-  while (pending_events.empty() &&
-         deadline > grpc_core::Timestamp::FromTimespecRoundDown(
-                        gpr_now(GPR_CLOCK_MONOTONIC))) {
-    int timeout = PollDeadlineToMillisTimeout(deadline);
+  while (pending_events.empty() && timeout_ms >= 0) {
     int r = 0;
     size_t i;
     nfds_t pfd_count;
     struct pollfd* pfds;
     PollEventHandle** watchers;
+    // Estimate start time for a poll iteration.
+    grpc_core::Timestamp start = grpc_core::Timestamp::FromTimespecRoundDown(
+        gpr_now(GPR_CLOCK_MONOTONIC));
     if (num_poll_handles_ + 2 <= inline_elements) {
       pfds = pollfd_space;
       watchers = watcher_space;
@@ -724,8 +719,8 @@ Poller::WorkResult PollPoller::Work(EventEngine::Duration timeout) {
     }
     mu_.Unlock();
 
-    if (!use_phony_poll_ || timeout == 0) {
-      r = poll(pfds, pfd_count, timeout);
+    if (!use_phony_poll_ || timeout_ms == 0) {
+      r = poll(pfds, pfd_count, timeout_ms);
     } else {
       gpr_log(GPR_ERROR,
               "Attempted a blocking poll when declared non-polling.");
@@ -822,6 +817,9 @@ Poller::WorkResult PollPoller::Work(EventEngine::Duration timeout) {
     if (pfds != pollfd_space) {
       gpr_free(pfds);
     }
+
+    // End of poll iteration. Update how much time is remaining.
+    timeout_ms -= PollElapsedTimeToMillis(start);
     mu_.Lock();
     if (absl::exchange(was_kicked_, false) &&
         absl::exchange(was_kicked_ext_, false)) {
