@@ -78,9 +78,6 @@ static gpr_timespec to_seconds_from_sub_second_time(int64_t time_in_units,
     out = gpr_inf_past(type);
   } else {
     out.tv_sec = time_in_units / units_per_sec;
-    /// Our current usage does not seem to cause precision issues. Division for
-    /// integers should be enough instead of converting them to doubles for
-    /// better precision.
     out.tv_nsec =
         static_cast<int32_t>((time_in_units - (out.tv_sec * units_per_sec)) *
                              (GPR_NS_PER_SEC / units_per_sec));
