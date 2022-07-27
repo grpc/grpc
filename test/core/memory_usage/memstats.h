@@ -15,9 +15,6 @@
 #ifndef TEST_H
 #define TEST_H
 
-#include <stdlib.h>
-#include <sys/resource.h>
-
 #include "absl/types/optional.h"
 
 // IWYU pragma: no_include <bits/types/struct_rusage.h>
