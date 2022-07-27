@@ -35,10 +35,17 @@ typedef struct grpc_stats_data {
   gpr_atm histograms[GRPC_STATS_HISTOGRAM_BUCKETS];
 } grpc_stats_data;
 
-extern grpc_stats_data* grpc_stats_per_cpu_storage;
+namespace grpc_core {
+struct Stats {
+  size_t num_cores;
+  grpc_stats_data per_cpu[0];
+};
+extern Stats* const g_stats_data;
+}  // namespace grpc_core
 
 #define GRPC_THREAD_STATS_DATA() \
-  (&grpc_stats_per_cpu_storage[grpc_core::ExecCtx::Get()->starting_cpu()])
+  (&::grpc_core::g_stats_data    \
+        ->per_cpu[grpc_core::ExecCtx::Get()->starting_cpu()])
 
 /* Only collect stats if GRPC_COLLECT_STATS is defined or it is a debug build.
  */
