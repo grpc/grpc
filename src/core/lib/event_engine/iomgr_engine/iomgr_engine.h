@@ -41,7 +41,7 @@ namespace experimental {
 
 // An iomgr-based EventEngine implementation.
 // All methods require an ExecCtx to already exist on the thread's stack.
-class IomgrEventEngine final : public EventEngine {
+class PosixEventEngine final : public EventEngine {
  public:
   class IomgrEndpoint : public EventEngine::Endpoint {
    public:
@@ -75,8 +75,8 @@ class IomgrEventEngine final : public EventEngine {
     bool CancelLookup(LookupTaskHandle handle) override;
   };
 
-  IomgrEventEngine();
-  ~IomgrEventEngine() override;
+  PosixEventEngine();
+  ~PosixEventEngine() override;
 
   absl::StatusOr<std::unique_ptr<Listener>> CreateListener(
       Listener::AcceptCallback on_accept,

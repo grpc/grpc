@@ -374,7 +374,7 @@ std::string TestScenarioName(
 class EventPollerTest : public ::testing::TestWithParam<std::string> {
   void SetUp() override {
     engine_ =
-        absl::make_unique<grpc_event_engine::experimental::IomgrEventEngine>();
+        absl::make_unique<grpc_event_engine::experimental::PosixEventEngine>();
     EXPECT_NE(engine_, nullptr);
     scheduler_ =
         absl::make_unique<grpc_event_engine::iomgr_engine::TestScheduler>(
@@ -390,7 +390,7 @@ class EventPollerTest : public ::testing::TestWithParam<std::string> {
   }
 
  private:
-  std::unique_ptr<grpc_event_engine::experimental::IomgrEventEngine> engine_;
+  std::unique_ptr<grpc_event_engine::experimental::PosixEventEngine> engine_;
   std::unique_ptr<grpc_event_engine::iomgr_engine::TestScheduler> scheduler_;
 };
 

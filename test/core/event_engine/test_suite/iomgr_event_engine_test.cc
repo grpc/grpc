@@ -23,7 +23,7 @@ int main(int argc, char** argv) {
   SetEventEngineFactories(
       []() {
         return absl::make_unique<
-            grpc_event_engine::experimental::IomgrEventEngine>();
+            grpc_event_engine::experimental::PosixEventEngine>();
       },
       nullptr);
   return RUN_ALL_TESTS();

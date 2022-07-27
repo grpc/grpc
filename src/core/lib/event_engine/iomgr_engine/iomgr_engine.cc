@@ -32,14 +32,14 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-struct IomgrEventEngine::ClosureData final : public EventEngine::Closure {
+struct PosixEventEngine::ClosureData final : public EventEngine::Closure {
   absl::AnyInvocable<void()> cb;
   iomgr_engine::Timer timer;
-  IomgrEventEngine* engine;
+  PosixEventEngine* engine;
   EventEngine::TaskHandle handle;
 
   void Run() override {
-    GRPC_EVENT_ENGINE_TRACE("IomgrEventEngine:%p executing callback:%s", engine,
+    GRPC_EVENT_ENGINE_TRACE("PosixEventEngine:%p executing callback:%s", engine,
                             HandleToString(handle).c_str());
     {
       grpc_core::MutexLock lock(&engine->mu_);
@@ -50,14 +50,14 @@ struct IomgrEventEngine::ClosureData final : public EventEngine::Closure {
   }
 };
 
-IomgrEventEngine::IomgrEventEngine() {}
+PosixEventEngine::PosixEventEngine() {}
 
-IomgrEventEngine::~IomgrEventEngine() {
+PosixEventEngine::~PosixEventEngine() {
   grpc_core::MutexLock lock(&mu_);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {
     for (auto handle : known_handles_) {
       gpr_log(GPR_ERROR,
-              "(event_engine) IomgrEventEngine:%p uncleared TaskHandle at "
+              "(event_engine) PosixEventEngine:%p uncleared TaskHandle at "
               "shutdown:%s",
               this, HandleToString(handle).c_str());
     }
@@ -65,7 +65,7 @@ IomgrEventEngine::~IomgrEventEngine() {
   GPR_ASSERT(GPR_LIKELY(known_handles_.empty()));
 }
 
-bool IomgrEventEngine::Cancel(EventEngine::TaskHandle handle) {
+bool PosixEventEngine::Cancel(EventEngine::TaskHandle handle) {
   grpc_core::MutexLock lock(&mu_);
   if (!known_handles_.contains(handle)) return false;
   auto* cd = reinterpret_cast<ClosureData*>(handle.keys[0]);
@@ -75,25 +75,25 @@ bool IomgrEventEngine::Cancel(EventEngine::TaskHandle handle) {
   return r;
 }
 
-EventEngine::TaskHandle IomgrEventEngine::RunAfter(
+EventEngine::TaskHandle PosixEventEngine::RunAfter(
     Duration when, absl::AnyInvocable<void()> closure) {
   return RunAfterInternal(when, std::move(closure));
 }
 
-EventEngine::TaskHandle IomgrEventEngine::RunAfter(
+EventEngine::TaskHandle PosixEventEngine::RunAfter(
     Duration when, EventEngine::Closure* closure) {
   return RunAfterInternal(when, [closure]() { closure->Run(); });
 }
 
-void IomgrEventEngine::Run(absl::AnyInvocable<void()> closure) {
+void PosixEventEngine::Run(absl::AnyInvocable<void()> closure) {
   thread_pool_.Add(std::move(closure));
 }
 
-void IomgrEventEngine::Run(EventEngine::Closure* closure) {
+void PosixEventEngine::Run(EventEngine::Closure* closure) {
   thread_pool_.Add([closure]() { closure->Run(); });
 }
 
-EventEngine::TaskHandle IomgrEventEngine::RunAfterInternal(
+EventEngine::TaskHandle PosixEventEngine::RunAfterInternal(
     Duration when, absl::AnyInvocable<void()> cb) {
   auto when_ts = ToTimestamp(timer_manager_.Now(), when);
   auto* cd = new ClosureData;
@@ -104,26 +104,26 @@ EventEngine::TaskHandle IomgrEventEngine::RunAfterInternal(
   grpc_core::MutexLock lock(&mu_);
   known_handles_.insert(handle);
   cd->handle = handle;
-  GRPC_EVENT_ENGINE_TRACE("IomgrEventEngine:%p scheduling callback:%s", this,
+  GRPC_EVENT_ENGINE_TRACE("PosixEventEngine:%p scheduling callback:%s", this,
                           HandleToString(handle).c_str());
   timer_manager_.TimerInit(&cd->timer, when_ts, cd);
   return handle;
 }
 
-std::unique_ptr<EventEngine::DNSResolver> IomgrEventEngine::GetDNSResolver(
+std::unique_ptr<EventEngine::DNSResolver> PosixEventEngine::GetDNSResolver(
     EventEngine::DNSResolver::ResolverOptions const& /*options*/) {
   GPR_ASSERT(false && "unimplemented");
 }
 
-bool IomgrEventEngine::IsWorkerThread() {
+bool PosixEventEngine::IsWorkerThread() {
   GPR_ASSERT(false && "unimplemented");
 }
 
-bool IomgrEventEngine::CancelConnect(EventEngine::ConnectionHandle /*handle*/) {
+bool PosixEventEngine::CancelConnect(EventEngine::ConnectionHandle /*handle*/) {
   GPR_ASSERT(false && "unimplemented");
 }
 
-EventEngine::ConnectionHandle IomgrEventEngine::Connect(
+EventEngine::ConnectionHandle PosixEventEngine::Connect(
     OnConnectCallback /*on_connect*/, const ResolvedAddress& /*addr*/,
     const EndpointConfig& /*args*/, MemoryAllocator /*memory_allocator*/,
     Duration /*deadline*/) {
@@ -131,7 +131,7 @@ EventEngine::ConnectionHandle IomgrEventEngine::Connect(
 }
 
 absl::StatusOr<std::unique_ptr<EventEngine::Listener>>
-IomgrEventEngine::CreateListener(
+PosixEventEngine::CreateListener(
     Listener::AcceptCallback /*on_accept*/,
     absl::AnyInvocable<void(absl::Status)> /*on_shutdown*/,
     const EndpointConfig& /*config*/,
