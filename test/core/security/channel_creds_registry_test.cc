@@ -81,11 +81,12 @@ TEST_F(ChannelCredsRegistryTest, Register) {
       nullptr);
 
   // Registration.
-  CoreConfiguration::Mocker mocker([](CoreConfiguration::Builder* builder) {
-    BuildCoreConfiguration(builder);
-    builder->channel_creds_registry()->RegisterChannelCredsFactory(
-        absl::make_unique<TestChannelCredsFactory>());
-  });
+  CoreConfiguration::WithSubstituteBuilder builder(
+      [](CoreConfiguration::Builder* builder) {
+        BuildCoreConfiguration(builder);
+        builder->channel_creds_registry()->RegisterChannelCredsFactory(
+            absl::make_unique<TestChannelCredsFactory>());
+      });
 
   RefCountedPtr<grpc_channel_credentials> test_cred(
       CoreConfiguration::Get().channel_creds_registry().CreateChannelCreds(

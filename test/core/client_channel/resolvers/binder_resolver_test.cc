@@ -50,18 +50,19 @@ class BinderResolverTest : public ::testing::Test {
   }
   ~BinderResolverTest() override {}
   static void SetUpTestSuite() {
-    mocker_ = std::make_unique<grpc_core::CoreConfiguration::Mocker>(
-        [](grpc_core::CoreConfiguration::Builder* builder) {
-          BuildCoreConfiguration(builder);
-          if (!builder->resolver_registry()->HasResolverFactory("binder")) {
-            // Binder resolver will only be registered on platforms that support
-            // binder transport. If it is not registered on current platform, we
-            // manually register it here for testing purpose.
-            RegisterBinderResolver(builder);
-            ASSERT_TRUE(
-                builder->resolver_registry()->HasResolverFactory("binder"));
-          }
-        });
+    builder_ =
+        std::make_unique<grpc_core::CoreConfiguration::WithSubstituteBuilder>(
+            [](grpc_core::CoreConfiguration::Builder* builder) {
+              BuildCoreConfiguration(builder);
+              if (!builder->resolver_registry()->HasResolverFactory("binder")) {
+                // Binder resolver will only be registered on platforms that
+                // support binder transport. If it is not registered on current
+                // platform, we manually register it here for testing purpose.
+                RegisterBinderResolver(builder);
+                ASSERT_TRUE(
+                    builder->resolver_registry()->HasResolverFactory("binder"));
+              }
+            });
     grpc_init();
     if (grpc_core::CoreConfiguration::Get()
             .resolver_registry()
@@ -70,7 +71,7 @@ class BinderResolverTest : public ::testing::Test {
   }
   static void TearDownTestSuite() {
     grpc_shutdown();
-    mocker_.reset();
+    builder_.reset();
   }
 
   void SetUp() override { ASSERT_TRUE(factory_); }
@@ -135,11 +136,12 @@ class BinderResolverTest : public ::testing::Test {
 
  private:
   grpc_core::ResolverFactory* factory_;
-  static std::unique_ptr<grpc_core::CoreConfiguration::Mocker> mocker_;
+  static std::unique_ptr<grpc_core::CoreConfiguration::WithSubstituteBuilder>
+      builder_;
 };
 
-std::unique_ptr<grpc_core::CoreConfiguration::Mocker>
-    BinderResolverTest::mocker_;
+std::unique_ptr<grpc_core::CoreConfiguration::WithSubstituteBuilder>
+    BinderResolverTest::builder_;
 
 }  // namespace
 

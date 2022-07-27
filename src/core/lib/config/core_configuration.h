@@ -92,10 +92,10 @@ class CoreConfiguration {
   //
   // Useful for running multiple tests back to back in the same process
   // without side effects from previous tests.
-  class Mocker {
+  class WithSubstituteBuilder {
    public:
     template <typename BuildFunc>
-    explicit Mocker(BuildFunc build) {
+    explicit WithSubstituteBuilder(BuildFunc build) {
       // Build core configuration to replace.
       Builder builder;
       build(&builder);
@@ -108,7 +108,7 @@ class CoreConfiguration {
           nullptr, std::memory_order_acquire);
     }
 
-    ~Mocker() {
+    ~WithSubstituteBuilder() {
       // Reset and restore.
       Reset();
       GPR_ASSERT(CoreConfiguration::config_.exchange(
@@ -149,7 +149,7 @@ class CoreConfiguration {
   template <typename BuildFunc, typename RunFunc>
   static void RunWithSpecialConfiguration(BuildFunc build_configuration,
                                           RunFunc code_to_run) {
-    Mocker mocker(build_configuration);
+    WithSubstituteBuilder builder(build_configuration);
     code_to_run();
   }
 

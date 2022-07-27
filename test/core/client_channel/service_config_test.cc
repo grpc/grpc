@@ -169,7 +169,7 @@ class ErrorParser : public ServiceConfigParser::Parser {
 class ServiceConfigTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    mocker_ = std::make_unique<CoreConfiguration::Mocker>(
+    builder_ = std::make_unique<CoreConfiguration::WithSubstituteBuilder>(
         [](CoreConfiguration::Builder* builder) {
           builder->service_config_parser()->RegisterParser(
               absl::make_unique<TestParser1>());
@@ -185,7 +185,7 @@ class ServiceConfigTest : public ::testing::Test {
   }
 
  private:
-  std::unique_ptr<CoreConfiguration::Mocker> mocker_;
+  std::unique_ptr<CoreConfiguration::WithSubstituteBuilder> builder_;
 };
 
 TEST_F(ServiceConfigTest, ErrorCheck1) {
@@ -449,12 +449,13 @@ TEST_F(ServiceConfigTest, Parser2ErrorInvalidValue) {
 TEST(ServiceConfigParserTest, DoubleRegistration) {
   CoreConfiguration::Reset();
   ASSERT_DEATH_IF_SUPPORTED(
-      CoreConfiguration::Mocker mocker([](CoreConfiguration::Builder* builder) {
-        builder->service_config_parser()->RegisterParser(
-            absl::make_unique<ErrorParser>("xyzabc"));
-        builder->service_config_parser()->RegisterParser(
-            absl::make_unique<ErrorParser>("xyzabc"));
-      }),
+      CoreConfiguration::WithSubstituteBuilder builder(
+          [](CoreConfiguration::Builder* builder) {
+            builder->service_config_parser()->RegisterParser(
+                absl::make_unique<ErrorParser>("xyzabc"));
+            builder->service_config_parser()->RegisterParser(
+                absl::make_unique<ErrorParser>("xyzabc"));
+          }),
       "xyzabc.*already registered");
 }
 
@@ -462,7 +463,7 @@ TEST(ServiceConfigParserTest, DoubleRegistration) {
 class ErroredParsersScopingTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    mocker_ = std::make_unique<CoreConfiguration::Mocker>(
+    builder_ = std::make_unique<CoreConfiguration::WithSubstituteBuilder>(
         [](CoreConfiguration::Builder* builder) {
           builder->service_config_parser()->RegisterParser(
               absl::make_unique<ErrorParser>("ep1"));
@@ -478,7 +479,7 @@ class ErroredParsersScopingTest : public ::testing::Test {
   }
 
  private:
-  std::unique_ptr<CoreConfiguration::Mocker> mocker_;
+  std::unique_ptr<CoreConfiguration::WithSubstituteBuilder> builder_;
 };
 
 TEST_F(ErroredParsersScopingTest, GlobalParams) {
@@ -516,7 +517,7 @@ TEST_F(ErroredParsersScopingTest, MethodParams) {
 class ClientChannelParserTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    mocker_ = std::make_unique<CoreConfiguration::Mocker>(
+    builder_ = std::make_unique<CoreConfiguration::WithSubstituteBuilder>(
         [](CoreConfiguration::Builder* builder) {
           builder->service_config_parser()->RegisterParser(
               absl::make_unique<internal::ClientChannelServiceConfigParser>());
@@ -527,7 +528,7 @@ class ClientChannelParserTest : public ::testing::Test {
   }
 
  private:
-  std::unique_ptr<CoreConfiguration::Mocker> mocker_;
+  std::unique_ptr<CoreConfiguration::WithSubstituteBuilder> builder_;
 };
 
 TEST_F(ClientChannelParserTest, ValidLoadBalancingConfigPickFirst) {
@@ -812,7 +813,7 @@ TEST_F(ClientChannelParserTest, InvalidHealthCheckMultipleEntries) {
 class RetryParserTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    mocker_ = std::make_unique<CoreConfiguration::Mocker>(
+    builder_ = std::make_unique<CoreConfiguration::WithSubstituteBuilder>(
         [](CoreConfiguration::Builder* builder) {
           builder->service_config_parser()->RegisterParser(
               absl::make_unique<internal::RetryServiceConfigParser>());
@@ -823,7 +824,7 @@ class RetryParserTest : public ::testing::Test {
   }
 
  private:
-  std::unique_ptr<CoreConfiguration::Mocker> mocker_;
+  std::unique_ptr<CoreConfiguration::WithSubstituteBuilder> builder_;
 };
 
 TEST_F(RetryParserTest, ValidRetryThrottling) {
@@ -1501,7 +1502,7 @@ TEST_F(RetryParserTest, InvalidRetryPolicyPerAttemptRecvTimeoutBadValue) {
 class MessageSizeParserTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    mocker_ = std::make_unique<CoreConfiguration::Mocker>(
+    builder_ = std::make_unique<CoreConfiguration::WithSubstituteBuilder>(
         [](CoreConfiguration::Builder* builder) {
           builder->service_config_parser()->RegisterParser(
               absl::make_unique<MessageSizeParser>());
@@ -1512,7 +1513,7 @@ class MessageSizeParserTest : public ::testing::Test {
   }
 
  private:
-  std::unique_ptr<CoreConfiguration::Mocker> mocker_;
+  std::unique_ptr<CoreConfiguration::WithSubstituteBuilder> builder_;
 };
 
 TEST_F(MessageSizeParserTest, Valid) {
