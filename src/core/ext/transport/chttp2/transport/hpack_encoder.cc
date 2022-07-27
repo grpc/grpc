@@ -432,12 +432,14 @@ void HPackCompressor::Framer::Encode(HttpSchemeMetadata,
 
 void HPackCompressor::Framer::Encode(GrpcTraceBinMetadata, const Slice& slice) {
   EncodeRepeatingSliceValue(GrpcTraceBinMetadata::key(), slice,
-                            &compressor_->grpc_trace_bin_index_);
+                            &compressor_->grpc_trace_bin_index_,
+                            HPackEncoderTable::MaxEntrySize());
 }
 
 void HPackCompressor::Framer::Encode(GrpcTagsBinMetadata, const Slice& slice) {
   EncodeRepeatingSliceValue(GrpcTagsBinMetadata::key(), slice,
-                            &compressor_->grpc_tags_bin_index_);
+                            &compressor_->grpc_tags_bin_index_,
+                            HPackEncoderTable::MaxEntrySize());
 }
 
 void HPackCompressor::Framer::Encode(HttpStatusMetadata, uint32_t status) {
