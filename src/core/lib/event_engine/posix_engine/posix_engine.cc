@@ -25,6 +25,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/event_engine/executor/threaded_executor.h"
 #include "src/core/lib/event_engine/posix_engine/timer.h"
 #include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/event_engine/utils.h"
@@ -86,11 +87,11 @@ EventEngine::TaskHandle PosixEventEngine::RunAfter(
 }
 
 void PosixEventEngine::Run(absl::AnyInvocable<void()> closure) {
-  thread_pool_.Add(std::move(closure));
+  executor_.Run(std::move(closure));
 }
 
 void PosixEventEngine::Run(EventEngine::Closure* closure) {
-  thread_pool_.Add([closure]() { closure->Run(); });
+  executor_.Run(closure);
 }
 
 EventEngine::TaskHandle PosixEventEngine::RunAfterInternal(

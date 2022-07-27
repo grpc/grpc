@@ -2251,6 +2251,39 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "event_engine_executor",
+    hdrs = [
+        "src/core/lib/event_engine/executor/executor.h",
+    ],
+    external_deps = [
+        "absl/functional:any_invocable",
+    ],
+    deps = [
+        "event_engine_base_hdrs",
+        "gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "event_engine_threaded_executor",
+    srcs = [
+        "src/core/lib/event_engine/executor/threaded_executor.cc",
+    ],
+    hdrs = [
+        "src/core/lib/event_engine/executor/threaded_executor.h",
+    ],
+    external_deps = [
+        "absl/functional:any_invocable",
+    ],
+    deps = [
+        "event_engine_base_hdrs",
+        "event_engine_executor",
+        "gpr_platform",
+        "event_engine_thread_pool",
+    ],
+)
+
+grpc_cc_library(
     name = "posix_event_engine_timer",
     srcs = [
         "src/core/lib/event_engine/posix_engine/timer.cc",
@@ -2274,10 +2307,10 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "posix_event_engine_thread_pool",
-    srcs = ["src/core/lib/event_engine/posix_engine/thread_pool.cc"],
+    name = "event_engine_thread_pool",
+    srcs = ["src/core/lib/event_engine/thread_pool.cc"],
     hdrs = [
-        "src/core/lib/event_engine/posix_engine/thread_pool.h",
+        "src/core/lib/event_engine/thread_pool.h",
     ],
     external_deps = ["absl/functional:any_invocable"],
     deps = ["gpr_base"],
@@ -2539,11 +2572,11 @@ grpc_cc_library(
     deps = [
         "event_engine_base_hdrs",
         "event_engine_common",
+        "event_engine_threaded_executor",
         "event_engine_trace",
         "event_engine_utils",
         "gpr_base",
         "grpc_trace",
-        "posix_event_engine_thread_pool",
         "posix_event_engine_timer",
         "posix_event_engine_timer_manager",
     ],
@@ -2561,10 +2594,10 @@ grpc_cc_library(
     deps = [
         "event_engine_base_hdrs",
         "event_engine_common",
+        "event_engine_threaded_executor",
         "event_engine_trace",
         "event_engine_utils",
         "gpr_base",
-        "posix_event_engine_thread_pool",
         "posix_event_engine_timer_manager",
         "time",
         "windows_iocp",

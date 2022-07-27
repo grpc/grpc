@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_THREAD_POOL_H
-#define GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_THREAD_POOL_H
+#ifndef GRPC_CORE_LIB_EVENT_ENGINE_THREAD_POOL_H
+#define GRPC_CORE_LIB_EVENT_ENGINE_THREAD_POOL_H
 
 #include <grpc/support/port_platform.h>
 
@@ -30,7 +30,7 @@
 #include "src/core/lib/gprpp/thd.h"
 
 namespace grpc_event_engine {
-namespace posix_engine {
+namespace experimental {
 
 class ThreadPool final {
  public:
@@ -65,7 +65,7 @@ class ThreadPool final {
   std::vector<Thread*> dead_threads_;
 };
 
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_THREAD_POOL_H
+#endif  // GRPC_CORE_LIB_EVENT_ENGINE_THREAD_POOL_H

@@ -1748,8 +1748,8 @@ src/core/lib/event_engine/memory_allocator.cc \
 src/core/lib/event_engine/poller.h \
 src/core/lib/event_engine/posix_engine/posix_engine.cc \
 src/core/lib/event_engine/posix_engine/posix_engine.h \
-src/core/lib/event_engine/posix_engine/thread_pool.cc \
-src/core/lib/event_engine/posix_engine/thread_pool.h \
+src/core/lib/event_engine/thread_pool.cc \
+src/core/lib/event_engine/thread_pool.h \
 src/core/lib/event_engine/posix_engine/timer.cc \
 src/core/lib/event_engine/posix_engine/timer.h \
 src/core/lib/event_engine/posix_engine/timer_heap.cc \

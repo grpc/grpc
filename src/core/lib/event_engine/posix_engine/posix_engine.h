@@ -32,9 +32,10 @@
 #include <grpc/event_engine/slice_buffer.h>
 
 #include "src/core/lib/event_engine/handle_containers.h"
-#include "src/core/lib/event_engine/posix_engine/thread_pool.h"
 #include "src/core/lib/event_engine/posix_engine/timer_manager.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/event_engine/executor/threaded_executor.h"
+
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -108,7 +109,7 @@ class PosixEventEngine final : public EventEngine {
                                            absl::AnyInvocable<void()> cb);
 
   posix_engine::TimerManager timer_manager_;
-  posix_engine::ThreadPool thread_pool_{2};
+  ThreadedExecutor executor_{2};
 
   grpc_core::Mutex mu_;
   TaskHandleSet known_handles_ ABSL_GUARDED_BY(mu_);

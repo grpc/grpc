@@ -450,7 +450,7 @@ CORE_SOURCE_FILES = [
     'src/core/lib/event_engine/event_engine.cc',
     'src/core/lib/event_engine/memory_allocator.cc',
     'src/core/lib/event_engine/posix_engine/posix_engine.cc',
-    'src/core/lib/event_engine/posix_engine/thread_pool.cc',
+    'src/core/lib/event_engine/thread_pool.cc',
     'src/core/lib/event_engine/posix_engine/timer.cc',
     'src/core/lib/event_engine/posix_engine/timer_heap.cc',
     'src/core/lib/event_engine/posix_engine/timer_manager.cc',

@@ -25,7 +25,7 @@
 #include "src/core/lib/gprpp/thd.h"
 
 namespace grpc_event_engine {
-namespace posix_engine {
+namespace experimental {
 
 ThreadPool::Thread::Thread(ThreadPool* pool)
     : pool_(pool),
@@ -121,5 +121,5 @@ void ThreadPool::Add(absl::AnyInvocable<void()> callback) {
   }
 }
 
-}  // namespace posix_engine
+}  // namespace experimental
 }  // namespace grpc_event_engine
