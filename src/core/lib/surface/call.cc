@@ -36,6 +36,7 @@
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/variant.h"
 #include "absl/utility/utility.h"
@@ -1961,14 +1962,42 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
     finalization_.Run(nullptr);
   }
 
+  enum class PauseReason {
+    kStartingBatch = 0,
+    kReceiveInitialMetadata,
+    kReceiveStatusOnClient,
+    kSendMessage,
+    kReceiveMessage,
+  };
+
+  constexpr const char* PauseReasonString(PauseReason reason) {
+    switch (reason) {
+      case PauseReason::kStartingBatch:
+        return "StartingBatch";
+      case PauseReason::kReceiveInitialMetadata:
+        return "ReceiveInitialMetadata";
+      case PauseReason::kReceiveStatusOnClient:
+        return "ReceiveStatusOnClient";
+      case PauseReason::kSendMessage:
+        return "SendMessage";
+      case PauseReason::kReceiveMessage:
+        return "ReceiveMessage";
+    }
+    return "Unknown";
+  }
+
+  static constexpr uint8_t PauseReasonBit(PauseReason reason) {
+    return 1 << static_cast<int>(reason);
+  }
+
   Mutex* mu() const ABSL_LOCK_RETURNED(mu_) { return &mu_; }
 
   Completion StartCompletion(void* tag, bool is_closure, const grpc_op* ops,
                              size_t num_ops) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
-  void FinishCompletion(Completion* completion)
+  void FinishCompletion(Completion* completion, PauseReason reason)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   void FailCompletion(const Completion& completion);
-  Completion PauseCompletion(const Completion& completion)
+  Completion PauseCompletion(const Completion& completion, PauseReason reason)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   void Update() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   virtual void UpdateOnce() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) = 0;
@@ -1983,7 +2012,7 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
  private:
   union CompletionInfo {
     struct Pending {
-      uint8_t refs;
+      uint8_t pause_bits;
       bool is_closure;
       bool success;
       void* tag;
@@ -2165,17 +2194,20 @@ PromiseBasedCall::Completion PromiseBasedCall::StartCompletion(
             c.ToString().c_str(), tag);
   }
   grpc_cq_begin_op(cq(), tag);
-  completion_info_[c.index()].pending = {1, is_closure, true, tag};
+  completion_info_[c.index()].pending = {
+      PauseReasonBit(PauseReason::kStartingBatch), is_closure, true, tag};
   return c;
 }
 
 PromiseBasedCall::Completion PromiseBasedCall::PauseCompletion(
-    const Completion& completion) {
+    const Completion& completion, PauseReason reason) {
   if (grpc_call_trace.enabled()) {
-    gpr_log(GPR_INFO, "%sPauseCompletion %s", DebugTag().c_str(),
-            completion.ToString().c_str());
+    gpr_log(GPR_INFO, "%sPauseCompletion %s %s", DebugTag().c_str(),
+            completion.ToString().c_str(), PauseReasonString(reason));
   }
-  completion_info_[completion.index()].pending.refs++;
+  auto& pause_bits = completion_info_[completion.index()].pending.pause_bits;
+  GPR_ASSERT((pause_bits & PauseReasonBit(reason)) == 0);
+  pause_bits |= PauseReasonBit(reason);
   return Completion(completion.index());
 }
 
@@ -2187,22 +2219,33 @@ void PromiseBasedCall::FailCompletion(const Completion& completion) {
   completion_info_[completion.index()].pending.success = false;
 }
 
-void PromiseBasedCall::FinishCompletion(Completion* completion) {
+void PromiseBasedCall::FinishCompletion(Completion* completion,
+                                        PauseReason reason) {
   if (grpc_call_trace.enabled()) {
-    int refs = completion_info_[completion->index()].pending.refs;
+    auto pause_bits = completion_info_[completion->index()].pending.pause_bits;
     bool success = completion_info_[completion->index()].pending.success;
-    gpr_log(GPR_INFO, "%sFinishCompletion %s %s", DebugTag().c_str(),
-            completion->ToString().c_str(),
-            (refs == 1 ? (success ? std::string("done") : std::string("failed"))
-                       : absl::StrFormat("paused:remaining=%d", refs - 1))
+    std::vector<const char*> pending;
+    for (size_t i = 0; i < 8 * sizeof(pause_bits); i++) {
+      if (static_cast<PauseReason>(i) == reason) continue;
+      if (pause_bits & (1 << i)) {
+        pending.push_back(PauseReasonString(static_cast<PauseReason>(i)));
+      }
+    }
+    gpr_log(GPR_INFO, "%sFinishCompletion %s %s %s", DebugTag().c_str(),
+            completion->ToString().c_str(), PauseReasonString(reason),
+            (pending.empty()
+                 ? (success ? std::string("done") : std::string("failed"))
+                 : absl::StrFormat("paused:remaining={%s}",
+                                   absl::StrJoin(pending, ",")))
                 .c_str());
   }
   const uint8_t i = completion->TakeIndex();
   GPR_ASSERT(i < GPR_ARRAY_SIZE(completion_info_));
   CompletionInfo::Pending& pending = completion_info_[i].pending;
-  --pending.refs;
+  GPR_ASSERT(pending.pause_bits & PauseReasonBit(reason));
+  pending.pause_bits &= ~PauseReasonBit(reason);
   auto error = pending.success ? GRPC_ERROR_NONE : GRPC_ERROR_CANCELLED;
-  if (pending.refs == 0) {
+  if (pending.pause_bits == 0) {
     if (pending.is_closure) {
       ExecCtx::Run(DEBUG_LOCATION, static_cast<grpc_closure*>(pending.tag),
                    error);
@@ -2418,10 +2461,12 @@ void ClientPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
         recv_initial_metadata_ =
             op.data.recv_initial_metadata.recv_initial_metadata;
         server_initial_metadata_ready_ = server_initial_metadata_.Wait();
-        recv_initial_metadata_completion_ = PauseCompletion(completion);
+        recv_initial_metadata_completion_ =
+            PauseCompletion(completion, PauseReason::kReceiveInitialMetadata);
       } break;
       case GRPC_OP_RECV_STATUS_ON_CLIENT: {
-        recv_status_on_client_completion_ = PauseCompletion(completion);
+        recv_status_on_client_completion_ =
+            PauseCompletion(completion, PauseReason::kReceiveStatusOnClient);
         if (auto* finished_metadata =
                 absl::get_if<ServerMetadataHandle>(&recv_status_on_client_)) {
           PublishStatus(op.data.recv_status_on_client,
@@ -2433,7 +2478,8 @@ void ClientPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
       case GRPC_OP_SEND_MESSAGE: {
         GPR_ASSERT(!outstanding_send_.has_value());
         if (!completed_) {
-          send_message_completion_ = PauseCompletion(completion);
+          send_message_completion_ =
+              PauseCompletion(completion, PauseReason::kSendMessage);
           SliceBuffer send;
           grpc_slice_buffer_swap(
               &op.data.send_message.send_message->data.raw.slice_buffer,
@@ -2447,7 +2493,8 @@ void ClientPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
       case GRPC_OP_RECV_MESSAGE: {
         GPR_ASSERT(!outstanding_recv_.has_value());
         recv_message_ = op.data.recv_message.recv_message;
-        recv_message_completion_ = PauseCompletion(completion);
+        recv_message_completion_ =
+            PauseCompletion(completion, PauseReason::kReceiveMessage);
         outstanding_recv_.emplace(server_to_client_messages_.receiver.Next());
       } break;
       case GRPC_OP_SEND_CLOSE_FROM_CLIENT: {
@@ -2478,7 +2525,7 @@ grpc_call_error ClientPromiseBasedCall::StartBatch(const grpc_op* ops,
       StartCompletion(notify_tag, is_notify_tag_closure, ops, nops);
   CommitBatch(ops, nops, completion);
   Update();
-  FinishCompletion(&completion);
+  FinishCompletion(&completion, PauseReason::kStartingBatch);
   return GRPC_CALL_OK;
 }
 
@@ -2532,7 +2579,8 @@ void ClientPromiseBasedCall::UpdateOnce() {
           GPR_ASSERT(recv_initial_metadata_ != nullptr);
           PublishMetadataArray(absl::exchange(recv_initial_metadata_, nullptr),
                                metadata);
-          FinishCompletion(&recv_initial_metadata_completion_);
+          FinishCompletion(&recv_initial_metadata_completion_,
+                           PauseReason::kReceiveInitialMetadata);
         };
     if (ServerMetadata*** server_initial_metadata =
             absl::get_if<ServerMetadata**>(&r)) {
@@ -2551,7 +2599,7 @@ void ClientPromiseBasedCall::UpdateOnce() {
         Finish(ServerMetadataHandle(absl::Status(
             absl::StatusCode::kInternal, "Failed to send message to server")));
       }
-      FinishCompletion(&send_message_completion_);
+      FinishCompletion(&send_message_completion_, PauseReason::kSendMessage);
     }
   }
   if (promise_.has_value()) {
@@ -2598,7 +2646,7 @@ void ClientPromiseBasedCall::UpdateOnce() {
         }
         *recv_message_ = nullptr;
       }
-      FinishCompletion(&recv_message_completion_);
+      FinishCompletion(&recv_message_completion_, PauseReason::kReceiveMessage);
     } else if (completed_) {
       if (grpc_call_trace.enabled()) {
         gpr_log(GPR_INFO,
@@ -2608,7 +2656,7 @@ void ClientPromiseBasedCall::UpdateOnce() {
       }
       outstanding_recv_.reset();
       *recv_message_ = nullptr;
-      FinishCompletion(&recv_message_completion_);
+      FinishCompletion(&recv_message_completion_, PauseReason::kReceiveMessage);
     }
   }
 }
@@ -2677,7 +2725,8 @@ void ClientPromiseBasedCall::PublishStatus(
         gpr_strdup(MakeErrorString(trailing_metadata.get()).c_str());
   }
   PublishMetadataArray(op_args.trailing_metadata, trailing_metadata.get());
-  FinishCompletion(&recv_status_on_client_completion_);
+  FinishCompletion(&recv_status_on_client_completion_,
+                   PauseReason::kReceiveStatusOnClient);
 }
 
 void ClientPromiseBasedCall::PublishMetadataArray(grpc_metadata_array* array,
