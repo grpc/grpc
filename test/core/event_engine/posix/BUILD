@@ -30,7 +30,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:bitset",
-        "//:iomgr_ee_timer",
+        "//:posix_event_engine_timer",
     ],
 )
 
@@ -42,7 +42,7 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//:iomgr_ee_timer",
+        "//:posix_event_engine_timer",
     ],
 )
 
@@ -57,10 +57,10 @@ grpc_cc_test(
     uses_event_engine = True,
     uses_polling = True,
     deps = [
-        "//:iomgr_ee_closure",
-        "//:iomgr_ee_event_poller",
-        "//:iomgr_ee_poller_posix_default",
         "//:posix_event_engine",
+        "//:posix_event_engine_closure",
+        "//:posix_event_engine_event_poller",
+        "//:posix_event_engine_poller_posix_default",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -73,10 +73,10 @@ grpc_cc_test(
     uses_event_engine = True,
     uses_polling = False,
     deps = [
-        "//:iomgr_ee_closure",
-        "//:iomgr_ee_event_poller",
-        "//:iomgr_ee_lockfree_event",
         "//:posix_event_engine",
+        "//:posix_event_engine_closure",
+        "//:posix_event_engine_event_poller",
+        "//:posix_event_engine_lockfree_event",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -92,8 +92,8 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = True,
     deps = [
-        "//:iomgr_ee_wakeup_fd_posix_eventfd",
-        "//:iomgr_ee_wakeup_fd_posix_pipe",
+        "//:posix_event_engine_wakeup_fd_posix_eventfd",
+        "//:posix_event_engine_wakeup_fd_posix_pipe",
         "//test/core/util:grpc_test_util",
     ],
 )

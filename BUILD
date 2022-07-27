@@ -2251,7 +2251,7 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "iomgr_ee_timer",
+    name = "posix_event_engine_timer",
     srcs = [
         "src/core/lib/event_engine/posix_engine/timer.cc",
         "src/core/lib/event_engine/posix_engine/timer_heap.cc",
@@ -2274,7 +2274,7 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "iomgr_ee_thread_pool",
+    name = "posix_event_engine_thread_pool",
     srcs = ["src/core/lib/event_engine/posix_engine/thread_pool.cc"],
     hdrs = [
         "src/core/lib/event_engine/posix_engine/thread_pool.h",
@@ -2284,7 +2284,7 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "iomgr_ee_timer_manager",
+    name = "posix_event_engine_timer_manager",
     srcs = ["src/core/lib/event_engine/posix_engine/timer_manager.cc"],
     hdrs = [
         "src/core/lib/event_engine/posix_engine/timer_manager.h",
@@ -2299,13 +2299,13 @@ grpc_cc_library(
         "event_engine_base_hdrs",
         "gpr_base",
         "gpr_codegen",
-        "iomgr_ee_timer",
+        "posix_event_engine_timer",
         "time",
     ],
 )
 
 grpc_cc_library(
-    name = "iomgr_ee_event_poller",
+    name = "posix_event_engine_event_poller",
     srcs = [],
     hdrs = [
         "src/core/lib/event_engine/posix_engine/event_poller.h",
@@ -2317,13 +2317,13 @@ grpc_cc_library(
     deps = [
         "event_engine_base_hdrs",
         "gpr_platform",
-        "iomgr_ee_closure",
+        "posix_event_engine_closure",
         "time",
     ],
 )
 
 grpc_cc_library(
-    name = "iomgr_ee_closure",
+    name = "posix_event_engine_closure",
     srcs = [],
     hdrs = [
         "src/core/lib/event_engine/posix_engine/posix_engine_closure.h",
@@ -2340,7 +2340,7 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "iomgr_ee_lockfree_event",
+    name = "posix_event_engine_lockfree_event",
     srcs = [
         "src/core/lib/event_engine/posix_engine/lockfree_event.cc",
     ],
@@ -2350,14 +2350,14 @@ grpc_cc_library(
     external_deps = ["absl/status"],
     deps = [
         "gpr_base",
-        "iomgr_ee_closure",
-        "iomgr_ee_event_poller",
+        "posix_event_engine_closure",
+        "posix_event_engine_event_poller",
         "status_helper",
     ],
 )
 
 grpc_cc_library(
-    name = "iomgr_ee_wakeup_fd_posix",
+    name = "posix_event_engine_wakeup_fd_posix",
     hdrs = [
         "src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h",
     ],
@@ -2366,7 +2366,7 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "iomgr_ee_wakeup_fd_posix_pipe",
+    name = "posix_event_engine_wakeup_fd_posix_pipe",
     srcs = [
         "src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.cc",
     ],
@@ -2381,13 +2381,13 @@ grpc_cc_library(
     ],
     deps = [
         "gpr_base",
-        "iomgr_ee_wakeup_fd_posix",
         "iomgr_port",
+        "posix_event_engine_wakeup_fd_posix",
     ],
 )
 
 grpc_cc_library(
-    name = "iomgr_ee_wakeup_fd_posix_eventfd",
+    name = "posix_event_engine_wakeup_fd_posix_eventfd",
     srcs = [
         "src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.cc",
     ],
@@ -2402,13 +2402,13 @@ grpc_cc_library(
     ],
     deps = [
         "gpr_base",
-        "iomgr_ee_wakeup_fd_posix",
         "iomgr_port",
+        "posix_event_engine_wakeup_fd_posix",
     ],
 )
 
 grpc_cc_library(
-    name = "iomgr_ee_wakeup_fd_posix_default",
+    name = "posix_event_engine_wakeup_fd_posix_default",
     srcs = [
         "src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.cc",
     ],
@@ -2421,15 +2421,15 @@ grpc_cc_library(
     ],
     deps = [
         "gpr_platform",
-        "iomgr_ee_wakeup_fd_posix",
-        "iomgr_ee_wakeup_fd_posix_eventfd",
-        "iomgr_ee_wakeup_fd_posix_pipe",
         "iomgr_port",
+        "posix_event_engine_wakeup_fd_posix",
+        "posix_event_engine_wakeup_fd_posix_eventfd",
+        "posix_event_engine_wakeup_fd_posix_pipe",
     ],
 )
 
 grpc_cc_library(
-    name = "iomgr_ee_poller_posix_epoll1",
+    name = "posix_event_engine_poller_posix_epoll1",
     srcs = [
         "src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc",
     ],
@@ -2447,18 +2447,18 @@ grpc_cc_library(
     deps = [
         "gpr_base",
         "gpr_codegen",
-        "iomgr_ee_closure",
-        "iomgr_ee_event_poller",
-        "iomgr_ee_lockfree_event",
-        "iomgr_ee_wakeup_fd_posix",
-        "iomgr_ee_wakeup_fd_posix_default",
         "iomgr_port",
+        "posix_event_engine_closure",
+        "posix_event_engine_event_poller",
+        "posix_event_engine_lockfree_event",
+        "posix_event_engine_wakeup_fd_posix",
+        "posix_event_engine_wakeup_fd_posix_default",
         "time",
     ],
 )
 
 grpc_cc_library(
-    name = "iomgr_ee_poller_posix_poll",
+    name = "posix_event_engine_poller_posix_poll",
     srcs = [
         "src/core/lib/event_engine/posix_engine/ev_poll_posix.cc",
     ],
@@ -2476,17 +2476,17 @@ grpc_cc_library(
     deps = [
         "gpr_base",
         "gpr_codegen",
-        "iomgr_ee_closure",
-        "iomgr_ee_event_poller",
-        "iomgr_ee_wakeup_fd_posix",
-        "iomgr_ee_wakeup_fd_posix_default",
         "iomgr_port",
+        "posix_event_engine_closure",
+        "posix_event_engine_event_poller",
+        "posix_event_engine_wakeup_fd_posix",
+        "posix_event_engine_wakeup_fd_posix_default",
         "time",
     ],
 )
 
 grpc_cc_library(
-    name = "iomgr_ee_poller_posix_default",
+    name = "posix_event_engine_poller_posix_default",
     srcs = [
         "src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc",
     ],
@@ -2496,9 +2496,9 @@ grpc_cc_library(
     external_deps = ["absl/strings"],
     deps = [
         "gpr_base",
-        "iomgr_ee_event_poller",
-        "iomgr_ee_poller_posix_epoll1",
-        "iomgr_ee_poller_posix_poll",
+        "posix_event_engine_event_poller",
+        "posix_event_engine_poller_posix_epoll1",
+        "posix_event_engine_poller_posix_poll",
     ],
 )
 
@@ -2543,9 +2543,9 @@ grpc_cc_library(
         "event_engine_utils",
         "gpr_base",
         "grpc_trace",
-        "iomgr_ee_thread_pool",
-        "iomgr_ee_timer",
-        "iomgr_ee_timer_manager",
+        "posix_event_engine_thread_pool",
+        "posix_event_engine_timer",
+        "posix_event_engine_timer_manager",
     ],
 )
 
@@ -2564,8 +2564,8 @@ grpc_cc_library(
         "event_engine_trace",
         "event_engine_utils",
         "gpr_base",
-        "iomgr_ee_thread_pool",
-        "iomgr_ee_timer_manager",
+        "posix_event_engine_thread_pool",
+        "posix_event_engine_timer_manager",
         "time",
         "windows_iocp",
     ],
