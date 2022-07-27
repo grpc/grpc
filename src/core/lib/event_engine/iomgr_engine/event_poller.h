@@ -24,6 +24,7 @@
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/event_engine/iomgr_engine/iomgr_engine_closure.h"
+#include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/gprpp/time.h"
 
 namespace grpc_event_engine {
@@ -64,13 +65,10 @@ class EventHandle {
   virtual void SetHasError() = 0;
   // Returns true if the handle has been shutdown.
   virtual bool IsHandleShutdown() = 0;
-  // Execute any pending actions that may have been set to a handle after the
-  // last invocation of Work(...) function.
-  virtual void ExecutePendingActions() = 0;
   virtual ~EventHandle() = default;
 };
 
-class EventPoller {
+class EventPoller : public grpc_event_engine::experimental::Poller {
  public:
   // Return an opaque handle to perform actions on the provided file descriptor.
   virtual EventHandle* CreateHandle(int fd, absl::string_view name,
@@ -84,19 +82,7 @@ class EventPoller {
   //    thread to return.
   // 3. Call Shutdown() on the poller.
   virtual void Shutdown() = 0;
-  // Poll all the underlying file descriptors for the specified period
-  // and return a vector containing a list of handles which have pending
-  // events. The calling thread should invoke ExecutePendingActions on each
-  // returned handle to take the necessary pending actions. Only one thread
-  // may invoke the Work function at any given point in time. The Work(...)
-  // method returns an absl Non-OK status if it was Kicked.
-  virtual absl::Status Work(grpc_core::Timestamp deadline,
-                            std::vector<EventHandle*>& pending_events) = 0;
-  // Trigger the thread executing Work(..) to break out as soon as possible.
-  // This function is useful in tests. It may also be used to break a thread
-  // out of Work(...) before calling Shutdown() on the poller.
-  virtual void Kick() = 0;
-  virtual ~EventPoller() = default;
+  ~EventPoller() override = default;
 };
 
 }  // namespace iomgr_engine

@@ -27,6 +27,7 @@
 
 #include "src/core/lib/event_engine/iomgr_engine/event_poller.h"
 #include "src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix.h"
+#include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/port.h"
 
@@ -47,17 +48,17 @@ class Epoll1Poller : public EventPoller {
   explicit Epoll1Poller(Scheduler* scheduler);
   EventHandle* CreateHandle(int fd, absl::string_view name,
                             bool track_err) override;
-  absl::Status Work(grpc_core::Timestamp deadline,
-                    std::vector<EventHandle*>& pending_events) override;
+  Poller::WorkResult Work(
+      grpc_event_engine::experimental::EventEngine::Duration timeout) override;
   void Kick() override;
   Scheduler* GetScheduler() { return scheduler_; }
   void Shutdown() override;
   ~Epoll1Poller() override;
 
  private:
-  absl::Status ProcessEpollEvents(int max_epoll_events_to_handle,
-                                  std::vector<EventHandle*>& pending_events);
-  absl::Status DoEpollWait(grpc_core::Timestamp deadline);
+  bool ProcessEpollEvents(int max_epoll_events_to_handle,
+                          Poller::Events& pending_events);
+  int DoEpollWait(grpc_core::Timestamp deadline);
   struct HandlesList {
     Epoll1EventHandle* handle;
     Epoll1EventHandle* next;

@@ -14,6 +14,9 @@
 
 #include <ostream>
 
+#include "absl/types/variant.h"
+
+#include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/iomgr/port.h"
 
 // This test won't work except with posix sockets enabled
@@ -51,7 +54,9 @@
 
 GPR_GLOBAL_CONFIG_DECLARE_STRING(grpc_poll_strategy);
 
+using ::grpc_event_engine::experimental::Poller;
 using ::grpc_event_engine::iomgr_engine::EventPoller;
+using namespace std::chrono_literals;
 
 static gpr_mu g_mu;
 static EventPoller* g_event_poller = nullptr;
@@ -351,16 +356,18 @@ void ClientStart(client* cl, int port) {
 
 // Wait for the signal to shutdown client and server.
 void WaitAndShutdown(server* sv, client* cl) {
-  std::vector<EventHandle*> pending_events;
+  Poller::WorkResult result;
   gpr_mu_lock(&g_mu);
   while (!sv->done || !cl->done) {
     gpr_mu_unlock(&g_mu);
-    (void)g_event_poller->Work(grpc_core::Timestamp::InfFuture(),
-                               pending_events);
-    for (auto it = pending_events.begin(); it != pending_events.end(); ++it) {
-      (*it)->ExecutePendingActions();
+    result = g_event_poller->Work(24h);
+    if (absl::holds_alternative<Poller::Events>(result)) {
+      auto pending_events = absl::get<Poller::Events>(result);
+      for (auto it = pending_events.begin(); it != pending_events.end(); ++it) {
+        (*it)->Run();
+      }
+      pending_events.clear();
     }
-    pending_events.clear();
     gpr_mu_lock(&g_mu);
   }
   gpr_mu_unlock(&g_mu);
@@ -473,16 +480,19 @@ TEST_P(EventPollerTest, TestEventPollerHandleChange) {
 
   // And now wait for it to run.
   auto poller_work = [](FdChangeData* fdc) {
-    std::vector<EventHandle*> pending_events;
+    Poller::WorkResult result;
     gpr_mu_lock(&g_mu);
     while (fdc->cb_that_ran == nullptr) {
       gpr_mu_unlock(&g_mu);
-      (void)g_event_poller->Work(grpc_core::Timestamp::InfFuture(),
-                                 pending_events);
-      for (auto it = pending_events.begin(); it != pending_events.end(); ++it) {
-        (*it)->ExecutePendingActions();
+      result = g_event_poller->Work(24h);
+      if (absl::holds_alternative<Poller::Events>(result)) {
+        auto pending_events = absl::get<Poller::Events>(result);
+        for (auto it = pending_events.begin(); it != pending_events.end();
+             ++it) {
+          (*it)->Run();
+        }
+        pending_events.clear();
       }
-      pending_events.clear();
       gpr_mu_lock(&g_mu);
     }
   };
