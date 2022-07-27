@@ -44,7 +44,6 @@
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/xds/upb_utils.h"
 #include "src/core/ext/xds/xds_common_types.h"
-#include "src/core/lib/iomgr/error.h"
 
 namespace grpc_core {
 
@@ -166,18 +165,15 @@ absl::StatusOr<Json> ParseStructToJson(const XdsEncodingContext& context,
   void* buf = upb_Arena_Malloc(context.arena, json_size + 1);
   upb_JsonEncode(resource, msg_def, context.symtab, 0,
                  reinterpret_cast<char*>(buf), json_size + 1, status.ptr());
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  auto json = Json::Parse(reinterpret_cast<char*>(buf), &error);
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  auto json = Json::Parse(reinterpret_cast<char*>(buf));
+  if (!json.ok()) {
     // This should not happen
-    auto ret_status = absl::InternalError(
+    return absl::InternalError(
         absl::StrCat("Error parsing JSON form of google::Protobuf::Struct "
                      "produced by upb library: ",
-                     grpc_error_std_string(error)));
-    GRPC_ERROR_UNREF(error);
-    return ret_status;
+                     json.status().ToString()));
   }
-  return json;
+  return std::move(*json);
 }
 
 }  // namespace

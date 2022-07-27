@@ -79,10 +79,9 @@ XdsRouteLookupClusterSpecifierPlugin::GenerateLoadBalancingPolicyConfig(
   upb_JsonEncode(plugin_config, msg_type, symtab, 0,
                  reinterpret_cast<char*>(buf), json_size + 1, status.ptr());
   Json::Object rls_policy;
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  rls_policy["routeLookupConfig"] =
-      Json::Parse(reinterpret_cast<char*>(buf), &error);
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  auto json = Json::Parse(reinterpret_cast<char*>(buf));
+  GPR_ASSERT(json.ok());
+  rls_policy["routeLookupConfig"] = std::move(*json);
   Json::Object cds_policy;
   cds_policy["cds_experimental"] = Json::Object();
   Json::Array child_policy;

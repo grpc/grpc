@@ -742,13 +742,9 @@ TEST_F(ClientChannelParserTest, InvalidHealthCheckMultipleEntries) {
       "}";
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
-  // TODO(roth): When we convert the JSON API to return absl::Status
-  // instead of grpc_error, change this expectation to be a fixed string
-  // equality match.
-  EXPECT_THAT(std::string(service_config.status().message()),
-              ::testing::ContainsRegex(
-                  "JSON parsing failed" CHILD_ERROR_TAG
-                  "duplicate key \"healthCheckConfig\" at index 104"));
+  EXPECT_EQ(service_config.status().message(),
+            "JSON parsing failed: ["
+            "duplicate key \"healthCheckConfig\" at index 104]");
 }
 
 //

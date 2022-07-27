@@ -587,6 +587,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/status",
+        "absl/status:statusor",
         "absl/synchronization",
         "absl/container:inlined_vector",
         "absl/strings",
@@ -3117,7 +3118,6 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "config",
-        "error",
         "gpr_base",
         "grpc_service_config",
         "json",
@@ -7000,13 +7000,12 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/status",
+        "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
     ],
-    deps = [
-        "error",
-        "gpr_base",
-    ],
+    deps = ["gpr_base"],
 )
 
 grpc_cc_library(

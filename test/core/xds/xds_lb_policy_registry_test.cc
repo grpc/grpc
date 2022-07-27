@@ -133,11 +133,10 @@ TEST(XdsLbPolicyRegistryTest, RingHashRingSizeDefaults) {
   auto result = ConvertXdsPolicy(policy);
   EXPECT_TRUE(result.ok());
   EXPECT_EQ(result->size(), 1);
-  grpc_error_handle error = GRPC_ERROR_NONE;
   EXPECT_EQ((*result)[0], Json::Parse("{"
                                       "\"ring_hash_experimental\": {"
-                                      "}}",
-                                      &error));
+                                      "}}")
+                              .value());
 }
 
 TEST(XdsLbPolicyRegistryTest, RingHashRingSizeCustom) {
@@ -152,13 +151,12 @@ TEST(XdsLbPolicyRegistryTest, RingHashRingSizeCustom) {
   auto result = ConvertXdsPolicy(policy);
   EXPECT_TRUE(result.ok());
   EXPECT_EQ(result->size(), 1);
-  grpc_error_handle error = GRPC_ERROR_NONE;
   EXPECT_EQ((*result)[0], Json::Parse("{"
                                       "\"ring_hash_experimental\": {"
                                       "  \"minRingSize\": 1234,"
                                       "  \"maxRingSize\": 4567"
-                                      "}}",
-                                      &error));
+                                      "}}")
+                              .value());
 }
 
 TEST(XdsLbPolicyRegistryTest, RoundRobin) {
@@ -169,11 +167,10 @@ TEST(XdsLbPolicyRegistryTest, RoundRobin) {
   auto result = ConvertXdsPolicy(policy);
   EXPECT_TRUE(result.ok());
   EXPECT_EQ(result->size(), 1);
-  grpc_error_handle error = GRPC_ERROR_NONE;
   EXPECT_EQ((*result)[0], Json::Parse("{"
                                       "\"round_robin\": {}"
-                                      "}",
-                                      &error));
+                                      "}")
+                              .value());
 }
 
 TEST(XdsLbPolicyRegistryTest, WrrLocality) {
@@ -190,14 +187,13 @@ TEST(XdsLbPolicyRegistryTest, WrrLocality) {
   auto result = ConvertXdsPolicy(policy);
   EXPECT_TRUE(result.ok());
   EXPECT_EQ(result->size(), 1);
-  grpc_error_handle error = GRPC_ERROR_NONE;
   EXPECT_EQ((*result)[0], Json::Parse("{"
                                       "\"xds_wrr_locality_experimental\": {"
                                       "  \"child_policy\": [{"
                                       "    \"round_robin\": {}"
                                       "  }]"
-                                      "}}",
-                                      &error));
+                                      "}}")
+                              .value());
 }
 
 TEST(XdsLbPolicyRegistryTest, WrrLocalityMissingEndpointPickingPolicy) {
@@ -256,14 +252,13 @@ TEST(XdsLbPolicyRegistryTest, WrrLocalityUnsupportedTypeSkipped) {
   auto result = ConvertXdsPolicy(policy);
   EXPECT_TRUE(result.ok());
   EXPECT_EQ(result->size(), 1);
-  grpc_error_handle error = GRPC_ERROR_NONE;
   EXPECT_EQ((*result)[0], Json::Parse("{"
                                       "\"xds_wrr_locality_experimental\": {"
                                       "  \"child_policy\": [{"
                                       "    \"round_robin\": {}"
                                       "  }]"
-                                      "}}",
-                                      &error));
+                                      "}}")
+                              .value());
 }
 
 class CustomLbPolicyFactory : public LoadBalancingPolicyFactory {
@@ -292,10 +287,7 @@ TEST(XdsLbPolicyRegistryTest, CustomLbPolicy) {
   auto result = ConvertXdsPolicy(policy);
   EXPECT_TRUE(result.ok());
   EXPECT_EQ(result->size(), 1);
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  EXPECT_EQ((*result)[0], Json::Parse("{"
-                                      "\"test.CustomLb\": null}",
-                                      &error));
+  EXPECT_EQ((*result)[0], Json::Parse("{\"test.CustomLb\": null}").value());
 }
 
 TEST(XdsLbPolicyRegistryTest, CustomLbPolicyUdpaTyped) {
@@ -308,10 +300,7 @@ TEST(XdsLbPolicyRegistryTest, CustomLbPolicyUdpaTyped) {
   auto result = ConvertXdsPolicy(policy);
   EXPECT_TRUE(result.ok());
   EXPECT_EQ(result->size(), 1);
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  EXPECT_EQ((*result)[0], Json::Parse("{"
-                                      "\"test.CustomLb\": null}",
-                                      &error));
+  EXPECT_EQ((*result)[0], Json::Parse("{\"test.CustomLb\": null}").value());
 }
 
 TEST(XdsLbPolicyRegistryTest, UnsupportedCustomTypeError) {
@@ -408,7 +397,6 @@ TEST(XdsLbPolicyRegistryTest, CustomLbPolicyJsonConversion) {
   auto result = ConvertXdsPolicy(policy);
   EXPECT_TRUE(result.ok());
   EXPECT_EQ(result->size(), 1);
-  grpc_error_handle error = GRPC_ERROR_NONE;
   EXPECT_EQ((*result)[0], Json::Parse(
                               R"json({
                                 "test.CustomLb":{
@@ -420,8 +408,8 @@ TEST(XdsLbPolicyRegistryTest, CustomLbPolicyJsonConversion) {
                                   },
                                   "list": [null, 234]
                                 }
-                              })json",
-                              &error));
+                              })json")
+                              .value());
 }
 
 TEST(XdsLbPolicyRegistryTest, CustomLbPolicyListError) {
@@ -458,11 +446,10 @@ TEST(XdsLbPolicyRegistryTest, UnsupportedBuiltInTypeSkipped) {
   auto result = ConvertXdsPolicy(policy);
   EXPECT_TRUE(result.ok());
   EXPECT_EQ(result->size(), 1);
-  grpc_error_handle error = GRPC_ERROR_NONE;
   EXPECT_EQ((*result)[0], Json::Parse("{"
                                       "\"round_robin\": {}"
-                                      "}",
-                                      &error));
+                                      "}")
+                              .value());
 }
 
 TEST(XdsLbPolicyRegistryTest, UnsupportedCustomTypeSkipped) {
@@ -481,11 +468,10 @@ TEST(XdsLbPolicyRegistryTest, UnsupportedCustomTypeSkipped) {
   auto result = ConvertXdsPolicy(policy);
   EXPECT_TRUE(result.ok());
   EXPECT_EQ(result->size(), 1);
-  grpc_error_handle error = GRPC_ERROR_NONE;
   EXPECT_EQ((*result)[0], Json::Parse("{"
                                       "\"round_robin\": {}"
-                                      "}",
-                                      &error));
+                                      "}")
+                              .value());
 }
 
 // Build a recurse load balancing policy that goes beyond the max allowable
