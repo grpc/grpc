@@ -101,10 +101,8 @@ class OutlierDetectionLbConfig : public LoadBalancingPolicy::Config {
   absl::string_view name() const override { return kOutlierDetection; }
 
   bool CountingEnabled() const {
-    return (
-        outlier_detection_config_.interval != Duration::Infinity() &&
-        (outlier_detection_config_.success_rate_ejection.has_value() ||
-         outlier_detection_config_.failure_percentage_ejection.has_value()));
+    return outlier_detection_config_.success_rate_ejection.has_value() ||
+           outlier_detection_config_.failure_percentage_ejection.has_value();
   }
 
   const OutlierDetectionConfig& outlier_detection_config() const {
