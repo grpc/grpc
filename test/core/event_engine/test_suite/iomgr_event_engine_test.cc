@@ -13,7 +13,7 @@
 // limitations under the License.
 #include <grpc/grpc.h>
 
-#include "src/core/lib/event_engine/iomgr_engine/iomgr_engine.h"
+#include "src/core/lib/event_engine/posix_engine/posix_engine.h"
 #include "test/core/event_engine/test_suite/event_engine_test.h"
 #include "test/core/util/test_config.h"
 

@@ -33,13 +33,13 @@
 
 #include <grpc/event_engine/event_engine.h>
 
-#include "src/core/lib/event_engine/iomgr_engine/timer_heap.h"
+#include "src/core/lib/event_engine/posix_engine/timer_heap.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/time_averaged_stats.h"
 
 namespace grpc_event_engine {
-namespace iomgr_engine {
+namespace posix_engine {
 
 struct Timer {
   int64_t deadline;
@@ -187,7 +187,7 @@ class TimerList {
   const std::unique_ptr<Shard*[]> shard_queue_ ABSL_GUARDED_BY(mu_);
 };
 
-}  // namespace iomgr_engine
+}  // namespace posix_engine
 }  // namespace grpc_event_engine
 
 #endif /* GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_TIMER_H */

@@ -23,11 +23,11 @@
 
 #include <grpc/event_engine/event_engine.h>
 
-#include "src/core/lib/event_engine/iomgr_engine/iomgr_engine_closure.h"
+#include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
 #include "src/core/lib/gprpp/time.h"
 
 namespace grpc_event_engine {
-namespace iomgr_engine {
+namespace posix_engine {
 
 class Scheduler {
  public:
@@ -99,7 +99,7 @@ class EventPoller {
   virtual ~EventPoller() = default;
 };
 
-}  // namespace iomgr_engine
+}  // namespace posix_engine
 }  // namespace grpc_event_engine
 
 #endif  // GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_EVENT_POLLER_H

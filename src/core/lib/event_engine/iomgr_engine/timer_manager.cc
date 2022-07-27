@@ -18,7 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/event_engine/iomgr_engine/timer_manager.h"
+#include "src/core/lib/event_engine/posix_engine/timer_manager.h"
 
 #include <algorithm>
 #include <memory>
@@ -35,7 +35,7 @@
 #include "src/core/lib/gprpp/thd.h"
 
 namespace grpc_event_engine {
-namespace iomgr_engine {
+namespace posix_engine {
 
 namespace {
 class ThreadCollector {
@@ -250,5 +250,5 @@ void TimerManager::Kick() {
   cv_.Signal();
 }
 
-}  // namespace iomgr_engine
+}  // namespace posix_engine
 }  // namespace grpc_event_engine

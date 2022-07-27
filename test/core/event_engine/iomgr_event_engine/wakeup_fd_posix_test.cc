@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix.h"
+#include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -22,11 +22,11 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "src/core/lib/event_engine/iomgr_engine/wakeup_fd_eventfd.h"
-#include "src/core/lib/event_engine/iomgr_engine/wakeup_fd_pipe.h"
+#include "src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.h"
+#include "src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.h"
 
 namespace grpc_event_engine {
-namespace iomgr_engine {
+namespace posix_engine {
 
 TEST(WakeupFdPosixTest, PipeWakeupFdTest) {
   if (!PipeWakeupFd::IsSupported()) {
@@ -52,7 +52,7 @@ TEST(WakeupFdPosixTest, EventFdWakeupFdTest) {
   EXPECT_TRUE((*eventfd_wakeup_fd)->ConsumeWakeup().ok());
 }
 
-}  // namespace iomgr_engine
+}  // namespace posix_engine
 }  // namespace grpc_event_engine
 
 int main(int argc, char** argv) {

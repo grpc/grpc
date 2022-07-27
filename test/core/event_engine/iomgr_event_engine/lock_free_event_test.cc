@@ -21,12 +21,12 @@
 #include <gtest/gtest.h>
 
 #include "src/core/lib/event_engine/event_engine_factory.h"
-#include "src/core/lib/event_engine/iomgr_engine/event_poller.h"
-#include "src/core/lib/event_engine/iomgr_engine/iomgr_engine_closure.h"
-#include "src/core/lib/event_engine/iomgr_engine/lockfree_event.h"
+#include "src/core/lib/event_engine/posix_engine/event_poller.h"
+#include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
+#include "src/core/lib/event_engine/posix_engine/lockfree_event.h"
 #include "src/core/lib/gprpp/sync.h"
 
-using ::grpc_event_engine::iomgr_engine::Scheduler;
+using ::grpc_event_engine::posix_engine::Scheduler;
 
 namespace {
 class TestScheduler : public Scheduler {
@@ -47,7 +47,7 @@ TestScheduler* g_scheduler;
 }  // namespace
 
 namespace grpc_event_engine {
-namespace iomgr_engine {
+namespace posix_engine {
 
 TEST(LockFreeEventTest, BasicTest) {
   LockfreeEvent event(g_scheduler);
@@ -140,7 +140,7 @@ TEST(LockFreeEventTest, MultiThreadedTest) {
   event.DestroyEvent();
 }
 
-}  // namespace iomgr_engine
+}  // namespace posix_engine
 }  // namespace grpc_event_engine
 
 int main(int argc, char** argv) {

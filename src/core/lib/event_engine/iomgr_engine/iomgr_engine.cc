@@ -13,7 +13,7 @@
 // limitations under the License.
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/event_engine/iomgr_engine/iomgr_engine.h"
+#include "src/core/lib/event_engine/posix_engine/posix_engine.h"
 
 #include <string>
 #include <utility>
@@ -25,7 +25,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/event_engine/iomgr_engine/timer.h"
+#include "src/core/lib/event_engine/posix_engine/timer.h"
 #include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/event_engine/utils.h"
 
@@ -34,7 +34,7 @@ namespace experimental {
 
 struct PosixEventEngine::ClosureData final : public EventEngine::Closure {
   absl::AnyInvocable<void()> cb;
-  iomgr_engine::Timer timer;
+  posix_engine::Timer timer;
   PosixEventEngine* engine;
   EventEngine::TaskHandle handle;
 

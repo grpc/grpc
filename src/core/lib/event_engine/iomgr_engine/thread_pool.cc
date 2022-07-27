@@ -18,14 +18,14 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/event_engine/iomgr_engine/thread_pool.h"
+#include "src/core/lib/event_engine/posix_engine/thread_pool.h"
 
 #include <utility>
 
 #include "src/core/lib/gprpp/thd.h"
 
 namespace grpc_event_engine {
-namespace iomgr_engine {
+namespace posix_engine {
 
 ThreadPool::Thread::Thread(ThreadPool* pool)
     : pool_(pool),
@@ -121,5 +121,5 @@ void ThreadPool::Add(absl::AnyInvocable<void()> callback) {
   }
 }
 
-}  // namespace iomgr_engine
+}  // namespace posix_engine
 }  // namespace grpc_event_engine

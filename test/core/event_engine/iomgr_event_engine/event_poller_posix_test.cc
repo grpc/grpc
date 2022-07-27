@@ -42,16 +42,16 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/event_engine/iomgr_engine/event_poller.h"
-#include "src/core/lib/event_engine/iomgr_engine/event_poller_posix_default.h"
-#include "src/core/lib/event_engine/iomgr_engine/iomgr_engine.h"
-#include "src/core/lib/event_engine/iomgr_engine/iomgr_engine_closure.h"
+#include "src/core/lib/event_engine/posix_engine/event_poller.h"
+#include "src/core/lib/event_engine/posix_engine/event_poller_posix_default.h"
+#include "src/core/lib/event_engine/posix_engine/posix_engine.h"
+#include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
 #include "src/core/lib/gprpp/global_config.h"
 #include "test/core/util/port.h"
 
 GPR_GLOBAL_CONFIG_DECLARE_STRING(grpc_poll_strategy);
 
-using ::grpc_event_engine::iomgr_engine::EventPoller;
+using ::grpc_event_engine::posix_engine::EventPoller;
 
 static gpr_mu g_mu;
 static EventPoller* g_event_poller = nullptr;
@@ -67,7 +67,7 @@ static EventPoller* g_event_poller = nullptr;
 #define CLIENT_TOTAL_WRITE_CNT 3
 
 namespace grpc_event_engine {
-namespace iomgr_engine {
+namespace posix_engine {
 
 namespace {
 
@@ -377,7 +377,7 @@ class EventPollerTest : public ::testing::TestWithParam<std::string> {
         absl::make_unique<grpc_event_engine::experimental::PosixEventEngine>();
     EXPECT_NE(engine_, nullptr);
     scheduler_ =
-        absl::make_unique<grpc_event_engine::iomgr_engine::TestScheduler>(
+        absl::make_unique<grpc_event_engine::posix_engine::TestScheduler>(
             engine_.get());
     EXPECT_NE(scheduler_, nullptr);
     GPR_GLOBAL_CONFIG_SET(grpc_poll_strategy, GetParam().c_str());
@@ -391,7 +391,7 @@ class EventPollerTest : public ::testing::TestWithParam<std::string> {
 
  private:
   std::unique_ptr<grpc_event_engine::experimental::PosixEventEngine> engine_;
-  std::unique_ptr<grpc_event_engine::iomgr_engine::TestScheduler> scheduler_;
+  std::unique_ptr<grpc_event_engine::posix_engine::TestScheduler> scheduler_;
 };
 
 // Test grpc_fd. Start an upload server and client, upload a stream of bytes
@@ -519,7 +519,7 @@ INSTANTIATE_TEST_SUITE_P(EventPoller, EventPollerTest,
                          &TestScenarioName);
 
 }  // namespace
-}  // namespace iomgr_engine
+}  // namespace posix_engine
 }  // namespace grpc_event_engine
 
 int main(int argc, char** argv) {

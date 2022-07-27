@@ -25,8 +25,8 @@
 #include "absl/strings/string_view.h"
 #include "absl/synchronization/mutex.h"
 
-#include "src/core/lib/event_engine/iomgr_engine/event_poller.h"
-#include "src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix.h"
+#include "src/core/lib/event_engine/posix_engine/event_poller.h"
+#include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/port.h"
 
@@ -37,7 +37,7 @@
 #define MAX_EPOLL_EVENTS 100
 
 namespace grpc_event_engine {
-namespace iomgr_engine {
+namespace posix_engine {
 
 class Epoll1EventHandle;
 
@@ -94,7 +94,7 @@ class Epoll1Poller : public EventPoller {
 // engine.
 Epoll1Poller* GetEpoll1Poller(Scheduler* scheduler);
 
-}  // namespace iomgr_engine
+}  // namespace posix_engine
 }  // namespace grpc_event_engine
 
 #endif  // GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_EV_EPOLL1_LINUX_H

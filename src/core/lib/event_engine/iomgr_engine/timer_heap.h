@@ -25,7 +25,7 @@
 #include <vector>
 
 namespace grpc_event_engine {
-namespace iomgr_engine {
+namespace posix_engine {
 
 struct Timer;
 
@@ -50,7 +50,7 @@ class TimerHeap {
   std::vector<Timer*> timers_;
 };
 
-}  // namespace iomgr_engine
+}  // namespace posix_engine
 }  // namespace grpc_event_engine
 
 #endif /* GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_TIMER_HEAP_H */

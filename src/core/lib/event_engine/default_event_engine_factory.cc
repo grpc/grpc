@@ -35,7 +35,7 @@ std::unique_ptr<EventEngine> DefaultEventEngineFactory() {
 }  // namespace experimental
 }  // namespace grpc_event_engine
 #else  // not GPR_WINDOWS
-#include "src/core/lib/event_engine/iomgr_engine/iomgr_engine.h"
+#include "src/core/lib/event_engine/posix_engine/posix_engine.h"
 
 namespace grpc_event_engine {
 namespace experimental {

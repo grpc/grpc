@@ -972,7 +972,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/event_engine/event_engine_factory.h )
   s.files += %w( src/core/lib/event_engine/handle_containers.h )
   s.files += %w( src/core/lib/event_engine/iomgr_engine/iomgr_engine.cc )
-  s.files += %w( src/core/lib/event_engine/iomgr_engine/iomgr_engine.h )
+  s.files += %w( src/core/lib/event_engine/iomgr_engine/posix_engine.h )
   s.files += %w( src/core/lib/event_engine/iomgr_engine/thread_pool.cc )
   s.files += %w( src/core/lib/event_engine/iomgr_engine/thread_pool.h )
   s.files += %w( src/core/lib/event_engine/iomgr_engine/timer.cc )

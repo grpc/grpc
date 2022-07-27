@@ -16,7 +16,7 @@
  *
  */
 
-#include "src/core/lib/event_engine/iomgr_engine/timer_heap.h"
+#include "src/core/lib/event_engine/posix_engine/timer_heap.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -24,7 +24,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "src/core/lib/event_engine/iomgr_engine/timer.h"
+#include "src/core/lib/event_engine/posix_engine/timer.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/bitset.h"
 
@@ -32,7 +32,7 @@ using testing::Contains;
 using testing::Not;
 
 namespace grpc_event_engine {
-namespace iomgr_engine {
+namespace posix_engine {
 
 namespace {
 int64_t RandomDeadline(void) { return rand(); }
@@ -193,7 +193,7 @@ TEST(TimerHeapTest, RandomMutations) {
 }
 
 }  // namespace
-}  // namespace iomgr_engine
+}  // namespace posix_engine
 }  // namespace grpc_event_engine
 
 int main(int argc, char** argv) {

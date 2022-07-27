@@ -18,7 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/event_engine/iomgr_engine/timer.h"
+#include "src/core/lib/event_engine/posix_engine/timer.h"
 
 #include <algorithm>
 #include <atomic>
@@ -27,12 +27,12 @@
 
 #include <grpc/support/cpu.h>
 
-#include "src/core/lib/event_engine/iomgr_engine/timer_heap.h"
+#include "src/core/lib/event_engine/posix_engine/timer_heap.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/time.h"
 
 namespace grpc_event_engine {
-namespace iomgr_engine {
+namespace posix_engine {
 
 static const size_t kInvalidHeapIndex = std::numeric_limits<size_t>::max();
 static const double kAddDeadlineScale = 0.33;
@@ -307,5 +307,5 @@ TimerList::TimerCheck(grpc_core::Timestamp* next) {
   return std::move(run);
 }
 
-}  // namespace iomgr_engine
+}  // namespace posix_engine
 }  // namespace grpc_event_engine

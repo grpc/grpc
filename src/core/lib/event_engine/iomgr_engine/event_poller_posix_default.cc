@@ -17,16 +17,16 @@
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 
-#include "src/core/lib/event_engine/iomgr_engine/ev_epoll1_linux.h"
-#include "src/core/lib/event_engine/iomgr_engine/ev_poll_posix.h"
-#include "src/core/lib/event_engine/iomgr_engine/event_poller.h"
+#include "src/core/lib/event_engine/posix_engine/ev_epoll1_linux.h"
+#include "src/core/lib/event_engine/posix_engine/ev_poll_posix.h"
+#include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/gprpp/global_config.h"
 #include "src/core/lib/gprpp/memory.h"
 
 GPR_GLOBAL_CONFIG_DECLARE_STRING(grpc_poll_strategy);
 
 namespace grpc_event_engine {
-namespace iomgr_engine {
+namespace posix_engine {
 
 namespace {
 
@@ -54,5 +54,5 @@ EventPoller* GetDefaultPoller(Scheduler* scheduler) {
   return poller;
 }
 
-}  // namespace iomgr_engine
+}  // namespace posix_engine
 }  // namespace grpc_event_engine

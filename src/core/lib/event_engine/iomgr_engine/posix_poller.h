@@ -19,7 +19,7 @@
 #include "src/core/lib/event_engine/poller.h"
 
 namespace grpc_event_engine {
-namespace iomgr_engine {
+namespace posix_engine {
 
 // Interface for posix pollers
 class PosixPoller : public experimental::Poller {
@@ -34,7 +34,7 @@ class PosixPoller : public experimental::Poller {
                                     bool track_err) = 0;
 }
 
-}  // namespace iomgr_engine
+}  // namespace posix_engine
 }  // namespace grpc_event_engine
 
 #endif  // GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_POSIX_POLLER_H

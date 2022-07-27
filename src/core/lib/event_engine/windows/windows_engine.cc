@@ -27,8 +27,8 @@
 #include <grpc/event_engine/slice_buffer.h>
 
 #include "src/core/lib/event_engine/handle_containers.h"
-#include "src/core/lib/event_engine/iomgr_engine/thread_pool.h"
-#include "src/core/lib/event_engine/iomgr_engine/timer_manager.h"
+#include "src/core/lib/event_engine/posix_engine/thread_pool.h"
+#include "src/core/lib/event_engine/posix_engine/timer_manager.h"
 #include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/event_engine/utils.h"
 #include "src/core/lib/event_engine/windows/iocp.h"
@@ -40,12 +40,12 @@ namespace grpc_event_engine {
 namespace experimental {
 
 // TODO(hork): The iomgr timer and execution engine can be reused. It should
-// be separated out from the iomgr_engine and instantiated as components. It is
+// be separated out from the posix_engine and instantiated as components. It is
 // effectively copied below.
 
 struct WindowsEventEngine::Closure final : public EventEngine::Closure {
   absl::AnyInvocable<void()> cb;
-  iomgr_engine::Timer timer;
+  posix_engine::Timer timer;
   WindowsEventEngine* engine;
   EventEngine::TaskHandle handle;
 

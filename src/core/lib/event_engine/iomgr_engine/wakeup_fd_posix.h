@@ -47,7 +47,7 @@
 #include "absl/status/status.h"
 
 namespace grpc_event_engine {
-namespace iomgr_engine {
+namespace posix_engine {
 
 class WakeupFd {
  public:
@@ -70,7 +70,7 @@ class WakeupFd {
   int write_fd_;
 };
 
-}  // namespace iomgr_engine
+}  // namespace posix_engine
 }  // namespace grpc_event_engine
 
 #endif  // GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_WAKEUP_FD_POSIX_H

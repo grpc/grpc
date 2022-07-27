@@ -13,7 +13,7 @@
 // limitations under the License.
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/event_engine/iomgr_engine/ev_epoll1_linux.h"
+#include "src/core/lib/event_engine/posix_engine/ev_epoll1_linux.h"
 
 #include <stdint.h>
 
@@ -45,21 +45,21 @@
 
 #include "absl/synchronization/mutex.h"
 
-#include "src/core/lib/event_engine/iomgr_engine/event_poller.h"
-#include "src/core/lib/event_engine/iomgr_engine/iomgr_engine_closure.h"
-#include "src/core/lib/event_engine/iomgr_engine/lockfree_event.h"
-#include "src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix.h"
-#include "src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix_default.h"
+#include "src/core/lib/event_engine/posix_engine/event_poller.h"
+#include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
+#include "src/core/lib/event_engine/posix_engine/lockfree_event.h"
+#include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h"
+#include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h"
 #include "src/core/lib/gprpp/fork.h"
 #include "src/core/lib/gprpp/time.h"
 
-using ::grpc_event_engine::iomgr_engine::LockfreeEvent;
-using ::grpc_event_engine::iomgr_engine::WakeupFd;
+using ::grpc_event_engine::posix_engine::LockfreeEvent;
+using ::grpc_event_engine::posix_engine::WakeupFd;
 
 #define MAX_EPOLL_EVENTS_HANDLED_PER_ITERATION 1
 
 namespace grpc_event_engine {
-namespace iomgr_engine {
+namespace posix_engine {
 
 class Epoll1EventHandle : public EventHandle {
  public:
@@ -252,7 +252,7 @@ void ResetEventManagerOnFork() {
 // It is possible that GLIBC has epoll but the underlying kernel doesn't.
 // Create epoll_fd to make sure epoll support is available
 bool InitEpoll1PollerLinux() {
-  if (!grpc_event_engine::iomgr_engine::SupportsWakeupFd()) {
+  if (!grpc_event_engine::posix_engine::SupportsWakeupFd()) {
     return false;
   }
   int fd = EpollCreateAndCloexec();
@@ -525,14 +525,14 @@ Epoll1Poller* GetEpoll1Poller(Scheduler* scheduler) {
   return nullptr;
 }
 
-}  // namespace iomgr_engine
+}  // namespace posix_engine
 }  // namespace grpc_event_engine
 
 #else /* defined(GRPC_LINUX_EPOLL) */
 #if defined(GRPC_POSIX_SOCKET_EV_EPOLL1)
 
 namespace grpc_event_engine {
-namespace iomgr_engine {
+namespace posix_engine {
 
 Epoll1Poller::Epoll1Poller(Scheduler* /* engine */) {
   GPR_ASSERT(false && "unimplemented");
@@ -568,7 +568,7 @@ void Epoll1Poller::Kick() { GPR_ASSERT(false && "unimplemented"); }
 // nullptr.
 Epoll1Poller* GetEpoll1Poller(Scheduler* /*scheduler*/) { return nullptr; }
 
-}  // namespace iomgr_engine
+}  // namespace posix_engine
 }  // namespace grpc_event_engine
 
 #endif /* defined(GRPC_POSIX_SOCKET_EV_EPOLL1) */

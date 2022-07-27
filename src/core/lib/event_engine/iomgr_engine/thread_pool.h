@@ -30,7 +30,7 @@
 #include "src/core/lib/gprpp/thd.h"
 
 namespace grpc_event_engine {
-namespace iomgr_engine {
+namespace posix_engine {
 
 class ThreadPool final {
  public:
@@ -65,7 +65,7 @@ class ThreadPool final {
   std::vector<Thread*> dead_threads_;
 };
 
-}  // namespace iomgr_engine
+}  // namespace posix_engine
 }  // namespace grpc_event_engine
 
 #endif  // GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_THREAD_POOL_H

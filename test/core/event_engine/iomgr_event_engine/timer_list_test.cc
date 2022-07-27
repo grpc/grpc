@@ -26,7 +26,7 @@
 
 #include <grpc/grpc.h>
 
-#include "src/core/lib/event_engine/iomgr_engine/timer.h"
+#include "src/core/lib/event_engine/posix_engine/timer.h"
 #include "src/core/lib/gprpp/time.h"
 
 using testing::Mock;
@@ -34,7 +34,7 @@ using testing::Return;
 using testing::StrictMock;
 
 namespace grpc_event_engine {
-namespace iomgr_engine {
+namespace posix_engine {
 
 namespace {
 const int64_t kHoursIn25Days = 25 * 24;
@@ -238,7 +238,7 @@ TEST(TimerListTest, LongRunningServiceCleanup) {
   EXPECT_TRUE(timer_list.TimerCancel(&timers[3]));
 }
 
-}  // namespace iomgr_engine
+}  // namespace posix_engine
 }  // namespace grpc_event_engine
 
 int main(int argc, char** argv) {

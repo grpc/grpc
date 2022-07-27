@@ -18,16 +18,16 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/event_engine/iomgr_engine/timer_heap.h"
+#include "src/core/lib/event_engine/posix_engine/timer_heap.h"
 
 #include <stdint.h>
 
 #include <algorithm>
 
-#include "src/core/lib/event_engine/iomgr_engine/timer.h"
+#include "src/core/lib/event_engine/posix_engine/timer.h"
 
 namespace grpc_event_engine {
-namespace iomgr_engine {
+namespace posix_engine {
 
 /* Adjusts a heap so as to move a hole at position i closer to the root,
    until a suitable position is found for element t. Then, copies t into that
@@ -103,5 +103,5 @@ Timer* TimerHeap::Top() { return timers_[0]; }
 
 void TimerHeap::Pop() { Remove(Top()); }
 
-}  // namespace iomgr_engine
+}  // namespace posix_engine
 }  // namespace grpc_event_engine

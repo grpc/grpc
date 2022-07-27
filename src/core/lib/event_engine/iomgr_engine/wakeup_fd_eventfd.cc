@@ -31,13 +31,13 @@
 #include <sys/eventfd.h>
 #include <unistd.h>
 
-#include "src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix.h"
+#include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h"
 #endif
 
-#include "src/core/lib/event_engine/iomgr_engine/wakeup_fd_eventfd.h"
+#include "src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.h"
 
 namespace grpc_event_engine {
-namespace iomgr_engine {
+namespace posix_engine {
 
 #ifdef GRPC_LINUX_EVENTFD
 
@@ -121,5 +121,5 @@ EventFdWakeupFd::CreateEventFdWakeupFd() {
 
 #endif  // GRPC_LINUX_EVENTFD
 
-}  // namespace iomgr_engine
+}  // namespace posix_engine
 }  // namespace grpc_event_engine

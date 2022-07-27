@@ -29,8 +29,8 @@
 #include <grpc/event_engine/slice_buffer.h>
 
 #include "src/core/lib/event_engine/handle_containers.h"
-#include "src/core/lib/event_engine/iomgr_engine/thread_pool.h"
-#include "src/core/lib/event_engine/iomgr_engine/timer_manager.h"
+#include "src/core/lib/event_engine/posix_engine/thread_pool.h"
+#include "src/core/lib/event_engine/posix_engine/timer_manager.h"
 #include "src/core/lib/event_engine/windows/iocp.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
@@ -107,8 +107,8 @@ class WindowsEventEngine : public EventEngine {
   TaskHandleSet known_handles_ ABSL_GUARDED_BY(mu_);
   std::atomic<intptr_t> aba_token_{0};
 
-  iomgr_engine::TimerManager timer_manager_;
-  iomgr_engine::ThreadPool thread_pool_{2};
+  posix_engine::TimerManager timer_manager_;
+  posix_engine::ThreadPool thread_pool_{2};
 
   IOCP iocp_;
 };

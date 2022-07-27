@@ -21,10 +21,10 @@
 
 #include "absl/status/status.h"
 
-#include "src/core/lib/event_engine/iomgr_engine/iomgr_engine_closure.h"
+#include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
 
 namespace grpc_event_engine {
-namespace iomgr_engine {
+namespace posix_engine {
 
 class Scheduler;
 
@@ -67,7 +67,7 @@ class LockfreeEvent {
   Scheduler* scheduler_;
 };
 
-}  // namespace iomgr_engine
+}  // namespace posix_engine
 }  // namespace grpc_event_engine
 
 #endif  // GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_LOCKFREE_EVENT_H

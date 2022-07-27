@@ -18,7 +18,7 @@
 #include <grpc/support/port_platform.h>
 
 namespace grpc_event_engine {
-namespace iomgr_engine {
+namespace posix_engine {
 
 class EventPoller;
 class Scheduler;
@@ -27,7 +27,7 @@ class Scheduler;
 // scheduler.
 EventPoller* GetDefaultPoller(Scheduler* scheduler);
 
-}  // namespace iomgr_engine
+}  // namespace posix_engine
 }  // namespace grpc_event_engine
 
 #endif  // GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_EVENT_POLLER_POSIX_DEFAULT_H

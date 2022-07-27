@@ -26,12 +26,12 @@
 #include "absl/strings/string_view.h"
 #include "absl/synchronization/mutex.h"
 
-#include "src/core/lib/event_engine/iomgr_engine/event_poller.h"
-#include "src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix.h"
+#include "src/core/lib/event_engine/posix_engine/event_poller.h"
+#include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h"
 #include "src/core/lib/gprpp/time.h"
 
 namespace grpc_event_engine {
-namespace iomgr_engine {
+namespace posix_engine {
 
 class PollEventHandle;
 
@@ -83,7 +83,7 @@ class PollPoller : public EventPoller {
 // and any attempt to schedule a blocking poll will result in a crash failure.
 PollPoller* GetPollPoller(Scheduler* scheduler, bool use_phony_poll);
 
-}  // namespace iomgr_engine
+}  // namespace posix_engine
 }  // namespace grpc_event_engine
 
 #endif  // GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_EV_POLL_POSIX_H

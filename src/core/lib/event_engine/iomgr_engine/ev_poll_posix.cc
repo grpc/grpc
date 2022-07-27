@@ -14,7 +14,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/event_engine/iomgr_engine/ev_poll_posix.h"
+#include "src/core/lib/event_engine/posix_engine/ev_poll_posix.h"
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -33,8 +33,8 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/event_engine/iomgr_engine/event_poller.h"
-#include "src/core/lib/event_engine/iomgr_engine/iomgr_engine_closure.h"
+#include "src/core/lib/event_engine/posix_engine/event_poller.h"
+#include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/port.h"
 
@@ -53,15 +53,15 @@
 
 #include <grpc/support/alloc.h>
 
-#include "src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix.h"
-#include "src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix_default.h"
+#include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h"
+#include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h"
 #include "src/core/lib/gprpp/fork.h"
 #include "src/core/lib/gprpp/global_config.h"
 #include "src/core/lib/gprpp/time.h"
 
 GPR_GLOBAL_CONFIG_DECLARE_STRING(grpc_poll_strategy);
 
-using ::grpc_event_engine::iomgr_engine::WakeupFd;
+using ::grpc_event_engine::posix_engine::WakeupFd;
 
 static const intptr_t kClosureNotReady = 0;
 static const intptr_t kClosureReady = 1;
@@ -69,7 +69,7 @@ static const int kPollinCheck = POLLIN | POLLHUP | POLLERR;
 static const int kPolloutCheck = POLLOUT | POLLHUP | POLLERR;
 
 namespace grpc_event_engine {
-namespace iomgr_engine {
+namespace posix_engine {
 
 class PollEventHandle : public EventHandle {
  public:
@@ -319,7 +319,7 @@ void ResetEventManagerOnFork() {
 // It is possible that GLIBC has epoll but the underlying kernel doesn't.
 // Create epoll_fd to make sure epoll support is available
 bool InitPollPollerPosix() {
-  if (!grpc_event_engine::iomgr_engine::SupportsWakeupFd()) {
+  if (!grpc_event_engine::posix_engine::SupportsWakeupFd()) {
     return false;
   }
   if (grpc_core::Fork::Enabled()) {
@@ -806,13 +806,13 @@ PollPoller* GetPollPoller(Scheduler* scheduler, bool use_phony_poll) {
   return nullptr;
 }
 
-}  // namespace iomgr_engine
+}  // namespace posix_engine
 }  // namespace grpc_event_engine
 
 #else /* GRPC_POSIX_SOCKET_EV_POLL */
 
 namespace grpc_event_engine {
-namespace iomgr_engine {
+namespace posix_engine {
 
 PollPoller::PollPoller(Scheduler* /* engine */) {
   GPR_ASSERT(false && "unimplemented");
@@ -852,7 +852,7 @@ void PollPoller::PollerHandlesListRemoveHandle(PollEventHandle* /*handle*/) {
   GPR_ASSERT(false && "unimplemented");
 }
 
-}  // namespace iomgr_engine
+}  // namespace posix_engine
 }  // namespace grpc_event_engine
 
 #endif /* GRPC_POSIX_SOCKET_EV_POLL */

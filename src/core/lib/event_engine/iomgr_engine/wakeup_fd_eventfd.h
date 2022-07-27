@@ -21,10 +21,10 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 
-#include "src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix.h"
+#include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h"
 
 namespace grpc_event_engine {
-namespace iomgr_engine {
+namespace posix_engine {
 
 class EventFdWakeupFd : public WakeupFd {
  public:
@@ -39,7 +39,7 @@ class EventFdWakeupFd : public WakeupFd {
   absl::Status Init();
 };
 
-}  // namespace iomgr_engine
+}  // namespace posix_engine
 }  // namespace grpc_event_engine
 
 #endif  // GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_WAKEUP_FD_EVENTFD_H

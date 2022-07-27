@@ -31,13 +31,13 @@
 
 #include <grpc/event_engine/event_engine.h>
 
-#include "src/core/lib/event_engine/iomgr_engine/timer.h"
+#include "src/core/lib/event_engine/posix_engine/timer.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/gprpp/time.h"
 
 namespace grpc_event_engine {
-namespace iomgr_engine {
+namespace posix_engine {
 
 // Timer Manager tries to keep only one thread waiting for the next timeout at
 // all times, and thus effectively preventing the thundering herd problem.
@@ -105,7 +105,7 @@ class TimerManager final {
   std::unique_ptr<TimerList> timer_list_;
 };
 
-}  // namespace iomgr_engine
+}  // namespace posix_engine
 }  // namespace grpc_event_engine
 
 #endif /* GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_TIMER_MANAGER_H */

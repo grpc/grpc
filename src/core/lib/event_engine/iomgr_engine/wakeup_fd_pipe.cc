@@ -31,13 +31,13 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix.h"
+#include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h"
 #endif
 
-#include "src/core/lib/event_engine/iomgr_engine/wakeup_fd_pipe.h"
+#include "src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.h"
 
 namespace grpc_event_engine {
-namespace iomgr_engine {
+namespace posix_engine {
 
 #ifdef GRPC_POSIX_WAKEUP_FD
 
@@ -148,5 +148,5 @@ absl::StatusOr<std::unique_ptr<WakeupFd>> PipeWakeupFd::CreatePipeWakeupFd() {
 
 #endif  //  GRPC_POSIX_WAKEUP_FD
 
-}  // namespace iomgr_engine
+}  // namespace posix_engine
 }  // namespace grpc_event_engine

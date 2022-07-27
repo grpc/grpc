@@ -13,7 +13,7 @@
 // limitations under the License.
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/event_engine/iomgr_engine/lockfree_event.h"
+#include "src/core/lib/event_engine/posix_engine/lockfree_event.h"
 
 #include <stdlib.h>
 
@@ -25,8 +25,8 @@
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/event_engine/iomgr_engine/event_poller.h"
-#include "src/core/lib/event_engine/iomgr_engine/iomgr_engine_closure.h"
+#include "src/core/lib/event_engine/posix_engine/event_poller.h"
+#include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
 #include "src/core/lib/gprpp/status_helper.h"
 
 //  'state' holds the to call when the fd is readable or writable respectively.
@@ -61,7 +61,7 @@
 //     For 5,6,7: See SetShutdown() function
 
 namespace grpc_event_engine {
-namespace iomgr_engine {
+namespace posix_engine {
 
 void LockfreeEvent::InitEvent() {
   // Perform an atomic store to start the state machine.
@@ -263,5 +263,5 @@ void LockfreeEvent::SetReady() {
   }
 }
 
-}  // namespace iomgr_engine
+}  // namespace posix_engine
 }  // namespace grpc_event_engine

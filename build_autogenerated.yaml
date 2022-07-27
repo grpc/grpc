@@ -755,7 +755,7 @@ libs:
   - src/core/lib/event_engine/default_event_engine_factory.h
   - src/core/lib/event_engine/event_engine_factory.h
   - src/core/lib/event_engine/handle_containers.h
-  - src/core/lib/event_engine/iomgr_engine/iomgr_engine.h
+  - src/core/lib/event_engine/iomgr_engine/posix_engine.h
   - src/core/lib/event_engine/iomgr_engine/thread_pool.h
   - src/core/lib/event_engine/iomgr_engine/timer.h
   - src/core/lib/event_engine/iomgr_engine/timer_heap.h
@@ -1935,7 +1935,7 @@ libs:
   - src/core/lib/event_engine/default_event_engine_factory.h
   - src/core/lib/event_engine/event_engine_factory.h
   - src/core/lib/event_engine/handle_containers.h
-  - src/core/lib/event_engine/iomgr_engine/iomgr_engine.h
+  - src/core/lib/event_engine/iomgr_engine/posix_engine.h
   - src/core/lib/event_engine/iomgr_engine/thread_pool.h
   - src/core/lib/event_engine/iomgr_engine/timer.h
   - src/core/lib/event_engine/iomgr_engine/timer_heap.h
