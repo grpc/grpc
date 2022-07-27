@@ -39,7 +39,9 @@
 //     int a;
 //     int b;
 //   };
-// We add a member to Foo to declare how to load the object from JSON:
+// We add a static JsonLoader() method to Foo to declare how to load the
+// object from JSON, and an optional JsonPostLoad() method to do any
+// necessary post-processing:
 //   struct Foo {
 //     int a;
 //     int b;
@@ -50,6 +52,8 @@
 //           .Finish();
 //       return &loader;
 //     }
+//     // Optional; omit if no post-processing needed.
+//     void JsonPostLoad(const Json& source, ErrorList* errors) { ++a; }
 //   };
 // Now we can load Foo objects from JSON:
 //   ErrorList errors;
@@ -255,6 +259,8 @@ class AutoLoader<std::map<std::string, T>> final : public LoadMap {
 template <typename T>
 const LoaderInterface* LoaderForType() {
   static const AutoLoader<T> loader;
+  static_assert(std::is_trivially_destructible<decltype(loader)>::value,
+                "AutoLoader type is not trivially destructible");
   return &loader;
 }
 
