@@ -32,14 +32,8 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/cpu.h>
 
-grpc_stats_data* grpc_stats_per_cpu_storage = nullptr;
-static size_t g_num_cores;
-
-void grpc_stats_init(void) {
-  g_num_cores = gpr_cpu_num_cores();
-  grpc_stats_per_cpu_storage = static_cast<grpc_stats_data*>(
-      gpr_zalloc(sizeof(grpc_stats_data) * g_num_cores));
-}
+static const size_t g_num_cores = gpr_cpu_num_cores();
+grpc_stats_data* grpc_stats_per_cpu_storage = new grpc_stats_data[g_num_cores];
 
 void grpc_stats_collect(grpc_stats_data* output) {
   memset(output, 0, sizeof(*output));

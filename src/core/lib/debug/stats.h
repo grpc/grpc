@@ -55,7 +55,8 @@ extern grpc_stats_data* grpc_stats_per_cpu_storage;
 #define GRPC_STATS_INC_HISTOGRAM(histogram, index)
 #endif /* defined(GRPC_COLLECT_STATS) || !defined(NDEBUG) */
 
-void grpc_stats_init(void);
+GRPC_DEPRECATED("function is no longer needed")
+inline void grpc_stats_init(void) {}
 void grpc_stats_collect(grpc_stats_data* output);
 // c = b-a
 void grpc_stats_diff(const grpc_stats_data* b, const grpc_stats_data* a,
