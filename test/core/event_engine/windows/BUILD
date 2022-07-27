@@ -43,9 +43,9 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "socket_test",
+    name = "win_socket_test",
     timeout = "short",
-    srcs = ["socket_test.cc"],
+    srcs = ["win_socket_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
     tags = [

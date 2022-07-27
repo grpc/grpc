@@ -38,9 +38,9 @@ using ::grpc_event_engine::experimental::WindowsEventEngine;
 using ::grpc_event_engine::experimental::WinSocket;
 }  // namespace
 
-class SocketTest : public testing::Test {};
+class WinSocketTest : public testing::Test {};
 
-TEST_F(SocketTest, ManualReadEventTriggeredWithoutIO) {
+TEST_F(WinSocketTest, ManualReadEventTriggeredWithoutIO) {
   auto engine = absl::make_unique<WindowsEventEngine>();
   SOCKET sockpair[2];
   CreateSockpair(sockpair, IOCP::GetDefaultSocketFlags());
@@ -65,7 +65,7 @@ TEST_F(SocketTest, ManualReadEventTriggeredWithoutIO) {
   wrapped_server_socket.MaybeShutdown(absl::CancelledError("done"));
 }
 
-TEST_F(SocketTest, NotificationCalledImmediatelyOnShutdownWinSocket) {
+TEST_F(WinSocketTest, NotificationCalledImmediatelyOnShutdownWinSocket) {
   auto engine = absl::make_unique<WindowsEventEngine>();
   SOCKET sockpair[2];
   CreateSockpair(sockpair, IOCP::GetDefaultSocketFlags());
