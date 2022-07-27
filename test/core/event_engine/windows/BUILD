@@ -24,8 +24,17 @@ grpc_cc_library(
     ],
 )
 
+grpc_cc_library(
+    name = "self_deleting_closure",
+    hdrs = ["self_deleting_closure.h"],
+    external_deps = [
+        "absl/functional:any_invocable",
+    ],
+)
+
 grpc_cc_test(
     name = "iocp_test",
+    timeout = "short",
     srcs = ["iocp_test.cc"],
     external_deps = [
         "gtest",
@@ -42,15 +51,17 @@ grpc_cc_test(
     deps = [
         "basic_closure",
         "create_sockpair",
+        "self_deleting_closure",
+        "//:event_engine_utils",
         "//:gpr_platform",
         "//:windows_iocp",
-        "//:event_engine_utils",
         "//test/core/util:grpc_test_util",
     ],
 )
 
 grpc_cc_test(
     name = "socket_test",
+    timeout = "short",
     srcs = ["socket_test.cc"],
     external_deps = ["gtest"],
     language = "C++",

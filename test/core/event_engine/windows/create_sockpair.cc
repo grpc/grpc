@@ -60,15 +60,15 @@ void CreateSockpair(SOCKET sockpair[2], DWORD flags) {
   // enabled, but not causing an unrecoverable error. So this is left as a
   // logged status. WSAEINVAL is expected.
   auto status = PrepareSocket(cli_sock);
-  if (!status.ok()) {
-    gpr_log(GPR_DEBUG, "Error preparing client socket: %s",
-            status.ToString().c_str());
-  }
+  // if (!status.ok()) {
+  //   gpr_log(GPR_DEBUG, "Error preparing client socket: %s",
+  //           status.ToString().c_str());
+  // }
   status = PrepareSocket(svr_sock);
-  if (!status.ok()) {
-    gpr_log(GPR_DEBUG, "Error preparing server socket: %s",
-            status.ToString().c_str());
-  }
+  // if (!status.ok()) {
+  //   gpr_log(GPR_DEBUG, "Error preparing server socket: %s",
+  //           status.ToString().c_str());
+  // }
 
   sockpair[0] = svr_sock;
   sockpair[1] = cli_sock;

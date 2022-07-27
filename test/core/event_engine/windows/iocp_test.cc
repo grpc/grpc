@@ -15,6 +15,8 @@
 
 #include "src/core/lib/event_engine/windows/iocp.h"
 
+#include <thread>
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -31,6 +33,7 @@
 #include "src/core/lib/iomgr/error.h"
 #include "test/core/event_engine/windows/basic_closure.h"
 #include "test/core/event_engine/windows/create_sockpair.h"
+#include "test/core/event_engine/windows/self_deleting_closure.h"
 
 // DO NOT SUBMIT(hork): get sanitizers working
 
@@ -40,6 +43,7 @@ using ::grpc_event_engine::experimental::CreateSockpair;
 using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::IOCP;
 using ::grpc_event_engine::experimental::Poller;
+using ::grpc_event_engine::experimental::SelfDeletingClosure;
 using ::grpc_event_engine::experimental::WindowsEventEngine;
 using ::grpc_event_engine::experimental::WinSocket;
 }  // namespace
@@ -136,6 +140,8 @@ TEST_F(IOCPTest, ClientReceivesNotificationOfServerSend) {
 
   delete on_read;
   delete on_write;
+  wrapped_client_socket->MaybeShutdown(absl::OkStatus());
+  wrapped_server_socket->MaybeShutdown(absl::OkStatus());
   delete wrapped_client_socket;
   delete wrapped_server_socket;
 }
@@ -206,6 +212,7 @@ TEST_F(IOCPTest, IocpWorkTimeoutDueToNoNotificationRegistered) {
   ASSERT_TRUE(read_called);
 
   delete on_read;
+  wrapped_client_socket->MaybeShutdown(absl::OkStatus());
   delete wrapped_client_socket;
 }
 
@@ -265,6 +272,102 @@ TEST_F(IOCPTest, CrashOnWatchingAClosedSocket) {
             static_cast<WinSocket*>(iocp.Watch(sockpair[0]));
       },
       "");
+}
+
+TEST_F(IOCPTest, StressTestThousandsOfSockets) {
+  // Start 100 threads, each with their own IOCP
+  // On each thread, create 50 socket pairs (100 sockets) and have them exchange
+  // a message before shutting down.
+  int thread_count = 100;
+  int sockets_per_thread = 50;
+  std::atomic<int> read_count{0};
+  std::atomic<int> write_count{0};
+  std::vector<std::thread> threads;
+  threads.reserve(thread_count);
+  for (int thread_n = 0; thread_n < thread_count; thread_n++) {
+    threads.emplace_back([thread_n, sockets_per_thread, &read_count,
+                          &write_count] {
+      auto engine = absl::make_unique<WindowsEventEngine>();
+      IOCP iocp(engine.get());
+      // Start a looping worker thread with a moderate timeout
+      std::thread iocp_worker([&iocp, engine = engine.get()] {
+        Poller::WorkResult result;
+        do {
+          result = iocp.Work(std::chrono::seconds(1));
+          if (absl::holds_alternative<Poller::Events>(result)) {
+            for (auto& event : absl::get<Poller::Events>(result)) {
+              engine->Run(event);
+            }
+          }
+        } while (!absl::holds_alternative<Poller::DeadlineExceeded>(result));
+      });
+      for (int i = 0; i < sockets_per_thread; i++) {
+        SOCKET sockpair[2];
+        CreateSockpair(sockpair, iocp.GetDefaultSocketFlags());
+        WinSocket* wrapped_client_socket =
+            static_cast<WinSocket*>(iocp.Watch(sockpair[0]));
+        WinSocket* wrapped_server_socket =
+            static_cast<WinSocket*>(iocp.Watch(sockpair[1]));
+        wrapped_client_socket->NotifyOnRead(
+            SelfDeletingClosure::Create([&read_count, wrapped_client_socket] {
+              read_count.fetch_add(1);
+              wrapped_client_socket->MaybeShutdown(absl::OkStatus());
+            }));
+        wrapped_server_socket->NotifyOnWrite(
+            SelfDeletingClosure::Create([&write_count, wrapped_server_socket] {
+              write_count.fetch_add(1);
+              wrapped_server_socket->MaybeShutdown(absl::OkStatus());
+            }));
+        {
+          // Set the client to receive
+          WSABUF read_wsabuf;
+          read_wsabuf.len = 20;
+          char read_char_buffer[20];
+          read_wsabuf.buf = read_char_buffer;
+          DWORD bytes_rcvd;
+          DWORD flags = 0;
+          memset(wrapped_client_socket->read_info()->overlapped(), 0,
+                 sizeof(OVERLAPPED));
+          int status = WSARecv(
+              wrapped_client_socket->socket(), &read_wsabuf, 1, &bytes_rcvd,
+              &flags, wrapped_client_socket->read_info()->overlapped(), NULL);
+          // Expecting error 997, WSA_IO_PENDING
+          EXPECT_EQ(status, -1);
+          int last_error = WSAGetLastError();
+          ASSERT_EQ(last_error, WSA_IO_PENDING);
+        }
+        {
+          // Have the server send a message to the client.
+          WSABUF write_wsabuf;
+          char write_char_buffer[20] = "hello!";
+          write_wsabuf.len = 20;
+          write_wsabuf.buf = write_char_buffer;
+          DWORD bytes_sent;
+          memset(wrapped_server_socket->write_info()->overlapped(), 0,
+                 sizeof(OVERLAPPED));
+          int status = WSASend(
+              wrapped_server_socket->socket(), &write_wsabuf, 1, &bytes_sent, 0,
+              wrapped_server_socket->write_info()->overlapped(), NULL);
+          EXPECT_EQ(status, 0);
+        }
+      }
+      iocp_worker.join();
+    });
+  }
+  for (auto& t : threads) {
+    t.join();
+  }
+  absl::Time deadline = absl::Now() + absl::Seconds(30);
+  while (read_count.load() != thread_count * sockets_per_thread ||
+         write_count.load() != thread_count * sockets_per_thread) {
+    absl::SleepFor(absl::Milliseconds(50));
+    if (deadline < absl::Now()) {
+      FAIL() << "Deadline exceeded with " << read_count.load() << " reads and "
+             << write_count.load() << " writes";
+    }
+  }
+  ASSERT_EQ(read_count.load(), thread_count * sockets_per_thread);
+  ASSERT_EQ(write_count.load(), thread_count * sockets_per_thread);
 }
 
 int main(int argc, char** argv) {
