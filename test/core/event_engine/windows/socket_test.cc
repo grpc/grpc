@@ -14,7 +14,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/event_engine/windows/socket.h"
+#include "src/core/lib/event_engine/windows/win_socket.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>

@@ -2575,11 +2575,11 @@ grpc_cc_library(
     name = "windows_iocp",
     srcs = [
         "src/core/lib/event_engine/windows/iocp.cc",
-        "src/core/lib/event_engine/windows/socket.cc",
+        "src/core/lib/event_engine/windows/win_socket.cc",
     ],
     hdrs = [
         "src/core/lib/event_engine/windows/iocp.h",
-        "src/core/lib/event_engine/windows/socket.h",
+        "src/core/lib/event_engine/windows/win_socket.h",
     ],
     external_deps = [
         "absl/base:core_headers",

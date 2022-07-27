@@ -47,9 +47,9 @@ TEST_F(SelfDeletingClosureTest, CallsItsFunction) {
 TEST_F(SelfDeletingClosureTest, CallsItsFunctionAndIsDestroyed) {
   Promise<bool> fn_called;
   Promise<bool> destroyed;
-  auto* closure = SelfDeletingClosure::Create(
-      [&fn_called] { fn_called.Set(true); },
-      [&destroyed] { destroyed.Set(true); });
+  auto* closure =
+      SelfDeletingClosure::Create([&fn_called] { fn_called.Set(true); },
+                                  [&destroyed] { destroyed.Set(true); });
   closure->Run();
   ASSERT_TRUE(fn_called.WaitWithTimeout(absl::Seconds(3)));
   ASSERT_TRUE(destroyed.WaitWithTimeout(absl::Seconds(3)));

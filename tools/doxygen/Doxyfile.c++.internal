@@ -1977,8 +1977,8 @@ src/core/lib/event_engine/utils.cc \
 src/core/lib/event_engine/utils.h \
 src/core/lib/event_engine/windows/iocp.cc \
 src/core/lib/event_engine/windows/iocp.h \
-src/core/lib/event_engine/windows/socket.cc \
-src/core/lib/event_engine/windows/socket.h \
+src/core/lib/event_engine/windows/win_socket.cc \
+src/core/lib/event_engine/windows/win_socket.h \
 src/core/lib/event_engine/windows/windows_engine.cc \
 src/core/lib/event_engine/windows/windows_engine.h \
 src/core/lib/gpr/alloc.cc \

@@ -25,7 +25,7 @@
 #include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/event_engine/utils.h"
 #include "src/core/lib/event_engine/windows/iocp.h"
-#include "src/core/lib/event_engine/windows/socket.h"
+#include "src/core/lib/event_engine/windows/win_socket.h"
 
 namespace grpc_event_engine {
 namespace experimental {

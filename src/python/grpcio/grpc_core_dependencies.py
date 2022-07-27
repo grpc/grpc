@@ -460,7 +460,7 @@ CORE_SOURCE_FILES = [
     'src/core/lib/event_engine/trace.cc',
     'src/core/lib/event_engine/utils.cc',
     'src/core/lib/event_engine/windows/iocp.cc',
-    'src/core/lib/event_engine/windows/socket.cc',
+    'src/core/lib/event_engine/windows/win_socket.cc',
     'src/core/lib/event_engine/windows/windows_engine.cc',
     'src/core/lib/gpr/alloc.cc',
     'src/core/lib/gpr/atm.cc',

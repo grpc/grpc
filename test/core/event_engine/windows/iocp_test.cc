@@ -28,7 +28,7 @@
 #include <grpc/support/log_windows.h>
 
 #include "src/core/lib/event_engine/poller.h"
-#include "src/core/lib/event_engine/windows/socket.h"
+#include "src/core/lib/event_engine/windows/win_socket.h"
 #include "src/core/lib/event_engine/windows/windows_engine.h"
 #include "src/core/lib/iomgr/error.h"
 #include "test/core/event_engine/common_closures.h"
