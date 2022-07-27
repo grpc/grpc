@@ -19,6 +19,9 @@
 // promise-style. Most of this will be removed once the promises conversion is
 // completed.
 
+// TODO(ctiller): When removing this file, also reduce the number of *'s on the
+// server initial metadata latch.
+
 #include <grpc/support/port_platform.h>
 
 #include <stdint.h>

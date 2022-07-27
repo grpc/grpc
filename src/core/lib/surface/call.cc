@@ -2363,6 +2363,8 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
       grpc_op::grpc_op_data::grpc_op_recv_status_on_client op_args,
       ServerMetadataHandle trailing_metadata)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu());
+  void PublishInitialMetadata(ServerMetadata* md)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu());
 
   ArenaPromise<ServerMetadataHandle> promise_ ABSL_GUARDED_BY(mu());
   Latch<ServerMetadata*> server_initial_metadata_ ABSL_GUARDED_BY(mu());
@@ -2529,6 +2531,17 @@ grpc_call_error ClientPromiseBasedCall::StartBatch(const grpc_op* ops,
   return GRPC_CALL_OK;
 }
 
+void ClientPromiseBasedCall::PublishInitialMetadata(ServerMetadata* metadata) {
+  incoming_compression_algorithm_ =
+      metadata->Take(GrpcEncodingMetadata()).value_or(GRPC_COMPRESS_NONE);
+  server_initial_metadata_ready_.reset();
+  GPR_ASSERT(recv_initial_metadata_ != nullptr);
+  PublishMetadataArray(absl::exchange(recv_initial_metadata_, nullptr),
+                       metadata);
+  FinishCompletion(&recv_initial_metadata_completion_,
+                   PauseReason::kReceiveInitialMetadata);
+}
+
 void ClientPromiseBasedCall::UpdateOnce() {
   if (grpc_call_trace.enabled()) {
     auto present_and_completion_text =
@@ -2570,24 +2583,12 @@ void ClientPromiseBasedCall::UpdateOnce() {
   }
   if (server_initial_metadata_ready_.has_value()) {
     Poll<ServerMetadata**> r = (*server_initial_metadata_ready_)();
-    auto recv_metadata =
-        [&](ServerMetadata* metadata) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu()) {
-          incoming_compression_algorithm_ =
-              metadata->Take(GrpcEncodingMetadata())
-                  .value_or(GRPC_COMPRESS_NONE);
-          server_initial_metadata_ready_.reset();
-          GPR_ASSERT(recv_initial_metadata_ != nullptr);
-          PublishMetadataArray(absl::exchange(recv_initial_metadata_, nullptr),
-                               metadata);
-          FinishCompletion(&recv_initial_metadata_completion_,
-                           PauseReason::kReceiveInitialMetadata);
-        };
     if (ServerMetadata*** server_initial_metadata =
             absl::get_if<ServerMetadata**>(&r)) {
-      recv_metadata(**server_initial_metadata);
+      PublishInitialMetadata(**server_initial_metadata);
     } else if (completed_) {
       ServerMetadata no_metadata{GetContext<Arena>()};
-      recv_metadata(&no_metadata);
+      PublishInitialMetadata(&no_metadata);
     }
   }
   if (outstanding_send_.has_value()) {
@@ -2662,13 +2663,29 @@ void ClientPromiseBasedCall::UpdateOnce() {
 }
 
 void ClientPromiseBasedCall::Finish(ServerMetadataHandle trailing_metadata) {
+  if (grpc_call_trace.enabled()) {
+    gpr_log(GPR_INFO, "%sFinish: %s", DebugTag().c_str(),
+            trailing_metadata->DebugString().c_str());
+  }
   promise_ = ArenaPromise<ServerMetadataHandle>();
   completed_ = true;
   if (recv_initial_metadata_ != nullptr) {
     ForceImmediateRepoll();
   }
-  is_trailers_only_ =
-      !absl::holds_alternative<Pending>(server_initial_metadata_.Wait()());
+  const bool pending_initial_metadata =
+      server_initial_metadata_ready_.has_value();
+  server_initial_metadata_ready_.reset();
+  Poll<ServerMetadata**> r = server_initial_metadata_.Wait()();
+  if (auto* result = absl::get_if<ServerMetadata**>(&r)) {
+    if (pending_initial_metadata) PublishInitialMetadata(**result);
+    is_trailers_only_ = false;
+  } else {
+    if (pending_initial_metadata) {
+      ServerMetadata no_metadata{GetContext<Arena>()};
+      PublishInitialMetadata(&no_metadata);
+    }
+    is_trailers_only_ = true;
+  }
   if (auto* channelz_channel = channel()->channelz_node()) {
     if (trailing_metadata->get(GrpcStatusMetadata())
             .value_or(GRPC_STATUS_UNKNOWN) == GRPC_STATUS_OK) {
