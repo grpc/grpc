@@ -52,11 +52,13 @@ struct TestStruct1 {
 struct TestStruct2 {
   std::vector<TestStruct1> a;
   std::vector<int32_t> b;
+  TestStruct1 c;
 
   static const JsonLoaderInterface* JsonLoader() {
     static const auto loader = JsonObjectLoader<TestStruct2>()
                                    .Field("a", &TestStruct2::a)
                                    .Field("b", &TestStruct2::b)
+                                   .OptionalField("c", &TestStruct2::c)
                                    .Finish();
     return &loader;
   }
@@ -143,7 +145,8 @@ TEST(JsonObjectLoaderTest, LoadPostLoadTestStruct1) {
 TEST(JsonObjectLoaderTest, LoadTestStruct2) {
   {
     auto s = Parse<TestStruct2>(
-        "{\"a\":[{\"a\":1,\"b\":2,\"c\":3,\"x\":\"foo\"}],\"b\":[1,2,3]}");
+        "{\"a\":[{\"a\":1,\"b\":2,\"c\":3,\"x\":\"foo\"}],\"b\":[1,2,3],"
+        "\"c\":{\"a\":1,\"x\":\"foo\"}}");
     ASSERT_TRUE(s.ok()) << s.status();
     EXPECT_EQ(s->a.size(), 1);
     EXPECT_EQ(s->a[0].a, 1);
@@ -154,6 +157,8 @@ TEST(JsonObjectLoaderTest, LoadTestStruct2) {
     EXPECT_EQ(s->b[0], 1);
     EXPECT_EQ(s->b[1], 2);
     EXPECT_EQ(s->b[2], 3);
+    EXPECT_EQ(s->c.a, 1);
+    EXPECT_EQ(s->c.x, "foo");
   }
   {
     auto s = Parse<TestStruct2>(
@@ -171,12 +176,13 @@ TEST(JsonObjectLoaderTest, LoadTestStruct2) {
   }
   {
     auto s = Parse<TestStruct2>(
-        "{\"a\":[{\"a\":\"foo\", \"x\":\"bar\"}],\"b\":[1,{},3]}");
+        "{\"a\":[{\"a\":\"foo\", \"x\":\"bar\"}],\"b\":[1,{},3],\"c\":1}");
     EXPECT_EQ(s.status().code(), absl::StatusCode::kInvalidArgument);
     EXPECT_EQ(s.status().message(),
               "errors validating JSON: ["
               "field:a[0].a error:failed to parse number; "
-              "field:b[1] error:is not a number]") << s.status();
+              "field:b[1] error:is not a number; "
+              "field:c error:is not an object]") << s.status();
   }
 }
 
