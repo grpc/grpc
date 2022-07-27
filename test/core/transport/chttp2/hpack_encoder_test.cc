@@ -239,6 +239,9 @@ TEST(HpackEncoderTest, TestBasicHeaders) {
 
 MATCHER(HasLiteralHeaderFieldNewNameFlagIncrementalIndexing, "") {
   constexpr size_t kHttp2FrameHeaderSize = 9u;
+  /// Reference: https://httpwg.org/specs/rfc7541.html#rfc.section.6.2.1
+  /// The first byte of a literal header field with incremental indexing should
+  /// be 0x40.
   constexpr uint8_t kLiteralHeaderFieldNewNameFlagIncrementalIndexing = 0x40;
   return (GRPC_SLICE_START_PTR(arg)[kHttp2FrameHeaderSize] ==
           kLiteralHeaderFieldNewNameFlagIncrementalIndexing);
@@ -246,6 +249,8 @@ MATCHER(HasLiteralHeaderFieldNewNameFlagIncrementalIndexing, "") {
 
 MATCHER(HasLiteralHeaderFieldNewNameFlagNoIndexing, "") {
   constexpr size_t kHttp2FrameHeaderSize = 9u;
+  /// Reference: https://httpwg.org/specs/rfc7541.html#rfc.section.6.2.2
+  /// The first byte of a literal header field without indexing should be 0x0.
   constexpr uint8_t kLiteralHeaderFieldNewNameFlagNoIndexing = 0x00;
   return (GRPC_SLICE_START_PTR(arg)[kHttp2FrameHeaderSize] ==
           kLiteralHeaderFieldNewNameFlagNoIndexing);
