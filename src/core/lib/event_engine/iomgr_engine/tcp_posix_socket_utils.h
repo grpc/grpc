@@ -234,13 +234,6 @@ class PosixSocket {
   // Returns an PosixSocket on success, otherwise returns a not-OK absl::Status
 
   // The dsmode output indicates which address family was actually created.
-  // The recommended way to use this is:
-  //  - First convert to IPv6 using grpc_sockaddr_to_v4mapped().
-  //  - Create the socket.
-  //  - If dsmode is IPV4, use grpc_sockaddr_is_v4mapped() to convert back to
-  //    IPv4, so that bind() or connect() see the correct family.
-  // Also, it's important to distinguish between DUALSTACK and IPV6 when
-  // listening on the [::] wildcard address.
   static absl::StatusOr<PosixSocket> CreateDualStackSocket(
       std::function<int(int /*domain*/, int /*type*/, int /*protocol*/)>
           socket_factory,
