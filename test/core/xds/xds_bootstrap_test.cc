@@ -121,8 +121,8 @@ TEST(XdsBootstrapTest, Basic) {
   ASSERT_TRUE(bootstrap.ok()) << bootstrap.status();
   EXPECT_EQ(bootstrap->server().server_uri, "fake:///lb");
   EXPECT_EQ(bootstrap->server().channel_creds_type, "fake");
-  EXPECT_TRUE(bootstrap->server().channel_creds_config.empty()) <<
-      Json{bootstrap->server().channel_creds_config}.Dump();
+  EXPECT_TRUE(bootstrap->server().channel_creds_config.empty())
+      << Json{bootstrap->server().channel_creds_config}.Dump();
   EXPECT_EQ(bootstrap->authorities().size(), 2);
   const XdsBootstrap::Authority* authority1 =
       bootstrap->LookupAuthority("xds.example.com");
@@ -133,8 +133,8 @@ TEST(XdsBootstrapTest, Basic) {
   EXPECT_EQ(authority1->xds_servers.size(), 1);
   EXPECT_EQ(authority1->xds_servers[0].server_uri, "fake:///xds_server");
   EXPECT_EQ(authority1->xds_servers[0].channel_creds_type, "fake");
-  EXPECT_TRUE(authority1->xds_servers[0].channel_creds_config.empty()) <<
-      Json{authority1->xds_servers[0].channel_creds_config}.Dump();
+  EXPECT_TRUE(authority1->xds_servers[0].channel_creds_config.empty())
+      << Json{authority1->xds_servers[0].channel_creds_config}.Dump();
   const XdsBootstrap::Authority* authority2 =
       bootstrap->LookupAuthority("xds.example2.com");
   ASSERT_NE(authority2, nullptr);
@@ -144,8 +144,8 @@ TEST(XdsBootstrapTest, Basic) {
   EXPECT_EQ(authority2->xds_servers.size(), 1);
   EXPECT_EQ(authority2->xds_servers[0].server_uri, "fake:///xds_server2");
   EXPECT_EQ(authority2->xds_servers[0].channel_creds_type, "fake");
-  EXPECT_TRUE(authority2->xds_servers[0].channel_creds_config.empty()) <<
-      Json{authority2->xds_servers[0].channel_creds_config}.Dump();
+  EXPECT_TRUE(authority2->xds_servers[0].channel_creds_config.empty())
+      << Json{authority2->xds_servers[0].channel_creds_config}.Dump();
   ASSERT_NE(bootstrap->node(), nullptr);
   EXPECT_EQ(bootstrap->node()->id, "foo");
   EXPECT_EQ(bootstrap->node()->cluster, "bar");
