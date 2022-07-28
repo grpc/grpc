@@ -34,7 +34,6 @@ class ChannelArgsEndpointConfig : public EndpointConfig {
   ChannelArgsEndpointConfig(const ChannelArgsEndpointConfig& config) = default;
   ChannelArgsEndpointConfig& operator=(const ChannelArgsEndpointConfig& other) =
       default;
-  EndpointConfig::Setting Get(absl::string_view key) const override;
   absl::optional<int> GetInt(absl::string_view key) const override;
   absl::optional<absl::string_view> GetString(
       absl::string_view key) const override;

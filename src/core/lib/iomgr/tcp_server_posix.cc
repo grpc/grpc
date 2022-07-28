@@ -72,22 +72,13 @@ static grpc_error_handle tcp_server_create(grpc_closure* shutdown_complete,
   grpc_tcp_server* s = new grpc_tcp_server;
   s->so_reuseport = grpc_is_socket_reuse_port_supported();
   s->expand_wildcard_addrs = false;
-  auto value = config.Get(GRPC_ARG_ALLOW_REUSEPORT);
-  if (absl::holds_alternative<int>(value)) {
-    s->so_reuseport =
-        grpc_is_socket_reuse_port_supported() && (absl::get<int>(value) != 0);
-  } else if (!absl::holds_alternative<absl::monostate>(value)) {
-    gpr_free(s);
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(GRPC_ARG_ALLOW_REUSEPORT
-                                                " must be an integer");
+  auto value = config.GetInt(GRPC_ARG_ALLOW_REUSEPORT);
+  if (value.has_value()) {
+    s->so_reuseport = (grpc_is_socket_reuse_port_supported() && *value != 0);
   }
-  value = config.Get(GRPC_ARG_EXPAND_WILDCARD_ADDRS);
-  if (absl::holds_alternative<int>(value)) {
-    s->expand_wildcard_addrs = (absl::get<int>(value) != 0);
-  } else if (!absl::holds_alternative<absl::monostate>(value)) {
-    gpr_free(s);
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(GRPC_ARG_EXPAND_WILDCARD_ADDRS
-                                                " must be an integer");
+  value = config.GetInt(GRPC_ARG_EXPAND_WILDCARD_ADDRS);
+  if (value.has_value()) {
+    s->expand_wildcard_addrs = (*value != 0);
   }
   gpr_ref_init(&s->refs, 1);
   gpr_mu_init(&s->mu);
@@ -289,7 +280,7 @@ static void on_read(void* arg, grpc_error_handle err) {
         read_notifier_pollset, acceptor);
   }
 
-  GPR_UNREACHABLE_CODE(return );
+  GPR_UNREACHABLE_CODE(return);
 
 error:
   gpr_mu_lock(&sp->server->mu);

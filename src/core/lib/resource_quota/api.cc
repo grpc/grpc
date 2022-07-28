@@ -47,9 +47,9 @@ ResourceQuotaRefPtr ResourceQuotaFromChannelArgs(
 
 ResourceQuotaRefPtr ResourceQuotaFromEndpointConfig(
     const grpc_event_engine::experimental::EndpointConfig& config) {
-  auto value = config.Get(GRPC_ARG_RESOURCE_QUOTA);
-  if (absl::holds_alternative<void*>(value)) {
-    return reinterpret_cast<ResourceQuota*>(absl::get<void*>(value))->Ref();
+  void* value = config.GetVoidPointer(GRPC_ARG_RESOURCE_QUOTA);
+  if (value != nullptr) {
+    return reinterpret_cast<ResourceQuota*>(value)->Ref();
   }
   return nullptr;
 }
