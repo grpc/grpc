@@ -247,10 +247,9 @@ TEST(XdsBootstrapTest, MissingChannelCreds) {
       "  ]"
       "}";
   auto bootstrap = XdsBootstrap::Create(json_str);
-  EXPECT_EQ(
-      bootstrap.status().message(),
-      "errors validating JSON: ["
-      "field:xds_servers[0].channel_creds error:field not present]")
+  EXPECT_EQ(bootstrap.status().message(),
+            "errors validating JSON: ["
+            "field:xds_servers[0].channel_creds error:field not present]")
       << bootstrap.status();
 }
 
@@ -296,7 +295,7 @@ TEST(XdsBootstrapTest, TopFieldsWrongTypes) {
       "field:node error:is not an object; "
       "field:certificate_providers error:is not an object; "
       "field:server_listener_resource_name_template error:is not a string]")
-          << bootstrap.status();
+      << bootstrap.status();
 }
 
 TEST(XdsBootstrapTest, XdsServerMissingFields) {
@@ -305,12 +304,11 @@ TEST(XdsBootstrapTest, XdsServerMissingFields) {
       "  \"xds_servers\":[{}]"
       "}";
   auto bootstrap = XdsBootstrap::Create(json_str);
-  EXPECT_EQ(
-      bootstrap.status().message(),
-      "errors validating JSON: ["
-      "field:xds_servers[0].server_uri error:field not present; "
-      "field:xds_servers[0].channel_creds error:field not present]")
-                        << bootstrap.status();
+  EXPECT_EQ(bootstrap.status().message(),
+            "errors validating JSON: ["
+            "field:xds_servers[0].server_uri error:field not present; "
+            "field:xds_servers[0].channel_creds error:field not present]")
+      << bootstrap.status();
 }
 
 TEST(XdsBootstrapTest, XdsServerUriAndCredsWrongTypes) {
@@ -324,12 +322,11 @@ TEST(XdsBootstrapTest, XdsServerUriAndCredsWrongTypes) {
       "  ]"
       "}";
   auto bootstrap = XdsBootstrap::Create(json_str);
-  EXPECT_EQ(
-      bootstrap.status().message(),
-      "errors validating JSON: ["
-      "field:xds_servers[0].server_uri error:is not a string; "
-      "field:xds_servers[0].channel_creds error:is not an array]")
-          << bootstrap.status();
+  EXPECT_EQ(bootstrap.status().message(),
+            "errors validating JSON: ["
+            "field:xds_servers[0].server_uri error:is not a string; "
+            "field:xds_servers[0].channel_creds error:is not an array]")
+      << bootstrap.status();
 }
 
 TEST(XdsBootstrapTest, ChannelCredsFieldsWrongTypes) {
@@ -356,7 +353,7 @@ TEST(XdsBootstrapTest, ChannelCredsFieldsWrongTypes) {
       "field:type error:is not a string; "
       "field:config error:is not an object]; "
       "field:xds_servers[0].channel_creds error:no known creds type found]")
-                        << bootstrap.status();
+      << bootstrap.status();
 }
 
 TEST(XdsBootstrapTest, NodeFieldsWrongTypes) {
@@ -370,15 +367,14 @@ TEST(XdsBootstrapTest, NodeFieldsWrongTypes) {
       "  }"
       "}";
   auto bootstrap = XdsBootstrap::Create(json_str);
-  EXPECT_EQ(
-      bootstrap.status().message(),
-      "errors validating JSON: ["
-      "field:xds_servers error:field not present; "
-      "field:node.id error:is not a string; "
-      "field:node.cluster error:is not a string; "
-      "field:node.locality error:is not an object; "
-      "field:node.metadata error:is not an object]")
-                                << bootstrap.status();
+  EXPECT_EQ(bootstrap.status().message(),
+            "errors validating JSON: ["
+            "field:xds_servers error:field not present; "
+            "field:node.id error:is not a string; "
+            "field:node.cluster error:is not a string; "
+            "field:node.locality error:is not an object; "
+            "field:node.metadata error:is not an object]")
+      << bootstrap.status();
 }
 
 TEST(XdsBootstrapTest, LocalityFieldsWrongType) {
@@ -393,14 +389,13 @@ TEST(XdsBootstrapTest, LocalityFieldsWrongType) {
       "  }"
       "}";
   auto bootstrap = XdsBootstrap::Create(json_str);
-  EXPECT_EQ(
-      bootstrap.status().message(),
-      "errors validating JSON: ["
-      "field:xds_servers error:field not present; "
-      "field:node.locality.region error:is not a string; "
-      "field:node.locality.zone error:is not a string; "
-      "field:node.locality.sub_zone error:is not a string]")
-                                << bootstrap.status();
+  EXPECT_EQ(bootstrap.status().message(),
+            "errors validating JSON: ["
+            "field:xds_servers error:field not present; "
+            "field:node.locality.region error:is not a string; "
+            "field:node.locality.zone error:is not a string; "
+            "field:node.locality.sub_zone error:is not a string]")
+      << bootstrap.status();
 }
 
 TEST(XdsBootstrapTest, CertificateProvidersElementWrongType) {
@@ -417,11 +412,10 @@ TEST(XdsBootstrapTest, CertificateProvidersElementWrongType) {
       "  }"
       "}";
   auto bootstrap = XdsBootstrap::Create(json_str);
-  EXPECT_EQ(
-      bootstrap.status().message(),
-      "errors validating JSON: ["
-      "field:certificate_providers[\"plugin\"] error:is not an object]")
-          << bootstrap.status();
+  EXPECT_EQ(bootstrap.status().message(),
+            "errors validating JSON: ["
+            "field:certificate_providers[\"plugin\"] error:is not an object]")
+      << bootstrap.status();
 }
 
 TEST(XdsBootstrapTest, CertificateProvidersPluginNameWrongType) {
@@ -440,12 +434,11 @@ TEST(XdsBootstrapTest, CertificateProvidersPluginNameWrongType) {
       "  }"
       "}";
   auto bootstrap = XdsBootstrap::Create(json_str);
-  EXPECT_EQ(
-      bootstrap.status().message(),
-      "errors validating JSON: ["
-      "field:certificate_providers[\"plugin\"].plugin_name error:"
-      "is not a string]")
-          << bootstrap.status();
+  EXPECT_EQ(bootstrap.status().message(),
+            "errors validating JSON: ["
+            "field:certificate_providers[\"plugin\"].plugin_name error:"
+            "is not a string]")
+      << bootstrap.status();
 }
 
 TEST(XdsBootstrapTest, CertificateProvidersUnrecognizedPluginName) {
@@ -464,12 +457,11 @@ TEST(XdsBootstrapTest, CertificateProvidersUnrecognizedPluginName) {
       "  }"
       "}";
   auto bootstrap = XdsBootstrap::Create(json_str);
-  EXPECT_EQ(
-      bootstrap.status().message(),
-      "errors validating JSON: ["
-      "field:certificate_providers[\"plugin\"].plugin_name error:"
-      "Unrecognized plugin name: unknown]")
-          << bootstrap.status();
+  EXPECT_EQ(bootstrap.status().message(),
+            "errors validating JSON: ["
+            "field:certificate_providers[\"plugin\"].plugin_name error:"
+            "Unrecognized plugin name: unknown]")
+      << bootstrap.status();
 }
 
 TEST(XdsBootstrapTest, AuthorityXdsServerInvalidResourceTemplate) {
@@ -502,13 +494,12 @@ TEST(XdsBootstrapTest, AuthorityXdsServerInvalidResourceTemplate) {
       "  }"
       "}";
   auto bootstrap = XdsBootstrap::Create(json_str);
-  EXPECT_EQ(
-      bootstrap.status().message(),
-      "errors validating JSON: ["
-      "field:authorities[\"xds.example.com\"]"
-      ".client_listener_resource_name_template error:"
-      "field must begin with \"xdstp://xds.example.com/\"]")
-          << bootstrap.status();
+  EXPECT_EQ(bootstrap.status().message(),
+            "errors validating JSON: ["
+            "field:authorities[\"xds.example.com\"]"
+            ".client_listener_resource_name_template error:"
+            "field must begin with \"xdstp://xds.example.com/\"]")
+      << bootstrap.status();
   gpr_unsetenv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
 }
 
@@ -539,7 +530,7 @@ TEST(XdsBootstrapTest, AuthorityXdsServerMissingServerUri) {
       "error:field not present; "
       "field:authorities[\"xds.example.com\"].xds_servers[0].channel_creds "
       "error:field not present]")
-                        << bootstrap.status();
+      << bootstrap.status();
   gpr_unsetenv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
 }
 
@@ -617,7 +608,7 @@ TEST(XdsBootstrapTest, CertificateProvidersFakePluginParsingError) {
           "errors validating JSON: \\["
           "field:certificate_providers\\[\"fake_plugin\"\\].config "
           "error:UNKNOWN:field:config field:value not of type number.*]"))
-          << bootstrap.status();
+      << bootstrap.status();
 }
 
 TEST(XdsBootstrapTest, CertificateProvidersFakePluginParsingSuccess) {

@@ -68,12 +68,11 @@ const absl::string_view kServerFeatureIgnoreResourceDeletion =
 //
 
 const JsonLoaderInterface* XdsBootstrap::Node::Locality::JsonLoader() {
-  static const auto loader =
-      JsonObjectLoader<Locality>()
-          .OptionalField("region", &Locality::region)
-          .OptionalField("zone", &Locality::zone)
-          .OptionalField("sub_zone", &Locality::sub_zone)
-          .Finish();
+  static const auto loader = JsonObjectLoader<Locality>()
+                                 .OptionalField("region", &Locality::region)
+                                 .OptionalField("zone", &Locality::zone)
+                                 .OptionalField("sub_zone", &Locality::sub_zone)
+                                 .Finish();
   return &loader;
 }
 
@@ -144,12 +143,11 @@ void XdsBootstrap::XdsServer::JsonPostLoad(const Json& json,
         if (channel_creds_type.empty() &&
             CoreConfiguration::Get().channel_creds_registry().IsSupported(
                 channel_creds->type)) {
-          if (!CoreConfiguration::Get().channel_creds_registry()
-                  .IsValidConfig(channel_creds->type,
-                                 channel_creds->config)) {
-            errors->AddError(absl::StrCat(
-                "invalid config for channel creds type \"",
-                channel_creds->type, "\""));
+          if (!CoreConfiguration::Get().channel_creds_registry().IsValidConfig(
+                  channel_creds->type, channel_creds->config)) {
+            errors->AddError(
+                absl::StrCat("invalid config for channel creds type \"",
+                             channel_creds->type, "\""));
             continue;
           }
           channel_creds_type = std::move(channel_creds->type);
@@ -267,9 +265,8 @@ const JsonLoaderInterface* XdsBootstrap::JsonLoader() {
           .OptionalField("node", &XdsBootstrap::node_)
           .OptionalField("certificate_providers",
                          &XdsBootstrap::certificate_providers_)
-          .OptionalField(
-              "server_listener_resource_name_template",
-              &XdsBootstrap::server_listener_resource_name_template_)
+          .OptionalField("server_listener_resource_name_template",
+                         &XdsBootstrap::server_listener_resource_name_template_)
           .Finish();
   return &loader;
 }
@@ -282,8 +279,9 @@ void XdsBootstrap::JsonPostLoad(const Json& json, ErrorList* errors) {
     for (const auto& p : authorities_) {
       const std::string& name = p.first;
       const Authority& authority = p.second;
-      ScopedField field(errors, absl::StrCat(
-          "[\"", name, "\"].client_listener_resource_name_template"));
+      ScopedField field(
+          errors, absl::StrCat("[\"", name,
+                               "\"].client_listener_resource_name_template"));
       std::string expected_prefix = absl::StrCat("xdstp://", name, "/");
       if (!authority.client_listener_resource_name_template.empty() &&
           !absl::StartsWith(authority.client_listener_resource_name_template,
