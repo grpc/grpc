@@ -22,7 +22,6 @@
 #include <string.h>
 
 #include <algorithm>
-#include <memory>
 #include <string>
 #include <vector>
 
@@ -634,8 +633,8 @@ grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(
   gpr_log(GPR_INFO, "Proxy address: %s", proxy->proxy_name.c_str());
   // Create TCP server.
   auto channel_args = grpc_core::CoreConfiguration::Get()
-                            .channel_args_preconditioning()
-                            .PreconditionChannelArgs(args);
+                          .channel_args_preconditioning()
+                          .PreconditionChannelArgs(args);
   proxy->channel_args = channel_args.ToC().release();
   grpc_error_handle error = grpc_tcp_server_create(
       nullptr,

@@ -17,9 +17,9 @@
 #include <grpc/support/port_platform.h>
 
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 
 #include <grpc/event_engine/endpoint_config.h>
-#include <grpc/impl/codegen/grpc_types.h>
 
 #include "src/core/lib/channel/channel_args.h"
 
