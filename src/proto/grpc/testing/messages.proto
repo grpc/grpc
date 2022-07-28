@@ -268,7 +268,3 @@ message ClientConfigureRequest {
 
 // Response for updating a test client's configuration.
 message ClientConfigureResponse {}
-
-message MemorySize {
-  int64 rss = 1;
-}
