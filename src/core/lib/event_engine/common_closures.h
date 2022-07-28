@@ -17,18 +17,19 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/support/port_platform.h>
-#include <grpc/event_engine/event_engine.h>
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
+
+#include <grpc/event_engine/event_engine.h>
 
 namespace grpc_event_engine {
 namespace experimental {
 
 class AnyInvocableClosure : public EventEngine::Closure {
  public:
-  explicit AnyInvocableClosure(absl::AnyInvocable<void()> cb) : cb_(std::move(cb)) {}
+  explicit AnyInvocableClosure(absl::AnyInvocable<void()> cb)
+      : cb_(std::move(cb)) {}
   void Run() override { cb_(); }
 
  private:
