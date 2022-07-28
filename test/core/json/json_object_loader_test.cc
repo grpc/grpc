@@ -36,6 +36,7 @@ struct TestStruct1 {
   uint32_t c = 2;
   std::string x;
   Duration d;
+  bool boolean;
   Json::Object j;
   absl::optional<int32_t> e;
 
@@ -48,6 +49,8 @@ struct TestStruct1 {
                                    .OptionalField("d", &TestStruct1::d)
                                    .OptionalField("e", &TestStruct1::e)
                                    .OptionalField("j", &TestStruct1::j)
+                                   .OptionalField("boolean",
+                                                  &TestStruct1::boolean)
                                    .Finish();
     return &loader;
   }
@@ -106,7 +109,7 @@ TEST(JsonObjectLoaderTest, LoadTestStruct1) {
   {
     auto s = Parse<TestStruct1>(
         "{\"a\":1,\"b\":\"2\",\"c\":3,\"x\":\"foo\",\"d\":\"1.3s\","
-        "\"j\":{\"foo\":\"bar\"}}");
+        "\"j\":{\"foo\":\"bar\"},\"boolean\":true}");
     ASSERT_TRUE(s.ok()) << s.status();
     EXPECT_EQ(s->a, 1);
     EXPECT_EQ(s->b, 2);
@@ -115,6 +118,7 @@ TEST(JsonObjectLoaderTest, LoadTestStruct1) {
     EXPECT_EQ(s->d, Duration::Milliseconds(1300));
     EXPECT_EQ(s->e, absl::nullopt);
     EXPECT_EQ(Json{s->j}.Dump(), "{\"foo\":\"bar\"}");
+    EXPECT_EQ(s->boolean, true);
   }
   {
     auto s = Parse<TestStruct1>(

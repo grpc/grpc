@@ -107,6 +107,16 @@ void LoadString::LoadInto(const std::string& value, void* dst,
   *static_cast<std::string*>(dst) = value;
 }
 
+void LoadBool::LoadInto(const Json& json, void* dst, ErrorList* errors) const {
+  if (json.type() == Json::Type::JSON_TRUE) {
+    *static_cast<bool*>(dst) = true;
+  } else if (json.type() == Json::Type::JSON_FALSE) {
+    *static_cast<bool*>(dst) = false;
+  } else {
+    errors->AddError("is not a boolean");
+  }
+}
+
 void LoadUnprocessedJsonObject::LoadInto(const Json& json, void* dst,
                                          ErrorList* errors) const {
   if (json.type() != Json::Type::OBJECT) {

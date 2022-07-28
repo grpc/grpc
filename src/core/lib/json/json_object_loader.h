@@ -177,6 +177,12 @@ class LoadString : public LoadScalar {
                 ErrorList* errors) const override;
 };
 
+// Load a bool.
+class LoadBool : public LoaderInterface {
+ public:
+  void LoadInto(const Json& json, void* dst, ErrorList* errors) const override;
+};
+
 // Load a vector of some type.
 class LoadVector : public LoaderInterface {
  public:
@@ -251,6 +257,8 @@ template <>
 class AutoLoader<Duration> final : public LoadDuration {};
 template <>
 class AutoLoader<std::string> final : public LoadString {};
+template <>
+class AutoLoader<bool> final : public LoadBool {};
 template <>
 class AutoLoader<Json::Object> final : public LoadUnprocessedJsonObject {};
 
