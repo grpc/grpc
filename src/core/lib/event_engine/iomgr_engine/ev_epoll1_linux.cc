@@ -94,7 +94,7 @@ class Epoll1EventHandle : public EventHandle {
     write_closure_->InitEvent();
     error_closure_->InitEvent();
     pending_actions_ = 0;
-    exec_actions_closure_ = new Epoll1ExecActionsClosure(this);
+    exec_actions_closure_ = std::make_unique<Epoll1ExecActionsClosure>(this);
   }
   Epoll1Poller* Poller() { return poller_; }
   EventEngine::Closure* SetPendingActions(bool pending_read, bool pending_write,
@@ -109,7 +109,7 @@ class Epoll1EventHandle : public EventHandle {
     if (pending_read || pending_write || pending_error) {
       Ref();
       // The closure will get executed and will call Unref() on the handle.
-      return exec_actions_closure_;
+      return exec_actions_closure_.get();
     }
     return nullptr;
   }
@@ -139,7 +139,6 @@ class Epoll1EventHandle : public EventHandle {
   void Ref() { ref_count_.fetch_add(1, std::memory_order_relaxed); }
   void Unref() {
     if (ref_count_.fetch_sub(1, std::memory_order_acq_rel) == 1) {
-      delete exec_actions_closure_;
       delete this;
     }
   }
@@ -160,7 +159,7 @@ class Epoll1EventHandle : public EventHandle {
   int pending_actions_;
   Epoll1Poller::HandlesList list_;
   Epoll1Poller* poller_;
-  Epoll1ExecActionsClosure* exec_actions_closure_;
+  std::unique_ptr<Epoll1ExecActionsClosure> exec_actions_closure_;
   std::unique_ptr<LockfreeEvent> read_closure_;
   std::unique_ptr<LockfreeEvent> write_closure_;
   std::unique_ptr<LockfreeEvent> error_closure_;

@@ -110,7 +110,7 @@ class PollEventHandle : public EventHandle {
     poller_->Ref();
     absl::MutexLock lock(&poller_->mu_);
     poller_->PollerHandlesListAddHandle(this);
-    exec_actions_closure_ = new PollExecActionsClosure(this);
+    exec_actions_closure_ = std::make_unique<PollExecActionsClosure>(this);
   }
   PollPoller* Poller() { return poller_; }
   EventEngine::Closure* SetPendingActions(bool pending_read,
@@ -123,7 +123,7 @@ class PollEventHandle : public EventHandle {
       // The closure is going to be executed. We'll Unref this handle after
       // the closure finishes.
       Ref();
-      return exec_actions_closure_;
+      return exec_actions_closure_.get();
     }
     return nullptr;
   }
@@ -202,7 +202,6 @@ class PollEventHandle : public EventHandle {
         scheduler_->Run(on_done_);
       }
       poller_->Unref();
-      delete exec_actions_closure_;
       delete this;
     }
   }
@@ -237,7 +236,7 @@ class PollEventHandle : public EventHandle {
   bool pollhup_;
   int watch_mask_;
   absl::Status shutdown_error_;
-  PollExecActionsClosure* exec_actions_closure_;
+  std::unique_ptr<PollExecActionsClosure> exec_actions_closure_;
   IomgrEngineClosure* on_done_;
   IomgrEngineClosure* read_closure_;
   IomgrEngineClosure* write_closure_;
