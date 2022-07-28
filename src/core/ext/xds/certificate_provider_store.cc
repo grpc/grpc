@@ -43,7 +43,7 @@ void CertificateProviderStore::PluginDefinition::JsonPostLoad(
     const Json& json, ErrorList* errors) {
   // Check that plugin is supported.
   CertificateProviderFactory* factory = nullptr;
-  {
+  if (!plugin_name.empty()) {
     ScopedField field(errors, ".plugin_name");
     factory = CertificateProviderRegistry::LookupCertificateProviderFactory(
         plugin_name);

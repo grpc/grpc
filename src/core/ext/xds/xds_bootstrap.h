@@ -69,9 +69,6 @@ class XdsBootstrap {
     static const JsonLoaderInterface* JsonLoader();
     void JsonPostLoad(const Json& json, ErrorList* errors);
 
-// FIXME: remove
-    static XdsServer Parse(const Json& json, grpc_error_handle* error);
-
     bool operator==(const XdsServer& other) const {
       return (server_uri == other.server_uri &&
               channel_creds_type == other.channel_creds_type &&
@@ -103,13 +100,11 @@ class XdsBootstrap {
   };
 
   // Creates bootstrap object from json_string.
-  // If *error is not GRPC_ERROR_NONE after returning, then there was an
-  // error parsing the contents.
-  static std::unique_ptr<XdsBootstrap> Create(absl::string_view json_string,
-                                              grpc_error_handle* error);
+  static absl::StatusOr<std::unique_ptr<XdsBootstrap>> Create(
+      absl::string_view json_string);
 
   // Do not instantiate directly -- use Create() above instead.
-  XdsBootstrap(Json json, grpc_error_handle* error);
+  XdsBootstrap() = default;
 
   static const JsonLoaderInterface* JsonLoader();
   void JsonPostLoad(const Json& json, ErrorList* errors);
@@ -138,16 +133,6 @@ class XdsBootstrap {
   bool XdsServerExists(const XdsServer& server) const;
 
  private:
-  grpc_error_handle ParseXdsServerList(Json* json,
-                                       std::vector<XdsServer>* servers);
-  grpc_error_handle ParseAuthorities(Json* json);
-  grpc_error_handle ParseAuthority(Json* json, const std::string& name);
-  grpc_error_handle ParseNode(Json* json);
-  grpc_error_handle ParseLocality(Json* json);
-  grpc_error_handle ParseCertificateProviders(Json* json);
-  grpc_error_handle ParseCertificateProvider(const std::string& instance_name,
-                                             Json* certificate_provider_json);
-
   std::vector<XdsServer> servers_;
   absl::optional<Node> node_;
   std::string client_default_listener_resource_name_template_;

@@ -109,9 +109,13 @@ void LoadString::LoadInto(const std::string& value, void* dst,
   *static_cast<std::string*>(dst) = value;
 }
 
-void LoadUnprocessedJson::LoadInto(const Json& value, void* dst,
-                                   ErrorList*) const {
-  *static_cast<Json*>(dst) = value;
+void LoadUnprocessedJson::LoadInto(const Json& json, void* dst,
+                                   ErrorList* errors) const {
+  if (json.type() != Json::Type::OBJECT) {
+    errors->AddError("is not an object");
+    return;
+  }
+  *static_cast<Json*>(dst) = json;
 }
 
 void LoadVector::LoadInto(const Json& json, void* dst,
@@ -133,7 +137,7 @@ void LoadMap::LoadInto(const Json& json, void* dst, ErrorList* errors) const {
     return;
   }
   for (const auto& pair : json.object_value()) {
-    ScopedField field(errors, absl::StrCat(".", pair.first));
+    ScopedField field(errors, absl::StrCat("[\"", pair.first, "\"]"));
     LoadOne(pair.second, pair.first, dst, errors);
   }
 }
@@ -150,7 +154,7 @@ void LoadObject(const Json& json, const Element* elements, size_t num_elements,
     const auto& it = json.object_value().find(element.name);
     if (it == json.object_value().end()) {
       if (element.optional) continue;
-      errors->AddError("does not exist");
+      errors->AddError("field not present");
       continue;
     }
     char* field_dst = static_cast<char*>(dst) + element.member_offset;

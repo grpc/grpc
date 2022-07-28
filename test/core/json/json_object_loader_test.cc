@@ -155,7 +155,7 @@ TEST(JsonObjectLoaderTest, LoadTestStruct1) {
     EXPECT_EQ(s.status().code(), absl::StatusCode::kInvalidArgument);
     EXPECT_EQ(s.status().message(),
               "errors validating JSON: ["
-              "field:a error:does not exist; "
+              "field:a error:field not present; "
               "field:b error:is not a number; "
               "field:c error:failed to parse number; "
               "field:x error:is not a string]")

@@ -760,14 +760,13 @@ class XdsClusterImplLbFactory : public LoadBalancingPolicyFactory {
         errors.emplace_back(
             "field:lrsLoadReportingServer error:type should be object");
       } else {
-        grpc_error_handle parser_error;
-        lrs_load_reporting_server = XdsBootstrap::XdsServer::Parse(
-            it->second.object_value(), &parser_error);
-        if (!GRPC_ERROR_IS_NONE(parser_error)) {
+        auto xds_server = LoadFromJson<XdsBootstrap::XdsServer>(it->second);
+        if (!xds_server.ok()) {
           errors.emplace_back(
               absl::StrCat("error parsing lrs_load_reporting_server: ",
-                           grpc_error_std_string(parser_error)));
-          GRPC_ERROR_UNREF(parser_error);
+                           xds_server.status().ToString()));
+        } else {
+          lrs_load_reporting_server = std::move(*xds_server);
         }
       }
     }
