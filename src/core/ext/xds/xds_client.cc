@@ -1373,7 +1373,7 @@ bool XdsClient::ChannelState::LrsCallState::IsCurrentCallOnChannel() const {
 // XdsClient
 //
 
-XdsClient::XdsClient(std::unique_ptr<XdsBootstrap> bootstrap,
+XdsClient::XdsClient(XdsBootstrap bootstrap,
                      OrphanablePtr<XdsTransportFactory> transport_factory,
                      Duration resource_request_timeout)
     : DualRefCounted<XdsClient>(
@@ -1384,9 +1384,9 @@ XdsClient::XdsClient(std::unique_ptr<XdsBootstrap> bootstrap,
       request_timeout_(resource_request_timeout),
       xds_federation_enabled_(XdsFederationEnabled()),
       certificate_provider_store_(MakeOrphanable<CertificateProviderStore>(
-          bootstrap_->certificate_providers())),
-      api_(this, &grpc_xds_client_trace, bootstrap_->node(),
-           &bootstrap_->certificate_providers(), &symtab_) {
+          bootstrap_.certificate_providers())),
+      api_(this, &grpc_xds_client_trace, bootstrap_.node(),
+           &bootstrap_.certificate_providers(), &symtab_) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO, "[xds_client %p] creating xds client", this);
   }
@@ -1458,7 +1458,7 @@ void XdsClient::WatchResource(const XdsResourceType* type,
   const XdsBootstrap::XdsServer* xds_server = nullptr;
   absl::string_view authority_name = resource_name->authority;
   if (absl::ConsumePrefix(&authority_name, "xdstp:")) {
-    auto* authority = bootstrap_->LookupAuthority(std::string(authority_name));
+    auto* authority = bootstrap_.LookupAuthority(std::string(authority_name));
     if (authority == nullptr) {
       fail(absl::UnavailableError(
           absl::StrCat("authority \"", authority_name,
@@ -1469,7 +1469,7 @@ void XdsClient::WatchResource(const XdsResourceType* type,
       xds_server = &authority->xds_servers[0];
     }
   }
-  if (xds_server == nullptr) xds_server = &bootstrap_->server();
+  if (xds_server == nullptr) xds_server = &bootstrap_.server();
   {
     MutexLock lock(&mu_);
     MaybeRegisterResourceTypeLocked(type);
@@ -1617,7 +1617,7 @@ std::string XdsClient::ConstructFullXdsResourceName(
 RefCountedPtr<XdsClusterDropStats> XdsClient::AddClusterDropStats(
     const XdsBootstrap::XdsServer& xds_server, absl::string_view cluster_name,
     absl::string_view eds_service_name) {
-  if (!bootstrap_->XdsServerExists(xds_server)) return nullptr;
+  if (!bootstrap_.XdsServerExists(xds_server)) return nullptr;
   auto key =
       std::make_pair(std::string(cluster_name), std::string(eds_service_name));
   RefCountedPtr<XdsClusterDropStats> cluster_drop_stats;
@@ -1683,7 +1683,7 @@ RefCountedPtr<XdsClusterLocalityStats> XdsClient::AddClusterLocalityStats(
     const XdsBootstrap::XdsServer& xds_server, absl::string_view cluster_name,
     absl::string_view eds_service_name,
     RefCountedPtr<XdsLocalityName> locality) {
-  if (!bootstrap_->XdsServerExists(xds_server)) return nullptr;
+  if (!bootstrap_.XdsServerExists(xds_server)) return nullptr;
   auto key =
       std::make_pair(std::string(cluster_name), std::string(eds_service_name));
   RefCountedPtr<XdsClusterLocalityStats> cluster_locality_stats;
@@ -1760,11 +1760,11 @@ void XdsClient::ResetBackoff() {
 }
 
 void XdsClient::NotifyOnErrorLocked(absl::Status status) {
-  const auto* node = bootstrap_->node();
+  const auto* node = bootstrap_.node();
   if (node != nullptr) {
     status = absl::Status(
         status.code(), absl::StrCat(status.message(),
-                                    " (node ID:", bootstrap_->node()->id, ")"));
+                                    " (node ID:", bootstrap_.node()->id, ")"));
   }
   std::set<RefCountedPtr<ResourceWatcherInterface>> watchers;
   for (const auto& a : authority_state_map_) {     // authority
@@ -1791,11 +1791,11 @@ void XdsClient::NotifyWatchersOnErrorLocked(
     const std::map<ResourceWatcherInterface*,
                    RefCountedPtr<ResourceWatcherInterface>>& watchers,
     absl::Status status) {
-  const auto* node = bootstrap_->node();
+  const auto* node = bootstrap_.node();
   if (node != nullptr) {
     status = absl::Status(
         status.code(), absl::StrCat(status.message(),
-                                    " (node ID:", bootstrap_->node()->id, ")"));
+                                    " (node ID:", bootstrap_.node()->id, ")"));
   }
   work_serializer_.Schedule(
       [watchers, status]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) {

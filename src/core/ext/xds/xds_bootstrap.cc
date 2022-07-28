@@ -228,18 +228,23 @@ const JsonLoaderInterface* XdsBootstrap::Authority::JsonLoader() {
 // XdsBootstrap
 //
 
-absl::StatusOr<std::unique_ptr<XdsBootstrap>> XdsBootstrap::Create(
+absl::StatusOr<XdsBootstrap> XdsBootstrap::Create(
     absl::string_view json_string) {
   auto json = Json::Parse(json_string);
   if (!json.ok()) {
     return absl::InvalidArgumentError(absl::StrCat(
         "Failed to parse bootstrap JSON string: ", json.status().message()));
   }
-  auto bootstrap = absl::make_unique<XdsBootstrap>();
-  absl::Status status = LoadFromJson<XdsBootstrap>(*json, bootstrap.get());
-  if (!status.ok()) return status;
-  return bootstrap;
+  return LoadFromJson<XdsBootstrap>(*json);
 }
+
+XdsBootstrap::XdsBootstrap(const XdsBootstrap&) = default;
+
+XdsBootstrap& XdsBootstrap::operator=(const XdsBootstrap&) = default;
+
+XdsBootstrap::XdsBootstrap(XdsBootstrap&&) = default;
+
+XdsBootstrap& XdsBootstrap::operator=(XdsBootstrap&&) = default;
 
 const JsonLoaderInterface* XdsBootstrap::JsonLoader() {
   if (XdsFederationEnabled()) {

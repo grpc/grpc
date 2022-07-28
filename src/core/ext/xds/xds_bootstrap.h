@@ -100,11 +100,18 @@ class XdsBootstrap {
   };
 
   // Creates bootstrap object from json_string.
-  static absl::StatusOr<std::unique_ptr<XdsBootstrap>> Create(
-      absl::string_view json_string);
+  static absl::StatusOr<XdsBootstrap> Create(absl::string_view json_string);
 
   // Do not instantiate directly -- use Create() above instead.
   XdsBootstrap() = default;
+
+  // Copyable.
+  XdsBootstrap(const XdsBootstrap&);
+  XdsBootstrap& operator=(const XdsBootstrap&);
+
+  // Movable.
+  XdsBootstrap(XdsBootstrap&&);
+  XdsBootstrap& operator=(XdsBootstrap&&);
 
   static const JsonLoaderInterface* JsonLoader();
   void JsonPostLoad(const Json& json, ErrorList* errors);

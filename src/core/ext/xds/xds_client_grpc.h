@@ -42,8 +42,7 @@ class GrpcXdsClient : public XdsClient {
       const ChannelArgs& args, const char* reason);
 
   // Do not instantiate directly -- use GetOrCreate() instead.
-  GrpcXdsClient(std::unique_ptr<XdsBootstrap> bootstrap,
-                const ChannelArgs& args);
+  GrpcXdsClient(XdsBootstrap bootstrap, const ChannelArgs& args);
   ~GrpcXdsClient() override;
 
   // Helpers for encoding the XdsClient object in channel args.

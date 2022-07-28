@@ -71,16 +71,12 @@ class XdsClient : public DualRefCounted<XdsClient> {
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) = 0;
   };
 
-  XdsClient(std::unique_ptr<XdsBootstrap> bootstrap,
+  XdsClient(XdsBootstrap bootstrap,
             OrphanablePtr<XdsTransportFactory> transport_factory,
             Duration resource_request_timeout = Duration::Seconds(15));
   ~XdsClient() override;
 
-  const XdsBootstrap& bootstrap() const {
-    // bootstrap_ is guaranteed to be non-null since XdsClient::GetOrCreate()
-    // would return a null object if bootstrap_ was null.
-    return *bootstrap_;
-  }
+  const XdsBootstrap& bootstrap() const { return bootstrap_; }
 
   XdsTransportFactory* transport_factory() const {
     return transport_factory_.get();
@@ -300,7 +296,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
       const XdsBootstrap::XdsServer& server, const char* reason)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
-  std::unique_ptr<XdsBootstrap> bootstrap_;
+  XdsBootstrap bootstrap_;
   OrphanablePtr<XdsTransportFactory> transport_factory_;
   const Duration request_timeout_;
   const bool xds_federation_enabled_;

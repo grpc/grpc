@@ -166,8 +166,7 @@ absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GrpcXdsClient::GetOrCreate(
   return xds_client;
 }
 
-GrpcXdsClient::GrpcXdsClient(std::unique_ptr<XdsBootstrap> bootstrap,
-                             const ChannelArgs& args)
+GrpcXdsClient::GrpcXdsClient(XdsBootstrap bootstrap, const ChannelArgs& args)
     : XdsClient(
           std::move(bootstrap), MakeOrphanable<GrpcXdsTransportFactory>(args),
           std::max(Duration::Zero(),
