@@ -5229,7 +5229,7 @@ targets:
   build: test
   language: c++
   headers:
-  - test/core/event_engine/common_closures.h
+  - src/core/lib/event_engine/common_closures.h
   src:
   - test/core/event_engine/common_closures_test.cc
   deps:
@@ -7346,14 +7346,13 @@ targets:
   build: test
   language: c++
   headers:
-  - test/core/event_engine/common_closures.h
+  - src/core/lib/event_engine/common_closures.h
   - test/core/event_engine/windows/create_sockpair.h
   src:
   - test/core/event_engine/windows/create_sockpair.cc
   - test/core/event_engine/windows/iocp_test.cc
   deps:
   - grpc_test_util
-  - grpc_test_util_unsecure
   platforms:
   - linux
   - posix
@@ -11160,14 +11159,13 @@ targets:
   build: test
   language: c++
   headers:
-  - test/core/event_engine/common_closures.h
+  - src/core/lib/event_engine/common_closures.h
   - test/core/event_engine/windows/create_sockpair.h
   src:
   - test/core/event_engine/windows/create_sockpair.cc
   - test/core/event_engine/windows/win_socket_test.cc
   deps:
   - grpc_test_util
-  - grpc_test_util_unsecure
   platforms:
   - linux
   - posix

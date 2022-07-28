@@ -26,18 +26,18 @@
 #include <grpc/grpc.h>
 #include <grpc/support/log_windows.h>
 
+#include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/executor/threaded_executor.h"
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/windows/iocp.h"
 #include "src/core/lib/event_engine/windows/win_socket.h"
 #include "src/core/lib/iomgr/error.h"
-#include "test/core/event_engine/common_closures.h"
 #include "test/core/event_engine/windows/create_sockpair.h"
 
 // DO NOT SUBMIT(hork): get sanitizers working
 
 namespace {
-using ::grpc_event_engine::experimental::BasicClosure;
+using ::grpc_event_engine::experimental::AnyInvocableClosure;
 using ::grpc_event_engine::experimental::CreateSockpair;
 using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::IOCP;
@@ -61,8 +61,8 @@ TEST_F(IOCPTest, ClientReceivesNotificationOfServerSend) {
   bool read_called = false;
   bool write_called = false;
   DWORD flags = 0;
-  BasicClosure* on_read;
-  BasicClosure* on_write;
+  AnyInvocableClosure* on_read;
+  AnyInvocableClosure* on_write;
   {
     // When the client gets some data, ensure it matches what we expect.
     WSABUF read_wsabuf;
@@ -79,8 +79,8 @@ TEST_F(IOCPTest, ClientReceivesNotificationOfServerSend) {
     EXPECT_EQ(status, -1);
     int last_error = WSAGetLastError();
     ASSERT_EQ(last_error, WSA_IO_PENDING);
-    on_read = new BasicClosure([wrapped_client_socket, &read_called,
-                                &read_wsabuf, &bytes_rcvd]() {
+    on_read = new AnyInvocableClosure([wrapped_client_socket, &read_called,
+                                       &read_wsabuf, &bytes_rcvd]() {
       gpr_log(GPR_DEBUG, "Notified on read");
       EXPECT_GE(wrapped_client_socket->read_info()->bytes_transferred(), 10);
       EXPECT_STREQ(read_wsabuf.buf, "hello!");
@@ -107,7 +107,7 @@ TEST_F(IOCPTest, ClientReceivesNotificationOfServerSend) {
       gpr_log(GPR_INFO, "Error sending data: (%d) %s", error_num, utf8_message);
       gpr_free(utf8_message);
     }
-    on_write = new BasicClosure([&write_called] {
+    on_write = new AnyInvocableClosure([&write_called] {
       gpr_log(GPR_DEBUG, "Notified on write");
       write_called = true;
     });
@@ -154,7 +154,7 @@ TEST_F(IOCPTest, IocpWorkTimeoutDueToNoNotificationRegistered) {
       static_cast<WinSocket*>(iocp.Watch(sockpair[0]));
   bool read_called = false;
   DWORD flags = 0;
-  BasicClosure* on_read;
+  AnyInvocableClosure* on_read;
   {
     // Set the client to receive asynchronously
     // Prepare a notification callback, but don't register it yet.
@@ -172,8 +172,8 @@ TEST_F(IOCPTest, IocpWorkTimeoutDueToNoNotificationRegistered) {
     EXPECT_EQ(status, -1);
     int last_error = WSAGetLastError();
     ASSERT_EQ(last_error, WSA_IO_PENDING);
-    on_read = new BasicClosure([wrapped_client_socket, &read_called,
-                                &read_wsabuf, &bytes_rcvd]() {
+    on_read = new AnyInvocableClosure([wrapped_client_socket, &read_called,
+                                       &read_wsabuf, &bytes_rcvd]() {
       gpr_log(GPR_DEBUG, "Notified on read");
       EXPECT_GE(wrapped_client_socket->read_info()->bytes_transferred(), 10);
       EXPECT_STREQ(read_wsabuf.buf, "hello!");

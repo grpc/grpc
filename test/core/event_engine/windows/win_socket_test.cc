@@ -23,15 +23,15 @@
 #include <grpc/grpc.h>
 #include <grpc/support/log_windows.h>
 
+#include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/executor/threaded_executor.h"
 #include "src/core/lib/event_engine/windows/iocp.h"
 #include "src/core/lib/event_engine/windows/win_socket.h"
 #include "src/core/lib/iomgr/error.h"
-#include "test/core/event_engine/common_closures.h"
 #include "test/core/event_engine/windows/create_sockpair.h"
 
 namespace {
-using ::grpc_event_engine::experimental::BasicClosure;
+using ::grpc_event_engine::experimental::AnyInvocableClosure;
 using ::grpc_event_engine::experimental::CreateSockpair;
 using ::grpc_event_engine::experimental::IOCP;
 using ::grpc_event_engine::experimental::ThreadedExecutor;
@@ -47,9 +47,9 @@ TEST_F(WinSocketTest, ManualReadEventTriggeredWithoutIO) {
   WinSocket wrapped_client_socket(sockpair[0], &executor);
   WinSocket wrapped_server_socket(sockpair[1], &executor);
   bool read_called = false;
-  BasicClosure on_read([&read_called]() { read_called = true; });
+  AnyInvocableClosure on_read([&read_called]() { read_called = true; });
   wrapped_client_socket.NotifyOnRead(&on_read);
-  BasicClosure on_write([] { FAIL() << "No Write expected"; });
+  AnyInvocableClosure on_write([] { FAIL() << "No Write expected"; });
   wrapped_client_socket.NotifyOnWrite(&on_write);
   ASSERT_FALSE(read_called);
   wrapped_client_socket.SetReadable();
@@ -72,7 +72,7 @@ TEST_F(WinSocketTest, NotificationCalledImmediatelyOnShutdownWinSocket) {
   WinSocket wrapped_client_socket(sockpair[0], &executor);
   wrapped_client_socket.MaybeShutdown(absl::CancelledError("testing"));
   bool read_called = false;
-  BasicClosure closure([&wrapped_client_socket, &read_called] {
+  AnyInvocableClosure closure([&wrapped_client_socket, &read_called] {
     ASSERT_EQ(wrapped_client_socket.read_info()->bytes_transferred(), 0);
     ASSERT_EQ(wrapped_client_socket.read_info()->wsa_error(), WSAESHUTDOWN);
     read_called = true;

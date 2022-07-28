@@ -14,21 +14,22 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "test/core/event_engine/common_closures.h"
+#include "src/core/lib/event_engine/common_closures.h"
 
 #include <gtest/gtest.h>
 
 #include "src/core/lib/event_engine/promise.h"
+#include "test/core/util/test_config.h"
 
-using ::grpc_event_engine::experimental::BasicClosure;
+using ::grpc_event_engine::experimental::AnyInvocableClosure;
 using ::grpc_event_engine::experimental::Promise;
 using ::grpc_event_engine::experimental::SelfDeletingClosure;
 
-class BasicClosureTest : public testing::Test {};
+class AnyInvocableClosureTest : public testing::Test {};
 
-TEST_F(BasicClosureTest, CallsItsFunction) {
+TEST_F(AnyInvocableClosureTest, CallsItsFunction) {
   Promise<bool> promise;
-  BasicClosure closure([&promise] { promise.Set(true); });
+  AnyInvocableClosure closure([&promise] { promise.Set(true); });
   closure.Run();
   ASSERT_TRUE(promise.WaitWithTimeout(absl::Seconds(3)));
 }
