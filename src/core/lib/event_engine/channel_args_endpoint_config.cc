@@ -17,7 +17,7 @@
 
 #include <string>
 
-#include "absl/types/variant.h"
+#include "absl/types/optional.h"
 
 #include <grpc/event_engine/endpoint_config.h>
 
@@ -26,24 +26,18 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-EndpointConfig::Setting ChannelArgsEndpointConfig::Get(
+absl::optional<int> ChannelArgsEndpointConfig::GetInt(
     absl::string_view key) const {
-  auto value = args_.Get(key);
-  if (value == nullptr) {
-    return absl::monostate();
-  }
-  if (absl::holds_alternative<grpc_core::ChannelArgs::Pointer>(*value)) {
-    return absl::get<grpc_core::ChannelArgs::Pointer>((*value)).c_pointer();
-  }
+  return args_.GetInt(key);
+}
 
-  if (absl::holds_alternative<int>(*value)) {
-    return absl::get<int>(*value);
-  }
+absl::optional<absl::string_view> ChannelArgsEndpointConfig::GetString(
+    absl::string_view key) const {
+  return args_.GetString(key);
+}
 
-  if (absl::holds_alternative<std::string>(*value)) {
-    return absl::get<std::string>(*value);
-  }
-  GPR_UNREACHABLE_CODE(return absl::monostate());
+void* ChannelArgsEndpointConfig::GetVoidPointer(absl::string_view key) const {
+  return args_.GetVoidPointer(key);
 }
 
 }  // namespace experimental

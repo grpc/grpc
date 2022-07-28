@@ -22,7 +22,6 @@
 
 #include <stdint.h>
 
-#include <memory>
 #include <string>
 #include <utility>
 
@@ -399,14 +398,12 @@ grpc_channel* grpc_channel_create_from_fd(const char* target, int fd,
           .PreconditionChannelArgs(args)
           .SetIfUnset(GRPC_ARG_DEFAULT_AUTHORITY, "test.authority")
           .SetObject(creds->Ref());
-  auto c_final_args = final_args.ToC();
 
   int flags = fcntl(fd, F_GETFL, 0);
   GPR_ASSERT(fcntl(fd, F_SETFL, flags | O_NONBLOCK) == 0);
   grpc_endpoint* client = grpc_tcp_create_from_fd(
       grpc_fd_create(fd, "client", true),
-      grpc_event_engine::experimental::ChannelArgsEndpointConfig(
-          c_final_args.get()),
+      grpc_event_engine::experimental::ChannelArgsEndpointConfig(final_args),
       "fd-client");
   grpc_transport* transport =
       grpc_create_chttp2_transport(final_args, client, true);

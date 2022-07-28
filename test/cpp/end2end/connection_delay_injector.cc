@@ -42,11 +42,11 @@ grpc_tcp_client_vtable* g_original_vtable = nullptr;
 grpc_core::Mutex* g_mu = nullptr;
 ConnectionAttemptInjector* g_injector ABSL_GUARDED_BY(*g_mu) = nullptr;
 
-int64_t TcpConnectWithDelay(
-    grpc_closure* closure, grpc_endpoint** ep,
-    grpc_pollset_set* interested_parties,
-    const grpc_event_engine::experimental::EndpointConfig& config,
-    const grpc_resolved_address* addr, grpc_core::Timestamp deadline) {
+int64_t TcpConnectWithDelay(grpc_closure* closure, grpc_endpoint** ep,
+                            grpc_pollset_set* interested_parties,
+                            const EndpointConfig& config,
+                            const grpc_resolved_address* addr,
+                            grpc_core::Timestamp deadline) {
   grpc_core::MutexLock lock(g_mu);
   if (g_injector == nullptr) {
     g_original_vtable->connect(closure, ep, interested_parties, config, addr,
@@ -127,8 +127,7 @@ void ConnectionAttemptInjector::InjectedDelay::TimerCallback(
 
 void ConnectionDelayInjector::HandleConnection(
     grpc_closure* closure, grpc_endpoint** ep,
-    grpc_pollset_set* interested_parties,
-    const grpc_event_engine::experimental::EndpointConfig& config,
+    grpc_pollset_set* interested_parties, const EndpointConfig& config,
     const grpc_resolved_address* addr, grpc_core::Timestamp deadline) {
   new InjectedDelay(duration_, closure, ep, interested_parties, config, addr,
                     deadline);
@@ -217,8 +216,7 @@ std::unique_ptr<ConnectionHoldInjector::Hold> ConnectionHoldInjector::AddHold(
 
 void ConnectionHoldInjector::HandleConnection(
     grpc_closure* closure, grpc_endpoint** ep,
-    grpc_pollset_set* interested_parties,
-    const grpc_event_engine::experimental::EndpointConfig& config,
+    grpc_pollset_set* interested_parties, const EndpointConfig& config,
     const grpc_resolved_address* addr, grpc_core::Timestamp deadline) {
   const int port = grpc_sockaddr_get_port(addr);
   gpr_log(GPR_INFO, "==> HandleConnection(): port=%d", port);

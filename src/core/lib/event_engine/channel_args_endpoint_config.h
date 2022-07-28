@@ -17,9 +17,9 @@
 #include <grpc/support/port_platform.h>
 
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 
 #include <grpc/event_engine/endpoint_config.h>
-#include <grpc/impl/codegen/grpc_types.h>
 
 #include "src/core/lib/channel/channel_args.h"
 
@@ -28,14 +28,16 @@ namespace experimental {
 
 class ChannelArgsEndpointConfig : public EndpointConfig {
  public:
+  ChannelArgsEndpointConfig() = default;
   explicit ChannelArgsEndpointConfig(const grpc_core::ChannelArgs& args)
       : args_(args) {}
-  explicit ChannelArgsEndpointConfig(const grpc_channel_args* args)
-      : args_(grpc_core::ChannelArgs::FromC(args)) {}
   ChannelArgsEndpointConfig(const ChannelArgsEndpointConfig& config) = default;
   ChannelArgsEndpointConfig& operator=(const ChannelArgsEndpointConfig& other) =
       default;
-  EndpointConfig::Setting Get(absl::string_view key) const override;
+  absl::optional<int> GetInt(absl::string_view key) const override;
+  absl::optional<absl::string_view> GetString(
+      absl::string_view key) const override;
+  void* GetVoidPointer(absl::string_view key) const override;
 
  private:
   grpc_core::ChannelArgs args_;

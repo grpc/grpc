@@ -42,7 +42,9 @@
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/periodic_update.h"
+#include "src/core/lib/transport/pid_controller.h"
 
+GPR_GLOBAL_CONFIG_DECLARE_BOOL(grpc_experimental_smooth_memory_presure);
 GPR_GLOBAL_CONFIG_DECLARE_BOOL(
     grpc_experimental_enable_periodic_resource_quota_reclamation);
 GPR_GLOBAL_CONFIG_DECLARE_INT32(grpc_experimental_max_quota_buffer_size);
@@ -226,6 +228,27 @@ class ReclaimerQueue {
   std::shared_ptr<State> state_;
 };
 
+namespace memory_quota_detail {
+// Utility to track memory pressure.
+// Tries to be conservative (returns a higher pressure than there may actually
+// be) but to be eventually accurate.
+class PressureTracker {
+ public:
+  double AddSampleAndGetEstimate(double sample);
+
+ private:
+  std::atomic<double> max_this_round_{0.0};
+  std::atomic<double> report_{0.0};
+  PidController pid_{PidController::Args()
+                         .set_gain_p(0.05)
+                         .set_gain_i(0.005)
+                         .set_integral_range(100.0)
+                         .set_min_control_value(0.0)
+                         .set_max_control_value(1.0)};
+  PeriodicUpdate update_{Duration::Seconds(1)};
+};
+}  // namespace memory_quota_detail
+
 class BasicMemoryQuota final
     : public std::enable_shared_from_this<BasicMemoryQuota> {
  public:
@@ -250,7 +273,7 @@ class BasicMemoryQuota final
   void Return(size_t amount);
   // Instantaneous memory pressure approximation.
   std::pair<double, size_t>
-  InstantaneousPressureAndMaxRecommendedAllocationSize() const;
+  InstantaneousPressureAndMaxRecommendedAllocationSize();
   // Get a reclamation queue
   ReclaimerQueue* reclaimer_queue(size_t i) { return &reclaimers_[i]; }
 
@@ -282,6 +305,8 @@ class BasicMemoryQuota final
   // We also increment this counter on completion of a sweep, as an indicator
   // that the wait has ended.
   std::atomic<uint64_t> reclamation_counter_{0};
+  // Memory pressure smoothing
+  memory_quota_detail::PressureTracker pressure_tracker_;
   // The name of this quota - used for debugging/tracing/etc..
   std::string name_;
 };
@@ -307,7 +332,7 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
     size_t prev_free = free_bytes_.fetch_add(n, std::memory_order_release);
     if ((max_quota_buffer_size() > 0 &&
          prev_free + n > max_quota_buffer_size()) ||
-        (periodic_donate_back() && donate_back_.Tick())) {
+        (periodic_donate_back() && donate_back_.Tick([](Duration) {}))) {
       // Try to immediately return some free'ed memory back to the total quota.
       MaybeDonateBack();
     }

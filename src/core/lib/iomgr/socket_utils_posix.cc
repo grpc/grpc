@@ -18,6 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/types/optional.h"
+
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_SOCKETUTILS
@@ -39,61 +41,55 @@
 
 using ::grpc_event_engine::experimental::EndpointConfig;
 
-#define MAX_CHUNK_SIZE (32 * 1024 * 1024)
-
 using ::grpc_core::PosixTcpOptions;
 
 namespace {
 
-int Clamp(int default_value, int min_value, int max_value, int actual_value) {
-  if (actual_value < min_value || actual_value > max_value) {
+int AdjustValue(int default_value, int min_value, int max_value,
+                absl::optional<int> actual_value) {
+  if (!actual_value.has_value() || *actual_value < min_value ||
+      *actual_value > max_value) {
     return default_value;
   }
-  return actual_value;
-}
-
-int GetConfigValue(const EndpointConfig& config, absl::string_view key,
-                   int min_value, int max_value, int default_value) {
-  EndpointConfig::Setting value = config.Get(key);
-  if (absl::holds_alternative<int>(value)) {
-    return Clamp(default_value, min_value, max_value, absl::get<int>(value));
-  }
-  return default_value;
+  return *actual_value;
 }
 }  // namespace
 
 PosixTcpOptions TcpOptionsFromEndpointConfig(const EndpointConfig& config) {
-  EndpointConfig::Setting value;
+  void* value;
   PosixTcpOptions options;
-  options.tcp_read_chunk_size = GetConfigValue(
-      config, GRPC_ARG_TCP_READ_CHUNK_SIZE, 1, PosixTcpOptions::kMaxChunkSize,
-      PosixTcpOptions::kDefaultReadChunkSize);
+  options.tcp_read_chunk_size = AdjustValue(
+      PosixTcpOptions::kDefaultReadChunkSize, 1, PosixTcpOptions::kMaxChunkSize,
+      config.GetInt(GRPC_ARG_TCP_READ_CHUNK_SIZE));
   options.tcp_min_read_chunk_size =
-      GetConfigValue(config, GRPC_ARG_TCP_MIN_READ_CHUNK_SIZE, 1,
-                     PosixTcpOptions::kMaxChunkSize,
-                     PosixTcpOptions::kDefaultMinReadChunksize);
+      AdjustValue(PosixTcpOptions::kDefaultMinReadChunksize, 1,
+                  PosixTcpOptions::kMaxChunkSize,
+                  config.GetInt(GRPC_ARG_TCP_MIN_READ_CHUNK_SIZE));
   options.tcp_max_read_chunk_size =
-      GetConfigValue(config, GRPC_ARG_TCP_MAX_READ_CHUNK_SIZE, 1,
-                     PosixTcpOptions::kMaxChunkSize,
-                     PosixTcpOptions::kDefaultMaxReadChunksize);
+      AdjustValue(PosixTcpOptions::kDefaultMaxReadChunksize, 1,
+                  PosixTcpOptions::kMaxChunkSize,
+                  config.GetInt(GRPC_ARG_TCP_MAX_READ_CHUNK_SIZE));
   options.tcp_tx_zerocopy_send_bytes_threshold =
-      GetConfigValue(config, GRPC_ARG_TCP_TX_ZEROCOPY_SEND_BYTES_THRESHOLD, 0,
-                     INT_MAX, PosixTcpOptions::kDefaultSendBytesThreshold);
+      AdjustValue(PosixTcpOptions::kDefaultSendBytesThreshold, 0, INT_MAX,
+                  config.GetInt(GRPC_ARG_TCP_TX_ZEROCOPY_SEND_BYTES_THRESHOLD));
   options.tcp_tx_zerocopy_max_simultaneous_sends =
-      GetConfigValue(config, GRPC_ARG_TCP_TX_ZEROCOPY_MAX_SIMULT_SENDS, 0,
-                     INT_MAX, PosixTcpOptions::kDefaultMaxSends);
+      AdjustValue(PosixTcpOptions::kDefaultMaxSends, 0, INT_MAX,
+                  config.GetInt(GRPC_ARG_TCP_TX_ZEROCOPY_MAX_SIMULT_SENDS));
   options.tcp_tx_zero_copy_enabled =
-      (GetConfigValue(config, GRPC_ARG_TCP_TX_ZEROCOPY_ENABLED, 0, 1,
-                      PosixTcpOptions::kZerocpTxEnabledDefault) != 0);
+      (AdjustValue(PosixTcpOptions::kZerocpTxEnabledDefault, 0, 1,
+                   config.GetInt(GRPC_ARG_TCP_TX_ZEROCOPY_ENABLED)) != 0);
   options.keep_alive_time_ms =
-      GetConfigValue(config, GRPC_ARG_KEEPALIVE_TIME_MS, 1, INT_MAX, 0);
-  options.keep_alive_timeout_ms =
-      GetConfigValue(config, GRPC_ARG_KEEPALIVE_TIMEOUT_MS, 1, INT_MAX, 0);
-  options.expand_wildcard_addrs =
-      (GetConfigValue(config, GRPC_ARG_EXPAND_WILDCARD_ADDRS, 1, INT_MAX, 0) !=
+      (AdjustValue(0, 1, INT_MAX, config.GetInt(GRPC_ARG_KEEPALIVE_TIME_MS)) !=
        0);
+  options.keep_alive_timeout_ms =
+      (AdjustValue(0, 1, INT_MAX,
+                   config.GetInt(GRPC_ARG_KEEPALIVE_TIMEOUT_MS)) != 0);
+  options.expand_wildcard_addrs =
+      (AdjustValue(0, 1, INT_MAX,
+                   config.GetInt(GRPC_ARG_EXPAND_WILDCARD_ADDRS)) != 0);
   options.allow_reuse_port =
-      (GetConfigValue(config, GRPC_ARG_ALLOW_REUSEPORT, 1, INT_MAX, 0) != 0);
+      (AdjustValue(0, 1, INT_MAX, config.GetInt(GRPC_ARG_ALLOW_REUSEPORT)) !=
+       0);
 
   if (options.tcp_min_read_chunk_size > options.tcp_max_read_chunk_size) {
     options.tcp_min_read_chunk_size = options.tcp_max_read_chunk_size;
@@ -102,16 +98,15 @@ PosixTcpOptions TcpOptionsFromEndpointConfig(const EndpointConfig& config) {
       options.tcp_read_chunk_size, options.tcp_min_read_chunk_size,
       options.tcp_max_read_chunk_size);
 
-  value = config.Get(GRPC_ARG_RESOURCE_QUOTA);
-  if (absl::holds_alternative<void*>(value)) {
+  value = config.GetVoidPointer(GRPC_ARG_RESOURCE_QUOTA);
+  if (value != nullptr) {
     options.resource_quota =
-        reinterpret_cast<grpc_core::ResourceQuota*>(absl::get<void*>(value))
-            ->Ref();
+        reinterpret_cast<grpc_core::ResourceQuota*>(value)->Ref();
   }
-  value = config.Get(GRPC_ARG_SOCKET_MUTATOR);
-  if (absl::holds_alternative<void*>(value)) {
-    options.socket_mutator = grpc_socket_mutator_ref(
-        static_cast<grpc_socket_mutator*>(absl::get<void*>(value)));
+  value = config.GetVoidPointer(GRPC_ARG_SOCKET_MUTATOR);
+  if (value != nullptr) {
+    options.socket_mutator =
+        grpc_socket_mutator_ref(static_cast<grpc_socket_mutator*>(value));
   }
   return options;
 }

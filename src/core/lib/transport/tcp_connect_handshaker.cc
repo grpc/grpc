@@ -157,8 +157,7 @@ void TCPConnectHandshaker::DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
   // args endpoint on success.
   grpc_tcp_client_connect(
       &connected_, &endpoint_to_destroy_, interested_parties_,
-      grpc_event_engine::experimental::ChannelArgsEndpointConfig(
-          args->args.ToC().get()),
+      grpc_event_engine::experimental::ChannelArgsEndpointConfig(args->args),
       &addr_, args->deadline);
 }
 

@@ -61,11 +61,9 @@ grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(const char* name,
   create_sockets(sv);
   grpc_core::ExecCtx exec_ctx;
   std::string final_name = absl::StrCat(name, ":client");
-  const grpc_channel_args* new_args = grpc_core::CoreConfiguration::Get()
-                                          .channel_args_preconditioning()
-                                          .PreconditionChannelArgs(args)
-                                          .ToC()
-                                          .release();
+  auto new_args = grpc_core::CoreConfiguration::Get()
+                      .channel_args_preconditioning()
+                      .PreconditionChannelArgs(args);
   p.client = grpc_tcp_create(
       grpc_fd_create(sv[1], final_name.c_str(), false),
       TcpOptionsFromEndpointConfig(
@@ -77,7 +75,6 @@ grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(const char* name,
       TcpOptionsFromEndpointConfig(
           grpc_event_engine::experimental::ChannelArgsEndpointConfig(new_args)),
       "socketpair-client");
-  grpc_channel_args_destroy(new_args);
   return p;
 }
 

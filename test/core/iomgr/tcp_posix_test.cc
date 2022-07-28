@@ -16,6 +16,7 @@
  *
  */
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/port.h"
 
@@ -236,7 +237,8 @@ static void read_test(size_t num_bytes, size_t slice_size,
   ep = grpc_tcp_create(
       grpc_fd_create(sv[1], "read_test", false),
       TcpOptionsFromEndpointConfig(
-          grpc_event_engine::experimental::ChannelArgsEndpointConfig(&args)),
+          grpc_event_engine::experimental::ChannelArgsEndpointConfig(
+              grpc_core::ChannelArgs::FromC(&args))),
       "test");
   grpc_endpoint_add_to_pollset(ep, g_pollset);
 
@@ -299,7 +301,8 @@ static void large_read_test(size_t slice_size, int min_progress_size) {
   ep = grpc_tcp_create(
       grpc_fd_create(sv[1], "large_read_test", false),
       TcpOptionsFromEndpointConfig(
-          grpc_event_engine::experimental::ChannelArgsEndpointConfig(&args)),
+          grpc_event_engine::experimental::ChannelArgsEndpointConfig(
+              grpc_core::ChannelArgs::FromC(&args))),
       "test");
   grpc_endpoint_add_to_pollset(ep, g_pollset);
 
@@ -472,7 +475,8 @@ static void write_test(size_t num_bytes, size_t slice_size,
   ep = grpc_tcp_create(
       grpc_fd_create(sv[1], "write_test", collect_timestamps),
       TcpOptionsFromEndpointConfig(
-          grpc_event_engine::experimental::ChannelArgsEndpointConfig(&args)),
+          grpc_event_engine::experimental::ChannelArgsEndpointConfig(
+              grpc_core::ChannelArgs::FromC(&args))),
       "test");
   grpc_endpoint_add_to_pollset(ep, g_pollset);
 
@@ -559,7 +563,8 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
   ep = grpc_tcp_create(
       grpc_fd_create(sv[1], "read_test", false),
       TcpOptionsFromEndpointConfig(
-          grpc_event_engine::experimental::ChannelArgsEndpointConfig(&args)),
+          grpc_event_engine::experimental::ChannelArgsEndpointConfig(
+              grpc_core::ChannelArgs::FromC(&args))),
       "test");
   GPR_ASSERT(grpc_tcp_fd(ep) == sv[1] && sv[1] >= 0);
   grpc_endpoint_add_to_pollset(ep, g_pollset);
@@ -665,12 +670,14 @@ static grpc_endpoint_test_fixture create_fixture_tcp_socketpair(
   f.client_ep = grpc_tcp_create(
       grpc_fd_create(sv[0], "fixture:client", false),
       TcpOptionsFromEndpointConfig(
-          grpc_event_engine::experimental::ChannelArgsEndpointConfig(&args)),
+          grpc_event_engine::experimental::ChannelArgsEndpointConfig(
+              grpc_core::ChannelArgs::FromC(&args))),
       "test");
   f.server_ep = grpc_tcp_create(
       grpc_fd_create(sv[1], "fixture:server", false),
       TcpOptionsFromEndpointConfig(
-          grpc_event_engine::experimental::ChannelArgsEndpointConfig(&args)),
+          grpc_event_engine::experimental::ChannelArgsEndpointConfig(
+              grpc_core::ChannelArgs::FromC(&args))),
       "test");
   grpc_endpoint_add_to_pollset(f.client_ep, g_pollset);
   grpc_endpoint_add_to_pollset(f.server_ep, g_pollset);
