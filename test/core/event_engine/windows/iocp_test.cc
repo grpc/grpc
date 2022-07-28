@@ -13,8 +13,7 @@
 // limitations under the License.
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/event_engine/windows/iocp.h"
-
+#ifdef GPR_WINDOWS
 #include <thread>
 
 #include <gmock/gmock.h>
@@ -29,6 +28,7 @@
 
 #include "src/core/lib/event_engine/executor/threaded_executor.h"
 #include "src/core/lib/event_engine/poller.h"
+#include "src/core/lib/event_engine/windows/iocp.h"
 #include "src/core/lib/event_engine/windows/win_socket.h"
 #include "src/core/lib/iomgr/error.h"
 #include "test/core/event_engine/common_closures.h"
@@ -376,3 +376,4 @@ int main(int argc, char** argv) {
   grpc_shutdown();
   return status;
 }
+#endif  // GPR_WINDOWS

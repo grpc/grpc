@@ -14,9 +14,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/event_engine/windows/win_socket.h"
-
-#include <gmock/gmock.h>
+#ifdef GPR_WINDOWS
 #include <gtest/gtest.h>
 
 #include "absl/status/status.h"
@@ -27,6 +25,7 @@
 
 #include "src/core/lib/event_engine/executor/threaded_executor.h"
 #include "src/core/lib/event_engine/windows/iocp.h"
+#include "src/core/lib/event_engine/windows/win_socket.h"
 #include "src/core/lib/iomgr/error.h"
 #include "test/core/event_engine/common_closures.h"
 #include "test/core/event_engine/windows/create_sockpair.h"
@@ -97,3 +96,5 @@ int main(int argc, char** argv) {
   grpc_shutdown();
   return status;
 }
+
+#endif  // GPR_WINDOWS
