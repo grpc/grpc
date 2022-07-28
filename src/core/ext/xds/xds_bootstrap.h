@@ -54,7 +54,7 @@ class XdsBootstrap {
     };
     Locality locality;
 
-    Json metadata;
+    Json::Object metadata;
 
     static const JsonLoaderInterface* JsonLoader();
   };
@@ -62,7 +62,7 @@ class XdsBootstrap {
   struct XdsServer {
     std::string server_uri;
     std::string channel_creds_type;
-    Json channel_creds_config;
+    Json::Object channel_creds_config;
     std::set<std::string> server_features;
 
     static const JsonLoaderInterface* JsonLoader();
@@ -78,7 +78,8 @@ class XdsBootstrap {
     bool operator<(const XdsServer& other) const {
       if (server_uri < other.server_uri) return true;
       if (channel_creds_type < other.channel_creds_type) return true;
-      if (channel_creds_config.Dump() < other.channel_creds_config.Dump()) {
+      if (Json{channel_creds_config}.Dump() <
+          Json{other.channel_creds_config}.Dump()) {
         return true;
       }
       if (server_features < other.server_features) return true;

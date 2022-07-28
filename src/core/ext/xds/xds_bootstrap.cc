@@ -97,7 +97,7 @@ namespace {
 // FIXME: move this into the public API?
 struct XdsChannelCreds {
   std::string type;
-  Json config;
+  Json::Object config;
 
   static const JsonLoaderInterface* JsonLoader() {
     static const auto loader =
@@ -181,7 +181,7 @@ void XdsBootstrap::XdsServer::JsonPostLoad(const Json& json,
 
 Json::Object XdsBootstrap::XdsServer::ToJson() const {
   Json::Object channel_creds_json{{"type", channel_creds_type}};
-  if (channel_creds_config.type() != Json::Type::JSON_NULL) {
+  if (!channel_creds_config.empty()) {
     channel_creds_json["config"] = channel_creds_config;
   }
   Json::Object json{
@@ -331,7 +331,7 @@ std::string XdsBootstrap::ToString() const {
         "  metadata=%s,\n"
         "},\n",
         node_->id, node_->cluster, node_->locality.region, node_->locality.zone,
-        node_->locality.sub_zone, node_->metadata.Dump()));
+        node_->locality.sub_zone, Json{node_->metadata}.Dump()));
   }
   parts.push_back(
       absl::StrFormat("servers=[\n"
@@ -339,9 +339,9 @@ std::string XdsBootstrap::ToString() const {
                       "    uri=\"%s\",\n"
                       "    creds_type=%s,\n",
                       server().server_uri, server().channel_creds_type));
-  if (server().channel_creds_config.type() != Json::Type::JSON_NULL) {
-    parts.push_back(absl::StrFormat("    creds_config=%s,",
-                                    server().channel_creds_config.Dump()));
+  if (!server().channel_creds_config.empty()) {
+    parts.push_back(absl::StrFormat(
+        "    creds_config=%s,", Json{server().channel_creds_config}.Dump()));
   }
   if (!server().server_features.empty()) {
     parts.push_back(absl::StrCat("    server_features=[",

@@ -206,10 +206,10 @@ void PopulateNode(const XdsEncodingContext& context,
       envoy_config_core_v3_Node_set_cluster(
           node_msg, StdStringToUpbString(node->cluster));
     }
-    if (!node->metadata.object_value().empty()) {
+    if (!node->metadata.empty()) {
       google_protobuf_Struct* metadata =
           envoy_config_core_v3_Node_mutable_metadata(node_msg, context.arena);
-      PopulateMetadata(context, metadata, node->metadata.object_value());
+      PopulateMetadata(context, metadata, node->metadata);
     }
     if (!node->locality.region.empty() || !node->locality.zone.empty() ||
         !node->locality.sub_zone.empty()) {
