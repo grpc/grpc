@@ -22,7 +22,6 @@
 #include <string.h>
 
 #include <algorithm>
-#include <memory>
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -30,7 +29,6 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
