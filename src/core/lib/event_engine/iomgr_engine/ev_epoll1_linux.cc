@@ -17,7 +17,7 @@
 
 #include <stdint.h>
 
-#include <algorithm>
+#include <atomic>
 #include <memory>
 
 #include "absl/memory/memory.h"
@@ -25,10 +25,8 @@
 #include "absl/status/statusor.h"
 
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
-#include <grpc/support/time.h>
 
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/time_util.h"
@@ -52,7 +50,6 @@
 #include "src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix.h"
 #include "src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix_default.h"
 #include "src/core/lib/gprpp/fork.h"
-#include "src/core/lib/gprpp/time.h"
 
 using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::Poller;

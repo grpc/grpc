@@ -28,7 +28,6 @@
 #include "src/core/lib/event_engine/iomgr_engine/event_poller.h"
 #include "src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix.h"
 #include "src/core/lib/event_engine/poller.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_LINUX_EPOLL
