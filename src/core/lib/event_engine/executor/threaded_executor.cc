@@ -16,6 +16,8 @@
 
 #include "src/core/lib/event_engine/executor/threaded_executor.h"
 
+#include <utility>
+
 namespace grpc_event_engine {
 namespace experimental {
 

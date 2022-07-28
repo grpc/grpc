@@ -29,7 +29,7 @@ namespace experimental {
 class BasicClosure : public EventEngine::Closure {
  public:
   explicit BasicClosure(absl::AnyInvocable<void()> cb) : cb_(std::move(cb)) {}
-  void Run() { cb_(); }
+  void Run() override { cb_(); }
 
  private:
   absl::AnyInvocable<void()> cb_;
@@ -47,11 +47,11 @@ class SelfDeletingClosure : public EventEngine::Closure {
                          absl::AnyInvocable<void()> dest_cb) {
     return new SelfDeletingClosure(std::move(cb), std::move(dest_cb));
   }
-  virtual ~SelfDeletingClosure() {
+  ~SelfDeletingClosure() override {
     if (dest_cb_) dest_cb_();
   };
 
-  void Run() {
+  void Run() override {
     cb_();
     delete this;
   }
