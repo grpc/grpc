@@ -37,10 +37,13 @@ buildozer_commands = []
 needs_codegen_base_src = set()
 original_deps = {}
 original_external_deps = {}
+skip_headers = collections.defaultdict(set)
 
 # TODO(ctiller): ideally we wouldn't hardcode a bunch of paths here.
 # We can likely parse out BUILD files from dependencies to generate this index.
 EXTERNAL_DEPS = {
+    'absl/algorithm/container.h':
+        'absl/algorithm:container',
     'absl/base/attributes.h':
         'absl/base:core_headers',
     'absl/base/call_once.h':
@@ -66,6 +69,8 @@ EXTERNAL_DEPS = {
         'absl/debugging:symbolize',
     'absl/flags/flag.h':
         'absl/flags:flag',
+    'absl/flags/parse.h':
+        'absl/flags:parse',
     'absl/functional/any_invocable.h':
         'absl/functional:any_invocable',
     'absl/functional/bind_front.h':
@@ -265,6 +270,7 @@ def grpc_cc_library(name,
                     tags=[],
                     deps=[],
                     external_deps=[],
+                    proto=None,
                     **kwargs):
     global args
     global num_cc_libraries
@@ -284,6 +290,9 @@ def grpc_cc_library(name,
     # other, whilst not biasing dependent projects
     if 'avoid_dep' in tags or 'grpc_avoid_dep' in tags:
         avoidness[name] += 10
+    if proto:
+        proto_hdr = '%s%s' % ((parsing_path + '/' if parsing_path else ''), proto.replace('.proto', '.pb.h'))
+        skip_headers[name].add(proto_hdr)
     for hdr in hdrs + public_hdrs:
         filename = '%s%s' % ((parsing_path + '/' if parsing_path else ''), hdr)
         vendors[filename].append(name)
@@ -374,7 +383,7 @@ args = parser.parse_args()
 
 for dirname in [
         "", "test/core/uri", "test/core/util", "test/core/end2end",
-        "test/core/event_engine"
+        "test/core/event_engine", "test/core/resource_quota",
 ]:
     parsing_path = dirname
     exec(
@@ -386,9 +395,11 @@ for dirname in [
             'config_setting': lambda **kwargs: None,
             'selects': FakeSelects(),
             'python_config_settings': lambda **kwargs: None,
+            'grpc_cc_binary': grpc_cc_library,
             'grpc_cc_library': grpc_cc_library,
             'grpc_cc_test': grpc_cc_library,
             'grpc_fuzzer': grpc_cc_library,
+            'grpc_proto_fuzzer': grpc_cc_library,
             'select': lambda d: d["//conditions:default"],
             'grpc_end2end_tests': lambda: None,
             'grpc_upb_proto_library': lambda name, **kwargs: None,
@@ -471,7 +482,13 @@ def make_library(library):
     deps = Choices(library)
     external_deps = Choices(None)
     for hdr in hdrs:
+        if hdr in skip_headers[library]:
+            continue
+
         if hdr == 'src/core/lib/profiling/stap_probes.h':
+            continue
+
+        if hdr.startswith('src/libfuzzer/'):
             continue
 
         if hdr == 'grpc/grpc.h' and not library.startswith('//:'):
