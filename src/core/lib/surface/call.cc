@@ -103,6 +103,9 @@ grpc_core::TraceFlag grpc_compression_trace(false, "compression");
 grpc_core::TraceFlag grpc_call_trace(false, "call");
 grpc_core::TraceFlag grpc_call_refcount_trace(false, "call_refcount");
 
+GPR_GLOBAL_CONFIG_DEFINE_BOOL(grpc_experimental_enable_promise_based_call,
+                              false, "enable promise based calls");
+
 namespace grpc_core {
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -2782,7 +2785,9 @@ size_t grpc_call_get_initial_size_estimate() {
 
 grpc_error_handle grpc_call_create(grpc_call_create_args* args,
                                    grpc_call** out_call) {
-  if (args->channel->is_promising()) {
+  static const bool kAllowPromises =
+      GPR_GLOBAL_CONFIG_GET(grpc_experimental_enable_promise_based_call);
+  if (kAllowPromises && args->channel->is_promising()) {
     if (args->server_transport_data == nullptr) {
       return grpc_core::MakePromiseBasedCall<grpc_core::ClientPromiseBasedCall>(
           args, out_call);
