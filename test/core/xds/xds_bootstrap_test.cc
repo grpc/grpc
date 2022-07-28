@@ -603,7 +603,9 @@ TEST(XdsBootstrapTest, CertificateProvidersFakePluginParsingError) {
       "}";
   auto bootstrap = XdsBootstrap::Create(json_str);
   EXPECT_THAT(
-      bootstrap.status().message(),
+      // Explicit conversion to std::string to work around
+      // https://github.com/google/googletest/issues/3949.
+      std::string(bootstrap.status().message()),
       ::testing::MatchesRegex(
           "errors validating JSON: \\["
           "field:certificate_providers\\[\"fake_plugin\"\\].config "
