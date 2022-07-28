@@ -148,7 +148,10 @@ bool JsonReader::StringAddChar(uint32_t c) {
       utf8_bytes_remaining_ = 1;
     } else if ((c & 0xf0) == 0xe0) {
       utf8_bytes_remaining_ = 2;
-    } else if ((c & 0xf8) == 0xf0) {
+    } else if ((c & 0xf8) == 0xf0 && c <= 0xf4) {
+      /// For the UTF-8 characters with length of 4 bytes, the range of the
+      /// first byte is [0xf0, 0xf4]. Reference: Table 3-7 in
+      /// https://www.unicode.org/versions/Unicode14.0.0/ch03.pdf
       utf8_bytes_remaining_ = 3;
     } else {
       return false;

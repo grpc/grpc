@@ -2256,6 +2256,16 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "event_engine_time_util",
+    srcs = ["src/core/lib/event_engine/time_util.cc"],
+    hdrs = ["src/core/lib/event_engine/time_util.h"],
+    deps = [
+        "event_engine_base_hdrs",
+        "gpr_platform",
+    ],
+)
+
+grpc_cc_library(
     name = "iomgr_ee_timer",
     srcs = [
         "src/core/lib/event_engine/iomgr_engine/timer.cc",
