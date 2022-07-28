@@ -21,16 +21,15 @@
 
 #include <algorithm>
 #include <map>
-#include <memory>
 #include <set>
 #include <string>
 #include <vector>
 
+#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
 #include "src/core/ext/xds/certificate_provider_store.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_object_loader.h"
 
@@ -110,8 +109,8 @@ class XdsBootstrap {
   XdsBootstrap& operator=(const XdsBootstrap&);
 
   // Movable.
-  XdsBootstrap(XdsBootstrap&&);
-  XdsBootstrap& operator=(XdsBootstrap&&);
+  XdsBootstrap(XdsBootstrap&&) noexcept;
+  XdsBootstrap& operator=(XdsBootstrap&&) noexcept;
 
   static const JsonLoaderInterface* JsonLoader();
   void JsonPostLoad(const Json& json, ErrorList* errors);

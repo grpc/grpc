@@ -20,10 +20,10 @@
 
 #include <stdlib.h>
 
+#include <memory>
 #include <utility>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/match.h"
@@ -35,12 +35,10 @@
 #include <grpc/support/alloc.h>
 
 #include "src/core/ext/xds/certificate_provider_factory.h"
-#include "src/core/ext/xds/certificate_provider_registry.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/json/json_util.h"
 #include "src/core/lib/security/credentials/channel_creds_registry.h"
 
 namespace grpc_core {
@@ -242,9 +240,9 @@ XdsBootstrap::XdsBootstrap(const XdsBootstrap&) = default;
 
 XdsBootstrap& XdsBootstrap::operator=(const XdsBootstrap&) = default;
 
-XdsBootstrap::XdsBootstrap(XdsBootstrap&&) = default;
+XdsBootstrap::XdsBootstrap(XdsBootstrap&&) noexcept = default;
 
-XdsBootstrap& XdsBootstrap::operator=(XdsBootstrap&&) = default;
+XdsBootstrap& XdsBootstrap::operator=(XdsBootstrap&&) noexcept = default;
 
 const JsonLoaderInterface* XdsBootstrap::JsonLoader() {
   if (XdsFederationEnabled()) {
