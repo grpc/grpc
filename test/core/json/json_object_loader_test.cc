@@ -30,6 +30,13 @@ absl::StatusOr<T> Parse(const std::string& json) {
   return LoadFromJson<T>(*parsed);
 }
 
+template <typename T>
+absl::Status ParseToObject(const std::string& json, T* result) {
+  auto parsed = Json::Parse(json);
+  if (!parsed.ok()) return parsed.status();
+  return LoadFromJson(*parsed, result);
+}
+
 struct TestStruct1 {
   int32_t a = 0;
   int32_t b = 1;
@@ -155,12 +162,28 @@ TEST(JsonObjectLoaderTest, LoadTestStruct1) {
     EXPECT_EQ(s.status().code(), absl::StatusCode::kInvalidArgument);
     EXPECT_EQ(s.status().message(),
               "errors validating JSON: ["
-              "field:a error:does not exist; "
+              "field:a error:field not present; "
               "field:b error:is not a number; "
               "field:c error:failed to parse number; "
               "field:x error:is not a string]")
         << s.status();
   }
+}
+
+TEST(JsonObjectLoaderTest, ParseToObject) {
+  TestStruct1 s;
+  absl::Status status = ParseToObject(
+      "{\"a\":1,\"b\":\"2\",\"c\":3,\"x\":\"foo\",\"d\":\"1.3s\","
+      "\"j\":{\"foo\":\"bar\"}}",
+      &s);
+  ASSERT_TRUE(status.ok()) << status;
+  EXPECT_EQ(s.a, 1);
+  EXPECT_EQ(s.b, 2);
+  EXPECT_EQ(s.c, 3);
+  EXPECT_EQ(s.x, "foo");
+  EXPECT_EQ(s.d, Duration::Milliseconds(1300));
+  EXPECT_EQ(s.e, absl::nullopt);
+  EXPECT_EQ(s.j.Dump(), "{\"foo\":\"bar\"}");
 }
 
 TEST(JsonObjectLoaderTest, LoadPostLoadTestStruct1) {
