@@ -21,22 +21,7 @@ licenses(["notice"])
 grpc_cc_library(
     name = "memstats",
     testonly = 1,
-    srcs = [
-        "memstats.cc",
-        "memstats.h",
-    ],
     hdrs = ["memstats.h"],
-    external_deps = [
-        "absl/types:optional",
-    ],
-    tags = [
-        "bazel_only",
-        "no_mac",
-        "no_windows",
-    ],
-    deps = [
-        "//:gpr",
-    ],
 )
 
 grpc_cc_binary(

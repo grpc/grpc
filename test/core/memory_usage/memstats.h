@@ -15,17 +15,18 @@
 #ifndef TEST_H
 #define TEST_H
 
-#include "absl/types/optional.h"
+#include <stdlib.h>
+#include <sys/resource.h>
 
 // IWYU pragma: no_include <bits/types/struct_rusage.h>
 
-// Get the memory usage of either the calling process or another process using
-// the pid
-long GetMemUsage(absl::optional<int> pid = absl::nullopt);
-
 struct MemStats {
   long rss;  // Resident set size, in kb
-  static MemStats Snapshot() { return MemStats{GetMemUsage()}; }
+  static MemStats Snapshot() {
+    struct rusage usage;
+    if (0 != getrusage(RUSAGE_SELF, &usage)) abort();
+    return MemStats{usage.ru_maxrss};
+  }
 };
 
 #endif
