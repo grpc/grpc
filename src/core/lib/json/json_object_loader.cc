@@ -23,15 +23,15 @@
 #include "absl/strings/ascii.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
+#include "absl/strings/strip.h"
 
 namespace grpc_core {
 
 void ErrorList::AddError(absl::string_view error) {
   std::string fields = absl::StrJoin(fields_, "");
-  errors_.emplace_back(absl::StrCat(
-      "field:",
-      absl::string_view(fields).substr(1),  // Skip leading '.' in field names
-      " error:", error));
+  absl::string_view fields_view = fields;
+  absl::ConsumePrefix(&fields_view, ".");  // Skip leading '.' in field names.
+  errors_.emplace_back(absl::StrCat("field:", fields_view, " error:", error));
 }
 
 void ErrorList::PushField(absl::string_view ext) {
@@ -67,14 +67,12 @@ bool LoadDuration::IsNumber() const { return false; }
 
 void LoadDuration::LoadInto(const std::string& value, void* dst,
                             ErrorList* errors) const {
-  size_t len = value.size();
-  if (value[len - 1] != 's') {
+  absl::string_view buf(value);
+  if (!absl::ConsumeSuffix(&buf, "s")) {
     errors->AddError("Not a duration (no s suffix)");
     return;
   }
-  absl::string_view buf(value);
-  buf = absl::StripAsciiWhitespace(
-      buf.substr(0, len - 1));  // Remove trailing 's'.
+  buf = absl::StripAsciiWhitespace(buf);
   auto decimal_point = buf.find('.');
   int nanos = 0;
   if (decimal_point != absl::string_view::npos) {
