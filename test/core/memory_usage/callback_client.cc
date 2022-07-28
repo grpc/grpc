@@ -18,12 +18,16 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
 #include "absl/strings/string_view.h"
+#include "absl/time/time.h"
 
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
+#include <grpcpp/impl/codegen/time.h>
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/support/status.h>
@@ -36,6 +40,7 @@
 ABSL_FLAG(std::string, target, "", "Target host:port");
 ABSL_FLAG(bool, secure, false, "Use SSL Credentials");
 ABSL_FLAG(int, server_pid, 99999, "Server's pid");
+ABSL_FLAG(int, size, 500, "Number of channels"); //TODO(chennancy) Pass in the real amount of flags
 
 std::shared_ptr<grpc::Channel> CreateChannelForTest(int index) {
   // Set the authentication mechanism.
@@ -121,22 +126,29 @@ int main(int argc, char** argv) {
   GetBeforeSnapshot(get_memory_channel, before_server_memory);
   long before_client_memory = GetMemUsage();
 
-  for(int i=0; i<500; ++i){
+  int size = absl::GetFlag(FLAGS_size);
+  std::vector<std::shared_ptr<grpc::Channel>> channels_list(size);
+  for(int i=0; i<size; ++i){
     std::shared_ptr<grpc::Channel> channel= CreateChannelForTest(i);
+    channels_list[i]=channel;
     UnaryCall(channel);
   }
-  gpr_sleep_until(grpc_timeout_seconds_to_deadline(10));
+  //gpr_sleep_until(grpc_timeout_seconds_to_deadline(10));
 
   // Getting peak memory usage
   long peak_server_memory = GetMemUsage(absl::GetFlag(FLAGS_server_pid));
   long peak_client_memory = GetMemUsage();
   gpr_log(GPR_INFO, "Before Server Mem: %ld", before_server_memory);
   gpr_log(GPR_INFO, "Before Client Mem: %ld", before_client_memory);
-  gpr_log(GPR_INFO, "Peak Client Mem: %ld", peak_client_memory);
   gpr_log(GPR_INFO, "Peak Server Mem: %ld", peak_server_memory);
+  gpr_log(GPR_INFO, "Peak Client Mem: %ld", peak_client_memory);
   gpr_log(GPR_INFO, "Server Difference: %ld", peak_server_memory-before_server_memory);
   gpr_log(GPR_INFO, "Client Difference: %ld", peak_client_memory-before_client_memory);
 
+  //Checking if any channels shutdown
+  for(int i=0; i<size; ++i){
+    GPR_ASSERT(!channels_list[i]->WaitForStateChange(GRPC_CHANNEL_READY, absl::Now() + absl::Milliseconds(1)));
+  }
   gpr_log(GPR_INFO, "Client Done");
   return 0;
 }
