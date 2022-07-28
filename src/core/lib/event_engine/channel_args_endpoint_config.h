@@ -38,7 +38,7 @@ class ChannelArgsEndpointConfig : public EndpointConfig {
   absl::optional<int> GetInt(absl::string_view key) const override;
   absl::optional<absl::string_view> GetString(
       absl::string_view key) const override;
-  absl::optional<void*> GetPointer(absl::string_view key) const override;
+  absl::optional<void*> GetVoidPointer(absl::string_view key) const override;
 
  private:
   grpc_core::ChannelArgs args_;

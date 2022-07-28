@@ -57,7 +57,7 @@ absl::optional<absl::string_view> ChannelArgsEndpointConfig::GetString(
   return args_.GetString(key);
 }
 
-absl::optional<void*> ChannelArgsEndpointConfig::GetPointer(
+absl::optional<void*> ChannelArgsEndpointConfig::GetVoidPointer(
     absl::string_view key) const {
   auto value = args_.Get(key);
   if (value != nullptr &&

@@ -45,7 +45,7 @@ class EndpointConfig {
       absl::string_view key) const = 0;
   // If the key points to an void* config, a void* pointer value gets returned.
   // Otherwise it returns an absl::nullopt_t
-  virtual absl::optional<void*> GetPointer(absl::string_view key) const = 0;
+  virtual absl::optional<void*> GetVoidPointer(absl::string_view key) const = 0;
 };
 
 }  // namespace experimental

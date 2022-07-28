@@ -29,11 +29,14 @@ TEST(EndpointConfigTest, CanSRetrieveValuesFromChannelArgs) {
   grpc_arg arg = grpc_channel_arg_integer_create(const_cast<char*>("arst"), 3);
   const grpc_channel_args args = {1, &arg};
   ChannelArgsEndpointConfig config(grpc_core::ChannelArgs::FromC(&args));
-  EXPECT_EQ(absl::get<int>(config.Get("arst")), 3);
+  EXPECT_EQ(*config.GetInt("arst"), 3);
 }
 
-TEST(EndpointConfigTest, ReturnsMonostateForMissingKeys) {
+TEST(EndpointConfigTest, ReturnsNoValueForMissingKeys) {
   ChannelArgsEndpointConfig config;
+  EXPECT_TRUE(!config.GetInt("nonexistent").has_value());
+  EXPECT_TRUE(!config.GetString("nonexistent").has_value());
+  EXPECT_TRUE(!config.GetVoidPointer("nonexistent").has_value());
   EXPECT_TRUE(
       absl::holds_alternative<absl::monostate>(config.Get("nonexistent")));
 }
