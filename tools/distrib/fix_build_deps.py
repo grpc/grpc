@@ -434,14 +434,16 @@ if args.whats_left:
 # problem. (models the list monad in Haskell!)
 class Choices:
 
-    def __init__(self, library):
+    def __init__(self, library, substitutions):
         self.library = library
         self.to_add = []
         self.to_remove = []
+        self.substitutions = substitutions
 
     def add_one_of(self, choices):
         if not choices:
             return
+        choices = [self.apply_substitutions(choice) for choice in choices]
         self.to_add.append(
             tuple(
                 make_relative_path(choice, self.library) for choice in choices))
@@ -450,7 +452,13 @@ class Choices:
         self.add_one_of([choice])
 
     def remove(self, remove):
+        remove = self.apply_substitutions(remove)
         self.to_remove.append(make_relative_path(remove, self.library))
+
+    def apply_substitutions(self, dep):
+        if dep in self.substitutions:
+            return self.substitutions[dep]
+        return dep
 
     def best(self, scorer):
         choices = set()
@@ -479,8 +487,11 @@ class Choices:
 def make_library(library):
     error = False
     hdrs = sorted(consumes[library])
-    deps = Choices(library)
-    external_deps = Choices(None)
+    # we need a little trickery here since grpc_base has channel.cc, which calls grpc_init
+    # which is in grpc, which is illegal but hard to change
+    # once event engine lands we can clean this up
+    deps = Choices(library, {'//:grpc_base': '//:grpc'} if library.startswith('//test/') else {})
+    external_deps = Choices(None, {})
     for hdr in hdrs:
         if hdr in skip_headers[library]:
             continue

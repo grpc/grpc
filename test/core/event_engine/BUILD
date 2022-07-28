@@ -30,7 +30,6 @@ grpc_cc_test(
     deps = [
         "//:gpr_platform",
         "//:grpc",
-        "//:grpc_base",
         "//test/core/util:grpc_test_util_unsecure",
     ],
 )
@@ -66,7 +65,7 @@ grpc_cc_library(
     hdrs = ["test_init.h"],
     external_deps = ["absl/strings"],
     deps = [
+        "//:event_engine_base_hdrs",
         "//:gpr_base",
-        "//:grpc_base",
     ],
 )

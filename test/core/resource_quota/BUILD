@@ -118,8 +118,9 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//:event_engine_memory_allocator",
+        "//:exec_ctx",
         "//:gpr_base",
-        "//:grpc_base",
         "//:memory_quota",
     ],
 )
@@ -139,9 +140,12 @@ grpc_proto_fuzzer(
     uses_polling = False,
     deps = [
         "call_checker",
+        "//:closure",
         "//:debug_location",
+        "//:error",
+        "//:event_engine_memory_allocator",
+        "//:exec_ctx",
         "//:gpr_base",
-        "//:grpc_base",
         "//:grpc_trace",
         "//:memory_quota",
         "//:useful",
