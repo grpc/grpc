@@ -236,13 +236,27 @@ absl::StatusOr<XdsBootstrap> XdsBootstrap::Create(
   return LoadFromJson<XdsBootstrap>(*json);
 }
 
-XdsBootstrap::XdsBootstrap(const XdsBootstrap&) = default;
+XdsBootstrap::XdsBootstrap(XdsBootstrap&& other) noexcept
+    : servers_(std::move(other.servers_)),
+      node_(std::move(other.node_)),
+      client_default_listener_resource_name_template_(
+          std::move(other.client_default_listener_resource_name_template_)),
+      server_listener_resource_name_template_(
+          std::move(other.server_listener_resource_name_template_)),
+      authorities_(std::move(other.authorities_)),
+      certificate_providers_(std::move(other.certificate_providers_)) {}
 
-XdsBootstrap& XdsBootstrap::operator=(const XdsBootstrap&) = default;
-
-XdsBootstrap::XdsBootstrap(XdsBootstrap&&) noexcept = default;
-
-XdsBootstrap& XdsBootstrap::operator=(XdsBootstrap&&) noexcept = default;
+XdsBootstrap& XdsBootstrap::operator=(XdsBootstrap&& other) noexcept {
+  servers_ = std::move(other.servers_);
+  node_ = std::move(other.node_);
+  client_default_listener_resource_name_template_ =
+      std::move(other.client_default_listener_resource_name_template_);
+  server_listener_resource_name_template_ =
+      std::move(other.server_listener_resource_name_template_);
+  authorities_ = std::move(other.authorities_);
+  certificate_providers_ = std::move(other.certificate_providers_);
+  return *this;
+}
 
 const JsonLoaderInterface* XdsBootstrap::JsonLoader() {
   if (XdsFederationEnabled()) {

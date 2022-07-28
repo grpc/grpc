@@ -105,13 +105,13 @@ class XdsBootstrap {
   // Do not instantiate directly -- use Create() above instead.
   XdsBootstrap() = default;
 
-  // Copyable.
-  XdsBootstrap(const XdsBootstrap&);
-  XdsBootstrap& operator=(const XdsBootstrap&);
+  // Not copyable.
+  XdsBootstrap(const XdsBootstrap&) = delete;
+  XdsBootstrap& operator=(const XdsBootstrap&) = delete;
 
   // Movable.
-  XdsBootstrap(XdsBootstrap&&) noexcept;
-  XdsBootstrap& operator=(XdsBootstrap&&) noexcept;
+  XdsBootstrap(XdsBootstrap&& other) noexcept;
+  XdsBootstrap& operator=(XdsBootstrap&& other) noexcept;
 
   static const JsonLoaderInterface* JsonLoader();
   void JsonPostLoad(const Json& json, ErrorList* errors);
