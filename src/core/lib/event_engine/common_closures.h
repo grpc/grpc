@@ -12,14 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_TEST_CORE_EVENT_ENGINE_UTIL_H
-#define GRPC_TEST_CORE_EVENT_ENGINE_UTIL_H
+#ifndef GRPC_CORE_LIB_EVENT_ENGINE_COMMON_CLOSURES_H
+#define GRPC_CORE_LIB_EVENT_ENGINE_COMMON_CLOSURES_H
 
 #include <grpc/support/port_platform.h>
 
-#include "absl/functional/any_invocable.h"
-
+#include <grpc/support/port_platform.h>
 #include <grpc/event_engine/event_engine.h>
+#include <utility>
+
+#include "absl/functional/any_invocable.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -65,4 +67,4 @@ class SelfDeletingClosure : public EventEngine::Closure {
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_TEST_CORE_EVENT_ENGINE_UTIL_H
+#endif  // GRPC_CORE_LIB_EVENT_ENGINE_COMMON_CLOSURES_H
