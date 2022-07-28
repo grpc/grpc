@@ -121,6 +121,7 @@ int main(int argc, char** argv) {
   // Getting peak memory usage
   long peak_server_memory = GetMemUsage(absl::GetFlag(FLAGS_server_pid));
   long peak_client_memory = GetMemUsage();
+  gpr_log(GPR_INFO, "Before Server Mem: %ld", before_server_memory);
   gpr_log(GPR_INFO, "Before Client Mem: %ld", before_client_memory);
   gpr_log(GPR_INFO, "Peak Client Mem: %ld", peak_client_memory);
   gpr_log(GPR_INFO, "Peak Server Mem: %ld", peak_server_memory);
