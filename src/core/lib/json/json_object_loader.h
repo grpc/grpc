@@ -21,6 +21,7 @@
 #include <cstring>
 #include <map>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 #include "absl/meta/type_traits.h"
@@ -28,6 +29,7 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/json/json.h"
@@ -188,6 +190,19 @@ class LoadVector : public LoaderInterface {
                        ErrorList* errors) const = 0;
 };
 
+// Load an optional of some type.
+class LoadOptional : public LoaderInterface {
+ public:
+  void LoadInto(const Json& json, void* dst, ErrorList* errors) const override;
+
+ protected:
+  ~LoadOptional() = default;
+
+ private:
+  virtual void LoadOne(const Json& json, void* dst,
+                       ErrorList* errors) const = 0;
+};
+
 // Load a map of string->some type.
 class LoadMap : public LoaderInterface {
  public:
@@ -238,6 +253,18 @@ template <>
 class AutoLoader<std::string> final : public LoadString {};
 template <>
 class AutoLoader<Json> final : public LoadUnprocessedJson {};
+
+// Specializations of AutoLoader for optional.
+template <typename T>
+class AutoLoader<absl::optional<T>> final : public LoaderInterface {
+ public:
+  void LoadInto(const Json& json, void* dst, ErrorList* errors) const override {
+    if (json.type() == Json::Type::JSON_NULL) return;
+    auto* opt = static_cast<absl::optional<T>*>(dst);
+    opt->emplace();
+    LoaderForType<T>()->LoadInto(json, &**opt, errors);
+  }
+};
 
 // Specializations of AutoLoader for vectors.
 template <typename T>
@@ -292,7 +319,7 @@ struct Element {
   // Is this field optional?
   bool optional;
   // The name of the field.
-  const char *name;
+  const char* name;
 };
 
 // Vec<T, kSize> provides a constant array type that can be appended to by

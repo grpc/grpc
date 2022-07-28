@@ -14,6 +14,8 @@
 
 #include "src/core/lib/json/json_object_loader.h"
 
+#include <cstdint>
+
 #include <gtest/gtest.h>
 
 #include "absl/strings/str_join.h"
@@ -35,6 +37,7 @@ struct TestStruct1 {
   std::string x;
   Duration d;
   Json j;
+  absl::optional<int32_t> e;
 
   static const JsonLoaderInterface* JsonLoader() {
     static const auto loader = JsonObjectLoader<TestStruct1>()
@@ -43,6 +46,7 @@ struct TestStruct1 {
                                    .OptionalField("c", &TestStruct1::c)
                                    .Field("x", &TestStruct1::x)
                                    .OptionalField("d", &TestStruct1::d)
+                                   .OptionalField("e", &TestStruct1::e)
                                    .OptionalField("j", &TestStruct1::j)
                                    .Finish();
     return &loader;
@@ -109,6 +113,33 @@ TEST(JsonObjectLoaderTest, LoadTestStruct1) {
     EXPECT_EQ(s->c, 3);
     EXPECT_EQ(s->x, "foo");
     EXPECT_EQ(s->d, Duration::Milliseconds(1300));
+    EXPECT_EQ(s->e, absl::nullopt);
+    EXPECT_EQ(s->j.Dump(), "{\"foo\":\"bar\"}");
+  }
+  {
+    auto s = Parse<TestStruct1>(
+        "{\"a\":1,\"b\":\"2\",\"c\":3,\"x\":\"foo\",\"d\":\"1.3s\","
+        "\"j\":{\"foo\":\"bar\"},\"e\":null}");
+    ASSERT_TRUE(s.ok()) << s.status();
+    EXPECT_EQ(s->a, 1);
+    EXPECT_EQ(s->b, 2);
+    EXPECT_EQ(s->c, 3);
+    EXPECT_EQ(s->x, "foo");
+    EXPECT_EQ(s->d, Duration::Milliseconds(1300));
+    EXPECT_EQ(s->e, absl::nullopt);
+    EXPECT_EQ(s->j.Dump(), "{\"foo\":\"bar\"}");
+  }
+  {
+    auto s = Parse<TestStruct1>(
+        "{\"a\":1,\"b\":\"2\",\"c\":3,\"x\":\"foo\",\"d\":\"1.3s\","
+        "\"j\":{\"foo\":\"bar\"},\"e\":3}");
+    ASSERT_TRUE(s.ok()) << s.status();
+    EXPECT_EQ(s->a, 1);
+    EXPECT_EQ(s->b, 2);
+    EXPECT_EQ(s->c, 3);
+    EXPECT_EQ(s->x, "foo");
+    EXPECT_EQ(s->d, Duration::Milliseconds(1300));
+    EXPECT_EQ(s->e, absl::optional<int32_t>(3));
     EXPECT_EQ(s->j.Dump(), "{\"foo\":\"bar\"}");
   }
   {
@@ -127,7 +158,8 @@ TEST(JsonObjectLoaderTest, LoadTestStruct1) {
               "field:a error:does not exist; "
               "field:b error:is not a number; "
               "field:c error:failed to parse number; "
-              "field:x error:is not a string]") << s.status();
+              "field:x error:is not a string]")
+        << s.status();
   }
 }
 
@@ -163,8 +195,8 @@ TEST(JsonObjectLoaderTest, LoadTestStruct2) {
     EXPECT_EQ(s->c.x, "foo");
   }
   {
-    auto s = Parse<TestStruct2>(
-        "{\"a\":[{\"a\":7, \"x\":\"bar\"}],\"b\":[1,2,3]}");
+    auto s =
+        Parse<TestStruct2>("{\"a\":[{\"a\":7, \"x\":\"bar\"}],\"b\":[1,2,3]}");
     ASSERT_TRUE(s.ok()) << s.status();
     EXPECT_EQ(s->a.size(), 1);
     EXPECT_EQ(s->a[0].a, 7);
@@ -184,7 +216,8 @@ TEST(JsonObjectLoaderTest, LoadTestStruct2) {
               "errors validating JSON: ["
               "field:a[0].a error:failed to parse number; "
               "field:b[1] error:is not a number; "
-              "field:c error:is not an object]") << s.status();
+              "field:c error:is not an object]")
+        << s.status();
   }
 }
 

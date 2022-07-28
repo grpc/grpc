@@ -137,6 +137,8 @@ TEST(Json, Utf8) {
   EXPECT_THAT("\"\xf0\x80\x80\x80\"", ContainsInvalidUtf8());
   /// If the first byte is 0xf4, the range of second byte is [0x80, 0x8f].
   EXPECT_THAT("\"\xf4\x90\x80\x80\"", ContainsInvalidUtf8());
+  /// The range of the first bytes is [0xf0, 0xf4].
+  EXPECT_THAT("\"\xf5\x80\x80\x80\"", ContainsInvalidUtf8());
 }
 
 TEST(Json, NestedEmptyContainers) {
