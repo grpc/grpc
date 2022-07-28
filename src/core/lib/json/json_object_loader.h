@@ -443,14 +443,6 @@ absl::StatusOr<T> LoadFromJson(const Json& json) {
   return result;
 }
 
-template <typename T>
-absl::Status LoadFromJson(const Json& json, T* result) {
-  ErrorList error_list;
-  json_detail::LoaderForType<T>()->LoadInto(json, result, &error_list);
-  if (!error_list.ok()) return error_list.status();
-  return absl::OkStatus();
-}
-
 }  // namespace grpc_core
 
 #endif  // GRPC_CORE_LIB_JSON_JSON_OBJECT_LOADER_H
