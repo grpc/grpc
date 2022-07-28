@@ -2547,7 +2547,7 @@ target_link_libraries(grpc_test_util_unsecure
   absl::failure_signal_handler
   absl::stacktrace
   absl::symbolize
-  grpc_unsecure
+  grpc
 )
 if(_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
   target_link_libraries(grpc_test_util_unsecure "-framework CoreFoundation")
@@ -5818,7 +5818,7 @@ target_include_directories(arena_test
 target_link_libraries(arena_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
+  grpc
 )
 
 
@@ -9085,7 +9085,6 @@ target_include_directories(endpoint_config_test
 target_link_libraries(endpoint_config_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc
   grpc_test_util_unsecure
 )
 
@@ -16727,7 +16726,6 @@ target_include_directories(smoke_test
 target_link_libraries(smoke_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc
   grpc_test_util_unsecure
 )
 
@@ -17908,7 +17906,6 @@ target_include_directories(test_core_event_engine_slice_buffer_test
 target_link_libraries(test_core_event_engine_slice_buffer_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc
   grpc_test_util_unsecure
 )
 
@@ -19311,7 +19308,6 @@ target_include_directories(uri_parser_test
 target_link_libraries(uri_parser_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc
   grpc_test_util_unsecure
 )
 

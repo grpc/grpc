@@ -291,7 +291,8 @@ def grpc_cc_library(name,
     if 'avoid_dep' in tags or 'grpc_avoid_dep' in tags:
         avoidness[name] += 10
     if proto:
-        proto_hdr = '%s%s' % ((parsing_path + '/' if parsing_path else ''), proto.replace('.proto', '.pb.h'))
+        proto_hdr = '%s%s' % ((parsing_path + '/' if parsing_path else ''),
+                              proto.replace('.proto', '.pb.h'))
         skip_headers[name].add(proto_hdr)
     for hdr in hdrs + public_hdrs:
         filename = '%s%s' % ((parsing_path + '/' if parsing_path else ''), hdr)
@@ -382,8 +383,12 @@ parser.add_argument('--whats_left',
 args = parser.parse_args()
 
 for dirname in [
-        "", "test/core/uri", "test/core/util", "test/core/end2end",
-        "test/core/event_engine", "test/core/resource_quota",
+        "",
+        "test/core/uri",
+        "test/core/util",
+        "test/core/end2end",
+        "test/core/event_engine",
+        "test/core/resource_quota",
 ]:
     parsing_path = dirname
     exec(
@@ -490,7 +495,9 @@ def make_library(library):
     # we need a little trickery here since grpc_base has channel.cc, which calls grpc_init
     # which is in grpc, which is illegal but hard to change
     # once event engine lands we can clean this up
-    deps = Choices(library, {'//:grpc_base': '//:grpc'} if library.startswith('//test/') else {})
+    deps = Choices(
+        library,
+        {'//:grpc_base': '//:grpc'} if library.startswith('//test/') else {})
     external_deps = Choices(None, {})
     for hdr in hdrs:
         if hdr in skip_headers[library]:
