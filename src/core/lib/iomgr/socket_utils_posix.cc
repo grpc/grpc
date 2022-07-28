@@ -56,7 +56,7 @@ int AdjustValue(int default_value, int min_value, int max_value,
 }  // namespace
 
 PosixTcpOptions TcpOptionsFromEndpointConfig(const EndpointConfig& config) {
-  absl::optional<void*> value;
+  void* value;
   PosixTcpOptions options;
   options.tcp_read_chunk_size = AdjustValue(
       PosixTcpOptions::kDefaultReadChunkSize, 1, PosixTcpOptions::kMaxChunkSize,
@@ -99,14 +99,14 @@ PosixTcpOptions TcpOptionsFromEndpointConfig(const EndpointConfig& config) {
       options.tcp_max_read_chunk_size);
 
   value = config.GetVoidPointer(GRPC_ARG_RESOURCE_QUOTA);
-  if (value.has_value()) {
+  if (value != nullptr) {
     options.resource_quota =
-        reinterpret_cast<grpc_core::ResourceQuota*>(*value)->Ref();
+        reinterpret_cast<grpc_core::ResourceQuota*>(value)->Ref();
   }
   value = config.GetVoidPointer(GRPC_ARG_SOCKET_MUTATOR);
-  if (value.has_value()) {
+  if (value != nullptr) {
     options.socket_mutator =
-        grpc_socket_mutator_ref(static_cast<grpc_socket_mutator*>(*value));
+        grpc_socket_mutator_ref(static_cast<grpc_socket_mutator*>(value));
   }
   return options;
 }

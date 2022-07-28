@@ -36,9 +36,7 @@ TEST(EndpointConfigTest, ReturnsNoValueForMissingKeys) {
   ChannelArgsEndpointConfig config;
   EXPECT_TRUE(!config.GetInt("nonexistent").has_value());
   EXPECT_TRUE(!config.GetString("nonexistent").has_value());
-  EXPECT_TRUE(!config.GetVoidPointer("nonexistent").has_value());
-  EXPECT_TRUE(
-      absl::holds_alternative<absl::monostate>(config.Get("nonexistent")));
+  EXPECT_EQ(config.GetVoidPointer("nonexistent"), nullptr);
 }
 
 int main(int argc, char** argv) {
