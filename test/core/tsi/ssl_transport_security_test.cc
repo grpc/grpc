@@ -38,6 +38,7 @@
 #include "src/core/tsi/transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
 #include "test/core/tsi/transport_security_test_lib.h"
+#include "test/core/util/build.h"
 #include "test/core/util/test_config.h"
 
 #define SSL_TSI_TEST_ALPN1 "foo"

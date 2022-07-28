@@ -44,7 +44,6 @@ grpc_proto_fuzzer(
     deps = [
         "//:chttp2_flow_control",
         "//:gpr",
-        "//test/core/util:grpc_suppressions",
     ],
 )
 
@@ -101,6 +100,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -116,7 +116,6 @@ grpc_cc_test(
     deps = [
         "//:chttp2_flow_control",
         "//:resource_quota",
-        "//test/core/util:grpc_suppressions",
     ],
 )
 
@@ -144,6 +143,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -158,6 +158,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -172,6 +173,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -184,6 +186,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -197,6 +200,7 @@ grpc_cc_test(
         "//:grpc",
         "//test/core/end2end:cq_verifier",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -212,6 +216,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 

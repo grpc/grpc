@@ -24,6 +24,8 @@
 #include <vector>
 
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -179,16 +181,13 @@ bool XdsBootstrap::XdsServer::IgnoreResourceDeletion() const {
 
 std::unique_ptr<XdsBootstrap> XdsBootstrap::Create(
     absl::string_view json_string, grpc_error_handle* error) {
-  Json json = Json::Parse(json_string, error);
-  if (!GRPC_ERROR_IS_NONE(*error)) {
-    grpc_error_handle error_out =
-        GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-            "Failed to parse bootstrap JSON string", error, 1);
-    GRPC_ERROR_UNREF(*error);
-    *error = error_out;
+  auto json = Json::Parse(json_string);
+  if (!json.ok()) {
+    *error = GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+        "Failed to parse bootstrap JSON string: ", json.status().ToString()));
     return nullptr;
   }
-  return absl::make_unique<XdsBootstrap>(std::move(json), error);
+  return absl::make_unique<XdsBootstrap>(std::move(*json), error);
 }
 
 XdsBootstrap::XdsBootstrap(Json json, grpc_error_handle* error) {

@@ -25,12 +25,15 @@ NS_ASSUME_NONNULL_BEGIN
 FOUNDATION_EXPORT const NSTimeInterval GRPCInteropTestTimeoutDefault;
 
 // Block typedef for waiting for a target group of expectations via XCTWaiter.
-typedef void (^GRPCTestWaiter)(XCTestCase *testCase, NSArray<XCTestExpectation *> *expectations,
-                               NSTimeInterval timeout);
+typedef void (^GRPCTestWaiter)(NSArray<XCTestExpectation *> *expectations, NSTimeInterval timeout);
+
+// Block typedef for asserting a given expression value with optional retry.
+typedef void (^GRPCTestAssert)(BOOL expressionValue, NSString *message);
 
 // Block typedef for a test run. Test run should call waiter to wait for a group of expectations
-// with timeout.
-typedef void (^GRPCTestRunBlock)(GRPCTestWaiter waiterBlock);
+// with timeout. Test run can also optionally invoke assertBlock to report assertion failure.
+// Failed assertion will be retried up to maximum retry.
+typedef void (^GRPCTestRunBlock)(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock);
 
 /**
  * Common utility to fetch plain text local interop server address.
@@ -60,11 +63,13 @@ FOUNDATION_EXPORT void GRPCPrintInteropTestServerDebugInfo(void);
 
 /**
  * Common utility to run a test block until success, up to predefined number of repeats.
+ * @param testCase Associated test case run for reporting test failures.
  * @param testBlock Target test block to be invoked by the utility function. The block will be
  * invoked synchronously before the function returns.
  * @return YES if test run succeeded within the repeat limit. NO otherwise.
  */
-FOUNDATION_EXPORT BOOL GRPCTestRunWithFlakeRepeats(GRPCTestRunBlock testBlock);
+FOUNDATION_EXPORT BOOL GRPCTestRunWithFlakeRepeats(XCTestCase *testCase,
+                                                   GRPCTestRunBlock testBlock);
 
 /**
  * Common utility to reset gRPC call's active connections.

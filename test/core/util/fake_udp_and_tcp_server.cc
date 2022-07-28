@@ -18,23 +18,38 @@
 
 #include "test/core/util/fake_udp_and_tcp_server.h"
 
-#include "absl/strings/match.h"
+#include <errno.h>
+#include <string.h>
+
+#include <set>
+#include <utility>
+#include <vector>
+
+#include "absl/memory/memory.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 
+#include <grpc/grpc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/time.h>
+
 #include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/iomgr/resolved_address.h"
+#include "src/core/lib/iomgr/sockaddr.h"
 #include "test/core/util/port.h"
 
 #ifdef GPR_WINDOWS
 #include "src/core/lib/iomgr/sockaddr_windows.h"
 #include "src/core/lib/iomgr/socket_windows.h"
 #include "src/core/lib/iomgr/tcp_windows.h"
+
 #define BAD_SOCKET_RETURN_VAL INVALID_SOCKET
 #define CLOSE_SOCKET closesocket
 #define ERRNO WSAGetLastError()
 #else
 #include <fcntl.h>
+#include <unistd.h>
 
-#include "src/core/lib/iomgr/sockaddr_posix.h"
 #define BAD_SOCKET_RETURN_VAL (-1)
 #define CLOSE_SOCKET close
 #define ERRNO errno

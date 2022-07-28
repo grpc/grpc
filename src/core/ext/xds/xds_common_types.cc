@@ -111,59 +111,59 @@ namespace {
 // same CertificateProviderPluginInstance struct since the fields are the same.
 // TODO(yashykt): Remove this once we stop supporting the old way of fetching
 // certificate provider instances.
-grpc_error_handle CertificateProviderInstanceParse(
+absl::StatusOr<CommonTlsContext::CertificateProviderPluginInstance>
+CertificateProviderInstanceParse(
     const XdsEncodingContext& context,
     const envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProviderInstance*
-        certificate_provider_instance_proto,
-    CommonTlsContext::CertificateProviderPluginInstance*
-        certificate_provider_plugin_instance) {
-  *certificate_provider_plugin_instance = {
-      UpbStringToStdString(
-          envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProviderInstance_instance_name(
-              certificate_provider_instance_proto)),
-      UpbStringToStdString(
-          envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProviderInstance_certificate_name(
-              certificate_provider_instance_proto))};
+        certificate_provider_instance_proto) {
+  CommonTlsContext::CertificateProviderPluginInstance
+      certificate_provider_plugin_instance = {
+          UpbStringToStdString(
+              envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProviderInstance_instance_name(
+                  certificate_provider_instance_proto)),
+          UpbStringToStdString(
+              envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProviderInstance_certificate_name(
+                  certificate_provider_instance_proto))};
   if (context.certificate_provider_definition_map->find(
-          certificate_provider_plugin_instance->instance_name) ==
+          certificate_provider_plugin_instance.instance_name) ==
       context.certificate_provider_definition_map->end()) {
-    return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+    return absl::InvalidArgumentError(
         absl::StrCat("Unrecognized certificate provider instance name: ",
-                     certificate_provider_plugin_instance->instance_name));
+                     certificate_provider_plugin_instance.instance_name));
   }
-  return GRPC_ERROR_NONE;
+  return certificate_provider_plugin_instance;
 }
 
-grpc_error_handle CertificateProviderPluginInstanceParse(
+absl::StatusOr<CommonTlsContext::CertificateProviderPluginInstance>
+CertificateProviderPluginInstanceParse(
     const XdsEncodingContext& context,
     const envoy_extensions_transport_sockets_tls_v3_CertificateProviderPluginInstance*
-        certificate_provider_plugin_instance_proto,
-    CommonTlsContext::CertificateProviderPluginInstance*
-        certificate_provider_plugin_instance) {
-  *certificate_provider_plugin_instance = {
-      UpbStringToStdString(
-          envoy_extensions_transport_sockets_tls_v3_CertificateProviderPluginInstance_instance_name(
-              certificate_provider_plugin_instance_proto)),
-      UpbStringToStdString(
-          envoy_extensions_transport_sockets_tls_v3_CertificateProviderPluginInstance_certificate_name(
-              certificate_provider_plugin_instance_proto))};
+        certificate_provider_plugin_instance_proto) {
+  CommonTlsContext::CertificateProviderPluginInstance
+      certificate_provider_plugin_instance = {
+          UpbStringToStdString(
+              envoy_extensions_transport_sockets_tls_v3_CertificateProviderPluginInstance_instance_name(
+                  certificate_provider_plugin_instance_proto)),
+          UpbStringToStdString(
+              envoy_extensions_transport_sockets_tls_v3_CertificateProviderPluginInstance_certificate_name(
+                  certificate_provider_plugin_instance_proto))};
   if (context.certificate_provider_definition_map->find(
-          certificate_provider_plugin_instance->instance_name) ==
+          certificate_provider_plugin_instance.instance_name) ==
       context.certificate_provider_definition_map->end()) {
-    return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+    return absl::InvalidArgumentError(
         absl::StrCat("Unrecognized certificate provider instance name: ",
-                     certificate_provider_plugin_instance->instance_name));
+                     certificate_provider_plugin_instance.instance_name));
   }
-  return GRPC_ERROR_NONE;
+  return certificate_provider_plugin_instance;
 }
 
-grpc_error_handle CertificateValidationContextParse(
+absl::StatusOr<CommonTlsContext::CertificateValidationContext>
+CertificateValidationContextParse(
     const XdsEncodingContext& context,
     const envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext*
-        certificate_validation_context_proto,
-    CommonTlsContext::CertificateValidationContext*
-        certificate_validation_context) {
-  std::vector<grpc_error_handle> errors;
+        certificate_validation_context_proto) {
+  std::vector<std::string> errors;
+  CommonTlsContext::CertificateValidationContext certificate_validation_context;
   size_t len = 0;
   auto* subject_alt_names_matchers =
       envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_match_subject_alt_names(
@@ -200,8 +200,7 @@ grpc_error_handle CertificateValidationContextParse(
       matcher = UpbStringToStdString(
           envoy_type_matcher_v3_RegexMatcher_regex(regex_matcher));
     } else {
-      errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "Invalid StringMatcher specified"));
+      errors.push_back("Invalid StringMatcher specified");
       continue;
     }
     bool ignore_case = envoy_type_matcher_v3_StringMatcher_ignore_case(
@@ -210,71 +209,75 @@ grpc_error_handle CertificateValidationContextParse(
         StringMatcher::Create(type, matcher,
                               /*case_sensitive=*/!ignore_case);
     if (!string_matcher.ok()) {
-      errors.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
-          absl::StrCat("string matcher: ", string_matcher.status().message())));
+      errors.push_back(
+          absl::StrCat("string matcher: ", string_matcher.status().message()));
       continue;
     }
     if (type == StringMatcher::Type::kSafeRegex && ignore_case) {
-      errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "StringMatcher: ignore_case has no effect for SAFE_REGEX."));
+      errors.push_back(
+          "StringMatcher: ignore_case has no effect for SAFE_REGEX.");
       continue;
     }
-    certificate_validation_context->match_subject_alt_names.push_back(
+    certificate_validation_context.match_subject_alt_names.push_back(
         std::move(string_matcher.value()));
   }
   auto* ca_certificate_provider_instance =
       envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_ca_certificate_provider_instance(
           certificate_validation_context_proto);
   if (ca_certificate_provider_instance != nullptr) {
-    grpc_error_handle error = CertificateProviderPluginInstanceParse(
-        context, ca_certificate_provider_instance,
-        &certificate_validation_context->ca_certificate_provider_instance);
-    if (!GRPC_ERROR_IS_NONE(error)) errors.push_back(error);
+    auto certificate_provider_instance = CertificateProviderPluginInstanceParse(
+        context, ca_certificate_provider_instance);
+    if (!certificate_provider_instance.ok()) {
+      errors.emplace_back(certificate_provider_instance.status().message());
+    } else {
+      certificate_validation_context.ca_certificate_provider_instance =
+          std::move(*certificate_provider_instance);
+    }
   }
   if (envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_verify_certificate_spki(
           certificate_validation_context_proto, nullptr) != nullptr) {
-    errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "CertificateValidationContext: verify_certificate_spki "
-        "unsupported"));
+    errors.push_back(
+        "CertificateValidationContext: verify_certificate_spki unsupported");
   }
   if (envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_verify_certificate_hash(
           certificate_validation_context_proto, nullptr) != nullptr) {
-    errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "CertificateValidationContext: verify_certificate_hash "
-        "unsupported"));
+    errors.push_back(
+        "CertificateValidationContext: verify_certificate_hash unsupported");
   }
   auto* require_signed_certificate_timestamp =
       envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_require_signed_certificate_timestamp(
           certificate_validation_context_proto);
   if (require_signed_certificate_timestamp != nullptr &&
       google_protobuf_BoolValue_value(require_signed_certificate_timestamp)) {
-    errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+    errors.push_back(
         "CertificateValidationContext: "
-        "require_signed_certificate_timestamp unsupported"));
+        "require_signed_certificate_timestamp unsupported");
   }
   if (envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_has_crl(
           certificate_validation_context_proto)) {
-    errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "CertificateValidationContext: crl unsupported"));
+    errors.push_back("CertificateValidationContext: crl unsupported");
   }
   if (envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_has_custom_validator_config(
           certificate_validation_context_proto)) {
-    errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "CertificateValidationContext: custom_validator_config "
-        "unsupported"));
+    errors.push_back(
+        "CertificateValidationContext: custom_validator_config unsupported");
   }
-  return GRPC_ERROR_CREATE_FROM_VECTOR(
-      "Error parsing CertificateValidationContext", &errors);
+  if (!errors.empty()) {
+    return absl::InvalidArgumentError(
+        absl::StrCat("Errors parsing CertificateValidationContext: ",
+                     absl::StrJoin(errors, "; ")));
+  }
+  return certificate_validation_context;
 }
 
 }  // namespace
 
-grpc_error_handle CommonTlsContext::Parse(
+absl::StatusOr<CommonTlsContext> CommonTlsContext::Parse(
     const XdsEncodingContext& context,
     const envoy_extensions_transport_sockets_tls_v3_CommonTlsContext*
-        common_tls_context_proto,
-    CommonTlsContext* common_tls_context) {
-  std::vector<grpc_error_handle> errors;
+        common_tls_context_proto) {
+  std::vector<std::string> errors;
+  CommonTlsContext common_tls_context;
   // The validation context is derived from the oneof in
   // 'validation_context_type'. 'validation_context_sds_secret_config' is not
   // supported.
@@ -286,10 +289,14 @@ grpc_error_handle CommonTlsContext::Parse(
         envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CombinedCertificateValidationContext_default_validation_context(
             combined_validation_context);
     if (default_validation_context != nullptr) {
-      grpc_error_handle error = CertificateValidationContextParse(
-          context, default_validation_context,
-          &common_tls_context->certificate_validation_context);
-      if (!GRPC_ERROR_IS_NONE(error)) errors.push_back(error);
+      auto certificate_validation_context = CertificateValidationContextParse(
+          context, default_validation_context);
+      if (!certificate_validation_context.ok()) {
+        errors.emplace_back(certificate_validation_context.status().message());
+      } else {
+        common_tls_context.certificate_validation_context =
+            std::move(*certificate_validation_context);
+      }
     }
     // If after parsing default_validation_context,
     // common_tls_context->certificate_validation_context.ca_certificate_provider_instance
@@ -301,39 +308,52 @@ grpc_error_handle CommonTlsContext::Parse(
     auto* validation_context_certificate_provider_instance =
         envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CombinedCertificateValidationContext_validation_context_certificate_provider_instance(
             combined_validation_context);
-    if (common_tls_context->certificate_validation_context
+    if (common_tls_context.certificate_validation_context
             .ca_certificate_provider_instance.Empty() &&
         validation_context_certificate_provider_instance != nullptr) {
-      grpc_error_handle error = CertificateProviderInstanceParse(
-          context, validation_context_certificate_provider_instance,
-          &common_tls_context->certificate_validation_context
-               .ca_certificate_provider_instance);
-      if (!GRPC_ERROR_IS_NONE(error)) errors.push_back(error);
+      auto certificate_provider_instance = CertificateProviderInstanceParse(
+          context, validation_context_certificate_provider_instance);
+      if (!certificate_provider_instance.ok()) {
+        errors.emplace_back(certificate_provider_instance.status().message());
+      } else {
+        common_tls_context.certificate_validation_context
+            .ca_certificate_provider_instance =
+            std::move(*certificate_provider_instance);
+      }
     }
   } else {
     auto* validation_context =
         envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_validation_context(
             common_tls_context_proto);
     if (validation_context != nullptr) {
-      grpc_error_handle error = CertificateValidationContextParse(
-          context, validation_context,
-          &common_tls_context->certificate_validation_context);
-      if (!GRPC_ERROR_IS_NONE(error)) errors.push_back(error);
+      auto certificate_validation_context =
+          CertificateValidationContextParse(context, validation_context);
+      if (!certificate_validation_context.ok()) {
+        errors.emplace_back(certificate_validation_context.status().message());
+      } else {
+        common_tls_context.certificate_validation_context =
+            std::move(*certificate_validation_context);
+      }
     } else if (
         envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_has_validation_context_sds_secret_config(
             common_tls_context_proto)) {
-      errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "validation_context_sds_secret_config unsupported"));
+      errors.push_back("validation_context_sds_secret_config unsupported");
     }
   }
   auto* tls_certificate_provider_instance =
       envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_tls_certificate_provider_instance(
           common_tls_context_proto);
   if (tls_certificate_provider_instance != nullptr) {
-    grpc_error_handle error = CertificateProviderPluginInstanceParse(
-        context, tls_certificate_provider_instance,
-        &common_tls_context->tls_certificate_provider_instance);
-    if (!GRPC_ERROR_IS_NONE(error)) errors.push_back(error);
+    auto certificate_provider_plugin_instance =
+        CertificateProviderPluginInstanceParse(
+            context, tls_certificate_provider_instance);
+    if (!certificate_provider_plugin_instance.ok()) {
+      errors.emplace_back(
+          certificate_provider_plugin_instance.status().message());
+    } else {
+      common_tls_context.tls_certificate_provider_instance =
+          std::move(*certificate_provider_plugin_instance);
+    }
   } else {
     // Fall back onto 'tls_certificate_certificate_provider_instance'. Note that
     // this way of fetching identity certificates is deprecated and will be
@@ -343,35 +363,39 @@ grpc_error_handle CommonTlsContext::Parse(
         envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_tls_certificate_certificate_provider_instance(
             common_tls_context_proto);
     if (tls_certificate_certificate_provider_instance != nullptr) {
-      grpc_error_handle error = CertificateProviderInstanceParse(
-          context, tls_certificate_certificate_provider_instance,
-          &common_tls_context->tls_certificate_provider_instance);
-      if (!GRPC_ERROR_IS_NONE(error)) errors.push_back(error);
+      auto certificate_provider_instance = CertificateProviderInstanceParse(
+          context, tls_certificate_certificate_provider_instance);
+      if (!certificate_provider_instance.ok()) {
+        errors.emplace_back(certificate_provider_instance.status().message());
+      } else {
+        common_tls_context.tls_certificate_provider_instance =
+            std::move(*certificate_provider_instance);
+      }
     } else {
       if (envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_has_tls_certificates(
               common_tls_context_proto)) {
-        errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "tls_certificates unsupported"));
+        errors.push_back("tls_certificates unsupported");
       }
       if (envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_has_tls_certificate_sds_secret_configs(
               common_tls_context_proto)) {
-        errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "tls_certificate_sds_secret_configs unsupported"));
+        errors.push_back("tls_certificate_sds_secret_configs unsupported");
       }
     }
   }
   if (envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_has_tls_params(
           common_tls_context_proto)) {
-    errors.push_back(
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("tls_params unsupported"));
+    errors.push_back("tls_params unsupported");
   }
   if (envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_has_custom_handshaker(
           common_tls_context_proto)) {
-    errors.push_back(
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("custom_handshaker unsupported"));
+    errors.push_back("custom_handshaker unsupported");
   }
-  return GRPC_ERROR_CREATE_FROM_VECTOR("Error parsing CommonTlsContext",
-                                       &errors);
+  if (!errors.empty()) {
+    return absl::InvalidArgumentError(
+        absl::StrCat("Errors parsing CommonTlsContext: [",
+                     absl::StrJoin(errors, "; "), "]"));
+  }
+  return common_tls_context;
 }
 
 absl::StatusOr<ExtractExtensionTypeNameResult> ExtractExtensionTypeName(

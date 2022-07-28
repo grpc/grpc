@@ -71,9 +71,6 @@ void grpc_cq_internal_unref(grpc_completion_queue* cq);
 #define GRPC_CQ_INTERNAL_UNREF(cq, reason) grpc_cq_internal_unref(cq)
 #endif
 
-/* Initializes global variables used by completion queues */
-void grpc_cq_global_init();
-
 /* Flag that an operation is beginning: the completion channel will not finish
    shutdown until a corrensponding grpc_cq_end_* call is made.
    \a tag is currently used only in debug builds. Return true on success, and

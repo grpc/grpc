@@ -22,6 +22,7 @@
 #include "envoy/config/trace/v3/trace.upb.h"
 #include "envoy/config/trace/v3/trace.upb.h"
 #include "envoy/config/trace/v3/trace.upb.h"
+#include "envoy/config/trace/v3/trace.upb.h"
 
 #include "upb/port_def.inc"
 

@@ -22,7 +22,9 @@
 
 #include <string>
 
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_join.h"
 
 #include <grpc/support/log.h>
 
@@ -47,46 +49,43 @@ void ServiceConfigParser::Builder::RegisterParser(
   registered_parsers_.emplace_back(std::move(parser));
 }
 
-ServiceConfigParser::ParsedConfigVector
+absl::StatusOr<ServiceConfigParser::ParsedConfigVector>
 ServiceConfigParser::ParseGlobalParameters(const ChannelArgs& args,
-                                           const Json& json,
-                                           grpc_error_handle* error) const {
+                                           const Json& json) const {
   ParsedConfigVector parsed_global_configs;
-  std::vector<grpc_error_handle> error_list;
+  std::vector<std::string> errors;
   for (size_t i = 0; i < registered_parsers_.size(); i++) {
-    grpc_error_handle parser_error = GRPC_ERROR_NONE;
-    auto parsed_config =
-        registered_parsers_[i]->ParseGlobalParams(args, json, &parser_error);
-    if (!GRPC_ERROR_IS_NONE(parser_error)) {
-      error_list.push_back(parser_error);
+    auto parsed_config = registered_parsers_[i]->ParseGlobalParams(args, json);
+    if (!parsed_config.ok()) {
+      errors.emplace_back(parsed_config.status().message());
+    } else {
+      parsed_global_configs.push_back(std::move(*parsed_config));
     }
-    parsed_global_configs.push_back(std::move(parsed_config));
   }
-  if (!error_list.empty()) {
-    *error = GRPC_ERROR_CREATE_FROM_VECTOR("Global Params", &error_list);
+  if (!errors.empty()) {
+    return absl::InvalidArgumentError(absl::StrJoin(errors, "; "));
   }
-  return parsed_global_configs;
+  return std::move(parsed_global_configs);
 }
 
-ServiceConfigParser::ParsedConfigVector
+absl::StatusOr<ServiceConfigParser::ParsedConfigVector>
 ServiceConfigParser::ParsePerMethodParameters(const ChannelArgs& args,
-                                              const Json& json,
-                                              grpc_error_handle* error) const {
+                                              const Json& json) const {
   ParsedConfigVector parsed_method_configs;
-  std::vector<grpc_error_handle> error_list;
+  std::vector<std::string> errors;
   for (size_t i = 0; i < registered_parsers_.size(); ++i) {
-    grpc_error_handle parser_error = GRPC_ERROR_NONE;
     auto parsed_config =
-        registered_parsers_[i]->ParsePerMethodParams(args, json, &parser_error);
-    if (!GRPC_ERROR_IS_NONE(parser_error)) {
-      error_list.push_back(parser_error);
+        registered_parsers_[i]->ParsePerMethodParams(args, json);
+    if (!parsed_config.ok()) {
+      errors.emplace_back(parsed_config.status().message());
+    } else {
+      parsed_method_configs.push_back(std::move(*parsed_config));
     }
-    parsed_method_configs.push_back(std::move(parsed_config));
   }
-  if (!error_list.empty()) {
-    *error = GRPC_ERROR_CREATE_FROM_VECTOR("methodConfig", &error_list);
+  if (!errors.empty()) {
+    return absl::InvalidArgumentError(absl::StrJoin(errors, "; "));
   }
-  return parsed_method_configs;
+  return std::move(parsed_method_configs);
 }
 
 size_t ServiceConfigParser::GetParserIndex(absl::string_view name) const {

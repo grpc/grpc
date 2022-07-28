@@ -27,7 +27,9 @@ typedef struct envoy_extensions_filters_http_rbac_v3_RBACPerRoute envoy_extensio
 extern const upb_MiniTable envoy_extensions_filters_http_rbac_v3_RBAC_msginit;
 extern const upb_MiniTable envoy_extensions_filters_http_rbac_v3_RBACPerRoute_msginit;
 struct envoy_config_rbac_v3_RBAC;
+struct xds_type_matcher_v3_Matcher;
 extern const upb_MiniTable envoy_config_rbac_v3_RBAC_msginit;
+extern const upb_MiniTable xds_type_matcher_v3_Matcher_msginit;
 
 
 
@@ -90,6 +92,24 @@ UPB_INLINE void envoy_extensions_filters_http_rbac_v3_RBAC_clear_shadow_rules_st
 UPB_INLINE upb_StringView envoy_extensions_filters_http_rbac_v3_RBAC_shadow_rules_stat_prefix(const envoy_extensions_filters_http_rbac_v3_RBAC* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(12, 24), upb_StringView);
 }
+UPB_INLINE bool envoy_extensions_filters_http_rbac_v3_RBAC_has_matcher(const envoy_extensions_filters_http_rbac_v3_RBAC* msg) {
+  return _upb_hasbit(msg, 3);
+}
+UPB_INLINE void envoy_extensions_filters_http_rbac_v3_RBAC_clear_matcher(const envoy_extensions_filters_http_rbac_v3_RBAC* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(20, 40), const upb_Message*) = NULL;
+}
+UPB_INLINE const struct xds_type_matcher_v3_Matcher* envoy_extensions_filters_http_rbac_v3_RBAC_matcher(const envoy_extensions_filters_http_rbac_v3_RBAC* msg) {
+  return *UPB_PTR_AT(msg, UPB_SIZE(20, 40), const struct xds_type_matcher_v3_Matcher*);
+}
+UPB_INLINE bool envoy_extensions_filters_http_rbac_v3_RBAC_has_shadow_matcher(const envoy_extensions_filters_http_rbac_v3_RBAC* msg) {
+  return _upb_hasbit(msg, 4);
+}
+UPB_INLINE void envoy_extensions_filters_http_rbac_v3_RBAC_clear_shadow_matcher(const envoy_extensions_filters_http_rbac_v3_RBAC* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(24, 48), const upb_Message*) = NULL;
+}
+UPB_INLINE const struct xds_type_matcher_v3_Matcher* envoy_extensions_filters_http_rbac_v3_RBAC_shadow_matcher(const envoy_extensions_filters_http_rbac_v3_RBAC* msg) {
+  return *UPB_PTR_AT(msg, UPB_SIZE(24, 48), const struct xds_type_matcher_v3_Matcher*);
+}
 
 UPB_INLINE void envoy_extensions_filters_http_rbac_v3_RBAC_set_rules(envoy_extensions_filters_http_rbac_v3_RBAC *msg, struct envoy_config_rbac_v3_RBAC* value) {
   _upb_sethas(msg, 1);
@@ -119,6 +139,32 @@ UPB_INLINE struct envoy_config_rbac_v3_RBAC* envoy_extensions_filters_http_rbac_
 }
 UPB_INLINE void envoy_extensions_filters_http_rbac_v3_RBAC_set_shadow_rules_stat_prefix(envoy_extensions_filters_http_rbac_v3_RBAC *msg, upb_StringView value) {
   *UPB_PTR_AT(msg, UPB_SIZE(12, 24), upb_StringView) = value;
+}
+UPB_INLINE void envoy_extensions_filters_http_rbac_v3_RBAC_set_matcher(envoy_extensions_filters_http_rbac_v3_RBAC *msg, struct xds_type_matcher_v3_Matcher* value) {
+  _upb_sethas(msg, 3);
+  *UPB_PTR_AT(msg, UPB_SIZE(20, 40), struct xds_type_matcher_v3_Matcher*) = value;
+}
+UPB_INLINE struct xds_type_matcher_v3_Matcher* envoy_extensions_filters_http_rbac_v3_RBAC_mutable_matcher(envoy_extensions_filters_http_rbac_v3_RBAC* msg, upb_Arena* arena) {
+  struct xds_type_matcher_v3_Matcher* sub = (struct xds_type_matcher_v3_Matcher*)envoy_extensions_filters_http_rbac_v3_RBAC_matcher(msg);
+  if (sub == NULL) {
+    sub = (struct xds_type_matcher_v3_Matcher*)_upb_Message_New(&xds_type_matcher_v3_Matcher_msginit, arena);
+    if (!sub) return NULL;
+    envoy_extensions_filters_http_rbac_v3_RBAC_set_matcher(msg, sub);
+  }
+  return sub;
+}
+UPB_INLINE void envoy_extensions_filters_http_rbac_v3_RBAC_set_shadow_matcher(envoy_extensions_filters_http_rbac_v3_RBAC *msg, struct xds_type_matcher_v3_Matcher* value) {
+  _upb_sethas(msg, 4);
+  *UPB_PTR_AT(msg, UPB_SIZE(24, 48), struct xds_type_matcher_v3_Matcher*) = value;
+}
+UPB_INLINE struct xds_type_matcher_v3_Matcher* envoy_extensions_filters_http_rbac_v3_RBAC_mutable_shadow_matcher(envoy_extensions_filters_http_rbac_v3_RBAC* msg, upb_Arena* arena) {
+  struct xds_type_matcher_v3_Matcher* sub = (struct xds_type_matcher_v3_Matcher*)envoy_extensions_filters_http_rbac_v3_RBAC_shadow_matcher(msg);
+  if (sub == NULL) {
+    sub = (struct xds_type_matcher_v3_Matcher*)_upb_Message_New(&xds_type_matcher_v3_Matcher_msginit, arena);
+    if (!sub) return NULL;
+    envoy_extensions_filters_http_rbac_v3_RBAC_set_shadow_matcher(msg, sub);
+  }
+  return sub;
 }
 
 /* envoy.extensions.filters.http.rbac.v3.RBACPerRoute */
