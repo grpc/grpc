@@ -890,6 +890,8 @@ src/core/ext/filters/client_channel/client_channel_channelz.h \
 src/core/ext/filters/client_channel/client_channel_factory.cc \
 src/core/ext/filters/client_channel/client_channel_factory.h \
 src/core/ext/filters/client_channel/client_channel_plugin.cc \
+src/core/ext/filters/client_channel/client_channel_service_config.cc \
+src/core/ext/filters/client_channel/client_channel_service_config.h \
 src/core/ext/filters/client_channel/config_selector.cc \
 src/core/ext/filters/client_channel/config_selector.h \
 src/core/ext/filters/client_channel/connector.h \
@@ -968,8 +970,6 @@ src/core/ext/filters/client_channel/resolver/sockaddr/README.md \
 src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc \
 src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc \
 src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h \
-src/core/ext/filters/client_channel/resolver_result_parsing.cc \
-src/core/ext/filters/client_channel/resolver_result_parsing.h \
 src/core/ext/filters/client_channel/retry_filter.cc \
 src/core/ext/filters/client_channel/retry_filter.h \
 src/core/ext/filters/client_channel/retry_service_config.cc \
