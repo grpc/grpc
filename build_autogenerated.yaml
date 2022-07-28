@@ -1755,7 +1755,7 @@ libs:
   - absl/debugging:failure_signal_handler
   - absl/debugging:stacktrace
   - absl/debugging:symbolize
-  - grpc_unsecure
+  - grpc
 - name: grpc_unsecure
   build: all
   language: c
@@ -4098,7 +4098,7 @@ targets:
   src:
   - test/core/resource_quota/arena_test.cc
   deps:
-  - grpc_test_util
+  - grpc
   uses_polling: false
 - name: async_end2end_test
   gtest: true
@@ -5577,7 +5577,6 @@ targets:
   src:
   - test/core/event_engine/endpoint_config_test.cc
   deps:
-  - grpc
   - grpc_test_util_unsecure
   uses_polling: false
 - name: endpoint_pair_test
@@ -9615,7 +9614,6 @@ targets:
   src:
   - test/core/event_engine/smoke_test.cc
   deps:
-  - grpc
   - grpc_test_util_unsecure
 - name: sockaddr_resolver_test
   gtest: true
@@ -10318,7 +10316,6 @@ targets:
   src:
   - test/core/event_engine/slice_buffer_test.cc
   deps:
-  - grpc
   - grpc_test_util_unsecure
 - name: test_core_gpr_time_test
   gtest: true
@@ -11047,7 +11044,6 @@ targets:
   src:
   - test/core/uri/uri_parser_test.cc
   deps:
-  - grpc
   - grpc_test_util_unsecure
 - name: useful_test
   gtest: true

@@ -1078,7 +1078,7 @@
         'absl/debugging:failure_signal_handler',
         'absl/debugging:stacktrace',
         'absl/debugging:symbolize',
-        'grpc_unsecure',
+        'grpc',
       ],
       'sources': [
         'test/core/event_engine/test_init.cc',
