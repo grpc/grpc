@@ -16,7 +16,6 @@
 #define GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_IOMGR_ENGINE_CLOSURE_H
 #include <grpc/support/port_platform.h>
 
-#include <atomic>
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
@@ -51,8 +50,7 @@ class IomgrEngineClosure final
   }
 
   // This closure clean doesn't itself up after execution. It is expected to be
-  // cleaned up by the caller at the appropriate time. The caller should call
-  // Unref() at the time of cleanup.
+  // cleaned up by the caller at the appropriate time.
   static IomgrEngineClosure* ToPermanentClosure(
       absl::AnyInvocable<void(absl::Status)> cb) {
     return new IomgrEngineClosure(std::move(cb), true);
