@@ -49,20 +49,12 @@ EndpointConfig::Setting ChannelArgsEndpointConfig::Get(
 
 absl::optional<int> ChannelArgsEndpointConfig::GetInt(
     absl::string_view key) const {
-  auto value = args_.Get(key);
-  if (value != nullptr && absl::holds_alternative<int>(*value)) {
-    return absl::get<int>(*value);
-  }
-  return absl::nullopt;
+  return args_.GetInt(key);
 }
 
-absl::optional<std::string> ChannelArgsEndpointConfig::GetString(
+absl::optional<absl::string_view> ChannelArgsEndpointConfig::GetString(
     absl::string_view key) const {
-  auto value = args_.Get(key);
-  if (value != nullptr && absl::holds_alternative<std::string>(*value)) {
-    return absl::get<std::string>(*value);
-  }
-  return absl::nullopt;
+  return args_.GetString(key);
 }
 
 absl::optional<void*> ChannelArgsEndpointConfig::GetPointer(

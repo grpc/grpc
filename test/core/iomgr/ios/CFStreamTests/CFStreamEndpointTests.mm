@@ -128,10 +128,9 @@ static bool compare_slice_buffer_with_buffer(grpc_slice_buffer *slices, const ch
   init_event_closure(&done, &connected_promise);
   auto args = grpc_core::CoreConfiguration::Get()
                   .channel_args_preconditioning()
-                  .PreconditionChannelArgs(nullptr)
-                  .ToC();
+                  .PreconditionChannelArgs(nullptr);
   grpc_tcp_client_connect(&done, &ep_, nullptr,
-                          grpc_event_engine::experimental::ChannelArgsEndpointConfig(args.get()),
+                          grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
                           &*resolved_addr, grpc_core::Timestamp::InfFuture());
 
   /* await the connection */

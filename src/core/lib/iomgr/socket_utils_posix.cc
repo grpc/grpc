@@ -41,8 +41,6 @@
 
 using ::grpc_event_engine::experimental::EndpointConfig;
 
-#define MAX_CHUNK_SIZE (32 * 1024 * 1024)
-
 using ::grpc_core::PosixTcpOptions;
 
 namespace {

@@ -118,8 +118,7 @@ void test_succeeds(void) {
                                     .PreconditionChannelArgs(nullptr);
   int64_t connection_handle = grpc_tcp_client_connect(
       &done, &g_connecting, g_pollset_set,
-      grpc_event_engine::experimental::ChannelArgsEndpointConfig(
-          args.ToC().get()),
+      grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
       &resolved_addr, grpc_core::Timestamp::InfFuture());
   /* await the connection */
   do {
@@ -173,7 +172,8 @@ void test_fails(void) {
   GRPC_CLOSURE_INIT(&done, must_fail, nullptr, grpc_schedule_on_exec_ctx);
   int64_t connection_handle = grpc_tcp_client_connect(
       &done, &g_connecting, g_pollset_set,
-      grpc_event_engine::experimental::ChannelArgsEndpointConfig(nullptr),
+      grpc_event_engine::experimental::ChannelArgsEndpointConfig(
+          grpc_core::ChannelArgs{}),
       &resolved_addr, grpc_core::Timestamp::InfFuture());
   gpr_mu_lock(g_mu);
 
@@ -237,8 +237,7 @@ void test_connect_cancellation_succeeds(void) {
                                     .PreconditionChannelArgs(nullptr);
   int64_t connection_handle = grpc_tcp_client_connect(
       &done, &g_connecting, g_pollset_set,
-      grpc_event_engine::experimental::ChannelArgsEndpointConfig(
-          args.ToC().get()),
+      grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
       &resolved_addr, grpc_core::Timestamp::InfFuture());
   ASSERT_GT(connection_handle, 0);
   ASSERT_EQ(grpc_tcp_client_cancel_connect(connection_handle), true);
@@ -265,7 +264,8 @@ void test_fails_bad_addr_no_leak(void) {
   GRPC_CLOSURE_INIT(&done, must_fail, nullptr, grpc_schedule_on_exec_ctx);
   grpc_tcp_client_connect(
       &done, &g_connecting, g_pollset_set,
-      grpc_event_engine::experimental::ChannelArgsEndpointConfig(nullptr),
+      grpc_event_engine::experimental::ChannelArgsEndpointConfig(
+          grpc_core::ChannelArgs{}),
       &resolved_addr, grpc_core::Timestamp::InfFuture());
   gpr_mu_lock(g_mu);
   while (g_connections_complete == connections_complete_before) {

@@ -684,8 +684,7 @@ grpc_error_handle Chttp2ServerListener::Create(
     listener = new Chttp2ServerListener(server, args, args_modifier);
     error = grpc_tcp_server_create(
         &listener->tcp_server_shutdown_complete_,
-        grpc_event_engine::experimental::ChannelArgsEndpointConfig(
-            args.ToC().get()),
+        grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
         &listener->tcp_server_);
     if (!GRPC_ERROR_IS_NONE(error)) return error;
     if (server->config_fetcher() != nullptr) {
@@ -733,8 +732,7 @@ grpc_error_handle Chttp2ServerListener::CreateWithAcceptor(
       new Chttp2ServerListener(server, args, args_modifier);
   grpc_error_handle error = grpc_tcp_server_create(
       &listener->tcp_server_shutdown_complete_,
-      grpc_event_engine::experimental::ChannelArgsEndpointConfig(
-          args.ToC().get()),
+      grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
       &listener->tcp_server_);
   if (!GRPC_ERROR_IS_NONE(error)) {
     delete listener;
@@ -1080,8 +1078,7 @@ void grpc_server_add_channel_from_fd(grpc_server* server, int fd,
   grpc_core::ChannelArgs server_args = core_server->channel_args();
   std::string name = absl::StrCat("fd:", fd);
   auto memory_quota =
-      grpc_core::ResourceQuotaFromChannelArgs(server_args.ToC().get())
-          ->memory_quota();
+      server_args.GetObject<grpc_core::ResourceQuota>()->memory_quota();
   grpc_endpoint* server_endpoint = grpc_tcp_create_from_fd(
       grpc_fd_create(fd, name.c_str(), true),
       grpc_event_engine::experimental::ChannelArgsEndpointConfig(server_args),

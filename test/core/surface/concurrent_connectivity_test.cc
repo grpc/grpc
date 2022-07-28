@@ -141,12 +141,10 @@ void bad_server_thread(void* vargs) {
   grpc_tcp_server* s;
   auto channel_args = grpc_core::CoreConfiguration::Get()
                           .channel_args_preconditioning()
-                          .PreconditionChannelArgs(nullptr)
-                          .ToC();
+                          .PreconditionChannelArgs(nullptr);
   grpc_error_handle error = grpc_tcp_server_create(
       nullptr,
-      grpc_event_engine::experimental::ChannelArgsEndpointConfig(
-          channel_args.get()),
+      grpc_event_engine::experimental::ChannelArgsEndpointConfig(channel_args),
       &s);
   ASSERT_TRUE(GRPC_ERROR_IS_NONE(error));
   memset(&resolved_addr, 0, sizeof(resolved_addr));

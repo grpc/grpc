@@ -137,7 +137,7 @@ absl::Status ConnectionManager::BindAndStartListener(
   EventEngine* event_engine = listener_type_oracle ? oracle_event_engine_.get()
                                                    : test_event_engine_.get();
 
-  ChannelArgsEndpointConfig config(nullptr);
+  ChannelArgsEndpointConfig config;
   auto status = event_engine->CreateListener(
       std::move(accept_cb),
       [](absl::Status status) { GPR_ASSERT(status.ok()); }, config,
@@ -174,7 +174,7 @@ ConnectionManager::CreateConnection(std::string target_addr,
       absl::StrCat("connection-", std::to_string(num_processed_connections_++));
   EventEngine* event_engine = client_type_oracle ? oracle_event_engine_.get()
                                                  : test_event_engine_.get();
-  ChannelArgsEndpointConfig config(nullptr);
+  ChannelArgsEndpointConfig config;
   event_engine->Connect(
       [this](absl::StatusOr<std::unique_ptr<Endpoint>> status) {
         if (!status.ok()) {

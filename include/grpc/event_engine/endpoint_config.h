@@ -41,7 +41,7 @@ class EndpointConfig {
   virtual absl::optional<int> GetInt(absl::string_view key) const = 0;
   // If the key points to an string config, an string value gets returned.
   // Otherwise it returns an absl::nullopt_t
-  virtual absl::optional<std::string> GetString(
+  virtual absl::optional<absl::string_view> GetString(
       absl::string_view key) const = 0;
   // If the key points to an void* config, a void* pointer value gets returned.
   // Otherwise it returns an absl::nullopt_t

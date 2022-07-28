@@ -126,11 +126,10 @@ class Client {
     EventState state;
     auto args = CoreConfiguration::Get()
                     .channel_args_preconditioning()
-                    .PreconditionChannelArgs(nullptr)
-                    .ToC();
+                    .PreconditionChannelArgs(nullptr);
     grpc_tcp_client_connect(
         state.closure(), &endpoint_, pollset_set,
-        grpc_event_engine::experimental::ChannelArgsEndpointConfig(args.get()),
+        grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
         addresses_or->data(), ExecCtx::Get()->Now() + Duration::Seconds(1));
     ASSERT_TRUE(PollUntilDone(&state, Timestamp::InfFuture()));
     ASSERT_EQ(GRPC_ERROR_NONE, state.error());

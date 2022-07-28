@@ -558,11 +558,10 @@ static void on_read_request_done_locked(void* arg, grpc_error_handle error) {
                     grpc_schedule_on_exec_ctx);
   auto args = grpc_core::CoreConfiguration::Get()
                   .channel_args_preconditioning()
-                  .PreconditionChannelArgs(nullptr)
-                  .ToC();
+                  .PreconditionChannelArgs(nullptr);
   grpc_tcp_client_connect(
       &conn->on_server_connect_done, &conn->server_endpoint, conn->pollset_set,
-      grpc_event_engine::experimental::ChannelArgsEndpointConfig(args.get()),
+      grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
       &(*addresses_or)[0], deadline);
 }
 
@@ -634,15 +633,13 @@ grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(
   proxy->proxy_name = grpc_core::JoinHostPort("localhost", proxy_port);
   gpr_log(GPR_INFO, "Proxy address: %s", proxy->proxy_name.c_str());
   // Create TCP server.
-  proxy->channel_args = grpc_core::CoreConfiguration::Get()
+  auto channel_args = grpc_core::CoreConfiguration::Get()
                             .channel_args_preconditioning()
-                            .PreconditionChannelArgs(args)
-                            .ToC()
-                            .release();
+                            .PreconditionChannelArgs(args);
+  proxy->channel_args = channel_args.ToC().release();
   grpc_error_handle error = grpc_tcp_server_create(
       nullptr,
-      grpc_event_engine::experimental::ChannelArgsEndpointConfig(
-          proxy->channel_args),
+      grpc_event_engine::experimental::ChannelArgsEndpointConfig(channel_args),
       &proxy->server);
   GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   // Bind to port.

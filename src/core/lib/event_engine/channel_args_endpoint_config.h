@@ -28,16 +28,16 @@ namespace experimental {
 
 class ChannelArgsEndpointConfig : public EndpointConfig {
  public:
+  ChannelArgsEndpointConfig() = default;
   explicit ChannelArgsEndpointConfig(const grpc_core::ChannelArgs& args)
       : args_(args) {}
-  explicit ChannelArgsEndpointConfig(const grpc_channel_args* args)
-      : args_(grpc_core::ChannelArgs::FromC(args)) {}
   ChannelArgsEndpointConfig(const ChannelArgsEndpointConfig& config) = default;
   ChannelArgsEndpointConfig& operator=(const ChannelArgsEndpointConfig& other) =
       default;
   EndpointConfig::Setting Get(absl::string_view key) const override;
   absl::optional<int> GetInt(absl::string_view key) const override;
-  absl::optional<std::string> GetString(absl::string_view key) const override;
+  absl::optional<absl::string_view> GetString(
+      absl::string_view key) const override;
   absl::optional<void*> GetPointer(absl::string_view key) const override;
 
  private:

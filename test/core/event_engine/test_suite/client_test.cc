@@ -87,7 +87,7 @@ TEST_F(EventEngineClientTest, ConnectToNonExistentListenerTest) {
   auto memory_quota = absl::make_unique<grpc_core::MemoryQuota>("bar");
   // Create a test EventEngine client endpoint and connect to a non existent
   // listener.
-  ChannelArgsEndpointConfig config(nullptr);
+  ChannelArgsEndpointConfig config;
   test_ee->Connect(
       [&client_endpoint_promise](
           absl::StatusOr<std::unique_ptr<Endpoint>> status) {
@@ -123,7 +123,7 @@ TEST_F(EventEngineClientTest, ConnectExchangeBidiDataTransferTest) {
         server_endpoint_promise.Set(std::move(ep));
       };
 
-  ChannelArgsEndpointConfig config(nullptr);
+  ChannelArgsEndpointConfig config;
   auto status = oracle_ee->CreateListener(
       std::move(accept_cb),
       [](absl::Status status) { GPR_ASSERT(status.ok()); }, config,
@@ -188,7 +188,7 @@ TEST_F(EventEngineClientTest, MultipleIPv6ConnectionsToOneOracleListenerTest) {
           grpc_core::MemoryAllocator /*memory_allocator*/) {
         server_endpoint_promise.Set(std::move(ep));
       };
-  ChannelArgsEndpointConfig config(nullptr);
+  ChannelArgsEndpointConfig config;
   auto status = oracle_ee->CreateListener(
       std::move(accept_cb),
       [](absl::Status status) { GPR_ASSERT(status.ok()); }, config,
@@ -209,7 +209,7 @@ TEST_F(EventEngineClientTest, MultipleIPv6ConnectionsToOneOracleListenerTest) {
     // Create a test EventEngine client endpoint and connect to a one of the
     // addresses bound to the oracle listener. Verify that the connection
     // succeeds.
-    ChannelArgsEndpointConfig config(nullptr);
+    ChannelArgsEndpointConfig config;
     test_ee->Connect(
         [&client_endpoint_promise](
             absl::StatusOr<std::unique_ptr<Endpoint>> status) {
