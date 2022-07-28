@@ -608,7 +608,7 @@ TEST(XdsBootstrapTest, CertificateProvidersFakePluginParsingError) {
       ::testing::MatchesRegex(
           "errors validating JSON: \\["
           "field:certificate_providers\\[\"fake_plugin\"\\].config "
-          "error:UNKNOWN:field:config field:value not of type number.*]"))
+          "error:UNKNOWN:field:config field:value not of type number.*\\]"))
       << bootstrap.status();
 }
 
