@@ -27,10 +27,12 @@
 #include <vector>
 
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 
 #include "src/core/ext/xds/certificate_provider_store.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_object_loader.h"
 
 namespace grpc_core {
 
@@ -43,10 +45,19 @@ class XdsBootstrap {
   struct Node {
     std::string id;
     std::string cluster;
-    std::string locality_region;
-    std::string locality_zone;
-    std::string locality_sub_zone;
+
+    struct Locality {
+      std::string region;
+      std::string zone;
+      std::string sub_zone;
+
+      static const JsonLoaderInterface* JsonLoader();
+    };
+    Locality locality;
+
     Json metadata;
+
+    static const JsonLoaderInterface* JsonLoader();
   };
 
   struct XdsServer {
@@ -55,6 +66,10 @@ class XdsBootstrap {
     Json channel_creds_config;
     std::set<std::string> server_features;
 
+    static const JsonLoaderInterface* JsonLoader();
+    void JsonPostLoad(const Json& json, ErrorList* errors);
+
+// FIXME: remove
     static XdsServer Parse(const Json& json, grpc_error_handle* error);
 
     bool operator==(const XdsServer& other) const {
@@ -83,6 +98,8 @@ class XdsBootstrap {
   struct Authority {
     std::string client_listener_resource_name_template;
     std::vector<XdsServer> xds_servers;
+
+    static const JsonLoaderInterface* JsonLoader();
   };
 
   // Creates bootstrap object from json_string.
@@ -94,12 +111,15 @@ class XdsBootstrap {
   // Do not instantiate directly -- use Create() above instead.
   XdsBootstrap(Json json, grpc_error_handle* error);
 
+  static const JsonLoaderInterface* JsonLoader();
+  void JsonPostLoad(const Json& json, ErrorList* errors);
+
   std::string ToString() const;
 
   // TODO(roth): We currently support only one server. Fix this when we
   // add support for fallback for the xds channel.
   const XdsServer& server() const { return servers_[0]; }
-  const Node* node() const { return node_.get(); }
+  const Node* node() const { return node_.has_value() ? &*node_ : nullptr; }
   const std::string& client_default_listener_resource_name_template() const {
     return client_default_listener_resource_name_template_;
   }
@@ -129,7 +149,7 @@ class XdsBootstrap {
                                              Json* certificate_provider_json);
 
   std::vector<XdsServer> servers_;
-  std::unique_ptr<Node> node_;
+  absl::optional<Node> node_;
   std::string client_default_listener_resource_name_template_;
   std::string server_listener_resource_name_template_;
   std::map<std::string, Authority> authorities_;

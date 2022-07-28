@@ -152,9 +152,9 @@ TEST(XdsBootstrapTest, Basic) {
   ASSERT_NE(bootstrap.node(), nullptr);
   EXPECT_EQ(bootstrap.node()->id, "foo");
   EXPECT_EQ(bootstrap.node()->cluster, "bar");
-  EXPECT_EQ(bootstrap.node()->locality_region, "milky_way");
-  EXPECT_EQ(bootstrap.node()->locality_zone, "sol_system");
-  EXPECT_EQ(bootstrap.node()->locality_sub_zone, "earth");
+  EXPECT_EQ(bootstrap.node()->locality.region, "milky_way");
+  EXPECT_EQ(bootstrap.node()->locality.zone, "sol_system");
+  EXPECT_EQ(bootstrap.node()->locality.sub_zone, "earth");
   ASSERT_EQ(bootstrap.node()->metadata.type(), Json::Type::OBJECT);
   EXPECT_THAT(bootstrap.node()->metadata.object_value(),
               ::testing::ElementsAre(

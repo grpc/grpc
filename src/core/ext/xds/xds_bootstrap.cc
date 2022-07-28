@@ -111,8 +111,120 @@ grpc_error_handle ParseChannelCredsArray(const Json::Array& json,
 }  // namespace
 
 //
+// XdsBootstrap::Node::Locality
+//
+
+const JsonLoaderInterface* XdsBootstrap::Node::Locality::JsonLoader() {
+  static const auto loader =
+      JsonObjectLoader<Locality>()
+          .OptionalField("region", &Locality::region)
+          .OptionalField("zone", &Locality::zone)
+          .OptionalField("sub_zone", &Locality::sub_zone)
+          .Finish();
+  return &loader;
+}
+
+//
+// XdsBootstrap::Node
+//
+
+const JsonLoaderInterface* XdsBootstrap::Node::JsonLoader() {
+  static const auto loader = JsonObjectLoader<Node>()
+                                 .OptionalField("id", &Node::id)
+                                 .OptionalField("cluster", &Node::cluster)
+                                 .OptionalField("locality", &Node::locality)
+                                 .OptionalField("metadata", &Node::metadata)
+                                 .Finish();
+  return &loader;
+}
+
+//
 // XdsBootstrap::XdsServer
 //
+
+namespace {
+
+struct XdsChannelCreds {
+  std::string type;
+  Json config;
+
+  static const JsonLoaderInterface* JsonLoader() {
+    static const auto loader =
+        JsonObjectLoader<XdsChannelCreds>()
+            .Field("type", &XdsChannelCreds::type)
+            .OptionalField("config", &XdsChannelCreds::config)
+            .Finish();
+    return &loader;
+  }
+};
+
+}  // namespace
+
+const JsonLoaderInterface* XdsBootstrap::XdsServer::JsonLoader() {
+  static const auto loader = JsonObjectLoader<XdsServer>()
+                                 .Field("server_uri", &XdsServer::server_uri)
+                                 .Finish();
+  return &loader;
+}
+
+void XdsBootstrap::XdsServer::JsonPostLoad(const Json& json,
+                                           ErrorList* errors) {
+  // Parse "channel_creds".
+  {
+    ScopedField field(errors, ".channel_creds");
+    auto it = json.object_value().find("channel_creds");
+    if (it == json.object_value().end()) {
+      errors->AddError("field not present");
+    } else if (it->second.type() != Json::Type::ARRAY) {
+      errors->AddError("is not an array");
+    } else {
+      const Json::Array& array = it->second.array_value();
+      for (size_t i = 0; i < array.size(); ++i) {
+        ScopedField field(errors, absl::StrCat("[", i, "]"));
+        auto channel_creds = LoadFromJson<XdsChannelCreds>(array[i]);
+        if (!channel_creds.ok()) {
+          errors->AddError(channel_creds.status().message());
+          continue;
+        }
+        // Select the first channel creds type that we support.
+        if (channel_creds_type.empty() &&
+            CoreConfiguration::Get().channel_creds_registry().IsSupported(
+                channel_creds->type)) {
+          if (!CoreConfiguration::Get().channel_creds_registry()
+                  .IsValidConfig(channel_creds->type,
+                                 channel_creds->config)) {
+            errors->AddError(absl::StrCat(
+                "invalid config for channel creds type \"",
+                channel_creds->type, "\""));
+            continue;
+          }
+          channel_creds_type = std::move(channel_creds->type);
+          channel_creds_config = std::move(channel_creds->config);
+        }
+      }
+    }
+  }
+  // Parse "server_features".
+  {
+    ScopedField field(errors, ".server_features");
+    auto it = json.object_value().find("server_features");
+    if (it != json.object_value().end()) {
+      if (it->second.type() != Json::Type::ARRAY) {
+        errors->AddError("is not an array");
+      } else {
+        const Json::Array& array = it->second.array_value();
+        for (const Json& feature_json : array) {
+          if (feature_json.type() == Json::Type::STRING &&
+              (feature_json.string_value() == kServerFeatureXdsV3 ||
+               feature_json.string_value() ==
+                   kServerFeatureIgnoreResourceDeletion)) {
+            server_features.insert(feature_json.string_value());
+          }
+        }
+      }
+    }
+  }
+}
 
 XdsBootstrap::XdsServer XdsBootstrap::XdsServer::Parse(
     const Json& json, grpc_error_handle* error) {
@@ -173,6 +285,20 @@ bool XdsBootstrap::XdsServer::ShouldUseV3() const {
 bool XdsBootstrap::XdsServer::IgnoreResourceDeletion() const {
   return server_features.find(std::string(
              kServerFeatureIgnoreResourceDeletion)) != server_features.end();
+}
+
+//
+// XdsBootstrap::Authority
+//
+
+const JsonLoaderInterface* XdsBootstrap::Authority::JsonLoader() {
+  static const auto loader =
+      JsonObjectLoader<Authority>()
+          .OptionalField("client_listener_resource_name_template",
+                         &Authority::client_listener_resource_name_template)
+          .OptionalField("xds_servers", &Authority::xds_servers)
+          .Finish();
+  return &loader;
 }
 
 //
@@ -264,6 +390,71 @@ XdsBootstrap::XdsBootstrap(Json json, grpc_error_handle* error) {
   }
   *error = GRPC_ERROR_CREATE_FROM_VECTOR("errors parsing xds bootstrap file",
                                          &error_list);
+}
+
+const JsonLoaderInterface* XdsBootstrap::JsonLoader() {
+  if (XdsFederationEnabled()) {
+    static const auto loader =
+        JsonObjectLoader<XdsBootstrap>()
+            .Field("xds_servers", &XdsBootstrap::servers_)
+            .OptionalField("certificate_providers",
+                           &XdsBootstrap::certificate_providers_)
+            .OptionalField(
+                "server_listener_resource_name_template",
+                &XdsBootstrap::server_listener_resource_name_template_)
+            .OptionalField("authorities", &XdsBootstrap::authorities_)
+            .OptionalField(
+                "client_default_listener_resource_name_template",
+                &XdsBootstrap::client_default_listener_resource_name_template_)
+            .Finish();
+    return &loader;
+  }
+  static const auto loader =
+      JsonObjectLoader<XdsBootstrap>()
+          .Field("xds_servers", &XdsBootstrap::servers_)
+          .OptionalField("certificate_providers",
+                         &XdsBootstrap::certificate_providers_)
+          .OptionalField(
+              "server_listener_resource_name_template",
+              &XdsBootstrap::server_listener_resource_name_template_)
+          .Finish();
+  return &loader;
+}
+
+void XdsBootstrap::JsonPostLoad(const Json& json, ErrorList* errors) {
+  // Verify that each authority has the right prefix in the
+  // client_listener_resource_name_template field.
+  {
+    ScopedField field(errors, ".authorities");
+    for (const auto& p : authorities_) {
+      const std::string& name = p.first;
+      const Authority& authority = p.second;
+      ScopedField field(errors, absl::StrCat(
+          "[", name, "].client_listener_resource_name_template"));
+      std::string expected_prefix = absl::StrCat("xdstp://", name, "/");
+      if (!authority.client_listener_resource_name_template.empty() &&
+          !absl::StartsWith(authority.client_listener_resource_name_template,
+                            expected_prefix)) {
+        errors->AddError(
+            absl::StrCat("field must begin with \"", expected_prefix, "\""));
+      }
+    }
+  }
+  // Parse node.
+  // TODO(roth): Change JSON object loader to grok absl::optional<> so
+  // that we don't need to parse this field manually.
+  {
+    ScopedField field(errors, ".node");
+    auto it = json.object_value().find("node");
+    if (it != json.object_value().end()) {
+      auto node = LoadFromJson<Node>(it->second);
+      if (!node.ok()) {
+        errors->AddError(node.status().message());
+      } else {
+        node_.emplace(std::move(*node));
+      }
+    }
+  }
 }
 
 const XdsBootstrap::Authority* XdsBootstrap::LookupAuthority(
@@ -366,7 +557,7 @@ grpc_error_handle XdsBootstrap::ParseAuthority(Json* json,
 
 grpc_error_handle XdsBootstrap::ParseNode(Json* json) {
   std::vector<grpc_error_handle> error_list;
-  node_ = absl::make_unique<Node>();
+  node_.emplace();
   auto it = json->mutable_object()->find("id");
   if (it != json->mutable_object()->end()) {
     if (it->second.type() != Json::Type::STRING) {
@@ -416,7 +607,7 @@ grpc_error_handle XdsBootstrap::ParseLocality(Json* json) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "\"region\" field is not a string"));
     } else {
-      node_->locality_region = std::move(*it->second.mutable_string_value());
+      node_->locality.region = std::move(*it->second.mutable_string_value());
     }
   }
   it = json->mutable_object()->find("zone");
@@ -425,7 +616,7 @@ grpc_error_handle XdsBootstrap::ParseLocality(Json* json) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "\"zone\" field is not a string"));
     } else {
-      node_->locality_zone = std::move(*it->second.mutable_string_value());
+      node_->locality.zone = std::move(*it->second.mutable_string_value());
     }
   }
   it = json->mutable_object()->find("sub_zone");
@@ -434,7 +625,7 @@ grpc_error_handle XdsBootstrap::ParseLocality(Json* json) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "\"sub_zone\" field is not a string"));
     } else {
-      node_->locality_sub_zone = std::move(*it->second.mutable_string_value());
+      node_->locality.sub_zone = std::move(*it->second.mutable_string_value());
     }
   }
   return GRPC_ERROR_CREATE_FROM_VECTOR("errors parsing \"locality\" object",
@@ -508,7 +699,7 @@ grpc_error_handle XdsBootstrap::ParseCertificateProvider(
 
 std::string XdsBootstrap::ToString() const {
   std::vector<std::string> parts;
-  if (node_ != nullptr) {
+  if (node_.has_value()) {
     parts.push_back(absl::StrFormat(
         "node={\n"
         "  id=\"%s\",\n"
@@ -520,8 +711,8 @@ std::string XdsBootstrap::ToString() const {
         "  },\n"
         "  metadata=%s,\n"
         "},\n",
-        node_->id, node_->cluster, node_->locality_region, node_->locality_zone,
-        node_->locality_sub_zone, node_->metadata.Dump()));
+        node_->id, node_->cluster, node_->locality.region, node_->locality.zone,
+        node_->locality.sub_zone, node_->metadata.Dump()));
   }
   parts.push_back(
       absl::StrFormat("servers=[\n"

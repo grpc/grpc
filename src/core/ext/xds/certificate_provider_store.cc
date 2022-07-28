@@ -27,6 +27,59 @@
 namespace grpc_core {
 
 //
+// CertificateProviderStore::PluginDefinition
+//
+
+const JsonLoaderInterface*
+CertificateProviderStore::PluginDefinition::JsonLoader() {
+  static const auto loader =
+      JsonObjectLoader<PluginDefinition>()
+          .Field("plugin_name", &PluginDefinition::plugin_name)
+          .Finish();
+  return &loader;
+}
+
+void CertificateProviderStore::PluginDefinition::JsonPostLoad(
+    const Json& json, ErrorList* errors) {
+  // Check that plugin is supported.
+  CertificateProviderFactory* factory = nullptr;
+  {
+    ScopedField field(errors, ".plugin_name");
+    factory = CertificateProviderRegistry::LookupCertificateProviderFactory(
+        plugin_name);
+    if (factory == nullptr) {
+      errors->AddError(absl::StrCat("Unrecognized plugin name: ", plugin_name));
+      return;  // No point checking config.
+    }
+  }
+  // Parse the config field.
+  {
+    ScopedField field(errors, ".config");
+    auto it = json.object_value().find("config");
+    // The config field is optional; if not present, we use an empty JSON
+    // object.
+    Json::Object config_json;
+    if (it != json.object_value().end()) {
+      if (it->second.type() != Json::Type::OBJECT) {
+        errors->AddError("is not an object");
+        return;  // No point parsing config.
+      } else {
+        config_json = it->second.object_value();
+      }
+    }
+    if (factory == nullptr) return;
+    // Use plugin to validate and parse config.
+    grpc_error_handle parse_error = GRPC_ERROR_NONE;
+    config = factory->CreateCertificateProviderConfig(config_json,
+						      &parse_error);
+    if (!GRPC_ERROR_IS_NONE(parse_error)) {
+      errors->AddError(grpc_error_std_string(parse_error));
+      GRPC_ERROR_UNREF(parse_error);
+    }
+  }
+}
+
+//
 // CertificateProviderStore::CertificateProviderWrapper
 //
 

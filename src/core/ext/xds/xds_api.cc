@@ -212,21 +212,21 @@ void PopulateNode(const XdsEncodingContext& context,
           envoy_config_core_v3_Node_mutable_metadata(node_msg, context.arena);
       PopulateMetadata(context, metadata, node->metadata.object_value());
     }
-    if (!node->locality_region.empty() || !node->locality_zone.empty() ||
-        !node->locality_sub_zone.empty()) {
+    if (!node->locality.region.empty() || !node->locality.zone.empty() ||
+        !node->locality.sub_zone.empty()) {
       envoy_config_core_v3_Locality* locality =
           envoy_config_core_v3_Node_mutable_locality(node_msg, context.arena);
-      if (!node->locality_region.empty()) {
+      if (!node->locality.region.empty()) {
         envoy_config_core_v3_Locality_set_region(
-            locality, StdStringToUpbString(node->locality_region));
+            locality, StdStringToUpbString(node->locality.region));
       }
-      if (!node->locality_zone.empty()) {
+      if (!node->locality.zone.empty()) {
         envoy_config_core_v3_Locality_set_zone(
-            locality, StdStringToUpbString(node->locality_zone));
+            locality, StdStringToUpbString(node->locality.zone));
       }
-      if (!node->locality_sub_zone.empty()) {
+      if (!node->locality.sub_zone.empty()) {
         envoy_config_core_v3_Locality_set_sub_zone(
-            locality, StdStringToUpbString(node->locality_sub_zone));
+            locality, StdStringToUpbString(node->locality.sub_zone));
       }
     }
   }
