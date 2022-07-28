@@ -23,15 +23,15 @@
 #include "absl/strings/ascii.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
+#include "absl/strings/strip.h"
 
 namespace grpc_core {
 
 void ErrorList::AddError(absl::string_view error) {
   std::string fields = absl::StrJoin(fields_, "");
-  errors_.emplace_back(absl::StrCat(
-      "field:",
-      absl::string_view(fields).substr(1),  // Skip leading '.' in field names
-      " error:", error));
+  absl::string_view fields_view = fields;
+  absl::ConsumePrefix(&fields_view, ".");  // Skip leading '.' in field names.
+  errors_.emplace_back(absl::StrCat("field:", fields_view, " error:", error));
 }
 
 void ErrorList::PushField(absl::string_view ext) {
@@ -67,14 +67,12 @@ bool LoadDuration::IsNumber() const { return false; }
 
 void LoadDuration::LoadInto(const std::string& value, void* dst,
                             ErrorList* errors) const {
-  size_t len = value.size();
-  if (value[len - 1] != 's') {
+  absl::string_view buf(value);
+  if (!absl::ConsumeSuffix(&buf, "s")) {
     errors->AddError("Not a duration (no s suffix)");
     return;
   }
-  absl::string_view buf(value);
-  buf = absl::StripAsciiWhitespace(
-      buf.substr(0, len - 1));  // Remove trailing 's'.
+  buf = absl::StripAsciiWhitespace(buf);
   auto decimal_point = buf.find('.');
   int nanos = 0;
   if (decimal_point != absl::string_view::npos) {
@@ -109,9 +107,13 @@ void LoadString::LoadInto(const std::string& value, void* dst,
   *static_cast<std::string*>(dst) = value;
 }
 
-void LoadUnprocessedJson::LoadInto(const Json& value, void* dst,
-                                   ErrorList*) const {
-  *static_cast<Json*>(dst) = value;
+void LoadUnprocessedJsonObject::LoadInto(const Json& json, void* dst,
+                                         ErrorList* errors) const {
+  if (json.type() != Json::Type::OBJECT) {
+    errors->AddError("is not an object");
+    return;
+  }
+  *static_cast<Json::Object*>(dst) = json.object_value();
 }
 
 void LoadVector::LoadInto(const Json& json, void* dst,
@@ -133,7 +135,7 @@ void LoadMap::LoadInto(const Json& json, void* dst, ErrorList* errors) const {
     return;
   }
   for (const auto& pair : json.object_value()) {
-    ScopedField field(errors, absl::StrCat(".", pair.first));
+    ScopedField field(errors, absl::StrCat("[\"", pair.first, "\"]"));
     LoadOne(pair.second, pair.first, dst, errors);
   }
 }
@@ -150,7 +152,7 @@ void LoadObject(const Json& json, const Element* elements, size_t num_elements,
     const auto& it = json.object_value().find(element.name);
     if (it == json.object_value().end()) {
       if (element.optional) continue;
-      errors->AddError("does not exist");
+      errors->AddError("field not present");
       continue;
     }
     char* field_dst = static_cast<char*>(dst) + element.member_offset;

@@ -216,8 +216,8 @@ class LoadMap : public LoaderInterface {
                        ErrorList* errors) const = 0;
 };
 
-// Loads an unprocessed JSON value.
-class LoadUnprocessedJson : public LoaderInterface {
+// Loads an unprocessed JSON object value.
+class LoadUnprocessedJsonObject : public LoaderInterface {
  public:
   void LoadInto(const Json& json, void* dst, ErrorList* errors) const override;
 };
@@ -252,7 +252,7 @@ class AutoLoader<Duration> final : public LoadDuration {};
 template <>
 class AutoLoader<std::string> final : public LoadString {};
 template <>
-class AutoLoader<Json> final : public LoadUnprocessedJson {};
+class AutoLoader<Json::Object> final : public LoadUnprocessedJsonObject {};
 
 // Specializations of AutoLoader for optional.
 template <typename T>
