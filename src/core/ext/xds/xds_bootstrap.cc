@@ -397,6 +397,7 @@ const JsonLoaderInterface* XdsBootstrap::JsonLoader() {
     static const auto loader =
         JsonObjectLoader<XdsBootstrap>()
             .Field("xds_servers", &XdsBootstrap::servers_)
+            .OptionalField("node", &XdsBootstrap::node_)
             .OptionalField("certificate_providers",
                            &XdsBootstrap::certificate_providers_)
             .OptionalField(
@@ -412,6 +413,7 @@ const JsonLoaderInterface* XdsBootstrap::JsonLoader() {
   static const auto loader =
       JsonObjectLoader<XdsBootstrap>()
           .Field("xds_servers", &XdsBootstrap::servers_)
+          .OptionalField("node", &XdsBootstrap::node_)
           .OptionalField("certificate_providers",
                          &XdsBootstrap::certificate_providers_)
           .OptionalField(
@@ -437,21 +439,6 @@ void XdsBootstrap::JsonPostLoad(const Json& json, ErrorList* errors) {
                             expected_prefix)) {
         errors->AddError(
             absl::StrCat("field must begin with \"", expected_prefix, "\""));
-      }
-    }
-  }
-  // Parse node.
-  // TODO(roth): Change JSON object loader to grok absl::optional<> so
-  // that we don't need to parse this field manually.
-  {
-    ScopedField field(errors, ".node");
-    auto it = json.object_value().find("node");
-    if (it != json.object_value().end()) {
-      auto node = LoadFromJson<Node>(it->second);
-      if (!node.ok()) {
-        errors->AddError(node.status().message());
-      } else {
-        node_.emplace(std::move(*node));
       }
     }
   }
