@@ -155,7 +155,7 @@ pip_install() {
 # Pin setuptools to < 60.0.0 to restore the distutil installation, see:
 # https://github.com/pypa/setuptools/pull/2896
 export SETUPTOOLS_USE_DISTUTILS=stdlib
-pip_install --upgrade pip==22.2
+pip_install --upgrade pip==21.3.1
 pip_install --upgrade setuptools==59.6.0
 
 # pip-installs the directory specified. Used because on MSYS the vanilla Windows
@@ -179,7 +179,7 @@ pip_install_dir_and_deps() {
 pip_install -U gevent
 
 pip_install --upgrade cython
-pip_install --upgrade six protobuf==4.21.3
+pip_install --upgrade six protobuf>=4.21.3
 
 if [ "$("$VENV_PYTHON" -c "import sys; print(sys.version_info[0])")" == "2" ]
 then
@@ -226,5 +226,4 @@ pip_install coverage==4.4 oauth2client==4.1.0 \
             googleapis-common-protos>=1.5.5 rsa==4.0
 $VENV_PYTHON "$ROOT/src/python/grpcio_tests/setup.py" preprocess
 $VENV_PYTHON "$ROOT/src/python/grpcio_tests/setup.py" build_package_protos
-find "$ROOT/src/python/grpcio_tests/" -name '*_pb2.py' | xargs cat
 pip_install_dir "$ROOT/src/python/grpcio_tests"
