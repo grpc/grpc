@@ -18,6 +18,7 @@ import importlib
 import pkgutil
 import re
 import unittest
+import sys
 
 import coverage
 
@@ -70,8 +71,13 @@ class Loader(object):
         along.
     """
         for importer, module_name, is_package in (
-                pkgutil.walk_packages(package_paths)):
-            module = importer.find_module(module_name).load_module(module_name)
+                pkgutil.walk_packages(package_paths, "tests.")):
+            found_module = importer.find_module(module_name)
+            module = None
+            if module_name in sys.modules:
+                module = sys.modules[module_name]
+            else:
+                module = found_module.load_module(module_name)
             self.visit_module(module)
 
     def visit_module(self, module):
