@@ -21,6 +21,7 @@
 #include <cstring>
 #include <map>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 #include "absl/meta/type_traits.h"
@@ -28,6 +29,7 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/json/json.h"
