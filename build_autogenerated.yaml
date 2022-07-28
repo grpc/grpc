@@ -5759,6 +5759,7 @@ targets:
   - src/core/lib/event_engine/iomgr_engine/wakeup_fd_pipe.h
   - src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix.h
   - src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix_default.h
+  - src/core/lib/event_engine/poller.h
   src:
   - src/core/lib/event_engine/iomgr_engine/ev_epoll1_linux.cc
   - src/core/lib/event_engine/iomgr_engine/ev_poll_posix.cc
@@ -7630,6 +7631,7 @@ targets:
   - src/core/lib/event_engine/iomgr_engine/event_poller.h
   - src/core/lib/event_engine/iomgr_engine/iomgr_engine_closure.h
   - src/core/lib/event_engine/iomgr_engine/lockfree_event.h
+  - src/core/lib/event_engine/poller.h
   src:
   - src/core/lib/event_engine/iomgr_engine/lockfree_event.cc
   - test/core/event_engine/iomgr_event_engine/lock_free_event_test.cc

@@ -21,9 +21,10 @@
 #include <memory>
 
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/status/statusor.h"
 
-#include "grpc/event_engine/event_engine.h"
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
@@ -42,8 +43,6 @@
 #include <sys/epoll.h>
 #include <sys/socket.h>
 #include <unistd.h>
-
-#include <vector>
 
 #include "absl/synchronization/mutex.h"
 

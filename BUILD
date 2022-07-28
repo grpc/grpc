@@ -2326,11 +2326,10 @@ grpc_cc_library(
         "absl/strings",
     ],
     deps = [
-        "event_engine_poller",
         "event_engine_base_hdrs",
+        "event_engine_poller",
         "gpr_platform",
         "iomgr_ee_closure",
-        "time",
     ],
 )
 
@@ -2457,11 +2456,11 @@ grpc_cc_library(
         "absl/synchronization",
     ],
     deps = [
-        "gpr_base",
-        "gpr_codegen",
         "event_engine_base_hdrs",
         "event_engine_poller",
         "event_engine_time_util",
+        "gpr_base",
+        "gpr_codegen",
         "iomgr_ee_closure",
         "iomgr_ee_event_poller",
         "iomgr_ee_lockfree_event",
@@ -2489,11 +2488,11 @@ grpc_cc_library(
         "absl/utility",
     ],
     deps = [
-        "gpr_base",
-        "gpr_codegen",
         "event_engine_base_hdrs",
         "event_engine_poller",
         "event_engine_time_util",
+        "gpr_base",
+        "gpr_codegen",
         "iomgr_ee_closure",
         "iomgr_ee_event_poller",
         "iomgr_ee_wakeup_fd_posix",
