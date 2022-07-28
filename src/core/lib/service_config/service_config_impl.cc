@@ -121,7 +121,12 @@ absl::Status ServiceConfigImpl::ParseJsonMethodConfig(const ChannelArgs& args,
             }
             default_method_config_vector_ = vector_ptr;
           } else {
-            grpc_slice key = grpc_slice_from_cpp_string(std::move(*path));
+            // This should ideally use
+            // grpc_slice_from_cpp_string(std::move(*path))
+            // to avoid an unnecessary string copy.  However, for some
+            // unknown reason, that seems to be breaking on some older
+            // compilers; it winds up yielding an empty slice.
+            grpc_slice key = grpc_slice_from_copied_string(path->c_str());
             // If the key is not already present in the map, this will
             // store a ref to the key in the map.
             auto& value = parsed_method_configs_map_[key];
