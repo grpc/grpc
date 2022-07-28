@@ -2282,6 +2282,7 @@ void CallContext::InContext(absl::AnyInvocable<void()> fn) {
   } else {
     grpc_event_engine::experimental::GetDefaultEventEngine()->Run(
         [call = call_, fn = std::move(fn)]() mutable {
+          ExecCtx exec_ctx;
           call->InContext(std::move(fn));
           call->InternalUnref("in_context");
         });
