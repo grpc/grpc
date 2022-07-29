@@ -487,7 +487,7 @@ absl::StatusOr<T> LoadFromJson(const Json& json) {
   T result;
   json_detail::LoaderForType<T>()->LoadInto(json, &result, &error_list);
   if (!error_list.ok()) return error_list.status();
-  return result;
+  return absl::StatusOr<T>(std::move(result));
 }
 
 }  // namespace grpc_core
