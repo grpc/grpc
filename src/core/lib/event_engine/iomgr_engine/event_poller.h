@@ -53,19 +53,19 @@ class EventHandle {
   // becomes readable. When the on_read closure is run, it may check
   // if the handle is shutdown using the IsHandleShutdown method and take
   // appropriate actions (for instance it should not try to invoke another
-  // recursive NotifyOnRead).
+  // recursive NotifyOnRead if the handle is shutdown).
   virtual void NotifyOnRead(IomgrEngineClosure* on_read) = 0;
   // Schedule on_write to be invoked when the underlying file descriptor
   // becomes writable. When the on_write closure is run, it may check
   // if the handle is shutdown using the IsHandleShutdown method and take
   // appropriate actions (for instance it should not try to invoke another
-  // recursive NotifyOnWrite).
+  // recursive NotifyOnWrite if the handle is shutdown).
   virtual void NotifyOnWrite(IomgrEngineClosure* on_write) = 0;
   // Schedule on_error to be invoked when the underlying file descriptor
   // encounters errors. When the on_error closure is run, it may check
   // if the handle is shutdown using the IsHandleShutdown method and take
   // appropriate actions (for instance it should not try to invoke another
-  // recursive NotifyOnError).
+  // recursive NotifyOnError if the handle is shutdown).
   virtual void NotifyOnError(IomgrEngineClosure* on_error) = 0;
   // Force set a readable event on the underlying file descriptor.
   virtual void SetReadable() = 0;
