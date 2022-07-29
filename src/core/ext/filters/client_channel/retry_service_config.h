@@ -33,6 +33,7 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_object_loader.h"
 #include "src/core/lib/service_config/service_config_parser.h"
 
 namespace grpc_core {
@@ -40,16 +41,15 @@ namespace internal {
 
 class RetryGlobalConfig : public ServiceConfigParser::ParsedConfig {
  public:
-  RetryGlobalConfig(intptr_t max_milli_tokens, intptr_t milli_token_ratio)
-      : max_milli_tokens_(max_milli_tokens),
-        milli_token_ratio_(milli_token_ratio) {}
+  uintptr_t max_milli_tokens() const { return max_milli_tokens_; }
+  uintptr_t milli_token_ratio() const { return milli_token_ratio_; }
 
-  intptr_t max_milli_tokens() const { return max_milli_tokens_; }
-  intptr_t milli_token_ratio() const { return milli_token_ratio_; }
+  static const JsonLoaderInterface* JsonLoader();
+  void JsonPostLoad(const Json& json, ErrorList* errors);
 
  private:
-  intptr_t max_milli_tokens_ = 0;
-  intptr_t milli_token_ratio_ = 0;
+  uintptr_t max_milli_tokens_ = 0;
+  uintptr_t milli_token_ratio_ = 0;
 };
 
 class RetryMethodConfig : public ServiceConfigParser::ParsedConfig {

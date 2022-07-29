@@ -49,6 +49,93 @@
 namespace grpc_core {
 namespace internal {
 
+//
+// RetryGlobalConfig
+//
+
+const JsonLoaderInterface* RetryGlobalConfig::JsonLoader() {
+  static const auto loader =
+      JsonObjectLoader<RetryGlobalConfig>()
+          // Note: The "tokenRatio" field requires custom parsing, so
+          // it's handled in JsonPostLoad() instead.
+          .Field("maxTokens", &RetryGlobalConfig::max_milli_tokens_)
+          .Finish();
+  return &loader;
+}
+
+void RetryGlobalConfig::JsonPostLoad(const Json& json, ErrorList* errors) {
+  // Validate maxTokens.
+  if (json.object_value().find("maxTokens") != json.object_value().end()) {
+    ScopedField field(errors, ".maxTokens");
+    if (max_milli_tokens_ == 0) errors->AddError("must be greater than 0");
+    // Multiply by 1000 to represent as milli-tokens.
+    max_milli_tokens_ *= 1000;
+  }
+  // Parse tokenRatio.
+  ScopedField field(errors, ".tokenRatio");
+  auto it = json.object_value().find("tokenRatio");
+  if (it == json.object_value().end()) {
+    errors->AddError("field not present");
+    return;
+  }
+  if (it->second.type() != Json::Type::NUMBER &&
+      it->second.type() != Json::Type::STRING) {
+    errors->AddError("is not a number");
+    return;
+  }
+  absl::string_view buf = it->second.string_value();
+  uint32_t multiplier = 1;
+  uint32_t decimal_value = 0;
+  auto decimal_point = buf.find('.');
+  if (decimal_point != absl::string_view::npos) {
+    absl::string_view after_decimal = buf.substr(decimal_point + 1);
+    buf = buf.substr(0, decimal_point);
+    // We support up to 3 decimal digits.
+    multiplier = 1000;
+    if (after_decimal.length() > 3) after_decimal = after_decimal.substr(0, 3);
+    // Parse decimal value.
+    if (!absl::SimpleAtoi(after_decimal, &decimal_value)) {
+      errors->AddError("could not parse as a number");
+      return;
+    }
+    uint32_t decimal_multiplier = 1;
+    for (size_t i = 0; i < (3 - after_decimal.length()); ++i) {
+      decimal_multiplier *= 10;
+    }
+    decimal_value *= decimal_multiplier;
+  }
+  uint32_t whole_value;
+  if (!absl::SimpleAtoi(buf, &whole_value)) {
+    errors->AddError("could not parse as a number");
+    return;
+  }
+  milli_token_ratio_ =
+      static_cast<int>((whole_value * multiplier) + decimal_value);
+  if (milli_token_ratio_ <= 0) {
+    errors->AddError("must be greater than 0");
+  }
+}
+
+//
+// RetryServiceConfigParser
+//
+
+namespace {
+
+struct GlobalConfig {
+  absl::optional<RetryGlobalConfig> retry_throttling;
+
+  static const JsonLoaderInterface* JsonLoader() {
+    static const auto loader =
+        JsonObjectLoader<GlobalConfig>()
+            .OptionalField("retryThrottling", &GlobalConfig::retry_throttling)
+            .Finish();
+    return &loader;
+  }
+};
+
+}  // namespace
+
 size_t RetryServiceConfigParser::ParserIndex() {
   return CoreConfiguration::Get().service_config_parser().GetParserIndex(
       parser_name());
@@ -59,106 +146,16 @@ void RetryServiceConfigParser::Register(CoreConfiguration::Builder* builder) {
       absl::make_unique<RetryServiceConfigParser>());
 }
 
-namespace {
-
-grpc_error_handle ParseRetryThrottling(const Json& json,
-                                       intptr_t* max_milli_tokens,
-                                       intptr_t* milli_token_ratio) {
-  if (json.type() != Json::Type::OBJECT) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "field:retryThrottling error:Type should be object");
-  }
-  std::vector<grpc_error_handle> error_list;
-  // Parse maxTokens.
-  auto it = json.object_value().find("maxTokens");
-  if (it == json.object_value().end()) {
-    error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "field:retryThrottling field:maxTokens error:Not found"));
-  } else if (it->second.type() != Json::Type::NUMBER) {
-    error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "field:retryThrottling field:maxTokens error:Type should be "
-        "number"));
-  } else {
-    *max_milli_tokens =
-        gpr_parse_nonnegative_int(it->second.string_value().c_str()) * 1000;
-    if (*max_milli_tokens <= 0) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:retryThrottling field:maxTokens error:should be "
-          "greater than zero"));
-    }
-  }
-  // Parse tokenRatio.
-  it = json.object_value().find("tokenRatio");
-  if (it == json.object_value().end()) {
-    error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "field:retryThrottling field:tokenRatio error:Not found"));
-  } else if (it->second.type() != Json::Type::NUMBER) {
-    error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "field:retryThrottling field:tokenRatio error:type should be "
-        "number"));
-  } else {
-    // We support up to 3 decimal digits.
-    size_t whole_len = it->second.string_value().size();
-    const char* value = it->second.string_value().c_str();
-    uint32_t multiplier = 1;
-    uint32_t decimal_value = 0;
-    const char* decimal_point = strchr(value, '.');
-    if (decimal_point != nullptr) {
-      whole_len = static_cast<size_t>(decimal_point - value);
-      multiplier = 1000;
-      size_t decimal_len = strlen(decimal_point + 1);
-      if (decimal_len > 3) decimal_len = 3;
-      if (!gpr_parse_bytes_to_uint32(decimal_point + 1, decimal_len,
-                                     &decimal_value)) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:retryThrottling field:tokenRatio error:Failed "
-            "parsing"));
-        return GRPC_ERROR_CREATE_FROM_VECTOR("retryThrottling", &error_list);
-      }
-      uint32_t decimal_multiplier = 1;
-      for (size_t i = 0; i < (3 - decimal_len); ++i) {
-        decimal_multiplier *= 10;
-      }
-      decimal_value *= decimal_multiplier;
-    }
-    uint32_t whole_value;
-    if (!gpr_parse_bytes_to_uint32(value, whole_len, &whole_value)) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:retryThrottling field:tokenRatio error:Failed "
-          "parsing"));
-      return GRPC_ERROR_CREATE_FROM_VECTOR("retryThrottling", &error_list);
-    }
-    *milli_token_ratio =
-        static_cast<int>((whole_value * multiplier) + decimal_value);
-    if (*milli_token_ratio <= 0) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:retryThrottling field:tokenRatio error:value should "
-          "be greater than 0"));
-    }
-  }
-  return GRPC_ERROR_CREATE_FROM_VECTOR("retryThrottling", &error_list);
-}
-
-}  // namespace
-
 absl::StatusOr<std::unique_ptr<ServiceConfigParser::ParsedConfig>>
 RetryServiceConfigParser::ParseGlobalParams(const ChannelArgs& /*args*/,
                                             const Json& json) {
-  auto it = json.object_value().find("retryThrottling");
-  if (it == json.object_value().end()) return nullptr;
-  intptr_t max_milli_tokens = 0;
-  intptr_t milli_token_ratio = 0;
-  grpc_error_handle error =
-      ParseRetryThrottling(it->second, &max_milli_tokens, &milli_token_ratio);
-  if (!GRPC_ERROR_IS_NONE(error)) {
-    absl::Status status = absl::InvalidArgumentError(
-        absl::StrCat("error parsing retry global parameters: ",
-                     grpc_error_std_string(error)));
-    GRPC_ERROR_UNREF(error);
-    return status;
-  }
-  return absl::make_unique<RetryGlobalConfig>(max_milli_tokens,
-                                              milli_token_ratio);
+  auto global_params = LoadFromJson<GlobalConfig>(json);
+  if (!global_params.ok()) return global_params.status();
+  // If the retryThrottling field was not present, no need to return any
+  // parsed config.
+  if (!global_params->retry_throttling.has_value()) return nullptr;
+  return absl::make_unique<RetryGlobalConfig>(
+      std::move(*global_params->retry_throttling));
 }
 
 namespace {

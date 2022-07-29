@@ -81,13 +81,10 @@ TEST_F(RetryParserTest, RetryThrottlingMissingFields) {
       "}";
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(std::string(service_config.status().message()),
-              ::testing::ContainsRegex(
-                  "Service config parsing errors: \\["
-                  "error parsing retry global parameters:"
-                  ".*retryThrottling" CHILD_ERROR_TAG
-                  "field:retryThrottling field:maxTokens error:Not found"
-                  ".*field:retryThrottling field:tokenRatio error:Not found"));
+  EXPECT_EQ(service_config.status().message(),
+            "Service config parsing errors: [errors validating JSON: ["
+            "field:retryThrottling.maxTokens error:field not present; "
+            "field:retryThrottling.tokenRatio error:field not present]]");
 }
 
 TEST_F(RetryParserTest, InvalidRetryThrottlingNegativeMaxTokens) {
@@ -100,13 +97,10 @@ TEST_F(RetryParserTest, InvalidRetryThrottlingNegativeMaxTokens) {
       "}";
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(std::string(service_config.status().message()),
-              ::testing::ContainsRegex(
-                  "Service config parsing errors: \\["
-                  "error parsing retry global parameters:"
-                  ".*retryThrottling" CHILD_ERROR_TAG
-                  "field:retryThrottling field:maxTokens error:should "
-                  "be greater than zero"));
+  EXPECT_EQ(service_config.status().message(),
+            "Service config parsing errors: [errors validating JSON: ["
+            "field:retryThrottling.maxTokens error:failed to parse number; "
+            "field:retryThrottling.maxTokens error:must be greater than 0]]");
 }
 
 TEST_F(RetryParserTest, InvalidRetryThrottlingInvalidTokenRatio) {
@@ -119,12 +113,10 @@ TEST_F(RetryParserTest, InvalidRetryThrottlingInvalidTokenRatio) {
       "}";
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(std::string(service_config.status().message()),
-              ::testing::ContainsRegex("Service config parsing errors: \\["
-                                       "error parsing retry global parameters:"
-                                       ".*retryThrottling" CHILD_ERROR_TAG
-                                       "field:retryThrottling field:tokenRatio "
-                                       "error:Failed parsing"));
+  EXPECT_EQ(service_config.status().message(),
+            "Service config parsing errors: [errors validating JSON: ["
+            "field:retryThrottling.tokenRatio error:"
+            "could not parse as a number]]");
 }
 
 TEST_F(RetryParserTest, ValidRetryPolicy) {
