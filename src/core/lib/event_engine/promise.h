@@ -15,11 +15,10 @@
 #define GRPC_CORE_LIB_EVENT_ENGINE_PROMISE_H
 #include <grpc/support/port_platform.h>
 
-#include "absl/time/time.h"
-#include "absl/types/optional.h"
-
+#include <grpc/support/port_platform.h>
 #include <grpc/support/log.h>
 
+#include "absl/time/time.h"
 #include "src/core/lib/gprpp/sync.h"
 
 namespace grpc_event_engine {
