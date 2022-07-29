@@ -20,7 +20,6 @@
 #define GRPCXX_CHANNEL_FILTER_H
 
 #include <stddef.h>
-#include <stdint.h>
 
 #include <functional>
 #include <new>
