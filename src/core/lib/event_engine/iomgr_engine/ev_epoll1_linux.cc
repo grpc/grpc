@@ -131,9 +131,8 @@ class Epoll1EventHandle : public EventHandle {
   inline void ExecutePendingActions() {
     int pending_actions =
         pending_actions_.exchange(0, std::memory_order_acq_rel);
-    // These may execute in Parallel with ShutdownHandle or
-    // OrphanHandle. Thats not an issue because the lockfree event
-    // implementation should be able to handle it.
+    // These may execute in Parallel with ShutdownHandle. Thats not an issue
+    // because the lockfree event implementation should be able to handle it.
     if (pending_actions & 1UL) {
       read_closure_->SetReady();
     }
@@ -318,7 +317,7 @@ void Epoll1EventHandle::OrphanHandle(IomgrEngineClosure* on_done,
     write_closure_->DestroyEvent();
     error_closure_->DestroyEvent();
   }
-
+  pending_actions_.store(0, std::memory_order_relaxed);
   {
     absl::MutexLock lock(&poller_->mu_);
     poller_->free_epoll1_handles_list_.push_back(this);

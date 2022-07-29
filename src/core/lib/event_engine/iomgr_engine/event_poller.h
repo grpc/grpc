@@ -39,20 +39,32 @@ class EventHandle {
   // Delete the handle and optionally close the underlying file descriptor if
   // release_fd != nullptr. The on_done closure is scheduled to be invoked
   // after the operation is complete. After this operation, NotifyXXX and SetXXX
-  // operations cannot be performed on the handle.
+  // operations cannot be performed on the handle. In general, this method
+  // should only be called after ShutdownHandle and after all existing NotifyXXX
+  // closures have run and there is no waiting NotifyXXX closure.
   virtual void OrphanHandle(IomgrEngineClosure* on_done, int* release_fd,
                             absl::string_view reason) = 0;
   // Shutdown a handle. After this operation, NotifyXXX and SetXXX operations
-  // cannot be performed.
+  // cannot be performed. If there is an attempt to call NotifyXXX operations
+  // after Shutdown handle, those closures will be run immediately.
   virtual void ShutdownHandle(absl::Status why) = 0;
   // Schedule on_read to be invoked when the underlying file descriptor
-  // becomes readable.
+  // becomes readable. When the on_read closure is run, it may check
+  // if the handle is shutdown using the IsHandleShutdown method and take
+  // appropriate actions (for instance it should not try to invoke another
+  // recursive NotifyOnRead).
   virtual void NotifyOnRead(IomgrEngineClosure* on_read) = 0;
   // Schedule on_write to be invoked when the underlying file descriptor
-  // becomes writable.
+  // becomes writable. When the on_write closure is run, it may check
+  // if the handle is shutdown using the IsHandleShutdown method and take
+  // appropriate actions (for instance it should not try to invoke another
+  // recursive NotifyOnWrite).
   virtual void NotifyOnWrite(IomgrEngineClosure* on_write) = 0;
   // Schedule on_error to be invoked when the underlying file descriptor
-  // encounters errors.
+  // encounters errors. When the on_error closure is run, it may check
+  // if the handle is shutdown using the IsHandleShutdown method and take
+  // appropriate actions (for instance it should not try to invoke another
+  // recursive NotifyOnError).
   virtual void NotifyOnError(IomgrEngineClosure* on_error) = 0;
   // Force set a readable event on the underlying file descriptor.
   virtual void SetReadable() = 0;
