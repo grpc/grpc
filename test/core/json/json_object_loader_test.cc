@@ -165,7 +165,8 @@ TYPED_TEST_P(UnsignedIntegerTest, IntegerFields) {
   ASSERT_TRUE(test_struct.ok()) << test_struct.status();
   EXPECT_EQ(test_struct->value, 5);
   EXPECT_EQ(test_struct->optional_value, 7);
-  EXPECT_EQ(test_struct->absl_optional_value, 9);
+  ASSERT_TRUE(test_struct->absl_optional_value.has_value());
+  EXPECT_EQ(*test_struct->absl_optional_value, 9);
   // Wrong JSON type.
   test_struct = Parse<TestStruct>(
       "{\"value\": [], \"optional_value\": {}, "
@@ -753,7 +754,7 @@ TEST(JsonObjectLoader, PostLoadHook) {
       return loader;
     }
 
-    void JsonPostLoad(const Json& source, ErrorList* errors) { ++a; }
+    void JsonPostLoad(const Json& /*source*/, ErrorList* /*errors*/) { ++a; }
   };
   auto test_struct = Parse<TestStruct>("{\"a\": 1}");
   ASSERT_TRUE(test_struct.ok()) << test_struct.status();
@@ -773,7 +774,7 @@ TEST(JsonObjectLoader, CustomValidationInPostLoadHook) {
       return loader;
     }
 
-    void JsonPostLoad(const Json& source, ErrorList* errors) {
+    void JsonPostLoad(const Json& /*source*/, ErrorList* errors) {
       ScopedField field(errors, ".a");
       if (!errors->FieldHasErrors() && a <= 0) {
         errors->AddError("must be greater than 0");
