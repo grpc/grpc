@@ -9411,6 +9411,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     src/core/lib/event_engine/iomgr_engine/wakeup_fd_eventfd.cc
     src/core/lib/event_engine/iomgr_engine/wakeup_fd_pipe.cc
     src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix_default.cc
+    src/core/lib/event_engine/time_util.cc
     test/core/event_engine/iomgr_event_engine/event_poller_posix_test.cc
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc

@@ -2471,14 +2471,12 @@ grpc_cc_library(
         "event_engine_poller",
         "event_engine_time_util",
         "gpr_base",
-        "gpr_codegen",
         "iomgr_ee_closure",
         "iomgr_ee_event_poller",
         "iomgr_ee_lockfree_event",
         "iomgr_ee_wakeup_fd_posix",
         "iomgr_ee_wakeup_fd_posix_default",
         "iomgr_port",
-        "time",
     ],
 )
 
