@@ -15,6 +15,10 @@
 #include "src/core/lib/resource_quota/memory_quota.h"
 
 #include <algorithm>
+#include <atomic>
+#include <chrono>
+#include <random>
+#include <thread>
 #include <vector>
 
 #include "gtest/gtest.h"
@@ -161,6 +165,78 @@ TEST(MemoryQuotaTest, NoBunchingIfIdle) {
 }
 
 }  // namespace testing
+
+//
+// PressureTrackerTest
+//
+
+namespace memory_quota_detail {
+namespace testing {
+
+TEST(PressureTrackerTest, NoOp) { PressureTracker(); }
+
+TEST(PressureTrackerTest, Decays) {
+  PressureTracker tracker;
+  int cur_ms = 0;
+  auto step_time = [&] {
+    ++cur_ms;
+    return Timestamp::ProcessEpoch() + Duration::Seconds(1) +
+           Duration::Milliseconds(cur_ms);
+  };
+  // At start pressure is zero and we should be reading zero back.
+  {
+    ExecCtx exec_ctx;
+    exec_ctx.TestOnlySetNow(step_time());
+    EXPECT_EQ(tracker.AddSampleAndGetEstimate(0.0), 0.0);
+  }
+  // If memory pressure goes to 100% or higher, we should *immediately* snap to
+  // reporting 100%.
+  {
+    ExecCtx exec_ctx;
+    exec_ctx.TestOnlySetNow(step_time());
+    EXPECT_EQ(tracker.AddSampleAndGetEstimate(1.0), 1.0);
+  }
+  // Once memory pressure reduces, we should *eventually* get back to reporting
+  // close to zero, and monotonically decrease.
+  const int got_full = cur_ms;
+  double last_reported = 1.0;
+  while (true) {
+    ExecCtx exec_ctx;
+    exec_ctx.TestOnlySetNow(step_time());
+    double new_reported = tracker.AddSampleAndGetEstimate(0.0);
+    EXPECT_LE(new_reported, last_reported);
+    last_reported = new_reported;
+    if (new_reported < 0.1) break;
+  }
+  // Verify the above happened in a somewhat reasonable time.
+  ASSERT_LE(cur_ms, got_full + 200000);
+}
+
+TEST(PressureTrackerTest, ManyThreads) {
+  PressureTracker tracker;
+  std::vector<std::thread> threads;
+  std::atomic<bool> shutdown{false};
+  threads.reserve(10);
+  for (int i = 0; i < 10; i++) {
+    threads.emplace_back([&tracker, &shutdown] {
+      std::random_device rng;
+      std::uniform_real_distribution<double> dist(0.0, 1.0);
+      while (!shutdown.load(std::memory_order_relaxed)) {
+        ExecCtx exec_ctx;
+        tracker.AddSampleAndGetEstimate(dist(rng));
+      }
+    });
+  }
+  std::this_thread::sleep_for(std::chrono::seconds(5));
+  shutdown.store(true, std::memory_order_relaxed);
+  for (auto& thread : threads) {
+    thread.join();
+  }
+}
+
+}  // namespace testing
+}  // namespace memory_quota_detail
+
 }  // namespace grpc_core
 
 // Hook needed to run ExecCtx outside of iomgr.

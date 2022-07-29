@@ -106,8 +106,6 @@ static bool compare_slice_buffer_with_buffer(grpc_slice_buffer *slices, const ch
 
   grpc_core::ExecCtx exec_ctx;
 
-  grpc_resolved_address resolved_addr;
-  struct sockaddr_in *addr = reinterpret_cast<struct sockaddr_in *>(resolved_addr.addr);
   int svr_fd;
   int r;
   std::promise<grpc_error_handle> connected_promise;
@@ -115,30 +113,30 @@ static bool compare_slice_buffer_with_buffer(grpc_slice_buffer *slices, const ch
 
   gpr_log(GPR_DEBUG, "test_succeeds");
 
-  GPR_ASSERT(grpc_string_to_sockaddr(&resolved_addr, "127.0.0.1", 0) == GRPC_ERROR_NONE);
+  auto resolved_addr = grpc_core::StringToSockaddr("127.0.0.1:0");
+  struct sockaddr_in *addr = reinterpret_cast<struct sockaddr_in *>(resolved_addr->addr);
 
   /* create a phony server */
   svr_fd = socket(AF_INET, SOCK_STREAM, 0);
   XCTAssertGreaterThanOrEqual(svr_fd, 0);
-  XCTAssertEqual(bind(svr_fd, (struct sockaddr *)addr, (socklen_t)resolved_addr.len), 0);
+  XCTAssertEqual(bind(svr_fd, (struct sockaddr *)addr, (socklen_t)resolved_addr->len), 0);
   XCTAssertEqual(listen(svr_fd, 1), 0);
 
   /* connect to it */
-  XCTAssertEqual(getsockname(svr_fd, (struct sockaddr *)addr, (socklen_t *)&resolved_addr.len), 0);
+  XCTAssertEqual(getsockname(svr_fd, (struct sockaddr *)addr, (socklen_t *)&resolved_addr->len), 0);
   init_event_closure(&done, &connected_promise);
-  const grpc_channel_args *args = grpc_core::CoreConfiguration::Get()
-                                      .channel_args_preconditioning()
-                                      .PreconditionChannelArgs(nullptr)
-                                      .ToC();
-  grpc_tcp_client_connect(&done, &ep_, nullptr, args, &resolved_addr,
+  auto args = grpc_core::CoreConfiguration::Get()
+                  .channel_args_preconditioning()
+                  .PreconditionChannelArgs(nullptr)
+                  .ToC();
+  grpc_tcp_client_connect(&done, &ep_, nullptr, args.get(), &*resolved_addr,
                           grpc_core::Timestamp::InfFuture());
-  grpc_channel_args_destroy(args);
 
   /* await the connection */
   do {
-    resolved_addr.len = sizeof(addr);
+    resolved_addr->len = sizeof(addr);
     r = accept(svr_fd, reinterpret_cast<struct sockaddr *>(addr),
-               reinterpret_cast<socklen_t *>(&resolved_addr.len));
+               reinterpret_cast<socklen_t *>(&resolved_addr->len));
   } while (r == -1 && errno == EINTR);
   XCTAssertGreaterThanOrEqual(r, 0, @"connection failed with return code %@ and errno %@", @(r),
                               @(errno));

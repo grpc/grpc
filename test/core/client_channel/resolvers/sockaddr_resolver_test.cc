@@ -27,7 +27,8 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/iomgr/work_serializer.h"
+#include "src/core/lib/gprpp/work_serializer.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resolver/resolver_registry.h"
 #include "test/core/util/test_config.h"
 

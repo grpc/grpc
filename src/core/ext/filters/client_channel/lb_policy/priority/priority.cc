@@ -30,6 +30,7 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
@@ -50,12 +51,12 @@
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/timer.h"
-#include "src/core/lib/iomgr/work_serializer.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -66,7 +67,7 @@ TraceFlag grpc_lb_priority_trace(false, "priority_lb");
 
 namespace {
 
-constexpr char kPriority[] = "priority_experimental";
+constexpr absl::string_view kPriority = "priority_experimental";
 
 // How long we keep a child around for after it is no longer being used
 // (either because it has been removed from the config or because we
@@ -89,7 +90,7 @@ class PriorityLbConfig : public LoadBalancingPolicy::Config {
                    std::vector<std::string> priorities)
       : children_(std::move(children)), priorities_(std::move(priorities)) {}
 
-  const char* name() const override { return kPriority; }
+  absl::string_view name() const override { return kPriority; }
 
   const std::map<std::string, PriorityLbChild>& children() const {
     return children_;
@@ -106,7 +107,7 @@ class PriorityLb : public LoadBalancingPolicy {
  public:
   explicit PriorityLb(Args args);
 
-  const char* name() const override { return kPriority; }
+  absl::string_view name() const override { return kPriority; }
 
   void UpdateLocked(UpdateArgs args) override;
   void ExitIdleLocked() override;
@@ -285,6 +286,7 @@ class PriorityLb : public LoadBalancingPolicy {
   ChannelArgs args_;
   RefCountedPtr<PriorityLbConfig> config_;
   absl::StatusOr<HierarchicalAddressMap> addresses_;
+  std::string resolution_note_;
 
   // Internal state.
   bool shutting_down_ = false;
@@ -367,6 +369,7 @@ void PriorityLb::UpdateLocked(UpdateArgs args) {
   args_ = std::move(args.args);
   // Update addresses.
   addresses_ = MakeHierarchicalAddressMap(args.addresses);
+  resolution_note_ = std::move(args.resolution_note);
   // Check all existing children against the new config.
   update_in_progress_ = true;
   for (const auto& p : children_) {
@@ -786,6 +789,7 @@ void PriorityLb::ChildPriority::UpdateLocked(
   } else {
     update_args.addresses = priority_policy_->addresses_.status();
   }
+  update_args.resolution_note = priority_policy_->resolution_note_;
   update_args.args = priority_policy_->args_;
   // Update the policy.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
@@ -923,49 +927,40 @@ class PriorityLbFactory : public LoadBalancingPolicyFactory {
     return MakeOrphanable<PriorityLb>(std::move(args));
   }
 
-  const char* name() const override { return kPriority; }
+  absl::string_view name() const override { return kPriority; }
 
-  RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
-      const Json& json, grpc_error_handle* error) const override {
-    GPR_DEBUG_ASSERT(error != nullptr && GRPC_ERROR_IS_NONE(*error));
+  absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
+  ParseLoadBalancingConfig(const Json& json) const override {
     if (json.type() == Json::Type::JSON_NULL) {
       // priority was mentioned as a policy in the deprecated
       // loadBalancingPolicy field or in the client API.
-      *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      return absl::InvalidArgumentError(
           "field:loadBalancingPolicy error:priority policy requires "
           "configuration. Please use loadBalancingConfig field of service "
           "config instead.");
-      return nullptr;
     }
-    std::vector<grpc_error_handle> error_list;
+    std::vector<std::string> errors;
     // Children.
     std::map<std::string, PriorityLbConfig::PriorityLbChild> children;
     auto it = json.object_value().find("children");
     if (it == json.object_value().end()) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:children error:required field missing"));
+      errors.emplace_back("field:children error:required field missing");
     } else if (it->second.type() != Json::Type::OBJECT) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:children error:type should be object"));
+      errors.emplace_back("field:children error:type should be object");
     } else {
       const Json::Object& object = it->second.object_value();
       for (const auto& p : object) {
         const std::string& child_name = p.first;
         const Json& element = p.second;
         if (element.type() != Json::Type::OBJECT) {
-          error_list.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
-              absl::StrCat("field:children key:", child_name,
-                           " error:should be type object")));
+          errors.emplace_back(absl::StrCat("field:children key:", child_name,
+                                           " error:should be type object"));
         } else {
           auto it2 = element.object_value().find("config");
           if (it2 == element.object_value().end()) {
-            error_list.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
-                absl::StrCat("field:children key:", child_name,
-                             " error:missing 'config' field")));
+            errors.emplace_back(absl::StrCat("field:children key:", child_name,
+                                             " error:missing 'config' field"));
           } else {
-            grpc_error_handle parse_error = GRPC_ERROR_NONE;
-            auto config = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
-                it2->second, &parse_error);
             bool ignore_resolution_requests = false;
             // If present, ignore_reresolution_requests must be of type
             // boolean.
@@ -975,23 +970,23 @@ class PriorityLbFactory : public LoadBalancingPolicyFactory {
               if (it3->second.type() == Json::Type::JSON_TRUE) {
                 ignore_resolution_requests = true;
               } else if (it3->second.type() != Json::Type::JSON_FALSE) {
-                error_list.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
+                errors.emplace_back(
                     absl::StrCat("field:children key:", child_name,
                                  " field:ignore_reresolution_requests:should "
-                                 "be type boolean")));
+                                 "be type boolean"));
               }
             }
-            if (config == nullptr) {
-              GPR_DEBUG_ASSERT(!GRPC_ERROR_IS_NONE(parse_error));
-              error_list.push_back(
-                  GRPC_ERROR_CREATE_REFERENCING_FROM_COPIED_STRING(
-                      absl::StrCat("field:children key:", child_name).c_str(),
-                      &parse_error, 1));
-              GRPC_ERROR_UNREF(parse_error);
+            auto config = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
+                it2->second);
+            if (!config.ok()) {
+              errors.emplace_back(
+                  absl::StrCat("field:children key:", child_name, ": ",
+                               config.status().message()));
+            } else {
+              children[child_name].config = std::move(*config);
+              children[child_name].ignore_reresolution_requests =
+                  ignore_resolution_requests;
             }
-            children[child_name].config = std::move(config);
-            children[child_name].ignore_reresolution_requests =
-                ignore_resolution_requests;
           }
         }
       }
@@ -1000,40 +995,37 @@ class PriorityLbFactory : public LoadBalancingPolicyFactory {
     std::vector<std::string> priorities;
     it = json.object_value().find("priorities");
     if (it == json.object_value().end()) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:priorities error:required field missing"));
+      errors.emplace_back("field:priorities error:required field missing");
     } else if (it->second.type() != Json::Type::ARRAY) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:priorities error:type should be array"));
+      errors.emplace_back("field:priorities error:type should be array");
     } else {
       const Json::Array& array = it->second.array_value();
       for (size_t i = 0; i < array.size(); ++i) {
         const Json& element = array[i];
         if (element.type() != Json::Type::STRING) {
-          error_list.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
-              "field:priorities element:", i, " error:should be type string")));
+          errors.emplace_back(absl::StrCat("field:priorities element:", i,
+                                           " error:should be type string"));
         } else if (children.find(element.string_value()) == children.end()) {
-          error_list.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
-              "field:priorities element:", i, " error:unknown child '",
-              element.string_value(), "'")));
+          errors.emplace_back(absl::StrCat("field:priorities element:", i,
+                                           " error:unknown child '",
+                                           element.string_value(), "'"));
         } else {
           priorities.emplace_back(element.string_value());
         }
       }
       if (priorities.size() != children.size()) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+        errors.emplace_back(absl::StrCat(
             "field:priorities error:priorities size (", priorities.size(),
-            ") != children size (", children.size(), ")")));
+            ") != children size (", children.size(), ")"));
       }
     }
-    if (error_list.empty()) {
-      return MakeRefCounted<PriorityLbConfig>(std::move(children),
-                                              std::move(priorities));
-    } else {
-      *error = GRPC_ERROR_CREATE_FROM_VECTOR(
-          "priority_experimental LB policy config", &error_list);
-      return nullptr;
+    if (!errors.empty()) {
+      return absl::InvalidArgumentError(
+          absl::StrCat("priority_experimental LB policy config: [",
+                       absl::StrJoin(errors, "; "), "]"));
     }
+    return MakeRefCounted<PriorityLbConfig>(std::move(children),
+                                            std::move(priorities));
   }
 };
 

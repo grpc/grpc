@@ -775,7 +775,6 @@ doc/core/combiner-explainer.md \
 doc/core/epoll-polling-engine.md \
 doc/core/grpc-client-server-polling-engine-usage.md \
 doc/core/grpc-cq.md \
-doc/core/grpc-error.md \
 doc/core/grpc-polling-engines.md \
 doc/core/moving-to-c++.md \
 doc/core/pending_api_cleanups.md \
@@ -1076,6 +1075,8 @@ src/core/ext/upb-generated/envoy/admin/v3/clusters.upb.c \
 src/core/ext/upb-generated/envoy/admin/v3/clusters.upb.h \
 src/core/ext/upb-generated/envoy/admin/v3/config_dump.upb.c \
 src/core/ext/upb-generated/envoy/admin/v3/config_dump.upb.h \
+src/core/ext/upb-generated/envoy/admin/v3/config_dump_shared.upb.c \
+src/core/ext/upb-generated/envoy/admin/v3/config_dump_shared.upb.h \
 src/core/ext/upb-generated/envoy/admin/v3/init_dump.upb.c \
 src/core/ext/upb-generated/envoy/admin/v3/init_dump.upb.h \
 src/core/ext/upb-generated/envoy/admin/v3/listeners.upb.c \
@@ -1182,6 +1183,8 @@ src/core/ext/upb-generated/envoy/config/trace/v3/lightstep.upb.c \
 src/core/ext/upb-generated/envoy/config/trace/v3/lightstep.upb.h \
 src/core/ext/upb-generated/envoy/config/trace/v3/opencensus.upb.c \
 src/core/ext/upb-generated/envoy/config/trace/v3/opencensus.upb.h \
+src/core/ext/upb-generated/envoy/config/trace/v3/opentelemetry.upb.c \
+src/core/ext/upb-generated/envoy/config/trace/v3/opentelemetry.upb.h \
 src/core/ext/upb-generated/envoy/config/trace/v3/service.upb.c \
 src/core/ext/upb-generated/envoy/config/trace/v3/service.upb.h \
 src/core/ext/upb-generated/envoy/config/trace/v3/skywalking.upb.c \
@@ -1262,6 +1265,8 @@ src/core/ext/upb-generated/envoy/type/v3/percent.upb.c \
 src/core/ext/upb-generated/envoy/type/v3/percent.upb.h \
 src/core/ext/upb-generated/envoy/type/v3/range.upb.c \
 src/core/ext/upb-generated/envoy/type/v3/range.upb.h \
+src/core/ext/upb-generated/envoy/type/v3/ratelimit_strategy.upb.c \
+src/core/ext/upb-generated/envoy/type/v3/ratelimit_strategy.upb.h \
 src/core/ext/upb-generated/envoy/type/v3/ratelimit_unit.upb.c \
 src/core/ext/upb-generated/envoy/type/v3/ratelimit_unit.upb.h \
 src/core/ext/upb-generated/envoy/type/v3/semantic_version.upb.c \
@@ -1364,6 +1369,8 @@ src/core/ext/upbdefs-generated/envoy/admin/v3/clusters.upbdefs.c \
 src/core/ext/upbdefs-generated/envoy/admin/v3/clusters.upbdefs.h \
 src/core/ext/upbdefs-generated/envoy/admin/v3/config_dump.upbdefs.c \
 src/core/ext/upbdefs-generated/envoy/admin/v3/config_dump.upbdefs.h \
+src/core/ext/upbdefs-generated/envoy/admin/v3/config_dump_shared.upbdefs.c \
+src/core/ext/upbdefs-generated/envoy/admin/v3/config_dump_shared.upbdefs.h \
 src/core/ext/upbdefs-generated/envoy/admin/v3/init_dump.upbdefs.c \
 src/core/ext/upbdefs-generated/envoy/admin/v3/init_dump.upbdefs.h \
 src/core/ext/upbdefs-generated/envoy/admin/v3/listeners.upbdefs.c \
@@ -1470,6 +1477,8 @@ src/core/ext/upbdefs-generated/envoy/config/trace/v3/lightstep.upbdefs.c \
 src/core/ext/upbdefs-generated/envoy/config/trace/v3/lightstep.upbdefs.h \
 src/core/ext/upbdefs-generated/envoy/config/trace/v3/opencensus.upbdefs.c \
 src/core/ext/upbdefs-generated/envoy/config/trace/v3/opencensus.upbdefs.h \
+src/core/ext/upbdefs-generated/envoy/config/trace/v3/opentelemetry.upbdefs.c \
+src/core/ext/upbdefs-generated/envoy/config/trace/v3/opentelemetry.upbdefs.h \
 src/core/ext/upbdefs-generated/envoy/config/trace/v3/service.upbdefs.c \
 src/core/ext/upbdefs-generated/envoy/config/trace/v3/service.upbdefs.h \
 src/core/ext/upbdefs-generated/envoy/config/trace/v3/skywalking.upbdefs.c \
@@ -1546,6 +1555,8 @@ src/core/ext/upbdefs-generated/envoy/type/v3/percent.upbdefs.c \
 src/core/ext/upbdefs-generated/envoy/type/v3/percent.upbdefs.h \
 src/core/ext/upbdefs-generated/envoy/type/v3/range.upbdefs.c \
 src/core/ext/upbdefs-generated/envoy/type/v3/range.upbdefs.h \
+src/core/ext/upbdefs-generated/envoy/type/v3/ratelimit_strategy.upbdefs.c \
+src/core/ext/upbdefs-generated/envoy/type/v3/ratelimit_strategy.upbdefs.h \
 src/core/ext/upbdefs-generated/envoy/type/v3/ratelimit_unit.upbdefs.c \
 src/core/ext/upbdefs-generated/envoy/type/v3/ratelimit_unit.upbdefs.h \
 src/core/ext/upbdefs-generated/envoy/type/v3/semantic_version.upbdefs.c \
@@ -1729,6 +1740,7 @@ src/core/lib/debug/trace.h \
 src/core/lib/event_engine/channel_args_endpoint_config.cc \
 src/core/lib/event_engine/channel_args_endpoint_config.h \
 src/core/lib/event_engine/default_event_engine_factory.cc \
+src/core/lib/event_engine/default_event_engine_factory.h \
 src/core/lib/event_engine/event_engine.cc \
 src/core/lib/event_engine/event_engine_factory.h \
 src/core/lib/event_engine/handle_containers.h \
@@ -1736,8 +1748,6 @@ src/core/lib/event_engine/iomgr_engine/iomgr_engine.cc \
 src/core/lib/event_engine/iomgr_engine/iomgr_engine.h \
 src/core/lib/event_engine/iomgr_engine/thread_pool.cc \
 src/core/lib/event_engine/iomgr_engine/thread_pool.h \
-src/core/lib/event_engine/iomgr_engine/time_averaged_stats.cc \
-src/core/lib/event_engine/iomgr_engine/time_averaged_stats.h \
 src/core/lib/event_engine/iomgr_engine/timer.cc \
 src/core/lib/event_engine/iomgr_engine/timer.h \
 src/core/lib/event_engine/iomgr_engine/timer_heap.cc \
@@ -1834,9 +1844,13 @@ src/core/lib/gprpp/thd_posix.cc \
 src/core/lib/gprpp/thd_windows.cc \
 src/core/lib/gprpp/time.cc \
 src/core/lib/gprpp/time.h \
+src/core/lib/gprpp/time_averaged_stats.cc \
+src/core/lib/gprpp/time_averaged_stats.h \
 src/core/lib/gprpp/time_util.cc \
 src/core/lib/gprpp/time_util.h \
 src/core/lib/gprpp/unique_type_name.h \
+src/core/lib/gprpp/work_serializer.cc \
+src/core/lib/gprpp/work_serializer.h \
 src/core/lib/http/format_request.cc \
 src/core/lib/http/format_request.h \
 src/core/lib/http/httpcli.cc \
@@ -1869,7 +1883,6 @@ src/core/lib/iomgr/error.cc \
 src/core/lib/iomgr/error.h \
 src/core/lib/iomgr/error_cfstream.cc \
 src/core/lib/iomgr/error_cfstream.h \
-src/core/lib/iomgr/error_internal.h \
 src/core/lib/iomgr/ev_apple.cc \
 src/core/lib/iomgr/ev_apple.h \
 src/core/lib/iomgr/ev_epoll1_linux.cc \
@@ -1963,8 +1976,6 @@ src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.cc \
 src/core/lib/iomgr/tcp_server_windows.cc \
 src/core/lib/iomgr/tcp_windows.cc \
 src/core/lib/iomgr/tcp_windows.h \
-src/core/lib/iomgr/time_averaged_stats.cc \
-src/core/lib/iomgr/time_averaged_stats.h \
 src/core/lib/iomgr/timer.cc \
 src/core/lib/iomgr/timer.h \
 src/core/lib/iomgr/timer_generic.cc \
@@ -1982,8 +1993,6 @@ src/core/lib/iomgr/wakeup_fd_pipe.cc \
 src/core/lib/iomgr/wakeup_fd_pipe.h \
 src/core/lib/iomgr/wakeup_fd_posix.cc \
 src/core/lib/iomgr/wakeup_fd_posix.h \
-src/core/lib/iomgr/work_serializer.cc \
-src/core/lib/iomgr/work_serializer.h \
 src/core/lib/json/json.h \
 src/core/lib/json/json_reader.cc \
 src/core/lib/json/json_util.cc \
@@ -2029,6 +2038,8 @@ src/core/lib/resource_quota/arena.cc \
 src/core/lib/resource_quota/arena.h \
 src/core/lib/resource_quota/memory_quota.cc \
 src/core/lib/resource_quota/memory_quota.h \
+src/core/lib/resource_quota/periodic_update.cc \
+src/core/lib/resource_quota/periodic_update.h \
 src/core/lib/resource_quota/resource_quota.cc \
 src/core/lib/resource_quota/resource_quota.h \
 src/core/lib/resource_quota/thread_quota.cc \

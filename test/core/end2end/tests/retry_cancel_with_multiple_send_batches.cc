@@ -16,29 +16,40 @@
  *
  */
 
-#include <stdio.h>
+#include <stdint.h>
 #include <string.h>
 
+#include <new>
+#include <string>
+
+#include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
+#include "absl/types/optional.h"
 
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
+#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/call_combiner.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/surface/channel_init.h"
+#include "src/core/lib/surface/channel_stack_type.h"
+#include "src/core/lib/transport/transport.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/tests/cancel_test_helpers.h"
+#include "test/core/util/test_config.h"
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
@@ -143,7 +154,7 @@ static void test_retry_cancel_with_multiple_send_batches(
   grpc_end2end_test_fixture f =
       begin_test(config, name.c_str(), &client_args, nullptr);
 
-  cq_verifier* cqv = cq_verifier_create(f.cq);
+  grpc_core::CqVerifier cqv(f.cq);
 
   gpr_timespec deadline = n_seconds_from_now(3);
   c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
@@ -210,11 +221,11 @@ static void test_retry_cancel_with_multiple_send_batches(
   GPR_ASSERT(GRPC_CALL_OK == mode.initiate_cancel(c, nullptr));
 
   // Client ops should now complete.
-  CQ_EXPECT_COMPLETION(cqv, tag(1), false);
-  CQ_EXPECT_COMPLETION(cqv, tag(2), false);
-  CQ_EXPECT_COMPLETION(cqv, tag(3), false);
-  CQ_EXPECT_COMPLETION(cqv, tag(4), true);
-  cq_verify(cqv);
+  cqv.Expect(tag(1), false);
+  cqv.Expect(tag(2), false);
+  cqv.Expect(tag(3), false);
+  cqv.Expect(tag(4), true);
+  cqv.Verify();
 
   gpr_log(GPR_INFO, "status=%d expected=%d", status, mode.expect_status);
   GPR_ASSERT(status == mode.expect_status);
@@ -226,8 +237,6 @@ static void test_retry_cancel_with_multiple_send_batches(
   grpc_byte_buffer_destroy(response_payload_recv);
 
   grpc_call_unref(c);
-
-  cq_verifier_destroy(cqv);
 
   end_test(&f);
   config.tear_down_data(&f);

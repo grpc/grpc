@@ -79,12 +79,12 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/timer.h"
-#include "src/core/lib/iomgr/work_serializer.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_util.h"
 #include "src/core/lib/resolver/resolver_registry.h"
@@ -107,7 +107,7 @@ TraceFlag grpc_lb_rls_trace(false, "rls_lb");
 
 namespace {
 
-const char* kRls = "rls_experimental";
+constexpr absl::string_view kRls = "rls_experimental";
 const char kGrpc[] = "grpc";
 const char* kRlsRequestPath = "/grpc.lookup.v1.RouteLookupService/RouteLookup";
 const char* kFakeTargetFieldValue = "fake_target_field_value";
@@ -162,7 +162,7 @@ class RlsLbConfig : public LoadBalancingPolicy::Config {
         default_child_policy_parsed_config_(
             std::move(default_child_policy_parsed_config)) {}
 
-  const char* name() const override { return kRls; }
+  absl::string_view name() const override { return kRls; }
 
   const KeyBuilderMap& key_builder_map() const {
     return route_lookup_config_.key_builder_map;
@@ -207,7 +207,7 @@ class RlsLb : public LoadBalancingPolicy {
  public:
   explicit RlsLb(Args args);
 
-  const char* name() const override { return kRls; }
+  absl::string_view name() const override { return kRls; }
   void UpdateLocked(UpdateArgs args) override;
   void ExitIdleLocked() override;
   void ResetBackoffLocked() override;
@@ -790,23 +790,23 @@ void RlsLb::ChildPolicyWrapper::StartUpdate() {
         lb_policy_.get(), this, target_.c_str(),
         child_policy_config.Dump().c_str());
   }
-  pending_config_ = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
-      child_policy_config, &error);
+  auto config = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
+      child_policy_config);
   // Returned RLS target fails the validation.
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!config.ok()) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
       gpr_log(GPR_INFO,
               "[rlslb %p] ChildPolicyWrapper=%p [%s]: config failed to parse: "
-              "%s; config: %s",
+              "%s",
               lb_policy_.get(), this, target_.c_str(),
-              grpc_error_std_string(error).c_str(),
-              child_policy_config.Dump().c_str());
+              config.status().ToString().c_str());
     }
     pending_config_.reset();
     picker_ = absl::make_unique<TransientFailurePicker>(
-        grpc_error_to_absl_status(error));
-    GRPC_ERROR_UNREF(error);
+        absl::UnavailableError(config.status().message()));
     child_policy_.reset();
+  } else {
+    pending_config_ = std::move(*config);
   }
 }
 
@@ -2441,43 +2441,42 @@ grpc_error_handle ValidateChildPolicyList(
       child_policy_config_target_field_name, target, child_policy_config);
   if (!GRPC_ERROR_IS_NONE(error)) return error;
   // Parse the config.
-  RefCountedPtr<LoadBalancingPolicy::Config> parsed_config =
-      LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
-          *child_policy_config, &error);
-  if (!GRPC_ERROR_IS_NONE(error)) return error;
+  auto parsed_config = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
+      *child_policy_config);
+  if (!parsed_config.ok()) {
+    return absl_status_to_grpc_error(parsed_config.status());
+  }
   // Find the chosen config and return it in JSON form.
   // We remove all non-selected configs, and in the selected config, we leave
   // the target field in place, set to the default value.  This slightly
   // optimizes what we need to do later when we update a child policy for a
   // given target.
-  if (parsed_config != nullptr) {
-    for (Json& config : *(child_policy_config->mutable_array())) {
-      if (config.object_value().begin()->first == parsed_config->name()) {
-        Json save_config = std::move(config);
-        child_policy_config->mutable_array()->clear();
-        child_policy_config->mutable_array()->push_back(std::move(save_config));
-        break;
-      }
+  for (Json& config : *(child_policy_config->mutable_array())) {
+    if (config.object_value().begin()->first == (*parsed_config)->name()) {
+      Json save_config = std::move(config);
+      child_policy_config->mutable_array()->clear();
+      child_policy_config->mutable_array()->push_back(std::move(save_config));
+      break;
     }
   }
   // If default target is set, return the parsed config.
   if (!default_target.empty()) {
-    *default_child_policy_parsed_config = std::move(parsed_config);
+    *default_child_policy_parsed_config = std::move(*parsed_config);
   }
   return GRPC_ERROR_NONE;
 }
 
 class RlsLbFactory : public LoadBalancingPolicyFactory {
  public:
-  const char* name() const override { return kRls; }
+  absl::string_view name() const override { return kRls; }
 
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
       LoadBalancingPolicy::Args args) const override {
     return MakeOrphanable<RlsLb>(std::move(args));
   }
 
-  RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
-      const Json& config, grpc_error_handle* error) const override {
+  absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
+  ParseLoadBalancingConfig(const Json& config) const override {
     std::vector<grpc_error_handle> error_list;
     // Parse routeLookupConfig.
     RlsLbConfig::RouteLookupConfig route_lookup_config;
@@ -2542,8 +2541,13 @@ class RlsLbFactory : public LoadBalancingPolicyFactory {
       }
     }
     // Return result.
-    *error = GRPC_ERROR_CREATE_FROM_VECTOR(
-        "errors parsing RLS LB policy config", &error_list);
+    if (!error_list.empty()) {
+      grpc_error_handle error = GRPC_ERROR_CREATE_FROM_VECTOR(
+          "errors parsing RLS LB policy config", &error_list);
+      std::string error_string = grpc_error_std_string(error);
+      GRPC_ERROR_UNREF(error);
+      return absl::InvalidArgumentError(error_string);
+    }
     return MakeRefCounted<RlsLbConfig>(
         std::move(route_lookup_config), std::move(rls_channel_service_config),
         std::move(child_policy_config),

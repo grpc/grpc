@@ -16,21 +16,44 @@
  *
  */
 
+#include <stdint.h>
 #include <string.h>
 
+#include <algorithm>
+#include <functional>
+#include <memory>
 #include <string>
+#include <utility>
+#include <vector>
 
+#include "absl/memory/memory.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
-#include <grpc/support/alloc.h>
+#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
 #include <grpc/support/log.h>
+#include <grpc/support/sync.h>
+#include <grpc/support/time.h>
 
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/event_engine_factory.h"
+#include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/resolve_address_impl.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
 #include "src/core/lib/resolver/server_address.h"
@@ -179,7 +202,6 @@ static void my_cancel_ares_request(grpc_ares_request* request) {
 
 int main(int argc, char** argv) {
   grpc_completion_queue* cq;
-  cq_verifier* cqv;
   grpc_op ops[6];
   grpc_op* op;
 
@@ -217,7 +239,7 @@ int main(int argc, char** argv) {
   grpc_call_details_init(&request_details2);
 
   cq = grpc_completion_queue_create_for_next(nullptr);
-  cqv = cq_verifier_create(cq);
+  grpc_core::CqVerifier cqv(cq);
 
   /* reserve two ports */
   int port1 = grpc_pick_unused_port_or_die();
@@ -298,9 +320,9 @@ int main(int argc, char** argv) {
   set_resolve_port(port1);
 
   /* first call should now start */
-  CQ_EXPECT_COMPLETION(cqv, tag(0x101), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(0x301), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(0x101), true);
+  cqv.Expect(tag(0x301), true);
+  cqv.Verify();
 
   GPR_ASSERT(GRPC_CHANNEL_READY ==
              grpc_channel_check_connectivity_state(chan, 0));
@@ -323,9 +345,9 @@ int main(int argc, char** argv) {
    * we should see a connectivity change and then nothing */
   set_resolve_port(-1);
   grpc_server_shutdown_and_notify(server1, cq, tag(0xdead1));
-  CQ_EXPECT_COMPLETION(cqv, tag(0x9999), 1);
-  cq_verify(cqv);
-  cq_verify_empty(cqv);
+  cqv.Expect(tag(0x9999), true);
+  cqv.Verify();
+  cqv.VerifyEmpty();
 
   /* and a new call: should go through to server2 when we start it */
   grpc_call* call2 =
@@ -375,9 +397,9 @@ int main(int argc, char** argv) {
                                       &request_metadata2, cq, cq, tag(0x401)));
 
   /* second call should now start */
-  CQ_EXPECT_COMPLETION(cqv, tag(0x201), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(0x401), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(0x201), true);
+  cqv.Expect(tag(0x401), true);
+  cqv.Verify();
 
   /* listen for close on the server call to probe for finishing */
   memset(ops, 0, sizeof(ops));
@@ -392,19 +414,19 @@ int main(int argc, char** argv) {
 
   /* shutdown second server: we should see nothing */
   grpc_server_shutdown_and_notify(server2, cq, tag(0xdead2));
-  cq_verify_empty(cqv);
+  cqv.VerifyEmpty();
 
   grpc_call_cancel(call1, nullptr);
   grpc_call_cancel(call2, nullptr);
 
   /* now everything else should finish */
-  CQ_EXPECT_COMPLETION(cqv, tag(0x102), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(0x202), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(0x302), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(0x402), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(0xdead1), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(0xdead2), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(0x102), true);
+  cqv.Expect(tag(0x202), true);
+  cqv.Expect(tag(0x302), true);
+  cqv.Expect(tag(0x402), true);
+  cqv.Expect(tag(0xdead1), true);
+  cqv.Expect(tag(0xdead2), true);
+  cqv.Verify();
 
   grpc_call_unref(call1);
   grpc_call_unref(call2);
@@ -423,7 +445,6 @@ int main(int argc, char** argv) {
   grpc_call_details_destroy(&request_details2);
   grpc_slice_unref(details2);
 
-  cq_verifier_destroy(cqv);
   grpc_completion_queue_destroy(cq);
 
   grpc_core::SetDNSResolver(g_default_dns_resolver);

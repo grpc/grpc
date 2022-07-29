@@ -18,10 +18,29 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stdint.h>
+#include <stdlib.h>
+
+#include <cmath>
+#include <memory>
+#include <string>
+#include <utility>
+
+#include "absl/status/statusor.h"
+
+#include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/http/parser.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/polling_entity.h"
+#include "src/core/lib/iomgr/pollset.h"
+#include "src/core/lib/uri/uri_parser.h"
 #include "test/core/util/test_config.h"
 
 #ifdef GRPC_TEST_PICK_PORT
-#include <math.h>
 #include <string.h>
 
 #include "absl/strings/str_format.h"
@@ -30,7 +49,6 @@
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 

@@ -2172,9 +2172,18 @@ UPB_INLINE void envoy_config_cluster_v3_Cluster_OriginalDstLbConfig_clear_use_ht
 UPB_INLINE bool envoy_config_cluster_v3_Cluster_OriginalDstLbConfig_use_http_header(const envoy_config_cluster_v3_Cluster_OriginalDstLbConfig* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), bool);
 }
+UPB_INLINE void envoy_config_cluster_v3_Cluster_OriginalDstLbConfig_clear_http_header_name(const envoy_config_cluster_v3_Cluster_OriginalDstLbConfig* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
+}
+UPB_INLINE upb_StringView envoy_config_cluster_v3_Cluster_OriginalDstLbConfig_http_header_name(const envoy_config_cluster_v3_Cluster_OriginalDstLbConfig* msg) {
+  return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView);
+}
 
 UPB_INLINE void envoy_config_cluster_v3_Cluster_OriginalDstLbConfig_set_use_http_header(envoy_config_cluster_v3_Cluster_OriginalDstLbConfig *msg, bool value) {
   *UPB_PTR_AT(msg, UPB_SIZE(0, 0), bool) = value;
+}
+UPB_INLINE void envoy_config_cluster_v3_Cluster_OriginalDstLbConfig_set_http_header_name(envoy_config_cluster_v3_Cluster_OriginalDstLbConfig *msg, upb_StringView value) {
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView) = value;
 }
 
 /* envoy.config.cluster.v3.Cluster.CommonLbConfig */
