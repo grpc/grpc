@@ -21,7 +21,6 @@
 #include <cstring>
 #include <map>
 #include <string>
-#include <type_traits>
 #include <vector>
 
 #include "absl/meta/type_traits.h"
