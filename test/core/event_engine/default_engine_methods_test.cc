@@ -13,6 +13,8 @@
 // limitations under the License.
 #include <grpc/support/port_platform.h>
 
+#include <thread>
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -94,6 +96,26 @@ TEST_F(DefaultEngineTest, SharedPtrGlobalEventEngineLifetimesAreValid) {
   ee2 = GetDefaultEventEngine();
   ASSERT_EQ(2, create_count);
   ASSERT_TRUE(ee2.unique());
+}
+
+TEST_F(DefaultEngineTest, StressTestSharedPtr) {
+  constexpr int thread_count = 13;
+  constexpr absl::Duration spin_time = absl::Seconds(3);
+  std::vector<std::thread> threads;
+  threads.reserve(thread_count);
+  for (int i = 0; i < thread_count; i++) {
+    threads.emplace_back([&spin_time, i] {
+      auto timeout = absl::Now() + spin_time;
+      int spin_count = 0;
+      do {
+        GetDefaultEventEngine().reset();
+        gpr_log(GPR_DEBUG, "thd::%d spin_count::%d", i, spin_count++);
+      } while (timeout > absl::Now());
+    });
+  }
+  for (auto& thd : threads) {
+    thd.join();
+  }
 }
 }  // namespace
 

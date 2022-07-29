@@ -49,9 +49,12 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "default_engine_methods_test",
-    srcs = ["default_engine_methods.cc"],
+    srcs = ["default_engine_methods_test.cc"],
     external_deps = ["gtest"],
     deps = [
+        "//:default_event_engine_factory_hdrs",
+        "//:event_engine_base_hdrs",
+        "//:gpr_base",
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],

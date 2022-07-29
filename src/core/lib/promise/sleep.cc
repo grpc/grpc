@@ -16,6 +16,8 @@
 
 #include "src/core/lib/promise/sleep.h"
 
+#include <memory>
+
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/event_engine/event_engine_factory.h"
