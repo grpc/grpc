@@ -21,7 +21,6 @@
 #include <cstring>
 #include <map>
 #include <string>
-#include <type_traits>
 #include <vector>
 
 #include "absl/meta/type_traits.h"
@@ -51,11 +50,11 @@
 //     int b;
 //     static const JsonLoaderInterface* JsonLoader() {
 //       // Note: Field names must be string constants; they are not copied.
-//       static const auto loader = JsonObjectLoader<Foo>()
+//       static const auto* loader = JsonObjectLoader<Foo>()
 //           .Field("a", &Foo::a)
 //           .Field("b", &Foo::b)
 //           .Finish();
-//       return &loader;
+//       return loader;
 //     }
 //     // Optional; omit if no post-processing needed.
 //     void JsonPostLoad(const Json& source, ErrorList* errors) { ++a; }
@@ -72,17 +71,22 @@ class ErrorList {
   void PushField(absl::string_view ext) GPR_ATTRIBUTE_NOINLINE;
   // Record that we've finished reading that field.
   void PopField() GPR_ATTRIBUTE_NOINLINE;
+
   // Record that we've encountered an error.
   void AddError(absl::string_view error) GPR_ATTRIBUTE_NOINLINE;
+  // Returns true if the current field has errors.
+  bool FieldHasErrors() const GPR_ATTRIBUTE_NOINLINE;
 
   // Returns the resulting status of parsing.
   absl::Status status() const;
 
   // Return true if there are no errors.
-  bool ok() const { return errors_.empty(); }
+  bool ok() const { return field_errors_.empty(); }
 
  private:
-  std::vector<std::string> errors_;
+  // TODO(roth): If we don't actually have any fields for which we
+  // report more than one error, simplify this data structure.
+  std::map<std::string /*field_name*/, std::vector<std::string>> field_errors_;
   std::vector<std::string> fields_;
 };
 
@@ -110,7 +114,7 @@ class LoaderInterface {
                         ErrorList* errors) const = 0;
 
  protected:
-  ~LoaderInterface() = default;
+  virtual ~LoaderInterface() = default;
 };
 
 // Loads a scalar (string or number).
@@ -119,7 +123,7 @@ class LoadScalar : public LoaderInterface {
   void LoadInto(const Json& json, void* dst, ErrorList* errors) const override;
 
  protected:
-  ~LoadScalar() = default;
+  ~LoadScalar() override = default;
 
  private:
   // true if we're loading a number, false if we're loading a string.
@@ -131,19 +135,10 @@ class LoadScalar : public LoaderInterface {
                         ErrorList* errors) const = 0;
 };
 
-// Load a number.
-class LoadNumber : public LoadScalar {
+// Load a string.
+class LoadString : public LoadScalar {
  protected:
-  ~LoadNumber() = default;
-
- private:
-  bool IsNumber() const override;
-};
-
-// Load a duration
-class LoadDuration : public LoadScalar {
- protected:
-  ~LoadDuration() = default;
+  ~LoadString() override = default;
 
  private:
   bool IsNumber() const override;
@@ -151,11 +146,31 @@ class LoadDuration : public LoadScalar {
                 ErrorList* errors) const override;
 };
 
-// Load a number of type T.
-template <typename T>
-class TypedLoadNumber : public LoadNumber {
+// Load a Duration.
+class LoadDuration : public LoadScalar {
  protected:
-  ~TypedLoadNumber() = default;
+  ~LoadDuration() override = default;
+
+ private:
+  bool IsNumber() const override;
+  void LoadInto(const std::string& value, void* dst,
+                ErrorList* errors) const override;
+};
+
+// Load a number.
+class LoadNumber : public LoadScalar {
+ protected:
+  ~LoadNumber() override = default;
+
+ private:
+  bool IsNumber() const override;
+};
+
+// Load a signed number of type T.
+template <typename T>
+class TypedLoadSignedNumber : public LoadNumber {
+ protected:
+  ~TypedLoadSignedNumber() override = default;
 
  private:
   void LoadInto(const std::string& value, void* dst,
@@ -166,15 +181,59 @@ class TypedLoadNumber : public LoadNumber {
   }
 };
 
-// Load a string.
-class LoadString : public LoadScalar {
+// Load an unsigned number of type T.
+template <typename T>
+class TypedLoadUnsignedNumber : public LoadNumber {
  protected:
-  ~LoadString() = default;
+  ~TypedLoadUnsignedNumber() override = default;
 
  private:
-  bool IsNumber() const override;
   void LoadInto(const std::string& value, void* dst,
-                ErrorList* errors) const override;
+                ErrorList* errors) const override {
+    if (!absl::SimpleAtoi(value, static_cast<T*>(dst))) {
+      errors->AddError("failed to parse non-negative number");
+    }
+  }
+};
+
+// Load a float.
+class LoadFloat : public LoadNumber {
+ protected:
+  ~LoadFloat() override = default;
+
+ private:
+  void LoadInto(const std::string& value, void* dst,
+                ErrorList* errors) const override {
+    if (!absl::SimpleAtof(value, static_cast<float*>(dst))) {
+      errors->AddError("failed to parse floating-point number");
+    }
+  }
+};
+
+// Load a double.
+class LoadDouble : public LoadNumber {
+ protected:
+  ~LoadDouble() override = default;
+
+ private:
+  void LoadInto(const std::string& value, void* dst,
+                ErrorList* errors) const override {
+    if (!absl::SimpleAtod(value, static_cast<double*>(dst))) {
+      errors->AddError("failed to parse floating-point number");
+    }
+  }
+};
+
+// Load a bool.
+class LoadBool : public LoaderInterface {
+ public:
+  void LoadInto(const Json& json, void* dst, ErrorList* errors) const override;
+};
+
+// Loads an unprocessed JSON object value.
+class LoadUnprocessedJsonObject : public LoaderInterface {
+ public:
+  void LoadInto(const Json& json, void* dst, ErrorList* errors) const override;
 };
 
 // Load a vector of some type.
@@ -183,20 +242,7 @@ class LoadVector : public LoaderInterface {
   void LoadInto(const Json& json, void* dst, ErrorList* errors) const override;
 
  protected:
-  ~LoadVector() = default;
-
- private:
-  virtual void LoadOne(const Json& json, void* dst,
-                       ErrorList* errors) const = 0;
-};
-
-// Load an optional of some type.
-class LoadOptional : public LoaderInterface {
- public:
-  void LoadInto(const Json& json, void* dst, ErrorList* errors) const override;
-
- protected:
-  ~LoadOptional() = default;
+  ~LoadVector() override = default;
 
  private:
   virtual void LoadOne(const Json& json, void* dst,
@@ -209,17 +255,11 @@ class LoadMap : public LoaderInterface {
   void LoadInto(const Json& json, void* dst, ErrorList* errors) const override;
 
  protected:
-  ~LoadMap() = default;
+  ~LoadMap() override = default;
 
  private:
   virtual void LoadOne(const Json& json, const std::string& name, void* dst,
                        ErrorList* errors) const = 0;
-};
-
-// Loads an unprocessed JSON object value.
-class LoadUnprocessedJsonObject : public LoaderInterface {
- public:
-  void LoadInto(const Json& json, void* dst, ErrorList* errors) const override;
 };
 
 // Fetch a LoaderInterface for some type.
@@ -240,31 +280,25 @@ class AutoLoader final : public LoaderInterface {
 
 // Specializations of AutoLoader for basic types.
 template <>
-class AutoLoader<int32_t> final : public TypedLoadNumber<int32_t> {};
-template <>
-class AutoLoader<uint32_t> final : public TypedLoadNumber<uint32_t> {};
-template <>
-class AutoLoader<int64_t> final : public TypedLoadNumber<int64_t> {};
-template <>
-class AutoLoader<uint64_t> final : public TypedLoadNumber<uint64_t> {};
+class AutoLoader<std::string> final : public LoadString {};
 template <>
 class AutoLoader<Duration> final : public LoadDuration {};
 template <>
-class AutoLoader<std::string> final : public LoadString {};
+class AutoLoader<int32_t> final : public TypedLoadSignedNumber<int32_t> {};
+template <>
+class AutoLoader<int64_t> final : public TypedLoadSignedNumber<int64_t> {};
+template <>
+class AutoLoader<uint32_t> final : public TypedLoadUnsignedNumber<uint32_t> {};
+template <>
+class AutoLoader<uint64_t> final : public TypedLoadUnsignedNumber<uint64_t> {};
+template <>
+class AutoLoader<float> final : public LoadFloat {};
+template <>
+class AutoLoader<double> final : public LoadDouble {};
+template <>
+class AutoLoader<bool> final : public LoadBool {};
 template <>
 class AutoLoader<Json::Object> final : public LoadUnprocessedJsonObject {};
-
-// Specializations of AutoLoader for optional.
-template <typename T>
-class AutoLoader<absl::optional<T>> final : public LoaderInterface {
- public:
-  void LoadInto(const Json& json, void* dst, ErrorList* errors) const override {
-    if (json.type() == Json::Type::JSON_NULL) return;
-    auto* opt = static_cast<absl::optional<T>*>(dst);
-    opt->emplace();
-    LoaderForType<T>()->LoadInto(json, &**opt, errors);
-  }
-};
 
 // Specializations of AutoLoader for vectors.
 template <typename T>
@@ -291,14 +325,24 @@ class AutoLoader<std::map<std::string, T>> final : public LoadMap {
   }
 };
 
+// Specializations of AutoLoader for absl::optional<>.
+template <typename T>
+class AutoLoader<absl::optional<T>> final : public LoaderInterface {
+ public:
+  void LoadInto(const Json& json, void* dst, ErrorList* errors) const override {
+    if (json.type() == Json::Type::JSON_NULL) return;
+    auto* opt = static_cast<absl::optional<T>*>(dst);
+    opt->emplace();
+    LoaderForType<T>()->LoadInto(json, &**opt, errors);
+  }
+};
+
 // Implementation of aforementioned LoaderForType.
 // Simply keeps a static AutoLoader<T> and returns a pointer to that.
 template <typename T>
 const LoaderInterface* LoaderForType() {
-  static const AutoLoader<T> loader;
-  static_assert(std::is_trivially_destructible<decltype(loader)>::value,
-                "AutoLoader type is not trivially destructible");
-  return &loader;
+  static const auto* loader = new AutoLoader<T>();
+  return loader;
 }
 
 // Element describes one typed field to be loaded from a JSON object.
@@ -349,7 +393,8 @@ class Vec<T, 0> {
 
 // Given a list of elements, and a destination object, load the elements into
 // the object from some parsed JSON.
-void LoadObject(const Json& json, const Element* elements, size_t num_elements,
+// Returns false if the JSON object was not of type Json::Type::OBJECT.
+bool LoadObject(const Json& json, const Element* elements, size_t num_elements,
                 void* dst, ErrorList* errors);
 
 // Adaptor type - takes a compile time computed list of elements and implements
@@ -378,8 +423,10 @@ class FinishedJsonObjectLoader<T, kElemCount,
       : elements_(elements) {}
 
   void LoadInto(const Json& json, void* dst, ErrorList* errors) const override {
-    LoadObject(json, elements_.data(), elements_.size(), dst, errors);
-    static_cast<T*>(dst)->JsonPostLoad(json, errors);
+    // Call JsonPostLoad() only if json is a JSON object.
+    if (LoadObject(json, elements_.data(), elements_.size(), dst, errors)) {
+      static_cast<T*>(dst)->JsonPostLoad(json, errors);
+    }
   }
 
  private:
@@ -397,8 +444,8 @@ class JsonObjectLoader final {
                   "Only initial loader step can have kElemCount==0.");
   }
 
-  FinishedJsonObjectLoader<T, kElemCount> Finish() const {
-    return FinishedJsonObjectLoader<T, kElemCount>(elements_);
+  FinishedJsonObjectLoader<T, kElemCount>* Finish() const {
+    return new FinishedJsonObjectLoader<T, kElemCount>(elements_);
   }
 
   template <typename U>
