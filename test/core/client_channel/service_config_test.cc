@@ -152,8 +152,7 @@ class ErrorParser : public ServiceConfigParser::Parser {
 class ServiceConfigTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    CoreConfiguration::Reset();
-    CoreConfiguration::BuildSpecialConfiguration(
+    builder_ = std::make_unique<CoreConfiguration::WithSubstituteBuilder>(
         [](CoreConfiguration::Builder* builder) {
           builder->service_config_parser()->RegisterParser(
               absl::make_unique<TestParser1>());
@@ -167,6 +166,9 @@ class ServiceConfigTest : public ::testing::Test {
                   "test_parser_2"),
               1);
   }
+
+ private:
+  std::unique_ptr<CoreConfiguration::WithSubstituteBuilder> builder_;
 };
 
 TEST_F(ServiceConfigTest, ErrorCheck1) {
@@ -406,7 +408,7 @@ TEST_F(ServiceConfigTest, Parser2ErrorInvalidValue) {
 TEST(ServiceConfigParserTest, DoubleRegistration) {
   CoreConfiguration::Reset();
   ASSERT_DEATH_IF_SUPPORTED(
-      CoreConfiguration::BuildSpecialConfiguration(
+      CoreConfiguration::WithSubstituteBuilder builder(
           [](CoreConfiguration::Builder* builder) {
             builder->service_config_parser()->RegisterParser(
                 absl::make_unique<ErrorParser>("xyzabc"));
@@ -420,8 +422,7 @@ TEST(ServiceConfigParserTest, DoubleRegistration) {
 class ErroredParsersScopingTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    CoreConfiguration::Reset();
-    CoreConfiguration::BuildSpecialConfiguration(
+    builder_ = std::make_unique<CoreConfiguration::WithSubstituteBuilder>(
         [](CoreConfiguration::Builder* builder) {
           builder->service_config_parser()->RegisterParser(
               absl::make_unique<ErrorParser>("ep1"));
@@ -435,6 +436,9 @@ class ErroredParsersScopingTest : public ::testing::Test {
         CoreConfiguration::Get().service_config_parser().GetParserIndex("ep2"),
         1);
   }
+
+ private:
+  std::unique_ptr<CoreConfiguration::WithSubstituteBuilder> builder_;
 };
 
 TEST_F(ErroredParsersScopingTest, GlobalParams) {
@@ -469,8 +473,7 @@ TEST_F(ErroredParsersScopingTest, MethodParams) {
 class ClientChannelParserTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    CoreConfiguration::Reset();
-    CoreConfiguration::BuildSpecialConfiguration(
+    builder_ = std::make_unique<CoreConfiguration::WithSubstituteBuilder>(
         [](CoreConfiguration::Builder* builder) {
           builder->service_config_parser()->RegisterParser(
               absl::make_unique<internal::ClientChannelServiceConfigParser>());
@@ -479,6 +482,9 @@ class ClientChannelParserTest : public ::testing::Test {
                   "client_channel"),
               0);
   }
+
+ private:
+  std::unique_ptr<CoreConfiguration::WithSubstituteBuilder> builder_;
 };
 
 TEST_F(ClientChannelParserTest, ValidLoadBalancingConfigPickFirst) {
@@ -742,13 +748,9 @@ TEST_F(ClientChannelParserTest, InvalidHealthCheckMultipleEntries) {
       "}";
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
-  // TODO(roth): When we convert the JSON API to return absl::Status
-  // instead of grpc_error, change this expectation to be a fixed string
-  // equality match.
-  EXPECT_THAT(std::string(service_config.status().message()),
-              ::testing::ContainsRegex(
-                  "JSON parsing failed" CHILD_ERROR_TAG
-                  "duplicate key \"healthCheckConfig\" at index 104"));
+  EXPECT_EQ(service_config.status().message(),
+            "JSON parsing failed: ["
+            "duplicate key \"healthCheckConfig\" at index 104]");
 }
 
 //
@@ -758,8 +760,7 @@ TEST_F(ClientChannelParserTest, InvalidHealthCheckMultipleEntries) {
 class RetryParserTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    CoreConfiguration::Reset();
-    CoreConfiguration::BuildSpecialConfiguration(
+    builder_ = std::make_unique<CoreConfiguration::WithSubstituteBuilder>(
         [](CoreConfiguration::Builder* builder) {
           builder->service_config_parser()->RegisterParser(
               absl::make_unique<internal::RetryServiceConfigParser>());
@@ -768,6 +769,9 @@ class RetryParserTest : public ::testing::Test {
                   "retry"),
               0);
   }
+
+ private:
+  std::unique_ptr<CoreConfiguration::WithSubstituteBuilder> builder_;
 };
 
 TEST_F(RetryParserTest, ValidRetryThrottling) {
@@ -1450,8 +1454,7 @@ TEST_F(RetryParserTest, InvalidRetryPolicyPerAttemptRecvTimeoutBadValue) {
 class MessageSizeParserTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    CoreConfiguration::Reset();
-    CoreConfiguration::BuildSpecialConfiguration(
+    builder_ = std::make_unique<CoreConfiguration::WithSubstituteBuilder>(
         [](CoreConfiguration::Builder* builder) {
           builder->service_config_parser()->RegisterParser(
               absl::make_unique<MessageSizeParser>());
@@ -1460,6 +1463,9 @@ class MessageSizeParserTest : public ::testing::Test {
                   "message_size"),
               0);
   }
+
+ private:
+  std::unique_ptr<CoreConfiguration::WithSubstituteBuilder> builder_;
 };
 
 TEST_F(MessageSizeParserTest, Valid) {

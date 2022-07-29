@@ -587,6 +587,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/status",
+        "absl/status:statusor",
         "absl/synchronization",
         "absl/container:inlined_vector",
         "absl/strings",
@@ -2236,6 +2237,41 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "event_engine_poller",
+    hdrs = [
+        "src/core/lib/event_engine/poller.h",
+    ],
+    external_deps = [
+        "absl/container:inlined_vector",
+        "absl/types:variant",
+    ],
+    deps = [
+        "event_engine_base_hdrs",
+        "gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "event_engine_time_util",
+    srcs = ["src/core/lib/event_engine/time_util.cc"],
+    hdrs = ["src/core/lib/event_engine/time_util.h"],
+    deps = [
+        "event_engine_base_hdrs",
+        "gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "common_event_engine_closures",
+    hdrs = ["src/core/lib/event_engine/common_closures.h"],
+    external_deps = ["absl/functional:any_invocable"],
+    deps = [
+        "event_engine_base_hdrs",
+        "gpr_platform",
+    ],
+)
+
+grpc_cc_library(
     name = "iomgr_ee_timer",
     srcs = [
         "src/core/lib/event_engine/iomgr_engine/timer.cc",
@@ -3102,7 +3138,6 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "config",
-        "error",
         "gpr_base",
         "grpc_service_config",
         "json",
@@ -6985,13 +7020,12 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/status",
+        "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
     ],
-    deps = [
-        "error",
-        "gpr_base",
-    ],
+    deps = ["gpr_base"],
 )
 
 grpc_cc_library(

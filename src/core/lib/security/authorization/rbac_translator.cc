@@ -33,7 +33,6 @@
 #include "absl/strings/strip.h"
 
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/matchers/matchers.h"
 
@@ -329,21 +328,18 @@ absl::StatusOr<Rbac> ParseAllowRulesArray(const Json& json,
 
 absl::StatusOr<RbacPolicies> GenerateRbacPolicies(
     absl::string_view authz_policy) {
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  Json json = Json::Parse(authz_policy, &error);
-  if (!GRPC_ERROR_IS_NONE(error)) {
-    absl::Status status = absl::InvalidArgumentError(
+  auto json = Json::Parse(authz_policy);
+  if (!json.ok()) {
+    return absl::InvalidArgumentError(
         absl::StrCat("Failed to parse gRPC authorization policy. Error: ",
-                     grpc_error_std_string(error)));
-    GRPC_ERROR_UNREF(error);
-    return status;
+                     json.status().ToString()));
   }
-  if (json.type() != Json::Type::OBJECT) {
+  if (json->type() != Json::Type::OBJECT) {
     return absl::InvalidArgumentError(
         "SDK authorization policy is not an object.");
   }
-  auto it = json.mutable_object()->find("name");
-  if (it == json.mutable_object()->end()) {
+  auto it = json->mutable_object()->find("name");
+  if (it == json->mutable_object()->end()) {
     return absl::InvalidArgumentError("\"name\" field is not present.");
   }
   if (it->second.type() != Json::Type::STRING) {
@@ -351,8 +347,8 @@ absl::StatusOr<RbacPolicies> GenerateRbacPolicies(
   }
   absl::string_view name = it->second.string_value();
   RbacPolicies rbac_policies;
-  it = json.mutable_object()->find("deny_rules");
-  if (it != json.mutable_object()->end()) {
+  it = json->mutable_object()->find("deny_rules");
+  if (it != json->mutable_object()->end()) {
     if (it->second.type() != Json::Type::ARRAY) {
       return absl::InvalidArgumentError("\"deny_rules\" is not an array.");
     }
@@ -366,8 +362,8 @@ absl::StatusOr<RbacPolicies> GenerateRbacPolicies(
   } else {
     rbac_policies.deny_policy.action = Rbac::Action::kDeny;
   }
-  it = json.mutable_object()->find("allow_rules");
-  if (it == json.mutable_object()->end()) {
+  it = json->mutable_object()->find("allow_rules");
+  if (it == json->mutable_object()->end()) {
     return absl::InvalidArgumentError("\"allow_rules\" is not present.");
   }
   if (it->second.type() != Json::Type::ARRAY) {
