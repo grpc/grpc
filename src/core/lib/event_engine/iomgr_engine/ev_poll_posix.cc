@@ -23,6 +23,7 @@
 #include <list>
 #include <memory>
 
+#include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/utility/utility.h"
