@@ -1144,7 +1144,7 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
           policy_it = policy.find("RING_HASH");
           if (policy_it != policy.end()) {
             xds_lb_policy = array[i];
-            auto config = ParseRingHashLbConfig(policy_it->second);
+            auto config = LoadFromJson<RingHashConfig>(policy_it->second);
             if (!config.ok()) {
               error_list.emplace_back(
                   absl_status_to_grpc_error(config.status()));

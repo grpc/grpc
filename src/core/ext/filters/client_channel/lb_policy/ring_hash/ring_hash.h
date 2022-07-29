@@ -25,6 +25,7 @@
 
 #include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_object_loader.h"
 
 namespace grpc_core {
 
@@ -35,8 +36,10 @@ UniqueTypeName RequestHashAttributeName();
 struct RingHashConfig {
   size_t min_ring_size = 1024;
   size_t max_ring_size = 8388608;
+
+  static const JsonLoaderInterface* JsonLoader();
+  void JsonPostLoad(const Json& json, ErrorList* errors);
 };
-absl::StatusOr<RingHashConfig> ParseRingHashLbConfig(const Json& json);
 
 }  // namespace grpc_core
 
