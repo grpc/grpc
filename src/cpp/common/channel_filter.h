@@ -138,12 +138,6 @@ class TransportStreamOpBatch {
     return op_->recv_trailing_metadata ? &recv_trailing_metadata_ : nullptr;
   }
 
-  uint32_t* send_initial_metadata_flags() const {
-    return op_->send_initial_metadata ? &op_->payload->send_initial_metadata
-                                             .send_initial_metadata_flags
-                                      : nullptr;
-  }
-
   grpc_closure* recv_initial_metadata_ready() const {
     return op_->recv_initial_metadata
                ? op_->payload->recv_initial_metadata.recv_initial_metadata_ready
