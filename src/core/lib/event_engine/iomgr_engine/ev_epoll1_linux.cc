@@ -161,7 +161,6 @@ class Epoll1EventHandle : public EventHandle {
   // See Epoll1Poller::ShutdownHandle for explanation on why a mutex is
   // required.
   absl::Mutex mu_;
-  std::atomic<int> ref_count_{1};
   int fd_;
   // See Epoll1Poller::SetPendingActions for explanation on why pending_actions_
   // needs to be atomic.
