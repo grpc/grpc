@@ -66,12 +66,13 @@ const absl::string_view kServerFeatureIgnoreResourceDeletion =
 //
 
 const JsonLoaderInterface* XdsBootstrap::Node::Locality::JsonLoader() {
-  static const auto loader = JsonObjectLoader<Locality>()
-                                 .OptionalField("region", &Locality::region)
-                                 .OptionalField("zone", &Locality::zone)
-                                 .OptionalField("sub_zone", &Locality::sub_zone)
-                                 .Finish();
-  return &loader;
+  static const auto* loader =
+      JsonObjectLoader<Locality>()
+          .OptionalField("region", &Locality::region)
+          .OptionalField("zone", &Locality::zone)
+          .OptionalField("sub_zone", &Locality::sub_zone)
+          .Finish();
+  return loader;
 }
 
 //
@@ -79,13 +80,13 @@ const JsonLoaderInterface* XdsBootstrap::Node::Locality::JsonLoader() {
 //
 
 const JsonLoaderInterface* XdsBootstrap::Node::JsonLoader() {
-  static const auto loader = JsonObjectLoader<Node>()
-                                 .OptionalField("id", &Node::id)
-                                 .OptionalField("cluster", &Node::cluster)
-                                 .OptionalField("locality", &Node::locality)
-                                 .OptionalField("metadata", &Node::metadata)
-                                 .Finish();
-  return &loader;
+  static const auto* loader = JsonObjectLoader<Node>()
+                                  .OptionalField("id", &Node::id)
+                                  .OptionalField("cluster", &Node::cluster)
+                                  .OptionalField("locality", &Node::locality)
+                                  .OptionalField("metadata", &Node::metadata)
+                                  .Finish();
+  return loader;
 }
 
 //
@@ -100,22 +101,22 @@ struct XdsChannelCreds {
   Json::Object config;
 
   static const JsonLoaderInterface* JsonLoader() {
-    static const auto loader =
+    static const auto* loader =
         JsonObjectLoader<XdsChannelCreds>()
             .Field("type", &XdsChannelCreds::type)
             .OptionalField("config", &XdsChannelCreds::config)
             .Finish();
-    return &loader;
+    return loader;
   }
 };
 
 }  // namespace
 
 const JsonLoaderInterface* XdsBootstrap::XdsServer::JsonLoader() {
-  static const auto loader = JsonObjectLoader<XdsServer>()
-                                 .Field("server_uri", &XdsServer::server_uri)
-                                 .Finish();
-  return &loader;
+  static const auto* loader = JsonObjectLoader<XdsServer>()
+                                  .Field("server_uri", &XdsServer::server_uri)
+                                  .Finish();
+  return loader;
 }
 
 void XdsBootstrap::XdsServer::JsonPostLoad(const Json& json,
@@ -213,13 +214,13 @@ bool XdsBootstrap::XdsServer::IgnoreResourceDeletion() const {
 //
 
 const JsonLoaderInterface* XdsBootstrap::Authority::JsonLoader() {
-  static const auto loader =
+  static const auto* loader =
       JsonObjectLoader<Authority>()
           .OptionalField("client_listener_resource_name_template",
                          &Authority::client_listener_resource_name_template)
           .OptionalField("xds_servers", &Authority::xds_servers)
           .Finish();
-  return &loader;
+  return loader;
 }
 
 //
@@ -260,7 +261,7 @@ XdsBootstrap& XdsBootstrap::operator=(XdsBootstrap&& other) noexcept {
 
 const JsonLoaderInterface* XdsBootstrap::JsonLoader() {
   if (XdsFederationEnabled()) {
-    static const auto loader =
+    static const auto* loader =
         JsonObjectLoader<XdsBootstrap>()
             .Field("xds_servers", &XdsBootstrap::servers_)
             .OptionalField("node", &XdsBootstrap::node_)
@@ -274,9 +275,9 @@ const JsonLoaderInterface* XdsBootstrap::JsonLoader() {
                 "client_default_listener_resource_name_template",
                 &XdsBootstrap::client_default_listener_resource_name_template_)
             .Finish();
-    return &loader;
+    return loader;
   }
-  static const auto loader =
+  static const auto* loader =
       JsonObjectLoader<XdsBootstrap>()
           .Field("xds_servers", &XdsBootstrap::servers_)
           .OptionalField("node", &XdsBootstrap::node_)
@@ -285,7 +286,7 @@ const JsonLoaderInterface* XdsBootstrap::JsonLoader() {
           .OptionalField("server_listener_resource_name_template",
                          &XdsBootstrap::server_listener_resource_name_template_)
           .Finish();
-  return &loader;
+  return loader;
 }
 
 void XdsBootstrap::JsonPostLoad(const Json& json, ErrorList* errors) {

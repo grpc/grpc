@@ -290,10 +290,10 @@ TEST(XdsBootstrapTest, TopFieldsWrongTypes) {
   EXPECT_EQ(
       bootstrap.status().message(),
       "errors validating JSON: ["
-      "field:xds_servers error:is not an array; "
-      "field:node error:is not an object; "
       "field:certificate_providers error:is not an object; "
-      "field:server_listener_resource_name_template error:is not a string]")
+      "field:node error:is not an object; "
+      "field:server_listener_resource_name_template error:is not a string; "
+      "field:xds_servers error:is not an array]")
       << bootstrap.status();
 }
 
@@ -305,8 +305,8 @@ TEST(XdsBootstrapTest, XdsServerMissingFields) {
   auto bootstrap = XdsBootstrap::Create(json_str);
   EXPECT_EQ(bootstrap.status().message(),
             "errors validating JSON: ["
-            "field:xds_servers[0].server_uri error:field not present; "
-            "field:xds_servers[0].channel_creds error:field not present]")
+            "field:xds_servers[0].channel_creds error:field not present; "
+            "field:xds_servers[0].server_uri error:field not present]")
       << bootstrap.status();
 }
 
@@ -323,8 +323,8 @@ TEST(XdsBootstrapTest, XdsServerUriAndCredsWrongTypes) {
   auto bootstrap = XdsBootstrap::Create(json_str);
   EXPECT_EQ(bootstrap.status().message(),
             "errors validating JSON: ["
-            "field:xds_servers[0].server_uri error:is not a string; "
-            "field:xds_servers[0].channel_creds error:is not an array]")
+            "field:xds_servers[0].channel_creds error:is not an array; "
+            "field:xds_servers[0].server_uri error:is not a string]")
       << bootstrap.status();
 }
 
@@ -347,11 +347,11 @@ TEST(XdsBootstrapTest, ChannelCredsFieldsWrongTypes) {
   EXPECT_EQ(
       bootstrap.status().message(),
       "errors validating JSON: ["
+      "field:xds_servers[0].channel_creds error:no known creds type found; "
       "field:xds_servers[0].channel_creds[0] error:"
       "errors validating JSON: ["
-      "field:type error:is not a string; "
-      "field:config error:is not an object]; "
-      "field:xds_servers[0].channel_creds error:no known creds type found]")
+      "field:config error:is not an object; "
+      "field:type error:is not a string]]")
       << bootstrap.status();
 }
 
@@ -368,11 +368,11 @@ TEST(XdsBootstrapTest, NodeFieldsWrongTypes) {
   auto bootstrap = XdsBootstrap::Create(json_str);
   EXPECT_EQ(bootstrap.status().message(),
             "errors validating JSON: ["
-            "field:xds_servers error:field not present; "
-            "field:node.id error:is not a string; "
             "field:node.cluster error:is not a string; "
+            "field:node.id error:is not a string; "
             "field:node.locality error:is not an object; "
-            "field:node.metadata error:is not an object]")
+            "field:node.metadata error:is not an object; "
+            "field:xds_servers error:field not present]")
       << bootstrap.status();
 }
 
@@ -390,10 +390,10 @@ TEST(XdsBootstrapTest, LocalityFieldsWrongType) {
   auto bootstrap = XdsBootstrap::Create(json_str);
   EXPECT_EQ(bootstrap.status().message(),
             "errors validating JSON: ["
-            "field:xds_servers error:field not present; "
             "field:node.locality.region error:is not a string; "
+            "field:node.locality.sub_zone error:is not a string; "
             "field:node.locality.zone error:is not a string; "
-            "field:node.locality.sub_zone error:is not a string]")
+            "field:xds_servers error:field not present]")
       << bootstrap.status();
 }
 
@@ -525,9 +525,9 @@ TEST(XdsBootstrapTest, AuthorityXdsServerMissingServerUri) {
   EXPECT_EQ(
       bootstrap.status().message(),
       "errors validating JSON: ["
-      "field:authorities[\"xds.example.com\"].xds_servers[0].server_uri "
-      "error:field not present; "
       "field:authorities[\"xds.example.com\"].xds_servers[0].channel_creds "
+      "error:field not present; "
+      "field:authorities[\"xds.example.com\"].xds_servers[0].server_uri "
       "error:field not present]")
       << bootstrap.status();
   gpr_unsetenv("GRPC_EXPERIMENTAL_XDS_FEDERATION");

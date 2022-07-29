@@ -35,11 +35,11 @@ namespace grpc_core {
 
 const JsonLoaderInterface*
 CertificateProviderStore::PluginDefinition::JsonLoader() {
-  static const auto loader =
+  static const auto* loader =
       JsonObjectLoader<PluginDefinition>()
           .Field("plugin_name", &PluginDefinition::plugin_name)
           .Finish();
-  return &loader;
+  return loader;
 }
 
 void CertificateProviderStore::PluginDefinition::JsonPostLoad(
