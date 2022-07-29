@@ -70,6 +70,7 @@ static const int kPolloutCheck = POLLOUT | POLLHUP | POLLERR;
 namespace grpc_event_engine {
 namespace iomgr_engine {
 
+using ::grpc_event_engine::experimental::AnyInvocableClosure;
 using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::Poller;
 using ::grpc_event_engine::iomgr_engine::WakeupFd;
@@ -227,7 +228,7 @@ class PollEventHandle : public EventHandle {
   bool pollhup_;
   int watch_mask_;
   absl::Status shutdown_error_;
-  grpc_event_engine::experimental::AnyInvocableClosure exec_actions_closure_;
+  AnyInvocableClosure exec_actions_closure_;
   IomgrEngineClosure* on_done_;
   IomgrEngineClosure* read_closure_;
   IomgrEngineClosure* write_closure_;

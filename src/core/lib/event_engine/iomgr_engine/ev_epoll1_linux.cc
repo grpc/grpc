@@ -57,6 +57,7 @@
 namespace grpc_event_engine {
 namespace iomgr_engine {
 
+using ::grpc_event_engine::experimental::AnyInvocableClosure;
 using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::Poller;
 using ::grpc_event_engine::iomgr_engine::LockfreeEvent;
@@ -162,7 +163,7 @@ class Epoll1EventHandle : public EventHandle {
   std::atomic<int> pending_actions_{0};
   Epoll1Poller::HandlesList list_;
   Epoll1Poller* poller_;
-  grpc_event_engine::experimental::AnyInvocableClosure exec_actions_closure_;
+  AnyInvocableClosure exec_actions_closure_;
   std::unique_ptr<LockfreeEvent> read_closure_;
   std::unique_ptr<LockfreeEvent> write_closure_;
   std::unique_ptr<LockfreeEvent> error_closure_;
