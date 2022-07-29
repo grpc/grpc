@@ -28,7 +28,8 @@ namespace experimental {
 
 class AnyInvocableClosure : public EventEngine::Closure {
  public:
-  explicit AnyInvocableClosure(absl::AnyInvocable<void()> cb) : cb_(std::move(cb)) {}
+  explicit AnyInvocableClosure(absl::AnyInvocable<void()> cb)
+      : cb_(std::move(cb)) {}
   void Run() override { cb_(); }
 
  private:
