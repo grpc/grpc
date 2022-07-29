@@ -5759,6 +5759,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/lib/event_engine/common_closures.h
   - src/core/lib/event_engine/iomgr_engine/ev_epoll1_linux.h
   - src/core/lib/event_engine/iomgr_engine/ev_poll_posix.h
   - src/core/lib/event_engine/iomgr_engine/event_poller.h
