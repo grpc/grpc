@@ -128,6 +128,7 @@
 #include "src/core/lib/iomgr/socket_utils.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_object_loader.h"
 #include "src/core/lib/resolver/resolver.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/security/credentials/credentials.h"
@@ -164,10 +165,52 @@ constexpr absl::string_view kGrpclb = "grpclb";
 
 class GrpcLbConfig : public LoadBalancingPolicy::Config {
  public:
-  GrpcLbConfig(RefCountedPtr<LoadBalancingPolicy::Config> child_policy,
-               std::string service_name)
-      : child_policy_(std::move(child_policy)),
-        service_name_(std::move(service_name)) {}
+  GrpcLbConfig() = default;
+
+  GrpcLbConfig(const GrpcLbConfig&) = delete;
+  GrpcLbConfig& operator=(const GrpcLbConfig&) = delete;
+
+  GrpcLbConfig(GrpcLbConfig&& other) noexcept
+      : child_policy_(std::move(other.child_policy_)),
+        service_name_(std::move(other.service_name_)) {}
+  GrpcLbConfig& operator=(GrpcLbConfig&& other) noexcept {
+    child_policy_ = std::move(other.child_policy_);
+    service_name_ = std::move(other.service_name_);
+    return *this;
+  }
+
+  static const JsonLoaderInterface* JsonLoader() {
+    static const auto* loader =
+        JsonObjectLoader<GrpcLbConfig>()
+            // Note: "childPolicy" field requires custom parsing, so
+            // it's handled in JsonPostLoad() instead.
+            .OptionalField("serviceName", &GrpcLbConfig::service_name_)
+            .Finish();
+    return loader;
+  }
+
+  void JsonPostLoad(const Json& json, ErrorList* errors) {
+    ScopedField field(errors, ".childPolicy");
+    Json child_policy_config_json_tmp;
+    const Json* child_policy_config_json;
+    auto it = json.object_value().find("childPolicy");
+    if (it == json.object_value().end()) {
+      child_policy_config_json_tmp = Json::Array{Json::Object{
+          {"round_robin", Json::Object()},
+      }};
+      child_policy_config_json = &child_policy_config_json_tmp;
+    } else {
+      child_policy_config_json = &it->second;
+    }
+    auto child_policy_config =
+        LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
+            *child_policy_config_json);
+    if (!child_policy_config.ok()) {
+      errors->AddError(child_policy_config.status().message());
+      return;
+    }
+    child_policy_ = std::move(*child_policy_config);
+  }
 
   absl::string_view name() const override { return kGrpclb; }
 
@@ -1850,48 +1893,9 @@ class GrpcLbFactory : public LoadBalancingPolicyFactory {
 
   absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
   ParseLoadBalancingConfig(const Json& json) const override {
-    if (json.type() == Json::Type::JSON_NULL) {
-      return MakeRefCounted<GrpcLbConfig>(nullptr, "");
-    }
-    std::vector<std::string> error_list;
-    std::string service_name;
-    auto it = json.object_value().find("serviceName");
-    if (it != json.object_value().end()) {
-      const Json& service_name_json = it->second;
-      if (service_name_json.type() != Json::Type::STRING) {
-        error_list.emplace_back(
-            "field:serviceName error:type should be string");
-      } else {
-        service_name = service_name_json.string_value();
-      }
-    }
-    Json child_policy_config_json_tmp;
-    const Json* child_policy_config_json;
-    it = json.object_value().find("childPolicy");
-    if (it == json.object_value().end()) {
-      child_policy_config_json_tmp = Json::Array{Json::Object{
-          {"round_robin", Json::Object()},
-      }};
-      child_policy_config_json = &child_policy_config_json_tmp;
-    } else {
-      child_policy_config_json = &it->second;
-    }
-    auto child_policy_config =
-        LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
-            *child_policy_config_json);
-    if (!child_policy_config.ok()) {
-      error_list.emplace_back(
-          absl::StrCat("error parsing childPolicy field: ",
-                       child_policy_config.status().message()));
-    }
-    if (error_list.empty()) {
-      return MakeRefCounted<GrpcLbConfig>(std::move(*child_policy_config),
-                                          std::move(service_name));
-    } else {
-      return absl::InvalidArgumentError(
-          absl::StrCat("errors parsing grpclb LB policy config: [",
-                       absl::StrJoin(error_list, "; "), "]"));
-    }
+    auto config = LoadFromJson<GrpcLbConfig>(json);
+    if (!config.ok()) return config.status();
+    return MakeRefCounted<GrpcLbConfig>(std::move(*config));
   }
 };
 

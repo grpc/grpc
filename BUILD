@@ -3819,6 +3819,7 @@ grpc_cc_library(
         "grpc_trace",
         "iomgr_timer",
         "json",
+        "json_object_loader",
         "orphanable",
         "protobuf_duration_upb",
         "protobuf_timestamp_upb",
