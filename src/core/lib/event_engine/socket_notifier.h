@@ -19,6 +19,8 @@
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 
+#include <grpc/event_engine/event_engine.h>
+
 namespace grpc_event_engine {
 namespace experimental {
 

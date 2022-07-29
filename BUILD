@@ -2571,7 +2571,10 @@ grpc_cc_library(
         "absl/functional:any_invocable",
         "absl/status",
     ],
-    deps = ["gpr_platform"],
+    deps = [
+        "event_engine_base_hdrs",
+        "gpr_platform",
+    ],
 )
 
 grpc_cc_library(
