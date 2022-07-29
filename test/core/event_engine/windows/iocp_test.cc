@@ -354,4 +354,6 @@ int main(int argc, char** argv) {
   grpc_shutdown();
   return status;
 }
-#endif  // GPR_WINDOWS
+#else  // not GPR_WINDOWS
+int main(int /* argc */, char** /* argv */) { return 1; }
+#endif
