@@ -17,6 +17,7 @@
 #include <cstdint>
 
 #include <gtest/gtest.h>
+#include <gmock/gmock.h>
 
 #include "absl/strings/str_join.h"
 
@@ -24,224 +25,768 @@ namespace grpc_core {
 namespace {
 
 template <typename T>
-absl::StatusOr<T> Parse(const std::string& json) {
+absl::StatusOr<T> Parse(absl::string_view json) {
   auto parsed = Json::Parse(json);
   if (!parsed.ok()) return parsed.status();
   return LoadFromJson<T>(*parsed);
 }
 
-struct TestStruct1 {
-  int32_t a = 0;
-  int32_t b = 1;
-  uint32_t c = 2;
-  std::string x;
-  Duration d;
-  Json::Object j;
-  absl::optional<int32_t> e;
+//
+// Signed integer tests
+//
 
-  static const JsonLoaderInterface* JsonLoader() {
-    static const auto* loader = JsonObjectLoader<TestStruct1>()
-                                    .Field("a", &TestStruct1::a)
-                                    .OptionalField("b", &TestStruct1::b)
-                                    .OptionalField("c", &TestStruct1::c)
-                                    .Field("x", &TestStruct1::x)
-                                    .OptionalField("d", &TestStruct1::d)
-                                    .OptionalField("e", &TestStruct1::e)
-                                    .OptionalField("j", &TestStruct1::j)
-                                    .Finish();
-    return loader;
-  }
-};
+template <typename T>
+class SignedIntegerTest : public ::testing::Test {};
 
-struct TestStruct2 {
-  std::vector<TestStruct1> a;
-  std::vector<int32_t> b;
-  TestStruct1 c;
+TYPED_TEST_SUITE_P(SignedIntegerTest);
 
-  static const JsonLoaderInterface* JsonLoader() {
-    static const auto* loader = JsonObjectLoader<TestStruct2>()
-                                    .Field("a", &TestStruct2::a)
-                                    .Field("b", &TestStruct2::b)
-                                    .OptionalField("c", &TestStruct2::c)
-                                    .Finish();
-    return loader;
-  }
-};
+TYPED_TEST_P(SignedIntegerTest, IntegerFields) {
+  struct TestStruct {
+    TypeParam value = 0;
+    TypeParam optional_value = 0;
+    absl::optional<TypeParam> absl_optional_value;
 
-struct TestStruct3 {
-  std::map<std::string, TestStruct1> a;
-  std::map<std::string, int32_t> b;
-
-  static const JsonLoaderInterface* JsonLoader() {
-    static const auto* loader = JsonObjectLoader<TestStruct3>()
-                                    .Field("a", &TestStruct3::a)
-                                    .Field("b", &TestStruct3::b)
-                                    .Finish();
-    return loader;
-  }
-};
-
-struct TestPostLoadStruct1 {
-  int32_t a = 0;
-  int32_t b = 1;
-  uint32_t c = 2;
-  std::string x;
-  Duration d;
-
-  static const JsonLoaderInterface* JsonLoader() {
-    static const auto* loader = JsonObjectLoader<TestPostLoadStruct1>()
-                                    .Field("a", &TestPostLoadStruct1::a)
-                                    .OptionalField("b", &TestPostLoadStruct1::b)
-                                    .OptionalField("c", &TestPostLoadStruct1::c)
-                                    .Field("x", &TestPostLoadStruct1::x)
-                                    .OptionalField("d", &TestPostLoadStruct1::d)
-                                    .Finish();
-    return loader;
-  }
-
-  void JsonPostLoad(const Json& source, ErrorList* errors) { ++a; }
-};
-
-TEST(JsonObjectLoaderTest, LoadTestStruct1) {
-  {
-    auto s = Parse<TestStruct1>(
-        "{\"a\":1,\"b\":\"2\",\"c\":3,\"x\":\"foo\",\"d\":\"1.3s\","
-        "\"j\":{\"foo\":\"bar\"}}");
-    ASSERT_TRUE(s.ok()) << s.status();
-    EXPECT_EQ(s->a, 1);
-    EXPECT_EQ(s->b, 2);
-    EXPECT_EQ(s->c, 3);
-    EXPECT_EQ(s->x, "foo");
-    EXPECT_EQ(s->d, Duration::Milliseconds(1300));
-    EXPECT_EQ(s->e, absl::nullopt);
-    EXPECT_EQ(Json{s->j}.Dump(), "{\"foo\":\"bar\"}");
-  }
-  {
-    auto s = Parse<TestStruct1>(
-        "{\"a\":1,\"b\":\"2\",\"c\":3,\"x\":\"foo\",\"d\":\"1.3s\","
-        "\"j\":{\"foo\":\"bar\"},\"e\":null}");
-    ASSERT_TRUE(s.ok()) << s.status();
-    EXPECT_EQ(s->a, 1);
-    EXPECT_EQ(s->b, 2);
-    EXPECT_EQ(s->c, 3);
-    EXPECT_EQ(s->x, "foo");
-    EXPECT_EQ(s->d, Duration::Milliseconds(1300));
-    EXPECT_EQ(s->e, absl::nullopt);
-    EXPECT_EQ(Json{s->j}.Dump(), "{\"foo\":\"bar\"}");
-  }
-  {
-    auto s = Parse<TestStruct1>(
-        "{\"a\":1,\"b\":\"2\",\"c\":3,\"x\":\"foo\",\"d\":\"1.3s\","
-        "\"j\":{\"foo\":\"bar\"},\"e\":3}");
-    ASSERT_TRUE(s.ok()) << s.status();
-    EXPECT_EQ(s->a, 1);
-    EXPECT_EQ(s->b, 2);
-    EXPECT_EQ(s->c, 3);
-    EXPECT_EQ(s->x, "foo");
-    EXPECT_EQ(s->d, Duration::Milliseconds(1300));
-    EXPECT_EQ(s->e, absl::optional<int32_t>(3));
-    EXPECT_EQ(Json{s->j}.Dump(), "{\"foo\":\"bar\"}");
-  }
-  {
-    auto s = Parse<TestStruct1>("{\"a\":7, \"x\":\"bar\"}");
-    ASSERT_TRUE(s.ok()) << s.status();
-    EXPECT_EQ(s->a, 7);
-    EXPECT_EQ(s->b, 1);
-    EXPECT_EQ(s->c, 2);
-    EXPECT_EQ(s->x, "bar");
-  }
-  {
-    auto s = Parse<TestStruct1>("{\"b\":[1],\"c\":\"foo\",\"x\":42}");
-    EXPECT_EQ(s.status().code(), absl::StatusCode::kInvalidArgument);
-    EXPECT_EQ(s.status().message(),
-              "errors validating JSON: ["
-              "field:a error:field not present; "
-              "field:b error:is not a number; "
-              "field:c error:failed to parse number; "
-              "field:x error:is not a string]")
-        << s.status();
-  }
+    static const JsonLoaderInterface* JsonLoader() {
+      static const auto* loader =
+          JsonObjectLoader<TestStruct>()
+              .Field("value", &TestStruct::value)
+              .OptionalField("optional_value", &TestStruct::optional_value)
+              .OptionalField("absl_optional_value",
+                             &TestStruct::absl_optional_value)
+              .Finish();
+      return loader;
+    }
+  };
+  // Positive number.
+  auto test_struct = Parse<TestStruct>("{\"value\": 5}");
+  ASSERT_TRUE(test_struct.ok()) << test_struct.status();
+  EXPECT_EQ(test_struct->value, 5);
+  EXPECT_EQ(test_struct->optional_value, 0);
+  EXPECT_FALSE(test_struct->absl_optional_value.has_value());
+  // Negative number.
+  test_struct = Parse<TestStruct>("{\"value\": -5}");
+  ASSERT_TRUE(test_struct.ok()) << test_struct.status();
+  EXPECT_EQ(test_struct->value, -5);
+  EXPECT_EQ(test_struct->optional_value, 0);
+  EXPECT_FALSE(test_struct->absl_optional_value.has_value());
+  // Encoded in a JSON string.
+  test_struct = Parse<TestStruct>("{\"value\": \"5\"}");
+  ASSERT_TRUE(test_struct.ok()) << test_struct.status();
+  EXPECT_EQ(test_struct->value, 5);
+  EXPECT_EQ(test_struct->optional_value, 0);
+  EXPECT_FALSE(test_struct->absl_optional_value.has_value());
+  // Fails if required field is not present.
+  test_struct = Parse<TestStruct>("{}");
+  EXPECT_EQ(test_struct.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(test_struct.status().message(),
+            "errors validating JSON: [field:value error:field not present]")
+      << test_struct.status();
+  // Optional fields present.
+  test_struct = Parse<TestStruct>("{\"value\": 5, \"optional_value\": 7, "
+                                  "\"absl_optional_value\": 9}");
+  ASSERT_TRUE(test_struct.ok()) << test_struct.status();
+  EXPECT_EQ(test_struct->value, 5);
+  EXPECT_EQ(test_struct->optional_value, 7);
+  EXPECT_EQ(test_struct->absl_optional_value, 9);
+  // Wrong JSON type.
+  test_struct = Parse<TestStruct>("{\"value\": [], \"optional_value\": {}, "
+                                  "\"absl_optional_value\": true}");
+  EXPECT_EQ(test_struct.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(test_struct.status().message(),
+            "errors validating JSON: ["
+            "field:absl_optional_value error:is not a number; "
+            "field:optional_value error:is not a number; "
+            "field:value error:is not a number]")
+      << test_struct.status();
 }
 
-TEST(JsonObjectLoaderTest, LoadPostLoadTestStruct1) {
-  {
-    auto s = Parse<TestPostLoadStruct1>(
-        "{\"a\":1,\"b\":2,\"c\":3,\"x\":\"foo\",\"d\":\"1.3s\"}");
-    ASSERT_TRUE(s.ok()) << s.status();
-    EXPECT_EQ(s->a, 2);
-    EXPECT_EQ(s->b, 2);
-    EXPECT_EQ(s->c, 3);
-    EXPECT_EQ(s->x, "foo");
-    EXPECT_EQ(s->d, Duration::Milliseconds(1300));
-  }
+REGISTER_TYPED_TEST_SUITE_P(SignedIntegerTest, IntegerFields);
+
+using IntegerTypes = ::testing::Types<int32_t, int64_t>;
+INSTANTIATE_TYPED_TEST_SUITE_P(My, SignedIntegerTest, IntegerTypes);
+
+//
+// Unsigned integer tests
+//
+
+template <typename T>
+class UnsignedIntegerTest : public ::testing::Test {};
+
+TYPED_TEST_SUITE_P(UnsignedIntegerTest);
+
+TYPED_TEST_P(UnsignedIntegerTest, IntegerFields) {
+  struct TestStruct {
+    TypeParam value = 0;
+    TypeParam optional_value = 0;
+    absl::optional<TypeParam> absl_optional_value;
+
+    static const JsonLoaderInterface* JsonLoader() {
+      static const auto* loader =
+          JsonObjectLoader<TestStruct>()
+              .Field("value", &TestStruct::value)
+              .OptionalField("optional_value", &TestStruct::optional_value)
+              .OptionalField("absl_optional_value",
+                             &TestStruct::absl_optional_value)
+              .Finish();
+      return loader;
+    }
+  };
+  // Positive number.
+  auto test_struct = Parse<TestStruct>("{\"value\": 5}");
+  ASSERT_TRUE(test_struct.ok()) << test_struct.status();
+  EXPECT_EQ(test_struct->value, 5);
+  EXPECT_EQ(test_struct->optional_value, 0);
+  EXPECT_FALSE(test_struct->absl_optional_value.has_value());
+  // Negative number.
+  test_struct = Parse<TestStruct>("{\"value\": -5}");
+  EXPECT_EQ(test_struct.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(test_struct.status().message(),
+            "errors validating JSON: ["
+            "field:value error:failed to parse non-negative number]")
+      << test_struct.status();
+  // Encoded in a JSON string.
+  test_struct = Parse<TestStruct>("{\"value\": \"5\"}");
+  ASSERT_TRUE(test_struct.ok()) << test_struct.status();
+  EXPECT_EQ(test_struct->value, 5);
+  EXPECT_EQ(test_struct->optional_value, 0);
+  EXPECT_FALSE(test_struct->absl_optional_value.has_value());
+  // Fails if required field is not present.
+  test_struct = Parse<TestStruct>("{}");
+  EXPECT_EQ(test_struct.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(test_struct.status().message(),
+            "errors validating JSON: [field:value error:field not present]")
+      << test_struct.status();
+  // Optional fields present.
+  test_struct = Parse<TestStruct>("{\"value\": 5, \"optional_value\": 7, "
+                                  "\"absl_optional_value\": 9}");
+  ASSERT_TRUE(test_struct.ok()) << test_struct.status();
+  EXPECT_EQ(test_struct->value, 5);
+  EXPECT_EQ(test_struct->optional_value, 7);
+  EXPECT_EQ(test_struct->absl_optional_value, 9);
+  // Wrong JSON type.
+  test_struct = Parse<TestStruct>("{\"value\": [], \"optional_value\": {}, "
+                                  "\"absl_optional_value\": true}");
+  EXPECT_EQ(test_struct.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(test_struct.status().message(),
+            "errors validating JSON: ["
+            "field:absl_optional_value error:is not a number; "
+            "field:optional_value error:is not a number; "
+            "field:value error:is not a number]")
+      << test_struct.status();
 }
 
-TEST(JsonObjectLoaderTest, LoadTestStruct2) {
-  {
-    auto s = Parse<TestStruct2>(
-        "{\"a\":[{\"a\":1,\"b\":2,\"c\":3,\"x\":\"foo\"}],\"b\":[1,2,3],"
-        "\"c\":{\"a\":1,\"x\":\"foo\"}}");
-    ASSERT_TRUE(s.ok()) << s.status();
-    EXPECT_EQ(s->a.size(), 1);
-    EXPECT_EQ(s->a[0].a, 1);
-    EXPECT_EQ(s->a[0].b, 2);
-    EXPECT_EQ(s->a[0].c, 3);
-    EXPECT_EQ(s->a[0].x, "foo");
-    EXPECT_EQ(s->b.size(), 3);
-    EXPECT_EQ(s->b[0], 1);
-    EXPECT_EQ(s->b[1], 2);
-    EXPECT_EQ(s->b[2], 3);
-    EXPECT_EQ(s->c.a, 1);
-    EXPECT_EQ(s->c.x, "foo");
-  }
-  {
-    auto s =
-        Parse<TestStruct2>("{\"a\":[{\"a\":7, \"x\":\"bar\"}],\"b\":[1,2,3]}");
-    ASSERT_TRUE(s.ok()) << s.status();
-    EXPECT_EQ(s->a.size(), 1);
-    EXPECT_EQ(s->a[0].a, 7);
-    EXPECT_EQ(s->a[0].b, 1);
-    EXPECT_EQ(s->a[0].c, 2);
-    EXPECT_EQ(s->a[0].x, "bar");
-    EXPECT_EQ(s->b.size(), 3);
-    EXPECT_EQ(s->b[0], 1);
-    EXPECT_EQ(s->b[1], 2);
-    EXPECT_EQ(s->b[2], 3);
-  }
-  {
-    auto s = Parse<TestStruct2>(
-        "{\"a\":[{\"a\":\"foo\", \"x\":\"bar\"}],\"b\":[1,{},3],\"c\":1}");
-    EXPECT_EQ(s.status().code(), absl::StatusCode::kInvalidArgument);
-    EXPECT_EQ(s.status().message(),
-              "errors validating JSON: ["
-              "field:a[0].a error:failed to parse number; "
-              "field:b[1] error:is not a number; "
-              "field:c error:is not an object]")
-        << s.status();
-  }
+REGISTER_TYPED_TEST_SUITE_P(UnsignedIntegerTest, IntegerFields);
+
+using UnsignedIntegerTypes = ::testing::Types<uint32_t, uint64_t>;
+INSTANTIATE_TYPED_TEST_SUITE_P(My, UnsignedIntegerTest, UnsignedIntegerTypes);
+
+//
+// Floating-point tests
+//
+
+template <typename T>
+class FloatingPointTest : public ::testing::Test {};
+
+TYPED_TEST_SUITE_P(FloatingPointTest);
+
+TYPED_TEST_P(FloatingPointTest, FloatFields) {
+  struct TestStruct {
+    TypeParam value = 0;
+    TypeParam optional_value = 0;
+    absl::optional<TypeParam> absl_optional_value;
+
+    static const JsonLoaderInterface* JsonLoader() {
+      static const auto* loader =
+          JsonObjectLoader<TestStruct>()
+              .Field("value", &TestStruct::value)
+              .OptionalField("optional_value", &TestStruct::optional_value)
+              .OptionalField("absl_optional_value",
+                             &TestStruct::absl_optional_value)
+              .Finish();
+      return loader;
+    }
+  };
+  // Positive number.
+  auto test_struct = Parse<TestStruct>("{\"value\": 5.2}");
+  ASSERT_TRUE(test_struct.ok()) << test_struct.status();
+  EXPECT_NEAR(test_struct->value, 5.2, 0.0001);
+  EXPECT_EQ(test_struct->optional_value, 0);
+  EXPECT_FALSE(test_struct->absl_optional_value.has_value());
+  // Negative number.
+  test_struct = Parse<TestStruct>("{\"value\": -5.2}");
+  ASSERT_TRUE(test_struct.ok()) << test_struct.status();
+  EXPECT_NEAR(test_struct->value, -5.2, 0.0001);
+  EXPECT_EQ(test_struct->optional_value, 0);
+  EXPECT_FALSE(test_struct->absl_optional_value.has_value());
+  // Encoded in a JSON string.
+  test_struct = Parse<TestStruct>("{\"value\": \"5.2\"}");
+  ASSERT_TRUE(test_struct.ok()) << test_struct.status();
+  EXPECT_NEAR(test_struct->value, 5.2, 0.0001);
+  EXPECT_EQ(test_struct->optional_value, 0);
+  EXPECT_FALSE(test_struct->absl_optional_value.has_value());
+  // Fails if required field is not present.
+  test_struct = Parse<TestStruct>("{}");
+  EXPECT_EQ(test_struct.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(test_struct.status().message(),
+            "errors validating JSON: [field:value error:field not present]")
+      << test_struct.status();
+  // Optional fields present.
+  test_struct = Parse<TestStruct>("{\"value\": 5.2, \"optional_value\": 7.5, "
+                                  "\"absl_optional_value\": 9.8}");
+  ASSERT_TRUE(test_struct.ok()) << test_struct.status();
+  EXPECT_NEAR(test_struct->value, 5.2, 0.0001);
+  EXPECT_NEAR(test_struct->optional_value, 7.5, 0.0001);
+  ASSERT_TRUE(test_struct->absl_optional_value.has_value());
+  EXPECT_NEAR(*test_struct->absl_optional_value, 9.8, 0.0001);
+  // Wrong JSON type.
+  test_struct = Parse<TestStruct>("{\"value\": [], \"optional_value\": {}, "
+                                  "\"absl_optional_value\": true}");
+  EXPECT_EQ(test_struct.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(test_struct.status().message(),
+            "errors validating JSON: ["
+            "field:absl_optional_value error:is not a number; "
+            "field:optional_value error:is not a number; "
+            "field:value error:is not a number]")
+      << test_struct.status();
 }
 
-TEST(JsonObjectLoaderTest, LoadTestStruct3) {
-  {
-    auto s = Parse<TestStruct3>(
-        "{\"a\":{\"k1\":{\"a\":7, \"x\":\"bar\"}, "
-        "\"k2\":{\"a\":1,\"b\":2,\"c\":3,\"x\":\"foo\"}}, "
-        "\"b\":{\"k1\":1,\"k2\":2,\"k3\":3}}");
-    ASSERT_TRUE(s.ok()) << s.status();
-    EXPECT_EQ(s->a.size(), 2);
-    EXPECT_EQ(s->a["k1"].a, 7);
-    EXPECT_EQ(s->a["k1"].b, 1);
-    EXPECT_EQ(s->a["k1"].c, 2);
-    EXPECT_EQ(s->a["k1"].x, "bar");
-    EXPECT_EQ(s->a["k2"].a, 1);
-    EXPECT_EQ(s->a["k2"].b, 2);
-    EXPECT_EQ(s->a["k2"].c, 3);
-    EXPECT_EQ(s->a["k2"].x, "foo");
-    EXPECT_EQ(s->b.size(), 3);
-    EXPECT_EQ(s->b["k1"], 1);
-    EXPECT_EQ(s->b["k2"], 2);
-    EXPECT_EQ(s->b["k3"], 3);
-  }
+REGISTER_TYPED_TEST_SUITE_P(FloatingPointTest, FloatFields);
+
+using FloatingPointTypes = ::testing::Types<float, double>;
+INSTANTIATE_TYPED_TEST_SUITE_P(My, FloatingPointTest, FloatingPointTypes);
+
+//
+// Boolean tests
+//
+
+TEST(JsonObjectLoader, BooleanFields) {
+  struct TestStruct {
+    bool value = false;
+    bool optional_value = true;
+    absl::optional<bool> absl_optional_value;
+
+    static const JsonLoaderInterface* JsonLoader() {
+      static const auto* loader =
+          JsonObjectLoader<TestStruct>()
+              .Field("value", &TestStruct::value)
+              .OptionalField("optional_value", &TestStruct::optional_value)
+              .OptionalField("absl_optional_value",
+                             &TestStruct::absl_optional_value)
+              .Finish();
+      return loader;
+    }
+  };
+  // True.
+  auto test_struct = Parse<TestStruct>("{\"value\": true}");
+  ASSERT_TRUE(test_struct.ok()) << test_struct.status();
+  EXPECT_EQ(test_struct->value, true);
+  EXPECT_EQ(test_struct->optional_value, true);  // Unmodified.
+  EXPECT_FALSE(test_struct->absl_optional_value.has_value());
+  // False.
+  test_struct = Parse<TestStruct>("{\"value\": false}");
+  ASSERT_TRUE(test_struct.ok()) << test_struct.status();
+  EXPECT_EQ(test_struct->value, false);
+  EXPECT_EQ(test_struct->optional_value, true);  // Unmodified.
+  EXPECT_FALSE(test_struct->absl_optional_value.has_value());
+  // Fails if required field is not present.
+  test_struct = Parse<TestStruct>("{}");
+  EXPECT_EQ(test_struct.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(test_struct.status().message(),
+            "errors validating JSON: [field:value error:field not present]")
+      << test_struct.status();
+  // Optional fields present.
+  test_struct = Parse<TestStruct>("{\"value\": true, \"optional_value\": false,"
+                                  "\"absl_optional_value\": true}");
+  ASSERT_TRUE(test_struct.ok()) << test_struct.status();
+  EXPECT_EQ(test_struct->value, true);
+  EXPECT_EQ(test_struct->optional_value, false);
+  EXPECT_EQ(test_struct->absl_optional_value, true);
+  // Wrong JSON type.
+  test_struct = Parse<TestStruct>("{\"value\": [], \"optional_value\": {}, "
+                                  "\"absl_optional_value\": 1}");
+  EXPECT_EQ(test_struct.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(test_struct.status().message(),
+            "errors validating JSON: ["
+            "field:absl_optional_value error:is not a boolean; "
+            "field:optional_value error:is not a boolean; "
+            "field:value error:is not a boolean]")
+      << test_struct.status();
+}
+
+//
+// String tests
+//
+
+TEST(JsonObjectLoader, StringFields) {
+  struct TestStruct {
+    std::string value;
+    std::string optional_value;
+    absl::optional<std::string> absl_optional_value;
+
+    static const JsonLoaderInterface* JsonLoader() {
+      static const auto* loader =
+          JsonObjectLoader<TestStruct>()
+              .Field("value", &TestStruct::value)
+              .OptionalField("optional_value", &TestStruct::optional_value)
+              .OptionalField("absl_optional_value",
+                             &TestStruct::absl_optional_value)
+              .Finish();
+      return loader;
+    }
+  };
+  // Valid string.
+  auto test_struct = Parse<TestStruct>("{\"value\": \"foo\"}");
+  ASSERT_TRUE(test_struct.ok()) << test_struct.status();
+  EXPECT_EQ(test_struct->value, "foo");
+  EXPECT_EQ(test_struct->optional_value, "");
+  EXPECT_FALSE(test_struct->absl_optional_value.has_value());
+  // Fails if required field is not present.
+  test_struct = Parse<TestStruct>("{}");
+  EXPECT_EQ(test_struct.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(test_struct.status().message(),
+            "errors validating JSON: [field:value error:field not present]")
+      << test_struct.status();
+  // Optional fields present.
+  test_struct = Parse<TestStruct>(
+      "{\"value\": \"foo\", \"optional_value\": \"bar\","
+      "\"absl_optional_value\": \"baz\"}");
+  ASSERT_TRUE(test_struct.ok()) << test_struct.status();
+  EXPECT_EQ(test_struct->value, "foo");
+  EXPECT_EQ(test_struct->optional_value, "bar");
+  EXPECT_EQ(test_struct->absl_optional_value, "baz");
+  // Wrong JSON type.
+  test_struct = Parse<TestStruct>("{\"value\": [], \"optional_value\": {}, "
+                                  "\"absl_optional_value\": 1}");
+  EXPECT_EQ(test_struct.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(test_struct.status().message(),
+            "errors validating JSON: ["
+            "field:absl_optional_value error:is not a string; "
+            "field:optional_value error:is not a string; "
+            "field:value error:is not a string]")
+      << test_struct.status();
+}
+
+//
+// Duration tests
+//
+
+TEST(JsonObjectLoader, DurationFields) {
+  struct TestStruct {
+    Duration value = Duration::Zero();
+    Duration optional_value = Duration::Zero();
+    absl::optional<Duration> absl_optional_value;
+
+    static const JsonLoaderInterface* JsonLoader() {
+      static const auto* loader =
+          JsonObjectLoader<TestStruct>()
+              .Field("value", &TestStruct::value)
+              .OptionalField("optional_value", &TestStruct::optional_value)
+              .OptionalField("absl_optional_value",
+                             &TestStruct::absl_optional_value)
+              .Finish();
+      return loader;
+    }
+  };
+  // Valid duration string.
+  auto test_struct = Parse<TestStruct>("{\"value\": \"3s\"}");
+  ASSERT_TRUE(test_struct.ok()) << test_struct.status();
+  EXPECT_EQ(test_struct->value, Duration::Seconds(3));
+  EXPECT_EQ(test_struct->optional_value, Duration::Zero());
+  EXPECT_FALSE(test_struct->absl_optional_value.has_value());
+  // Invalid duration strings.
+  test_struct = Parse<TestStruct>(
+      "{\"value\": \"3sec\", \"optional_value\": \"foos\","
+      "\"absl_optional_value\": \"1.0123456789s\"}");
+  EXPECT_EQ(test_struct.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(test_struct.status().message(),
+            "errors validating JSON: ["
+            "field:absl_optional_value error:"
+            "Not a duration (too many digits after decimal); "
+            "field:optional_value error:"
+            "Not a duration (not a number of seconds); "
+            "field:value error:Not a duration (no s suffix)]")
+      << test_struct.status();
+  test_struct = Parse<TestStruct>("{\"value\": \"3.xs\"}");
+  EXPECT_EQ(test_struct.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(test_struct.status().message(),
+            "errors validating JSON: ["
+            "field:value error:Not a duration (not a number of nanoseconds)]")
+      << test_struct.status();
+  // Fails if required field is not present.
+  test_struct = Parse<TestStruct>("{}");
+  EXPECT_EQ(test_struct.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(test_struct.status().message(),
+            "errors validating JSON: [field:value error:field not present]")
+      << test_struct.status();
+  // Optional fields present.
+  test_struct = Parse<TestStruct>(
+      "{\"value\": \"3s\", \"optional_value\": \"3.2s\", "
+      "\"absl_optional_value\": \"10s\"}");
+  ASSERT_TRUE(test_struct.ok()) << test_struct.status();
+  EXPECT_EQ(test_struct->value, Duration::Seconds(3));
+  EXPECT_EQ(test_struct->optional_value, Duration::Milliseconds(3200));
+  EXPECT_EQ(test_struct->absl_optional_value, Duration::Seconds(10));
+  // Wrong JSON type.
+  test_struct = Parse<TestStruct>("{\"value\": [], \"optional_value\": {}, "
+                                  "\"absl_optional_value\": 1}");
+  EXPECT_EQ(test_struct.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(test_struct.status().message(),
+            "errors validating JSON: ["
+            "field:absl_optional_value error:is not a string; "
+            "field:optional_value error:is not a string; "
+            "field:value error:is not a string]")
+      << test_struct.status();
+}
+
+//
+// Json::Object tests
+//
+
+TEST(JsonObjectLoader, JsonObjectFields) {
+  struct TestStruct {
+    Json::Object value;
+    Json::Object optional_value;
+    absl::optional<Json::Object> absl_optional_value;
+
+    static const JsonLoaderInterface* JsonLoader() {
+      static const auto* loader =
+          JsonObjectLoader<TestStruct>()
+              .Field("value", &TestStruct::value)
+              .OptionalField("optional_value", &TestStruct::optional_value)
+              .OptionalField("absl_optional_value",
+                             &TestStruct::absl_optional_value)
+              .Finish();
+      return loader;
+    }
+  };
+  // Valid object.
+  auto test_struct = Parse<TestStruct>("{\"value\": {\"a\":1}}");
+  ASSERT_TRUE(test_struct.ok()) << test_struct.status();
+  EXPECT_EQ(Json{test_struct->value}.Dump(), "{\"a\":1}");
+  EXPECT_EQ(Json{test_struct->optional_value}.Dump(), "{}");
+  EXPECT_FALSE(test_struct->absl_optional_value.has_value());
+  // Fails if required field is not present.
+  test_struct = Parse<TestStruct>("{}");
+  EXPECT_EQ(test_struct.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(test_struct.status().message(),
+            "errors validating JSON: [field:value error:field not present]")
+      << test_struct.status();
+  // Optional fields present.
+  test_struct = Parse<TestStruct>(
+      "{\"value\": {\"a\":1}, \"optional_value\": {\"b\":2}, "
+      "\"absl_optional_value\": {\"c\":3}}");
+  ASSERT_TRUE(test_struct.ok()) << test_struct.status();
+  EXPECT_EQ(Json{test_struct->value}.Dump(), "{\"a\":1}");
+  EXPECT_EQ(Json{test_struct->optional_value}.Dump(), "{\"b\":2}");
+  ASSERT_TRUE(test_struct->absl_optional_value.has_value());
+  EXPECT_EQ(Json{*test_struct->absl_optional_value}.Dump(), "{\"c\":3}");
+  // Wrong JSON type.
+  test_struct = Parse<TestStruct>("{\"value\": [], \"optional_value\": true, "
+                                  "\"absl_optional_value\": 1}");
+  EXPECT_EQ(test_struct.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(test_struct.status().message(),
+            "errors validating JSON: ["
+            "field:absl_optional_value error:is not an object; "
+            "field:optional_value error:is not an object; "
+            "field:value error:is not an object]")
+      << test_struct.status();
+}
+
+//
+// map<> tests
+//
+
+TEST(JsonObjectLoader, MapFields) {
+  struct TestStruct {
+    std::map<std::string, int32_t> value;
+    std::map<std::string, std::string> optional_value;
+    absl::optional<std::map<std::string, bool>> absl_optional_value;
+
+    static const JsonLoaderInterface* JsonLoader() {
+      static const auto* loader =
+          JsonObjectLoader<TestStruct>()
+              .Field("value", &TestStruct::value)
+              .OptionalField("optional_value", &TestStruct::optional_value)
+              .OptionalField("absl_optional_value",
+                             &TestStruct::absl_optional_value)
+              .Finish();
+      return loader;
+    }
+  };
+  // Valid map.
+  auto test_struct = Parse<TestStruct>("{\"value\": {\"a\":1}}");
+  ASSERT_TRUE(test_struct.ok()) << test_struct.status();
+  EXPECT_THAT(test_struct->value,
+              ::testing::ElementsAre(::testing::Pair("a", 1)));
+  EXPECT_THAT(test_struct->optional_value, ::testing::ElementsAre());
+  EXPECT_FALSE(test_struct->absl_optional_value.has_value());
+  // Fails if required field is not present.
+  test_struct = Parse<TestStruct>("{}");
+  EXPECT_EQ(test_struct.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(test_struct.status().message(),
+            "errors validating JSON: [field:value error:field not present]")
+      << test_struct.status();
+  // Optional fields present.
+  test_struct = Parse<TestStruct>(
+      "{\"value\": {\"a\":1}, \"optional_value\": {\"b\":\"foo\"}, "
+      "\"absl_optional_value\": {\"c\":true}}");
+  ASSERT_TRUE(test_struct.ok()) << test_struct.status();
+  EXPECT_THAT(test_struct->value,
+              ::testing::ElementsAre(::testing::Pair("a", 1)));
+  EXPECT_THAT(test_struct->optional_value,
+              ::testing::ElementsAre(::testing::Pair("b", "foo")));
+  ASSERT_TRUE(test_struct->absl_optional_value.has_value());
+  EXPECT_THAT(*test_struct->absl_optional_value,
+              ::testing::ElementsAre(::testing::Pair("c", true)));
+  // Wrong JSON type.
+  test_struct = Parse<TestStruct>("{\"value\": [], \"optional_value\": true, "
+                                  "\"absl_optional_value\": 1}");
+  EXPECT_EQ(test_struct.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(test_struct.status().message(),
+            "errors validating JSON: ["
+            "field:absl_optional_value error:is not an object; "
+            "field:optional_value error:is not an object; "
+            "field:value error:is not an object]")
+      << test_struct.status();
+  // Wrong JSON type for map value.
+  test_struct = Parse<TestStruct>(
+      "{\"value\": {\"a\":\"foo\"}, \"optional_value\": {\"b\":true}, "
+      "\"absl_optional_value\": {\"c\":1}}");
+  EXPECT_EQ(test_struct.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(test_struct.status().message(),
+            "errors validating JSON: ["
+            "field:absl_optional_value[\"c\"] error:is not a boolean; "
+            "field:optional_value[\"b\"] error:is not a string; "
+            "field:value[\"a\"] error:failed to parse number]")
+      << test_struct.status();
+}
+
+//
+// vector<> tests
+//
+
+TEST(JsonObjectLoader, VectorFields) {
+  struct TestStruct {
+    std::vector<int32_t> value;
+    std::vector<std::string> optional_value;
+    absl::optional<std::vector<bool>> absl_optional_value;
+
+    static const JsonLoaderInterface* JsonLoader() {
+      static const auto* loader =
+          JsonObjectLoader<TestStruct>()
+              .Field("value", &TestStruct::value)
+              .OptionalField("optional_value", &TestStruct::optional_value)
+              .OptionalField("absl_optional_value",
+                             &TestStruct::absl_optional_value)
+              .Finish();
+      return loader;
+    }
+  };
+  // Valid map.
+  auto test_struct = Parse<TestStruct>("{\"value\": [1, 2, 3]}");
+  ASSERT_TRUE(test_struct.ok()) << test_struct.status();
+  EXPECT_THAT(test_struct->value, ::testing::ElementsAre(1, 2, 3));
+  EXPECT_THAT(test_struct->optional_value, ::testing::ElementsAre());
+  EXPECT_FALSE(test_struct->absl_optional_value.has_value());
+  // Fails if required field is not present.
+  test_struct = Parse<TestStruct>("{}");
+  EXPECT_EQ(test_struct.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(test_struct.status().message(),
+            "errors validating JSON: [field:value error:field not present]")
+      << test_struct.status();
+  // Optional fields present.
+  test_struct = Parse<TestStruct>(
+      "{\"value\": [4, 5, 6], \"optional_value\": [\"foo\", \"bar\"], "
+      "\"absl_optional_value\": [true, false, true]}");
+  ASSERT_TRUE(test_struct.ok()) << test_struct.status();
+  EXPECT_THAT(test_struct->value, ::testing::ElementsAre(4, 5, 6));
+  EXPECT_THAT(test_struct->optional_value,
+              ::testing::ElementsAre("foo", "bar"));
+  ASSERT_TRUE(test_struct->absl_optional_value.has_value());
+  EXPECT_THAT(*test_struct->absl_optional_value,
+              ::testing::ElementsAre(true, false, true));
+  // Wrong JSON type.
+  test_struct = Parse<TestStruct>("{\"value\": {}, \"optional_value\": true, "
+                                  "\"absl_optional_value\": 1}");
+  EXPECT_EQ(test_struct.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(test_struct.status().message(),
+            "errors validating JSON: ["
+            "field:absl_optional_value error:is not an array; "
+            "field:optional_value error:is not an array; "
+            "field:value error:is not an array]")
+      << test_struct.status();
+  // Wrong JSON type for map value.
+  test_struct = Parse<TestStruct>(
+      "{\"value\": [\"foo\", \"bar\"], \"optional_value\": [true, false], "
+      "\"absl_optional_value\": [1, 2]}");
+  EXPECT_EQ(test_struct.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(test_struct.status().message(),
+            "errors validating JSON: ["
+            "field:absl_optional_value[0] error:is not a boolean; "
+            "field:absl_optional_value[1] error:is not a boolean; "
+            "field:optional_value[0] error:is not a string; "
+            "field:optional_value[1] error:is not a string; "
+            "field:value[0] error:failed to parse number; "
+            "field:value[1] error:failed to parse number]")
+      << test_struct.status();
+}
+
+//
+// Nested struct tests
+//
+
+TEST(JsonObjectLoader, NestedStructFields) {
+  struct NestedStruct {
+    int32_t inner = 0;
+
+    static const JsonLoaderInterface* JsonLoader() {
+      static const auto* loader =
+          JsonObjectLoader<NestedStruct>()
+              .Field("inner", &NestedStruct::inner)
+              .Finish();
+      return loader;
+    }
+  };
+  struct TestStruct {
+    NestedStruct outer;
+    NestedStruct optional_outer;
+    absl::optional<NestedStruct> absl_optional_outer;
+
+    static const JsonLoaderInterface* JsonLoader() {
+      static const auto* loader =
+          JsonObjectLoader<TestStruct>()
+              .Field("outer", &TestStruct::outer)
+              .OptionalField("optional_outer", &TestStruct::optional_outer)
+              .OptionalField("absl_optional_outer",
+                             &TestStruct::absl_optional_outer)
+              .Finish();
+      return loader;
+    }
+  };
+  // Valid nested struct.
+  auto test_struct = Parse<TestStruct>("{\"outer\": {\"inner\": 1}}");
+  ASSERT_TRUE(test_struct.ok()) << test_struct.status();
+  EXPECT_EQ(test_struct->outer.inner, 1);
+  EXPECT_EQ(test_struct->optional_outer.inner, 0);
+  EXPECT_FALSE(test_struct->absl_optional_outer.has_value());
+  // Fails if required field is not present.
+  test_struct = Parse<TestStruct>("{}");
+  EXPECT_EQ(test_struct.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(test_struct.status().message(),
+            "errors validating JSON: [field:outer error:field not present]")
+      << test_struct.status();
+  // Fails if inner required field is not present.
+  test_struct = Parse<TestStruct>("{\"outer\": {}}");
+  EXPECT_EQ(test_struct.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(
+      test_struct.status().message(),
+      "errors validating JSON: [field:outer.inner error:field not present]")
+      << test_struct.status();
+  // Optional fields present.
+  test_struct = Parse<TestStruct>(
+      "{\"outer\": {\"inner\":1}, \"optional_outer\": {\"inner\":2}, "
+      "\"absl_optional_outer\": {\"inner\":3}}");
+  ASSERT_TRUE(test_struct.ok()) << test_struct.status();
+  EXPECT_EQ(test_struct->outer.inner, 1);
+  EXPECT_EQ(test_struct->optional_outer.inner, 2);
+  ASSERT_TRUE(test_struct->absl_optional_outer.has_value());
+  EXPECT_EQ(test_struct->absl_optional_outer->inner, 3);
+  // Wrong JSON type.
+  test_struct = Parse<TestStruct>(
+      "{\"outer\": \"foo\", \"optional_outer\": true, "
+      "\"absl_optional_outer\": 1}");
+  EXPECT_EQ(test_struct.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(test_struct.status().message(),
+            "errors validating JSON: ["
+            "field:absl_optional_outer error:is not an object; "
+            "field:optional_outer error:is not an object; "
+            "field:outer error:is not an object]")
+      << test_struct.status();
+  // Wrong JSON type for inner value.
+  test_struct = Parse<TestStruct>(
+      "{\"outer\": {\"inner\":\"foo\"}, \"optional_outer\": {\"inner\":true}, "
+      "\"absl_optional_outer\": {\"inner\":[]}}");
+  EXPECT_EQ(test_struct.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(test_struct.status().message(),
+            "errors validating JSON: ["
+            "field:absl_optional_outer.inner error:is not a number; "
+            "field:optional_outer.inner error:is not a number; "
+            "field:outer.inner error:failed to parse number]")
+      << test_struct.status();
+}
+
+TEST(JsonObjectLoader, IgnoresUnsupportedFields) {
+  struct TestStruct {
+    int32_t a = 0;
+
+    static const JsonLoaderInterface* JsonLoader() {
+      static const auto* loader = JsonObjectLoader<TestStruct>()
+                                      .Field("a", &TestStruct::a)
+                                      .Finish();
+      return loader;
+    }
+  };
+  auto test_struct = Parse<TestStruct>("{\"a\": 3, \"b\":false}");
+  ASSERT_TRUE(test_struct.ok()) << test_struct.status();
+  EXPECT_EQ(test_struct->a, 3);
+}
+
+TEST(JsonObjectLoader, PostLoadHook) {
+  struct TestStruct {
+    int32_t a = 0;
+
+    static const JsonLoaderInterface* JsonLoader() {
+      static const auto* loader = JsonObjectLoader<TestStruct>()
+                                      .OptionalField("a", &TestStruct::a)
+                                      .Finish();
+      return loader;
+    }
+
+    void JsonPostLoad(const Json& source, ErrorList* errors) { ++a; }
+  };
+  auto test_struct = Parse<TestStruct>("{\"a\": 1}");
+  ASSERT_TRUE(test_struct.ok()) << test_struct.status();
+  EXPECT_EQ(test_struct->a, 2);
+  test_struct = Parse<TestStruct>("{}");
+  ASSERT_TRUE(test_struct.ok()) << test_struct.status();
+  EXPECT_EQ(test_struct->a, 1);
+}
+
+TEST(JsonObjectLoader, CustomValidationInPostLoadHook) {
+  struct TestStruct {
+    int32_t a = 0;
+
+    static const JsonLoaderInterface* JsonLoader() {
+      static const auto* loader = JsonObjectLoader<TestStruct>()
+                                      .Field("a", &TestStruct::a)
+                                      .Finish();
+      return loader;
+    }
+
+    void JsonPostLoad(const Json& source, ErrorList* errors) {
+      ScopedField field(errors, ".a");
+      if (!errors->FieldHasErrors() && a <= 0) {
+        errors->AddError("must be greater than 0");
+      }
+    }
+  };
+  // Value greater than 0.
+  auto test_struct = Parse<TestStruct>("{\"a\": 1}");
+  ASSERT_TRUE(test_struct.ok()) << test_struct.status();
+  EXPECT_EQ(test_struct->a, 1);
+  // Value 0, triggers custom validation.
+  test_struct = Parse<TestStruct>("{\"a\": 0}");
+  EXPECT_EQ(test_struct.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(test_struct.status().message(),
+            "errors validating JSON: [field:a error:must be greater than 0]")
+      << test_struct.status();
+  // Invalid type, generates built-in parsing error, so custom
+  // validation will not generate a new error.
+  test_struct = Parse<TestStruct>("{\"a\": []}");
+  EXPECT_EQ(test_struct.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(test_struct.status().message(),
+            "errors validating JSON: [field:a error:is not a number]")
+      << test_struct.status();
 }
 
 }  // namespace

@@ -27,23 +27,36 @@
 
 namespace grpc_core {
 
-void ErrorList::AddError(absl::string_view error) {
-  std::string fields = absl::StrJoin(fields_, "");
-  absl::string_view fields_view = fields;
-  absl::ConsumePrefix(&fields_view, ".");  // Skip leading '.' in field names.
-  errors_.emplace_back(absl::StrCat("field:", fields_view, " error:", error));
-}
-
 void ErrorList::PushField(absl::string_view ext) {
+  // Skip leading '.' for top-level field names.
+  if (fields_.empty()) absl::ConsumePrefix(&ext, ".");
   fields_.emplace_back(std::string(ext));
 }
 
 void ErrorList::PopField() { fields_.pop_back(); }
 
+void ErrorList::AddError(absl::string_view error) {
+  field_errors_[absl::StrJoin(fields_, "")].emplace_back(error);
+}
+
+bool ErrorList::FieldHasErrors() const {
+  return field_errors_.find(absl::StrJoin(fields_, "")) != field_errors_.end();
+}
+
 absl::Status ErrorList::status() const {
-  if (errors_.empty()) return absl::OkStatus();
+  if (field_errors_.empty()) return absl::OkStatus();
+  std::vector<std::string> errors;
+  for (const auto& p : field_errors_) {
+    if (p.second.size() > 1) {
+      errors.emplace_back(absl::StrCat("field:", p.first, " errors:[",
+                                       absl::StrJoin(p.second, "; "), "]"));
+    } else {
+      errors.emplace_back(
+          absl::StrCat("field:", p.first, " error:", p.second[0]));
+    }
+  }
   return absl::InvalidArgumentError(absl::StrCat(
-      "errors validating JSON: [", absl::StrJoin(errors_, "; "), "]"));
+      "errors validating JSON: [", absl::StrJoin(errors, "; "), "]"));
 }
 
 namespace json_detail {
@@ -61,7 +74,12 @@ void LoadScalar::LoadInto(const Json& json, void* dst,
   return LoadInto(json.string_value(), dst, errors);
 }
 
-bool LoadNumber::IsNumber() const { return true; }
+bool LoadString::IsNumber() const { return false; }
+
+void LoadString::LoadInto(const std::string& value, void* dst,
+                          ErrorList*) const {
+  *static_cast<std::string*>(dst) = value;
+}
 
 bool LoadDuration::IsNumber() const { return false; }
 
@@ -79,7 +97,7 @@ void LoadDuration::LoadInto(const std::string& value, void* dst,
     absl::string_view after_decimal = buf.substr(decimal_point + 1);
     buf = buf.substr(0, decimal_point);
     if (!absl::SimpleAtoi(after_decimal, &nanos)) {
-      errors->AddError("Not a duration (not an number of nanoseconds)");
+      errors->AddError("Not a duration (not a number of nanoseconds)");
       return;
     }
     if (after_decimal.length() > 9) {
@@ -93,18 +111,23 @@ void LoadDuration::LoadInto(const std::string& value, void* dst,
   }
   int seconds;
   if (!absl::SimpleAtoi(buf, &seconds)) {
-    errors->AddError("Not a duration (not an number of seconds)");
+    errors->AddError("Not a duration (not a number of seconds)");
     return;
   }
   *static_cast<Duration*>(dst) =
       Duration::FromSecondsAndNanoseconds(seconds, nanos);
 }
 
-bool LoadString::IsNumber() const { return false; }
+bool LoadNumber::IsNumber() const { return true; }
 
-void LoadString::LoadInto(const std::string& value, void* dst,
-                          ErrorList*) const {
-  *static_cast<std::string*>(dst) = value;
+void LoadBool::LoadInto(const Json& json, void* dst, ErrorList* errors) const {
+  if (json.type() == Json::Type::JSON_TRUE) {
+    *static_cast<bool*>(dst) = true;
+  } else if (json.type() == Json::Type::JSON_FALSE) {
+    *static_cast<bool*>(dst) = false;
+  } else {
+    errors->AddError("is not a boolean");
+  }
 }
 
 void LoadUnprocessedJsonObject::LoadInto(const Json& json, void* dst,
@@ -140,11 +163,11 @@ void LoadMap::LoadInto(const Json& json, void* dst, ErrorList* errors) const {
   }
 }
 
-void LoadObject(const Json& json, const Element* elements, size_t num_elements,
+bool LoadObject(const Json& json, const Element* elements, size_t num_elements,
                 void* dst, ErrorList* errors) {
   if (json.type() != Json::Type::OBJECT) {
     errors->AddError("is not an object");
-    return;
+    return false;
   }
   for (size_t i = 0; i < num_elements; ++i) {
     const Element& element = elements[i];
@@ -158,6 +181,7 @@ void LoadObject(const Json& json, const Element* elements, size_t num_elements,
     char* field_dst = static_cast<char*>(dst) + element.member_offset;
     element.loader->LoadInto(it->second, field_dst, errors);
   }
+  return true;
 }
 
 }  // namespace json_detail
