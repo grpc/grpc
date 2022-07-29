@@ -67,7 +67,6 @@ class Epoll1EventHandle : public EventHandle {
  public:
   Epoll1EventHandle(int fd, Epoll1Poller* poller)
       : fd_(fd),
-        pending_actions_(0),
         list_(),
         poller_(poller),
         exec_actions_closure_([this]() { ExecutePendingActions(); }),
@@ -79,7 +78,14 @@ class Epoll1EventHandle : public EventHandle {
     read_closure_->InitEvent();
     write_closure_->InitEvent();
     error_closure_->InitEvent();
-    pending_actions_ = 0;
+    pending_actions_.store(0, std::memory_order_relaxed);
+  }
+  void ReInit(int fd) {
+    fd_ = fd;
+    read_closure_->InitEvent();
+    write_closure_->InitEvent();
+    error_closure_->InitEvent();
+    pending_actions_.store(0, std::memory_order_relaxed);
   }
   Epoll1Poller* Poller() { return poller_; }
   EventEngine::Closure* SetPendingActions(bool pending_read, bool pending_write,
@@ -317,7 +323,6 @@ void Epoll1EventHandle::OrphanHandle(IomgrEngineClosure* on_done,
     write_closure_->DestroyEvent();
     error_closure_->DestroyEvent();
   }
-  pending_actions_.store(0, std::memory_order_relaxed);
   {
     absl::MutexLock lock(&poller_->mu_);
     poller_->free_epoll1_handles_list_.push_back(this);
@@ -398,6 +403,7 @@ EventHandle* Epoll1Poller::CreateHandle(int fd, absl::string_view /*name*/,
       new_handle = reinterpret_cast<Epoll1EventHandle*>(
           free_epoll1_handles_list_.front());
       free_epoll1_handles_list_.pop_front();
+      new_handle->ReInit(fd);
     }
   }
   ForkFdListAddHandle(new_handle);
@@ -447,7 +453,6 @@ bool Epoll1Poller::ProcessEpollEvents(int max_epoll_events_to_handle,
       bool read_ev = (ev->events & (EPOLLIN | EPOLLPRI)) != 0;
       bool write_ev = (ev->events & EPOLLOUT) != 0;
       bool err_fallback = error && !track_err;
-
       if (EventEngine::Closure* closure = handle->SetPendingActions(
               read_ev || cancel || err_fallback,
               write_ev || cancel || err_fallback, error && !err_fallback)) {
