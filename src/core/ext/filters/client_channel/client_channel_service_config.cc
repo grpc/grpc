@@ -60,11 +60,11 @@ ClientChannelGlobalParsedConfig::HealthCheckConfig::operator=(
 
 const JsonLoaderInterface*
 ClientChannelGlobalParsedConfig::HealthCheckConfig::JsonLoader() {
-  static const auto loader =
+  static const auto* loader =
       JsonObjectLoader<HealthCheckConfig>()
           .OptionalField("serviceName", &HealthCheckConfig::service_name)
           .Finish();
-  return &loader;
+  return loader;
 }
 
 //
@@ -87,7 +87,7 @@ ClientChannelGlobalParsedConfig& ClientChannelGlobalParsedConfig::operator=(
 }
 
 const JsonLoaderInterface* ClientChannelGlobalParsedConfig::JsonLoader() {
-  static const auto loader =
+  static const auto* loader =
       JsonObjectLoader<ClientChannelGlobalParsedConfig>()
           // Note: "loadBalancingConfig" requires special handling, so
           // that field will be parsed in JsonPostLoad() instead.
@@ -97,7 +97,7 @@ const JsonLoaderInterface* ClientChannelGlobalParsedConfig::JsonLoader() {
           .OptionalField("healthCheckConfig",
                          &ClientChannelGlobalParsedConfig::health_check_config_)
           .Finish();
-  return &loader;
+  return loader;
 }
 
 void ClientChannelGlobalParsedConfig::JsonPostLoad(const Json& json,
@@ -150,13 +150,13 @@ ClientChannelMethodParsedConfig& ClientChannelMethodParsedConfig::operator=(
 }
 
 const JsonLoaderInterface* ClientChannelMethodParsedConfig::JsonLoader() {
-  static const auto loader =
+  static const auto* loader =
       JsonObjectLoader<ClientChannelMethodParsedConfig>()
           .OptionalField("timeout", &ClientChannelMethodParsedConfig::timeout_)
           .OptionalField("waitForReady",
                          &ClientChannelMethodParsedConfig::wait_for_ready_)
           .Finish();
-  return &loader;
+  return loader;
 }
 
 //

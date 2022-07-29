@@ -51,11 +51,11 @@
 //     int b;
 //     static const JsonLoaderInterface* JsonLoader() {
 //       // Note: Field names must be string constants; they are not copied.
-//       static const auto loader = JsonObjectLoader<Foo>()
+//       static const auto* loader = JsonObjectLoader<Foo>()
 //           .Field("a", &Foo::a)
 //           .Field("b", &Foo::b)
 //           .Finish();
-//       return &loader;
+//       return loader;
 //     }
 //     // Optional; omit if no post-processing needed.
 //     void JsonPostLoad(const Json& source, ErrorList* errors) { ++a; }
@@ -113,7 +113,7 @@ class LoaderInterface {
                         ErrorList* errors) const = 0;
 
  protected:
-  ~LoaderInterface() = default;
+  virtual ~LoaderInterface() = default;
 };
 
 // Loads a scalar (string or number).
@@ -122,7 +122,7 @@ class LoadScalar : public LoaderInterface {
   void LoadInto(const Json& json, void* dst, ErrorList* errors) const override;
 
  protected:
-  ~LoadScalar() = default;
+  ~LoadScalar() override = default;
 
  private:
   // true if we're loading a number, false if we're loading a string.
@@ -137,7 +137,7 @@ class LoadScalar : public LoaderInterface {
 // Load a number.
 class LoadNumber : public LoadScalar {
  protected:
-  ~LoadNumber() = default;
+  ~LoadNumber() override = default;
 
  private:
   bool IsNumber() const override;
@@ -146,7 +146,7 @@ class LoadNumber : public LoadScalar {
 // Load a duration
 class LoadDuration : public LoadScalar {
  protected:
-  ~LoadDuration() = default;
+  ~LoadDuration() override = default;
 
  private:
   bool IsNumber() const override;
@@ -158,7 +158,7 @@ class LoadDuration : public LoadScalar {
 template <typename T>
 class TypedLoadSignedNumber : public LoadNumber {
  protected:
-  ~TypedLoadSignedNumber() = default;
+  ~TypedLoadSignedNumber() override = default;
 
  private:
   void LoadInto(const std::string& value, void* dst,
@@ -173,7 +173,7 @@ class TypedLoadSignedNumber : public LoadNumber {
 template <typename T>
 class TypedLoadUnsignedNumber : public LoadNumber {
  protected:
-  ~TypedLoadUnsignedNumber() = default;
+  ~TypedLoadUnsignedNumber() override = default;
 
  private:
   void LoadInto(const std::string& value, void* dst,
@@ -187,7 +187,7 @@ class TypedLoadUnsignedNumber : public LoadNumber {
 // Load a float.
 class LoadFloat : public LoadNumber {
  protected:
-  ~LoadFloat() = default;
+  ~LoadFloat() override = default;
 
  private:
   void LoadInto(const std::string& value, void* dst,
@@ -201,7 +201,7 @@ class LoadFloat : public LoadNumber {
 // Load a double.
 class LoadDouble : public LoadNumber {
  protected:
-  ~LoadDouble() = default;
+  ~LoadDouble() override = default;
 
  private:
   void LoadInto(const std::string& value, void* dst,
@@ -215,7 +215,7 @@ class LoadDouble : public LoadNumber {
 // Load a string.
 class LoadString : public LoadScalar {
  protected:
-  ~LoadString() = default;
+  ~LoadString() override = default;
 
  private:
   bool IsNumber() const override;
@@ -235,7 +235,7 @@ class LoadVector : public LoaderInterface {
   void LoadInto(const Json& json, void* dst, ErrorList* errors) const override;
 
  protected:
-  ~LoadVector() = default;
+  ~LoadVector() override = default;
 
  private:
   virtual void LoadOne(const Json& json, void* dst,
@@ -248,7 +248,7 @@ class LoadOptional : public LoaderInterface {
   void LoadInto(const Json& json, void* dst, ErrorList* errors) const override;
 
  protected:
-  ~LoadOptional() = default;
+  ~LoadOptional() override = default;
 
  private:
   virtual void LoadOne(const Json& json, void* dst,
@@ -261,7 +261,7 @@ class LoadMap : public LoaderInterface {
   void LoadInto(const Json& json, void* dst, ErrorList* errors) const override;
 
  protected:
-  ~LoadMap() = default;
+  ~LoadMap() override = default;
 
  private:
   virtual void LoadOne(const Json& json, const std::string& name, void* dst,
@@ -353,10 +353,8 @@ class AutoLoader<std::map<std::string, T>> final : public LoadMap {
 // Simply keeps a static AutoLoader<T> and returns a pointer to that.
 template <typename T>
 const LoaderInterface* LoaderForType() {
-  static const AutoLoader<T> loader;
-  static_assert(std::is_trivially_destructible<decltype(loader)>::value,
-                "AutoLoader type is not trivially destructible");
-  return &loader;
+  static const auto* loader = new AutoLoader<T>();
+  return loader;
 }
 
 // Element describes one typed field to be loaded from a JSON object.
@@ -457,8 +455,8 @@ class JsonObjectLoader final {
                   "Only initial loader step can have kElemCount==0.");
   }
 
-  FinishedJsonObjectLoader<T, kElemCount> Finish() const {
-    return FinishedJsonObjectLoader<T, kElemCount>(elements_);
+  FinishedJsonObjectLoader<T, kElemCount>* Finish() const {
+    return new FinishedJsonObjectLoader<T, kElemCount>(elements_);
   }
 
   template <typename U>

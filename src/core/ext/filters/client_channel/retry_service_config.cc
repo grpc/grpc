@@ -54,13 +54,13 @@ namespace internal {
 //
 
 const JsonLoaderInterface* RetryGlobalConfig::JsonLoader() {
-  static const auto loader =
+  static const auto* loader =
       JsonObjectLoader<RetryGlobalConfig>()
           // Note: The "tokenRatio" field requires custom parsing, so
           // it's handled in JsonPostLoad() instead.
           .Field("maxTokens", &RetryGlobalConfig::max_milli_tokens_)
           .Finish();
-  return &loader;
+  return loader;
 }
 
 void RetryGlobalConfig::JsonPostLoad(const Json& json, ErrorList* errors) {
@@ -123,7 +123,7 @@ void RetryGlobalConfig::JsonPostLoad(const Json& json, ErrorList* errors) {
 //
 
 const JsonLoaderInterface* RetryMethodConfig::JsonLoader() {
-  static const auto loader =
+  static const auto* loader =
       JsonObjectLoader<RetryMethodConfig>()
           // Note: The "retryableStatusCodes" field requires custom parsing,
           // so it's handled in JsonPostLoad() instead.
@@ -134,7 +134,7 @@ const JsonLoaderInterface* RetryMethodConfig::JsonLoader() {
           .OptionalField("perAttemptRecvTimeout",
                          &RetryMethodConfig::per_attempt_recv_timeout_)
           .Finish();
-  return &loader;
+  return loader;
 }
 
 void RetryMethodConfig::JsonPostLoad(const Json& json, ErrorList* errors) {
@@ -244,11 +244,11 @@ struct GlobalConfig {
   absl::optional<RetryGlobalConfig> retry_throttling;
 
   static const JsonLoaderInterface* JsonLoader() {
-    static const auto loader =
+    static const auto* loader =
         JsonObjectLoader<GlobalConfig>()
             .OptionalField("retryThrottling", &GlobalConfig::retry_throttling)
             .Finish();
-    return &loader;
+    return loader;
   }
 };
 
@@ -272,11 +272,11 @@ struct MethodConfig {
   absl::optional<RetryMethodConfig> retry_policy;
 
   static const JsonLoaderInterface* JsonLoader() {
-    static const auto loader =
+    static const auto* loader =
         JsonObjectLoader<MethodConfig>()
             .OptionalField("retryPolicy", &MethodConfig::retry_policy)
             .Finish();
-    return &loader;
+    return loader;
   }
 };
 
