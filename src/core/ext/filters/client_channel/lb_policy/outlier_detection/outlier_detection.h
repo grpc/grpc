@@ -24,6 +24,7 @@
 #include "absl/types/optional.h"
 
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/json/json_object_loader.h"
 
 namespace grpc_core {
 
@@ -39,16 +40,24 @@ struct OutlierDetectionConfig {
     uint32_t enforcement_percentage = 0;
     uint32_t minimum_hosts = 5;
     uint32_t request_volume = 100;
+
+    static const JsonLoaderInterface* JsonLoader();
   };
   struct FailurePercentageEjection {
     uint32_t threshold = 85;
     uint32_t enforcement_percentage = 0;
     uint32_t minimum_hosts = 5;
     uint32_t request_volume = 50;
+
+    static const JsonLoaderInterface* JsonLoader();
   };
   absl::optional<SuccessRateEjection> success_rate_ejection;
   absl::optional<FailurePercentageEjection> failure_percentage_ejection;
+
+  static const JsonLoaderInterface* JsonLoader();
+  void JsonPostLoad(const Json& json, ErrorList* errors);
 };
+
 }  // namespace grpc_core
 
 #endif  // GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_OUTLIER_DETECTION_OUTLIER_DETECTION_H

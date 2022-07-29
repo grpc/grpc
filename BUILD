@@ -4487,6 +4487,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "gpr_platform",
+        "json_object_loader",
         "time",
     ],
 )

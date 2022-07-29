@@ -490,6 +490,13 @@ absl::StatusOr<T> LoadFromJson(const Json& json) {
   return result;
 }
 
+template <typename T>
+T LoadFromJson(const Json& json, ErrorList* error_list) {
+  T result;
+  json_detail::LoaderForType<T>()->LoadInto(json, &result, error_list);
+  return result;
+}
+
 }  // namespace grpc_core
 
 #endif  // GRPC_CORE_LIB_JSON_JSON_OBJECT_LOADER_H
