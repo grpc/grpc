@@ -17,10 +17,7 @@
 #include "test/core/event_engine/test_suite/event_engine_test.h"
 #include "test/core/util/test_config.h"
 
-#ifndef GPR_WINDOWS
-#error \
-    "This test should only be run on a Windows machine. Investigate your bad build configuration."
-#endif
+#ifdef GPR_WINDOWS
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
@@ -32,3 +29,9 @@ int main(int argc, char** argv) {
   SetEventEngineFactories(factory, factory);
   return RUN_ALL_TESTS();
 }
+
+#else  // not GPR_WINDOWS
+
+int main(int /* argc */, char** /* argv */) { return 1; }
+
+#endif // GPR_WINDOWS
