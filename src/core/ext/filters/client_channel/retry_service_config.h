@@ -54,17 +54,6 @@ class RetryGlobalConfig : public ServiceConfigParser::ParsedConfig {
 
 class RetryMethodConfig : public ServiceConfigParser::ParsedConfig {
  public:
-  RetryMethodConfig(int max_attempts, Duration initial_backoff,
-                    Duration max_backoff, float backoff_multiplier,
-                    StatusCodeSet retryable_status_codes,
-                    absl::optional<Duration> per_attempt_recv_timeout)
-      : max_attempts_(max_attempts),
-        initial_backoff_(initial_backoff),
-        max_backoff_(max_backoff),
-        backoff_multiplier_(backoff_multiplier),
-        retryable_status_codes_(retryable_status_codes),
-        per_attempt_recv_timeout_(per_attempt_recv_timeout) {}
-
   int max_attempts() const { return max_attempts_; }
   Duration initial_backoff() const { return initial_backoff_; }
   Duration max_backoff() const { return max_backoff_; }
@@ -75,6 +64,9 @@ class RetryMethodConfig : public ServiceConfigParser::ParsedConfig {
   absl::optional<Duration> per_attempt_recv_timeout() const {
     return per_attempt_recv_timeout_;
   }
+
+  static const JsonLoaderInterface* JsonLoader();
+  void JsonPostLoad(const Json& json, ErrorList* errors);
 
  private:
   int max_attempts_ = 0;

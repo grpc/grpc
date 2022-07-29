@@ -72,17 +72,20 @@ class ErrorList {
   void PushField(absl::string_view ext) GPR_ATTRIBUTE_NOINLINE;
   // Record that we've finished reading that field.
   void PopField() GPR_ATTRIBUTE_NOINLINE;
+
   // Record that we've encountered an error.
   void AddError(absl::string_view error) GPR_ATTRIBUTE_NOINLINE;
+  // Returns true if the current field has errors.
+  bool FieldHasErrors() const GPR_ATTRIBUTE_NOINLINE;
 
   // Returns the resulting status of parsing.
   absl::Status status() const;
 
   // Return true if there are no errors.
-  bool ok() const { return errors_.empty(); }
+  bool ok() const { return field_errors_.empty(); }
 
  private:
-  std::vector<std::string> errors_;
+  std::map<std::string /*field_name*/, std::vector<std::string>> field_errors_;
   std::vector<std::string> fields_;
 };
 
@@ -151,17 +154,60 @@ class LoadDuration : public LoadScalar {
                 ErrorList* errors) const override;
 };
 
-// Load a number of type T.
+// Load a signed number of type T.
 template <typename T>
-class TypedLoadNumber : public LoadNumber {
+class TypedLoadSignedNumber : public LoadNumber {
  protected:
-  ~TypedLoadNumber() = default;
+  ~TypedLoadSignedNumber() = default;
 
  private:
   void LoadInto(const std::string& value, void* dst,
                 ErrorList* errors) const override {
     if (!absl::SimpleAtoi(value, static_cast<T*>(dst))) {
       errors->AddError("failed to parse number");
+    }
+  }
+};
+
+// Load an unsigned number of type T.
+template <typename T>
+class TypedLoadUnsignedNumber : public LoadNumber {
+ protected:
+  ~TypedLoadUnsignedNumber() = default;
+
+ private:
+  void LoadInto(const std::string& value, void* dst,
+                ErrorList* errors) const override {
+    if (!absl::SimpleAtoi(value, static_cast<T*>(dst))) {
+      errors->AddError("failed to parse non-negative number");
+    }
+  }
+};
+
+// Load a float.
+class LoadFloat : public LoadNumber {
+ protected:
+  ~LoadFloat() = default;
+
+ private:
+  void LoadInto(const std::string& value, void* dst,
+                ErrorList* errors) const override {
+    if (!absl::SimpleAtof(value, static_cast<float*>(dst))) {
+      errors->AddError("failed to parse floating-point number");
+    }
+  }
+};
+
+// Load a double.
+class LoadDouble : public LoadNumber {
+ protected:
+  ~LoadDouble() = default;
+
+ private:
+  void LoadInto(const std::string& value, void* dst,
+                ErrorList* errors) const override {
+    if (!absl::SimpleAtod(value, static_cast<double*>(dst))) {
+      errors->AddError("failed to parse floating-point number");
     }
   }
 };
@@ -246,13 +292,17 @@ class AutoLoader final : public LoaderInterface {
 
 // Specializations of AutoLoader for basic types.
 template <>
-class AutoLoader<int32_t> final : public TypedLoadNumber<int32_t> {};
+class AutoLoader<int32_t> final : public TypedLoadSignedNumber<int32_t> {};
 template <>
-class AutoLoader<uint32_t> final : public TypedLoadNumber<uint32_t> {};
+class AutoLoader<uint32_t> final : public TypedLoadUnsignedNumber<uint32_t> {};
 template <>
-class AutoLoader<int64_t> final : public TypedLoadNumber<int64_t> {};
+class AutoLoader<int64_t> final : public TypedLoadSignedNumber<int64_t> {};
 template <>
-class AutoLoader<uint64_t> final : public TypedLoadNumber<uint64_t> {};
+class AutoLoader<uint64_t> final : public TypedLoadUnsignedNumber<uint64_t> {};
+template <>
+class AutoLoader<float> final : public LoadFloat {};
+template <>
+class AutoLoader<double> final : public LoadDouble {};
 template <>
 class AutoLoader<Duration> final : public LoadDuration {};
 template <>
@@ -357,7 +407,8 @@ class Vec<T, 0> {
 
 // Given a list of elements, and a destination object, load the elements into
 // the object from some parsed JSON.
-void LoadObject(const Json& json, const Element* elements, size_t num_elements,
+// Returns false if the JSON object was not of type Json::Type::OBJECT.
+bool LoadObject(const Json& json, const Element* elements, size_t num_elements,
                 void* dst, ErrorList* errors);
 
 // Adaptor type - takes a compile time computed list of elements and implements
@@ -386,8 +437,9 @@ class FinishedJsonObjectLoader<T, kElemCount,
       : elements_(elements) {}
 
   void LoadInto(const Json& json, void* dst, ErrorList* errors) const override {
-    LoadObject(json, elements_.data(), elements_.size(), dst, errors);
-    static_cast<T*>(dst)->JsonPostLoad(json, errors);
+    if (LoadObject(json, elements_.data(), elements_.size(), dst, errors)) {
+      static_cast<T*>(dst)->JsonPostLoad(json, errors);
+    }
   }
 
  private:
