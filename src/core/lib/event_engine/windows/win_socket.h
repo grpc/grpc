@@ -84,13 +84,9 @@ class WinSocket final : public SocketNotifier {
   // Return the appropriate OpState for a given OVERLAPPED
   // Returns nullptr if the overlapped does not match either read or write ops.
   OpState* GetOpInfoForOverlapped(OVERLAPPED* overlapped);
-  // -------------------------------------------------
-  // TODO(hork): We need access to these for WSA* ops in TCP code.
-  // Maybe we can encapsulate these calls inside of the OpState class. Would
-  // need to rename it.
+  // Getters for the operation state data.
   OpState* read_info() { return &read_info_; }
   OpState* write_info() { return &write_info_; }
-  // -------------------------------------------------
   // Accessor method for underlying socket
   SOCKET socket();
 

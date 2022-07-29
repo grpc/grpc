@@ -29,12 +29,11 @@
 #include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/executor/threaded_executor.h"
 #include "src/core/lib/event_engine/poller.h"
+#include "src/core/lib/event_engine/promise.h"
 #include "src/core/lib/event_engine/windows/iocp.h"
 #include "src/core/lib/event_engine/windows/win_socket.h"
 #include "src/core/lib/iomgr/error.h"
 #include "test/core/event_engine/windows/create_sockpair.h"
-
-// DO NOT SUBMIT(hork): get sanitizers working
 
 namespace {
 using ::grpc_event_engine::experimental::AnyInvocableClosure;
@@ -42,6 +41,7 @@ using ::grpc_event_engine::experimental::CreateSockpair;
 using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::IOCP;
 using ::grpc_event_engine::experimental::Poller;
+using ::grpc_event_engine::experimental::Promise;
 using ::grpc_event_engine::experimental::SelfDeletingClosure;
 using ::grpc_event_engine::experimental::ThreadedExecutor;
 using ::grpc_event_engine::experimental::WinSocket;
@@ -58,8 +58,8 @@ TEST_F(IOCPTest, ClientReceivesNotificationOfServerSend) {
       static_cast<WinSocket*>(iocp.Watch(sockpair[0]));
   WinSocket* wrapped_server_socket =
       static_cast<WinSocket*>(iocp.Watch(sockpair[1]));
-  bool read_called = false;
-  bool write_called = false;
+  Promise<bool> read_called{false};
+  Promise<bool> write_called{false};
   DWORD flags = 0;
   AnyInvocableClosure* on_read;
   AnyInvocableClosure* on_write;
@@ -84,7 +84,7 @@ TEST_F(IOCPTest, ClientReceivesNotificationOfServerSend) {
       gpr_log(GPR_DEBUG, "Notified on read");
       EXPECT_GE(wrapped_client_socket->read_info()->bytes_transferred(), 10);
       EXPECT_STREQ(read_wsabuf.buf, "hello!");
-      read_called = true;
+      read_called.Set(true);
     });
     wrapped_client_socket->NotifyOnRead(on_read);
   }
@@ -109,7 +109,7 @@ TEST_F(IOCPTest, ClientReceivesNotificationOfServerSend) {
     }
     on_write = new AnyInvocableClosure([&write_called] {
       gpr_log(GPR_DEBUG, "Notified on write");
-      write_called = true;
+      write_called.Set(true);
     });
     wrapped_server_socket->NotifyOnWrite(on_write);
   }
@@ -126,16 +126,8 @@ TEST_F(IOCPTest, ClientReceivesNotificationOfServerSend) {
   ASSERT_EQ(closures.size(), 1);
   executor.Run(closures[0]);
   // wait for the callbacks to run
-  absl::Time deadline = absl::Now() + absl::Seconds(10);
-  while (!read_called || !write_called) {
-    absl::SleepFor(absl::Milliseconds(10));
-    if (deadline < absl::Now()) {
-      FAIL() << "Deadline exceeded";
-    }
-  }
-  // redundant, but self-documenting
-  ASSERT_TRUE(read_called);
-  ASSERT_TRUE(write_called);
+  ASSERT_TRUE(read_called.WaitWithTimeout(absl::Seconds(10)));
+  ASSERT_TRUE(write_called.WaitWithTimeout(absl::Seconds(10)));
 
   delete on_read;
   delete on_write;
@@ -152,7 +144,7 @@ TEST_F(IOCPTest, IocpWorkTimeoutDueToNoNotificationRegistered) {
   CreateSockpair(sockpair, iocp.GetDefaultSocketFlags());
   WinSocket* wrapped_client_socket =
       static_cast<WinSocket*>(iocp.Watch(sockpair[0]));
-  bool read_called = false;
+  Promise<bool> read_called{false};
   DWORD flags = 0;
   AnyInvocableClosure* on_read;
   {
@@ -177,7 +169,7 @@ TEST_F(IOCPTest, IocpWorkTimeoutDueToNoNotificationRegistered) {
       gpr_log(GPR_DEBUG, "Notified on read");
       EXPECT_GE(wrapped_client_socket->read_info()->bytes_transferred(), 10);
       EXPECT_STREQ(read_wsabuf.buf, "hello!");
-      read_called = true;
+      read_called.Set(true);
     });
   }
   {
@@ -201,14 +193,7 @@ TEST_F(IOCPTest, IocpWorkTimeoutDueToNoNotificationRegistered) {
   // register the closure, which should trigger it immediately.
   wrapped_client_socket->NotifyOnRead(on_read);
   // wait for the callbacks to run
-  absl::Time deadline = absl::Now() + absl::Seconds(10);
-  while (!read_called) {
-    absl::SleepFor(absl::Milliseconds(10));
-    if (deadline < absl::Now()) {
-      FAIL() << "Deadline exceeded";
-    }
-  }
-  ASSERT_TRUE(read_called);
+  ASSERT_TRUE(read_called.WaitWithTimeout(absl::Seconds(10)));
 
   delete on_read;
   wrapped_client_socket->MaybeShutdown(absl::OkStatus());
@@ -218,11 +203,11 @@ TEST_F(IOCPTest, IocpWorkTimeoutDueToNoNotificationRegistered) {
 TEST_F(IOCPTest, KickWorks) {
   ThreadedExecutor executor{2};
   IOCP iocp(&executor);
-  bool kicked;
+  Promise<bool> kicked{false};
   executor.Run([&iocp, &kicked] {
     Poller::WorkResult result = iocp.Work(std::chrono::seconds(30));
     ASSERT_TRUE(absl::holds_alternative<Poller::Kicked>(result));
-    kicked = true;
+    kicked.Set(true);
   });
   executor.Run([&iocp] {
     // give the worker thread a chance to start
@@ -230,20 +215,13 @@ TEST_F(IOCPTest, KickWorks) {
     iocp.Kick();
   });
   // wait for the callbacks to run
-  absl::Time deadline = absl::Now() + absl::Seconds(10);
-  while (!kicked) {
-    absl::SleepFor(absl::Milliseconds(10));
-    if (deadline < absl::Now()) {
-      FAIL() << "Deadline exceeded";
-    }
-  }
-  ASSERT_TRUE(kicked);
+  ASSERT_TRUE(kicked.WaitWithTimeout(absl::Seconds(10)));
 }
 
 TEST_F(IOCPTest, KickThenShutdownCasusesNextWorkerToBeKicked) {
+  // TODO(hork): evaluate if a kick count is going to be useful.
   // This documents the existing poller's behavior of maintaining a kick count,
   // but it's unclear if it's going to be needed.
-  // TODO(hork): evaluate if a kick count is going to be useful.
   ThreadedExecutor executor{2};
   IOCP iocp(&executor);
   // kick twice

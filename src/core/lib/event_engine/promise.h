@@ -16,6 +16,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "absl/time/time.h"
+#include "absl/types/optional.h"
 
 #include <grpc/support/log.h>
 
@@ -32,9 +33,13 @@ namespace experimental {
 template <typename T>
 class Promise {
  public:
+  Promise() = default;
+  // Initialize a default value that will be returned if WaitWithTimeout times
+  // out
+  explicit Promise(T&& val) : val_(val) {}
   // The getter will wait until the setter has been called, and will return the
   // value passed during Set.
-  T& Get() { return WaitWithTimeout(absl::Hours(1)); }
+  T& Get() { return WaitWithTimeout(absl::Hours(1)).value(); }
   // The getter will wait with timeout until the setter has been called, and
   // will return the value passed during Set.
   T& WaitWithTimeout(absl::Duration d) {
