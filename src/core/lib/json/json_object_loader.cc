@@ -74,7 +74,12 @@ void LoadScalar::LoadInto(const Json& json, void* dst,
   return LoadInto(json.string_value(), dst, errors);
 }
 
-bool LoadNumber::IsNumber() const { return true; }
+bool LoadString::IsNumber() const { return false; }
+
+void LoadString::LoadInto(const std::string& value, void* dst,
+                          ErrorList*) const {
+  *static_cast<std::string*>(dst) = value;
+}
 
 bool LoadDuration::IsNumber() const { return false; }
 
@@ -92,7 +97,7 @@ void LoadDuration::LoadInto(const std::string& value, void* dst,
     absl::string_view after_decimal = buf.substr(decimal_point + 1);
     buf = buf.substr(0, decimal_point);
     if (!absl::SimpleAtoi(after_decimal, &nanos)) {
-      errors->AddError("Not a duration (not an number of nanoseconds)");
+      errors->AddError("Not a duration (not a number of nanoseconds)");
       return;
     }
     if (after_decimal.length() > 9) {
@@ -106,19 +111,14 @@ void LoadDuration::LoadInto(const std::string& value, void* dst,
   }
   int seconds;
   if (!absl::SimpleAtoi(buf, &seconds)) {
-    errors->AddError("Not a duration (not an number of seconds)");
+    errors->AddError("Not a duration (not a number of seconds)");
     return;
   }
   *static_cast<Duration*>(dst) =
       Duration::FromSecondsAndNanoseconds(seconds, nanos);
 }
 
-bool LoadString::IsNumber() const { return false; }
-
-void LoadString::LoadInto(const std::string& value, void* dst,
-                          ErrorList*) const {
-  *static_cast<std::string*>(dst) = value;
-}
+bool LoadNumber::IsNumber() const { return true; }
 
 void LoadBool::LoadInto(const Json& json, void* dst, ErrorList* errors) const {
   if (json.type() == Json::Type::JSON_TRUE) {
