@@ -44,9 +44,10 @@ class EventHandle {
   // closures have run and there is no waiting NotifyXXX closure.
   virtual void OrphanHandle(IomgrEngineClosure* on_done, int* release_fd,
                             absl::string_view reason) = 0;
-  // Shutdown a handle. After this operation, NotifyXXX and SetXXX operations
-  // cannot be performed. If there is an attempt to call NotifyXXX operations
-  // after Shutdown handle, those closures will be run immediately.
+  // Shutdown a handle. If there is an attempt to call NotifyXXX operations
+  // after Shutdown handle, those closures will be run immediately with the
+  // absl::Status provided here being passed to the callbacks enclosed within
+  // the IomgrEngineClosure object.
   virtual void ShutdownHandle(absl::Status why) = 0;
   // Schedule on_read to be invoked when the underlying file descriptor
   // becomes readable. When the on_read closure is run, it may check
