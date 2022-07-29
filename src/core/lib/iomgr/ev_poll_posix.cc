@@ -654,8 +654,12 @@ static uint32_t fd_begin_poll(grpc_fd* fd, grpc_pollset* pollset,
 static void fd_end_poll(grpc_fd_watcher* watcher, int got_read, int got_write) {
   int was_polling = 0;
   int kick = 0;
-  grpc_fd* fd = watcher->fd;
 
+  if (watcher->pollset == nullptr) {
+    watcher->fd = nullptr;
+  }
+
+  grpc_fd* fd = watcher->fd;
   if (fd == nullptr) {
     return;
   }
@@ -1030,7 +1034,6 @@ static grpc_error_handle pollset_work(grpc_pollset* pollset,
 
         for (i = 1; i < pfd_count; i++) {
           if (watchers[i].pollset == nullptr) {
-            watchers[i].fd = nullptr;
             fd_end_poll(&watchers[i], 0, 0);
           } else {
             // Wake up all the file descriptors, if we have an invalid one
@@ -1040,9 +1043,6 @@ static grpc_error_handle pollset_work(grpc_pollset* pollset,
         }
       } else if (r == 0) {
         for (i = 1; i < pfd_count; i++) {
-          if (watchers[i].pollset == nullptr) {
-            watchers[i].fd = nullptr;
-          }
           fd_end_poll(&watchers[i], 0, 0);
         }
       } else {
@@ -1056,7 +1056,6 @@ static grpc_error_handle pollset_work(grpc_pollset* pollset,
         for (i = 1; i < pfd_count; i++) {
           if (watchers[i].pollset == nullptr) {
             grpc_fd* fd = watchers[i].fd;
-            watchers[i].fd = nullptr;
             fd_end_poll(&watchers[i], 0, 0);
             if (pfds[i].revents & POLLHUP) {
               gpr_atm_no_barrier_store(&fd->pollhup, 1);
