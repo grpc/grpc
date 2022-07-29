@@ -38,7 +38,7 @@ class Promise {
   explicit Promise(T&& val) : val_(val) {}
   // The getter will wait until the setter has been called, and will return the
   // value passed during Set.
-  T& Get() { return WaitWithTimeout(absl::Hours(1)).value(); }
+  T& Get() { return WaitWithTimeout(absl::Hours(1)); }
   // The getter will wait with timeout until the setter has been called, and
   // will return the value passed during Set.
   T& WaitWithTimeout(absl::Duration d) {
