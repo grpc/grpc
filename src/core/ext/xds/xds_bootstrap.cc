@@ -289,7 +289,7 @@ const JsonLoaderInterface* XdsBootstrap::JsonLoader() {
   return loader;
 }
 
-void XdsBootstrap::JsonPostLoad(const Json& json, ErrorList* errors) {
+void XdsBootstrap::JsonPostLoad(const Json& /*json*/, ErrorList* errors) {
   // Verify that each authority has the right prefix in the
   // client_listener_resource_name_template field.
   {
