@@ -17,7 +17,7 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 licenses(["notice"])
 
 grpc_package(
-    name = "test/core/event_engine/posix_event_engine",
+    name = "test/core/event_engine/posix",
     visibility = "public",
 )  # Useful for third party devs to test their io manager implementation.
 
