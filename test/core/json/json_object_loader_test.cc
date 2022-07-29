@@ -40,16 +40,16 @@ struct TestStruct1 {
   absl::optional<int32_t> e;
 
   static const JsonLoaderInterface* JsonLoader() {
-    static const auto loader = JsonObjectLoader<TestStruct1>()
-                                   .Field("a", &TestStruct1::a)
-                                   .OptionalField("b", &TestStruct1::b)
-                                   .OptionalField("c", &TestStruct1::c)
-                                   .Field("x", &TestStruct1::x)
-                                   .OptionalField("d", &TestStruct1::d)
-                                   .OptionalField("e", &TestStruct1::e)
-                                   .OptionalField("j", &TestStruct1::j)
-                                   .Finish();
-    return &loader;
+    static const auto* loader = JsonObjectLoader<TestStruct1>()
+                                    .Field("a", &TestStruct1::a)
+                                    .OptionalField("b", &TestStruct1::b)
+                                    .OptionalField("c", &TestStruct1::c)
+                                    .Field("x", &TestStruct1::x)
+                                    .OptionalField("d", &TestStruct1::d)
+                                    .OptionalField("e", &TestStruct1::e)
+                                    .OptionalField("j", &TestStruct1::j)
+                                    .Finish();
+    return loader;
   }
 };
 
@@ -59,12 +59,12 @@ struct TestStruct2 {
   TestStruct1 c;
 
   static const JsonLoaderInterface* JsonLoader() {
-    static const auto loader = JsonObjectLoader<TestStruct2>()
-                                   .Field("a", &TestStruct2::a)
-                                   .Field("b", &TestStruct2::b)
-                                   .OptionalField("c", &TestStruct2::c)
-                                   .Finish();
-    return &loader;
+    static const auto* loader = JsonObjectLoader<TestStruct2>()
+                                    .Field("a", &TestStruct2::a)
+                                    .Field("b", &TestStruct2::b)
+                                    .OptionalField("c", &TestStruct2::c)
+                                    .Finish();
+    return loader;
   }
 };
 
@@ -73,11 +73,11 @@ struct TestStruct3 {
   std::map<std::string, int32_t> b;
 
   static const JsonLoaderInterface* JsonLoader() {
-    static const auto loader = JsonObjectLoader<TestStruct3>()
-                                   .Field("a", &TestStruct3::a)
-                                   .Field("b", &TestStruct3::b)
-                                   .Finish();
-    return &loader;
+    static const auto* loader = JsonObjectLoader<TestStruct3>()
+                                    .Field("a", &TestStruct3::a)
+                                    .Field("b", &TestStruct3::b)
+                                    .Finish();
+    return loader;
   }
 };
 
@@ -89,14 +89,14 @@ struct TestPostLoadStruct1 {
   Duration d;
 
   static const JsonLoaderInterface* JsonLoader() {
-    static const auto loader = JsonObjectLoader<TestPostLoadStruct1>()
-                                   .Field("a", &TestPostLoadStruct1::a)
-                                   .OptionalField("b", &TestPostLoadStruct1::b)
-                                   .OptionalField("c", &TestPostLoadStruct1::c)
-                                   .Field("x", &TestPostLoadStruct1::x)
-                                   .OptionalField("d", &TestPostLoadStruct1::d)
-                                   .Finish();
-    return &loader;
+    static const auto* loader = JsonObjectLoader<TestPostLoadStruct1>()
+                                    .Field("a", &TestPostLoadStruct1::a)
+                                    .OptionalField("b", &TestPostLoadStruct1::b)
+                                    .OptionalField("c", &TestPostLoadStruct1::c)
+                                    .Field("x", &TestPostLoadStruct1::x)
+                                    .OptionalField("d", &TestPostLoadStruct1::d)
+                                    .Finish();
+    return loader;
   }
 
   void JsonPostLoad(const Json& source, ErrorList* errors) { ++a; }
