@@ -69,11 +69,7 @@ class Epoll1EventHandle : public EventHandle {
         pending_actions_(0),
         list_(),
         poller_(poller),
-        exec_actions_closure_([this]() {
-          ExecutePendingActions();
-          // Unref - for the Ref taken in SetPendingActions.
-          Unref();
-        }),
+        exec_actions_closure_([this]() { ExecutePendingActions(); }),
         read_closure_(absl::make_unique<LockfreeEvent>(poller->GetScheduler())),
         write_closure_(
             absl::make_unique<LockfreeEvent>(poller->GetScheduler())),
@@ -87,16 +83,35 @@ class Epoll1EventHandle : public EventHandle {
   Epoll1Poller* Poller() { return poller_; }
   EventEngine::Closure* SetPendingActions(bool pending_read, bool pending_write,
                                           bool pending_error) {
-    pending_actions_ |= pending_read;
+    int pending_actions = 0;
+    pending_actions |= pending_read;
     if (pending_write) {
-      pending_actions_ |= (1 << 2);
+      pending_actions |= (1 << 2);
     }
     if (pending_error) {
-      pending_actions_ |= (1 << 3);
+      pending_actions |= (1 << 3);
+    }
+    // Another thread may be executing ExecutePendingActions() at this point
+    // This is possible for instance, if one instantiation of Work(..) sets
+    // an fd to be readable while the next instantiation of Work(...) may
+    // set the fd to be writable. While the second instantiation is running,
+    // ExecutePendingActions() of the first instantiation may execute in
+    // parallel and read the pending_actions_ variable. So we need to use
+    // atomics to manipulate pending_actions_ variable.
+
+    // Load pending_actions_ into curr.
+    int curr = pending_actions_.load(std::memory_order_acquire);
+    while (true) {
+      // Check whether pending_actions_ == curr. If so set pending_actions_ to
+      // curr | pending_actions. Otherwise update curr to latest value of
+      // pending_actions_ and retry.
+      if (pending_actions_.compare_exchange_strong(curr, curr | pending_actions,
+                                                   std::memory_order_relaxed,
+                                                   std::memory_order_relaxed)) {
+        break;
+      }
     }
     if (pending_read || pending_write || pending_error) {
-      Ref();
-      // The closure will get executed and will call Unref() on the handle.
       return &exec_actions_closure_;
     }
     return nullptr;
@@ -113,21 +128,19 @@ class Epoll1EventHandle : public EventHandle {
   void SetHasError() override;
   bool IsHandleShutdown() override;
   inline void ExecutePendingActions() {
-    if (pending_actions_ & 1UL) {
+    int pending_actions =
+        pending_actions_.exchange(0, std::memory_order_acq_rel);
+    // These may execute in Parallel with ShutdownHandle or
+    // OrphanHandle. Thats not an issue because the lockfree event
+    // implementation should be able to handle it.
+    if (pending_actions & 1UL) {
       read_closure_->SetReady();
     }
-    if ((pending_actions_ >> 2) & 1UL) {
+    if ((pending_actions >> 2) & 1UL) {
       write_closure_->SetReady();
     }
-    if ((pending_actions_ >> 3) & 1UL) {
+    if ((pending_actions >> 3) & 1UL) {
       error_closure_->SetReady();
-    }
-    pending_actions_ = 0;
-  }
-  void Ref() { ref_count_.fetch_add(1, std::memory_order_relaxed); }
-  void Unref() {
-    if (ref_count_.fetch_sub(1, std::memory_order_acq_rel) == 1) {
-      delete this;
     }
   }
   absl::Mutex* mu() { return &mu_; }
@@ -144,10 +157,12 @@ class Epoll1EventHandle : public EventHandle {
   absl::Mutex mu_;
   std::atomic<int> ref_count_{1};
   int fd_;
-  int pending_actions_;
+  // See Epoll1Poller::SetPendingActions for explanation on why pending_actions_
+  // needs to be atomic.
+  std::atomic<int> pending_actions_{0};
   Epoll1Poller::HandlesList list_;
   Epoll1Poller* poller_;
-  experimental::AnyInvocableClosure exec_actions_closure_;
+  grpc_event_engine::experimental::AnyInvocableClosure exec_actions_closure_;
   std::unique_ptr<LockfreeEvent> read_closure_;
   std::unique_ptr<LockfreeEvent> write_closure_;
   std::unique_ptr<LockfreeEvent> error_closure_;
@@ -367,7 +382,7 @@ Epoll1Poller::~Epoll1Poller() {
       Epoll1EventHandle* handle = reinterpret_cast<Epoll1EventHandle*>(
           free_epoll1_handles_list_.front());
       free_epoll1_handles_list_.pop_front();
-      handle->Unref();
+      delete handle;
     }
   }
 }
@@ -404,8 +419,11 @@ EventHandle* Epoll1Poller::CreateHandle(int fd, absl::string_view /*name*/,
 
 // Process the epoll events found by DoEpollWait() function.
 // - g_epoll_set.cursor points to the index of the first event to be processed
-// - This function then processes up-to MAX_EPOLL_EVENTS_PER_ITERATION and
-//   updates the g_epoll_set.cursor
+// - This function then processes up-to max_epoll_events_to_handle and
+//   updates the g_epoll_set.cursor.
+// It returns true, it there was a Kick that forced invocation of this
+// function. It also returns the list of closures to run to take action
+// on file descriptors that became readable/writable.
 bool Epoll1Poller::ProcessEpollEvents(int max_epoll_events_to_handle,
                                       Poller::Events& pending_events) {
   int64_t num_events = g_epoll_set_.num_events;

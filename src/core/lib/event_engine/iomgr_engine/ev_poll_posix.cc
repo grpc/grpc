@@ -227,7 +227,7 @@ class PollEventHandle : public EventHandle {
   bool pollhup_;
   int watch_mask_;
   absl::Status shutdown_error_;
-  experimental::AnyInvocableClosure exec_actions_closure_;
+  grpc_event_engine::experimental::AnyInvocableClosure exec_actions_closure_;
   IomgrEngineClosure* on_done_;
   IomgrEngineClosure* read_closure_;
   IomgrEngineClosure* write_closure_;

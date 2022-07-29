@@ -55,6 +55,13 @@ class Epoll1Poller : public EventPoller {
   ~Epoll1Poller() override;
 
  private:
+  // Process the epoll events found by DoEpollWait() function.
+  // - g_epoll_set.cursor points to the index of the first event to be processed
+  // - This function then processes up-to max_epoll_events_to_handle and
+  //   updates the g_epoll_set.cursor.
+  // It returns true, it there was a Kick that forced invocation of this
+  // function. It also returns the list of closures to run to take action
+  // on file descriptors that became readable/writable.
   bool ProcessEpollEvents(int max_epoll_events_to_handle,
                           Poller::Events& pending_events);
   int DoEpollWait(
