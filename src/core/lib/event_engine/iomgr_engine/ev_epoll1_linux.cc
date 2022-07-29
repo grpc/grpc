@@ -46,6 +46,7 @@
 
 #include "absl/synchronization/mutex.h"
 
+#include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/iomgr_engine/event_poller.h"
 #include "src/core/lib/event_engine/iomgr_engine/iomgr_engine_closure.h"
 #include "src/core/lib/event_engine/iomgr_engine/lockfree_event.h"
@@ -54,29 +55,15 @@
 #include "src/core/lib/gprpp/fork.h"
 #include "src/core/lib/gprpp/time.h"
 
-using ::grpc_event_engine::experimental::EventEngine;
-using ::grpc_event_engine::experimental::Poller;
-using ::grpc_event_engine::iomgr_engine::LockfreeEvent;
-using ::grpc_event_engine::iomgr_engine::WakeupFd;
-
 #define MAX_EPOLL_EVENTS_HANDLED_PER_ITERATION 1
 
 namespace grpc_event_engine {
 namespace iomgr_engine {
 
-class Epoll1EventHandle;
-
-class Epoll1ExecActionsClosure final
-    : public grpc_event_engine::experimental::EventEngine::Closure {
- public:
-  explicit Epoll1ExecActionsClosure(Epoll1EventHandle* handle)
-      : handle_(handle) {}
-  ~Epoll1ExecActionsClosure() final = default;
-  void Run() override;
-
- private:
-  Epoll1EventHandle* handle_;
-};
+using ::grpc_event_engine::experimental::EventEngine;
+using ::grpc_event_engine::experimental::Poller;
+using ::grpc_event_engine::iomgr_engine::LockfreeEvent;
+using ::grpc_event_engine::iomgr_engine::WakeupFd;
 
 class Epoll1EventHandle : public EventHandle {
  public:
@@ -85,6 +72,11 @@ class Epoll1EventHandle : public EventHandle {
         pending_actions_(0),
         list_(),
         poller_(poller),
+        exec_actions_closure_([this]() {
+          ExecutePendingActions();
+          // Unref - for the Ref taken in SetPendingActions.
+          Unref();
+        }),
         read_closure_(absl::make_unique<LockfreeEvent>(poller->GetScheduler())),
         write_closure_(
             absl::make_unique<LockfreeEvent>(poller->GetScheduler())),
@@ -94,7 +86,6 @@ class Epoll1EventHandle : public EventHandle {
     write_closure_->InitEvent();
     error_closure_->InitEvent();
     pending_actions_ = 0;
-    exec_actions_closure_ = std::make_unique<Epoll1ExecActionsClosure>(this);
   }
   Epoll1Poller* Poller() { return poller_; }
   EventEngine::Closure* SetPendingActions(bool pending_read, bool pending_write,
@@ -109,7 +100,7 @@ class Epoll1EventHandle : public EventHandle {
     if (pending_read || pending_write || pending_error) {
       Ref();
       // The closure will get executed and will call Unref() on the handle.
-      return exec_actions_closure_.get();
+      return &exec_actions_closure_;
     }
     return nullptr;
   }
@@ -159,16 +150,10 @@ class Epoll1EventHandle : public EventHandle {
   int pending_actions_;
   Epoll1Poller::HandlesList list_;
   Epoll1Poller* poller_;
-  std::unique_ptr<Epoll1ExecActionsClosure> exec_actions_closure_;
+  experimental::AnyInvocableClosure exec_actions_closure_;
   std::unique_ptr<LockfreeEvent> read_closure_;
   std::unique_ptr<LockfreeEvent> write_closure_;
   std::unique_ptr<LockfreeEvent> error_closure_;
-};
-
-void Epoll1ExecActionsClosure::Run() {
-  handle_->ExecutePendingActions();
-  // Unref - for the Ref taken in SetPendingActions.
-  handle_->Unref();
 };
 
 namespace {

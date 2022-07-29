@@ -53,6 +53,7 @@
 
 #include <grpc/support/alloc.h>
 
+#include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix.h"
 #include "src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix_default.h"
 #include "src/core/lib/event_engine/time_util.h"
@@ -62,10 +63,6 @@
 
 GPR_GLOBAL_CONFIG_DECLARE_STRING(grpc_poll_strategy);
 
-using ::grpc_event_engine::experimental::EventEngine;
-using ::grpc_event_engine::experimental::Poller;
-using ::grpc_event_engine::iomgr_engine::WakeupFd;
-
 static const intptr_t kClosureNotReady = 0;
 static const intptr_t kClosureReady = 1;
 static const int kPollinCheck = POLLIN | POLLHUP | POLLERR;
@@ -74,18 +71,9 @@ static const int kPolloutCheck = POLLOUT | POLLHUP | POLLERR;
 namespace grpc_event_engine {
 namespace iomgr_engine {
 
-class PollEventHandle;
-
-class PollExecActionsClosure final
-    : public grpc_event_engine::experimental::EventEngine::Closure {
- public:
-  explicit PollExecActionsClosure(PollEventHandle* handle) : handle_(handle) {}
-  ~PollExecActionsClosure() final = default;
-  void Run() override;
-
- private:
-  PollEventHandle* handle_;
-};
+using ::grpc_event_engine::experimental::EventEngine;
+using ::grpc_event_engine::experimental::Poller;
+using ::grpc_event_engine::iomgr_engine::WakeupFd;
 
 class PollEventHandle : public EventHandle {
  public:
@@ -103,6 +91,11 @@ class PollEventHandle : public EventHandle {
         pollhup_(false),
         watch_mask_(-1),
         shutdown_error_(absl::OkStatus()),
+        exec_actions_closure_([this]() {
+          ExecutePendingActions();
+          // Unref - for the Ref taken in SetPendingActions.
+          Unref();
+        }),
         on_done_(nullptr),
         read_closure_(reinterpret_cast<IomgrEngineClosure*>(kClosureNotReady)),
         write_closure_(
@@ -110,7 +103,6 @@ class PollEventHandle : public EventHandle {
     poller_->Ref();
     absl::MutexLock lock(&poller_->mu_);
     poller_->PollerHandlesListAddHandle(this);
-    exec_actions_closure_ = std::make_unique<PollExecActionsClosure>(this);
   }
   PollPoller* Poller() { return poller_; }
   EventEngine::Closure* SetPendingActions(bool pending_read,
@@ -123,7 +115,7 @@ class PollEventHandle : public EventHandle {
       // The closure is going to be executed. We'll Unref this handle after
       // the closure finishes.
       Ref();
-      return exec_actions_closure_.get();
+      return &exec_actions_closure_;
     }
     return nullptr;
   }
@@ -236,16 +228,10 @@ class PollEventHandle : public EventHandle {
   bool pollhup_;
   int watch_mask_;
   absl::Status shutdown_error_;
-  std::unique_ptr<PollExecActionsClosure> exec_actions_closure_;
+  experimental::AnyInvocableClosure exec_actions_closure_;
   IomgrEngineClosure* on_done_;
   IomgrEngineClosure* read_closure_;
   IomgrEngineClosure* write_closure_;
-};
-
-void PollExecActionsClosure::Run() {
-  handle_->ExecutePendingActions();
-  // Unref - for the Ref taken in SetPendingActions.
-  handle_->Unref();
 };
 
 namespace {
