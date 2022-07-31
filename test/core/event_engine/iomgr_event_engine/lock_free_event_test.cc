@@ -38,6 +38,10 @@ class TestScheduler : public Scheduler {
     engine_->Run(closure);
   }
 
+  void Run(absl::AnyInvocable<void()> cb) override {
+    engine_->Run(std::move(cb));
+  }
+
  private:
   grpc_event_engine::experimental::EventEngine* engine_;
 };
@@ -61,6 +65,7 @@ TEST(LockFreeEventTest, BasicTest) {
         grpc_core::MutexLock lock(&mu);
         EXPECT_TRUE(status.ok());
         cv.Signal();
+        return IomgrEngineClosure::Ok{};
       }));
   event.SetReady();
   EXPECT_FALSE(cv.WaitWithTimeout(&mu, absl::Seconds(10)));
@@ -72,6 +77,7 @@ TEST(LockFreeEventTest, BasicTest) {
         grpc_core::MutexLock lock(&mu);
         EXPECT_TRUE(status.ok());
         cv.Signal();
+        return IomgrEngineClosure::Ok{};
       }));
   EXPECT_FALSE(cv.WaitWithTimeout(&mu, absl::Seconds(10)));
 
@@ -82,6 +88,7 @@ TEST(LockFreeEventTest, BasicTest) {
         EXPECT_FALSE(status.ok());
         EXPECT_EQ(status, absl::CancelledError("Shutdown"));
         cv.Signal();
+        return IomgrEngineClosure::Ok{};
       }));
   event.SetShutdown(absl::CancelledError("Shutdown"));
   EXPECT_FALSE(cv.WaitWithTimeout(&mu, absl::Seconds(10)));
@@ -116,6 +123,7 @@ TEST(LockFreeEventTest, MultiThreadedTest) {
                 EXPECT_TRUE(status.ok());
                 signalled = true;
                 cv.SignalAll();
+                return IomgrEngineClosure::Ok{};
               }));
         } else {
           event.SetReady();
