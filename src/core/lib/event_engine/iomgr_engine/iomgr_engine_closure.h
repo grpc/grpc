@@ -36,9 +36,9 @@ namespace iomgr_engine {
 class IomgrEngineClosure final
     : public grpc_event_engine::experimental::EventEngine::Closure {
  public:
-  struct OK {};
+  struct Ok {};
   struct Delete {};
-  using Result = absl::variant<OK, Delete>;
+  using Result = absl::variant<Ok, Delete>;
   IomgrEngineClosure() = default;
   IomgrEngineClosure(absl::AnyInvocable<Result(absl::Status)> cb,
                      bool is_permanent)

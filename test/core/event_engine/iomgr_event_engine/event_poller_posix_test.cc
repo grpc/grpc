@@ -79,6 +79,7 @@ using ::grpc_event_engine::experimental::Poller;
 using ::grpc_event_engine::experimental::Promise;
 using ::grpc_event_engine::experimental::SelfDeletingClosure;
 using ::grpc_event_engine::iomgr_engine::EventPoller;
+using ::grpc_event_engine::iomgr_engine::IomgrEngineClosure;
 using namespace std::chrono_literals;
 
 namespace {
@@ -204,7 +205,7 @@ void SessionReadCb(session* se, absl::Status status) {
     se->session_read_closure =
         IomgrEngineClosure::TestOnlyToClosure([se](absl::Status status) {
           SessionReadCb(se, status);
-          return false;
+          return IomgrEngineClosure::Ok{};
         });
     se->em_fd->NotifyOnRead(se->session_read_closure);
   }
@@ -242,7 +243,7 @@ void ListenCb(server* sv, absl::Status status) {
     sv->listen_closure =
         IomgrEngineClosure::TestOnlyToClosure([sv](absl::Status status) {
           ListenCb(sv, status);
-          return false;
+          return IomgrEngineClosure::Ok{};
         });
     listen_em_fd->NotifyOnRead(sv->listen_closure);
     return;
@@ -257,13 +258,13 @@ void ListenCb(server* sv, absl::Status status) {
   se->session_read_closure =
       IomgrEngineClosure::TestOnlyToClosure([se](absl::Status status) {
         SessionReadCb(se, status);
-        return false;
+        return IomgrEngineClosure::Ok{};
       });
   se->em_fd->NotifyOnRead(se->session_read_closure);
   sv->listen_closure =
       IomgrEngineClosure::TestOnlyToClosure([sv](absl::Status status) {
         ListenCb(sv, status);
-        return false;
+        return IomgrEngineClosure::Ok{};
       });
   listen_em_fd->NotifyOnRead(sv->listen_closure);
 }
@@ -289,7 +290,7 @@ int ServerStart(server* sv) {
   sv->listen_closure =
       IomgrEngineClosure::TestOnlyToClosure([sv](absl::Status status) {
         ListenCb(sv, status);
-        return false;
+        return IomgrEngineClosure::Ok{};
       });
   sv->em_fd->NotifyOnRead(sv->listen_closure);
   return port;
@@ -346,7 +347,7 @@ void ClientSessionWrite(client* cl, absl::Status status) {
     cl->write_closure =
         IomgrEngineClosure::TestOnlyToClosure([cl](absl::Status status) {
           ClientSessionWrite(cl, status);
-          return false;
+          return IomgrEngineClosure::Ok{};
         });
     cl->client_write_cnt++;
     gpr_mu_unlock(&g_mu);
@@ -492,12 +493,12 @@ TEST_P(EventPollerTest, TestEventPollerHandleChange) {
   IomgrEngineClosure* first_closure =
       IomgrEngineClosure::TestOnlyToClosure([a = &a](absl::Status status) {
         FirstReadCallback(a, status);
-        return false;
+        return IomgrEngineClosure::Ok{};
       });
   IomgrEngineClosure* second_closure =
       IomgrEngineClosure::TestOnlyToClosure([b = &b](absl::Status status) {
         SecondReadCallback(b, status);
-        return false;
+        return IomgrEngineClosure::Ok{};
       });
   InitChangeData(&a);
   InitChangeData(&b);
@@ -576,13 +577,14 @@ class WakeupFdHandle {
       : num_wakeups_(num_wakeups),
         scheduler_(scheduler),
         poller_(poller),
-        on_read_(
-            IomgrEngineClosure::ToPermanentClosure([this](absl::Status status) {
+        on_read_(IomgrEngineClosure::ToPermanentClosure(
+            [this](absl::Status status) -> IomgrEngineClosure::Result {
               if (!status.ok()) {
                 EXPECT_EQ(status, absl::InternalError("Shutting down"));
                 Unref();
-                // By returning true, we ensure the closure cleans itself up.
-                return true;
+                // By returning IomgrEngineClosure::Delete, we ensure the
+                // closure cleans itself up.
+                return IomgrEngineClosure::Delete{};
               }
               EXPECT_TRUE(wakeup_fd_->ConsumeWakeup().ok());
               handle_->NotifyOnRead(on_read_);
@@ -603,7 +605,7 @@ class WakeupFdHandle {
                   Unref();
                 }));
               }
-              return false;
+              return IomgrEngineClosure::Ok{};
             })) {
     ++kTotalActiveWakeupFdHandles;
     EXPECT_GT(num_wakeups_, 0);
@@ -632,7 +634,7 @@ class WakeupFdHandle {
                   poller->Kick();
                 }
                 delete wakeupfd_handle;
-                return false;
+                return IomgrEngineClosure::Ok{};
               }),
           nullptr, "");
     }
