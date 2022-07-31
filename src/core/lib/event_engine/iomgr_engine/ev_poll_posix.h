@@ -63,9 +63,9 @@ class PollPoller : public EventPoller {
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   friend class PollEventHandle;
   struct HandlesList {
-    PollEventHandle* handle;
-    PollEventHandle* next;
-    PollEventHandle* prev;
+    PollEventHandle* handle = nullptr;
+    PollEventHandle* next = nullptr;
+    PollEventHandle* prev = nullptr;
   };
   absl::Mutex mu_;
   Scheduler* scheduler_;

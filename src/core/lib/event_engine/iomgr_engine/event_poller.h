@@ -16,6 +16,7 @@
 #define GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_EVENT_POLLER_H
 #include <grpc/support/port_platform.h>
 
+#include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 
@@ -30,6 +31,7 @@ namespace iomgr_engine {
 class Scheduler {
  public:
   virtual void Run(experimental::EventEngine::Closure* closure) = 0;
+  virtual void Run(absl::AnyInvocable<void()>) = 0;
   virtual ~Scheduler() = default;
 };
 

@@ -67,9 +67,9 @@ class Epoll1Poller : public EventPoller {
   int DoEpollWait(
       grpc_event_engine::experimental::EventEngine::Duration timeout);
   struct HandlesList {
-    Epoll1EventHandle* handle;
-    Epoll1EventHandle* next;
-    Epoll1EventHandle* prev;
+    Epoll1EventHandle* handle = nullptr;
+    Epoll1EventHandle* next = nullptr;
+    Epoll1EventHandle* prev = nullptr;
   };
   friend class Epoll1EventHandle;
 #ifdef GRPC_LINUX_EPOLL

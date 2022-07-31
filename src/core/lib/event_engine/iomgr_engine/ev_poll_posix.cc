@@ -101,6 +101,9 @@ class PollEventHandle : public EventHandle {
         read_closure_(reinterpret_cast<IomgrEngineClosure*>(kClosureNotReady)),
         write_closure_(
             reinterpret_cast<IomgrEngineClosure*>(kClosureNotReady)) {
+    poller_handles_list_.next = nullptr;
+    poller_handles_list_.prev = nullptr;
+    poller_handles_list_.handle = this;
     poller_->Ref();
     absl::MutexLock lock(&poller_->mu_);
     poller_->PollerHandlesListAddHandle(this);
@@ -377,9 +380,11 @@ void PollEventHandle::OrphanHandle(IomgrEngineClosure* on_done, int* release_fd,
     if (!is_shutdown_) {
       is_shutdown_ = true;
       shutdown_error_ =
-          absl::Status(absl::StatusCode::kInternal, "FD Shutdown");
+          absl::Status(absl::StatusCode::kInternal, "FD Orphaned");
       // signal read/write closed to OS so that future operations fail.
-      shutdown(fd_, SHUT_RDWR);
+      if (!released_) {
+        shutdown(fd_, SHUT_RDWR);
+      }
       SetReadyLocked(&read_closure_);
       SetReadyLocked(&write_closure_);
     }
@@ -406,12 +411,13 @@ int PollEventHandle::NotifyOnLocked(IomgrEngineClosure** st,
   } else if (*st == reinterpret_cast<IomgrEngineClosure*>(kClosureNotReady)) {
     // not ready ==> switch to a waiting state by setting the closure
     *st = closure;
+    return 1;
   } else if (*st == reinterpret_cast<IomgrEngineClosure*>(kClosureReady)) {
     // already ready ==> queue the closure to run immediately
     *st = reinterpret_cast<IomgrEngineClosure*>(kClosureNotReady);
     closure->SetStatus(shutdown_error_);
     scheduler_->Run(closure);
-    return 1;
+    return 0;
   } else {
     /* upcallptr was set to a different closure.  This is an error! */
     gpr_log(GPR_ERROR,
@@ -470,12 +476,13 @@ void PollEventHandle::NotifyOnRead(IomgrEngineClosure* on_read) {
     absl::ReleasableMutexLock lock(&mu_);
     if (NotifyOnLocked(&read_closure_, on_read)) {
       lock.Release();
-      // NotifyOnLocked immediately scheduled some closure. It would have set
-      // the closure state to NOT_READY. We need to wakeup the Work(...)
-      // thread to start polling on this fd. If this call is not made, it is
-      // possible that the poller will reach a state where all the fds under
-      // the poller's control are not polled for POLLIN/POLLOUT events thus
-      // leading to an indefinitely blocked Work(..) method.
+      // NotifyOnLocked could not immediatel schedule some closure. It would
+      // have set the closure state to point to the new closure. We need to
+      // wakeup the Work(...) thread to start polling on this fd. If this call
+      // is not made, it is possible that the poller will reach a state where
+      // all the fds under the poller's control are not polled for
+      // POLLIN/POLLOUT events thus leading to an indefinitely blocked Work(..)
+      // method.
       poller_->KickExternal(false);
     }
   }
@@ -492,12 +499,13 @@ void PollEventHandle::NotifyOnWrite(IomgrEngineClosure* on_write) {
     absl::ReleasableMutexLock lock(&mu_);
     if (NotifyOnLocked(&write_closure_, on_write)) {
       lock.Release();
-      // NotifyOnLocked immediately scheduled some closure. It would have set
-      // the closure state to NOT_READY. We need to wakeup the Work(...)
-      // thread to start polling on this fd. If this call is not made, it is
-      // possible that the poller will reach a state where all the fds under
-      // the poller's control are not polled for POLLIN/POLLOUT events thus
-      // leading to an indefinitely blocked Work(..) method.
+      // NotifyOnLocked could not immediatel schedule some closure. It would
+      // have set the closure state to point to the new closure. We need to
+      // wakeup the Work(...) thread to start polling on this fd. If this call
+      // is not made, it is possible that the poller will reach a state where
+      // all the fds under the poller's control are not polled for
+      // POLLIN/POLLOUT events thus leading to an indefinitely blocked Work(..)
+      // method.
       poller_->KickExternal(false);
     }
   }
@@ -543,15 +551,30 @@ uint32_t PollEventHandle::BeginPollLocked(uint32_t read_mask,
     SetWatched(0);
     return 0;
   }
-  //   if there is nobody polling for read, but we need to, then start doing
-  //   so
+  // if there is nobody polling for read, but we need to, then start doing so.
+  // In particular, the fd represented by this PollEventHandle is added to the
+  // list of fds to be polled in this round for POLLIN iff there is already a
+  // pending closure registered for this handle using the NotifyOnRead method.
+  // This prevents spurious wakeups from being issued due to the level triggered
+  // nature of poll syscall. In other words, polling for an input event is
+  // started only after a request to be notified of an input.
   if (read_mask && !read_ready &&
-      read_closure_ != reinterpret_cast<IomgrEngineClosure*>(kClosureReady)) {
+      read_closure_ != reinterpret_cast<IomgrEngineClosure*>(kClosureReady) &&
+      read_closure_ !=
+          reinterpret_cast<IomgrEngineClosure*>(kClosureNotReady)) {
     mask |= read_mask;
   }
   // if there is nobody polling for write, but we need to, then start doing so
+  // In particular, the fd represented by this PollEventHandle is added to the
+  // list of fds to be polled in this round for POLLOUT iff there is already a
+  // pending closure registered for this handle using the NotifyOnWrite method.
+  // This prevents spurious wakeups from being issued due to the level triggered
+  // nature of poll syscall. In other words, polling for an output event is
+  // started only after a request to be notified of an output.
   if (write_mask && !write_ready &&
-      write_closure_ != reinterpret_cast<IomgrEngineClosure*>(kClosureReady)) {
+      write_closure_ != reinterpret_cast<IomgrEngineClosure*>(kClosureReady) &&
+      write_closure_ !=
+          reinterpret_cast<IomgrEngineClosure*>(kClosureNotReady)) {
     mask |= write_mask;
   }
   SetWatched(mask);
@@ -596,7 +619,7 @@ void PollPoller::PollerHandlesListAddHandle(PollEventHandle* handle) {
 
 void PollPoller::PollerHandlesListRemoveHandle(PollEventHandle* handle) {
   if (poll_handles_list_head_ == handle) {
-    poll_handles_list_head_ = handle->ForkFdListPos().next;
+    poll_handles_list_head_ = handle->PollerHandlesListPos().next;
   }
   if (handle->PollerHandlesListPos().prev != nullptr) {
     handle->PollerHandlesListPos().prev->PollerHandlesListPos().next =

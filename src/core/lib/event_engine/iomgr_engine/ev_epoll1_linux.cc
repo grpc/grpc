@@ -323,11 +323,11 @@ void Epoll1EventHandle::OrphanHandle(IomgrEngineClosure* on_done,
     write_closure_->DestroyEvent();
     error_closure_->DestroyEvent();
   }
+  pending_actions_.store(0, std::memory_order_release);
   {
     absl::MutexLock lock(&poller_->mu_);
     poller_->free_epoll1_handles_list_.push_back(this);
   }
-
   if (on_done != nullptr) {
     on_done->SetStatus(absl::OkStatus());
     poller_->GetScheduler()->Run(on_done);
