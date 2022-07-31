@@ -1321,6 +1321,7 @@ void Server::CallData::StartNewRpc(grpc_call_element* elem) {
       grpc_op op;
       op.op = GRPC_OP_RECV_MESSAGE;
       op.flags = 0;
+      op.reserved = nullptr;
       op.data.recv_message.recv_message = &payload_;
       GRPC_CLOSURE_INIT(&publish_, PublishNewRpc, elem,
                         grpc_schedule_on_exec_ctx);
