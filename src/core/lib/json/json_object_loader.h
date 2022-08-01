@@ -507,6 +507,7 @@ template <typename T>
 absl::optional<T> LoadJsonObjectField(const Json::Object& json,
                                       absl::string_view field,
                                       ErrorList* errors, bool required = true) {
+  ScopedField error_field(errors, absl::StrCat(".", field));
   const Json* field_json =
       json_detail::GetJsonObjectField(json, field, errors, required);
   if (field_json == nullptr) return absl::nullopt;

@@ -929,7 +929,7 @@ TEST(JsonObjectLoader, LoadJsonObjectField) {
     auto status = errors.status();
     EXPECT_THAT(status.code(), absl::StatusCode::kInvalidArgument);
     EXPECT_EQ(status.message(),
-              "errors validating JSON: [field: error:is not a string]")
+              "errors validating JSON: [field:int error:is not a string]")
         << status;
   }
 }
