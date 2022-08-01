@@ -26,6 +26,7 @@
 
 #include "absl/types/optional.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
 
@@ -53,6 +54,8 @@
 namespace grpc_core {
 
 namespace {
+
+using ::grpc_event_engine::experimental::EventEngine;
 
 // TODO(ctiller): The idle filter was disabled in client channel by default
 // due to b/143502997. Now the bug is fixed enable the filter by default.
@@ -121,15 +124,19 @@ struct MaxAgeFilter::Config {
 
 absl::StatusOr<ClientIdleFilter> ClientIdleFilter::Create(
     const ChannelArgs& args, ChannelFilter::Args filter_args) {
-  ClientIdleFilter filter(filter_args.channel_stack(),
-                          GetClientIdleTimeout(args));
+  // TODO(hork): pull EventEngine from args
+  ClientIdleFilter filter(
+      filter_args.channel_stack(), GetClientIdleTimeout(args),
+      grpc_event_engine::experimental::GetDefaultEventEngine());
   return absl::StatusOr<ClientIdleFilter>(std::move(filter));
 }
 
 absl::StatusOr<MaxAgeFilter> MaxAgeFilter::Create(
     const ChannelArgs& args, ChannelFilter::Args filter_args) {
+  // TODO(hork): pull EventEngine from args
   MaxAgeFilter filter(filter_args.channel_stack(),
-                      Config::FromChannelArgs(args));
+                      Config::FromChannelArgs(args),
+                      grpc_event_engine::experimental::GetDefaultEventEngine());
   return absl::StatusOr<MaxAgeFilter>(std::move(filter));
 }
 
@@ -259,10 +266,12 @@ void ChannelIdleFilter::StartIdleTimer() {
                     }
                   });
   });
-  activity_.Set(MakeActivity(std::move(promise), ExecCtxWakeupScheduler{},
-                             [channel_stack, this](absl::Status status) {
-                               if (status.ok()) CloseChannel();
-                             }));
+  activity_.Set(MakeActivity(
+      std::move(promise), ExecCtxWakeupScheduler{},
+      [channel_stack, this](absl::Status status) {
+        if (status.ok()) CloseChannel();
+      },
+      engine_.get()));
 }
 
 void ChannelIdleFilter::CloseChannel() {
@@ -304,11 +313,13 @@ void RegisterChannelIdleFilters(CoreConfiguration::Builder* builder) {
       });
 }
 
-MaxAgeFilter::MaxAgeFilter(grpc_channel_stack* channel_stack,
-                           const Config& max_age_config)
-    : ChannelIdleFilter(channel_stack, max_age_config.max_connection_idle),
+MaxAgeFilter::MaxAgeFilter(
+    grpc_channel_stack* channel_stack, const Config& max_age_config,
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine)
+    : ChannelIdleFilter(channel_stack, max_age_config.max_connection_idle,
+                        engine),
       max_connection_age_(max_age_config.max_connection_age),
       max_connection_age_grace_(max_age_config.max_connection_age_grace),
-      engine_(grpc_event_engine::experimental::GetDefaultEventEngine()) {}
+      engine_(engine) {}
 
 }  // namespace grpc_core

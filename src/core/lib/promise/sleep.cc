@@ -35,12 +35,15 @@ Sleep::~Sleep() {
   switch (stage_) {
     case Stage::kInitial:
       break;
-    case Stage::kStarted:
-      if (GetContext<EventEngine>()->Cancel(timer_handle_)) {
+    case Stage::kStarted: {
+      auto* engine = GetContext<EventEngine>();
+      GPR_ASSERT(engine != nullptr && "Sleep requires an EventEngine context");
+      if (engine->Cancel(timer_handle_)) {
         lock.Release();
         OnTimer();
       }
       break;
+    }
     case Stage::kDone:
       break;
   }
@@ -59,18 +62,21 @@ void Sleep::OnTimer() {
 Poll<absl::Status> Sleep::operator()() {
   MutexLock lock(&mu_);
   switch (stage_) {
-    case Stage::kInitial:
+    case Stage::kInitial: {
       if (deadline_ <= ExecCtx::Get()->Now()) {
         return absl::OkStatus();
       }
       stage_ = Stage::kStarted;
-      timer_handle_ = GetContext<EventEngine>()->RunAfter(
-          deadline_ - ExecCtx::Get()->Now(), [this] {
+      auto* engine = GetContext<EventEngine>();
+      GPR_ASSERT(engine != nullptr && "Sleep requires an EventEngine context");
+      timer_handle_ =
+          engine->RunAfter(deadline_ - ExecCtx::Get()->Now(), [this] {
             ApplicationCallbackExecCtx callback_exec_ctx;
             ExecCtx exec_ctx;
             OnTimer();
           });
       break;
+    }
     case Stage::kStarted:
       break;
     case Stage::kDone:

@@ -23,6 +23,7 @@
 
 #include "src/core/lib/event_engine/default_event_engine_factory.h"
 #include "src/core/lib/event_engine/event_engine_factory.h"
+#include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/gprpp/sync.h"
 
 namespace grpc_event_engine {
