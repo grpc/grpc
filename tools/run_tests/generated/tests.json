@@ -6365,7 +6365,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-      "name": "ssl_transport_security_utils_test",
+    "name": "ssl_transport_security_utils_test",
     "platforms": [
       "linux",
       "mac",
@@ -6373,22 +6373,6 @@
     ],
     "uses_polling": true
   },
-  {
-    "args": [],
-    "benchmark": false,
-    "ci_platforms": [
-      "linux",
-      "mac",
-      "posix"
-    ],
-    "cpu_cost": 1.0,
-    "exclude_configs": [],
-    "exclude_iomgrs": [],
-    "flaky": false,
-    "gtest": true,
-    "language": "c++",
-    "name": "stack_tracer_test",
-  
   {
     "args": [],
     "benchmark": false,
