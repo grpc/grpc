@@ -34,4 +34,4 @@ int main(int argc, char** argv) {
 
 int main(int /* argc */, char** /* argv */) { return 1; }
 
-#endif // GPR_WINDOWS
+#endif  // GPR_WINDOWS
