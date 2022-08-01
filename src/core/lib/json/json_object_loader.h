@@ -83,6 +83,8 @@ class ErrorList {
   // Return true if there are no errors.
   bool ok() const { return field_errors_.empty(); }
 
+  size_t size() const { return field_errors_.size(); }
+
  private:
   // TODO(roth): If we don't actually have any fields for which we
   // report more than one error, simplify this data structure.
@@ -306,7 +308,7 @@ class AutoLoader<std::vector<T>> final : public LoadVector {
  private:
   void LoadOne(const Json& json, void* dst, ErrorList* errors) const final {
     auto* vec = static_cast<std::vector<T>*>(dst);
-    T value;
+    T value{};
     LoaderForType<T>()->LoadInto(json, &value, errors);
     vec->push_back(std::move(value));
   }
@@ -319,7 +321,7 @@ class AutoLoader<std::map<std::string, T>> final : public LoadMap {
   void LoadOne(const Json& json, const std::string& name, void* dst,
                ErrorList* errors) const final {
     auto* map = static_cast<std::map<std::string, T>*>(dst);
-    T value;
+    T value{};
     LoaderForType<T>()->LoadInto(json, &value, errors);
     map->emplace(name, std::move(value));
   }
@@ -474,6 +476,10 @@ class JsonObjectLoader final {
   GPR_NO_UNIQUE_ADDRESS Vec<Element, kElemCount> elements_;
 };
 
+const Json* GetJsonObjectField(const Json::Object& json,
+                               absl::string_view field,
+                               ErrorList* errors, bool required);
+
 }  // namespace json_detail
 
 template <typename T>
@@ -484,7 +490,7 @@ using JsonLoaderInterface = json_detail::LoaderInterface;
 template <typename T>
 absl::StatusOr<T> LoadFromJson(const Json& json) {
   ErrorList error_list;
-  T result;
+  T result{};
   json_detail::LoaderForType<T>()->LoadInto(json, &result, &error_list);
   if (!error_list.ok()) return error_list.status();
   return result;
@@ -492,8 +498,22 @@ absl::StatusOr<T> LoadFromJson(const Json& json) {
 
 template <typename T>
 T LoadFromJson(const Json& json, ErrorList* error_list) {
-  T result;
+  T result{};
   json_detail::LoaderForType<T>()->LoadInto(json, &result, error_list);
+  return result;
+}
+
+template <typename T>
+absl::optional<T> LoadJsonObjectField(
+    const Json::Object& json, absl::string_view field, ErrorList* errors,
+    bool required = true) {
+  const Json* field_json =
+      json_detail::GetJsonObjectField(json, field, errors, required);
+  if (field_json == nullptr) return absl::nullopt;
+  T result{};
+  size_t starting_error_size = errors->size();
+  json_detail::LoaderForType<T>()->LoadInto(*field_json, &result, errors);
+  if (errors->size() > starting_error_size) return absl::nullopt;
   return result;
 }
 
