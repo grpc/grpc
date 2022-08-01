@@ -3880,7 +3880,7 @@ grpc_cc_library(
         "grpc_trace",
         "iomgr_timer",
         "json",
-        "json_util",
+        "json_object_loader",
         "orphanable",
         "ref_counted_ptr",
         "rls_upb",
