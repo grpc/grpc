@@ -85,8 +85,7 @@ void WinSocket::NotifyOnReady(OpState& info, EventEngine::Closure* closure) {
     executor_->Run(closure);
     return;
   };
-  if (info.has_pending_iocp_) {
-    info.has_pending_iocp_ = false;
+  if (absl::exchange(info.has_pending_iocp_, false)) {
     executor_->Run(closure);
   } else {
     info.closure_ = closure;
