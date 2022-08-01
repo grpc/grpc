@@ -16,6 +16,8 @@
  *
  */
 
+#include <limits.h>
+
 #include <chrono>
 #include <memory>
 #include <string>
@@ -24,13 +26,11 @@
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
 #include "absl/strings/string_view.h"
-#include "absl/time/time.h"
 
 #include <grpc/support/log.h>
-#include <grpc/support/time.h>
 #include <grpcpp/grpcpp.h>
-#include <grpcpp/impl/codegen/time.h>
 #include <grpcpp/security/credentials.h>
+#include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/status.h>
 
 #include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
@@ -159,7 +159,7 @@ int main(int argc, char** argv) {
         GRPC_CHANNEL_READY,
         std::chrono::system_clock::now() + std::chrono::milliseconds(1)));
     // channels_list[i]->~Channel();
-    //channels_list[i].reset();
+    // channels_list[i].reset();
   }
   gpr_log(GPR_INFO, "Client Done");
   return 0;
