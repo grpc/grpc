@@ -2567,10 +2567,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "event_engine_socket_notifier",
     hdrs = ["src/core/lib/event_engine/socket_notifier.h"],
-    external_deps = [
-        "absl/functional:any_invocable",
-        "absl/status",
-    ],
+    external_deps = ["absl/status"],
     deps = [
         "event_engine_base_hdrs",
         "gpr_platform",
