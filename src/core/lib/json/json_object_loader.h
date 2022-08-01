@@ -477,8 +477,8 @@ class JsonObjectLoader final {
 };
 
 const Json* GetJsonObjectField(const Json::Object& json,
-                               absl::string_view field,
-                               ErrorList* errors, bool required);
+                               absl::string_view field, ErrorList* errors,
+                               bool required);
 
 }  // namespace json_detail
 
@@ -504,9 +504,9 @@ T LoadFromJson(const Json& json, ErrorList* error_list) {
 }
 
 template <typename T>
-absl::optional<T> LoadJsonObjectField(
-    const Json::Object& json, absl::string_view field, ErrorList* errors,
-    bool required = true) {
+absl::optional<T> LoadJsonObjectField(const Json::Object& json,
+                                      absl::string_view field,
+                                      ErrorList* errors, bool required = true) {
   const Json* field_json =
       json_detail::GetJsonObjectField(json, field, errors, required);
   if (field_json == nullptr) return absl::nullopt;
