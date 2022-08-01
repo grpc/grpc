@@ -728,6 +728,57 @@ TEST(JsonObjectLoader, NestedStructFields) {
       << test_struct.status();
 }
 
+TEST(JsonObjectLoader, BareString) {
+  auto parsed = Parse<std::string>("\"foo\"");
+  ASSERT_TRUE(parsed.ok()) << parsed.status();
+  EXPECT_EQ(*parsed, "foo");
+}
+
+TEST(JsonObjectLoader, BareDuration) {
+  auto parsed = Parse<Duration>("\"1.5s\"");
+  ASSERT_TRUE(parsed.ok()) << parsed.status();
+  EXPECT_EQ(*parsed, Duration::Milliseconds(1500));
+}
+
+TEST(JsonObjectLoader, BareSignedInteger) {
+  auto parsed = Parse<int32_t>("5");
+  ASSERT_TRUE(parsed.ok()) << parsed.status();
+  EXPECT_EQ(*parsed, 5);
+}
+
+TEST(JsonObjectLoader, BareUnsignedInteger) {
+  auto parsed = Parse<uint32_t>("5");
+  ASSERT_TRUE(parsed.ok()) << parsed.status();
+  EXPECT_EQ(*parsed, 5);
+}
+
+TEST(JsonObjectLoader, BareFloat) {
+  auto parsed = Parse<float>("5.2");
+  ASSERT_TRUE(parsed.ok()) << parsed.status();
+  EXPECT_NEAR(*parsed, 5.2, 0.001);
+}
+
+TEST(JsonObjectLoader, BareBool) {
+  auto parsed = Parse<bool>("true");
+  ASSERT_TRUE(parsed.ok()) << parsed.status();
+  EXPECT_TRUE(*parsed);
+}
+
+TEST(JsonObjectLoader, BareVector) {
+  auto parsed = Parse<std::vector<int32_t>>("[1, 2, 3]");
+  ASSERT_TRUE(parsed.ok()) << parsed.status();
+  EXPECT_THAT(*parsed, ::testing::ElementsAre(1, 2, 3));
+}
+
+TEST(JsonObjectLoader, BareMap) {
+  auto parsed =
+      Parse<std::map<std::string, int32_t>>("{\"a\":1, \"b\":2, \"c\":3}");
+  ASSERT_TRUE(parsed.ok()) << parsed.status();
+  EXPECT_THAT(*parsed, ::testing::ElementsAre(
+      ::testing::Pair("a", 1), ::testing::Pair("b", 2),
+      ::testing::Pair("c", 3)));
+}
+
 TEST(JsonObjectLoader, IgnoresUnsupportedFields) {
   struct TestStruct {
     int32_t a = 0;
@@ -798,6 +849,89 @@ TEST(JsonObjectLoader, CustomValidationInPostLoadHook) {
   EXPECT_EQ(test_struct.status().message(),
             "errors validating JSON: [field:a error:is not a number]")
       << test_struct.status();
+}
+
+TEST(JsonObjectLoader, LoadFromJsonWithErrorList) {
+  struct TestStruct {
+    int32_t a = 0;
+
+    static const JsonLoaderInterface* JsonLoader() {
+      static const auto* loader =
+          JsonObjectLoader<TestStruct>().Field("a", &TestStruct::a).Finish();
+      return loader;
+    }
+  };
+  // Valid.
+  {
+    absl::string_view json_str = "{\"a\":1}";
+    auto json = Json::Parse(json_str);
+    ASSERT_TRUE(json.ok()) << json.status();
+    ErrorList errors;
+    TestStruct test_struct = LoadFromJson<TestStruct>(*json, &errors);
+    ASSERT_TRUE(errors.ok()) << errors.status();
+    EXPECT_EQ(test_struct.a, 1);
+  }
+  // Invalid.
+  {
+    absl::string_view json_str = "{\"a\":\"foo\"}";
+    auto json = Json::Parse(json_str);
+    ASSERT_TRUE(json.ok()) << json.status();
+    ErrorList errors;
+    LoadFromJson<TestStruct>(*json, &errors);
+    absl::Status status = errors.status();
+    EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+    EXPECT_EQ(status.message(),
+              "errors validating JSON: [field:a error:failed to parse number]")
+        << status;
+  }
+}
+
+TEST(JsonObjectLoader, LoadJsonObjectField) {
+  absl::string_view json_str = "{\"int\":1}";
+  auto json = Json::Parse(json_str);
+  ASSERT_TRUE(json.ok()) << json.status();
+  // Load a valid field.
+  {
+    ErrorList errors;
+    auto value =
+        LoadJsonObjectField<int32_t>(json->object_value(), "int", &errors);
+    ASSERT_TRUE(value.has_value()) << errors.status();
+    EXPECT_EQ(*value, 1);
+    EXPECT_TRUE(errors.ok());
+  }
+  // An optional field that is not present.
+  {
+    ErrorList errors;
+    auto value = LoadJsonObjectField<int32_t>(
+        json->object_value(), "not_present", &errors, /*required=*/false);
+    EXPECT_FALSE(value.has_value());
+    EXPECT_TRUE(errors.ok());
+  }
+  // A required field that is not present.
+  {
+    ErrorList errors;
+    auto value = LoadJsonObjectField<int32_t>(
+        json->object_value(), "not_present", &errors);
+    EXPECT_FALSE(value.has_value());
+    auto status = errors.status();
+    EXPECT_THAT(status.code(), absl::StatusCode::kInvalidArgument);
+    EXPECT_EQ(status.message(),
+              "errors validating JSON: ["
+              "field:not_present error:field not present]")
+        << status;
+  }
+  // Value has the wrong type.
+  {
+    ErrorList errors;
+    auto value =
+        LoadJsonObjectField<std::string>(json->object_value(), "int", &errors);
+    EXPECT_FALSE(value.has_value());
+    auto status = errors.status();
+    EXPECT_THAT(status.code(), absl::StatusCode::kInvalidArgument);
+    EXPECT_EQ(status.message(),
+              "errors validating JSON: [field: error:is not a string]")
+        << status;
+  }
 }
 
 }  // namespace
