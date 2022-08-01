@@ -2207,6 +2207,7 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/time",
+        "absl/types:optional",
         "absl/functional:any_invocable",
     ],
     tags = ["nofixdeps"],
@@ -2532,6 +2533,25 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "iomgr_ee_tcp_posix_socket_utils",
+    srcs = [
+        "src/core/lib/event_engine/iomgr_engine/tcp_posix_socket_utils.cc",
+    ],
+    hdrs = [
+        "src/core/lib/event_engine/iomgr_engine/tcp_posix_socket_utils.h",
+    ],
+    external_deps = ["absl/status"],
+    deps = [
+        "event_engine_base_hdrs",
+        "gpr_base",
+        "grpc_codegen",
+        "iomgr_port",
+        "resource_quota",
+        "socket_mutator",
+    ],
+)
+
+grpc_cc_library(
     name = "iomgr_event_engine",
     srcs = ["src/core/lib/event_engine/iomgr_engine/iomgr_engine.cc"],
     hdrs = ["src/core/lib/event_engine/iomgr_engine/iomgr_engine.h"],
@@ -2703,6 +2723,22 @@ grpc_cc_library(
         "bitset",
         "gpr_base",
         "slice",
+    ],
+)
+
+grpc_cc_library(
+    name = "socket_mutator",
+    srcs = [
+        "src/core/lib/iomgr/socket_mutator.cc",
+    ],
+    hdrs = [
+        "src/core/lib/iomgr/socket_mutator.h",
+    ],
+    deps = [
+        "channel_args",
+        "gpr_base",
+        "grpc_codegen",
+        "useful",
     ],
 )
 

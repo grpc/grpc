@@ -24,6 +24,7 @@
 #include <utility>
 
 #include "absl/strings/str_cat.h"
+#include "absl/types/variant.h"
 
 #include <grpc/grpc.h>
 
@@ -42,6 +43,15 @@ ResourceQuotaRefPtr ResourceQuotaFromChannelArgs(
   return grpc_channel_args_find_pointer<ResourceQuota>(args,
                                                        GRPC_ARG_RESOURCE_QUOTA)
       ->Ref();
+}
+
+ResourceQuotaRefPtr ResourceQuotaFromEndpointConfig(
+    const grpc_event_engine::experimental::EndpointConfig& config) {
+  void* value = config.GetVoidPointer(GRPC_ARG_RESOURCE_QUOTA);
+  if (value != nullptr) {
+    return reinterpret_cast<ResourceQuota*>(value)->Ref();
+  }
+  return nullptr;
 }
 
 ChannelArgs EnsureResourceQuotaInChannelArgs(const ChannelArgs& args) {
