@@ -88,6 +88,8 @@ class BlockingUnaryCallImpl {
     // TODO(yashykt): If deserialization fails, but the status received is OK,
     // then it might be a good idea to change the status to something better
     // than StatusCode::UNIMPLEMENTED to reflect this.
+    // TODO(cove): This confused me due to this issue:
+    // https://github.com/dotnet/aspnetcore/issues/39317
     if (!ops.got_message && status_.ok()) {
       status_ = Status(StatusCode::UNIMPLEMENTED,
                        "No message returned for unary request");
