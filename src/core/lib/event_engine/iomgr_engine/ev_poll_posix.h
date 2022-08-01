@@ -19,16 +19,16 @@
 
 #include <atomic>
 #include <memory>
-#include <vector>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "absl/synchronization/mutex.h"
 
+#include <grpc/event_engine/event_engine.h>
+
 #include "src/core/lib/event_engine/iomgr_engine/event_poller.h"
 #include "src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix.h"
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/event_engine/poller.h"
 
 namespace grpc_event_engine {
 namespace iomgr_engine {
@@ -42,8 +42,8 @@ class PollPoller : public EventPoller {
   PollPoller(Scheduler* scheduler, bool use_phony_poll);
   EventHandle* CreateHandle(int fd, absl::string_view name,
                             bool track_err) override;
-  absl::Status Work(grpc_core::Timestamp deadline,
-                    std::vector<EventHandle*>& pending_events) override;
+  Poller::WorkResult Work(
+      grpc_event_engine::experimental::EventEngine::Duration timeout) override;
   void Kick() override;
   Scheduler* GetScheduler() { return scheduler_; }
   void Shutdown() override;
@@ -63,9 +63,9 @@ class PollPoller : public EventPoller {
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   friend class PollEventHandle;
   struct HandlesList {
-    PollEventHandle* handle;
-    PollEventHandle* next;
-    PollEventHandle* prev;
+    PollEventHandle* handle = nullptr;
+    PollEventHandle* next = nullptr;
+    PollEventHandle* prev = nullptr;
   };
   absl::Mutex mu_;
   Scheduler* scheduler_;

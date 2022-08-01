@@ -57,6 +57,8 @@ grpc_cc_test(
     uses_event_engine = True,
     uses_polling = True,
     deps = [
+        "//:common_event_engine_closures",
+        "//:event_engine_poller",
         "//:iomgr_ee_closure",
         "//:iomgr_ee_event_poller",
         "//:iomgr_ee_poller_posix_default",

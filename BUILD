@@ -2337,9 +2337,9 @@ grpc_cc_library(
     ],
     deps = [
         "event_engine_base_hdrs",
+        "event_engine_poller",
         "gpr_platform",
         "iomgr_ee_closure",
-        "time",
     ],
 )
 
@@ -2459,6 +2459,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/functional:any_invocable",
         "absl/memory",
         "absl/status",
         "absl/status:statusor",
@@ -2466,15 +2467,17 @@ grpc_cc_library(
         "absl/synchronization",
     ],
     deps = [
+        "common_event_engine_closures",
+        "event_engine_base_hdrs",
+        "event_engine_poller",
+        "event_engine_time_util",
         "gpr_base",
-        "gpr_codegen",
         "iomgr_ee_closure",
         "iomgr_ee_event_poller",
         "iomgr_ee_lockfree_event",
         "iomgr_ee_wakeup_fd_posix",
         "iomgr_ee_wakeup_fd_posix_default",
         "iomgr_port",
-        "time",
     ],
 )
 
@@ -2488,6 +2491,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/functional:any_invocable",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -2495,6 +2499,10 @@ grpc_cc_library(
         "absl/utility",
     ],
     deps = [
+        "common_event_engine_closures",
+        "event_engine_base_hdrs",
+        "event_engine_poller",
+        "event_engine_time_util",
         "gpr_base",
         "gpr_codegen",
         "iomgr_ee_closure",
