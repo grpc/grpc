@@ -386,6 +386,9 @@ grpc_error_handle SecurityHandshaker::OnHandshakeNextDoneLocked(
         /*urgent=*/true, /*min_progress_size=*/1);
     return error;
   }
+  if (result == TSI_ASYNC) {
+    return GRPC_ERROR_NONE;
+  }
   if (result != TSI_OK) {
     auto* security_connector = args_->args.GetObject<grpc_security_connector>();
     absl::string_view connector_type = "<unknown>";
