@@ -104,13 +104,6 @@ int main(int argc, char** argv) {
   }
   builder.AddListeningPort(server_address, creds);
   builder.RegisterService(&callback_server);
-  //builder.AddChannelArgument(GRPC_ARG_MAX_CONNECTION_IDLE_MS, INT_MAX);
-  //builder.AddChannelArgument(GRPC_ARG_MAX_CONNECTION_AGE_MS, INT_MAX);
-  //builder.AddChannelArgument(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS, 1);
-  //builder.AddChannelArgument(GRPC_ARG_KEEPALIVE_TIME_MS, INT_MAX);
-  //builder.AddChannelArgument(GRPC_ARG_KEEPALIVE_TIMEOUT_MS, INT_MAX);
-  //channel_args.SetInt(GRPC_ARG_KEEPALIVE_TIME_MS, INT_MAX);
-  //  channel_args.SetInt(GRPC_ARG_KEEPALIVE_TIMEOUT_MS, INT_MAX);
 
   // Set up the server to start accepting requests.
   std::shared_ptr<grpc::Server> server(builder.BuildAndStart());

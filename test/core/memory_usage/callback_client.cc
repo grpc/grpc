@@ -147,7 +147,6 @@ int main(int argc, char** argv) {
     channels_list[i] = channel;
     UnaryCall(channel);
   }
-  // gpr_sleep_until(grpc_timeout_seconds_to_deadline(10));
 
   // Getting peak memory usage
   long peak_server_memory = GetMemUsage(absl::GetFlag(FLAGS_server_pid));
