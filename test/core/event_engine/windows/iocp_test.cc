@@ -355,5 +355,5 @@ int main(int argc, char** argv) {
   return status;
 }
 #else  // not GPR_WINDOWS
-int main(int /* argc */, char** /* argv */) { return 1; }
+int main(int /* argc */, char** /* argv */) { return 0; }
 #endif
