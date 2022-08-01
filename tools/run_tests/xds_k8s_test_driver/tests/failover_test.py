@@ -18,7 +18,6 @@ from absl import flags
 from absl.testing import absltest
 
 from framework import xds_k8s_testcase
-from framework.helpers import skips
 from framework.infrastructure import k8s
 from framework.test_app import server_app
 
@@ -33,12 +32,6 @@ _XdsTestClient = xds_k8s_testcase.XdsTestClient
 class FailoverTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
     REPLICA_COUNT = 3
     MAX_RATE_PER_ENDPOINT = 100
-
-    @staticmethod
-    def is_supported(config: skips.TestConfig) -> bool:
-        # TODO(b/238226704): Remove when the fix for selecting correct
-        #  cluster is backported.
-        return config.version_gte('master')
 
     def setUp(self):
         super().setUp()

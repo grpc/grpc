@@ -23,7 +23,6 @@
 #include <stdlib.h>
 
 #include <cstdint>
-#include <type_traits>
 #include <utility>
 
 #include <grpc/support/log.h>

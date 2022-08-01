@@ -81,7 +81,7 @@ TEST_F(ChannelCredsRegistryTest, Register) {
       nullptr);
 
   // Registration.
-  CoreConfiguration::BuildSpecialConfiguration(
+  CoreConfiguration::WithSubstituteBuilder builder(
       [](CoreConfiguration::Builder* builder) {
         BuildCoreConfiguration(builder);
         builder->channel_creds_registry()->RegisterChannelCredsFactory(

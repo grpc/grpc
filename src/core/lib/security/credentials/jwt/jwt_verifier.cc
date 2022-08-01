@@ -38,6 +38,7 @@
 #include <openssl/rsa.h>
 #include <openssl/x509.h>
 
+#include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
@@ -111,16 +112,14 @@ static Json parse_json_part_from_jwt(const char* str, size_t len) {
     return Json();  // JSON null
   }
   absl::string_view string = grpc_core::StringViewFromSlice(slice);
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  Json json = Json::Parse(string, &error);
-  if (!GRPC_ERROR_IS_NONE(error)) {
-    gpr_log(GPR_ERROR, "JSON parse error: %s",
-            grpc_error_std_string(error).c_str());
-    GRPC_ERROR_UNREF(error);
-    json = Json();  // JSON null
-  }
+  auto json = Json::Parse(string);
   grpc_slice_unref_internal(slice);
-  return json;
+  if (!json.ok()) {
+    gpr_log(GPR_ERROR, "JSON parse error: %s",
+            json.status().ToString().c_str());
+    return Json();  // JSON null
+  }
+  return std::move(*json);
 }
 
 static const char* validate_string_field(const Json& json, const char* key) {
@@ -435,14 +434,13 @@ static Json json_from_http(const grpc_http_response* response) {
             response->status);
     return Json();  // JSON null
   }
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  Json json = Json::Parse(
-      absl::string_view(response->body, response->body_length), &error);
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  auto json =
+      Json::Parse(absl::string_view(response->body, response->body_length));
+  if (!json.ok()) {
     gpr_log(GPR_ERROR, "Invalid JSON found in response.");
     return Json();  // JSON null
   }
-  return json;
+  return std::move(*json);
 }
 
 static const Json* find_property_by_name(const Json& json, const char* name) {

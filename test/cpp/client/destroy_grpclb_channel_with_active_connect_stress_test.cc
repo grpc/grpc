@@ -69,11 +69,10 @@ void TryConnectAndDestroy() {
   grpc_core::ServerAddressList addresses;
   addresses.emplace_back(address.addr, address.len, grpc_core::ChannelArgs());
   grpc_core::Resolver::Result lb_address_result;
-  grpc_error_handle error = GRPC_ERROR_NONE;
   lb_address_result.service_config = grpc_core::ServiceConfigImpl::Create(
-      grpc_core::ChannelArgs(), "{\"loadBalancingConfig\":[{\"grpclb\":{}}]}",
-      &error);
-  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
+      grpc_core::ChannelArgs(), "{\"loadBalancingConfig\":[{\"grpclb\":{}}]}");
+  ASSERT_TRUE(lb_address_result.service_config.ok())
+      << lb_address_result.service_config.status();
   lb_address_result.args = grpc_core::SetGrpcLbBalancerAddresses(
       grpc_core::ChannelArgs(), addresses);
   response_generator->SetResponse(lb_address_result);

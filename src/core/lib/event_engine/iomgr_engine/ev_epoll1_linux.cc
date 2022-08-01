@@ -61,15 +61,6 @@ using ::grpc_event_engine::iomgr_engine::WakeupFd;
 namespace grpc_event_engine {
 namespace iomgr_engine {
 
-namespace {
-// Only used when GRPC_ENABLE_FORK_SUPPORT=1
-struct ForkFdList {
-  Epoll1EventHandle* handle;
-  Epoll1EventHandle* next;
-  Epoll1EventHandle* prev;
-};
-}  // namespace
-
 class Epoll1EventHandle : public EventHandle {
  public:
   Epoll1EventHandle(int fd, Epoll1Poller* poller)
@@ -125,7 +116,7 @@ class Epoll1EventHandle : public EventHandle {
   LockfreeEvent* ReadClosure() { return read_closure_.get(); }
   LockfreeEvent* WriteClosure() { return write_closure_.get(); }
   LockfreeEvent* ErrorClosure() { return error_closure_.get(); }
-  ForkFdList& ForkFdListPos() { return list_; }
+  Epoll1Poller::HandlesList& ForkFdListPos() { return list_; }
 
  private:
   void HandleShutdownInternal(absl::Status why, bool releasing_fd);
@@ -134,7 +125,7 @@ class Epoll1EventHandle : public EventHandle {
   absl::Mutex mu_;
   int fd_;
   int pending_actions_;
-  ForkFdList list_;
+  Epoll1Poller::HandlesList list_;
   Epoll1Poller* poller_;
   std::unique_ptr<LockfreeEvent> read_closure_;
   std::unique_ptr<LockfreeEvent> write_closure_;
@@ -142,9 +133,6 @@ class Epoll1EventHandle : public EventHandle {
 };
 
 namespace {
-
-bool kEpoll1PollerSupported = false;
-gpr_once g_init_epoll1_poller = GPR_ONCE_INIT;
 
 int EpollCreateAndCloexec() {
 #ifdef GRPC_LINUX_EPOLL_CREATE1
@@ -232,7 +220,7 @@ int PollDeadlineToMillisTimeout(grpc_core::Timestamp millis) {
   }
 }
 
-void InitEpoll1PollerLinux();
+bool InitEpoll1PollerLinux();
 
 // Called by the child process's post-fork handler to close open fds,
 // including the global epoll fd of each poller. This allows gRPC to shutdown in
@@ -263,22 +251,20 @@ void ResetEventManagerOnFork() {
 
 // It is possible that GLIBC has epoll but the underlying kernel doesn't.
 // Create epoll_fd to make sure epoll support is available
-void InitEpoll1PollerLinux() {
+bool InitEpoll1PollerLinux() {
   if (!grpc_event_engine::iomgr_engine::SupportsWakeupFd()) {
-    kEpoll1PollerSupported = false;
-    return;
+    return false;
   }
   int fd = EpollCreateAndCloexec();
   if (fd <= 0) {
-    kEpoll1PollerSupported = false;
-    return;
+    return false;
   }
-  kEpoll1PollerSupported = true;
   if (grpc_core::Fork::Enabled()) {
     gpr_mu_init(&fork_fd_list_mu);
     grpc_core::Fork::SetResetChildPollingEngineFunc(ResetEventManagerOnFork);
   }
   close(fd);
+  return true;
 }
 
 }  // namespace
@@ -532,7 +518,7 @@ void Epoll1Poller::Kick() {
 }
 
 Epoll1Poller* GetEpoll1Poller(Scheduler* scheduler) {
-  gpr_once_init(&g_init_epoll1_poller, []() { InitEpoll1PollerLinux(); });
+  static bool kEpoll1PollerSupported = InitEpoll1PollerLinux();
   if (kEpoll1PollerSupported) {
     return new Epoll1Poller(scheduler);
   }

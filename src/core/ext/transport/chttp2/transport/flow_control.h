@@ -252,6 +252,7 @@ class TransportFlowControl final {
  private:
   double TargetLogBdp();
   double SmoothLogBdp(double value);
+  double TargetInitialWindowSizeBasedOnMemoryPressureAndBdp() const;
   static void UpdateSetting(int64_t* desired_value, int64_t new_desired_value,
                             FlowControlAction* action,
                             FlowControlAction& (FlowControlAction::*set)(
