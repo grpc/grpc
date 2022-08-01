@@ -40,10 +40,11 @@
 
 #include "src/core/lib/event_engine/iomgr_engine/tcp_posix_socket_utils.h"
 
-using ::grpc_event_engine::experimental::EndpointConfig;
-
 namespace grpc_event_engine {
 namespace iomgr_engine {
+
+using ::grpc_event_engine::experimental::EndpointConfig;
+using ::grpc_event_engine::experimental::EventEngine;
 
 namespace {
 
@@ -75,15 +76,93 @@ int CreateSocket(std::function<int(int, int, int)> socket_factory, int family,
 
 const uint8_t kV4MappedPrefix[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0xff};
 
-bool SockaddrIsV4Mapped(const sockaddr* addr) {
+bool SockaddrIsV4Mapped(const sockaddr* addr, sockaddr* resolved_addr4_out,
+                        socklen_t size) {
   if (addr->sa_family == AF_INET6) {
     const sockaddr_in6* addr6 = reinterpret_cast<const sockaddr_in6*>(addr);
+    sockaddr_in* addr4_out =
+        resolved_addr4_out == nullptr
+            ? nullptr
+            : reinterpret_cast<sockaddr_in*>(resolved_addr4_out);
+
     if (memcmp(addr6->sin6_addr.s6_addr, kV4MappedPrefix,
                sizeof(kV4MappedPrefix)) == 0) {
+      if (resolved_addr4_out != nullptr) {
+        // Normalize ::ffff:0.0.0.0/96 to IPv4.
+        memset(resolved_addr4_out, 0, size);
+        addr4_out->sin_family = AF_INET;
+        // s6_addr32 would be nice, but it's non-standard.
+        memcpy(&addr4_out->sin_addr, &addr6->sin6_addr.s6_addr[12], 4);
+        addr4_out->sin_port = addr6->sin6_port;
+      }
       return true;
     }
   }
   return false;
+}
+
+absl::StatusOr<std::string> SockaddrToString(const sockaddr* addr) {
+  const int save_errno = errno;
+  EventEngine::ResolvedAddress addr_normalized;
+  if (SockaddrIsV4Mapped(addr, const_cast<sockaddr*>(addr_normalized.address()),
+                         addr_normalized.size())) {
+    addr = const_cast<sockaddr*>(addr_normalized.address());
+  }
+  std::string out;
+#ifdef GRPC_HAVE_UNIX_SOCKET
+  if (addr->sa_family == GRPC_AF_UNIX) {
+    const sockaddr_un* addr_un = reinterpret_cast<const sockaddr_un*>(addr);
+    bool abstract = addr_un->sun_path[0] == '\0';
+    if (abstract) {
+      int len = resolved_addr->len - sizeof(addr->sa_family);
+      if (len <= 0) {
+        return absl::InvalidArgumentError("empty UDS abstract path");
+      }
+      out = std::string(addr_un->sun_path, len);
+    } else {
+      size_t maxlen = sizeof(addr_un->sun_path);
+      if (strnlen(addr_un->sun_path, maxlen) == maxlen) {
+        return absl::InvalidArgumentError("UDS path is not null-terminated");
+      }
+      out = std::string(addr_un->sun_path);
+    }
+    return out;
+  }
+#endif
+
+  const void* ip = nullptr;
+  int port = 0;
+  uint32_t sin6_scope_id = 0;
+  if (addr->sa_family == GRPC_AF_INET) {
+    const grpc_sockaddr_in* addr4 =
+        reinterpret_cast<const grpc_sockaddr_in*>(addr);
+    ip = &addr4->sin_addr;
+    port = grpc_ntohs(addr4->sin_port);
+  } else if (addr->sa_family == GRPC_AF_INET6) {
+    const grpc_sockaddr_in6* addr6 =
+        reinterpret_cast<const grpc_sockaddr_in6*>(addr);
+    ip = &addr6->sin6_addr;
+    port = grpc_ntohs(addr6->sin6_port);
+    sin6_scope_id = addr6->sin6_scope_id;
+  }
+  char ntop_buf[GRPC_INET6_ADDRSTRLEN];
+  if (ip != nullptr && grpc_inet_ntop(addr->sa_family, ip, ntop_buf,
+                                      sizeof(ntop_buf)) != nullptr) {
+    if (sin6_scope_id != 0) {
+      // Enclose sin6_scope_id with the format defined in RFC 6874 section 2.
+      std::string host_with_scope =
+          absl::StrFormat("%s%%%" PRIu32, ntop_buf, sin6_scope_id);
+      out = grpc_core::JoinHostPort(host_with_scope, port);
+    } else {
+      out = grpc_core::JoinHostPort(ntop_buf, port);
+    }
+  } else {
+    return absl::InvalidArgumentError(
+        absl::StrCat("Unknown sockaddr family: ", addr->sa_family));
+  }
+  /* This is probably redundant, but we wouldn't want to log the wrong error. */
+  errno = save_errno;
+  return out;
 }
 
 #endif /* GRPC_POSIX_SOCKET_UTILS_COMMON */
@@ -535,6 +614,14 @@ bool PosixSocket::IsIpv6LoopbackAvailable() {
   return kIpv6LoopbackAvailable;
 }
 
+absl::StatusOr<EventEngine::ResolvedAddress> PosixSocket::LocalAddress() {}
+
+absl::StatusOr<EventEngine::ResolvedAddress> PosixSocket::PeerAddress() {}
+
+absl::StatusOr<std::string> PosixSocket::LocalAddressString() {}
+
+absl::StatusOr<std::string> PosixSocket::PeerAddressString() {}
+
 absl::StatusOr<PosixSocket> PosixSocket::CreateDualStackSocket(
     std::function<int(int, int, int)> socket_factory,
     const experimental::EventEngine::ResolvedAddress& addr, int type,
@@ -559,7 +646,7 @@ absl::StatusOr<PosixSocket> PosixSocket::CreateDualStackSocket(
       return sock;
     }
     // If this isn't an IPv4 address, then return whatever we've got.
-    if (!SockaddrIsV4Mapped(sock_addr)) {
+    if (!SockaddrIsV4Mapped(sock_addr, nullptr, 0)) {
       dsmode = PosixSocket::DSMode::DSMODE_IPV6;
       return sock;
     }

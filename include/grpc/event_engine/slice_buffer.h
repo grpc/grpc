@@ -25,6 +25,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/utility/utility.h"
 
+#include "grpc/impl/codegen/slice.h"
 #include <grpc/event_engine/slice.h>
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
@@ -65,6 +66,11 @@ class SliceBuffer {
   SliceBuffer& operator=(SliceBuffer&& other) noexcept {
     grpc_slice_buffer_swap(&slice_buffer_, &other.slice_buffer_);
     return *this;
+  }
+
+  // Swap the contents of this SliceBuffer with the contents of another.
+  void Swap(SliceBuffer& other) {
+    grpc_slice_buffer_swap(&slice_buffer_, &other.slice_buffer_);
   }
 
   /// Appends a new slice into the SliceBuffer and makes an attempt to merge

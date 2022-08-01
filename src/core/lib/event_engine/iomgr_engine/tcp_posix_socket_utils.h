@@ -38,6 +38,8 @@
 namespace grpc_event_engine {
 namespace iomgr_engine {
 
+using ::grpc_event_engine::experimental::EventEngine;
+
 struct PosixTcpOptions {
   static constexpr int kDefaultReadChunkSize = 8192;
   static constexpr int kDefaultMinReadChunksize = 256;
@@ -184,6 +186,14 @@ class PosixSocket {
   // Extracts the first socket mutator from config if any and applies on the fd.
   absl::Status ApplySocketMutatorInOptions(grpc_fd_usage usage,
                                            const PosixTcpOptions& options);
+
+  absl::StatusOr<EventEngine::ResolvedAddress> LocalAddress();
+
+  absl::StatusOr<EventEngine::ResolvedAddress> PeerAddress();
+
+  absl::StatusOr<std::string> LocalAddressString();
+
+  absl::StatusOr<std::string> PeerAddressString();
 
   // An enum to keep track of IPv4/IPv6 socket modes.
 

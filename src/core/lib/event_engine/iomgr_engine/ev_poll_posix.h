@@ -47,6 +47,7 @@ class PollPoller : public EventPoller {
   void Kick() override;
   Scheduler* GetScheduler() { return scheduler_; }
   void Shutdown() override;
+  bool CanTrackErrors() override { return false; }
   ~PollPoller() override;
 
  private:

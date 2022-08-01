@@ -52,6 +52,7 @@ class Epoll1Poller : public EventPoller {
   void Kick() override;
   Scheduler* GetScheduler() { return scheduler_; }
   void Shutdown() override;
+  bool CanTrackErrors() override { return false; }
   ~Epoll1Poller() override;
 
  private:

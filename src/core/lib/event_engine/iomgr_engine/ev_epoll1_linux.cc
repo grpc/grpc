@@ -88,7 +88,7 @@ class Epoll1EventHandle : public EventHandle {
     error_closure_->InitEvent();
     pending_actions_.store(0, std::memory_order_relaxed);
   }
-  Epoll1Poller* Poller() { return poller_; }
+  Epoll1Poller* Poller() override { return poller_; }
   EventEngine::Closure* SetPendingActions(bool pending_read, bool pending_write,
                                           bool pending_error) {
     int pending_actions = 0;
