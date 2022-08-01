@@ -308,7 +308,7 @@ class AutoLoader<std::vector<T>> final : public LoadVector {
  private:
   void LoadOne(const Json& json, void* dst, ErrorList* errors) const final {
     auto* vec = static_cast<std::vector<T>*>(dst);
-    T value;
+    T value{};
     LoaderForType<T>()->LoadInto(json, &value, errors);
     vec->push_back(std::move(value));
   }
@@ -321,7 +321,7 @@ class AutoLoader<std::map<std::string, T>> final : public LoadMap {
   void LoadOne(const Json& json, const std::string& name, void* dst,
                ErrorList* errors) const final {
     auto* map = static_cast<std::map<std::string, T>*>(dst);
-    T value;
+    T value{};
     LoaderForType<T>()->LoadInto(json, &value, errors);
     map->emplace(name, std::move(value));
   }
@@ -490,7 +490,7 @@ using JsonLoaderInterface = json_detail::LoaderInterface;
 template <typename T>
 absl::StatusOr<T> LoadFromJson(const Json& json) {
   ErrorList error_list;
-  T result;
+  T result{};
   json_detail::LoaderForType<T>()->LoadInto(json, &result, &error_list);
   if (!error_list.ok()) return error_list.status();
   return result;
@@ -498,7 +498,7 @@ absl::StatusOr<T> LoadFromJson(const Json& json) {
 
 template <typename T>
 T LoadFromJson(const Json& json, ErrorList* error_list) {
-  T result;
+  T result{};
   json_detail::LoaderForType<T>()->LoadInto(json, &result, error_list);
   return result;
 }
@@ -510,7 +510,7 @@ absl::optional<T> LoadJsonObjectField(
   const Json* field_json =
       json_detail::GetJsonObjectField(json, field, errors, required);
   if (field_json == nullptr) return absl::nullopt;
-  T result;
+  T result{};
   size_t starting_error_size = errors->size();
   json_detail::LoaderForType<T>()->LoadInto(*field_json, &result, errors);
   if (errors->size() > starting_error_size) return absl::nullopt;
