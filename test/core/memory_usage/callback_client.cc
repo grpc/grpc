@@ -16,6 +16,7 @@
  *
  */
 
+#include <inttypes.h>
 #include <limits.h>
 
 #include <chrono>
@@ -26,6 +27,7 @@
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
 #include "absl/strings/string_view.h"
+#include "absl/synchronization/notification.h"
 
 #include <grpc/support/log.h>
 #include <grpcpp/grpcpp.h>
@@ -41,9 +43,7 @@
 ABSL_FLAG(std::string, target, "", "Target host:port");
 ABSL_FLAG(bool, secure, false, "Use SSL Credentials");
 ABSL_FLAG(int, server_pid, 99999, "Server's pid");
-ABSL_FLAG(
-    int, size, 500,
-    "Number of channels");  // TODO(chennancy) Pass in the real amount of flags
+ABSL_FLAG(int, size, 50, "Number of channels");
 
 std::shared_ptr<grpc::Channel> CreateChannelForTest(int index) {
   // Set the authentication mechanism.
@@ -68,51 +68,54 @@ std::shared_ptr<grpc::Channel> CreateChannelForTest(int index) {
   return channel;
 }
 
-void UnaryCall(std::shared_ptr<grpc::Channel> channel) {
+struct CallParams {
+  grpc::ClientContext context;
+  grpc::testing::SimpleRequest request;
+  grpc::testing::SimpleResponse response;
+  grpc::testing::MemorySize snapshot_response;
+  absl::Notification done;
+};
+
+// Simple Unary RPC to send to confirm connection is open
+std::shared_ptr<CallParams> UnaryCall(std::shared_ptr<grpc::Channel> channel) {
   std::unique_ptr<grpc::testing::BenchmarkService::Stub> stub =
       grpc::testing::BenchmarkService::NewStub(channel);
 
   // Start a call.
-  struct CallParams {
-    grpc::ClientContext context;
-    grpc::testing::SimpleRequest request;
-    grpc::testing::SimpleResponse response;
-  };
-  CallParams* params = new CallParams();
+  auto params = std::make_shared<CallParams>();
   stub->async()->UnaryCall(&params->context, &params->request,
-                           &params->response, [](const grpc::Status& status) {
-                             if (status.ok()) {
-                               gpr_log(GPR_INFO, "UnaryCall RPC succeeded.");
-                             } else {
+                           &params->response,
+                           [params](const grpc::Status& status) {
+                             if (!status.ok()) {
                                gpr_log(GPR_ERROR, "UnaryCall RPC failed.");
                              }
+                             params->done.Notify();
                            });
+  return params;
 }
 
 // Get memory usage of server's process before the server is made
-void GetBeforeSnapshot(std::shared_ptr<grpc::Channel> channel,
-                       long& before_server_memory) {
+std::shared_ptr<CallParams> GetBeforeSnapshot(
+    std::shared_ptr<grpc::Channel> channel, long& before_server_memory) {
   std::unique_ptr<grpc::testing::BenchmarkService::Stub> stub =
       grpc::testing::BenchmarkService::NewStub(channel);
 
   // Start a call.
-  struct CallParams {
-    grpc::ClientContext context;
-    grpc::testing::SimpleRequest request;
-    grpc::testing::MemorySize response;
-  };
-  CallParams* params = new CallParams();
+  auto params = std::make_shared<CallParams>();
   stub->async()->GetBeforeSnapshot(
-      &params->context, &params->request, &params->response,
+      &params->context, &params->request, &params->snapshot_response,
       [params, &before_server_memory](const grpc::Status& status) {
         if (status.ok()) {
-          before_server_memory = params->response.rss();
-          gpr_log(GPR_INFO, "Server Before RPC: %ld", params->response.rss());
+          before_server_memory = params->snapshot_response.rss();
+          gpr_log(GPR_INFO, "Server Before RPC: %ld",
+                  params->snapshot_response.rss());
           gpr_log(GPR_INFO, "GetBeforeSnapshot succeeded.");
         } else {
           gpr_log(GPR_ERROR, "GetBeforeSnapshot failed.");
         }
+        params->done.Notify();
       });
+  return params;
 }
 
 int main(int argc, char** argv) {
@@ -126,19 +129,22 @@ int main(int argc, char** argv) {
     return 1;
   }
   gpr_log(GPR_INFO, "Client Target: %s", absl::GetFlag(FLAGS_target).c_str());
+  gpr_log(GPR_INFO, "Client Size: %d", absl::GetFlag(FLAGS_size));
 
   // Getting initial memory usage
   std::shared_ptr<grpc::Channel> get_memory_channel = CreateChannelForTest(0);
   long before_server_memory;
-  GetBeforeSnapshot(get_memory_channel, before_server_memory);
+  GetBeforeSnapshot(get_memory_channel, before_server_memory)
+      ->done.WaitForNotification();
   long before_client_memory = GetMemUsage();
 
+  // Create the channels and send an RPC to confirm they're open
   int size = absl::GetFlag(FLAGS_size);
   std::vector<std::shared_ptr<grpc::Channel>> channels_list(size);
   for (int i = 0; i < size; ++i) {
     std::shared_ptr<grpc::Channel> channel = CreateChannelForTest(i);
     channels_list[i] = channel;
-    UnaryCall(channel);
+    UnaryCall(channel)->done.WaitForNotification();
   }
 
   // Getting peak memory usage
@@ -148,18 +154,19 @@ int main(int argc, char** argv) {
   gpr_log(GPR_INFO, "Before Client Mem: %ld", before_client_memory);
   gpr_log(GPR_INFO, "Peak Server Mem: %ld", peak_server_memory);
   gpr_log(GPR_INFO, "Peak Client Mem: %ld", peak_client_memory);
-  gpr_log(GPR_INFO, "Server Difference: %ld",
-          peak_server_memory - before_server_memory);
-  gpr_log(GPR_INFO, "Client Difference: %ld",
-          peak_client_memory - before_client_memory);
+  gpr_log(GPR_INFO, "Server Difference: %f",
+          static_cast<float>(peak_server_memory - before_server_memory) /
+              static_cast<float>(size));
+  gpr_log(GPR_INFO, "Client Difference: %f",
+          static_cast<float>(peak_client_memory - before_client_memory) /
+              static_cast<float>(size));
 
-  // Checking if any channels shutdown
+  // Checking that all channels are still open
   for (int i = 0; i < size; ++i) {
-    GPR_ASSERT(!channels_list[i]->WaitForStateChange(
-        GRPC_CHANNEL_READY,
-        std::chrono::system_clock::now() + std::chrono::milliseconds(1)));
-    // channels_list[i]->~Channel();
-    // channels_list[i].reset();
+    GPR_ASSERT(!absl::exchange(channels_list[i], nullptr)
+                    ->WaitForStateChange(GRPC_CHANNEL_READY,
+                                         std::chrono::system_clock::now() +
+                                             std::chrono::milliseconds(1)));
   }
   gpr_log(GPR_INFO, "Client Done");
   return 0;
