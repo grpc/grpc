@@ -16055,7 +16055,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(ssl_transport_security_utils_test
     test/core/tsi/ssl_transport_security_utils_test.cc
-    test/core/tsi/transport_security_test_lib.cc
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
