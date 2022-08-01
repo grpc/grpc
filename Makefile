@@ -1126,6 +1126,7 @@ LIBGRPC_SRC = \
     src/core/ext/upb-generated/envoy/admin/v3/certs.upb.c \
     src/core/ext/upb-generated/envoy/admin/v3/clusters.upb.c \
     src/core/ext/upb-generated/envoy/admin/v3/config_dump.upb.c \
+    src/core/ext/upb-generated/envoy/admin/v3/config_dump_shared.upb.c \
     src/core/ext/upb-generated/envoy/admin/v3/init_dump.upb.c \
     src/core/ext/upb-generated/envoy/admin/v3/listeners.upb.c \
     src/core/ext/upb-generated/envoy/admin/v3/memory.upb.c \
@@ -1179,6 +1180,7 @@ LIBGRPC_SRC = \
     src/core/ext/upb-generated/envoy/config/trace/v3/http_tracer.upb.c \
     src/core/ext/upb-generated/envoy/config/trace/v3/lightstep.upb.c \
     src/core/ext/upb-generated/envoy/config/trace/v3/opencensus.upb.c \
+    src/core/ext/upb-generated/envoy/config/trace/v3/opentelemetry.upb.c \
     src/core/ext/upb-generated/envoy/config/trace/v3/service.upb.c \
     src/core/ext/upb-generated/envoy/config/trace/v3/skywalking.upb.c \
     src/core/ext/upb-generated/envoy/config/trace/v3/trace.upb.c \
@@ -1219,6 +1221,7 @@ LIBGRPC_SRC = \
     src/core/ext/upb-generated/envoy/type/v3/http_status.upb.c \
     src/core/ext/upb-generated/envoy/type/v3/percent.upb.c \
     src/core/ext/upb-generated/envoy/type/v3/range.upb.c \
+    src/core/ext/upb-generated/envoy/type/v3/ratelimit_strategy.upb.c \
     src/core/ext/upb-generated/envoy/type/v3/ratelimit_unit.upb.c \
     src/core/ext/upb-generated/envoy/type/v3/semantic_version.upb.c \
     src/core/ext/upb-generated/envoy/type/v3/token_bucket.upb.c \
@@ -1270,6 +1273,7 @@ LIBGRPC_SRC = \
     src/core/ext/upbdefs-generated/envoy/admin/v3/certs.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/admin/v3/clusters.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/admin/v3/config_dump.upbdefs.c \
+    src/core/ext/upbdefs-generated/envoy/admin/v3/config_dump_shared.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/admin/v3/init_dump.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/admin/v3/listeners.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/admin/v3/memory.upbdefs.c \
@@ -1323,6 +1327,7 @@ LIBGRPC_SRC = \
     src/core/ext/upbdefs-generated/envoy/config/trace/v3/http_tracer.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/config/trace/v3/lightstep.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/config/trace/v3/opencensus.upbdefs.c \
+    src/core/ext/upbdefs-generated/envoy/config/trace/v3/opentelemetry.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/config/trace/v3/service.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/config/trace/v3/skywalking.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/config/trace/v3/trace.upbdefs.c \
@@ -1361,6 +1366,7 @@ LIBGRPC_SRC = \
     src/core/ext/upbdefs-generated/envoy/type/v3/http_status.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/type/v3/percent.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/type/v3/range.upbdefs.c \
+    src/core/ext/upbdefs-generated/envoy/type/v3/ratelimit_strategy.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/type/v3/ratelimit_unit.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/type/v3/semantic_version.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/type/v3/token_bucket.upbdefs.c \
@@ -1409,6 +1415,7 @@ LIBGRPC_SRC = \
     src/core/ext/xds/xds_certificate_provider.cc \
     src/core/ext/xds/xds_channel_stack_modifier.cc \
     src/core/ext/xds/xds_client.cc \
+    src/core/ext/xds/xds_client_grpc.cc \
     src/core/ext/xds/xds_client_stats.cc \
     src/core/ext/xds/xds_cluster.cc \
     src/core/ext/xds/xds_cluster_specifier_plugin.cc \
@@ -1423,6 +1430,7 @@ LIBGRPC_SRC = \
     src/core/ext/xds/xds_route_config.cc \
     src/core/ext/xds/xds_routing.cc \
     src/core/ext/xds/xds_server_config_fetcher.cc \
+    src/core/ext/xds/xds_transport_grpc.cc \
     src/core/lib/address_utils/parse_address.cc \
     src/core/lib/address_utils/sockaddr_utils.cc \
     src/core/lib/backoff/backoff.cc \
@@ -1449,7 +1457,6 @@ LIBGRPC_SRC = \
     src/core/lib/event_engine/event_engine.cc \
     src/core/lib/event_engine/iomgr_engine/iomgr_engine.cc \
     src/core/lib/event_engine/iomgr_engine/thread_pool.cc \
-    src/core/lib/event_engine/iomgr_engine/time_averaged_stats.cc \
     src/core/lib/event_engine/iomgr_engine/timer.cc \
     src/core/lib/event_engine/iomgr_engine/timer_heap.cc \
     src/core/lib/event_engine/iomgr_engine/timer_manager.cc \
@@ -1460,6 +1467,8 @@ LIBGRPC_SRC = \
     src/core/lib/event_engine/trace.cc \
     src/core/lib/gprpp/status_helper.cc \
     src/core/lib/gprpp/time.cc \
+    src/core/lib/gprpp/time_averaged_stats.cc \
+    src/core/lib/gprpp/work_serializer.cc \
     src/core/lib/http/format_request.cc \
     src/core/lib/http/httpcli.cc \
     src/core/lib/http/httpcli_security_connector.cc \
@@ -1482,8 +1491,6 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/ev_windows.cc \
     src/core/lib/iomgr/exec_ctx.cc \
     src/core/lib/iomgr/executor.cc \
-    src/core/lib/iomgr/executor/mpmcqueue.cc \
-    src/core/lib/iomgr/executor/threadpool.cc \
     src/core/lib/iomgr/fork_posix.cc \
     src/core/lib/iomgr/fork_windows.cc \
     src/core/lib/iomgr/gethostname_fallback.cc \
@@ -1528,7 +1535,6 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.cc \
     src/core/lib/iomgr/tcp_server_windows.cc \
     src/core/lib/iomgr/tcp_windows.cc \
-    src/core/lib/iomgr/time_averaged_stats.cc \
     src/core/lib/iomgr/timer.cc \
     src/core/lib/iomgr/timer_generic.cc \
     src/core/lib/iomgr/timer_heap.cc \
@@ -1539,7 +1545,6 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/wakeup_fd_nospecial.cc \
     src/core/lib/iomgr/wakeup_fd_pipe.cc \
     src/core/lib/iomgr/wakeup_fd_posix.cc \
-    src/core/lib/iomgr/work_serializer.cc \
     src/core/lib/json/json_reader.cc \
     src/core/lib/json/json_util.cc \
     src/core/lib/json/json_writer.cc \
@@ -1552,6 +1557,7 @@ LIBGRPC_SRC = \
     src/core/lib/resource_quota/api.cc \
     src/core/lib/resource_quota/arena.cc \
     src/core/lib/resource_quota/memory_quota.cc \
+    src/core/lib/resource_quota/periodic_update.cc \
     src/core/lib/resource_quota/resource_quota.cc \
     src/core/lib/resource_quota/thread_quota.cc \
     src/core/lib/resource_quota/trace.cc \
@@ -1852,7 +1858,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/http/message_compress/message_decompress_filter.cc \
     src/core/ext/filters/http/server/http_server_filter.cc \
     src/core/ext/filters/message_size/message_size_filter.cc \
-    src/core/ext/transport/chttp2/alpn/alpn.cc \
     src/core/ext/transport/chttp2/client/chttp2_connector.cc \
     src/core/ext/transport/chttp2/server/chttp2_server.cc \
     src/core/ext/transport/chttp2/transport/bin_decoder.cc \
@@ -1921,7 +1926,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/event_engine/event_engine.cc \
     src/core/lib/event_engine/iomgr_engine/iomgr_engine.cc \
     src/core/lib/event_engine/iomgr_engine/thread_pool.cc \
-    src/core/lib/event_engine/iomgr_engine/time_averaged_stats.cc \
     src/core/lib/event_engine/iomgr_engine/timer.cc \
     src/core/lib/event_engine/iomgr_engine/timer_heap.cc \
     src/core/lib/event_engine/iomgr_engine/timer_manager.cc \
@@ -1932,6 +1936,8 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/event_engine/trace.cc \
     src/core/lib/gprpp/status_helper.cc \
     src/core/lib/gprpp/time.cc \
+    src/core/lib/gprpp/time_averaged_stats.cc \
+    src/core/lib/gprpp/work_serializer.cc \
     src/core/lib/http/format_request.cc \
     src/core/lib/http/httpcli.cc \
     src/core/lib/http/parser.cc \
@@ -1953,8 +1959,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/ev_windows.cc \
     src/core/lib/iomgr/exec_ctx.cc \
     src/core/lib/iomgr/executor.cc \
-    src/core/lib/iomgr/executor/mpmcqueue.cc \
-    src/core/lib/iomgr/executor/threadpool.cc \
     src/core/lib/iomgr/fork_posix.cc \
     src/core/lib/iomgr/fork_windows.cc \
     src/core/lib/iomgr/gethostname_fallback.cc \
@@ -1999,7 +2003,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.cc \
     src/core/lib/iomgr/tcp_server_windows.cc \
     src/core/lib/iomgr/tcp_windows.cc \
-    src/core/lib/iomgr/time_averaged_stats.cc \
     src/core/lib/iomgr/timer.cc \
     src/core/lib/iomgr/timer_generic.cc \
     src/core/lib/iomgr/timer_heap.cc \
@@ -2010,7 +2013,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/wakeup_fd_nospecial.cc \
     src/core/lib/iomgr/wakeup_fd_pipe.cc \
     src/core/lib/iomgr/wakeup_fd_posix.cc \
-    src/core/lib/iomgr/work_serializer.cc \
     src/core/lib/json/json_reader.cc \
     src/core/lib/json/json_util.cc \
     src/core/lib/json/json_writer.cc \
@@ -2022,6 +2024,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/resource_quota/api.cc \
     src/core/lib/resource_quota/arena.cc \
     src/core/lib/resource_quota/memory_quota.cc \
+    src/core/lib/resource_quota/periodic_update.cc \
     src/core/lib/resource_quota/resource_quota.cc \
     src/core/lib/resource_quota/thread_quota.cc \
     src/core/lib/resource_quota/trace.cc \
@@ -2856,9 +2859,11 @@ src/core/ext/filters/rbac/rbac_filter.cc: $(OPENSSL_DEP)
 src/core/ext/filters/rbac/rbac_service_config_parser.cc: $(OPENSSL_DEP)
 src/core/ext/filters/server_config_selector/server_config_selector.cc: $(OPENSSL_DEP)
 src/core/ext/filters/server_config_selector/server_config_selector_filter.cc: $(OPENSSL_DEP)
+src/core/ext/transport/chttp2/alpn/alpn.cc: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/admin/v3/certs.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/admin/v3/clusters.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/admin/v3/config_dump.upb.c: $(OPENSSL_DEP)
+src/core/ext/upb-generated/envoy/admin/v3/config_dump_shared.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/admin/v3/init_dump.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/admin/v3/listeners.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/admin/v3/memory.upb.c: $(OPENSSL_DEP)
@@ -2912,6 +2917,7 @@ src/core/ext/upb-generated/envoy/config/trace/v3/dynamic_ot.upb.c: $(OPENSSL_DEP
 src/core/ext/upb-generated/envoy/config/trace/v3/http_tracer.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/config/trace/v3/lightstep.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/config/trace/v3/opencensus.upb.c: $(OPENSSL_DEP)
+src/core/ext/upb-generated/envoy/config/trace/v3/opentelemetry.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/config/trace/v3/service.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/config/trace/v3/skywalking.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/config/trace/v3/trace.upb.c: $(OPENSSL_DEP)
@@ -2952,6 +2958,7 @@ src/core/ext/upb-generated/envoy/type/v3/http.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/type/v3/http_status.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/type/v3/percent.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/type/v3/range.upb.c: $(OPENSSL_DEP)
+src/core/ext/upb-generated/envoy/type/v3/ratelimit_strategy.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/type/v3/ratelimit_unit.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/type/v3/semantic_version.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/type/v3/token_bucket.upb.c: $(OPENSSL_DEP)
@@ -2987,6 +2994,7 @@ src/core/ext/upb-generated/xds/type/v3/typed_struct.upb.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/admin/v3/certs.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/admin/v3/clusters.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/admin/v3/config_dump.upbdefs.c: $(OPENSSL_DEP)
+src/core/ext/upbdefs-generated/envoy/admin/v3/config_dump_shared.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/admin/v3/init_dump.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/admin/v3/listeners.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/admin/v3/memory.upbdefs.c: $(OPENSSL_DEP)
@@ -3040,6 +3048,7 @@ src/core/ext/upbdefs-generated/envoy/config/trace/v3/dynamic_ot.upbdefs.c: $(OPE
 src/core/ext/upbdefs-generated/envoy/config/trace/v3/http_tracer.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/config/trace/v3/lightstep.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/config/trace/v3/opencensus.upbdefs.c: $(OPENSSL_DEP)
+src/core/ext/upbdefs-generated/envoy/config/trace/v3/opentelemetry.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/config/trace/v3/service.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/config/trace/v3/skywalking.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/config/trace/v3/trace.upbdefs.c: $(OPENSSL_DEP)
@@ -3078,6 +3087,7 @@ src/core/ext/upbdefs-generated/envoy/type/v3/http.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/type/v3/http_status.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/type/v3/percent.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/type/v3/range.upbdefs.c: $(OPENSSL_DEP)
+src/core/ext/upbdefs-generated/envoy/type/v3/ratelimit_strategy.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/type/v3/ratelimit_unit.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/type/v3/semantic_version.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/type/v3/token_bucket.upbdefs.c: $(OPENSSL_DEP)
@@ -3125,6 +3135,7 @@ src/core/ext/xds/xds_bootstrap.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_certificate_provider.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_channel_stack_modifier.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_client.cc: $(OPENSSL_DEP)
+src/core/ext/xds/xds_client_grpc.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_client_stats.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_cluster.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_cluster_specifier_plugin.cc: $(OPENSSL_DEP)
@@ -3139,6 +3150,7 @@ src/core/ext/xds/xds_resource_type.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_route_config.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_routing.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_server_config_fetcher.cc: $(OPENSSL_DEP)
+src/core/ext/xds/xds_transport_grpc.cc: $(OPENSSL_DEP)
 src/core/lib/http/httpcli_security_connector.cc: $(OPENSSL_DEP)
 src/core/lib/matchers/matchers.cc: $(OPENSSL_DEP)
 src/core/lib/security/authorization/grpc_authorization_engine.cc: $(OPENSSL_DEP)

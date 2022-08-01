@@ -36,10 +36,16 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/global_config_env.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 
 grpc_core::TraceFlag grpc_flowctl_trace(false, "flowctl");
+
+GPR_GLOBAL_CONFIG_DEFINE_BOOL(
+    grpc_experimental_broad_flow_control_range, false,
+    "Use an enlarged memory pressure range for scaling flow control when using "
+    "a resource quota.");
 
 namespace grpc_core {
 namespace chttp2 {
@@ -212,6 +218,58 @@ double TransportFlowControl::SmoothLogBdp(double value) {
   return pid_controller_.Update(bdp_error, dt > kMaxDt ? kMaxDt : dt);
 }
 
+double
+TransportFlowControl::TargetInitialWindowSizeBasedOnMemoryPressureAndBdp()
+    const {
+  const double bdp = bdp_estimator_.EstimateBdp() * 2.0;
+  const double memory_pressure = memory_owner_->InstantaneousPressure();
+  // Linear interpolation between two values.
+  // Given a line segment between the two points (t_min, a), and (t_max, b),
+  // and a value t such that t_min <= t <= t_max, return the value on the line
+  // segment at t.
+  auto lerp = [](double t, double t_min, double t_max, double a, double b) {
+    return a + (b - a) * (t - t_min) / (t_max - t_min);
+  };
+  // We split memory pressure into three broad regions:
+  // 1. Low memory pressure, the "anything goes" case - we assume no memory
+  //    pressure concerns and advertise a huge window to keep things flowing.
+  // 2. Moderate memory pressure, the "adjust to BDP" case - we linearly ramp
+  //    down window size to 2*BDP - which should still allow bytes to flow, but
+  //    is arguably more considered.
+  // 3. High memory pressure - past 50% we linearly ramp down window size from
+  //    BDP to 0 - at which point senders effectively must request to send bytes
+  //    to us.
+  //
+  //          ▲
+  //          │
+  // 16mb ────┤---------x----
+  //          │              -----
+  //  BDP ────┤                   ----x---
+  //          │                           ----
+  //          │                               -----
+  //          │                                    ----
+  //          │                                        -----
+  //          │                                             ---x
+  //          ├─────────┬─────────────┬────────────────────────┬─────►
+  //          │Anything │Adjust to    │Drop to zero            │
+  //          │Goes     │BDP          │                        │
+  //          0%        20%           50%                      100% memory
+  //                                                                pressure
+  const double kAnythingGoesPressure = 0.2;
+  const double kAdjustedToBdpPressure = 0.5;
+  const double kAnythingGoesWindow = std::max(double(1 << 24), bdp);
+  if (memory_pressure < kAnythingGoesPressure) {
+    return kAnythingGoesWindow;
+  } else if (memory_pressure < kAdjustedToBdpPressure) {
+    return lerp(memory_pressure, kAnythingGoesPressure, kAdjustedToBdpPressure,
+                kAnythingGoesWindow, bdp);
+  } else if (memory_pressure < 1.0) {
+    return lerp(memory_pressure, kAdjustedToBdpPressure, 1.0, bdp, 0);
+  } else {
+    return 0;
+  }
+}
+
 void TransportFlowControl::UpdateSetting(
     int64_t* desired_value, int64_t new_desired_value,
     FlowControlAction* action,
@@ -227,13 +285,17 @@ void TransportFlowControl::UpdateSetting(
 }
 
 FlowControlAction TransportFlowControl::PeriodicUpdate() {
+  static const bool kSmoothMemoryPressure =
+      GPR_GLOBAL_CONFIG_GET(grpc_experimental_smooth_memory_presure);
   FlowControlAction action;
   if (enable_bdp_probe_) {
     // get bdp estimate and update initial_window accordingly.
     // target might change based on how much memory pressure we are under
     // TODO(ncteisen): experiment with setting target to be huge under low
     // memory pressure.
-    double target = pow(2, SmoothLogBdp(TargetLogBdp()));
+    double target = kSmoothMemoryPressure
+                        ? TargetInitialWindowSizeBasedOnMemoryPressureAndBdp()
+                        : pow(2, SmoothLogBdp(TargetLogBdp()));
     if (g_test_only_transport_target_window_estimates_mocker != nullptr) {
       // Hook for simulating unusual flow control situations in tests.
       target = g_test_only_transport_target_window_estimates_mocker

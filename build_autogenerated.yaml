@@ -281,6 +281,7 @@ libs:
   - absl/synchronization:synchronization
   - absl/time:time
   - absl/types:optional
+  - absl/types:variant
 - name: grpc
   build: all
   language: c
@@ -416,6 +417,7 @@ libs:
   - src/core/ext/upb-generated/envoy/admin/v3/certs.upb.h
   - src/core/ext/upb-generated/envoy/admin/v3/clusters.upb.h
   - src/core/ext/upb-generated/envoy/admin/v3/config_dump.upb.h
+  - src/core/ext/upb-generated/envoy/admin/v3/config_dump_shared.upb.h
   - src/core/ext/upb-generated/envoy/admin/v3/init_dump.upb.h
   - src/core/ext/upb-generated/envoy/admin/v3/listeners.upb.h
   - src/core/ext/upb-generated/envoy/admin/v3/memory.upb.h
@@ -469,6 +471,7 @@ libs:
   - src/core/ext/upb-generated/envoy/config/trace/v3/http_tracer.upb.h
   - src/core/ext/upb-generated/envoy/config/trace/v3/lightstep.upb.h
   - src/core/ext/upb-generated/envoy/config/trace/v3/opencensus.upb.h
+  - src/core/ext/upb-generated/envoy/config/trace/v3/opentelemetry.upb.h
   - src/core/ext/upb-generated/envoy/config/trace/v3/service.upb.h
   - src/core/ext/upb-generated/envoy/config/trace/v3/skywalking.upb.h
   - src/core/ext/upb-generated/envoy/config/trace/v3/trace.upb.h
@@ -509,6 +512,7 @@ libs:
   - src/core/ext/upb-generated/envoy/type/v3/http_status.upb.h
   - src/core/ext/upb-generated/envoy/type/v3/percent.upb.h
   - src/core/ext/upb-generated/envoy/type/v3/range.upb.h
+  - src/core/ext/upb-generated/envoy/type/v3/ratelimit_strategy.upb.h
   - src/core/ext/upb-generated/envoy/type/v3/ratelimit_unit.upb.h
   - src/core/ext/upb-generated/envoy/type/v3/semantic_version.upb.h
   - src/core/ext/upb-generated/envoy/type/v3/token_bucket.upb.h
@@ -560,6 +564,7 @@ libs:
   - src/core/ext/upbdefs-generated/envoy/admin/v3/certs.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/admin/v3/clusters.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/admin/v3/config_dump.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/admin/v3/config_dump_shared.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/admin/v3/init_dump.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/admin/v3/listeners.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/admin/v3/memory.upbdefs.h
@@ -613,6 +618,7 @@ libs:
   - src/core/ext/upbdefs-generated/envoy/config/trace/v3/http_tracer.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/config/trace/v3/lightstep.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/config/trace/v3/opencensus.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/config/trace/v3/opentelemetry.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/config/trace/v3/service.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/config/trace/v3/skywalking.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/config/trace/v3/trace.upbdefs.h
@@ -651,6 +657,7 @@ libs:
   - src/core/ext/upbdefs-generated/envoy/type/v3/http_status.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/type/v3/percent.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/type/v3/range.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/type/v3/ratelimit_strategy.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/type/v3/ratelimit_unit.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/type/v3/semantic_version.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/type/v3/token_bucket.upbdefs.h
@@ -702,6 +709,7 @@ libs:
   - src/core/ext/xds/xds_channel_args.h
   - src/core/ext/xds/xds_channel_stack_modifier.h
   - src/core/ext/xds/xds_client.h
+  - src/core/ext/xds/xds_client_grpc.h
   - src/core/ext/xds/xds_client_stats.h
   - src/core/ext/xds/xds_cluster.h
   - src/core/ext/xds/xds_cluster_specifier_plugin.h
@@ -716,6 +724,8 @@ libs:
   - src/core/ext/xds/xds_resource_type_impl.h
   - src/core/ext/xds/xds_route_config.h
   - src/core/ext/xds/xds_routing.h
+  - src/core/ext/xds/xds_transport.h
+  - src/core/ext/xds/xds_transport_grpc.h
   - src/core/lib/address_utils/parse_address.h
   - src/core/lib/address_utils/sockaddr_utils.h
   - src/core/lib/avl/avl.h
@@ -742,11 +752,11 @@ libs:
   - src/core/lib/debug/stats_data.h
   - src/core/lib/debug/trace.h
   - src/core/lib/event_engine/channel_args_endpoint_config.h
+  - src/core/lib/event_engine/default_event_engine_factory.h
   - src/core/lib/event_engine/event_engine_factory.h
   - src/core/lib/event_engine/handle_containers.h
   - src/core/lib/event_engine/iomgr_engine/iomgr_engine.h
   - src/core/lib/event_engine/iomgr_engine/thread_pool.h
-  - src/core/lib/event_engine/iomgr_engine/time_averaged_stats.h
   - src/core/lib/event_engine/iomgr_engine/timer.h
   - src/core/lib/event_engine/iomgr_engine/timer_heap.h
   - src/core/lib/event_engine/iomgr_engine/timer_manager.h
@@ -766,7 +776,9 @@ libs:
   - src/core/lib/gprpp/status_helper.h
   - src/core/lib/gprpp/table.h
   - src/core/lib/gprpp/time.h
+  - src/core/lib/gprpp/time_averaged_stats.h
   - src/core/lib/gprpp/unique_type_name.h
+  - src/core/lib/gprpp/work_serializer.h
   - src/core/lib/http/format_request.h
   - src/core/lib/http/httpcli.h
   - src/core/lib/http/httpcli_ssl_credentials.h
@@ -783,15 +795,12 @@ libs:
   - src/core/lib/iomgr/endpoint_pair.h
   - src/core/lib/iomgr/error.h
   - src/core/lib/iomgr/error_cfstream.h
-  - src/core/lib/iomgr/error_internal.h
   - src/core/lib/iomgr/ev_apple.h
   - src/core/lib/iomgr/ev_epoll1_linux.h
   - src/core/lib/iomgr/ev_poll_posix.h
   - src/core/lib/iomgr/ev_posix.h
   - src/core/lib/iomgr/exec_ctx.h
   - src/core/lib/iomgr/executor.h
-  - src/core/lib/iomgr/executor/mpmcqueue.h
-  - src/core/lib/iomgr/executor/threadpool.h
   - src/core/lib/iomgr/gethostname.h
   - src/core/lib/iomgr/grpc_if_nametoindex.h
   - src/core/lib/iomgr/internal_errqueue.h
@@ -828,7 +837,6 @@ libs:
   - src/core/lib/iomgr/tcp_server.h
   - src/core/lib/iomgr/tcp_server_utils_posix.h
   - src/core/lib/iomgr/tcp_windows.h
-  - src/core/lib/iomgr/time_averaged_stats.h
   - src/core/lib/iomgr/timer.h
   - src/core/lib/iomgr/timer_generic.h
   - src/core/lib/iomgr/timer_heap.h
@@ -836,7 +844,6 @@ libs:
   - src/core/lib/iomgr/unix_sockets_posix.h
   - src/core/lib/iomgr/wakeup_fd_pipe.h
   - src/core/lib/iomgr/wakeup_fd_posix.h
-  - src/core/lib/iomgr/work_serializer.h
   - src/core/lib/json/json.h
   - src/core/lib/json/json_util.h
   - src/core/lib/matchers/matchers.h
@@ -867,6 +874,7 @@ libs:
   - src/core/lib/resource_quota/api.h
   - src/core/lib/resource_quota/arena.h
   - src/core/lib/resource_quota/memory_quota.h
+  - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/resource_quota/trace.h
@@ -1103,6 +1111,7 @@ libs:
   - src/core/ext/upb-generated/envoy/admin/v3/certs.upb.c
   - src/core/ext/upb-generated/envoy/admin/v3/clusters.upb.c
   - src/core/ext/upb-generated/envoy/admin/v3/config_dump.upb.c
+  - src/core/ext/upb-generated/envoy/admin/v3/config_dump_shared.upb.c
   - src/core/ext/upb-generated/envoy/admin/v3/init_dump.upb.c
   - src/core/ext/upb-generated/envoy/admin/v3/listeners.upb.c
   - src/core/ext/upb-generated/envoy/admin/v3/memory.upb.c
@@ -1156,6 +1165,7 @@ libs:
   - src/core/ext/upb-generated/envoy/config/trace/v3/http_tracer.upb.c
   - src/core/ext/upb-generated/envoy/config/trace/v3/lightstep.upb.c
   - src/core/ext/upb-generated/envoy/config/trace/v3/opencensus.upb.c
+  - src/core/ext/upb-generated/envoy/config/trace/v3/opentelemetry.upb.c
   - src/core/ext/upb-generated/envoy/config/trace/v3/service.upb.c
   - src/core/ext/upb-generated/envoy/config/trace/v3/skywalking.upb.c
   - src/core/ext/upb-generated/envoy/config/trace/v3/trace.upb.c
@@ -1196,6 +1206,7 @@ libs:
   - src/core/ext/upb-generated/envoy/type/v3/http_status.upb.c
   - src/core/ext/upb-generated/envoy/type/v3/percent.upb.c
   - src/core/ext/upb-generated/envoy/type/v3/range.upb.c
+  - src/core/ext/upb-generated/envoy/type/v3/ratelimit_strategy.upb.c
   - src/core/ext/upb-generated/envoy/type/v3/ratelimit_unit.upb.c
   - src/core/ext/upb-generated/envoy/type/v3/semantic_version.upb.c
   - src/core/ext/upb-generated/envoy/type/v3/token_bucket.upb.c
@@ -1247,6 +1258,7 @@ libs:
   - src/core/ext/upbdefs-generated/envoy/admin/v3/certs.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/admin/v3/clusters.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/admin/v3/config_dump.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/admin/v3/config_dump_shared.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/admin/v3/init_dump.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/admin/v3/listeners.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/admin/v3/memory.upbdefs.c
@@ -1300,6 +1312,7 @@ libs:
   - src/core/ext/upbdefs-generated/envoy/config/trace/v3/http_tracer.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/config/trace/v3/lightstep.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/config/trace/v3/opencensus.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/config/trace/v3/opentelemetry.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/config/trace/v3/service.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/config/trace/v3/skywalking.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/config/trace/v3/trace.upbdefs.c
@@ -1338,6 +1351,7 @@ libs:
   - src/core/ext/upbdefs-generated/envoy/type/v3/http_status.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/type/v3/percent.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/type/v3/range.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/type/v3/ratelimit_strategy.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/type/v3/ratelimit_unit.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/type/v3/semantic_version.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/type/v3/token_bucket.upbdefs.c
@@ -1386,6 +1400,7 @@ libs:
   - src/core/ext/xds/xds_certificate_provider.cc
   - src/core/ext/xds/xds_channel_stack_modifier.cc
   - src/core/ext/xds/xds_client.cc
+  - src/core/ext/xds/xds_client_grpc.cc
   - src/core/ext/xds/xds_client_stats.cc
   - src/core/ext/xds/xds_cluster.cc
   - src/core/ext/xds/xds_cluster_specifier_plugin.cc
@@ -1400,6 +1415,7 @@ libs:
   - src/core/ext/xds/xds_route_config.cc
   - src/core/ext/xds/xds_routing.cc
   - src/core/ext/xds/xds_server_config_fetcher.cc
+  - src/core/ext/xds/xds_transport_grpc.cc
   - src/core/lib/address_utils/parse_address.cc
   - src/core/lib/address_utils/sockaddr_utils.cc
   - src/core/lib/backoff/backoff.cc
@@ -1426,7 +1442,6 @@ libs:
   - src/core/lib/event_engine/event_engine.cc
   - src/core/lib/event_engine/iomgr_engine/iomgr_engine.cc
   - src/core/lib/event_engine/iomgr_engine/thread_pool.cc
-  - src/core/lib/event_engine/iomgr_engine/time_averaged_stats.cc
   - src/core/lib/event_engine/iomgr_engine/timer.cc
   - src/core/lib/event_engine/iomgr_engine/timer_heap.cc
   - src/core/lib/event_engine/iomgr_engine/timer_manager.cc
@@ -1437,6 +1452,8 @@ libs:
   - src/core/lib/event_engine/trace.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
+  - src/core/lib/gprpp/time_averaged_stats.cc
+  - src/core/lib/gprpp/work_serializer.cc
   - src/core/lib/http/format_request.cc
   - src/core/lib/http/httpcli.cc
   - src/core/lib/http/httpcli_security_connector.cc
@@ -1459,8 +1476,6 @@ libs:
   - src/core/lib/iomgr/ev_windows.cc
   - src/core/lib/iomgr/exec_ctx.cc
   - src/core/lib/iomgr/executor.cc
-  - src/core/lib/iomgr/executor/mpmcqueue.cc
-  - src/core/lib/iomgr/executor/threadpool.cc
   - src/core/lib/iomgr/fork_posix.cc
   - src/core/lib/iomgr/fork_windows.cc
   - src/core/lib/iomgr/gethostname_fallback.cc
@@ -1505,7 +1520,6 @@ libs:
   - src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.cc
   - src/core/lib/iomgr/tcp_server_windows.cc
   - src/core/lib/iomgr/tcp_windows.cc
-  - src/core/lib/iomgr/time_averaged_stats.cc
   - src/core/lib/iomgr/timer.cc
   - src/core/lib/iomgr/timer_generic.cc
   - src/core/lib/iomgr/timer_heap.cc
@@ -1516,7 +1530,6 @@ libs:
   - src/core/lib/iomgr/wakeup_fd_nospecial.cc
   - src/core/lib/iomgr/wakeup_fd_pipe.cc
   - src/core/lib/iomgr/wakeup_fd_posix.cc
-  - src/core/lib/iomgr/work_serializer.cc
   - src/core/lib/json/json_reader.cc
   - src/core/lib/json/json_util.cc
   - src/core/lib/json/json_writer.cc
@@ -1529,6 +1542,7 @@ libs:
   - src/core/lib/resource_quota/api.cc
   - src/core/lib/resource_quota/arena.cc
   - src/core/lib/resource_quota/memory_quota.cc
+  - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/resource_quota/trace.cc
@@ -1672,13 +1686,13 @@ libs:
   - absl/container:flat_hash_map
   - absl/container:flat_hash_set
   - absl/container:inlined_vector
+  - absl/functional:any_invocable
   - absl/functional:bind_front
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/types:span
-  - absl/types:variant
   - absl/utility:utility
   - gpr
   - libssl
@@ -1693,49 +1707,24 @@ libs:
   headers:
   - test/core/event_engine/test_init.h
   - test/core/util/build.h
-  - test/core/util/cmdline.h
-  - test/core/util/evaluate_args_test_util.h
-  - test/core/util/fuzzer_util.h
-  - test/core/util/grpc_profiler.h
-  - test/core/util/histogram.h
-  - test/core/util/mock_authorization_endpoint.h
-  - test/core/util/mock_endpoint.h
-  - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/port.h
   - test/core/util/port_server_client.h
   - test/core/util/reconnect_server.h
-  - test/core/util/resolve_localhost_ip46.h
-  - test/core/util/slice_splitter.h
   - test/core/util/stack_tracer.h
-  - test/core/util/subprocess.h
   - test/core/util/test_config.h
   - test/core/util/test_tcp_server.h
   - test/core/util/tls_utils.h
-  - test/core/util/tracer_util.h
   src:
   - test/core/event_engine/test_init.cc
   - test/core/util/build.cc
-  - test/core/util/cmdline.cc
-  - test/core/util/fuzzer_util.cc
-  - test/core/util/grpc_profiler.cc
-  - test/core/util/histogram.cc
-  - test/core/util/mock_endpoint.cc
-  - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/port.cc
   - test/core/util/port_isolated_runtime_environment.cc
   - test/core/util/port_server_client.cc
   - test/core/util/reconnect_server.cc
-  - test/core/util/resolve_localhost_ip46.cc
-  - test/core/util/slice_splitter.cc
   - test/core/util/stack_tracer.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/test_config.cc
   - test/core/util/test_tcp_server.cc
   - test/core/util/tls_utils.cc
-  - test/core/util/tracer_util.cc
   deps:
   - absl/debugging:failure_signal_handler
   - absl/debugging:stacktrace
@@ -1748,47 +1737,22 @@ libs:
   headers:
   - test/core/event_engine/test_init.h
   - test/core/util/build.h
-  - test/core/util/cmdline.h
-  - test/core/util/evaluate_args_test_util.h
-  - test/core/util/fuzzer_util.h
-  - test/core/util/grpc_profiler.h
-  - test/core/util/histogram.h
-  - test/core/util/mock_authorization_endpoint.h
-  - test/core/util/mock_endpoint.h
-  - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/port.h
   - test/core/util/port_server_client.h
   - test/core/util/reconnect_server.h
-  - test/core/util/resolve_localhost_ip46.h
-  - test/core/util/slice_splitter.h
   - test/core/util/stack_tracer.h
-  - test/core/util/subprocess.h
   - test/core/util/test_config.h
   - test/core/util/test_tcp_server.h
-  - test/core/util/tracer_util.h
   src:
   - test/core/event_engine/test_init.cc
   - test/core/util/build.cc
-  - test/core/util/cmdline.cc
-  - test/core/util/fuzzer_util.cc
-  - test/core/util/grpc_profiler.cc
-  - test/core/util/histogram.cc
-  - test/core/util/mock_endpoint.cc
-  - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/port.cc
   - test/core/util/port_isolated_runtime_environment.cc
   - test/core/util/port_server_client.cc
   - test/core/util/reconnect_server.cc
-  - test/core/util/resolve_localhost_ip46.cc
-  - test/core/util/slice_splitter.cc
   - test/core/util/stack_tracer.cc
-  - test/core/util/subprocess_posix.cc
-  - test/core/util/subprocess_windows.cc
   - test/core/util/test_config.cc
   - test/core/util/test_tcp_server.cc
-  - test/core/util/tracer_util.cc
   deps:
   - absl/debugging:failure_signal_handler
   - absl/debugging:stacktrace
@@ -1893,7 +1857,6 @@ libs:
   - src/core/ext/filters/http/message_compress/message_decompress_filter.h
   - src/core/ext/filters/http/server/http_server_filter.h
   - src/core/ext/filters/message_size/message_size_filter.h
-  - src/core/ext/transport/chttp2/alpn/alpn.h
   - src/core/ext/transport/chttp2/client/chttp2_connector.h
   - src/core/ext/transport/chttp2/server/chttp2_server.h
   - src/core/ext/transport/chttp2/transport/bin_decoder.h
@@ -1961,11 +1924,11 @@ libs:
   - src/core/lib/debug/stats_data.h
   - src/core/lib/debug/trace.h
   - src/core/lib/event_engine/channel_args_endpoint_config.h
+  - src/core/lib/event_engine/default_event_engine_factory.h
   - src/core/lib/event_engine/event_engine_factory.h
   - src/core/lib/event_engine/handle_containers.h
   - src/core/lib/event_engine/iomgr_engine/iomgr_engine.h
   - src/core/lib/event_engine/iomgr_engine/thread_pool.h
-  - src/core/lib/event_engine/iomgr_engine/time_averaged_stats.h
   - src/core/lib/event_engine/iomgr_engine/timer.h
   - src/core/lib/event_engine/iomgr_engine/timer_heap.h
   - src/core/lib/event_engine/iomgr_engine/timer_manager.h
@@ -1985,7 +1948,9 @@ libs:
   - src/core/lib/gprpp/status_helper.h
   - src/core/lib/gprpp/table.h
   - src/core/lib/gprpp/time.h
+  - src/core/lib/gprpp/time_averaged_stats.h
   - src/core/lib/gprpp/unique_type_name.h
+  - src/core/lib/gprpp/work_serializer.h
   - src/core/lib/http/format_request.h
   - src/core/lib/http/httpcli.h
   - src/core/lib/http/parser.h
@@ -2001,15 +1966,12 @@ libs:
   - src/core/lib/iomgr/endpoint_pair.h
   - src/core/lib/iomgr/error.h
   - src/core/lib/iomgr/error_cfstream.h
-  - src/core/lib/iomgr/error_internal.h
   - src/core/lib/iomgr/ev_apple.h
   - src/core/lib/iomgr/ev_epoll1_linux.h
   - src/core/lib/iomgr/ev_poll_posix.h
   - src/core/lib/iomgr/ev_posix.h
   - src/core/lib/iomgr/exec_ctx.h
   - src/core/lib/iomgr/executor.h
-  - src/core/lib/iomgr/executor/mpmcqueue.h
-  - src/core/lib/iomgr/executor/threadpool.h
   - src/core/lib/iomgr/gethostname.h
   - src/core/lib/iomgr/grpc_if_nametoindex.h
   - src/core/lib/iomgr/internal_errqueue.h
@@ -2046,7 +2008,6 @@ libs:
   - src/core/lib/iomgr/tcp_server.h
   - src/core/lib/iomgr/tcp_server_utils_posix.h
   - src/core/lib/iomgr/tcp_windows.h
-  - src/core/lib/iomgr/time_averaged_stats.h
   - src/core/lib/iomgr/timer.h
   - src/core/lib/iomgr/timer_generic.h
   - src/core/lib/iomgr/timer_heap.h
@@ -2054,7 +2015,6 @@ libs:
   - src/core/lib/iomgr/unix_sockets_posix.h
   - src/core/lib/iomgr/wakeup_fd_pipe.h
   - src/core/lib/iomgr/wakeup_fd_posix.h
-  - src/core/lib/iomgr/work_serializer.h
   - src/core/lib/json/json.h
   - src/core/lib/json/json_util.h
   - src/core/lib/promise/activity.h
@@ -2084,6 +2044,7 @@ libs:
   - src/core/lib/resource_quota/api.h
   - src/core/lib/resource_quota/arena.h
   - src/core/lib/resource_quota/memory_quota.h
+  - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/resource_quota/trace.h
@@ -2225,7 +2186,6 @@ libs:
   - src/core/ext/filters/http/message_compress/message_decompress_filter.cc
   - src/core/ext/filters/http/server/http_server_filter.cc
   - src/core/ext/filters/message_size/message_size_filter.cc
-  - src/core/ext/transport/chttp2/alpn/alpn.cc
   - src/core/ext/transport/chttp2/client/chttp2_connector.cc
   - src/core/ext/transport/chttp2/server/chttp2_server.cc
   - src/core/ext/transport/chttp2/transport/bin_decoder.cc
@@ -2294,7 +2254,6 @@ libs:
   - src/core/lib/event_engine/event_engine.cc
   - src/core/lib/event_engine/iomgr_engine/iomgr_engine.cc
   - src/core/lib/event_engine/iomgr_engine/thread_pool.cc
-  - src/core/lib/event_engine/iomgr_engine/time_averaged_stats.cc
   - src/core/lib/event_engine/iomgr_engine/timer.cc
   - src/core/lib/event_engine/iomgr_engine/timer_heap.cc
   - src/core/lib/event_engine/iomgr_engine/timer_manager.cc
@@ -2305,6 +2264,8 @@ libs:
   - src/core/lib/event_engine/trace.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
+  - src/core/lib/gprpp/time_averaged_stats.cc
+  - src/core/lib/gprpp/work_serializer.cc
   - src/core/lib/http/format_request.cc
   - src/core/lib/http/httpcli.cc
   - src/core/lib/http/parser.cc
@@ -2326,8 +2287,6 @@ libs:
   - src/core/lib/iomgr/ev_windows.cc
   - src/core/lib/iomgr/exec_ctx.cc
   - src/core/lib/iomgr/executor.cc
-  - src/core/lib/iomgr/executor/mpmcqueue.cc
-  - src/core/lib/iomgr/executor/threadpool.cc
   - src/core/lib/iomgr/fork_posix.cc
   - src/core/lib/iomgr/fork_windows.cc
   - src/core/lib/iomgr/gethostname_fallback.cc
@@ -2372,7 +2331,6 @@ libs:
   - src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.cc
   - src/core/lib/iomgr/tcp_server_windows.cc
   - src/core/lib/iomgr/tcp_windows.cc
-  - src/core/lib/iomgr/time_averaged_stats.cc
   - src/core/lib/iomgr/timer.cc
   - src/core/lib/iomgr/timer_generic.cc
   - src/core/lib/iomgr/timer_heap.cc
@@ -2383,7 +2341,6 @@ libs:
   - src/core/lib/iomgr/wakeup_fd_nospecial.cc
   - src/core/lib/iomgr/wakeup_fd_pipe.cc
   - src/core/lib/iomgr/wakeup_fd_posix.cc
-  - src/core/lib/iomgr/work_serializer.cc
   - src/core/lib/json/json_reader.cc
   - src/core/lib/json/json_util.cc
   - src/core/lib/json/json_writer.cc
@@ -2395,6 +2352,7 @@ libs:
   - src/core/lib/resource_quota/api.cc
   - src/core/lib/resource_quota/arena.cc
   - src/core/lib/resource_quota/memory_quota.cc
+  - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/resource_quota/trace.cc
@@ -2475,13 +2433,13 @@ libs:
   - absl/container:flat_hash_map
   - absl/container:flat_hash_set
   - absl/container:inlined_vector
+  - absl/functional:any_invocable
   - absl/functional:bind_front
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/types:span
-  - absl/types:variant
   - absl/utility:utility
   - gpr
   - address_sorting
@@ -2493,6 +2451,19 @@ libs:
   language: c++
   public_headers: []
   headers:
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
   - test/cpp/microbenchmarks/fullstack_context_mutators.h
   - test/cpp/microbenchmarks/fullstack_fixtures.h
   - test/cpp/microbenchmarks/helpers.h
@@ -2501,6 +2472,18 @@ libs:
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
   - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
   - test/cpp/microbenchmarks/helpers.cc
   deps:
   - benchmark
@@ -2879,6 +2862,19 @@ libs:
   public_headers: []
   headers:
   - test/core/end2end/data/ssl_test_data.h
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
   - test/cpp/util/byte_buffer_proto_helper.h
   - test/cpp/util/create_test_channel.h
   - test/cpp/util/string_ref_helper.h
@@ -2889,6 +2885,18 @@ libs:
   - test/core/end2end/data/server1_cert.cc
   - test/core/end2end/data/server1_key.cc
   - test/core/end2end/data/test_root_cert.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
   - test/cpp/util/byte_buffer_proto_helper.cc
   - test/cpp/util/create_test_channel.cc
   - test/cpp/util/string_ref_helper.cc
@@ -3195,49 +3203,6 @@ libs:
   deps:
   - grpc++
 targets:
-- name: alloc_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/gpr/alloc_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: alpn_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/transport/chttp2/alpn_test.cc
-  deps:
-  - grpc_test_util
-- name: alts_security_connector_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/security/alts_security_connector_test.cc
-  deps:
-  - grpc_test_util
-- name: auth_context_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/security/auth_context_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: b64_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/slice/b64_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: bad_server_response_test
   build: test
   language: c
@@ -3253,9 +3218,34 @@ targets:
   language: c
   headers:
   - test/core/end2end/cq_verifier.h
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
   src:
   - test/core/bad_ssl/bad_ssl_test.cc
   - test/core/end2end/cq_verifier.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
   platforms:
@@ -3267,119 +3257,40 @@ targets:
   language: c
   headers:
   - test/core/end2end/cq_verifier.h
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
   src:
   - test/core/bad_ssl/bad_ssl_test.cc
   - test/core/end2end/cq_verifier.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
   platforms:
   - linux
   - posix
   - mac
-- name: bin_decoder_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/transport/chttp2/bin_decoder_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: bin_encoder_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/transport/chttp2/bin_encoder_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: buffer_list_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/iomgr/buffer_list_test.cc
-  deps:
-  - grpc_test_util
-- name: c_slice_buffer_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/slice/c_slice_buffer_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: channel_stack_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/channel/channel_stack_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: check_gcp_environment_linux_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/security/check_gcp_environment_linux_test.cc
-  deps:
-  - grpc_test_util
-- name: check_gcp_environment_windows_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/security/check_gcp_environment_windows_test.cc
-  deps:
-  - grpc_test_util
-- name: client_ssl_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/handshake/client_ssl.cc
-  deps:
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
-- name: cmdline_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/util/cmdline_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: combiner_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/iomgr/combiner_test.cc
-  deps:
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
-- name: compression_test
-  build: test
-  language: c
-  headers:
-  - test/core/compression/args_utils.h
-  src:
-  - test/core/compression/args_utils.cc
-  - test/core/compression/compression_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: connection_refused_test
   build: test
   language: c
@@ -3390,15 +3301,6 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - grpc_test_util
-- name: cpu_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/gpr/cpu_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: dualstack_socket_test
   build: test
   language: c
@@ -3413,43 +3315,37 @@ targets:
   - linux
   - posix
   - mac
-- name: endpoint_pair_test
-  build: test
-  language: c
-  headers:
-  - test/core/iomgr/endpoint_tests.h
-  src:
-  - test/core/iomgr/endpoint_pair_test.cc
-  - test/core/iomgr/endpoint_tests.cc
-  deps:
-  - grpc_test_util
-- name: env_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/gpr/env_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: fd_conservation_posix_test
   build: test
   language: c
-  headers: []
+  headers:
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
   src:
   - test/core/iomgr/fd_conservation_posix_test.cc
-  deps:
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
-- name: fd_posix_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/iomgr/fd_posix_test.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
   platforms:
@@ -3461,12 +3357,37 @@ targets:
   language: c
   headers:
   - test/core/end2end/data/ssl_test_data.h
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
   src:
   - test/core/end2end/data/client_certs.cc
   - test/core/end2end/data/server1_cert.cc
   - test/core/end2end/data/server1_key.cc
   - test/core/end2end/data/test_root_cert.cc
   - test/core/fling/fling_stream_test.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
   platforms:
@@ -3478,44 +3399,43 @@ targets:
   language: c
   headers:
   - test/core/end2end/data/ssl_test_data.h
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
   src:
   - test/core/end2end/data/client_certs.cc
   - test/core/end2end/data/server1_cert.cc
   - test/core/end2end/data/server1_key.cc
   - test/core/end2end/data/test_root_cert.cc
   - test/core/fling/fling_test.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
   platforms:
   - linux
   - posix
   - mac
-- name: fork_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/gprpp/fork_test.cc
-  deps:
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
-  uses_polling: false
-- name: format_request_test
-  build: test
-  language: c
-  headers:
-  - test/core/end2end/data/ssl_test_data.h
-  src:
-  - test/core/end2end/data/client_certs.cc
-  - test/core/end2end/data/server1_cert.cc
-  - test/core/end2end/data/server1_key.cc
-  - test/core/end2end/data/test_root_cert.cc
-  - test/core/http/format_request_test.cc
-  deps:
-  - grpc_test_util
 - name: goaway_server_test
   build: test
   language: c
@@ -3526,71 +3446,17 @@ targets:
   - test/core/end2end/goaway_server_test.cc
   deps:
   - grpc_test_util
-- name: grpc_alts_credentials_options_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/security/grpc_alts_credentials_options_test.cc
-  deps:
-  - grpc_test_util
-- name: grpc_ipv6_loopback_available_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/iomgr/grpc_ipv6_loopback_available_test.cc
-  deps:
-  - grpc_test_util
-- name: handshake_server_with_readahead_handshaker_test
-  build: test
-  language: c
-  headers:
-  - test/core/handshake/server_ssl_common.h
-  src:
-  - test/core/handshake/readahead_handshaker_server_ssl.cc
-  - test/core/handshake/server_ssl_common.cc
-  deps:
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
-- name: histogram_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/util/histogram_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: host_port_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/gprpp/host_port_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: hpack_encoder_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/transport/chttp2/hpack_encoder_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: inproc_callback_test
   build: test
   language: c
-  headers: []
+  headers:
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/local_util.h
   src:
+  - test/core/end2end/fixtures/local_util.cc
   - test/core/end2end/inproc_callback_test.cc
   deps:
-  - end2end_tests
+  - grpc_test_util
   uses_polling: false
 - name: invalid_call_argument_test
   build: test
@@ -3602,42 +3468,6 @@ targets:
   - test/core/end2end/invalid_call_argument_test.cc
   deps:
   - grpc_test_util
-- name: json_token_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/security/json_token_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: jwt_verifier_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/security/jwt_verifier_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: load_file_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/iomgr/load_file_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: message_compress_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/compression/message_compress_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: minimal_stack_is_minimal_test
   build: test
   language: c
@@ -3647,47 +3477,14 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: mpmcqueue_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/iomgr/mpmcqueue_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: mpscq_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/gprpp/mpscq_test.cc
-  deps:
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
-  uses_polling: false
 - name: multiple_server_queues_test
   build: test
   language: c
-  headers:
-  - test/core/end2end/cq_verifier.h
+  headers: []
   src:
-  - test/core/end2end/cq_verifier.cc
   - test/core/end2end/multiple_server_queues_test.cc
   deps:
   - grpc_test_util
-- name: murmur_hash_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/gpr/murmur_hash_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: no_server_test
   build: test
   language: c
@@ -3698,29 +3495,6 @@ targets:
   - test/core/end2end/no_server_test.cc
   deps:
   - grpc_test_util
-- name: parser_test
-  build: test
-  language: c
-  headers:
-  - test/core/end2end/data/ssl_test_data.h
-  src:
-  - test/core/end2end/data/client_certs.cc
-  - test/core/end2end/data/server1_cert.cc
-  - test/core/end2end/data/server1_key.cc
-  - test/core/end2end/data/test_root_cert.cc
-  - test/core/http/parser_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: percent_encoding_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/slice/percent_encoding_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: public_headers_must_be_c89
   build: test
   language: c
@@ -3733,244 +3507,75 @@ targets:
   - test/core/surface/public_headers_must_be_c89.c
   deps:
   - grpc_test_util
-- name: resolve_address_using_ares_resolver_posix_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/iomgr/resolve_address_posix_test.cc
-  deps:
-  - grpc_test_util
-  args:
-  - --resolver=ares
-  platforms:
-  - linux
-  - posix
-  - mac
-- name: resolve_address_using_native_resolver_posix_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/iomgr/resolve_address_posix_test.cc
-  deps:
-  - grpc_test_util
-  args:
-  - --resolver=native
-  platforms:
-  - linux
-  - posix
-  - mac
-- name: secure_endpoint_test
-  build: test
-  language: c
-  headers:
-  - test/core/iomgr/endpoint_tests.h
-  src:
-  - test/core/iomgr/endpoint_tests.cc
-  - test/core/security/secure_endpoint_test.cc
-  deps:
-  - grpc_test_util
-- name: security_connector_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/security/security_connector_test.cc
-  deps:
-  - grpc_test_util
-- name: server_ssl_test
-  build: test
-  language: c
-  headers:
-  - test/core/handshake/server_ssl_common.h
-  src:
-  - test/core/handshake/server_ssl.cc
-  - test/core/handshake/server_ssl_common.cc
-  deps:
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
-- name: slice_string_helpers_test
-  build: test
-  language: c
-  headers:
-  - src/core/lib/slice/slice.h
-  - src/core/lib/slice/slice_internal.h
-  - src/core/lib/slice/slice_refcount.h
-  - src/core/lib/slice/slice_refcount_base.h
-  - src/core/lib/slice/slice_string_helpers.h
-  src:
-  - src/core/lib/slice/slice.cc
-  - src/core/lib/slice/slice_refcount.cc
-  - src/core/lib/slice/slice_string_helpers.cc
-  - test/core/slice/slice_string_helpers_test.cc
-  deps:
-  - gpr
-  uses_polling: false
-- name: socket_utils_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/iomgr/socket_utils_test.cc
-  deps:
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
-- name: spinlock_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/gpr/spinlock_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: ssl_credentials_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/security/ssl_credentials_test.cc
-  deps:
-  - grpc_test_util
-- name: status_conversion_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/transport/status_conversion_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: stream_map_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/transport/chttp2/stream_map_test.cc
-  deps:
-  - grpc_test_util
-- name: string_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/gpr/string_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: sync_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/gpr/sync_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: tcp_client_posix_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/iomgr/tcp_client_posix_test.cc
-  deps:
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
 - name: tcp_posix_test
   build: test
   language: c
   headers:
   - test/core/iomgr/endpoint_tests.h
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
   src:
   - test/core/iomgr/endpoint_tests.cc
   - test/core/iomgr/tcp_posix_test.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
   platforms:
   - linux
   - posix
-- name: tcp_server_posix_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/iomgr/tcp_server_posix_test.cc
-  deps:
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
-- name: test_core_gpr_time_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/gpr/time_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: test_core_iomgr_time_averaged_stats_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/iomgr/time_averaged_stats_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: test_core_iomgr_timer_heap_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/iomgr/timer_heap_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: test_core_iomgr_timer_list_test
   build: test
   language: c
-  headers: []
+  headers:
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
   src:
   - test/core/iomgr/timer_list_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: thd_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/gprpp/thd_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: threadpool_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/iomgr/threadpool_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: varint_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/transport/chttp2/varint_test.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
   uses_polling: false
@@ -4109,10 +3714,35 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
   - test/cpp/util/byte_buffer_proto_helper.h
   - test/cpp/util/string_ref_helper.h
   - test/cpp/util/subprocess.h
   src:
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
   - test/cpp/naming/address_sorting_test.cc
   - test/cpp/util/byte_buffer_proto_helper.cc
   - test/cpp/util/string_ref_helper.cc
@@ -4147,8 +3777,33 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
   src:
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
   - test/cpp/common/alarm_test.cc
   deps:
   - grpc++_unsecure
@@ -4157,6 +3812,25 @@ targets:
   - linux
   - posix
   - mac
+- name: alloc_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gpr/alloc_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
+- name: alpn_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/transport/chttp2/alpn_test.cc
+  deps:
+  - grpc_test_util
 - name: alts_concurrent_connectivity_test
   gtest: true
   build: test
@@ -4257,6 +3931,40 @@ targets:
   - test/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol_test.cc
   deps:
   - grpc_test_util
+- name: alts_security_connector_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
+  src:
+  - test/core/security/alts_security_connector_test.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
+  deps:
+  - grpc_test_util
 - name: alts_tsi_handshaker_test
   gtest: true
   build: test
@@ -4319,7 +4027,6 @@ targets:
   - src/core/lib/iomgr/closure.h
   - src/core/lib/iomgr/combiner.h
   - src/core/lib/iomgr/error.h
-  - src/core/lib/iomgr/error_internal.h
   - src/core/lib/iomgr/exec_ctx.h
   - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/iomgr_internal.h
@@ -4339,6 +4046,7 @@ targets:
   - src/core/lib/promise/seq.h
   - src/core/lib/resource_quota/arena.h
   - src/core/lib/resource_quota/memory_quota.h
+  - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/resource_quota/trace.h
@@ -4348,6 +4056,7 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/transport/pid_controller.h
   - test/core/promise/test_context.h
   src:
   - src/core/ext/upb-generated/google/protobuf/any.upb.c
@@ -4364,6 +4073,7 @@ targets:
   - src/core/lib/promise/activity.cc
   - src/core/lib/resource_quota/arena.cc
   - src/core/lib/resource_quota/memory_quota.cc
+  - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/resource_quota/trace.cc
@@ -4371,11 +4081,13 @@ targets:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/lib/transport/pid_controller.cc
   - test/core/promise/arena_promise_test.cc
   deps:
+  - absl/functional:any_invocable
+  - absl/functional:function_ref
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:variant
   - absl/utility:utility
   - gpr
   - upb
@@ -4405,6 +4117,41 @@ targets:
   - test/cpp/end2end/async_end2end_test.cc
   deps:
   - grpc++_test_util
+- name: auth_context_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
+  src:
+  - test/core/security/auth_context_test.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: auth_property_iterator_test
   gtest: true
   build: test
@@ -4419,9 +4166,34 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
   src:
   - test/core/security/authorization_matchers_test.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
 - name: authorization_policy_provider_test
@@ -4445,19 +4217,57 @@ targets:
   language: c++
   headers:
   - src/core/lib/avl/avl.h
+  - src/core/lib/gpr/useful.h
   src:
   - test/core/avl/avl_test.cc
-  deps: []
+  deps:
+  - absl/strings:strings
+  - absl/types:variant
   uses_polling: false
 - name: aws_request_signer_test
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
   src:
   - test/core/security/aws_request_signer_test.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
+- name: b64_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/slice/b64_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: backoff_test
   gtest: true
   build: test
@@ -4507,6 +4317,26 @@ targets:
   - linux
   - posix
   - mac
+  uses_polling: false
+- name: bin_decoder_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/transport/chttp2/bin_decoder_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
+- name: bin_encoder_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/transport/chttp2/bin_encoder_test.cc
+  deps:
+  - grpc_test_util
   uses_polling: false
 - name: binder_resolver_test
   gtest: true
@@ -4639,8 +4469,44 @@ targets:
   - src/core/lib/gprpp/bitset.h
   src:
   - test/core/gprpp/bitset_test.cc
-  deps: []
+  deps:
+  - absl/strings:strings
+  - absl/types:variant
   uses_polling: false
+- name: buffer_list_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
+  src:
+  - test/core/iomgr/buffer_list_test.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
+  deps:
+  - grpc_test_util
 - name: byte_buffer_test
   gtest: true
   build: test
@@ -4650,6 +4516,16 @@ targets:
   - test/cpp/util/byte_buffer_test.cc
   deps:
   - grpc++_test_util
+  uses_polling: false
+- name: c_slice_buffer_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/slice/c_slice_buffer_test.cc
+  deps:
+  - grpc_test_util
   uses_polling: false
 - name: call_finalization_test
   gtest: true
@@ -4679,6 +4555,7 @@ targets:
   - absl/meta:type_traits
   - absl/status:status
   - absl/status:statusor
+  - absl/strings:strings
   - absl/types:variant
   uses_polling: false
 - name: cancel_ares_query_test
@@ -4708,10 +4585,35 @@ targets:
   - src/core/lib/security/authorization/mock_cel/cel_value.h
   - src/core/lib/security/authorization/mock_cel/evaluator_core.h
   - src/core/lib/security/authorization/mock_cel/flat_expr_builder.h
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
   src:
   - src/core/ext/upb-generated/google/type/expr.upb.c
   - src/core/lib/security/authorization/cel_authorization_engine.cc
   - test/core/security/cel_authorization_engine_test.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
 - name: certificate_provider_registry_test
@@ -4773,9 +4675,34 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
   src:
   - test/core/security/channel_creds_registry_test.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
 - name: channel_filter_test
@@ -4798,6 +4725,16 @@ targets:
   - test/core/channel/channel_stack_builder_test.cc
   deps:
   - grpc_test_util
+- name: channel_stack_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/channel/channel_stack_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: channel_trace_test
   gtest: true
   build: test
@@ -4851,6 +4788,74 @@ targets:
   deps:
   - grpc++
   - grpc_test_util
+- name: check_gcp_environment_linux_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
+  src:
+  - test/core/security/check_gcp_environment_linux_test.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
+  deps:
+  - grpc_test_util
+- name: check_gcp_environment_windows_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
+  src:
+  - test/core/security/check_gcp_environment_windows_test.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
+  deps:
+  - grpc_test_util
 - name: chunked_vector_test
   gtest: true
   build: test
@@ -4871,7 +4876,6 @@ targets:
   - src/core/lib/iomgr/closure.h
   - src/core/lib/iomgr/combiner.h
   - src/core/lib/iomgr/error.h
-  - src/core/lib/iomgr/error_internal.h
   - src/core/lib/iomgr/exec_ctx.h
   - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/iomgr_internal.h
@@ -4890,6 +4894,7 @@ targets:
   - src/core/lib/promise/seq.h
   - src/core/lib/resource_quota/arena.h
   - src/core/lib/resource_quota/memory_quota.h
+  - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/resource_quota/trace.h
@@ -4899,6 +4904,7 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/transport/pid_controller.h
   src:
   - src/core/ext/upb-generated/google/protobuf/any.upb.c
   - src/core/ext/upb-generated/google/rpc/status.upb.c
@@ -4914,6 +4920,7 @@ targets:
   - src/core/lib/promise/activity.cc
   - src/core/lib/resource_quota/arena.cc
   - src/core/lib/resource_quota/memory_quota.cc
+  - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/resource_quota/trace.cc
@@ -4921,11 +4928,13 @@ targets:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/lib/transport/pid_controller.cc
   - test/core/gprpp/chunked_vector_test.cc
   deps:
+  - absl/functional:any_invocable
+  - absl/functional:function_ref
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:variant
   - absl/utility:utility
   - gpr
   - upb
@@ -5007,6 +5016,15 @@ targets:
   - linux
   - posix
   - mac
+- name: client_channel_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/client_channel/client_channel_test.cc
+  deps:
+  - grpc_test_util
 - name: client_context_test_peer_test
   gtest: true
   build: test
@@ -5062,6 +5080,54 @@ targets:
   - linux
   - posix
   - mac
+- name: client_ssl_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/handshake/client_ssl.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
+- name: cmdline_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
+  src:
+  - test/core/util/cmdline.cc
+  - test/core/util/cmdline_test.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: codegen_test_full
   gtest: true
   build: test
@@ -5084,6 +5150,54 @@ targets:
   - grpc++
   - grpc_test_util
   uses_polling: false
+- name: combiner_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
+  src:
+  - test/core/iomgr/combiner_test.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
+- name: common_closures_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/event_engine/common_closures.h
+  src:
+  - test/core/event_engine/common_closures_test.cc
+  deps:
+  - grpc_test_util_unsecure
 - name: completion_queue_threading_test
   gtest: true
   build: test
@@ -5094,6 +5208,18 @@ targets:
   - test/core/surface/completion_queue_threading_test.cc
   deps:
   - grpc_test_util
+- name: compression_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/compression/args_utils.h
+  src:
+  - test/core/compression/args_utils.cc
+  - test/core/compression/compression_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: concurrent_connectivity_test
   gtest: true
   build: test
@@ -5120,9 +5246,34 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
   src:
   - test/core/transport/connectivity_state_test.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
 - name: context_allocator_end2end_test
@@ -5144,9 +5295,34 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
   src:
   - test/core/transport/chttp2/context_list_test.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
   uses_polling: false
@@ -5180,6 +5356,16 @@ targets:
   src:
   - test/core/gprpp/cpp_impl_of_test.cc
   deps: []
+  uses_polling: false
+- name: cpu_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gpr/cpu_test.cc
+  deps:
+  - grpc_test_util
   uses_polling: false
 - name: crl_ssl_transport_security_test
   gtest: true
@@ -5403,6 +5589,53 @@ targets:
   src:
   - test/core/event_engine/endpoint_config_test.cc
   deps:
+  - grpc
+  - grpc_test_util_unsecure
+  uses_polling: false
+- name: endpoint_pair_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/iomgr/endpoint_tests.h
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
+  src:
+  - test/core/iomgr/endpoint_pair_test.cc
+  - test/core/iomgr/endpoint_tests.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
+  deps:
+  - grpc_test_util
+- name: env_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gpr/env_test.cc
+  deps:
   - grpc_test_util
   uses_polling: false
 - name: error_details_test
@@ -5424,9 +5657,34 @@ targets:
   language: c++
   headers:
   - test/core/iomgr/endpoint_tests.h
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
   src:
   - test/core/iomgr/endpoint_tests.cc
   - test/core/iomgr/error_test.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
   uses_polling: false
@@ -5434,20 +5692,100 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
   src:
   - test/core/transport/error_utils_test.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
 - name: evaluate_args_test
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
   src:
   - test/core/security/evaluate_args_test.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
+- name: event_poller_posix_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/event_engine/iomgr_engine/ev_epoll1_linux.h
+  - src/core/lib/event_engine/iomgr_engine/ev_poll_posix.h
+  - src/core/lib/event_engine/iomgr_engine/event_poller.h
+  - src/core/lib/event_engine/iomgr_engine/event_poller_posix_default.h
+  - src/core/lib/event_engine/iomgr_engine/iomgr_engine_closure.h
+  - src/core/lib/event_engine/iomgr_engine/lockfree_event.h
+  - src/core/lib/event_engine/iomgr_engine/wakeup_fd_eventfd.h
+  - src/core/lib/event_engine/iomgr_engine/wakeup_fd_pipe.h
+  - src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix.h
+  - src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix_default.h
+  src:
+  - src/core/lib/event_engine/iomgr_engine/ev_epoll1_linux.cc
+  - src/core/lib/event_engine/iomgr_engine/ev_poll_posix.cc
+  - src/core/lib/event_engine/iomgr_engine/event_poller_posix_default.cc
+  - src/core/lib/event_engine/iomgr_engine/lockfree_event.cc
+  - src/core/lib/event_engine/iomgr_engine/wakeup_fd_eventfd.cc
+  - src/core/lib/event_engine/iomgr_engine/wakeup_fd_pipe.cc
+  - src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix_default.cc
+  - test/core/event_engine/iomgr_event_engine/event_poller_posix_test.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: examine_stack_test
   gtest: true
   build: test
@@ -5493,7 +5831,6 @@ targets:
   - src/core/lib/iomgr/closure.h
   - src/core/lib/iomgr/combiner.h
   - src/core/lib/iomgr/error.h
-  - src/core/lib/iomgr/error_internal.h
   - src/core/lib/iomgr/exec_ctx.h
   - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/iomgr_internal.h
@@ -5528,9 +5865,9 @@ targets:
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/promise/exec_ctx_wakeup_scheduler_test.cc
   deps:
+  - absl/functional:any_invocable
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:variant
   - absl/utility:utility
   - gpr
   - upb
@@ -5651,6 +5988,44 @@ targets:
   - test/core/tsi/transport_security_test_lib.cc
   deps:
   - grpc_test_util
+- name: fd_posix_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
+  src:
+  - test/core/iomgr/fd_posix_test.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: file_watcher_certificate_provider_factory_test
   gtest: true
   build: test
@@ -5710,7 +6085,6 @@ targets:
   - src/core/lib/iomgr/closure.h
   - src/core/lib/iomgr/combiner.h
   - src/core/lib/iomgr/error.h
-  - src/core/lib/iomgr/error_internal.h
   - src/core/lib/iomgr/exec_ctx.h
   - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/iomgr_internal.h
@@ -5728,6 +6102,7 @@ targets:
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
   - src/core/lib/resource_quota/memory_quota.h
+  - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/resource_quota/trace.h
@@ -5754,6 +6129,7 @@ targets:
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/resource_quota/memory_quota.cc
+  - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/resource_quota/trace.cc
@@ -5765,10 +6141,10 @@ targets:
   - src/core/lib/transport/pid_controller.cc
   - test/core/transport/chttp2/flow_control_test.cc
   deps:
+  - absl/functional:any_invocable
   - absl/functional:function_ref
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:variant
   - absl/utility:utility
   - gpr
   - upb
@@ -5792,7 +6168,6 @@ targets:
   - src/core/lib/iomgr/closure.h
   - src/core/lib/iomgr/combiner.h
   - src/core/lib/iomgr/error.h
-  - src/core/lib/iomgr/error_internal.h
   - src/core/lib/iomgr/exec_ctx.h
   - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/iomgr_internal.h
@@ -5818,6 +6193,7 @@ targets:
   - src/core/lib/promise/wait_set.h
   - src/core/lib/resource_quota/arena.h
   - src/core/lib/resource_quota/memory_quota.h
+  - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/resource_quota/trace.h
@@ -5827,6 +6203,7 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/transport/pid_controller.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
   - src/core/ext/upb-generated/google/protobuf/any.upb.c
@@ -5843,6 +6220,7 @@ targets:
   - src/core/lib/promise/activity.cc
   - src/core/lib/resource_quota/arena.cc
   - src/core/lib/resource_quota/memory_quota.cc
+  - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/resource_quota/trace.cc
@@ -5850,17 +6228,72 @@ targets:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/lib/transport/pid_controller.cc
   - test/core/promise/for_each_test.cc
   deps:
   - absl/container:flat_hash_set
+  - absl/functional:any_invocable
+  - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:variant
   - absl/utility:utility
   - gpr
   - upb
   uses_polling: false
+- name: fork_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gprpp/fork_test.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
+  uses_polling: false
+- name: format_request_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/data/ssl_test_data.h
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
+  src:
+  - test/core/end2end/data/client_certs.cc
+  - test/core/end2end/data/server1_cert.cc
+  - test/core/end2end/data/server1_key.cc
+  - test/core/end2end/data/test_root_cert.cc
+  - test/core/http/format_request_test.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
+  deps:
+  - grpc_test_util
 - name: frame_handler_test
   gtest: true
   build: test
@@ -5964,13 +6397,72 @@ targets:
   - test/core/transport/chttp2/graceful_shutdown_test.cc
   deps:
   - grpc_test_util
+- name: grpc_alts_credentials_options_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
+  src:
+  - test/core/security/grpc_alts_credentials_options_test.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
+  deps:
+  - grpc_test_util
 - name: grpc_authorization_engine_test
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
   src:
   - test/core/security/grpc_authorization_engine_test.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
 - name: grpc_authorization_policy_provider_test
@@ -5980,10 +6472,35 @@ targets:
   headers:
   - src/core/lib/security/authorization/grpc_authorization_policy_provider.h
   - src/core/lib/security/authorization/rbac_translator.h
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
   src:
   - src/core/lib/security/authorization/grpc_authorization_policy_provider.cc
   - src/core/lib/security/authorization/rbac_translator.cc
   - test/core/security/grpc_authorization_policy_provider_test.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
 - name: grpc_authz_end2end_test
@@ -6066,6 +6583,40 @@ targets:
   - src/compiler/csharp_plugin.cc
   deps:
   - grpc_plugin_support
+- name: grpc_ipv6_loopback_available_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
+  src:
+  - test/core/iomgr/grpc_ipv6_loopback_available_test.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
+  deps:
+  - grpc_test_util
 - name: grpc_node_plugin
   build: protoc
   language: c++
@@ -6110,45 +6661,170 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
   src:
   - test/core/security/grpc_tls_certificate_distributor_test.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
 - name: grpc_tls_certificate_provider_test
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
   src:
   - test/core/security/grpc_tls_certificate_provider_test.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
 - name: grpc_tls_certificate_verifier_test
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
   src:
   - test/core/security/grpc_tls_certificate_verifier_test.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
 - name: grpc_tls_credentials_options_comparator_test
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
   src:
   - test/core/security/grpc_tls_credentials_options_comparator_test.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
 - name: grpc_tls_credentials_options_test
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
   src:
   - test/core/security/grpc_tls_credentials_options_test.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
 - name: grpc_tool_test
@@ -6220,11 +6896,28 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/end2end/cq_verifier.h
   src:
+  - test/core/end2end/cq_verifier.cc
   - test/core/end2end/h2_ssl_session_reuse_test.cc
   deps:
-  - end2end_tests
+  - grpc_test_util
+- name: handshake_server_with_readahead_handshaker_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/handshake/server_ssl_common.h
+  src:
+  - test/core/handshake/readahead_handshaker_server_ssl.cc
+  - test/core/handshake/server_ssl_common.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: head_of_line_blocking_bad_client_test
   gtest: true
   build: test
@@ -6270,13 +6963,118 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - grpc++_test_util
-- name: hpack_parser_table_test
+- name: histogram_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
+  src:
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/histogram_test.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
+- name: host_port_test
   gtest: true
   build: test
   language: c++
   headers: []
   src:
+  - test/core/gprpp/host_port_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
+- name: hpack_encoder_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
+  src:
+  - test/core/transport/chttp2/hpack_encoder_test.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
+- name: hpack_parser_table_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
+  src:
   - test/core/transport/chttp2/hpack_parser_table_test.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
   uses_polling: false
@@ -6284,9 +7082,34 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
   src:
   - test/core/transport/chttp2/hpack_parser_test.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
   uses_polling: false
@@ -6417,9 +7240,34 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
   src:
   - test/core/security/insecure_security_connector_test.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
 - name: interop_client
@@ -6502,6 +7350,7 @@ targets:
   - test/core/promise/join_test.cc
   deps:
   - absl/meta:type_traits
+  - absl/strings:strings
   - absl/types:variant
   - absl/utility:utility
   uses_polling: false
@@ -6512,6 +7361,76 @@ targets:
   headers: []
   src:
   - test/core/json/json_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
+- name: json_token_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
+  src:
+  - test/core/security/json_token_test.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
+- name: jwt_verifier_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
+  src:
+  - test/core/security/jwt_verifier_test.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
   uses_polling: false
@@ -6666,7 +7585,6 @@ targets:
   - src/cpp/server/load_reporter/get_cpu_stats_windows.cc
   - test/cpp/server/load_reporter/get_cpu_stats_test.cc
   deps:
-  - grpc++
   - grpc_test_util
 - name: lb_load_data_store_test
   gtest: true
@@ -6681,6 +7599,55 @@ targets:
   deps:
   - grpc++
   - grpc_test_util
+- name: load_file_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
+  src:
+  - test/core/iomgr/load_file_test.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
+- name: lock_free_event_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/event_engine/iomgr_engine/event_poller.h
+  - src/core/lib/event_engine/iomgr_engine/iomgr_engine_closure.h
+  - src/core/lib/event_engine/iomgr_engine/lockfree_event.h
+  src:
+  - src/core/lib/event_engine/iomgr_engine/lockfree_event.cc
+  - test/core/event_engine/iomgr_event_engine/lock_free_event_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: log_test
   gtest: true
   build: test
@@ -6729,9 +7696,34 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
   src:
   - test/core/security/matchers_test.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
 - name: memory_quota_stress_test
@@ -6752,7 +7744,6 @@ targets:
   - src/core/lib/iomgr/closure.h
   - src/core/lib/iomgr/combiner.h
   - src/core/lib/iomgr/error.h
-  - src/core/lib/iomgr/error_internal.h
   - src/core/lib/iomgr/exec_ctx.h
   - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/iomgr_internal.h
@@ -6770,6 +7761,7 @@ targets:
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
   - src/core/lib/resource_quota/memory_quota.h
+  - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/trace.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
@@ -6777,6 +7769,7 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/transport/pid_controller.h
   src:
   - src/core/ext/upb-generated/google/protobuf/any.upb.c
   - src/core/ext/upb-generated/google/rpc/status.upb.c
@@ -6791,16 +7784,19 @@ targets:
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/resource_quota/memory_quota.cc
+  - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/trace.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/lib/transport/pid_controller.cc
   - test/core/resource_quota/memory_quota_stress_test.cc
   deps:
+  - absl/functional:any_invocable
+  - absl/functional:function_ref
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:variant
   - absl/utility:utility
   - gpr
   - upb
@@ -6826,7 +7822,6 @@ targets:
   - src/core/lib/iomgr/closure.h
   - src/core/lib/iomgr/combiner.h
   - src/core/lib/iomgr/error.h
-  - src/core/lib/iomgr/error_internal.h
   - src/core/lib/iomgr/exec_ctx.h
   - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/iomgr_internal.h
@@ -6844,6 +7839,7 @@ targets:
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
   - src/core/lib/resource_quota/memory_quota.h
+  - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/trace.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
@@ -6851,6 +7847,7 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/transport/pid_controller.h
   - test/core/resource_quota/call_checker.h
   src:
   - src/core/ext/upb-generated/google/protobuf/any.upb.c
@@ -6866,16 +7863,19 @@ targets:
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/resource_quota/memory_quota.cc
+  - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/trace.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/lib/transport/pid_controller.cc
   - test/core/resource_quota/memory_quota_test.cc
   deps:
+  - absl/functional:any_invocable
+  - absl/functional:function_ref
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:variant
   - absl/utility:utility
   - gpr
   - upb
@@ -6895,13 +7895,73 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - grpc++_test_util
+- name: message_compress_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
+  src:
+  - test/core/compression/message_compress_test.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: metadata_map_test
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
   src:
   - test/core/transport/metadata_map_test.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
 - name: miscompile_with_no_unique_address_test
@@ -6942,6 +8002,30 @@ targets:
   deps:
   - grpc++_test
   - grpc++_test_util
+- name: mpscq_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gprpp/mpscq_test.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
+  uses_polling: false
+- name: murmur_hash_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gpr/murmur_hash_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: nonblocking_test
   gtest: true
   build: test
@@ -7174,6 +8258,56 @@ targets:
   - test/core/transport/parsed_metadata_test.cc
   deps:
   - grpc_test_util
+- name: parser_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/data/ssl_test_data.h
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
+  src:
+  - test/core/end2end/data/client_certs.cc
+  - test/core/end2end/data/server1_cert.cc
+  - test/core/end2end/data/server1_key.cc
+  - test/core/end2end/data/test_root_cert.cc
+  - test/core/http/parser_test.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
+- name: percent_encoding_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/slice/percent_encoding_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: periodic_update_test
   gtest: true
   build: test
@@ -7188,7 +8322,6 @@ targets:
   - src/core/lib/iomgr/closure.h
   - src/core/lib/iomgr/combiner.h
   - src/core/lib/iomgr/error.h
-  - src/core/lib/iomgr/error_internal.h
   - src/core/lib/iomgr/exec_ctx.h
   - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/iomgr_internal.h
@@ -7217,6 +8350,8 @@ targets:
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/resource_quota/periodic_update_test.cc
   deps:
+  - absl/functional:any_invocable
+  - absl/functional:function_ref
   - absl/status:statusor
   - gpr
   - upb
@@ -7225,9 +8360,34 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
   src:
   - test/core/transport/pid_controller_test.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
 - name: pipe_test
@@ -7249,7 +8409,6 @@ targets:
   - src/core/lib/iomgr/closure.h
   - src/core/lib/iomgr/combiner.h
   - src/core/lib/iomgr/error.h
-  - src/core/lib/iomgr/error_internal.h
   - src/core/lib/iomgr/exec_ctx.h
   - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/iomgr_internal.h
@@ -7273,6 +8432,7 @@ targets:
   - src/core/lib/promise/seq.h
   - src/core/lib/resource_quota/arena.h
   - src/core/lib/resource_quota/memory_quota.h
+  - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/resource_quota/trace.h
@@ -7282,6 +8442,7 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/transport/pid_controller.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
   - src/core/ext/upb-generated/google/protobuf/any.upb.c
@@ -7298,6 +8459,7 @@ targets:
   - src/core/lib/promise/activity.cc
   - src/core/lib/resource_quota/arena.cc
   - src/core/lib/resource_quota/memory_quota.cc
+  - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/resource_quota/trace.cc
@@ -7305,11 +8467,13 @@ targets:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/lib/transport/pid_controller.cc
   - test/core/promise/pipe_test.cc
   deps:
+  - absl/functional:any_invocable
+  - absl/functional:function_ref
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:variant
   - absl/utility:utility
   - gpr
   - upb
@@ -7547,10 +8711,35 @@ targets:
   headers:
   - src/core/lib/security/authorization/grpc_authorization_policy_provider.h
   - src/core/lib/security/authorization/rbac_translator.h
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
   src:
   - src/core/lib/security/authorization/grpc_authorization_policy_provider.cc
   - src/core/lib/security/authorization/rbac_translator.cc
   - test/core/security/rbac_translator_test.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
 - name: ref_counted_ptr_test
@@ -7584,27 +8773,161 @@ targets:
   - linux
   - posix
   - mac
+- name: resolve_address_using_ares_resolver_posix_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
+  src:
+  - test/core/iomgr/resolve_address_posix_test.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
+  deps:
+  - absl/flags:flag
+  - absl/flags:parse
+  - grpc_test_util
+  args:
+  - --resolver=ares
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: resolve_address_using_ares_resolver_test
   gtest: true
   build: test
   language: c++
   headers:
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
   - test/core/util/fake_udp_and_tcp_server.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
   src:
   - test/core/iomgr/resolve_address_test.cc
+  - test/core/util/cmdline.cc
   - test/core/util/fake_udp_and_tcp_server.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
   - grpc++_test_config
+- name: resolve_address_using_native_resolver_posix_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
+  src:
+  - test/core/iomgr/resolve_address_posix_test.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
+  deps:
+  - absl/flags:flag
+  - absl/flags:parse
+  - grpc_test_util
+  args:
+  - --resolver=native
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: resolve_address_using_native_resolver_test
   gtest: true
   build: test
   language: c++
   headers:
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
   - test/core/util/fake_udp_and_tcp_server.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
   src:
   - test/core/iomgr/resolve_address_test.cc
+  - test/core/util/cmdline.cc
   - test/core/util/fake_udp_and_tcp_server.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
   - grpc++_test_config
@@ -7627,7 +8950,6 @@ targets:
   - src/core/lib/iomgr/closure.h
   - src/core/lib/iomgr/combiner.h
   - src/core/lib/iomgr/error.h
-  - src/core/lib/iomgr/error_internal.h
   - src/core/lib/iomgr/exec_ctx.h
   - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/iomgr_internal.h
@@ -7645,6 +8967,7 @@ targets:
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
   - src/core/lib/resource_quota/memory_quota.h
+  - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/resource_quota/trace.h
@@ -7654,6 +8977,7 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/transport/pid_controller.h
   src:
   - src/core/ext/upb-generated/google/protobuf/any.upb.c
   - src/core/ext/upb-generated/google/rpc/status.upb.c
@@ -7668,6 +8992,7 @@ targets:
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/resource_quota/memory_quota.cc
+  - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/resource_quota/trace.cc
@@ -7675,11 +9000,13 @@ targets:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/lib/transport/pid_controller.cc
   - test/core/resource_quota/resource_quota_test.cc
   deps:
+  - absl/functional:any_invocable
+  - absl/functional:function_ref
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:variant
   - absl/utility:utility
   - gpr
   - upb
@@ -7744,6 +9071,76 @@ targets:
   - test/core/surface/secure_channel_create_test.cc
   deps:
   - grpc_test_util
+- name: secure_endpoint_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/iomgr/endpoint_tests.h
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
+  src:
+  - test/core/iomgr/endpoint_tests.cc
+  - test/core/security/secure_endpoint_test.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
+  deps:
+  - grpc_test_util
+- name: security_connector_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
+  src:
+  - test/core/security/security_connector_test.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
+  deps:
+  - grpc_test_util
 - name: seq_test
   gtest: true
   build: test
@@ -7793,12 +9190,37 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
   src:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
   - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
   - test/cpp/server/server_builder_test.cc
   deps:
   - grpc++_unsecure
@@ -7811,12 +9233,37 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
   src:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
   - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
   - test/cpp/server/server_builder_with_socket_mutator_test.cc
   deps:
   - grpc++_unsecure
@@ -7901,16 +9348,56 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
   src:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
   - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
   - test/cpp/server/server_request_call_test.cc
   deps:
   - grpc++_unsecure
   - grpc_test_util_unsecure
+  platforms:
+  - linux
+  - posix
+  - mac
+- name: server_ssl_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/handshake/server_ssl_common.h
+  src:
+  - test/core/handshake/server_ssl.cc
+  - test/core/handshake/server_ssl_common.cc
+  deps:
+  - grpc_test_util
   platforms:
   - linux
   - posix
@@ -7954,9 +9441,34 @@ targets:
   build: test
   run: false
   language: c++
-  headers: []
+  headers:
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
   src:
   - test/core/transport/chttp2/settings_timeout_test.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
 - name: shutdown_test
@@ -8076,6 +9588,7 @@ targets:
   - absl/synchronization:synchronization
   - absl/time:time
   - absl/types:optional
+  - absl/types:variant
   uses_polling: false
 - name: sleep_test
   gtest: true
@@ -8088,6 +9601,24 @@ targets:
   deps:
   - grpc
   uses_polling: false
+- name: slice_string_helpers_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/slice/slice.h
+  - src/core/lib/slice/slice_internal.h
+  - src/core/lib/slice/slice_refcount.h
+  - src/core/lib/slice/slice_refcount_base.h
+  - src/core/lib/slice/slice_string_helpers.h
+  src:
+  - src/core/lib/slice/slice.cc
+  - src/core/lib/slice/slice_refcount.cc
+  - src/core/lib/slice/slice_string_helpers.cc
+  - test/core/slice/slice_string_helpers_test.cc
+  deps:
+  - gpr
+  uses_polling: false
 - name: smoke_test
   gtest: true
   build: test
@@ -8096,7 +9627,8 @@ targets:
   src:
   - test/core/event_engine/smoke_test.cc
   deps:
-  - grpc_test_util
+  - grpc
+  - grpc_test_util_unsecure
 - name: sockaddr_resolver_test
   gtest: true
   build: test
@@ -8113,6 +9645,88 @@ targets:
   headers: []
   src:
   - test/core/address_utils/sockaddr_utils_test.cc
+  deps:
+  - grpc_test_util
+- name: socket_utils_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
+  src:
+  - test/core/iomgr/socket_utils_test.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
+- name: spinlock_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gpr/spinlock_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
+- name: ssl_credentials_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
+  src:
+  - test/core/security/ssl_credentials_test.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
 - name: ssl_transport_security_test
@@ -8177,6 +9791,41 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
+- name: status_conversion_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
+  src:
+  - test/core/transport/status_conversion_test.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: status_helper_test
   gtest: true
   build: test
@@ -8203,15 +9852,74 @@ targets:
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
   src:
   - test/core/end2end/cq_verifier.cc
   - test/core/iomgr/stranded_event_test.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
   platforms:
   - linux
   - posix
   - mac
+- name: stream_map_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
+  src:
+  - test/core/transport/chttp2/stream_map_test.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
+  deps:
+  - grpc_test_util
 - name: streaming_throughput_test
   gtest: true
   build: test
@@ -8236,9 +9944,34 @@ targets:
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
   src:
   - test/core/end2end/cq_verifier.cc
   - test/core/transport/chttp2/streams_not_seen_test.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
 - name: string_ref_test
@@ -8252,13 +9985,58 @@ targets:
   - grpc++
   - grpc_test_util
   uses_polling: false
-- name: system_roots_test
+- name: string_test
   gtest: true
   build: test
   language: c++
   headers: []
   src:
+  - test/core/gpr/string_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
+- name: sync_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gpr/sync_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
+- name: system_roots_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
+  src:
   - test/core/security/system_roots_test.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
 - name: table_test
@@ -8273,107 +10051,92 @@ targets:
   - test/core/gprpp/table_test.cc
   deps:
   - absl/meta:type_traits
+  - absl/strings:strings
   - absl/types:optional
+  - absl/types:variant
   - absl/utility:utility
   uses_polling: false
-- name: test_core_event_engine_iomgr_event_engine_time_averaged_stats_test
+- name: tcp_client_posix_test
   gtest: true
   build: test
   language: c++
   headers:
-  - src/core/lib/event_engine/iomgr_engine/time_averaged_stats.h
-  - src/core/lib/gpr/alloc.h
-  - src/core/lib/gpr/env.h
-  - src/core/lib/gpr/murmur_hash.h
-  - src/core/lib/gpr/spinlock.h
-  - src/core/lib/gpr/string.h
-  - src/core/lib/gpr/string_windows.h
-  - src/core/lib/gpr/time_precise.h
-  - src/core/lib/gpr/tls.h
-  - src/core/lib/gpr/tmpfile.h
-  - src/core/lib/gpr/useful.h
-  - src/core/lib/gprpp/construct_destruct.h
-  - src/core/lib/gprpp/debug_location.h
-  - src/core/lib/gprpp/examine_stack.h
-  - src/core/lib/gprpp/fork.h
-  - src/core/lib/gprpp/global_config.h
-  - src/core/lib/gprpp/global_config_custom.h
-  - src/core/lib/gprpp/global_config_env.h
-  - src/core/lib/gprpp/global_config_generic.h
-  - src/core/lib/gprpp/host_port.h
-  - src/core/lib/gprpp/manual_constructor.h
-  - src/core/lib/gprpp/memory.h
-  - src/core/lib/gprpp/mpscq.h
-  - src/core/lib/gprpp/stat.h
-  - src/core/lib/gprpp/sync.h
-  - src/core/lib/gprpp/thd.h
-  - src/core/lib/gprpp/time_util.h
-  - src/core/lib/profiling/timers.h
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
   src:
-  - src/core/lib/event_engine/iomgr_engine/time_averaged_stats.cc
-  - src/core/lib/gpr/alloc.cc
-  - src/core/lib/gpr/atm.cc
-  - src/core/lib/gpr/cpu_iphone.cc
-  - src/core/lib/gpr/cpu_linux.cc
-  - src/core/lib/gpr/cpu_posix.cc
-  - src/core/lib/gpr/cpu_windows.cc
-  - src/core/lib/gpr/env_linux.cc
-  - src/core/lib/gpr/env_posix.cc
-  - src/core/lib/gpr/env_windows.cc
-  - src/core/lib/gpr/log.cc
-  - src/core/lib/gpr/log_android.cc
-  - src/core/lib/gpr/log_linux.cc
-  - src/core/lib/gpr/log_posix.cc
-  - src/core/lib/gpr/log_windows.cc
-  - src/core/lib/gpr/murmur_hash.cc
-  - src/core/lib/gpr/string.cc
-  - src/core/lib/gpr/string_posix.cc
-  - src/core/lib/gpr/string_util_windows.cc
-  - src/core/lib/gpr/string_windows.cc
-  - src/core/lib/gpr/sync.cc
-  - src/core/lib/gpr/sync_abseil.cc
-  - src/core/lib/gpr/sync_posix.cc
-  - src/core/lib/gpr/sync_windows.cc
-  - src/core/lib/gpr/time.cc
-  - src/core/lib/gpr/time_posix.cc
-  - src/core/lib/gpr/time_precise.cc
-  - src/core/lib/gpr/time_windows.cc
-  - src/core/lib/gpr/tmpfile_msys.cc
-  - src/core/lib/gpr/tmpfile_posix.cc
-  - src/core/lib/gpr/tmpfile_windows.cc
-  - src/core/lib/gpr/wrap_memcpy.cc
-  - src/core/lib/gprpp/examine_stack.cc
-  - src/core/lib/gprpp/fork.cc
-  - src/core/lib/gprpp/global_config_env.cc
-  - src/core/lib/gprpp/host_port.cc
-  - src/core/lib/gprpp/mpscq.cc
-  - src/core/lib/gprpp/stat_posix.cc
-  - src/core/lib/gprpp/stat_windows.cc
-  - src/core/lib/gprpp/thd_posix.cc
-  - src/core/lib/gprpp/thd_windows.cc
-  - src/core/lib/gprpp/time_util.cc
-  - src/core/lib/profiling/basic_timers.cc
-  - src/core/lib/profiling/stap_timers.cc
-  - test/core/event_engine/iomgr_event_engine/time_averaged_stats_test.cc
+  - test/core/iomgr/tcp_client_posix_test.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
   deps:
-  - absl/base:base
-  - absl/base:core_headers
-  - absl/memory:memory
-  - absl/random:random
-  - absl/status:status
-  - absl/strings:cord
-  - absl/strings:str_format
-  - absl/strings:strings
-  - absl/synchronization:synchronization
-  - absl/time:time
-  - absl/types:optional
-  uses_polling: false
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
+- name: tcp_server_posix_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
+  src:
+  - test/core/iomgr/tcp_server_posix_test.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: test_core_event_engine_iomgr_event_engine_timer_heap_test
   gtest: true
   build: test
   language: c++
   headers:
-  - src/core/lib/event_engine/iomgr_engine/time_averaged_stats.h
   - src/core/lib/event_engine/iomgr_engine/timer.h
   - src/core/lib/event_engine/iomgr_engine/timer_heap.h
   - src/core/lib/gpr/alloc.h
@@ -8403,10 +10166,10 @@ targets:
   - src/core/lib/gprpp/sync.h
   - src/core/lib/gprpp/thd.h
   - src/core/lib/gprpp/time.h
+  - src/core/lib/gprpp/time_averaged_stats.h
   - src/core/lib/gprpp/time_util.h
   - src/core/lib/profiling/timers.h
   src:
-  - src/core/lib/event_engine/iomgr_engine/time_averaged_stats.cc
   - src/core/lib/event_engine/iomgr_engine/timer.cc
   - src/core/lib/event_engine/iomgr_engine/timer_heap.cc
   - src/core/lib/gpr/alloc.cc
@@ -8450,6 +10213,7 @@ targets:
   - src/core/lib/gprpp/thd_posix.cc
   - src/core/lib/gprpp/thd_windows.cc
   - src/core/lib/gprpp/time.cc
+  - src/core/lib/gprpp/time_averaged_stats.cc
   - src/core/lib/gprpp/time_util.cc
   - src/core/lib/profiling/basic_timers.cc
   - src/core/lib/profiling/stap_timers.cc
@@ -8457,6 +10221,7 @@ targets:
   deps:
   - absl/base:base
   - absl/base:core_headers
+  - absl/functional:any_invocable
   - absl/memory:memory
   - absl/random:random
   - absl/status:status
@@ -8467,13 +10232,13 @@ targets:
   - absl/synchronization:synchronization
   - absl/time:time
   - absl/types:optional
+  - absl/types:variant
   uses_polling: false
 - name: test_core_event_engine_iomgr_event_engine_timer_list_test
   gtest: true
   build: test
   language: c++
   headers:
-  - src/core/lib/event_engine/iomgr_engine/time_averaged_stats.h
   - src/core/lib/event_engine/iomgr_engine/timer.h
   - src/core/lib/event_engine/iomgr_engine/timer_heap.h
   - src/core/lib/gpr/alloc.h
@@ -8502,10 +10267,10 @@ targets:
   - src/core/lib/gprpp/sync.h
   - src/core/lib/gprpp/thd.h
   - src/core/lib/gprpp/time.h
+  - src/core/lib/gprpp/time_averaged_stats.h
   - src/core/lib/gprpp/time_util.h
   - src/core/lib/profiling/timers.h
   src:
-  - src/core/lib/event_engine/iomgr_engine/time_averaged_stats.cc
   - src/core/lib/event_engine/iomgr_engine/timer.cc
   - src/core/lib/event_engine/iomgr_engine/timer_heap.cc
   - src/core/lib/gpr/alloc.cc
@@ -8549,6 +10314,7 @@ targets:
   - src/core/lib/gprpp/thd_posix.cc
   - src/core/lib/gprpp/thd_windows.cc
   - src/core/lib/gprpp/time.cc
+  - src/core/lib/gprpp/time_averaged_stats.cc
   - src/core/lib/gprpp/time_util.cc
   - src/core/lib/profiling/basic_timers.cc
   - src/core/lib/profiling/stap_timers.cc
@@ -8556,6 +10322,7 @@ targets:
   deps:
   - absl/base:base
   - absl/base:core_headers
+  - absl/functional:any_invocable
   - absl/memory:memory
   - absl/random:random
   - absl/status:status
@@ -8566,6 +10333,7 @@ targets:
   - absl/synchronization:synchronization
   - absl/time:time
   - absl/types:optional
+  - absl/types:variant
   uses_polling: false
 - name: test_core_event_engine_slice_buffer_test
   gtest: true
@@ -8575,7 +10343,18 @@ targets:
   src:
   - test/core/event_engine/slice_buffer_test.cc
   deps:
+  - grpc
+  - grpc_test_util_unsecure
+- name: test_core_gpr_time_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gpr/time_test.cc
+  deps:
   - grpc_test_util
+  uses_polling: false
 - name: test_core_gprpp_time_test
   gtest: true
   build: test
@@ -8658,6 +10437,7 @@ targets:
   deps:
   - absl/base:base
   - absl/base:core_headers
+  - absl/functional:any_invocable
   - absl/memory:memory
   - absl/random:random
   - absl/status:status
@@ -8668,14 +10448,75 @@ targets:
   - absl/synchronization:synchronization
   - absl/time:time
   - absl/types:optional
+  - absl/types:variant
+  uses_polling: false
+- name: test_core_iomgr_timer_heap_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
+  src:
+  - test/core/iomgr/timer_heap_test.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
+  deps:
+  - grpc_test_util
   uses_polling: false
 - name: test_core_security_credentials_test
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
   src:
   - test/core/security/credentials_test.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
 - name: test_core_slice_slice_buffer_test
@@ -8743,6 +10584,16 @@ targets:
   - test/cpp/util/time_test.cc
   deps:
   - grpc++_test_util
+  uses_polling: false
+- name: thd_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gprpp/thd_test.cc
+  deps:
+  - grpc_test_util
   uses_polling: false
 - name: thread_manager_test
   gtest: true
@@ -8848,6 +10699,7 @@ targets:
   - absl/synchronization:synchronization
   - absl/time:time
   - absl/types:optional
+  - absl/types:variant
   uses_polling: false
 - name: thread_stress_test
   gtest: true
@@ -8896,9 +10748,34 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
   src:
   - test/core/transport/timeout_encoding_test.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
   uses_polling: false
@@ -8941,9 +10818,34 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
   src:
   - test/core/security/tls_security_connector_test.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
 - name: tls_test
@@ -9099,6 +11001,7 @@ targets:
   - absl/meta:type_traits
   - absl/status:status
   - absl/status:statusor
+  - absl/strings:strings
   - absl/types:variant
   - absl/utility:utility
   uses_polling: false
@@ -9146,6 +11049,7 @@ targets:
   deps:
   - absl/strings:str_format
   - absl/strings:strings
+  - absl/types:variant
   uses_polling: false
 - name: unknown_frame_bad_client_test
   gtest: true
@@ -9168,7 +11072,8 @@ targets:
   src:
   - test/core/uri/uri_parser_test.cc
   deps:
-  - grpc_test_util
+  - grpc
+  - grpc_test_util_unsecure
 - name: useful_test
   gtest: true
   build: test
@@ -9177,8 +11082,38 @@ targets:
   - src/core/lib/gpr/useful.h
   src:
   - test/core/gpr/useful_test.cc
-  deps: []
+  deps:
+  - absl/strings:strings
+  - absl/types:variant
   uses_polling: false
+- name: varint_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/transport/chttp2/varint_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
+- name: wakeup_fd_posix_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/event_engine/iomgr_engine/wakeup_fd_eventfd.h
+  - src/core/lib/event_engine/iomgr_engine/wakeup_fd_pipe.h
+  - src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix.h
+  src:
+  - src/core/lib/event_engine/iomgr_engine/wakeup_fd_eventfd.cc
+  - src/core/lib/event_engine/iomgr_engine/wakeup_fd_pipe.cc
+  - test/core/event_engine/iomgr_event_engine/wakeup_fd_posix_test.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: window_overflow_bad_client_test
   gtest: true
   build: test
@@ -9390,7 +11325,7 @@ targets:
   language: c++
   headers: []
   src:
-  - test/core/iomgr/work_serializer_test.cc
+  - test/core/gprpp/work_serializer_test.cc
   deps:
   - grpc_test_util
   platforms:
@@ -9402,8 +11337,6 @@ targets:
   build: test
   language: c++
   headers:
-  - test/core/event_engine/test_init.h
-  - test/core/util/build.h
   - test/core/util/cmdline.h
   - test/core/util/evaluate_args_test_util.h
   - test/core/util/fuzzer_util.h
@@ -9413,23 +11346,15 @@ targets:
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
   - test/core/util/passthru_endpoint.h
-  - test/core/util/port.h
-  - test/core/util/port_server_client.h
-  - test/core/util/reconnect_server.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
-  - test/core/util/stack_tracer.h
   - test/core/util/subprocess.h
-  - test/core/util/test_config.h
-  - test/core/util/test_tcp_server.h
   - test/core/util/tracer_util.h
   src:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
   - src/proto/grpc/testing/xds/v3/orca_load_report.proto
-  - test/core/event_engine/test_init.cc
-  - test/core/util/build.cc
   - test/core/util/cmdline.cc
   - test/core/util/fuzzer_util.cc
   - test/core/util/grpc_profiler.cc
@@ -9437,24 +11362,15 @@ targets:
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
   - test/core/util/passthru_endpoint.cc
-  - test/core/util/port.cc
-  - test/core/util/port_isolated_runtime_environment.cc
-  - test/core/util/port_server_client.cc
-  - test/core/util/reconnect_server.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
-  - test/core/util/stack_tracer.cc
   - test/core/util/subprocess_posix.cc
   - test/core/util/subprocess_windows.cc
-  - test/core/util/test_config.cc
-  - test/core/util/test_tcp_server.cc
   - test/core/util/tracer_util.cc
   - test/cpp/performance/writes_per_rpc_test.cc
   deps:
-  - absl/debugging:failure_signal_handler
-  - absl/debugging:stacktrace
-  - absl/debugging:symbolize
   - grpc++
+  - grpc_test_util
   platforms:
   - linux
   - posix
@@ -9668,9 +11584,34 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/util/cmdline.h
+  - test/core/util/evaluate_args_test_util.h
+  - test/core/util/fuzzer_util.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/histogram.h
+  - test/core/util/mock_authorization_endpoint.h
+  - test/core/util/mock_endpoint.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/passthru_endpoint.h
+  - test/core/util/resolve_localhost_ip46.h
+  - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
+  - test/core/util/tracer_util.h
   src:
   - test/core/security/xds_credentials_test.cc
+  - test/core/util/cmdline.cc
+  - test/core/util/fuzzer_util.cc
+  - test/core/util/grpc_profiler.cc
+  - test/core/util/histogram.cc
+  - test/core/util/mock_endpoint.cc
+  - test/core/util/parse_hexstring.cc
+  - test/core/util/passthru_endpoint.cc
+  - test/core/util/resolve_localhost_ip46.cc
+  - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
+  - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
 - name: xds_csds_end2end_test
@@ -10176,12 +12117,12 @@ targets:
   - mac
 external_proto_libraries:
 - destination: third_party/envoy-api
-  hash: c5807010b67033330915ca5a20483e30538ae5e689aa14b3631d6284beca4630
+  hash: 0fe4c68dea4423f5880c068abbcbc90ac4b98496cf2af15a1fe3fbc0fdb050fd
   proto_prefix: third_party/envoy-api/
-  strip_prefix: data-plane-api-9c42588c956220b48eb3099d186487c2f04d32ec
+  strip_prefix: data-plane-api-bf6154e482bbd5e6f64032993206e66b6116f2bd
   urls:
-  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/9c42588c956220b48eb3099d186487c2f04d32ec.tar.gz
-  - https://github.com/envoyproxy/data-plane-api/archive/9c42588c956220b48eb3099d186487c2f04d32ec.tar.gz
+  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/bf6154e482bbd5e6f64032993206e66b6116f2bd.tar.gz
+  - https://github.com/envoyproxy/data-plane-api/archive/bf6154e482bbd5e6f64032993206e66b6116f2bd.tar.gz
 - destination: third_party/googleapis
   hash: 5bb6b0253ccf64b53d6c7249625a7e3f6c3bc6402abd52d3778bfa48258703a0
   proto_prefix: third_party/googleapis/

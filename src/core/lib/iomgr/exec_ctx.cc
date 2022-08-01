@@ -37,18 +37,10 @@ static void exec_ctx_run(grpc_closure* closure) {
             closure->line_initiated);
   }
 #endif
-#ifdef GRPC_ERROR_IS_ABSEIL_STATUS
   grpc_error_handle error =
       grpc_core::internal::StatusMoveFromHeapPtr(closure->error_data.error);
   closure->error_data.error = 0;
   closure->cb(closure->cb_arg, std::move(error));
-#else
-  grpc_error_handle error =
-      reinterpret_cast<grpc_error_handle>(closure->error_data.error);
-  closure->error_data.error = 0;
-  closure->cb(closure->cb_arg, error);
-  GRPC_ERROR_UNREF(error);
-#endif
 #ifndef NDEBUG
   if (grpc_trace_closure.enabled()) {
     gpr_log(GPR_DEBUG, "closure %p finished", closure);
@@ -118,11 +110,7 @@ void ExecCtx::Run(const DebugLocation& location, grpc_closure* closure,
   closure->run = false;
   GPR_ASSERT(closure->cb != nullptr);
 #endif
-#ifdef GRPC_ERROR_IS_ABSEIL_STATUS
   closure->error_data.error = internal::StatusAllocHeapPtr(error);
-#else
-  closure->error_data.error = reinterpret_cast<intptr_t>(error);
-#endif
   exec_ctx_sched(closure);
 }
 

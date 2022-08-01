@@ -28,6 +28,7 @@ struct envoy_config_rbac_v3_Permission_Set;
 struct envoy_config_rbac_v3_Principal;
 struct envoy_config_rbac_v3_Principal_Set;
 struct envoy_config_rbac_v3_Principal_Authenticated;
+struct envoy_config_rbac_v3_Action;
 typedef struct envoy_config_rbac_v3_RBAC envoy_config_rbac_v3_RBAC;
 typedef struct envoy_config_rbac_v3_RBAC_PoliciesEntry envoy_config_rbac_v3_RBAC_PoliciesEntry;
 typedef struct envoy_config_rbac_v3_Policy envoy_config_rbac_v3_Policy;
@@ -36,6 +37,7 @@ typedef struct envoy_config_rbac_v3_Permission_Set envoy_config_rbac_v3_Permissi
 typedef struct envoy_config_rbac_v3_Principal envoy_config_rbac_v3_Principal;
 typedef struct envoy_config_rbac_v3_Principal_Set envoy_config_rbac_v3_Principal_Set;
 typedef struct envoy_config_rbac_v3_Principal_Authenticated envoy_config_rbac_v3_Principal_Authenticated;
+typedef struct envoy_config_rbac_v3_Action envoy_config_rbac_v3_Action;
 extern const upb_MiniTable envoy_config_rbac_v3_RBAC_msginit;
 extern const upb_MiniTable envoy_config_rbac_v3_RBAC_PoliciesEntry_msginit;
 extern const upb_MiniTable envoy_config_rbac_v3_Policy_msginit;
@@ -44,6 +46,7 @@ extern const upb_MiniTable envoy_config_rbac_v3_Permission_Set_msginit;
 extern const upb_MiniTable envoy_config_rbac_v3_Principal_msginit;
 extern const upb_MiniTable envoy_config_rbac_v3_Principal_Set_msginit;
 extern const upb_MiniTable envoy_config_rbac_v3_Principal_Authenticated_msginit;
+extern const upb_MiniTable envoy_config_rbac_v3_Action_msginit;
 struct envoy_config_core_v3_CidrRange;
 struct envoy_config_core_v3_TypedExtensionConfig;
 struct envoy_config_route_v3_HeaderMatcher;
@@ -1023,6 +1026,61 @@ UPB_INLINE struct envoy_type_matcher_v3_StringMatcher* envoy_config_rbac_v3_Prin
     envoy_config_rbac_v3_Principal_Authenticated_set_principal_name(msg, sub);
   }
   return sub;
+}
+
+/* envoy.config.rbac.v3.Action */
+
+UPB_INLINE envoy_config_rbac_v3_Action* envoy_config_rbac_v3_Action_new(upb_Arena* arena) {
+  return (envoy_config_rbac_v3_Action*)_upb_Message_New(&envoy_config_rbac_v3_Action_msginit, arena);
+}
+UPB_INLINE envoy_config_rbac_v3_Action* envoy_config_rbac_v3_Action_parse(const char* buf, size_t size, upb_Arena* arena) {
+  envoy_config_rbac_v3_Action* ret = envoy_config_rbac_v3_Action_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, ret, &envoy_config_rbac_v3_Action_msginit, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE envoy_config_rbac_v3_Action* envoy_config_rbac_v3_Action_parse_ex(const char* buf, size_t size,
+                           const upb_ExtensionRegistry* extreg,
+                           int options, upb_Arena* arena) {
+  envoy_config_rbac_v3_Action* ret = envoy_config_rbac_v3_Action_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, ret, &envoy_config_rbac_v3_Action_msginit, extreg, options, arena) !=
+      kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE char* envoy_config_rbac_v3_Action_serialize(const envoy_config_rbac_v3_Action* msg, upb_Arena* arena, size_t* len) {
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_rbac_v3_Action_msginit, 0, arena, &ptr, len);
+  return ptr;
+}
+UPB_INLINE char* envoy_config_rbac_v3_Action_serialize_ex(const envoy_config_rbac_v3_Action* msg, int options,
+                                 upb_Arena* arena, size_t* len) {
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_rbac_v3_Action_msginit, options, arena, &ptr, len);
+  return ptr;
+}
+UPB_INLINE void envoy_config_rbac_v3_Action_clear_name(const envoy_config_rbac_v3_Action* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
+}
+UPB_INLINE upb_StringView envoy_config_rbac_v3_Action_name(const envoy_config_rbac_v3_Action* msg) {
+  return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView);
+}
+UPB_INLINE void envoy_config_rbac_v3_Action_clear_action(const envoy_config_rbac_v3_Action* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t) = 0;
+}
+UPB_INLINE int32_t envoy_config_rbac_v3_Action_action(const envoy_config_rbac_v3_Action* msg) {
+  return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t);
+}
+
+UPB_INLINE void envoy_config_rbac_v3_Action_set_name(envoy_config_rbac_v3_Action *msg, upb_StringView value) {
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView) = value;
+}
+UPB_INLINE void envoy_config_rbac_v3_Action_set_action(envoy_config_rbac_v3_Action *msg, int32_t value) {
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t) = value;
 }
 
 extern const upb_MiniTable_File envoy_config_rbac_v3_rbac_proto_upb_file_layout;

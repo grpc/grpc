@@ -43,10 +43,9 @@ class grpc_fake_channel_credentials final : public grpc_channel_credentials {
   grpc_core::RefCountedPtr<grpc_channel_security_connector>
   create_security_connector(
       grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
-      const char* target, const grpc_channel_args* args,
-      grpc_channel_args** /*new_args*/) override {
+      const char* target, grpc_core::ChannelArgs* args) override {
     return grpc_fake_channel_security_connector_create(
-        this->Ref(), std::move(call_creds), target, args);
+        this->Ref(), std::move(call_creds), target, *args);
   }
 
   grpc_core::UniqueTypeName type() const override {
@@ -65,7 +64,7 @@ class grpc_fake_channel_credentials final : public grpc_channel_credentials {
 class grpc_fake_server_credentials final : public grpc_server_credentials {
  public:
   grpc_core::RefCountedPtr<grpc_server_security_connector>
-  create_security_connector(const grpc_channel_args* /*args*/) override {
+  create_security_connector(const grpc_core::ChannelArgs& /*args*/) override {
     return grpc_fake_server_security_connector_create(this->Ref());
   }
 
@@ -89,13 +88,6 @@ grpc_arg grpc_fake_transport_expected_targets_arg(char* expected_targets) {
   return grpc_channel_arg_string_create(
       const_cast<char*>(GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS),
       expected_targets);
-}
-
-const char* grpc_fake_transport_get_expected_targets(
-    const grpc_channel_args* args) {
-  const grpc_arg* expected_target_arg =
-      grpc_channel_args_find(args, GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS);
-  return grpc_channel_arg_get_string(expected_target_arg);
 }
 
 /* -- Metadata-only test credentials. -- */

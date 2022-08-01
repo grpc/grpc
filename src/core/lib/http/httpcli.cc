@@ -25,7 +25,6 @@
 #include <string>
 #include <utility>
 
-#include "absl/container/inlined_vector.h"
 #include "absl/functional/bind_front.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
@@ -165,7 +164,8 @@ HttpRequest::HttpRequest(
       channel_args_(CoreConfiguration::Get()
                         .channel_args_preconditioning()
                         .PreconditionChannelArgs(channel_args)
-                        .ToC()),
+                        .ToC()
+                        .release()),
       channel_creds_(std::move(channel_creds)),
       on_done_(on_done),
       resource_quota_(ResourceQuotaFromChannelArgs(channel_args_)),
@@ -313,7 +313,6 @@ void HttpRequest::OnHandshakeDone(void* arg, grpc_error_handle error) {
     return;
   }
   // Handshake completed, so we own fields in args
-  grpc_channel_args_destroy(args->args);
   grpc_slice_buffer_destroy_internal(args->read_buffer);
   gpr_free(args->read_buffer);
   req->ep_ = args->endpoint;
@@ -328,11 +327,10 @@ void HttpRequest::OnHandshakeDone(void* arg, grpc_error_handle error) {
 
 void HttpRequest::DoHandshake(const grpc_resolved_address* addr) {
   // Create the security connector using the credentials and target name.
-  grpc_channel_args* new_args_from_connector = nullptr;
+  ChannelArgs args = ChannelArgs::FromC(channel_args_);
   RefCountedPtr<grpc_channel_security_connector> sc =
       channel_creds_->create_security_connector(
-          nullptr /*call_creds*/, uri_.authority().c_str(), channel_args_,
-          &new_args_from_connector);
+          nullptr /*call_creds*/, uri_.authority().c_str(), &args);
   if (sc == nullptr) {
     Finish(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
         "failed to create security connector", &overall_error_, 1));
@@ -344,30 +342,19 @@ void HttpRequest::DoHandshake(const grpc_resolved_address* addr) {
         "Failed to extract URI from address", &overall_error_, 1));
     return;
   }
-  absl::InlinedVector<grpc_arg, 2> args_to_add = {
-      grpc_security_connector_to_arg(sc.get()),
-      grpc_channel_arg_string_create(
-          const_cast<char*>(GRPC_ARG_TCP_HANDSHAKER_RESOLVED_ADDRESS),
-          const_cast<char*>(address.value().c_str())),
-  };
-  const grpc_channel_args* new_args = grpc_channel_args_copy_and_add(
-      new_args_from_connector != nullptr ? new_args_from_connector
-                                         : channel_args_,
-      args_to_add.data(), args_to_add.size());
-  grpc_channel_args_destroy(new_args_from_connector);
+  args = args.SetObject(std::move(sc))
+             .Set(GRPC_ARG_TCP_HANDSHAKER_RESOLVED_ADDRESS, address.value());
   // Start the handshake
   handshake_mgr_ = MakeRefCounted<HandshakeManager>();
   CoreConfiguration::Get().handshaker_registry().AddHandshakers(
-      HANDSHAKER_CLIENT, new_args, pollset_set_, handshake_mgr_.get());
+      HANDSHAKER_CLIENT, args, pollset_set_, handshake_mgr_.get());
   Ref().release();  // ref held by pending handshake
   grpc_endpoint* ep = ep_;
   ep_ = nullptr;
   own_endpoint_ = false;
-  handshake_mgr_->DoHandshake(ep, new_args, deadline_,
+  handshake_mgr_->DoHandshake(ep, args, deadline_,
                               /*acceptor=*/nullptr, OnHandshakeDone,
                               /*user_data=*/this);
-  sc.reset(DEBUG_LOCATION, "httpcli");
-  grpc_channel_args_destroy(new_args);
 }
 
 void HttpRequest::NextAddress(grpc_error_handle error) {

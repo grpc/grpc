@@ -28,6 +28,20 @@ grpc_cc_test(
     deps = ["//test/core/util:grpc_test_util"],
 )
 
+grpc_cc_test(
+    name = "bm_channel_args",
+    srcs = ["bm_channel_args.cc"],
+    external_deps = [
+        "benchmark",
+        "absl/container:btree",
+    ],
+    deps = [
+        "//:channel_args",
+        "//:grpc++",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
 grpc_cc_library(
     name = "helpers",
     testonly = 1,
@@ -43,6 +57,7 @@ grpc_cc_library(
     deps = [
         "//:grpc++_unsecure",
         "//src/proto/grpc/testing:echo_proto",
+        "//test/core/util:grpc_test_util_base",
         "//test/core/util:grpc_test_util_unsecure",
         "//test/cpp/util:test_config",
     ],
@@ -65,6 +80,7 @@ grpc_cc_library(
         "//:grpc++",
         "//src/proto/grpc/testing:echo_proto",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
         "//test/cpp/util:test_config",
     ],
 )
@@ -286,22 +302,9 @@ grpc_cc_test(
         "no_mac",
         "no_windows",
     ],
-    deps = [":helpers"],
-)
-
-grpc_cc_test(
-    name = "bm_threadpool",
-    size = "large",
-    srcs = ["bm_threadpool.cc"],
-    args = grpc_benchmark_args(),
-    tags = [
-        "manual",
-        "no_windows",
-        "notap",
+    deps = [
+        ":helpers",
     ],
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [":helpers"],
 )
 
 grpc_cc_library(

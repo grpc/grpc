@@ -27,12 +27,12 @@
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/transport/error_utils.h"
 
@@ -56,7 +56,8 @@ SubchannelStreamClient::SubchannelStreamClient(
       interested_parties_(interested_parties),
       tracer_(tracer),
       call_allocator_(
-          ResourceQuotaFromChannelArgs(connected_subchannel_->args())
+          connected_subchannel_->args()
+              .GetObject<ResourceQuota>()
               ->memory_quota()
               ->CreateMemoryAllocator(
                   (tracer != nullptr) ? tracer : "SubchannelStreamClient")),

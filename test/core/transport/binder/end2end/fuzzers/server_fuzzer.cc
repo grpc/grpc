@@ -50,14 +50,11 @@ DEFINE_PROTO_FUZZER(const binder_transport_fuzzer::Input& input) {
             input.incoming_parcels()),
         std::make_shared<
             grpc::experimental::binder::UntrustedSecurityPolicy>());
-    const grpc_channel_args* channel_args =
-        grpc_core::CoreConfiguration::Get()
-            .channel_args_preconditioning()
-            .PreconditionChannelArgs(nullptr)
-            .ToC();
+    grpc_core::ChannelArgs channel_args = grpc_core::CoreConfiguration::Get()
+                                              .channel_args_preconditioning()
+                                              .PreconditionChannelArgs(nullptr);
     (void)grpc_core::Server::FromC(server)->SetupTransport(
         server_transport, nullptr, channel_args, nullptr);
-    grpc_channel_args_destroy(channel_args);
     grpc_call* call1 = nullptr;
     grpc_call_details call_details1;
     grpc_metadata_array request_metadata1;

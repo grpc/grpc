@@ -16,18 +16,21 @@
  *
  */
 
-#include <stdio.h>
+#include <stdint.h>
 #include <string.h>
 
 #include <grpc/byte_buffer.h>
-#include <grpc/support/alloc.h>
+#include <grpc/grpc.h>
+#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
 #include <grpc/support/log.h>
-#include <grpc/support/time.h>
 
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/transport/transport.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
+#include "test/core/util/test_config.h"
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
@@ -93,7 +96,7 @@ static void test_invoke_request_with_flags(
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_end2end_test_fixture f =
       begin_test(config, "test_invoke_request_with_flags", nullptr, nullptr);
-  cq_verifier* cqv = cq_verifier_create(f.cq);
+  grpc_core::CqVerifier cqv(f.cq);
   grpc_op ops[6];
   grpc_op* op;
   grpc_metadata_array initial_metadata_recv;
@@ -151,8 +154,8 @@ static void test_invoke_request_with_flags(
   GPR_ASSERT(expectation == error);
 
   if (expectation == GRPC_CALL_OK) {
-    CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
-    cq_verify(cqv);
+    cqv.Expect(tag(1), true);
+    cqv.Verify();
     grpc_slice_unref(details);
   }
 
@@ -162,8 +165,6 @@ static void test_invoke_request_with_flags(
   grpc_call_details_destroy(&call_details);
 
   grpc_call_unref(c);
-
-  cq_verifier_destroy(cqv);
 
   grpc_byte_buffer_destroy(request_payload);
   grpc_byte_buffer_destroy(request_payload_recv);

@@ -21,7 +21,7 @@
 #include <string.h>
 
 #include <functional>
-#include <type_traits>
+#include <type_traits>  // IWYU pragma: keep
 #include <utility>
 
 #include "absl/status/status.h"
@@ -192,8 +192,8 @@ ArenaPromise<ServerMetadataHandle> ClientAuthFilter::MakeCallPromise(
                 next_promise_factory);
 }
 
-absl::StatusOr<ClientAuthFilter> ClientAuthFilter::Create(ChannelArgs args,
-                                                          ChannelFilter::Args) {
+absl::StatusOr<ClientAuthFilter> ClientAuthFilter::Create(
+    const ChannelArgs& args, ChannelFilter::Args) {
   auto* sc = args.GetObject<grpc_security_connector>();
   if (sc == nullptr) {
     return absl::InvalidArgumentError(

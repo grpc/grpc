@@ -32,8 +32,8 @@
 #include "src/core/lib/event_engine/event_engine_factory.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/resolve_address.h"
-#include "src/core/lib/iomgr/work_serializer.h"
 #include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "test/core/util/test_config.h"
@@ -347,7 +347,7 @@ static void start_test_under_work_serializer(void* arg) {
       const_cast<char*>(GRPC_ARG_DNS_MIN_TIME_BETWEEN_RESOLUTIONS_MS),
       kMinResolutionPeriodMs);
   grpc_channel_args cooldown_args = {1, &cooldown_arg};
-  args.args = &cooldown_args;
+  args.args = grpc_core::ChannelArgs::FromC(&cooldown_args);
   res_cb_arg->resolver = factory->CreateResolver(std::move(args));
   ASSERT_NE(res_cb_arg->resolver, nullptr);
   // First resolution, would incur in system-level resolution.

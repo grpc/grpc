@@ -18,10 +18,10 @@
 #include <stdint.h>
 
 #include <atomic>
-#include <functional>
 #include <memory>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
@@ -47,10 +47,10 @@ class IomgrEventEngine final : public EventEngine {
   class IomgrEndpoint : public EventEngine::Endpoint {
    public:
     ~IomgrEndpoint() override;
-    void Read(std::function<void(absl::Status)> on_read, SliceBuffer* buffer,
-              const ReadArgs* args) override;
-    void Write(std::function<void(absl::Status)> on_writable, SliceBuffer* data,
-               const WriteArgs* args) override;
+    void Read(absl::AnyInvocable<void(absl::Status)> on_read,
+              SliceBuffer* buffer, const ReadArgs* args) override;
+    void Write(absl::AnyInvocable<void(absl::Status)> on_writable,
+               SliceBuffer* data, const WriteArgs* args) override;
     const ResolvedAddress& GetPeerAddress() const override;
     const ResolvedAddress& GetLocalAddress() const override;
   };
@@ -81,7 +81,7 @@ class IomgrEventEngine final : public EventEngine {
 
   absl::StatusOr<std::unique_ptr<Listener>> CreateListener(
       Listener::AcceptCallback on_accept,
-      std::function<void(absl::Status)> on_shutdown,
+      absl::AnyInvocable<void(absl::Status)> on_shutdown,
       const EndpointConfig& config,
       std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory)
       override;
@@ -97,15 +97,16 @@ class IomgrEventEngine final : public EventEngine {
   std::unique_ptr<DNSResolver> GetDNSResolver(
       const DNSResolver::ResolverOptions& options) override;
   void Run(Closure* closure) override;
-  void Run(std::function<void()> closure) override;
+  void Run(absl::AnyInvocable<void()> closure) override;
   TaskHandle RunAfter(Duration when, Closure* closure) override;
-  TaskHandle RunAfter(Duration when, std::function<void()> closure) override;
+  TaskHandle RunAfter(Duration when,
+                      absl::AnyInvocable<void()> closure) override;
   bool Cancel(TaskHandle handle) override;
 
  private:
   struct ClosureData;
   EventEngine::TaskHandle RunAfterInternal(Duration when,
-                                           std::function<void()> cb);
+                                           absl::AnyInvocable<void()> cb);
   grpc_core::Timestamp ToTimestamp(EventEngine::Duration when);
 
   iomgr_engine::TimerManager timer_manager_;

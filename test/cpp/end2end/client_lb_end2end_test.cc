@@ -156,11 +156,13 @@ class FakeResolverResponseGeneratorWrapper {
       const std::vector<int>& ports, const char* service_config_json = nullptr,
       const char* attribute_key = nullptr,
       std::unique_ptr<grpc_core::ServerAddress::AttributeInterface> attribute =
-          nullptr) {
+          nullptr,
+      const grpc_core::ChannelArgs& per_address_args =
+          grpc_core::ChannelArgs()) {
     grpc_core::ExecCtx exec_ctx;
     response_generator_->SetResponse(
         BuildFakeResults(ipv6_only_, ports, service_config_json, attribute_key,
-                         std::move(attribute)));
+                         std::move(attribute), per_address_args));
   }
 
   void SetNextResolutionUponError(const std::vector<int>& ports) {
@@ -184,7 +186,9 @@ class FakeResolverResponseGeneratorWrapper {
       const char* service_config_json = nullptr,
       const char* attribute_key = nullptr,
       std::unique_ptr<grpc_core::ServerAddress::AttributeInterface> attribute =
-          nullptr) {
+          nullptr,
+      const grpc_core::ChannelArgs& per_address_args =
+          grpc_core::ChannelArgs()) {
     grpc_core::Resolver::Result result;
     result.addresses = grpc_core::ServerAddressList();
     for (const int& port : ports) {
@@ -200,16 +204,15 @@ class FakeResolverResponseGeneratorWrapper {
         attributes[attribute_key] = attribute->Copy();
       }
       result.addresses->emplace_back(address.addr, address.len,
-                                     nullptr /* args */, std::move(attributes));
+                                     per_address_args, std::move(attributes));
     }
     if (result.addresses->empty()) {
       result.resolution_note = "fake resolver empty address list";
     }
     if (service_config_json != nullptr) {
-      grpc_error_handle error = GRPC_ERROR_NONE;
       result.service_config = grpc_core::ServiceConfigImpl::Create(
-          nullptr, service_config_json, &error);
-      GPR_ASSERT(*result.service_config != nullptr);
+          grpc_core::ChannelArgs(), service_config_json);
+      GPR_ASSERT(result.service_config.ok());
     }
     return result;
   }
@@ -302,7 +305,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
     }  // else, default to pick first
     args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
                     response_generator.Get());
-    return grpc::CreateCustomChannel("fake:///", creds_, args);
+    return grpc::CreateCustomChannel("fake:default.example.com", creds_, args);
   }
 
   Status SendRpc(
@@ -362,6 +365,25 @@ class ClientLbEnd2endTest : public ::testing::Test {
         << location.file() << ":" << location.line();
   }
 
+  void SendRpcsUntil(
+      const grpc_core::DebugLocation& debug_location,
+      const std::unique_ptr<grpc::testing::EchoTestService::Stub>& stub,
+      std::function<bool(const Status&)> continue_predicate,
+      int timeout_ms = 15000) {
+    absl::Time deadline = absl::InfiniteFuture();
+    if (timeout_ms != 0) {
+      deadline = absl::Now() +
+                 (absl::Milliseconds(timeout_ms) * grpc_test_slowdown_factor());
+    }
+    while (true) {
+      Status status = SendRpc(stub);
+      if (!continue_predicate(status)) return;
+      EXPECT_LE(absl::Now(), deadline)
+          << debug_location.file() << ":" << debug_location.line();
+      if (absl::Now() >= deadline) break;
+    }
+  }
+
   struct ServerData {
     const int port_;
     std::unique_ptr<Server> server_;
@@ -413,6 +435,13 @@ class ClientLbEnd2endTest : public ::testing::Test {
       server_->Shutdown(grpc_timeout_milliseconds_to_deadline(0));
       thread_->join();
       started_ = false;
+    }
+
+    void StopListeningAndSendGoaways() {
+      grpc_core::ExecCtx exec_ctx;
+      auto* server = grpc_core::Server::FromC(server_->c_server());
+      server->StopListening();
+      server->SendGoaways();
     }
 
     void SetServingStatus(const std::string& service, bool serving) {
@@ -573,6 +602,78 @@ TEST_F(ClientLbEnd2endTest, ChannelIdleness) {
   response_generator.SetNextResolution(GetServersPorts());
   CheckRpcSendOk(DEBUG_LOCATION, stub);
   EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_READY);
+}
+
+TEST_F(ClientLbEnd2endTest, AuthorityOverrideOnChannel) {
+  StartServers(1);
+  // Set authority via channel arg.
+  auto response_generator = BuildResolverResponseGenerator();
+  ChannelArguments args;
+  args.SetString(GRPC_ARG_DEFAULT_AUTHORITY, "foo.example.com");
+  auto channel = BuildChannel("", response_generator, args);
+  auto stub = BuildStub(channel);
+  response_generator.SetNextResolution(GetServersPorts());
+  // Send an RPC.
+  EchoRequest request;
+  request.mutable_param()->set_echo_host_from_authority_header(true);
+  EchoResponse response;
+  Status status = SendRpc(stub, &response, /*timeout_ms=*/1000,
+                          /*wait_for_ready=*/false, &request);
+  EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
+                           << " message=" << status.error_message();
+  // Check that the right authority was seen by the server.
+  EXPECT_EQ("foo.example.com", response.param().host());
+}
+
+TEST_F(ClientLbEnd2endTest, AuthorityOverrideFromResolver) {
+  StartServers(1);
+  auto response_generator = BuildResolverResponseGenerator();
+  auto channel = BuildChannel("", response_generator);
+  auto stub = BuildStub(channel);
+  // Inject resolver result that sets the per-address authority to a
+  // different value.
+  response_generator.SetNextResolution(
+      GetServersPorts(), /*service_config_json=*/nullptr,
+      /*attribute_key=*/nullptr, /*attribute=*/nullptr,
+      grpc_core::ChannelArgs().Set(GRPC_ARG_DEFAULT_AUTHORITY,
+                                   "foo.example.com"));
+  // Send an RPC.
+  EchoRequest request;
+  request.mutable_param()->set_echo_host_from_authority_header(true);
+  EchoResponse response;
+  Status status = SendRpc(stub, &response, /*timeout_ms=*/1000,
+                          /*wait_for_ready=*/false, &request);
+  EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
+                           << " message=" << status.error_message();
+  // Check that the right authority was seen by the server.
+  EXPECT_EQ("foo.example.com", response.param().host());
+}
+
+TEST_F(ClientLbEnd2endTest, AuthorityOverridePrecedence) {
+  StartServers(1);
+  // Set authority via channel arg.
+  auto response_generator = BuildResolverResponseGenerator();
+  ChannelArguments args;
+  args.SetString(GRPC_ARG_DEFAULT_AUTHORITY, "foo.example.com");
+  auto channel = BuildChannel("", response_generator, args);
+  auto stub = BuildStub(channel);
+  // Inject resolver result that sets the per-address authority to a
+  // different value.
+  response_generator.SetNextResolution(
+      GetServersPorts(), /*service_config_json=*/nullptr,
+      /*attribute_key=*/nullptr, /*attribute=*/nullptr,
+      grpc_core::ChannelArgs().Set(GRPC_ARG_DEFAULT_AUTHORITY,
+                                   "bar.example.com"));
+  // Send an RPC.
+  EchoRequest request;
+  request.mutable_param()->set_echo_host_from_authority_header(true);
+  EchoResponse response;
+  Status status = SendRpc(stub, &response, /*timeout_ms=*/1000,
+                          /*wait_for_ready=*/false, &request);
+  EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
+                           << " message=" << status.error_message();
+  // Check that the right authority was seen by the server.
+  EXPECT_EQ("foo.example.com", response.param().host());
 }
 
 //
@@ -1749,25 +1850,32 @@ TEST_F(RoundRobinTest, SingleReconnect) {
   for (size_t i = 0; i < servers_.size(); ++i) {
     EXPECT_EQ(1, servers_[i]->service_.request_count());
   }
-  const auto pre_death = servers_[0]->service_.request_count();
   // Kill the first server.
-  servers_[0]->Shutdown();
-  // Client request still succeed. May need retrying if RR had returned a pick
-  // before noticing the change in the server's connectivity.
-  while (true) {
-    Status status = SendRpc(stub);
-    if (status.ok()) break;
-    EXPECT_EQ(StatusCode::UNAVAILABLE, status.error_code());
-    EXPECT_EQ("", status.error_message());
-  }
-  // Send a bunch of RPCs that should succeed.
+  servers_[0]->StopListeningAndSendGoaways();
+  // Wait for client to notice that the backend is down.  We know that's
+  // happened when we see kNumServers RPCs that do not go to backend 0.
+  ResetCounters();
+  SendRpcsUntil(DEBUG_LOCATION, stub,
+                [&, num_rpcs_not_on_backend_0 = 0](Status status) mutable {
+                  EXPECT_TRUE(status.ok())
+                      << "code=" << status.error_code()
+                      << " message=" << status.error_message();
+                  if (servers_[0]->service_.request_count() == 1) {
+                    num_rpcs_not_on_backend_0 = 0;
+                  } else {
+                    ++num_rpcs_not_on_backend_0;
+                  }
+                  ResetCounters();
+                  return num_rpcs_not_on_backend_0 < kNumServers;
+                });
+  // Send a bunch of RPCs.
   for (int i = 0; i < 10 * kNumServers; ++i) {
     CheckRpcSendOk(DEBUG_LOCATION, stub);
   }
-  const auto post_death = servers_[0]->service_.request_count();
   // No requests have gone to the deceased server.
-  EXPECT_EQ(pre_death, post_death);
+  EXPECT_EQ(0UL, servers_[0]->service_.request_count());
   // Bring the first server back up.
+  servers_[0]->Shutdown();
   StartServer(0);
   // Requests should start arriving at the first server either right away (if
   // the server managed to start before the RR policy retried the subchannel) or
@@ -2419,7 +2527,7 @@ TEST_F(ClientLbAddressTest, Basic) {
   for (const int port : GetServersPorts()) {
     expected.emplace_back(
         absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", port,
-                     " args={} attributes={", kAttributeKey, "=foo}"));
+                     " attributes={", kAttributeKey, "=foo}"));
   }
   EXPECT_EQ(addresses_seen(), expected);
 }

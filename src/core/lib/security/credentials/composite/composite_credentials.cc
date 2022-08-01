@@ -146,18 +146,16 @@ grpc_call_credentials* grpc_composite_call_credentials_create(
 grpc_core::RefCountedPtr<grpc_channel_security_connector>
 grpc_composite_channel_credentials::create_security_connector(
     grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
-    const char* target, const grpc_channel_args* args,
-    grpc_channel_args** new_args) {
+    const char* target, grpc_core::ChannelArgs* args) {
   GPR_ASSERT(inner_creds_ != nullptr && call_creds_ != nullptr);
   /* If we are passed a call_creds, create a call composite to pass it
      downstream. */
   if (call_creds != nullptr) {
     return inner_creds_->create_security_connector(
         composite_call_credentials_create(call_creds_, std::move(call_creds)),
-        target, args, new_args);
+        target, args);
   } else {
-    return inner_creds_->create_security_connector(call_creds_, target, args,
-                                                   new_args);
+    return inner_creds_->create_security_connector(call_creds_, target, args);
   }
 }
 

@@ -302,7 +302,7 @@ static void simple_request_body(grpc_end2end_test_fixture f,
                                 test_result expected_result) {
   grpc_call* c;
   gpr_timespec deadline = five_seconds_time();
-  cq_verifier* cqv = cq_verifier_create(f.cq);
+  grpc_core::CqVerifier cqv(f.cq);
   grpc_op ops[6];
   grpc_op* op;
   grpc_call_error error;
@@ -325,10 +325,9 @@ static void simple_request_body(grpc_end2end_test_fixture f,
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(1), expected_result == SUCCESS);
-  cq_verify(cqv);
+  cqv.Verify();
 
   grpc_call_unref(c);
-  cq_verifier_destroy(cqv);
 }
 
 class H2SslCertTest

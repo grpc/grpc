@@ -39,7 +39,6 @@
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/container/inlined_vector.h"
 #include "absl/hash/hash.h"
 #include "absl/memory/memory.h"
 #include "absl/status/status.h"
@@ -80,12 +79,12 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/timer.h"
-#include "src/core/lib/iomgr/work_serializer.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_util.h"
 #include "src/core/lib/resolver/resolver_registry.h"
@@ -108,7 +107,7 @@ TraceFlag grpc_lb_rls_trace(false, "rls_lb");
 
 namespace {
 
-const char* kRls = "rls_experimental";
+constexpr absl::string_view kRls = "rls_experimental";
 const char kGrpc[] = "grpc";
 const char* kRlsRequestPath = "/grpc.lookup.v1.RouteLookupService/RouteLookup";
 const char* kFakeTargetFieldValue = "fake_target_field_value";
@@ -163,7 +162,7 @@ class RlsLbConfig : public LoadBalancingPolicy::Config {
         default_child_policy_parsed_config_(
             std::move(default_child_policy_parsed_config)) {}
 
-  const char* name() const override { return kRls; }
+  absl::string_view name() const override { return kRls; }
 
   const KeyBuilderMap& key_builder_map() const {
     return route_lookup_config_.key_builder_map;
@@ -208,7 +207,7 @@ class RlsLb : public LoadBalancingPolicy {
  public:
   explicit RlsLb(Args args);
 
-  const char* name() const override { return kRls; }
+  absl::string_view name() const override { return kRls; }
   void UpdateLocked(UpdateArgs args) override;
   void ExitIdleLocked() override;
   void ResetBackoffLocked() override;
@@ -325,7 +324,7 @@ class RlsLb : public LoadBalancingPolicy {
       }
 
       RefCountedPtr<SubchannelInterface> CreateSubchannel(
-          ServerAddress address, const grpc_channel_args& args) override;
+          ServerAddress address, const ChannelArgs& args) override;
       void UpdateState(grpc_connectivity_state state,
                        const absl::Status& status,
                        std::unique_ptr<SubchannelPicker> picker) override;
@@ -707,7 +706,7 @@ class RlsLb : public LoadBalancingPolicy {
 
   // Accessed only from within WorkSerializer.
   absl::StatusOr<ServerAddressList> addresses_;
-  const grpc_channel_args* channel_args_ = nullptr;
+  ChannelArgs channel_args_;
   RefCountedPtr<RlsLbConfig> config_;
   RefCountedPtr<ChildPolicyWrapper> default_child_policy_;
   std::map<std::string /*target*/, ChildPolicyWrapper*> child_policy_map_;
@@ -791,23 +790,23 @@ void RlsLb::ChildPolicyWrapper::StartUpdate() {
         lb_policy_.get(), this, target_.c_str(),
         child_policy_config.Dump().c_str());
   }
-  pending_config_ = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
-      child_policy_config, &error);
+  auto config = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
+      child_policy_config);
   // Returned RLS target fails the validation.
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!config.ok()) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
       gpr_log(GPR_INFO,
               "[rlslb %p] ChildPolicyWrapper=%p [%s]: config failed to parse: "
-              "%s; config: %s",
+              "%s",
               lb_policy_.get(), this, target_.c_str(),
-              grpc_error_std_string(error).c_str(),
-              child_policy_config.Dump().c_str());
+              config.status().ToString().c_str());
     }
     pending_config_.reset();
     picker_ = absl::make_unique<TransientFailurePicker>(
-        grpc_error_to_absl_status(error));
-    GRPC_ERROR_UNREF(error);
+        absl::UnavailableError(config.status().message()));
     child_policy_.reset();
+  } else {
+    pending_config_ = std::move(*config);
   }
 }
 
@@ -843,7 +842,7 @@ void RlsLb::ChildPolicyWrapper::MaybeFinishUpdate() {
   UpdateArgs update_args;
   update_args.config = std::move(pending_config_);
   update_args.addresses = lb_policy_->addresses_;
-  update_args.args = grpc_channel_args_copy(lb_policy_->channel_args_);
+  update_args.args = lb_policy_->channel_args_;
   child_policy_->UpdateLocked(std::move(update_args));
 }
 
@@ -853,7 +852,7 @@ void RlsLb::ChildPolicyWrapper::MaybeFinishUpdate() {
 
 RefCountedPtr<SubchannelInterface>
 RlsLb::ChildPolicyWrapper::ChildPolicyHelper::CreateSubchannel(
-    ServerAddress address, const grpc_channel_args& args) {
+    ServerAddress address, const ChannelArgs& args) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(GPR_INFO,
             "[rlslb %p] ChildPolicyWrapper=%p [%s] ChildPolicyHelper=%p: "
@@ -1544,41 +1543,32 @@ RlsLb::RlsChannel::RlsChannel(RefCountedPtr<RlsLb> lb_policy)
   // Get channel creds from parent channel.
   // TODO(roth): Once we eliminate insecure builds, get this via a
   // method on the helper instead of digging through channel args.
-  grpc_channel_credentials* creds =
-      grpc_channel_credentials_find_in_args(lb_policy_->channel_args_);
+  auto* creds = lb_policy_->channel_args_.GetObject<grpc_channel_credentials>();
   // Use the parent channel's authority.
   std::string authority(lb_policy_->channel_control_helper()->GetAuthority());
-  absl::InlinedVector<grpc_arg, 3> args = {
-      grpc_channel_arg_string_create(
-          const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
-          const_cast<char*>(authority.c_str())),
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_CHANNELZ_IS_INTERNAL_CHANNEL), 1),
-  };
+  ChannelArgs args = ChannelArgs()
+                         .Set(GRPC_ARG_DEFAULT_AUTHORITY, authority)
+                         .Set(GRPC_ARG_CHANNELZ_IS_INTERNAL_CHANNEL, 1);
   // Propagate fake security connector expected targets, if any.
   // (This is ugly, but it seems better than propagating all channel args
   // from the parent channel by default and then having a giant
   // exclude list of args to strip out, like we do in grpclb.)
-  const char* fake_security_expected_targets = grpc_channel_args_find_string(
-      lb_policy_->channel_args_, GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS);
-  if (fake_security_expected_targets != nullptr) {
-    args.push_back(grpc_channel_arg_string_create(
-        const_cast<char*>(GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS),
-        const_cast<char*>(fake_security_expected_targets)));
+  absl::optional<absl::string_view> fake_security_expected_targets =
+      lb_policy_->channel_args_.GetString(
+          GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS);
+  if (fake_security_expected_targets.has_value()) {
+    args = args.Set(GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS,
+                    *fake_security_expected_targets);
   }
   // Add service config args if needed.
   const std::string& service_config =
       lb_policy_->config_->rls_channel_service_config();
   if (!service_config.empty()) {
-    args.push_back(grpc_channel_arg_string_create(
-        const_cast<char*>(GRPC_ARG_SERVICE_CONFIG),
-        const_cast<char*>(service_config.c_str())));
-    args.push_back(grpc_channel_arg_integer_create(
-        const_cast<char*>(GRPC_ARG_SERVICE_CONFIG_DISABLE_RESOLUTION), 1));
+    args = args.Set(GRPC_ARG_SERVICE_CONFIG, service_config)
+               .Set(GRPC_ARG_SERVICE_CONFIG_DISABLE_RESOLUTION, 1);
   }
-  grpc_channel_args rls_channel_args = {args.size(), args.data()};
   channel_ = grpc_channel_create(lb_policy_->config_->lookup_service().c_str(),
-                                 creds, &rls_channel_args);
+                                 creds, args.ToC().get());
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(GPR_INFO, "[rlslb %p] RlsChannel=%p: created channel %p for %s",
             lb_policy_.get(), this, channel_,
@@ -1589,8 +1579,7 @@ RlsLb::RlsChannel::RlsChannel(RefCountedPtr<RlsLb> lb_policy)
     channelz::ChannelNode* child_channelz_node =
         grpc_channel_get_channelz_node(channel_);
     channelz::ChannelNode* parent_channelz_node =
-        grpc_channel_args_find_pointer<channelz::ChannelNode>(
-            lb_policy_->channel_args_, GRPC_ARG_CHANNELZ_CHANNEL_NODE);
+        lb_policy_->channel_args_.GetObject<channelz::ChannelNode>();
     if (child_channelz_node != nullptr && parent_channelz_node != nullptr) {
       parent_channelz_node->AddChildChannel(child_channelz_node->uuid());
       parent_channelz_node_ = parent_channelz_node->Ref();
@@ -1890,18 +1879,17 @@ RlsLb::ResponseInfo RlsLb::RlsRequest::ParseResponseProto() {
 // RlsLb
 //
 
-std::string GetServerUri(const grpc_channel_args* args) {
-  const char* server_uri_str =
-      grpc_channel_args_find_string(args, GRPC_ARG_SERVER_URI);
-  GPR_ASSERT(server_uri_str != nullptr);
-  absl::StatusOr<URI> uri = URI::Parse(server_uri_str);
+std::string GetServerUri(const ChannelArgs& args) {
+  auto server_uri_str = args.GetString(GRPC_ARG_SERVER_URI);
+  GPR_ASSERT(server_uri_str.has_value());
+  absl::StatusOr<URI> uri = URI::Parse(*server_uri_str);
   GPR_ASSERT(uri.ok());
   return std::string(absl::StripPrefix(uri->path(), "/"));
 }
 
 RlsLb::RlsLb(Args args)
     : LoadBalancingPolicy(std::move(args)),
-      server_name_(GetServerUri(args.args)),
+      server_name_(GetServerUri(channel_args())),
       cache_(this) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(GPR_INFO, "[rlslb %p] policy created", this);
@@ -1933,14 +1921,12 @@ void RlsLb::UpdateLocked(UpdateArgs args) {
     old_addresses = addresses_;
   }
   // Swap out channel args.
-  grpc_channel_args_destroy(channel_args_);
-  channel_args_ = grpc_channel_args_copy(args.args);
+  channel_args_ = std::move(args.args);
   // Determine whether we need to update all child policies.
   bool update_child_policies =
       old_config == nullptr ||
       old_config->child_policy_config() != config_->child_policy_config() ||
-      old_addresses != addresses_ ||
-      grpc_channel_args_compare(args.args, channel_args_) != 0;
+      old_addresses != addresses_ || args.args != channel_args_;
   // If default target changes, swap out child policy.
   bool created_default_child = false;
   if (old_config == nullptr ||
@@ -2050,9 +2036,7 @@ void RlsLb::ShutdownLocked() {
   MutexLock lock(&mu_);
   is_shutdown_ = true;
   config_.reset(DEBUG_LOCATION, "ShutdownLocked");
-  if (channel_args_ != nullptr) {
-    grpc_channel_args_destroy(channel_args_);
-  }
+  channel_args_ = ChannelArgs();
   cache_.Shutdown();
   request_map_.clear();
   rls_channel_.reset();
@@ -2457,43 +2441,42 @@ grpc_error_handle ValidateChildPolicyList(
       child_policy_config_target_field_name, target, child_policy_config);
   if (!GRPC_ERROR_IS_NONE(error)) return error;
   // Parse the config.
-  RefCountedPtr<LoadBalancingPolicy::Config> parsed_config =
-      LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
-          *child_policy_config, &error);
-  if (!GRPC_ERROR_IS_NONE(error)) return error;
+  auto parsed_config = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
+      *child_policy_config);
+  if (!parsed_config.ok()) {
+    return absl_status_to_grpc_error(parsed_config.status());
+  }
   // Find the chosen config and return it in JSON form.
   // We remove all non-selected configs, and in the selected config, we leave
   // the target field in place, set to the default value.  This slightly
   // optimizes what we need to do later when we update a child policy for a
   // given target.
-  if (parsed_config != nullptr) {
-    for (Json& config : *(child_policy_config->mutable_array())) {
-      if (config.object_value().begin()->first == parsed_config->name()) {
-        Json save_config = std::move(config);
-        child_policy_config->mutable_array()->clear();
-        child_policy_config->mutable_array()->push_back(std::move(save_config));
-        break;
-      }
+  for (Json& config : *(child_policy_config->mutable_array())) {
+    if (config.object_value().begin()->first == (*parsed_config)->name()) {
+      Json save_config = std::move(config);
+      child_policy_config->mutable_array()->clear();
+      child_policy_config->mutable_array()->push_back(std::move(save_config));
+      break;
     }
   }
   // If default target is set, return the parsed config.
   if (!default_target.empty()) {
-    *default_child_policy_parsed_config = std::move(parsed_config);
+    *default_child_policy_parsed_config = std::move(*parsed_config);
   }
   return GRPC_ERROR_NONE;
 }
 
 class RlsLbFactory : public LoadBalancingPolicyFactory {
  public:
-  const char* name() const override { return kRls; }
+  absl::string_view name() const override { return kRls; }
 
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
       LoadBalancingPolicy::Args args) const override {
     return MakeOrphanable<RlsLb>(std::move(args));
   }
 
-  RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
-      const Json& config, grpc_error_handle* error) const override {
+  absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
+  ParseLoadBalancingConfig(const Json& config) const override {
     std::vector<grpc_error_handle> error_list;
     // Parse routeLookupConfig.
     RlsLbConfig::RouteLookupConfig route_lookup_config;
@@ -2517,7 +2500,7 @@ class RlsLbFactory : public LoadBalancingPolicyFactory {
           *rls_channel_service_config_json_obj);
       rls_channel_service_config = rls_channel_service_config_json.Dump();
       auto service_config = MakeRefCounted<ServiceConfigImpl>(
-          /*args=*/nullptr, rls_channel_service_config,
+          ChannelArgs(), rls_channel_service_config,
           std::move(rls_channel_service_config_json), &child_error);
       if (!GRPC_ERROR_IS_NONE(child_error)) {
         error_list.push_back(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
@@ -2558,8 +2541,13 @@ class RlsLbFactory : public LoadBalancingPolicyFactory {
       }
     }
     // Return result.
-    *error = GRPC_ERROR_CREATE_FROM_VECTOR(
-        "errors parsing RLS LB policy config", &error_list);
+    if (!error_list.empty()) {
+      grpc_error_handle error = GRPC_ERROR_CREATE_FROM_VECTOR(
+          "errors parsing RLS LB policy config", &error_list);
+      std::string error_string = grpc_error_std_string(error);
+      GRPC_ERROR_UNREF(error);
+      return absl::InvalidArgumentError(error_string);
+    }
     return MakeRefCounted<RlsLbConfig>(
         std::move(route_lookup_config), std::move(rls_channel_service_config),
         std::move(child_policy_config),
