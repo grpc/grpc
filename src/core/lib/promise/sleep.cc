@@ -25,7 +25,7 @@
 
 namespace grpc_core {
 
-using ::grpc_event_engine::experimental::GetDefaultEventEngine;
+using ::grpc_event_engine::experimental::EventEngine;
 
 Sleep::Sleep(Timestamp deadline) : deadline_(deadline) {}
 
@@ -36,7 +36,7 @@ Sleep::~Sleep() {
     case Stage::kInitial:
       break;
     case Stage::kStarted:
-      if (GetDefaultEventEngine()->Cancel(timer_handle_)) {
+      if (GetContext<EventEngine>()->Cancel(timer_handle_)) {
         lock.Release();
         OnTimer();
       }
@@ -64,7 +64,7 @@ Poll<absl::Status> Sleep::operator()() {
         return absl::OkStatus();
       }
       stage_ = Stage::kStarted;
-      timer_handle_ = GetDefaultEventEngine()->RunAfter(
+      timer_handle_ = GetContext<EventEngine>()->RunAfter(
           deadline_ - ExecCtx::Get()->Now(), [this] {
             ApplicationCallbackExecCtx callback_exec_ctx;
             ExecCtx exec_ctx;

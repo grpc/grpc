@@ -179,8 +179,8 @@ class FuzzerDNSResolver : public grpc_core::DNSResolver {
   };
 
   // Gets the singleton instance, possibly creating it first
-  static FuzzerDNSResolver* GetOrCreate() {
-    static FuzzerDNSResolver* instance = new FuzzerDNSResolver();
+  static FuzzerDNSResolver* GetOrCreate(FuzzingEventEngine* engine) {
+    static FuzzerDNSResolver* instance = new FuzzerDNSResolver(engine);
     return instance;
   }
 
@@ -207,7 +207,7 @@ class FuzzerDNSResolver : public grpc_core::DNSResolver {
       absl::string_view /* name */, grpc_core::Duration /* timeout */,
       grpc_pollset_set* /* interested_parties */,
       absl::string_view /* name_server */) override {
-    GetDefaultEventEngine()->Run([on_resolved] {
+    engine_->Run([on_resolved] {
       on_resolved(absl::UnimplementedError(
           "The Fuzzing DNS resolver does not support looking up SRV records"));
     });
@@ -220,7 +220,7 @@ class FuzzerDNSResolver : public grpc_core::DNSResolver {
       grpc_pollset_set* /* interested_parties */,
       absl::string_view /* name_server */) override {
     // Not supported
-    GetDefaultEventEngine()->Run([on_resolved] {
+    engine_->Run([on_resolved] {
       on_resolved(absl::UnimplementedError(
           "The Fuzing DNS resolver does not support looking up TXT records"));
     });
@@ -229,6 +229,10 @@ class FuzzerDNSResolver : public grpc_core::DNSResolver {
 
   // FuzzerDNSResolver does not support cancellation.
   bool Cancel(TaskHandle /*handle*/) override { return false; }
+
+ private:
+  explicit FuzzerDNSResolver(FuzzingEventEngine* engine) : engine_(engine) {}
+  FuzzingEventEngine* engine_;
 };
 
 }  // namespace
@@ -824,14 +828,15 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
         return absl::make_unique<FuzzingEventEngine>(
             FuzzingEventEngine::Options(), actions);
       });
-  GetDefaultEventEngine();
   grpc_init();
   grpc_timer_manager_set_threading(false);
   {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Executor::SetThreadingAll(false);
   }
-  grpc_core::SetDNSResolver(FuzzerDNSResolver::GetOrCreate());
+  auto engine =
+      std::dynamic_pointer_cast<FuzzingEventEngine>(GetDefaultEventEngine());
+  grpc_core::SetDNSResolver(FuzzerDNSResolver::GetOrCreate(engine.get()));
   grpc_dns_lookup_hostname_ares = my_dns_lookup_ares;
   grpc_cancel_ares_request = my_cancel_ares_request;
 
@@ -868,12 +873,10 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
   while (action_index < msg.actions_size() || g_channel != nullptr ||
          g_server != nullptr || pending_channel_watches > 0 ||
          pending_pings > 0 || ActiveCall() != nullptr) {
-    std::dynamic_pointer_cast<FuzzingEventEngine>(GetDefaultEventEngine())
-        ->Tick();
+    engine->Tick();
 
     if (action_index == msg.actions_size()) {
-      std::dynamic_pointer_cast<FuzzingEventEngine>(GetDefaultEventEngine())
-          ->FuzzingDone();
+      engine->FuzzingDone();
       if (g_channel != nullptr) {
         grpc_channel_destroy(g_channel);
         g_channel = nullptr;

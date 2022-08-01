@@ -151,6 +151,10 @@ class XdsClient : public DualRefCounted<XdsClient> {
   // implementation.
   std::string DumpClientConfigBinary();
 
+  grpc_event_engine::experimental::EventEngine* engine() {
+    return engine_.get();
+  }
+
  private:
   struct XdsResourceKey {
     std::string id;
@@ -307,6 +311,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
   OrphanablePtr<CertificateProviderStore> certificate_provider_store_;
   XdsApi api_;
   WorkSerializer work_serializer_;
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine_;
 
   Mutex mu_;
 

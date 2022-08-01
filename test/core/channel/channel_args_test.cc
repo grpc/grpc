@@ -178,7 +178,6 @@ static const grpc_arg_pointer_vtable fake_pointer_arg_vtable = {
 
 TEST(GrpcChannelArgsTest, ChannelCreateWithArgs) {
   grpc_arg client_a[3];
-  auto engine = grpc_event_engine::experimental::GetDefaultEventEngine();
 
   client_a[0] =
       grpc_channel_arg_integer_create(const_cast<char*>("arg_int"), 0);

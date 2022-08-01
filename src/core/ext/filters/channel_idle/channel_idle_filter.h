@@ -134,6 +134,7 @@ class MaxAgeFilter final : public ChannelIdleFilter {
   SingleSetActivityPtr max_age_activity_;
   Duration max_connection_age_;
   Duration max_connection_age_grace_;
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine_;
 };
 
 }  // namespace grpc_core

@@ -2615,6 +2615,7 @@ grpc_cc_library(
     ],
     external_deps = ["absl/functional:any_invocable"],
     deps = [
+        "context",
         "default_event_engine_factory",
         "event_engine_base_hdrs",
         "gpr_base",
@@ -3490,6 +3491,7 @@ grpc_cc_library(
         "closure",
         "config",
         "debug_location",
+        "default_event_engine_factory_hdrs",
         "exec_ctx",
         "exec_ctx_wakeup_scheduler",
         "gpr_base",

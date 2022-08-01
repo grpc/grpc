@@ -21,6 +21,13 @@
 
 #include <grpc/event_engine/event_engine.h>
 
+#include "src/core/lib/promise/context.h"
+
+namespace grpc_core {
+template <>
+struct ContextType<grpc_event_engine::experimental::EventEngine> {};
+}  // namespace grpc_core
+
 namespace grpc_event_engine {
 namespace experimental {
 
