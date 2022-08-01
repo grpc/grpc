@@ -54,7 +54,6 @@ grpc_cc_test(
     deps = [
         "call_checker",
         "//:memory_quota",
-        "//test/core/util:grpc_suppressions",
     ],
 )
 
@@ -69,7 +68,6 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:periodic_update",
-        "//test/core/util:grpc_suppressions",
     ],
 )
 
@@ -84,7 +82,6 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:thread_quota",
-        "//test/core/util:grpc_suppressions",
     ],
 )
 
@@ -99,7 +96,6 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:resource_quota",
-        "//test/core/util:grpc_suppressions",
     ],
 )
 
@@ -118,7 +114,6 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:memory_quota",
-        "//test/core/util:grpc_suppressions",
     ],
 )
 

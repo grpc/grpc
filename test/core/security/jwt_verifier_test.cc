@@ -208,18 +208,13 @@ TEST(JwtVerifierTest, JwtIssuerEmailDomain) {
 
 TEST(JwtVerifierTest, ClaimsSuccess) {
   grpc_jwt_claims* claims;
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  Json json = Json::Parse(claims_without_time_constraint, &error);
-  if (!GRPC_ERROR_IS_NONE(error)) {
-    gpr_log(GPR_ERROR, "JSON parse error: %s",
-            grpc_error_std_string(error).c_str());
-  }
-  ASSERT_TRUE(GRPC_ERROR_IS_NONE(error));
-  ASSERT_EQ(json.type(), Json::Type::OBJECT);
+  auto json = Json::Parse(claims_without_time_constraint);
+  ASSERT_TRUE(json.ok()) << json.status();
+  ASSERT_EQ(json->type(), Json::Type::OBJECT);
   grpc_core::ExecCtx exec_ctx;
-  claims = grpc_jwt_claims_from_json(json);
+  claims = grpc_jwt_claims_from_json(*json);
   ASSERT_NE(claims, nullptr);
-  ASSERT_EQ(*grpc_jwt_claims_json(claims), json);
+  ASSERT_EQ(*grpc_jwt_claims_json(claims), *json);
   ASSERT_STREQ(grpc_jwt_claims_audience(claims), "https://foo.com");
   ASSERT_STREQ(grpc_jwt_claims_issuer(claims), "blah.foo.com");
   ASSERT_STREQ(grpc_jwt_claims_subject(claims), "juju@blah.foo.com");
@@ -231,21 +226,16 @@ TEST(JwtVerifierTest, ClaimsSuccess) {
 
 TEST(JwtVerifierTest, ExpiredClaimsFailure) {
   grpc_jwt_claims* claims;
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  Json json = Json::Parse(expired_claims, &error);
-  if (!GRPC_ERROR_IS_NONE(error)) {
-    gpr_log(GPR_ERROR, "JSON parse error: %s",
-            grpc_error_std_string(error).c_str());
-  }
-  ASSERT_TRUE(GRPC_ERROR_IS_NONE(error));
-  ASSERT_EQ(json.type(), Json::Type::OBJECT);
+  auto json = Json::Parse(expired_claims);
+  ASSERT_TRUE(json.ok()) << json.status();
+  ASSERT_EQ(json->type(), Json::Type::OBJECT);
   gpr_timespec exp_iat = {100, 0, GPR_CLOCK_REALTIME};
   gpr_timespec exp_exp = {120, 0, GPR_CLOCK_REALTIME};
   gpr_timespec exp_nbf = {60, 0, GPR_CLOCK_REALTIME};
   grpc_core::ExecCtx exec_ctx;
-  claims = grpc_jwt_claims_from_json(json);
+  claims = grpc_jwt_claims_from_json(*json);
   ASSERT_NE(claims, nullptr);
-  ASSERT_EQ(*grpc_jwt_claims_json(claims), json);
+  ASSERT_EQ(*grpc_jwt_claims_json(claims), *json);
   ASSERT_STREQ(grpc_jwt_claims_audience(claims), "https://foo.com");
   ASSERT_STREQ(grpc_jwt_claims_issuer(claims), "blah.foo.com");
   ASSERT_STREQ(grpc_jwt_claims_subject(claims), "juju@blah.foo.com");
@@ -253,37 +243,26 @@ TEST(JwtVerifierTest, ExpiredClaimsFailure) {
   ASSERT_EQ(gpr_time_cmp(grpc_jwt_claims_issued_at(claims), exp_iat), 0);
   ASSERT_EQ(gpr_time_cmp(grpc_jwt_claims_expires_at(claims), exp_exp), 0);
   ASSERT_EQ(gpr_time_cmp(grpc_jwt_claims_not_before(claims), exp_nbf), 0);
-
   ASSERT_EQ(grpc_jwt_claims_check(claims, "https://foo.com"),
             GRPC_JWT_VERIFIER_TIME_CONSTRAINT_FAILURE);
   grpc_jwt_claims_destroy(claims);
 }
 
 TEST(JwtVerifierTest, InvalidClaimsFailure) {
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  Json json = Json::Parse(invalid_claims, &error);
-  if (!GRPC_ERROR_IS_NONE(error)) {
-    gpr_log(GPR_ERROR, "JSON parse error: %s",
-            grpc_error_std_string(error).c_str());
-  }
-  ASSERT_TRUE(GRPC_ERROR_IS_NONE(error));
-  ASSERT_EQ(json.type(), Json::Type::OBJECT);
+  auto json = Json::Parse(invalid_claims);
+  ASSERT_TRUE(json.ok()) << json.status();
+  ASSERT_EQ(json->type(), Json::Type::OBJECT);
   grpc_core::ExecCtx exec_ctx;
-  ASSERT_EQ(grpc_jwt_claims_from_json(json), nullptr);
+  ASSERT_EQ(grpc_jwt_claims_from_json(*json), nullptr);
 }
 
 TEST(JwtVerifierTest, BadAudienceClaimsFailure) {
   grpc_jwt_claims* claims;
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  Json json = Json::Parse(claims_without_time_constraint, &error);
-  if (!GRPC_ERROR_IS_NONE(error)) {
-    gpr_log(GPR_ERROR, "JSON parse error: %s",
-            grpc_error_std_string(error).c_str());
-  }
-  ASSERT_TRUE(GRPC_ERROR_IS_NONE(error));
-  ASSERT_EQ(json.type(), Json::Type::OBJECT);
+  auto json = Json::Parse(claims_without_time_constraint);
+  ASSERT_TRUE(json.ok()) << json.status();
+  ASSERT_EQ(json->type(), Json::Type::OBJECT);
   grpc_core::ExecCtx exec_ctx;
-  claims = grpc_jwt_claims_from_json(json);
+  claims = grpc_jwt_claims_from_json(*json);
   ASSERT_NE(claims, nullptr);
   ASSERT_EQ(grpc_jwt_claims_check(claims, "https://bar.com"),
             GRPC_JWT_VERIFIER_BAD_AUDIENCE);
@@ -292,16 +271,11 @@ TEST(JwtVerifierTest, BadAudienceClaimsFailure) {
 
 TEST(JwtVerifierTest, BadSubjectClaimsFailure) {
   grpc_jwt_claims* claims;
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  Json json = Json::Parse(claims_with_bad_subject, &error);
-  if (!GRPC_ERROR_IS_NONE(error)) {
-    gpr_log(GPR_ERROR, "JSON parse error: %s",
-            grpc_error_std_string(error).c_str());
-  }
-  ASSERT_TRUE(GRPC_ERROR_IS_NONE(error));
-  ASSERT_EQ(json.type(), Json::Type::OBJECT);
+  auto json = Json::Parse(claims_with_bad_subject);
+  ASSERT_TRUE(json.ok()) << json.status();
+  ASSERT_EQ(json->type(), Json::Type::OBJECT);
   grpc_core::ExecCtx exec_ctx;
-  claims = grpc_jwt_claims_from_json(json);
+  claims = grpc_jwt_claims_from_json(*json);
   ASSERT_NE(claims, nullptr);
   ASSERT_EQ(grpc_jwt_claims_check(claims, "https://foo.com"),
             GRPC_JWT_VERIFIER_BAD_SUBJECT);

@@ -58,6 +58,14 @@ EXTERNAL_DEPS = {
         'absl/container:inlined_vector',
     'absl/cleanup/cleanup.h':
         'absl/cleanup',
+    'absl/debugging/failure_signal_handler.h':
+        'absl/debugging:failure_signal_handler',
+    'absl/debugging/stacktrace.h':
+        'absl/debugging:stacktrace',
+    'absl/debugging/symbolize.h':
+        'absl/debugging:symbolize',
+    'absl/flags/flag.h':
+        'absl/flags:flag',
     'absl/functional/any_invocable.h':
         'absl/functional:any_invocable',
     'absl/functional/bind_front.h':
@@ -277,13 +285,14 @@ def grpc_cc_library(name,
     if 'avoid_dep' in tags or 'grpc_avoid_dep' in tags:
         avoidness[name] += 10
     for hdr in hdrs + public_hdrs:
-        vendors[hdr].append(name)
+        filename = '%s%s' % ((parsing_path + '/' if parsing_path else ''), hdr)
+        vendors[filename].append(name)
     inc = set()
     original_deps[name] = frozenset(deps)
     original_external_deps[name] = frozenset(external_deps)
     for src in hdrs + public_hdrs + srcs:
-        for line in open('%s%s' %
-                         ((parsing_path + '/' if parsing_path else ''), src)):
+        filename = '%s%s' % ((parsing_path + '/' if parsing_path else ''), src)
+        for line in open(filename):
             m = re.search(r'#include <(.*)>', line)
             if m:
                 inc.add(m.group(1))
@@ -363,7 +372,10 @@ parser.add_argument('--whats_left',
                     help='show what is left to opt in')
 args = parser.parse_args()
 
-for dirname in ["", "test/core/uri"]:
+for dirname in [
+        "", "test/core/uri", "test/core/util", "test/core/end2end",
+        "test/core/event_engine"
+]:
     parsing_path = dirname
     exec(
         open('%sBUILD' % (dirname + '/' if dirname else ''), 'r').read(), {
@@ -378,11 +390,13 @@ for dirname in ["", "test/core/uri"]:
             'grpc_cc_test': grpc_cc_library,
             'grpc_fuzzer': grpc_cc_library,
             'select': lambda d: d["//conditions:default"],
+            'grpc_end2end_tests': lambda: None,
             'grpc_upb_proto_library': lambda name, **kwargs: None,
             'grpc_upb_proto_reflection_library': lambda name, **kwargs: None,
             'grpc_generate_one_off_targets': lambda: None,
             'grpc_package': lambda **kwargs: None,
             'filegroup': lambda name, **kwargs: None,
+            'sh_library': lambda name, **kwargs: None,
         }, {})
     parsing_path = None
 
@@ -462,11 +476,14 @@ def make_library(library):
 
         if hdr == 'grpc/grpc.h' and not library.startswith('//:'):
             # not the root build including grpc.h ==> //:grpc
-            deps.add('//:grpc')
+            deps.add_one_of(['//:grpc', '//:grpc_unsecure'])
             continue
 
         if hdr in INTERNAL_DEPS:
-            deps.add(INTERNAL_DEPS[hdr])
+            dep = INTERNAL_DEPS[hdr]
+            if not dep.startswith('//'):
+                dep = '//:' + dep
+            deps.add(dep)
             continue
 
         if hdr in vendors:
@@ -511,6 +528,7 @@ def make_library(library):
         for sys_path in [
                 'sys',
                 'arpa',
+                'gperftools',
                 'netinet',
                 'linux',
                 'android',

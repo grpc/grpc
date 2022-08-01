@@ -88,7 +88,6 @@
 #include "src/core/lib/service_config/service_config_impl.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/server.h"
-#include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/uri/uri_parser.h"
 
@@ -1145,15 +1144,12 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
       config_selector_route.unsupported_action =
           absl::get_if<XdsRouteConfigResource::Route::NonForwardingAction>(
               &route.action) == nullptr;
-      XdsRouting::GeneratePerHttpFilterConfigsResult result =
-          XdsRouting::GeneratePerHTTPFilterConfigs(http_filters, vhost, route,
-                                                   nullptr, ChannelArgs());
-      if (!GRPC_ERROR_IS_NONE(result.error)) {
-        return grpc_error_to_absl_status(result.error);
-      }
+      auto result = XdsRouting::GeneratePerHTTPFilterConfigs(
+          http_filters, vhost, route, nullptr, ChannelArgs());
+      if (!result.ok()) return result.status();
       std::vector<std::string> fields;
-      fields.reserve(result.per_filter_configs.size());
-      for (const auto& p : result.per_filter_configs) {
+      fields.reserve(result->per_filter_configs.size());
+      for (const auto& p : result->per_filter_configs) {
         fields.emplace_back(absl::StrCat("    \"", p.first, "\": [\n",
                                          absl::StrJoin(p.second, ",\n"),
                                          "\n    ]"));
@@ -1169,10 +1165,8 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
             absl::StrJoin(fields, ",\n"),
             "\n  } ]\n"
             "}");
-        grpc_error_handle error = GRPC_ERROR_NONE;
         config_selector_route.method_config =
-            ServiceConfigImpl::Create(result.args, json.c_str(), &error);
-        GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+            ServiceConfigImpl::Create(result->args, json.c_str()).value();
       }
     }
   }

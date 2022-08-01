@@ -21,7 +21,22 @@ licenses(["notice"])
 grpc_cc_library(
     name = "memstats",
     testonly = 1,
+    srcs = [
+        "memstats.cc",
+        "memstats.h",
+    ],
     hdrs = ["memstats.h"],
+    external_deps = [
+        "absl/types:optional",
+    ],
+    tags = [
+        "bazel_only",
+        "no_mac",
+        "no_windows",
+    ],
+    deps = [
+        "//:gpr",
+    ],
 )
 
 grpc_cc_binary(
@@ -42,6 +57,7 @@ grpc_cc_binary(
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -64,6 +80,7 @@ grpc_cc_binary(
         "//:grpc",
         "//test/core/end2end:ssl_test_data",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -89,6 +106,7 @@ grpc_cc_binary(
         "//src/proto/grpc/testing:benchmark_service_proto",
         "//test/core/end2end:ssl_test_data",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -114,6 +132,7 @@ grpc_cc_binary(
         "//src/proto/grpc/testing:benchmark_service_proto",
         "//test/core/end2end:ssl_test_data",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -143,5 +162,6 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )

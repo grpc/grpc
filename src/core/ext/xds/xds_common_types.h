@@ -31,7 +31,6 @@
 
 #include "src/core/ext/xds/upb_utils.h"
 #include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/matchers/matchers.h"
 
 namespace grpc_core {
@@ -83,11 +82,10 @@ struct CommonTlsContext {
   std::string ToString() const;
   bool Empty() const;
 
-  static grpc_error_handle Parse(
+  static absl::StatusOr<CommonTlsContext> Parse(
       const XdsEncodingContext& context,
       const envoy_extensions_transport_sockets_tls_v3_CommonTlsContext*
-          common_tls_context_proto,
-      CommonTlsContext* common_tls_context);
+          common_tls_context_proto);
 };
 
 struct ExtractExtensionTypeNameResult {

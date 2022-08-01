@@ -19,21 +19,23 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <algorithm>
+#include <iterator>
 #include <map>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include "absl/algorithm/container.h"
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
-#include "util/logging.h"
+#include "absl/strings/string_view.h"
 
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "test/core/util/port.h"
 #include "test/core/util/subprocess.h"
@@ -60,6 +62,7 @@ class Subprocess {
     process_ = gpr_subprocess_create(args_c.size(), args_c.data());
   }
 
+  int GetPID() { return gpr_subprocess_get_process_id(process_); }
   int Join() { return gpr_subprocess_join(process_); }
   void Interrupt() { gpr_subprocess_interrupt(process_); }
 
@@ -125,7 +128,8 @@ int RunChannelBenchmark(char* root) {
   std::vector<std::string> client_flags = {
       absl::StrCat(root, "/memory_usage_callback_client",
                    gpr_subprocess_binary_extension()),
-      "--target", grpc_core::JoinHostPort("127.0.0.1", port), "--nosecure"};
+      "--target", grpc_core::JoinHostPort("127.0.0.1", port), "--nosecure",
+      absl::StrCat("--server_pid=", svr.GetPID())};
   Subprocess cli(client_flags);
   /* wait for completion */
   if ((status = cli.Join()) != 0) {
