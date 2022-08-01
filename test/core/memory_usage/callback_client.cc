@@ -71,12 +71,6 @@ std::shared_ptr<grpc::Channel> CreateChannelForTest(int index) {
 void UnaryCall(std::shared_ptr<grpc::Channel> channel) {
   std::unique_ptr<grpc::testing::BenchmarkService::Stub> stub =
       grpc::testing::BenchmarkService::NewStub(channel);
-  return stub;
-}
-
-void UnaryCall() {
-  std::unique_ptr<grpc::testing::BenchmarkService::Stub> stub =
-      CreateStubForTest();
 
   // Start a call.
   struct CallParams {
@@ -96,12 +90,11 @@ void UnaryCall() {
 }
 
 // Get memory usage of server's process before the server is made
-
 void GetBeforeSnapshot(std::shared_ptr<grpc::Channel> channel,
                        long& before_server_memory) {
   std::unique_ptr<grpc::testing::BenchmarkService::Stub> stub =
       grpc::testing::BenchmarkService::NewStub(channel);
-      
+
   // Start a call.
   struct CallParams {
     grpc::ClientContext context;
@@ -168,7 +161,6 @@ int main(int argc, char** argv) {
     // channels_list[i]->~Channel();
     //channels_list[i].reset();
   }
-  
   gpr_log(GPR_INFO, "Client Done");
   return 0;
 }
