@@ -4263,6 +4263,7 @@ grpc_cc_library(
         "grpc_trace",
         "grpc_xds_client",
         "json",
+        "json_object_loader",
         "orphanable",
         "ref_counted_ptr",
         "server_address",
