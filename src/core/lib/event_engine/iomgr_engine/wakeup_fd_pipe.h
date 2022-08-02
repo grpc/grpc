@@ -11,23 +11,35 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#ifndef GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_WAKEUP_FD_PIPE_H
+#define GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_WAKEUP_FD_PIPE_H
 
 #include <grpc/support/port_platform.h>
 
 #include <memory>
 
-#include "absl/memory/memory.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
-#include <grpc/event_engine/event_engine.h>
-
-#include "src/core/lib/event_engine/iomgr_engine/iomgr_engine.h"
+#include "src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix.h"
 
 namespace grpc_event_engine {
-namespace experimental {
+namespace iomgr_engine {
 
-std::unique_ptr<EventEngine> DefaultEventEngineFactory() {
-  return absl::make_unique<IomgrEventEngine>();
-}
+class PipeWakeupFd : public WakeupFd {
+ public:
+  PipeWakeupFd() : WakeupFd() {}
+  ~PipeWakeupFd() override;
+  absl::Status ConsumeWakeup() override;
+  absl::Status Wakeup() override;
+  static absl::StatusOr<std::unique_ptr<WakeupFd>> CreatePipeWakeupFd();
+  static bool IsSupported();
 
-}  // namespace experimental
+ private:
+  absl::Status Init();
+};
+
+}  // namespace iomgr_engine
 }  // namespace grpc_event_engine
+
+#endif  // GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_WAKEUP_FD_PIPE_H

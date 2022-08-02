@@ -12,22 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#ifndef GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_EVENT_POLLER_POSIX_DEFAULT_H
+#define GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_EVENT_POLLER_POSIX_DEFAULT_H
+
 #include <grpc/support/port_platform.h>
 
-#include <memory>
-
-#include "absl/memory/memory.h"
-
-#include <grpc/event_engine/event_engine.h>
-
-#include "src/core/lib/event_engine/iomgr_engine/iomgr_engine.h"
-
 namespace grpc_event_engine {
-namespace experimental {
+namespace iomgr_engine {
 
-std::unique_ptr<EventEngine> DefaultEventEngineFactory() {
-  return absl::make_unique<IomgrEventEngine>();
-}
+class EventPoller;
+class Scheduler;
 
-}  // namespace experimental
+// Return an instance of an event poller which is tied to the specified
+// scheduler.
+EventPoller* GetDefaultPoller(Scheduler* scheduler);
+
+}  // namespace iomgr_engine
 }  // namespace grpc_event_engine
+
+#endif  // GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_EVENT_POLLER_POSIX_DEFAULT_H

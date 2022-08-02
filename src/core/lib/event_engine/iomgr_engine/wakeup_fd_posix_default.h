@@ -12,22 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#ifndef GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_WAKEUP_FD_POSIX_DEFAULT_H
+#define GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_WAKEUP_FD_POSIX_DEFAULT_H
 #include <grpc/support/port_platform.h>
 
 #include <memory>
 
-#include "absl/memory/memory.h"
-
-#include <grpc/event_engine/event_engine.h>
-
-#include "src/core/lib/event_engine/iomgr_engine/iomgr_engine.h"
+#include "absl/status/statusor.h"
 
 namespace grpc_event_engine {
-namespace experimental {
+namespace iomgr_engine {
 
-std::unique_ptr<EventEngine> DefaultEventEngineFactory() {
-  return absl::make_unique<IomgrEventEngine>();
-}
+class WakeupFd;
 
-}  // namespace experimental
+// Returns true if wakeup-fd is supported by the system.
+bool SupportsWakeupFd();
+
+// Create and return an initialized WakeupFd instance if supported.
+absl::StatusOr<std::unique_ptr<WakeupFd>> CreateWakeupFd();
+
+}  // namespace iomgr_engine
 }  // namespace grpc_event_engine
+
+#endif  // GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_WAKEUP_FD_POSIX_DEFAULT_H
