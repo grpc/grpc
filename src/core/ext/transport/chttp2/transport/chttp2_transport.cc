@@ -1128,14 +1128,14 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
     gpr_log(GPR_ERROR,
             "Received a GOAWAY with error code ENHANCE_YOUR_CALM and debug "
             "data equal to \"too_many_pings\"");
-    constexpr auto max_keepalive_time = grpc_core::Duration::Milliseconds(
-        INT_MAX / KEEPALIVE_TIME_BACKOFF_MULTIPLIER);
-    t->keepalive_time =
-        t->keepalive_time > max_keepalive_time
-            ? grpc_core::Duration::Infinity()
-            : t->keepalive_time * KEEPALIVE_TIME_BACKOFF_MULTIPLIER;
+    constexpr int max_keepalive_time_millis =
+        INT_MAX / KEEPALIVE_TIME_BACKOFF_MULTIPLIER;
+    int throttled_keepalive_time =
+        t->keepalive_time.millis() > max_keepalive_time_millis
+            ? INT_MAX
+            : t->keepalive_time.millis() * KEEPALIVE_TIME_BACKOFF_MULTIPLIER;
     status.SetPayload(grpc_core::kKeepaliveThrottlingKey,
-                      absl::Cord(std::to_string(t->keepalive_time.millis())));
+                      absl::Cord(std::to_string(throttled_keepalive_time)));
   }
   // lie: use transient failure from the transport to indicate goaway has been
   // received.

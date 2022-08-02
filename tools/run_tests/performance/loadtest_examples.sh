@@ -29,7 +29,7 @@ fi
 
 outputbasedir="${1}"
 
-mkdir -p "${outputbasedir}/templates"
+mkdir -p "${outputbasedir}/templates/psm/prebuilt"
 
 example_file() {
     local scenario="${1}"

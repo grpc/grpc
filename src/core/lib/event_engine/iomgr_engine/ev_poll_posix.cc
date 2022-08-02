@@ -19,16 +19,15 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include <algorithm>
 #include <atomic>
 #include <list>
 #include <memory>
 
-#include "absl/functional/any_invocable.h"
-#include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
 #include "absl/utility/utility.h"
 
-#include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
@@ -36,7 +35,6 @@
 
 #include "src/core/lib/event_engine/iomgr_engine/event_poller.h"
 #include "src/core/lib/event_engine/iomgr_engine/iomgr_engine_closure.h"
-#include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/port.h"
 
@@ -49,19 +47,21 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include <vector>
+
 #include "absl/synchronization/mutex.h"
 
 #include <grpc/support/alloc.h>
 
-#include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix.h"
 #include "src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix_default.h"
-#include "src/core/lib/event_engine/time_util.h"
 #include "src/core/lib/gprpp/fork.h"
 #include "src/core/lib/gprpp/global_config.h"
 #include "src/core/lib/gprpp/time.h"
 
 GPR_GLOBAL_CONFIG_DECLARE_STRING(grpc_poll_strategy);
+
+using ::grpc_event_engine::iomgr_engine::WakeupFd;
 
 static const intptr_t kClosureNotReady = 0;
 static const intptr_t kClosureReady = 1;
@@ -70,11 +70,6 @@ static const int kPolloutCheck = POLLOUT | POLLHUP | POLLERR;
 
 namespace grpc_event_engine {
 namespace iomgr_engine {
-
-using ::grpc_event_engine::experimental::AnyInvocableClosure;
-using ::grpc_event_engine::experimental::EventEngine;
-using ::grpc_event_engine::experimental::Poller;
-using ::grpc_event_engine::iomgr_engine::WakeupFd;
 
 class PollEventHandle : public EventHandle {
  public:
@@ -92,32 +87,20 @@ class PollEventHandle : public EventHandle {
         pollhup_(false),
         watch_mask_(-1),
         shutdown_error_(absl::OkStatus()),
-        exec_actions_closure_([this]() { ExecutePendingActions(); }),
         on_done_(nullptr),
-        read_closure_(reinterpret_cast<IomgrEngineClosure*>(kClosureNotReady)),
+        read_closure_(reinterpret_cast<PosixEngineClosure*>(kClosureNotReady)),
         write_closure_(
-            reinterpret_cast<IomgrEngineClosure*>(kClosureNotReady)) {
-    poller_handles_list_.next = nullptr;
-    poller_handles_list_.prev = nullptr;
-    poller_handles_list_.handle = this;
+            reinterpret_cast<PosixEngineClosure*>(kClosureNotReady)) {
     poller_->Ref();
     absl::MutexLock lock(&poller_->mu_);
     poller_->PollerHandlesListAddHandle(this);
   }
   PollPoller* Poller() { return poller_; }
-  EventEngine::Closure* SetPendingActions(bool pending_read,
-                                          bool pending_write) {
+  void SetPendingActions(bool pending_read, bool pending_write) {
     pending_actions_ |= pending_read;
     if (pending_write) {
       pending_actions_ |= (1 << 2);
     }
-    if (pending_read || pending_write) {
-      // The closure is going to be executed. We'll Unref this handle in
-      // ExecutePendingActions.
-      Ref();
-      return &exec_actions_closure_;
-    }
-    return nullptr;
   }
   void ForceRemoveHandleFromPoller() {
     absl::MutexLock lock(&poller_->mu_);
@@ -147,12 +130,12 @@ class PollEventHandle : public EventHandle {
   void SetWatched(int watch_mask) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     watch_mask_ = watch_mask;
   }
-  void OrphanHandle(IomgrEngineClosure* on_done, int* release_fd,
+  void OrphanHandle(PosixEngineClosure* on_done, int* release_fd,
                     absl::string_view reason) override;
   void ShutdownHandle(absl::Status why) override;
-  void NotifyOnRead(IomgrEngineClosure* on_read) override;
-  void NotifyOnWrite(IomgrEngineClosure* on_write) override;
-  void NotifyOnError(IomgrEngineClosure* on_error) override;
+  void NotifyOnRead(PosixEngineClosure* on_read) override;
+  void NotifyOnWrite(PosixEngineClosure* on_write) override;
+  void NotifyOnError(PosixEngineClosure* on_error) override;
   void SetReadable() override;
   void SetWritable() override;
   void SetHasError() override;
@@ -160,7 +143,7 @@ class PollEventHandle : public EventHandle {
     absl::MutexLock lock(&mu_);
     return is_shutdown_;
   };
-  inline void ExecutePendingActions() {
+  void ExecutePendingActions() override {
     int kick = 0;
     {
       absl::MutexLock lock(&mu_);
@@ -178,11 +161,11 @@ class PollEventHandle : public EventHandle {
     }
     if (kick) {
       // SetReadyLocked immediately scheduled some closure. It would have set
-      // the closure state to NOT_READY. We need to wakeup the Work(...)
-      // thread to start polling on this fd. If this call is not made, it is
-      // possible that the poller will reach a state where all the fds under
-      // the poller's control are not polled for POLLIN/POLLOUT events thus
-      // leading to an indefinitely blocked Work(..) method.
+      // the closure state to NOT_READY. We need to wakeup the Work(...) thread
+      // to start polling on this fd. If this call is not made, it is possible
+      // that the poller will reach a state where all the fds under the
+      // poller's control are not polled for POLLIN/POLLOUT events thus leading
+      // to an indefinitely blocked Work(..) method.
       poller_->KickExternal(false);
     }
     Unref();
@@ -205,12 +188,12 @@ class PollEventHandle : public EventHandle {
   }
   uint32_t BeginPollLocked(uint32_t read_mask, uint32_t write_mask)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
-  EventEngine::Closure* EndPollLocked(int got_read, int got_write)
+  bool EndPollLocked(int got_read, int got_write)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
  private:
-  int SetReadyLocked(IomgrEngineClosure** st);
-  int NotifyOnLocked(IomgrEngineClosure** st, IomgrEngineClosure* closure);
+  int SetReadyLocked(PosixEngineClosure** st);
+  int NotifyOnLocked(PosixEngineClosure** st, PosixEngineClosure* closure);
   // See Epoll1Poller::ShutdownHandle for explanation on why a mutex is
   // required.
   absl::Mutex mu_;
@@ -228,13 +211,13 @@ class PollEventHandle : public EventHandle {
   bool pollhup_;
   int watch_mask_;
   absl::Status shutdown_error_;
-  AnyInvocableClosure exec_actions_closure_;
-  IomgrEngineClosure* on_done_;
-  IomgrEngineClosure* read_closure_;
-  IomgrEngineClosure* write_closure_;
+  PosixEngineClosure* on_done_;
+  PosixEngineClosure* read_closure_;
+  PosixEngineClosure* write_closure_;
 };
 
 namespace {
+
 // Only used when GRPC_ENABLE_FORK_SUPPORT=1
 std::list<PollPoller*> fork_poller_list;
 
@@ -289,12 +272,11 @@ void ForkPollerListRemovePoller(PollPoller* poller) {
   }
 }
 
-// Returns the number of milliseconds elapsed between now and start timestamp.
-int PollElapsedTimeToMillis(grpc_core::Timestamp start) {
-  if (start == grpc_core::Timestamp::InfFuture()) return -1;
+int PollDeadlineToMillisTimeout(grpc_core::Timestamp millis) {
+  if (millis == grpc_core::Timestamp::InfFuture()) return -1;
   grpc_core::Timestamp now =
       grpc_core::Timestamp::FromTimespecRoundDown(gpr_now(GPR_CLOCK_MONOTONIC));
-  int64_t delta = (now - start).millis();
+  int64_t delta = (millis - now).millis();
   if (delta > INT_MAX) {
     return INT_MAX;
   } else if (delta < 0) {
@@ -307,9 +289,9 @@ int PollElapsedTimeToMillis(grpc_core::Timestamp start) {
 bool InitPollPollerPosix();
 
 // Called by the child process's post-fork handler to close open fds,
-// including the global epoll fd of each poller. This allows gRPC to shutdown
-// in the child process without interfering with connections or RPCs ongoing
-// in the parent.
+// including the global epoll fd of each poller. This allows gRPC to shutdown in
+// the child process without interfering with connections or RPCs ongoing in the
+// parent.
 void ResetEventManagerOnFork() {
   // Delete all pending Epoll1EventHandles.
   gpr_mu_lock(&fork_fd_list_mu);
@@ -359,7 +341,7 @@ EventHandle* PollPoller::CreateHandle(int fd, absl::string_view /*name*/,
   return handle;
 }
 
-void PollEventHandle::OrphanHandle(IomgrEngineClosure* on_done, int* release_fd,
+void PollEventHandle::OrphanHandle(PosixEngineClosure* on_done, int* release_fd,
                                    absl::string_view /* reason */) {
   ForkFdListRemoveHandle(this);
   ForceRemoveHandleFromPoller();
@@ -376,11 +358,9 @@ void PollEventHandle::OrphanHandle(IomgrEngineClosure* on_done, int* release_fd,
     if (!is_shutdown_) {
       is_shutdown_ = true;
       shutdown_error_ =
-          absl::Status(absl::StatusCode::kInternal, "FD Orphaned");
+          absl::Status(absl::StatusCode::kInternal, "FD Shutdown");
       // signal read/write closed to OS so that future operations fail.
-      if (!released_) {
-        shutdown(fd_, SHUT_RDWR);
-      }
+      shutdown(fd_, SHUT_RDWR);
       SetReadyLocked(&read_closure_);
       SetReadyLocked(&write_closure_);
     }
@@ -398,18 +378,18 @@ void PollEventHandle::OrphanHandle(IomgrEngineClosure* on_done, int* release_fd,
   Unref();
 }
 
-int PollEventHandle::NotifyOnLocked(IomgrEngineClosure** st,
-                                    IomgrEngineClosure* closure) {
+int PollEventHandle::NotifyOnLocked(PosixEngineClosure** st,
+                                    PosixEngineClosure* closure) {
   if (is_shutdown_ || pollhup_) {
-    closure->SetStatus(shutdown_error_);
+    closure->SetStatus(
+        absl::Status(absl::StatusCode::kInternal, "FD Shutdown"));
     scheduler_->Run(closure);
-  } else if (*st == reinterpret_cast<IomgrEngineClosure*>(kClosureNotReady)) {
+  } else if (*st == reinterpret_cast<PosixEngineClosure*>(kClosureNotReady)) {
     // not ready ==> switch to a waiting state by setting the closure
     *st = closure;
-    return 0;
-  } else if (*st == reinterpret_cast<IomgrEngineClosure*>(kClosureReady)) {
+  } else if (*st == reinterpret_cast<PosixEngineClosure*>(kClosureReady)) {
     // already ready ==> queue the closure to run immediately
-    *st = reinterpret_cast<IomgrEngineClosure*>(kClosureNotReady);
+    *st = reinterpret_cast<PosixEngineClosure*>(kClosureNotReady);
     closure->SetStatus(shutdown_error_);
     scheduler_->Run(closure);
     return 1;
@@ -424,18 +404,18 @@ int PollEventHandle::NotifyOnLocked(IomgrEngineClosure** st,
 }
 
 // returns 1 if state becomes not ready
-int PollEventHandle::SetReadyLocked(IomgrEngineClosure** st) {
-  if (*st == reinterpret_cast<IomgrEngineClosure*>(kClosureReady)) {
+int PollEventHandle::SetReadyLocked(PosixEngineClosure** st) {
+  if (*st == reinterpret_cast<PosixEngineClosure*>(kClosureReady)) {
     // duplicate ready ==> ignore
     return 0;
-  } else if (*st == reinterpret_cast<IomgrEngineClosure*>(kClosureNotReady)) {
+  } else if (*st == reinterpret_cast<PosixEngineClosure*>(kClosureNotReady)) {
     // not ready, and not waiting ==> flag ready
-    *st = reinterpret_cast<IomgrEngineClosure*>(kClosureReady);
+    *st = reinterpret_cast<PosixEngineClosure*>(kClosureReady);
     return 0;
   } else {
     // waiting ==> queue closure
-    IomgrEngineClosure* closure = *st;
-    *st = reinterpret_cast<IomgrEngineClosure*>(kClosureNotReady);
+    PosixEngineClosure* closure = *st;
+    *st = reinterpret_cast<PosixEngineClosure*>(kClosureNotReady);
     closure->SetStatus(shutdown_error_);
     scheduler_->Run(closure);
     return 1;
@@ -443,8 +423,8 @@ int PollEventHandle::SetReadyLocked(IomgrEngineClosure** st) {
 }
 
 void PollEventHandle::ShutdownHandle(absl::Status why) {
-  // We need to take a Ref here because SetReadyLocked may trigger execution
-  // of a closure which calls OrphanHandle or poller->Shutdown() prematurely.
+  // We need to take a Ref here because SetReadyLocked may trigger execution of
+  // a closure which calls OrphanHandle or poller->Shutdown() prematurely.
   Ref();
   {
     absl::MutexLock lock(&mu_);
@@ -462,9 +442,9 @@ void PollEventHandle::ShutdownHandle(absl::Status why) {
   Unref();
 }
 
-void PollEventHandle::NotifyOnRead(IomgrEngineClosure* on_read) {
-  // We need to take a Ref here because NotifyOnLocked may trigger execution
-  // of a closure which calls OrphanHandle that may delete this object or call
+void PollEventHandle::NotifyOnRead(PosixEngineClosure* on_read) {
+  // We need to take a Ref here because NotifyOnLocked may trigger execution of
+  // a closure which calls OrphanHandle that may delete this object or call
   // poller->Shutdown() prematurely.
   Ref();
   {
@@ -484,9 +464,9 @@ void PollEventHandle::NotifyOnRead(IomgrEngineClosure* on_read) {
   Unref();
 }
 
-void PollEventHandle::NotifyOnWrite(IomgrEngineClosure* on_write) {
-  // We need to take a Ref here because NotifyOnLocked may trigger execution
-  // of a closure which calls OrphanHandle that may delete this object or call
+void PollEventHandle::NotifyOnWrite(PosixEngineClosure* on_write) {
+  // We need to take a Ref here because NotifyOnLocked may trigger execution of
+  // a closure which calls OrphanHandle that may delete this object or call
   // poller->Shutdown() prematurely.
   Ref();
   {
@@ -506,7 +486,7 @@ void PollEventHandle::NotifyOnWrite(IomgrEngineClosure* on_write) {
   Unref();
 }
 
-void PollEventHandle::NotifyOnError(IomgrEngineClosure* on_error) {
+void PollEventHandle::NotifyOnError(PosixEngineClosure* on_error) {
   on_error->SetStatus(
       absl::Status(absl::StatusCode::kCancelled,
                    "Polling engine does not support tracking errors"));
@@ -539,35 +519,31 @@ uint32_t PollEventHandle::BeginPollLocked(uint32_t read_mask,
   bool read_ready = (pending_actions_ & 1UL);
   bool write_ready = ((pending_actions_ >> 2) & 1UL);
   Ref();
-  // If we are shutdown, then no need to poll this fd. Set watch_mask to 0.
+  // if we are shutdown, then no need to poll this fd. Set watch_mask to 0.
   if (is_shutdown_) {
     SetWatched(0);
     return 0;
   }
-  // If there is nobody polling for read, but we need to, then start doing so.
+  //   if there is nobody polling for read, but we need to, then start doing so
   if (read_mask && !read_ready &&
-      read_closure_ != reinterpret_cast<IomgrEngineClosure*>(kClosureReady)) {
+      read_closure_ != reinterpret_cast<PosixEngineClosure*>(kClosureReady)) {
     mask |= read_mask;
   }
-
-  // If there is nobody polling for write, but we need to, then start doing so
+  // if there is nobody polling for write, but we need to, then start doing so
   if (write_mask && !write_ready &&
-      write_closure_ != reinterpret_cast<IomgrEngineClosure*>(kClosureReady)) {
+      write_closure_ != reinterpret_cast<PosixEngineClosure*>(kClosureReady)) {
     mask |= write_mask;
   }
   SetWatched(mask);
   return mask;
 }
 
-EventEngine::Closure* PollEventHandle::EndPollLocked(int got_read,
-                                                     int got_write) {
-  EventEngine::Closure* closure = nullptr;
+bool PollEventHandle::EndPollLocked(int got_read, int got_write) {
+  SetPendingActions(got_read, got_write);
   if (is_orphaned_ && !IsWatched()) {
     CloseFd();
-  } else if (!is_orphaned_) {
-    closure = SetPendingActions(got_read, got_write);
   }
-  return closure;
+  return !is_orphaned_ && (got_read || got_write);
 }
 
 void PollPoller::KickExternal(bool ext) {
@@ -597,7 +573,7 @@ void PollPoller::PollerHandlesListAddHandle(PollEventHandle* handle) {
 
 void PollPoller::PollerHandlesListRemoveHandle(PollEventHandle* handle) {
   if (poll_handles_list_head_ == handle) {
-    poll_handles_list_head_ = handle->PollerHandlesListPos().next;
+    poll_handles_list_head_ = handle->ForkFdListPos().next;
   }
   if (handle->PollerHandlesListPos().prev != nullptr) {
     handle->PollerHandlesListPos().prev->PollerHandlesListPos().next =
@@ -641,28 +617,33 @@ PollPoller::~PollPoller() {
   GPR_ASSERT(poll_handles_list_head_ == nullptr);
 }
 
-Poller::WorkResult PollPoller::Work(EventEngine::Duration timeout) {
+absl::Status PollPoller::Work(grpc_core::Timestamp deadline,
+                              std::vector<EventHandle*>& pending_events) {
+  absl::Status error = absl::OkStatus();
   // Avoid malloc for small number of elements.
   enum { inline_elements = 96 };
   struct pollfd pollfd_space[inline_elements];
-  bool was_kicked_ext = false;
   PollEventHandle* watcher_space[inline_elements];
-  Poller::Events pending_events;
-  int timeout_ms =
-      static_cast<int>(grpc_event_engine::experimental::Milliseconds(timeout));
   mu_.Lock();
+  if (absl::exchange(was_kicked_, false) &&
+      absl::exchange(was_kicked_ext_, false)) {
+    // External kick. Need to break out.
+    mu_.Unlock();
+    return absl::Status(absl::StatusCode::kInternal, "Kicked");
+  }
+
   // Start polling, and keep doing so while we're being asked to
   // re-evaluate our pollers (this allows poll() based pollers to
   // ensure they don't miss wakeups).
-  while (pending_events.empty() && timeout_ms >= 0) {
+  while (error.ok() && pending_events.empty() &&
+         deadline > grpc_core::Timestamp::FromTimespecRoundDown(
+                        gpr_now(GPR_CLOCK_MONOTONIC))) {
+    int timeout = PollDeadlineToMillisTimeout(deadline);
     int r = 0;
     size_t i;
     nfds_t pfd_count;
     struct pollfd* pfds;
     PollEventHandle** watchers;
-    // Estimate start time for a poll iteration.
-    grpc_core::Timestamp start = grpc_core::Timestamp::FromTimespecRoundDown(
-        gpr_now(GPR_CLOCK_MONOTONIC));
     if (num_poll_handles_ + 2 <= inline_elements) {
       pfds = pollfd_space;
       watchers = watcher_space;
@@ -705,8 +686,8 @@ Poller::WorkResult PollPoller::Work(EventEngine::Duration timeout) {
     }
     mu_.Unlock();
 
-    if (!use_phony_poll_ || timeout_ms == 0) {
-      r = poll(pfds, pfd_count, timeout_ms);
+    if (!use_phony_poll_ || timeout == 0) {
+      r = poll(pfds, pfd_count, timeout);
     } else {
       gpr_log(GPR_ERROR,
               "Attempted a blocking poll when declared non-polling.");
@@ -715,11 +696,9 @@ Poller::WorkResult PollPoller::Work(EventEngine::Duration timeout) {
 
     if (r <= 0) {
       if (r < 0 && errno != EINTR) {
-        // Abort fail here.
-        gpr_log(GPR_ERROR,
-                "(event_engine) PollPoller:%p encountered poll error: %s", this,
-                strerror(errno));
-        GPR_ASSERT(false);
+        // Save the error code
+        error = absl::Status(absl::StatusCode::kInternal,
+                             absl::StrCat("poll: ", strerror(errno)));
       }
 
       for (i = 1; i < pfd_count; i++) {
@@ -730,22 +709,25 @@ Poller::WorkResult PollPoller::Work(EventEngine::Duration timeout) {
           head->SetWatched(-1);
           // This fd was Watched with a watch mask > 0.
           if (watch_mask > 0 && r < 0) {
-            // This case implies the fd was polled (since watch_mask > 0 and
-            // the poll returned an error. Mark the fds as both readable and
+            // This case implies the fd was polled (since watch_mask > 0 and the
+            // poll returned an error. Mark the fds as both readable and
             // writable.
-            if (EventEngine::Closure* closure = head->EndPollLocked(1, 1)) {
-              // Its safe to add to list of pending events because
-              // EndPollLocked returns a +ve number only when the handle is
-              // not orphaned. But an orphan might be initiated on the handle
-              // after this Work() method returns and before the next Work()
-              // method is invoked.
-              pending_events.push_back(closure);
+            if (head->EndPollLocked(1, 1)) {
+              // Its safe to add to list of pending events because EndPollLocked
+              // returns a +ve number only when the handle is not orphaned.
+              // But an orphan might be initiated on the handle after this
+              // Work() method returns and before the next Work() method is
+              // invoked. To prevent the handle from being destroyed until the
+              // pending events are processed, take a Ref() of the handle. This
+              // Ref() will be Unref'ed in ExecutePendingActions.
+              head->Ref();
+              pending_events.push_back(head);
             }
           } else {
-            // In this case, (1) watch_mask > 0 && r == 0 or (2) watch_mask ==
-            // 0 and r < 0 or (3) watch_mask == 0 and r == 0. For case-1, no
-            // events are pending on the fd even though the fd was polled. For
-            // case-2 and 3, the fd was not polled
+            // In this case, (1) watch_mask > 0 && r == 0 or (2) watch_mask == 0
+            // and r < 0 or (3) watch_mask == 0 and r == 0.
+            // For case-1, no events are pending on the fd even though the fd
+            // was polled. For case-2 and 3, the fd was not polled
             head->EndPollLocked(0, 0);
           }
         } else {
@@ -777,15 +759,17 @@ Poller::WorkResult PollPoller::Work(EventEngine::Duration timeout) {
             head->SetPollhup(true);
           }
           head->SetWatched(-1);
-          if (EventEngine::Closure* closure =
-                  head->EndPollLocked(pfds[i].revents & kPollinCheck,
-                                      pfds[i].revents & kPolloutCheck)) {
+          if (head->EndPollLocked(pfds[i].revents & kPollinCheck,
+                                  pfds[i].revents & kPolloutCheck)) {
             // Its safe to add to list of pending events because EndPollLocked
             // returns a +ve number only when the handle is not orphaned.
             // But an orphan might be initiated on the handle after this
             // Work() method returns and before the next Work() method is
-            // invoked.
-            pending_events.push_back(closure);
+            // invoked. To prevent the handle from being destroyed until the
+            // pending events are processed, take a Ref() of the handle. This
+            // Ref() will be Unref'ed in ExecutePendingActions.
+            head->Ref();
+            pending_events.push_back(head);
           }
         }
         lock.Release();
@@ -797,25 +781,16 @@ Poller::WorkResult PollPoller::Work(EventEngine::Duration timeout) {
     if (pfds != pollfd_space) {
       gpr_free(pfds);
     }
-
-    // End of poll iteration. Update how much time is remaining.
-    timeout_ms -= PollElapsedTimeToMillis(start);
     mu_.Lock();
     if (absl::exchange(was_kicked_, false) &&
         absl::exchange(was_kicked_ext_, false)) {
       // External kick. Need to break out.
-      was_kicked_ext = true;
+      error = absl::Status(absl::StatusCode::kInternal, "Kicked");
       break;
     }
   }
   mu_.Unlock();
-  if (pending_events.empty()) {
-    if (was_kicked_ext) {
-      return Poller::Kicked{};
-    }
-    return Poller::DeadlineExceeded{};
-  }
-  return pending_events;
+  return error;
 }
 
 void PollPoller::Shutdown() {
@@ -839,9 +814,6 @@ PollPoller* GetPollPoller(Scheduler* scheduler, bool use_phony_poll) {
 namespace grpc_event_engine {
 namespace iomgr_engine {
 
-using ::grpc_event_engine::experimental::EventEngine;
-using ::grpc_event_engine::experimental::Poller;
-
 PollPoller::PollPoller(Scheduler* /* engine */) {
   GPR_ASSERT(false && "unimplemented");
 }
@@ -855,7 +827,8 @@ EventHandle* PollPoller::CreateHandle(int /*fd*/, absl::string_view /*name*/,
   GPR_ASSERT(false && "unimplemented");
 }
 
-Poller::WorkResult PollPoller::Work(EventEngine::Duration /*timeout*/) {
+absl::Status PollPoller::Work(grpc_core::Timestamp /*deadline*/,
+                              std::vector<EventHandle*>& /*pending_events*/) {
   GPR_ASSERT(false && "unimplemented");
 }
 
