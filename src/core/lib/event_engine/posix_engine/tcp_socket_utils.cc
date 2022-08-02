@@ -38,10 +38,10 @@
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/event_engine/iomgr_engine/tcp_posix_socket_utils.h"
+#include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 
 namespace grpc_event_engine {
-namespace iomgr_engine {
+namespace posix_engine {
 
 using ::grpc_event_engine::experimental::EndpointConfig;
 using ::grpc_event_engine::experimental::EventEngine;
@@ -747,5 +747,5 @@ static absl::StatusOr<PosixSocket> PosixSocket::CreateDualStackSocket(
 
 #endif /* GRPC_POSIX_SOCKET_UTILS_COMMON */
 
-}  // namespace iomgr_engine
+}  // namespace posix_engine
 }  // namespace grpc_event_engine

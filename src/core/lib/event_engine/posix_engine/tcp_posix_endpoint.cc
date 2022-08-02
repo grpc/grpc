@@ -13,7 +13,7 @@
 // limitations under the License.
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/event_engine/iomgr_engine/tcp_posix_endpoint.h"
+#include "src/core/lib/event_engine/posix_engine/tcp_posix_endpoint.h"
 
 #include <unordered_map>
 
@@ -51,7 +51,7 @@ typedef size_t msg_iovlen_type;
 #endif
 
 namespace grpc_event_engine {
-namespace iomgr_engine {
+namespace posix_engine {
 
 using ::grpc_event_engine::experimental::EndpointConfig;
 using ::grpc_event_engine::experimental::EventEngine;
@@ -415,7 +415,7 @@ class TcpZerocopySendCtx {
 PosixEndpoint::PosixEndpoint(EventHandle* handle,
                              const PosixTcpOptions& options)
     : handle_(handle), poller_(handle->Poller()), options_(options) {
-  fd_= handle_->WrappedFd();
+  fd_ = handle_->WrappedFd();
   GPR_ASSERT(options.resource_quota != nullptr);
   memory_owner_ =
       options.resource_quota->memory_quota()->CreateMemoryOwner(peer_string);
@@ -507,5 +507,5 @@ PosixEndpoint::PosixEndpoint(EventHandle* handle,
   }
 }
 
-}  // namespace iomgr_engine
+}  // namespace posix_engine
 }  // namespace grpc_event_engine

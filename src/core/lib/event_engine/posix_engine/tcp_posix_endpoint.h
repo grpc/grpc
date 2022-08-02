@@ -21,13 +21,13 @@
 #include "grpc/event_engine/slice_buffer.h"
 #include <grpc/event_engine/event_engine.h>
 
-#include "src/core/lib/event_engine/iomgr_engine/event_poller.h"
-#include "src/core/lib/event_engine/iomgr_engine/iomgr_engine_closure.h"
-#include "src/core/lib/event_engine/iomgr_engine/tcp_posix_socket_utils.h"
+#include "src/core/lib/event_engine/posix_engine/event_poller.h"
+#include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
+#include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/iomgr/port.h"
 
 namespace grpc_event_engine {
-namespace iomgr_engine {
+namespace posix_engine {
 
 using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::SliceBuffer;
@@ -76,10 +76,10 @@ class PosixEndpoint : public EventEngine::Endpoint {
   // byte within outgoing_buffer's slices[0] to write next.
   size_t outgoing_byte_idx_ = 0;
 
-  IomgrEngineClosure* on_read_ = nullptr;
-  IomgrEngineClosure* on_write_ = nullptr;
-  IomgrEngineClosure* on_error_ = nullptr;
-  IomgrEngineClosure* release_fd_cb_ = nullptr;
+  PosixEngineClosure* on_read_ = nullptr;
+  PosixEngineClosure* on_write_ = nullptr;
+  PosixEngineClosure* on_error_ = nullptr;
+  PosixEngineClosure* release_fd_cb_ = nullptr;
   int* release_fd_ = nullptr;
 
   EventEngine::ResolvedAddress peer_address_;
@@ -111,7 +111,7 @@ class PosixEndpoint : public EventEngine::Endpoint {
   PosixTcpOptions options_;
 };
 
-}  // namespace iomgr_engine
+}  // namespace posix_engine
 }  // namespace grpc_event_engine
 
 #endif  // GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_TCP_POSIX_ENDPOINT_H

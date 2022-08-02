@@ -112,9 +112,8 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:event_engine_common",
-        "//:iomgr_ee_tcp_posix_socket_utils",
+        "//:posix_event_engine_tcp_socket_utils",
         "//:socket_mutator",
-        "//test/core/util:grpc_suppressions",
         "//test/core/util:grpc_test_util",
     ],
 )

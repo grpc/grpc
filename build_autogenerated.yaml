@@ -10142,14 +10142,18 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/event_engine/iomgr_engine/tcp_posix_socket_utils.h
+  - src/core/lib/event_engine/posix_engine/tcp_socket_utils.h
   - src/core/lib/iomgr/socket_mutator.h
   src:
-  - src/core/lib/event_engine/iomgr_engine/tcp_posix_socket_utils.cc
+  - src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc
   - src/core/lib/iomgr/socket_mutator.cc
-  - test/core/event_engine/iomgr_event_engine/tcp_posix_socket_utils_test.cc
+  - test/core/event_engine/posix/tcp_posix_socket_utils_test.cc
   deps:
   - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
   uses_polling: false
 - name: tcp_server_posix_test
   gtest: true

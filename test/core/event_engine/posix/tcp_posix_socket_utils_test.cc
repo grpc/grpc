@@ -29,12 +29,12 @@
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
-#include "src/core/lib/event_engine/iomgr_engine/tcp_posix_socket_utils.h"
+#include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/socket_mutator.h"
 
 namespace grpc_event_engine {
-namespace iomgr_engine {
+namespace posix_engine {
 
 namespace {
 
@@ -159,7 +159,7 @@ TEST(TcpPosixSocketUtilsTest, SocketOptionsTest) {
   close(sock);
 }
 
-}  // namespace iomgr_engine
+}  // namespace posix_engine
 }  // namespace grpc_event_engine
 
 int main(int argc, char** argv) {

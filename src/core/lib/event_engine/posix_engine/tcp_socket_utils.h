@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_TCP_POSIX_SOCKET_UTILS_H
-#define GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_TCP_POSIX_SOCKET_UTILS_H
+#ifndef GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_TCP_SOCKET_UTILS_H
+#define GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_TCP_SOCKET_UTILS_H
 
 #include <grpc/support/port_platform.h>
 
@@ -36,7 +36,7 @@
 #endif /* ifdef GRPC_LINUX_ERRQUEUE */
 
 namespace grpc_event_engine {
-namespace iomgr_engine {
+namespace posix_engine {
 
 using ::grpc_event_engine::experimental::EventEngine;
 
@@ -254,7 +254,7 @@ class PosixSocket {
   int fd_;
 };
 
-}  // namespace iomgr_engine
+}  // namespace posix_engine
 }  // namespace grpc_event_engine
 
-#endif /* GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_TCP_POSIX_SOCKET_UTILS_H */
+#endif  // GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_TCP_SOCKET_UTILS_H
