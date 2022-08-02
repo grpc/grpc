@@ -18,19 +18,15 @@
 
 #include <stddef.h>
 
-#include <algorithm>
 #include <map>
 #include <memory>
-#include <set>
 #include <string>
 #include <utility>
-#include <vector>
 
 #include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
-#include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/impl/codegen/connectivity_state.h>
@@ -90,8 +86,8 @@ class XdsClusterManagerLbConfig : public LoadBalancingPolicy::Config {
 
   XdsClusterManagerLbConfig(XdsClusterManagerLbConfig&& other) noexcept
       : cluster_map_(std::move(other.cluster_map_)) {}
-  XdsClusterManagerLbConfig& operator=(XdsClusterManagerLbConfig&& other)
-      noexcept {
+  XdsClusterManagerLbConfig& operator=(
+      XdsClusterManagerLbConfig&& other) noexcept {
     cluster_map_ = std::move(other.cluster_map_);
     return *this;
   }

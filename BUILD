@@ -4453,6 +4453,7 @@ grpc_cc_library(
         "grpc_lb_subchannel_list",
         "grpc_trace",
         "json",
+        "json_object_loader",
         "orphanable",
         "ref_counted",
         "ref_counted_ptr",
@@ -4500,6 +4501,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "gpr_platform",
+        "json",
         "json_object_loader",
         "time",
     ],
@@ -4533,7 +4535,6 @@ grpc_cc_library(
         "iomgr_fwd",
         "iomgr_timer",
         "json",
-        "json_util",
         "orphanable",
         "ref_counted",
         "ref_counted_ptr",

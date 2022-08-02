@@ -36,8 +36,6 @@
 #include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/variant.h"
 
@@ -67,7 +65,6 @@
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/json/json.h"
-#include "src/core/lib/json/json_util.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
@@ -1114,8 +1111,7 @@ const JsonLoaderInterface* OutlierDetectionConfig::JsonLoader() {
   return loader;
 }
 
-void OutlierDetectionConfig::JsonPostLoad(const Json& json,
-                                          ErrorList* errors) {
+void OutlierDetectionConfig::JsonPostLoad(const Json& json, ErrorList* errors) {
   if (json.object_value().find("maxEjectionTime") ==
       json.object_value().end()) {
     max_ejection_time = std::max(base_ejection_time, Duration::Seconds(300));

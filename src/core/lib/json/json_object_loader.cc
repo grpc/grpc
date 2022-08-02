@@ -59,8 +59,8 @@ absl::Status ErrorList::status(absl::string_view prefix) const {
           absl::StrCat("field:", p.first, " error:", p.second[0]));
     }
   }
-  return absl::InvalidArgumentError(absl::StrCat(
-      prefix, ": [", absl::StrJoin(errors, "; "), "]"));
+  return absl::InvalidArgumentError(
+      absl::StrCat(prefix, ": [", absl::StrJoin(errors, "; "), "]"));
 }
 
 namespace json_detail {
