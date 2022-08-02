@@ -16,15 +16,14 @@
 
 #include "src/core/lib/promise/sleep.h"
 
-#include <atomic>
-
-#include "activity.h"
+#include <utility>
 
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/event_engine/event_engine_factory.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/promise/activity.h"
 
 namespace grpc_core {
 
