@@ -20,8 +20,6 @@
 
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
-#include "absl/synchronization/mutex.h"
-#include "absl/types/variant.h"
 #include "absl/utility/utility.h"
 
 #include <grpc/event_engine/event_engine.h>
@@ -36,11 +34,8 @@ namespace iomgr_engine {
 class IomgrEngineClosure final
     : public grpc_event_engine::experimental::EventEngine::Closure {
  public:
-  struct Ok {};
-  struct Delete {};
-  using Result = absl::variant<Ok, Delete>;
   IomgrEngineClosure() = default;
-  IomgrEngineClosure(absl::AnyInvocable<Result(absl::Status)> cb,
+  IomgrEngineClosure(absl::AnyInvocable<void(absl::Status)> cb,
                      bool is_permanent)
       : cb_(std::move(cb)),
         is_permanent_(is_permanent),
@@ -48,45 +43,34 @@ class IomgrEngineClosure final
   ~IomgrEngineClosure() final = default;
   void SetStatus(absl::Status status) { status_ = status; }
   void Run() override {
-    // A mutex is required to ensure only one active thread is executing the
-    // enclosed any-invocable callback. For e.g, an IomgrEngineClosure scheduled
-    // for a NotifyOnRead operation may execute and immediately schedule another
-    // NotifyOnRead operation within the callback body. The second NotifyOnRead
-    // request may also be served immediately before the first callback exits.
-    // This would lead to potential races in the callback body and complicate
-    // cleanup behaviour. To prevent this, we use a mutex to ensure sequential
-    // access to the callback. In previous iomgr implementations, ExecCtx played
-    // this role and provided sequential access to the callback.
-    //
-    // This mutex should not lead to contention because it only ensures
-    // sequential access between two consequtive read or two consequetive write
-    // handling operations.
-    absl::ReleasableMutexLock lock(&mu_);
-    auto result = cb_(absl::exchange(status_, absl::OkStatus()));
-    if (!is_permanent_ || absl::holds_alternative<Delete>(result)) {
-      lock.Release();
+    // We need to read the is_permanent_ variable before executing the
+    // enclosed callback. This is because a permanent closure may delete this
+    // object within the callback itself and thus reading this variable after
+    // the callback execution is not safe.
+    if ABSL_PREDICT_FALSE (!is_permanent_) {
+      cb_(absl::exchange(status_, absl::OkStatus()));
       delete this;
+    } else {
+      cb_(absl::exchange(status_, absl::OkStatus()));
     }
   }
 
-  // This closure clean doesn't itself up after execution by default. To
-  // gracefully cleanup the closure, the enclosed any-invocable callback must
-  // return IomgrEngineclosure::Delete{}.
+  // This closure clean doesn't itself up after execution by default. The caller
+  // should take care if its lifetime.
   static IomgrEngineClosure* ToPermanentClosure(
-      absl::AnyInvocable<Result(absl::Status)> cb) {
+      absl::AnyInvocable<void(absl::Status)> cb) {
     return new IomgrEngineClosure(std::move(cb), true);
   }
 
   // This closure clean's itself up after execution. It is expected to be
   // used only in tests.
   static IomgrEngineClosure* TestOnlyToClosure(
-      absl::AnyInvocable<Result(absl::Status)> cb) {
+      absl::AnyInvocable<void(absl::Status)> cb) {
     return new IomgrEngineClosure(std::move(cb), false);
   }
 
  private:
-  absl::Mutex mu_;
-  absl::AnyInvocable<Result(absl::Status)> cb_;
+  absl::AnyInvocable<void(absl::Status)> cb_;
   bool is_permanent_ = false;
   absl::Status status_;
 };
