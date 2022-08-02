@@ -101,10 +101,8 @@ class OutlierDetectionLbConfig : public LoadBalancingPolicy::Config {
   absl::string_view name() const override { return kOutlierDetection; }
 
   bool CountingEnabled() const {
-    return (
-        outlier_detection_config_.interval != Duration::Infinity() &&
-        (outlier_detection_config_.success_rate_ejection.has_value() ||
-         outlier_detection_config_.failure_percentage_ejection.has_value()));
+    return outlier_detection_config_.success_rate_ejection.has_value() ||
+           outlier_detection_config_.failure_percentage_ejection.has_value();
   }
 
   const OutlierDetectionConfig& outlier_detection_config() const {
@@ -304,6 +302,11 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
         }
       }
       return false;
+    }
+
+    void DisableEjection() {
+      Uneject();
+      multiplier_ = 0;
     }
 
    private:
@@ -644,6 +647,9 @@ void OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
                   "[outlier_detection_lb %p] adding map entry for %s (%p)",
                   this, address_key.c_str(), subchannel_state.get());
         }
+      } else if (!config_->CountingEnabled()) {
+        // If counting is not enabled, reset state.
+        subchannel_state->DisableEjection();
       }
       current_addresses.emplace(address_key);
     }
@@ -1093,7 +1099,7 @@ OutlierDetectionConfig::FailurePercentageEjection::JsonLoader() {
 const JsonLoaderInterface* OutlierDetectionConfig::JsonLoader() {
   static const auto* loader =
       JsonObjectLoader<OutlierDetectionConfig>()
-          .Field("interval", &OutlierDetectionConfig::interval)
+          .OptionalField("interval", &OutlierDetectionConfig::interval)
           .OptionalField("baseEjectionTime",
                          &OutlierDetectionConfig::base_ejection_time)
           .OptionalField("maxEjectionTime",

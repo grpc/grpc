@@ -148,6 +148,12 @@ class MovedCppStringSliceRefCount : public grpc_slice_refcount {
   explicit MovedCppStringSliceRefCount(std::string&& str)
       : grpc_slice_refcount(Destroy), str_(std::move(str)) {}
 
+  uint8_t* data() {
+    return reinterpret_cast<uint8_t*>(const_cast<char*>(str_.data()));
+  }
+
+  size_t size() const { return str_.size(); }
+
  private:
   static void Destroy(grpc_slice_refcount* arg) {
     delete static_cast<MovedCppStringSliceRefCount*>(arg);
@@ -206,10 +212,10 @@ grpc_slice grpc_slice_from_cpp_string(std::string str) {
     slice.data.inlined.length = str.size();
     memcpy(GRPC_SLICE_START_PTR(slice), str.data(), str.size());
   } else {
-    slice.data.refcounted.bytes =
-        reinterpret_cast<uint8_t*>(const_cast<char*>(str.data()));
-    slice.data.refcounted.length = str.size();
-    slice.refcount = new grpc_core::MovedCppStringSliceRefCount(std::move(str));
+    auto* refcount = new grpc_core::MovedCppStringSliceRefCount(std::move(str));
+    slice.data.refcounted.bytes = refcount->data();
+    slice.data.refcounted.length = refcount->size();
+    slice.refcount = refcount;
   }
   return slice;
 }
