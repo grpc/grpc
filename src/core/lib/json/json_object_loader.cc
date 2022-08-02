@@ -184,5 +184,16 @@ bool LoadObject(const Json& json, const Element* elements, size_t num_elements,
   return true;
 }
 
+const Json* GetJsonObjectField(const Json::Object& json,
+                               absl::string_view field, ErrorList* errors,
+                               bool required) {
+  auto it = json.find(std::string(field));
+  if (it == json.end()) {
+    if (required) errors->AddError("field not present");
+    return nullptr;
+  }
+  return &it->second;
+}
+
 }  // namespace json_detail
 }  // namespace grpc_core
