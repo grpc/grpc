@@ -4377,7 +4377,6 @@ grpc_cc_library(
         "orphanable",
         "ref_counted_ptr",
         "server_address",
-        "time",
         "work_serializer",
     ],
 )
