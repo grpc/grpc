@@ -61,6 +61,7 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_object_loader.h"
 #include "src/core/lib/matchers/matchers.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/security/credentials/credentials.h"
@@ -82,9 +83,27 @@ constexpr int kMaxAggregateClusterRecursionDepth = 16;
 // Config for this LB policy.
 class CdsLbConfig : public LoadBalancingPolicy::Config {
  public:
-  explicit CdsLbConfig(std::string cluster) : cluster_(std::move(cluster)) {}
+  CdsLbConfig() = default;
+
+  CdsLbConfig(const CdsLbConfig&) = delete;
+  CdsLbConfig& operator=(const CdsLbConfig&) = delete;
+
+  CdsLbConfig(CdsLbConfig&& other) noexcept
+      : cluster_(std::move(other.cluster_)) {}
+  CdsLbConfig& operator=(CdsLbConfig&& other) noexcept {
+    cluster_ = std::move(other.cluster_);
+    return *this;
+  }
+
   const std::string& cluster() const { return cluster_; }
   absl::string_view name() const override { return kCds; }
+
+  static const JsonLoaderInterface* JsonLoader() {
+    static const auto* loader = JsonObjectLoader<CdsLbConfig>()
+                                    .Field("cluster", &CdsLbConfig::cluster_)
+                                    .Finish();
+    return loader;
+  }
 
  private:
   std::string cluster_;
@@ -734,23 +753,10 @@ class CdsLbFactory : public LoadBalancingPolicyFactory {
           "field:loadBalancingPolicy error:cds policy requires configuration. "
           "Please use loadBalancingConfig field of service config instead.");
     }
-    std::vector<std::string> errors;
-    // cluster name.
-    std::string cluster;
-    auto it = json.object_value().find("cluster");
-    if (it == json.object_value().end()) {
-      errors.emplace_back("required field 'cluster' not present");
-    } else if (it->second.type() != Json::Type::STRING) {
-      errors.emplace_back("field:cluster error:type should be string");
-    } else {
-      cluster = it->second.string_value();
-    }
-    if (!errors.empty()) {
-      return absl::InvalidArgumentError(
-          absl::StrCat("errors parsing CDS LB policy config: [",
-                       absl::StrJoin(errors, "; "), "]"));
-    }
-    return MakeRefCounted<CdsLbConfig>(std::move(cluster));
+    auto config = LoadFromJson<CdsLbConfig>(
+        json, "errors validating cds LB policy config");
+    if (!config.ok()) return config.status();
+    return MakeRefCounted<CdsLbConfig>(std::move(*config));
   }
 };
 
