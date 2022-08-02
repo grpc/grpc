@@ -46,7 +46,7 @@ GPR_GLOBAL_CONFIG_DEFINE_INT32(
     grpc_experimental_max_quota_buffer_size, 1024 * 1024,
     "Maximum size for one memory allocators buffer size against a quota");
 GPR_GLOBAL_CONFIG_DEFINE_INT32(
-    grpc_experimental_resource_quota_set_point, 60,
+    grpc_experimental_resource_quota_set_point, 95,
     "Ask the resource quota to target this percentage of total quota usage.");
 
 namespace grpc_core {
@@ -487,6 +487,78 @@ BasicMemoryQuota::InstantaneousPressureAndMaxRecommendedAllocationSize() {
 
 namespace memory_quota_detail {
 
+double PressureController::Update(double error) {
+  bool is_low = error < 0;
+  bool was_low = absl::exchange(last_was_low_, is_low);
+  double new_control;  // leave unset to compiler can note bad branches
+  if (is_low && was_low) {
+    // Memory pressure is too low this round, and was last round too.
+    // If we have reached the min reporting value last time, then we will report
+    // the same value again this time and can start to increase the ticks_same_
+    // counter.
+    if (last_control_ == min_) {
+      ticks_same_++;
+      if (ticks_same_ >= max_ticks_same_) {
+        // If it's been the same for too long, reduce the min reported value
+        // down towards zero.
+        min_ /= 2.0;
+        ticks_same_ = 0;
+      }
+    }
+    // Target the min reporting value.
+    new_control = min_;
+  } else if (!is_low && !was_low) {
+    // Memory pressure is high, and was high previously.
+    ticks_same_++;
+    if (ticks_same_ >= 100) {
+      // It's been high for too long, increase the max reporting value up
+      // towards 1.0.
+      max_ = (1.0 + max_) / 2.0;
+      ticks_same_ = 0;
+    }
+    // Target the max reporting value.
+    new_control = max_;
+  } else if (is_low) {
+    // Memory pressure is low, but was high last round.
+    // Target the min reporting value, but first update it to be closer to the
+    // current max (that we've been reporting lately).
+    // In this way the min will gradually climb towards the max as we find a
+    // stable point.
+    // If this is too high, then we'll eventually move it back towards zero.
+    ticks_same_ = 0;
+    min_ = (min_ + max_) / 2.0;
+    new_control = min_;
+  } else {
+    // Memory pressure is high, but was low last round.
+    // Target the max reporting value, but first update it to be closer to the
+    // last reported value.
+    // The first switchover will have last_control_ being 0, and max_ being 2,
+    // so we'll immediately choose 1.0 which will tend to really slow down
+    // progress.
+    // If we end up targetting too low, we'll eventually move it back towards
+    // 1.0 after max_ticks_same_ ticks.
+    ticks_same_ = 0;
+    max_ = (last_control_ + max_) / 2.0;
+    new_control = max_;
+  }
+  // If the control value is decreasing we do it slowly. This avoids rapid
+  // oscillations.
+  // (If we want a control value that's higher than the last one we snap
+  // immediately because it's likely that memory pressure is growing unchecked).
+  if (new_control < last_control_) {
+    new_control =
+        std::max(new_control, last_control_ - max_reduction_per_tick_ / 1000.0);
+  }
+  last_control_ = new_control;
+  return new_control;
+}
+
+std::string PressureController::DebugString() const {
+  return absl::StrCat(last_was_low_ ? "low" : "high", " min=", min_,
+                      " max=", max_, " ticks=", ticks_same_,
+                      " last_control=", last_control_);
+}
+
 double PressureTracker::AddSampleAndGetEstimate(double sample) {
   static const double kSetPoint =
       GPR_GLOBAL_CONFIG_GET(grpc_experimental_resource_quota_set_point) / 100.0;
@@ -502,20 +574,20 @@ double PressureTracker::AddSampleAndGetEstimate(double sample) {
   if (sample >= 0.99) {
     report_.store(1.0, std::memory_order_relaxed);
   }
-  update_.Tick([&](Duration dt) {
+  update_.Tick([&](Duration) {
     // Reset the round tracker with the new sample.
     const double current_estimate =
         max_this_round_.exchange(sample, std::memory_order_relaxed);
     double report;
     if (current_estimate > 0.99) {
       // Under very high memory pressure we... just max things out.
-      report = pid_.Update(1e99, 1.0);
+      report = controller_.Update(1e99);
     } else {
-      report = pid_.Update(current_estimate - kSetPoint, dt.seconds());
+      report = controller_.Update(current_estimate - kSetPoint);
     }
     if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
-      gpr_log(GPR_INFO, "RQ: pressure:%lf report:%lf error_integral:%lf",
-              current_estimate, report, pid_.error_integral());
+      gpr_log(GPR_INFO, "RQ: pressure:%lf report:%lf controller:%s",
+              current_estimate, report, controller_.DebugString().c_str());
     }
     report_.store(report, std::memory_order_relaxed);
   });

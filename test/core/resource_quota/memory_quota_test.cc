@@ -166,12 +166,33 @@ TEST(MemoryQuotaTest, NoBunchingIfIdle) {
 
 }  // namespace testing
 
+namespace memory_quota_detail {
+namespace testing {
+
+//
+// PressureControllerTest
+//
+
+TEST(PressureControllerTest, Init) {
+  PressureController c{100, 3};
+  EXPECT_EQ(c.Update(-1.0), 0.0);
+  EXPECT_EQ(c.Update(1.0), 1.0);
+}
+
+TEST(PressureControllerTest, LowDecays) {
+  PressureController c{100, 3};
+  EXPECT_EQ(c.Update(1.0), 1.0);
+  double last = 1.0;
+  while (last > 1e-30) {
+    double x = c.Update(-1.0);
+    EXPECT_LE(x, last);
+    last = x;
+  }
+}
+
 //
 // PressureTrackerTest
 //
-
-namespace memory_quota_detail {
-namespace testing {
 
 TEST(PressureTrackerTest, NoOp) { PressureTracker(); }
 
@@ -209,7 +230,7 @@ TEST(PressureTrackerTest, Decays) {
     if (new_reported < 0.1) break;
   }
   // Verify the above happened in a somewhat reasonable time.
-  ASSERT_LE(cur_ms, got_full + 200000);
+  ASSERT_LE(cur_ms, got_full + 1000000);
 }
 
 TEST(PressureTrackerTest, ManyThreads) {
