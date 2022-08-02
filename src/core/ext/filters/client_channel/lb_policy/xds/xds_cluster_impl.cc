@@ -705,10 +705,11 @@ struct DropCategory {
   uint32_t requests_per_million;
 
   static const JsonLoaderInterface* JsonLoader() {
-    static const auto* loader = JsonObjectLoader<DropCategory>()
-                                    .Field("category", &DropCategory::category)
-                                    .Field("category", &DropCategory::category)
-                                    .Finish();
+    static const auto* loader =
+        JsonObjectLoader<DropCategory>()
+            .Field("category", &DropCategory::category)
+            .Field("requests_per_million", &DropCategory::requests_per_million)
+            .Finish();
     return loader;
   }
 };
