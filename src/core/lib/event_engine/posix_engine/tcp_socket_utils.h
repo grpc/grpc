@@ -133,11 +133,11 @@ int Accept4(int sockfd,
             grpc_event_engine::experimental::EventEngine::ResolvedAddress& addr,
             int nonblock, int cloexec);
 
-class PosixSocket {
+class PosixSocketWrapper {
  public:
-  explicit PosixSocket(int fd) : fd_(fd) { GPR_ASSERT(fd_ > 0); }
+  explicit PosixSocketWrapper(int fd) : fd_(fd) { GPR_ASSERT(fd_ > 0); }
 
-  ~PosixSocket() = default;
+  ~PosixSocketWrapper() = default;
 
   // Set socket to use zerocopy
   absl::Status SetSocketZeroCopy();
@@ -187,12 +187,16 @@ class PosixSocket {
   absl::Status ApplySocketMutatorInOptions(grpc_fd_usage usage,
                                            const PosixTcpOptions& options);
 
+  // Return LocalAddress as EventEngine::ResolvedAddress
   absl::StatusOr<EventEngine::ResolvedAddress> LocalAddress();
 
+  // Return PeerAddress as EventEngine::ResolvedAddress
   absl::StatusOr<EventEngine::ResolvedAddress> PeerAddress();
 
+  // Return LocalAddress as string
   absl::StatusOr<std::string> LocalAddressString();
 
+  // Return PeerAddress as string
   absl::StatusOr<std::string> PeerAddressString();
 
   // An enum to keep track of IPv4/IPv6 socket modes.
@@ -241,10 +245,11 @@ class PosixSocket {
   // If addr is AF_INET, AF_UNIX, or anything else, then this is similar to
   // calling socket() directly.
 
-  // Returns an PosixSocket on success, otherwise returns a not-OK absl::Status
+  // Returns an PosixSocketWrapper on success, otherwise returns a not-OK
+  // absl::Status
 
   // The dsmode output indicates which address family was actually created.
-  static absl::StatusOr<PosixSocket> CreateDualStackSocket(
+  static absl::StatusOr<PosixSocketWrapper> CreateDualStackSocket(
       std::function<int(int /*domain*/, int /*type*/, int /*protocol*/)>
           socket_factory,
       const experimental::EventEngine::ResolvedAddress& addr, int type,

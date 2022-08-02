@@ -35,7 +35,7 @@ class Scheduler {
   virtual ~Scheduler() = default;
 };
 
-class EventPoller;
+class PosixEventPoller;
 
 class EventHandle {
  public:
@@ -80,7 +80,7 @@ class EventHandle {
   // Returns true if the handle has been shutdown.
   virtual bool IsHandleShutdown() = 0;
   // Returns the poller which was used to create this handle.
-  virtual EventPoller* Poller() = 0;
+  virtual PosixEventPoller* Poller() = 0;
   virtual ~EventHandle() = default;
 };
 

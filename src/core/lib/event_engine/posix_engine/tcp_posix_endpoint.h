@@ -21,6 +21,7 @@
 #include "grpc/event_engine/slice_buffer.h"
 #include <grpc/event_engine/event_engine.h>
 
+#include "src/core/lib/event_engine/posix_engine/buffer_list.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
@@ -35,16 +36,18 @@ using ::grpc_event_engine::experimental::SliceBuffer;
 class TcpZerocopySendCtx;
 class TcpZerocopySendRecord;
 
-class PosixEndpoint : public EventEngine::Endpoint {
+class PosixStreamSocket {
  public:
-  PosixEndpoint(EventHandle* handle, const PosixTcpOptions& options);
-  ~PosixEndpoint() override;
+  PosixStreamSocket(EventHandle* handle, PosixEngineClosure* on_done,
+                    EventEngine* engine, const PosixTcpOptions& options);
+  ~PosixStreamSocket();
   void Read(absl::AnyInvocable<void(absl::Status)> on_read, SliceBuffer* buffer,
-            const ReadArgs* args) override;
+            const EventEngine::Endpoint::ReadArgs* args);
   void Write(absl::AnyInvocable<void(absl::Status)> on_writable,
-             SliceBuffer* data, const WriteArgs* args) override;
-  const EventEngine::ResolvedAddress& GetPeerAddress() const override;
-  const EventEngine::ResolvedAddress& GetLocalAddress() const override;
+             SliceBuffer* data, const EventEngine::Endpoint::WriteArgs* args);
+  const EventEngine::ResolvedAddress& GetPeerAddress() const;
+  const EventEngine::ResolvedAddress& GetLocalAddress() const;
+  void MaybeShutdown(absl::Status why);
   void Ref() { ref_count_.fetch_add(1, std::memory_order_relaxed); }
   void Unref() {
     if (ref_count_.fetch_sub(1, std::memory_order_acq_rel) == 1) {
@@ -53,6 +56,35 @@ class PosixEndpoint : public EventEngine::Endpoint {
   }
 
  private:
+  void HandleWrite(absl::Status status);
+  void HandleError(absl::Status status);
+  void HandleRead(absl::Status status);
+  void MaybeMakeReadSlices() ABSL_EXCLUSIVE_LOCKS_REQUIRED(read_mu_);
+  bool TcpDoRead(absl::Status& status) ABSL_EXCLUSIVE_LOCKS_REQUIRED(read_mu_);
+  void FinishEstimate();
+  void AddToEstimate(size_t bytes);
+  void MaybePostReclaimer() ABSL_EXCLUSIVE_LOCKS_REQUIRED(read_mu_);
+  void PerformReclamation() ABSL_LOCKS_EXCLUDED(read_mu_);
+  // Zero copy related helper methods.
+  TcpZerocopySendRecord* TcpGetSendZerocopyRecord(SliceBuffer& buf);
+  bool DoFlushZerocopy(TcpZerocopySendRecord* record, absl::Status& status);
+  bool TcpFlushZerocopy(TcpZerocopySendRecord* record, absl::Status& status);
+  bool TcpFlush(absl::Status& status);
+  void TcpShutdownTracedBufferList();
+#ifdef GRPC_LINUX_ERRQUEUE
+  // Reads \a cmsg to process zerocopy control messages.
+  bool ProcessErrors();
+  void ProcessZerocopy(struct cmsghdr* cmsg);
+  // Reads \a cmsg to derive timestamps from the control messages.
+  struct cmsghdr* ProcessTimestamp(msghdr* msg, struct cmsghdr* cmsg);
+  void ZerocopyDisableAndWaitForRemaining();
+  void UnrefMaybePutZerocopySendRecord(TcpZerocopySendRecord* record);
+  bool WriteWithTimestamps(struct msghdr* msg, size_t sending_length,
+                           ssize_t* sent_length, int* saved_errno,
+                           int additional_flags);
+#endif
+  absl::Mutex read_mu_;
+  absl::Mutex traced_buffer_mu_;
   int fd_;
   bool is_first_read_ = true;
   bool has_posted_reclaimer_ = false;
@@ -65,8 +97,7 @@ class PosixEndpoint : public EventEngine::Endpoint {
   // garbage after the last read.
   SliceBuffer last_read_buffer_;
 
-  absl::Mutex read_mu_;
-  SliceBuffer* incoming_buffer ABSL_GUARDED_BY(read_mu_) = nullptr;
+  SliceBuffer* incoming_buffer_ ABSL_GUARDED_BY(read_mu_) = nullptr;
   // bytes pending on the socket from the last read.
   int inq_ = 1;
   // cache whether kernel supports inq.
@@ -79,14 +110,17 @@ class PosixEndpoint : public EventEngine::Endpoint {
   PosixEngineClosure* on_read_ = nullptr;
   PosixEngineClosure* on_write_ = nullptr;
   PosixEngineClosure* on_error_ = nullptr;
-  PosixEngineClosure* release_fd_cb_ = nullptr;
-  int* release_fd_ = nullptr;
+  PosixEngineClosure* on_done_ = nullptr;
+  absl::AnyInvocable<void(absl::Status)> read_cb_;
+  absl::AnyInvocable<void(absl::Status)> write_cb_;
 
   EventEngine::ResolvedAddress peer_address_;
   EventEngine::ResolvedAddress local_address_;
 
   grpc_core::MemoryOwner memory_owner_;
   grpc_core::MemoryAllocator::Reservation self_reservation_;
+
+  void* outgoing_buffer_arg_ = nullptr;
 
   // A counter which starts at 0. It is initialized the first time the socket
   // options for collecting timestamps are set, and is incremented with each
@@ -106,9 +140,10 @@ class PosixEndpoint : public EventEngine::Endpoint {
   // A hint from upper layers specifying the minimum number of bytes that need
   // to be read to make meaningful progress.
   int min_progress_size_ = 1;
+  TracedBuffer* tb_head_ = nullptr;
   EventHandle* handle_;
-  EventPoller* poller_;
-  PosixTcpOptions options_;
+  PosixEventPoller* poller_;
+  EventEngine* engine_;
 };
 
 }  // namespace posix_engine
