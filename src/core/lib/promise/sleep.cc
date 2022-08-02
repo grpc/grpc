@@ -67,6 +67,9 @@ void Sleep::ActiveClosure::Run() {
 }
 
 void Sleep::ActiveClosure::Cancel() {
+  // If we cancel correctly then we must own both refs still and can simply
+  // delete without unreffing twice, otherwise try unreffing since this may be
+  // the last owned ref.
   if (GetDefaultEventEngine()->Cancel(timer_handle_) || refs_.Unref()) {
     delete this;
   }

@@ -68,6 +68,7 @@ class Sleep final {
 
    private:
     Waker waker_;
+    // One ref dropped by Run(), the other by Cancel().
     RefCount refs_{2};
     const grpc_event_engine::experimental::EventEngine::TaskHandle
         timer_handle_;
