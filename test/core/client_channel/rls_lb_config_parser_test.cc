@@ -192,9 +192,9 @@ TEST_F(RlsConfigParsingTest, InvalidRlsChannelServiceConfig) {
       ::testing::ContainsRegex(
           "errors parsing RLS LB policy config" CHILD_ERROR_TAG
           "field:routeLookupChannelServiceConfig" CHILD_ERROR_TAG
-          "Service config parsing errors: \\["
-          "error parsing client channel global parameters" CHILD_ERROR_TAG
-          "field:loadBalancingPolicy error:Unknown lb policy"))
+          "Service config parsing errors: \\[errors validating JSON: \\["
+          "field:loadBalancingPolicy error:"
+          "unknown LB policy \"unknown\"\\]\\]"))
       << service_config.status();
 }
 
