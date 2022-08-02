@@ -16,51 +16,55 @@
  *
  */
 
-#include <stdio.h>
-#include <string.h>
+#include <signal.h>
+#include <unistd.h>
 
-#include <thread>
+#include <memory>
+#include <string>
 
-#include <gtest/gtest.h>
-
-#include "absl/algorithm/container.h"
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
-#include "util/logging.h"
+#include "absl/strings/string_view.h"
 
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/time.h>
 #include <grpcpp/grpcpp.h>
-#include <grpcpp/support/client_callback.h>
+#include <grpcpp/security/server_credentials.h>
+#include <grpcpp/support/server_callback.h>
+#include <grpcpp/support/status.h>
 
-#include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/env.h"
-#include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/security/credentials/credentials.h"
-#include "src/cpp/client/secure_credentials.h"
 #include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
+#include "src/proto/grpc/testing/messages.pb.h"
 #include "test/core/memory_usage/memstats.h"
-#include "test/core/util/port.h"
-#include "test/core/util/subprocess.h"
 #include "test/core/util/test_config.h"
 
 class ServerCallbackImpl final
     : public grpc::testing::BenchmarkService::CallbackService {
+ public:
+  explicit ServerCallbackImpl(long before_server_memory)
+      : before_server_create(before_server_memory) {}
+
   grpc::ServerUnaryReactor* UnaryCall(
       grpc::CallbackServerContext* context,
       const grpc::testing::SimpleRequest* request,
       grpc::testing::SimpleResponse* response) override {
-    gpr_log(GPR_INFO, "RPC CALL RECEIVED");
+    gpr_log(GPR_INFO, "UnaryCall RPC CALL RECEIVED");
     auto* reactor = context->DefaultReactor();
     reactor->Finish(grpc::Status::OK);
     return reactor;
   }
+  grpc::ServerUnaryReactor* GetBeforeSnapshot(
+      grpc::CallbackServerContext* context,
+      const grpc::testing::SimpleRequest* request,
+      grpc::testing::MemorySize* response) override {
+    gpr_log(GPR_INFO, "BeforeSnapshot RPC CALL RECEIVED");
+    response->set_rss(before_server_create);
+    auto* reactor = context->DefaultReactor();
+    reactor->Finish(grpc::Status::OK);
+    return reactor;
+  }
+
+ private:
+  long before_server_create;
 };
 
 /* We have some sort of deadlock, so let's not exit gracefully for now.
@@ -85,8 +89,12 @@ int main(int argc, char** argv) {
   }
   gpr_log(GPR_INFO, "Server port: %s", server_address.c_str());
 
-  ServerCallbackImpl callback_server;
+  // Get initial process memory usage before creating server
+  long before_server_create = GetMemUsage();
+  gpr_log(GPR_INFO, "Server Before Mem: %ld", before_server_create);
+  ServerCallbackImpl callback_server(before_server_create);
   grpc::ServerBuilder builder;
+
   // Set the authentication mechanism.
   std::shared_ptr<grpc::ServerCredentials> creds =
       grpc::InsecureServerCredentials();

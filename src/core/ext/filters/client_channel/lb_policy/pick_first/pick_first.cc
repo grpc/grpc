@@ -229,6 +229,7 @@ void PickFirst::AttemptToConnectUsingLatestUpdateArgsLocked() {
   }
   latest_pending_subchannel_list_ = MakeOrphanable<PickFirstSubchannelList>(
       this, std::move(addresses), latest_update_args_.args);
+  latest_pending_subchannel_list_->StartWatchingLocked();
   // Empty update or no valid subchannels.  Put the channel in
   // TRANSIENT_FAILURE.
   if (latest_pending_subchannel_list_->num_subchannels() == 0) {

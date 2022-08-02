@@ -16,47 +16,28 @@
  *
  */
 
-#include <stdio.h>
-#include <string.h>
+#include <memory>
+#include <string>
 
-#include <gtest/gtest.h>
-
-#include "absl/algorithm/container.h"
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
-#include "util/logging.h"
+#include "absl/strings/string_view.h"
 
-#include <grpc/byte_buffer.h>
-#include <grpc/byte_buffer_reader.h>
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/time.h>
 #include <grpcpp/grpcpp.h>
-#include <grpcpp/support/client_callback.h>
+#include <grpcpp/security/credentials.h>
+#include <grpcpp/support/status.h>
 
-#include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/env.h"
-#include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/iomgr/sockaddr.h"
-#include "src/core/lib/iomgr/socket_utils.h"
-#include "src/core/lib/security/credentials/credentials.h"
-#include "src/cpp/client/secure_credentials.h"
 #include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
+#include "src/proto/grpc/testing/messages.pb.h"
 #include "test/core/memory_usage/memstats.h"
-#include "test/core/util/port.h"
-#include "test/core/util/subprocess.h"
 #include "test/core/util/test_config.h"
 
 ABSL_FLAG(std::string, target, "", "Target host:port");
 ABSL_FLAG(bool, secure, false, "Use SSL Credentials");
+ABSL_FLAG(int, server_pid, 99999, "Server's pid");
 
-void UnaryCall() {
+std::unique_ptr<grpc::testing::BenchmarkService::Stub> CreateStubForTest() {
   // Set the authentication mechanism.
   std::shared_ptr<grpc::ChannelCredentials> creds =
       grpc::InsecureChannelCredentials();
@@ -70,6 +51,12 @@ void UnaryCall() {
       CreateChannel(absl::GetFlag(FLAGS_target), creds);
   std::unique_ptr<grpc::testing::BenchmarkService::Stub> stub =
       grpc::testing::BenchmarkService::NewStub(channel);
+  return stub;
+}
+
+void UnaryCall() {
+  std::unique_ptr<grpc::testing::BenchmarkService::Stub> stub =
+      CreateStubForTest();
 
   // Start a call.
   struct CallParams {
@@ -88,6 +75,31 @@ void UnaryCall() {
                            });
 }
 
+// Get memory usage of server's process before the server is made
+long GetBeforeSnapshot() {
+  std::unique_ptr<grpc::testing::BenchmarkService::Stub> stub =
+      CreateStubForTest();
+
+  // Start a call.
+  struct CallParams {
+    grpc::ClientContext context;
+    grpc::testing::SimpleRequest request;
+    grpc::testing::MemorySize response;
+  };
+  CallParams* params = new CallParams();
+  stub->async()->GetBeforeSnapshot(
+      &params->context, &params->request, &params->response,
+      [params](const grpc::Status& status) {
+        if (status.ok()) {
+          gpr_log(GPR_INFO, "Before: %ld", params->response.rss());
+          gpr_log(GPR_INFO, "GetBeforeSnapshot succeeded.");
+        } else {
+          gpr_log(GPR_ERROR, "GetBeforeSnapshot failed.");
+        }
+      });
+  return params->response.rss();
+}
+
 int main(int argc, char** argv) {
   absl::ParseCommandLine(argc, argv);
   char* fake_argv[1];
@@ -100,7 +112,19 @@ int main(int argc, char** argv) {
   }
   gpr_log(GPR_INFO, "Client Target: %s", absl::GetFlag(FLAGS_target).c_str());
 
+  // Getting initial memory usage
+  long before_server_memory = GetBeforeSnapshot();
+  long before_client_memory = GetMemUsage();
+
   UnaryCall();
+
+  // Getting peak memory usage
+  long peak_server_memory = GetMemUsage(absl::GetFlag(FLAGS_server_pid));
+  long peak_client_memory = GetMemUsage();
+  gpr_log(GPR_INFO, "Before Server Mem: %ld", before_server_memory);
+  gpr_log(GPR_INFO, "Before Client Mem: %ld", before_client_memory);
+  gpr_log(GPR_INFO, "Peak Client Mem: %ld", peak_client_memory);
+  gpr_log(GPR_INFO, "Peak Server Mem: %ld", peak_server_memory);
   gpr_log(GPR_INFO, "Client Done");
   return 0;
 }

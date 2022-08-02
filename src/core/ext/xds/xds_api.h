@@ -39,7 +39,6 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/iomgr/error.h"
 
 namespace grpc_core {
 
@@ -153,7 +152,7 @@ class XdsApi {
                                absl::string_view version,
                                absl::string_view nonce,
                                const std::vector<std::string>& resource_names,
-                               grpc_error_handle error, bool populate_node);
+                               absl::Status status, bool populate_node);
 
   // Returns non-OK when failing to deserialize response message.
   // Otherwise, all events are reported to the parser.
@@ -167,13 +166,12 @@ class XdsApi {
   // Creates an LRS request sending a client-side load report.
   std::string CreateLrsRequest(ClusterLoadReportMap cluster_load_report_map);
 
-  // Parses the LRS response and returns \a
-  // load_reporting_interval for client-side load reporting. If there is any
-  // error, the output config is invalid.
-  grpc_error_handle ParseLrsResponse(absl::string_view encoded_response,
-                                     bool* send_all_clusters,
-                                     std::set<std::string>* cluster_names,
-                                     Duration* load_reporting_interval);
+  // Parses the LRS response and populates send_all_clusters,
+  // cluster_names, and load_reporting_interval.
+  absl::Status ParseLrsResponse(absl::string_view encoded_response,
+                                bool* send_all_clusters,
+                                std::set<std::string>* cluster_names,
+                                Duration* load_reporting_interval);
 
   // Assemble the client config proto message and return the serialized result.
   std::string AssembleClientConfig(
