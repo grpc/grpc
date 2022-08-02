@@ -19,6 +19,7 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/event_engine/event_engine_factory.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/context.h"
 
