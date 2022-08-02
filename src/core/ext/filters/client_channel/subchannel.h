@@ -23,6 +23,7 @@
 
 #include <deque>
 #include <map>
+#include <memory>
 #include <string>
 
 #include "absl/base/thread_annotations.h"

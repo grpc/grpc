@@ -32,6 +32,8 @@
 #include "absl/strings/string_view.h"
 #include "upb/def.hpp"
 
+#include <grpc/event_engine/event_engine.h>
+
 #include "src/core/ext/xds/certificate_provider_store.h"
 #include "src/core/ext/xds/xds_api.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
