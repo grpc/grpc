@@ -1866,7 +1866,6 @@ grpc_cc_library(
         "map",
         "orphanable",
         "periodic_update",
-        "pid_controller",
         "poll",
         "race",
         "ref_counted_ptr",
