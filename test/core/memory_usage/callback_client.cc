@@ -154,10 +154,10 @@ int main(int argc, char** argv) {
   gpr_log(GPR_INFO, "Before Client Mem: %ld", before_client_memory);
   gpr_log(GPR_INFO, "Peak Server Mem: %ld", peak_server_memory);
   gpr_log(GPR_INFO, "Peak Client Mem: %ld", peak_client_memory);
-  gpr_log(GPR_INFO, "Server Difference: %f",
+  gpr_log(GPR_INFO, "Server Per Channel Memory: %f",
           static_cast<float>(peak_server_memory - before_server_memory) /
               static_cast<float>(size));
-  gpr_log(GPR_INFO, "Client Difference: %f",
+  gpr_log(GPR_INFO, "Client Per Channel Memory: %f",
           static_cast<float>(peak_client_memory - before_client_memory) /
               static_cast<float>(size));
 
