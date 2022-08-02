@@ -77,6 +77,8 @@ static gpr_timespec to_seconds_from_sub_second_time(int64_t time_in_units,
   } else if (time_in_units == INT64_MIN) {
     out = gpr_inf_past(type);
   } else {
+    GPR_DEBUG_ASSERT(GPR_NS_PER_SEC % units_per_sec == 0);
+
     out.tv_sec = time_in_units / units_per_sec;
     out.tv_nsec =
         static_cast<int32_t>((time_in_units - (out.tv_sec * units_per_sec)) *
