@@ -1893,7 +1893,8 @@ class GrpcLbFactory : public LoadBalancingPolicyFactory {
 
   absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
   ParseLoadBalancingConfig(const Json& json) const override {
-    auto config = LoadFromJson<GrpcLbConfig>(json);
+    auto config = LoadFromJson<GrpcLbConfig>(
+        json, "errors validating grpclb LB policy config");
     if (!config.ok()) return config.status();
     return MakeRefCounted<GrpcLbConfig>(std::move(*config));
   }

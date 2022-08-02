@@ -44,6 +44,10 @@ bool ErrorList::FieldHasErrors() const {
 }
 
 absl::Status ErrorList::status() const {
+  return status("errors validating JSON");
+}
+
+absl::Status ErrorList::status(absl::string_view prefix) const {
   if (field_errors_.empty()) return absl::OkStatus();
   std::vector<std::string> errors;
   for (const auto& p : field_errors_) {
@@ -56,7 +60,7 @@ absl::Status ErrorList::status() const {
     }
   }
   return absl::InvalidArgumentError(absl::StrCat(
-      "errors validating JSON: [", absl::StrJoin(errors, "; "), "]"));
+      prefix, ": [", absl::StrJoin(errors, "; "), "]"));
 }
 
 namespace json_detail {

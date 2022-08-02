@@ -142,7 +142,7 @@ class RlsLbConfig : public LoadBalancingPolicy::Config {
   struct RouteLookupConfig {
     KeyBuilderMap key_builder_map;
     std::string lookup_service;
-    Duration lookup_service_timeout;
+    Duration lookup_service_timeout = kDefaultLookupServiceTimeout;
     Duration max_age = kMaxMaxAge;
     Duration stale_age = kMaxMaxAge;
     int64_t cache_size_bytes = 0;
@@ -2209,9 +2209,9 @@ struct GrpcKeyBuilder {
   };
 
   struct ExtraKeys {
-    std::string host_key;
-    std::string service_key;
-    std::string method_key;
+    absl::optional<std::string> host_key;
+    absl::optional<std::string> service_key;
+    absl::optional<std::string> method_key;
 
     static const JsonLoaderInterface* JsonLoader() {
       static const auto* loader =
@@ -2225,11 +2225,9 @@ struct GrpcKeyBuilder {
 
     void JsonPostLoad(const Json& json, ErrorList* errors) {
       auto check_field = [&](const std::string& field_name,
-                             std::string* struct_field) {
+                             absl::optional<std::string>* struct_field) {
         ScopedField field(errors, absl::StrCat(".", field_name));
-        if (!errors->FieldHasErrors() &&
-            json.object_value().find(field_name) != json.object_value().end() &&
-            struct_field->empty()) {
+        if (struct_field->has_value() && (*struct_field)->empty()) {
           errors->AddError("must be non-empty if set");
         }
       };
@@ -2248,7 +2246,7 @@ struct GrpcKeyBuilder {
     static const auto* loader =
         JsonObjectLoader<GrpcKeyBuilder>()
             .Field("names", &GrpcKeyBuilder::names)
-            .Field("headers", &GrpcKeyBuilder::headers)
+            .OptionalField("headers", &GrpcKeyBuilder::headers)
             .OptionalField("extraKeys", &GrpcKeyBuilder::extra_keys)
             .OptionalField("constantKeys", &GrpcKeyBuilder::constant_keys)
             .Finish();
@@ -2268,9 +2266,6 @@ struct GrpcKeyBuilder {
     {
       ScopedField field(errors, ".headers");
       if (!errors->FieldHasErrors()) {
-        if (headers.empty()) {
-          errors->AddError("must be non-empty");
-        }
         for (size_t i = 0; i < headers.size(); ++i) {
           NameMatcher& header = headers[i];
           ScopedField field(errors, absl::StrCat("[", i, "]"));
@@ -2286,17 +2281,15 @@ struct GrpcKeyBuilder {
         }
       }
     }
-    // Make sure no keys in constantKeys are empty.
-    for (const auto& p : constant_keys) {
-      ScopedField field(errors,
-                        absl::StrCat(".constantKeys[\"", p.first, "\""));
-      if (p.first.empty()) {
-        errors->AddError("must be non-empty");
-      }
+    // Make sure no key in constantKeys is empty.
+    if (constant_keys.find("") != constant_keys.end()) {
+      ScopedField field(errors, ".constantKeys[\"\"]");
+      errors->AddError("key must be non-empty");
     }
     // Check for duplicate keys in constantKeys and extraKeys.
     auto duplicate_key_check_func = [&keys_seen, errors](
         const std::string& key, const std::string& field_name) {
+      if (key.empty()) return;  // Already generated an error about this.
       ScopedField field(errors, field_name);
       auto it = keys_seen.find(key);
       if (it != keys_seen.end()) {
@@ -2309,9 +2302,15 @@ struct GrpcKeyBuilder {
       duplicate_key_check_func(
           p.first, absl::StrCat(".constantKeys[\"", p.first, "\"]"));
     }
-    duplicate_key_check_func(extra_keys.host_key, ".extraKeys.host");
-    duplicate_key_check_func(extra_keys.service_key, ".extraKeys.service");
-    duplicate_key_check_func(extra_keys.method_key, ".extraKeys.method");
+    if (extra_keys.host_key.has_value()) {
+      duplicate_key_check_func(*extra_keys.host_key, ".extraKeys.host");
+    }
+    if (extra_keys.service_key.has_value()) {
+      duplicate_key_check_func(*extra_keys.service_key, ".extraKeys.service");
+    }
+    if (extra_keys.method_key.has_value()) {
+      duplicate_key_check_func(*extra_keys.method_key, ".extraKeys.method");
+    }
   }
 };
 
@@ -2347,10 +2346,17 @@ void RlsLbConfig::RouteLookupConfig::JsonPostLoad(const Json& json,
         key_builder.header_keys.emplace(std::move(header.key),
                                         std::move(header.names));
       }
-      key_builder.host_key = std::move(grpc_keybuilder.extra_keys.host_key);
-      key_builder.service_key =
-          std::move(grpc_keybuilder.extra_keys.service_key);
-      key_builder.method_key = std::move(grpc_keybuilder.extra_keys.method_key);
+      if (grpc_keybuilder.extra_keys.host_key.has_value()) {
+        key_builder.host_key = std::move(*grpc_keybuilder.extra_keys.host_key);
+      }
+      if (grpc_keybuilder.extra_keys.service_key.has_value()) {
+        key_builder.service_key =
+            std::move(*grpc_keybuilder.extra_keys.service_key);
+      }
+      if (grpc_keybuilder.extra_keys.method_key.has_value()) {
+        key_builder.method_key =
+            std::move(*grpc_keybuilder.extra_keys.method_key);
+      }
       key_builder.constant_keys = std::move(grpc_keybuilder.constant_keys);
       // Add entries to map.
       for (const auto& name : grpc_keybuilder.names) {
@@ -2431,6 +2437,14 @@ void RlsLbConfig::JsonPostLoad(const Json& json, ErrorList* errors) {
       GRPC_ERROR_UNREF(child_error);
     }
   }
+  // Validate childPolicyConfigTargetFieldName.
+  {
+    ScopedField field(errors, ".childPolicyConfigTargetFieldName");
+    if (!errors->FieldHasErrors() &&
+        child_policy_config_target_field_name_.empty()) {
+      errors->AddError("must be non-empty");
+    }
+  }
   // Parse childPolicy.
   {
     ScopedField field(errors, ".childPolicy");
@@ -2489,7 +2503,8 @@ class RlsLbFactory : public LoadBalancingPolicyFactory {
 
   absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
   ParseLoadBalancingConfig(const Json& json) const override {
-    auto config = LoadFromJson<RlsLbConfig>(json);
+    auto config =
+        LoadFromJson<RlsLbConfig>(json, "errors validing RLS LB policy config");
     if (!config.ok()) return config.status();
     return MakeRefCounted<RlsLbConfig>(std::move(*config));
   }
