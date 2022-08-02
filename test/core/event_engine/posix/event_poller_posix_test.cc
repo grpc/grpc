@@ -403,6 +403,9 @@ class EventPollerTest : public ::testing::TestWithParam<std::string> {
     EXPECT_NE(scheduler_, nullptr);
     GPR_GLOBAL_CONFIG_SET(grpc_poll_strategy, GetParam().c_str());
     g_event_poller = GetDefaultPoller(scheduler_.get());
+    if (g_event_poller != nullptr) {
+      EXPECT_EQ(g_event_poller->Name(), GetParam());
+    }
   }
 
   void TearDown() override {
@@ -552,9 +555,8 @@ std::atomic<int> kTotalActiveWakeupFdHandles{0};
 class WakeupFdHandle {
  public:
   WakeupFdHandle(int num_wakeups, Scheduler* scheduler,
-                 PosixEventPoller* poller, std::string poller_name)
+                 PosixEventPoller* poller)
       : num_wakeups_(num_wakeups),
-        poller_name_(std::move(poller_name)),
         scheduler_(scheduler),
         poller_(poller),
         on_read_(
@@ -562,9 +564,11 @@ class WakeupFdHandle {
               EXPECT_TRUE(status.ok());
               status = ReadPipe();
               if (!status.ok()) {
-                // poll based poller may generate spurious wakeups. In such case
-                // do not bother changing the number of wakeups received.
-                EXPECT_EQ(poller_name_, "poll");
+                // Rarely epoll1 poller may generate an EPOLLHUP - which is a
+                // spurious wakeup. Poll based poller may also likely generate a
+                // lot of spurious wakeups because of the level triggered nature
+                // of poll In such cases do not bother changing the number of
+                // wakeups received.
                 EXPECT_EQ(status, absl::InternalError("Spurious Wakeup"));
                 handle_->NotifyOnRead(on_read_);
                 return;
@@ -645,7 +649,6 @@ class WakeupFdHandle {
     }
   }
   int num_wakeups_;
-  std::string poller_name_;
   Scheduler* scheduler_;
   PosixEventPoller* poller_;
   PosixEngineClosure* on_read_;
@@ -661,12 +664,12 @@ class WakeupFdHandle {
 class Worker {
  public:
   Worker(Scheduler* scheduler, PosixEventPoller* poller, int num_handles,
-         int num_wakeups_per_handle, std::string poller_name)
+         int num_wakeups_per_handle)
       : scheduler_(scheduler), poller_(poller) {
     handles_.reserve(num_handles);
     for (int i = 0; i < num_handles; i++) {
-      handles_.push_back(new WakeupFdHandle(num_wakeups_per_handle, scheduler_,
-                                            poller_, poller_name));
+      handles_.push_back(
+          new WakeupFdHandle(num_wakeups_per_handle, scheduler_, poller_));
     }
   }
   void Ref() { ref_count_.fetch_add(1, std::memory_order_relaxed); }
@@ -725,8 +728,7 @@ TEST_P(EventPollerTest, TestMultipleHandles) {
   if (g_event_poller == nullptr) {
     return;
   }
-  Worker worker(Scheduler(), g_event_poller, kNumHandles, kNumWakeupsPerHandle,
-                GetParam());
+  Worker worker(Scheduler(), g_event_poller, kNumHandles, kNumWakeupsPerHandle);
   worker.Start();
   worker.Wait();
 }

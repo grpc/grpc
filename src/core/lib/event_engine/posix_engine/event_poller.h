@@ -85,6 +85,7 @@ class PosixEventPoller : public grpc_event_engine::experimental::Poller {
   // Return an opaque handle to perform actions on the provided file descriptor.
   virtual EventHandle* CreateHandle(int fd, absl::string_view name,
                                     bool track_err) = 0;
+  virtual std::string Name() = 0;
   // Shuts down and deletes the poller. It is legal to call this function
   // only when no other poller method is in progress. For instance, it is
   // not safe to call this method, while a thread is blocked on Work(...).
