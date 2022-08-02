@@ -4590,6 +4590,7 @@ grpc_cc_library(
         "grpc_lb_address_filtering",
         "grpc_trace",
         "json",
+        "json_object_loader",
         "orphanable",
         "ref_counted",
         "ref_counted_ptr",

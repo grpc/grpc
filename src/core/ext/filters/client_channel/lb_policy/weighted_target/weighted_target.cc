@@ -56,6 +56,7 @@
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_object_loader.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
@@ -82,16 +83,30 @@ class WeightedTargetLbConfig : public LoadBalancingPolicy::Config {
   struct ChildConfig {
     uint32_t weight;
     RefCountedPtr<LoadBalancingPolicy::Config> config;
+
+    static const JsonLoaderInterface* JsonLoader();
+    void JsonPostLoad(const Json& json, ErrorList* errors);
   };
 
   using TargetMap = std::map<std::string, ChildConfig>;
 
-  explicit WeightedTargetLbConfig(TargetMap target_map)
-      : target_map_(std::move(target_map)) {}
+  WeightedTargetLbConfig() = default;
+
+  WeightedTargetLbConfig(const WeightedTargetLbConfig&) = delete;
+  WeightedTargetLbConfig& operator=(const WeightedTargetLbConfig&) = delete;
+
+  WeightedTargetLbConfig(WeightedTargetLbConfig&& other) noexcept
+      : target_map_(std::move(other.target_map_)) {}
+  WeightedTargetLbConfig& operator=(WeightedTargetLbConfig&& other) noexcept {
+    target_map_ = std::move(other.target_map_);
+    return *this;
+  }
 
   absl::string_view name() const override { return kWeightedTarget; }
 
   const TargetMap& target_map() const { return target_map_; }
+
+  static const JsonLoaderInterface* JsonLoader();
 
  private:
   TargetMap target_map_;
@@ -676,6 +691,41 @@ void WeightedTargetLb::WeightedChild::Helper::AddTraceEvent(
 // factory
 //
 
+const JsonLoaderInterface* WeightedTargetLbConfig::ChildConfig::JsonLoader() {
+  static const auto* loader =
+      JsonObjectLoader<ChildConfig>()
+          // Note: The config field requires custom parsing, so it's
+          // handled in JsonPostLoad() instead.
+          .Field("weight", &ChildConfig::weight)
+          .Finish();
+  return loader;
+}
+
+void WeightedTargetLbConfig::ChildConfig::JsonPostLoad(const Json& json,
+                                                       ErrorList* errors) {
+  ScopedField field(errors, ".childPolicy");
+  auto it = json.object_value().find("childPolicy");
+  if (it == json.object_value().end()) {
+    errors->AddError("field not present");
+    return;
+  }
+  auto lb_config =
+      LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(it->second);
+  if (!lb_config.ok()) {
+    errors->AddError(lb_config.status().message());
+    return;
+  }
+  config = std::move(*lb_config);
+}
+
+const JsonLoaderInterface* WeightedTargetLbConfig::JsonLoader() {
+  static const auto* loader =
+      JsonObjectLoader<WeightedTargetLbConfig>()
+          .Field("targets", &WeightedTargetLbConfig::target_map_)
+          .Finish();
+  return loader;
+}
+
 class WeightedTargetLbFactory : public LoadBalancingPolicyFactory {
  public:
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
@@ -695,75 +745,10 @@ class WeightedTargetLbFactory : public LoadBalancingPolicyFactory {
           "configuration.  Please use loadBalancingConfig field of service "
           "config instead.");
     }
-    std::vector<std::string> errors;
-    // Weight map.
-    WeightedTargetLbConfig::TargetMap target_map;
-    auto it = json.object_value().find("targets");
-    if (it == json.object_value().end()) {
-      errors.emplace_back("field:targets error:required field not present");
-    } else if (it->second.type() != Json::Type::OBJECT) {
-      errors.emplace_back("field:targets error:type should be object");
-    } else {
-      for (const auto& p : it->second.object_value()) {
-        auto config = ParseChildConfig(p.second);
-        if (!config.ok()) {
-          errors.emplace_back(config.status().message());
-        } else {
-          target_map[p.first] = std::move(*config);
-        }
-      }
-    }
-    if (!errors.empty()) {
-      return absl::InvalidArgumentError(
-          absl::StrCat("weighted_target_experimental LB policy config: [",
-                       absl::StrJoin(errors, "; "), "]"));
-    }
-    return MakeRefCounted<WeightedTargetLbConfig>(std::move(target_map));
-  }
-
- private:
-  static absl::StatusOr<WeightedTargetLbConfig::ChildConfig> ParseChildConfig(
-      const Json& json) {
-    if (json.type() != Json::Type::OBJECT) {
-      return absl::InvalidArgumentError("value should be of type object");
-    }
-    WeightedTargetLbConfig::ChildConfig child_config;
-    std::vector<std::string> errors;
-    // Weight.
-    auto it = json.object_value().find("weight");
-    if (it == json.object_value().end()) {
-      errors.emplace_back("required field \"weight\" not specified");
-    } else if (it->second.type() != Json::Type::NUMBER) {
-      errors.emplace_back("field:weight error:must be of type number");
-    } else {
-      int weight = gpr_parse_nonnegative_int(it->second.string_value().c_str());
-      if (weight == -1) {
-        errors.emplace_back("field:weight error:unparseable value");
-      } else if (weight == 0) {
-        errors.emplace_back(
-            "field:weight error:value must be greater than zero");
-      } else {
-        child_config.weight = weight;
-      }
-    }
-    // Child policy.
-    it = json.object_value().find("childPolicy");
-    if (it != json.object_value().end()) {
-      auto config =
-          LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(it->second);
-      if (!config.ok()) {
-        errors.emplace_back(
-            absl::StrCat("field:childPolicy: ", config.status().message()));
-      } else {
-        child_config.config = std::move(*config);
-      }
-    }
-    // Return result.
-    if (!errors.empty()) {
-      return absl::InvalidArgumentError(absl::StrCat(
-          "errors parsing target config: [", absl::StrJoin(errors, "; "), "]"));
-    }
-    return child_config;
+    auto config = LoadFromJson<WeightedTargetLbConfig>(
+        json, "errors validating weighted_target LB policy config");
+    if (!config.ok()) return config.status();
+    return MakeRefCounted<WeightedTargetLbConfig>(std::move(*config));
   }
 };
 
