@@ -187,7 +187,6 @@ bool LoadObject(const Json& json, const Element* elements, size_t num_elements,
 const Json* GetJsonObjectField(const Json::Object& json,
                                absl::string_view field, ErrorList* errors,
                                bool required) {
-  ScopedField error_field(errors, absl::StrCat(".", field));
   auto it = json.find(std::string(field));
   if (it == json.end()) {
     if (required) errors->AddError("field not present");

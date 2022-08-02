@@ -27,6 +27,7 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/numbers.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
@@ -477,8 +478,8 @@ class JsonObjectLoader final {
 };
 
 const Json* GetJsonObjectField(const Json::Object& json,
-                               absl::string_view field,
-                               ErrorList* errors, bool required);
+                               absl::string_view field, ErrorList* errors,
+                               bool required);
 
 }  // namespace json_detail
 
@@ -504,9 +505,10 @@ T LoadFromJson(const Json& json, ErrorList* error_list) {
 }
 
 template <typename T>
-absl::optional<T> LoadJsonObjectField(
-    const Json::Object& json, absl::string_view field, ErrorList* errors,
-    bool required = true) {
+absl::optional<T> LoadJsonObjectField(const Json::Object& json,
+                                      absl::string_view field,
+                                      ErrorList* errors, bool required = true) {
+  ScopedField error_field(errors, absl::StrCat(".", field));
   const Json* field_json =
       json_detail::GetJsonObjectField(json, field, errors, required);
   if (field_json == nullptr) return absl::nullopt;

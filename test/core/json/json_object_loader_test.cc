@@ -774,9 +774,9 @@ TEST(JsonObjectLoader, BareMap) {
   auto parsed =
       Parse<std::map<std::string, int32_t>>("{\"a\":1, \"b\":2, \"c\":3}");
   ASSERT_TRUE(parsed.ok()) << parsed.status();
-  EXPECT_THAT(*parsed, ::testing::ElementsAre(
-      ::testing::Pair("a", 1), ::testing::Pair("b", 2),
-      ::testing::Pair("c", 3)));
+  EXPECT_THAT(*parsed, ::testing::ElementsAre(::testing::Pair("a", 1),
+                                              ::testing::Pair("b", 2),
+                                              ::testing::Pair("c", 3)));
 }
 
 TEST(JsonObjectLoader, IgnoresUnsupportedFields) {
@@ -910,8 +910,8 @@ TEST(JsonObjectLoader, LoadJsonObjectField) {
   // A required field that is not present.
   {
     ErrorList errors;
-    auto value = LoadJsonObjectField<int32_t>(
-        json->object_value(), "not_present", &errors);
+    auto value = LoadJsonObjectField<int32_t>(json->object_value(),
+                                              "not_present", &errors);
     EXPECT_FALSE(value.has_value());
     auto status = errors.status();
     EXPECT_THAT(status.code(), absl::StatusCode::kInvalidArgument);
@@ -929,7 +929,7 @@ TEST(JsonObjectLoader, LoadJsonObjectField) {
     auto status = errors.status();
     EXPECT_THAT(status.code(), absl::StatusCode::kInvalidArgument);
     EXPECT_EQ(status.message(),
-              "errors validating JSON: [field: error:is not a string]")
+              "errors validating JSON: [field:int error:is not a string]")
         << status;
   }
 }
