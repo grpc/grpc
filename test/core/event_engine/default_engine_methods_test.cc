@@ -104,12 +104,10 @@ TEST_F(DefaultEngineTest, StressTestSharedPtr) {
   std::vector<std::thread> threads;
   threads.reserve(thread_count);
   for (int i = 0; i < thread_count; i++) {
-    threads.emplace_back([&spin_time, i] {
+    threads.emplace_back([&spin_time] {
       auto timeout = absl::Now() + spin_time;
-      int spin_count = 0;
       do {
         GetDefaultEventEngine().reset();
-        gpr_log(GPR_DEBUG, "thd::%d spin_count::%d", i, spin_count++);
       } while (timeout > absl::Now());
     });
   }

@@ -41,6 +41,9 @@ void SetDefaultEventEngineFactory(
   delete g_event_engine_factory.exchange(
       new absl::AnyInvocable<std::unique_ptr<EventEngine>()>(
           std::move(factory)));
+  // Forget any previous EventEngines
+  grpc_core::MutexLock lock(&g_mu);
+  g_event_engine->reset();
 }
 
 std::unique_ptr<EventEngine> CreateEventEngine() {
