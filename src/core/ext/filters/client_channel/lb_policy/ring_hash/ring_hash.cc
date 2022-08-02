@@ -870,7 +870,8 @@ class RingHashFactory : public LoadBalancingPolicyFactory {
 
   absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
   ParseLoadBalancingConfig(const Json& json) const override {
-    auto config = LoadFromJson<RingHashConfig>(json);
+    auto config = LoadFromJson<RingHashConfig>(
+        json, "errors validating ring_hash LB policy config");
     if (!config.ok()) return config.status();
     return MakeRefCounted<RingHashLbConfig>(config->min_ring_size,
                                             config->max_ring_size);

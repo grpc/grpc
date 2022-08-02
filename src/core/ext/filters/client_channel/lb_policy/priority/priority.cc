@@ -1008,7 +1008,8 @@ class PriorityLbFactory : public LoadBalancingPolicyFactory {
           "configuration. Please use loadBalancingConfig field of service "
           "config instead.");
     }
-    auto config = LoadFromJson<PriorityLbConfig>(json);
+    auto config = LoadFromJson<PriorityLbConfig>(
+        json, "errors validating priority LB policy config");
     if (!config.ok()) return config.status();
     return MakeRefCounted<PriorityLbConfig>(std::move(*config));
   }

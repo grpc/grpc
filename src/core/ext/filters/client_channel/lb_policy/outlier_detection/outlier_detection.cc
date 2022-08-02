@@ -1047,7 +1047,10 @@ class OutlierDetectionLbFactory : public LoadBalancingPolicyFactory {
         }
       }
     }
-    if (!errors.ok()) return errors.status();
+    if (!errors.ok()) {
+      return errors.status(
+          "errors validating outlier_detection LB policy config");
+    }
     return MakeRefCounted<OutlierDetectionLbConfig>(outlier_detection_config,
                                                     std::move(child_policy));
   }
