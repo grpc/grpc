@@ -353,12 +353,13 @@ struct Element {
   Element() = default;
   template <typename A, typename B>
   Element(const char* name, bool optional, B A::*p,
-          const LoaderInterface* loader)
+          const LoaderInterface* loader, bool enabled)
       : loader(loader),
         member_offset(static_cast<uint16_t>(
             reinterpret_cast<uintptr_t>(&(static_cast<A*>(nullptr)->*p)))),
         optional(optional),
-        name(name) {}
+        name(name),
+        enabled(enabled) {}
   // The loader for this field.
   const LoaderInterface* loader;
   // Offset into the destination object to store the field.
@@ -367,6 +368,8 @@ struct Element {
   bool optional;
   // The name of the field.
   const char* name;
+  // Whether parsing of this field is enabled.
+  bool enabled;
 };
 
 // Vec<T, kSize> provides a constant array type that can be appended to by
@@ -452,14 +455,16 @@ class JsonObjectLoader final {
   }
 
   template <typename U>
-  JsonObjectLoader<T, kElemCount + 1> Field(const char* name, U T::*p) const {
-    return Field(name, false, p);
+  JsonObjectLoader<T, kElemCount + 1> Field(const char* name, U T::*p,
+                                            bool enabled = true) const {
+    return Field(name, false, p, enabled);
   }
 
   template <typename U>
   JsonObjectLoader<T, kElemCount + 1> OptionalField(const char* name,
-                                                    U T::*p) const {
-    return Field(name, true, p);
+                                                    U T::*p,
+                                                    bool enabled = true) const {
+    return Field(name, true, p, enabled);
   }
 
   JsonObjectLoader(const Vec<Element, kElemCount - 1>& elements,
@@ -469,9 +474,9 @@ class JsonObjectLoader final {
  private:
   template <typename U>
   JsonObjectLoader<T, kElemCount + 1> Field(const char* name, bool optional,
-                                            U T::*p) const {
+                                            U T::*p, bool enabled) const {
     return JsonObjectLoader<T, kElemCount + 1>(
-        elements_, Element(name, optional, p, LoaderForType<U>()));
+        elements_, Element(name, optional, p, LoaderForType<U>(), enabled));
   }
 
   GPR_NO_UNIQUE_ADDRESS Vec<Element, kElemCount> elements_;

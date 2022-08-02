@@ -794,6 +794,26 @@ TEST(JsonObjectLoader, IgnoresUnsupportedFields) {
   EXPECT_EQ(test_struct->a, 3);
 }
 
+TEST(JsonObjectLoader, IgnoresDisabledFields) {
+  struct TestStruct {
+    int32_t a = 0;
+    int32_t b = 0;
+
+    static const JsonLoaderInterface* JsonLoader() {
+      static const auto* loader =
+          JsonObjectLoader<TestStruct>()
+              .Field("a", &TestStruct::a, false)
+              .OptionalField("b", &TestStruct::b, false)
+              .Finish();
+      return loader;
+    }
+  };
+  auto test_struct = Parse<TestStruct>("{\"a\":false, \"b\":false}");
+  ASSERT_TRUE(test_struct.ok()) << test_struct.status();
+  EXPECT_EQ(test_struct->a, 0);
+  EXPECT_EQ(test_struct->b, 0);
+}
+
 TEST(JsonObjectLoader, PostLoadHook) {
   struct TestStruct {
     int32_t a = 0;

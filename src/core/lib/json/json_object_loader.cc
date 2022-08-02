@@ -171,6 +171,7 @@ bool LoadObject(const Json& json, const Element* elements, size_t num_elements,
   }
   for (size_t i = 0; i < num_elements; ++i) {
     const Element& element = elements[i];
+    if (!element.enabled) continue;
     ScopedField field(errors, absl::StrCat(".", element.name));
     const auto& it = json.object_value().find(element.name);
     if (it == json.object_value().end()) {
