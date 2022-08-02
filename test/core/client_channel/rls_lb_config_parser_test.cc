@@ -158,13 +158,13 @@ TEST_F(RlsConfigParsingTest, InvalidChildPolicyConfig) {
   auto service_config =
       ServiceConfigImpl::Create(ChannelArgs(), service_config_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(service_config.status().message(),
-              ::testing::HasSubstr(
-                  "errors validing RLS LB policy config: ["
-                  "field:childPolicy error:"
-                  "errors validating grpclb LB policy config: ["
-                  "field:childPolicy error:type should be array]; "
-                  "field:routeLookupConfig error:field not present]"))
+  EXPECT_THAT(
+      service_config.status().message(),
+      ::testing::HasSubstr("errors validing RLS LB policy config: ["
+                           "field:childPolicy error:"
+                           "errors validating grpclb LB policy config: ["
+                           "field:childPolicy error:type should be array]; "
+                           "field:routeLookupConfig error:field not present]"))
       << service_config.status();
 }
 

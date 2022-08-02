@@ -17,7 +17,6 @@
 #include <grpc/support/port_platform.h>
 
 #include <inttypes.h>
-#include <stddef.h>
 
 #include <algorithm>
 #include <map>
@@ -983,9 +982,9 @@ void PriorityLbConfig::JsonPostLoad(const Json& json, ErrorList* errors) {
     }
   }
   if (!unknown_priorities.empty()) {
-    errors->AddError(absl::StrCat(
-        "unknown priorit(ies): [", absl::StrJoin(unknown_priorities, ", "),
-        "]"));
+    errors->AddError(absl::StrCat("unknown priorit(ies): [",
+                                  absl::StrJoin(unknown_priorities, ", "),
+                                  "]"));
   }
 }
 

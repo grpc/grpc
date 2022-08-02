@@ -32,7 +32,6 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
-#include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
@@ -54,7 +53,6 @@
 #include "src/core/ext/xds/xds_endpoint.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -156,14 +154,14 @@ class XdsClusterImplLbConfig : public LoadBalancingPolicy::Config {
         lrs_load_reporting_server_(std::move(other.lrs_load_reporting_server_)),
         max_concurrent_requests_(other.max_concurrent_requests_),
         drop_config_(std::move(other.drop_config_)) {}
-  XdsClusterImplLbConfig& operator=(const XdsClusterImplLbConfig&& other)
-      noexcept {
-    child_policy_ = std::move(other.child_policy_);
-    cluster_name_ = std::move(other.cluster_name_);
-    eds_service_name_ = std::move(other.eds_service_name_);
-    lrs_load_reporting_server_ = std::move(other.lrs_load_reporting_server_);
-    max_concurrent_requests_ = std::move(other.max_concurrent_requests_);
-    drop_config_ = std::move(other.drop_config_);
+  XdsClusterImplLbConfig& operator=(
+      const XdsClusterImplLbConfig&& other) noexcept {
+    child_policy_ = other.child_policy_;
+    cluster_name_ = other.cluster_name_;
+    eds_service_name_ = other.eds_service_name_;
+    lrs_load_reporting_server_ = other.lrs_load_reporting_server_;
+    max_concurrent_requests_ = other.max_concurrent_requests_;
+    drop_config_ = other.drop_config_;
     return *this;
   }
 
@@ -707,11 +705,10 @@ struct DropCategory {
   uint32_t requests_per_million;
 
   static const JsonLoaderInterface* JsonLoader() {
-    static const auto* loader =
-        JsonObjectLoader<DropCategory>()
-            .Field("category", &DropCategory::category)
-            .Field("category", &DropCategory::category)
-            .Finish();
+    static const auto* loader = JsonObjectLoader<DropCategory>()
+                                    .Field("category", &DropCategory::category)
+                                    .Field("category", &DropCategory::category)
+                                    .Finish();
     return loader;
   }
 };

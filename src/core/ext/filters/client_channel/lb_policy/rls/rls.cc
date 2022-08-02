@@ -169,8 +169,7 @@ class RlsLbConfig : public LoadBalancingPolicy::Config {
 
   RlsLbConfig& operator=(RlsLbConfig&& other) noexcept {
     route_lookup_config_ = std::move(other.route_lookup_config_);
-    rls_channel_service_config_ =
-        std::move(other.rls_channel_service_config_);
+    rls_channel_service_config_ = std::move(other.rls_channel_service_config_);
     child_policy_config_ = std::move(other.child_policy_config_);
     child_policy_config_target_field_name_ =
         std::move(other.child_policy_config_target_field_name_);
@@ -763,8 +762,8 @@ void RlsLb::ChildPolicyWrapper::Orphan() {
 }
 
 bool InsertOrUpdateChildPolicyField(const std::string& field,
-                                    const std::string& value,
-                                    Json* config, ErrorList* errors) {
+                                    const std::string& value, Json* config,
+                                    ErrorList* errors) {
   if (config->type() != Json::Type::ARRAY) {
     errors->AddError("is not an array");
     return false;
@@ -2152,11 +2151,10 @@ struct GrpcKeyBuilder {
     std::string method;
 
     static const JsonLoaderInterface* JsonLoader() {
-      static const auto* loader =
-          JsonObjectLoader<Name>()
-              .Field("service", &Name::service)
-              .OptionalField("method", &Name::method)
-              .Finish();
+      static const auto* loader = JsonObjectLoader<Name>()
+                                      .Field("service", &Name::service)
+                                      .OptionalField("method", &Name::method)
+                                      .Finish();
       return loader;
     }
   };
@@ -2288,7 +2286,8 @@ struct GrpcKeyBuilder {
     }
     // Check for duplicate keys in constantKeys and extraKeys.
     auto duplicate_key_check_func = [&keys_seen, errors](
-        const std::string& key, const std::string& field_name) {
+                                        const std::string& key,
+                                        const std::string& field_name) {
       if (key.empty()) return;  // Already generated an error about this.
       ScopedField field(errors, field_name);
       auto it = keys_seen.find(key);
@@ -2343,8 +2342,7 @@ void RlsLbConfig::RouteLookupConfig::JsonPostLoad(const Json& json,
       // Construct KeyBuilder.
       RlsLbConfig::KeyBuilder key_builder;
       for (const auto& header : grpc_keybuilder.headers) {
-        key_builder.header_keys.emplace(std::move(header.key),
-                                        std::move(header.names));
+        key_builder.header_keys.emplace(header.key, header.names);
       }
       if (grpc_keybuilder.extra_keys.host_key.has_value()) {
         key_builder.host_key = std::move(*grpc_keybuilder.extra_keys.host_key);
@@ -2363,8 +2361,7 @@ void RlsLbConfig::RouteLookupConfig::JsonPostLoad(const Json& json,
         std::string path = absl::StrCat("/", name.service, "/", name.method);
         bool inserted = key_builder_map.emplace(path, key_builder).second;
         if (!inserted) {
-          errors->AddError(
-              absl::StrCat("duplicate entry for \"", path, "\""));
+          errors->AddError(absl::StrCat("duplicate entry for \"", path, "\""));
         }
       }
     }
@@ -2457,9 +2454,9 @@ void RlsLbConfig::JsonPostLoad(const Json& json, ErrorList* errors) {
       std::string target = route_lookup_config_.default_target.empty()
                                ? kFakeTargetFieldValue
                                : route_lookup_config_.default_target;
-      if (InsertOrUpdateChildPolicyField(
-              child_policy_config_target_field_name_, target,
-              &child_policy_config_, errors)) {
+      if (InsertOrUpdateChildPolicyField(child_policy_config_target_field_name_,
+                                         target, &child_policy_config_,
+                                         errors)) {
         // Parse the config.
         auto parsed_config =
             LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(

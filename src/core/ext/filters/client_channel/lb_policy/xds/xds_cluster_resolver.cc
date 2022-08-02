@@ -59,7 +59,6 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -72,7 +71,6 @@
 #include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/transport/connectivity_state.h"
-#include "src/core/lib/transport/error_utils.h"
 
 #define GRPC_EDS_DEFAULT_FALLBACK_TIMEOUT 10000
 
@@ -126,8 +124,8 @@ class XdsClusterResolverLbConfig : public LoadBalancingPolicy::Config {
   XdsClusterResolverLbConfig(XdsClusterResolverLbConfig&& other) noexcept
       : discovery_mechanisms_(std::move(other.discovery_mechanisms_)),
         xds_lb_policy_(std::move(other.xds_lb_policy_)) {}
-  XdsClusterResolverLbConfig& operator=(XdsClusterResolverLbConfig&& other)
-      noexcept {
+  XdsClusterResolverLbConfig& operator=(
+      XdsClusterResolverLbConfig&& other) noexcept {
     discovery_mechanisms_ = std::move(other.discovery_mechanisms_);
     xds_lb_policy_ = std::move(other.xds_lb_policy_);
     return *this;
@@ -1137,8 +1135,8 @@ void XdsClusterResolverLbConfig::DiscoveryMechanism::JsonPostLoad(
   }
   // Parse "dnsHostname" if type is LOGICAL_DNS.
   if (type == DiscoveryMechanismType::LOGICAL_DNS) {
-    auto value = LoadJsonObjectField<std::string>(
-        json.object_value(), "dnsHostname", errors);
+    auto value = LoadJsonObjectField<std::string>(json.object_value(),
+                                                  "dnsHostname", errors);
     if (value.has_value()) dns_hostname = std::move(*value);
   }
 }
