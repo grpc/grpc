@@ -30,6 +30,7 @@
 #include "src/core/lib/event_engine/iomgr_engine/timer.h"
 #include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/event_engine/forkable.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -67,10 +68,13 @@ struct IomgrEventEngine::ClosureData final : public EventEngine::Closure {
   }
 };
 
-IomgrEventEngine::IomgrEventEngine() {}
+IomgrEventEngine::IomgrEventEngine() {
+  grpc_event_engine::experimental::ManageForkable(this);
+}
 
 IomgrEventEngine::~IomgrEventEngine() {
   grpc_core::MutexLock lock(&mu_);
+  grpc_event_engine::experimental::ForgetForkable(this);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {
     for (auto handle : known_handles_) {
       gpr_log(GPR_ERROR,
@@ -91,6 +95,13 @@ bool IomgrEventEngine::Cancel(EventEngine::TaskHandle handle) {
   if (r) delete cd;
   return r;
 }
+
+// DO NOT SUBMIT - implement
+void IomgrEventEngine::PrepareFork() { abort(); }
+
+void IomgrEventEngine::PostforkParent() { abort(); }
+
+void IomgrEventEngine::PostforkChild() { abort(); }
 
 EventEngine::TaskHandle IomgrEventEngine::RunAfter(
     Duration when, absl::AnyInvocable<void()> closure) {

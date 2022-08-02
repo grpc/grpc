@@ -31,6 +31,7 @@
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/event_engine/slice_buffer.h>
 
+#include "src/core/lib/event_engine/forkable.h"
 #include "src/core/lib/event_engine/handle_containers.h"
 #include "src/core/lib/event_engine/iomgr_engine/thread_pool.h"
 #include "src/core/lib/event_engine/iomgr_engine/timer_manager.h"
@@ -42,7 +43,7 @@ namespace experimental {
 
 // An iomgr-based EventEngine implementation.
 // All methods require an ExecCtx to already exist on the thread's stack.
-class IomgrEventEngine final : public EventEngine {
+class IomgrEventEngine final : public EventEngine, public Forkable {
  public:
   class IomgrEndpoint : public EventEngine::Endpoint {
    public:
@@ -102,6 +103,11 @@ class IomgrEventEngine final : public EventEngine {
   TaskHandle RunAfter(Duration when,
                       absl::AnyInvocable<void()> closure) override;
   bool Cancel(TaskHandle handle) override;
+
+  // Forkable
+  void PrepareFork() override;
+  void PostforkParent() override;
+  void PostforkChild() override;
 
  private:
   struct ClosureData;
