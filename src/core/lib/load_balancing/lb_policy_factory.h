@@ -22,10 +22,10 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
-#include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/load_balancing/lb_policy.h"
 
 namespace grpc_core {
 
