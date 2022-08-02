@@ -262,7 +262,10 @@ class ActivityContexts : public ContextHolder<Contexts>... {
     explicit ScopedContext(ActivityContexts* contexts)
         : Context<ContextTypeFromHeld<Contexts>>(
               static_cast<ContextHolder<Contexts>*>(contexts)
-                  ->GetContext())... {}
+                  ->GetContext())... {
+      // Silient `unused-but-set-parameter` in case of Contexts = {}
+      (void)contexts;
+    }
   };
 };
 
