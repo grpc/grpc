@@ -32,10 +32,6 @@ namespace experimental {
 template <typename T>
 class Promise {
  public:
-  Promise() = default;
-  // Initialize a default value that will be returned if WaitWithTimeout times
-  // out
-  explicit Promise(T&& val) : val_(val) {}
   // The getter will wait until the setter has been called, and will return the
   // value passed during Set.
   T& Get() { return WaitWithTimeout(absl::Hours(1)); }

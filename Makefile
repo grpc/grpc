@@ -1455,21 +1455,16 @@ LIBGRPC_SRC = \
     src/core/lib/event_engine/channel_args_endpoint_config.cc \
     src/core/lib/event_engine/default_event_engine_factory.cc \
     src/core/lib/event_engine/event_engine.cc \
-    src/core/lib/event_engine/executor/threaded_executor.cc \
+    src/core/lib/event_engine/iomgr_engine/iomgr_engine.cc \
+    src/core/lib/event_engine/iomgr_engine/thread_pool.cc \
+    src/core/lib/event_engine/iomgr_engine/timer.cc \
+    src/core/lib/event_engine/iomgr_engine/timer_heap.cc \
+    src/core/lib/event_engine/iomgr_engine/timer_manager.cc \
     src/core/lib/event_engine/memory_allocator.cc \
-    src/core/lib/event_engine/posix_engine/posix_engine.cc \
-    src/core/lib/event_engine/posix_engine/timer.cc \
-    src/core/lib/event_engine/posix_engine/timer_heap.cc \
-    src/core/lib/event_engine/posix_engine/timer_manager.cc \
     src/core/lib/event_engine/resolved_address.cc \
     src/core/lib/event_engine/slice.cc \
     src/core/lib/event_engine/slice_buffer.cc \
-    src/core/lib/event_engine/thread_pool.cc \
     src/core/lib/event_engine/trace.cc \
-    src/core/lib/event_engine/utils.cc \
-    src/core/lib/event_engine/windows/iocp.cc \
-    src/core/lib/event_engine/windows/win_socket.cc \
-    src/core/lib/event_engine/windows/windows_engine.cc \
     src/core/lib/gprpp/status_helper.cc \
     src/core/lib/gprpp/time.cc \
     src/core/lib/gprpp/time_averaged_stats.cc \
@@ -1928,21 +1923,16 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/event_engine/channel_args_endpoint_config.cc \
     src/core/lib/event_engine/default_event_engine_factory.cc \
     src/core/lib/event_engine/event_engine.cc \
-    src/core/lib/event_engine/executor/threaded_executor.cc \
+    src/core/lib/event_engine/iomgr_engine/iomgr_engine.cc \
+    src/core/lib/event_engine/iomgr_engine/thread_pool.cc \
+    src/core/lib/event_engine/iomgr_engine/timer.cc \
+    src/core/lib/event_engine/iomgr_engine/timer_heap.cc \
+    src/core/lib/event_engine/iomgr_engine/timer_manager.cc \
     src/core/lib/event_engine/memory_allocator.cc \
-    src/core/lib/event_engine/posix_engine/posix_engine.cc \
-    src/core/lib/event_engine/posix_engine/timer.cc \
-    src/core/lib/event_engine/posix_engine/timer_heap.cc \
-    src/core/lib/event_engine/posix_engine/timer_manager.cc \
     src/core/lib/event_engine/resolved_address.cc \
     src/core/lib/event_engine/slice.cc \
     src/core/lib/event_engine/slice_buffer.cc \
-    src/core/lib/event_engine/thread_pool.cc \
     src/core/lib/event_engine/trace.cc \
-    src/core/lib/event_engine/utils.cc \
-    src/core/lib/event_engine/windows/iocp.cc \
-    src/core/lib/event_engine/windows/win_socket.cc \
-    src/core/lib/event_engine/windows/windows_engine.cc \
     src/core/lib/gprpp/status_helper.cc \
     src/core/lib/gprpp/time.cc \
     src/core/lib/gprpp/time_averaged_stats.cc \

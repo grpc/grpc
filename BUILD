@@ -2252,40 +2252,11 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "event_engine_executor",
-    hdrs = [
-        "src/core/lib/event_engine/executor/executor.h",
-    ],
-    external_deps = ["absl/functional:any_invocable"],
-    deps = [
-        "event_engine_base_hdrs",
-        "gpr_platform",
-    ],
-)
-
-grpc_cc_library(
     name = "event_engine_time_util",
     srcs = ["src/core/lib/event_engine/time_util.cc"],
     hdrs = ["src/core/lib/event_engine/time_util.h"],
     deps = [
         "event_engine_base_hdrs",
-        "gpr_platform",
-    ],
-)
-
-grpc_cc_library(
-    name = "event_engine_threaded_executor",
-    srcs = [
-        "src/core/lib/event_engine/executor/threaded_executor.cc",
-    ],
-    hdrs = [
-        "src/core/lib/event_engine/executor/threaded_executor.h",
-    ],
-    external_deps = ["absl/functional:any_invocable"],
-    deps = [
-        "event_engine_base_hdrs",
-        "event_engine_executor",
-        "event_engine_thread_pool",
         "gpr_platform",
     ],
 )
@@ -2301,14 +2272,14 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "posix_event_engine_timer",
+    name = "iomgr_ee_timer",
     srcs = [
-        "src/core/lib/event_engine/posix_engine/timer.cc",
-        "src/core/lib/event_engine/posix_engine/timer_heap.cc",
+        "src/core/lib/event_engine/iomgr_engine/timer.cc",
+        "src/core/lib/event_engine/iomgr_engine/timer_heap.cc",
     ],
     hdrs = [
-        "src/core/lib/event_engine/posix_engine/timer.h",
-        "src/core/lib/event_engine/posix_engine/timer_heap.h",
+        "src/core/lib/event_engine/iomgr_engine/timer.h",
+        "src/core/lib/event_engine/iomgr_engine/timer_heap.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -2324,20 +2295,20 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "event_engine_thread_pool",
-    srcs = ["src/core/lib/event_engine/thread_pool.cc"],
+    name = "iomgr_ee_thread_pool",
+    srcs = ["src/core/lib/event_engine/iomgr_engine/thread_pool.cc"],
     hdrs = [
-        "src/core/lib/event_engine/thread_pool.h",
+        "src/core/lib/event_engine/iomgr_engine/thread_pool.h",
     ],
     external_deps = ["absl/functional:any_invocable"],
     deps = ["gpr_base"],
 )
 
 grpc_cc_library(
-    name = "posix_event_engine_timer_manager",
-    srcs = ["src/core/lib/event_engine/posix_engine/timer_manager.cc"],
+    name = "iomgr_ee_timer_manager",
+    srcs = ["src/core/lib/event_engine/iomgr_engine/timer_manager.cc"],
     hdrs = [
-        "src/core/lib/event_engine/posix_engine/timer_manager.h",
+        "src/core/lib/event_engine/iomgr_engine/timer_manager.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -2349,16 +2320,16 @@ grpc_cc_library(
         "event_engine_base_hdrs",
         "gpr_base",
         "gpr_codegen",
-        "posix_event_engine_timer",
+        "iomgr_ee_timer",
         "time",
     ],
 )
 
 grpc_cc_library(
-    name = "posix_event_engine_event_poller",
+    name = "iomgr_ee_event_poller",
     srcs = [],
     hdrs = [
-        "src/core/lib/event_engine/posix_engine/event_poller.h",
+        "src/core/lib/event_engine/iomgr_engine/event_poller.h",
     ],
     external_deps = [
         "absl/status",
@@ -2367,16 +2338,16 @@ grpc_cc_library(
     deps = [
         "event_engine_base_hdrs",
         "gpr_platform",
-        "posix_event_engine_closure",
+        "iomgr_ee_closure",
         "time",
     ],
 )
 
 grpc_cc_library(
-    name = "posix_event_engine_closure",
+    name = "iomgr_ee_closure",
     srcs = [],
     hdrs = [
-        "src/core/lib/event_engine/posix_engine/posix_engine_closure.h",
+        "src/core/lib/event_engine/iomgr_engine/iomgr_engine_closure.h",
     ],
     external_deps = [
         "absl/functional:any_invocable",
@@ -2390,38 +2361,38 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "posix_event_engine_lockfree_event",
+    name = "iomgr_ee_lockfree_event",
     srcs = [
-        "src/core/lib/event_engine/posix_engine/lockfree_event.cc",
+        "src/core/lib/event_engine/iomgr_engine/lockfree_event.cc",
     ],
     hdrs = [
-        "src/core/lib/event_engine/posix_engine/lockfree_event.h",
+        "src/core/lib/event_engine/iomgr_engine/lockfree_event.h",
     ],
     external_deps = ["absl/status"],
     deps = [
         "gpr_base",
-        "posix_event_engine_closure",
-        "posix_event_engine_event_poller",
+        "iomgr_ee_closure",
+        "iomgr_ee_event_poller",
         "status_helper",
     ],
 )
 
 grpc_cc_library(
-    name = "posix_event_engine_wakeup_fd_posix",
+    name = "iomgr_ee_wakeup_fd_posix",
     hdrs = [
-        "src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h",
+        "src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix.h",
     ],
     external_deps = ["absl/status"],
     deps = ["gpr_platform"],
 )
 
 grpc_cc_library(
-    name = "posix_event_engine_wakeup_fd_posix_pipe",
+    name = "iomgr_ee_wakeup_fd_posix_pipe",
     srcs = [
-        "src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.cc",
+        "src/core/lib/event_engine/iomgr_engine/wakeup_fd_pipe.cc",
     ],
     hdrs = [
-        "src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.h",
+        "src/core/lib/event_engine/iomgr_engine/wakeup_fd_pipe.h",
     ],
     external_deps = [
         "absl/memory",
@@ -2431,18 +2402,18 @@ grpc_cc_library(
     ],
     deps = [
         "gpr_base",
+        "iomgr_ee_wakeup_fd_posix",
         "iomgr_port",
-        "posix_event_engine_wakeup_fd_posix",
     ],
 )
 
 grpc_cc_library(
-    name = "posix_event_engine_wakeup_fd_posix_eventfd",
+    name = "iomgr_ee_wakeup_fd_posix_eventfd",
     srcs = [
-        "src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.cc",
+        "src/core/lib/event_engine/iomgr_engine/wakeup_fd_eventfd.cc",
     ],
     hdrs = [
-        "src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.h",
+        "src/core/lib/event_engine/iomgr_engine/wakeup_fd_eventfd.h",
     ],
     external_deps = [
         "absl/memory",
@@ -2452,18 +2423,18 @@ grpc_cc_library(
     ],
     deps = [
         "gpr_base",
+        "iomgr_ee_wakeup_fd_posix",
         "iomgr_port",
-        "posix_event_engine_wakeup_fd_posix",
     ],
 )
 
 grpc_cc_library(
-    name = "posix_event_engine_wakeup_fd_posix_default",
+    name = "iomgr_ee_wakeup_fd_posix_default",
     srcs = [
-        "src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.cc",
+        "src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix_default.cc",
     ],
     hdrs = [
-        "src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h",
+        "src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix_default.h",
     ],
     external_deps = [
         "absl/status",
@@ -2471,20 +2442,20 @@ grpc_cc_library(
     ],
     deps = [
         "gpr_platform",
+        "iomgr_ee_wakeup_fd_posix",
+        "iomgr_ee_wakeup_fd_posix_eventfd",
+        "iomgr_ee_wakeup_fd_posix_pipe",
         "iomgr_port",
-        "posix_event_engine_wakeup_fd_posix",
-        "posix_event_engine_wakeup_fd_posix_eventfd",
-        "posix_event_engine_wakeup_fd_posix_pipe",
     ],
 )
 
 grpc_cc_library(
-    name = "posix_event_engine_poller_posix_epoll1",
+    name = "iomgr_ee_poller_posix_epoll1",
     srcs = [
-        "src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc",
+        "src/core/lib/event_engine/iomgr_engine/ev_epoll1_linux.cc",
     ],
     hdrs = [
-        "src/core/lib/event_engine/posix_engine/ev_epoll1_linux.h",
+        "src/core/lib/event_engine/iomgr_engine/ev_epoll1_linux.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -2497,23 +2468,23 @@ grpc_cc_library(
     deps = [
         "gpr_base",
         "gpr_codegen",
+        "iomgr_ee_closure",
+        "iomgr_ee_event_poller",
+        "iomgr_ee_lockfree_event",
+        "iomgr_ee_wakeup_fd_posix",
+        "iomgr_ee_wakeup_fd_posix_default",
         "iomgr_port",
-        "posix_event_engine_closure",
-        "posix_event_engine_event_poller",
-        "posix_event_engine_lockfree_event",
-        "posix_event_engine_wakeup_fd_posix",
-        "posix_event_engine_wakeup_fd_posix_default",
         "time",
     ],
 )
 
 grpc_cc_library(
-    name = "posix_event_engine_poller_posix_poll",
+    name = "iomgr_ee_poller_posix_poll",
     srcs = [
-        "src/core/lib/event_engine/posix_engine/ev_poll_posix.cc",
+        "src/core/lib/event_engine/iomgr_engine/ev_poll_posix.cc",
     ],
     hdrs = [
-        "src/core/lib/event_engine/posix_engine/ev_poll_posix.h",
+        "src/core/lib/event_engine/iomgr_engine/ev_poll_posix.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -2526,58 +2497,36 @@ grpc_cc_library(
     deps = [
         "gpr_base",
         "gpr_codegen",
+        "iomgr_ee_closure",
+        "iomgr_ee_event_poller",
+        "iomgr_ee_wakeup_fd_posix",
+        "iomgr_ee_wakeup_fd_posix_default",
         "iomgr_port",
-        "posix_event_engine_closure",
-        "posix_event_engine_event_poller",
-        "posix_event_engine_wakeup_fd_posix",
-        "posix_event_engine_wakeup_fd_posix_default",
         "time",
     ],
 )
 
 grpc_cc_library(
-    name = "posix_event_engine_poller_posix_default",
+    name = "iomgr_ee_poller_posix_default",
     srcs = [
-        "src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc",
+        "src/core/lib/event_engine/iomgr_engine/event_poller_posix_default.cc",
     ],
     hdrs = [
-        "src/core/lib/event_engine/posix_engine/event_poller_posix_default.h",
+        "src/core/lib/event_engine/iomgr_engine/event_poller_posix_default.h",
     ],
     external_deps = ["absl/strings"],
     deps = [
         "gpr_base",
-        "posix_event_engine_event_poller",
-        "posix_event_engine_poller_posix_epoll1",
-        "posix_event_engine_poller_posix_poll",
+        "iomgr_ee_event_poller",
+        "iomgr_ee_poller_posix_epoll1",
+        "iomgr_ee_poller_posix_poll",
     ],
 )
 
 grpc_cc_library(
-    name = "event_engine_utils",
-    srcs = ["src/core/lib/event_engine/utils.cc"],
-    hdrs = ["src/core/lib/event_engine/utils.h"],
-    external_deps = ["absl/strings"],
-    deps = [
-        "event_engine_base_hdrs",
-        "gpr_platform",
-        "time",
-    ],
-)
-
-grpc_cc_library(
-    name = "event_engine_socket_notifier",
-    hdrs = ["src/core/lib/event_engine/socket_notifier.h"],
-    external_deps = ["absl/status"],
-    deps = [
-        "event_engine_base_hdrs",
-        "gpr_platform",
-    ],
-)
-
-grpc_cc_library(
-    name = "posix_event_engine",
-    srcs = ["src/core/lib/event_engine/posix_engine/posix_engine.cc"],
-    hdrs = ["src/core/lib/event_engine/posix_engine/posix_engine.h"],
+    name = "iomgr_event_engine",
+    srcs = ["src/core/lib/event_engine/iomgr_engine/iomgr_engine.cc"],
+    hdrs = ["src/core/lib/event_engine/iomgr_engine/iomgr_engine.h"],
     external_deps = [
         "absl/base:core_headers",
         "absl/container:flat_hash_set",
@@ -2589,64 +2538,13 @@ grpc_cc_library(
     deps = [
         "event_engine_base_hdrs",
         "event_engine_common",
-        "event_engine_threaded_executor",
         "event_engine_trace",
-        "event_engine_utils",
         "gpr_base",
         "grpc_trace",
-        "posix_event_engine_timer",
-        "posix_event_engine_timer_manager",
-    ],
-)
-
-grpc_cc_library(
-    name = "windows_event_engine",
-    srcs = ["src/core/lib/event_engine/windows/windows_engine.cc"],
-    hdrs = ["src/core/lib/event_engine/windows/windows_engine.h"],
-    external_deps = [
-        "absl/status",
-        "absl/status:statusor",
-        "absl/strings",
-    ],
-    deps = [
-        "event_engine_base_hdrs",
-        "event_engine_common",
-        "event_engine_threaded_executor",
-        "event_engine_trace",
-        "event_engine_utils",
-        "gpr_base",
-        "posix_event_engine_timer_manager",
+        "iomgr_ee_thread_pool",
+        "iomgr_ee_timer",
+        "iomgr_ee_timer_manager",
         "time",
-        "windows_iocp",
-    ],
-)
-
-grpc_cc_library(
-    name = "windows_iocp",
-    srcs = [
-        "src/core/lib/event_engine/windows/iocp.cc",
-        "src/core/lib/event_engine/windows/win_socket.cc",
-    ],
-    hdrs = [
-        "src/core/lib/event_engine/windows/iocp.h",
-        "src/core/lib/event_engine/windows/win_socket.h",
-    ],
-    external_deps = [
-        "absl/base:core_headers",
-        "absl/functional:any_invocable",
-        "absl/status",
-        "absl/strings:str_format",
-    ],
-    deps = [
-        "error",
-        "event_engine_base_hdrs",
-        "event_engine_executor",
-        "event_engine_poller",
-        "event_engine_socket_notifier",
-        "event_engine_trace",
-        "event_engine_utils",
-        "gpr_base",
-        "gpr_platform",
     ],
 )
 
@@ -2696,16 +2594,14 @@ grpc_cc_library(
 grpc_cc_library(
     name = "default_event_engine_factory",
     srcs = ["src/core/lib/event_engine/default_event_engine_factory.cc"],
-    hdrs = ["src/core/lib/event_engine/default_event_engine_factory.h"],
+    hdrs = [
+        "src/core/lib/event_engine/default_event_engine_factory.h",
+    ],
     external_deps = ["absl/memory"],
-    select_deps = [{
-        "//:windows": ["windows_event_engine"],
-        "//:windows_msvc": ["windows_event_engine"],
-        "//conditions:default": ["posix_event_engine"],
-    }],
     deps = [
         "event_engine_base_hdrs",
         "gpr_platform",
+        "iomgr_event_engine",
     ],
 )
 
@@ -3059,6 +2955,7 @@ grpc_cc_library(
         "config",
         "cpp_impl_of",
         "debug_location",
+        "default_event_engine_factory",
         "default_event_engine_factory_hdrs",
         "dual_ref_counted",
         "error",
