@@ -754,14 +754,22 @@ libs:
   - src/core/lib/event_engine/channel_args_endpoint_config.h
   - src/core/lib/event_engine/default_event_engine_factory.h
   - src/core/lib/event_engine/event_engine_factory.h
+  - src/core/lib/event_engine/executor/executor.h
+  - src/core/lib/event_engine/executor/threaded_executor.h
   - src/core/lib/event_engine/handle_containers.h
-  - src/core/lib/event_engine/iomgr_engine/iomgr_engine.h
-  - src/core/lib/event_engine/iomgr_engine/thread_pool.h
-  - src/core/lib/event_engine/iomgr_engine/timer.h
-  - src/core/lib/event_engine/iomgr_engine/timer_heap.h
-  - src/core/lib/event_engine/iomgr_engine/timer_manager.h
+  - src/core/lib/event_engine/poller.h
+  - src/core/lib/event_engine/posix_engine/posix_engine.h
+  - src/core/lib/event_engine/posix_engine/timer.h
+  - src/core/lib/event_engine/posix_engine/timer_heap.h
+  - src/core/lib/event_engine/posix_engine/timer_manager.h
   - src/core/lib/event_engine/promise.h
+  - src/core/lib/event_engine/socket_notifier.h
+  - src/core/lib/event_engine/thread_pool.h
   - src/core/lib/event_engine/trace.h
+  - src/core/lib/event_engine/utils.h
+  - src/core/lib/event_engine/windows/iocp.h
+  - src/core/lib/event_engine/windows/win_socket.h
+  - src/core/lib/event_engine/windows/windows_engine.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/chunked_vector.h
@@ -1439,16 +1447,21 @@ libs:
   - src/core/lib/event_engine/channel_args_endpoint_config.cc
   - src/core/lib/event_engine/default_event_engine_factory.cc
   - src/core/lib/event_engine/event_engine.cc
-  - src/core/lib/event_engine/iomgr_engine/iomgr_engine.cc
-  - src/core/lib/event_engine/iomgr_engine/thread_pool.cc
-  - src/core/lib/event_engine/iomgr_engine/timer.cc
-  - src/core/lib/event_engine/iomgr_engine/timer_heap.cc
-  - src/core/lib/event_engine/iomgr_engine/timer_manager.cc
+  - src/core/lib/event_engine/executor/threaded_executor.cc
   - src/core/lib/event_engine/memory_allocator.cc
+  - src/core/lib/event_engine/posix_engine/posix_engine.cc
+  - src/core/lib/event_engine/posix_engine/timer.cc
+  - src/core/lib/event_engine/posix_engine/timer_heap.cc
+  - src/core/lib/event_engine/posix_engine/timer_manager.cc
   - src/core/lib/event_engine/resolved_address.cc
   - src/core/lib/event_engine/slice.cc
   - src/core/lib/event_engine/slice_buffer.cc
+  - src/core/lib/event_engine/thread_pool.cc
   - src/core/lib/event_engine/trace.cc
+  - src/core/lib/event_engine/utils.cc
+  - src/core/lib/event_engine/windows/iocp.cc
+  - src/core/lib/event_engine/windows/win_socket.cc
+  - src/core/lib/event_engine/windows/windows_engine.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/gprpp/time_averaged_stats.cc
@@ -1924,14 +1937,22 @@ libs:
   - src/core/lib/event_engine/channel_args_endpoint_config.h
   - src/core/lib/event_engine/default_event_engine_factory.h
   - src/core/lib/event_engine/event_engine_factory.h
+  - src/core/lib/event_engine/executor/executor.h
+  - src/core/lib/event_engine/executor/threaded_executor.h
   - src/core/lib/event_engine/handle_containers.h
-  - src/core/lib/event_engine/iomgr_engine/iomgr_engine.h
-  - src/core/lib/event_engine/iomgr_engine/thread_pool.h
-  - src/core/lib/event_engine/iomgr_engine/timer.h
-  - src/core/lib/event_engine/iomgr_engine/timer_heap.h
-  - src/core/lib/event_engine/iomgr_engine/timer_manager.h
+  - src/core/lib/event_engine/poller.h
+  - src/core/lib/event_engine/posix_engine/posix_engine.h
+  - src/core/lib/event_engine/posix_engine/timer.h
+  - src/core/lib/event_engine/posix_engine/timer_heap.h
+  - src/core/lib/event_engine/posix_engine/timer_manager.h
   - src/core/lib/event_engine/promise.h
+  - src/core/lib/event_engine/socket_notifier.h
+  - src/core/lib/event_engine/thread_pool.h
   - src/core/lib/event_engine/trace.h
+  - src/core/lib/event_engine/utils.h
+  - src/core/lib/event_engine/windows/iocp.h
+  - src/core/lib/event_engine/windows/win_socket.h
+  - src/core/lib/event_engine/windows/windows_engine.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/chunked_vector.h
@@ -2250,16 +2271,21 @@ libs:
   - src/core/lib/event_engine/channel_args_endpoint_config.cc
   - src/core/lib/event_engine/default_event_engine_factory.cc
   - src/core/lib/event_engine/event_engine.cc
-  - src/core/lib/event_engine/iomgr_engine/iomgr_engine.cc
-  - src/core/lib/event_engine/iomgr_engine/thread_pool.cc
-  - src/core/lib/event_engine/iomgr_engine/timer.cc
-  - src/core/lib/event_engine/iomgr_engine/timer_heap.cc
-  - src/core/lib/event_engine/iomgr_engine/timer_manager.cc
+  - src/core/lib/event_engine/executor/threaded_executor.cc
   - src/core/lib/event_engine/memory_allocator.cc
+  - src/core/lib/event_engine/posix_engine/posix_engine.cc
+  - src/core/lib/event_engine/posix_engine/timer.cc
+  - src/core/lib/event_engine/posix_engine/timer_heap.cc
+  - src/core/lib/event_engine/posix_engine/timer_manager.cc
   - src/core/lib/event_engine/resolved_address.cc
   - src/core/lib/event_engine/slice.cc
   - src/core/lib/event_engine/slice_buffer.cc
+  - src/core/lib/event_engine/thread_pool.cc
   - src/core/lib/event_engine/trace.cc
+  - src/core/lib/event_engine/utils.cc
+  - src/core/lib/event_engine/windows/iocp.cc
+  - src/core/lib/event_engine/windows/win_socket.cc
+  - src/core/lib/event_engine/windows/windows_engine.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/gprpp/time_averaged_stats.cc
@@ -3493,6 +3519,18 @@ targets:
   - test/core/end2end/no_server_test.cc
   deps:
   - grpc_test_util
+- name: pollset_windows_starvation_test
+  build: test
+  language: c
+  headers: []
+  src:
+  - test/core/iomgr/pollset_windows_starvation_test.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - windows
 - name: public_headers_must_be_c89
   build: test
   language: c
@@ -5759,25 +5797,25 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/event_engine/iomgr_engine/ev_epoll1_linux.h
-  - src/core/lib/event_engine/iomgr_engine/ev_poll_posix.h
-  - src/core/lib/event_engine/iomgr_engine/event_poller.h
-  - src/core/lib/event_engine/iomgr_engine/event_poller_posix_default.h
-  - src/core/lib/event_engine/iomgr_engine/iomgr_engine_closure.h
-  - src/core/lib/event_engine/iomgr_engine/lockfree_event.h
-  - src/core/lib/event_engine/iomgr_engine/wakeup_fd_eventfd.h
-  - src/core/lib/event_engine/iomgr_engine/wakeup_fd_pipe.h
-  - src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix.h
-  - src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix_default.h
+  - src/core/lib/event_engine/posix_engine/ev_epoll1_linux.h
+  - src/core/lib/event_engine/posix_engine/ev_poll_posix.h
+  - src/core/lib/event_engine/posix_engine/event_poller.h
+  - src/core/lib/event_engine/posix_engine/event_poller_posix_default.h
+  - src/core/lib/event_engine/posix_engine/lockfree_event.h
+  - src/core/lib/event_engine/posix_engine/posix_engine_closure.h
+  - src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.h
+  - src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.h
+  - src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h
+  - src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h
   src:
-  - src/core/lib/event_engine/iomgr_engine/ev_epoll1_linux.cc
-  - src/core/lib/event_engine/iomgr_engine/ev_poll_posix.cc
-  - src/core/lib/event_engine/iomgr_engine/event_poller_posix_default.cc
-  - src/core/lib/event_engine/iomgr_engine/lockfree_event.cc
-  - src/core/lib/event_engine/iomgr_engine/wakeup_fd_eventfd.cc
-  - src/core/lib/event_engine/iomgr_engine/wakeup_fd_pipe.cc
-  - src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix_default.cc
-  - test/core/event_engine/iomgr_event_engine/event_poller_posix_test.cc
+  - src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc
+  - src/core/lib/event_engine/posix_engine/ev_poll_posix.cc
+  - src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc
+  - src/core/lib/event_engine/posix_engine/lockfree_event.cc
+  - src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.cc
+  - src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.cc
+  - src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.cc
+  - test/core/event_engine/posix/event_poller_posix_test.cc
   deps:
   - grpc_test_util
   platforms:
@@ -7303,20 +7341,22 @@ targets:
   deps:
   - grpc++_test_config
   - grpc++_test_util
-- name: iomgr_event_engine_test
+- name: iocp_test
   gtest: true
   build: test
   language: c++
   headers:
-  - test/core/event_engine/test_suite/event_engine_test.h
-  - test/core/event_engine/test_suite/event_engine_test_utils.h
+  - src/core/lib/event_engine/common_closures.h
+  - test/core/event_engine/windows/create_sockpair.h
   src:
-  - test/core/event_engine/test_suite/event_engine_test.cc
-  - test/core/event_engine/test_suite/event_engine_test_utils.cc
-  - test/core/event_engine/test_suite/iomgr_event_engine_test.cc
-  - test/core/event_engine/test_suite/timer_test.cc
+  - test/core/event_engine/windows/create_sockpair.cc
+  - test/core/event_engine/windows/iocp_test.cc
   deps:
   - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - windows
   uses_polling: false
 - name: istio_echo_server_test
   gtest: true
@@ -7637,12 +7677,12 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/event_engine/iomgr_engine/event_poller.h
-  - src/core/lib/event_engine/iomgr_engine/iomgr_engine_closure.h
-  - src/core/lib/event_engine/iomgr_engine/lockfree_event.h
+  - src/core/lib/event_engine/posix_engine/event_poller.h
+  - src/core/lib/event_engine/posix_engine/lockfree_event.h
+  - src/core/lib/event_engine/posix_engine/posix_engine_closure.h
   src:
-  - src/core/lib/event_engine/iomgr_engine/lockfree_event.cc
-  - test/core/event_engine/iomgr_event_engine/lock_free_event_test.cc
+  - src/core/lib/event_engine/posix_engine/lockfree_event.cc
+  - test/core/event_engine/posix/lock_free_event_test.cc
   deps:
   - grpc_test_util
   uses_polling: false
@@ -8502,6 +8542,21 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - grpc++_test_util
+- name: posix_event_engine_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/event_engine/test_suite/event_engine_test.h
+  - test/core/event_engine/test_suite/event_engine_test_utils.h
+  src:
+  - test/core/event_engine/test_suite/event_engine_test.cc
+  - test/core/event_engine/test_suite/event_engine_test_utils.cc
+  - test/core/event_engine/test_suite/posix_event_engine_test.cc
+  - test/core/event_engine/test_suite/timer_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: promise_factory_test
   gtest: true
   build: test
@@ -10117,13 +10172,13 @@ targets:
   - linux
   - posix
   - mac
-- name: test_core_event_engine_iomgr_event_engine_timer_heap_test
+- name: test_core_event_engine_posix_timer_heap_test
   gtest: true
   build: test
   language: c++
   headers:
-  - src/core/lib/event_engine/iomgr_engine/timer.h
-  - src/core/lib/event_engine/iomgr_engine/timer_heap.h
+  - src/core/lib/event_engine/posix_engine/timer.h
+  - src/core/lib/event_engine/posix_engine/timer_heap.h
   - src/core/lib/gpr/alloc.h
   - src/core/lib/gpr/env.h
   - src/core/lib/gpr/murmur_hash.h
@@ -10155,8 +10210,8 @@ targets:
   - src/core/lib/gprpp/time_util.h
   - src/core/lib/profiling/timers.h
   src:
-  - src/core/lib/event_engine/iomgr_engine/timer.cc
-  - src/core/lib/event_engine/iomgr_engine/timer_heap.cc
+  - src/core/lib/event_engine/posix_engine/timer.cc
+  - src/core/lib/event_engine/posix_engine/timer_heap.cc
   - src/core/lib/gpr/alloc.cc
   - src/core/lib/gpr/atm.cc
   - src/core/lib/gpr/cpu_iphone.cc
@@ -10202,7 +10257,7 @@ targets:
   - src/core/lib/gprpp/time_util.cc
   - src/core/lib/profiling/basic_timers.cc
   - src/core/lib/profiling/stap_timers.cc
-  - test/core/event_engine/iomgr_event_engine/timer_heap_test.cc
+  - test/core/event_engine/posix/timer_heap_test.cc
   deps:
   - absl/base:base
   - absl/base:core_headers
@@ -10219,13 +10274,13 @@ targets:
   - absl/types:optional
   - absl/types:variant
   uses_polling: false
-- name: test_core_event_engine_iomgr_event_engine_timer_list_test
+- name: test_core_event_engine_posix_timer_list_test
   gtest: true
   build: test
   language: c++
   headers:
-  - src/core/lib/event_engine/iomgr_engine/timer.h
-  - src/core/lib/event_engine/iomgr_engine/timer_heap.h
+  - src/core/lib/event_engine/posix_engine/timer.h
+  - src/core/lib/event_engine/posix_engine/timer_heap.h
   - src/core/lib/gpr/alloc.h
   - src/core/lib/gpr/env.h
   - src/core/lib/gpr/murmur_hash.h
@@ -10256,8 +10311,8 @@ targets:
   - src/core/lib/gprpp/time_util.h
   - src/core/lib/profiling/timers.h
   src:
-  - src/core/lib/event_engine/iomgr_engine/timer.cc
-  - src/core/lib/event_engine/iomgr_engine/timer_heap.cc
+  - src/core/lib/event_engine/posix_engine/timer.cc
+  - src/core/lib/event_engine/posix_engine/timer_heap.cc
   - src/core/lib/gpr/alloc.cc
   - src/core/lib/gpr/atm.cc
   - src/core/lib/gpr/cpu_iphone.cc
@@ -10303,7 +10358,7 @@ targets:
   - src/core/lib/gprpp/time_util.cc
   - src/core/lib/profiling/basic_timers.cc
   - src/core/lib/profiling/stap_timers.cc
-  - test/core/event_engine/iomgr_event_engine/timer_list_test.cc
+  - test/core/event_engine/posix/timer_list_test.cc
   deps:
   - absl/base:base
   - absl/base:core_headers
@@ -11086,19 +11141,36 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/event_engine/iomgr_engine/wakeup_fd_eventfd.h
-  - src/core/lib/event_engine/iomgr_engine/wakeup_fd_pipe.h
-  - src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix.h
+  - src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.h
+  - src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.h
+  - src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h
   src:
-  - src/core/lib/event_engine/iomgr_engine/wakeup_fd_eventfd.cc
-  - src/core/lib/event_engine/iomgr_engine/wakeup_fd_pipe.cc
-  - test/core/event_engine/iomgr_event_engine/wakeup_fd_posix_test.cc
+  - src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.cc
+  - src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.cc
+  - test/core/event_engine/posix/wakeup_fd_posix_test.cc
   deps:
   - grpc_test_util
   platforms:
   - linux
   - posix
   - mac
+- name: win_socket_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/event_engine/common_closures.h
+  - test/core/event_engine/windows/create_sockpair.h
+  src:
+  - test/core/event_engine/windows/create_sockpair.cc
+  - test/core/event_engine/windows/win_socket_test.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - windows
+  uses_polling: false
 - name: window_overflow_bad_client_test
   gtest: true
   build: test
