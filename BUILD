@@ -4225,6 +4225,7 @@ grpc_cc_library(
         "iomgr_timer",
         "json",
         "json_util",
+        "lb_policy_registry",
         "match",
         "orphanable",
         "protobuf_any_upb",
@@ -4248,7 +4249,6 @@ grpc_cc_library(
         "work_serializer",
         "xds_type_upb",
         "xds_type_upbdefs",
-        "lb_policy_registry",
     ],
 )
 
