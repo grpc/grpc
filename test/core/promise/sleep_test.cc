@@ -14,6 +14,12 @@
 
 #include "src/core/lib/promise/sleep.h"
 
+#include <algorithm>
+#include <cstddef>
+#include <memory>
+#include <utility>
+#include <vector>
+
 #include "absl/synchronization/notification.h"
 #include "gtest/gtest.h"
 

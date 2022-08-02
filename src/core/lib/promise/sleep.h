@@ -17,16 +17,12 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <cstddef>
-#include <utility>
-
-#include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
 
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/support/log.h>
 
-#include "src/core/lib/gprpp/manual_constructor.h"
-#include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"

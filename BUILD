@@ -1254,10 +1254,7 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/promise/sleep.h",
     ],
-    external_deps = [
-        "absl/base:core_headers",
-        "absl/status",
-    ],
+    external_deps = ["absl/status"],
     deps = [
         "activity",
         "event_engine_base",
@@ -1265,6 +1262,7 @@ grpc_cc_library(
         "exec_ctx",
         "gpr_base",
         "poll",
+        "ref_counted",
         "time",
     ],
 )
