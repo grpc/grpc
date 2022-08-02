@@ -259,6 +259,16 @@ class BasicSeq {
     return &final_promise_;
   }
 
+  // Get the Wrapped type of factory F
+  template <typename F, typename Arg, typename Iter>
+  struct BasicSeqIterTraits {
+    using IterValue = decltype(*std::declval<Iter>());
+    using StateCreated = decltype(std::declval<F>()(std::declval<IterValue>(),
+                                                    std::declval<Arg>()));
+    using State = PromiseLike<StateCreated>;
+    using Wrapped = typename State::Result;
+  };
+
   // Callable to advance the state to the next one after I given the result from
   // state I.
   template <char I>
@@ -423,8 +433,7 @@ class BasicSeq {
 // At each element, the accumulator A and the current value V is passed to some
 // function of type F as f(V, A); f is expected to return a promise that
 // resolves to Traits::WrappedType.
-template <template <typename Wrapped> class Traits, typename F, typename Arg,
-          typename Iter>
+template <class Traits, typename F, typename Arg, typename Iter>
 class BasicSeqIter {
  private:
   using IterValue = decltype(*std::declval<Iter>());
@@ -484,7 +493,7 @@ class BasicSeqIter {
   Poll<Wrapped> PollNonEmpty() {
     Poll<Wrapped> r = state_();
     if (absl::holds_alternative<Pending>(r)) return r;
-    return Traits<Wrapped>::template CheckResultAndRunNext<Wrapped>(
+    return Traits::template CheckResultAndRunNext<Wrapped>(
         std::move(absl::get<Wrapped>(r)), [this](Wrapped arg) -> Poll<Wrapped> {
           auto next = cur_;
           ++next;
@@ -494,7 +503,7 @@ class BasicSeqIter {
           cur_ = next;
           state_.~State();
           Construct(&state_,
-                    Traits<Wrapped>::CallSeqFactory(f_, *cur_, std::move(arg)));
+                    Traits::template CallSeqFactory(f_, *cur_, std::move(arg)));
           return PollNonEmpty();
         });
   }

@@ -143,12 +143,16 @@ promise_detail::TrySeq<Functors...> TrySeq(Functors... functors) {
 //   }
 //   return argument;
 template <typename Iter, typename Factory, typename Argument>
-promise_detail::BasicSeqIter<promise_detail::TrySeqTraits, Factory, Argument,
-                             Iter>
+promise_detail::BasicSeqIter<
+    promise_detail::TrySeqTraits<typename promise_detail::BasicSeqIterTraits<
+        Factory, Argument, Iter>::Wrapped>,
+    Factory, Argument, Iter>
 TrySeqIter(Iter begin, Iter end, Argument argument, Factory factory) {
-  return promise_detail::BasicSeqIter<promise_detail::TrySeqTraits, Factory,
-                                      Argument, Iter>(
-      begin, end, std::move(factory), std::move(argument));
+  return promise_detail::BasicSeqIter<
+      promise_detail::TrySeqTraits<typename promise_detail::BasicSeqIterTraits<
+          Factory, Argument, Iter>::Wrapped>,
+      Factory, Argument, Iter>(begin, end, std::move(factory),
+                               std::move(argument));
 }
 
 }  // namespace grpc_core

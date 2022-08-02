@@ -75,11 +75,16 @@ F Seq(F functor) {
 //   }
 //   return argument;
 template <typename Iter, typename Factory, typename Argument>
-promise_detail::BasicSeqIter<promise_detail::SeqTraits, Factory, Argument, Iter>
+promise_detail::BasicSeqIter<
+    promise_detail::SeqTraits<typename promise_detail::BasicSeqIterTraits<
+        Factory, Argument, Iter>::Wrapped>,
+    Factory, Argument, Iter>
 SeqIter(Iter begin, Iter end, Argument argument, Factory factory) {
-  return promise_detail::BasicSeqIter<promise_detail::SeqTraits, Factory,
-                                      Argument, Iter>(
-      begin, end, std::move(factory), std::move(argument));
+  return promise_detail::BasicSeqIter<
+      promise_detail::SeqTraits<typename promise_detail::BasicSeqIterTraits<
+          Factory, Argument, Iter>::Wrapped>,
+      Factory, Argument, Iter>(begin, end, std::move(factory),
+                               std::move(argument));
 }
 
 }  // namespace grpc_core
