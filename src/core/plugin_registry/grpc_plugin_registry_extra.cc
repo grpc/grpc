@@ -32,8 +32,6 @@ namespace grpc_core {
 void FileWatcherCertificateProviderInit();
 void FileWatcherCertificateProviderShutdown();
 }  // namespace grpc_core
-void grpc_lb_policy_xds_cluster_resolver_init(void);
-void grpc_lb_policy_xds_cluster_resolver_shutdown(void);
 #endif
 
 void grpc_register_extra_plugins() {
@@ -44,8 +42,6 @@ void grpc_register_extra_plugins() {
                        grpc_certificate_provider_registry_shutdown);
   grpc_register_plugin(grpc_core::FileWatcherCertificateProviderInit,
                        grpc_core::FileWatcherCertificateProviderShutdown);
-  grpc_register_plugin(grpc_lb_policy_xds_cluster_resolver_init,
-                       grpc_lb_policy_xds_cluster_resolver_shutdown);
 #endif
 }
 
@@ -61,6 +57,8 @@ extern void RegisterXdsClusterManagerLbPolicy(
     CoreConfiguration::Builder* builder);
 extern void RegisterXdsClusterImplLbPolicy(CoreConfiguration::Builder* builder);
 extern void RegisterCdsLbPolicy(CoreConfiguration::Builder* builder);
+extern void RegisterXdsClusterResolverLbPolicy(
+    CoreConfiguration::Builder* builder);
 #endif
 void RegisterExtraFilters(CoreConfiguration::Builder* builder) {
   // Use builder to avoid unused-parameter warning.
@@ -76,6 +74,7 @@ void RegisterExtraFilters(CoreConfiguration::Builder* builder) {
   RegisterXdsClusterManagerLbPolicy(builder);
   RegisterXdsClusterImplLbPolicy(builder);
   RegisterCdsLbPolicy(builder);
+  RegisterXdsClusterResolverLbPolicy(builder);
 #endif
 }
 }  // namespace grpc_core
