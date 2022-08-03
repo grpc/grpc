@@ -160,7 +160,7 @@ class XdsClusterImplLbConfig : public LoadBalancingPolicy::Config {
     cluster_name_ = std::move(other.cluster_name_);
     eds_service_name_ = std::move(other.eds_service_name_);
     lrs_load_reporting_server_ = std::move(other.lrs_load_reporting_server_);
-    max_concurrent_requests_ = std::move(other.max_concurrent_requests_);
+    max_concurrent_requests_ = other.max_concurrent_requests_;
     drop_config_ = std::move(other.drop_config_);
     return *this;
   }
