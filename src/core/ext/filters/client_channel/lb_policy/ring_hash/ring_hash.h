@@ -32,8 +32,8 @@ UniqueTypeName RequestHashAttributeName();
 // Helper Parsing method to parse ring hash policy configs; for example, ring
 // hash size validity.
 struct RingHashConfig {
-  size_t min_ring_size = 1024;
-  size_t max_ring_size = 8388608;
+  uint64_t min_ring_size = 1024;
+  uint64_t max_ring_size = 8388608;
 
   static const JsonLoaderInterface* JsonLoader();
   void JsonPostLoad(const Json& json, ErrorList* errors);
