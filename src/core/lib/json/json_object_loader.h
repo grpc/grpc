@@ -513,7 +513,7 @@ absl::StatusOr<T> LoadFromJson(const Json& json,
   T result{};
   json_detail::LoaderForType<T>()->LoadInto(json, args, &result, &error_list);
   if (!error_list.ok()) return error_list.status();
-  return result;
+  return std::move(result);
 }
 
 template <typename T>
@@ -536,7 +536,7 @@ absl::optional<T> LoadJsonObjectField(const Json::Object& json,
   size_t starting_error_size = errors->size();
   json_detail::LoaderForType<T>()->LoadInto(*field_json, args, &result, errors);
   if (errors->size() > starting_error_size) return absl::nullopt;
-  return result;
+  return std::move(result);
 }
 
 }  // namespace grpc_core
