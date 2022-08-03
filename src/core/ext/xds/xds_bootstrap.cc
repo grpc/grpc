@@ -217,12 +217,21 @@ const JsonLoaderInterface* XdsBootstrap::Authority::JsonLoader(
 
 absl::StatusOr<XdsBootstrap> XdsBootstrap::Create(
     absl::string_view json_string) {
+  // Parse JSON.
   auto json = Json::Parse(json_string);
   if (!json.ok()) {
     return absl::InvalidArgumentError(absl::StrCat(
         "Failed to parse bootstrap JSON string: ", json.status().message()));
   }
-  return LoadFromJson<XdsBootstrap>(*json);
+  // Validate JSON.
+  class XdsJsonArgs : public JsonArgs {
+   public:
+    bool IsEnabled(absl::string_view key) const override {
+      if (key == "federation") return XdsFederationEnabled();
+      return true;
+    }
+  };
+  return LoadFromJson<XdsBootstrap>(*json, XdsJsonArgs());
 }
 
 XdsBootstrap::XdsBootstrap(XdsBootstrap&& other) noexcept
@@ -247,33 +256,22 @@ XdsBootstrap& XdsBootstrap::operator=(XdsBootstrap&& other) noexcept {
   return *this;
 }
 
-const JsonLoaderInterface* XdsBootstrap::JsonLoader(const JsonArgs&) {
-// FIXME: check this via JsonArgs to avoid duplication
-  if (XdsFederationEnabled()) {
-    static const auto* loader =
-        JsonObjectLoader<XdsBootstrap>()
-            .Field("xds_servers", &XdsBootstrap::servers_)
-            .OptionalField("node", &XdsBootstrap::node_)
-            .OptionalField("certificate_providers",
-                           &XdsBootstrap::certificate_providers_)
-            .OptionalField(
-                "server_listener_resource_name_template",
-                &XdsBootstrap::server_listener_resource_name_template_)
-            .OptionalField("authorities", &XdsBootstrap::authorities_)
-            .OptionalField(
-                "client_default_listener_resource_name_template",
-                &XdsBootstrap::client_default_listener_resource_name_template_)
-            .Finish();
-    return loader;
-  }
+const JsonLoaderInterface* XdsBootstrap::JsonLoader(const JsonArgs& args) {
   static const auto* loader =
       JsonObjectLoader<XdsBootstrap>()
           .Field("xds_servers", &XdsBootstrap::servers_)
           .OptionalField("node", &XdsBootstrap::node_)
           .OptionalField("certificate_providers",
                          &XdsBootstrap::certificate_providers_)
-          .OptionalField("server_listener_resource_name_template",
-                         &XdsBootstrap::server_listener_resource_name_template_)
+          .OptionalField(
+              "server_listener_resource_name_template",
+              &XdsBootstrap::server_listener_resource_name_template_)
+          .OptionalField("authorities", &XdsBootstrap::authorities_,
+                         "federation")
+          .OptionalField(
+              "client_default_listener_resource_name_template",
+              &XdsBootstrap::client_default_listener_resource_name_template_,
+              "federation")
           .Finish();
   return loader;
 }
