@@ -116,8 +116,9 @@ const JsonLoaderInterface* XdsBootstrap::XdsServer::JsonLoader(
   return loader;
 }
 
-void XdsBootstrap::XdsServer::JsonPostLoad(
-    const Json& json, const JsonArgs& args, ErrorList* errors) {
+void XdsBootstrap::XdsServer::JsonPostLoad(const Json& json,
+                                           const JsonArgs& args,
+                                           ErrorList* errors) {
   // Parse "channel_creds".
   auto channel_creds_list = LoadJsonObjectField<std::vector<ChannelCreds>>(
       json.object_value(), args, "channel_creds", errors);
@@ -132,9 +133,8 @@ void XdsBootstrap::XdsServer::JsonPostLoad(
               creds.type)) {
         if (!CoreConfiguration::Get().channel_creds_registry().IsValidConfig(
                 creds.type, creds.config)) {
-          errors->AddError(
-              absl::StrCat("invalid config for channel creds type \"",
-                           creds.type, "\""));
+          errors->AddError(absl::StrCat(
+              "invalid config for channel creds type \"", creds.type, "\""));
           continue;
         }
         channel_creds.type = std::move(creds.type);
@@ -263,9 +263,8 @@ const JsonLoaderInterface* XdsBootstrap::JsonLoader(const JsonArgs& args) {
           .OptionalField("node", &XdsBootstrap::node_)
           .OptionalField("certificate_providers",
                          &XdsBootstrap::certificate_providers_)
-          .OptionalField(
-              "server_listener_resource_name_template",
-              &XdsBootstrap::server_listener_resource_name_template_)
+          .OptionalField("server_listener_resource_name_template",
+                         &XdsBootstrap::server_listener_resource_name_template_)
           .OptionalField("authorities", &XdsBootstrap::authorities_,
                          "federation")
           .OptionalField(

@@ -31,6 +31,7 @@
 
 #include "src/core/ext/xds/certificate_provider_store.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
 
 namespace grpc_core {
