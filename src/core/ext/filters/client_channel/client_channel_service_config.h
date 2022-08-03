@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_RESULT_PARSING_H
-#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_RESULT_PARSING_H
+#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_CLIENT_CHANNEL_SERVICE_CONFIG_H
+#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_CLIENT_CHANNEL_SERVICE_CONFIG_H
 
 #include <grpc/support/port_platform.h>
 
@@ -23,7 +23,6 @@
 
 #include <memory>
 #include <string>
-#include <utility>
 
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
@@ -35,6 +34,7 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
 #include "src/core/lib/service_config/service_config_parser.h"
 
@@ -47,14 +47,14 @@ class ClientChannelGlobalParsedConfig
   ClientChannelGlobalParsedConfig() = default;
 
   // Not copyable.
-  ClientChannelGlobalParsedConfig(
-      const ClientChannelGlobalParsedConfig&) = delete;
+  ClientChannelGlobalParsedConfig(const ClientChannelGlobalParsedConfig&) =
+      delete;
   ClientChannelGlobalParsedConfig& operator=(
       const ClientChannelGlobalParsedConfig&) = delete;
 
   // Movable.
-  ClientChannelGlobalParsedConfig(ClientChannelGlobalParsedConfig&& other)
-      noexcept;
+  ClientChannelGlobalParsedConfig(
+      ClientChannelGlobalParsedConfig&& other) noexcept;
   ClientChannelGlobalParsedConfig& operator=(
       ClientChannelGlobalParsedConfig&& other) noexcept;
 
@@ -95,14 +95,14 @@ class ClientChannelMethodParsedConfig
   ClientChannelMethodParsedConfig() = default;
 
   // Not copyable.
-  ClientChannelMethodParsedConfig(
-      const ClientChannelMethodParsedConfig&) = delete;
+  ClientChannelMethodParsedConfig(const ClientChannelMethodParsedConfig&) =
+      delete;
   ClientChannelMethodParsedConfig& operator=(
       const ClientChannelMethodParsedConfig&) = delete;
 
   // Movable.
-  ClientChannelMethodParsedConfig(ClientChannelMethodParsedConfig&& other)
-      noexcept;
+  ClientChannelMethodParsedConfig(
+      ClientChannelMethodParsedConfig&& other) noexcept;
   ClientChannelMethodParsedConfig& operator=(
       ClientChannelMethodParsedConfig&& other) noexcept;
 
@@ -137,4 +137,4 @@ class ClientChannelServiceConfigParser : public ServiceConfigParser::Parser {
 }  // namespace internal
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_RESULT_PARSING_H
+#endif  // GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_CLIENT_CHANNEL_SERVICE_CONFIG_H

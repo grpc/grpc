@@ -801,8 +801,7 @@ TEST(JsonObjectLoader, IgnoresDisabledFields) {
     FakeJsonArgs() = default;
 
     bool IsEnabled(absl::string_view key) const override {
-      if (key == "disabled") return false;
-      return true;
+      return key != "disabled";
     }
   };
   struct TestStruct {
@@ -842,7 +841,9 @@ TEST(JsonObjectLoader, PostLoadHook) {
     }
 
     void JsonPostLoad(const Json& /*source*/, const JsonArgs& /*args*/,
-                      ErrorList* /*errors*/) { ++a; }
+                      ErrorList* /*errors*/) {
+      ++a;
+    }
   };
   auto test_struct = Parse<TestStruct>("{\"a\": 1}");
   ASSERT_TRUE(test_struct.ok()) << test_struct.status();
@@ -932,8 +933,8 @@ TEST(JsonObjectLoader, LoadJsonObjectField) {
   // Load a valid field.
   {
     ErrorList errors;
-    auto value = LoadJsonObjectField<int32_t>(
-        json->object_value(), JsonArgs(), "int", &errors);
+    auto value = LoadJsonObjectField<int32_t>(json->object_value(), JsonArgs(),
+                                              "int", &errors);
     ASSERT_TRUE(value.has_value()) << errors.status();
     EXPECT_EQ(*value, 1);
     EXPECT_TRUE(errors.ok());
@@ -941,9 +942,9 @@ TEST(JsonObjectLoader, LoadJsonObjectField) {
   // An optional field that is not present.
   {
     ErrorList errors;
-    auto value = LoadJsonObjectField<int32_t>(
-        json->object_value(), JsonArgs(), "not_present", &errors,
-        /*required=*/false);
+    auto value = LoadJsonObjectField<int32_t>(json->object_value(), JsonArgs(),
+                                              "not_present", &errors,
+                                              /*required=*/false);
     EXPECT_FALSE(value.has_value());
     EXPECT_TRUE(errors.ok());
   }
@@ -963,8 +964,8 @@ TEST(JsonObjectLoader, LoadJsonObjectField) {
   // Value has the wrong type.
   {
     ErrorList errors;
-    auto value = LoadJsonObjectField<std::string>(
-        json->object_value(), JsonArgs(), "int", &errors);
+    auto value = LoadJsonObjectField<std::string>(json->object_value(),
+                                                  JsonArgs(), "int", &errors);
     EXPECT_FALSE(value.has_value());
     auto status = errors.status();
     EXPECT_THAT(status.code(), absl::StatusCode::kInvalidArgument);

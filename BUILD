@@ -3360,8 +3360,9 @@ grpc_cc_library(
         "iomgr_fwd",
         "iomgr_timer",
         "json",
+        "json_args",
         "json_channel_args",
-        "json_util",
+        "json_object_loader",
         "memory_quota",
         "orphanable",
         "protobuf_duration_upb",
@@ -7028,6 +7029,7 @@ grpc_cc_library(
         "error",
         "gpr_base",
         "json",
+        "json_args",
         "json_object_loader",
         "time",
     ],
@@ -7036,10 +7038,8 @@ grpc_cc_library(
 grpc_cc_library(
     name = "json_args",
     hdrs = ["src/core/lib/json/json_args.h"],
-    external_deps = [
-        "absl/strings",
-        "absl/types:optional",
-    ],
+    external_deps = ["absl/strings"],
+    deps = ["gpr_base"],
 )
 
 grpc_cc_library(
@@ -7064,8 +7064,13 @@ grpc_cc_library(
 grpc_cc_library(
     name = "json_channel_args",
     hdrs = ["src/core/lib/json/json_channel_args.h"],
+    external_deps = [
+        "absl/strings",
+        "absl/types:optional",
+    ],
     deps = [
         "channel_args",
+        "gpr",
         "json_args",
     ],
 )

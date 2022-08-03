@@ -14,8 +14,6 @@
 // limitations under the License.
 //
 
-#include "src/core/ext/filters/message_size/message_size_filter.h"
-
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -23,6 +21,7 @@
 
 #include <grpc/grpc.h>
 
+#include "src/core/ext/filters/message_size/message_size_filter.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/string.h"

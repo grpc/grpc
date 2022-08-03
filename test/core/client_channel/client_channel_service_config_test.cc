@@ -130,12 +130,11 @@ TEST_F(ClientChannelParserTest, InvalidGrpclbLoadBalancingConfig) {
       "]}";
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(
-      service_config.status().message(),
-      "Service config parsing errors: [errors validating JSON: ["
-      "field:loadBalancingConfig error:"
-      "errors parsing grpclb LB policy config: ["
-      "error parsing childPolicy field: type should be array]]]");
+  EXPECT_EQ(service_config.status().message(),
+            "Service config parsing errors: [errors validating JSON: ["
+            "field:loadBalancingConfig error:"
+            "errors parsing grpclb LB policy config: ["
+            "error parsing childPolicy field: type should be array]]]");
 }
 
 TEST_F(ClientChannelParserTest, ValidLoadBalancingPolicy) {
@@ -162,10 +161,9 @@ TEST_F(ClientChannelParserTest, UnknownLoadBalancingPolicy) {
   const char* test_json = "{\"loadBalancingPolicy\":\"unknown\"}";
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(
-      service_config.status().message(),
-      "Service config parsing errors: [errors validating JSON: ["
-      "field:loadBalancingPolicy error:unknown LB policy \"unknown\"]]");
+  EXPECT_EQ(service_config.status().message(),
+            "Service config parsing errors: [errors validating JSON: ["
+            "field:loadBalancingPolicy error:unknown LB policy \"unknown\"]]");
 }
 
 TEST_F(ClientChannelParserTest, LoadBalancingPolicyXdsNotAllowed) {
@@ -173,12 +171,11 @@ TEST_F(ClientChannelParserTest, LoadBalancingPolicyXdsNotAllowed) {
       "{\"loadBalancingPolicy\":\"xds_cluster_resolver_experimental\"}";
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(
-      service_config.status().message(),
-      "Service config parsing errors: [errors validating JSON: ["
-      "field:loadBalancingPolicy error:LB policy "
-      "\"xds_cluster_resolver_experimental\" requires a config. Please "
-      "use loadBalancingConfig instead.]]");
+  EXPECT_EQ(service_config.status().message(),
+            "Service config parsing errors: [errors validating JSON: ["
+            "field:loadBalancingPolicy error:LB policy "
+            "\"xds_cluster_resolver_experimental\" requires a config. Please "
+            "use loadBalancingConfig instead.]]");
 }
 
 TEST_F(ClientChannelParserTest, ValidTimeout) {
@@ -217,11 +214,10 @@ TEST_F(ClientChannelParserTest, InvalidTimeout) {
       "}";
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(
-      service_config.status().message(),
-      "Service config parsing errors: [errors parsing methodConfig: ["
-      "index 0: [errors validating JSON: ["
-      "field:timeout error:Not a duration (no s suffix)]]]]");
+  EXPECT_EQ(service_config.status().message(),
+            "Service config parsing errors: [errors parsing methodConfig: ["
+            "index 0: [errors validating JSON: ["
+            "field:timeout error:Not a duration (no s suffix)]]]]");
 }
 
 TEST_F(ClientChannelParserTest, ValidWaitForReady) {
@@ -264,11 +260,10 @@ TEST_F(ClientChannelParserTest, InvalidWaitForReady) {
       "}";
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(
-      service_config.status().message(),
-      "Service config parsing errors: [errors parsing methodConfig: ["
-      "index 0: [errors validating JSON: ["
-      "field:waitForReady error:is not a boolean]]]]");
+  EXPECT_EQ(service_config.status().message(),
+            "Service config parsing errors: [errors parsing methodConfig: ["
+            "index 0: [errors validating JSON: ["
+            "field:waitForReady error:is not a boolean]]]]");
 }
 
 TEST_F(ClientChannelParserTest, ValidHealthCheck) {

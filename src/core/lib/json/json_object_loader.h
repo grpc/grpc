@@ -410,9 +410,8 @@ class Vec<T, 0> {
 // Given a list of elements, and a destination object, load the elements into
 // the object from some parsed JSON.
 // Returns false if the JSON object was not of type Json::Type::OBJECT.
-bool LoadObject(
-    const Json& json, const JsonArgs& args, const Element* elements,
-    size_t num_elements, void* dst, ErrorList* errors);
+bool LoadObject(const Json& json, const JsonArgs& args, const Element* elements,
+                size_t num_elements, void* dst, ErrorList* errors);
 
 // Adaptor type - takes a compile time computed list of elements and implements
 // LoaderInterface by calling LoadObject.
@@ -496,9 +495,9 @@ class JsonObjectLoader final {
   GPR_NO_UNIQUE_ADDRESS Vec<Element, kElemCount> elements_;
 };
 
-const Json* GetJsonObjectField(
-    const Json::Object& json, absl::string_view field, ErrorList* errors,
-    bool required);
+const Json* GetJsonObjectField(const Json::Object& json,
+                               absl::string_view field, ErrorList* errors,
+                               bool required);
 
 }  // namespace json_detail
 
@@ -525,9 +524,10 @@ T LoadFromJson(const Json& json, const JsonArgs& args, ErrorList* error_list) {
 }
 
 template <typename T>
-absl::optional<T> LoadJsonObjectField(
-    const Json::Object& json, const JsonArgs& args, absl::string_view field,
-    ErrorList* errors, bool required = true) {
+absl::optional<T> LoadJsonObjectField(const Json::Object& json,
+                                      const JsonArgs& args,
+                                      absl::string_view field,
+                                      ErrorList* errors, bool required = true) {
   ScopedField error_field(errors, absl::StrCat(".", field));
   const Json* field_json =
       json_detail::GetJsonObjectField(json, field, errors, required);

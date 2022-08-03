@@ -131,8 +131,8 @@ void LoadBool::LoadInto(const Json& json, const JsonArgs&, void* dst,
   }
 }
 
-void LoadUnprocessedJsonObject::LoadInto(
-    const Json& json, const JsonArgs&, void* dst, ErrorList* errors) const {
+void LoadUnprocessedJsonObject::LoadInto(const Json& json, const JsonArgs&,
+                                         void* dst, ErrorList* errors) const {
   if (json.type() != Json::Type::OBJECT) {
     errors->AddError("is not an object");
     return;

@@ -845,6 +845,8 @@ libs:
   - src/core/lib/iomgr/wakeup_fd_pipe.h
   - src/core/lib/iomgr/wakeup_fd_posix.h
   - src/core/lib/json/json.h
+  - src/core/lib/json/json_args.h
+  - src/core/lib/json/json_channel_args.h
   - src/core/lib/json/json_object_loader.h
   - src/core/lib/json/json_util.h
   - src/core/lib/matchers/matchers.h
@@ -2016,6 +2018,8 @@ libs:
   - src/core/lib/iomgr/wakeup_fd_pipe.h
   - src/core/lib/iomgr/wakeup_fd_posix.h
   - src/core/lib/json/json.h
+  - src/core/lib/json/json_args.h
+  - src/core/lib/json/json_channel_args.h
   - src/core/lib/json/json_object_loader.h
   - src/core/lib/json/json_util.h
   - src/core/lib/promise/activity.h

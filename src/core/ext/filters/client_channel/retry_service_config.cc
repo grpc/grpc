@@ -18,17 +18,13 @@
 
 #include "src/core/ext/filters/client_channel/retry_service_config.h"
 
-#include <stdio.h>
-#include <string.h>
-
-#include <algorithm>
 #include <map>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "absl/memory/memory.h"
-#include "absl/status/status.h"
+#include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
 
@@ -39,10 +35,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gpr/string.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json_channel_args.h"
-#include "src/core/lib/json/json_util.h"
 
 // As per the retry design, we do not allow more than 5 retry attempts.
 #define MAX_MAX_RETRY_ATTEMPTS 5

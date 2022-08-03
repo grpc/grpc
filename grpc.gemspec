@@ -1218,6 +1218,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/iomgr/wakeup_fd_posix.cc )
   s.files += %w( src/core/lib/iomgr/wakeup_fd_posix.h )
   s.files += %w( src/core/lib/json/json.h )
+  s.files += %w( src/core/lib/json/json_args.h )
+  s.files += %w( src/core/lib/json/json_channel_args.h )
   s.files += %w( src/core/lib/json/json_object_loader.cc )
   s.files += %w( src/core/lib/json/json_object_loader.h )
   s.files += %w( src/core/lib/json/json_reader.cc )
