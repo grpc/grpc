@@ -66,7 +66,7 @@ class RetryMethodConfig : public ServiceConfigParser::ParsedConfig {
     return per_attempt_recv_timeout_;
   }
 
-  static const JsonLoaderInterface* JsonLoader(const JsonArgs& args);
+  static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
   void JsonPostLoad(const Json& json, const JsonArgs& args, ErrorList* errors);
 
  private:

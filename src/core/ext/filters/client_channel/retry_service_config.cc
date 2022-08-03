@@ -118,7 +118,7 @@ void RetryGlobalConfig::JsonPostLoad(const Json& json, const JsonArgs& args,
 // RetryMethodConfig
 //
 
-const JsonLoaderInterface* RetryMethodConfig::JsonLoader(const JsonArgs& args) {
+const JsonLoaderInterface* RetryMethodConfig::JsonLoader(const JsonArgs&) {
   static const auto* loader =
       JsonObjectLoader<RetryMethodConfig>()
           // Note: The "retryableStatusCodes" field requires custom parsing,
@@ -198,7 +198,7 @@ void RetryMethodConfig::JsonPostLoad(const Json& json, const JsonArgs& args,
       }
     }
   }
-  // Parse perAttemptRecvTimeout.
+  // Validate perAttemptRecvTimeout.
   if (args.IsEnabled(GRPC_ARG_EXPERIMENTAL_ENABLE_HEDGING)) {
     if (per_attempt_recv_timeout_.has_value()) {
       ScopedField field(errors, ".perAttemptRecvTimeout");
