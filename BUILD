@@ -5718,6 +5718,7 @@ grpc_cc_library(
         "grpc_trace",
         "httpcli",
         "httpcli_ssl_credentials",
+        "iomgr_fwd",
         "json",
         "orphanable",
         "poll",

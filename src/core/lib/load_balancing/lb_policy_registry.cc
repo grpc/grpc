@@ -29,9 +29,10 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
-#include "lb_policy.h"
 
 #include <grpc/support/log.h>
+
+#include "src/core/lib/load_balancing/lb_policy.h"
 
 namespace grpc_core {
 

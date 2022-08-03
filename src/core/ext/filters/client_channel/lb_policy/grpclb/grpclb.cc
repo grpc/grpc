@@ -1906,7 +1906,7 @@ class GrpcLbFactory : public LoadBalancingPolicyFactory {
 namespace grpc_core {
 void RegisterGrpcLbLoadReportingFilter(CoreConfiguration::Builder* builder) {
   builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
-      absl::make_unique<grpc_core::GrpcLbFactory>());
+      absl::make_unique<GrpcLbFactory>());
   builder->channel_init()->RegisterStage(
       GRPC_CLIENT_SUBCHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
       [](ChannelStackBuilder* builder) {
