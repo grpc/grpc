@@ -33,6 +33,7 @@
 
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_args.h"
 
 // Provides a means to load JSON objects into C++ objects, with the aim of
 // minimizing object code size.
@@ -113,7 +114,7 @@ class LoaderInterface {
  public:
   // Convert json value to whatever type we're loading at dst.
   // If errors occur, add them to error_list.
-  virtual void LoadInto(const Json& json, void* dst,
+  virtual void LoadInto(const Json& json, const JsonArgs& args, void* dst,
                         ErrorList* errors) const = 0;
 
  protected:
@@ -123,7 +124,8 @@ class LoaderInterface {
 // Loads a scalar (string or number).
 class LoadScalar : public LoaderInterface {
  public:
-  void LoadInto(const Json& json, void* dst, ErrorList* errors) const override;
+  void LoadInto(const Json& json, const JsonArgs& args, void* dst,
+                ErrorList* errors) const override;
 
  protected:
   ~LoadScalar() override = default;
@@ -230,38 +232,43 @@ class LoadDouble : public LoadNumber {
 // Load a bool.
 class LoadBool : public LoaderInterface {
  public:
-  void LoadInto(const Json& json, void* dst, ErrorList* errors) const override;
+  void LoadInto(const Json& json, const JsonArgs& /*args*/, void* dst,
+                ErrorList* errors) const override;
 };
 
 // Loads an unprocessed JSON object value.
 class LoadUnprocessedJsonObject : public LoaderInterface {
  public:
-  void LoadInto(const Json& json, void* dst, ErrorList* errors) const override;
+  void LoadInto(const Json& json, const JsonArgs& /*args*/, void* dst,
+                ErrorList* errors) const override;
 };
 
 // Load a vector of some type.
 class LoadVector : public LoaderInterface {
  public:
-  void LoadInto(const Json& json, void* dst, ErrorList* errors) const override;
+  void LoadInto(const Json& json, const JsonArgs& args, void* dst,
+                ErrorList* errors) const override;
 
  protected:
   ~LoadVector() override = default;
 
  private:
-  virtual void LoadOne(const Json& json, void* dst,
+  virtual void LoadOne(const Json& json, const JsonArgs& args, void* dst,
                        ErrorList* errors) const = 0;
 };
 
 // Load a map of string->some type.
 class LoadMap : public LoaderInterface {
  public:
-  void LoadInto(const Json& json, void* dst, ErrorList* errors) const override;
+  void LoadInto(const Json& json, const JsonArgs& args, void* dst,
+                ErrorList* errors) const override;
 
  protected:
   ~LoadMap() override = default;
 
  private:
-  virtual void LoadOne(const Json& json, const std::string& name, void* dst,
+  virtual void LoadOne(const Json& json, const JsonArgs& args,
+                       const std::string& name, void* dst,
                        ErrorList* errors) const = 0;
 };
 
@@ -276,8 +283,9 @@ const LoaderInterface* LoaderForType();
 template <typename T>
 class AutoLoader final : public LoaderInterface {
  public:
-  void LoadInto(const Json& json, void* dst, ErrorList* errors) const override {
-    T::JsonLoader()->LoadInto(json, dst, errors);
+  void LoadInto(const Json& json, const JsonArgs& args, void* dst,
+                ErrorList* errors) const override {
+    T::JsonLoader(args)->LoadInto(json, args, dst, errors);
   }
 };
 
@@ -307,10 +315,11 @@ class AutoLoader<Json::Object> final : public LoadUnprocessedJsonObject {};
 template <typename T>
 class AutoLoader<std::vector<T>> final : public LoadVector {
  private:
-  void LoadOne(const Json& json, void* dst, ErrorList* errors) const final {
+  void LoadOne(const Json& json, const JsonArgs& args, void* dst,
+               ErrorList* errors) const final {
     auto* vec = static_cast<std::vector<T>*>(dst);
     T value{};
-    LoaderForType<T>()->LoadInto(json, &value, errors);
+    LoaderForType<T>()->LoadInto(json, args, &value, errors);
     vec->push_back(std::move(value));
   }
 };
@@ -319,11 +328,11 @@ class AutoLoader<std::vector<T>> final : public LoadVector {
 template <typename T>
 class AutoLoader<std::map<std::string, T>> final : public LoadMap {
  private:
-  void LoadOne(const Json& json, const std::string& name, void* dst,
-               ErrorList* errors) const final {
+  void LoadOne(const Json& json, const JsonArgs& args, const std::string& name,
+               void* dst, ErrorList* errors) const final {
     auto* map = static_cast<std::map<std::string, T>*>(dst);
     T value{};
-    LoaderForType<T>()->LoadInto(json, &value, errors);
+    LoaderForType<T>()->LoadInto(json, args, &value, errors);
     map->emplace(name, std::move(value));
   }
 };
@@ -332,11 +341,12 @@ class AutoLoader<std::map<std::string, T>> final : public LoadMap {
 template <typename T>
 class AutoLoader<absl::optional<T>> final : public LoaderInterface {
  public:
-  void LoadInto(const Json& json, void* dst, ErrorList* errors) const override {
+  void LoadInto(const Json& json, const JsonArgs& args, void* dst,
+                ErrorList* errors) const override {
     if (json.type() == Json::Type::JSON_NULL) return;
     auto* opt = static_cast<absl::optional<T>*>(dst);
     opt->emplace();
-    LoaderForType<T>()->LoadInto(json, &**opt, errors);
+    LoaderForType<T>()->LoadInto(json, args, &**opt, errors);
   }
 };
 
@@ -353,12 +363,13 @@ struct Element {
   Element() = default;
   template <typename A, typename B>
   Element(const char* name, bool optional, B A::*p,
-          const LoaderInterface* loader)
+          const LoaderInterface* loader, const char* enable_key)
       : loader(loader),
         member_offset(static_cast<uint16_t>(
             reinterpret_cast<uintptr_t>(&(static_cast<A*>(nullptr)->*p)))),
         optional(optional),
-        name(name) {}
+        name(name),
+        enable_key(enable_key) {}
   // The loader for this field.
   const LoaderInterface* loader;
   // Offset into the destination object to store the field.
@@ -367,6 +378,8 @@ struct Element {
   bool optional;
   // The name of the field.
   const char* name;
+  // The key to use with JsonArgs to see if this field is enabled.
+  const char* enable_key;
 };
 
 // Vec<T, kSize> provides a constant array type that can be appended to by
@@ -397,8 +410,8 @@ class Vec<T, 0> {
 // Given a list of elements, and a destination object, load the elements into
 // the object from some parsed JSON.
 // Returns false if the JSON object was not of type Json::Type::OBJECT.
-bool LoadObject(const Json& json, const Element* elements, size_t num_elements,
-                void* dst, ErrorList* errors);
+bool LoadObject(const Json& json, const JsonArgs& args, const Element* elements,
+                size_t num_elements, void* dst, ErrorList* errors);
 
 // Adaptor type - takes a compile time computed list of elements and implements
 // LoaderInterface by calling LoadObject.
@@ -408,8 +421,9 @@ class FinishedJsonObjectLoader final : public LoaderInterface {
   explicit FinishedJsonObjectLoader(const Vec<Element, kElemCount>& elements)
       : elements_(elements) {}
 
-  void LoadInto(const Json& json, void* dst, ErrorList* errors) const override {
-    LoadObject(json, elements_.data(), elements_.size(), dst, errors);
+  void LoadInto(const Json& json, const JsonArgs& args, void* dst,
+                ErrorList* errors) const override {
+    LoadObject(json, args, elements_.data(), elements_.size(), dst, errors);
   }
 
  private:
@@ -425,10 +439,12 @@ class FinishedJsonObjectLoader<T, kElemCount,
   explicit FinishedJsonObjectLoader(const Vec<Element, kElemCount>& elements)
       : elements_(elements) {}
 
-  void LoadInto(const Json& json, void* dst, ErrorList* errors) const override {
+  void LoadInto(const Json& json, const JsonArgs& args, void* dst,
+                ErrorList* errors) const override {
     // Call JsonPostLoad() only if json is a JSON object.
-    if (LoadObject(json, elements_.data(), elements_.size(), dst, errors)) {
-      static_cast<T*>(dst)->JsonPostLoad(json, errors);
+    if (LoadObject(json, args, elements_.data(), elements_.size(), dst,
+                   errors)) {
+      static_cast<T*>(dst)->JsonPostLoad(json, args, errors);
     }
   }
 
@@ -452,14 +468,15 @@ class JsonObjectLoader final {
   }
 
   template <typename U>
-  JsonObjectLoader<T, kElemCount + 1> Field(const char* name, U T::*p) const {
-    return Field(name, false, p);
+  JsonObjectLoader<T, kElemCount + 1> Field(
+      const char* name, U T::*p, const char* enable_key = nullptr) const {
+    return Field(name, false, p, enable_key);
   }
 
   template <typename U>
-  JsonObjectLoader<T, kElemCount + 1> OptionalField(const char* name,
-                                                    U T::*p) const {
-    return Field(name, true, p);
+  JsonObjectLoader<T, kElemCount + 1> OptionalField(
+      const char* name, U T::*p, const char* enable_key = nullptr) const {
+    return Field(name, true, p, enable_key);
   }
 
   JsonObjectLoader(const Vec<Element, kElemCount - 1>& elements,
@@ -469,9 +486,10 @@ class JsonObjectLoader final {
  private:
   template <typename U>
   JsonObjectLoader<T, kElemCount + 1> Field(const char* name, bool optional,
-                                            U T::*p) const {
+                                            U T::*p,
+                                            const char* enable_key) const {
     return JsonObjectLoader<T, kElemCount + 1>(
-        elements_, Element(name, optional, p, LoaderForType<U>()));
+        elements_, Element(name, optional, p, LoaderForType<U>(), enable_key));
   }
 
   GPR_NO_UNIQUE_ADDRESS Vec<Element, kElemCount> elements_;
@@ -489,23 +507,25 @@ using JsonObjectLoader = json_detail::JsonObjectLoader<T>;
 using JsonLoaderInterface = json_detail::LoaderInterface;
 
 template <typename T>
-absl::StatusOr<T> LoadFromJson(const Json& json) {
+absl::StatusOr<T> LoadFromJson(const Json& json,
+                               const JsonArgs& args = JsonArgs()) {
   ErrorList error_list;
   T result{};
-  json_detail::LoaderForType<T>()->LoadInto(json, &result, &error_list);
+  json_detail::LoaderForType<T>()->LoadInto(json, args, &result, &error_list);
   if (!error_list.ok()) return error_list.status();
-  return result;
+  return std::move(result);
 }
 
 template <typename T>
-T LoadFromJson(const Json& json, ErrorList* error_list) {
+T LoadFromJson(const Json& json, const JsonArgs& args, ErrorList* error_list) {
   T result{};
-  json_detail::LoaderForType<T>()->LoadInto(json, &result, error_list);
+  json_detail::LoaderForType<T>()->LoadInto(json, args, &result, error_list);
   return result;
 }
 
 template <typename T>
 absl::optional<T> LoadJsonObjectField(const Json::Object& json,
+                                      const JsonArgs& args,
                                       absl::string_view field,
                                       ErrorList* errors, bool required = true) {
   ScopedField error_field(errors, absl::StrCat(".", field));
@@ -514,9 +534,9 @@ absl::optional<T> LoadJsonObjectField(const Json::Object& json,
   if (field_json == nullptr) return absl::nullopt;
   T result{};
   size_t starting_error_size = errors->size();
-  json_detail::LoaderForType<T>()->LoadInto(*field_json, &result, errors);
+  json_detail::LoaderForType<T>()->LoadInto(*field_json, args, &result, errors);
   if (errors->size() > starting_error_size) return absl::nullopt;
-  return result;
+  return std::move(result);
 }
 
 }  // namespace grpc_core

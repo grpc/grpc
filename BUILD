@@ -7027,9 +7027,17 @@ grpc_cc_library(
         "error",
         "gpr_base",
         "json",
+        "json_args",
         "json_object_loader",
         "time",
     ],
+)
+
+grpc_cc_library(
+    name = "json_args",
+    hdrs = ["src/core/lib/json/json_args.h"],
+    external_deps = ["absl/strings"],
+    deps = ["gpr_base"],
 )
 
 grpc_cc_library(
@@ -7046,7 +7054,22 @@ grpc_cc_library(
     deps = [
         "gpr_base",
         "json",
+        "json_args",
         "time",
+    ],
+)
+
+grpc_cc_library(
+    name = "json_channel_args",
+    hdrs = ["src/core/lib/json/json_channel_args.h"],
+    external_deps = [
+        "absl/strings",
+        "absl/types:optional",
+    ],
+    deps = [
+        "channel_args",
+        "gpr",
+        "json_args",
     ],
 )
 
