@@ -263,7 +263,7 @@ class ActivityContexts : public ContextHolder<Contexts>... {
         : Context<ContextTypeFromHeld<Contexts>>(
               static_cast<ContextHolder<Contexts>*>(contexts)
                   ->GetContext())... {
-      // Silient `unused-but-set-parameter` in case of Contexts = {}
+      // Silence `unused-but-set-parameter` in case of Contexts = {}
       (void)contexts;
     }
   };
