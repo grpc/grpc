@@ -27,8 +27,6 @@
 
 extern void grpc_register_extra_plugins(void);
 
-void grpc_chttp2_plugin_init(void);
-void grpc_chttp2_plugin_shutdown(void);
 void grpc_client_channel_init(void);
 void grpc_client_channel_shutdown(void);
 void grpc_resolver_dns_ares_init(void);
