@@ -122,8 +122,6 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/health/health_check_client.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/http_proxy.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/http_proxy.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/address_filtering.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/address_filtering.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h" role="src" />
@@ -157,9 +155,6 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_impl.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_resolver.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy_factory.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy_registry.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy_registry.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/local_subchannel_pool.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/local_subchannel_pool.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/proxy_mapper.h" role="src" />
@@ -194,7 +189,6 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/service_config_channel_arg_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel_interface.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel_interface_internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel_pool_interface.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel_pool_interface.h" role="src" />
@@ -1208,6 +1202,12 @@
     <file baseinstalldir="/" name="src/core/lib/json/json_util.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json_util.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json_writer.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/load_balancing/lb_policy.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/load_balancing/lb_policy.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/load_balancing/lb_policy_factory.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/load_balancing/lb_policy_registry.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/load_balancing/lb_policy_registry.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/load_balancing/subchannel_interface.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/matchers/matchers.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/matchers/matchers.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/profiling/basic_timers.cc" role="src" />

@@ -22,6 +22,18 @@ grpc_package(
 )
 
 grpc_cc_test(
+    name = "common_closures_test",
+    srcs = ["common_closures_test.cc"],
+    external_deps = ["gtest"],
+    deps = [
+        "//:common_event_engine_closures",
+        "//:gpr_platform",
+        "//:grpc_base",
+        "//test/core/util:grpc_test_util_unsecure",
+    ],
+)
+
+grpc_cc_test(
     name = "endpoint_config_test",
     srcs = ["endpoint_config_test.cc"],
     external_deps = ["gtest"],

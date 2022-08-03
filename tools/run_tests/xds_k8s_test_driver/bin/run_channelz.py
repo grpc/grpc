@@ -174,6 +174,9 @@ def main(argv):
     if len(argv) > 1:
         raise app.UsageError('Too many command-line arguments.')
 
+    # Must be called before KubernetesApiManager or GcpApiManager init.
+    xds_flags.set_socket_default_timeout_from_flag()
+
     k8s_api_manager = k8s.KubernetesApiManager(xds_k8s_flags.KUBE_CONTEXT.value)
 
     # Resource names.

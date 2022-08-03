@@ -36,6 +36,7 @@
 #include "absl/types/optional.h"
 
 #include <grpc/byte_buffer.h>
+#include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -313,11 +314,11 @@ static void sched_connect(grpc_closure* closure, grpc_endpoint** ep,
       GRPC_CLOSURE_CREATE(do_connect, fc, grpc_schedule_on_exec_ctx));
 }
 
-static int64_t my_tcp_client_connect(grpc_closure* closure, grpc_endpoint** ep,
-                                     grpc_pollset_set* /*interested_parties*/,
-                                     const grpc_channel_args* /*channel_args*/,
-                                     const grpc_resolved_address* /*addr*/,
-                                     grpc_core::Timestamp deadline) {
+static int64_t my_tcp_client_connect(
+    grpc_closure* closure, grpc_endpoint** ep,
+    grpc_pollset_set* /*interested_parties*/,
+    const grpc_event_engine::experimental::EndpointConfig& /*config*/,
+    const grpc_resolved_address* /*addr*/, grpc_core::Timestamp deadline) {
   sched_connect(closure, ep, deadline.as_timespec(GPR_CLOCK_MONOTONIC));
   return 0;
 }

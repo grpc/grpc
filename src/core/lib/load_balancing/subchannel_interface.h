@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SUBCHANNEL_INTERFACE_H
-#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SUBCHANNEL_INTERFACE_H
+#ifndef GRPC_CORE_LIB_LOAD_BALANCING_SUBCHANNEL_INTERFACE_H
+#define GRPC_CORE_LIB_LOAD_BALANCING_SUBCHANNEL_INTERFACE_H
 
 #include <grpc/support/port_platform.h>
 
@@ -137,4 +137,4 @@ class DelegatingSubchannel : public SubchannelInterface {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SUBCHANNEL_INTERFACE_H
+#endif  // GRPC_CORE_LIB_LOAD_BALANCING_SUBCHANNEL_INTERFACE_H

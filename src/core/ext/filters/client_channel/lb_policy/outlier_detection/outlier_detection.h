@@ -30,7 +30,7 @@ namespace grpc_core {
 bool XdsOutlierDetectionEnabled();
 
 struct OutlierDetectionConfig {
-  Duration interval = Duration::Infinity();
+  Duration interval = Duration::Seconds(10);
   Duration base_ejection_time = Duration::Milliseconds(30000);
   Duration max_ejection_time = Duration::Milliseconds(30000);
   uint32_t max_ejection_percent = 10;
@@ -39,16 +39,40 @@ struct OutlierDetectionConfig {
     uint32_t enforcement_percentage = 0;
     uint32_t minimum_hosts = 5;
     uint32_t request_volume = 100;
+
+    bool operator==(const SuccessRateEjection& other) const {
+      return stdev_factor == other.stdev_factor &&
+             enforcement_percentage == other.enforcement_percentage &&
+             minimum_hosts == other.minimum_hosts &&
+             request_volume == other.request_volume;
+    }
   };
   struct FailurePercentageEjection {
     uint32_t threshold = 85;
     uint32_t enforcement_percentage = 0;
     uint32_t minimum_hosts = 5;
     uint32_t request_volume = 50;
+
+    bool operator==(const FailurePercentageEjection& other) const {
+      return threshold == other.threshold &&
+             enforcement_percentage == other.enforcement_percentage &&
+             minimum_hosts == other.minimum_hosts &&
+             request_volume == other.request_volume;
+    }
   };
   absl::optional<SuccessRateEjection> success_rate_ejection;
   absl::optional<FailurePercentageEjection> failure_percentage_ejection;
+
+  bool operator==(const OutlierDetectionConfig& other) const {
+    return interval == other.interval &&
+           base_ejection_time == other.base_ejection_time &&
+           max_ejection_time == other.max_ejection_time &&
+           max_ejection_percent == other.max_ejection_percent &&
+           success_rate_ejection == other.success_rate_ejection &&
+           failure_percentage_ejection == other.failure_percentage_ejection;
+  }
 };
+
 }  // namespace grpc_core
 
 #endif  // GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_OUTLIER_DETECTION_OUTLIER_DETECTION_H
