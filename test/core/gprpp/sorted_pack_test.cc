@@ -23,7 +23,7 @@ using grpc_core::WithSortedPack;
 
 template <int I>
 struct Int {
-  static constexpr int value = I;
+  int value() const { return I; }
 };
 
 template <typename A, typename B>
@@ -34,10 +34,8 @@ struct Cmp<Int<A>, Int<B>> {
 };
 
 template <typename... Args>
-struct VecMaker;
-template <int... Args>
-struct VecMaker<Int<Args>...> {
-  static std::vector<int> Make() { return {Args...}; }
+struct VecMaker {
+  static std::vector<int> Make() { return {Args().value()...}; }
 };
 
 template <int... Args>
