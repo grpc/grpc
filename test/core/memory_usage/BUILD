@@ -34,11 +34,6 @@ grpc_cc_library(
         "no_mac",
         "no_windows",
     ],
-    tags = [
-        "bazel_only",
-        "no_mac",
-        "no_windows",
-    ],
     deps = [
         "//:gpr",
     ],
