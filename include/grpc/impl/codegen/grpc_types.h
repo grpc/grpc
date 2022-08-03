@@ -583,8 +583,6 @@ typedef struct {
   grpc_slice method;
   grpc_slice host;
   gpr_timespec deadline;
-  uint32_t flags;
-  void* reserved;
 } grpc_call_details;
 
 typedef enum {
