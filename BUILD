@@ -1179,6 +1179,7 @@ grpc_cc_library(
     hdrs = ["src/core/lib/gprpp/packed_table.h"],
     language = "c++",
     deps = [
+        "gpr_public_hdrs",
         "sorted_pack",
         "table",
     ],
@@ -3461,6 +3462,7 @@ grpc_cc_library(
         "src/core/lib/gprpp/sorted_pack.h",
     ],
     language = "c++",
+    deps = ["gpr_platform"],
 )
 
 grpc_cc_library(

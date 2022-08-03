@@ -12,8 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef SORTED_PACK_H
-#define SORTED_PACK_H
+#ifndef GRPC_CORE_LIB_GPRPP_SORTED_PACK_H
+#define GRPC_CORE_LIB_GPRPP_SORTED_PACK_H
+
+#include <grpc/support/port_platform.h>
 
 #include <type_traits>
 
@@ -93,4 +95,4 @@ struct WithSortedPack {
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_CORE_LIB_GPRPP_SORTED_PACK_H
