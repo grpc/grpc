@@ -1128,9 +1128,9 @@ class OutlierDetectionLbFactory : public LoadBalancingPolicyFactory {
 }  // namespace
 
 void RegisterOutlierDetectionLbPolicy(CoreConfiguration::Builder* builder) {
-  if (grpc_core::XdsOutlierDetectionEnabled()) {
+  if (XdsOutlierDetectionEnabled()) {
     builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
-        absl::make_unique<grpc_core::OutlierDetectionLbFactory>());
+        absl::make_unique<OutlierDetectionLbFactory>());
   }
 }
 

@@ -132,6 +132,7 @@ grpc_cc_library(
         "//:grpc_sockaddr",
         "//:grpc_trace",
         "//:httpcli",
+        "//:iomgr_fwd",
         "//:iomgr_port",
         "//:orphanable",
         "//:ref_counted_ptr",
@@ -168,6 +169,7 @@ grpc_cc_library(
         "//:grpc_sockaddr",
         "//:grpc_unsecure",
         "//:httpcli",
+        "//:iomgr_fwd",
         "//:iomgr_port",
         "//:orphanable",
         "//:ref_counted_ptr",
@@ -286,6 +288,7 @@ grpc_cc_library(
         "absl/types:variant",
     ],
     deps = [
+        "//:config",
         "//:gpr_base",
         "//:grpc",
         "//:grpc_backend_metric_data",

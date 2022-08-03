@@ -773,7 +773,7 @@ class WeightedTargetLbFactory : public LoadBalancingPolicyFactory {
 
 void RegisterWeightedAverageLbPolicy(CoreConfiguration::Builder* builder) {
   builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
-      absl::make_unique<grpc_core::WeightedTargetLbFactory>());
+      absl::make_unique<WeightedTargetLbFactory>());
 }
 
 }  // namespace grpc_core

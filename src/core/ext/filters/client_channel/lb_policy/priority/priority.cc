@@ -1035,7 +1035,7 @@ class PriorityLbFactory : public LoadBalancingPolicyFactory {
 
 void RegisterPriorityLbPolicy(CoreConfiguration::Builder* builder) {
   builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
-      absl::make_unique<grpc_core::PriorityLbFactory>());
+      absl::make_unique<PriorityLbFactory>());
 }
 
 }  // namespace grpc_core
