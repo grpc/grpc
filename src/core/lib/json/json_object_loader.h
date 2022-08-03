@@ -363,7 +363,7 @@ struct Element {
   Element() = default;
   template <typename A, typename B>
   Element(const char* name, bool optional, B A::*p,
-          const LoaderInterface* loader, absl::string_view enable_key)
+          const LoaderInterface* loader, const char* enable_key)
       : loader(loader),
         member_offset(static_cast<uint16_t>(
             reinterpret_cast<uintptr_t>(&(static_cast<A*>(nullptr)->*p)))),
@@ -379,7 +379,7 @@ struct Element {
   // The name of the field.
   const char* name;
   // The key to use with JsonArgs to see if this field is enabled.
-  absl::string_view enable_key;
+  const char* enable_key;
 };
 
 // Vec<T, kSize> provides a constant array type that can be appended to by
@@ -469,13 +469,13 @@ class JsonObjectLoader final {
 
   template <typename U>
   JsonObjectLoader<T, kElemCount + 1> Field(
-      const char* name, U T::*p, absl::string_view enable_key = "") const {
+      const char* name, U T::*p, const char* enable_key = nullptr) const {
     return Field(name, false, p, enable_key);
   }
 
   template <typename U>
   JsonObjectLoader<T, kElemCount + 1> OptionalField(
-      const char* name, U T::*p, absl::string_view enable_key = "") const {
+      const char* name, U T::*p, const char* enable_key = nullptr) const {
     return Field(name, true, p, enable_key);
   }
 
@@ -486,8 +486,7 @@ class JsonObjectLoader final {
  private:
   template <typename U>
   JsonObjectLoader<T, kElemCount + 1> Field(
-      const char* name, bool optional, U T::*p,
-      absl::string_view enable_key) const {
+      const char* name, bool optional, U T::*p, const char* enable_key) const {
     return JsonObjectLoader<T, kElemCount + 1>(
         elements_, Element(name, optional, p, LoaderForType<U>(), enable_key));
   }

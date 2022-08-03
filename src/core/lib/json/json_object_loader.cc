@@ -173,7 +173,7 @@ bool LoadObject(const Json& json, const JsonArgs& args, const Element* elements,
   }
   for (size_t i = 0; i < num_elements; ++i) {
     const Element& element = elements[i];
-    if (!element.enable_key.empty() && !args.IsEnabled(element.enable_key)) {
+    if (element.enable_key != nullptr && !args.IsEnabled(element.enable_key)) {
       continue;
     }
     ScopedField field(errors, absl::StrCat(".", element.name));
