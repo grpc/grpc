@@ -63,8 +63,10 @@ class PollPoller : public PosixEventPoller {
   void PollerHandlesListRemoveHandle(PollEventHandle* handle)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   friend class PollEventHandle;
-  struct HandlesList {
-    PollEventHandle* handle = nullptr;
+  class HandlesList {
+   public:
+    explicit HandlesList(PollEventHandle* handle) : handle(handle) {}
+    PollEventHandle* handle;
     PollEventHandle* next = nullptr;
     PollEventHandle* prev = nullptr;
   };

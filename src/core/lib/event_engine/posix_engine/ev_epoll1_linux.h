@@ -65,8 +65,10 @@ class Epoll1Poller : public PosixEventPoller {
                           Poller::Events& pending_events);
   int DoEpollWait(
       grpc_event_engine::experimental::EventEngine::Duration timeout);
-  struct HandlesList {
-    Epoll1EventHandle* handle = nullptr;
+  class HandlesList {
+   public:
+    explicit HandlesList(Epoll1EventHandle* handle) : handle(handle) {}
+    Epoll1EventHandle* handle;
     Epoll1EventHandle* next = nullptr;
     Epoll1EventHandle* prev = nullptr;
   };

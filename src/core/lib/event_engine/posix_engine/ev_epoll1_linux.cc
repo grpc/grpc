@@ -72,7 +72,7 @@ class Epoll1EventHandle : public EventHandle {
  public:
   Epoll1EventHandle(int fd, Epoll1Poller* poller)
       : fd_(fd),
-        list_(),
+        list_(this),
         poller_(poller),
         exec_actions_closure_([this]() { ExecutePendingActions(); }),
         read_closure_(absl::make_unique<LockfreeEvent>(poller->GetScheduler())),
