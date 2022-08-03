@@ -2192,17 +2192,13 @@ grpc_error_handle ClientChannel::CallData::ApplyServiceConfigToCallLocked(
       }
       // If the service config set wait_for_ready and the application
       // did not explicitly set it, use the value from the service config.
-      uint32_t* send_initial_metadata_flags =
-          &pending_batches_[0]
-               ->payload->send_initial_metadata.send_initial_metadata_flags;
+      auto* wait_for_ready =
+          pending_batches_[0]
+              ->payload->send_initial_metadata.send_initial_metadata
+              ->GetOrCreatePointer(WaitForReady());
       if (method_params->wait_for_ready().has_value() &&
-          !(*send_initial_metadata_flags &
-            GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET)) {
-        if (method_params->wait_for_ready().value()) {
-          *send_initial_metadata_flags |= GRPC_INITIAL_METADATA_WAIT_FOR_READY;
-        } else {
-          *send_initial_metadata_flags &= ~GRPC_INITIAL_METADATA_WAIT_FOR_READY;
-        }
+          !wait_for_ready->explicitly_set) {
+        wait_for_ready->value = method_params->wait_for_ready().value();
       }
     }
     // Set the dynamic filter stack.
@@ -2310,16 +2306,14 @@ bool ClientChannel::CallData::CheckResolutionLocked(grpc_call_element* elem,
       pending_batches_[0]->payload->send_initial_metadata;
   grpc_metadata_batch* initial_metadata_batch =
       send_initial_metadata.send_initial_metadata;
-  const uint32_t send_initial_metadata_flags =
-      send_initial_metadata.send_initial_metadata_flags;
   // If we don't yet have a resolver result, we need to queue the call
   // until we get one.
   if (GPR_UNLIKELY(!chand->received_service_config_data_)) {
     // If the resolver returned transient failure before returning the
     // first service config, fail any non-wait_for_ready calls.
     absl::Status resolver_error = chand->resolver_transient_failure_error_;
-    if (!resolver_error.ok() && (send_initial_metadata_flags &
-                                 GRPC_INITIAL_METADATA_WAIT_FOR_READY) == 0) {
+    if (!resolver_error.ok() &&
+        !initial_metadata_batch->GetOrCreatePointer(WaitForReady())->value) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
         gpr_log(GPR_INFO, "chand=%p calld=%p: resolution failed, failing call",
                 chand, this);
@@ -2717,8 +2711,7 @@ void ClientChannel::LoadBalancedCall::StartTransportStreamOpBatch(
     }
     if (batch->send_initial_metadata) {
       call_attempt_tracer_->RecordSendInitialMetadata(
-          batch->payload->send_initial_metadata.send_initial_metadata,
-          batch->payload->send_initial_metadata.send_initial_metadata_flags);
+          batch->payload->send_initial_metadata.send_initial_metadata);
       peer_string_ = batch->payload->send_initial_metadata.peer_string;
       original_send_initial_metadata_on_complete_ = batch->on_complete;
       GRPC_CLOSURE_INIT(&send_initial_metadata_on_complete_,
@@ -3093,8 +3086,6 @@ bool ClientChannel::LoadBalancedCall::PickSubchannelLocked(
       pending_batches_[0]->payload->send_initial_metadata;
   grpc_metadata_batch* initial_metadata_batch =
       send_initial_metadata.send_initial_metadata;
-  const uint32_t send_initial_metadata_flags =
-      send_initial_metadata.send_initial_metadata_flags;
   // Perform LB pick.
   LoadBalancingPolicy::PickArgs pick_args;
   pick_args.path = path_.as_string_view();
@@ -3152,7 +3143,7 @@ bool ClientChannel::LoadBalancedCall::PickSubchannelLocked(
             return false;
           },
       // FailPick
-      [this, send_initial_metadata_flags,
+      [this, initial_metadata_batch,
        &error](LoadBalancingPolicy::PickResult::Fail* fail_pick)
           ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::data_plane_mu_) {
             if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
@@ -3161,8 +3152,8 @@ bool ClientChannel::LoadBalancedCall::PickSubchannelLocked(
             }
             // If wait_for_ready is false, then the error indicates the RPC
             // attempt's final status.
-            if ((send_initial_metadata_flags &
-                 GRPC_INITIAL_METADATA_WAIT_FOR_READY) == 0) {
+            if (!initial_metadata_batch->GetOrCreatePointer(WaitForReady())
+                     ->value) {
               grpc_error_handle lb_error =
                   absl_status_to_grpc_error(fail_pick->status);
               *error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
