@@ -485,8 +485,9 @@ class JsonObjectLoader final {
 
  private:
   template <typename U>
-  JsonObjectLoader<T, kElemCount + 1> Field(
-      const char* name, bool optional, U T::*p, const char* enable_key) const {
+  JsonObjectLoader<T, kElemCount + 1> Field(const char* name, bool optional,
+                                            U T::*p,
+                                            const char* enable_key) const {
     return JsonObjectLoader<T, kElemCount + 1>(
         elements_, Element(name, optional, p, LoaderForType<U>(), enable_key));
   }
