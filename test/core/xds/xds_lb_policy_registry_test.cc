@@ -28,8 +28,8 @@
 
 #include <grpc/grpc.h>
 
-#include "src/core/ext/filters/client_channel/lb_policy_factory.h"
-#include "src/core/ext/filters/client_channel/lb_policy_registry.h"
+#include "src/core/lib/load_balancing/lb_policy_factory.h"
+#include "src/core/lib/load_balancing/lb_policy_registry.h"
 #include "src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/ring_hash.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/round_robin.grpc.pb.h"

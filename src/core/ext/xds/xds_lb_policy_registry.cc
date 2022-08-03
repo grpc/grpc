@@ -41,9 +41,9 @@
 #include "upb/upb.hpp"
 #include "xds/type/v3/typed_struct.upb.h"
 
-#include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/xds/upb_utils.h"
 #include "src/core/ext/xds/xds_common_types.h"
+#include "src/core/lib/load_balancing/lb_policy_registry.h"
 
 namespace grpc_core {
 
