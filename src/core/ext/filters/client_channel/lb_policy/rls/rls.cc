@@ -2176,7 +2176,7 @@ struct GrpcKeyBuilder {
       return loader;
     }
 
-    void JsonPostLoad(const Json& json, const JsonArgs&, ErrorList* errors) {
+    void JsonPostLoad(const Json&, const JsonArgs&, ErrorList* errors) {
       // key must be non-empty.
       {
         ScopedField field(errors, ".key");
@@ -2223,7 +2223,7 @@ struct GrpcKeyBuilder {
       return loader;
     }
 
-    void JsonPostLoad(const Json& json, const JsonArgs&, ErrorList* errors) {
+    void JsonPostLoad(const Json&, const JsonArgs&, ErrorList* errors) {
       auto check_field = [&](const std::string& field_name,
                              absl::optional<std::string>* struct_field) {
         ScopedField field(errors, absl::StrCat(".", field_name));
@@ -2253,7 +2253,7 @@ struct GrpcKeyBuilder {
     return loader;
   }
 
-  void JsonPostLoad(const Json& json, const JsonArgs&, ErrorList* errors) {
+  void JsonPostLoad(const Json&, const JsonArgs&, ErrorList* errors) {
     // The names field must be non-empty.
     {
       ScopedField field(errors, ".names");
@@ -2261,32 +2261,13 @@ struct GrpcKeyBuilder {
         errors->AddError("must be non-empty");
       }
     }
-    // Parse headers.
-    std::set<absl::string_view> keys_seen;
-    {
-      ScopedField field(errors, ".headers");
-      if (!errors->FieldHasErrors()) {
-        for (size_t i = 0; i < headers.size(); ++i) {
-          NameMatcher& header = headers[i];
-          ScopedField field(errors, absl::StrCat("[", i, "]"));
-          if (keys_seen.find(header.key) != keys_seen.end()) {
-            ScopedField field(errors, ".key");
-            if (!errors->FieldHasErrors()) {
-              errors->AddError(
-                  absl::StrCat("duplicate key \"", header.key, "\""));
-            }
-          } else {
-            keys_seen.insert(header.key);
-          }
-        }
-      }
-    }
     // Make sure no key in constantKeys is empty.
     if (constant_keys.find("") != constant_keys.end()) {
       ScopedField field(errors, ".constantKeys[\"\"]");
       errors->AddError("key must be non-empty");
     }
-    // Check for duplicate keys in constantKeys and extraKeys.
+    // Check for duplicate keys.
+    std::set<absl::string_view> keys_seen;
     auto duplicate_key_check_func = [&keys_seen, errors](
                                         const std::string& key,
                                         const std::string& field_name) {
@@ -2299,6 +2280,11 @@ struct GrpcKeyBuilder {
         keys_seen.insert(key);
       }
     };
+    for (size_t i = 0; i < headers.size(); ++i) {
+      NameMatcher& header = headers[i];
+      duplicate_key_check_func(header.key,
+                               absl::StrCat(".headers[", i, "].key"));
+    }
     for (const auto& p : constant_keys) {
       duplicate_key_check_func(
           p.first, absl::StrCat(".constantKeys[\"", p.first, "\"]"));
