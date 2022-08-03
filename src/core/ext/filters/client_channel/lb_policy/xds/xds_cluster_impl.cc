@@ -155,14 +155,13 @@ class XdsClusterImplLbConfig : public LoadBalancingPolicy::Config {
         lrs_load_reporting_server_(std::move(other.lrs_load_reporting_server_)),
         max_concurrent_requests_(other.max_concurrent_requests_),
         drop_config_(std::move(other.drop_config_)) {}
-  XdsClusterImplLbConfig& operator=(
-      const XdsClusterImplLbConfig&& other) noexcept {
-    child_policy_ = other.child_policy_;
-    cluster_name_ = other.cluster_name_;
-    eds_service_name_ = other.eds_service_name_;
-    lrs_load_reporting_server_ = other.lrs_load_reporting_server_;
-    max_concurrent_requests_ = other.max_concurrent_requests_;
-    drop_config_ = other.drop_config_;
+  XdsClusterImplLbConfig& operator=(XdsClusterImplLbConfig&& other) noexcept {
+    child_policy_ = std::move(other.child_policy_);
+    cluster_name_ = std::move(other.cluster_name_);
+    eds_service_name_ = std::move(other.eds_service_name_);
+    lrs_load_reporting_server_ = std::move(other.lrs_load_reporting_server_);
+    max_concurrent_requests_ = std::move(other.max_concurrent_requests_);
+    drop_config_ = std::move(other.drop_config_);
     return *this;
   }
 
