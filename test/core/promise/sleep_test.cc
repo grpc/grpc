@@ -105,7 +105,7 @@ TEST(Sleep, StressTest) {
     auto notification = std::make_shared<absl::Notification>();
     auto activity = MakeActivity(
         Sleep(exec_ctx.Now() + Duration::Seconds(1)), ExecCtxWakeupScheduler(),
-        [notification](absl::Status r) { notification->Notify(); });
+        [notification](absl::Status /*r*/) { notification->Notify(); });
     notifications.push_back(std::move(notification));
     activities.push_back(std::move(activity));
   }
