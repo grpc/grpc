@@ -31,18 +31,6 @@ void grpc_chttp2_plugin_init(void);
 void grpc_chttp2_plugin_shutdown(void);
 void grpc_client_channel_init(void);
 void grpc_client_channel_shutdown(void);
-void grpc_lb_policy_grpclb_init(void);
-void grpc_lb_policy_grpclb_shutdown(void);
-void grpc_lb_policy_priority_init(void);
-void grpc_lb_policy_priority_shutdown(void);
-void grpc_lb_policy_outlier_detection_init(void);
-void grpc_lb_policy_outlier_detection_shutdown(void);
-void grpc_lb_policy_weighted_target_init(void);
-void grpc_lb_policy_weighted_target_shutdown(void);
-void grpc_lb_policy_pick_first_init(void);
-void grpc_lb_policy_pick_first_shutdown(void);
-void grpc_lb_policy_round_robin_init(void);
-void grpc_lb_policy_round_robin_shutdown(void);
 void grpc_resolver_dns_ares_init(void);
 void grpc_resolver_dns_ares_shutdown(void);
 namespace grpc_core {
@@ -56,22 +44,10 @@ void RlsLbPluginShutdown();
 
 void grpc_register_built_in_plugins(void) {
   grpc_register_plugin(grpc_client_channel_init, grpc_client_channel_shutdown);
-  grpc_register_plugin(grpc_lb_policy_grpclb_init,
-                       grpc_lb_policy_grpclb_shutdown);
 #ifndef GRPC_NO_RLS
   grpc_register_plugin(grpc_core::RlsLbPluginInit,
                        grpc_core::RlsLbPluginShutdown);
 #endif  // !GRPC_NO_RLS
-  grpc_register_plugin(grpc_lb_policy_outlier_detection_init,
-                       grpc_lb_policy_outlier_detection_shutdown);
-  grpc_register_plugin(grpc_lb_policy_priority_init,
-                       grpc_lb_policy_priority_shutdown);
-  grpc_register_plugin(grpc_lb_policy_weighted_target_init,
-                       grpc_lb_policy_weighted_target_shutdown);
-  grpc_register_plugin(grpc_lb_policy_pick_first_init,
-                       grpc_lb_policy_pick_first_shutdown);
-  grpc_register_plugin(grpc_lb_policy_round_robin_init,
-                       grpc_lb_policy_round_robin_shutdown);
   grpc_register_plugin(grpc_core::GrpcLbPolicyRingHashInit,
                        grpc_core::GrpcLbPolicyRingHashShutdown);
   grpc_register_plugin(grpc_resolver_dns_ares_init,
@@ -102,6 +78,14 @@ extern void RegisterNativeDnsResolver(CoreConfiguration::Builder* builder);
 extern void RegisterAresDnsResolver(CoreConfiguration::Builder* builder);
 extern void RegisterSockaddrResolver(CoreConfiguration::Builder* builder);
 extern void RegisterFakeResolver(CoreConfiguration::Builder* builder);
+extern void RegisterGrpclbLbPolicy(CoreConfiguration::Builder* builder);
+extern void RegisterPriorityLbPolicy(CoreConfiguration::Builder* builder);
+extern void RegisterOutlierDetectionLbPolicy(
+    CoreConfiguration::Builder* builder);
+extern void RegisterWeightedAverageLbPolicy(
+    CoreConfiguration::Builder* builder);
+extern void RegisterPickFirstLbPolicy(CoreConfiguration::Builder* builder);
+extern void RegisterRoundRobinLbPolicy(CoreConfiguration::Builder* builder);
 #ifdef GPR_SUPPORT_BINDER_TRANSPORT
 extern void RegisterBinderResolver(CoreConfiguration::Builder* builder);
 #endif
@@ -112,6 +96,12 @@ void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
   // the start of the handshaker list.
   RegisterHttpConnectHandshaker(builder);
   RegisterTCPConnectHandshaker(builder);
+  RegisterGrpclbLbPolicy(builder);
+  RegisterPriorityLbPolicy(builder);
+  RegisterOutlierDetectionLbPolicy(builder);
+  RegisterWeightedAverageLbPolicy(builder);
+  RegisterPickFirstLbPolicy(builder);
+  RegisterRoundRobinLbPolicy(builder);
   BuildClientChannelConfiguration(builder);
   SecurityRegisterHandshakerFactories(builder);
   RegisterClientAuthorityFilter(builder);

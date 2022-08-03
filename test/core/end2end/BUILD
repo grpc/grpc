@@ -71,6 +71,7 @@ grpc_cc_library(
         "//:grpc_base",
         "//:httpcli",
         "//:iomgr_fwd",
+        "//:pollset_set",
         "//:resolved_address",
         "//:slice_refcount",
         "//:sockaddr_utils",

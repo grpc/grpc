@@ -528,8 +528,10 @@ void CdsLb::OnClusterChanged(const std::string& name,
       args.work_serializer = work_serializer();
       args.args = args_;
       args.channel_control_helper = absl::make_unique<Helper>(Ref());
-      child_policy_ = LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
-          (*config)->name(), std::move(args));
+      child_policy_ =
+          CoreConfiguration::Get()
+              .lb_policy_registry()
+              .CreateLoadBalancingPolicy((*config)->name(), std::move(args));
       if (child_policy_ == nullptr) {
         OnError(name, absl::UnavailableError("failed to create child policy"));
         return;

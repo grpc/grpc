@@ -28,6 +28,7 @@
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/resolved_address.h"

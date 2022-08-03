@@ -297,6 +297,7 @@ grpc_cc_library(
         "//:lb_policy_factory",
         "//:lb_policy_registry",
         "//:orphanable",
+        "//:pollset_set",
         "//:ref_counted_ptr",
         "//:resolved_address",
         "//:server_address",
