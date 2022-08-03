@@ -47,7 +47,6 @@ class ServerCallbackImpl final
       grpc::CallbackServerContext* context,
       const grpc::testing::SimpleRequest* request,
       grpc::testing::SimpleResponse* response) override {
-    gpr_log(GPR_INFO, "UnaryCall RPC CALL RECEIVED");
     auto* reactor = context->DefaultReactor();
     reactor->Finish(grpc::Status::OK);
     return reactor;

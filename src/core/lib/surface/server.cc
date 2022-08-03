@@ -80,7 +80,6 @@ struct Server::RequestedCall {
         cq_bound_to_call(call_cq),
         call(call_arg),
         initial_metadata(initial_md) {
-    details->reserved = nullptr;
     data.batch.details = details;
   }
 
@@ -1250,7 +1249,6 @@ void Server::CallData::Publish(size_t cq_idx, RequestedCall* rc) {
           grpc_slice_ref_internal(path_->c_slice());
       rc->data.batch.details->deadline =
           deadline_.as_timespec(GPR_CLOCK_MONOTONIC);
-      rc->data.batch.details->flags = recv_initial_metadata_flags_;
       break;
     case RequestedCall::Type::REGISTERED_CALL:
       *rc->data.registered.deadline =
@@ -1349,15 +1347,12 @@ void Server::CallData::RecvInitialMetadataBatchComplete(
 void Server::CallData::StartTransportStreamOpBatchImpl(
     grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
   if (batch->recv_initial_metadata) {
-    GPR_ASSERT(batch->payload->recv_initial_metadata.recv_flags == nullptr);
     recv_initial_metadata_ =
         batch->payload->recv_initial_metadata.recv_initial_metadata;
     original_recv_initial_metadata_ready_ =
         batch->payload->recv_initial_metadata.recv_initial_metadata_ready;
     batch->payload->recv_initial_metadata.recv_initial_metadata_ready =
         &recv_initial_metadata_ready_;
-    batch->payload->recv_initial_metadata.recv_flags =
-        &recv_initial_metadata_flags_;
   }
   if (batch->recv_trailing_metadata) {
     original_recv_trailing_metadata_ready_ =

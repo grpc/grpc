@@ -284,4 +284,9 @@ const std::string& GrpcStatusContext::DisplayValue(const std::string& x) {
   return x;
 }
 
+std::string WaitForReady::DisplayValue(ValueType x) {
+  return absl::StrCat(x.value ? "true" : "false",
+                      x.explicitly_set ? " (explicit)" : "");
+}
+
 }  // namespace grpc_core
