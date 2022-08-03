@@ -529,7 +529,7 @@ class PickFirstFactory : public LoadBalancingPolicyFactory {
 }  // namespace
 
 void RegisterPickFirstLbPolicy(grpc_core::CoreConfiguration::Builder* builder) {
-  builder->lb_policy_registry().RegisterLoadBalancingPolicyFactory(
+  builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
       absl::make_unique<grpc_core::PickFirstFactory>());
 }
 

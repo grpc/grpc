@@ -2207,6 +2207,7 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/time",
+        "absl/types:optional",
         "absl/functional:any_invocable",
     ],
     tags = ["nofixdeps"],
@@ -4406,6 +4407,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "channel_args",
+        "config",
         "debug_location",
         "gpr_base",
         "grpc_base",
@@ -4692,6 +4694,7 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "closure",
+        "config",
         "debug_location",
         "exec_ctx",
         "gpr_base",
@@ -4731,6 +4734,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "channel_args",
+        "config",
         "debug_location",
         "event_engine_base",
         "gpr_base",

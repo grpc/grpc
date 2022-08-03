@@ -30,6 +30,7 @@
 
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/tcp_client.h"
@@ -103,12 +104,12 @@ static void must_fail(void* arg, grpc_error_handle error) {
   /* connect to it */
   GPR_ASSERT(getsockname(svr_fd, (struct sockaddr*)addr, (socklen_t*)&resolved_addr->len) == 0);
   GRPC_CLOSURE_INIT(&done, must_succeed, nullptr, grpc_schedule_on_exec_ctx);
-  auto args = grpc_core::CoreConfiguration::Get()
-                  .channel_args_preconditioning()
-                  .PreconditionChannelArgs(nullptr)
-                  .ToC();
-  grpc_tcp_client_connect(&done, &g_connecting, nullptr, args.get(), &*resolved_addr,
-                          grpc_core::Timestamp::InfFuture());
+  auto args =
+      grpc_core::CoreConfiguration::Get().channel_args_preconditioning().PreconditionChannelArgs(
+          nullptr);
+  grpc_tcp_client_connect(&done, &g_connecting, nullptr,
+                          grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
+                          &*resolved_addr, grpc_core::Timestamp::InfFuture());
 
   /* await the connection */
   do {
@@ -160,12 +161,12 @@ static void must_fail(void* arg, grpc_error_handle error) {
 
   /* connect to a broken address */
   GRPC_CLOSURE_INIT(&done, must_fail, nullptr, grpc_schedule_on_exec_ctx);
-  auto args = grpc_core::CoreConfiguration::Get()
-                  .channel_args_preconditioning()
-                  .PreconditionChannelArgs(nullptr)
-                  .ToC();
-  grpc_tcp_client_connect(&done, &g_connecting, nullptr, args.get(), &*resolved_addr,
-                          grpc_core::Timestamp::InfFuture());
+  auto args =
+      grpc_core::CoreConfiguration::Get().channel_args_preconditioning().PreconditionChannelArgs(
+          nullptr);
+  grpc_tcp_client_connect(&done, &g_connecting, nullptr,
+                          grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
+                          &*resolved_addr, grpc_core::Timestamp::InfFuture());
 
   grpc_core::ExecCtx::Get()->Flush();
 
