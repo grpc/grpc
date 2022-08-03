@@ -2320,7 +2320,10 @@ grpc_cc_library(
         "src/core/lib/event_engine/iomgr_engine/thread_pool.h",
     ],
     external_deps = ["absl/functional:any_invocable"],
-    deps = ["gpr_base"],
+    deps = [
+        "forkable",
+        "gpr_base",
+    ],
 )
 
 grpc_cc_library(
@@ -2337,6 +2340,7 @@ grpc_cc_library(
     ],
     deps = [
         "event_engine_base_hdrs",
+        "forkable",
         "gpr_base",
         "gpr_codegen",
         "iomgr_ee_timer",

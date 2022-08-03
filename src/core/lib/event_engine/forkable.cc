@@ -35,7 +35,7 @@ absl::flat_hash_set<Forkable*> g_forkables;
 
 void RegisterForkHandlers() {
   grpc_core::MutexLock lock(&g_mu);
-  GPR_ASSERT(!g_registered);
+  GPR_ASSERT(!absl::exchange(g_registered, true));
   pthread_atfork(PrepareFork, PostforkParent, PostforkChild);
 };
 
@@ -63,7 +63,7 @@ void ManageForkable(Forkable* engine) {
   grpc_core::MutexLock lock(&g_mu);
   g_forkables.insert(engine);
 }
-void ForgetForkable(Forkable* engine) {
+void StopManagingForkable(Forkable* engine) {
   grpc_core::MutexLock lock(&g_mu);
   g_forkables.erase(engine);
 }
@@ -82,7 +82,7 @@ void PostforkParent() {}
 void PostforkChild() {}
 
 void ManageForkable(Forkable* engine) {}
-void ForgetForkable(Forkable* engine) {}
+void StopManagingForkable(Forkable* engine) {}
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

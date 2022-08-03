@@ -27,10 +27,10 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/event_engine/forkable.h"
 #include "src/core/lib/event_engine/iomgr_engine/timer.h"
 #include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/event_engine/forkable.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -70,11 +70,15 @@ struct IomgrEventEngine::ClosureData final : public EventEngine::Closure {
 
 IomgrEventEngine::IomgrEventEngine() {
   grpc_event_engine::experimental::ManageForkable(this);
+  grpc_event_engine::experimental::ManageForkable(&thread_pool_);
+  grpc_event_engine::experimental::ManageForkable(&timer_manager_);
 }
 
 IomgrEventEngine::~IomgrEventEngine() {
   grpc_core::MutexLock lock(&mu_);
-  grpc_event_engine::experimental::ForgetForkable(this);
+  grpc_event_engine::experimental::StopManagingForkable(this);
+  grpc_event_engine::experimental::StopManagingForkable(&thread_pool_);
+  grpc_event_engine::experimental::StopManagingForkable(&timer_manager_);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {
     for (auto handle : known_handles_) {
       gpr_log(GPR_ERROR,
@@ -96,12 +100,16 @@ bool IomgrEventEngine::Cancel(EventEngine::TaskHandle handle) {
   return r;
 }
 
-// DO NOT SUBMIT - implement
-void IomgrEventEngine::PrepareFork() { abort(); }
+void IomgrEventEngine::PrepareFork() {
+  // ExecCtx fork needs are handled in legacy fork-support code.
+  // ThreadPool is handled as its own managed Forkable.
+  // TimerManager is handled as its own managed Forkable.
+  // This will probably get more complex when fds are involved.
+}
 
-void IomgrEventEngine::PostforkParent() { abort(); }
+void IomgrEventEngine::PostforkParent() {}
 
-void IomgrEventEngine::PostforkChild() { abort(); }
+void IomgrEventEngine::PostforkChild() {}
 
 EventEngine::TaskHandle IomgrEventEngine::RunAfter(
     Duration when, absl::AnyInvocable<void()> closure) {

@@ -31,6 +31,7 @@
 
 #include <grpc/event_engine/event_engine.h>
 
+#include "src/core/lib/event_engine/forkable.h"
 #include "src/core/lib/event_engine/iomgr_engine/timer.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"
@@ -43,7 +44,7 @@ namespace iomgr_engine {
 // all times, and thus effectively preventing the thundering herd problem.
 // TODO(ctiller): consider unifying this thread pool and the one in
 // thread_pool.{h,cc}.
-class TimerManager final {
+class TimerManager final : public grpc_event_engine::experimental::Forkable {
  public:
   TimerManager();
   ~TimerManager();
@@ -53,6 +54,11 @@ class TimerManager final {
   void TimerInit(Timer* timer, grpc_core::Timestamp deadline,
                  experimental::EventEngine::Closure* closure);
   bool TimerCancel(Timer* timer);
+
+  // Forkable
+  void PrepareFork() override;
+  void PostforkParent() override;
+  void PostforkChild() override;
 
  private:
   struct RunThreadArgs {

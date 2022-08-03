@@ -250,5 +250,11 @@ void TimerManager::Kick() {
   cv_.Signal();
 }
 
+void TimerManager::PrepareFork() { abort(); }
+
+void TimerManager::PostforkParent() { abort(); }
+
+void TimerManager::PostforkChild() { abort(); }
+
 }  // namespace iomgr_engine
 }  // namespace grpc_event_engine

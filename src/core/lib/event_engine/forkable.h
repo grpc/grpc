@@ -22,8 +22,8 @@ namespace experimental {
 // Register fork handlers with the system, enabling fork support.
 //
 // This provides pthread-based support for fork events. Any objects that
-// implement ForkSupported can register themselves with this system using
-// AddForkable, and their respective methods will be called upon fork.
+// implement Forkable can register themselves with this system using
+// ManageForkable, and their respective methods will be called upon fork.
 //
 // This should be called once upon grpc_initialization.
 void RegisterForkHandlers();
@@ -47,9 +47,11 @@ class Forkable {
 // Add Forkables from the set of objects that are supported.
 // Upon fork, each engine will have its respective fork callbacks called on the
 // thread that invoked the fork.
+//
+// Ordering of fork callback operations is not guaranteed.
 void ManageForkable(Forkable* engine);
 // Remove a forkable from the managed set.
-void ForgetForkable(Forkable* engine);
+void StopManagingForkable(Forkable* engine);
 
 }  // namespace experimental
 }  // namespace grpc_event_engine
