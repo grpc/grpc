@@ -12,8 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef PACKED_TABLE_H
-#define PACKED_TABLE_H
+#ifndef GRPC_CORE_LIB_GPRPP_PACKED_TABLE_H
+#define GRPC_CORE_LIB_GPRPP_PACKED_TABLE_H
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/sorted_pack.h"
 #include "src/core/lib/gprpp/table.h"
@@ -35,4 +37,4 @@ using PackedTable =
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_CORE_LIB_GPRPP_PACKED_TABLE_H

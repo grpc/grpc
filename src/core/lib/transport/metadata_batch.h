@@ -41,7 +41,6 @@
 #include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/gprpp/chunked_vector.h"
 #include "src/core/lib/gprpp/packed_table.h"
-#include "src/core/lib/gprpp/table.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
