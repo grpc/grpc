@@ -58,6 +58,7 @@
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -949,8 +950,9 @@ const JsonLoaderInterface* PriorityLbConfig::PriorityLbChild::JsonLoader(
   return loader;
 }
 
-void PriorityLbConfig::PriorityLbChild::JsonPostLoad(
-    const Json& json, const JsonArgs&, ErrorList* errors) {
+void PriorityLbConfig::PriorityLbChild::JsonPostLoad(const Json& json,
+                                                     const JsonArgs&,
+                                                     ErrorList* errors) {
   ScopedField field(errors, ".config");
   auto it = json.object_value().find("config");
   if (it == json.object_value().end()) {

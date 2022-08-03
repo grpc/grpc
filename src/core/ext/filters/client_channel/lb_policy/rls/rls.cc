@@ -86,6 +86,7 @@
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
 #include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/resolver/server_address.h"
@@ -2331,8 +2332,9 @@ const JsonLoaderInterface* RlsLbConfig::RouteLookupConfig::JsonLoader(
   return loader;
 }
 
-void RlsLbConfig::RouteLookupConfig::JsonPostLoad(
-    const Json& json, const JsonArgs& args, ErrorList* errors) {
+void RlsLbConfig::RouteLookupConfig::JsonPostLoad(const Json& json,
+                                                  const JsonArgs& args,
+                                                  ErrorList* errors) {
   // Parse grpcKeybuilders.
   auto grpc_keybuilders = LoadJsonObjectField<std::vector<GrpcKeyBuilder>>(
       json.object_value(), args, "grpcKeybuilders", errors);
