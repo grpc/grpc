@@ -40,6 +40,7 @@
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/iomgr/pollset.h"
 #include "test/core/util/cmdline.h"
 #include "test/core/util/fake_udp_and_tcp_server.h"
 #include "test/core/util/test_config.h"

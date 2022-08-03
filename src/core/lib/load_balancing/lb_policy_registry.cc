@@ -29,6 +29,7 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
+#include "lb_policy.h"
 
 #include <grpc/support/log.h>
 
@@ -44,6 +45,12 @@ void LoadBalancingPolicyRegistry::Builder::RegisterLoadBalancingPolicyFactory(
           std::string(factory->name()).c_str());
   GPR_ASSERT(factories_.find(factory->name()) == factories_.end());
   factories_.emplace(factory->name(), std::move(factory));
+}
+
+LoadBalancingPolicyRegistry LoadBalancingPolicyRegistry::Builder::Build() {
+  LoadBalancingPolicyRegistry out;
+  out.factories_ = std::move(factories_);
+  return out;
 }
 
 //

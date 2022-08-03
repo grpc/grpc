@@ -33,6 +33,7 @@
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/work_serializer.h"
+#include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/resolver/server_address.h"
