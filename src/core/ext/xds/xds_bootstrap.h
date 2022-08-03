@@ -126,7 +126,7 @@ class XdsBootstrap {
   XdsBootstrap(XdsBootstrap&& other) noexcept;
   XdsBootstrap& operator=(XdsBootstrap&& other) noexcept;
 
-  static const JsonLoaderInterface* JsonLoader(const JsonArgs& args);
+  static const JsonLoaderInterface* JsonLoader(const JsonArgs& /*args*/);
   void JsonPostLoad(const Json& json, const JsonArgs& /*args*/,
                     ErrorList* errors);
 

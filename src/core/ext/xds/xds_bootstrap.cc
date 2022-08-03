@@ -256,7 +256,7 @@ XdsBootstrap& XdsBootstrap::operator=(XdsBootstrap&& other) noexcept {
   return *this;
 }
 
-const JsonLoaderInterface* XdsBootstrap::JsonLoader(const JsonArgs& args) {
+const JsonLoaderInterface* XdsBootstrap::JsonLoader(const JsonArgs&) {
   static const auto* loader =
       JsonObjectLoader<XdsBootstrap>()
           .Field("xds_servers", &XdsBootstrap::servers_)
