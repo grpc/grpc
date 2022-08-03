@@ -275,7 +275,7 @@ def grpc_deps():
             ],
             build_file_content = BUILD_ALL_CONTENT,
         )
-        
+
     if "com_github_google_benchmark" not in native.existing_rules():
         http_archive(
             name = "com_github_google_benchmark",

@@ -54,7 +54,7 @@ def grpc_extra_deps(ignore_version_differences = False):
     api_dependencies()
 
     rules_foreign_cc_dependencies(register_default_tools = False, register_built_tools = False)
-    
+
     go_rules_dependencies()
     go_register_toolchains(version = "1.18")
     gazelle_dependencies()
