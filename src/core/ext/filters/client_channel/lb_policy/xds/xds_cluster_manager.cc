@@ -707,7 +707,7 @@ class XdsClusterManagerLbFactory : public LoadBalancingPolicyFactory {
 
 void RegisterXdsClusterManagerLbPolicy(CoreConfiguration::Builder* builder) {
   builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
-      absl::make_unique<grpc_core::XdsClusterManagerLbFactory>());
+      absl::make_unique<XdsClusterManagerLbFactory>());
 }
 
 }  // namespace grpc_core

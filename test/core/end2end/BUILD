@@ -121,6 +121,7 @@ grpc_cc_test(
         "//:grpc_base",
         "//:grpc_codegen",
         "//:grpc_public_hdrs",
+        "//:iomgr_fwd",
         "//test/core/util:grpc_test_util",
     ],
 )

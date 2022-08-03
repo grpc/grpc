@@ -763,7 +763,7 @@ class CdsLbFactory : public LoadBalancingPolicyFactory {
 
 void RegisterCdsLbPolicy(CoreConfiguration::Builder* builder) {
   builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
-      absl::make_unique<grpc_core::CdsLbFactory>());
+      absl::make_unique<CdsLbFactory>());
 }
 
 }  // namespace grpc_core

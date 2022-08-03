@@ -26,7 +26,6 @@
 #include "src/core/ext/filters/client_channel/retry_service_config.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/load_balancing/lb_policy_registry.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 

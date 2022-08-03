@@ -523,7 +523,7 @@ class RoundRobinFactory : public LoadBalancingPolicyFactory {
 
 void RegisterRoundRobinLbPolicy(CoreConfiguration::Builder* builder) {
   builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
-      absl::make_unique<grpc_core::RoundRobinFactory>());
+      absl::make_unique<RoundRobinFactory>());
 }
 
 }  // namespace grpc_core
