@@ -146,6 +146,10 @@ class GcpResourceManager(metaclass=_MetaSingletonAndAbslFlags):
                 'Predefined resource_suffix is not supported for UrlMap tests')
         logging.info('GcpResourceManager: resource prefix=%s, suffix=%s',
                      self.resource_prefix, self.resource_suffix)
+
+        # Must be called before KubernetesApiManager or GcpApiManager init.
+        xds_flags.set_socket_default_timeout_from_flag()
+
         # API managers
         self.k8s_api_manager = k8s.KubernetesApiManager(self.kube_context)
         self.gcp_api_manager = gcp.api.GcpApiManager()

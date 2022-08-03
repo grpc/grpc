@@ -100,6 +100,7 @@ psmBuildConfigs() {
         -a ci_gitCommit="${GRPC_GITREF}" \
         -a ci_gitCommit_java="${GRPC_JAVA_GITREF}" \
         -a ci_gitActualCommit="${KOKORO_GIT_COMMIT}" \
+        -a enablePrometheus=true \
         --prefix="${LOAD_TEST_PREFIX}" -u "${UNIQUE_IDENTIFIER}" -u "${pool}" -u "${proxy_type}"\
         -a pool="${pool}" \
         --category=psm \
@@ -129,6 +130,7 @@ buildConfigs() {
         -a ci_gitCommit="${GRPC_GITREF}" \
         -a ci_gitCommit_java="${GRPC_JAVA_GITREF}" \
         -a ci_gitActualCommit="${KOKORO_GIT_COMMIT}" \
+        -a enablePrometheus=true \
         --prefix="${LOAD_TEST_PREFIX}" -u "${UNIQUE_IDENTIFIER}" -u "${pool}" \
         -a pool="${pool}" --category=psm \
         --allow_client_language=c++ --allow_server_language=c++ \

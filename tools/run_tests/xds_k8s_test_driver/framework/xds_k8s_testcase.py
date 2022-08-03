@@ -116,6 +116,9 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
         # support current test case.
         skips.evaluate_test_config(cls.is_supported)
 
+        # Must be called before KubernetesApiManager or GcpApiManager init.
+        xds_flags.set_socket_default_timeout_from_flag()
+
         # GCP
         cls.project = xds_flags.PROJECT.value
         cls.network = xds_flags.NETWORK.value
