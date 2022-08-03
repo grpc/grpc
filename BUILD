@@ -3970,7 +3970,6 @@ grpc_cc_library(
         "json",
         "json_args",
         "json_object_loader",
-        "json_util",
         "lb_policy",
         "lb_policy_factory",
         "lb_policy_registry",
