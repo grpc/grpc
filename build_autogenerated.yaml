@@ -340,7 +340,6 @@ libs:
   - src/core/ext/filters/client_channel/global_subchannel_pool.h
   - src/core/ext/filters/client_channel/health/health_check_client.h
   - src/core/ext/filters/client_channel/http_proxy.h
-  - src/core/ext/filters/client_channel/lb_policy.h
   - src/core/ext/filters/client_channel/lb_policy/address_filtering.h
   - src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h
   - src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h
@@ -355,8 +354,6 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/subchannel_list.h
   - src/core/ext/filters/client_channel/lb_policy/xds/xds.h
   - src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h
-  - src/core/ext/filters/client_channel/lb_policy_factory.h
-  - src/core/ext/filters/client_channel/lb_policy_registry.h
   - src/core/ext/filters/client_channel/local_subchannel_pool.h
   - src/core/ext/filters/client_channel/proxy_mapper.h
   - src/core/ext/filters/client_channel/proxy_mapper_registry.h
@@ -371,7 +368,6 @@ libs:
   - src/core/ext/filters/client_channel/retry_service_config.h
   - src/core/ext/filters/client_channel/retry_throttle.h
   - src/core/ext/filters/client_channel/subchannel.h
-  - src/core/ext/filters/client_channel/subchannel_interface.h
   - src/core/ext/filters/client_channel/subchannel_interface_internal.h
   - src/core/ext/filters/client_channel/subchannel_pool_interface.h
   - src/core/ext/filters/client_channel/subchannel_stream_client.h
@@ -846,6 +842,10 @@ libs:
   - src/core/lib/iomgr/wakeup_fd_posix.h
   - src/core/lib/json/json.h
   - src/core/lib/json/json_util.h
+  - src/core/lib/load_balancing/lb_policy.h
+  - src/core/lib/load_balancing/lb_policy_factory.h
+  - src/core/lib/load_balancing/lb_policy_registry.h
+  - src/core/lib/load_balancing/subchannel_interface.h
   - src/core/lib/matchers/matchers.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/arena_promise.h
@@ -1021,7 +1021,6 @@ libs:
   - src/core/ext/filters/client_channel/global_subchannel_pool.cc
   - src/core/ext/filters/client_channel/health/health_check_client.cc
   - src/core/ext/filters/client_channel/http_proxy.cc
-  - src/core/ext/filters/client_channel/lb_policy.cc
   - src/core/ext/filters/client_channel/lb_policy/address_filtering.cc
   - src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc
@@ -1041,7 +1040,6 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_impl.cc
   - src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc
   - src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_resolver.cc
-  - src/core/ext/filters/client_channel/lb_policy_registry.cc
   - src/core/ext/filters/client_channel/local_subchannel_pool.cc
   - src/core/ext/filters/client_channel/proxy_mapper_registry.cc
   - src/core/ext/filters/client_channel/resolver/binder/binder_resolver.cc
@@ -1532,6 +1530,8 @@ libs:
   - src/core/lib/json/json_reader.cc
   - src/core/lib/json/json_util.cc
   - src/core/lib/json/json_writer.cc
+  - src/core/lib/load_balancing/lb_policy.cc
+  - src/core/lib/load_balancing/lb_policy_registry.cc
   - src/core/lib/matchers/matchers.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/promise/sleep.cc
@@ -1814,7 +1814,6 @@ libs:
   - src/core/ext/filters/client_channel/global_subchannel_pool.h
   - src/core/ext/filters/client_channel/health/health_check_client.h
   - src/core/ext/filters/client_channel/http_proxy.h
-  - src/core/ext/filters/client_channel/lb_policy.h
   - src/core/ext/filters/client_channel/lb_policy/address_filtering.h
   - src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h
   - src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h
@@ -1827,8 +1826,6 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h
   - src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h
   - src/core/ext/filters/client_channel/lb_policy/subchannel_list.h
-  - src/core/ext/filters/client_channel/lb_policy_factory.h
-  - src/core/ext/filters/client_channel/lb_policy_registry.h
   - src/core/ext/filters/client_channel/local_subchannel_pool.h
   - src/core/ext/filters/client_channel/proxy_mapper.h
   - src/core/ext/filters/client_channel/proxy_mapper_registry.h
@@ -1842,7 +1839,6 @@ libs:
   - src/core/ext/filters/client_channel/retry_service_config.h
   - src/core/ext/filters/client_channel/retry_throttle.h
   - src/core/ext/filters/client_channel/subchannel.h
-  - src/core/ext/filters/client_channel/subchannel_interface.h
   - src/core/ext/filters/client_channel/subchannel_interface_internal.h
   - src/core/ext/filters/client_channel/subchannel_pool_interface.h
   - src/core/ext/filters/client_channel/subchannel_stream_client.h
@@ -2015,6 +2011,10 @@ libs:
   - src/core/lib/iomgr/wakeup_fd_posix.h
   - src/core/lib/json/json.h
   - src/core/lib/json/json_util.h
+  - src/core/lib/load_balancing/lb_policy.h
+  - src/core/lib/load_balancing/lb_policy_factory.h
+  - src/core/lib/load_balancing/lb_policy_registry.h
+  - src/core/lib/load_balancing/subchannel_interface.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/arena_promise.h
   - src/core/lib/promise/call_push_pull.h
@@ -2135,7 +2135,6 @@ libs:
   - src/core/ext/filters/client_channel/global_subchannel_pool.cc
   - src/core/ext/filters/client_channel/health/health_check_client.cc
   - src/core/ext/filters/client_channel/http_proxy.cc
-  - src/core/ext/filters/client_channel/lb_policy.cc
   - src/core/ext/filters/client_channel/lb_policy/address_filtering.cc
   - src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc
@@ -2151,7 +2150,6 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/rls/rls.cc
   - src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
   - src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc
-  - src/core/ext/filters/client_channel/lb_policy_registry.cc
   - src/core/ext/filters/client_channel/local_subchannel_pool.cc
   - src/core/ext/filters/client_channel/proxy_mapper_registry.cc
   - src/core/ext/filters/client_channel/resolver/binder/binder_resolver.cc
@@ -2342,6 +2340,8 @@ libs:
   - src/core/lib/json/json_reader.cc
   - src/core/lib/json/json_util.cc
   - src/core/lib/json/json_writer.cc
+  - src/core/lib/load_balancing/lb_policy.cc
+  - src/core/lib/load_balancing/lb_policy_registry.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/promise/sleep.cc
   - src/core/lib/resolver/resolver.cc

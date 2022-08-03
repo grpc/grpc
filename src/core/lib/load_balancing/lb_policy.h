@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_H
-#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_H
+#ifndef GRPC_CORE_LIB_LOAD_BALANCING_LB_POLICY_H
+#define GRPC_CORE_LIB_LOAD_BALANCING_LB_POLICY_H
 
 #include <grpc/support/port_platform.h>
 
@@ -36,7 +36,6 @@
 #include <grpc/impl/codegen/connectivity_state.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
-#include "src/core/ext/filters/client_channel/subchannel_interface.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -45,6 +44,7 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
+#include "src/core/lib/load_balancing/subchannel_interface.h"
 #include "src/core/lib/resolver/server_address.h"
 
 namespace grpc_core {
@@ -432,4 +432,4 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_H
+#endif  // GRPC_CORE_LIB_LOAD_BALANCING_LB_POLICY_H
