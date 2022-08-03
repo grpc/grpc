@@ -84,7 +84,8 @@ struct XdsClusterResource {
            lb_policy == other.lb_policy &&
            min_ring_size == other.min_ring_size &&
            max_ring_size == other.max_ring_size &&
-           max_concurrent_requests == other.max_concurrent_requests;
+           max_concurrent_requests == other.max_concurrent_requests &&
+           outlier_detection == other.outlier_detection;
   }
 
   std::string ToString() const;
