@@ -78,6 +78,11 @@ struct Sorted<Cmp, Typelist<>> {
 
 }  // namespace sorted_pack_detail
 
+// Given a type T<A...>, and a type comparator Cmp<P,Q>, and some set of types
+// Args...:
+// Sort Args... using Cmp into SortedArgs..., then instantiate T<SortedArgs...>
+// as Type.
+// Cmp<P,Q> should have a single constant `kValue` that is true if P < Q.
 template <template <typename...> class T,
           template <typename, typename> class Cmp, typename... Args>
 struct WithSortedPack {
