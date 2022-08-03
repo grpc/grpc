@@ -66,6 +66,7 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
 #include "src/core/lib/resolver/resolver.h"
 #include "src/core/lib/resolver/resolver_registry.h"
@@ -1115,8 +1116,8 @@ void XdsClusterResolverLbConfig::DiscoveryMechanism::JsonPostLoad(
   }
   // Parse "type".
   {
-    auto type_field = LoadJsonObjectField<std::string>(
-        json.object_value(), args, "type", errors);
+    auto type_field = LoadJsonObjectField<std::string>(json.object_value(),
+                                                       args, "type", errors);
     if (type_field.has_value()) {
       if (*type_field == "EDS") {
         type = DiscoveryMechanismType::EDS;
@@ -1130,9 +1131,9 @@ void XdsClusterResolverLbConfig::DiscoveryMechanism::JsonPostLoad(
   }
   // Parse "edsServiceName" if type is EDS.
   if (type == DiscoveryMechanismType::EDS) {
-    auto value = LoadJsonObjectField<std::string>(
-        json.object_value(), args, "edsServiceName", errors,
-        /*required=*/false);
+    auto value = LoadJsonObjectField<std::string>(json.object_value(), args,
+                                                  "edsServiceName", errors,
+                                                  /*required=*/false);
     if (value.has_value()) eds_service_name = std::move(*value);
   }
   // Parse "dnsHostname" if type is LOGICAL_DNS.
@@ -1155,8 +1156,9 @@ const JsonLoaderInterface* XdsClusterResolverLbConfig::JsonLoader(
   return loader;
 }
 
-void XdsClusterResolverLbConfig::JsonPostLoad(
-    const Json& json, const JsonArgs& args, ErrorList* errors) {
+void XdsClusterResolverLbConfig::JsonPostLoad(const Json& json,
+                                              const JsonArgs& args,
+                                              ErrorList* errors) {
   // Validate discoveryMechanisms.
   {
     ScopedField field(errors, ".discoveryMechanisms");

@@ -61,6 +61,7 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -731,8 +732,9 @@ const JsonLoaderInterface* XdsClusterImplLbConfig::JsonLoader(const JsonArgs&) {
   return loader;
 }
 
-void XdsClusterImplLbConfig::JsonPostLoad(
-    const Json& json, const JsonArgs& args, ErrorList* errors) {
+void XdsClusterImplLbConfig::JsonPostLoad(const Json& json,
+                                          const JsonArgs& args,
+                                          ErrorList* errors) {
   // LRS load reporting server name.
   // FIXME: merge in other PR
   auto it = json.object_value().find("lrsLoadReportingServer");

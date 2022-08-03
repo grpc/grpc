@@ -54,6 +54,7 @@
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -700,8 +701,9 @@ const JsonLoaderInterface* WeightedTargetLbConfig::ChildConfig::JsonLoader(
   return loader;
 }
 
-void WeightedTargetLbConfig::ChildConfig::JsonPostLoad(
-    const Json& json, const JsonArgs&, ErrorList* errors) {
+void WeightedTargetLbConfig::ChildConfig::JsonPostLoad(const Json& json,
+                                                       const JsonArgs&,
+                                                       ErrorList* errors) {
   ScopedField field(errors, ".childPolicy");
   auto it = json.object_value().find("childPolicy");
   if (it == json.object_value().end()) {
