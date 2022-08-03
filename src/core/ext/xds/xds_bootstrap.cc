@@ -65,7 +65,8 @@ const absl::string_view kServerFeatureIgnoreResourceDeletion =
 // XdsBootstrap::Node::Locality
 //
 
-const JsonLoaderInterface* XdsBootstrap::Node::Locality::JsonLoader() {
+const JsonLoaderInterface* XdsBootstrap::Node::Locality::JsonLoader(
+    const JsonArgs&) {
   static const auto* loader =
       JsonObjectLoader<Locality>()
           .OptionalField("region", &Locality::region)
@@ -79,7 +80,7 @@ const JsonLoaderInterface* XdsBootstrap::Node::Locality::JsonLoader() {
 // XdsBootstrap::Node
 //
 
-const JsonLoaderInterface* XdsBootstrap::Node::JsonLoader() {
+const JsonLoaderInterface* XdsBootstrap::Node::JsonLoader(const JsonArgs&) {
   static const auto* loader = JsonObjectLoader<Node>()
                                   .OptionalField("id", &Node::id)
                                   .OptionalField("cluster", &Node::cluster)
@@ -100,7 +101,7 @@ struct XdsChannelCreds {
   std::string type;
   Json::Object config;
 
-  static const JsonLoaderInterface* JsonLoader() {
+  static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
     static const auto* loader =
         JsonObjectLoader<XdsChannelCreds>()
             .Field("type", &XdsChannelCreds::type)
@@ -112,16 +113,18 @@ struct XdsChannelCreds {
 
 }  // namespace
 
-const JsonLoaderInterface* XdsBootstrap::XdsServer::JsonLoader() {
+const JsonLoaderInterface* XdsBootstrap::XdsServer::JsonLoader(
+    const JsonArgs&) {
   static const auto* loader = JsonObjectLoader<XdsServer>()
                                   .Field("server_uri", &XdsServer::server_uri)
                                   .Finish();
   return loader;
 }
 
-void XdsBootstrap::XdsServer::JsonPostLoad(const Json& json,
-                                           ErrorList* errors) {
+void XdsBootstrap::XdsServer::JsonPostLoad(
+    const Json& json, const JsonArgs& /*args*/, ErrorList* errors) {
   // Parse "channel_creds".
+// FIXME: parse this as a vector of XdsChannelCreds, then select the one we want
   {
     ScopedField field(errors, ".channel_creds");
     auto it = json.object_value().find("channel_creds");
@@ -213,7 +216,8 @@ bool XdsBootstrap::XdsServer::IgnoreResourceDeletion() const {
 // XdsBootstrap::Authority
 //
 
-const JsonLoaderInterface* XdsBootstrap::Authority::JsonLoader() {
+const JsonLoaderInterface* XdsBootstrap::Authority::JsonLoader(
+    const JsonArgs&) {
   static const auto* loader =
       JsonObjectLoader<Authority>()
           .OptionalField("client_listener_resource_name_template",
@@ -259,7 +263,8 @@ XdsBootstrap& XdsBootstrap::operator=(XdsBootstrap&& other) noexcept {
   return *this;
 }
 
-const JsonLoaderInterface* XdsBootstrap::JsonLoader() {
+const JsonLoaderInterface* XdsBootstrap::JsonLoader(const JsonArgs&) {
+// FIXME: check this via JsonArgs to avoid duplication
   if (XdsFederationEnabled()) {
     static const auto* loader =
         JsonObjectLoader<XdsBootstrap>()
@@ -289,7 +294,8 @@ const JsonLoaderInterface* XdsBootstrap::JsonLoader() {
   return loader;
 }
 
-void XdsBootstrap::JsonPostLoad(const Json& /*json*/, ErrorList* errors) {
+void XdsBootstrap::JsonPostLoad(const Json& /*json*/, const JsonArgs& /*args*/,
+                                ErrorList* errors) {
   // Verify that each authority has the right prefix in the
   // client_listener_resource_name_template field.
   {

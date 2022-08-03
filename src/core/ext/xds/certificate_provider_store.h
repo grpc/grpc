@@ -52,8 +52,8 @@ class CertificateProviderStore
     std::string plugin_name;
     RefCountedPtr<CertificateProviderFactory::Config> config;
 
-    static const JsonLoaderInterface* JsonLoader();
-    void JsonPostLoad(const Json& json, ErrorList* errors);
+    static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+    void JsonPostLoad(const Json& json, const JsonArgs&, ErrorList* errors);
   };
 
   // Maps plugin instance (opaque) name to plugin defition.

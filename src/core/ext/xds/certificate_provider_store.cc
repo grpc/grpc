@@ -34,7 +34,7 @@ namespace grpc_core {
 //
 
 const JsonLoaderInterface*
-CertificateProviderStore::PluginDefinition::JsonLoader() {
+CertificateProviderStore::PluginDefinition::JsonLoader(const JsonArgs&) {
   static const auto* loader =
       JsonObjectLoader<PluginDefinition>()
           .Field("plugin_name", &PluginDefinition::plugin_name)
@@ -43,7 +43,7 @@ CertificateProviderStore::PluginDefinition::JsonLoader() {
 }
 
 void CertificateProviderStore::PluginDefinition::JsonPostLoad(
-    const Json& json, ErrorList* errors) {
+    const Json& json, const JsonArgs&, ErrorList* errors) {
   // Check that plugin is supported.
   CertificateProviderFactory* factory = nullptr;
   if (!plugin_name.empty()) {

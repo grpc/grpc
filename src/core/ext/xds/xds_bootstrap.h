@@ -50,13 +50,13 @@ class XdsBootstrap {
       std::string zone;
       std::string sub_zone;
 
-      static const JsonLoaderInterface* JsonLoader();
+      static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
     };
     Locality locality;
 
     Json::Object metadata;
 
-    static const JsonLoaderInterface* JsonLoader();
+    static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
   };
 
   struct XdsServer {
@@ -65,8 +65,9 @@ class XdsBootstrap {
     Json::Object channel_creds_config;
     std::set<std::string> server_features;
 
-    static const JsonLoaderInterface* JsonLoader();
-    void JsonPostLoad(const Json& json, ErrorList* errors);
+    static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+    void JsonPostLoad(const Json& json, const JsonArgs& /*args*/,
+                      ErrorList* errors);
 
     bool operator==(const XdsServer& other) const {
       return (server_uri == other.server_uri &&
@@ -96,7 +97,7 @@ class XdsBootstrap {
     std::string client_listener_resource_name_template;
     std::vector<XdsServer> xds_servers;
 
-    static const JsonLoaderInterface* JsonLoader();
+    static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
   };
 
   // Creates bootstrap object from json_string.
@@ -113,8 +114,9 @@ class XdsBootstrap {
   XdsBootstrap(XdsBootstrap&& other) noexcept;
   XdsBootstrap& operator=(XdsBootstrap&& other) noexcept;
 
-  static const JsonLoaderInterface* JsonLoader();
-  void JsonPostLoad(const Json& json, ErrorList* errors);
+  static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+  void JsonPostLoad(const Json& json, const JsonArgs& /*args*/,
+                    ErrorList* errors);
 
   std::string ToString() const;
 

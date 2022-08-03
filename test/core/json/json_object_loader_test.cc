@@ -25,10 +25,11 @@ namespace grpc_core {
 namespace {
 
 template <typename T>
-absl::StatusOr<T> Parse(absl::string_view json) {
+absl::StatusOr<T> Parse(absl::string_view json,
+                        const JsonArgs& args = JsonArgs()) {
   auto parsed = Json::Parse(json);
   if (!parsed.ok()) return parsed.status();
-  return LoadFromJson<T>(*parsed);
+  return LoadFromJson<T>(*parsed, args);
 }
 
 //
@@ -46,7 +47,7 @@ TYPED_TEST_P(SignedIntegerTest, IntegerFields) {
     TypeParam optional_value = 0;
     absl::optional<TypeParam> absl_optional_value;
 
-    static const JsonLoaderInterface* JsonLoader() {
+    static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
       static const auto* loader =
           JsonObjectLoader<TestStruct>()
               .Field("value", &TestStruct::value)
@@ -122,7 +123,7 @@ TYPED_TEST_P(UnsignedIntegerTest, IntegerFields) {
     TypeParam optional_value = 0;
     absl::optional<TypeParam> absl_optional_value;
 
-    static const JsonLoaderInterface* JsonLoader() {
+    static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
       static const auto* loader =
           JsonObjectLoader<TestStruct>()
               .Field("value", &TestStruct::value)
@@ -200,7 +201,7 @@ TYPED_TEST_P(FloatingPointTest, FloatFields) {
     TypeParam optional_value = 0;
     absl::optional<TypeParam> absl_optional_value;
 
-    static const JsonLoaderInterface* JsonLoader() {
+    static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
       static const auto* loader =
           JsonObjectLoader<TestStruct>()
               .Field("value", &TestStruct::value)
@@ -272,7 +273,7 @@ TEST(JsonObjectLoader, BooleanFields) {
     bool optional_value = true;
     absl::optional<bool> absl_optional_value;
 
-    static const JsonLoaderInterface* JsonLoader() {
+    static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
       static const auto* loader =
           JsonObjectLoader<TestStruct>()
               .Field("value", &TestStruct::value)
@@ -332,7 +333,7 @@ TEST(JsonObjectLoader, StringFields) {
     std::string optional_value;
     absl::optional<std::string> absl_optional_value;
 
-    static const JsonLoaderInterface* JsonLoader() {
+    static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
       static const auto* loader =
           JsonObjectLoader<TestStruct>()
               .Field("value", &TestStruct::value)
@@ -386,7 +387,7 @@ TEST(JsonObjectLoader, DurationFields) {
     Duration optional_value = Duration::Zero();
     absl::optional<Duration> absl_optional_value;
 
-    static const JsonLoaderInterface* JsonLoader() {
+    static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
       static const auto* loader =
           JsonObjectLoader<TestStruct>()
               .Field("value", &TestStruct::value)
@@ -459,7 +460,7 @@ TEST(JsonObjectLoader, JsonObjectFields) {
     Json::Object optional_value;
     absl::optional<Json::Object> absl_optional_value;
 
-    static const JsonLoaderInterface* JsonLoader() {
+    static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
       static const auto* loader =
           JsonObjectLoader<TestStruct>()
               .Field("value", &TestStruct::value)
@@ -514,7 +515,7 @@ TEST(JsonObjectLoader, MapFields) {
     std::map<std::string, std::string> optional_value;
     absl::optional<std::map<std::string, bool>> absl_optional_value;
 
-    static const JsonLoaderInterface* JsonLoader() {
+    static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
       static const auto* loader =
           JsonObjectLoader<TestStruct>()
               .Field("value", &TestStruct::value)
@@ -584,7 +585,7 @@ TEST(JsonObjectLoader, VectorFields) {
     std::vector<std::string> optional_value;
     absl::optional<std::vector<bool>> absl_optional_value;
 
-    static const JsonLoaderInterface* JsonLoader() {
+    static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
       static const auto* loader =
           JsonObjectLoader<TestStruct>()
               .Field("value", &TestStruct::value)
@@ -653,7 +654,7 @@ TEST(JsonObjectLoader, NestedStructFields) {
   struct NestedStruct {
     int32_t inner = 0;
 
-    static const JsonLoaderInterface* JsonLoader() {
+    static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
       static const auto* loader = JsonObjectLoader<NestedStruct>()
                                       .Field("inner", &NestedStruct::inner)
                                       .Finish();
@@ -665,7 +666,7 @@ TEST(JsonObjectLoader, NestedStructFields) {
     NestedStruct optional_outer;
     absl::optional<NestedStruct> absl_optional_outer;
 
-    static const JsonLoaderInterface* JsonLoader() {
+    static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
       static const auto* loader =
           JsonObjectLoader<TestStruct>()
               .Field("outer", &TestStruct::outer)
@@ -783,7 +784,7 @@ TEST(JsonObjectLoader, IgnoresUnsupportedFields) {
   struct TestStruct {
     int32_t a = 0;
 
-    static const JsonLoaderInterface* JsonLoader() {
+    static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
       static const auto* loader =
           JsonObjectLoader<TestStruct>().Field("a", &TestStruct::a).Finish();
       return loader;
@@ -794,18 +795,55 @@ TEST(JsonObjectLoader, IgnoresUnsupportedFields) {
   EXPECT_EQ(test_struct->a, 3);
 }
 
+TEST(JsonObjectLoader, IgnoresDisabledFields) {
+  class FakeJsonArgs : public JsonArgs {
+   public:
+    FakeJsonArgs() = default;
+
+    bool IsEnabled(absl::string_view key) const override {
+      return key != "disabled";
+    }
+  };
+  struct TestStruct {
+    int32_t a = 0;
+    int32_t b = 0;
+    int32_t c = 0;
+
+    static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
+      static const auto* loader =
+          JsonObjectLoader<TestStruct>()
+              .Field("a", &TestStruct::a, "disabled")
+              .OptionalField("b", &TestStruct::b, "disabled")
+              .OptionalField("c", &TestStruct::c, "enabled")
+              .Finish();
+      return loader;
+    }
+  };
+  // Fields "a" and "b" have the wrong types, but we ignore them,
+  // because they're disabled.
+  auto test_struct =
+      Parse<TestStruct>("{\"a\":false, \"b\":false, \"c\":1}", FakeJsonArgs());
+  ASSERT_TRUE(test_struct.ok()) << test_struct.status();
+  EXPECT_EQ(test_struct->a, 0);
+  EXPECT_EQ(test_struct->b, 0);
+  EXPECT_EQ(test_struct->c, 1);
+}
+
 TEST(JsonObjectLoader, PostLoadHook) {
   struct TestStruct {
     int32_t a = 0;
 
-    static const JsonLoaderInterface* JsonLoader() {
+    static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
       static const auto* loader = JsonObjectLoader<TestStruct>()
                                       .OptionalField("a", &TestStruct::a)
                                       .Finish();
       return loader;
     }
 
-    void JsonPostLoad(const Json& /*source*/, ErrorList* /*errors*/) { ++a; }
+    void JsonPostLoad(const Json& /*source*/, const JsonArgs& /*args*/,
+                      ErrorList* /*errors*/) {
+      ++a;
+    }
   };
   auto test_struct = Parse<TestStruct>("{\"a\": 1}");
   ASSERT_TRUE(test_struct.ok()) << test_struct.status();
@@ -819,13 +857,14 @@ TEST(JsonObjectLoader, CustomValidationInPostLoadHook) {
   struct TestStruct {
     int32_t a = 0;
 
-    static const JsonLoaderInterface* JsonLoader() {
+    static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
       static const auto* loader =
           JsonObjectLoader<TestStruct>().Field("a", &TestStruct::a).Finish();
       return loader;
     }
 
-    void JsonPostLoad(const Json& /*source*/, ErrorList* errors) {
+    void JsonPostLoad(const Json& /*source*/, const JsonArgs& /*args*/,
+                      ErrorList* errors) {
       ScopedField field(errors, ".a");
       if (!errors->FieldHasErrors() && a <= 0) {
         errors->AddError("must be greater than 0");
@@ -855,7 +894,7 @@ TEST(JsonObjectLoader, LoadFromJsonWithErrorList) {
   struct TestStruct {
     int32_t a = 0;
 
-    static const JsonLoaderInterface* JsonLoader() {
+    static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
       static const auto* loader =
           JsonObjectLoader<TestStruct>().Field("a", &TestStruct::a).Finish();
       return loader;
@@ -867,7 +906,8 @@ TEST(JsonObjectLoader, LoadFromJsonWithErrorList) {
     auto json = Json::Parse(json_str);
     ASSERT_TRUE(json.ok()) << json.status();
     ErrorList errors;
-    TestStruct test_struct = LoadFromJson<TestStruct>(*json, &errors);
+    TestStruct test_struct =
+        LoadFromJson<TestStruct>(*json, JsonArgs(), &errors);
     ASSERT_TRUE(errors.ok()) << errors.status();
     EXPECT_EQ(test_struct.a, 1);
   }
@@ -877,7 +917,7 @@ TEST(JsonObjectLoader, LoadFromJsonWithErrorList) {
     auto json = Json::Parse(json_str);
     ASSERT_TRUE(json.ok()) << json.status();
     ErrorList errors;
-    LoadFromJson<TestStruct>(*json, &errors);
+    LoadFromJson<TestStruct>(*json, JsonArgs(), &errors);
     absl::Status status = errors.status();
     EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
     EXPECT_EQ(status.message(),
@@ -893,8 +933,8 @@ TEST(JsonObjectLoader, LoadJsonObjectField) {
   // Load a valid field.
   {
     ErrorList errors;
-    auto value =
-        LoadJsonObjectField<int32_t>(json->object_value(), "int", &errors);
+    auto value = LoadJsonObjectField<int32_t>(json->object_value(), JsonArgs(),
+                                              "int", &errors);
     ASSERT_TRUE(value.has_value()) << errors.status();
     EXPECT_EQ(*value, 1);
     EXPECT_TRUE(errors.ok());
@@ -902,15 +942,16 @@ TEST(JsonObjectLoader, LoadJsonObjectField) {
   // An optional field that is not present.
   {
     ErrorList errors;
-    auto value = LoadJsonObjectField<int32_t>(
-        json->object_value(), "not_present", &errors, /*required=*/false);
+    auto value = LoadJsonObjectField<int32_t>(json->object_value(), JsonArgs(),
+                                              "not_present", &errors,
+                                              /*required=*/false);
     EXPECT_FALSE(value.has_value());
     EXPECT_TRUE(errors.ok());
   }
   // A required field that is not present.
   {
     ErrorList errors;
-    auto value = LoadJsonObjectField<int32_t>(json->object_value(),
+    auto value = LoadJsonObjectField<int32_t>(json->object_value(), JsonArgs(),
                                               "not_present", &errors);
     EXPECT_FALSE(value.has_value());
     auto status = errors.status();
@@ -923,8 +964,8 @@ TEST(JsonObjectLoader, LoadJsonObjectField) {
   // Value has the wrong type.
   {
     ErrorList errors;
-    auto value =
-        LoadJsonObjectField<std::string>(json->object_value(), "int", &errors);
+    auto value = LoadJsonObjectField<std::string>(json->object_value(),
+                                                  JsonArgs(), "int", &errors);
     EXPECT_FALSE(value.has_value());
     auto status = errors.status();
     EXPECT_THAT(status.code(), absl::StatusCode::kInvalidArgument);
