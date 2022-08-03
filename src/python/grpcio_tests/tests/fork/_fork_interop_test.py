@@ -49,7 +49,7 @@ _SUBPROCESS_TIMEOUT_S = 30
 @unittest.skipUnless(
     sys.platform.startswith("linux"),
     "not supported on windows, and fork+exec networking blocked on mac")
-@unittest.skipUnless(six.PY2, "https://github.com/grpc/grpc/issues/18075")
+@unittest.skipIf(sys.version_info[:2] == (3, 7), "https://github.com/grpc/grpc/issues/18075")
 class ForkInteropTest(unittest.TestCase):
 
     def setUp(self):
