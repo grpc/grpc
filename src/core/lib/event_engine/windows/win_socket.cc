@@ -40,20 +40,18 @@ WinSocket::WinSocket(SOCKET socket, Executor* executor) noexcept
       read_info_(OpState(this)),
       write_info_(OpState(this)) {}
 
-WinSocket::~WinSocket() { GPR_ASSERT(is_shutdown_); }
+WinSocket::~WinSocket() { GPR_ASSERT(is_shutdown_.load()); }
 
 SOCKET WinSocket::socket() { return socket_; }
 
 void WinSocket::MaybeShutdown(absl::Status why) {
-  grpc_core::MutexLock lock(&mu_);
   // if already shutdown, return early. Otherwise, set the shutdown flag.
-  if (is_shutdown_) {
+  if (is_shutdown_.exchange(true)) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {
       gpr_log(GPR_DEBUG, "WinSocket::%p already shutting down", this);
     }
     return;
   }
-  is_shutdown_ = true;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {
     gpr_log(GPR_DEBUG, "WinSocket::%p shutting down now. Reason: %s", this,
             why.ToString().c_str());
@@ -79,7 +77,6 @@ void WinSocket::MaybeShutdown(absl::Status why) {
 }
 
 void WinSocket::NotifyOnReady(OpState& info, EventEngine::Closure* closure) {
-  grpc_core::MutexLock lock(&mu_);
   if (IsShutdown()) {
     info.SetError(WSAESHUTDOWN);
     executor_->Run(closure);
@@ -104,7 +101,6 @@ WinSocket::OpState::OpState(WinSocket* win_socket) noexcept
     : win_socket_(win_socket), closure_(nullptr) {}
 
 void WinSocket::OpState::SetReady() {
-  grpc_core::MutexLock lock(&win_socket_->mu_);
   GPR_ASSERT(!has_pending_iocp_);
   if (closure_) {
     win_socket_->executor_->Run(closure_);
@@ -131,7 +127,7 @@ void WinSocket::SetReadable() { read_info_.SetReady(); }
 
 void WinSocket::SetWritable() { write_info_.SetReady(); }
 
-bool WinSocket::IsShutdown() { return is_shutdown_; }
+bool WinSocket::IsShutdown() { return is_shutdown_.load(); }
 
 WinSocket::OpState* WinSocket::GetOpInfoForOverlapped(OVERLAPPED* overlapped) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {
