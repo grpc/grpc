@@ -41,6 +41,7 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/json/json_channel_args.h"
 #include "src/core/lib/json/json_util.h"
 
 // As per the retry design, we do not allow more than 5 retry attempts.
@@ -53,7 +54,7 @@ namespace internal {
 // RetryGlobalConfig
 //
 
-const JsonLoaderInterface* RetryGlobalConfig::JsonLoader() {
+const JsonLoaderInterface* RetryGlobalConfig::JsonLoader(const JsonArgs&) {
   static const auto* loader =
       JsonObjectLoader<RetryGlobalConfig>()
           // Note: The "tokenRatio" field requires custom parsing, so
@@ -63,7 +64,8 @@ const JsonLoaderInterface* RetryGlobalConfig::JsonLoader() {
   return loader;
 }
 
-void RetryGlobalConfig::JsonPostLoad(const Json& json, ErrorList* errors) {
+void RetryGlobalConfig::JsonPostLoad(const Json& json, const JsonArgs&,
+                                     ErrorList* errors) {
   // Validate maxTokens.
   {
     ScopedField field(errors, ".maxTokens");
@@ -122,7 +124,7 @@ void RetryGlobalConfig::JsonPostLoad(const Json& json, ErrorList* errors) {
 // RetryMethodConfig
 //
 
-const JsonLoaderInterface* RetryMethodConfig::JsonLoader() {
+const JsonLoaderInterface* RetryMethodConfig::JsonLoader(const JsonArgs& args) {
   static const auto* loader =
       JsonObjectLoader<RetryMethodConfig>()
           // Note: The "retryableStatusCodes" field requires custom parsing,
@@ -132,12 +134,14 @@ const JsonLoaderInterface* RetryMethodConfig::JsonLoader() {
           .Field("maxBackoff", &RetryMethodConfig::max_backoff_)
           .Field("backoffMultiplier", &RetryMethodConfig::backoff_multiplier_)
           .OptionalField("perAttemptRecvTimeout",
-                         &RetryMethodConfig::per_attempt_recv_timeout_)
+                         &RetryMethodConfig::per_attempt_recv_timeout_,
+                         GRPC_ARG_EXPERIMENTAL_ENABLE_HEDGING)
           .Finish();
   return loader;
 }
 
-void RetryMethodConfig::JsonPostLoad(const Json& json, ErrorList* errors) {
+void RetryMethodConfig::JsonPostLoad(const Json& json, const JsonArgs& args,
+                                     ErrorList* errors) {
   // Validate maxAttempts.
   {
     ScopedField field(errors, ".maxAttempts");
@@ -201,24 +205,29 @@ void RetryMethodConfig::JsonPostLoad(const Json& json, ErrorList* errors) {
     }
   }
   // Parse perAttemptRecvTimeout.
-  if (false) { // FIXME if (args.GetBool(GRPC_ARG_EXPERIMENTAL_ENABLE_HEDGING).value_or(false)) {
-    ScopedField field(errors, ".perAttemptRecvTimeout");
+  if (args.IsEnabled(GRPC_ARG_EXPERIMENTAL_ENABLE_HEDGING)) {
     if (per_attempt_recv_timeout_.has_value()) {
-      if (*per_attempt_recv_timeout_ == Duration::Zero()) {
+      ScopedField field(errors, ".perAttemptRecvTimeout");
+      // TODO(roth): As part of implementing hedging, relax this check such
+      // that we allow a value of 0 if a hedging policy is specified.
+      if (!errors->FieldHasErrors() &&
+          *per_attempt_recv_timeout_ == Duration::Zero()) {
         errors->AddError("must be greater than 0");
       }
     } else if (retryable_status_codes_.Empty()) {
       // If perAttemptRecvTimeout not present, retryableStatusCodes must be
       // non-empty.
-      errors->AddError(
-          "must be non-empty if perAttemptRecvTimeout not present");
+      ScopedField field(errors, ".retryableStatusCodes");
+      if (!errors->FieldHasErrors()) {
+        errors->AddError(
+            "must be non-empty if perAttemptRecvTimeout not present");
+      }
     }
-  } else {
-    per_attempt_recv_timeout_.reset();
-    ScopedField field(errors, ".retryableStatusCodes");
+  } else if (retryable_status_codes_.Empty()) {
     // Hedging not enabled, so the error message for
     // retryableStatusCodes unset should be different.
-    if (!errors->FieldHasErrors() && retryable_status_codes_.Empty()) {
+    ScopedField field(errors, ".retryableStatusCodes");
+    if (!errors->FieldHasErrors()) {
       errors->AddError("must be non-empty");
     }
   }
@@ -243,7 +252,7 @@ namespace {
 struct GlobalConfig {
   absl::optional<RetryGlobalConfig> retry_throttling;
 
-  static const JsonLoaderInterface* JsonLoader() {
+  static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
     static const auto* loader =
         JsonObjectLoader<GlobalConfig>()
             .OptionalField("retryThrottling", &GlobalConfig::retry_throttling)
@@ -271,7 +280,7 @@ namespace {
 struct MethodConfig {
   absl::optional<RetryMethodConfig> retry_policy;
 
-  static const JsonLoaderInterface* JsonLoader() {
+  static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
     static const auto* loader =
         JsonObjectLoader<MethodConfig>()
             .OptionalField("retryPolicy", &MethodConfig::retry_policy)
@@ -285,7 +294,7 @@ struct MethodConfig {
 absl::StatusOr<std::unique_ptr<ServiceConfigParser::ParsedConfig>>
 RetryServiceConfigParser::ParsePerMethodParams(const ChannelArgs& args,
                                                const Json& json) {
-  auto method_params = LoadFromJson<MethodConfig>(json);
+  auto method_params = LoadFromJson<MethodConfig>(json, JsonChannelArgs(args));
   if (!method_params.ok()) return method_params.status();
   // If the retryPolicy field was not present, no need to return any
   // parsed config.

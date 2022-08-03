@@ -665,17 +665,12 @@ TEST_F(RetryParserTest, InvalidRetryPolicyPerAttemptRecvTimeoutBadValue) {
       ChannelArgs().Set(GRPC_ARG_EXPERIMENTAL_ENABLE_HEDGING, 1);
   auto service_config = ServiceConfigImpl::Create(args, test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
-// FIXME
-// A regular expression to enter referenced or child errors.
-#define CHILD_ERROR_TAG ".*children.*"
-  EXPECT_THAT(std::string(service_config.status().message()),
-              ::testing::ContainsRegex(
-                  "Service config parsing errors: \\["
-                  "errors parsing methodConfig: \\["
-                  "index 0: \\["
-                  "error parsing retry method parameters:.*"
-                  "retryPolicy" CHILD_ERROR_TAG
-                  "field:perAttemptRecvTimeout error:must be greater than 0"));
+  EXPECT_THAT(service_config.status().message(),
+      "Service config parsing errors: [errors parsing methodConfig: ["
+      "index 0: [errors validating JSON: ["
+      "field:retryPolicy.perAttemptRecvTimeout "
+      "error:must be greater than 0]]]]")
+      << service_config.status();
 }
 
 }  // namespace testing

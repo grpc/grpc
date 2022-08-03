@@ -59,7 +59,8 @@ ClientChannelGlobalParsedConfig::HealthCheckConfig::operator=(
 }
 
 const JsonLoaderInterface*
-ClientChannelGlobalParsedConfig::HealthCheckConfig::JsonLoader() {
+ClientChannelGlobalParsedConfig::HealthCheckConfig::JsonLoader(
+    const JsonArgs&) {
   static const auto* loader =
       JsonObjectLoader<HealthCheckConfig>()
           .OptionalField("serviceName", &HealthCheckConfig::service_name)
@@ -86,7 +87,8 @@ ClientChannelGlobalParsedConfig& ClientChannelGlobalParsedConfig::operator=(
   return *this;
 }
 
-const JsonLoaderInterface* ClientChannelGlobalParsedConfig::JsonLoader() {
+const JsonLoaderInterface* ClientChannelGlobalParsedConfig::JsonLoader(
+    const JsonArgs&) {
   static const auto* loader =
       JsonObjectLoader<ClientChannelGlobalParsedConfig>()
           // Note: "loadBalancingConfig" requires special handling, so
@@ -100,8 +102,8 @@ const JsonLoaderInterface* ClientChannelGlobalParsedConfig::JsonLoader() {
   return loader;
 }
 
-void ClientChannelGlobalParsedConfig::JsonPostLoad(const Json& json,
-                                                   ErrorList* errors) {
+void ClientChannelGlobalParsedConfig::JsonPostLoad(
+    const Json& json, const JsonArgs&, ErrorList* errors) {
   // Parse LB config.
   {
     ScopedField field(errors, ".loadBalancingConfig");
@@ -149,7 +151,8 @@ ClientChannelMethodParsedConfig& ClientChannelMethodParsedConfig::operator=(
   return *this;
 }
 
-const JsonLoaderInterface* ClientChannelMethodParsedConfig::JsonLoader() {
+const JsonLoaderInterface* ClientChannelMethodParsedConfig::JsonLoader(
+    const JsonArgs&) {
   static const auto* loader =
       JsonObjectLoader<ClientChannelMethodParsedConfig>()
           .OptionalField("timeout", &ClientChannelMethodParsedConfig::timeout_)

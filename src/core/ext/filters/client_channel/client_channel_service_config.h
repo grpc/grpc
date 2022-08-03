@@ -70,8 +70,8 @@ class ClientChannelGlobalParsedConfig
     return health_check_config_.service_name;
   }
 
-  static const JsonLoaderInterface* JsonLoader();
-  void JsonPostLoad(const Json& json, ErrorList* errors);
+  static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+  void JsonPostLoad(const Json& json, const JsonArgs&, ErrorList* errors);
 
  private:
   struct HealthCheckConfig {
@@ -81,7 +81,7 @@ class ClientChannelGlobalParsedConfig
     HealthCheckConfig(HealthCheckConfig&& other) noexcept;
     HealthCheckConfig& operator=(HealthCheckConfig&& other) noexcept;
 
-    static const JsonLoaderInterface* JsonLoader();
+    static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
   };
 
   RefCountedPtr<LoadBalancingPolicy::Config> parsed_lb_config_;
@@ -110,7 +110,7 @@ class ClientChannelMethodParsedConfig
 
   absl::optional<bool> wait_for_ready() const { return wait_for_ready_; }
 
-  static const JsonLoaderInterface* JsonLoader();
+  static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
 
  private:
   Duration timeout_;

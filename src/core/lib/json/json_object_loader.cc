@@ -61,7 +61,7 @@ absl::Status ErrorList::status() const {
 
 namespace json_detail {
 
-void LoadScalar::LoadInto(const Json& json, void* dst,
+void LoadScalar::LoadInto(const Json& json, const JsonArgs& args, void* dst,
                           ErrorList* errors) const {
   // We accept either STRING or NUMBER for numeric values, as per
   // https://developers.google.com/protocol-buffers/docs/proto3#json.
@@ -120,7 +120,8 @@ void LoadDuration::LoadInto(const std::string& value, void* dst,
 
 bool LoadNumber::IsNumber() const { return true; }
 
-void LoadBool::LoadInto(const Json& json, void* dst, ErrorList* errors) const {
+void LoadBool::LoadInto(const Json& json, const JsonArgs&, void* dst,
+                        ErrorList* errors) const {
   if (json.type() == Json::Type::JSON_TRUE) {
     *static_cast<bool*>(dst) = true;
   } else if (json.type() == Json::Type::JSON_FALSE) {
@@ -130,8 +131,8 @@ void LoadBool::LoadInto(const Json& json, void* dst, ErrorList* errors) const {
   }
 }
 
-void LoadUnprocessedJsonObject::LoadInto(const Json& json, void* dst,
-                                         ErrorList* errors) const {
+void LoadUnprocessedJsonObject::LoadInto(
+    const Json& json, const JsonArgs&, void* dst, ErrorList* errors) const {
   if (json.type() != Json::Type::OBJECT) {
     errors->AddError("is not an object");
     return;
@@ -139,7 +140,7 @@ void LoadUnprocessedJsonObject::LoadInto(const Json& json, void* dst,
   *static_cast<Json::Object*>(dst) = json.object_value();
 }
 
-void LoadVector::LoadInto(const Json& json, void* dst,
+void LoadVector::LoadInto(const Json& json, const JsonArgs& args, void* dst,
                           ErrorList* errors) const {
   if (json.type() != Json::Type::ARRAY) {
     errors->AddError("is not an array");
@@ -148,30 +149,33 @@ void LoadVector::LoadInto(const Json& json, void* dst,
   const auto& array = json.array_value();
   for (size_t i = 0; i < array.size(); ++i) {
     ScopedField field(errors, absl::StrCat("[", i, "]"));
-    LoadOne(array[i], dst, errors);
+    LoadOne(array[i], args, dst, errors);
   }
 }
 
-void LoadMap::LoadInto(const Json& json, void* dst, ErrorList* errors) const {
+void LoadMap::LoadInto(const Json& json, const JsonArgs& args, void* dst,
+                       ErrorList* errors) const {
   if (json.type() != Json::Type::OBJECT) {
     errors->AddError("is not an object");
     return;
   }
   for (const auto& pair : json.object_value()) {
     ScopedField field(errors, absl::StrCat("[\"", pair.first, "\"]"));
-    LoadOne(pair.second, pair.first, dst, errors);
+    LoadOne(pair.second, args, pair.first, dst, errors);
   }
 }
 
-bool LoadObject(const Json& json, const Element* elements, size_t num_elements,
-                void* dst, ErrorList* errors) {
+bool LoadObject(const Json& json, const JsonArgs& args, const Element* elements,
+                size_t num_elements, void* dst, ErrorList* errors) {
   if (json.type() != Json::Type::OBJECT) {
     errors->AddError("is not an object");
     return false;
   }
   for (size_t i = 0; i < num_elements; ++i) {
     const Element& element = elements[i];
-    if (!element.enabled) continue;
+    if (!element.enable_key.empty() && !args.IsEnabled(element.enable_key)) {
+      continue;
+    }
     ScopedField field(errors, absl::StrCat(".", element.name));
     const auto& it = json.object_value().find(element.name);
     if (it == json.object_value().end()) {
@@ -180,7 +184,7 @@ bool LoadObject(const Json& json, const Element* elements, size_t num_elements,
       continue;
     }
     char* field_dst = static_cast<char*>(dst) + element.member_offset;
-    element.loader->LoadInto(it->second, field_dst, errors);
+    element.loader->LoadInto(it->second, args, field_dst, errors);
   }
   return true;
 }
