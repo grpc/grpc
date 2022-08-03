@@ -20,6 +20,7 @@
 #define GRPCXX_CHANNEL_FILTER_H
 
 #include <stddef.h>
+#include <stdint.h>
 
 #include <functional>
 #include <new>
@@ -135,6 +136,12 @@ class TransportStreamOpBatch {
   }
   MetadataBatch* recv_trailing_metadata() {
     return op_->recv_trailing_metadata ? &recv_trailing_metadata_ : nullptr;
+  }
+
+  uint32_t* send_initial_metadata_flags() const {
+    return op_->send_initial_metadata ? &op_->payload->send_initial_metadata
+                                             .send_initial_metadata_flags
+                                      : nullptr;
   }
 
   grpc_closure* recv_initial_metadata_ready() const {
