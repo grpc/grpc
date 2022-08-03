@@ -75,28 +75,10 @@ grpc_cc_library(
 # -- EventEngine implementations --
 
 grpc_cc_test(
-    name = "posix_event_engine_test",
-    srcs = ["posix_event_engine_test.cc"],
+    name = "iomgr_event_engine_test",
+    srcs = ["iomgr_event_engine_test.cc"],
     uses_polling = False,
-    deps = [
-        "//:posix_event_engine",
-        "//test/core/event_engine/test_suite:timer",
-    ],
-)
-
-grpc_cc_test(
-    name = "windows_event_engine_test",
-    srcs = ["windows_event_engine_test.cc"],
-    tags = [
-        "bazel_only",
-        "no_linux",
-        "no_mac",
-    ],
-    uses_polling = False,
-    deps = [
-        "//:windows_event_engine",
-        "//test/core/event_engine/test_suite:timer",
-    ],
+    deps = ["//test/core/event_engine/test_suite:timer"],
 )
 
 grpc_cc_test(
