@@ -218,7 +218,7 @@ class Table {
 
   // Check if this table has index I.
   template <size_t I>
-      absl::enable_if_t < I<sizeof...(Ts), bool> has() const {
+  absl::enable_if_t<(I < sizeof...(Ts)), bool> has() const {
     return present_bits_.is_set(I);
   }
 
