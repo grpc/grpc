@@ -50,6 +50,25 @@ struct SeqTraits {
 template <typename... Fs>
 using Seq = BasicSeq<SeqTraits, Fs...>;
 
+template <typename I, typename F, typename Arg>
+struct SeqIterTraits {
+  using Iter = I;
+  using Factory = F;
+  using Argument = Arg;
+  using IterValue = decltype(*std::declval<Iter>());
+  using StateCreated = decltype(std::declval<F>()(std::declval<IterValue>(),
+                                                  std::declval<Arg>()));
+  using State = PromiseLike<StateCreated>;
+  using Wrapped = typename State::Result;
+};
+
+template <typename Iter, typename Factory, typename Argument>
+struct SeqIterResultTraits {
+  using IterTraits = SeqIterTraits<Iter, Factory, Argument>;
+  using Traits = SeqTraits<typename IterTraits::Wrapped>;
+  using Result = BasicSeqIter<Traits, IterTraits>;
+};
+
 }  // namespace promise_detail
 
 // Sequencing combinator.
@@ -75,16 +94,11 @@ F Seq(F functor) {
 //   }
 //   return argument;
 template <typename Iter, typename Factory, typename Argument>
-promise_detail::BasicSeqIter<
-    promise_detail::SeqTraits<typename promise_detail::BasicSeqIterTraits<
-        Factory, Argument, Iter>::Wrapped>,
-    Factory, Argument, Iter>
+typename promise_detail::SeqIterResultTraits<Iter, Factory, Argument>::Result
 SeqIter(Iter begin, Iter end, Argument argument, Factory factory) {
-  return promise_detail::BasicSeqIter<
-      promise_detail::SeqTraits<typename promise_detail::BasicSeqIterTraits<
-          Factory, Argument, Iter>::Wrapped>,
-      Factory, Argument, Iter>(begin, end, std::move(factory),
-                               std::move(argument));
+  using Result = typename promise_detail::SeqIterResultTraits<Iter, Factory,
+                                                              Argument>::Result;
+  return Result(begin, end, std::move(factory), std::move(argument));
 }
 
 }  // namespace grpc_core

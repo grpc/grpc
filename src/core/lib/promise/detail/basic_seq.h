@@ -259,16 +259,6 @@ class BasicSeq {
     return &final_promise_;
   }
 
-  // Get the Wrapped type of factory F
-  template <typename F, typename Arg, typename Iter>
-  struct BasicSeqIterTraits {
-    using IterValue = decltype(*std::declval<Iter>());
-    using StateCreated = decltype(std::declval<F>()(std::declval<IterValue>(),
-                                                    std::declval<Arg>()));
-    using State = PromiseLike<StateCreated>;
-    using Wrapped = typename State::Result;
-  };
-
   // Callable to advance the state to the next one after I given the result from
   // state I.
   template <char I>
@@ -431,19 +421,21 @@ class BasicSeq {
 
 // As above, but models a sequence of unknown size
 // At each element, the accumulator A and the current value V is passed to some
-// function of type F as f(V, A); f is expected to return a promise that
-// resolves to Traits::WrappedType.
-template <class Traits, typename F, typename Arg, typename Iter>
+// function of type IterTraits::Factory as f(V, IterTraits::Argument); f is
+// expected to return a promise that resolves to Traits::WrappedType.
+template <class Traits, typename IterTraits>
 class BasicSeqIter {
  private:
-  using IterValue = decltype(*std::declval<Iter>());
-  using StateCreated = decltype(std::declval<F>()(std::declval<IterValue>(),
-                                                  std::declval<Arg>()));
-  using State = PromiseLike<StateCreated>;
-  using Wrapped = typename State::Result;
+  using Iter = typename IterTraits::Iter;
+  using Factory = typename IterTraits::Factory;
+  using Argument = typename IterTraits::Argument;
+  using IterValue = typename IterTraits::IterValue;
+  using StateCreated = typename IterTraits::StateCreated;
+  using State = typename IterTraits::State;
+  using Wrapped = typename IterTraits::Wrapped;
 
  public:
-  BasicSeqIter(Iter begin, Iter end, F f, Arg arg)
+  BasicSeqIter(Iter begin, Iter end, Factory f, Argument arg)
       : cur_(begin), end_(end), f_(std::move(f)) {
     if (cur_ == end_) {
       Construct(&result_, std::move(arg));
@@ -510,10 +502,10 @@ class BasicSeqIter {
 
   Iter cur_;
   const Iter end_;
-  GPR_NO_UNIQUE_ADDRESS F f_;
+  GPR_NO_UNIQUE_ADDRESS Factory f_;
   union {
     GPR_NO_UNIQUE_ADDRESS State state_;
-    GPR_NO_UNIQUE_ADDRESS Arg result_;
+    GPR_NO_UNIQUE_ADDRESS Argument result_;
   };
 };
 

@@ -115,6 +115,25 @@ using TrySeqTraits = TrySeqTraitsWithSfinae<T>;
 template <typename... Fs>
 using TrySeq = BasicSeq<TrySeqTraits, Fs...>;
 
+template <typename I, typename F, typename Arg>
+struct TrySeqIterTraits {
+  using Iter = I;
+  using Factory = F;
+  using Argument = Arg;
+  using IterValue = decltype(*std::declval<Iter>());
+  using StateCreated = decltype(std::declval<F>()(std::declval<IterValue>(),
+                                                  std::declval<Arg>()));
+  using State = PromiseLike<StateCreated>;
+  using Wrapped = typename State::Result;
+};
+
+template <typename Iter, typename Factory, typename Argument>
+struct TrySeqIterResultTraits {
+  using IterTraits = TrySeqIterTraits<Iter, Factory, Argument>;
+  using Traits = TrySeqTraits<typename IterTraits::Wrapped>;
+  using Result = BasicSeqIter<Traits, IterTraits>;
+};
+
 }  // namespace promise_detail
 
 // Try a sequence of operations.
@@ -143,16 +162,12 @@ promise_detail::TrySeq<Functors...> TrySeq(Functors... functors) {
 //   }
 //   return argument;
 template <typename Iter, typename Factory, typename Argument>
-promise_detail::BasicSeqIter<
-    promise_detail::TrySeqTraits<typename promise_detail::BasicSeqIterTraits<
-        Factory, Argument, Iter>::Wrapped>,
-    Factory, Argument, Iter>
+typename promise_detail::TrySeqIterResultTraits<Iter, Factory, Argument>::Result
 TrySeqIter(Iter begin, Iter end, Argument argument, Factory factory) {
-  return promise_detail::BasicSeqIter<
-      promise_detail::TrySeqTraits<typename promise_detail::BasicSeqIterTraits<
-          Factory, Argument, Iter>::Wrapped>,
-      Factory, Argument, Iter>(begin, end, std::move(factory),
-                               std::move(argument));
+  using Result =
+      typename promise_detail::TrySeqIterResultTraits<Iter, Factory,
+                                                      Argument>::Result;
+  return Result(begin, end, std::move(factory), std::move(argument));
 }
 
 }  // namespace grpc_core
