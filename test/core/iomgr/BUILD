@@ -280,6 +280,21 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "pollset_windows_starvation_test",
+    srcs = ["pollset_windows_starvation_test.cc"],
+    language = "C++",
+    tags = [
+        "no_linux",
+        "no_mac",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "tcp_server_posix_test",
     srcs = ["tcp_server_posix_test.cc"],
     external_deps = ["gtest"],
