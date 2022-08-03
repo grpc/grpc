@@ -98,6 +98,8 @@ class TimerManager final : public grpc_event_engine::experimental::Forkable {
   bool has_timed_waiter_ ABSL_GUARDED_BY(mu_) = false;
   // are we shutting down?
   bool shutdown_ ABSL_GUARDED_BY(mu_) = false;
+  // are we forking?
+  bool forking_ ABSL_GUARDED_BY(mu_) = false;
   // are we shutting down?
   bool kicked_ ABSL_GUARDED_BY(mu_) = false;
   // the deadline of the current timed waiter thread (only relevant if
@@ -109,6 +111,7 @@ class TimerManager final : public grpc_event_engine::experimental::Forkable {
   uint64_t wakeups_ ABSL_GUARDED_BY(mu_) = 0;
   // actual timer implementation
   std::unique_ptr<TimerList> timer_list_;
+  int prefork_thread_count_ = 0;
 };
 
 }  // namespace iomgr_engine
