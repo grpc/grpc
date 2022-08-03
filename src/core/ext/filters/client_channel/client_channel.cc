@@ -1112,8 +1112,9 @@ RefCountedPtr<LoadBalancingPolicy::Config> ChooseLbPolicy(
     policy_name = resolver_result.args.GetString(GRPC_ARG_LB_POLICY_NAME);
     bool requires_config = false;
     if (policy_name.has_value() &&
-        (!LoadBalancingPolicyRegistry::LoadBalancingPolicyExists(
-             *policy_name, &requires_config) ||
+        (!CoreConfiguration::Get()
+              .lb_policy_registry()
+              .LoadBalancingPolicyExists(*policy_name, &requires_config) ||
          requires_config)) {
       if (requires_config) {
         gpr_log(GPR_ERROR,
@@ -1137,7 +1138,8 @@ RefCountedPtr<LoadBalancingPolicy::Config> ChooseLbPolicy(
       {std::string(*policy_name), Json::Object{}},
   }};
   auto lb_policy_config =
-      LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(config_json);
+      CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
+          config_json);
   // The policy name came from one of three places:
   // - The deprecated loadBalancingPolicy field in the service config,
   //   in which case the code in ClientChannelServiceConfigParser

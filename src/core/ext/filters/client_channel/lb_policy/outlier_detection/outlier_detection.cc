@@ -48,6 +48,7 @@
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
@@ -1099,8 +1100,9 @@ class OutlierDetectionLbFactory : public LoadBalancingPolicyFactory {
     if (it == json.object_value().end()) {
       errors.emplace_back("field:childPolicy error:required field missing");
     } else {
-      auto child_policy_config =
-          LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(it->second);
+      auto child_policy_config = CoreConfiguration::Get()
+                                     .lb_policy_registry()
+                                     .ParseLoadBalancingConfig(it->second);
       if (!child_policy_config.ok()) {
         errors.emplace_back(
             absl::StrCat("error parsing childPolicy field: ",
@@ -1125,18 +1127,11 @@ class OutlierDetectionLbFactory : public LoadBalancingPolicyFactory {
 
 }  // namespace
 
-}  // namespace grpc_core
-
-//
-// Plugin registration
-//
-
-void grpc_lb_policy_outlier_detection_init() {
+void RegisterOutlierDetectionLbPolicy(CoreConfiguration::Builder* builder) {
   if (grpc_core::XdsOutlierDetectionEnabled()) {
-    grpc_core::LoadBalancingPolicyRegistry::Builder::
-        RegisterLoadBalancingPolicyFactory(
-            absl::make_unique<grpc_core::OutlierDetectionLbFactory>());
+    builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
+        absl::make_unique<grpc_core::OutlierDetectionLbFactory>());
   }
 }
 
-void grpc_lb_policy_outlier_detection_shutdown() {}
+}  // namespace grpc_core

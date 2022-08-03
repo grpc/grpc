@@ -2990,6 +2990,7 @@ grpc_cc_library(
         "orphanable",
         "percent_encoding",
         "poll",
+        "pollset_set",
         "promise",
         "ref_counted",
         "ref_counted_ptr",
@@ -4145,6 +4146,7 @@ grpc_cc_library(
         "lb_policy_registry",
         "match",
         "orphanable",
+        "pollset_set",
         "protobuf_any_upb",
         "protobuf_duration_upb",
         "protobuf_struct_upb",
@@ -4299,6 +4301,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "config",
         "debug_location",
         "gpr_base",
         "grpc_base",
@@ -4445,6 +4448,7 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "closure",
+        "config",
         "debug_location",
         "exec_ctx",
         "gpr_base",
@@ -4567,6 +4571,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "closure",
+        "config",
         "debug_location",
         "exec_ctx",
         "gpr_base",
@@ -4652,6 +4657,7 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "closure",
+        "config",
         "debug_location",
         "exec_ctx",
         "gpr_base",

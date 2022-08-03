@@ -974,7 +974,9 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
         "[xds_cluster_resolver_lb %p] generated config for child policy: %s",
         this, json_str.c_str());
   }
-  auto config = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(json);
+  auto config =
+      CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
+          json);
   if (!config.ok()) {
     // This should never happen, but if it does, we basically have no
     // way to fix it, so we put the channel in TRANSIENT_FAILURE.
@@ -1333,16 +1335,9 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
 
 }  // namespace
 
-}  // namespace grpc_core
-
-//
-// Plugin registration
-//
-
-void grpc_lb_policy_xds_cluster_resolver_init() {
-  grpc_core::LoadBalancingPolicyRegistry::Builder::
-      RegisterLoadBalancingPolicyFactory(
-          absl::make_unique<grpc_core::XdsClusterResolverLbFactory>());
+void RegisterXdsClusterResolverLbPolicy(CoreConfiguration::Builder* builder) {
+  builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
+      absl::make_unique<grpc_core::XdsClusterResolverLbFactory>());
 }
 
-void grpc_lb_policy_xds_cluster_resolver_shutdown() {}
+}  // namespace grpc_core

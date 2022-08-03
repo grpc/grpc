@@ -977,8 +977,9 @@ class PriorityLbFactory : public LoadBalancingPolicyFactory {
                                  "be type boolean"));
               }
             }
-            auto config = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
-                it2->second);
+            auto config = CoreConfiguration::Get()
+                              .lb_policy_registry()
+                              .ParseLoadBalancingConfig(it2->second);
             if (!config.ok()) {
               errors.emplace_back(
                   absl::StrCat("field:children key:", child_name, ": ",
@@ -1033,7 +1034,7 @@ class PriorityLbFactory : public LoadBalancingPolicyFactory {
 }  // namespace
 
 void RegisterPriorityLbPolicy(CoreConfiguration::Builder* builder) {
-  builder->lb_policy_registry().RegisterLoadBalancingPolicyFactory(
+  builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
       absl::make_unique<grpc_core::PriorityLbFactory>());
 }
 

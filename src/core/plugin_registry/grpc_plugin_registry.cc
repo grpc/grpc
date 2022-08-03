@@ -33,23 +33,10 @@ void grpc_client_channel_init(void);
 void grpc_client_channel_shutdown(void);
 void grpc_resolver_dns_ares_init(void);
 void grpc_resolver_dns_ares_shutdown(void);
-namespace grpc_core {
-void GrpcLbPolicyRingHashInit(void);
-void GrpcLbPolicyRingHashShutdown(void);
-#ifndef GRPC_NO_RLS
-void RlsLbPluginInit();
-void RlsLbPluginShutdown();
-#endif  // !GRPC_NO_RLS
-}  // namespace grpc_core
+namespace grpc_core {}  // namespace grpc_core
 
 void grpc_register_built_in_plugins(void) {
   grpc_register_plugin(grpc_client_channel_init, grpc_client_channel_shutdown);
-#ifndef GRPC_NO_RLS
-  grpc_register_plugin(grpc_core::RlsLbPluginInit,
-                       grpc_core::RlsLbPluginShutdown);
-#endif  // !GRPC_NO_RLS
-  grpc_register_plugin(grpc_core::GrpcLbPolicyRingHashInit,
-                       grpc_core::GrpcLbPolicyRingHashShutdown);
   grpc_register_plugin(grpc_resolver_dns_ares_init,
                        grpc_resolver_dns_ares_shutdown);
   grpc_register_extra_plugins();
@@ -78,7 +65,6 @@ extern void RegisterNativeDnsResolver(CoreConfiguration::Builder* builder);
 extern void RegisterAresDnsResolver(CoreConfiguration::Builder* builder);
 extern void RegisterSockaddrResolver(CoreConfiguration::Builder* builder);
 extern void RegisterFakeResolver(CoreConfiguration::Builder* builder);
-extern void RegisterGrpclbLbPolicy(CoreConfiguration::Builder* builder);
 extern void RegisterPriorityLbPolicy(CoreConfiguration::Builder* builder);
 extern void RegisterOutlierDetectionLbPolicy(
     CoreConfiguration::Builder* builder);
@@ -86,6 +72,10 @@ extern void RegisterWeightedAverageLbPolicy(
     CoreConfiguration::Builder* builder);
 extern void RegisterPickFirstLbPolicy(CoreConfiguration::Builder* builder);
 extern void RegisterRoundRobinLbPolicy(CoreConfiguration::Builder* builder);
+extern void RegisterRingHashLbPolicy(CoreConfiguration::Builder* builder);
+#ifndef GRPC_NO_RLS
+extern void RegisterRlsLbPolicy(CoreConfiguration::Builder* builder);
+#endif  // !GRPC_NO_RLS
 #ifdef GPR_SUPPORT_BINDER_TRANSPORT
 extern void RegisterBinderResolver(CoreConfiguration::Builder* builder);
 #endif
@@ -96,12 +86,12 @@ void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
   // the start of the handshaker list.
   RegisterHttpConnectHandshaker(builder);
   RegisterTCPConnectHandshaker(builder);
-  RegisterGrpclbLbPolicy(builder);
   RegisterPriorityLbPolicy(builder);
   RegisterOutlierDetectionLbPolicy(builder);
   RegisterWeightedAverageLbPolicy(builder);
   RegisterPickFirstLbPolicy(builder);
   RegisterRoundRobinLbPolicy(builder);
+  RegisterRingHashLbPolicy(builder);
   BuildClientChannelConfiguration(builder);
   SecurityRegisterHandshakerFactories(builder);
   RegisterClientAuthorityFilter(builder);
@@ -120,6 +110,9 @@ void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
 #ifdef GPR_SUPPORT_BINDER_TRANSPORT
   RegisterBinderResolver(builder);
 #endif
+#ifndef GRPC_NO_RLS
+  RegisterRlsLbPolicy(builder);
+#endif  // !GRPC_NO_RLS
   // Run last so it gets a consistent location.
   // TODO(ctiller): Is this actually necessary?
   RegisterSecurityFilters(builder);

@@ -52,6 +52,7 @@
 #include "src/core/ext/filters/client_channel/lb_policy/subchannel_list.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -894,11 +895,9 @@ class RingHashFactory : public LoadBalancingPolicyFactory {
 
 }  // namespace
 
-void GrpcLbPolicyRingHashInit() {
-  LoadBalancingPolicyRegistry::Builder::RegisterLoadBalancingPolicyFactory(
+void RegisterRingHashLbPolicy(CoreConfiguration::Builder* builder) {
+  builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
       absl::make_unique<RingHashFactory>());
 }
-
-void GrpcLbPolicyRingHashShutdown() {}
 
 }  // namespace grpc_core

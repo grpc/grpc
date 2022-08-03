@@ -1877,7 +1877,7 @@ class GrpcLbFactory : public LoadBalancingPolicyFactory {
       child_policy_config_json = &it->second;
     }
     auto child_policy_config =
-        LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
+        CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
             *child_policy_config_json);
     if (!child_policy_config.ok()) {
       error_list.emplace_back(
@@ -1903,16 +1903,10 @@ class GrpcLbFactory : public LoadBalancingPolicyFactory {
 // Plugin registration
 //
 
-void grpc_lb_policy_grpclb_init() {
-  grpc_core::LoadBalancingPolicyRegistry::Builder::
-      RegisterLoadBalancingPolicyFactory(
-          absl::make_unique<grpc_core::GrpcLbFactory>());
-}
-
-void grpc_lb_policy_grpclb_shutdown() {}
-
 namespace grpc_core {
 void RegisterGrpcLbLoadReportingFilter(CoreConfiguration::Builder* builder) {
+  builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
+      absl::make_unique<grpc_core::GrpcLbFactory>());
   builder->channel_init()->RegisterStage(
       GRPC_CLIENT_SUBCHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
       [](ChannelStackBuilder* builder) {
