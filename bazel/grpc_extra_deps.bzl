@@ -22,6 +22,7 @@ load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
 load("@envoy_api//bazel:repositories.bzl", "api_dependencies")
 load("@io_bazel_rules_go//go:deps.bzl", "go_register_toolchains", "go_rules_dependencies")
 load("@upb//bazel:workspace_deps.bzl", "upb_deps")
+load("@rules_foreign_cc//foreign_cc:repositories.bzl", "rules_foreign_cc_dependencies")
 
 def grpc_extra_deps(ignore_version_differences = False):
     """Loads the extra dependencies.
@@ -52,6 +53,8 @@ def grpc_extra_deps(ignore_version_differences = False):
 
     api_dependencies()
 
+    rules_foreign_cc_dependencies(register_default_tools = False, register_built_tools = False)
+    
     go_rules_dependencies()
     go_register_toolchains(version = "1.18")
     gazelle_dependencies()

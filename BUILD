@@ -102,6 +102,11 @@ selects.config_setting_group(
     ],
 )
 
+config_setting(
+    name = "debug_tcmalloc",
+    values = {"define": "tcmalloc=debug"},
+)
+
 # Fuzzers can be built as fuzzers or as tests
 config_setting(
     name = "grpc_build_fuzzers",

@@ -16,6 +16,13 @@
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@com_github_grpc_grpc//bazel:grpc_python_deps.bzl", "grpc_python_deps")
 
+# Make all contents of an external repository accessible under a filegroup.  Used for external HTTP
+# archives, e.g. cares.
+def _build_all_content(exclude = []):
+    return """filegroup(name = "all", srcs = glob(["**"], exclude={}), visibility = ["//visibility:public"])""".format(repr(exclude))
+
+BUILD_ALL_CONTENT = _build_all_content()
+
 # buildifier: disable=unnamed-macro
 def grpc_deps():
     """Loads dependencies need to compile and test the grpc library."""
@@ -180,6 +187,11 @@ def grpc_deps():
         actual = "@com_github_libuv_libuv//:libuv_test",
     )
 
+    native.bind(
+        name = "gperftools",
+        actual = "@grpc//third_party/gperftools:gperftools",
+    )
+
     if "boringssl" not in native.existing_rules():
         http_archive(
             name = "boringssl",
@@ -241,6 +253,29 @@ def grpc_deps():
             ],
         )
 
+    if "rules_foreign_cc" not in native.existing_rules():
+        http_archive(
+            name = "rules_foreign_cc",
+            sha256 = "6041f1374ff32ba711564374ad8e007aef77f71561a7ce784123b9b4b88614fc",
+            strip_prefix = "rules_foreign_cc-0.8.0",
+            urls = [
+                #2022-08-02
+                "https://github.com/bazelbuild/rules_foreign_cc/archive/0.8.0.tar.gz",
+            ],
+        )
+
+    if "com_github_gperftools_gperftools" not in native.existing_rules():
+        http_archive(
+            name = "com_github_gperftools_gperftools",
+            sha256 = "83e3bfdd28b8bcf53222c3798d4d395d52dadbbae59e8730c4a6d31a9c3732d8",
+            strip_prefix = "gperftools-2.10",
+            urls = [
+                #2022-08-02
+                "https://github.com/gperftools/gperftools/releases/download/gperftools-2.10/gperftools-2.10.tar.gz",
+            ],
+            build_file_content = BUILD_ALL_CONTENT,
+        )
+        
     if "com_github_google_benchmark" not in native.existing_rules():
         http_archive(
             name = "com_github_google_benchmark",
