@@ -361,7 +361,7 @@ grpc_error_handle SecurityHandshaker::CheckPeerLocked() {
     return grpc_set_tsi_error_result(
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Peer extraction failed"), result);
   }
-  connector_->check_peer(peer, args_->endpoint, &auth_context_,
+  connector_->check_peer(peer, args_->endpoint, args_->args, &auth_context_,
                          &on_peer_checked_);
   return GRPC_ERROR_NONE;
 }
