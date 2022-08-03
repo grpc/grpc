@@ -125,13 +125,14 @@ struct TrySeqIterTraits {
                                                   std::declval<Arg>()));
   using State = PromiseLike<StateCreated>;
   using Wrapped = typename State::Result;
+
+  using Traits = TrySeqTraits<Wrapped>;
 };
 
 template <typename Iter, typename Factory, typename Argument>
 struct TrySeqIterResultTraits {
   using IterTraits = TrySeqIterTraits<Iter, Factory, Argument>;
-  using Traits = TrySeqTraits<typename IterTraits::Wrapped>;
-  using Result = BasicSeqIter<Traits, IterTraits>;
+  using Result = BasicSeqIter<IterTraits>;
 };
 
 }  // namespace promise_detail

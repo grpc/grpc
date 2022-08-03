@@ -422,10 +422,11 @@ class BasicSeq {
 // As above, but models a sequence of unknown size
 // At each element, the accumulator A and the current value V is passed to some
 // function of type IterTraits::Factory as f(V, IterTraits::Argument); f is
-// expected to return a promise that resolves to Traits::WrappedType.
-template <class Traits, typename IterTraits>
+// expected to return a promise that resolves to IterTraits::Wrapped.
+template <class IterTraits>
 class BasicSeqIter {
  private:
+  using Traits = typename IterTraits::Traits;
   using Iter = typename IterTraits::Iter;
   using Factory = typename IterTraits::Factory;
   using Argument = typename IterTraits::Argument;
