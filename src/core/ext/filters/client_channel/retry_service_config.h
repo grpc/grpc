@@ -46,7 +46,7 @@ class RetryGlobalConfig : public ServiceConfigParser::ParsedConfig {
   uintptr_t milli_token_ratio() const { return milli_token_ratio_; }
 
   static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
-  void JsonPostLoad(const Json& json, const JsonArgs&, ErrorList* errors);
+  void JsonPostLoad(const Json& json, const JsonArgs& args, ErrorList* errors);
 
  private:
   uintptr_t max_milli_tokens_ = 0;

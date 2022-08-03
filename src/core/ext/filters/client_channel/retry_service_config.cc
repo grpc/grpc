@@ -48,24 +48,24 @@ namespace internal {
 //
 
 const JsonLoaderInterface* RetryGlobalConfig::JsonLoader(const JsonArgs&) {
-  static const auto* loader =
-      JsonObjectLoader<RetryGlobalConfig>()
-          // Note: The "tokenRatio" field requires custom parsing, so
-          // it's handled in JsonPostLoad() instead.
-          .Field("maxTokens", &RetryGlobalConfig::max_milli_tokens_)
-          .Finish();
+  // Note: Both fields require custom processing, so they're handled in
+  // JsonPostLoad() instead.
+  static const auto* loader = JsonObjectLoader<RetryGlobalConfig>().Finish();
   return loader;
 }
 
-void RetryGlobalConfig::JsonPostLoad(const Json& json, const JsonArgs&,
+void RetryGlobalConfig::JsonPostLoad(const Json& json, const JsonArgs& args,
                                      ErrorList* errors) {
-  // Validate maxTokens.
-  {
+  // Parse maxTokens.
+  auto max_tokens = LoadJsonObjectField<uint32_t>(
+      json.object_value(), args, "maxTokens", errors);
+  if (max_tokens.has_value()) {
     ScopedField field(errors, ".maxTokens");
-    if (!errors->FieldHasErrors()) {
-      if (max_milli_tokens_ == 0) errors->AddError("must be greater than 0");
+    if (*max_tokens == 0) {
+      errors->AddError("must be greater than 0");
+    } else {
       // Multiply by 1000 to represent as milli-tokens.
-      max_milli_tokens_ *= 1000;
+      max_milli_tokens_ = static_cast<uintptr_t>(*max_tokens) * 1000;
     }
   }
   // Parse tokenRatio.
