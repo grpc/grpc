@@ -91,27 +91,22 @@ const JsonLoaderInterface* XdsBootstrap::Node::JsonLoader(const JsonArgs&) {
 }
 
 //
-// XdsBootstrap::XdsServer
+// XdsBootstrap::XdsServer::ChannelCreds
 //
 
-namespace {
+const JsonLoaderInterface* XdsBootstrap::XdsServer::ChannelCreds::JsonLoader(
+    const JsonArgs&) {
+  static const auto* loader =
+      JsonObjectLoader<ChannelCreds>()
+          .Field("type", &ChannelCreds::type)
+          .OptionalField("config", &ChannelCreds::config)
+          .Finish();
+  return loader;
+}
 
-// FIXME: move this into the public API?
-struct XdsChannelCreds {
-  std::string type;
-  Json::Object config;
-
-  static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
-    static const auto* loader =
-        JsonObjectLoader<XdsChannelCreds>()
-            .Field("type", &XdsChannelCreds::type)
-            .OptionalField("config", &XdsChannelCreds::config)
-            .Finish();
-    return loader;
-  }
-};
-
-}  // namespace
+//
+// XdsBootstrap::XdsServer
+//
 
 const JsonLoaderInterface* XdsBootstrap::XdsServer::JsonLoader(
     const JsonArgs&) {
@@ -122,43 +117,32 @@ const JsonLoaderInterface* XdsBootstrap::XdsServer::JsonLoader(
 }
 
 void XdsBootstrap::XdsServer::JsonPostLoad(
-    const Json& json, const JsonArgs& /*args*/, ErrorList* errors) {
+    const Json& json, const JsonArgs& args, ErrorList* errors) {
   // Parse "channel_creds".
-// FIXME: parse this as a vector of XdsChannelCreds, then select the one we want
-  {
+  auto channel_creds_list = LoadJsonObjectField<std::vector<ChannelCreds>>(
+      json.object_value(), args, "channel_creds", errors);
+  if (channel_creds_list.has_value()) {
     ScopedField field(errors, ".channel_creds");
-    auto it = json.object_value().find("channel_creds");
-    if (it == json.object_value().end()) {
-      errors->AddError("field not present");
-    } else if (it->second.type() != Json::Type::ARRAY) {
-      errors->AddError("is not an array");
-    } else {
-      const Json::Array& array = it->second.array_value();
-      for (size_t i = 0; i < array.size(); ++i) {
-        ScopedField field(errors, absl::StrCat("[", i, "]"));
-        auto channel_creds = LoadFromJson<XdsChannelCreds>(array[i]);
-        if (!channel_creds.ok()) {
-          errors->AddError(channel_creds.status().message());
+    for (size_t i = 0; i < channel_creds_list->size(); ++i) {
+      ScopedField field(errors, absl::StrCat("[", i, "]"));
+      auto& creds = (*channel_creds_list)[i];
+      // Select the first channel creds type that we support.
+      if (channel_creds.type.empty() &&
+          CoreConfiguration::Get().channel_creds_registry().IsSupported(
+              creds.type)) {
+        if (!CoreConfiguration::Get().channel_creds_registry().IsValidConfig(
+                creds.type, creds.config)) {
+          errors->AddError(
+              absl::StrCat("invalid config for channel creds type \"",
+                           creds.type, "\""));
           continue;
         }
-        // Select the first channel creds type that we support.
-        if (channel_creds_type.empty() &&
-            CoreConfiguration::Get().channel_creds_registry().IsSupported(
-                channel_creds->type)) {
-          if (!CoreConfiguration::Get().channel_creds_registry().IsValidConfig(
-                  channel_creds->type, channel_creds->config)) {
-            errors->AddError(
-                absl::StrCat("invalid config for channel creds type \"",
-                             channel_creds->type, "\""));
-            continue;
-          }
-          channel_creds_type = std::move(channel_creds->type);
-          channel_creds_config = std::move(channel_creds->config);
-        }
+        channel_creds.type = std::move(creds.type);
+        channel_creds.config = std::move(creds.config);
       }
-      if (channel_creds_type.empty()) {
-        errors->AddError("no known creds type found");
-      }
+    }
+    if (channel_creds.type.empty()) {
+      errors->AddError("no known creds type found");
     }
   }
   // Parse "server_features".
@@ -184,9 +168,9 @@ void XdsBootstrap::XdsServer::JsonPostLoad(
 }
 
 Json::Object XdsBootstrap::XdsServer::ToJson() const {
-  Json::Object channel_creds_json{{"type", channel_creds_type}};
-  if (!channel_creds_config.empty()) {
-    channel_creds_json["config"] = channel_creds_config;
+  Json::Object channel_creds_json{{"type", channel_creds.type}};
+  if (!channel_creds.config.empty()) {
+    channel_creds_json["config"] = channel_creds.config;
   }
   Json::Object json{
       {"server_uri", server_uri},
@@ -359,10 +343,10 @@ std::string XdsBootstrap::ToString() const {
                       "  {\n"
                       "    uri=\"%s\",\n"
                       "    creds_type=%s,\n",
-                      server().server_uri, server().channel_creds_type));
-  if (!server().channel_creds_config.empty()) {
+                      server().server_uri, server().channel_creds.type));
+  if (!server().channel_creds.config.empty()) {
     parts.push_back(absl::StrFormat(
-        "    creds_config=%s,", Json{server().channel_creds_config}.Dump()));
+        "    creds_config=%s,", Json{server().channel_creds.config}.Dump()));
   }
   if (!server().server_features.empty()) {
     parts.push_back(absl::StrCat("    server_features=[",
@@ -392,7 +376,7 @@ std::string XdsBootstrap::ToString() const {
                         "        uri=\"%s\",\n"
                         "        creds_type=%s,\n",
                         entry.second.xds_servers[0].server_uri,
-                        entry.second.xds_servers[0].channel_creds_type));
+                        entry.second.xds_servers[0].channel_creds.type));
     parts.push_back("      },\n");
   }
   parts.push_back("}");

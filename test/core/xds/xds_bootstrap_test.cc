@@ -120,9 +120,9 @@ TEST(XdsBootstrapTest, Basic) {
   auto bootstrap = XdsBootstrap::Create(json_str);
   ASSERT_TRUE(bootstrap.ok()) << bootstrap.status();
   EXPECT_EQ(bootstrap->server().server_uri, "fake:///lb");
-  EXPECT_EQ(bootstrap->server().channel_creds_type, "fake");
-  EXPECT_TRUE(bootstrap->server().channel_creds_config.empty())
-      << Json{bootstrap->server().channel_creds_config}.Dump();
+  EXPECT_EQ(bootstrap->server().channel_creds.type, "fake");
+  EXPECT_TRUE(bootstrap->server().channel_creds.config.empty())
+      << Json{bootstrap->server().channel_creds.config}.Dump();
   EXPECT_EQ(bootstrap->authorities().size(), 2);
   const XdsBootstrap::Authority* authority1 =
       bootstrap->LookupAuthority("xds.example.com");
@@ -132,9 +132,9 @@ TEST(XdsBootstrapTest, Basic) {
             "server/%s");
   EXPECT_EQ(authority1->xds_servers.size(), 1);
   EXPECT_EQ(authority1->xds_servers[0].server_uri, "fake:///xds_server");
-  EXPECT_EQ(authority1->xds_servers[0].channel_creds_type, "fake");
-  EXPECT_TRUE(authority1->xds_servers[0].channel_creds_config.empty())
-      << Json{authority1->xds_servers[0].channel_creds_config}.Dump();
+  EXPECT_EQ(authority1->xds_servers[0].channel_creds.type, "fake");
+  EXPECT_TRUE(authority1->xds_servers[0].channel_creds.config.empty())
+      << Json{authority1->xds_servers[0].channel_creds.config}.Dump();
   const XdsBootstrap::Authority* authority2 =
       bootstrap->LookupAuthority("xds.example2.com");
   ASSERT_NE(authority2, nullptr);
@@ -143,9 +143,9 @@ TEST(XdsBootstrapTest, Basic) {
             "server/%s");
   EXPECT_EQ(authority2->xds_servers.size(), 1);
   EXPECT_EQ(authority2->xds_servers[0].server_uri, "fake:///xds_server2");
-  EXPECT_EQ(authority2->xds_servers[0].channel_creds_type, "fake");
-  EXPECT_TRUE(authority2->xds_servers[0].channel_creds_config.empty())
-      << Json{authority2->xds_servers[0].channel_creds_config}.Dump();
+  EXPECT_EQ(authority2->xds_servers[0].channel_creds.type, "fake");
+  EXPECT_TRUE(authority2->xds_servers[0].channel_creds.config.empty())
+      << Json{authority2->xds_servers[0].channel_creds.config}.Dump();
   ASSERT_NE(bootstrap->node(), nullptr);
   EXPECT_EQ(bootstrap->node()->id, "foo");
   EXPECT_EQ(bootstrap->node()->cluster, "bar");
@@ -182,7 +182,7 @@ TEST(XdsBootstrapTest, ValidWithoutNode) {
   auto bootstrap = XdsBootstrap::Create(json_str);
   ASSERT_TRUE(bootstrap.ok()) << bootstrap.status();
   EXPECT_EQ(bootstrap->server().server_uri, "fake:///lb");
-  EXPECT_EQ(bootstrap->server().channel_creds_type, "fake");
+  EXPECT_EQ(bootstrap->server().channel_creds.type, "fake");
   EXPECT_EQ(bootstrap->node(), nullptr);
 }
 
@@ -199,7 +199,7 @@ TEST(XdsBootstrapTest, InsecureCreds) {
   auto bootstrap = XdsBootstrap::Create(json_str);
   ASSERT_TRUE(bootstrap.ok()) << bootstrap.status();
   EXPECT_EQ(bootstrap->server().server_uri, "fake:///lb");
-  EXPECT_EQ(bootstrap->server().channel_creds_type, "insecure");
+  EXPECT_EQ(bootstrap->server().channel_creds.type, "insecure");
   EXPECT_EQ(bootstrap->node(), nullptr);
 }
 
@@ -232,7 +232,7 @@ TEST(XdsBootstrapTest, GoogleDefaultCreds) {
   auto bootstrap = XdsBootstrap::Create(json_str);
   ASSERT_TRUE(bootstrap.ok()) << bootstrap.status();
   EXPECT_EQ(bootstrap->server().server_uri, "fake:///lb");
-  EXPECT_EQ(bootstrap->server().channel_creds_type, "google_default");
+  EXPECT_EQ(bootstrap->server().channel_creds.type, "google_default");
   EXPECT_EQ(bootstrap->node(), nullptr);
 }
 
@@ -347,11 +347,8 @@ TEST(XdsBootstrapTest, ChannelCredsFieldsWrongTypes) {
   EXPECT_EQ(
       bootstrap.status().message(),
       "errors validating JSON: ["
-      "field:xds_servers[0].channel_creds error:no known creds type found; "
-      "field:xds_servers[0].channel_creds[0] error:"
-      "errors validating JSON: ["
-      "field:config error:is not an object; "
-      "field:type error:is not a string]]")
+      "field:xds_servers[0].channel_creds[0].config error:is not an object; "
+      "field:xds_servers[0].channel_creds[0].type error:is not a string]")
       << bootstrap.status();
 }
 

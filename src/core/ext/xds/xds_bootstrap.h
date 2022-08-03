@@ -60,29 +60,40 @@ class XdsBootstrap {
   };
 
   struct XdsServer {
+    struct ChannelCreds {
+      std::string type;
+      Json::Object config;
+
+      bool operator==(const ChannelCreds& other) const {
+        return type == other.type && config == other.config;
+      }
+
+      bool operator<(const ChannelCreds& other) const {
+        if (type < other.type) return true;
+        if (Json{config}.Dump() < Json{other.config}.Dump()) return true;
+        return false;
+      }
+
+      static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+    };
+
     std::string server_uri;
-    std::string channel_creds_type;
-    Json::Object channel_creds_config;
+    ChannelCreds channel_creds;
     std::set<std::string> server_features;
 
     static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
-    void JsonPostLoad(const Json& json, const JsonArgs& /*args*/,
+    void JsonPostLoad(const Json& json, const JsonArgs& args,
                       ErrorList* errors);
 
     bool operator==(const XdsServer& other) const {
       return (server_uri == other.server_uri &&
-              channel_creds_type == other.channel_creds_type &&
-              channel_creds_config == other.channel_creds_config &&
+              channel_creds == other.channel_creds &&
               server_features == other.server_features);
     }
 
     bool operator<(const XdsServer& other) const {
       if (server_uri < other.server_uri) return true;
-      if (channel_creds_type < other.channel_creds_type) return true;
-      if (Json{channel_creds_config}.Dump() <
-          Json{other.channel_creds_config}.Dump()) {
-        return true;
-      }
+      if (channel_creds < other.channel_creds) return true;
       if (server_features < other.server_features) return true;
       return false;
     }
