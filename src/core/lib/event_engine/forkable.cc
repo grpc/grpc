@@ -59,13 +59,14 @@ void PostforkChild() {
   }
 }
 
-void ManageForkable(Forkable* engine) {
+void ManageForkable(Forkable* forkable) {
   grpc_core::MutexLock lock(&g_mu);
-  g_forkables.insert(engine);
+  g_forkables.insert(forkable);
 }
-void StopManagingForkable(Forkable* engine) {
+
+void StopManagingForkable(Forkable* forkable) {
   grpc_core::MutexLock lock(&g_mu);
-  g_forkables.erase(engine);
+  g_forkables.erase(forkable);
 }
 
 }  // namespace experimental

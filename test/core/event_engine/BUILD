@@ -34,6 +34,18 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "forkable_test",
+    srcs = ["forkable_test.cc"],
+    external_deps = ["gtest"],
+    deps = [
+        "//:forkable",
+        "//:gpr_platform",
+        "//:grpc_base",
+        "//test/core/util:grpc_test_util_unsecure",
+    ],
+)
+
+grpc_cc_test(
     name = "endpoint_config_test",
     srcs = ["endpoint_config_test.cc"],
     external_deps = ["gtest"],
