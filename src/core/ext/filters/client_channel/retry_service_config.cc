@@ -57,8 +57,8 @@ const JsonLoaderInterface* RetryGlobalConfig::JsonLoader(const JsonArgs&) {
 void RetryGlobalConfig::JsonPostLoad(const Json& json, const JsonArgs& args,
                                      ErrorList* errors) {
   // Parse maxTokens.
-  auto max_tokens = LoadJsonObjectField<uint32_t>(
-      json.object_value(), args, "maxTokens", errors);
+  auto max_tokens = LoadJsonObjectField<uint32_t>(json.object_value(), args,
+                                                  "maxTokens", errors);
   if (max_tokens.has_value()) {
     ScopedField field(errors, ".maxTokens");
     if (*max_tokens == 0) {
