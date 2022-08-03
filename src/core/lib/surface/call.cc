@@ -1415,10 +1415,16 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
         if (is_client() && send_deadline() != Timestamp::InfFuture()) {
           send_initial_metadata_.Set(GrpcTimeoutMetadata(), send_deadline());
         }
+        if (is_client()) {
+          send_initial_metadata_.Set(
+              WaitForReady(),
+              WaitForReady::ValueType{
+                  (op->flags & GRPC_INITIAL_METADATA_WAIT_FOR_READY) != 0,
+                  (op->flags &
+                   GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET) != 0});
+        }
         stream_op_payload->send_initial_metadata.send_initial_metadata =
             &send_initial_metadata_;
-        stream_op_payload->send_initial_metadata.send_initial_metadata_flags =
-            op->flags;
         if (is_client()) {
           stream_op_payload->send_initial_metadata.peer_string = &peer_string_;
         }
