@@ -330,6 +330,28 @@
     "benchmark": false,
     "ci_platforms": [
       "linux",
+      "posix",
+      "windows"
+    ],
+    "cpu_cost": 1.0,
+    "exclude_configs": [],
+    "exclude_iomgrs": [],
+    "flaky": false,
+    "gtest": false,
+    "language": "c",
+    "name": "pollset_windows_starvation_test",
+    "platforms": [
+      "linux",
+      "posix",
+      "windows"
+    ],
+    "uses_polling": true
+  },
+  {
+    "args": [],
+    "benchmark": false,
+    "ci_platforms": [
+      "linux",
       "mac",
       "posix",
       "windows"
@@ -4100,7 +4122,6 @@
     "benchmark": false,
     "ci_platforms": [
       "linux",
-      "mac",
       "posix",
       "windows"
     ],
@@ -4110,10 +4131,9 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "iomgr_event_engine_test",
+    "name": "iocp_test",
     "platforms": [
       "linux",
-      "mac",
       "posix",
       "windows"
     ],
@@ -5212,6 +5232,30 @@
       "windows"
     ],
     "uses_polling": true
+  },
+  {
+    "args": [],
+    "benchmark": false,
+    "ci_platforms": [
+      "linux",
+      "mac",
+      "posix",
+      "windows"
+    ],
+    "cpu_cost": 1.0,
+    "exclude_configs": [],
+    "exclude_iomgrs": [],
+    "flaky": false,
+    "gtest": true,
+    "language": "c++",
+    "name": "posix_event_engine_test",
+    "platforms": [
+      "linux",
+      "mac",
+      "posix",
+      "windows"
+    ],
+    "uses_polling": false
   },
   {
     "args": [],
@@ -6860,7 +6904,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "test_core_event_engine_iomgr_event_engine_timer_heap_test",
+    "name": "test_core_event_engine_posix_timer_heap_test",
     "platforms": [
       "linux",
       "mac",
@@ -6884,7 +6928,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "test_core_event_engine_iomgr_event_engine_timer_list_test",
+    "name": "test_core_event_engine_posix_timer_list_test",
     "platforms": [
       "linux",
       "mac",
@@ -7728,6 +7772,28 @@
       "posix"
     ],
     "uses_polling": true
+  },
+  {
+    "args": [],
+    "benchmark": false,
+    "ci_platforms": [
+      "linux",
+      "posix",
+      "windows"
+    ],
+    "cpu_cost": 1.0,
+    "exclude_configs": [],
+    "exclude_iomgrs": [],
+    "flaky": false,
+    "gtest": true,
+    "language": "c++",
+    "name": "win_socket_test",
+    "platforms": [
+      "linux",
+      "posix",
+      "windows"
+    ],
+    "uses_polling": false
   },
   {
     "args": [],
