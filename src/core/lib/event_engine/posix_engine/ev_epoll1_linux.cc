@@ -524,6 +524,9 @@ void Epoll1EventHandle::SetWritable() { write_closure_->SetReady(); }
 
 void Epoll1EventHandle::SetHasError() { error_closure_->SetReady(); }
 
+// Polls the registered Fds for events until timeout is reached or there is a
+// Kick(). If there is a Kick(), it returns any previously un-processed events.
+// If there are no un-processed events, it returns Poller::WorkResult::Kicked{}
 Poller::WorkResult Epoll1Poller::Work(EventEngine::Duration timeout) {
   Poller::Events pending_events;
   if (g_epoll_set_.cursor == g_epoll_set_.num_events) {
