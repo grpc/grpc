@@ -1409,12 +1409,22 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
           error = GRPC_CALL_ERROR_INVALID_METADATA;
           goto done_with_error;
         }
+
+        // On the server side, grpc-timeout metadata should not
+        // be passed. For the client, this may be set by the application
+        // explictly or by using the set_deadline method of grpc::ClientContext
+        // object.
+        if (!is_client()) {
+          send_initial_metadata_.Remove(grpc_core::GrpcTimeoutMetadata());
+        }
+
         // Ignore any te metadata key value pairs specified.
         send_initial_metadata_.Remove(TeMetadata());
         /* TODO(ctiller): just make these the same variable? */
         if (is_client() && send_deadline() != Timestamp::InfFuture()) {
           send_initial_metadata_.Set(GrpcTimeoutMetadata(), send_deadline());
         }
+
         stream_op_payload->send_initial_metadata.send_initial_metadata =
             &send_initial_metadata_;
         stream_op_payload->send_initial_metadata.send_initial_metadata_flags =
@@ -1529,6 +1539,9 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
           }
         }
 
+        // On the server side, grpc-timeout metadata should not
+        // be passed.
+        send_trailing_metadata_.Remove(grpc_core::GrpcTimeoutMetadata());
         status_error_.set(status_error);
         GRPC_ERROR_UNREF(status_error);
 
