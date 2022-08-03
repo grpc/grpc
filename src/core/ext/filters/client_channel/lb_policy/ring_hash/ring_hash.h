@@ -19,7 +19,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <stdlib.h>
+#include <stdint.h>
 
 #include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/json/json.h"
