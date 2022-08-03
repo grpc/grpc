@@ -1254,10 +1254,7 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/promise/sleep.h",
     ],
-    external_deps = [
-        "absl/base:core_headers",
-        "absl/status",
-    ],
+    external_deps = ["absl/status"],
     deps = [
         "activity",
         "event_engine_base",
@@ -1265,6 +1262,7 @@ grpc_cc_library(
         "exec_ctx",
         "gpr_base",
         "poll",
+        "ref_counted",
         "time",
     ],
 )
@@ -2259,6 +2257,16 @@ grpc_cc_library(
     name = "event_engine_time_util",
     srcs = ["src/core/lib/event_engine/time_util.cc"],
     hdrs = ["src/core/lib/event_engine/time_util.h"],
+    deps = [
+        "event_engine_base_hdrs",
+        "gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "common_event_engine_closures",
+    hdrs = ["src/core/lib/event_engine/common_closures.h"],
+    external_deps = ["absl/functional:any_invocable"],
     deps = [
         "event_engine_base_hdrs",
         "gpr_platform",
@@ -4274,7 +4282,6 @@ grpc_cc_library(
         "orphanable",
         "ref_counted_ptr",
         "server_address",
-        "time",
         "work_serializer",
     ],
 )

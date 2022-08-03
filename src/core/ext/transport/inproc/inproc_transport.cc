@@ -83,8 +83,7 @@ void op_state_machine_locked(inproc_stream* s, grpc_error_handle error);
 void log_metadata(const grpc_metadata_batch* md_batch, bool is_client,
                   bool is_initial);
 void fill_in_metadata(inproc_stream* s, const grpc_metadata_batch* metadata,
-                      uint32_t flags, grpc_metadata_batch* out_md,
-                      uint32_t* outflags, bool* markfilled);
+                      grpc_metadata_batch* out_md, bool* markfilled);
 
 void ResetSendMessage(grpc_transport_stream_op_batch* batch) {
   absl::exchange(batch->payload->send_message.send_message, nullptr)->Clear();
@@ -194,18 +193,15 @@ struct inproc_stream {
       // Now transfer from the other side's write_buffer if any to the to_read
       // buffer
       if (cs->write_buffer_initial_md_filled) {
-        (void)fill_in_metadata(this, &cs->write_buffer_initial_md,
-                               cs->write_buffer_initial_md_flags,
-                               &to_read_initial_md, &to_read_initial_md_flags,
-                               &to_read_initial_md_filled);
+        fill_in_metadata(this, &cs->write_buffer_initial_md,
+                         &to_read_initial_md, &to_read_initial_md_filled);
         deadline = std::min(deadline, cs->write_buffer_deadline);
         cs->write_buffer_initial_md.Clear();
         cs->write_buffer_initial_md_filled = false;
       }
       if (cs->write_buffer_trailing_md_filled) {
-        (void)fill_in_metadata(this, &cs->write_buffer_trailing_md, 0,
-                               &to_read_trailing_md, nullptr,
-                               &to_read_trailing_md_filled);
+        fill_in_metadata(this, &cs->write_buffer_trailing_md,
+                         &to_read_trailing_md, &to_read_trailing_md_filled);
         cs->write_buffer_trailing_md.Clear();
         cs->write_buffer_trailing_md_filled = false;
       }
@@ -251,7 +247,6 @@ struct inproc_stream {
   grpc_core::Arena* arena;
 
   grpc_metadata_batch to_read_initial_md{arena};
-  uint32_t to_read_initial_md_flags = 0;
   bool to_read_initial_md_filled = false;
   grpc_metadata_batch to_read_trailing_md{arena};
   bool to_read_trailing_md_filled = false;
@@ -260,7 +255,6 @@ struct inproc_stream {
   // stream is set up but server side stream is not yet set up
   grpc_metadata_batch write_buffer_initial_md{arena};
   bool write_buffer_initial_md_filled = false;
-  uint32_t write_buffer_initial_md_flags = 0;
   grpc_core::Timestamp write_buffer_deadline =
       grpc_core::Timestamp::InfFuture();
   grpc_metadata_batch write_buffer_trailing_md{arena};
@@ -336,15 +330,12 @@ class CopySink {
 }  // namespace
 
 void fill_in_metadata(inproc_stream* s, const grpc_metadata_batch* metadata,
-                      uint32_t flags, grpc_metadata_batch* out_md,
-                      uint32_t* outflags, bool* markfilled) {
+                      grpc_metadata_batch* out_md, bool* markfilled) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_inproc_trace)) {
-    log_metadata(metadata, s->t->is_client, outflags != nullptr);
+    log_metadata(metadata, s->t->is_client,
+                 metadata->get_pointer(grpc_core::WaitForReady()) != nullptr);
   }
 
-  if (outflags != nullptr) {
-    *outflags = flags;
-  }
   if (markfilled != nullptr) {
     *markfilled = true;
   }
@@ -453,7 +444,7 @@ void fail_helper_locked(inproc_stream* s, grpc_error_handle error) {
                                     : &other->to_read_trailing_md;
     bool* destfilled = (other == nullptr) ? &s->write_buffer_trailing_md_filled
                                           : &other->to_read_trailing_md_filled;
-    (void)fill_in_metadata(s, &fake_md, 0, dest, nullptr, destfilled);
+    fill_in_metadata(s, &fake_md, dest, destfilled);
 
     if (other != nullptr) {
       if (GRPC_ERROR_IS_NONE(other->cancel_other_error)) {
@@ -475,12 +466,10 @@ void fail_helper_locked(inproc_stream* s, grpc_error_handle error) {
       fake_md.Set(grpc_core::HttpAuthorityMetadata(),
                   grpc_core::Slice::FromStaticString("inproc-fail"));
 
-      (void)fill_in_metadata(
-          s, &fake_md, 0,
-          s->recv_initial_md_op->payload->recv_initial_metadata
-              .recv_initial_metadata,
-          s->recv_initial_md_op->payload->recv_initial_metadata.recv_flags,
-          nullptr);
+      fill_in_metadata(s, &fake_md,
+                       s->recv_initial_md_op->payload->recv_initial_metadata
+                           .recv_initial_metadata,
+                       nullptr);
       err = GRPC_ERROR_NONE;
     } else {
       err = GRPC_ERROR_REF(error);
@@ -654,11 +643,10 @@ void op_state_machine_locked(inproc_stream* s, grpc_error_handle error) {
       goto done;
     } else {
       if (!other || !other->closed) {
-        (void)fill_in_metadata(
-            s,
-            s->send_trailing_md_op->payload->send_trailing_metadata
-                .send_trailing_metadata,
-            0, dest, nullptr, destfilled);
+        fill_in_metadata(s,
+                         s->send_trailing_md_op->payload->send_trailing_metadata
+                             .send_trailing_metadata,
+                         dest, destfilled);
       }
       s->trailing_md_sent = true;
       if (s->send_trailing_md_op->payload->send_trailing_metadata.sent) {
@@ -702,12 +690,10 @@ void op_state_machine_locked(inproc_stream* s, grpc_error_handle error) {
 
     if (s->to_read_initial_md_filled) {
       s->initial_md_recvd = true;
-      fill_in_metadata(
-          s, &s->to_read_initial_md, s->to_read_initial_md_flags,
-          s->recv_initial_md_op->payload->recv_initial_metadata
-              .recv_initial_metadata,
-          s->recv_initial_md_op->payload->recv_initial_metadata.recv_flags,
-          nullptr);
+      fill_in_metadata(s, &s->to_read_initial_md,
+                       s->recv_initial_md_op->payload->recv_initial_metadata
+                           .recv_initial_metadata,
+                       nullptr);
       if (s->deadline != grpc_core::Timestamp::InfFuture()) {
         s->recv_initial_md_op->payload->recv_initial_metadata
             .recv_initial_metadata->Set(grpc_core::GrpcTimeoutMetadata(),
@@ -787,10 +773,10 @@ void op_state_machine_locked(inproc_stream* s, grpc_error_handle error) {
     if (s->recv_trailing_md_op != nullptr) {
       // We wanted trailing metadata and we got it
       s->trailing_md_recvd = true;
-      fill_in_metadata(s, &s->to_read_trailing_md, 0,
+      fill_in_metadata(s, &s->to_read_trailing_md,
                        s->recv_trailing_md_op->payload->recv_trailing_metadata
                            .recv_trailing_metadata,
-                       nullptr, nullptr);
+                       nullptr);
       s->to_read_trailing_md.Clear();
       s->to_read_trailing_md_filled = false;
 
@@ -901,7 +887,7 @@ bool cancel_stream_locked(inproc_stream* s, grpc_error_handle error) {
                                     : &other->to_read_trailing_md;
     bool* destfilled = (other == nullptr) ? &s->write_buffer_trailing_md_filled
                                           : &other->to_read_trailing_md_filled;
-    (void)fill_in_metadata(s, &cancel_md, 0, dest, nullptr, destfilled);
+    fill_in_metadata(s, &cancel_md, dest, destfilled);
 
     if (other != nullptr) {
       if (GRPC_ERROR_IS_NONE(other->cancel_other_error)) {
@@ -995,9 +981,6 @@ void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
       grpc_metadata_batch* dest = (other == nullptr)
                                       ? &s->write_buffer_initial_md
                                       : &other->to_read_initial_md;
-      uint32_t* destflags = (other == nullptr)
-                                ? &s->write_buffer_initial_md_flags
-                                : &other->to_read_initial_md_flags;
       bool* destfilled = (other == nullptr) ? &s->write_buffer_initial_md_filled
                                             : &other->to_read_initial_md_filled;
       if (*destfilled || s->initial_md_sent) {
@@ -1006,10 +989,9 @@ void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
         error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Extra initial metadata");
       } else {
         if (!s->other_side_closed) {
-          (void)fill_in_metadata(
-              s, op->payload->send_initial_metadata.send_initial_metadata,
-              op->payload->send_initial_metadata.send_initial_metadata_flags,
-              dest, destflags, destfilled);
+          fill_in_metadata(
+              s, op->payload->send_initial_metadata.send_initial_metadata, dest,
+              destfilled);
         }
         if (s->t->is_client) {
           grpc_core::Timestamp* dl =

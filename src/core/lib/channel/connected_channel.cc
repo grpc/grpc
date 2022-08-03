@@ -361,8 +361,6 @@ class ClientStream : public Orphanable {
       batch_payload_.send_initial_metadata.send_initial_metadata =
           client_initial_metadata_.get();
       // DO NOT SUBMIT: figure this field out
-      batch_payload_.send_initial_metadata.send_initial_metadata_flags = 0;
-      // DO NOT SUBMIT: figure this field out
       batch_payload_.send_initial_metadata.peer_string = nullptr;
       server_initial_metadata_ =
           GetContext<MetadataAllocator>()->MakeMetadata<ServerMetadata>();
@@ -370,8 +368,6 @@ class ClientStream : public Orphanable {
           server_initial_metadata_.get();
       batch_payload_.recv_initial_metadata.recv_initial_metadata_ready =
           &recv_initial_metadata_ready_;
-      // DO NOT SUBMIT: figure this field out
-      batch_payload_.recv_initial_metadata.recv_flags = nullptr;
       // DO NOT SUBMIT: figure this field out
       batch_payload_.recv_initial_metadata.trailing_metadata_available =
           nullptr;

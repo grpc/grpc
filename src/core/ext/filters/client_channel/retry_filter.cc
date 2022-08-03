@@ -610,7 +610,6 @@ class RetryFilter::CallData {
   // send_initial_metadata
   bool seen_send_initial_metadata_ = false;
   grpc_metadata_batch send_initial_metadata_{arena_};
-  uint32_t send_initial_metadata_flags_;
   // TODO(roth): As part of implementing hedging, we'll probably need to
   // have the LB call set a value in CallAttempt and then propagate it
   // from CallAttempt to the parent call when we commit.  Otherwise, we
@@ -1068,8 +1067,6 @@ void RetryFilter::CallData::CallAttempt::AddBatchesForPendingBatches(
     }
     // recv_initial_metadata.
     if (batch->recv_initial_metadata) {
-      // recv_flags is only used on the server side.
-      GPR_ASSERT(batch->payload->recv_initial_metadata.recv_flags == nullptr);
       batch_data->AddRetriableRecvInitialMetadataOp();
     }
     // recv_message.
@@ -2014,8 +2011,6 @@ void RetryFilter::CallData::CallAttempt::BatchData::
   batch_.send_initial_metadata = true;
   batch_.payload->send_initial_metadata.send_initial_metadata =
       &call_attempt_->send_initial_metadata_;
-  batch_.payload->send_initial_metadata.send_initial_metadata_flags =
-      calld->send_initial_metadata_flags_;
   batch_.payload->send_initial_metadata.peer_string = calld->peer_string_;
 }
 
@@ -2367,8 +2362,6 @@ void RetryFilter::CallData::MaybeCacheSendOpsForBatch(PendingBatch* pending) {
     grpc_metadata_batch* send_initial_metadata =
         batch->payload->send_initial_metadata.send_initial_metadata;
     send_initial_metadata_ = send_initial_metadata->Copy();
-    send_initial_metadata_flags_ =
-        batch->payload->send_initial_metadata.send_initial_metadata_flags;
     peer_string_ = batch->payload->send_initial_metadata.peer_string;
   }
   // Set up cache for send_message ops.
