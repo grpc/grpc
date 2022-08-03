@@ -75,8 +75,8 @@ class XdsClusterManagerLbConfig : public LoadBalancingPolicy::Config {
   struct Child {
     RefCountedPtr<LoadBalancingPolicy::Config> config;
 
-    static const JsonLoaderInterface* JsonLoader();
-    void JsonPostLoad(const Json& json, ErrorList* errors);
+    static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+    void JsonPostLoad(const Json& json, const JsonArgs&, ErrorList* errors);
   };
 
   XdsClusterManagerLbConfig() = default;
@@ -99,8 +99,8 @@ class XdsClusterManagerLbConfig : public LoadBalancingPolicy::Config {
     return cluster_map_;
   }
 
-  static const JsonLoaderInterface* JsonLoader();
-  void JsonPostLoad(const Json& json, ErrorList* errors);
+  static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+  void JsonPostLoad(const Json& json, const JsonArgs&, ErrorList* errors);
 
  private:
   std::map<std::string, Child> cluster_map_;
@@ -635,15 +635,16 @@ void XdsClusterManagerLb::ClusterChild::Helper::AddTraceEvent(
 // factory
 //
 
-const JsonLoaderInterface* XdsClusterManagerLbConfig::Child::JsonLoader() {
+const JsonLoaderInterface* XdsClusterManagerLbConfig::Child::JsonLoader(
+    const JsonArgs&) {
   // Note: The "childPolicy" field requires custom processing, so
   // it's handled in JsonPostLoad() instead.
   static const auto* loader = JsonObjectLoader<Child>().Finish();
   return loader;
 }
 
-void XdsClusterManagerLbConfig::Child::JsonPostLoad(const Json& json,
-                                                    ErrorList* errors) {
+void XdsClusterManagerLbConfig::Child::JsonPostLoad(
+    const Json& json, const JsonArgs&, ErrorList* errors) {
   ScopedField field(errors, ".childPolicy");
   auto it = json.object_value().find("childPolicy");
   if (it == json.object_value().end()) {
@@ -659,7 +660,8 @@ void XdsClusterManagerLbConfig::Child::JsonPostLoad(const Json& json,
   config = std::move(*lb_config);
 }
 
-const JsonLoaderInterface* XdsClusterManagerLbConfig::JsonLoader() {
+const JsonLoaderInterface* XdsClusterManagerLbConfig::JsonLoader(
+    const JsonArgs&) {
   static const auto* loader =
       JsonObjectLoader<XdsClusterManagerLbConfig>()
           .Field("children", &XdsClusterManagerLbConfig::cluster_map_)
@@ -667,7 +669,7 @@ const JsonLoaderInterface* XdsClusterManagerLbConfig::JsonLoader() {
   return loader;
 }
 
-void XdsClusterManagerLbConfig::JsonPostLoad(const Json& json,
+void XdsClusterManagerLbConfig::JsonPostLoad(const Json& json, const JsonArgs&,
                                              ErrorList* errors) {
   if (cluster_map_.empty()) {
     ScopedField field(errors, ".children");
@@ -697,7 +699,8 @@ class XdsClusterManagerLbFactory : public LoadBalancingPolicyFactory {
           "config instead.");
     }
     auto config = LoadFromJson<XdsClusterManagerLbConfig>(
-        json, "errors validating xds_cluster_manager LB policy config");
+        json, JsonArgs(),
+        "errors validating xds_cluster_manager LB policy config");
     if (!config.ok()) return config.status();
     return MakeRefCounted<XdsClusterManagerLbConfig>(std::move(*config));
   }

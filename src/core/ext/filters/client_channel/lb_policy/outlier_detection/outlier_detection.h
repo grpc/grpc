@@ -49,7 +49,7 @@ struct OutlierDetectionConfig {
              request_volume == other.request_volume;
     }
 
-    static const JsonLoaderInterface* JsonLoader();
+    static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
   };
   struct FailurePercentageEjection {
     uint32_t threshold = 85;
@@ -64,7 +64,7 @@ struct OutlierDetectionConfig {
              request_volume == other.request_volume;
     }
 
-    static const JsonLoaderInterface* JsonLoader();
+    static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
   };
   absl::optional<SuccessRateEjection> success_rate_ejection;
   absl::optional<FailurePercentageEjection> failure_percentage_ejection;
@@ -78,8 +78,8 @@ struct OutlierDetectionConfig {
            failure_percentage_ejection == other.failure_percentage_ejection;
   }
 
-  static const JsonLoaderInterface* JsonLoader();
-  void JsonPostLoad(const Json& json, ErrorList* errors);
+  static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+  void JsonPostLoad(const Json& json, const JsonArgs&, ErrorList* errors);
 };
 
 }  // namespace grpc_core

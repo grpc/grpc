@@ -35,8 +35,8 @@ struct RingHashConfig {
   uint64_t min_ring_size = 1024;
   uint64_t max_ring_size = 8388608;
 
-  static const JsonLoaderInterface* JsonLoader();
-  void JsonPostLoad(const Json& json, ErrorList* errors);
+  static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+  void JsonPostLoad(const Json& json, const JsonArgs&, ErrorList* errors);
 };
 
 }  // namespace grpc_core

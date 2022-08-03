@@ -181,8 +181,8 @@ class XdsClusterImplLbConfig : public LoadBalancingPolicy::Config {
     return drop_config_;
   }
 
-  static const JsonLoaderInterface* JsonLoader();
-  void JsonPostLoad(const Json& json, ErrorList* errors);
+  static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+  void JsonPostLoad(const Json& json, const JsonArgs& args, ErrorList* errors);
 
  private:
   RefCountedPtr<LoadBalancingPolicy::Config> child_policy_;
@@ -704,7 +704,7 @@ struct DropCategory {
   std::string category;
   uint32_t requests_per_million;
 
-  static const JsonLoaderInterface* JsonLoader() {
+  static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
     static const auto* loader =
         JsonObjectLoader<DropCategory>()
             .Field("category", &DropCategory::category)
@@ -714,7 +714,7 @@ struct DropCategory {
   }
 };
 
-const JsonLoaderInterface* XdsClusterImplLbConfig::JsonLoader() {
+const JsonLoaderInterface* XdsClusterImplLbConfig::JsonLoader(const JsonArgs&) {
   static const auto* loader =
       JsonObjectLoader<XdsClusterImplLbConfig>()
           // Note: Some fields require custom processing, so they are
@@ -731,7 +731,8 @@ const JsonLoaderInterface* XdsClusterImplLbConfig::JsonLoader() {
   return loader;
 }
 
-void XdsClusterImplLbConfig::JsonPostLoad(const Json& json, ErrorList* errors) {
+void XdsClusterImplLbConfig::JsonPostLoad(
+    const Json& json, const JsonArgs& args, ErrorList* errors) {
   // LRS load reporting server name.
   // FIXME: merge in other PR
   auto it = json.object_value().find("lrsLoadReportingServer");
@@ -768,7 +769,7 @@ void XdsClusterImplLbConfig::JsonPostLoad(const Json& json, ErrorList* errors) {
   // Parse "dropCategories" field.
   {
     auto value = LoadJsonObjectField<std::vector<DropCategory>>(
-        json.object_value(), "dropCategories", errors);
+        json.object_value(), args, "dropCategories", errors);
     if (value.has_value()) {
       drop_config_ = MakeRefCounted<XdsEndpointResource::DropConfig>();
       for (size_t i = 0; i < value->size(); ++i) {
@@ -809,7 +810,8 @@ class XdsClusterImplLbFactory : public LoadBalancingPolicyFactory {
           "config instead.");
     }
     auto config = LoadFromJson<XdsClusterImplLbConfig>(
-        json, "errors validating xds_cluster_impl LB policy config");
+        json, JsonArgs(),
+        "errors validating xds_cluster_impl LB policy config");
     if (!config.ok()) return config.status();
     return MakeRefCounted<XdsClusterImplLbConfig>(std::move(*config));
   }

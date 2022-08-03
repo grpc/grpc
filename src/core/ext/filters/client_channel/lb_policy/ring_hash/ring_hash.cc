@@ -80,7 +80,7 @@ UniqueTypeName RequestHashAttributeName() {
 
 // Helper Parser method
 
-const JsonLoaderInterface* RingHashConfig::JsonLoader() {
+const JsonLoaderInterface* RingHashConfig::JsonLoader(const JsonArgs&) {
   static const auto* loader =
       JsonObjectLoader<RingHashConfig>()
           .OptionalField("min_ring_size", &RingHashConfig::min_ring_size)
@@ -89,7 +89,8 @@ const JsonLoaderInterface* RingHashConfig::JsonLoader() {
   return loader;
 }
 
-void RingHashConfig::JsonPostLoad(const Json& json, ErrorList* errors) {
+void RingHashConfig::JsonPostLoad(const Json& json, const JsonArgs&,
+                                  ErrorList* errors) {
   {
     ScopedField field(errors, ".min_ring_size");
     if (!errors->FieldHasErrors() &&
@@ -868,7 +869,7 @@ class RingHashFactory : public LoadBalancingPolicyFactory {
   absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
   ParseLoadBalancingConfig(const Json& json) const override {
     auto config = LoadFromJson<RingHashConfig>(
-        json, "errors validating ring_hash LB policy config");
+        json, JsonArgs(), "errors validating ring_hash LB policy config");
     if (!config.ok()) return config.status();
     return MakeRefCounted<RingHashLbConfig>(config->min_ring_size,
                                             config->max_ring_size);

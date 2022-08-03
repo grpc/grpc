@@ -82,8 +82,8 @@ class WeightedTargetLbConfig : public LoadBalancingPolicy::Config {
     uint32_t weight;
     RefCountedPtr<LoadBalancingPolicy::Config> config;
 
-    static const JsonLoaderInterface* JsonLoader();
-    void JsonPostLoad(const Json& json, ErrorList* errors);
+    static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+    void JsonPostLoad(const Json& json, const JsonArgs&, ErrorList* errors);
   };
 
   using TargetMap = std::map<std::string, ChildConfig>;
@@ -104,7 +104,7 @@ class WeightedTargetLbConfig : public LoadBalancingPolicy::Config {
 
   const TargetMap& target_map() const { return target_map_; }
 
-  static const JsonLoaderInterface* JsonLoader();
+  static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
 
  private:
   TargetMap target_map_;
@@ -689,7 +689,8 @@ void WeightedTargetLb::WeightedChild::Helper::AddTraceEvent(
 // factory
 //
 
-const JsonLoaderInterface* WeightedTargetLbConfig::ChildConfig::JsonLoader() {
+const JsonLoaderInterface* WeightedTargetLbConfig::ChildConfig::JsonLoader(
+    const JsonArgs&) {
   static const auto* loader =
       JsonObjectLoader<ChildConfig>()
           // Note: The config field requires custom parsing, so it's
@@ -699,8 +700,8 @@ const JsonLoaderInterface* WeightedTargetLbConfig::ChildConfig::JsonLoader() {
   return loader;
 }
 
-void WeightedTargetLbConfig::ChildConfig::JsonPostLoad(const Json& json,
-                                                       ErrorList* errors) {
+void WeightedTargetLbConfig::ChildConfig::JsonPostLoad(
+    const Json& json, const JsonArgs&, ErrorList* errors) {
   ScopedField field(errors, ".childPolicy");
   auto it = json.object_value().find("childPolicy");
   if (it == json.object_value().end()) {
@@ -716,7 +717,7 @@ void WeightedTargetLbConfig::ChildConfig::JsonPostLoad(const Json& json,
   config = std::move(*lb_config);
 }
 
-const JsonLoaderInterface* WeightedTargetLbConfig::JsonLoader() {
+const JsonLoaderInterface* WeightedTargetLbConfig::JsonLoader(const JsonArgs&) {
   static const auto* loader =
       JsonObjectLoader<WeightedTargetLbConfig>()
           .Field("targets", &WeightedTargetLbConfig::target_map_)
@@ -744,7 +745,7 @@ class WeightedTargetLbFactory : public LoadBalancingPolicyFactory {
           "config instead.");
     }
     auto config = LoadFromJson<WeightedTargetLbConfig>(
-        json, "errors validating weighted_target LB policy config");
+        json, JsonArgs(), "errors validating weighted_target LB policy config");
     if (!config.ok()) return config.status();
     return MakeRefCounted<WeightedTargetLbConfig>(std::move(*config));
   }

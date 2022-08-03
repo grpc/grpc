@@ -86,8 +86,8 @@ class PriorityLbConfig : public LoadBalancingPolicy::Config {
     RefCountedPtr<LoadBalancingPolicy::Config> config;
     bool ignore_reresolution_requests = false;
 
-    static const JsonLoaderInterface* JsonLoader();
-    void JsonPostLoad(const Json& json, ErrorList* errors);
+    static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+    void JsonPostLoad(const Json& json, const JsonArgs&, ErrorList* errors);
   };
 
   PriorityLbConfig() = default;
@@ -111,8 +111,8 @@ class PriorityLbConfig : public LoadBalancingPolicy::Config {
   }
   const std::vector<std::string>& priorities() const { return priorities_; }
 
-  static const JsonLoaderInterface* JsonLoader();
-  void JsonPostLoad(const Json& json, ErrorList* errors);
+  static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+  void JsonPostLoad(const Json& json, const JsonArgs&, ErrorList* errors);
 
  private:
   std::map<std::string, PriorityLbChild> children_;
@@ -937,7 +937,8 @@ void PriorityLb::ChildPriority::Helper::AddTraceEvent(
 // factory
 //
 
-const JsonLoaderInterface* PriorityLbConfig::PriorityLbChild::JsonLoader() {
+const JsonLoaderInterface* PriorityLbConfig::PriorityLbChild::JsonLoader(
+    const JsonArgs&) {
   static const auto* loader =
       JsonObjectLoader<PriorityLbChild>()
           // Note: The "config" field requires custom parsing, so it's
@@ -948,8 +949,8 @@ const JsonLoaderInterface* PriorityLbConfig::PriorityLbChild::JsonLoader() {
   return loader;
 }
 
-void PriorityLbConfig::PriorityLbChild::JsonPostLoad(const Json& json,
-                                                     ErrorList* errors) {
+void PriorityLbConfig::PriorityLbChild::JsonPostLoad(
+    const Json& json, const JsonArgs&, ErrorList* errors) {
   ScopedField field(errors, ".config");
   auto it = json.object_value().find("config");
   if (it == json.object_value().end()) {
@@ -965,7 +966,7 @@ void PriorityLbConfig::PriorityLbChild::JsonPostLoad(const Json& json,
   config = std::move(*lb_config);
 }
 
-const JsonLoaderInterface* PriorityLbConfig::JsonLoader() {
+const JsonLoaderInterface* PriorityLbConfig::JsonLoader(const JsonArgs&) {
   static const auto* loader =
       JsonObjectLoader<PriorityLbConfig>()
           .Field("children", &PriorityLbConfig::children_)
@@ -974,7 +975,8 @@ const JsonLoaderInterface* PriorityLbConfig::JsonLoader() {
   return loader;
 }
 
-void PriorityLbConfig::JsonPostLoad(const Json& /*json*/, ErrorList* errors) {
+void PriorityLbConfig::JsonPostLoad(const Json& /*json*/, const JsonArgs&,
+                                    ErrorList* errors) {
   std::set<std::string> unknown_priorities;
   for (const std::string& priority : priorities_) {
     if (children_.find(priority) == children_.end()) {
@@ -1008,7 +1010,7 @@ class PriorityLbFactory : public LoadBalancingPolicyFactory {
           "config instead.");
     }
     auto config = LoadFromJson<PriorityLbConfig>(
-        json, "errors validating priority LB policy config");
+        json, JsonArgs(), "errors validating priority LB policy config");
     if (!config.ok()) return config.status();
     return MakeRefCounted<PriorityLbConfig>(std::move(*config));
   }

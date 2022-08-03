@@ -179,7 +179,7 @@ class GrpcLbConfig : public LoadBalancingPolicy::Config {
     return *this;
   }
 
-  static const JsonLoaderInterface* JsonLoader() {
+  static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
     static const auto* loader =
         JsonObjectLoader<GrpcLbConfig>()
             // Note: "childPolicy" field requires custom parsing, so
@@ -189,7 +189,7 @@ class GrpcLbConfig : public LoadBalancingPolicy::Config {
     return loader;
   }
 
-  void JsonPostLoad(const Json& json, ErrorList* errors) {
+  void JsonPostLoad(const Json& json, const JsonArgs&, ErrorList* errors) {
     ScopedField field(errors, ".childPolicy");
     Json child_policy_config_json_tmp;
     const Json* child_policy_config_json;
@@ -1894,7 +1894,7 @@ class GrpcLbFactory : public LoadBalancingPolicyFactory {
   absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
   ParseLoadBalancingConfig(const Json& json) const override {
     auto config = LoadFromJson<GrpcLbConfig>(
-        json, "errors validating grpclb LB policy config");
+        json, JsonArgs(), "errors validating grpclb LB policy config");
     if (!config.ok()) return config.status();
     return MakeRefCounted<GrpcLbConfig>(std::move(*config));
   }

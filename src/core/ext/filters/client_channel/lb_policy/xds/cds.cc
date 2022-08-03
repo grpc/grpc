@@ -97,7 +97,7 @@ class CdsLbConfig : public LoadBalancingPolicy::Config {
   const std::string& cluster() const { return cluster_; }
   absl::string_view name() const override { return kCds; }
 
-  static const JsonLoaderInterface* JsonLoader() {
+  static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
     static const auto* loader = JsonObjectLoader<CdsLbConfig>()
                                     .Field("cluster", &CdsLbConfig::cluster_)
                                     .Finish();
@@ -753,7 +753,7 @@ class CdsLbFactory : public LoadBalancingPolicyFactory {
           "Please use loadBalancingConfig field of service config instead.");
     }
     auto config = LoadFromJson<CdsLbConfig>(
-        json, "errors validating cds LB policy config");
+        json, JsonArgs(), "errors validating cds LB policy config");
     if (!config.ok()) return config.status();
     return MakeRefCounted<CdsLbConfig>(std::move(*config));
   }

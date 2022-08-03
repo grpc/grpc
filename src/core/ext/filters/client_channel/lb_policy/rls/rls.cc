@@ -148,8 +148,9 @@ class RlsLbConfig : public LoadBalancingPolicy::Config {
     int64_t cache_size_bytes = 0;
     std::string default_target;
 
-    static const JsonLoaderInterface* JsonLoader();
-    void JsonPostLoad(const Json& json, ErrorList* errors);
+    static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+    void JsonPostLoad(const Json& json, const JsonArgs& args,
+                      ErrorList* errors);
   };
 
   RlsLbConfig() = default;
@@ -209,8 +210,8 @@ class RlsLbConfig : public LoadBalancingPolicy::Config {
     return default_child_policy_parsed_config_;
   }
 
-  static const JsonLoaderInterface* JsonLoader();
-  void JsonPostLoad(const Json& json, ErrorList* errors);
+  static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+  void JsonPostLoad(const Json& json, const JsonArgs&, ErrorList* errors);
 
  private:
   RouteLookupConfig route_lookup_config_;
@@ -2150,7 +2151,7 @@ struct GrpcKeyBuilder {
     std::string service;
     std::string method;
 
-    static const JsonLoaderInterface* JsonLoader() {
+    static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
       static const auto* loader = JsonObjectLoader<Name>()
                                       .Field("service", &Name::service)
                                       .OptionalField("method", &Name::method)
@@ -2164,7 +2165,7 @@ struct GrpcKeyBuilder {
     std::vector<std::string> names;
     absl::optional<bool> required_match;
 
-    static const JsonLoaderInterface* JsonLoader() {
+    static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
       static const auto* loader =
           JsonObjectLoader<NameMatcher>()
               .Field("key", &NameMatcher::key)
@@ -2174,7 +2175,7 @@ struct GrpcKeyBuilder {
       return loader;
     }
 
-    void JsonPostLoad(const Json& json, ErrorList* errors) {
+    void JsonPostLoad(const Json& json, const JsonArgs&, ErrorList* errors) {
       // key must be non-empty.
       {
         ScopedField field(errors, ".key");
@@ -2211,7 +2212,7 @@ struct GrpcKeyBuilder {
     absl::optional<std::string> service_key;
     absl::optional<std::string> method_key;
 
-    static const JsonLoaderInterface* JsonLoader() {
+    static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
       static const auto* loader =
           JsonObjectLoader<ExtraKeys>()
               .OptionalField("host", &ExtraKeys::host_key)
@@ -2221,7 +2222,7 @@ struct GrpcKeyBuilder {
       return loader;
     }
 
-    void JsonPostLoad(const Json& json, ErrorList* errors) {
+    void JsonPostLoad(const Json& json, const JsonArgs&, ErrorList* errors) {
       auto check_field = [&](const std::string& field_name,
                              absl::optional<std::string>* struct_field) {
         ScopedField field(errors, absl::StrCat(".", field_name));
@@ -2240,7 +2241,7 @@ struct GrpcKeyBuilder {
   ExtraKeys extra_keys;
   std::map<std::string /*key*/, std::string /*value*/> constant_keys;
 
-  static const JsonLoaderInterface* JsonLoader() {
+  static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
     static const auto* loader =
         JsonObjectLoader<GrpcKeyBuilder>()
             .Field("names", &GrpcKeyBuilder::names)
@@ -2251,7 +2252,7 @@ struct GrpcKeyBuilder {
     return loader;
   }
 
-  void JsonPostLoad(const Json& json, ErrorList* errors) {
+  void JsonPostLoad(const Json& json, const JsonArgs&, ErrorList* errors) {
     // The names field must be non-empty.
     {
       ScopedField field(errors, ".names");
@@ -2313,7 +2314,8 @@ struct GrpcKeyBuilder {
   }
 };
 
-const JsonLoaderInterface* RlsLbConfig::RouteLookupConfig::JsonLoader() {
+const JsonLoaderInterface* RlsLbConfig::RouteLookupConfig::JsonLoader(
+    const JsonArgs&) {
   static const auto* loader =
       JsonObjectLoader<RouteLookupConfig>()
           // Note: Some fields require manual processing and are handled in
@@ -2329,11 +2331,11 @@ const JsonLoaderInterface* RlsLbConfig::RouteLookupConfig::JsonLoader() {
   return loader;
 }
 
-void RlsLbConfig::RouteLookupConfig::JsonPostLoad(const Json& json,
-                                                  ErrorList* errors) {
+void RlsLbConfig::RouteLookupConfig::JsonPostLoad(
+    const Json& json, const JsonArgs& args, ErrorList* errors) {
   // Parse grpcKeybuilders.
   auto grpc_keybuilders = LoadJsonObjectField<std::vector<GrpcKeyBuilder>>(
-      json.object_value(), "grpcKeybuilders", errors);
+      json.object_value(), args, "grpcKeybuilders", errors);
   if (grpc_keybuilders.has_value()) {
     ScopedField field(errors, ".grpcKeybuilders");
     for (size_t i = 0; i < grpc_keybuilders->size(); ++i) {
@@ -2408,7 +2410,7 @@ void RlsLbConfig::RouteLookupConfig::JsonPostLoad(const Json& json,
   }
 }
 
-const JsonLoaderInterface* RlsLbConfig::JsonLoader() {
+const JsonLoaderInterface* RlsLbConfig::JsonLoader(const JsonArgs&) {
   static const auto* loader =
       JsonObjectLoader<RlsLbConfig>()
           // Note: Some fields require manual processing and are handled in
@@ -2420,7 +2422,8 @@ const JsonLoaderInterface* RlsLbConfig::JsonLoader() {
   return loader;
 }
 
-void RlsLbConfig::JsonPostLoad(const Json& json, ErrorList* errors) {
+void RlsLbConfig::JsonPostLoad(const Json& json, const JsonArgs&,
+                               ErrorList* errors) {
   // Parse routeLookupChannelServiceConfig.
   auto it = json.object_value().find("routeLookupChannelServiceConfig");
   if (it != json.object_value().end()) {
@@ -2500,8 +2503,8 @@ class RlsLbFactory : public LoadBalancingPolicyFactory {
 
   absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
   ParseLoadBalancingConfig(const Json& json) const override {
-    auto config =
-        LoadFromJson<RlsLbConfig>(json, "errors validing RLS LB policy config");
+    auto config = LoadFromJson<RlsLbConfig>(
+        json, JsonArgs(), "errors validing RLS LB policy config");
     if (!config.ok()) return config.status();
     return MakeRefCounted<RlsLbConfig>(std::move(*config));
   }

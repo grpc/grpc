@@ -1032,7 +1032,7 @@ class OutlierDetectionLbFactory : public LoadBalancingPolicyFactory {
     {
       ScopedField field(&errors, "[\"outlier_detection_experimental\"]");
       outlier_detection_config =
-          LoadFromJson<OutlierDetectionConfig>(json, &errors);
+          LoadFromJson<OutlierDetectionConfig>(json, JsonArgs(), &errors);
       // Parse childPolicy manually.
       {
         ScopedField field(&errors, ".childPolicy");
@@ -1066,7 +1066,7 @@ class OutlierDetectionLbFactory : public LoadBalancingPolicyFactory {
 //
 
 const JsonLoaderInterface*
-OutlierDetectionConfig::SuccessRateEjection::JsonLoader() {
+OutlierDetectionConfig::SuccessRateEjection::JsonLoader(const JsonArgs&) {
   static const auto* loader =
       JsonObjectLoader<SuccessRateEjection>()
           .OptionalField("stdevFactor", &SuccessRateEjection::stdev_factor)
@@ -1079,7 +1079,7 @@ OutlierDetectionConfig::SuccessRateEjection::JsonLoader() {
 }
 
 const JsonLoaderInterface*
-OutlierDetectionConfig::FailurePercentageEjection::JsonLoader() {
+OutlierDetectionConfig::FailurePercentageEjection::JsonLoader(const JsonArgs&) {
   static const auto* loader =
       JsonObjectLoader<FailurePercentageEjection>()
           .OptionalField("threshold", &FailurePercentageEjection::threshold)
@@ -1093,7 +1093,7 @@ OutlierDetectionConfig::FailurePercentageEjection::JsonLoader() {
   return loader;
 }
 
-const JsonLoaderInterface* OutlierDetectionConfig::JsonLoader() {
+const JsonLoaderInterface* OutlierDetectionConfig::JsonLoader(const JsonArgs&) {
   static const auto* loader =
       JsonObjectLoader<OutlierDetectionConfig>()
           .OptionalField("interval", &OutlierDetectionConfig::interval)
@@ -1111,7 +1111,8 @@ const JsonLoaderInterface* OutlierDetectionConfig::JsonLoader() {
   return loader;
 }
 
-void OutlierDetectionConfig::JsonPostLoad(const Json& json, ErrorList* errors) {
+void OutlierDetectionConfig::JsonPostLoad(const Json& json, const JsonArgs&,
+                                          ErrorList* errors) {
   if (json.object_value().find("maxEjectionTime") ==
       json.object_value().end()) {
     max_ejection_time = std::max(base_ejection_time, Duration::Seconds(300));
