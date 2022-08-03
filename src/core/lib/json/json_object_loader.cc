@@ -61,7 +61,7 @@ absl::Status ErrorList::status() const {
 
 namespace json_detail {
 
-void LoadScalar::LoadInto(const Json& json, const JsonArgs& args, void* dst,
+void LoadScalar::LoadInto(const Json& json, const JsonArgs& /*args*/, void* dst,
                           ErrorList* errors) const {
   // We accept either STRING or NUMBER for numeric values, as per
   // https://developers.google.com/protocol-buffers/docs/proto3#json.
