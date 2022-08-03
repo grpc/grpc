@@ -974,7 +974,7 @@ const JsonLoaderInterface* PriorityLbConfig::JsonLoader() {
   return loader;
 }
 
-void PriorityLbConfig::JsonPostLoad(const Json& json, ErrorList* errors) {
+void PriorityLbConfig::JsonPostLoad(const Json& /*json*/, ErrorList* errors) {
   std::set<std::string> unknown_priorities;
   for (const std::string& priority : priorities_) {
     if (children_.find(priority) == children_.end()) {
