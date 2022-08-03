@@ -20,6 +20,9 @@
 
 #include <gtest/gtest.h>
 
+#include "absl/strings/str_join.h"
+#include "absl/strings/str_split.h"
+
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
@@ -39,6 +42,19 @@ struct TestInput {
   const char* input;
   const char* expected_parse;
 };
+
+static std::string SortedLines(absl::string_view in) {
+  std::vector<absl::string_view> lines =
+      absl::StrSplit(in, '\n', absl::SkipEmpty());
+  std::sort(lines.begin(), lines.end());
+  return absl::StrJoin(lines, "\n");
+}
+
+TEST(SortedLinesTest, Works) {
+  EXPECT_EQ(SortedLines(""), "");
+  EXPECT_EQ(SortedLines("a\nb\nc\n"), "a\nb\nc");
+  EXPECT_EQ(SortedLines("b\na\nc\n"), "a\nb\nc");
+}
 
 struct Test {
   absl::optional<size_t> table_size;
@@ -107,7 +123,7 @@ class ParseTest : public ::testing::TestWithParam<Test> {
 
     TestEncoder encoder;
     b.Encode(&encoder);
-    EXPECT_EQ(encoder.result(), expect);
+    EXPECT_EQ(SortedLines(encoder.result()), SortedLines(expect));
   }
 
  private:
