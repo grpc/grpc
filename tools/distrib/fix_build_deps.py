@@ -380,8 +380,15 @@ parser.add_argument('--whats_left',
                     action='store_true',
                     default=False,
                     help='show what is left to opt in')
-parser.add_argument('--explain', action='store_true', default=False, help='try to explain some decisions')
-parser.add_argument('--why', type=str, default=None, help='with --explain, target why a given dependency is needed')
+parser.add_argument('--explain',
+                    action='store_true',
+                    default=False,
+                    help='try to explain some decisions')
+parser.add_argument(
+    '--why',
+    type=str,
+    default=None,
+    help='with --explain, target why a given dependency is needed')
 args = parser.parse_args()
 
 for dirname in [
@@ -450,9 +457,11 @@ class Choices:
     def add_one_of(self, choices, trigger):
         if not choices:
             return
-        choices = sum([self.apply_substitutions(choice) for choice in choices], [])
+        choices = sum([self.apply_substitutions(choice) for choice in choices],
+                      [])
         if args.explain and (args.why is None or args.why in choices):
-            print("{}: Adding one of {} for {}".format(self.library, choices, trigger))
+            print("{}: Adding one of {} for {}".format(self.library, choices,
+                                                       trigger))
         self.to_add.append(
             tuple(
                 make_relative_path(choice, self.library) for choice in choices))
@@ -499,9 +508,8 @@ def make_library(library):
     # we need a little trickery here since grpc_base has channel.cc, which calls grpc_init
     # which is in grpc, which is illegal but hard to change
     # once event engine lands we can clean this up
-    deps = Choices(
-        library,
-        {'//:grpc_base': ['//:grpc', '//:grpc_unsecure']} if library.startswith('//test/') else {})
+    deps = Choices(library, {'//:grpc_base': ['//:grpc', '//:grpc_unsecure']}
+                   if library.startswith('//test/') else {})
     external_deps = Choices(None, {})
     for hdr in hdrs:
         if hdr in skip_headers[library]:
