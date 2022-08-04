@@ -17,6 +17,7 @@
  */
 
 #include <limits.h>
+#include <stdio.h>
 
 #include <chrono>
 #include <memory>
@@ -161,12 +162,12 @@ int main(int argc, char** argv) {
 
   printf("---------Client channel stats--------\n");
   printf("client channel memory usage: %f bytes per channel\n",
-         static_cast<double>(peak_client_memory - before_client_memory) /
-             size * 1024);
+         static_cast<double>(peak_client_memory - before_client_memory) / size *
+             1024);
   printf("---------Server channel stats--------\n");
   printf("server channel memory usage: %f bytes per channel\n",
-         static_cast<double>(peak_server_memory - before_server_memory) /
-             size * 1024);
+         static_cast<double>(peak_server_memory - before_server_memory) / size *
+             1024);
   gpr_log(GPR_INFO, "Client Done");
   return 0;
 }
