@@ -36,12 +36,15 @@ grpc_cc_test(
 grpc_cc_test(
     name = "forkable_test",
     srcs = ["forkable_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/time",
+        "gtest",
+    ],
     deps = [
         "//:forkable",
+        "//:gpr_base",
         "//:gpr_platform",
-        "//:grpc_base",
-        "//test/core/util:grpc_test_util_unsecure",
+        "//:grpc_unsecure",
     ],
 )
 

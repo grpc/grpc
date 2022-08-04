@@ -2245,9 +2245,7 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/event_engine/forkable.h",
     ],
-    external_deps = [
-        "absl/container:flat_hash_set",
-    ],
+    external_deps = ["absl/container:flat_hash_set"],
     deps = [
         "gpr_base",
         "gpr_platform",
@@ -2348,7 +2346,10 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/event_engine/thread_pool.h",
     ],
-    external_deps = ["absl/functional:any_invocable"],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/functional:any_invocable",
+    ],
     deps = [
         "forkable",
         "gpr_base",
