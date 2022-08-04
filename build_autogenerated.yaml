@@ -220,6 +220,7 @@ libs:
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/memory.h
   - src/core/lib/gprpp/mpscq.h
+  - src/core/lib/gprpp/mpscq_locked.h
   - src/core/lib/gprpp/stat.h
   - src/core/lib/gprpp/sync.h
   - src/core/lib/gprpp/thd.h
@@ -262,6 +263,7 @@ libs:
   - src/core/lib/gprpp/global_config_env.cc
   - src/core/lib/gprpp/host_port.cc
   - src/core/lib/gprpp/mpscq.cc
+  - src/core/lib/gprpp/mpscq_locked.cc
   - src/core/lib/gprpp/stat_posix.cc
   - src/core/lib/gprpp/stat_windows.cc
   - src/core/lib/gprpp/thd_posix.cc
@@ -307,24 +309,6 @@ libs:
   - include/grpc/slice.h
   - include/grpc/slice_buffer.h
   - include/grpc/status.h
-  - include/grpc/support/alloc.h
-  - include/grpc/support/atm.h
-  - include/grpc/support/atm_gcc_atomic.h
-  - include/grpc/support/atm_gcc_sync.h
-  - include/grpc/support/atm_windows.h
-  - include/grpc/support/cpu.h
-  - include/grpc/support/log.h
-  - include/grpc/support/log_windows.h
-  - include/grpc/support/port_platform.h
-  - include/grpc/support/string_util.h
-  - include/grpc/support/sync.h
-  - include/grpc/support/sync_abseil.h
-  - include/grpc/support/sync_custom.h
-  - include/grpc/support/sync_generic.h
-  - include/grpc/support/sync_posix.h
-  - include/grpc/support/sync_windows.h
-  - include/grpc/support/thd_id.h
-  - include/grpc/support/time.h
   - include/grpc/support/workaround_list.h
   headers:
   - src/core/ext/filters/channel_idle/channel_idle_filter.h
@@ -1798,24 +1782,6 @@ libs:
   - include/grpc/slice.h
   - include/grpc/slice_buffer.h
   - include/grpc/status.h
-  - include/grpc/support/alloc.h
-  - include/grpc/support/atm.h
-  - include/grpc/support/atm_gcc_atomic.h
-  - include/grpc/support/atm_gcc_sync.h
-  - include/grpc/support/atm_windows.h
-  - include/grpc/support/cpu.h
-  - include/grpc/support/log.h
-  - include/grpc/support/log_windows.h
-  - include/grpc/support/port_platform.h
-  - include/grpc/support/string_util.h
-  - include/grpc/support/sync.h
-  - include/grpc/support/sync_abseil.h
-  - include/grpc/support/sync_custom.h
-  - include/grpc/support/sync_generic.h
-  - include/grpc/support/sync_posix.h
-  - include/grpc/support/sync_windows.h
-  - include/grpc/support/thd_id.h
-  - include/grpc/support/time.h
   - include/grpc/support/workaround_list.h
   headers:
   - src/core/ext/filters/channel_idle/channel_idle_filter.h
@@ -3652,6 +3618,7 @@ targets:
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/memory.h
   - src/core/lib/gprpp/mpscq.h
+  - src/core/lib/gprpp/mpscq_locked.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
@@ -3711,6 +3678,7 @@ targets:
   - src/core/lib/gprpp/global_config_env.cc
   - src/core/lib/gprpp/host_port.cc
   - src/core/lib/gprpp/mpscq.cc
+  - src/core/lib/gprpp/mpscq_locked.cc
   - src/core/lib/gprpp/stat_posix.cc
   - src/core/lib/gprpp/stat_windows.cc
   - src/core/lib/gprpp/thd_posix.cc
@@ -7543,6 +7511,7 @@ targets:
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/memory.h
   - src/core/lib/gprpp/mpscq.h
+  - src/core/lib/gprpp/mpscq_locked.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
@@ -7602,6 +7571,7 @@ targets:
   - src/core/lib/gprpp/global_config_env.cc
   - src/core/lib/gprpp/host_port.cc
   - src/core/lib/gprpp/mpscq.cc
+  - src/core/lib/gprpp/mpscq_locked.cc
   - src/core/lib/gprpp/stat_posix.cc
   - src/core/lib/gprpp/stat_windows.cc
   - src/core/lib/gprpp/thd_posix.cc
@@ -8109,6 +8079,7 @@ targets:
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/memory.h
   - src/core/lib/gprpp/mpscq.h
+  - src/core/lib/gprpp/mpscq_locked.h
   - src/core/lib/gprpp/no_destruct.h
   - src/core/lib/gprpp/stat.h
   - src/core/lib/gprpp/sync.h
@@ -8152,6 +8123,7 @@ targets:
   - src/core/lib/gprpp/global_config_env.cc
   - src/core/lib/gprpp/host_port.cc
   - src/core/lib/gprpp/mpscq.cc
+  - src/core/lib/gprpp/mpscq_locked.cc
   - src/core/lib/gprpp/stat_posix.cc
   - src/core/lib/gprpp/stat_windows.cc
   - src/core/lib/gprpp/thd_posix.cc
@@ -8224,6 +8196,7 @@ targets:
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/memory.h
   - src/core/lib/gprpp/mpscq.h
+  - src/core/lib/gprpp/mpscq_locked.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
@@ -8282,6 +8255,7 @@ targets:
   - src/core/lib/gprpp/global_config_env.cc
   - src/core/lib/gprpp/host_port.cc
   - src/core/lib/gprpp/mpscq.cc
+  - src/core/lib/gprpp/mpscq_locked.cc
   - src/core/lib/gprpp/stat_posix.cc
   - src/core/lib/gprpp/stat_windows.cc
   - src/core/lib/gprpp/thd_posix.cc
@@ -9688,6 +9662,7 @@ targets:
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/memory.h
   - src/core/lib/gprpp/mpscq.h
+  - src/core/lib/gprpp/mpscq_locked.h
   - src/core/lib/gprpp/single_set_ptr.h
   - src/core/lib/gprpp/stat.h
   - src/core/lib/gprpp/sync.h
@@ -9731,6 +9706,7 @@ targets:
   - src/core/lib/gprpp/global_config_env.cc
   - src/core/lib/gprpp/host_port.cc
   - src/core/lib/gprpp/mpscq.cc
+  - src/core/lib/gprpp/mpscq_locked.cc
   - src/core/lib/gprpp/stat_posix.cc
   - src/core/lib/gprpp/stat_windows.cc
   - src/core/lib/gprpp/thd_posix.cc
@@ -10312,6 +10288,7 @@ targets:
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/memory.h
   - src/core/lib/gprpp/mpscq.h
+  - src/core/lib/gprpp/mpscq_locked.h
   - src/core/lib/gprpp/stat.h
   - src/core/lib/gprpp/sync.h
   - src/core/lib/gprpp/thd.h
@@ -10358,6 +10335,7 @@ targets:
   - src/core/lib/gprpp/global_config_env.cc
   - src/core/lib/gprpp/host_port.cc
   - src/core/lib/gprpp/mpscq.cc
+  - src/core/lib/gprpp/mpscq_locked.cc
   - src/core/lib/gprpp/stat_posix.cc
   - src/core/lib/gprpp/stat_windows.cc
   - src/core/lib/gprpp/thd_posix.cc
@@ -10413,6 +10391,7 @@ targets:
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/memory.h
   - src/core/lib/gprpp/mpscq.h
+  - src/core/lib/gprpp/mpscq_locked.h
   - src/core/lib/gprpp/stat.h
   - src/core/lib/gprpp/sync.h
   - src/core/lib/gprpp/thd.h
@@ -10459,6 +10438,7 @@ targets:
   - src/core/lib/gprpp/global_config_env.cc
   - src/core/lib/gprpp/host_port.cc
   - src/core/lib/gprpp/mpscq.cc
+  - src/core/lib/gprpp/mpscq_locked.cc
   - src/core/lib/gprpp/stat_posix.cc
   - src/core/lib/gprpp/stat_windows.cc
   - src/core/lib/gprpp/thd_posix.cc
@@ -10532,6 +10512,7 @@ targets:
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/memory.h
   - src/core/lib/gprpp/mpscq.h
+  - src/core/lib/gprpp/mpscq_locked.h
   - src/core/lib/gprpp/stat.h
   - src/core/lib/gprpp/sync.h
   - src/core/lib/gprpp/thd.h
@@ -10575,6 +10556,7 @@ targets:
   - src/core/lib/gprpp/global_config_env.cc
   - src/core/lib/gprpp/host_port.cc
   - src/core/lib/gprpp/mpscq.cc
+  - src/core/lib/gprpp/mpscq_locked.cc
   - src/core/lib/gprpp/stat_posix.cc
   - src/core/lib/gprpp/stat_windows.cc
   - src/core/lib/gprpp/thd_posix.cc
@@ -10783,6 +10765,7 @@ targets:
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/memory.h
   - src/core/lib/gprpp/mpscq.h
+  - src/core/lib/gprpp/mpscq_locked.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
   - src/core/lib/gprpp/stat.h
@@ -10828,6 +10811,7 @@ targets:
   - src/core/lib/gprpp/global_config_env.cc
   - src/core/lib/gprpp/host_port.cc
   - src/core/lib/gprpp/mpscq.cc
+  - src/core/lib/gprpp/mpscq_locked.cc
   - src/core/lib/gprpp/stat_posix.cc
   - src/core/lib/gprpp/stat_windows.cc
   - src/core/lib/gprpp/thd_posix.cc

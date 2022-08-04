@@ -917,7 +917,7 @@ grpc_cc_library(
         "src/core/lib/gprpp/fork.cc",
         "src/core/lib/gprpp/global_config_env.cc",
         "src/core/lib/gprpp/host_port.cc",
-        "src/core/lib/gprpp/mpscq.cc",
+        "src/core/lib/gprpp/mpscq_locked.cc",
         "src/core/lib/gprpp/stat_posix.cc",
         "src/core/lib/gprpp/stat_windows.cc",
         "src/core/lib/gprpp/thd_posix.cc",
@@ -943,7 +943,7 @@ grpc_cc_library(
         "src/core/lib/gprpp/host_port.h",
         "src/core/lib/gprpp/manual_constructor.h",
         "src/core/lib/gprpp/memory.h",
-        "src/core/lib/gprpp/mpscq.h",
+        "src/core/lib/gprpp/mpscq_locked.h",
         "src/core/lib/gprpp/stat.h",
         "src/core/lib/gprpp/sync.h",
         "src/core/lib/gprpp/thd.h",
@@ -974,6 +974,7 @@ grpc_cc_library(
         "gpr_codegen",
         "gpr_tls",
         "grpc_codegen",
+        "mpscq",
         "useful",
     ],
 )
@@ -1045,6 +1046,22 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "mpscq",
+    srcs = [
+        "src/core/lib/gprpp/mpscq.cc",
+    ],
+    hdrs = [
+        "src/core/lib/gprpp/mpscq.h",
+    ],
+    tags = ["nofixdeps"],
+    deps = [
+        "gpr_codegen",
+        "gpr_platform",
+        "gpr_public_hdrs",
+    ],
+)
+
+grpc_cc_library(
     name = "work_serializer",
     srcs = [
         "src/core/lib/gprpp/work_serializer.cc",
@@ -1059,6 +1076,7 @@ grpc_cc_library(
         "debug_location",
         "gpr_base",
         "grpc_trace",
+        "mpscq",
         "orphanable",
     ],
 )
@@ -1872,6 +1890,7 @@ grpc_cc_library(
         "grpc_trace",
         "loop",
         "map",
+        "mpscq",
         "orphanable",
         "periodic_update",
         "pid_controller",
@@ -2055,6 +2074,7 @@ grpc_cc_library(
         "debug_location",
         "error",
         "gpr_base",
+        "mpscq",
     ],
 )
 
@@ -2098,6 +2118,7 @@ grpc_cc_library(
         "gpr_tls",
         "grpc_codegen",
         "grpc_trace",
+        "mpscq",
         "time",
         "useful",
     ],
@@ -3087,6 +3108,7 @@ grpc_cc_library(
         "json",
         "latch",
         "memory_quota",
+        "mpscq",
         "orphanable",
         "percent_encoding",
         "poll",

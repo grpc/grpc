@@ -497,6 +497,7 @@ CORE_SOURCE_FILES = [
     'src/core/lib/gprpp/global_config_env.cc',
     'src/core/lib/gprpp/host_port.cc',
     'src/core/lib/gprpp/mpscq.cc',
+    'src/core/lib/gprpp/mpscq_locked.cc',
     'src/core/lib/gprpp/stat_posix.cc',
     'src/core/lib/gprpp/stat_windows.cc',
     'src/core/lib/gprpp/status_helper.cc',

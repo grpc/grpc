@@ -22,10 +22,6 @@
 
 namespace grpc_core {
 
-//
-// MultiProducerSingleConsumerQueue
-//
-
 bool MultiProducerSingleConsumerQueue::Push(Node* node) {
   node->next.store(nullptr, std::memory_order_relaxed);
   Node* prev = head_.exchange(node, std::memory_order_acq_rel);
@@ -74,35 +70,6 @@ MultiProducerSingleConsumerQueue::PopAndCheckEnd(bool* empty) {
   // indicates a retry is in order: we're still adding
   *empty = false;
   return nullptr;
-}
-
-//
-// LockedMultiProducerSingleConsumerQueue
-//
-
-bool LockedMultiProducerSingleConsumerQueue::Push(Node* node) {
-  return queue_.Push(node);
-}
-
-LockedMultiProducerSingleConsumerQueue::Node*
-LockedMultiProducerSingleConsumerQueue::TryPop() {
-  if (mu_.TryLock()) {
-    Node* node = queue_.Pop();
-    mu_.Unlock();
-    return node;
-  }
-  return nullptr;
-}
-
-LockedMultiProducerSingleConsumerQueue::Node*
-LockedMultiProducerSingleConsumerQueue::Pop() {
-  MutexLock lock(&mu_);
-  bool empty = false;
-  Node* node;
-  do {
-    node = queue_.PopAndCheckEnd(&empty);
-  } while (node == nullptr && !empty);
-  return node;
 }
 
 }  // namespace grpc_core

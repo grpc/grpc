@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_GPRPP_MPSCQ_H
-#define GRPC_CORE_LIB_GPRPP_MPSCQ_H
+#ifndef GRPC_CORE_LIB_GPRPP_MPSCQ_LOCKED_H
+#define GRPC_CORE_LIB_GPRPP_MPSCQ_LOCKED_H
 
 #include <grpc/support/port_platform.h>
 
@@ -25,47 +25,37 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/mpscq.h"
+#include "src/core/lib/gprpp/sync.h"
+
 namespace grpc_core {
 
-// Multiple-producer single-consumer lock free queue, based upon the
-// implementation from Dmitry Vyukov here:
-// http://www.1024cores.net/home/lock-free-algorithms/queues/intrusive-mpsc-node-based-queue
-class MultiProducerSingleConsumerQueue {
+// An mpscq with a lock: it's safe to pop from multiple threads, but doing
+// only one thread will succeed concurrently.
+class LockedMultiProducerSingleConsumerQueue {
  public:
-  // List node.  Application node types can inherit from this.
-  struct Node {
-    std::atomic<Node*> next{nullptr};
-  };
-
-  MultiProducerSingleConsumerQueue() : head_{&stub_}, tail_(&stub_) {}
-  ~MultiProducerSingleConsumerQueue() {
-    GPR_ASSERT(head_.load(std::memory_order_relaxed) == &stub_);
-    GPR_ASSERT(tail_ == &stub_);
-  }
+  typedef MultiProducerSingleConsumerQueue::Node Node;
 
   // Push a node
   // Thread safe - can be called from multiple threads concurrently
   // Returns true if this was possibly the first node (may return true
   // sporadically, will not return false sporadically)
   bool Push(Node* node);
+
   // Pop a node (returns NULL if no node is ready - which doesn't indicate that
   // the queue is empty!!)
-  // Thread compatible - can only be called from one thread at a time
+  // Thread safe - can be called from multiple threads concurrently
+  Node* TryPop();
+
+  // Pop a node.  Returns NULL only if the queue was empty at some point after
+  // calling this function
   Node* Pop();
-  // Pop a node; sets *empty to true if the queue is empty, or false if it is
-  // not.
-  Node* PopAndCheckEnd(bool* empty);
 
  private:
-  // make sure head & tail don't share a cacheline
-  union {
-    char padding_[GPR_CACHELINE_SIZE];
-    std::atomic<Node*> head_{nullptr};
-  };
-  Node* tail_;
-  Node stub_;
+  MultiProducerSingleConsumerQueue queue_;
+  Mutex mu_;
 };
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_GPRPP_MPSCQ_H */
+#endif /* GRPC_CORE_LIB_GPRPP_MPSCQ_LOCKED_H */
