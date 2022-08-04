@@ -28,7 +28,7 @@ grpc_cc_test(
     deps = [
         "//:common_event_engine_closures",
         "//:gpr_platform",
-        "//:grpc_base",
+        "//:grpc",
         "//test/core/util:grpc_test_util_unsecure",
     ],
 )
