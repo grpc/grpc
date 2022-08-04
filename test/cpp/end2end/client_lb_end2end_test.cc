@@ -2128,6 +2128,7 @@ class ClientLbPickArgsTest : public ClientLbEnd2endTest {
   }
 
   static void SetUpTestCase() {
+    grpc_core::CoreConfiguration::Reset();
     grpc_core::CoreConfiguration::RegisterBuilder(
         [](grpc_core::CoreConfiguration::Builder* builder) {
           grpc_core::RegisterTestPickArgsLoadBalancingPolicy(builder,
@@ -2232,6 +2233,7 @@ class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
   }
 
   static void SetUpTestCase() {
+    grpc_core::CoreConfiguration::Reset();
     grpc_core::CoreConfiguration::RegisterBuilder(
         [](grpc_core::CoreConfiguration::Builder* builder) {
           grpc_core::RegisterInterceptRecvTrailingMetadataLoadBalancingPolicy(
@@ -2496,6 +2498,7 @@ class ClientLbAddressTest : public ClientLbEnd2endTest {
   }
 
   static void SetUpTestCase() {
+    grpc_core::CoreConfiguration::Reset();
     grpc_core::CoreConfiguration::RegisterBuilder(
         [](grpc_core::CoreConfiguration::Builder* builder) {
           grpc_core::RegisterAddressTestLoadBalancingPolicy(builder,
@@ -2568,6 +2571,7 @@ class OobBackendMetricTest : public ClientLbEnd2endTest {
   }
 
   static void SetUpTestCase() {
+    grpc_core::CoreConfiguration::Reset();
     grpc_core::CoreConfiguration::RegisterBuilder(
         [](grpc_core::CoreConfiguration::Builder* builder) {
           grpc_core::RegisterOobBackendMetricTestLoadBalancingPolicy(

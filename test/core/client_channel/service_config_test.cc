@@ -474,10 +474,7 @@ class ClientChannelParserTest : public ::testing::Test {
  protected:
   void SetUp() override {
     builder_ = std::make_unique<CoreConfiguration::WithSubstituteBuilder>(
-        [](CoreConfiguration::Builder* builder) {
-          builder->service_config_parser()->RegisterParser(
-              absl::make_unique<internal::ClientChannelServiceConfigParser>());
-        });
+        BuildCoreConfiguration);
     EXPECT_EQ(CoreConfiguration::Get().service_config_parser().GetParserIndex(
                   "client_channel"),
               0);
