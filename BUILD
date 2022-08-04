@@ -1185,6 +1185,16 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "no_destruct",
+    language = "c++",
+    public_hdrs = ["src/core/lib/gprpp/no_destruct.h"],
+    deps = [
+        "construct_destruct",
+        "gpr_base",
+    ],
+)
+
+grpc_cc_library(
     name = "orphanable",
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/orphanable.h"],
@@ -7307,6 +7317,7 @@ grpc_cc_library(
         "gpr_base",
         "json",
         "json_args",
+        "no_destruct",
         "time",
     ],
 )
