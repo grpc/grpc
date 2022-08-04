@@ -34,6 +34,7 @@
 
 #include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gprpp/construct_destruct.h"
+#include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/promise/context.h"
@@ -61,10 +62,8 @@ class Wakeable {
 class Waker {
  public:
   explicit Waker(Wakeable* wakeable) : wakeable_(wakeable) {}
-  Waker() : Waker(nullptr) {}
-  ~Waker() {
-    if (wakeable_ != nullptr) wakeable_->Drop();
-  }
+  Waker() : Waker(unwakeable()) {}
+  ~Waker() { wakeable_->Drop(); }
   Waker(const Waker&) = delete;
   Waker& operator=(const Waker&) = delete;
   Waker(Waker&& other) noexcept : wakeable_(other.Take()) {}
@@ -74,9 +73,7 @@ class Waker {
   }
 
   // Wake the underlying activity.
-  void Wakeup() {
-    if (auto* wakeable = Take()) wakeable->Wakeup();
-  }
+  void Wakeup() { Take()->Wakeup(); }
 
   template <typename H>
   friend H AbslHashValue(H h, const Waker& w) {
@@ -88,7 +85,15 @@ class Waker {
   }
 
  private:
-  Wakeable* Take() { return absl::exchange(wakeable_, nullptr); }
+  struct Unwakeable final : public Wakeable {
+    void Wakeup() override {}
+    void Drop() override {}
+  };
+  static Unwakeable* unwakeable() {
+    return NoDestructSingleton<Unwakeable>::Get();
+  }
+
+  Wakeable* Take() { return absl::exchange(wakeable_, unwakeable()); }
 
   Wakeable* wakeable_;
 };
