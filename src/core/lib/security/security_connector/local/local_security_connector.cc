@@ -199,6 +199,7 @@ class grpc_local_channel_security_connector final
   }
 
   void check_peer(tsi_peer peer, grpc_endpoint* ep,
+                  const grpc_core::ChannelArgs& /*args*/,
                   grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
                   grpc_closure* on_peer_checked) override {
     grpc_local_credentials* creds =
@@ -246,6 +247,7 @@ class grpc_local_server_security_connector final
   }
 
   void check_peer(tsi_peer peer, grpc_endpoint* ep,
+                  const grpc_core::ChannelArgs& /*args*/,
                   grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
                   grpc_closure* on_peer_checked) override {
     grpc_local_server_credentials* creds =
