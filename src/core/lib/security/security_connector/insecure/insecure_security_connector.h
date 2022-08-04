@@ -67,7 +67,7 @@ class InsecureChannelSecurityConnector
                        grpc_pollset_set* /* interested_parties */,
                        HandshakeManager* handshake_manager) override;
 
-  void check_peer(tsi_peer peer, grpc_endpoint* ep,
+  void check_peer(tsi_peer peer, grpc_endpoint* ep, const ChannelArgs& /*args*/,
                   RefCountedPtr<grpc_auth_context>* auth_context,
                   grpc_closure* on_peer_checked) override;
 
@@ -90,7 +90,7 @@ class InsecureServerSecurityConnector : public grpc_server_security_connector {
                        grpc_pollset_set* /* interested_parties */,
                        HandshakeManager* handshake_manager) override;
 
-  void check_peer(tsi_peer peer, grpc_endpoint* ep,
+  void check_peer(tsi_peer peer, grpc_endpoint* ep, const ChannelArgs& /*args*/,
                   RefCountedPtr<grpc_auth_context>* auth_context,
                   grpc_closure* on_peer_checked) override;
 

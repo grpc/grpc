@@ -62,6 +62,7 @@ class Subprocess {
     process_ = gpr_subprocess_create(args_c.size(), args_c.data());
   }
 
+  int GetPID() { return gpr_subprocess_get_process_id(process_); }
   int Join() { return gpr_subprocess_join(process_); }
   void Interrupt() { gpr_subprocess_interrupt(process_); }
 
@@ -127,7 +128,11 @@ int RunChannelBenchmark(char* root) {
   std::vector<std::string> client_flags = {
       absl::StrCat(root, "/memory_usage_callback_client",
                    gpr_subprocess_binary_extension()),
-      "--target", grpc_core::JoinHostPort("127.0.0.1", port), "--nosecure"};
+      "--target",
+      grpc_core::JoinHostPort("127.0.0.1", port),
+      "--nosecure",
+      absl::StrCat("--server_pid=", svr.GetPID()),
+      absl::StrCat("--size=", absl::GetFlag(FLAGS_size))};
   Subprocess cli(client_flags);
   /* wait for completion */
   if ((status = cli.Join()) != 0) {
