@@ -225,7 +225,7 @@ const StaticTableEntry kStaticTable[hpack_constants::kLastStaticEntry] = {
     {"www-authenticate", ""},
 };
 
-GPR_ATTRIBUTE_NOINLINE HPackTable::Memento MakeMemento(size_t i) {
+HPackTable::Memento MakeMemento(size_t i) {
   auto sm = kStaticTable[i];
   return grpc_metadata_batch::Parse(
       sm.key, Slice::FromStaticString(sm.value),
