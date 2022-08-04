@@ -81,6 +81,7 @@ class ErrorList {
 
   // Returns the resulting status of parsing.
   absl::Status status() const;
+  absl::Status status(absl::string_view prefix) const;
 
   // Return true if there are no errors.
   bool ok() const { return field_errors_.empty(); }
@@ -344,9 +345,13 @@ class AutoLoader<absl::optional<T>> final : public LoaderInterface {
   void LoadInto(const Json& json, const JsonArgs& args, void* dst,
                 ErrorList* errors) const override {
     if (json.type() == Json::Type::JSON_NULL) return;
-    auto* opt = static_cast<absl::optional<T>*>(dst);
-    opt->emplace();
-    LoaderForType<T>()->LoadInto(json, args, &**opt, errors);
+    T value{};
+    size_t starting_error_size = errors->size();
+    LoaderForType<T>()->LoadInto(json, args, &value, errors);
+    if (errors->size() == starting_error_size) {
+      auto* opt = static_cast<absl::optional<T>*>(dst);
+      opt->emplace(std::move(value));
+    }
   }
 };
 
@@ -507,12 +512,13 @@ using JsonObjectLoader = json_detail::JsonObjectLoader<T>;
 using JsonLoaderInterface = json_detail::LoaderInterface;
 
 template <typename T>
-absl::StatusOr<T> LoadFromJson(const Json& json,
-                               const JsonArgs& args = JsonArgs()) {
+absl::StatusOr<T> LoadFromJson(
+    const Json& json, const JsonArgs& args = JsonArgs(),
+    absl::string_view error_prefix = "errors validating JSON") {
   ErrorList error_list;
   T result{};
   json_detail::LoaderForType<T>()->LoadInto(json, args, &result, &error_list);
-  if (!error_list.ok()) return error_list.status();
+  if (!error_list.ok()) return error_list.status(error_prefix);
   return std::move(result);
 }
 
