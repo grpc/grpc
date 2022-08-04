@@ -783,7 +783,7 @@ absl::StatusOr<XdsRouteConfigResource::Route::RouteAction> RouteActionParse(
       cluster.weight = google_protobuf_UInt32Value_value(weight);
       if (cluster.weight == 0) continue;
       sum_of_weights += cluster.weight;
-      if (context.use_v3) {
+      if (context.server.ShouldUseV3()) {
         auto typed_per_filter_config = ParseTypedPerFilterConfig<
             envoy_config_route_v3_WeightedCluster_ClusterWeight,
             envoy_config_route_v3_WeightedCluster_ClusterWeight_TypedPerFilterConfigEntry>(
@@ -980,7 +980,7 @@ absl::StatusOr<XdsRouteConfigResource> XdsRouteConfigResource::Parse(
       return absl::InvalidArgumentError("VirtualHost has no domains");
     }
     // Parse typed_per_filter_config.
-    if (context.use_v3) {
+    if (context.server.ShouldUseV3()) {
       auto typed_per_filter_config = ParseTypedPerFilterConfig<
           envoy_config_route_v3_VirtualHost,
           envoy_config_route_v3_VirtualHost_TypedPerFilterConfigEntry>(
@@ -1063,7 +1063,7 @@ absl::StatusOr<XdsRouteConfigResource> XdsRouteConfigResource::Parse(
         route.action
             .emplace<XdsRouteConfigResource::Route::NonForwardingAction>();
       }
-      if (context.use_v3) {
+      if (context.server.ShouldUseV3()) {
         auto typed_per_filter_config = ParseTypedPerFilterConfig<
             envoy_config_route_v3_Route,
             envoy_config_route_v3_Route_TypedPerFilterConfigEntry>(

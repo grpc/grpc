@@ -33,14 +33,13 @@ namespace grpc_core {
 // Used to inject type-specific logic into XdsClient.
 class XdsResourceType {
  public:
+  // Context passed into Decode().
   struct DecodeContext {
-    XdsClient* client;  // Used only for logging. Unsafe for dereferencing.
+    XdsClient* client;
     const XdsBootstrap::XdsServer& server;
     TraceFlag* tracer;
     upb_DefPool* symtab;
     upb_Arena* arena;
- // FIXME: remove this field; code should instead check server.ShouldUseV3()
-    bool use_v3;
     const XdsCertificateProviderPluginMapInterface*
         certificate_provider_plugin_map;
   };
