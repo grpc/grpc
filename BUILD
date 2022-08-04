@@ -5586,6 +5586,7 @@ grpc_cc_library(
         "grpc_security_base",
         "grpc_ssl_credentials",
         "grpc_trace",
+        "iomgr_fwd",
         "httpcli",
         "json",
         "ref_counted_ptr",
