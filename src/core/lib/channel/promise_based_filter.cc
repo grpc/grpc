@@ -27,6 +27,7 @@
 #include <grpc/status.h>
 
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/event_engine/event_engine_factory.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice.h"
@@ -44,7 +45,8 @@ BaseCallData::BaseCallData(grpc_call_element* elem,
       arena_(args->arena),
       call_combiner_(args->call_combiner),
       deadline_(args->deadline),
-      context_(args->context) {
+      context_(args->context),
+      event_engine_(grpc_event_engine::experimental::GetDefaultEventEngine()) {
   if (flags & kFilterExaminesServerInitialMetadata) {
     server_initial_metadata_latch_ = arena_->New<Latch<ServerMetadata*>>();
   }

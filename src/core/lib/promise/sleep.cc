@@ -52,9 +52,12 @@ Poll<absl::Status> Sleep::operator()() {
 }
 
 Sleep::ActiveClosure::ActiveClosure(Timestamp deadline)
-    : waker_(Activity::current()->MakeOwningWaker()),
-      timer_handle_(GetContext<EventEngine>()->RunAfter(
-          deadline - ExecCtx::Get()->Now(), this)) {}
+    : waker_(Activity::current()->MakeOwningWaker()) {
+  auto engine = GetContext<EventEngine>();
+  GPR_ASSERT(engine != nullptr &&
+             "An EventEngine context is required for Promise Sleep");
+  timer_handle_ = engine->RunAfter(deadline - ExecCtx::Get()->Now(), this);
+}
 
 void Sleep::ActiveClosure::Run() {
   ApplicationCallbackExecCtx callback_exec_ctx;
