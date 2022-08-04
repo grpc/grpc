@@ -17,30 +17,24 @@
 #include <grpc/support/port_platform.h>
 
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 
 #include <grpc/event_engine/endpoint_config.h>
-
-#include "src/core/lib/channel/channel_args.h"
+#include <grpc/impl/codegen/grpc_types.h>
 
 namespace grpc_event_engine {
 namespace experimental {
 
+/// A readonly \a EndpointConfig based on grpc_channel_args. This class does not
+/// take ownership of the grpc_endpoint_args*, and instances of this class
+/// should not be used after the underlying args are destroyed.
 class ChannelArgsEndpointConfig : public EndpointConfig {
  public:
-  ChannelArgsEndpointConfig() = default;
-  explicit ChannelArgsEndpointConfig(const grpc_core::ChannelArgs& args)
+  explicit ChannelArgsEndpointConfig(const grpc_channel_args* args)
       : args_(args) {}
-  ChannelArgsEndpointConfig(const ChannelArgsEndpointConfig& config) = default;
-  ChannelArgsEndpointConfig& operator=(const ChannelArgsEndpointConfig& other) =
-      default;
-  absl::optional<int> GetInt(absl::string_view key) const override;
-  absl::optional<absl::string_view> GetString(
-      absl::string_view key) const override;
-  void* GetVoidPointer(absl::string_view key) const override;
+  Setting Get(absl::string_view key) const override;
 
  private:
-  grpc_core::ChannelArgs args_;
+  const grpc_channel_args* args_;
 };
 
 }  // namespace experimental

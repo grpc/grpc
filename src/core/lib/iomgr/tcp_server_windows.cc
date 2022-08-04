@@ -29,7 +29,6 @@
 
 #include "absl/strings/str_cat.h"
 
-#include <grpc/event_engine/endpoint_config.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/log_windows.h>
@@ -38,6 +37,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/iocp_windows.h"
 #include "src/core/lib/iomgr/pollset_windows.h"
 #include "src/core/lib/iomgr/resolve_address.h"
@@ -45,12 +45,9 @@
 #include "src/core/lib/iomgr/socket_windows.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/iomgr/tcp_windows.h"
-#include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/slice/slice_internal.h"
 
 #define MIN_SAFE_ACCEPT_QUEUE_SIZE 100
-
-using ::grpc_event_engine::experimental::EndpointConfig;
 
 /* one listening port */
 typedef struct grpc_tcp_listener grpc_tcp_listener;
@@ -97,14 +94,17 @@ struct grpc_tcp_server {
 
   /* shutdown callback */
   grpc_closure* shutdown_complete;
+
+  grpc_channel_args* channel_args;
 };
 
 /* Public function. Allocates the proper data structures to hold a
    grpc_tcp_server. */
 static grpc_error_handle tcp_server_create(grpc_closure* shutdown_complete,
-                                           const EndpointConfig& config,
+                                           const grpc_channel_args* args,
                                            grpc_tcp_server** server) {
   grpc_tcp_server* s = (grpc_tcp_server*)gpr_malloc(sizeof(grpc_tcp_server));
+  s->channel_args = grpc_channel_args_copy(args);
   gpr_ref_init(&s->refs, 1);
   gpr_mu_init(&s->mu);
   s->active_ports = 0;
@@ -132,6 +132,7 @@ static void destroy_server(void* arg, grpc_error_handle error) {
     grpc_winsocket_destroy(sp->socket);
     gpr_free(sp);
   }
+  grpc_channel_args_destroy(s->channel_args);
   gpr_mu_destroy(&s->mu);
   gpr_free(s);
 }
@@ -362,7 +363,7 @@ static void on_accept(void* arg, grpc_error_handle error) {
       }
       std::string fd_name = absl::StrCat("tcp_server:", peer_name_string);
       ep = grpc_tcp_create(grpc_winsocket_create(sock, fd_name.c_str()),
-                           peer_name_string);
+                           sp->server->channel_args, peer_name_string);
     } else {
       closesocket(sock);
     }
