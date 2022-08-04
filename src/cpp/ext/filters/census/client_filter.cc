@@ -117,8 +117,7 @@ OpenCensusCallTracer::OpenCensusCallAttemptTracer::OpenCensusCallAttemptTracer(
 }
 
 void OpenCensusCallTracer::OpenCensusCallAttemptTracer::
-    RecordSendInitialMetadata(grpc_metadata_batch* send_initial_metadata,
-                              uint32_t /*flags*/) {
+    RecordSendInitialMetadata(grpc_metadata_batch* send_initial_metadata) {
   char tracing_buf[kMaxTraceContextLen];
   size_t tracing_len = TraceContextSerialize(context_.Context(), tracing_buf,
                                              kMaxTraceContextLen);

@@ -14,18 +14,18 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_FACTORY_H
-#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_FACTORY_H
+#ifndef GRPC_CORE_LIB_LOAD_BALANCING_LB_POLICY_FACTORY_H
+#define GRPC_CORE_LIB_LOAD_BALANCING_LB_POLICY_FACTORY_H
 
 #include <grpc/support/port_platform.h>
 
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
-#include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/load_balancing/lb_policy.h"
 
 namespace grpc_core {
 
@@ -46,4 +46,4 @@ class LoadBalancingPolicyFactory {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_FACTORY_H
+#endif  // GRPC_CORE_LIB_LOAD_BALANCING_LB_POLICY_FACTORY_H

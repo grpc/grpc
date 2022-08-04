@@ -33,8 +33,8 @@
 
 #include <grpc/support/log.h>
 
-#include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/load_balancing/lb_policy_registry.h"
 #include "src/proto/grpc/lookup/v1/rls_config.upb.h"
 #include "src/proto/grpc/lookup/v1/rls_config.upbdefs.h"
 

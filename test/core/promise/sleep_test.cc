@@ -14,7 +14,11 @@
 
 #include "src/core/lib/promise/sleep.h"
 
+#include <algorithm>
+#include <cstddef>
 #include <memory>
+#include <utility>
+#include <vector>
 
 #include "absl/synchronization/notification.h"
 #include "gtest/gtest.h"
@@ -23,6 +27,7 @@
 
 #include "src/core/lib/event_engine/event_engine_factory.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/promise/exec_ctx_wakeup_scheduler.h"
 #include "src/core/lib/promise/race.h"
 #include "test/core/promise/test_wakeup_schedulers.h"
 
@@ -100,6 +105,34 @@ TEST(Sleep, MoveSemantics) {
   done.WaitForNotification();
   exec_ctx.InvalidateNow();
   EXPECT_GE(ExecCtx::Get()->Now(), done_time);
+}
+
+TEST(Sleep, StressTest) {
+  // Kick off a bunch sleeps for one second.
+  static const int kNumActivities = 100000;
+  ExecCtx exec_ctx;
+  std::vector<std::shared_ptr<absl::Notification>> notifications;
+  std::vector<ActivityPtr> activities;
+  auto engine = grpc_event_engine::experimental::GetDefaultEventEngine();
+  gpr_log(GPR_INFO, "Starting %d sleeps for 1sec", kNumActivities);
+  for (int i = 0; i < kNumActivities; i++) {
+    auto notification = std::make_shared<absl::Notification>();
+    auto activity = MakeActivity(
+        Sleep(exec_ctx.Now() + Duration::Seconds(1)), ExecCtxWakeupScheduler(),
+        [notification](absl::Status /*r*/) { notification->Notify(); },
+        engine.get());
+    notifications.push_back(std::move(notification));
+    activities.push_back(std::move(activity));
+  }
+  gpr_log(GPR_INFO,
+          "Waiting for the first %d sleeps, whilst cancelling the other half",
+          kNumActivities / 2);
+  for (size_t i = 0; i < kNumActivities / 2; i++) {
+    notifications[i]->WaitForNotification();
+    activities[i].reset();
+    activities[i + kNumActivities / 2].reset();
+    exec_ctx.Flush();
+  }
 }
 
 }  // namespace
