@@ -7271,6 +7271,7 @@ grpc_cc_library(
         "json",
         "json_args",
         "json_object_loader",
+        "no_destruct",
         "time",
     ],
 )
