@@ -6496,6 +6496,7 @@ grpc_cc_library(
         "iomgr_fwd",
         "iomgr_timer",
         "memory_quota",
+        "no_destruct",
         "poll",
         "ref_counted",
         "ref_counted_ptr",

@@ -78,10 +78,6 @@ void HPackTable::MementoRingBuffer::Rebuild(uint32_t max_entries) {
   entries_.swap(entries);
 }
 
-HPackTable::HPackTable() : static_metadata_(GetStaticMementos()) {}
-
-HPackTable::~HPackTable() = default;
-
 /* Evict one element from the table */
 void HPackTable::EvictOne() {
   auto first_entry = entries_.PopOne();
@@ -240,11 +236,6 @@ GPR_ATTRIBUTE_NOINLINE HPackTable::Memento MakeMemento(size_t i) {
 }
 
 }  // namespace
-
-auto HPackTable::GetStaticMementos() -> const StaticMementos& {
-  static const StaticMementos* const static_mementos = new StaticMementos();
-  return *static_mementos;
-}
 
 HPackTable::StaticMementos::StaticMementos() {
   for (uint32_t i = 0; i < hpack_constants::kLastStaticEntry; i++) {
