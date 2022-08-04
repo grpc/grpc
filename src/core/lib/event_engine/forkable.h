@@ -44,7 +44,7 @@ class Forkable {
   virtual void PostforkChild() = 0;
 
  protected:
-  virtual ~Forkable() = default;
+  ~Forkable() = default;
 };
 
 // Add Forkables from the set of objects that are supported.
