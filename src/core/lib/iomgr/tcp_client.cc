@@ -22,13 +22,14 @@
 
 grpc_tcp_client_vtable* grpc_tcp_client_impl;
 
-int64_t grpc_tcp_client_connect(
-    grpc_closure* on_connect, grpc_endpoint** endpoint,
-    grpc_pollset_set* interested_parties,
-    const grpc_event_engine::experimental::EndpointConfig& config,
-    const grpc_resolved_address* addr, grpc_core::Timestamp deadline) {
+int64_t grpc_tcp_client_connect(grpc_closure* on_connect,
+                                grpc_endpoint** endpoint,
+                                grpc_pollset_set* interested_parties,
+                                const grpc_channel_args* channel_args,
+                                const grpc_resolved_address* addr,
+                                grpc_core::Timestamp deadline) {
   return grpc_tcp_client_impl->connect(on_connect, endpoint, interested_parties,
-                                       config, addr, deadline);
+                                       channel_args, addr, deadline);
 }
 
 bool grpc_tcp_client_cancel_connect(int64_t connection_handle) {
