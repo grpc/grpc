@@ -506,8 +506,8 @@ void MaybeLogCluster(const XdsResourceType::DecodeContext& context,
 }  // namespace
 
 absl::StatusOr<XdsResourceType::DecodeResult> XdsClusterResourceType::Decode(
-    const XdsResourceType::DecodeContext& context, absl::string_view serialized_resource,
-    bool is_v2) const {
+    const XdsResourceType::DecodeContext& context,
+    absl::string_view serialized_resource, bool is_v2) const {
   // Parse serialized proto.
   auto* resource = envoy_config_cluster_v3_Cluster_parse(
       serialized_resource.data(), serialized_resource.size(), context.arena);

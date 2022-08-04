@@ -149,8 +149,7 @@ class XdsClient::ChannelState::AdsCallState
     absl::Status ProcessAdsResponseFields(AdsResponseFields fields) override
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
 
-    void ParseResource(upb_Arena* arena, size_t idx,
-                       absl::string_view type_url,
+    void ParseResource(upb_Arena* arena, size_t idx, absl::string_view type_url,
                        absl::string_view serialized_resource) override
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
 
@@ -701,8 +700,11 @@ void XdsClient::ChannelState::AdsCallState::AdsResponseParser::ParseResource(
   }
   // Parse the resource.
   XdsResourceType::DecodeContext context = {
-      xds_client(), ads_call_state_->chand()->server_, &grpc_xds_client_trace,
-      xds_client()->symtab_.ptr(), arena,
+      xds_client(),
+      ads_call_state_->chand()->server_,
+      &grpc_xds_client_trace,
+      xds_client()->symtab_.ptr(),
+      arena,
       xds_client()->bootstrap_->certificate_provider_plugin_map()};
   absl::StatusOr<XdsResourceType::DecodeResult> result =
       result_.type->Decode(context, serialized_resource, is_v2);

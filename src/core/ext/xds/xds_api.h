@@ -179,7 +179,7 @@ class XdsApi {
   XdsClient* client_;
   TraceFlag* tracer_;
   const XdsBootstrap::Node* node_;  // Do not own.
-  upb::SymbolTable* symtab_;                 // Do not own.
+  upb::SymbolTable* symtab_;        // Do not own.
   const std::string build_version_;
   const std::string user_agent_name_;
   const std::string user_agent_version_;

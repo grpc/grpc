@@ -1059,8 +1059,8 @@ void MaybeLogListener(const XdsResourceType::DecodeContext& context,
 }  // namespace
 
 absl::StatusOr<XdsResourceType::DecodeResult> XdsListenerResourceType::Decode(
-    const XdsResourceType::DecodeContext& context, absl::string_view serialized_resource,
-    bool is_v2) const {
+    const XdsResourceType::DecodeContext& context,
+    absl::string_view serialized_resource, bool is_v2) const {
   // Parse serialized proto.
   auto* resource = envoy_config_listener_v3_Listener_parse(
       serialized_resource.data(), serialized_resource.size(), context.arena);

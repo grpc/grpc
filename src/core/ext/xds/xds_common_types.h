@@ -94,7 +94,8 @@ struct ExtractExtensionTypeNameResult {
 };
 
 absl::StatusOr<ExtractExtensionTypeNameResult> ExtractExtensionTypeName(
-    const XdsResourceType::DecodeContext& context, const google_protobuf_Any* any);
+    const XdsResourceType::DecodeContext& context,
+    const google_protobuf_Any* any);
 
 }  // namespace grpc_core
 

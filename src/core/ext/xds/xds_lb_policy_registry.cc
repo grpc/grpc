@@ -53,8 +53,8 @@ class RingHashLbPolicyConfigFactory
     : public XdsLbPolicyRegistry::ConfigFactory {
  public:
   absl::StatusOr<Json::Object> ConvertXdsLbPolicyConfig(
-      const XdsResourceType::DecodeContext& context, absl::string_view configuration,
-      int /* recursion_depth */) override {
+      const XdsResourceType::DecodeContext& context,
+      absl::string_view configuration, int /* recursion_depth */) override {
     const auto* resource =
         envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_parse(
             configuration.data(), configuration.size(), context.arena);
@@ -115,8 +115,8 @@ class WrrLocalityLbPolicyConfigFactory
     : public XdsLbPolicyRegistry::ConfigFactory {
  public:
   absl::StatusOr<Json::Object> ConvertXdsLbPolicyConfig(
-      const XdsResourceType::DecodeContext& context, absl::string_view configuration,
-      int recursion_depth) override {
+      const XdsResourceType::DecodeContext& context,
+      absl::string_view configuration, int recursion_depth) override {
     const auto* resource =
         envoy_extensions_load_balancing_policies_wrr_locality_v3_WrrLocality_parse(
             configuration.data(), configuration.size(), context.arena);
@@ -151,8 +151,9 @@ class WrrLocalityLbPolicyConfigFactory
   }
 };
 
-absl::StatusOr<Json> ParseStructToJson(const XdsResourceType::DecodeContext& context,
-                                       const google_protobuf_Struct* resource) {
+absl::StatusOr<Json> ParseStructToJson(
+    const XdsResourceType::DecodeContext& context,
+    const google_protobuf_Struct* resource) {
   upb::Status status;
   const auto* msg_def = google_protobuf_Struct_getmsgdef(context.symtab);
   size_t json_size = upb_JsonEncode(resource, msg_def, context.symtab, 0,

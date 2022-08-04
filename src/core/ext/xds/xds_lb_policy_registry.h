@@ -39,8 +39,8 @@ class XdsLbPolicyRegistry {
    public:
     virtual ~ConfigFactory() {}
     virtual absl::StatusOr<Json::Object> ConvertXdsLbPolicyConfig(
-        const XdsResourceType::DecodeContext& context, absl::string_view configuration,
-        int recursion_depth) = 0;
+        const XdsResourceType::DecodeContext& context,
+        absl::string_view configuration, int recursion_depth) = 0;
 
     virtual absl::string_view type() = 0;
   };

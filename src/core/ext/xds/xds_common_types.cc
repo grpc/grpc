@@ -398,7 +398,8 @@ absl::StatusOr<CommonTlsContext> CommonTlsContext::Parse(
 }
 
 absl::StatusOr<ExtractExtensionTypeNameResult> ExtractExtensionTypeName(
-    const XdsResourceType::DecodeContext& context, const google_protobuf_Any* any) {
+    const XdsResourceType::DecodeContext& context,
+    const google_protobuf_Any* any) {
   ExtractExtensionTypeNameResult result;
   result.type = UpbStringToAbsl(google_protobuf_Any_type_url(any));
   if (result.type == "type.googleapis.com/xds.type.v3.TypedStruct" ||

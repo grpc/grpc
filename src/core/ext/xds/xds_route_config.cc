@@ -1113,9 +1113,9 @@ void MaybeLogRouteConfiguration(
 }  // namespace
 
 absl::StatusOr<XdsResourceType::DecodeResult>
-XdsRouteConfigResourceType::Decode(const XdsResourceType::DecodeContext& context,
-                                   absl::string_view serialized_resource,
-                                   bool /*is_v2*/) const {
+XdsRouteConfigResourceType::Decode(
+    const XdsResourceType::DecodeContext& context,
+    absl::string_view serialized_resource, bool /*is_v2*/) const {
   // Parse serialized proto.
   auto* resource = envoy_config_route_v3_RouteConfiguration_parse(
       serialized_resource.data(), serialized_resource.size(), context.arena);

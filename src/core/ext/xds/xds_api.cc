@@ -195,8 +195,7 @@ void PopulateBuildVersion(const XdsApiContext& context,
                           encoded_build_version.size(), context.arena);
 }
 
-void PopulateNode(const XdsApiContext& context,
-                  const XdsBootstrap::Node* node,
+void PopulateNode(const XdsApiContext& context, const XdsBootstrap::Node* node,
                   const std::string& build_version,
                   const std::string& user_agent_name,
                   const std::string& user_agent_version,

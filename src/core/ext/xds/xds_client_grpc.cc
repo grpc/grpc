@@ -25,8 +25,8 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
-#include "absl/strings/string_view.h"
 #include "absl/strings/str_join.h"
+#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
@@ -35,8 +35,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/ext/xds/certificate_provider_registry.h"
 #include "src/core/ext/xds/certificate_provider_factory.h"
+#include "src/core/ext/xds/certificate_provider_registry.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_channel_args.h"
 #include "src/core/ext/xds/xds_cluster_specifier_plugin.h"
@@ -75,8 +75,8 @@ class GrpcXdsCertificateProviderPluginMap
         CertificateProviderRegistry::LookupCertificateProviderFactory(
             plugin_name);
     if (factory == nullptr) {
-      return absl::InvalidArgumentError(absl::StrCat(
-          "Unrecognized plugin name: ", plugin_name));
+      return absl::InvalidArgumentError(
+          absl::StrCat("Unrecognized plugin name: ", plugin_name));
     }
     grpc_error_handle error = GRPC_ERROR_NONE;
     auto parsed_config =
