@@ -235,6 +235,9 @@ class LoadBool : public LoaderInterface {
  public:
   void LoadInto(const Json& json, const JsonArgs& /*args*/, void* dst,
                 ErrorList* errors) const override;
+
+ protected:
+  ~LoadBool() = default;
 };
 
 // Loads an unprocessed JSON object value.
@@ -242,6 +245,9 @@ class LoadUnprocessedJsonObject : public LoaderInterface {
  public:
   void LoadInto(const Json& json, const JsonArgs& /*args*/, void* dst,
                 ErrorList* errors) const override;
+
+ protected:
+  ~LoadUnprocessedJsonObject() = default;
 };
 
 // Load a vector of some type.
