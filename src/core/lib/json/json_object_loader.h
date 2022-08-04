@@ -338,6 +338,10 @@ class AutoLoader<std::vector<T>> final : public LoadVector {
   }
 };
 
+// Specialization of AutoLoader for vector<bool> - we need a different
+// implementation because, as vector<bool> packs bits in its implementation, the
+// technique of returning a void* from Emplace() for the generic vector loader
+// doesn't work.
 template <>
 class AutoLoader<std::vector<bool>> final : public LoaderInterface {
  public:
