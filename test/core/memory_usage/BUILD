@@ -91,6 +91,7 @@ grpc_cc_binary(
     external_deps = [
         "absl/flags:flag",
         "absl/flags:parse",
+        "absl/time",
         "gtest",
     ],
     tags = [
