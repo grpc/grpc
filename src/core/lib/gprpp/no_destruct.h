@@ -23,6 +23,28 @@
 
 namespace grpc_core {
 
+// NoDestruct<T> is a wrapper around an object of type T that:
+// - stores the value inline - no heap allocation
+// - is non-copyable
+// - is eagerly constructed (i.e. the constructor is called when NoDestruct is
+//   constructed)
+// - *NEVER* calls ~T()
+// It's useful in cases where no ordering can be assumed between destructors of
+// objects that need to refer to each other - such as at program destruction
+// time.
+// Examples:
+//  // globally available object:
+//  static NoDestruct<Foo> g_foo(1, "foo", 2.0);
+//  // used as:
+//  g_foo->DoSomething();
+//  // singleton function:
+//  Bar* BarSingleton() {
+//   static NoDestruct<Bar> bar(1, "bar", 2.0);
+//   return &*bar;
+//  }
+// The globally available version is constructed at program startup, and the
+// singleton version is constructed at the first call to BarSingleton().
+// Neither Foo nor Bar instance will be destructed.
 template <typename T>
 class NoDestruct {
  public:
@@ -45,6 +67,10 @@ class NoDestruct {
   typename std::aligned_storage<sizeof(T), alignof(T)>::type space_;
 };
 
+// Helper for when a program desires a single instance of a default constructed
+// T to be always available.
+// T is constructed eagerly at program startup, so it's essentially free to load
+// the pointer to the instance.
 template <typename T>
 class NoDestructSingleton {
  public:
