@@ -78,6 +78,6 @@ grpc_cc_library(
     external_deps = ["absl/strings"],
     deps = [
         "//:event_engine_base_hdrs",
-        "//:gpr_base",
+        "//:gpr",
     ],
 )
