@@ -82,8 +82,8 @@ void PrepareFork() {}
 void PostforkParent() {}
 void PostforkChild() {}
 
-void ManageForkable(Forkable* engine) {}
-void StopManagingForkable(Forkable* engine) {}
+void ManageForkable(Forkable* /* forkable */) {}
+void StopManagingForkable(Forkable* /* forkable */) {}
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

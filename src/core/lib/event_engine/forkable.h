@@ -46,13 +46,13 @@ class Forkable {
 };
 
 // Add Forkables from the set of objects that are supported.
-// Upon fork, each engine will have its respective fork callbacks called on the
-// thread that invoked the fork.
+// Upon fork, each forkable will have its respective fork hooks called on
+// the thread that invoked the fork.
 //
-// Ordering of fork callback operations is not guaranteed.
-void ManageForkable(Forkable* engine);
+// Relative ordering of fork callback operations is not guaranteed.
+void ManageForkable(Forkable* forkable);
 // Remove a forkable from the managed set.
-void StopManagingForkable(Forkable* engine);
+void StopManagingForkable(Forkable* forkable);
 
 }  // namespace experimental
 }  // namespace grpc_event_engine
