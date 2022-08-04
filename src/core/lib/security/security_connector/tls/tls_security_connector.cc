@@ -353,7 +353,7 @@ void TlsChannelSecurityConnector::add_handshakers(
 }
 
 void TlsChannelSecurityConnector::check_peer(
-    tsi_peer peer, grpc_endpoint* /*ep*/,
+    tsi_peer peer, grpc_endpoint* /*ep*/, const ChannelArgs& /*args*/,
     RefCountedPtr<grpc_auth_context>* auth_context,
     grpc_closure* on_peer_checked) {
   const char* target_name = overridden_target_name_.empty()
@@ -640,7 +640,7 @@ void TlsServerSecurityConnector::add_handshakers(
 }
 
 void TlsServerSecurityConnector::check_peer(
-    tsi_peer peer, grpc_endpoint* /*ep*/,
+    tsi_peer peer, grpc_endpoint* /*ep*/, const ChannelArgs& /*args*/,
     RefCountedPtr<grpc_auth_context>* auth_context,
     grpc_closure* on_peer_checked) {
   grpc_error_handle error = grpc_ssl_check_alpn(&peer);

@@ -137,11 +137,11 @@ absl::Status ConnectionManager::BindAndStartListener(
   EventEngine* event_engine = listener_type_oracle ? oracle_event_engine_.get()
                                                    : test_event_engine_.get();
 
-  ChannelArgsEndpointConfig config;
   auto status = event_engine->CreateListener(
       std::move(accept_cb),
-      [](absl::Status status) { GPR_ASSERT(status.ok()); }, config,
-      absl::make_unique<grpc_core::MemoryQuota>("foo"));
+      [](absl::Status status) { GPR_ASSERT(status.ok()); },
+      ChannelArgsEndpointConfig(nullptr),
+      std::make_unique<grpc_core::MemoryQuota>("foo"));
   if (!status.ok()) {
     return status.status();
   }
@@ -174,7 +174,6 @@ ConnectionManager::CreateConnection(std::string target_addr,
       absl::StrCat("connection-", std::to_string(num_processed_connections_++));
   EventEngine* event_engine = client_type_oracle ? oracle_event_engine_.get()
                                                  : test_event_engine_.get();
-  ChannelArgsEndpointConfig config;
   event_engine->Connect(
       [this](absl::StatusOr<std::unique_ptr<Endpoint>> status) {
         if (!status.ok()) {
@@ -185,7 +184,7 @@ ConnectionManager::CreateConnection(std::string target_addr,
           last_in_progress_connection_.SetClientEndpoint(std::move(*status));
         }
       },
-      URIToResolvedAddress(target_addr), config,
+      URIToResolvedAddress(target_addr), ChannelArgsEndpointConfig(nullptr),
       memory_quota_->CreateMemoryAllocator(conn_name), timeout);
 
   auto client_endpoint = last_in_progress_connection_.GetClientEndpoint();

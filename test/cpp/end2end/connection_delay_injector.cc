@@ -21,12 +21,9 @@
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/resource_quota/api.h"
 
 // defined in tcp_client.cc
 extern grpc_tcp_client_vtable* grpc_tcp_client_impl;
-
-using ::grpc_event_engine::experimental::EndpointConfig;
 
 namespace grpc {
 namespace testing {
@@ -44,17 +41,17 @@ ConnectionAttemptInjector* g_injector ABSL_GUARDED_BY(*g_mu) = nullptr;
 
 int64_t TcpConnectWithDelay(grpc_closure* closure, grpc_endpoint** ep,
                             grpc_pollset_set* interested_parties,
-                            const EndpointConfig& config,
+                            const grpc_channel_args* channel_args,
                             const grpc_resolved_address* addr,
                             grpc_core::Timestamp deadline) {
   grpc_core::MutexLock lock(g_mu);
   if (g_injector == nullptr) {
-    g_original_vtable->connect(closure, ep, interested_parties, config, addr,
-                               deadline);
+    g_original_vtable->connect(closure, ep, interested_parties, channel_args,
+                               addr, deadline);
     return 0;
   }
-  g_injector->HandleConnection(closure, ep, interested_parties, config, addr,
-                               deadline);
+  g_injector->HandleConnection(closure, ep, interested_parties, channel_args,
+                               addr, deadline);
   return 0;
 }
 
@@ -92,10 +89,10 @@ void ConnectionAttemptInjector::Start() {
 
 void ConnectionAttemptInjector::AttemptConnection(
     grpc_closure* closure, grpc_endpoint** ep,
-    grpc_pollset_set* interested_parties, const EndpointConfig& config,
+    grpc_pollset_set* interested_parties, const grpc_channel_args* channel_args,
     const grpc_resolved_address* addr, grpc_core::Timestamp deadline) {
-  g_original_vtable->connect(closure, ep, interested_parties, config, addr,
-                             deadline);
+  g_original_vtable->connect(closure, ep, interested_parties, channel_args,
+                             addr, deadline);
 }
 
 //
@@ -104,9 +101,9 @@ void ConnectionAttemptInjector::AttemptConnection(
 
 ConnectionAttemptInjector::InjectedDelay::InjectedDelay(
     grpc_core::Duration duration, grpc_closure* closure, grpc_endpoint** ep,
-    grpc_pollset_set* interested_parties, const EndpointConfig& config,
+    grpc_pollset_set* interested_parties, const grpc_channel_args* channel_args,
     const grpc_resolved_address* addr, grpc_core::Timestamp deadline)
-    : attempt_(closure, ep, interested_parties, config, addr, deadline) {
+    : attempt_(closure, ep, interested_parties, channel_args, addr, deadline) {
   GRPC_CLOSURE_INIT(&timer_callback_, TimerCallback, this, nullptr);
   grpc_core::Timestamp now = grpc_core::ExecCtx::Get()->Now();
   duration = std::min(duration, deadline - now);
@@ -127,10 +124,10 @@ void ConnectionAttemptInjector::InjectedDelay::TimerCallback(
 
 void ConnectionDelayInjector::HandleConnection(
     grpc_closure* closure, grpc_endpoint** ep,
-    grpc_pollset_set* interested_parties, const EndpointConfig& config,
+    grpc_pollset_set* interested_parties, const grpc_channel_args* channel_args,
     const grpc_resolved_address* addr, grpc_core::Timestamp deadline) {
-  new InjectedDelay(duration_, closure, ep, interested_parties, config, addr,
-                    deadline);
+  new InjectedDelay(duration_, closure, ep, interested_parties, channel_args,
+                    addr, deadline);
 }
 
 //
@@ -216,7 +213,7 @@ std::unique_ptr<ConnectionHoldInjector::Hold> ConnectionHoldInjector::AddHold(
 
 void ConnectionHoldInjector::HandleConnection(
     grpc_closure* closure, grpc_endpoint** ep,
-    grpc_pollset_set* interested_parties, const EndpointConfig& config,
+    grpc_pollset_set* interested_parties, const grpc_channel_args* channel_args,
     const grpc_resolved_address* addr, grpc_core::Timestamp deadline) {
   const int port = grpc_sockaddr_get_port(addr);
   gpr_log(GPR_INFO, "==> HandleConnection(): port=%d", port);
@@ -232,7 +229,7 @@ void ConnectionHoldInjector::HandleConnection(
                                       hold, nullptr);
         }
         hold->queued_attempt_ = absl::make_unique<QueuedAttempt>(
-            closure, ep, interested_parties, config, addr, deadline);
+            closure, ep, interested_parties, channel_args, addr, deadline);
         hold->start_cv_.Signal();
         holds_.erase(it);
         return;
@@ -240,7 +237,8 @@ void ConnectionHoldInjector::HandleConnection(
     }
   }
   // Anything we're not holding should proceed normally.
-  AttemptConnection(closure, ep, interested_parties, config, addr, deadline);
+  AttemptConnection(closure, ep, interested_parties, channel_args, addr,
+                    deadline);
 }
 
 }  // namespace testing
