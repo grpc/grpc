@@ -254,8 +254,8 @@ class LoadVector : public LoaderInterface {
   ~LoadVector() override = default;
 
  private:
-  virtual void LoadOne(const Json& json, const JsonArgs& args, void* dst,
-                       ErrorList* errors) const = 0;
+  virtual void* EmplaceBack(void* dst) const = 0;
+  virtual const LoaderInterface* ElementLoader() const = 0;
 };
 
 // Load a map of string->some type.
@@ -268,9 +268,22 @@ class LoadMap : public LoaderInterface {
   ~LoadMap() override = default;
 
  private:
-  virtual void LoadOne(const Json& json, const JsonArgs& args,
-                       const std::string& name, void* dst,
-                       ErrorList* errors) const = 0;
+  virtual void* Insert(const std::string& name, void* dst) const = 0;
+  virtual const LoaderInterface* ElementLoader() const = 0;
+};
+
+// Load an optional of some type.
+class LoadOptional : public LoaderInterface {
+ public:
+  void LoadInto(const Json& json, const JsonArgs& args, void* dst,
+                ErrorList* errors) const override;
+
+ protected:
+  ~LoadOptional() override = default;
+
+ private:
+  virtual void* Emplace(void* dst) const = 0;
+  virtual const LoaderInterface* ElementLoader() const = 0;
 };
 
 // Fetch a LoaderInterface for some type.
@@ -316,38 +329,50 @@ class AutoLoader<Json::Object> final : public LoadUnprocessedJsonObject {};
 template <typename T>
 class AutoLoader<std::vector<T>> final : public LoadVector {
  private:
-  void LoadOne(const Json& json, const JsonArgs& args, void* dst,
-               ErrorList* errors) const final {
+  void* EmplaceBack(void* dst) const final {
     auto* vec = static_cast<std::vector<T>*>(dst);
-    T value{};
-    LoaderForType<T>()->LoadInto(json, args, &value, errors);
-    vec->push_back(std::move(value));
+    vec->emplace_back();
+    return &vec->back();
   }
+  const LoaderInterface* ElementLoader() const final {
+    return LoaderForType<T>();
+  }
+};
+
+// Specialization of AutoLoader for vector<bool> - we need a different
+// implementation because, as vector<bool> packs bits in its implementation, the
+// technique of returning a void* from Emplace() for the generic vector loader
+// doesn't work.
+template <>
+class AutoLoader<std::vector<bool>> final : public LoaderInterface {
+ public:
+  void LoadInto(const Json& json, const JsonArgs& args, void* dst,
+                ErrorList* errors) const override;
 };
 
 // Specializations of AutoLoader for maps.
 template <typename T>
 class AutoLoader<std::map<std::string, T>> final : public LoadMap {
  private:
-  void LoadOne(const Json& json, const JsonArgs& args, const std::string& name,
-               void* dst, ErrorList* errors) const final {
-    auto* map = static_cast<std::map<std::string, T>*>(dst);
-    T value{};
-    LoaderForType<T>()->LoadInto(json, args, &value, errors);
-    map->emplace(name, std::move(value));
+  void* Insert(const std::string& name, void* dst) const final {
+    return &static_cast<std::map<std::string, T>*>(dst)
+                ->emplace(name, T())
+                .first->second;
+  };
+  const LoaderInterface* ElementLoader() const final {
+    return LoaderForType<T>();
   }
 };
 
 // Specializations of AutoLoader for absl::optional<>.
 template <typename T>
-class AutoLoader<absl::optional<T>> final : public LoaderInterface {
+class AutoLoader<absl::optional<T>> final : public LoadOptional {
  public:
-  void LoadInto(const Json& json, const JsonArgs& args, void* dst,
-                ErrorList* errors) const override {
-    if (json.type() == Json::Type::JSON_NULL) return;
-    auto* opt = static_cast<absl::optional<T>*>(dst);
-    opt->emplace();
-    LoaderForType<T>()->LoadInto(json, args, &**opt, errors);
+  void* Emplace(void* dst) const final {
+    return &static_cast<absl::optional<T>*>(dst)->emplace();
+  }
+  const LoaderInterface* ElementLoader() const final {
+    return LoaderForType<T>();
   }
 };
 
@@ -413,8 +438,8 @@ class Vec<T, 0> {
 bool LoadObject(const Json& json, const JsonArgs& args, const Element* elements,
                 size_t num_elements, void* dst, ErrorList* errors);
 
-// Adaptor type - takes a compile time computed list of elements and implements
-// LoaderInterface by calling LoadObject.
+// Adaptor type - takes a compile time computed list of elements and
+// implements LoaderInterface by calling LoadObject.
 template <typename T, size_t kElemCount, typename Hidden = void>
 class FinishedJsonObjectLoader final : public LoaderInterface {
  public:
@@ -453,8 +478,8 @@ class FinishedJsonObjectLoader<T, kElemCount,
 };
 
 // Builder type for JSON object loaders.
-// Concatenate fields with Field, OptionalField, and then call Finish to obtain
-// an object that implements LoaderInterface.
+// Concatenate fields with Field, OptionalField, and then call Finish to
+// obtain an object that implements LoaderInterface.
 template <typename T, size_t kElemCount = 0>
 class JsonObjectLoader final {
  public:
