@@ -71,6 +71,9 @@ def main(argv):  # pylint: disable=too-many-locals,too-many-branches,too-many-st
     if len(argv) > 1:
         raise app.UsageError('Too many command-line arguments.')
 
+    # Must be called before KubernetesApiManager or GcpApiManager init.
+    xds_flags.set_socket_default_timeout_from_flag()
+
     command = _CMD.value
     security_mode = _SECURITY.value
 

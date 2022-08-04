@@ -20,7 +20,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/filters/client_channel/subchannel.h"
-#include "src/core/ext/filters/client_channel/subchannel_interface.h"
+#include "src/core/lib/load_balancing/subchannel_interface.h"
 
 namespace grpc_core {
 

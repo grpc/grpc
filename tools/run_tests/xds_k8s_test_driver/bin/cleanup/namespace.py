@@ -25,6 +25,9 @@ def main(argv):
         raise app.UsageError('Too many command-line arguments.')
     cleanup.load_keep_config()
 
+    # Must be called before KubernetesApiManager or GcpApiManager init.
+    xds_flags.set_socket_default_timeout_from_flag()
+
     project: str = xds_flags.PROJECT.value
     network: str = xds_flags.NETWORK.value
     gcp_service_account: str = xds_k8s_flags.GCP_SERVICE_ACCOUNT.value
