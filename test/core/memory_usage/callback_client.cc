@@ -150,16 +150,6 @@ int main(int argc, char** argv) {
   // Getting peak memory usage
   long peak_server_memory = GetMemUsage(absl::GetFlag(FLAGS_server_pid));
   long peak_client_memory = GetMemUsage();
-  gpr_log(GPR_INFO, "Before Server Mem: %ld", before_server_memory);
-  gpr_log(GPR_INFO, "Before Client Mem: %ld", before_client_memory);
-  gpr_log(GPR_INFO, "Peak Server Mem: %ld", peak_server_memory);
-  gpr_log(GPR_INFO, "Peak Client Mem: %ld", peak_client_memory);
-  gpr_log(GPR_INFO, "Server Per Channel Memory: %f",
-          static_cast<float>(peak_server_memory - before_server_memory) /
-              static_cast<float>(size));
-  gpr_log(GPR_INFO, "Client Per Channel Memory: %f",
-          static_cast<float>(peak_client_memory - before_client_memory) /
-              static_cast<float>(size));
 
   // Checking that all channels are still open
   for (int i = 0; i < size; ++i) {
@@ -168,6 +158,15 @@ int main(int argc, char** argv) {
                                          std::chrono::system_clock::now() +
                                              std::chrono::milliseconds(1)));
   }
+
+  printf("---------Client channel stats--------\n");
+  printf("client channel memory usage: %f bytes per channel\n",
+         static_cast<double>(peak_client_memory - before_client_memory) /
+             size * 1024);
+  printf("---------Server channel stats--------\n");
+  printf("server channel memory usage: %f bytes per channel\n",
+         static_cast<double>(peak_server_memory - before_server_memory) /
+             size * 1024);
   gpr_log(GPR_INFO, "Client Done");
   return 0;
 }

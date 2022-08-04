@@ -47,6 +47,10 @@ _INTERESTING = {
         (rb'client call memory usage: ([0-9\.]+) bytes per call', float),
     'server call':
         (rb'server call memory usage: ([0-9\.]+) bytes per call', float),
+    'client channel':
+        (rb'client channel memory usage: ([0-9\.]+) bytes per channel', float),
+    'server channel':
+        (rb'server channel memory usage: ([0-9\.]+) bytes per channel', float),
 }
 
 _SCENARIOS = {
@@ -54,7 +58,10 @@ _SCENARIOS = {
     'minstack': ['--scenario_config=minstack'],
 }
 
-
+_BENCHMARKS = {
+    'call': ['--benchmark_names=call','--size=50000'],
+    'channel': ['--benchmark_names=channel','--size=20000'],
+}
 def _run():
     """Build with Bazel, then run, and extract interesting lines from the output."""
     subprocess.check_call([
@@ -62,21 +69,20 @@ def _run():
         'test/core/memory_usage/memory_usage_test'
     ])
     ret = {}
-    for scenario, extra_args in _SCENARIOS.items():
-        try:
-            output = subprocess.check_output([
-                'bazel-bin/test/core/memory_usage/memory_usage_test',
-                '--benchmark_names=call',
-                '--size=50000',
-            ] + extra_args)
-        except subprocess.CalledProcessError as e:
-            print('Error running benchmark:', e)
-            continue
-        for line in output.splitlines():
-            for key, (pattern, conversion) in _INTERESTING.items():
-                m = re.match(pattern, line)
-                if m:
-                    ret[scenario + ': ' + key] = conversion(m.group(1))
+    for benchmark_args in _BENCHMARKS.values():
+        for scenario, extra_args in _SCENARIOS.items():
+            try:
+                output = subprocess.check_output([
+                    'bazel-bin/test/core/memory_usage/memory_usage_test',
+                ] + benchmark_args + extra_args)
+            except subprocess.CalledProcessError as e:
+                print('Error running benchmark:', e)
+                continue
+            for line in output.splitlines():
+                for key, (pattern, conversion) in _INTERESTING.items():
+                    m = re.match(pattern, line)
+                    if m:
+                        ret[scenario + ': ' + key] = conversion(m.group(1))
     return ret
 
 
@@ -97,23 +103,28 @@ if args.diff_base:
 text = ''
 if old is None:
     print(cur)
-    for key, value in sorted(cur.items()):
+    for key, value in cur.items():
         text += '{}: {}\n'.format(key, value)
 else:
     print(cur, old)
-    diff_size = 0
+    call_diff_size = 0
+    channel_diff_size = 0
     for scenario in _SCENARIOS.keys():
-        for key, value in sorted(_INTERESTING.items()):
+        for key, value in _INTERESTING.items():
             key = scenario + ': ' + key
             if key in cur:
                 if key not in old:
                     text += '{}: {}\n'.format(key, cur[key])
                 else:
-                    diff_size += cur[key] - old[key]
                     text += '{}: {} -> {}\n'.format(key, old[key], cur[key])
+                    if key is 'client call' or 'server call':
+                        call_diff_size += cur[key] - old[key]
+                    else:
+                        channel_diff_size += cur[key] - old[key]
 
-    print("DIFF_SIZE: %f" % diff_size)
-    check_on_pr.label_increase_decrease_on_pr('per-call-memory', diff_size, 64)
+    print("CALL_DIFF_SIZE: %f" % call_diff_size)
+    print("CHANNEL_DIFF_SIZE: %f" % channel_diff_size)
+    check_on_pr.label_increase_decrease_on_pr('per-call-memory', call_diff_size, 64)
 
 print(text)
 check_on_pr.check_on_pr('Memory Difference', '```\n%s\n```' % text)
