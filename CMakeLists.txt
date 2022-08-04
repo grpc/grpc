@@ -1490,6 +1490,14 @@ foreach(_hdr
   include/grpc/grpc_posix.h
   include/grpc/grpc_security.h
   include/grpc/grpc_security_constants.h
+  include/grpc/impl/codegen/byte_buffer.h
+  include/grpc/impl/codegen/byte_buffer_reader.h
+  include/grpc/impl/codegen/compression_types.h
+  include/grpc/impl/codegen/connectivity_state.h
+  include/grpc/impl/codegen/grpc_types.h
+  include/grpc/impl/codegen/propagation_bits.h
+  include/grpc/impl/codegen/slice.h
+  include/grpc/impl/codegen/status.h
   include/grpc/load_reporting.h
   include/grpc/slice.h
   include/grpc/slice_buffer.h
@@ -2426,11 +2434,19 @@ foreach(_hdr
   include/grpc/impl/codegen/atm_gcc_atomic.h
   include/grpc/impl/codegen/atm_gcc_sync.h
   include/grpc/impl/codegen/atm_windows.h
+  include/grpc/impl/codegen/byte_buffer.h
+  include/grpc/impl/codegen/byte_buffer_reader.h
+  include/grpc/impl/codegen/compression_types.h
+  include/grpc/impl/codegen/connectivity_state.h
   include/grpc/impl/codegen/fork.h
   include/grpc/impl/codegen/gpr_slice.h
   include/grpc/impl/codegen/gpr_types.h
+  include/grpc/impl/codegen/grpc_types.h
   include/grpc/impl/codegen/log.h
   include/grpc/impl/codegen/port_platform.h
+  include/grpc/impl/codegen/propagation_bits.h
+  include/grpc/impl/codegen/slice.h
+  include/grpc/impl/codegen/status.h
   include/grpc/impl/codegen/sync.h
   include/grpc/impl/codegen/sync_abseil.h
   include/grpc/impl/codegen/sync_custom.h
@@ -2987,11 +3003,19 @@ foreach(_hdr
   include/grpc/impl/codegen/atm_gcc_atomic.h
   include/grpc/impl/codegen/atm_gcc_sync.h
   include/grpc/impl/codegen/atm_windows.h
+  include/grpc/impl/codegen/byte_buffer.h
+  include/grpc/impl/codegen/byte_buffer_reader.h
+  include/grpc/impl/codegen/compression_types.h
+  include/grpc/impl/codegen/connectivity_state.h
   include/grpc/impl/codegen/fork.h
   include/grpc/impl/codegen/gpr_slice.h
   include/grpc/impl/codegen/gpr_types.h
+  include/grpc/impl/codegen/grpc_types.h
   include/grpc/impl/codegen/log.h
   include/grpc/impl/codegen/port_platform.h
+  include/grpc/impl/codegen/propagation_bits.h
+  include/grpc/impl/codegen/slice.h
+  include/grpc/impl/codegen/status.h
   include/grpc/impl/codegen/sync.h
   include/grpc/impl/codegen/sync_abseil.h
   include/grpc/impl/codegen/sync_custom.h
