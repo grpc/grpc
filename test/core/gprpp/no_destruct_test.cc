@@ -14,6 +14,8 @@
 
 #include "src/core/lib/gprpp/no_destruct.h"
 
+#include <stdlib.h>
+
 #include <memory>
 
 #include <gtest/gtest.h>
@@ -22,9 +24,22 @@ namespace grpc_core {
 namespace testing {
 namespace {
 
+class CrashOnDestruction {
+ public:
+  void Exists() {}
+
+ private:
+  ~CrashOnDestruction() { abort(); }
+};
+
 NoDestruct<std::unique_ptr<int>> g_test_int(new int(42));
+NoDestruct<CrashOnDestruction> g_test_crash_on_destruction;
 
 TEST(NoDestruct, Works) { EXPECT_EQ(42, **g_test_int); }
+
+TEST(NoDestruct, CrashOnDestructionIsAccessible) {
+  g_test_crash_on_destruction->Exists();
+}
 
 }  // namespace
 }  // namespace testing
