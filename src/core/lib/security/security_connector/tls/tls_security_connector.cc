@@ -42,7 +42,6 @@
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/credentials.h"
