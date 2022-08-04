@@ -90,8 +90,8 @@ struct grpc_tcp_server {
   /* next pollset to assign a channel to */
   gpr_atm next_pollset_to_assign = 0;
 
-  /* Contains config extracted from channel args for this server */
-  grpc_core::PosixTcpOptions options;
+  /* channel args for this server */
+  grpc_channel_args* channel_args = nullptr;
 
   /* a handler for external connections, owned */
   grpc_core::TcpServerFdHandler* fd_handler = nullptr;

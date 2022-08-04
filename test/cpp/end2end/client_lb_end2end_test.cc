@@ -30,7 +30,6 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 
-#include <grpc/event_engine/endpoint_config.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
