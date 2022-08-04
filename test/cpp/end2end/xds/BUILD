@@ -250,8 +250,8 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    shard_count = 5,
     linkstatic = True,  # Fixes dyld error on MacOS
+    shard_count = 5,
     tags = [
         "no_test_ios",
         "no_windows",
