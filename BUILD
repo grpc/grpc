@@ -414,7 +414,6 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS,
-    standalone = True,
     tags = [
         "avoid_dep",
         "nofixdeps",
@@ -429,7 +428,6 @@ grpc_cc_library(
         "gpr",
         "grpc_authorization_base",
         "grpc_base",
-        "grpc_codegen",
         "grpc_common",
         "grpc_http_filters",
         "grpc_security_base",
