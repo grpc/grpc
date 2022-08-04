@@ -1188,7 +1188,10 @@ grpc_cc_library(
     name = "no_destruct",
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/no_destruct.h"],
-    deps = ["construct_destruct"],
+    deps = [
+        "construct_destruct",
+        "gpr_base",
+    ],
 )
 
 grpc_cc_library(
