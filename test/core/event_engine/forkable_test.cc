@@ -38,9 +38,9 @@ class ForkableTest : public testing::Test {};
 TEST_F(ForkableTest, Basics) {
   class SomeForkable : public Forkable {
    public:
-    void PrepareFork() { prepare_called_ = true; }
-    void PostforkParent() { parent_called_ = true; }
-    void PostforkChild() { child_called_ = true; }
+    void PrepareFork() override { prepare_called_ = true; }
+    void PostforkParent() override { parent_called_ = true; }
+    void PostforkChild() override { child_called_ = true; }
 
     void CheckParent() {
       EXPECT_TRUE(prepare_called_);
@@ -75,9 +75,9 @@ TEST_F(ForkableTest, Basics) {
     gpr_log(GPR_DEBUG, "Waiting for child pid: %d", child_pid);
     do {
       // retry on EINTR, and fail otherwise
-      if(waitpid(child_pid, &status, 0) != -1) break;
+      if (waitpid(child_pid, &status, 0) != -1) break;
       ASSERT_EQ(errno, EINTR);
-    } while(true);
+    } while (true);
     if (WIFEXITED(status)) {
       ASSERT_EQ(WEXITSTATUS(status), 0);
     } else {

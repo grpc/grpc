@@ -24,6 +24,7 @@
 #include <queue>
 #include <vector>
 
+#include "absl/base/thread_annotations.h"
 #include "absl/functional/any_invocable.h"
 
 #include "src/core/lib/event_engine/forkable.h"
