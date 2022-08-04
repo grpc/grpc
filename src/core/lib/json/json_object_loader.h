@@ -31,6 +31,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
+#include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_args.h"
@@ -354,8 +355,7 @@ class AutoLoader<absl::optional<T>> final : public LoaderInterface {
 // Simply keeps a static AutoLoader<T> and returns a pointer to that.
 template <typename T>
 const LoaderInterface* LoaderForType() {
-  static const auto* loader = new AutoLoader<T>();
-  return loader;
+  return NoDestructSingleton<AutoLoader<T>>::Get();
 }
 
 // Element describes one typed field to be loaded from a JSON object.
