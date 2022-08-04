@@ -2215,7 +2215,6 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/time",
-        "absl/types:optional",
         "absl/functional:any_invocable",
     ],
     tags = ["nofixdeps"],
@@ -7291,6 +7290,7 @@ grpc_cc_library(
         "json",
         "json_args",
         "json_object_loader",
+        "no_destruct",
         "time",
     ],
 )

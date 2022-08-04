@@ -505,6 +505,7 @@ static grpc_endpoint_vtable vtable = {win_read,
                                       win_can_track_err};
 
 grpc_endpoint* grpc_tcp_create(grpc_winsocket* socket,
+                               grpc_channel_args* channel_args,
                                absl::string_view peer_string) {
   // TODO(jtattermusch): C++ize grpc_tcp and its dependencies (i.e. add
   // constructors) to ensure proper initialization
