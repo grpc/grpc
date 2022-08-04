@@ -33,8 +33,8 @@
 #include "envoy/config/endpoint/v3/endpoint.upbdefs.h"
 #include "upb/def.h"
 
-#include "src/core/ext/xds/upb_utils.h"
 #include "src/core/ext/xds/xds_client_stats.h"
+#include "src/core/ext/xds/xds_resource_type.h"
 #include "src/core/ext/xds/xds_resource_type_impl.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"

@@ -32,11 +32,11 @@
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
 #include "absl/types/optional.h"
+#include "upb/arena.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/xds/upb_utils.h"
 #include "src/core/ext/xds/xds_api.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_client_stats.h"

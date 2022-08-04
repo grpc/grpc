@@ -22,7 +22,6 @@
 #include <string>
 
 #include "absl/strings/string_view.h"
-#include "upb/def.h"
 #include "upb/upb.h"
 
 namespace grpc_core {
