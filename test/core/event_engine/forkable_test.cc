@@ -14,6 +14,13 @@
 
 #include <grpc/support/port_platform.h>
 
+#ifndef GRPC_ENABLE_FORK_SUPPORT
+
+// Test nothing, everything is fine
+int main(int /* argc */, char** /* argv */) { return 0; }
+
+#else  // GRPC_ENABLE_FORK_SUPPORT
+
 #include "src/core/lib/event_engine/forkable.h"
 
 #include <sys/wait.h>
@@ -35,12 +42,6 @@ using ::grpc_event_engine::experimental::StopManagingForkable;
 
 class ForkableTest : public testing::Test {};
 
-#ifndef GRPC_ENABLE_FORK_SUPPORT
-
-// Test nothing, everything is fine
-int main(int /* argc */, char** /* argv */) { return 0; }
-
-#else  // GRPC_ENABLE_FORK_SUPPORT
 
 #ifdef GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
 TEST_F(ForkableTest, BasicPthreadAtForkOperations) {
