@@ -700,7 +700,7 @@ void XdsClient::ChannelState::AdsCallState::AdsResponseParser::ParseResource(
     return;
   }
   // Parse the resource.
-  XdsEncodingContext context = {
+  XdsResourceType::DecodeContext context = {
       xds_client(), ads_call_state_->chand()->server_, &grpc_xds_client_trace,
       xds_client()->symtab_.ptr(), arena,
       ads_call_state_->chand()->server_.ShouldUseV3(),

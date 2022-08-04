@@ -341,7 +341,7 @@ namespace {
 
 absl::StatusOr<XdsRouteConfigResource::ClusterSpecifierPluginMap>
 ClusterSpecifierPluginParse(
-    const XdsEncodingContext& context,
+    const XdsResourceType::DecodeContext& context,
     const envoy_config_route_v3_RouteConfiguration* route_config) {
   XdsRouteConfigResource::ClusterSpecifierPluginMap
       cluster_specifier_plugin_map;
@@ -587,7 +587,7 @@ absl::Status RouteRuntimeFractionParse(
 template <typename ParentType, typename EntryType>
 absl::StatusOr<XdsRouteConfigResource::TypedPerFilterConfig>
 ParseTypedPerFilterConfig(
-    const XdsEncodingContext& context, const ParentType* parent,
+    const XdsResourceType::DecodeContext& context, const ParentType* parent,
     const EntryType* (*entry_func)(const ParentType*, size_t*),
     upb_StringView (*key_func)(const EntryType*),
     const google_protobuf_Any* (*value_func)(const EntryType*)) {
@@ -650,7 +650,7 @@ ParseTypedPerFilterConfig(
 }
 
 absl::Status RetryPolicyParse(
-    const XdsEncodingContext& context,
+    const XdsResourceType::DecodeContext& context,
     const envoy_config_route_v3_RetryPolicy* retry_policy,
     absl::optional<XdsRouteConfigResource::RetryPolicy>* retry) {
   std::vector<std::string> errors;
@@ -725,7 +725,7 @@ absl::Status RetryPolicyParse(
 }
 
 absl::StatusOr<XdsRouteConfigResource::Route::RouteAction> RouteActionParse(
-    const XdsEncodingContext& context,
+    const XdsResourceType::DecodeContext& context,
     const envoy_config_route_v3_Route* route_msg,
     const std::map<std::string /*cluster_specifier_plugin_name*/,
                    std::string /*LB policy config*/>&
@@ -942,7 +942,7 @@ absl::StatusOr<XdsRouteConfigResource::Route::RouteAction> RouteActionParse(
 }  // namespace
 
 absl::StatusOr<XdsRouteConfigResource> XdsRouteConfigResource::Parse(
-    const XdsEncodingContext& context,
+    const XdsResourceType::DecodeContext& context,
     const envoy_config_route_v3_RouteConfiguration* route_config) {
   XdsRouteConfigResource rds_update;
   // Get the cluster spcifier plugins
@@ -1097,7 +1097,7 @@ absl::StatusOr<XdsRouteConfigResource> XdsRouteConfigResource::Parse(
 namespace {
 
 void MaybeLogRouteConfiguration(
-    const XdsEncodingContext& context,
+    const XdsResourceType::DecodeContext& context,
     const envoy_config_route_v3_RouteConfiguration* route_config) {
   if (GRPC_TRACE_FLAG_ENABLED(*context.tracer) &&
       gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
@@ -1113,7 +1113,7 @@ void MaybeLogRouteConfiguration(
 }  // namespace
 
 absl::StatusOr<XdsResourceType::DecodeResult>
-XdsRouteConfigResourceType::Decode(const XdsEncodingContext& context,
+XdsRouteConfigResourceType::Decode(const XdsResourceType::DecodeContext& context,
                                    absl::string_view serialized_resource,
                                    bool /*is_v2*/) const {
   // Parse serialized proto.

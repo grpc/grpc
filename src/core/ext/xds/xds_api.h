@@ -45,7 +45,6 @@ namespace grpc_core {
 class XdsClient;
 
 // TODO(roth): When we have time, split this into multiple pieces:
-// - a common upb-based parsing framework (combine with XdsEncodingContext)
 // - ADS request/response handling
 // - LRS request/response handling
 // - CSDS response generation

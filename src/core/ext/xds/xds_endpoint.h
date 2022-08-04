@@ -129,7 +129,7 @@ class XdsEndpointResourceType
     return "envoy.api.v2.ClusterLoadAssignment";
   }
 
-  absl::StatusOr<DecodeResult> Decode(const XdsEncodingContext& context,
+  absl::StatusOr<DecodeResult> Decode(const XdsResourceType::DecodeContext& context,
                                       absl::string_view serialized_resource,
                                       bool is_v2) const override;
 

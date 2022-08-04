@@ -103,7 +103,7 @@ std::string XdsClusterResource::ToString() const {
 namespace {
 
 absl::StatusOr<CommonTlsContext> UpstreamTlsContextParse(
-    const XdsEncodingContext& context,
+    const XdsResourceType::DecodeContext& context,
     const envoy_config_core_v3_TransportSocket* transport_socket) {
   CommonTlsContext common_tls_context;
   // Record Upstream tls context
@@ -210,7 +210,7 @@ absl::Status CdsLogicalDnsParse(const envoy_config_cluster_v3_Cluster* cluster,
 }
 
 absl::StatusOr<XdsClusterResource> CdsResourceParse(
-    const XdsEncodingContext& context,
+    const XdsResourceType::DecodeContext& context,
     const envoy_config_cluster_v3_Cluster* cluster, bool /*is_v2*/) {
   XdsClusterResource cds_update;
   std::vector<std::string> errors;
@@ -491,7 +491,7 @@ absl::StatusOr<XdsClusterResource> CdsResourceParse(
   return cds_update;
 }
 
-void MaybeLogCluster(const XdsEncodingContext& context,
+void MaybeLogCluster(const XdsResourceType::DecodeContext& context,
                      const envoy_config_cluster_v3_Cluster* cluster) {
   if (GRPC_TRACE_FLAG_ENABLED(*context.tracer) &&
       gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
@@ -506,7 +506,7 @@ void MaybeLogCluster(const XdsEncodingContext& context,
 }  // namespace
 
 absl::StatusOr<XdsResourceType::DecodeResult> XdsClusterResourceType::Decode(
-    const XdsEncodingContext& context, absl::string_view serialized_resource,
+    const XdsResourceType::DecodeContext& context, absl::string_view serialized_resource,
     bool is_v2) const {
   // Parse serialized proto.
   auto* resource = envoy_config_cluster_v3_Cluster_parse(
