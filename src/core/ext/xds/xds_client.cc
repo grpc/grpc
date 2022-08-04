@@ -149,7 +149,7 @@ class XdsClient::ChannelState::AdsCallState
     absl::Status ProcessAdsResponseFields(AdsResponseFields fields) override
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
 
-    void ParseResource(const XdsEncodingContext& context, size_t idx,
+    void ParseResource(upb_Arena* arena, size_t idx,
                        absl::string_view type_url,
                        absl::string_view serialized_resource) override
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
@@ -689,7 +689,7 @@ void UpdateResourceMetadataNacked(const std::string& version,
 }  // namespace
 
 void XdsClient::ChannelState::AdsCallState::AdsResponseParser::ParseResource(
-    const XdsEncodingContext& context, size_t idx, absl::string_view type_url,
+    upb_Arena* arena, size_t idx, absl::string_view type_url,
     absl::string_view serialized_resource) {
   // Check the type_url of the resource.
   bool is_v2 = false;
@@ -700,6 +700,11 @@ void XdsClient::ChannelState::AdsCallState::AdsResponseParser::ParseResource(
     return;
   }
   // Parse the resource.
+  XdsEncodingContext context = {
+      xds_client(), ads_call_state_->chand()->server_, &grpc_xds_client_trace,
+      xds_client()->symtab_.ptr(), arena,
+      ads_call_state_->chand()->server_.ShouldUseV3(),
+      &xds_client()->bootstrap_->certificate_providers()};
   absl::StatusOr<XdsResourceType::DecodeResult> result =
       result_.type->Decode(context, serialized_resource, is_v2);
   if (!result.ok()) {

@@ -413,7 +413,7 @@ absl::Status XdsApi::ParseAdsResponse(const XdsBootstrap::XdsServer& server,
       serialized_resource =
           UpbStringToAbsl(google_protobuf_Any_value(resource));
     }
-    parser->ParseResource(context, i, type_url, serialized_resource);
+    parser->ParseResource(context.arena, i, type_url, serialized_resource);
   }
   return absl::OkStatus();
 }

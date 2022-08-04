@@ -43,6 +43,7 @@ struct XdsEncodingContext {
   TraceFlag* tracer;
   upb_DefPool* symtab;
   upb_Arena* arena;
+  // FIXME: remove this field; code should instead check server.ShouldUseV3()
   bool use_v3;
   const CertificateProviderStore::PluginDefinitionMap*
       certificate_provider_definition_map;
