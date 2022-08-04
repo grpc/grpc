@@ -26,7 +26,6 @@
 #include "upb/def.h"
 #include "upb/upb.h"
 
-#include "src/core/ext/xds/certificate_provider_store.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/lib/debug/trace.h"
 
@@ -45,8 +44,8 @@ struct XdsEncodingContext {
   upb_Arena* arena;
   // FIXME: remove this field; code should instead check server.ShouldUseV3()
   bool use_v3;
-  const CertificateProviderStore::PluginDefinitionMap*
-      certificate_provider_definition_map;
+  const XdsCertificateProviderPluginMapInterface*
+      certificate_provider_plugin_map;
 };
 
 // Works for both std::string and absl::string_view.

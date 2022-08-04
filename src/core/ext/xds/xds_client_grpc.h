@@ -26,6 +26,7 @@
 
 #include <grpc/impl/codegen/grpc_types.h>
 
+#include "src/core/ext/xds/certificate_provider_store.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -55,6 +56,13 @@ class GrpcXdsClient : public XdsClient {
   }
 
   grpc_pollset_set* interested_parties() const;
+
+  CertificateProviderStore& certificate_provider_store() const {
+    return *certificate_provider_store_;
+  }
+
+ private:
+  OrphanablePtr<CertificateProviderStore> certificate_provider_store_;
 };
 
 namespace internal {

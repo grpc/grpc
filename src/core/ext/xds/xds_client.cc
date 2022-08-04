@@ -704,7 +704,7 @@ void XdsClient::ChannelState::AdsCallState::AdsResponseParser::ParseResource(
       xds_client(), ads_call_state_->chand()->server_, &grpc_xds_client_trace,
       xds_client()->symtab_.ptr(), arena,
       ads_call_state_->chand()->server_.ShouldUseV3(),
-      &xds_client()->bootstrap_->certificate_providers()};
+      xds_client()->bootstrap_->certificate_provider_plugin_map()};
   absl::StatusOr<XdsResourceType::DecodeResult> result =
       result_.type->Decode(context, serialized_resource, is_v2);
   if (!result.ok()) {
@@ -1388,8 +1388,6 @@ XdsClient::XdsClient(std::unique_ptr<XdsBootstrap> bootstrap,
       transport_factory_(std::move(transport_factory)),
       request_timeout_(resource_request_timeout),
       xds_federation_enabled_(XdsFederationEnabled()),
-      certificate_provider_store_(MakeOrphanable<CertificateProviderStore>(
-          bootstrap_->certificate_providers())),
       api_(this, &grpc_xds_client_trace, bootstrap_->node(), &symtab_) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO, "[xds_client %p] creating xds client", this);
