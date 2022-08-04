@@ -1072,6 +1072,8 @@ src/core/ext/filters/client_channel/client_channel_channelz.h \
 src/core/ext/filters/client_channel/client_channel_factory.cc \
 src/core/ext/filters/client_channel/client_channel_factory.h \
 src/core/ext/filters/client_channel/client_channel_plugin.cc \
+src/core/ext/filters/client_channel/client_channel_service_config.cc \
+src/core/ext/filters/client_channel/client_channel_service_config.h \
 src/core/ext/filters/client_channel/config_selector.cc \
 src/core/ext/filters/client_channel/config_selector.h \
 src/core/ext/filters/client_channel/connector.h \
@@ -1141,8 +1143,6 @@ src/core/ext/filters/client_channel/resolver/polling_resolver.h \
 src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc \
 src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc \
 src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h \
-src/core/ext/filters/client_channel/resolver_result_parsing.cc \
-src/core/ext/filters/client_channel/resolver_result_parsing.h \
 src/core/ext/filters/client_channel/retry_filter.cc \
 src/core/ext/filters/client_channel/retry_filter.h \
 src/core/ext/filters/client_channel/retry_service_config.cc \
@@ -2209,6 +2209,7 @@ src/core/lib/iomgr/wakeup_fd_posix.cc \
 src/core/lib/iomgr/wakeup_fd_posix.h \
 src/core/lib/json/json.h \
 src/core/lib/json/json_args.h \
+src/core/lib/json/json_channel_args.h \
 src/core/lib/json/json_object_loader.cc \
 src/core/lib/json/json_object_loader.h \
 src/core/lib/json/json_reader.cc \
