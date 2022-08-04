@@ -21,8 +21,6 @@ int main(int /* argc */, char** /* argv */) { return 0; }
 
 #else  // GRPC_ENABLE_FORK_SUPPORT
 
-#include "src/core/lib/event_engine/forkable.h"
-
 #include <sys/wait.h>
 #include <unistd.h>
 
@@ -33,6 +31,8 @@ int main(int /* argc */, char** /* argv */) { return 0; }
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/event_engine/forkable.h"
+
 namespace {
 using ::grpc_event_engine::experimental::Forkable;
 using ::grpc_event_engine::experimental::ManageForkable;
@@ -41,7 +41,6 @@ using ::grpc_event_engine::experimental::StopManagingForkable;
 }  // namespace
 
 class ForkableTest : public testing::Test {};
-
 
 #ifdef GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
 TEST_F(ForkableTest, BasicPthreadAtForkOperations) {
