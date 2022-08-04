@@ -30,7 +30,7 @@ Gem::Specification.new do |s|
   s.require_paths = %w( src/ruby/lib src/ruby/bin src/ruby/pb )
   s.platform      = Gem::Platform::RUBY
 
-  s.add_dependency 'google-protobuf', '~> 3.19'
+  s.add_dependency 'google-protobuf', '~> 3.21'
   s.add_dependency 'googleapis-common-protos-types', '~> 1.0'
 
   s.add_development_dependency 'bundler',            '>= 1.9'
@@ -1059,6 +1059,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/gprpp/memory.h )
   s.files += %w( src/core/lib/gprpp/mpscq.cc )
   s.files += %w( src/core/lib/gprpp/mpscq.h )
+  s.files += %w( src/core/lib/gprpp/no_destruct.h )
   s.files += %w( src/core/lib/gprpp/orphanable.h )
   s.files += %w( src/core/lib/gprpp/overload.h )
   s.files += %w( src/core/lib/gprpp/ref_counted.h )

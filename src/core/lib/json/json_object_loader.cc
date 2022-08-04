@@ -147,9 +147,29 @@ void LoadVector::LoadInto(const Json& json, const JsonArgs& args, void* dst,
     return;
   }
   const auto& array = json.array_value();
+  const LoaderInterface* element_loader = ElementLoader();
   for (size_t i = 0; i < array.size(); ++i) {
     ScopedField field(errors, absl::StrCat("[", i, "]"));
-    LoadOne(array[i], args, dst, errors);
+    void* element = EmplaceBack(dst);
+    element_loader->LoadInto(array[i], args, element, errors);
+  }
+}
+
+void AutoLoader<std::vector<bool>>::LoadInto(const Json& json,
+                                             const JsonArgs& args, void* dst,
+                                             ErrorList* errors) const {
+  if (json.type() != Json::Type::ARRAY) {
+    errors->AddError("is not an array");
+    return;
+  }
+  const auto& array = json.array_value();
+  const LoaderInterface* element_loader = LoaderForType<bool>();
+  std::vector<bool>* vec = static_cast<std::vector<bool>*>(dst);
+  for (size_t i = 0; i < array.size(); ++i) {
+    ScopedField field(errors, absl::StrCat("[", i, "]"));
+    bool elem = false;
+    element_loader->LoadInto(array[i], args, &elem, errors);
+    vec->push_back(elem);
   }
 }
 
@@ -159,10 +179,19 @@ void LoadMap::LoadInto(const Json& json, const JsonArgs& args, void* dst,
     errors->AddError("is not an object");
     return;
   }
+  const LoaderInterface* element_loader = ElementLoader();
   for (const auto& pair : json.object_value()) {
     ScopedField field(errors, absl::StrCat("[\"", pair.first, "\"]"));
-    LoadOne(pair.second, args, pair.first, dst, errors);
+    void* element = Insert(pair.first, dst);
+    element_loader->LoadInto(pair.second, args, element, errors);
   }
+}
+
+void LoadOptional::LoadInto(const Json& json, const JsonArgs& args, void* dst,
+                            ErrorList* errors) const {
+  if (json.type() == Json::Type::JSON_NULL) return;
+  void* element = Emplace(dst);
+  ElementLoader()->LoadInto(json, args, element, errors);
 }
 
 bool LoadObject(const Json& json, const JsonArgs& args, const Element* elements,
