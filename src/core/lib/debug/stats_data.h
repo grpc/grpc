@@ -23,10 +23,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <inttypes.h>
-
-#include "src/core/lib/iomgr/exec_ctx.h"
-
 typedef enum {
   GRPC_STATS_COUNTER_CLIENT_CALLS_CREATED,
   GRPC_STATS_COUNTER_SERVER_CALLS_CREATED,

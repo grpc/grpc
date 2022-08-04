@@ -16,18 +16,21 @@
  *
  */
 
+#include <stdint.h>
 #include <string.h>
 
-#include <grpc/support/alloc.h>
+#include <grpc/grpc.h>
+#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
 #include <grpc/support/log.h>
-#include <grpc/support/sync.h>
-#include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/surface/channel.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
+#include "test/core/util/test_config.h"
 
 #define MAX_PING_STRIKES 2
 
@@ -65,7 +68,7 @@ static void end_test(grpc_end2end_test_fixture* f) {
 // Send more pings than server allows to trigger server's GOAWAY.
 static void test_bad_ping(grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f = config.create_fixture(nullptr, nullptr);
-  cq_verifier* cqv = cq_verifier_create(f.cq);
+  grpc_core::CqVerifier cqv(f.cq);
   grpc_arg client_a[] = {
       grpc_channel_arg_integer_create(
           const_cast<char*>(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA), 0),
@@ -142,8 +145,8 @@ static void test_bad_ping(grpc_end2end_test_config config) {
       grpc_server_request_call(f.server, &s, &call_details,
                                &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(101), true);
+  cqv.Verify();
 
   // Send too many pings to the server to trigger the punishment:
   // The first ping will let server mark its last_recv time. Afterwards, each
@@ -153,11 +156,11 @@ static void test_bad_ping(grpc_end2end_test_config config) {
   int i;
   for (i = 1; i <= MAX_PING_STRIKES + 2; i++) {
     grpc_channel_ping(f.client, f.cq, tag(200 + i), nullptr);
-    CQ_EXPECT_COMPLETION(cqv, tag(200 + i), 1);
+    cqv.Expect(tag(200 + i), true);
     if (i == MAX_PING_STRIKES + 2) {
-      CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
+      cqv.Expect(tag(1), true);
     }
-    cq_verify(cqv);
+    cqv.Verify();
   }
 
   memset(ops, 0, sizeof(ops));
@@ -184,12 +187,12 @@ static void test_bad_ping(grpc_end2end_test_config config) {
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(102), true);
+  cqv.Verify();
 
   grpc_server_shutdown_and_notify(f.server, f.cq, tag(0xdead));
-  CQ_EXPECT_COMPLETION(cqv, tag(0xdead), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(0xdead), true);
+  cqv.Verify();
 
   grpc_call_unref(s);
 
@@ -205,7 +208,6 @@ static void test_bad_ping(grpc_end2end_test_config config) {
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
   grpc_call_unref(c);
-  cq_verifier_destroy(cqv);
   end_test(&f);
   config.tear_down_data(&f);
 }
@@ -214,7 +216,7 @@ static void test_bad_ping(grpc_end2end_test_config config) {
 // max_pings_without_data should limit pings sent out on wire.
 static void test_pings_without_data(grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f = config.create_fixture(nullptr, nullptr);
-  cq_verifier* cqv = cq_verifier_create(f.cq);
+  grpc_core::CqVerifier cqv(f.cq);
   // Only allow MAX_PING_STRIKES pings without data (DATA/HEADERS/WINDOW_UPDATE)
   // so that the transport will throttle the excess pings.
   grpc_arg client_a[] = {
@@ -294,8 +296,8 @@ static void test_pings_without_data(grpc_end2end_test_config config) {
       grpc_server_request_call(f.server, &s, &call_details,
                                &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(101), true);
+  cqv.Verify();
 
   // Send too many pings to the server similar to the previous test case.
   // However, since we set the MAX_PINGS_WITHOUT_DATA at the client side, only
@@ -304,9 +306,9 @@ static void test_pings_without_data(grpc_end2end_test_config config) {
   for (i = 1; i <= MAX_PING_STRIKES + 2; i++) {
     grpc_channel_ping(f.client, f.cq, tag(200 + i), nullptr);
     if (i <= MAX_PING_STRIKES) {
-      CQ_EXPECT_COMPLETION(cqv, tag(200 + i), 1);
+      cqv.Expect(tag(200 + i), true);
     }
-    cq_verify(cqv);
+    cqv.Verify();
   }
 
   memset(ops, 0, sizeof(ops));
@@ -333,19 +335,19 @@ static void test_pings_without_data(grpc_end2end_test_config config) {
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
+  cqv.Expect(tag(102), true);
   // Client call should return.
-  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(1), true);
+  cqv.Verify();
 
   grpc_server_shutdown_and_notify(f.server, f.cq, tag(0xdead));
-  CQ_EXPECT_COMPLETION(cqv, tag(0xdead), 1);
+  cqv.Expect(tag(0xdead), true);
 
   // Also expect the previously blocked pings to complete with an error
-  CQ_EXPECT_COMPLETION(cqv, tag(200 + MAX_PING_STRIKES + 1), 0);
-  CQ_EXPECT_COMPLETION(cqv, tag(200 + MAX_PING_STRIKES + 2), 0);
+  cqv.Expect(tag(200 + MAX_PING_STRIKES + 1), false);
+  cqv.Expect(tag(200 + MAX_PING_STRIKES + 2), false);
 
-  cq_verify(cqv);
+  cqv.Verify();
 
   grpc_call_unref(s);
 
@@ -359,7 +361,6 @@ static void test_pings_without_data(grpc_end2end_test_config config) {
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
   grpc_call_unref(c);
-  cq_verifier_destroy(cqv);
   end_test(&f);
   config.tear_down_data(&f);
 }

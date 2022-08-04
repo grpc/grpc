@@ -19,7 +19,17 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <functional>
+#include <map>
+#include <string>
+#include <vector>
+
+#include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/http/httpcli.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/security/credentials/external/external_account_credentials.h"
+#include "src/core/lib/uri/uri_parser.h"
 
 namespace grpc_core {
 

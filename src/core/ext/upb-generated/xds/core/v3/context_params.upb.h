@@ -54,11 +54,15 @@ UPB_INLINE xds_core_v3_ContextParams* xds_core_v3_ContextParams_parse_ex(const c
   return ret;
 }
 UPB_INLINE char* xds_core_v3_ContextParams_serialize(const xds_core_v3_ContextParams* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &xds_core_v3_ContextParams_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &xds_core_v3_ContextParams_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* xds_core_v3_ContextParams_serialize_ex(const xds_core_v3_ContextParams* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &xds_core_v3_ContextParams_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &xds_core_v3_ContextParams_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE bool xds_core_v3_ContextParams_has_params(const xds_core_v3_ContextParams* msg) {
   return _upb_has_submsg_nohasbit(msg, UPB_SIZE(0, 0));

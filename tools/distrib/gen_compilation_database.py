@@ -90,6 +90,9 @@ def modifyCompileCommand(target, args):
     options = options.replace("-std=c++0x ", "")
     options = options.replace("-std=c++14 ", "")
 
+    # Add -DNDEBUG so that editors show the correct size information for structs.
+    options += " -DNDEBUG"
+
     if args.vscode:
         # Visual Studio Code doesn't seem to like "-iquote". Replace it with
         # old-style "-I".

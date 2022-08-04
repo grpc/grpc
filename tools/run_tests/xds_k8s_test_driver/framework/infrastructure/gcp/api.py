@@ -435,19 +435,19 @@ class GcpStandardCloudApiResource(GcpProjectApiResource, metaclass=abc.ABCMeta):
     def _execute(  # pylint: disable=arguments-differ
             self,
             request: HttpRequest,
-            timeout_sec=GcpProjectApiResource._WAIT_FOR_OPERATION_SEC):
+            timeout_sec: int = GcpProjectApiResource._WAIT_FOR_OPERATION_SEC):
         operation = request.execute(num_retries=self._GCP_API_RETRIES)
-        self._wait(operation, timeout_sec)
+        logger.debug('Operation %s', operation)
+        self._wait(operation['name'], timeout_sec)
 
     def _wait(self,
-              operation,
-              timeout_sec=GcpProjectApiResource._WAIT_FOR_OPERATION_SEC):
-        op_name = operation['name']
-        logger.debug('Waiting for %s operation, timeout %s sec: %s',
-                     self.api_name, timeout_sec, op_name)
+              operation_id: str,
+              timeout_sec: int = GcpProjectApiResource._WAIT_FOR_OPERATION_SEC):
+        logger.info('Waiting %s sec for %s operation id: %s', timeout_sec,
+                    self.api_name, operation_id)
 
         op_request = self.api.projects().locations().operations().get(
-            name=op_name)
+            name=operation_id)
         operation = self.wait_for_operation(
             operation_request=op_request,
             test_success_fn=lambda result: result['done'],

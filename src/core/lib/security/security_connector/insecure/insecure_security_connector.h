@@ -21,9 +21,25 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/security/context/security_context.h"
+#include <utility>
+
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
+
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
+#include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
+#include "src/core/lib/transport/handshaker.h"
+#include "src/core/tsi/transport_security_interface.h"
 
 namespace grpc_core {
 
@@ -47,7 +63,7 @@ class InsecureChannelSecurityConnector
   ArenaPromise<absl::Status> CheckCallHost(
       absl::string_view host, grpc_auth_context* auth_context) override;
 
-  void add_handshakers(const grpc_channel_args* args,
+  void add_handshakers(const ChannelArgs& args,
                        grpc_pollset_set* /* interested_parties */,
                        HandshakeManager* handshake_manager) override;
 
@@ -70,7 +86,7 @@ class InsecureServerSecurityConnector : public grpc_server_security_connector {
       : grpc_server_security_connector("" /* url_scheme */,
                                        std::move(server_creds)) {}
 
-  void add_handshakers(const grpc_channel_args* args,
+  void add_handshakers(const ChannelArgs& args,
                        grpc_pollset_set* /* interested_parties */,
                        HandshakeManager* handshake_manager) override;
 

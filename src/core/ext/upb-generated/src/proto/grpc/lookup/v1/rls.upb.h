@@ -63,11 +63,15 @@ UPB_INLINE grpc_lookup_v1_RouteLookupRequest* grpc_lookup_v1_RouteLookupRequest_
   return ret;
 }
 UPB_INLINE char* grpc_lookup_v1_RouteLookupRequest_serialize(const grpc_lookup_v1_RouteLookupRequest* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &grpc_lookup_v1_RouteLookupRequest_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &grpc_lookup_v1_RouteLookupRequest_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* grpc_lookup_v1_RouteLookupRequest_serialize_ex(const grpc_lookup_v1_RouteLookupRequest* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &grpc_lookup_v1_RouteLookupRequest_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &grpc_lookup_v1_RouteLookupRequest_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE void grpc_lookup_v1_RouteLookupRequest_clear_target_type(const grpc_lookup_v1_RouteLookupRequest* msg) {
   *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
@@ -165,11 +169,15 @@ UPB_INLINE grpc_lookup_v1_RouteLookupResponse* grpc_lookup_v1_RouteLookupRespons
   return ret;
 }
 UPB_INLINE char* grpc_lookup_v1_RouteLookupResponse_serialize(const grpc_lookup_v1_RouteLookupResponse* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &grpc_lookup_v1_RouteLookupResponse_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &grpc_lookup_v1_RouteLookupResponse_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* grpc_lookup_v1_RouteLookupResponse_serialize_ex(const grpc_lookup_v1_RouteLookupResponse* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &grpc_lookup_v1_RouteLookupResponse_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &grpc_lookup_v1_RouteLookupResponse_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE void grpc_lookup_v1_RouteLookupResponse_clear_header_data(const grpc_lookup_v1_RouteLookupResponse* msg) {
   *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);

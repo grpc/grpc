@@ -26,7 +26,6 @@
 
 #include <atomic>
 #include <new>
-#include <type_traits>
 #include <utility>
 
 #include "absl/container/inlined_vector.h"
@@ -171,6 +170,7 @@ class BaseCallData : public Activity, private Wakeable {
     ~Flusher();
 
     void Resume(grpc_transport_stream_op_batch* batch) {
+      GPR_ASSERT(!call_->is_last());
       release_.push_back(batch);
     }
 

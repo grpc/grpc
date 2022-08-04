@@ -14,9 +14,16 @@
 
 #include "src/core/lib/resource_quota/memory_quota.h"
 
-#include <gtest/gtest.h>
+#include <algorithm>
+#include <atomic>
+#include <chrono>
+#include <random>
+#include <thread>
+#include <vector>
 
-#include "absl/synchronization/notification.h"
+#include "gtest/gtest.h"
+
+#include <grpc/slice.h>
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice_refcount.h"
@@ -101,48 +108,6 @@ TEST(MemoryQuotaTest, CreateSomeObjectsAndExpectReclamation) {
   EXPECT_EQ(object2.get(), nullptr);
 }
 
-TEST(MemoryQuotaTest, BasicRebind) {
-  ExecCtx exec_ctx;
-
-  MemoryQuota memory_quota("foo");
-  memory_quota.SetSize(4096);
-  MemoryQuota memory_quota2("foo2");
-  memory_quota2.SetSize(4096);
-
-  auto memory_allocator = memory_quota2.CreateMemoryOwner("bar");
-  auto object = memory_allocator.MakeUnique<Sized<2048>>();
-
-  memory_allocator.Rebind(&memory_quota);
-  auto memory_allocator2 = memory_quota2.CreateMemoryOwner("bar2");
-
-  auto checker1 = CallChecker::Make();
-  memory_allocator2.PostReclaimer(
-      ReclamationPass::kDestructive,
-      [checker1](absl::optional<ReclamationSweep> sweep) {
-        checker1->Called();
-        // Taken memory should be reassigned to
-        // memory_quota, so this should be cancelled
-        EXPECT_FALSE(sweep.has_value());
-      });
-
-  auto checker2 = CallChecker::Make();
-  memory_allocator.PostReclaimer(
-      ReclamationPass::kDestructive,
-      [&object, checker2](absl::optional<ReclamationSweep> sweep) {
-        checker2->Called();
-        EXPECT_TRUE(sweep.has_value());
-        // The new memory allocator should reclaim
-        // the object allocated against the previous
-        // quota because that's now part of this
-        // quota.
-        object.reset();
-      });
-
-  auto object2 = memory_allocator.MakeUnique<Sized<2048>>();
-  exec_ctx.Flush();
-  EXPECT_EQ(object.get(), nullptr);
-}
-
 TEST(MemoryQuotaTest, ReserveRangeNoPressure) {
   MemoryQuota memory_quota("foo");
   auto memory_allocator = memory_quota.CreateMemoryAllocator("bar");
@@ -200,6 +165,78 @@ TEST(MemoryQuotaTest, NoBunchingIfIdle) {
 }
 
 }  // namespace testing
+
+//
+// PressureTrackerTest
+//
+
+namespace memory_quota_detail {
+namespace testing {
+
+TEST(PressureTrackerTest, NoOp) { PressureTracker(); }
+
+TEST(PressureTrackerTest, Decays) {
+  PressureTracker tracker;
+  int cur_ms = 0;
+  auto step_time = [&] {
+    ++cur_ms;
+    return Timestamp::ProcessEpoch() + Duration::Seconds(1) +
+           Duration::Milliseconds(cur_ms);
+  };
+  // At start pressure is zero and we should be reading zero back.
+  {
+    ExecCtx exec_ctx;
+    exec_ctx.TestOnlySetNow(step_time());
+    EXPECT_EQ(tracker.AddSampleAndGetEstimate(0.0), 0.0);
+  }
+  // If memory pressure goes to 100% or higher, we should *immediately* snap to
+  // reporting 100%.
+  {
+    ExecCtx exec_ctx;
+    exec_ctx.TestOnlySetNow(step_time());
+    EXPECT_EQ(tracker.AddSampleAndGetEstimate(1.0), 1.0);
+  }
+  // Once memory pressure reduces, we should *eventually* get back to reporting
+  // close to zero, and monotonically decrease.
+  const int got_full = cur_ms;
+  double last_reported = 1.0;
+  while (true) {
+    ExecCtx exec_ctx;
+    exec_ctx.TestOnlySetNow(step_time());
+    double new_reported = tracker.AddSampleAndGetEstimate(0.0);
+    EXPECT_LE(new_reported, last_reported);
+    last_reported = new_reported;
+    if (new_reported < 0.1) break;
+  }
+  // Verify the above happened in a somewhat reasonable time.
+  ASSERT_LE(cur_ms, got_full + 200000);
+}
+
+TEST(PressureTrackerTest, ManyThreads) {
+  PressureTracker tracker;
+  std::vector<std::thread> threads;
+  std::atomic<bool> shutdown{false};
+  threads.reserve(10);
+  for (int i = 0; i < 10; i++) {
+    threads.emplace_back([&tracker, &shutdown] {
+      std::random_device rng;
+      std::uniform_real_distribution<double> dist(0.0, 1.0);
+      while (!shutdown.load(std::memory_order_relaxed)) {
+        ExecCtx exec_ctx;
+        tracker.AddSampleAndGetEstimate(dist(rng));
+      }
+    });
+  }
+  std::this_thread::sleep_for(std::chrono::seconds(5));
+  shutdown.store(true, std::memory_order_relaxed);
+  for (auto& thread : threads) {
+    thread.join();
+  }
+}
+
+}  // namespace testing
+}  // namespace memory_quota_detail
+
 }  // namespace grpc_core
 
 // Hook needed to run ExecCtx outside of iomgr.

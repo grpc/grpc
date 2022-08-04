@@ -20,28 +20,47 @@
 
 #include "src/core/lib/security/transport/secure_endpoint.h"
 
-#include <limits.h>
+#include <inttypes.h>
 
-#include <new>
+#include <algorithm>
+#include <atomic>
+#include <memory>
 
+#include "absl/base/thread_annotations.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
+
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/event_engine/memory_request.h>
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gprpp/memory.h"
-#include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
+#include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/resource_quota/trace.h"
 #include "src/core/lib/security/transport/tsi_error.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/tsi/transport_security_grpc.h"
+#include "src/core/tsi/transport_security_interface.h"
 
 #define STAGING_BUFFER_SIZE 8192
 
@@ -84,6 +103,8 @@ struct secure_endpoint {
           memory_owner.MakeSlice(grpc_core::MemoryRequest(STAGING_BUFFER_SIZE));
     }
     has_posted_reclaimer.store(false, std::memory_order_relaxed);
+    min_progress_size = 1;
+    grpc_slice_buffer_init(&protector_staging_buffer);
     gpr_ref_init(&ref, 1);
   }
 
@@ -96,6 +117,7 @@ struct secure_endpoint {
     grpc_slice_unref_internal(read_staging_buffer);
     grpc_slice_unref_internal(write_staging_buffer);
     grpc_slice_buffer_destroy_internal(&output_buffer);
+    grpc_slice_buffer_destroy_internal(&protector_staging_buffer);
     gpr_mu_destroy(&protector_mu);
   }
 
@@ -121,7 +143,8 @@ struct secure_endpoint {
   grpc_core::MemoryOwner memory_owner;
   grpc_core::MemoryAllocator::Reservation self_reservation;
   std::atomic<bool> has_posted_reclaimer;
-
+  int min_progress_size;
+  grpc_slice_buffer protector_staging_buffer;
   gpr_refcount ref;
 };
 }  // namespace
@@ -240,7 +263,7 @@ static void on_read(void* user_data, grpc_error_handle error) {
     uint8_t* cur = GRPC_SLICE_START_PTR(ep->read_staging_buffer);
     uint8_t* end = GRPC_SLICE_END_PTR(ep->read_staging_buffer);
 
-    if (error != GRPC_ERROR_NONE) {
+    if (!GRPC_ERROR_IS_NONE(error)) {
       grpc_slice_buffer_reset_and_unref_internal(ep->read_buffer);
       call_read_cb(ep, GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                            "Secure read failed", &error, 1));
@@ -249,8 +272,19 @@ static void on_read(void* user_data, grpc_error_handle error) {
 
     if (ep->zero_copy_protector != nullptr) {
       // Use zero-copy grpc protector to unprotect.
+      int min_progress_size = 1;
+      // Get the size of the last frame which is not yet fully decrypted.
+      // This estimated frame size is stored in ep->min_progress_size which is
+      // passed to the TCP layer to indicate the minimum number of
+      // bytes that need to be read to make meaningful progress. This would
+      // avoid reading of small slices from the network.
+      // TODO(vigneshbabu): Set min_progress_size in the regular (non-zero-copy)
+      // frame protector code path as well.
       result = tsi_zero_copy_grpc_protector_unprotect(
-          ep->zero_copy_protector, &ep->source_buffer, ep->read_buffer);
+          ep->zero_copy_protector, &ep->source_buffer, ep->read_buffer,
+          &min_progress_size);
+      min_progress_size = std::max(1, min_progress_size);
+      ep->min_progress_size = result != TSI_OK ? 1 : min_progress_size;
     } else {
       // Use frame protector to unprotect.
       /* TODO(yangg) check error, maybe bail out early */
@@ -336,7 +370,7 @@ static void endpoint_read(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
   }
 
   grpc_endpoint_read(ep->wrapped_ep, &ep->source_buffer, &ep->on_read, urgent,
-                     /*min_progress_size=*/1);
+                     /*min_progress_size=*/ep->min_progress_size);
 }
 
 static void flush_write_staging_buffer(secure_endpoint* ep, uint8_t** cur,
@@ -351,8 +385,7 @@ static void flush_write_staging_buffer(secure_endpoint* ep, uint8_t** cur,
 }
 
 static void endpoint_write(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
-                           grpc_closure* cb, void* arg,
-                           int /*max_frame_size*/) {
+                           grpc_closure* cb, void* arg, int max_frame_size) {
   GPR_TIMER_SCOPE("secure_endpoint.endpoint_write", 0);
 
   unsigned i;
@@ -377,8 +410,25 @@ static void endpoint_write(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
 
     if (ep->zero_copy_protector != nullptr) {
       // Use zero-copy grpc protector to protect.
-      result = tsi_zero_copy_grpc_protector_protect(ep->zero_copy_protector,
-                                                    slices, &ep->output_buffer);
+      result = TSI_OK;
+      // Break the input slices into chunks of size = max_frame_size and call
+      // tsi_zero_copy_grpc_protector_protect on each chunk. This ensures that
+      // the protector cannot create frames larger than the specified
+      // max_frame_size.
+      while (slices->length > static_cast<size_t>(max_frame_size) &&
+             result == TSI_OK) {
+        grpc_slice_buffer_move_first(slices,
+                                     static_cast<size_t>(max_frame_size),
+                                     &ep->protector_staging_buffer);
+        result = tsi_zero_copy_grpc_protector_protect(
+            ep->zero_copy_protector, &ep->protector_staging_buffer,
+            &ep->output_buffer);
+      }
+      if (result == TSI_OK && slices->length > 0) {
+        result = tsi_zero_copy_grpc_protector_protect(
+            ep->zero_copy_protector, slices, &ep->output_buffer);
+      }
+      grpc_slice_buffer_reset_and_unref_internal(&ep->protector_staging_buffer);
     } else {
       // Use frame protector to protect.
       for (i = 0; i < slices->count; i++) {
@@ -446,7 +496,7 @@ static void endpoint_write(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
   }
 
   grpc_endpoint_write(ep->wrapped_ep, &ep->output_buffer, cb, arg,
-                      /*max_frame_size=*/INT_MAX);
+                      max_frame_size);
 }
 
 static void endpoint_shutdown(grpc_endpoint* secure_ep, grpc_error_handle why) {

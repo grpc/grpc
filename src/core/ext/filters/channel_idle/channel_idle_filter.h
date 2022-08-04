@@ -94,7 +94,7 @@ class ClientIdleFilter final : public ChannelIdleFilter {
   static const grpc_channel_filter kFilter;
 
   static absl::StatusOr<ClientIdleFilter> Create(
-      ChannelArgs args, ChannelFilter::Args filter_args);
+      const ChannelArgs& args, ChannelFilter::Args filter_args);
 
  private:
   using ChannelIdleFilter::ChannelIdleFilter;
@@ -105,7 +105,7 @@ class MaxAgeFilter final : public ChannelIdleFilter {
   static const grpc_channel_filter kFilter;
   struct Config;
 
-  static absl::StatusOr<MaxAgeFilter> Create(ChannelArgs args,
+  static absl::StatusOr<MaxAgeFilter> Create(const ChannelArgs& args,
                                              ChannelFilter::Args filter_args);
 
   void PostInit() override;

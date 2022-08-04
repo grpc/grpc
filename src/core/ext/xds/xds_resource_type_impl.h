@@ -14,6 +14,8 @@
 // limitations under the License.
 //
 
+#ifndef GRPC_CORE_EXT_XDS_XDS_RESOURCE_TYPE_IMPL_H
+#define GRPC_CORE_EXT_XDS_XDS_RESOURCE_TYPE_IMPL_H
 #include <grpc/support/port_platform.h>
 
 #include <memory>
@@ -23,9 +25,6 @@
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_resource_type.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-
-#ifndef GRPC_CORE_EXT_XDS_XDS_RESOURCE_TYPE_IMPL_H
-#define GRPC_CORE_EXT_XDS_XDS_RESOURCE_TYPE_IMPL_H
 
 namespace grpc_core {
 

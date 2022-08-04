@@ -46,10 +46,7 @@ changes to this codebase at the moment.
    ```
 
 #### Configure GKE cluster
-This is an example outlining minimal requirements to run `tests.baseline_test`.  
-For more details, and for the setup for security tests, see
-["Setting up Traffic Director service security with proxyless gRPC"](https://cloud.google.com/traffic-director/docs/security-proxyless-setup)
- user guide.
+This is an example outlining minimal requirements to run the [baseline tests](xds-baseline-tests).
  
 Update gloud sdk:
 ```shell
@@ -195,45 +192,6 @@ python -m grpc_tools.protoc --proto_path=../../../ \
 
 # Basic usage
 
-### xDS Baseline Tests
-
-Test suite meant to confirm that basic xDS features work as expected. Executing
-it before other test suites will help to identify whether test failure related
-to specific features under test, or caused by unrelated infrastructure
-disturbances.
-
-The client and server images are created based on Git commit hashes, but not
-every single one of them. It is triggered nightly and per-release. For example,
-the commit we are using below (`d22f93e1ade22a1e026b57210f6fc21f7a3ca0cf`) comes
-from branch `v1.37.x` in `grpc-java` repo.
-
-```shell
-# Help
-python -m tests.baseline_test --help
-python -m tests.baseline_test --helpfull
-
-# Run on grpc-testing cluster
-python -m tests.baseline_test \
-  --flagfile="config/grpc-testing.cfg" \
-  --kube_context="${KUBE_CONTEXT}" \
-  --server_image="gcr.io/grpc-testing/xds-interop/java-server:d22f93e1ade22a1e026b57210f6fc21f7a3ca0cf" \
-  --client_image="gcr.io/grpc-testing/xds-interop/java-client:d22f93e1ade22a1e026b57210f6fc21f7a3ca0cf"
-```
-
-### xDS Security Tests
-```shell
-# Help
-python -m tests.security_test --help
-python -m tests.security_test --helpfull
-
-# Run on grpc-testing cluster
-python -m tests.security_test \
-  --flagfile="config/grpc-testing.cfg" \
-  --kube_context="${KUBE_CONTEXT}" \
-  --server_image="gcr.io/grpc-testing/xds-interop/java-server:d22f93e1ade22a1e026b57210f6fc21f7a3ca0cf" \
-  --client_image="gcr.io/grpc-testing/xds-interop/java-client:d22f93e1ade22a1e026b57210f6fc21f7a3ca0cf"
-```
-
 ## Local development
 This test driver allows running tests locally against remote GKE clusters, right
 from your dev environment. You need:
@@ -269,7 +227,44 @@ envsubst < config/local-dev.cfg.example > config/local-dev.cfg
 
 Learn more about flagfiles in [abseil documentation](https://abseil.io/docs/python/guides/flags#a-note-about---flagfile).
 
-### Helper scripts
+## Test suites
+
+See the full list of available test suites in the [`tests/`](https://github.com/grpc/grpc/tree/master/tools/run_tests/xds_k8s_test_driver/tests) folder. 
+
+### xDS Baseline Tests
+
+Test suite meant to confirm that basic xDS features work as expected. Executing
+it before other test suites will help to identify whether test failure related
+to specific features under test, or caused by unrelated infrastructure
+disturbances.
+
+```shell
+# Help
+python -m tests.baseline_test --help
+python -m tests.baseline_test --helpfull
+
+# Run the baseline test with local-dev.cfg settings
+python -m tests.baseline_test --flagfile="config/local-dev.cfg"
+  
+# Same as above, but using the helper script
+./run.sh tests/baseline_test.py
+```
+
+### xDS Security Tests
+Test suite meant to verify mTLS/TLS features. Note that this requires
+additional environment configuration. For more details, and for the 
+setup for the security tests, see
+["Setting up Traffic Director service security with proxyless gRPC"](https://cloud.google.com/traffic-director/docs/security-proxyless-setup) user guide.
+
+```shell
+# Run the security test with local-dev.cfg settings
+python -m tests.security_test --flagfile="config/local-dev.cfg"
+
+# Same as above, but using the helper script
+./run.sh tests/security_test.py
+```
+
+## Helper scripts
 You can use interop xds-k8s [`bin/`](https://github.com/grpc/grpc/tree/master/tools/run_tests/xds_k8s_test_driver/bin)
 scripts to configure TD, start k8s instances step-by-step, and keep them alive
 for as long as you need. 
@@ -322,6 +317,7 @@ XDS_K8S_CONFIG=./path-to-flagfile.cfg ./run.sh bin/run_td_setup.py --resource_su
 ./run.sh tests/security_test.py SecurityTest.test_mtls --nocheck_local_certs
 ```
 
+## Partial setups
 ### Regular workflow
 ```shell
 # Setup Traffic Director

@@ -22,6 +22,7 @@
 #include <limits>
 #include <memory>
 #include <type_traits>
+#include <utility>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/types/optional.h"

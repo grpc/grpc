@@ -16,61 +16,62 @@
 
 #include "src/core/lib/promise/sleep.h"
 
+#include <utility>
+
+#include <grpc/event_engine/event_engine.h>
+
+#include "src/core/lib/event_engine/event_engine_factory.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/promise/activity.h"
 
 namespace grpc_core {
 
-Sleep::Sleep(Timestamp deadline) : state_(new State(deadline)) {
-  GRPC_CLOSURE_INIT(&state_->on_timer, &OnTimer, state_, nullptr);
-}
+using ::grpc_event_engine::experimental::GetDefaultEventEngine;
+
+Sleep::Sleep(Timestamp deadline) : deadline_(deadline) {}
 
 Sleep::~Sleep() {
-  if (state_ == nullptr) return;
-  {
-    MutexLock lock(&state_->mu);
-    switch (state_->stage) {
-      case Stage::kInitial:
-        state_->Unref();
-        break;
-      case Stage::kStarted:
-        grpc_timer_cancel(&state_->timer);
-        break;
-      case Stage::kDone:
-        break;
-    }
-  }
-  state_->Unref();
-}
-
-void Sleep::OnTimer(void* arg, grpc_error_handle) {
-  auto* state = static_cast<State*>(arg);
-  Waker waker;
-  {
-    MutexLock lock(&state->mu);
-    state->stage = Stage::kDone;
-    waker = std::move(state->waker);
-  }
-  waker.Wakeup();
-  state->Unref();
+  if (closure_ != nullptr) closure_->Cancel();
 }
 
 Poll<absl::Status> Sleep::operator()() {
-  MutexLock lock(&state_->mu);
-  switch (state_->stage) {
-    case Stage::kInitial:
-      if (state_->deadline <= ExecCtx::Get()->Now()) {
-        return absl::OkStatus();
-      }
-      state_->stage = Stage::kStarted;
-      grpc_timer_init(&state_->timer, state_->deadline, &state_->on_timer);
-      break;
-    case Stage::kStarted:
-      break;
-    case Stage::kDone:
-      return absl::OkStatus();
+  // Invalidate now so that we see a fresh version of the time.
+  // TODO(ctiller): the following can be safely removed when we remove ExecCtx.
+  ExecCtx::Get()->InvalidateNow();
+  // If the deadline is earlier than now we can just return.
+  if (deadline_ <= ExecCtx::Get()->Now()) return absl::OkStatus();
+  if (closure_ == nullptr) {
+    // TODO(ctiller): it's likely we'll want a pool of closures - probably per
+    // cpu? - to avoid allocating/deallocating on fast paths.
+    closure_ = new ActiveClosure(deadline_);
   }
-  state_->waker = Activity::current()->MakeNonOwningWaker();
   return Pending{};
+}
+
+Sleep::ActiveClosure::ActiveClosure(Timestamp deadline)
+    : waker_(Activity::current()->MakeOwningWaker()),
+      timer_handle_(GetDefaultEventEngine()->RunAfter(
+          deadline - ExecCtx::Get()->Now(), this)) {}
+
+void Sleep::ActiveClosure::Run() {
+  ApplicationCallbackExecCtx callback_exec_ctx;
+  ExecCtx exec_ctx;
+  auto waker = std::move(waker_);
+  if (refs_.Unref()) {
+    delete this;
+  } else {
+    waker.Wakeup();
+  }
+}
+
+void Sleep::ActiveClosure::Cancel() {
+  // If we cancel correctly then we must own both refs still and can simply
+  // delete without unreffing twice, otherwise try unreffing since this may be
+  // the last owned ref.
+  if (GetDefaultEventEngine()->Cancel(timer_handle_) || refs_.Unref()) {
+    delete this;
+  }
 }
 
 }  // namespace grpc_core

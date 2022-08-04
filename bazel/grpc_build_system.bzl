@@ -176,10 +176,6 @@ def grpc_cc_library(
                       "//:grpc_allow_exceptions": ["GRPC_ALLOW_EXCEPTIONS=1"],
                       "//:grpc_disallow_exceptions": ["GRPC_ALLOW_EXCEPTIONS=0"],
                       "//conditions:default": [],
-                  }) +
-                  select({
-                      "//:use_abseil_status": ["GRPC_ERROR_IS_ABSEIL_STATUS=1"],
-                      "//conditions:default": [],
                   }),
         hdrs = hdrs + public_hdrs,
         deps = deps + _get_external_deps(external_deps),
@@ -362,7 +358,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
     if language.upper() == "C":
         copts = copts + if_not_windows(["-std=c11"])
 
-    core_deps = deps + _get_external_deps(external_deps)
+    core_deps = deps + _get_external_deps(external_deps) + ["//test/core/util:grpc_suppressions"]
 
     # Test args for all tests
     test_args = {
@@ -378,14 +374,15 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         "linkstatic": linkstatic,
     }
 
-    ios_cc_test(
-        name = name,
-        srcs = srcs,
-        tags = tags,
-        deps = core_deps,
-        args = args,
-        **test_args
-    )
+    if "grpc-fuzzer" not in tags:
+        ios_cc_test(
+            name = name,
+            srcs = srcs,
+            tags = tags,
+            deps = core_deps,
+            args = args,
+            **test_args
+        )
     if not uses_polling:
         # the test behavior doesn't depend on polling, just generate the test
         native.cc_test(
@@ -437,7 +434,7 @@ def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], da
         data = data,
         testonly = testonly,
         linkshared = linkshared,
-        deps = deps + _get_external_deps(external_deps),
+        deps = deps + _get_external_deps(external_deps) + ["//test/core/util:grpc_suppressions"],
         copts = GRPC_DEFAULT_COPTS + copts,
         linkopts = if_not_windows(["-pthread"]) + linkopts,
         tags = tags,
@@ -450,6 +447,10 @@ def grpc_generate_one_off_targets():
     native.alias(
         name = "grpc_objc",
         actual = "//:grpc",
+    )
+    native.config_setting(
+        name = "windows_other",
+        values = {"define": "GRPC_WINDOWS_OTHER=1"},
     )
 
 def grpc_generate_objc_one_off_targets():

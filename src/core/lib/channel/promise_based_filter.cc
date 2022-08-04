@@ -587,11 +587,17 @@ void ClientCallData::StartBatch(grpc_transport_stream_op_batch* b) {
       recv_trailing_state_ = RecvTrailingState::kForwarded;
       HookRecvTrailingMetadata(batch);
     }
-  } else if (cancelled_error_ != GRPC_ERROR_NONE) {
+  } else if (!GRPC_ERROR_IS_NONE(cancelled_error_)) {
     batch.CancelWith(GRPC_ERROR_REF(cancelled_error_), &flusher);
   }
 
-  if (batch.is_captured()) batch.ResumeWith(&flusher);
+  if (batch.is_captured()) {
+    if (!is_last()) {
+      batch.ResumeWith(&flusher);
+    } else {
+      batch.CancelWith(GRPC_ERROR_CANCELLED, &flusher);
+    }
+  }
 }
 
 // Handle cancellation.
@@ -692,7 +698,7 @@ void ClientCallData::RecvInitialMetadataReady(grpc_error_handle error) {
       abort();  // unreachable
   }
   Flusher flusher(this);
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     recv_initial_metadata_->state = RecvInitialMetadata::kResponded;
     flusher.AddClosure(
         absl::exchange(recv_initial_metadata_->original_on_ready, nullptr),
@@ -829,7 +835,7 @@ void ClientCallData::RecvTrailingMetadataReady(grpc_error_handle error) {
   }
   // If there was an error, we'll put that into the trailing metadata and
   // proceed as if there was not.
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     SetStatusFromError(recv_trailing_metadata_, error);
   }
   // Record that we've got the callback.
@@ -1149,7 +1155,7 @@ void ServerCallData::RecvInitialMetadataReady(grpc_error_handle error) {
   Flusher flusher(this);
   GPR_ASSERT(recv_initial_state_ == RecvInitialState::kForwarded);
   // If there was an error we just propagate that through
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     recv_initial_state_ = RecvInitialState::kResponded;
     flusher.AddClosure(
         absl::exchange(original_recv_initial_metadata_ready_, nullptr),

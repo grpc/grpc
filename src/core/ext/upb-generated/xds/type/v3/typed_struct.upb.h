@@ -53,11 +53,15 @@ UPB_INLINE xds_type_v3_TypedStruct* xds_type_v3_TypedStruct_parse_ex(const char*
   return ret;
 }
 UPB_INLINE char* xds_type_v3_TypedStruct_serialize(const xds_type_v3_TypedStruct* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &xds_type_v3_TypedStruct_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &xds_type_v3_TypedStruct_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* xds_type_v3_TypedStruct_serialize_ex(const xds_type_v3_TypedStruct* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &xds_type_v3_TypedStruct_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &xds_type_v3_TypedStruct_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE void xds_type_v3_TypedStruct_clear_type_url(const xds_type_v3_TypedStruct* msg) {
   *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);

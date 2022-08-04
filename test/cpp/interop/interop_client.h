@@ -136,7 +136,8 @@ class InteropClient {
                         const std::string& optional_debug_string);
   bool TransientFailureOrAbort();
 
-  std::tuple<bool, int32_t, std::string> PerformOneSoakTestIteration(
+  std::tuple<bool, int32_t, std::string, std::string>
+  PerformOneSoakTestIteration(
       const bool reset_channel,
       const int32_t max_acceptable_per_iteration_latency_ms);
 

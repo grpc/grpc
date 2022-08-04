@@ -25,7 +25,6 @@
 #include <atomic>
 #include <functional>
 #include <string>
-#include <type_traits>
 #include <utility>
 
 #include "absl/status/status.h"
@@ -131,7 +130,7 @@ class FaultInjectionFilter::InjectionDecision {
 };
 
 absl::StatusOr<FaultInjectionFilter> FaultInjectionFilter::Create(
-    ChannelArgs, ChannelFilter::Args filter_args) {
+    const ChannelArgs&, ChannelFilter::Args filter_args) {
   return FaultInjectionFilter(filter_args);
 }
 

@@ -485,8 +485,8 @@ class CLanguage(object):
             return ('debian11_openssl102', [
                 "-DgRPC_SSL_PROVIDER=package",
             ])
-        elif compiler == 'gcc11':
-            return ('gcc_11', [])
+        elif compiler == 'gcc12':
+            return ('gcc_12', ["-DCMAKE_CXX_STANDARD=20"])
         elif compiler == 'gcc_musl':
             return ('alpine', [])
         elif compiler == 'clang6':
@@ -1022,22 +1022,6 @@ class ObjCLanguage(object):
                 cpu_cost=1e6,
                 environ=_FORCE_ENVIRON_FOR_WRAPPERS))
         # TODO(jtattermusch): Create bazel target for the test and remove the test from here
-        # TODO(jtattermusch): Clarify what do these tests do?
-        out.append(
-            self.config.job_spec(
-                ['src/objective-c/tests/CoreTests/build_and_run_tests.sh'],
-                timeout_seconds=60 * 60,
-                shortname='ios-test-core-tests',
-                cpu_cost=1e6,
-                environ=_FORCE_ENVIRON_FOR_WRAPPERS))
-        # TODO(jtattermusch): Make sure the //src/objective-c/tests:InteropTests bazel test passes reliably and remove the test from there.
-        out.append(
-            self.config.job_spec(['src/objective-c/tests/run_one_test.sh'],
-                                 timeout_seconds=60 * 60,
-                                 shortname='ios-test-interoptests',
-                                 cpu_cost=1e6,
-                                 environ={'SCHEME': 'InteropTests'}))
-        # TODO(jtattermusch): Create bazel target for the test and remove the test from here
         # (how does one add the cronet dependency in bazel?)
         out.append(
             self.config.job_spec(['src/objective-c/tests/run_one_test.sh'],
@@ -1512,7 +1496,7 @@ argp.add_argument(
         'gcc6',
         'gcc10.2',
         'gcc10.2_openssl102',
-        'gcc11',
+        'gcc12',
         'gcc_musl',
         'clang6',
         'clang13',

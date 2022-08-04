@@ -20,7 +20,6 @@
 
 #include "src/cpp/ext/filters/census/server_filter.h"
 
-#include <memory>
 #include <utility>
 
 #include "absl/strings/str_cat.h"
@@ -82,7 +81,7 @@ void CensusServerCallData::OnDoneRecvMessageCb(void* user_data,
   GPR_ASSERT(calld != nullptr);
   GPR_ASSERT(channeld != nullptr);
   // Stream messages are no longer valid after receiving trailing metadata.
-  if ((*calld->recv_message_) != nullptr) {
+  if (calld->recv_message_->has_value()) {
     ++calld->recv_message_count_;
   }
   grpc_core::Closure::Run(DEBUG_LOCATION, calld->initial_on_done_recv_message_,
@@ -95,7 +94,7 @@ void CensusServerCallData::OnDoneRecvInitialMetadataCb(
   CensusServerCallData* calld =
       reinterpret_cast<CensusServerCallData*>(elem->call_data);
   GPR_ASSERT(calld != nullptr);
-  if (error == GRPC_ERROR_NONE) {
+  if (GRPC_ERROR_IS_NONE(error)) {
     grpc_metadata_batch* initial_metadata = calld->recv_initial_metadata_;
     GPR_ASSERT(initial_metadata != nullptr);
     ServerMetadataElements sml;

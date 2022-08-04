@@ -1,0 +1,14 @@
+enable_bdp: true
+actions {
+  set_min_progress_size {
+    size: 11
+  }
+}
+actions {
+  periodic_update {
+  }
+}
+actions {
+  perform_send_from_remote {
+  }
+}

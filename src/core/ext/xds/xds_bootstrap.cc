@@ -20,11 +20,12 @@
 
 #include <stdlib.h>
 
-#include <algorithm>
 #include <utility>
 #include <vector>
 
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -55,6 +56,10 @@ bool XdsFederationEnabled() {
 }
 
 namespace {
+
+const absl::string_view kServerFeatureXdsV3 = "xds_v3";
+const absl::string_view kServerFeatureIgnoreResourceDeletion =
+    "ignore_resource_deletion";
 
 grpc_error_handle ParseChannelCreds(const Json::Object& json, size_t idx,
                                     XdsBootstrap::XdsServer* server) {
@@ -92,7 +97,7 @@ grpc_error_handle ParseChannelCredsArray(const Json::Array& json,
     } else {
       grpc_error_handle parse_error =
           ParseChannelCreds(child.object_value(), i, server);
-      if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
+      if (!GRPC_ERROR_IS_NONE(parse_error)) error_list.push_back(parse_error);
     }
   }
   if (server->channel_creds_type.empty()) {
@@ -121,7 +126,7 @@ XdsBootstrap::XdsServer XdsBootstrap::XdsServer::Parse(
   if (creds_array != nullptr) {
     grpc_error_handle parse_error =
         ParseChannelCredsArray(*creds_array, &server);
-    if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
+    if (!GRPC_ERROR_IS_NONE(parse_error)) error_list.push_back(parse_error);
   }
   const Json::Array* server_features_array = nullptr;
   ParseJsonObjectField(json.object_value(), "server_features",
@@ -129,7 +134,9 @@ XdsBootstrap::XdsServer XdsBootstrap::XdsServer::Parse(
   if (server_features_array != nullptr) {
     for (const Json& feature_json : *server_features_array) {
       if (feature_json.type() == Json::Type::STRING &&
-          feature_json.string_value() == "xds_v3") {
+          (feature_json.string_value() == kServerFeatureXdsV3 ||
+           feature_json.string_value() ==
+               kServerFeatureIgnoreResourceDeletion)) {
         server.server_features.insert(feature_json.string_value());
       }
     }
@@ -159,7 +166,13 @@ Json::Object XdsBootstrap::XdsServer::ToJson() const {
 }
 
 bool XdsBootstrap::XdsServer::ShouldUseV3() const {
-  return server_features.find("xds_v3") != server_features.end();
+  return server_features.find(std::string(kServerFeatureXdsV3)) !=
+         server_features.end();
+}
+
+bool XdsBootstrap::XdsServer::IgnoreResourceDeletion() const {
+  return server_features.find(std::string(
+             kServerFeatureIgnoreResourceDeletion)) != server_features.end();
 }
 
 //
@@ -168,16 +181,13 @@ bool XdsBootstrap::XdsServer::ShouldUseV3() const {
 
 std::unique_ptr<XdsBootstrap> XdsBootstrap::Create(
     absl::string_view json_string, grpc_error_handle* error) {
-  Json json = Json::Parse(json_string, error);
-  if (*error != GRPC_ERROR_NONE) {
-    grpc_error_handle error_out =
-        GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-            "Failed to parse bootstrap JSON string", error, 1);
-    GRPC_ERROR_UNREF(*error);
-    *error = error_out;
+  auto json = Json::Parse(json_string);
+  if (!json.ok()) {
+    *error = GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+        "Failed to parse bootstrap JSON string: ", json.status().ToString()));
     return nullptr;
   }
-  return absl::make_unique<XdsBootstrap>(std::move(json), error);
+  return absl::make_unique<XdsBootstrap>(std::move(*json), error);
 }
 
 XdsBootstrap::XdsBootstrap(Json json, grpc_error_handle* error) {
@@ -196,7 +206,7 @@ XdsBootstrap::XdsBootstrap(Json json, grpc_error_handle* error) {
         "\"xds_servers\" field is not an array"));
   } else {
     grpc_error_handle parse_error = ParseXdsServerList(&it->second, &servers_);
-    if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
+    if (!GRPC_ERROR_IS_NONE(parse_error)) error_list.push_back(parse_error);
   }
   it = json.mutable_object()->find("node");
   if (it != json.mutable_object()->end()) {
@@ -205,7 +215,7 @@ XdsBootstrap::XdsBootstrap(Json json, grpc_error_handle* error) {
           "\"node\" field is not an object"));
     } else {
       grpc_error_handle parse_error = ParseNode(&it->second);
-      if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
+      if (!GRPC_ERROR_IS_NONE(parse_error)) error_list.push_back(parse_error);
     }
   }
   if (XdsFederationEnabled()) {
@@ -216,7 +226,7 @@ XdsBootstrap::XdsBootstrap(Json json, grpc_error_handle* error) {
             "\"authorities\" field is not an object"));
       } else {
         grpc_error_handle parse_error = ParseAuthorities(&it->second);
-        if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
+        if (!GRPC_ERROR_IS_NONE(parse_error)) error_list.push_back(parse_error);
       }
     }
     it = json.mutable_object()->find(
@@ -249,7 +259,7 @@ XdsBootstrap::XdsBootstrap(Json json, grpc_error_handle* error) {
           "\"certificate_providers\" field is not an object"));
     } else {
       grpc_error_handle parse_error = ParseCertificateProviders(&it->second);
-      if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
+      if (!GRPC_ERROR_IS_NONE(parse_error)) error_list.push_back(parse_error);
     }
   }
   *error = GRPC_ERROR_CREATE_FROM_VECTOR("errors parsing xds bootstrap file",
@@ -277,7 +287,7 @@ bool XdsBootstrap::XdsServerExists(
 }
 
 grpc_error_handle XdsBootstrap::ParseXdsServerList(
-    Json* json, absl::InlinedVector<XdsServer, 1>* servers) {
+    Json* json, std::vector<XdsServer>* servers) {
   std::vector<grpc_error_handle> error_list;
   for (size_t i = 0; i < json->mutable_array()->size(); ++i) {
     Json& child = json->mutable_array()->at(i);
@@ -287,7 +297,7 @@ grpc_error_handle XdsBootstrap::ParseXdsServerList(
     } else {
       grpc_error_handle parse_error;
       servers->emplace_back(XdsServer::Parse(child, &parse_error));
-      if (parse_error != GRPC_ERROR_NONE) {
+      if (!GRPC_ERROR_IS_NONE(parse_error)) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
             absl::StrCat("errors parsing index ", i)));
         error_list.push_back(parse_error);
@@ -307,7 +317,7 @@ grpc_error_handle XdsBootstrap::ParseAuthorities(Json* json) {
       continue;
     }
     grpc_error_handle parse_error = ParseAuthority(&p.second, p.first);
-    if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
+    if (!GRPC_ERROR_IS_NONE(parse_error)) error_list.push_back(parse_error);
   }
   return GRPC_ERROR_CREATE_FROM_VECTOR("errors parsing \"authorities\"",
                                        &error_list);
@@ -344,7 +354,7 @@ grpc_error_handle XdsBootstrap::ParseAuthority(Json* json,
     } else {
       grpc_error_handle parse_error =
           ParseXdsServerList(&it->second, &authority.xds_servers);
-      if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
+      if (!GRPC_ERROR_IS_NONE(parse_error)) error_list.push_back(parse_error);
     }
   }
   if (error_list.empty()) {
@@ -382,7 +392,7 @@ grpc_error_handle XdsBootstrap::ParseNode(Json* json) {
           "\"locality\" field is not an object"));
     } else {
       grpc_error_handle parse_error = ParseLocality(&it->second);
-      if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
+      if (!GRPC_ERROR_IS_NONE(parse_error)) error_list.push_back(parse_error);
     }
   }
   it = json->mutable_object()->find("metadata");
@@ -440,7 +450,7 @@ grpc_error_handle XdsBootstrap::ParseCertificateProviders(Json* json) {
     } else {
       grpc_error_handle parse_error = ParseCertificateProvider(
           certificate_provider.first, &certificate_provider.second);
-      if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
+      if (!GRPC_ERROR_IS_NONE(parse_error)) error_list.push_back(parse_error);
     }
   }
   return GRPC_ERROR_CREATE_FROM_VECTOR(
@@ -476,14 +486,16 @@ grpc_error_handle XdsBootstrap::ParseCertificateProvider(
           grpc_error_handle parse_error = GRPC_ERROR_NONE;
           config = factory->CreateCertificateProviderConfig(it->second,
                                                             &parse_error);
-          if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
+          if (!GRPC_ERROR_IS_NONE(parse_error)) {
+            error_list.push_back(parse_error);
+          }
         }
       } else {
         // "config" is an optional field, so create an empty JSON object.
         grpc_error_handle parse_error = GRPC_ERROR_NONE;
         config = factory->CreateCertificateProviderConfig(Json::Object(),
                                                           &parse_error);
-        if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
+        if (!GRPC_ERROR_IS_NONE(parse_error)) error_list.push_back(parse_error);
       }
       certificate_providers_.insert(
           {instance_name, {std::move(plugin_name), std::move(config)}});

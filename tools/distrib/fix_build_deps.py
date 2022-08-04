@@ -17,6 +17,7 @@
 import argparse
 import collections
 from doctest import SKIP
+import multiprocessing
 import os
 import re
 import subprocess
@@ -46,7 +47,7 @@ EXTERNAL_DEPS = {
         'absl/base',
     # TODO(ctiller) remove this
     'absl/base/internal/endian.h':
-        'absl-base',
+        'absl/base',
     'absl/base/thread_annotations.h':
         'absl/base:core_headers',
     'absl/container/flat_hash_map.h':
@@ -55,6 +56,18 @@ EXTERNAL_DEPS = {
         'absl/container:flat_hash_set',
     'absl/container/inlined_vector.h':
         'absl/container:inlined_vector',
+    'absl/cleanup/cleanup.h':
+        'absl/cleanup',
+    'absl/debugging/failure_signal_handler.h':
+        'absl/debugging:failure_signal_handler',
+    'absl/debugging/stacktrace.h':
+        'absl/debugging:stacktrace',
+    'absl/debugging/symbolize.h':
+        'absl/debugging:symbolize',
+    'absl/flags/flag.h':
+        'absl/flags:flag',
+    'absl/functional/any_invocable.h':
+        'absl/functional:any_invocable',
     'absl/functional/bind_front.h':
         'absl/functional:bind_front',
     'absl/functional/function_ref.h':
@@ -127,6 +140,8 @@ EXTERNAL_DEPS = {
         'opencensus-trace-propagation',
     'opencensus/tags/context_util.h':
         'opencensus-tags-context_util',
+    'openssl/base.h':
+        'libssl',
     'openssl/bio.h':
         'libssl',
     'openssl/bn.h':
@@ -135,6 +150,8 @@ EXTERNAL_DEPS = {
         'libcrypto',
     'openssl/crypto.h':
         'libcrypto',
+    'openssl/digest.h':
+        'libssl',
     'openssl/engine.h':
         'libcrypto',
     'openssl/err.h':
@@ -159,6 +176,8 @@ EXTERNAL_DEPS = {
         'libcrypto',
     're2/re2.h':
         're2',
+    'upb/arena.h':
+        'upb_lib',
     'upb/def.h':
         'upb_lib',
     'upb/json_encode.h':
@@ -178,6 +197,8 @@ EXTERNAL_DEPS = {
 }
 
 INTERNAL_DEPS = {
+    'google/api/expr/v1alpha1/syntax.upb.h':
+        'google_type_expr_upb',
     'google/rpc/status.upb.h':
         'google_rpc_status_upb',
     'google/protobuf/any.upb.h':
@@ -224,13 +245,16 @@ INTERNAL_DEPS = {
         'xds_type_upb',
 }
 
-SKIP_DEPS = {'google/api/expr/v1alpha1/syntax.upb.h'}
-
 
 class FakeSelects:
 
     def config_setting_group(self, **kwargs):
         pass
+
+
+num_cc_libraries = 0
+num_opted_out_cc_libraries = 0
+parsing_path = None
 
 
 def grpc_cc_library(name,
@@ -242,7 +266,17 @@ def grpc_cc_library(name,
                     deps=[],
                     external_deps=[],
                     **kwargs):
-    if select_deps or 'nofixdeps' in tags or 'grpc-autodeps' not in tags:
+    global args
+    global num_cc_libraries
+    global num_opted_out_cc_libraries
+    global parsing_path
+    assert (parsing_path is not None)
+    name = '//%s:%s' % (parsing_path, name)
+    num_cc_libraries += 1
+    if select_deps or 'nofixdeps' in tags:
+        if args.whats_left and not select_deps and 'nofixdeps' not in tags:
+            num_opted_out_cc_libraries += 1
+            print("Not opted in: {}".format(name))
         no_update.add(name)
     scores[name] = len(public_hdrs + hdrs)
     # avoid_dep is the internal way of saying prefer something else
@@ -250,22 +284,22 @@ def grpc_cc_library(name,
     # other, whilst not biasing dependent projects
     if 'avoid_dep' in tags or 'grpc_avoid_dep' in tags:
         avoidness[name] += 10
-    if 'nofixdeps' in tags:
-        avoidness[name] += 1
     for hdr in hdrs + public_hdrs:
-        vendors[hdr].append(name)
+        filename = '%s%s' % ((parsing_path + '/' if parsing_path else ''), hdr)
+        vendors[filename].append(name)
     inc = set()
     original_deps[name] = frozenset(deps)
     original_external_deps[name] = frozenset(external_deps)
     for src in hdrs + public_hdrs + srcs:
-        for line in open(src):
+        filename = '%s%s' % ((parsing_path + '/' if parsing_path else ''), src)
+        for line in open(filename):
             m = re.search(r'#include <(.*)>', line)
             if m:
                 inc.add(m.group(1))
             m = re.search(r'#include "(.*)"', line)
             if m:
                 inc.add(m.group(1))
-            if 'grpc::g_glip' in line or 'grpc:g_core_codegen_interface' in line:
+            if 'grpc::g_glip' in line or 'grpc::g_core_codegen_interface' in line:
                 needs_codegen_base_src.add(name)
     consumes[name] = list(inc)
 
@@ -332,76 +366,124 @@ parser.add_argument('--score',
                     default='edit_distance',
                     help='scoring function to use: one of ' +
                     ', '.join(SCORERS.keys()))
+parser.add_argument('--whats_left',
+                    action='store_true',
+                    default=False,
+                    help='show what is left to opt in')
 args = parser.parse_args()
 
-exec(
-    open('BUILD', 'r').read(), {
-        'load': lambda filename, *args: None,
-        'licenses': lambda licenses: None,
-        'package': lambda **kwargs: None,
-        'exports_files': lambda files: None,
-        'config_setting': lambda **kwargs: None,
-        'selects': FakeSelects(),
-        'python_config_settings': lambda **kwargs: None,
-        'grpc_cc_library': grpc_cc_library,
-        'select': lambda d: d["//conditions:default"],
-        'grpc_upb_proto_library': lambda name, **kwargs: None,
-        'grpc_upb_proto_reflection_library': lambda name, **kwargs: None,
-        'grpc_generate_one_off_targets': lambda: None,
-        'filegroup': lambda name, **kwargs: None,
-    }, {})
+for dirname in [
+        "", "test/core/uri", "test/core/util", "test/core/end2end",
+        "test/core/event_engine"
+]:
+    parsing_path = dirname
+    exec(
+        open('%sBUILD' % (dirname + '/' if dirname else ''), 'r').read(), {
+            'load': lambda filename, *args: None,
+            'licenses': lambda licenses: None,
+            'package': lambda **kwargs: None,
+            'exports_files': lambda files: None,
+            'config_setting': lambda **kwargs: None,
+            'selects': FakeSelects(),
+            'python_config_settings': lambda **kwargs: None,
+            'grpc_cc_library': grpc_cc_library,
+            'grpc_cc_test': grpc_cc_library,
+            'grpc_fuzzer': grpc_cc_library,
+            'select': lambda d: d["//conditions:default"],
+            'grpc_end2end_tests': lambda: None,
+            'grpc_upb_proto_library': lambda name, **kwargs: None,
+            'grpc_upb_proto_reflection_library': lambda name, **kwargs: None,
+            'grpc_generate_one_off_targets': lambda: None,
+            'grpc_package': lambda **kwargs: None,
+            'filegroup': lambda name, **kwargs: None,
+            'sh_library': lambda name, **kwargs: None,
+        }, {})
+    parsing_path = None
+
+if args.whats_left:
+    print("{}/{} libraries are opted in".format(
+        num_cc_libraries - num_opted_out_cc_libraries, num_cc_libraries))
+
+
+def make_relative_path(dep, lib):
+    if lib is None:
+        return dep
+    lib_path = lib[:lib.rfind(':') + 1]
+    if dep.startswith(lib_path):
+        return dep[len(lib_path):]
+    return dep
+
+
+if args.whats_left:
+    print("{}/{} libraries are opted in".format(
+        num_cc_libraries - num_opted_out_cc_libraries, num_cc_libraries))
 
 
 # Keeps track of all possible sets of dependencies that could satify the
 # problem. (models the list monad in Haskell!)
 class Choices:
 
-    def __init__(self):
-        self.choices = set()
-        self.choices.add(frozenset())
+    def __init__(self, library):
+        self.library = library
+        self.to_add = []
+        self.to_remove = []
 
     def add_one_of(self, choices):
         if not choices:
             return
-        new_choices = set()
-        for append_choice in choices:
-            for choice in self.choices:
-                new_choices.add(choice.union([append_choice]))
-        self.choices = new_choices
+        self.to_add.append(
+            tuple(
+                make_relative_path(choice, self.library) for choice in choices))
 
     def add(self, choice):
         self.add_one_of([choice])
 
     def remove(self, remove):
-        new_choices = set()
-        for choice in self.choices:
-            new_choices.add(choice.difference([remove]))
-        self.choices = new_choices
+        self.to_remove.append(make_relative_path(remove, self.library))
 
     def best(self, scorer):
+        choices = set()
+        choices.add(frozenset())
+
+        for add in sorted(set(self.to_add), key=lambda x: (len(x), x)):
+            new_choices = set()
+            for append_choice in add:
+                for choice in choices:
+                    new_choices.add(choice.union([append_choice]))
+            choices = new_choices
+        for remove in sorted(set(self.to_remove)):
+            new_choices = set()
+            for choice in choices:
+                new_choices.add(choice.difference([remove]))
+            choices = new_choices
+
         best = None
         final_scorer = lambda x: (total_avoidness(x), scorer(x), total_score(x))
-        for choice in self.choices:
+        for choice in choices:
             if best is None or final_scorer(choice) < final_scorer(best):
                 best = choice
         return best
 
 
-error = False
-for library in sorted(consumes.keys()):
-    if library in no_update:
-        continue
-    if args.targets and library not in args.targets:
-        continue
+def make_library(library):
+    error = False
     hdrs = sorted(consumes[library])
-    deps = Choices()
-    external_deps = Choices()
+    deps = Choices(library)
+    external_deps = Choices(None)
     for hdr in hdrs:
         if hdr == 'src/core/lib/profiling/stap_probes.h':
             continue
 
+        if hdr == 'grpc/grpc.h' and not library.startswith('//:'):
+            # not the root build including grpc.h ==> //:grpc
+            deps.add_one_of(['//:grpc', '//:grpc_unsecure'])
+            continue
+
         if hdr in INTERNAL_DEPS:
-            deps.add(INTERNAL_DEPS[hdr])
+            dep = INTERNAL_DEPS[hdr]
+            if not dep.startswith('//'):
+                dep = '//:' + dep
+            deps.add(dep)
             continue
 
         if hdr in vendors:
@@ -446,6 +528,7 @@ for library in sorted(consumes.keys()):
         for sys_path in [
                 'sys',
                 'arpa',
+                'gperftools',
                 'netinet',
                 'linux',
                 'android',
@@ -460,10 +543,8 @@ for library in sorted(consumes.keys()):
             # assume a system include
             continue
 
-        if hdr in SKIP_DEPS:
-            continue
-
-        print("# ERROR: can't categorize header: %s" % hdr)
+        print("# ERROR: can't categorize header: %s used by %s" %
+              (hdr, library))
         error = True
 
     if library in needs_codegen_base_src:
@@ -476,9 +557,27 @@ for library in sorted(consumes.keys()):
     external_deps = sorted(
         external_deps.best(lambda x: SCORERS[args.score]
                            (x, original_external_deps[library])))
-    target = ':' + library
-    buildozer_set_list('external_deps', external_deps, target, via='deps')
-    buildozer_set_list('deps', deps, target)
+
+    return (library, error, deps, external_deps)
+
+
+update_libraries = []
+for library in sorted(consumes.keys()):
+    if library in no_update:
+        continue
+    if args.targets and library not in args.targets:
+        continue
+    update_libraries.append(library)
+with multiprocessing.Pool(processes=multiprocessing.cpu_count()) as p:
+    updated_libraries = p.map(make_library, update_libraries, 1)
+
+error = False
+for library, lib_error, deps, external_deps in updated_libraries:
+    if lib_error:
+        error = True
+        continue
+    buildozer_set_list('external_deps', external_deps, library, via='deps')
+    buildozer_set_list('deps', deps, library)
 
 if buildozer_commands:
     ok_statuses = (0, 3)

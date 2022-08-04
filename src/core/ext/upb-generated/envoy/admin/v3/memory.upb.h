@@ -51,11 +51,15 @@ UPB_INLINE envoy_admin_v3_Memory* envoy_admin_v3_Memory_parse_ex(const char* buf
   return ret;
 }
 UPB_INLINE char* envoy_admin_v3_Memory_serialize(const envoy_admin_v3_Memory* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_admin_v3_Memory_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_admin_v3_Memory_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_admin_v3_Memory_serialize_ex(const envoy_admin_v3_Memory* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_admin_v3_Memory_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_admin_v3_Memory_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE void envoy_admin_v3_Memory_clear_allocated(const envoy_admin_v3_Memory* msg) {
   *UPB_PTR_AT(msg, UPB_SIZE(0, 0), uint64_t) = 0;

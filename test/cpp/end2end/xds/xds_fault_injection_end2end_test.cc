@@ -116,12 +116,10 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionAlwaysAbort) {
   // Config fault injection via different setup
   SetFilterConfig(http_fault);
   // Fire several RPCs, and expect all of them to be aborted.
-  CheckRpcSendFailure(
-      DEBUG_LOCATION,
-      CheckRpcSendFailureOptions()
-          .set_times(5)
-          .set_rpc_options(RpcOptions().set_wait_for_ready(true))
-          .set_expected_error_code(StatusCode::ABORTED));
+  for (size_t i = 0; i < 5; ++i) {
+    CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::ABORTED, "Fault injected",
+                        RpcOptions().set_wait_for_ready(true));
+  }
 }
 
 // Without the listener config, the fault injection won't be enabled.
@@ -166,7 +164,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageAbort) {
   SetFilterConfig(http_fault);
   // Send kNumRpcs RPCs and count the aborts.
   size_t num_aborted = SendRpcsAndCountFailuresWithMessage(
-      DEBUG_LOCATION, kNumRpcs, "Fault injected");
+      DEBUG_LOCATION, kNumRpcs, StatusCode::ABORTED, "Fault injected");
   // The abort rate should be roughly equal to the expectation.
   const double seen_abort_rate = static_cast<double>(num_aborted) / kNumRpcs;
   EXPECT_THAT(seen_abort_rate,
@@ -196,7 +194,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageAbortViaHeaders) {
       {"x-envoy-fault-abort-percentage", std::to_string(kAbortPercentage)},
   };
   size_t num_aborted = SendRpcsAndCountFailuresWithMessage(
-      DEBUG_LOCATION, kNumRpcs, "Fault injected",
+      DEBUG_LOCATION, kNumRpcs, StatusCode::ABORTED, "Fault injected",
       RpcOptions().set_metadata(metadata));
   // The abort rate should be roughly equal to the expectation.
   const double seen_abort_rate = static_cast<double>(num_aborted) / kNumRpcs;

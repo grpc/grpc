@@ -18,7 +18,6 @@
 
 #include <functional>
 #include <memory>
-#include <type_traits>
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
@@ -57,8 +56,8 @@ class ServerConfigSelectorFilter final : public ChannelFilter {
   ServerConfigSelectorFilter(ServerConfigSelectorFilter&&) = default;
   ServerConfigSelectorFilter& operator=(ServerConfigSelectorFilter&&) = default;
 
-  static absl::StatusOr<ServerConfigSelectorFilter> Create(ChannelArgs args,
-                                                           ChannelFilter::Args);
+  static absl::StatusOr<ServerConfigSelectorFilter> Create(
+      const ChannelArgs& args, ChannelFilter::Args);
 
   ArenaPromise<ServerMetadataHandle> MakeCallPromise(
       CallArgs call_args, NextPromiseFactory next_promise_factory) override;
@@ -98,7 +97,7 @@ class ServerConfigSelectorFilter final : public ChannelFilter {
 };
 
 absl::StatusOr<ServerConfigSelectorFilter> ServerConfigSelectorFilter::Create(
-    ChannelArgs args, ChannelFilter::Args) {
+    const ChannelArgs& args, ChannelFilter::Args) {
   ServerConfigSelectorProvider* server_config_selector_provider =
       args.GetObject<ServerConfigSelectorProvider>();
   if (server_config_selector_provider == nullptr) {
@@ -136,7 +135,7 @@ ArenaPromise<ServerMetadataHandle> ServerConfigSelectorFilter::MakeCallPromise(
   if (!sel.ok()) return Immediate(ServerMetadataHandle(sel.status()));
   auto call_config =
       sel.value()->GetCallConfig(call_args.client_initial_metadata.get());
-  if (call_config.error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(call_config.error)) {
     auto r = Immediate(ServerMetadataHandle(
         absl::UnavailableError(grpc_error_std_string(call_config.error))));
     GRPC_ERROR_UNREF(call_config.error);

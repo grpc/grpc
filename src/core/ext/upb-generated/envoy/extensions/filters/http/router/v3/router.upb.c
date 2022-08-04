@@ -35,7 +35,7 @@ static const upb_MiniTable_Field envoy_extensions_filters_http_router_v3_Router_
 const upb_MiniTable envoy_extensions_filters_http_router_v3_Router_msginit = {
   &envoy_extensions_filters_http_router_v3_Router_submsgs[0],
   &envoy_extensions_filters_http_router_v3_Router__fields[0],
-  UPB_SIZE(20, 40), 7, kUpb_ExtMode_NonExtendable, 7, 255, 0,
+  UPB_SIZE(24, 32), 7, kUpb_ExtMode_NonExtendable, 7, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[1] = {

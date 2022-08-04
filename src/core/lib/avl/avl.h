@@ -19,10 +19,11 @@
 
 #include <stdlib.h>
 
+#include <algorithm>  // IWYU pragma: keep
 #include <memory>
 #include <utility>
 
-#include "absl/container/inlined_vector.h"
+#include "src/core/lib/gpr/useful.h"
 
 namespace grpc_core {
 
@@ -58,33 +59,32 @@ class AVL {
 
   bool SameIdentity(const AVL& avl) const { return root_ == avl.root_; }
 
-  bool operator==(const AVL& other) const {
-    Iterator a(root_);
-    Iterator b(other.root_);
+  friend int QsortCompare(const AVL& left, const AVL& right) {
+    if (left.root_.get() == right.root_.get()) return 0;
+    Iterator a(left.root_);
+    Iterator b(right.root_);
     for (;;) {
       Node* p = a.current();
       Node* q = b.current();
-      if (p == nullptr) return q == nullptr;
-      if (q == nullptr) return false;
-      if (p->kv != q->kv) return false;
+      if (p != q) {
+        if (p == nullptr) return -1;
+        if (q == nullptr) return 1;
+        const int kv = QsortCompare(p->kv, q->kv);
+        if (kv != 0) return kv;
+      } else if (p == nullptr) {
+        return 0;
+      }
       a.MoveNext();
       b.MoveNext();
     }
   }
 
+  bool operator==(const AVL& other) const {
+    return QsortCompare(*this, other) == 0;
+  }
+
   bool operator<(const AVL& other) const {
-    Iterator a(root_);
-    Iterator b(other.root_);
-    for (;;) {
-      Node* p = a.current();
-      Node* q = b.current();
-      if (p == nullptr) return q != nullptr;
-      if (q == nullptr) return false;
-      if (p->kv < q->kv) return true;
-      if (p->kv != q->kv) return false;
-      a.MoveNext();
-      b.MoveNext();
-    }
+    return QsortCompare(*this, other) < 0;
   }
 
  private:
@@ -104,30 +104,52 @@ class AVL {
   };
   NodePtr root_;
 
+  class IteratorStack {
+   public:
+    void Push(Node* n) {
+      nodes_[depth_] = n;
+      ++depth_;
+    }
+
+    Node* Pop() {
+      --depth_;
+      return nodes_[depth_];
+    }
+
+    Node* Back() const { return nodes_[depth_ - 1]; }
+
+    bool Empty() const { return depth_ == 0; }
+
+   private:
+    size_t depth_{0};
+    // 32 is the maximum depth we can accept, and corresponds to ~4billion nodes
+    // - which ought to suffice our use cases.
+    Node* nodes_[32];
+  };
+
   class Iterator {
    public:
     explicit Iterator(const NodePtr& root) {
       auto* n = root.get();
       while (n != nullptr) {
-        stack_.push_back(n);
+        stack_.Push(n);
         n = n->left.get();
       }
     }
-    Node* current() const { return stack_.empty() ? nullptr : stack_.back(); }
+    Node* current() const { return stack_.Empty() ? nullptr : stack_.Back(); }
     void MoveNext() {
-      auto* n = stack_.back();
-      stack_.pop_back();
+      auto* n = stack_.Pop();
       if (n->right != nullptr) {
         n = n->right.get();
         while (n != nullptr) {
-          stack_.push_back(n);
+          stack_.Push(n);
           n = n->left.get();
         }
       }
     }
 
    private:
-    absl::InlinedVector<Node*, 8> stack_;
+    IteratorStack stack_;
   };
 
   explicit AVL(NodePtr root) : root_(std::move(root)) {}

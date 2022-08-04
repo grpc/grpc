@@ -21,8 +21,8 @@
 #include "src/core/ext/filters/load_reporting/server_load_reporting_filter.h"
 
 #include <limits.h>
-#include <netinet/in.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 #include <functional>
 #include <string>
@@ -75,7 +75,7 @@ constexpr char kEncodedIpv6AddressLengthString[] = "32";
 constexpr char kEmptyAddressLengthString[] = "00";
 
 absl::StatusOr<ServerLoadReportingFilter> ServerLoadReportingFilter::Create(
-    ChannelArgs channel_args, ChannelFilter::Args) {
+    const ChannelArgs& channel_args, ChannelFilter::Args) {
   // Find and record the peer_identity.
   ServerLoadReportingFilter filter;
   const auto* auth_context = channel_args.GetObject<grpc_auth_context>();
@@ -136,7 +136,7 @@ std::string GetCensusSafeClientIpString(
     }
     return client_ip;
   } else {
-    GPR_UNREACHABLE_CODE();
+    GPR_UNREACHABLE_CODE(abort());
   }
 }
 
@@ -155,7 +155,7 @@ std::string MakeClientIpAndLrToken(
       prefix = kEncodedIpv6AddressLengthString;
       break;
     default:
-      GPR_UNREACHABLE_CODE();
+      GPR_UNREACHABLE_CODE(abort());
   }
   return absl::StrCat(prefix, client_ip, lr_token);
 }

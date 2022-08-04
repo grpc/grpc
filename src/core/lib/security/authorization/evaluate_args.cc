@@ -16,13 +16,21 @@
 
 #include "src/core/lib/security/authorization/evaluate_args.h"
 
+#include <string.h>
+
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/match.h"
 #include "absl/strings/numbers.h"
 
+#include <grpc/grpc_security_constants.h>
+#include <grpc/support/log.h>
+
 #include "src/core/lib/address_utils/parse_address.h"
-#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/security/credentials/tls/tls_utils.h"
-#include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/slice/slice.h"
+#include "src/core/lib/uri/uri_parser.h"
 
 namespace grpc_core {
 
@@ -48,13 +56,14 @@ EvaluateArgs::PerChannelArgs::Address ParseEndpointUri(
             std::string(port_view).c_str());
   }
   address.address_str = std::string(host_view);
-  grpc_error_handle error = grpc_string_to_sockaddr(
-      &address.address, address.address_str.c_str(), address.port);
-  if (error != GRPC_ERROR_NONE) {
-    gpr_log(GPR_DEBUG, "Address %s is not IPv4/IPv6. Error: %s",
-            address.address_str.c_str(), grpc_error_std_string(error).c_str());
+  auto resolved_address = StringToSockaddr(uri->path());
+  if (!resolved_address.ok()) {
+    gpr_log(GPR_DEBUG, "Address \"%s\" is not IPv4/IPv6. Error: %s",
+            uri->path().c_str(), resolved_address.status().ToString().c_str());
+    memset(&address.address, 0, sizeof(address.address));
+  } else {
+    address.address = *resolved_address;
   }
-  GRPC_ERROR_UNREF(error);
   return address;
 }
 

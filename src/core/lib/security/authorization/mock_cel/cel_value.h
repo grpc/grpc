@@ -32,7 +32,11 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stdint.h>
+
 #include <memory>
+#include <string>
+#include <utility>
 
 #include "absl/memory/memory.h"
 #include "absl/strings/string_view.h"

@@ -51,13 +51,14 @@ tsi_result tsi_zero_copy_grpc_protector_protect(
 
 tsi_result tsi_zero_copy_grpc_protector_unprotect(
     tsi_zero_copy_grpc_protector* self, grpc_slice_buffer* protected_slices,
-    grpc_slice_buffer* unprotected_slices) {
+    grpc_slice_buffer* unprotected_slices, int* min_progress_size) {
   if (self == nullptr || self->vtable == nullptr ||
       protected_slices == nullptr || unprotected_slices == nullptr) {
     return TSI_INVALID_ARGUMENT;
   }
   if (self->vtable->unprotect == nullptr) return TSI_UNIMPLEMENTED;
-  return self->vtable->unprotect(self, protected_slices, unprotected_slices);
+  return self->vtable->unprotect(self, protected_slices, unprotected_slices,
+                                 min_progress_size);
 }
 
 void tsi_zero_copy_grpc_protector_destroy(tsi_zero_copy_grpc_protector* self) {

@@ -112,6 +112,7 @@ struct read_and_write_test_state {
   uint8_t current_write_data;
   int read_done;
   int write_done;
+  int max_write_frame_size;
   grpc_slice_buffer incoming;
   grpc_slice_buffer outgoing;
   grpc_closure done_read;
@@ -134,13 +135,13 @@ static void read_and_write_test_read_handler(void* data,
 
   state->bytes_read += count_slices(
       state->incoming.slices, state->incoming.count, &state->current_read_data);
-  if (state->bytes_read == state->target_bytes || error != GRPC_ERROR_NONE) {
+  if (state->bytes_read == state->target_bytes || !GRPC_ERROR_IS_NONE(error)) {
     gpr_log(GPR_INFO, "Read handler done");
     gpr_mu_lock(g_mu);
-    state->read_done = 1 + (error == GRPC_ERROR_NONE);
+    state->read_done = 1 + (GRPC_ERROR_IS_NONE(error));
     GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, nullptr));
     gpr_mu_unlock(g_mu);
-  } else if (error == GRPC_ERROR_NONE) {
+  } else if (GRPC_ERROR_IS_NONE(error)) {
     /* We perform many reads one after another. If grpc_endpoint_read and the
      * read_handler are both run inline, we might end up growing the stack
      * beyond the limit. Schedule the read on ExecCtx to avoid this. */
@@ -153,7 +154,7 @@ static void write_scheduler(void* data, grpc_error_handle /* error */) {
   struct read_and_write_test_state* state =
       static_cast<struct read_and_write_test_state*>(data);
   grpc_endpoint_write(state->write_ep, &state->outgoing, &state->done_write,
-                      nullptr, /*max_frame_size=*/INT_MAX);
+                      nullptr, /*max_frame_size=*/state->max_write_frame_size);
 }
 
 static void read_and_write_test_write_handler(void* data,
@@ -163,7 +164,7 @@ static void read_and_write_test_write_handler(void* data,
   grpc_slice* slices = nullptr;
   size_t nslices;
 
-  if (error == GRPC_ERROR_NONE) {
+  if (GRPC_ERROR_IS_NONE(error)) {
     state->bytes_written += state->current_write_size;
     if (state->target_bytes - state->bytes_written <
         state->current_write_size) {
@@ -186,7 +187,7 @@ static void read_and_write_test_write_handler(void* data,
 
   gpr_log(GPR_INFO, "Write handler done");
   gpr_mu_lock(g_mu);
-  state->write_done = 1 + (error == GRPC_ERROR_NONE);
+  state->write_done = 1 + (GRPC_ERROR_IS_NONE(error));
   GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, nullptr));
   gpr_mu_unlock(g_mu);
 }
@@ -197,13 +198,14 @@ static void read_and_write_test_write_handler(void* data,
  */
 static void read_and_write_test(grpc_endpoint_test_config config,
                                 size_t num_bytes, size_t write_size,
-                                size_t slice_size, bool shutdown) {
+                                size_t slice_size, int max_write_frame_size,
+                                bool shutdown) {
   struct read_and_write_test_state state;
   grpc_endpoint_test_fixture f =
       begin_test(config, "read_and_write_test", slice_size);
   grpc_core::ExecCtx exec_ctx;
   auto deadline = grpc_core::Timestamp::FromTimespecRoundUp(
-      grpc_timeout_seconds_to_deadline(20));
+      grpc_timeout_seconds_to_deadline(60));
   gpr_log(GPR_DEBUG,
           "num_bytes=%" PRIuPTR " write_size=%" PRIuPTR " slice_size=%" PRIuPTR
           " shutdown=%d",
@@ -223,6 +225,7 @@ static void read_and_write_test(grpc_endpoint_test_config config,
   state.target_bytes = num_bytes;
   state.bytes_read = 0;
   state.current_write_size = write_size;
+  state.max_write_frame_size = max_write_frame_size;
   state.bytes_written = 0;
   state.read_done = 0;
   state.write_done = 0;
@@ -278,7 +281,7 @@ static void read_and_write_test(grpc_endpoint_test_config config,
 
 static void inc_on_failure(void* arg, grpc_error_handle error) {
   gpr_mu_lock(g_mu);
-  *static_cast<int*>(arg) += (error != GRPC_ERROR_NONE);
+  *static_cast<int*>(arg) += (!GRPC_ERROR_IS_NONE(error));
   GPR_ASSERT(GRPC_LOG_IF_ERROR("kick", grpc_pollset_kick(g_pollset, nullptr)));
   gpr_mu_unlock(g_mu);
 }
@@ -305,7 +308,6 @@ static void multiple_shutdown_test(grpc_endpoint_test_config config) {
   grpc_endpoint_test_fixture f =
       begin_test(config, "multiple_shutdown_test", 128);
   int fail_count = 0;
-
   grpc_slice_buffer slice_buffer;
   grpc_slice_buffer_init(&slice_buffer);
 
@@ -346,11 +348,13 @@ void grpc_endpoint_tests(grpc_endpoint_test_config config,
   g_pollset = pollset;
   g_mu = mu;
   multiple_shutdown_test(config);
-  read_and_write_test(config, 10000000, 100000, 8192, false);
-  read_and_write_test(config, 1000000, 100000, 1, false);
-  read_and_write_test(config, 100000000, 100000, 1, true);
+  for (int i = 1; i <= 8192; i = i * 2) {
+    read_and_write_test(config, 10000000, 100000, 8192, i, false);
+    read_and_write_test(config, 1000000, 100000, 1, i, false);
+    read_and_write_test(config, 100000000, 100000, 1, i, true);
+  }
   for (i = 1; i < 1000; i = std::max(i + 1, i * 5 / 4)) {
-    read_and_write_test(config, 40320, i, i, false);
+    read_and_write_test(config, 40320, i, i, i, false);
   }
   g_pollset = nullptr;
   g_mu = nullptr;

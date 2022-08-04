@@ -295,7 +295,6 @@ OrcaProducer::OrcaProducer(RefCountedPtr<Subchannel> subchannel)
   auto connectivity_watcher = MakeRefCounted<ConnectivityWatcher>(WeakRef());
   connectivity_watcher_ = connectivity_watcher.get();
   subchannel_->WatchConnectivityState(
-      connected_subchannel_ == nullptr ? GRPC_CHANNEL_IDLE : GRPC_CHANNEL_READY,
       /*health_check_service_name=*/absl::nullopt,
       std::move(connectivity_watcher));
 }

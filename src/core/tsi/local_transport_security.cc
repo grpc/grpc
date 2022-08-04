@@ -119,13 +119,17 @@ tsi_result create_handshaker_result(const unsigned char* received_bytes,
 
 /* --- tsi_handshaker methods implementation. --- */
 
-tsi_result handshaker_next(
-    tsi_handshaker* self, const unsigned char* received_bytes,
-    size_t received_bytes_size, const unsigned char** /*bytes_to_send*/,
-    size_t* bytes_to_send_size, tsi_handshaker_result** result,
-    tsi_handshaker_on_next_done_cb /*cb*/, void* /*user_data*/) {
+tsi_result handshaker_next(tsi_handshaker* self,
+                           const unsigned char* received_bytes,
+                           size_t received_bytes_size,
+                           const unsigned char** /*bytes_to_send*/,
+                           size_t* bytes_to_send_size,
+                           tsi_handshaker_result** result,
+                           tsi_handshaker_on_next_done_cb /*cb*/,
+                           void* /*user_data*/, std::string* error) {
   if (self == nullptr) {
     gpr_log(GPR_ERROR, "Invalid arguments to handshaker_next()");
+    if (error != nullptr) *error = "invalid argument";
     return TSI_INVALID_ARGUMENT;
   }
   /* Note that there is no interaction between TSI peers, and all operations are

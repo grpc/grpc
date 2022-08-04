@@ -80,7 +80,6 @@ struct Server::RequestedCall {
         cq_bound_to_call(call_cq),
         call(call_arg),
         initial_metadata(initial_md) {
-    details->reserved = nullptr;
     data.batch.details = details;
   }
 
@@ -520,7 +519,8 @@ const grpc_channel_filter Server::kServerTopFilter = {
 
 namespace {
 
-RefCountedPtr<channelz::ServerNode> CreateChannelzNode(ChannelArgs args) {
+RefCountedPtr<channelz::ServerNode> CreateChannelzNode(
+    const ChannelArgs& args) {
   RefCountedPtr<channelz::ServerNode> channelz_node;
   if (args.GetBool(GRPC_ARG_ENABLE_CHANNELZ)
           .value_or(GRPC_ENABLE_CHANNELZ_DEFAULT)) {
@@ -538,11 +538,10 @@ RefCountedPtr<channelz::ServerNode> CreateChannelzNode(ChannelArgs args) {
 
 }  // namespace
 
-Server::Server(ChannelArgs args)
-    : channel_args_(args.ToC()), channelz_node_(CreateChannelzNode(args)) {}
+Server::Server(const ChannelArgs& args)
+    : channel_args_(args), channelz_node_(CreateChannelzNode(args)) {}
 
 Server::~Server() {
-  grpc_channel_args_destroy(channel_args_);
   // Remove the cq pollsets from the config_fetcher.
   if (started_ && config_fetcher_ != nullptr &&
       config_fetcher_->interested_parties() != nullptr) {
@@ -604,11 +603,11 @@ void Server::Start() {
 
 grpc_error_handle Server::SetupTransport(
     grpc_transport* transport, grpc_pollset* accepting_pollset,
-    const grpc_channel_args* args,
+    const ChannelArgs& args,
     const RefCountedPtr<channelz::SocketNode>& socket_node) {
   // Create channel.
-  absl::StatusOr<RefCountedPtr<Channel>> channel = Channel::Create(
-      nullptr, ChannelArgs::FromC(args), GRPC_SERVER_CHANNEL, transport);
+  absl::StatusOr<RefCountedPtr<Channel>> channel =
+      Channel::Create(nullptr, args, GRPC_SERVER_CHANNEL, transport);
   if (!channel.ok()) {
     return absl_status_to_grpc_error(channel.status());
   }
@@ -707,7 +706,7 @@ void Server::FailCall(size_t cq_idx, RequestedCall* rc,
                       grpc_error_handle error) {
   *rc->call = nullptr;
   rc->initial_metadata->count = 0;
-  GPR_ASSERT(error != GRPC_ERROR_NONE);
+  GPR_ASSERT(!GRPC_ERROR_IS_NONE(error));
   grpc_cq_end_op(cqs_[cq_idx], rc->tag, error, DoneRequestEvent, rc,
                  &rc->completion);
 }
@@ -1121,7 +1120,7 @@ void Server::ChannelData::AcceptStream(void* arg, grpc_transport* /*transport*/,
   grpc_call_element* elem =
       grpc_call_stack_element(grpc_call_get_call_stack(call), 0);
   auto* calld = static_cast<Server::CallData*>(elem->call_data);
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     GRPC_ERROR_UNREF(error);
     calld->FailCallCreation();
     return;
@@ -1250,7 +1249,6 @@ void Server::CallData::Publish(size_t cq_idx, RequestedCall* rc) {
           grpc_slice_ref_internal(path_->c_slice());
       rc->data.batch.details->deadline =
           deadline_.as_timespec(GPR_CLOCK_MONOTONIC);
-      rc->data.batch.details->flags = recv_initial_metadata_flags_;
       break;
     case RequestedCall::Type::REGISTERED_CALL:
       *rc->data.registered.deadline =
@@ -1273,7 +1271,7 @@ void Server::CallData::PublishNewRpc(void* arg, grpc_error_handle error) {
   auto* chand = static_cast<Server::ChannelData*>(call_elem->channel_data);
   RequestMatcherInterface* rm = calld->matcher_;
   Server* server = rm->server();
-  if (error != GRPC_ERROR_NONE || server->ShutdownCalled()) {
+  if (!GRPC_ERROR_IS_NONE(error) || server->ShutdownCalled()) {
     calld->state_.store(CallState::ZOMBIED, std::memory_order_relaxed);
     calld->KillZombie();
     return;
@@ -1337,7 +1335,7 @@ void Server::CallData::RecvInitialMetadataBatchComplete(
     void* arg, grpc_error_handle error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
   auto* calld = static_cast<Server::CallData*>(elem->call_data);
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     gpr_log(GPR_DEBUG, "Failed call creation: %s",
             grpc_error_std_string(error).c_str());
     calld->FailCallCreation();
@@ -1349,15 +1347,12 @@ void Server::CallData::RecvInitialMetadataBatchComplete(
 void Server::CallData::StartTransportStreamOpBatchImpl(
     grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
   if (batch->recv_initial_metadata) {
-    GPR_ASSERT(batch->payload->recv_initial_metadata.recv_flags == nullptr);
     recv_initial_metadata_ =
         batch->payload->recv_initial_metadata.recv_initial_metadata;
     original_recv_initial_metadata_ready_ =
         batch->payload->recv_initial_metadata.recv_initial_metadata_ready;
     batch->payload->recv_initial_metadata.recv_initial_metadata_ready =
         &recv_initial_metadata_ready_;
-    batch->payload->recv_initial_metadata.recv_flags =
-        &recv_initial_metadata_flags_;
   }
   if (batch->recv_trailing_metadata) {
     original_recv_trailing_metadata_ready_ =
@@ -1372,9 +1367,11 @@ void Server::CallData::RecvInitialMetadataReady(void* arg,
                                                 grpc_error_handle error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
   CallData* calld = static_cast<CallData*>(elem->call_data);
-  if (error == GRPC_ERROR_NONE) {
+  if (GRPC_ERROR_IS_NONE(error)) {
     calld->path_ = calld->recv_initial_metadata_->Take(HttpPathMetadata());
-    calld->host_ = calld->recv_initial_metadata_->Take(HttpAuthorityMetadata());
+    auto* host =
+        calld->recv_initial_metadata_->get_pointer(HttpAuthorityMetadata());
+    if (host != nullptr) calld->host_.emplace(host->Ref());
   } else {
     (void)GRPC_ERROR_REF(error);
   }
