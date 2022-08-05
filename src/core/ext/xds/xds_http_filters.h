@@ -19,9 +19,10 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <map>
 #include <memory>
-#include <set>
 #include <string>
+#include <vector>
 
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -30,8 +31,6 @@
 #include "upb/def.h"
 #include "upb/upb.h"
 
-#include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/json/json.h"
 
 namespace grpc_core {

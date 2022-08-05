@@ -18,15 +18,14 @@
 
 #include "src/core/ext/xds/xds_http_filters_grpc.h"
 
-#include <algorithm>
-#include <map>
-#include <utility>
-#include <vector>
+#include <memory>
 
 #include "absl/memory/memory.h"
 #include "absl/status/status.h"
-#include "envoy/extensions/filters/http/router/v3/router.upb.h"
-#include "envoy/extensions/filters/http/router/v3/router.upbdefs.h"
+#include "absl/strings/string_view.h"
+#include "upb/arena.h"
+#include "upb/def.h"
+#include "upb/upb.h"
 
 #include "src/core/ext/xds/xds_http_fault_filter.h"
 #include "src/core/ext/xds/xds_http_rbac_filter.h"

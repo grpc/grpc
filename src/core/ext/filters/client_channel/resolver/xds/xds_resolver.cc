@@ -43,8 +43,6 @@
 #include "absl/types/variant.h"
 #include "re2/re2.h"
 
-#include "src/core/lib/gprpp/unique_type_name.h"
-
 #define XXH_INLINE_ALL
 #include "xxhash.h"
 
@@ -59,6 +57,7 @@
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_client_grpc.h"
 #include "src/core/ext/xds/xds_http_filters.h"
+#include "src/core/ext/xds/xds_http_filters_grpc.h"
 #include "src/core/ext/xds/xds_listener.h"
 #include "src/core/ext/xds/xds_resource_type_impl.h"
 #include "src/core/ext/xds/xds_route_config.h"
@@ -74,6 +73,7 @@
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
