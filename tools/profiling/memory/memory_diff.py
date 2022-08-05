@@ -43,13 +43,13 @@ argp.add_argument('-j', '--jobs', type=int, default=multiprocessing.cpu_count())
 args = argp.parse_args()
 
 _INTERESTING = {
-    'client call':
+    'call/client':
         (rb'client call memory usage: ([0-9\.]+) bytes per call', float),
-    'server call':
+    'call/server':
         (rb'server call memory usage: ([0-9\.]+) bytes per call', float),
-    'client channel':
+    'channel/client':
         (rb'client channel memory usage: ([0-9\.]+) bytes per channel', float),
-    'server channel':
+    'channel/server':
         (rb'server channel memory usage: ([0-9\.]+) bytes per channel', float),
 }
 
@@ -60,7 +60,7 @@ _SCENARIOS = {
 
 _BENCHMARKS = {
     'call': ['--benchmark_names=call', '--size=50000'],
-    'channel': ['--benchmark_names=channel', '--size=20000'],
+    'channel': ['--benchmark_names=channel', '--size=10000'],
 }
 
 
@@ -71,8 +71,11 @@ def _run():
         'test/core/memory_usage/memory_usage_test'
     ])
     ret = {}
-    for benchmark_args in _BENCHMARKS.values():
+    for name, benchmark_args in _BENCHMARKS.items():
         for scenario, extra_args in _SCENARIOS.items():
+            #TODO(chenancy) Remove when minstack is implemented for channel
+            if name == 'channel' and scenario == 'minstack':
+                continue
             try:
                 output = subprocess.check_output([
                     'bazel-bin/test/core/memory_usage/memory_usage_test',
@@ -105,21 +108,21 @@ if args.diff_base:
 text = ''
 if old is None:
     print(cur)
-    for key, value in cur.items():
+    for key, value in sorted(cur.items()):
         text += '{}: {}\n'.format(key, value)
 else:
     print(cur, old)
     call_diff_size = 0
     channel_diff_size = 0
     for scenario in _SCENARIOS.keys():
-        for key, value in _INTERESTING.items():
+        for key, value in sorted(_INTERESTING.items()):
             key = scenario + ': ' + key
             if key in cur:
                 if key not in old:
                     text += '{}: {}\n'.format(key, cur[key])
                 else:
                     text += '{}: {} -> {}\n'.format(key, old[key], cur[key])
-                    if key == 'client call' or 'server call':
+                    if key == 'call/client' or 'call/server':
                         call_diff_size += cur[key] - old[key]
                     else:
                         channel_diff_size += cur[key] - old[key]
@@ -128,6 +131,9 @@ else:
     print("CHANNEL_DIFF_SIZE: %f" % channel_diff_size)
     check_on_pr.label_increase_decrease_on_pr('per-call-memory', call_diff_size,
                                               64)
+    check_on_pr.label_increase_decrease_on_pr('per-channel-memory', channel_diff_size,
+                                              1000) 
+    #TODO(chennancy)Change significant value when minstack also runs for channel
 
 print(text)
 check_on_pr.check_on_pr('Memory Difference', '```\n%s\n```' % text)
