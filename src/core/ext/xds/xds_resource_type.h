@@ -23,9 +23,11 @@
 
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
+#include "upb/arena.h"
 #include "upb/def.h"
 
 #include "src/core/ext/xds/xds_bootstrap.h"
+#include "src/core/lib/debug/trace.h"
 
 namespace grpc_core {
 
