@@ -1378,6 +1378,7 @@ XdsClient::XdsClient(std::unique_ptr<XdsBootstrap> bootstrap,
                      XdsHttpFilterRegistry xds_http_filter_registry,
                      XdsClusterSpecifierPluginRegistry
                          xds_cluster_specifier_plugin_registry,
+                     XdsLbPolicyRegistry xds_lb_policy_registry,
                      Duration resource_request_timeout)
     : DualRefCounted<XdsClient>(
           GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_refcount_trace) ? "XdsClient"
@@ -1387,6 +1388,7 @@ XdsClient::XdsClient(std::unique_ptr<XdsBootstrap> bootstrap,
       xds_http_filter_registry_(std::move(xds_http_filter_registry)),
       xds_cluster_specifier_plugin_registry_(
           std::move(xds_cluster_specifier_plugin_registry)),
+      xds_lb_policy_registry_(std::move(xds_lb_policy_registry)),
       request_timeout_(resource_request_timeout),
       xds_federation_enabled_(XdsFederationEnabled()),
       certificate_provider_store_(MakeOrphanable<CertificateProviderStore>(

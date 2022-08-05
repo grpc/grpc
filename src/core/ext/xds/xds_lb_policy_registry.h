@@ -31,40 +31,41 @@
 
 namespace grpc_core {
 
+class XdsLbPolicyRegistry;
+
 // A registry that maintans a set of converters that are able to map xDS
 // loadbalancing policy configurations to gRPC's JSON format.
+class XdsLbPolicy {
+ public:
+  virtual ~XdsLbPolicy() = default;
+
+  virtual absl::string_view ConfigProtoType() = 0;
+
+  virtual absl::StatusOr<Json::Object> ConvertXdsLbPolicyConfig(
+      const XdsEncodingContext& context, const XdsLbPolicyRegistry& registry,
+      absl::string_view configuration, int recursion_depth) = 0;
+};
+
 class XdsLbPolicyRegistry {
  public:
-  class ConfigFactory {
-   public:
-    virtual ~ConfigFactory() {}
-    virtual absl::StatusOr<Json::Object> ConvertXdsLbPolicyConfig(
-        const XdsEncodingContext& context, absl::string_view configuration,
-        int recursion_depth) = 0;
-
-    virtual absl::string_view type() = 0;
-  };
+  void RegisterPolicy(std::unique_ptr<XdsLbPolicy> policy);
 
   // Converts an xDS cluster load balancing policy message to gRPC's JSON
   // format. An error is returned if none of the lb policies in the list are
   // supported, or if a supported lb policy configuration conversion fails. \a
   // recursion_depth indicates the current depth of the tree if lb_policy
   // configuration recursively holds other lb policies.
-  static absl::StatusOr<Json::Array> ConvertXdsLbPolicyConfig(
+  absl::StatusOr<Json::Array> ConvertXdsLbPolicyConfig(
       const XdsEncodingContext& context,
       const envoy_config_cluster_v3_LoadBalancingPolicy* lb_policy,
-      int recursion_depth = 0);
+      int recursion_depth = 0) const;
 
  private:
-  XdsLbPolicyRegistry();
-
-  static XdsLbPolicyRegistry* Get();
-
   // A map of config factories that goes from the type of the lb policy config
   // to the config factory.
-  std::map<absl::string_view /* Owned by ConfigFactory */,
-           std::unique_ptr<ConfigFactory>>
-      policy_config_factories_;
+  std::map<absl::string_view /* Owned by XdsLbPolicy */,
+           std::unique_ptr<XdsLbPolicy>>
+      lb_policies_;
 };
 
 }  // namespace grpc_core

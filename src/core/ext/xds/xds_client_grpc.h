@@ -47,6 +47,7 @@ class GrpcXdsClient : public XdsClient {
                 XdsHttpFilterRegistry xds_http_filter_registry,
                 XdsClusterSpecifierPluginRegistry
                     xds_cluster_specifier_plugin_registry,
+                XdsLbPolicyRegistry xds_lb_policy_registry,
                 const ChannelArgs& args);
   ~GrpcXdsClient() override;
 

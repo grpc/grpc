@@ -28,6 +28,7 @@
 
 #include <grpc/grpc.h>
 
+#include "src/core/ext/xds/xds_lb_policy_registry_grpc.h"
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
 #include "src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h"
@@ -63,7 +64,9 @@ absl::StatusOr<Json::Array> ConvertXdsPolicy(LoadBalancingPolicyProto policy) {
                                 nullptr};
   auto* upb_policy = envoy_config_cluster_v3_LoadBalancingPolicy_parse(
       serialized_policy.data(), serialized_policy.size(), arena.ptr());
-  return XdsLbPolicyRegistry::ConvertXdsLbPolicyConfig(context, upb_policy);
+  XdsLbPolicyRegistry registry;
+  RegisterGrpcXdsLbPolicies(&registry);
+  return registry.ConvertXdsLbPolicyConfig(context, upb_policy);
 }
 
 TEST(XdsLbPolicyRegistryTest, EmptyLoadBalancingPolicy) {

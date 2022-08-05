@@ -903,6 +903,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/xds/xds_http_rbac_filter.h )
   s.files += %w( src/core/ext/xds/xds_lb_policy_registry.cc )
   s.files += %w( src/core/ext/xds/xds_lb_policy_registry.h )
+  s.files += %w( src/core/ext/xds/xds_lb_policy_registry_grpc.cc )
+  s.files += %w( src/core/ext/xds/xds_lb_policy_registry_grpc.h )
   s.files += %w( src/core/ext/xds/xds_listener.cc )
   s.files += %w( src/core/ext/xds/xds_listener.h )
   s.files += %w( src/core/ext/xds/xds_resource_type.cc )

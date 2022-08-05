@@ -49,108 +49,6 @@ namespace grpc_core {
 
 namespace {
 
-class RingHashLbPolicyConfigFactory
-    : public XdsLbPolicyRegistry::ConfigFactory {
- public:
-  absl::StatusOr<Json::Object> ConvertXdsLbPolicyConfig(
-      const XdsEncodingContext& context, absl::string_view configuration,
-      int /* recursion_depth */) override {
-    const auto* resource =
-        envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_parse(
-            configuration.data(), configuration.size(), context.arena);
-    if (resource == nullptr) {
-      return absl::InvalidArgumentError(
-          "Can't decode RingHash loadbalancing policy");
-    }
-    if (envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_hash_function(
-            resource) !=
-        envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_XX_HASH) {
-      return absl::InvalidArgumentError(
-          "Invalid hash function provided for RingHash loadbalancing policy. "
-          "Only XX_HASH is supported.");
-    }
-    Json::Object json;
-    const auto* min_ring_size =
-        envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_minimum_ring_size(
-            resource);
-    if (min_ring_size != nullptr) {
-      json.emplace("minRingSize",
-                   google_protobuf_UInt64Value_value(min_ring_size));
-    }
-    const auto* max_ring_size =
-        envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_maximum_ring_size(
-            resource);
-    if (max_ring_size != nullptr) {
-      json.emplace("maxRingSize",
-                   google_protobuf_UInt64Value_value(max_ring_size));
-    }
-    return Json::Object{{"ring_hash_experimental", std::move(json)}};
-  }
-
-  absl::string_view type() override { return Type(); }
-
-  static absl::string_view Type() {
-    return "envoy.extensions.load_balancing_policies.ring_hash.v3.RingHash";
-  }
-};
-
-class RoundRobinLbPolicyConfigFactory
-    : public XdsLbPolicyRegistry::ConfigFactory {
- public:
-  absl::StatusOr<Json::Object> ConvertXdsLbPolicyConfig(
-      const XdsEncodingContext& /* context */,
-      absl::string_view /* configuration */,
-      int /* recursion_depth */) override {
-    return Json::Object{{"round_robin", Json::Object()}};
-  }
-
-  absl::string_view type() override { return Type(); }
-
-  static absl::string_view Type() {
-    return "envoy.extensions.load_balancing_policies.round_robin.v3.RoundRobin";
-  }
-};
-
-class WrrLocalityLbPolicyConfigFactory
-    : public XdsLbPolicyRegistry::ConfigFactory {
- public:
-  absl::StatusOr<Json::Object> ConvertXdsLbPolicyConfig(
-      const XdsEncodingContext& context, absl::string_view configuration,
-      int recursion_depth) override {
-    const auto* resource =
-        envoy_extensions_load_balancing_policies_wrr_locality_v3_WrrLocality_parse(
-            configuration.data(), configuration.size(), context.arena);
-    if (resource == nullptr) {
-      return absl::InvalidArgumentError(
-          "Can't decode WrrLocality loadbalancing policy");
-    }
-    const auto* endpoint_picking_policy =
-        envoy_extensions_load_balancing_policies_wrr_locality_v3_WrrLocality_endpoint_picking_policy(
-            resource);
-    if (endpoint_picking_policy == nullptr) {
-      return absl::InvalidArgumentError(
-          "WrrLocality: endpoint_picking_policy not found");
-    }
-    auto child_policy = XdsLbPolicyRegistry::ConvertXdsLbPolicyConfig(
-        context, endpoint_picking_policy, recursion_depth + 1);
-    if (!child_policy.ok()) {
-      return absl::InvalidArgumentError(
-          absl::StrCat("Error parsing WrrLocality load balancing policy: ",
-                       child_policy.status().message()));
-    }
-    return Json::Object{
-        {"xds_wrr_locality_experimental",
-         Json::Object{{"child_policy", *std::move(child_policy)}}}};
-  }
-
-  absl::string_view type() override { return Type(); }
-
-  static absl::string_view Type() {
-    return "envoy.extensions.load_balancing_policies.wrr_locality.v3."
-           "WrrLocality";
-  }
-};
-
 absl::StatusOr<Json> ParseStructToJson(const XdsEncodingContext& context,
                                        const google_protobuf_Struct* resource) {
   upb::Status status;
@@ -178,14 +76,14 @@ absl::StatusOr<Json> ParseStructToJson(const XdsEncodingContext& context,
 
 }  // namespace
 
-//
-// XdsLbPolicyRegistry
-//
+void XdsLbPolicyRegistry::RegisterPolicy(std::unique_ptr<XdsLbPolicy> policy) {
+  lb_policies_[policy->ConfigProtoType()] = std::move(policy);
+}
 
 absl::StatusOr<Json::Array> XdsLbPolicyRegistry::ConvertXdsLbPolicyConfig(
     const XdsEncodingContext& context,
     const envoy_config_cluster_v3_LoadBalancingPolicy* lb_policy,
-    int recursion_depth) {
+    int recursion_depth) const {
   constexpr int kMaxRecursionDepth = 16;
   if (recursion_depth >= kMaxRecursionDepth) {
     return absl::InvalidArgumentError(
@@ -223,10 +121,10 @@ absl::StatusOr<Json::Array> XdsLbPolicyRegistry::ConvertXdsLbPolicyConfig(
     }
     absl::string_view value =
         UpbStringToAbsl(google_protobuf_Any_value(typed_config));
-    auto config_factory_it = Get()->policy_config_factories_.find(type->type);
-    if (config_factory_it != Get()->policy_config_factories_.end()) {
+    auto config_factory_it = lb_policies_.find(type->type);
+    if (config_factory_it != lb_policies_.end()) {
       policy = config_factory_it->second->ConvertXdsLbPolicyConfig(
-          context, value, recursion_depth);
+          context, *this, value, recursion_depth);
       if (!policy.ok()) {
         return absl::InvalidArgumentError(
             absl::StrCat("Error parsing "
@@ -264,24 +162,6 @@ absl::StatusOr<Json::Array> XdsLbPolicyRegistry::ConvertXdsLbPolicyConfig(
   }
   return absl::InvalidArgumentError(
       "No supported load balancing policy config found.");
-}
-
-XdsLbPolicyRegistry::XdsLbPolicyRegistry() {
-  policy_config_factories_.emplace(
-      RingHashLbPolicyConfigFactory::Type(),
-      absl::make_unique<RingHashLbPolicyConfigFactory>());
-  policy_config_factories_.emplace(
-      RoundRobinLbPolicyConfigFactory::Type(),
-      absl::make_unique<RoundRobinLbPolicyConfigFactory>());
-  policy_config_factories_.emplace(
-      WrrLocalityLbPolicyConfigFactory::Type(),
-      absl::make_unique<WrrLocalityLbPolicyConfigFactory>());
-}
-
-XdsLbPolicyRegistry* XdsLbPolicyRegistry::Get() {
-  // This is thread-safe since C++11
-  static XdsLbPolicyRegistry* instance = new XdsLbPolicyRegistry();
-  return instance;
 }
 
 }  // namespace grpc_core

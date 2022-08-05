@@ -40,6 +40,8 @@
 #include "src/core/ext/xds/xds_cluster_specifier_plugin_grpc.h"
 #include "src/core/ext/xds/xds_http_filters.h"
 #include "src/core/ext/xds/xds_http_filters_grpc.h"
+#include "src/core/ext/xds/xds_lb_policy_registry.h"
+#include "src/core/ext/xds/xds_lb_policy_registry_grpc.h"
 #include "src/core/ext/xds/xds_transport.h"
 #include "src/core/ext/xds/xds_transport_grpc.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -136,6 +138,9 @@ absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GrpcXdsClient::GetOrCreate(
   XdsClusterSpecifierPluginRegistry xds_cluster_specifier_plugin_registry;
   RegisterGrpcXdsClusterSpecifierPlugins(
       &xds_cluster_specifier_plugin_registry);
+  // Construct xDS LB policy registry.
+  XdsLbPolicyRegistry xds_lb_policy_registry;
+  RegisterGrpcXdsLbPolicies(&xds_lb_policy_registry);
   // If getting bootstrap from channel args, create a local XdsClient
   // instance for the channel or server instead of using the global instance.
   absl::optional<absl::string_view> bootstrap_config = args.GetString(
@@ -150,6 +155,7 @@ absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GrpcXdsClient::GetOrCreate(
     return MakeRefCounted<GrpcXdsClient>(
         std::move(bootstrap), std::move(xds_http_filter_registry),
         std::move(xds_cluster_specifier_plugin_registry),
+        std::move(xds_lb_policy_registry),
         ChannelArgs::FromC(xds_channel_args));
   }
   // Otherwise, use the global instance.
@@ -174,7 +180,7 @@ absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GrpcXdsClient::GetOrCreate(
   auto xds_client = MakeRefCounted<GrpcXdsClient>(
       std::move(bootstrap), std::move(xds_http_filter_registry),
       std::move(xds_cluster_specifier_plugin_registry),
-      ChannelArgs::FromC(g_channel_args));
+      std::move(xds_lb_policy_registry), ChannelArgs::FromC(g_channel_args));
   g_xds_client = xds_client.get();
   return xds_client;
 }
@@ -183,11 +189,13 @@ GrpcXdsClient::GrpcXdsClient(std::unique_ptr<XdsBootstrap> bootstrap,
                              XdsHttpFilterRegistry xds_http_filter_registry,
                              XdsClusterSpecifierPluginRegistry
                                  xds_cluster_specifier_plugin_registry,
+                             XdsLbPolicyRegistry xds_lb_policy_registry,
                              const ChannelArgs& args)
     : XdsClient(
           std::move(bootstrap), MakeOrphanable<GrpcXdsTransportFactory>(args),
           std::move(xds_http_filter_registry),
           std::move(xds_cluster_specifier_plugin_registry),
+          std::move(xds_lb_policy_registry),
           std::max(Duration::Zero(),
                    args.GetDurationFromIntMillis(
                            GRPC_ARG_XDS_RESOURCE_DOES_NOT_EXIST_TIMEOUT_MS)
