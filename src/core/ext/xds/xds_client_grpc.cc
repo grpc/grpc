@@ -61,58 +61,9 @@
 
 namespace grpc_core {
 
-class GrpcXdsCertificateProviderPluginMap
-    : public XdsCertificateProviderPluginMapInterface {
- public:
-  const CertificateProviderStore::PluginDefinitionMap& plugin_map() const {
-    return plugin_map_;
-  }
-
-  absl::Status AddPlugin(const std::string& instance_name,
-                         const std::string& plugin_name,
-                         const Json& config) override {
-    CertificateProviderFactory* factory =
-        CertificateProviderRegistry::LookupCertificateProviderFactory(
-            plugin_name);
-    if (factory == nullptr) {
-      return absl::InvalidArgumentError(
-          absl::StrCat("Unrecognized plugin name: ", plugin_name));
-    }
-    grpc_error_handle error = GRPC_ERROR_NONE;
-    auto parsed_config =
-        factory->CreateCertificateProviderConfig(config, &error);
-    if (!GRPC_ERROR_IS_NONE(error)) {
-      absl::Status status = grpc_error_to_absl_status(error);
-      GRPC_ERROR_UNREF(error);
-      return status;
-    }
-    plugin_map_.insert(
-        {instance_name, {plugin_name, std::move(parsed_config)}});
-    return absl::OkStatus();
-  }
-
-  bool HasPlugin(const std::string& instance_name) const override {
-    return plugin_map_.find(instance_name) != plugin_map_.end();
-  }
-
-  std::string ToString() const override {
-    std::vector<std::string> parts = {"{\n"};
-    for (const auto& entry : plugin_map_) {
-      parts.push_back(
-          absl::StrFormat("  %s={\n"
-                          "    plugin_name=%s\n"
-                          "    config=%s\n"
-                          "  },\n",
-                          entry.first, entry.second.plugin_name,
-                          entry.second.config->ToString()));
-    }
-    parts.push_back("}");
-    return absl::StrJoin(parts, "");
-  }
-
- private:
-  CertificateProviderStore::PluginDefinitionMap plugin_map_;
-};
+//
+// GrpcXdsClient
+//
 
 namespace {
 
@@ -271,6 +222,53 @@ void SetXdsFallbackBootstrapConfig(const char* config) {
 }
 
 }  // namespace internal
+
+//
+// GrpcXdsCertificateProviderPluginMap
+//
+
+absl::Status GrpcXdsCertificateProviderPluginMap::AddPlugin(
+    const std::string& instance_name, const std::string& plugin_name,
+    const Json& config) {
+  CertificateProviderFactory* factory =
+      CertificateProviderRegistry::LookupCertificateProviderFactory(
+          plugin_name);
+  if (factory == nullptr) {
+    return absl::InvalidArgumentError(
+        absl::StrCat("Unrecognized plugin name: ", plugin_name));
+  }
+  grpc_error_handle error = GRPC_ERROR_NONE;
+  auto parsed_config =
+      factory->CreateCertificateProviderConfig(config, &error);
+  if (!GRPC_ERROR_IS_NONE(error)) {
+    absl::Status status = grpc_error_to_absl_status(error);
+    GRPC_ERROR_UNREF(error);
+    return status;
+  }
+  plugin_map_.insert(
+      {instance_name, {plugin_name, std::move(parsed_config)}});
+  return absl::OkStatus();
+}
+
+bool GrpcXdsCertificateProviderPluginMap::HasPlugin(
+    const std::string& instance_name) const {
+  return plugin_map_.find(instance_name) != plugin_map_.end();
+}
+
+std::string GrpcXdsCertificateProviderPluginMap::ToString() const {
+  std::vector<std::string> parts = {"{\n"};
+  for (const auto& entry : plugin_map_) {
+    parts.push_back(
+        absl::StrFormat("  %s={\n"
+                        "    plugin_name=%s\n"
+                        "    config=%s\n"
+                        "  },\n",
+                        entry.first, entry.second.plugin_name,
+                        entry.second.config->ToString()));
+  }
+  parts.push_back("}");
+  return absl::StrJoin(parts, "");
+}
 
 }  // namespace grpc_core
 

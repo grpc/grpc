@@ -73,6 +73,26 @@ void UnsetGlobalXdsClientForTest();
 void SetXdsFallbackBootstrapConfig(const char* config);
 }  // namespace internal
 
+// Exposed for testing purposes only.
+class GrpcXdsCertificateProviderPluginMap
+    : public XdsCertificateProviderPluginMapInterface {
+ public:
+  const CertificateProviderStore::PluginDefinitionMap& plugin_map() const {
+    return plugin_map_;
+  }
+
+  absl::Status AddPlugin(const std::string& instance_name,
+                         const std::string& plugin_name,
+                         const Json& config) override;
+
+  bool HasPlugin(const std::string& instance_name) const override;
+
+  std::string ToString() const override;
+
+ private:
+  CertificateProviderStore::PluginDefinitionMap plugin_map_;
+};
+
 }  // namespace grpc_core
 
 #endif  // GRPC_CORE_EXT_XDS_XDS_CLIENT_GRPC_H
