@@ -39,6 +39,7 @@
 
 #include "src/core/ext/xds/upb_utils.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
+#include "src/core/ext/xds/xds_client.h"
 
 namespace grpc_core {
 
@@ -124,7 +125,7 @@ CertificateProviderInstanceParse(
           UpbStringToStdString(
               envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProviderInstance_certificate_name(
                   certificate_provider_instance_proto))};
-  if (!context.certificate_provider_plugin_map->HasPlugin(
+  if (!context.client->bootstrap().certificate_provider_plugin_map()->HasPlugin(
           certificate_provider_plugin_instance.instance_name)) {
     return absl::InvalidArgumentError(
         absl::StrCat("Unrecognized certificate provider instance name: ",
@@ -146,7 +147,7 @@ CertificateProviderPluginInstanceParse(
           UpbStringToStdString(
               envoy_extensions_transport_sockets_tls_v3_CertificateProviderPluginInstance_certificate_name(
                   certificate_provider_plugin_instance_proto))};
-  if (!context.certificate_provider_plugin_map->HasPlugin(
+  if (!context.client->bootstrap().certificate_provider_plugin_map()->HasPlugin(
           certificate_provider_plugin_instance.instance_name)) {
     return absl::InvalidArgumentError(
         absl::StrCat("Unrecognized certificate provider instance name: ",

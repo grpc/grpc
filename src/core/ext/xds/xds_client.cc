@@ -700,12 +700,8 @@ void XdsClient::ChannelState::AdsCallState::AdsResponseParser::ParseResource(
   }
   // Parse the resource.
   XdsResourceType::DecodeContext context = {
-      xds_client(),
-      ads_call_state_->chand()->server_,
-      &grpc_xds_client_trace,
-      xds_client()->symtab_.ptr(),
-      arena,
-      xds_client()->bootstrap_->certificate_provider_plugin_map()};
+      xds_client(), ads_call_state_->chand()->server_, &grpc_xds_client_trace,
+      xds_client()->symtab_.ptr(), arena};
   absl::StatusOr<XdsResourceType::DecodeResult> result =
       result_.type->Decode(context, serialized_resource, is_v2);
   if (!result.ok()) {

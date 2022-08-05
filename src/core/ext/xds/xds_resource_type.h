@@ -42,8 +42,6 @@ class XdsResourceType {
     TraceFlag* tracer;
     upb_DefPool* symtab;
     upb_Arena* arena;
-    const XdsCertificateProviderPluginMapInterface*
-        certificate_provider_plugin_map;
   };
 
   // A base type for resource data.
