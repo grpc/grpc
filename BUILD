@@ -1185,6 +1185,16 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "no_destruct",
+    language = "c++",
+    public_hdrs = ["src/core/lib/gprpp/no_destruct.h"],
+    deps = [
+        "construct_destruct",
+        "gpr_base",
+    ],
+)
+
+grpc_cc_library(
     name = "orphanable",
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/orphanable.h"],
@@ -1386,15 +1396,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "switch",
-    language = "c++",
-    public_hdrs = [
-        "src/core/lib/promise/detail/switch.h",
-    ],
-    deps = ["gpr_platform"],
-)
-
-grpc_cc_library(
     name = "basic_join",
     external_deps = [
         "absl/types:variant",
@@ -1462,7 +1463,6 @@ grpc_cc_library(
         "poll",
         "promise_factory",
         "promise_like",
-        "switch",
     ],
 )
 
@@ -2205,7 +2205,6 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/time",
-        "absl/types:optional",
         "absl/functional:any_invocable",
     ],
     tags = ["nofixdeps"],
@@ -7270,7 +7269,51 @@ grpc_cc_library(
         "error",
         "gpr_base",
         "json",
+        "json_args",
+        "json_object_loader",
+        "no_destruct",
         "time",
+    ],
+)
+
+grpc_cc_library(
+    name = "json_args",
+    hdrs = ["src/core/lib/json/json_args.h"],
+    external_deps = ["absl/strings"],
+    deps = ["gpr_base"],
+)
+
+grpc_cc_library(
+    name = "json_object_loader",
+    srcs = ["src/core/lib/json/json_object_loader.cc"],
+    hdrs = ["src/core/lib/json/json_object_loader.h"],
+    external_deps = [
+        "absl/meta:type_traits",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/types:optional",
+    ],
+    deps = [
+        "gpr_base",
+        "json",
+        "json_args",
+        "no_destruct",
+        "time",
+    ],
+)
+
+grpc_cc_library(
+    name = "json_channel_args",
+    hdrs = ["src/core/lib/json/json_channel_args.h"],
+    external_deps = [
+        "absl/strings",
+        "absl/types:optional",
+    ],
+    deps = [
+        "channel_args",
+        "gpr",
+        "json_args",
     ],
 )
 
