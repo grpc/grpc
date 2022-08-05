@@ -131,8 +131,8 @@ else:
     print("CHANNEL_DIFF_SIZE: %f" % channel_diff_size)
     check_on_pr.label_increase_decrease_on_pr('per-call-memory', call_diff_size,
                                               64)
-    check_on_pr.label_increase_decrease_on_pr('per-channel-memory', channel_diff_size,
-                                              1000) 
+    check_on_pr.label_increase_decrease_on_pr('per-channel-memory',
+                                              channel_diff_size, 1000)
     #TODO(chennancy)Change significant value when minstack also runs for channel
 
 print(text)
