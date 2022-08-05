@@ -1666,6 +1666,8 @@ src/core/ext/xds/xds_http_fault_filter.cc \
 src/core/ext/xds/xds_http_fault_filter.h \
 src/core/ext/xds/xds_http_filters.cc \
 src/core/ext/xds/xds_http_filters.h \
+src/core/ext/xds/xds_http_filters_grpc.cc \
+src/core/ext/xds/xds_http_filters_grpc.h \
 src/core/ext/xds/xds_http_rbac_filter.cc \
 src/core/ext/xds/xds_http_rbac_filter.h \
 src/core/ext/xds/xds_lb_policy_registry.cc \

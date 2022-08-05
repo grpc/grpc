@@ -36,9 +36,7 @@
 
 namespace grpc_core {
 
-extern const char* kXdsHttpRouterFilterConfigName;
-
-class XdsHttpFilterImpl {
+class XdsHttpFilter {
  public:
   struct FilterConfig {
     absl::string_view config_proto_type_name;
@@ -54,20 +52,14 @@ class XdsHttpFilterImpl {
     }
   };
 
-  // Service config data for the filter, returned by GenerateServiceConfig().
-  struct ServiceConfigJsonEntry {
-    // The top-level field name in the method config.
-    // Filter implementations should use their primary config proto type
-    // name for this.
-    // The value of this field in the method config will be a JSON array,
-    // which will be populated with the elements returned by each filter
-    // instance.
-    std::string service_config_field_name;
-    // The element to add to the JSON array.
-    std::string element;
-  };
+  virtual ~XdsHttpFilter() = default;
 
-  virtual ~XdsHttpFilterImpl() = default;
+  // Returns the xDS proto type for the primary config.
+  virtual absl::string_view ConfigProtoType() const = 0;
+
+  // Returns the xDS proto type for the override config, or the empty
+  // string if the filter does not support an override config.
+  virtual absl::string_view OverrideConfigProtoType() const = 0;
 
   // Loads the proto message into the upb symtab.
   virtual void PopulateSymtab(upb_DefPool* symtab) const = 0;
@@ -82,26 +74,6 @@ class XdsHttpFilterImpl {
   virtual absl::StatusOr<FilterConfig> GenerateFilterConfigOverride(
       upb_StringView serialized_filter_config, upb_Arena* arena) const = 0;
 
-  // C-core channel filter implementation.
-  virtual const grpc_channel_filter* channel_filter() const = 0;
-
-  // Modifies channel args that may affect service config parsing (not
-  // visible to the channel as a whole).
-  // Takes ownership of args.  Caller takes ownership of return value.
-  virtual ChannelArgs ModifyChannelArgs(const ChannelArgs& args) const {
-    return args;
-  }
-
-  // Function to convert the Configs into a JSON string to be added to the
-  // per-method part of the service config.
-  // The hcm_filter_config comes from the HttpConnectionManager config.
-  // The filter_config_override comes from the first of the ClusterWeight,
-  // Route, or VirtualHost entries that it is found in, or null if
-  // there is no override in any of those locations.
-  virtual absl::StatusOr<ServiceConfigJsonEntry> GenerateServiceConfig(
-      const FilterConfig& hcm_filter_config,
-      const FilterConfig* filter_config_override) const = 0;
-
   // Returns true if the filter is supported on clients; false otherwise
   virtual bool IsSupportedOnClients() const = 0;
 
@@ -112,22 +84,35 @@ class XdsHttpFilterImpl {
   virtual bool IsTerminalFilter() const { return false; }
 };
 
+class XdsHttpRouterFilter : public XdsHttpFilter {
+ public:
+  absl::string_view ConfigProtoType() const override;
+  absl::string_view OverrideConfigProtoType() const override;
+  void PopulateSymtab(upb_DefPool* symtab) const override;
+  absl::StatusOr<FilterConfig> GenerateFilterConfig(
+      upb_StringView serialized_filter_config, upb_Arena* arena) const override;
+  absl::StatusOr<FilterConfig> GenerateFilterConfigOverride(
+      upb_StringView /*serialized_filter_config*/,
+      upb_Arena* /*arena*/) const override;
+  bool IsSupportedOnClients() const override { return true; }
+  bool IsSupportedOnServers() const override { return true; }
+  bool IsTerminalFilter() const override { return true; }
+};
+
 class XdsHttpFilterRegistry {
  public:
-  static void RegisterFilter(
-      std::unique_ptr<XdsHttpFilterImpl> filter,
-      const std::set<absl::string_view>& config_proto_type_names);
+  void RegisterFilter(std::unique_ptr<XdsHttpFilter> filter);
 
-  static const XdsHttpFilterImpl* GetFilterForType(
-      absl::string_view proto_type_name);
+  const XdsHttpFilter* GetFilterForType(
+      absl::string_view proto_type_name) const;
 
-  static void PopulateSymtab(upb_DefPool* symtab);
+  void PopulateSymtab(upb_DefPool* symtab) const;
 
-  // Global init and shutdown.
-  static void Init();
-  static void Shutdown();
+ private:
+  std::vector<std::unique_ptr<XdsHttpFilter>> filters_;
+  std::map<absl::string_view, XdsHttpFilter*> filter_registry_;
 };
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_EXT_XDS_XDS_HTTP_FILTERS_H */
+#endif  // GRPC_CORE_EXT_XDS_XDS_HTTP_FILTERS_H

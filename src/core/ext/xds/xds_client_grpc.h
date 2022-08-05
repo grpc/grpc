@@ -28,6 +28,7 @@
 
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_client.h"
+#include "src/core/ext/xds/xds_http_filters_grpc.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -43,6 +44,7 @@ class GrpcXdsClient : public XdsClient {
 
   // Do not instantiate directly -- use GetOrCreate() instead.
   GrpcXdsClient(std::unique_ptr<XdsBootstrap> bootstrap,
+                XdsHttpFilterRegistry xds_http_filter_registry,
                 const ChannelArgs& args);
   ~GrpcXdsClient() override;
 

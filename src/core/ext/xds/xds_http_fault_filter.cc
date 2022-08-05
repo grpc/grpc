@@ -48,9 +48,6 @@
 
 namespace grpc_core {
 
-const char* kXdsHttpFaultFilterConfigName =
-    "envoy.extensions.filters.http.fault.v3.HTTPFault";
-
 namespace {
 
 uint32_t GetDenominator(const envoy_type_v3_FractionalPercent* fraction) {
@@ -176,11 +173,19 @@ absl::StatusOr<Json> ParseHttpFaultIntoJson(
 
 }  // namespace
 
+absl::string_view XdsHttpFaultFilter::ConfigProtoType() const {
+  return "envoy.extensions.filters.http.fault.v3.HTTPFault";
+}
+
+absl::string_view XdsHttpFaultFilter::OverrideConfigProtoType() const {
+  return "";
+}
+
 void XdsHttpFaultFilter::PopulateSymtab(upb_DefPool* symtab) const {
   envoy_extensions_filters_http_fault_v3_HTTPFault_getmsgdef(symtab);
 }
 
-absl::StatusOr<XdsHttpFilterImpl::FilterConfig>
+absl::StatusOr<XdsHttpFilter::FilterConfig>
 XdsHttpFaultFilter::GenerateFilterConfig(
     upb_StringView serialized_filter_config, upb_Arena* arena) const {
   absl::StatusOr<Json> parse_result =
@@ -188,10 +193,10 @@ XdsHttpFaultFilter::GenerateFilterConfig(
   if (!parse_result.ok()) {
     return parse_result.status();
   }
-  return FilterConfig{kXdsHttpFaultFilterConfigName, std::move(*parse_result)};
+  return FilterConfig{ConfigProtoType(), std::move(*parse_result)};
 }
 
-absl::StatusOr<XdsHttpFilterImpl::FilterConfig>
+absl::StatusOr<XdsHttpFilter::FilterConfig>
 XdsHttpFaultFilter::GenerateFilterConfigOverride(
     upb_StringView serialized_filter_config, upb_Arena* arena) const {
   // HTTPFault filter has the same message type in HTTP connection manager's
@@ -208,7 +213,7 @@ ChannelArgs XdsHttpFaultFilter::ModifyChannelArgs(
   return args.Set(GRPC_ARG_PARSE_FAULT_INJECTION_METHOD_CONFIG, 1);
 }
 
-absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>
+absl::StatusOr<GrpcXdsHttpFilter::ServiceConfigJsonEntry>
 XdsHttpFaultFilter::GenerateServiceConfig(
     const FilterConfig& hcm_filter_config,
     const FilterConfig* filter_config_override) const {

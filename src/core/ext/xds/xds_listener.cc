@@ -356,8 +356,9 @@ HttpConnectionManagerParse(
                                          filter_type.status().message()));
         continue;
       }
-      const XdsHttpFilterImpl* filter_impl =
-          XdsHttpFilterRegistry::GetFilterForType(filter_type->type);
+      const XdsHttpFilter* filter_impl =
+          context.client->xds_http_filter_registry().GetFilterForType(
+              filter_type->type);
       if (filter_impl == nullptr) {
         if (!is_optional) {
           errors.emplace_back(absl::StrCat(
@@ -374,7 +375,7 @@ HttpConnectionManagerParse(
         }
         continue;
       }
-      absl::StatusOr<XdsHttpFilterImpl::FilterConfig> filter_config =
+      absl::StatusOr<XdsHttpFilter::FilterConfig> filter_config =
           filter_impl->GenerateFilterConfig(google_protobuf_Any_value(any),
                                             context.arena);
       if (!filter_config.ok()) {
@@ -395,8 +396,8 @@ HttpConnectionManagerParse(
     // to take care of the case where there are two terminal filters in the list
     // out of which only one gets added in the final list.
     for (const auto& http_filter : http_connection_manager.http_filters) {
-      const XdsHttpFilterImpl* filter_impl =
-          XdsHttpFilterRegistry::GetFilterForType(
+      const XdsHttpFilter* filter_impl =
+          context.client->xds_http_filter_registry().GetFilterForType(
               http_filter.config.config_proto_type_name);
       if (&http_filter != &http_connection_manager.http_filters.back()) {
         // Filters before the last filter must not be terminal.
@@ -423,7 +424,7 @@ HttpConnectionManagerParse(
     // to expose whether the resource we received was v2 or v3.
     http_connection_manager.http_filters.emplace_back(
         XdsListenerResource::HttpConnectionManager::HttpFilter{
-            "router", {kXdsHttpRouterFilterConfigName, Json()}});
+            "router", {XdsHttpRouterFilter().ConfigProtoType(), Json()}});
   }
   // Guarding parsing of RouteConfig on the server side with the environmental
   // variable since that's the first feature on the server side that will be

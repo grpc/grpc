@@ -1375,12 +1375,14 @@ bool XdsClient::ChannelState::LrsCallState::IsCurrentCallOnChannel() const {
 
 XdsClient::XdsClient(std::unique_ptr<XdsBootstrap> bootstrap,
                      OrphanablePtr<XdsTransportFactory> transport_factory,
+                     XdsHttpFilterRegistry xds_http_filter_registry,
                      Duration resource_request_timeout)
     : DualRefCounted<XdsClient>(
           GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_refcount_trace) ? "XdsClient"
                                                                   : nullptr),
       bootstrap_(std::move(bootstrap)),
       transport_factory_(std::move(transport_factory)),
+      xds_http_filter_registry_(std::move(xds_http_filter_registry)),
       request_timeout_(resource_request_timeout),
       xds_federation_enabled_(XdsFederationEnabled()),
       certificate_provider_store_(MakeOrphanable<CertificateProviderStore>(
@@ -1390,6 +1392,7 @@ XdsClient::XdsClient(std::unique_ptr<XdsBootstrap> bootstrap,
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO, "[xds_client %p] creating xds client", this);
   }
+  xds_http_filter_registry_.PopulateSymtab(symtab_.ptr());
 }
 
 XdsClient::~XdsClient() {

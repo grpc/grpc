@@ -25,39 +25,27 @@
 #include "upb/upb.h"
 
 #include "src/core/ext/xds/xds_http_filters.h"
+#include "src/core/ext/xds/xds_http_filters_grpc.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 
 namespace grpc_core {
 
-extern const char* kXdsHttpFaultFilterConfigName;
-
-class XdsHttpFaultFilter : public XdsHttpFilterImpl {
+class XdsHttpFaultFilter : public GrpcXdsHttpFilter {
  public:
-  // Overrides the PopulateSymtab method
+  absl::string_view ConfigProtoType() const override;
+  absl::string_view OverrideConfigProtoType() const override;
   void PopulateSymtab(upb_DefPool* symtab) const override;
-
-  // Overrides the GenerateFilterConfig method
   absl::StatusOr<FilterConfig> GenerateFilterConfig(
       upb_StringView serialized_filter_config, upb_Arena* arena) const override;
-
-  // Overrides the GenerateFilterConfigOverride method
   absl::StatusOr<FilterConfig> GenerateFilterConfigOverride(
       upb_StringView serialized_filter_config, upb_Arena* arena) const override;
-
-  // Overrides the channel_filter method
   const grpc_channel_filter* channel_filter() const override;
-
-  // Overrides the ModifyChannelArgs method
   ChannelArgs ModifyChannelArgs(const ChannelArgs& args) const override;
-
-  // Overrides the GenerateServiceConfig method
   absl::StatusOr<ServiceConfigJsonEntry> GenerateServiceConfig(
       const FilterConfig& hcm_filter_config,
       const FilterConfig* filter_config_override) const override;
-
   bool IsSupportedOnClients() const override { return true; }
-
   bool IsSupportedOnServers() const override { return false; }
 };
 

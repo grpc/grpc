@@ -35,6 +35,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/xds/xds_http_filters.h"
+#include "src/core/ext/xds/xds_http_filters_grpc.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/matchers/matchers.h"
 
@@ -195,7 +196,7 @@ absl::optional<absl::string_view> XdsRouting::GetHeaderValue(
 
 namespace {
 
-const XdsHttpFilterImpl::FilterConfig* FindFilterConfigOverride(
+const XdsHttpFilter::FilterConfig* FindFilterConfigOverride(
     const std::string& instance_name,
     const XdsRouteConfigResource::VirtualHost& vhost,
     const XdsRouteConfigResource::Route& route,
@@ -220,6 +221,7 @@ const XdsHttpFilterImpl::FilterConfig* FindFilterConfigOverride(
 
 absl::StatusOr<XdsRouting::GeneratePerHttpFilterConfigsResult>
 XdsRouting::GeneratePerHTTPFilterConfigs(
+    const XdsHttpFilterRegistry& xds_http_filter_registry,
     const std::vector<XdsListenerResource::HttpConnectionManager::HttpFilter>&
         http_filters,
     const XdsRouteConfigResource::VirtualHost& vhost,
@@ -232,9 +234,9 @@ XdsRouting::GeneratePerHTTPFilterConfigs(
   for (const auto& http_filter : http_filters) {
     // Find filter.  This is guaranteed to succeed, because it's checked
     // at config validation time in the XdsApi code.
-    const XdsHttpFilterImpl* filter_impl =
-        XdsHttpFilterRegistry::GetFilterForType(
-            http_filter.config.config_proto_type_name);
+    auto* filter_impl = static_cast<const GrpcXdsHttpFilter*>(
+        xds_http_filter_registry.GetFilterForType(
+            http_filter.config.config_proto_type_name));
     GPR_ASSERT(filter_impl != nullptr);
     // If there is not actually any C-core filter associated with this
     // xDS filter, then it won't need any config, so skip it.
@@ -243,7 +245,7 @@ XdsRouting::GeneratePerHTTPFilterConfigs(
     // parsing.
     result.args = filter_impl->ModifyChannelArgs(result.args);
     // Find config override, if any.
-    const XdsHttpFilterImpl::FilterConfig* config_override =
+    const XdsHttpFilter::FilterConfig* config_override =
         FindFilterConfigOverride(http_filter.name, vhost, route,
                                  cluster_weight);
     // Generate service config for filter.

@@ -895,6 +895,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/xds/xds_http_fault_filter.h )
   s.files += %w( src/core/ext/xds/xds_http_filters.cc )
   s.files += %w( src/core/ext/xds/xds_http_filters.h )
+  s.files += %w( src/core/ext/xds/xds_http_filters_grpc.cc )
+  s.files += %w( src/core/ext/xds/xds_http_filters_grpc.h )
   s.files += %w( src/core/ext/xds/xds_http_rbac_filter.cc )
   s.files += %w( src/core/ext/xds/xds_http_rbac_filter.h )
   s.files += %w( src/core/ext/xds/xds_lb_policy_registry.cc )

@@ -38,6 +38,7 @@
 #include "src/core/ext/xds/xds_channel_args.h"
 #include "src/core/ext/xds/xds_cluster_specifier_plugin.h"
 #include "src/core/ext/xds/xds_http_filters.h"
+#include "src/core/ext/xds/xds_http_filters_grpc.h"
 #include "src/core/ext/xds/xds_transport.h"
 #include "src/core/ext/xds/xds_transport_grpc.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -69,7 +70,6 @@ char* g_fallback_bootstrap_config ABSL_GUARDED_BY(*g_mu) = nullptr;
 
 void XdsClientGlobalInit() {
   g_mu = new Mutex;
-  XdsHttpFilterRegistry::Init();
   XdsClusterSpecifierPluginRegistry::Init();
 }
 
@@ -80,7 +80,6 @@ void XdsClientGlobalShutdown() ABSL_NO_THREAD_SAFETY_ANALYSIS {
   g_fallback_bootstrap_config = nullptr;
   delete g_mu;
   g_mu = nullptr;
-  XdsHttpFilterRegistry::Shutdown();
   XdsClusterSpecifierPluginRegistry::Shutdown();
 }
 
@@ -131,6 +130,9 @@ absl::StatusOr<std::string> GetBootstrapContents(const char* fallback_config) {
 
 absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GrpcXdsClient::GetOrCreate(
     const ChannelArgs& args, const char* reason) {
+  // Construct xDS HTTP filter registry.
+  XdsHttpFilterRegistry xds_http_filter_registry;
+  RegisterGrpcXdsHttpFilters(&xds_http_filter_registry);
   // If getting bootstrap from channel args, create a local XdsClient
   // instance for the channel or server instead of using the global instance.
   absl::optional<absl::string_view> bootstrap_config = args.GetString(
@@ -143,6 +145,7 @@ absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GrpcXdsClient::GetOrCreate(
     grpc_channel_args* xds_channel_args = args.GetPointer<grpc_channel_args>(
         GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_CLIENT_CHANNEL_ARGS);
     return MakeRefCounted<GrpcXdsClient>(std::move(bootstrap),
+                                         std::move(xds_http_filter_registry),
                                          ChannelArgs::FromC(xds_channel_args));
   }
   // Otherwise, use the global instance.
@@ -165,15 +168,18 @@ absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GrpcXdsClient::GetOrCreate(
   if (!GRPC_ERROR_IS_NONE(error)) return grpc_error_to_absl_status(error);
   // Instantiate XdsClient.
   auto xds_client = MakeRefCounted<GrpcXdsClient>(
-      std::move(bootstrap), ChannelArgs::FromC(g_channel_args));
+      std::move(bootstrap), std::move(xds_http_filter_registry),
+      ChannelArgs::FromC(g_channel_args));
   g_xds_client = xds_client.get();
   return xds_client;
 }
 
 GrpcXdsClient::GrpcXdsClient(std::unique_ptr<XdsBootstrap> bootstrap,
+                             XdsHttpFilterRegistry xds_http_filter_registry,
                              const ChannelArgs& args)
     : XdsClient(
           std::move(bootstrap), MakeOrphanable<GrpcXdsTransportFactory>(args),
+          std::move(xds_http_filter_registry),
           std::max(Duration::Zero(),
                    args.GetDurationFromIntMillis(
                            GRPC_ARG_XDS_RESOURCE_DOES_NOT_EXIST_TIMEOUT_MS)

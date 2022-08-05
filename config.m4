@@ -439,6 +439,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/xds/xds_endpoint.cc \
     src/core/ext/xds/xds_http_fault_filter.cc \
     src/core/ext/xds/xds_http_filters.cc \
+    src/core/ext/xds/xds_http_filters_grpc.cc \
     src/core/ext/xds/xds_http_rbac_filter.cc \
     src/core/ext/xds/xds_lb_policy_registry.cc \
     src/core/ext/xds/xds_listener.cc \

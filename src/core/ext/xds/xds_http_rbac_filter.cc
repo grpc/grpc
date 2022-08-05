@@ -52,12 +52,6 @@
 
 namespace grpc_core {
 
-const char* kXdsHttpRbacFilterConfigName =
-    "envoy.extensions.filters.http.rbac.v3.RBAC";
-
-const char* kXdsHttpRbacFilterConfigOverrideName =
-    "envoy.extensions.filters.http.rbac.v3.RBACPerRoute";
-
 namespace {
 
 Json ParseRegexMatcherToJson(
@@ -492,11 +486,19 @@ absl::StatusOr<Json> ParseHttpRbacToJson(
 
 }  // namespace
 
+absl::string_view XdsHttpRbacFilter::ConfigProtoType() const {
+  return "envoy.extensions.filters.http.rbac.v3.RBAC";
+}
+
+absl::string_view XdsHttpRbacFilter::OverrideConfigProtoType() const {
+  return "envoy.extensions.filters.http.rbac.v3.RBACPerRoute";
+}
+
 void XdsHttpRbacFilter::PopulateSymtab(upb_DefPool* symtab) const {
   envoy_extensions_filters_http_rbac_v3_RBAC_getmsgdef(symtab);
 }
 
-absl::StatusOr<XdsHttpFilterImpl::FilterConfig>
+absl::StatusOr<XdsHttpFilter::FilterConfig>
 XdsHttpRbacFilter::GenerateFilterConfig(upb_StringView serialized_filter_config,
                                         upb_Arena* arena) const {
   absl::StatusOr<Json> rbac_json;
@@ -510,10 +512,10 @@ XdsHttpRbacFilter::GenerateFilterConfig(upb_StringView serialized_filter_config,
   if (!rbac_json.ok()) {
     return rbac_json.status();
   }
-  return FilterConfig{kXdsHttpRbacFilterConfigName, std::move(*rbac_json)};
+  return FilterConfig{ConfigProtoType(), std::move(*rbac_json)};
 }
 
-absl::StatusOr<XdsHttpFilterImpl::FilterConfig>
+absl::StatusOr<XdsHttpFilter::FilterConfig>
 XdsHttpRbacFilter::GenerateFilterConfigOverride(
     upb_StringView serialized_filter_config, upb_Arena* arena) const {
   auto* rbac_per_route =
@@ -533,8 +535,7 @@ XdsHttpRbacFilter::GenerateFilterConfigOverride(
       return rbac_json.status();
     }
   }
-  return FilterConfig{kXdsHttpRbacFilterConfigOverrideName,
-                      std::move(*rbac_json)};
+  return FilterConfig{OverrideConfigProtoType(), std::move(*rbac_json)};
 }
 
 const grpc_channel_filter* XdsHttpRbacFilter::channel_filter() const {
@@ -546,7 +547,7 @@ ChannelArgs XdsHttpRbacFilter::ModifyChannelArgs(
   return args.Set(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG, 1);
 }
 
-absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>
+absl::StatusOr<GrpcXdsHttpFilter::ServiceConfigJsonEntry>
 XdsHttpRbacFilter::GenerateServiceConfig(
     const FilterConfig& hcm_filter_config,
     const FilterConfig* filter_config_override) const {

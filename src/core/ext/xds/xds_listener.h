@@ -80,7 +80,7 @@ struct XdsListenerResource {
 
     struct HttpFilter {
       std::string name;
-      XdsHttpFilterImpl::FilterConfig config;
+      XdsHttpFilter::FilterConfig config;
 
       bool operator==(const HttpFilter& other) const {
         return name == other.name && config == other.config;
@@ -220,7 +220,6 @@ class XdsListenerResourceType
     envoy_config_listener_v3_Listener_getmsgdef(symtab);
     envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_getmsgdef(
         symtab);
-    XdsHttpFilterRegistry::PopulateSymtab(symtab);
   }
 };
 

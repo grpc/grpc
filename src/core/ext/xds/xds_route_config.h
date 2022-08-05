@@ -50,7 +50,7 @@ bool XdsRbacEnabled();
 
 struct XdsRouteConfigResource {
   using TypedPerFilterConfig =
-      std::map<std::string, XdsHttpFilterImpl::FilterConfig>;
+      std::map<std::string, XdsHttpFilter::FilterConfig>;
 
   using ClusterSpecifierPluginMap =
       std::map<std::string /*cluster_specifier_plugin_name*/,

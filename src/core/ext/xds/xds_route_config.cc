@@ -629,14 +629,14 @@ ParseTypedPerFilterConfig(
     }
     auto type = ExtractExtensionTypeName(context, any);
     if (!type.ok()) return type.status();
-    const XdsHttpFilterImpl* filter_impl =
-        XdsHttpFilterRegistry::GetFilterForType(type->type);
+    const XdsHttpFilter* filter_impl =
+        context.client->xds_http_filter_registry().GetFilterForType(type->type);
     if (filter_impl == nullptr) {
       if (is_optional) continue;
       return absl::InvalidArgumentError(
           absl::StrCat("no filter registered for config type ", type->type));
     }
-    absl::StatusOr<XdsHttpFilterImpl::FilterConfig> filter_config =
+    absl::StatusOr<XdsHttpFilter::FilterConfig> filter_config =
         filter_impl->GenerateFilterConfigOverride(
             google_protobuf_Any_value(any), context.arena);
     if (!filter_config.ok()) {
