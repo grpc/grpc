@@ -122,7 +122,7 @@ else:
                     text += '{}: {}\n'.format(key, cur[key])
                 else:
                     text += '{}: {} -> {}\n'.format(key, old[key], cur[key])
-                    if key == 'call/client' or 'call/server':
+                    if 'call' in key:
                         call_diff_size += cur[key] - old[key]
                     else:
                         channel_diff_size += cur[key] - old[key]
