@@ -2652,7 +2652,7 @@ grpc_cc_library(
         "event_engine_poller",
         "event_engine_socket_notifier",
         "event_engine_trace",
-        "event_engine_utils",
+        "event_engine_time_util",
         "gpr_base",
         "gpr_platform",
     ],
