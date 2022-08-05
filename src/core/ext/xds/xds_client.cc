@@ -1373,13 +1373,13 @@ bool XdsClient::ChannelState::LrsCallState::IsCurrentCallOnChannel() const {
 // XdsClient
 //
 
-XdsClient::XdsClient(std::unique_ptr<XdsBootstrap> bootstrap,
-                     OrphanablePtr<XdsTransportFactory> transport_factory,
-                     XdsHttpFilterRegistry xds_http_filter_registry,
-                     XdsClusterSpecifierPluginRegistry
-                         xds_cluster_specifier_plugin_registry,
-                     XdsLbPolicyRegistry xds_lb_policy_registry,
-                     Duration resource_request_timeout)
+XdsClient::XdsClient(
+    std::unique_ptr<XdsBootstrap> bootstrap,
+    OrphanablePtr<XdsTransportFactory> transport_factory,
+    XdsHttpFilterRegistry xds_http_filter_registry,
+    XdsClusterSpecifierPluginRegistry xds_cluster_specifier_plugin_registry,
+    XdsLbPolicyRegistry xds_lb_policy_registry,
+    Duration resource_request_timeout)
     : DualRefCounted<XdsClient>(
           GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_refcount_trace) ? "XdsClient"
                                                                   : nullptr),

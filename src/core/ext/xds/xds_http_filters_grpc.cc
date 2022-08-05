@@ -93,7 +93,7 @@ class GrpcXdsHttpRouterFilter : public GrpcXdsHttpFilter {
 
 namespace internal {
 void (*RegisterExtraXdsHttpFiltersForTest)(XdsHttpFilterRegistry*) = nullptr;
-}  // namespace
+}  // namespace internal
 
 void RegisterGrpcXdsHttpFilters(XdsHttpFilterRegistry* registry) {
   registry->RegisterFilter(absl::make_unique<GrpcXdsHttpRouterFilter>());

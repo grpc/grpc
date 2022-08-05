@@ -70,7 +70,7 @@ void RegisterGrpcXdsHttpFilters(XdsHttpFilterRegistry* registry);
 // Exposed for testing only.
 namespace internal {
 extern void (*RegisterExtraXdsHttpFiltersForTest)(XdsHttpFilterRegistry*);
-}  // namespace
+}  // namespace internal
 
 }  // namespace grpc_core
 

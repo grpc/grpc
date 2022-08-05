@@ -3192,22 +3192,22 @@ int main(int argc, char** argv) {
   grpc_init();
   grpc_core::internal::RegisterExtraXdsHttpFiltersForTest =
       [](grpc_core::XdsHttpFilterRegistry* registry) {
-    registry->RegisterFilter(
-        absl::make_unique<grpc::testing::NoOpHttpFilter>(
-            "grpc.testing.client_only_http_filter",
-            /*supported_on_clients=*/ true, /*supported_on_servers=*/ false,
-            /*is_terminal_filter=*/ false));
-    registry->RegisterFilter(
-        absl::make_unique<grpc::testing::NoOpHttpFilter>(
-            "grpc.testing.server_only_http_filter",
-            /*supported_on_clients=*/ false, /*supported_on_servers=*/ true,
-            /*is_terminal_filter=*/ false));
-    registry->RegisterFilter(
-        absl::make_unique<grpc::testing::NoOpHttpFilter>(
-            "grpc.testing.terminal_http_filter",
-            /*supported_on_clients=*/ true, /*supported_on_servers=*/ true,
-            /*is_terminal_filter=*/ true));
-  };
+        registry->RegisterFilter(
+            absl::make_unique<grpc::testing::NoOpHttpFilter>(
+                "grpc.testing.client_only_http_filter",
+                /*supported_on_clients=*/true, /*supported_on_servers=*/false,
+                /*is_terminal_filter=*/false));
+        registry->RegisterFilter(
+            absl::make_unique<grpc::testing::NoOpHttpFilter>(
+                "grpc.testing.server_only_http_filter",
+                /*supported_on_clients=*/false, /*supported_on_servers=*/true,
+                /*is_terminal_filter=*/false));
+        registry->RegisterFilter(
+            absl::make_unique<grpc::testing::NoOpHttpFilter>(
+                "grpc.testing.terminal_http_filter",
+                /*supported_on_clients=*/true, /*supported_on_servers=*/true,
+                /*is_terminal_filter=*/true));
+      };
   const auto result = RUN_ALL_TESTS();
   grpc_shutdown();
   return result;

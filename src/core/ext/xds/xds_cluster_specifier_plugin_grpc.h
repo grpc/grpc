@@ -32,8 +32,7 @@
 
 namespace grpc_core {
 
-class XdsRouteLookupClusterSpecifierPlugin
-    : public XdsClusterSpecifierPlugin {
+class XdsRouteLookupClusterSpecifierPlugin : public XdsClusterSpecifierPlugin {
   absl::string_view ConfigProtoType() const override;
 
   void PopulateSymtab(upb_DefPool* symtab) const override;

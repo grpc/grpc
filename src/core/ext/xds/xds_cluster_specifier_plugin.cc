@@ -40,8 +40,8 @@ void XdsClusterSpecifierPluginRegistry::RegisterPlugin(
   plugins_[plugin->ConfigProtoType()] = std::move(plugin);
 }
 
-void XdsClusterSpecifierPluginRegistry::PopulateSymtab(upb_DefPool* symtab)
-    const {
+void XdsClusterSpecifierPluginRegistry::PopulateSymtab(
+    upb_DefPool* symtab) const {
   for (const auto& p : plugins_) {
     p.second->PopulateSymtab(symtab);
   }

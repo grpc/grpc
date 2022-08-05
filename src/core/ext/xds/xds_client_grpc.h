@@ -43,12 +43,11 @@ class GrpcXdsClient : public XdsClient {
       const ChannelArgs& args, const char* reason);
 
   // Do not instantiate directly -- use GetOrCreate() instead.
-  GrpcXdsClient(std::unique_ptr<XdsBootstrap> bootstrap,
-                XdsHttpFilterRegistry xds_http_filter_registry,
-                XdsClusterSpecifierPluginRegistry
-                    xds_cluster_specifier_plugin_registry,
-                XdsLbPolicyRegistry xds_lb_policy_registry,
-                const ChannelArgs& args);
+  GrpcXdsClient(
+      std::unique_ptr<XdsBootstrap> bootstrap,
+      XdsHttpFilterRegistry xds_http_filter_registry,
+      XdsClusterSpecifierPluginRegistry xds_cluster_specifier_plugin_registry,
+      XdsLbPolicyRegistry xds_lb_policy_registry, const ChannelArgs& args);
   ~GrpcXdsClient() override;
 
   // Helpers for encoding the XdsClient object in channel args.

@@ -74,13 +74,13 @@ class XdsClient : public DualRefCounted<XdsClient> {
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) = 0;
   };
 
-  XdsClient(std::unique_ptr<XdsBootstrap> bootstrap,
-            OrphanablePtr<XdsTransportFactory> transport_factory,
-            XdsHttpFilterRegistry xds_http_filter_registry,
-            XdsClusterSpecifierPluginRegistry
-                xds_cluster_specifier_plugin_registry,
-            XdsLbPolicyRegistry xds_lb_policy_registry,
-            Duration resource_request_timeout = Duration::Seconds(15));
+  XdsClient(
+      std::unique_ptr<XdsBootstrap> bootstrap,
+      OrphanablePtr<XdsTransportFactory> transport_factory,
+      XdsHttpFilterRegistry xds_http_filter_registry,
+      XdsClusterSpecifierPluginRegistry xds_cluster_specifier_plugin_registry,
+      XdsLbPolicyRegistry xds_lb_policy_registry,
+      Duration resource_request_timeout = Duration::Seconds(15));
   ~XdsClient() override;
 
   const XdsBootstrap& bootstrap() const {

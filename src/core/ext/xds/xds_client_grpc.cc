@@ -71,9 +71,7 @@ char* g_fallback_bootstrap_config ABSL_GUARDED_BY(*g_mu) = nullptr;
 
 }  // namespace
 
-void XdsClientGlobalInit() {
-  g_mu = new Mutex;
-}
+void XdsClientGlobalInit() { g_mu = new Mutex; }
 
 // TODO(roth): Find a better way to clear the fallback config that does
 // not require using ABSL_NO_THREAD_SAFETY_ANALYSIS.
@@ -185,12 +183,11 @@ absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GrpcXdsClient::GetOrCreate(
   return xds_client;
 }
 
-GrpcXdsClient::GrpcXdsClient(std::unique_ptr<XdsBootstrap> bootstrap,
-                             XdsHttpFilterRegistry xds_http_filter_registry,
-                             XdsClusterSpecifierPluginRegistry
-                                 xds_cluster_specifier_plugin_registry,
-                             XdsLbPolicyRegistry xds_lb_policy_registry,
-                             const ChannelArgs& args)
+GrpcXdsClient::GrpcXdsClient(
+    std::unique_ptr<XdsBootstrap> bootstrap,
+    XdsHttpFilterRegistry xds_http_filter_registry,
+    XdsClusterSpecifierPluginRegistry xds_cluster_specifier_plugin_registry,
+    XdsLbPolicyRegistry xds_lb_policy_registry, const ChannelArgs& args)
     : XdsClient(
           std::move(bootstrap), MakeOrphanable<GrpcXdsTransportFactory>(args),
           std::move(xds_http_filter_registry),
