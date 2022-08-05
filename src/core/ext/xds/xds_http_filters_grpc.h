@@ -75,6 +75,11 @@ class GrpcXdsHttpFilter : public XdsHttpFilter {
 
 void RegisterGrpcXdsHttpFilters(XdsHttpFilterRegistry* registry);
 
+// Exposed for testing only.
+namespace internal {
+extern void (*RegisterExtraXdsHttpFiltersForTest)(XdsHttpFilterRegistry*);
+}  // namespace
+
 }  // namespace grpc_core
 
 #endif  // GRPC_CORE_EXT_XDS_XDS_HTTP_FILTERS_GRPC_H

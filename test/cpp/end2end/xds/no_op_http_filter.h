@@ -14,13 +14,13 @@
 
 #include <string>
 
-#include "src/core/ext/xds/xds_http_filters.h"
+#include "src/core/ext/xds/xds_http_filters_grpc.h"
 
 namespace grpc {
 namespace testing {
 
 // A No-op HTTP filter used for verifying parsing logic.
-class NoOpHttpFilter : public grpc_core::XdsHttpFilter {
+class NoOpHttpFilter : public grpc_core::GrpcXdsHttpFilter {
  public:
   NoOpHttpFilter(std::string name, bool supported_on_clients,
                  bool supported_on_servers, bool is_terminal_filter)
@@ -28,6 +28,10 @@ class NoOpHttpFilter : public grpc_core::XdsHttpFilter {
         supported_on_clients_(supported_on_clients),
         supported_on_servers_(supported_on_servers),
         is_terminal_filter_(is_terminal_filter) {}
+
+  absl::string_view ConfigProtoType() const override { return name_; }
+
+  absl::string_view OverrideConfigProtoType() const override { return ""; }
 
   void PopulateSymtab(upb_DefPool* /* symtab */) const override {}
 
@@ -45,11 +49,11 @@ class NoOpHttpFilter : public grpc_core::XdsHttpFilter {
 
   const grpc_channel_filter* channel_filter() const override { return nullptr; }
 
-  absl::StatusOr<grpc_core::XdsHttpFilter::ServiceConfigJsonEntry>
+  absl::StatusOr<grpc_core::GrpcXdsHttpFilter::ServiceConfigJsonEntry>
   GenerateServiceConfig(
       const FilterConfig& /*hcm_filter_config*/,
       const FilterConfig* /*filter_config_override*/) const override {
-    return grpc_core::XdsHttpFilter::ServiceConfigJsonEntry{name_, ""};
+    return grpc_core::GrpcXdsHttpFilter::ServiceConfigJsonEntry{name_, ""};
   }
 
   bool IsSupportedOnClients() const override { return supported_on_clients_; }

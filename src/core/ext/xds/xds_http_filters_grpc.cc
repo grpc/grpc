@@ -92,11 +92,18 @@ class GrpcXdsHttpRouterFilter : public GrpcXdsHttpFilter {
 
 }  // namespace
 
+namespace internal {
+void (*RegisterExtraXdsHttpFiltersForTest)(XdsHttpFilterRegistry*) = nullptr;
+}  // namespace
+
 void RegisterGrpcXdsHttpFilters(XdsHttpFilterRegistry* registry) {
   registry->RegisterFilter(absl::make_unique<GrpcXdsHttpRouterFilter>());
   registry->RegisterFilter(absl::make_unique<XdsHttpFaultFilter>());
   registry->RegisterFilter(absl::make_unique<XdsHttpRbacFilter>());
   registry->RegisterFilter(absl::make_unique<XdsHttpRbacFilter>());
+  if (internal::RegisterExtraXdsHttpFiltersForTest != nullptr) {
+    internal::RegisterExtraXdsHttpFiltersForTest(registry);
+  }
 }
 
 }  // namespace grpc_core
