@@ -25,7 +25,7 @@
 
 #include "src/core/ext/transport/chttp2/transport/huffsyms.h"
 
-static const int kFirstBits = 15;
+static const int kFirstBits = 8;
 
 class BitQueue {
  public:
@@ -231,6 +231,38 @@ class Switch : public Item {
   std::map<std::string, Sink> cases_;
 };
 
+std::string ToCamelCase(const std::string& in) {
+  std::string out;
+  bool next_upper = true;
+  for (char c : in) {
+    if (c == '_') {
+      next_upper = true;
+    } else {
+      if (next_upper) {
+        out.push_back(toupper(c));
+        next_upper = false;
+      } else {
+        out.push_back(c);
+      }
+    }
+  }
+  return out;
+}
+
+std::string Uint(int bits) { return absl::StrCat("uint", bits, "_t"); }
+
+int TypeBitsForMax(int max) {
+  if (max <= 255) {
+    return 8;
+  } else if (max <= 65535) {
+    return 16;
+  } else {
+    return 32;
+  }
+}
+
+std::string TypeForMax(int max) { return Uint(TypeBitsForMax(max)); }
+
 std::map<std::string, int> g_emit_buffer_idx;
 
 class EmitBuffer : public Item {
@@ -239,15 +271,42 @@ class EmitBuffer : public Item {
       : name_(absl::StrCat(name, "_", g_emit_buffer_idx[name]++)) {}
 
   std::vector<std::string> ToLines() const override {
+    // decide whether to do a flat array or a one-level deep thing
+    auto vi = ValueInfo();
+    const int flat_array_size = emit_.size() * TypeBitsForMax(vi.max);
+    const int nested_array_size =
+        emit_.size() * TypeBitsForMax(vi.values.size()) +
+        vi.values.size() * TypeBitsForMax(vi.max);
+
     std::vector<std::string> lines;
     lines.push_back(
-        absl::StrCat("static const ", Type(), " ", name_, "[] = {"));
-    std::vector<std::string> elems;
-    for (const auto& elem : emit_) {
-      elems.push_back(absl::StrCat("0x", absl::Hex(elem, absl::kZeroPad2)));
+        absl::StrCat("// max=", vi.max, " unique=", vi.values.size(),
+                     " flat=", flat_array_size, " nested=", nested_array_size));
+    if (flat_array_size < nested_array_size) {
+      GenArray(name_, TypeForMax(vi.max), emit_, &lines);
+      lines.push_back(absl::StrCat(TypeForMax(vi.max), " Get",
+                                   ToCamelCase(name_), "(size_t i) { return g_",
+                                   name_, "[i]; }"));
+    } else {
+      std::vector<int> inner;
+      std::vector<int> outer;
+      std::map<int, int> value_to_inner;
+      for (auto v : emit_) {
+        auto it = value_to_inner.find(v);
+        if (it == value_to_inner.end()) {
+          it = value_to_inner.emplace(v, inner.size()).first;
+          inner.push_back(v);
+        }
+        outer.push_back(it->second);
+      }
+      GenArray(absl::StrCat(name_, "_outer"), TypeForMax(vi.values.size()),
+               outer, &lines);
+      GenArray(absl::StrCat(name_, "_inner"), TypeForMax(vi.max), inner,
+               &lines);
+      lines.push_back(absl::StrCat(TypeForMax(vi.max), " Get",
+                                   ToCamelCase(name_), "(size_t i) { return g_",
+                                   name_, "_inner[g_", name_, "_outer[i]]; }"));
     }
-    lines.push_back(absl::StrCat("  ", absl::StrJoin(elems, ", ")));
-    lines.push_back("};");
     return lines;
   }
 
@@ -263,19 +322,39 @@ class EmitBuffer : public Item {
 
   void Append(int x) { emit_.push_back(x); }
 
-  std::string Type() const {
+  struct ValueInfoResult {
     int max = 0;
+    std::map<int, int> values;
+  };
+
+  ValueInfoResult ValueInfo() const {
+    ValueInfoResult result;
     for (auto v : emit_) {
-      max = std::max(max, v);
+      result.max = std::max(result.max, v);
+      result.values[v]++;
     }
-    if (max <= 255) return "uint8_t";
-    if (max <= 65535) return "uint16_t";
-    return "uint32_t";
+    return result;
   }
 
-  const std::string& name() const { return name_; }
+  std::string Accessor(std::string index) {
+    return absl::StrCat("Get", ToCamelCase(name_), "(", index, ")");
+  }
 
  private:
+  static void GenArray(std::string name, std::string type,
+                       const std::vector<int>& values,
+                       std::vector<std::string>* lines) {
+    lines->push_back(absl::StrCat("static const ", type, " g_", name, "[",
+                                  values.size(), "] = {"));
+    std::vector<std::string> elems;
+    elems.reserve(values.size());
+    for (const auto& elem : values) {
+      elems.push_back(absl::StrCat(elem));
+    }
+    lines->push_back(absl::StrCat("  ", absl::StrJoin(elems, ", ")));
+    lines->push_back("};");
+  }
+
   std::string name_;
   std::vector<int> emit_;
 };
@@ -310,8 +389,8 @@ struct Unmatched {
 
 void AddStep(Sink* globals, Sink* out, SymSet start_syms, int num_bits,
              bool allow_multiple_emits) {
-  auto emit_buffer = globals->Add<EmitBuffer>("g_emit_buffer");
-  auto emit_op = globals->Add<EmitBuffer>("g_emit_op");
+  auto emit_buffer = globals->Add<EmitBuffer>("emit_buffer");
+  auto emit_op = globals->Add<EmitBuffer>("emit_op");
   RefillTo(out, num_bits, "buffer_len == 0");
   out->Add(absl::StrCat("index = buffer >> (buffer_len - ", num_bits, ");"));
   using MatchCase = absl::variant<Matched, Unmatched>;
@@ -333,7 +412,6 @@ void AddStep(Sink* globals, Sink* out, SymSet start_syms, int num_bits,
     };
     if (actions.consumed == 0) {
       idx = Index{add_case(Unmatched{std::move(actions.remaining)}), 0};
-      continue;
     } else {
       idx = Index{add_case(Matched{static_cast<int>(actions.emit.size()),
                                    actions.consumed}),
@@ -344,10 +422,10 @@ void AddStep(Sink* globals, Sink* out, SymSet start_syms, int num_bits,
   for (auto idx : indices) {
     emit_op->Append(idx.match_case + idx.emit_offset * match_cases.size());
   }
-  out->Add(absl::StrCat("emit_ofs = ", emit_op->name(), "[index] / ",
+  out->Add(absl::StrCat("emit_ofs = ", emit_op->Accessor("index"), " / ",
                         match_cases.size(), ";"));
   auto s = out->Add<Switch>(
-      absl::StrCat(emit_op->name(), "[index] % ", match_cases.size()));
+      absl::StrCat(emit_op->Accessor("index"), " % ", match_cases.size()));
   for (auto kv : match_cases) {
     auto c = s->Case(absl::StrCat(kv.second));
     if (auto* p = absl::get_if<Unmatched>(&kv.first)) {
@@ -361,8 +439,9 @@ void AddStep(Sink* globals, Sink* out, SymSet start_syms, int num_bits,
     }
     const auto& matched = absl::get<Matched>(kv.first);
     for (int i = 0; i < matched.emits; i++) {
-      c->Add(
-          absl::StrCat("sink(", emit_buffer->name(), "[emit_ofs + ", i, "]);"));
+      c->Add(absl::StrCat("sink(",
+                          emit_buffer->Accessor(absl::StrCat("emit_ofs + ", i)),
+                          ");"));
     }
     c->Add(absl::StrCat("buffer_len -= ", matched.bits_consumed, ";"));
     c->Add("goto refill;");
