@@ -24,7 +24,7 @@ from framework.helpers import skips
 
 logger = logging.getLogger(__name__)
 flags.adopt_module_key_flags(xds_k8s_testcase)
-flags.mark_flags_as_required(xds_k8s_flags.SERVER_IMAGE_UNIVERSAL)
+flags.mark_flag_as_required('server_image_universal')
 
 # Type aliases
 RpcTypeUnaryCall = xds_url_map_testcase.RpcTypeUnaryCall
