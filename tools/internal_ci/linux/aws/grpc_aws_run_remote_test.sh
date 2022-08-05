@@ -48,7 +48,7 @@ sudo apt update && sudo apt install -y jq
 
 # ubuntu 18.04 lts(arm64)
 # https://aws.amazon.com/amazon-linux-ami/
-AWS_MACHINE_IMAGE=ami-026141f3d5c6d2d0c
+AWS_MACHINE_IMAGE=ami-05d39b0802b3a7f8e
 # use 4-core instance by default
 AWS_INSTANCE_TYPE=${AWS_INSTANCE_TYPE:-t4g.xlarge}
 AWS_SECURITY_GROUP=sg-021240e886feba750
