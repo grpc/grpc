@@ -26,9 +26,9 @@
 #include <string>
 #include <vector>
 
+#include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 
-#include "src/core/ext/xds/certificate_provider_store.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json.h"
 
@@ -37,6 +37,19 @@ namespace grpc_core {
 bool XdsFederationEnabled();
 
 class XdsClient;
+
+class XdsCertificateProviderPluginMapInterface {
+ public:
+  virtual ~XdsCertificateProviderPluginMapInterface() = default;
+
+  virtual absl::Status AddPlugin(const std::string& instance_name,
+                                 const std::string& plugin_name,
+                                 const Json& config) = 0;
+
+  virtual bool HasPlugin(const std::string& instance_name) const = 0;
+
+  virtual std::string ToString() const = 0;
+};
 
 class XdsBootstrap {
  public:
@@ -88,11 +101,17 @@ class XdsBootstrap {
   // Creates bootstrap object from json_string.
   // If *error is not GRPC_ERROR_NONE after returning, then there was an
   // error parsing the contents.
-  static std::unique_ptr<XdsBootstrap> Create(absl::string_view json_string,
-                                              grpc_error_handle* error);
+  static std::unique_ptr<XdsBootstrap> Create(
+      absl::string_view json_string,
+      std::unique_ptr<XdsCertificateProviderPluginMapInterface>
+          certificate_provider_plugin_map,
+      grpc_error_handle* error);
 
   // Do not instantiate directly -- use Create() above instead.
-  XdsBootstrap(Json json, grpc_error_handle* error);
+  XdsBootstrap(Json json,
+               std::unique_ptr<XdsCertificateProviderPluginMapInterface>
+                   certificate_provider_plugin_map,
+               grpc_error_handle* error);
 
   std::string ToString() const;
 
@@ -110,9 +129,9 @@ class XdsBootstrap {
     return authorities_;
   }
   const Authority* LookupAuthority(const std::string& name) const;
-  const CertificateProviderStore::PluginDefinitionMap& certificate_providers()
-      const {
-    return certificate_providers_;
+  const XdsCertificateProviderPluginMapInterface*
+  certificate_provider_plugin_map() const {
+    return certificate_provider_plugin_map_.get();
   }
   // A util method to check that an xds server exists in this bootstrap file.
   bool XdsServerExists(const XdsServer& server) const;
@@ -133,7 +152,8 @@ class XdsBootstrap {
   std::string client_default_listener_resource_name_template_;
   std::string server_listener_resource_name_template_;
   std::map<std::string, Authority> authorities_;
-  CertificateProviderStore::PluginDefinitionMap certificate_providers_;
+  std::unique_ptr<XdsCertificateProviderPluginMapInterface>
+      certificate_provider_plugin_map_;
 };
 
 }  // namespace grpc_core
