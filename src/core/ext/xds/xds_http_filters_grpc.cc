@@ -80,8 +80,8 @@ class GrpcXdsHttpRouterFilter : public GrpcXdsHttpFilter {
   const grpc_channel_filter* channel_filter() const override { return nullptr; }
   // No-op.  This will never be called, since channel_filter() returns null.
   absl::StatusOr<ServiceConfigJsonEntry> GenerateServiceConfig(
-      const FilterConfig& hcm_filter_config,
-      const FilterConfig* filter_config_override) const override {
+      const FilterConfig& /*hcm_filter_config*/,
+      const FilterConfig* /*filter_config_override*/) const override {
     return absl::UnimplementedError("router filter should never be called");
   }
 
