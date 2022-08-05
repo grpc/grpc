@@ -23,6 +23,7 @@
 
 #include "src/core/lib/event_engine/default_event_engine_factory.h"
 #include "src/core/lib/event_engine/event_engine_factory.h"
+#include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/gprpp/sync.h"
 
 namespace grpc_event_engine {
@@ -55,9 +56,12 @@ std::unique_ptr<EventEngine> CreateEventEngine() {
 std::shared_ptr<EventEngine> GetDefaultEventEngine() {
   grpc_core::MutexLock lock(&g_mu);
   if (std::shared_ptr<EventEngine> engine = g_event_engine->lock()) {
+    GRPC_EVENT_ENGINE_TRACE("DefaultEventEngine::%p use_count:%ld",
+                            engine.get(), engine.use_count());
     return engine;
   }
   std::shared_ptr<EventEngine> engine{CreateEventEngine()};
+  GRPC_EVENT_ENGINE_TRACE("Created DefaultEventEngine::%p", engine.get());
   *g_event_engine = engine;
   return engine;
 }

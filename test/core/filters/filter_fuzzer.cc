@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <atomic>
 #include <map>
 
 #include "absl/memory/memory.h"
@@ -36,12 +37,12 @@ bool squelch = true;
 
 static void dont_log(gpr_log_func_args* /*args*/) {}
 
-static gpr_timespec g_now;
+static std::atomic<gpr_timespec> g_now;
 extern gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
 
 static gpr_timespec now_impl(gpr_clock_type clock_type) {
   GPR_ASSERT(clock_type != GPR_TIMESPAN);
-  gpr_timespec ts = g_now;
+  gpr_timespec ts = g_now.load(std::memory_order_relaxed);
   ts.clock_type = clock_type;
   return ts;
 }
@@ -281,9 +282,13 @@ class MainLoop {
       case filter_fuzzer::Action::TYPE_NOT_SET:
         break;
       case filter_fuzzer::Action::kAdvanceTimeMicroseconds:
-        g_now = gpr_time_add(
-            g_now, gpr_time_from_micros(action.advance_time_microseconds(),
-                                        GPR_TIMESPAN));
+        // load & store do not need to be done atomically, g_now is only
+        // modified from this thread.
+        g_now.store(
+            gpr_time_add(g_now.load(std::memory_order_relaxed),
+                         gpr_time_from_micros(
+                             action.advance_time_microseconds(), GPR_TIMESPAN)),
+            std::memory_order_relaxed);
         break;
       case filter_fuzzer::Action::kCancel:
         calls_.erase(action.call());

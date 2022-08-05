@@ -823,19 +823,21 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
   if (squelch && grpc_trace_fuzzer == nullptr) gpr_set_log_function(dont_log);
   gpr_free(grpc_trace_fuzzer);
   grpc_set_tcp_client_impl(&fuzz_tcp_client_vtable);
+
   grpc_event_engine::experimental::SetDefaultEventEngineFactory(
       [actions = msg.event_engine_actions()]() {
         return absl::make_unique<FuzzingEventEngine>(
             FuzzingEventEngine::Options(), actions);
       });
+  auto engine =
+      std::dynamic_pointer_cast<FuzzingEventEngine>(GetDefaultEventEngine());
+  FuzzingEventEngine::SetGlobalNowImplEngine(engine.get());
   grpc_init();
   grpc_timer_manager_set_threading(false);
   {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Executor::SetThreadingAll(false);
   }
-  auto engine =
-      std::dynamic_pointer_cast<FuzzingEventEngine>(GetDefaultEventEngine());
   grpc_core::SetDNSResolver(FuzzerDNSResolver::GetOrCreate(engine.get()));
   grpc_dns_lookup_hostname_ares = my_dns_lookup_ares;
   grpc_cancel_ares_request = my_cancel_ares_request;
@@ -1223,4 +1225,5 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
 
   grpc_resource_quota_unref(g_resource_quota);
   grpc_shutdown_blocking();
+  FuzzingEventEngine::UnsetGlobalNowImplEngine(engine.get());
 }

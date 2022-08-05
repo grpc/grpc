@@ -2231,6 +2231,7 @@ grpc_cc_library(
     ],
     tags = ["nofixdeps"],
     deps = [
+        "context",
         "event_engine_base_hdrs",
         "gpr_base",
     ],
@@ -2732,6 +2733,7 @@ grpc_cc_library(
         "context",
         "default_event_engine_factory",
         "event_engine_base_hdrs",
+        "event_engine_trace",
         "gpr_base",
     ],
 )
