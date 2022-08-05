@@ -17,16 +17,6 @@ settings:
   g_stands_for: gamma
   protobuf_version: 3.21.4
   version: 1.49.0-dev
-targets:
-- name: gen_hpack_tables
-  build: tool
-  language: c++
-  src:
-  - tools/codegen/core/gen_hpack_tables.cc
-  deps:
-  - grpc
-  - gpr
-  uses_polling: false
 configs:
   asan:
     CC: clang
