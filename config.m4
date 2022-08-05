@@ -435,6 +435,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/xds/xds_client_stats.cc \
     src/core/ext/xds/xds_cluster.cc \
     src/core/ext/xds/xds_cluster_specifier_plugin.cc \
+    src/core/ext/xds/xds_cluster_specifier_plugin_grpc.cc \
     src/core/ext/xds/xds_common_types.cc \
     src/core/ext/xds/xds_endpoint.cc \
     src/core/ext/xds/xds_http_fault_filter.cc \

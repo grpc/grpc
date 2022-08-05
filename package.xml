@@ -869,6 +869,8 @@
     <file baseinstalldir="/" name="src/core/ext/xds/xds_cluster.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_cluster_specifier_plugin.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_cluster_specifier_plugin.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_cluster_specifier_plugin_grpc.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_cluster_specifier_plugin_grpc.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_common_types.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_common_types.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_endpoint.cc" role="src" />
