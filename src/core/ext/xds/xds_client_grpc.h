@@ -45,6 +45,8 @@ class GrpcXdsClient : public XdsClient {
   // Do not instantiate directly -- use GetOrCreate() instead.
   GrpcXdsClient(std::unique_ptr<XdsBootstrap> bootstrap,
                 XdsHttpFilterRegistry xds_http_filter_registry,
+                XdsClusterSpecifierPluginRegistry
+                    xds_cluster_specifier_plugin_registry,
                 const ChannelArgs& args);
   ~GrpcXdsClient() override;
 

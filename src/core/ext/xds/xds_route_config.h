@@ -232,7 +232,6 @@ class XdsRouteConfigResourceType
 
   void InitUpbSymtab(upb_DefPool* symtab) const override {
     envoy_config_route_v3_RouteConfiguration_getmsgdef(symtab);
-    XdsClusterSpecifierPluginRegistry::PopulateSymtab(symtab);
   }
 };
 

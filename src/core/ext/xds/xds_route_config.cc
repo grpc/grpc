@@ -372,8 +372,9 @@ ClusterSpecifierPluginParse(
     if (!plugin_type.ok()) return plugin_type.status();
     bool is_optional = envoy_config_route_v3_ClusterSpecifierPlugin_is_optional(
         cluster_specifier_plugin[i]);
-    const XdsClusterSpecifierPluginImpl* cluster_specifier_plugin_impl =
-        XdsClusterSpecifierPluginRegistry::GetPluginForType(plugin_type->type);
+    const XdsClusterSpecifierPlugin* cluster_specifier_plugin_impl =
+        context.client->xds_cluster_specifier_plugin_registry()
+            .GetPluginForType(plugin_type->type);
     std::string lb_policy_config;
     if (cluster_specifier_plugin_impl == nullptr) {
       if (!is_optional) {

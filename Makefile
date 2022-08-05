@@ -1417,6 +1417,7 @@ LIBGRPC_SRC = \
     src/core/ext/xds/xds_client_stats.cc \
     src/core/ext/xds/xds_cluster.cc \
     src/core/ext/xds/xds_cluster_specifier_plugin.cc \
+    src/core/ext/xds/xds_cluster_specifier_plugin_grpc.cc \
     src/core/ext/xds/xds_common_types.cc \
     src/core/ext/xds/xds_endpoint.cc \
     src/core/ext/xds/xds_http_fault_filter.cc \
@@ -3151,6 +3152,7 @@ src/core/ext/xds/xds_client_grpc.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_client_stats.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_cluster.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_cluster_specifier_plugin.cc: $(OPENSSL_DEP)
+src/core/ext/xds/xds_cluster_specifier_plugin_grpc.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_common_types.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_endpoint.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_http_fault_filter.cc: $(OPENSSL_DEP)

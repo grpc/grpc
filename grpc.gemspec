@@ -887,6 +887,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/xds/xds_cluster.h )
   s.files += %w( src/core/ext/xds/xds_cluster_specifier_plugin.cc )
   s.files += %w( src/core/ext/xds/xds_cluster_specifier_plugin.h )
+  s.files += %w( src/core/ext/xds/xds_cluster_specifier_plugin_grpc.cc )
+  s.files += %w( src/core/ext/xds/xds_cluster_specifier_plugin_grpc.h )
   s.files += %w( src/core/ext/xds/xds_common_types.cc )
   s.files += %w( src/core/ext/xds/xds_common_types.h )
   s.files += %w( src/core/ext/xds/xds_endpoint.cc )

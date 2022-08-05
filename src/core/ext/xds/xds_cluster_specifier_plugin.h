@@ -19,6 +19,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <map>
 #include <memory>
 #include <string>
 
@@ -30,9 +31,12 @@
 
 namespace grpc_core {
 
-class XdsClusterSpecifierPluginImpl {
+class XdsClusterSpecifierPlugin {
  public:
-  virtual ~XdsClusterSpecifierPluginImpl() = default;
+  virtual ~XdsClusterSpecifierPlugin() = default;
+
+  // Returns the xDS protobuf type for the config.
+  virtual absl::string_view ConfigProtoType() const = 0;
 
   // Loads the proto message into the upb symtab.
   virtual void PopulateSymtab(upb_DefPool* symtab) const = 0;
@@ -43,29 +47,18 @@ class XdsClusterSpecifierPluginImpl {
       upb_DefPool* symtab) const = 0;
 };
 
-class XdsRouteLookupClusterSpecifierPlugin
-    : public XdsClusterSpecifierPluginImpl {
-  void PopulateSymtab(upb_DefPool* symtab) const override;
-
-  absl::StatusOr<std::string> GenerateLoadBalancingPolicyConfig(
-      upb_StringView serialized_plugin_config, upb_Arena* arena,
-      upb_DefPool* symtab) const override;
-};
-
 class XdsClusterSpecifierPluginRegistry {
  public:
-  static void RegisterPlugin(
-      std::unique_ptr<XdsClusterSpecifierPluginImpl> plugin,
-      absl::string_view config_proto_type_name);
+  void RegisterPlugin(std::unique_ptr<XdsClusterSpecifierPlugin> plugin);
 
-  static void PopulateSymtab(upb_DefPool* symtab);
+  void PopulateSymtab(upb_DefPool* symtab) const;
 
-  static const XdsClusterSpecifierPluginImpl* GetPluginForType(
-      absl::string_view config_proto_type_name);
+  const XdsClusterSpecifierPlugin* GetPluginForType(
+      absl::string_view config_proto_type_name) const;
 
-  // Global init and shutdown.
-  static void Init();
-  static void Shutdown();
+ private:
+  std::map<absl::string_view, std::unique_ptr<XdsClusterSpecifierPlugin>>
+      plugins_;
 };
 
 }  // namespace grpc_core

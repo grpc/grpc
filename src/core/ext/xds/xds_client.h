@@ -36,6 +36,7 @@
 #include "src/core/ext/xds/xds_api.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_client_stats.h"
+#include "src/core/ext/xds/xds_cluster_specifier_plugin.h"
 #include "src/core/ext/xds/xds_http_filters.h"
 #include "src/core/ext/xds/xds_resource_type.h"
 #include "src/core/ext/xds/xds_transport.h"
@@ -75,6 +76,8 @@ class XdsClient : public DualRefCounted<XdsClient> {
   XdsClient(std::unique_ptr<XdsBootstrap> bootstrap,
             OrphanablePtr<XdsTransportFactory> transport_factory,
             XdsHttpFilterRegistry xds_http_filter_registry,
+            XdsClusterSpecifierPluginRegistry
+                xds_cluster_specifier_plugin_registry,
             Duration resource_request_timeout = Duration::Seconds(15));
   ~XdsClient() override;
 
@@ -90,6 +93,11 @@ class XdsClient : public DualRefCounted<XdsClient> {
 
   const XdsHttpFilterRegistry& xds_http_filter_registry() const {
     return xds_http_filter_registry_;
+  }
+
+  const XdsClusterSpecifierPluginRegistry&
+  xds_cluster_specifier_plugin_registry() const {
+    return xds_cluster_specifier_plugin_registry_;
   }
 
   CertificateProviderStore& certificate_provider_store() {
@@ -309,6 +317,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
   std::unique_ptr<XdsBootstrap> bootstrap_;
   OrphanablePtr<XdsTransportFactory> transport_factory_;
   XdsHttpFilterRegistry xds_http_filter_registry_;
+  XdsClusterSpecifierPluginRegistry xds_cluster_specifier_plugin_registry_;
   const Duration request_timeout_;
   const bool xds_federation_enabled_;
   OrphanablePtr<CertificateProviderStore> certificate_provider_store_;
