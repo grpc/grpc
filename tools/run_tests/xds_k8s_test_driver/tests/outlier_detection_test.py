@@ -62,8 +62,6 @@ class OutlierDetectionTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
 
     @staticmethod
     def is_supported(config: skips.TestConfig) -> bool:
-        if config.server_lang != _Lang.JAVA:
-            return False
         if config.client_lang in _Lang.CPP | _Lang.PYTHON:
             return config.version_gte('v1.48.x')
         if config.client_lang == _Lang.NODE:
