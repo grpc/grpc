@@ -37,14 +37,15 @@ bool squelch = true;
 
 static void dont_log(gpr_log_func_args* /*args*/) {}
 
-static std::atomic<gpr_timespec> g_now;
+static grpc_core::Mutex g_now_mu;
+static gpr_timespec g_now ABSL_GUARDED_BY(g_now_mu);
 extern gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
 
 static gpr_timespec now_impl(gpr_clock_type clock_type) {
   GPR_ASSERT(clock_type != GPR_TIMESPAN);
-  gpr_timespec ts = g_now.load(std::memory_order_relaxed);
-  ts.clock_type = clock_type;
-  return ts;
+  grpc_core::MutexLock lock(&g_now_mu);
+  g_now.clock_type = clock_type;
+  return g_now;
 }
 
 namespace grpc_core {
@@ -281,15 +282,13 @@ class MainLoop {
     switch (action.type_case()) {
       case filter_fuzzer::Action::TYPE_NOT_SET:
         break;
-      case filter_fuzzer::Action::kAdvanceTimeMicroseconds:
-        // load & store do not need to be done atomically, g_now is only
-        // modified from this thread.
-        g_now.store(
-            gpr_time_add(g_now.load(std::memory_order_relaxed),
-                         gpr_time_from_micros(
-                             action.advance_time_microseconds(), GPR_TIMESPAN)),
-            std::memory_order_relaxed);
+      case filter_fuzzer::Action::kAdvanceTimeMicroseconds: {
+        grpc_core::MutexLock lock(&g_now_mu);
+        g_now = gpr_time_add(
+            g_now, gpr_time_from_micros(action.advance_time_microseconds(),
+                                        GPR_TIMESPAN));
         break;
+      }
       case filter_fuzzer::Action::kCancel:
         calls_.erase(action.call());
         break;
@@ -593,8 +592,11 @@ DEFINE_PROTO_FUZZER(const filter_fuzzer::Msg& msg) {
   char* grpc_trace_fuzzer = gpr_getenv("GRPC_TRACE_FUZZER");
   if (squelch && grpc_trace_fuzzer == nullptr) gpr_set_log_function(dont_log);
   gpr_free(grpc_trace_fuzzer);
-  g_now = {1, 0, GPR_CLOCK_MONOTONIC};
-  grpc_core::TestOnlySetProcessEpoch(g_now);
+  {
+    grpc_core::MutexLock lock(&g_now_mu);
+    g_now = {1, 0, GPR_CLOCK_MONOTONIC};
+    grpc_core::TestOnlySetProcessEpoch(g_now);
+  }
   gpr_now_impl = now_impl;
   grpc_init();
   grpc_timer_manager_set_threading(false);
