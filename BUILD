@@ -6421,6 +6421,24 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "huffsyms",
+    srcs = [
+        "src/core/ext/transport/chttp2/transport/huffsyms.cc",
+    ],
+    hdrs = [
+        "src/core/ext/transport/chttp2/transport/huffsyms.h",
+    ],
+    deps = ["gpr_platform"],
+)
+
+grpc_cc_library(
+    name = "decode_huff",
+    hdrs = [
+        "src/core/ext/transport/chttp2/transport/decode_huff.h",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_transport_chttp2",
     srcs = [
         "src/core/ext/transport/chttp2/transport/bin_decoder.cc",
@@ -6437,7 +6455,6 @@ grpc_cc_library(
         "src/core/ext/transport/chttp2/transport/hpack_parser.cc",
         "src/core/ext/transport/chttp2/transport/hpack_parser_table.cc",
         "src/core/ext/transport/chttp2/transport/http2_settings.cc",
-        "src/core/ext/transport/chttp2/transport/huffsyms.cc",
         "src/core/ext/transport/chttp2/transport/parsing.cc",
         "src/core/ext/transport/chttp2/transport/stream_lists.cc",
         "src/core/ext/transport/chttp2/transport/stream_map.cc",
@@ -6460,7 +6477,6 @@ grpc_cc_library(
         "src/core/ext/transport/chttp2/transport/hpack_parser.h",
         "src/core/ext/transport/chttp2/transport/hpack_parser_table.h",
         "src/core/ext/transport/chttp2/transport/http2_settings.h",
-        "src/core/ext/transport/chttp2/transport/huffsyms.h",
         "src/core/ext/transport/chttp2/transport/internal.h",
         "src/core/ext/transport/chttp2/transport/stream_map.h",
         "src/core/ext/transport/chttp2/transport/varint.h",
@@ -6484,6 +6500,7 @@ grpc_cc_library(
         "bitset",
         "chttp2_flow_control",
         "debug_location",
+        "decode_huff",
         "gpr_base",
         "grpc_base",
         "grpc_codegen",
@@ -6492,6 +6509,7 @@ grpc_cc_library(
         "hpack_constants",
         "hpack_encoder_table",
         "httpcli",
+        "huffsyms",
         "iomgr_fwd",
         "iomgr_timer",
         "memory_quota",
