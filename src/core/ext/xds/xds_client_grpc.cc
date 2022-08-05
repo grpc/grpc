@@ -244,15 +244,13 @@ absl::Status GrpcXdsCertificateProviderPluginMap::AddPlugin(
         absl::StrCat("Unrecognized plugin name: ", plugin_name));
   }
   grpc_error_handle error = GRPC_ERROR_NONE;
-  auto parsed_config =
-      factory->CreateCertificateProviderConfig(config, &error);
+  auto parsed_config = factory->CreateCertificateProviderConfig(config, &error);
   if (!GRPC_ERROR_IS_NONE(error)) {
     absl::Status status = grpc_error_to_absl_status(error);
     GRPC_ERROR_UNREF(error);
     return status;
   }
-  plugin_map_.insert(
-      {instance_name, {plugin_name, std::move(parsed_config)}});
+  plugin_map_.insert({instance_name, {plugin_name, std::move(parsed_config)}});
   return absl::OkStatus();
 }
 

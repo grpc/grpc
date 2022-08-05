@@ -742,7 +742,8 @@ TEST(XdsBootstrapTest, CertificateProvidersFakePluginParsingSuccess) {
   const CertificateProviderStore::PluginDefinition& fake_plugin =
       static_cast<const GrpcXdsCertificateProviderPluginMap*>(
           bootstrap.certificate_provider_plugin_map())
-          ->plugin_map().at("fake_plugin");
+          ->plugin_map()
+          .at("fake_plugin");
   ASSERT_EQ(fake_plugin.plugin_name, "fake");
   ASSERT_STREQ(fake_plugin.config->name(), "fake");
   ASSERT_EQ(static_cast<RefCountedPtr<FakeCertificateProviderFactory::Config>>(
@@ -776,7 +777,8 @@ TEST(XdsBootstrapTest, CertificateProvidersFakePluginEmptyConfig) {
   const CertificateProviderStore::PluginDefinition& fake_plugin =
       static_cast<const GrpcXdsCertificateProviderPluginMap*>(
           bootstrap.certificate_provider_plugin_map())
-          ->plugin_map().at("fake_plugin");
+          ->plugin_map()
+          .at("fake_plugin");
   ASSERT_EQ(fake_plugin.plugin_name, "fake");
   ASSERT_STREQ(fake_plugin.config->name(), "fake");
   ASSERT_EQ(static_cast<RefCountedPtr<FakeCertificateProviderFactory::Config>>(
