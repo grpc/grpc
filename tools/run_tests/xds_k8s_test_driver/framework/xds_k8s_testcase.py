@@ -72,6 +72,7 @@ class TdPropagationRetryableError(Exception):
 
 
 class XdsKubernetesBaseTestCase(absltest.TestCase):
+    lang_spec: skips.TestConfig
     client_namespace: str
     client_runner: KubernetesClientRunner
     ensure_firewall: bool
@@ -115,7 +116,7 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
 
         # Raises unittest.SkipTest if given client/server/version does not
         # support current test case.
-        skips.evaluate_test_config(cls.is_supported)
+        cls.lang_spec = skips.evaluate_test_config(cls.is_supported)
 
         # Must be called before KubernetesApiManager or GcpApiManager init.
         xds_flags.set_socket_default_timeout_from_flag()
