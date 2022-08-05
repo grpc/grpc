@@ -21,10 +21,11 @@
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
+#include "absl/types/variant.h"
 
 #include "src/core/ext/transport/chttp2/transport/huffsyms.h"
 
-static const int kFirstBits = 10;
+static const int kFirstBits = 16;
 
 class BitQueue {
  public:
@@ -32,13 +33,20 @@ class BitQueue {
   BitQueue() : BitQueue(0, 0) {}
 
   int Top() const { return (mask_ >> (len_ - 1)) & 1; }
-  void Pop() { len_--; }
+  void Pop() {
+    mask_ &= ~(1 << (len_ - 1));
+    len_--;
+  }
   bool Empty() const { return len_ == 0; }
   int length() const { return len_; }
   unsigned mask() const { return mask_; }
 
   std::string ToString() const {
     return absl::StrCat(absl::Hex(mask_), "/", len_);
+  }
+
+  bool operator<(const BitQueue& other) const {
+    return std::tie(mask_, len_) < std::tie(other.mask_, other.len_);
   }
 
  private:
@@ -49,6 +57,10 @@ class BitQueue {
 struct Sym {
   BitQueue bits;
   int symbol;
+
+  bool operator<(const Sym& other) const {
+    return std::tie(bits, symbol) < std::tie(other.bits, other.symbol);
+  }
 };
 
 using SymSet = std::vector<Sym>;
@@ -73,27 +85,14 @@ SymSet AllSyms() {
   return syms;
 }
 
-SymSet BigSyms() {
-  SymSet syms;
-  for (int i = 0; i < GRPC_CHTTP2_NUM_HUFFSYMS; i++) {
-    if (grpc_chttp2_huffsyms[i].length <= kFirstBits) continue;
-    Sym sym;
-    sym.bits =
-        BitQueue(grpc_chttp2_huffsyms[i].bits, grpc_chttp2_huffsyms[i].length);
-    sym.symbol = i;
-    syms.push_back(sym);
-  }
-  return syms;
-}
-
 struct SymbolActions {
   std::vector<int> emit;
   int consumed;
+  SymSet remaining;
 };
 
-SymbolActions ActionsFor(BitQueue index) {
+SymbolActions ActionsFor(BitQueue index, SymSet pending, bool allow_multiple) {
   std::vector<int> emit;
-  SymSet pending = AllSyms();
   int consumed = 0;
 
   while (!index.Empty()) {
@@ -110,6 +109,7 @@ SymbolActions ActionsFor(BitQueue index) {
         if (!next_pending[0].bits.Empty()) abort();
         emit.push_back(next_pending[0].symbol);
         consumed += grpc_chttp2_huffsyms[next_pending[0].symbol].length;
+        if (!allow_multiple) goto done;
         pending = AllSyms();
         break;
       default:
@@ -118,7 +118,8 @@ SymbolActions ActionsFor(BitQueue index) {
     }
     index.Pop();
   }
-  return SymbolActions{std::move(emit), consumed};
+done:
+  return SymbolActions{std::move(emit), consumed, pending};
 }
 
 class Item {
@@ -230,9 +231,12 @@ class Switch : public Item {
   std::map<std::string, Sink> cases_;
 };
 
+std::map<std::string, int> g_emit_buffer_idx;
+
 class EmitBuffer : public Item {
  public:
-  explicit EmitBuffer(std::string name) : name_(std::move(name)) {}
+  explicit EmitBuffer(std::string name)
+      : name_(absl::StrCat(name, "_", g_emit_buffer_idx[name]++)) {}
 
   std::vector<std::string> ToLines() const override {
     std::vector<std::string> lines;
@@ -269,6 +273,8 @@ class EmitBuffer : public Item {
     return "uint32_t";
   }
 
+  const std::string& name() const { return name_; }
+
  private:
   std::string name_;
   std::vector<int> emit_;
@@ -286,12 +292,88 @@ void RefillTo(Sink* out, int length, std::string ret) {
   w->Add("buffer_len += 8;");
 }
 
+struct Matched {
+  int emits;
+  int bits_consumed;
+
+  bool operator<(const Matched& other) const {
+    return std::tie(emits, bits_consumed) <
+           std::tie(other.emits, other.bits_consumed);
+  }
+};
+
+struct Unmatched {
+  SymSet syms;
+
+  bool operator<(const Unmatched& other) const { return syms < other.syms; }
+};
+
+void AddStep(Sink* globals, Sink* out, SymSet start_syms, int num_bits,
+             bool allow_multiple_emits) {
+  auto emit_buffer = globals->Add<EmitBuffer>("g_emit_buffer");
+  auto emit_op = globals->Add<EmitBuffer>("g_emit_op");
+  RefillTo(out, num_bits, "buffer_len == 0");
+  out->Add(absl::StrCat("index = buffer >> (buffer_len - ", num_bits, ");"));
+  using MatchCase = absl::variant<Matched, Unmatched>;
+  std::map<MatchCase, int> match_cases;
+  struct Index {
+    int match_case;
+    int emit_offset;
+  };
+  std::vector<Index> indices;
+  for (int i = 0; i < (1 << num_bits); i++) {
+    auto actions =
+        ActionsFor(BitQueue(i, num_bits), start_syms, allow_multiple_emits);
+    Index idx;
+    auto add_case = [&match_cases](MatchCase match_case) {
+      if (match_cases.find(match_case) == match_cases.end()) {
+        match_cases[match_case] = match_cases.size();
+      }
+      return match_cases[match_case];
+    };
+    if (actions.consumed == 0) {
+      idx = Index{add_case(Unmatched{std::move(actions.remaining)}), 0};
+      continue;
+    } else {
+      idx = Index{add_case(Matched{static_cast<int>(actions.emit.size()),
+                                   actions.consumed}),
+                  emit_buffer->OffsetOf(actions.emit)};
+    }
+    indices.push_back(idx);
+  }
+  for (auto idx : indices) {
+    emit_op->Append(idx.match_case + idx.emit_offset * match_cases.size());
+  }
+  out->Add(absl::StrCat("emit_ofs = ", emit_op->name(), "[index] / ",
+                        match_cases.size(), ";"));
+  auto s = out->Add<Switch>(
+      absl::StrCat(emit_op->name(), "[index] % ", match_cases.size()));
+  for (auto kv : match_cases) {
+    auto c = s->Case(absl::StrCat(kv.second));
+    if (auto* p = absl::get_if<Unmatched>(&kv.first)) {
+      c->Add(absl::StrCat("// ", SymSetString(p->syms)));
+      c->Add(absl::StrCat("buffer_len -= ", num_bits, ";"));
+      int max_bits = 0;
+      for (auto sym : p->syms) max_bits = std::max(max_bits, sym.bits.length());
+      AddStep(globals, c, p->syms, std::min(max_bits, kFirstBits), false);
+      c->Add("break;");
+      continue;
+    }
+    const auto& matched = absl::get<Matched>(kv.first);
+    for (int i = 0; i < matched.emits; i++) {
+      c->Add(
+          absl::StrCat("sink(", emit_buffer->name(), "[emit_ofs + ", i, "]);"));
+    }
+    c->Add(absl::StrCat("buffer_len -= ", matched.bits_consumed, ";"));
+    c->Add("goto refill;");
+  }
+}
+
 int main(void) {
   auto out = absl::make_unique<Sink>();
   out->Add("#include <cstddef>");
   out->Add("#include <cstdint>");
-  auto emit_buffer = out->Add<EmitBuffer>("g_emit_buffer");
-  auto emit_op = out->Add<EmitBuffer>("g_emit_op");
+  auto* globals = out->Add<Sink>();
   out->Add("template <typename F>");
   out->Add(
       "bool DecodeHuff(F sink, const uint8_t* begin, const uint8_t* end) {");
@@ -300,79 +382,9 @@ int main(void) {
   init->Add("uint64_t index;");
   init->Add("size_t emit_ofs;");
   init->Add("int buffer_len = 0;");
-  init->Add("uint8_t emit_slow;");
   out->Add("refill:");
-  RefillTo(out->Add<Indent>(), kFirstBits, "buffer_len == 0");
-  out->Add<Indent>()->Add(
-      absl::StrCat("index = buffer >> (buffer_len - ", kFirstBits, ");"));
-  std::map<std::pair<int, int>, int> consumed_cases{{{0, 0}, 0}};
-  struct Index {
-    int consumed_case;
-    int emit_offset;
-  };
-  std::vector<Index> indices;
-  for (int i = 0; i < (1 << kFirstBits); i++) {
-    const auto actions = ActionsFor(BitQueue(i, kFirstBits));
-    if (actions.consumed == 0) {
-      indices.push_back({0, 0});
-      continue;
-    }
-    auto consumed_case_index =
-        std::pair<int, int>(actions.consumed, actions.emit.size());
-    if (consumed_cases.find(consumed_case_index) == consumed_cases.end()) {
-      consumed_cases.emplace(consumed_case_index, consumed_cases.size());
-    }
-    indices.push_back(Index{
-        consumed_cases.find(consumed_case_index)->second,
-        emit_buffer->OffsetOf(actions.emit),
-    });
-  }
-  for (auto idx : indices) {
-    emit_op->Append(idx.consumed_case +
-                    idx.emit_offset * consumed_cases.size());
-  }
-  out->Add<Indent>()->Add(absl::StrCat("emit_ofs = g_emit_op[index] / ",
-                                       consumed_cases.size(), ";"));
-  auto s = out->Add<Indent>()->Add<Switch>(
-      absl::StrCat("g_emit_op[index] % ", consumed_cases.size()));
-  for (auto kv : consumed_cases) {
-    auto c = s->Case(absl::StrCat(kv.second));
-    if (kv.second == 0) {
-      c->Add("break;");
-      continue;
-    }
-    for (int i = 0; i < kv.first.second; i++) {
-      c->Add(absl::StrCat("sink(g_emit_buffer[emit_ofs + ", i, "]);"));
-    }
-    c->Add(absl::StrCat("buffer_len -= ", kv.first.first, ";"));
-    c->Add("goto refill;");
-  }
-  std::map<int, SymSet> symbols_by_length;
-  for (Sym sym : BigSyms()) symbols_by_length[sym.bits.length()].push_back(sym);
-  auto slow = out->Add<Indent>();
-  for (const auto& kv : symbols_by_length) {
-    RefillTo(slow, kv.first, "false");
-    auto s = slow->Add<Switch>(
-        absl::StrCat("buffer >> (buffer_len - ", kv.first, ")"));
-    for (Sym sym : kv.second) {
-      auto c = s->Case(
-          absl::StrCat("0x", absl::Hex(sym.bits.mask(), absl::kZeroPad2)));
-      if (sym.symbol == 256) {
-        c->Add(absl::StrCat("return buffer_len == ", kv.first, ";"));
-      } else {
-        c->Add(absl::StrCat("emit_slow = ", sym.symbol, ";"));
-        c->Add(absl::StrCat("goto slow_", kv.first, ";"));
-      }
-    }
-  }
-  slow->Add("return false;");
-  for (const auto& kv : symbols_by_length) {
-    out->Add(absl::StrCat("slow_", kv.first, ":"));
-    auto s = out->Add<Indent>();
-    s->Add(absl::StrCat("sink(emit_slow);"));
-    s->Add(absl::StrCat("buffer_len -= ", kv.first, ";"));
-    s->Add("goto refill;");
-  }
+  AddStep(globals, out->Add<Indent>(), AllSyms(), kFirstBits, true);
+  out->Add("  abort();");
   out->Add("}");
   puts(out->ToString().c_str());
   return 0;
