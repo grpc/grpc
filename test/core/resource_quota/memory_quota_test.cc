@@ -187,14 +187,14 @@ TEST(PressureTrackerTest, Decays) {
   {
     ExecCtx exec_ctx;
     exec_ctx.TestOnlySetNow(step_time());
-    EXPECT_EQ(tracker.AddSampleAndGetEstimate(0.0), 0.0);
+    EXPECT_EQ(tracker.AddSampleAndGetControlValue(0.0), 0.0);
   }
   // If memory pressure goes to 100% or higher, we should *immediately* snap to
   // reporting 100%.
   {
     ExecCtx exec_ctx;
     exec_ctx.TestOnlySetNow(step_time());
-    EXPECT_EQ(tracker.AddSampleAndGetEstimate(1.0), 1.0);
+    EXPECT_EQ(tracker.AddSampleAndGetControlValue(1.0), 1.0);
   }
   // Once memory pressure reduces, we should *eventually* get back to reporting
   // close to zero, and monotonically decrease.
@@ -203,7 +203,7 @@ TEST(PressureTrackerTest, Decays) {
   while (true) {
     ExecCtx exec_ctx;
     exec_ctx.TestOnlySetNow(step_time());
-    double new_reported = tracker.AddSampleAndGetEstimate(0.0);
+    double new_reported = tracker.AddSampleAndGetControlValue(0.0);
     EXPECT_LE(new_reported, last_reported);
     last_reported = new_reported;
     if (new_reported < 0.1) break;
@@ -223,7 +223,7 @@ TEST(PressureTrackerTest, ManyThreads) {
       std::uniform_real_distribution<double> dist(0.0, 1.0);
       while (!shutdown.load(std::memory_order_relaxed)) {
         ExecCtx exec_ctx;
-        tracker.AddSampleAndGetEstimate(dist(rng));
+        tracker.AddSampleAndGetControlValue(dist(rng));
       }
     });
   }

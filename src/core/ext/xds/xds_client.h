@@ -34,7 +34,6 @@
 
 #include <grpc/event_engine/event_engine.h>
 
-#include "src/core/ext/xds/certificate_provider_store.h"
 #include "src/core/ext/xds/xds_api.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_client_stats.h"
@@ -86,10 +85,6 @@ class XdsClient : public DualRefCounted<XdsClient> {
 
   XdsTransportFactory* transport_factory() const {
     return transport_factory_.get();
-  }
-
-  CertificateProviderStore& certificate_provider_store() {
-    return *certificate_provider_store_;
   }
 
   void Orphan() override;
@@ -310,7 +305,6 @@ class XdsClient : public DualRefCounted<XdsClient> {
   OrphanablePtr<XdsTransportFactory> transport_factory_;
   const Duration request_timeout_;
   const bool xds_federation_enabled_;
-  OrphanablePtr<CertificateProviderStore> certificate_provider_store_;
   XdsApi api_;
   WorkSerializer work_serializer_;
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine_;
