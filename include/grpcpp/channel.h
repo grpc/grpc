@@ -119,6 +119,7 @@ class Channel final : public grpc::ChannelInterface,
   std::vector<
       std::unique_ptr<grpc::experimental::ClientInterceptorFactoryInterface>>
       interceptor_creators_;
+      uint8_t temp[1024*1024]; //TODO(chennancy) remove, don't push
 };
 
 }  // namespace grpc
