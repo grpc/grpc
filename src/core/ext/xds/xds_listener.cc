@@ -48,6 +48,7 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/ext/xds/upb_utils.h"
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/ext/xds/xds_resource_type.h"
@@ -269,7 +270,7 @@ std::string XdsListenerResource::ToString() const {
 namespace {
 
 void MaybeLogHttpConnectionManager(
-    const XdsEncodingContext& context,
+    const XdsResourceType::DecodeContext& context,
     const envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager*
         http_connection_manager_config) {
   if (GRPC_TRACE_FLAG_ENABLED(*context.tracer) &&
@@ -287,7 +288,7 @@ void MaybeLogHttpConnectionManager(
 
 absl::StatusOr<XdsListenerResource::HttpConnectionManager>
 HttpConnectionManagerParse(
-    bool is_client, const XdsEncodingContext& context,
+    bool is_client, const XdsResourceType::DecodeContext& context,
     const envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager*
         http_connection_manager_proto,
     bool is_v2) {
@@ -482,7 +483,7 @@ HttpConnectionManagerParse(
 }
 
 absl::StatusOr<XdsListenerResource> LdsResourceParseClient(
-    const XdsEncodingContext& context,
+    const XdsResourceType::DecodeContext& context,
     const envoy_config_listener_v3_ApiListener* api_listener, bool is_v2) {
   const upb_StringView encoded_api_listener = google_protobuf_Any_value(
       envoy_config_listener_v3_ApiListener_api_listener(api_listener));
@@ -504,7 +505,7 @@ absl::StatusOr<XdsListenerResource> LdsResourceParseClient(
 
 absl::StatusOr<XdsListenerResource::DownstreamTlsContext>
 DownstreamTlsContextParse(
-    const XdsEncodingContext& context,
+    const XdsResourceType::DecodeContext& context,
     const envoy_config_core_v3_TransportSocket* transport_socket) {
   absl::string_view name = UpbStringToAbsl(
       envoy_config_core_v3_TransportSocket_name(transport_socket));
@@ -681,7 +682,7 @@ absl::StatusOr<FilterChain::FilterChainMatch> FilterChainMatchParse(
 }
 
 absl::StatusOr<FilterChain> FilterChainParse(
-    const XdsEncodingContext& context,
+    const XdsResourceType::DecodeContext& context,
     const envoy_config_listener_v3_FilterChain* filter_chain_proto,
     bool is_v2) {
   FilterChain filter_chain;
@@ -975,7 +976,7 @@ absl::StatusOr<XdsListenerResource::FilterChainMap> BuildFilterChainMap(
 }
 
 absl::StatusOr<XdsListenerResource> LdsResourceParseServer(
-    const XdsEncodingContext& context,
+    const XdsResourceType::DecodeContext& context,
     const envoy_config_listener_v3_Listener* listener, bool is_v2) {
   XdsListenerResource lds_update;
   lds_update.type = XdsListenerResource::ListenerType::kTcpListener;
@@ -1021,7 +1022,7 @@ absl::StatusOr<XdsListenerResource> LdsResourceParseServer(
 }
 
 absl::StatusOr<XdsListenerResource> LdsResourceParse(
-    const XdsEncodingContext& context,
+    const XdsResourceType::DecodeContext& context,
     const envoy_config_listener_v3_Listener* listener, bool is_v2) {
   // Check whether it's a client or server listener.
   const envoy_config_listener_v3_ApiListener* api_listener =
@@ -1046,7 +1047,7 @@ absl::StatusOr<XdsListenerResource> LdsResourceParse(
   return LdsResourceParseServer(context, listener, is_v2);
 }
 
-void MaybeLogListener(const XdsEncodingContext& context,
+void MaybeLogListener(const XdsResourceType::DecodeContext& context,
                       const envoy_config_listener_v3_Listener* listener) {
   if (GRPC_TRACE_FLAG_ENABLED(*context.tracer) &&
       gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
@@ -1061,8 +1062,8 @@ void MaybeLogListener(const XdsEncodingContext& context,
 }  // namespace
 
 absl::StatusOr<XdsResourceType::DecodeResult> XdsListenerResourceType::Decode(
-    const XdsEncodingContext& context, absl::string_view serialized_resource,
-    bool is_v2) const {
+    const XdsResourceType::DecodeContext& context,
+    absl::string_view serialized_resource, bool is_v2) const {
   // Parse serialized proto.
   auto* resource = envoy_config_listener_v3_Listener_parse(
       serialized_resource.data(), serialized_resource.size(), context.arena);

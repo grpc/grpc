@@ -59,6 +59,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/xds/upb_utils.h"
+#include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_cluster_specifier_plugin.h"
 #include "src/core/ext/xds/xds_common_types.h"
@@ -342,7 +343,7 @@ namespace {
 
 absl::StatusOr<XdsRouteConfigResource::ClusterSpecifierPluginMap>
 ClusterSpecifierPluginParse(
-    const XdsEncodingContext& context,
+    const XdsResourceType::DecodeContext& context,
     const envoy_config_route_v3_RouteConfiguration* route_config) {
   XdsRouteConfigResource::ClusterSpecifierPluginMap
       cluster_specifier_plugin_map;
@@ -589,7 +590,7 @@ absl::Status RouteRuntimeFractionParse(
 template <typename ParentType, typename EntryType>
 absl::StatusOr<XdsRouteConfigResource::TypedPerFilterConfig>
 ParseTypedPerFilterConfig(
-    const XdsEncodingContext& context, const ParentType* parent,
+    const XdsResourceType::DecodeContext& context, const ParentType* parent,
     const EntryType* (*entry_func)(const ParentType*, size_t*),
     upb_StringView (*key_func)(const EntryType*),
     const google_protobuf_Any* (*value_func)(const EntryType*)) {
@@ -652,7 +653,7 @@ ParseTypedPerFilterConfig(
 }
 
 absl::Status RetryPolicyParse(
-    const XdsEncodingContext& context,
+    const XdsResourceType::DecodeContext& context,
     const envoy_config_route_v3_RetryPolicy* retry_policy,
     absl::optional<XdsRouteConfigResource::RetryPolicy>* retry) {
   std::vector<std::string> errors;
@@ -727,7 +728,7 @@ absl::Status RetryPolicyParse(
 }
 
 absl::StatusOr<XdsRouteConfigResource::Route::RouteAction> RouteActionParse(
-    const XdsEncodingContext& context,
+    const XdsResourceType::DecodeContext& context,
     const envoy_config_route_v3_Route* route_msg,
     const std::map<std::string /*cluster_specifier_plugin_name*/,
                    std::string /*LB policy config*/>&
@@ -785,7 +786,7 @@ absl::StatusOr<XdsRouteConfigResource::Route::RouteAction> RouteActionParse(
       cluster.weight = google_protobuf_UInt32Value_value(weight);
       if (cluster.weight == 0) continue;
       sum_of_weights += cluster.weight;
-      if (context.use_v3) {
+      if (context.server.ShouldUseV3()) {
         auto typed_per_filter_config = ParseTypedPerFilterConfig<
             envoy_config_route_v3_WeightedCluster_ClusterWeight,
             envoy_config_route_v3_WeightedCluster_ClusterWeight_TypedPerFilterConfigEntry>(
@@ -944,7 +945,7 @@ absl::StatusOr<XdsRouteConfigResource::Route::RouteAction> RouteActionParse(
 }  // namespace
 
 absl::StatusOr<XdsRouteConfigResource> XdsRouteConfigResource::Parse(
-    const XdsEncodingContext& context,
+    const XdsResourceType::DecodeContext& context,
     const envoy_config_route_v3_RouteConfiguration* route_config) {
   XdsRouteConfigResource rds_update;
   // Get the cluster spcifier plugins
@@ -982,7 +983,7 @@ absl::StatusOr<XdsRouteConfigResource> XdsRouteConfigResource::Parse(
       return absl::InvalidArgumentError("VirtualHost has no domains");
     }
     // Parse typed_per_filter_config.
-    if (context.use_v3) {
+    if (context.server.ShouldUseV3()) {
       auto typed_per_filter_config = ParseTypedPerFilterConfig<
           envoy_config_route_v3_VirtualHost,
           envoy_config_route_v3_VirtualHost_TypedPerFilterConfigEntry>(
@@ -1065,7 +1066,7 @@ absl::StatusOr<XdsRouteConfigResource> XdsRouteConfigResource::Parse(
         route.action
             .emplace<XdsRouteConfigResource::Route::NonForwardingAction>();
       }
-      if (context.use_v3) {
+      if (context.server.ShouldUseV3()) {
         auto typed_per_filter_config = ParseTypedPerFilterConfig<
             envoy_config_route_v3_Route,
             envoy_config_route_v3_Route_TypedPerFilterConfigEntry>(
@@ -1099,7 +1100,7 @@ absl::StatusOr<XdsRouteConfigResource> XdsRouteConfigResource::Parse(
 namespace {
 
 void MaybeLogRouteConfiguration(
-    const XdsEncodingContext& context,
+    const XdsResourceType::DecodeContext& context,
     const envoy_config_route_v3_RouteConfiguration* route_config) {
   if (GRPC_TRACE_FLAG_ENABLED(*context.tracer) &&
       gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
@@ -1115,9 +1116,9 @@ void MaybeLogRouteConfiguration(
 }  // namespace
 
 absl::StatusOr<XdsResourceType::DecodeResult>
-XdsRouteConfigResourceType::Decode(const XdsEncodingContext& context,
-                                   absl::string_view serialized_resource,
-                                   bool /*is_v2*/) const {
+XdsRouteConfigResourceType::Decode(
+    const XdsResourceType::DecodeContext& context,
+    absl::string_view serialized_resource, bool /*is_v2*/) const {
   // Parse serialized proto.
   auto* resource = envoy_config_route_v3_RouteConfiguration_parse(
       serialized_resource.data(), serialized_resource.size(), context.arena);

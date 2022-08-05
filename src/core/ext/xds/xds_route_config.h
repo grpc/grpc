@@ -36,9 +36,9 @@
 #include "re2/re2.h"
 #include "upb/def.h"
 
-#include "src/core/ext/xds/upb_utils.h"
 #include "src/core/ext/xds/xds_cluster_specifier_plugin.h"
 #include "src/core/ext/xds/xds_http_filters.h"
+#include "src/core/ext/xds/xds_resource_type.h"
 #include "src/core/ext/xds/xds_resource_type_impl.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/gprpp/time.h"
@@ -211,7 +211,7 @@ struct XdsRouteConfigResource {
   std::string ToString() const;
 
   static absl::StatusOr<XdsRouteConfigResource> Parse(
-      const XdsEncodingContext& context,
+      const XdsResourceType::DecodeContext& context,
       const envoy_config_route_v3_RouteConfiguration* route_config);
 };
 
@@ -226,9 +226,9 @@ class XdsRouteConfigResourceType
     return "envoy.api.v2.RouteConfiguration";
   }
 
-  absl::StatusOr<DecodeResult> Decode(const XdsEncodingContext& context,
-                                      absl::string_view serialized_resource,
-                                      bool /*is_v2*/) const override;
+  absl::StatusOr<DecodeResult> Decode(
+      const XdsResourceType::DecodeContext& context,
+      absl::string_view serialized_resource, bool /*is_v2*/) const override;
 
   void InitUpbSymtab(upb_DefPool* symtab) const override {
     envoy_config_route_v3_RouteConfiguration_getmsgdef(symtab);

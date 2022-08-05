@@ -59,7 +59,7 @@ class XdsRingHashLbPolicy : public XdsLbPolicy {
   absl::string_view ConfigProtoType() override { return Type(); }
 
   absl::StatusOr<Json::Object> ConvertXdsLbPolicyConfig(
-      const XdsEncodingContext& context, const XdsLbPolicyRegistry&,
+      const XdsResourceType::DecodeContext& context, const XdsLbPolicyRegistry&,
       absl::string_view configuration, int /* recursion_depth */) override {
     const auto* resource =
         envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_parse(
@@ -103,9 +103,9 @@ class XdsRoundRobinLbPolicy : public XdsLbPolicy {
   absl::string_view ConfigProtoType() override { return Type(); }
 
   absl::StatusOr<Json::Object> ConvertXdsLbPolicyConfig(
-      const XdsEncodingContext& /* context */, const XdsLbPolicyRegistry&,
-      absl::string_view /* configuration */,
-      int /* recursion_depth */) override {
+      const XdsResourceType::DecodeContext& /*context*/,
+      const XdsLbPolicyRegistry&, absl::string_view /*configuration*/,
+      int /*recursion_depth*/) override {
     return Json::Object{{"round_robin", Json::Object()}};
   }
 };
@@ -120,8 +120,9 @@ class XdsWrrLocalityLbPolicy : public XdsLbPolicy {
   absl::string_view ConfigProtoType() override { return Type(); }
 
   absl::StatusOr<Json::Object> ConvertXdsLbPolicyConfig(
-      const XdsEncodingContext& context, const XdsLbPolicyRegistry& registry,
-      absl::string_view configuration, int recursion_depth) override {
+      const XdsResourceType::DecodeContext& context,
+      const XdsLbPolicyRegistry& registry, absl::string_view configuration,
+      int recursion_depth) override {
     const auto* resource =
         envoy_extensions_load_balancing_policies_wrr_locality_v3_WrrLocality_parse(
             configuration.data(), configuration.size(), context.arena);

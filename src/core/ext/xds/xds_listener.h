@@ -37,9 +37,9 @@
 #include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.h"
 #include "upb/def.h"
 
-#include "src/core/ext/xds/upb_utils.h"
 #include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/ext/xds/xds_http_filters.h"
+#include "src/core/ext/xds/xds_resource_type.h"
 #include "src/core/ext/xds/xds_resource_type_impl.h"
 #include "src/core/ext/xds/xds_route_config.h"
 #include "src/core/lib/gprpp/time.h"
@@ -210,9 +210,9 @@ class XdsListenerResourceType
     return "envoy.api.v2.Listener";
   }
 
-  absl::StatusOr<DecodeResult> Decode(const XdsEncodingContext& context,
-                                      absl::string_view serialized_resource,
-                                      bool is_v2) const override;
+  absl::StatusOr<DecodeResult> Decode(
+      const XdsResourceType::DecodeContext& context,
+      absl::string_view serialized_resource, bool is_v2) const override;
 
   bool AllResourcesRequiredInSotW() const override { return true; }
 

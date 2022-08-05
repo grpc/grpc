@@ -58,10 +58,8 @@ absl::StatusOr<Json::Array> ConvertXdsPolicy(LoadBalancingPolicyProto policy) {
   std::string serialized_policy = policy.SerializeAsString();
   upb::Arena arena;
   upb::SymbolTable symtab;
-  XdsEncodingContext context = {nullptr,     XdsBootstrap::XdsServer(),
-                                nullptr,     symtab.ptr(),
-                                arena.ptr(), true,
-                                nullptr};
+  XdsResourceType::DecodeContext context = {nullptr, XdsBootstrap::XdsServer(),
+                                            nullptr, symtab.ptr(), arena.ptr()};
   auto* upb_policy = envoy_config_cluster_v3_LoadBalancingPolicy_parse(
       serialized_policy.data(), serialized_policy.size(), arena.ptr());
   XdsLbPolicyRegistry registry;

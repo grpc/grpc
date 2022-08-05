@@ -49,8 +49,9 @@ namespace grpc_core {
 
 namespace {
 
-absl::StatusOr<Json> ParseStructToJson(const XdsEncodingContext& context,
-                                       const google_protobuf_Struct* resource) {
+absl::StatusOr<Json> ParseStructToJson(
+    const XdsResourceType::DecodeContext& context,
+    const google_protobuf_Struct* resource) {
   upb::Status status;
   const auto* msg_def = google_protobuf_Struct_getmsgdef(context.symtab);
   size_t json_size = upb_JsonEncode(resource, msg_def, context.symtab, 0,
@@ -81,7 +82,7 @@ void XdsLbPolicyRegistry::RegisterPolicy(std::unique_ptr<XdsLbPolicy> policy) {
 }
 
 absl::StatusOr<Json::Array> XdsLbPolicyRegistry::ConvertXdsLbPolicyConfig(
-    const XdsEncodingContext& context,
+    const XdsResourceType::DecodeContext& context,
     const envoy_config_cluster_v3_LoadBalancingPolicy* lb_policy,
     int recursion_depth) const {
   constexpr int kMaxRecursionDepth = 16;

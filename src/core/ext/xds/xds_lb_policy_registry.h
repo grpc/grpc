@@ -26,7 +26,7 @@
 #include "absl/strings/string_view.h"
 #include "envoy/config/cluster/v3/cluster.upb.h"
 
-#include "src/core/ext/xds/upb_utils.h"
+#include "src/core/ext/xds/xds_resource_type.h"
 #include "src/core/lib/json/json.h"
 
 namespace grpc_core {
@@ -42,8 +42,9 @@ class XdsLbPolicy {
   virtual absl::string_view ConfigProtoType() = 0;
 
   virtual absl::StatusOr<Json::Object> ConvertXdsLbPolicyConfig(
-      const XdsEncodingContext& context, const XdsLbPolicyRegistry& registry,
-      absl::string_view configuration, int recursion_depth) = 0;
+      const XdsResourceType::DecodeContext& context,
+      const XdsLbPolicyRegistry& registry, absl::string_view configuration,
+      int recursion_depth) = 0;
 };
 
 class XdsLbPolicyRegistry {
@@ -56,7 +57,7 @@ class XdsLbPolicyRegistry {
   // recursion_depth indicates the current depth of the tree if lb_policy
   // configuration recursively holds other lb policies.
   absl::StatusOr<Json::Array> ConvertXdsLbPolicyConfig(
-      const XdsEncodingContext& context,
+      const XdsResourceType::DecodeContext& context,
       const envoy_config_cluster_v3_LoadBalancingPolicy* lb_policy,
       int recursion_depth = 0) const;
 
