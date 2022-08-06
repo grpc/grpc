@@ -25,7 +25,7 @@
 
 #include "src/core/ext/transport/chttp2/transport/huffsyms.h"
 
-static const int kFirstBits = 8;
+static const int kFirstBits = 9;
 
 class BitQueue {
  public:
@@ -547,8 +547,9 @@ void AddStep(Sink* globals, Sink* out, FunMaker* fun_maker, SymSet start_syms,
     }
     indices.push_back(idx);
   }
-  const int pack_consume_bits = BitsForMaxValue(num_bits);
-  const int pack_match_bits = BitsForMaxValue(match_cases.size() - 1);
+  const int pack_consume_bits = std::min(4, BitsForMaxValue(num_bits));
+  const int pack_match_bits =
+      std::min(4, BitsForMaxValue(match_cases.size() - 1));
   const int pack_emit_bits = num_bits;
   for (auto idx : indices) {
     emit_op->Append(idx.consumed_bits | (idx.match_case << pack_consume_bits) |
