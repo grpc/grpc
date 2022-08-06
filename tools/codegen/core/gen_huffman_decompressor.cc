@@ -299,7 +299,7 @@ class EmitBuffer : public Item {
         absl::StrCat("// max=", vi.max, " unique=", vi.values.size(),
                      " flat=", flat_array_size, " nested=", nested_array_size));
     if (flat_array_size < nested_array_size) {
-      GenArray(name_, TypeForMax(vi.max), emit_, &lines);
+      GenArray(name_, TypeForMax(vi.max), emit_, true, &lines);
       lines.push_back(absl::StrCat("inline ", TypeForMax(vi.max), " Get",
                                    ToCamelCase(name_), "(size_t i) { return g_",
                                    name_, "[i]; }"));
@@ -316,8 +316,8 @@ class EmitBuffer : public Item {
         outer.push_back(it->second);
       }
       GenArray(absl::StrCat(name_, "_outer"), TypeForMax(vi.values.size()),
-               outer, &lines);
-      GenArray(absl::StrCat(name_, "_inner"), TypeForMax(vi.max), inner,
+               outer, false, &lines);
+      GenArray(absl::StrCat(name_, "_inner"), TypeForMax(vi.max), inner, true,
                &lines);
       lines.push_back(absl::StrCat("inline ", TypeForMax(vi.max), " Get",
                                    ToCamelCase(name_), "(size_t i) { return g_",
@@ -358,7 +358,7 @@ class EmitBuffer : public Item {
 
  private:
   static void GenArray(std::string name, std::string type,
-                       const std::vector<int>& values,
+                       const std::vector<int>& values, bool hex,
                        std::vector<std::string>* lines) {
     if (IsMonotonicIncreasing(values)) {
       lines->push_back("// monotonic increasing");
@@ -368,7 +368,17 @@ class EmitBuffer : public Item {
     std::vector<std::string> elems;
     elems.reserve(values.size());
     for (const auto& elem : values) {
-      elems.push_back(absl::StrCat(elem));
+      if (hex) {
+        if (type == "uint8_t") {
+          elems.push_back(absl::StrCat("0x", absl::Hex(elem, absl::kZeroPad2)));
+        } else if (type == "uint16_t") {
+          elems.push_back(absl::StrCat("0x", absl::Hex(elem, absl::kZeroPad4)));
+        } else {
+          elems.push_back(absl::StrCat("0x", absl::Hex(elem, absl::kZeroPad8)));
+        }
+      } else {
+        elems.push_back(absl::StrCat(elem));
+      }
     }
     lines->push_back(absl::StrCat("  ", absl::StrJoin(elems, ", ")));
     lines->push_back("};");
@@ -506,8 +516,9 @@ void AddStep(Sink* globals, Sink* out, FunMaker* fun_maker, SymSet start_syms,
     }
     out->Add("}");
   }
-  out->Add(absl::StrCat("const auto index = buffer_ >> (buffer_len_ - ",
-                        num_bits, ");"));
+  out->Add(absl::StrCat("const auto index = (buffer_ >> (buffer_len_ - ",
+                        num_bits, ")) & 0x", absl::Hex((1 << num_bits) - 1),
+                        ";"));
   std::map<MatchCase, int> match_cases;
   struct Index {
     int match_case;
