@@ -572,363 +572,348 @@ static const uint16_t g_emit_op_23_inner[50] = {
 inline uint16_t GetEmitOp23(size_t i) {
   return g_emit_op_23_inner[g_emit_op_23_outer[i]];
 }
-template <typename F>
-bool DecodeHuff(F sink, const uint8_t* begin, const uint8_t* end) {
-  uint64_t buffer = 0;
-  uint64_t index;
-  size_t emit_ofs;
-  int buffer_len = 0;
-  uint64_t op;
-refill:
-  while (buffer_len < 11) {
-    if (begin == end) return buffer_len == 0;
-    buffer <<= 8;
-    buffer |= static_cast<uint64_t>(*begin++);
-    buffer_len += 8;
-  }
-  index = buffer >> (buffer_len - 11);
-  op = GetEmitOp0(index);
-  buffer_len -= op % 11;
-  op /= 11;
-  emit_ofs = op / 5;
-  switch (op % 5) {
-    case 3: {
-      // 0:0/2,36:1/2,64:2/2,91:3/2
-      while (buffer_len < 2) {
-        if (begin == end) return buffer_len == 0;
-        buffer <<= 8;
-        buffer |= static_cast<uint64_t>(*begin++);
-        buffer_len += 8;
-      }
-      index = buffer >> (buffer_len - 2);
-      op = GetEmitOp2(index);
-      buffer_len -= op % 2;
-      sink(GetEmitBuffer2(op + 0));
-      goto refill;
-    }
-    case 4: {
-      // 1:fd8/12,2:1ffe2/17,3:1ffe3/17,4:1ffe4/17,5:1ffe5/17,6:1ffe6/17,7:1ffe7/17,8:1ffe8/17,9:1fea/13,10:7fffc/19,11:1ffe9/17,12:1ffea/17,13:7fffd/19,14:1ffeb/17,15:1ffec/17,16:1ffed/17,17:1ffee/17,18:1ffef/17,19:1fff0/17,20:1fff1/17,21:1fff2/17,22:7fffe/19,23:1fff3/17,24:1fff4/17,25:1fff5/17,26:1fff6/17,27:1fff7/17,28:1fff8/17,29:1fff9/17,30:1fffa/17,31:1fffb/17,60:c/4,92:f0/8,93:0/2,94:4/3,96:d/4,123:e/4,125:5/3,126:1/2,127:1fffc/17,128:1e6/9,129:7d2/11,130:1e7/9,131:1e8/9,132:7d3/11,133:7d4/11,134:7d5/11,135:fd9/12,136:7d6/11,137:fda/12,138:fdb/12,139:fdc/12,140:fdd/12,141:fde/12,142:1feb/13,143:fdf/12,144:1fec/13,145:1fed/13,146:7d7/11,147:fe0/12,148:1fee/13,149:fe1/12,150:fe2/12,151:fe3/12,152:fe4/12,153:3dc/10,154:7d8/11,155:fe5/12,156:7d9/11,157:fe6/12,158:fe7/12,159:1fef/13,160:7da/11,161:3dd/10,162:1e9/9,163:7db/11,164:7dc/11,165:fe8/12,166:fe9/12,167:3de/10,168:fea/12,169:7dd/11,170:7de/11,171:1ff0/13,172:3df/10,173:7df/11,174:feb/12,175:fec/12,176:3e0/10,177:3e1/10,178:7e0/11,179:3e2/10,180:fed/12,181:7e1/11,182:fee/12,183:fef/12,184:1ea/9,185:7e2/11,186:7e3/11,187:7e4/11,188:ff0/12,189:7e5/11,190:7e6/11,191:ff1/12,192:7fe0/15,193:7fe1/15,194:1eb/9,195:f1/8,196:7e7/11,197:ff2/12,198:7e8/11,199:3fec/14,200:7fe2/15,201:7fe3/15,202:7fe4/15,203:ffde/16,204:ffdf/16,205:7fe5/15,206:1ff1/13,207:3fed/14,208:f2/8,209:3e3/10,210:7fe6/15,211:ffe0/16,212:ffe1/16,213:7fe7/15,214:ffe2/16,215:1ff2/13,216:3e4/10,217:3e5/10,218:7fe8/15,219:7fe9/15,220:1fffd/17,221:ffe3/16,222:ffe4/16,223:ffe5/16,224:1ec/9,225:1ff3/13,226:1ed/9,227:3e6/10,228:7e9/11,229:3e7/10,230:3e8/10,231:ff3/12,232:7ea/11,233:7eb/11,234:3fee/14,235:3fef/14,236:1ff4/13,237:1ff5/13,238:7fea/15,239:ff4/12,240:7feb/15,241:ffe6/16,242:7fec/15,243:7fed/15,244:ffe7/16,245:ffe8/16,246:ffe9/16,247:ffea/16,248:ffeb/16,249:1fffe/17,250:ffec/16,251:ffed/16,252:ffee/16,253:ffef/16,254:fff0/16,255:7fee/15,256:7ffff/19
-      while (buffer_len < 11) {
-        if (begin == end) return buffer_len == 0;
-        buffer <<= 8;
-        buffer |= static_cast<uint64_t>(*begin++);
-        buffer_len += 8;
-      }
-      index = buffer >> (buffer_len - 11);
-      op = GetEmitOp3(index);
-      buffer_len -= op % 11;
+class HuffDecoder {
+ public:
+  template <typename F>
+  bool DecodeHuff(F sink, const uint8_t* begin, const uint8_t* end) {
+    while (true) {
+      if (!RefillTo11()) return buffer_len_ == 0;
+      const auto index = buffer_ >> (buffer_len_ - 11);
+      auto op = GetEmitOp0(index);
+      buffer_len_ -= op % 11;
       op /= 11;
-      emit_ofs = op / 21;
-      switch (op % 21) {
-        case 2: {
-          // 137:0/1,138:1/1
-          while (buffer_len < 1) {
-            if (begin == end) return buffer_len == 0;
-            buffer <<= 8;
-            buffer |= static_cast<uint64_t>(*begin++);
-            buffer_len += 8;
-          }
-          index = buffer >> (buffer_len - 1);
-          op = GetEmitOp5(index);
-          buffer_len -= op % 1;
-          sink(GetEmitBuffer5(op + 0));
-          goto refill;
-        }
-        case 3: {
-          // 139:0/1,140:1/1
-          while (buffer_len < 1) {
-            if (begin == end) return buffer_len == 0;
-            buffer <<= 8;
-            buffer |= static_cast<uint64_t>(*begin++);
-            buffer_len += 8;
-          }
-          index = buffer >> (buffer_len - 1);
-          op = GetEmitOp6(index);
-          buffer_len -= op % 1;
-          sink(GetEmitBuffer6(op + 0));
-          goto refill;
-        }
-        case 4: {
-          // 141:0/1,143:1/1
-          while (buffer_len < 1) {
-            if (begin == end) return buffer_len == 0;
-            buffer <<= 8;
-            buffer |= static_cast<uint64_t>(*begin++);
-            buffer_len += 8;
-          }
-          index = buffer >> (buffer_len - 1);
-          op = GetEmitOp7(index);
-          buffer_len -= op % 1;
-          sink(GetEmitBuffer7(op + 0));
-          goto refill;
-        }
-        case 16: {
-          // 144:0/2,145:1/2,148:2/2,159:3/2
-          while (buffer_len < 2) {
-            if (begin == end) return buffer_len == 0;
-            buffer <<= 8;
-            buffer |= static_cast<uint64_t>(*begin++);
-            buffer_len += 8;
-          }
-          index = buffer >> (buffer_len - 2);
-          op = GetEmitOp18(index);
-          buffer_len -= op % 2;
-          sink(GetEmitBuffer18(op + 0));
-          goto refill;
-        }
-        case 5: {
-          // 147:0/1,149:1/1
-          while (buffer_len < 1) {
-            if (begin == end) return buffer_len == 0;
-            buffer <<= 8;
-            buffer |= static_cast<uint64_t>(*begin++);
-            buffer_len += 8;
-          }
-          index = buffer >> (buffer_len - 1);
-          op = GetEmitOp8(index);
-          buffer_len -= op % 1;
-          sink(GetEmitBuffer8(op + 0));
-          goto refill;
-        }
-        case 6: {
-          // 150:0/1,151:1/1
-          while (buffer_len < 1) {
-            if (begin == end) return buffer_len == 0;
-            buffer <<= 8;
-            buffer |= static_cast<uint64_t>(*begin++);
-            buffer_len += 8;
-          }
-          index = buffer >> (buffer_len - 1);
-          op = GetEmitOp9(index);
-          buffer_len -= op % 1;
-          sink(GetEmitBuffer9(op + 0));
-          goto refill;
-        }
-        case 7: {
-          // 152:0/1,155:1/1
-          while (buffer_len < 1) {
-            if (begin == end) return buffer_len == 0;
-            buffer <<= 8;
-            buffer |= static_cast<uint64_t>(*begin++);
-            buffer_len += 8;
-          }
-          index = buffer >> (buffer_len - 1);
-          op = GetEmitOp10(index);
-          buffer_len -= op % 1;
-          sink(GetEmitBuffer10(op + 0));
-          goto refill;
-        }
-        case 8: {
-          // 157:0/1,158:1/1
-          while (buffer_len < 1) {
-            if (begin == end) return buffer_len == 0;
-            buffer <<= 8;
-            buffer |= static_cast<uint64_t>(*begin++);
-            buffer_len += 8;
-          }
-          index = buffer >> (buffer_len - 1);
-          op = GetEmitOp11(index);
-          buffer_len -= op % 1;
-          sink(GetEmitBuffer11(op + 0));
-          goto refill;
-        }
-        case 9: {
-          // 165:0/1,166:1/1
-          while (buffer_len < 1) {
-            if (begin == end) return buffer_len == 0;
-            buffer <<= 8;
-            buffer |= static_cast<uint64_t>(*begin++);
-            buffer_len += 8;
-          }
-          index = buffer >> (buffer_len - 1);
-          op = GetEmitOp12(index);
-          buffer_len -= op % 1;
-          sink(GetEmitBuffer12(op + 0));
-          goto refill;
-        }
-        case 10: {
-          // 168:0/1,174:1/1
-          while (buffer_len < 1) {
-            if (begin == end) return buffer_len == 0;
-            buffer <<= 8;
-            buffer |= static_cast<uint64_t>(*begin++);
-            buffer_len += 8;
-          }
-          index = buffer >> (buffer_len - 1);
-          op = GetEmitOp13(index);
-          buffer_len -= op % 1;
-          sink(GetEmitBuffer13(op + 0));
-          goto refill;
-        }
-        case 17: {
-          // 171:0/2,206:1/2,215:2/2,225:3/2
-          while (buffer_len < 2) {
-            if (begin == end) return buffer_len == 0;
-            buffer <<= 8;
-            buffer |= static_cast<uint64_t>(*begin++);
-            buffer_len += 8;
-          }
-          index = buffer >> (buffer_len - 2);
-          op = GetEmitOp19(index);
-          buffer_len -= op % 2;
-          sink(GetEmitBuffer19(op + 0));
-          goto refill;
-        }
-        case 11: {
-          // 175:0/1,180:1/1
-          while (buffer_len < 1) {
-            if (begin == end) return buffer_len == 0;
-            buffer <<= 8;
-            buffer |= static_cast<uint64_t>(*begin++);
-            buffer_len += 8;
-          }
-          index = buffer >> (buffer_len - 1);
-          op = GetEmitOp14(index);
-          buffer_len -= op % 1;
-          sink(GetEmitBuffer14(op + 0));
-          goto refill;
-        }
-        case 12: {
-          // 182:0/1,183:1/1
-          while (buffer_len < 1) {
-            if (begin == end) return buffer_len == 0;
-            buffer <<= 8;
-            buffer |= static_cast<uint64_t>(*begin++);
-            buffer_len += 8;
-          }
-          index = buffer >> (buffer_len - 1);
-          op = GetEmitOp15(index);
-          buffer_len -= op % 1;
-          sink(GetEmitBuffer15(op + 0));
-          goto refill;
-        }
-        case 13: {
-          // 188:0/1,191:1/1
-          while (buffer_len < 1) {
-            if (begin == end) return buffer_len == 0;
-            buffer <<= 8;
-            buffer |= static_cast<uint64_t>(*begin++);
-            buffer_len += 8;
-          }
-          index = buffer >> (buffer_len - 1);
-          op = GetEmitOp16(index);
-          buffer_len -= op % 1;
-          sink(GetEmitBuffer16(op + 0));
-          goto refill;
-        }
-        case 19: {
-          // 192:0/4,193:1/4,200:2/4,201:3/4,202:4/4,203:1e/5,204:1f/5,205:5/4,210:6/4,213:7/4,218:8/4,219:9/4,238:a/4,240:b/4,242:c/4,243:d/4,255:e/4
-          while (buffer_len < 5) {
-            if (begin == end) return buffer_len == 0;
-            buffer <<= 8;
-            buffer |= static_cast<uint64_t>(*begin++);
-            buffer_len += 8;
-          }
-          index = buffer >> (buffer_len - 5);
-          op = GetEmitOp20(index);
-          buffer_len -= op % 5;
-          sink(GetEmitBuffer20(op + 0));
-          goto refill;
-        }
-        case 14: {
-          // 197:0/1,231:1/1
-          while (buffer_len < 1) {
-            if (begin == end) return buffer_len == 0;
-            buffer <<= 8;
-            buffer |= static_cast<uint64_t>(*begin++);
-            buffer_len += 8;
-          }
-          index = buffer >> (buffer_len - 1);
-          op = GetEmitOp17(index);
-          buffer_len -= op % 1;
-          sink(GetEmitBuffer17(op + 0));
-          goto refill;
-        }
-        case 18: {
-          // 199:4/3,207:5/3,234:6/3,235:7/3,236:0/2,237:1/2
-          while (buffer_len < 3) {
-            if (begin == end) return buffer_len == 0;
-            buffer <<= 8;
-            buffer |= static_cast<uint64_t>(*begin++);
-            buffer_len += 8;
-          }
-          index = buffer >> (buffer_len - 3);
-          op = GetEmitOp22(index);
-          buffer_len -= op % 3;
-          sink(GetEmitBuffer22(op + 0));
-          goto refill;
+      const auto emit_ofs = op / 5;
+      switch (op % 5) {
+        case 0: {
+          *out_++ = GetEmitBuffer0(emit_ofs + 0);
+          *out_++ = GetEmitBuffer0(emit_ofs + 1);
+          return true;
         }
         case 1: {
-          // 1:0/1,135:1/1
-          while (buffer_len < 1) {
-            if (begin == end) return buffer_len == 0;
-            buffer <<= 8;
-            buffer |= static_cast<uint64_t>(*begin++);
-            buffer_len += 8;
-          }
-          index = buffer >> (buffer_len - 1);
-          op = GetEmitOp4(index);
-          buffer_len -= op % 1;
-          sink(GetEmitBuffer4(op + 0));
-          goto refill;
+          *out_++ = GetEmitBuffer0(emit_ofs + 0);
+          return true;
         }
-        case 20: {
-          // 2:22/6,3:23/6,4:24/6,5:25/6,6:26/6,7:27/6,8:28/6,10:fc/8,11:29/6,12:2a/6,13:fd/8,14:2b/6,15:2c/6,16:2d/6,17:2e/6,18:2f/6,19:30/6,20:31/6,21:32/6,22:fe/8,23:33/6,24:34/6,25:35/6,26:36/6,27:37/6,28:38/6,29:39/6,30:3a/6,31:3b/6,127:3c/6,211:0/5,212:1/5,214:2/5,220:3d/6,221:3/5,222:4/5,223:5/5,241:6/5,244:7/5,245:8/5,246:9/5,247:a/5,248:b/5,249:3e/6,250:c/5,251:d/5,252:e/5,253:f/5,254:10/5,256:ff/8
-          while (buffer_len < 8) {
-            if (begin == end) return buffer_len == 0;
-            buffer <<= 8;
-            buffer |= static_cast<uint64_t>(*begin++);
-            buffer_len += 8;
-          }
-          index = buffer >> (buffer_len - 8);
-          op = GetEmitOp23(index);
-          buffer_len -= op % 8;
-          sink(GetEmitBuffer23(op + 0));
-          goto refill;
+        case 2: {
+          return DecodeStep0();
         }
-        case 15: {
-          // 9:2/2,142:3/2,239:0/1
-          while (buffer_len < 2) {
-            if (begin == end) return buffer_len == 0;
-            buffer <<= 8;
-            buffer |= static_cast<uint64_t>(*begin++);
-            buffer_len += 8;
-          }
-          index = buffer >> (buffer_len - 2);
-          op = GetEmitOp21(index);
-          buffer_len -= op % 2;
-          sink(GetEmitBuffer21(op + 0));
-          goto refill;
+        case 3: {
+          return DecodeStep1();
         }
-        case 0: {
-          sink(GetEmitBuffer3(emit_ofs + 0));
-          goto refill;
+        case 4: {
+          return DecodeStep2();
         }
       }
-    }
-    case 2: {
-      // 35:0/1,62:1/1
-      while (buffer_len < 1) {
-        if (begin == end) return buffer_len == 0;
-        buffer <<= 8;
-        buffer |= static_cast<uint64_t>(*begin++);
-        buffer_len += 8;
-      }
-      index = buffer >> (buffer_len - 1);
-      op = GetEmitOp1(index);
-      buffer_len -= op % 1;
-      sink(GetEmitBuffer1(op + 0));
-      goto refill;
-    }
-    case 1: {
-      sink(GetEmitBuffer0(emit_ofs + 0));
-      goto refill;
-    }
-    case 0: {
-      sink(GetEmitBuffer0(emit_ofs + 0));
-      sink(GetEmitBuffer0(emit_ofs + 1));
-      goto refill;
     }
   }
-  abort();
-}
+
+ private:
+  bool RefillTo11() {
+    while (buffer_len_ < 11) {
+      if (begin_ == end_) return false;
+      buffer_ <<= 8;
+      buffer_ |= static_cast<uint64_t>(*begin_++);
+      buffer_len_ += 8;
+    }
+    return true;
+  }
+  bool DecodeStep0() {
+    if (!RefillTo1()) return buffer_len_ == 0;
+    const auto index = buffer_ >> (buffer_len_ - 1);
+    auto op = GetEmitOp1(index);
+    buffer_len_ -= op % 1;
+    *out_++ = GetEmitBuffer1(op + 0);
+    return true;
+  }
+  bool RefillTo1() {
+    while (buffer_len_ < 1) {
+      if (begin_ == end_) return false;
+      buffer_ <<= 8;
+      buffer_ |= static_cast<uint64_t>(*begin_++);
+      buffer_len_ += 8;
+    }
+    return true;
+  }
+  bool DecodeStep1() {
+    if (!RefillTo2()) return buffer_len_ == 0;
+    const auto index = buffer_ >> (buffer_len_ - 2);
+    auto op = GetEmitOp2(index);
+    buffer_len_ -= op % 2;
+    *out_++ = GetEmitBuffer2(op + 0);
+    return true;
+  }
+  bool RefillTo2() {
+    while (buffer_len_ < 2) {
+      if (begin_ == end_) return false;
+      buffer_ <<= 8;
+      buffer_ |= static_cast<uint64_t>(*begin_++);
+      buffer_len_ += 8;
+    }
+    return true;
+  }
+  bool DecodeStep2() {
+    if (!RefillTo11()) return buffer_len_ == 0;
+    const auto index = buffer_ >> (buffer_len_ - 11);
+    auto op = GetEmitOp3(index);
+    buffer_len_ -= op % 11;
+    op /= 11;
+    const auto emit_ofs = op / 21;
+    switch (op % 21) {
+      case 0: {
+        *out_++ = GetEmitBuffer3(emit_ofs + 0);
+        return true;
+      }
+      case 8: {
+        return DecodeStep10();
+      }
+      case 9: {
+        return DecodeStep11();
+      }
+      case 10: {
+        return DecodeStep12();
+      }
+      case 11: {
+        return DecodeStep13();
+      }
+      case 12: {
+        return DecodeStep14();
+      }
+      case 13: {
+        return DecodeStep15();
+      }
+      case 14: {
+        return DecodeStep16();
+      }
+      case 16: {
+        return DecodeStep17();
+      }
+      case 17: {
+        return DecodeStep18();
+      }
+      case 19: {
+        return DecodeStep19();
+      }
+      case 15: {
+        return DecodeStep20();
+      }
+      case 18: {
+        return DecodeStep21();
+      }
+      case 20: {
+        return DecodeStep22();
+      }
+      case 1: {
+        return DecodeStep3();
+      }
+      case 2: {
+        return DecodeStep4();
+      }
+      case 3: {
+        return DecodeStep5();
+      }
+      case 4: {
+        return DecodeStep6();
+      }
+      case 5: {
+        return DecodeStep7();
+      }
+      case 6: {
+        return DecodeStep8();
+      }
+      case 7: {
+        return DecodeStep9();
+      }
+    }
+  }
+  bool DecodeStep3() {
+    if (!RefillTo1()) return buffer_len_ == 0;
+    const auto index = buffer_ >> (buffer_len_ - 1);
+    auto op = GetEmitOp4(index);
+    buffer_len_ -= op % 1;
+    *out_++ = GetEmitBuffer4(op + 0);
+    return true;
+  }
+  bool DecodeStep4() {
+    if (!RefillTo1()) return buffer_len_ == 0;
+    const auto index = buffer_ >> (buffer_len_ - 1);
+    auto op = GetEmitOp5(index);
+    buffer_len_ -= op % 1;
+    *out_++ = GetEmitBuffer5(op + 0);
+    return true;
+  }
+  bool DecodeStep5() {
+    if (!RefillTo1()) return buffer_len_ == 0;
+    const auto index = buffer_ >> (buffer_len_ - 1);
+    auto op = GetEmitOp6(index);
+    buffer_len_ -= op % 1;
+    *out_++ = GetEmitBuffer6(op + 0);
+    return true;
+  }
+  bool DecodeStep6() {
+    if (!RefillTo1()) return buffer_len_ == 0;
+    const auto index = buffer_ >> (buffer_len_ - 1);
+    auto op = GetEmitOp7(index);
+    buffer_len_ -= op % 1;
+    *out_++ = GetEmitBuffer7(op + 0);
+    return true;
+  }
+  bool DecodeStep7() {
+    if (!RefillTo1()) return buffer_len_ == 0;
+    const auto index = buffer_ >> (buffer_len_ - 1);
+    auto op = GetEmitOp8(index);
+    buffer_len_ -= op % 1;
+    *out_++ = GetEmitBuffer8(op + 0);
+    return true;
+  }
+  bool DecodeStep8() {
+    if (!RefillTo1()) return buffer_len_ == 0;
+    const auto index = buffer_ >> (buffer_len_ - 1);
+    auto op = GetEmitOp9(index);
+    buffer_len_ -= op % 1;
+    *out_++ = GetEmitBuffer9(op + 0);
+    return true;
+  }
+  bool DecodeStep9() {
+    if (!RefillTo1()) return buffer_len_ == 0;
+    const auto index = buffer_ >> (buffer_len_ - 1);
+    auto op = GetEmitOp10(index);
+    buffer_len_ -= op % 1;
+    *out_++ = GetEmitBuffer10(op + 0);
+    return true;
+  }
+  bool DecodeStep10() {
+    if (!RefillTo1()) return buffer_len_ == 0;
+    const auto index = buffer_ >> (buffer_len_ - 1);
+    auto op = GetEmitOp11(index);
+    buffer_len_ -= op % 1;
+    *out_++ = GetEmitBuffer11(op + 0);
+    return true;
+  }
+  bool DecodeStep11() {
+    if (!RefillTo1()) return buffer_len_ == 0;
+    const auto index = buffer_ >> (buffer_len_ - 1);
+    auto op = GetEmitOp12(index);
+    buffer_len_ -= op % 1;
+    *out_++ = GetEmitBuffer12(op + 0);
+    return true;
+  }
+  bool DecodeStep12() {
+    if (!RefillTo1()) return buffer_len_ == 0;
+    const auto index = buffer_ >> (buffer_len_ - 1);
+    auto op = GetEmitOp13(index);
+    buffer_len_ -= op % 1;
+    *out_++ = GetEmitBuffer13(op + 0);
+    return true;
+  }
+  bool DecodeStep13() {
+    if (!RefillTo1()) return buffer_len_ == 0;
+    const auto index = buffer_ >> (buffer_len_ - 1);
+    auto op = GetEmitOp14(index);
+    buffer_len_ -= op % 1;
+    *out_++ = GetEmitBuffer14(op + 0);
+    return true;
+  }
+  bool DecodeStep14() {
+    if (!RefillTo1()) return buffer_len_ == 0;
+    const auto index = buffer_ >> (buffer_len_ - 1);
+    auto op = GetEmitOp15(index);
+    buffer_len_ -= op % 1;
+    *out_++ = GetEmitBuffer15(op + 0);
+    return true;
+  }
+  bool DecodeStep15() {
+    if (!RefillTo1()) return buffer_len_ == 0;
+    const auto index = buffer_ >> (buffer_len_ - 1);
+    auto op = GetEmitOp16(index);
+    buffer_len_ -= op % 1;
+    *out_++ = GetEmitBuffer16(op + 0);
+    return true;
+  }
+  bool DecodeStep16() {
+    if (!RefillTo1()) return buffer_len_ == 0;
+    const auto index = buffer_ >> (buffer_len_ - 1);
+    auto op = GetEmitOp17(index);
+    buffer_len_ -= op % 1;
+    *out_++ = GetEmitBuffer17(op + 0);
+    return true;
+  }
+  bool DecodeStep17() {
+    if (!RefillTo2()) return buffer_len_ == 0;
+    const auto index = buffer_ >> (buffer_len_ - 2);
+    auto op = GetEmitOp18(index);
+    buffer_len_ -= op % 2;
+    *out_++ = GetEmitBuffer18(op + 0);
+    return true;
+  }
+  bool DecodeStep18() {
+    if (!RefillTo2()) return buffer_len_ == 0;
+    const auto index = buffer_ >> (buffer_len_ - 2);
+    auto op = GetEmitOp19(index);
+    buffer_len_ -= op % 2;
+    *out_++ = GetEmitBuffer19(op + 0);
+    return true;
+  }
+  bool DecodeStep19() {
+    if (!RefillTo5()) return buffer_len_ == 0;
+    const auto index = buffer_ >> (buffer_len_ - 5);
+    auto op = GetEmitOp20(index);
+    buffer_len_ -= op % 5;
+    *out_++ = GetEmitBuffer20(op + 0);
+    return true;
+  }
+  bool RefillTo5() {
+    while (buffer_len_ < 5) {
+      if (begin_ == end_) return false;
+      buffer_ <<= 8;
+      buffer_ |= static_cast<uint64_t>(*begin_++);
+      buffer_len_ += 8;
+    }
+    return true;
+  }
+  bool DecodeStep20() {
+    if (!RefillTo2()) return buffer_len_ == 0;
+    const auto index = buffer_ >> (buffer_len_ - 2);
+    auto op = GetEmitOp21(index);
+    buffer_len_ -= op % 2;
+    *out_++ = GetEmitBuffer21(op + 0);
+    return true;
+  }
+  bool DecodeStep21() {
+    if (!RefillTo3()) return buffer_len_ == 0;
+    const auto index = buffer_ >> (buffer_len_ - 3);
+    auto op = GetEmitOp22(index);
+    buffer_len_ -= op % 3;
+    *out_++ = GetEmitBuffer22(op + 0);
+    return true;
+  }
+  bool RefillTo3() {
+    while (buffer_len_ < 3) {
+      if (begin_ == end_) return false;
+      buffer_ <<= 8;
+      buffer_ |= static_cast<uint64_t>(*begin_++);
+      buffer_len_ += 8;
+    }
+    return true;
+  }
+  bool DecodeStep22() {
+    if (!RefillTo8()) return buffer_len_ == 0;
+    const auto index = buffer_ >> (buffer_len_ - 8);
+    auto op = GetEmitOp23(index);
+    buffer_len_ -= op % 8;
+    *out_++ = GetEmitBuffer23(op + 0);
+    return true;
+  }
+  bool RefillTo8() {
+    while (buffer_len_ < 8) {
+      if (begin_ == end_) return false;
+      buffer_ <<= 8;
+      buffer_ |= static_cast<uint64_t>(*begin_++);
+      buffer_len_ += 8;
+    }
+    return true;
+  }
+  const uint8_t* begin_;
+  const uint8_t* const end_;
+  uint8_t* out_;
+  uint64_t buffer_ = 0;
+  int buffer_len_ = 0;
+};

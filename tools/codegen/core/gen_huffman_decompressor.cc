@@ -375,13 +375,42 @@ void Sink::Add(std::string s) {
   children_.push_back(absl::make_unique<String>(std::move(s)));
 }
 
-void RefillTo(Sink* out, int length, std::string ret) {
-  auto w = out->Add<While>(absl::StrCat("buffer_len < ", length));
-  w->Add(absl::StrCat("if (begin == end) return ", ret, ";"));
-  w->Add("buffer <<= 8;");
-  w->Add("buffer |= static_cast<uint64_t>(*begin++);");
-  w->Add("buffer_len += 8;");
-}
+class FunMaker {
+ public:
+  explicit FunMaker(Sink* sink) : sink_(sink) {}
+
+  std::string RefillTo(int n) {
+    if (have_refills_.count(n) == 0) {
+      have_refills_.insert(n);
+      auto fn = NewFun(absl::StrCat("RefillTo", n));
+      auto w = fn->Add<While>(absl::StrCat("buffer_len_ < ", n));
+      w->Add(absl::StrCat("if (begin_ == end_) return false;"));
+      w->Add("buffer_ <<= 8;");
+      w->Add("buffer_ |= static_cast<uint64_t>(*begin_++);");
+      w->Add("buffer_len_ += 8;");
+      fn->Add("return true;");
+    }
+    return absl::StrCat("RefillTo", n, "()");
+  }
+
+  Sink* ReturnNewFun(std::string base_name, Sink* callsite) {
+    std::string name = absl::StrCat(base_name, have_funs_[base_name]++);
+    callsite->Add(absl::StrCat("return ", name, "();"));
+    return NewFun(name);
+  }
+
+ private:
+  Sink* NewFun(std::string name) {
+    sink_->Add(absl::StrCat("bool ", name, "() {"));
+    auto fn = sink_->Add<Indent>();
+    sink_->Add("}");
+    return fn;
+  }
+
+  std::set<int> have_refills_;
+  std::map<std::string, int> have_funs_;
+  Sink* sink_;
+};
 
 struct Matched {
   int emits;
@@ -397,32 +426,35 @@ struct Unmatched {
 
 using MatchCase = absl::variant<Matched, Unmatched>;
 
-void AddStep(Sink* globals, Sink* out, SymSet start_syms, int num_bits,
-             bool allow_multiple_emits);
+void AddStep(Sink* globals, Sink* out, FunMaker* fun_maker, SymSet start_syms,
+             int num_bits, bool allow_multiple_emits);
 
-void AddMatchBody(Sink* globals, Sink* out, EmitBuffer* emit_buffer,
-                  std::string ofs, const MatchCase& match_case) {
+void AddMatchBody(Sink* globals, Sink* out, FunMaker* fun_maker,
+                  EmitBuffer* emit_buffer, std::string ofs,
+                  const MatchCase& match_case) {
   if (auto* p = absl::get_if<Unmatched>(&match_case)) {
-    out->Add(absl::StrCat("// ", SymSetString(p->syms)));
     int max_bits = 0;
     for (auto sym : p->syms) max_bits = std::max(max_bits, sym.bits.length());
-    AddStep(globals, out, p->syms, std::min(max_bits, kFirstBits), false);
+    AddStep(globals, fun_maker->ReturnNewFun("DecodeStep", out), fun_maker,
+            p->syms, std::min(max_bits, kFirstBits), false);
     return;
   }
   const auto& matched = absl::get<Matched>(match_case);
   for (int i = 0; i < matched.emits; i++) {
     out->Add(absl::StrCat(
-        "sink(", emit_buffer->Accessor(absl::StrCat(ofs, " + ", i)), ");"));
+        "*out_++ = ", emit_buffer->Accessor(absl::StrCat(ofs, " + ", i)), ";"));
   }
-  out->Add("goto refill;");
+  out->Add("return true;");
 }
 
-void AddStep(Sink* globals, Sink* out, SymSet start_syms, int num_bits,
-             bool allow_multiple_emits) {
+void AddStep(Sink* globals, Sink* out, FunMaker* fun_maker, SymSet start_syms,
+             int num_bits, bool allow_multiple_emits) {
   auto emit_buffer = globals->Add<EmitBuffer>("emit_buffer");
   auto emit_op = globals->Add<EmitBuffer>("emit_op");
-  RefillTo(out, num_bits, "buffer_len == 0");
-  out->Add(absl::StrCat("index = buffer >> (buffer_len - ", num_bits, ");"));
+  out->Add(absl::StrCat("if (!", fun_maker->RefillTo(num_bits),
+                        ") return buffer_len_ == 0;"));
+  out->Add(absl::StrCat("const auto index = buffer_ >> (buffer_len_ - ",
+                        num_bits, ");"));
   std::map<MatchCase, int> match_cases;
   struct Index {
     int match_case;
@@ -453,17 +485,19 @@ void AddStep(Sink* globals, Sink* out, SymSet start_syms, int num_bits,
                         num_bits +
                     idx.consumed_bits);
   }
-  out->Add(absl::StrCat("op = ", emit_op->Accessor("index"), ";"));
-  out->Add(absl::StrCat("buffer_len -= op % ", num_bits, ";"));
+  out->Add(absl::StrCat("auto op = ", emit_op->Accessor("index"), ";"));
+  out->Add(absl::StrCat("buffer_len_ -= op % ", num_bits, ";"));
   if (match_cases.size() == 1) {
-    AddMatchBody(globals, out, emit_buffer, "op", match_cases.begin()->first);
+    AddMatchBody(globals, out, fun_maker, emit_buffer, "op",
+                 match_cases.begin()->first);
   } else {
     out->Add(absl::StrCat("op /= ", num_bits, ";"));
-    out->Add(absl::StrCat("emit_ofs = op / ", match_cases.size(), ";"));
+    out->Add(
+        absl::StrCat("const auto emit_ofs = op / ", match_cases.size(), ";"));
     auto s = out->Add<Switch>(absl::StrCat("op % ", match_cases.size()));
     for (auto kv : match_cases) {
       auto c = s->Case(absl::StrCat(kv.second));
-      AddMatchBody(globals, c, emit_buffer, "emit_ofs", kv.first);
+      AddMatchBody(globals, c, fun_maker, emit_buffer, "emit_ofs", kv.first);
     }
   }
 }
@@ -474,19 +508,30 @@ int main(void) {
   out->Add("#include <cstdint>");
   out->Add("#include <stdlib.h>");
   auto* globals = out->Add<Sink>();
-  out->Add("template <typename F>");
-  out->Add(
+  out->Add("class HuffDecoder {");
+  out->Add(" public:");
+  auto pub = out->Add<Indent>();
+  out->Add(" private:");
+  auto prv = out->Add<Indent>();
+  FunMaker fun_maker(prv->Add<Sink>());
+  out->Add("};");
+  // members
+  prv->Add("const uint8_t* begin_;");
+  prv->Add("const uint8_t* const end_;");
+  prv->Add("uint8_t* out_;");
+  prv->Add("uint64_t buffer_ = 0;");
+  prv->Add("int buffer_len_ = 0;");
+  // main fn
+  pub->Add("template <typename F>");
+  pub->Add(
       "bool DecodeHuff(F sink, const uint8_t* begin, const uint8_t* end) {");
-  auto init = out->Add<Indent>();
-  init->Add("uint64_t buffer = 0;");
-  init->Add("uint64_t index;");
-  init->Add("size_t emit_ofs;");
-  init->Add("int buffer_len = 0;");
-  init->Add("uint64_t op;");
-  out->Add("refill:");
-  AddStep(globals, out->Add<Indent>(), AllSyms(), kFirstBits, true);
-  out->Add("  abort();");
-  out->Add("}");
+  auto body = pub->Add<Indent>();
+  body->Add("while (true) {");
+  AddStep(globals, body->Add<Indent>(), &fun_maker, AllSyms(), kFirstBits,
+          true);
+  body->Add("}");
+  pub->Add("}");
+
   puts(out->ToString().c_str());
   return 0;
 }
