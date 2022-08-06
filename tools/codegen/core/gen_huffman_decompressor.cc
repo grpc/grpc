@@ -264,6 +264,12 @@ int TypeBitsForMax(int max) {
 
 std::string TypeForMax(int max) { return Uint(TypeBitsForMax(max)); }
 
+int BitsForMaxValue(int x) {
+  int n = 0;
+  while (x >= (1 << n)) n++;
+  return n;
+}
+
 bool IsMonotonicIncreasing(const std::vector<int>& v) {
   int max = 0;
   for (int i : v) {
@@ -529,21 +535,24 @@ void AddStep(Sink* globals, Sink* out, FunMaker* fun_maker, SymSet start_syms,
     }
     indices.push_back(idx);
   }
+  const int pack_consume_bits = BitsForMaxValue(num_bits);
+  const int pack_match_bits = BitsForMaxValue(match_cases.size() - 1);
+  const int pack_emit_bits = num_bits;
   for (auto idx : indices) {
-    emit_op->Append((idx.match_case + idx.emit_offset * match_cases.size()) *
-                        num_bits +
-                    idx.consumed_bits);
+    emit_op->Append(idx.consumed_bits | (idx.match_case << pack_consume_bits) |
+                    (idx.emit_offset << (pack_consume_bits + pack_match_bits)));
   }
-  out->Add(absl::StrCat("auto op = ", emit_op->Accessor("index"), ";"));
-  out->Add(absl::StrCat("buffer_len_ -= op % ", num_bits, ";"));
+  out->Add(absl::StrCat("const auto op = ", emit_op->Accessor("index"), ";"));
+  out->Add(
+      absl::StrCat("buffer_len_ -= op & ", (1 << pack_consume_bits) - 1, ";"));
+  out->Add(absl::StrCat("const auto emit_ofs = op >> ",
+                        pack_consume_bits + pack_match_bits, ";"));
   if (match_cases.size() == 1) {
-    AddMatchBody(globals, out, fun_maker, emit_buffer, "op",
+    AddMatchBody(globals, out, fun_maker, emit_buffer, "emit_ofs",
                  match_cases.begin()->first, is_top, refill);
   } else {
-    out->Add(absl::StrCat("op /= ", num_bits, ";"));
-    out->Add(
-        absl::StrCat("const auto emit_ofs = op / ", match_cases.size(), ";"));
-    auto s = out->Add<Switch>(absl::StrCat("op % ", match_cases.size()));
+    auto s = out->Add<Switch>(absl::StrCat("(op >> ", pack_consume_bits, ") & ",
+                                           (1 << pack_match_bits) - 1));
     for (auto kv : match_cases) {
       auto c = s->Case(absl::StrCat(kv.second));
       AddMatchBody(globals, c, fun_maker, emit_buffer, "emit_ofs", kv.first,
