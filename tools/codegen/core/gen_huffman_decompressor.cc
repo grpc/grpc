@@ -25,7 +25,7 @@
 
 #include "src/core/ext/transport/chttp2/transport/huffsyms.h"
 
-static const int kFirstBits = 11;
+static const int kFirstBits = 7;
 
 class BitQueue {
  public:
@@ -566,7 +566,8 @@ int main(void) {
   done->Add("}");
   AddStep(globals, done, &fun_maker, AllSyms(), kFirstBits - 1, false, false);
   done->Add("if (buffer_len_ == 0) return;");
-  done->Add(absl::StrCat("if (buffer_ != (1 << buffer_len_)-1) ok_ = false;"));
+  done->Add("const uint64_t mask = (1 << buffer_len_) - 1;");
+  done->Add(absl::StrCat("if ((buffer_ & mask) != mask) ok_ = false;"));
   prv->Add("}");
   // members
   prv->Add("F sink_;");
