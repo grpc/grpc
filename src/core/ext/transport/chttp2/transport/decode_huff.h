@@ -10,7 +10,7 @@ static const uint8_t g_emit_buffer_0[74] = {
     74,  75,  76,  77,  78,  79,  80,  81,  82,  83,  84, 85,  86,  87,  89,
     106, 107, 113, 118, 119, 120, 121, 122, 38,  42,  44, 59,  88,  90};
 inline uint8_t GetEmitBuffer0(size_t i) { return g_emit_buffer_0[i]; }
-// max=3291 unique=78 flat=8192 nested=5344
+// max=3293 unique=78 flat=8192 nested=5344
 // monotonic increasing
 static const uint8_t g_emit_op_0_outer[512] = {
     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  1,  1,
@@ -41,13 +41,13 @@ static const uint8_t g_emit_op_0_outer[512] = {
     62, 63, 63, 63, 63, 64, 64, 64, 64, 65, 65, 65, 65, 66, 66, 66, 66, 67, 67,
     67, 67, 68, 68, 69, 69, 70, 70, 71, 71, 72, 72, 73, 73, 74, 75, 76, 77};
 static const uint16_t g_emit_op_0_inner[78] = {
-    3,    48,   93,   138,  183,  228,  273,  318,  363,  408,  454,  499,
-    544,  589,  634,  679,  724,  769,  814,  859,  904,  949,  994,  1039,
-    1084, 1129, 1174, 1219, 1264, 1309, 1354, 1399, 1444, 1489, 1534, 1579,
-    1625, 1670, 1715, 1760, 1805, 1850, 1895, 1940, 1985, 2030, 2075, 2120,
-    2165, 2210, 2255, 2300, 2345, 2390, 2435, 2480, 2525, 2570, 2615, 2660,
-    2705, 2750, 2795, 2840, 2885, 2930, 2975, 3020, 3066, 3111, 3156, 3201,
-    3246, 3291, 18,   27,   36,   45};
+    5,    50,   95,   140,  185,  230,  275,  320,  365,  410,  456,  501,
+    546,  591,  636,  681,  726,  771,  816,  861,  906,  951,  996,  1041,
+    1086, 1131, 1176, 1221, 1266, 1311, 1356, 1401, 1446, 1491, 1536, 1581,
+    1627, 1672, 1717, 1762, 1807, 1852, 1897, 1942, 1987, 2032, 2077, 2122,
+    2167, 2212, 2257, 2302, 2347, 2392, 2437, 2482, 2527, 2572, 2617, 2662,
+    2707, 2752, 2797, 2842, 2887, 2932, 2977, 3022, 3068, 3113, 3158, 3203,
+    3248, 3293, 18,   27,   36,   45};
 inline uint16_t GetEmitOp0(size_t i) {
   return g_emit_op_0_inner[g_emit_op_0_outer[i]];
 }
@@ -66,7 +66,7 @@ static const uint8_t g_emit_buffer_1[179] = {
     79,  80,  81,  82,  83,  84,  85,  86,  87,  89,  106, 107, 113, 118, 119,
     120, 121, 122, 38,  42,  44,  59,  88,  90,  33,  34,  40,  41,  63};
 inline uint8_t GetEmitBuffer1(size_t i) { return g_emit_buffer_1[i]; }
-// max=8918 unique=182 flat=16384 nested=11104
+// max=8920 unique=182 flat=16384 nested=11104
 // monotonic increasing
 static const uint8_t g_emit_op_1_outer[1024] = {
     0,   1,   2,   3,   4,   5,   6,   7,   8,   9,   10,  10,  10,  10,  10,
@@ -139,21 +139,21 @@ static const uint8_t g_emit_op_1_outer[1024] = {
     171, 171, 171, 172, 172, 172, 172, 173, 173, 173, 173, 174, 175, 176, 177,
     178, 179, 180, 181};
 static const uint16_t g_emit_op_1_inner[182] = {
-    8,    108,  208,  308,  408,  508,  608,  708,  808,  908,  13,   158,
-    1008, 1108, 1208, 1308, 1408, 1508, 1608, 1708, 1808, 163,  258,  1158,
-    1908, 2008, 2108, 2208, 2308, 2408, 2508, 2608, 263,  358,  1258, 2058,
-    2708, 2808, 2908, 3008, 3108, 3208, 3308, 363,  458,  1358, 2158, 2858,
-    3408, 3508, 3608, 3708, 3808, 3908, 463,  558,  1458, 2258, 2958, 3558,
-    4008, 4108, 4208, 4308, 4408, 563,  658,  1558, 2358, 3058, 3658, 4158,
-    4508, 4608, 4708, 4808, 663,  758,  1658, 2458, 3158, 3758, 4258, 4658,
-    4908, 5008, 5108, 763,  858,  1758, 2558, 3258, 3858, 4358, 4758, 5058,
-    5208, 5308, 863,  5408, 958,  1858, 2658, 3358, 3958, 4458, 4858, 5158,
-    5358, 963,  5514, 5564, 5614, 5664, 5714, 5764, 5814, 5864, 5914, 5964,
-    6014, 6064, 6114, 6164, 6214, 6264, 6314, 6364, 6414, 6464, 6514, 6564,
-    6614, 6664, 6714, 6764, 6815, 6865, 6915, 6965, 7015, 7065, 7115, 7165,
-    7215, 7265, 7315, 7365, 7415, 7465, 7515, 7565, 7615, 7665, 7715, 7765,
-    7815, 7865, 7915, 7965, 8015, 8065, 8115, 8165, 8215, 8265, 8315, 8365,
-    8416, 8466, 8516, 8566, 8616, 8666, 8718, 8768, 8818, 8868, 8918, 30,
+    10,   110,  210,  310,  410,  510,  610,  710,  810,  910,  15,   160,
+    1010, 1110, 1210, 1310, 1410, 1510, 1610, 1710, 1810, 165,  260,  1160,
+    1910, 2010, 2110, 2210, 2310, 2410, 2510, 2610, 265,  360,  1260, 2060,
+    2710, 2810, 2910, 3010, 3110, 3210, 3310, 365,  460,  1360, 2160, 2860,
+    3410, 3510, 3610, 3710, 3810, 3910, 465,  560,  1460, 2260, 2960, 3560,
+    4010, 4110, 4210, 4310, 4410, 565,  660,  1560, 2360, 3060, 3660, 4160,
+    4510, 4610, 4710, 4810, 665,  760,  1660, 2460, 3160, 3760, 4260, 4660,
+    4910, 5010, 5110, 765,  860,  1760, 2560, 3260, 3860, 4360, 4760, 5060,
+    5210, 5310, 865,  5410, 960,  1860, 2660, 3360, 3960, 4460, 4860, 5160,
+    5360, 965,  5516, 5566, 5616, 5666, 5716, 5766, 5816, 5866, 5916, 5966,
+    6016, 6066, 6116, 6166, 6216, 6266, 6316, 6366, 6416, 6466, 6516, 6566,
+    6616, 6666, 6716, 6766, 6817, 6867, 6917, 6967, 7017, 7067, 7117, 7167,
+    7217, 7267, 7317, 7367, 7417, 7467, 7517, 7567, 7617, 7667, 7717, 7767,
+    7817, 7867, 7917, 7967, 8017, 8067, 8117, 8167, 8217, 8267, 8317, 8367,
+    8418, 8468, 8518, 8568, 8618, 8668, 8720, 8770, 8820, 8870, 8920, 30,
     40,   50};
 inline uint16_t GetEmitOp1(size_t i) {
   return g_emit_op_1_inner[g_emit_op_1_outer[i]];
@@ -162,15 +162,16 @@ inline uint16_t GetEmitOp1(size_t i) {
 // monotonic increasing
 static const uint8_t g_emit_buffer_2[2] = {39, 43};
 inline uint8_t GetEmitBuffer2(size_t i) { return g_emit_buffer_2[i]; }
-// max=0 unique=2 flat=16 nested=32
-static const uint8_t g_emit_op_2[2] = {-1, 0};
+// max=2 unique=2 flat=16 nested=32
+// monotonic increasing
+static const uint8_t g_emit_op_2[2] = {1, 2};
 inline uint8_t GetEmitOp2(size_t i) { return g_emit_op_2[i]; }
 // max=226 unique=22 flat=176 nested=352
 static const uint8_t g_emit_buffer_3[22] = {
     0,  36,  64,  91,  93,  126, 94,  125, 60,  96,  123,
     92, 195, 208, 128, 130, 131, 162, 184, 194, 224, 226};
 inline uint8_t GetEmitBuffer3(size_t i) { return g_emit_buffer_3[i]; }
-// max=3998 unique=40 flat=16384 nested=8832
+// max=4000 unique=40 flat=16384 nested=8832
 // monotonic increasing
 static const uint8_t g_emit_op_3_outer[1024] = {
     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
@@ -228,9 +229,9 @@ static const uint8_t g_emit_op_3_outer[1024] = {
     10, 10, 10, 10, 11, 11, 12, 12, 13, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
     23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39};
 static const uint16_t g_emit_op_3_inner[40] = {
-    1,    191,  381,  571,  761,  951,  1142, 1332, 1523, 1713,
-    1903, 2097, 2287, 2477, 2668, 2858, 3048, 3238, 3428, 3618,
-    3808, 3998, 20,   30,   40,   50,   60,   70,   80,   90,
+    3,    193,  383,  573,  763,  953,  1144, 1334, 1525, 1715,
+    1905, 2099, 2289, 2479, 2670, 2860, 3050, 3240, 3430, 3620,
+    3810, 4000, 20,   30,   40,   50,   60,   70,   80,   90,
     100,  110,  120,  130,  140,  150,  160,  170,  180,  190};
 inline uint16_t GetEmitOp3(size_t i) {
   return g_emit_op_3_inner[g_emit_op_3_outer[i]];
@@ -239,286 +240,153 @@ inline uint16_t GetEmitOp3(size_t i) {
 // monotonic increasing
 static const uint8_t g_emit_buffer_4[2] = {153, 161};
 inline uint8_t GetEmitBuffer4(size_t i) { return g_emit_buffer_4[i]; }
-// max=0 unique=2 flat=16 nested=32
-static const uint8_t g_emit_op_4[2] = {-1, 0};
+// max=2 unique=2 flat=16 nested=32
+// monotonic increasing
+static const uint8_t g_emit_op_4[2] = {1, 2};
 inline uint8_t GetEmitOp4(size_t i) { return g_emit_op_4[i]; }
 // max=172 unique=2 flat=16 nested=32
 // monotonic increasing
 static const uint8_t g_emit_buffer_5[2] = {167, 172};
 inline uint8_t GetEmitBuffer5(size_t i) { return g_emit_buffer_5[i]; }
-// max=0 unique=2 flat=16 nested=32
-static const uint8_t g_emit_op_5[2] = {-1, 0};
+// max=2 unique=2 flat=16 nested=32
+// monotonic increasing
+static const uint8_t g_emit_op_5[2] = {1, 2};
 inline uint8_t GetEmitOp5(size_t i) { return g_emit_op_5[i]; }
 // max=177 unique=2 flat=16 nested=32
 // monotonic increasing
 static const uint8_t g_emit_buffer_6[2] = {176, 177};
 inline uint8_t GetEmitBuffer6(size_t i) { return g_emit_buffer_6[i]; }
-// max=0 unique=2 flat=16 nested=32
-static const uint8_t g_emit_op_6[2] = {-1, 0};
+// max=2 unique=2 flat=16 nested=32
+// monotonic increasing
+static const uint8_t g_emit_op_6[2] = {1, 2};
 inline uint8_t GetEmitOp6(size_t i) { return g_emit_op_6[i]; }
 // max=209 unique=2 flat=16 nested=32
 // monotonic increasing
 static const uint8_t g_emit_buffer_7[2] = {179, 209};
 inline uint8_t GetEmitBuffer7(size_t i) { return g_emit_buffer_7[i]; }
-// max=0 unique=2 flat=16 nested=32
-static const uint8_t g_emit_op_7[2] = {-1, 0};
+// max=2 unique=2 flat=16 nested=32
+// monotonic increasing
+static const uint8_t g_emit_op_7[2] = {1, 2};
 inline uint8_t GetEmitOp7(size_t i) { return g_emit_op_7[i]; }
 // max=217 unique=2 flat=16 nested=32
 // monotonic increasing
 static const uint8_t g_emit_buffer_8[2] = {216, 217};
 inline uint8_t GetEmitBuffer8(size_t i) { return g_emit_buffer_8[i]; }
-// max=0 unique=2 flat=16 nested=32
-static const uint8_t g_emit_op_8[2] = {-1, 0};
+// max=2 unique=2 flat=16 nested=32
+// monotonic increasing
+static const uint8_t g_emit_op_8[2] = {1, 2};
 inline uint8_t GetEmitOp8(size_t i) { return g_emit_op_8[i]; }
 // max=229 unique=2 flat=16 nested=32
 // monotonic increasing
 static const uint8_t g_emit_buffer_9[2] = {227, 229};
 inline uint8_t GetEmitBuffer9(size_t i) { return g_emit_buffer_9[i]; }
-// max=0 unique=2 flat=16 nested=32
-static const uint8_t g_emit_op_9[2] = {-1, 0};
+// max=2 unique=2 flat=16 nested=32
+// monotonic increasing
+static const uint8_t g_emit_op_9[2] = {1, 2};
 inline uint8_t GetEmitOp9(size_t i) { return g_emit_op_9[i]; }
-// max=0 unique=0 flat=0 nested=0
+// max=146 unique=4 flat=32 nested=64
 // monotonic increasing
-static const uint8_t g_emit_buffer_10_outer[0] = {
-
-};
+static const uint8_t g_emit_buffer_10[4] = {133, 134, 136, 146};
+inline uint8_t GetEmitBuffer10(size_t i) { return g_emit_buffer_10[i]; }
+// max=8 unique=4 flat=32 nested=64
 // monotonic increasing
-static const uint8_t g_emit_buffer_10_inner[0] = {
-
-};
-inline uint8_t GetEmitBuffer10(size_t i) {
-  return g_emit_buffer_10_inner[g_emit_buffer_10_outer[i]];
-}
-// max=4 unique=2 flat=32 nested=48
-// monotonic increasing
-static const uint8_t g_emit_op_10[4] = {2, 2, 4, 4};
+static const uint8_t g_emit_op_10[4] = {2, 4, 6, 8};
 inline uint8_t GetEmitOp10(size_t i) { return g_emit_op_10[i]; }
-// max=134 unique=2 flat=16 nested=32
+// max=163 unique=4 flat=32 nested=64
 // monotonic increasing
-static const uint8_t g_emit_buffer_11[2] = {133, 134};
+static const uint8_t g_emit_buffer_11[4] = {154, 156, 160, 163};
 inline uint8_t GetEmitBuffer11(size_t i) { return g_emit_buffer_11[i]; }
-// max=0 unique=2 flat=16 nested=32
-static const uint8_t g_emit_op_11[2] = {-1, 0};
+// max=8 unique=4 flat=32 nested=64
+// monotonic increasing
+static const uint8_t g_emit_op_11[4] = {2, 4, 6, 8};
 inline uint8_t GetEmitOp11(size_t i) { return g_emit_op_11[i]; }
-// max=146 unique=2 flat=16 nested=32
+// max=173 unique=4 flat=32 nested=64
 // monotonic increasing
-static const uint8_t g_emit_buffer_12[2] = {136, 146};
+static const uint8_t g_emit_buffer_12[4] = {164, 169, 170, 173};
 inline uint8_t GetEmitBuffer12(size_t i) { return g_emit_buffer_12[i]; }
-// max=0 unique=2 flat=16 nested=32
-static const uint8_t g_emit_op_12[2] = {-1, 0};
+// max=8 unique=4 flat=32 nested=64
+// monotonic increasing
+static const uint8_t g_emit_op_12[4] = {2, 4, 6, 8};
 inline uint8_t GetEmitOp12(size_t i) { return g_emit_op_12[i]; }
-// max=0 unique=0 flat=0 nested=0
+// max=186 unique=4 flat=32 nested=64
 // monotonic increasing
-static const uint8_t g_emit_buffer_13_outer[0] = {
-
-};
+static const uint8_t g_emit_buffer_13[4] = {178, 181, 185, 186};
+inline uint8_t GetEmitBuffer13(size_t i) { return g_emit_buffer_13[i]; }
+// max=8 unique=4 flat=32 nested=64
 // monotonic increasing
-static const uint8_t g_emit_buffer_13_inner[0] = {
-
-};
-inline uint8_t GetEmitBuffer13(size_t i) {
-  return g_emit_buffer_13_inner[g_emit_buffer_13_outer[i]];
-}
-// max=4 unique=2 flat=32 nested=48
-// monotonic increasing
-static const uint8_t g_emit_op_13[4] = {2, 2, 4, 4};
+static const uint8_t g_emit_op_13[4] = {2, 4, 6, 8};
 inline uint8_t GetEmitOp13(size_t i) { return g_emit_op_13[i]; }
-// max=156 unique=2 flat=16 nested=32
+// max=196 unique=4 flat=32 nested=64
 // monotonic increasing
-static const uint8_t g_emit_buffer_14[2] = {154, 156};
+static const uint8_t g_emit_buffer_14[4] = {187, 189, 190, 196};
 inline uint8_t GetEmitBuffer14(size_t i) { return g_emit_buffer_14[i]; }
-// max=0 unique=2 flat=16 nested=32
-static const uint8_t g_emit_op_14[2] = {-1, 0};
+// max=8 unique=4 flat=32 nested=64
+// monotonic increasing
+static const uint8_t g_emit_op_14[4] = {2, 4, 6, 8};
 inline uint8_t GetEmitOp14(size_t i) { return g_emit_op_14[i]; }
-// max=163 unique=2 flat=16 nested=32
+// max=233 unique=4 flat=32 nested=64
 // monotonic increasing
-static const uint8_t g_emit_buffer_15[2] = {160, 163};
+static const uint8_t g_emit_buffer_15[4] = {198, 228, 232, 233};
 inline uint8_t GetEmitBuffer15(size_t i) { return g_emit_buffer_15[i]; }
-// max=0 unique=2 flat=16 nested=32
-static const uint8_t g_emit_op_15[2] = {-1, 0};
+// max=8 unique=4 flat=32 nested=64
+// monotonic increasing
+static const uint8_t g_emit_op_15[4] = {2, 4, 6, 8};
 inline uint8_t GetEmitOp15(size_t i) { return g_emit_op_15[i]; }
-// max=0 unique=0 flat=0 nested=0
-// monotonic increasing
-static const uint8_t g_emit_buffer_16_outer[0] = {
-
-};
-// monotonic increasing
-static const uint8_t g_emit_buffer_16_inner[0] = {
-
-};
-inline uint8_t GetEmitBuffer16(size_t i) {
-  return g_emit_buffer_16_inner[g_emit_buffer_16_outer[i]];
-}
-// max=4 unique=2 flat=32 nested=48
-// monotonic increasing
-static const uint8_t g_emit_op_16[4] = {2, 2, 4, 4};
-inline uint8_t GetEmitOp16(size_t i) { return g_emit_op_16[i]; }
-// max=169 unique=2 flat=16 nested=32
-// monotonic increasing
-static const uint8_t g_emit_buffer_17[2] = {164, 169};
-inline uint8_t GetEmitBuffer17(size_t i) { return g_emit_buffer_17[i]; }
-// max=0 unique=2 flat=16 nested=32
-static const uint8_t g_emit_op_17[2] = {-1, 0};
-inline uint8_t GetEmitOp17(size_t i) { return g_emit_op_17[i]; }
-// max=173 unique=2 flat=16 nested=32
-// monotonic increasing
-static const uint8_t g_emit_buffer_18[2] = {170, 173};
-inline uint8_t GetEmitBuffer18(size_t i) { return g_emit_buffer_18[i]; }
-// max=0 unique=2 flat=16 nested=32
-static const uint8_t g_emit_op_18[2] = {-1, 0};
-inline uint8_t GetEmitOp18(size_t i) { return g_emit_op_18[i]; }
-// max=0 unique=0 flat=0 nested=0
-// monotonic increasing
-static const uint8_t g_emit_buffer_19_outer[0] = {
-
-};
-// monotonic increasing
-static const uint8_t g_emit_buffer_19_inner[0] = {
-
-};
-inline uint8_t GetEmitBuffer19(size_t i) {
-  return g_emit_buffer_19_inner[g_emit_buffer_19_outer[i]];
-}
-// max=4 unique=2 flat=32 nested=48
-// monotonic increasing
-static const uint8_t g_emit_op_19[4] = {2, 2, 4, 4};
-inline uint8_t GetEmitOp19(size_t i) { return g_emit_op_19[i]; }
-// max=181 unique=2 flat=16 nested=32
-// monotonic increasing
-static const uint8_t g_emit_buffer_20[2] = {178, 181};
-inline uint8_t GetEmitBuffer20(size_t i) { return g_emit_buffer_20[i]; }
-// max=0 unique=2 flat=16 nested=32
-static const uint8_t g_emit_op_20[2] = {-1, 0};
-inline uint8_t GetEmitOp20(size_t i) { return g_emit_op_20[i]; }
-// max=186 unique=2 flat=16 nested=32
-// monotonic increasing
-static const uint8_t g_emit_buffer_21[2] = {185, 186};
-inline uint8_t GetEmitBuffer21(size_t i) { return g_emit_buffer_21[i]; }
-// max=0 unique=2 flat=16 nested=32
-static const uint8_t g_emit_op_21[2] = {-1, 0};
-inline uint8_t GetEmitOp21(size_t i) { return g_emit_op_21[i]; }
-// max=0 unique=0 flat=0 nested=0
-// monotonic increasing
-static const uint8_t g_emit_buffer_22_outer[0] = {
-
-};
-// monotonic increasing
-static const uint8_t g_emit_buffer_22_inner[0] = {
-
-};
-inline uint8_t GetEmitBuffer22(size_t i) {
-  return g_emit_buffer_22_inner[g_emit_buffer_22_outer[i]];
-}
-// max=4 unique=2 flat=32 nested=48
-// monotonic increasing
-static const uint8_t g_emit_op_22[4] = {2, 2, 4, 4};
-inline uint8_t GetEmitOp22(size_t i) { return g_emit_op_22[i]; }
-// max=189 unique=2 flat=16 nested=32
-// monotonic increasing
-static const uint8_t g_emit_buffer_23[2] = {187, 189};
-inline uint8_t GetEmitBuffer23(size_t i) { return g_emit_buffer_23[i]; }
-// max=0 unique=2 flat=16 nested=32
-static const uint8_t g_emit_op_23[2] = {-1, 0};
-inline uint8_t GetEmitOp23(size_t i) { return g_emit_op_23[i]; }
-// max=196 unique=2 flat=16 nested=32
-// monotonic increasing
-static const uint8_t g_emit_buffer_24[2] = {190, 196};
-inline uint8_t GetEmitBuffer24(size_t i) { return g_emit_buffer_24[i]; }
-// max=0 unique=2 flat=16 nested=32
-static const uint8_t g_emit_op_24[2] = {-1, 0};
-inline uint8_t GetEmitOp24(size_t i) { return g_emit_op_24[i]; }
-// max=0 unique=0 flat=0 nested=0
-// monotonic increasing
-static const uint8_t g_emit_buffer_25_outer[0] = {
-
-};
-// monotonic increasing
-static const uint8_t g_emit_buffer_25_inner[0] = {
-
-};
-inline uint8_t GetEmitBuffer25(size_t i) {
-  return g_emit_buffer_25_inner[g_emit_buffer_25_outer[i]];
-}
-// max=4 unique=2 flat=32 nested=48
-// monotonic increasing
-static const uint8_t g_emit_op_25[4] = {2, 2, 4, 4};
-inline uint8_t GetEmitOp25(size_t i) { return g_emit_op_25[i]; }
-// max=228 unique=2 flat=16 nested=32
-// monotonic increasing
-static const uint8_t g_emit_buffer_26[2] = {198, 228};
-inline uint8_t GetEmitBuffer26(size_t i) { return g_emit_buffer_26[i]; }
-// max=0 unique=2 flat=16 nested=32
-static const uint8_t g_emit_op_26[2] = {-1, 0};
-inline uint8_t GetEmitOp26(size_t i) { return g_emit_op_26[i]; }
-// max=233 unique=2 flat=16 nested=32
-// monotonic increasing
-static const uint8_t g_emit_buffer_27[2] = {232, 233};
-inline uint8_t GetEmitBuffer27(size_t i) { return g_emit_buffer_27[i]; }
-// max=0 unique=2 flat=16 nested=32
-static const uint8_t g_emit_op_27[2] = {-1, 0};
-inline uint8_t GetEmitOp27(size_t i) { return g_emit_op_27[i]; }
 // max=143 unique=8 flat=64 nested=128
 // monotonic increasing
-static const uint8_t g_emit_buffer_28[8] = {1,   135, 137, 138,
+static const uint8_t g_emit_buffer_16[8] = {1,   135, 137, 138,
                                             139, 140, 141, 143};
-inline uint8_t GetEmitBuffer28(size_t i) { return g_emit_buffer_28[i]; }
-// max=22 unique=8 flat=64 nested=128
+inline uint8_t GetEmitBuffer16(size_t i) { return g_emit_buffer_16[i]; }
+// max=24 unique=8 flat=64 nested=128
 // monotonic increasing
-static const uint8_t g_emit_op_28[8] = {1, 4, 7, 10, 13, 16, 19, 22};
-inline uint8_t GetEmitOp28(size_t i) { return g_emit_op_28[i]; }
+static const uint8_t g_emit_op_16[8] = {3, 6, 9, 12, 15, 18, 21, 24};
+inline uint8_t GetEmitOp16(size_t i) { return g_emit_op_16[i]; }
 // max=158 unique=8 flat=64 nested=128
 // monotonic increasing
-static const uint8_t g_emit_buffer_29[8] = {147, 149, 150, 151,
+static const uint8_t g_emit_buffer_17[8] = {147, 149, 150, 151,
                                             152, 155, 157, 158};
-inline uint8_t GetEmitBuffer29(size_t i) { return g_emit_buffer_29[i]; }
-// max=22 unique=8 flat=64 nested=128
+inline uint8_t GetEmitBuffer17(size_t i) { return g_emit_buffer_17[i]; }
+// max=24 unique=8 flat=64 nested=128
 // monotonic increasing
-static const uint8_t g_emit_op_29[8] = {1, 4, 7, 10, 13, 16, 19, 22};
-inline uint8_t GetEmitOp29(size_t i) { return g_emit_op_29[i]; }
+static const uint8_t g_emit_op_17[8] = {3, 6, 9, 12, 15, 18, 21, 24};
+inline uint8_t GetEmitOp17(size_t i) { return g_emit_op_17[i]; }
 // max=183 unique=8 flat=64 nested=128
 // monotonic increasing
-static const uint8_t g_emit_buffer_30[8] = {165, 166, 168, 174,
+static const uint8_t g_emit_buffer_18[8] = {165, 166, 168, 174,
                                             175, 180, 182, 183};
-inline uint8_t GetEmitBuffer30(size_t i) { return g_emit_buffer_30[i]; }
-// max=22 unique=8 flat=64 nested=128
+inline uint8_t GetEmitBuffer18(size_t i) { return g_emit_buffer_18[i]; }
+// max=24 unique=8 flat=64 nested=128
 // monotonic increasing
-static const uint8_t g_emit_op_30[8] = {1, 4, 7, 10, 13, 16, 19, 22};
-inline uint8_t GetEmitOp30(size_t i) { return g_emit_op_30[i]; }
-// max=230 unique=1 flat=8 nested=16
+static const uint8_t g_emit_op_18[8] = {3, 6, 9, 12, 15, 18, 21, 24};
+inline uint8_t GetEmitOp18(size_t i) { return g_emit_op_18[i]; }
+// max=230 unique=3 flat=24 nested=48
+static const uint8_t g_emit_buffer_19[3] = {230, 129, 132};
+inline uint8_t GetEmitBuffer19(size_t i) { return g_emit_buffer_19[i]; }
+// max=6 unique=3 flat=32 nested=56
 // monotonic increasing
-static const uint8_t g_emit_buffer_31[1] = {230};
-inline uint8_t GetEmitBuffer31(size_t i) { return g_emit_buffer_31[i]; }
-// max=4 unique=2 flat=32 nested=48
-static const uint8_t g_emit_op_31[4] = {-1, -1, 4, 4};
-inline uint8_t GetEmitOp31(size_t i) { return g_emit_op_31[i]; }
-// max=132 unique=2 flat=16 nested=32
-// monotonic increasing
-static const uint8_t g_emit_buffer_32[2] = {129, 132};
-inline uint8_t GetEmitBuffer32(size_t i) { return g_emit_buffer_32[i]; }
-// max=0 unique=2 flat=16 nested=32
-static const uint8_t g_emit_op_32[2] = {-1, 0};
-inline uint8_t GetEmitOp32(size_t i) { return g_emit_op_32[i]; }
+static const uint8_t g_emit_op_19[4] = {1, 1, 4, 6};
+inline uint8_t GetEmitOp19(size_t i) { return g_emit_op_19[i]; }
 // max=239 unique=11 flat=88 nested=176
-static const uint8_t g_emit_buffer_33[11] = {188, 191, 197, 231, 239, 9,
+static const uint8_t g_emit_buffer_20[11] = {188, 191, 197, 231, 239, 9,
                                              142, 144, 145, 148, 159};
-inline uint8_t GetEmitBuffer33(size_t i) { return g_emit_buffer_33[i]; }
-// max=42 unique=11 flat=128 nested=216
+inline uint8_t GetEmitBuffer20(size_t i) { return g_emit_buffer_20[i]; }
+// max=44 unique=11 flat=128 nested=216
 // monotonic increasing
-static const uint8_t g_emit_op_33[16] = {1,  1,  5,  5,  9,  9,  13, 13,
-                                         17, 17, 22, 26, 30, 34, 38, 42};
-inline uint8_t GetEmitOp33(size_t i) { return g_emit_op_33[i]; }
+static const uint8_t g_emit_op_20[16] = {3,  3,  7,  7,  11, 11, 15, 15,
+                                         19, 19, 24, 28, 32, 36, 40, 44};
+inline uint8_t GetEmitOp20(size_t i) { return g_emit_op_20[i]; }
 // max=255 unique=76 flat=608 nested=1216
-static const uint8_t g_emit_buffer_34[76] = {
+static const uint8_t g_emit_buffer_21[76] = {
     171, 206, 215, 225, 236, 237, 199, 207, 234, 235, 192, 193, 200,
     201, 202, 205, 210, 213, 218, 219, 238, 240, 242, 243, 255, 203,
     204, 211, 212, 214, 221, 222, 223, 241, 244, 245, 246, 247, 248,
     250, 251, 252, 253, 254, 2,   3,   4,   5,   6,   7,   8,   11,
     12,  14,  15,  16,  17,  18,  19,  20,  21,  23,  24,  25,  26,
     27,  28,  29,  30,  31,  127, 220, 249, 10,  13,  22};
-inline uint8_t GetEmitBuffer34(size_t i) { return g_emit_buffer_34[i]; }
-// max=1508 unique=77 flat=16384 nested=9424
+inline uint8_t GetEmitBuffer21(size_t i) { return g_emit_buffer_21[i]; }
+// max=1510 unique=77 flat=16384 nested=9424
 // monotonic increasing
-static const uint8_t g_emit_op_34_outer[1024] = {
+static const uint8_t g_emit_op_21_outer[1024] = {
     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
@@ -573,31 +441,24 @@ static const uint8_t g_emit_op_34_outer[1024] = {
     60, 60, 60, 61, 61, 61, 61, 62, 62, 62, 62, 63, 63, 63, 63, 64, 64, 64, 64,
     65, 65, 65, 65, 66, 66, 66, 66, 67, 67, 67, 67, 68, 68, 68, 68, 69, 69, 69,
     69, 70, 70, 70, 70, 71, 71, 71, 71, 72, 72, 72, 72, 73, 74, 75, 76};
-static const uint16_t g_emit_op_34_inner[77] = {
-    2,    22,   42,   62,   82,   102,  123,  143,  163,  183,  204,
-    224,  244,  264,  284,  304,  324,  344,  364,  384,  404,  424,
-    444,  464,  484,  505,  525,  545,  565,  585,  605,  625,  645,
-    665,  685,  705,  725,  745,  765,  785,  805,  825,  845,  865,
-    886,  906,  926,  946,  966,  986,  1006, 1026, 1046, 1066, 1086,
-    1106, 1126, 1146, 1166, 1186, 1206, 1226, 1246, 1266, 1286, 1306,
-    1326, 1346, 1366, 1386, 1406, 1426, 1446, 1468, 1488, 1508, 18};
-inline uint16_t GetEmitOp34(size_t i) {
-  return g_emit_op_34_inner[g_emit_op_34_outer[i]];
+static const uint16_t g_emit_op_21_inner[77] = {
+    4,    24,   44,   64,   84,   104,  125,  145,  165,  185,  206,
+    226,  246,  266,  286,  306,  326,  346,  366,  386,  406,  426,
+    446,  466,  486,  507,  527,  547,  567,  587,  607,  627,  647,
+    667,  687,  707,  727,  747,  767,  787,  807,  827,  847,  867,
+    888,  908,  928,  948,  968,  988,  1008, 1028, 1048, 1068, 1088,
+    1108, 1128, 1148, 1168, 1188, 1208, 1228, 1248, 1268, 1288, 1308,
+    1328, 1348, 1368, 1388, 1408, 1428, 1448, 1470, 1490, 1510, 20};
+inline uint16_t GetEmitOp21(size_t i) {
+  return g_emit_op_21_inner[g_emit_op_21_outer[i]];
 }
-// max=124 unique=1 flat=8 nested=16
+// max=124 unique=3 flat=24 nested=48
+static const uint8_t g_emit_buffer_22[3] = {124, 35, 62};
+inline uint8_t GetEmitBuffer22(size_t i) { return g_emit_buffer_22[i]; }
+// max=6 unique=3 flat=32 nested=56
 // monotonic increasing
-static const uint8_t g_emit_buffer_35[1] = {124};
-inline uint8_t GetEmitBuffer35(size_t i) { return g_emit_buffer_35[i]; }
-// max=4 unique=2 flat=32 nested=48
-static const uint8_t g_emit_op_35[4] = {-1, -1, 4, 4};
-inline uint8_t GetEmitOp35(size_t i) { return g_emit_op_35[i]; }
-// max=62 unique=2 flat=16 nested=32
-// monotonic increasing
-static const uint8_t g_emit_buffer_36[2] = {35, 62};
-inline uint8_t GetEmitBuffer36(size_t i) { return g_emit_buffer_36[i]; }
-// max=0 unique=2 flat=16 nested=32
-static const uint8_t g_emit_op_36[2] = {-1, 0};
-inline uint8_t GetEmitOp36(size_t i) { return g_emit_op_36[i]; }
+static const uint8_t g_emit_op_22[4] = {1, 1, 4, 6};
+inline uint8_t GetEmitOp22(size_t i) { return g_emit_op_22[i]; }
 template <typename F>
 class HuffDecoder {
  public:
@@ -624,7 +485,7 @@ class HuffDecoder {
           break;
         }
         case 3: {
-          DecodeStep33();
+          DecodeStep20();
           break;
         }
         case 1: {
@@ -705,56 +566,52 @@ class HuffDecoder {
     op /= 10;
     const auto emit_ofs = op / 19;
     switch (op % 19) {
-      case 9: {
-        DecodeStep11();
-        break;
-      }
       case 10: {
-        DecodeStep14();
+        DecodeStep10();
         break;
       }
       case 11: {
+        DecodeStep11();
+        break;
+      }
+      case 12: {
+        DecodeStep12();
+        break;
+      }
+      case 13: {
+        DecodeStep13();
+        break;
+      }
+      case 14: {
+        DecodeStep14();
+        break;
+      }
+      case 15: {
+        DecodeStep15();
+        break;
+      }
+      case 16: {
+        DecodeStep16();
+        break;
+      }
+      case 7: {
         DecodeStep17();
+        break;
+      }
+      case 17: {
+        DecodeStep18();
+        break;
+      }
+      case 18: {
+        DecodeStep19();
         break;
       }
       case 1: {
         DecodeStep2();
         break;
       }
-      case 12: {
-        DecodeStep20();
-        break;
-      }
-      case 13: {
-        DecodeStep23();
-        break;
-      }
-      case 14: {
-        DecodeStep26();
-        break;
-      }
-      case 15: {
-        DecodeStep27();
-        break;
-      }
-      case 16: {
-        DecodeStep28();
-        break;
-      }
-      case 7: {
-        DecodeStep29();
-        break;
-      }
       case 2: {
         DecodeStep3();
-        break;
-      }
-      case 17: {
-        DecodeStep31();
-        break;
-      }
-      case 18: {
-        DecodeStep32();
         break;
       }
       case 3: {
@@ -775,6 +632,10 @@ class HuffDecoder {
       }
       case 8: {
         DecodeStep8();
+        break;
+      }
+      case 9: {
+        DecodeStep9();
         break;
       }
       case 0: {
@@ -851,18 +712,7 @@ class HuffDecoder {
     const auto index = buffer_ >> (buffer_len_ - 2);
     auto op = GetEmitOp10(index);
     buffer_len_ -= op % 2;
-    op /= 2;
-    const auto emit_ofs = op / 2;
-    switch (op % 2) {
-      case 1: {
-        DecodeStep10();
-        break;
-      }
-      case 0: {
-        DecodeStep9();
-        break;
-      }
-    }
+    sink_(GetEmitBuffer10(op + 0));
   }
   bool RefillTo2() {
     switch (buffer_len_) {
@@ -874,23 +724,23 @@ class HuffDecoder {
     return true;
   }
   void DecodeStep9() {
-    if (!RefillTo1()) {
+    if (!RefillTo2()) {
       ok_ = false;
       return;
     }
-    const auto index = buffer_ >> (buffer_len_ - 1);
+    const auto index = buffer_ >> (buffer_len_ - 2);
     auto op = GetEmitOp11(index);
-    buffer_len_ -= op % 1;
+    buffer_len_ -= op % 2;
     sink_(GetEmitBuffer11(op + 0));
   }
   void DecodeStep10() {
-    if (!RefillTo1()) {
+    if (!RefillTo2()) {
       ok_ = false;
       return;
     }
-    const auto index = buffer_ >> (buffer_len_ - 1);
+    const auto index = buffer_ >> (buffer_len_ - 2);
     auto op = GetEmitOp12(index);
-    buffer_len_ -= op % 1;
+    buffer_len_ -= op % 2;
     sink_(GetEmitBuffer12(op + 0));
   }
   void DecodeStep11() {
@@ -901,212 +751,37 @@ class HuffDecoder {
     const auto index = buffer_ >> (buffer_len_ - 2);
     auto op = GetEmitOp13(index);
     buffer_len_ -= op % 2;
-    op /= 2;
-    const auto emit_ofs = op / 2;
-    switch (op % 2) {
-      case 0: {
-        DecodeStep12();
-        break;
-      }
-      case 1: {
-        DecodeStep13();
-        break;
-      }
-    }
+    sink_(GetEmitBuffer13(op + 0));
   }
   void DecodeStep12() {
-    if (!RefillTo1()) {
+    if (!RefillTo2()) {
       ok_ = false;
       return;
     }
-    const auto index = buffer_ >> (buffer_len_ - 1);
+    const auto index = buffer_ >> (buffer_len_ - 2);
     auto op = GetEmitOp14(index);
-    buffer_len_ -= op % 1;
+    buffer_len_ -= op % 2;
     sink_(GetEmitBuffer14(op + 0));
   }
   void DecodeStep13() {
-    if (!RefillTo1()) {
+    if (!RefillTo2()) {
       ok_ = false;
       return;
     }
-    const auto index = buffer_ >> (buffer_len_ - 1);
+    const auto index = buffer_ >> (buffer_len_ - 2);
     auto op = GetEmitOp15(index);
-    buffer_len_ -= op % 1;
+    buffer_len_ -= op % 2;
     sink_(GetEmitBuffer15(op + 0));
   }
   void DecodeStep14() {
-    if (!RefillTo2()) {
-      ok_ = false;
-      return;
-    }
-    const auto index = buffer_ >> (buffer_len_ - 2);
-    auto op = GetEmitOp16(index);
-    buffer_len_ -= op % 2;
-    op /= 2;
-    const auto emit_ofs = op / 2;
-    switch (op % 2) {
-      case 0: {
-        DecodeStep15();
-        break;
-      }
-      case 1: {
-        DecodeStep16();
-        break;
-      }
-    }
-  }
-  void DecodeStep15() {
-    if (!RefillTo1()) {
-      ok_ = false;
-      return;
-    }
-    const auto index = buffer_ >> (buffer_len_ - 1);
-    auto op = GetEmitOp17(index);
-    buffer_len_ -= op % 1;
-    sink_(GetEmitBuffer17(op + 0));
-  }
-  void DecodeStep16() {
-    if (!RefillTo1()) {
-      ok_ = false;
-      return;
-    }
-    const auto index = buffer_ >> (buffer_len_ - 1);
-    auto op = GetEmitOp18(index);
-    buffer_len_ -= op % 1;
-    sink_(GetEmitBuffer18(op + 0));
-  }
-  void DecodeStep17() {
-    if (!RefillTo2()) {
-      ok_ = false;
-      return;
-    }
-    const auto index = buffer_ >> (buffer_len_ - 2);
-    auto op = GetEmitOp19(index);
-    buffer_len_ -= op % 2;
-    op /= 2;
-    const auto emit_ofs = op / 2;
-    switch (op % 2) {
-      case 0: {
-        DecodeStep18();
-        break;
-      }
-      case 1: {
-        DecodeStep19();
-        break;
-      }
-    }
-  }
-  void DecodeStep18() {
-    if (!RefillTo1()) {
-      ok_ = false;
-      return;
-    }
-    const auto index = buffer_ >> (buffer_len_ - 1);
-    auto op = GetEmitOp20(index);
-    buffer_len_ -= op % 1;
-    sink_(GetEmitBuffer20(op + 0));
-  }
-  void DecodeStep19() {
-    if (!RefillTo1()) {
-      ok_ = false;
-      return;
-    }
-    const auto index = buffer_ >> (buffer_len_ - 1);
-    auto op = GetEmitOp21(index);
-    buffer_len_ -= op % 1;
-    sink_(GetEmitBuffer21(op + 0));
-  }
-  void DecodeStep20() {
-    if (!RefillTo2()) {
-      ok_ = false;
-      return;
-    }
-    const auto index = buffer_ >> (buffer_len_ - 2);
-    auto op = GetEmitOp22(index);
-    buffer_len_ -= op % 2;
-    op /= 2;
-    const auto emit_ofs = op / 2;
-    switch (op % 2) {
-      case 0: {
-        DecodeStep21();
-        break;
-      }
-      case 1: {
-        DecodeStep22();
-        break;
-      }
-    }
-  }
-  void DecodeStep21() {
-    if (!RefillTo1()) {
-      ok_ = false;
-      return;
-    }
-    const auto index = buffer_ >> (buffer_len_ - 1);
-    auto op = GetEmitOp23(index);
-    buffer_len_ -= op % 1;
-    sink_(GetEmitBuffer23(op + 0));
-  }
-  void DecodeStep22() {
-    if (!RefillTo1()) {
-      ok_ = false;
-      return;
-    }
-    const auto index = buffer_ >> (buffer_len_ - 1);
-    auto op = GetEmitOp24(index);
-    buffer_len_ -= op % 1;
-    sink_(GetEmitBuffer24(op + 0));
-  }
-  void DecodeStep23() {
-    if (!RefillTo2()) {
-      ok_ = false;
-      return;
-    }
-    const auto index = buffer_ >> (buffer_len_ - 2);
-    auto op = GetEmitOp25(index);
-    buffer_len_ -= op % 2;
-    op /= 2;
-    const auto emit_ofs = op / 2;
-    switch (op % 2) {
-      case 0: {
-        DecodeStep24();
-        break;
-      }
-      case 1: {
-        DecodeStep25();
-        break;
-      }
-    }
-  }
-  void DecodeStep24() {
-    if (!RefillTo1()) {
-      ok_ = false;
-      return;
-    }
-    const auto index = buffer_ >> (buffer_len_ - 1);
-    auto op = GetEmitOp26(index);
-    buffer_len_ -= op % 1;
-    sink_(GetEmitBuffer26(op + 0));
-  }
-  void DecodeStep25() {
-    if (!RefillTo1()) {
-      ok_ = false;
-      return;
-    }
-    const auto index = buffer_ >> (buffer_len_ - 1);
-    auto op = GetEmitOp27(index);
-    buffer_len_ -= op % 1;
-    sink_(GetEmitBuffer27(op + 0));
-  }
-  void DecodeStep26() {
     if (!RefillTo3()) {
       ok_ = false;
       return;
     }
     const auto index = buffer_ >> (buffer_len_ - 3);
-    auto op = GetEmitOp28(index);
+    auto op = GetEmitOp16(index);
     buffer_len_ -= op % 3;
-    sink_(GetEmitBuffer28(op + 0));
+    sink_(GetEmitBuffer16(op + 0));
   }
   bool RefillTo3() {
     switch (buffer_len_) {
@@ -1118,66 +793,45 @@ class HuffDecoder {
     }
     return true;
   }
-  void DecodeStep27() {
+  void DecodeStep15() {
     if (!RefillTo3()) {
       ok_ = false;
       return;
     }
     const auto index = buffer_ >> (buffer_len_ - 3);
-    auto op = GetEmitOp29(index);
+    auto op = GetEmitOp17(index);
     buffer_len_ -= op % 3;
-    sink_(GetEmitBuffer29(op + 0));
+    sink_(GetEmitBuffer17(op + 0));
   }
-  void DecodeStep28() {
+  void DecodeStep16() {
     if (!RefillTo3()) {
       ok_ = false;
       return;
     }
     const auto index = buffer_ >> (buffer_len_ - 3);
-    auto op = GetEmitOp30(index);
+    auto op = GetEmitOp18(index);
     buffer_len_ -= op % 3;
-    sink_(GetEmitBuffer30(op + 0));
+    sink_(GetEmitBuffer18(op + 0));
   }
-  void DecodeStep29() {
+  void DecodeStep17() {
     if (!RefillTo2()) {
       ok_ = false;
       return;
     }
     const auto index = buffer_ >> (buffer_len_ - 2);
-    auto op = GetEmitOp31(index);
+    auto op = GetEmitOp19(index);
     buffer_len_ -= op % 2;
-    op /= 2;
-    const auto emit_ofs = op / 2;
-    switch (op % 2) {
-      case 1: {
-        DecodeStep30();
-        break;
-      }
-      case 0: {
-        sink_(GetEmitBuffer31(emit_ofs + 0));
-        break;
-      }
-    }
+    sink_(GetEmitBuffer19(op + 0));
   }
-  void DecodeStep30() {
-    if (!RefillTo1()) {
-      ok_ = false;
-      return;
-    }
-    const auto index = buffer_ >> (buffer_len_ - 1);
-    auto op = GetEmitOp32(index);
-    buffer_len_ -= op % 1;
-    sink_(GetEmitBuffer32(op + 0));
-  }
-  void DecodeStep31() {
+  void DecodeStep18() {
     if (!RefillTo4()) {
       ok_ = false;
       return;
     }
     const auto index = buffer_ >> (buffer_len_ - 4);
-    auto op = GetEmitOp33(index);
+    auto op = GetEmitOp20(index);
     buffer_len_ -= op % 4;
-    sink_(GetEmitBuffer33(op + 0));
+    sink_(GetEmitBuffer20(op + 0));
   }
   bool RefillTo4() {
     switch (buffer_len_) {
@@ -1190,13 +844,13 @@ class HuffDecoder {
     }
     return true;
   }
-  void DecodeStep32() {
+  void DecodeStep19() {
     if (!RefillTo10()) {
       ok_ = false;
       return;
     }
     const auto index = buffer_ >> (buffer_len_ - 10);
-    auto op = GetEmitOp34(index);
+    auto op = GetEmitOp21(index);
     buffer_len_ -= op % 10;
     op /= 10;
     const auto emit_ofs = op / 2;
@@ -1207,41 +861,20 @@ class HuffDecoder {
         break;
       }
       case 0: {
-        sink_(GetEmitBuffer34(emit_ofs + 0));
+        sink_(GetEmitBuffer21(emit_ofs + 0));
         break;
       }
     }
   }
-  void DecodeStep33() {
+  void DecodeStep20() {
     if (!RefillTo2()) {
       ok_ = false;
       return;
     }
     const auto index = buffer_ >> (buffer_len_ - 2);
-    auto op = GetEmitOp35(index);
+    auto op = GetEmitOp22(index);
     buffer_len_ -= op % 2;
-    op /= 2;
-    const auto emit_ofs = op / 2;
-    switch (op % 2) {
-      case 1: {
-        DecodeStep34();
-        break;
-      }
-      case 0: {
-        sink_(GetEmitBuffer35(emit_ofs + 0));
-        break;
-      }
-    }
-  }
-  void DecodeStep34() {
-    if (!RefillTo1()) {
-      ok_ = false;
-      return;
-    }
-    const auto index = buffer_ >> (buffer_len_ - 1);
-    auto op = GetEmitOp36(index);
-    buffer_len_ -= op % 1;
-    sink_(GetEmitBuffer36(op + 0));
+    sink_(GetEmitBuffer22(op + 0));
   }
   void Done() {
     if (buffer_len_ < 9) {

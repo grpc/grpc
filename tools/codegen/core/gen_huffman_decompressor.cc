@@ -109,7 +109,7 @@ SymbolActions ActionsFor(BitQueue index, SymSet pending, bool allow_multiple) {
       case 1:
         if (!next_pending[0].bits.Empty()) abort();
         emit.push_back(next_pending[0].symbol);
-        len_consume = index.length() + 1;
+        len_consume = index.length() - 1;
         if (!allow_multiple) goto done;
         pending = AllSyms();
         break;
