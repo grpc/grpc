@@ -402,7 +402,7 @@ class HPackParser::String {
     // Grab the byte range, and iterate through it.
     const uint8_t* p = input->cur_ptr();
     input->Advance(length);
-    return DecodeHuff(output, p, p + length);
+    return HuffDecoder<Out>(output, p, p + length).Run();
   }
 
   // Parse some uncompressed string bytes.
