@@ -25,7 +25,7 @@
 
 #include "src/core/ext/transport/chttp2/transport/huffsyms.h"
 
-static const int kFirstBits = 12;
+static const int kFirstBits = 11;
 
 class BitQueue {
  public:
