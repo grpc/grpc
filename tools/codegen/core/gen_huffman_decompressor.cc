@@ -93,7 +93,8 @@ struct SymbolActions {
 
 SymbolActions ActionsFor(BitQueue index, SymSet pending, bool allow_multiple) {
   std::vector<int> emit;
-  int consumed = 0;
+  int len_start = index.length();
+  int len_consume = len_start;
 
   while (!index.Empty()) {
     SymSet next_pending;
@@ -108,7 +109,7 @@ SymbolActions ActionsFor(BitQueue index, SymSet pending, bool allow_multiple) {
       case 1:
         if (!next_pending[0].bits.Empty()) abort();
         emit.push_back(next_pending[0].symbol);
-        consumed += grpc_chttp2_huffsyms[next_pending[0].symbol].length;
+        len_consume = index.length() + 1;
         if (!allow_multiple) goto done;
         pending = AllSyms();
         break;
@@ -119,7 +120,7 @@ SymbolActions ActionsFor(BitQueue index, SymSet pending, bool allow_multiple) {
     index.Pop();
   }
 done:
-  return SymbolActions{std::move(emit), consumed, pending};
+  return SymbolActions{std::move(emit), len_start - len_consume, pending};
 }
 
 class Item {
