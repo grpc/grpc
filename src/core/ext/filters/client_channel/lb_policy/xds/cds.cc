@@ -93,7 +93,7 @@ class CdsLbConfig : public LoadBalancingPolicy::Config {
 // CDS LB policy.
 class CdsLb : public LoadBalancingPolicy {
  public:
-  CdsLb(RefCountedPtr<XdsClient> xds_client, Args args);
+  CdsLb(RefCountedPtr<GrpcXdsClient> xds_client, Args args);
 
   absl::string_view name() const override { return kCds; }
 
@@ -195,7 +195,7 @@ class CdsLb : public LoadBalancingPolicy {
   ChannelArgs args_;
 
   // The xds client.
-  RefCountedPtr<XdsClient> xds_client_;
+  RefCountedPtr<GrpcXdsClient> xds_client_;
 
   // Maps from cluster name to the state for that cluster.
   // The root of the tree is config_->cluster().
@@ -258,7 +258,7 @@ void CdsLb::Helper::AddTraceEvent(TraceSeverity severity,
 // CdsLb
 //
 
-CdsLb::CdsLb(RefCountedPtr<XdsClient> xds_client, Args args)
+CdsLb::CdsLb(RefCountedPtr<GrpcXdsClient> xds_client, Args args)
     : LoadBalancingPolicy(std::move(args)), xds_client_(std::move(xds_client)) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
     gpr_log(GPR_INFO, "[cdslb %p] created -- using xds client %p", this,
