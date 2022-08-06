@@ -527,7 +527,8 @@ void AddStep(Sink* globals, Sink* out, FunMaker* fun_maker, SymSet start_syms,
   };
   std::vector<Index> indices;
   for (int i = 0; i < (1 << num_bits); i++) {
-    auto actions = ActionsFor(BitQueue(i, num_bits), start_syms, is_top);
+    auto actions =
+        ActionsFor(BitQueue(i, num_bits), start_syms, true || is_top);
     Index idx;
     auto add_case = [&match_cases](MatchCase match_case) {
       if (match_cases.find(match_case) == match_cases.end()) {
