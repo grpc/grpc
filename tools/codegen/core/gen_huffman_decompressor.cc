@@ -25,7 +25,7 @@
 
 #include "src/core/ext/transport/chttp2/transport/huffsyms.h"
 
-static const int kFirstBits = 14;
+static const int kFirstBits = 15;
 
 class BitQueue {
  public:
@@ -383,11 +383,12 @@ class FunMaker {
     if (have_refills_.count(n) == 0) {
       have_refills_.insert(n);
       auto fn = NewFun(absl::StrCat("RefillTo", n), "bool");
-      auto w = fn->Add<While>(absl::StrCat("buffer_len_ < ", n));
-      w->Add(absl::StrCat("if (begin_ == end_) return false;"));
-      w->Add("buffer_ <<= 8;");
-      w->Add("buffer_ |= static_cast<uint64_t>(*begin_++);");
-      w->Add("buffer_len_ += 8;");
+      auto s = fn->Add<Switch>("buffer_len_");
+      for (int i = 0; i < n; i++) {
+        auto c = s->Case(absl::StrCat(i));
+        const int bytes_needed = (n - i + 7) / 8;
+        c->Add(absl::StrCat("return ", ReadBytes(bytes_needed), ";"));
+      }
       fn->Add("return true;");
     }
     return absl::StrCat("RefillTo", n, "()");
@@ -414,7 +415,25 @@ class FunMaker {
     return fn;
   }
 
+  std::string ReadBytes(int bytes_needed) {
+    if (have_reads_.count(bytes_needed) == 0) {
+      have_reads_.insert(bytes_needed);
+      auto fn = NewFun(absl::StrCat("Read", bytes_needed), "bool");
+      fn->Add(
+          absl::StrCat("if (begin_+", bytes_needed, " > end_) return false;"));
+      fn->Add(absl::StrCat("buffer_ <<= ", 8 * bytes_needed, ";"));
+      for (int i = 0; i < bytes_needed; i++) {
+        fn->Add(absl::StrCat("buffer_ |= static_cast<uint64_t>(*begin_++) << ",
+                             8 * (bytes_needed - i - 1), ";"));
+      }
+      fn->Add(absl::StrCat("buffer_len_ += ", 8 * bytes_needed, ";"));
+      fn->Add("return true;");
+    }
+    return absl::StrCat("Read", bytes_needed, "()");
+  }
+
   std::set<int> have_refills_;
+  std::set<int> have_reads_;
   std::map<std::string, int> have_funs_;
   Sink* sink_;
 };
@@ -454,8 +473,6 @@ void AddMatchBody(Sink* globals, Sink* out, FunMaker* fun_maker,
       for (auto sym : p->syms) max_bits = std::max(max_bits, sym.bits.length());
       AddStep(globals, fun_maker->CallNewFun("DecodeStep", out), fun_maker,
               p->syms, std::min(max_bits, kFirstBits), false, true);
-    } else {
-      out->Add("ok_ = false;");
     }
     return;
   }
