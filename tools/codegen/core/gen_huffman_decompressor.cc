@@ -28,7 +28,7 @@
 
 #include "src/core/ext/transport/chttp2/transport/huffsyms.h"
 
-static const int kFirstBits = 18;
+static const int kFirstBits = 8;
 
 class BitQueue {
  public:
@@ -412,7 +412,8 @@ class TableBuilder : public Item {
         });
       }
       for (auto& t : threads) t.join();
-      return sum + 3 * 64 * slices.size();
+      if (slice_bits != 0) sum += 3 * 64 * slices.size();
+      return sum;
     }
     std::vector<std::string> ToLines(int id, int op_bits) const override {
       std::vector<std::string> lines;
@@ -426,18 +427,27 @@ class TableBuilder : public Item {
         GenArray(absl::StrCat("table", id, "_", i, "_outer"),
                  TypeForMax(max_outer), slices[i].outer, false, &lines);
       }
-      GenCompound(id, slices.size(), "emit", "uint8_t", &lines);
-      GenCompound(id, slices.size(), "inner", TypeForMax(max_inner), &lines);
-      GenCompound(id, slices.size(), "outer", TypeForMax(max_outer), &lines);
-      lines.push_back(absl::StrCat(
-          "inline uint64_t GetOp", id, "(size_t i) { return g_table", id,
-          "_inner[i >> ", op_bits - slice_bits, "][g_table", id, "_outer[i >> ",
-          op_bits - slice_bits, "][i & 0x",
-          absl::Hex((1 << (op_bits - slice_bits)) - 1), "]]; }"));
-      lines.push_back(absl::StrCat("inline uint64_t GetEmit", id,
-                                   "(size_t i, size_t emit) { return g_table",
-                                   id, "_emit[i >> ", op_bits - slice_bits,
-                                   "][emit]; }"));
+      if (slice_bits == 0) {
+        lines.push_back(absl::StrCat(
+            "inline uint64_t GetOp", id, "(size_t i) { return g_table", id,
+            "_0_inner[g_table", id, "_0_outer[i]]; }"));
+        lines.push_back(absl::StrCat("inline uint64_t GetEmit", id,
+                                     "(size_t, size_t emit) { return g_table",
+                                     id, "_0_emit[emit]; }"));
+      } else {
+        GenCompound(id, slices.size(), "emit", "uint8_t", &lines);
+        GenCompound(id, slices.size(), "inner", TypeForMax(max_inner), &lines);
+        GenCompound(id, slices.size(), "outer", TypeForMax(max_outer), &lines);
+        lines.push_back(absl::StrCat(
+            "inline uint64_t GetOp", id, "(size_t i) { return g_table", id,
+            "_inner[i >> ", op_bits - slice_bits, "][g_table", id,
+            "_outer[i >> ", op_bits - slice_bits, "][i & 0x",
+            absl::Hex((1 << (op_bits - slice_bits)) - 1), "]]; }"));
+        lines.push_back(absl::StrCat("inline uint64_t GetEmit", id,
+                                     "(size_t i, size_t emit) { return g_table",
+                                     id, "_emit[i >> ", op_bits - slice_bits,
+                                     "][emit]; }"));
+      }
       return lines;
     }
     uint64_t MaxInner() const {
