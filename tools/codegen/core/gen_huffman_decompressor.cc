@@ -25,7 +25,7 @@
 
 #include "src/core/ext/transport/chttp2/transport/huffsyms.h"
 
-static const int kFirstBits = 15;
+static const int kFirstBits = 8;
 
 class BitQueue {
  public:
@@ -487,9 +487,8 @@ class TableBuilder : public Item {
       GenCompound(id, slices.size(), "ops", TypeForMax(max_op), &lines);
       lines.push_back(absl::StrCat(
           "inline uint64_t GetOp", id, "(size_t i) { return g_table", id,
-          "_ops[i >> ", op_bits - slice_bits, "][g_table", id, "_outer[i >> ",
-          op_bits - slice_bits, "][i & 0x",
-          absl::Hex((1 << (op_bits - slice_bits)) - 1), "]]; }"));
+          "_ops[i >> ", op_bits - slice_bits, "][i & 0x",
+          absl::Hex((1 << (op_bits - slice_bits)) - 1), "]; }"));
       lines.push_back(absl::StrCat("inline uint64_t GetEmit", id,
                                    "(size_t i, size_t emit) { return g_table",
                                    id, "_emit[i >> ", op_bits - slice_bits,
