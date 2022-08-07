@@ -510,7 +510,7 @@ double PressureController::Update(double error) {
   } else if (!is_low && !was_low) {
     // Memory pressure is high, and was high previously.
     ticks_same_++;
-    if (ticks_same_ >= 100) {
+    if (ticks_same_ >= max_ticks_same_) {
       // It's been high for too long, increase the max reporting value up
       // towards 1.0.
       max_ = (1.0 + max_) / 2.0;
