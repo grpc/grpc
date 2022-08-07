@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import abc
+import contextlib
 import datetime
 import enum
 import hashlib
@@ -116,6 +117,9 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
         # support current test case.
         skips.evaluate_test_config(cls.is_supported)
 
+        # Must be called before KubernetesApiManager or GcpApiManager init.
+        xds_flags.set_socket_default_timeout_from_flag()
+
         # GCP
         cls.project = xds_flags.PROJECT.value
         cls.network = xds_flags.NETWORK.value
@@ -165,6 +169,14 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
         cls.k8s_api_manager.close()
         cls.secondary_k8s_api_manager.close()
         cls.gcp_api_manager.close()
+
+    @contextlib.contextmanager
+    def subTest(self, msg, **params):  # noqa pylint: disable=signature-differs
+        logger.info('--- Starting subTest %s.%s ---', self.id(), msg)
+        try:
+            yield super().subTest(msg, **params)
+        finally:
+            logger.info('--- Finished subTest %s.%s ---', self.id(), msg)
 
     def setupTrafficDirectorGrpc(self):
         self.td.setup_for_grpc(self.server_xds_host,

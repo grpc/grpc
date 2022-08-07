@@ -81,10 +81,7 @@ absl::Status WriteTrailingMetadata(const Transaction& tx,
 }
 
 WireWriterImpl::WireWriterImpl(std::unique_ptr<Binder> binder)
-    : binder_(std::move(binder)), combiner_(grpc_combiner_create()) {
-  gpr_log(GPR_INFO, "%s write_mu_ = %p , flow_control_mu_ = %p", __func__,
-          &write_mu_, &flow_control_mu_);
-}
+    : binder_(std::move(binder)), combiner_(grpc_combiner_create()) {}
 
 WireWriterImpl::~WireWriterImpl() {
   GRPC_COMBINER_UNREF(combiner_, "wire_writer_impl");

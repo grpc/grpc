@@ -265,8 +265,7 @@ grpc_sh_test(
     data = [
         "@com_google_protobuf//:protoc",
         "//src/compiler:grpc_objective_c_plugin",
-        # NOTE: the :well_known_protos has been recently renamed to :well_known_type_protos on protobuf's main branch
-        "@com_google_protobuf//:well_known_protos",
+        "@com_google_protobuf//:well_known_type_protos",
     ] + glob(["RemoteTestClient/*.proto"]),
     uses_polling = False,
 )

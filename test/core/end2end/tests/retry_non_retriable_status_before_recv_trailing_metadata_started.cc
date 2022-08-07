@@ -236,7 +236,6 @@ test_retry_non_retriable_status_before_recv_trailing_metadata_started(
   GPR_ASSERT(status == GRPC_STATUS_INVALID_ARGUMENT);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/service/method"));
-  GPR_ASSERT(0 == call_details.flags);
   GPR_ASSERT(was_cancelled == 0);
 
   grpc_slice_unref(details);

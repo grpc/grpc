@@ -475,8 +475,7 @@ class ClientContext {
     return (wait_for_ready_ ? GRPC_INITIAL_METADATA_WAIT_FOR_READY : 0) |
            (wait_for_ready_explicitly_set_
                 ? GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET
-                : 0) |
-           (initial_metadata_corked_ ? GRPC_INITIAL_METADATA_CORKED : 0);
+                : 0);
   }
 
   std::string authority() { return authority_; }

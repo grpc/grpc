@@ -204,7 +204,9 @@ static double AdjustForMemoryPressure(double memory_pressure, double target) {
 
 double TransportFlowControl::TargetLogBdp() {
   return AdjustForMemoryPressure(
-      memory_owner_->is_valid() ? memory_owner_->InstantaneousPressure() : 0.0,
+      memory_owner_->is_valid()
+          ? memory_owner_->GetPressureInfo().pressure_control_value
+          : 0.0,
       1 + log2(bdp_estimator_.EstimateBdp()));
 }
 
@@ -222,7 +224,8 @@ double
 TransportFlowControl::TargetInitialWindowSizeBasedOnMemoryPressureAndBdp()
     const {
   const double bdp = bdp_estimator_.EstimateBdp() * 2.0;
-  const double memory_pressure = memory_owner_->InstantaneousPressure();
+  const double memory_pressure =
+      memory_owner_->GetPressureInfo().pressure_control_value;
   // Linear interpolation between two values.
   // Given a line segment between the two points (t_min, a), and (t_max, b),
   // and a value t such that t_min <= t <= t_max, return the value on the line

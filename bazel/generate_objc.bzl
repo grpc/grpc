@@ -177,7 +177,7 @@ generate_objc = rule(
             default = False,
         ),
         "well_known_protos": attr.label(
-            default = "@com_google_protobuf//:well_known_protos",
+            default = "@com_google_protobuf//:well_known_type_protos",
         ),
         "_protoc": attr.label(
             default = Label("//external:protocol_compiler"),

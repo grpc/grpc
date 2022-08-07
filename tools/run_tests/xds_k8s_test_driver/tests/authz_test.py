@@ -52,7 +52,7 @@ class AuthzTest(xds_k8s_testcase.SecurityXdsKubernetesTestCase):
         # Per "Authorization (RBAC)" in
         # https://github.com/grpc/grpc/blob/master/doc/grpc_xds_features.md
         if config.client_lang in _Lang.CPP | _Lang.PYTHON:
-            return config.version_gte('v1.44.x')
+            return config.version_gte('v1.47.x')
         elif config.client_lang in _Lang.GO | _Lang.JAVA:
             return config.version_gte('v1.42.x')
         elif config.client_lang == _Lang.NODE:
