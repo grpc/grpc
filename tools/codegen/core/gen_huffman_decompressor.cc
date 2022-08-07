@@ -25,7 +25,7 @@
 
 #include "src/core/ext/transport/chttp2/transport/huffsyms.h"
 
-static const int kFirstBits = 13;
+static const int kFirstBits = 15;
 
 class BitQueue {
  public:
@@ -270,117 +270,284 @@ int BitsForMaxValue(int x) {
   return n;
 }
 
-bool IsMonotonicIncreasing(const std::vector<int>& v) {
-  int max = 0;
-  for (int i : v) {
-    if (i < max) return false;
-    max = i;
-  }
-  return true;
-}
-
 std::map<std::string, int> g_emit_buffer_idx;
+std::map<std::string, std::string> g_arrays;
 
-class EmitBuffer : public Item {
+class TableBuilder : public Item {
  public:
-  explicit EmitBuffer(std::string name)
-      : name_(absl::StrCat(name, "_", g_emit_buffer_idx[name]++)) {}
+  void Add(int match_case, std::vector<uint8_t> emit, int consumed_bits) {
+    elems_.push_back({match_case, std::move(emit), consumed_bits});
+    max_consumed_bits_ = std::max(max_consumed_bits_, consumed_bits);
+    max_match_case_ = std::max(max_match_case_, match_case);
+  }
 
   std::vector<std::string> ToLines() const override {
-    // decide whether to do a flat array or a one-level deep thing
-    auto vi = ValueInfo();
-    const int flat_array_size = emit_.size() * TypeBitsForMax(vi.max);
-    const int nested_array_size =
-        emit_.size() * TypeBitsForMax(vi.values.size()) +
-        vi.values.size() * TypeBitsForMax(vi.max);
-
-    std::vector<std::string> lines;
-    lines.push_back(
-        absl::StrCat("// max=", vi.max, " unique=", vi.values.size(),
-                     " flat=", flat_array_size, " nested=", nested_array_size));
-    if (flat_array_size < nested_array_size) {
-      GenArray(name_, TypeForMax(vi.max), emit_, true, &lines);
-      lines.push_back(absl::StrCat("inline ", TypeForMax(vi.max), " Get",
-                                   ToCamelCase(name_), "(size_t i) { return g_",
-                                   name_, "[i]; }"));
-    } else {
-      std::vector<int> inner;
-      std::vector<int> outer;
-      std::map<int, int> value_to_inner;
-      for (auto v : emit_) {
-        auto it = value_to_inner.find(v);
-        if (it == value_to_inner.end()) {
-          it = value_to_inner.emplace(v, inner.size()).first;
-          inner.push_back(v);
-        }
-        outer.push_back(it->second);
-      }
-      GenArray(absl::StrCat(name_, "_outer"), TypeForMax(vi.values.size()),
-               outer, false, &lines);
-      GenArray(absl::StrCat(name_, "_inner"), TypeForMax(vi.max), inner, true,
-               &lines);
-      lines.push_back(absl::StrCat("inline ", TypeForMax(vi.max), " Get",
-                                   ToCamelCase(name_), "(size_t i) { return g_",
-                                   name_, "_inner[g_", name_, "_outer[i]]; }"));
-    }
-    return lines;
+    return Choose()->ToLines(id_, BitsForMaxValue(elems_.size() - 1));
   }
 
-  int OffsetOf(const std::vector<int>& x) {
-    auto r = std::search(emit_.begin(), emit_.end(), x.begin(), x.end());
-    if (r == emit_.end()) {
-      // look for a partial match @ end
-      for (size_t check_len = x.size() - 1; check_len > 0; check_len--) {
-        if (emit_.size() < check_len) continue;
-        bool matches = true;
-        for (size_t i = 0; matches && i < check_len; i++) {
-          if (emit_[emit_.size() - check_len + i] != x[i]) matches = false;
-        }
-        if (matches) {
-          int offset = emit_.size() - check_len;
-          for (size_t i = check_len; i < x.size(); i++) {
-            emit_.push_back(x[i]);
-          }
-          return offset;
-        }
-      }
-      // add new
-      int result = emit_.size();
-      for (auto v : x) emit_.push_back(v);
-      return result;
-    }
-    return r - emit_.begin();
+  std::string EmitAccessor(std::string index, std::string offset) {
+    return absl::StrCat("GetEmit", id_, "(", index, ", ", offset, ")");
   }
 
-  void Append(int x) { emit_.push_back(x); }
-
-  struct ValueInfoResult {
-    int max = 0;
-    std::map<int, int> values;
-  };
-
-  ValueInfoResult ValueInfo() const {
-    ValueInfoResult result;
-    for (auto v : emit_) {
-      result.max = std::max(result.max, v);
-      result.values[v]++;
-    }
-    return result;
+  std::string OpAccessor(std::string index) {
+    return absl::StrCat("GetOp", id_, "(", index, ")");
   }
 
-  std::string Accessor(std::string index) {
-    return absl::StrCat("Get", ToCamelCase(name_), "(", index, ")");
-  }
+  int ConsumeBits() const { return BitsForMaxValue(max_consumed_bits_); }
+  int MatchBits() const { return BitsForMaxValue(max_match_case_); }
 
  private:
-  static void GenArray(std::string name, std::string type,
-                       const std::vector<int>& values, bool hex,
-                       std::vector<std::string>* lines) {
-    if (IsMonotonicIncreasing(values)) {
-      lines->push_back("// monotonic increasing");
+  struct Elem {
+    int match_case;
+    std::vector<uint8_t> emit;
+    int consumed_bits;
+  };
+
+  struct NestedSlice {
+    std::vector<uint8_t> emit;
+    std::vector<uint64_t> inner;
+    std::vector<int> outer;
+
+    size_t InnerSize() const {
+      return inner.size() *
+             TypeBitsForMax(*std::max_element(inner.begin(), inner.end()));
     }
-    lines->push_back(absl::StrCat("static const ", type, " g_", name, "[",
-                                  values.size(), "] = {"));
+
+    size_t OuterSize() const {
+      return outer.size() *
+             TypeBitsForMax(*std::max_element(outer.begin(), outer.end()));
+    }
+
+    size_t EmitSize() const { return emit.size() * 8; }
+  };
+
+  struct Slice {
+    std::vector<uint8_t> emit;
+    std::vector<uint64_t> ops;
+
+    size_t OpsSize() const {
+      return ops.size() *
+             TypeBitsForMax(*std::max_element(ops.begin(), ops.end()));
+    }
+
+    size_t EmitSize() const { return emit.size() * 8; }
+
+    int OffsetOf(const std::vector<uint8_t>& x) {
+      if (x.empty()) return 0;
+      auto r = std::search(emit.begin(), emit.end(), x.begin(), x.end());
+      if (r == emit.end()) {
+        // look for a partial match @ end
+        for (size_t check_len = x.size() - 1; check_len > 0; check_len--) {
+          if (emit.size() < check_len) continue;
+          bool matches = true;
+          for (size_t i = 0; matches && i < check_len; i++) {
+            if (emit[emit.size() - check_len + i] != x[i]) matches = false;
+          }
+          if (matches) {
+            int offset = emit.size() - check_len;
+            for (size_t i = check_len; i < x.size(); i++) {
+              emit.push_back(x[i]);
+            }
+            return offset;
+          }
+        }
+        // add new
+        int result = emit.size();
+        for (auto v : x) emit.push_back(v);
+        return result;
+      }
+      return r - emit.begin();
+    }
+
+    NestedSlice MakeNestedSlice() const {
+      NestedSlice result;
+      result.emit = emit;
+      std::map<uint64_t, int> op_to_inner;
+      for (auto v : ops) {
+        auto it = op_to_inner.find(v);
+        if (it == op_to_inner.end()) {
+          it = op_to_inner.emplace(v, op_to_inner.size()).first;
+          result.inner.push_back(v);
+        }
+        result.outer.push_back(it->second);
+      }
+      return result;
+    }
+  };
+
+  struct EncodeOption {
+    virtual size_t Size() const = 0;
+    virtual std::vector<std::string> ToLines(int id, int op_bits) const = 0;
+    virtual ~EncodeOption() {}
+  };
+
+  struct NestedTable : public EncodeOption {
+    std::vector<NestedSlice> slices;
+    int slice_bits;
+    size_t Size() const override {
+      size_t sum = 0;
+      for (size_t i = 0; i < slices.size(); i++) {
+        bool emit_found = false;
+        bool inner_found = false;
+        bool outer_found = false;
+        for (size_t j = 0; j < i; j++) {
+          if (slices[j].emit == slices[i].emit) {
+            emit_found = true;
+          }
+          if (slices[j].inner == slices[i].inner) {
+            inner_found = true;
+          }
+          if (slices[j].outer == slices[i].outer) {
+            outer_found = true;
+          }
+        }
+        if (!emit_found) sum += slices[i].EmitSize();
+        if (!inner_found) sum += slices[i].InnerSize();
+        if (!outer_found) sum += slices[i].OuterSize();
+      }
+      return sum + 3 * 64 * slices.size();
+    }
+    std::vector<std::string> ToLines(int id, int op_bits) const override {
+      std::vector<std::string> lines;
+      const uint64_t max_inner = MaxInner();
+      const uint64_t max_outer = MaxOuter();
+      for (size_t i = 0; i < slices.size(); i++) {
+        GenArray(absl::StrCat("table", id, "_", i, "_emit"), "uint8_t",
+                 slices[i].emit, true, &lines);
+        GenArray(absl::StrCat("table", id, "_", i, "_inner"),
+                 TypeForMax(max_inner), slices[i].inner, true, &lines);
+        GenArray(absl::StrCat("table", id, "_", i, "_outer"),
+                 TypeForMax(max_outer), slices[i].outer, false, &lines);
+      }
+      GenCompound(id, slices.size(), "emit", "uint8_t", &lines);
+      GenCompound(id, slices.size(), "inner", TypeForMax(max_inner), &lines);
+      GenCompound(id, slices.size(), "outer", TypeForMax(max_outer), &lines);
+      lines.push_back(absl::StrCat(
+          "inline uint64_t GetOp", id, "(size_t i) { return g_table", id,
+          "_inner[i >> ", op_bits - slice_bits, "][g_table", id, "_outer[i >> ",
+          op_bits - slice_bits, "][i & 0x",
+          absl::Hex((1 << (op_bits - slice_bits)) - 1), "]]; }"));
+      lines.push_back(absl::StrCat("inline uint64_t GetEmit", id,
+                                   "(size_t i, size_t emit) { return g_table",
+                                   id, "_emit[i >> ", op_bits - slice_bits,
+                                   "][emit]; }"));
+      return lines;
+    }
+    uint64_t MaxInner() const {
+      uint64_t max_inner = 0;
+      for (size_t i = 0; i < slices.size(); i++) {
+        max_inner = std::max(
+            max_inner,
+            *std::max_element(slices[i].inner.begin(), slices[i].inner.end()));
+      }
+      return max_inner;
+    }
+    int MaxOuter() const {
+      int max_outer = 0;
+      for (size_t i = 0; i < slices.size(); i++) {
+        max_outer = std::max(
+            max_outer,
+            *std::max_element(slices[i].outer.begin(), slices[i].outer.end()));
+      }
+      return max_outer;
+    }
+  };
+
+  struct Table : public EncodeOption {
+    std::vector<Slice> slices;
+    int slice_bits;
+    size_t Size() const override {
+      size_t sum = 0;
+      for (size_t i = 0; i < slices.size(); i++) {
+        bool emit_found = false;
+        bool ops_found = false;
+        for (size_t j = 0; j < i; j++) {
+          if (slices[j].emit == slices[i].emit) {
+            emit_found = true;
+          }
+          if (slices[j].ops == slices[i].ops) {
+            ops_found = true;
+          }
+        }
+        if (!emit_found) sum += slices[i].EmitSize();
+        if (!ops_found) sum += slices[i].OpsSize();
+      }
+      return sum + 3 * 64 * slices.size();
+    }
+    std::vector<std::string> ToLines(int id, int op_bits) const override {
+      std::vector<std::string> lines;
+      uint64_t max_op = MaxOp();
+      for (size_t i = 0; i < slices.size(); i++) {
+        GenArray(absl::StrCat("table", id, "_", i, "_emit"), "uint8_t",
+                 slices[i].emit, true, &lines);
+        GenArray(absl::StrCat("table", id, "_", i, "_ops"), TypeForMax(max_op),
+                 slices[i].ops, true, &lines);
+      }
+      GenCompound(id, slices.size(), "emit", "uint8_t", &lines);
+      GenCompound(id, slices.size(), "ops", TypeForMax(max_op), &lines);
+      lines.push_back(absl::StrCat(
+          "inline uint64_t GetOp", id, "(size_t i) { return g_table", id,
+          "_ops[i >> ", op_bits - slice_bits, "][g_table", id, "_outer[i >> ",
+          op_bits - slice_bits, "][i & 0x",
+          absl::Hex((1 << (op_bits - slice_bits)) - 1), "]]; }"));
+      lines.push_back(absl::StrCat("inline uint64_t GetEmit", id,
+                                   "(size_t i, size_t emit) { return g_table",
+                                   id, "_emit[i >> ", op_bits - slice_bits,
+                                   "][emit]; }"));
+      return lines;
+    }
+    uint64_t MaxOp() const {
+      uint64_t max_op = 0;
+      for (size_t i = 0; i < slices.size(); i++) {
+        max_op = std::max(max_op, *std::max_element(slices[i].ops.begin(),
+                                                    slices[i].ops.end()));
+      }
+      return max_op;
+    }
+    std::unique_ptr<NestedTable> MakeNestedTable() {
+      std::unique_ptr<NestedTable> result(new NestedTable);
+      result->slice_bits = slice_bits;
+      for (const auto& slice : slices) {
+        result->slices.push_back(slice.MakeNestedSlice());
+      }
+      return result;
+    }
+  };
+
+  std::unique_ptr<Table> MakeTable(size_t slice_bits) const {
+    std::unique_ptr<Table> table = absl::make_unique<Table>();
+    int slices = 1 << slice_bits;
+    table->slices.resize(slices);
+    table->slice_bits = slice_bits;
+    const int pack_consume_bits = ConsumeBits();
+    const int pack_match_bits = MatchBits();
+    for (size_t i = 0; i < slices; i++) {
+      auto& slice = table->slices[i];
+      for (size_t j = 0; j < elems_.size() / slices; j++) {
+        const auto& elem = elems_[i * elems_.size() / slices + j];
+        slice.ops.push_back(elem.consumed_bits |
+                            (elem.match_case << pack_consume_bits) |
+                            (slice.OffsetOf(elem.emit)
+                             << (pack_consume_bits + pack_match_bits)));
+      }
+    }
+    return table;
+  }
+
+  static void GenCompound(int id, int slices, std::string ext, std::string type,
+                          std::vector<std::string>* lines) {
+    lines->push_back(absl::StrCat("static const ", type, "* const g_table", id,
+                                  "_", ext, "[] = {"));
+    for (int i = 0; i < slices; i++) {
+      lines->push_back(absl::StrCat("  g_table", id, "_", i, "_", ext, ","));
+    }
+    lines->push_back("};");
+  }
+
+  template <typename T>
+  static void GenArray(std::string name, std::string type,
+                       const std::vector<T>& values, bool hex,
+                       std::vector<std::string>* lines) {
     std::vector<std::string> elems;
     elems.reserve(values.size());
     for (const auto& elem : values) {
@@ -396,13 +563,50 @@ class EmitBuffer : public Item {
         elems.push_back(absl::StrCat(elem));
       }
     }
-    lines->push_back(absl::StrCat("  ", absl::StrJoin(elems, ", ")));
-    lines->push_back("};");
+    std::string data = absl::StrJoin(elems, ", ");
+    std::string signature = type + data;
+    auto it = g_arrays.find(signature);
+    if (it == g_arrays.end()) {
+      g_arrays.emplace(std::move(signature), name);
+      lines->push_back(absl::StrCat("static const ", type, " g_", name, "[",
+                                    values.size(), "] = {"));
+      lines->push_back(absl::StrCat("  ", data));
+      lines->push_back("};");
+    } else {
+      lines->push_back(absl::StrCat("#define g_", name, " g_", it->second));
+    }
   }
 
-  std::string name_;
-  std::vector<int> emit_;
+  EncodeOption* Choose() const {
+    if (chosen_ == nullptr) {
+      std::vector<std::unique_ptr<EncodeOption>> options;
+      for (size_t slice_bits = 0; (1 << slice_bits) < elems_.size();
+           slice_bits++) {
+        auto t = MakeTable(slice_bits);
+        options.push_back(t->MakeNestedTable());
+        options.push_back(std::move(t));
+      }
+      chosen_ = std::move(options.back());
+      options.pop_back();
+      while (!options.empty()) {
+        if (chosen_->Size() > options.back()->Size()) {
+          chosen_ = std::move(options.back());
+        }
+        options.pop_back();
+      }
+    }
+    return chosen_.get();
+  }
+
+  std::vector<Elem> elems_;
+  mutable std::unique_ptr<EncodeOption> chosen_;
+  int max_consumed_bits_ = 0;
+  int max_match_case_ = 0;
+  int id_ = next_id_++;
+  static int next_id_;
 };
+
+int TableBuilder::next_id_ = 1;
 
 void Sink::Add(std::string s) {
   children_.push_back(absl::make_unique<String>(std::move(s)));
@@ -493,8 +697,9 @@ void AddStep(Sink* globals, Sink* out, FunMaker* fun_maker, SymSet start_syms,
              int num_bits, bool is_top, bool refill);
 
 void AddMatchBody(Sink* globals, Sink* out, FunMaker* fun_maker,
-                  EmitBuffer* emit_buffer, std::string ofs,
-                  const MatchCase& match_case, bool is_top, bool refill) {
+                  TableBuilder* table_builder, std::string index,
+                  std::string ofs, const MatchCase& match_case, bool is_top,
+                  bool refill) {
   if (absl::holds_alternative<End>(match_case)) {
     out->Add("begin_ = end_;");
     out->Add("buffer_len_ = 0;");
@@ -512,14 +717,14 @@ void AddMatchBody(Sink* globals, Sink* out, FunMaker* fun_maker,
   const auto& matched = absl::get<Matched>(match_case);
   for (int i = 0; i < matched.emits; i++) {
     out->Add(absl::StrCat(
-        "sink_(", emit_buffer->Accessor(absl::StrCat(ofs, " + ", i)), ");"));
+        "sink_(",
+        table_builder->EmitAccessor(index, absl::StrCat(ofs, " + ", i)), ");"));
   }
 }
 
 void AddStep(Sink* globals, Sink* out, FunMaker* fun_maker, SymSet start_syms,
              int num_bits, bool is_top, bool refill) {
-  auto emit_buffer = globals->Add<EmitBuffer>("emit_buffer");
-  auto emit_op = globals->Add<EmitBuffer>("emit_op");
+  auto table_builder = globals->Add<TableBuilder>();
   if (refill) {
     out->Add(absl::StrCat("if (!", fun_maker->RefillTo(num_bits), ") {"));
     auto ifblk = out->Add<Indent>();
@@ -536,16 +741,9 @@ void AddStep(Sink* globals, Sink* out, FunMaker* fun_maker, SymSet start_syms,
                         num_bits, ")) & 0x", absl::Hex((1 << num_bits) - 1),
                         ";"));
   std::map<MatchCase, int> match_cases;
-  struct Index {
-    int match_case;
-    int emit_offset;
-    int consumed_bits;
-  };
-  std::vector<Index> indices;
   for (int i = 0; i < (1 << num_bits); i++) {
     auto actions =
         ActionsFor(BitQueue(i, num_bits), start_syms, true || is_top);
-    Index idx;
     auto add_case = [&match_cases](MatchCase match_case) {
       if (match_cases.find(match_case) == match_cases.end()) {
         match_cases[match_case] = match_cases.size();
@@ -553,39 +751,36 @@ void AddStep(Sink* globals, Sink* out, FunMaker* fun_maker, SymSet start_syms,
       return match_cases[match_case];
     };
     if (actions.emit.size() == 1 && actions.emit[0] == 256) {
-      idx = Index{add_case(End{}), 0, actions.consumed};
+      table_builder->Add(add_case(End{}), {}, actions.consumed);
     } else if (actions.consumed == 0) {
-      idx =
-          Index{add_case(Unmatched{std::move(actions.remaining)}), 0, num_bits};
+      table_builder->Add(add_case(Unmatched{std::move(actions.remaining)}), {},
+                         num_bits);
     } else {
-      idx = Index{add_case(Matched{static_cast<int>(actions.emit.size())}),
-                  emit_buffer->OffsetOf(actions.emit), actions.consumed};
+      std::vector<uint8_t> emit;
+      for (auto sym : actions.emit) emit.push_back(sym);
+      table_builder->Add(
+          add_case(Matched{static_cast<int>(actions.emit.size())}),
+          std::move(emit), actions.consumed);
     }
-    indices.push_back(idx);
   }
-  const int pack_consume_bits = std::min(4, BitsForMaxValue(num_bits));
-  const int pack_match_bits =
-      std::min(4, BitsForMaxValue(match_cases.size() - 1));
-  const int pack_emit_bits = num_bits;
-  for (auto idx : indices) {
-    emit_op->Append(idx.consumed_bits | (idx.match_case << pack_consume_bits) |
-                    (idx.emit_offset << (pack_consume_bits + pack_match_bits)));
-  }
-  out->Add(absl::StrCat("const auto op = ", emit_op->Accessor("index"), ";"));
-  out->Add(
-      absl::StrCat("buffer_len_ -= op & ", (1 << pack_consume_bits) - 1, ";"));
-  out->Add(absl::StrCat("const auto emit_ofs = op >> ",
-                        pack_consume_bits + pack_match_bits, ";"));
+  out->Add(absl::StrCat("const auto op = ", table_builder->OpAccessor("index"),
+                        ";"));
+  out->Add(absl::StrCat("buffer_len_ -= op & ",
+                        (1 << table_builder->ConsumeBits()) - 1, ";"));
+  out->Add(absl::StrCat(
+      "const auto emit_ofs = op >> ",
+      table_builder->ConsumeBits() + table_builder->MatchBits(), ";"));
   if (match_cases.size() == 1) {
-    AddMatchBody(globals, out, fun_maker, emit_buffer, "emit_ofs",
+    AddMatchBody(globals, out, fun_maker, table_builder, "index", "emit_ofs",
                  match_cases.begin()->first, is_top, refill);
   } else {
-    auto s = out->Add<Switch>(absl::StrCat("(op >> ", pack_consume_bits, ") & ",
-                                           (1 << pack_match_bits) - 1));
+    auto s = out->Add<Switch>(
+        absl::StrCat("(op >> ", table_builder->ConsumeBits(), ") & ",
+                     (1 << table_builder->MatchBits()) - 1));
     for (auto kv : match_cases) {
       auto c = s->Case(absl::StrCat(kv.second));
-      AddMatchBody(globals, c, fun_maker, emit_buffer, "emit_ofs", kv.first,
-                   is_top, refill);
+      AddMatchBody(globals, c, fun_maker, table_builder, "index", "emit_ofs",
+                   kv.first, is_top, refill);
       c->Add("break;");
     }
   }
