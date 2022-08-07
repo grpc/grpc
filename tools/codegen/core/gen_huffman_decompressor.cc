@@ -28,8 +28,8 @@
 
 #include "src/core/ext/transport/chttp2/transport/huffsyms.h"
 
-static const int kFirstBits = 10;
-static const int kMaxDepth = 1;
+static const int kFirstBits = 9;
+static const int kMaxDepth = 2;
 
 class BitQueue {
  public:
@@ -860,7 +860,7 @@ int main(void) {
   fix->Add(absl::StrCat("buffer_len_ = ", kFirstBits - 1, ";"));
   done->Add("}");
   AddStep(globals, done, &fun_maker, AllSyms(), kFirstBits - 1, false, false,
-          0);
+          1);
   done->Add("if (buffer_len_ == 0) return;");
   done->Add("const uint64_t mask = (1 << buffer_len_) - 1;");
   done->Add(absl::StrCat("if ((buffer_ & mask) != mask) ok_ = false;"));
@@ -877,7 +877,7 @@ int main(void) {
   auto body = pub->Add<Indent>();
   body->Add("while (ok_) {");
   AddStep(globals, body->Add<Indent>(), &fun_maker, AllSyms(), kFirstBits, true,
-          true, 1);
+          true, 0);
   body->Add("}");
   body->Add("return ok_;");
   pub->Add("}");
