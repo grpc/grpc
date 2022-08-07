@@ -21,6 +21,8 @@
 #include <thread>
 #include <vector>
 
+#include <openssl/sha.h>
+
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
@@ -28,8 +30,26 @@
 
 #include "src/core/ext/transport/chttp2/transport/huffsyms.h"
 
-static const int kFirstBits = 7;
-static const int kMaxDepth = 2;
+static const int kFirstBits = 8;
+static const int kMaxDepth = 1;
+
+struct Hash {
+  uint8_t bytes[SHA256_DIGEST_LENGTH];
+  bool operator==(const Hash& other) const {
+    return memcmp(bytes, other.bytes, SHA256_DIGEST_LENGTH) == 0;
+  }
+  bool operator<(const Hash& other) const {
+    return memcmp(bytes, other.bytes, SHA256_DIGEST_LENGTH) < 0;
+  }
+};
+
+template <typename T>
+Hash HashVec(const std::vector<T>& v) {
+  Hash h;
+  SHA1(reinterpret_cast<const uint8_t*>(v.data()), v.size() * sizeof(T),
+       h.bytes);
+  return h;
+}
 
 class BitQueue {
  public:
@@ -389,30 +409,24 @@ class TableBuilder : public Item {
     std::vector<NestedSlice> slices;
     int slice_bits;
     size_t Size() const override {
-      std::atomic<size_t> sum{0};
-      std::vector<std::thread> threads;
+      size_t sum = 0;
+      std::vector<Hash> h_emit;
+      std::vector<Hash> h_inner;
+      std::vector<Hash> h_outer;
       for (size_t i = 0; i < slices.size(); i++) {
-        threads.emplace_back([this, i, &sum] {
-          bool emit_found = false;
-          bool inner_found = false;
-          bool outer_found = false;
-          for (size_t j = 0; j < i; j++) {
-            if (!emit_found && slices[j].emit == slices[i].emit) {
-              emit_found = true;
-            }
-            if (!inner_found && slices[j].inner == slices[i].inner) {
-              inner_found = true;
-            }
-            if (!outer_found && slices[j].outer == slices[i].outer) {
-              outer_found = true;
-            }
-          }
-          if (!emit_found) sum += slices[i].EmitSize();
-          if (!inner_found) sum += slices[i].InnerSize();
-          if (!outer_found) sum += slices[i].OuterSize();
-        });
+        h_emit.push_back(HashVec(slices[i].emit));
+        h_inner.push_back(HashVec(slices[i].inner));
+        h_outer.push_back(HashVec(slices[i].outer));
       }
-      for (auto& t : threads) t.join();
+      std::set<Hash> seen;
+      for (size_t i = 0; i < slices.size(); i++) {
+        if (seen.count(h_emit[i]) == 0) sum += slices[i].EmitSize();
+        if (seen.count(h_outer[i]) == 0) sum += slices[i].OuterSize();
+        if (seen.count(h_inner[i]) == 0) sum += slices[i].OuterSize();
+        seen.insert(h_emit[i]);
+        seen.insert(h_outer[i]);
+        seen.insert(h_inner[i]);
+      }
       if (slice_bits != 0) sum += 3 * 64 * slices.size();
       return sum;
     }
@@ -475,26 +489,21 @@ class TableBuilder : public Item {
     std::vector<Slice> slices;
     int slice_bits;
     size_t Size() const override {
-      std::atomic<size_t> sum{0};
-      std::vector<std::thread> threads;
+      size_t sum = 0;
+      std::vector<Hash> h_emit;
+      std::vector<Hash> h_ops;
       for (size_t i = 0; i < slices.size(); i++) {
-        threads.emplace_back([this, i, &sum] {
-          bool emit_found = false;
-          bool ops_found = false;
-          for (size_t j = 0; j < i; j++) {
-            if (!emit_found && slices[j].emit == slices[i].emit) {
-              emit_found = true;
-            }
-            if (!ops_found && slices[j].ops == slices[i].ops) {
-              ops_found = true;
-            }
-          }
-          if (!emit_found) sum += slices[i].EmitSize();
-          if (!ops_found) sum += slices[i].OpsSize();
-        });
+        h_emit.push_back(HashVec(slices[i].emit));
+        h_ops.push_back(HashVec(slices[i].ops));
       }
-      for (auto& t : threads) t.join();
-      return sum.load() + 3 * 64 * slices.size();
+      std::set<Hash> seen;
+      for (size_t i = 0; i < slices.size(); i++) {
+        if (seen.count(h_emit[i]) == 0) sum += slices[i].EmitSize();
+        if (seen.count(h_ops[i]) == 0) sum += slices[i].OpsSize();
+        seen.insert(h_emit[i]);
+        seen.insert(h_ops[i]);
+      }
+      return sum + 3 * 64 * slices.size();
     }
     std::vector<std::string> ToLines(int id, int op_bits) const override {
       std::vector<std::string> lines;
