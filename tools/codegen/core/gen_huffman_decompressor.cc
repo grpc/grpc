@@ -25,7 +25,7 @@
 
 #include "src/core/ext/transport/chttp2/transport/huffsyms.h"
 
-static const int kFirstBits = 9;
+static const int kFirstBits = 13;
 
 class BitQueue {
  public:
@@ -329,6 +329,22 @@ class EmitBuffer : public Item {
   int OffsetOf(const std::vector<int>& x) {
     auto r = std::search(emit_.begin(), emit_.end(), x.begin(), x.end());
     if (r == emit_.end()) {
+      // look for a partial match @ end
+      for (size_t check_len = x.size() - 1; check_len > 0; check_len--) {
+        if (emit_.size() < check_len) continue;
+        bool matches = true;
+        for (size_t i = 0; matches && i < check_len; i++) {
+          if (emit_[emit_.size() - check_len + i] != x[i]) matches = false;
+        }
+        if (matches) {
+          int offset = emit_.size() - check_len;
+          for (size_t i = check_len; i < x.size(); i++) {
+            emit_.push_back(x[i]);
+          }
+          return offset;
+        }
+      }
+      // add new
       int result = emit_.size();
       for (auto v : x) emit_.push_back(v);
       return result;
