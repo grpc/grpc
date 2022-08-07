@@ -2,63 +2,222 @@
 
 #include <cstddef>
 #include <cstdint>
-static const uint8_t g_table1_0_emit[36] = {
-    0x30, 0x31, 0x32, 0x61, 0x63, 0x65, 0x69, 0x6f, 0x73, 0x74, 0x20, 0x25,
-    0x2d, 0x2e, 0x2f, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x3d, 0x41,
-    0x5f, 0x62, 0x64, 0x66, 0x67, 0x68, 0x6c, 0x6d, 0x6e, 0x70, 0x72, 0x75};
-static const uint16_t g_table1_0_ops[64] = {
-    0x0005, 0x0005, 0x0105, 0x0105, 0x0205, 0x0205, 0x0305, 0x0305,
-    0x0405, 0x0405, 0x0505, 0x0505, 0x0605, 0x0605, 0x0705, 0x0705,
-    0x0805, 0x0805, 0x0905, 0x0905, 0x0a06, 0x0b06, 0x0c06, 0x0d06,
-    0x0e06, 0x0f06, 0x1006, 0x1106, 0x1206, 0x1306, 0x1406, 0x1506,
-    0x1606, 0x1706, 0x1806, 0x1906, 0x1a06, 0x1b06, 0x1c06, 0x1d06,
-    0x1e06, 0x1f06, 0x2006, 0x2106, 0x2206, 0x2306, 0x000e, 0x0016,
-    0x001e, 0x0026, 0x002e, 0x0036, 0x003e, 0x0046, 0x004e, 0x0056,
-    0x005e, 0x0066, 0x006e, 0x0076, 0x007e, 0x0086, 0x008e, 0x0096};
+static const uint8_t g_table1_0_emit[2] = {0x30, 0x31};
+static const uint16_t g_table1_0_inner[2] = {0x0005, 0x0085};
+static const uint8_t g_table1_0_outer[32] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                             0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1,
+                                             1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+static const uint8_t g_table1_1_emit[2] = {0x32, 0x61};
+#define g_table1_1_inner g_table1_0_inner
+#define g_table1_1_outer g_table1_0_outer
+static const uint8_t g_table1_2_emit[2] = {0x63, 0x65};
+#define g_table1_2_inner g_table1_0_inner
+#define g_table1_2_outer g_table1_0_outer
+static const uint8_t g_table1_3_emit[2] = {0x69, 0x6f};
+#define g_table1_3_inner g_table1_0_inner
+#define g_table1_3_outer g_table1_0_outer
+static const uint8_t g_table1_4_emit[2] = {0x73, 0x74};
+#define g_table1_4_inner g_table1_0_inner
+#define g_table1_4_outer g_table1_0_outer
+static const uint8_t g_table1_5_emit[4] = {0x20, 0x25, 0x2d, 0x2e};
+static const uint16_t g_table1_5_inner[4] = {0x0006, 0x0086, 0x0106, 0x0186};
+static const uint8_t g_table1_5_outer[32] = {0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1,
+                                             1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2,
+                                             2, 2, 3, 3, 3, 3, 3, 3, 3, 3};
+static const uint8_t g_table1_6_emit[4] = {0x2f, 0x33, 0x34, 0x35};
+#define g_table1_6_inner g_table1_5_inner
+#define g_table1_6_outer g_table1_5_outer
+static const uint8_t g_table1_7_emit[4] = {0x36, 0x37, 0x38, 0x39};
+#define g_table1_7_inner g_table1_5_inner
+#define g_table1_7_outer g_table1_5_outer
+static const uint8_t g_table1_8_emit[4] = {0x3d, 0x41, 0x5f, 0x62};
+#define g_table1_8_inner g_table1_5_inner
+#define g_table1_8_outer g_table1_5_outer
+static const uint8_t g_table1_9_emit[4] = {0x64, 0x66, 0x67, 0x68};
+#define g_table1_9_inner g_table1_5_inner
+#define g_table1_9_outer g_table1_5_outer
+static const uint8_t g_table1_10_emit[4] = {0x6c, 0x6d, 0x6e, 0x70};
+#define g_table1_10_inner g_table1_5_inner
+#define g_table1_10_outer g_table1_5_outer
+static const uint8_t g_table1_11_emit[6] = {0x72, 0x75, 0x3a, 0x42, 0x43, 0x44};
+static const uint16_t g_table1_11_inner[6] = {0x0006, 0x0086, 0x0107,
+                                              0x0187, 0x0207, 0x0287};
+static const uint8_t g_table1_11_outer[32] = {0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1,
+                                              1, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3,
+                                              3, 3, 4, 4, 4, 4, 5, 5, 5, 5};
+static const uint8_t g_table1_12_emit[8] = {0x45, 0x46, 0x47, 0x48,
+                                            0x49, 0x4a, 0x4b, 0x4c};
+static const uint16_t g_table1_12_inner[8] = {0x0007, 0x0087, 0x0107, 0x0187,
+                                              0x0207, 0x0287, 0x0307, 0x0387};
+static const uint8_t g_table1_12_outer[32] = {0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2,
+                                              2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5,
+                                              5, 5, 6, 6, 6, 6, 7, 7, 7, 7};
+static const uint8_t g_table1_13_emit[8] = {0x4d, 0x4e, 0x4f, 0x50,
+                                            0x51, 0x52, 0x53, 0x54};
+#define g_table1_13_inner g_table1_12_inner
+#define g_table1_13_outer g_table1_12_outer
+static const uint8_t g_table1_14_emit[8] = {0x55, 0x56, 0x57, 0x59,
+                                            0x6a, 0x6b, 0x71, 0x76};
+#define g_table1_14_inner g_table1_12_inner
+#define g_table1_14_outer g_table1_12_outer
+static const uint8_t g_table1_15_emit[10] = {0x77, 0x78, 0x79, 0x7a, 0x26,
+                                             0x2a, 0x2c, 0x3b, 0x58, 0x5a};
+static const uint16_t g_table1_15_inner[14] = {
+    0x0007, 0x0087, 0x0107, 0x0187, 0x0208, 0x0288, 0x0308,
+    0x0388, 0x0408, 0x0488, 0x0019, 0x0029, 0x0039, 0x0049};
+static const uint8_t g_table1_15_outer[32] = {
+    0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3,  3,  3,  3,
+    4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 11, 12, 13};
 static const uint8_t* const g_table1_emit[] = {
-    g_table1_0_emit,
+    g_table1_0_emit,  g_table1_1_emit,  g_table1_2_emit,  g_table1_3_emit,
+    g_table1_4_emit,  g_table1_5_emit,  g_table1_6_emit,  g_table1_7_emit,
+    g_table1_8_emit,  g_table1_9_emit,  g_table1_10_emit, g_table1_11_emit,
+    g_table1_12_emit, g_table1_13_emit, g_table1_14_emit, g_table1_15_emit,
 };
-static const uint16_t* const g_table1_ops[] = {
-    g_table1_0_ops,
+static const uint16_t* const g_table1_inner[] = {
+    g_table1_0_inner,  g_table1_1_inner,  g_table1_2_inner,  g_table1_3_inner,
+    g_table1_4_inner,  g_table1_5_inner,  g_table1_6_inner,  g_table1_7_inner,
+    g_table1_8_inner,  g_table1_9_inner,  g_table1_10_inner, g_table1_11_inner,
+    g_table1_12_inner, g_table1_13_inner, g_table1_14_inner, g_table1_15_inner,
 };
-inline uint64_t GetOp1(size_t i) { return g_table1_ops[i >> 6][i & 0x3f]; }
+static const uint8_t* const g_table1_outer[] = {
+    g_table1_0_outer,  g_table1_1_outer,  g_table1_2_outer,  g_table1_3_outer,
+    g_table1_4_outer,  g_table1_5_outer,  g_table1_6_outer,  g_table1_7_outer,
+    g_table1_8_outer,  g_table1_9_outer,  g_table1_10_outer, g_table1_11_outer,
+    g_table1_12_outer, g_table1_13_outer, g_table1_14_outer, g_table1_15_outer,
+};
+inline uint64_t GetOp1(size_t i) {
+  return g_table1_inner[i >> 5][g_table1_outer[i >> 5][i & 0x1f]];
+}
 inline uint64_t GetEmit1(size_t i, size_t emit) {
-  return g_table1_emit[i >> 6][emit];
+  return g_table1_emit[i >> 5][emit];
 }
-static const uint8_t g_table2_0_emit[68] = {
-    0x30, 0x31, 0x32, 0x61, 0x63, 0x65, 0x69, 0x6f, 0x73, 0x74, 0x20, 0x25,
-    0x2d, 0x2e, 0x2f, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x3d, 0x41,
-    0x5f, 0x62, 0x64, 0x66, 0x67, 0x68, 0x6c, 0x6d, 0x6e, 0x70, 0x72, 0x75,
-    0x3a, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0x4a, 0x4b, 0x4c,
-    0x4d, 0x4e, 0x4f, 0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57, 0x59,
-    0x6a, 0x6b, 0x71, 0x76, 0x77, 0x78, 0x79, 0x7a};
-static const uint16_t g_table2_0_ops[128] = {
-    0x0005, 0x0005, 0x0005, 0x0005, 0x0045, 0x0045, 0x0045, 0x0045, 0x0085,
-    0x0085, 0x0085, 0x0085, 0x00c5, 0x00c5, 0x00c5, 0x00c5, 0x0105, 0x0105,
-    0x0105, 0x0105, 0x0145, 0x0145, 0x0145, 0x0145, 0x0185, 0x0185, 0x0185,
-    0x0185, 0x01c5, 0x01c5, 0x01c5, 0x01c5, 0x0205, 0x0205, 0x0205, 0x0205,
-    0x0245, 0x0245, 0x0245, 0x0245, 0x0286, 0x0286, 0x02c6, 0x02c6, 0x0306,
-    0x0306, 0x0346, 0x0346, 0x0386, 0x0386, 0x03c6, 0x03c6, 0x0406, 0x0406,
-    0x0446, 0x0446, 0x0486, 0x0486, 0x04c6, 0x04c6, 0x0506, 0x0506, 0x0546,
-    0x0546, 0x0586, 0x0586, 0x05c6, 0x05c6, 0x0606, 0x0606, 0x0646, 0x0646,
-    0x0686, 0x0686, 0x06c6, 0x06c6, 0x0706, 0x0706, 0x0746, 0x0746, 0x0786,
-    0x0786, 0x07c6, 0x07c6, 0x0806, 0x0806, 0x0846, 0x0846, 0x0886, 0x0886,
-    0x08c6, 0x08c6, 0x0907, 0x0947, 0x0987, 0x09c7, 0x0a07, 0x0a47, 0x0a87,
-    0x0ac7, 0x0b07, 0x0b47, 0x0b87, 0x0bc7, 0x0c07, 0x0c47, 0x0c87, 0x0cc7,
-    0x0d07, 0x0d47, 0x0d87, 0x0dc7, 0x0e07, 0x0e47, 0x0e87, 0x0ec7, 0x0f07,
-    0x0f47, 0x0f87, 0x0fc7, 0x1007, 0x1047, 0x1087, 0x10c7, 0x000f, 0x0017,
-    0x001f, 0x0027};
+static const uint8_t g_table2_0_emit[36] = {
+    0x30, 0x30, 0x31, 0x30, 0x32, 0x30, 0x61, 0x30, 0x63, 0x30, 0x65, 0x30,
+    0x69, 0x30, 0x6f, 0x30, 0x73, 0x30, 0x74, 0x31, 0x31, 0x32, 0x31, 0x61,
+    0x31, 0x63, 0x31, 0x65, 0x31, 0x69, 0x31, 0x6f, 0x31, 0x73, 0x31, 0x74};
+static const uint16_t g_table2_0_inner[22] = {
+    0x000a, 0x008a, 0x018a, 0x028a, 0x038a, 0x048a, 0x058a, 0x068a,
+    0x078a, 0x088a, 0x0015, 0x010a, 0x098a, 0x0a0a, 0x0b0a, 0x0c0a,
+    0x0d0a, 0x0e0a, 0x0f0a, 0x100a, 0x110a, 0x0115};
+static const uint8_t g_table2_0_outer[64] = {
+    0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 10, 10, 10, 10, 10,
+    10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10,
+    11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 21, 21, 21, 21, 21,
+    21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21};
+static const uint8_t g_table2_1_emit[36] = {
+    0x32, 0x30, 0x32, 0x31, 0x32, 0x32, 0x61, 0x32, 0x63, 0x32, 0x65, 0x32,
+    0x69, 0x32, 0x6f, 0x32, 0x73, 0x32, 0x74, 0x61, 0x30, 0x61, 0x31, 0x61,
+    0x61, 0x63, 0x61, 0x65, 0x61, 0x69, 0x61, 0x6f, 0x61, 0x73, 0x61, 0x74};
+static const uint16_t g_table2_1_inner[22] = {
+    0x000a, 0x010a, 0x020a, 0x028a, 0x038a, 0x048a, 0x058a, 0x068a,
+    0x078a, 0x088a, 0x0015, 0x098a, 0x0a8a, 0x030a, 0x0b8a, 0x0c0a,
+    0x0d0a, 0x0e0a, 0x0f0a, 0x100a, 0x110a, 0x0315};
+#define g_table2_1_outer g_table2_0_outer
+static const uint8_t g_table2_2_emit[36] = {
+    0x63, 0x30, 0x63, 0x31, 0x63, 0x32, 0x63, 0x61, 0x63, 0x63, 0x65, 0x63,
+    0x69, 0x63, 0x6f, 0x63, 0x73, 0x63, 0x74, 0x65, 0x30, 0x65, 0x31, 0x65,
+    0x32, 0x65, 0x61, 0x65, 0x65, 0x69, 0x65, 0x6f, 0x65, 0x73, 0x65, 0x74};
+static const uint16_t g_table2_2_inner[22] = {
+    0x000a, 0x010a, 0x020a, 0x030a, 0x040a, 0x048a, 0x058a, 0x068a,
+    0x078a, 0x088a, 0x0015, 0x098a, 0x0a8a, 0x0b8a, 0x0c8a, 0x050a,
+    0x0d8a, 0x0e0a, 0x0f0a, 0x100a, 0x110a, 0x0515};
+#define g_table2_2_outer g_table2_0_outer
+static const uint8_t g_table2_3_emit[36] = {
+    0x69, 0x30, 0x69, 0x31, 0x69, 0x32, 0x69, 0x61, 0x69, 0x63, 0x69, 0x65,
+    0x69, 0x69, 0x6f, 0x69, 0x73, 0x69, 0x74, 0x6f, 0x30, 0x6f, 0x31, 0x6f,
+    0x32, 0x6f, 0x61, 0x6f, 0x63, 0x6f, 0x65, 0x6f, 0x6f, 0x73, 0x6f, 0x74};
+static const uint16_t g_table2_3_inner[22] = {
+    0x000a, 0x010a, 0x020a, 0x030a, 0x040a, 0x050a, 0x060a, 0x068a,
+    0x078a, 0x088a, 0x0015, 0x098a, 0x0a8a, 0x0b8a, 0x0c8a, 0x0d8a,
+    0x0e8a, 0x070a, 0x0f8a, 0x100a, 0x110a, 0x0715};
+#define g_table2_3_outer g_table2_0_outer
+static const uint8_t g_table2_4_emit[38] = {
+    0x73, 0x30, 0x73, 0x31, 0x73, 0x32, 0x73, 0x61, 0x73, 0x63,
+    0x73, 0x65, 0x73, 0x69, 0x73, 0x6f, 0x73, 0x73, 0x74, 0x30,
+    0x74, 0x31, 0x74, 0x32, 0x74, 0x61, 0x74, 0x63, 0x74, 0x65,
+    0x74, 0x69, 0x74, 0x6f, 0x74, 0x73, 0x74, 0x74};
+static const uint16_t g_table2_4_inner[22] = {
+    0x000a, 0x010a, 0x020a, 0x030a, 0x040a, 0x050a, 0x060a, 0x070a,
+    0x080a, 0x088a, 0x0015, 0x090a, 0x0a0a, 0x0b0a, 0x0c0a, 0x0d0a,
+    0x0e0a, 0x0f0a, 0x100a, 0x110a, 0x120a, 0x0915};
+#define g_table2_4_outer g_table2_0_outer
+#define g_table2_5_emit g_table1_5_emit
+static const uint16_t g_table2_5_inner[4] = {0x0016, 0x0096, 0x0116, 0x0196};
+static const uint8_t g_table2_5_outer[64] = {
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+    2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3};
+#define g_table2_6_emit g_table1_6_emit
+#define g_table2_6_inner g_table2_5_inner
+#define g_table2_6_outer g_table2_5_outer
+#define g_table2_7_emit g_table1_7_emit
+#define g_table2_7_inner g_table2_5_inner
+#define g_table2_7_outer g_table2_5_outer
+#define g_table2_8_emit g_table1_8_emit
+#define g_table2_8_inner g_table2_5_inner
+#define g_table2_8_outer g_table2_5_outer
+#define g_table2_9_emit g_table1_9_emit
+#define g_table2_9_inner g_table2_5_inner
+#define g_table2_9_outer g_table2_5_outer
+#define g_table2_10_emit g_table1_10_emit
+#define g_table2_10_inner g_table2_5_inner
+#define g_table2_10_outer g_table2_5_outer
+#define g_table2_11_emit g_table1_11_emit
+static const uint16_t g_table2_11_inner[6] = {0x0016, 0x0096, 0x0117,
+                                              0x0197, 0x0217, 0x0297};
+static const uint8_t g_table2_11_outer[64] = {
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3,
+    3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5};
+#define g_table2_12_emit g_table1_12_emit
+static const uint16_t g_table2_12_inner[8] = {0x0017, 0x0097, 0x0117, 0x0197,
+                                              0x0217, 0x0297, 0x0317, 0x0397};
+static const uint8_t g_table2_12_outer[64] = {
+    0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2,
+    2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5,
+    5, 5, 5, 5, 6, 6, 6, 6, 6, 6, 6, 6, 7, 7, 7, 7, 7, 7, 7, 7};
+#define g_table2_13_emit g_table1_13_emit
+#define g_table2_13_inner g_table2_12_inner
+#define g_table2_13_outer g_table2_12_outer
+#define g_table2_14_emit g_table1_14_emit
+#define g_table2_14_inner g_table2_12_inner
+#define g_table2_14_outer g_table2_12_outer
+static const uint8_t g_table2_15_emit[15] = {0x77, 0x78, 0x79, 0x7a, 0x26,
+                                             0x2a, 0x2c, 0x3b, 0x58, 0x5a,
+                                             0x21, 0x22, 0x28, 0x29, 0x3f};
+static const uint16_t g_table2_15_inner[18] = {
+    0x0017, 0x0097, 0x0117, 0x0197, 0x0218, 0x0298, 0x0318, 0x0398, 0x0418,
+    0x0498, 0x051a, 0x059a, 0x061a, 0x069a, 0x071a, 0x002a, 0x003a, 0x004a};
+static const uint8_t g_table2_15_outer[64] = {
+    0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1,  1,  1,  1,  2,  2,  2,  2, 2, 2,
+    2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4,  4,  5,  5,  5,  5,  6,  6, 6, 6,
+    7, 7, 7, 7, 8, 8, 8, 8, 9, 9, 9, 9, 10, 11, 12, 13, 14, 15, 16, 17};
 static const uint8_t* const g_table2_emit[] = {
-    g_table2_0_emit,
+    g_table2_0_emit,  g_table2_1_emit,  g_table2_2_emit,  g_table2_3_emit,
+    g_table2_4_emit,  g_table2_5_emit,  g_table2_6_emit,  g_table2_7_emit,
+    g_table2_8_emit,  g_table2_9_emit,  g_table2_10_emit, g_table2_11_emit,
+    g_table2_12_emit, g_table2_13_emit, g_table2_14_emit, g_table2_15_emit,
 };
-static const uint16_t* const g_table2_ops[] = {
-    g_table2_0_ops,
+static const uint16_t* const g_table2_inner[] = {
+    g_table2_0_inner,  g_table2_1_inner,  g_table2_2_inner,  g_table2_3_inner,
+    g_table2_4_inner,  g_table2_5_inner,  g_table2_6_inner,  g_table2_7_inner,
+    g_table2_8_inner,  g_table2_9_inner,  g_table2_10_inner, g_table2_11_inner,
+    g_table2_12_inner, g_table2_13_inner, g_table2_14_inner, g_table2_15_inner,
 };
-inline uint64_t GetOp2(size_t i) { return g_table2_ops[i >> 7][i & 0x7f]; }
-inline uint64_t GetEmit2(size_t i, size_t emit) {
-  return g_table2_emit[i >> 7][emit];
+static const uint8_t* const g_table2_outer[] = {
+    g_table2_0_outer,  g_table2_1_outer,  g_table2_2_outer,  g_table2_3_outer,
+    g_table2_4_outer,  g_table2_5_outer,  g_table2_6_outer,  g_table2_7_outer,
+    g_table2_8_outer,  g_table2_9_outer,  g_table2_10_outer, g_table2_11_outer,
+    g_table2_12_outer, g_table2_13_outer, g_table2_14_outer, g_table2_15_outer,
+};
+inline uint64_t GetOp2(size_t i) {
+  return g_table2_inner[i >> 6][g_table2_outer[i >> 6][i & 0x3f]];
 }
-static const uint8_t g_table3_0_emit[2] = {0x26, 0x2a};
+inline uint64_t GetEmit2(size_t i, size_t emit) {
+  return g_table2_emit[i >> 6][emit];
+}
+static const uint8_t g_table3_0_emit[2] = {0x27, 0x2b};
 static const uint8_t g_table3_0_ops[2] = {0x01, 0x03};
 static const uint8_t* const g_table3_emit[] = {
     g_table3_0_emit,
@@ -70,19 +229,186 @@ inline uint64_t GetOp3(size_t i) { return g_table3_ops[i >> 1][i & 0x1]; }
 inline uint64_t GetEmit3(size_t i, size_t emit) {
   return g_table3_emit[i >> 1][emit];
 }
-static const uint8_t g_table4_0_emit[2] = {0x2c, 0x3b};
-#define g_table4_0_ops g_table3_0_ops
+static const uint8_t g_table4_0_emit[44] = {
+    0x00, 0x30, 0x00, 0x31, 0x00, 0x32, 0x00, 0x61, 0x00, 0x63, 0x00,
+    0x65, 0x00, 0x69, 0x00, 0x6f, 0x00, 0x73, 0x00, 0x74, 0x00, 0x20,
+    0x00, 0x25, 0x00, 0x2d, 0x00, 0x2e, 0x00, 0x2f, 0x00, 0x33, 0x00,
+    0x34, 0x00, 0x35, 0x00, 0x36, 0x00, 0x37, 0x00, 0x38, 0x00, 0x39};
+static const uint16_t g_table4_0_ops[64] = {
+    0x0008, 0x0008, 0x0008, 0x0008, 0x0408, 0x0408, 0x0408, 0x0408,
+    0x0808, 0x0808, 0x0808, 0x0808, 0x0c08, 0x0c08, 0x0c08, 0x0c08,
+    0x1008, 0x1008, 0x1008, 0x1008, 0x1408, 0x1408, 0x1408, 0x1408,
+    0x1808, 0x1808, 0x1808, 0x1808, 0x1c08, 0x1c08, 0x1c08, 0x1c08,
+    0x2008, 0x2008, 0x2008, 0x2008, 0x2408, 0x2408, 0x2408, 0x2408,
+    0x2809, 0x2809, 0x2c09, 0x2c09, 0x3009, 0x3009, 0x3409, 0x3409,
+    0x3809, 0x3809, 0x3c09, 0x3c09, 0x4009, 0x4009, 0x4409, 0x4409,
+    0x4809, 0x4809, 0x4c09, 0x4c09, 0x5009, 0x5009, 0x5409, 0x5409};
+static const uint8_t g_table4_1_emit[92] = {
+    0x00, 0x3d, 0x00, 0x41, 0x00, 0x5f, 0x00, 0x62, 0x00, 0x64, 0x00, 0x66,
+    0x00, 0x67, 0x00, 0x68, 0x00, 0x6c, 0x00, 0x6d, 0x00, 0x6e, 0x00, 0x70,
+    0x00, 0x72, 0x00, 0x75, 0x00, 0x3a, 0x00, 0x42, 0x00, 0x43, 0x00, 0x44,
+    0x00, 0x45, 0x00, 0x46, 0x00, 0x47, 0x00, 0x48, 0x00, 0x49, 0x00, 0x4a,
+    0x00, 0x4b, 0x00, 0x4c, 0x00, 0x4d, 0x00, 0x4e, 0x00, 0x4f, 0x00, 0x50,
+    0x00, 0x51, 0x00, 0x52, 0x00, 0x53, 0x00, 0x54, 0x00, 0x55, 0x00, 0x56,
+    0x00, 0x57, 0x00, 0x59, 0x00, 0x6a, 0x00, 0x6b, 0x00, 0x71, 0x00, 0x76,
+    0x00, 0x77, 0x00, 0x78, 0x00, 0x79, 0x00, 0x7a};
+static const uint16_t g_table4_1_ops[64] = {
+    0x0009, 0x0009, 0x0409, 0x0409, 0x0809, 0x0809, 0x0c09, 0x0c09,
+    0x1009, 0x1009, 0x1409, 0x1409, 0x1809, 0x1809, 0x1c09, 0x1c09,
+    0x2009, 0x2009, 0x2409, 0x2409, 0x2809, 0x2809, 0x2c09, 0x2c09,
+    0x3009, 0x3009, 0x3409, 0x3409, 0x380a, 0x3c0a, 0x400a, 0x440a,
+    0x480a, 0x4c0a, 0x500a, 0x540a, 0x580a, 0x5c0a, 0x600a, 0x640a,
+    0x680a, 0x6c0a, 0x700a, 0x740a, 0x780a, 0x7c0a, 0x800a, 0x840a,
+    0x880a, 0x8c0a, 0x900a, 0x940a, 0x980a, 0x9c0a, 0xa00a, 0xa40a,
+    0xa80a, 0xac0a, 0xb00a, 0xb40a, 0x0013, 0x0013, 0x0013, 0x0013};
+static const uint8_t g_table4_2_emit[44] = {
+    0x24, 0x30, 0x24, 0x31, 0x24, 0x32, 0x24, 0x61, 0x24, 0x63, 0x24,
+    0x65, 0x24, 0x69, 0x24, 0x6f, 0x24, 0x73, 0x24, 0x74, 0x24, 0x20,
+    0x24, 0x25, 0x24, 0x2d, 0x24, 0x2e, 0x24, 0x2f, 0x24, 0x33, 0x24,
+    0x34, 0x24, 0x35, 0x24, 0x36, 0x24, 0x37, 0x24, 0x38, 0x24, 0x39};
+#define g_table4_2_ops g_table4_0_ops
+static const uint8_t g_table4_3_emit[92] = {
+    0x24, 0x3d, 0x24, 0x41, 0x24, 0x5f, 0x24, 0x62, 0x24, 0x64, 0x24, 0x66,
+    0x24, 0x67, 0x24, 0x68, 0x24, 0x6c, 0x24, 0x6d, 0x24, 0x6e, 0x24, 0x70,
+    0x24, 0x72, 0x24, 0x75, 0x24, 0x3a, 0x24, 0x42, 0x24, 0x43, 0x24, 0x44,
+    0x24, 0x45, 0x24, 0x46, 0x24, 0x47, 0x24, 0x48, 0x24, 0x49, 0x24, 0x4a,
+    0x24, 0x4b, 0x24, 0x4c, 0x24, 0x4d, 0x24, 0x4e, 0x24, 0x4f, 0x24, 0x50,
+    0x24, 0x51, 0x24, 0x52, 0x24, 0x53, 0x24, 0x54, 0x24, 0x55, 0x24, 0x56,
+    0x24, 0x57, 0x24, 0x59, 0x24, 0x6a, 0x24, 0x6b, 0x24, 0x71, 0x24, 0x76,
+    0x24, 0x77, 0x24, 0x78, 0x24, 0x79, 0x24, 0x7a};
+#define g_table4_3_ops g_table4_1_ops
+static const uint8_t g_table4_4_emit[44] = {
+    0x40, 0x30, 0x40, 0x31, 0x40, 0x32, 0x40, 0x61, 0x40, 0x63, 0x40,
+    0x65, 0x40, 0x69, 0x40, 0x6f, 0x40, 0x73, 0x40, 0x74, 0x40, 0x20,
+    0x40, 0x25, 0x40, 0x2d, 0x40, 0x2e, 0x40, 0x2f, 0x40, 0x33, 0x40,
+    0x34, 0x40, 0x35, 0x40, 0x36, 0x40, 0x37, 0x40, 0x38, 0x40, 0x39};
+#define g_table4_4_ops g_table4_0_ops
+static const uint8_t g_table4_5_emit[92] = {
+    0x40, 0x3d, 0x40, 0x41, 0x40, 0x5f, 0x40, 0x62, 0x40, 0x64, 0x40, 0x66,
+    0x40, 0x67, 0x40, 0x68, 0x40, 0x6c, 0x40, 0x6d, 0x40, 0x6e, 0x40, 0x70,
+    0x40, 0x72, 0x40, 0x75, 0x40, 0x3a, 0x40, 0x42, 0x40, 0x43, 0x40, 0x44,
+    0x40, 0x45, 0x40, 0x46, 0x40, 0x47, 0x40, 0x48, 0x40, 0x49, 0x40, 0x4a,
+    0x40, 0x4b, 0x40, 0x4c, 0x40, 0x4d, 0x40, 0x4e, 0x40, 0x4f, 0x40, 0x50,
+    0x40, 0x51, 0x40, 0x52, 0x40, 0x53, 0x40, 0x54, 0x40, 0x55, 0x40, 0x56,
+    0x40, 0x57, 0x40, 0x59, 0x40, 0x6a, 0x40, 0x6b, 0x40, 0x71, 0x40, 0x76,
+    0x40, 0x77, 0x40, 0x78, 0x40, 0x79, 0x40, 0x7a};
+#define g_table4_5_ops g_table4_1_ops
+static const uint8_t g_table4_6_emit[44] = {
+    0x5b, 0x30, 0x5b, 0x31, 0x5b, 0x32, 0x5b, 0x61, 0x5b, 0x63, 0x5b,
+    0x65, 0x5b, 0x69, 0x5b, 0x6f, 0x5b, 0x73, 0x5b, 0x74, 0x5b, 0x20,
+    0x5b, 0x25, 0x5b, 0x2d, 0x5b, 0x2e, 0x5b, 0x2f, 0x5b, 0x33, 0x5b,
+    0x34, 0x5b, 0x35, 0x5b, 0x36, 0x5b, 0x37, 0x5b, 0x38, 0x5b, 0x39};
+#define g_table4_6_ops g_table4_0_ops
+static const uint8_t g_table4_7_emit[92] = {
+    0x5b, 0x3d, 0x5b, 0x41, 0x5b, 0x5f, 0x5b, 0x62, 0x5b, 0x64, 0x5b, 0x66,
+    0x5b, 0x67, 0x5b, 0x68, 0x5b, 0x6c, 0x5b, 0x6d, 0x5b, 0x6e, 0x5b, 0x70,
+    0x5b, 0x72, 0x5b, 0x75, 0x5b, 0x3a, 0x5b, 0x42, 0x5b, 0x43, 0x5b, 0x44,
+    0x5b, 0x45, 0x5b, 0x46, 0x5b, 0x47, 0x5b, 0x48, 0x5b, 0x49, 0x5b, 0x4a,
+    0x5b, 0x4b, 0x5b, 0x4c, 0x5b, 0x4d, 0x5b, 0x4e, 0x5b, 0x4f, 0x5b, 0x50,
+    0x5b, 0x51, 0x5b, 0x52, 0x5b, 0x53, 0x5b, 0x54, 0x5b, 0x55, 0x5b, 0x56,
+    0x5b, 0x57, 0x5b, 0x59, 0x5b, 0x6a, 0x5b, 0x6b, 0x5b, 0x71, 0x5b, 0x76,
+    0x5b, 0x77, 0x5b, 0x78, 0x5b, 0x79, 0x5b, 0x7a};
+#define g_table4_7_ops g_table4_1_ops
+static const uint8_t g_table4_8_emit[44] = {
+    0x5d, 0x30, 0x5d, 0x31, 0x5d, 0x32, 0x5d, 0x61, 0x5d, 0x63, 0x5d,
+    0x65, 0x5d, 0x69, 0x5d, 0x6f, 0x5d, 0x73, 0x5d, 0x74, 0x5d, 0x20,
+    0x5d, 0x25, 0x5d, 0x2d, 0x5d, 0x2e, 0x5d, 0x2f, 0x5d, 0x33, 0x5d,
+    0x34, 0x5d, 0x35, 0x5d, 0x36, 0x5d, 0x37, 0x5d, 0x38, 0x5d, 0x39};
+#define g_table4_8_ops g_table4_0_ops
+static const uint8_t g_table4_9_emit[92] = {
+    0x5d, 0x3d, 0x5d, 0x41, 0x5d, 0x5f, 0x5d, 0x62, 0x5d, 0x64, 0x5d, 0x66,
+    0x5d, 0x67, 0x5d, 0x68, 0x5d, 0x6c, 0x5d, 0x6d, 0x5d, 0x6e, 0x5d, 0x70,
+    0x5d, 0x72, 0x5d, 0x75, 0x5d, 0x3a, 0x5d, 0x42, 0x5d, 0x43, 0x5d, 0x44,
+    0x5d, 0x45, 0x5d, 0x46, 0x5d, 0x47, 0x5d, 0x48, 0x5d, 0x49, 0x5d, 0x4a,
+    0x5d, 0x4b, 0x5d, 0x4c, 0x5d, 0x4d, 0x5d, 0x4e, 0x5d, 0x4f, 0x5d, 0x50,
+    0x5d, 0x51, 0x5d, 0x52, 0x5d, 0x53, 0x5d, 0x54, 0x5d, 0x55, 0x5d, 0x56,
+    0x5d, 0x57, 0x5d, 0x59, 0x5d, 0x6a, 0x5d, 0x6b, 0x5d, 0x71, 0x5d, 0x76,
+    0x5d, 0x77, 0x5d, 0x78, 0x5d, 0x79, 0x5d, 0x7a};
+#define g_table4_9_ops g_table4_1_ops
+static const uint8_t g_table4_10_emit[44] = {
+    0x7e, 0x30, 0x7e, 0x31, 0x7e, 0x32, 0x7e, 0x61, 0x7e, 0x63, 0x7e,
+    0x65, 0x7e, 0x69, 0x7e, 0x6f, 0x7e, 0x73, 0x7e, 0x74, 0x7e, 0x20,
+    0x7e, 0x25, 0x7e, 0x2d, 0x7e, 0x2e, 0x7e, 0x2f, 0x7e, 0x33, 0x7e,
+    0x34, 0x7e, 0x35, 0x7e, 0x36, 0x7e, 0x37, 0x7e, 0x38, 0x7e, 0x39};
+#define g_table4_10_ops g_table4_0_ops
+static const uint8_t g_table4_11_emit[92] = {
+    0x7e, 0x3d, 0x7e, 0x41, 0x7e, 0x5f, 0x7e, 0x62, 0x7e, 0x64, 0x7e, 0x66,
+    0x7e, 0x67, 0x7e, 0x68, 0x7e, 0x6c, 0x7e, 0x6d, 0x7e, 0x6e, 0x7e, 0x70,
+    0x7e, 0x72, 0x7e, 0x75, 0x7e, 0x3a, 0x7e, 0x42, 0x7e, 0x43, 0x7e, 0x44,
+    0x7e, 0x45, 0x7e, 0x46, 0x7e, 0x47, 0x7e, 0x48, 0x7e, 0x49, 0x7e, 0x4a,
+    0x7e, 0x4b, 0x7e, 0x4c, 0x7e, 0x4d, 0x7e, 0x4e, 0x7e, 0x4f, 0x7e, 0x50,
+    0x7e, 0x51, 0x7e, 0x52, 0x7e, 0x53, 0x7e, 0x54, 0x7e, 0x55, 0x7e, 0x56,
+    0x7e, 0x57, 0x7e, 0x59, 0x7e, 0x6a, 0x7e, 0x6b, 0x7e, 0x71, 0x7e, 0x76,
+    0x7e, 0x77, 0x7e, 0x78, 0x7e, 0x79, 0x7e, 0x7a};
+#define g_table4_11_ops g_table4_1_ops
+static const uint8_t g_table4_12_emit[72] = {
+    0x5e, 0x30, 0x5e, 0x31, 0x5e, 0x32, 0x5e, 0x61, 0x5e, 0x63, 0x5e, 0x65,
+    0x5e, 0x69, 0x5e, 0x6f, 0x5e, 0x73, 0x5e, 0x74, 0x5e, 0x20, 0x5e, 0x25,
+    0x5e, 0x2d, 0x5e, 0x2e, 0x5e, 0x2f, 0x5e, 0x33, 0x5e, 0x34, 0x5e, 0x35,
+    0x5e, 0x36, 0x5e, 0x37, 0x5e, 0x38, 0x5e, 0x39, 0x5e, 0x3d, 0x5e, 0x41,
+    0x5e, 0x5f, 0x5e, 0x62, 0x5e, 0x64, 0x5e, 0x66, 0x5e, 0x67, 0x5e, 0x68,
+    0x5e, 0x6c, 0x5e, 0x6d, 0x5e, 0x6e, 0x5e, 0x70, 0x5e, 0x72, 0x5e, 0x75};
+static const uint16_t g_table4_12_ops[64] = {
+    0x0009, 0x0009, 0x0409, 0x0409, 0x0809, 0x0809, 0x0c09, 0x0c09,
+    0x1009, 0x1009, 0x1409, 0x1409, 0x1809, 0x1809, 0x1c09, 0x1c09,
+    0x2009, 0x2009, 0x2409, 0x2409, 0x280a, 0x2c0a, 0x300a, 0x340a,
+    0x380a, 0x3c0a, 0x400a, 0x440a, 0x480a, 0x4c0a, 0x500a, 0x540a,
+    0x580a, 0x5c0a, 0x600a, 0x640a, 0x680a, 0x6c0a, 0x700a, 0x740a,
+    0x780a, 0x7c0a, 0x800a, 0x840a, 0x880a, 0x8c0a, 0x0014, 0x0014,
+    0x0014, 0x0014, 0x0014, 0x0014, 0x0014, 0x0014, 0x0014, 0x0014,
+    0x0014, 0x0014, 0x0014, 0x0014, 0x0014, 0x0014, 0x0014, 0x0014};
+static const uint8_t g_table4_13_emit[72] = {
+    0x7d, 0x30, 0x7d, 0x31, 0x7d, 0x32, 0x7d, 0x61, 0x7d, 0x63, 0x7d, 0x65,
+    0x7d, 0x69, 0x7d, 0x6f, 0x7d, 0x73, 0x7d, 0x74, 0x7d, 0x20, 0x7d, 0x25,
+    0x7d, 0x2d, 0x7d, 0x2e, 0x7d, 0x2f, 0x7d, 0x33, 0x7d, 0x34, 0x7d, 0x35,
+    0x7d, 0x36, 0x7d, 0x37, 0x7d, 0x38, 0x7d, 0x39, 0x7d, 0x3d, 0x7d, 0x41,
+    0x7d, 0x5f, 0x7d, 0x62, 0x7d, 0x64, 0x7d, 0x66, 0x7d, 0x67, 0x7d, 0x68,
+    0x7d, 0x6c, 0x7d, 0x6d, 0x7d, 0x6e, 0x7d, 0x70, 0x7d, 0x72, 0x7d, 0x75};
+#define g_table4_13_ops g_table4_12_ops
+static const uint8_t g_table4_14_emit[40] = {
+    0x3c, 0x30, 0x3c, 0x31, 0x3c, 0x32, 0x3c, 0x61, 0x3c, 0x63,
+    0x3c, 0x65, 0x3c, 0x69, 0x3c, 0x6f, 0x3c, 0x73, 0x3c, 0x74,
+    0x60, 0x30, 0x60, 0x31, 0x60, 0x32, 0x60, 0x61, 0x60, 0x63,
+    0x60, 0x65, 0x60, 0x69, 0x60, 0x6f, 0x60, 0x73, 0x60, 0x74};
+static const uint16_t g_table4_14_ops[64] = {
+    0x000a, 0x040a, 0x080a, 0x0c0a, 0x100a, 0x140a, 0x180a, 0x1c0a,
+    0x200a, 0x240a, 0x0015, 0x0015, 0x0015, 0x0015, 0x0015, 0x0015,
+    0x0015, 0x0015, 0x0015, 0x0015, 0x0015, 0x0015, 0x0015, 0x0015,
+    0x0015, 0x0015, 0x0015, 0x0015, 0x0015, 0x0015, 0x0015, 0x0015,
+    0x280a, 0x2c0a, 0x300a, 0x340a, 0x380a, 0x3c0a, 0x400a, 0x440a,
+    0x480a, 0x4c0a, 0x2815, 0x2815, 0x2815, 0x2815, 0x2815, 0x2815,
+    0x2815, 0x2815, 0x2815, 0x2815, 0x2815, 0x2815, 0x2815, 0x2815,
+    0x2815, 0x2815, 0x2815, 0x2815, 0x2815, 0x2815, 0x2815, 0x2815};
+static const uint8_t g_table4_15_emit[31] = {
+    0x7b, 0x30, 0x7b, 0x31, 0x7b, 0x32, 0x7b, 0x61, 0x7b, 0x63, 0x7b,
+    0x65, 0x7b, 0x69, 0x7b, 0x6f, 0x7b, 0x73, 0x7b, 0x74, 0x5c, 0xc3,
+    0xd0, 0x80, 0x82, 0x83, 0xa2, 0xb8, 0xc2, 0xe0, 0xe2};
+static const uint16_t g_table4_15_ops[64] = {
+    0x000a, 0x040a, 0x080a, 0x0c0a, 0x100a, 0x140a, 0x180a, 0x1c0a,
+    0x200a, 0x240a, 0x0015, 0x0015, 0x0015, 0x0015, 0x0015, 0x0015,
+    0x0015, 0x0015, 0x0015, 0x0015, 0x0015, 0x0015, 0x0015, 0x0015,
+    0x0015, 0x0015, 0x0015, 0x0015, 0x0015, 0x0015, 0x0015, 0x0015,
+    0x2819, 0x2819, 0x2a19, 0x2a19, 0x2c19, 0x2c19, 0x2e1a, 0x301a,
+    0x321a, 0x341a, 0x361a, 0x381a, 0x3a1a, 0x3c1a, 0x002a, 0x003a,
+    0x004a, 0x005a, 0x006a, 0x007a, 0x008a, 0x009a, 0x00aa, 0x00ba,
+    0x00ca, 0x00da, 0x00ea, 0x00fa, 0x010a, 0x011a, 0x012a, 0x013a};
 static const uint8_t* const g_table4_emit[] = {
-    g_table4_0_emit,
+    g_table4_0_emit,  g_table4_1_emit,  g_table4_2_emit,  g_table4_3_emit,
+    g_table4_4_emit,  g_table4_5_emit,  g_table4_6_emit,  g_table4_7_emit,
+    g_table4_8_emit,  g_table4_9_emit,  g_table4_10_emit, g_table4_11_emit,
+    g_table4_12_emit, g_table4_13_emit, g_table4_14_emit, g_table4_15_emit,
 };
-static const uint8_t* const g_table4_ops[] = {
-    g_table4_0_ops,
+static const uint16_t* const g_table4_ops[] = {
+    g_table4_0_ops,  g_table4_1_ops,  g_table4_2_ops,  g_table4_3_ops,
+    g_table4_4_ops,  g_table4_5_ops,  g_table4_6_ops,  g_table4_7_ops,
+    g_table4_8_ops,  g_table4_9_ops,  g_table4_10_ops, g_table4_11_ops,
+    g_table4_12_ops, g_table4_13_ops, g_table4_14_ops, g_table4_15_ops,
 };
-inline uint64_t GetOp4(size_t i) { return g_table4_ops[i >> 1][i & 0x1]; }
+inline uint64_t GetOp4(size_t i) { return g_table4_ops[i >> 6][i & 0x3f]; }
 inline uint64_t GetEmit4(size_t i, size_t emit) {
-  return g_table4_emit[i >> 1][emit];
+  return g_table4_emit[i >> 6][emit];
 }
-static const uint8_t g_table5_0_emit[2] = {0x58, 0x5a};
+static const uint8_t g_table5_0_emit[2] = {0x99, 0xa1};
 #define g_table5_0_ops g_table3_0_ops
 static const uint8_t* const g_table5_emit[] = {
     g_table5_0_emit,
@@ -94,37 +420,19 @@ inline uint64_t GetOp5(size_t i) { return g_table5_ops[i >> 1][i & 0x1]; }
 inline uint64_t GetEmit5(size_t i, size_t emit) {
   return g_table5_emit[i >> 1][emit];
 }
-static const uint8_t g_table6_0_emit[18] = {0x21, 0x22, 0x28, 0x29, 0x3f, 0x27,
-                                            0x2b, 0x7c, 0x23, 0x3e, 0x00, 0x24,
-                                            0x40, 0x5b, 0x5d, 0x7e, 0x5e, 0x7d};
-static const uint16_t g_table6_0_inner[20] = {
-    0x0003, 0x0023, 0x0043, 0x0063, 0x0083, 0x00a4, 0x00c4,
-    0x00e4, 0x0105, 0x0125, 0x0146, 0x0166, 0x0186, 0x01a6,
-    0x01c6, 0x01e6, 0x0207, 0x0227, 0x000f, 0x0017};
-static const uint8_t g_table6_0_outer[128] = {
-    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 0, 0, 1, 1,  1,
-    1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  2, 2, 2, 2, 2,  2,
-    2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  3,  3,  3,  3, 3, 3, 3, 3,  3,
-    3,  3,  3,  3,  3,  3,  3,  4,  4,  4,  4,  4,  4,  4, 4, 4, 4, 4,  4,
-    4,  4,  4,  4,  5,  5,  5,  5,  5,  5,  5,  5,  6,  6, 6, 6, 6, 6,  6,
-    6,  7,  7,  7,  7,  7,  7,  7,  7,  8,  8,  8,  8,  9, 9, 9, 9, 10, 10,
-    11, 11, 12, 12, 13, 13, 14, 14, 15, 15, 16, 17, 18, 19};
+static const uint8_t g_table6_0_emit[2] = {0xa7, 0xac};
+#define g_table6_0_ops g_table3_0_ops
 static const uint8_t* const g_table6_emit[] = {
     g_table6_0_emit,
 };
-static const uint16_t* const g_table6_inner[] = {
-    g_table6_0_inner,
+static const uint8_t* const g_table6_ops[] = {
+    g_table6_0_ops,
 };
-static const uint8_t* const g_table6_outer[] = {
-    g_table6_0_outer,
-};
-inline uint64_t GetOp6(size_t i) {
-  return g_table6_inner[i >> 7][g_table6_outer[i >> 7][i & 0x7f]];
-}
+inline uint64_t GetOp6(size_t i) { return g_table6_ops[i >> 1][i & 0x1]; }
 inline uint64_t GetEmit6(size_t i, size_t emit) {
-  return g_table6_emit[i >> 7][emit];
+  return g_table6_emit[i >> 1][emit];
 }
-static const uint8_t g_table7_0_emit[2] = {0x3c, 0x60};
+static const uint8_t g_table7_0_emit[2] = {0xb0, 0xb1};
 #define g_table7_0_ops g_table3_0_ops
 static const uint8_t* const g_table7_emit[] = {
     g_table7_0_emit,
@@ -136,42 +444,19 @@ inline uint64_t GetOp7(size_t i) { return g_table7_ops[i >> 1][i & 0x1]; }
 inline uint64_t GetEmit7(size_t i, size_t emit) {
   return g_table7_emit[i >> 1][emit];
 }
-static const uint8_t g_table8_0_emit[96] = {
-    0x7b, 0x30, 0x7b, 0x31, 0x7b, 0x32, 0x7b, 0x61, 0x7b, 0x63, 0x7b, 0x65,
-    0x7b, 0x69, 0x7b, 0x6f, 0x7b, 0x73, 0x7b, 0x74, 0x7b, 0x20, 0x7b, 0x25,
-    0x7b, 0x2d, 0x7b, 0x2e, 0x7b, 0x2f, 0x7b, 0x33, 0x7b, 0x34, 0x7b, 0x35,
-    0x7b, 0x36, 0x7b, 0x37, 0x7b, 0x38, 0x7b, 0x39, 0x7b, 0x3d, 0x7b, 0x41,
-    0x7b, 0x5f, 0x7b, 0x62, 0x7b, 0x64, 0x7b, 0x66, 0x7b, 0x67, 0x7b, 0x68,
-    0x7b, 0x6c, 0x7b, 0x6d, 0x7b, 0x6e, 0x7b, 0x70, 0x7b, 0x72, 0x7b, 0x75,
-    0x5c, 0xc3, 0xd0, 0x80, 0x82, 0x83, 0xa2, 0xb8, 0xc2, 0xe0, 0xe2, 0x99,
-    0xa1, 0xa7, 0xac, 0xb0, 0xb1, 0xb3, 0xd1, 0xd8, 0xd9, 0xe3, 0xe5, 0xe6};
-static const uint16_t g_table8_0_ops[128] = {
-    0x0006, 0x0006, 0x0206, 0x0206, 0x0406, 0x0406, 0x0606, 0x0606, 0x0806,
-    0x0806, 0x0a06, 0x0a06, 0x0c06, 0x0c06, 0x0e06, 0x0e06, 0x1006, 0x1006,
-    0x1206, 0x1206, 0x1407, 0x1607, 0x1807, 0x1a07, 0x1c07, 0x1e07, 0x2007,
-    0x2207, 0x2407, 0x2607, 0x2807, 0x2a07, 0x2c07, 0x2e07, 0x3007, 0x3207,
-    0x3407, 0x3607, 0x3807, 0x3a07, 0x3c07, 0x3e07, 0x4007, 0x4207, 0x4407,
-    0x4607, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009,
-    0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009, 0x0009,
-    0x0009, 0x480d, 0x480d, 0x480d, 0x480d, 0x490d, 0x490d, 0x490d, 0x490d,
-    0x4a0d, 0x4a0d, 0x4a0d, 0x4a0d, 0x4b0e, 0x4b0e, 0x4c0e, 0x4c0e, 0x4d0e,
-    0x4d0e, 0x4e0e, 0x4e0e, 0x4f0e, 0x4f0e, 0x500e, 0x500e, 0x510e, 0x510e,
-    0x520e, 0x520e, 0x530f, 0x540f, 0x550f, 0x560f, 0x570f, 0x580f, 0x590f,
-    0x5a0f, 0x5b0f, 0x5c0f, 0x5d0f, 0x5e0f, 0x5f0f, 0x0017, 0x001f, 0x0027,
-    0x002f, 0x0037, 0x003f, 0x0047, 0x004f, 0x0057, 0x005f, 0x0067, 0x006f,
-    0x0077, 0x007f, 0x0087, 0x008f, 0x0097, 0x009f, 0x00a7, 0x00af, 0x00b7,
-    0x00bf, 0x00c7};
+static const uint8_t g_table8_0_emit[2] = {0xb3, 0xd1};
+#define g_table8_0_ops g_table3_0_ops
 static const uint8_t* const g_table8_emit[] = {
     g_table8_0_emit,
 };
-static const uint16_t* const g_table8_ops[] = {
+static const uint8_t* const g_table8_ops[] = {
     g_table8_0_ops,
 };
-inline uint64_t GetOp8(size_t i) { return g_table8_ops[i >> 7][i & 0x7f]; }
+inline uint64_t GetOp8(size_t i) { return g_table8_ops[i >> 1][i & 0x1]; }
 inline uint64_t GetEmit8(size_t i, size_t emit) {
-  return g_table8_emit[i >> 7][emit];
+  return g_table8_emit[i >> 1][emit];
 }
-static const uint8_t g_table9_0_emit[2] = {0x81, 0x84};
+static const uint8_t g_table9_0_emit[2] = {0xd8, 0xd9};
 #define g_table9_0_ops g_table3_0_ops
 static const uint8_t* const g_table9_emit[] = {
     g_table9_0_emit,
@@ -183,7 +468,7 @@ inline uint64_t GetOp9(size_t i) { return g_table9_ops[i >> 1][i & 0x1]; }
 inline uint64_t GetEmit9(size_t i, size_t emit) {
   return g_table9_emit[i >> 1][emit];
 }
-static const uint8_t g_table10_0_emit[2] = {0x85, 0x86};
+static const uint8_t g_table10_0_emit[2] = {0xe3, 0xe5};
 #define g_table10_0_ops g_table3_0_ops
 static const uint8_t* const g_table10_emit[] = {
     g_table10_0_emit,
@@ -195,152 +480,303 @@ inline uint64_t GetOp10(size_t i) { return g_table10_ops[i >> 1][i & 0x1]; }
 inline uint64_t GetEmit10(size_t i, size_t emit) {
   return g_table10_emit[i >> 1][emit];
 }
-static const uint8_t g_table11_0_emit[2] = {0x88, 0x92};
-#define g_table11_0_ops g_table3_0_ops
+static const uint8_t g_table11_0_emit[4] = {0x85, 0x86, 0x88, 0x92};
+static const uint8_t g_table11_0_ops[4] = {0x02, 0x06, 0x0a, 0x0e};
 static const uint8_t* const g_table11_emit[] = {
     g_table11_0_emit,
 };
 static const uint8_t* const g_table11_ops[] = {
     g_table11_0_ops,
 };
-inline uint64_t GetOp11(size_t i) { return g_table11_ops[i >> 1][i & 0x1]; }
+inline uint64_t GetOp11(size_t i) { return g_table11_ops[i >> 2][i & 0x3]; }
 inline uint64_t GetEmit11(size_t i, size_t emit) {
-  return g_table11_emit[i >> 1][emit];
+  return g_table11_emit[i >> 2][emit];
 }
-static const uint8_t g_table12_0_emit[2] = {0x9a, 0x9c};
-#define g_table12_0_ops g_table3_0_ops
+static const uint8_t g_table12_0_emit[4] = {0x9a, 0x9c, 0xa0, 0xa3};
+#define g_table12_0_ops g_table11_0_ops
 static const uint8_t* const g_table12_emit[] = {
     g_table12_0_emit,
 };
 static const uint8_t* const g_table12_ops[] = {
     g_table12_0_ops,
 };
-inline uint64_t GetOp12(size_t i) { return g_table12_ops[i >> 1][i & 0x1]; }
+inline uint64_t GetOp12(size_t i) { return g_table12_ops[i >> 2][i & 0x3]; }
 inline uint64_t GetEmit12(size_t i, size_t emit) {
-  return g_table12_emit[i >> 1][emit];
+  return g_table12_emit[i >> 2][emit];
 }
-static const uint8_t g_table13_0_emit[2] = {0xa0, 0xa3};
-#define g_table13_0_ops g_table3_0_ops
+static const uint8_t g_table13_0_emit[4] = {0xa4, 0xa9, 0xaa, 0xad};
+#define g_table13_0_ops g_table11_0_ops
 static const uint8_t* const g_table13_emit[] = {
     g_table13_0_emit,
 };
 static const uint8_t* const g_table13_ops[] = {
     g_table13_0_ops,
 };
-inline uint64_t GetOp13(size_t i) { return g_table13_ops[i >> 1][i & 0x1]; }
+inline uint64_t GetOp13(size_t i) { return g_table13_ops[i >> 2][i & 0x3]; }
 inline uint64_t GetEmit13(size_t i, size_t emit) {
-  return g_table13_emit[i >> 1][emit];
+  return g_table13_emit[i >> 2][emit];
 }
-static const uint8_t g_table14_0_emit[2] = {0xa4, 0xa9};
-#define g_table14_0_ops g_table3_0_ops
+static const uint8_t g_table14_0_emit[4] = {0xb2, 0xb5, 0xb9, 0xba};
+#define g_table14_0_ops g_table11_0_ops
 static const uint8_t* const g_table14_emit[] = {
     g_table14_0_emit,
 };
 static const uint8_t* const g_table14_ops[] = {
     g_table14_0_ops,
 };
-inline uint64_t GetOp14(size_t i) { return g_table14_ops[i >> 1][i & 0x1]; }
+inline uint64_t GetOp14(size_t i) { return g_table14_ops[i >> 2][i & 0x3]; }
 inline uint64_t GetEmit14(size_t i, size_t emit) {
-  return g_table14_emit[i >> 1][emit];
+  return g_table14_emit[i >> 2][emit];
 }
-static const uint8_t g_table15_0_emit[2] = {0xaa, 0xad};
-#define g_table15_0_ops g_table3_0_ops
+static const uint8_t g_table15_0_emit[4] = {0xbb, 0xbd, 0xbe, 0xc4};
+#define g_table15_0_ops g_table11_0_ops
 static const uint8_t* const g_table15_emit[] = {
     g_table15_0_emit,
 };
 static const uint8_t* const g_table15_ops[] = {
     g_table15_0_ops,
 };
-inline uint64_t GetOp15(size_t i) { return g_table15_ops[i >> 1][i & 0x1]; }
+inline uint64_t GetOp15(size_t i) { return g_table15_ops[i >> 2][i & 0x3]; }
 inline uint64_t GetEmit15(size_t i, size_t emit) {
-  return g_table15_emit[i >> 1][emit];
+  return g_table15_emit[i >> 2][emit];
 }
-static const uint8_t g_table16_0_emit[2] = {0xb2, 0xb5};
-#define g_table16_0_ops g_table3_0_ops
+static const uint8_t g_table16_0_emit[4] = {0xc6, 0xe4, 0xe8, 0xe9};
+#define g_table16_0_ops g_table11_0_ops
 static const uint8_t* const g_table16_emit[] = {
     g_table16_0_emit,
 };
 static const uint8_t* const g_table16_ops[] = {
     g_table16_0_ops,
 };
-inline uint64_t GetOp16(size_t i) { return g_table16_ops[i >> 1][i & 0x1]; }
+inline uint64_t GetOp16(size_t i) { return g_table16_ops[i >> 2][i & 0x3]; }
 inline uint64_t GetEmit16(size_t i, size_t emit) {
-  return g_table16_emit[i >> 1][emit];
+  return g_table16_emit[i >> 2][emit];
 }
-static const uint8_t g_table17_0_emit[2] = {0xb9, 0xba};
-#define g_table17_0_ops g_table3_0_ops
+static const uint8_t g_table17_0_emit[8] = {0x01, 0x87, 0x89, 0x8a,
+                                            0x8b, 0x8c, 0x8d, 0x8f};
+static const uint8_t g_table17_0_ops[8] = {0x03, 0x07, 0x0b, 0x0f,
+                                           0x13, 0x17, 0x1b, 0x1f};
 static const uint8_t* const g_table17_emit[] = {
     g_table17_0_emit,
 };
 static const uint8_t* const g_table17_ops[] = {
     g_table17_0_ops,
 };
-inline uint64_t GetOp17(size_t i) { return g_table17_ops[i >> 1][i & 0x1]; }
+inline uint64_t GetOp17(size_t i) { return g_table17_ops[i >> 3][i & 0x7]; }
 inline uint64_t GetEmit17(size_t i, size_t emit) {
-  return g_table17_emit[i >> 1][emit];
+  return g_table17_emit[i >> 3][emit];
 }
-static const uint8_t g_table18_0_emit[2] = {0xbb, 0xbd};
-#define g_table18_0_ops g_table3_0_ops
+static const uint8_t g_table18_0_emit[8] = {0x93, 0x95, 0x96, 0x97,
+                                            0x98, 0x9b, 0x9d, 0x9e};
+#define g_table18_0_ops g_table17_0_ops
 static const uint8_t* const g_table18_emit[] = {
     g_table18_0_emit,
 };
 static const uint8_t* const g_table18_ops[] = {
     g_table18_0_ops,
 };
-inline uint64_t GetOp18(size_t i) { return g_table18_ops[i >> 1][i & 0x1]; }
+inline uint64_t GetOp18(size_t i) { return g_table18_ops[i >> 3][i & 0x7]; }
 inline uint64_t GetEmit18(size_t i, size_t emit) {
-  return g_table18_emit[i >> 1][emit];
+  return g_table18_emit[i >> 3][emit];
 }
-static const uint8_t g_table19_0_emit[2] = {0xbe, 0xc4};
-#define g_table19_0_ops g_table3_0_ops
+static const uint8_t g_table19_0_emit[8] = {0xa5, 0xa6, 0xa8, 0xae,
+                                            0xaf, 0xb4, 0xb6, 0xb7};
+#define g_table19_0_ops g_table17_0_ops
 static const uint8_t* const g_table19_emit[] = {
     g_table19_0_emit,
 };
 static const uint8_t* const g_table19_ops[] = {
     g_table19_0_ops,
 };
-inline uint64_t GetOp19(size_t i) { return g_table19_ops[i >> 1][i & 0x1]; }
+inline uint64_t GetOp19(size_t i) { return g_table19_ops[i >> 3][i & 0x7]; }
 inline uint64_t GetEmit19(size_t i, size_t emit) {
-  return g_table19_emit[i >> 1][emit];
+  return g_table19_emit[i >> 3][emit];
 }
-static const uint8_t g_table20_0_emit[2] = {0xc6, 0xe4};
-#define g_table20_0_ops g_table3_0_ops
+static const uint8_t g_table20_0_emit[3] = {0xe6, 0x81, 0x84};
+static const uint8_t g_table20_0_ops[4] = {0x01, 0x01, 0x06, 0x0a};
 static const uint8_t* const g_table20_emit[] = {
     g_table20_0_emit,
 };
 static const uint8_t* const g_table20_ops[] = {
     g_table20_0_ops,
 };
-inline uint64_t GetOp20(size_t i) { return g_table20_ops[i >> 1][i & 0x1]; }
+inline uint64_t GetOp20(size_t i) { return g_table20_ops[i >> 2][i & 0x3]; }
 inline uint64_t GetEmit20(size_t i, size_t emit) {
-  return g_table20_emit[i >> 1][emit];
+  return g_table20_emit[i >> 2][emit];
 }
-static const uint8_t g_table21_0_emit[2] = {0xe8, 0xe9};
-#define g_table21_0_ops g_table3_0_ops
+static const uint8_t g_table21_0_emit[11] = {0xbc, 0xbf, 0xc5, 0xe7, 0xef, 0x09,
+                                             0x8e, 0x90, 0x91, 0x94, 0x9f};
+static const uint8_t g_table21_0_ops[16] = {0x03, 0x03, 0x0b, 0x0b, 0x13, 0x13,
+                                            0x1b, 0x1b, 0x23, 0x23, 0x2c, 0x34,
+                                            0x3c, 0x44, 0x4c, 0x54};
 static const uint8_t* const g_table21_emit[] = {
     g_table21_0_emit,
 };
 static const uint8_t* const g_table21_ops[] = {
     g_table21_0_ops,
 };
-inline uint64_t GetOp21(size_t i) { return g_table21_ops[i >> 1][i & 0x1]; }
+inline uint64_t GetOp21(size_t i) { return g_table21_ops[i >> 4][i & 0xf]; }
 inline uint64_t GetEmit21(size_t i, size_t emit) {
-  return g_table21_emit[i >> 1][emit];
+  return g_table21_emit[i >> 4][emit];
 }
-static const uint8_t g_table22_0_emit[4] = {0x01, 0x87, 0x89, 0x8a};
-static const uint8_t g_table22_0_ops[4] = {0x02, 0x06, 0x0a, 0x0e};
+static const uint8_t g_table22_0_emit[72] = {
+    0xab, 0x30, 0xab, 0x31, 0xab, 0x32, 0xab, 0x61, 0xab, 0x63, 0xab, 0x65,
+    0xab, 0x69, 0xab, 0x6f, 0xab, 0x73, 0xab, 0x74, 0xab, 0x20, 0xab, 0x25,
+    0xab, 0x2d, 0xab, 0x2e, 0xab, 0x2f, 0xab, 0x33, 0xab, 0x34, 0xab, 0x35,
+    0xab, 0x36, 0xab, 0x37, 0xab, 0x38, 0xab, 0x39, 0xab, 0x3d, 0xab, 0x41,
+    0xab, 0x5f, 0xab, 0x62, 0xab, 0x64, 0xab, 0x66, 0xab, 0x67, 0xab, 0x68,
+    0xab, 0x6c, 0xab, 0x6d, 0xab, 0x6e, 0xab, 0x70, 0xab, 0x72, 0xab, 0x75};
+static const uint16_t g_table22_0_inner[37] = {
+    0x0009, 0x0089, 0x0109, 0x0189, 0x0209, 0x0289, 0x0309, 0x0389,
+    0x0409, 0x0489, 0x050a, 0x058a, 0x060a, 0x068a, 0x070a, 0x078a,
+    0x080a, 0x088a, 0x090a, 0x098a, 0x0a0a, 0x0a8a, 0x0b0a, 0x0b8a,
+    0x0c0a, 0x0c8a, 0x0d0a, 0x0d8a, 0x0e0a, 0x0e8a, 0x0f0a, 0x0f8a,
+    0x100a, 0x108a, 0x110a, 0x118a, 0x0014};
+static const uint8_t g_table22_0_outer[64] = {
+    0,  0,  1,  1,  2,  2,  3,  3,  4,  4,  5,  5,  6,  6,  7,  7,
+    8,  8,  9,  9,  10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
+    22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 36,
+    36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36, 36};
+static const uint8_t g_table22_1_emit[72] = {
+    0xce, 0x30, 0xce, 0x31, 0xce, 0x32, 0xce, 0x61, 0xce, 0x63, 0xce, 0x65,
+    0xce, 0x69, 0xce, 0x6f, 0xce, 0x73, 0xce, 0x74, 0xce, 0x20, 0xce, 0x25,
+    0xce, 0x2d, 0xce, 0x2e, 0xce, 0x2f, 0xce, 0x33, 0xce, 0x34, 0xce, 0x35,
+    0xce, 0x36, 0xce, 0x37, 0xce, 0x38, 0xce, 0x39, 0xce, 0x3d, 0xce, 0x41,
+    0xce, 0x5f, 0xce, 0x62, 0xce, 0x64, 0xce, 0x66, 0xce, 0x67, 0xce, 0x68,
+    0xce, 0x6c, 0xce, 0x6d, 0xce, 0x6e, 0xce, 0x70, 0xce, 0x72, 0xce, 0x75};
+#define g_table22_1_inner g_table22_0_inner
+#define g_table22_1_outer g_table22_0_outer
+static const uint8_t g_table22_2_emit[72] = {
+    0xd7, 0x30, 0xd7, 0x31, 0xd7, 0x32, 0xd7, 0x61, 0xd7, 0x63, 0xd7, 0x65,
+    0xd7, 0x69, 0xd7, 0x6f, 0xd7, 0x73, 0xd7, 0x74, 0xd7, 0x20, 0xd7, 0x25,
+    0xd7, 0x2d, 0xd7, 0x2e, 0xd7, 0x2f, 0xd7, 0x33, 0xd7, 0x34, 0xd7, 0x35,
+    0xd7, 0x36, 0xd7, 0x37, 0xd7, 0x38, 0xd7, 0x39, 0xd7, 0x3d, 0xd7, 0x41,
+    0xd7, 0x5f, 0xd7, 0x62, 0xd7, 0x64, 0xd7, 0x66, 0xd7, 0x67, 0xd7, 0x68,
+    0xd7, 0x6c, 0xd7, 0x6d, 0xd7, 0x6e, 0xd7, 0x70, 0xd7, 0x72, 0xd7, 0x75};
+#define g_table22_2_inner g_table22_0_inner
+#define g_table22_2_outer g_table22_0_outer
+static const uint8_t g_table22_3_emit[72] = {
+    0xe1, 0x30, 0xe1, 0x31, 0xe1, 0x32, 0xe1, 0x61, 0xe1, 0x63, 0xe1, 0x65,
+    0xe1, 0x69, 0xe1, 0x6f, 0xe1, 0x73, 0xe1, 0x74, 0xe1, 0x20, 0xe1, 0x25,
+    0xe1, 0x2d, 0xe1, 0x2e, 0xe1, 0x2f, 0xe1, 0x33, 0xe1, 0x34, 0xe1, 0x35,
+    0xe1, 0x36, 0xe1, 0x37, 0xe1, 0x38, 0xe1, 0x39, 0xe1, 0x3d, 0xe1, 0x41,
+    0xe1, 0x5f, 0xe1, 0x62, 0xe1, 0x64, 0xe1, 0x66, 0xe1, 0x67, 0xe1, 0x68,
+    0xe1, 0x6c, 0xe1, 0x6d, 0xe1, 0x6e, 0xe1, 0x70, 0xe1, 0x72, 0xe1, 0x75};
+#define g_table22_3_inner g_table22_0_inner
+#define g_table22_3_outer g_table22_0_outer
+static const uint8_t g_table22_4_emit[72] = {
+    0xec, 0x30, 0xec, 0x31, 0xec, 0x32, 0xec, 0x61, 0xec, 0x63, 0xec, 0x65,
+    0xec, 0x69, 0xec, 0x6f, 0xec, 0x73, 0xec, 0x74, 0xec, 0x20, 0xec, 0x25,
+    0xec, 0x2d, 0xec, 0x2e, 0xec, 0x2f, 0xec, 0x33, 0xec, 0x34, 0xec, 0x35,
+    0xec, 0x36, 0xec, 0x37, 0xec, 0x38, 0xec, 0x39, 0xec, 0x3d, 0xec, 0x41,
+    0xec, 0x5f, 0xec, 0x62, 0xec, 0x64, 0xec, 0x66, 0xec, 0x67, 0xec, 0x68,
+    0xec, 0x6c, 0xec, 0x6d, 0xec, 0x6e, 0xec, 0x70, 0xec, 0x72, 0xec, 0x75};
+#define g_table22_4_inner g_table22_0_inner
+#define g_table22_4_outer g_table22_0_outer
+static const uint8_t g_table22_5_emit[72] = {
+    0xed, 0x30, 0xed, 0x31, 0xed, 0x32, 0xed, 0x61, 0xed, 0x63, 0xed, 0x65,
+    0xed, 0x69, 0xed, 0x6f, 0xed, 0x73, 0xed, 0x74, 0xed, 0x20, 0xed, 0x25,
+    0xed, 0x2d, 0xed, 0x2e, 0xed, 0x2f, 0xed, 0x33, 0xed, 0x34, 0xed, 0x35,
+    0xed, 0x36, 0xed, 0x37, 0xed, 0x38, 0xed, 0x39, 0xed, 0x3d, 0xed, 0x41,
+    0xed, 0x5f, 0xed, 0x62, 0xed, 0x64, 0xed, 0x66, 0xed, 0x67, 0xed, 0x68,
+    0xed, 0x6c, 0xed, 0x6d, 0xed, 0x6e, 0xed, 0x70, 0xed, 0x72, 0xed, 0x75};
+#define g_table22_5_inner g_table22_0_inner
+#define g_table22_5_outer g_table22_0_outer
+static const uint8_t g_table22_6_emit[40] = {
+    0xc7, 0x30, 0xc7, 0x31, 0xc7, 0x32, 0xc7, 0x61, 0xc7, 0x63,
+    0xc7, 0x65, 0xc7, 0x69, 0xc7, 0x6f, 0xc7, 0x73, 0xc7, 0x74,
+    0xcf, 0x30, 0xcf, 0x31, 0xcf, 0x32, 0xcf, 0x61, 0xcf, 0x63,
+    0xcf, 0x65, 0xcf, 0x69, 0xcf, 0x6f, 0xcf, 0x73, 0xcf, 0x74};
+static const uint16_t g_table22_6_inner[22] = {
+    0x000a, 0x008a, 0x010a, 0x018a, 0x020a, 0x028a, 0x030a, 0x038a,
+    0x040a, 0x048a, 0x0015, 0x050a, 0x058a, 0x060a, 0x068a, 0x070a,
+    0x078a, 0x080a, 0x088a, 0x090a, 0x098a, 0x0515};
+#define g_table22_6_outer g_table2_0_outer
+static const uint8_t g_table22_7_emit[40] = {
+    0xea, 0x30, 0xea, 0x31, 0xea, 0x32, 0xea, 0x61, 0xea, 0x63,
+    0xea, 0x65, 0xea, 0x69, 0xea, 0x6f, 0xea, 0x73, 0xea, 0x74,
+    0xeb, 0x30, 0xeb, 0x31, 0xeb, 0x32, 0xeb, 0x61, 0xeb, 0x63,
+    0xeb, 0x65, 0xeb, 0x69, 0xeb, 0x6f, 0xeb, 0x73, 0xeb, 0x74};
+#define g_table22_7_inner g_table22_6_inner
+#define g_table22_7_outer g_table2_0_outer
+static const uint8_t g_table22_8_emit[4] = {0xc0, 0xc1, 0xc8, 0xc9};
+static const uint16_t g_table22_8_inner[4] = {0x0016, 0x0056, 0x0096, 0x00d6};
+#define g_table22_8_outer g_table2_5_outer
+static const uint8_t g_table22_9_emit[4] = {0xca, 0xcd, 0xd2, 0xd5};
+#define g_table22_9_inner g_table22_8_inner
+#define g_table22_9_outer g_table2_5_outer
+static const uint8_t g_table22_10_emit[4] = {0xda, 0xdb, 0xee, 0xf0};
+#define g_table22_10_inner g_table22_8_inner
+#define g_table22_10_outer g_table2_5_outer
+static const uint8_t g_table22_11_emit[5] = {0xf2, 0xf3, 0xff, 0xcb, 0xcc};
+static const uint16_t g_table22_11_inner[5] = {0x0016, 0x0056, 0x0096, 0x00d7,
+                                               0x0117};
+static const uint8_t g_table22_11_outer[64] = {
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+    2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4};
+static const uint8_t g_table22_12_emit[8] = {0xd3, 0xd4, 0xd6, 0xdd,
+                                             0xde, 0xdf, 0xf1, 0xf4};
+static const uint16_t g_table22_12_inner[8] = {0x0017, 0x0057, 0x0097, 0x00d7,
+                                               0x0117, 0x0157, 0x0197, 0x01d7};
+#define g_table22_12_outer g_table2_12_outer
+static const uint8_t g_table22_13_emit[8] = {0xf5, 0xf6, 0xf7, 0xf8,
+                                             0xfa, 0xfb, 0xfc, 0xfd};
+#define g_table22_13_inner g_table22_12_inner
+#define g_table22_13_outer g_table2_12_outer
+static const uint8_t g_table22_14_emit[15] = {0xfe, 0x02, 0x03, 0x04, 0x05,
+                                              0x06, 0x07, 0x08, 0x0b, 0x0c,
+                                              0x0e, 0x0f, 0x10, 0x11, 0x12};
+static const uint16_t g_table22_14_inner[15] = {
+    0x0017, 0x0058, 0x0098, 0x00d8, 0x0118, 0x0158, 0x0198, 0x01d8,
+    0x0218, 0x0258, 0x0298, 0x02d8, 0x0318, 0x0358, 0x0398};
+static const uint8_t g_table22_14_outer[64] = {
+    0,  0,  0,  0,  0,  0,  0,  0,  1,  1,  1,  1,  2,  2,  2,  2,
+    3,  3,  3,  3,  4,  4,  4,  4,  5,  5,  5,  5,  6,  6,  6,  6,
+    7,  7,  7,  7,  8,  8,  8,  8,  9,  9,  9,  9,  10, 10, 10, 10,
+    11, 11, 11, 11, 12, 12, 12, 12, 13, 13, 13, 13, 14, 14, 14, 14};
+static const uint8_t g_table22_15_emit[18] = {
+    0x13, 0x14, 0x15, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c,
+    0x1d, 0x1e, 0x1f, 0x7f, 0xdc, 0xf9, 0x0a, 0x0d, 0x16};
+static const uint16_t g_table22_15_inner[19] = {
+    0x0018, 0x0058, 0x0098, 0x00d8, 0x0118, 0x0158, 0x0198,
+    0x01d8, 0x0218, 0x0258, 0x0298, 0x02d8, 0x0318, 0x0358,
+    0x0398, 0x03da, 0x041a, 0x045a, 0x002a};
+static const uint8_t g_table22_15_outer[64] = {
+    0,  0,  0,  0,  1,  1,  1,  1,  2,  2,  2,  2,  3,  3,  3,  3,
+    4,  4,  4,  4,  5,  5,  5,  5,  6,  6,  6,  6,  7,  7,  7,  7,
+    8,  8,  8,  8,  9,  9,  9,  9,  10, 10, 10, 10, 11, 11, 11, 11,
+    12, 12, 12, 12, 13, 13, 13, 13, 14, 14, 14, 14, 15, 16, 17, 18};
 static const uint8_t* const g_table22_emit[] = {
-    g_table22_0_emit,
+    g_table22_0_emit,  g_table22_1_emit,  g_table22_2_emit,  g_table22_3_emit,
+    g_table22_4_emit,  g_table22_5_emit,  g_table22_6_emit,  g_table22_7_emit,
+    g_table22_8_emit,  g_table22_9_emit,  g_table22_10_emit, g_table22_11_emit,
+    g_table22_12_emit, g_table22_13_emit, g_table22_14_emit, g_table22_15_emit,
 };
-static const uint8_t* const g_table22_ops[] = {
-    g_table22_0_ops,
+static const uint16_t* const g_table22_inner[] = {
+    g_table22_0_inner,  g_table22_1_inner,  g_table22_2_inner,
+    g_table22_3_inner,  g_table22_4_inner,  g_table22_5_inner,
+    g_table22_6_inner,  g_table22_7_inner,  g_table22_8_inner,
+    g_table22_9_inner,  g_table22_10_inner, g_table22_11_inner,
+    g_table22_12_inner, g_table22_13_inner, g_table22_14_inner,
+    g_table22_15_inner,
 };
-inline uint64_t GetOp22(size_t i) { return g_table22_ops[i >> 2][i & 0x3]; }
-inline uint64_t GetEmit22(size_t i, size_t emit) {
-  return g_table22_emit[i >> 2][emit];
+static const uint8_t* const g_table22_outer[] = {
+    g_table22_0_outer,  g_table22_1_outer,  g_table22_2_outer,
+    g_table22_3_outer,  g_table22_4_outer,  g_table22_5_outer,
+    g_table22_6_outer,  g_table22_7_outer,  g_table22_8_outer,
+    g_table22_9_outer,  g_table22_10_outer, g_table22_11_outer,
+    g_table22_12_outer, g_table22_13_outer, g_table22_14_outer,
+    g_table22_15_outer,
+};
+inline uint64_t GetOp22(size_t i) {
+  return g_table22_inner[i >> 6][g_table22_outer[i >> 6][i & 0x3f]];
 }
-static const uint8_t g_table23_0_emit[4] = {0x8b, 0x8c, 0x8d, 0x8f};
-#define g_table23_0_ops g_table22_0_ops
+inline uint64_t GetEmit22(size_t i, size_t emit) {
+  return g_table22_emit[i >> 6][emit];
+}
+static const uint8_t g_table23_0_emit[3] = {0x7c, 0x23, 0x3e};
+#define g_table23_0_ops g_table20_0_ops
 static const uint8_t* const g_table23_emit[] = {
     g_table23_0_emit,
 };
@@ -351,154 +787,6 @@ inline uint64_t GetOp23(size_t i) { return g_table23_ops[i >> 2][i & 0x3]; }
 inline uint64_t GetEmit23(size_t i, size_t emit) {
   return g_table23_emit[i >> 2][emit];
 }
-static const uint8_t g_table24_0_emit[4] = {0x93, 0x95, 0x96, 0x97};
-#define g_table24_0_ops g_table22_0_ops
-static const uint8_t* const g_table24_emit[] = {
-    g_table24_0_emit,
-};
-static const uint8_t* const g_table24_ops[] = {
-    g_table24_0_ops,
-};
-inline uint64_t GetOp24(size_t i) { return g_table24_ops[i >> 2][i & 0x3]; }
-inline uint64_t GetEmit24(size_t i, size_t emit) {
-  return g_table24_emit[i >> 2][emit];
-}
-static const uint8_t g_table25_0_emit[4] = {0x98, 0x9b, 0x9d, 0x9e};
-#define g_table25_0_ops g_table22_0_ops
-static const uint8_t* const g_table25_emit[] = {
-    g_table25_0_emit,
-};
-static const uint8_t* const g_table25_ops[] = {
-    g_table25_0_ops,
-};
-inline uint64_t GetOp25(size_t i) { return g_table25_ops[i >> 2][i & 0x3]; }
-inline uint64_t GetEmit25(size_t i, size_t emit) {
-  return g_table25_emit[i >> 2][emit];
-}
-static const uint8_t g_table26_0_emit[4] = {0xa5, 0xa6, 0xa8, 0xae};
-#define g_table26_0_ops g_table22_0_ops
-static const uint8_t* const g_table26_emit[] = {
-    g_table26_0_emit,
-};
-static const uint8_t* const g_table26_ops[] = {
-    g_table26_0_ops,
-};
-inline uint64_t GetOp26(size_t i) { return g_table26_ops[i >> 2][i & 0x3]; }
-inline uint64_t GetEmit26(size_t i, size_t emit) {
-  return g_table26_emit[i >> 2][emit];
-}
-static const uint8_t g_table27_0_emit[4] = {0xaf, 0xb4, 0xb6, 0xb7};
-#define g_table27_0_ops g_table22_0_ops
-static const uint8_t* const g_table27_emit[] = {
-    g_table27_0_emit,
-};
-static const uint8_t* const g_table27_ops[] = {
-    g_table27_0_ops,
-};
-inline uint64_t GetOp27(size_t i) { return g_table27_ops[i >> 2][i & 0x3]; }
-inline uint64_t GetEmit27(size_t i, size_t emit) {
-  return g_table27_emit[i >> 2][emit];
-}
-static const uint8_t g_table28_0_emit[4] = {0xbc, 0xbf, 0xc5, 0xe7};
-#define g_table28_0_ops g_table22_0_ops
-static const uint8_t* const g_table28_emit[] = {
-    g_table28_0_emit,
-};
-static const uint8_t* const g_table28_ops[] = {
-    g_table28_0_ops,
-};
-inline uint64_t GetOp28(size_t i) { return g_table28_ops[i >> 2][i & 0x3]; }
-inline uint64_t GetEmit28(size_t i, size_t emit) {
-  return g_table28_emit[i >> 2][emit];
-}
-static const uint8_t g_table29_0_emit[10] = {0xab, 0xce, 0xd7, 0xe1, 0xec,
-                                             0xed, 0xc7, 0xcf, 0xea, 0xeb};
-static const uint8_t g_table29_0_ops[16] = {0x03, 0x03, 0x0b, 0x0b, 0x13, 0x13,
-                                            0x1b, 0x1b, 0x23, 0x23, 0x2b, 0x2b,
-                                            0x34, 0x3c, 0x44, 0x4c};
-static const uint8_t* const g_table29_emit[] = {
-    g_table29_0_emit,
-};
-static const uint8_t* const g_table29_ops[] = {
-    g_table29_0_ops,
-};
-inline uint64_t GetOp29(size_t i) { return g_table29_ops[i >> 4][i & 0xf]; }
-inline uint64_t GetEmit29(size_t i, size_t emit) {
-  return g_table29_emit[i >> 4][emit];
-}
-static const uint8_t g_table30_0_emit[7] = {0xef, 0x09, 0x8e, 0x90,
-                                            0x91, 0x94, 0x9f};
-static const uint8_t g_table30_0_ops[8] = {0x02, 0x02, 0x07, 0x0b,
-                                           0x0f, 0x13, 0x17, 0x1b};
-static const uint8_t* const g_table30_emit[] = {
-    g_table30_0_emit,
-};
-static const uint8_t* const g_table30_ops[] = {
-    g_table30_0_ops,
-};
-inline uint64_t GetOp30(size_t i) { return g_table30_ops[i >> 3][i & 0x7]; }
-inline uint64_t GetEmit30(size_t i, size_t emit) {
-  return g_table30_emit[i >> 3][emit];
-}
-static const uint8_t g_table31_0_emit[8] = {0xc0, 0xc1, 0xc8, 0xc9,
-                                            0xca, 0xcd, 0xd2, 0xd5};
-static const uint16_t g_table31_0_ops[32] = {
-    0x0005, 0x0005, 0x0005, 0x0005, 0x0015, 0x0015, 0x0015, 0x0015,
-    0x0025, 0x0025, 0x0025, 0x0025, 0x0035, 0x0035, 0x0035, 0x0035,
-    0x0045, 0x0045, 0x0045, 0x0045, 0x0055, 0x0055, 0x0055, 0x0055,
-    0x0065, 0x0065, 0x0065, 0x0065, 0x0075, 0x0075, 0x0075, 0x0075};
-static const uint8_t g_table31_1_emit[9] = {0xda, 0xdb, 0xee, 0xf0, 0xf2,
-                                            0xf3, 0xff, 0xcb, 0xcc};
-static const uint16_t g_table31_1_ops[32] = {
-    0x0005, 0x0005, 0x0005, 0x0005, 0x0015, 0x0015, 0x0015, 0x0015,
-    0x0025, 0x0025, 0x0025, 0x0025, 0x0035, 0x0035, 0x0035, 0x0035,
-    0x0045, 0x0045, 0x0045, 0x0045, 0x0055, 0x0055, 0x0055, 0x0055,
-    0x0065, 0x0065, 0x0065, 0x0065, 0x0076, 0x0076, 0x0086, 0x0086};
-static const uint8_t g_table31_2_emit[16] = {0xd3, 0xd4, 0xd6, 0xdd, 0xde, 0xdf,
-                                             0xf1, 0xf4, 0xf5, 0xf6, 0xf7, 0xf8,
-                                             0xfa, 0xfb, 0xfc, 0xfd};
-static const uint16_t g_table31_2_ops[32] = {
-    0x0006, 0x0006, 0x0016, 0x0016, 0x0026, 0x0026, 0x0036, 0x0036,
-    0x0046, 0x0046, 0x0056, 0x0056, 0x0066, 0x0066, 0x0076, 0x0076,
-    0x0086, 0x0086, 0x0096, 0x0096, 0x00a6, 0x00a6, 0x00b6, 0x00b6,
-    0x00c6, 0x00c6, 0x00d6, 0x00d6, 0x00e6, 0x00e6, 0x00f6, 0x00f6};
-static const uint8_t g_table31_3_emit[30] = {
-    0xfe, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x0b, 0x0c,
-    0x0e, 0x0f, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x17, 0x18,
-    0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f, 0x7f, 0xdc, 0xf9};
-static const uint16_t g_table31_3_ops[32] = {
-    0x0006, 0x0006, 0x0017, 0x0027, 0x0037, 0x0047, 0x0057, 0x0067,
-    0x0077, 0x0087, 0x0097, 0x00a7, 0x00b7, 0x00c7, 0x00d7, 0x00e7,
-    0x00f7, 0x0107, 0x0117, 0x0127, 0x0137, 0x0147, 0x0157, 0x0167,
-    0x0177, 0x0187, 0x0197, 0x01a7, 0x01b7, 0x01c7, 0x01d7, 0x000f};
-static const uint8_t* const g_table31_emit[] = {
-    g_table31_0_emit,
-    g_table31_1_emit,
-    g_table31_2_emit,
-    g_table31_3_emit,
-};
-static const uint16_t* const g_table31_ops[] = {
-    g_table31_0_ops,
-    g_table31_1_ops,
-    g_table31_2_ops,
-    g_table31_3_ops,
-};
-inline uint64_t GetOp31(size_t i) { return g_table31_ops[i >> 5][i & 0x1f]; }
-inline uint64_t GetEmit31(size_t i, size_t emit) {
-  return g_table31_emit[i >> 5][emit];
-}
-static const uint8_t g_table32_0_emit[3] = {0x0a, 0x0d, 0x16};
-static const uint8_t g_table32_0_ops[4] = {0x02, 0x0a, 0x12, 0x06};
-static const uint8_t* const g_table32_emit[] = {
-    g_table32_0_emit,
-};
-static const uint8_t* const g_table32_ops[] = {
-    g_table32_0_ops,
-};
-inline uint64_t GetOp32(size_t i) { return g_table32_ops[i >> 2][i & 0x3]; }
-inline uint64_t GetEmit32(size_t i, size_t emit) {
-  return g_table32_emit[i >> 2][emit];
-}
 template <typename F>
 class HuffDecoder {
  public:
@@ -506,33 +794,34 @@ class HuffDecoder {
       : sink_(sink), begin_(begin), end_(end) {}
   bool Run() {
     while (ok_) {
-      if (!RefillTo7()) {
+      if (!RefillTo10()) {
         Done();
         return ok_;
       }
-      const auto index = (buffer_ >> (buffer_len_ - 7)) & 0x7f;
+      const auto index = (buffer_ >> (buffer_len_ - 10)) & 0x3ff;
       const auto op = GetOp2(index);
-      buffer_len_ -= op & 7;
-      const auto emit_ofs = op >> 6;
-      switch ((op >> 3) & 7) {
-        case 1: {
+      buffer_len_ -= op & 15;
+      const auto emit_ofs = op >> 7;
+      switch ((op >> 4) & 7) {
+        case 2: {
           DecodeStep0();
           break;
         }
-        case 2: {
+        case 4: {
           DecodeStep1();
           break;
         }
         case 3: {
-          DecodeStep2();
+          DecodeStep20();
           break;
         }
-        case 4: {
-          DecodeStep3();
+        case 1: {
+          sink_(GetEmit2(index, emit_ofs + 0));
           break;
         }
         case 0: {
           sink_(GetEmit2(index, emit_ofs + 0));
+          sink_(GetEmit2(index, emit_ofs + 1));
           break;
         }
       }
@@ -541,18 +830,31 @@ class HuffDecoder {
   }
 
  private:
-  bool RefillTo7() {
+  bool RefillTo10() {
     switch (buffer_len_) {
-      case 0:
-      case 1:
       case 2:
       case 3:
       case 4:
       case 5:
-      case 6: {
+      case 6:
+      case 7:
+      case 8:
+      case 9: {
         return Read1();
       }
+      case 0:
+      case 1: {
+        return Read2();
+      }
     }
+    return true;
+  }
+  bool Read2() {
+    if (begin_ + 2 > end_) return false;
+    buffer_ <<= 16;
+    buffer_ |= static_cast<uint64_t>(*begin_++) << 8;
+    buffer_ |= static_cast<uint64_t>(*begin_++) << 0;
+    buffer_len_ += 16;
     return true;
   }
   bool Read1() {
@@ -582,15 +884,97 @@ class HuffDecoder {
     return true;
   }
   void DecodeStep1() {
-    if (!RefillTo1()) {
+    if (!RefillTo10()) {
       ok_ = false;
       return;
     }
-    const auto index = (buffer_ >> (buffer_len_ - 1)) & 0x1;
+    const auto index = (buffer_ >> (buffer_len_ - 10)) & 0x3ff;
     const auto op = GetOp4(index);
-    buffer_len_ -= op & 1;
-    const auto emit_ofs = op >> 1;
-    sink_(GetEmit4(index, emit_ofs + 0));
+    buffer_len_ -= op & 15;
+    const auto emit_ofs = op >> 9;
+    switch ((op >> 4) & 31) {
+      case 11: {
+        DecodeStep10();
+        break;
+      }
+      case 12: {
+        DecodeStep11();
+        break;
+      }
+      case 13: {
+        DecodeStep12();
+        break;
+      }
+      case 14: {
+        DecodeStep13();
+        break;
+      }
+      case 15: {
+        DecodeStep14();
+        break;
+      }
+      case 16: {
+        DecodeStep15();
+        break;
+      }
+      case 17: {
+        DecodeStep16();
+        break;
+      }
+      case 8: {
+        DecodeStep17();
+        break;
+      }
+      case 18: {
+        DecodeStep18();
+        break;
+      }
+      case 19: {
+        DecodeStep19();
+        break;
+      }
+      case 2: {
+        DecodeStep2();
+        break;
+      }
+      case 3: {
+        DecodeStep3();
+        break;
+      }
+      case 4: {
+        DecodeStep4();
+        break;
+      }
+      case 5: {
+        DecodeStep5();
+        break;
+      }
+      case 6: {
+        DecodeStep6();
+        break;
+      }
+      case 7: {
+        DecodeStep7();
+        break;
+      }
+      case 9: {
+        DecodeStep8();
+        break;
+      }
+      case 10: {
+        DecodeStep9();
+        break;
+      }
+      case 1: {
+        sink_(GetEmit4(index, emit_ofs + 0));
+        break;
+      }
+      case 0: {
+        sink_(GetEmit4(index, emit_ofs + 0));
+        sink_(GetEmit4(index, emit_ofs + 1));
+        break;
+      }
+    }
   }
   void DecodeStep2() {
     if (!RefillTo1()) {
@@ -604,28 +988,15 @@ class HuffDecoder {
     sink_(GetEmit5(index, emit_ofs + 0));
   }
   void DecodeStep3() {
-    if (!RefillTo7()) {
+    if (!RefillTo1()) {
       ok_ = false;
       return;
     }
-    const auto index = (buffer_ >> (buffer_len_ - 7)) & 0x7f;
+    const auto index = (buffer_ >> (buffer_len_ - 1)) & 0x1;
     const auto op = GetOp6(index);
-    buffer_len_ -= op & 7;
-    const auto emit_ofs = op >> 5;
-    switch ((op >> 3) & 3) {
-      case 1: {
-        DecodeStep4();
-        break;
-      }
-      case 2: {
-        DecodeStep5();
-        break;
-      }
-      case 0: {
-        sink_(GetEmit6(index, emit_ofs + 0));
-        break;
-      }
-    }
+    buffer_len_ -= op & 1;
+    const auto emit_ofs = op >> 1;
+    sink_(GetEmit6(index, emit_ofs + 0));
   }
   void DecodeStep4() {
     if (!RefillTo1()) {
@@ -639,117 +1010,15 @@ class HuffDecoder {
     sink_(GetEmit7(index, emit_ofs + 0));
   }
   void DecodeStep5() {
-    if (!RefillTo7()) {
+    if (!RefillTo1()) {
       ok_ = false;
       return;
     }
-    const auto index = (buffer_ >> (buffer_len_ - 7)) & 0x7f;
+    const auto index = (buffer_ >> (buffer_len_ - 1)) & 0x1;
     const auto op = GetOp8(index);
-    buffer_len_ -= op & 7;
-    const auto emit_ofs = op >> 8;
-    switch ((op >> 3) & 31) {
-      case 6: {
-        DecodeStep10();
-        break;
-      }
-      case 7: {
-        DecodeStep11();
-        break;
-      }
-      case 8: {
-        DecodeStep12();
-        break;
-      }
-      case 9: {
-        DecodeStep13();
-        break;
-      }
-      case 10: {
-        DecodeStep14();
-        break;
-      }
-      case 11: {
-        DecodeStep15();
-        break;
-      }
-      case 12: {
-        DecodeStep16();
-        break;
-      }
-      case 13: {
-        DecodeStep17();
-        break;
-      }
-      case 14: {
-        DecodeStep18();
-        break;
-      }
-      case 15: {
-        DecodeStep19();
-        break;
-      }
-      case 16: {
-        DecodeStep20();
-        break;
-      }
-      case 17: {
-        DecodeStep21();
-        break;
-      }
-      case 18: {
-        DecodeStep22();
-        break;
-      }
-      case 19: {
-        DecodeStep23();
-        break;
-      }
-      case 20: {
-        DecodeStep24();
-        break;
-      }
-      case 21: {
-        DecodeStep25();
-        break;
-      }
-      case 23: {
-        DecodeStep26();
-        break;
-      }
-      case 22: {
-        DecodeStep27();
-        break;
-      }
-      case 24: {
-        DecodeStep28();
-        break;
-      }
-      case 2: {
-        DecodeStep6();
-        break;
-      }
-      case 3: {
-        DecodeStep7();
-        break;
-      }
-      case 4: {
-        DecodeStep8();
-        break;
-      }
-      case 5: {
-        DecodeStep9();
-        break;
-      }
-      case 1: {
-        sink_(GetEmit8(index, emit_ofs + 0));
-        break;
-      }
-      case 0: {
-        sink_(GetEmit8(index, emit_ofs + 0));
-        sink_(GetEmit8(index, emit_ofs + 1));
-        break;
-      }
-    }
+    buffer_len_ -= op & 1;
+    const auto emit_ofs = op >> 1;
+    sink_(GetEmit8(index, emit_ofs + 0));
   }
   void DecodeStep6() {
     if (!RefillTo1()) {
@@ -774,136 +1043,15 @@ class HuffDecoder {
     sink_(GetEmit10(index, emit_ofs + 0));
   }
   void DecodeStep8() {
-    if (!RefillTo1()) {
-      ok_ = false;
-      return;
-    }
-    const auto index = (buffer_ >> (buffer_len_ - 1)) & 0x1;
-    const auto op = GetOp11(index);
-    buffer_len_ -= op & 1;
-    const auto emit_ofs = op >> 1;
-    sink_(GetEmit11(index, emit_ofs + 0));
-  }
-  void DecodeStep9() {
-    if (!RefillTo1()) {
-      ok_ = false;
-      return;
-    }
-    const auto index = (buffer_ >> (buffer_len_ - 1)) & 0x1;
-    const auto op = GetOp12(index);
-    buffer_len_ -= op & 1;
-    const auto emit_ofs = op >> 1;
-    sink_(GetEmit12(index, emit_ofs + 0));
-  }
-  void DecodeStep10() {
-    if (!RefillTo1()) {
-      ok_ = false;
-      return;
-    }
-    const auto index = (buffer_ >> (buffer_len_ - 1)) & 0x1;
-    const auto op = GetOp13(index);
-    buffer_len_ -= op & 1;
-    const auto emit_ofs = op >> 1;
-    sink_(GetEmit13(index, emit_ofs + 0));
-  }
-  void DecodeStep11() {
-    if (!RefillTo1()) {
-      ok_ = false;
-      return;
-    }
-    const auto index = (buffer_ >> (buffer_len_ - 1)) & 0x1;
-    const auto op = GetOp14(index);
-    buffer_len_ -= op & 1;
-    const auto emit_ofs = op >> 1;
-    sink_(GetEmit14(index, emit_ofs + 0));
-  }
-  void DecodeStep12() {
-    if (!RefillTo1()) {
-      ok_ = false;
-      return;
-    }
-    const auto index = (buffer_ >> (buffer_len_ - 1)) & 0x1;
-    const auto op = GetOp15(index);
-    buffer_len_ -= op & 1;
-    const auto emit_ofs = op >> 1;
-    sink_(GetEmit15(index, emit_ofs + 0));
-  }
-  void DecodeStep13() {
-    if (!RefillTo1()) {
-      ok_ = false;
-      return;
-    }
-    const auto index = (buffer_ >> (buffer_len_ - 1)) & 0x1;
-    const auto op = GetOp16(index);
-    buffer_len_ -= op & 1;
-    const auto emit_ofs = op >> 1;
-    sink_(GetEmit16(index, emit_ofs + 0));
-  }
-  void DecodeStep14() {
-    if (!RefillTo1()) {
-      ok_ = false;
-      return;
-    }
-    const auto index = (buffer_ >> (buffer_len_ - 1)) & 0x1;
-    const auto op = GetOp17(index);
-    buffer_len_ -= op & 1;
-    const auto emit_ofs = op >> 1;
-    sink_(GetEmit17(index, emit_ofs + 0));
-  }
-  void DecodeStep15() {
-    if (!RefillTo1()) {
-      ok_ = false;
-      return;
-    }
-    const auto index = (buffer_ >> (buffer_len_ - 1)) & 0x1;
-    const auto op = GetOp18(index);
-    buffer_len_ -= op & 1;
-    const auto emit_ofs = op >> 1;
-    sink_(GetEmit18(index, emit_ofs + 0));
-  }
-  void DecodeStep16() {
-    if (!RefillTo1()) {
-      ok_ = false;
-      return;
-    }
-    const auto index = (buffer_ >> (buffer_len_ - 1)) & 0x1;
-    const auto op = GetOp19(index);
-    buffer_len_ -= op & 1;
-    const auto emit_ofs = op >> 1;
-    sink_(GetEmit19(index, emit_ofs + 0));
-  }
-  void DecodeStep17() {
-    if (!RefillTo1()) {
-      ok_ = false;
-      return;
-    }
-    const auto index = (buffer_ >> (buffer_len_ - 1)) & 0x1;
-    const auto op = GetOp20(index);
-    buffer_len_ -= op & 1;
-    const auto emit_ofs = op >> 1;
-    sink_(GetEmit20(index, emit_ofs + 0));
-  }
-  void DecodeStep18() {
-    if (!RefillTo1()) {
-      ok_ = false;
-      return;
-    }
-    const auto index = (buffer_ >> (buffer_len_ - 1)) & 0x1;
-    const auto op = GetOp21(index);
-    buffer_len_ -= op & 1;
-    const auto emit_ofs = op >> 1;
-    sink_(GetEmit21(index, emit_ofs + 0));
-  }
-  void DecodeStep19() {
     if (!RefillTo2()) {
       ok_ = false;
       return;
     }
     const auto index = (buffer_ >> (buffer_len_ - 2)) & 0x3;
-    const auto op = GetOp22(index);
+    const auto op = GetOp11(index);
     buffer_len_ -= op & 3;
     const auto emit_ofs = op >> 2;
-    sink_(GetEmit22(index, emit_ofs + 0));
+    sink_(GetEmit11(index, emit_ofs + 0));
   }
   bool RefillTo2() {
     switch (buffer_len_) {
@@ -914,82 +1062,125 @@ class HuffDecoder {
     }
     return true;
   }
-  void DecodeStep20() {
+  void DecodeStep9() {
     if (!RefillTo2()) {
       ok_ = false;
       return;
     }
     const auto index = (buffer_ >> (buffer_len_ - 2)) & 0x3;
-    const auto op = GetOp23(index);
+    const auto op = GetOp12(index);
     buffer_len_ -= op & 3;
     const auto emit_ofs = op >> 2;
-    sink_(GetEmit23(index, emit_ofs + 0));
+    sink_(GetEmit12(index, emit_ofs + 0));
   }
-  void DecodeStep21() {
+  void DecodeStep10() {
     if (!RefillTo2()) {
       ok_ = false;
       return;
     }
     const auto index = (buffer_ >> (buffer_len_ - 2)) & 0x3;
-    const auto op = GetOp24(index);
+    const auto op = GetOp13(index);
     buffer_len_ -= op & 3;
     const auto emit_ofs = op >> 2;
-    sink_(GetEmit24(index, emit_ofs + 0));
+    sink_(GetEmit13(index, emit_ofs + 0));
   }
-  void DecodeStep22() {
+  void DecodeStep11() {
     if (!RefillTo2()) {
       ok_ = false;
       return;
     }
     const auto index = (buffer_ >> (buffer_len_ - 2)) & 0x3;
-    const auto op = GetOp25(index);
+    const auto op = GetOp14(index);
     buffer_len_ -= op & 3;
     const auto emit_ofs = op >> 2;
-    sink_(GetEmit25(index, emit_ofs + 0));
+    sink_(GetEmit14(index, emit_ofs + 0));
   }
-  void DecodeStep23() {
+  void DecodeStep12() {
     if (!RefillTo2()) {
       ok_ = false;
       return;
     }
     const auto index = (buffer_ >> (buffer_len_ - 2)) & 0x3;
-    const auto op = GetOp26(index);
+    const auto op = GetOp15(index);
     buffer_len_ -= op & 3;
     const auto emit_ofs = op >> 2;
-    sink_(GetEmit26(index, emit_ofs + 0));
+    sink_(GetEmit15(index, emit_ofs + 0));
   }
-  void DecodeStep24() {
+  void DecodeStep13() {
     if (!RefillTo2()) {
       ok_ = false;
       return;
     }
     const auto index = (buffer_ >> (buffer_len_ - 2)) & 0x3;
-    const auto op = GetOp27(index);
+    const auto op = GetOp16(index);
     buffer_len_ -= op & 3;
     const auto emit_ofs = op >> 2;
-    sink_(GetEmit27(index, emit_ofs + 0));
+    sink_(GetEmit16(index, emit_ofs + 0));
   }
-  void DecodeStep25() {
+  void DecodeStep14() {
+    if (!RefillTo3()) {
+      ok_ = false;
+      return;
+    }
+    const auto index = (buffer_ >> (buffer_len_ - 3)) & 0x7;
+    const auto op = GetOp17(index);
+    buffer_len_ -= op & 3;
+    const auto emit_ofs = op >> 2;
+    sink_(GetEmit17(index, emit_ofs + 0));
+  }
+  bool RefillTo3() {
+    switch (buffer_len_) {
+      case 0:
+      case 1:
+      case 2: {
+        return Read1();
+      }
+    }
+    return true;
+  }
+  void DecodeStep15() {
+    if (!RefillTo3()) {
+      ok_ = false;
+      return;
+    }
+    const auto index = (buffer_ >> (buffer_len_ - 3)) & 0x7;
+    const auto op = GetOp18(index);
+    buffer_len_ -= op & 3;
+    const auto emit_ofs = op >> 2;
+    sink_(GetEmit18(index, emit_ofs + 0));
+  }
+  void DecodeStep16() {
+    if (!RefillTo3()) {
+      ok_ = false;
+      return;
+    }
+    const auto index = (buffer_ >> (buffer_len_ - 3)) & 0x7;
+    const auto op = GetOp19(index);
+    buffer_len_ -= op & 3;
+    const auto emit_ofs = op >> 2;
+    sink_(GetEmit19(index, emit_ofs + 0));
+  }
+  void DecodeStep17() {
     if (!RefillTo2()) {
       ok_ = false;
       return;
     }
     const auto index = (buffer_ >> (buffer_len_ - 2)) & 0x3;
-    const auto op = GetOp28(index);
+    const auto op = GetOp20(index);
     buffer_len_ -= op & 3;
     const auto emit_ofs = op >> 2;
-    sink_(GetEmit28(index, emit_ofs + 0));
+    sink_(GetEmit20(index, emit_ofs + 0));
   }
-  void DecodeStep26() {
+  void DecodeStep18() {
     if (!RefillTo4()) {
       ok_ = false;
       return;
     }
     const auto index = (buffer_ >> (buffer_len_ - 4)) & 0xf;
-    const auto op = GetOp29(index);
+    const auto op = GetOp21(index);
     buffer_len_ -= op & 7;
     const auto emit_ofs = op >> 3;
-    sink_(GetEmit29(index, emit_ofs + 0));
+    sink_(GetEmit21(index, emit_ofs + 0));
   }
   bool RefillTo4() {
     switch (buffer_len_) {
@@ -1002,97 +1193,58 @@ class HuffDecoder {
     }
     return true;
   }
-  void DecodeStep27() {
-    if (!RefillTo3()) {
+  void DecodeStep19() {
+    if (!RefillTo10()) {
       ok_ = false;
       return;
     }
-    const auto index = (buffer_ >> (buffer_len_ - 3)) & 0x7;
-    const auto op = GetOp30(index);
-    buffer_len_ -= op & 3;
-    const auto emit_ofs = op >> 2;
-    sink_(GetEmit30(index, emit_ofs + 0));
-  }
-  bool RefillTo3() {
-    switch (buffer_len_) {
-      case 0:
-      case 1:
+    const auto index = (buffer_ >> (buffer_len_ - 10)) & 0x3ff;
+    const auto op = GetOp22(index);
+    buffer_len_ -= op & 15;
+    const auto emit_ofs = op >> 6;
+    switch ((op >> 4) & 3) {
       case 2: {
-        return Read1();
+        begin_ = end_;
+        buffer_len_ = 0;
+        break;
       }
-    }
-    return true;
-  }
-  void DecodeStep28() {
-    if (!RefillTo7()) {
-      ok_ = false;
-      return;
-    }
-    const auto index = (buffer_ >> (buffer_len_ - 7)) & 0x7f;
-    const auto op = GetOp31(index);
-    buffer_len_ -= op & 7;
-    const auto emit_ofs = op >> 4;
-    switch ((op >> 3) & 1) {
       case 1: {
-        DecodeStep29();
+        sink_(GetEmit22(index, emit_ofs + 0));
         break;
       }
       case 0: {
-        sink_(GetEmit31(index, emit_ofs + 0));
+        sink_(GetEmit22(index, emit_ofs + 0));
+        sink_(GetEmit22(index, emit_ofs + 1));
         break;
       }
     }
   }
-  void DecodeStep29() {
+  void DecodeStep20() {
     if (!RefillTo2()) {
       ok_ = false;
       return;
     }
     const auto index = (buffer_ >> (buffer_len_ - 2)) & 0x3;
-    const auto op = GetOp32(index);
+    const auto op = GetOp23(index);
     buffer_len_ -= op & 3;
-    const auto emit_ofs = op >> 3;
-    switch ((op >> 2) & 1) {
-      case 1: {
-        begin_ = end_;
-        buffer_len_ = 0;
-        break;
-      }
-      case 0: {
-        sink_(GetEmit32(index, emit_ofs + 0));
-        break;
-      }
-    }
+    const auto emit_ofs = op >> 2;
+    sink_(GetEmit23(index, emit_ofs + 0));
   }
   void Done() {
-    if (buffer_len_ < 6) {
-      buffer_ = (buffer_ << (6 - buffer_len_)) |
-                ((uint64_t(1) << (6 - buffer_len_)) - 1);
-      buffer_len_ = 6;
+    if (buffer_len_ < 9) {
+      buffer_ = (buffer_ << (9 - buffer_len_)) |
+                ((uint64_t(1) << (9 - buffer_len_)) - 1);
+      buffer_len_ = 9;
     }
-    const auto index = (buffer_ >> (buffer_len_ - 6)) & 0x3f;
+    const auto index = (buffer_ >> (buffer_len_ - 9)) & 0x1ff;
     const auto op = GetOp1(index);
-    buffer_len_ -= op & 7;
-    const auto emit_ofs = op >> 8;
-    switch ((op >> 3) & 31) {
+    buffer_len_ -= op & 15;
+    const auto emit_ofs = op >> 7;
+    switch ((op >> 4) & 7) {
       case 1:
-      case 10:
-      case 11:
-      case 12:
-      case 13:
-      case 14:
-      case 15:
-      case 16:
-      case 17:
-      case 18:
       case 2:
       case 3:
-      case 4:
-      case 5:
-      case 6:
-      case 7:
-      case 8:
-      case 9: {
+      case 4: {
         break;
       }
       case 0: {
