@@ -28,7 +28,8 @@
 
 #include "src/core/ext/transport/chttp2/transport/huffsyms.h"
 
-static const int kFirstBits = 7;
+static const int kFirstBits = 12;
+static const int kMaxDepth = 1;
 
 class BitQueue {
  public:
@@ -736,12 +737,12 @@ struct End {
 using MatchCase = absl::variant<Matched, Unmatched, End>;
 
 void AddStep(Sink* globals, Sink* out, FunMaker* fun_maker, SymSet start_syms,
-             int num_bits, bool is_top, bool refill);
+             int num_bits, bool is_top, bool refill, int depth);
 
 void AddMatchBody(Sink* globals, Sink* out, FunMaker* fun_maker,
                   TableBuilder* table_builder, std::string index,
                   std::string ofs, const MatchCase& match_case, bool is_top,
-                  bool refill) {
+                  bool refill, int depth) {
   if (absl::holds_alternative<End>(match_case)) {
     out->Add("begin_ = end_;");
     out->Add("buffer_len_ = 0;");
@@ -751,8 +752,10 @@ void AddMatchBody(Sink* globals, Sink* out, FunMaker* fun_maker,
     if (refill) {
       int max_bits = 0;
       for (auto sym : p->syms) max_bits = std::max(max_bits, sym.bits.length());
-      AddStep(globals, fun_maker->CallNewFun("DecodeStep", out), fun_maker,
-              p->syms, std::min(max_bits, kFirstBits), false, true);
+      AddStep(
+          globals, fun_maker->CallNewFun("DecodeStep", out), fun_maker, p->syms,
+          depth + 1 >= kMaxDepth ? max_bits : std::min(max_bits, kFirstBits),
+          false, true, depth + 1);
     }
     return;
   }
@@ -765,7 +768,7 @@ void AddMatchBody(Sink* globals, Sink* out, FunMaker* fun_maker,
 }
 
 void AddStep(Sink* globals, Sink* out, FunMaker* fun_maker, SymSet start_syms,
-             int num_bits, bool is_top, bool refill) {
+             int num_bits, bool is_top, bool refill, int depth) {
   auto table_builder = globals->Add<TableBuilder>();
   if (refill) {
     out->Add(absl::StrCat("if (!", fun_maker->RefillTo(num_bits), ") {"));
@@ -813,7 +816,7 @@ void AddStep(Sink* globals, Sink* out, FunMaker* fun_maker, SymSet start_syms,
       table_builder->ConsumeBits() + table_builder->MatchBits(), ";"));
   if (match_cases.size() == 1) {
     AddMatchBody(globals, out, fun_maker, table_builder, "index", "emit_ofs",
-                 match_cases.begin()->first, is_top, refill);
+                 match_cases.begin()->first, is_top, refill, depth);
   } else {
     auto s = out->Add<Switch>(
         absl::StrCat("(op >> ", table_builder->ConsumeBits(), ") & ",
@@ -821,7 +824,7 @@ void AddStep(Sink* globals, Sink* out, FunMaker* fun_maker, SymSet start_syms,
     for (auto kv : match_cases) {
       auto c = s->Case(absl::StrCat(kv.second));
       AddMatchBody(globals, c, fun_maker, table_builder, "index", "emit_ofs",
-                   kv.first, is_top, refill);
+                   kv.first, is_top, refill, depth);
       c->Add("break;");
     }
   }
@@ -856,7 +859,8 @@ int main(void) {
                         kFirstBits - 1, " - buffer_len_)) - 1);"));
   fix->Add(absl::StrCat("buffer_len_ = ", kFirstBits - 1, ";"));
   done->Add("}");
-  AddStep(globals, done, &fun_maker, AllSyms(), kFirstBits - 1, false, false);
+  AddStep(globals, done, &fun_maker, AllSyms(), kFirstBits - 1, false, false,
+          0);
   done->Add("if (buffer_len_ == 0) return;");
   done->Add("const uint64_t mask = (1 << buffer_len_) - 1;");
   done->Add(absl::StrCat("if ((buffer_ & mask) != mask) ok_ = false;"));
@@ -873,7 +877,7 @@ int main(void) {
   auto body = pub->Add<Indent>();
   body->Add("while (ok_) {");
   AddStep(globals, body->Add<Indent>(), &fun_maker, AllSyms(), kFirstBits, true,
-          true);
+          true, 1);
   body->Add("}");
   body->Add("return ok_;");
   pub->Add("}");
