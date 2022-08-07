@@ -12,10 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <atomic>
 #include <cstdint>
+#include <limits>
 #include <map>
 #include <set>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include "absl/memory/memory.h"
@@ -25,7 +28,7 @@
 
 #include "src/core/ext/transport/chttp2/transport/huffsyms.h"
 
-static const int kFirstBits = 11;
+static const int kFirstBits = 20;
 
 class BitQueue {
  public:
@@ -385,26 +388,30 @@ class TableBuilder : public Item {
     std::vector<NestedSlice> slices;
     int slice_bits;
     size_t Size() const override {
-      size_t sum = 0;
+      std::atomic<size_t> sum{0};
+      std::vector<std::thread> threads;
       for (size_t i = 0; i < slices.size(); i++) {
-        bool emit_found = false;
-        bool inner_found = false;
-        bool outer_found = false;
-        for (size_t j = 0; j < i; j++) {
-          if (slices[j].emit == slices[i].emit) {
-            emit_found = true;
+        threads.emplace_back([this, i, &sum] {
+          bool emit_found = false;
+          bool inner_found = false;
+          bool outer_found = false;
+          for (size_t j = 0; j < i; j++) {
+            if (!emit_found && slices[j].emit == slices[i].emit) {
+              emit_found = true;
+            }
+            if (!inner_found && slices[j].inner == slices[i].inner) {
+              inner_found = true;
+            }
+            if (!outer_found && slices[j].outer == slices[i].outer) {
+              outer_found = true;
+            }
           }
-          if (slices[j].inner == slices[i].inner) {
-            inner_found = true;
-          }
-          if (slices[j].outer == slices[i].outer) {
-            outer_found = true;
-          }
-        }
-        if (!emit_found) sum += slices[i].EmitSize();
-        if (!inner_found) sum += slices[i].InnerSize();
-        if (!outer_found) sum += slices[i].OuterSize();
+          if (!emit_found) sum += slices[i].EmitSize();
+          if (!inner_found) sum += slices[i].InnerSize();
+          if (!outer_found) sum += slices[i].OuterSize();
+        });
       }
+      for (auto& t : threads) t.join();
       return sum + 3 * 64 * slices.size();
     }
     std::vector<std::string> ToLines(int id, int op_bits) const override {
@@ -457,22 +464,26 @@ class TableBuilder : public Item {
     std::vector<Slice> slices;
     int slice_bits;
     size_t Size() const override {
-      size_t sum = 0;
+      std::atomic<size_t> sum{0};
+      std::vector<std::thread> threads;
       for (size_t i = 0; i < slices.size(); i++) {
-        bool emit_found = false;
-        bool ops_found = false;
-        for (size_t j = 0; j < i; j++) {
-          if (slices[j].emit == slices[i].emit) {
-            emit_found = true;
+        threads.emplace_back([this, i, &sum] {
+          bool emit_found = false;
+          bool ops_found = false;
+          for (size_t j = 0; j < i; j++) {
+            if (!emit_found && slices[j].emit == slices[i].emit) {
+              emit_found = true;
+            }
+            if (!ops_found && slices[j].ops == slices[i].ops) {
+              ops_found = true;
+            }
           }
-          if (slices[j].ops == slices[i].ops) {
-            ops_found = true;
-          }
-        }
-        if (!emit_found) sum += slices[i].EmitSize();
-        if (!ops_found) sum += slices[i].OpsSize();
+          if (!emit_found) sum += slices[i].EmitSize();
+          if (!ops_found) sum += slices[i].OpsSize();
+        });
       }
-      return sum + 3 * 64 * slices.size();
+      for (auto& t : threads) t.join();
+      return sum.load() + 3 * 64 * slices.size();
     }
     std::vector<std::string> ToLines(int id, int op_bits) const override {
       std::vector<std::string> lines;
@@ -578,20 +589,42 @@ class TableBuilder : public Item {
 
   EncodeOption* Choose() const {
     if (chosen_ == nullptr) {
-      std::vector<std::unique_ptr<EncodeOption>> options;
+      struct Measure {
+        std::unique_ptr<EncodeOption> best;
+        size_t best_size;
+        std::thread thread;
+        Measure(const TableBuilder* builder, size_t slice_bits)
+            : thread{[this, builder, slice_bits] {
+                auto raw = builder->MakeTable(slice_bits);
+                std::unique_ptr<NestedTable> nested;
+                size_t nested_size;
+                std::thread measure_nested([&raw, &nested, &nested_size] {
+                  nested = raw->MakeNestedTable();
+                  nested_size = nested->Size();
+                });
+                size_t raw_size = raw->Size();
+                measure_nested.join();
+                if (raw_size < best_size) {
+                  best = std::move(raw);
+                  best_size = raw_size;
+                } else {
+                  best = std::move(nested);
+                  best_size = nested_size;
+                }
+              }} {};
+      };
+      std::vector<std::unique_ptr<Measure>> options;
       for (size_t slice_bits = 0; (1 << slice_bits) < elems_.size();
            slice_bits++) {
-        auto t = MakeTable(slice_bits);
-        options.push_back(t->MakeNestedTable());
-        options.push_back(std::move(t));
+        options.emplace_back(absl::make_unique<Measure>(this, slice_bits));
       }
-      chosen_ = std::move(options.back());
-      options.pop_back();
-      while (!options.empty()) {
-        if (chosen_->Size() > options.back()->Size()) {
-          chosen_ = std::move(options.back());
+      size_t best_size = std::numeric_limits<size_t>::max();
+      for (auto& option : options) {
+        option->thread.join();
+        if (option->best_size < best_size) {
+          chosen_ = std::move(option->best);
+          best_size = option->best_size;
         }
-        options.pop_back();
       }
     }
     return chosen_.get();
