@@ -2551,6 +2551,21 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "posix_event_engine_internal_errqueue",
+    srcs = [
+        "src/core/lib/event_engine/posix_engine/internal_errqueue.cc",
+    ],
+    hdrs = [
+        "src/core/lib/event_engine/posix_engine/internal_errqueue.h",
+    ],
+    deps = [
+        "gpr_base",
+        "gpr_codegen",
+        "iomgr_port",
+    ],
+)
+
+grpc_cc_library(
     name = "event_engine_utils",
     srcs = ["src/core/lib/event_engine/utils.cc"],
     hdrs = ["src/core/lib/event_engine/utils.h"],
