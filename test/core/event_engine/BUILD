@@ -51,7 +51,7 @@ grpc_cc_test(
     srcs = ["default_engine_methods_test.cc"],
     external_deps = ["gtest"],
     deps = [
-        "//:default_event_engine_factory_hdrs",
+        "//:default_event_engine",
         "//:event_engine_base_hdrs",
         "//:gpr_base",
         "//:grpc",
