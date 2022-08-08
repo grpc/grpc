@@ -13,6 +13,8 @@
 // limitations under the License.
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/event_engine/default_event_engine.h"
+
 #include <atomic>
 #include <memory>
 #include <utility>
@@ -21,7 +23,6 @@
 
 #include <grpc/event_engine/event_engine.h>
 
-#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/default_event_engine_factory.h"
 
 namespace grpc_event_engine {

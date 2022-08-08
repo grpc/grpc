@@ -2213,18 +2213,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "default_event_engine",
-    hdrs = [
-        "src/core/lib/event_engine/default_event_engine.h",
-    ],
-    tags = ["nofixdeps"],
-    deps = [
-        "event_engine_base_hdrs",
-        "gpr_base",
-    ],
-)
-
-grpc_cc_library(
     name = "time_averaged_stats",
     srcs = ["src/core/lib/gprpp/time_averaged_stats.cc"],
     hdrs = [
@@ -2708,13 +2696,15 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "event_engine_base",
+    name = "default_event_engine",
     srcs = [
-        "src/core/lib/event_engine/event_engine.cc",
+        "src/core/lib/event_engine/default_event_engine.cc",
+    ],
+    hdrs = [
+        "src/core/lib/event_engine/default_event_engine.h",
     ],
     external_deps = ["absl/functional:any_invocable"],
     deps = [
-        "default_event_engine",
         "default_event_engine_factory",
         "event_engine_base_hdrs",
         "gpr_base",
@@ -3058,7 +3048,6 @@ grpc_cc_library(
         "default_event_engine",
         "dual_ref_counted",
         "error",
-        "event_engine_base",
         "event_engine_common",
         "exec_ctx",
         "gpr_base",
