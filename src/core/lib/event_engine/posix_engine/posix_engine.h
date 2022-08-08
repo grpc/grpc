@@ -32,7 +32,6 @@
 #include <grpc/event_engine/slice_buffer.h>
 
 #include "src/core/lib/event_engine/executor/threaded_executor.h"
-#include "src/core/lib/event_engine/forkable.h"
 #include "src/core/lib/event_engine/handle_containers.h"
 #include "src/core/lib/event_engine/posix_engine/timer_manager.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -42,7 +41,7 @@ namespace experimental {
 
 // An iomgr-based Posix EventEngine implementation.
 // All methods require an ExecCtx to already exist on the thread's stack.
-class PosixEventEngine final : public EventEngine, public Forkable {
+class PosixEventEngine final : public EventEngine {
  public:
   class PosixEndpoint : public EventEngine::Endpoint {
    public:
@@ -76,7 +75,7 @@ class PosixEventEngine final : public EventEngine, public Forkable {
     bool CancelLookup(LookupTaskHandle handle) override;
   };
 
-  PosixEventEngine();
+  PosixEventEngine() = default;
   ~PosixEventEngine() override;
 
   absl::StatusOr<std::unique_ptr<Listener>> CreateListener(
@@ -102,11 +101,6 @@ class PosixEventEngine final : public EventEngine, public Forkable {
   TaskHandle RunAfter(Duration when,
                       absl::AnyInvocable<void()> closure) override;
   bool Cancel(TaskHandle handle) override;
-
-  // Forkable
-  void PrepareFork() override;
-  void PostforkParent() override;
-  void PostforkChild() override;
 
  private:
   struct ClosureData;

@@ -39,12 +39,11 @@ void PostforkChild();
 // support.
 class Forkable {
  public:
+  Forkable();
+  virtual ~Forkable();
   virtual void PrepareFork() = 0;
   virtual void PostforkParent() = 0;
   virtual void PostforkChild() = 0;
-
- protected:
-  ~Forkable() = default;
 };
 
 // Add Forkables from the set of objects that are supported.

@@ -35,9 +35,7 @@ int main(int /* argc */, char** /* argv */) { return 0; }
 
 namespace {
 using ::grpc_event_engine::experimental::Forkable;
-using ::grpc_event_engine::experimental::ManageForkable;
 using ::grpc_event_engine::experimental::RegisterForkHandlers;
-using ::grpc_event_engine::experimental::StopManagingForkable;
 }  // namespace
 
 class ForkableTest : public testing::Test {};
@@ -69,7 +67,6 @@ TEST_F(ForkableTest, BasicPthreadAtForkOperations) {
   };
 
   SomeForkable forkable;
-  ManageForkable(&forkable);
   int child_pid = fork();
   ASSERT_NE(child_pid, -1);
   if (child_pid == 0) {
@@ -93,7 +90,6 @@ TEST_F(ForkableTest, BasicPthreadAtForkOperations) {
       ASSERT_EQ(-99, status);
     }
   }
-  StopManagingForkable(&forkable);
 }
 #endif  // GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
 

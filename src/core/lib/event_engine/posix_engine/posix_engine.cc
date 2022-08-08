@@ -52,15 +52,8 @@ struct PosixEventEngine::ClosureData final : public EventEngine::Closure {
   }
 };
 
-PosixEventEngine::PosixEventEngine() {
-  grpc_event_engine::experimental::ManageForkable(this);
-  grpc_event_engine::experimental::ManageForkable(&timer_manager_);
-}
-
 PosixEventEngine::~PosixEventEngine() {
   grpc_core::MutexLock lock(&mu_);
-  grpc_event_engine::experimental::StopManagingForkable(this);
-  grpc_event_engine::experimental::StopManagingForkable(&timer_manager_);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {
     for (auto handle : known_handles_) {
       gpr_log(GPR_ERROR,
@@ -81,17 +74,6 @@ bool PosixEventEngine::Cancel(EventEngine::TaskHandle handle) {
   if (r) delete cd;
   return r;
 }
-
-void PosixEventEngine::PrepareFork() {
-  // ExecCtx fork needs are handled in legacy fork-support code.
-  // ThreadPool is handled as its own managed Forkable.
-  // TimerManager is handled as its own managed Forkable.
-  // This will probably get more complex when fds are involved.
-}
-
-void PosixEventEngine::PostforkParent() {}
-
-void PosixEventEngine::PostforkChild() {}
 
 EventEngine::TaskHandle PosixEventEngine::RunAfter(
     Duration when, absl::AnyInvocable<void()> closure) {

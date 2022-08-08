@@ -37,7 +37,7 @@ namespace experimental {
 class ThreadPool final : public grpc_event_engine::experimental::Forkable {
  public:
   explicit ThreadPool(int reserve_threads);
-  ~ThreadPool();
+  ~ThreadPool() override;
 
   void Add(absl::AnyInvocable<void()> callback);
 

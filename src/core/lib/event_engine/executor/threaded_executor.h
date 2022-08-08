@@ -30,7 +30,7 @@ namespace experimental {
 class ThreadedExecutor : public Executor {
  public:
   explicit ThreadedExecutor(int reserve_threads);
-  ~ThreadedExecutor() override;
+  ~ThreadedExecutor() override = default;
   void Run(EventEngine::Closure* closure) override;
   void Run(absl::AnyInvocable<void()> closure) override;
 

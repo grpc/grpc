@@ -33,6 +33,10 @@ bool g_registered{false};
 absl::flat_hash_set<Forkable*> g_forkables;
 }  // namespace
 
+Forkable::Forkable() { ManageForkable(this); }
+
+Forkable::~Forkable() { StopManagingForkable(this); }
+
 void RegisterForkHandlers() {
   grpc_core::MutexLock lock(&g_mu);
   GPR_ASSERT(!absl::exchange(g_registered, true));

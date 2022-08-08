@@ -47,7 +47,7 @@ namespace posix_engine {
 class TimerManager final : public grpc_event_engine::experimental::Forkable {
  public:
   TimerManager();
-  ~TimerManager();
+  ~TimerManager() override;
 
   grpc_core::Timestamp Now() { return host_.Now(); }
 
