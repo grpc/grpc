@@ -15,12 +15,15 @@
 #ifndef GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_EVENT_POLLER_H
 #define GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_EVENT_POLLER_H
 #include <grpc/support/port_platform.h>
-#include <grpc/event_engine/event_engine.h>
+
 #include <string>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
+
+#include <grpc/event_engine/event_engine.h>
+
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
 

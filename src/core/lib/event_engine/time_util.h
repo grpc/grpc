@@ -15,8 +15,10 @@
 #define GRPC_CORE_LIB_EVENT_ENGINE_TIME_UTIL_H
 
 #include <grpc/support/port_platform.h>
-#include <grpc/event_engine/event_engine.h>
+
 #include <stddef.h>
+
+#include <grpc/event_engine/event_engine.h>
 
 namespace grpc_event_engine {
 namespace experimental {

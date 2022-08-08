@@ -15,13 +15,14 @@
 #ifndef GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_ENGINE_CLOSURE_H
 #define GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_ENGINE_CLOSURE_H
 #include <grpc/support/port_platform.h>
-#include <grpc/event_engine/event_engine.h>
+
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/utility/utility.h"
-#include "absl/base/optimization.h"
+
+#include <grpc/event_engine/event_engine.h>
 
 namespace grpc_event_engine {
 namespace posix_engine {
@@ -46,7 +47,7 @@ class PosixEngineClosure final
     // enclosed callback. This is because a permanent closure may delete this
     // object within the callback itself and thus reading this variable after
     // the callback execution is not safe.
-    if (ABSL_PREDICT_FALSE(!is_permanent_)) {
+    if (!is_permanent_) {
       cb_(absl::exchange(status_, absl::OkStatus()));
       delete this;
     } else {
