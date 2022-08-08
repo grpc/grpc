@@ -16,6 +16,7 @@
 #include <cstdint>
 #include <limits>
 #include <map>
+#include <numeric>
 #include <set>
 #include <string>
 #include <thread>
@@ -26,12 +27,10 @@
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
+#include "absl/types/optional.h"
 #include "absl/types/variant.h"
 
 #include "src/core/ext/transport/chttp2/transport/huffsyms.h"
-
-static const int kFirstBits = 8;
-static const int kMaxDepth = 1;
 
 struct Hash {
   uint8_t bytes[SHA256_DIGEST_LENGTH];
@@ -182,6 +181,62 @@ class Sink : public Item {
   std::vector<ItemPtr> children_;
 };
 
+class TableBuilder;
+class FunMaker;
+
+struct Matched {
+  int emits;
+
+  bool operator<(const Matched& other) const { return emits < other.emits; }
+};
+
+struct Unmatched {
+  SymSet syms;
+
+  bool operator<(const Unmatched& other) const { return syms < other.syms; }
+};
+
+struct End {
+  bool operator<(End) const { return false; }
+};
+
+using MatchCase = absl::variant<Matched, Unmatched, End>;
+
+class BuildCtx {
+ public:
+  BuildCtx(std::vector<int> max_bits_for_depth, Sink* globals,
+           FunMaker* fun_maker)
+      : max_bits_for_depth_(std::move(max_bits_for_depth)),
+        globals_(globals),
+        fun_maker_(fun_maker) {}
+
+  void AddStep(SymSet start_syms, int num_bits, bool is_top, bool refill,
+               int depth, Sink* out);
+  void AddMatchBody(TableBuilder* table_builder, std::string index,
+                    std::string ofs, const MatchCase& match_case, bool is_top,
+                    bool refill, int depth, Sink* out);
+
+  int NewId() { return next_id_++; }
+  int MaxBitsForTop() const { return max_bits_for_depth_[0]; }
+
+  absl::optional<std::string> PreviousNameForArtifact(std::string proposed_name,
+                                                      Hash hash) {
+    auto it = arrays_.find(hash);
+    if (it == arrays_.end()) {
+      arrays_.emplace(hash, proposed_name);
+      return absl::nullopt;
+    }
+    return it->second;
+  }
+
+ private:
+  const std::vector<int> max_bits_for_depth_;
+  std::map<Hash, std::string> arrays_;
+  int next_id_ = 1;
+  Sink* const globals_;
+  FunMaker* const fun_maker_;
+};
+
 class String : public Item {
  public:
   explicit String(std::string s) : s_(std::move(s)) {}
@@ -294,11 +349,10 @@ int BitsForMaxValue(int x) {
   return n;
 }
 
-std::map<std::string, int> g_emit_buffer_idx;
-std::map<std::string, std::string> g_arrays;
-
 class TableBuilder : public Item {
  public:
+  explicit TableBuilder(BuildCtx* ctx) : ctx_(ctx), id_(ctx->NewId()) {}
+
   void Add(int match_case, std::vector<uint8_t> emit, int consumed_bits) {
     elems_.push_back({match_case, std::move(emit), consumed_bits});
     max_consumed_bits_ = std::max(max_consumed_bits_, consumed_bits);
@@ -306,7 +360,7 @@ class TableBuilder : public Item {
   }
 
   std::vector<std::string> ToLines() const override {
-    return Choose()->ToLines(id_, BitsForMaxValue(elems_.size() - 1));
+    return Choose()->ToLines(this, BitsForMaxValue(elems_.size() - 1));
   }
 
   std::string EmitAccessor(std::string index, std::string offset) {
@@ -401,7 +455,8 @@ class TableBuilder : public Item {
 
   struct EncodeOption {
     virtual size_t Size() const = 0;
-    virtual std::vector<std::string> ToLines(int id, int op_bits) const = 0;
+    virtual std::vector<std::string> ToLines(const TableBuilder* builder,
+                                             int op_bits) const = 0;
     virtual ~EncodeOption() {}
   };
 
@@ -430,17 +485,20 @@ class TableBuilder : public Item {
       if (slice_bits != 0) sum += 3 * 64 * slices.size();
       return sum;
     }
-    std::vector<std::string> ToLines(int id, int op_bits) const override {
+    std::vector<std::string> ToLines(const TableBuilder* builder,
+                                     int op_bits) const override {
+      const int id = builder->id_;
       std::vector<std::string> lines;
       const uint64_t max_inner = MaxInner();
       const uint64_t max_outer = MaxOuter();
       for (size_t i = 0; i < slices.size(); i++) {
-        GenArray(absl::StrCat("table", id, "_", i, "_emit"), "uint8_t",
-                 slices[i].emit, true, &lines);
-        GenArray(absl::StrCat("table", id, "_", i, "_inner"),
-                 TypeForMax(max_inner), slices[i].inner, true, &lines);
-        GenArray(absl::StrCat("table", id, "_", i, "_outer"),
-                 TypeForMax(max_outer), slices[i].outer, false, &lines);
+        builder->GenArray(absl::StrCat("table", id, "_", i, "_emit"), "uint8_t",
+                          slices[i].emit, true, &lines);
+        builder->GenArray(absl::StrCat("table", id, "_", i, "_inner"),
+                          TypeForMax(max_inner), slices[i].inner, true, &lines);
+        builder->GenArray(absl::StrCat("table", id, "_", i, "_outer"),
+                          TypeForMax(max_outer), slices[i].outer, false,
+                          &lines);
       }
       if (slice_bits == 0) {
         lines.push_back(absl::StrCat(
@@ -505,14 +563,16 @@ class TableBuilder : public Item {
       }
       return sum + 3 * 64 * slices.size();
     }
-    std::vector<std::string> ToLines(int id, int op_bits) const override {
+    std::vector<std::string> ToLines(const TableBuilder* builder,
+                                     int op_bits) const override {
       std::vector<std::string> lines;
       uint64_t max_op = MaxOp();
+      const int id = builder->id_;
       for (size_t i = 0; i < slices.size(); i++) {
-        GenArray(absl::StrCat("table", id, "_", i, "_emit"), "uint8_t",
-                 slices[i].emit, true, &lines);
-        GenArray(absl::StrCat("table", id, "_", i, "_ops"), TypeForMax(max_op),
-                 slices[i].ops, true, &lines);
+        builder->GenArray(absl::StrCat("table", id, "_", i, "_emit"), "uint8_t",
+                          slices[i].emit, true, &lines);
+        builder->GenArray(absl::StrCat("table", id, "_", i, "_ops"),
+                          TypeForMax(max_op), slices[i].ops, true, &lines);
       }
       GenCompound(id, slices.size(), "emit", "uint8_t", &lines);
       GenCompound(id, slices.size(), "ops", TypeForMax(max_op), &lines);
@@ -575,9 +635,14 @@ class TableBuilder : public Item {
   }
 
   template <typename T>
-  static void GenArray(std::string name, std::string type,
-                       const std::vector<T>& values, bool hex,
-                       std::vector<std::string>* lines) {
+  void GenArray(std::string name, std::string type,
+                const std::vector<T>& values, bool hex,
+                std::vector<std::string>* lines) const {
+    auto previous_name = ctx_->PreviousNameForArtifact(name, HashVec(values));
+    if (previous_name.has_value()) {
+      lines->push_back(absl::StrCat("#define g_", name, " g_", *previous_name));
+      return;
+    }
     std::vector<std::string> elems;
     elems.reserve(values.size());
     for (const auto& elem : values) {
@@ -594,71 +659,60 @@ class TableBuilder : public Item {
       }
     }
     std::string data = absl::StrJoin(elems, ", ");
-    std::string signature = type + data;
-    auto it = g_arrays.find(signature);
-    if (it == g_arrays.end()) {
-      g_arrays.emplace(std::move(signature), name);
-      lines->push_back(absl::StrCat("static const ", type, " g_", name, "[",
-                                    values.size(), "] = {"));
-      lines->push_back(absl::StrCat("  ", data));
-      lines->push_back("};");
-    } else {
-      lines->push_back(absl::StrCat("#define g_", name, " g_", it->second));
-    }
+    lines->push_back(absl::StrCat("static const ", type, " g_", name, "[",
+                                  values.size(), "] = {"));
+    lines->push_back(absl::StrCat("  ", data));
+    lines->push_back("};");
   }
 
-  EncodeOption* Choose() const {
-    if (chosen_ == nullptr) {
-      struct Measure {
-        std::unique_ptr<EncodeOption> best;
-        size_t best_size;
-        std::thread thread;
-        Measure(const TableBuilder* builder, size_t slice_bits)
-            : thread{[this, builder, slice_bits] {
-                auto raw = builder->MakeTable(slice_bits);
-                std::unique_ptr<NestedTable> nested;
-                size_t nested_size;
-                std::thread measure_nested([&raw, &nested, &nested_size] {
-                  nested = raw->MakeNestedTable();
-                  nested_size = nested->Size();
-                });
-                size_t raw_size = raw->Size();
-                measure_nested.join();
-                if (raw_size < best_size) {
-                  best = std::move(raw);
-                  best_size = raw_size;
-                } else {
-                  best = std::move(nested);
-                  best_size = nested_size;
-                }
-              }} {};
-      };
-      std::vector<std::unique_ptr<Measure>> options;
-      for (size_t slice_bits = 0; (1 << slice_bits) < elems_.size();
-           slice_bits++) {
-        options.emplace_back(absl::make_unique<Measure>(this, slice_bits));
-      }
-      size_t best_size = std::numeric_limits<size_t>::max();
-      for (auto& option : options) {
-        option->thread.join();
-        if (option->best_size < best_size) {
-          chosen_ = std::move(option->best);
-          best_size = option->best_size;
-        }
+  std::unique_ptr<EncodeOption> Choose() const {
+    std::unique_ptr<EncodeOption> chosen;
+    struct Measure {
+      std::unique_ptr<EncodeOption> best;
+      size_t best_size;
+      std::thread thread;
+      Measure(const TableBuilder* builder, size_t slice_bits)
+          : thread{[this, builder, slice_bits] {
+              auto raw = builder->MakeTable(slice_bits);
+              std::unique_ptr<NestedTable> nested;
+              size_t nested_size;
+              std::thread measure_nested([&raw, &nested, &nested_size] {
+                nested = raw->MakeNestedTable();
+                nested_size = nested->Size();
+              });
+              size_t raw_size = raw->Size();
+              measure_nested.join();
+              if (raw_size < best_size) {
+                best = std::move(raw);
+                best_size = raw_size;
+              } else {
+                best = std::move(nested);
+                best_size = nested_size;
+              }
+            }} {};
+    };
+    std::vector<std::unique_ptr<Measure>> options;
+    for (size_t slice_bits = 0; (1 << slice_bits) < elems_.size();
+         slice_bits++) {
+      options.emplace_back(absl::make_unique<Measure>(this, slice_bits));
+    }
+    size_t best_size = std::numeric_limits<size_t>::max();
+    for (auto& option : options) {
+      option->thread.join();
+      if (option->best_size < best_size) {
+        chosen = std::move(option->best);
+        best_size = option->best_size;
       }
     }
-    return chosen_.get();
+    return chosen;
   }
 
+  BuildCtx* const ctx_;
   std::vector<Elem> elems_;
-  mutable std::unique_ptr<EncodeOption> chosen_;
   int max_consumed_bits_ = 0;
   int max_match_case_ = 0;
-  int id_ = next_id_++;
-  static int next_id_;
+  const int id_;
 };
-
-int TableBuilder::next_id_ = 1;
 
 void Sink::Add(std::string s) {
   children_.push_back(absl::make_unique<String>(std::move(s)));
@@ -727,31 +781,9 @@ class FunMaker {
   Sink* sink_;
 };
 
-struct Matched {
-  int emits;
-
-  bool operator<(const Matched& other) const { return emits < other.emits; }
-};
-
-struct Unmatched {
-  SymSet syms;
-
-  bool operator<(const Unmatched& other) const { return syms < other.syms; }
-};
-
-struct End {
-  bool operator<(End) const { return false; }
-};
-
-using MatchCase = absl::variant<Matched, Unmatched, End>;
-
-void AddStep(Sink* globals, Sink* out, FunMaker* fun_maker, SymSet start_syms,
-             int num_bits, bool is_top, bool refill, int depth);
-
-void AddMatchBody(Sink* globals, Sink* out, FunMaker* fun_maker,
-                  TableBuilder* table_builder, std::string index,
-                  std::string ofs, const MatchCase& match_case, bool is_top,
-                  bool refill, int depth) {
+void BuildCtx::AddMatchBody(TableBuilder* table_builder, std::string index,
+                            std::string ofs, const MatchCase& match_case,
+                            bool is_top, bool refill, int depth, Sink* out) {
   if (absl::holds_alternative<End>(match_case)) {
     out->Add("begin_ = end_;");
     out->Add("buffer_len_ = 0;");
@@ -761,10 +793,12 @@ void AddMatchBody(Sink* globals, Sink* out, FunMaker* fun_maker,
     if (refill) {
       int max_bits = 0;
       for (auto sym : p->syms) max_bits = std::max(max_bits, sym.bits.length());
-      AddStep(
-          globals, fun_maker->CallNewFun("DecodeStep", out), fun_maker, p->syms,
-          depth + 1 >= kMaxDepth ? max_bits : std::min(max_bits, kFirstBits),
-          false, true, depth + 1);
+      AddStep(p->syms,
+              depth + 1 >= max_bits_for_depth_.size()
+                  ? max_bits
+                  : std::min(max_bits, max_bits_for_depth_[depth + 1]),
+              false, true, depth + 1,
+              fun_maker_->CallNewFun("DecodeStep", out));
     }
     return;
   }
@@ -776,11 +810,11 @@ void AddMatchBody(Sink* globals, Sink* out, FunMaker* fun_maker,
   }
 }
 
-void AddStep(Sink* globals, Sink* out, FunMaker* fun_maker, SymSet start_syms,
-             int num_bits, bool is_top, bool refill, int depth) {
-  auto table_builder = globals->Add<TableBuilder>();
+void BuildCtx::AddStep(SymSet start_syms, int num_bits, bool is_top,
+                       bool refill, int depth, Sink* out) {
+  auto table_builder = globals_->Add<TableBuilder>(this);
   if (refill) {
-    out->Add(absl::StrCat("if (!", fun_maker->RefillTo(num_bits), ") {"));
+    out->Add(absl::StrCat("if (!", fun_maker_->RefillTo(num_bits), ") {"));
     auto ifblk = out->Add<Indent>();
     if (!is_top) {
       ifblk->Add("ok_ = false;");
@@ -824,22 +858,22 @@ void AddStep(Sink* globals, Sink* out, FunMaker* fun_maker, SymSet start_syms,
       "const auto emit_ofs = op >> ",
       table_builder->ConsumeBits() + table_builder->MatchBits(), ";"));
   if (match_cases.size() == 1) {
-    AddMatchBody(globals, out, fun_maker, table_builder, "index", "emit_ofs",
-                 match_cases.begin()->first, is_top, refill, depth);
+    AddMatchBody(table_builder, "index", "emit_ofs", match_cases.begin()->first,
+                 is_top, refill, depth, out);
   } else {
     auto s = out->Add<Switch>(
         absl::StrCat("(op >> ", table_builder->ConsumeBits(), ") & ",
                      (1 << table_builder->MatchBits()) - 1));
     for (auto kv : match_cases) {
       auto c = s->Case(absl::StrCat(kv.second));
-      AddMatchBody(globals, c, fun_maker, table_builder, "index", "emit_ofs",
-                   kv.first, is_top, refill, depth);
+      AddMatchBody(table_builder, "index", "emit_ofs", kv.first, is_top, refill,
+                   depth, c);
       c->Add("break;");
     }
   }
 }
 
-int main(void) {
+std::string Build(std::vector<int> max_bits_for_depth) {
   auto out = absl::make_unique<Sink>();
   out->Add("#include <cstddef>");
   out->Add("#include <cstdint>");
@@ -852,7 +886,7 @@ int main(void) {
   auto prv = out->Add<Indent>();
   FunMaker fun_maker(prv->Add<Sink>());
   out->Add("};");
-
+  BuildCtx ctx(std::move(max_bits_for_depth), globals, &fun_maker);
   // constructor
   pub->Add(
       "HuffDecoder(F sink, const uint8_t* begin, const uint8_t* end) : "
@@ -860,16 +894,15 @@ int main(void) {
   // finalizer
   prv->Add("void Done() {");
   auto done = prv->Add<Indent>();
-  done->Add(absl::StrCat("if (buffer_len_ < ", kFirstBits - 1, ") {"));
+  done->Add(absl::StrCat("if (buffer_len_ < ", ctx.MaxBitsForTop() - 1, ") {"));
   auto fix = done->Add<Indent>();
-  fix->Add(absl::StrCat("buffer_ = (buffer_ << (", kFirstBits - 1,
+  fix->Add(absl::StrCat("buffer_ = (buffer_ << (", ctx.MaxBitsForTop() - 1,
                         "-buffer_len_)) | "
                         "((uint64_t(1) << (",
-                        kFirstBits - 1, " - buffer_len_)) - 1);"));
-  fix->Add(absl::StrCat("buffer_len_ = ", kFirstBits - 1, ";"));
+                        ctx.MaxBitsForTop() - 1, " - buffer_len_)) - 1);"));
+  fix->Add(absl::StrCat("buffer_len_ = ", ctx.MaxBitsForTop() - 1, ";"));
   done->Add("}");
-  AddStep(globals, done, &fun_maker, AllSyms(), kFirstBits - 1, false, false,
-          1);
+  ctx.AddStep(AllSyms(), ctx.MaxBitsForTop() - 1, false, false, 1, done);
   done->Add("if (buffer_len_ == 0) return;");
   done->Add("const uint64_t mask = (1 << buffer_len_) - 1;");
   done->Add(absl::StrCat("if ((buffer_ & mask) != mask) ok_ = false;"));
@@ -885,12 +918,60 @@ int main(void) {
   pub->Add("bool Run() {");
   auto body = pub->Add<Indent>();
   body->Add("while (ok_) {");
-  AddStep(globals, body->Add<Indent>(), &fun_maker, AllSyms(), kFirstBits, true,
-          true, 0);
+  ctx.AddStep(AllSyms(), ctx.MaxBitsForTop(), true, true, 0,
+              body->Add<Indent>());
   body->Add("}");
   body->Add("return ok_;");
   pub->Add("}");
+  return out->ToString();
+}
 
-  puts(out->ToString().c_str());
+class PermBuilder {
+ public:
+  std::vector<std::vector<int>> Run() {
+    Step({});
+    return std::move(perms_);
+  }
+
+ private:
+  void Step(std::vector<int> so_far) {
+    int sum_so_far = std::accumulate(so_far.begin(), so_far.end(), 0);
+    if (sum_so_far + 5 > 30) {
+      perms_.emplace_back(std::move(so_far));
+      return;
+    }
+    for (int i = 5; i <= std::min(30 - sum_so_far, 18); i++) {
+      auto p = so_far;
+      p.push_back(i);
+      Step(std::move(p));
+    }
+  }
+
+  std::vector<std::vector<int>> perms_;
+};
+
+int main(void) {
+  std::string best;
+  size_t best_len = std::numeric_limits<size_t>::max();
+  std::vector<std::unique_ptr<std::string>> results;
+  std::vector<std::thread> threads;
+  for (auto perm : PermBuilder().Run()) {
+    results.emplace_back(absl::make_unique<std::string>());
+    threads.emplace_back([perm, r = results.back().get()] {
+      *r = Build(perm);
+      puts(absl::StrCat("// PERM: ", r->length(), " from ",
+                        absl::StrJoin(perm, ","))
+               .c_str());
+    });
+  }
+  for (auto& t : threads) t.join();
+  for (auto& r : results) {
+    size_t l = r->length();
+    if (l < best_len) {
+      best_len = l;
+      best = std::move(*r);
+    }
+  }
+  puts(best.c_str());
   return 0;
 }

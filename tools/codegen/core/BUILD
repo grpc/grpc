@@ -18,5 +18,5 @@ grpc_cc_binary(
     name = 'gen_huffman_decompressor',
     srcs = ['gen_huffman_decompressor.cc'],
     deps = ['//:huffsyms'],
-    external_deps = ['absl/strings', 'absl/memory', 'absl/types:variant', 'libcrypto'],
+    external_deps = ['absl/strings', 'absl/memory', 'absl/types:optional', 'absl/types:variant', 'libcrypto'],
 )
