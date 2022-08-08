@@ -27,8 +27,6 @@
 #include <string.h>
 #include <time.h>
 
-#include "src/core/lib/gprpp/memory.h"
-
 namespace grpc_event_engine {
 namespace posix_engine {
 

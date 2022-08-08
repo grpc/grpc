@@ -24,7 +24,6 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/event_engine/posix_engine/internal_errqueue.h"
-#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/port.h"
 
 namespace grpc_event_engine {
