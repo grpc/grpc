@@ -34,6 +34,12 @@ TD_BOOTSTRAP_IMAGE = flags.DEFINE_string(
 SERVER_IMAGE = flags.DEFINE_string("server_image",
                                    default=None,
                                    help="Server Docker image name")
+SERVER_IMAGE_UNIVERSAL = flags.DEFINE_string(
+    "server_image_universal",
+    default=None,
+    help=("Server Docker image name to use in tests that need to override\n"
+          "the language-specific xDS test server with the reference\n"
+          "implementation of a different language, or a different version."))
 CLIENT_IMAGE = flags.DEFINE_string("client_image",
                                    default=None,
                                    help="Client Docker image name")

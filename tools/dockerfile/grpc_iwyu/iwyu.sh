@@ -84,6 +84,8 @@ ${IWYU_ROOT}/iwyu/iwyu_tool.py -p compile_commands_for_iwyu.json $1       \
        -Xiwyu --update_comments                                           \
        -Xiwyu --mapping_file=${IWYU_ROOT}/tools/distrib/iwyu_mappings.imp \
   | grep -v -E "port_platform.h"                                          \
+  | grep -v -E "repeated_ptr_field.h"                                     \
+  | grep -v -E "repeated_field.h"                                         \
   | grep -v -E "^(- )?namespace "                                         \
   > iwyu/iwyu.`echo $1 | sha1sum`.out
 ' > iwyu/run_iwyu_on.sh

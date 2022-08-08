@@ -81,6 +81,7 @@
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
+#include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "src/cpp/server/secure_server_credentials.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"

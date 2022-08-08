@@ -36,7 +36,6 @@
 #include "absl/types/optional.h"
 
 #include <grpc/byte_buffer.h>
-#include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -52,7 +51,7 @@
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channelz.h"
-#include "src/core/lib/event_engine/event_engine_factory.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/time.h"
@@ -314,11 +313,11 @@ static void sched_connect(grpc_closure* closure, grpc_endpoint** ep,
       GRPC_CLOSURE_CREATE(do_connect, fc, grpc_schedule_on_exec_ctx));
 }
 
-static int64_t my_tcp_client_connect(
-    grpc_closure* closure, grpc_endpoint** ep,
-    grpc_pollset_set* /*interested_parties*/,
-    const grpc_event_engine::experimental::EndpointConfig& /*config*/,
-    const grpc_resolved_address* /*addr*/, grpc_core::Timestamp deadline) {
+static int64_t my_tcp_client_connect(grpc_closure* closure, grpc_endpoint** ep,
+                                     grpc_pollset_set* /*interested_parties*/,
+                                     const grpc_channel_args* /*channel_args*/,
+                                     const grpc_resolved_address* /*addr*/,
+                                     grpc_core::Timestamp deadline) {
   sched_connect(closure, ep, deadline.as_timespec(GPR_CLOCK_MONOTONIC));
   return 0;
 }

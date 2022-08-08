@@ -15,25 +15,33 @@
 
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 
-#include "absl/types/optional.h"
+#include <string>
+
+#include "absl/types/variant.h"
+
+#include <grpc/event_engine/endpoint_config.h>
+#include <grpc/impl/codegen/grpc_types.h>
 
 #include "src/core/lib/channel/channel_args.h"
 
 namespace grpc_event_engine {
 namespace experimental {
 
-absl::optional<int> ChannelArgsEndpointConfig::GetInt(
+EndpointConfig::Setting ChannelArgsEndpointConfig::Get(
     absl::string_view key) const {
-  return args_.GetInt(key);
-}
-
-absl::optional<absl::string_view> ChannelArgsEndpointConfig::GetString(
-    absl::string_view key) const {
-  return args_.GetString(key);
-}
-
-void* ChannelArgsEndpointConfig::GetVoidPointer(absl::string_view key) const {
-  return args_.GetVoidPointer(key);
+  const grpc_arg* arg = grpc_channel_args_find(args_, std::string(key).c_str());
+  if (arg == nullptr) {
+    return absl::monostate();
+  }
+  switch (arg->type) {
+    case GRPC_ARG_STRING:
+      return absl::string_view(arg->value.string);
+    case GRPC_ARG_INTEGER:
+      return arg->value.integer;
+    case GRPC_ARG_POINTER:
+      return arg->value.pointer.p;
+  }
+  GPR_UNREACHABLE_CODE(return absl::monostate());
 }
 
 }  // namespace experimental
