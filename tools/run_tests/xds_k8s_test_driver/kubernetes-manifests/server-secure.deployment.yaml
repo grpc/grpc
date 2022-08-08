@@ -66,9 +66,7 @@ spec:
             % if xds_server_uri:
             - "--xds-server-uri=${xds_server_uri}"
             % endif
-            - "--include-v3-features-experimental"
-            - "--include-psm-security-experimental"
-            - "--node-metadata-experimental=app=${namespace_name}-${deployment_name}"
+            - "--node-metadata=app=${namespace_name}-${deployment_name}"
           resources:
             limits:
               cpu: 100m

@@ -46,7 +46,7 @@ class WinSocket final : public SocketNotifier {
     // Retrieve results of overlapped operation (via Winsock API)
     void GetOverlappedResult();
     // OVERLAPPED, needed for Winsock API calls
-    OVERLAPPED* overlapped() { return &overlapped_; }
+    LPOVERLAPPED overlapped() { return &overlapped_; }
     // Data from the previous operation, set via GetOverlappedResult
     DWORD bytes_transferred() const { return bytes_transferred_; }
     // Previous error if set.
@@ -91,14 +91,22 @@ class WinSocket final : public SocketNotifier {
   SOCKET socket();
 
  private:
-  void NotifyOnReady(OpState& info, EventEngine::Closure* callback);
+  void NotifyOnReady(OpState& info, EventEngine::Closure* closure);
 
   SOCKET socket_;
-  grpc_core::Mutex mu_;
-  bool is_shutdown_ ABSL_GUARDED_BY(mu_) = false;
+  std::atomic<bool> is_shutdown_{false};
   Executor* executor_;
-  OpState read_info_ ABSL_GUARDED_BY(mu_);
-  OpState write_info_ ABSL_GUARDED_BY(mu_);
+  // These OpStates are effectively synchronized using their respective
+  // OVERLAPPED structures and the Overlapped I/O APIs. For example, OpState
+  // users should not attempt to read their bytes_transeferred until
+  // GetOverlappedResult has returned, to ensure there are no two threads
+  // reading and writing the same values concurrently.
+  //
+  // Callers must also ensure that at most one read and write operation are
+  // occurring at a time. Attempting to do multiple concurrent reads/writes will
+  // have undefined behavior.
+  OpState read_info_;
+  OpState write_info_;
 };
 
 // Attempt to configure default socket settings

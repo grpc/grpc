@@ -79,6 +79,7 @@ ClientContext::ClientContext()
 ClientContext::~ClientContext() {
   if (call_) {
     grpc_call_unref(call_);
+    call_ = nullptr;
   }
   g_client_callbacks->Destructor(this);
 }

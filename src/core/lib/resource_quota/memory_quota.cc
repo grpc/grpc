@@ -219,11 +219,10 @@ absl::optional<size_t> GrpcMemoryAllocatorImpl::TryReserve(
   // Scale the request down according to memory pressure if we have that
   // flexibility.
   if (scaled_size_over_min != 0) {
-    const auto pressure_and_max_recommended_allocation_size =
-        memory_quota_->InstantaneousPressureAndMaxRecommendedAllocationSize();
-    double pressure = pressure_and_max_recommended_allocation_size.first;
+    const auto pressure_info = memory_quota_->GetPressureInfo();
+    double pressure = pressure_info.pressure_control_value;
     size_t max_recommended_allocation_size =
-        pressure_and_max_recommended_allocation_size.second;
+        pressure_info.max_recommended_allocation_size;
     // Reduce allocation size proportional to the pressure > 80% usage.
     if (pressure > 0.8) {
       scaled_size_over_min =
@@ -463,22 +462,26 @@ void BasicMemoryQuota::Return(size_t amount) {
   free_bytes_.fetch_add(amount, std::memory_order_relaxed);
 }
 
-std::pair<double, size_t>
-BasicMemoryQuota::InstantaneousPressureAndMaxRecommendedAllocationSize() {
+BasicMemoryQuota::PressureInfo BasicMemoryQuota::GetPressureInfo() {
   static const bool kSmoothMemoryPressure =
       GPR_GLOBAL_CONFIG_GET(grpc_experimental_smooth_memory_presure);
   double free = free_bytes_.load();
   if (free < 0) free = 0;
   size_t quota_size = quota_size_.load();
   double size = quota_size;
-  if (size < 1) return std::make_pair(1.0, 1);
-  double pressure = (size - free) / size;
-  if (pressure < 0.0) pressure = 0.0;
-  if (pressure > 1.0) pressure = 1.0;
+  if (size < 1) return PressureInfo{1, 1, 1};
+  PressureInfo pressure_info;
+  pressure_info.instantaneous_pressure = std::max(0.0, (size - free) / size);
   if (kSmoothMemoryPressure) {
-    pressure = pressure_tracker_.AddSampleAndGetEstimate(pressure);
+    pressure_info.pressure_control_value =
+        pressure_tracker_.AddSampleAndGetControlValue(
+            pressure_info.instantaneous_pressure);
+  } else {
+    pressure_info.pressure_control_value =
+        std::min(pressure_info.instantaneous_pressure, 1.0);
   }
-  return std::make_pair(pressure, quota_size / 16);
+  pressure_info.max_recommended_allocation_size = quota_size / 16;
+  return pressure_info;
 }
 
 //
@@ -487,7 +490,7 @@ BasicMemoryQuota::InstantaneousPressureAndMaxRecommendedAllocationSize() {
 
 namespace memory_quota_detail {
 
-double PressureTracker::AddSampleAndGetEstimate(double sample) {
+double PressureTracker::AddSampleAndGetControlValue(double sample) {
   static const double kSetPoint =
       GPR_GLOBAL_CONFIG_GET(grpc_experimental_resource_quota_set_point) / 100.0;
 

@@ -1185,6 +1185,16 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "no_destruct",
+    language = "c++",
+    public_hdrs = ["src/core/lib/gprpp/no_destruct.h"],
+    deps = [
+        "construct_destruct",
+        "gpr_base",
+    ],
+)
+
+grpc_cc_library(
     name = "orphanable",
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/orphanable.h"],
@@ -1254,10 +1264,7 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/promise/sleep.h",
     ],
-    external_deps = [
-        "absl/base:core_headers",
-        "absl/status",
-    ],
+    external_deps = ["absl/status"],
     deps = [
         "activity",
         "event_engine_base",
@@ -1265,6 +1272,7 @@ grpc_cc_library(
         "exec_ctx",
         "gpr_base",
         "poll",
+        "ref_counted",
         "time",
     ],
 )
@@ -1388,15 +1396,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "switch",
-    language = "c++",
-    public_hdrs = [
-        "src/core/lib/promise/detail/switch.h",
-    ],
-    deps = ["gpr_platform"],
-)
-
-grpc_cc_library(
     name = "basic_join",
     external_deps = [
         "absl/types:variant",
@@ -1464,7 +1463,6 @@ grpc_cc_library(
         "poll",
         "promise_factory",
         "promise_like",
-        "switch",
     ],
 )
 
@@ -2564,6 +2562,21 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "posix_event_engine_internal_errqueue",
+    srcs = [
+        "src/core/lib/event_engine/posix_engine/internal_errqueue.cc",
+    ],
+    hdrs = [
+        "src/core/lib/event_engine/posix_engine/internal_errqueue.h",
+    ],
+    deps = [
+        "gpr_base",
+        "gpr_codegen",
+        "iomgr_port",
+    ],
+)
+
+grpc_cc_library(
     name = "event_engine_utils",
     srcs = ["src/core/lib/event_engine/utils.cc"],
     hdrs = ["src/core/lib/event_engine/utils.h"],
@@ -2731,6 +2744,7 @@ grpc_cc_library(
     select_deps = [{
         "//:windows": ["windows_event_engine"],
         "//:windows_msvc": ["windows_event_engine"],
+        "//:windows_other": ["windows_event_engine"],
         "//conditions:default": ["posix_event_engine"],
     }],
     deps = [
@@ -3418,6 +3432,84 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "lb_policy",
+    srcs = ["src/core/lib/load_balancing/lb_policy.cc"],
+    hdrs = ["src/core/lib/load_balancing/lb_policy.h"],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/types:optional",
+        "absl/types:variant",
+    ],
+    deps = [
+        "debug_location",
+        "gpr_platform",
+        "grpc_backend_metric_data",
+        "grpc_base",
+        "grpc_codegen",
+        "grpc_trace",
+        "iomgr_fwd",
+        "orphanable",
+        "ref_counted",
+        "ref_counted_ptr",
+        "server_address",
+        "subchannel_interface",
+        "work_serializer",
+    ],
+)
+
+grpc_cc_library(
+    name = "lb_policy_factory",
+    hdrs = ["src/core/lib/load_balancing/lb_policy_factory.h"],
+    external_deps = [
+        "absl/status:statusor",
+        "absl/strings",
+    ],
+    deps = [
+        "gpr_platform",
+        "json",
+        "lb_policy",
+        "orphanable",
+        "ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
+    name = "lb_policy_registry",
+    srcs = ["src/core/lib/load_balancing/lb_policy_registry.cc"],
+    hdrs = ["src/core/lib/load_balancing/lb_policy_registry.h"],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/strings:str_format",
+    ],
+    deps = [
+        "gpr_base",
+        "json",
+        "lb_policy",
+        "lb_policy_factory",
+        "orphanable",
+        "ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
+    name = "subchannel_interface",
+    hdrs = ["src/core/lib/load_balancing/subchannel_interface.h"],
+    external_deps = ["absl/status"],
+    deps = [
+        "gpr",
+        "grpc_base",
+        "grpc_codegen",
+        "iomgr_fwd",
+        "ref_counted",
+        "ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_client_channel",
     srcs = [
         "src/core/ext/filters/client_channel/backend_metric.cc",
@@ -3432,10 +3524,8 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/global_subchannel_pool.cc",
         "src/core/ext/filters/client_channel/health/health_check_client.cc",
         "src/core/ext/filters/client_channel/http_proxy.cc",
-        "src/core/ext/filters/client_channel/lb_policy.cc",
         "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc",
         "src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.cc",
-        "src/core/ext/filters/client_channel/lb_policy_registry.cc",
         "src/core/ext/filters/client_channel/local_subchannel_pool.cc",
         "src/core/ext/filters/client_channel/proxy_mapper_registry.cc",
         "src/core/ext/filters/client_channel/resolver_result_parsing.cc",
@@ -3459,11 +3549,8 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/global_subchannel_pool.h",
         "src/core/ext/filters/client_channel/health/health_check_client.h",
         "src/core/ext/filters/client_channel/http_proxy.h",
-        "src/core/ext/filters/client_channel/lb_policy.h",
         "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h",
         "src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.h",
-        "src/core/ext/filters/client_channel/lb_policy_factory.h",
-        "src/core/ext/filters/client_channel/lb_policy_registry.h",
         "src/core/ext/filters/client_channel/local_subchannel_pool.h",
         "src/core/ext/filters/client_channel/proxy_mapper.h",
         "src/core/ext/filters/client_channel/proxy_mapper_registry.h",
@@ -3472,7 +3559,6 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/retry_service_config.h",
         "src/core/ext/filters/client_channel/retry_throttle.h",
         "src/core/ext/filters/client_channel/subchannel.h",
-        "src/core/ext/filters/client_channel/subchannel_interface.h",
         "src/core/ext/filters/client_channel/subchannel_interface_internal.h",
         "src/core/ext/filters/client_channel/subchannel_pool_interface.h",
         "src/core/ext/filters/client_channel/subchannel_stream_client.h",
@@ -3485,7 +3571,6 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/strings:cord",
-        "absl/strings:str_format",
         "absl/types:optional",
         "absl/types:variant",
         "absl/utility",
@@ -3520,6 +3605,8 @@ grpc_cc_library(
         "iomgr_timer",
         "json",
         "json_util",
+        "lb_policy",
+        "lb_policy_registry",
         "memory_quota",
         "orphanable",
         "protobuf_duration_upb",
@@ -3533,6 +3620,7 @@ grpc_cc_library(
         "slice_buffer",
         "slice_refcount",
         "sockaddr_utils",
+        "subchannel_interface",
         "time",
         "transport_fwd",
         "unique_type_name",
@@ -3978,6 +4066,9 @@ grpc_cc_library(
         "grpc_trace",
         "iomgr_timer",
         "json",
+        "lb_policy",
+        "lb_policy_factory",
+        "lb_policy_registry",
         "orphanable",
         "protobuf_duration_upb",
         "protobuf_timestamp_upb",
@@ -3988,6 +4079,7 @@ grpc_cc_library(
         "slice",
         "slice_refcount",
         "sockaddr_utils",
+        "subchannel_interface",
         "time",
         "uri_parser",
         "useful",
@@ -4039,11 +4131,15 @@ grpc_cc_library(
         "iomgr_timer",
         "json",
         "json_util",
+        "lb_policy",
+        "lb_policy_factory",
+        "lb_policy_registry",
         "orphanable",
         "ref_counted_ptr",
         "rls_upb",
         "server_address",
         "slice_refcount",
+        "subchannel_interface",
         "time",
         "uri_parser",
         "work_serializer",
@@ -4189,6 +4285,7 @@ grpc_cc_library(
         "iomgr_timer",
         "json",
         "json_util",
+        "lb_policy_registry",
         "match",
         "orphanable",
         "protobuf_any_upb",
@@ -4348,7 +4445,6 @@ grpc_cc_library(
         "debug_location",
         "gpr_base",
         "grpc_base",
-        "grpc_client_channel",
         "grpc_codegen",
         "grpc_matchers",
         "grpc_outlier_detection_header",
@@ -4357,9 +4453,13 @@ grpc_cc_library(
         "grpc_trace",
         "grpc_xds_client",
         "json",
+        "lb_policy",
+        "lb_policy_factory",
+        "lb_policy_registry",
         "orphanable",
         "ref_counted_ptr",
         "server_address",
+        "subchannel_interface",
         "time",
         "unique_type_name",
         "work_serializer",
@@ -4420,10 +4520,13 @@ grpc_cc_library(
         "grpc_trace",
         "grpc_xds_client",
         "json",
+        "lb_policy",
+        "lb_policy_factory",
+        "lb_policy_registry",
         "orphanable",
         "ref_counted_ptr",
         "server_address",
-        "time",
+        "subchannel_interface",
         "work_serializer",
     ],
 )
@@ -4455,10 +4558,14 @@ grpc_cc_library(
         "grpc_trace",
         "grpc_xds_client",
         "json",
+        "lb_policy",
+        "lb_policy_factory",
+        "lb_policy_registry",
         "orphanable",
         "ref_counted",
         "ref_counted_ptr",
         "server_address",
+        "subchannel_interface",
     ],
 )
 
@@ -4487,10 +4594,14 @@ grpc_cc_library(
         "grpc_trace",
         "iomgr_timer",
         "json",
+        "lb_policy",
+        "lb_policy_factory",
+        "lb_policy_registry",
         "orphanable",
         "ref_counted",
         "ref_counted_ptr",
         "server_address",
+        "subchannel_interface",
         "time",
         "work_serializer",
     ],
@@ -4530,12 +4641,13 @@ grpc_cc_library(
         "debug_location",
         "gpr_base",
         "grpc_base",
-        "grpc_client_channel",
         "grpc_codegen",
         "iomgr_fwd",
+        "lb_policy",
         "orphanable",
         "ref_counted_ptr",
         "server_address",
+        "subchannel_interface",
     ],
 )
 
@@ -4557,14 +4669,17 @@ grpc_cc_library(
         "debug_location",
         "gpr_base",
         "grpc_base",
-        "grpc_client_channel",
         "grpc_codegen",
         "grpc_lb_subchannel_list",
         "grpc_trace",
         "json",
+        "lb_policy",
+        "lb_policy_factory",
+        "lb_policy_registry",
         "orphanable",
         "ref_counted_ptr",
         "server_address",
+        "subchannel_interface",
     ],
 )
 
@@ -4598,11 +4713,15 @@ grpc_cc_library(
         "grpc_lb_subchannel_list",
         "grpc_trace",
         "json",
+        "lb_policy",
+        "lb_policy_factory",
+        "lb_policy_registry",
         "orphanable",
         "ref_counted",
         "ref_counted_ptr",
         "server_address",
         "sockaddr_utils",
+        "subchannel_interface",
         "unique_type_name",
         "work_serializer",
     ],
@@ -4625,14 +4744,17 @@ grpc_cc_library(
         "debug_location",
         "gpr_base",
         "grpc_base",
-        "grpc_client_channel",
         "grpc_codegen",
         "grpc_lb_subchannel_list",
         "grpc_trace",
         "json",
+        "lb_policy",
+        "lb_policy_factory",
+        "lb_policy_registry",
         "orphanable",
         "ref_counted_ptr",
         "server_address",
+        "subchannel_interface",
     ],
 )
 
@@ -4678,11 +4800,15 @@ grpc_cc_library(
         "iomgr_timer",
         "json",
         "json_util",
+        "lb_policy",
+        "lb_policy_factory",
+        "lb_policy_registry",
         "orphanable",
         "ref_counted",
         "ref_counted_ptr",
         "server_address",
         "sockaddr_utils",
+        "subchannel_interface",
         "work_serializer",
     ],
 )
@@ -4713,10 +4839,14 @@ grpc_cc_library(
         "grpc_trace",
         "iomgr_timer",
         "json",
+        "lb_policy",
+        "lb_policy_factory",
+        "lb_policy_registry",
         "orphanable",
         "ref_counted",
         "ref_counted_ptr",
         "server_address",
+        "subchannel_interface",
         "time",
         "work_serializer",
     ],
@@ -4746,10 +4876,14 @@ grpc_cc_library(
         "grpc_lb_address_filtering",
         "grpc_trace",
         "json",
+        "lb_policy",
+        "lb_policy_factory",
+        "lb_policy_registry",
         "orphanable",
         "ref_counted",
         "ref_counted_ptr",
         "server_address",
+        "subchannel_interface",
         "time",
         "work_serializer",
     ],
@@ -7186,7 +7320,51 @@ grpc_cc_library(
         "error",
         "gpr_base",
         "json",
+        "json_args",
+        "json_object_loader",
+        "no_destruct",
         "time",
+    ],
+)
+
+grpc_cc_library(
+    name = "json_args",
+    hdrs = ["src/core/lib/json/json_args.h"],
+    external_deps = ["absl/strings"],
+    deps = ["gpr_base"],
+)
+
+grpc_cc_library(
+    name = "json_object_loader",
+    srcs = ["src/core/lib/json/json_object_loader.cc"],
+    hdrs = ["src/core/lib/json/json_object_loader.h"],
+    external_deps = [
+        "absl/meta:type_traits",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/types:optional",
+    ],
+    deps = [
+        "gpr_base",
+        "json",
+        "json_args",
+        "no_destruct",
+        "time",
+    ],
+)
+
+grpc_cc_library(
+    name = "json_channel_args",
+    hdrs = ["src/core/lib/json/json_channel_args.h"],
+    external_deps = [
+        "absl/strings",
+        "absl/types:optional",
+    ],
+    deps = [
+        "channel_args",
+        "gpr",
+        "json_args",
     ],
 )
 

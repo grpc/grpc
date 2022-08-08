@@ -45,11 +45,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
-#include "src/core/ext/filters/client_channel/lb_policy_factory.h"
-#include "src/core/ext/filters/client_channel/lb_policy_registry.h"
-#include "src/core/ext/filters/client_channel/subchannel_interface.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
@@ -68,6 +64,10 @@
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_util.h"
+#include "src/core/lib/load_balancing/lb_policy.h"
+#include "src/core/lib/load_balancing/lb_policy_factory.h"
+#include "src/core/lib/load_balancing/lb_policy_registry.h"
+#include "src/core/lib/load_balancing/subchannel_interface.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
@@ -101,10 +101,8 @@ class OutlierDetectionLbConfig : public LoadBalancingPolicy::Config {
   absl::string_view name() const override { return kOutlierDetection; }
 
   bool CountingEnabled() const {
-    return (
-        outlier_detection_config_.interval != Duration::Infinity() &&
-        (outlier_detection_config_.success_rate_ejection.has_value() ||
-         outlier_detection_config_.failure_percentage_ejection.has_value()));
+    return outlier_detection_config_.success_rate_ejection.has_value() ||
+           outlier_detection_config_.failure_percentage_ejection.has_value();
   }
 
   const OutlierDetectionConfig& outlier_detection_config() const {
@@ -304,6 +302,11 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
         }
       }
       return false;
+    }
+
+    void DisableEjection() {
+      Uneject();
+      multiplier_ = 0;
     }
 
    private:
@@ -644,6 +647,9 @@ void OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
                   "[outlier_detection_lb %p] adding map entry for %s (%p)",
                   this, address_key.c_str(), subchannel_state.get());
         }
+      } else if (!config_->CountingEnabled()) {
+        // If counting is not enabled, reset state.
+        subchannel_state->DisableEjection();
       }
       current_addresses.emplace(address_key);
     }
@@ -1074,7 +1080,7 @@ class OutlierDetectionLbFactory : public LoadBalancingPolicyFactory {
     }
     ParseJsonObjectFieldAsDuration(json.object_value(), "interval",
                                    &outlier_detection_config.interval,
-                                   &error_list);
+                                   &error_list, /*required=*/false);
     ParseJsonObjectFieldAsDuration(json.object_value(), "baseEjectionTime",
                                    &outlier_detection_config.base_ejection_time,
                                    &error_list, /*required=*/false);
