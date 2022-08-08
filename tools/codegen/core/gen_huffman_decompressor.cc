@@ -1005,7 +1005,7 @@ int main(void) {
   size_t best_len = std::numeric_limits<size_t>::max();
   std::vector<std::unique_ptr<std::string>> results;
   std::queue<std::thread> threads;
-  for (auto perm : PermBuilder(3).Run()) {
+  for (auto perm : PermBuilder(30).Run()) {
     while (threads.size() > 200) {
       threads.front().join();
       threads.pop();
