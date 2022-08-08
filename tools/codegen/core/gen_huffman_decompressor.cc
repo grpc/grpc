@@ -17,6 +17,7 @@
 #include <limits>
 #include <map>
 #include <numeric>
+#include <queue>
 #include <set>
 #include <string>
 #include <thread>
@@ -945,8 +946,7 @@ class PermBuilder {
       perms_.emplace_back(std::move(so_far));
       return;
     }
-    for (int i = so_far.empty() ? 5 : 3; i <= std::min(30 - sum_so_far, 20);
-         i++) {
+    for (int i = 5; i <= std::min(30 - sum_so_far, 16); i++) {
       auto p = so_far;
       p.push_back(i);
       Step(std::move(p));
@@ -961,16 +961,23 @@ int main(void) {
   std::string best;
   size_t best_len = std::numeric_limits<size_t>::max();
   std::vector<std::unique_ptr<std::string>> results;
-  std::vector<std::thread> threads;
+  std::queue<std::thread> threads;
   for (auto perm : PermBuilder(3).Run()) {
+    while (threads.size() > 200) {
+      threads.front().join();
+      threads.pop();
+    }
     results.emplace_back(absl::make_unique<std::string>());
-    threads.emplace_back([perm, r = results.back().get()] {
+    threads.emplace([perm, r = results.back().get()] {
       *r = Build(perm);
       *r = absl::StrCat("// PERM: ", r->length(), " from ",
                         absl::StrJoin(perm, ","), "\n", *r);
     });
   }
-  for (auto& t : threads) t.join();
+  while (!threads.empty()) {
+    threads.front().join();
+    threads.pop();
+  }
   for (auto& r : results) {
     size_t l = r->length();
     if (l < best_len) {
