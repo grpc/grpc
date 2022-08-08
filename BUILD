@@ -416,7 +416,7 @@ grpc_cc_library(
         "channel_init",
         "channel_stack_type",
         "config",
-        "default_event_engine_factory_hdrs",
+        "default_event_engine",
         "gpr_base",
         "grpc_authorization_base",
         "grpc_base",
@@ -479,7 +479,7 @@ grpc_cc_library(
         "channel_init",
         "channel_stack_type",
         "config",
-        "default_event_engine_factory_hdrs",
+        "default_event_engine",
         "gpr_base",
         "grpc_authorization_base",
         "grpc_base",
@@ -2213,9 +2213,9 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "default_event_engine_factory_hdrs",
+    name = "default_event_engine",
     hdrs = [
-        "src/core/lib/event_engine/event_engine_factory.h",
+        "src/core/lib/event_engine/default_event_engine.h",
     ],
     tags = ["nofixdeps"],
     deps = [
@@ -2713,7 +2713,7 @@ grpc_cc_library(
         "src/core/lib/event_engine/event_engine.cc",
     ],
     hdrs = [
-        "src/core/lib/event_engine/event_engine_factory.h",
+        "src/core/lib/event_engine/default_event_engine.h",
     ],
     external_deps = ["absl/functional:any_invocable"],
     deps = [
@@ -3057,7 +3057,7 @@ grpc_cc_library(
         "config",
         "cpp_impl_of",
         "debug_location",
-        "default_event_engine_factory_hdrs",
+        "default_event_engine",
         "dual_ref_counted",
         "error",
         "event_engine_base",
@@ -4165,7 +4165,7 @@ grpc_cc_library(
         "channel_fwd",
         "config",
         "debug_location",
-        "default_event_engine_factory_hdrs",
+        "default_event_engine",
         "envoy_admin_upb",
         "envoy_config_cluster_upb",
         "envoy_config_cluster_upbdefs",
