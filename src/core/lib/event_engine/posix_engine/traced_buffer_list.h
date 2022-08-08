@@ -17,11 +17,13 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stdint.h>
+
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
 
-#include <grpc/support/time.h>
+#include <grpc/impl/codegen/gpr_types.h>
 
 #include "src/core/lib/event_engine/posix_engine/internal_errqueue.h"
 #include "src/core/lib/iomgr/port.h"
