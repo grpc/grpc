@@ -43,7 +43,6 @@
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/transport/chttp2/transport/decode_huff.h"
 #include "src/core/ext/transport/chttp2/transport/frame_rst_stream.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
@@ -57,6 +56,10 @@
 #include "src/core/lib/transport/http2_errors.h"
 #include "src/core/lib/transport/parsed_metadata.h"
 #include "src/core/lib/transport/transport.h"
+
+#define GRPC_THIS_IS_INCLUDED_FROM_THE_HPACK_PARSER
+#include "src/core/ext/transport/chttp2/transport/decode_huff.h"
+#undef GRPC_THIS_IS_INCLUDED_FROM_THE_HPACK_PARSER
 
 // IWYU pragma: no_include <type_traits>
 
