@@ -21,7 +21,7 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 
-#include "src/core/lib/event_engine/event_engine_factory.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "test/core/util/test_config.h"
 

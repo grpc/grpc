@@ -13,6 +13,8 @@
 // limitations under the License.
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/event_engine/default_event_engine.h"
+
 #include <atomic>
 #include <memory>
 #include <utility>
@@ -23,7 +25,6 @@
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/default_event_engine_factory.h"
-#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/gprpp/sync.h"
 

@@ -21,7 +21,7 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/event_engine/event_engine_factory.h"  // IWYU pragma: keep
+#include "src/core/lib/event_engine/default_event_engine.h"  // IWYU pragma:keep
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/activity.h"
