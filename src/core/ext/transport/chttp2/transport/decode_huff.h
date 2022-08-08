@@ -321,7 +321,7 @@ class HuffDecoder {
   }
   void DecodeStep0() {
     if (!RefillTo2()) {
-      ok_ = false;
+      CheckOkAtEnd();
       return;
     }
     const auto index = (buffer_ >> (buffer_len_ - 2)) & 0x3;
@@ -341,7 +341,7 @@ class HuffDecoder {
   }
   void DecodeStep1() {
     if (!RefillTo7()) {
-      ok_ = false;
+      CheckOkAtEnd();
       return;
     }
     const auto index = (buffer_ >> (buffer_len_ - 7)) & 0x7f;
@@ -375,7 +375,7 @@ class HuffDecoder {
   }
   void DecodeStep2() {
     if (!RefillTo8()) {
-      ok_ = false;
+      CheckOkAtEnd();
       return;
     }
     const auto index = (buffer_ >> (buffer_len_ - 8)) & 0xff;
@@ -435,7 +435,7 @@ class HuffDecoder {
   }
   void DecodeStep3() {
     if (!RefillTo1()) {
-      ok_ = false;
+      CheckOkAtEnd();
       return;
     }
     const auto index = (buffer_ >> (buffer_len_ - 1)) & 0x1;
@@ -454,7 +454,7 @@ class HuffDecoder {
   }
   void DecodeStep4() {
     if (!RefillTo1()) {
-      ok_ = false;
+      CheckOkAtEnd();
       return;
     }
     const auto index = (buffer_ >> (buffer_len_ - 1)) & 0x1;
@@ -465,7 +465,7 @@ class HuffDecoder {
   }
   void DecodeStep5() {
     if (!RefillTo1()) {
-      ok_ = false;
+      CheckOkAtEnd();
       return;
     }
     const auto index = (buffer_ >> (buffer_len_ - 1)) & 0x1;
@@ -476,7 +476,7 @@ class HuffDecoder {
   }
   void DecodeStep6() {
     if (!RefillTo1()) {
-      ok_ = false;
+      CheckOkAtEnd();
       return;
     }
     const auto index = (buffer_ >> (buffer_len_ - 1)) & 0x1;
@@ -487,7 +487,7 @@ class HuffDecoder {
   }
   void DecodeStep7() {
     if (!RefillTo1()) {
-      ok_ = false;
+      CheckOkAtEnd();
       return;
     }
     const auto index = (buffer_ >> (buffer_len_ - 1)) & 0x1;
@@ -498,7 +498,7 @@ class HuffDecoder {
   }
   void DecodeStep8() {
     if (!RefillTo1()) {
-      ok_ = false;
+      CheckOkAtEnd();
       return;
     }
     const auto index = (buffer_ >> (buffer_len_ - 1)) & 0x1;
@@ -509,7 +509,7 @@ class HuffDecoder {
   }
   void DecodeStep9() {
     if (!RefillTo2()) {
-      ok_ = false;
+      CheckOkAtEnd();
       return;
     }
     const auto index = (buffer_ >> (buffer_len_ - 2)) & 0x3;
@@ -520,7 +520,7 @@ class HuffDecoder {
   }
   void DecodeStep10() {
     if (!RefillTo3()) {
-      ok_ = false;
+      CheckOkAtEnd();
       return;
     }
     const auto index = (buffer_ >> (buffer_len_ - 3)) & 0x7;
@@ -541,7 +541,7 @@ class HuffDecoder {
   }
   void DecodeStep11() {
     if (!RefillTo4()) {
-      ok_ = false;
+      CheckOkAtEnd();
       return;
     }
     const auto index = (buffer_ >> (buffer_len_ - 4)) & 0xf;
@@ -563,7 +563,7 @@ class HuffDecoder {
   }
   void DecodeStep12() {
     if (!RefillTo7()) {
-      ok_ = false;
+      CheckOkAtEnd();
       return;
     }
     const auto index = (buffer_ >> (buffer_len_ - 7)) & 0x7f;
@@ -584,7 +584,7 @@ class HuffDecoder {
   }
   void DecodeStep13() {
     if (!RefillTo4()) {
-      ok_ = false;
+      CheckOkAtEnd();
       return;
     }
     const auto index = (buffer_ >> (buffer_len_ - 4)) & 0xf;
@@ -615,6 +615,9 @@ class HuffDecoder {
         break;
       }
     }
+    CheckOkAtEnd();
+  }
+  void CheckOkAtEnd() {
     if (buffer_len_ == 0) return;
     const uint64_t mask = (1 << buffer_len_) - 1;
     if ((buffer_ & mask) != mask) ok_ = false;

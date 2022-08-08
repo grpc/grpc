@@ -852,7 +852,7 @@ void BuildCtx::AddStep(SymSet start_syms, int num_bits, bool is_top,
     out->Add(absl::StrCat("if (!", fun_maker_->RefillTo(num_bits), ") {"));
     auto ifblk = out->Add<Indent>();
     if (!is_top) {
-      ifblk->Add("ok_ = false;");
+      ifblk->Add("CheckOkAtEnd();");
       ifblk->Add("return;");
     } else {
       ifblk->Add("Done();");
@@ -947,9 +947,13 @@ std::string Build(std::vector<int> max_bits_for_depth) {
   fix->Add(absl::StrCat("buffer_len_ = ", ctx.MaxBitsForTop() - 1, ";"));
   done->Add("}");
   ctx.AddStep(AllSyms(), ctx.MaxBitsForTop() - 1, false, false, 1, done);
-  done->Add("if (buffer_len_ == 0) return;");
-  done->Add("const uint64_t mask = (1 << buffer_len_) - 1;");
-  done->Add(absl::StrCat("if ((buffer_ & mask) != mask) ok_ = false;"));
+  done->Add("CheckOkAtEnd();");
+  prv->Add("}");
+  prv->Add("void CheckOkAtEnd() {");
+  auto check_ok = prv->Add<Indent>();
+  check_ok->Add("if (buffer_len_ == 0) return;");
+  check_ok->Add("const uint64_t mask = (1 << buffer_len_) - 1;");
+  check_ok->Add(absl::StrCat("if ((buffer_ & mask) != mask) ok_ = false;"));
   prv->Add("}");
   // members
   prv->Add("F sink_;");
