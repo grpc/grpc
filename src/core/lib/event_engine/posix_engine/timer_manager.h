@@ -31,6 +31,7 @@
 
 #include <grpc/event_engine/event_engine.h>
 
+#include "src/core/lib/event_engine/forkable.h"
 #include "src/core/lib/event_engine/posix_engine/timer.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"
@@ -43,7 +44,7 @@ namespace posix_engine {
 // all times, and thus effectively preventing the thundering herd problem.
 // TODO(ctiller): consider unifying this thread pool and the one in
 // thread_pool.{h,cc}.
-class TimerManager final {
+class TimerManager final : public grpc_event_engine::experimental::Forkable {
  public:
   TimerManager();
   ~TimerManager();
@@ -53,6 +54,11 @@ class TimerManager final {
   void TimerInit(Timer* timer, grpc_core::Timestamp deadline,
                  experimental::EventEngine::Closure* closure);
   bool TimerCancel(Timer* timer);
+
+  // Forkable
+  void PrepareFork() override;
+  void PostforkParent() override;
+  void PostforkChild() override;
 
  private:
   struct RunThreadArgs {
@@ -92,6 +98,8 @@ class TimerManager final {
   bool has_timed_waiter_ ABSL_GUARDED_BY(mu_) = false;
   // are we shutting down?
   bool shutdown_ ABSL_GUARDED_BY(mu_) = false;
+  // are we forking?
+  bool forking_ ABSL_GUARDED_BY(mu_) = false;
   // are we shutting down?
   bool kicked_ ABSL_GUARDED_BY(mu_) = false;
   // the deadline of the current timed waiter thread (only relevant if
@@ -103,6 +111,7 @@ class TimerManager final {
   uint64_t wakeups_ ABSL_GUARDED_BY(mu_) = 0;
   // actual timer implementation
   std::unique_ptr<TimerList> timer_list_;
+  int prefork_thread_count_ = 0;
 };
 
 }  // namespace posix_engine

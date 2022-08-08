@@ -949,6 +949,8 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/executor/executor.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/executor/threaded_executor.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/executor/threaded_executor.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/forkable.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/forkable.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/handle_containers.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/memory_allocator.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/poller.h" role="src" />

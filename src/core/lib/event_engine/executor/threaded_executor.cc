@@ -18,11 +18,17 @@
 
 #include <utility>
 
+#include "src/core/lib/event_engine/forkable.h"
+
 namespace grpc_event_engine {
 namespace experimental {
 
 ThreadedExecutor::ThreadedExecutor(int reserve_threads)
-    : thread_pool_(reserve_threads){};
+    : thread_pool_(reserve_threads) {
+  ManageForkable(&thread_pool_);
+};
+
+ThreadedExecutor::~ThreadedExecutor() { StopManagingForkable(&thread_pool_); }
 
 void ThreadedExecutor::Run(EventEngine::Closure* closure) {
   thread_pool_.Add([closure]() { closure->Run(); });
