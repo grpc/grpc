@@ -38,21 +38,18 @@ extern gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
 namespace grpc_core {
 namespace testing {
 namespace {
-int g_clock = 123;
-Mutex mu_;
+std::atomic<int> g_clock{123};
 
 gpr_timespec fake_gpr_now(gpr_clock_type clock_type) {
-  MutexLock lock(&mu_);
   gpr_timespec ts;
-  ts.tv_sec = g_clock;
+  ts.tv_sec = g_clock.load();
   ts.tv_nsec = 0;
   ts.clock_type = clock_type;
   return ts;
 }
 
 void inc_time(void) {
-  MutexLock lock(&mu_);
-  g_clock += 30;
+  g_clock.fetch_add(30);
 }
 }  // namespace
 
@@ -147,10 +144,7 @@ INSTANTIATE_TEST_SUITE_P(TooManyNames, BdpEstimatorRandomTest,
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
-  {
-    grpc_core::MutexLock lock(&grpc_core::testing::mu_);
-    gpr_now_impl = grpc_core::testing::fake_gpr_now;
-  }
+  gpr_now_impl = grpc_core::testing::fake_gpr_now;
   grpc_init();
   grpc_timer_manager_set_threading(false);
   ::testing::InitGoogleTest(&argc, argv);
