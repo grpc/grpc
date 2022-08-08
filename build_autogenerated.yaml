@@ -4138,7 +4138,7 @@ targets:
   src:
   - test/core/resource_quota/arena_test.cc
   deps:
-  - grpc_test_util
+  - grpc
   uses_polling: false
 - name: async_end2end_test
   gtest: true
@@ -5232,6 +5232,7 @@ targets:
   src:
   - test/core/event_engine/common_closures_test.cc
   deps:
+  - grpc
   - grpc_test_util_unsecure
 - name: completion_queue_threading_test
   gtest: true
