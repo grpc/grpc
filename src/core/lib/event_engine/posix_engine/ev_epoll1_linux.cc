@@ -52,7 +52,6 @@
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h"
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h"
 #include "src/core/lib/gprpp/fork.h"
-#include "src/core/lib/gprpp/time.h"
 
 using ::grpc_event_engine::posix_engine::LockfreeEvent;
 using ::grpc_event_engine::posix_engine::WakeupFd;

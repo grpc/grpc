@@ -18,7 +18,6 @@
 #include <stdint.h>
 
 #include <algorithm>
-#include <chrono>
 
 #include "absl/strings/str_cat.h"
 

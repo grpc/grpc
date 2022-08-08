@@ -607,7 +607,7 @@ class WakeupFdHandle : public grpc_core::DualRefCounted<WakeupFdHandle> {
     EXPECT_TRUE(wakeup_fd_->Wakeup().ok());
   }
 
-  ~WakeupFdHandle() { delete on_read_; }
+  ~WakeupFdHandle() override { delete on_read_; }
 
   void Orphan() override {
     // Once the handle has orphaned itself, decrement
