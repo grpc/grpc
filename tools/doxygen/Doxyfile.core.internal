@@ -1733,10 +1733,10 @@ src/core/lib/debug/trace.cc \
 src/core/lib/debug/trace.h \
 src/core/lib/event_engine/channel_args_endpoint_config.cc \
 src/core/lib/event_engine/channel_args_endpoint_config.h \
+src/core/lib/event_engine/default_event_engine.cc \
+src/core/lib/event_engine/default_event_engine.h \
 src/core/lib/event_engine/default_event_engine_factory.cc \
 src/core/lib/event_engine/default_event_engine_factory.h \
-src/core/lib/event_engine/event_engine.cc \
-src/core/lib/event_engine/event_engine_factory.h \
 src/core/lib/event_engine/executor/executor.h \
 src/core/lib/event_engine/executor/threaded_executor.cc \
 src/core/lib/event_engine/executor/threaded_executor.h \
@@ -1834,6 +1834,7 @@ src/core/lib/gprpp/match.h \
 src/core/lib/gprpp/memory.h \
 src/core/lib/gprpp/mpscq.cc \
 src/core/lib/gprpp/mpscq.h \
+src/core/lib/gprpp/no_destruct.h \
 src/core/lib/gprpp/orphanable.h \
 src/core/lib/gprpp/overload.h \
 src/core/lib/gprpp/ref_counted.h \
@@ -2001,6 +2002,9 @@ src/core/lib/iomgr/wakeup_fd_pipe.h \
 src/core/lib/iomgr/wakeup_fd_posix.cc \
 src/core/lib/iomgr/wakeup_fd_posix.h \
 src/core/lib/json/json.h \
+src/core/lib/json/json_args.h \
+src/core/lib/json/json_object_loader.cc \
+src/core/lib/json/json_object_loader.h \
 src/core/lib/json/json_reader.cc \
 src/core/lib/json/json_util.cc \
 src/core/lib/json/json_util.h \
@@ -2025,7 +2029,6 @@ src/core/lib/promise/detail/basic_seq.h \
 src/core/lib/promise/detail/promise_factory.h \
 src/core/lib/promise/detail/promise_like.h \
 src/core/lib/promise/detail/status.h \
-src/core/lib/promise/detail/switch.h \
 src/core/lib/promise/exec_ctx_wakeup_scheduler.h \
 src/core/lib/promise/intra_activity_waiter.h \
 src/core/lib/promise/latch.h \

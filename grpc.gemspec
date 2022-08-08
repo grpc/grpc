@@ -30,7 +30,7 @@ Gem::Specification.new do |s|
   s.require_paths = %w( src/ruby/lib src/ruby/bin src/ruby/pb )
   s.platform      = Gem::Platform::RUBY
 
-  s.add_dependency 'google-protobuf', '~> 3.19'
+  s.add_dependency 'google-protobuf', '~> 3.21'
   s.add_dependency 'googleapis-common-protos-types', '~> 1.0'
 
   s.add_development_dependency 'bundler',            '>= 1.9'
@@ -960,10 +960,10 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/debug/trace.h )
   s.files += %w( src/core/lib/event_engine/channel_args_endpoint_config.cc )
   s.files += %w( src/core/lib/event_engine/channel_args_endpoint_config.h )
+  s.files += %w( src/core/lib/event_engine/default_event_engine.cc )
+  s.files += %w( src/core/lib/event_engine/default_event_engine.h )
   s.files += %w( src/core/lib/event_engine/default_event_engine_factory.cc )
   s.files += %w( src/core/lib/event_engine/default_event_engine_factory.h )
-  s.files += %w( src/core/lib/event_engine/event_engine.cc )
-  s.files += %w( src/core/lib/event_engine/event_engine_factory.h )
   s.files += %w( src/core/lib/event_engine/executor/executor.h )
   s.files += %w( src/core/lib/event_engine/executor/threaded_executor.cc )
   s.files += %w( src/core/lib/event_engine/executor/threaded_executor.h )
@@ -1059,6 +1059,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/gprpp/memory.h )
   s.files += %w( src/core/lib/gprpp/mpscq.cc )
   s.files += %w( src/core/lib/gprpp/mpscq.h )
+  s.files += %w( src/core/lib/gprpp/no_destruct.h )
   s.files += %w( src/core/lib/gprpp/orphanable.h )
   s.files += %w( src/core/lib/gprpp/overload.h )
   s.files += %w( src/core/lib/gprpp/ref_counted.h )
@@ -1225,6 +1226,9 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/iomgr/wakeup_fd_posix.cc )
   s.files += %w( src/core/lib/iomgr/wakeup_fd_posix.h )
   s.files += %w( src/core/lib/json/json.h )
+  s.files += %w( src/core/lib/json/json_args.h )
+  s.files += %w( src/core/lib/json/json_object_loader.cc )
+  s.files += %w( src/core/lib/json/json_object_loader.h )
   s.files += %w( src/core/lib/json/json_reader.cc )
   s.files += %w( src/core/lib/json/json_util.cc )
   s.files += %w( src/core/lib/json/json_util.h )
@@ -1249,7 +1253,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/promise/detail/promise_factory.h )
   s.files += %w( src/core/lib/promise/detail/promise_like.h )
   s.files += %w( src/core/lib/promise/detail/status.h )
-  s.files += %w( src/core/lib/promise/detail/switch.h )
   s.files += %w( src/core/lib/promise/exec_ctx_wakeup_scheduler.h )
   s.files += %w( src/core/lib/promise/intra_activity_waiter.h )
   s.files += %w( src/core/lib/promise/latch.h )

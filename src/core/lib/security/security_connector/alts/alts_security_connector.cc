@@ -115,6 +115,7 @@ class grpc_alts_channel_security_connector final
   }
 
   void check_peer(tsi_peer peer, grpc_endpoint* /*ep*/,
+                  const grpc_core::ChannelArgs& /*args*/,
                   grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
                   grpc_closure* on_peer_checked) override {
     alts_check_peer(peer, auth_context, on_peer_checked);
@@ -173,6 +174,7 @@ class grpc_alts_server_security_connector final
   }
 
   void check_peer(tsi_peer peer, grpc_endpoint* /*ep*/,
+                  const grpc_core::ChannelArgs& /*args*/,
                   grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
                   grpc_closure* on_peer_checked) override {
     alts_check_peer(peer, auth_context, on_peer_checked);
