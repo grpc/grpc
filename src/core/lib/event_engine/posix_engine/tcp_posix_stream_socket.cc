@@ -13,7 +13,7 @@
 // limitations under the License.
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/event_engine/posix_engine/tcp_posix_endpoint.h"
+#include "src/core/lib/event_engine/posix_engine/tcp_posix_stream_socket.h"
 
 #include <atomic>
 #include <memory>

@@ -12,19 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_TCP_POSIX_ENDPOINT_H
-#define GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_TCP_POSIX_ENDPOINT_H
+#ifndef GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_TCP_POSIX_STREAM_SOCKET_H
+#define GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_TCP_POSIX_STREAM_SOCKET_H
 
 #include <grpc/support/port_platform.h>
 
-#include "grpc/event_engine/endpoint_config.h"
-#include "grpc/event_engine/slice_buffer.h"
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/slice_buffer.h>
 
-#include "src/core/lib/event_engine/posix_engine/buffer_list.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
+#include "src/core/lib/event_engine/posix_engine/traced_buffer_list.h"
 #include "src/core/lib/iomgr/port.h"
 
 namespace grpc_event_engine {
@@ -149,4 +148,4 @@ class PosixStreamSocket {
 }  // namespace posix_engine
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_TCP_POSIX_ENDPOINT_H
+#endif  // GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_TCP_POSIX_STREAM_SOCKET_H

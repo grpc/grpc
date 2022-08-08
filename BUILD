@@ -2597,6 +2597,27 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "posix_event_engine_tcp_stream_socket",
+    srcs = [
+        "src/core/lib/event_engine/posix_engine/tcp_posix_stream_socket.cc",
+    ],
+    hdrs = [
+        "src/core/lib/event_engine/posix_engine/tcp_posix_stream_socket.h",
+    ],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "absl/status",
+        "absl/types:optional",
+    ],
+    deps = [
+        "gpr_base",
+        "iomgr_port",
+        "posix_event_engine_traced_buffer_list",
+        "posix_event_engine_internal_errqueue",
+    ],
+)
+
+grpc_cc_library(
     name = "event_engine_utils",
     srcs = ["src/core/lib/event_engine/utils.cc"],
     hdrs = ["src/core/lib/event_engine/utils.h"],
