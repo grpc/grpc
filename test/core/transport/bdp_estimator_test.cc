@@ -48,9 +48,7 @@ gpr_timespec fake_gpr_now(gpr_clock_type clock_type) {
   return ts;
 }
 
-void inc_time(void) {
-  g_clock.fetch_add(30);
-}
+void inc_time(void) { g_clock.fetch_add(30); }
 }  // namespace
 
 TEST(BdpEstimatorTest, NoOp) { BdpEstimator est("test"); }
