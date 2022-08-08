@@ -879,6 +879,11 @@ grpc_cc_library(
     deps = ["gpr_platform"],
 )
 
+alias(
+    name = "gpr_base",
+    actual = ":gpr",
+)
+
 grpc_cc_library(
     name = "gpr",
     srcs = [
