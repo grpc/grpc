@@ -1,4 +1,4 @@
-// PERM: 32868 from 8,9,13
+// PERM: 32710 from 8,9,13
 #include <stdlib.h>
 
 #include <cstddef>
@@ -157,16 +157,8 @@ inline uint64_t GetEmit4(size_t i, size_t emit) {
 static const uint8_t g_table5_0_emit[5] = {0x5c, 0xc3, 0xd0, 0x80, 0x82};
 static const uint8_t g_table5_0_ops[8] = {0x02, 0x02, 0x06, 0x06,
                                           0x0a, 0x0a, 0x0f, 0x13};
-static const uint8_t* const g_table5_emit[] = {
-    g_table5_0_emit,
-};
-static const uint8_t* const g_table5_ops[] = {
-    g_table5_0_ops,
-};
-inline uint64_t GetOp5(size_t i) { return g_table5_ops[i >> 3][i & 0x7]; }
-inline uint64_t GetEmit5(size_t i, size_t emit) {
-  return g_table5_emit[i >> 3][emit];
-}
+inline uint64_t GetOp5(size_t i) { return g_table5_0_ops[i]; }
+inline uint64_t GetEmit5(size_t, size_t emit) { return g_table5_0_emit[emit]; }
 static const uint8_t g_table6_0_emit[10] = {0x83, 0xa2, 0xb8, 0xc2, 0xe0,
                                             0xe2, 0x99, 0xa1, 0xa7, 0xac};
 static const uint8_t g_table6_0_inner[10] = {0x03, 0x0b, 0x13, 0x1b, 0x23,
