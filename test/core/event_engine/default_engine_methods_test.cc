@@ -75,7 +75,7 @@ class DefaultEngineTest : public testing::Test {
 
 TEST_F(DefaultEngineTest, SharedPtrGlobalEventEngineLifetimesAreValid) {
   int create_count = 0;
-  grpc_event_engine::experimental::SetDefaultEventEngineFactory(
+  grpc_event_engine::experimental::SetEventEngineFactory(
       [&create_count] {
         ++create_count;
         return absl::make_unique<FakeEventEngine>();
@@ -96,6 +96,7 @@ TEST_F(DefaultEngineTest, SharedPtrGlobalEventEngineLifetimesAreValid) {
   ee2 = GetDefaultEventEngine();
   ASSERT_EQ(2, create_count);
   ASSERT_TRUE(ee2.unique());
+  grpc_event_engine::experimental::RevertToDefaultEventEngineFactory();
 }
 
 TEST_F(DefaultEngineTest, StressTestSharedPtr) {

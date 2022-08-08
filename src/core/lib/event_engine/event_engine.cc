@@ -37,7 +37,7 @@ grpc_core::Mutex g_mu;
 std::weak_ptr<EventEngine>* g_event_engine = new std::weak_ptr<EventEngine>();
 }  // namespace
 
-void SetDefaultEventEngineFactory(
+void SetEventEngineFactory(
     absl::AnyInvocable<std::unique_ptr<EventEngine>()> factory) {
   delete g_event_engine_factory.exchange(
       new absl::AnyInvocable<std::unique_ptr<EventEngine>()>(
@@ -45,6 +45,10 @@ void SetDefaultEventEngineFactory(
   // Forget any previous EventEngines
   grpc_core::MutexLock lock(&g_mu);
   g_event_engine->reset();
+}
+
+void RevertToDefaultEventEngineFactory() {
+  delete g_event_engine_factory.exchange(nullptr);
 }
 
 std::unique_ptr<EventEngine> CreateEventEngine() {

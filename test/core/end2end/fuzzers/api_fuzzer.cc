@@ -824,7 +824,7 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
   gpr_free(grpc_trace_fuzzer);
   grpc_set_tcp_client_impl(&fuzz_tcp_client_vtable);
 
-  grpc_event_engine::experimental::SetDefaultEventEngineFactory(
+  grpc_event_engine::experimental::SetEventEngineFactory(
       [actions = msg.event_engine_actions()]() {
         return absl::make_unique<FuzzingEventEngine>(
             FuzzingEventEngine::Options(), actions);
