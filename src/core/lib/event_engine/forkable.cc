@@ -81,6 +81,9 @@ void StopManagingForkable(Forkable* forkable) {
 namespace grpc_event_engine {
 namespace experimental {
 
+Forkable::Forkable() {}
+Forkable::~Forkable() {}
+
 void RegisterForkHandlers() {}
 void PrepareFork() {}
 void PostforkParent() {}
