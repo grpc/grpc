@@ -3782,7 +3782,6 @@ target_link_libraries(grpc++_test_util
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::flags
   grpc++
-  grpc_unsecure
   grpc_test_util
 )
 
@@ -4381,7 +4380,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   target_link_libraries(bad_ssl_alpn_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
-    grpc_unsecure
     grpc_test_util
   )
 
@@ -4424,7 +4422,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   target_link_libraries(bad_ssl_cert_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
-    grpc_unsecure
     grpc_test_util
   )
 
@@ -4524,7 +4521,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   target_link_libraries(fd_conservation_posix_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
-    grpc_unsecure
     grpc_test_util
   )
 
@@ -4570,7 +4566,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   target_link_libraries(fling_stream_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
-    grpc_unsecure
     grpc_test_util
   )
 
@@ -4616,7 +4611,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   target_link_libraries(fling_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
-    grpc_unsecure
     grpc_test_util
   )
 
@@ -4883,7 +4877,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
 
   target_link_libraries(tcp_posix_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
-    grpc_unsecure
     grpc_test_util
   )
 
@@ -4924,7 +4917,6 @@ target_include_directories(test_core_iomgr_timer_list_test
 
 target_link_libraries(test_core_iomgr_timer_list_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_unsecure
   grpc_test_util
 )
 
@@ -5636,7 +5628,6 @@ target_include_directories(alts_security_connector_test
 target_link_libraries(alts_security_connector_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_unsecure
   grpc_test_util
 )
 
@@ -5985,7 +5976,6 @@ target_include_directories(auth_context_test
 target_link_libraries(auth_context_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_unsecure
   grpc_test_util
 )
 
@@ -6068,7 +6058,6 @@ target_include_directories(authorization_matchers_test
 target_link_libraries(authorization_matchers_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_unsecure
   grpc_test_util
 )
 
@@ -6191,7 +6180,6 @@ target_include_directories(aws_request_signer_test
 target_link_libraries(aws_request_signer_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_unsecure
   grpc_test_util
 )
 
@@ -6707,7 +6695,6 @@ target_include_directories(buffer_list_test
 target_link_libraries(buffer_list_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_unsecure
   grpc_test_util
 )
 
@@ -6939,7 +6926,6 @@ target_include_directories(cel_authorization_engine_test
 target_link_libraries(cel_authorization_engine_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_unsecure
   grpc_test_util
 )
 
@@ -7180,7 +7166,6 @@ target_include_directories(channel_creds_registry_test
 target_link_libraries(channel_creds_registry_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_unsecure
   grpc_test_util
 )
 
@@ -7505,7 +7490,6 @@ target_include_directories(check_gcp_environment_linux_test
 target_link_libraries(check_gcp_environment_linux_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_unsecure
   grpc_test_util
 )
 
@@ -7553,7 +7537,6 @@ target_include_directories(check_gcp_environment_windows_test
 target_link_libraries(check_gcp_environment_windows_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_unsecure
   grpc_test_util
 )
 
@@ -8098,7 +8081,6 @@ target_include_directories(cmdline_test
 target_link_libraries(cmdline_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_unsecure
   grpc_test_util
 )
 
@@ -8219,7 +8201,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(combiner_test
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
-    grpc_unsecure
     grpc_test_util
   )
 
@@ -8447,7 +8428,6 @@ target_include_directories(connectivity_state_test
 target_link_libraries(connectivity_state_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_unsecure
   grpc_test_util
 )
 
@@ -8547,7 +8527,6 @@ target_include_directories(context_list_test
 target_link_libraries(context_list_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_unsecure
   grpc_test_util
 )
 
@@ -9242,7 +9221,6 @@ target_include_directories(endpoint_pair_test
 target_link_libraries(endpoint_pair_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_unsecure
   grpc_test_util
 )
 
@@ -9374,7 +9352,6 @@ target_include_directories(error_test
 target_link_libraries(error_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_unsecure
   grpc_test_util
 )
 
@@ -9422,7 +9399,6 @@ target_include_directories(error_utils_test
 target_link_libraries(error_utils_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_unsecure
   grpc_test_util
 )
 
@@ -9470,7 +9446,6 @@ target_include_directories(evaluate_args_test
 target_link_libraries(evaluate_args_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_unsecure
   grpc_test_util
 )
 
@@ -9870,7 +9845,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(fd_posix_test
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
-    grpc_unsecure
     grpc_test_util
   )
 
@@ -10232,7 +10206,6 @@ target_include_directories(format_request_test
 target_link_libraries(format_request_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_unsecure
   grpc_test_util
 )
 
@@ -10596,7 +10569,6 @@ target_include_directories(grpc_alts_credentials_options_test
 target_link_libraries(grpc_alts_credentials_options_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_unsecure
   grpc_test_util
 )
 
@@ -10644,7 +10616,6 @@ target_include_directories(grpc_authorization_engine_test
 target_link_libraries(grpc_authorization_engine_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_unsecure
   grpc_test_util
 )
 
@@ -10694,7 +10665,6 @@ target_include_directories(grpc_authorization_policy_provider_test
 target_link_libraries(grpc_authorization_policy_provider_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_unsecure
   grpc_test_util
 )
 
@@ -10994,7 +10964,6 @@ target_include_directories(grpc_ipv6_loopback_available_test
 target_link_libraries(grpc_ipv6_loopback_available_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_unsecure
   grpc_test_util
 )
 
@@ -11242,7 +11211,6 @@ target_include_directories(grpc_tls_certificate_distributor_test
 target_link_libraries(grpc_tls_certificate_distributor_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_unsecure
   grpc_test_util
 )
 
@@ -11290,7 +11258,6 @@ target_include_directories(grpc_tls_certificate_provider_test
 target_link_libraries(grpc_tls_certificate_provider_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_unsecure
   grpc_test_util
 )
 
@@ -11338,7 +11305,6 @@ target_include_directories(grpc_tls_certificate_verifier_test
 target_link_libraries(grpc_tls_certificate_verifier_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_unsecure
   grpc_test_util
 )
 
@@ -11386,7 +11352,6 @@ target_include_directories(grpc_tls_credentials_options_comparator_test
 target_link_libraries(grpc_tls_credentials_options_comparator_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_unsecure
   grpc_test_util
 )
 
@@ -11434,7 +11399,6 @@ target_include_directories(grpc_tls_credentials_options_test
 target_link_libraries(grpc_tls_credentials_options_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_unsecure
   grpc_test_util
 )
 
@@ -11854,7 +11818,6 @@ target_include_directories(histogram_test
 target_link_libraries(histogram_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_unsecure
   grpc_test_util
 )
 
@@ -11937,7 +11900,6 @@ target_include_directories(hpack_encoder_test
 target_link_libraries(hpack_encoder_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_unsecure
   grpc_test_util
 )
 
@@ -11985,7 +11947,6 @@ target_include_directories(hpack_parser_table_test
 target_link_libraries(hpack_parser_table_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_unsecure
   grpc_test_util
 )
 
@@ -12033,7 +11994,6 @@ target_include_directories(hpack_parser_test
 target_link_libraries(hpack_parser_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_unsecure
   grpc_test_util
 )
 
@@ -12442,7 +12402,6 @@ target_include_directories(insecure_security_connector_test
 target_link_libraries(insecure_security_connector_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_unsecure
   grpc_test_util
 )
 
@@ -12779,7 +12738,6 @@ target_include_directories(json_token_test
 target_link_libraries(json_token_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_unsecure
   grpc_test_util
 )
 
@@ -12827,7 +12785,6 @@ target_include_directories(jwt_verifier_test
 target_link_libraries(jwt_verifier_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_unsecure
   grpc_test_util
 )
 
@@ -13117,7 +13074,6 @@ target_include_directories(load_file_test
 target_link_libraries(load_file_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_unsecure
   grpc_test_util
 )
 
@@ -13310,7 +13266,6 @@ target_include_directories(matchers_test
 target_link_libraries(matchers_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_unsecure
   grpc_test_util
 )
 
@@ -13532,7 +13487,6 @@ target_include_directories(message_compress_test
 target_link_libraries(message_compress_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_unsecure
   grpc_test_util
 )
 
@@ -13580,7 +13534,6 @@ target_include_directories(metadata_map_test
 target_link_libraries(metadata_map_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_unsecure
   grpc_test_util
 )
 
@@ -14414,7 +14367,6 @@ target_include_directories(parser_test
 target_link_libraries(parser_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_unsecure
   grpc_test_util
 )
 
@@ -14551,7 +14503,6 @@ target_include_directories(pid_controller_test
 target_link_libraries(pid_controller_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_unsecure
   grpc_test_util
 )
 
@@ -15280,7 +15231,6 @@ target_include_directories(rbac_translator_test
 target_link_libraries(rbac_translator_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_unsecure
   grpc_test_util
 )
 
@@ -15438,7 +15388,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_ALLTARGETS_LIBRARIES}
     absl::flags
     absl::flags_parse
-    grpc_unsecure
     grpc_test_util
   )
 
@@ -15488,7 +15437,6 @@ target_include_directories(resolve_address_using_ares_resolver_test
 target_link_libraries(resolve_address_using_ares_resolver_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_unsecure
   grpc_test_util
   grpc++_test_config
 )
@@ -15540,7 +15488,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_ALLTARGETS_LIBRARIES}
     absl::flags
     absl::flags_parse
-    grpc_unsecure
     grpc_test_util
   )
 
@@ -15590,7 +15537,6 @@ target_include_directories(resolve_address_using_native_resolver_test
 target_link_libraries(resolve_address_using_native_resolver_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_unsecure
   grpc_test_util
   grpc++_test_config
 )
@@ -15905,7 +15851,6 @@ target_include_directories(secure_endpoint_test
 target_link_libraries(secure_endpoint_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_unsecure
   grpc_test_util
 )
 
@@ -15953,7 +15898,6 @@ target_include_directories(security_connector_test
 target_link_libraries(security_connector_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_unsecure
   grpc_test_util
 )
 
@@ -16738,7 +16682,6 @@ target_include_directories(settings_timeout_test
 target_link_libraries(settings_timeout_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_unsecure
   grpc_test_util
 )
 
@@ -17147,7 +17090,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(socket_utils_test
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
-    grpc_unsecure
     grpc_test_util
   )
 
@@ -17231,7 +17173,6 @@ target_include_directories(ssl_credentials_test
 target_link_libraries(ssl_credentials_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_unsecure
   grpc_test_util
 )
 
@@ -17424,7 +17365,6 @@ target_include_directories(status_conversion_test
 target_link_libraries(status_conversion_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_unsecure
   grpc_test_util
 )
 
@@ -17544,7 +17484,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(stranded_event_test
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
-    grpc_unsecure
     grpc_test_util
   )
 
@@ -17593,7 +17532,6 @@ target_include_directories(stream_map_test
 target_link_libraries(stream_map_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_unsecure
   grpc_test_util
 )
 
@@ -17699,7 +17637,6 @@ target_include_directories(streams_not_seen_test
 target_link_libraries(streams_not_seen_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_unsecure
   grpc_test_util
 )
 
@@ -17853,7 +17790,6 @@ target_include_directories(system_roots_test
 target_link_libraries(system_roots_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_unsecure
   grpc_test_util
 )
 
@@ -17941,7 +17877,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(tcp_client_posix_test
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
-    grpc_unsecure
     grpc_test_util
   )
 
@@ -17991,7 +17926,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(tcp_server_posix_test
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
-    grpc_unsecure
     grpc_test_util
   )
 
@@ -18393,7 +18327,6 @@ target_include_directories(test_core_iomgr_timer_heap_test
 target_link_libraries(test_core_iomgr_timer_heap_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_unsecure
   grpc_test_util
 )
 
@@ -18441,7 +18374,6 @@ target_include_directories(test_core_security_credentials_test
 target_link_libraries(test_core_security_credentials_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_unsecure
   grpc_test_util
 )
 
@@ -18995,7 +18927,6 @@ target_include_directories(timeout_encoding_test
 target_link_libraries(timeout_encoding_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_unsecure
   grpc_test_util
 )
 
@@ -19167,7 +19098,6 @@ target_include_directories(tls_security_connector_test
 target_link_libraries(tls_security_connector_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_unsecure
   grpc_test_util
 )
 
@@ -20099,7 +20029,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc++
-    grpc_unsecure
     grpc_test_util
   )
 
@@ -20795,7 +20724,6 @@ target_include_directories(xds_credentials_test
 target_link_libraries(xds_credentials_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_unsecure
   grpc_test_util
 )
 

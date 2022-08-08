@@ -2935,7 +2935,6 @@ libs:
   deps:
   - absl/flags:flag
   - grpc++
-  - grpc_unsecure
   - grpc_test_util
 - name: grpc++_unsecure
   build: all
@@ -3278,7 +3277,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - grpc_unsecure
   - grpc_test_util
   platforms:
   - linux
@@ -3318,7 +3316,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - grpc_unsecure
   - grpc_test_util
   platforms:
   - linux
@@ -3380,7 +3377,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - grpc_unsecure
   - grpc_test_util
   platforms:
   - linux
@@ -3423,7 +3419,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - grpc_unsecure
   - grpc_test_util
   platforms:
   - linux
@@ -3466,7 +3461,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - grpc_unsecure
   - grpc_test_util
   platforms:
   - linux
@@ -3589,7 +3583,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - grpc_unsecure
   - grpc_test_util
   platforms:
   - linux
@@ -3626,7 +3619,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - grpc_unsecure
   - grpc_test_util
   uses_polling: false
 - name: activity_test
@@ -4013,7 +4005,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - grpc_unsecure
   - grpc_test_util
 - name: alts_tsi_handshaker_test
   gtest: true
@@ -4197,7 +4188,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - grpc_unsecure
   - grpc_test_util
   uses_polling: false
 - name: auth_property_iterator_test
@@ -4243,7 +4233,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - grpc_unsecure
   - grpc_test_util
 - name: authorization_policy_provider_test
   gtest: true
@@ -4306,7 +4295,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - grpc_unsecure
   - grpc_test_util
 - name: b64_test
   gtest: true
@@ -4556,7 +4544,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - grpc_unsecure
   - grpc_test_util
 - name: byte_buffer_test
   gtest: true
@@ -4666,7 +4653,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - grpc_unsecure
   - grpc_test_util
 - name: certificate_provider_registry_test
   gtest: true
@@ -4756,7 +4742,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - grpc_unsecure
   - grpc_test_util
 - name: channel_filter_test
   gtest: true
@@ -4874,7 +4859,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - grpc_unsecure
   - grpc_test_util
 - name: check_gcp_environment_windows_test
   gtest: true
@@ -4909,7 +4893,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - grpc_unsecure
   - grpc_test_util
 - name: chunked_vector_test
   gtest: true
@@ -5178,7 +5161,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - grpc_unsecure
   - grpc_test_util
   uses_polling: false
 - name: codegen_test_full
@@ -5236,7 +5218,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - grpc_unsecure
   - grpc_test_util
   platforms:
   - linux
@@ -5330,7 +5311,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - grpc_unsecure
   - grpc_test_util
 - name: context_allocator_end2end_test
   gtest: true
@@ -5380,7 +5360,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - grpc_unsecure
   - grpc_test_util
   uses_polling: false
 - name: context_test
@@ -5684,7 +5663,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - grpc_unsecure
   - grpc_test_util
 - name: env_test
   gtest: true
@@ -5744,7 +5722,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - grpc_unsecure
   - grpc_test_util
   uses_polling: false
 - name: error_utils_test
@@ -5780,7 +5757,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - grpc_unsecure
   - grpc_test_util
 - name: evaluate_args_test
   gtest: true
@@ -5815,7 +5791,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - grpc_unsecure
   - grpc_test_util
 - name: event_poller_posix_test
   gtest: true
@@ -6082,7 +6057,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - grpc_unsecure
   - grpc_test_util
   platforms:
   - linux
@@ -6351,7 +6325,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - grpc_unsecure
   - grpc_test_util
 - name: frame_handler_test
   gtest: true
@@ -6489,7 +6462,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - grpc_unsecure
   - grpc_test_util
 - name: grpc_authorization_engine_test
   gtest: true
@@ -6524,7 +6496,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - grpc_unsecure
   - grpc_test_util
 - name: grpc_authorization_policy_provider_test
   gtest: true
@@ -6563,7 +6534,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - grpc_unsecure
   - grpc_test_util
 - name: grpc_authz_end2end_test
   gtest: true
@@ -6678,7 +6648,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - grpc_unsecure
   - grpc_test_util
 - name: grpc_node_plugin
   build: protoc
@@ -6753,7 +6722,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - grpc_unsecure
   - grpc_test_util
 - name: grpc_tls_certificate_provider_test
   gtest: true
@@ -6788,7 +6756,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - grpc_unsecure
   - grpc_test_util
 - name: grpc_tls_certificate_verifier_test
   gtest: true
@@ -6823,7 +6790,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - grpc_unsecure
   - grpc_test_util
 - name: grpc_tls_credentials_options_comparator_test
   gtest: true
@@ -6858,7 +6824,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - grpc_unsecure
   - grpc_test_util
 - name: grpc_tls_credentials_options_test
   gtest: true
@@ -6893,7 +6858,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - grpc_unsecure
   - grpc_test_util
 - name: grpc_tool_test
   gtest: true
@@ -7064,7 +7028,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - grpc_unsecure
   - grpc_test_util
   uses_polling: false
 - name: host_port_test
@@ -7110,7 +7073,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - grpc_unsecure
   - grpc_test_util
   uses_polling: false
 - name: hpack_parser_table_test
@@ -7146,7 +7108,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - grpc_unsecure
   - grpc_test_util
   uses_polling: false
 - name: hpack_parser_test
@@ -7182,7 +7143,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - grpc_unsecure
   - grpc_test_util
   uses_polling: false
 - name: http2_client
@@ -7341,7 +7301,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - grpc_unsecure
   - grpc_test_util
 - name: interop_client
   build: test
@@ -7482,7 +7441,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - grpc_unsecure
   - grpc_test_util
   uses_polling: false
 - name: jwt_verifier_test
@@ -7518,7 +7476,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - grpc_unsecure
   - grpc_test_util
   uses_polling: false
 - name: lame_client_test
@@ -7718,7 +7675,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - grpc_unsecure
   - grpc_test_util
   uses_polling: false
 - name: lock_free_event_test
@@ -7811,7 +7767,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - grpc_unsecure
   - grpc_test_util
 - name: memory_quota_stress_test
   gtest: true
@@ -8009,7 +7964,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - grpc_unsecure
   - grpc_test_util
   uses_polling: false
 - name: metadata_map_test
@@ -8045,7 +7999,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - grpc_unsecure
   - grpc_test_util
 - name: miscompile_with_no_unique_address_test
   gtest: true
@@ -8470,7 +8423,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - grpc_unsecure
   - grpc_test_util
   uses_polling: false
 - name: percent_encoding_test
@@ -8564,7 +8516,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - grpc_unsecure
   - grpc_test_util
 - name: pipe_test
   gtest: true
@@ -8929,7 +8880,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - grpc_unsecure
   - grpc_test_util
 - name: ref_counted_ptr_test
   gtest: true
@@ -8997,7 +8947,6 @@ targets:
   deps:
   - absl/flags:flag
   - absl/flags:parse
-  - grpc_unsecure
   - grpc_test_util
   args:
   - --resolver=ares
@@ -9040,7 +8989,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - grpc_unsecure
   - grpc_test_util
   - grpc++_test_config
 - name: resolve_address_using_native_resolver_posix_test
@@ -9078,7 +9026,6 @@ targets:
   deps:
   - absl/flags:flag
   - absl/flags:parse
-  - grpc_unsecure
   - grpc_test_util
   args:
   - --resolver=native
@@ -9121,7 +9068,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - grpc_unsecure
   - grpc_test_util
   - grpc++_test_config
 - name: resource_quota_test
@@ -9296,7 +9242,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - grpc_unsecure
   - grpc_test_util
 - name: security_connector_test
   gtest: true
@@ -9331,7 +9276,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - grpc_unsecure
   - grpc_test_util
 - name: seq_test
   gtest: true
@@ -9661,7 +9605,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - grpc_unsecure
   - grpc_test_util
 - name: shutdown_test
   gtest: true
@@ -9872,7 +9815,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - grpc_unsecure
   - grpc_test_util
   platforms:
   - linux
@@ -9921,7 +9863,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - grpc_unsecure
   - grpc_test_util
 - name: ssl_transport_security_test
   gtest: true
@@ -10005,7 +9946,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - grpc_unsecure
   - grpc_test_util
   uses_polling: false
 - name: status_helper_test
@@ -10063,7 +10003,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - grpc_unsecure
   - grpc_test_util
   platforms:
   - linux
@@ -10102,7 +10041,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - grpc_unsecure
   - grpc_test_util
 - name: streaming_throughput_test
   gtest: true
@@ -10157,7 +10095,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - grpc_unsecure
   - grpc_test_util
 - name: string_ref_test
   gtest: true
@@ -10223,7 +10160,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - grpc_unsecure
   - grpc_test_util
 - name: table_test
   gtest: true
@@ -10275,7 +10211,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - grpc_unsecure
   - grpc_test_util
   platforms:
   - linux
@@ -10314,7 +10249,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - grpc_unsecure
   - grpc_test_util
   platforms:
   - linux
@@ -10671,7 +10605,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - grpc_unsecure
   - grpc_test_util
   uses_polling: false
 - name: test_core_security_credentials_test
@@ -10707,7 +10640,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - grpc_unsecure
   - grpc_test_util
 - name: test_core_slice_slice_buffer_test
   gtest: true
@@ -10967,7 +10899,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - grpc_unsecure
   - grpc_test_util
   uses_polling: false
 - name: timer_test
@@ -11038,7 +10969,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - grpc_unsecure
   - grpc_test_util
 - name: tls_test
   gtest: true
@@ -11578,7 +11508,6 @@ targets:
   - test/cpp/performance/writes_per_rpc_test.cc
   deps:
   - grpc++
-  - grpc_unsecure
   - grpc_test_util
   platforms:
   - linux
@@ -11822,7 +11751,6 @@ targets:
   - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   deps:
-  - grpc_unsecure
   - grpc_test_util
 - name: xds_csds_end2end_test
   gtest: true
