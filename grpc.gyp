@@ -1601,7 +1601,6 @@
       'dependencies': [
         'absl/flags:flag',
         'grpc++',
-        'grpc_unsecure',
         'grpc_test_util',
       ],
       'sources': [
