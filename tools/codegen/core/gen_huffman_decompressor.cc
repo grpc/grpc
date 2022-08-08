@@ -962,7 +962,7 @@ int main(void) {
   size_t best_len = std::numeric_limits<size_t>::max();
   std::vector<std::unique_ptr<std::string>> results;
   std::vector<std::thread> threads;
-  for (auto perm : PermBuilder(2).Run()) {
+  for (auto perm : PermBuilder(3).Run()) {
     results.emplace_back(absl::make_unique<std::string>());
     threads.emplace_back([perm, r = results.back().get()] {
       *r = Build(perm);
