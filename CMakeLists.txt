@@ -2103,6 +2103,7 @@ add_library(grpc
   src/core/lib/event_engine/slice.cc
   src/core/lib/event_engine/slice_buffer.cc
   src/core/lib/event_engine/thread_pool.cc
+  src/core/lib/event_engine/time_util.cc
   src/core/lib/event_engine/trace.cc
   src/core/lib/event_engine/utils.cc
   src/core/lib/event_engine/windows/iocp.cc
@@ -2713,6 +2714,7 @@ add_library(grpc_unsecure
   src/core/lib/event_engine/slice.cc
   src/core/lib/event_engine/slice_buffer.cc
   src/core/lib/event_engine/thread_pool.cc
+  src/core/lib/event_engine/time_util.cc
   src/core/lib/event_engine/trace.cc
   src/core/lib/event_engine/utils.cc
   src/core/lib/event_engine/windows/iocp.cc
@@ -9463,7 +9465,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.cc
     src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.cc
     src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.cc
-    src/core/lib/event_engine/time_util.cc
     test/core/event_engine/posix/event_poller_posix_test.cc
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
