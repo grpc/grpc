@@ -260,6 +260,7 @@ def grpc_deps():
             strip_prefix = "rules_foreign_cc-0.8.0",
             urls = [
                 #2022-08-02
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/bazelbuild/rules_foreign_cc/archive/0.8.0.tar.gz",
                 "https://github.com/bazelbuild/rules_foreign_cc/archive/0.8.0.tar.gz",
             ],
         )
@@ -271,6 +272,7 @@ def grpc_deps():
             strip_prefix = "gperftools-2.10",
             urls = [
                 #2022-08-02
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/gperftools/gperftools/releases/download/gperftools-2.10/gperftools-2.10.tar.gz",
                 "https://github.com/gperftools/gperftools/releases/download/gperftools-2.10/gperftools-2.10.tar.gz",
             ],
             build_file_content = BUILD_ALL_CONTENT,
