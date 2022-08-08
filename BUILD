@@ -2288,7 +2288,6 @@ grpc_cc_library(
         "event_engine_base_hdrs",
         "event_engine_executor",
         "event_engine_thread_pool",
-        "forkable",
         "gpr_platform",
     ],
 )
@@ -2602,7 +2601,6 @@ grpc_cc_library(
         "event_engine_threaded_executor",
         "event_engine_trace",
         "event_engine_utils",
-        "forkable",
         "gpr_base",
         "grpc_trace",
         "posix_event_engine_timer",

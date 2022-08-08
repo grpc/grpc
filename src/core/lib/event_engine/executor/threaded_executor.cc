@@ -18,8 +18,6 @@
 
 #include <utility>
 
-#include "src/core/lib/event_engine/forkable.h"
-
 namespace grpc_event_engine {
 namespace experimental {
 
