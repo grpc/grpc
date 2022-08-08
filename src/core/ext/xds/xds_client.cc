@@ -1385,7 +1385,7 @@ XdsClient::XdsClient(std::unique_ptr<XdsBootstrap> bootstrap,
       request_timeout_(resource_request_timeout),
       xds_federation_enabled_(XdsFederationEnabled()),
       api_(this, &grpc_xds_client_trace, bootstrap_->node(), &symtab_),
-      engine_(grpc_event_engine::experimental::GetDefaultEventEngine())  {
+      engine_(grpc_event_engine::experimental::GetDefaultEventEngine()) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO, "[xds_client %p] creating xds client", this);
   }

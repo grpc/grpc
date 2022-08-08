@@ -21,6 +21,7 @@
 
 #include <grpc/event_engine/event_engine.h>
 
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/default_event_engine_factory.h"
 #include "src/core/lib/event_engine/event_engine_factory.h"
 #include "src/core/lib/event_engine/trace.h"

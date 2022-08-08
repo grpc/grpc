@@ -283,7 +283,7 @@ class MainLoop {
       case filter_fuzzer::Action::TYPE_NOT_SET:
         break;
       case filter_fuzzer::Action::kAdvanceTimeMicroseconds: {
-        grpc_core::MutexLock lock(&g_now_mu);
+        MutexLock lock(&g_now_mu);
         g_now = gpr_time_add(
             g_now, gpr_time_from_micros(action.advance_time_microseconds(),
                                         GPR_TIMESPAN));
