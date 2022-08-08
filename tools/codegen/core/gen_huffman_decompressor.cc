@@ -928,6 +928,7 @@ std::string Build(std::vector<int> max_bits_for_depth) {
 
 class PermBuilder {
  public:
+  explicit PermBuilder(int max_depth) : max_depth_(max_depth) {}
   std::vector<std::vector<int>> Run() {
     Step({});
     return std::move(perms_);
@@ -936,17 +937,23 @@ class PermBuilder {
  private:
   void Step(std::vector<int> so_far) {
     int sum_so_far = std::accumulate(so_far.begin(), so_far.end(), 0);
+    if (so_far.size() > max_depth_ ||
+        (so_far.size() == max_depth_ && sum_so_far != 30)) {
+      return;
+    }
     if (sum_so_far + 5 > 30) {
       perms_.emplace_back(std::move(so_far));
       return;
     }
-    for (int i = 5; i <= std::min(30 - sum_so_far, 18); i++) {
+    for (int i = so_far.empty() ? 5 : 3; i <= std::min(30 - sum_so_far, 20);
+         i++) {
       auto p = so_far;
       p.push_back(i);
       Step(std::move(p));
     }
   }
 
+  const int max_depth_;
   std::vector<std::vector<int>> perms_;
 };
 
@@ -955,13 +962,12 @@ int main(void) {
   size_t best_len = std::numeric_limits<size_t>::max();
   std::vector<std::unique_ptr<std::string>> results;
   std::vector<std::thread> threads;
-  for (auto perm : PermBuilder().Run()) {
+  for (auto perm : PermBuilder(2).Run()) {
     results.emplace_back(absl::make_unique<std::string>());
     threads.emplace_back([perm, r = results.back().get()] {
       *r = Build(perm);
-      puts(absl::StrCat("// PERM: ", r->length(), " from ",
-                        absl::StrJoin(perm, ","))
-               .c_str());
+      *r = absl::StrCat("// PERM: ", r->length(), " from ",
+                        absl::StrJoin(perm, ","), "\n", *r);
     });
   }
   for (auto& t : threads) t.join();
