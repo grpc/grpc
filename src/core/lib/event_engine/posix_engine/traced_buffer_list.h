@@ -152,4 +152,4 @@ void TcpSetWriteTimestampsCallback(
 }  // namespace posix_engine
 }  // namespace grpc_event_engine
 
-#endif /* GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_BUFFER_LIST_H */
+#endif /* GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_TRACED_BUFFER_LIST_H */
