@@ -75,11 +75,10 @@ class DefaultEngineTest : public testing::Test {
 
 TEST_F(DefaultEngineTest, SharedPtrGlobalEventEngineLifetimesAreValid) {
   int create_count = 0;
-  grpc_event_engine::experimental::SetEventEngineFactory(
-      [&create_count] {
-        ++create_count;
-        return absl::make_unique<FakeEventEngine>();
-      });
+  grpc_event_engine::experimental::SetEventEngineFactory([&create_count] {
+    ++create_count;
+    return absl::make_unique<FakeEventEngine>();
+  });
   std::shared_ptr<EventEngine> ee2;
   {
     std::shared_ptr<EventEngine> ee1 = GetDefaultEventEngine();
