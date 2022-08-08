@@ -147,7 +147,10 @@ INSTANTIATE_TEST_SUITE_P(TooManyNames, BdpEstimatorRandomTest,
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
-  gpr_now_impl = grpc_core::testing::fake_gpr_now;
+  {
+    grpc_core::MutexLock lock(&grpc_core::testing::mu_);
+    gpr_now_impl = grpc_core::testing::fake_gpr_now;
+  }
   grpc_init();
   grpc_timer_manager_set_threading(false);
   ::testing::InitGoogleTest(&argc, argv);

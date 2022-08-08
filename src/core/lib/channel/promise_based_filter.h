@@ -25,12 +25,14 @@
 #include <stdlib.h>
 
 #include <atomic>
+#include <memory>
 #include <new>
 #include <utility>
 
 #include "absl/container/inlined_vector.h"
 #include "absl/meta/type_traits.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
 
