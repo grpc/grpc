@@ -402,7 +402,6 @@ for dirname in [
     parsing_path = dirname
     exec(
         open('%sBUILD' % (dirname + '/' if dirname else ''), 'r').read(), {
-            'alias': lambda name, **kwargs: None,
             'load': lambda filename, *args: None,
             'licenses': lambda licenses: None,
             'package': lambda **kwargs: None,
