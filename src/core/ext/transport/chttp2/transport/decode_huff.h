@@ -269,10 +269,10 @@ class HuffDecoder {
   HuffDecoder(F sink, const uint8_t* begin, const uint8_t* end)
       : sink_(sink), begin_(begin), end_(end) {}
   bool Run() {
-    while (ok_) {
+    while (!done_) {
       if (!RefillTo8()) {
         Done();
-        return ok_;
+        break;
       }
       const auto index = (buffer_ >> (buffer_len_ - 8)) & 0xff;
       const auto op = GetOp2(index);
@@ -618,6 +618,7 @@ class HuffDecoder {
     CheckOkAtEnd();
   }
   void CheckOkAtEnd() {
+    done_ = true;
     if (buffer_len_ == 0) return;
     const uint64_t mask = (1 << buffer_len_) - 1;
     if ((buffer_ & mask) != mask) ok_ = false;
@@ -628,4 +629,5 @@ class HuffDecoder {
   uint64_t buffer_ = 0;
   int buffer_len_ = 0;
   bool ok_ = true;
+  bool done_ = false;
 };

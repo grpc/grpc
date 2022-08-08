@@ -856,7 +856,7 @@ void BuildCtx::AddStep(SymSet start_syms, int num_bits, bool is_top,
       ifblk->Add("return;");
     } else {
       ifblk->Add("Done();");
-      ifblk->Add("return ok_;");
+      ifblk->Add("break;");
     }
     out->Add("}");
   }
@@ -951,6 +951,7 @@ std::string Build(std::vector<int> max_bits_for_depth) {
   prv->Add("}");
   prv->Add("void CheckOkAtEnd() {");
   auto check_ok = prv->Add<Indent>();
+  check_ok->Add("done_ = true;");
   check_ok->Add("if (buffer_len_ == 0) return;");
   check_ok->Add("const uint64_t mask = (1 << buffer_len_) - 1;");
   check_ok->Add(absl::StrCat("if ((buffer_ & mask) != mask) ok_ = false;"));
@@ -962,10 +963,11 @@ std::string Build(std::vector<int> max_bits_for_depth) {
   prv->Add("uint64_t buffer_ = 0;");
   prv->Add("int buffer_len_ = 0;");
   prv->Add("bool ok_ = true;");
+  prv->Add("bool done_ = false;");
   // main fn
   pub->Add("bool Run() {");
   auto body = pub->Add<Indent>();
-  body->Add("while (ok_) {");
+  body->Add("while (!done_) {");
   ctx.AddStep(AllSyms(), ctx.MaxBitsForTop(), true, true, 0,
               body->Add<Indent>());
   body->Add("}");

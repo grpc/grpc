@@ -431,7 +431,6 @@ static void BM_LegacyDecode(benchmark::State& state) {
   };
 
   std::vector<uint8_t> output;
-  auto add = [&output](uint8_t c) { output.push_back(c); };
   int16_t decode_state;
   // Parse one half byte... we leverage some lookup tables to keep the logic
   // here really simple.
