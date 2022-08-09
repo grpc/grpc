@@ -54,22 +54,24 @@ class DefaultEngineTest : public testing::Test {
         Duration /* timeout */) override {
       return {-1, -1};
     };
-    bool CancelConnect(ConnectionHandle handle) override { return false; };
+    bool CancelConnect(ConnectionHandle /* handle */) override {
+      return false;
+    };
     bool IsWorkerThread() override { return false; };
     std::unique_ptr<DNSResolver> GetDNSResolver(
-        const DNSResolver::ResolverOptions& options) override {
+        const DNSResolver::ResolverOptions& /* options */) override {
       return nullptr;
     };
-    void Run(Closure* closure) override{};
-    void Run(absl::AnyInvocable<void()> closure) override{};
-    TaskHandle RunAfter(Duration when, Closure* closure) override {
+    void Run(Closure* /* closure */) override{};
+    void Run(absl::AnyInvocable<void()> /* closure */) override{};
+    TaskHandle RunAfter(Duration when, Closure* /* closure */) override {
       return {-1, -1};
     }
-    TaskHandle RunAfter(Duration when,
-                        absl::AnyInvocable<void()> closure) override {
+    TaskHandle RunAfter(Duration /* when */,
+                        absl::AnyInvocable<void()> /* closure */) override {
       return {-1, -1};
     }
-    bool Cancel(TaskHandle handle) override { return false; };
+    bool Cancel(TaskHandle /* handle */) override { return false; };
   };
 };
 
