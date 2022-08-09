@@ -63,7 +63,7 @@
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/debug/stats.h"
-#include "src/core/lib/event_engine/event_engine_factory.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gpr/alloc.h"
 #include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gpr/useful.h"
@@ -2375,7 +2375,7 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
       grpc_op::grpc_op_data::grpc_op_recv_status_on_client op_args,
       ServerMetadataHandle trailing_metadata)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu());
-  void PublishInitialMetadata(ServerMetadata* md)
+  void PublishInitialMetadata(ServerMetadata* metadata)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu());
 
   ArenaPromise<ServerMetadataHandle> promise_ ABSL_GUARDED_BY(mu());
