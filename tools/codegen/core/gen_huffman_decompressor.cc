@@ -541,10 +541,10 @@ class TableBuilder {
             slices[i].outer, false, global_decls, global_values));
       }
       if (slice_bits == 0) {
-        global_fns->Add(absl::StrCat("inline uint64_t GetOp", id,
+        global_fns->Add(absl::StrCat("static inline uint64_t GetOp", id,
                                      "(size_t i) { return ", inner_names[0],
                                      "[", outer_names[0], "[i]]; }"));
-        global_fns->Add(absl::StrCat("inline uint64_t GetEmit", id,
+        global_fns->Add(absl::StrCat("static inline uint64_t GetEmit", id,
                                      "(size_t, size_t emit) { return ",
                                      emit_names[0], "[emit]; }"));
       } else {
@@ -555,11 +555,11 @@ class TableBuilder {
         GenCompound(id, outer_names, "outer", TypeForMax(max_outer),
                     global_decls, global_values);
         global_fns->Add(absl::StrCat(
-            "inline uint64_t GetOp", id, "(size_t i) { return table", id,
+            "static inline uint64_t GetOp", id, "(size_t i) { return table", id,
             "_inner_[i >> ", op_bits - slice_bits, "][table", id,
             "_outer_[i >> ", op_bits - slice_bits, "][i & 0x",
             absl::Hex((1 << (op_bits - slice_bits)) - 1), "]]; }"));
-        global_fns->Add(absl::StrCat("inline uint64_t GetEmit", id,
+        global_fns->Add(absl::StrCat("static inline uint64_t GetEmit", id,
                                      "(size_t i, size_t emit) { return table",
                                      id, "_emit_[i >> ", op_bits - slice_bits,
                                      "][emit]; }"));
@@ -622,10 +622,10 @@ class TableBuilder {
             slices[i].ops, true, global_decls, global_values));
       }
       if (slice_bits == 0) {
-        global_fns->Add(absl::StrCat("inline uint64_t GetOp", id,
+        global_fns->Add(absl::StrCat("static inline uint64_t GetOp", id,
                                      "(size_t i) { return ", ops_names[0],
                                      "[i]; }"));
-        global_fns->Add(absl::StrCat("inline uint64_t GetEmit", id,
+        global_fns->Add(absl::StrCat("static inline uint64_t GetEmit", id,
                                      "(size_t, size_t emit) { return ",
                                      emit_names[0], "[emit]; }"));
       } else {
@@ -634,10 +634,10 @@ class TableBuilder {
         GenCompound(id, ops_names, "ops", TypeForMax(max_op), global_decls,
                     global_values);
         global_fns->Add(absl::StrCat(
-            "inline uint64_t GetOp", id, "(size_t i) { return table", id,
+            "static inline uint64_t GetOp", id, "(size_t i) { return table", id,
             "_ops_[i >> ", op_bits - slice_bits, "][i & 0x",
             absl::Hex((1 << (op_bits - slice_bits)) - 1), "]; }"));
-        global_fns->Add(absl::StrCat("inline uint64_t GetEmit", id,
+        global_fns->Add(absl::StrCat("static inline uint64_t GetEmit", id,
                                      "(size_t i, size_t emit) { return table",
                                      id, "_emit_[i >> ", op_bits - slice_bits,
                                      "][emit]; }"));

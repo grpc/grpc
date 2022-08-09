@@ -22,82 +22,100 @@
 #include <cstdint>
 class HuffDecoderCommon {
  protected:
-  inline uint64_t GetOp1(size_t i) {
+  static inline uint64_t GetOp1(size_t i) {
     return table1_0_inner_[table1_0_outer_[i]];
   }
-  inline uint64_t GetEmit1(size_t, size_t emit) { return table1_0_emit_[emit]; }
-  inline uint64_t GetOp2(size_t i) {
+  static inline uint64_t GetEmit1(size_t, size_t emit) {
+    return table1_0_emit_[emit];
+  }
+  static inline uint64_t GetOp2(size_t i) {
     return table2_0_inner_[table2_0_outer_[i]];
   }
-  inline uint64_t GetEmit2(size_t, size_t emit) { return table2_0_emit_[emit]; }
-  inline uint64_t GetOp3(size_t i) {
+  static inline uint64_t GetEmit2(size_t, size_t emit) {
+    return table2_0_emit_[emit];
+  }
+  static inline uint64_t GetOp3(size_t i) {
     return table3_0_inner_[table3_0_outer_[i]];
   }
-  inline uint64_t GetEmit3(size_t, size_t emit) { return table3_0_emit_[emit]; }
-  inline uint64_t GetOp4(size_t i) { return table4_ops_[i >> 6][i & 0x3f]; }
-  inline uint64_t GetEmit4(size_t i, size_t emit) {
+  static inline uint64_t GetEmit3(size_t, size_t emit) {
+    return table3_0_emit_[emit];
+  }
+  static inline uint64_t GetOp4(size_t i) {
+    return table4_ops_[i >> 6][i & 0x3f];
+  }
+  static inline uint64_t GetEmit4(size_t i, size_t emit) {
     return table4_emit_[i >> 6][emit];
   }
-  inline uint64_t GetOp5(size_t i) {
+  static inline uint64_t GetOp5(size_t i) {
     return table5_0_inner_[table5_0_outer_[i]];
   }
-  inline uint64_t GetEmit5(size_t, size_t emit) { return table5_0_emit_[emit]; }
-  inline uint64_t GetOp6(size_t i) {
+  static inline uint64_t GetEmit5(size_t, size_t emit) {
+    return table5_0_emit_[emit];
+  }
+  static inline uint64_t GetOp6(size_t i) {
     return table6_0_inner_[table6_0_outer_[i]];
   }
-  inline uint64_t GetEmit6(size_t, size_t emit) { return table6_0_emit_[emit]; }
-  inline uint64_t GetOp7(size_t i) {
+  static inline uint64_t GetEmit6(size_t, size_t emit) {
+    return table6_0_emit_[emit];
+  }
+  static inline uint64_t GetOp7(size_t i) {
     return table6_0_inner_[table6_0_outer_[i]];
   }
-  inline uint64_t GetEmit7(size_t, size_t emit) { return table7_0_emit_[emit]; }
-  inline uint64_t GetOp8(size_t i) {
+  static inline uint64_t GetEmit7(size_t, size_t emit) {
+    return table7_0_emit_[emit];
+  }
+  static inline uint64_t GetOp8(size_t i) {
     return table6_0_inner_[table6_0_outer_[i]];
   }
-  inline uint64_t GetEmit8(size_t, size_t emit) { return table8_0_emit_[emit]; }
-  inline uint64_t GetOp9(size_t i) {
+  static inline uint64_t GetEmit8(size_t, size_t emit) {
+    return table8_0_emit_[emit];
+  }
+  static inline uint64_t GetOp9(size_t i) {
     return table6_0_inner_[table6_0_outer_[i]];
   }
-  inline uint64_t GetEmit9(size_t, size_t emit) { return table9_0_emit_[emit]; }
-  inline uint64_t GetOp10(size_t i) {
+  static inline uint64_t GetEmit9(size_t, size_t emit) {
+    return table9_0_emit_[emit];
+  }
+  static inline uint64_t GetOp10(size_t i) {
     return table6_0_inner_[table6_0_outer_[i]];
   }
-  inline uint64_t GetEmit10(size_t, size_t emit) {
+  static inline uint64_t GetEmit10(size_t, size_t emit) {
     return table10_0_emit_[emit];
   }
-  inline uint64_t GetOp11(size_t i) {
+  static inline uint64_t GetOp11(size_t i) {
     return table6_0_inner_[table6_0_outer_[i]];
   }
-  inline uint64_t GetEmit11(size_t, size_t emit) {
+  static inline uint64_t GetEmit11(size_t, size_t emit) {
     return table11_0_emit_[emit];
   }
-  inline uint64_t GetOp12(size_t i) {
+  static inline uint64_t GetOp12(size_t i) {
     return table12_0_inner_[table12_0_outer_[i]];
   }
-  inline uint64_t GetEmit12(size_t, size_t emit) {
+  static inline uint64_t GetEmit12(size_t, size_t emit) {
     return table12_0_emit_[emit];
   }
-  inline uint64_t GetOp13(size_t i) {
+  static inline uint64_t GetOp13(size_t i) {
     return table13_0_inner_[table13_0_outer_[i]];
   }
-  inline uint64_t GetEmit13(size_t, size_t emit) {
+  static inline uint64_t GetEmit13(size_t, size_t emit) {
     return table13_0_emit_[emit];
   }
-  inline uint64_t GetOp14(size_t i) {
+  static inline uint64_t GetOp14(size_t i) {
     return table14_0_inner_[table14_0_outer_[i]];
   }
-  inline uint64_t GetEmit14(size_t, size_t emit) {
+  static inline uint64_t GetEmit14(size_t, size_t emit) {
     return table14_0_emit_[emit];
   }
-  inline uint64_t GetOp15(size_t i) {
+  static inline uint64_t GetOp15(size_t i) {
     return table15_0_inner_[table15_0_outer_[i]];
   }
-  inline uint64_t GetEmit15(size_t, size_t emit) {
+  static inline uint64_t GetEmit15(size_t, size_t emit) {
     return table15_0_emit_[emit];
   }
-  inline uint64_t GetOp16(size_t i) {
+  static inline uint64_t GetOp16(size_t i) {
     return table16_0_inner_[table16_0_outer_[i]];
   }
-  inline uint64_t GetEmit16(size_t, size_t emit) {
+  static inline uint64_t GetEmit16(size_t, size_t emit) {
     return table16_0_emit_[emit];
   }
 
