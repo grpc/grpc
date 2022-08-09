@@ -340,6 +340,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/transport/chttp2_transport.h',
                       'src/core/ext/transport/chttp2/transport/context_list.cc',
                       'src/core/ext/transport/chttp2/transport/context_list.h',
+                      'src/core/ext/transport/chttp2/transport/decode_huff.cc',
                       'src/core/ext/transport/chttp2/transport/decode_huff.h',
                       'src/core/ext/transport/chttp2/transport/flow_control.cc',
                       'src/core/ext/transport/chttp2/transport/flow_control.h',
