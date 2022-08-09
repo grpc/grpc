@@ -55,24 +55,23 @@ void TestVerifierCalledOnAckVerifier(void* arg, Timestamps* ts,
 
 // Tests that all TracedBuffer elements in the list are flushed out on shutdown.
 // Also tests that arg is passed correctly.
-TEST(BufferListTest, Testshutdownflusheslist) {
+TEST(BufferListTest, TestShutdownFlushesList) {
   TcpSetWriteTimestampsCallback(TestShutdownFlushesListVerifier);
-  std::list<TracedBuffer*> traced_buffers;
+  TracedBufferList traced_buffers;
   int verifier_called[NUM_ELEM];
   for (auto i = 0; i < NUM_ELEM; i++) {
     verifier_called[i] = 0;
-    TracedBuffer::AddNewEntry(traced_buffers, i, 0,
-                              static_cast<void*>(&verifier_called[i]));
+    traced_buffers.AddNewEntry(i, 0, static_cast<void*>(&verifier_called[i]));
   }
-  TracedBuffer::Shutdown(traced_buffers, nullptr, absl::OkStatus());
+  traced_buffers.Shutdown(nullptr, absl::OkStatus());
   for (auto i = 0; i < NUM_ELEM; i++) {
     ASSERT_EQ(verifier_called[i], 1);
   }
-  ASSERT_TRUE(traced_buffers.empty());
+  ASSERT_TRUE(traced_buffers.Size() == 0);
 }
 
 // Tests that the timestamp verifier is called on an ACK timestamp.
-TEST(BufferListTest, Testverifiercalledonack) {
+TEST(BufferListTest, TestVerifierCalledOnAck) {
   struct sock_extended_err serr;
   serr.ee_data = 213;
   serr.ee_info = SCM_TSTAMP_ACK;
@@ -80,34 +79,42 @@ TEST(BufferListTest, Testverifiercalledonack) {
   tss.ts[0].tv_sec = 123;
   tss.ts[0].tv_nsec = 456;
   TcpSetWriteTimestampsCallback(TestVerifierCalledOnAckVerifier);
-  std::list<TracedBuffer*> traced_buffers;
+  TracedBufferList traced_buffers;
   int verifier_called = 0;
-  TracedBuffer::AddNewEntry(traced_buffers, 213, 0, &verifier_called);
-  TracedBuffer::ProcessTimestamp(traced_buffers, &serr, nullptr, &tss);
+  traced_buffers.AddNewEntry(213, 0, &verifier_called);
+  traced_buffers.ProcessTimestamp(&serr, nullptr, &tss);
   ASSERT_EQ(verifier_called, 1);
-  ASSERT_TRUE(traced_buffers.empty());
-  TracedBuffer::Shutdown(traced_buffers, nullptr, absl::OkStatus());
+  ASSERT_TRUE(traced_buffers.Size() == 0);
+  traced_buffers.Shutdown(nullptr, absl::OkStatus());
+  ASSERT_TRUE(traced_buffers.Size() == 0);
 }
 
-// Tests that shutdown can be called repeatedly.
-TEST(BufferListTest, Testrepeatedshutdown) {
+// Tests that ProcessTimestamp called after Shutdown does nothing.
+TEST(BufferListTest, TestProcessTimestampAfterShutdown) {
   struct sock_extended_err serr;
   serr.ee_data = 213;
   serr.ee_info = SCM_TSTAMP_ACK;
   struct scm_timestamping tss;
   tss.ts[0].tv_sec = 123;
   tss.ts[0].tv_nsec = 456;
-  TcpSetWriteTimestampsCallback(TestVerifierCalledOnAckVerifier);
-  std::list<TracedBuffer*> traced_buffers;
+  TcpSetWriteTimestampsCallback(TestShutdownFlushesListVerifier);
+  TracedBufferList traced_buffers;
   int verifier_called = 0;
 
-  TracedBuffer::AddNewEntry(traced_buffers, 213, 0, &verifier_called);
-  TracedBuffer::ProcessTimestamp(traced_buffers, &serr, nullptr, &tss);
+  traced_buffers.AddNewEntry(213, 0, &verifier_called);
+  ASSERT_TRUE(traced_buffers.Size() == 1);
+  traced_buffers.Shutdown(nullptr, absl::OkStatus());
+  ASSERT_TRUE(traced_buffers.Size() == 0);
+  // Check that the callback was executed after first Shutdown.
   ASSERT_EQ(verifier_called, 1);
-  ASSERT_TRUE(traced_buffers.empty());
-  TracedBuffer::Shutdown(traced_buffers, nullptr, absl::OkStatus());
-  TracedBuffer::Shutdown(traced_buffers, nullptr, absl::OkStatus());
-  TracedBuffer::Shutdown(traced_buffers, nullptr, absl::OkStatus());
+  verifier_called = 0;
+  traced_buffers.Shutdown(nullptr, absl::OkStatus());
+  ASSERT_TRUE(traced_buffers.Size() == 0);
+  // Second Shutdown should not execute the callback.
+  ASSERT_EQ(verifier_called, 0);
+  traced_buffers.ProcessTimestamp(&serr, nullptr, &tss);
+  // A ProcessTimestamp after Shutdown not execute the callback.
+  ASSERT_EQ(verifier_called, 0);
 }
 
 }  // namespace posix_engine
