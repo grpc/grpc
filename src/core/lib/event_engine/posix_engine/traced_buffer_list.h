@@ -154,13 +154,14 @@ class TracedBufferList {
  public:
   // Add a new entry in the TracedBuffer list pointed to by head. Also saves
   // sendmsg_time with the current timestamp.
-  void AddEntry(int32_t /*seq_no*/, int /*fd*/, void* /*arg*/) {}
+  void AddNewEntry(int32_t /*seq_no*/, int /*fd*/, void* /*arg*/) {}
   // Processes a received timestamp based on sock_extended_err and
   // scm_timestamping structures. It will invoke the timestamps callback if the
   // timestamp type is SCM_TSTAMP_ACK.
   void ProcessTimestamp(struct sock_extended_err* /*serr*/,
                         struct cmsghdr* /*opt_stats*/,
                         struct scm_timestamping* /*tss*/) {}
+  int Size() { return 0; }
   // Cleans the list by calling the callback for each traced buffer in the list
   // with timestamps that it has.
   void Shutdown(void* /*remaining*/, absl::Status /*shutdown_err*/) {}
