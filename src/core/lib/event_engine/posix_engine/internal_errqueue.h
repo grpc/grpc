@@ -163,6 +163,9 @@ struct tcp_info {
 #ifndef TCP_INFO
 #define TCP_INFO 11
 #endif
+
+int GetSocketTcpInfo(tcp_info* info, int fd);
+
 #endif /* GRPC_LINUX_ERRQUEUE */
 
 // Returns true if kernel is capable of supporting errqueue and timestamping.

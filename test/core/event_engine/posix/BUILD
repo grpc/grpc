@@ -97,3 +97,16 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "traced_buffer_list_test",
+    srcs = ["traced_buffer_list_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:posix_event_engine_traced_buffer_list",
+        "//test/core/util:grpc_test_util",
+    ],
+)
