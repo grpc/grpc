@@ -30,16 +30,6 @@
 #include "src/core/lib/event_engine/posix_engine/internal_errqueue.h"
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_LINUX_ERRQUEUE
-#include <linux/errqueue.h>
-#include <linux/netlink.h>
-#include <netinet/in.h>
-#include <string.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <time.h>
-#endif
-
 namespace grpc_event_engine {
 namespace posix_engine {
 
@@ -119,40 +109,52 @@ struct Timestamps {
 // TracedBuffer list is kept track of using the head element of the list. If
 // *the head element of the list is nullptr, then the list is empty.
 #ifdef GRPC_LINUX_ERRQUEUE
-class TracedBuffer {
- public:
-  // Use AddNewEntry function instead of using this directly.
-  TracedBuffer(uint32_t seq_no, void* arg) : seq_no_(seq_no), arg_(arg) {}
 
+class TracedBufferList {
+ public:
   // Add a new entry in the TracedBuffer list pointed to by head. Also saves
   // sendmsg_time with the current timestamp.
-  static void AddNewEntry(std::list<TracedBuffer*>& traced_buffers,
-                          uint32_t seq_no, int fd, void* arg);
-
+  void AddNewEntry(int32_t seq_no, int fd, void* arg);
   // Processes a received timestamp based on sock_extended_err and
   // scm_timestamping structures. It will invoke the timestamps callback if the
   // timestamp type is SCM_TSTAMP_ACK.
-  static void ProcessTimestamp(std::list<TracedBuffer*>& traced_buffers,
-                               struct sock_extended_err* serr,
-                               struct cmsghdr* opt_stats,
-                               struct scm_timestamping* tss);
-
+  void ProcessTimestamp(struct sock_extended_err* serr,
+                        struct cmsghdr* opt_stats,
+                        struct scm_timestamping* tss);
+  int Size() { return buffer_list_.size(); }
   // Cleans the list by calling the callback for each traced buffer in the list
   // with timestamps that it has.
-  static void Shutdown(std::list<TracedBuffer*>& traced_buffers,
-                       void* remaining, absl::Status shutdown_err);
+  void Shutdown(void* /*remaining*/, absl::Status /*shutdown_err*/);
 
  private:
-  uint32_t seq_no_; /* The sequence number for the last byte in the buffer */
-  void* arg_;       /* The arg to pass to timestamps_callback */
-  Timestamps ts_;   /* The timestamps corresponding to this buffer */
+  class TracedBuffer {
+   public:
+    TracedBuffer(uint32_t seq_no, void* arg) : seq_no_(seq_no), arg_(arg) {}
+
+   private:
+    friend class TracedBufferList;
+    uint32_t seq_no_; /* The sequence number for the last byte in the buffer */
+    void* arg_;       /* The arg to pass to timestamps_callback */
+    Timestamps ts_;   /* The timestamps corresponding to this buffer */
+  };
+  std::list<TracedBuffer*> buffer_list_;
 };
+
 #else  /* GRPC_LINUX_ERRQUEUE */
-class TracedBuffer {
+class TracedBufferList {
  public:
-  // Phony shutdown function.
-  static void Shutdown(std::list<TracedBuffer>& /*traced_buffers*/,
-                       void* /*remaining*/, absl::Status /*shutdown_err*/) {}
+  // Add a new entry in the TracedBuffer list pointed to by head. Also saves
+  // sendmsg_time with the current timestamp.
+  void AddEntry(int32_t /*seq_no*/, int /*fd*/, void* /*arg*/) {}
+  // Processes a received timestamp based on sock_extended_err and
+  // scm_timestamping structures. It will invoke the timestamps callback if the
+  // timestamp type is SCM_TSTAMP_ACK.
+  void ProcessTimestamp(struct sock_extended_err* /*serr*/,
+                        struct cmsghdr* /*opt_stats*/,
+                        struct scm_timestamping* /*tss*/) {}
+  // Cleans the list by calling the callback for each traced buffer in the list
+  // with timestamps that it has.
+  void Shutdown(void* /*remaining*/, absl::Status /*shutdown_err*/) {}
 };
 #endif /* GRPC_LINUX_ERRQUEUE */
 

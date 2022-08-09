@@ -16,10 +16,14 @@
 
 #include "src/core/lib/event_engine/posix_engine/traced_buffer_list.h"
 
+#include <linux/errqueue.h>
+#include <linux/netlink.h>
 #include <stddef.h>
 #include <stdlib.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <time.h>
 
-#include <cstdint>
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
@@ -193,8 +197,7 @@ void ExtractOptStatsFromCmsg(ConnectionMetrics* metrics,
 }
 }  // namespace.
 
-void TracedBuffer::AddNewEntry(std::list<TracedBuffer*>& traced_buffers,
-                               uint32_t seq_no, int fd, void* arg) {
+void TracedBufferList::AddNewEntry(int32_t seq_no, int fd, void* arg) {
   TracedBuffer* new_elem = new TracedBuffer(seq_no, arg);
   // Store the current time as the sendmsg time.
   new_elem->ts_.sendmsg_time.time = gpr_now(GPR_CLOCK_REALTIME);
@@ -207,15 +210,14 @@ void TracedBuffer::AddNewEntry(std::list<TracedBuffer*>& traced_buffers,
                                &new_elem->ts_.info);
   }
 
-  traced_buffers.push_back(new_elem);
+  buffer_list_.push_back(new_elem);
 }
 
-void TracedBuffer::ProcessTimestamp(std::list<TracedBuffer*>& traced_buffers,
-                                    struct sock_extended_err* serr,
-                                    struct cmsghdr* opt_stats,
-                                    struct scm_timestamping* tss) {
-  auto it = traced_buffers.begin();
-  while (it != traced_buffers.end()) {
+void TracedBufferList::ProcessTimestamp(struct sock_extended_err* serr,
+                                        struct cmsghdr* opt_stats,
+                                        struct scm_timestamping* tss) {
+  auto it = buffer_list_.begin();
+  while (it != buffer_list_.end()) {
     TracedBuffer* elem = (*it);
     // The byte number refers to the sequence number of the last byte which this
     // timestamp relates to.
@@ -225,12 +227,12 @@ void TracedBuffer::ProcessTimestamp(std::list<TracedBuffer*>& traced_buffers,
           FillGprFromTimestamp(&(elem->ts_.scheduled_time.time), &(tss->ts[0]));
           ExtractOptStatsFromCmsg(&(elem->ts_.scheduled_time.metrics),
                                   opt_stats);
-          it++;
+          ++it;
           break;
         case SCM_TSTAMP_SND:
           FillGprFromTimestamp(&(elem->ts_.sent_time.time), &(tss->ts[0]));
           ExtractOptStatsFromCmsg(&(elem->ts_.sent_time.metrics), opt_stats);
-          it++;
+          ++it;
           break;
         case SCM_TSTAMP_ACK:
           FillGprFromTimestamp(&(elem->ts_.acked_time.time), &(tss->ts[0]));
@@ -239,8 +241,8 @@ void TracedBuffer::ProcessTimestamp(std::list<TracedBuffer*>& traced_buffers,
           // thing below can be passed by value if we don't want the restriction
           // on the lifetime.
           g_timestamps_callback(elem->arg_, &(elem->ts_), absl::OkStatus());
-          it = traced_buffers.erase(it);
-          delete static_cast<TracedBuffer*>(elem);
+          it = buffer_list_.erase(it);
+          delete elem;
           break;
         default:
           abort();
@@ -251,13 +253,11 @@ void TracedBuffer::ProcessTimestamp(std::list<TracedBuffer*>& traced_buffers,
   }
 }
 
-void TracedBuffer::Shutdown(std::list<TracedBuffer*>& traced_buffers,
-                            void* remaining, absl::Status shutdown_err) {
-  auto it = traced_buffers.begin();
-  while (it != traced_buffers.end()) {
-    TracedBuffer* elem = (*it);
+void TracedBufferList::Shutdown(void* remaining, absl::Status shutdown_err) {
+  while (!buffer_list_.empty()) {
+    TracedBuffer* elem = buffer_list_.front();
     g_timestamps_callback(elem->arg_, &(elem->ts_), shutdown_err);
-    it = traced_buffers.erase(it);
+    buffer_list_.pop_front();
     delete elem;
   }
   if (remaining != nullptr) {
