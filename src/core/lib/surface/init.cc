@@ -38,6 +38,7 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/event_engine/forkable.h"
 #include "src/core/lib/gprpp/fork.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"
@@ -152,6 +153,7 @@ void grpc_init(void) {
       g_shutting_down_cv->SignalAll();
     }
     grpc_core::Fork::GlobalInit();
+    grpc_event_engine::experimental::RegisterForkHandlers();
     grpc_fork_handlers_auto_register();
     grpc_stats_init();
     grpc_core::ApplicationCallbackExecCtx::GlobalInit();

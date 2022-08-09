@@ -419,6 +419,7 @@ grpc_cc_library(
         "channel_stack_type",
         "config",
         "default_event_engine_factory_hdrs",
+        "forkable",
         "gpr_base",
         "grpc_authorization_base",
         "grpc_base",
@@ -478,6 +479,7 @@ grpc_cc_library(
         "channel_stack_type",
         "config",
         "default_event_engine_factory_hdrs",
+        "forkable",
         "gpr_base",
         "grpc_authorization_base",
         "grpc_base",
@@ -2282,6 +2284,21 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "forkable",
+    srcs = [
+        "src/core/lib/event_engine/forkable.cc",
+    ],
+    hdrs = [
+        "src/core/lib/event_engine/forkable.h",
+    ],
+    external_deps = ["absl/container:flat_hash_set"],
+    deps = [
+        "gpr_base",
+        "gpr_platform",
+    ],
+)
+
+grpc_cc_library(
     name = "iomgr_ee_timer",
     srcs = [
         "src/core/lib/event_engine/iomgr_engine/timer.cc",
@@ -2311,8 +2328,12 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/event_engine/iomgr_engine/thread_pool.h",
     ],
+    external_deps = ["absl/base:core_headers"],
     tags = ["grpc-autodeps"],
-    deps = ["gpr_base"],
+    deps = [
+        "forkable",
+        "gpr_base",
+    ],
 )
 
 grpc_cc_library(
@@ -2330,6 +2351,7 @@ grpc_cc_library(
     tags = ["grpc-autodeps"],
     deps = [
         "event_engine_base_hdrs",
+        "forkable",
         "gpr_base",
         "gpr_codegen",
         "iomgr_ee_timer",
