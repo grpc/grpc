@@ -121,6 +121,9 @@ grpc_cc_test(
     srcs = ["traced_buffer_list_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
+    tags = [
+        "no_windows",
+    ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [

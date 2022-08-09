@@ -30,11 +30,20 @@
 #include "src/core/lib/event_engine/posix_engine/internal_errqueue.h"
 #include "src/core/lib/iomgr/port.h"
 
+#ifdef GRPC_LINUX_ERRQUEUE
+#include <linux/errqueue.h>
+#include <linux/netlink.h>
+#include <netinet/in.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <time.h>
+#endif /* GRPC_LINUX_ERRQUEUE */
+
 namespace grpc_event_engine {
 namespace posix_engine {
 
-struct ConnectionMetrics {
-  /* Delivery rate in Bytes/s. */
+struct ConnectionMetrics { /* Delivery rate in Bytes/s. */
   absl::optional<uint64_t> delivery_rate;
   /* If the delivery rate is limited by the application, this is set to true. */
   absl::optional<bool> is_delivery_rate_app_limited;
