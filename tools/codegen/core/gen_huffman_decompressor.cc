@@ -230,10 +230,12 @@ using MatchCase = absl::variant<Matched, Unmatched, End>;
 
 class BuildCtx {
  public:
-  BuildCtx(std::vector<int> max_bits_for_depth, Sink* globals,
-           FunMaker* fun_maker)
+  BuildCtx(std::vector<int> max_bits_for_depth, Sink* global_fns,
+           Sink* global_decls, Sink* global_values, FunMaker* fun_maker)
       : max_bits_for_depth_(std::move(max_bits_for_depth)),
-        globals_(globals),
+        global_fns_(global_fns),
+        global_decls_(global_decls),
+        global_values_(global_values),
         fun_maker_(fun_maker) {}
 
   void AddStep(SymSet start_syms, int num_bits, bool is_top, bool refill,
@@ -255,11 +257,17 @@ class BuildCtx {
     return it->second;
   }
 
+  Sink* global_fns() const { return global_fns_; }
+  Sink* global_decls() const { return global_decls_; }
+  Sink* global_values() const { return global_values_; }
+
  private:
   const std::vector<int> max_bits_for_depth_;
   std::map<Hash, std::string> arrays_;
   int next_id_ = 1;
-  Sink* const globals_;
+  Sink* const global_fns_;
+  Sink* const global_decls_;
+  Sink* const global_values_;
   FunMaker* const fun_maker_;
 };
 
@@ -375,7 +383,7 @@ int BitsForMaxValue(int x) {
   return n;
 }
 
-class TableBuilder : public Item {
+class TableBuilder {
  public:
   explicit TableBuilder(BuildCtx* ctx) : ctx_(ctx), id_(ctx->NewId()) {}
 
@@ -385,8 +393,8 @@ class TableBuilder : public Item {
     max_match_case_ = std::max(max_match_case_, match_case);
   }
 
-  std::vector<std::string> ToLines() const override {
-    return Choose()->ToLines(this, BitsForMaxValue(elems_.size() - 1));
+  void Build() const {
+    Choose()->Build(this, BitsForMaxValue(elems_.size() - 1));
   }
 
   std::string EmitAccessor(std::string index, std::string offset) {
@@ -481,8 +489,7 @@ class TableBuilder : public Item {
 
   struct EncodeOption {
     virtual size_t Size() const = 0;
-    virtual std::vector<std::string> ToLines(const TableBuilder* builder,
-                                             int op_bits) const = 0;
+    virtual void Build(const TableBuilder* builder, int op_bits) const = 0;
     virtual ~EncodeOption() {}
   };
 
@@ -511,8 +518,10 @@ class TableBuilder : public Item {
       if (slice_bits != 0) sum += 3 * 64 * slices.size();
       return sum;
     }
-    std::vector<std::string> ToLines(const TableBuilder* builder,
-                                     int op_bits) const override {
+    void Build(const TableBuilder* builder, int op_bits) const override {
+      Sink* const global_fns = builder->ctx_->global_fns();
+      Sink* const global_decls = builder->ctx_->global_decls();
+      Sink* const global_values = builder->ctx_->global_values();
       const int id = builder->id_;
       std::vector<std::string> lines;
       const uint64_t max_inner = MaxInner();
@@ -521,38 +530,40 @@ class TableBuilder : public Item {
       std::vector<std::string> inner_names;
       std::vector<std::string> outer_names;
       for (size_t i = 0; i < slices.size(); i++) {
-        emit_names.push_back(
-            builder->GenArray(absl::StrCat("table", id, "_", i, "_emit"),
-                              "uint8_t", slices[i].emit, true, &lines));
+        emit_names.push_back(builder->GenArray(
+            absl::StrCat("table", id, "_", i, "_emit"), "uint8_t",
+            slices[i].emit, true, global_decls, global_values));
         inner_names.push_back(builder->GenArray(
             absl::StrCat("table", id, "_", i, "_inner"), TypeForMax(max_inner),
-            slices[i].inner, true, &lines));
+            slices[i].inner, true, global_decls, global_values));
         outer_names.push_back(builder->GenArray(
             absl::StrCat("table", id, "_", i, "_outer"), TypeForMax(max_outer),
-            slices[i].outer, false, &lines));
+            slices[i].outer, false, global_decls, global_values));
       }
       if (slice_bits == 0) {
-        lines.push_back(absl::StrCat("inline uint64_t GetOp", id,
+        global_fns->Add(absl::StrCat("inline uint64_t GetOp", id,
                                      "(size_t i) { return ", inner_names[0],
                                      "[", outer_names[0], "[i]]; }"));
-        lines.push_back(absl::StrCat("inline uint64_t GetEmit", id,
+        global_fns->Add(absl::StrCat("inline uint64_t GetEmit", id,
                                      "(size_t, size_t emit) { return ",
                                      emit_names[0], "[emit]; }"));
       } else {
-        GenCompound(id, emit_names, "emit", "uint8_t", &lines);
-        GenCompound(id, inner_names, "inner", TypeForMax(max_inner), &lines);
-        GenCompound(id, outer_names, "outer", TypeForMax(max_outer), &lines);
-        lines.push_back(absl::StrCat(
-            "inline uint64_t GetOp", id, "(size_t i) { return g_table", id,
-            "_inner[i >> ", op_bits - slice_bits, "][g_table", id,
-            "_outer[i >> ", op_bits - slice_bits, "][i & 0x",
+        GenCompound(id, emit_names, "emit", "uint8_t", global_decls,
+                    global_values);
+        GenCompound(id, inner_names, "inner", TypeForMax(max_inner),
+                    global_decls, global_values);
+        GenCompound(id, outer_names, "outer", TypeForMax(max_outer),
+                    global_decls, global_values);
+        global_fns->Add(absl::StrCat(
+            "inline uint64_t GetOp", id, "(size_t i) { return table", id,
+            "_inner_[i >> ", op_bits - slice_bits, "][table", id,
+            "_outer_[i >> ", op_bits - slice_bits, "][i & 0x",
             absl::Hex((1 << (op_bits - slice_bits)) - 1), "]]; }"));
-        lines.push_back(absl::StrCat("inline uint64_t GetEmit", id,
-                                     "(size_t i, size_t emit) { return g_table",
-                                     id, "_emit[i >> ", op_bits - slice_bits,
+        global_fns->Add(absl::StrCat("inline uint64_t GetEmit", id,
+                                     "(size_t i, size_t emit) { return table",
+                                     id, "_emit_[i >> ", op_bits - slice_bits,
                                      "][emit]; }"));
       }
-      return lines;
     }
     uint64_t MaxInner() const {
       uint64_t max_inner = 0;
@@ -594,41 +605,43 @@ class TableBuilder : public Item {
       }
       return sum + 3 * 64 * slices.size();
     }
-    std::vector<std::string> ToLines(const TableBuilder* builder,
-                                     int op_bits) const override {
-      std::vector<std::string> lines;
+    void Build(const TableBuilder* builder, int op_bits) const override {
+      Sink* const global_fns = builder->ctx_->global_fns();
+      Sink* const global_decls = builder->ctx_->global_decls();
+      Sink* const global_values = builder->ctx_->global_values();
       uint64_t max_op = MaxOp();
       const int id = builder->id_;
       std::vector<std::string> emit_names;
       std::vector<std::string> ops_names;
       for (size_t i = 0; i < slices.size(); i++) {
-        emit_names.push_back(
-            builder->GenArray(absl::StrCat("table", id, "_", i, "_emit"),
-                              "uint8_t", slices[i].emit, true, &lines));
-        ops_names.push_back(
-            builder->GenArray(absl::StrCat("table", id, "_", i, "_ops"),
-                              TypeForMax(max_op), slices[i].ops, true, &lines));
+        emit_names.push_back(builder->GenArray(
+            absl::StrCat("table", id, "_", i, "_emit"), "uint8_t",
+            slices[i].emit, true, global_decls, global_values));
+        ops_names.push_back(builder->GenArray(
+            absl::StrCat("table", id, "_", i, "_ops"), TypeForMax(max_op),
+            slices[i].ops, true, global_decls, global_values));
       }
       if (slice_bits == 0) {
-        lines.push_back(absl::StrCat("inline uint64_t GetOp", id,
+        global_fns->Add(absl::StrCat("inline uint64_t GetOp", id,
                                      "(size_t i) { return ", ops_names[0],
                                      "[i]; }"));
-        lines.push_back(absl::StrCat("inline uint64_t GetEmit", id,
+        global_fns->Add(absl::StrCat("inline uint64_t GetEmit", id,
                                      "(size_t, size_t emit) { return ",
                                      emit_names[0], "[emit]; }"));
       } else {
-        GenCompound(id, emit_names, "emit", "uint8_t", &lines);
-        GenCompound(id, ops_names, "ops", TypeForMax(max_op), &lines);
-        lines.push_back(absl::StrCat(
-            "inline uint64_t GetOp", id, "(size_t i) { return g_table", id,
-            "_ops[i >> ", op_bits - slice_bits, "][i & 0x",
+        GenCompound(id, emit_names, "emit", "uint8_t", global_decls,
+                    global_values);
+        GenCompound(id, ops_names, "ops", TypeForMax(max_op), global_decls,
+                    global_values);
+        global_fns->Add(absl::StrCat(
+            "inline uint64_t GetOp", id, "(size_t i) { return table", id,
+            "_ops_[i >> ", op_bits - slice_bits, "][i & 0x",
             absl::Hex((1 << (op_bits - slice_bits)) - 1), "]; }"));
-        lines.push_back(absl::StrCat("inline uint64_t GetEmit", id,
-                                     "(size_t i, size_t emit) { return g_table",
-                                     id, "_emit[i >> ", op_bits - slice_bits,
+        global_fns->Add(absl::StrCat("inline uint64_t GetEmit", id,
+                                     "(size_t i, size_t emit) { return table",
+                                     id, "_emit_[i >> ", op_bits - slice_bits,
                                      "][emit]; }"));
       }
-      return lines;
     }
     uint64_t MaxOp() const {
       uint64_t max_op = 0;
@@ -669,23 +682,25 @@ class TableBuilder : public Item {
   }
 
   static void GenCompound(int id, std::vector<std::string> names,
-                          std::string ext, std::string type,
-                          std::vector<std::string>* lines) {
-    lines->push_back(absl::StrCat("static const ", type, "* const g_table", id,
-                                  "_", ext, "[] = {"));
+                          std::string ext, std::string type, Sink* global_decls,
+                          Sink* global_values) {
+    global_decls->Add(absl::StrCat("static const ", type, "* const table", id,
+                                   "_", ext, "_[", names.size(), "];"));
+    global_values->Add(absl::StrCat("static const ", type, "* const table", id,
+                                    "_", ext, "_[", names.size(), "] = {"));
     for (const std::string& name : names) {
-      lines->push_back(absl::StrCat("  ", name, ","));
+      global_values->Add(absl::StrCat("  ", name, ","));
     }
-    lines->push_back("};");
+    global_values->Add("};");
   }
 
   template <typename T>
   std::string GenArray(std::string name, std::string type,
                        const std::vector<T>& values, bool hex,
-                       std::vector<std::string>* lines) const {
+                       Sink* global_decls, Sink* global_values) const {
     auto previous_name = ctx_->PreviousNameForArtifact(name, HashVec(values));
     if (previous_name.has_value()) {
-      return absl::StrCat("g_", *previous_name);
+      return absl::StrCat(*previous_name, "_");
     }
     std::vector<std::string> elems;
     elems.reserve(values.size());
@@ -703,11 +718,13 @@ class TableBuilder : public Item {
       }
     }
     std::string data = absl::StrJoin(elems, ", ");
-    lines->push_back(absl::StrCat("static const ", type, " g_", name, "[",
-                                  values.size(), "] = {"));
-    lines->push_back(absl::StrCat("  ", data));
-    lines->push_back("};");
-    return absl::StrCat("g_", name);
+    global_decls->Add(absl::StrCat("static const ", type, " ", name, "_[",
+                                   values.size(), "];"));
+    global_values->Add(absl::StrCat("static const ", type, " ", name, "_[",
+                                    values.size(), "] = {"));
+    global_values->Add(absl::StrCat("  ", data));
+    global_values->Add("};");
+    return absl::StrCat(name, "_");
   }
 
   std::unique_ptr<EncodeOption> Choose() const {
@@ -857,7 +874,7 @@ void BuildCtx::AddMatchBody(TableBuilder* table_builder, std::string index,
 
 void BuildCtx::AddStep(SymSet start_syms, int num_bits, bool is_top,
                        bool refill, int depth, Sink* out) {
-  auto table_builder = globals_->Add<TableBuilder>(this);
+  TableBuilder table_builder(this);
   if (refill) {
     out->Add(absl::StrCat("if (!", fun_maker_->RefillTo(num_bits), ") {"));
     auto ifblk = out->Add<Indent>();
@@ -883,36 +900,37 @@ void BuildCtx::AddStep(SymSet start_syms, int num_bits, bool is_top,
       return match_cases[match_case];
     };
     if (actions.emit.size() == 1 && actions.emit[0] == 256) {
-      table_builder->Add(add_case(End{}), {}, actions.consumed);
+      table_builder.Add(add_case(End{}), {}, actions.consumed);
     } else if (actions.consumed == 0) {
-      table_builder->Add(add_case(Unmatched{std::move(actions.remaining)}), {},
-                         num_bits);
+      table_builder.Add(add_case(Unmatched{std::move(actions.remaining)}), {},
+                        num_bits);
     } else {
       std::vector<uint8_t> emit;
       for (auto sym : actions.emit) emit.push_back(sym);
-      table_builder->Add(
+      table_builder.Add(
           add_case(Matched{static_cast<int>(actions.emit.size())}),
           std::move(emit), actions.consumed);
     }
   }
-  out->Add(absl::StrCat("const auto op = ", table_builder->OpAccessor("index"),
-                        ";"));
+  table_builder.Build();
+  out->Add(
+      absl::StrCat("const auto op = ", table_builder.OpAccessor("index"), ";"));
   out->Add(absl::StrCat("buffer_len_ -= op & ",
-                        (1 << table_builder->ConsumeBits()) - 1, ";"));
-  out->Add(absl::StrCat(
-      "const auto emit_ofs = op >> ",
-      table_builder->ConsumeBits() + table_builder->MatchBits(), ";"));
+                        (1 << table_builder.ConsumeBits()) - 1, ";"));
+  out->Add(absl::StrCat("const auto emit_ofs = op >> ",
+                        table_builder.ConsumeBits() + table_builder.MatchBits(),
+                        ";"));
   if (match_cases.size() == 1) {
-    AddMatchBody(table_builder, "index", "emit_ofs", match_cases.begin()->first,
-                 is_top, refill, depth, out);
+    AddMatchBody(&table_builder, "index", "emit_ofs",
+                 match_cases.begin()->first, is_top, refill, depth, out);
   } else {
     auto s = out->Add<Switch>(
-        absl::StrCat("(op >> ", table_builder->ConsumeBits(), ") & ",
-                     (1 << table_builder->MatchBits()) - 1));
+        absl::StrCat("(op >> ", table_builder.ConsumeBits(), ") & ",
+                     (1 << table_builder.MatchBits()) - 1));
     for (auto kv : match_cases) {
       auto c = s->Case(absl::StrCat(kv.second));
-      AddMatchBody(table_builder, "index", "emit_ofs", kv.first, is_top, refill,
-                   depth, c);
+      AddMatchBody(&table_builder, "index", "emit_ofs", kv.first, is_top,
+                   refill, depth, c);
       c->Add("break;");
     }
   }
@@ -932,15 +950,23 @@ std::string Build(std::vector<int> max_bits_for_depth) {
   out->Add("#include <cstddef>");
   out->Add("#include <cstdint>");
   out->Add("#include <stdlib.h>");
-  auto* globals = out->Add<Sink>();
-  out->Add("template<typename F> class HuffDecoder {");
+  out->Add("class HuffDecoderCommon {");
+  out->Add(" protected:");
+  auto global_fns = out->Add<Indent>();
+  out->Add(" private:");
+  auto global_decls = out->Add<Indent>();
+  out->Add("};");
+  out->Add(
+      "template<typename F> class HuffDecoder : public HuffDecoderCommon {");
   out->Add(" public:");
   auto pub = out->Add<Indent>();
   out->Add(" private:");
   auto prv = out->Add<Indent>();
   FunMaker fun_maker(prv->Add<Sink>());
   out->Add("};");
-  BuildCtx ctx(std::move(max_bits_for_depth), globals, &fun_maker);
+  auto global_values = out->Add<Indent>();
+  BuildCtx ctx(std::move(max_bits_for_depth), global_fns, global_decls,
+               global_values, &fun_maker);
   // constructor
   pub->Add(
       "HuffDecoder(F sink, const uint8_t* begin, const uint8_t* end) : "

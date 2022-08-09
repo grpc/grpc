@@ -20,239 +20,132 @@
 
 #include <cstddef>
 #include <cstdint>
-static const uint8_t g_table1_0_emit[68] = {
-    0x30, 0x31, 0x32, 0x61, 0x63, 0x65, 0x69, 0x6f, 0x73, 0x74, 0x20, 0x25,
-    0x2d, 0x2e, 0x2f, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x3d, 0x41,
-    0x5f, 0x62, 0x64, 0x66, 0x67, 0x68, 0x6c, 0x6d, 0x6e, 0x70, 0x72, 0x75,
-    0x3a, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0x4a, 0x4b, 0x4c,
-    0x4d, 0x4e, 0x4f, 0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57, 0x59,
-    0x6a, 0x6b, 0x71, 0x76, 0x77, 0x78, 0x79, 0x7a};
-static const uint16_t g_table1_0_inner[72] = {
-    0x0005, 0x0045, 0x0085, 0x00c5, 0x0105, 0x0145, 0x0185, 0x01c5, 0x0205,
-    0x0245, 0x0286, 0x02c6, 0x0306, 0x0346, 0x0386, 0x03c6, 0x0406, 0x0446,
-    0x0486, 0x04c6, 0x0506, 0x0546, 0x0586, 0x05c6, 0x0606, 0x0646, 0x0686,
-    0x06c6, 0x0706, 0x0746, 0x0786, 0x07c6, 0x0806, 0x0846, 0x0886, 0x08c6,
-    0x0907, 0x0947, 0x0987, 0x09c7, 0x0a07, 0x0a47, 0x0a87, 0x0ac7, 0x0b07,
-    0x0b47, 0x0b87, 0x0bc7, 0x0c07, 0x0c47, 0x0c87, 0x0cc7, 0x0d07, 0x0d47,
-    0x0d87, 0x0dc7, 0x0e07, 0x0e47, 0x0e87, 0x0ec7, 0x0f07, 0x0f47, 0x0f87,
-    0x0fc7, 0x1007, 0x1047, 0x1087, 0x10c7, 0x000f, 0x0017, 0x001f, 0x0027};
-static const uint8_t g_table1_0_outer[128] = {
-    0,  0,  0,  0,  1,  1,  1,  1,  2,  2,  2,  2,  3,  3,  3,  3,  4,  4,  4,
-    4,  5,  5,  5,  5,  6,  6,  6,  6,  7,  7,  7,  7,  8,  8,  8,  8,  9,  9,
-    9,  9,  10, 10, 11, 11, 12, 12, 13, 13, 14, 14, 15, 15, 16, 16, 17, 17, 18,
-    18, 19, 19, 20, 20, 21, 21, 22, 22, 23, 23, 24, 24, 25, 25, 26, 26, 27, 27,
-    28, 28, 29, 29, 30, 30, 31, 31, 32, 32, 33, 33, 34, 34, 35, 35, 36, 37, 38,
-    39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57,
-    58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71};
-inline uint64_t GetOp1(size_t i) {
-  return g_table1_0_inner[g_table1_0_outer[i]];
-}
-inline uint64_t GetEmit1(size_t, size_t emit) { return g_table1_0_emit[emit]; }
-static const uint8_t g_table2_0_emit[74] = {
-    0x30, 0x31, 0x32, 0x61, 0x63, 0x65, 0x69, 0x6f, 0x73, 0x74, 0x20,
-    0x25, 0x2d, 0x2e, 0x2f, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39,
-    0x3d, 0x41, 0x5f, 0x62, 0x64, 0x66, 0x67, 0x68, 0x6c, 0x6d, 0x6e,
-    0x70, 0x72, 0x75, 0x3a, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48,
-    0x49, 0x4a, 0x4b, 0x4c, 0x4d, 0x4e, 0x4f, 0x50, 0x51, 0x52, 0x53,
-    0x54, 0x55, 0x56, 0x57, 0x59, 0x6a, 0x6b, 0x71, 0x76, 0x77, 0x78,
-    0x79, 0x7a, 0x26, 0x2a, 0x2c, 0x3b, 0x58, 0x5a};
-static const uint16_t g_table2_0_inner[76] = {
-    0x0005, 0x0045, 0x0085, 0x00c5, 0x0105, 0x0145, 0x0185, 0x01c5, 0x0205,
-    0x0245, 0x0286, 0x02c6, 0x0306, 0x0346, 0x0386, 0x03c6, 0x0406, 0x0446,
-    0x0486, 0x04c6, 0x0506, 0x0546, 0x0586, 0x05c6, 0x0606, 0x0646, 0x0686,
-    0x06c6, 0x0706, 0x0746, 0x0786, 0x07c6, 0x0806, 0x0846, 0x0886, 0x08c6,
-    0x0907, 0x0947, 0x0987, 0x09c7, 0x0a07, 0x0a47, 0x0a87, 0x0ac7, 0x0b07,
-    0x0b47, 0x0b87, 0x0bc7, 0x0c07, 0x0c47, 0x0c87, 0x0cc7, 0x0d07, 0x0d47,
-    0x0d87, 0x0dc7, 0x0e07, 0x0e47, 0x0e87, 0x0ec7, 0x0f07, 0x0f47, 0x0f87,
-    0x0fc7, 0x1007, 0x1047, 0x1087, 0x10c7, 0x1108, 0x1148, 0x1188, 0x11c8,
-    0x1208, 0x1248, 0x0018, 0x0028};
-static const uint8_t g_table2_0_outer[256] = {
-    0,  0,  0,  0,  0,  0,  0,  0,  1,  1,  1,  1,  1,  1,  1,  1,  2,  2,  2,
-    2,  2,  2,  2,  2,  3,  3,  3,  3,  3,  3,  3,  3,  4,  4,  4,  4,  4,  4,
-    4,  4,  5,  5,  5,  5,  5,  5,  5,  5,  6,  6,  6,  6,  6,  6,  6,  6,  7,
-    7,  7,  7,  7,  7,  7,  7,  8,  8,  8,  8,  8,  8,  8,  8,  9,  9,  9,  9,
-    9,  9,  9,  9,  10, 10, 10, 10, 11, 11, 11, 11, 12, 12, 12, 12, 13, 13, 13,
-    13, 14, 14, 14, 14, 15, 15, 15, 15, 16, 16, 16, 16, 17, 17, 17, 17, 18, 18,
-    18, 18, 19, 19, 19, 19, 20, 20, 20, 20, 21, 21, 21, 21, 22, 22, 22, 22, 23,
-    23, 23, 23, 24, 24, 24, 24, 25, 25, 25, 25, 26, 26, 26, 26, 27, 27, 27, 27,
-    28, 28, 28, 28, 29, 29, 29, 29, 30, 30, 30, 30, 31, 31, 31, 31, 32, 32, 32,
-    32, 33, 33, 33, 33, 34, 34, 34, 34, 35, 35, 35, 35, 36, 36, 37, 37, 38, 38,
-    39, 39, 40, 40, 41, 41, 42, 42, 43, 43, 44, 44, 45, 45, 46, 46, 47, 47, 48,
-    48, 49, 49, 50, 50, 51, 51, 52, 52, 53, 53, 54, 54, 55, 55, 56, 56, 57, 57,
-    58, 58, 59, 59, 60, 60, 61, 61, 62, 62, 63, 63, 64, 64, 65, 65, 66, 66, 67,
-    67, 68, 69, 70, 71, 72, 73, 74, 75};
-inline uint64_t GetOp2(size_t i) {
-  return g_table2_0_inner[g_table2_0_outer[i]];
-}
-inline uint64_t GetEmit2(size_t, size_t emit) { return g_table2_0_emit[emit]; }
-static const uint8_t g_table3_0_emit[4] = {0x21, 0x22, 0x28, 0x29};
-static const uint8_t g_table3_0_inner[4] = {0x02, 0x06, 0x0a, 0x0e};
-static const uint8_t g_table3_0_outer[4] = {0, 1, 2, 3};
-inline uint64_t GetOp3(size_t i) {
-  return g_table3_0_inner[g_table3_0_outer[i]];
-}
-inline uint64_t GetEmit3(size_t, size_t emit) { return g_table3_0_emit[emit]; }
-static const uint8_t g_table4_0_emit[17] = {0x3f, 0x27, 0x2b, 0x7c, 0x23, 0x3e,
-                                            0x00, 0x24, 0x40, 0x5b, 0x5d, 0x7e,
-                                            0x5e, 0x7d, 0x3c, 0x60, 0x7b};
-static const uint16_t g_table4_0_inner[18] = {
-    0x0002, 0x0013, 0x0023, 0x0033, 0x0044, 0x0054, 0x0065, 0x0075, 0x0085,
-    0x0095, 0x00a5, 0x00b5, 0x00c6, 0x00d6, 0x00e7, 0x00f7, 0x0107, 0x000f};
-static const uint8_t g_table4_0_outer[128] = {
-    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 0, 0, 0, 0,  0,
-    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1, 1, 1, 1, 1,  1,
-    1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  2,  2,  2,  2, 2, 2, 2, 2,  2,
-    2,  2,  2,  2,  2,  2,  2,  3,  3,  3,  3,  3,  3,  3, 3, 3, 3, 3,  3,
-    3,  3,  3,  3,  4,  4,  4,  4,  4,  4,  4,  4,  5,  5, 5, 5, 5, 5,  5,
-    5,  6,  6,  6,  6,  7,  7,  7,  7,  8,  8,  8,  8,  9, 9, 9, 9, 10, 10,
-    10, 10, 11, 11, 11, 11, 12, 12, 13, 13, 14, 15, 16, 17};
-inline uint64_t GetOp4(size_t i) {
-  return g_table4_0_inner[g_table4_0_outer[i]];
-}
-inline uint64_t GetEmit4(size_t, size_t emit) { return g_table4_0_emit[emit]; }
-static const uint8_t g_table5_0_emit[79] = {
-    0x5c, 0xc3, 0xd0, 0x80, 0x82, 0x83, 0xa2, 0xb8, 0xc2, 0xe0, 0xe2, 0x99,
-    0xa1, 0xa7, 0xac, 0xb0, 0xb1, 0xb3, 0xd1, 0xd8, 0xd9, 0xe3, 0xe5, 0xe6,
-    0x81, 0x84, 0x85, 0x86, 0x88, 0x92, 0x9a, 0x9c, 0xa0, 0xa3, 0xa4, 0xa9,
-    0xaa, 0xad, 0xb2, 0xb5, 0xb9, 0xba, 0xbb, 0xbd, 0xbe, 0xc4, 0xc6, 0xe4,
-    0xe8, 0xe9, 0x01, 0x87, 0x89, 0x8a, 0x8b, 0x8c, 0x8d, 0x8f, 0x93, 0x95,
-    0x96, 0x97, 0x98, 0x9b, 0x9d, 0x9e, 0xa5, 0xa6, 0xa8, 0xae, 0xaf, 0xb4,
-    0xb6, 0xb7, 0xbc, 0xbf, 0xc5, 0xe7, 0xef};
-static const uint16_t g_table5_0_inner[90] = {
-    0x0004, 0x0104, 0x0204, 0x0305, 0x0405, 0x0505, 0x0605, 0x0705, 0x0805,
-    0x0905, 0x0a05, 0x0b06, 0x0c06, 0x0d06, 0x0e06, 0x0f06, 0x1006, 0x1106,
-    0x1206, 0x1306, 0x1406, 0x1506, 0x1606, 0x1706, 0x1807, 0x1907, 0x1a07,
-    0x1b07, 0x1c07, 0x1d07, 0x1e07, 0x1f07, 0x2007, 0x2107, 0x2207, 0x2307,
-    0x2407, 0x2507, 0x2607, 0x2707, 0x2807, 0x2907, 0x2a07, 0x2b07, 0x2c07,
-    0x2d07, 0x2e07, 0x2f07, 0x3007, 0x3107, 0x3208, 0x3308, 0x3408, 0x3508,
-    0x3608, 0x3708, 0x3808, 0x3908, 0x3a08, 0x3b08, 0x3c08, 0x3d08, 0x3e08,
-    0x3f08, 0x4008, 0x4108, 0x4208, 0x4308, 0x4408, 0x4508, 0x4608, 0x4708,
-    0x4808, 0x4908, 0x4a08, 0x4b08, 0x4c08, 0x4d08, 0x4e08, 0x0018, 0x0028,
-    0x0038, 0x0048, 0x0058, 0x0068, 0x0078, 0x0088, 0x0098, 0x00a8, 0x00b8};
-static const uint8_t g_table5_0_outer[256] = {
-    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  1,  1,
-    1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  2,  2,  2,  2,  2,  2,
-    2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  3,  3,  3,  3,  3,  3,  3,  3,  4,
-    4,  4,  4,  4,  4,  4,  4,  5,  5,  5,  5,  5,  5,  5,  5,  6,  6,  6,  6,
-    6,  6,  6,  6,  7,  7,  7,  7,  7,  7,  7,  7,  8,  8,  8,  8,  8,  8,  8,
-    8,  9,  9,  9,  9,  9,  9,  9,  9,  10, 10, 10, 10, 10, 10, 10, 10, 11, 11,
-    11, 11, 12, 12, 12, 12, 13, 13, 13, 13, 14, 14, 14, 14, 15, 15, 15, 15, 16,
-    16, 16, 16, 17, 17, 17, 17, 18, 18, 18, 18, 19, 19, 19, 19, 20, 20, 20, 20,
-    21, 21, 21, 21, 22, 22, 22, 22, 23, 23, 23, 23, 24, 24, 25, 25, 26, 26, 27,
-    27, 28, 28, 29, 29, 30, 30, 31, 31, 32, 32, 33, 33, 34, 34, 35, 35, 36, 36,
-    37, 37, 38, 38, 39, 39, 40, 40, 41, 41, 42, 42, 43, 43, 44, 44, 45, 45, 46,
-    46, 47, 47, 48, 48, 49, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61,
-    62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80,
-    81, 82, 83, 84, 85, 86, 87, 88, 89};
-inline uint64_t GetOp5(size_t i) {
-  return g_table5_0_inner[g_table5_0_outer[i]];
-}
-inline uint64_t GetEmit5(size_t, size_t emit) { return g_table5_0_emit[emit]; }
-static const uint8_t g_table6_0_emit[2] = {0x09, 0x8e};
-static const uint8_t g_table6_0_inner[2] = {0x01, 0x03};
-static const uint8_t g_table6_0_outer[2] = {0, 1};
-inline uint64_t GetOp6(size_t i) {
-  return g_table6_0_inner[g_table6_0_outer[i]];
-}
-inline uint64_t GetEmit6(size_t, size_t emit) { return g_table6_0_emit[emit]; }
-static const uint8_t g_table7_0_emit[2] = {0x90, 0x91};
-inline uint64_t GetOp7(size_t i) {
-  return g_table6_0_inner[g_table6_0_outer[i]];
-}
-inline uint64_t GetEmit7(size_t, size_t emit) { return g_table7_0_emit[emit]; }
-static const uint8_t g_table8_0_emit[2] = {0x94, 0x9f};
-inline uint64_t GetOp8(size_t i) {
-  return g_table6_0_inner[g_table6_0_outer[i]];
-}
-inline uint64_t GetEmit8(size_t, size_t emit) { return g_table8_0_emit[emit]; }
-static const uint8_t g_table9_0_emit[2] = {0xab, 0xce};
-inline uint64_t GetOp9(size_t i) {
-  return g_table6_0_inner[g_table6_0_outer[i]];
-}
-inline uint64_t GetEmit9(size_t, size_t emit) { return g_table9_0_emit[emit]; }
-static const uint8_t g_table10_0_emit[2] = {0xd7, 0xe1};
-inline uint64_t GetOp10(size_t i) {
-  return g_table6_0_inner[g_table6_0_outer[i]];
-}
-inline uint64_t GetEmit10(size_t, size_t emit) {
-  return g_table10_0_emit[emit];
-}
-static const uint8_t g_table11_0_emit[2] = {0xec, 0xed};
-inline uint64_t GetOp11(size_t i) {
-  return g_table6_0_inner[g_table6_0_outer[i]];
-}
-inline uint64_t GetEmit11(size_t, size_t emit) {
-  return g_table11_0_emit[emit];
-}
-static const uint8_t g_table12_0_emit[4] = {0xc7, 0xcf, 0xea, 0xeb};
-inline uint64_t GetOp12(size_t i) {
-  return g_table3_0_inner[g_table3_0_outer[i]];
-}
-inline uint64_t GetEmit12(size_t, size_t emit) {
-  return g_table12_0_emit[emit];
-}
-static const uint8_t g_table13_0_emit[8] = {0xc0, 0xc1, 0xc8, 0xc9,
-                                            0xca, 0xcd, 0xd2, 0xd5};
-static const uint8_t g_table13_0_inner[8] = {0x03, 0x07, 0x0b, 0x0f,
-                                             0x13, 0x17, 0x1b, 0x1f};
-static const uint8_t g_table13_0_outer[8] = {0, 1, 2, 3, 4, 5, 6, 7};
-inline uint64_t GetOp13(size_t i) {
-  return g_table13_0_inner[g_table13_0_outer[i]];
-}
-inline uint64_t GetEmit13(size_t, size_t emit) {
-  return g_table13_0_emit[emit];
-}
-static const uint8_t g_table14_0_emit[16] = {0xd3, 0xd4, 0xd6, 0xdd, 0xde, 0xdf,
-                                             0xf1, 0xf4, 0xf5, 0xf6, 0xf7, 0xf8,
-                                             0xfa, 0xfb, 0xfc, 0xfd};
-static const uint8_t g_table14_0_inner[16] = {
-    0x04, 0x0c, 0x14, 0x1c, 0x24, 0x2c, 0x34, 0x3c,
-    0x44, 0x4c, 0x54, 0x5c, 0x64, 0x6c, 0x74, 0x7c};
-static const uint8_t g_table14_0_outer[16] = {0, 1, 2,  3,  4,  5,  6,  7,
-                                              8, 9, 10, 11, 12, 13, 14, 15};
-inline uint64_t GetOp14(size_t i) {
-  return g_table14_0_inner[g_table14_0_outer[i]];
-}
-inline uint64_t GetEmit14(size_t, size_t emit) {
-  return g_table14_0_emit[emit];
-}
-static const uint8_t g_table15_0_emit[33] = {
-    0xfe, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x0b, 0x0c, 0x0e,
-    0x0f, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x17, 0x18, 0x19, 0x1a,
-    0x1b, 0x1c, 0x1d, 0x1e, 0x1f, 0x7f, 0xdc, 0xf9, 0x0a, 0x0d, 0x16};
-static const uint16_t g_table15_0_inner[34] = {
-    0x0004, 0x0015, 0x0025, 0x0035, 0x0045, 0x0055, 0x0065, 0x0075, 0x0085,
-    0x0095, 0x00a5, 0x00b5, 0x00c5, 0x00d5, 0x00e5, 0x00f5, 0x0105, 0x0115,
-    0x0125, 0x0135, 0x0145, 0x0155, 0x0165, 0x0175, 0x0185, 0x0195, 0x01a5,
-    0x01b5, 0x01c5, 0x01d5, 0x01e7, 0x01f7, 0x0207, 0x000f};
-static const uint8_t g_table15_0_outer[128] = {
-    0,  0,  0,  0,  0,  0,  0,  0,  1,  1,  1,  1,  2,  2,  2,  2,  3,  3,  3,
-    3,  4,  4,  4,  4,  5,  5,  5,  5,  6,  6,  6,  6,  7,  7,  7,  7,  8,  8,
-    8,  8,  9,  9,  9,  9,  10, 10, 10, 10, 11, 11, 11, 11, 12, 12, 12, 12, 13,
-    13, 13, 13, 14, 14, 14, 14, 15, 15, 15, 15, 16, 16, 16, 16, 17, 17, 17, 17,
-    18, 18, 18, 18, 19, 19, 19, 19, 20, 20, 20, 20, 21, 21, 21, 21, 22, 22, 22,
-    22, 23, 23, 23, 23, 24, 24, 24, 24, 25, 25, 25, 25, 26, 26, 26, 26, 27, 27,
-    27, 27, 28, 28, 28, 28, 29, 29, 29, 29, 30, 31, 32, 33};
-inline uint64_t GetOp15(size_t i) {
-  return g_table15_0_inner[g_table15_0_outer[i]];
-}
-inline uint64_t GetEmit15(size_t, size_t emit) {
-  return g_table15_0_emit[emit];
-}
-static const uint8_t g_table16_0_emit[9] = {0xda, 0xdb, 0xee, 0xf0, 0xf2,
-                                            0xf3, 0xff, 0xcb, 0xcc};
-static const uint8_t g_table16_0_inner[9] = {0x03, 0x0b, 0x13, 0x1b, 0x23,
-                                             0x2b, 0x33, 0x3c, 0x44};
-static const uint8_t g_table16_0_outer[16] = {0, 0, 1, 1, 2, 2, 3, 3,
-                                              4, 4, 5, 5, 6, 6, 7, 8};
-inline uint64_t GetOp16(size_t i) {
-  return g_table16_0_inner[g_table16_0_outer[i]];
-}
-inline uint64_t GetEmit16(size_t, size_t emit) {
-  return g_table16_0_emit[emit];
-}
+class HuffDecoderCommon {
+ protected:
+  inline uint64_t GetOp1(size_t i) {
+    return table1_0_inner_[table1_0_outer_[i]];
+  }
+  inline uint64_t GetEmit1(size_t, size_t emit) { return table1_0_emit_[emit]; }
+  inline uint64_t GetOp2(size_t i) {
+    return table2_0_inner_[table2_0_outer_[i]];
+  }
+  inline uint64_t GetEmit2(size_t, size_t emit) { return table2_0_emit_[emit]; }
+  inline uint64_t GetOp3(size_t i) {
+    return table3_0_inner_[table3_0_outer_[i]];
+  }
+  inline uint64_t GetEmit3(size_t, size_t emit) { return table3_0_emit_[emit]; }
+  inline uint64_t GetOp4(size_t i) { return table4_ops_[i >> 6][i & 0x3f]; }
+  inline uint64_t GetEmit4(size_t i, size_t emit) {
+    return table4_emit_[i >> 6][emit];
+  }
+  inline uint64_t GetOp5(size_t i) {
+    return table5_0_inner_[table5_0_outer_[i]];
+  }
+  inline uint64_t GetEmit5(size_t, size_t emit) { return table5_0_emit_[emit]; }
+  inline uint64_t GetOp6(size_t i) {
+    return table6_0_inner_[table6_0_outer_[i]];
+  }
+  inline uint64_t GetEmit6(size_t, size_t emit) { return table6_0_emit_[emit]; }
+  inline uint64_t GetOp7(size_t i) {
+    return table6_0_inner_[table6_0_outer_[i]];
+  }
+  inline uint64_t GetEmit7(size_t, size_t emit) { return table7_0_emit_[emit]; }
+  inline uint64_t GetOp8(size_t i) {
+    return table6_0_inner_[table6_0_outer_[i]];
+  }
+  inline uint64_t GetEmit8(size_t, size_t emit) { return table8_0_emit_[emit]; }
+  inline uint64_t GetOp9(size_t i) {
+    return table6_0_inner_[table6_0_outer_[i]];
+  }
+  inline uint64_t GetEmit9(size_t, size_t emit) { return table9_0_emit_[emit]; }
+  inline uint64_t GetOp10(size_t i) {
+    return table6_0_inner_[table6_0_outer_[i]];
+  }
+  inline uint64_t GetEmit10(size_t, size_t emit) {
+    return table10_0_emit_[emit];
+  }
+  inline uint64_t GetOp11(size_t i) {
+    return table6_0_inner_[table6_0_outer_[i]];
+  }
+  inline uint64_t GetEmit11(size_t, size_t emit) {
+    return table11_0_emit_[emit];
+  }
+  inline uint64_t GetOp12(size_t i) {
+    return table12_0_inner_[table12_0_outer_[i]];
+  }
+  inline uint64_t GetEmit12(size_t, size_t emit) {
+    return table12_0_emit_[emit];
+  }
+  inline uint64_t GetOp13(size_t i) {
+    return table13_0_inner_[table13_0_outer_[i]];
+  }
+  inline uint64_t GetEmit13(size_t, size_t emit) {
+    return table13_0_emit_[emit];
+  }
+  inline uint64_t GetOp14(size_t i) {
+    return table14_0_inner_[table14_0_outer_[i]];
+  }
+  inline uint64_t GetEmit14(size_t, size_t emit) {
+    return table14_0_emit_[emit];
+  }
+  inline uint64_t GetOp15(size_t i) {
+    return table15_0_inner_[table15_0_outer_[i]];
+  }
+  inline uint64_t GetEmit15(size_t, size_t emit) {
+    return table15_0_emit_[emit];
+  }
+  inline uint64_t GetOp16(size_t i) {
+    return table16_0_inner_[table16_0_outer_[i]];
+  }
+  inline uint64_t GetEmit16(size_t, size_t emit) {
+    return table16_0_emit_[emit];
+  }
+
+ private:
+  static const uint8_t table1_0_emit_[68];
+  static const uint16_t table1_0_inner_[72];
+  static const uint8_t table1_0_outer_[128];
+  static const uint8_t table2_0_emit_[74];
+  static const uint16_t table2_0_inner_[76];
+  static const uint8_t table2_0_outer_[256];
+  static const uint8_t table3_0_emit_[4];
+  static const uint8_t table3_0_inner_[4];
+  static const uint8_t table3_0_outer_[4];
+  static const uint8_t table4_0_emit_[3];
+  static const uint8_t table4_0_ops_[64];
+  static const uint8_t table4_1_emit_[14];
+  static const uint8_t table4_1_ops_[64];
+  static const uint8_t* const table4_emit_[2];
+  static const uint8_t* const table4_ops_[2];
+  static const uint8_t table5_0_emit_[79];
+  static const uint16_t table5_0_inner_[90];
+  static const uint8_t table5_0_outer_[256];
+  static const uint8_t table6_0_emit_[2];
+  static const uint8_t table6_0_inner_[2];
+  static const uint8_t table6_0_outer_[2];
+  static const uint8_t table7_0_emit_[2];
+  static const uint8_t table8_0_emit_[2];
+  static const uint8_t table9_0_emit_[2];
+  static const uint8_t table10_0_emit_[2];
+  static const uint8_t table11_0_emit_[2];
+  static const uint8_t table12_0_emit_[4];
+  static const uint8_t table12_0_inner_[4];
+  static const uint8_t table12_0_outer_[4];
+  static const uint8_t table13_0_emit_[8];
+  static const uint8_t table13_0_inner_[8];
+  static const uint8_t table13_0_outer_[8];
+  static const uint8_t table14_0_emit_[16];
+  static const uint8_t table14_0_inner_[16];
+  static const uint8_t table14_0_outer_[16];
+  static const uint8_t table15_0_emit_[33];
+  static const uint16_t table15_0_inner_[34];
+  static const uint8_t table15_0_outer_[128];
+  static const uint8_t table16_0_emit_[9];
+  static const uint8_t table16_0_inner_[9];
+  static const uint8_t table16_0_outer_[16];
+};
 template <typename F>
-class HuffDecoder {
+class HuffDecoder : public HuffDecoderCommon {
  public:
   HuffDecoder(F sink, const uint8_t* begin, const uint8_t* end)
       : sink_(sink), begin_(begin), end_(end) {}
@@ -619,3 +512,170 @@ class HuffDecoder {
   bool ok_ = true;
   bool done_ = false;
 };
+static const uint8_t table1_0_emit_[68] = {
+    0x30, 0x31, 0x32, 0x61, 0x63, 0x65, 0x69, 0x6f, 0x73, 0x74, 0x20, 0x25,
+    0x2d, 0x2e, 0x2f, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x3d, 0x41,
+    0x5f, 0x62, 0x64, 0x66, 0x67, 0x68, 0x6c, 0x6d, 0x6e, 0x70, 0x72, 0x75,
+    0x3a, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0x4a, 0x4b, 0x4c,
+    0x4d, 0x4e, 0x4f, 0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57, 0x59,
+    0x6a, 0x6b, 0x71, 0x76, 0x77, 0x78, 0x79, 0x7a};
+static const uint16_t table1_0_inner_[72] = {
+    0x0005, 0x0045, 0x0085, 0x00c5, 0x0105, 0x0145, 0x0185, 0x01c5, 0x0205,
+    0x0245, 0x0286, 0x02c6, 0x0306, 0x0346, 0x0386, 0x03c6, 0x0406, 0x0446,
+    0x0486, 0x04c6, 0x0506, 0x0546, 0x0586, 0x05c6, 0x0606, 0x0646, 0x0686,
+    0x06c6, 0x0706, 0x0746, 0x0786, 0x07c6, 0x0806, 0x0846, 0x0886, 0x08c6,
+    0x0907, 0x0947, 0x0987, 0x09c7, 0x0a07, 0x0a47, 0x0a87, 0x0ac7, 0x0b07,
+    0x0b47, 0x0b87, 0x0bc7, 0x0c07, 0x0c47, 0x0c87, 0x0cc7, 0x0d07, 0x0d47,
+    0x0d87, 0x0dc7, 0x0e07, 0x0e47, 0x0e87, 0x0ec7, 0x0f07, 0x0f47, 0x0f87,
+    0x0fc7, 0x1007, 0x1047, 0x1087, 0x10c7, 0x000f, 0x0017, 0x001f, 0x0027};
+static const uint8_t table1_0_outer_[128] = {
+    0,  0,  0,  0,  1,  1,  1,  1,  2,  2,  2,  2,  3,  3,  3,  3,  4,  4,  4,
+    4,  5,  5,  5,  5,  6,  6,  6,  6,  7,  7,  7,  7,  8,  8,  8,  8,  9,  9,
+    9,  9,  10, 10, 11, 11, 12, 12, 13, 13, 14, 14, 15, 15, 16, 16, 17, 17, 18,
+    18, 19, 19, 20, 20, 21, 21, 22, 22, 23, 23, 24, 24, 25, 25, 26, 26, 27, 27,
+    28, 28, 29, 29, 30, 30, 31, 31, 32, 32, 33, 33, 34, 34, 35, 35, 36, 37, 38,
+    39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57,
+    58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71};
+static const uint8_t table2_0_emit_[74] = {
+    0x30, 0x31, 0x32, 0x61, 0x63, 0x65, 0x69, 0x6f, 0x73, 0x74, 0x20,
+    0x25, 0x2d, 0x2e, 0x2f, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39,
+    0x3d, 0x41, 0x5f, 0x62, 0x64, 0x66, 0x67, 0x68, 0x6c, 0x6d, 0x6e,
+    0x70, 0x72, 0x75, 0x3a, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48,
+    0x49, 0x4a, 0x4b, 0x4c, 0x4d, 0x4e, 0x4f, 0x50, 0x51, 0x52, 0x53,
+    0x54, 0x55, 0x56, 0x57, 0x59, 0x6a, 0x6b, 0x71, 0x76, 0x77, 0x78,
+    0x79, 0x7a, 0x26, 0x2a, 0x2c, 0x3b, 0x58, 0x5a};
+static const uint16_t table2_0_inner_[76] = {
+    0x0005, 0x0045, 0x0085, 0x00c5, 0x0105, 0x0145, 0x0185, 0x01c5, 0x0205,
+    0x0245, 0x0286, 0x02c6, 0x0306, 0x0346, 0x0386, 0x03c6, 0x0406, 0x0446,
+    0x0486, 0x04c6, 0x0506, 0x0546, 0x0586, 0x05c6, 0x0606, 0x0646, 0x0686,
+    0x06c6, 0x0706, 0x0746, 0x0786, 0x07c6, 0x0806, 0x0846, 0x0886, 0x08c6,
+    0x0907, 0x0947, 0x0987, 0x09c7, 0x0a07, 0x0a47, 0x0a87, 0x0ac7, 0x0b07,
+    0x0b47, 0x0b87, 0x0bc7, 0x0c07, 0x0c47, 0x0c87, 0x0cc7, 0x0d07, 0x0d47,
+    0x0d87, 0x0dc7, 0x0e07, 0x0e47, 0x0e87, 0x0ec7, 0x0f07, 0x0f47, 0x0f87,
+    0x0fc7, 0x1007, 0x1047, 0x1087, 0x10c7, 0x1108, 0x1148, 0x1188, 0x11c8,
+    0x1208, 0x1248, 0x0018, 0x0028};
+static const uint8_t table2_0_outer_[256] = {
+    0,  0,  0,  0,  0,  0,  0,  0,  1,  1,  1,  1,  1,  1,  1,  1,  2,  2,  2,
+    2,  2,  2,  2,  2,  3,  3,  3,  3,  3,  3,  3,  3,  4,  4,  4,  4,  4,  4,
+    4,  4,  5,  5,  5,  5,  5,  5,  5,  5,  6,  6,  6,  6,  6,  6,  6,  6,  7,
+    7,  7,  7,  7,  7,  7,  7,  8,  8,  8,  8,  8,  8,  8,  8,  9,  9,  9,  9,
+    9,  9,  9,  9,  10, 10, 10, 10, 11, 11, 11, 11, 12, 12, 12, 12, 13, 13, 13,
+    13, 14, 14, 14, 14, 15, 15, 15, 15, 16, 16, 16, 16, 17, 17, 17, 17, 18, 18,
+    18, 18, 19, 19, 19, 19, 20, 20, 20, 20, 21, 21, 21, 21, 22, 22, 22, 22, 23,
+    23, 23, 23, 24, 24, 24, 24, 25, 25, 25, 25, 26, 26, 26, 26, 27, 27, 27, 27,
+    28, 28, 28, 28, 29, 29, 29, 29, 30, 30, 30, 30, 31, 31, 31, 31, 32, 32, 32,
+    32, 33, 33, 33, 33, 34, 34, 34, 34, 35, 35, 35, 35, 36, 36, 37, 37, 38, 38,
+    39, 39, 40, 40, 41, 41, 42, 42, 43, 43, 44, 44, 45, 45, 46, 46, 47, 47, 48,
+    48, 49, 49, 50, 50, 51, 51, 52, 52, 53, 53, 54, 54, 55, 55, 56, 56, 57, 57,
+    58, 58, 59, 59, 60, 60, 61, 61, 62, 62, 63, 63, 64, 64, 65, 65, 66, 66, 67,
+    67, 68, 69, 70, 71, 72, 73, 74, 75};
+static const uint8_t table3_0_emit_[4] = {0x21, 0x22, 0x28, 0x29};
+static const uint8_t table3_0_inner_[4] = {0x02, 0x06, 0x0a, 0x0e};
+static const uint8_t table3_0_outer_[4] = {0, 1, 2, 3};
+static const uint8_t table4_0_emit_[3] = {0x3f, 0x27, 0x2b};
+static const uint8_t table4_0_ops_[64] = {
+    0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02,
+    0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02,
+    0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x13,
+    0x13, 0x13, 0x13, 0x13, 0x13, 0x13, 0x13, 0x13, 0x13, 0x13, 0x13,
+    0x13, 0x13, 0x13, 0x13, 0x23, 0x23, 0x23, 0x23, 0x23, 0x23, 0x23,
+    0x23, 0x23, 0x23, 0x23, 0x23, 0x23, 0x23, 0x23, 0x23};
+static const uint8_t table4_1_emit_[14] = {0x7c, 0x23, 0x3e, 0x00, 0x24,
+                                           0x40, 0x5b, 0x5d, 0x7e, 0x5e,
+                                           0x7d, 0x3c, 0x60, 0x7b};
+static const uint8_t table4_1_ops_[64] = {
+    0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03,
+    0x03, 0x03, 0x03, 0x03, 0x03, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14,
+    0x14, 0x14, 0x24, 0x24, 0x24, 0x24, 0x24, 0x24, 0x24, 0x24, 0x35,
+    0x35, 0x35, 0x35, 0x45, 0x45, 0x45, 0x45, 0x55, 0x55, 0x55, 0x55,
+    0x65, 0x65, 0x65, 0x65, 0x75, 0x75, 0x75, 0x75, 0x85, 0x85, 0x85,
+    0x85, 0x96, 0x96, 0xa6, 0xa6, 0xb7, 0xc7, 0xd7, 0x0f};
+static const uint8_t* const table4_emit_[2] = {
+    table4_0_emit_,
+    table4_1_emit_,
+};
+static const uint8_t* const table4_ops_[2] = {
+    table4_0_ops_,
+    table4_1_ops_,
+};
+static const uint8_t table5_0_emit_[79] = {
+    0x5c, 0xc3, 0xd0, 0x80, 0x82, 0x83, 0xa2, 0xb8, 0xc2, 0xe0, 0xe2, 0x99,
+    0xa1, 0xa7, 0xac, 0xb0, 0xb1, 0xb3, 0xd1, 0xd8, 0xd9, 0xe3, 0xe5, 0xe6,
+    0x81, 0x84, 0x85, 0x86, 0x88, 0x92, 0x9a, 0x9c, 0xa0, 0xa3, 0xa4, 0xa9,
+    0xaa, 0xad, 0xb2, 0xb5, 0xb9, 0xba, 0xbb, 0xbd, 0xbe, 0xc4, 0xc6, 0xe4,
+    0xe8, 0xe9, 0x01, 0x87, 0x89, 0x8a, 0x8b, 0x8c, 0x8d, 0x8f, 0x93, 0x95,
+    0x96, 0x97, 0x98, 0x9b, 0x9d, 0x9e, 0xa5, 0xa6, 0xa8, 0xae, 0xaf, 0xb4,
+    0xb6, 0xb7, 0xbc, 0xbf, 0xc5, 0xe7, 0xef};
+static const uint16_t table5_0_inner_[90] = {
+    0x0004, 0x0104, 0x0204, 0x0305, 0x0405, 0x0505, 0x0605, 0x0705, 0x0805,
+    0x0905, 0x0a05, 0x0b06, 0x0c06, 0x0d06, 0x0e06, 0x0f06, 0x1006, 0x1106,
+    0x1206, 0x1306, 0x1406, 0x1506, 0x1606, 0x1706, 0x1807, 0x1907, 0x1a07,
+    0x1b07, 0x1c07, 0x1d07, 0x1e07, 0x1f07, 0x2007, 0x2107, 0x2207, 0x2307,
+    0x2407, 0x2507, 0x2607, 0x2707, 0x2807, 0x2907, 0x2a07, 0x2b07, 0x2c07,
+    0x2d07, 0x2e07, 0x2f07, 0x3007, 0x3107, 0x3208, 0x3308, 0x3408, 0x3508,
+    0x3608, 0x3708, 0x3808, 0x3908, 0x3a08, 0x3b08, 0x3c08, 0x3d08, 0x3e08,
+    0x3f08, 0x4008, 0x4108, 0x4208, 0x4308, 0x4408, 0x4508, 0x4608, 0x4708,
+    0x4808, 0x4908, 0x4a08, 0x4b08, 0x4c08, 0x4d08, 0x4e08, 0x0018, 0x0028,
+    0x0038, 0x0048, 0x0058, 0x0068, 0x0078, 0x0088, 0x0098, 0x00a8, 0x00b8};
+static const uint8_t table5_0_outer_[256] = {
+    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  1,  1,
+    1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  2,  2,  2,  2,  2,  2,
+    2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  3,  3,  3,  3,  3,  3,  3,  3,  4,
+    4,  4,  4,  4,  4,  4,  4,  5,  5,  5,  5,  5,  5,  5,  5,  6,  6,  6,  6,
+    6,  6,  6,  6,  7,  7,  7,  7,  7,  7,  7,  7,  8,  8,  8,  8,  8,  8,  8,
+    8,  9,  9,  9,  9,  9,  9,  9,  9,  10, 10, 10, 10, 10, 10, 10, 10, 11, 11,
+    11, 11, 12, 12, 12, 12, 13, 13, 13, 13, 14, 14, 14, 14, 15, 15, 15, 15, 16,
+    16, 16, 16, 17, 17, 17, 17, 18, 18, 18, 18, 19, 19, 19, 19, 20, 20, 20, 20,
+    21, 21, 21, 21, 22, 22, 22, 22, 23, 23, 23, 23, 24, 24, 25, 25, 26, 26, 27,
+    27, 28, 28, 29, 29, 30, 30, 31, 31, 32, 32, 33, 33, 34, 34, 35, 35, 36, 36,
+    37, 37, 38, 38, 39, 39, 40, 40, 41, 41, 42, 42, 43, 43, 44, 44, 45, 45, 46,
+    46, 47, 47, 48, 48, 49, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61,
+    62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80,
+    81, 82, 83, 84, 85, 86, 87, 88, 89};
+static const uint8_t table6_0_emit_[2] = {0x09, 0x8e};
+static const uint8_t table6_0_inner_[2] = {0x01, 0x03};
+static const uint8_t table6_0_outer_[2] = {0, 1};
+static const uint8_t table7_0_emit_[2] = {0x90, 0x91};
+static const uint8_t table8_0_emit_[2] = {0x94, 0x9f};
+static const uint8_t table9_0_emit_[2] = {0xab, 0xce};
+static const uint8_t table10_0_emit_[2] = {0xd7, 0xe1};
+static const uint8_t table11_0_emit_[2] = {0xec, 0xed};
+static const uint8_t table12_0_emit_[4] = {0xc7, 0xcf, 0xea, 0xeb};
+static const uint8_t table12_0_inner_[4] = {0x02, 0x06, 0x0a, 0x0e};
+static const uint8_t table12_0_outer_[4] = {0, 1, 2, 3};
+static const uint8_t table13_0_emit_[8] = {0xc0, 0xc1, 0xc8, 0xc9,
+                                           0xca, 0xcd, 0xd2, 0xd5};
+static const uint8_t table13_0_inner_[8] = {0x03, 0x07, 0x0b, 0x0f,
+                                            0x13, 0x17, 0x1b, 0x1f};
+static const uint8_t table13_0_outer_[8] = {0, 1, 2, 3, 4, 5, 6, 7};
+static const uint8_t table14_0_emit_[16] = {0xd3, 0xd4, 0xd6, 0xdd, 0xde, 0xdf,
+                                            0xf1, 0xf4, 0xf5, 0xf6, 0xf7, 0xf8,
+                                            0xfa, 0xfb, 0xfc, 0xfd};
+static const uint8_t table14_0_inner_[16] = {0x04, 0x0c, 0x14, 0x1c, 0x24, 0x2c,
+                                             0x34, 0x3c, 0x44, 0x4c, 0x54, 0x5c,
+                                             0x64, 0x6c, 0x74, 0x7c};
+static const uint8_t table14_0_outer_[16] = {0, 1, 2,  3,  4,  5,  6,  7,
+                                             8, 9, 10, 11, 12, 13, 14, 15};
+static const uint8_t table15_0_emit_[33] = {
+    0xfe, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x0b, 0x0c, 0x0e,
+    0x0f, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x17, 0x18, 0x19, 0x1a,
+    0x1b, 0x1c, 0x1d, 0x1e, 0x1f, 0x7f, 0xdc, 0xf9, 0x0a, 0x0d, 0x16};
+static const uint16_t table15_0_inner_[34] = {
+    0x0004, 0x0015, 0x0025, 0x0035, 0x0045, 0x0055, 0x0065, 0x0075, 0x0085,
+    0x0095, 0x00a5, 0x00b5, 0x00c5, 0x00d5, 0x00e5, 0x00f5, 0x0105, 0x0115,
+    0x0125, 0x0135, 0x0145, 0x0155, 0x0165, 0x0175, 0x0185, 0x0195, 0x01a5,
+    0x01b5, 0x01c5, 0x01d5, 0x01e7, 0x01f7, 0x0207, 0x000f};
+static const uint8_t table15_0_outer_[128] = {
+    0,  0,  0,  0,  0,  0,  0,  0,  1,  1,  1,  1,  2,  2,  2,  2,  3,  3,  3,
+    3,  4,  4,  4,  4,  5,  5,  5,  5,  6,  6,  6,  6,  7,  7,  7,  7,  8,  8,
+    8,  8,  9,  9,  9,  9,  10, 10, 10, 10, 11, 11, 11, 11, 12, 12, 12, 12, 13,
+    13, 13, 13, 14, 14, 14, 14, 15, 15, 15, 15, 16, 16, 16, 16, 17, 17, 17, 17,
+    18, 18, 18, 18, 19, 19, 19, 19, 20, 20, 20, 20, 21, 21, 21, 21, 22, 22, 22,
+    22, 23, 23, 23, 23, 24, 24, 24, 24, 25, 25, 25, 25, 26, 26, 26, 26, 27, 27,
+    27, 27, 28, 28, 28, 28, 29, 29, 29, 29, 30, 31, 32, 33};
+static const uint8_t table16_0_emit_[9] = {0xda, 0xdb, 0xee, 0xf0, 0xf2,
+                                           0xf3, 0xff, 0xcb, 0xcc};
+static const uint8_t table16_0_inner_[9] = {0x03, 0x0b, 0x13, 0x1b, 0x23,
+                                            0x2b, 0x33, 0x3c, 0x44};
+static const uint8_t table16_0_outer_[16] = {0, 0, 1, 1, 2, 2, 3, 3,
+                                             4, 4, 5, 5, 6, 6, 7, 8};
