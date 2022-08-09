@@ -6423,12 +6423,12 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "decode_huff",
+    srcs = [
+        "src/core/ext/transport/chttp2/transport/decode_huff.cc",
+    ],
     hdrs = [
         "src/core/ext/transport/chttp2/transport/decode_huff.h",
     ],
-    srcs = [
-        "src/core/ext/transport/chttp2/transport/decode_huff.cc",
-    ]
 )
 
 grpc_cc_library(
