@@ -18,12 +18,9 @@
 #include <benchmark/benchmark.h>
 
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
+#include "src/core/ext/transport/chttp2/transport/decode_huff.h"
 #include "src/core/lib/slice/slice.h"
 #include "test/core/util/test_config.h"
-
-#define GRPC_THIS_IS_INCLUDED_FROM_THE_HPACK_PARSER
-#include "src/core/ext/transport/chttp2/transport/decode_huff.h"
-#undef GRPC_THIS_IS_INCLUDED_FROM_THE_HPACK_PARSER
 
 static const std::vector<uint8_t>* kInput = [] {
   std::vector<uint8_t> v;
