@@ -452,11 +452,11 @@ class IsolatedXdsKubernetesTestCase(XdsKubernetesBaseTestCase,
                                             attempts=3,
                                             log_level=logging.INFO)
         try:
-            retryer(self._cleanup)
+            retryer(self.cleanup)
         except retryers.RetryError:
             logger.exception('Got error during teardown')
 
-    def _cleanup(self):
+    def cleanup(self):
         self.td.cleanup(force=self.force_cleanup)
         self.client_runner.cleanup(force=self.force_cleanup)
         self.server_runner.cleanup(force=self.force_cleanup,
