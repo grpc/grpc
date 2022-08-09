@@ -17,17 +17,15 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stdint.h>
+
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 
-#include <sys/types.h>
 #include <time.h>
 
 #ifdef GRPC_LINUX_ERRQUEUE
-#include <linux/errqueue.h>
-#include <linux/net_tstamp.h>
-#include <linux/netlink.h>
 #include <sys/socket.h>
 #endif /* GRPC_LINUX_ERRQUEUE */
 

@@ -17,16 +17,28 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stdint.h>
+
 #include <list>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
 
-#include <grpc/support/time.h>
+#include <grpc/impl/codegen/gpr_types.h>
 
 #include "src/core/lib/event_engine/posix_engine/internal_errqueue.h"
 #include "src/core/lib/iomgr/port.h"
+
+#ifdef GRPC_LINUX_ERRQUEUE
+#include <linux/errqueue.h>
+#include <linux/netlink.h>
+#include <netinet/in.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <time.h>
+#endif
 
 namespace grpc_event_engine {
 namespace posix_engine {
