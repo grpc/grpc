@@ -16,9 +16,19 @@
 
 #include "src/core/lib/event_engine/posix_engine/traced_buffer_list.h"
 
+#include <linux/errqueue.h>
+#include <linux/netlink.h>
+#include <stddef.h>
+#include <stdlib.h>
+#include <sys/socket.h>
+
+#include <cstdint>
+#include <utility>
+
 #include "absl/functional/any_invocable.h"
 
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/iomgr/port.h"
 
