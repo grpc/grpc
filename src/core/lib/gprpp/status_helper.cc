@@ -363,8 +363,8 @@ google_rpc_Status* StatusToProto(const absl::Status& status, upb_arena* arena) {
 }
 
 absl::Status StatusFromProto(google_rpc_Status* msg) {
-  int32_t code = google_rpc_Status_code(msg);
-  upb_strview message = google_rpc_Status_message(msg);
+  int32_t code = google_rpc_Status(msg);
+  upb_strview message = google_rpc_Status(msg);
   absl::Status status(static_cast<absl::StatusCode>(code),
                       absl::string_view(message.data, message.size));
   size_t detail_len;
