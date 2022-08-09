@@ -752,6 +752,7 @@ libs:
   - src/core/lib/event_engine/default_event_engine_factory.h
   - src/core/lib/event_engine/executor/executor.h
   - src/core/lib/event_engine/executor/threaded_executor.h
+  - src/core/lib/event_engine/forkable.h
   - src/core/lib/event_engine/handle_containers.h
   - src/core/lib/event_engine/poller.h
   - src/core/lib/event_engine/posix_engine/posix_engine.h
@@ -1448,6 +1449,7 @@ libs:
   - src/core/lib/event_engine/default_event_engine.cc
   - src/core/lib/event_engine/default_event_engine_factory.cc
   - src/core/lib/event_engine/executor/threaded_executor.cc
+  - src/core/lib/event_engine/forkable.cc
   - src/core/lib/event_engine/memory_allocator.cc
   - src/core/lib/event_engine/posix_engine/posix_engine.cc
   - src/core/lib/event_engine/posix_engine/timer.cc
@@ -1938,6 +1940,7 @@ libs:
   - src/core/lib/event_engine/default_event_engine_factory.h
   - src/core/lib/event_engine/executor/executor.h
   - src/core/lib/event_engine/executor/threaded_executor.h
+  - src/core/lib/event_engine/forkable.h
   - src/core/lib/event_engine/handle_containers.h
   - src/core/lib/event_engine/poller.h
   - src/core/lib/event_engine/posix_engine/posix_engine.h
@@ -2275,6 +2278,7 @@ libs:
   - src/core/lib/event_engine/default_event_engine.cc
   - src/core/lib/event_engine/default_event_engine_factory.cc
   - src/core/lib/event_engine/executor/threaded_executor.cc
+  - src/core/lib/event_engine/forkable.cc
   - src/core/lib/event_engine/memory_allocator.cc
   - src/core/lib/event_engine/posix_engine/posix_engine.cc
   - src/core/lib/event_engine/posix_engine/timer.cc
@@ -6287,6 +6291,15 @@ targets:
   - posix
   - mac
   uses_polling: false
+- name: forkable_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/event_engine/forkable_test.cc
+  deps:
+  - grpc_unsecure
 - name: format_request_test
   gtest: true
   build: test

@@ -417,6 +417,7 @@ grpc_cc_library(
         "channel_stack_type",
         "config",
         "default_event_engine",
+        "forkable",
         "gpr_base",
         "grpc_authorization_base",
         "grpc_base",
@@ -480,6 +481,7 @@ grpc_cc_library(
         "channel_stack_type",
         "config",
         "default_event_engine",
+        "forkable",
         "gpr_base",
         "grpc_authorization_base",
         "grpc_base",
@@ -2222,6 +2224,21 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "forkable",
+    srcs = [
+        "src/core/lib/event_engine/forkable.cc",
+    ],
+    hdrs = [
+        "src/core/lib/event_engine/forkable.h",
+    ],
+    external_deps = ["absl/container:flat_hash_set"],
+    deps = [
+        "gpr_base",
+        "gpr_platform",
+    ],
+)
+
+grpc_cc_library(
     name = "event_engine_poller",
     hdrs = [
         "src/core/lib/event_engine/poller.h",
@@ -2314,8 +2331,14 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/event_engine/thread_pool.h",
     ],
-    external_deps = ["absl/functional:any_invocable"],
-    deps = ["gpr_base"],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/functional:any_invocable",
+    ],
+    deps = [
+        "forkable",
+        "gpr_base",
+    ],
 )
 
 grpc_cc_library(
@@ -2332,6 +2355,7 @@ grpc_cc_library(
     ],
     deps = [
         "event_engine_base_hdrs",
+        "forkable",
         "gpr_base",
         "gpr_codegen",
         "posix_event_engine_timer",
