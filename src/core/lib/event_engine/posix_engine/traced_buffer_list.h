@@ -17,14 +17,28 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stdint.h>
+
+#include <list>
+
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
 
-#include <grpc/support/time.h>
+#include <grpc/impl/codegen/gpr_types.h>
 
 #include "src/core/lib/event_engine/posix_engine/internal_errqueue.h"
 #include "src/core/lib/iomgr/port.h"
+
+#ifdef GRPC_LINUX_ERRQUEUE
+#include <linux/errqueue.h>
+#include <linux/netlink.h>
+#include <netinet/in.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <time.h>
+#endif
 
 namespace grpc_event_engine {
 namespace posix_engine {
@@ -108,39 +122,37 @@ struct Timestamps {
 class TracedBuffer {
  public:
   // Use AddNewEntry function instead of using this directly.
-  TracedBuffer(uint32_t seq_no, void* arg)
-      : seq_no_(seq_no), arg_(arg), next_(nullptr) {}
+  TracedBuffer(uint32_t seq_no, void* arg) : seq_no_(seq_no), arg_(arg) {}
 
   // Add a new entry in the TracedBuffer list pointed to by head. Also saves
   // sendmsg_time with the current timestamp.
-  static void AddNewEntry(TracedBuffer** head, uint32_t seq_no, int fd,
-                          void* arg);
+  static void AddNewEntry(std::list<TracedBuffer*>& traced_buffers,
+                          uint32_t seq_no, int fd, void* arg);
 
   // Processes a received timestamp based on sock_extended_err and
   // scm_timestamping structures. It will invoke the timestamps callback if the
   // timestamp type is SCM_TSTAMP_ACK.
-  static void ProcessTimestamp(TracedBuffer** head,
+  static void ProcessTimestamp(std::list<TracedBuffer*>& traced_buffers,
                                struct sock_extended_err* serr,
                                struct cmsghdr* opt_stats,
                                struct scm_timestamping* tss);
 
   // Cleans the list by calling the callback for each traced buffer in the list
   // with timestamps that it has.
-  static void Shutdown(TracedBuffer** head, void* remaining,
-                       absl::Status shutdown_err);
+  static void Shutdown(std::list<TracedBuffer*>& traced_buffers,
+                       void* remaining, absl::Status shutdown_err);
 
  private:
-  uint32_t seq_no_;    /* The sequence number for the last byte in the buffer */
-  void* arg_;          /* The arg to pass to timestamps_callback */
-  Timestamps ts_;      /* The timestamps corresponding to this buffer */
-  TracedBuffer* next_; /* The next TracedBuffer in the list */
+  uint32_t seq_no_; /* The sequence number for the last byte in the buffer */
+  void* arg_;       /* The arg to pass to timestamps_callback */
+  Timestamps ts_;   /* The timestamps corresponding to this buffer */
 };
 #else  /* GRPC_LINUX_ERRQUEUE */
 class TracedBuffer {
  public:
   // Phony shutdown function.
-  static void Shutdown(TracedBuffer** /*head*/, void* /*remaining*/,
-                       absl::Status /*shutdown_err*/) {}
+  static void Shutdown(std::list<TracedBuffer>& /*traced_buffers*/,
+                       void* /*remaining*/, absl::Status /*shutdown_err*/) {}
 };
 #endif /* GRPC_LINUX_ERRQUEUE */
 

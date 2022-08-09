@@ -17,17 +17,15 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stdint.h>
+
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 
-#include <sys/types.h>
 #include <time.h>
 
 #ifdef GRPC_LINUX_ERRQUEUE
-#include <linux/errqueue.h>
-#include <linux/net_tstamp.h>
-#include <linux/netlink.h>
 #include <sys/socket.h>
 #endif /* GRPC_LINUX_ERRQUEUE */
 
@@ -163,6 +161,9 @@ struct tcp_info {
 #ifndef TCP_INFO
 #define TCP_INFO 11
 #endif
+
+int GetSocketTcpInfo(tcp_info* info, int fd);
+
 #endif /* GRPC_LINUX_ERRQUEUE */
 
 // Returns true if kernel is capable of supporting errqueue and timestamping.

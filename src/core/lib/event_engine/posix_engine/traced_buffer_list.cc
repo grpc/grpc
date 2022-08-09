@@ -16,16 +16,20 @@
 
 #include "src/core/lib/event_engine/posix_engine/traced_buffer_list.h"
 
+#include <stddef.h>
+#include <stdlib.h>
+
+#include <cstdint>
+#include <utility>
+
 #include "absl/functional/any_invocable.h"
 
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_LINUX_ERRQUEUE
-#include <netinet/in.h>
-#include <string.h>
-#include <time.h>
 
 namespace grpc_event_engine {
 namespace posix_engine {
@@ -67,27 +71,27 @@ void ExtractOptStatsFromTcpInfo(ConnectionMetrics* metrics,
     return;
   }
   if (info->length > offsetof(tcp_info, tcpi_sndbuf_limited)) {
-    metrics->recurring_retrans.emplace(info->tcpi_retransmits);
-    metrics->is_delivery_rate_app_limited.emplace(
-        info->tcpi_delivery_rate_app_limited);
-    metrics->congestion_window.emplace(info->tcpi_snd_cwnd);
-    metrics->reordering.emplace(info->tcpi_reordering);
-    metrics->packet_retx.emplace(info->tcpi_total_retrans);
-    metrics->pacing_rate.emplace(info->tcpi_pacing_rate);
-    metrics->data_notsent.emplace(info->tcpi_notsent_bytes);
+    metrics->recurring_retrans = info->tcpi_retransmits;
+    metrics->is_delivery_rate_app_limited =
+        info->tcpi_delivery_rate_app_limited;
+    metrics->congestion_window = info->tcpi_snd_cwnd;
+    metrics->reordering = info->tcpi_reordering;
+    metrics->packet_retx = info->tcpi_total_retrans;
+    metrics->pacing_rate = info->tcpi_pacing_rate;
+    metrics->data_notsent = info->tcpi_notsent_bytes;
     if (info->tcpi_min_rtt != UINT32_MAX) {
-      metrics->min_rtt.emplace(info->tcpi_min_rtt);
+      metrics->min_rtt = info->tcpi_min_rtt;
     }
-    metrics->packet_sent.emplace(info->tcpi_data_segs_out);
-    metrics->delivery_rate.emplace(info->tcpi_delivery_rate);
-    metrics->busy_usec.emplace(info->tcpi_busy_time);
-    metrics->rwnd_limited_usec.emplace(info->tcpi_rwnd_limited);
-    metrics->sndbuf_limited_usec.emplace(info->tcpi_sndbuf_limited);
+    metrics->packet_sent = info->tcpi_data_segs_out;
+    metrics->delivery_rate = info->tcpi_delivery_rate;
+    metrics->busy_usec = info->tcpi_busy_time;
+    metrics->rwnd_limited_usec = info->tcpi_rwnd_limited;
+    metrics->sndbuf_limited_usec = info->tcpi_sndbuf_limited;
   }
   if (info->length > offsetof(tcp_info, tcpi_dsack_dups)) {
-    metrics->data_sent.emplace(info->tcpi_bytes_sent);
-    metrics->data_retx.emplace(info->tcpi_bytes_retrans);
-    metrics->packet_spurious_retx.emplace(info->tcpi_dsack_dups);
+    metrics->data_sent = info->tcpi_bytes_sent;
+    metrics->data_retx = info->tcpi_bytes_retrans;
+    metrics->packet_spurious_retx = info->tcpi_dsack_dups;
   }
 }
 
@@ -108,97 +112,89 @@ void ExtractOptStatsFromCmsg(ConnectionMetrics* metrics,
     const void* val = data + offset + NLA_HDRLEN;
     switch (attr->nla_type) {
       case TCP_NLA_BUSY: {
-        metrics->busy_usec.emplace(ReadUnaligned<uint64_t>(val));
+        metrics->busy_usec = ReadUnaligned<uint64_t>(val);
         break;
       }
       case TCP_NLA_RWND_LIMITED: {
-        metrics->rwnd_limited_usec.emplace(ReadUnaligned<uint64_t>(val));
+        metrics->rwnd_limited_usec = ReadUnaligned<uint64_t>(val);
         break;
       }
       case TCP_NLA_SNDBUF_LIMITED: {
-        metrics->sndbuf_limited_usec.emplace(ReadUnaligned<uint64_t>(val));
+        metrics->sndbuf_limited_usec = ReadUnaligned<uint64_t>(val);
         break;
       }
       case TCP_NLA_PACING_RATE: {
-        metrics->pacing_rate.emplace(ReadUnaligned<uint64_t>(val));
+        metrics->pacing_rate = ReadUnaligned<uint64_t>(val);
         break;
       }
       case TCP_NLA_DELIVERY_RATE: {
-        metrics->delivery_rate.emplace(ReadUnaligned<uint64_t>(val));
+        metrics->delivery_rate = ReadUnaligned<uint64_t>(val);
         break;
       }
       case TCP_NLA_DELIVERY_RATE_APP_LMT: {
-        metrics->is_delivery_rate_app_limited.emplace(
-            ReadUnaligned<uint8_t>(val));
+        metrics->is_delivery_rate_app_limited = ReadUnaligned<uint8_t>(val);
         break;
       }
       case TCP_NLA_SND_CWND: {
-        metrics->congestion_window.emplace(ReadUnaligned<uint32_t>(val));
+        metrics->congestion_window = ReadUnaligned<uint32_t>(val);
         break;
       }
       case TCP_NLA_MIN_RTT: {
-        metrics->min_rtt.emplace(ReadUnaligned<uint32_t>(val));
+        metrics->min_rtt = ReadUnaligned<uint32_t>(val);
         break;
       }
       case TCP_NLA_SRTT: {
-        metrics->srtt.emplace(ReadUnaligned<uint32_t>(val));
+        metrics->srtt = ReadUnaligned<uint32_t>(val);
         break;
       }
       case TCP_NLA_RECUR_RETRANS: {
-        metrics->recurring_retrans.emplace(ReadUnaligned<uint8_t>(val));
+        metrics->recurring_retrans = ReadUnaligned<uint8_t>(val);
         break;
       }
       case TCP_NLA_BYTES_SENT: {
-        metrics->data_sent.emplace(ReadUnaligned<uint64_t>(val));
+        metrics->data_sent = ReadUnaligned<uint64_t>(val);
         break;
       }
       case TCP_NLA_DATA_SEGS_OUT: {
-        metrics->packet_sent.emplace(ReadUnaligned<uint64_t>(val));
+        metrics->packet_sent = ReadUnaligned<uint64_t>(val);
         break;
       }
       case TCP_NLA_TOTAL_RETRANS: {
-        metrics->packet_retx.emplace(ReadUnaligned<uint64_t>(val));
+        metrics->packet_retx = ReadUnaligned<uint64_t>(val);
         break;
       }
       case TCP_NLA_DELIVERED: {
-        metrics->packet_delivered.emplace(ReadUnaligned<uint32_t>(val));
+        metrics->packet_delivered = ReadUnaligned<uint32_t>(val);
         break;
       }
       case TCP_NLA_DELIVERED_CE: {
-        metrics->packet_delivered_ce.emplace(ReadUnaligned<uint32_t>(val));
+        metrics->packet_delivered_ce = ReadUnaligned<uint32_t>(val);
         break;
       }
       case TCP_NLA_BYTES_RETRANS: {
-        metrics->data_retx.emplace(ReadUnaligned<uint64_t>(val));
+        metrics->data_retx = ReadUnaligned<uint64_t>(val);
         break;
       }
       case TCP_NLA_DSACK_DUPS: {
-        metrics->packet_spurious_retx.emplace(ReadUnaligned<uint32_t>(val));
+        metrics->packet_spurious_retx = ReadUnaligned<uint32_t>(val);
         break;
       }
       case TCP_NLA_REORDERING: {
-        metrics->reordering.emplace(ReadUnaligned<uint32_t>(val));
+        metrics->reordering = ReadUnaligned<uint32_t>(val);
         break;
       }
       case TCP_NLA_SND_SSTHRESH: {
-        metrics->snd_ssthresh.emplace(ReadUnaligned<uint32_t>(val));
+        metrics->snd_ssthresh = ReadUnaligned<uint32_t>(val);
         break;
       }
     }
     offset += NLA_ALIGN(attr->nla_len);
   }
 }
-
-int GetSocketTcpInfo(tcp_info* info, int fd) {
-  memset(info, 0, sizeof(*info));
-  info->length = offsetof(tcp_info, length);
-  return getsockopt(fd, IPPROTO_TCP, TCP_INFO, info, &(info->length));
-}
 }  // namespace.
 
-void TracedBuffer::AddNewEntry(TracedBuffer** head, uint32_t seq_no, int fd,
-                               void* arg) {
-  GPR_DEBUG_ASSERT(head != nullptr);
+void TracedBuffer::AddNewEntry(std::list<TracedBuffer*>& traced_buffers,
+                               uint32_t seq_no, int fd, void* arg) {
   TracedBuffer* new_elem = new TracedBuffer(seq_no, arg);
   // Store the current time as the sendmsg time.
   new_elem->ts_.sendmsg_time.time = gpr_now(GPR_CLOCK_REALTIME);
@@ -210,26 +206,17 @@ void TracedBuffer::AddNewEntry(TracedBuffer** head, uint32_t seq_no, int fd,
     ExtractOptStatsFromTcpInfo(&new_elem->ts_.sendmsg_time.metrics,
                                &new_elem->ts_.info);
   }
-  if (*head == nullptr) {
-    *head = new_elem;
-    return;
-  }
-  // Append at the end.
-  TracedBuffer* ptr = *head;
-  while (ptr->next_ != nullptr) {
-    ptr = ptr->next_;
-  }
-  ptr->next_ = new_elem;
+
+  traced_buffers.push_back(new_elem);
 }
 
-void TracedBuffer::ProcessTimestamp(TracedBuffer** head,
+void TracedBuffer::ProcessTimestamp(std::list<TracedBuffer*>& traced_buffers,
                                     struct sock_extended_err* serr,
                                     struct cmsghdr* opt_stats,
                                     struct scm_timestamping* tss) {
-  GPR_DEBUG_ASSERT(head != nullptr);
-  TracedBuffer* elem = *head;
-  TracedBuffer* next = nullptr;
-  while (elem != nullptr) {
+  auto it = traced_buffers.begin();
+  while (it != traced_buffers.end()) {
+    TracedBuffer* elem = (*it);
     // The byte number refers to the sequence number of the last byte which this
     // timestamp relates to.
     if (serr->ee_data >= elem->seq_no_) {
@@ -238,12 +225,12 @@ void TracedBuffer::ProcessTimestamp(TracedBuffer** head,
           FillGprFromTimestamp(&(elem->ts_.scheduled_time.time), &(tss->ts[0]));
           ExtractOptStatsFromCmsg(&(elem->ts_.scheduled_time.metrics),
                                   opt_stats);
-          elem = elem->next_;
+          it++;
           break;
         case SCM_TSTAMP_SND:
           FillGprFromTimestamp(&(elem->ts_.sent_time.time), &(tss->ts[0]));
           ExtractOptStatsFromCmsg(&(elem->ts_.sent_time.metrics), opt_stats);
-          elem = elem->next_;
+          it++;
           break;
         case SCM_TSTAMP_ACK:
           FillGprFromTimestamp(&(elem->ts_.acked_time.time), &(tss->ts[0]));
@@ -252,9 +239,8 @@ void TracedBuffer::ProcessTimestamp(TracedBuffer** head,
           // thing below can be passed by value if we don't want the restriction
           // on the lifetime.
           g_timestamps_callback(elem->arg_, &(elem->ts_), absl::OkStatus());
-          next = elem->next_;
+          it = traced_buffers.erase(it);
           delete static_cast<TracedBuffer*>(elem);
-          *head = elem = next;
           break;
         default:
           abort();
@@ -265,17 +251,15 @@ void TracedBuffer::ProcessTimestamp(TracedBuffer** head,
   }
 }
 
-void TracedBuffer::Shutdown(TracedBuffer** head, void* remaining,
-                            absl::Status shutdown_err) {
-  GPR_DEBUG_ASSERT(head != nullptr);
-  TracedBuffer* elem = *head;
-  while (elem != nullptr) {
+void TracedBuffer::Shutdown(std::list<TracedBuffer*>& traced_buffers,
+                            void* remaining, absl::Status shutdown_err) {
+  auto it = traced_buffers.begin();
+  while (it != traced_buffers.end()) {
+    TracedBuffer* elem = (*it);
     g_timestamps_callback(elem->arg_, &(elem->ts_), shutdown_err);
-    auto* next = elem->next_;
+    it = traced_buffers.erase(it);
     delete elem;
-    elem = next;
   }
-  *head = nullptr;
   if (remaining != nullptr) {
     g_timestamps_callback(remaining, nullptr, shutdown_err);
   }
