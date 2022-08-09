@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_TCP_POSIX_STREAM_SOCKET_H
-#define GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_TCP_POSIX_STREAM_SOCKET_H
+#ifndef GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_POSIX_STREAM_SOCKET_H
+#define GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_POSIX_STREAM_SOCKET_H
 
 #include <grpc/support/port_platform.h>
 
@@ -139,7 +139,7 @@ class PosixStreamSocket {
   // A hint from upper layers specifying the minimum number of bytes that need
   // to be read to make meaningful progress.
   int min_progress_size_ = 1;
-  TracedBuffer* tb_head_ = nullptr;
+  std::list<TracedBuffer*> traced_buffers_;
   EventHandle* handle_;
   PosixEventPoller* poller_;
   EventEngine* engine_;
@@ -148,4 +148,4 @@ class PosixStreamSocket {
 }  // namespace posix_engine
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_TCP_POSIX_STREAM_SOCKET_H
+#endif  // GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_POSIX_STREAM_SOCKET_H

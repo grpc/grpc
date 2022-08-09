@@ -128,3 +128,16 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "tcp_posix_stream_socket_test",
+    srcs = ["tcp_posix_stream_socket_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:posix_event_engine_stream_socket",
+        "//test/core/util:grpc_test_util",
+    ],
+)

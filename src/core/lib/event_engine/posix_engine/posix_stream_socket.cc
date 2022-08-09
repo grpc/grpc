@@ -13,7 +13,7 @@
 // limitations under the License.
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/event_engine/posix_engine/tcp_posix_stream_socket.h"
+#include "src/core/lib/event_engine/posix_engine/posix_stream_socket.h"
 
 #include <atomic>
 #include <memory>
@@ -951,7 +951,7 @@ struct cmsghdr* PosixStreamSocket::ProcessTimestamp(msghdr* msg,
   // simple mutex for now.
   {
     absl::MutexLock lock(&traced_buffer_mu_);
-    TracedBuffer::ProcessTimestamp(&tb_head_, serr, opt_stats, tss);
+    TracedBuffer::ProcessTimestamp(traced_buffers_, serr, opt_stats, tss);
   }
   return next_cmsg;
 }
@@ -1009,7 +1009,7 @@ bool PosixStreamSocket::WriteWithTimestamps(struct msghdr* msg,
   // Only save timestamps if all the bytes were taken by sendmsg.
   if (sending_length == static_cast<size_t>(length)) {
     traced_buffer_mu_.Lock();
-    TracedBuffer::AddNewEntry(&tb_head_,
+    TracedBuffer::AddNewEntry(traced_buffers_,
                               static_cast<uint32_t>(bytes_counter_ + length),
                               fd_, outgoing_buffer_arg_);
     traced_buffer_mu_.Unlock();
@@ -1024,7 +1024,7 @@ TcpZerocopySendRecord* PosixStreamSocket::TcpGetSendZerocopyRecord(
   return nullptr;
 }
 
-void PosixStreamSocket::HandleError(absl::Status status) {
+void PosixStreamSocket::HandleError(absl::Status /*status*/) {
   GPR_ASSERT(false && "Error handling not supported on this platform");
 }
 #endif /* GRPC_LINUX_ERRQUEUE */
@@ -1034,7 +1034,7 @@ void PosixStreamSocket::HandleError(absl::Status status) {
 void PosixStreamSocket::TcpShutdownTracedBufferList() {
   if (outgoing_buffer_arg_ != nullptr) {
     traced_buffer_mu_.Lock();
-    TracedBuffer::Shutdown(&tb_head_, outgoing_buffer_arg_,
+    TracedBuffer::Shutdown(traced_buffers_, outgoing_buffer_arg_,
                            absl::InternalError("TracedBuffer list shutdown"));
     traced_buffer_mu_.Unlock();
     outgoing_buffer_arg_ = nullptr;
@@ -1307,7 +1307,8 @@ PosixStreamSocket::PosixStreamSocket(EventHandle* handle,
                                      PosixEngineClosure* on_done,
                                      EventEngine* engine,
                                      const PosixTcpOptions& options)
-    : handle_(handle),
+    : traced_buffers_(),
+      handle_(handle),
       on_done_(on_done),
       poller_(handle->Poller()),
       engine_(engine) {
