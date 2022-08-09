@@ -156,49 +156,37 @@ inline uint64_t GetOp6(size_t i) {
 }
 inline uint64_t GetEmit6(size_t, size_t emit) { return g_table6_0_emit[emit]; }
 static const uint8_t g_table7_0_emit[2] = {0x90, 0x91};
-#define g_table7_0_inner g_table6_0_inner
-#define g_table7_0_outer g_table6_0_outer
 inline uint64_t GetOp7(size_t i) {
-  return g_table7_0_inner[g_table7_0_outer[i]];
+  return g_table6_0_inner[g_table6_0_outer[i]];
 }
 inline uint64_t GetEmit7(size_t, size_t emit) { return g_table7_0_emit[emit]; }
 static const uint8_t g_table8_0_emit[2] = {0x94, 0x9f};
-#define g_table8_0_inner g_table6_0_inner
-#define g_table8_0_outer g_table6_0_outer
 inline uint64_t GetOp8(size_t i) {
-  return g_table8_0_inner[g_table8_0_outer[i]];
+  return g_table6_0_inner[g_table6_0_outer[i]];
 }
 inline uint64_t GetEmit8(size_t, size_t emit) { return g_table8_0_emit[emit]; }
 static const uint8_t g_table9_0_emit[2] = {0xab, 0xce};
-#define g_table9_0_inner g_table6_0_inner
-#define g_table9_0_outer g_table6_0_outer
 inline uint64_t GetOp9(size_t i) {
-  return g_table9_0_inner[g_table9_0_outer[i]];
+  return g_table6_0_inner[g_table6_0_outer[i]];
 }
 inline uint64_t GetEmit9(size_t, size_t emit) { return g_table9_0_emit[emit]; }
 static const uint8_t g_table10_0_emit[2] = {0xd7, 0xe1};
-#define g_table10_0_inner g_table6_0_inner
-#define g_table10_0_outer g_table6_0_outer
 inline uint64_t GetOp10(size_t i) {
-  return g_table10_0_inner[g_table10_0_outer[i]];
+  return g_table6_0_inner[g_table6_0_outer[i]];
 }
 inline uint64_t GetEmit10(size_t, size_t emit) {
   return g_table10_0_emit[emit];
 }
 static const uint8_t g_table11_0_emit[2] = {0xec, 0xed};
-#define g_table11_0_inner g_table6_0_inner
-#define g_table11_0_outer g_table6_0_outer
 inline uint64_t GetOp11(size_t i) {
-  return g_table11_0_inner[g_table11_0_outer[i]];
+  return g_table6_0_inner[g_table6_0_outer[i]];
 }
 inline uint64_t GetEmit11(size_t, size_t emit) {
   return g_table11_0_emit[emit];
 }
 static const uint8_t g_table12_0_emit[4] = {0xc7, 0xcf, 0xea, 0xeb};
-#define g_table12_0_inner g_table3_0_inner
-#define g_table12_0_outer g_table3_0_outer
 inline uint64_t GetOp12(size_t i) {
-  return g_table12_0_inner[g_table12_0_outer[i]];
+  return g_table3_0_inner[g_table3_0_outer[i]];
 }
 inline uint64_t GetEmit12(size_t, size_t emit) {
   return g_table12_0_emit[emit];

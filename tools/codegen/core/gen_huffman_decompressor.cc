@@ -517,26 +517,31 @@ class TableBuilder : public Item {
       std::vector<std::string> lines;
       const uint64_t max_inner = MaxInner();
       const uint64_t max_outer = MaxOuter();
+      std::vector<std::string> emit_names;
+      std::vector<std::string> inner_names;
+      std::vector<std::string> outer_names;
       for (size_t i = 0; i < slices.size(); i++) {
-        builder->GenArray(absl::StrCat("table", id, "_", i, "_emit"), "uint8_t",
-                          slices[i].emit, true, &lines);
-        builder->GenArray(absl::StrCat("table", id, "_", i, "_inner"),
-                          TypeForMax(max_inner), slices[i].inner, true, &lines);
-        builder->GenArray(absl::StrCat("table", id, "_", i, "_outer"),
-                          TypeForMax(max_outer), slices[i].outer, false,
-                          &lines);
+        emit_names.push_back(
+            builder->GenArray(absl::StrCat("table", id, "_", i, "_emit"),
+                              "uint8_t", slices[i].emit, true, &lines));
+        inner_names.push_back(builder->GenArray(
+            absl::StrCat("table", id, "_", i, "_inner"), TypeForMax(max_inner),
+            slices[i].inner, true, &lines));
+        outer_names.push_back(builder->GenArray(
+            absl::StrCat("table", id, "_", i, "_outer"), TypeForMax(max_outer),
+            slices[i].outer, false, &lines));
       }
       if (slice_bits == 0) {
-        lines.push_back(absl::StrCat(
-            "inline uint64_t GetOp", id, "(size_t i) { return g_table", id,
-            "_0_inner[g_table", id, "_0_outer[i]]; }"));
+        lines.push_back(absl::StrCat("inline uint64_t GetOp", id,
+                                     "(size_t i) { return ", inner_names[0],
+                                     "[", outer_names[0], "[i]]; }"));
         lines.push_back(absl::StrCat("inline uint64_t GetEmit", id,
-                                     "(size_t, size_t emit) { return g_table",
-                                     id, "_0_emit[emit]; }"));
+                                     "(size_t, size_t emit) { return ",
+                                     emit_names[0], "[emit]; }"));
       } else {
-        GenCompound(id, slices.size(), "emit", "uint8_t", &lines);
-        GenCompound(id, slices.size(), "inner", TypeForMax(max_inner), &lines);
-        GenCompound(id, slices.size(), "outer", TypeForMax(max_outer), &lines);
+        GenCompound(id, emit_names, "emit", "uint8_t", &lines);
+        GenCompound(id, inner_names, "inner", TypeForMax(max_inner), &lines);
+        GenCompound(id, outer_names, "outer", TypeForMax(max_outer), &lines);
         lines.push_back(absl::StrCat(
             "inline uint64_t GetOp", id, "(size_t i) { return g_table", id,
             "_inner[i >> ", op_bits - slice_bits, "][g_table", id,
@@ -594,22 +599,26 @@ class TableBuilder : public Item {
       std::vector<std::string> lines;
       uint64_t max_op = MaxOp();
       const int id = builder->id_;
+      std::vector<std::string> emit_names;
+      std::vector<std::string> ops_names;
       for (size_t i = 0; i < slices.size(); i++) {
-        builder->GenArray(absl::StrCat("table", id, "_", i, "_emit"), "uint8_t",
-                          slices[i].emit, true, &lines);
-        builder->GenArray(absl::StrCat("table", id, "_", i, "_ops"),
-                          TypeForMax(max_op), slices[i].ops, true, &lines);
+        emit_names.push_back(
+            builder->GenArray(absl::StrCat("table", id, "_", i, "_emit"),
+                              "uint8_t", slices[i].emit, true, &lines));
+        ops_names.push_back(
+            builder->GenArray(absl::StrCat("table", id, "_", i, "_ops"),
+                              TypeForMax(max_op), slices[i].ops, true, &lines));
       }
       if (slice_bits == 0) {
         lines.push_back(absl::StrCat("inline uint64_t GetOp", id,
-                                     "(size_t i) { return g_table", id,
-                                     "_0_ops[i]; }"));
+                                     "(size_t i) { return ", ops_names[0],
+                                     "[i]; }"));
         lines.push_back(absl::StrCat("inline uint64_t GetEmit", id,
-                                     "(size_t, size_t emit) { return g_table",
-                                     id, "_0_emit[emit]; }"));
+                                     "(size_t, size_t emit) { return ",
+                                     emit_names[0], "[emit]; }"));
       } else {
-        GenCompound(id, slices.size(), "emit", "uint8_t", &lines);
-        GenCompound(id, slices.size(), "ops", TypeForMax(max_op), &lines);
+        GenCompound(id, emit_names, "emit", "uint8_t", &lines);
+        GenCompound(id, ops_names, "ops", TypeForMax(max_op), &lines);
         lines.push_back(absl::StrCat(
             "inline uint64_t GetOp", id, "(size_t i) { return g_table", id,
             "_ops[i >> ", op_bits - slice_bits, "][i & 0x",
@@ -659,24 +668,24 @@ class TableBuilder : public Item {
     return table;
   }
 
-  static void GenCompound(int id, int slices, std::string ext, std::string type,
+  static void GenCompound(int id, std::vector<std::string> names,
+                          std::string ext, std::string type,
                           std::vector<std::string>* lines) {
     lines->push_back(absl::StrCat("static const ", type, "* const g_table", id,
                                   "_", ext, "[] = {"));
-    for (int i = 0; i < slices; i++) {
-      lines->push_back(absl::StrCat("  g_table", id, "_", i, "_", ext, ","));
+    for (const std::string& name : names) {
+      lines->push_back(absl::StrCat("  ", name, ","));
     }
     lines->push_back("};");
   }
 
   template <typename T>
-  void GenArray(std::string name, std::string type,
-                const std::vector<T>& values, bool hex,
-                std::vector<std::string>* lines) const {
+  std::string GenArray(std::string name, std::string type,
+                       const std::vector<T>& values, bool hex,
+                       std::vector<std::string>* lines) const {
     auto previous_name = ctx_->PreviousNameForArtifact(name, HashVec(values));
     if (previous_name.has_value()) {
-      lines->push_back(absl::StrCat("#define g_", name, " g_", *previous_name));
-      return;
+      return absl::StrCat("g_", *previous_name);
     }
     std::vector<std::string> elems;
     elems.reserve(values.size());
@@ -698,6 +707,7 @@ class TableBuilder : public Item {
                                   values.size(), "] = {"));
     lines->push_back(absl::StrCat("  ", data));
     lines->push_back("};");
+    return absl::StrCat("g_", name);
   }
 
   std::unique_ptr<EncodeOption> Choose() const {
