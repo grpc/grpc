@@ -113,7 +113,7 @@ TEST(BufferListTest, TestProcessTimestampAfterShutdown) {
   // Second Shutdown should not execute the callback.
   ASSERT_EQ(verifier_called, 0);
   traced_buffers.ProcessTimestamp(&serr, nullptr, &tss);
-  // A ProcessTimestamp after Shutdown not execute the callback.
+  // A ProcessTimestamp after Shutdown should not execute the callback.
   ASSERT_EQ(verifier_called, 0);
 }
 
