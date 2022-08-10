@@ -131,6 +131,7 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
     ],
+    testonly = True,
     deps = [
         "//:event_engine_base_hdrs",
         "//:gpr_base",

@@ -25,35 +25,37 @@ namespace grpc_event_engine {
 namespace experimental {
 
 class AbortingEventEngine : public EventEngine {
-  ConnectionHandle Connect(OnConnectCallback on_connect,
-                           const ResolvedAddress& addr,
-                           const EndpointConfig& args,
-                           MemoryAllocator memory_allocator,
-                           Duration timeout) override {
+  ConnectionHandle Connect(OnConnectCallback /* on_connect */,
+                           const ResolvedAddress& /* addr */,
+                           const EndpointConfig& /* args */,
+                           MemoryAllocator /* memory_allocator */,
+                           Duration /* timeout */) override {
     abort();
   };
-  bool CancelConnect(ConnectionHandle handle) override { abort(); }
+  bool CancelConnect(ConnectionHandle /* handle */) override { abort(); }
   absl::StatusOr<std::unique_ptr<Listener>> CreateListener(
-      Listener::AcceptCallback on_accept,
-      absl::AnyInvocable<void(absl::Status)> on_shutdown,
-      const EndpointConfig& config,
-      std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory)
+      Listener::AcceptCallback /* on_accept */,
+      absl::AnyInvocable<void(absl::Status)> /* on_shutdown */,
+      const EndpointConfig& /* config */,
+      std::unique_ptr<MemoryAllocatorFactory> /* memory_allocator_factory */)
       override {
     abort();
   };
   bool IsWorkerThread() override { abort(); }
   std::unique_ptr<DNSResolver> GetDNSResolver(
-      const DNSResolver::ResolverOptions& options) override {
+      const DNSResolver::ResolverOptions& /* options */) override {
     abort();
   }
-  void Run(Closure* closure) override { abort(); }
-  void Run(absl::AnyInvocable<void()> closure) override { abort(); }
-  TaskHandle RunAfter(Duration when, Closure* closure) override { abort(); }
-  TaskHandle RunAfter(Duration when,
-                      absl::AnyInvocable<void()> closure) override {
+  void Run(Closure* /* closure */) override { abort(); }
+  void Run(absl::AnyInvocable<void()> /* closure */) override { abort(); }
+  TaskHandle RunAfter(Duration /* when */, Closure* /* closure */) override {
     abort();
   }
-  bool Cancel(TaskHandle handle) override { abort(); }
+  TaskHandle RunAfter(Duration /* when */,
+                      absl::AnyInvocable<void()> /* closure */) override {
+    abort();
+  }
+  bool Cancel(TaskHandle /* handle */) override { abort(); }
 };
 
 }  // namespace experimental
