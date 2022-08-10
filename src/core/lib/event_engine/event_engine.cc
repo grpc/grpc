@@ -18,6 +18,7 @@
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
+#include "event_engine_factory.h"
 
 #include <grpc/event_engine/event_engine.h>
 
@@ -33,11 +34,16 @@ std::atomic<absl::AnyInvocable<std::unique_ptr<EventEngine>()>*>
 std::atomic<EventEngine*> g_event_engine{nullptr};
 }  // namespace
 
-void SetDefaultEventEngineFactory(
+void SetEventEngineFactory(
     absl::AnyInvocable<std::unique_ptr<EventEngine>()> factory) {
   delete g_event_engine_factory.exchange(
       new absl::AnyInvocable<std::unique_ptr<EventEngine>()>(
           std::move(factory)));
+}
+
+void EventEngineFactoryReset() {
+  delete g_event_engine_factory.exchange(nullptr);
+  ResetDefaultEventEngine();
 }
 
 std::unique_ptr<EventEngine> CreateEventEngine() {
