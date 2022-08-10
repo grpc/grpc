@@ -9,7 +9,7 @@
 #include <stddef.h>
 #include "upb/msg_internal.h"
 #include "envoy/service/status/v3/csds.upb.h"
-#include "envoy/admin/v3/config_dump.upb.h"
+#include "envoy/admin/v3/config_dump_shared.upb.h"
 #include "envoy/config/core/v3/base.upb.h"
 #include "envoy/type/matcher/v3/node.upb.h"
 #include "google/api/annotations.upb.h"

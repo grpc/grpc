@@ -61,6 +61,11 @@ UPB_INLINE const upb_MessageDef *envoy_config_rbac_v3_Principal_Authenticated_ge
   return upb_DefPool_FindMessageByName(s, "envoy.config.rbac.v3.Principal.Authenticated");
 }
 
+UPB_INLINE const upb_MessageDef *envoy_config_rbac_v3_Action_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_rbac_v3_rbac_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.rbac.v3.Action");
+}
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

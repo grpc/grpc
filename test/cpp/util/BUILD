@@ -82,6 +82,7 @@ grpc_cc_library(
         "//:grpc++",
         "//test/core/end2end:ssl_test_data",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -113,6 +114,7 @@ grpc_cc_library(
     ],
     deps = [
         "//:grpc++_unsecure",
+        "//test/core/util:grpc_test_util_base",
         "//test/core/util:grpc_test_util_unsecure",
     ],
 )
@@ -370,7 +372,6 @@ grpc_cc_test(
         "//src/proto/grpc/channelz:channelz_proto",
         "//src/proto/grpc/testing:test_proto",
         "//test/core/util:grpc_test_util",
-        "//test/core/util:grpc_test_util_base",
         "//test/cpp/util:test_util",
     ],
 )

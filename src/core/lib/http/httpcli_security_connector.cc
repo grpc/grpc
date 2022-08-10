@@ -107,6 +107,7 @@ class grpc_httpcli_ssl_channel_security_connector final
   }
 
   void check_peer(tsi_peer peer, grpc_endpoint* /*ep*/,
+                  const ChannelArgs& /*args*/,
                   RefCountedPtr<grpc_auth_context>* /*auth_context*/,
                   grpc_closure* on_peer_checked) override {
     grpc_error_handle error = GRPC_ERROR_NONE;

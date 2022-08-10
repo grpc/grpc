@@ -66,8 +66,6 @@ spec:
             % if config_mesh:
             - "--config-mesh-experimental=${config_mesh}"
             % endif
-            - "--include-v3-features-experimental"
-            - "--include-psm-security-experimental"
           resources:
             limits:
               cpu: 100m

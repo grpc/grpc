@@ -114,12 +114,13 @@ end:
 
 grpc_auth_refresh_token grpc_auth_refresh_token_create_from_string(
     const char* json_string) {
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  Json json = Json::Parse(json_string, &error);
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  Json json;
+  auto json_or = Json::Parse(json_string);
+  if (!json_or.ok()) {
     gpr_log(GPR_ERROR, "JSON parsing failed: %s",
-            grpc_error_std_string(error).c_str());
-    GRPC_ERROR_UNREF(error);
+            json_or.status().ToString().c_str());
+  } else {
+    json = std::move(*json_or);
   }
   return grpc_auth_refresh_token_create_from_json(json);
 }
@@ -158,7 +159,6 @@ grpc_oauth2_token_fetcher_credentials_parse_server_response(
     grpc_core::Duration* token_lifetime) {
   char* null_terminated_body = nullptr;
   grpc_credentials_status status = GRPC_CREDENTIALS_OK;
-  Json json;
 
   if (response == nullptr) {
     gpr_log(GPR_ERROR, "Received NULL response.");
@@ -184,38 +184,37 @@ grpc_oauth2_token_fetcher_credentials_parse_server_response(
     const char* token_type = nullptr;
     const char* expires_in = nullptr;
     Json::Object::const_iterator it;
-    grpc_error_handle error = GRPC_ERROR_NONE;
-    json = Json::Parse(null_terminated_body, &error);
-    if (!GRPC_ERROR_IS_NONE(error)) {
+    auto json = Json::Parse(
+        null_terminated_body != nullptr ? null_terminated_body : "");
+    if (!json.ok()) {
       gpr_log(GPR_ERROR, "Could not parse JSON from %s: %s",
-              null_terminated_body, grpc_error_std_string(error).c_str());
-      GRPC_ERROR_UNREF(error);
+              null_terminated_body, json.status().ToString().c_str());
       status = GRPC_CREDENTIALS_ERROR;
       goto end;
     }
-    if (json.type() != Json::Type::OBJECT) {
+    if (json->type() != Json::Type::OBJECT) {
       gpr_log(GPR_ERROR, "Response should be a JSON object");
       status = GRPC_CREDENTIALS_ERROR;
       goto end;
     }
-    it = json.object_value().find("access_token");
-    if (it == json.object_value().end() ||
+    it = json->object_value().find("access_token");
+    if (it == json->object_value().end() ||
         it->second.type() != Json::Type::STRING) {
       gpr_log(GPR_ERROR, "Missing or invalid access_token in JSON.");
       status = GRPC_CREDENTIALS_ERROR;
       goto end;
     }
     access_token = it->second.string_value().c_str();
-    it = json.object_value().find("token_type");
-    if (it == json.object_value().end() ||
+    it = json->object_value().find("token_type");
+    if (it == json->object_value().end() ||
         it->second.type() != Json::Type::STRING) {
       gpr_log(GPR_ERROR, "Missing or invalid token_type in JSON.");
       status = GRPC_CREDENTIALS_ERROR;
       goto end;
     }
     token_type = it->second.string_value().c_str();
-    it = json.object_value().find("expires_in");
-    if (it == json.object_value().end() ||
+    it = json->object_value().find("expires_in");
+    if (it == json->object_value().end() ||
         it->second.type() != Json::Type::NUMBER) {
       gpr_log(GPR_ERROR, "Missing or invalid expires_in in JSON.");
       status = GRPC_CREDENTIALS_ERROR;

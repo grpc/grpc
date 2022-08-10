@@ -16,21 +16,35 @@
  *
  */
 
+#include <inttypes.h>
 #include <limits.h>
 #include <string.h>
 
+#include <memory>
+#include <string>
+#include <vector>
+
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
+#include <grpc/impl/codegen/propagation_bits.h>
 #include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
+#include <grpc/status.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/atm.h>
 #include <grpc/support/log.h>
+#include <grpc/support/sync.h>
+#include <grpc/support/time.h>
 
-#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/thd.h"
-#include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/pollset.h"
+#include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "test/core/end2end/cq_verifier.h"
@@ -186,11 +200,10 @@ static void start_rpc(int target_port, grpc_status_code expected_status,
   grpc_metadata_array trailing_metadata_recv;
   grpc_status_code status;
   grpc_call_error error;
-  cq_verifier* cqv;
   grpc_slice details;
 
   state.cq = grpc_completion_queue_create_for_next(nullptr);
-  cqv = cq_verifier_create(state.cq);
+  grpc_core::CqVerifier cqv(state.cq);
   state.target = grpc_core::JoinHostPort("127.0.0.1", target_port);
 
   grpc_channel_credentials* creds = grpc_insecure_credentials_create();
@@ -239,8 +252,8 @@ static void start_rpc(int target_port, grpc_status_code expected_status,
 
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(1), true);
+  cqv.Verify();
 
   GPR_ASSERT(status == expected_status);
   if (expected_detail != nullptr) {
@@ -251,7 +264,6 @@ static void start_rpc(int target_port, grpc_status_code expected_status,
   grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
   grpc_slice_unref(details);
-  cq_verifier_destroy(cqv);
 }
 
 static void cleanup_rpc() {

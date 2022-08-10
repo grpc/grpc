@@ -344,9 +344,6 @@ struct grpc_transport_stream_op_batch_payload {
       : context(context) {}
   struct {
     grpc_metadata_batch* send_initial_metadata = nullptr;
-    /** Iff send_initial_metadata != NULL, flags associated with
-        send_initial_metadata: a bitfield of GRPC_INITIAL_METADATA_xxx */
-    uint32_t send_initial_metadata_flags = 0;
     // If non-NULL, will be set by the transport to the peer string (a char*).
     // The transport retains ownership of the string.
     // Note: This pointer may be used by the transport after the
@@ -388,10 +385,6 @@ struct grpc_transport_stream_op_batch_payload {
 
   struct {
     grpc_metadata_batch* recv_initial_metadata = nullptr;
-    // Flags are used only on the server side.  If non-null, will be set to
-    // a bitfield of the GRPC_INITIAL_METADATA_xxx macros (e.g., to
-    // indicate if the call is idempotent).
-    uint32_t* recv_flags = nullptr;
     /** Should be enqueued when initial metadata is ready to be processed. */
     grpc_closure* recv_initial_metadata_ready = nullptr;
     // If not NULL, will be set to true if trailing metadata is

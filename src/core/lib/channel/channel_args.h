@@ -27,7 +27,6 @@
 #include <iosfwd>
 #include <memory>
 #include <string>
-#include <type_traits>
 #include <utility>
 
 #include "absl/meta/type_traits.h"
@@ -40,6 +39,7 @@
 
 #include "src/core/lib/avl/avl.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -63,6 +63,16 @@ template <typename T, typename Ignored = void /* for SFINAE */>
 struct ChannelArgTypeTraits;
 
 namespace channel_args_detail {
+inline int PointerCompare(void* a_ptr, const grpc_arg_pointer_vtable* a_vtable,
+                          void* b_ptr,
+                          const grpc_arg_pointer_vtable* b_vtable) {
+  int c = QsortCompare(a_ptr, b_ptr);
+  if (c == 0) return 0;
+  c = QsortCompare(a_vtable, b_vtable);
+  if (c != 0) return c;
+  return a_vtable->cmp(a_ptr, b_ptr);
+}
+
 // The type returned by calling Ref() on a T - used to determine the basest-type
 // before the crt refcount base class.
 template <typename T>
@@ -87,11 +97,16 @@ struct ChannelArgTypeTraits<
     static const grpc_arg_pointer_vtable tbl = {
         // copy
         [](void* p) -> void* {
-          return p == nullptr ? nullptr : static_cast<T*>(p)->Ref().release();
+          return p == nullptr ? nullptr
+                              : static_cast<T*>(p)
+                                    ->Ref(DEBUG_LOCATION, "ChannelArgs copy")
+                                    .release();
         },
         // destroy
         [](void* p) {
-          if (p != nullptr) static_cast<T*>(p)->Unref();
+          if (p != nullptr) {
+            static_cast<T*>(p)->Unref(DEBUG_LOCATION, "ChannelArgs destroy");
+          }
         },
         // compare
         [](void* p1, void* p2) {
@@ -169,6 +184,11 @@ struct GetObjectImpl<T, absl::enable_if_t<WrapInSharedPtr<T>::value, void> > {
   using StoredType = std::shared_ptr<T>*;
   static Result Get(StoredType p) { return p->get(); };
   static ReffedResult GetReffed(StoredType p) { return ReffedResult(*p); };
+  static ReffedResult GetReffed(StoredType p,
+                                const DebugLocation& /* location */,
+                                const char* /* reason */) {
+    return GetReffed(*p);
+  };
 };
 // RefCountedPtr
 template <typename T>
@@ -180,6 +200,11 @@ struct GetObjectImpl<T, absl::enable_if_t<!WrapInSharedPtr<T>::value, void> > {
   static ReffedResult GetReffed(StoredType p) {
     if (p == nullptr) return nullptr;
     return p->Ref();
+  };
+  static ReffedResult GetReffed(StoredType p, const DebugLocation& location,
+                                const char* reason) {
+    if (p == nullptr) return nullptr;
+    return p->Ref(location, reason);
   };
 };
 
@@ -219,9 +244,20 @@ class ChannelArgs {
       return *this;
     }
 
-    bool operator==(const Pointer& rhs) const;
-    bool operator<(const Pointer& rhs) const;
-    bool operator!=(const Pointer& rhs) const;
+    friend int QsortCompare(const Pointer& a, const Pointer& b) {
+      return channel_args_detail::PointerCompare(a.p_, a.vtable_, b.p_,
+                                                 b.vtable_);
+    }
+
+    bool operator==(const Pointer& rhs) const {
+      return QsortCompare(*this, rhs) == 0;
+    }
+    bool operator<(const Pointer& rhs) const {
+      return QsortCompare(*this, rhs) < 0;
+    }
+    bool operator!=(const Pointer& rhs) const {
+      return QsortCompare(*this, rhs) != 0;
+    }
 
     void* c_pointer() const { return p_; }
     const grpc_arg_pointer_vtable* c_vtable() const { return vtable_; }
@@ -232,6 +268,7 @@ class ChannelArgs {
     void* p_;
     const grpc_arg_pointer_vtable* vtable_;
   };
+
   using Value = absl::variant<int, std::string, Pointer>;
 
   struct ChannelArgsDeleter {
@@ -359,6 +396,13 @@ class ChannelArgs {
   typename GetObjectImpl<T>::ReffedResult GetObjectRef() const {
     return GetObjectImpl<T>::GetReffed(
         GetPointer<T>(ChannelArgNameTraits<T>::ChannelArgName()));
+  }
+  template <typename T>
+  typename GetObjectImpl<T>::ReffedResult GetObjectRef(
+      const DebugLocation& location, const char* reason) const {
+    return GetObjectImpl<T>::GetReffed(
+        GetPointer<T>(ChannelArgNameTraits<T>::ChannelArgName()), location,
+        reason);
   }
 
   bool operator!=(const ChannelArgs& other) const;

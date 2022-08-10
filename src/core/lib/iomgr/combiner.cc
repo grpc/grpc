@@ -149,11 +149,7 @@ static void combiner_exec(grpc_core::Combiner* lock, grpc_closure* cl,
   }
   GPR_ASSERT(last & STATE_UNORPHANED);  // ensure lock has not been destroyed
   assert(cl->cb);
-#ifdef GRPC_ERROR_IS_ABSEIL_STATUS
   cl->error_data.error = grpc_core::internal::StatusAllocHeapPtr(error);
-#else
-  cl->error_data.error = reinterpret_cast<intptr_t>(error);
-#endif
   lock->queue.Push(cl->next_data.mpscq_node.get());
 }
 
@@ -228,18 +224,10 @@ bool grpc_combiner_continue_exec_ctx() {
 #ifndef NDEBUG
     cl->scheduled = false;
 #endif
-#ifdef GRPC_ERROR_IS_ABSEIL_STATUS
     grpc_error_handle cl_err =
         grpc_core::internal::StatusMoveFromHeapPtr(cl->error_data.error);
     cl->error_data.error = 0;
     cl->cb(cl->cb_arg, std::move(cl_err));
-#else
-    grpc_error_handle cl_err =
-        reinterpret_cast<grpc_error_handle>(cl->error_data.error);
-    cl->error_data.error = 0;
-    cl->cb(cl->cb_arg, cl_err);
-    GRPC_ERROR_UNREF(cl_err);
-#endif
   } else {
     grpc_closure* c = lock->final_list.head;
     GPR_ASSERT(c != nullptr);
@@ -252,18 +240,10 @@ bool grpc_combiner_continue_exec_ctx() {
 #ifndef NDEBUG
       c->scheduled = false;
 #endif
-#ifdef GRPC_ERROR_IS_ABSEIL_STATUS
       grpc_error_handle error =
           grpc_core::internal::StatusMoveFromHeapPtr(c->error_data.error);
       c->error_data.error = 0;
       c->cb(c->cb_arg, std::move(error));
-#else
-      grpc_error_handle error =
-          reinterpret_cast<grpc_error_handle>(c->error_data.error);
-      c->error_data.error = 0;
-      c->cb(c->cb_arg, error);
-      GRPC_ERROR_UNREF(error);
-#endif
       c = next;
     }
   }

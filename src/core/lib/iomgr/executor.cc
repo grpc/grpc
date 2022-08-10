@@ -121,18 +121,10 @@ size_t Executor::RunClosures(const char* executor_name,
 #else
     EXECUTOR_TRACE("(%s) run %p", executor_name, c);
 #endif
-#ifdef GRPC_ERROR_IS_ABSEIL_STATUS
     grpc_error_handle error =
         internal::StatusMoveFromHeapPtr(c->error_data.error);
     c->error_data.error = 0;
     c->cb(c->cb_arg, std::move(error));
-#else
-    grpc_error_handle error =
-        reinterpret_cast<grpc_error_handle>(c->error_data.error);
-    c->error_data.error = 0;
-    c->cb(c->cb_arg, error);
-    GRPC_ERROR_UNREF(error);
-#endif
     c = next;
     n++;
     ExecCtx::Get()->Flush();
@@ -455,7 +447,5 @@ void Executor::SetThreadingDefault(bool enable) {
   EXECUTOR_TRACE("Executor::SetThreadingDefault(%d) called", enable);
   executors[static_cast<size_t>(ExecutorType::DEFAULT)]->SetThreading(enable);
 }
-
-void grpc_executor_global_init() {}
 
 }  // namespace grpc_core

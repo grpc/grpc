@@ -73,7 +73,7 @@ namespace experimental {
 ///    server->Wait();
 ///
 ////////////////////////////////////////////////////////////////////////////////
-class EventEngine {
+class EventEngine : public std::enable_shared_from_this<EventEngine> {
  public:
   /// A duration between two events.
   ///
@@ -428,15 +428,23 @@ class EventEngine {
 
 /// Replace gRPC's default EventEngine factory.
 ///
-/// Applications may call \a SetDefaultEventEngineFactory at any time to replace
-/// the default factory used within gRPC. EventEngines will be created when
-/// necessary, when they are otherwise not provided by the application.
+/// Applications may call \a SetEventEngineFactory time to replace the default
+/// factory used within gRPC. EventEngines will be created when necessary, when
+/// they are otherwise not provided by the application.
 ///
 /// To be certain that none of the gRPC-provided built-in EventEngines are
 /// created, applications must set a custom EventEngine factory method *before*
 /// grpc is initialized.
-void SetDefaultEventEngineFactory(
+void SetEventEngineFactory(
     absl::AnyInvocable<std::unique_ptr<EventEngine>()> factory);
+
+/// Revert to using gRPC's default EventEngine factory.
+///
+/// Applications that have called \a SetEventEngineFactory can unregister their
+/// custom factory, reverting to use gRPC's built-in default EventEngines. This
+/// has no effect on any EventEngines that were already created using the custom
+/// factory.
+void RevertToDefaultEventEngineFactory();
 
 /// Create an EventEngine using the default factory.
 std::unique_ptr<EventEngine> CreateEventEngine();

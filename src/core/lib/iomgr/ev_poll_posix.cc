@@ -18,6 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <grpc/support/sync.h>
+
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_SOCKET_EV_POLL
@@ -360,9 +362,7 @@ static void unref_by(grpc_fd* fd, int n) {
     if (fd->shutdown) {
       GRPC_ERROR_UNREF(fd->shutdown_error);
     }
-#ifdef GRPC_ERROR_IS_ABSEIL_STATUS
     fd->shutdown_error.~Status();
-#endif
     gpr_free(fd);
   } else {
     GPR_ASSERT(old > n);
@@ -377,9 +377,7 @@ static grpc_fd* fd_create(int fd, const char* name, bool track_err) {
   gpr_mu_init(&r->mu);
   gpr_atm_rel_store(&r->refst, 1);
   r->shutdown = 0;
-#ifdef GRPC_ERROR_IS_ABSEIL_STATUS
   new (&r->shutdown_error) absl::Status();
-#endif
   r->read_closure = CLOSURE_NOT_READY;
   r->write_closure = CLOSURE_NOT_READY;
   r->fd = fd;
@@ -619,7 +617,6 @@ static uint32_t fd_begin_poll(grpc_fd* fd, grpc_pollset* pollset,
 
   /* if we are shutdown, then don't add to the watcher set */
   if (fd->shutdown) {
-    watcher->fd = nullptr;
     watcher->pollset = nullptr;
     watcher->worker = nullptr;
     gpr_mu_unlock(&fd->mu);
@@ -660,12 +657,17 @@ static void fd_end_poll(grpc_fd_watcher* watcher, int got_read, int got_write) {
   int was_polling = 0;
   int kick = 0;
   grpc_fd* fd = watcher->fd;
-
   if (fd == nullptr) {
     return;
   }
 
   gpr_mu_lock(&fd->mu);
+  if (watcher->pollset == nullptr) {
+    watcher->fd = nullptr;
+    gpr_mu_unlock(&fd->mu);
+    GRPC_FD_UNREF(fd, "multipoller_start");
+    return;
+  }
 
   if (watcher == fd->read_watcher) {
     /* remove read watcher, kick if we still need a read */
@@ -1014,7 +1016,9 @@ static grpc_error_handle pollset_work(grpc_pollset* pollset,
         grpc_fd* fd = watchers[i].fd;
         pfds[i].events = static_cast<short>(
             fd_begin_poll(fd, pollset, &worker, POLLIN, POLLOUT, &watchers[i]));
-        GRPC_FD_UNREF(fd, "multipoller_start");
+        if (watchers[i].pollset != nullptr) {
+          GRPC_FD_UNREF(fd, "multipoller_start");
+        }
       }
 
       /* TODO(vpai): Consider first doing a 0 timeout poll here to avoid
@@ -1034,7 +1038,7 @@ static grpc_error_handle pollset_work(grpc_pollset* pollset,
         }
 
         for (i = 1; i < pfd_count; i++) {
-          if (watchers[i].fd == nullptr) {
+          if (watchers[i].pollset == nullptr) {
             fd_end_poll(&watchers[i], 0, 0);
           } else {
             // Wake up all the file descriptors, if we have an invalid one
@@ -1055,7 +1059,11 @@ static grpc_error_handle pollset_work(grpc_pollset* pollset,
               &error, grpc_wakeup_fd_consume_wakeup(&worker.wakeup_fd->fd));
         }
         for (i = 1; i < pfd_count; i++) {
-          if (watchers[i].fd == nullptr) {
+          if (watchers[i].pollset == nullptr) {
+            grpc_fd* fd = watchers[i].fd;
+            if (pfds[i].revents & POLLHUP) {
+              gpr_atm_no_barrier_store(&fd->pollhup, 1);
+            }
             fd_end_poll(&watchers[i], 0, 0);
           } else {
             if (GRPC_TRACE_FLAG_ENABLED(grpc_polling_trace)) {

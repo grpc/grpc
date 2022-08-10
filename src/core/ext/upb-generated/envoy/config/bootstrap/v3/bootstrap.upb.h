@@ -440,6 +440,15 @@ UPB_INLINE void envoy_config_bootstrap_v3_Bootstrap_clear_perf_tracing_file_path
 UPB_INLINE upb_StringView envoy_config_bootstrap_v3_Bootstrap_perf_tracing_file_path(const envoy_config_bootstrap_v3_Bootstrap* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(132, 256), upb_StringView);
 }
+UPB_INLINE bool envoy_config_bootstrap_v3_Bootstrap_has_default_regex_engine(const envoy_config_bootstrap_v3_Bootstrap* msg) {
+  return _upb_hasbit(msg, 18);
+}
+UPB_INLINE void envoy_config_bootstrap_v3_Bootstrap_clear_default_regex_engine(const envoy_config_bootstrap_v3_Bootstrap* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(140, 272), const upb_Message*) = NULL;
+}
+UPB_INLINE const struct envoy_config_core_v3_TypedExtensionConfig* envoy_config_bootstrap_v3_Bootstrap_default_regex_engine(const envoy_config_bootstrap_v3_Bootstrap* msg) {
+  return *UPB_PTR_AT(msg, UPB_SIZE(140, 272), const struct envoy_config_core_v3_TypedExtensionConfig*);
+}
 
 UPB_INLINE void envoy_config_bootstrap_v3_Bootstrap_set_node(envoy_config_bootstrap_v3_Bootstrap *msg, struct envoy_config_core_v3_Node* value) {
   _upb_sethas(msg, 1);
@@ -761,6 +770,19 @@ UPB_INLINE struct envoy_config_bootstrap_v3_CustomInlineHeader* envoy_config_boo
 }
 UPB_INLINE void envoy_config_bootstrap_v3_Bootstrap_set_perf_tracing_file_path(envoy_config_bootstrap_v3_Bootstrap *msg, upb_StringView value) {
   *UPB_PTR_AT(msg, UPB_SIZE(132, 256), upb_StringView) = value;
+}
+UPB_INLINE void envoy_config_bootstrap_v3_Bootstrap_set_default_regex_engine(envoy_config_bootstrap_v3_Bootstrap *msg, struct envoy_config_core_v3_TypedExtensionConfig* value) {
+  _upb_sethas(msg, 18);
+  *UPB_PTR_AT(msg, UPB_SIZE(140, 272), struct envoy_config_core_v3_TypedExtensionConfig*) = value;
+}
+UPB_INLINE struct envoy_config_core_v3_TypedExtensionConfig* envoy_config_bootstrap_v3_Bootstrap_mutable_default_regex_engine(envoy_config_bootstrap_v3_Bootstrap* msg, upb_Arena* arena) {
+  struct envoy_config_core_v3_TypedExtensionConfig* sub = (struct envoy_config_core_v3_TypedExtensionConfig*)envoy_config_bootstrap_v3_Bootstrap_default_regex_engine(msg);
+  if (sub == NULL) {
+    sub = (struct envoy_config_core_v3_TypedExtensionConfig*)_upb_Message_New(&envoy_config_core_v3_TypedExtensionConfig_msginit, arena);
+    if (!sub) return NULL;
+    envoy_config_bootstrap_v3_Bootstrap_set_default_regex_engine(msg, sub);
+  }
+  return sub;
 }
 
 /* envoy.config.bootstrap.v3.Bootstrap.StaticResources */

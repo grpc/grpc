@@ -40,7 +40,6 @@
 #include "src/core/ext/filters/client_channel/client_channel_factory.h"
 #include "src/core/ext/filters/client_channel/config_selector.h"
 #include "src/core/ext/filters/client_channel/dynamic_filters.h"
-#include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
@@ -57,12 +56,13 @@
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
+#include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/polling_entity.h"
-#include "src/core/lib/iomgr/work_serializer.h"
+#include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/resolver/resolver.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/service_config/service_config.h"
@@ -167,6 +167,12 @@ class ClientChannel {
       grpc_closure* on_call_destruction_complete,
       ConfigSelector::CallDispatchController* call_dispatch_controller,
       bool is_transparent_retry);
+
+  // Exposed for testing only.
+  static ChannelArgs MakeSubchannelArgs(
+      const ChannelArgs& channel_args, const ChannelArgs& address_args,
+      const RefCountedPtr<SubchannelPoolInterface>& subchannel_pool,
+      const std::string& channel_default_authority);
 
  private:
   class CallData;

@@ -31,30 +31,27 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/cpu.h>
-#include <grpc/support/sync.h>
 
-grpc_stats_data* grpc_stats_per_cpu_storage = nullptr;
-static size_t g_num_cores;
-static gpr_once g_once = GPR_ONCE_INIT;
-
-void grpc_stats_init(void) {
-  gpr_once_init(&g_once, []() {
-    g_num_cores = gpr_cpu_num_cores();
-    grpc_stats_per_cpu_storage = static_cast<grpc_stats_data*>(
-        gpr_zalloc(sizeof(grpc_stats_data) * g_num_cores));
-  });
-}
+namespace grpc_core {
+Stats* const g_stats_data = [] {
+  size_t num_cores = gpr_cpu_num_cores();
+  Stats* stats = static_cast<Stats*>(
+      gpr_zalloc(sizeof(Stats) + num_cores * sizeof(grpc_stats_data)));
+  stats->num_cores = num_cores;
+  return stats;
+}();
+}  // namespace grpc_core
 
 void grpc_stats_collect(grpc_stats_data* output) {
   memset(output, 0, sizeof(*output));
-  for (size_t core = 0; core < g_num_cores; core++) {
+  for (size_t core = 0; core < grpc_core::g_stats_data->num_cores; core++) {
     for (size_t i = 0; i < GRPC_STATS_COUNTER_COUNT; i++) {
       output->counters[i] += gpr_atm_no_barrier_load(
-          &grpc_stats_per_cpu_storage[core].counters[i]);
+          &grpc_core::g_stats_data->per_cpu[core].counters[i]);
     }
     for (size_t i = 0; i < GRPC_STATS_HISTOGRAM_BUCKETS; i++) {
       output->histograms[i] += gpr_atm_no_barrier_load(
-          &grpc_stats_per_cpu_storage[core].histograms[i]);
+          &grpc_core::g_stats_data->per_cpu[core].histograms[i]);
     }
   }
 }

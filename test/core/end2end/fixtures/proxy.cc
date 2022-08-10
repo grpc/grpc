@@ -18,15 +18,23 @@
 
 #include "test/core/end2end/fixtures/proxy.h"
 
+#include <stdlib.h>
 #include <string.h>
 
+#include <string>
+#include <utility>
+
+#include <grpc/byte_buffer.h>
+#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
+#include <grpc/support/time.h>
 
-#include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/surface/call.h"
 #include "test/core/util/port.h"
@@ -374,7 +382,7 @@ static void on_new_call(void* arg, int success) {
     GPR_ASSERT(err == GRPC_CALL_OK);
 
     op.op = GRPC_OP_SEND_INITIAL_METADATA;
-    op.flags = proxy->new_call_details.flags;
+    op.flags = 0;
     op.data.send_initial_metadata.count = pc->c2p_initial_metadata.count;
     op.data.send_initial_metadata.metadata = pc->c2p_initial_metadata.metadata;
     refpc(pc, "on_p2s_sent_initial_metadata");

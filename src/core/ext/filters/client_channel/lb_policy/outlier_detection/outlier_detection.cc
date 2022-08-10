@@ -36,6 +36,8 @@
 #include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/variant.h"
 
@@ -43,11 +45,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
-#include "src/core/ext/filters/client_channel/lb_policy_factory.h"
-#include "src/core/ext/filters/client_channel/lb_policy_registry.h"
-#include "src/core/ext/filters/client_channel/subchannel_interface.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
@@ -57,15 +55,19 @@
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/timer.h"
-#include "src/core/lib/iomgr/work_serializer.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_util.h"
+#include "src/core/lib/load_balancing/lb_policy.h"
+#include "src/core/lib/load_balancing/lb_policy_factory.h"
+#include "src/core/lib/load_balancing/lb_policy_registry.h"
+#include "src/core/lib/load_balancing/subchannel_interface.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
@@ -84,7 +86,8 @@ bool XdsOutlierDetectionEnabled() {
 
 namespace {
 
-constexpr char kOutlierDetection[] = "outlier_detection_experimental";
+constexpr absl::string_view kOutlierDetection =
+    "outlier_detection_experimental";
 
 // Config for xDS Cluster Impl LB policy.
 class OutlierDetectionLbConfig : public LoadBalancingPolicy::Config {
@@ -95,13 +98,11 @@ class OutlierDetectionLbConfig : public LoadBalancingPolicy::Config {
       : outlier_detection_config_(outlier_detection_config),
         child_policy_(std::move(child_policy)) {}
 
-  const char* name() const override { return kOutlierDetection; }
+  absl::string_view name() const override { return kOutlierDetection; }
 
   bool CountingEnabled() const {
-    return (
-        outlier_detection_config_.interval != Duration::Infinity() &&
-        (outlier_detection_config_.success_rate_ejection.has_value() ||
-         outlier_detection_config_.failure_percentage_ejection.has_value()));
+    return outlier_detection_config_.success_rate_ejection.has_value() ||
+           outlier_detection_config_.failure_percentage_ejection.has_value();
   }
 
   const OutlierDetectionConfig& outlier_detection_config() const {
@@ -122,7 +123,7 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
  public:
   explicit OutlierDetectionLb(Args args);
 
-  const char* name() const override { return kOutlierDetection; }
+  absl::string_view name() const override { return kOutlierDetection; }
 
   void UpdateLocked(UpdateArgs args) override;
   void ExitIdleLocked() override;
@@ -301,6 +302,11 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
         }
       }
       return false;
+    }
+
+    void DisableEjection() {
+      Uneject();
+      multiplier_ = 0;
     }
 
    private:
@@ -641,6 +647,9 @@ void OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
                   "[outlier_detection_lb %p] adding map entry for %s (%p)",
                   this, address_key.c_str(), subchannel_state.get());
         }
+      } else if (!config_->CountingEnabled()) {
+        // If counting is not enabled, reset state.
+        subchannel_state->DisableEjection();
       }
       current_addresses.emplace(address_key);
     }
@@ -667,6 +676,7 @@ void OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
   // Update child policy.
   UpdateArgs update_args;
   update_args.addresses = std::move(args.addresses);
+  update_args.resolution_note = std::move(args.resolution_note);
   update_args.config = config_->child_policy();
   // Update the policy.
   update_args.args = std::move(args.args);
@@ -1007,28 +1017,27 @@ class OutlierDetectionLbFactory : public LoadBalancingPolicyFactory {
     return MakeOrphanable<OutlierDetectionLb>(std::move(args));
   }
 
-  const char* name() const override { return kOutlierDetection; }
+  absl::string_view name() const override { return kOutlierDetection; }
 
-  RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
-      const Json& json, grpc_error_handle* error) const override {
-    GPR_DEBUG_ASSERT(error != nullptr && GRPC_ERROR_IS_NONE(*error));
+  absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
+  ParseLoadBalancingConfig(const Json& json) const override {
     if (json.type() == Json::Type::JSON_NULL) {
       // This policy was configured in the deprecated loadBalancingPolicy
       // field or in the client API.
-      *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      return absl::InvalidArgumentError(
           "field:loadBalancingPolicy error:outlier_detection policy requires "
           "configuration. Please use loadBalancingConfig field of service "
           "config instead.");
-      return nullptr;
     }
+    std::vector<std::string> errors;
     std::vector<grpc_error_handle> error_list;
     // Outlier detection config
     OutlierDetectionConfig outlier_detection_config;
     auto it = json.object_value().find("successRateEjection");
     if (it != json.object_value().end()) {
       if (it->second.type() != Json::Type::OBJECT) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:successRateEjection error:type must be object"));
+        errors.emplace_back(
+            "field:successRateEjection error:type must be object");
       } else {
         OutlierDetectionConfig::SuccessRateEjection success_config;
         const Json::Object& object = it->second.object_value();
@@ -1050,8 +1059,8 @@ class OutlierDetectionLbFactory : public LoadBalancingPolicyFactory {
     it = json.object_value().find("failurePercentageEjection");
     if (it != json.object_value().end()) {
       if (it->second.type() != Json::Type::OBJECT) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:successRateEjection error:type must be object"));
+        errors.emplace_back(
+            "field:successRateEjection error:type must be object");
       } else {
         OutlierDetectionConfig::FailurePercentageEjection failure_config;
         const Json::Object& object = it->second.object_value();
@@ -1071,7 +1080,7 @@ class OutlierDetectionLbFactory : public LoadBalancingPolicyFactory {
     }
     ParseJsonObjectFieldAsDuration(json.object_value(), "interval",
                                    &outlier_detection_config.interval,
-                                   &error_list);
+                                   &error_list, /*required=*/false);
     ParseJsonObjectFieldAsDuration(json.object_value(), "baseEjectionTime",
                                    &outlier_detection_config.base_ejection_time,
                                    &error_list, /*required=*/false);
@@ -1088,24 +1097,26 @@ class OutlierDetectionLbFactory : public LoadBalancingPolicyFactory {
     RefCountedPtr<LoadBalancingPolicy::Config> child_policy;
     it = json.object_value().find("childPolicy");
     if (it == json.object_value().end()) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:childPolicy error:required field missing"));
+      errors.emplace_back("field:childPolicy error:required field missing");
     } else {
-      grpc_error_handle parse_error = GRPC_ERROR_NONE;
-      child_policy = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
-          it->second, &parse_error);
-      if (child_policy == nullptr) {
-        GPR_DEBUG_ASSERT(!GRPC_ERROR_IS_NONE(parse_error));
-        std::vector<grpc_error_handle> child_errors;
-        child_errors.push_back(parse_error);
-        error_list.push_back(
-            GRPC_ERROR_CREATE_FROM_VECTOR("field:childPolicy", &child_errors));
+      auto child_policy_config =
+          LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(it->second);
+      if (!child_policy_config.ok()) {
+        errors.emplace_back(
+            absl::StrCat("error parsing childPolicy field: ",
+                         child_policy_config.status().message()));
+      } else {
+        child_policy = std::move(*child_policy_config);
       }
     }
-    if (!error_list.empty()) {
-      *error = GRPC_ERROR_CREATE_FROM_VECTOR(
-          "outlier_detection_experimental LB policy config", &error_list);
-      return nullptr;
+    for (auto& error : error_list) {
+      errors.emplace_back(grpc_error_std_string(error));
+      GRPC_ERROR_UNREF(error);
+    }
+    if (!errors.empty()) {
+      return absl::InvalidArgumentError(
+          absl::StrCat("outlier_detection_experimental LB policy config: [",
+                       absl::StrJoin(errors, "; "), "]"));
     }
     return MakeRefCounted<OutlierDetectionLbConfig>(outlier_detection_config,
                                                     std::move(child_policy));

@@ -16,21 +16,25 @@
  *
  */
 
-#include <stdio.h>
+#include <stdint.h>
 #include <string.h>
 
 #include <grpc/byte_buffer.h>
-#include <grpc/support/alloc.h>
+#include <grpc/grpc.h>
+#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
 #include "src/core/ext/transport/chttp2/transport/frame_ping.h"
-#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/gprpp/global_config_generic.h"
+#include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/iomgr/port.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
+#include "test/core/util/test_config.h"
 
 #ifdef GRPC_POSIX_SOCKET
 #include "src/core/lib/iomgr/ev_posix.h"
@@ -112,7 +116,7 @@ static void test_keepalive_timeout(grpc_end2end_test_config config) {
 
   grpc_end2end_test_fixture f =
       begin_test(config, "keepalive_timeout", &keepalive_args, nullptr);
-  cq_verifier* cqv = cq_verifier_create(f.cq);
+  grpc_core::CqVerifier cqv(f.cq);
   grpc_op ops[6];
   grpc_op* op;
   grpc_metadata_array initial_metadata_recv;
@@ -152,8 +156,8 @@ static void test_keepalive_timeout(grpc_end2end_test_config config) {
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(1), true);
+  cqv.Verify();
 
   GPR_ASSERT(status == GRPC_STATUS_UNAVAILABLE);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "keepalive watchdog timeout"));
@@ -163,8 +167,6 @@ static void test_keepalive_timeout(grpc_end2end_test_config config) {
   grpc_metadata_array_destroy(&trailing_metadata_recv);
 
   grpc_call_unref(c);
-
-  cq_verifier_destroy(cqv);
 
   end_test(&f);
   config.tear_down_data(&f);
@@ -201,7 +203,7 @@ static void test_read_delays_keepalive(grpc_end2end_test_config config) {
   grpc_set_disable_ping_ack(true);
   grpc_call* c;
   grpc_call* s;
-  cq_verifier* cqv = cq_verifier_create(f.cq);
+  grpc_core::CqVerifier cqv(f.cq);
   grpc_op ops[6];
   grpc_op* op;
   grpc_metadata_array initial_metadata_recv;
@@ -260,8 +262,8 @@ static void test_read_delays_keepalive(grpc_end2end_test_config config) {
       grpc_server_request_call(f.server, &s, &call_details,
                                &request_metadata_recv, f.cq, f.cq, tag(100));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  CQ_EXPECT_COMPLETION(cqv, tag(100), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(100), true);
+  cqv.Verify();
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -309,8 +311,8 @@ static void test_read_delays_keepalive(grpc_end2end_test_config config) {
     error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
                                   tag(102), nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
-    CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
-    cq_verify(cqv);
+    cqv.Expect(tag(102), true);
+    cqv.Verify();
 
     memset(ops, 0, sizeof(ops));
     op = ops;
@@ -322,9 +324,9 @@ static void test_read_delays_keepalive(grpc_end2end_test_config config) {
     error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
                                   tag(103), nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
-    CQ_EXPECT_COMPLETION(cqv, tag(103), 1);
-    CQ_EXPECT_COMPLETION(cqv, tag(2), 1);
-    cq_verify(cqv);
+    cqv.Expect(tag(103), true);
+    cqv.Expect(tag(2), true);
+    cqv.Verify();
 
     grpc_byte_buffer_destroy(request_payload);
     grpc_byte_buffer_destroy(response_payload);
@@ -361,16 +363,14 @@ static void test_read_delays_keepalive(grpc_end2end_test_config config) {
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(3), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(104), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(1), true);
+  cqv.Expect(tag(3), true);
+  cqv.Expect(tag(101), true);
+  cqv.Expect(tag(104), true);
+  cqv.Verify();
 
   grpc_call_unref(c);
   grpc_call_unref(s);
-
-  cq_verifier_destroy(cqv);
 
   grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
