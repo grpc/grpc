@@ -305,8 +305,6 @@ FlowControlAction TransportFlowControl::PeriodicUpdate() {
                    ->ComputeNextTargetInitialWindowSizeFromPeriodicUpdate(
                        target_initial_window_size_ /* current target */);
     }
-    // Though initial window 'could' drop to 0, we keep the floor at
-    // kMinInitialWindowSize
     UpdateSetting(
         &target_initial_window_size_,
         static_cast<int32_t>(Clamp(target, double(kMinInitialWindowSize),

@@ -55,7 +55,7 @@ static constexpr uint32_t kDefaultFrameSize = 16384;
 static constexpr int64_t kMaxWindow = static_cast<int64_t>((1u << 31) - 1);
 // TODO(ncteisen): Tune this
 static constexpr uint32_t kFrameSize = 1024 * 1024;
-static constexpr const uint32_t kMinInitialWindowSize = 128;
+static constexpr const uint32_t kMinInitialWindowSize = 0;
 static constexpr const uint32_t kMaxInitialWindowSize = (1u << 30);
 // The maximum per-stream flow control window delta to advertise.
 static constexpr const int64_t kMaxWindowDelta = (1u << 20);
