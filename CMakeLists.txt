@@ -3142,7 +3142,6 @@ add_library(grpc++
   src/cpp/server/async_generic_service.cc
   src/cpp/server/channel_argument_option.cc
   src/cpp/server/create_default_thread_pool.cc
-  src/cpp/server/dynamic_thread_pool.cc
   src/cpp/server/external_connection_acceptor_impl.cc
   src/cpp/server/health/default_health_check_service.cc
   src/cpp/server/health/health_check_service.cc
@@ -3816,7 +3815,6 @@ add_library(grpc++_unsecure
   src/cpp/server/async_generic_service.cc
   src/cpp/server/channel_argument_option.cc
   src/cpp/server/create_default_thread_pool.cc
-  src/cpp/server/dynamic_thread_pool.cc
   src/cpp/server/external_connection_acceptor_impl.cc
   src/cpp/server/health/default_health_check_service.cc
   src/cpp/server/health/health_check_service.cc
@@ -6570,7 +6568,6 @@ add_executable(binder_transport_test
   src/cpp/server/async_generic_service.cc
   src/cpp/server/channel_argument_option.cc
   src/cpp/server/create_default_thread_pool.cc
-  src/cpp/server/dynamic_thread_pool.cc
   src/cpp/server/external_connection_acceptor_impl.cc
   src/cpp/server/health/default_health_check_service.cc
   src/cpp/server/health/health_check_service.cc
@@ -9130,7 +9127,6 @@ add_executable(endpoint_binder_pool_test
   src/cpp/server/async_generic_service.cc
   src/cpp/server/channel_argument_option.cc
   src/cpp/server/create_default_thread_pool.cc
-  src/cpp/server/dynamic_thread_pool.cc
   src/cpp/server/external_connection_acceptor_impl.cc
   src/cpp/server/health/default_health_check_service.cc
   src/cpp/server/health/health_check_service.cc
@@ -9719,7 +9715,6 @@ add_executable(fake_binder_test
   src/cpp/server/async_generic_service.cc
   src/cpp/server/channel_argument_option.cc
   src/cpp/server/create_default_thread_pool.cc
-  src/cpp/server/dynamic_thread_pool.cc
   src/cpp/server/external_connection_acceptor_impl.cc
   src/cpp/server/health/default_health_check_service.cc
   src/cpp/server/health/health_check_service.cc
@@ -19361,7 +19356,6 @@ add_executable(transport_stream_receiver_test
   src/cpp/server/async_generic_service.cc
   src/cpp/server/channel_argument_option.cc
   src/cpp/server/create_default_thread_pool.cc
-  src/cpp/server/dynamic_thread_pool.cc
   src/cpp/server/external_connection_acceptor_impl.cc
   src/cpp/server/health/default_health_check_service.cc
   src/cpp/server/health/health_check_service.cc
@@ -19862,7 +19856,6 @@ add_executable(wire_reader_test
   src/cpp/server/async_generic_service.cc
   src/cpp/server/channel_argument_option.cc
   src/cpp/server/create_default_thread_pool.cc
-  src/cpp/server/dynamic_thread_pool.cc
   src/cpp/server/external_connection_acceptor_impl.cc
   src/cpp/server/health/default_health_check_service.cc
   src/cpp/server/health/health_check_service.cc
@@ -19955,7 +19948,6 @@ add_executable(wire_writer_test
   src/cpp/server/async_generic_service.cc
   src/cpp/server/channel_argument_option.cc
   src/cpp/server/create_default_thread_pool.cc
-  src/cpp/server/dynamic_thread_pool.cc
   src/cpp/server/external_connection_acceptor_impl.cc
   src/cpp/server/health/default_health_check_service.cc
   src/cpp/server/health/health_check_service.cc
