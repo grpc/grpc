@@ -16,6 +16,8 @@
 #define GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_EVENT_POLLER_H
 #include <grpc/support/port_platform.h>
 
+#include <string>
+
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"

@@ -15,6 +15,7 @@
 #include <ostream>
 
 #include "absl/functional/any_invocable.h"
+#include "absl/time/time.h"
 #include "absl/types/variant.h"
 
 #include "src/core/lib/event_engine/poller.h"
@@ -55,6 +56,7 @@
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h"
 #include "src/core/lib/event_engine/promise.h"
+#include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/gprpp/global_config.h"
 #include "test/core/util/port.h"
 
@@ -552,7 +554,7 @@ std::atomic<int> kTotalActiveWakeupFdHandles{0};
 // (2) registes to be notified of the next read event and (3) schedules
 // generation of the next read event. The Fd orphanes itself after processing
 // a specified number of read events.
-class WakeupFdHandle {
+class WakeupFdHandle : public grpc_core::DualRefCounted<WakeupFdHandle> {
  public:
   WakeupFdHandle(int num_wakeups, Scheduler* scheduler,
                  PosixEventPoller* poller)
@@ -582,7 +584,7 @@ class WakeupFdHandle {
                 Unref();
               } else {
                 handle_->NotifyOnRead(on_read_);
-                Ref();
+                Ref().release();
                 // Schedule next wakeup to trigger the registered NotifyOnRead
                 // callback.
                 scheduler_->Run(SelfDeletingClosure::Create([this]() {
@@ -592,6 +594,7 @@ class WakeupFdHandle {
                 }));
               }
             })) {
+    WeakRef().release();
     ++kTotalActiveWakeupFdHandles;
     EXPECT_GT(num_wakeups_, 0);
     EXPECT_NE(scheduler_, nullptr);
@@ -604,7 +607,23 @@ class WakeupFdHandle {
     EXPECT_TRUE(wakeup_fd_->Wakeup().ok());
   }
 
-  ~WakeupFdHandle() { delete on_read_; }
+  ~WakeupFdHandle() override { delete on_read_; }
+
+  void Orphan() override {
+    // Once the handle has orphaned itself, decrement
+    // kTotalActiveWakeupFdHandles. Once all handles have orphaned themselves,
+    // send a Kick to the poller.
+    handle_->OrphanHandle(
+        PosixEngineClosure::TestOnlyToClosure(
+            [poller = poller_, wakeupfd_handle = this](absl::Status status) {
+              EXPECT_TRUE(status.ok());
+              if (--kTotalActiveWakeupFdHandles == 0) {
+                poller->Kick();
+              }
+              wakeupfd_handle->WeakUnref();
+            }),
+        nullptr, "");
+  }
 
  private:
   absl::Status ReadPipe() {
@@ -630,29 +649,10 @@ class WakeupFdHandle {
       }
     }
   }
-  void Ref() { ref_count_.fetch_add(1, std::memory_order_relaxed); }
-  void Unref() {
-    if (ref_count_.fetch_sub(1, std::memory_order_acq_rel) == 1) {
-      // Once the handle has orphaned itself, decrement
-      // kTotalActiveWakeupFdHandles. Once all handles have orphaned themselves,
-      // send a Kick to the poller.
-      handle_->OrphanHandle(
-          PosixEngineClosure::TestOnlyToClosure(
-              [poller = poller_, wakeupfd_handle = this](absl::Status status) {
-                EXPECT_TRUE(status.ok());
-                if (--kTotalActiveWakeupFdHandles == 0) {
-                  poller->Kick();
-                }
-                delete wakeupfd_handle;
-              }),
-          nullptr, "");
-    }
-  }
   int num_wakeups_;
   Scheduler* scheduler_;
   PosixEventPoller* poller_;
   PosixEngineClosure* on_read_;
-  std::atomic<int> ref_count_{1};
   std::unique_ptr<WakeupFd> wakeup_fd_;
   EventHandle* handle_;
 };
@@ -661,7 +661,7 @@ class WakeupFdHandle {
 // repeatedly calls the Work(..) method on the poller to get pet pending events,
 // then schedules another parallel Work(..) instantiation and processes these
 // pending events. This continues until all Fds have orphaned themselves.
-class Worker {
+class Worker : public grpc_core::DualRefCounted<Worker> {
  public:
   Worker(Scheduler* scheduler, PosixEventPoller* poller, int num_handles,
          int num_wakeups_per_handle)
@@ -671,20 +671,18 @@ class Worker {
       handles_.push_back(
           new WakeupFdHandle(num_wakeups_per_handle, scheduler_, poller_));
     }
+    WeakRef().release();
   }
-  void Ref() { ref_count_.fetch_add(1, std::memory_order_relaxed); }
-  void Unref() {
-    if (ref_count_.fetch_sub(1, std::memory_order_acq_rel) == 1) {
-      promise.Set(true);
-    }
-  }
-
+  void Orphan() override { promise.Set(true); }
   void Start() {
     // Start executing Work(..).
     scheduler_->Run([this]() { Work(); });
   }
 
-  void Wait() { EXPECT_TRUE(promise.Get()); }
+  void Wait() {
+    EXPECT_TRUE(promise.WaitWithTimeout(absl::Seconds(60)));
+    WeakUnref();
+  }
 
  private:
   void Work() {
@@ -692,7 +690,7 @@ class Worker {
     if (absl::holds_alternative<Poller::Events>(result)) {
       // Schedule next work instantiation immediately and take a Ref for
       // the next instantiation.
-      Ref();
+      Ref().release();
       scheduler_->Run([this]() { Work(); });
       // Process pending events of current Work(..) instantiation.
       auto pending_events = absl::get<Poller::Events>(result);
@@ -713,7 +711,6 @@ class Worker {
   PosixEventPoller* poller_;
   Promise<bool> promise;
   std::vector<WakeupFdHandle*> handles_;
-  std::atomic<int> ref_count_{1};
 };
 
 // This test creates kNumHandles file descriptors and kNumWakeupsPerHandle
@@ -728,9 +725,10 @@ TEST_P(EventPollerTest, TestMultipleHandles) {
   if (g_event_poller == nullptr) {
     return;
   }
-  Worker worker(Scheduler(), g_event_poller, kNumHandles, kNumWakeupsPerHandle);
-  worker.Start();
-  worker.Wait();
+  Worker* worker = new Worker(Scheduler(), g_event_poller, kNumHandles,
+                              kNumWakeupsPerHandle);
+  worker->Start();
+  worker->Wait();
 }
 
 INSTANTIATE_TEST_SUITE_P(PosixEventPoller, EventPollerTest,

@@ -81,8 +81,8 @@ class PollEventHandle : public EventHandle {
   PollEventHandle(int fd, PollPoller* poller)
       : fd_(fd),
         pending_actions_(0),
-        fork_fd_list_(),
-        poller_handles_list_(),
+        fork_fd_list_(this),
+        poller_handles_list_(this),
         poller_(poller),
         scheduler_(poller->GetScheduler()),
         is_orphaned_(false),
@@ -97,9 +97,6 @@ class PollEventHandle : public EventHandle {
         read_closure_(reinterpret_cast<PosixEngineClosure*>(kClosureNotReady)),
         write_closure_(
             reinterpret_cast<PosixEngineClosure*>(kClosureNotReady)) {
-    poller_handles_list_.next = nullptr;
-    poller_handles_list_.prev = nullptr;
-    poller_handles_list_.handle = this;
     poller_->Ref();
     absl::MutexLock lock(&poller_->mu_);
     poller_->PollerHandlesListAddHandle(this);

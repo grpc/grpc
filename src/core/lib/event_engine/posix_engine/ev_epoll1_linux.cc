@@ -52,7 +52,6 @@
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h"
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h"
 #include "src/core/lib/gprpp/fork.h"
-#include "src/core/lib/gprpp/time.h"
 
 using ::grpc_event_engine::posix_engine::LockfreeEvent;
 using ::grpc_event_engine::posix_engine::WakeupFd;
@@ -72,7 +71,7 @@ class Epoll1EventHandle : public EventHandle {
  public:
   Epoll1EventHandle(int fd, Epoll1Poller* poller)
       : fd_(fd),
-        list_(),
+        list_(this),
         poller_(poller),
         exec_actions_closure_([this]() { ExecutePendingActions(); }),
         read_closure_(absl::make_unique<LockfreeEvent>(poller->GetScheduler())),
@@ -83,46 +82,42 @@ class Epoll1EventHandle : public EventHandle {
     read_closure_->InitEvent();
     write_closure_->InitEvent();
     error_closure_->InitEvent();
-    pending_actions_.store(0, std::memory_order_relaxed);
+    pending_read_.store(false, std::memory_order_relaxed);
+    pending_write_.store(false, std::memory_order_relaxed);
+    pending_error_.store(false, std::memory_order_relaxed);
   }
   void ReInit(int fd) {
     fd_ = fd;
     read_closure_->InitEvent();
     write_closure_->InitEvent();
     error_closure_->InitEvent();
-    pending_actions_.store(0, std::memory_order_relaxed);
+    pending_read_.store(false, std::memory_order_relaxed);
+    pending_write_.store(false, std::memory_order_relaxed);
+    pending_error_.store(false, std::memory_order_relaxed);
   }
   Epoll1Poller* Poller() override { return poller_; }
   EventEngine::Closure* SetPendingActions(bool pending_read, bool pending_write,
                                           bool pending_error) {
-    int pending_actions = 0;
-    pending_actions |= pending_read;
-    if (pending_write) {
-      pending_actions |= (1 << 2);
-    }
-    if (pending_error) {
-      pending_actions |= (1 << 3);
-    }
     // Another thread may be executing ExecutePendingActions() at this point
     // This is possible for instance, if one instantiation of Work(..) sets
     // an fd to be readable while the next instantiation of Work(...) may
     // set the fd to be writable. While the second instantiation is running,
     // ExecutePendingActions() of the first instantiation may execute in
-    // parallel and read the pending_actions_ variable. So we need to use
-    // atomics to manipulate pending_actions_ variable.
+    // parallel and read the pending_<***>_ variables. So we need to use
+    // atomics to manipulate pending_<***>_ variables.
 
-    // Load pending_actions_ into curr.
-    int curr = pending_actions_.load(std::memory_order_acquire);
-    while (true) {
-      // Check whether pending_actions_ == curr. If so set pending_actions_ to
-      // curr | pending_actions. Otherwise update curr to latest value of
-      // pending_actions_ and retry.
-      if (pending_actions_.compare_exchange_strong(curr, curr | pending_actions,
-                                                   std::memory_order_relaxed,
-                                                   std::memory_order_relaxed)) {
-        break;
-      }
+    if (pending_read) {
+      pending_read_.store(true, std::memory_order_release);
     }
+
+    if (pending_write) {
+      pending_write_.store(true, std::memory_order_release);
+    }
+
+    if (pending_error) {
+      pending_error_.store(true, std::memory_order_release);
+    }
+
     if (pending_read || pending_write || pending_error) {
       return &exec_actions_closure_;
     }
@@ -140,17 +135,15 @@ class Epoll1EventHandle : public EventHandle {
   void SetHasError() override;
   bool IsHandleShutdown() override;
   inline void ExecutePendingActions() {
-    int pending_actions =
-        pending_actions_.exchange(0, std::memory_order_acq_rel);
     // These may execute in Parallel with ShutdownHandle. Thats not an issue
     // because the lockfree event implementation should be able to handle it.
-    if (pending_actions & 1UL) {
+    if (pending_read_.exchange(false, std::memory_order_acq_rel)) {
       read_closure_->SetReady();
     }
-    if ((pending_actions >> 2) & 1UL) {
+    if (pending_write_.exchange(false, std::memory_order_acq_rel)) {
       write_closure_->SetReady();
     }
-    if ((pending_actions >> 3) & 1UL) {
+    if (pending_error_.exchange(false, std::memory_order_acq_rel)) {
       error_closure_->SetReady();
     }
   }
@@ -167,9 +160,11 @@ class Epoll1EventHandle : public EventHandle {
   // required.
   absl::Mutex mu_;
   int fd_;
-  // See Epoll1Poller::SetPendingActions for explanation on why pending_actions_
-  // needs to be atomic.
-  std::atomic<int> pending_actions_{0};
+  // See Epoll1Poller::SetPendingActions for explanation on why pending_<***>_
+  // need to be atomic.
+  std::atomic<bool> pending_read_{false};
+  std::atomic<bool> pending_write_{false};
+  std::atomic<bool> pending_error_{false};
   Epoll1Poller::HandlesList list_;
   Epoll1Poller* poller_;
   AnyInvocableClosure exec_actions_closure_;
@@ -327,7 +322,9 @@ void Epoll1EventHandle::OrphanHandle(PosixEngineClosure* on_done,
     write_closure_->DestroyEvent();
     error_closure_->DestroyEvent();
   }
-  pending_actions_.store(0, std::memory_order_release);
+  pending_read_.store(false, std::memory_order_release);
+  pending_write_.store(false, std::memory_order_release);
+  pending_error_.store(false, std::memory_order_release);
   {
     absl::MutexLock lock(&poller_->mu_);
     poller_->free_epoll1_handles_list_.push_back(this);
@@ -470,7 +467,8 @@ bool Epoll1Poller::ProcessEpollEvents(int max_epoll_events_to_handle,
 
 //  Do epoll_wait and store the events in g_epoll_set.events field. This does
 //  not "process" any of the events yet; that is done in ProcessEpollEvents().
-//  See ProcessEpollEvents() function for more details.
+//  See ProcessEpollEvents() function for more details. It returns the number
+// of events generated by epoll_wait.
 int Epoll1Poller::DoEpollWait(EventEngine::Duration timeout) {
   int r;
   do {
@@ -523,6 +521,9 @@ void Epoll1EventHandle::SetWritable() { write_closure_->SetReady(); }
 
 void Epoll1EventHandle::SetHasError() { error_closure_->SetReady(); }
 
+// Polls the registered Fds for events until timeout is reached or there is a
+// Kick(). If there is a Kick(), it returns any previously un-processed events.
+// If there are no un-processed events, it returns Poller::WorkResult::Kicked{}
 Poller::WorkResult Epoll1Poller::Work(EventEngine::Duration timeout) {
   Poller::Events pending_events;
   if (g_epoll_set_.cursor == g_epoll_set_.num_events) {
@@ -592,7 +593,7 @@ bool Epoll1Poller::ProcessEpollEvents(int /*max_epoll_events_to_handle*/,
   GPR_ASSERT(false && "unimplemented");
 }
 
-int Epoll1Poller::DoEpollWait(grpc_core::Timestamp /*deadline*/) {
+int Epoll1Poller::DoEpollWait(EventEngine::Duration /*timeout*/) {
   GPR_ASSERT(false && "unimplemented");
 }
 

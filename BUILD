@@ -2507,7 +2507,6 @@ grpc_cc_library(
         "posix_event_engine_lockfree_event",
         "posix_event_engine_wakeup_fd_posix",
         "posix_event_engine_wakeup_fd_posix_default",
-        "time",
     ],
 )
 
@@ -2735,8 +2734,8 @@ grpc_cc_library(
         "event_engine_executor",
         "event_engine_poller",
         "event_engine_socket_notifier",
+        "event_engine_time_util",
         "event_engine_trace",
-        "event_engine_utils",
         "gpr_base",
         "gpr_platform",
     ],
