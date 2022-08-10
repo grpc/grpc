@@ -98,6 +98,7 @@ class Waker {
   struct Unwakeable final : public Wakeable {
     void Wakeup() override {}
     void Drop() override {}
+    std::string ActivityDebugTag() const override { return "<unknown>"; }
   };
   static Unwakeable* unwakeable() {
     return NoDestructSingleton<Unwakeable>::Get();
