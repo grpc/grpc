@@ -33,7 +33,7 @@ using ::grpc_event_engine::experimental::SetEventEngineFactory;
 class EventEngineFactoryTest : public testing::Test {
  public:
   EventEngineFactoryTest() = default;
-  ~EventEngineFactoryTest() { EventEngineFactoryReset(); }
+  ~EventEngineFactoryTest() override { EventEngineFactoryReset(); }
 };
 
 TEST_F(EventEngineFactoryTest, CustomFactoryIsUsed) {
