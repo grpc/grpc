@@ -38,22 +38,17 @@ extern gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
 namespace grpc_core {
 namespace testing {
 namespace {
-int g_clock = 123;
-Mutex mu_;
+std::atomic<int> g_clock{123};
 
 gpr_timespec fake_gpr_now(gpr_clock_type clock_type) {
-  MutexLock lock(&mu_);
   gpr_timespec ts;
-  ts.tv_sec = g_clock;
+  ts.tv_sec = g_clock.load();
   ts.tv_nsec = 0;
   ts.clock_type = clock_type;
   return ts;
 }
 
-void inc_time(void) {
-  MutexLock lock(&mu_);
-  g_clock += 30;
-}
+void inc_time(void) { g_clock.fetch_add(30); }
 }  // namespace
 
 TEST(BdpEstimatorTest, NoOp) { BdpEstimator est("test"); }
