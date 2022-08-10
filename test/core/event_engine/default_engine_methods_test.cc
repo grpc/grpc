@@ -64,7 +64,7 @@ class DefaultEngineTest : public testing::Test {
     };
     void Run(Closure* /* closure */) override{};
     void Run(absl::AnyInvocable<void()> /* closure */) override{};
-    TaskHandle RunAfter(Duration when, Closure* /* closure */) override {
+    TaskHandle RunAfter(Duration /* when */, Closure* /* closure */) override {
       return {-1, -1};
     }
     TaskHandle RunAfter(Duration /* when */,
