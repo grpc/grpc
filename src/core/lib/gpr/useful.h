@@ -153,7 +153,7 @@ inline uint32_t MixHash32(uint32_t a, uint32_t b) {
   return RotateLeft(a, 2u) ^ b;
 }
 
-static uint32_t RoundUpToPowerOf2(uint32_t v) {
+inline uint32_t RoundUpToPowerOf2(uint32_t v) {
   v--;
   v |= v >> 1;
   v |= v >> 2;
