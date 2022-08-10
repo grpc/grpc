@@ -20,6 +20,7 @@
 #include <utility>
 
 #include "src/core/lib/promise/detail/basic_seq.h"
+#include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/poll.h"
 
 namespace grpc_core {

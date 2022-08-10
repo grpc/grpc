@@ -1478,6 +1478,7 @@ grpc_cc_library(
         "basic_seq",
         "gpr_platform",
         "poll",
+        "promise_like",
     ],
 )
 
@@ -1496,6 +1497,7 @@ grpc_cc_library(
         "basic_seq",
         "gpr_platform",
         "poll",
+        "promise_like",
         "promise_status",
     ],
 )
@@ -6018,7 +6020,6 @@ grpc_cc_library(
         "activity",
         "arena",
         "arena_promise",
-        "basic_seq",
         "channel_args",
         "channel_fwd",
         "closure",
