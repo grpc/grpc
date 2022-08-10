@@ -3544,7 +3544,6 @@ grpc_cc_library(
         "config",
         "construct_destruct",
         "debug_location",
-        "default_event_engine",
         "dual_ref_counted",
         "gpr_base",
         "gpr_codegen",
