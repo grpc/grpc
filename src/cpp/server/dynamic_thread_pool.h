@@ -23,6 +23,7 @@
 #include <list>
 #include <queue>
 
+#include "src/core/lib/event_engine/thread_pool.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/cpp/server/thread_pool_interface.h"
@@ -31,34 +32,15 @@ namespace grpc {
 
 class DynamicThreadPool final : public ThreadPoolInterface {
  public:
-  explicit DynamicThreadPool(int reserve_threads);
-  ~DynamicThreadPool() override;
+  explicit DynamicThreadPool(int reserve_threads)
+      : thread_pool_(reserve_threads) {}
 
-  void Add(const std::function<void()>& callback) override;
+  void Add(const std::function<void()>& callback) override {
+    thread_pool_.Add(callback);
+  }
 
  private:
-  class DynamicThread {
-   public:
-    explicit DynamicThread(DynamicThreadPool* pool);
-    ~DynamicThread();
-
-   private:
-    DynamicThreadPool* pool_;
-    grpc_core::Thread thd_;
-    void ThreadFunc();
-  };
-  grpc_core::Mutex mu_;
-  grpc_core::CondVar cv_;
-  grpc_core::CondVar shutdown_cv_;
-  bool shutdown_;
-  std::queue<std::function<void()>> callbacks_;
-  int reserve_threads_;
-  int nthreads_;
-  int threads_waiting_;
-  std::list<DynamicThread*> dead_threads_;
-
-  void ThreadFunc();
-  static void ReapThreads(std::list<DynamicThread*>* tlist);
+  grpc_event_engine::experimental::ThreadPool thread_pool_;
 };
 
 }  // namespace grpc
