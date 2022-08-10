@@ -19,7 +19,7 @@
 #include <fstream>
 #include <sstream>
 
-void read(const std::string& filename, std::string& data) {
+string read_file(const std::string& filename) {
   std::ifstream file(filename.c_str(), std::ios::in);
 
   if (!file.is_open()) {
@@ -28,5 +28,5 @@ void read(const std::string& filename, std::string& data) {
 
   std::stringstream ss;
   ss << file.rdbuf();
-  data = ss.str();
+  return ss.str();
 }

@@ -35,12 +35,10 @@ using ::grpc::Server;
 using ::grpc::ServerBuilder;
 using ::grpc::ServerContext;
 using ::grpc::Status;
-
 using ::helloworld::Greeter;
 using ::helloworld::HelloReply;
 using ::helloworld::HelloRequest;
 
-// Logic and data behind the server's behavior.
 class GreeterServiceImpl final : public Greeter::Service {
   Status SayHello(ServerContext* context, const HelloRequest* request,
                   HelloReply* reply) override {
@@ -53,20 +51,14 @@ class GreeterServiceImpl final : public Greeter::Service {
 };
 
 void run_server() {
-  std::string server_address{"localhost:50051"};
-
   grpc::EnableDefaultHealthCheckService(true);
   grpc::reflection::InitProtoReflectionServerBuilderPlugin();
 
-  ServerBuilder builder;
-
   // Use the gen_certs.sh for the generation of required certificates
   // [!] Be carefull here using a server.crt with the CN != localhost [!]
-  std::string key, cert, root;
-
-  read("server.crt", cert);
-  read("server.key", key);
-  read("ca.crt", root);
+  std::string cert = read_file("client.crt");
+  std::string key = read_file("client.key");
+  std::string root = read_file("ca.crt");
 
   // Configure SSL options
   grpc::SslServerCredentialsOptions::PemKeyCertPair keycert = {key, cert};
@@ -74,7 +66,10 @@ void run_server() {
   sslOps.pem_root_certs = root;
   sslOps.pem_key_cert_pairs.push_back(keycert);
 
-  // Listen on the given address without any authentication mechanism.
+  ServerBuilder builder;
+
+  // Listen on the given address.
+  std::string server_address{"localhost:50051"};
   builder.AddListeningPort(server_address, grpc::SslServerCredentials(sslOps));
 
   // Register "service" as the instance through which we'll communicate with

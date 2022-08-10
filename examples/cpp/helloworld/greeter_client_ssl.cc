@@ -32,7 +32,6 @@
 using ::grpc::Channel;
 using ::grpc::ClientContext;
 using ::grpc::Status;
-
 using ::helloworld::Greeter;
 using ::helloworld::HelloReply;
 using ::helloworld::HelloRequest;
@@ -86,11 +85,9 @@ int main(int, char**) {
 
   try {
     // Use the gen_certs.sh for the generation of required certificates
-    std::string cert, key, root;
-
-    read("client.crt", cert);
-    read("client.key", key);
-    read("ca.crt", root);
+    std::string cert = read_file("client.crt");
+    std::string key = read_file("client.key");
+    std::string root = read_file("ca.crt");
 
     GreeterClient greeter{cert, key, root, server};
 
