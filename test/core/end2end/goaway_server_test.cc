@@ -44,7 +44,7 @@
 
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/event_engine/event_engine_factory.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -82,12 +82,12 @@ static void set_resolve_port(int port) {
 
 namespace {
 
-using ::grpc_event_engine::experimental::GetDefaultEventEngine;
-
 grpc_core::DNSResolver* g_default_dns_resolver;
 
 class TestDNSResolver : public grpc_core::DNSResolver {
  public:
+  TestDNSResolver()
+      : engine_(grpc_event_engine::experimental::GetDefaultEventEngine()) {}
   TaskHandle LookupHostname(
       std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
           on_resolved,
@@ -114,7 +114,7 @@ class TestDNSResolver : public grpc_core::DNSResolver {
       absl::string_view /* name */, grpc_core::Duration /* timeout */,
       grpc_pollset_set* /* interested_parties */,
       absl::string_view /* name_server */) override {
-    GetDefaultEventEngine()->Run([on_resolved] {
+    engine_->Run([on_resolved] {
       on_resolved(absl::UnimplementedError(
           "The Testing DNS resolver does not support looking up SRV records"));
     });
@@ -127,7 +127,7 @@ class TestDNSResolver : public grpc_core::DNSResolver {
       grpc_pollset_set* /* interested_parties */,
       absl::string_view /* name_server */) override {
     // Not supported
-    GetDefaultEventEngine()->Run([on_resolved] {
+    engine_->Run([on_resolved] {
       on_resolved(absl::UnimplementedError(
           "The Testing DNS resolver does not support looking up TXT records"));
     });
@@ -159,6 +159,7 @@ class TestDNSResolver : public grpc_core::DNSResolver {
                                                  std::move(addrs));
     }
   }
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine_;
 };
 
 }  // namespace

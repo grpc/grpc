@@ -28,8 +28,23 @@ grpc_cc_test(
     deps = [
         "//:common_event_engine_closures",
         "//:gpr_platform",
-        "//:grpc_base",
+        "//:grpc",
         "//test/core/util:grpc_test_util_unsecure",
+    ],
+)
+
+grpc_cc_test(
+    name = "forkable_test",
+    srcs = ["forkable_test.cc"],
+    external_deps = [
+        "absl/time",
+        "gtest",
+    ],
+    deps = [
+        "//:forkable",
+        "//:gpr_base",
+        "//:gpr_platform",
+        "//:grpc_unsecure",
     ],
 )
 
@@ -42,8 +57,20 @@ grpc_cc_test(
     deps = [
         "//:gpr_platform",
         "//:grpc",
-        "//:grpc_base",
         "//test/core/util:grpc_test_util_unsecure",
+    ],
+)
+
+grpc_cc_test(
+    name = "default_engine_methods_test",
+    srcs = ["default_engine_methods_test.cc"],
+    external_deps = ["gtest"],
+    deps = [
+        "//:default_event_engine",
+        "//:event_engine_base_hdrs",
+        "//:gpr_base",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
     ],
 )
 
@@ -78,7 +105,7 @@ grpc_cc_library(
     hdrs = ["test_init.h"],
     external_deps = ["absl/strings"],
     deps = [
+        "//:event_engine_base_hdrs",
         "//:gpr_base",
-        "//:grpc_base",
     ],
 )

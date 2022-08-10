@@ -51,8 +51,6 @@ struct PosixEventEngine::ClosureData final : public EventEngine::Closure {
   }
 };
 
-PosixEventEngine::PosixEventEngine() {}
-
 PosixEventEngine::~PosixEventEngine() {
   grpc_core::MutexLock lock(&mu_);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {

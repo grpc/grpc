@@ -416,7 +416,8 @@ grpc_cc_library(
         "channel_init",
         "channel_stack_type",
         "config",
-        "default_event_engine_factory_hdrs",
+        "default_event_engine",
+        "forkable",
         "gpr_base",
         "grpc_authorization_base",
         "grpc_base",
@@ -479,7 +480,8 @@ grpc_cc_library(
         "channel_init",
         "channel_stack_type",
         "config",
-        "default_event_engine_factory_hdrs",
+        "default_event_engine",
+        "forkable",
         "gpr_base",
         "grpc_authorization_base",
         "grpc_base",
@@ -1267,7 +1269,8 @@ grpc_cc_library(
     external_deps = ["absl/status"],
     deps = [
         "activity",
-        "event_engine_base",
+        "context",
+        "default_event_engine",
         "event_engine_base_hdrs",
         "exec_ctx",
         "gpr_base",
@@ -1520,6 +1523,7 @@ grpc_cc_library(
         "context",
         "gpr_base",
         "gpr_tls",
+        "no_destruct",
         "orphanable",
         "poll",
         "promise_factory",
@@ -1864,7 +1868,6 @@ grpc_cc_library(
         "map",
         "orphanable",
         "periodic_update",
-        "pid_controller",
         "poll",
         "race",
         "ref_counted_ptr",
@@ -2214,24 +2217,27 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "default_event_engine_factory_hdrs",
-    hdrs = [
-        "src/core/lib/event_engine/event_engine_factory.h",
-    ],
-    tags = ["nofixdeps"],
-    deps = [
-        "event_engine_base_hdrs",
-        "gpr_base",
-    ],
-)
-
-grpc_cc_library(
     name = "time_averaged_stats",
     srcs = ["src/core/lib/gprpp/time_averaged_stats.cc"],
     hdrs = [
         "src/core/lib/gprpp/time_averaged_stats.h",
     ],
     deps = ["gpr_base"],
+)
+
+grpc_cc_library(
+    name = "forkable",
+    srcs = [
+        "src/core/lib/event_engine/forkable.cc",
+    ],
+    hdrs = [
+        "src/core/lib/event_engine/forkable.h",
+    ],
+    external_deps = ["absl/container:flat_hash_set"],
+    deps = [
+        "gpr_base",
+        "gpr_platform",
+    ],
 )
 
 grpc_cc_library(
@@ -2327,8 +2333,14 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/event_engine/thread_pool.h",
     ],
-    external_deps = ["absl/functional:any_invocable"],
-    deps = ["gpr_base"],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/functional:any_invocable",
+    ],
+    deps = [
+        "forkable",
+        "gpr_base",
+    ],
 )
 
 grpc_cc_library(
@@ -2345,6 +2357,7 @@ grpc_cc_library(
     ],
     deps = [
         "event_engine_base_hdrs",
+        "forkable",
         "gpr_base",
         "gpr_codegen",
         "posix_event_engine_timer",
@@ -2709,18 +2722,21 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "event_engine_base",
+    name = "default_event_engine",
     srcs = [
-        "src/core/lib/event_engine/event_engine.cc",
+        "src/core/lib/event_engine/default_event_engine.cc",
     ],
     hdrs = [
-        "src/core/lib/event_engine/event_engine_factory.h",
+        "src/core/lib/event_engine/default_event_engine.h",
     ],
     external_deps = ["absl/functional:any_invocable"],
     deps = [
+        "context",
         "default_event_engine_factory",
         "event_engine_base_hdrs",
+        "event_engine_trace",
         "gpr_base",
+        "grpc_trace",
     ],
 )
 
@@ -3058,10 +3074,9 @@ grpc_cc_library(
         "config",
         "cpp_impl_of",
         "debug_location",
-        "default_event_engine_factory_hdrs",
+        "default_event_engine",
         "dual_ref_counted",
         "error",
-        "event_engine_base",
         "event_engine_common",
         "exec_ctx",
         "gpr_base",
@@ -3525,8 +3540,8 @@ grpc_cc_library(
         "config",
         "construct_destruct",
         "debug_location",
+        "default_event_engine",
         "dual_ref_counted",
-        "event_engine_base",
         "gpr_base",
         "gpr_codegen",
         "grpc_backend_metric_data",
@@ -3666,6 +3681,7 @@ grpc_cc_library(
         "closure",
         "config",
         "debug_location",
+        "default_event_engine",
         "exec_ctx",
         "exec_ctx_wakeup_scheduler",
         "gpr_base",
@@ -3989,7 +4005,7 @@ grpc_cc_library(
         "channel_stack_type",
         "config",
         "debug_location",
-        "event_engine_base",
+        "default_event_engine",
         "gpr_base",
         "gpr_codegen",
         "grpc_base",
@@ -4166,7 +4182,7 @@ grpc_cc_library(
         "channel_fwd",
         "config",
         "debug_location",
-        "default_event_engine_factory_hdrs",
+        "default_event_engine",
         "envoy_admin_upb",
         "envoy_config_cluster_upb",
         "envoy_config_cluster_upbdefs",
@@ -4807,7 +4823,7 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "debug_location",
-        "event_engine_base",
+        "default_event_engine",
         "gpr_base",
         "grpc_base",
         "grpc_client_channel",
@@ -7035,7 +7051,7 @@ grpc_cc_library(
     visibility = ["@grpc:public"],
     deps = [
         "debug_location",
-        "event_engine_base",
+        "default_event_engine",
         "gpr_base",
         "grpc++",
         "grpc++_codegen_base",
