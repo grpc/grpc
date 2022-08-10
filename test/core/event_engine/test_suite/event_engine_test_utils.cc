@@ -79,23 +79,34 @@ absl::Status SendValidatePayload(std::string data, Endpoint* send_endpoint,
   Promise<bool> read_promise;
   Promise<bool> write_promise;
   SliceBuffer read_slice_buf;
+  SliceBuffer read_store_buf;
   SliceBuffer write_slice_buf;
+
+  read_slice_buf.Clear();
+  write_slice_buf.Clear();
+  read_store_buf.Clear();
+  // std::cout << "SendValidatePayload ... " << std::endl;
+  // fflush(stdout);
 
   AppendStringToSliceBuffer(&write_slice_buf, data);
   EventEngine::Endpoint::ReadArgs args = {num_bytes_written};
   std::function<void(absl::Status)> read_cb;
-  read_cb = [receive_endpoint, &read_slice_buf, &read_cb, &read_promise,
-             &args](absl::Status status) {
+  read_cb = [receive_endpoint, &read_slice_buf, &read_store_buf, &read_cb,
+             &read_promise, &args](absl::Status status) {
     GPR_ASSERT(status.ok());
     if (read_slice_buf.Length() == static_cast<size_t>(args.read_hint_bytes)) {
+      read_slice_buf.MoveFirstNBytesIntoSliceBuffer(read_slice_buf.Length(),
+                                                    read_store_buf);
       read_promise.Set(true);
       return;
     }
     args.read_hint_bytes -= read_slice_buf.Length();
-    receive_endpoint->Read(std::move(read_cb), &read_slice_buf, &args);
+    read_slice_buf.MoveFirstNBytesIntoSliceBuffer(read_slice_buf.Length(),
+                                                  read_store_buf);
+    receive_endpoint->Read(read_cb, &read_slice_buf, &args);
   };
   // Start asynchronous reading at the receive_endpoint.
-  receive_endpoint->Read(std::move(read_cb), &read_slice_buf, &args);
+  receive_endpoint->Read(read_cb, &read_slice_buf, &args);
   // Start asynchronous writing at the send_endpoint.
   send_endpoint->Write(
       [&write_promise](absl::Status status) {
@@ -108,7 +119,10 @@ absl::Status SendValidatePayload(std::string data, Endpoint* send_endpoint,
   // Wait for async read to complete.
   GPR_ASSERT(read_promise.Get() == true);
   // Check if data written == data read
-  if (data != ExtractSliceBufferIntoString(&read_slice_buf)) {
+  std::string data_read = ExtractSliceBufferIntoString(&read_store_buf);
+  if (data != data_read) {
+    std::cout << "Data written = " << data << std::endl;
+    std::cout << "Data read = " << data_read << std::endl;
     return absl::CancelledError("Data read != Data written");
   }
   return absl::OkStatus();

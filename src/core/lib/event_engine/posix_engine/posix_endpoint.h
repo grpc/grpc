@@ -12,11 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_POSIX_STREAM_SOCKET_H
-#define GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_POSIX_STREAM_SOCKET_H
+#ifndef GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_POSIX_ENDPOINT_H
+#define GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_POSIX_ENDPOINT_H
 
 #include <grpc/support/port_platform.h>
 
+#include <memory>
+
+#include "grpc/event_engine/endpoint_config.h"
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/slice_buffer.h>
 
@@ -29,6 +32,7 @@
 namespace grpc_event_engine {
 namespace posix_engine {
 
+using ::grpc_event_engine::experimental::EndpointConfig;
 using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::SliceBuffer;
 
@@ -38,23 +42,28 @@ class TcpZerocopySendRecord;
 class PosixStreamSocket {
  public:
   PosixStreamSocket(EventHandle* handle, PosixEngineClosure* on_done,
-                    EventEngine* engine, const PosixTcpOptions& options);
+                    Scheduler* scheduler, const PosixTcpOptions& options);
   ~PosixStreamSocket();
   void Read(absl::AnyInvocable<void(absl::Status)> on_read, SliceBuffer* buffer,
             const EventEngine::Endpoint::ReadArgs* args);
   void Write(absl::AnyInvocable<void(absl::Status)> on_writable,
              SliceBuffer* data, const EventEngine::Endpoint::WriteArgs* args);
-  const EventEngine::ResolvedAddress& GetPeerAddress() const;
-  const EventEngine::ResolvedAddress& GetLocalAddress() const;
+  const EventEngine::ResolvedAddress& GetPeerAddress() const {
+    return peer_address_;
+  }
+  const EventEngine::ResolvedAddress& GetLocalAddress() const {
+    return local_address_;
+  }
+
   void MaybeShutdown(absl::Status why);
+
+ private:
   void Ref() { ref_count_.fetch_add(1, std::memory_order_relaxed); }
   void Unref() {
     if (ref_count_.fetch_sub(1, std::memory_order_acq_rel) == 1) {
       delete this;
     }
   }
-
- private:
   void HandleWrite(absl::Status status);
   void HandleError(absl::Status status);
   void HandleRead(absl::Status status);
@@ -139,13 +148,52 @@ class PosixStreamSocket {
   // A hint from upper layers specifying the minimum number of bytes that need
   // to be read to make meaningful progress.
   int min_progress_size_ = 1;
-  std::list<TracedBuffer*> traced_buffers_;
+  TracedBufferList traced_buffers_;
   EventHandle* handle_;
   PosixEventPoller* poller_;
-  EventEngine* engine_;
+  Scheduler* scheduler_;
 };
+
+class PosixEndpoint : public EventEngine::Endpoint {
+ public:
+  PosixEndpoint(EventHandle* handle, PosixEngineClosure* on_shutdown,
+                Scheduler* scheduler, const EndpointConfig& config)
+      : socket_(new PosixStreamSocket(handle, on_shutdown, scheduler,
+                                      TcpOptionsFromEndpointConfig(config))) {}
+
+  void Read(absl::AnyInvocable<void(absl::Status)> on_read, SliceBuffer* buffer,
+            const EventEngine::Endpoint::ReadArgs* args) override {
+    socket_->Read(std::move(on_read), buffer, args);
+  }
+
+  void Write(absl::AnyInvocable<void(absl::Status)> on_writable,
+             SliceBuffer* data,
+             const EventEngine::Endpoint::WriteArgs* args) override {
+    socket_->Write(std::move(on_writable), data, args);
+  }
+
+  PosixStreamSocket* Socket() { return socket_; }
+
+  const EventEngine::ResolvedAddress& GetPeerAddress() const override {
+    return socket_->GetPeerAddress();
+  }
+  const EventEngine::ResolvedAddress& GetLocalAddress() const override {
+    return socket_->GetLocalAddress();
+  }
+
+  ~PosixEndpoint() override {
+    socket_->MaybeShutdown(absl::InternalError("Endpoint closing"));
+  }
+
+ private:
+  PosixStreamSocket* socket_;
+};
+
+std::unique_ptr<PosixEndpoint> CreatePosixEndpoint(
+    EventHandle* handle, PosixEngineClosure* on_shutdown, Scheduler* scheduler,
+    const EndpointConfig& config);
 
 }  // namespace posix_engine
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_POSIX_STREAM_SOCKET_H
+#endif  // GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_POSIX_ENDPOINT_H

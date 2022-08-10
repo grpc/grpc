@@ -2597,22 +2597,27 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "posix_event_engine_stream_socket",
+    name = "posix_event_engine_endpoint",
     srcs = [
-        "src/core/lib/event_engine/posix_engine/posix_stream_socket.cc",
+        "src/core/lib/event_engine/posix_engine/posix_endpoint.cc",
     ],
     hdrs = [
-        "src/core/lib/event_engine/posix_engine/posix_stream_socket.h",
+        "src/core/lib/event_engine/posix_engine/posix_endpoint.h",
     ],
     external_deps = [
         "absl/functional:any_invocable",
         "absl/status",
+        "absl/strings",
         "absl/types:optional",
+        "absl/synchronization",
     ],
     deps = [
+        "event_engine_base_hdrs",
         "gpr_base",
         "iomgr_port",
+        "posix_event_engine_event_poller",
         "posix_event_engine_internal_errqueue",
+        "posix_event_engine_tcp_socket_utils",
         "posix_event_engine_traced_buffer_list",
     ],
 )
@@ -2647,7 +2652,10 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h",
     ],
-    external_deps = ["absl/status"],
+    external_deps = [
+        "absl/status",
+        "absl/strings:str_format",
+    ],
     deps = [
         "event_engine_base_hdrs",
         "gpr_base",

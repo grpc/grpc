@@ -114,6 +114,7 @@ grpc_cc_test(
         "//:event_engine_common",
         "//:posix_event_engine_tcp_socket_utils",
         "//:socket_mutator",
+    ],
 )
 
 grpc_cc_test(
@@ -133,14 +134,26 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "tcp_posix_stream_socket_test",
-    srcs = ["tcp_posix_stream_socket_test.cc"],
+    name = "posix_endpoint_test",
+    srcs = ["posix_endpoint_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
-    uses_event_engine = False,
-    uses_polling = False,
+    tags = [
+        "no_windows",
+    ],
+    uses_event_engine = True,
+    uses_polling = True,
     deps = [
-        "//:posix_event_engine_stream_socket",
+        "//:channel_args",
+        "//:common_event_engine_closures",
+        "//:event_engine_poller",
+        "//:posix_event_engine",
+        "//:posix_event_engine_closure",
+        "//:posix_event_engine_endpoint",
+        "//:posix_event_engine_event_poller",
+        "//:posix_event_engine_poller_posix_default",
+        "//test/core/event_engine/test_suite:conformance_test_base_lib",
+        "//test/core/event_engine/test_suite:oracle_event_engine_posix",
         "//test/core/util:grpc_test_util",
     ],
 )

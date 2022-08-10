@@ -97,7 +97,7 @@ bool SockaddrIsV4Mapped(const EventEngine::ResolvedAddress* resolved_addr,
                sizeof(kV4MappedPrefix)) == 0) {
       if (resolved_addr4_out != nullptr) {
         // Normalize ::ffff:0.0.0.0/96 to IPv4.
-        memset(resolved_addr4_out, 0, resolved_addr4_out->size());
+        memset(addr4_out, 0, sizeof(sockaddr_in));
         addr4_out->sin_family = AF_INET;
         // s6_addr32 would be nice, but it's non-standard.
         memcpy(&addr4_out->sin_addr, &addr6->sin6_addr.s6_addr[12], 4);
@@ -117,6 +117,8 @@ absl::StatusOr<std::string> SockaddrToString(
   const int save_errno = errno;
   EventEngine::ResolvedAddress addr_normalized;
   if (SockaddrIsV4Mapped(resolved_addr, &addr_normalized)) {
+    std::cout << "Is V4 mapped is true" << std::endl;
+    fflush(stdout);
     resolved_addr = &addr_normalized;
   }
   const sockaddr* addr =
@@ -204,11 +206,9 @@ PosixTcpOptions TcpOptionsFromEndpointConfig(const EndpointConfig& config) {
       (AdjustValue(PosixTcpOptions::kZerocpTxEnabledDefault, 0, 1,
                    config.GetInt(GRPC_ARG_TCP_TX_ZEROCOPY_ENABLED)) != 0);
   options.keep_alive_time_ms =
-      (AdjustValue(0, 1, INT_MAX, config.GetInt(GRPC_ARG_KEEPALIVE_TIME_MS)) !=
-       0);
+      AdjustValue(0, 1, INT_MAX, config.GetInt(GRPC_ARG_KEEPALIVE_TIME_MS));
   options.keep_alive_timeout_ms =
-      (AdjustValue(0, 1, INT_MAX,
-                   config.GetInt(GRPC_ARG_KEEPALIVE_TIMEOUT_MS)) != 0);
+      AdjustValue(0, 1, INT_MAX, config.GetInt(GRPC_ARG_KEEPALIVE_TIMEOUT_MS));
   options.expand_wildcard_addrs =
       (AdjustValue(0, 1, INT_MAX,
                    config.GetInt(GRPC_ARG_EXPAND_WILDCARD_ADDRS)) != 0);
@@ -521,8 +521,8 @@ static std::atomic<int> g_socket_supports_tcp_user_timeout(
     SOCKET_SUPPORTS_TCP_USER_TIMEOUT_DEFAULT);
 
 // Set TCP_USER_TIMEOUT
-void PosixSocketWrapper::TrySetSocketTcpUserTimeout(const PosixTcpOptions& options,
-                                             bool is_client) {
+void PosixSocketWrapper::TrySetSocketTcpUserTimeout(
+    const PosixTcpOptions& options, bool is_client) {
   static int kDefaultClientUserTimeoutMs = 20000;
   static int kDefaultServerUserTimeoutMs = 20000;
   static bool kDefaultClientUserTimeoutEnabled = false;
@@ -578,8 +578,8 @@ void PosixSocketWrapper::TrySetSocketTcpUserTimeout(const PosixTcpOptions& optio
 }
 
 // Set a socket using a grpc_socket_mutator
-absl::Status PosixSocketWrapper::SetSocketMutator(grpc_fd_usage usage,
-                                           grpc_socket_mutator* mutator) {
+absl::Status PosixSocketWrapper::SetSocketMutator(
+    grpc_fd_usage usage, grpc_socket_mutator* mutator) {
   GPR_ASSERT(mutator);
   if (!grpc_socket_mutator_mutate_fd(mutator, fd_, usage)) {
     return absl::Status(absl::StatusCode::kInternal,
@@ -625,9 +625,10 @@ bool PosixSocketWrapper::IsIpv6LoopbackAvailable() {
   return kIpv6LoopbackAvailable;
 }
 
-absl::StatusOr<EventEngine::ResolvedAddress> PosixSocketWrapper::LocalAddress() {
+absl::StatusOr<EventEngine::ResolvedAddress>
+PosixSocketWrapper::LocalAddress() {
   EventEngine::ResolvedAddress addr;
-  socklen_t len = addr.size();
+  socklen_t len = EventEngine::ResolvedAddress::MAX_SIZE_BYTES;
   if (getsockname(fd_, const_cast<sockaddr*>(addr.address()), &len) < 0) {
     return absl::InternalError(absl::StrCat("getsockname:", strerror(errno)));
   }
@@ -636,7 +637,7 @@ absl::StatusOr<EventEngine::ResolvedAddress> PosixSocketWrapper::LocalAddress() 
 
 absl::StatusOr<EventEngine::ResolvedAddress> PosixSocketWrapper::PeerAddress() {
   EventEngine::ResolvedAddress addr;
-  socklen_t len = addr.size();
+  socklen_t len = EventEngine::ResolvedAddress::MAX_SIZE_BYTES;
   if (getpeername(fd_, const_cast<sockaddr*>(addr.address()), &len) < 0) {
     return absl::InternalError(absl::StrCat("getpeername:", strerror(errno)));
   }
@@ -728,8 +729,8 @@ absl::Status PosixSocketWrapper::SetSocketReusePort(int /*reuse*/) {
   GPR_ASSERT(false && "unimplemented");
 }
 
-void PosixSocketWrapper::TrySetSocketTcpUserTimeout(const PosixTcpOptions& /*options*/,
-                                             bool /*is_client*/) {
+void PosixSocketWrapper::TrySetSocketTcpUserTimeout(
+    const PosixTcpOptions& /*options*/, bool /*is_client*/) {
   GPR_ASSERT(false && "unimplemented");
 }
 
@@ -753,8 +754,8 @@ absl::Status PosixSocketWrapper::SetSocketRcvBuf(int /*buffer_size_bytes*/) {
   GPR_ASSERT(false && "unimplemented");
 }
 
-absl::Status PosixSocketWrapper::SetSocketMutator(grpc_fd_usage /*usage*/,
-                                           grpc_socket_mutator* /*mutator*/) {
+absl::Status PosixSocketWrapper::SetSocketMutator(
+    grpc_fd_usage /*usage*/, grpc_socket_mutator* /*mutator*/) {
   GPR_ASSERT(false && "unimplemented");
 }
 
@@ -763,7 +764,9 @@ absl::Status PosixSocketWrapper::ApplySocketMutatorInOptions(
   GPR_ASSERT(false && "unimplemented");
 }
 
-bool PosixSocketWrapper::SetSocketDualStack() { GPR_ASSERT(false && "unimplemented"); }
+bool PosixSocketWrapper::SetSocketDualStack() {
+  GPR_ASSERT(false && "unimplemented");
+}
 
 static bool PosixSocketWrapper::IsSocketReusePortSupported() {
   GPR_ASSERT(false && "unimplemented");
@@ -773,7 +776,8 @@ static bool PosixSocketWrapper::IsIpv6LoopbackAvailable() {
   GPR_ASSERT(false && "unimplemented");
 }
 
-static absl::StatusOr<PosixSocketWrapper> PosixSocketWrapper::CreateDualStackSocket(
+static absl::StatusOr<PosixSocketWrapper>
+PosixSocketWrapper::CreateDualStackSocket(
     std::function<int(int /*domain*/, int /*type*/, int /*protocol*/)>
     /* socket_factory */,
     const experimental::EventEngine::ResolvedAddress& /*addr*/, int /*type*/,
