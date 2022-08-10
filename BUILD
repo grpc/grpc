@@ -881,18 +881,6 @@ grpc_cc_library(
     deps = ["gpr_platform"],
 )
 
-# for compatibility purpose
-grpc_cc_library(
-    name = "gpr_base",
-    tags = [
-        "avoid_dep",
-        "nofixdeps",
-    ],
-    deps = [
-        "gpr",
-    ],
-)
-
 grpc_cc_library(
     name = "gpr",
     srcs = [
