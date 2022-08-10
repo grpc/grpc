@@ -134,10 +134,10 @@ struct CallArgs {
   // During promise setup filters can substitute their own latch for this
   // and consequently intercept the sent value and mutate/observe it.
   Latch<ServerMetadata*>* server_initial_metadata;
-  // Messages travelling from the client to the server.
-  PipeReceiver<Message>* client_to_server_messages;
-  // Messages travelling from the server to the client.
-  PipeSender<Message>* server_to_client_messages;
+  // Messages travelling from the application to the transport.
+  PipeReceiver<Message>* outgoing_messages;
+  // Messages travelling from the transport to the application.
+  PipeSender<Message>* incoming_messages;
 };
 
 using NextPromiseFactory =
