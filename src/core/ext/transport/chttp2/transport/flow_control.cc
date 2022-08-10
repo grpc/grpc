@@ -21,7 +21,6 @@
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 
 #include <inttypes.h>
-#include <limits.h>
 
 #include <algorithm>
 #include <cmath>
@@ -32,10 +31,10 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
-#include "http2_settings.h"
 
 #include <grpc/support/log.h>
 
+#include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/global_config_env.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
