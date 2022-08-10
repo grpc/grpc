@@ -20,12 +20,11 @@
 #define GRPC_INTERNAL_CPP_DYNAMIC_THREAD_POOL_H
 
 #include <functional>
-#include <list>
-#include <queue>
+#include <memory>
+
+#include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/event_engine/default_event_engine.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/thd.h"
 #include "src/cpp/server/thread_pool_interface.h"
 
 namespace grpc {

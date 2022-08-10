@@ -16,8 +16,6 @@
  *
  */
 
-#include <grpc/support/cpu.h>
-
 #include "src/cpp/server/dynamic_thread_pool.h"
 #include "src/cpp/server/thread_pool_interface.h"
 
