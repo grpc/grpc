@@ -32,6 +32,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
+#include "http2_settings.h"
 
 #include <grpc/support/log.h>
 
@@ -274,14 +275,14 @@ TransportFlowControl::TargetInitialWindowSizeBasedOnMemoryPressureAndBdp()
 }
 
 void TransportFlowControl::UpdateSetting(
-    int64_t* desired_value, int64_t new_desired_value,
-    FlowControlAction* action,
+    grpc_chttp2_setting_id id, int64_t* desired_value,
+    uint32_t new_desired_value, FlowControlAction* action,
     FlowControlAction& (FlowControlAction::*set)(FlowControlAction::Urgency,
                                                  uint32_t)) {
-  int64_t delta = new_desired_value - *desired_value;
-  // TODO(ncteisen): tune this
-  if (delta != 0 &&
-      (delta <= -*desired_value / 5 || delta >= *desired_value / 5)) {
+  new_desired_value =
+      Clamp(new_desired_value, grpc_chttp2_settings_parameters[id].min_value,
+            grpc_chttp2_settings_parameters[id].max_value);
+  if (new_desired_value != *desired_value) {
     *desired_value = new_desired_value;
     (action->*set)(FlowControlAction::Urgency::QUEUE_UPDATE, *desired_value);
   }
@@ -296,9 +297,12 @@ FlowControlAction TransportFlowControl::PeriodicUpdate() {
     // target might change based on how much memory pressure we are under
     // TODO(ncteisen): experiment with setting target to be huge under low
     // memory pressure.
-    double target = kSmoothMemoryPressure
-                        ? TargetInitialWindowSizeBasedOnMemoryPressureAndBdp()
-                        : pow(2, SmoothLogBdp(TargetLogBdp()));
+    uint32_t target = static_cast<uint32_t>(RoundUpToPowerOf2(
+        Clamp(kSmoothMemoryPressure
+                  ? TargetInitialWindowSizeBasedOnMemoryPressureAndBdp()
+                  : pow(2, SmoothLogBdp(TargetLogBdp())),
+              0.0, static_cast<double>(kMaxInitialWindowSize))));
+    if (target < kMinPositiveInitialWindowSize) target = 0;
     if (g_test_only_transport_target_window_estimates_mocker != nullptr) {
       // Hook for simulating unusual flow control situations in tests.
       target = g_test_only_transport_target_window_estimates_mocker
@@ -307,23 +311,13 @@ FlowControlAction TransportFlowControl::PeriodicUpdate() {
     }
     // Though initial window 'could' drop to 0, we keep the floor at
     // kMinInitialWindowSize
-    UpdateSetting(
-        &target_initial_window_size_,
-        static_cast<int32_t>(Clamp(target, double(kMinInitialWindowSize),
-                                   double(kMaxInitialWindowSize))),
-        &action, &FlowControlAction::set_send_initial_window_update);
-
-    // get bandwidth estimate and update max_frame accordingly.
-    double bw_dbl = bdp_estimator_.EstimateBandwidth();
+    UpdateSetting(GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE,
+                  &target_initial_window_size_, target, &action,
+                  &FlowControlAction::set_send_initial_window_update);
     // we target the max of BDP or bandwidth in microseconds.
-    UpdateSetting(
-        &target_frame_size_,
-        static_cast<int32_t>(Clamp(
-            std::max(static_cast<int32_t>(Clamp(bw_dbl, 0.0, double(INT_MAX))) /
-                         1000,
-                     static_cast<int32_t>(target_initial_window_size_)),
-            16384, 16777215)),
-        &action, &FlowControlAction::set_send_max_frame_size_update);
+    UpdateSetting(GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE, &target_frame_size_,
+                  target, &action,
+                  &FlowControlAction::set_send_max_frame_size_update);
   }
   return UpdateAction(action);
 }

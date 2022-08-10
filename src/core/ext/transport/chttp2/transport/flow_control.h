@@ -33,6 +33,7 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
@@ -53,9 +54,8 @@ namespace chttp2 {
 static constexpr uint32_t kDefaultWindow = 65535;
 static constexpr uint32_t kDefaultFrameSize = 16384;
 static constexpr int64_t kMaxWindow = static_cast<int64_t>((1u << 31) - 1);
-// TODO(ncteisen): Tune this
-static constexpr uint32_t kFrameSize = 1024 * 1024;
-static constexpr const uint32_t kMinInitialWindowSize = 128;
+// If smaller than this, advertise zero window.
+static constexpr uint32_t kMinPositiveInitialWindowSize = 1024;
 static constexpr const uint32_t kMaxInitialWindowSize = (1u << 30);
 // The maximum per-stream flow control window delta to advertise.
 static constexpr const int64_t kMaxWindowDelta = (1u << 20);
@@ -253,7 +253,8 @@ class TransportFlowControl final {
   double TargetLogBdp();
   double SmoothLogBdp(double value);
   double TargetInitialWindowSizeBasedOnMemoryPressureAndBdp() const;
-  static void UpdateSetting(int64_t* desired_value, int64_t new_desired_value,
+  static void UpdateSetting(grpc_chttp2_setting_id id, int64_t* desired_value,
+                            uint32_t new_desired_value,
                             FlowControlAction* action,
                             FlowControlAction& (FlowControlAction::*set)(
                                 FlowControlAction::Urgency, uint32_t));
