@@ -48,10 +48,6 @@ void SetEventEngineFactory(
   g_event_engine->reset();
 }
 
-void RevertToDefaultEventEngineFactory() {
-  delete g_event_engine_factory.exchange(nullptr);
-}
-
 void EventEngineFactoryReset() {
   delete g_event_engine_factory.exchange(nullptr);
   ResetDefaultEventEngine();
