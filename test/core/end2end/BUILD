@@ -170,7 +170,7 @@ grpc_cc_test(
     deps = [
         "cq_verifier",
         "//:debug_location",
-        "//:default_event_engine_factory_hdrs",
+        "//:default_event_engine",
         "//:gpr_base",
         "//:grpc",
         "//:grpc_codegen",

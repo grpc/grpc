@@ -19,7 +19,7 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 
-#include "src/core/lib/event_engine/event_engine_factory.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "test/core/event_engine/util/aborting_event_engine.h"
 #include "test/core/util/test_config.h"
 

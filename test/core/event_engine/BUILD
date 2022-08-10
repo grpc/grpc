@@ -34,6 +34,21 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "forkable_test",
+    srcs = ["forkable_test.cc"],
+    external_deps = [
+        "absl/time",
+        "gtest",
+    ],
+    deps = [
+        "//:forkable",
+        "//:gpr_base",
+        "//:gpr_platform",
+        "//:grpc_unsecure",
+    ],
+)
+
+grpc_cc_test(
     name = "endpoint_config_test",
     srcs = ["endpoint_config_test.cc"],
     external_deps = ["gtest"],
@@ -43,6 +58,19 @@ grpc_cc_test(
         "//:gpr_platform",
         "//:grpc",
         "//test/core/util:grpc_test_util_unsecure",
+    ],
+)
+
+grpc_cc_test(
+    name = "default_engine_methods_test",
+    srcs = ["default_engine_methods_test.cc"],
+    external_deps = ["gtest"],
+    deps = [
+        "//:default_event_engine",
+        "//:event_engine_base_hdrs",
+        "//:gpr_base",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
     ],
 )
 

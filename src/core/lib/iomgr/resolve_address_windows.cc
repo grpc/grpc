@@ -34,7 +34,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/event_engine/event_engine_factory.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/thd.h"
@@ -48,8 +48,6 @@
 
 namespace grpc_core {
 namespace {
-
-using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 
 class NativeDNSRequest {
  public:
@@ -82,6 +80,9 @@ class NativeDNSRequest {
 };
 
 }  // namespace
+
+NativeDNSResolver::NativeDNSResolver()
+    : engine_(grpc_event_engine::experimental::GetDefaultEventEngine()) {}
 
 NativeDNSResolver* NativeDNSResolver::GetOrCreate() {
   static NativeDNSResolver* instance = new NativeDNSResolver();
@@ -167,7 +168,7 @@ DNSResolver::TaskHandle NativeDNSResolver::LookupSRV(
     absl::string_view /* name */, Duration /* deadline */,
     grpc_pollset_set* /* interested_parties */,
     absl::string_view /* name_server */) {
-  GetDefaultEventEngine()->Run([on_resolved] {
+  engine_->Run([on_resolved] {
     on_resolved(absl::UnimplementedError(
         "The Native resolver does not support looking up SRV records"));
   });
@@ -180,7 +181,7 @@ DNSResolver::TaskHandle NativeDNSResolver::LookupTXT(
     grpc_pollset_set* /* interested_parties */,
     absl::string_view /* name_server */) {
   // Not supported
-  GetDefaultEventEngine()->Run([on_resolved] {
+  engine_->Run([on_resolved] {
     on_resolved(absl::UnimplementedError(
         "The Native resolver does not support looking up TXT records"));
   });

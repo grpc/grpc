@@ -51,7 +51,7 @@
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channelz.h"
-#include "src/core/lib/event_engine/event_engine_factory.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/time.h"
@@ -138,6 +138,7 @@ static void finish_resolve(void* arg, grpc_error_handle error) {
 
 namespace {
 
+using ::grpc_event_engine::experimental::FuzzingEventEngine;
 using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 
 class FuzzerDNSResolver : public grpc_core::DNSResolver {
@@ -178,8 +179,8 @@ class FuzzerDNSResolver : public grpc_core::DNSResolver {
   };
 
   // Gets the singleton instance, possibly creating it first
-  static FuzzerDNSResolver* GetOrCreate() {
-    static FuzzerDNSResolver* instance = new FuzzerDNSResolver();
+  static FuzzerDNSResolver* GetOrCreate(FuzzingEventEngine* engine) {
+    static FuzzerDNSResolver* instance = new FuzzerDNSResolver(engine);
     return instance;
   }
 
@@ -206,7 +207,7 @@ class FuzzerDNSResolver : public grpc_core::DNSResolver {
       absl::string_view /* name */, grpc_core::Duration /* timeout */,
       grpc_pollset_set* /* interested_parties */,
       absl::string_view /* name_server */) override {
-    GetDefaultEventEngine()->Run([on_resolved] {
+    engine_->Run([on_resolved] {
       on_resolved(absl::UnimplementedError(
           "The Fuzzing DNS resolver does not support looking up SRV records"));
     });
@@ -219,7 +220,7 @@ class FuzzerDNSResolver : public grpc_core::DNSResolver {
       grpc_pollset_set* /* interested_parties */,
       absl::string_view /* name_server */) override {
     // Not supported
-    GetDefaultEventEngine()->Run([on_resolved] {
+    engine_->Run([on_resolved] {
       on_resolved(absl::UnimplementedError(
           "The Fuzing DNS resolver does not support looking up TXT records"));
     });
@@ -228,6 +229,10 @@ class FuzzerDNSResolver : public grpc_core::DNSResolver {
 
   // FuzzerDNSResolver does not support cancellation.
   bool Cancel(TaskHandle /*handle*/) override { return false; }
+
+ private:
+  explicit FuzzerDNSResolver(FuzzingEventEngine* engine) : engine_(engine) {}
+  FuzzingEventEngine* engine_;
 };
 
 }  // namespace
@@ -820,19 +825,19 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
   grpc_set_tcp_client_impl(&fuzz_tcp_client_vtable);
   grpc_event_engine::experimental::SetEventEngineFactory(
       [actions = msg.event_engine_actions()]() {
-        return absl::make_unique<
-            grpc_event_engine::experimental::FuzzingEventEngine>(
-            grpc_event_engine::experimental::FuzzingEventEngine::Options(),
-            actions);
+        return absl::make_unique<FuzzingEventEngine>(
+            FuzzingEventEngine::Options(), actions);
       });
-  grpc_event_engine::experimental::GetDefaultEventEngine();
+  auto engine =
+      std::dynamic_pointer_cast<FuzzingEventEngine>(GetDefaultEventEngine());
+  FuzzingEventEngine::SetGlobalNowImplEngine(engine.get());
   grpc_init();
   grpc_timer_manager_set_threading(false);
   {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Executor::SetThreadingAll(false);
   }
-  grpc_core::SetDNSResolver(FuzzerDNSResolver::GetOrCreate());
+  grpc_core::SetDNSResolver(FuzzerDNSResolver::GetOrCreate(engine.get()));
   grpc_dns_lookup_hostname_ares = my_dns_lookup_ares;
   grpc_cancel_ares_request = my_cancel_ares_request;
 
@@ -869,14 +874,10 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
   while (action_index < msg.actions_size() || g_channel != nullptr ||
          g_server != nullptr || pending_channel_watches > 0 ||
          pending_pings > 0 || ActiveCall() != nullptr) {
-    static_cast<grpc_event_engine::experimental::FuzzingEventEngine*>(
-        grpc_event_engine::experimental::GetDefaultEventEngine())
-        ->Tick();
+    engine->Tick();
 
     if (action_index == msg.actions_size()) {
-      static_cast<grpc_event_engine::experimental::FuzzingEventEngine*>(
-          grpc_event_engine::experimental::GetDefaultEventEngine())
-          ->FuzzingDone();
+      engine->FuzzingDone();
       if (g_channel != nullptr) {
         grpc_channel_destroy(g_channel);
         g_channel = nullptr;
@@ -1223,4 +1224,5 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
 
   grpc_resource_quota_unref(g_resource_quota);
   grpc_shutdown_blocking();
+  FuzzingEventEngine::UnsetGlobalNowImplEngine(engine.get());
 }

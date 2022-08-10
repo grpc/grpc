@@ -72,7 +72,7 @@ namespace experimental {
 ///    server->Wait();
 ///
 ////////////////////////////////////////////////////////////////////////////////
-class EventEngine {
+class EventEngine : public std::enable_shared_from_this<EventEngine> {
  public:
   /// A duration between two events.
   ///
@@ -444,7 +444,6 @@ void SetEventEngineFactory(
 /// used going forward. This has no affect on any EventEngines that were created
 /// using the previous factories.
 void EventEngineFactoryReset();
-
 /// Create an EventEngine using the default factory.
 std::unique_ptr<EventEngine> CreateEventEngine();
 
