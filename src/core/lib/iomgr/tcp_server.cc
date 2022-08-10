@@ -73,6 +73,14 @@ void grpc_tcp_server_shutdown_listeners(grpc_tcp_server* s) {
   grpc_tcp_server_impl->shutdown_listeners(s);
 }
 
+int grpc_tcp_server_pre_allocated_fd(grpc_tcp_server* s) {
+  return grpc_tcp_server_impl->pre_allocated_fd(s);
+}
+
+void grpc_tcp_server_set_pre_allocated_fd(grpc_tcp_server* s, int fd) {
+  grpc_tcp_server_impl->set_pre_allocated_fd(s, fd);
+}
+
 void grpc_set_tcp_server_impl(grpc_tcp_server_vtable* impl) {
   grpc_tcp_server_impl = impl;
 }

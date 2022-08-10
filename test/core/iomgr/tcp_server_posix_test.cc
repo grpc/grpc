@@ -34,6 +34,10 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#ifdef GRPC_HAVE_UNIX_SOCKET
+#include <sys/un.h>
+#endif
+
 #include <string>
 
 #include <grpc/grpc.h>
@@ -467,6 +471,157 @@ static void test_connect(size_t num_connects,
   ASSERT_EQ(weak_ref.server, nullptr);
 }
 
+static void pre_allocate_inet_sock(grpc_tcp_server* s, int family, int port,
+                                   int* fd) {
+  struct sockaddr_in address;
+  memset(&address, 0, sizeof(address));
+  address.sin_family = family;
+  address.sin_port = htons(port);
+
+  int pre_fd = socket(address.sin_family, SOCK_STREAM, 0);
+  ASSERT_GE(pre_fd, 0);
+  ASSERT_EQ(bind(pre_fd, (struct sockaddr*)&address, sizeof(address)), 0);
+  ASSERT_EQ(listen(pre_fd, SOMAXCONN), 0);
+
+  grpc_tcp_server_set_pre_allocated_fd(s, pre_fd);
+  ASSERT_EQ(grpc_tcp_server_pre_allocated_fd(s), pre_fd);
+  *fd = pre_fd;
+}
+
+static void test_pre_allocated_inet_fd() {
+  grpc_core::ExecCtx exec_ctx;
+  grpc_resolved_address resolved_addr;
+  struct sockaddr_in* addr =
+      reinterpret_cast<struct sockaddr_in*>(resolved_addr.addr);
+  grpc_tcp_server* s;
+  auto args = grpc_core::CoreConfiguration::Get()
+                  .channel_args_preconditioning()
+                  .PreconditionChannelArgs(nullptr);
+  ASSERT_EQ(
+      GRPC_ERROR_NONE,
+      grpc_tcp_server_create(
+          nullptr,
+          grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
+          &s));
+  LOG_TEST("test_pre_allocated_inet_fd");
+
+  // Pre allocate FD
+  int pre_fd;
+  int port = grpc_pick_unused_port_or_die();
+  pre_allocate_inet_sock(s, AF_INET, port, &pre_fd);
+
+  // Add port
+  int pt;
+  memset(&resolved_addr, 0, sizeof(resolved_addr));
+  resolved_addr.len = static_cast<socklen_t>(sizeof(struct sockaddr_in));
+  addr->sin_family = AF_INET;
+  addr->sin_port = htons(port);
+  ASSERT_EQ(grpc_tcp_server_add_port(s, &resolved_addr, &pt), GRPC_ERROR_NONE);
+  ASSERT_GE(grpc_tcp_server_port_fd_count(s, 0), 1);
+  ASSERT_EQ(grpc_tcp_server_port_fd(s, 0, 0), pre_fd);
+
+  // Start server
+  std::vector<grpc_pollset*> test_pollset;
+  test_pollset.push_back(g_pollset);
+  grpc_tcp_server_start(s, &test_pollset, on_connect, nullptr);
+
+  // Test connection
+  test_addr dst;
+  dst.addr.len = static_cast<socklen_t>(sizeof(dst.addr.addr));
+  ASSERT_EQ(getsockname(pre_fd, (struct sockaddr*)dst.addr.addr,
+                        (socklen_t*)&dst.addr.len),
+            0);
+  ASSERT_LE(dst.addr.len, sizeof(dst.addr.addr));
+  test_addr_init_str(&dst);
+  on_connect_result result;
+  on_connect_result_init(&result);
+  ASSERT_EQ(tcp_connect(&dst, &result), GRPC_ERROR_NONE);
+  ASSERT_EQ(result.server_fd, pre_fd);
+  ASSERT_EQ(result.server, s);
+  ASSERT_EQ(grpc_tcp_server_port_fd(s, result.port_index, result.fd_index),
+            result.server_fd);
+
+  grpc_tcp_server_unref(s);
+  close(pre_fd);
+}
+
+#ifdef GRPC_HAVE_UNIX_SOCKET
+static void pre_allocate_unix_sock(grpc_tcp_server* s, const char* path,
+                                   int* fd) {
+  struct sockaddr_un address;
+  memset(&address, 0, sizeof(struct sockaddr_un));
+  address.sun_family = AF_UNIX;
+  strcpy(address.sun_path, path);
+  unlink(path);
+
+  int pre_fd = socket(address.sun_family, SOCK_STREAM, 0);
+  ASSERT_GE(pre_fd, 0);
+  ASSERT_EQ(bind(pre_fd, (struct sockaddr*)&address, sizeof(address)), 0);
+  ASSERT_EQ(listen(pre_fd, SOMAXCONN), 0);
+
+  grpc_tcp_server_set_pre_allocated_fd(s, pre_fd);
+  ASSERT_EQ(grpc_tcp_server_pre_allocated_fd(s), pre_fd);
+  *fd = pre_fd;
+}
+
+static void test_pre_allocated_unix_fd() {
+  grpc_core::ExecCtx exec_ctx;
+  grpc_resolved_address resolved_addr;
+  struct sockaddr_un* addr =
+      reinterpret_cast<struct sockaddr_un*>(resolved_addr.addr);
+  grpc_tcp_server* s;
+  auto args = grpc_core::CoreConfiguration::Get()
+                  .channel_args_preconditioning()
+                  .PreconditionChannelArgs(nullptr);
+  ASSERT_EQ(
+      GRPC_ERROR_NONE,
+      grpc_tcp_server_create(
+          nullptr,
+          grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
+          &s));
+  LOG_TEST("test_pre_allocated_unix_fd");
+
+  // Pre allocate FD
+  int pre_fd;
+  char path[50] = "/tmp/pre_fd_test.sock";
+  pre_allocate_unix_sock(s, path, &pre_fd);
+
+  // Add port
+  int pt;
+  memset(&resolved_addr, 0, sizeof(resolved_addr));
+  resolved_addr.len = static_cast<socklen_t>(sizeof(struct sockaddr_un));
+  addr->sun_family = AF_UNIX;
+  strcpy(addr->sun_path, path);
+  ASSERT_EQ(grpc_tcp_server_add_port(s, &resolved_addr, &pt), GRPC_ERROR_NONE);
+  ASSERT_GE(grpc_tcp_server_port_fd_count(s, 0), 1);
+  ASSERT_EQ(grpc_tcp_server_port_fd(s, 0, 0), pre_fd);
+
+  // Start server
+  std::vector<grpc_pollset*> test_pollset;
+  test_pollset.push_back(g_pollset);
+  grpc_tcp_server_start(s, &test_pollset, on_connect, nullptr);
+
+  // Test connection
+  test_addr dst;
+  dst.addr.len = static_cast<socklen_t>(sizeof(dst.addr.addr));
+  ASSERT_EQ(getsockname(pre_fd, (struct sockaddr*)dst.addr.addr,
+                        (socklen_t*)&dst.addr.len),
+            0);
+  ASSERT_LE(dst.addr.len, sizeof(dst.addr.addr));
+  test_addr_init_str(&dst);
+  on_connect_result result;
+  on_connect_result_init(&result);
+  ASSERT_EQ(tcp_connect(&dst, &result), GRPC_ERROR_NONE);
+  ASSERT_EQ(result.server_fd, pre_fd);
+  ASSERT_EQ(result.server, s);
+  ASSERT_EQ(grpc_tcp_server_port_fd(s, result.port_index, result.fd_index),
+            result.server_fd);
+
+  grpc_tcp_server_unref(s);
+  close(pre_fd);
+}
+#endif // GRPC_HAVE_UNIX_SOCKET
+
 static void destroy_pollset(void* p, grpc_error_handle /*error*/) {
   grpc_pollset_destroy(static_cast<grpc_pollset*>(p));
 }
@@ -497,6 +652,10 @@ TEST(TcpServerPosixTest, MainTest) {
     test_no_op_with_start();
     test_no_op_with_port();
     test_no_op_with_port_and_start();
+    test_pre_allocated_inet_fd();
+#ifdef GRPC_HAVE_UNIX_SOCKET
+    test_pre_allocated_unix_fd();
+#endif
 
     if (getifaddrs(&ifa) != 0 || ifa == nullptr) {
       FAIL() << "getifaddrs: " << grpc_core::StrError(errno);
