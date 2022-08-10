@@ -23,7 +23,7 @@
 #include <list>
 #include <queue>
 
-#include "src/core/lib/event_engine/thread_pool.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/cpp/server/thread_pool_interface.h"
@@ -32,15 +32,15 @@ namespace grpc {
 
 class DynamicThreadPool final : public ThreadPoolInterface {
  public:
-  explicit DynamicThreadPool(int reserve_threads)
-      : thread_pool_(reserve_threads) {}
+  explicit DynamicThreadPool(int reserve_threads) {}
 
   void Add(const std::function<void()>& callback) override {
-    thread_pool_.Add(callback);
+    event_engine_->Run(callback);
   }
 
  private:
-  grpc_event_engine::experimental::ThreadPool thread_pool_;
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_ =
+      grpc_event_engine::experimental::GetDefaultEventEngine();
 };
 
 }  // namespace grpc
