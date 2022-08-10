@@ -84,7 +84,6 @@ void ResetDefaultEventEngine() {
 namespace {
 grpc_core::ChannelArgs EnsureEventEngineInChannelArgs(
     grpc_core::ChannelArgs args) {
-  gpr_log(GPR_DEBUG, "DO NOT SUBMIT: ensuring EventEngine");
   if (args.ContainsObject<EventEngine>()) return args;
   return args.SetObject<EventEngine>(GetDefaultEventEngine());
 }
