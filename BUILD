@@ -1523,6 +1523,7 @@ grpc_cc_library(
         "context",
         "gpr_base",
         "gpr_tls",
+        "no_destruct",
         "orphanable",
         "poll",
         "promise_factory",
