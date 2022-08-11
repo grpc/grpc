@@ -45,8 +45,8 @@ void SetEventEngineFactory(
       new absl::AnyInvocable<std::unique_ptr<EventEngine>()>(
           std::move(factory)));
   // Forget any previous EventEngines
-  grpc_core::MutexLock lock(g_mu.Get());
-  g_event_engine.Get()->reset();
+  grpc_core::MutexLock lock(&*g_mu);
+  g_event_engine->reset();
 }
 
 void RevertToDefaultEventEngineFactory() {
@@ -61,21 +61,21 @@ std::unique_ptr<EventEngine> CreateEventEngine() {
 }
 
 std::shared_ptr<EventEngine> GetDefaultEventEngine() {
-  grpc_core::MutexLock lock(g_mu.Get());
-  if (std::shared_ptr<EventEngine> engine = g_event_engine.Get()->lock()) {
+  grpc_core::MutexLock lock(&*g_mu);
+  if (std::shared_ptr<EventEngine> engine = g_event_engine->lock()) {
     GRPC_EVENT_ENGINE_TRACE("DefaultEventEngine::%p use_count:%ld",
                             engine.get(), engine.use_count());
     return engine;
   }
   std::shared_ptr<EventEngine> engine{CreateEventEngine()};
   GRPC_EVENT_ENGINE_TRACE("Created DefaultEventEngine::%p", engine.get());
-  *g_event_engine.Get() = engine;
+  *g_event_engine = engine;
   return engine;
 }
 
 void ResetDefaultEventEngine() {
-  grpc_core::MutexLock lock(g_mu.Get());
-  g_event_engine.Get()->reset();
+  grpc_core::MutexLock lock(&*g_mu);
+  g_event_engine->reset();
 }
 
 }  // namespace experimental
