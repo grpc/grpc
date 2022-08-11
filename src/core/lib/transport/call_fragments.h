@@ -162,9 +162,10 @@ class FragmentAllocator {
 
   ServerMetadataHandle MakeServerMetadata() { return MakeClientMetadata(); }
 
-  MessageHandle MakeMessage() {
+  template <typename... Args>
+  MessageHandle MakeMessage(Args&&... args) {
     auto* node = AllocateNode();
-    new (&node->message) Message();
+    new (&node->message) Message(std::forward<Args>(args)...);
     return MessageHandle(&node->message, true);
   }
 

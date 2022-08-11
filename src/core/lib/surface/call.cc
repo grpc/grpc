@@ -1932,7 +1932,7 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
           promise_detail::Context<CallContext>(&call->call_context_),
           promise_detail::Context<CallFinalization>(&call->finalization_),
           promise_detail::Context<FragmentAllocator>(
-              &call->metadata_allocator_) {}
+              &call->fragment_allocator_) {}
   };
 
   class Completion {
@@ -2130,7 +2130,7 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
   /* Contexts for various subsystems (security, tracing, ...). */
   grpc_call_context_element context_[GRPC_CONTEXT_COUNT] = {};
   grpc_completion_queue* cq_ ABSL_GUARDED_BY(mu_);
-  FragmentAllocator metadata_allocator_ ABSL_GUARDED_BY(mu_);
+  FragmentAllocator fragment_allocator_ ABSL_GUARDED_BY(mu_);
   NonOwningWakable* non_owning_wakeable_ ABSL_GUARDED_BY(mu_) = nullptr;
   CompletionInfo completion_info_[6];
   CallFinalization finalization_;
@@ -2383,8 +2383,8 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
 
   ArenaPromise<ServerMetadataHandle> promise_ ABSL_GUARDED_BY(mu());
   Latch<ServerMetadata*> server_initial_metadata_ ABSL_GUARDED_BY(mu());
-  Pipe<Message> client_to_server_messages_ ABSL_GUARDED_BY(mu()){arena()};
-  Pipe<Message> server_to_client_messages_ ABSL_GUARDED_BY(mu()){arena()};
+  Pipe<MessageHandle> client_to_server_messages_ ABSL_GUARDED_BY(mu()){arena()};
+  Pipe<MessageHandle> server_to_client_messages_ ABSL_GUARDED_BY(mu()){arena()};
 
   ClientMetadataHandle send_initial_metadata_;
   grpc_metadata_array* recv_initial_metadata_ ABSL_GUARDED_BY(mu()) = nullptr;
@@ -2393,9 +2393,9 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
                 grpc_op::grpc_op_data::grpc_op_recv_status_on_client,
                 ServerMetadataHandle>
       recv_status_on_client_ ABSL_GUARDED_BY(mu());
-  absl::optional<PipeSender<Message>::PushType> outstanding_send_
+  absl::optional<PipeSender<MessageHandle>::PushType> outstanding_send_
       ABSL_GUARDED_BY(mu());
-  absl::optional<PipeReceiver<Message>::NextType> outstanding_recv_
+  absl::optional<PipeReceiver<MessageHandle>::NextType> outstanding_recv_
       ABSL_GUARDED_BY(mu());
   absl::optional<Latch<ServerMetadata*>::WaitPromise>
       server_initial_metadata_ready_;
@@ -2502,7 +2502,8 @@ void ClientPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
               &op.data.send_message.send_message->data.raw.slice_buffer,
               send.c_slice_buffer());
           outstanding_send_.emplace(client_to_server_messages_.sender.Push(
-              Message(std::move(send), op.flags)));
+              GetContext<FragmentAllocator>()->MakeMessage(std::move(send),
+                                                           op.flags)));
         } else {
           FailCompletion(completion);
         }
@@ -2632,19 +2633,19 @@ void ClientPromiseBasedCall::UpdateOnce() {
   }
   if (incoming_compression_algorithm_.has_value() &&
       outstanding_recv_.has_value()) {
-    Poll<absl::optional<Message>> r = (*outstanding_recv_)();
-    if (auto* result = absl::get_if<absl::optional<Message>>(&r)) {
+    Poll<absl::optional<MessageHandle>> r = (*outstanding_recv_)();
+    if (auto* result = absl::get_if<absl::optional<MessageHandle>>(&r)) {
       outstanding_recv_.reset();
       if (result->has_value()) {
-        Message& message = **result;
-        if ((message.flags() & GRPC_WRITE_INTERNAL_COMPRESS) &&
+        MessageHandle& message = **result;
+        if ((message->flags() & GRPC_WRITE_INTERNAL_COMPRESS) &&
             (incoming_compression_algorithm_ != GRPC_COMPRESS_NONE)) {
           *recv_message_ = grpc_raw_compressed_byte_buffer_create(
               nullptr, 0, *incoming_compression_algorithm_);
         } else {
           *recv_message_ = grpc_raw_byte_buffer_create(nullptr, 0);
         }
-        grpc_slice_buffer_move_into(message.payload()->c_slice_buffer(),
+        grpc_slice_buffer_move_into(message->payload()->c_slice_buffer(),
                                     &(*recv_message_)->data.raw.slice_buffer);
         if (grpc_call_trace.enabled()) {
           gpr_log(GPR_INFO,
