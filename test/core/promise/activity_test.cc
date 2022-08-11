@@ -16,7 +16,10 @@
 
 #include <stdlib.h>
 
+#include <atomic>
+#include <chrono>
 #include <functional>
+#include <thread>
 #include <tuple>
 
 #include "gmock/gmock.h"
@@ -319,6 +322,73 @@ TEST(ActivityTest, CanCancelDuringSuccessfulExecution) {
 TEST(WakerTest, CanWakeupEmptyWaker) {
   // Empty wakers should not do anything upon wakeup.
   Waker().Wakeup();
+}
+
+TEST(AtomicWakerTest, CanWakeupEmptyWaker) {
+  // Empty wakers should not do anything upon wakeup.
+  AtomicWaker waker;
+  EXPECT_FALSE(waker.Armed());
+  waker.Wakeup();
+}
+
+TEST(AtomicWakerTest, ThreadStress) {
+  AtomicWaker waker;
+  std::vector<std::thread> threads;
+  std::atomic<bool> done{false};
+  std::atomic<int> wakeups{0};
+  std::atomic<int> drops{0};
+  std::atomic<int> armed{0};
+  std::atomic<int> not_armed{0};
+
+  threads.reserve(90);
+  for (int i = 0; i < 30; i++) {
+    threads.emplace_back([&] {
+      while (!done.load(std::memory_order_relaxed)) {
+        waker.Wakeup();
+      }
+    });
+  }
+  for (int i = 0; i < 30; i++) {
+    threads.emplace_back([&] {
+      while (!done.load(std::memory_order_relaxed)) {
+        class TestWakeable final : public Wakeable {
+         public:
+          TestWakeable(std::atomic<int>* wakeups, std::atomic<int>* drops)
+              : wakeups_(wakeups), drops_(drops) {}
+          void Wakeup() {
+            wakeups_->fetch_add(1, std::memory_order_relaxed);
+            delete this;
+          }
+          void Drop() {
+            drops_->fetch_add(1, std::memory_order_relaxed);
+            delete this;
+          }
+
+         private:
+          std::atomic<int>* const wakeups_;
+          std::atomic<int>* const drops_;
+        };
+        waker.Set(Waker(new TestWakeable(&wakeups, &drops)));
+      }
+    });
+  }
+  for (int i = 0; i < 30; i++) {
+    threads.emplace_back([&] {
+      while (!done.load(std::memory_order_relaxed)) {
+        (waker.Armed() ? &armed : &not_armed)
+            ->fetch_add(1, std::memory_order_relaxed);
+      }
+    });
+  }
+
+  do {
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+  } while (wakeups.load(std::memory_order_relaxed) == 0 ||
+           drops.load(std::memory_order_relaxed) == 0 ||
+           armed.load(std::memory_order_relaxed) == 0 ||
+           not_armed.load(std::memory_order_relaxed) == 0);
+  done.store(true, std::memory_order_relaxed);
+  for (auto& t : threads) t.join();
 }
 
 }  // namespace grpc_core
