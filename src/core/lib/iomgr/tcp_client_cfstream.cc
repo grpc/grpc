@@ -27,12 +27,12 @@
 #include <netinet/in.h>
 #include <string.h>
 
-#include <grpc/event_engine/endpoint_config.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/cfstream_handle.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -149,11 +149,11 @@ static void ParseResolvedAddress(const grpc_resolved_address* addr,
   *port = grpc_sockaddr_get_port(addr);
 }
 
-static int64_t CFStreamClientConnect(
-    grpc_closure* closure, grpc_endpoint** ep,
-    grpc_pollset_set* interested_parties,
-    const grpc_event_engine::experimental::EndpointConfig& /*config*/,
-    const grpc_resolved_address* resolved_addr, grpc_core::Timestamp deadline) {
+static int64_t CFStreamClientConnect(grpc_closure* closure, grpc_endpoint** ep,
+                                     grpc_pollset_set* interested_parties,
+                                     const grpc_channel_args* channel_args,
+                                     const grpc_resolved_address* resolved_addr,
+                                     grpc_core::Timestamp deadline) {
   auto addr_uri = grpc_sockaddr_to_uri(resolved_addr);
   if (!addr_uri.ok()) {
     grpc_error_handle error =

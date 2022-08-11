@@ -37,10 +37,13 @@ buildozer_commands = []
 needs_codegen_base_src = set()
 original_deps = {}
 original_external_deps = {}
+skip_headers = collections.defaultdict(set)
 
 # TODO(ctiller): ideally we wouldn't hardcode a bunch of paths here.
 # We can likely parse out BUILD files from dependencies to generate this index.
 EXTERNAL_DEPS = {
+    'absl/algorithm/container.h':
+        'absl/algorithm:container',
     'absl/base/attributes.h':
         'absl/base:core_headers',
     'absl/base/call_once.h':
@@ -66,6 +69,8 @@ EXTERNAL_DEPS = {
         'absl/debugging:symbolize',
     'absl/flags/flag.h':
         'absl/flags:flag',
+    'absl/flags/parse.h':
+        'absl/flags:parse',
     'absl/functional/any_invocable.h':
         'absl/functional:any_invocable',
     'absl/functional/bind_front.h':
@@ -265,6 +270,7 @@ def grpc_cc_library(name,
                     tags=[],
                     deps=[],
                     external_deps=[],
+                    proto=None,
                     **kwargs):
     global args
     global num_cc_libraries
@@ -284,6 +290,10 @@ def grpc_cc_library(name,
     # other, whilst not biasing dependent projects
     if 'avoid_dep' in tags or 'grpc_avoid_dep' in tags:
         avoidness[name] += 10
+    if proto:
+        proto_hdr = '%s%s' % ((parsing_path + '/' if parsing_path else ''),
+                              proto.replace('.proto', '.pb.h'))
+        skip_headers[name].add(proto_hdr)
     for hdr in hdrs + public_hdrs:
         filename = '%s%s' % ((parsing_path + '/' if parsing_path else ''), hdr)
         vendors[filename].append(name)
@@ -370,11 +380,24 @@ parser.add_argument('--whats_left',
                     action='store_true',
                     default=False,
                     help='show what is left to opt in')
+parser.add_argument('--explain',
+                    action='store_true',
+                    default=False,
+                    help='try to explain some decisions')
+parser.add_argument(
+    '--why',
+    type=str,
+    default=None,
+    help='with --explain, target why a given dependency is needed')
 args = parser.parse_args()
 
 for dirname in [
-        "", "test/core/uri", "test/core/util", "test/core/end2end",
-        "test/core/event_engine"
+        "",
+        "test/core/uri",
+        "test/core/util",
+        "test/core/end2end",
+        "test/core/event_engine",
+        "test/core/resource_quota",
 ]:
     parsing_path = dirname
     exec(
@@ -386,9 +409,11 @@ for dirname in [
             'config_setting': lambda **kwargs: None,
             'selects': FakeSelects(),
             'python_config_settings': lambda **kwargs: None,
+            'grpc_cc_binary': grpc_cc_library,
             'grpc_cc_library': grpc_cc_library,
             'grpc_cc_test': grpc_cc_library,
             'grpc_fuzzer': grpc_cc_library,
+            'grpc_proto_fuzzer': grpc_cc_library,
             'select': lambda d: d["//conditions:default"],
             'grpc_end2end_tests': lambda: None,
             'grpc_upb_proto_library': lambda name, **kwargs: None,
@@ -423,23 +448,35 @@ if args.whats_left:
 # problem. (models the list monad in Haskell!)
 class Choices:
 
-    def __init__(self, library):
+    def __init__(self, library, substitutions):
         self.library = library
         self.to_add = []
         self.to_remove = []
+        self.substitutions = substitutions
 
-    def add_one_of(self, choices):
+    def add_one_of(self, choices, trigger):
         if not choices:
             return
+        choices = sum([self.apply_substitutions(choice) for choice in choices],
+                      [])
+        if args.explain and (args.why is None or args.why in choices):
+            print("{}: Adding one of {} for {}".format(self.library, choices,
+                                                       trigger))
         self.to_add.append(
             tuple(
                 make_relative_path(choice, self.library) for choice in choices))
 
-    def add(self, choice):
-        self.add_one_of([choice])
+    def add(self, choice, trigger):
+        self.add_one_of([choice], trigger)
 
     def remove(self, remove):
-        self.to_remove.append(make_relative_path(remove, self.library))
+        for remove in self.apply_substitutions(remove):
+            self.to_remove.append(make_relative_path(remove, self.library))
+
+    def apply_substitutions(self, dep):
+        if dep in self.substitutions:
+            return self.substitutions[dep]
+        return [dep]
 
     def best(self, scorer):
         choices = set()
@@ -468,30 +505,40 @@ class Choices:
 def make_library(library):
     error = False
     hdrs = sorted(consumes[library])
-    deps = Choices(library)
-    external_deps = Choices(None)
+    # we need a little trickery here since grpc_base has channel.cc, which calls grpc_init
+    # which is in grpc, which is illegal but hard to change
+    # once event engine lands we can clean this up
+    deps = Choices(library, {'//:grpc_base': ['//:grpc', '//:grpc_unsecure']}
+                   if library.startswith('//test/') else {})
+    external_deps = Choices(None, {})
     for hdr in hdrs:
+        if hdr in skip_headers[library]:
+            continue
+
         if hdr == 'src/core/lib/profiling/stap_probes.h':
+            continue
+
+        if hdr.startswith('src/libfuzzer/'):
             continue
 
         if hdr == 'grpc/grpc.h' and not library.startswith('//:'):
             # not the root build including grpc.h ==> //:grpc
-            deps.add_one_of(['//:grpc', '//:grpc_unsecure'])
+            deps.add_one_of(['//:grpc', '//:grpc_unsecure'], hdr)
             continue
 
         if hdr in INTERNAL_DEPS:
             dep = INTERNAL_DEPS[hdr]
             if not dep.startswith('//'):
                 dep = '//:' + dep
-            deps.add(dep)
+            deps.add(dep, hdr)
             continue
 
         if hdr in vendors:
-            deps.add_one_of(vendors[hdr])
+            deps.add_one_of(vendors[hdr], hdr)
             continue
 
         if 'include/' + hdr in vendors:
-            deps.add_one_of(vendors['include/' + hdr])
+            deps.add_one_of(vendors['include/' + hdr], hdr)
             continue
 
         if '.' not in hdr:
@@ -499,13 +546,13 @@ def make_library(library):
             continue
 
         if hdr in EXTERNAL_DEPS:
-            external_deps.add(EXTERNAL_DEPS[hdr])
+            external_deps.add(EXTERNAL_DEPS[hdr], hdr)
             continue
 
         if hdr.startswith('opencensus/'):
             trail = hdr[len('opencensus/'):]
             trail = trail[:trail.find('/')]
-            external_deps.add('opencensus-' + trail)
+            external_deps.add('opencensus-' + trail, hdr)
             continue
 
         if hdr.startswith('envoy/'):
@@ -513,11 +560,11 @@ def make_library(library):
             file = file.split('.')
             path = path.split('/')
             dep = '_'.join(path[:-1] + [file[1]])
-            deps.add(dep)
+            deps.add(dep, hdr)
             continue
 
         if hdr.startswith('google/protobuf/') and not hdr.endswith('.upb.h'):
-            external_deps.add('protobuf_headers')
+            external_deps.add('protobuf_headers', hdr)
             continue
 
         if '/' not in hdr:
@@ -548,7 +595,7 @@ def make_library(library):
         error = True
 
     if library in needs_codegen_base_src:
-        deps.add('grpc++_codegen_base_src')
+        deps.add('grpc++_codegen_base_src', '#needs_codegen_base_src')
 
     deps.remove(library)
 

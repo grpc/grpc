@@ -18,7 +18,7 @@ set -ex
 # change to grpc repo root
 cd "$(dirname "$0")/../../.."
 
-PYTHON=$(realpath "${1:-py36/bin/python}")
+PYTHON=$(realpath "${1:-py37/bin/python}")
 
 ROOT=$(pwd)
 

@@ -82,6 +82,7 @@ class grpc_fake_channel_security_connector final
   ~grpc_fake_channel_security_connector() override { gpr_free(target_); }
 
   void check_peer(tsi_peer peer, grpc_endpoint* ep,
+                  const grpc_core::ChannelArgs& /*args*/,
                   grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
                   grpc_closure* on_peer_checked) override;
 
@@ -262,6 +263,7 @@ end:
 
 void grpc_fake_channel_security_connector::check_peer(
     tsi_peer peer, grpc_endpoint* /*ep*/,
+    const grpc_core::ChannelArgs& /*args*/,
     grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
     grpc_closure* on_peer_checked) {
   fake_check_peer(this, peer, auth_context, on_peer_checked);
@@ -278,6 +280,7 @@ class grpc_fake_server_security_connector
   ~grpc_fake_server_security_connector() override = default;
 
   void check_peer(tsi_peer peer, grpc_endpoint* /*ep*/,
+                  const grpc_core::ChannelArgs& /*args*/,
                   grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
                   grpc_closure* on_peer_checked) override {
     fake_check_peer(this, peer, auth_context, on_peer_checked);

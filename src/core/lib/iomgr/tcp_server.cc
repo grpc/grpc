@@ -22,11 +22,10 @@
 
 grpc_tcp_server_vtable* grpc_tcp_server_impl;
 
-grpc_error_handle grpc_tcp_server_create(
-    grpc_closure* shutdown_complete,
-    const grpc_event_engine::experimental::EndpointConfig& config,
-    grpc_tcp_server** server) {
-  return grpc_tcp_server_impl->create(shutdown_complete, config, server);
+grpc_error_handle grpc_tcp_server_create(grpc_closure* shutdown_complete,
+                                         const grpc_channel_args* args,
+                                         grpc_tcp_server** server) {
+  return grpc_tcp_server_impl->create(shutdown_complete, args, server);
 }
 
 void grpc_tcp_server_start(grpc_tcp_server* server,

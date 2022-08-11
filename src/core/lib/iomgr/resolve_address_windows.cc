@@ -34,7 +34,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/event_engine/event_engine_factory.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/thd.h"
@@ -119,7 +119,7 @@ NativeDNSResolver::LookupHostnameBlocking(absl::string_view name,
     goto done;
   }
   if (port.empty()) {
-    if (default_port == NULL) {
+    if (default_port.empty()) {
       error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
           absl::StrFormat("no port in name '%s'", name));
       goto done;

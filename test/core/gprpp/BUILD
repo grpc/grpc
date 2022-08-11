@@ -310,7 +310,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:chunked_vector",
-        "//:gpr_base",
+        "//:gpr",
         "//:resource_quota",
     ],
 )

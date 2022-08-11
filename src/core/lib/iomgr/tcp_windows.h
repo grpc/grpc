@@ -41,6 +41,7 @@
  * Takes ownership of the handle.
  */
 grpc_endpoint* grpc_tcp_create(grpc_winsocket* socket,
+                               grpc_channel_args* channel_args,
                                absl::string_view peer_string);
 
 grpc_error_handle grpc_tcp_prepare_socket(SOCKET sock);

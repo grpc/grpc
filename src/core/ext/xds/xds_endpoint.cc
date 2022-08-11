@@ -125,7 +125,7 @@ std::string XdsEndpointResource::ToString() const {
 namespace {
 
 void MaybeLogClusterLoadAssignment(
-    const XdsEncodingContext& context,
+    const XdsResourceType::DecodeContext& context,
     const envoy_config_endpoint_v3_ClusterLoadAssignment* cla) {
   if (GRPC_TRACE_FLAG_ENABLED(*context.tracer) &&
       gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
@@ -273,7 +273,7 @@ absl::Status DropParseAndAppend(
 }
 
 absl::StatusOr<XdsEndpointResource> EdsResourceParse(
-    const XdsEncodingContext& /*context*/,
+    const XdsResourceType::DecodeContext& /*context*/,
     const envoy_config_endpoint_v3_ClusterLoadAssignment*
         cluster_load_assignment,
     bool /*is_v2*/) {
@@ -343,8 +343,8 @@ absl::StatusOr<XdsEndpointResource> EdsResourceParse(
 }  // namespace
 
 absl::StatusOr<XdsResourceType::DecodeResult> XdsEndpointResourceType::Decode(
-    const XdsEncodingContext& context, absl::string_view serialized_resource,
-    bool is_v2) const {
+    const XdsResourceType::DecodeContext& context,
+    absl::string_view serialized_resource, bool is_v2) const {
   // Parse serialized proto.
   auto* resource = envoy_config_endpoint_v3_ClusterLoadAssignment_parse(
       serialized_resource.data(), serialized_resource.size(), context.arena);
