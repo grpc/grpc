@@ -1269,6 +1269,7 @@ grpc_cc_library(
     external_deps = ["absl/status"],
     deps = [
         "activity",
+        "context",
         "default_event_engine",
         "event_engine_base_hdrs",
         "exec_ctx",
@@ -2730,9 +2731,12 @@ grpc_cc_library(
     ],
     external_deps = ["absl/functional:any_invocable"],
     deps = [
+        "context",
         "default_event_engine_factory",
         "event_engine_base_hdrs",
+        "event_engine_trace",
         "gpr_base",
+        "grpc_trace",
     ],
 )
 
@@ -3677,6 +3681,7 @@ grpc_cc_library(
         "closure",
         "config",
         "debug_location",
+        "default_event_engine",
         "exec_ctx",
         "exec_ctx_wakeup_scheduler",
         "gpr_base",
