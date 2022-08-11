@@ -70,10 +70,10 @@ class NoDestruct {
   typename std::aligned_storage<sizeof(T), alignof(T)>::type space_;
 };
 
-// Helper for when a program desires a single instance of a default constructed
-// T to be always available.
-// T is constructed eagerly at program startup, so it's essentially free to load
-// the pointer to the instance.
+// Helper for when a program desires a single *process wide* instance of a
+// default constructed T to be always available.
+// The instance is constructed eagerly at program startup, so it's essentially
+// free to load the pointer to the instance.
 template <typename T>
 class NoDestructSingleton {
  public:
