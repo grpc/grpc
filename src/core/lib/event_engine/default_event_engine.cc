@@ -26,6 +26,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/default_event_engine_factory.h"
 #include "src/core/lib/event_engine/trace.h"
+#include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/sync.h"
 
 namespace grpc_event_engine {
@@ -34,8 +35,8 @@ namespace experimental {
 namespace {
 std::atomic<absl::AnyInvocable<std::unique_ptr<EventEngine>()>*>
     g_event_engine_factory{nullptr};
-grpc_core::Mutex g_mu;
-std::weak_ptr<EventEngine>* g_event_engine = new std::weak_ptr<EventEngine>();
+grpc_core::NoDestructSingleton<grpc_core::Mutex> g_mu;
+grpc_core::NoDestructSingleton<std::weak_ptr<EventEngine>> g_event_engine;
 }  // namespace
 
 void SetEventEngineFactory(
@@ -44,8 +45,8 @@ void SetEventEngineFactory(
       new absl::AnyInvocable<std::unique_ptr<EventEngine>()>(
           std::move(factory)));
   // Forget any previous EventEngines
-  grpc_core::MutexLock lock(&g_mu);
-  g_event_engine->reset();
+  grpc_core::MutexLock lock(g_mu.Get());
+  g_event_engine.Get()->reset();
 }
 
 void RevertToDefaultEventEngineFactory() {
@@ -60,21 +61,21 @@ std::unique_ptr<EventEngine> CreateEventEngine() {
 }
 
 std::shared_ptr<EventEngine> GetDefaultEventEngine() {
-  grpc_core::MutexLock lock(&g_mu);
-  if (std::shared_ptr<EventEngine> engine = g_event_engine->lock()) {
+  grpc_core::MutexLock lock(g_mu.Get());
+  if (std::shared_ptr<EventEngine> engine = g_event_engine.Get()->lock()) {
     GRPC_EVENT_ENGINE_TRACE("DefaultEventEngine::%p use_count:%ld",
                             engine.get(), engine.use_count());
     return engine;
   }
   std::shared_ptr<EventEngine> engine{CreateEventEngine()};
   GRPC_EVENT_ENGINE_TRACE("Created DefaultEventEngine::%p", engine.get());
-  *g_event_engine = engine;
+  *g_event_engine.Get() = engine;
   return engine;
 }
 
 void ResetDefaultEventEngine() {
-  grpc_core::MutexLock lock(&g_mu);
-  g_event_engine->reset();
+  grpc_core::MutexLock lock(g_mu.Get());
+  g_event_engine.Get()->reset();
 }
 
 }  // namespace experimental

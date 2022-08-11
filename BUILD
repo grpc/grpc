@@ -2737,6 +2737,7 @@ grpc_cc_library(
         "event_engine_trace",
         "gpr_base",
         "grpc_trace",
+        "no_destruct",
     ],
 )
 
