@@ -119,6 +119,24 @@ std::shared_ptr<CallParams> GetBeforeSnapshot(
   return params;
 }
 
+// Simple Unary RPC to send to confirm connection is open
+std::shared_ptr<CallParams> MemoryProfilerDump(std::shared_ptr<grpc::Channel> channel) {
+  std::unique_ptr<grpc::testing::BenchmarkService::Stub> stub =
+      grpc::testing::BenchmarkService::NewStub(channel);
+
+  // Start a call.
+  auto params = std::make_shared<CallParams>();
+  stub->async()->MemoryProfilerDump(&params->context, &params->request,
+                           &params->response,
+                           [params](const grpc::Status& status) {
+                             if (!status.ok()) {
+                               gpr_log(GPR_ERROR, "MemoryProfilerDump RPC failed.");
+                             }
+                             params->done.Notify();
+                           });
+  return params;
+}
+
 int main(int argc, char** argv) {
   absl::ParseCommandLine(argc, argv);
   char* fake_argv[1];
@@ -147,6 +165,9 @@ int main(int argc, char** argv) {
     channels_list[i] = channel;
     UnaryCall(channel)->done.WaitForNotification();
   }
+
+  //Trigger HeapProfilerDump in server when all channels are open for memory profiling
+  MemoryProfilerDump(get_memory_channel)->done.WaitForNotification();
 
   // Getting peak memory usage
   long peak_server_memory = GetMemUsage(absl::GetFlag(FLAGS_server_pid));

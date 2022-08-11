@@ -36,6 +36,7 @@
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "test/core/memory_usage/memstats.h"
 #include "test/core/util/test_config.h"
+#include "gperftools/heap-profiler.h"
 
 class ServerCallbackImpl final
     : public grpc::testing::BenchmarkService::CallbackService {
@@ -61,7 +62,15 @@ class ServerCallbackImpl final
     reactor->Finish(grpc::Status::OK);
     return reactor;
   }
-
+  grpc::ServerUnaryReactor* MemoryProfilerDump(
+      grpc::CallbackServerContext* context,
+      const grpc::testing::SimpleRequest* request,
+      grpc::testing::SimpleResponse* response) override {
+    HeapProfilerDump("Server Peak Usage");
+    auto* reactor = context->DefaultReactor();
+    reactor->Finish(grpc::Status::OK);
+    return reactor;
+  }
  private:
   long before_server_create;
 };
@@ -79,6 +88,10 @@ int main(int argc, char** argv) {
   GPR_ASSERT(argc >= 1);
   fake_argv[0] = argv[0];
   grpc::testing::TestEnvironment env(&argc, argv);
+
+  //Start gperftools heap profiler
+  HeapProfilerStart("/tmp/server.heapprof");
+
   grpc_init();
   signal(SIGINT, sigint_handler);
   std::string server_address = absl::GetFlag(FLAGS_bind);
@@ -106,8 +119,9 @@ int main(int argc, char** argv) {
   // Set up the server to start accepting requests.
   std::shared_ptr<grpc::Server> server(builder.BuildAndStart());
   gpr_log(GPR_INFO, "Server listening on %s", server_address.c_str());
-
+ 
   // Keep the program running until the server shuts down.
   server->Wait();
+  HeapProfilerStop();
   return 0;
 }
