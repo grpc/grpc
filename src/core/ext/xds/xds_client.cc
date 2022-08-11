@@ -57,6 +57,7 @@
 namespace grpc_core {
 
 using ::grpc_event_engine::experimental::EventEngine;
+using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 
 TraceFlag grpc_xds_client_trace(false, "xds_client");
 TraceFlag grpc_xds_client_refcount_trace(false, "xds_client_refcount");
@@ -190,7 +191,7 @@ class XdsClient::ChannelState::AdsCallState
       if (state.resource != nullptr) return;
       // Start timer.
       ads_calld_ = std::move(ads_calld);
-      timer_handle_ = ads_calld_->xds_client()->engine()->RunAfter(
+      timer_handle_ = GetDefaultEventEngine()->RunAfter(
           ads_calld_->xds_client()->request_timeout_,
           [self = Ref(DEBUG_LOCATION, "timer")]() {
             ApplicationCallbackExecCtx callback_exec_ctx;
@@ -213,7 +214,7 @@ class XdsClient::ChannelState::AdsCallState
       // TODO(roth): Find a way to write a test for this case.
       timer_start_needed_ = false;
       if (timer_handle_.has_value()) {
-        ads_calld_->xds_client()->engine()->Cancel(*timer_handle_);
+        GetDefaultEventEngine()->Cancel(*timer_handle_);
         timer_handle_.reset();
       }
     }
@@ -564,7 +565,7 @@ void XdsClient::ChannelState::RetryableCall<T>::Orphan() {
   shutting_down_ = true;
   calld_.reset();
   if (timer_handle_.has_value()) {
-    chand()->xds_client()->engine()->Cancel(*timer_handle_);
+    GetDefaultEventEngine()->Cancel(*timer_handle_);
     timer_handle_.reset();
   }
   this->Unref(DEBUG_LOCATION, "RetryableCall+orphaned");
@@ -607,7 +608,7 @@ void XdsClient::ChannelState::RetryableCall<T>::StartRetryTimerLocked() {
             chand()->xds_client(), chand()->server_.server_uri.c_str(),
             timeout.millis());
   }
-  timer_handle_ = chand()->xds_client()->engine()->RunAfter(
+  timer_handle_ = GetDefaultEventEngine()->RunAfter(
       timeout,
       [self = this->Ref(DEBUG_LOCATION, "RetryableCall+retry_timer_start")]() {
         ApplicationCallbackExecCtx callback_exec_ctx;
@@ -1105,7 +1106,7 @@ XdsClient::ChannelState::AdsCallState::ResourceNamesForRequest(
 
 void XdsClient::ChannelState::LrsCallState::Reporter::Orphan() {
   if (timer_handle_.has_value() &&
-      xds_client()->engine()->Cancel(*timer_handle_)) {
+      GetDefaultEventEngine()->Cancel(*timer_handle_)) {
     timer_handle_.reset();
     Unref(DEBUG_LOCATION, "Orphan");
   }
@@ -1113,7 +1114,7 @@ void XdsClient::ChannelState::LrsCallState::Reporter::Orphan() {
 
 void XdsClient::ChannelState::LrsCallState::Reporter::
     ScheduleNextReportLocked() {
-  timer_handle_ = xds_client()->engine()->RunAfter(report_interval_, [this]() {
+  timer_handle_ = GetDefaultEventEngine()->RunAfter(report_interval_, [this]() {
     ApplicationCallbackExecCtx callback_exec_ctx;
     ExecCtx exec_ctx;
     if (OnNextReportTimer()) {
@@ -1384,8 +1385,7 @@ XdsClient::XdsClient(std::unique_ptr<XdsBootstrap> bootstrap,
       transport_factory_(std::move(transport_factory)),
       request_timeout_(resource_request_timeout),
       xds_federation_enabled_(XdsFederationEnabled()),
-      api_(this, &grpc_xds_client_trace, bootstrap_->node(), &symtab_),
-      engine_(grpc_event_engine::experimental::GetDefaultEventEngine()) {
+      api_(this, &grpc_xds_client_trace, bootstrap_->node(), &symtab_) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO, "[xds_client %p] creating xds client", this);
   }
