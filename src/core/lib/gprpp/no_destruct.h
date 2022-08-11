@@ -58,10 +58,13 @@ class NoDestruct {
   NoDestruct& operator=(const NoDestruct&) = delete;
   ~NoDestruct() = default;
 
-  T* operator->() { return reinterpret_cast<T*>(&space_); }
-  const T* operator->() const { return *reinterpret_cast<const T*>(&space_); }
-  T& operator*() { return *reinterpret_cast<T*>(&space_); }
-  const T& operator*() const { return *reinterpret_cast<const T*>(&space_); }
+  T* operator->() { return get(); }
+  const T* operator->() const { return get(); }
+  T& operator*() { return *get(); }
+  const T& operator*() const { return *get(); }
+
+  T* get() { return reinterpret_cast<T*>(&space_); }
+  const T* get() const { return reinterpret_cast<const T*>(&space_); }
 
  private:
   typename std::aligned_storage<sizeof(T), alignof(T)>::type space_;
@@ -77,6 +80,9 @@ class NoDestructSingleton {
   static T* Get() { return &*value_; }
 
  private:
+  NoDestructSingleton() = delete;
+  ~NoDestructSingleton() = delete;
+
   static NoDestruct<T> value_;
 };
 
