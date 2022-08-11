@@ -136,14 +136,10 @@ class TcpZerocopySendRecord {
 
   // Reset this structure for a new tcp_write() with zerocopy.
   void PrepareForSends(SliceBuffer& slices_to_send) {
-    // std::cout << "PrepareForSends start\n";
-    // fflush(stdout);
     AssertEmpty();
     out_offset_.slice_idx = 0;
     out_offset_.byte_idx = 0;
     buf_.Swap(slices_to_send);
-    // std::cout << "PrepareForSends end\n";
-    // fflush(stdout);
     Ref();
   }
 
@@ -155,11 +151,7 @@ class TcpZerocopySendRecord {
   bool Unref() {
     const intptr_t prior = ref_.fetch_sub(1, std::memory_order_acq_rel);
     GPR_DEBUG_ASSERT(prior > 0);
-    // std::cout << "Unref called\n";
-    // fflush(stdout);
     if (prior == 1) {
-      // std::cout << "AllSendsComplete set\n";
-      // fflush(stdout);
       AllSendsComplete();
       return true;
     }
@@ -546,8 +538,6 @@ bool PosixStreamSocket::TcpDoRead(absl::Status& status) {
     iov[i].iov_len = slice.length();
   }
 
-  // std::cout << "ENTER TCP do-read: " << std::endl;
-  // fflush(stdout);
   GPR_ASSERT(incoming_buffer_->Length() != 0);
   GPR_DEBUG_ASSERT(min_progress_size_ > 0);
 
@@ -661,9 +651,6 @@ bool PosixStreamSocket::TcpDoRead(absl::Status& status) {
 
   GPR_DEBUG_ASSERT(total_read_bytes > 0);
   status = absl::OkStatus();
-  // std::cout << "Frame size tuning enabled: " << frame_size_tuning_enabled_
-  //           << " Total read bytes: " << total_read_bytes << std::endl;
-  // fflush(stdout);
   if (frame_size_tuning_enabled_) {
     // Update min progress size based on the total number of bytes read in
     // this round.
@@ -735,8 +722,6 @@ void PosixStreamSocket::MaybeMakeReadSlices() {
             min_read_chunk_size,
             grpc_core::Clamp(extra_wanted, min_read_chunk_size,
                              max_read_chunk_size)))));
-    // std::cout << "Incoming buffer length = " << incoming_buffer_->Length()
-    //           << std::endl;
     MaybePostReclaimer();
   }
 }
@@ -744,8 +729,6 @@ void PosixStreamSocket::MaybeMakeReadSlices() {
 void PosixStreamSocket::HandleRead(absl::Status status) {
   read_mu_.Lock();
   if (status.ok()) {
-    // std::cout << "HandleRead: Making read slices\n";
-    // fflush(stdout);
     MaybeMakeReadSlices();
     if (!TcpDoRead(status)) {
       // We've consumed the edge, request a new one.
@@ -761,11 +744,7 @@ void PosixStreamSocket::HandleRead(absl::Status status) {
   read_cb_ = nullptr;
   incoming_buffer_ = nullptr;
   read_mu_.Unlock();
-  // std::cout << "Calling on_read callback ..." << std::endl;
-  // fflush(stdout);
   cb(status);
-  // std::cout << "Called on_read callback ..." << std::endl;
-  // fflush(stdout);
   Unref();
 }
 
@@ -779,9 +758,6 @@ void PosixStreamSocket::Read(absl::AnyInvocable<void(absl::Status)> on_read,
   incoming_buffer_->Clear();
   incoming_buffer_->Swap(last_read_buffer_);
   read_mu_.Unlock();
-  // std::cout << "Entering Socket Read. Incoming buffer length: "
-  //           << incoming_buffer_->Length() << std::endl;
-  // fflush(stdout);
   if (args != nullptr && frame_size_tuning_enabled_) {
     min_progress_size_ = args->read_hint_bytes;
   } else {
@@ -792,18 +768,12 @@ void PosixStreamSocket::Read(absl::AnyInvocable<void(absl::Status)> on_read,
     // Endpoint read called for the very first time. Register read callback
     // with the polling engine.
     is_first_read_ = false;
-    // std::cout << "Registering read callback" << std::endl;
-    // fflush(stdout);
     handle_->NotifyOnRead(on_read_);
   } else if (inq_ == 0) {
     // Upper layer asked to read more but we know there is no pending data to
     // read from previous reads. So, wait for POLLIN.
-    // std::cout << "Registering read callback-2" << std::endl;
-    // fflush(stdout);
     handle_->NotifyOnRead(on_read_);
   } else {
-    // std::cout << "Calling handle_read directly ..." << std::endl;
-    // fflush(stdout);
     on_read_->SetStatus(absl::OkStatus());
     scheduler_->Run(on_read_);
   }
@@ -995,9 +965,6 @@ void PosixStreamSocket::HandleError(absl::Status status) {
     Unref();
     return;
   }
-  // std::cout << "Handling errors ..." << std::endl;
-  // fflush(stdout);
-
   // We are still interested in collecting timestamps, so let's try reading
   // them.
   if (!ProcessErrors()) {
@@ -1129,8 +1096,6 @@ bool PosixStreamSocket::DoFlushZerocopy(TcpZerocopySendRecord* record,
       tcp_zerocopy_send_ctx_->UndoSend();
       if (saved_errno == EAGAIN || saved_errno == ENOBUFS) {
         record->UnwindIfThrottled(unwind_slice_idx, unwind_byte_idx);
-        // std::cout << "Received EAGAIN or ENOBUFS error" << std::endl;
-        // fflush(stdout);
         return false;
       } else {
         status = absl::InternalError(

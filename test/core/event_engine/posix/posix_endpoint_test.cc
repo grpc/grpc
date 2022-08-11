@@ -217,10 +217,10 @@ std::string TestScenarioName(const ::testing::TestParamInfo<TestParam>& info) {
                       "_is_zero_copy_enabled_", info.param.IsZeroCopyEnabled());
 }
 
-// A helper class to create Fds and drive the polling for these Fds. It
-// repeatedly calls the Work(..) method on the poller to get pet pending events,
-// then schedules another parallel Work(..) instantiation and processes these
-// pending events. This continues until all Fds have orphaned themselves.
+// A helper class to drive the polling of Fds. It repeatedly calls the Work(..)
+// method on the poller to get pet pending events, then schedules another
+// parallel Work(..) instantiation and processes these pending events. This
+// continues until all Fds have orphaned themselves.
 class Worker {
  public:
   Worker(Scheduler* scheduler, PosixEventPoller* poller)
@@ -331,21 +331,15 @@ TEST_P(PosixEndpointTest, ConnectExchangeBidiDataTransferTest) {
     // client.
     for (int i = 0; i < kNumExchangedMessages; i++) {
       // Send from client to server and verify data read at the server.
-      // std::cout << "Sending message " << i << std::endl;
-      // fflush(stdout);
       ASSERT_TRUE(SendValidatePayload(GetNextSendMessage(),
                                       client_endpoint.get(),
                                       server_endpoint.get())
                       .ok());
-      // std::cout << "Receiving message " << i << std::endl;
-      // fflush(stdout);
       // Send from server to client and verify data read at the client.
       ASSERT_TRUE(SendValidatePayload(GetNextSendMessage(),
                                       server_endpoint.get(),
                                       client_endpoint.get())
                       .ok());
-      // std::cout << "Received message " << i << std::endl;
-      // fflush(stdout);
     }
   }
   worker.Wait();
