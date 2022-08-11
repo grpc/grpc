@@ -50,7 +50,12 @@ do
   # cmd in the dockerfile in not ok as contents of the added file will not be
   # reflected in the SHA).
   DOCKER_IMAGE_NAME=$(basename $DOCKERFILE_DIR)
-  DOCKER_IMAGE_TAG=$(sha1sum $DOCKERFILE_DIR/Dockerfile | cut -f1 -d\ )
+
+  if [ ! -e "$DOCKERFILE_DIR/Dockerfile" ]; then
+    continue
+  else
+    DOCKER_IMAGE_TAG=$(sha1sum $DOCKERFILE_DIR/Dockerfile | cut -f1 -d\ )
+  fi
 
   # skip the image if it already exists in the repo 
   curl --silent -f -lSL https://registry.hub.docker.com/v2/repositories/${DOCKERHUB_ORGANIZATION}/${DOCKER_IMAGE_NAME}/tags/${DOCKER_IMAGE_TAG} > /dev/null \
