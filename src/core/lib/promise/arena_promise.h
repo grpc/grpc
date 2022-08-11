@@ -19,6 +19,7 @@
 
 #include <stdlib.h>
 
+#include <new>
 #include <utility>
 
 #include "absl/meta/type_traits.h"
