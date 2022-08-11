@@ -41,7 +41,7 @@ TEST(NoDestruct, CrashOnDestructionIsAccessible) {
   g_test_crash_on_destruction->Exists();
 }
 
-static bool g_thing_constructed = false;
+bool g_thing_constructed = false;
 
 class Thing {
  public:
