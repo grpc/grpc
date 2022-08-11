@@ -353,6 +353,9 @@ EventHandle* PollPoller::CreateHandle(int fd, absl::string_view /*name*/,
   GPR_DEBUG_ASSERT(track_err == false);
   PollEventHandle* handle = new PollEventHandle(fd, this);
   ForkFdListAddHandle(handle);
+  // We need to send a kick to the thread executing Work(..) so that it can
+  // add this new Fd into the list of Fds to poll.
+  KickExternal(false);
   return handle;
 }
 
