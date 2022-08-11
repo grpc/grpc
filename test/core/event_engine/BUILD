@@ -126,12 +126,12 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "aborting_event_engine",
+    testonly = True,
     hdrs = ["util/aborting_event_engine.h"],
     external_deps = [
         "absl/status",
         "absl/status:statusor",
     ],
-    testonly = True,
     deps = [
         "//:event_engine_base_hdrs",
         "//:gpr_base",
