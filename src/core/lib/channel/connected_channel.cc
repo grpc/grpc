@@ -576,7 +576,7 @@ class ClientStream : public Orphanable {
           }
           recv_message_state_ = absl::optional<MessageHandle>(
               GetContext<FragmentAllocator>()->MakeMessage(
-                  std::move(*pending.payload), pending.flags));
+                  std::move(*pending.payload), pending.flags, nullptr));
         } else {
           if (grpc_call_trace.enabled()) {
             gpr_log(GPR_INFO, "%sRecvMessageBatchDone: received no payload",

@@ -104,8 +104,8 @@ grpc_core::TraceFlag grpc_compression_trace(false, "compression");
 grpc_core::TraceFlag grpc_call_trace(false, "call");
 grpc_core::TraceFlag grpc_call_refcount_trace(false, "call_refcount");
 
-GPR_GLOBAL_CONFIG_DEFINE_BOOL(grpc_experimental_enable_promise_based_call,
-                              false, "enable promise based calls");
+GPR_GLOBAL_CONFIG_DEFINE_BOOL(grpc_experimental_enable_promise_based_call, true,
+                              "enable promise based calls");
 
 namespace grpc_core {
 
@@ -1896,10 +1896,20 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
   void Drop() override { InternalUnref("wakeup"); }
 
   void InContext(absl::AnyInvocable<void()> fn) {
-    ScopedContext activity_context(this);
-    MutexLock lock(&mu_);
-    fn();
-    Update();
+    if (Activity::current() == this) {
+      fn();
+    } else {
+      InternalRef("in_context");
+      grpc_event_engine::experimental::GetDefaultEventEngine()->Run(
+          [this, fn = std::move(fn)]() mutable {
+            ExecCtx exec_ctx;
+            ScopedContext activity_context(this);
+            MutexLock lock(&mu_);
+            fn();
+            Update();
+            InternalUnref("in_context");
+          });
+    }
   }
 
   grpc_compression_algorithm test_only_compression_algorithm() override {
@@ -2289,18 +2299,7 @@ void PromiseBasedCall::SetCompletionQueue(grpc_completion_queue* cq) {
 // CallContext
 
 void CallContext::InContext(absl::AnyInvocable<void()> fn) {
-  call_->InternalRef("in_context");
-  if (Activity::current() == call_) {
-    fn();
-    call_->InternalUnref("in_context");
-  } else {
-    grpc_event_engine::experimental::GetDefaultEventEngine()->Run(
-        [call = call_, fn = std::move(fn)]() mutable {
-          ExecCtx exec_ctx;
-          call->InContext(std::move(fn));
-          call->InternalUnref("in_context");
-        });
-  }
+  call_->InContext(std::move(fn));
 }
 
 void CallContext::IncrementRefCount(const char* reason) {
@@ -2502,8 +2501,14 @@ void ClientPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
               &op.data.send_message.send_message->data.raw.slice_buffer,
               send.c_slice_buffer());
           outstanding_send_.emplace(client_to_server_messages_.sender.Push(
-              GetContext<FragmentAllocator>()->MakeMessage(std::move(send),
-                                                           op.flags)));
+              GetContext<FragmentAllocator>()->MakeMessage(
+                  std::move(send), op.flags, [this]() {
+                    InContext([this] {
+                      mu()->AssertHeld();
+                      FinishCompletion(&send_message_completion_,
+                                       PauseReason::kSendMessage);
+                    });
+                  })));
         } else {
           FailCompletion(completion);
         }
@@ -2616,7 +2621,6 @@ void ClientPromiseBasedCall::UpdateOnce() {
         Finish(ServerMetadataHandle(absl::Status(
             absl::StatusCode::kInternal, "Failed to send message to server")));
       }
-      FinishCompletion(&send_message_completion_, PauseReason::kSendMessage);
     }
   }
   if (promise_.has_value()) {
