@@ -54,9 +54,8 @@
 #include "src/core/lib/promise/latch.h"
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/resource_quota/arena.h"
-#include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/lib/transport/call_fragments.h"
 #include "src/core/lib/transport/connectivity_state.h"
-#include "src/core/lib/transport/metadata_allocator.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport_fwd.h"
 
@@ -82,47 +81,6 @@ struct grpc_transport_stream_op_batch_payload;
   (GRPC_WRITE_INTERNAL_COMPRESS | GRPC_WRITE_INTERNAL_TEST_ONLY_WAS_COMPRESSED)
 
 namespace grpc_core {
-
-// Server metadata type
-// TODO(ctiller): This should be a bespoke instance of MetadataMap<>
-using ServerMetadata = grpc_metadata_batch;
-using ServerMetadataHandle = MetadataHandle<ServerMetadata>;
-
-// Ok/not-ok check for trailing metadata, so that it can be used as result types
-// for TrySeq.
-inline bool IsStatusOk(const ServerMetadataHandle& m) {
-  return m->get(GrpcStatusMetadata()).value_or(GRPC_STATUS_UNKNOWN) ==
-         GRPC_STATUS_OK;
-}
-
-// Client initial metadata type
-// TODO(ctiller): This should be a bespoke instance of MetadataMap<>
-using ClientMetadata = grpc_metadata_batch;
-using ClientMetadataHandle = MetadataHandle<ClientMetadata>;
-
-// Server initial metadata type
-// TODO(ctiller): This should be a bespoke instance of MetadataMap<>
-using ServerMetadataHandle = MetadataHandle<grpc_metadata_batch>;
-
-class Message {
- public:
-  Message() = default;
-  ~Message() = default;
-  Message(SliceBuffer payload, uint32_t flags)
-      : payload_(std::move(payload)), flags_(flags) {}
-  Message(const Message&) = delete;
-  Message& operator=(const Message&) = delete;
-  Message(Message&& other) noexcept = default;
-  Message& operator=(Message&& other) noexcept = default;
-
-  uint32_t flags() const { return flags_; }
-  SliceBuffer* payload() { return &payload_; }
-  const SliceBuffer* payload() const { return &payload_; }
-
- private:
-  SliceBuffer payload_;
-  uint32_t flags_ = 0;
-};
 
 struct CallArgs {
   // Initial metadata from the client to the server.

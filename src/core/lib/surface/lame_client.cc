@@ -47,8 +47,8 @@
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/channel_stack_type.h"
+#include "src/core/lib/transport/call_fragments.h"
 #include "src/core/lib/transport/connectivity_state.h"
-#include "src/core/lib/transport/metadata_allocator.h"
 #include "src/core/lib/transport/transport.h"
 
 // Avoid some IWYU confusion:

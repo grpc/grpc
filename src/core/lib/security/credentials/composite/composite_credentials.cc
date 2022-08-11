@@ -35,7 +35,7 @@
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/surface/api_trace.h"
-#include "src/core/lib/transport/metadata_allocator.h"
+#include "src/core/lib/transport/call_fragments.h"
 #include "src/core/lib/transport/transport.h"
 
 //

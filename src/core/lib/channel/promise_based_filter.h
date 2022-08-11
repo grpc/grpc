@@ -56,8 +56,8 @@
 #include "src/core/lib/promise/latch.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/transport/call_fragments.h"
 #include "src/core/lib/transport/error_utils.h"
-#include "src/core/lib/transport/metadata_allocator.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 
@@ -234,13 +234,13 @@ class BaseCallData : public Activity, private Wakeable {
     grpc_transport_stream_op_batch* batch_;
   };
 
-  static MetadataHandle<grpc_metadata_batch> WrapMetadata(
+  static FragmentHandle<grpc_metadata_batch> WrapMetadata(
       grpc_metadata_batch* p) {
-    return MetadataHandle<grpc_metadata_batch>(p, false);
+    return FragmentHandle<grpc_metadata_batch>(p, false);
   }
 
   static grpc_metadata_batch* UnwrapMetadata(
-      MetadataHandle<grpc_metadata_batch> p) {
+      FragmentHandle<grpc_metadata_batch> p) {
     return p.Unwrap();
   }
 

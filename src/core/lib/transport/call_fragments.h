@@ -26,6 +26,7 @@
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
 namespace grpc_core {
@@ -35,26 +36,26 @@ namespace promise_filter_detail {
 class BaseCallData;
 }  // namespace promise_filter_detail
 
-class MetadataAllocator;
+class FragmentAllocator;
 
 // Small unowned "handle" type to ensure one accessor at a time to metadata.
 // The focus here is to get promises to use the syntax we'd like - we'll
 // probably substitute some other smart pointer later.
 template <typename T>
-class MetadataHandle {
+class FragmentHandle {
  public:
-  MetadataHandle() = default;
+  FragmentHandle() = default;
 
-  MetadataHandle(const MetadataHandle&) = delete;
-  MetadataHandle& operator=(const MetadataHandle&) = delete;
+  FragmentHandle(const FragmentHandle&) = delete;
+  FragmentHandle& operator=(const FragmentHandle&) = delete;
 
-  MetadataHandle(MetadataHandle&& other) noexcept
+  FragmentHandle(FragmentHandle&& other) noexcept
       : handle_(other.handle_),
         allocated_by_allocator_(other.allocated_by_allocator_) {
     other.handle_ = nullptr;
     other.allocated_by_allocator_ = false;
   }
-  MetadataHandle& operator=(MetadataHandle&& other) noexcept {
+  FragmentHandle& operator=(FragmentHandle&& other) noexcept {
     handle_ = other.handle_;
     allocated_by_allocator_ = other.allocated_by_allocator_;
     other.handle_ = nullptr;
@@ -62,24 +63,24 @@ class MetadataHandle {
     return *this;
   }
 
-  explicit MetadataHandle(const absl::Status& status);
+  explicit FragmentHandle(const absl::Status& status);
 
-  ~MetadataHandle();
+  ~FragmentHandle();
 
   T* operator->() const { return handle_; }
   bool has_value() const { return handle_ != nullptr; }
   T* get() const { return handle_; }
-  void reset() { *this = MetadataHandle(); }
+  void reset() { *this = FragmentHandle(); }
 
-  static MetadataHandle TestOnlyWrap(T* p) { return MetadataHandle(p, false); }
+  static FragmentHandle TestOnlyWrap(T* p) { return FragmentHandle(p, false); }
 
  private:
   // We restrict access to construction from a pointer to limit the number of
   // cases that need dealing with as this code evolves.
   friend class promise_filter_detail::BaseCallData;
-  friend class MetadataAllocator;
+  friend class FragmentAllocator;
 
-  explicit MetadataHandle(T* handle, bool allocated_by_allocator)
+  explicit FragmentHandle(T* handle, bool allocated_by_allocator)
       : handle_(handle), allocated_by_allocator_(allocated_by_allocator) {}
 
   T* Unwrap() {
@@ -96,6 +97,45 @@ class MetadataHandle {
   bool allocated_by_allocator_ = false;
 };
 
+// Server metadata type
+// TODO(ctiller): This should be a bespoke instance of MetadataMap<>
+using ServerMetadata = grpc_metadata_batch;
+using ServerMetadataHandle = FragmentHandle<ServerMetadata>;
+
+// Client initial metadata type
+// TODO(ctiller): This should be a bespoke instance of MetadataMap<>
+using ClientMetadata = grpc_metadata_batch;
+using ClientMetadataHandle = FragmentHandle<ClientMetadata>;
+
+class Message {
+ public:
+  Message() = default;
+  ~Message() = default;
+  Message(SliceBuffer payload, uint32_t flags)
+      : payload_(std::move(payload)), flags_(flags) {}
+  Message(const Message&) = delete;
+  Message& operator=(const Message&) = delete;
+  Message(Message&& other) noexcept = default;
+  Message& operator=(Message&& other) noexcept = default;
+
+  uint32_t flags() const { return flags_; }
+  SliceBuffer* payload() { return &payload_; }
+  const SliceBuffer* payload() const { return &payload_; }
+
+ private:
+  SliceBuffer payload_;
+  uint32_t flags_ = 0;
+};
+
+using MessageHandle = FragmentHandle<Message>;
+
+// Ok/not-ok check for trailing metadata, so that it can be used as result types
+// for TrySeq.
+inline bool IsStatusOk(const ServerMetadataHandle& m) {
+  return m->get(GrpcStatusMetadata()).value_or(GRPC_STATUS_UNKNOWN) ==
+         GRPC_STATUS_OK;
+}
+
 // Within a call arena we need metadata at least four times - (client,server) x
 // (initial,trailing), and possibly more for early returning promises.
 // Since we often don't need these *simultaneously*, we can save memory by
@@ -103,32 +143,40 @@ class MetadataHandle {
 // We'd still like the memory to be part of the arena though, so this type
 // creates a small free list of metadata objects and a central (call context)
 // based place to create/destroy them.
-class MetadataAllocator {
+class FragmentAllocator {
  public:
-  MetadataAllocator() = default;
-  ~MetadataAllocator() = default;
-  MetadataAllocator(const MetadataAllocator&) = delete;
-  MetadataAllocator& operator=(const MetadataAllocator&) = delete;
+  FragmentAllocator() = default;
+  ~FragmentAllocator() = default;
+  FragmentAllocator(const FragmentAllocator&) = delete;
+  FragmentAllocator& operator=(const FragmentAllocator&) = delete;
 
-  template <typename T>
-  MetadataHandle<T> MakeMetadata() {
+  ClientMetadataHandle MakeClientMetadata() {
     auto* node = AllocateNode();
     // TODO(ctiller): once we finish the promise transition, have metadata map
     // know about arena contexts and allocate directly from there.
     // (we could do so before, but there's enough places where we don't have a
     // promise context up that it's too much whackamole)
-    new (&node->batch) T(GetContext<Arena>());
-    return MetadataHandle<T>(&node->batch, GetContext<MetadataAllocator>());
+    new (&node->batch) ClientMetadata(GetContext<Arena>());
+    return ClientMetadataHandle(&node->batch, true);
+  }
+
+  ServerMetadataHandle MakeServerMetadata() { return MakeClientMetadata(); }
+
+  MessageHandle MakeMessage() {
+    auto* node = AllocateNode();
+    new (&node->message) Message();
+    return MessageHandle(&node->message, true);
   }
 
  private:
   union Node {
     Node* next_free;
     grpc_metadata_batch batch;
+    Message message;
   };
 
   template <typename T>
-  friend class MetadataHandle;
+  friend class FragmentHandle;
 
   template <typename T>
   void Delete(T* p) {
@@ -143,10 +191,10 @@ class MetadataAllocator {
 };
 
 template <>
-struct ContextType<MetadataAllocator> {};
+struct ContextType<FragmentAllocator> {};
 
 template <typename T>
-MetadataHandle<T>::MetadataHandle(const absl::Status& status) {
+FragmentHandle<T>::FragmentHandle(const absl::Status& status) {
   // TODO(ctiller): currently we guarantee that MetadataAllocator is only
   // present for promise based calls, and if we're using promise_based_filter
   // it's not present. If we're in a promise based call, the correct thing is to
@@ -154,10 +202,10 @@ MetadataHandle<T>::MetadataHandle(const absl::Status& status) {
   // need to do the hacky thing promise_based_filter does.
   // This all goes away when promise_based_filter goes away, and this code will
   // just assume there's an allocator present and move forward.
-  if (auto* allocator = GetContext<MetadataAllocator>()) {
+  if (auto* allocator = GetContext<FragmentAllocator>()) {
     handle_ = nullptr;
     allocated_by_allocator_ = false;
-    *this = allocator->MakeMetadata<T>();
+    *this = allocator->MakeServerMetadata();
   } else {
     handle_ = GetContext<Arena>()->New<T>(GetContext<Arena>());
     allocated_by_allocator_ = false;
@@ -170,9 +218,9 @@ MetadataHandle<T>::MetadataHandle(const absl::Status& status) {
 }
 
 template <typename T>
-MetadataHandle<T>::~MetadataHandle() {
+FragmentHandle<T>::~FragmentHandle() {
   if (allocated_by_allocator_) {
-    GetContext<MetadataAllocator>()->Delete(handle_);
+    GetContext<FragmentAllocator>()->Delete(handle_);
   }
 }
 

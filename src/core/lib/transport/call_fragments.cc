@@ -14,11 +14,11 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/transport/metadata_allocator.h"
+#include "src/core/lib/transport/call_fragments.h"
 
 namespace grpc_core {
 
-MetadataAllocator::Node* MetadataAllocator::AllocateNode() {
+FragmentAllocator::Node* FragmentAllocator::AllocateNode() {
   if (free_list_ != nullptr) {
     Node* node = free_list_;
     free_list_ = free_list_->next_free;
@@ -27,7 +27,7 @@ MetadataAllocator::Node* MetadataAllocator::AllocateNode() {
   return static_cast<Node*>(GetContext<Arena>()->Alloc(sizeof(Node)));
 }
 
-void MetadataAllocator::FreeNode(Node* node) {
+void FragmentAllocator::FreeNode(Node* node) {
   node->next_free = free_list_;
   free_list_ = node;
 }

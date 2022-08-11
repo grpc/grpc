@@ -94,8 +94,8 @@
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/surface/server.h"
 #include "src/core/lib/surface/validate_metadata.h"
+#include "src/core/lib/transport/call_fragments.h"
 #include "src/core/lib/transport/error_utils.h"
-#include "src/core/lib/transport/metadata_allocator.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 
@@ -1923,7 +1923,7 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
         public promise_detail::Context<grpc_call_context_element>,
         public promise_detail::Context<CallContext>,
         public promise_detail::Context<CallFinalization>,
-        public promise_detail::Context<MetadataAllocator> {
+        public promise_detail::Context<FragmentAllocator> {
    public:
     explicit ScopedContext(PromiseBasedCall* call)
         : ScopedActivity(call),
@@ -1931,7 +1931,7 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
           promise_detail::Context<grpc_call_context_element>(call->context_),
           promise_detail::Context<CallContext>(&call->call_context_),
           promise_detail::Context<CallFinalization>(&call->finalization_),
-          promise_detail::Context<MetadataAllocator>(
+          promise_detail::Context<FragmentAllocator>(
               &call->metadata_allocator_) {}
   };
 
@@ -2130,7 +2130,7 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
   /* Contexts for various subsystems (security, tracing, ...). */
   grpc_call_context_element context_[GRPC_CONTEXT_COUNT] = {};
   grpc_completion_queue* cq_ ABSL_GUARDED_BY(mu_);
-  MetadataAllocator metadata_allocator_ ABSL_GUARDED_BY(mu_);
+  FragmentAllocator metadata_allocator_ ABSL_GUARDED_BY(mu_);
   NonOwningWakable* non_owning_wakeable_ ABSL_GUARDED_BY(mu_) = nullptr;
   CompletionInfo completion_info_[6];
   CallFinalization finalization_;
@@ -2319,7 +2319,7 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
     GRPC_STATS_INC_CLIENT_CALLS_CREATED();
     ScopedContext context(this);
     send_initial_metadata_ =
-        GetContext<MetadataAllocator>()->MakeMetadata<ClientMetadata>();
+        GetContext<FragmentAllocator>()->MakeClientMetadata();
     send_initial_metadata_->Set(HttpPathMetadata(), std::move(*args->path));
     if (args->authority.has_value()) {
       send_initial_metadata_->Set(HttpAuthorityMetadata(),

@@ -978,7 +978,7 @@ libs:
   - src/core/lib/transport/handshaker_registry.h
   - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/http_connect_handshaker.h
-  - src/core/lib/transport/metadata_allocator.h
+  - src/core/lib/transport/call_fragments.h
   - src/core/lib/transport/metadata_batch.h
   - src/core/lib/transport/parsed_metadata.h
   - src/core/lib/transport/pid_controller.h
@@ -2136,7 +2136,7 @@ libs:
   - src/core/lib/transport/handshaker_registry.h
   - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/http_connect_handshaker.h
-  - src/core/lib/transport/metadata_allocator.h
+  - src/core/lib/transport/call_fragments.h
   - src/core/lib/transport/metadata_batch.h
   - src/core/lib/transport/parsed_metadata.h
   - src/core/lib/transport/pid_controller.h

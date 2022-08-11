@@ -528,7 +528,7 @@ class MainLoop {
     };
 
     template <typename R>
-    absl::optional<MetadataHandle<R>> LoadMetadata(
+    absl::optional<FragmentHandle<R>> LoadMetadata(
         const filter_fuzzer::Metadata& metadata, std::unique_ptr<R>* out) {
       if (*out != nullptr) return absl::nullopt;
       *out = absl::make_unique<R>(arena_.get());
@@ -536,7 +536,7 @@ class MainLoop {
         (*out)->Append(md.key(), Slice::FromCopiedString(md.value()),
                        [](absl::string_view, const Slice&) {});
       }
-      return MetadataHandle<R>::TestOnlyWrap(out->get());
+      return FragmentHandle<R>::TestOnlyWrap(out->get());
     }
 
     void Step() {

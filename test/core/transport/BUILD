@@ -66,8 +66,8 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "metadata_allocator_test",
-    srcs = ["metadata_allocator_test.cc"],
+    name = "call_fragments_test",
+    srcs = ["call_fragments_test.cc"],
     external_deps = [
         "gtest",
     ],

@@ -14,7 +14,7 @@
 // limitations under the License.
 //
 
-#include "src/core/lib/transport/metadata_allocator.h"
+#include "src/core/lib/transport/call_fragments.h"
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -30,50 +30,48 @@ using testing::Each;
 namespace grpc_core {
 namespace testing {
 
-class MetadataAllocatorTest : public ::testing::Test {
+class CallFragmentsTest : public ::testing::Test {
  protected:
-  MetadataAllocatorTest() {}
-  ~MetadataAllocatorTest() override {}
+  CallFragmentsTest() {}
+  ~CallFragmentsTest() override {}
 
  private:
   MemoryAllocator memory_allocator_ =
       ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test");
   ScopedArenaPtr arena_ = MakeScopedArena(4096, &memory_allocator_);
-  MetadataAllocator metadata_allocator_;
+  FragmentAllocator fragment_allocator_;
 
   TestContext<Arena> arena_context_{arena_.get()};
-  TestContext<MetadataAllocator> metadata_allocator_context_{
-      &metadata_allocator_};
+  TestContext<FragmentAllocator> fragment_allocator_context_{
+      &fragment_allocator_};
 };
 
 // Ensure test fixture can init/destroy successfully.
-TEST_F(MetadataAllocatorTest, Nothing) {}
+TEST_F(CallFragmentsTest, Nothing) {}
 
 // Ensure we can create/destroy some client metadata.
-TEST_F(MetadataAllocatorTest, ClientMetadata) {
-  GetContext<MetadataAllocator>()->MakeMetadata<ClientMetadata>();
+TEST_F(CallFragmentsTest, ClientMetadata) {
+  GetContext<FragmentAllocator>()->MakeClientMetadata();
 }
 
 // Ensure we can create/destroy some server metadata.
-TEST_F(MetadataAllocatorTest, ServerMetadata) {
-  GetContext<MetadataAllocator>()->MakeMetadata<ServerMetadata>();
+TEST_F(CallFragmentsTest, ServerMetadata) {
+  GetContext<FragmentAllocator>()->MakeServerMetadata();
 }
 
 // Ensure repeated allocation/deallocations reuse memory.
-TEST_F(MetadataAllocatorTest, RepeatedAllocationsReuseMemory) {
-  void* p =
-      GetContext<MetadataAllocator>()->MakeMetadata<ClientMetadata>().get();
-  void* q =
-      GetContext<MetadataAllocator>()->MakeMetadata<ClientMetadata>().get();
+TEST_F(CallFragmentsTest, RepeatedAllocationsReuseMemory) {
+  void* p = GetContext<FragmentAllocator>()->MakeClientMetadata().get();
+  void* q = GetContext<FragmentAllocator>()->MakeClientMetadata().get();
   EXPECT_EQ(p, q);
 }
 
 // Ensure repeated allocation reinitializes.
-TEST_F(MetadataAllocatorTest, RepeatedAllocationsReinitialize) {
+TEST_F(CallFragmentsTest, RepeatedAllocationsReinitialize) {
   std::vector<void*> addresses;
   for (int i = 0; i < 4; i++) {
     ClientMetadataHandle metadata =
-        GetContext<MetadataAllocator>()->MakeMetadata<ClientMetadata>();
+        GetContext<FragmentAllocator>()->MakeClientMetadata();
     EXPECT_EQ(metadata->get_pointer(HttpPathMetadata()), nullptr);
     metadata->Set(HttpPathMetadata(), Slice::FromCopiedString("/"));
     EXPECT_EQ(metadata->get_pointer(HttpPathMetadata())->as_string_view(), "/");

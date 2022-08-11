@@ -2252,7 +2252,7 @@ src/core/lib/transport/http2_errors.h \
 src/core/lib/transport/http_connect_handshaker.cc \
 src/core/lib/transport/http_connect_handshaker.h \
 src/core/lib/transport/metadata_allocator.cc \
-src/core/lib/transport/metadata_allocator.h \
+src/core/lib/transport/call_fragments.h \
 src/core/lib/transport/metadata_batch.cc \
 src/core/lib/transport/metadata_batch.h \
 src/core/lib/transport/parsed_metadata.cc \
