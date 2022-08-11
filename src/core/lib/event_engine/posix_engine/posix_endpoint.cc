@@ -503,11 +503,11 @@ void TcpZerocopySendRecord::UpdateOffsetForBytesSent(size_t sending_length,
   }
 }
 
-void PosixStreamSocket::AddToEstimate(size_t bytes) {
+void PosixEndpointImpl::AddToEstimate(size_t bytes) {
   bytes_read_this_round_ += static_cast<double>(bytes);
 }
 
-void PosixStreamSocket::FinishEstimate() {
+void PosixEndpointImpl::FinishEstimate() {
   // If we read >80% of the target buffer in one read loop, increase the size of
   // the target buffer to either the amount read, or twice its previous value.
   if (bytes_read_this_round_ > target_length_ * 0.8) {
@@ -519,7 +519,7 @@ void PosixStreamSocket::FinishEstimate() {
 }
 
 // Returns true if data available to read or error other than EAGAIN.
-bool PosixStreamSocket::TcpDoRead(absl::Status& status) {
+bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
   struct msghdr msg;
   struct iovec iov[MAX_READ_IOVEC];
   ssize_t read_bytes;
@@ -685,7 +685,7 @@ bool PosixStreamSocket::TcpDoRead(absl::Status& status) {
   return true;
 }
 
-void PosixStreamSocket::PerformReclamation() {
+void PosixEndpointImpl::PerformReclamation() {
   read_mu_.Lock();
   if (incoming_buffer_ != nullptr) {
     incoming_buffer_->Clear();
@@ -694,7 +694,7 @@ void PosixStreamSocket::PerformReclamation() {
   read_mu_.Unlock();
 }
 
-void PosixStreamSocket::MaybePostReclaimer() {
+void PosixEndpointImpl::MaybePostReclaimer() {
   if (!has_posted_reclaimer_) {
     has_posted_reclaimer_ = true;
     memory_owner_.PostReclaimer(
@@ -706,7 +706,7 @@ void PosixStreamSocket::MaybePostReclaimer() {
   }
 }
 
-void PosixStreamSocket::MaybeMakeReadSlices() {
+void PosixEndpointImpl::MaybeMakeReadSlices() {
   if (incoming_buffer_->Length() < static_cast<size_t>(min_progress_size_) &&
       incoming_buffer_->Count() < MAX_READ_IOVEC) {
     int target_length =
@@ -726,7 +726,7 @@ void PosixStreamSocket::MaybeMakeReadSlices() {
   }
 }
 
-void PosixStreamSocket::HandleRead(absl::Status status) {
+void PosixEndpointImpl::HandleRead(absl::Status status) {
   read_mu_.Lock();
   if (status.ok()) {
     MaybeMakeReadSlices();
@@ -748,7 +748,7 @@ void PosixStreamSocket::HandleRead(absl::Status status) {
   Unref();
 }
 
-void PosixStreamSocket::Read(absl::AnyInvocable<void(absl::Status)> on_read,
+void PosixEndpointImpl::Read(absl::AnyInvocable<void(absl::Status)> on_read,
                              SliceBuffer* buffer,
                              const EventEngine::Endpoint::ReadArgs* args) {
   GPR_ASSERT(read_cb_ == nullptr);
@@ -780,7 +780,7 @@ void PosixStreamSocket::Read(absl::AnyInvocable<void(absl::Status)> on_read,
 }
 
 #ifdef GRPC_LINUX_ERRQUEUE
-TcpZerocopySendRecord* PosixStreamSocket::TcpGetSendZerocopyRecord(
+TcpZerocopySendRecord* PosixEndpointImpl::TcpGetSendZerocopyRecord(
     SliceBuffer& buf) {
   TcpZerocopySendRecord* zerocopy_send_record = nullptr;
   const bool use_zerocopy =
@@ -805,7 +805,7 @@ TcpZerocopySendRecord* PosixStreamSocket::TcpGetSendZerocopyRecord(
 
 // For linux platforms, reads the socket's error queue and processes error
 // messages from the queue.
-bool PosixStreamSocket::ProcessErrors() {
+bool PosixEndpointImpl::ProcessErrors() {
   bool processed_err = false;
   struct iovec iov;
   iov.iov_base = nullptr;
@@ -873,14 +873,14 @@ bool PosixStreamSocket::ProcessErrors() {
   }
 }
 
-void PosixStreamSocket::UnrefMaybePutZerocopySendRecord(
+void PosixEndpointImpl::UnrefMaybePutZerocopySendRecord(
     TcpZerocopySendRecord* record) {
   if (record->Unref()) {
     tcp_zerocopy_send_ctx_->PutSendRecord(record);
   }
 }
 
-void PosixStreamSocket::ZerocopyDisableAndWaitForRemaining() {
+void PosixEndpointImpl::ZerocopyDisableAndWaitForRemaining() {
   tcp_zerocopy_send_ctx_->Shutdown();
   while (!tcp_zerocopy_send_ctx_->AllSendRecordsEmpty()) {
     ProcessErrors();
@@ -888,7 +888,7 @@ void PosixStreamSocket::ZerocopyDisableAndWaitForRemaining() {
 }
 
 // Reads \a cmsg to process zerocopy control messages.
-void PosixStreamSocket::ProcessZerocopy(struct cmsghdr* cmsg) {
+void PosixEndpointImpl::ProcessZerocopy(struct cmsghdr* cmsg) {
   GPR_DEBUG_ASSERT(cmsg);
   auto serr = reinterpret_cast<struct sock_extended_err*>(CMSG_DATA(cmsg));
   GPR_DEBUG_ASSERT(serr->ee_errno == 0);
@@ -916,7 +916,7 @@ void PosixStreamSocket::ProcessZerocopy(struct cmsghdr* cmsg) {
 // in \a msg. \a cmsg should point to the control message that the caller wants
 // processed. On return, a pointer to a control message is returned. On the next
 // iteration, CMSG_NXTHDR(msg, ret_val) should be passed as \a cmsg.
-struct cmsghdr* PosixStreamSocket::ProcessTimestamp(msghdr* msg,
+struct cmsghdr* PosixEndpointImpl::ProcessTimestamp(msghdr* msg,
                                                     struct cmsghdr* cmsg) {
   auto next_cmsg = CMSG_NXTHDR(msg, cmsg);
   cmsghdr* opt_stats = nullptr;
@@ -957,7 +957,7 @@ struct cmsghdr* PosixStreamSocket::ProcessTimestamp(msghdr* msg,
   return next_cmsg;
 }
 
-void PosixStreamSocket::HandleError(absl::Status status) {
+void PosixEndpointImpl::HandleError(absl::Status status) {
   if (!status.ok() ||
       stop_error_notification_.load(std::memory_order_relaxed)) {
     // We aren't going to register to hear on error anymore, so it is safe to
@@ -976,7 +976,7 @@ void PosixStreamSocket::HandleError(absl::Status status) {
   handle_->NotifyOnError(on_error_);
 }
 
-bool PosixStreamSocket::WriteWithTimestamps(struct msghdr* msg,
+bool PosixEndpointImpl::WriteWithTimestamps(struct msghdr* msg,
                                             size_t sending_length,
                                             ssize_t* sent_length,
                                             int* saved_errno,
@@ -1018,19 +1018,19 @@ bool PosixStreamSocket::WriteWithTimestamps(struct msghdr* msg,
 }
 
 #else
-TcpZerocopySendRecord* PosixStreamSocket::TcpGetSendZerocopyRecord(
+TcpZerocopySendRecord* PosixEndpointImpl::TcpGetSendZerocopyRecord(
     SliceBuffer& /*buf*/) {
   return nullptr;
 }
 
-void PosixStreamSocket::HandleError(absl::Status /*status*/) {
+void PosixEndpointImpl::HandleError(absl::Status /*status*/) {
   GPR_ASSERT(false && "Error handling not supported on this platform");
 }
 #endif /* GRPC_LINUX_ERRQUEUE */
 
 // If outgoing_buffer_arg is filled, shuts down the list early, so that any
 // release operations needed can be performed on the arg.
-void PosixStreamSocket::TcpShutdownTracedBufferList() {
+void PosixEndpointImpl::TcpShutdownTracedBufferList() {
   if (outgoing_buffer_arg_ != nullptr) {
     traced_buffer_mu_.Lock();
     traced_buffers_.Shutdown(outgoing_buffer_arg_,
@@ -1041,7 +1041,7 @@ void PosixStreamSocket::TcpShutdownTracedBufferList() {
 }
 
 // returns true if done, false if pending; if returning true, *error is set
-bool PosixStreamSocket::DoFlushZerocopy(TcpZerocopySendRecord* record,
+bool PosixEndpointImpl::DoFlushZerocopy(TcpZerocopySendRecord* record,
                                         absl::Status& status) {
   msg_iovlen_type iov_size;
   ssize_t sent_length = 0;
@@ -1113,7 +1113,7 @@ bool PosixStreamSocket::DoFlushZerocopy(TcpZerocopySendRecord* record,
   }
 }
 
-bool PosixStreamSocket::TcpFlushZerocopy(TcpZerocopySendRecord* record,
+bool PosixEndpointImpl::TcpFlushZerocopy(TcpZerocopySendRecord* record,
                                          absl::Status& status) {
   bool done = DoFlushZerocopy(record, status);
   if (done) {
@@ -1124,7 +1124,7 @@ bool PosixStreamSocket::TcpFlushZerocopy(TcpZerocopySendRecord* record,
   return done;
 }
 
-bool PosixStreamSocket::TcpFlush(absl::Status& status) {
+bool PosixEndpointImpl::TcpFlush(absl::Status& status) {
   struct msghdr msg;
   struct iovec iov[MAX_WRITE_IOVEC];
   msg_iovlen_type iov_size;
@@ -1220,7 +1220,7 @@ bool PosixStreamSocket::TcpFlush(absl::Status& status) {
   }
 }
 
-void PosixStreamSocket::HandleWrite(absl::Status status) {
+void PosixEndpointImpl::HandleWrite(absl::Status status) {
   if (!status.ok()) {
     absl::AnyInvocable<void(absl::Status)> cb_ = std::move(write_cb_);
     write_cb_ = nullptr;
@@ -1247,7 +1247,7 @@ void PosixStreamSocket::HandleWrite(absl::Status status) {
   }
 }
 
-void PosixStreamSocket::Write(
+void PosixEndpointImpl::Write(
     absl::AnyInvocable<void(absl::Status)> on_writable, SliceBuffer* data,
     const EventEngine::Endpoint::WriteArgs* args) {
   absl::Status status = absl::OkStatus();
@@ -1290,7 +1290,7 @@ void PosixStreamSocket::Write(
   }
 }
 
-void PosixStreamSocket::MaybeShutdown(absl::Status why) {
+void PosixEndpointImpl::MaybeShutdown(absl::Status why) {
   if (poller_->CanTrackErrors()) {
     ZerocopyDisableAndWaitForRemaining();
     stop_error_notification_.store(true, std::memory_order_release);
@@ -1300,14 +1300,14 @@ void PosixStreamSocket::MaybeShutdown(absl::Status why) {
   Unref();
 }
 
-PosixStreamSocket ::~PosixStreamSocket() {
+PosixEndpointImpl ::~PosixEndpointImpl() {
   handle_->OrphanHandle(on_done_, nullptr, "");
   delete on_read_;
   delete on_write_;
   delete on_error_;
 }
 
-PosixStreamSocket::PosixStreamSocket(EventHandle* handle,
+PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
                                      PosixEngineClosure* on_done,
                                      Scheduler* scheduler,
                                      const PosixTcpOptions& options)
@@ -1321,7 +1321,7 @@ PosixStreamSocket::PosixStreamSocket(EventHandle* handle,
   GPR_ASSERT(options.resource_quota != nullptr);
   memory_owner_ = options.resource_quota->memory_quota()->CreateMemoryOwner(
       *sock.PeerAddressString());
-  self_reservation_ = memory_owner_.MakeReservation(sizeof(PosixStreamSocket));
+  self_reservation_ = memory_owner_.MakeReservation(sizeof(PosixEndpointImpl));
   local_address_ = *sock.LocalAddress();
   peer_address_ = *sock.PeerAddress();
   target_length_ = static_cast<double>(options.tcp_read_chunk_size);

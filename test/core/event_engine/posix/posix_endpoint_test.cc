@@ -35,6 +35,7 @@
 #include "src/core/lib/event_engine/posix_engine/posix_engine.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
+#include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/gprpp/global_config.h"
 #include "src/core/lib/iomgr/port.h"
 #include "test/core/event_engine/test_suite/event_engine_test_utils.h"
@@ -221,23 +222,22 @@ std::string TestScenarioName(const ::testing::TestParamInfo<TestParam>& info) {
 // method on the poller to get pet pending events, then schedules another
 // parallel Work(..) instantiation and processes these pending events. This
 // continues until all Fds have orphaned themselves.
-class Worker {
+class Worker : public grpc_core::DualRefCounted<Worker> {
  public:
   Worker(Scheduler* scheduler, PosixEventPoller* poller)
-      : scheduler_(scheduler), poller_(poller) {}
-  void Ref() { ref_count_.fetch_add(1, std::memory_order_relaxed); }
-  void Unref() {
-    if (ref_count_.fetch_sub(1, std::memory_order_acq_rel) == 1) {
-      promise.Set(true);
-    }
+      : scheduler_(scheduler), poller_(poller) {
+    WeakRef().release();
   }
-
+  void Orphan() override { promise.Set(true); }
   void Start() {
     // Start executing Work(..).
     scheduler_->Run([this]() { Work(); });
   }
 
-  void Wait() { EXPECT_TRUE(promise.Get()); }
+  void Wait() {
+    EXPECT_TRUE(promise.WaitWithTimeout(absl::Seconds(60)));
+    WeakUnref();
+  }
 
  private:
   void Work() {
@@ -245,7 +245,7 @@ class Worker {
     if (absl::holds_alternative<Poller::Events>(result)) {
       // Schedule next work instantiation immediately and take a Ref for
       // the next instantiation.
-      Ref();
+      Ref().release();
       scheduler_->Run([this]() { Work(); });
       // Process pending events of current Work(..) instantiation.
       auto pending_events = absl::get<Poller::Events>(result);
@@ -265,7 +265,6 @@ class Worker {
   Scheduler* scheduler_;
   PosixEventPoller* poller_;
   Promise<bool> promise;
-  std::atomic<int> ref_count_{1};
 };
 
 class PosixEndpointTest : public ::testing::TestWithParam<TestParam> {
@@ -314,8 +313,8 @@ TEST_P(PosixEndpointTest, ConnectExchangeBidiDataTransferTest) {
   if (PosixPoller() == nullptr) {
     return;
   }
-  Worker worker(Scheduler(), PosixPoller());
-  worker.Start();
+  Worker* worker = new Worker(Scheduler(), PosixPoller());
+  worker->Start();
   {
     auto connections =
         CreateConnectedEndpoints(OracleEE(), Scheduler(), PosixPoller(),
@@ -342,7 +341,7 @@ TEST_P(PosixEndpointTest, ConnectExchangeBidiDataTransferTest) {
                       .ok());
     }
   }
-  worker.Wait();
+  worker->Wait();
 }
 
 // Create  N connections and exchange and verify random number of messages over
@@ -353,8 +352,8 @@ TEST_P(PosixEndpointTest, MultipleIPv6ConnectionsToOneOracleListenerTest) {
   if (PosixPoller() == nullptr) {
     return;
   }
-  Worker worker(Scheduler(), PosixPoller());
-  worker.Start();
+  Worker* worker = new Worker(Scheduler(), PosixPoller());
+  worker->Start();
   auto connections =
       CreateConnectedEndpoints(OracleEE(), Scheduler(), PosixPoller(),
                                GetParam().IsZeroCopyEnabled(), kNumConnections);
@@ -365,7 +364,6 @@ TEST_P(PosixEndpointTest, MultipleIPv6ConnectionsToOneOracleListenerTest) {
   for (int i = 0; i < kNumConnections; i++) {
     // For each connection, simulate a parallel bi-directional data transfer.
     // All bi-directional transfers are run in parallel across all connections.
-    // Each bi-directional data transfer uses a random number of messages.
     auto it = connections.begin();
     auto client_endpoint = std::move(std::get<0>(*it));
     auto server_endpoint = std::move(std::get<1>(*it));
@@ -405,11 +403,11 @@ TEST_P(PosixEndpointTest, MultipleIPv6ConnectionsToOneOracleListenerTest) {
   for (auto& t : threads) {
     t.join();
   }
-  worker.Wait();
+  worker->Wait();
 }
 
 INSTANTIATE_TEST_SUITE_P(
-    PosixEventPoller, PosixEndpointTest,
+    PosixEndpoint, PosixEndpointTest,
     ::testing::ValuesIn({TestParam(std::string("epoll1"), false),
                          TestParam(std::string("epoll1"), true),
                          TestParam(std::string("poll"), false),

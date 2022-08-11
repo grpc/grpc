@@ -39,11 +39,11 @@ using ::grpc_event_engine::experimental::SliceBuffer;
 class TcpZerocopySendCtx;
 class TcpZerocopySendRecord;
 
-class PosixStreamSocket {
+class PosixEndpointImpl {
  public:
-  PosixStreamSocket(EventHandle* handle, PosixEngineClosure* on_done,
+  PosixEndpointImpl(EventHandle* handle, PosixEngineClosure* on_done,
                     Scheduler* scheduler, const PosixTcpOptions& options);
-  ~PosixStreamSocket();
+  ~PosixEndpointImpl();
   void Read(absl::AnyInvocable<void(absl::Status)> on_read, SliceBuffer* buffer,
             const EventEngine::Endpoint::ReadArgs* args);
   void Write(absl::AnyInvocable<void(absl::Status)> on_writable,
@@ -158,35 +158,33 @@ class PosixEndpoint : public EventEngine::Endpoint {
  public:
   PosixEndpoint(EventHandle* handle, PosixEngineClosure* on_shutdown,
                 Scheduler* scheduler, const EndpointConfig& config)
-      : socket_(new PosixStreamSocket(handle, on_shutdown, scheduler,
-                                      TcpOptionsFromEndpointConfig(config))) {}
+      : impl_(new PosixEndpointImpl(handle, on_shutdown, scheduler,
+                                    TcpOptionsFromEndpointConfig(config))) {}
 
   void Read(absl::AnyInvocable<void(absl::Status)> on_read, SliceBuffer* buffer,
             const EventEngine::Endpoint::ReadArgs* args) override {
-    socket_->Read(std::move(on_read), buffer, args);
+    impl_->Read(std::move(on_read), buffer, args);
   }
 
   void Write(absl::AnyInvocable<void(absl::Status)> on_writable,
              SliceBuffer* data,
              const EventEngine::Endpoint::WriteArgs* args) override {
-    socket_->Write(std::move(on_writable), data, args);
+    impl_->Write(std::move(on_writable), data, args);
   }
-
-  PosixStreamSocket* Socket() { return socket_; }
 
   const EventEngine::ResolvedAddress& GetPeerAddress() const override {
-    return socket_->GetPeerAddress();
+    return impl_->GetPeerAddress();
   }
   const EventEngine::ResolvedAddress& GetLocalAddress() const override {
-    return socket_->GetLocalAddress();
+    return impl_->GetLocalAddress();
   }
 
   ~PosixEndpoint() override {
-    socket_->MaybeShutdown(absl::InternalError("Endpoint closing"));
+    impl_->MaybeShutdown(absl::InternalError("Endpoint closing"));
   }
 
  private:
-  PosixStreamSocket* socket_;
+  PosixEndpointImpl* impl_;
 };
 
 std::unique_ptr<PosixEndpoint> CreatePosixEndpoint(
