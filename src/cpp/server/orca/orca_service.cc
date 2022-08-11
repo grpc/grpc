@@ -17,7 +17,6 @@
 #include <stddef.h>
 
 #include <map>
-#include <memory>
 #include <string>
 #include <utility>
 
@@ -55,6 +54,7 @@ namespace grpc {
 namespace experimental {
 
 using ::grpc_event_engine::experimental::EventEngine;
+using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 
 //
 // OrcaService::Reactor
@@ -64,9 +64,7 @@ class OrcaService::Reactor : public ServerWriteReactor<ByteBuffer>,
                              public grpc_core::RefCounted<Reactor> {
  public:
   explicit Reactor(OrcaService* service, const ByteBuffer* request_buffer)
-      : RefCounted("OrcaService::Reactor"),
-        service_(service),
-        engine_(grpc_event_engine::experimental::GetDefaultEventEngine()) {
+      : RefCounted("OrcaService::Reactor"), service_(service) {
     // Get slice from request.
     Slice slice;
     GPR_ASSERT(request_buffer->DumpToSingleSlice(&slice).ok());
@@ -129,7 +127,7 @@ class OrcaService::Reactor : public ServerWriteReactor<ByteBuffer>,
     grpc_core::ExecCtx exec_ctx;
     grpc::internal::MutexLock lock(&timer_mu_);
     if (cancelled_) return false;
-    timer_handle_ = engine_->RunAfter(
+    timer_handle_ = GetDefaultEventEngine()->RunAfter(
         report_interval_,
         [self = Ref(DEBUG_LOCATION, "Orca Service")] { self->OnTimer(); });
     return true;
@@ -138,7 +136,8 @@ class OrcaService::Reactor : public ServerWriteReactor<ByteBuffer>,
   bool MaybeCancelTimer() {
     grpc::internal::MutexLock lock(&timer_mu_);
     cancelled_ = true;
-    if (timer_handle_.has_value() && engine_->Cancel(*timer_handle_)) {
+    if (timer_handle_.has_value() &&
+        GetDefaultEventEngine()->Cancel(*timer_handle_)) {
       timer_handle_.reset();
       return true;
     }
@@ -162,7 +161,6 @@ class OrcaService::Reactor : public ServerWriteReactor<ByteBuffer>,
 
   grpc_core::Duration report_interval_;
   ByteBuffer response_;
-  std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine_;
 };
 
 //
