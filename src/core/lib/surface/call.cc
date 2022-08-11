@@ -2388,6 +2388,7 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
   ClientMetadataHandle send_initial_metadata_;
   grpc_metadata_array* recv_initial_metadata_ ABSL_GUARDED_BY(mu()) = nullptr;
   grpc_byte_buffer** recv_message_ ABSL_GUARDED_BY(mu()) = nullptr;
+  AtomicWaker send_message_waker_;
   absl::variant<absl::monostate,
                 grpc_op::grpc_op_data::grpc_op_recv_status_on_client,
                 ServerMetadataHandle>
@@ -2502,13 +2503,8 @@ void ClientPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
               send.c_slice_buffer());
           outstanding_send_.emplace(client_to_server_messages_.sender.Push(
               GetContext<FragmentAllocator>()->MakeMessage(
-                  std::move(send), op.flags, [this]() {
-                    InContext([this] {
-                      mu()->AssertHeld();
-                      FinishCompletion(&send_message_completion_,
-                                       PauseReason::kSendMessage);
-                    });
-                  })));
+                  std::move(send), op.flags,
+                  [this]() { send_message_waker_.Wakeup(); })));
         } else {
           FailCompletion(completion);
         }
@@ -2601,6 +2597,9 @@ void ClientPromiseBasedCall::UpdateOnce() {
                                     recv_message_completion_)
             .c_str(),
         promise_.has_value() ? "true" : "false");
+  }
+  if (send_message_completion_.has_value() && !send_message_waker_.Armed()) {
+    FinishCompletion(&send_message_completion_, PauseReason::kSendMessage);
   }
   if (server_initial_metadata_ready_.has_value()) {
     Poll<ServerMetadata**> r = (*server_initial_metadata_ready_)();

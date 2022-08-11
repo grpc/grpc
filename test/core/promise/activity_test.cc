@@ -355,13 +355,16 @@ TEST(AtomicWakerTest, ThreadStress) {
          public:
           TestWakeable(std::atomic<int>* wakeups, std::atomic<int>* drops)
               : wakeups_(wakeups), drops_(drops) {}
-          void Wakeup() {
+          void Wakeup() override {
             wakeups_->fetch_add(1, std::memory_order_relaxed);
             delete this;
           }
-          void Drop() {
+          void Drop() override {
             drops_->fetch_add(1, std::memory_order_relaxed);
             delete this;
+          }
+          std::string ActivityDebugTag() const override {
+            return "TestWakeable";
           }
 
          private:
