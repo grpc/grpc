@@ -88,7 +88,7 @@ grpc_cc_library(
     deps = [
         "//:arena",
         "//:debug_location",
-        "//:gpr_base",
+        "//:gpr",
         "//:grpc_authorization_base",
         "//:grpc_base",
         "//:grpc_security_base",
@@ -125,7 +125,7 @@ grpc_cc_library(
         "stack_tracer",
         "//:channel_args_preconditioning",
         "//:config",
-        "//:gpr_base",
+        "//:gpr",
         "//:grpc",
         "//:grpc_public_hdrs",
         "//:grpc_security_base",
@@ -162,7 +162,7 @@ grpc_cc_library(
         "stack_tracer",
         "//:channel_args_preconditioning",
         "//:config",
-        "//:gpr_base",
+        "//:gpr",
         "//:grpc_security_base",
         "//:grpc_sockaddr",
         "//:grpc_unsecure",
@@ -187,7 +187,7 @@ grpc_cc_test(
     deps = [
         "grpc_test_util",
         "grpc_test_util_base",
-        "//:gpr_base",
+        "//:gpr",
         "//:useful",
     ],
 )
@@ -223,7 +223,7 @@ grpc_cc_test(
     deps = [
         "grpc_test_util",
         "grpc_test_util_base",
-        "//:gpr_base",
+        "//:gpr",
     ],
 )
 
@@ -268,7 +268,7 @@ grpc_cc_test(
     deps = [
         "grpc_test_util",
         "stack_tracer",
-        "//:gpr_base",
+        "//:gpr",
     ],
 )
 
@@ -285,7 +285,7 @@ grpc_cc_library(
         "absl/types:variant",
     ],
     deps = [
-        "//:gpr_base",
+        "//:gpr",
         "//:grpc",
         "//:grpc_backend_metric_data",
         "//:grpc_client_channel",
@@ -316,7 +316,7 @@ grpc_cc_library(
     language = "C++",
     deps = [
         "grpc_test_util",
-        "//:gpr_base",
+        "//:gpr",
         "//:grpc",
         "//:resolved_address",
         "//:sockaddr_utils",

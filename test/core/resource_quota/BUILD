@@ -32,7 +32,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:arena",
-        "//:gpr_base",
+        "//:gpr",
         "//:grpc",
         "//:ref_counted_ptr",
         "//:resource_quota",
@@ -44,7 +44,7 @@ grpc_cc_library(
     testonly = True,
     hdrs = ["call_checker.h"],
     language = "c++",
-    deps = ["//:gpr_base"],
+    deps = ["//:gpr"],
 )
 
 grpc_cc_test(
@@ -74,7 +74,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:exec_ctx",
-        "//:gpr_base",
+        "//:gpr",
         "//:periodic_update",
     ],
 )
@@ -120,7 +120,7 @@ grpc_cc_test(
     deps = [
         "//:event_engine_memory_allocator",
         "//:exec_ctx",
-        "//:gpr_base",
+        "//:gpr",
         "//:memory_quota",
     ],
 )
@@ -145,7 +145,7 @@ grpc_proto_fuzzer(
         "//:error",
         "//:event_engine_memory_allocator",
         "//:exec_ctx",
-        "//:gpr_base",
+        "//:gpr",
         "//:grpc_trace",
         "//:memory_quota",
         "//:useful",
