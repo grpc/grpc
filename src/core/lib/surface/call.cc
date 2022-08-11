@@ -146,6 +146,8 @@ class Call : public CppImplOf<Call, grpc_call> {
   // for that functionality be invented)
   virtual grpc_call_stack* call_stack() = 0;
 
+  gpr_atm* peer_string_atm_ptr() { return &peer_string_; }
+
  protected:
   // The maximum number of concurrent batches possible.
   // Based upon the maximum number of individually queueable ops in the batch
@@ -197,7 +199,6 @@ class Call : public CppImplOf<Call, grpc_call> {
   void PublishToParent(Call* parent);
   void MaybeUnpublishFromParent();
   void PropagateCancellationToChildren();
-  gpr_atm* peer_string_atm_ptr() { return &peer_string_; }
 
   Timestamp send_deadline() const { return send_deadline_; }
   void set_send_deadline(Timestamp send_deadline) {
@@ -2784,6 +2785,10 @@ void ClientPromiseBasedCall::PublishMetadataArray(grpc_metadata_array* array,
 bool ClientPromiseBasedCall::Completed() {
   MutexLock lock(mu());
   return completed_;
+}
+
+gpr_atm* CallContext::peer_string_atm_ptr() {
+  return call_->peer_string_atm_ptr();
 }
 
 }  // namespace grpc_core

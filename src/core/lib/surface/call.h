@@ -91,6 +91,7 @@ class CallContext {
   void Unref(const char* reason = "call_context");
 
   grpc_call_stats* call_stats() { return &call_stats_; }
+  gpr_atm* peer_string_atm_ptr();
 
  private:
   // Call final info.
