@@ -38,7 +38,7 @@ class BaseCallData;
 
 class FragmentAllocator;
 
-// Small unowned "handle" type to ensure one accessor at a time to metadata.
+// Small owned "handle" type to ensure one accessor at a time to metadata.
 // The focus here is to get promises to use the syntax we'd like - we'll
 // probably substitute some other smart pointer later.
 template <typename T>

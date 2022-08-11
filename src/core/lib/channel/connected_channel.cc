@@ -388,6 +388,7 @@ class ClientStream : public Orphanable {
       SchedulePush();
     }
     if (absl::holds_alternative<Idle>(send_message_state_)) {
+      message_to_send_.reset();
       send_message_state_ = client_to_server_messages_->Next();
     }
     if (auto* next = absl::get_if<PipeReceiver<MessageHandle>::NextType>(
@@ -398,11 +399,12 @@ class ClientStream : public Orphanable {
         send_message_.payload = &batch_payload_;
         send_message_.on_complete = &send_message_batch_done_;
         if (p->has_value()) {
-          send_message_state_ = std::move(**p);
-          auto& msg = absl::get<MessageHandle>(send_message_state_);
+          message_to_send_ = std::move(**p);
+          send_message_state_ = SendMessageToTransport{};
           send_message_.send_message = true;
-          batch_payload_.send_message.send_message = msg->payload();
-          batch_payload_.send_message.flags = msg->flags();
+          batch_payload_.send_message.send_message =
+              message_to_send_->payload();
+          batch_payload_.send_message.flags = message_to_send_->flags();
         } else {
           GPR_ASSERT(!absl::holds_alternative<Closed>(send_message_state_));
           client_trailing_metadata_ =
@@ -623,6 +625,7 @@ class ClientStream : public Orphanable {
  private:
   struct Idle {};
   struct Closed {};
+  struct SendMessageToTransport {};
 
   class StreamDeleter {
    public:
@@ -686,7 +689,7 @@ class ClientStream : public Orphanable {
         [](const PipeReceiver<MessageHandle>::NextType&) -> std::string {
           return "WAITING";
         },
-        [](const MessageHandle&) -> std::string { return "SENDING"; });
+        [](SendMessageToTransport) -> std::string { return "SENDING"; });
   }
 
   std::string RecvMessageString() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
@@ -725,8 +728,9 @@ class ClientStream : public Orphanable {
   Latch<ServerMetadata*>* server_initial_metadata_latch_;
   PipeReceiver<MessageHandle>* client_to_server_messages_;
   PipeSender<MessageHandle>* server_to_client_messages_;
+  MessageHandle message_to_send_ ABSL_GUARDED_BY(mu_);
   absl::variant<Idle, Closed, PipeReceiver<MessageHandle>::NextType,
-                MessageHandle>
+                SendMessageToTransport>
       send_message_state_ ABSL_GUARDED_BY(mu_);
   struct PendingReceiveMessage {
     absl::optional<SliceBuffer> payload;

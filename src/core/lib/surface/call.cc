@@ -1903,10 +1903,12 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
       grpc_event_engine::experimental::GetDefaultEventEngine()->Run(
           [this, fn = std::move(fn)]() mutable {
             ExecCtx exec_ctx;
-            ScopedContext activity_context(this);
-            MutexLock lock(&mu_);
-            fn();
-            Update();
+            {
+              ScopedContext activity_context(this);
+              MutexLock lock(&mu_);
+              fn();
+              Update();
+            }
             InternalUnref("in_context");
           });
     }
