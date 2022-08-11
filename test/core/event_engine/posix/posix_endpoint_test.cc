@@ -61,7 +61,9 @@ namespace {
 
 constexpr int kMinMessageSize = 1024;
 constexpr int kMaxMessageSize = 8192;
+constexpr int kNumConnections = 10;
 constexpr int kNumExchangedMessages = 100;
+std::atomic<int> g_num_active_connections{0};
 
 // Returns a random message with bounded length.
 std::string GetNextSendMessage() {
@@ -100,19 +102,22 @@ class TestScheduler : public Scheduler {
   EventEngine* engine_;
 };
 
-std::tuple<std::unique_ptr<EventEngine::Endpoint>,
-           std::unique_ptr<EventEngine::Endpoint>>
-CreateConnectedSocket(EventEngine* oracle_ee, Scheduler* scheduler,
-                      PosixEventPoller* poller, bool is_zero_copy_enabled) {
+std::list<std::tuple<std::unique_ptr<EventEngine::Endpoint>,
+                     std::unique_ptr<EventEngine::Endpoint>>>
+CreateConnectedEndpoints(EventEngine* oracle_ee, Scheduler* scheduler,
+                         PosixEventPoller* poller, bool is_zero_copy_enabled,
+                         int num_connections) {
   EXPECT_NE(oracle_ee, nullptr);
   EXPECT_NE(scheduler, nullptr);
   EXPECT_NE(poller, nullptr);
+  std::list<std::tuple<std::unique_ptr<EventEngine::Endpoint>,
+                       std::unique_ptr<EventEngine::Endpoint>>>
+      connections;
   auto memory_quota = absl::make_unique<grpc_core::MemoryQuota>("bar");
   std::string target_addr = absl::StrCat(
       "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die()));
   EventEngine::ResolvedAddress resolved_addr =
       URIToResolvedAddress(target_addr);
-  Promise<std::unique_ptr<EventEngine::Endpoint>> client_endpoint_promise;
   Promise<std::unique_ptr<EventEngine::Endpoint>> server_endpoint_promise;
 
   Listener::AcceptCallback accept_cb =
@@ -141,44 +146,54 @@ CreateConnectedSocket(EventEngine* oracle_ee, Scheduler* scheduler,
   EXPECT_TRUE(listener->Start().ok());
 
   // Create client socket and connect to the target address.
-  int client_fd;
-  int one = 1;
-  int flags;
+  for (int i = 0; i < num_connections; ++i) {
+    int client_fd;
+    int one = 1;
+    int flags;
 
-  client_fd = socket(AF_INET6, SOCK_STREAM, 0);
-  setsockopt(client_fd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
-  // Make fd non-blocking.
-  flags = fcntl(client_fd, F_GETFL, 0);
-  EXPECT_EQ(fcntl(client_fd, F_SETFL, flags | O_NONBLOCK), 0);
+    client_fd = socket(AF_INET6, SOCK_STREAM, 0);
+    setsockopt(client_fd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
+    // Make fd non-blocking.
+    flags = fcntl(client_fd, F_GETFL, 0);
+    EXPECT_EQ(fcntl(client_fd, F_SETFL, flags | O_NONBLOCK), 0);
 
-  if (connect(client_fd, const_cast<struct sockaddr*>(resolved_addr.address()),
-              resolved_addr.size()) == -1) {
-    if (errno == EINPROGRESS) {
-      struct pollfd pfd;
-      pfd.fd = client_fd;
-      pfd.events = POLLOUT;
-      pfd.revents = 0;
-      if (poll(&pfd, 1, -1) == -1) {
-        gpr_log(GPR_ERROR, "poll() failed during connect; errno=%d", errno);
+    if (connect(client_fd,
+                const_cast<struct sockaddr*>(resolved_addr.address()),
+                resolved_addr.size()) == -1) {
+      if (errno == EINPROGRESS) {
+        struct pollfd pfd;
+        pfd.fd = client_fd;
+        pfd.events = POLLOUT;
+        pfd.revents = 0;
+        if (poll(&pfd, 1, -1) == -1) {
+          gpr_log(GPR_ERROR, "poll() failed during connect; errno=%d", errno);
+          abort();
+        }
+      } else {
+        gpr_log(GPR_ERROR, "Failed to connect to the server (errno=%d)", errno);
         abort();
       }
-    } else {
-      gpr_log(GPR_ERROR, "Failed to connect to the server (errno=%d)", errno);
-      abort();
     }
+    EventHandle* handle =
+        poller->CreateHandle(client_fd, "test", poller->CanTrackErrors());
+    EXPECT_NE(handle, nullptr);
+    auto server_endpoint = std::move(server_endpoint_promise.Get());
+    EXPECT_NE(server_endpoint, nullptr);
+    ++g_num_active_connections;
+    connections.push_back(
+        std::make_tuple<std::unique_ptr<Endpoint>, std::unique_ptr<Endpoint>>(
+            CreatePosixEndpoint(handle,
+                                PosixEngineClosure::TestOnlyToClosure(
+                                    [poller](absl::Status /*status*/) {
+                                      if (--g_num_active_connections == 0) {
+                                        poller->Kick();
+                                      }
+                                    }),
+                                scheduler, config),
+            std::move(server_endpoint)));
+    server_endpoint_promise.Reset();
   }
-  EventHandle* handle =
-      poller->CreateHandle(client_fd, "test", poller->CanTrackErrors());
-  EXPECT_NE(handle, nullptr);
-  auto server_endpoint = std::move(server_endpoint_promise.Get());
-  EXPECT_NE(server_endpoint, nullptr);
-  return std::make_tuple<std::unique_ptr<Endpoint>, std::unique_ptr<Endpoint>>(
-      CreatePosixEndpoint(
-          handle,
-          PosixEngineClosure::TestOnlyToClosure(
-              [poller](absl::Status /*status*/) { poller->Kick(); }),
-          scheduler, config),
-      std::move(server_endpoint));
+  return connections;
 }
 
 }  // namespace
@@ -302,36 +317,108 @@ TEST_P(PosixEndpointTest, ConnectExchangeBidiDataTransferTest) {
   Worker worker(Scheduler(), PosixPoller());
   worker.Start();
   {
-    auto endpoints = CreateConnectedSocket(
-        OracleEE(), Scheduler(), PosixPoller(), GetParam().IsZeroCopyEnabled());
-
-    auto client_endpoint = std::move(std::get<0>(endpoints));
-    auto server_endpoint = std::move(std::get<1>(endpoints));
+    auto connections =
+        CreateConnectedEndpoints(OracleEE(), Scheduler(), PosixPoller(),
+                                 GetParam().IsZeroCopyEnabled(), 1);
+    auto it = connections.begin();
+    auto client_endpoint = std::move(std::get<0>(*it));
+    auto server_endpoint = std::move(std::get<1>(*it));
     EXPECT_TRUE(client_endpoint != nullptr);
     EXPECT_TRUE(server_endpoint != nullptr);
+    connections.erase(it);
 
     // Alternate message exchanges between client -- server and server --
     // client.
     for (int i = 0; i < kNumExchangedMessages; i++) {
       // Send from client to server and verify data read at the server.
+      // std::cout << "Sending message " << i << std::endl;
+      // fflush(stdout);
       ASSERT_TRUE(SendValidatePayload(GetNextSendMessage(),
                                       client_endpoint.get(),
                                       server_endpoint.get())
                       .ok());
-
+      // std::cout << "Receiving message " << i << std::endl;
+      // fflush(stdout);
       // Send from server to client and verify data read at the client.
       ASSERT_TRUE(SendValidatePayload(GetNextSendMessage(),
                                       server_endpoint.get(),
                                       client_endpoint.get())
                       .ok());
+      // std::cout << "Received message " << i << std::endl;
+      // fflush(stdout);
     }
+  }
+  worker.Wait();
+}
+
+// Create  N connections and exchange and verify random number of messages over
+// each connection in parallel.
+TEST_P(PosixEndpointTest, MultipleIPv6ConnectionsToOneOracleListenerTest) {
+  auto oracle_ee = std::make_unique<experimental::PosixOracleEventEngine>();
+  auto test_ee = std::make_unique<experimental::PosixEventEngine>();
+  if (PosixPoller() == nullptr) {
+    return;
+  }
+  Worker worker(Scheduler(), PosixPoller());
+  worker.Start();
+  auto connections =
+      CreateConnectedEndpoints(OracleEE(), Scheduler(), PosixPoller(),
+                               GetParam().IsZeroCopyEnabled(), kNumConnections);
+  std::vector<std::thread> threads;
+  // Create one thread for each connection. For each connection, create
+  // 2 more worker threads: to exchange and verify bi-directional data transfer.
+  threads.reserve(kNumConnections);
+  for (int i = 0; i < kNumConnections; i++) {
+    // For each connection, simulate a parallel bi-directional data transfer.
+    // All bi-directional transfers are run in parallel across all connections.
+    // Each bi-directional data transfer uses a random number of messages.
+    auto it = connections.begin();
+    auto client_endpoint = std::move(std::get<0>(*it));
+    auto server_endpoint = std::move(std::get<1>(*it));
+    EXPECT_TRUE(client_endpoint != nullptr);
+    EXPECT_TRUE(server_endpoint != nullptr);
+    connections.erase(it);
+    threads.emplace_back([client_endpoint = std::move(client_endpoint),
+                          server_endpoint = std::move(server_endpoint)]() {
+      std::vector<std::thread> workers;
+      workers.reserve(2);
+      auto worker = [client_endpoint = client_endpoint.get(),
+                     server_endpoint =
+                         server_endpoint.get()](bool client_to_server) {
+        for (int i = 0; i < kNumExchangedMessages; i++) {
+          // If client_to_server is true, send from client to server and
+          // verify data read at the server. Otherwise send data from server
+          // to client and verify data read at client.
+          if (client_to_server) {
+            EXPECT_TRUE(SendValidatePayload(GetNextSendMessage(),
+                                            client_endpoint, server_endpoint)
+                            .ok());
+          } else {
+            EXPECT_TRUE(SendValidatePayload(GetNextSendMessage(),
+                                            server_endpoint, client_endpoint)
+                            .ok());
+          }
+        }
+      };
+      // worker[0] simulates a flow from client to server endpoint
+      workers.emplace_back([&worker]() { worker(true); });
+      // worker[1] simulates a flow from server to client endpoint
+      workers.emplace_back([&worker]() { worker(false); });
+      workers[0].join();
+      workers[1].join();
+    });
+  }
+  for (auto& t : threads) {
+    t.join();
   }
   worker.Wait();
 }
 
 INSTANTIATE_TEST_SUITE_P(
     PosixEventPoller, PosixEndpointTest,
-    ::testing::ValuesIn({TestParam(std::string("poll"), false),
+    ::testing::ValuesIn({TestParam(std::string("epoll1"), false),
+                         TestParam(std::string("epoll1"), true),
+                         TestParam(std::string("poll"), false),
                          TestParam(std::string("poll"), true)}),
     &TestScenarioName);
 

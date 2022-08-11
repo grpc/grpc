@@ -353,6 +353,7 @@ EventHandle* PollPoller::CreateHandle(int fd, absl::string_view /*name*/,
   GPR_DEBUG_ASSERT(track_err == false);
   PollEventHandle* handle = new PollEventHandle(fd, this);
   ForkFdListAddHandle(handle);
+  KickExternal(false);
   return handle;
 }
 

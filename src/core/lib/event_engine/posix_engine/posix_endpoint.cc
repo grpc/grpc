@@ -1368,7 +1368,7 @@ PosixStreamSocket::PosixStreamSocket(EventHandle* handle,
       options.tcp_tx_zerocopy_send_bytes_threshold);
   frame_size_tuning_enabled_ = ExperimentalTcpFrameSizeTuningEnabled();
   if (options.tcp_tx_zero_copy_enabled &&
-      !tcp_zerocopy_send_ctx_->memory_limited()) {
+      !tcp_zerocopy_send_ctx_->memory_limited() && poller_->CanTrackErrors()) {
 #ifdef GRPC_LINUX_ERRQUEUE
     const int enable = 1;
     auto err =
