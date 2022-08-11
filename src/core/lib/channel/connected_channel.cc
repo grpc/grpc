@@ -378,7 +378,7 @@ class ClientStream : public Orphanable {
       batch_payload_.recv_trailing_metadata.recv_trailing_metadata =
           server_trailing_metadata_.get();
       batch_payload_.recv_trailing_metadata.collect_stats =
-          &GetContext<grpc_call_stats>()->transport_stream_stats;
+          &GetContext<CallContext>()->call_stats()->transport_stream_stats;
       batch_payload_.recv_trailing_metadata.recv_trailing_metadata_ready =
           &recv_trailing_metadata_ready_;
       push_metadata_ = true;

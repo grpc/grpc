@@ -1922,7 +1922,6 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
         public promise_detail::Context<grpc_call_context_element>,
         public promise_detail::Context<CallContext>,
         public promise_detail::Context<CallFinalization>,
-        public promise_detail::Context<grpc_call_stats>,
         public promise_detail::Context<MetadataAllocator> {
    public:
     explicit ScopedContext(PromiseBasedCall* call)
@@ -1931,7 +1930,6 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
           promise_detail::Context<grpc_call_context_element>(call->context_),
           promise_detail::Context<CallContext>(&call->call_context_),
           promise_detail::Context<CallFinalization>(&call->finalization_),
-          promise_detail::Context<grpc_call_stats>(&call->final_info_.stats),
           promise_detail::Context<MetadataAllocator>(
               &call->metadata_allocator_) {}
   };
@@ -1969,8 +1967,6 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
 
   ~PromiseBasedCall() override {
     if (non_owning_wakeable_) non_owning_wakeable_->DropActivity();
-    // DO NOT SUBMIT - need to get the correct call_final_info into this call
-    finalization_.Run(nullptr);
   }
 
   enum class PauseReason {
@@ -2019,6 +2015,13 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
                    grpc_metadata_batch* batch);
 
   std::string ActivityDebugTag() const override { return DebugTag(); }
+
+  void RunFinalization(grpc_status_code status, const char* status_details) {
+    grpc_call_final_info final_info;
+    final_info.stats = *call_context_.call_stats();
+    final_info.error_string = status_details;
+    finalization_.Run(&final_info);
+  }
 
  private:
   union CompletionInfo {
@@ -2130,7 +2133,6 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
   NonOwningWakable* non_owning_wakeable_ ABSL_GUARDED_BY(mu_) = nullptr;
   CompletionInfo completion_info_[6];
   CallFinalization finalization_;
-  grpc_call_final_info final_info_;
 };
 
 template <typename T>
@@ -2744,10 +2746,18 @@ void ClientPromiseBasedCall::PublishStatus(
   const grpc_status_code status = trailing_metadata->get(GrpcStatusMetadata())
                                       .value_or(GRPC_STATUS_UNKNOWN);
   *op_args.status = status;
+  absl::string_view message_string;
   if (Slice* message = trailing_metadata->get_pointer(GrpcMessageMetadata())) {
+    message_string = message->as_string_view();
     *op_args.status_details = message->Ref().TakeCSlice();
   } else {
     *op_args.status_details = grpc_empty_slice();
+  }
+  if (message_string.empty()) {
+    RunFinalization(status, nullptr);
+  } else {
+    std::string error_string(message_string);
+    RunFinalization(status, error_string.c_str());
   }
   if (op_args.error_string != nullptr && status != GRPC_STATUS_OK) {
     *op_args.error_string =

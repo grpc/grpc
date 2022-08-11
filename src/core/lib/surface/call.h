@@ -90,8 +90,13 @@ class CallContext {
   // TODO(ctiller): remove this once transport APIs are promise based
   void Unref(const char* reason = "call_context");
 
+  grpc_call_stats* call_stats() { return &call_stats_; }
+
  private:
-  // TODO(ctiller): remove this once transport APIs are promise based
+  // Call final info.
+  grpc_call_stats call_stats_;
+  // TODO(ctiller): remove this once transport APIs are promise based and we
+  // don't need refcounting here.
   PromiseBasedCall* const call_;
 };
 
