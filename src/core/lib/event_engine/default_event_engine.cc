@@ -35,8 +35,8 @@ namespace experimental {
 namespace {
 std::atomic<absl::AnyInvocable<std::unique_ptr<EventEngine>()>*>
     g_event_engine_factory{nullptr};
-grpc_core::NoDestructSingleton<grpc_core::Mutex> g_mu;
-grpc_core::NoDestructSingleton<std::weak_ptr<EventEngine>> g_event_engine;
+grpc_core::NoDestruct<grpc_core::Mutex> g_mu;
+grpc_core::NoDestruct<std::weak_ptr<EventEngine>> g_event_engine;
 }  // namespace
 
 void SetEventEngineFactory(
