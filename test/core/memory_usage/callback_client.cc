@@ -45,6 +45,7 @@ ABSL_FLAG(std::string, target, "", "Target host:port");
 ABSL_FLAG(bool, secure, false, "Use SSL Credentials");
 ABSL_FLAG(int, server_pid, 99999, "Server's pid");
 ABSL_FLAG(int, size, 50, "Number of channels");
+ABSL_FLAG(bool, memory_profiling, false, "Run memory profiling");
 
 std::shared_ptr<grpc::Channel> CreateChannelForTest(int index) {
   // Set the authentication mechanism.
@@ -120,20 +121,21 @@ std::shared_ptr<CallParams> GetBeforeSnapshot(
 }
 
 // Simple Unary RPC to send to confirm connection is open
-std::shared_ptr<CallParams> MemoryProfilerDump(std::shared_ptr<grpc::Channel> channel) {
+std::shared_ptr<CallParams> MemoryProfilerDump(
+    std::shared_ptr<grpc::Channel> channel) {
   std::unique_ptr<grpc::testing::BenchmarkService::Stub> stub =
       grpc::testing::BenchmarkService::NewStub(channel);
 
   // Start a call.
   auto params = std::make_shared<CallParams>();
-  stub->async()->MemoryProfilerDump(&params->context, &params->request,
-                           &params->response,
-                           [params](const grpc::Status& status) {
-                             if (!status.ok()) {
-                               gpr_log(GPR_ERROR, "MemoryProfilerDump RPC failed.");
-                             }
-                             params->done.Notify();
-                           });
+  stub->async()->MemoryProfilerDump(
+      &params->context, &params->request, &params->response,
+      [params](const grpc::Status& status) {
+        if (!status.ok()) {
+          gpr_log(GPR_ERROR, "MemoryProfilerDump RPC failed.");
+        }
+        params->done.Notify();
+      });
   return params;
 }
 
@@ -166,8 +168,10 @@ int main(int argc, char** argv) {
     UnaryCall(channel)->done.WaitForNotification();
   }
 
-  //Trigger HeapProfilerDump in server when all channels are open for memory profiling
-  MemoryProfilerDump(get_memory_channel)->done.WaitForNotification();
+  // Trigger HeapProfilerDump in server when all channels are open for memory
+  // profiling
+  if (absl::GetFlag(FLAGS_memory_profiling))
+    MemoryProfilerDump(get_memory_channel)->done.WaitForNotification();
 
   // Getting peak memory usage
   long peak_server_memory = GetMemUsage(absl::GetFlag(FLAGS_server_pid));

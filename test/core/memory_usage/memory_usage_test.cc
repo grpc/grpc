@@ -48,8 +48,7 @@ ABSL_FLAG(int, size, 1000, "Number of channels/calls");
 ABSL_FLAG(std::string, scenario_config, "insecure",
           "Possible Values: minstack (Use minimal stack), resource_quota, "
           "secure (Use SSL credentials on server)");
-ABSL_FLAG(bool, memory_profiling, false,
-          "Run memory profiling");  // TODO (chennancy) Connect this flag
+ABSL_FLAG(bool, memory_profiling, false, "Run memory profiling");
 
 class Subprocess {
  public:
@@ -117,7 +116,9 @@ int RunChannelBenchmark(char* root) {
   std::vector<std::string> server_flags = {
       absl::StrCat(root, "/memory_usage_callback_server",
                    gpr_subprocess_binary_extension()),
-      "--bind", grpc_core::JoinHostPort("::", port)};
+      "--bind", grpc_core::JoinHostPort("::", port),
+      absl::StrCat("--memory_profiling=",
+                   absl::GetFlag(FLAGS_memory_profiling))};
   Subprocess svr(server_flags);
 
   // Wait one second before starting client to avoid possible race condition
@@ -132,7 +133,9 @@ int RunChannelBenchmark(char* root) {
       grpc_core::JoinHostPort("127.0.0.1", port),
       "--nosecure",
       absl::StrCat("--server_pid=", svr.GetPID()),
-      absl::StrCat("--size=", absl::GetFlag(FLAGS_size))};
+      absl::StrCat("--size=", absl::GetFlag(FLAGS_size)),
+      absl::StrCat("--memory_profiling=",
+                   absl::GetFlag(FLAGS_memory_profiling))};
   Subprocess cli(client_flags);
   /* wait for completion */
   if ((status = cli.Join()) != 0) {
