@@ -351,7 +351,7 @@ uint32_t StreamFlowControl::DesiredAnnounceSize() const {
 FlowControlAction StreamFlowControl::UpdateAction(FlowControlAction action) {
   const int64_t desired_announce_size = DesiredAnnounceSize();
   if (desired_announce_size > 0) {
-    if ((min_progress_size_ > 0 && announced_window_delta_ < 0) ||
+    if ((min_progress_size_ > 0 && announced_window_delta_ <= 0) ||
         desired_announce_size >= 8192) {
       action.set_send_stream_update(
           FlowControlAction::Urgency::UPDATE_IMMEDIATELY);
