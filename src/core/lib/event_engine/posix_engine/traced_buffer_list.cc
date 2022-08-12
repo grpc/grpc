@@ -16,6 +16,11 @@
 
 #include "src/core/lib/event_engine/posix_engine/traced_buffer_list.h"
 
+#include <stddef.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
@@ -26,7 +31,9 @@
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_LINUX_ERRQUEUE
+#include <linux/errqueue.h>  // IWYU pragma: keep
 #include <linux/netlink.h>
+#include <sys/socket.h>  // IWYU pragma: keep
 
 namespace grpc_event_engine {
 namespace posix_engine {
