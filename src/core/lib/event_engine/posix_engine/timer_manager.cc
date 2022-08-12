@@ -274,6 +274,7 @@ void TimerManager::PostforkParent() {
     StartThread();
   }
   prefork_thread_count_ = 0;
+  forking_ = false;
 }
 
 void TimerManager::PostforkChild() {
@@ -282,6 +283,7 @@ void TimerManager::PostforkChild() {
     StartThread();
   }
   prefork_thread_count_ = 0;
+  forking_ = false;
 }
 
 }  // namespace posix_engine
