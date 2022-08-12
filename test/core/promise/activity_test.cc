@@ -332,6 +332,24 @@ TEST(AtomicWakerTest, CanWakeupEmptyWaker) {
   waker.Wakeup();
 }
 
+class TestWakeable final : public Wakeable {
+ public:
+  TestWakeable(std::atomic<int>* wakeups, std::atomic<int>* drops)
+      : wakeups_(wakeups), drops_(drops) {}
+  void Wakeup() override {
+    wakeups_->fetch_add(1, std::memory_order_relaxed);
+    delete this;
+  }
+  void Drop() override {
+    drops_->fetch_add(1, std::memory_order_relaxed);
+    delete this;
+  }
+
+ private:
+  std::atomic<int>* const wakeups_;
+  std::atomic<int>* const drops_;
+};
+
 TEST(AtomicWakerTest, ThreadStress) {
   AtomicWaker waker;
   std::vector<std::thread> threads;
@@ -352,23 +370,6 @@ TEST(AtomicWakerTest, ThreadStress) {
   for (int i = 0; i < 30; i++) {
     threads.emplace_back([&] {
       while (!done.load(std::memory_order_relaxed)) {
-        class TestWakeable final : public Wakeable {
-         public:
-          TestWakeable(std::atomic<int>* wakeups, std::atomic<int>* drops)
-              : wakeups_(wakeups), drops_(drops) {}
-          void Wakeup() override {
-            wakeups_->fetch_add(1, std::memory_order_relaxed);
-            delete this;
-          }
-          void Drop() override {
-            drops_->fetch_add(1, std::memory_order_relaxed);
-            delete this;
-          }
-
-         private:
-          std::atomic<int>* const wakeups_;
-          std::atomic<int>* const drops_;
-        };
         waker.Set(Waker(new TestWakeable(&wakeups, &drops)));
       }
     });
@@ -385,7 +386,6 @@ TEST(AtomicWakerTest, ThreadStress) {
   do {
     std::this_thread::sleep_for(std::chrono::seconds(1));
   } while (wakeups.load(std::memory_order_relaxed) == 0 ||
-           drops.load(std::memory_order_relaxed) == 0 ||
            armed.load(std::memory_order_relaxed) == 0 ||
            not_armed.load(std::memory_order_relaxed) == 0);
   done.store(true, std::memory_order_relaxed);
