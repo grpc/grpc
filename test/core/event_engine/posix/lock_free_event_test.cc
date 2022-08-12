@@ -26,13 +26,14 @@
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
 #include "src/core/lib/gprpp/sync.h"
 
+using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::posix_engine::Scheduler;
 
 namespace {
 class TestScheduler : public Scheduler {
  public:
-  explicit TestScheduler(grpc_event_engine::experimental::EventEngine* engine)
-      : engine_(engine) {}
+  explicit TestScheduler(std::shared_ptr<EventEngine> engine)
+      : engine_(std::move(engine)) {}
   void Run(
       grpc_event_engine::experimental::EventEngine::Closure* closure) override {
     engine_->Run(closure);
@@ -43,7 +44,7 @@ class TestScheduler : public Scheduler {
   }
 
  private:
-  grpc_event_engine::experimental::EventEngine* engine_;
+  std::shared_ptr<EventEngine> engine_;
 };
 
 TestScheduler* g_scheduler;
@@ -149,9 +150,7 @@ TEST(LockFreeEventTest, MultiThreadedTest) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc_event_engine::experimental::EventEngine* engine =
-      grpc_event_engine::experimental::GetDefaultEventEngine();
-  EXPECT_NE(engine, nullptr);
-  g_scheduler = new TestScheduler(engine);
+  g_scheduler = new TestScheduler(
+      grpc_event_engine::experimental::GetDefaultEventEngine());
   return RUN_ALL_TESTS();
 }
