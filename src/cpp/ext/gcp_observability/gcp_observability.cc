@@ -46,6 +46,7 @@ void GcpObservabilityInit() {
   // TODO(yashykt): Add code for gRPC config parsing
   grpc::RegisterOpenCensusPlugin();
   grpc::RegisterOpenCensusViewsForExport();
+  // TODO(yashykt): Setup tracing and stats exporting only if enabled in config.
   // TODO(yashykt): Get probability from config
   opencensus::trace::TraceConfig::SetCurrentTraceParams(
       {kMaxAttributes, kMaxAnnotations, kMaxMessageEvents, kMaxLinks,
