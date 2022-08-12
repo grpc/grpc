@@ -205,14 +205,14 @@ inline void chttp2_init_server_secure_fullstack(
   grpc_server_start(f->server);
 }
 
-void chttp2_tear_down_secure_fullstack(grpc_end2end_test_fixture* f) {
+inline void chttp2_tear_down_secure_fullstack(grpc_end2end_test_fixture* f) {
   fullstack_secure_fixture_data* ffd =
       static_cast<fullstack_secure_fixture_data*>(f->fixture_data);
   delete ffd;
 }
 
 // Create a TLS channel credential.
-static grpc_channel_credentials* create_tls_channel_credentials(
+inline grpc_channel_credentials* create_tls_channel_credentials(
     fullstack_secure_fixture_data* ffd) {
   grpc_tls_credentials_options* options = grpc_tls_credentials_options_create();
   grpc_tls_credentials_options_set_verify_server_cert(
@@ -235,7 +235,7 @@ static grpc_channel_credentials* create_tls_channel_credentials(
 }
 
 // Create a TLS server credential.
-static grpc_server_credentials* create_tls_server_credentials(
+inline grpc_server_credentials* create_tls_server_credentials(
     fullstack_secure_fixture_data* ffd) {
   grpc_tls_credentials_options* options = grpc_tls_credentials_options_create();
   options->set_min_tls_version(ffd->tls_version);
