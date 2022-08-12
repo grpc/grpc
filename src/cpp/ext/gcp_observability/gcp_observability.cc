@@ -16,8 +16,16 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/cpp/ext/gcp_observability/gcp_observability.h"
+
+#include <stdint.h>
+
+#include <utility>
+
 #include "opencensus/exporters/stats/stackdriver/stackdriver_exporter.h"
 #include "opencensus/exporters/trace/stackdriver/stackdriver_exporter.h"
+#include "opencensus/trace/sampler.h"
+#include "opencensus/trace/trace_config.h"
 
 #include <grpcpp/opencensus.h>
 
@@ -34,11 +42,11 @@ constexpr uint32_t kMaxMessageEvents = 128;
 constexpr uint32_t kMaxLinks = 128;
 }  // namespace
 
-void RegisterOpenCensusPluginForGcpObservability() {
+void GcpObservabilityInit() {
   // TODO(yashykt): Add code for gRPC config parsing
   grpc::RegisterOpenCensusPlugin();
   grpc::RegisterOpenCensusViewsForExport();
-  // TODO(yashykt: Get probability from config
+  // TODO(yashykt): Get probability from config
   opencensus::trace::TraceConfig::SetCurrentTraceParams(
       {kMaxAttributes, kMaxAnnotations, kMaxMessageEvents, kMaxLinks,
        opencensus::trace::ProbabilitySampler(1.0)});

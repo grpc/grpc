@@ -14,17 +14,17 @@
 // limitations under the License.
 //
 
+#include "src/cpp/ext/gcp_observability/gcp_observability.h"
+
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpcpp/opencensus.h>
 
 #include "test/core/util/test_config.h"
 
 namespace {
 
 TEST(GcpObservabilityTest, RegistrationTest) {
-  grpc::experimental::RegisterOpenCensusPluginForGcpObservability();
+  grpc::experimental::GcpObservabilityInit();
 }
 
 }  // namespace

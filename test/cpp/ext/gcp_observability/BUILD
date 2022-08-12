@@ -1,4 +1,4 @@
-# Copyright 2018 gRPC authors.
+# Copyright 2022 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,29 +16,19 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 
 licenses(["notice"])
 
-grpc_package(name = "test/cpp/ext/filters/census")
+grpc_package(name = "test/cpp/ext/gcp_observability")
 
 grpc_cc_test(
-    name = "grpc_opencensus_plugin_test",
+    name = "gcp_observability_test",
     srcs = [
-        "stats_plugin_end2end_test.cc",
+        "gcp_observability_test.cc",
     ],
     external_deps = [
         "gtest",
-        "opencensus-stats-test",
-        "opencensus-tags",
-        "opencensus-with-tag-map",
     ],
     language = "C++",
-    linkstatic = True,
-    tags = ["no_windows"],  # TODO(jtattermusch): fix test on windows
     deps = [
-        "//:grpc++",
-        "//:grpc_opencensus_plugin",
-        "//src/proto/grpc/testing:echo_proto",
-        "//test/core/util:grpc_test_util",
-        "//test/cpp/end2end:test_service_impl",
-        "//test/cpp/util:test_config",
+        "//:grpcpp_gcp_observability",
         "//test/cpp/util:test_util",
     ],
 )

@@ -7249,18 +7249,19 @@ grpc_cc_library(
 
 # This is an EXPERIMENTAL target subject to change.
 grpc_cc_library(
-    name = "grpcpp_opencensus_gcp_observability_plugin",
+    name = "grpcpp_gcp_observability",
     srcs = [
-        "src/cpp/ext/filters/census/gcp_observability.cc",
+        "src/cpp/ext/gcp_observability/gcp_observability.cc",
+    ],
+    hdrs = [
+        "src/cpp/ext/gcp_observability/gcp_observability.h",
     ],
     external_deps = [
+        "opencensus-trace",
         "opencensus-trace-stackdriver_exporter",
         "opencensus-stats-stackdriver_exporter",
     ],
     language = "c++",
-    public_hdrs = [
-        "include/grpcpp/opencensus.h",
-    ],
     tags = ["nofixdeps"],
     visibility = ["//test:__subpackages__"],
     deps = [
