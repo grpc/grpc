@@ -25,6 +25,7 @@
 
 #include <grpc/grpc.h>
 
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/exec_ctx_wakeup_scheduler.h"
 #include "src/core/lib/promise/race.h"
@@ -37,12 +38,15 @@ TEST(Sleep, Zzzz) {
   ExecCtx exec_ctx;
   absl::Notification done;
   Timestamp done_time = ExecCtx::Get()->Now() + Duration::Seconds(1);
+  auto engine = grpc_event_engine::experimental::GetDefaultEventEngine();
   // Sleep for one second then set done to true.
-  auto activity = MakeActivity(Sleep(done_time), InlineWakeupScheduler(),
-                               [&done](absl::Status r) {
-                                 EXPECT_EQ(r, absl::OkStatus());
-                                 done.Notify();
-                               });
+  auto activity = MakeActivity(
+      Sleep(done_time), InlineWakeupScheduler(),
+      [&done](absl::Status r) {
+        EXPECT_EQ(r, absl::OkStatus());
+        done.Notify();
+      },
+      engine.get());
   done.WaitForNotification();
   exec_ctx.InvalidateNow();
   EXPECT_GE(ExecCtx::Get()->Now(), done_time);
@@ -52,12 +56,15 @@ TEST(Sleep, AlreadyDone) {
   ExecCtx exec_ctx;
   absl::Notification done;
   Timestamp done_time = ExecCtx::Get()->Now() - Duration::Seconds(1);
+  auto engine = grpc_event_engine::experimental::GetDefaultEventEngine();
   // Sleep for no time at all then set done to true.
-  auto activity = MakeActivity(Sleep(done_time), InlineWakeupScheduler(),
-                               [&done](absl::Status r) {
-                                 EXPECT_EQ(r, absl::OkStatus());
-                                 done.Notify();
-                               });
+  auto activity = MakeActivity(
+      Sleep(done_time), InlineWakeupScheduler(),
+      [&done](absl::Status r) {
+        EXPECT_EQ(r, absl::OkStatus());
+        done.Notify();
+      },
+      engine.get());
   done.WaitForNotification();
 }
 
@@ -65,13 +72,16 @@ TEST(Sleep, Cancel) {
   ExecCtx exec_ctx;
   absl::Notification done;
   Timestamp done_time = ExecCtx::Get()->Now() + Duration::Seconds(1);
+  auto engine = grpc_event_engine::experimental::GetDefaultEventEngine();
   // Sleep for one second but race it to complete immediately
   auto activity = MakeActivity(
       Race(Sleep(done_time), [] { return absl::CancelledError(); }),
-      InlineWakeupScheduler(), [&done](absl::Status r) {
+      InlineWakeupScheduler(),
+      [&done](absl::Status r) {
         EXPECT_EQ(r, absl::CancelledError());
         done.Notify();
-      });
+      },
+      engine.get());
   done.WaitForNotification();
   exec_ctx.InvalidateNow();
   EXPECT_LT(ExecCtx::Get()->Now(), done_time);
@@ -84,11 +94,14 @@ TEST(Sleep, MoveSemantics) {
   Timestamp done_time = ExecCtx::Get()->Now() + Duration::Milliseconds(111);
   Sleep donor(done_time);
   Sleep sleeper = std::move(donor);
-  auto activity = MakeActivity(std::move(sleeper), InlineWakeupScheduler(),
-                               [&done](absl::Status r) {
-                                 EXPECT_EQ(r, absl::OkStatus());
-                                 done.Notify();
-                               });
+  auto engine = grpc_event_engine::experimental::GetDefaultEventEngine();
+  auto activity = MakeActivity(
+      std::move(sleeper), InlineWakeupScheduler(),
+      [&done](absl::Status r) {
+        EXPECT_EQ(r, absl::OkStatus());
+        done.Notify();
+      },
+      engine.get());
   done.WaitForNotification();
   exec_ctx.InvalidateNow();
   EXPECT_GE(ExecCtx::Get()->Now(), done_time);
@@ -100,12 +113,14 @@ TEST(Sleep, StressTest) {
   ExecCtx exec_ctx;
   std::vector<std::shared_ptr<absl::Notification>> notifications;
   std::vector<ActivityPtr> activities;
+  auto engine = grpc_event_engine::experimental::GetDefaultEventEngine();
   gpr_log(GPR_INFO, "Starting %d sleeps for 1sec", kNumActivities);
   for (int i = 0; i < kNumActivities; i++) {
     auto notification = std::make_shared<absl::Notification>();
     auto activity = MakeActivity(
         Sleep(exec_ctx.Now() + Duration::Seconds(1)), ExecCtxWakeupScheduler(),
-        [notification](absl::Status /*r*/) { notification->Notify(); });
+        [notification](absl::Status /*r*/) { notification->Notify(); },
+        engine.get());
     notifications.push_back(std::move(notification));
     activities.push_back(std::move(activity));
   }
