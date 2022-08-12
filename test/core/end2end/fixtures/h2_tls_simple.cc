@@ -16,35 +16,19 @@
  *
  */
 
-#include <stdint.h>
 #include <string.h>
 
 #include <string>
 
-#include "absl/container/inlined_vector.h"
-#include "absl/strings/string_view.h"
-
 #include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-#include <grpc/grpc_security_constants.h>
-#include <grpc/slice.h>
-#include <grpc/status.h>
-#include <grpc/support/log.h>
 
-#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/global_config_generic.h"
 #include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/gprpp/thd.h"
-#include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/load_file.h"
-#include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 #include "src/core/lib/security/security_connector/ssl_utils_config.h"
-#include "src/core/lib/slice/slice_internal.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/fixtures/h2_tls_common.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
-#include "test/core/util/tls_utils.h"
 
 static grpc_end2end_test_fixture chttp2_create_fixture_simple_fullstack(
     const grpc_channel_args*, const grpc_channel_args*) {
