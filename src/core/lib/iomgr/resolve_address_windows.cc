@@ -120,7 +120,7 @@ NativeDNSResolver::LookupHostnameBlocking(absl::string_view name,
     goto done;
   }
   if (port.empty()) {
-    if (default_port == NULL) {
+    if (default_port.empty()) {
       error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
           absl::StrFormat("no port in name '%s'", name));
       goto done;

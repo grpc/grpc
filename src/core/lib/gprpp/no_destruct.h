@@ -58,25 +58,31 @@ class NoDestruct {
   NoDestruct& operator=(const NoDestruct&) = delete;
   ~NoDestruct() = default;
 
-  T* operator->() { return reinterpret_cast<T*>(&space_); }
-  const T* operator->() const { return *reinterpret_cast<const T*>(&space_); }
-  T& operator*() { return *reinterpret_cast<T*>(&space_); }
-  const T& operator*() const { return *reinterpret_cast<const T*>(&space_); }
+  T* operator->() { return get(); }
+  const T* operator->() const { return get(); }
+  T& operator*() { return *get(); }
+  const T& operator*() const { return *get(); }
+
+  T* get() { return reinterpret_cast<T*>(&space_); }
+  const T* get() const { return reinterpret_cast<const T*>(&space_); }
 
  private:
   typename std::aligned_storage<sizeof(T), alignof(T)>::type space_;
 };
 
-// Helper for when a program desires a single instance of a default constructed
-// T to be always available.
-// T is constructed eagerly at program startup, so it's essentially free to load
-// the pointer to the instance.
+// Helper for when a program desires a single *process wide* instance of a
+// default constructed T to be always available.
+// The instance is constructed eagerly at program startup, so it's essentially
+// free to load the pointer to the instance.
 template <typename T>
 class NoDestructSingleton {
  public:
   static T* Get() { return &*value_; }
 
  private:
+  NoDestructSingleton() = delete;
+  ~NoDestructSingleton() = delete;
+
   static NoDestruct<T> value_;
 };
 

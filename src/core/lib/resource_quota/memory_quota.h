@@ -523,8 +523,8 @@ class MemoryQuota final
 
   // Return true if the instantaneous memory pressure is high.
   bool IsMemoryPressureHigh() const {
-    static constexpr double kMemoryPressureHighThreshold = 0.9;
-    return memory_quota_->GetPressureInfo().pressure_control_value >
+    static constexpr double kMemoryPressureHighThreshold = 1.0;
+    return memory_quota_->GetPressureInfo().instantaneous_pressure >
            kMemoryPressureHighThreshold;
   }
 

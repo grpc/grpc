@@ -1722,6 +1722,21 @@ PUBLIC_HEADERS_C += \
     include/grpc/grpc_posix.h \
     include/grpc/grpc_security.h \
     include/grpc/grpc_security_constants.h \
+    include/grpc/impl/codegen/atm.h \
+    include/grpc/impl/codegen/atm_gcc_atomic.h \
+    include/grpc/impl/codegen/atm_gcc_sync.h \
+    include/grpc/impl/codegen/atm_windows.h \
+    include/grpc/impl/codegen/fork.h \
+    include/grpc/impl/codegen/gpr_slice.h \
+    include/grpc/impl/codegen/gpr_types.h \
+    include/grpc/impl/codegen/log.h \
+    include/grpc/impl/codegen/port_platform.h \
+    include/grpc/impl/codegen/sync.h \
+    include/grpc/impl/codegen/sync_abseil.h \
+    include/grpc/impl/codegen/sync_custom.h \
+    include/grpc/impl/codegen/sync_generic.h \
+    include/grpc/impl/codegen/sync_posix.h \
+    include/grpc/impl/codegen/sync_windows.h \
     include/grpc/load_reporting.h \
     include/grpc/slice.h \
     include/grpc/slice_buffer.h \
@@ -2133,6 +2148,21 @@ PUBLIC_HEADERS_C += \
     include/grpc/grpc_posix.h \
     include/grpc/grpc_security.h \
     include/grpc/grpc_security_constants.h \
+    include/grpc/impl/codegen/atm.h \
+    include/grpc/impl/codegen/atm_gcc_atomic.h \
+    include/grpc/impl/codegen/atm_gcc_sync.h \
+    include/grpc/impl/codegen/atm_windows.h \
+    include/grpc/impl/codegen/fork.h \
+    include/grpc/impl/codegen/gpr_slice.h \
+    include/grpc/impl/codegen/gpr_types.h \
+    include/grpc/impl/codegen/log.h \
+    include/grpc/impl/codegen/port_platform.h \
+    include/grpc/impl/codegen/sync.h \
+    include/grpc/impl/codegen/sync_abseil.h \
+    include/grpc/impl/codegen/sync_custom.h \
+    include/grpc/impl/codegen/sync_generic.h \
+    include/grpc/impl/codegen/sync_posix.h \
+    include/grpc/impl/codegen/sync_windows.h \
     include/grpc/load_reporting.h \
     include/grpc/slice.h \
     include/grpc/slice_buffer.h \
