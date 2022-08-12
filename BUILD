@@ -2593,6 +2593,41 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "posix_event_engine_internal_errqueue",
+    srcs = [
+        "src/core/lib/event_engine/posix_engine/internal_errqueue.cc",
+    ],
+    hdrs = [
+        "src/core/lib/event_engine/posix_engine/internal_errqueue.h",
+    ],
+    deps = [
+        "gpr",
+        "iomgr_port",
+    ],
+)
+
+grpc_cc_library(
+    name = "posix_event_engine_traced_buffer_list",
+    srcs = [
+        "src/core/lib/event_engine/posix_engine/traced_buffer_list.cc",
+    ],
+    hdrs = [
+        "src/core/lib/event_engine/posix_engine/traced_buffer_list.h",
+    ],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "absl/status",
+        "absl/types:optional",
+    ],
+    deps = [
+        "gpr",
+        "gpr_codegen",
+        "iomgr_port",
+        "posix_event_engine_internal_errqueue",
+    ],
+)
+
+grpc_cc_library(
     name = "event_engine_utils",
     srcs = ["src/core/lib/event_engine/utils.cc"],
     hdrs = ["src/core/lib/event_engine/utils.h"],
@@ -3671,7 +3706,6 @@ grpc_cc_library(
         "grpc_base",
         "grpc_server_config_selector",
         "grpc_service_config",
-        "poll",
         "promise",
         "ref_counted_ptr",
     ],
@@ -3792,7 +3826,6 @@ grpc_cc_library(
         "gpr_platform",
         "grpc_base",
         "grpc_codegen",
-        "poll",
         "slice",
     ],
 )
@@ -3865,7 +3898,6 @@ grpc_cc_library(
         "grpc_trace",
         "json",
         "json_util",
-        "poll",
         "service_config_parser",
         "sleep",
         "time",
@@ -3959,7 +3991,6 @@ grpc_cc_library(
         "grpc_trace",
         "latch",
         "percent_encoding",
-        "poll",
         "promise",
         "seq",
         "slice",
@@ -4911,7 +4942,6 @@ grpc_cc_library(
         "grpc_public_hdrs",
         "grpc_security_base",
         "grpc_sockaddr",
-        "poll",
         "promise",
         "resolved_address",
         "seq",
@@ -5430,7 +5460,6 @@ grpc_cc_library(
         "grpc_credentials_util",
         "grpc_security_base",
         "grpc_trace",
-        "poll",
         "promise",
         "ref_counted",
         "ref_counted_ptr",
@@ -5488,7 +5517,6 @@ grpc_cc_library(
         "grpc_security_base",
         "handshaker",
         "iomgr_fwd",
-        "poll",
         "promise",
         "ref_counted_ptr",
         "slice",
@@ -5522,7 +5550,6 @@ grpc_cc_library(
         "grpc_security_base",
         "handshaker",
         "iomgr_fwd",
-        "poll",
         "promise",
         "ref_counted_ptr",
         "tsi_base",
@@ -5575,7 +5602,6 @@ grpc_cc_library(
         "grpc_sockaddr",
         "handshaker",
         "iomgr_fwd",
-        "poll",
         "promise",
         "ref_counted_ptr",
         "resolved_address",
@@ -5615,7 +5641,6 @@ grpc_cc_library(
         "grpc_security_base",
         "handshaker",
         "iomgr_fwd",
-        "poll",
         "promise",
         "ref_counted_ptr",
         "slice_refcount",
@@ -5653,7 +5678,6 @@ grpc_cc_library(
         "grpc_trace",
         "handshaker",
         "iomgr_fwd",
-        "poll",
         "promise",
         "ref_counted_ptr",
         "tsi_base",
@@ -5749,7 +5773,6 @@ grpc_cc_library(
         "grpc_trace",
         "handshaker",
         "iomgr_fwd",
-        "poll",
         "promise",
         "ref_counted",
         "ref_counted_ptr",
@@ -5783,7 +5806,6 @@ grpc_cc_library(
         "grpc_base",
         "grpc_security_base",
         "grpc_trace",
-        "poll",
         "promise",
         "ref_counted_ptr",
         "slice",
@@ -5828,7 +5850,6 @@ grpc_cc_library(
         "httpcli_ssl_credentials",
         "json",
         "orphanable",
-        "poll",
         "promise",
         "ref_counted_ptr",
         "slice",
@@ -5950,7 +5971,6 @@ grpc_cc_library(
         "grpc_security_base",
         "handshaker",
         "iomgr_fwd",
-        "poll",
         "promise",
         "ref_counted_ptr",
         "tsi_base",
