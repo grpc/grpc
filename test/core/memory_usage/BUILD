@@ -140,8 +140,8 @@ grpc_cc_binary(
         "no_windows",
     ],
     deps = [
-        ":memstats",
         ":gperftools_lib",
+        ":memstats",
         "//:gpr",
         "//:grpc",
         "//:grpc++",

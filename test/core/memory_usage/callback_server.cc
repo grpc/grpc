@@ -69,9 +69,9 @@ class ServerCallbackImpl final
       grpc::CallbackServerContext* context,
       const grpc::testing::SimpleRequest* request,
       grpc::testing::SimpleResponse* response) override {
-    #ifdef GRPC_USE_GPERFTOOLS
+#ifdef GRPC_USE_GPERFTOOLS
     HeapProfilerDump("Server Peak Usage");
-    #endif
+#endif
     auto* reactor = context->DefaultReactor();
     reactor->Finish(grpc::Status::OK);
     return reactor;
@@ -96,12 +96,12 @@ int main(int argc, char** argv) {
   fake_argv[0] = argv[0];
   grpc::testing::TestEnvironment env(&argc, argv);
 
-  // Start gperftools heap profiler
-  #ifdef GRPC_USE_GPERFTOOLS
+// Start gperftools heap profiler
+#ifdef GRPC_USE_GPERFTOOLS
   if (absl::GetFlag(FLAGS_memory_profiling)) {
     HeapProfilerStart("/tmp/server.heapprof");
   }
-  #endif
+#endif
   grpc_init();
   signal(SIGINT, sigint_handler);
   std::string server_address = absl::GetFlag(FLAGS_bind);
@@ -132,8 +132,8 @@ int main(int argc, char** argv) {
 
   // Keep the program running until the server shuts down.
   server->Wait();
-  #ifdef GRPC_USE_GPERFTOOLS
+#ifdef GRPC_USE_GPERFTOOLS
   if (absl::GetFlag(FLAGS_memory_profiling)) HeapProfilerStop();
-  #endif
+#endif
   return 0;
 }
