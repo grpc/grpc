@@ -130,11 +130,11 @@ grpc_cc_binary(
         "//:gpr",
         "//:grpc",
         "//:grpc++",
-        "//third_party/gperftools:gperftools",
         "//src/proto/grpc/testing:benchmark_service_proto",
         "//test/core/end2end:ssl_test_data",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
+        "//third_party/gperftools",
     ],
 )
 

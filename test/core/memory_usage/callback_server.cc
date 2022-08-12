@@ -92,8 +92,9 @@ int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
 
   // Start gperftools heap profiler
-  if (absl::GetFlag(FLAGS_memory_profiling))
+  if (absl::GetFlag(FLAGS_memory_profiling)) {
     HeapProfilerStart("/tmp/server.heapprof");
+  }
 
   grpc_init();
   signal(SIGINT, sigint_handler);

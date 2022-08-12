@@ -170,8 +170,9 @@ int main(int argc, char** argv) {
 
   // Trigger HeapProfilerDump in server when all channels are open for memory
   // profiling
-  if (absl::GetFlag(FLAGS_memory_profiling))
+  if (absl::GetFlag(FLAGS_memory_profiling)) {
     MemoryProfilerDump(get_memory_channel)->done.WaitForNotification();
+  }
 
   // Getting peak memory usage
   long peak_server_memory = GetMemUsage(absl::GetFlag(FLAGS_server_pid));
