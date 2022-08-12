@@ -62,8 +62,9 @@ void TimerManager::StartThread() {
   ++thread_count_;
   auto* thread = new RunThreadArgs();
   thread->self = this;
-  thread->thread =
-      grpc_core::Thread("timer_manager", &TimerManager::RunThread, thread);
+  thread->thread = grpc_core::Thread(
+      "timer_manager", &TimerManager::RunThread, thread, nullptr,
+      grpc_core::Thread::Options().set_tracked(false));
   thread->thread.Start();
 }
 
