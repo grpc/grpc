@@ -107,6 +107,11 @@ config_setting(
     values = {"define": "tcmalloc=debug"},
 )
 
+config_setting(
+    name = "grpc_use_gperftools",
+    values = {"define": "grpc_use_gperftools=true"},
+)
+
 # Fuzzers can be built as fuzzers or as tests
 config_setting(
     name = "grpc_build_fuzzers",

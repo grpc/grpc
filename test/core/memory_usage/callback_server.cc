@@ -25,7 +25,6 @@
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
 #include "absl/strings/string_view.h"
-#include "gperftools/heap-profiler.h"
 
 #include <grpc/support/log.h>
 #include <grpcpp/grpcpp.h>
@@ -37,6 +36,10 @@
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "test/core/memory_usage/memstats.h"
 #include "test/core/util/test_config.h"
+
+#ifdef GRPC_USE_GPERFTOOLS
+#include "gperftools/heap-profiler.h"
+#endif
 
 class ServerCallbackImpl final
     : public grpc::testing::BenchmarkService::CallbackService {
@@ -66,7 +69,9 @@ class ServerCallbackImpl final
       grpc::CallbackServerContext* context,
       const grpc::testing::SimpleRequest* request,
       grpc::testing::SimpleResponse* response) override {
+    #ifdef GRPC_USE_GPERFTOOLS
     HeapProfilerDump("Server Peak Usage");
+    #endif
     auto* reactor = context->DefaultReactor();
     reactor->Finish(grpc::Status::OK);
     return reactor;
@@ -92,10 +97,11 @@ int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
 
   // Start gperftools heap profiler
+  #ifdef GRPC_USE_GPERFTOOLS
   if (absl::GetFlag(FLAGS_memory_profiling)) {
     HeapProfilerStart("/tmp/server.heapprof");
   }
-
+  #endif
   grpc_init();
   signal(SIGINT, sigint_handler);
   std::string server_address = absl::GetFlag(FLAGS_bind);
@@ -126,6 +132,8 @@ int main(int argc, char** argv) {
 
   // Keep the program running until the server shuts down.
   server->Wait();
+  #ifdef GRPC_USE_GPERFTOOLS
   if (absl::GetFlag(FLAGS_memory_profiling)) HeapProfilerStop();
+  #endif
   return 0;
 }

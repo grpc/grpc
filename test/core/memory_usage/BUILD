@@ -111,6 +111,20 @@ grpc_cc_binary(
     ],
 )
 
+grpc_cc_library(
+    name = "gperftools_lib",
+    defines = select({
+        "//:grpc_use_gperftools": ["GRPC_USE_GPERFTOOLS"],
+        "//conditions:default": [],
+    }),
+    select_deps = [
+        {
+            "//:grpc_use_gperftools": ["//third_party/gperftools:gperftools"],
+            "//conditions:default": [],
+        },
+    ],
+)
+
 grpc_cc_binary(
     name = "memory_usage_callback_server",
     testonly = 1,
@@ -127,6 +141,7 @@ grpc_cc_binary(
     ],
     deps = [
         ":memstats",
+        ":gperftools_lib",
         "//:gpr",
         "//:grpc",
         "//:grpc++",

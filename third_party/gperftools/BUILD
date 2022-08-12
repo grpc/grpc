@@ -12,6 +12,7 @@ configure_make(
         "--enable-frame-pointers",
         "--disable-libunwind",
     ] + select({
+        "//:mac_x86_64": ["AR=/usr/bin/ar"],
         "//conditions:default": [],
     }),
     lib_source = "@com_github_gperftools_gperftools//:all",
