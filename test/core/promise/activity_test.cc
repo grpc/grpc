@@ -351,13 +351,13 @@ class TestWakeable final : public Wakeable {
 };
 
 TEST(AtomicWakerTest, ThreadStress) {
-  AtomicWaker waker;
   std::vector<std::thread> threads;
   std::atomic<bool> done{false};
   std::atomic<int> wakeups{0};
   std::atomic<int> drops{0};
   std::atomic<int> armed{0};
   std::atomic<int> not_armed{0};
+  AtomicWaker waker;
 
   threads.reserve(90);
   for (int i = 0; i < 30; i++) {
