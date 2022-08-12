@@ -21,9 +21,8 @@
 #include <algorithm>
 
 #include "absl/time/time.h"
-#include "opencensus/stats/internal/aggregation_window.h"
-#include "opencensus/stats/internal/set_aggregation_window.h"
 #include "opencensus/stats/stats.h"
+#include "opencensus/stats/view_descriptor.h"
 
 #include <grpcpp/opencensus.h>
 
