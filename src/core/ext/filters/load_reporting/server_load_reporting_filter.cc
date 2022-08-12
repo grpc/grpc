@@ -36,6 +36,7 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+#include "opencensus/stats/stats.h"
 #include "opencensus/tags/tag_key.h"
 
 #include <grpc/grpc_security.h>
