@@ -56,6 +56,7 @@ class FragmentHandle {
     other.allocated_by_allocator_ = false;
   }
   FragmentHandle& operator=(FragmentHandle&& other) noexcept {
+    DestroyHandle();
     handle_ = other.handle_;
     allocated_by_allocator_ = other.allocated_by_allocator_;
     other.handle_ = nullptr;
@@ -65,7 +66,7 @@ class FragmentHandle {
 
   explicit FragmentHandle(const absl::Status& status);
 
-  ~FragmentHandle();
+  ~FragmentHandle() { DestroyHandle(); }
 
   T* operator->() const { return handle_; }
   bool has_value() const { return handle_ != nullptr; }
@@ -82,6 +83,8 @@ class FragmentHandle {
 
   explicit FragmentHandle(T* handle, bool allocated_by_allocator)
       : handle_(handle), allocated_by_allocator_(allocated_by_allocator) {}
+
+  void DestroyHandle();
 
   T* Unwrap() {
     T* result = handle_;
@@ -118,8 +121,6 @@ class Message {
         on_consumed_(std::move(on_consumed)) {}
   Message(const Message&) = delete;
   Message& operator=(const Message&) = delete;
-  Message(Message&& other) noexcept = default;
-  Message& operator=(Message&& other) noexcept = default;
 
   uint32_t flags() const { return flags_; }
   SliceBuffer* payload() { return &payload_; }
@@ -223,7 +224,7 @@ FragmentHandle<T>::FragmentHandle(const absl::Status& status) {
 }
 
 template <typename T>
-FragmentHandle<T>::~FragmentHandle() {
+void FragmentHandle<T>::DestroyHandle() {
   if (allocated_by_allocator_) {
     GetContext<FragmentAllocator>()->Delete(handle_);
   }
