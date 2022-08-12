@@ -21,7 +21,6 @@
 #include "src/cpp/server/load_reporter/load_reporter.h"
 
 #include <inttypes.h>
-#include <stdint.h>
 #include <stdio.h>
 
 #include <chrono>
