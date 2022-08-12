@@ -342,6 +342,7 @@ class _StreamResponseMixin(Call):
             if not self.cancelled():
                 self.cancel()
             await self._raise_for_status()
+            return cygrpc.EOF
 
         if raw_response is cygrpc.EOF:
             return cygrpc.EOF
