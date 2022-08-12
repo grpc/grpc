@@ -352,6 +352,8 @@ class ClientStream : public Orphanable {
           GetContext<Arena>()->Alloc(transport_->vtable->sizeof_stream)));
       grpc_transport_init_stream(transport_, stream_.get(), &stream_refcount_,
                                  nullptr, GetContext<Arena>());
+      grpc_transport_set_pops(transport_, stream_.get(),
+                              GetContext<CallContext>()->polling_entity());
       memset(&metadata_, 0, sizeof(metadata_));
       metadata_.send_initial_metadata = true;
       metadata_.recv_initial_metadata = true;

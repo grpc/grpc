@@ -1980,6 +1980,7 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
 
   ~PromiseBasedCall() override {
     if (non_owning_wakeable_) non_owning_wakeable_->DropActivity();
+    if (cq_) GRPC_CQ_INTERNAL_UNREF(cq_, "bind");
   }
 
   enum class PauseReason {
@@ -2168,7 +2169,20 @@ PromiseBasedCall::PromiseBasedCall(Arena* arena,
                                    const grpc_call_create_args& args)
     : Call(arena, args.server_transport_data == nullptr, args.send_deadline,
            args.channel->Ref()),
-      cq_(args.cq) {}
+      cq_(args.cq) {
+  if (args.cq != nullptr) {
+    GPR_ASSERT(args.pollset_set_alternative == nullptr &&
+               "Only one of 'cq' and 'pollset_set_alternative' should be "
+               "non-nullptr.");
+    GRPC_CQ_INTERNAL_REF(args.cq, "bind");
+    call_context_.pollent_ =
+        grpc_polling_entity_create_from_pollset(grpc_cq_pollset(args.cq));
+  }
+  if (args.pollset_set_alternative != nullptr) {
+    call_context_.pollent_ = grpc_polling_entity_create_from_pollset_set(
+        args.pollset_set_alternative);
+  }
+}
 
 Waker PromiseBasedCall::MakeNonOwningWaker() {
   if (non_owning_wakeable_ == nullptr) {
@@ -2503,6 +2517,7 @@ void ClientPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
           grpc_slice_buffer_swap(
               &op.data.send_message.send_message->data.raw.slice_buffer,
               send.c_slice_buffer());
+          send_message_waker_.Set(MakeOwningWaker());
           outstanding_send_.emplace(client_to_server_messages_.sender.Push(
               GetContext<FragmentAllocator>()->MakeMessage(
                   std::move(send), op.flags,
@@ -2579,8 +2594,7 @@ void ClientPromiseBasedCall::UpdateOnce() {
           return "";
         } else {
           return absl::StrCat(
-              caption, ":!!BUG:operation is not present, has completion: ",
-              static_cast<int>(completion.index()), "!! ");
+              caption, ":no-op:", static_cast<int>(completion.index()), " ");
         }
       }
     };
@@ -2590,9 +2604,10 @@ void ClientPromiseBasedCall::UpdateOnce() {
                                     server_initial_metadata_ready_.has_value(),
                                     recv_initial_metadata_completion_)
             .c_str(),
-        present_and_completion_text("outstanding_send",
-                                    outstanding_send_.has_value(),
-                                    send_message_completion_)
+        present_and_completion_text(
+            "outstanding_send",
+            outstanding_send_.has_value() || send_message_waker_.Armed(),
+            send_message_completion_)
             .c_str(),
         present_and_completion_text("outstanding_recv",
                                     outstanding_recv_.has_value(),
