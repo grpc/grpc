@@ -42,3 +42,18 @@ grpc_cc_test(
         "//test/cpp/util:test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "gcp_observability_test",
+    srcs = [
+        "gcp_observability_test.cc",
+    ],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    deps = [
+        "//:grpcpp_opencensus_gcp_observability_plugin",
+        "//test/cpp/util:test_util",
+    ],
+)

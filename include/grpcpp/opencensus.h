@@ -42,6 +42,13 @@ void RegisterOpenCensusViewsForExport();
 // Returns the tracing Span for the current RPC.
 ::opencensus::trace::Span GetSpanFromServerContext(ServerContext* context);
 
+namespace experimental {
+// Setup gRPC's OpenCensus plugin to export monitoring and trace information to
+// stackdriver. Users of this API should not call `RegisterOpenCensusPlugin()`
+// or `RegisterOpenCensusViewsForExport()` in addition to this call.
+void RegisterOpenCensusPluginForGcpObservability();
+}  // namespace experimental
+
 }  // namespace grpc
 
 #endif  // GRPCPP_OPENCENSUS_H
