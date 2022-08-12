@@ -123,7 +123,7 @@ class AtomicWaker {
   explicit AtomicWaker(Wakeable* wakeable) : wakeable_(wakeable) {}
   AtomicWaker() : AtomicWaker(activity_detail::unwakeable()) {}
   explicit AtomicWaker(Waker waker) : AtomicWaker(waker.Take()) {}
-  ~AtomicWaker() { wakeable_.load(std::memory_order_relaxed)->Drop(); }
+  ~AtomicWaker() { wakeable_.load(std::memory_order_acquire)->Drop(); }
   AtomicWaker(const AtomicWaker&) = delete;
   AtomicWaker& operator=(const AtomicWaker&) = delete;
   AtomicWaker(AtomicWaker&& other) noexcept = delete;
@@ -140,13 +140,13 @@ class AtomicWaker {
 
   // Set to some new waker
   void Set(Waker waker) {
-    wakeable_.exchange(waker.Take(), std::memory_order_relaxed)->Drop();
+    wakeable_.exchange(waker.Take(), std::memory_order_acq_rel)->Wakeup();
   }
 
  private:
   Wakeable* Take() {
     return wakeable_.exchange(activity_detail::unwakeable(),
-                              std::memory_order_relaxed);
+                              std::memory_order_acq_rel);
   }
 
   std::atomic<Wakeable*> wakeable_;
