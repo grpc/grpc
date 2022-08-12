@@ -2572,7 +2572,7 @@ grpc_cc_library(
         "src/core/lib/event_engine/posix_engine/internal_errqueue.h",
     ],
     deps = [
-        "gpr_base",
+        "gpr",
         "iomgr_port",
     ],
 )
@@ -2591,7 +2591,7 @@ grpc_cc_library(
         "absl/types:optional",
     ],
     deps = [
-        "gpr_base",
+        "gpr",
         "gpr_codegen",
         "iomgr_port",
         "posix_event_engine_internal_errqueue",
