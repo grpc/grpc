@@ -47,10 +47,11 @@ class RemoveNegTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
             debug_use_port_forwarding=self.debug_use_port_forwarding,
             reuse_namespace=True)
 
-    def tearDown(self):
+    def cleanup(self):
+        super().cleanup()
         if hasattr(self, 'alternate_server_runner'):
-            self.alternate_server_runner.cleanup()
-        super().tearDown()
+            self.alternate_server_runner.cleanup(
+                force=self.force_cleanup, force_namespace=self.force_cleanup)
 
     def test_remove_neg(self) -> None:
         with self.subTest('00_create_health_check'):
