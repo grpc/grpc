@@ -82,12 +82,12 @@ static void set_resolve_port(int port) {
 
 namespace {
 
+using ::grpc_event_engine::experimental::GetDefaultEventEngine;
+
 grpc_core::DNSResolver* g_default_dns_resolver;
 
 class TestDNSResolver : public grpc_core::DNSResolver {
  public:
-  TestDNSResolver()
-      : engine_(grpc_event_engine::experimental::GetDefaultEventEngine()) {}
   TaskHandle LookupHostname(
       std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
           on_resolved,
@@ -114,7 +114,7 @@ class TestDNSResolver : public grpc_core::DNSResolver {
       absl::string_view /* name */, grpc_core::Duration /* timeout */,
       grpc_pollset_set* /* interested_parties */,
       absl::string_view /* name_server */) override {
-    engine_->Run([on_resolved] {
+    GetDefaultEventEngine()->Run([on_resolved] {
       on_resolved(absl::UnimplementedError(
           "The Testing DNS resolver does not support looking up SRV records"));
     });
@@ -127,7 +127,7 @@ class TestDNSResolver : public grpc_core::DNSResolver {
       grpc_pollset_set* /* interested_parties */,
       absl::string_view /* name_server */) override {
     // Not supported
-    engine_->Run([on_resolved] {
+    GetDefaultEventEngine()->Run([on_resolved] {
       on_resolved(absl::UnimplementedError(
           "The Testing DNS resolver does not support looking up TXT records"));
     });
@@ -159,7 +159,6 @@ class TestDNSResolver : public grpc_core::DNSResolver {
                                                  std::move(addrs));
     }
   }
-  std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine_;
 };
 
 }  // namespace

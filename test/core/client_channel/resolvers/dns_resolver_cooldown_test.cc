@@ -18,7 +18,6 @@
 
 #include <cstring>
 #include <functional>
-#include <memory>
 
 #include <gtest/gtest.h>
 
@@ -63,12 +62,12 @@ static struct iomgr_args {
 
 namespace {
 
+using ::grpc_event_engine::experimental::GetDefaultEventEngine;
+
 grpc_core::DNSResolver* g_default_dns_resolver;
 
 class TestDNSResolver : public grpc_core::DNSResolver {
  public:
-  TestDNSResolver()
-      : engine_(grpc_event_engine::experimental::GetDefaultEventEngine()) {}
   // Wrapper around default resolve_address in order to count the number of
   // times we incur in a system-level name resolution.
   TaskHandle LookupHostname(
@@ -114,7 +113,7 @@ class TestDNSResolver : public grpc_core::DNSResolver {
       absl::string_view /* name */, grpc_core::Duration /* timeout */,
       grpc_pollset_set* /* interested_parties */,
       absl::string_view /* name_server */) override {
-    engine_->Run([on_resolved] {
+    GetDefaultEventEngine()->Run([on_resolved] {
       on_resolved(absl::UnimplementedError(
           "The Testing DNS resolver does not support looking up SRV records"));
     });
@@ -127,7 +126,7 @@ class TestDNSResolver : public grpc_core::DNSResolver {
       grpc_pollset_set* /* interested_parties */,
       absl::string_view /* name_server */) override {
     // Not supported
-    engine_->Run([on_resolved] {
+    GetDefaultEventEngine()->Run([on_resolved] {
       on_resolved(absl::UnimplementedError(
           "The Testing DNS resolver does not support looking up TXT records"));
     });
@@ -136,9 +135,6 @@ class TestDNSResolver : public grpc_core::DNSResolver {
 
   // Not cancellable
   bool Cancel(TaskHandle /*handle*/) override { return false; }
-
- private:
-  std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine_;
 };
 
 }  // namespace
