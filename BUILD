@@ -7262,7 +7262,7 @@ grpc_cc_library(
         "include/grpcpp/opencensus.h",
     ],
     tags = ["nofixdeps"],
-    visibility = ["@grpc:public"],
+    visibility = ["//test:__subpackages__"],
     deps = [
         "gpr",
         "grpc_opencensus_plugin",
