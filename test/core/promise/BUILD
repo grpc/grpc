@@ -26,7 +26,7 @@ grpc_cc_library(
     external_deps = ["gtest"],
     visibility = ["//test/core:__subpackages__"],
     deps = [
-        "//:gpr_base",
+        "//:gpr",
     ],
 )
 
@@ -37,7 +37,7 @@ grpc_cc_library(
     external_deps = ["gtest"],
     visibility = ["//test/core:__subpackages__"],
     deps = [
-        "//:gpr_base",
+        "//:gpr",
     ],
 )
 

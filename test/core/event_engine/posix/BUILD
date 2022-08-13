@@ -99,6 +99,22 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "traced_buffer_list_test",
+    srcs = ["traced_buffer_list_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    tags = [
+        "no_windows",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//third_party/grpc:posix_event_engine_traced_buffer_list",
+        "//third_party/grpc/test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "tcp_posix_socket_utils_test",
     srcs = ["tcp_posix_socket_utils_test.cc"],
     external_deps = ["gtest"],

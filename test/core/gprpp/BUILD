@@ -98,6 +98,18 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "no_destruct_test",
+    srcs = ["no_destruct_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:no_destruct",
+    ],
+)
+
+grpc_cc_test(
     name = "match_test",
     srcs = ["match_test.cc"],
     external_deps = ["gtest"],
@@ -298,7 +310,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:chunked_vector",
-        "//:gpr_base",
+        "//:gpr",
         "//:resource_quota",
     ],
 )
