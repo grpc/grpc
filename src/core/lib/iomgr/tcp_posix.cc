@@ -32,6 +32,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/resource.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -132,6 +133,9 @@ class TcpZerocopySendRecord {
 
   // Indicates whether all underlying data has been sent or not.
   bool AllSlicesSent() { return out_offset_.slice_idx == buf_.count; }
+
+  // Returns the total length of the underlying data;
+  int Length() { return buf_.length; }
 
   // Reset this structure for a new tcp_write() with zerocopy.
   void PrepareForSends(grpc_slice_buffer* slices_to_send) {
@@ -381,10 +385,15 @@ class TcpZerocopySendCtx {
   //
   // Please refer to the STATE TRANSITION DIAGRAM below for more details.
   //
-  bool UpdateZeroCopyOMemStateAfterSend(bool seen_enobuf) {
+  bool UpdateZeroCopyOMemStateAfterSend(bool seen_enobuf, bool& cont) {
     MutexLock guard(&lock_);
     is_in_write_ = false;
+    cont = false;
     if (seen_enobuf) {
+      if (ctx_lookup_.size() == 1) {
+        // There is no un-acked z-copy record. Retry the sendmsg again.
+        cont = true;
+      }
       if (zcopy_enobuf_state_ == OMemState::CHECK) {
         zcopy_enobuf_state_ = OMemState::OPEN;
         return true;
@@ -465,6 +474,17 @@ using grpc_core::TcpZerocopySendCtx;
 using grpc_core::TcpZerocopySendRecord;
 
 namespace {
+
+int GetRLimitMemLockMax() {
+  static int kRlimitMemLock = []() -> int {
+    struct rlimit limit;
+    if (getrlimit(RLIMIT_MEMLOCK, &limit) != 0) {
+      return -1;
+    }
+    return static_cast<int>(limit.rlim_max);
+  }();
+  return kRlimitMemLock;
+}
 
 bool ExperimentalTcpFrameSizeTuningEnabled() {
   static const bool kEnableTcpFrameSizeTuning =
@@ -1508,6 +1528,7 @@ static bool do_tcp_flush_zerocopy(grpc_tcp* tcp, TcpZerocopySendRecord* record,
   bool tried_sending_message;
   int saved_errno;
   msghdr msg;
+  bool cont;
   // iov consumes a large space. Keep it as the last item on the stack to
   // improve locality. After all, we expect only the first elements of it being
   // populated in most cases.
@@ -1522,6 +1543,7 @@ static bool do_tcp_flush_zerocopy(grpc_tcp* tcp, TcpZerocopySendRecord* record,
     msg.msg_iovlen = iov_size;
     msg.msg_flags = 0;
     tried_sending_message = false;
+    cont = false;
     // Before calling sendmsg (with or without timestamps): we
     // take a single ref on the zerocopy send record.
     tcp->tcp_zerocopy_send_ctx.NoteSend(record);
@@ -1546,7 +1568,24 @@ static bool do_tcp_flush_zerocopy(grpc_tcp* tcp, TcpZerocopySendRecord* record,
       sent_length = tcp_send(tcp->fd, &msg, &saved_errno, MSG_ZEROCOPY);
     }
     if (tcp->tcp_zerocopy_send_ctx.UpdateZeroCopyOMemStateAfterSend(
-            saved_errno == ENOBUFS)) {
+            saved_errno == ENOBUFS, cont) ||
+        cont) {
+      // If cont, is true it implies that we received an ENOBUFS error but
+      // there are no un-acked z-copy records. This situation may arise because
+      // the RLIMIT_MEMLOCK limit on the machine may be very small. This limit
+      // controls the max number of bytes a process can pin to RAM. Tx0cp
+      // respects this limit and if a sendmsg tries to send more than this
+      // limit, the kernel may return ENOBUFS error. Print a warning message
+      // here to allow help with debugging. Grpc should not attempt to raise
+      // the rlimit value.
+      if (cont) {
+        gpr_log(GPR_ERROR,
+                "Tx0cp tried to send %d bytes but encountered an ENOBUFS error "
+                "possibly because RLIMIT_MEMLOCK is too small. Current value "
+                "of RLIMIT_MEMLOCK is %d. Consider increasing the "
+                "RLIMI_MEMLOCK value.",
+                record->Length(), GetRLimitMemLockMax());
+      }
       grpc_fd_set_writable(tcp->em_fd);
     }
     if (sent_length < 0) {
