@@ -30,6 +30,9 @@
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/internal_errqueue.h"
 
+#ifdef GRPC_POSIX_SOCKET_TCP
+#include <linux/netlink.h>  // IWYU pragma: keep
+
 #ifndef SOL_TCP
 #define SOL_TCP IPPROTO_TCP
 #endif
@@ -775,7 +778,7 @@ void PosixEndpointImpl::Read(absl::AnyInvocable<void(absl::Status)> on_read,
     handle_->NotifyOnRead(on_read_);
   } else {
     on_read_->SetStatus(absl::OkStatus());
-    scheduler_->Run(on_read_);
+    engine_->Run(on_read_);
   }
 }
 
@@ -1309,13 +1312,13 @@ PosixEndpointImpl ::~PosixEndpointImpl() {
 
 PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
                                      PosixEngineClosure* on_done,
-                                     Scheduler* scheduler,
+                                     std::shared_ptr<EventEngine> engine,
                                      const PosixTcpOptions& options)
     : on_done_(on_done),
       traced_buffers_(),
       handle_(handle),
       poller_(handle->Poller()),
-      scheduler_(scheduler) {
+      engine_(engine) {
   PosixSocketWrapper sock(handle->WrappedFd());
   fd_ = handle_->WrappedFd();
   GPR_ASSERT(options.resource_quota != nullptr);
@@ -1328,7 +1331,7 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
   bytes_read_this_round_ = 0;
   min_read_chunk_size_ = options.tcp_min_read_chunk_size;
   max_read_chunk_size_ = options.tcp_max_read_chunk_size;
-  tcp_zerocopy_send_ctx_ = std::make_unique<TcpZerocopySendCtx>(
+  tcp_zerocopy_send_ctx_ = absl::make_unique<TcpZerocopySendCtx>(
       options.tcp_tx_zerocopy_max_simultaneous_sends,
       options.tcp_tx_zerocopy_send_bytes_threshold);
   frame_size_tuning_enabled_ = ExperimentalTcpFrameSizeTuningEnabled();
@@ -1373,13 +1376,32 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
 }
 
 std::unique_ptr<PosixEndpoint> CreatePosixEndpoint(
-    EventHandle* handle, PosixEngineClosure* on_shutdown, Scheduler* scheduler,
-    const EndpointConfig& config) {
+    EventHandle* handle, PosixEngineClosure* on_shutdown,
+    std::shared_ptr<EventEngine> engine, const EndpointConfig& config) {
   GPR_ASSERT(handle != nullptr);
-  GPR_ASSERT(scheduler != nullptr);
-  return std::make_unique<PosixEndpoint>(handle, on_shutdown, scheduler,
-                                         config);
+  GPR_ASSERT(engine != nullptr);
+  return absl::make_unique<PosixEndpoint>(handle, on_shutdown,
+                                          std::move(engine), config);
 }
 
 }  // namespace posix_engine
 }  // namespace grpc_event_engine
+
+#else  // GRPC_POSIX_SOCKET_TCP
+
+namespace grpc_event_engine {
+namespace posix_engine {
+
+using ::grpc_event_engine::experimental::EndpointConfig;
+using ::grpc_event_engine::experimental::EventEngine;
+
+std::unique_ptr<PosixEndpoint> CreatePosixEndpoint(
+    EventHandle* /*handle*/, PosixEngineClosure* /*on_shutdown*/,
+    std::shared_ptr<EventEngine> /*engine*/, const EndpointConfig& /*config*/) {
+  GPR_ASSERT(false && "Cannot create PosixEndpoint on this platform");
+}
+
+}  // namespace posix_engine
+}  // namespace grpc_event_engine
+
+#endif  // GRPC_POSIX_SOCKET_TCP

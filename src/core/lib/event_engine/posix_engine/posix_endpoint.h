@@ -32,6 +32,8 @@
 namespace grpc_event_engine {
 namespace posix_engine {
 
+#ifdef GRPC_POSIX_SOCKET_TCP
+
 using ::grpc_event_engine::experimental::EndpointConfig;
 using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::SliceBuffer;
@@ -42,7 +44,8 @@ class TcpZerocopySendRecord;
 class PosixEndpointImpl {
  public:
   PosixEndpointImpl(EventHandle* handle, PosixEngineClosure* on_done,
-                    Scheduler* scheduler, const PosixTcpOptions& options);
+                    std::shared_ptr<EventEngine> engine,
+                    const PosixTcpOptions& options);
   ~PosixEndpointImpl();
   void Read(absl::AnyInvocable<void(absl::Status)> on_read, SliceBuffer* buffer,
             const EventEngine::Endpoint::ReadArgs* args);
@@ -151,14 +154,15 @@ class PosixEndpointImpl {
   TracedBufferList traced_buffers_;
   EventHandle* handle_;
   PosixEventPoller* poller_;
-  Scheduler* scheduler_;
+  std::shared_ptr<EventEngine> engine_;
 };
 
 class PosixEndpoint : public EventEngine::Endpoint {
  public:
   PosixEndpoint(EventHandle* handle, PosixEngineClosure* on_shutdown,
-                Scheduler* scheduler, const EndpointConfig& config)
-      : impl_(new PosixEndpointImpl(handle, on_shutdown, scheduler,
+                std::shared_ptr<EventEngine> engine,
+                const EndpointConfig& config)
+      : impl_(new PosixEndpointImpl(handle, on_shutdown, std::move(engine),
                                     TcpOptionsFromEndpointConfig(config))) {}
 
   void Read(absl::AnyInvocable<void(absl::Status)> on_read, SliceBuffer* buffer,
@@ -187,9 +191,44 @@ class PosixEndpoint : public EventEngine::Endpoint {
   PosixEndpointImpl* impl_;
 };
 
+#else  // GRPC_POSIX_SOCKET_TCP
+
+class PosixEndpoint : public EventEngine::Endpoint {
+ public:
+  PosixEndpoint() = default;
+
+  void Read(absl::AnyInvocable<void(absl::Status)> /*on_read*/,
+            SliceBuffer* /*buffer*/,
+            const EventEngine::Endpoint::ReadArgs* /*args*/) override {
+    GPR_ASSERT(false && "PosixEndpoint::Read not supported on this platform");
+  }
+
+  void Write(absl::AnyInvocable<void(absl::Status)> /*on_writable*/,
+             SliceBuffer* /*data*/,
+             const EventEngine::Endpoint::WriteArgs* /*args*/) override {
+    GPR_ASSERT(false && "PosixEndpoint::Write not supported on this platform");
+  }
+
+  const EventEngine::ResolvedAddress& GetPeerAddress() const override {
+    GPR_ASSERT(false &&
+               "PosixEndpoint::GetPeerAddress not supported on this platform");
+  }
+  const EventEngine::ResolvedAddress& GetLocalAddress() const override {
+    GPR_ASSERT(false &&
+               "PosixEndpoint::GetLocalAddress not supported on this platform");
+  }
+
+  ~PosixEndpoint() override = default;
+};
+
+#endif  // GRPC_POSIX_SOCKET_TCP
+
+// Create a PosixEndpoint.
+// A shared_ptr of the EventEngine is passed to the endpoint to ensure that
+// the event engine is alive for the lifetime of the endpoint.
 std::unique_ptr<PosixEndpoint> CreatePosixEndpoint(
-    EventHandle* handle, PosixEngineClosure* on_shutdown, Scheduler* scheduler,
-    const EndpointConfig& config);
+    EventHandle* handle, PosixEngineClosure* on_shutdown,
+    std::shared_ptr<EventEngine> engine, const EndpointConfig& config);
 
 }  // namespace posix_engine
 }  // namespace grpc_event_engine

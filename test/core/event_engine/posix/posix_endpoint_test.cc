@@ -18,6 +18,7 @@
 #include <poll.h>
 
 #include <chrono>
+#include <memory>
 #include <random>
 #include <string>
 #include <thread>
@@ -90,6 +91,17 @@ std::string GetNextSendMessage() {
   return tmp_s;
 }
 
+std::shared_ptr<EventEngine> GetPosixEE() {
+  static std::shared_ptr<EventEngine> posix_ee =
+      std::make_shared<PosixEventEngine>();
+  return posix_ee;
+}
+
+EventEngine* GetOracleEE() {
+  static EventEngine* oracle_ee = new PosixOracleEventEngine();
+  return oracle_ee;
+}
+
 class TestScheduler : public Scheduler {
  public:
   explicit TestScheduler(EventEngine* engine) : engine_(engine) {}
@@ -105,11 +117,10 @@ class TestScheduler : public Scheduler {
 
 std::list<std::tuple<std::unique_ptr<EventEngine::Endpoint>,
                      std::unique_ptr<EventEngine::Endpoint>>>
-CreateConnectedEndpoints(EventEngine* oracle_ee, Scheduler* scheduler,
-                         PosixEventPoller* poller, bool is_zero_copy_enabled,
+CreateConnectedEndpoints(PosixEventPoller* poller, bool is_zero_copy_enabled,
                          int num_connections) {
-  EXPECT_NE(oracle_ee, nullptr);
-  EXPECT_NE(scheduler, nullptr);
+  EXPECT_NE(GetOracleEE(), nullptr);
+  EXPECT_NE(GetPosixEE(), nullptr);
   EXPECT_NE(poller, nullptr);
   std::list<std::tuple<std::unique_ptr<EventEngine::Endpoint>,
                        std::unique_ptr<EventEngine::Endpoint>>>
@@ -136,7 +147,7 @@ CreateConnectedEndpoints(EventEngine* oracle_ee, Scheduler* scheduler,
                     kMinMessageSize);
   }
   ChannelArgsEndpointConfig config(args);
-  auto status = oracle_ee->CreateListener(
+  auto status = GetOracleEE()->CreateListener(
       std::move(accept_cb),
       [](absl::Status status) { ASSERT_TRUE(status.ok()); }, config,
       absl::make_unique<grpc_core::MemoryQuota>("foo"));
@@ -190,7 +201,7 @@ CreateConnectedEndpoints(EventEngine* oracle_ee, Scheduler* scheduler,
                                         poller->Kick();
                                       }
                                     }),
-                                scheduler, config),
+                                GetPosixEE(), config),
             std::move(server_endpoint)));
     server_endpoint_promise.Reset();
   }
@@ -224,14 +235,14 @@ std::string TestScenarioName(const ::testing::TestParamInfo<TestParam>& info) {
 // continues until all Fds have orphaned themselves.
 class Worker : public grpc_core::DualRefCounted<Worker> {
  public:
-  Worker(Scheduler* scheduler, PosixEventPoller* poller)
-      : scheduler_(scheduler), poller_(poller) {
+  Worker(std::shared_ptr<EventEngine> engine, PosixEventPoller* poller)
+      : engine_(std::move(engine)), poller_(poller) {
     WeakRef().release();
   }
   void Orphan() override { promise.Set(true); }
   void Start() {
     // Start executing Work(..).
-    scheduler_->Run([this]() { Work(); });
+    engine_->Run([this]() { Work(); });
   }
 
   void Wait() {
@@ -246,7 +257,7 @@ class Worker : public grpc_core::DualRefCounted<Worker> {
       // Schedule next work instantiation immediately and take a Ref for
       // the next instantiation.
       Ref().release();
-      scheduler_->Run([this]() { Work(); });
+      engine_->Run([this]() { Work(); });
       // Process pending events of current Work(..) instantiation.
       auto pending_events = absl::get<Poller::Events>(result);
       for (auto it = pending_events.begin(); it != pending_events.end(); ++it) {
@@ -262,21 +273,16 @@ class Worker : public grpc_core::DualRefCounted<Worker> {
       Unref();
     }
   }
-  Scheduler* scheduler_;
+  std::shared_ptr<EventEngine> engine_;
   PosixEventPoller* poller_;
   Promise<bool> promise;
 };
 
 class PosixEndpointTest : public ::testing::TestWithParam<TestParam> {
   void SetUp() override {
-    oracle_ee_ = absl::make_unique<
-        grpc_event_engine::experimental::PosixOracleEventEngine>();
-    posix_ee_ =
-        absl::make_unique<grpc_event_engine::experimental::PosixEventEngine>();
-    EXPECT_NE(posix_ee_, nullptr);
     scheduler_ =
         absl::make_unique<grpc_event_engine::posix_engine::TestScheduler>(
-            posix_ee_.get());
+            GetPosixEE().get());
     EXPECT_NE(scheduler_, nullptr);
     GPR_GLOBAL_CONFIG_SET(grpc_poll_strategy, GetParam().Poller().c_str());
     poller_ = GetDefaultPoller(scheduler_.get());
@@ -294,31 +300,22 @@ class PosixEndpointTest : public ::testing::TestWithParam<TestParam> {
  public:
   TestScheduler* Scheduler() { return scheduler_.get(); }
 
-  PosixOracleEventEngine* OracleEE() { return oracle_ee_.get(); }
-
   PosixEventPoller* PosixPoller() { return poller_; }
 
-  PosixEventEngine* PosixEE() { return posix_ee_.get(); }
-
  private:
-  std::unique_ptr<PosixOracleEventEngine> oracle_ee_;
   PosixEventPoller* poller_;
-  std::unique_ptr<PosixEventEngine> posix_ee_;
   std::unique_ptr<TestScheduler> scheduler_;
 };
 
 TEST_P(PosixEndpointTest, ConnectExchangeBidiDataTransferTest) {
-  auto oracle_ee = std::make_unique<experimental::PosixOracleEventEngine>();
-  auto test_ee = std::make_unique<experimental::PosixEventEngine>();
   if (PosixPoller() == nullptr) {
     return;
   }
-  Worker* worker = new Worker(Scheduler(), PosixPoller());
+  Worker* worker = new Worker(GetPosixEE(), PosixPoller());
   worker->Start();
   {
-    auto connections =
-        CreateConnectedEndpoints(OracleEE(), Scheduler(), PosixPoller(),
-                                 GetParam().IsZeroCopyEnabled(), 1);
+    auto connections = CreateConnectedEndpoints(
+        PosixPoller(), GetParam().IsZeroCopyEnabled(), 1);
     auto it = connections.begin();
     auto client_endpoint = std::move(std::get<0>(*it));
     auto server_endpoint = std::move(std::get<1>(*it));
@@ -347,16 +344,13 @@ TEST_P(PosixEndpointTest, ConnectExchangeBidiDataTransferTest) {
 // Create  N connections and exchange and verify random number of messages over
 // each connection in parallel.
 TEST_P(PosixEndpointTest, MultipleIPv6ConnectionsToOneOracleListenerTest) {
-  auto oracle_ee = std::make_unique<experimental::PosixOracleEventEngine>();
-  auto test_ee = std::make_unique<experimental::PosixEventEngine>();
   if (PosixPoller() == nullptr) {
     return;
   }
-  Worker* worker = new Worker(Scheduler(), PosixPoller());
+  Worker* worker = new Worker(GetPosixEE(), PosixPoller());
   worker->Start();
-  auto connections =
-      CreateConnectedEndpoints(OracleEE(), Scheduler(), PosixPoller(),
-                               GetParam().IsZeroCopyEnabled(), kNumConnections);
+  auto connections = CreateConnectedEndpoints(
+      PosixPoller(), GetParam().IsZeroCopyEnabled(), kNumConnections);
   std::vector<std::thread> threads;
   // Create one thread for each connection. For each connection, create
   // 2 more worker threads: to exchange and verify bi-directional data transfer.
