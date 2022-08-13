@@ -109,8 +109,8 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//third_party/grpc:posix_event_engine_traced_buffer_list",
-        "//third_party/grpc/test/core/util:grpc_test_util",
+        "//:posix_event_engine_traced_buffer_list",
+        "//test/core/util:grpc_test_util",
     ],
 )
 
