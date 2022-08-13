@@ -19,7 +19,6 @@
 #include <atomic>
 #include <chrono>
 #include <functional>
-#include <ratio>
 #include <thread>
 #include <tuple>
 #include <vector>
