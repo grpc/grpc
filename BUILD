@@ -2629,7 +2629,10 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h",
     ],
-    external_deps = ["absl/status"],
+    external_deps = [
+        "absl/status",
+        "absl/strings:str_format",
+    ],
     deps = [
         "event_engine_base_hdrs",
         "gpr",

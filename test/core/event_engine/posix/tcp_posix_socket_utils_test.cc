@@ -108,7 +108,7 @@ TEST(TcpPosixSocketUtilsTest, SocketMutatorTest) {
   auto test_with_vtable = [](const grpc_socket_mutator_vtable* vtable) {
     int sock = socket(PF_INET, SOCK_STREAM, 0);
     EXPECT_GT(sock, 0);
-    PosixSocket posix_sock(sock);
+    PosixSocketWrapper posix_sock(sock);
     struct test_socket_mutator mutator;
     grpc_socket_mutator_init(&mutator.base, vtable);
 
@@ -147,7 +147,7 @@ TEST(TcpPosixSocketUtilsTest, SocketMutatorTest) {
 TEST(TcpPosixSocketUtilsTest, SocketOptionsTest) {
   int sock = socket(PF_INET, SOCK_STREAM, 0);
   EXPECT_GT(sock, 0);
-  PosixSocket posix_sock(sock);
+  PosixSocketWrapper posix_sock(sock);
   EXPECT_TRUE(posix_sock.SetSocketNonBlocking(1).ok());
   EXPECT_TRUE(posix_sock.SetSocketNonBlocking(0).ok());
   EXPECT_TRUE(posix_sock.SetSocketCloexec(1).ok());
