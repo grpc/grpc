@@ -114,6 +114,7 @@ grpc_cc_test(
         "//:event_engine_common",
         "//:posix_event_engine_tcp_socket_utils",
         "//:socket_mutator",
+        "//test/core/util:grpc_test_util",
     ],
 )
 
