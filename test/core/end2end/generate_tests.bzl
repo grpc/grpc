@@ -140,7 +140,7 @@ END2END_FIXTURES = {
     "h2_uds": _fixture_options(
         dns_resolver = False,
         _platforms = ["linux", "mac", "posix"],
-    ),    
+    ),
     "h2_uds_abstract": _fixture_options(
         dns_resolver = False,
         _platforms = ["linux", "posix"],
