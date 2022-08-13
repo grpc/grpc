@@ -60,10 +60,10 @@ class PeriodicUpdate {
   // Whilst in this state other threads *may* decrement updates_remaining_, but
   // this is fine because they'll observe an ignorable negative value.
 
+  std::atomic<int64_t> updates_remaining_{1};
   const Duration period_;
   Timestamp period_start_ = Timestamp::ProcessEpoch();
   int64_t expected_updates_per_period_ = 1;
-  std::atomic<int64_t> updates_remaining_{1};
 };
 
 }  // namespace grpc_core
