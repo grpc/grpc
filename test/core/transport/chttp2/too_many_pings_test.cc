@@ -333,14 +333,17 @@ void VerifyChannelDisconnected(grpc_channel* channel,
                                grpc_completion_queue* cq) {
   // Verify channel gets disconnected. Use a ping to make sure that clients
   // tries sending/receiving bytes if the channel is connected.
-  grpc_channel_ping(channel, cq, reinterpret_cast<void*>(2000), nullptr);
-  grpc_event ev = grpc_completion_queue_next(
-      cq, grpc_timeout_seconds_to_deadline(5), nullptr);
-  GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
-  GPR_ASSERT(ev.tag == reinterpret_cast<void*>(2000));
-  GPR_ASSERT(ev.success == 0);
-  GPR_ASSERT(grpc_channel_check_connectivity_state(channel, 0) !=
-             GRPC_CHANNEL_READY);
+  grpc_event ev;
+  do {
+    grpc_channel_ping(channel, cq, reinterpret_cast<void*>(2000), nullptr);
+    ev = grpc_completion_queue_next(cq, grpc_timeout_seconds_to_deadline(5),
+                                    nullptr);
+    GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
+    GPR_ASSERT(ev.tag == reinterpret_cast<void*>(2000));
+    // Keep retrying until it actually disconnects: this could take an iteration
+    // or two to settle out.
+  } while (ev.success != 0 || grpc_channel_check_connectivity_state(
+                                  channel, 0) == GRPC_CHANNEL_READY);
 }
 
 class KeepaliveThrottlingTest : public ::testing::Test {
