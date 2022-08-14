@@ -20,11 +20,15 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <algorithm>
+#include <memory>
 #include <string>
+#include <vector>
 
 #include "absl/strings/str_format.h"
 #include "absl/synchronization/notification.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/propagation_bits.h>
 #include <grpc/slice.h>
