@@ -24,6 +24,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <cstdint>
 #include <string>
 
 #include "absl/strings/string_view.h"
@@ -447,12 +448,12 @@ struct grpc_chttp2_transport {
   bool reading_paused_on_pending_induced_frames = false;
 };
 
-typedef enum {
+enum grpc_published_metadata_method : uint8_t {
   GRPC_METADATA_NOT_PUBLISHED,
   GRPC_METADATA_SYNTHESIZED_FROM_FAKE,
   GRPC_METADATA_PUBLISHED_FROM_WIRE,
   GRPC_METADATA_PUBLISHED_AT_CLOSE
-} grpc_published_metadata_method;
+};
 
 struct grpc_chttp2_stream {
   grpc_chttp2_stream(grpc_chttp2_transport* t, grpc_stream_refcount* refcount,
@@ -473,7 +474,6 @@ struct grpc_chttp2_stream {
   grpc_closure* destroy_stream_arg;
 
   grpc_chttp2_stream_link links[STREAM_LIST_COUNT];
-  grpc_core::BitSet<STREAM_LIST_COUNT> included;
 
   /** HTTP2 stream id for this stream, or zero if one has not been assigned */
   uint32_t id = 0;
@@ -509,6 +509,8 @@ struct grpc_chttp2_stream {
   grpc_transport_stream_stats* collecting_stats = nullptr;
   grpc_transport_stream_stats stats = grpc_transport_stream_stats();
 
+  /* Which lists in links is this stream included in? */
+  grpc_core::BitSet<STREAM_LIST_COUNT> included;
   /** Is this stream closed for writing. */
   bool write_closed = false;
   /** Is this stream reading half-closed. */
@@ -526,31 +528,34 @@ struct grpc_chttp2_stream {
   bool eos_received = false;
   bool eos_sent = false;
 
+  grpc_published_metadata_method published_metadata[2] = {};
+  bool final_metadata_requested = false;
+
+  bool received_last_frame = false; /* protected by t combiner */
+  /** how many header frames have we received? */
+  uint8_t header_frames_received = 0;
+
+  bool sent_initial_metadata = false;
+  bool sent_trailing_metadata = false;
+  /** Whether the bytes needs to be traced using Fathom */
+  bool traced = false;
+
   /** the error that resulted in this stream being read-closed */
   grpc_error_handle read_closed_error = GRPC_ERROR_NONE;
   /** the error that resulted in this stream being write-closed */
   grpc_error_handle write_closed_error = GRPC_ERROR_NONE;
 
-  grpc_published_metadata_method published_metadata[2] = {};
-  bool final_metadata_requested = false;
-
   grpc_metadata_batch initial_metadata_buffer;
   grpc_metadata_batch trailing_metadata_buffer;
 
-  grpc_slice_buffer frame_storage;  /* protected by t combiner */
-  bool received_last_frame = false; /* protected by t combiner */
+  grpc_slice_buffer frame_storage; /* protected by t combiner */
 
   grpc_core::Timestamp deadline = grpc_core::Timestamp::InfFuture();
 
   /** saw some stream level error */
   grpc_error_handle forced_close_error = GRPC_ERROR_NONE;
-  /** how many header frames have we received? */
-  uint8_t header_frames_received = 0;
   /** number of bytes received - reset at end of parse thread execution */
   int64_t received_bytes = 0;
-
-  bool sent_initial_metadata = false;
-  bool sent_trailing_metadata = false;
 
   grpc_core::chttp2::StreamFlowControl flow_control;
 
@@ -561,8 +566,6 @@ struct grpc_chttp2_stream {
   grpc_chttp2_write_cb* finish_after_write = nullptr;
   size_t sending_bytes = 0;
 
-  /** Whether the bytes needs to be traced using Fathom */
-  bool traced = false;
   /** Byte counter for number of bytes written */
   size_t byte_counter = 0;
 };
