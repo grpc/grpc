@@ -470,14 +470,6 @@ struct grpc_chttp2_stream {
     explicit Reffer(grpc_chttp2_stream* s);
   } reffer;
 
-  grpc_closure destroy_stream;
-  grpc_closure* destroy_stream_arg;
-
-  grpc_chttp2_stream_link links[STREAM_LIST_COUNT];
-
-  /** HTTP2 stream id for this stream, or zero if one has not been assigned */
-  uint32_t id = 0;
-
   /** things the upper layers would like to send */
   grpc_metadata_batch* send_initial_metadata = nullptr;
   grpc_closure* send_initial_metadata_finished = nullptr;
@@ -508,6 +500,9 @@ struct grpc_chttp2_stream {
 
   grpc_transport_stream_stats* collecting_stats = nullptr;
   grpc_transport_stream_stats stats = grpc_transport_stream_stats();
+
+  /** HTTP2 stream id for this stream, or zero if one has not been assigned */
+  uint32_t id = 0;
 
   /* Which lists in links is this stream included in? */
   grpc_core::BitSet<STREAM_LIST_COUNT> included;
@@ -545,11 +540,6 @@ struct grpc_chttp2_stream {
   /** the error that resulted in this stream being write-closed */
   grpc_error_handle write_closed_error = GRPC_ERROR_NONE;
 
-  grpc_metadata_batch initial_metadata_buffer;
-  grpc_metadata_batch trailing_metadata_buffer;
-
-  grpc_slice_buffer frame_storage; /* protected by t combiner */
-
   grpc_core::Timestamp deadline = grpc_core::Timestamp::InfFuture();
 
   /** saw some stream level error */
@@ -568,6 +558,16 @@ struct grpc_chttp2_stream {
 
   /** Byte counter for number of bytes written */
   size_t byte_counter = 0;
+
+  grpc_chttp2_stream_link links[STREAM_LIST_COUNT];
+
+  grpc_metadata_batch initial_metadata_buffer;
+  grpc_metadata_batch trailing_metadata_buffer;
+
+  grpc_slice_buffer frame_storage; /* protected by t combiner */
+
+  grpc_closure destroy_stream;
+  grpc_closure* destroy_stream_arg;
 };
 
 /** Transport writing call flow:
