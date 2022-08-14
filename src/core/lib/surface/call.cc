@@ -2233,7 +2233,9 @@ PromiseBasedCall::Completion PromiseBasedCall::StartCompletion(
     gpr_log(GPR_INFO, "%sStartCompletion %s tag=%p", DebugTag().c_str(),
             c.ToString().c_str(), tag);
   }
-  grpc_cq_begin_op(cq(), tag);
+  if (!is_closure) {
+    grpc_cq_begin_op(cq(), tag);
+  }
   completion_info_[c.index()].pending = {
       PauseReasonBit(PauseReason::kStartingBatch), is_closure, true, tag};
   return c;
@@ -2309,6 +2311,9 @@ void PromiseBasedCall::ForceImmediateRepoll() { keep_polling_ = true; }
 void PromiseBasedCall::SetCompletionQueue(grpc_completion_queue* cq) {
   MutexLock lock(&mu_);
   cq_ = cq;
+  GRPC_CQ_INTERNAL_REF(cq, "bind");
+  call_context_.pollent_ =
+      grpc_polling_entity_create_from_pollset(grpc_cq_pollset(cq));
 }
 
 ///////////////////////////////////////////////////////////////////////////////
