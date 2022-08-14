@@ -34,6 +34,8 @@ namespace promise_detail {
 ///////////////////////////////////////////////////////////////////////////////
 // HELPER TYPES
 
+std::string Unwakeable::ActivityDebugTag() const { return "<unknown>"; }
+
 // Weak handle to an Activity.
 // Handle can persist while Activity goes away.
 class FreestandingActivity::Handle final : public Wakeable {

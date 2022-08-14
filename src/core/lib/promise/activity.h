@@ -63,16 +63,16 @@ class Wakeable {
   inline ~Wakeable() {}
 };
 
-namespace activity_detail {
+namespace promise_detail {
 struct Unwakeable final : public Wakeable {
   void Wakeup() override {}
   void Drop() override {}
-  std::string ActivityDebugTag() const override { return "<unknown>"; }
+  std::string ActivityDebugTag() const override;
 };
 static Unwakeable* unwakeable() {
   return NoDestructSingleton<Unwakeable>::Get();
 }
-}  // namespace activity_detail
+}  // namespace promise_detail
 
 class AtomicWaker;
 
@@ -81,7 +81,7 @@ class AtomicWaker;
 class Waker {
  public:
   explicit Waker(Wakeable* wakeable) : wakeable_(wakeable) {}
-  Waker() : Waker(activity_detail::unwakeable()) {}
+  Waker() : Waker(promise_detail::unwakeable()) {}
   ~Waker() { wakeable_->Drop(); }
   Waker(const Waker&) = delete;
   Waker& operator=(const Waker&) = delete;
@@ -111,7 +111,7 @@ class Waker {
   friend class AtomicWaker;
 
   Wakeable* Take() {
-    return absl::exchange(wakeable_, activity_detail::unwakeable());
+    return absl::exchange(wakeable_, promise_detail::unwakeable());
   }
 
   Wakeable* wakeable_;
@@ -121,7 +121,7 @@ class Waker {
 class AtomicWaker {
  public:
   explicit AtomicWaker(Wakeable* wakeable) : wakeable_(wakeable) {}
-  AtomicWaker() : AtomicWaker(activity_detail::unwakeable()) {}
+  AtomicWaker() : AtomicWaker(promise_detail::unwakeable()) {}
   explicit AtomicWaker(Waker waker) : AtomicWaker(waker.Take()) {}
   ~AtomicWaker() { wakeable_.load(std::memory_order_acquire)->Drop(); }
   AtomicWaker(const AtomicWaker&) = delete;
@@ -135,7 +135,7 @@ class AtomicWaker {
   // Return true if there is a not-unwakeable wakeable present.
   bool Armed() const noexcept {
     return wakeable_.load(std::memory_order_relaxed) !=
-           activity_detail::unwakeable();
+           promise_detail::unwakeable();
   }
 
   // Set to some new waker
@@ -145,7 +145,7 @@ class AtomicWaker {
 
  private:
   Wakeable* Take() {
-    return wakeable_.exchange(activity_detail::unwakeable(),
+    return wakeable_.exchange(promise_detail::unwakeable(),
                               std::memory_order_acq_rel);
   }
 
