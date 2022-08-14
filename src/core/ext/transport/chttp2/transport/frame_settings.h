@@ -30,22 +30,22 @@
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/lib/iomgr/error.h"
 
-typedef enum {
+enum grpc_chttp2_settings_parse_state : uint8_t {
   GRPC_CHTTP2_SPS_ID0,
   GRPC_CHTTP2_SPS_ID1,
   GRPC_CHTTP2_SPS_VAL0,
   GRPC_CHTTP2_SPS_VAL1,
   GRPC_CHTTP2_SPS_VAL2,
   GRPC_CHTTP2_SPS_VAL3
-} grpc_chttp2_settings_parse_state;
+};
 
 struct grpc_chttp2_settings_parser {
   grpc_chttp2_settings_parse_state state;
-  uint32_t* target_settings;
   uint8_t is_ack;
   uint16_t id;
   uint32_t value;
   uint32_t incoming_settings[GRPC_CHTTP2_NUM_SETTINGS];
+  uint32_t* target_settings;
 };
 /* Create a settings frame by diffing old & new, and updating old to be new */
 grpc_slice grpc_chttp2_settings_create(uint32_t* old_settings,

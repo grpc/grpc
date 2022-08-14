@@ -87,16 +87,11 @@ typedef enum {
   STREAM_LIST_COUNT /* must be last */
 } grpc_chttp2_stream_list_id;
 
-typedef enum {
+enum grpc_chttp2_write_state : uint8_t {
   GRPC_CHTTP2_WRITE_STATE_IDLE,
   GRPC_CHTTP2_WRITE_STATE_WRITING,
   GRPC_CHTTP2_WRITE_STATE_WRITING_WITH_MORE,
-} grpc_chttp2_write_state;
-
-typedef enum {
-  GRPC_CHTTP2_OPTIMIZE_FOR_LATENCY,
-  GRPC_CHTTP2_OPTIMIZE_FOR_THROUGHPUT,
-} grpc_chttp2_optimization_target;
+};
 
 typedef enum {
   GRPC_CHTTP2_PCL_INITIATE = 0,
@@ -153,7 +148,7 @@ struct grpc_chttp2_server_ping_recv_state {
   int ping_strikes;
 };
 /* deframer state for the overall http2 stream of bytes */
-typedef enum {
+enum grpc_chttp2_deframe_transport_state : uint8_t {
   /* prefix: one entry per http2 connection prefix byte */
   GRPC_DTS_CLIENT_PREFIX_0 = 0,
   GRPC_DTS_CLIENT_PREFIX_1,
@@ -193,7 +188,7 @@ typedef enum {
   GRPC_DTS_FH_8,
   /* inside a http2 frame */
   GRPC_DTS_FRAME
-} grpc_chttp2_deframe_transport_state;
+};
 
 struct grpc_chttp2_stream_list {
   grpc_chttp2_stream* head;
@@ -204,7 +199,7 @@ struct grpc_chttp2_stream_link {
   grpc_chttp2_stream* prev;
 };
 /* We keep several sets of connection wide parameters */
-typedef enum {
+enum grpc_chttp2_setting_set : uint8_t {
   /* The settings our peer has asked for (and we have acked) */
   GRPC_PEER_SETTINGS = 0,
   /* The settings we'd like to have */
@@ -214,14 +209,14 @@ typedef enum {
   /* The settings the peer has acked */
   GRPC_ACKED_SETTINGS,
   GRPC_NUM_SETTING_SETS
-} grpc_chttp2_setting_set;
+};
 
-typedef enum {
+enum grpc_chttp2_sent_goaway_state : uint8_t {
   GRPC_CHTTP2_NO_GOAWAY_SEND,
   GRPC_CHTTP2_GRACEFUL_GOAWAY,
   GRPC_CHTTP2_FINAL_GOAWAY_SEND_SCHEDULED,
   GRPC_CHTTP2_FINAL_GOAWAY_SENT,
-} grpc_chttp2_sent_goaway_state;
+};
 
 typedef struct grpc_chttp2_write_cb {
   int64_t call_at_byte;
@@ -229,12 +224,12 @@ typedef struct grpc_chttp2_write_cb {
   struct grpc_chttp2_write_cb* next;
 } grpc_chttp2_write_cb;
 
-typedef enum {
+enum grpc_chttp2_keepalive_state : uint8_t {
   GRPC_CHTTP2_KEEPALIVE_STATE_WAITING,
   GRPC_CHTTP2_KEEPALIVE_STATE_PINGING,
   GRPC_CHTTP2_KEEPALIVE_STATE_DYING,
   GRPC_CHTTP2_KEEPALIVE_STATE_DISABLED,
-} grpc_chttp2_keepalive_state;
+};
 
 struct grpc_chttp2_transport {
   grpc_chttp2_transport(const grpc_core::ChannelArgs& channel_args,
@@ -247,7 +242,6 @@ struct grpc_chttp2_transport {
   std::string peer_string;
 
   grpc_core::MemoryOwner memory_owner;
-  const grpc_core::MemoryAllocator::Reservation self_reservation;
   grpc_core::ReclamationSweep active_reclamation;
 
   grpc_core::Combiner* combiner;
@@ -255,16 +249,56 @@ struct grpc_chttp2_transport {
   grpc_closure* notify_on_receive_settings = nullptr;
   grpc_closure* notify_on_close = nullptr;
 
+  /** how much data are we willing to buffer when the WRITE_BUFFER_HINT is set?
+   */
+  uint32_t write_buffer_size = grpc_core::chttp2::kDefaultWindow;
+
   /** write execution state of the transport */
   grpc_chttp2_write_state write_state = GRPC_CHTTP2_WRITE_STATE_IDLE;
 
+  /** is this a client? */
+  bool is_client;
   /** is the transport destroying itself? */
-  uint8_t destroying = false;
+  bool destroying = false;
+  /** are the local settings dirty and need to be sent? */
+  bool dirtied_local_settings = true;
+  /** have local settings been sent? */
+  bool sent_local_settings = false;
+  /** bitmask of setting indexes to send out
+      Hack: it's common for implementations to assume 65536 bytes initial send
+      window -- this should by rights be 0 */
+
+  grpc_chttp2_deframe_transport_state deframe_state = GRPC_DTS_CLIENT_PREFIX_0;
+  uint8_t incoming_frame_type = 0;
+  uint8_t incoming_frame_flags = 0;
+  uint8_t header_eof = 0;
+  bool is_first_frame = true;
+
+  /* bdp estimator */
+  bool bdp_ping_blocked =
+      false; /* Is the BDP blocked due to not receiving any data? */
+
+  /** have we scheduled a benign cleanup? */
+  bool benign_reclaimer_registered = false;
+  /** have we scheduled a destructive cleanup? */
+  bool destructive_reclaimer_registered = false;
+
+  /* next bdp ping timer */
+  bool have_next_bdp_ping_timer = false;
+  /** If start_bdp_ping_locked has been called */
+  bool bdp_ping_started = false;
+
+  /** if keepalive pings are allowed when there's no outstanding streams */
+  bool keepalive_permit_without_calls = false;
+  /** If start_keepalive_ping_locked has been called */
+  bool keepalive_ping_started = false;
+
+  bool reading_paused_on_pending_induced_frames = false;
+
+  grpc_chttp2_sent_goaway_state sent_goaway_state = GRPC_CHTTP2_NO_GOAWAY_SEND;
+
   /** has the upper layer closed the transport? */
   grpc_error_handle closed_with_error = GRPC_ERROR_NONE;
-
-  /** is there a read request to the endpoint outstanding? */
-  uint8_t endpoint_reading = 1;
 
   /** various lists of streams */
   grpc_chttp2_stream_list lists[STREAM_LIST_COUNT] = {};
@@ -298,29 +332,14 @@ struct grpc_chttp2_transport {
   grpc_slice_buffer outbuf;
   /** hpack encoding */
   grpc_core::HPackCompressor hpack_compressor;
-  /** is this a client? */
-  bool is_client;
 
   /** data to write next write */
   grpc_slice_buffer qbuf;
-
-  /** how much data are we willing to buffer when the WRITE_BUFFER_HINT is set?
-   */
-  uint32_t write_buffer_size = grpc_core::chttp2::kDefaultWindow;
 
   /** Set to a grpc_error object if a goaway frame is received. By default, set
    * to GRPC_ERROR_NONE */
   grpc_error_handle goaway_error = GRPC_ERROR_NONE;
 
-  grpc_chttp2_sent_goaway_state sent_goaway_state = GRPC_CHTTP2_NO_GOAWAY_SEND;
-
-  /** are the local settings dirty and need to be sent? */
-  bool dirtied_local_settings = true;
-  /** have local settings been sent? */
-  bool sent_local_settings = false;
-  /** bitmask of setting indexes to send out
-      Hack: it's common for implementations to assume 65536 bytes initial send
-      window -- this should by rights be 0 */
   uint32_t force_send_settings = 1 << GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE;
   /** settings values */
   uint32_t settings[GRPC_NUM_SETTING_SETS][GRPC_CHTTP2_NUM_SETTINGS];
@@ -331,6 +350,20 @@ struct grpc_chttp2_transport {
 
   /** last new stream id */
   uint32_t last_new_stream_id = 0;
+
+  /* deframing */
+  uint32_t expect_continuation_stream_id = 0;
+  uint32_t incoming_frame_size = 0;
+  uint32_t incoming_stream_id = 0;
+
+  uint32_t num_messages_in_next_write = 0;
+
+  /** The number of pending induced frames (SETTINGS_ACK, PINGS_ACK and
+   * RST_STREAM) in the outgoing buffer (t->qbuf). If this number goes beyond
+   * DEFAULT_MAX_PENDING_INDUCED_FRAMES, we pause reading new frames. We would
+   * only continue reading when we are able to write to the socket again,
+   * thereby reducing the number of induced frames. */
+  uint32_t num_pending_induced_frames = 0;
 
   /** ping queues for various ping insertion points */
   grpc_chttp2_ping_queue ping_queue = grpc_chttp2_ping_queue();
@@ -363,16 +396,6 @@ struct grpc_chttp2_transport {
    * streams readable since they may have become unstalled */
   int64_t initial_window_update = 0;
 
-  /* deframing */
-  grpc_chttp2_deframe_transport_state deframe_state = GRPC_DTS_CLIENT_PREFIX_0;
-  uint8_t incoming_frame_type = 0;
-  uint8_t incoming_frame_flags = 0;
-  uint8_t header_eof = 0;
-  bool is_first_frame = true;
-  uint32_t expect_continuation_stream_id = 0;
-  uint32_t incoming_frame_size = 0;
-  uint32_t incoming_stream_id = 0;
-
   /* active parser */
   void* parser_data = nullptr;
   grpc_chttp2_stream* incoming_stream = nullptr;
@@ -382,9 +405,6 @@ struct grpc_chttp2_transport {
 
   grpc_chttp2_write_cb* write_cb_pool = nullptr;
 
-  /* bdp estimator */
-  bool bdp_ping_blocked =
-      false; /* Is the BDP blocked due to not receiving any data? */
   grpc_closure next_bdp_ping_timer_expired_locked;
   grpc_closure start_bdp_ping_locked;
   grpc_closure finish_bdp_ping_locked;
@@ -396,20 +416,11 @@ struct grpc_chttp2_transport {
   /* a list of closures to run after writes are finished */
   grpc_closure_list run_after_write = GRPC_CLOSURE_LIST_INIT;
 
-  /* buffer pool state */
-  /** have we scheduled a benign cleanup? */
-  bool benign_reclaimer_registered = false;
-  /** have we scheduled a destructive cleanup? */
-  bool destructive_reclaimer_registered = false;
   /** benign cleanup closure */
   grpc_closure benign_reclaimer_locked;
   /** destructive cleanup closure */
   grpc_closure destructive_reclaimer_locked;
 
-  /* next bdp ping timer */
-  bool have_next_bdp_ping_timer = false;
-  /** If start_bdp_ping_locked has been called */
-  bool bdp_ping_started = false;
   grpc_timer next_bdp_ping_timer;
 
   /* keep-alive ping support */
@@ -429,22 +440,11 @@ struct grpc_chttp2_transport {
   grpc_core::Duration keepalive_time;
   /** grace period for a ping to complete before watchdog kicks in */
   grpc_core::Duration keepalive_timeout;
-  /** if keepalive pings are allowed when there's no outstanding streams */
-  bool keepalive_permit_without_calls = false;
-  /** If start_keepalive_ping_locked has been called */
-  bool keepalive_ping_started = false;
   /** keep-alive state machine state */
   grpc_chttp2_keepalive_state keepalive_state;
   grpc_core::ContextList* cl = nullptr;
   grpc_core::RefCountedPtr<grpc_core::channelz::SocketNode> channelz_socket;
-  uint32_t num_messages_in_next_write = 0;
-  /** The number of pending induced frames (SETTINGS_ACK, PINGS_ACK and
-   * RST_STREAM) in the outgoing buffer (t->qbuf). If this number goes beyond
-   * DEFAULT_MAX_PENDING_INDUCED_FRAMES, we pause reading new frames. We would
-   * only continue reading when we are able to write to the socket again,
-   * thereby reducing the number of induced frames. */
-  uint32_t num_pending_induced_frames = 0;
-  bool reading_paused_on_pending_induced_frames = false;
+  const grpc_core::MemoryAllocator::Reservation self_reservation;
 };
 
 typedef enum {

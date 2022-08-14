@@ -550,7 +550,7 @@ grpc_chttp2_transport::grpc_chttp2_transport(
 
 static void destroy_transport_locked(void* tp, grpc_error_handle /*error*/) {
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(tp);
-  t->destroying = 1;
+  t->destroying = true;
   close_transport_locked(
       t, grpc_error_set_int(
              GRPC_ERROR_CREATE_FROM_STATIC_STRING("Transport destroyed"),
@@ -2535,7 +2535,6 @@ static void read_action_locked(void* tp, grpc_error_handle error) {
     }
 
     close_transport_locked(t, GRPC_ERROR_REF(error));
-    t->endpoint_reading = 0;
   } else if (GRPC_ERROR_IS_NONE(t->closed_with_error)) {
     keep_reading = true;
     // Since we have read a byte, reset the keepalive timer
