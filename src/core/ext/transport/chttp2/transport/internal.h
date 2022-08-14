@@ -24,7 +24,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include <cstdint>
 #include <string>
 
 #include "absl/strings/string_view.h"
