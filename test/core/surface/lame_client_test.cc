@@ -114,8 +114,7 @@ TEST(LameClientTest, MainTest) {
                                 tag(1), nullptr);
   ASSERT_EQ(GRPC_CALL_OK, error);
 
-  /* the call should immediately fail */
-  cqv.Expect(tag(1), false);
+  cqv.Expect(tag(1), grpc_core::CqVerifier::AnyStatus{});
   cqv.Verify();
 
   memset(ops, 0, sizeof(ops));

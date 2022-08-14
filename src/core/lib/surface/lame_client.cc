@@ -74,7 +74,8 @@ LameClientFilter::State::State()
     : state_tracker("lame_client", GRPC_CHANNEL_SHUTDOWN) {}
 
 ArenaPromise<ServerMetadataHandle> LameClientFilter::MakeCallPromise(
-    CallArgs, NextPromiseFactory) {
+    CallArgs args, NextPromiseFactory) {
+  args.incoming_messages->Close();
   return Immediate(ServerMetadataHandle(error_));
 }
 
