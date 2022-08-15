@@ -587,10 +587,17 @@ BackOff::Options ParseArgsForBackoffValues(const ChannelArgs& args,
                                            Duration* min_connect_timeout) {
   const absl::optional<Duration> fixed_reconnect_backoff =
       args.GetDurationFromIntMillis("grpc.testing.fixed_reconnect_backoff_ms");
+  const absl::optional<Duration> fixed_min_connect_timeout =
+      args.GetDurationFromIntMillis(
+          "grpc.testing.fixed_min_connect_timeout_ms");
   if (fixed_reconnect_backoff.has_value()) {
     const Duration backoff =
         std::max(Duration::Milliseconds(100), *fixed_reconnect_backoff);
-    *min_connect_timeout = backoff;
+    if (fixed_min_connect_timeout.has_value()) {
+      *min_connect_timeout = *fixed_min_connect_timeout;
+    } else {
+      *min_connect_timeout = backoff;
+    }
     return BackOff::Options()
         .set_initial_backoff(backoff)
         .set_multiplier(1.0)
