@@ -172,11 +172,11 @@ static void test_max_connection_idle(grpc_end2end_test_config config) {
   client_a[0].type = GRPC_ARG_INTEGER;
   client_a[0].key =
       const_cast<char*>("grpc.testing.fixed_reconnect_backoff_ms");
-  client_a[0].value.integer = 500;
+  client_a[0].value.integer = 1000;
   client_a[1].type = GRPC_ARG_INTEGER;
   client_a[1].key =
       const_cast<char*>("grpc.testing.fixed_min_connect_timeout_ms");
-  client_a[1].value.integer = 1500;
+  client_a[1].value.integer = 2000;
   grpc_arg server_a[2];
   server_a[0].type = GRPC_ARG_INTEGER;
   server_a[0].key = const_cast<char*>(GRPC_ARG_MAX_CONNECTION_IDLE_MS);
@@ -236,7 +236,4 @@ void max_connection_idle(grpc_end2end_test_config config) {
   test_max_connection_idle(config);
 }
 
-void max_connection_idle_pre_init(void) {
-  // TODO(b/238249704): remove tracing once the flakiness is resolved
-  GPR_ASSERT(1 == grpc_tracer_set_enabled("handshaker", 1));
-}
+void max_connection_idle_pre_init(void) {}
