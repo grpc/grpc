@@ -232,4 +232,7 @@ void max_connection_idle(grpc_end2end_test_config config) {
   test_max_connection_idle(config);
 }
 
-void max_connection_idle_pre_init(void) {}
+void max_connection_idle_pre_init(void) {
+  // TODO(b/238249704): remove tracing once the flakiness is resolved
+  GPR_ASSERT(1 == grpc_tracer_set_enabled("handshaker", 1));
+}
