@@ -12,13 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:jessie
+FROM debian:bullseye
 
-RUN echo "deb http://archive.debian.org/debian/ jessie-backports main contrib non-free" > /etc/apt/sources.list.d/jessie-backports.list && ${'\\'}
-    echo 'Acquire::Check-Valid-Until no;' > /etc/apt/apt.conf.d/99no-check-valid-until && ${'\\'}
-    apt-get update && ${'\\'}
-    apt-get install -y --no-install-recommends -t jessie-backports openjdk-8-jdk-headless && ${'\\'}
+RUN apt-get update && ${'\\'}
+    apt-get install -y --no-install-recommends openjdk-11-jdk-headless && ${'\\'}
     apt-get clean
+
+WORKDIR /var/local/git/grpc-java/
 
 # Define the default command.
 CMD ["bash"]
