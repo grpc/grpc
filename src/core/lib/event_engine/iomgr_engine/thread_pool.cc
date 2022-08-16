@@ -69,7 +69,7 @@ void ThreadPool::ThreadFunc() {
     // Drain callbacks before considering shutdown to ensure all work
     // gets completed.
     if (!callbacks_.empty()) {
-      auto cb = callbacks_.front();
+      auto cb = std::move(callbacks_.front());
       callbacks_.pop();
       lock.Release();
       cb();
