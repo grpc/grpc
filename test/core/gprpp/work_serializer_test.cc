@@ -219,7 +219,7 @@ TEST(WorkSerializerTest, WorkSerializerDestructionRace) {
 // serializer destruction.
 TEST(WorkSerializerTest, WorkSerializerDestructionRaceMultipleThreads) {
   auto lock = std::make_shared<grpc_core::WorkSerializer>();
-  absl::Barrier barrier(51);
+  absl::Barrier barrier(11);
   std::vector<std::thread> threads;
   threads.reserve(10);
   for (int i = 0; i < 10; ++i) {
