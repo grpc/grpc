@@ -91,7 +91,7 @@ TEST_F(EventEngineTimerTest, TimersRespectScheduleOrdering) {
   grpc_core::MutexLock lock(&mu_);
   {
     auto engine = this->NewEventEngine();
-    engine->RunAfter(100ms, [&]() {
+    engine->RunAfter(3000ms, [&]() {
       grpc_core::MutexLock lock(&mu_);
       ordered.push_back(2);
       ++count;
