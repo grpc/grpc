@@ -374,11 +374,11 @@ grpc_cc_test(
     name = "work_serializer_test",
     srcs = ["work_serializer_test.cc"],
     exec_properties = LARGE_MACHINE,
-    shard_count = 5,
     external_deps = [
         "gtest",
     ],
     language = "C++",
+    shard_count = 5,
     tags = [
         "no_windows",  # LARGE_MACHINE is not configured for windows RBE
     ],
