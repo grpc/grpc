@@ -18,7 +18,7 @@ import contextlib
 import datetime
 import logging
 import pathlib
-from typing import Optional
+from typing import List, Optional
 
 import mako.template
 import yaml
@@ -282,14 +282,29 @@ class KubernetesBaseRunner(base_runner.BaseRunner):
         logger.debug('Namespace %s deleted', self.k8s_namespace.name)
 
     def _wait_deployment_with_available_replicas(self, name, count=1, **kwargs):
-        logger.info('Waiting for deployment %s to have %s available replica(s)',
-                    name, count)
+        logger.info(
+            'Waiting for deployment %s to report %s '
+            'available replica(s)', name, count)
         self.k8s_namespace.wait_for_deployment_available_replicas(
             name, count, **kwargs)
         deployment = self.k8s_namespace.get_deployment(name)
         logger.info('Deployment %s has %i replicas available',
                     deployment.metadata.name,
                     deployment.status.available_replicas)
+
+    def _wait_deployment_pod_count(self,
+                                   deployment: k8s.V1Deployment,
+                                   count: int = 1,
+                                   **kwargs) -> List[k8s.V1Pod]:
+        logger.info('Waiting for deployment %s to initialize %s pod(s)',
+                    deployment.metadata.name, count)
+        self.k8s_namespace.wait_for_deployment_replica_count(
+            deployment, count, **kwargs)
+        pods = self.k8s_namespace.list_deployment_pods(deployment)
+        logger.info('Deployment %s initialized %i pod(s): %s',
+                    deployment.metadata.name, count,
+                    [pod.metadata.name for pod in pods])
+        return pods
 
     def _wait_pod_started(self, name, **kwargs):
         logger.info('Waiting for pod %s to start', name)

@@ -344,6 +344,27 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
 
         _wait_for_deployment_available_replicas()
 
+    def wait_for_deployment_replica_count(
+            self,
+            deployment: V1Deployment,
+            count: int = 1,
+            *,
+            timeout_sec: int = WAIT_MEDIUM_TIMEOUT_SEC,
+            wait_sec: int = WAIT_MEDIUM_SLEEP_SEC):
+
+        @retrying.retry(
+            retry_on_result=lambda r: not self._replicas_count(r, count),
+            stop_max_delay=timeout_sec * 1000,
+            wait_fixed=wait_sec * 1000)
+        def _wait_for_deployment_replica_count():
+            pods = self.list_deployment_pods(deployment)
+            logger.debug(
+                'Waiting for deployment %s to match %i replicas '
+                'current match: %s', deployment.metadata.name, count, pods)
+            return pods
+
+        _wait_for_deployment_replica_count()
+
     def wait_for_deployment_deleted(self,
                                     deployment_name: str,
                                     timeout_sec=WAIT_MEDIUM_TIMEOUT_SEC,
@@ -409,3 +430,7 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
         return (deployment is not None and
                 deployment.status.available_replicas is not None and
                 deployment.status.available_replicas >= count)
+
+    @staticmethod
+    def _replicas_count(pods, count):
+        return len(pods) == count
