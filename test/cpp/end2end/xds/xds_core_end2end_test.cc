@@ -244,8 +244,7 @@ TEST_P(GlobalXdsClientTest, MultipleChannelsShareXdsClient) {
   // Create second channel and tell it to connect to kNewServerName.
   auto channel2 = CreateChannel(/*failover_timeout_ms=*/0, kNewServerName);
   channel2->GetState(/*try_to_connect=*/true);
-  ASSERT_TRUE(
-      channel2->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100)));
+  ASSERT_TRUE(channel2->WaitForConnected(grpc_timeout_seconds_to_deadline(1)));
   // Make sure there's only one client connected.
   EXPECT_EQ(1UL, balancer_->ads_service()->clients().size());
 }
@@ -269,8 +268,7 @@ TEST_P(
   // Create second channel and tell it to connect to kNewServerName.
   auto channel2 = CreateChannel(/*failover_timeout_ms=*/0, kNewServerName);
   channel2->GetState(/*try_to_connect=*/true);
-  ASSERT_TRUE(
-      channel2->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100)));
+  ASSERT_TRUE(channel2->WaitForConnected(grpc_timeout_seconds_to_deadline(1)));
   // Now, destroy the new channel, send an EDS update to use a different backend
   // and test that the channel switches to that backend.
   channel2.reset();
