@@ -26,6 +26,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/useful.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
@@ -168,11 +169,13 @@ static void test_max_connection_idle(grpc_end2end_test_config config) {
   grpc_connectivity_state state = GRPC_CHANNEL_IDLE;
   grpc_core::CqVerifier cqv(f.cq);
 
-  grpc_arg client_a[1];
-  client_a[0].type = GRPC_ARG_INTEGER;
-  client_a[0].key =
-      const_cast<char*>("grpc.testing.fixed_reconnect_backoff_ms");
-  client_a[0].value.integer = 1000;
+  grpc_arg client_a[] = {
+      grpc_channel_arg_integer_create(
+          const_cast<char*>(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS), 1000),
+      grpc_channel_arg_integer_create(
+          const_cast<char*>(GRPC_ARG_MAX_RECONNECT_BACKOFF_MS), 1000),
+      grpc_channel_arg_integer_create(
+          const_cast<char*>(GRPC_ARG_MIN_RECONNECT_BACKOFF_MS), 5000)};
   grpc_arg server_a[2];
   server_a[0].type = GRPC_ARG_INTEGER;
   server_a[0].key = const_cast<char*>(GRPC_ARG_MAX_CONNECTION_IDLE_MS);
@@ -193,7 +196,7 @@ static void test_max_connection_idle(grpc_end2end_test_config config) {
      READY is reached */
   while (state != GRPC_CHANNEL_READY) {
     grpc_channel_watch_connectivity_state(
-        f.client, state, grpc_timeout_seconds_to_deadline(3), f.cq, tag(99));
+        f.client, state, grpc_timeout_seconds_to_deadline(10), f.cq, tag(99));
     cqv.Expect(tag(99), true);
     cqv.Verify();
     state = grpc_channel_check_connectivity_state(f.client, 0);
