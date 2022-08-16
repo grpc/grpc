@@ -19,10 +19,6 @@
 #include <stdint.h>
 #include <string.h>
 
-#include <string>
-
-#include "absl/strings/str_format.h"
-
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/propagation_bits.h>
@@ -31,6 +27,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/time.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/test_config.h"
