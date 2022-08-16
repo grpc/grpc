@@ -30,7 +30,7 @@ namespace experimental {
 
 namespace {
 grpc_core::NoDestruct<grpc_core::Mutex> g_mu;
-grpc_core::NoDestruct<bool> g_registered ABSL_GUARDED_BY(g_mu)(false);
+bool g_registered ABSL_GUARDED_BY(g_mu){false};
 grpc_core::NoDestruct<absl::flat_hash_set<Forkable*>> g_forkables
     ABSL_GUARDED_BY(g_mu);
 }  // namespace
@@ -41,7 +41,7 @@ Forkable::~Forkable() { StopManagingForkable(this); }
 
 void RegisterForkHandlers() {
   grpc_core::MutexLock lock(g_mu.get());
-  GPR_ASSERT(!absl::exchange(*g_registered, true));
+  GPR_ASSERT(!absl::exchange(g_registered, true));
   pthread_atfork(PrepareFork, PostforkParent, PostforkChild);
 };
 
