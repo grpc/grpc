@@ -73,10 +73,6 @@ static void test_connectivity(grpc_end2end_test_config config) {
           const_cast<char*>(GRPC_ARG_MAX_RECONNECT_BACKOFF_MS), 1000),
       grpc_channel_arg_integer_create(
           const_cast<char*>(GRPC_ARG_MIN_RECONNECT_BACKOFF_MS), 5000)};
-  arg_array[0].type = GRPC_ARG_INTEGER;
-  arg_array[0].key =
-      const_cast<char*>("grpc.testing.fixed_reconnect_backoff_ms");
-  arg_array[0].value.integer = 1000;
   grpc_channel_args client_args = {GPR_ARRAY_SIZE(arg_array), arg_array};
 
   config.init_client(&f, &client_args);
