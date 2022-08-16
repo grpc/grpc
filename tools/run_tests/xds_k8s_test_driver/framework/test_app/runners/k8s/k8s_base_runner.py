@@ -1,4 +1,4 @@
-# Copyright 2020 gRPC authors.
+# Copyright 2022 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,12 +11,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""
+Common functionality for running xDS Test Client and Server on Kubernetes.
+"""
 import contextlib
 import datetime
 import logging
 import pathlib
-from typing import Dict, Optional
-import urllib.parse
+from typing import Optional
 
 import mako.template
 import yaml
@@ -25,34 +27,20 @@ import framework.helpers.datetime
 import framework.helpers.highlighter
 from framework.infrastructure import gcp
 from framework.infrastructure import k8s
+from framework.test_app.runners import base_runner
 
 logger = logging.getLogger(__name__)
 
 # Type aliases
+_RunnerError = base_runner.RunnerError
 _HighlighterYaml = framework.helpers.highlighter.HighlighterYaml
 _helper_datetime = framework.helpers.datetime
-timedelta = datetime.timedelta
+_timedelta = datetime.timedelta
 
 
-def _logs_explorer_query(query: Dict[str, str]) -> str:
-    return '\n'.join(f'{k}="{v}"' for k, v in query.items())
-
-
-def _logs_explorer_request(req: Dict[str, str]) -> str:
-    return ';'.join(f'{k}={_logs_explorer_quote(v)}' for k, v in req.items())
-
-
-def _logs_explorer_quote(value: str):
-    return urllib.parse.quote_plus(value, safe=':')
-
-
-class RunnerError(Exception):
-    """Error running app"""
-
-
-class KubernetesBaseRunner:
+class KubernetesBaseRunner(base_runner.BaseRunner):
     TEMPLATE_DIR_NAME = 'kubernetes-manifests'
-    TEMPLATE_DIR_RELATIVE_PATH = f'../../{TEMPLATE_DIR_NAME}'
+    TEMPLATE_DIR_RELATIVE_PATH = f'../../../../{TEMPLATE_DIR_NAME}'
     ROLE_WORKLOAD_IDENTITY_USER = 'roles/iam.workloadIdentityUser'
 
     def __init__(self,
@@ -82,20 +70,20 @@ class KubernetesBaseRunner:
             self.delete_namespace()
             self.namespace = None
 
-    @staticmethod
-    def _render_template(template_file, **kwargs):
+    @classmethod
+    def _render_template(cls, template_file, **kwargs):
         template = mako.template.Template(filename=str(template_file))
         return template.render(**kwargs)
 
-    @staticmethod
-    def _manifests_from_yaml_file(yaml_file):
+    @classmethod
+    def _manifests_from_yaml_file(cls, yaml_file):
         with open(yaml_file) as f:
             with contextlib.closing(yaml.safe_load_all(f)) as yml:
                 for manifest in yml:
                     yield manifest
 
-    @staticmethod
-    def _manifests_from_str(document):
+    @classmethod
+    def _manifests_from_str(cls, document):
         with contextlib.closing(yaml.safe_load_all(document)) as yml:
             for manifest in yml:
                 yield manifest
@@ -118,12 +106,12 @@ class KubernetesBaseRunner:
         manifest = next(manifests)
         # Error out on multi-document yaml
         if next(manifests, False):
-            raise RunnerError('Exactly one document expected in manifest '
-                              f'{template_file}')
+            raise _RunnerError('Exactly one document expected in manifest '
+                               f'{template_file}')
         k8s_objects = self.k8s_namespace.apply_manifest(manifest)
         if len(k8s_objects) != 1:
-            raise RunnerError('Expected exactly one object must created from '
-                              f'manifest {template_file}')
+            raise _RunnerError('Expected exactly one object must created from '
+                               f'manifest {template_file}')
 
         logger.info('%s %s created', k8s_objects[0].kind,
                     k8s_objects[0].metadata.name)
@@ -145,18 +133,18 @@ class KubernetesBaseRunner:
     def _create_namespace(self, template, **kwargs) -> k8s.V1Namespace:
         namespace = self._create_from_template(template, **kwargs)
         if not isinstance(namespace, k8s.V1Namespace):
-            raise RunnerError('Expected V1Namespace to be created '
-                              f'from manifest {template}')
+            raise _RunnerError('Expected V1Namespace to be created '
+                               f'from manifest {template}')
         if namespace.metadata.name != kwargs['namespace_name']:
-            raise RunnerError('V1Namespace created with unexpected name: '
-                              f'{namespace.metadata.name}')
+            raise _RunnerError('V1Namespace created with unexpected name: '
+                               f'{namespace.metadata.name}')
         logger.debug('V1Namespace %s created at %s',
                      namespace.metadata.self_link,
                      namespace.metadata.creation_timestamp)
         return namespace
 
-    @staticmethod
-    def _get_workload_identity_member_name(project, namespace_name,
+    @classmethod
+    def _get_workload_identity_member_name(cls, project, namespace_name,
                                            service_account_name):
         """
         Returns workload identity member name used to authenticate Kubernetes
@@ -199,11 +187,11 @@ class KubernetesBaseRunner:
                                 **kwargs) -> k8s.V1ServiceAccount:
         resource = self._create_from_template(template, **kwargs)
         if not isinstance(resource, k8s.V1ServiceAccount):
-            raise RunnerError('Expected V1ServiceAccount to be created '
-                              f'from manifest {template}')
+            raise _RunnerError('Expected V1ServiceAccount to be created '
+                               f'from manifest {template}')
         if resource.metadata.name != kwargs['service_account_name']:
-            raise RunnerError('V1ServiceAccount created with unexpected name: '
-                              f'{resource.metadata.name}')
+            raise _RunnerError('V1ServiceAccount created with unexpected name: '
+                               f'{resource.metadata.name}')
         logger.debug('V1ServiceAccount %s created at %s',
                      resource.metadata.self_link,
                      resource.metadata.creation_timestamp)
@@ -212,11 +200,11 @@ class KubernetesBaseRunner:
     def _create_deployment(self, template, **kwargs) -> k8s.V1Deployment:
         deployment = self._create_from_template(template, **kwargs)
         if not isinstance(deployment, k8s.V1Deployment):
-            raise RunnerError('Expected V1Deployment to be created '
-                              f'from manifest {template}')
+            raise _RunnerError('Expected V1Deployment to be created '
+                               f'from manifest {template}')
         if deployment.metadata.name != kwargs['deployment_name']:
-            raise RunnerError('V1Deployment created with unexpected name: '
-                              f'{deployment.metadata.name}')
+            raise _RunnerError('V1Deployment created with unexpected name: '
+                               f'{deployment.metadata.name}')
         logger.debug('V1Deployment %s created at %s',
                      deployment.metadata.self_link,
                      deployment.metadata.creation_timestamp)
@@ -225,11 +213,11 @@ class KubernetesBaseRunner:
     def _create_service(self, template, **kwargs) -> k8s.V1Service:
         service = self._create_from_template(template, **kwargs)
         if not isinstance(service, k8s.V1Service):
-            raise RunnerError('Expected V1Service to be created '
-                              f'from manifest {template}')
+            raise _RunnerError('Expected V1Service to be created '
+                               f'from manifest {template}')
         if service.metadata.name != kwargs['service_name']:
-            raise RunnerError('V1Service created with unexpected name: '
-                              f'{service.metadata.name}')
+            raise _RunnerError('V1Service created with unexpected name: '
+                               f'{service.metadata.name}')
         logger.debug('V1Service %s created at %s', service.metadata.self_link,
                      service.metadata.creation_timestamp)
         return service
@@ -311,36 +299,36 @@ class KubernetesBaseRunner:
         logger.info("Service %s: detected NEG=%s in zones=%s", name, neg_name,
                     neg_zones)
 
-    @staticmethod
-    def _logs_explorer_link(*,
+    @classmethod
+    def _logs_explorer_link(cls,
+                            *,
                             deployment_name: str,
                             namespace_name: str,
                             gcp_project: str,
                             gcp_ui_url: str,
-                            end_delta: Optional[timedelta] = None) -> None:
+                            end_delta: Optional[_timedelta] = None) -> None:
         """Output the link to test server/client logs in GCP Logs Explorer."""
         if end_delta is None:
-            end_delta = timedelta(hours=1)
-
+            end_delta = _timedelta(hours=1)
         time_now = _helper_datetime.iso8601_utc_time()
         time_end = _helper_datetime.iso8601_utc_time(end_delta)
-        query = _logs_explorer_query({
+        request = {'timeRange': f'{time_now}/{time_end}'}
+        query = {
             'resource.type': 'k8s_container',
             'resource.labels.project_id': gcp_project,
             'resource.labels.container_name': deployment_name,
             'resource.labels.namespace_name': namespace_name,
-        })
-        req = _logs_explorer_request({
-            'query': query,
-            'timeRange': f'{time_now}/{time_end}',
-        })
+        }
 
-        link = f'https://{gcp_ui_url}/logs/query;{req}?project={gcp_project}'
+        link = cls._logs_explorer_link_from_params(gcp_ui_url=gcp_ui_url,
+                                                   gcp_project=gcp_project,
+                                                   query=query,
+                                                   request=request)
         # A whitespace at the end to indicate the end of the url.
         logger.info("GCP Logs Explorer link to %s:\n%s ", deployment_name, link)
 
-    @staticmethod
-    def _make_namespace_name(resource_prefix: str, resource_suffix: str,
+    @classmethod
+    def _make_namespace_name(cls, resource_prefix: str, resource_suffix: str,
                              name: str) -> str:
         """A helper to make consistent test app kubernetes namespace name
         for given resource prefix and suffix."""
