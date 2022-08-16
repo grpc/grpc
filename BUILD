@@ -148,7 +148,7 @@ python_config_settings()
 # This should be updated along with build_handwritten.yaml
 g_stands_for = "gamma"  # @unused
 
-core_version = "26.0.0"  # @unused
+core_version = "27.0.0"  # @unused
 
 version = "1.49.0-dev"  # @unused
 
