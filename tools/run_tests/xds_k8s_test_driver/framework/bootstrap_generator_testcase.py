@@ -20,6 +20,8 @@ from framework.infrastructure import k8s
 from framework.infrastructure import traffic_director
 from framework.test_app import client_app
 from framework.test_app import server_app
+import framework.test_app.runners.k8s.k8s_xds_client_runner
+import framework.test_app.runners.k8s.k8s_xds_server_runner
 
 logger = logging.getLogger(__name__)
 
@@ -27,8 +29,8 @@ logger = logging.getLogger(__name__)
 TrafficDirectorManager = traffic_director.TrafficDirectorManager
 XdsTestServer = xds_k8s_testcase.XdsTestServer
 XdsTestClient = xds_k8s_testcase.XdsTestClient
-KubernetesServerRunner = server_app.KubernetesServerRunner
-KubernetesClientRunner = client_app.KubernetesClientRunner
+KubernetesServerRunner = framework.test_app.runners.k8s.k8s_xds_server_runner.KubernetesServerRunner
+KubernetesClientRunner = framework.test_app.runners.k8s.k8s_xds_client_runner.KubernetesClientRunner
 
 
 class BootstrapGeneratorBaseTest(xds_k8s_testcase.XdsKubernetesBaseTestCase):

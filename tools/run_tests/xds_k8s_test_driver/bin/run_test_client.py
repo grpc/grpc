@@ -21,6 +21,7 @@ from framework import xds_k8s_flags
 from framework.infrastructure import gcp
 from framework.infrastructure import k8s
 from framework.test_app import client_app
+import framework.test_app.runners.k8s.k8s_xds_client_runner
 
 logger = logging.getLogger(__name__)
 # Flags
@@ -52,7 +53,7 @@ flags.adopt_module_key_flags(xds_k8s_flags)
 flags.mark_flag_as_required("resource_suffix")
 
 # Type aliases
-KubernetesClientRunner = client_app.KubernetesClientRunner
+KubernetesClientRunner = framework.test_app.runners.k8s.k8s_xds_client_runner.KubernetesClientRunner
 
 
 def main(argv):

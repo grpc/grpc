@@ -42,6 +42,7 @@ from framework.infrastructure import gcp
 from framework.infrastructure import k8s
 from framework.infrastructure import traffic_director
 from framework.test_app import server_app
+import framework.test_app.runners.k8s.k8s_xds_server_runner
 
 logger = logging.getLogger(__name__)
 # Flags
@@ -64,7 +65,7 @@ flags.adopt_module_key_flags(xds_k8s_flags)
 # Running outside of a test suite, so require explicit resource_suffix.
 flags.mark_flag_as_required("resource_suffix")
 
-KubernetesServerRunner = server_app.KubernetesServerRunner
+KubernetesServerRunner = framework.test_app.runners.k8s.k8s_xds_server_runner.KubernetesServerRunner
 
 
 def main(argv):  # pylint: disable=too-many-locals,too-many-branches,too-many-statements

@@ -20,6 +20,7 @@ from absl.testing import absltest
 from framework import xds_k8s_testcase
 from framework.infrastructure import k8s
 from framework.test_app import server_app
+import framework.test_app.runners.k8s.k8s_xds_server_runner
 
 logger = logging.getLogger(__name__)
 flags.adopt_module_key_flags(xds_k8s_testcase)
@@ -35,7 +36,7 @@ class ChangeBackendServiceTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
         super().setUp()
         self.alternate_k8s_namespace = k8s.KubernetesNamespace(
             self.k8s_api_manager, self.server_namespace)
-        self.alternate_server_runner = server_app.KubernetesServerRunner(
+        self.alternate_server_runner = framework.test_app.runners.k8s.k8s_xds_server_runner.KubernetesServerRunner(
             self.alternate_k8s_namespace,
             deployment_name=self.server_name + '-alt',
             image_name=self.server_image,

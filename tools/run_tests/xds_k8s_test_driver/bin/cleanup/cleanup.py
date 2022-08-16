@@ -44,11 +44,13 @@ from framework.infrastructure import k8s
 from framework.infrastructure import traffic_director
 from framework.test_app import client_app
 from framework.test_app import server_app
+import framework.test_app.runners.k8s.k8s_xds_client_runner
+import framework.test_app.runners.k8s.k8s_xds_server_runner
 
 logger = logging.getLogger(__name__)
 Json = Any
-KubernetesClientRunner = client_app.KubernetesClientRunner
-KubernetesServerRunner = server_app.KubernetesServerRunner
+KubernetesClientRunner = framework.test_app.runners.k8s.k8s_xds_client_runner.KubernetesClientRunner
+KubernetesServerRunner = framework.test_app.runners.k8s.k8s_xds_server_runner.KubernetesServerRunner
 
 GCLOUD = os.environ.get('GCLOUD', 'gcloud')
 GCLOUD_CMD_TIMEOUT_S = datetime.timedelta(seconds=5).total_seconds()

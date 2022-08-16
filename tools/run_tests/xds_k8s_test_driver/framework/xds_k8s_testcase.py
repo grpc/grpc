@@ -40,6 +40,8 @@ from framework.rpc import grpc_csds
 from framework.rpc import grpc_testing
 from framework.test_app import client_app
 from framework.test_app import server_app
+import framework.test_app.runners.k8s.k8s_xds_client_runner
+import framework.test_app.runners.k8s.k8s_xds_server_runner
 
 logger = logging.getLogger(__name__)
 # TODO(yashkt): We will no longer need this flag once Core exposes local certs
@@ -57,8 +59,8 @@ TrafficDirectorAppNetManager = traffic_director.TrafficDirectorAppNetManager
 TrafficDirectorSecureManager = traffic_director.TrafficDirectorSecureManager
 XdsTestServer = server_app.XdsTestServer
 XdsTestClient = client_app.XdsTestClient
-KubernetesServerRunner = server_app.KubernetesServerRunner
-KubernetesClientRunner = client_app.KubernetesClientRunner
+KubernetesServerRunner = framework.test_app.runners.k8s.k8s_xds_server_runner.KubernetesServerRunner
+KubernetesClientRunner = framework.test_app.runners.k8s.k8s_xds_client_runner.KubernetesClientRunner
 LoadBalancerStatsResponse = grpc_testing.LoadBalancerStatsResponse
 _ChannelState = grpc_channelz.ChannelState
 _timedelta = datetime.timedelta
