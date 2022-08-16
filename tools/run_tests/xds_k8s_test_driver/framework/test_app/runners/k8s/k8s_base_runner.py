@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 _RunnerError = base_runner.RunnerError
 _HighlighterYaml = framework.helpers.highlighter.HighlighterYaml
 _helper_datetime = framework.helpers.datetime
-timedelta = datetime.timedelta
+_timedelta = datetime.timedelta
 
 
 class KubernetesBaseRunner(base_runner.BaseRunner):
@@ -306,10 +306,10 @@ class KubernetesBaseRunner(base_runner.BaseRunner):
                             namespace_name: str,
                             gcp_project: str,
                             gcp_ui_url: str,
-                            end_delta: Optional[timedelta] = None) -> None:
+                            end_delta: Optional[_timedelta] = None) -> None:
         """Output the link to test server/client logs in GCP Logs Explorer."""
         if end_delta is None:
-            end_delta = timedelta(hours=1)
+            end_delta = _timedelta(hours=1)
         time_now = _helper_datetime.iso8601_utc_time()
         time_end = _helper_datetime.iso8601_utc_time(end_delta)
         request = {'timeRange': f'{time_now}/{time_end}'}
