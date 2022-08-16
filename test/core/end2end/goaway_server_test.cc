@@ -247,27 +247,23 @@ int main(int argc, char** argv) {
 
   std::string addr;
 
-  grpc_arg arg_array[] = {
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS), 1000),
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_MAX_RECONNECT_BACKOFF_MS), 1000),
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_MIN_RECONNECT_BACKOFF_MS), 5000),
-      /* When this test brings down server1 and then brings up server2,
-       * the targetted server port number changes, and the client channel
-       * needs to re-resolve to pick this up. This test requires that
-       * happen within 10 seconds, but gRPC's DNS resolvers rate limit
-       * resolution attempts to at most once every 30 seconds by default.
-       * So we tweak it for this test. */
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_DNS_MIN_TIME_BETWEEN_RESOLUTIONS_MS),
-          1000)};
-  grpc_channel_args client_args = {GPR_ARRAY_SIZE(arg_array), arg_array};
+  auto client_args =
+      grpc_core::ChannelArgs()
+          .Set(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS, 1000)
+          .Set(GRPC_ARG_MAX_RECONNECT_BACKOFF_MS, 1000)
+          .Set(GRPC_ARG_MIN_RECONNECT_BACKOFF_MS, 5000)
+          /* When this test brings down server1 and then brings up server2,
+           * the targetted server port number changes, and the client channel
+           * needs to re-resolve to pick this up. This test requires that
+           * happen within 10 seconds, but gRPC's DNS resolvers rate limit
+           * resolution attempts to at most once every 30 seconds by default.
+           * So we tweak it for this test. */
+          .Set(GRPC_ARG_DNS_MIN_TIME_BETWEEN_RESOLUTIONS_MS, 1000)
+          .ToC();
 
   /* create a channel that picks first amongst the servers */
   grpc_channel_credentials* creds = grpc_insecure_credentials_create();
-  grpc_channel* chan = grpc_channel_create("test", creds, &client_args);
+  grpc_channel* chan = grpc_channel_create("test", creds, client_args.get());
   grpc_channel_credentials_release(creds);
   /* and an initial call to them */
   grpc_slice host = grpc_slice_from_static_string("127.0.0.1");

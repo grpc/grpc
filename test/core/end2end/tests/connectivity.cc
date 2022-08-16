@@ -66,16 +66,13 @@ static void test_connectivity(grpc_end2end_test_config config) {
   grpc_core::CqVerifier cqv(f.cq);
   child_events ce;
 
-  grpc_arg arg_array[] = {
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS), 1000),
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_MAX_RECONNECT_BACKOFF_MS), 1000),
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_MIN_RECONNECT_BACKOFF_MS), 5000)};
-  grpc_channel_args client_args = {GPR_ARRAY_SIZE(arg_array), arg_array};
+  auto client_args = grpc_core::ChannelArgs()
+                         .Set(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS, 1000)
+                         .Set(GRPC_ARG_MAX_RECONNECT_BACKOFF_MS, 1000)
+                         .Set(GRPC_ARG_MIN_RECONNECT_BACKOFF_MS, 5000)
+                         .ToC();
 
-  config.init_client(&f, &client_args);
+  config.init_client(&f, client_args.get());
 
   ce.channel = f.client;
   ce.cq = f.cq;

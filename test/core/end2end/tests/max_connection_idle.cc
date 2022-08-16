@@ -169,13 +169,11 @@ static void test_max_connection_idle(grpc_end2end_test_config config) {
   grpc_connectivity_state state = GRPC_CHANNEL_IDLE;
   grpc_core::CqVerifier cqv(f.cq);
 
-  grpc_arg client_a[] = {
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS), 1000),
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_MAX_RECONNECT_BACKOFF_MS), 1000),
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_MIN_RECONNECT_BACKOFF_MS), 5000)};
+  auto client_args = grpc_core::ChannelArgs()
+                         .Set(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS, 1000)
+                         .Set(GRPC_ARG_MAX_RECONNECT_BACKOFF_MS, 1000)
+                         .Set(GRPC_ARG_MIN_RECONNECT_BACKOFF_MS, 5000)
+                         .ToC();
   grpc_arg server_a[2];
   server_a[0].type = GRPC_ARG_INTEGER;
   server_a[0].key = const_cast<char*>(GRPC_ARG_MAX_CONNECTION_IDLE_MS);
@@ -183,10 +181,9 @@ static void test_max_connection_idle(grpc_end2end_test_config config) {
   server_a[1].type = GRPC_ARG_INTEGER;
   server_a[1].key = const_cast<char*>(GRPC_ARG_MAX_CONNECTION_AGE_MS);
   server_a[1].value.integer = MAX_CONNECTION_AGE_MS;
-  grpc_channel_args client_args = {GPR_ARRAY_SIZE(client_a), client_a};
   grpc_channel_args server_args = {GPR_ARRAY_SIZE(server_a), server_a};
 
-  config.init_client(&f, &client_args);
+  config.init_client(&f, client_args.get());
   config.init_server(&f, &server_args);
 
   /* check that we're still in idle, and start connecting */
