@@ -88,7 +88,7 @@ static void end_test(grpc_end2end_test_fixture* f) {
 }
 
 static grpc_slice large_slice(void) {
-  grpc_slice slice = grpc_slice_malloc(100000);
+  grpc_slice slice = grpc_slice_malloc(1000000);
   memset(GRPC_SLICE_START_PTR(slice), 'x', GRPC_SLICE_LENGTH(slice));
   return slice;
 }
@@ -264,23 +264,12 @@ void invoke_large_request(grpc_end2end_test_config config) {
   test_invoke_large_request(config, 16384, 65536);
   test_invoke_large_request(config, 32768, 65536);
 
-  test_invoke_large_request(config, 100000 - 1, 65536);
-  test_invoke_large_request(config, 100000, 65536);
-  test_invoke_large_request(config, 100000 + 1, 65536);
-  test_invoke_large_request(config, 100000 + 2, 65536);
-  test_invoke_large_request(config, 100000 + 3, 65536);
-  test_invoke_large_request(config, 100000 + 4, 65536);
-  test_invoke_large_request(config, 100000 + 5, 65536);
-  test_invoke_large_request(config, 100000 + 6, 65536);
-
-  test_invoke_large_request(config, 100000 - 1, 200000);
-  test_invoke_large_request(config, 100000, 200000);
-  test_invoke_large_request(config, 100000 + 1, 200000);
-  test_invoke_large_request(config, 100000 + 2, 200000);
-  test_invoke_large_request(config, 100000 + 3, 200000);
-  test_invoke_large_request(config, 100000 + 4, 200000);
-  test_invoke_large_request(config, 100000 + 5, 200000);
-  test_invoke_large_request(config, 100000 + 6, 200000);
+  test_invoke_large_request(config, 1000000 - 1, 65536);
+  test_invoke_large_request(config, 1000000, 65536);
+  test_invoke_large_request(config, 1000000 + 1, 65536);
+  test_invoke_large_request(config, 1000000 - 1, 2000000);
+  test_invoke_large_request(config, 1000000, 2000000);
+  test_invoke_large_request(config, 1000000 + 1, 2000000);
 }
 
 void invoke_large_request_pre_init(void) {}
