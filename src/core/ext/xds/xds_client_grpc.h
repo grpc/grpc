@@ -20,28 +20,31 @@
 #include <grpc/support/port_platform.h>
 
 #include <memory>
+#include <string>
 
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/impl/codegen/grpc_types.h>
 
+#include "src/core/ext/xds/certificate_provider_store.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
+#include "src/core/lib/json/json.h"
 
 namespace grpc_core {
 
 class GrpcXdsClient : public XdsClient {
  public:
   // Factory function to get or create the global XdsClient instance.
-  // If *error is not GRPC_ERROR_NONE upon return, then there was
-  // an error initializing the client.
-  static RefCountedPtr<XdsClient> GetOrCreate(const ChannelArgs& args,
-                                              grpc_error_handle* error);
+  static absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GetOrCreate(
+      const ChannelArgs& args, const char* reason);
 
   // Do not instantiate directly -- use GetOrCreate() instead.
   GrpcXdsClient(std::unique_ptr<XdsBootstrap> bootstrap,
@@ -57,6 +60,13 @@ class GrpcXdsClient : public XdsClient {
   }
 
   grpc_pollset_set* interested_parties() const;
+
+  CertificateProviderStore& certificate_provider_store() const {
+    return *certificate_provider_store_;
+  }
+
+ private:
+  OrphanablePtr<CertificateProviderStore> certificate_provider_store_;
 };
 
 namespace internal {
@@ -66,6 +76,26 @@ void UnsetGlobalXdsClientForTest();
 // Does not take ownership of config.
 void SetXdsFallbackBootstrapConfig(const char* config);
 }  // namespace internal
+
+// Exposed for testing purposes only.
+class GrpcXdsCertificateProviderPluginMap
+    : public XdsCertificateProviderPluginMapInterface {
+ public:
+  const CertificateProviderStore::PluginDefinitionMap& plugin_map() const {
+    return plugin_map_;
+  }
+
+  absl::Status AddPlugin(const std::string& instance_name,
+                         const std::string& plugin_name,
+                         const Json& config) override;
+
+  bool HasPlugin(const std::string& instance_name) const override;
+
+  std::string ToString() const override;
+
+ private:
+  CertificateProviderStore::PluginDefinitionMap plugin_map_;
+};
 
 }  // namespace grpc_core
 

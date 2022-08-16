@@ -103,7 +103,10 @@ END2END_FIXTURES = {
     ),
     "h2_ssl": _fixture_options(secure = True),
     "h2_ssl_cred_reload": _fixture_options(secure = True),
-    "h2_tls": _fixture_options(secure = True),
+    "h2_tls_simple": _fixture_options(secure = True),
+    "h2_tls_static_async_tls1_3": _fixture_options(secure = True),
+    "h2_tls_certwatch_sync_tls1_2": _fixture_options(secure = True),
+    "h2_tls_certwatch_async_tls1_3": _fixture_options(secure = True),
     "h2_local_abstract_uds_percent_encoded": _fixture_options(
         secure = True,
         dns_resolver = False,
@@ -434,7 +437,7 @@ def grpc_end2end_tests():
         bin_name = "%s_test" % f
         grpc_cc_binary(
             name = bin_name,
-            srcs = ["fixtures/%s.cc" % f],
+            srcs = ["fixtures/%s.cc" % f, "fixtures/h2_tls_common.h"],
             language = "C++",
             testonly = 1,
             data = [

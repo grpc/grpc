@@ -485,8 +485,8 @@ class CLanguage(object):
             return ('debian11_openssl102', [
                 "-DgRPC_SSL_PROVIDER=package",
             ])
-        elif compiler == 'gcc11':
-            return ('gcc_11', [])
+        elif compiler == 'gcc12':
+            return ('gcc_12', ["-DCMAKE_CXX_STANDARD=20"])
         elif compiler == 'gcc_musl':
             return ('alpine', [])
         elif compiler == 'clang6':
@@ -644,10 +644,6 @@ class PythonLanguage(object):
             if io_platform != 'native':
                 environment['GRPC_ENABLE_FORK_SUPPORT'] = '0'
             for python_config in self.pythons:
-                # TODO(https://github.com/grpc/grpc/issues/23784) allow gevent
-                # to run on later version once issue solved.
-                if io_platform == 'gevent' and python_config.name != 'py36':
-                    continue
                 jobs.extend([
                     self.config.job_spec(
                         python_config.run + [self._TEST_COMMAND[io_platform]],
@@ -727,11 +723,6 @@ class PythonLanguage(object):
         config_vars = _PythonConfigVars(shell, builder,
                                         builder_prefix_arguments,
                                         venv_relative_python, toolchain, runner)
-        python36_config = _python_config_generator(name='py36',
-                                                   major='3',
-                                                   minor='6',
-                                                   bits=bits,
-                                                   config_vars=config_vars)
         python37_config = _python_config_generator(name='py37',
                                                    major='3',
                                                    minor='7',
@@ -774,11 +765,9 @@ class PythonLanguage(object):
                 return (python39_config,)
             else:
                 return (
-                    python36_config,
+                    python37_config,
                     python38_config,
                 )
-        elif args.compiler == 'python3.6':
-            return (python36_config,)
         elif args.compiler == 'python3.7':
             return (python37_config,)
         elif args.compiler == 'python3.8':
@@ -795,7 +784,6 @@ class PythonLanguage(object):
             return (python38_config,)
         elif args.compiler == 'all_the_cpythons':
             return (
-                python36_config,
                 python37_config,
                 python38_config,
                 python39_config,
@@ -1496,13 +1484,12 @@ argp.add_argument(
         'gcc6',
         'gcc10.2',
         'gcc10.2_openssl102',
-        'gcc11',
+        'gcc12',
         'gcc_musl',
         'clang6',
         'clang13',
         'python2.7',
         'python3.5',
-        'python3.6',
         'python3.7',
         'python3.8',
         'python3.9',

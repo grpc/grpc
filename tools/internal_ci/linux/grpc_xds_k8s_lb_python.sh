@@ -50,6 +50,9 @@ build_test_app_docker_images() {
   gcloud -q auth configure-docker
 
   docker push "${CLIENT_IMAGE_NAME}:${GIT_COMMIT}"
+  if is_version_branch "${TESTING_VERSION}"; then
+    tag_and_push_docker_image "${CLIENT_IMAGE_NAME}" "${GIT_COMMIT}" "${TESTING_VERSION}"
+  fi
 }
 
 #######################################
@@ -138,8 +141,8 @@ main() {
   echo "Sourcing test driver install script from: ${TEST_DRIVER_INSTALL_SCRIPT_URL}"
   source /dev/stdin <<< "$(curl -s "${TEST_DRIVER_INSTALL_SCRIPT_URL}")"
 
-  activate_gke_cluster GKE_CLUSTER_PSM_SECURITY
-  activate_secondary_gke_cluster GKE_CLUSTER_PSM_SECURITY
+  activate_gke_cluster GKE_CLUSTER_PSM_LB
+  activate_secondary_gke_cluster GKE_CLUSTER_PSM_LB
 
   set -x
   if [[ -n "${KOKORO_ARTIFACTS_DIR}" ]]; then

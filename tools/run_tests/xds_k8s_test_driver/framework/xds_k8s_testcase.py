@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import abc
+import contextlib
 import datetime
 import enum
 import hashlib
@@ -71,6 +72,7 @@ class TdPropagationRetryableError(Exception):
 
 
 class XdsKubernetesBaseTestCase(absltest.TestCase):
+    lang_spec: skips.TestConfig
     client_namespace: str
     client_runner: KubernetesClientRunner
     ensure_firewall: bool
@@ -114,7 +116,10 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
 
         # Raises unittest.SkipTest if given client/server/version does not
         # support current test case.
-        skips.evaluate_test_config(cls.is_supported)
+        cls.lang_spec = skips.evaluate_test_config(cls.is_supported)
+
+        # Must be called before KubernetesApiManager or GcpApiManager init.
+        xds_flags.set_socket_default_timeout_from_flag()
 
         # GCP
         cls.project = xds_flags.PROJECT.value
@@ -165,6 +170,14 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
         cls.k8s_api_manager.close()
         cls.secondary_k8s_api_manager.close()
         cls.gcp_api_manager.close()
+
+    @contextlib.contextmanager
+    def subTest(self, msg, **params):  # noqa pylint: disable=signature-differs
+        logger.info('--- Starting subTest %s.%s ---', self.id(), msg)
+        try:
+            yield super().subTest(msg, **params)
+        finally:
+            logger.info('--- Finished subTest %s.%s ---', self.id(), msg)
 
     def setupTrafficDirectorGrpc(self):
         self.td.setup_for_grpc(self.server_xds_host,
@@ -439,11 +452,11 @@ class IsolatedXdsKubernetesTestCase(XdsKubernetesBaseTestCase,
                                             attempts=3,
                                             log_level=logging.INFO)
         try:
-            retryer(self._cleanup)
+            retryer(self.cleanup)
         except retryers.RetryError:
             logger.exception('Got error during teardown')
 
-    def _cleanup(self):
+    def cleanup(self):
         self.td.cleanup(force=self.force_cleanup)
         self.client_runner.cleanup(force=self.force_cleanup)
         self.server_runner.cleanup(force=self.force_cleanup,

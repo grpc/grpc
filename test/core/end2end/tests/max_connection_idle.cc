@@ -16,17 +16,20 @@
  *
  */
 
-#include <limits.h>
+#include <stdint.h>
 #include <string.h>
 
+#include <grpc/grpc.h>
+#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/sync.h>
-#include <grpc/support/time.h>
 
 #include "src/core/lib/gpr/useful.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
+#include "test/core/util/test_config.h"
 
 #define MAX_CONNECTION_IDLE_MS 500
 #define MAX_CONNECTION_AGE_MS 9999
@@ -148,7 +151,6 @@ static void simple_request_body(grpc_end2end_test_config /*config*/,
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
-  GPR_ASSERT(0 == call_details.flags);
   GPR_ASSERT(was_cancelled == 0);
 
   grpc_slice_unref(details);

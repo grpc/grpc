@@ -121,8 +121,11 @@ void FuzzingEventEngine::Tick() {
     ++current_tick_;
     // Find newly expired timers.
     while (!tasks_by_time_.empty() && tasks_by_time_.begin()->first <= now_) {
-      tasks_by_id_.erase(tasks_by_time_.begin()->second->id);
-      to_run.push_back(std::move(tasks_by_time_.begin()->second->closure));
+      auto& task = *tasks_by_time_.begin()->second;
+      tasks_by_id_.erase(task.id);
+      if (task.closure != nullptr) {
+        to_run.push_back(std::move(task.closure));
+      }
       tasks_by_time_.erase(tasks_by_time_.begin());
     }
   }
@@ -197,10 +200,10 @@ bool FuzzingEventEngine::Cancel(TaskHandle handle) {
   if (it == tasks_by_id_.end()) {
     return false;
   }
-  if (it->second == nullptr) {
+  if (it->second->closure == nullptr) {
     return false;
   }
-  it->second = nullptr;
+  it->second->closure = nullptr;
   return true;
 }
 

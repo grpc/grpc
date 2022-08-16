@@ -14,28 +14,36 @@
 // limitations under the License.
 //
 
-#include <stdio.h>
+#include <stdint.h>
 #include <string.h>
+
+#include <new>
+
+#include "absl/types/optional.h"
 
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
+#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/call_combiner.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/surface/channel_init.h"
-#include "src/core/lib/transport/error_utils.h"
+#include "src/core/lib/surface/channel_stack_type.h"
+#include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/lib/transport/transport.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
-#include "test/core/end2end/tests/cancel_test_helpers.h"
+#include "test/core/util/test_config.h"
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
@@ -227,7 +235,6 @@ static void test_retry_transparent_goaway(grpc_end2end_test_config config) {
   GPR_ASSERT(status == GRPC_STATUS_OK);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/service/method"));
-  GPR_ASSERT(0 == call_details.flags);
   GPR_ASSERT(was_cancelled == 0);
   GPR_ASSERT(byte_buffer_eq_slice(request_payload_recv, request_payload_slice));
   GPR_ASSERT(

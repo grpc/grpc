@@ -16,23 +16,20 @@
  *
  */
 
-/**
- * This test is for checking whether proxy authentication is working with HTTP
- * Connect.
- */
-#include <stdio.h>
+#include <stdint.h>
 #include <string.h>
 
-#include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
+#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/time.h>
 
-#include "src/core/lib/gpr/string.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/fixtures/http_proxy_fixture.h"
+#include "test/core/util/test_config.h"
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
@@ -197,7 +194,6 @@ static void simple_request_body(grpc_end2end_test_config /*config*/,
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
-  GPR_ASSERT(0 == call_details.flags);
   GPR_ASSERT(was_cancelled == 0);
 
   grpc_slice_unref(details);

@@ -93,16 +93,12 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
-#include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h"
-#include "src/core/ext/filters/client_channel/lb_policy_factory.h"
-#include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
-#include "src/core/ext/filters/client_channel/subchannel_interface.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -110,7 +106,7 @@
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/event_engine/event_engine_factory.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -128,6 +124,10 @@
 #include "src/core/lib/iomgr/socket_utils.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/load_balancing/lb_policy.h"
+#include "src/core/lib/load_balancing/lb_policy_factory.h"
+#include "src/core/lib/load_balancing/lb_policy_registry.h"
+#include "src/core/lib/load_balancing/subchannel_interface.h"
 #include "src/core/lib/resolver/resolver.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/security/credentials/credentials.h"
@@ -160,7 +160,7 @@ namespace {
 using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 
-constexpr char kGrpclb[] = "grpclb";
+constexpr absl::string_view kGrpclb = "grpclb";
 
 class GrpcLbConfig : public LoadBalancingPolicy::Config {
  public:
@@ -168,7 +168,8 @@ class GrpcLbConfig : public LoadBalancingPolicy::Config {
                std::string service_name)
       : child_policy_(std::move(child_policy)),
         service_name_(std::move(service_name)) {}
-  const char* name() const override { return kGrpclb; }
+
+  absl::string_view name() const override { return kGrpclb; }
 
   RefCountedPtr<LoadBalancingPolicy::Config> child_policy() const {
     return child_policy_;
@@ -185,7 +186,7 @@ class GrpcLb : public LoadBalancingPolicy {
  public:
   explicit GrpcLb(Args args);
 
-  const char* name() const override { return kGrpclb; }
+  absl::string_view name() const override { return kGrpclb; }
 
   void UpdateLocked(UpdateArgs args) override;
   void ResetBackoffLocked() override;
@@ -1845,28 +1846,27 @@ class GrpcLbFactory : public LoadBalancingPolicyFactory {
     return MakeOrphanable<GrpcLb>(std::move(args));
   }
 
-  const char* name() const override { return kGrpclb; }
+  absl::string_view name() const override { return kGrpclb; }
 
-  RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
-      const Json& json, grpc_error_handle* error) const override {
-    GPR_DEBUG_ASSERT(error != nullptr && GRPC_ERROR_IS_NONE(*error));
+  absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
+  ParseLoadBalancingConfig(const Json& json) const override {
     if (json.type() == Json::Type::JSON_NULL) {
       return MakeRefCounted<GrpcLbConfig>(nullptr, "");
     }
-    std::vector<grpc_error_handle> error_list;
-    Json child_policy_config_json_tmp;
-    const Json* child_policy_config_json;
+    std::vector<std::string> error_list;
     std::string service_name;
     auto it = json.object_value().find("serviceName");
     if (it != json.object_value().end()) {
       const Json& service_name_json = it->second;
       if (service_name_json.type() != Json::Type::STRING) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:serviceName error:type should be string"));
+        error_list.emplace_back(
+            "field:serviceName error:type should be string");
       } else {
         service_name = service_name_json.string_value();
       }
     }
+    Json child_policy_config_json_tmp;
+    const Json* child_policy_config_json;
     it = json.object_value().find("childPolicy");
     if (it == json.object_value().end()) {
       child_policy_config_json_tmp = Json::Array{Json::Object{
@@ -1876,25 +1876,24 @@ class GrpcLbFactory : public LoadBalancingPolicyFactory {
     } else {
       child_policy_config_json = &it->second;
     }
-    grpc_error_handle parse_error = GRPC_ERROR_NONE;
-    RefCountedPtr<LoadBalancingPolicy::Config> child_policy_config =
+    auto child_policy_config =
         LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
-            *child_policy_config_json, &parse_error);
-    if (!GRPC_ERROR_IS_NONE(parse_error)) {
-      std::vector<grpc_error_handle> child_errors;
-      child_errors.push_back(parse_error);
-      error_list.push_back(
-          GRPC_ERROR_CREATE_FROM_VECTOR("field:childPolicy", &child_errors));
+            *child_policy_config_json);
+    if (!child_policy_config.ok()) {
+      error_list.emplace_back(
+          absl::StrCat("error parsing childPolicy field: ",
+                       child_policy_config.status().message()));
     }
     if (error_list.empty()) {
-      return MakeRefCounted<GrpcLbConfig>(std::move(child_policy_config),
+      return MakeRefCounted<GrpcLbConfig>(std::move(*child_policy_config),
                                           std::move(service_name));
     } else {
-      *error = GRPC_ERROR_CREATE_FROM_VECTOR("GrpcLb Parser", &error_list);
-      return nullptr;
+      return absl::InvalidArgumentError(
+          absl::StrCat("errors parsing grpclb LB policy config: [",
+                       absl::StrJoin(error_list, "; "), "]"));
     }
   }
-};  // namespace grpc_core
+};
 
 }  // namespace
 

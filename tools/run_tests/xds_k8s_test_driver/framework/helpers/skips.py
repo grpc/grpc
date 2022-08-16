@@ -48,7 +48,10 @@ class Lang(enum.Flag):
 
 @dataclass
 class TestConfig:
-    """Describes the config for the test suite."""
+    """Describes the config for the test suite.
+
+    TODO(sergiitk): rename to LangSpec and rename skips.py to lang.py.
+    """
     client_lang: Lang
     server_lang: Lang
     version: Optional[str]
@@ -85,8 +88,11 @@ def _get_lang(image_name: str) -> Lang:
         re.search(r'/(\w+)-(client|server):', image_name).group(1))
 
 
-def evaluate_test_config(check: Callable[[TestConfig], bool]) -> None:
-    """Evaluates the test config check against Abseil flags."""
+def evaluate_test_config(check: Callable[[TestConfig], bool]) -> TestConfig:
+    """Evaluates the test config check against Abseil flags.
+
+    TODO(sergiitk): split into parse_lang_spec and check_is_supported.
+    """
     # NOTE(lidiz) a manual skip mechanism is needed because absl/flags
     # cannot be used in the built-in test-skipping decorators. See the
     # official FAQs:
@@ -100,3 +106,4 @@ def evaluate_test_config(check: Callable[[TestConfig], bool]) -> None:
         raise unittest.SkipTest(f'Unsupported test config: {test_config}')
 
     logger.info('Detected language and version: %s', test_config)
+    return test_config

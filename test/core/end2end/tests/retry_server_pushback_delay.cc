@@ -16,23 +16,28 @@
  *
  */
 
-#include <stdio.h>
+#include <inttypes.h>
 #include <string.h>
+
+#include <string>
+
+#include "absl/strings/string_view.h"
 
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
+#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
-#include "test/core/end2end/tests/cancel_test_helpers.h"
+#include "test/core/util/test_config.h"
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
@@ -288,7 +293,6 @@ static void test_retry_server_pushback_delay(grpc_end2end_test_config config) {
   GPR_ASSERT(status == GRPC_STATUS_OK);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "message2"));
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/service/method"));
-  GPR_ASSERT(0 == call_details.flags);
   GPR_ASSERT(was_cancelled == 0);
 
   grpc_slice_unref(details);

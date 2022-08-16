@@ -486,27 +486,50 @@ TEST_P(EdsTest, SameBackendListedMultipleTimes) {
             backends_[0]->backend_service()->request_count());
 }
 
-// Tests that RPCs will be blocked until a non-empty serverlist is received.
-TEST_P(EdsTest, InitiallyEmptyServerlist) {
+TEST_P(EdsTest, OneLocalityWithNoEndpoints) {
   CreateAndStartBackends(1);
-  // First response is an empty serverlist.
+  // Initial EDS resource has one locality with no endpoints.
   EdsResourceArgs::Locality empty_locality("locality0", {});
   EdsResourceArgs args({std::move(empty_locality)});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // RPCs should fail.
   constexpr char kErrorMessage[] =
-      // TODO(roth): Improve this error message as part of
-      // https://github.com/grpc/grpc/issues/22883.
-      "empty address list: ";
+      "empty address list: EDS resource eds_service_name contains empty "
+      "localities: \\[\\{region=\"xds_default_locality_region\", "
+      "zone=\"xds_default_locality_zone\", sub_zone=\"locality0\"\\}\\]";
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE, kErrorMessage);
-  // Send non-empty serverlist.
+  // Send EDS resource that has an endpoint.
   args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // RPCs should eventually succeed.
   WaitForAllBackends(DEBUG_LOCATION, 0, 1, [&](const RpcResult& result) {
     if (!result.status.ok()) {
       EXPECT_EQ(result.status.error_code(), StatusCode::UNAVAILABLE);
-      EXPECT_EQ(result.status.error_message(), kErrorMessage);
+      EXPECT_THAT(result.status.error_message(),
+                  ::testing::MatchesRegex(kErrorMessage));
+    }
+  });
+}
+
+TEST_P(EdsTest, NoLocalities) {
+  CreateAndStartBackends(1);
+  // Initial EDS resource has no localities.
+  EdsResourceArgs args;
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // RPCs should fail.
+  constexpr char kErrorMessage[] =
+      "no children in weighted_target policy: EDS resource eds_service_name "
+      "contains no localities";
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE, kErrorMessage);
+  // Send EDS resource that has an endpoint.
+  args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // RPCs should eventually succeed.
+  WaitForAllBackends(DEBUG_LOCATION, 0, 1, [&](const RpcResult& result) {
+    if (!result.status.ok()) {
+      EXPECT_EQ(result.status.error_code(), StatusCode::UNAVAILABLE);
+      EXPECT_THAT(result.status.error_message(),
+                  ::testing::MatchesRegex(kErrorMessage));
     }
   });
 }
@@ -710,14 +733,6 @@ TEST_P(EdsTest, LocalityContainingNoEndpoints) {
             kNumRpcs / backends_.size());
   EXPECT_EQ(backends_[1]->backend_service()->request_count(),
             kNumRpcs / backends_.size());
-}
-
-// EDS update with no localities.
-TEST_P(EdsTest, NoLocalities) {
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource({}));
-  Status status = SendRpc();
-  EXPECT_FALSE(status.ok());
-  EXPECT_EQ(status.error_code(), StatusCode::UNAVAILABLE);
 }
 
 // Tests that the locality map can work properly even when it contains a large

@@ -92,25 +92,38 @@ void GRPCPrintInteropTestServerDebugInfo() {
         NSStringize(HOST_PORT_REMOTE));
 }
 
-BOOL GRPCTestRunWithFlakeRepeats(GRPCTestRunBlock testBlock) {
+BOOL GRPCTestRunWithFlakeRepeats(XCTestCase *testCase, GRPCTestRunBlock testBlock) {
   NSInteger repeats = GRPCGetTestFlakeRepeats();
   NSInteger runs = 0;
 
   while (runs < repeats) {
-    __block XCTWaiterResult result;
     GRPCResetCallConnections();
 
-    testBlock(^(XCTestCase *testCase, NSArray<XCTestExpectation *> *expectations,
-                NSTimeInterval timeout) {
-      if (runs < repeats - 1) {
-        result = [XCTWaiter waitForExpectations:expectations timeout:timeout];
-      } else {
-        XCTWaiter *waiter = [[XCTWaiter alloc] initWithDelegate:testCase];
-        result = [waiter waitForExpectations:expectations timeout:timeout];
-      }
-    });
+    const BOOL isLastRun = (runs == repeats - 1);
+    __block XCTWaiterResult result;
+    __block BOOL assertionSuccess = YES;
 
-    if (result == XCTWaiterResultCompleted) {
+    GRPCTestWaiter waiterBlock =
+        ^(NSArray<XCTestExpectation *> *expectations, NSTimeInterval timeout) {
+          if (isLastRun) {
+            XCTWaiter *waiter = [[XCTWaiter alloc] initWithDelegate:testCase];
+            result = [waiter waitForExpectations:expectations timeout:timeout];
+          } else {
+            result = [XCTWaiter waitForExpectations:expectations timeout:timeout];
+          }
+        };
+
+    GRPCTestAssert assertBlock = ^(BOOL expressionValue, NSString *message) {
+      BOOL result = !!(expressionValue);
+      assertionSuccess = assertionSuccess && result;
+      if (isLastRun && !result) {
+        _XCTPrimitiveFail(testCase, @"%@", message);
+      }
+    };
+
+    testBlock(waiterBlock, assertBlock);
+
+    if (result == XCTWaiterResultCompleted && assertionSuccess) {
       return YES;
     }
     runs += 1;

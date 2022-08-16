@@ -18,7 +18,6 @@
 
 #include <functional>
 #include <memory>
-#include <type_traits>
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
@@ -38,7 +37,6 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/context.h"
-#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/service_config/service_config_call_data.h"

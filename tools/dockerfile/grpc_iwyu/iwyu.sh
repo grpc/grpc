@@ -46,9 +46,12 @@ export ENABLED_MODULES='
   src/core/ext
   src/core/lib
   src/cpp
+  test/core/end2end
+  test/core/memory_usage
   test/core/promise
   test/core/resource_quota
   test/core/uri
+  test/core/util
 '
 
 export DISABLED_MODULES='
@@ -66,6 +69,7 @@ cat compile_commands.json | jq -r '.[].file'                                    
   | grep -v -E "/upb-generated/|/upbdefs-generated/"                             \
   | grep -v -E $EXCLUSION_REGEX                                                  \
   | grep -v src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h \
+  | grep -v test/core/end2end/end2end_tests.cc                                   \
   | sort                                                                         \
   > iwyu_files0.txt
 
@@ -80,6 +84,8 @@ ${IWYU_ROOT}/iwyu/iwyu_tool.py -p compile_commands_for_iwyu.json $1       \
        -Xiwyu --update_comments                                           \
        -Xiwyu --mapping_file=${IWYU_ROOT}/tools/distrib/iwyu_mappings.imp \
   | grep -v -E "port_platform.h"                                          \
+  | grep -v -E "repeated_ptr_field.h"                                     \
+  | grep -v -E "repeated_field.h"                                         \
   | grep -v -E "^(- )?namespace "                                         \
   > iwyu/iwyu.`echo $1 | sha1sum`.out
 ' > iwyu/run_iwyu_on.sh

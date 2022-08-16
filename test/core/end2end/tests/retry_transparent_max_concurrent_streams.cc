@@ -14,28 +14,20 @@
 // limitations under the License.
 //
 
-#include <stdio.h>
+#include <stdint.h>
 #include <string.h>
 
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
+#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/channel_stack_builder.h"
-#include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/surface/channel_init.h"
-#include "src/core/lib/transport/error_utils.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
-#include "test/core/end2end/tests/cancel_test_helpers.h"
+#include "test/core/util/test_config.h"
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
@@ -175,7 +167,6 @@ static void test_retry_transparent_max_concurrent_streams(
   cqv.Expect(tag(101), true);
   cqv.Verify();
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/service/method"));
-  GPR_ASSERT(0 == call_details.flags);
   grpc_call_details_destroy(&call_details);
   grpc_metadata_array_destroy(&request_metadata_recv);
 
@@ -293,7 +284,6 @@ static void test_retry_transparent_max_concurrent_streams(
   cqv.Expect(tag(201), true);
   cqv.Verify();
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/service/method"));
-  GPR_ASSERT(0 == call_details.flags);
   grpc_call_details_destroy(&call_details);
   // Make sure the "grpc-previous-rpc-attempts" header was NOT sent, since
   // we don't do that for transparent retries.

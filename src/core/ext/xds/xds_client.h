@@ -32,7 +32,6 @@
 #include "absl/strings/string_view.h"
 #include "upb/def.hpp"
 
-#include "src/core/ext/xds/certificate_provider_store.h"
 #include "src/core/ext/xds/xds_api.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_client_stats.h"
@@ -84,10 +83,6 @@ class XdsClient : public DualRefCounted<XdsClient> {
 
   XdsTransportFactory* transport_factory() const {
     return transport_factory_.get();
-  }
-
-  CertificateProviderStore& certificate_provider_store() {
-    return *certificate_provider_store_;
   }
 
   void Orphan() override;
@@ -297,13 +292,13 @@ class XdsClient : public DualRefCounted<XdsClient> {
       const std::set<std::string>& clusters) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   RefCountedPtr<ChannelState> GetOrCreateChannelStateLocked(
-      const XdsBootstrap::XdsServer& server) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+      const XdsBootstrap::XdsServer& server, const char* reason)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   std::unique_ptr<XdsBootstrap> bootstrap_;
   OrphanablePtr<XdsTransportFactory> transport_factory_;
   const Duration request_timeout_;
   const bool xds_federation_enabled_;
-  OrphanablePtr<CertificateProviderStore> certificate_provider_store_;
   XdsApi api_;
   WorkSerializer work_serializer_;
 

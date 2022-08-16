@@ -82,7 +82,6 @@ def _update_visibility(visibility):
     PUBLIC = ["//visibility:public"]
     PRIVATE = ["//:__subpackages__"]
     VISIBILITY_TARGETS = {
-        "alt_gpr_base_legacy": PRIVATE,
         "alt_grpc++_base_legacy": PRIVATE,
         "alt_grpc_base_legacy": PRIVATE,
         "alt_grpc++_base_unsecure_legacy": PRIVATE,
@@ -358,7 +357,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
     if language.upper() == "C":
         copts = copts + if_not_windows(["-std=c11"])
 
-    core_deps = deps + _get_external_deps(external_deps)
+    core_deps = deps + _get_external_deps(external_deps) + ["//test/core/util:grpc_suppressions"]
 
     # Test args for all tests
     test_args = {
@@ -434,7 +433,7 @@ def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], da
         data = data,
         testonly = testonly,
         linkshared = linkshared,
-        deps = deps + _get_external_deps(external_deps),
+        deps = deps + _get_external_deps(external_deps) + ["//test/core/util:grpc_suppressions"],
         copts = GRPC_DEFAULT_COPTS + copts,
         linkopts = if_not_windows(["-pthread"]) + linkopts,
         tags = tags,
@@ -447,6 +446,10 @@ def grpc_generate_one_off_targets():
     native.alias(
         name = "grpc_objc",
         actual = "//:grpc",
+    )
+    native.config_setting(
+        name = "windows_other",
+        values = {"define": "GRPC_WINDOWS_OTHER=1"},
     )
 
 def grpc_generate_objc_one_off_targets():

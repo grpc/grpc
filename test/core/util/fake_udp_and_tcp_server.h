@@ -17,17 +17,11 @@
 #include <grpc/support/port_platform.h>
 
 #include <functional>
-#include <set>
+#include <memory>
 #include <string>
 #include <thread>
 
-#include "absl/memory/memory.h"
-
-#include <grpc/slice.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/time.h>
+#include <grpc/support/sync.h>
 
 namespace grpc_core {
 namespace testing {

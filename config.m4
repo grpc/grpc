@@ -55,7 +55,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/filters/client_channel/global_subchannel_pool.cc \
     src/core/ext/filters/client_channel/health/health_check_client.cc \
     src/core/ext/filters/client_channel/http_proxy.cc \
-    src/core/ext/filters/client_channel/lb_policy.cc \
     src/core/ext/filters/client_channel/lb_policy/address_filtering.cc \
     src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc \
     src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc \
@@ -75,7 +74,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_impl.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_resolver.cc \
-    src/core/ext/filters/client_channel/lb_policy_registry.cc \
     src/core/ext/filters/client_channel/local_subchannel_pool.cc \
     src/core/ext/filters/client_channel/proxy_mapper_registry.cc \
     src/core/ext/filters/client_channel/resolver/binder/binder_resolver.cc \
@@ -144,6 +142,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upb-generated/envoy/admin/v3/certs.upb.c \
     src/core/ext/upb-generated/envoy/admin/v3/clusters.upb.c \
     src/core/ext/upb-generated/envoy/admin/v3/config_dump.upb.c \
+    src/core/ext/upb-generated/envoy/admin/v3/config_dump_shared.upb.c \
     src/core/ext/upb-generated/envoy/admin/v3/init_dump.upb.c \
     src/core/ext/upb-generated/envoy/admin/v3/listeners.upb.c \
     src/core/ext/upb-generated/envoy/admin/v3/memory.upb.c \
@@ -197,6 +196,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upb-generated/envoy/config/trace/v3/http_tracer.upb.c \
     src/core/ext/upb-generated/envoy/config/trace/v3/lightstep.upb.c \
     src/core/ext/upb-generated/envoy/config/trace/v3/opencensus.upb.c \
+    src/core/ext/upb-generated/envoy/config/trace/v3/opentelemetry.upb.c \
     src/core/ext/upb-generated/envoy/config/trace/v3/service.upb.c \
     src/core/ext/upb-generated/envoy/config/trace/v3/skywalking.upb.c \
     src/core/ext/upb-generated/envoy/config/trace/v3/trace.upb.c \
@@ -237,6 +237,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upb-generated/envoy/type/v3/http_status.upb.c \
     src/core/ext/upb-generated/envoy/type/v3/percent.upb.c \
     src/core/ext/upb-generated/envoy/type/v3/range.upb.c \
+    src/core/ext/upb-generated/envoy/type/v3/ratelimit_strategy.upb.c \
     src/core/ext/upb-generated/envoy/type/v3/ratelimit_unit.upb.c \
     src/core/ext/upb-generated/envoy/type/v3/semantic_version.upb.c \
     src/core/ext/upb-generated/envoy/type/v3/token_bucket.upb.c \
@@ -288,6 +289,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upbdefs-generated/envoy/admin/v3/certs.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/admin/v3/clusters.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/admin/v3/config_dump.upbdefs.c \
+    src/core/ext/upbdefs-generated/envoy/admin/v3/config_dump_shared.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/admin/v3/init_dump.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/admin/v3/listeners.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/admin/v3/memory.upbdefs.c \
@@ -341,6 +343,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upbdefs-generated/envoy/config/trace/v3/http_tracer.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/config/trace/v3/lightstep.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/config/trace/v3/opencensus.upbdefs.c \
+    src/core/ext/upbdefs-generated/envoy/config/trace/v3/opentelemetry.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/config/trace/v3/service.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/config/trace/v3/skywalking.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/config/trace/v3/trace.upbdefs.c \
@@ -379,6 +382,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upbdefs-generated/envoy/type/v3/http_status.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/type/v3/percent.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/type/v3/range.upbdefs.c \
+    src/core/ext/upbdefs-generated/envoy/type/v3/ratelimit_strategy.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/type/v3/ratelimit_unit.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/type/v3/semantic_version.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/type/v3/token_bucket.upbdefs.c \
@@ -465,18 +469,24 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/debug/stats_data.cc \
     src/core/lib/debug/trace.cc \
     src/core/lib/event_engine/channel_args_endpoint_config.cc \
+    src/core/lib/event_engine/default_event_engine.cc \
     src/core/lib/event_engine/default_event_engine_factory.cc \
-    src/core/lib/event_engine/event_engine.cc \
-    src/core/lib/event_engine/iomgr_engine/iomgr_engine.cc \
-    src/core/lib/event_engine/iomgr_engine/thread_pool.cc \
-    src/core/lib/event_engine/iomgr_engine/timer.cc \
-    src/core/lib/event_engine/iomgr_engine/timer_heap.cc \
-    src/core/lib/event_engine/iomgr_engine/timer_manager.cc \
+    src/core/lib/event_engine/executor/threaded_executor.cc \
+    src/core/lib/event_engine/forkable.cc \
     src/core/lib/event_engine/memory_allocator.cc \
+    src/core/lib/event_engine/posix_engine/posix_engine.cc \
+    src/core/lib/event_engine/posix_engine/timer.cc \
+    src/core/lib/event_engine/posix_engine/timer_heap.cc \
+    src/core/lib/event_engine/posix_engine/timer_manager.cc \
     src/core/lib/event_engine/resolved_address.cc \
     src/core/lib/event_engine/slice.cc \
     src/core/lib/event_engine/slice_buffer.cc \
+    src/core/lib/event_engine/thread_pool.cc \
     src/core/lib/event_engine/trace.cc \
+    src/core/lib/event_engine/utils.cc \
+    src/core/lib/event_engine/windows/iocp.cc \
+    src/core/lib/event_engine/windows/win_socket.cc \
+    src/core/lib/event_engine/windows/windows_engine.cc \
     src/core/lib/gpr/alloc.cc \
     src/core/lib/gpr/atm.cc \
     src/core/lib/gpr/cpu_iphone.cc \
@@ -598,9 +608,12 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/wakeup_fd_nospecial.cc \
     src/core/lib/iomgr/wakeup_fd_pipe.cc \
     src/core/lib/iomgr/wakeup_fd_posix.cc \
+    src/core/lib/json/json_object_loader.cc \
     src/core/lib/json/json_reader.cc \
     src/core/lib/json/json_util.cc \
     src/core/lib/json/json_writer.cc \
+    src/core/lib/load_balancing/lb_policy.cc \
+    src/core/lib/load_balancing/lb_policy_registry.cc \
     src/core/lib/matchers/matchers.cc \
     src/core/lib/profiling/basic_timers.cc \
     src/core/lib/profiling/stap_timers.cc \
@@ -612,6 +625,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/resource_quota/api.cc \
     src/core/lib/resource_quota/arena.cc \
     src/core/lib/resource_quota/memory_quota.cc \
+    src/core/lib/resource_quota/periodic_update.cc \
     src/core/lib/resource_quota/resource_quota.cc \
     src/core/lib/resource_quota/thread_quota.cc \
     src/core/lib/resource_quota/trace.cc \
@@ -1315,12 +1329,15 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/config)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/debug)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/event_engine)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/event_engine/iomgr_engine)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/event_engine/executor)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/event_engine/posix_engine)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/event_engine/windows)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gpr)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gprpp)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/http)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/iomgr)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/json)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/load_balancing)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/matchers)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/profiling)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/promise)
