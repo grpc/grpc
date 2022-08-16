@@ -19,8 +19,7 @@ from absl.testing import absltest
 
 from framework import xds_k8s_testcase
 from framework.infrastructure import k8s
-from framework.test_app import server_app
-import framework.test_app.runners.k8s.k8s_xds_server_runner
+from framework.test_app.runners.k8s import k8s_xds_server_runner
 
 logger = logging.getLogger(__name__)
 flags.adopt_module_key_flags(xds_k8s_testcase)
@@ -28,6 +27,7 @@ flags.adopt_module_key_flags(xds_k8s_testcase)
 # Type aliases
 _XdsTestServer = xds_k8s_testcase.XdsTestServer
 _XdsTestClient = xds_k8s_testcase.XdsTestClient
+_KubernetesServerRunner = k8s_xds_server_runner.KubernetesServerRunner
 
 
 class FailoverTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
@@ -36,7 +36,7 @@ class FailoverTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
 
     def setUp(self):
         super().setUp()
-        self.secondary_server_runner = framework.test_app.runners.k8s.k8s_xds_server_runner.KubernetesServerRunner(
+        self.secondary_server_runner = _KubernetesServerRunner(
             k8s.KubernetesNamespace(self.secondary_k8s_api_manager,
                                     self.server_namespace),
             deployment_name=self.server_name + '-alt',
