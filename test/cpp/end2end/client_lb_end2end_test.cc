@@ -837,8 +837,8 @@ TEST_F(PickFirstTest, ResetConnectionBackoff) {
   // Wait for connect.  Should happen as soon as the client connects to
   // the newly started server, which should be before the initial
   // backoff timeout elapses.
-  EXPECT_TRUE(
-      channel->WaitForConnected(grpc_timeout_milliseconds_to_deadline(20)));
+  EXPECT_TRUE(channel->WaitForConnected(
+      grpc_timeout_milliseconds_to_deadline(kInitialBackOffMs)));
   const gpr_timespec t1 = gpr_now(GPR_CLOCK_MONOTONIC);
   const grpc_core::Duration waited =
       grpc_core::Duration::FromTimespec(gpr_time_sub(t1, t0));
