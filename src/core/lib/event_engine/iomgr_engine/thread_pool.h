@@ -39,7 +39,7 @@ class ThreadPool final : public grpc_event_engine::experimental::Forkable {
   explicit ThreadPool(int reserve_threads);
   ~ThreadPool() override;
 
-  void Add(std::function<void()>& callback);
+  void Add(const std::function<void()>& callback);
 
   // Forkable
   void PrepareFork() override;

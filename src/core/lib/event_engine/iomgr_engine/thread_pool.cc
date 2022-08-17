@@ -109,7 +109,7 @@ ThreadPool::~ThreadPool() {
   ReapThreads(&dead_threads_);
 }
 
-void ThreadPool::Add(std::function<void()>& callback) {
+void ThreadPool::Add(const std::function<void()>& callback) {
   grpc_core::MutexLock lock(&mu_);
   // Add works to the callbacks list
   callbacks_.push(callback);
