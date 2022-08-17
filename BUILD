@@ -2237,6 +2237,7 @@ grpc_cc_library(
     deps = [
         "gpr",
         "gpr_platform",
+        "no_destruct",
     ],
 )
 
