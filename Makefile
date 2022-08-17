@@ -1447,6 +1447,7 @@ LIBGRPC_SRC = \
     src/core/lib/event_engine/channel_args_endpoint_config.cc \
     src/core/lib/event_engine/default_event_engine_factory.cc \
     src/core/lib/event_engine/event_engine.cc \
+    src/core/lib/event_engine/forkable.cc \
     src/core/lib/event_engine/iomgr_engine/iomgr_engine.cc \
     src/core/lib/event_engine/iomgr_engine/thread_pool.cc \
     src/core/lib/event_engine/iomgr_engine/time_averaged_stats.cc \
@@ -1918,6 +1919,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/event_engine/channel_args_endpoint_config.cc \
     src/core/lib/event_engine/default_event_engine_factory.cc \
     src/core/lib/event_engine/event_engine.cc \
+    src/core/lib/event_engine/forkable.cc \
     src/core/lib/event_engine/iomgr_engine/iomgr_engine.cc \
     src/core/lib/event_engine/iomgr_engine/thread_pool.cc \
     src/core/lib/event_engine/iomgr_engine/time_averaged_stats.cc \

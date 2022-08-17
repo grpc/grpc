@@ -1726,6 +1726,8 @@ src/core/lib/event_engine/channel_args_endpoint_config.h \
 src/core/lib/event_engine/default_event_engine_factory.cc \
 src/core/lib/event_engine/event_engine.cc \
 src/core/lib/event_engine/event_engine_factory.h \
+src/core/lib/event_engine/forkable.cc \
+src/core/lib/event_engine/forkable.h \
 src/core/lib/event_engine/handle_containers.h \
 src/core/lib/event_engine/iomgr_engine/iomgr_engine.cc \
 src/core/lib/event_engine/iomgr_engine/iomgr_engine.h \
@@ -1812,6 +1814,7 @@ src/core/lib/gprpp/match.h \
 src/core/lib/gprpp/memory.h \
 src/core/lib/gprpp/mpscq.cc \
 src/core/lib/gprpp/mpscq.h \
+src/core/lib/gprpp/no_destruct.h \
 src/core/lib/gprpp/orphanable.h \
 src/core/lib/gprpp/overload.h \
 src/core/lib/gprpp/ref_counted.h \
