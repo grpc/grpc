@@ -5461,6 +5461,9 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - grpc++_test_util
+  platforms:
+  - linux
+  - posix
 - name: end2end_test
   gtest: true
   build: test
