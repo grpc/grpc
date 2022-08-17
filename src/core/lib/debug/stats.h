@@ -55,8 +55,6 @@ extern Stats* const g_stats_data;
       &GRPC_THREAD_STATS_DATA()->histograms[histogram##_FIRST_SLOT + (index)], \
       1))
 
-GRPC_DEPRECATED("function is no longer needed")
-inline void grpc_stats_init(void) {}
 void grpc_stats_collect(grpc_stats_data* output);
 // c = b-a
 void grpc_stats_diff(const grpc_stats_data* b, const grpc_stats_data* a,
