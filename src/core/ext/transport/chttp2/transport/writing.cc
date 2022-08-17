@@ -269,16 +269,6 @@ class WriteContext {
     GPR_TIMER_SCOPE("grpc_chttp2_begin_write", 0);
   }
 
-  // TODO(ctiller): make this the destructor
-  void FlushStats() {
-    GRPC_STATS_INC_HTTP2_SEND_INITIAL_METADATA_PER_WRITE(
-        initial_metadata_writes_);
-    GRPC_STATS_INC_HTTP2_SEND_MESSAGE_PER_WRITE(message_writes_);
-    GRPC_STATS_INC_HTTP2_SEND_TRAILING_METADATA_PER_WRITE(
-        trailing_metadata_writes_);
-    GRPC_STATS_INC_HTTP2_SEND_FLOWCTL_PER_WRITE(flow_control_writes_);
-  }
-
   void FlushSettings() {
     if (t_->dirtied_local_settings && !t_->sent_local_settings) {
       grpc_slice_buffer_add(
@@ -515,9 +505,11 @@ class StreamWriteContext {
 
     if (!data_send_context.AnyOutgoing()) {
       if (t_->flow_control.remote_window() <= 0) {
+        GRPC_STATS_INC_HTTP2_TRANSPORT_STALLS();
         report_stall(t_, s_, "transport");
         grpc_chttp2_list_add_stalled_by_transport(t_, s_);
       } else if (data_send_context.stream_remote_window() <= 0) {
+        GRPC_STATS_INC_HTTP2_STREAM_STALLS();
         report_stall(t_, s_, "stream");
         grpc_chttp2_list_add_stalled_by_stream(t_, s_);
       }

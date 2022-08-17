@@ -766,7 +766,6 @@ class HPackParser::String {
   // decoded byte.
   template <typename Out>
   static bool ParseHuff(Input* input, uint32_t length, Out output) {
-    GRPC_STATS_INC_HPACK_RECV_HUFFMAN();
     int16_t state = 0;
     // Parse one half byte... we leverage some lookup tables to keep the logic
     // here really simple.
@@ -799,7 +798,6 @@ class HPackParser::String {
   // Parse some uncompressed string bytes.
   static absl::optional<String> ParseUncompressed(Input* input,
                                                   uint32_t length) {
-    GRPC_STATS_INC_HPACK_RECV_UNCOMPRESSED();
     // Check there's enough bytes
     if (input->remaining() < length) {
       return input->UnexpectedEOF(absl::optional<String>());
@@ -1161,7 +1159,6 @@ class HPackParser::Parser {
     if (GPR_UNLIKELY(elem == nullptr)) {
       return InvalidHPackIndexError(*index, false);
     }
-    GRPC_STATS_INC_HPACK_RECV_INDEXED();
     return FinishHeaderOmitFromTable(*elem);
   }
 
