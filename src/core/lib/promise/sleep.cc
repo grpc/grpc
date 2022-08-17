@@ -18,14 +18,13 @@
 
 #include <utility>
 
-#include "poll.h"
-
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/activity.h"
+#include "src/core/lib/promise/poll.h"
 
 namespace grpc_core {
 
