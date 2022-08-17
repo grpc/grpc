@@ -73,9 +73,9 @@ std::shared_ptr<EventEngine> GetDefaultEventEngine() {
   return engine;
 }
 
-void ResetDefaultEventEngine(std::shared_ptr<EventEngine> event_engine) {
+void ResetDefaultEventEngine() {
   grpc_core::MutexLock lock(&*g_mu);
-  *g_event_engine = event_engine;
+  g_event_engine->reset();
 }
 
 }  // namespace experimental

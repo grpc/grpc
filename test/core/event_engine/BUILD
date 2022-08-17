@@ -109,3 +109,13 @@ grpc_cc_library(
         "//:gpr",
     ],
 )
+
+grpc_cc_library(
+    name = "mock_event_engine",
+    hdrs = ["mock_event_engine.h"],
+    external_deps = ["gtest"],
+    deps = [
+        "//:event_engine_base_hdrs",
+        "//:gpr",
+    ],
+)

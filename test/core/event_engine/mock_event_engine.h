@@ -34,6 +34,7 @@ class MockEventEngine : public EventEngine {
               (OnConnectCallback on_connect, const ResolvedAddress& addr,
                const EndpointConfig& args, MemoryAllocator memory_allocator,
                Duration timeout));
+  MOCK_METHOD(bool, CancelConnect, (ConnectionHandle handle));
   MOCK_METHOD(bool, IsWorkerThread, ());
   MOCK_METHOD(std::unique_ptr<DNSResolver>, GetDNSResolver,
               (const DNSResolver::ResolverOptions& options));

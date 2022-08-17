@@ -355,6 +355,7 @@ grpc_cc_test(
         "//:exec_ctx",
         "//:grpc",
         "//:sleep",
+        "//test/core/event_engine:mock_event_engine",
     ],
 )
 

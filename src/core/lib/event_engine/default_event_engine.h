@@ -38,8 +38,7 @@ namespace experimental {
 std::shared_ptr<EventEngine> GetDefaultEventEngine();
 
 /// Reset the default event engine
-void ResetDefaultEventEngine(
-    std::shared_ptr<EventEngine> event_engine = nullptr);
+void ResetDefaultEventEngine();
 
 }  // namespace experimental
 }  // namespace grpc_event_engine
