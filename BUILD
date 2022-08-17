@@ -2343,7 +2343,6 @@ grpc_cc_library(
         "absl/base:core_headers",
         "absl/functional:any_invocable",
     ],
-    tags = ["grpc-autodeps"],
     deps = [
         "forkable",
         "gpr_base",

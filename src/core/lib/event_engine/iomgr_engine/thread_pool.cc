@@ -20,6 +20,8 @@
 
 #include "src/core/lib/event_engine/iomgr_engine/thread_pool.h"
 
+#include <utility>
+
 #include "absl/functional/any_invocable.h"
 
 #include "src/core/lib/gprpp/thd.h"
