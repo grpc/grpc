@@ -142,7 +142,7 @@ FaultInjectionFilter::FaultInjectionFilter(ChannelFilter::Args filter_args)
           filter_args.channel_stack(),
           filter_args.uninitialized_channel_element())),
       service_config_parser_index_(
-          FaultInjectionServiceConfigParser::ParserIndex()) {}
+          FaultInjectionServiceConfigParser::ParserIndex()), mu_(new Mutex) {}
 
 // Construct a promise for one call.
 ArenaPromise<ServerMetadataHandle> FaultInjectionFilter::MakeCallPromise(
@@ -222,14 +222,21 @@ FaultInjectionFilter::MakeInjectionDecision(
     }
   }
   // Roll the dice
-  const bool delay_request =
-      delay != Duration::Zero() &&
-      UnderFraction(&delay_rand_generator_, delay_percentage_numerator,
-                    fi_policy->delay_percentage_denominator);
-  const bool abort_request =
-      abort_code != GRPC_STATUS_OK &&
-      UnderFraction(&abort_rand_generator_, abort_percentage_numerator,
-                    fi_policy->abort_percentage_denominator);
+  bool delay_request = delay != Duration::Zero();
+  bool abort_request = abort_code != GRPC_STATUS_OK;
+  if (delay_request || abort_request) {
+    MutexLock lock(mu_.get());
+    if (delay_request) {
+      delay_request =
+          UnderFraction(&delay_rand_generator_, delay_percentage_numerator,
+                        fi_policy->delay_percentage_denominator);
+    }
+    if (abort_request) {
+      abort_request =
+          UnderFraction(&abort_rand_generator_, abort_percentage_numerator,
+                        fi_policy->abort_percentage_denominator);
+    }
+  }
 
   return InjectionDecision(
       fi_policy->max_faults, delay_request ? delay : Duration::Zero(),
