@@ -33,19 +33,8 @@ typedef intptr_t gpr_atm;
 #define GPR_ATM_MAX INTPTR_MAX
 #define GPR_ATM_MIN INTPTR_MIN
 
-#ifdef GPR_LOW_LEVEL_COUNTERS
-extern gpr_atm gpr_counter_atm_cas;
-extern gpr_atm gpr_counter_atm_add;
-#define GPR_ATM_INC_COUNTER(counter) \
-  __atomic_fetch_add(&counter, 1, __ATOMIC_RELAXED)
-#define GPR_ATM_INC_CAS_THEN(blah) \
-  (GPR_ATM_INC_COUNTER(gpr_counter_atm_cas), blah)
-#define GPR_ATM_INC_ADD_THEN(blah) \
-  (GPR_ATM_INC_COUNTER(gpr_counter_atm_add), blah)
-#else
 #define GPR_ATM_INC_CAS_THEN(blah) blah
 #define GPR_ATM_INC_ADD_THEN(blah) blah
-#endif
 
 #define gpr_atm_full_barrier() (__atomic_thread_fence(__ATOMIC_SEQ_CST))
 
