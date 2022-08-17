@@ -473,8 +473,8 @@ class PromiseActivity final : public FreestandingActivity,
   // Notification that we're no longer executing - it's ok to destruct the
   // promise.
   void MarkDone() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu()) {
-    GPR_ASSERT(!done_);
-    done_ = true;
+    GPR_ASSERT(!absl::exchange(done_, true));
+    ScopedContext contexts(this);
     Destruct(&promise_holder_.promise);
   }
 
