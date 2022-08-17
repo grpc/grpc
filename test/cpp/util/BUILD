@@ -332,6 +332,7 @@ grpc_cc_binary(
     srcs = ["channelz_sampler.cc"],
     external_deps = [
         "absl/flags:flag",
+        "absl/strings",
     ],
     language = "c++",
     tags = [

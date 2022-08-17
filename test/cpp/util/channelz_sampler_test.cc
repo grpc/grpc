@@ -26,6 +26,7 @@
 #include <string>
 #include <thread>
 
+#include "absl/strings/str_cat.h"
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
@@ -164,6 +165,12 @@ TEST(ChannelzSamplerTest, SimpleTest) {
   client_thread_2.join();
 }
 
+int GenerateUniuquePortNumber() {
+  return 10000 + (std::hash<pid_t>()(getpid()) +
+                  std::hash<std::thread::id>{}(std::this_thread::get_id())) %
+                     10000;
+}
+
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
@@ -174,6 +181,9 @@ int main(int argc, char** argv) {
   } else {
     g_root = ".";
   }
+
+  /// ensures the target address is unique even if this test is run in parallel
+  server_address = absl::StrCat("0.0.0.0:", GenerateUniuquePortNumber());
   int ret = RUN_ALL_TESTS();
   return ret;
 }
