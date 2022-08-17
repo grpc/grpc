@@ -18,6 +18,9 @@ set -e
 BUILDOZER_VERSION="4.2.2"
 TEMP_BUILDOZER_PATH="/tmp/buildozer-for-grpc"
 
+MAX_DOWNLOAD_RETRY=5
+DOWNLOAD_WAITING_INTERVAL_SECS=10
+
 function error_handling() {
     error=$1
     if [[ -n "$error" ]]; then
@@ -34,9 +37,8 @@ function download_buildozer() {
         *)          error_handling "Unsupported platform: ${platform}";;
     esac
 
-    max_retry=5
     download_success=0
-    for i in $(seq 1 $max_retry); do
+    for i in $(seq 1 $MAX_DOWNLOAD_RETRY); do
         if [ -x "$(command -v curl)" ]; then
             http_code=`curl -L -o ${TEMP_BUILDOZER_PATH} -w "%{http_code}" ${download_link}`
             if [ $http_code -eq "200" ]; then
@@ -50,15 +52,14 @@ function download_buildozer() {
 
         if [ $download_success -eq 1 ]; then
             break
-        elif [ $i -lt $max_retry ]; then
-            secs_to_sleep=10
-            echo "Failed to download buildozer: retrying in $secs_to_sleep secs"
-            sleep $secs_to_sleep
+        elif [ $i -lt $MAX_DOWNLOAD_RETRY ]; then
+            echo "Failed to download buildozer: retrying in $DOWNLOAD_WAITING_INTERVAL_SECS secs"
+            sleep $DOWNLOAD_WAITING_INTERVAL_SECS
         fi
     done
 
     if [ $download_success -ne 1 ]; then
-        error_handling "Failed to download buildozer after $max_retry tries"
+        error_handling "Failed to download buildozer after $MAX_DOWNLOAD_RETRY tries"
     fi
 
     chmod +x ${TEMP_BUILDOZER_PATH}
