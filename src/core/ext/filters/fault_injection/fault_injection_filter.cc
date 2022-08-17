@@ -27,6 +27,7 @@
 #include <string>
 #include <utility>
 
+#include "absl/random/distributions.h"
 #include "absl/status/status.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
@@ -70,12 +71,14 @@ auto AsInt(absl::string_view s) -> absl::optional<T> {
   return absl::nullopt;
 }
 
-inline bool UnderFraction(const uint32_t numerator,
+inline bool UnderFraction(absl::InsecureBitGen* rand_generator,
+                          const uint32_t numerator,
                           const uint32_t denominator) {
   if (numerator <= 0) return false;
   if (numerator >= denominator) return true;
   // Generate a random number in [0, denominator).
-  const uint32_t random_number = rand() % denominator;
+  const uint32_t random_number =
+      absl::Uniform(absl::IntervalClosedOpen, *rand_generator, 0u, denominator);
   return random_number < numerator;
 }
 
@@ -221,11 +224,11 @@ FaultInjectionFilter::MakeInjectionDecision(
   // Roll the dice
   const bool delay_request =
       delay != Duration::Zero() &&
-      UnderFraction(delay_percentage_numerator,
+      UnderFraction(&delay_rand_generator_, delay_percentage_numerator,
                     fi_policy->delay_percentage_denominator);
   const bool abort_request =
       abort_code != GRPC_STATUS_OK &&
-      UnderFraction(abort_percentage_numerator,
+      UnderFraction(&abort_rand_generator_, abort_percentage_numerator,
                     fi_policy->abort_percentage_denominator);
 
   return InjectionDecision(

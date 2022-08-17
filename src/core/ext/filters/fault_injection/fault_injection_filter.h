@@ -21,6 +21,7 @@
 
 #include <stddef.h>
 
+#include "absl/random/random.h"
 #include "absl/status/statusor.h"
 
 #include "src/core/lib/channel/channel_args.h"
@@ -60,6 +61,8 @@ class FaultInjectionFilter : public ChannelFilter {
   // The relative index of instances of the same filter.
   size_t index_;
   const size_t service_config_parser_index_;
+  absl::InsecureBitGen abort_rand_generator_;
+  absl::InsecureBitGen delay_rand_generator_;
 };
 
 }  // namespace grpc_core
