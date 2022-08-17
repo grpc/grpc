@@ -1002,7 +1002,7 @@ size_t XdsEnd2endTest::WaitForAllBackends(
 absl::optional<AdsServiceImpl::ResponseState> XdsEnd2endTest::WaitForNack(
     const grpc_core::DebugLocation& debug_location,
     std::function<absl::optional<AdsServiceImpl::ResponseState>()> get_state,
-    StatusCode expected_status) {
+    const RpcOptions& rpc_options, StatusCode expected_status) {
   absl::optional<AdsServiceImpl::ResponseState> response_state;
   auto deadline = absl::Now() + absl::Seconds(30);
   auto continue_predicate = [&]() {
@@ -1016,7 +1016,7 @@ absl::optional<AdsServiceImpl::ResponseState> XdsEnd2endTest::WaitForNack(
   do {
     // Some tests for example the XdsSecurityTests need a higher timeout from
     // the default 1000ms for some builds.
-    const Status status = SendRpc(RpcOptions().set_timeout_ms(5000));
+    const Status status = SendRpc(rpc_options);
     EXPECT_EQ(expected_status, status.error_code())
         << "code=" << status.error_code()
         << " message=" << status.error_message() << " at "
