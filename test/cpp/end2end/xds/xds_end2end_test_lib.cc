@@ -1014,7 +1014,9 @@ absl::optional<AdsServiceImpl::ResponseState> XdsEnd2endTest::WaitForNack(
            response_state->state != AdsServiceImpl::ResponseState::NACKED;
   };
   do {
-    const Status status = SendRpc();
+    // Some tests for example the XdsSecurityTests need a higher timeout from
+    // the default 1000ms for some builds.
+    const Status status = SendRpc(RpcOptions().set_timeout_ms(5000));
     EXPECT_EQ(expected_status, status.error_code())
         << "code=" << status.error_code()
         << " message=" << status.error_message() << " at "

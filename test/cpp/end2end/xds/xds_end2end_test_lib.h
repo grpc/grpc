@@ -717,7 +717,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
   struct RpcOptions {
     RpcService service = SERVICE_ECHO;
     RpcMethod method = METHOD_ECHO;
-    int timeout_ms = 5000;
+    int timeout_ms = 1000;
     bool wait_for_ready = false;
     std::vector<std::pair<std::string, std::string>> metadata;
     // These options are used by the backend service impl.

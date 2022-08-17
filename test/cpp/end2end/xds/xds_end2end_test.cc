@@ -385,7 +385,7 @@ class XdsSecurityTest : public XdsEnd2endTest {
             // error message here.
             return false;
           },
-          /* timeout_ms= */ 20 * 1000);
+          /* timeout_ms= */ 20 * 1000, RpcOptions().set_timeout_ms(5000));
     } else {
       backends_[backend_index_]->backend_service()->ResetCounters();
       SendRpcsUntil(
@@ -409,7 +409,7 @@ class XdsSecurityTest : public XdsEnd2endTest {
                       expected_authenticated_identity);
             return false;
           },
-          /* timeout_ms= */ 20 * 1000, RpcOptions());
+          /* timeout_ms= */ 20 * 1000, RpcOptions().set_timeout_ms(5000));
     }
   }
 
@@ -787,7 +787,7 @@ TEST_P(XdsSecurityTest, TestTlsConfigurationInCombinedValidationContext) {
       ->set_instance_name("fake_plugin1");
   transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
   balancer_->ads_service()->SetCdsResource(cluster);
-  CheckRpcSendOk(DEBUG_LOCATION);
+  CheckRpcSendOk(DEBUG_LOCATION, 1, RpcOptions().set_timeout_ms(5000));
 }
 
 // TODO(yashykt): Remove this test once we stop supporting old fields
@@ -804,7 +804,7 @@ TEST_P(XdsSecurityTest,
       ->set_instance_name("fake_plugin1");
   transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
   balancer_->ads_service()->SetCdsResource(cluster);
-  CheckRpcSendOk(DEBUG_LOCATION);
+  CheckRpcSendOk(DEBUG_LOCATION, 1, RpcOptions().set_timeout_ms(5000));
 }
 
 TEST_P(XdsSecurityTest, TestMtlsConfigurationWithNoSanMatchers) {
