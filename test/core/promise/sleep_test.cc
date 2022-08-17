@@ -21,6 +21,7 @@
 #include <vector>
 
 #include "absl/synchronization/notification.h"
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
