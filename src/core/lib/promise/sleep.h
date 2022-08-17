@@ -60,12 +60,17 @@ class Sleep final {
     explicit ActiveClosure(Timestamp deadline);
 
     void Run() override;
+    // After calling Cancel, it's no longer safe to access this object.
     void Cancel();
 
+    bool HasRun() const;
+
    private:
+    bool Unref();
+
     Waker waker_;
     // One ref dropped by Run(), the other by Cancel().
-    RefCount refs_{2};
+    std::atomic<int> refs_{2};
     const grpc_event_engine::experimental::EventEngine::TaskHandle
         timer_handle_;
   };
