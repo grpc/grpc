@@ -145,19 +145,10 @@ INSTANTIATE_TEST_SUITE_P(HistogramTestCases, HistogramTest,
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-/* Only run this test if GRPC_COLLECT_STATS is defined or if it is a debug
- * build.
- */
-#if defined(GRPC_COLLECT_STATS) || !defined(NDEBUG)
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   grpc_init();
   int ret = RUN_ALL_TESTS();
   grpc_shutdown();
   return ret;
-#else
-  // Avoid unused parameter warning for conditional parameters.
-  (void)argc;
-  (void)argv;
-#endif
 }
