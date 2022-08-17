@@ -17,7 +17,7 @@ describe 'Server Interceptors' do
   let(:interceptor) { TestServerInterceptor.new }
   let(:request) { EchoMsg.new }
   let(:trailing_metadata) { {} }
-  let(:service) { EchoService.new(trailing_metadata) }
+  let(:service) { EchoService.new(**trailing_metadata) }
   let(:interceptors) { [] }
 
   before(:each) do
