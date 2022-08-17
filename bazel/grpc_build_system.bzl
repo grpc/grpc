@@ -362,7 +362,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
     if language.upper() == "C":
         copts = copts + if_not_windows(["-std=c11"])
 
-    core_deps = deps + _get_external_deps(external_deps) + ["//test/core/util:grpc_suppressions"]
+    core_deps = deps + _get_external_deps(external_deps)
 
     # Test args for all tests
     test_args = {
@@ -438,7 +438,7 @@ def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], da
         data = data,
         testonly = testonly,
         linkshared = linkshared,
-        deps = deps + _get_external_deps(external_deps) + ["//test/core/util:grpc_suppressions"],
+        deps = deps + _get_external_deps(external_deps),
         copts = GRPC_DEFAULT_COPTS + copts,
         linkopts = if_not_windows(["-pthread"]) + linkopts,
         tags = tags,

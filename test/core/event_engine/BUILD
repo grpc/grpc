@@ -33,6 +33,7 @@ grpc_cc_test(
         "//:gpr_base",
         "//:gpr_platform",
         "//:grpc_unsecure",
+        "//test/core/util:grpc_suppressions",
     ],
 )
 

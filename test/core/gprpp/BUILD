@@ -106,6 +106,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:no_destruct",
+        "//test/core/util:grpc_suppressions",
     ],
 )
 
