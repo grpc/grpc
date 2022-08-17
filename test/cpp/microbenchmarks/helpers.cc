@@ -70,9 +70,11 @@ void TrackCounters::AddToLabel(std::ostream& out, benchmark::State& state) {
   }
   for (int i = 0; i < GRPC_STATS_HISTOGRAM_COUNT; i++) {
     out << " " << grpc_stats_histogram_name[i] << "-median:"
-        << grpc_stats_histo_percentile(&stats, (grpc_stats_histograms)i, 50.0)
+        << grpc_stats_histo_percentile(
+               &stats, static_cast<grpc_stats_histograms>(i), 50.0)
         << " " << grpc_stats_histogram_name[i] << "-99p:"
-        << grpc_stats_histo_percentile(&stats, (grpc_stats_histograms)i, 99.0);
+        << grpc_stats_histo_percentile(
+               &stats, static_cast<grpc_stats_histograms>(i), 99.0);
   }
 #ifdef GPR_LOW_LEVEL_COUNTERS
   out << " locks/iter:"

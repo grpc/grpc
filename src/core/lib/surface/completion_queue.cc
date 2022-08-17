@@ -40,7 +40,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
-#include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/spinlock.h"
 #include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gprpp/atomic_utils.h"
