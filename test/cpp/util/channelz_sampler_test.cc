@@ -45,6 +45,7 @@
 #include "src/core/lib/gpr/env.h"
 #include "src/cpp/server/channelz/channelz_service.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
+#include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/subprocess.h"
 #include "test/cpp/util/test_credentials_provider.h"
@@ -165,12 +166,6 @@ TEST(ChannelzSamplerTest, SimpleTest) {
   client_thread_2.join();
 }
 
-int GenerateUniuquePortNumber() {
-  return 10000 + (std::hash<pid_t>()(getpid()) +
-                  std::hash<std::thread::id>{}(std::this_thread::get_id())) %
-                     10000;
-}
-
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
@@ -183,7 +178,7 @@ int main(int argc, char** argv) {
   }
 
   /// ensures the target address is unique even if this test is run in parallel
-  server_address = absl::StrCat("0.0.0.0:", GenerateUniuquePortNumber());
+  server_address = absl::StrCat("0.0.0.0:", grpc_pick_unused_port_or_die());
   int ret = RUN_ALL_TESTS();
   return ret;
 }
