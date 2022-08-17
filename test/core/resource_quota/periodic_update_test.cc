@@ -69,12 +69,12 @@ TEST(PeriodicUpdateTest, SimpleTest) {
         done = true;
       });
     }
-    // Ensure the time taken was between 1 and 1.5 seconds - we make a little
+    // Ensure the time taken was between 1 and 3 seconds - we make a little
     // allowance for the presumed inaccuracy of this type.
     {
       ExecCtx exec_ctx;
       EXPECT_GE(exec_ctx.Now() - start, Duration::Seconds(1));
-      EXPECT_LE(exec_ctx.Now() - start, Duration::Milliseconds(1500));
+      EXPECT_LE(exec_ctx.Now() - start, Duration::Seconds(3));
       start = reset_start;
     }
   }
@@ -110,11 +110,11 @@ TEST(PeriodicUpdate, ThreadTest) {
   for (auto& th : threads) {
     th.join();
   }
-  // Ensure our ten cycles took at least 10 seconds, and no more than 15.
+  // Ensure our ten cycles took at least 10 seconds, and no more than 30.
   {
     ExecCtx exec_ctx;
     EXPECT_GE(exec_ctx.Now() - start, Duration::Seconds(10));
-    EXPECT_LE(exec_ctx.Now() - start, Duration::Seconds(15));
+    EXPECT_LE(exec_ctx.Now() - start, Duration::Seconds(30));
   }
 }
 
