@@ -19,7 +19,6 @@
 #include "src/core/ext/filters/fault_injection/fault_injection_filter.h"
 
 #include <stdint.h>
-#include <stdlib.h>
 
 #include <algorithm>
 #include <atomic>
@@ -27,7 +26,6 @@
 #include <string>
 #include <utility>
 
-#include "absl/random/distributions.h"
 #include "absl/status/status.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
@@ -142,7 +140,8 @@ FaultInjectionFilter::FaultInjectionFilter(ChannelFilter::Args filter_args)
           filter_args.channel_stack(),
           filter_args.uninitialized_channel_element())),
       service_config_parser_index_(
-          FaultInjectionServiceConfigParser::ParserIndex()), mu_(new Mutex) {}
+          FaultInjectionServiceConfigParser::ParserIndex()),
+      mu_(new Mutex) {}
 
 // Construct a promise for one call.
 ArenaPromise<ServerMetadataHandle> FaultInjectionFilter::MakeCallPromise(
