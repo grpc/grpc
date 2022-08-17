@@ -21,11 +21,11 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <functional>
 #include <queue>
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/functional/any_invocable.h"
 
 #include "src/core/lib/event_engine/forkable.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -39,7 +39,7 @@ class ThreadPool final : public grpc_event_engine::experimental::Forkable {
   explicit ThreadPool(int reserve_threads);
   ~ThreadPool() override;
 
-  void Add(absl::AnyInvocable<void()> callback);
+  void Add(std::function<void()>& callback);
 
   // Forkable
   void PrepareFork() override;
@@ -67,7 +67,7 @@ class ThreadPool final : public grpc_event_engine::experimental::Forkable {
   grpc_core::CondVar shutdown_cv_;
   grpc_core::CondVar fork_cv_;
   bool shutdown_;
-  std::queue<absl::AnyInvocable<void()>> callbacks_;
+  std::queue<std::function<void()>> callbacks_;
   int reserve_threads_;
   int nthreads_;
   int threads_waiting_;

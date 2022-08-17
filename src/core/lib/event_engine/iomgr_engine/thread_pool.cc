@@ -20,10 +20,6 @@
 
 #include "src/core/lib/event_engine/iomgr_engine/thread_pool.h"
 
-#include <utility>
-
-#include "absl/functional/any_invocable.h"
-
 #include "src/core/lib/gprpp/thd.h"
 
 namespace grpc_event_engine {
@@ -71,7 +67,7 @@ void ThreadPool::ThreadFunc() {
     // Drain callbacks before considering shutdown to ensure all work
     // gets completed.
     if (!callbacks_.empty()) {
-      auto cb = std::move(callbacks_.front());
+      auto cb = callbacks_.front();
       callbacks_.pop();
       lock.Release();
       cb();
@@ -113,10 +109,10 @@ ThreadPool::~ThreadPool() {
   ReapThreads(&dead_threads_);
 }
 
-void ThreadPool::Add(absl::AnyInvocable<void()> callback) {
+void ThreadPool::Add(std::function<void()>& callback) {
   grpc_core::MutexLock lock(&mu_);
   // Add works to the callbacks list
-  callbacks_.push(std::move(callback));
+  callbacks_.push(callback);
   // Store the callback for later if we are forking.
   // TODO(hork): should we block instead?
   if (forking_) return;

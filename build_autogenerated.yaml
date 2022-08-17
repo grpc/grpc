@@ -759,6 +759,7 @@ libs:
   - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/dual_ref_counted.h
   - src/core/lib/gprpp/match.h
+  - src/core/lib/gprpp/no_destruct.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/overload.h
   - src/core/lib/gprpp/ref_counted.h
@@ -1978,6 +1979,7 @@ libs:
   - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/dual_ref_counted.h
   - src/core/lib/gprpp/match.h
+  - src/core/lib/gprpp/no_destruct.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/overload.h
   - src/core/lib/gprpp/ref_counted.h
@@ -7023,6 +7025,17 @@ targets:
   deps:
   - grpc++_test
   - grpc++_test_util
+- name: no_destruct_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/gprpp/no_destruct.h
+  src:
+  - test/core/gprpp/no_destruct_test.cc
+  deps:
+  - gpr
+  uses_polling: false
 - name: nonblocking_test
   gtest: true
   build: test
