@@ -25,6 +25,7 @@ import yaml
 
 import framework.helpers.datetime
 import framework.helpers.highlighter
+import framework.helpers.rand
 from framework.infrastructure import gcp
 from framework.infrastructure import k8s
 from framework.test_app.runners import base_runner
@@ -198,6 +199,12 @@ class KubernetesBaseRunner(base_runner.BaseRunner):
         return resource
 
     def _create_deployment(self, template, **kwargs) -> k8s.V1Deployment:
+        # Automatically apply random deployment_id to use in the matchLabels
+        # to prevent selecting pods in the same namespace belonging to
+        # a different deployment.
+        if 'deployment_id' not in kwargs:
+            kwargs['deployment_id'] = framework.helpers.rand.rand_string(
+                lowercase=True)
         deployment = self._create_from_template(template, **kwargs)
         if not isinstance(deployment, k8s.V1Deployment):
             raise _RunnerError('Expected V1Deployment to be created '
