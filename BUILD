@@ -7259,6 +7259,7 @@ grpc_cc_library(
         "slice",
         "slice_buffer",
         "slice_refcount",
+        "time",
     ],
 )
 
