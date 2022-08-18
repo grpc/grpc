@@ -1018,6 +1018,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
   // the equation:
   //
   //   kn <= 5.00 * sqrt(np(1-p))
+  // TODO(yashykt): The above explanation assumes a normal distribution, but we
+  // use a uniform distribution instead. We need a better estimate of how many
+  // RPCs are needed with what error tolerance.
   static size_t ComputeIdealNumRpcs(double p, double error_tolerance) {
     GPR_ASSERT(p >= 0 && p <= 1);
     size_t num_rpcs =
