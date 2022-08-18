@@ -1273,7 +1273,6 @@ grpc_cc_library(
         "exec_ctx",
         "gpr",
         "poll",
-        "ref_counted",
         "time",
     ],
 )
