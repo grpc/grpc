@@ -34,7 +34,7 @@
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/test_config.h"
 
-#define MAX_CONNECTION_IDLE_MS 500
+#define MAX_CONNECTION_IDLE_MS 2000
 #define MAX_CONNECTION_AGE_MS 9999
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
