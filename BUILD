@@ -1031,6 +1031,7 @@ grpc_cc_library(
         "percent_encoding",
         "protobuf_any_upb",
         "slice",
+        "time",
     ],
 )
 

@@ -31,15 +31,18 @@
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
-#include "absl/time/clock.h"
+#include "absl/time/time.h"
 #include "google/protobuf/any.upb.h"
 #include "google/rpc/status.upb.h"
 #include "upb/arena.h"
 #include "upb/upb.h"
 #include "upb/upb.hpp"
 
+#include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/gprpp/time_util.h"
 #include "src/core/lib/slice/percent_encoding.h"
 #include "src/core/lib/slice/slice.h"
 
@@ -176,7 +179,7 @@ absl::Status StatusCreate(absl::StatusCode code, absl::string_view msg,
   if (location.line() != -1) {
     StatusSetInt(&s, StatusIntProperty::kFileLine, location.line());
   }
-  StatusSetTime(&s, StatusTimeProperty::kCreated, absl::Now());
+  StatusSetTime(&s, StatusTimeProperty::kCreated, grpc_core::Timestamp::Now());
   for (const absl::Status& child : children) {
     if (!child.ok()) {
       StatusAddChild(&s, child);
@@ -226,15 +229,16 @@ absl::optional<std::string> StatusGetStr(const absl::Status& status,
 }
 
 void StatusSetTime(absl::Status* status, StatusTimeProperty key,
-                   absl::Time time) {
-  std::string time_str =
-      absl::FormatTime(absl::RFC3339_full, time, absl::UTCTimeZone());
+                   grpc_core::Timestamp time) {
+  std::string time_str = absl::FormatTime(
+      absl::RFC3339_full, ToAbslTime(time.as_timespec(GPR_CLOCK_MONOTONIC)),
+      absl::UTCTimeZone());
   status->SetPayload(GetStatusTimePropertyUrl(key),
                      absl::Cord(std::move(time_str)));
 }
 
-absl::optional<absl::Time> StatusGetTime(const absl::Status& status,
-                                         StatusTimeProperty key) {
+absl::optional<grpc_core::Timestamp> StatusGetTime(const absl::Status& status,
+                                                   StatusTimeProperty key) {
   absl::optional<absl::Cord> p =
       status.GetPayload(GetStatusTimePropertyUrl(key));
   if (p.has_value()) {
@@ -242,12 +246,14 @@ absl::optional<absl::Time> StatusGetTime(const absl::Status& status,
     absl::Time time;
     if (sv.has_value()) {
       if (absl::ParseTime(absl::RFC3339_full, sv.value(), &time, nullptr)) {
-        return time;
+        return grpc_core::Timestamp::FromTimespecRoundDown(
+            ToGprTimeSpec(time, GPR_CLOCK_MONOTONIC));
       }
     } else {
       std::string s = std::string(*p);
       if (absl::ParseTime(absl::RFC3339_full, s, &time, nullptr)) {
-        return time;
+        return grpc_core::Timestamp::FromTimespecRoundDown(
+            ToGprTimeSpec(time, GPR_CLOCK_MONOTONIC));
       }
     }
   }

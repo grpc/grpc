@@ -29,7 +29,8 @@ namespace grpc_core {
 gpr_timespec ToGprTimeSpec(absl::Duration duration);
 
 // Converts absl::Time to gpr_timespec(GPR_CLOCK_REALTIME)
-gpr_timespec ToGprTimeSpec(absl::Time time);
+gpr_timespec ToGprTimeSpec(absl::Time time,
+                           gpr_clock_type clock_type = GPR_CLOCK_REALTIME);
 
 // Converts gpr_timespec(GPR_TIMESPAN) to absl::Duration
 absl::Duration ToAbslDuration(gpr_timespec ts);
