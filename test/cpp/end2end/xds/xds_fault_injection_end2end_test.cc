@@ -204,13 +204,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageAbortViaHeaders) {
 
 TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelay) {
   CreateAndStartBackends(1);
-  const uint32_t kFixedDelayMilliseconds = 100000;
-#ifndef NDEBUG
-  const uint32_t kRpcTimeoutMilliseconds = grpc_test_slowdown_factor() * 3000;
-#else
   const uint32_t kRpcTimeoutMilliseconds = grpc_test_slowdown_factor() * 6000;
-#endif
-  const uint32_t kDelayPercentageCap = 100;
   const uint32_t kFixedDelaySeconds = 100;
   const uint32_t kDelayPercentagePerHundred = 50;
   const double kDelayRate = kDelayPercentagePerHundred / 100.0;
@@ -256,11 +250,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelay) {
 TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelayViaHeaders) {
   CreateAndStartBackends(1);
   const uint32_t kFixedDelayMilliseconds = 100000;
-#ifndef NDEBUG
-  const uint32_t kRpcTimeoutMilliseconds = grpc_test_slowdown_factor() * 3000;
-#else
   const uint32_t kRpcTimeoutMilliseconds = grpc_test_slowdown_factor() * 6000;
-#endif const uint32_t kDelayPercentageCap = 100;
   const uint32_t kDelayPercentageCap = 100;
   const uint32_t kDelayPercentage = 50;
   const double kDelayRate = kDelayPercentage / 100.0;
