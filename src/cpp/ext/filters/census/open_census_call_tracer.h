@@ -26,7 +26,6 @@
 #include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
-#include "absl/time/time.h"
 
 #include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/support/atm.h>
@@ -35,6 +34,7 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
@@ -81,7 +81,7 @@ class OpenCensusCallTracer : public grpc_core::CallTracer {
     const bool arena_allocated_;
     CensusContext context_;
     // Start time (for measuring latency).
-    absl::Time start_time_;
+    grpc_core::Timestamp start_time_;
     // Number of messages in this RPC.
     uint64_t recv_message_count_ = 0;
     uint64_t sent_message_count_ = 0;
@@ -109,8 +109,8 @@ class OpenCensusCallTracer : public grpc_core::CallTracer {
   // Transparent retries per call
   uint64_t transparent_retries_ ABSL_GUARDED_BY(&mu_) = 0;
   // Retry delay
-  absl::Duration retry_delay_ ABSL_GUARDED_BY(&mu_);
-  absl::Time time_at_last_attempt_end_ ABSL_GUARDED_BY(&mu_);
+  grpc_core::Duration retry_delay_ ABSL_GUARDED_BY(&mu_);
+  grpc_core::Timestamp time_at_last_attempt_end_ ABSL_GUARDED_BY(&mu_);
   uint64_t num_active_rpcs_ ABSL_GUARDED_BY(&mu_) = 0;
 };
 

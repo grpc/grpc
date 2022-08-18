@@ -31,7 +31,6 @@
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "absl/time/clock.h"
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
 #include "opencensus/stats/stats.h"
@@ -48,6 +47,7 @@
 
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
@@ -111,7 +111,7 @@ OpenCensusCallTracer::OpenCensusCallAttemptTracer::OpenCensusCallAttemptTracer(
       arena_allocated_(arena_allocated),
       context_(CreateCensusContextForCallAttempt(parent_->method_,
                                                  parent_->context_)),
-      start_time_(absl::Now()) {
+      start_time_(grpc_core::Timestamp::Now()) {
   context_.AddSpanAttribute("previous-rpc-attempts", attempt_num);
   context_.AddSpanAttribute("transparent-retry", is_transparent_retry);
 }
@@ -192,7 +192,7 @@ void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordCancel(
 
 void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordEnd(
     const gpr_timespec& /*latency*/) {
-  double latency_ms = absl::ToDoubleMilliseconds(absl::Now() - start_time_);
+  double latency_ms = (grpc_core::Timestamp::Now() - start_time_).millis();
   std::vector<std::pair<opencensus::tags::TagKey, std::string>> tags =
       context_.tags().tags();
   tags.emplace_back(ClientMethodTagKey(), std::string(parent_->method_));
@@ -209,7 +209,7 @@ void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordEnd(
   context_.EndSpan();
   grpc_core::MutexLock lock(&parent_->mu_);
   if (--parent_->num_active_rpcs_ == 0) {
-    parent_->time_at_last_attempt_end_ = absl::Now();
+    parent_->time_at_last_attempt_end_ = grpc_core::Timestamp::Now();
   }
   if (arena_allocated_) {
     this->~OpenCensusCallAttemptTracer();
@@ -235,7 +235,8 @@ OpenCensusCallTracer::~OpenCensusCallTracer() {
   ::opencensus::stats::Record(
       {{RpcClientRetriesPerCall(), retries_ - 1},  // exclude first attempt
        {RpcClientTransparentRetriesPerCall(), transparent_retries_},
-       {RpcClientRetryDelayPerCall(), ToDoubleMilliseconds(retry_delay_)}},
+       {RpcClientRetryDelayPerCall(),
+        static_cast<double>(retry_delay_.millis())}},
       tags);
   context_.EndSpan();
 }
@@ -259,7 +260,7 @@ OpenCensusCallTracer::StartNewAttempt(bool is_transparent_retry) {
     if (transparent_retries_ != 0 || retries_ != 0) {
       is_first_attempt = false;
       if (num_active_rpcs_ == 0) {
-        retry_delay_ += absl::Now() - time_at_last_attempt_end_;
+        retry_delay_ += grpc_core::Timestamp::Now() - time_at_last_attempt_end_;
       }
     }
     attempt_num = retries_;

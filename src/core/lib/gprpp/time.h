@@ -62,6 +62,11 @@ class Duration;
 class Timestamp {
  public:
   constexpr Timestamp() = default;
+  // Return the current time.
+  // Prefer using ExecCtx::Now() when possible, this method does not cache
+  // timestamp values.
+  static Timestamp Now();
+
   // Constructs a Timestamp from a gpr_timespec.
   static Timestamp FromTimespecRoundDown(gpr_timespec t);
   static Timestamp FromTimespecRoundUp(gpr_timespec t);

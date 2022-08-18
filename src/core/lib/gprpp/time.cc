@@ -133,6 +133,10 @@ int64_t TimespanToMillisRoundDown(gpr_timespec ts) {
 
 }  // namespace
 
+Timestamp Timestamp::Now() {
+  return Timestamp::FromTimespecRoundDown(gpr_now(GPR_CLOCK_MONOTONIC));
+}
+
 Timestamp Timestamp::FromTimespecRoundUp(gpr_timespec ts) {
   return FromMillisecondsAfterProcessEpoch(TimespanToMillisRoundUp(gpr_time_sub(
       gpr_convert_clock_type(ts, GPR_CLOCK_MONOTONIC), StartTime())));
