@@ -19,7 +19,6 @@
 #include "src/core/ext/filters/fault_injection/fault_injection_filter.h"
 
 #include <stdint.h>
-#include <stdlib.h>
 
 #include <algorithm>
 #include <atomic>
@@ -70,12 +69,14 @@ auto AsInt(absl::string_view s) -> absl::optional<T> {
   return absl::nullopt;
 }
 
-inline bool UnderFraction(const uint32_t numerator,
+inline bool UnderFraction(absl::InsecureBitGen* rand_generator,
+                          const uint32_t numerator,
                           const uint32_t denominator) {
   if (numerator <= 0) return false;
   if (numerator >= denominator) return true;
   // Generate a random number in [0, denominator).
-  const uint32_t random_number = rand() % denominator;
+  const uint32_t random_number =
+      absl::Uniform(absl::IntervalClosedOpen, *rand_generator, 0u, denominator);
   return random_number < numerator;
 }
 
@@ -139,7 +140,8 @@ FaultInjectionFilter::FaultInjectionFilter(ChannelFilter::Args filter_args)
           filter_args.channel_stack(),
           filter_args.uninitialized_channel_element())),
       service_config_parser_index_(
-          FaultInjectionServiceConfigParser::ParserIndex()) {}
+          FaultInjectionServiceConfigParser::ParserIndex()),
+      mu_(new Mutex) {}
 
 // Construct a promise for one call.
 ArenaPromise<ServerMetadataHandle> FaultInjectionFilter::MakeCallPromise(
@@ -219,14 +221,21 @@ FaultInjectionFilter::MakeInjectionDecision(
     }
   }
   // Roll the dice
-  const bool delay_request =
-      delay != Duration::Zero() &&
-      UnderFraction(delay_percentage_numerator,
-                    fi_policy->delay_percentage_denominator);
-  const bool abort_request =
-      abort_code != GRPC_STATUS_OK &&
-      UnderFraction(abort_percentage_numerator,
-                    fi_policy->abort_percentage_denominator);
+  bool delay_request = delay != Duration::Zero();
+  bool abort_request = abort_code != GRPC_STATUS_OK;
+  if (delay_request || abort_request) {
+    MutexLock lock(mu_.get());
+    if (delay_request) {
+      delay_request =
+          UnderFraction(&delay_rand_generator_, delay_percentage_numerator,
+                        fi_policy->delay_percentage_denominator);
+    }
+    if (abort_request) {
+      abort_request =
+          UnderFraction(&abort_rand_generator_, abort_percentage_numerator,
+                        fi_policy->abort_percentage_denominator);
+    }
+  }
 
   return InjectionDecision(
       fi_policy->max_faults, delay_request ? delay : Duration::Zero(),

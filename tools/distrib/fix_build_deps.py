@@ -85,6 +85,8 @@ EXTERNAL_DEPS = {
         'absl/meta:type_traits',
     'absl/random/random.h':
         'absl/random',
+    'absl/random/distributions.h':
+        'absl/random:distributions',
     'absl/status/status.h':
         'absl/status',
     'absl/status/statusor.h':
