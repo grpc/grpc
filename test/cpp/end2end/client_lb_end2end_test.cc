@@ -2231,9 +2231,9 @@ class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
 
   static void TearDownTestCase() { grpc_shutdown(); }
 
-  int trailers_intercepted() {
+  int num_trailers_intercepted() {
     grpc::internal::MutexLock lock(&mu_);
-    return trailers_intercepted_;
+    return num_trailers_intercepted_;
   }
 
   absl::Status last_status() {
@@ -2251,8 +2251,13 @@ class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
     return std::move(load_report_);
   }
 
-  grpc::internal::Mutex mu_;
-  grpc::internal::CondVar cond_;
+  void WaitForLbCallback() {
+    grpc::internal::MutexLock lock(&mu_);
+    while (!trailer_intercepted_) {
+      cond_.WaitWithTimeout(&mu_, absl::Seconds(3));
+    }
+    trailer_intercepted_ = false;
+  }
 
  private:
   static void ReportTrailerIntercepted(
@@ -2261,19 +2266,21 @@ class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
     ClientLbInterceptTrailingMetadataTest* self = current_test_instance_;
     grpc::internal::MutexLock lock(&self->mu_);
     self->last_status_ = args_seen.status;
-    self->trailers_intercepted_++;
+    self->num_trailers_intercepted_++;
+    self->trailer_intercepted_ = true;
     self->trailing_metadata_ = args_seen.metadata;
     if (backend_metric_data != nullptr) {
       self->load_report_ =
           BackendMetricDataToOrcaLoadReport(*backend_metric_data);
     }
-    self->Signal();
+    self->cond_.Signal();
   }
 
-  void Signal() { cond_.Signal(); }
-
   static ClientLbInterceptTrailingMetadataTest* current_test_instance_;
-  int trailers_intercepted_ = 0;
+  int num_trailers_intercepted_ = 0;
+  bool trailer_intercepted_ = false;
+  grpc::internal::Mutex mu_;
+  grpc::internal::CondVar cond_;
   absl::Status last_status_;
   grpc_core::MetadataVector trailing_metadata_;
   absl::optional<xds::data::orca::v3::OrcaLoadReport> load_report_;
@@ -2294,7 +2301,7 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, StatusOk) {
   // Check LB policy name for the channel.
   EXPECT_EQ("intercept_trailing_metadata_lb",
             channel->GetLoadBalancingPolicyName());
-  EXPECT_EQ(1, trailers_intercepted());
+  EXPECT_EQ(1, num_trailers_intercepted());
   EXPECT_EQ(absl::OkStatus(), last_status());
 }
 
@@ -2333,13 +2340,10 @@ TEST_F(ClientLbInterceptTrailingMetadataTest,
     auto stream = stub->BidiStream(&ctx);
     ctx.TryCancel();
   }
-  {
-    // Wait for stream to be cancelled.
-    grpc::internal::MutexLock lock(&mu_);
-    cond_.WaitWithTimeout(&mu_, absl::Seconds(3));
-  }
+  // Wait for stream to be cancelled.
+  WaitForLbCallback();
   // Check status seen by LB policy.
-  EXPECT_EQ(1, trailers_intercepted());
+  EXPECT_EQ(1, num_trailers_intercepted());
   absl::Status status_seen_by_lb = last_status();
   EXPECT_EQ(status_seen_by_lb.code(), absl::StatusCode::kCancelled);
   EXPECT_EQ(status_seen_by_lb.message(), "call cancelled");
@@ -2362,7 +2366,7 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, InterceptsRetriesDisabled) {
   // Check LB policy name for the channel.
   EXPECT_EQ("intercept_trailing_metadata_lb",
             channel->GetLoadBalancingPolicyName());
-  EXPECT_EQ(kNumRpcs, trailers_intercepted());
+  EXPECT_EQ(kNumRpcs, num_trailers_intercepted());
   EXPECT_THAT(trailing_metadata(),
               ::testing::UnorderedElementsAre(
                   // TODO(roth): Should grpc-status be visible here?
@@ -2404,7 +2408,7 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, InterceptsRetriesEnabled) {
   // Check LB policy name for the channel.
   EXPECT_EQ("intercept_trailing_metadata_lb",
             channel->GetLoadBalancingPolicyName());
-  EXPECT_EQ(kNumRpcs, trailers_intercepted());
+  EXPECT_EQ(kNumRpcs, num_trailers_intercepted());
   EXPECT_THAT(trailing_metadata(),
               ::testing::UnorderedElementsAre(
                   // TODO(roth): Should grpc-status be visible here?
@@ -2457,7 +2461,7 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, BackendMetricData) {
   // Check LB policy name for the channel.
   EXPECT_EQ("intercept_trailing_metadata_lb",
             channel->GetLoadBalancingPolicyName());
-  EXPECT_EQ(kNumRpcs, trailers_intercepted());
+  EXPECT_EQ(kNumRpcs, num_trailers_intercepted());
 }
 
 //
