@@ -1722,7 +1722,6 @@ libs:
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
-  - absl/random:distributions
   - absl/status:statusor
   - absl/types:span
   - absl/utility:utility
@@ -2504,7 +2503,6 @@ libs:
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
-  - absl/random:distributions
   - absl/status:statusor
   - absl/types:span
   - absl/utility:utility

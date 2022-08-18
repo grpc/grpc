@@ -3843,9 +3843,9 @@ grpc_cc_library(
         "src/core/ext/filters/fault_injection/service_config_parser.h",
     ],
     external_deps = [
+        "absl/base:core_headers",
         "absl/memory",
         "absl/random",
-        "absl/random:distributions",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
