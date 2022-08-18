@@ -27,7 +27,6 @@
 #include <string>
 
 #include "absl/strings/string_view.h"
-#include "absl/time/time.h"
 #include "absl/types/optional.h"
 
 #include <grpc/grpc_security.h>
@@ -36,6 +35,7 @@
 
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice.h"
@@ -99,8 +99,8 @@ class CensusServerCallData : public CallData {
   // recv message
   grpc_closure* initial_on_done_recv_message_;
   grpc_closure on_done_recv_message_;
-  absl::Time start_time_;
-  absl::Duration elapsed_time_;
+  grpc_core::Timestamp start_time_;
+  grpc_core::Duration elapsed_time_;
   absl::optional<grpc_core::SliceBuffer>* recv_message_;
   uint64_t recv_message_count_;
   uint64_t sent_message_count_;
