@@ -81,6 +81,11 @@ grpc_cc_test(
     ],
     language = "C++",
     tags = [
+        # Flaky on windows
+        "no_windows",
+        "no_mac",
+        "no_test_ios",
+
         # Known race between stream creation and cancellation
         "notsan",
     ],
