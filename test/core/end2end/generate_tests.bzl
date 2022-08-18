@@ -82,7 +82,8 @@ END2END_FIXTURES = {
     "h2_full+trace": _fixture_options(tracing = True),
     "h2_http_proxy": _fixture_options(supports_proxy_auth = True),
     "h2_insecure": _fixture_options(secure = True),
-    "h2_oauth2": _fixture_options(),
+    "h2_oauth2_tls12": _fixture_options(),
+    "h2_oauth2_tls13": _fixture_options(),
     "h2_proxy": _fixture_options(includes_proxy = True),
     "h2_sockpair_1byte": _fixture_options(
         fullstack = False,
@@ -101,8 +102,10 @@ END2END_FIXTURES = {
         tracing = True,
         client_channel = False,
     ),
-    "h2_ssl": _fixture_options(secure = True),
-    "h2_ssl_cred_reload": _fixture_options(secure = True),
+    "h2_ssl_tls12": _fixture_options(secure = True),
+    "h2_ssl_tls13": _fixture_options(secure = True),
+    "h2_ssl_cred_reload_tls12": _fixture_options(secure = True),
+    "h2_ssl_cred_reload_tls13": _fixture_options(secure = True),
     "h2_tls_simple": _fixture_options(secure = True),
     "h2_tls_static_async_tls1_3": _fixture_options(secure = True),
     "h2_tls_certwatch_sync_tls1_2": _fixture_options(secure = True),
@@ -137,6 +140,10 @@ END2END_FIXTURES = {
     "h2_uds": _fixture_options(
         dns_resolver = False,
         _platforms = ["linux", "mac", "posix"],
+    ),
+    "h2_uds_abstract": _fixture_options(
+        dns_resolver = False,
+        _platforms = ["linux", "posix"],
     ),
     "inproc": _fixture_options(
         secure = True,
