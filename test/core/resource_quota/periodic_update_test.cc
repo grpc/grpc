@@ -63,7 +63,7 @@ TEST(PeriodicUpdateTest, SimpleTest) {
     done = false;
     while (!done) {
       ExecCtx exec_ctx;
-      upd->Tick([&](Duration elapsed) {
+      upd->Tick([&](Duration) {
         reset_start = ExecCtx::Get()->Now();
         EXPECT_GE(exec_ctx.Now() - start, Duration::Seconds(1));
         done = true;
