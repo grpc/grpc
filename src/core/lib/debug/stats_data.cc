@@ -22,10 +22,9 @@
 
 #include "src/core/lib/debug/stats_data.h"
 
-#include <inttypes.h>
-
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 
 const char* grpc_stats_counter_name[GRPC_STATS_COUNTER_COUNT] = {
     "client_calls_created",
@@ -43,6 +42,8 @@ const char* grpc_stats_counter_name[GRPC_STATS_COUNTER_COUNT] = {
     "histogram_slow_lookups",
     "syscall_write",
     "syscall_read",
+    "tcp_read_alloc_8k",
+    "tcp_read_alloc_64k",
     "http2_settings_writes",
     "http2_pings_sent",
     "http2_writes_begun",
@@ -71,6 +72,8 @@ const char* grpc_stats_counter_doc[GRPC_STATS_COUNTER_COUNT] = {
     "Number of write syscalls (or equivalent - eg sendmsg) made by this "
     "process",
     "Number of read syscalls (or equivalent - eg recvmsg) made by this process",
+    "Number of 8k allocations by the TCP subsystem for reading",
+    "Number of 64k allocations by the TCP subsystem for reading",
     "Number of settings frames sent",
     "Number of HTTP2 pings sent by process",
     "Number of HTTP2 writes initiated",
@@ -80,16 +83,15 @@ const char* grpc_stats_counter_doc[GRPC_STATS_COUNTER_COUNT] = {
     "window",
 };
 const char* grpc_stats_histogram_name[GRPC_STATS_HISTOGRAM_COUNT] = {
-    "call_initial_size",  "poll_events_returned",    "tcp_write_size",
-    "tcp_write_iov_size", "tcp_read_allocation",     "tcp_read_size",
-    "tcp_read_offer",     "tcp_read_offer_iov_size", "http2_send_message_size",
+    "call_initial_size",       "poll_events_returned",    "tcp_write_size",
+    "tcp_write_iov_size",      "tcp_read_size",           "tcp_read_offer",
+    "tcp_read_offer_iov_size", "http2_send_message_size",
 };
 const char* grpc_stats_histogram_doc[GRPC_STATS_HISTOGRAM_COUNT] = {
     "Initial size of the grpc_call arena created at call start",
     "How many events are called for each syscall_poll",
     "Number of bytes offered to each syscall_write",
     "Number of byte segments offered to each syscall_write",
-    "Number of bytes allocated in each slice by tcp reads",
     "Number of bytes received by each syscall_read",
     "Number of bytes offered to each syscall_read",
     "Number of byte segments offered to each syscall_read",
@@ -252,29 +254,6 @@ void grpc_stats_inc_tcp_write_iov_size(int value) {
       GRPC_STATS_HISTOGRAM_TCP_WRITE_IOV_SIZE,
       grpc_stats_histo_find_bucket_slow(value, grpc_stats_table_6, 64));
 }
-void grpc_stats_inc_tcp_read_allocation(int value) {
-  value = grpc_core::Clamp(value, 0, 16777216);
-  if (value < 5) {
-    GRPC_STATS_INC_HISTOGRAM(GRPC_STATS_HISTOGRAM_TCP_READ_ALLOCATION, value);
-    return;
-  }
-  union {
-    double dbl;
-    uint64_t uint;
-  } _val, _bkt;
-  _val.dbl = value;
-  if (_val.uint < 4683743612465315840ull) {
-    int bucket =
-        grpc_stats_table_5[((_val.uint - 4617315517961601024ull) >> 50)] + 5;
-    _bkt.dbl = grpc_stats_table_4[bucket];
-    bucket -= (_val.uint < _bkt.uint);
-    GRPC_STATS_INC_HISTOGRAM(GRPC_STATS_HISTOGRAM_TCP_READ_ALLOCATION, bucket);
-    return;
-  }
-  GRPC_STATS_INC_HISTOGRAM(
-      GRPC_STATS_HISTOGRAM_TCP_READ_ALLOCATION,
-      grpc_stats_histo_find_bucket_slow(value, grpc_stats_table_4, 64));
-}
 void grpc_stats_inc_tcp_read_size(int value) {
   value = grpc_core::Clamp(value, 0, 16777216);
   if (value < 5) {
@@ -371,19 +350,17 @@ void grpc_stats_inc_http2_send_message_size(int value) {
       GRPC_STATS_HISTOGRAM_HTTP2_SEND_MESSAGE_SIZE,
       grpc_stats_histo_find_bucket_slow(value, grpc_stats_table_4, 64));
 }
-const int grpc_stats_histo_buckets[9] = {64, 128, 64, 64, 64, 64, 64, 64, 64};
-const int grpc_stats_histo_start[9] = {0,   64,  192, 256, 320,
-                                       384, 448, 512, 576};
-const int* const grpc_stats_histo_bucket_boundaries[9] = {
+const int grpc_stats_histo_buckets[8] = {64, 128, 64, 64, 64, 64, 64, 64};
+const int grpc_stats_histo_start[8] = {0, 64, 192, 256, 320, 384, 448, 512};
+const int* const grpc_stats_histo_bucket_boundaries[8] = {
     grpc_stats_table_0, grpc_stats_table_2, grpc_stats_table_4,
     grpc_stats_table_6, grpc_stats_table_4, grpc_stats_table_4,
-    grpc_stats_table_4, grpc_stats_table_6, grpc_stats_table_4};
-void (*const grpc_stats_inc_histogram[9])(int x) = {
+    grpc_stats_table_6, grpc_stats_table_4};
+void (*const grpc_stats_inc_histogram[8])(int x) = {
     grpc_stats_inc_call_initial_size,
     grpc_stats_inc_poll_events_returned,
     grpc_stats_inc_tcp_write_size,
     grpc_stats_inc_tcp_write_iov_size,
-    grpc_stats_inc_tcp_read_allocation,
     grpc_stats_inc_tcp_read_size,
     grpc_stats_inc_tcp_read_offer,
     grpc_stats_inc_tcp_read_offer_iov_size,

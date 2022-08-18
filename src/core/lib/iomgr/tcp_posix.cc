@@ -828,7 +828,7 @@ static void tcp_trace_read(grpc_tcp* tcp, grpc_error_handle error)
 }
 
 /* Returns true if data available to read or error other than EAGAIN. */
-#define MAX_READ_IOVEC 4
+#define MAX_READ_IOVEC 16
 static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(tcp->read_mu) {
   GPR_TIMER_SCOPE("tcp_do_read", 0);
@@ -1009,29 +1009,30 @@ static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error)
 static void maybe_make_read_slices(grpc_tcp* tcp)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(tcp->read_mu) {
   if (tcp->incoming_buffer->length <
-          static_cast<size_t>(tcp->min_progress_size) &&
-      tcp->incoming_buffer->count < MAX_READ_IOVEC) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-      gpr_log(GPR_INFO,
-              "TCP:%p alloc_slices; min_chunk=%d max_chunk=%d target=%lf "
-              "buf_len=%" PRIdPTR,
-              tcp, tcp->min_read_chunk_size, tcp->max_read_chunk_size,
-              tcp->target_length, tcp->incoming_buffer->length);
+      static_cast<size_t>(tcp->min_progress_size)) {
+    const int max_read_iovec =
+        tcp->memory_owner.GetPressureInfo().pressure_control_value > 0.8
+            ? 1
+            : MAX_READ_IOVEC;
+    while (tcp->incoming_buffer->length <
+               static_cast<size_t>(tcp->min_progress_size) &&
+           tcp->incoming_buffer->count < max_read_iovec) {
+      const int target_length = std::max(static_cast<int>(tcp->target_length),
+                                         tcp->min_progress_size);
+      const int extra_wanted =
+          target_length - static_cast<int>(tcp->incoming_buffer->length);
+      int alloc_size;
+      if (extra_wanted >= 64 * 1024) {
+        alloc_size = 64 * 1024;
+        GRPC_STATS_INC_TCP_READ_ALLOC_64K();
+      } else {
+        alloc_size = 8 * 1024;
+        GRPC_STATS_INC_TCP_READ_ALLOC_8K();
+      }
+      grpc_slice_buffer_add_indexed(tcp->incoming_buffer,
+                                    tcp->memory_owner.MakeSlice(alloc_size));
+      maybe_post_reclaimer(tcp);
     }
-    int target_length =
-        std::max(static_cast<int>(tcp->target_length), tcp->min_progress_size);
-    int extra_wanted =
-        target_length - static_cast<int>(tcp->incoming_buffer->length);
-    int min_read_chunk_size =
-        std::max(tcp->min_read_chunk_size, tcp->min_progress_size);
-    int max_read_chunk_size =
-        std::max(tcp->max_read_chunk_size, tcp->min_progress_size);
-    grpc_slice slice = tcp->memory_owner.MakeSlice(grpc_core::MemoryRequest(
-        min_read_chunk_size, grpc_core::Clamp(extra_wanted, min_read_chunk_size,
-                                              max_read_chunk_size)));
-    GRPC_STATS_INC_TCP_READ_ALLOCATION(GRPC_SLICE_LENGTH(slice));
-    grpc_slice_buffer_add_indexed(tcp->incoming_buffer, slice);
-    maybe_post_reclaimer(tcp);
   }
 }
 

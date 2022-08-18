@@ -70,10 +70,10 @@
   max: 1024
   buckets: 64
   doc: Number of byte segments offered to each syscall_write
-- histogram: tcp_read_allocation
-  max: 16777216
-  buckets: 64
-  doc: Number of bytes allocated in each slice by tcp reads
+- counter: tcp_read_alloc_8k
+  doc: Number of 8k allocations by the TCP subsystem for reading
+- counter: tcp_read_alloc_64k
+  doc: Number of 64k allocations by the TCP subsystem for reading
 - histogram: tcp_read_size
   max: 16777216
   buckets: 64
