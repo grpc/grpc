@@ -2251,6 +2251,9 @@ class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
     return std::move(load_report_);
   }
 
+  grpc::internal::Mutex mu_;
+  grpc::internal::CondVar cond_;
+
  private:
   static void ReportTrailerIntercepted(
       const grpc_core::TrailingMetadataArgsSeen& args_seen) {
@@ -2264,10 +2267,12 @@ class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
       self->load_report_ =
           BackendMetricDataToOrcaLoadReport(*backend_metric_data);
     }
+    self->Signal();
   }
 
+  void Signal() { cond_.Signal(); }
+
   static ClientLbInterceptTrailingMetadataTest* current_test_instance_;
-  grpc::internal::Mutex mu_;
   int trailers_intercepted_ = 0;
   absl::Status last_status_;
   grpc_core::MetadataVector trailing_metadata_;
@@ -2327,6 +2332,11 @@ TEST_F(ClientLbInterceptTrailingMetadataTest,
     ClientContext ctx;
     auto stream = stub->BidiStream(&ctx);
     ctx.TryCancel();
+  }
+  {
+    // Wait for stream to be cancelled.
+    grpc::internal::MutexLock lock(&mu_);
+    cond_.WaitWithTimeout(&mu_, absl::Seconds(3));
   }
   // Check status seen by LB policy.
   EXPECT_EQ(1, trailers_intercepted());
