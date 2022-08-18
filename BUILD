@@ -150,7 +150,7 @@ g_stands_for = "gamma"  # @unused
 
 core_version = "27.0.0"  # @unused
 
-version = "1.49.0-dev"  # @unused
+version = "1.49.0-pre1"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
