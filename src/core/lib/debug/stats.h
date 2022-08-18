@@ -47,9 +47,6 @@ extern Stats* const g_stats_data;
   (&::grpc_core::g_stats_data    \
         ->per_cpu[grpc_core::ExecCtx::Get()->starting_cpu()])
 
-/* Only collect stats if GRPC_COLLECT_STATS is defined or it is a debug build.
- */
-#if defined(GRPC_COLLECT_STATS) || !defined(NDEBUG)
 #define GRPC_STATS_INC_COUNTER(ctr) \
   (gpr_atm_no_barrier_fetch_add(&GRPC_THREAD_STATS_DATA()->counters[(ctr)], 1))
 
@@ -57,13 +54,7 @@ extern Stats* const g_stats_data;
   (gpr_atm_no_barrier_fetch_add(                                               \
       &GRPC_THREAD_STATS_DATA()->histograms[histogram##_FIRST_SLOT + (index)], \
       1))
-#else /* defined(GRPC_COLLECT_STATS) || !defined(NDEBUG) */
-#define GRPC_STATS_INC_COUNTER(ctr)
-#define GRPC_STATS_INC_HISTOGRAM(histogram, index)
-#endif /* defined(GRPC_COLLECT_STATS) || !defined(NDEBUG) */
 
-GRPC_DEPRECATED("function is no longer needed")
-inline void grpc_stats_init(void) {}
 void grpc_stats_collect(grpc_stats_data* output);
 // c = b-a
 void grpc_stats_diff(const grpc_stats_data* b, const grpc_stats_data* a,
