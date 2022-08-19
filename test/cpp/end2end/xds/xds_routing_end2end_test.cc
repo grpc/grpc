@@ -2289,6 +2289,10 @@ TEST_P(LdsRdsTest, XdsRetryPolicyMaxBackOff) {
   max_interval->set_seconds(1 * grpc_test_slowdown_factor());
   max_interval->set_nanos(0);
   SetRouteConfiguration(balancer_.get(), new_route_config);
+  // Send an initial RPC to make sure we get connected (we don't want
+  // the channel startup time to affect the retry timing).
+  CheckRpcSendOk(DEBUG_LOCATION);
+  ResetBackendCounters();
   // We expect 2 retry before the RPC times out with DEADLINE_EXCEEDED.
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::DEADLINE_EXCEEDED, "Deadline Exceeded",
