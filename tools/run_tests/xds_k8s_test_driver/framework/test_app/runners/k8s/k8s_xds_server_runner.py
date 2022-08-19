@@ -102,7 +102,6 @@ class KubernetesServerRunner(k8s_base_runner.KubernetesBaseRunner):
             test_port=DEFAULT_TEST_PORT,
             maintenance_port=None,
             secure_mode=False,
-            server_id=None,
             replica_count=1) -> List[XdsTestServer]:
         # Implementation detail: in secure mode, maintenance ("backchannel")
         # port must be different from the test port so communication with
@@ -127,9 +126,9 @@ class KubernetesServerRunner(k8s_base_runner.KubernetesBaseRunner):
 
         logger.info(
             'Deploying xDS test server "%s" to k8s namespace %s: test_port=%s '
-            'maintenance_port=%s secure_mode=%s server_id=%s replica_count=%s',
+            'maintenance_port=%s secure_mode=%s replica_count=%s',
             self.deployment_name, self.k8s_namespace.name, test_port,
-            maintenance_port, secure_mode, server_id, replica_count)
+            maintenance_port, secure_mode, replica_count)
         self._logs_explorer_link(deployment_name=self.deployment_name,
                                  namespace_name=self.k8s_namespace.name,
                                  gcp_project=self.gcp_project,
@@ -180,7 +179,6 @@ class KubernetesServerRunner(k8s_base_runner.KubernetesBaseRunner):
             replica_count=replica_count,
             test_port=test_port,
             maintenance_port=maintenance_port,
-            server_id=server_id,
             secure_mode=secure_mode)
 
         self._wait_deployment_with_available_replicas(self.deployment_name,
@@ -210,11 +208,10 @@ class KubernetesServerRunner(k8s_base_runner.KubernetesBaseRunner):
             servers.append(
                 XdsTestServer(ip=pod_ip,
                               rpc_port=test_port,
+                              hostname=pod_name,
                               maintenance_port=local_port,
                               secure_mode=secure_mode,
-                              server_id=server_id,
-                              rpc_host=rpc_host,
-                              pod_name=pod_name))
+                              rpc_host=rpc_host))
         return servers
 
     def cleanup(self, *, force=False, force_namespace=False):  # pylint: disable=arguments-differ
