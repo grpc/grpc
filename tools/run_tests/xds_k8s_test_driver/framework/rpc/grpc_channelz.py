@@ -57,8 +57,13 @@ _GetServerSocketsResponse = channelz_pb2.GetServerSocketsResponse
 class ChannelzServiceClient(framework.rpc.grpc.GrpcClientHelper):
     stub: channelz_pb2_grpc.ChannelzStub
 
-    def __init__(self, channel: grpc.Channel):
-        super().__init__(channel, channelz_pb2_grpc.ChannelzStub)
+    def __init__(self,
+                 channel: grpc.Channel,
+                 *,
+                 log_target: Optional[str] = ''):
+        super().__init__(channel,
+                         channelz_pb2_grpc.ChannelzStub,
+                         log_target=log_target)
 
     @staticmethod
     def is_sock_tcpip_address(address: Address):

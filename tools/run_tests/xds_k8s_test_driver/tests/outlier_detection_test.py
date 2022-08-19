@@ -115,7 +115,7 @@ class OutlierDetectionTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
                 rpc_types=rpc_types,
                 metadata=(
                     (RpcTypeUnaryCall, 'rpc-behavior',
-                     f'hostname={test_servers[0].pod_name} error-code-2'),))
+                     f'hostname={test_servers[0].hostname} error-code-2'),))
             self.assertRpcsEventuallyGoToGivenServers(test_client,
                                                       test_servers[1:])
 
