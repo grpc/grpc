@@ -133,6 +133,7 @@ int64_t TimespanToMillisRoundDown(gpr_timespec ts) {
 
 }  // namespace
 
+// DO NOT SUBMIT(hork): consider deleting this, it's risky to have around.
 Timestamp Timestamp::Now() {
   return Timestamp::FromTimespecRoundDown(gpr_now(GPR_CLOCK_MONOTONIC));
 }

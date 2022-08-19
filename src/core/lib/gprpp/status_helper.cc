@@ -179,7 +179,10 @@ absl::Status StatusCreate(absl::StatusCode code, absl::string_view msg,
   if (location.line() != -1) {
     StatusSetInt(&s, StatusIntProperty::kFileLine, location.line());
   }
-  StatusSetTime(&s, StatusTimeProperty::kCreated, grpc_core::Timestamp::Now());
+  // TODO(hork): to use ExecCtx time here, we must remove circular dependencies
+  StatusSetTime(&s, StatusTimeProperty::kCreated,
+                grpc_core::Timestamp::FromTimespecRoundDown(
+                    ToGprTimeSpec(absl::Now(), GPR_CLOCK_MONOTONIC)));
   for (const absl::Status& child : children) {
     if (!child.ok()) {
       StatusAddChild(&s, child);

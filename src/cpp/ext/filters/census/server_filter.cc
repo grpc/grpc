@@ -34,6 +34,7 @@
 
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/cpp/ext/filters/census/channel_filter.h"
@@ -132,7 +133,7 @@ void CensusServerCallData::StartTransportStreamOpBatch(
   // We need to record the time when the trailing metadata was sent to mark the
   // completeness of the request.
   if (op->send_trailing_metadata() != nullptr) {
-    elapsed_time_ = grpc_core::Timestamp::Now() - start_time_;
+    elapsed_time_ = grpc_core::ExecCtx::Get()->Now() - start_time_;
     size_t len = ServerStatsSerialize(elapsed_time_.millis() * GPR_NS_PER_MS,
                                       stats_buf_, kMaxServerStatsLen);
     if (len > 0) {
@@ -147,7 +148,7 @@ void CensusServerCallData::StartTransportStreamOpBatch(
 
 grpc_error_handle CensusServerCallData::Init(
     grpc_call_element* elem, const grpc_call_element_args* args) {
-  start_time_ = grpc_core::Timestamp::Now();
+  start_time_ = grpc_core::ExecCtx::Get()->Now();
   gc_ =
       grpc_call_from_top_element(grpc_call_stack_element(args->call_stack, 0));
   GRPC_CLOSURE_INIT(&on_done_recv_initial_metadata_,

@@ -111,7 +111,7 @@ OpenCensusCallTracer::OpenCensusCallAttemptTracer::OpenCensusCallAttemptTracer(
       arena_allocated_(arena_allocated),
       context_(CreateCensusContextForCallAttempt(parent_->method_,
                                                  parent_->context_)),
-      start_time_(grpc_core::Timestamp::Now()) {
+      start_time_(grpc_core::ExecCtx::Get()->Now()) {
   context_.AddSpanAttribute("previous-rpc-attempts", attempt_num);
   context_.AddSpanAttribute("transparent-retry", is_transparent_retry);
 }
@@ -192,7 +192,7 @@ void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordCancel(
 
 void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordEnd(
     const gpr_timespec& /*latency*/) {
-  double latency_ms = (grpc_core::Timestamp::Now() - start_time_).millis();
+  double latency_ms = (grpc_core::ExecCtx::Get()->Now() - start_time_).millis();
   std::vector<std::pair<opencensus::tags::TagKey, std::string>> tags =
       context_.tags().tags();
   tags.emplace_back(ClientMethodTagKey(), std::string(parent_->method_));
@@ -209,7 +209,7 @@ void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordEnd(
   context_.EndSpan();
   grpc_core::MutexLock lock(&parent_->mu_);
   if (--parent_->num_active_rpcs_ == 0) {
-    parent_->time_at_last_attempt_end_ = grpc_core::Timestamp::Now();
+    parent_->time_at_last_attempt_end_ = grpc_core::ExecCtx::Get()->Now();
   }
   if (arena_allocated_) {
     this->~OpenCensusCallAttemptTracer();
@@ -260,7 +260,8 @@ OpenCensusCallTracer::StartNewAttempt(bool is_transparent_retry) {
     if (transparent_retries_ != 0 || retries_ != 0) {
       is_first_attempt = false;
       if (num_active_rpcs_ == 0) {
-        retry_delay_ += grpc_core::Timestamp::Now() - time_at_last_attempt_end_;
+        retry_delay_ +=
+            grpc_core::ExecCtx::Get()->Now() - time_at_last_attempt_end_;
       }
     }
     attempt_num = retries_;
