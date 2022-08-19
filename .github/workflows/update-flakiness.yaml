@@ -1,7 +1,7 @@
 name: Update Flakiness
 on: [push]
 jobs:
-  PRAutoFix:
+  UpdateFlakiness:
     runs-on: ubuntu-latest
     steps:
       # Setup to run sanity suite
@@ -12,6 +12,7 @@ jobs:
       - name: Install Python Packages
         run: |
           pip install pyyaml mako virtualenv
+          pip install --upgrade google-cloud-bigquery
           sudo apt-get update
           sudo apt-get install python3-dev
       - name: Check out repository code
