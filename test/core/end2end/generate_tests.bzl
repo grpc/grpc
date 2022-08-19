@@ -20,6 +20,7 @@ load(
     "grpc_cc_library",
     "grpc_sh_test",
 )
+load("flaky.bzl", "FLAKY_TESTS")
 
 def _fixture_options(
         fullstack = True,
@@ -37,7 +38,6 @@ def _fixture_options(
         client_channel = True,
         supports_msvc = True,
         supports_retry = None,
-        flaky_tests = [],
         tags = []):
     if supports_retry == None:
         supports_retry = client_channel
@@ -56,7 +56,6 @@ def _fixture_options(
         client_channel = client_channel,
         supports_msvc = supports_msvc,
         _platforms = _platforms,
-        flaky_tests = flaky_tests,
         supports_retry = supports_retry,
         tags = tags,
     )
@@ -466,14 +465,15 @@ def grpc_end2end_tests():
             if not _compatible(fopt, topt):
                 continue
             test_short_name = str(t) if not topt.short_name else topt.short_name
+            name = "%s_test@%s" % (f, test_short_name)
             grpc_sh_test(
-                name = "%s_test@%s" % (f, test_short_name),
+                name = name,
                 srcs = ["run.sh"],
                 data = [":" + bin_name],
                 args = ["$(location %s)" % bin_name, t],
                 tags = _platform_support_tags(fopt) + fopt.tags + [
                     "no_test_ios",
                 ],
-                flaky = t in fopt.flaky_tests,
+                flaky = name in FLAKY_TESTS,
                 exclude_pollers = topt.exclude_pollers,
             )
