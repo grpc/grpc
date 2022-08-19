@@ -93,7 +93,7 @@ with open('test/core/end2end/flaky.bzl', 'w') as f:
             print(line.strip(), file=f)
     print("FLAKY_TESTS = [", file=f)
     for line in sorted(list(flaky_e2e)):
-        print("    '{}',".format(line), file=f)
+        print("    \"{}\",".format(line), file=f)
     print("]", file=f)
 
 run_buildozer.run_buildozer(buildozer_commands)
