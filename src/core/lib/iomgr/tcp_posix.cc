@@ -1010,7 +1010,7 @@ static void maybe_make_read_slices(grpc_tcp* tcp)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(tcp->read_mu) {
   if (tcp->incoming_buffer->length <
       static_cast<size_t>(tcp->min_progress_size)) {
-    const int max_read_iovec =
+    const size_t max_read_iovec =
         tcp->memory_owner.GetPressureInfo().pressure_control_value > 0.8
             ? 1
             : MAX_READ_IOVEC;
