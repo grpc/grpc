@@ -19,7 +19,7 @@ set -eo pipefail
 readonly GITHUB_REPOSITORY_NAME="grpc"
 readonly TEST_DRIVER_INSTALL_SCRIPT_URL="https://raw.githubusercontent.com/${TEST_DRIVER_REPO_OWNER:-grpc}/grpc/${TEST_DRIVER_BRANCH:-master}/tools/internal_ci/linux/grpc_xds_k8s_install_test_driver.sh"
 ## xDS test client Docker images
-readonly SERVER_IMAGE_NAME="gcr.io/grpc-testing/xds-interop/cpp-server:13171a8b293837517c0446ec0e149e9d10ea3d10"
+readonly SERVER_IMAGE_NAME="gcr.io/grpc-testing/xds-interop/python-server"
 readonly CLIENT_IMAGE_NAME="gcr.io/grpc-testing/xds-interop/python-client"
 readonly FORCE_IMAGE_BUILD="${FORCE_IMAGE_BUILD:-0}"
 readonly BUILD_APP_PATH="interop-testing/build/install/grpc-interop-testing"
@@ -45,19 +45,28 @@ build_test_app_docker_images() {
     -t "${CLIENT_IMAGE_NAME}:${GIT_COMMIT}" \
     .
 
+  docker build \
+    -f src/python/grpcio_tests/tests_py3_only/interop/Dockerfile.server \
+    -t "${SERVER_IMAGE_NAME}:${GIT_COMMIT}" \
+    .
+
   popd
 
   gcloud -q auth configure-docker
 
   docker push "${CLIENT_IMAGE_NAME}:${GIT_COMMIT}"
+  docker push "${SERVER_IMAGE_NAME}:${GIT_COMMIT}"
+
   if is_version_branch "${TESTING_VERSION}"; then
     tag_and_push_docker_image "${CLIENT_IMAGE_NAME}" "${GIT_COMMIT}" "${TESTING_VERSION}"
+    tag_and_push_docker_image "${SERVER_IMAGE_NAME}" "${GIT_COMMIT}" "${TESTING_VERSION}"
   fi
 }
 
 #######################################
 # Builds test app and its docker images unless they already exist
 # Globals:
+#   SERVER_IMAGE_NAME: Test server Docker image name
 #   CLIENT_IMAGE_NAME: Test client Docker image name
 #   GIT_COMMIT: SHA-1 of git commit being built
 #   FORCE_IMAGE_BUILD
@@ -68,12 +77,16 @@ build_test_app_docker_images() {
 #######################################
 build_docker_images_if_needed() {
   # Check if images already exist
+  server_tags="$(gcloud_gcr_list_image_tags "${SERVER_IMAGE_NAME}" "${GIT_COMMIT}")"
+  printf "Server image: %s:%s\n" "${SERVER_IMAGE_NAME}" "${GIT_COMMIT}"
+  echo "${server_tags:-Server image not found}"
+
   client_tags="$(gcloud_gcr_list_image_tags "${CLIENT_IMAGE_NAME}" "${GIT_COMMIT}")"
   printf "Client image: %s:%s\n" "${CLIENT_IMAGE_NAME}" "${GIT_COMMIT}"
   echo "${client_tags:-Client image not found}"
 
   # Build if any of the images are missing, or FORCE_IMAGE_BUILD=1
-  if [[ "${FORCE_IMAGE_BUILD}" == "1" || -z "${client_tags}" ]]; then
+  if [[ "${FORCE_IMAGE_BUILD}" == "1" || -z "${server_tags}" || -z "${client_tags}" ]]; then
     build_test_app_docker_images
   else
     echo "Skipping ${LANGUAGE_NAME} test app build"
@@ -109,7 +122,7 @@ run_test() {
     --kube_context="${KUBE_CONTEXT}" \
     --secondary_kube_context="${SECONDARY_KUBE_CONTEXT}" \
     --client_image="${CLIENT_IMAGE_NAME}:${GIT_COMMIT}" \
-    --server_image="${SERVER_IMAGE_NAME}" \
+    --server_image="${SERVER_IMAGE_NAME}:${GIT_COMMIT}" \
     --testing_version="${TESTING_VERSION}" \
     --force_cleanup \
     --collect_app_logs \
