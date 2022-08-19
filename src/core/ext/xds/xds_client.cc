@@ -915,7 +915,6 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdateLocked(
             xds_client(), lds_update_map.size());
   }
   auto& lds_state = state_map_[XdsApi::kLdsTypeUrl];
-  std::set<std::string> rds_resource_names_seen;
   for (auto& p : lds_update_map) {
     const std::string& listener_name = p.first;
     XdsApi::LdsUpdate& lds_update = p.second.resource;
@@ -924,11 +923,6 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdateLocked(
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
       gpr_log(GPR_INFO, "[xds_client %p] LDS resource %s: %s", xds_client(),
               listener_name.c_str(), lds_update.ToString().c_str());
-    }
-    // Record the RDS resource names seen.
-    if (!lds_update.http_connection_manager.route_config_name.empty()) {
-      rds_resource_names_seen.insert(
-          lds_update.http_connection_manager.route_config_name);
     }
     // Ignore identical update.
     ListenerState& listener_state = xds_client()->listener_map_[listener_name];
@@ -960,10 +954,6 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdateLocked(
       auto& resource = it->second.update;
       if (!resource.has_value()) continue;
       lds_update_map[listener_name];
-      if (!resource->http_connection_manager.route_config_name.empty()) {
-        rds_resource_names_seen.insert(
-            resource->http_connection_manager.route_config_name);
-      }
     }
   }
   // For any subscribed resource that is not present in the update,
@@ -982,22 +972,6 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdateLocked(
       if (!listener_state.update.has_value()) continue;
       listener_state.update.reset();
       for (const auto& p : listener_state.watchers) {
-        p.first->OnResourceDoesNotExist();
-      }
-    }
-  }
-  // For any RDS resource that is no longer referred to by any LDS
-  // resources, remove it from the cache and notify watchers that it
-  // does not exist.
-  auto& rds_state = state_map_[XdsApi::kRdsTypeUrl];
-  for (const auto& p : rds_state.subscribed_resources) {
-    const std::string& rds_resource_name = p.first;
-    if (rds_resource_names_seen.find(rds_resource_name) ==
-        rds_resource_names_seen.end()) {
-      RouteConfigState& route_config_state =
-          xds_client()->route_config_map_[rds_resource_name];
-      route_config_state.update.reset();
-      for (const auto& p : route_config_state.watchers) {
         p.first->OnResourceDoesNotExist();
       }
     }
@@ -1057,7 +1031,6 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdateLocked(
             xds_client(), cds_update_map.size());
   }
   auto& cds_state = state_map_[XdsApi::kCdsTypeUrl];
-  std::set<std::string> eds_resource_names_seen;
   for (auto& p : cds_update_map) {
     const char* cluster_name = p.first.c_str();
     XdsApi::CdsUpdate& cds_update = p.second.resource;
@@ -1067,10 +1040,6 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdateLocked(
       gpr_log(GPR_INFO, "[xds_client %p] cluster=%s: %s", xds_client(),
               cluster_name, cds_update.ToString().c_str());
     }
-    // Record the EDS resource names seen.
-    eds_resource_names_seen.insert(cds_update.eds_service_name.empty()
-                                       ? cluster_name
-                                       : cds_update.eds_service_name);
     // Ignore identical update.
     ClusterState& cluster_state = xds_client()->cluster_map_[cluster_name];
     if (cluster_state.update.has_value() &&
@@ -1100,9 +1069,6 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdateLocked(
       auto& resource = it->second.update;
       if (!resource.has_value()) continue;
       cds_update_map[cluster_name];
-      eds_resource_names_seen.insert(resource->eds_service_name.empty()
-                                         ? cluster_name
-                                         : resource->eds_service_name);
     }
   }
   // For any subscribed resource that is not present in the update,
@@ -1120,22 +1086,6 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdateLocked(
       if (!cluster_state.update.has_value()) continue;
       cluster_state.update.reset();
       for (const auto& p : cluster_state.watchers) {
-        p.first->OnResourceDoesNotExist();
-      }
-    }
-  }
-  // For any EDS resource that is no longer referred to by any CDS
-  // resources, remove it from the cache and notify watchers that it
-  // does not exist.
-  auto& eds_state = state_map_[XdsApi::kEdsTypeUrl];
-  for (const auto& p : eds_state.subscribed_resources) {
-    const std::string& eds_resource_name = p.first;
-    if (eds_resource_names_seen.find(eds_resource_name) ==
-        eds_resource_names_seen.end()) {
-      EndpointState& endpoint_state =
-          xds_client()->endpoint_map_[eds_resource_name];
-      endpoint_state.update.reset();
-      for (const auto& p : endpoint_state.watchers) {
         p.first->OnResourceDoesNotExist();
       }
     }
