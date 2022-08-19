@@ -2251,14 +2251,14 @@ class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
     return std::move(load_report_);
   }
 
+  // Returns true if received callback within deadline.
   bool WaitForLbCallback() {
     grpc::internal::MutexLock lock(&mu_);
-    bool timed_out = false;
     while (!trailer_intercepted_) {
-      timed_out = cond_.WaitWithTimeout(&mu_, absl::Seconds(3));
+      if (cond_.WaitWithTimeout(&mu_, absl::Seconds(3))) return false;
     }
     trailer_intercepted_ = false;
-    return timed_out;
+    return true;
   }
 
  private:
@@ -2343,7 +2343,7 @@ TEST_F(ClientLbInterceptTrailingMetadataTest,
     ctx.TryCancel();
   }
   // Wait for stream to be cancelled.
-  ASSERT_FALSE(WaitForLbCallback());
+  ASSERT_TRUE(WaitForLbCallback());
   // Check status seen by LB policy.
   EXPECT_EQ(1, num_trailers_intercepted());
   absl::Status status_seen_by_lb = last_status();
