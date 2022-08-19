@@ -91,6 +91,7 @@ with open('test/core/end2end/flaky.bzl', 'w') as f:
             if line[0] != '#':
                 break
             print(line.strip(), file=f)
+    print("\"\"\"A list of flaky tests, consumed by generate_tests.bzl to set flaky attrs.\"\"\"", file=f)
     print("FLAKY_TESTS = [", file=f)
     for line in sorted(list(flaky_e2e)):
         print("    \"{}\",".format(line), file=f)
