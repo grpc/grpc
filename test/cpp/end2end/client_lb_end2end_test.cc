@@ -90,7 +90,7 @@ class MyTestServiceImpl : public TestServiceImpl {
   Status Echo(ServerContext* context, const EchoRequest* request,
               EchoResponse* response) override {
     {
-      grpc::internal::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(&mu_);
       ++request_count_;
     }
     AddClient(context->peer());
@@ -111,29 +111,29 @@ class MyTestServiceImpl : public TestServiceImpl {
   }
 
   int request_count() {
-    grpc::internal::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(&mu_);
     return request_count_;
   }
 
   void ResetCounters() {
-    grpc::internal::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(&mu_);
     request_count_ = 0;
   }
 
   std::set<std::string> clients() {
-    grpc::internal::MutexLock lock(&clients_mu_);
+    grpc_core::MutexLock lock(&clients_mu_);
     return clients_;
   }
 
  private:
   void AddClient(const std::string& client) {
-    grpc::internal::MutexLock lock(&clients_mu_);
+    grpc_core::MutexLock lock(&clients_mu_);
     clients_.insert(client);
   }
 
-  grpc::internal::Mutex mu_;
+  grpc_core::Mutex mu_;
   int request_count_ = 0;
-  grpc::internal::Mutex clients_mu_;
+  grpc_core::Mutex clients_mu_;
   std::set<std::string> clients_;
   // For strings storage.
   xds::data::orca::v3::OrcaLoadReport load_report_;
@@ -391,8 +391,8 @@ class ClientLbEnd2endTest : public ::testing::Test {
     experimental::OrcaService orca_service_;
     std::unique_ptr<std::thread> thread_;
 
-    grpc::internal::Mutex mu_;
-    grpc::internal::CondVar cond_;
+    grpc_core::Mutex mu_;
+    grpc_core::CondVar cond_;
     bool server_ready_ ABSL_GUARDED_BY(mu_) = false;
     bool started_ ABSL_GUARDED_BY(mu_) = false;
 
@@ -402,7 +402,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
 
     void Start(const std::string& server_host) {
       gpr_log(GPR_INFO, "starting server on port %d", port_);
-      grpc::internal::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(&mu_);
       started_ = true;
       thread_ = absl::make_unique<std::thread>(
           std::bind(&ServerData::Serve, this, server_host));
@@ -424,13 +424,13 @@ class ClientLbEnd2endTest : public ::testing::Test {
       builder.RegisterService(&service_);
       builder.RegisterService(&orca_service_);
       server_ = builder.BuildAndStart();
-      grpc::internal::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(&mu_);
       server_ready_ = true;
       cond_.Signal();
     }
 
     void Shutdown() {
-      grpc::internal::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(&mu_);
       if (!started_) return;
       server_->Shutdown(grpc_timeout_milliseconds_to_deadline(0));
       thread_->join();
@@ -2134,7 +2134,7 @@ class ClientLbPickArgsTest : public ClientLbEnd2endTest {
   static void TearDownTestCase() { grpc_shutdown(); }
 
   std::vector<grpc_core::PickArgsSeen> args_seen_list() {
-    grpc::internal::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(&mu_);
     return args_seen_list_;
   }
 
@@ -2156,12 +2156,12 @@ class ClientLbPickArgsTest : public ClientLbEnd2endTest {
  private:
   static void SavePickArgs(const grpc_core::PickArgsSeen& args_seen) {
     ClientLbPickArgsTest* self = current_test_instance_;
-    grpc::internal::MutexLock lock(&self->mu_);
+    grpc_core::MutexLock lock(&self->mu_);
     self->args_seen_list_.emplace_back(args_seen);
   }
 
   static ClientLbPickArgsTest* current_test_instance_;
-  grpc::internal::Mutex mu_;
+  grpc_core::Mutex mu_;
   std::vector<grpc_core::PickArgsSeen> args_seen_list_;
 };
 
@@ -2232,28 +2232,28 @@ class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
   static void TearDownTestCase() { grpc_shutdown(); }
 
   int num_trailers_intercepted() {
-    grpc::internal::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(&mu_);
     return num_trailers_intercepted_;
   }
 
   absl::Status last_status() {
-    grpc::internal::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(&mu_);
     return last_status_;
   }
 
   grpc_core::MetadataVector trailing_metadata() {
-    grpc::internal::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(&mu_);
     return std::move(trailing_metadata_);
   }
 
   absl::optional<xds::data::orca::v3::OrcaLoadReport> backend_load_report() {
-    grpc::internal::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(&mu_);
     return std::move(load_report_);
   }
 
   // Returns true if received callback within deadline.
   bool WaitForLbCallback() {
-    grpc::internal::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(&mu_);
     while (!trailer_intercepted_) {
       if (cond_.WaitWithTimeout(&mu_, absl::Seconds(3))) return false;
     }
@@ -2266,7 +2266,7 @@ class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
       const grpc_core::TrailingMetadataArgsSeen& args_seen) {
     const auto* backend_metric_data = args_seen.backend_metric_data;
     ClientLbInterceptTrailingMetadataTest* self = current_test_instance_;
-    grpc::internal::MutexLock lock(&self->mu_);
+    grpc_core::MutexLock lock(&self->mu_);
     self->last_status_ = args_seen.status;
     self->num_trailers_intercepted_++;
     self->trailer_intercepted_ = true;
@@ -2281,8 +2281,8 @@ class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
   static ClientLbInterceptTrailingMetadataTest* current_test_instance_;
   int num_trailers_intercepted_ = 0;
   bool trailer_intercepted_ = false;
-  grpc::internal::Mutex mu_;
-  grpc::internal::CondVar cond_;
+  grpc_core::Mutex mu_;
+  grpc_core::CondVar cond_;
   absl::Status last_status_;
   grpc_core::MetadataVector trailing_metadata_;
   absl::optional<xds::data::orca::v3::OrcaLoadReport> load_report_;
@@ -2505,19 +2505,19 @@ class ClientLbAddressTest : public ClientLbEnd2endTest {
   static void TearDownTestCase() { grpc_shutdown(); }
 
   const std::vector<std::string>& addresses_seen() {
-    grpc::internal::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(&mu_);
     return addresses_seen_;
   }
 
  private:
   static void SaveAddress(const grpc_core::ServerAddress& address) {
     ClientLbAddressTest* self = current_test_instance_;
-    grpc::internal::MutexLock lock(&self->mu_);
+    grpc_core::MutexLock lock(&self->mu_);
     self->addresses_seen_.emplace_back(address.ToString());
   }
 
   static ClientLbAddressTest* current_test_instance_;
-  grpc::internal::Mutex mu_;
+  grpc_core::Mutex mu_;
   std::vector<std::string> addresses_seen_;
 };
 
@@ -2571,7 +2571,7 @@ class OobBackendMetricTest : public ClientLbEnd2endTest {
   static void TearDownTestCase() { grpc_shutdown(); }
 
   absl::optional<BackendMetricReport> GetBackendMetricReport() {
-    grpc::internal::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(&mu_);
     if (backend_metric_reports_.empty()) return absl::nullopt;
     auto result = std::move(backend_metric_reports_.front());
     backend_metric_reports_.pop_front();
@@ -2584,13 +2584,13 @@ class OobBackendMetricTest : public ClientLbEnd2endTest {
       const grpc_core::BackendMetricData& backend_metric_data) {
     auto load_report = BackendMetricDataToOrcaLoadReport(backend_metric_data);
     int port = grpc_sockaddr_get_port(&address.address());
-    grpc::internal::MutexLock lock(&current_test_instance_->mu_);
+    grpc_core::MutexLock lock(&current_test_instance_->mu_);
     current_test_instance_->backend_metric_reports_.push_back(
         {port, std::move(load_report)});
   }
 
   static OobBackendMetricTest* current_test_instance_;
-  grpc::internal::Mutex mu_;
+  grpc_core::Mutex mu_;
   std::deque<BackendMetricReport> backend_metric_reports_ ABSL_GUARDED_BY(&mu_);
 };
 
