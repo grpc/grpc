@@ -19,6 +19,7 @@ from absl import flags
 from absl.testing import absltest
 from google.protobuf import json_format
 
+from framework import xds_k8s_flags
 from framework import xds_k8s_testcase
 from framework import xds_url_map_testcase
 from framework.helpers import skips
@@ -42,6 +43,15 @@ _RPC_COUNT = 100
 
 
 class AffinityTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        # Force the python client to use the reference server image (Java)
+        # because the python server doesn't yet support set_not_serving RPC.
+        # TODO(https://github.com/grpc/grpc/issues/30635): Remove when resolved.
+        if cls.lang_spec.client_lang == _Lang.PYTHON:
+            cls.server_image = xds_k8s_flags.SERVER_IMAGE_UNIVERSAL.value
 
     @staticmethod
     def is_supported(config: skips.TestConfig) -> bool:
