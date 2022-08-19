@@ -84,7 +84,8 @@ static void simple_request_body(grpc_end2end_test_config /*config*/,
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
-  op->flags = 0;
+  op->flags = GRPC_INITIAL_METADATA_WAIT_FOR_READY |
+              GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET;
   op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
@@ -210,7 +211,8 @@ static void test_max_connection_idle(grpc_end2end_test_config config) {
   /* wait for the channel to reach its maximum idle time */
   grpc_channel_watch_connectivity_state(
       f.client, GRPC_CHANNEL_READY,
-      grpc_timeout_milliseconds_to_deadline(MAX_CONNECTION_IDLE_MS + 3000),
+      gpr_time_add(grpc_timeout_milliseconds_to_deadline(3000),
+                   gpr_time_from_millis(MAX_CONNECTION_IDLE_MS, GPR_TIMESPAN)),
       f.cq, tag(99));
   cqv.Expect(tag(99), true);
   cqv.Verify();
