@@ -1995,7 +1995,7 @@ TEST_F(RoundRobinTest, HealthCheckingHandlesSubchannelFailure) {
   WaitForServer(DEBUG_LOCATION, stub, 0);
   // Stop server 0 and send a new resolver result to ensure that RR
   // checks each subchannel's state.
-  servers_[0]->Shutdown();
+  servers_[0]->StopListeningAndSendGoaways();
   response_generator.SetNextResolution(GetServersPorts());
   // Send a bunch more RPCs.
   for (size_t i = 0; i < 100; i++) {
