@@ -18,6 +18,8 @@
 
 #include "test/cpp/end2end/test_service_impl.h"
 
+#include <chrono>
+#include <future>
 #include <string>
 #include <thread>
 
@@ -535,7 +537,8 @@ ServerBidiReactor<EchoRequest, EchoResponse>*
 CallbackTestServiceImpl::BidiStream(CallbackServerContext* context) {
   class Reactor : public grpc::ServerBidiReactor<EchoRequest, EchoResponse> {
    public:
-    explicit Reactor(CallbackServerContext* ctx) : ctx_(ctx) {
+    explicit Reactor(CallbackServerContext* ctx)
+        : ctx_(ctx), cancel_notifiee_(cancel_notifier_.get_future()) {
       // If 'server_try_cancel' is set in the metadata, the RPC is cancelled by
       // the server by calling ServerContext::TryCancel() depending on the
       // value:
@@ -570,6 +573,7 @@ CallbackTestServiceImpl::BidiStream(CallbackServerContext* context) {
       delete this;
     }
     void OnCancel() override {
+      cancel_notifier_.set_value();
       EXPECT_TRUE(setup_done_);
       EXPECT_TRUE(ctx_->IsCancelled());
       FinishOnce(Status::CANCELLED);
@@ -589,6 +593,7 @@ CallbackTestServiceImpl::BidiStream(CallbackServerContext* context) {
           }
         }
       } else if (client_try_cancel_) {
+        cancel_notifiee_.wait_for(std::chrono::seconds(10));
         EXPECT_TRUE(ctx_->IsCancelled());
       }
 
@@ -631,6 +636,8 @@ CallbackTestServiceImpl::BidiStream(CallbackServerContext* context) {
     bool setup_done_{false};
     std::thread finish_thread_;
     bool client_try_cancel_ = false;
+    std::promise<void> cancel_notifier_;
+    std::future<void> cancel_notifiee_;
   };
 
   return new Reactor(context);
