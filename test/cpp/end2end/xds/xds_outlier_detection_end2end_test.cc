@@ -102,27 +102,22 @@ TEST_P(OutlierDetectionTest, SuccessRateEjectionAndUnejection) {
                  WaitForBackendOptions(), rpc_options);
   WaitForBackend(DEBUG_LOCATION, 1, /*check_status=*/nullptr,
                  WaitForBackendOptions(), rpc_options1);
-  // Cause an error and wait for 1 outlier detection interval to pass
+  // Trigger an error to backend 0.
+  // The success rate enforcement_percentage is 100%, so this will cause
+  // the backend to be ejected when the ejection timer fires.
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::CANCELLED, "",
                       RpcOptions()
                           .set_metadata(std::move(metadata))
                           .set_server_expected_error(StatusCode::CANCELLED));
-  gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(100));
-  ResetBackendCounters();
-  // 1 backend is ejected, rpc destinated to it are now hashed to the other
-  // backend.
-  // Success rate enforcement_percentage of 100% is honored as this test will
-  // consistently reject 1 backend
-  CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options);
-  EXPECT_EQ(100, backends_[1]->backend_service()->request_count());
-  // Let base ejection period pass and see that we are no longer ejecting, rpcs
-  // going to their expectedly hashed backends.
-  gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(2000));
-  ResetBackendCounters();
-  CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options);
-  CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options1);
-  EXPECT_EQ(100, backends_[0]->backend_service()->request_count());
-  EXPECT_EQ(100, backends_[1]->backend_service()->request_count());
+  // Wait for traffic aimed at backend 0 to start going to backend 1.
+  // This tells us that backend 0 has been ejected.
+  // It should take no more than one ejection timer interval.
+  WaitForBackend(DEBUG_LOCATION, 1, /*check_status=*/nullptr,
+                 WaitForBackendOptions().set_timeout_ms(100), rpc_options);
+  // Now wait for traffic aimed at backend 0 to switch back to backend 0.
+  // This tells us that backend 0 has been unejected.
+  WaitForBackend(DEBUG_LOCATION, 0, /*check_status=*/nullptr,
+                 WaitForBackendOptions(), rpc_options);
 }
 
 // We don't eject more than max_ejection_percent (default 10%) of the backends
