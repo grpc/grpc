@@ -39,17 +39,17 @@ gpr_timespec ToGprTimeSpec(absl::Duration duration) {
   }
 }
 
-gpr_timespec ToGprTimeSpec(absl::Time time, gpr_clock_type clock_type) {
+gpr_timespec ToGprTimeSpec(absl::Time time) {
   if (time == absl::InfiniteFuture()) {
-    return gpr_inf_future(clock_type);
+    return gpr_inf_future(GPR_CLOCK_REALTIME);
   } else if (time == absl::InfinitePast()) {
-    return gpr_inf_past(clock_type);
+    return gpr_inf_past(GPR_CLOCK_REALTIME);
   } else {
     timespec ts = absl::ToTimespec(time);
     gpr_timespec out;
     out.tv_sec = static_cast<decltype(out.tv_sec)>(ts.tv_sec);
     out.tv_nsec = static_cast<decltype(out.tv_nsec)>(ts.tv_nsec);
-    out.clock_type = clock_type;
+    out.clock_type = GPR_CLOCK_REALTIME;
     return out;
   }
 }

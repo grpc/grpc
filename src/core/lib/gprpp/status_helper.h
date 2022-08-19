@@ -28,10 +28,10 @@
 
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
+#include "absl/time/time.h"
 #include "absl/types/optional.h"
 
 #include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/time.h"
 
 extern "C" {
 struct google_rpc_Status;
@@ -133,11 +133,7 @@ absl::optional<std::string> StatusGetStr(
 
 /// Sets the time property to the status
 void StatusSetTime(absl::Status* status, StatusTimeProperty key,
-                   grpc_core::Timestamp time);
-
-/// Gets the time property from the status
-absl::optional<grpc_core::Timestamp> StatusGetTime(
-    const absl::Status& status, StatusTimeProperty key) GRPC_MUST_USE_RESULT;
+                   absl::Time time);
 
 /// Adds a child status to status
 void StatusAddChild(absl::Status* status, absl::Status child);

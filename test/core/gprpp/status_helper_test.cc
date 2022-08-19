@@ -38,7 +38,6 @@ TEST(StatusUtilTest, CreateStatus) {
   EXPECT_EQ(true, StatusGetStr(s, StatusStrProperty::kFile).has_value());
   EXPECT_EQ(true, StatusGetInt(s, StatusIntProperty::kFileLine).has_value());
 #endif
-  EXPECT_EQ(true, StatusGetTime(s, StatusTimeProperty::kCreated).has_value());
   EXPECT_THAT(StatusGetChildren(s),
               ::testing::ElementsAre(absl::CancelledError()));
 }
@@ -65,19 +64,6 @@ TEST(StatusUtilTest, GetStrNotExistent) {
   absl::Status s = absl::CancelledError();
   EXPECT_EQ(absl::optional<std::string>(),
             StatusGetStr(s, StatusStrProperty::kOsError));
-}
-
-TEST(StatusUtilTest, SetAndGetTime) {
-  absl::Status s = absl::CancelledError();
-  absl::Time t = absl::Now();
-  StatusSetTime(&s, StatusTimeProperty::kCreated, t);
-  EXPECT_EQ(t, StatusGetTime(s, StatusTimeProperty::kCreated));
-}
-
-TEST(StatusUtilTest, GetTimeNotExistent) {
-  absl::Status s = absl::CancelledError();
-  EXPECT_EQ(absl::optional<absl::Time>(),
-            StatusGetTime(s, StatusTimeProperty::kCreated));
 }
 
 TEST(StatusUtilTest, AddAndGetChildren) {
