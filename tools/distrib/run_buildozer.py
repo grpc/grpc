@@ -16,8 +16,10 @@ import subprocess
 import sys
 import tempfile
 
+
 def run_buildozer(buildozer_commands):
-    if not buildozer_commands: return
+    if not buildozer_commands:
+        return
     ok_statuses = (0, 3)
     temp = tempfile.NamedTemporaryFile()
     open(temp.name, 'w').write('\n'.join(buildozer_commands))

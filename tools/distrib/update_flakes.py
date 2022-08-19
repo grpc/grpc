@@ -14,42 +14,54 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import re
-import run_buildozer
 import os
+import re
 import subprocess
 import sys
-import update_flakes_query
 
 from google.cloud import bigquery
+import run_buildozer
+import update_flakes_query
 
-lookback_hours = 24*7*4
+lookback_hours = 24 * 7 * 4
+
 
 def include_test(test):
-    if '@' in test: return False
-    if test.startswith("//test/cpp/qps:"): return False
+    if '@' in test:
+        return False
+    if test.startswith("//test/cpp/qps:"):
+        return False
     return True
+
 
 TEST_DIRS = ['test/core', 'test/cpp']
 tests = {}
 already_flaky = set()
 for test_dir in TEST_DIRS:
-    for line in subprocess.check_output(['bazel', 'query', 'tests({}/...)'.format(test_dir)]).splitlines():
+    for line in subprocess.check_output(
+        ['bazel', 'query', 'tests({}/...)'.format(test_dir)]).splitlines():
         test = line.strip().decode('utf-8')
-        if not include_test(test): continue
+        if not include_test(test):
+            continue
         tests[test] = False
 for test_dir in TEST_DIRS:
-    for line in subprocess.check_output(['bazel', 'query', 'attr(flaky, 1, tests({}/...))'.format(test_dir)]).splitlines():
+    for line in subprocess.check_output(
+        ['bazel', 'query',
+         'attr(flaky, 1, tests({}/...))'.format(test_dir)]).splitlines():
         test = line.strip().decode('utf-8')
-        if not include_test(test): continue
+        if not include_test(test):
+            continue
         already_flaky.add(test)
 
 flaky_e2e = set()
 
 client = bigquery.Client()
-for row in client.query(update_flakes_query.QUERY.format(lookback_hours = lookback_hours)).result():
+for row in client.query(
+        update_flakes_query.QUERY.format(
+            lookback_hours=lookback_hours)).result():
     if row.test_binary not in tests:
-        m = re.match(r'^//test/core/end2end:([^@]*)@([^@]*)(.*)', row.test_binary)
+        m = re.match(r'^//test/core/end2end:([^@]*)@([^@]*)(.*)',
+                     row.test_binary)
         if m:
             flaky_e2e.add('{}@{}{}'.format(m.group(1), m.group(2), m.group(3)))
             print("will mark end2end test {} as flaky".format(row.test_binary))
