@@ -140,21 +140,27 @@ TEST_F(TimerTest, CancelSomeTimers) {
   grpc_core::ExecCtx exec_ctx;
   const int kNumTimers = 10;
   grpc_timer timers[kNumTimers];
-  int timer_fired = 0;
+  std::atomic<int> timer_fired{0};
+  grpc_core::ExecCtx::Get()->InvalidateNow();
   for (int i = 0; i < kNumTimers; ++i) {
-    grpc_timer_init(&timers[i],
-                    grpc_core::ExecCtx::Get()->Now() +
-                        grpc_core::Duration::Milliseconds(500) +
-                        grpc_core::Duration::Milliseconds(i),
-                    GRPC_CLOSURE_CREATE(
-                        [](void* arg, grpc_error_handle error) {
-                          if (error == GRPC_ERROR_CANCELLED) {
-                            return;
-                          }
-                          int* timer_fired = static_cast<int*>(arg);
-                          ++*timer_fired;
-                        },
-                        &timer_fired, grpc_schedule_on_exec_ctx));
+    // Set a large firing time for timers which are bound to be cancelled
+    // and set a small firing time for timers which need to execute.
+    grpc_timer_init(
+        &timers[i],
+        grpc_core::ExecCtx::Get()->Now() +
+            ((i < kNumTimers / 2) ? grpc_core ::Duration::Milliseconds(60000)
+                                  : grpc_core ::Duration::Milliseconds(100) +
+                                        grpc_core::Duration::Milliseconds(i)),
+        GRPC_CLOSURE_CREATE(
+            [](void* arg, grpc_error_handle error) {
+              if (error == GRPC_ERROR_CANCELLED) {
+                return;
+              }
+              std::atomic<int>* timer_fired =
+                  static_cast<std::atomic<int>*>(arg);
+              ++*timer_fired;
+            },
+            &timer_fired, grpc_schedule_on_exec_ctx));
   }
   for (int i = 0; i < kNumTimers / 2; ++i) {
     grpc_timer_cancel(&timers[i]);

@@ -180,23 +180,16 @@ class RlsEnd2endTest : public ::testing::Test {
           EXPECT_THAT(ctx->client_metadata(),
                       ::testing::Contains(
                           ::testing::Pair(kCallCredsMdKey, kCallCredsMdValue)));
+          EXPECT_EQ(ctx->ExperimentalGetAuthority(), kServerName);
         });
     rls_server_->Start();
+    // Set up client.
     resolver_response_generator_ =
         absl::make_unique<FakeResolverResponseGeneratorWrapper>();
-    ResetStub();
-  }
-
-  void TearDown() override {
-    ShutdownBackends();
-    rls_server_->Shutdown();
-  }
-
-  void ResetStub(const char* expected_authority = kServerName) {
     ChannelArguments args;
     args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
                     resolver_response_generator_->Get());
-    args.SetString(GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS, expected_authority);
+    args.SetString(GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS, kServerName);
     grpc_channel_credentials* channel_creds =
         grpc_fake_transport_security_credentials_create();
     grpc_call_credentials* call_creds = grpc_md_only_test_credentials_create(
@@ -209,6 +202,11 @@ class RlsEnd2endTest : public ::testing::Test {
     channel_ = grpc::CreateCustomChannel(
         absl::StrCat("fake:///", kServerName).c_str(), std::move(creds), args);
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
+  }
+
+  void TearDown() override {
+    ShutdownBackends();
+    rls_server_->Shutdown();
   }
 
   void ShutdownBackends() {
@@ -1377,35 +1375,6 @@ TEST_F(RlsEnd2endTest, ConnectivityStateTransientFailure) {
   EXPECT_EQ(rls_server_->service_.response_count(), 1);
   EXPECT_EQ(GRPC_CHANNEL_TRANSIENT_FAILURE,
             channel_->GetState(/*try_to_connect=*/false));
-}
-
-TEST_F(RlsEnd2endTest, RlsAuthorityDeathTest) {
-  GTEST_FLAG_SET(death_test_style, "threadsafe");
-  ResetStub("incorrect_authority");
-  SetNextResolution(
-      MakeServiceConfigBuilder()
-          .AddKeyBuilder(absl::StrFormat("\"names\":[{"
-                                         "  \"service\":\"%s\","
-                                         "  \"method\":\"%s\""
-                                         "}],"
-                                         "\"headers\":["
-                                         "  {"
-                                         "    \"key\":\"%s\","
-                                         "    \"names\":["
-                                         "      \"key1\""
-                                         "    ]"
-                                         "  }"
-                                         "]",
-                                         kServiceValue, kMethodValue, kTestKey))
-          .Build());
-  // Make sure that we blow up (via abort() from the security connector) when
-  // the authority for the RLS channel doesn't match expectations.
-  ASSERT_DEATH_IF_SUPPORTED(
-      {
-        CheckRpcSendOk(DEBUG_LOCATION,
-                       RpcOptions().set_metadata({{"key1", kTestValue}}));
-      },
-      "");
 }
 
 }  // namespace

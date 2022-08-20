@@ -23,9 +23,11 @@
 
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
+#include "upb/arena.h"
 #include "upb/def.h"
 
-#include "src/core/ext/xds/upb_utils.h"
+#include "src/core/ext/xds/xds_bootstrap.h"
+#include "src/core/lib/debug/trace.h"
 
 namespace grpc_core {
 
@@ -33,6 +35,15 @@ namespace grpc_core {
 // Used to inject type-specific logic into XdsClient.
 class XdsResourceType {
  public:
+  // Context passed into Decode().
+  struct DecodeContext {
+    XdsClient* client;
+    const XdsBootstrap::XdsServer& server;
+    TraceFlag* tracer;
+    upb_DefPool* symtab;
+    upb_Arena* arena;
+  };
+
   // A base type for resource data.
   // Subclasses will extend this, and their DecodeResults will be
   // downcastable to their extended type.
@@ -60,7 +71,7 @@ class XdsResourceType {
   // whose resource field is set to a non-OK status.
   // Otherwise, returns a DecodeResult with a valid resource.
   virtual absl::StatusOr<DecodeResult> Decode(
-      const XdsEncodingContext& context, absl::string_view serialized_resource,
+      const DecodeContext& context, absl::string_view serialized_resource,
       bool is_v2) const = 0;
 
   // Returns true if r1 and r2 are equal.

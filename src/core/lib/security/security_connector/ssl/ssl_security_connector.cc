@@ -45,7 +45,6 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/promise/arena_promise.h"
-#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/credentials.h"
@@ -153,6 +152,7 @@ class grpc_ssl_channel_security_connector final
   }
 
   void check_peer(tsi_peer peer, grpc_endpoint* /*ep*/,
+                  const grpc_core::ChannelArgs& /*args*/,
                   grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
                   grpc_closure* on_peer_checked) override {
     const char* target_name = overridden_target_name_.empty()
@@ -297,6 +297,7 @@ class grpc_ssl_server_security_connector
   }
 
   void check_peer(tsi_peer peer, grpc_endpoint* /*ep*/,
+                  const grpc_core::ChannelArgs& /*args*/,
                   grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
                   grpc_closure* on_peer_checked) override {
     grpc_error_handle error = ssl_check_peer(nullptr, &peer, auth_context);
