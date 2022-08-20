@@ -141,9 +141,8 @@ class KubernetesClientRunner(k8s_base_runner.KubernetesBaseRunner):
             print_response=print_response)
 
         # Load test client pod. We need only one client at the moment
-        pod: k8s.V1Pod = self._wait_deployment_pod_count(self.deployment)[0]
-        pod_name = pod.metadata.name
-        self._wait_pod_started(pod_name)
+        pod_name = self._wait_deployment_pod_count(self.deployment)[0]
+        pod: k8s.V1Pod = self._wait_pod_started(pod_name)
 
         # Verify the deployment reports all pods started as well.
         self._wait_deployment_with_available_replicas(self.deployment_name)

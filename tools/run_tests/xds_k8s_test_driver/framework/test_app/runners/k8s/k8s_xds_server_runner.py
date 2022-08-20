@@ -181,14 +181,13 @@ class KubernetesServerRunner(k8s_base_runner.KubernetesBaseRunner):
             maintenance_port=maintenance_port,
             secure_mode=secure_mode)
 
-        pods = self._wait_deployment_pod_count(self.deployment, replica_count)
-        for pod in pods:
-            self._wait_pod_started(pod.metadata.name)
+        pod_names = self._wait_deployment_pod_count(self.deployment,
+                                                    replica_count)
+        pods = [self._wait_pod_started(pod_name) for pod_name in pod_names]
 
         # Verify the deployment reports all pods started as well.
         self._wait_deployment_with_available_replicas(self.deployment_name,
                                                       replica_count)
-
         servers = []
         for pod in pods:
             pod_ip = pod.status.pod_ip

@@ -312,7 +312,7 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
             name: str,
             count: int = 1,
             timeout_sec: int = WAIT_MEDIUM_TIMEOUT_SEC,
-            wait_sec: int = WAIT_MEDIUM_SLEEP_SEC):
+            wait_sec: int = WAIT_SHORT_SLEEP_SEC):
         timeout = datetime.timedelta(seconds=timeout_sec)
         retryer = retryers.constant_retryer(
             wait_fixed=datetime.timedelta(seconds=wait_sec),
