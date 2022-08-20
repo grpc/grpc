@@ -183,7 +183,7 @@ void ConnectionHoldInjector::Hold::WaitForCompletion() {
 
 bool ConnectionHoldInjector::Hold::IsStarted() {
   grpc_core::MutexLock lock(&injector_->mu_);
-  return !start_cv_.WaitWithDeadline(&injector_->mu_, absl::Now());
+  return !start_cv_.WaitWithTimeout(&injector_->mu_, absl::Duration());
 }
 
 void ConnectionHoldInjector::Hold::OnComplete(void* arg,

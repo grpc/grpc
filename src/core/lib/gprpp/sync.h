@@ -134,12 +134,9 @@ class CondVar {
   void Signal() { gpr_cv_signal(&cv_); }
   void SignalAll() { gpr_cv_broadcast(&cv_); }
 
-  void Wait(Mutex* mu) { WaitWithDeadline(mu, absl::InfiniteFuture()); }
+  void Wait(Mutex* mu) { WaitWithTimeout(mu, absl::InfiniteDuration()); }
   bool WaitWithTimeout(Mutex* mu, absl::Duration timeout) {
     return gpr_cv_wait(&cv_, &mu->mu_, ToGprTimeSpec(timeout)) != 0;
-  }
-  bool WaitWithDeadline(Mutex* mu, absl::Time deadline) {
-    return gpr_cv_wait(&cv_, &mu->mu_, ToGprTimeSpec(deadline)) != 0;
   }
 
  private:

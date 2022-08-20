@@ -241,9 +241,9 @@ static grpc_error_handle pollset_work(grpc_pollset* pollset,
     auto it = apple_pollset->workers.begin();
 
     while (!actual_worker.kicked && !apple_pollset->is_shutdown) {
-      if (actual_worker.cv.WaitWithDeadline(
-              &apple_pollset->mu, grpc_core::ToAbslTime(deadline.as_timespec(
-                                      GPR_CLOCK_REALTIME)))) {
+      if (actual_worker.cv.WaitWithTimeout(
+              &apple_pollset->mu,
+              grpc_core::ToAbslDuration(deadline - ExecCtx::Get()->Now()))) {
         // timed out
         break;
       }

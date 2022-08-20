@@ -47,3 +47,13 @@ grep -EIrn \
     '^#include (<pthread.h>)' \
     test | \
     diff - /dev/null
+
+#
+# Prevent usage of absl::Mutex's family of WaitWithDeadline
+# These do not rely on monotonic clocks, and may wake up milliseconds early
+#
+
+grep -EIrn \
+    'WaitWithDeadline\(' \
+    include/grpc include/grpcpp src/core src/cpp test/ | \
+    diff - /dev/null

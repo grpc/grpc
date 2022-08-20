@@ -33,6 +33,7 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/gprpp/time_util.h"
 #include "src/core/lib/profiling/timers.h"
 
 #ifdef GPR_LOW_LEVEL_COUNTERS
@@ -87,10 +88,9 @@ int gpr_cv_wait(gpr_cv* cv, gpr_mu* mu, gpr_timespec abs_deadline) {
     return 0;
   }
   abs_deadline = gpr_convert_clock_type(abs_deadline, GPR_CLOCK_REALTIME);
-  timespec ts = {static_cast<decltype(ts.tv_sec)>(abs_deadline.tv_sec),
-                 static_cast<decltype(ts.tv_nsec)>(abs_deadline.tv_nsec)};
-  return reinterpret_cast<absl::CondVar*>(cv)->WaitWithDeadline(
-      reinterpret_cast<absl::Mutex*>(mu), absl::TimeFromTimespec(ts));
+  auto timeout = gpr_time_sub(abs_deadline, gpr_now(GPR_CLOCK_REALTIME));
+  return reinterpret_cast<absl::CondVar*>(cv)->WaitWithTimeout(
+      reinterpret_cast<absl::Mutex*>(mu), grpc_core::ToAbslDuration(timeout));
 }
 
 void gpr_cv_signal(gpr_cv* cv) {
