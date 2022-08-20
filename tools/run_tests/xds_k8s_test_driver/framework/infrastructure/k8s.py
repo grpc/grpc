@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import datetime
 import functools
 import json
 import logging
@@ -24,9 +25,14 @@ from kubernetes import utils
 import kubernetes.config
 # TODO(sergiitk): replace with tenacity
 import retrying
+import yaml
+
+import framework.helpers.highlighter
+from framework.helpers import retryers
 
 logger = logging.getLogger(__name__)
 # Type aliases
+_HighlighterYaml = framework.helpers.highlighter.HighlighterYaml
 V1Deployment = client.V1Deployment
 V1ServiceAccount = client.V1ServiceAccount
 V1Pod = client.V1Pod
@@ -181,6 +187,7 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
     WAIT_LONG_SLEEP_SEC: int = 30
 
     def __init__(self, api: KubernetesApiManager, name: str):
+        self._highlighter = _HighlighterYaml()
         self.name = name
         self.api = api
 
@@ -325,24 +332,23 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
 
     def wait_for_deployment_available_replicas(
             self,
-            name,
-            count=1,
-            timeout_sec=WAIT_MEDIUM_TIMEOUT_SEC,
-            wait_sec=WAIT_MEDIUM_SLEEP_SEC):
-
-        @retrying.retry(
-            retry_on_result=lambda r: not self._replicas_available(r, count),
-            stop_max_delay=timeout_sec * 1000,
-            wait_fixed=wait_sec * 1000)
-        def _wait_for_deployment_available_replicas():
-            deployment = self.get_deployment(name)
-            logger.debug(
-                'Waiting for deployment %s to have %s available '
-                'replicas, current count %s', deployment.metadata.name, count,
-                deployment.status.available_replicas)
-            return deployment
-
-        _wait_for_deployment_available_replicas()
+            name: str,
+            count: int = 1,
+            timeout_sec: int = WAIT_MEDIUM_TIMEOUT_SEC,
+            wait_sec: int = WAIT_MEDIUM_SLEEP_SEC):
+        timeout = datetime.timedelta(seconds=timeout_sec)
+        retryer = retryers.constant_retryer(
+            wait_fixed=datetime.timedelta(seconds=wait_sec),
+            timeout=timeout,
+            check_result=lambda depl: self._replicas_available(depl, 10))
+        try:
+            retryer(self.get_deployment, name)
+        except retryers.RetryError as e:
+            logger.error(
+                'Timeout %s waiting for deployment %s to report %i '
+                'replicas available. Last status:\n%s', timeout, name, count,
+                self._pretty_format_status(e.result()))
+            raise
 
     def wait_for_deployment_replica_count(
             self,
@@ -350,20 +356,47 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
             count: int = 1,
             *,
             timeout_sec: int = WAIT_MEDIUM_TIMEOUT_SEC,
-            wait_sec: int = WAIT_MEDIUM_SLEEP_SEC):
+            wait_sec: int = WAIT_SHORT_SLEEP_SEC):
+        timeout = datetime.timedelta(seconds=timeout_sec)
+        retryer = retryers.constant_retryer(
+            wait_fixed=datetime.timedelta(seconds=wait_sec),
+            timeout=timeout,
+            check_result=lambda pods: len(pods) == count)
+        try:
+            retryer(self.list_deployment_pods, deployment)
+        except retryers.RetryError as e:
+            result = e.result(default=[])
+            logger.error(
+                'Timeout %s waiting for pod count %i, got: %i. '
+                'Pod statuses:\n%s', timeout, count, len(result),
+                self._pretty_format_statuses(result))
+            raise
 
-        @retrying.retry(
-            retry_on_result=lambda r: not self._replicas_count(r, count),
-            stop_max_delay=timeout_sec * 1000,
-            wait_fixed=wait_sec * 1000)
-        def _wait_for_deployment_replica_count():
-            pods = self.list_deployment_pods(deployment)
-            logger.debug(
-                'Waiting for deployment %s to match %i replicas '
-                'current match: %s', deployment.metadata.name, count, pods)
-            return pods
+    def _pretty_format_statuses(self, k8s_objects: List[Optional[object]]):
+        return '\n'.join(
+            self._pretty_format_status(k8s_object)
+            for k8s_object in k8s_objects)
 
-        _wait_for_deployment_replica_count()
+    def _pretty_format_status(self, k8s_object: Optional[object]):
+        if k8s_object is None:
+            return 'No data'
+        if 'metadata' in k8s_object.metadata and 'name' in k8s_object.metadata:
+            name = k8s_object.metadata.name
+        else:
+            name = 'Can\'t parse resource name'
+        if 'status' in k8s_object:
+            try:
+                status = self._pretty_format(k8s_object.status.to_dict())
+            except Exception as e:
+                status = f'Can\'t parse resource status: {e}'
+        else:
+            status = 'Can\'t parse resource status'
+        return f'{name}:\n{status}\n'
+
+    def _pretty_format(self, data: dict) -> str:
+        """Return a string with pretty-printed yaml data from a python dict."""
+        yaml_out: str = yaml.dump(data, explicit_start=True, explicit_end=True)
+        return self._highlighter.highlight(yaml_out)
 
     def wait_for_deployment_deleted(self,
                                     deployment_name: str,
@@ -430,7 +463,3 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
         return (deployment is not None and
                 deployment.status.available_replicas is not None and
                 deployment.status.available_replicas >= count)
-
-    @staticmethod
-    def _replicas_count(pods, count):
-        return len(pods) == count
