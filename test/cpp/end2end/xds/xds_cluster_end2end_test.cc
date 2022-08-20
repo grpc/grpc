@@ -84,7 +84,8 @@ TEST_P(CdsTest, InvalidClusterStillExistsIfPreviouslyCached) {
   auto cluster = default_cluster_;
   cluster.set_type(Cluster::STATIC);
   balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state = WaitForCdsNack(DEBUG_LOCATION, StatusCode::OK);
+  const auto response_state =
+      WaitForCdsNack(DEBUG_LOCATION, RpcOptions(), StatusCode::OK);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::ContainsRegex(absl::StrCat(

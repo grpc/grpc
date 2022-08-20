@@ -90,7 +90,6 @@ int main(int argc, char** argv) {
 
   // Get initial process memory usage before creating server
   long before_server_create = GetMemUsage();
-  gpr_log(GPR_INFO, "Server Before Mem: %ld", before_server_create);
   ServerCallbackImpl callback_server(before_server_create);
   grpc::ServerBuilder builder;
 

@@ -75,7 +75,7 @@ class PosixEventEngine final : public EventEngine {
     bool CancelLookup(LookupTaskHandle handle) override;
   };
 
-  PosixEventEngine();
+  PosixEventEngine() = default;
   ~PosixEventEngine() override;
 
   absl::StatusOr<std::unique_ptr<Listener>> CreateListener(
