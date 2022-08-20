@@ -22,7 +22,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  version = '1.49.0-dev'
+  version = '1.50.0-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -680,10 +680,11 @@ Pod::Spec.new do |s|
                       'src/core/lib/debug/stats_data.h',
                       'src/core/lib/debug/trace.h',
                       'src/core/lib/event_engine/channel_args_endpoint_config.h',
+                      'src/core/lib/event_engine/default_event_engine.h',
                       'src/core/lib/event_engine/default_event_engine_factory.h',
-                      'src/core/lib/event_engine/event_engine_factory.h',
                       'src/core/lib/event_engine/executor/executor.h',
                       'src/core/lib/event_engine/executor/threaded_executor.h',
+                      'src/core/lib/event_engine/forkable.h',
                       'src/core/lib/event_engine/handle_containers.h',
                       'src/core/lib/event_engine/poller.h',
                       'src/core/lib/event_engine/posix_engine/posix_engine.h',
@@ -726,6 +727,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/gprpp/match.h',
                       'src/core/lib/gprpp/memory.h',
                       'src/core/lib/gprpp/mpscq.h',
+                      'src/core/lib/gprpp/no_destruct.h',
                       'src/core/lib/gprpp/orphanable.h',
                       'src/core/lib/gprpp/overload.h',
                       'src/core/lib/gprpp/ref_counted.h',
@@ -824,7 +826,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/promise/detail/promise_factory.h',
                       'src/core/lib/promise/detail/promise_like.h',
                       'src/core/lib/promise/detail/status.h',
-                      'src/core/lib/promise/detail/switch.h',
                       'src/core/lib/promise/exec_ctx_wakeup_scheduler.h',
                       'src/core/lib/promise/intra_activity_waiter.h',
                       'src/core/lib/promise/latch.h',
@@ -1534,10 +1535,11 @@ Pod::Spec.new do |s|
                               'src/core/lib/debug/stats_data.h',
                               'src/core/lib/debug/trace.h',
                               'src/core/lib/event_engine/channel_args_endpoint_config.h',
+                              'src/core/lib/event_engine/default_event_engine.h',
                               'src/core/lib/event_engine/default_event_engine_factory.h',
-                              'src/core/lib/event_engine/event_engine_factory.h',
                               'src/core/lib/event_engine/executor/executor.h',
                               'src/core/lib/event_engine/executor/threaded_executor.h',
+                              'src/core/lib/event_engine/forkable.h',
                               'src/core/lib/event_engine/handle_containers.h',
                               'src/core/lib/event_engine/poller.h',
                               'src/core/lib/event_engine/posix_engine/posix_engine.h',
@@ -1580,6 +1582,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/gprpp/match.h',
                               'src/core/lib/gprpp/memory.h',
                               'src/core/lib/gprpp/mpscq.h',
+                              'src/core/lib/gprpp/no_destruct.h',
                               'src/core/lib/gprpp/orphanable.h',
                               'src/core/lib/gprpp/overload.h',
                               'src/core/lib/gprpp/ref_counted.h',
@@ -1678,7 +1681,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/promise/detail/promise_factory.h',
                               'src/core/lib/promise/detail/promise_like.h',
                               'src/core/lib/promise/detail/status.h',
-                              'src/core/lib/promise/detail/switch.h',
                               'src/core/lib/promise/exec_ctx_wakeup_scheduler.h',
                               'src/core/lib/promise/intra_activity_waiter.h',
                               'src/core/lib/promise/latch.h',

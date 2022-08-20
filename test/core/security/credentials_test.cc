@@ -489,8 +489,8 @@ class RequestMetadataState : public RefCounted<RequestMetadataState> {
     explicit BogusSecurityConnector(absl::string_view url_scheme)
         : grpc_channel_security_connector(url_scheme, nullptr, nullptr) {}
 
-    void check_peer(tsi_peer, grpc_endpoint*, RefCountedPtr<grpc_auth_context>*,
-                    grpc_closure*) override {
+    void check_peer(tsi_peer, grpc_endpoint*, const ChannelArgs&,
+                    RefCountedPtr<grpc_auth_context>*, grpc_closure*) override {
       GPR_ASSERT(false);
     }
 

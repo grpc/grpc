@@ -88,6 +88,11 @@ config_setting(
     values = {"cpu": "watchos_arm64_32"}
 )
 
+config_setting(
+    name = "openbsd",
+    values = {"cpu": "openbsd"},
+)
+
 copy_file(
     name = "ares_build_h",
     src = "@com_github_grpc_grpc//third_party/cares:ares_build.h",
@@ -113,6 +118,7 @@ copy_file(
         ":darwin_arm64e": "@com_github_grpc_grpc//third_party/cares:config_darwin/ares_config.h",
         ":windows": "@com_github_grpc_grpc//third_party/cares:config_windows/ares_config.h",
         ":android": "@com_github_grpc_grpc//third_party/cares:config_android/ares_config.h",
+        ":openbsd": "@com_github_grpc_grpc//third_party/cares:config_openbsd/ares_config.h",
         "//conditions:default": "@com_github_grpc_grpc//third_party/cares:config_linux/ares_config.h",
     }),
     out = "ares_config.h",

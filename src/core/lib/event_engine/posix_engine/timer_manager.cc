@@ -62,8 +62,9 @@ void TimerManager::StartThread() {
   ++thread_count_;
   auto* thread = new RunThreadArgs();
   thread->self = this;
-  thread->thread =
-      grpc_core::Thread("timer_manager", &TimerManager::RunThread, thread);
+  thread->thread = grpc_core::Thread(
+      "timer_manager", &TimerManager::RunThread, thread, nullptr,
+      grpc_core::Thread::Options().set_tracked(false));
   thread->thread.Start();
 }
 
@@ -73,12 +74,14 @@ void TimerManager::RunSomeTimers(
   ThreadCollector collector;
   {
     grpc_core::MutexLock lock(&mu_);
+    if (shutdown_ || forking_) return;
     // remove a waiter from the pool, and start another thread if necessary
     --waiter_count_;
     if (waiter_count_ == 0) {
       // The number of timer threads is always increasing until all the threads
-      // are stopped. In rare cases, if a large number of timers fire
-      // simultaneously, we may end up using a large number of threads.
+      // are stopped, with the exception that all threads are shut down on fork
+      // events. In rare cases, if a large number of timers fire simultaneously,
+      // we may end up using a large number of threads.
       // TODO(ctiller): We could avoid this by exiting threads in WaitUntil().
       StartThread();
     } else {
@@ -106,9 +109,8 @@ void TimerManager::RunSomeTimers(
 bool TimerManager::WaitUntil(grpc_core::Timestamp next) {
   grpc_core::MutexLock lock(&mu_);
 
-  if (shutdown_) {
-    return false;
-  }
+  if (shutdown_) return false;
+  if (forking_) return false;
 
   // TODO(ctiller): if there are too many waiting threads, this would be a good
   // place to exit the current thread.
@@ -248,6 +250,40 @@ void TimerManager::Kick() {
   ++timed_waiter_generation_;
   kicked_ = true;
   cv_.Signal();
+}
+
+void TimerManager::PrepareFork() {
+  {
+    grpc_core::MutexLock lock(&mu_);
+    forking_ = true;
+    prefork_thread_count_ = thread_count_;
+    cv_.SignalAll();
+  }
+  while (true) {
+    grpc_core::MutexLock lock(&mu_);
+    ThreadCollector collector;
+    collector.Collect(std::move(completed_threads_));
+    if (thread_count_ == 0) break;
+    cv_.Wait(&mu_);
+  }
+}
+
+void TimerManager::PostforkParent() {
+  grpc_core::MutexLock lock(&mu_);
+  for (int i = 0; i < prefork_thread_count_; i++) {
+    StartThread();
+  }
+  prefork_thread_count_ = 0;
+  forking_ = false;
+}
+
+void TimerManager::PostforkChild() {
+  grpc_core::MutexLock lock(&mu_);
+  for (int i = 0; i < prefork_thread_count_; i++) {
+    StartThread();
+  }
+  prefork_thread_count_ = 0;
+  forking_ = false;
 }
 
 }  // namespace posix_engine
