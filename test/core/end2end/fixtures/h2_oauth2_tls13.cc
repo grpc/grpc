@@ -117,13 +117,6 @@ static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
   return f;
 }
 
-static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack_tls1_2(
-    const grpc_channel_args* client_args,
-    const grpc_channel_args* server_args) {
-  return chttp2_create_fixture_secure_fullstack(client_args, server_args,
-                                                grpc_tls_version::TLS1_2);
-}
-
 static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack_tls1_3(
     const grpc_channel_args* client_args,
     const grpc_channel_args* server_args) {
@@ -266,15 +259,6 @@ static void chttp2_init_server_simple_ssl_secure_fullstack(
 /* All test configurations */
 
 static grpc_end2end_test_config configs[] = {
-    {"chttp2/simple_ssl_with_oauth2_fullstack_tls1_2",
-     FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
-         FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
-         FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
-         FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER,
-     "foo.test.google.fr", chttp2_create_fixture_secure_fullstack_tls1_2,
-     chttp2_init_client_simple_ssl_with_oauth2_secure_fullstack,
-     chttp2_init_server_simple_ssl_secure_fullstack,
-     chttp2_tear_down_secure_fullstack},
     {"chttp2/simple_ssl_with_oauth2_fullstack_tls1_3",
      FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
          FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |

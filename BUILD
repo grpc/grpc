@@ -146,11 +146,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "gamma"  # @unused
+g_stands_for = "galley"  # @unused
 
-core_version = "26.0.0"  # @unused
+core_version = "27.0.0"  # @unused
 
-version = "1.49.0-dev"  # @unused
+version = "1.50.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -1273,7 +1273,6 @@ grpc_cc_library(
         "exec_ctx",
         "gpr",
         "poll",
-        "ref_counted",
         "time",
     ],
 )
@@ -2237,6 +2236,7 @@ grpc_cc_library(
     deps = [
         "gpr",
         "gpr_platform",
+        "no_destruct",
     ],
 )
 
@@ -3842,7 +3842,9 @@ grpc_cc_library(
         "src/core/ext/filters/fault_injection/service_config_parser.h",
     ],
     external_deps = [
+        "absl/base:core_headers",
         "absl/memory",
+        "absl/random",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",

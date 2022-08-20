@@ -927,55 +927,62 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
   absl::optional<AdsServiceImpl::ResponseState> WaitForNack(
       const grpc_core::DebugLocation& debug_location,
       std::function<absl::optional<AdsServiceImpl::ResponseState>()> get_state,
+      const RpcOptions& rpc_options = RpcOptions(),
       StatusCode expected_status = StatusCode::UNAVAILABLE);
 
   // Sends RPCs until an LDS NACK is seen.
   absl::optional<AdsServiceImpl::ResponseState> WaitForLdsNack(
       const grpc_core::DebugLocation& debug_location,
+      const RpcOptions& rpc_options = RpcOptions(),
       StatusCode expected_status = StatusCode::UNAVAILABLE) {
     return WaitForNack(
         debug_location,
         [&]() { return balancer_->ads_service()->lds_response_state(); },
-        expected_status);
+        rpc_options, expected_status);
   }
 
   // Sends RPCs until an RDS NACK is seen.
   absl::optional<AdsServiceImpl::ResponseState> WaitForRdsNack(
       const grpc_core::DebugLocation& debug_location,
+      const RpcOptions& rpc_options = RpcOptions(),
       StatusCode expected_status = StatusCode::UNAVAILABLE) {
     return WaitForNack(
         debug_location,
         [&]() { return RouteConfigurationResponseState(balancer_.get()); },
-        expected_status);
+        rpc_options, expected_status);
   }
 
   // Sends RPCs until a CDS NACK is seen.
   absl::optional<AdsServiceImpl::ResponseState> WaitForCdsNack(
       const grpc_core::DebugLocation& debug_location,
+      const RpcOptions& rpc_options = RpcOptions(),
       StatusCode expected_status = StatusCode::UNAVAILABLE) {
     return WaitForNack(
         debug_location,
         [&]() { return balancer_->ads_service()->cds_response_state(); },
-        expected_status);
+        rpc_options, expected_status);
   }
 
   // Sends RPCs until an EDS NACK is seen.
   absl::optional<AdsServiceImpl::ResponseState> WaitForEdsNack(
-      const grpc_core::DebugLocation& debug_location) {
-    return WaitForNack(debug_location, [&]() {
-      return balancer_->ads_service()->eds_response_state();
-    });
+      const grpc_core::DebugLocation& debug_location,
+      const RpcOptions& rpc_options = RpcOptions()) {
+    return WaitForNack(
+        debug_location,
+        [&]() { return balancer_->ads_service()->eds_response_state(); },
+        rpc_options);
   }
 
   // Convenient front-end to wait for RouteConfiguration to be NACKed,
   // regardless of whether it's sent in LDS or RDS.
   absl::optional<AdsServiceImpl::ResponseState> WaitForRouteConfigNack(
       const grpc_core::DebugLocation& debug_location,
+      const RpcOptions& rpc_options = RpcOptions(),
       StatusCode expected_status = StatusCode::UNAVAILABLE) {
     if (GetParam().enable_rds_testing()) {
-      return WaitForRdsNack(debug_location, expected_status);
+      return WaitForRdsNack(debug_location, rpc_options, expected_status);
     }
-    return WaitForLdsNack(debug_location, expected_status);
+    return WaitForLdsNack(debug_location, rpc_options, expected_status);
   }
 
   // Convenient front-end for accessing xDS response state for a
@@ -1018,6 +1025,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
   // the equation:
   //
   //   kn <= 5.00 * sqrt(np(1-p))
+  // TODO(yashykt): The above explanation assumes a normal distribution, but we
+  // use a uniform distribution instead. We need a better estimate of how many
+  // RPCs are needed with what error tolerance.
   static size_t ComputeIdealNumRpcs(double p, double error_tolerance) {
     GPR_ASSERT(p >= 0 && p <= 1);
     size_t num_rpcs =

@@ -377,7 +377,9 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    flaky = True,
     language = "C++",
+    shard_count = 5,
     tags = [
         "no_windows",  # LARGE_MACHINE is not configured for windows RBE
     ],
