@@ -17,7 +17,9 @@ from typing import List
 from absl import flags
 from absl.testing import absltest
 
+from framework import xds_k8s_flags
 from framework import xds_k8s_testcase
+from framework.helpers import skips
 from framework.infrastructure import k8s
 from framework.test_app.runners.k8s import k8s_xds_server_runner
 
@@ -25,6 +27,7 @@ logger = logging.getLogger(__name__)
 flags.adopt_module_key_flags(xds_k8s_testcase)
 
 # Type aliases
+_Lang = skips.Lang
 _XdsTestServer = xds_k8s_testcase.XdsTestServer
 _XdsTestClient = xds_k8s_testcase.XdsTestClient
 _KubernetesServerRunner = k8s_xds_server_runner.KubernetesServerRunner
@@ -33,6 +36,15 @@ _KubernetesServerRunner = k8s_xds_server_runner.KubernetesServerRunner
 class FailoverTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
     REPLICA_COUNT = 3
     MAX_RATE_PER_ENDPOINT = 100
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        # Force the python client to use the reference server image (Java)
+        # because the python server doesn't yet support set_not_serving RPC.
+        # TODO(https://github.com/grpc/grpc/issues/30635): Remove when resolved.
+        if cls.lang_spec.client_lang == _Lang.PYTHON:
+            cls.server_image = xds_k8s_flags.SERVER_IMAGE_UNIVERSAL.value
 
     def setUp(self):
         super().setUp()

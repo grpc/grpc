@@ -41,8 +41,9 @@ Forkable::~Forkable() { StopManagingForkable(this); }
 
 void RegisterForkHandlers() {
   grpc_core::MutexLock lock(g_mu.get());
-  GPR_ASSERT(!absl::exchange(g_registered, true));
-  pthread_atfork(PrepareFork, PostforkParent, PostforkChild);
+  if (!absl::exchange(g_registered, true)) {
+    pthread_atfork(PrepareFork, PostforkParent, PostforkChild);
+  }
 };
 
 void PrepareFork() {
