@@ -104,6 +104,9 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
     end
     add_message "grpc.testing.ClientConfigureResponse" do
     end
+    add_message "grpc.testing.MemorySize" do
+      optional :rss, :int64, 1
+    end
     add_enum "grpc.testing.PayloadType" do
       value :COMPRESSABLE, 0
     end
@@ -139,6 +142,7 @@ module Grpc
     ClientConfigureRequest::Metadata = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.ClientConfigureRequest.Metadata").msgclass
     ClientConfigureRequest::RpcType = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.ClientConfigureRequest.RpcType").enummodule
     ClientConfigureResponse = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.ClientConfigureResponse").msgclass
+    MemorySize = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.MemorySize").msgclass
     PayloadType = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.PayloadType").enummodule
     GrpclbRouteType = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.GrpclbRouteType").enummodule
   end

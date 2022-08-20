@@ -29,7 +29,7 @@ fi
 
 outputbasedir="${1}"
 
-mkdir -p "${outputbasedir}/templates"
+mkdir -p "${outputbasedir}/templates/psm/prebuilt"
 
 example_file() {
     local scenario="${1}"
@@ -148,6 +148,7 @@ psm_basic_example() {
         -s psm_image_prefix="\${psm_image_prefix}" \
         -s psm_image_tag="\${psm_image_tag}" \
         -s timeout_seconds=900 --prefix=psm-examples -u "${uniquifier}" -r "^${scenario}$" \
+        -a enablePrometheus=true \
         --allow_client_language=c++ --allow_server_language=c++ \
         --allow_server_language=node \
         --client_channels=8 \
@@ -178,6 +179,7 @@ psm_prebuilt_example() {
         -s psm_image_tag="\${psm_image_tag}" \
         --prefix=psm-examples -u prebuilt-"${uniquifier}" -r "^${scenario}$" \
         -a pool="\${workers_pool}" \
+        -a enablePrometheus=true \
         --allow_client_language=c++ --allow_server_language=c++ \
         --allow_server_language=node \
         --client_channels=8 \

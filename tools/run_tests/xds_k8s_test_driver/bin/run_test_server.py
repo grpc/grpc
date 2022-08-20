@@ -20,7 +20,7 @@ from framework import xds_flags
 from framework import xds_k8s_flags
 from framework.infrastructure import gcp
 from framework.infrastructure import k8s
-from framework.test_app import server_app
+from framework.test_app.runners.k8s import k8s_xds_server_runner
 
 logger = logging.getLogger(__name__)
 # Flags
@@ -43,12 +43,16 @@ flags.adopt_module_key_flags(xds_k8s_flags)
 # Running outside of a test suite, so require explicit resource_suffix.
 flags.mark_flag_as_required("resource_suffix")
 
-KubernetesServerRunner = server_app.KubernetesServerRunner
+# Type aliases
+_KubernetesServerRunner = k8s_xds_server_runner.KubernetesServerRunner
 
 
 def main(argv):
     if len(argv) > 1:
         raise app.UsageError('Too many command-line arguments.')
+
+    # Must be called before KubernetesApiManager or GcpApiManager init.
+    xds_flags.set_socket_default_timeout_from_flag()
 
     project: str = xds_flags.PROJECT.value
     # GCP Service Account email
@@ -75,9 +79,9 @@ def main(argv):
             deployment_template='server-secure.deployment.yaml')
 
     k8s_api_manager = k8s.KubernetesApiManager(xds_k8s_flags.KUBE_CONTEXT.value)
-    server_namespace = KubernetesServerRunner.make_namespace_name(
+    server_namespace = _KubernetesServerRunner.make_namespace_name(
         resource_prefix, resource_suffix)
-    server_runner = KubernetesServerRunner(
+    server_runner = _KubernetesServerRunner(
         k8s.KubernetesNamespace(k8s_api_manager, server_namespace),
         **runner_kwargs)
 

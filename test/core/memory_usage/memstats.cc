@@ -52,5 +52,6 @@ long GetMemUsage(absl::optional<int> pid) {
   // Calculations in case x86-64 is configured to use 2MB pages
   long page_size_kb = sysconf(_SC_PAGE_SIZE) / 1024;
   resident_set = rss * page_size_kb;
+  // Memory in KB
   return resident_set;
 }

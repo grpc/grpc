@@ -91,6 +91,7 @@ grpc_cc_binary(
     external_deps = [
         "absl/flags:flag",
         "absl/flags:parse",
+        "absl/time",
         "gtest",
     ],
     tags = [
@@ -150,6 +151,7 @@ grpc_cc_test(
         "absl/flags:flag",
         "absl/flags:parse",
     ],
+    flaky = True,
     language = "C++",
     tags = [
         "bazel_only",

@@ -402,7 +402,9 @@ TEST_F(TlsSecurityConnectorTest,
   ExecCtx exec_ctx;
   grpc_closure* on_peer_checked = GRPC_CLOSURE_CREATE(
       VerifyExpectedErrorCallback, nullptr, grpc_schedule_on_exec_ctx);
-  tls_connector->check_peer(peer, nullptr, &auth_context, on_peer_checked);
+  ChannelArgs args;
+  tls_connector->check_peer(peer, nullptr, args, &auth_context,
+                            on_peer_checked);
 }
 
 TEST_F(TlsSecurityConnectorTest,
@@ -440,7 +442,8 @@ TEST_F(TlsSecurityConnectorTest,
   grpc_closure* on_peer_checked = GRPC_CLOSURE_CREATE(
       VerifyExpectedErrorCallback, const_cast<char*>(expected_error_msg),
       grpc_schedule_on_exec_ctx);
-  tls_connector->check_peer(peer, nullptr, &auth_context, on_peer_checked);
+  tls_connector->check_peer(peer, nullptr, new_args, &auth_context,
+                            on_peer_checked);
 }
 
 TEST_F(TlsSecurityConnectorTest,
@@ -588,7 +591,8 @@ TEST_F(TlsSecurityConnectorTest,
   ExecCtx exec_ctx;
   grpc_closure* on_peer_checked = GRPC_CLOSURE_CREATE(
       VerifyExpectedErrorCallback, nullptr, grpc_schedule_on_exec_ctx);
-  tls_connector->check_peer(peer, nullptr, &auth_context, on_peer_checked);
+  tls_connector->check_peer(peer, nullptr, new_args, &auth_context,
+                            on_peer_checked);
   core_external_verifier->Unref();
 }
 
@@ -627,7 +631,8 @@ TEST_F(TlsSecurityConnectorTest,
   grpc_closure* on_peer_checked = GRPC_CLOSURE_CREATE(
       VerifyExpectedErrorCallback, const_cast<char*>(expected_error_msg),
       grpc_schedule_on_exec_ctx);
-  tls_connector->check_peer(peer, nullptr, &auth_context, on_peer_checked);
+  tls_connector->check_peer(peer, nullptr, new_args, &auth_context,
+                            on_peer_checked);
   core_external_verifier->Unref();
 }
 
@@ -676,7 +681,8 @@ TEST_F(TlsSecurityConnectorTest,
   ExecCtx exec_ctx;
   grpc_closure* on_peer_checked = GRPC_CLOSURE_CREATE(
       VerifyExpectedErrorCallback, nullptr, grpc_schedule_on_exec_ctx);
-  tls_connector->check_peer(peer, nullptr, &auth_context, on_peer_checked);
+  tls_connector->check_peer(peer, nullptr, new_args, &auth_context,
+                            on_peer_checked);
 }
 
 TEST_F(TlsSecurityConnectorTest,
@@ -728,7 +734,8 @@ TEST_F(TlsSecurityConnectorTest,
   grpc_closure* on_peer_checked = GRPC_CLOSURE_CREATE(
       VerifyExpectedErrorCallback, const_cast<char*>(expected_error_msg),
       grpc_schedule_on_exec_ctx);
-  tls_connector->check_peer(peer, nullptr, &auth_context, on_peer_checked);
+  tls_connector->check_peer(peer, nullptr, new_args, &auth_context,
+                            on_peer_checked);
 }
 
 //
@@ -977,7 +984,8 @@ TEST_F(TlsSecurityConnectorTest,
   ExecCtx exec_ctx;
   grpc_closure* on_peer_checked = GRPC_CLOSURE_CREATE(
       VerifyExpectedErrorCallback, nullptr, grpc_schedule_on_exec_ctx);
-  connector->check_peer(peer, nullptr, &auth_context, on_peer_checked);
+  ChannelArgs args;
+  connector->check_peer(peer, nullptr, args, &auth_context, on_peer_checked);
 }
 
 TEST_F(TlsSecurityConnectorTest,
@@ -1011,7 +1019,8 @@ TEST_F(TlsSecurityConnectorTest,
   grpc_closure* on_peer_checked = GRPC_CLOSURE_CREATE(
       VerifyExpectedErrorCallback, const_cast<char*>(expected_error_msg),
       grpc_schedule_on_exec_ctx);
-  connector->check_peer(peer, nullptr, &auth_context, on_peer_checked);
+  ChannelArgs args;
+  connector->check_peer(peer, nullptr, args, &auth_context, on_peer_checked);
 }
 
 TEST_F(TlsSecurityConnectorTest,
@@ -1041,7 +1050,8 @@ TEST_F(TlsSecurityConnectorTest,
   ExecCtx exec_ctx;
   grpc_closure* on_peer_checked = GRPC_CLOSURE_CREATE(
       VerifyExpectedErrorCallback, nullptr, grpc_schedule_on_exec_ctx);
-  connector->check_peer(peer, nullptr, &auth_context, on_peer_checked);
+  ChannelArgs args;
+  connector->check_peer(peer, nullptr, args, &auth_context, on_peer_checked);
   core_external_verifier->Unref();
 }
 
@@ -1077,7 +1087,8 @@ TEST_F(TlsSecurityConnectorTest,
   grpc_closure* on_peer_checked = GRPC_CLOSURE_CREATE(
       VerifyExpectedErrorCallback, const_cast<char*>(expected_error_msg),
       grpc_schedule_on_exec_ctx);
-  connector->check_peer(peer, nullptr, &auth_context, on_peer_checked);
+  ChannelArgs args;
+  connector->check_peer(peer, nullptr, args, &auth_context, on_peer_checked);
   core_external_verifier->Unref();
 }
 
