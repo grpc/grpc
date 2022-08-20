@@ -39,7 +39,6 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/json/json.h"
-#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/security/credentials/call_creds_util.h"
 #include "src/core/lib/surface/api_trace.h"

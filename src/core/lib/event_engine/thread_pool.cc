@@ -32,7 +32,7 @@ ThreadPool::Thread::Thread(ThreadPool* pool)
       thd_(
           "posix_eventengine_pool",
           [](void* th) { static_cast<ThreadPool::Thread*>(th)->ThreadFunc(); },
-          this) {
+          this, nullptr, grpc_core::Thread::Options().set_tracked(false)) {
   thd_.Start();
 }
 ThreadPool::Thread::~Thread() { thd_.Join(); }

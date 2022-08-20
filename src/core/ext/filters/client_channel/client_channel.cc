@@ -1626,6 +1626,10 @@ grpc_error_handle ClientChannel::DoPingLocked(grpc_transport_op* op) {
                 complete_pick->subchannel.get());
             RefCountedPtr<ConnectedSubchannel> connected_subchannel =
                 subchannel->connected_subchannel();
+            if (connected_subchannel == nullptr) {
+              return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                  "LB pick for ping not connected");
+            }
             connected_subchannel->Ping(op->send_ping.on_initiate,
                                        op->send_ping.on_ack);
             return GRPC_ERROR_NONE;
