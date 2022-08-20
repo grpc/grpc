@@ -38,6 +38,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    flaky = True,
     deps = [
         "//:grpc++",
         "//test/core/util:grpc_test_util",

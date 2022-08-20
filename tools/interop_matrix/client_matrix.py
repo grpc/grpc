@@ -119,6 +119,7 @@ LANG_RELEASE_MATRIX = {
             ('v1.43.0', ReleaseInfo()),
             ('v1.44.0', ReleaseInfo()),
             ('v1.46.2', ReleaseInfo()),
+            ('v1.47.1', ReleaseInfo()),
             ('v1.48.0', ReleaseInfo()),
         ]),
     'go':
@@ -420,6 +421,9 @@ LANG_RELEASE_MATRIX = {
                 ('v1.46.2',
                  ReleaseInfo(runtimes=['python'],
                              testcases_file='python__master')),
+                ('v1.47.1',
+                 ReleaseInfo(runtimes=['python'],
+                             testcases_file='python__master')),
                 ('v1.48.0',
                  ReleaseInfo(runtimes=['python'],
                              testcases_file='python__master')),
@@ -496,6 +500,7 @@ LANG_RELEASE_MATRIX = {
             ('v1.43.0', ReleaseInfo()),
             ('v1.44.0', ReleaseInfo()),
             ('v1.46.2', ReleaseInfo()),
+            ('v1.47.1', ReleaseInfo()),
             ('v1.48.0', ReleaseInfo()),
         ]),
     'php':
@@ -543,6 +548,7 @@ LANG_RELEASE_MATRIX = {
             ('v1.43.0', ReleaseInfo()),
             ('v1.44.0', ReleaseInfo()),
             ('v1.46.2', ReleaseInfo()),
+            ('v1.47.1', ReleaseInfo()),
             ('v1.48.0', ReleaseInfo()),
         ]),
     'csharp':

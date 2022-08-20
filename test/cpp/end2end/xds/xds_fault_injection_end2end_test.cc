@@ -148,7 +148,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageAbort) {
   CreateAndStartBackends(1);
   const uint32_t kAbortPercentagePerHundred = 50;
   const double kAbortRate = kAbortPercentagePerHundred / 100.0;
-  const double kErrorTolerance = 0.05;
+  const double kErrorTolerance = 0.1;
   const size_t kNumRpcs = ComputeIdealNumRpcs(kAbortRate, kErrorTolerance);
   // Create an EDS resource
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
@@ -176,7 +176,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageAbortViaHeaders) {
   const uint32_t kAbortPercentageCap = 100;
   const uint32_t kAbortPercentage = 50;
   const double kAbortRate = kAbortPercentage / 100.0;
-  const double kErrorTolerance = 0.05;
+  const double kErrorTolerance = 0.1;
   const size_t kNumRpcs = ComputeIdealNumRpcs(kAbortRate, kErrorTolerance);
   // Create an EDS resource
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
@@ -204,11 +204,11 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageAbortViaHeaders) {
 
 TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelay) {
   CreateAndStartBackends(1);
-  const uint32_t kRpcTimeoutMilliseconds = grpc_test_slowdown_factor() * 3000;
+  const uint32_t kRpcTimeoutMilliseconds = 10000;
   const uint32_t kFixedDelaySeconds = 100;
   const uint32_t kDelayPercentagePerHundred = 50;
   const double kDelayRate = kDelayPercentagePerHundred / 100.0;
-  const double kErrorTolerance = 0.05;
+  const double kErrorTolerance = 0.1;
   const size_t kNumRpcs = ComputeIdealNumRpcs(kDelayRate, kErrorTolerance);
   const size_t kMaxConcurrentRequests = kNumRpcs;
   // Create an EDS resource
@@ -250,11 +250,11 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelay) {
 TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelayViaHeaders) {
   CreateAndStartBackends(1);
   const uint32_t kFixedDelayMilliseconds = 100000;
-  const uint32_t kRpcTimeoutMilliseconds = grpc_test_slowdown_factor() * 3000;
+  const uint32_t kRpcTimeoutMilliseconds = 10000;
   const uint32_t kDelayPercentageCap = 100;
   const uint32_t kDelayPercentage = 50;
   const double kDelayRate = kDelayPercentage / 100.0;
-  const double kErrorTolerance = 0.05;
+  const double kErrorTolerance = 0.1;
   const size_t kNumRpcs = ComputeIdealNumRpcs(kDelayRate, kErrorTolerance);
   const size_t kMaxConcurrentRequests = kNumRpcs;
   // Create an EDS resource
@@ -338,7 +338,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionAlwaysDelayPercentageAbort) {
   const uint32_t kRpcTimeoutMilliseconds = 100 * 1000;  // 100s should not reach
   const uint32_t kConnectionTimeoutMilliseconds =
       10 * 1000;  // 10s should not reach
-  const double kErrorTolerance = 0.05;
+  const double kErrorTolerance = 0.1;
   const size_t kNumRpcs = ComputeIdealNumRpcs(kAbortRate, kErrorTolerance);
   const size_t kMaxConcurrentRequests = kNumRpcs;
   // Create an EDS resource
@@ -399,7 +399,7 @@ TEST_P(FaultInjectionTest,
   const uint32_t kRpcTimeoutMilliseconds = 100 * 1000;  // 100s should not reach
   const uint32_t kConnectionTimeoutMilliseconds =
       10 * 1000;  // 10s should not reach
-  const double kErrorTolerance = 0.05;
+  const double kErrorTolerance = 0.1;
   const size_t kNumRpcs = ComputeIdealNumRpcs(kAbortRate, kErrorTolerance);
   const size_t kMaxConcurrentRequests = kNumRpcs;
   // Create an EDS resource
