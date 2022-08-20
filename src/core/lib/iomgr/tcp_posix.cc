@@ -1313,7 +1313,6 @@ struct cmsghdr* process_timestamp(grpc_tcp* tcp, msghdr* msg,
  * messages from the queue.
  */
 static bool process_errors(grpc_tcp* tcp) {
-  bool processed_err = false;
   struct iovec iov;
   iov.iov_base = nullptr;
   iov.iov_len = 0;
@@ -1344,10 +1343,10 @@ static bool process_errors(grpc_tcp* tcp) {
     } while (r < 0 && saved_errno == EINTR);
 
     if (r == -1 && saved_errno == EAGAIN) {
-      return processed_err; /* No more errors to process */
+      return true; /* No more errors to process */
     }
     if (r == -1) {
-      return processed_err;
+      return false;
     }
     if (GPR_UNLIKELY((msg.msg_flags & MSG_CTRUNC) != 0)) {
       gpr_log(GPR_ERROR, "Error message was truncated.");
@@ -1355,20 +1354,15 @@ static bool process_errors(grpc_tcp* tcp) {
 
     if (msg.msg_controllen == 0) {
       /* There was no control message found. It was probably spurious. */
-      return processed_err;
+      continue;
     }
-    bool seen = false;
     for (auto cmsg = CMSG_FIRSTHDR(&msg); cmsg && cmsg->cmsg_len;
          cmsg = CMSG_NXTHDR(&msg, cmsg)) {
       if (CmsgIsZeroCopy(*cmsg)) {
         process_zerocopy(tcp, cmsg);
-        seen = true;
-        processed_err = true;
       } else if (cmsg->cmsg_level == SOL_SOCKET &&
                  cmsg->cmsg_type == SCM_TIMESTAMPING) {
         cmsg = process_timestamp(tcp, &msg, cmsg);
-        seen = true;
-        processed_err = true;
       } else {
         /* Got a control message that is not a timestamp or zerocopy. Don't know
          * how to handle this. */
@@ -1377,11 +1371,7 @@ static bool process_errors(grpc_tcp* tcp) {
                   "unknown control message cmsg_level:%d cmsg_type:%d",
                   cmsg->cmsg_level, cmsg->cmsg_type);
         }
-        return processed_err;
       }
-    }
-    if (!seen) {
-      return processed_err;
     }
   }
 }
