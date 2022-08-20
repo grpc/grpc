@@ -3425,6 +3425,7 @@ targets:
   - mac
 - name: fling_stream_test
   build: test
+  run: false
   language: c
   headers:
   - test/core/end2end/data/ssl_test_data.h
@@ -3665,6 +3666,7 @@ targets:
 - name: activity_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - src/core/lib/gprpp/atomic_utils.h
@@ -3837,6 +3839,7 @@ targets:
 - name: alts_concurrent_connectivity_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
@@ -5039,6 +5042,7 @@ targets:
 - name: client_interceptors_end2end_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/cpp/end2end/interceptors_util.h
@@ -5084,6 +5088,7 @@ targets:
 - name: client_ssl_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers: []
   src:
@@ -5154,6 +5159,7 @@ targets:
 - name: combiner_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/core/util/cmdline.h
@@ -5203,7 +5209,6 @@ targets:
 - name: completion_queue_threading_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers: []
   src:
@@ -5411,6 +5416,7 @@ targets:
 - name: dns_resolver_cooldown_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers: []
   src:
@@ -5451,6 +5457,7 @@ targets:
 - name: end2end_binder_transport_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/core/transport/binder/end2end/fake_binder.h
@@ -5467,6 +5474,9 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - grpc++_test_util
+  platforms:
+  - linux
+  - posix
 - name: end2end_test
   gtest: true
   build: test
@@ -5761,6 +5771,7 @@ targets:
 - name: event_poller_posix_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - src/core/lib/event_engine/posix_engine/ev_epoll1_linux.h
@@ -6707,6 +6718,7 @@ targets:
 - name: grpc_tls_certificate_provider_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/core/util/cmdline.h
@@ -7169,6 +7181,7 @@ targets:
 - name: httpscli_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/core/http/httpcli_test_util.h
@@ -8068,6 +8081,7 @@ targets:
 - name: orca_service_end2end_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers: []
   src:
@@ -8194,6 +8208,7 @@ targets:
 - name: periodic_update_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - src/core/ext/upb-generated/google/protobuf/any.upb.h
@@ -8921,6 +8936,7 @@ targets:
 - name: rls_end2end_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/core/util/test_lb_policies.h
@@ -8971,6 +8987,7 @@ targets:
 - name: secure_endpoint_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/core/iomgr/endpoint_tests.h
@@ -9059,7 +9076,6 @@ targets:
 - name: sequential_connectivity_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers: []
   src:
@@ -9335,7 +9351,6 @@ targets:
 - name: settings_timeout_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - test/core/util/cmdline.h
@@ -9651,6 +9666,7 @@ targets:
 - name: stranded_event_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
@@ -10261,6 +10277,7 @@ targets:
 - name: timer_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers: []
   src:
@@ -10340,6 +10357,7 @@ targets:
 - name: too_many_pings_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
@@ -10835,6 +10853,7 @@ targets:
 - name: work_serializer_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers: []
   src:
@@ -11026,6 +11045,7 @@ targets:
 - name: xds_core_end2end_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/cpp/end2end/counted_service.h
@@ -11253,6 +11273,7 @@ targets:
 - name: xds_fault_injection_end2end_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/cpp/end2end/counted_service.h
@@ -11396,6 +11417,7 @@ targets:
 - name: xds_outlier_detection_end2end_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/cpp/end2end/counted_service.h
@@ -11513,6 +11535,7 @@ targets:
 - name: xds_rls_end2end_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/cpp/end2end/counted_service.h
