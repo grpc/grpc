@@ -17,12 +17,13 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <atomic>
+
 #include "absl/status/status.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
@@ -60,12 +61,17 @@ class Sleep final {
     explicit ActiveClosure(Timestamp deadline);
 
     void Run() override;
+    // After calling Cancel, it's no longer safe to access this object.
     void Cancel();
 
+    bool HasRun() const;
+
    private:
+    bool Unref();
+
     Waker waker_;
     // One ref dropped by Run(), the other by Cancel().
-    RefCount refs_{2};
+    std::atomic<int> refs_{2};
     const grpc_event_engine::experimental::EventEngine::TaskHandle
         timer_handle_;
   };

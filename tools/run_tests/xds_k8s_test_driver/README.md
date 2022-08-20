@@ -16,7 +16,7 @@ changes to this codebase at the moment.
       simpler CRUD
 - [x] Security: manage `roles/iam.workloadIdentityUser` role grant lifecycle for
       dynamically-named namespaces 
-- [ ] Restructure `framework.test_app` and `framework.xds_k8s*` into a module
+- [x] Restructure `framework.test_app` and `framework.xds_k8s*` into a module
       containing xDS-interop-specific logic
 - [ ] Address inline TODOs in code
 - [x] Improve README.md documentation, explain helpers in bin/ folder

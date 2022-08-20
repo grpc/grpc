@@ -35,6 +35,7 @@ namespace testing {
 TEST(PeriodicUpdateTest, SimpleTest) {
   std::unique_ptr<PeriodicUpdate> upd;
   Timestamp start;
+  Timestamp reset_start;
   // Create a periodic update that updates every second.
   {
     ExecCtx exec_ctx;
@@ -45,28 +46,36 @@ TEST(PeriodicUpdateTest, SimpleTest) {
   bool done = false;
   while (!done) {
     ExecCtx exec_ctx;
-    upd->Tick([&](Duration) { done = true; });
+    upd->Tick([&](Duration elapsed) {
+      reset_start = ExecCtx::Get()->Now();
+      EXPECT_GE(elapsed, Duration::Seconds(1));
+      done = true;
+    });
   }
   // Ensure that took at least 1 second.
   {
     ExecCtx exec_ctx;
     EXPECT_GE(exec_ctx.Now() - start, Duration::Seconds(1));
-    start = exec_ctx.Now();
+    start = reset_start;
   }
   // Do ten more update cycles
   for (int i = 0; i < 10; i++) {
     done = false;
     while (!done) {
       ExecCtx exec_ctx;
-      upd->Tick([&](Duration) { done = true; });
+      upd->Tick([&](Duration) {
+        reset_start = ExecCtx::Get()->Now();
+        EXPECT_GE(exec_ctx.Now() - start, Duration::Seconds(1));
+        done = true;
+      });
     }
-    // Ensure the time taken was between 1 and 1.5 seconds - we make a little
+    // Ensure the time taken was between 1 and 3 seconds - we make a little
     // allowance for the presumed inaccuracy of this type.
     {
       ExecCtx exec_ctx;
       EXPECT_GE(exec_ctx.Now() - start, Duration::Seconds(1));
-      EXPECT_LE(exec_ctx.Now() - start, Duration::Milliseconds(1500));
-      start = exec_ctx.Now();
+      EXPECT_LE(exec_ctx.Now() - start, Duration::Seconds(3));
+      start = reset_start;
     }
   }
 }
@@ -101,11 +110,11 @@ TEST(PeriodicUpdate, ThreadTest) {
   for (auto& th : threads) {
     th.join();
   }
-  // Ensure our ten cycles took at least 10 seconds, and no more than 15.
+  // Ensure our ten cycles took at least 10 seconds, and no more than 30.
   {
     ExecCtx exec_ctx;
     EXPECT_GE(exec_ctx.Now() - start, Duration::Seconds(10));
-    EXPECT_LE(exec_ctx.Now() - start, Duration::Seconds(15));
+    EXPECT_LE(exec_ctx.Now() - start, Duration::Seconds(30));
   }
 }
 

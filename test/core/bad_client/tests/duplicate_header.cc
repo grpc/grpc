@@ -113,6 +113,7 @@ static void verifier(grpc_server* server, grpc_completion_queue* cq,
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   cqv.Expect(tag(103), true);
+  cqv.Verify();
 
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
