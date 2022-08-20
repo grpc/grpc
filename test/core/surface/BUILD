@@ -48,7 +48,6 @@ grpc_cc_test(
     name = "completion_queue_threading_test",
     srcs = ["completion_queue_threading_test.cc"],
     external_deps = ["gtest"],
-    flaky = True,  # TODO(b/153064668)
     language = "C++",
     deps = [
         "//:gpr",
@@ -146,7 +145,6 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:server1.pem",
     ],
     external_deps = ["gtest"],
-    flaky = True,  # TODO(b/151696318)
     language = "C++",
     deps = [
         "//:gpr",

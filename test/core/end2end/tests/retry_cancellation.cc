@@ -129,13 +129,13 @@ static void test_retry_cancellation(grpc_end2end_test_config config,
               "      { \"service\": \"service\", \"method\": \"method\" }\n"
               "    ],\n"
               "    \"retryPolicy\": {\n"
-              "      \"maxAttempts\": 3,\n"
+              "      \"maxAttempts\": 5,\n"
               "      \"initialBackoff\": \"1s\",\n"
               "      \"maxBackoff\": \"120s\",\n"
               "      \"backoffMultiplier\": 1.6,\n"
               "      \"retryableStatusCodes\": [ \"ABORTED\" ]\n"
               "    },\n"
-              "    \"timeout\": \"5s\"\n"
+              "    \"timeout\": \"10s\"\n"
               "  } ]\n"
               "}")),
   };

@@ -81,8 +81,7 @@
 // IWYU pragma: no_include <google/protobuf/repeated_ptr_field.h>
 
 // Applicable when simulating channel actions. Prevents overflows.
-static constexpr uint64_t kMaxWaitMs =
-    31536000000;  // 1 year (24 * 365 * 3600 * 1000)
+static constexpr uint64_t kMaxWaitMs = grpc_core::Duration::Hours(1).millis();
 // Applicable when simulating channel actions. Prevents overflows.
 static constexpr uint64_t kMaxAddNReadableBytes = (2 * 1024 * 1024);  // 2GB
 // Applicable when simulating channel actions. Prevents overflows.

@@ -20,7 +20,7 @@ from framework import xds_flags
 from framework import xds_k8s_flags
 from framework.infrastructure import gcp
 from framework.infrastructure import k8s
-from framework.test_app import client_app
+from framework.test_app.runners.k8s import k8s_xds_client_runner
 
 logger = logging.getLogger(__name__)
 # Flags
@@ -52,7 +52,7 @@ flags.adopt_module_key_flags(xds_k8s_flags)
 flags.mark_flag_as_required("resource_suffix")
 
 # Type aliases
-KubernetesClientRunner = client_app.KubernetesClientRunner
+_KubernetesClientRunner = k8s_xds_client_runner.KubernetesClientRunner
 
 
 def main(argv):
@@ -84,9 +84,9 @@ def main(argv):
             deployment_template='client-secure.deployment.yaml')
 
     k8s_api_manager = k8s.KubernetesApiManager(xds_k8s_flags.KUBE_CONTEXT.value)
-    client_namespace = KubernetesClientRunner.make_namespace_name(
+    client_namespace = _KubernetesClientRunner.make_namespace_name(
         xds_flags.RESOURCE_PREFIX.value, xds_flags.RESOURCE_SUFFIX.value)
-    client_runner = KubernetesClientRunner(
+    client_runner = _KubernetesClientRunner(
         k8s.KubernetesNamespace(k8s_api_manager, client_namespace),
         **runner_kwargs)
 
