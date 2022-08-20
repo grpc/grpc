@@ -253,8 +253,7 @@ void CqVerifier::VerifyEmpty(Duration timeout) {
   GPR_ASSERT(expectations_.empty());
   grpc_event ev = grpc_completion_queue_next(cq_, deadline, nullptr);
   if (ev.type != GRPC_QUEUE_TIMEOUT) {
-    gpr_log(GPR_ERROR, "unexpected event (expected nothing): %s",
-            grpc_event_string(&ev).c_str());
+    FailUnexpectedEvent(&ev)
   }
 }
 
