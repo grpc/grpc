@@ -20,9 +20,9 @@ from doctest import SKIP
 import multiprocessing
 import os
 import re
-import subprocess
 import sys
-import tempfile
+
+import run_buildozer
 
 # find our home
 ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
@@ -85,6 +85,8 @@ EXTERNAL_DEPS = {
         'absl/meta:type_traits',
     'absl/random/random.h':
         'absl/random',
+    'absl/random/distributions.h':
+        'absl/random:distributions',
     'absl/status/status.h':
         'absl/status',
     'absl/status/statusor.h':
@@ -626,15 +628,7 @@ for library, lib_error, deps, external_deps in updated_libraries:
     buildozer_set_list('external_deps', external_deps, library, via='deps')
     buildozer_set_list('deps', deps, library)
 
-if buildozer_commands:
-    ok_statuses = (0, 3)
-    temp = tempfile.NamedTemporaryFile()
-    open(temp.name, 'w').write('\n'.join(buildozer_commands))
-    c = ['tools/distrib/buildozer.sh', '-f', temp.name]
-    r = subprocess.call(c)
-    if r not in ok_statuses:
-        print('{} failed with status {}'.format(c, r))
-        sys.exit(1)
+run_buildozer.run_buildozer(buildozer_commands)
 
 if error:
     sys.exit(1)

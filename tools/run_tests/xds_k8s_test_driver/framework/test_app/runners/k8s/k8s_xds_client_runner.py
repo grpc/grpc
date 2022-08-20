@@ -161,7 +161,8 @@ class KubernetesClientRunner(k8s_base_runner.KubernetesBaseRunner):
         return XdsTestClient(ip=pod_ip,
                              rpc_port=rpc_port,
                              server_target=server_target,
-                             rpc_host=rpc_host)
+                             rpc_host=rpc_host,
+                             hostname=pod.metadata.name)
 
     def cleanup(self, *, force=False, force_namespace=False):  # pylint: disable=arguments-differ
         if self.port_forwarder:
