@@ -22,13 +22,13 @@ We use tenacity as a general-purpose retrying library.
 """
 import datetime
 import logging
-from typing import Any, Optional, Sequence, Callable, List
+from typing import Any, Callable, List, Optional, Sequence
 
 import tenacity
-from tenacity.retry import retry_base
-from tenacity import wait
-from tenacity import stop
 from tenacity import _utils as tenacity_utils
+from tenacity import stop
+from tenacity import wait
+from tenacity.retry import retry_base
 
 retryers_logger = logging.getLogger(__name__)
 # Type aliases

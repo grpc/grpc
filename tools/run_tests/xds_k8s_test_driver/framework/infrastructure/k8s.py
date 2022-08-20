@@ -23,12 +23,10 @@ from typing import List, Optional, Tuple
 from kubernetes import client
 from kubernetes import utils
 import kubernetes.config
-# TODO(sergiitk): replace with tenacity
-import retrying
 import yaml
 
-import framework.helpers.highlighter
 from framework.helpers import retryers
+import framework.helpers.highlighter
 
 logger = logging.getLogger(__name__)
 # Type aliases
@@ -239,69 +237,48 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
                                  name: str,
                                  timeout_sec=WAIT_SHORT_TIMEOUT_SEC,
                                  wait_sec=WAIT_SHORT_SLEEP_SEC):
-
-        @retrying.retry(retry_on_result=lambda r: r is not None,
-                        stop_max_delay=timeout_sec * 1000,
-                        wait_fixed=wait_sec * 1000)
-        def _wait_for_deleted_service_with_retry():
-            service = self.get_service(name)
-            if service is not None:
-                logger.debug('Waiting for service %s to be deleted',
-                             service.metadata.name)
-            return service
-
-        _wait_for_deleted_service_with_retry()
+        retryer = retryers.constant_retryer(
+            wait_fixed=datetime.timedelta(seconds=wait_sec),
+            timeout=datetime.timedelta(seconds=timeout_sec),
+            check_result=lambda service: service is None)
+        retryer(self.get_service, name)
 
     def wait_for_service_account_deleted(self,
                                          name: str,
                                          timeout_sec=WAIT_SHORT_TIMEOUT_SEC,
                                          wait_sec=WAIT_SHORT_SLEEP_SEC):
-
-        @retrying.retry(retry_on_result=lambda r: r is not None,
-                        stop_max_delay=timeout_sec * 1000,
-                        wait_fixed=wait_sec * 1000)
-        def _wait_for_deleted_service_account_with_retry():
-            service_account = self.get_service_account(name)
-            if service_account is not None:
-                logger.debug('Waiting for service account %s to be deleted',
-                             service_account.metadata.name)
-            return service_account
-
-        _wait_for_deleted_service_account_with_retry()
+        retryer = retryers.constant_retryer(
+            wait_fixed=datetime.timedelta(seconds=wait_sec),
+            timeout=datetime.timedelta(seconds=timeout_sec),
+            check_result=lambda service_account: service_account is None)
+        retryer(self.get_service_account, name)
 
     def wait_for_namespace_deleted(self,
                                    timeout_sec=WAIT_LONG_TIMEOUT_SEC,
                                    wait_sec=WAIT_LONG_SLEEP_SEC):
-
-        @retrying.retry(retry_on_result=lambda r: r is not None,
-                        stop_max_delay=timeout_sec * 1000,
-                        wait_fixed=wait_sec * 1000)
-        def _wait_for_deleted_namespace_with_retry():
-            namespace = self.get()
-            if namespace is not None:
-                logger.debug('Waiting for namespace %s to be deleted',
-                             namespace.metadata.name)
-            return namespace
-
-        _wait_for_deleted_namespace_with_retry()
+        retryer = retryers.constant_retryer(
+            wait_fixed=datetime.timedelta(seconds=wait_sec),
+            timeout=datetime.timedelta(seconds=timeout_sec),
+            check_result=lambda namespace: namespace is None)
+        retryer(self.get)
 
     def wait_for_service_neg(self,
                              name: str,
-                             timeout_sec=WAIT_SHORT_TIMEOUT_SEC,
-                             wait_sec=WAIT_SHORT_SLEEP_SEC):
-
-        @retrying.retry(retry_on_result=lambda r: not r,
-                        stop_max_delay=timeout_sec * 1000,
-                        wait_fixed=wait_sec * 1000)
-        def _wait_for_service_neg():
-            service = self.get_service(name)
-            if self.NEG_STATUS_META not in service.metadata.annotations:
-                logger.debug('Waiting for service %s NEG',
-                             service.metadata.name)
-                return False
-            return True
-
-        _wait_for_service_neg()
+                             timeout_sec: int = WAIT_SHORT_TIMEOUT_SEC,
+                             wait_sec: int = WAIT_SHORT_SLEEP_SEC):
+        timeout = datetime.timedelta(seconds=timeout_sec)
+        retryer = retryers.constant_retryer(
+            wait_fixed=datetime.timedelta(seconds=wait_sec),
+            timeout=timeout,
+            check_result=self._check_service_neg_annotation)
+        try:
+            retryer(self.get_service, name)
+        except retryers.RetryError as e:
+            logger.error(
+                'Timeout %s waiting for service %s to report NEG status. '
+                'Last service status:\n%s', timeout, name,
+                self._pretty_format_status(e.result()))
+            raise
 
     def get_service_neg(self, service_name: str,
                         service_port: int) -> Tuple[str, List[str]]:
@@ -340,7 +317,7 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
         retryer = retryers.constant_retryer(
             wait_fixed=datetime.timedelta(seconds=wait_sec),
             timeout=timeout,
-            check_result=lambda depl: self._replicas_available(depl, 10))
+            check_result=lambda depl: self._replicas_available(depl, count))
         try:
             retryer(self.get_deployment, name)
         except retryers.RetryError as e:
@@ -372,6 +349,55 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
                 self._pretty_format_statuses(result))
             raise
 
+    def wait_for_deployment_deleted(self,
+                                    deployment_name: str,
+                                    timeout_sec=WAIT_MEDIUM_TIMEOUT_SEC,
+                                    wait_sec=WAIT_MEDIUM_SLEEP_SEC):
+        retryer = retryers.constant_retryer(
+            wait_fixed=datetime.timedelta(seconds=wait_sec),
+            timeout=datetime.timedelta(seconds=timeout_sec),
+            check_result=lambda deployment: deployment is None)
+        retryer(self.get_deployment, deployment_name)
+
+    def list_pods_with_labels(self, labels: dict) -> List[V1Pod]:
+        pod_list: V1PodList = self.api.core.list_namespaced_pod(
+            self.name, label_selector=label_dict_to_selector(labels))
+        return pod_list.items
+
+    def get_pod(self, name: str) -> V1Pod:
+        return self.api.core.read_namespaced_pod(name, self.name)
+
+    def wait_for_pod_started(self,
+                             pod_name: str,
+                             timeout_sec: int = WAIT_SHORT_TIMEOUT_SEC,
+                             wait_sec: int = WAIT_SHORT_SLEEP_SEC):
+        timeout = datetime.timedelta(seconds=timeout_sec)
+        retryer = retryers.constant_retryer(
+            wait_fixed=datetime.timedelta(seconds=wait_sec),
+            timeout=timeout,
+            check_result=self._pod_started)
+        try:
+            retryer(self.get_pod, pod_name)
+        except retryers.RetryError as e:
+            logger.error(
+                'Timeout %s waiting for pod %s to start. '
+                'Pod status:\n%s', timeout, pod_name,
+                self._pretty_format_status(e.result()))
+            raise
+
+    def port_forward_pod(
+        self,
+        pod: V1Pod,
+        remote_port: int,
+        local_port: Optional[int] = None,
+        local_address: Optional[str] = None,
+    ) -> PortForwarder:
+        pf = PortForwarder(self.api.context, self.name,
+                           f"pod/{pod.metadata.name}", remote_port, local_port,
+                           local_address)
+        pf.connect()
+        return pf
+
     def _pretty_format_statuses(self, k8s_objects: List[Optional[object]]):
         return '\n'.join(
             self._pretty_format_status(k8s_object)
@@ -398,68 +424,17 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
         yaml_out: str = yaml.dump(data, explicit_start=True, explicit_end=True)
         return self._highlighter.highlight(yaml_out)
 
-    def wait_for_deployment_deleted(self,
-                                    deployment_name: str,
-                                    timeout_sec=WAIT_MEDIUM_TIMEOUT_SEC,
-                                    wait_sec=WAIT_MEDIUM_SLEEP_SEC):
+    @classmethod
+    def _check_service_neg_annotation(cls, service: Optional[V1Service]):
+        return (service is not None and
+                cls.NEG_STATUS_META in service.metadata.annotations)
 
-        @retrying.retry(retry_on_result=lambda r: r is not None,
-                        stop_max_delay=timeout_sec * 1000,
-                        wait_fixed=wait_sec * 1000)
-        def _wait_for_deleted_deployment_with_retry():
-            deployment = self.get_deployment(deployment_name)
-            if deployment is not None:
-                logger.debug(
-                    'Waiting for deployment %s to be deleted. '
-                    'Non-terminated replicas: %s', deployment.metadata.name,
-                    deployment.status.replicas)
-            return deployment
-
-        _wait_for_deleted_deployment_with_retry()
-
-    def list_pods_with_labels(self, labels: dict) -> List[V1Pod]:
-        pod_list: V1PodList = self.api.core.list_namespaced_pod(
-            self.name, label_selector=label_dict_to_selector(labels))
-        return pod_list.items
-
-    def get_pod(self, name) -> client.V1Pod:
-        return self.api.core.read_namespaced_pod(name, self.name)
-
-    def wait_for_pod_started(self,
-                             pod_name,
-                             timeout_sec=WAIT_SHORT_TIMEOUT_SEC,
-                             wait_sec=WAIT_SHORT_SLEEP_SEC):
-
-        @retrying.retry(retry_on_result=lambda r: not self._pod_started(r),
-                        stop_max_delay=timeout_sec * 1000,
-                        wait_fixed=wait_sec * 1000)
-        def _wait_for_pod_started():
-            pod = self.get_pod(pod_name)
-            logger.debug('Waiting for pod %s to start, current phase: %s',
-                         pod.metadata.name, pod.status.phase)
-            return pod
-
-        _wait_for_pod_started()
-
-    def port_forward_pod(
-        self,
-        pod: V1Pod,
-        remote_port: int,
-        local_port: Optional[int] = None,
-        local_address: Optional[str] = None,
-    ) -> PortForwarder:
-        pf = PortForwarder(self.api.context, self.name,
-                           f"pod/{pod.metadata.name}", remote_port, local_port,
-                           local_address)
-        pf.connect()
-        return pf
-
-    @staticmethod
-    def _pod_started(pod: V1Pod):
+    @classmethod
+    def _pod_started(cls, pod: V1Pod):
         return pod.status.phase not in ('Pending', 'Unknown')
 
-    @staticmethod
-    def _replicas_available(deployment, count):
+    @classmethod
+    def _replicas_available(cls, deployment: V1Deployment, count: int):
         return (deployment is not None and
                 deployment.status.available_replicas is not None and
                 deployment.status.available_replicas >= count)
