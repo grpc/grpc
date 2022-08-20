@@ -22,7 +22,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  version = '1.49.0-dev'
+  version = '1.50.0-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -681,10 +681,11 @@ Pod::Spec.new do |s|
                       'src/core/lib/debug/stats_data.h',
                       'src/core/lib/debug/trace.h',
                       'src/core/lib/event_engine/channel_args_endpoint_config.h',
+                      'src/core/lib/event_engine/default_event_engine.h',
                       'src/core/lib/event_engine/default_event_engine_factory.h',
-                      'src/core/lib/event_engine/event_engine_factory.h',
                       'src/core/lib/event_engine/executor/executor.h',
                       'src/core/lib/event_engine/executor/threaded_executor.h',
+                      'src/core/lib/event_engine/forkable.h',
                       'src/core/lib/event_engine/handle_containers.h',
                       'src/core/lib/event_engine/poller.h',
                       'src/core/lib/event_engine/posix_engine/posix_engine.h',
@@ -1536,10 +1537,11 @@ Pod::Spec.new do |s|
                               'src/core/lib/debug/stats_data.h',
                               'src/core/lib/debug/trace.h',
                               'src/core/lib/event_engine/channel_args_endpoint_config.h',
+                              'src/core/lib/event_engine/default_event_engine.h',
                               'src/core/lib/event_engine/default_event_engine_factory.h',
-                              'src/core/lib/event_engine/event_engine_factory.h',
                               'src/core/lib/event_engine/executor/executor.h',
                               'src/core/lib/event_engine/executor/threaded_executor.h',
+                              'src/core/lib/event_engine/forkable.h',
                               'src/core/lib/event_engine/handle_containers.h',
                               'src/core/lib/event_engine/poller.h',
                               'src/core/lib/event_engine/posix_engine/posix_engine.h',

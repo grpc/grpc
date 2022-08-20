@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.49.0-dev'
+  version = '1.50.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -1049,13 +1049,15 @@ Pod::Spec.new do |s|
                       'src/core/lib/debug/trace.h',
                       'src/core/lib/event_engine/channel_args_endpoint_config.cc',
                       'src/core/lib/event_engine/channel_args_endpoint_config.h',
+                      'src/core/lib/event_engine/default_event_engine.cc',
+                      'src/core/lib/event_engine/default_event_engine.h',
                       'src/core/lib/event_engine/default_event_engine_factory.cc',
                       'src/core/lib/event_engine/default_event_engine_factory.h',
-                      'src/core/lib/event_engine/event_engine.cc',
-                      'src/core/lib/event_engine/event_engine_factory.h',
                       'src/core/lib/event_engine/executor/executor.h',
                       'src/core/lib/event_engine/executor/threaded_executor.cc',
                       'src/core/lib/event_engine/executor/threaded_executor.h',
+                      'src/core/lib/event_engine/forkable.cc',
+                      'src/core/lib/event_engine/forkable.h',
                       'src/core/lib/event_engine/handle_containers.h',
                       'src/core/lib/event_engine/memory_allocator.cc',
                       'src/core/lib/event_engine/poller.h',
@@ -2159,10 +2161,11 @@ Pod::Spec.new do |s|
                               'src/core/lib/debug/stats_data.h',
                               'src/core/lib/debug/trace.h',
                               'src/core/lib/event_engine/channel_args_endpoint_config.h',
+                              'src/core/lib/event_engine/default_event_engine.h',
                               'src/core/lib/event_engine/default_event_engine_factory.h',
-                              'src/core/lib/event_engine/event_engine_factory.h',
                               'src/core/lib/event_engine/executor/executor.h',
                               'src/core/lib/event_engine/executor/threaded_executor.h',
+                              'src/core/lib/event_engine/forkable.h',
                               'src/core/lib/event_engine/handle_containers.h',
                               'src/core/lib/event_engine/poller.h',
                               'src/core/lib/event_engine/posix_engine/posix_engine.h',

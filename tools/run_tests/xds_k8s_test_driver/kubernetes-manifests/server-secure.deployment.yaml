@@ -6,18 +6,21 @@ metadata:
   namespace: ${namespace_name}
   labels:
     app: ${deployment_name}
+    deployment_id: ${deployment_id}
     owner: xds-k8s-interop-test
 spec:
   replicas: ${replica_count}
   selector:
     matchLabels:
       app: ${deployment_name}
+      deployment_id: ${deployment_id}
   template:
     metadata:
       annotations:
         security.cloud.google.com/use-workload-certificates: ""
       labels:
         app: ${deployment_name}
+        deployment_id: ${deployment_id}
         owner: xds-k8s-interop-test
     spec:
       serviceAccountName: ${service_account_name}

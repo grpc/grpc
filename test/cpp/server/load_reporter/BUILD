@@ -37,6 +37,7 @@ grpc_cc_test(
         "gtest",
         "opencensus-stats-test",
     ],
+    flaky = True,
     tags = ["no_windows"],
     deps = [
         "//:gpr",

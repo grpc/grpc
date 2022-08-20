@@ -45,43 +45,7 @@
 struct fullstack_secure_fixture_data {
   std::string localaddr;
   grpc_tls_version tls_version;
-  bool server_credential_reloaded = false;
 };
-
-static grpc_ssl_certificate_config_reload_status
-ssl_server_certificate_config_callback(
-    void* user_data, grpc_ssl_server_certificate_config** config) {
-  if (config == nullptr) {
-    return GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_FAIL;
-  }
-  fullstack_secure_fixture_data* ffd =
-      static_cast<fullstack_secure_fixture_data*>(user_data);
-  if (!ffd->server_credential_reloaded) {
-    grpc_slice ca_slice, cert_slice, key_slice;
-    GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
-                                 grpc_load_file(CA_CERT_PATH, 1, &ca_slice)));
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "load_file", grpc_load_file(SERVER_CERT_PATH, 1, &cert_slice)));
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "load_file", grpc_load_file(SERVER_KEY_PATH, 1, &key_slice)));
-    const char* ca_cert =
-        reinterpret_cast<const char*> GRPC_SLICE_START_PTR(ca_slice);
-    const char* server_cert =
-        reinterpret_cast<const char*> GRPC_SLICE_START_PTR(cert_slice);
-    const char* server_key =
-        reinterpret_cast<const char*> GRPC_SLICE_START_PTR(key_slice);
-    grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {server_key, server_cert};
-    *config = grpc_ssl_server_certificate_config_create(ca_cert,
-                                                        &pem_key_cert_pair, 1);
-    grpc_slice_unref(cert_slice);
-    grpc_slice_unref(key_slice);
-    grpc_slice_unref(ca_slice);
-    ffd->server_credential_reloaded = true;
-    return GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW;
-  } else {
-    return GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED;
-  }
-}
 
 static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
     const grpc_channel_args* /*client_args*/,
@@ -90,6 +54,7 @@ static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
   int port = grpc_pick_unused_port_or_die();
   fullstack_secure_fixture_data* ffd = new fullstack_secure_fixture_data();
   memset(&f, 0, sizeof(f));
+
   ffd->localaddr = grpc_core::JoinHostPort("localhost", port);
   ffd->tls_version = tls_version;
 
@@ -104,13 +69,6 @@ static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack_tls1_2(
     const grpc_channel_args* server_args) {
   return chttp2_create_fixture_secure_fullstack(client_args, server_args,
                                                 grpc_tls_version::TLS1_2);
-}
-
-static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack_tls1_3(
-    const grpc_channel_args* client_args,
-    const grpc_channel_args* server_args) {
-  return chttp2_create_fixture_secure_fullstack(client_args, server_args,
-                                                grpc_tls_version::TLS1_3);
 }
 
 static void process_auth_failure(void* state, grpc_auth_context* /*ctx*/,
@@ -140,7 +98,6 @@ static void chttp2_init_server_secure_fullstack(
   if (f->server) {
     grpc_server_destroy(f->server);
   }
-  ffd->server_credential_reloaded = false;
   f->server = grpc_server_create(server_args, nullptr);
   grpc_server_register_completion_queue(f->server, f->cq, nullptr);
   GPR_ASSERT(grpc_server_add_http2_port(f->server, ffd->localaddr.c_str(),
@@ -192,12 +149,18 @@ static int fail_server_auth_check(const grpc_channel_args* server_args) {
 
 static void chttp2_init_server_simple_ssl_secure_fullstack(
     grpc_end2end_test_fixture* f, const grpc_channel_args* server_args) {
-  grpc_ssl_server_credentials_options* options =
-      grpc_ssl_server_credentials_create_options_using_config_fetcher(
-          GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE,
-          ssl_server_certificate_config_callback, f->fixture_data);
-  grpc_server_credentials* ssl_creds =
-      grpc_ssl_server_credentials_create_with_options(options);
+  grpc_slice cert_slice, key_slice;
+  GPR_ASSERT(GRPC_LOG_IF_ERROR(
+      "load_file", grpc_load_file(SERVER_CERT_PATH, 1, &cert_slice)));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
+                               grpc_load_file(SERVER_KEY_PATH, 1, &key_slice)));
+  const char* server_cert =
+      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(cert_slice);
+  const char* server_key =
+      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(key_slice);
+  grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {server_key, server_cert};
+  grpc_server_credentials* ssl_creds = grpc_ssl_server_credentials_create(
+      nullptr, &pem_key_cert_pair, 1, 0, nullptr);
   if (f != nullptr && ssl_creds != nullptr) {
     // Set the min and max TLS version.
     grpc_ssl_server_credentials* creds =
@@ -207,6 +170,8 @@ static void chttp2_init_server_simple_ssl_secure_fullstack(
     creds->set_min_tls_version(ffd->tls_version);
     creds->set_max_tls_version(ffd->tls_version);
   }
+  grpc_slice_unref(cert_slice);
+  grpc_slice_unref(key_slice);
   if (fail_server_auth_check(server_args)) {
     grpc_auth_metadata_processor processor = {process_auth_failure, nullptr,
                                               nullptr};
@@ -227,21 +192,10 @@ static grpc_end2end_test_config configs[] = {
      chttp2_init_client_simple_ssl_secure_fullstack,
      chttp2_init_server_simple_ssl_secure_fullstack,
      chttp2_tear_down_secure_fullstack},
-    {"chttp2/simple_ssl_fullstack_tls1_3",
-     FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
-         FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
-         FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
-         FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER |
-         FEATURE_MASK_DOES_NOT_SUPPORT_CLIENT_HANDSHAKE_COMPLETE_FIRST,
-     "foo.test.google.fr", chttp2_create_fixture_secure_fullstack_tls1_3,
-     chttp2_init_client_simple_ssl_secure_fullstack,
-     chttp2_init_server_simple_ssl_secure_fullstack,
-     chttp2_tear_down_secure_fullstack},
 };
 
 int main(int argc, char** argv) {
   size_t i;
-
   grpc::testing::TestEnvironment env(&argc, argv);
   grpc_end2end_tests_pre_init();
   GPR_GLOBAL_CONFIG_SET(grpc_default_ssl_roots_file_path, CA_CERT_PATH);
@@ -253,6 +207,5 @@ int main(int argc, char** argv) {
   }
 
   grpc_shutdown();
-
   return 0;
 }

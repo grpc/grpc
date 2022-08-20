@@ -82,7 +82,6 @@ def _update_visibility(visibility):
     PUBLIC = ["//visibility:public"]
     PRIVATE = ["//:__subpackages__"]
     VISIBILITY_TARGETS = {
-        "alt_gpr_base_legacy": PRIVATE,
         "alt_grpc++_base_legacy": PRIVATE,
         "alt_grpc_base_legacy": PRIVATE,
         "alt_grpc++_base_unsecure_legacy": PRIVATE,
