@@ -45,8 +45,6 @@ void TmpFile::RewriteFile(absl::string_view data) {
   // Create a new file containing new data.
   std::string new_name = CreateTmpFileAndWriteData(data);
   GPR_ASSERT(!new_name.empty());
-  // Remove the old file.
-  GPR_ASSERT(remove(name_.c_str()) == 0);
   // Rename the new file to the original name.
   GPR_ASSERT(rename(new_name.c_str(), name_.c_str()) == 0);
 }
