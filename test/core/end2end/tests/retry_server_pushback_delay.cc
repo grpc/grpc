@@ -200,7 +200,7 @@ static void test_retry_server_pushback_delay(grpc_end2end_test_config config) {
                                &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(tag(101), true);
-  cqv.Verify();
+  cqv.Verify(grpc_core::Duration::Seconds(20));
 
   peer = grpc_call_get_peer(s);
   GPR_ASSERT(peer != nullptr);
