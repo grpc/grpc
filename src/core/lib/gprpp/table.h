@@ -317,6 +317,14 @@ class Table {
     ForEachImpl(std::move(f), absl::make_index_sequence<sizeof...(Ts)>());
   }
 
+  // Iterate through each set field in the table if it exists in Vs, in the
+  // order of Vs.
+  template <typename F, typename... Vs>
+  void ForEachIn(F f) const {
+    ForEachImpl(std::move(f),
+                absl::index_sequence<table_detail::IndexOf<Vs, Ts...>()...>());
+  }
+
   // Count the number of set fields in the table
   size_t count() const { return present_bits_.count(); }
 

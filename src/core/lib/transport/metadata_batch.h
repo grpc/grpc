@@ -1045,7 +1045,9 @@ class MetadataMap {
   //    void Encode(string_view key, Slice value);
   template <typename Encoder>
   void Encode(Encoder* encoder) const {
-    table_.ForEach(metadata_detail::EncodeWrapper<Encoder>{encoder});
+    table_.template ForEachIn<metadata_detail::EncodeWrapper<Encoder>,
+                              Value<Traits>...>(
+        metadata_detail::EncodeWrapper<Encoder>{encoder});
     for (const auto& unk : unknown_) {
       encoder->Encode(unk.first, unk.second);
     }
