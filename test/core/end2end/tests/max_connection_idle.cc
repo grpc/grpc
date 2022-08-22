@@ -175,8 +175,8 @@ static void test_max_connection_idle(grpc_end2end_test_config config) {
 
   auto client_args = grpc_core::ChannelArgs()
                          .Set(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS, 1000)
-                         .Set(GRPC_ARG_MAX_RECONNECT_BACKOFF_MS, 1000)
-                         .Set(GRPC_ARG_MIN_RECONNECT_BACKOFF_MS, 5000)
+                         .Set(GRPC_ARG_MAX_RECONNECT_BACKOFF_MS, 5000)
+                         .Set(GRPC_ARG_MIN_RECONNECT_BACKOFF_MS, 1000)
                          .ToC();
   grpc_arg server_a[2];
   server_a[0].type = GRPC_ARG_INTEGER;
