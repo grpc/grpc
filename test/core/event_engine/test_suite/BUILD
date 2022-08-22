@@ -122,6 +122,7 @@ grpc_cc_library(
     hdrs = ["oracle_event_engine_posix.h"],
     tags = [
         "no_windows",
+        "cpu:10",
     ],
     deps = [
         ":conformance_test_base_lib",
