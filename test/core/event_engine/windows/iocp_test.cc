@@ -252,10 +252,10 @@ TEST_F(IOCPTest, CrashOnWatchingAClosedSocket) {
 }
 
 TEST_F(IOCPTest, StressTestThousandsOfSockets) {
-  // Start 100 threads, each with their own IOCP
+  // Start 10 threads, each with their own IOCP
   // On each thread, create 50 socket pairs (100 sockets) and have them exchange
   // a message before shutting down.
-  int thread_count = 100;
+  int thread_count = 10;
   int sockets_per_thread = 50;
   std::atomic<int> read_count{0};
   std::atomic<int> write_count{0};

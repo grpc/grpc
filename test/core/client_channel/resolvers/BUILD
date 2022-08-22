@@ -49,7 +49,6 @@ grpc_cc_test(
     name = "dns_resolver_cooldown_test",
     srcs = ["dns_resolver_cooldown_test.cc"],
     external_deps = ["gtest"],
-    flaky = True,
     language = "C++",
     deps = [
         "//:gpr",
