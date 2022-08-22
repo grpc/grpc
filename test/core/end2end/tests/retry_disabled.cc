@@ -191,7 +191,7 @@ static void test_retry_disabled(grpc_end2end_test_config config) {
                                &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(tag(101), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   peer = grpc_call_get_peer(s);
   GPR_ASSERT(peer != nullptr);
@@ -221,7 +221,7 @@ static void test_retry_disabled(grpc_end2end_test_config config) {
 
   cqv.Expect(tag(102), true);
   cqv.Expect(tag(1), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   GPR_ASSERT(status == GRPC_STATUS_ABORTED);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));

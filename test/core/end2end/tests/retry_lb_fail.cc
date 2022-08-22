@@ -238,7 +238,7 @@ static void test_retry_lb_fail(grpc_end2end_test_config config) {
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   cqv.Expect(tag(1), false);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -252,7 +252,7 @@ static void test_retry_lb_fail(grpc_end2end_test_config config) {
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   cqv.Expect(tag(2), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   GPR_ASSERT(status == GRPC_STATUS_ABORTED);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "LB pick failed"));

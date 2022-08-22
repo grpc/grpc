@@ -136,7 +136,7 @@ class GracefulShutdownTest : public ::testing::Test {
     // Shutdown and destroy server
     grpc_server_shutdown_and_notify(server_, cq_, Tag(1000));
     cqv_->Expect(Tag(1000), true);
-    cqv_->Verify();
+    cqv_->Verify(DEBUG_LOCATION);
     grpc_server_destroy(server_);
     cqv_.reset();
     grpc_completion_queue_destroy(cq_);
@@ -257,7 +257,7 @@ TEST_F(GracefulShutdownTest, GracefulGoaway) {
   WaitForGoaway(0);
   // The shutdown should successfully complete.
   cqv_->Expect(Tag(1), true);
-  cqv_->Verify();
+  cqv_->Verify(DEBUG_LOCATION);
 }
 
 TEST_F(GracefulShutdownTest, RequestStartedBeforeFinalGoaway) {
@@ -300,7 +300,7 @@ TEST_F(GracefulShutdownTest, RequestStartedBeforeFinalGoaway) {
   cqv_->Expect(Tag(100), false);
   // The shutdown should successfully complete.
   cqv_->Expect(Tag(1), true);
-  cqv_->Verify();
+  cqv_->Verify(DEBUG_LOCATION);
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
 }
@@ -332,7 +332,7 @@ TEST_F(GracefulShutdownTest, RequestStartedAfterFinalGoawayIsIgnored) {
       "\x10\x0auser-agent\x17grpc-c/0.12.0.0 (linux)";
   Write(absl::string_view(kRequestFrame, sizeof(kRequestFrame) - 1));
   cqv_->Expect(Tag(100), true);
-  cqv_->Verify();
+  cqv_->Verify(DEBUG_LOCATION);
 
   // Initiate shutdown on the server
   grpc_server_shutdown_and_notify(server_, cq_, Tag(1));
@@ -390,7 +390,7 @@ TEST_F(GracefulShutdownTest, RequestStartedAfterFinalGoawayIsIgnored) {
   cqv_->Expect(Tag(101), true);
   // The shutdown should successfully complete.
   cqv_->Expect(Tag(1), true);
-  cqv_->Verify();
+  cqv_->Verify(DEBUG_LOCATION);
   grpc_call_unref(s);
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
@@ -414,7 +414,7 @@ TEST_F(GracefulShutdownTest, UnresponsiveClient) {
                     1) /* clock skew between threads due to time caching */);
   // The shutdown should successfully complete.
   cqv_->Expect(Tag(1), true);
-  cqv_->Verify();
+  cqv_->Verify(DEBUG_LOCATION);
 }
 
 // Test that servers send a GOAWAY with the last stream ID even when the
@@ -429,7 +429,7 @@ TEST_F(GracefulShutdownTest, GoawayReceivedOnServerDisconnect) {
                 grpc_slice_from_static_string("Cancelling all calls"));
   // The shutdown should successfully complete.
   cqv_->Expect(Tag(1), true);
-  cqv_->Verify();
+  cqv_->Verify(DEBUG_LOCATION);
 }
 
 }  // namespace

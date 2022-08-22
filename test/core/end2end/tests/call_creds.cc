@@ -246,7 +246,7 @@ static void request_response_with_payload_and_call_creds(
     // Expect the call to fail since the channel credentials did not satisfy the
     // minimum security level requirements.
     cqv.Expect(tag(1), true);
-    cqv.Verify();
+    cqv.Verify(DEBUG_LOCATION);
     GPR_ASSERT(status == GRPC_STATUS_UNAUTHENTICATED);
   } else {
     error =
@@ -254,7 +254,7 @@ static void request_response_with_payload_and_call_creds(
                                  &request_metadata_recv, f.cq, f.cq, tag(101));
     GPR_ASSERT(GRPC_CALL_OK == error);
     cqv.Expect(tag(101), true);
-    cqv.Verify();
+    cqv.Verify(DEBUG_LOCATION);
     server_auth_context = grpc_call_auth_context(s);
     GPR_ASSERT(server_auth_context != nullptr);
     print_auth_context(0, server_auth_context);
@@ -285,7 +285,7 @@ static void request_response_with_payload_and_call_creds(
     GPR_ASSERT(GRPC_CALL_OK == error);
 
     cqv.Expect(tag(102), true);
-    cqv.Verify();
+    cqv.Verify(DEBUG_LOCATION);
 
     memset(ops, 0, sizeof(ops));
     op = ops;
@@ -313,7 +313,7 @@ static void request_response_with_payload_and_call_creds(
 
     cqv.Expect(tag(103), true);
     cqv.Expect(tag(1), true);
-    cqv.Verify();
+    cqv.Verify(DEBUG_LOCATION);
 
     GPR_ASSERT(status == GRPC_STATUS_OK);
     GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
@@ -498,7 +498,7 @@ static void test_request_with_server_rejecting_client_creds(
   GPR_ASSERT(error == GRPC_CALL_OK);
 
   cqv.Expect(tag(1), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   GPR_ASSERT(status == GRPC_STATUS_UNAUTHENTICATED);
 

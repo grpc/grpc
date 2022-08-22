@@ -191,7 +191,7 @@ static void test_retry_streaming_after_commit(grpc_end2end_test_config config) {
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(tag(3), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   // Server gets a call with received initial metadata.
   error =
@@ -199,7 +199,7 @@ static void test_retry_streaming_after_commit(grpc_end2end_test_config config) {
                                &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(tag(101), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   peer = grpc_call_get_peer(s);
   GPR_ASSERT(peer != nullptr);
@@ -220,7 +220,7 @@ static void test_retry_streaming_after_commit(grpc_end2end_test_config config) {
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(tag(102), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   // Server sends initial metadata and a message.
   memset(ops, 0, sizeof(ops));
@@ -237,7 +237,7 @@ static void test_retry_streaming_after_commit(grpc_end2end_test_config config) {
   cqv.Expect(tag(103), true);
   // Client receives initial metadata and a message.
   cqv.Expect(tag(2), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   // Client sends a second message and a close.
   memset(ops, 0, sizeof(ops));
@@ -251,7 +251,7 @@ static void test_retry_streaming_after_commit(grpc_end2end_test_config config) {
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(tag(4), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   // Server receives a second message.
   memset(ops, 0, sizeof(ops));
@@ -263,7 +263,7 @@ static void test_retry_streaming_after_commit(grpc_end2end_test_config config) {
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(tag(104), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   // Server receives a close, sends a second message, and sends status.
   memset(ops, 0, sizeof(ops));
@@ -285,7 +285,7 @@ static void test_retry_streaming_after_commit(grpc_end2end_test_config config) {
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(tag(105), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   // Client receives a second message.
   memset(ops, 0, sizeof(ops));
@@ -297,7 +297,7 @@ static void test_retry_streaming_after_commit(grpc_end2end_test_config config) {
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(tag(5), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   // Client receives status.
   memset(ops, 0, sizeof(ops));
@@ -311,7 +311,7 @@ static void test_retry_streaming_after_commit(grpc_end2end_test_config config) {
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(tag(1), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   GPR_ASSERT(status == GRPC_STATUS_ABORTED);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));

@@ -99,7 +99,7 @@ static void run_test(const char* target, size_t nops) {
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   cqv.Expect(tag(1), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   GPR_ASSERT(status != GRPC_STATUS_OK);
 

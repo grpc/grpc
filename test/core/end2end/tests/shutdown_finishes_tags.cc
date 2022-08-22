@@ -87,7 +87,7 @@ static void test_early_server_shutdown_finishes_tags(
   grpc_server_shutdown_and_notify(f.server, f.cq, tag(1000));
   cqv.Expect(tag(101), false);
   cqv.Expect(tag(1000), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
   GPR_ASSERT(s == nullptr);
 
   grpc_server_destroy(f.server);

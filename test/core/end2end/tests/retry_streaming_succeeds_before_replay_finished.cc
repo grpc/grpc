@@ -197,7 +197,7 @@ static void test_retry_streaming_succeeds_before_replay_finished(
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(tag(2), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   // Server gets a call with received initial metadata.
   error =
@@ -205,7 +205,7 @@ static void test_retry_streaming_succeeds_before_replay_finished(
                                &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(tag(101), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   peer = grpc_call_get_peer(s);
   GPR_ASSERT(peer != nullptr);
@@ -226,7 +226,7 @@ static void test_retry_streaming_succeeds_before_replay_finished(
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(tag(102), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   // Client sends a second message.
   memset(ops, 0, sizeof(ops));
@@ -238,7 +238,7 @@ static void test_retry_streaming_succeeds_before_replay_finished(
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(tag(3), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   // Server receives the second message.
   memset(ops, 0, sizeof(ops));
@@ -250,7 +250,7 @@ static void test_retry_streaming_succeeds_before_replay_finished(
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(tag(103), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   // Client sends a third message.
   memset(ops, 0, sizeof(ops));
@@ -262,7 +262,7 @@ static void test_retry_streaming_succeeds_before_replay_finished(
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(tag(4), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   // Server receives the third message.
   memset(ops, 0, sizeof(ops));
@@ -274,7 +274,7 @@ static void test_retry_streaming_succeeds_before_replay_finished(
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(tag(104), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   // Server sends both initial and trailing metadata.
   memset(ops, 0, sizeof(ops));
@@ -294,7 +294,7 @@ static void test_retry_streaming_succeeds_before_replay_finished(
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(tag(105), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   // Clean up from first attempt.
   grpc_call_unref(s);
@@ -320,7 +320,7 @@ static void test_retry_streaming_succeeds_before_replay_finished(
                                &request_metadata_recv, f.cq, f.cq, tag(201));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(tag(201), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   peer = grpc_call_get_peer(s);
   GPR_ASSERT(peer != nullptr);
@@ -341,7 +341,7 @@ static void test_retry_streaming_succeeds_before_replay_finished(
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(tag(202), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   // Server sends initial metadata, a message, and trailing metadata.
   memset(ops, 0, sizeof(ops));
@@ -364,7 +364,7 @@ static void test_retry_streaming_succeeds_before_replay_finished(
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(tag(205), true);
   cqv.Expect(tag(1), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   GPR_ASSERT(status == GRPC_STATUS_ABORTED);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));

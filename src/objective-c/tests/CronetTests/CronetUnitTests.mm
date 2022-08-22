@@ -217,7 +217,7 @@ unsigned int parse_h2_length(const char *field) {
   });
 
   cqv.Expect((void *)1, true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   GPR_ASSERT(status == GRPC_STATUS_UNAVAILABLE);
 
@@ -390,7 +390,7 @@ unsigned int parse_h2_length(const char *field) {
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   cqv.Expect((void *)1, true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   grpc_slice_unref(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);

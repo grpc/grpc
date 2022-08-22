@@ -138,7 +138,7 @@ static void simple_request_body(grpc_end2end_test_config /*config*/,
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   cqv.Expect(tag(1), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   GPR_ASSERT(status == GRPC_STATUS_DEADLINE_EXCEEDED);
 

@@ -209,7 +209,7 @@ static void request_for_disabled_algorithm(
 
   cqv.Expect(tag(101), true);
   cqv.Expect(tag(1), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
@@ -239,7 +239,7 @@ static void request_for_disabled_algorithm(
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   cqv.Expect(tag(103), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   /* call was cancelled (closed) ... */
   GPR_ASSERT(was_cancelled != 0);
@@ -394,7 +394,7 @@ static void request_with_payload_template_inner(
                                &request_metadata_recv, f.cq, f.cq, tag(100));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(tag(100), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   GPR_ASSERT(grpc_core::BitCount(
                  grpc_call_test_only_get_encodings_accepted_by_peer(s)) ==
@@ -458,7 +458,7 @@ static void request_with_payload_template_inner(
     GPR_ASSERT(GRPC_CALL_OK == error);
 
     cqv.Expect(tag(102), true);
-    cqv.Verify();
+    cqv.Verify(DEBUG_LOCATION);
 
     GPR_ASSERT(request_payload_recv->type == GRPC_BB_RAW);
     GPR_ASSERT(byte_buffer_eq_string(request_payload_recv, request_str));
@@ -490,7 +490,7 @@ static void request_with_payload_template_inner(
 
     cqv.Expect(tag(103), true);
     cqv.Expect(tag(3), true);
-    cqv.Verify();
+    cqv.Verify(DEBUG_LOCATION);
 
     GPR_ASSERT(response_payload_recv->type == GRPC_BB_RAW);
     GPR_ASSERT(byte_buffer_eq_string(response_payload_recv, response_str));
@@ -542,7 +542,7 @@ static void request_with_payload_template_inner(
   cqv.Expect(tag(4), true);
   cqv.Expect(tag(101), true);
   cqv.Expect(tag(104), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   GPR_ASSERT(status == GRPC_STATUS_OK);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));

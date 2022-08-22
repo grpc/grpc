@@ -146,7 +146,7 @@ static void test_bad_ping(grpc_end2end_test_config config) {
                                &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(tag(101), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   // Send too many pings to the server to trigger the punishment:
   // The first ping will let server mark its last_recv time. Afterwards, each
@@ -160,7 +160,7 @@ static void test_bad_ping(grpc_end2end_test_config config) {
     if (i == MAX_PING_STRIKES + 2) {
       cqv.Expect(tag(1), true);
     }
-    cqv.Verify();
+    cqv.Verify(DEBUG_LOCATION);
   }
 
   memset(ops, 0, sizeof(ops));
@@ -188,11 +188,11 @@ static void test_bad_ping(grpc_end2end_test_config config) {
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   cqv.Expect(tag(102), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   grpc_server_shutdown_and_notify(f.server, f.cq, tag(0xdead));
   cqv.Expect(tag(0xdead), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   grpc_call_unref(s);
 
@@ -297,7 +297,7 @@ static void test_pings_without_data(grpc_end2end_test_config config) {
                                &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(tag(101), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   // Send too many pings to the server similar to the previous test case.
   // However, since we set the MAX_PINGS_WITHOUT_DATA at the client side, only
@@ -308,7 +308,7 @@ static void test_pings_without_data(grpc_end2end_test_config config) {
     if (i <= MAX_PING_STRIKES) {
       cqv.Expect(tag(200 + i), true);
     }
-    cqv.Verify();
+    cqv.Verify(DEBUG_LOCATION);
   }
 
   memset(ops, 0, sizeof(ops));
@@ -338,7 +338,7 @@ static void test_pings_without_data(grpc_end2end_test_config config) {
   cqv.Expect(tag(102), true);
   // Client call should return.
   cqv.Expect(tag(1), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   grpc_server_shutdown_and_notify(f.server, f.cq, tag(0xdead));
   cqv.Expect(tag(0xdead), true);
@@ -347,7 +347,7 @@ static void test_pings_without_data(grpc_end2end_test_config config) {
   cqv.Expect(tag(200 + MAX_PING_STRIKES + 1), false);
   cqv.Expect(tag(200 + MAX_PING_STRIKES + 2), false);
 
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   grpc_call_unref(s);
 

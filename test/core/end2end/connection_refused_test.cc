@@ -112,7 +112,7 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
                                                    nullptr));
   /* verify that all tags get completed */
   cqv.Expect(tag(1), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   if (wait_for_ready) {
     GPR_ASSERT(status == GRPC_STATUS_DEADLINE_EXCEEDED);

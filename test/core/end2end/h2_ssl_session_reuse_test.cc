@@ -194,7 +194,7 @@ void do_round_trip(grpc_completion_queue* cq, grpc_server* server,
                                    &request_metadata_recv, cq, cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(tag(101), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   grpc_auth_context* auth = grpc_call_auth_context(s);
   grpc_auth_property_iterator it = grpc_auth_context_find_properties_by_name(
@@ -232,7 +232,7 @@ void do_round_trip(grpc_completion_queue* cq, grpc_server* server,
 
   cqv.Expect(tag(103), true);
   cqv.Expect(tag(1), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);

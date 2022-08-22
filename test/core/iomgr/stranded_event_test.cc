@@ -102,7 +102,7 @@ void StartCall(TestCall* test_call) {
   GPR_ASSERT(GRPC_CALL_OK == error);
   grpc_core::CqVerifier cqv(test_call->cq);
   cqv.Expect(tag, true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 }
 
 void SendMessage(grpc_call* call, grpc_completion_queue* cq) {
@@ -123,7 +123,7 @@ void SendMessage(grpc_call* call, grpc_completion_queue* cq) {
   GPR_ASSERT(GRPC_CALL_OK == error);
   grpc_core::CqVerifier cqv(cq);
   cqv.Expect(tag, true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
   grpc_byte_buffer_destroy(request_payload);
 }
 
@@ -143,7 +143,7 @@ void ReceiveMessage(grpc_call* call, grpc_completion_queue* cq) {
   GPR_ASSERT(GRPC_CALL_OK == error);
   grpc_core::CqVerifier cqv(cq);
   cqv.Expect(tag, true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
   grpc_byte_buffer_destroy(request_payload);
 }
 

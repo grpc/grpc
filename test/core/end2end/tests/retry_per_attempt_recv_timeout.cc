@@ -194,7 +194,7 @@ static void test_retry_per_attempt_recv_timeout(
                                &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(tag(101), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   // Make sure the "grpc-previous-rpc-attempts" header was not sent in the
   // initial attempt.
@@ -215,7 +215,7 @@ static void test_retry_per_attempt_recv_timeout(
                                &request_metadata_recv, f.cq, f.cq, tag(201));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(tag(201), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   // Now we can unref the first call.
   grpc_call_unref(s0);
@@ -261,7 +261,7 @@ static void test_retry_per_attempt_recv_timeout(
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(tag(202), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   grpc_call_unref(s);
   grpc_metadata_array_destroy(&request_metadata_recv);
@@ -275,7 +275,7 @@ static void test_retry_per_attempt_recv_timeout(
                                &request_metadata_recv, f.cq, f.cq, tag(301));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(tag(301), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   // Make sure the "grpc-previous-rpc-attempts" header was sent in the retry.
   found_retry_header = false;
@@ -317,7 +317,7 @@ static void test_retry_per_attempt_recv_timeout(
 
   cqv.Expect(tag(302), true);
   cqv.Expect(tag(1), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   GPR_ASSERT(status == GRPC_STATUS_OK);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));

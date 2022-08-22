@@ -178,7 +178,7 @@ static void test_server_channel_filter(grpc_end2end_test_config config) {
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   cqv.Expect(tag(1), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   if (g_channel_filter_init_failure) {
     // Inproc channel returns invalid_argument and other clients return
@@ -274,7 +274,7 @@ static void test_client_channel_filter(grpc_end2end_test_config config) {
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   cqv.Expect(tag(1), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   if (g_channel_filter_init_failure) {
     GPR_ASSERT(status == GRPC_STATUS_INVALID_ARGUMENT);
@@ -366,7 +366,7 @@ static void test_client_subchannel_filter(grpc_end2end_test_config config) {
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   cqv.Expect(tag(1), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   if (g_channel_filter_init_failure) {
     GPR_ASSERT(status == GRPC_STATUS_UNAVAILABLE);
@@ -393,7 +393,7 @@ static void test_client_subchannel_filter(grpc_end2end_test_config config) {
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   cqv.Expect(tag(2), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   if (g_channel_filter_init_failure) {
     GPR_ASSERT(status == GRPC_STATUS_UNAVAILABLE);

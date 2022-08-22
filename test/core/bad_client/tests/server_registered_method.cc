@@ -55,7 +55,7 @@ static void verifier_succeeds(grpc_server* server, grpc_completion_queue* cq,
                                               &payload, cq, cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(tag(101), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   GPR_ASSERT(payload != nullptr);
 

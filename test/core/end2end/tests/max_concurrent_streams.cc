@@ -144,7 +144,7 @@ static void simple_request_body(grpc_end2end_test_config /*config*/,
                                &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(tag(101), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -172,7 +172,7 @@ static void simple_request_body(grpc_end2end_test_config /*config*/,
 
   cqv.Expect(tag(102), true);
   cqv.Expect(tag(1), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
@@ -377,7 +377,7 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   /* first request is finished, we should be able to start the second */
   live_call = (live_call == 300) ? 400 : 300;
   cqv.Expect(tag(live_call + 1), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   grpc_call_details_destroy(&call_details);
 
@@ -385,7 +385,7 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
                                  f.server, &s2, &call_details,
                                  &request_metadata_recv, f.cq, f.cq, tag(201)));
   cqv.Expect(tag(201), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -412,7 +412,7 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
 
   cqv.Expect(tag(live_call + 2), true);
   cqv.Expect(tag(202), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   grpc_call_unref(c1);
   grpc_call_unref(s1);
@@ -531,7 +531,7 @@ static void test_max_concurrent_streams_with_timeout_on_first(
 
   cqv.Expect(tag(101), true);
   cqv.Expect(tag(301), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -577,7 +577,7 @@ static void test_max_concurrent_streams_with_timeout_on_first(
   /* first request is finished, we should be able to start the second */
   cqv.Expect(tag(401), true);
   cqv.Expect(tag(201), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -605,7 +605,7 @@ static void test_max_concurrent_streams_with_timeout_on_first(
 
   cqv.Expect(tag(402), true);
   cqv.Expect(tag(202), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   grpc_call_unref(c1);
   grpc_call_unref(s1);
@@ -724,7 +724,7 @@ static void test_max_concurrent_streams_with_timeout_on_second(
 
   cqv.Expect(tag(101), true);
   cqv.Expect(tag(301), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -763,7 +763,7 @@ static void test_max_concurrent_streams_with_timeout_on_second(
   /* the second request is time out*/
   cqv.Expect(tag(401), false);
   cqv.Expect(tag(402), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   /* second request is finished because of time out, so destroy the second call
    */
@@ -796,7 +796,7 @@ static void test_max_concurrent_streams_with_timeout_on_second(
 
   cqv.Expect(tag(302), true);
   cqv.Expect(tag(102), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   grpc_call_unref(c1);
   grpc_call_unref(s1);

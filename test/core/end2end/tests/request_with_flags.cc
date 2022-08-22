@@ -155,7 +155,7 @@ static void test_invoke_request_with_flags(
 
   if (expectation == GRPC_CALL_OK) {
     cqv.Expect(tag(1), true);
-    cqv.Verify();
+    cqv.Verify(DEBUG_LOCATION);
     grpc_slice_unref(details);
   }
 

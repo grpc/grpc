@@ -74,7 +74,7 @@ static void test_ping(grpc_end2end_test_config config,
                                           GPR_TIMESPAN)),
         f.cq, tag(99));
     cqv.Expect(tag(99), true);
-    cqv.Verify();
+    cqv.Verify(DEBUG_LOCATION);
     state = grpc_channel_check_connectivity_state(f.client, 0);
     GPR_ASSERT(state == GRPC_CHANNEL_READY ||
                state == GRPC_CHANNEL_CONNECTING ||
@@ -84,12 +84,12 @@ static void test_ping(grpc_end2end_test_config config,
   for (i = 1; i <= PING_NUM; i++) {
     grpc_channel_ping(f.client, f.cq, tag(i), nullptr);
     cqv.Expect(tag(i), true);
-    cqv.Verify();
+    cqv.Verify(DEBUG_LOCATION);
   }
 
   grpc_server_shutdown_and_notify(f.server, f.cq, tag(0xdead));
   cqv.Expect(tag(0xdead), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   /* cleanup server */
   grpc_server_destroy(f.server);

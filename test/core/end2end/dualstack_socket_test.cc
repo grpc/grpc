@@ -207,7 +207,7 @@ void test_connect(const char* server_host, const char* client_host, int port,
                                      &request_metadata_recv, cq, cq, tag(101));
     GPR_ASSERT(GRPC_CALL_OK == error);
     cqv.Expect(tag(101), true);
-    cqv.Verify();
+    cqv.Verify(DEBUG_LOCATION);
 
     memset(ops, 0, sizeof(ops));
     op = ops;
@@ -232,7 +232,7 @@ void test_connect(const char* server_host, const char* client_host, int port,
 
     cqv.Expect(tag(102), true);
     cqv.Expect(tag(1), true);
-    cqv.Verify();
+    cqv.Verify(DEBUG_LOCATION);
 
     peer = grpc_call_get_peer(c);
     gpr_log(GPR_DEBUG, "got peer: '%s'", peer);
@@ -249,7 +249,7 @@ void test_connect(const char* server_host, const char* client_host, int port,
   } else {
     /* Check for a failed connection. */
     cqv.Expect(tag(1), true);
-    cqv.Verify();
+    cqv.Verify(DEBUG_LOCATION);
 
     gpr_log(GPR_INFO, "status: %d (expected: %d)", status,
             GRPC_STATUS_UNAVAILABLE);

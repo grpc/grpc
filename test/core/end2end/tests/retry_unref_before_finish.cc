@@ -179,7 +179,7 @@ static void test_retry_unref_before_finish(grpc_end2end_test_config config) {
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(tag(1), true);
   cqv.Expect(tag(101), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   // Server immediately sends FAILED_PRECONDITION status (not retriable).
   // This forces the retry filter to start a recv_trailing_metadata op
@@ -204,7 +204,7 @@ static void test_retry_unref_before_finish(grpc_end2end_test_config config) {
   // Server ops complete and client recv ops complete.
   cqv.Expect(tag(2), true);
   cqv.Expect(tag(102), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/service/method"));
   GPR_ASSERT(was_cancelled == 0);

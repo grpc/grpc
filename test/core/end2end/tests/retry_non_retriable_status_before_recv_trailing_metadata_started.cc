@@ -184,7 +184,7 @@ test_retry_non_retriable_status_before_recv_trailing_metadata_started(
                                &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(tag(101), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   peer = grpc_call_get_peer(s);
   GPR_ASSERT(peer != nullptr);
@@ -214,7 +214,7 @@ test_retry_non_retriable_status_before_recv_trailing_metadata_started(
 
   cqv.Expect(tag(102), true);
   cqv.Expect(tag(1), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -231,7 +231,7 @@ test_retry_non_retriable_status_before_recv_trailing_metadata_started(
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   cqv.Expect(tag(2), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   GPR_ASSERT(status == GRPC_STATUS_INVALID_ARGUMENT);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));

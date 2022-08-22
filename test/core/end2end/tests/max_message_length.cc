@@ -225,7 +225,7 @@ static void test_max_message_length_on_request(grpc_end2end_test_config config,
 
   if (send_limit) {
     cqv.Expect(tag(1), true);
-    cqv.Verify();
+    cqv.Verify(DEBUG_LOCATION);
     goto done;
   }
 
@@ -234,7 +234,7 @@ static void test_max_message_length_on_request(grpc_end2end_test_config config,
                                &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(tag(101), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -254,7 +254,7 @@ static void test_max_message_length_on_request(grpc_end2end_test_config config,
 
   cqv.Expect(tag(102), true);
   cqv.Expect(tag(1), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/service/method"));
   GPR_ASSERT(was_cancelled == 1);
@@ -413,7 +413,7 @@ static void test_max_message_length_on_response(grpc_end2end_test_config config,
                                &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(tag(101), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -446,7 +446,7 @@ static void test_max_message_length_on_response(grpc_end2end_test_config config,
 
   cqv.Expect(tag(102), true);
   cqv.Expect(tag(1), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/service/method"));
   GPR_ASSERT(status == GRPC_STATUS_RESOURCE_EXHAUSTED);
@@ -572,7 +572,7 @@ static void test_max_receive_message_length_on_compressed_request(
                                &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(tag(101), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -608,7 +608,7 @@ static void test_max_receive_message_length_on_compressed_request(
 
   cqv.Expect(tag(102), true);
   cqv.Expect(tag(1), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/service/method"));
   if (minimal_stack) {
@@ -727,7 +727,7 @@ static void test_max_receive_message_length_on_compressed_response(
                                &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(tag(101), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   grpc_metadata compression_md = gzip_compression_override();
   memset(ops, 0, sizeof(ops));
@@ -762,7 +762,7 @@ static void test_max_receive_message_length_on_compressed_response(
 
   cqv.Expect(tag(102), true);
   cqv.Expect(tag(1), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/service/method"));
   if (minimal_stack) {

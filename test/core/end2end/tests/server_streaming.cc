@@ -162,14 +162,14 @@ static void test_server_streaming(grpc_end2end_test_config config,
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv->Expect(tag(3), true);
-  cqv->Verify();
+  cqv->Verify(DEBUG_LOCATION);
 
   error =
       grpc_server_request_call(f.server, &s, &call_details,
                                &request_metadata_recv, f.cq, f.cq, tag(100));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv->Expect(tag(100), true);
-  cqv->Verify();
+  cqv->Verify(DEBUG_LOCATION);
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -183,7 +183,7 @@ static void test_server_streaming(grpc_end2end_test_config config,
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   cqv->Expect(tag(101), true);
-  cqv->Verify();
+  cqv->Verify(DEBUG_LOCATION);
 
   // Server writes bunch of messages
   for (int i = 0; i < num_messages; i++) {
@@ -200,7 +200,7 @@ static void test_server_streaming(grpc_end2end_test_config config,
                                   tag(103), nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
     cqv->Expect(tag(103), true);
-    cqv->Verify();
+    cqv->Verify(DEBUG_LOCATION);
 
     grpc_byte_buffer_destroy(response_payload);
   }
@@ -227,7 +227,7 @@ static void test_server_streaming(grpc_end2end_test_config config,
   bool seen_status = false;
   cqv->Expect(tag(1), grpc_core::CqVerifier::Maybe{&seen_status});
   cqv->Expect(tag(104), true);
-  cqv->Verify();
+  cqv->Verify(DEBUG_LOCATION);
 
   // Client keeps reading messages till it gets the status
   int num_messages_received = 0;
@@ -244,7 +244,7 @@ static void test_server_streaming(grpc_end2end_test_config config,
     GPR_ASSERT(GRPC_CALL_OK == error);
     cqv->Expect(tag(1), grpc_core::CqVerifier::Maybe{&seen_status});
     cqv->Expect(tag(102), true);
-    cqv->Verify();
+    cqv->Verify(DEBUG_LOCATION);
     if (request_payload_recv == nullptr) {
       // The transport has received the trailing metadata.
       break;
@@ -256,7 +256,7 @@ static void test_server_streaming(grpc_end2end_test_config config,
   GPR_ASSERT(num_messages_received == num_messages);
   if (!seen_status) {
     cqv->Expect(tag(1), true);
-    cqv->Verify();
+    cqv->Verify(DEBUG_LOCATION);
   }
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));

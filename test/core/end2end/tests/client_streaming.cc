@@ -144,7 +144,7 @@ static void test_client_streaming(grpc_end2end_test_config config,
                                &request_metadata_recv, f.cq, f.cq, tag(100));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(tag(100), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -159,7 +159,7 @@ static void test_client_streaming(grpc_end2end_test_config config,
 
   cqv.Expect(tag(101), true);
   cqv.Expect(tag(1), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   // Client writes bunch of messages and server reads them
   for (i = 0; i < messages; i++) {
@@ -188,7 +188,7 @@ static void test_client_streaming(grpc_end2end_test_config config,
     GPR_ASSERT(GRPC_CALL_OK == error);
     cqv.Expect(tag(102), true);
     cqv.Expect(tag(103), true);
-    cqv.Verify();
+    cqv.Verify(DEBUG_LOCATION);
     GPR_ASSERT(byte_buffer_eq_string(request_payload_recv, "hello world"));
     grpc_byte_buffer_destroy(request_payload_recv);
   }
@@ -208,9 +208,9 @@ static void test_client_streaming(grpc_end2end_test_config config,
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(tag(104), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
   // Do an empty verify to make sure that the client receives the status
-  cqv.VerifyEmpty();
+  cqv.VerifyEmpty(DEBUG_LOCATION);
 
   // Client tries sending another message which should fail
   request_payload = grpc_raw_byte_buffer_create(&request_payload_slice, 1);
@@ -226,7 +226,7 @@ static void test_client_streaming(grpc_end2end_test_config config,
   GPR_ASSERT(GRPC_CALL_OK == error);
   grpc_byte_buffer_destroy(request_payload);
   cqv.Expect(tag(103), false);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   // Client sends close and requests status
   memset(ops, 0, sizeof(ops));
@@ -246,7 +246,7 @@ static void test_client_streaming(grpc_end2end_test_config config,
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(tag(3), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
 

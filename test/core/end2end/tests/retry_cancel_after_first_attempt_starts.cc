@@ -194,7 +194,7 @@ static void test_retry_cancel_after_first_attempt_starts(
   cqv.Expect(tag(1), grpc_core::CqVerifier::AnyStatus());
   cqv.Expect(tag(2), grpc_core::CqVerifier::AnyStatus());
   cqv.Expect(tag(3), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   grpc_slice_unref(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);

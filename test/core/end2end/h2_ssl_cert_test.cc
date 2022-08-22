@@ -325,7 +325,7 @@ static void simple_request_body(grpc_end2end_test_fixture f,
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(1), expected_result == SUCCESS);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   grpc_call_unref(c);
 }

@@ -160,7 +160,7 @@ static void test_max_age_forcibly_close(grpc_end2end_test_config config) {
                                &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv->Expect(tag(101), true);
-  cqv->Verify();
+  cqv->Verify(DEBUG_LOCATION);
 
   gpr_timespec expect_shutdown_time = grpc_timeout_milliseconds_to_deadline(
       static_cast<int>(MAX_CONNECTION_AGE_MS *
@@ -169,12 +169,13 @@ static void test_max_age_forcibly_close(grpc_end2end_test_config config) {
 
   /* Wait for the channel to reach its max age */
   cqv->VerifyEmpty(
-      grpc_core::Duration::Seconds(CQ_MAX_CONNECTION_AGE_WAIT_TIME_S));
+      grpc_core::Duration::Seconds(CQ_MAX_CONNECTION_AGE_WAIT_TIME_S),
+      DEBUG_LOCATION);
 
   /* After the channel reaches its max age, we still do nothing here. And wait
      for it to use up its max age grace period. */
   cqv->Expect(tag(1), true);
-  cqv->Verify();
+  cqv->Verify(DEBUG_LOCATION);
 
   gpr_timespec channel_shutdown_time = gpr_now(GPR_CLOCK_MONOTONIC);
   GPR_ASSERT(gpr_time_cmp(channel_shutdown_time, expect_shutdown_time) < 0);
@@ -203,11 +204,11 @@ static void test_max_age_forcibly_close(grpc_end2end_test_config config) {
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv->Expect(tag(102), true);
-  cqv->Verify();
+  cqv->Verify(DEBUG_LOCATION);
 
   grpc_server_shutdown_and_notify(f.server, f.cq, tag(0xdead));
   cqv->Expect(tag(0xdead), true);
-  cqv->Verify();
+  cqv->Verify(DEBUG_LOCATION);
 
   grpc_call_unref(s);
 
@@ -303,16 +304,18 @@ static void test_max_age_gracefully_close(grpc_end2end_test_config config) {
                                &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv->Expect(tag(101), true);
-  cqv->Verify();
+  cqv->Verify(DEBUG_LOCATION);
 
   /* Wait for the channel to reach its max age */
   cqv->VerifyEmpty(
-      grpc_core::Duration::Seconds(CQ_MAX_CONNECTION_AGE_WAIT_TIME_S));
+      grpc_core::Duration::Seconds(CQ_MAX_CONNECTION_AGE_WAIT_TIME_S),
+      DEBUG_LOCATION);
 
   /* The connection is shutting down gracefully. In-progress rpc should not be
      closed, hence the completion queue should see nothing here. */
   cqv->VerifyEmpty(
-      grpc_core::Duration::Seconds(CQ_MAX_CONNECTION_AGE_GRACE_WAIT_TIME_S));
+      grpc_core::Duration::Seconds(CQ_MAX_CONNECTION_AGE_GRACE_WAIT_TIME_S),
+      DEBUG_LOCATION);
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -340,11 +343,11 @@ static void test_max_age_gracefully_close(grpc_end2end_test_config config) {
 
   cqv->Expect(tag(102), true);
   cqv->Expect(tag(1), true);
-  cqv->Verify();
+  cqv->Verify(DEBUG_LOCATION);
 
   grpc_server_shutdown_and_notify(f.server, f.cq, tag(0xdead));
   cqv->Expect(tag(0xdead), true);
-  cqv->Verify();
+  cqv->Verify(DEBUG_LOCATION);
 
   grpc_call_unref(s);
 

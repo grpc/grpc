@@ -123,7 +123,7 @@ static void prepare_test(int is_client) {
                                         g_state.cq, g_state.cq, tag(101)));
     g_state.cqv->Expect(tag(101), true);
     g_state.cqv->Expect(tag(1), true);
-    g_state.cqv->Verify();
+    g_state.cqv->Verify(DEBUG_LOCATION);
   }
 }
 
@@ -198,7 +198,7 @@ static void test_send_initial_metadata_more_than_once() {
                                                    (size_t)(op - g_state.ops),
                                                    tag(1), nullptr));
   g_state.cqv->Expect(tag(1), false);
-  g_state.cqv->Verify();
+  g_state.cqv->Verify(DEBUG_LOCATION);
 
   op = g_state.ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
@@ -327,7 +327,7 @@ static void test_receive_initial_metadata_twice_at_client() {
                                                    (size_t)(op - g_state.ops),
                                                    tag(1), nullptr));
   g_state.cqv->Expect(tag(1), false);
-  g_state.cqv->Verify();
+  g_state.cqv->Verify(DEBUG_LOCATION);
   op = g_state.ops;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
   op->data.recv_initial_metadata.recv_initial_metadata =
@@ -423,7 +423,7 @@ static void test_recv_status_on_client_twice() {
                                                    (size_t)(op - g_state.ops),
                                                    tag(1), nullptr));
   g_state.cqv->Expect(tag(1), true);
-  g_state.cqv->Verify();
+  g_state.cqv->Verify(DEBUG_LOCATION);
 
   op = g_state.ops;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;

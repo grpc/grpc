@@ -116,7 +116,7 @@ TEST(LameClientTest, MainTest) {
 
   /* the call should immediately fail */
   cqv.Expect(tag(1), false);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -133,7 +133,7 @@ TEST(LameClientTest, MainTest) {
 
   /* the call should immediately fail */
   cqv.Expect(tag(2), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   peer = grpc_call_get_peer(call);
   ASSERT_STREQ(peer, "lampoon:national");

@@ -253,7 +253,7 @@ static void start_rpc(int target_port, grpc_status_code expected_status,
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   cqv.Expect(tag(1), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   GPR_ASSERT(status == expected_status);
   if (expected_detail != nullptr) {

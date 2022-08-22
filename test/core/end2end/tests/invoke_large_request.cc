@@ -177,7 +177,7 @@ static void test_invoke_large_request(grpc_end2end_test_config config,
                                &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(tag(101), true);
-  cqv.Verify(grpc_core::Duration::Seconds(60));
+  cqv.Verify(grpc_core::Duration::Seconds(60), DEBUG_LOCATION);
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -196,7 +196,7 @@ static void test_invoke_large_request(grpc_end2end_test_config config,
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   cqv.Expect(tag(102), true);
-  cqv.Verify(grpc_core::Duration::Seconds(60));
+  cqv.Verify(grpc_core::Duration::Seconds(60), DEBUG_LOCATION);
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -224,7 +224,7 @@ static void test_invoke_large_request(grpc_end2end_test_config config,
 
   cqv.Expect(tag(103), true);
   cqv.Expect(tag(1), true);
-  cqv.Verify(grpc_core::Duration::Seconds(60));
+  cqv.Verify(grpc_core::Duration::Seconds(60), DEBUG_LOCATION);
 
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));

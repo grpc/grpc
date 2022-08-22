@@ -99,7 +99,7 @@ static void empty_batch_body(grpc_end2end_test_config /*config*/,
   error = grpc_call_start_batch(c, op, 0, tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(tag(1), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   grpc_call_unref(c);
 }

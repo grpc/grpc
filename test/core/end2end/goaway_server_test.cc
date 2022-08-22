@@ -317,7 +317,7 @@ int main(int argc, char** argv) {
   /* first call should now start */
   cqv.Expect(tag(0x101), true);
   cqv.Expect(tag(0x301), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   GPR_ASSERT(GRPC_CHANNEL_READY ==
              grpc_channel_check_connectivity_state(chan, 0));
@@ -341,8 +341,8 @@ int main(int argc, char** argv) {
   set_resolve_port(-1);
   grpc_server_shutdown_and_notify(server1, cq, tag(0xdead1));
   cqv.Expect(tag(0x9999), true);
-  cqv.Verify();
-  cqv.VerifyEmpty();
+  cqv.Verify(DEBUG_LOCATION);
+  cqv.VerifyEmpty(DEBUG_LOCATION);
 
   /* and a new call: should go through to server2 when we start it */
   grpc_call* call2 =
@@ -394,7 +394,7 @@ int main(int argc, char** argv) {
   /* second call should now start */
   cqv.Expect(tag(0x201), true);
   cqv.Expect(tag(0x401), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   /* listen for close on the server call to probe for finishing */
   memset(ops, 0, sizeof(ops));
@@ -409,7 +409,7 @@ int main(int argc, char** argv) {
 
   /* shutdown second server: we should see nothing */
   grpc_server_shutdown_and_notify(server2, cq, tag(0xdead2));
-  cqv.VerifyEmpty();
+  cqv.VerifyEmpty(DEBUG_LOCATION);
 
   grpc_call_cancel(call1, nullptr);
   grpc_call_cancel(call2, nullptr);
@@ -421,7 +421,7 @@ int main(int argc, char** argv) {
   cqv.Expect(tag(0x402), true);
   cqv.Expect(tag(0xdead1), true);
   cqv.Expect(tag(0xdead2), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   grpc_call_unref(call1);
   grpc_call_unref(call2);

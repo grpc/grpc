@@ -172,7 +172,7 @@ static void test_request_with_large_metadata(grpc_end2end_test_config config) {
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   cqv.Expect(tag(101), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   memset(ops, 0, sizeof(ops));
   // Server: send initial metadata and receive request.
@@ -192,7 +192,7 @@ static void test_request_with_large_metadata(grpc_end2end_test_config config) {
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   cqv.Expect(tag(102), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   memset(ops, 0, sizeof(ops));
   // Server: receive close and send status.  This should trigger
@@ -217,7 +217,7 @@ static void test_request_with_large_metadata(grpc_end2end_test_config config) {
 
   cqv.Expect(tag(103), true);
   cqv.Expect(tag(1), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   GPR_ASSERT(status == GRPC_STATUS_OK);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
@@ -321,7 +321,7 @@ static void test_request_with_bad_large_metadata_response(
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   cqv.Expect(tag(101), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   memset(ops, 0, sizeof(ops));
   // Server: send large initial metadata
@@ -350,7 +350,7 @@ static void test_request_with_bad_large_metadata_response(
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(tag(102), true);
   cqv.Expect(tag(1), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   GPR_ASSERT(status == GRPC_STATUS_RESOURCE_EXHAUSTED);
   GPR_ASSERT(0 == grpc_slice_str_cmp(

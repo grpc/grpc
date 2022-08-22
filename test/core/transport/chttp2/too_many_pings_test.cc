@@ -155,11 +155,11 @@ grpc_status_code PerformCall(grpc_channel* channel, grpc_server* server,
                                    &request_metadata_recv, cq, cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(tag(101), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
   grpc_call_cancel_with_status(s, GRPC_STATUS_PERMISSION_DENIED, "test status",
                                nullptr);
   cqv.Expect(tag(1), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
   // cleanup
   grpc_slice_unref(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);
@@ -284,7 +284,7 @@ grpc_status_code PerformWaitingCall(grpc_channel* channel, grpc_server* server,
                                    &request_metadata_recv, cq, cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(tag(101), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
   // Since the server is configured to allow only a single ping strike, it would
   // take 3 pings to trigger the GOAWAY frame with "too_many_pings" from the
   // server. (The second ping from the client would be the first bad ping sent
@@ -659,7 +659,7 @@ void PerformCallWithResponsePayload(grpc_channel* channel, grpc_server* server,
                                    &request_metadata_recv, cq, cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(tag(101), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -673,7 +673,7 @@ void PerformCallWithResponsePayload(grpc_channel* channel, grpc_server* server,
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   cqv.Expect(tag(102), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -701,7 +701,7 @@ void PerformCallWithResponsePayload(grpc_channel* channel, grpc_server* server,
 
   cqv.Expect(tag(103), true);
   cqv.Expect(tag(1), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   GPR_ASSERT(status == GRPC_STATUS_OK);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
@@ -764,26 +764,26 @@ TEST(TooManyPings, BdpPingNotSentWithoutReceiveSideActivity) {
   // BDP sent.
   grpc_channel_ping(channel, cq, tag(1), nullptr);
   cqv.Expect(tag(1), true);
-  cqv.Verify(grpc_core::Duration::Seconds(5));
+  cqv.Verify(grpc_core::Duration::Seconds(5), DEBUG_LOCATION);
   // Second ping
   grpc_channel_ping(channel, cq, tag(2), nullptr);
   cqv.Expect(tag(2), true);
-  cqv.Verify(grpc_core::Duration::Seconds(5));
+  cqv.Verify(grpc_core::Duration::Seconds(5), DEBUG_LOCATION);
   ASSERT_EQ(grpc_channel_check_connectivity_state(channel, 0),
             GRPC_CHANNEL_READY);
   PerformCallWithResponsePayload(channel, server, cq);
   // Wait a bit to make sure that the BDP ping goes out.
-  cqv.VerifyEmpty(grpc_core::Duration::Seconds(1));
+  cqv.VerifyEmpty(grpc_core::Duration::Seconds(1), DEBUG_LOCATION);
   // The call with a response payload should have triggered a BDP ping.
   // Send two more pings to verify. The second ping should cause a disconnect.
   // If BDP was not sent, the second ping would not cause a disconnect.
   grpc_channel_ping(channel, cq, tag(3), nullptr);
   cqv.Expect(tag(3), true);
-  cqv.Verify(grpc_core::Duration::Seconds(5));
+  cqv.Verify(grpc_core::Duration::Seconds(5), DEBUG_LOCATION);
   // Second ping
   grpc_channel_ping(channel, cq, tag(4), nullptr);
   cqv.Expect(tag(4), true);
-  cqv.Verify(grpc_core::Duration::Seconds(5));
+  cqv.Verify(grpc_core::Duration::Seconds(5), DEBUG_LOCATION);
   // Make sure that the transports have been destroyed
   VerifyChannelDisconnected(channel, cq);
   TransportCounter::WaitForTransportsToBeDestroyed();
@@ -837,15 +837,15 @@ TEST(TooManyPings, TransportsGetCleanedUpOnDisconnect) {
   // First ping
   grpc_channel_ping(channel, cq, tag(1), nullptr);
   cqv.Expect(tag(1), true);
-  cqv.Verify(grpc_core::Duration::Seconds(5));
+  cqv.Verify(grpc_core::Duration::Seconds(5), DEBUG_LOCATION);
   // Second ping
   grpc_channel_ping(channel, cq, tag(2), nullptr);
   cqv.Expect(tag(2), true);
-  cqv.Verify(grpc_core::Duration::Seconds(5));
+  cqv.Verify(grpc_core::Duration::Seconds(5), DEBUG_LOCATION);
   // Third ping caused disconnect
   grpc_channel_ping(channel, cq, tag(2), nullptr);
   cqv.Expect(tag(2), true);
-  cqv.Verify(grpc_core::Duration::Seconds(5));
+  cqv.Verify(grpc_core::Duration::Seconds(5), DEBUG_LOCATION);
   // Make sure that the transports have been destroyed
   VerifyChannelDisconnected(channel, cq);
   TransportCounter::WaitForTransportsToBeDestroyed();

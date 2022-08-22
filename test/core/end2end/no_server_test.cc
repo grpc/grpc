@@ -89,7 +89,7 @@ void run_test(bool wait_for_ready) {
 
   /* verify that all tags get completed */
   cqv.Expect(tag(1), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   gpr_log(GPR_INFO, "call status: %d", status);
   if (wait_for_ready) {

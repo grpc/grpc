@@ -189,7 +189,7 @@ static void test_cancel_after_round_trip(grpc_end2end_test_config config,
                                &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(tag(101), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -214,7 +214,7 @@ static void test_cancel_after_round_trip(grpc_end2end_test_config config,
 
   cqv.Expect(tag(102), true);
   cqv.Expect(tag(1), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   grpc_byte_buffer_destroy(request_payload_recv);
   grpc_byte_buffer_destroy(response_payload_recv);
@@ -259,7 +259,7 @@ static void test_cancel_after_round_trip(grpc_end2end_test_config config,
 
   cqv.Expect(tag(2), true);
   cqv.Expect(tag(103), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   GPR_ASSERT(status == mode.expect_status || status == GRPC_STATUS_INTERNAL);
   GPR_ASSERT(was_cancelled == 1);

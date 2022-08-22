@@ -165,7 +165,7 @@ static void test_retry_transparent_max_concurrent_streams(
                                &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(tag(101), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/service/method"));
   grpc_call_details_destroy(&call_details);
   grpc_metadata_array_destroy(&request_metadata_recv);
@@ -250,7 +250,7 @@ static void test_retry_transparent_max_concurrent_streams(
   cqv.Expect(tag(103), true);
   cqv.Expect(tag(102), true);
   cqv.Expect(tag(1), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   // Clean up from first call.
   GPR_ASSERT(byte_buffer_eq_slice(request_payload_recv, request_payload_slice));
@@ -282,7 +282,7 @@ static void test_retry_transparent_max_concurrent_streams(
                                &request_metadata_recv, f.cq, f.cq, tag(201));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(tag(201), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/service/method"));
   grpc_call_details_destroy(&call_details);
   // Make sure the "grpc-previous-rpc-attempts" header was NOT sent, since
@@ -325,7 +325,7 @@ static void test_retry_transparent_max_concurrent_streams(
   // Second call completes.
   cqv.Expect(tag(202), true);
   cqv.Expect(tag(2), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   // Clean up from second call.
   GPR_ASSERT(byte_buffer_eq_slice(request_payload_recv, request_payload_slice));

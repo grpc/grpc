@@ -57,10 +57,17 @@ class CqVerifier {
 
   // Ensure all expected events (and only those events) are present on the
   // bound completion queue within \a timeout.
-  void Verify(Duration timeout = Duration::Seconds(10));
+  // Default timeout: 5 seconds
+  void Verify(const DebugLocation& location);
+  // Ensure all expected events (and only those events) are present on the
+  // bound completion queue within \a timeout.
+  void Verify(Duration timeout, const DebugLocation& location);
 
   // Ensure that the completion queue is empty, waiting up to \a timeout.
-  void VerifyEmpty(Duration timeout = Duration::Seconds(1));
+  // Default timeout: 1 second
+  void VerifyEmpty(const DebugLocation& location);
+  // Ensure that the completion queue is empty, waiting up to \a timeout.
+  void VerifyEmpty(Duration timeout, const DebugLocation& location);
 
   // Match an expectation about a status.
   // location must be DEBUG_LOCATION.
@@ -80,8 +87,8 @@ class CqVerifier {
     std::string ToString() const;
   };
 
-  void FailNoEventReceived() const;
-  void FailUnexpectedEvent(grpc_event* ev) const;
+  void FailNoEventReceived(const DebugLocation& location) const;
+  void FailUnexpectedEvent(grpc_event* ev, const DebugLocation& location) const;
   bool AllMaybes() const;
 
   grpc_completion_queue* const cq_;

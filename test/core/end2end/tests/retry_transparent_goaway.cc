@@ -182,7 +182,7 @@ static void test_retry_transparent_goaway(grpc_end2end_test_config config) {
 
   // Client send ops should now complete.
   cqv.Expect(tag(1), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   // Server should get a call.
   error =
@@ -190,7 +190,7 @@ static void test_retry_transparent_goaway(grpc_end2end_test_config config) {
                                &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(tag(101), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   // Server receives the request.
   memset(ops, 0, sizeof(ops));
@@ -202,7 +202,7 @@ static void test_retry_transparent_goaway(grpc_end2end_test_config config) {
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(tag(102), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   // Server sends a response with status OK.
   memset(ops, 0, sizeof(ops));
@@ -230,7 +230,7 @@ static void test_retry_transparent_goaway(grpc_end2end_test_config config) {
   // involved, so the completion order tends to be a little racy.
   cqv.Expect(tag(103), true);
   cqv.Expect(tag(2), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   GPR_ASSERT(status == GRPC_STATUS_OK);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));

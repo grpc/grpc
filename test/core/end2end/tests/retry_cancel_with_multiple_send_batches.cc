@@ -225,7 +225,7 @@ static void test_retry_cancel_with_multiple_send_batches(
   cqv.Expect(tag(2), false);
   cqv.Expect(tag(3), false);
   cqv.Expect(tag(4), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   gpr_log(GPR_INFO, "status=%d expected=%d", status, mode.expect_status);
   GPR_ASSERT(status == mode.expect_status);

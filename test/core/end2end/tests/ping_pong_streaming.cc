@@ -153,7 +153,7 @@ static void test_pingpong_streaming(grpc_end2end_test_config config,
                                &request_metadata_recv, f.cq, f.cq, tag(100));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(tag(100), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -202,7 +202,7 @@ static void test_pingpong_streaming(grpc_end2end_test_config config,
                                   tag(102), nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
     cqv.Expect(tag(102), true);
-    cqv.Verify();
+    cqv.Verify(DEBUG_LOCATION);
 
     memset(ops, 0, sizeof(ops));
     op = ops;
@@ -216,7 +216,7 @@ static void test_pingpong_streaming(grpc_end2end_test_config config,
     GPR_ASSERT(GRPC_CALL_OK == error);
     cqv.Expect(tag(103), true);
     cqv.Expect(tag(2), true);
-    cqv.Verify();
+    cqv.Verify(DEBUG_LOCATION);
 
     grpc_byte_buffer_destroy(request_payload);
     grpc_byte_buffer_destroy(response_payload);
@@ -255,7 +255,7 @@ static void test_pingpong_streaming(grpc_end2end_test_config config,
   cqv.Expect(tag(3), true);
   cqv.Expect(tag(101), true);
   cqv.Expect(tag(104), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   grpc_call_unref(c);
   grpc_call_unref(s);

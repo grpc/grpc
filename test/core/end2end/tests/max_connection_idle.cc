@@ -114,7 +114,7 @@ static void simple_request_body(grpc_end2end_test_config /*config*/,
                                &request_metadata_recv, f->cq, f->cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(tag(101), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   peer = grpc_call_get_peer(s);
   GPR_ASSERT(peer != nullptr);
@@ -151,7 +151,7 @@ static void simple_request_body(grpc_end2end_test_config /*config*/,
 
   cqv.Expect(tag(102), true);
   cqv.Expect(tag(1), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
@@ -199,7 +199,7 @@ static void test_max_connection_idle(grpc_end2end_test_config config) {
     grpc_channel_watch_connectivity_state(
         f.client, state, grpc_timeout_seconds_to_deadline(10), f.cq, tag(99));
     cqv.Expect(tag(99), true);
-    cqv.Verify();
+    cqv.Verify(DEBUG_LOCATION);
     state = grpc_channel_check_connectivity_state(f.client, 0);
     GPR_ASSERT(state == GRPC_CHANNEL_READY ||
                state == GRPC_CHANNEL_CONNECTING ||
@@ -216,14 +216,14 @@ static void test_max_connection_idle(grpc_end2end_test_config config) {
                    gpr_time_from_millis(MAX_CONNECTION_IDLE_MS, GPR_TIMESPAN)),
       f.cq, tag(99));
   cqv.Expect(tag(99), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
   state = grpc_channel_check_connectivity_state(f.client, 0);
   GPR_ASSERT(state == GRPC_CHANNEL_TRANSIENT_FAILURE ||
              state == GRPC_CHANNEL_CONNECTING || state == GRPC_CHANNEL_IDLE);
 
   grpc_server_shutdown_and_notify(f.server, f.cq, tag(0xdead));
   cqv.Expect(tag(0xdead), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   grpc_server_destroy(f.server);
   grpc_channel_destroy(f.client);

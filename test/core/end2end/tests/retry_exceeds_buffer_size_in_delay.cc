@@ -195,7 +195,7 @@ static void test_retry_exceeds_buffer_size_in_delay(
                                &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(tag(101), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   peer = grpc_call_get_peer(s);
   GPR_ASSERT(peer != nullptr);
@@ -224,7 +224,7 @@ static void test_retry_exceeds_buffer_size_in_delay(
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(tag(102), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   grpc_call_unref(s);
   grpc_metadata_array_destroy(&request_metadata_recv);
@@ -235,7 +235,7 @@ static void test_retry_exceeds_buffer_size_in_delay(
   // Do a bit more polling, to make sure the client sees status from the
   // first attempt.  (Note: This polls for 1s, which is less than the
   // retry initial backoff time of 2s from the service config above.)
-  cqv.VerifyEmpty();
+  cqv.VerifyEmpty(DEBUG_LOCATION);
 
   // Client sends a message that puts it over the buffer size limit.
   memset(ops, 0, sizeof(ops));
@@ -249,7 +249,7 @@ static void test_retry_exceeds_buffer_size_in_delay(
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(tag(2), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   // Server gets another call.
   error =
@@ -257,7 +257,7 @@ static void test_retry_exceeds_buffer_size_in_delay(
                                &request_metadata_recv, f.cq, f.cq, tag(201));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(tag(201), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   // Server again sends ABORTED.  But this time, the client won't retry,
   // since the call has been committed by exceeding the buffer size.
@@ -279,7 +279,7 @@ static void test_retry_exceeds_buffer_size_in_delay(
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(tag(202), true);
   cqv.Expect(tag(1), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   GPR_ASSERT(status == GRPC_STATUS_ABORTED);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "message2"));

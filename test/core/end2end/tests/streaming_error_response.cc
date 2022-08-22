@@ -164,7 +164,7 @@ static void test(grpc_end2end_test_config config, bool request_status_early,
                                  f.server, &s, &call_details,
                                  &request_metadata_recv, f.cq, f.cq, tag(101)));
   cqv.Expect(tag(101), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -196,7 +196,7 @@ static void test(grpc_end2end_test_config config, bool request_status_early,
   if (recv_message_separately) {
     cqv.Expect(tag(4), true);
   }
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -224,7 +224,7 @@ static void test(grpc_end2end_test_config config, bool request_status_early,
     GPR_ASSERT(GRPC_CALL_OK == error);
 
     cqv.Expect(tag(2), true);
-    cqv.Verify();
+    cqv.Verify(DEBUG_LOCATION);
   }
 
   // Cancel the call so that the client sets up an error status.
@@ -242,7 +242,7 @@ static void test(grpc_end2end_test_config config, bool request_status_early,
   if (request_status_early) {
     cqv.Expect(tag(1), true);
   }
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   if (!request_status_early) {
     memset(ops, 0, sizeof(ops));
@@ -257,7 +257,7 @@ static void test(grpc_end2end_test_config config, bool request_status_early,
     GPR_ASSERT(GRPC_CALL_OK == error);
 
     cqv.Expect(tag(3), true);
-    cqv.Verify();
+    cqv.Verify(DEBUG_LOCATION);
 
     GPR_ASSERT(response_payload1_recv != nullptr);
     GPR_ASSERT(response_payload2_recv != nullptr);

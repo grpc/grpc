@@ -147,7 +147,7 @@ static void simple_request_body(grpc_end2end_test_config /*config*/,
   gpr_free(dynamic_string);
 
   cqv.Expect(tag(1), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));

@@ -180,7 +180,7 @@ static void test_retry_unref_before_recv(grpc_end2end_test_config config) {
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(tag(1), true);
   cqv.Expect(tag(101), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   // Client unrefs the call without starting recv_trailing_metadata.
   // This should trigger a cancellation.
@@ -209,7 +209,7 @@ static void test_retry_unref_before_recv(grpc_end2end_test_config config) {
   // Server ops complete and client recv ops complete.
   cqv.Expect(tag(2), false);  // Failure!
   cqv.Expect(tag(102), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/service/method"));
   // Note: Not checking the value of was_cancelled here, because it will

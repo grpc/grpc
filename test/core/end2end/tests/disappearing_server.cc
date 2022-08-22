@@ -126,7 +126,7 @@ static void do_request_and_shutdown_server(grpc_end2end_test_config /*config*/,
                                &request_metadata_recv, f->cq, f->cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   cqv.Expect(tag(101), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
 
   /* should be able to shut down the server early
      - and still complete the request */
@@ -159,7 +159,7 @@ static void do_request_and_shutdown_server(grpc_end2end_test_config /*config*/,
   cqv.Expect(tag(102), true);
   cqv.Expect(tag(1), true);
   cqv.Expect(tag(1000), true);
-  cqv.Verify();
+  cqv.Verify(DEBUG_LOCATION);
   /* Please refer https://github.com/grpc/grpc/issues/21221 for additional
    * details.
    * TODO(yashykt@) - The following line should be removeable after C-Core
@@ -167,7 +167,7 @@ static void do_request_and_shutdown_server(grpc_end2end_test_config /*config*/,
    * test remains flaky even after this, an alternative fix would be to send a
    * request when the server is in the shut down state.
    */
-  cqv.VerifyEmpty();
+  cqv.VerifyEmpty(DEBUG_LOCATION);
 
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
