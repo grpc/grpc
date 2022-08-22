@@ -38,7 +38,6 @@ class OutlierDetectionTest : public XdsEnd2endTest {
     return absl::StrCat(ipv6_only_ ? "[::1]" : "127.0.0.1", ":",
                         backends_[index]->port(), "_0");
   }
-  void set_test_interval(absl::Duration interval) { test_interval_ = interval; }
   absl::Duration get_test_interval() const {
     return test_interval_ * grpc_test_slowdown_factor();
   }
@@ -116,7 +115,6 @@ TEST_P(OutlierDetectionTest, SuccessRateEjectionAndUnejection) {
                       RpcOptions()
                           .set_metadata(std::move(metadata))
                           .set_server_expected_error(StatusCode::CANCELLED));
-
   // Wait for traffic aimed at backend 0 to start going to backend 1.
   // This tells us that backend 0 has been ejected.
   // It should take no more than one ejection timer interval.
@@ -124,7 +122,6 @@ TEST_P(OutlierDetectionTest, SuccessRateEjectionAndUnejection) {
                  WaitForBackendOptions().set_timeout_ms(
                      10 * get_test_interval() / absl::Milliseconds(1)),
                  rpc_options);
-
   // Now wait for traffic aimed at backend 0 to switch back to backend 0.
   // This tells us that backend 0 has been unejected.
   WaitForBackend(DEBUG_LOCATION, 0, /*check_status=*/nullptr,
@@ -578,21 +575,18 @@ TEST_P(OutlierDetectionTest, FailurePercentageEjectionAndUnejection) {
                  WaitForBackendOptions().set_timeout_ms(
                      10 * get_test_interval() / absl::Milliseconds(1)),
                  rpc_options);
-
   // 1 backend is ejected all traffic going to the ejected backend should now
   // all be going to the other backend.
   // failure percentage enforcement_percentage of 100% is honored as this test
   // will consistently reject 1 backend.
   CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options);
   EXPECT_EQ(100, backends_[1]->backend_service()->request_count());
-
   // Now wait for traffic aimed at backend 0 to switch back to backend 0.
   // This tells us that backend 0 has been unejected.
   WaitForBackend(DEBUG_LOCATION, 0, /*check_status=*/nullptr,
                  WaitForBackendOptions().set_timeout_ms(
                      200 * get_test_interval() / absl::Milliseconds(1)),
                  rpc_options);
-
   // Verify that rpcs go to their expectedly hashed backends.
   CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options);
   CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options1);
