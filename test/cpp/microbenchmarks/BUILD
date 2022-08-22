@@ -205,6 +205,7 @@ grpc_cc_test(
         "bm_fullstack_streaming_ping_pong.cc",
     ],
     args = grpc_benchmark_args(),
+    flaky = True,
     tags = [
         "no_mac",  # to emulate "excluded_poll_engines: poll"
         "no_windows",
@@ -250,6 +251,7 @@ grpc_cc_test(
         "bm_fullstack_unary_ping_pong.cc",
     ],
     args = grpc_benchmark_args(),
+    flaky = True,
     tags = [
         "no_mac",  # to emulate "excluded_poll_engines: poll"
         "no_windows",

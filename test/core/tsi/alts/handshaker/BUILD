@@ -81,6 +81,7 @@ grpc_cc_test(
         "alts_concurrent_connectivity_test.cc",
     ],
     external_deps = ["gtest"],
+    flaky = True,
     language = "C++",
     # TODO(apolcyn): make the fake TCP server used in this
     # test portable to Windows.

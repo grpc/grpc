@@ -284,10 +284,10 @@
       ProtoPath="%(_Protobuf_OutOfDateProto.AdditionalImportDirs);$(Protobuf_StandardImportsPath);%(_Protobuf_OutOfDateProto.ProtoRoot)"
       ProtoDepDir="$(Protobuf_DepFilesPath)"
       OutputDir="%(_Protobuf_OutOfDateProto.OutputDir)"
-      OutputOptions="%(_Protobuf_OutOfDateProto._OutputOptions)"
+      OutputOptions="%(_Protobuf_OutOfDateProto.OutputOptions);%(_Protobuf_OutOfDateProto._OutputOptions)"
       GrpcPluginExe="%(_Protobuf_OutOfDateProto.GrpcPluginExe)"
       GrpcOutputDir="%(_Protobuf_OutOfDateProto.GrpcOutputDir)"
-      GrpcOutputOptions="%(_Protobuf_OutOfDateProto._GrpcOutputOptions)"
+      GrpcOutputOptions="%(_Protobuf_OutOfDateProto.GrpcOutputOptions);%(_Protobuf_OutOfDateProto._GrpcOutputOptions)"
       AdditionalProtocArguments="%(_Protobuf_OutOfDateProto.AdditionalProtocArguments)"
     >
       <Output TaskParameter="GeneratedFiles" ItemName="_Protobuf_GeneratedFiles"/>

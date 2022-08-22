@@ -151,6 +151,7 @@ grpc_cc_test(
         "absl/flags:flag",
         "absl/flags:parse",
     ],
+    flaky = True,
     language = "C++",
     tags = [
         "bazel_only",
