@@ -5410,7 +5410,6 @@ targets:
 - name: dns_resolver_cooldown_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers: []
   src:
@@ -6815,6 +6814,7 @@ targets:
 - name: grpc_tls_credentials_options_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/core/util/cmdline.h
