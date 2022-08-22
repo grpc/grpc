@@ -18,22 +18,17 @@
 
 #include <algorithm>
 #include <memory>
-#include <string>
 #include <utility>
+#include <vector>
 
 #include "absl/memory/memory.h"
 #include "absl/status/statusor.h"
-#include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 
-#include <grpc/support/log.h>
-
-#include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/iomgr/port.h"
-#include "src/core/lib/iomgr/resolved_address.h"
+#include "src/core/lib/resolver/address_parser_registry.h"
 #include "src/core/lib/resolver/resolver.h"
 #include "src/core/lib/resolver/resolver_factory.h"
 #include "src/core/lib/resolver/resolver_registry.h"

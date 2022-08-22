@@ -2859,6 +2859,7 @@ grpc_cc_library(
         "src/core/lib/resolver/address_parser_registry.h",
     ],
     external_deps = [
+        "absl/status",
         "absl/status:statusor",
         "absl/strings",
     ],
@@ -5204,13 +5205,12 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "address_parser_registry",
         "config",
         "gpr",
         "grpc_base",
         "grpc_resolver",
-        "iomgr_port",
         "orphanable",
-        "resolved_address",
         "server_address",
         "uri_parser",
     ],
@@ -6631,6 +6631,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "address_parser_registry",
         "config",
         "debug_location",
         "gpr",

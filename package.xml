@@ -1249,6 +1249,8 @@
     <file baseinstalldir="/" name="src/core/lib/promise/sleep.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/sleep.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/try_seq.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/resolver/address_parser_registry.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/resolver/address_parser_registry.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resolver/resolver.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resolver/resolver.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resolver/resolver_factory.h" role="src" />

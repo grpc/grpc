@@ -41,6 +41,7 @@
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
+#include "src/core/lib/resolver/address_parser_registry.h"
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
 
@@ -336,8 +337,7 @@ absl::StatusOr<grpc_resolved_address> StringToSockaddr(
 namespace {
 absl::StatusOr<grpc_resolved_address> ParsePathWithSchemeAndParser(
     absl::string_view path, absl::string_view scheme,
-    bool (*parser)(const grpc_core::URI& uri,
-                   grpc_resolved_address* resolved_addr)) {
+    bool (*parser)(const URI& uri, grpc_resolved_address* resolved_addr)) {
   grpc_resolved_address addr;
   auto uri = URI::Create(std::string(scheme), "", std::string(path), {}, "");
   if (!uri.ok()) return uri.status();
@@ -352,7 +352,7 @@ absl::StatusOr<grpc_resolved_address> ParsePathWithSchemeAndParser(
 void RegisterDefaultAddressParsers(CoreConfiguration::Builder* builder) {
   auto add_scheme = [builder](
                         absl::string_view scheme,
-                        bool (*parser)(const grpc_core::URI& uri,
+                        bool (*parser)(const URI& uri,
                                        grpc_resolved_address* resolved_addr)) {
     builder->address_parser_registry()->AddScheme(
         scheme,

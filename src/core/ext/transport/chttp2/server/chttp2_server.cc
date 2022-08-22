@@ -36,8 +36,6 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
-#include "absl/strings/string_view.h"
-#include "absl/strings/strip.h"
 #include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
@@ -69,7 +67,7 @@
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/iomgr/timer.h"
-#include "src/core/lib/iomgr/unix_sockets_posix.h"
+#include "src/core/lib/resolver/address_parser_registry.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/security/credentials/credentials.h"
