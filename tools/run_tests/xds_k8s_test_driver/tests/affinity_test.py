@@ -139,11 +139,9 @@ class AffinityTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
                 rpc_distribution.raw['rpcsByPeer'].keys())[0]
 
         with self.subTest('11_turn_down_server_in_use'):
-            for s in test_servers:
-                if s.pod_name == first_backend_inuse:
-                    logging.info('setting backend %s to NOT_SERVING',
-                                 s.pod_name)
-                    s.set_not_serving()
+            for server in test_servers:
+                if server.hostname == first_backend_inuse:
+                    server.set_not_serving()
 
         with self.subTest('12_wait_for_unhealth_status_propagation'):
             deadline = time.time() + _TD_PROPAGATE_TIMEOUT
