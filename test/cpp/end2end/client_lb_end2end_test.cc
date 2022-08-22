@@ -429,7 +429,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
       cond_.Signal();
     }
 
-    void Shutdown() {
+    void Shutdown(int timeout_ms = 0) {
       grpc_core::MutexLock lock(&mu_);
       if (!started_) return;
       server_->Shutdown(grpc_timeout_milliseconds_to_deadline(0));
@@ -1254,7 +1254,7 @@ TEST_F(PickFirstTest, CheckStateBeforeStartWatch) {
   gpr_log(GPR_INFO, "****** RESOLUTION SET FOR CHANNEL 1 *******");
   WaitForServer(DEBUG_LOCATION, stub_1, 0);
   gpr_log(GPR_INFO, "****** CHANNEL 1 CONNECTED *******");
-  servers_[0]->Shutdown();
+  servers_[0]->Shutdown(/*timeout_ms=*/3000);
   // Channel 1 will receive a re-resolution containing the same server. It will
   // create a new subchannel and hold a ref to it.
   StartServers(1, ports);
