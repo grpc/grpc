@@ -406,11 +406,12 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
     def _pretty_format_status(self, k8s_object: Optional[object]):
         if k8s_object is None:
             return 'No data'
-        if 'metadata' in k8s_object.metadata and 'name' in k8s_object.metadata:
+        if hasattr(k8s_object, 'metadata') and hasattr(k8s_object.metadata,
+                                                       'name'):
             name = k8s_object.metadata.name
         else:
             name = 'Can\'t parse resource name'
-        if 'status' in k8s_object:
+        if hasattr(k8s_object, 'status'):
             try:
                 status = self._pretty_format(k8s_object.status.to_dict())
             except Exception as e:
