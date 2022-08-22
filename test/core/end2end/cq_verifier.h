@@ -83,7 +83,8 @@ class CqVerifier {
   };
 
   void FailNoEventReceived(const SourceLocation& location) const;
-  void FailUnexpectedEvent(grpc_event* ev, const SourceLocation& location) const;
+  void FailUnexpectedEvent(grpc_event* ev,
+                           const SourceLocation& location) const;
   bool AllMaybes() const;
 
   grpc_completion_queue* const cq_;
