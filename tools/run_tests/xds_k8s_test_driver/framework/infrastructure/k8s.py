@@ -276,8 +276,8 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
             retryer(self.get_service, name)
         except retryers.RetryError as e:
             logger.error(
-                'Timeout %s waiting for service %s to report NEG status. '
-                'Last service status:\n%s', timeout, name,
+                'Timeout %s (h:mm:ss) waiting for service %s to report NEG '
+                'status. Last service status:\n%s', timeout, name,
                 self._pretty_format_status(e.result()))
             raise
 
@@ -324,7 +324,7 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
             retryer(self.get_deployment, name)
         except retryers.RetryError as e:
             logger.error(
-                'Timeout %s waiting for deployment %s to report %i '
+                'Timeout %s (h:mm:ss) waiting for deployment %s to report %i '
                 'replicas available. Last status:\n%s', timeout, name, count,
                 self._pretty_format_status(e.result()))
             raise
@@ -346,7 +346,7 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
         except retryers.RetryError as e:
             result = e.result(default=[])
             logger.error(
-                'Timeout %s waiting for pod count %i, got: %i. '
+                'Timeout %s (h:mm:ss) waiting for pod count %i, got: %i. '
                 'Pod statuses:\n%s', timeout, count, len(result),
                 self._pretty_format_statuses(result))
             raise
@@ -383,7 +383,7 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
             retryer(self.get_pod, pod_name)
         except retryers.RetryError as e:
             logger.error(
-                'Timeout %s waiting for pod %s to start. '
+                'Timeout %s (h:mm:ss) waiting for pod %s to start. '
                 'Pod status:\n%s', timeout, pod_name,
                 self._pretty_format_status(e.result()))
             raise

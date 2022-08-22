@@ -171,7 +171,7 @@ class RetryError(tenacity.RetryError):
         callback_name = tenacity_utils.get_callback_name(retry_state.fn)
         self.message = f'Retry error calling {callback_name}:'
         if timeout:
-            self.message += f' timeout {timeout} exceeded'
+            self.message += f' timeout {timeout} (h:mm:ss) exceeded'
             if attempts:
                 self.message += ' or'
         if attempts:
