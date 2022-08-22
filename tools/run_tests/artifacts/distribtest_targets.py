@@ -442,7 +442,8 @@ def targets():
         PythonDistribTest('linux', 'x64', 'arch', source=True),
         PythonDistribTest('linux', 'x64', 'ubuntu2004', source=True),
         # Ruby
-        RubyDistribTest('linux', 'x64',
+        RubyDistribTest('linux',
+                        'x64',
                         'x64',
                         'stretch',
                         ruby_version='ruby_2_6',
