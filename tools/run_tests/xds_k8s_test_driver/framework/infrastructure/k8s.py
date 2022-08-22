@@ -235,18 +235,19 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
 
     def wait_for_service_deleted(self,
                                  name: str,
-                                 timeout_sec=WAIT_SHORT_TIMEOUT_SEC,
-                                 wait_sec=WAIT_SHORT_SLEEP_SEC):
+                                 timeout_sec: int = WAIT_SHORT_TIMEOUT_SEC,
+                                 wait_sec: int = WAIT_SHORT_SLEEP_SEC) -> None:
         retryer = retryers.constant_retryer(
             wait_fixed=datetime.timedelta(seconds=wait_sec),
             timeout=datetime.timedelta(seconds=timeout_sec),
             check_result=lambda service: service is None)
         retryer(self.get_service, name)
 
-    def wait_for_service_account_deleted(self,
-                                         name: str,
-                                         timeout_sec=WAIT_SHORT_TIMEOUT_SEC,
-                                         wait_sec=WAIT_SHORT_SLEEP_SEC):
+    def wait_for_service_account_deleted(
+            self,
+            name: str,
+            timeout_sec: int = WAIT_SHORT_TIMEOUT_SEC,
+            wait_sec: int = WAIT_SHORT_SLEEP_SEC) -> None:
         retryer = retryers.constant_retryer(
             wait_fixed=datetime.timedelta(seconds=wait_sec),
             timeout=datetime.timedelta(seconds=timeout_sec),
@@ -254,8 +255,8 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
         retryer(self.get_service_account, name)
 
     def wait_for_namespace_deleted(self,
-                                   timeout_sec=WAIT_LONG_TIMEOUT_SEC,
-                                   wait_sec=WAIT_LONG_SLEEP_SEC):
+                                   timeout_sec: int = WAIT_LONG_TIMEOUT_SEC,
+                                   wait_sec: int = WAIT_LONG_SLEEP_SEC) -> None:
         retryer = retryers.constant_retryer(
             wait_fixed=datetime.timedelta(seconds=wait_sec),
             timeout=datetime.timedelta(seconds=timeout_sec),
@@ -265,7 +266,7 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
     def wait_for_service_neg(self,
                              name: str,
                              timeout_sec: int = WAIT_SHORT_TIMEOUT_SEC,
-                             wait_sec: int = WAIT_SHORT_SLEEP_SEC):
+                             wait_sec: int = WAIT_SHORT_SLEEP_SEC) -> None:
         timeout = datetime.timedelta(seconds=timeout_sec)
         retryer = retryers.constant_retryer(
             wait_fixed=datetime.timedelta(seconds=wait_sec),
@@ -293,9 +294,10 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
     def get_deployment(self, name) -> V1Deployment:
         return self.api.apps.read_namespaced_deployment(name, self.name)
 
-    def delete_deployment(self,
-                          name,
-                          grace_period_seconds=DELETE_GRACE_PERIOD_SEC):
+    def delete_deployment(
+            self,
+            name: str,
+            grace_period_seconds: int = DELETE_GRACE_PERIOD_SEC) -> None:
         self.api.apps.delete_namespaced_deployment(
             name=name,
             namespace=self.name,
@@ -312,7 +314,7 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
             name: str,
             count: int = 1,
             timeout_sec: int = WAIT_MEDIUM_TIMEOUT_SEC,
-            wait_sec: int = WAIT_SHORT_SLEEP_SEC):
+            wait_sec: int = WAIT_SHORT_SLEEP_SEC) -> None:
         timeout = datetime.timedelta(seconds=timeout_sec)
         retryer = retryers.constant_retryer(
             wait_fixed=datetime.timedelta(seconds=wait_sec),
@@ -333,7 +335,7 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
             count: int = 1,
             *,
             timeout_sec: int = WAIT_MEDIUM_TIMEOUT_SEC,
-            wait_sec: int = WAIT_SHORT_SLEEP_SEC):
+            wait_sec: int = WAIT_SHORT_SLEEP_SEC) -> None:
         timeout = datetime.timedelta(seconds=timeout_sec)
         retryer = retryers.constant_retryer(
             wait_fixed=datetime.timedelta(seconds=wait_sec),
@@ -349,10 +351,11 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
                 self._pretty_format_statuses(result))
             raise
 
-    def wait_for_deployment_deleted(self,
-                                    deployment_name: str,
-                                    timeout_sec=WAIT_MEDIUM_TIMEOUT_SEC,
-                                    wait_sec=WAIT_MEDIUM_SLEEP_SEC):
+    def wait_for_deployment_deleted(
+            self,
+            deployment_name: str,
+            timeout_sec: int = WAIT_MEDIUM_TIMEOUT_SEC,
+            wait_sec: int = WAIT_MEDIUM_SLEEP_SEC) -> None:
         retryer = retryers.constant_retryer(
             wait_fixed=datetime.timedelta(seconds=wait_sec),
             timeout=datetime.timedelta(seconds=timeout_sec),
@@ -370,7 +373,7 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
     def wait_for_pod_started(self,
                              pod_name: str,
                              timeout_sec: int = WAIT_SHORT_TIMEOUT_SEC,
-                             wait_sec: int = WAIT_SHORT_SLEEP_SEC):
+                             wait_sec: int = WAIT_SHORT_SLEEP_SEC) -> None:
         timeout = datetime.timedelta(seconds=timeout_sec)
         retryer = retryers.constant_retryer(
             wait_fixed=datetime.timedelta(seconds=wait_sec),
@@ -398,12 +401,13 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
         pf.connect()
         return pf
 
-    def _pretty_format_statuses(self, k8s_objects: List[Optional[object]]):
+    def _pretty_format_statuses(self,
+                                k8s_objects: List[Optional[object]]) -> str:
         return '\n'.join(
             self._pretty_format_status(k8s_object)
             for k8s_object in k8s_objects)
 
-    def _pretty_format_status(self, k8s_object: Optional[object]):
+    def _pretty_format_status(self, k8s_object: Optional[object]) -> str:
         if k8s_object is None:
             return 'No data'
         if hasattr(k8s_object, 'metadata') and hasattr(k8s_object.metadata,
@@ -426,16 +430,17 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
         return self._highlighter.highlight(yaml_out)
 
     @classmethod
-    def _check_service_neg_annotation(cls, service: Optional[V1Service]):
+    def _check_service_neg_annotation(cls,
+                                      service: Optional[V1Service]) -> bool:
         return (service is not None and
                 cls.NEG_STATUS_META in service.metadata.annotations)
 
     @classmethod
-    def _pod_started(cls, pod: V1Pod):
+    def _pod_started(cls, pod: V1Pod) -> bool:
         return pod.status.phase not in ('Pending', 'Unknown')
 
     @classmethod
-    def _replicas_available(cls, deployment: V1Deployment, count: int):
+    def _replicas_available(cls, deployment: V1Deployment, count: int) -> bool:
         return (deployment is not None and
                 deployment.status.available_replicas is not None and
                 deployment.status.available_replicas >= count)
