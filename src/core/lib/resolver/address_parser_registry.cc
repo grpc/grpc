@@ -12,11 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/resolver/address_parser_registry.h"
 
+#include <algorithm>
+#include <string>
+
+#include "absl/status/status.h"
 #include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
-#include "absl/strings/strip.h"
 
 #include <grpc/support/log.h>
 

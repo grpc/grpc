@@ -12,13 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef ADDRESS_PARSER_REGISTRY_H
-#define ADDRESS_PARSER_REGISTRY_H
+#ifndef GRPC_CORE_LIB_RESOLVER_ADDRESS_PARSER_REGISTRY_H
+#define GRPC_CORE_LIB_RESOLVER_ADDRESS_PARSER_REGISTRY_H
+
+#include <grpc/support/port_platform.h>
 
 #include <functional>
-#include <string>
+#include <utility>
+#include <vector>
 
 #include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/uri/uri_parser.h"
@@ -75,4 +79,4 @@ class AddressParserRegistry {
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_CORE_LIB_RESOLVER_ADDRESS_PARSER_REGISTRY_H

@@ -18,6 +18,8 @@
 
 #include "src/core/lib/resolver/resolver_registry.h"
 
+#include <algorithm>
+
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
