@@ -2281,8 +2281,13 @@ class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
   static ClientLbInterceptTrailingMetadataTest* current_test_instance_;
   int num_trailers_intercepted_ = 0;
   bool trailer_intercepted_ = false;
+<<<<<<< HEAD
   grpc_core::Mutex mu_;
   grpc_core::CondVar cond_;
+=======
+  grpc::internal::Mutex mu_;
+  grpc::internal::CondVar cond_;
+>>>>>>> 609ebbf43d65b191dff5f41f5ffbc9ca58656847
   absl::Status last_status_;
   grpc_core::MetadataVector trailing_metadata_;
   absl::optional<xds::data::orca::v3::OrcaLoadReport> load_report_;
