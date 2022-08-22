@@ -53,7 +53,7 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "c++",
     tags = [
-        "cpu:10",
+        "cpu:4",
     ],
     uses_event_engine = False,
     uses_polling = False,
