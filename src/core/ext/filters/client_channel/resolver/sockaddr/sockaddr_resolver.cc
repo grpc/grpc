@@ -44,7 +44,7 @@ namespace grpc_core {
 
 namespace {
 
-class SockaddrResolver : public Resolver {
+class SockaddrResolver final : public Resolver {
  public:
   SockaddrResolver(ServerAddressList addresses, ResolverArgs args);
 
@@ -75,14 +75,34 @@ void SockaddrResolver::StartLocked() {
 // Factory
 //
 
+class SockaddrResolverFactory final : public ResolverFactory {
+ public:
+  bool IsValidUri(const URI& uri) const override {
+    return CoreConfiguration::Get().address_parser_registry().Parse(uri).ok();
+  }
+
+  OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override {
+    auto addresses =
+        CoreConfiguration::Get().address_parser_registry().Parse(args.uri);
+    if (!addresses.ok()) return nullptr;
+    ServerAddressList server_addresses;
+    server_addresses.reserve(addresses->size());
+    for (auto address : *addresses) {
+      server_addresses.emplace_back(address, ChannelArgs());
+    }
+    return MakeOrphanable<SockaddrResolver>(std::move(server_addresses),
+                                            std::move(args));
+  }
+
+  bool ImplementsScheme(absl::string_view scheme) const override {
+    return CoreConfiguration::Get().address_parser_registry().HasScheme(scheme);
+  }
+};
+
+#if 0
 bool ParseUri(const URI& uri,
               bool parse(const URI& uri, grpc_resolved_address* dst),
               ServerAddressList* addresses) {
-  if (!uri.authority().empty()) {
-    gpr_log(GPR_ERROR, "authority-based URIs not supported by the %s scheme",
-            uri.scheme().c_str());
-    return false;
-  }
   // Construct addresses.
   bool errors_found = false;
   for (absl::string_view ith_path : absl::StrSplit(uri.path(), ',')) {
@@ -111,6 +131,7 @@ OrphanablePtr<Resolver> CreateSockaddrResolver(
   return MakeOrphanable<SockaddrResolver>(std::move(addresses),
                                           std::move(args));
 }
+
 
 class IPv4ResolverFactory : public ResolverFactory {
  public:
@@ -181,10 +202,14 @@ class UnixAbstractResolverFactory : public ResolverFactory {
   }
 };
 #endif  // GRPC_HAVE_UNIX_SOCKET
+#endif
 
 }  // namespace
 
 void RegisterSockaddrResolver(CoreConfiguration::Builder* builder) {
+  builder->resolver_registry()->RegisterResolverFactory(
+      absl::make_unique<SockaddrResolverFactory>());
+#if 0
   builder->resolver_registry()->RegisterResolverFactory(
       absl::make_unique<IPv4ResolverFactory>());
   builder->resolver_registry()->RegisterResolverFactory(
@@ -194,6 +219,7 @@ void RegisterSockaddrResolver(CoreConfiguration::Builder* builder) {
       absl::make_unique<UnixResolverFactory>());
   builder->resolver_registry()->RegisterResolverFactory(
       absl::make_unique<UnixAbstractResolverFactory>());
+#endif
 #endif
 }
 

@@ -34,6 +34,7 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/grpc_if_nametoindex.h"
@@ -292,20 +293,16 @@ bool grpc_parse_ipv6(const grpc_core::URI& uri,
 
 bool grpc_parse_uri(const grpc_core::URI& uri,
                     grpc_resolved_address* resolved_addr) {
-  if (uri.scheme() == "unix") {
-    return grpc_parse_unix(uri, resolved_addr);
+  auto r = grpc_core::CoreConfiguration::Get()
+               .address_parser_registry()
+               .ParseSingleAddress(uri);
+  if (!r.ok()) {
+    gpr_log(GPR_ERROR, "Can't parse scheme '%s': %s", uri.scheme().c_str(),
+            r.status().ToString().c_str());
+    return false;
   }
-  if (uri.scheme() == "unix-abstract") {
-    return grpc_parse_unix_abstract(uri, resolved_addr);
-  }
-  if (uri.scheme() == "ipv4") {
-    return grpc_parse_ipv4(uri, resolved_addr);
-  }
-  if (uri.scheme() == "ipv6") {
-    return grpc_parse_ipv6(uri, resolved_addr);
-  }
-  gpr_log(GPR_ERROR, "Can't parse scheme '%s'", uri.scheme().c_str());
-  return false;
+  *resolved_addr = *r;
+  return true;
 }
 
 uint16_t grpc_strhtons(const char* port) {
@@ -334,6 +331,42 @@ absl::StatusOr<grpc_resolved_address> StringToSockaddr(
 absl::StatusOr<grpc_resolved_address> StringToSockaddr(
     absl::string_view address, int port) {
   return StringToSockaddr(JoinHostPort(address, port));
+}
+
+namespace {
+absl::StatusOr<grpc_resolved_address> ParsePathWithSchemeAndParser(
+    absl::string_view path, absl::string_view scheme,
+    bool (*parser)(const grpc_core::URI& uri,
+                   grpc_resolved_address* resolved_addr)) {
+  grpc_resolved_address addr;
+  auto uri = URI::Create(std::string(scheme), "", std::string(path), {}, "");
+  if (!uri.ok()) return uri.status();
+  if (!parser(*uri, &addr)) {
+    return absl::InvalidArgumentError(
+        absl::StrCat("Failed to parse address:", path));
+  }
+  return addr;
+}
+}  // namespace
+
+void RegisterDefaultAddressParsers(CoreConfiguration::Builder* builder) {
+  auto add_scheme = [builder](
+                        absl::string_view scheme,
+                        bool (*parser)(const grpc_core::URI& uri,
+                                       grpc_resolved_address* resolved_addr)) {
+    builder->address_parser_registry()->AddScheme(
+        scheme,
+        [parser, scheme](
+            absl::string_view path) -> absl::StatusOr<grpc_resolved_address> {
+          return ParsePathWithSchemeAndParser(path, scheme, parser);
+        });
+  };
+  add_scheme("ipv4", grpc_parse_ipv4);
+  add_scheme("ipv6", grpc_parse_ipv6);
+#ifdef GRPC_HAVE_UNIX_SOCKET
+  add_scheme("unix", grpc_parse_unix);
+  add_scheme("unix-abstract", grpc_parse_unix_abstract);
+#endif
 }
 
 }  // namespace grpc_core

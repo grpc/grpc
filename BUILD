@@ -1126,6 +1126,7 @@ grpc_cc_library(
     ],
     visibility = ["@grpc:client_channel"],
     deps = [
+        "address_parser_registry",
         "channel_args_preconditioning",
         "channel_creds_registry",
         "channel_init",
@@ -2864,6 +2865,7 @@ grpc_cc_library(
     deps = [
         "gpr",
         "resolved_address",
+        "uri_parser",
     ],
 )
 

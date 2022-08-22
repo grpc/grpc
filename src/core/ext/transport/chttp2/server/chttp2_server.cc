@@ -94,9 +94,6 @@
 namespace grpc_core {
 namespace {
 
-const char kUnixUriPrefix[] = "unix:";
-const char kUnixAbstractUriPrefix[] = "unix-abstract:";
-
 class Chttp2ServerListener : public Server::ListenerInterface {
  public:
   static grpc_error_handle Create(Server* server, grpc_resolved_address* addr,
@@ -916,19 +913,17 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
                                                     args_modifier);
   }
   *port_num = -1;
-  absl::StatusOr<std::vector<grpc_resolved_address>> resolved_or;
   std::vector<grpc_error_handle> error_list;
   std::string parsed_addr = URI::PercentDecode(addr);
-  absl::string_view parsed_addr_unprefixed{parsed_addr};
   // Using lambda to avoid use of goto.
   grpc_error_handle error = [&]() {
     grpc_error_handle error = GRPC_ERROR_NONE;
-    if (absl::ConsumePrefix(&parsed_addr_unprefixed, kUnixUriPrefix)) {
-      resolved_or = grpc_resolve_unix_domain_address(parsed_addr_unprefixed);
-    } else if (absl::ConsumePrefix(&parsed_addr_unprefixed,
-                                   kUnixAbstractUriPrefix)) {
-      resolved_or =
-          grpc_resolve_unix_abstract_domain_address(parsed_addr_unprefixed);
+    auto uri = URI::Parse(parsed_addr);
+    const auto& address_parser_registry =
+        CoreConfiguration::Get().address_parser_registry();
+    absl::StatusOr<std::vector<grpc_resolved_address>> resolved_or;
+    if (uri.ok() && address_parser_registry.HasScheme(uri->scheme())) {
+      resolved_or = address_parser_registry.Parse(*uri);
     } else {
       resolved_or =
           GetDNSResolver()->LookupHostnameBlocking(parsed_addr, "https");

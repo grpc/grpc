@@ -21,17 +21,19 @@
 #include "absl/status/statusor.h"
 
 #include "src/core/lib/iomgr/resolved_address.h"
+#include "src/core/lib/uri/uri_parser.h"
 
 namespace grpc_core {
 
 using AddressParser =
-    std::function<absl::StatusOr<std::vector<grpc_resolved_address>>(
-        absl::string_view)>;
+    std::function<absl::StatusOr<grpc_resolved_address>(absl::string_view)>;
 
+// Handle mapping of address-like URIs to grpc_resolved_address structs.
+// Used by the sockaddr resolver and server construction to parse addresses.
 class AddressParserRegistry {
  private:
   struct Parser {
-    std::string prefix;
+    absl::string_view scheme;
     AddressParser parser;
   };
 
@@ -49,8 +51,15 @@ class AddressParserRegistry {
   AddressParserRegistry(AddressParserRegistry&&) = default;
   AddressParserRegistry& operator=(AddressParserRegistry&&) = default;
 
+  // Parse URI using an appropriate parser, return a list of resolved addresses.
   absl::StatusOr<std::vector<grpc_resolved_address>> Parse(
-      absl::string_view uri) const;
+      const URI& uri) const;
+
+  absl::StatusOr<grpc_resolved_address> ParseSingleAddress(
+      const URI& uri) const;
+
+  // Does the registry have a given scheme?
+  bool HasScheme(absl::string_view scheme) const;
 
  private:
   AddressParserRegistry() = delete;
@@ -58,6 +67,8 @@ class AddressParserRegistry {
       : parsers_(std::move(parsers)) {}
   AddressParserRegistry(const AddressParserRegistry&) = delete;
   AddressParserRegistry& operator=(const AddressParserRegistry&) = delete;
+
+  absl::StatusOr<const AddressParser*> GetParser(const URI& uri) const;
 
   std::vector<Parser> parsers_;
 };
