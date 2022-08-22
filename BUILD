@@ -3112,6 +3112,7 @@ grpc_cc_library(
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
         "arena",
+"address_parser_registry",
         "arena_promise",
         "atomic_utils",
         "avl",
