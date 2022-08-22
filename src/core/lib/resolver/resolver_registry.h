@@ -39,7 +39,7 @@ class ResolverRegistry {
  private:
   // Forward declaration needed to use this in Builder.
   struct State {
-    std::map<absl::string_view, std::unique_ptr<ResolverFactory>> factories;
+    std::vector<std::unique_ptr<ResolverFactory>> factories;
     std::string default_prefix;
   };
 

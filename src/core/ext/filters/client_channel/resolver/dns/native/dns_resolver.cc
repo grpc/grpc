@@ -160,7 +160,9 @@ void NativeClientChannelDNSResolver::OnResolved(
 
 class NativeClientChannelDNSResolverFactory : public ResolverFactory {
  public:
-  absl::string_view scheme() const override { return "dns"; }
+  bool ImplementsScheme(absl::string_view scheme) const override {
+    return scheme == "dns";
+  }
 
   bool IsValidUri(const URI& uri) const override {
     if (GPR_UNLIKELY(!uri.authority().empty())) {

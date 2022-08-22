@@ -1097,7 +1097,9 @@ void XdsResolver::MaybeRemoveUnusedClusters() {
 
 class XdsResolverFactory : public ResolverFactory {
  public:
-  absl::string_view scheme() const override { return "xds"; }
+  bool ImplementsScheme(absl::string_view scheme) const override {
+    return scheme == "xds";
+  }
 
   bool IsValidUri(const URI& uri) const override {
     if (uri.path().empty() || uri.path().back() == '/') {

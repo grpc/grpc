@@ -122,7 +122,9 @@ class IPv4ResolverFactory : public ResolverFactory {
     return CreateSockaddrResolver(std::move(args), grpc_parse_ipv4);
   }
 
-  absl::string_view scheme() const override { return "ipv4"; }
+  bool ImplementsScheme(absl::string_view scheme) const override {
+    return scheme == "ipv4";
+  }
 };
 
 class IPv6ResolverFactory : public ResolverFactory {
@@ -135,7 +137,9 @@ class IPv6ResolverFactory : public ResolverFactory {
     return CreateSockaddrResolver(std::move(args), grpc_parse_ipv6);
   }
 
-  absl::string_view scheme() const override { return "ipv6"; }
+  bool ImplementsScheme(absl::string_view scheme) const override {
+    return scheme == "ipv6";
+  }
 };
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
@@ -153,12 +157,16 @@ class UnixResolverFactory : public ResolverFactory {
     return "localhost";
   }
 
-  absl::string_view scheme() const override { return "unix"; }
+  bool ImplementsScheme(absl::string_view scheme) const override {
+    return scheme == "unix";
+  }
 };
 
 class UnixAbstractResolverFactory : public ResolverFactory {
  public:
-  absl::string_view scheme() const override { return "unix-abstract"; }
+  bool ImplementsScheme(absl::string_view scheme) const override {
+    return scheme == "unix-abstract";
+  }
 
   bool IsValidUri(const URI& uri) const override {
     return ParseUri(uri, grpc_parse_unix_abstract, nullptr);

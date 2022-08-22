@@ -39,13 +39,16 @@ void ResolverRegistry::Builder::SetDefaultPrefix(std::string default_prefix) {
 
 void ResolverRegistry::Builder::RegisterResolverFactory(
     std::unique_ptr<ResolverFactory> factory) {
-  auto p = state_.factories.emplace(factory->scheme(), std::move(factory));
-  GPR_ASSERT(p.second);
+  state_.factories.emplace_back(std::move(factory));
+  GPR_ASSERT(state_.factories.back() != nullptr);
 }
 
 bool ResolverRegistry::Builder::HasResolverFactory(
     absl::string_view scheme) const {
-  return state_.factories.find(scheme) != state_.factories.end();
+  for (const auto& factory : state_.factories) {
+    if (factory->ImplementsScheme(scheme)) return true;
+  }
+  return false;
 }
 
 void ResolverRegistry::Builder::Reset() {
@@ -107,9 +110,10 @@ std::string ResolverRegistry::AddDefaultPrefixIfNeeded(
 
 ResolverFactory* ResolverRegistry::LookupResolverFactory(
     absl::string_view scheme) const {
-  auto it = state_.factories.find(scheme);
-  if (it == state_.factories.end()) return nullptr;
-  return it->second.get();
+  for (const auto& factory : state_.factories) {
+    if (factory->ImplementsScheme(scheme)) return factory.get();
+  }
+  return nullptr;
 }
 
 // Returns the factory for the scheme of \a target.  If \a target does

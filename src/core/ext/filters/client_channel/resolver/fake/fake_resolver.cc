@@ -349,7 +349,9 @@ namespace {
 
 class FakeResolverFactory : public ResolverFactory {
  public:
-  absl::string_view scheme() const override { return "fake"; }
+  bool ImplementsScheme(absl::string_view scheme) const override {
+    return scheme == "fake";
+  }
 
   bool IsValidUri(const URI& /*uri*/) const override { return true; }
 

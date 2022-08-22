@@ -416,8 +416,8 @@ class GoogleCloud2ProdResolverFactory : public ResolverFactory {
  public:
   // TODO(roth): Remove experimental suffix once this code is proven stable,
   // and update the scheme in google_c2p_resolver_test.cc when doing so.
-  absl::string_view scheme() const override {
-    return "google-c2p-experimental";
+  bool ImplementsScheme(absl::string_view scheme) const override {
+    return scheme == "google-c2p-experimental";
   }
 
   bool IsValidUri(const URI& uri) const override {
