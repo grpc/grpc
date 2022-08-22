@@ -2850,6 +2850,24 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "address_parser_registry",
+    srcs = [
+        "src/core/lib/resolver/address_parser_registry.cc",
+    ],
+    hdrs = [
+        "src/core/lib/resolver/address_parser_registry.h",
+    ],
+    external_deps = [
+        "absl/status:statusor",
+        "absl/strings",
+    ],
+    deps = [
+        "gpr",
+        "resolved_address",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_base",
     srcs = [
         "src/core/lib/address_utils/parse_address.cc",
