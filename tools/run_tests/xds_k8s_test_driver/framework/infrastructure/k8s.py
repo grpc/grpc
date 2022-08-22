@@ -410,18 +410,26 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
     def _pretty_format_status(self, k8s_object: Optional[object]) -> str:
         if k8s_object is None:
             return 'No data'
+
+        # Parse the name if present.
         if hasattr(k8s_object, 'metadata') and hasattr(k8s_object.metadata,
                                                        'name'):
             name = k8s_object.metadata.name
         else:
             name = 'Can\'t parse resource name'
+
+        # Pretty-print the status if present.
         if hasattr(k8s_object, 'status'):
             try:
                 status = self._pretty_format(k8s_object.status.to_dict())
-            except Exception as e:
+            except Exception as e:  # pylint: disable=broad-except
+                # Catching all exceptions because not printing the status
+                # isn't as important as the system under test.
                 status = f'Can\'t parse resource status: {e}'
         else:
             status = 'Can\'t parse resource status'
+
+        # Return the name of k8s object, and its pretty-printed status.
         return f'{name}:\n{status}\n'
 
     def _pretty_format(self, data: dict) -> str:
@@ -432,15 +440,16 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
     @classmethod
     def _check_service_neg_annotation(cls,
                                       service: Optional[V1Service]) -> bool:
-        return (service is not None and
+        return (isinstance(service, V1Service) and
                 cls.NEG_STATUS_META in service.metadata.annotations)
 
     @classmethod
     def _pod_started(cls, pod: V1Pod) -> bool:
-        return pod.status.phase not in ('Pending', 'Unknown')
+        return (isinstance(pod, V1Pod) and
+                pod.status.phase not in ('Pending', 'Unknown'))
 
     @classmethod
     def _replicas_available(cls, deployment: V1Deployment, count: int) -> bool:
-        return (deployment is not None and
+        return (isinstance(deployment, V1Deployment) and
                 deployment.status.available_replicas is not None and
                 deployment.status.available_replicas >= count)

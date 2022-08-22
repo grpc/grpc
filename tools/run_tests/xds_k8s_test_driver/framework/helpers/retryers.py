@@ -22,7 +22,7 @@ We use tenacity as a general-purpose retrying library.
 """
 import datetime
 import logging
-from typing import Any, Callable, List, Optional, Sequence
+from typing import Any, Callable, List, Optional, Tuple, Type
 
 import tenacity
 from tenacity import _utils as tenacity_utils
@@ -35,21 +35,24 @@ retryers_logger = logging.getLogger(__name__)
 timedelta = datetime.timedelta
 Retrying = tenacity.Retrying
 CheckResultFn = Callable[[Any], bool]
-
-
-def _retry_on_exceptions(retry_on_exceptions: Optional[Sequence[Any]] = None):
-    # Retry on all exceptions by default
-    if retry_on_exceptions is None:
-        retry_on_exceptions = (Exception,)
-    return tenacity.retry_if_exception_type(retry_on_exceptions)
+_ExceptionClasses = Tuple[Type[Exception], ...]
 
 
 def _build_retry_conditions(
         *,
-        retry_on_exceptions: Optional[Sequence[Any]] = None,
+        retry_on_exceptions: Optional[_ExceptionClasses] = None,
         check_result: Optional[CheckResultFn] = None) -> List[retry_base]:
-    retry_conditions = [_retry_on_exceptions(retry_on_exceptions)]
+
+    # Retry on all exceptions by default
+    if retry_on_exceptions is None:
+        retry_on_exceptions = (Exception,)
+
+    retry_conditions = [tenacity.retry_if_exception_type(retry_on_exceptions)]
     if check_result is not None:
+        if retry_on_exceptions:
+            # When retry_on_exceptions is set, also catch them while executing
+            # check_result callback.
+            check_result = _safe_check_result(check_result, retry_on_exceptions)
         retry_conditions.append(tenacity.retry_if_not_result(check_result))
     return retry_conditions
 
@@ -59,7 +62,7 @@ def exponential_retryer_with_timeout(
         wait_min: timedelta,
         wait_max: timedelta,
         timeout: timedelta,
-        retry_on_exceptions: Optional[Sequence[Any]] = None,
+        retry_on_exceptions: Optional[_ExceptionClasses] = None,
         check_result: Optional[CheckResultFn] = None,
         logger: Optional[logging.Logger] = None,
         log_level: Optional[int] = logging.DEBUG) -> Retrying:
@@ -84,7 +87,7 @@ def constant_retryer(*,
                      wait_fixed: timedelta,
                      attempts: int = 0,
                      timeout: Optional[timedelta] = None,
-                     retry_on_exceptions: Optional[Sequence[Any]] = None,
+                     retry_on_exceptions: Optional[_ExceptionClasses] = None,
                      check_result: Optional[CheckResultFn] = None,
                      logger: Optional[logging.Logger] = None,
                      log_level: Optional[int] = logging.DEBUG) -> Retrying:
@@ -116,6 +119,9 @@ def _on_error_callback(*,
                        timeout: Optional[timedelta] = None,
                        attempts: int = 0,
                        check_result: Optional[CheckResultFn] = None):
+    """A helper to propagate the initial state to the RetryError, so that
+    it can assemble a helpful message containing timeout/number of attempts.
+    """
 
     def error_handler(retry_state: tenacity.RetryCallState):
         raise RetryError(retry_state,
@@ -124,6 +130,33 @@ def _on_error_callback(*,
                          check_result=check_result)
 
     return error_handler
+
+
+def _safe_check_result(check_result: CheckResultFn,
+                       retry_on_exceptions: _ExceptionClasses) -> CheckResultFn:
+    """Wraps check_result callback to catch and handle retry_on_exceptions.
+
+    Normally tenacity doesn't retry when retry_if_result/retry_if_not_result
+    raise an error. This wraps the callback to automatically catch Exceptions
+    specified in the retry_on_exceptions argument.
+
+    Ideally we should make all check_result callbacks to not throw, but
+    in case it does, we'd rather be annoying in the logs, than break the test.
+    """
+
+    def _check_result_wrapped(result):
+        try:
+            return check_result(result)
+        except retry_on_exceptions:
+            retryers_logger.warning(
+                "Result check callback %s raised an exception."
+                "This shouldn't happen, please handle any exceptions and "
+                "return return a boolean.",
+                tenacity_utils.get_callback_name(check_result),
+                exc_info=True)
+            return False
+
+    return _check_result_wrapped
 
 
 class RetryError(tenacity.RetryError):
