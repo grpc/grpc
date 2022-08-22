@@ -28,6 +28,7 @@ grpc_cc_library(
     hdrs = ["test_service_impl.h"],
     external_deps = [
         "gtest",
+        "absl/synchronization",
     ],
     deps = [
         "//src/proto/grpc/testing:echo_proto",
@@ -254,7 +255,6 @@ grpc_cc_library(
     srcs = ["end2end_test.cc"],
     external_deps = [
         "gtest",
-        "absl/synchronization",
     ],
     linkstatic = True,
     deps = [
