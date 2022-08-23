@@ -131,7 +131,7 @@ class SubchannelData {
    public:
     Watcher(
         SubchannelData<SubchannelListType, SubchannelDataType>* subchannel_data,
-        RefCountedPtr<SubchannelListType> subchannel_list)
+        WeakRefCountedPtr<SubchannelListType> subchannel_list)
         : subchannel_data_(subchannel_data),
           subchannel_list_(std::move(subchannel_list)) {}
 
@@ -148,7 +148,7 @@ class SubchannelData {
 
    private:
     SubchannelData<SubchannelListType, SubchannelDataType>* subchannel_data_;
-    RefCountedPtr<SubchannelListType> subchannel_list_;
+    WeakRefCountedPtr<SubchannelListType> subchannel_list_;
   };
 
   // Starts watching the connectivity state of the subchannel.
@@ -322,7 +322,7 @@ void SubchannelData<SubchannelListType,
   }
   GPR_ASSERT(pending_watcher_ == nullptr);
   pending_watcher_ =
-      new Watcher(this, subchannel_list()->Ref(DEBUG_LOCATION, "Watcher"));
+      new Watcher(this, subchannel_list()->WeakRef(DEBUG_LOCATION, "Watcher"));
   subchannel_->WatchConnectivityState(
       std::unique_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>(
           pending_watcher_));
