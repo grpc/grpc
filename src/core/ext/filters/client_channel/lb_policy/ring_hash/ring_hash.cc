@@ -232,9 +232,13 @@ class RingHash : public LoadBalancingPolicy {
     }
 
     ~RingHashSubchannelList() override {
-      ring_.reset(DEBUG_LOCATION, "~RingHashSubchannelList");
       RingHash* p = static_cast<RingHash*>(policy());
       p->Unref(DEBUG_LOCATION, "subchannel_list");
+    }
+
+    void Orphan() override {
+      ring_.reset(DEBUG_LOCATION, "RingHashSubchannelList::Orphan()");
+      SubchannelList::Orphan();
     }
 
     // Updates the counters of subchannels in each state when a
@@ -259,11 +263,6 @@ class RingHash : public LoadBalancingPolicy {
         if (!subchannel(i)->connectivity_state().has_value()) return false;
       }
       return true;
-    }
-
-    void ShutdownLocked() override {
-      ring_.reset(DEBUG_LOCATION, "RingHashSubchannelList::ShutdownLocked()");
-      SubchannelList::ShutdownLocked();
     }
 
     size_t num_idle_;
@@ -359,8 +358,8 @@ class RingHash : public LoadBalancingPolicy {
   RefCountedPtr<RingHashLbConfig> config_;
 
   // list of subchannels.
-  OrphanablePtr<RingHashSubchannelList> subchannel_list_;
-  OrphanablePtr<RingHashSubchannelList> latest_pending_subchannel_list_;
+  RefCountedPtr<RingHashSubchannelList> subchannel_list_;
+  RefCountedPtr<RingHashSubchannelList> latest_pending_subchannel_list_;
   // indicating if we are shutting down.
   bool shutdown_ = false;
 };
@@ -464,7 +463,7 @@ RingHash::Ring::Ring(RingHash* parent,
             });
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)) {
     gpr_log(GPR_INFO,
-            "[RH %p picker %p] created ring from subchannel_list=%p "
+            "[RH %p] created ring %p from subchannel_list=%p "
             "with %" PRIuPTR " ring entries",
             parent, this, subchannel_list_.get(), ring_.size());
   }
@@ -836,7 +835,7 @@ void RingHash::UpdateLocked(UpdateArgs args) {
     gpr_log(GPR_INFO, "[RH %p] replacing latest pending subchannel list %p",
             this, latest_pending_subchannel_list_.get());
   }
-  latest_pending_subchannel_list_ = MakeOrphanable<RingHashSubchannelList>(
+  latest_pending_subchannel_list_ = MakeRefCounted<RingHashSubchannelList>(
       this, std::move(addresses), args.args);
   latest_pending_subchannel_list_->StartWatchingLocked();
   // If we have no existing list or the new list is empty, immediately
