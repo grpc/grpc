@@ -305,21 +305,22 @@ class RingHash : public LoadBalancingPolicy {
     Picker(RefCountedPtr<RingHash> parent, RefCountedPtr<Ring> ring)
         : parent_(std::move(parent)), ring_(std::move(ring)) {}
 
+    ~Picker() override {
+      // Hop into WorkSerializer to unref the ring, since that may
+      // trigger the unreffing of the underlying subchannels.
+      new RingUnreffer(std::move(parent_), std::move(ring_));
+    }
+
     PickResult Pick(PickArgs args) override;
 
    private:
-    // A fire-and-forget class that schedules subchannel connection attempts
-    // on the control plane WorkSerializer.
-    class SubchannelConnectionAttempter : public Orphanable {
+    // An interface for running a callback in the control plane WorkSerializer.
+    class WorkSerializerRunner : public Orphanable {
      public:
-      explicit SubchannelConnectionAttempter(
+      explicit WorkSerializerRunner(
           RefCountedPtr<RingHash> ring_hash_lb)
           : ring_hash_lb_(std::move(ring_hash_lb)) {
         GRPC_CLOSURE_INIT(&closure_, RunInExecCtx, this, nullptr);
-      }
-
-      void AddSubchannel(RefCountedPtr<SubchannelInterface> subchannel) {
-        subchannels_.push_back(std::move(subchannel));
       }
 
       void Orphan() override {
@@ -328,16 +329,18 @@ class RingHash : public LoadBalancingPolicy {
         ExecCtx::Run(DEBUG_LOCATION, &closure_, GRPC_ERROR_NONE);
       }
 
+      // Will be invoked inside of the WorkSerializer.
+      virtual void Run() {}
+
+     protected:
+      RingHash* ring_hash_lb() const { return ring_hash_lb_.get(); }
+
      private:
       static void RunInExecCtx(void* arg, grpc_error_handle /*error*/) {
         auto* self = static_cast<SubchannelConnectionAttempter*>(arg);
         self->ring_hash_lb_->work_serializer()->Run(
             [self]() {
-              if (!self->ring_hash_lb_->shutdown_) {
-                for (auto& subchannel : self->subchannels_) {
-                  subchannel->RequestConnection();
-                }
-              }
+              self->Run();
               delete self;
             },
             DEBUG_LOCATION);
@@ -345,7 +348,43 @@ class RingHash : public LoadBalancingPolicy {
 
       RefCountedPtr<RingHash> ring_hash_lb_;
       grpc_closure closure_;
+    };
+
+    // A fire-and-forget class that schedules subchannel connection attempts
+    // on the control plane WorkSerializer.
+    class SubchannelConnectionAttempter : public WorkSerializerRunner {
+     public:
+      explicit SubchannelConnectionAttempter(
+          RefCountedPtr<RingHash> ring_hash_lb)
+          : WorkSerializerRunner(std::move(ring_hash_lb)) {}
+
+      void AddSubchannel(RefCountedPtr<SubchannelInterface> subchannel) {
+        subchannels_.push_back(std::move(subchannel));
+      }
+
+      void Run() override {
+        if (!ring_hash_lb()->shutdown_) {
+          for (auto& subchannel : subchannels_) {
+            subchannel->RequestConnection();
+          }
+        }
+      }
+
+     private:
       std::vector<RefCountedPtr<SubchannelInterface>> subchannels_;
+    };
+
+    // A fire-and-forget class that unrefs the ring in the control plane
+    // WorkSerializer.
+    class RingUnreffer : public WorkSerializerRunner {
+     public:
+      RingUnreffer(RefCountedPtr<RingHash> ring_hash_lb,
+                   RefCountedPtr<Ring> ring)
+          : WorkSerializerRunner(std::move(ring_hash_lb)),
+            ring_(std::move(ring)) {}
+
+     private:
+      RefCountedPtr<Ring> ring_;
     };
 
     RefCountedPtr<RingHash> parent_;
