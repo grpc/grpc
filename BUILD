@@ -4623,12 +4623,12 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "debug_location",
+        "dual_ref_counted",
         "gpr",
         "grpc_base",
         "grpc_codegen",
         "iomgr_fwd",
         "lb_policy",
-        "orphanable",
         "ref_counted_ptr",
         "server_address",
         "subchannel_interface",
