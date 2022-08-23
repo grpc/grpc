@@ -317,8 +317,7 @@ class RingHash : public LoadBalancingPolicy {
     // An interface for running a callback in the control plane WorkSerializer.
     class WorkSerializerRunner : public Orphanable {
      public:
-      explicit WorkSerializerRunner(
-          RefCountedPtr<RingHash> ring_hash_lb)
+      explicit WorkSerializerRunner(RefCountedPtr<RingHash> ring_hash_lb)
           : ring_hash_lb_(std::move(ring_hash_lb)) {
         GRPC_CLOSURE_INIT(&closure_, RunInExecCtx, this, nullptr);
       }
