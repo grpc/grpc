@@ -91,12 +91,13 @@ button](https://stackoverflow.com/a/9770061). Click on it, and choose "Add as
 link". If you do not select this option, Visual Studio will copy files to the
 project directory instead.
 
-Alternatively, you can also specify `AdditionalImportDirs` to give the location of proto files outside
-the project. Eg.
+Alternatively, you can also specify `AdditionalImportDirs` and provide a list of directories to search for imported .proto files. The directories and searched in the order given.
+
+Eg.
 
 ```xml
   <Protobuf Include="protos/*.proto" ProtoRoot="protos"
-      AdditionalImportDirs="/folder/ouside/project/protos/myapis/" ... />
+      AdditionalImportDirs="/folder/ouside/project/protos/myapis/;/another/folder/" ... />
 ```
 
 #### My .proto files have same filename in different folders
@@ -360,7 +361,7 @@ The following metadata are recognized on the `<Protobuf>` items.
 | GrpcOutputDir  | See notes | A directory                        | Directory for generated gRPC stubs    |
 | GrpcOutputOptions | | arbitrary options                  | Extra options passed to gRPC codegen as `--grpc_opt=opt1,opt2` |
 | GrpcServices   | `both`    | `none`, `client`, `server`, `both` | Generated gRPC stubs             |
-| AdditionalImportDirs | See notes | Directories                        | Additional directories for to find files |
+| AdditionalImportDirs | See notes | Directories                        | Specify additional directories in which to search for imports .proto files |
 
 __Notes__
 
@@ -399,8 +400,8 @@ to explicitly pass some otherwise unsupported (e.g. experimental) options to the
 `grpc_csharp_plugin`.
 
 * __AdditionalImportDirs__
-Pass additional directories to include proto files.  These may be directories _outside_ of the 
-project directory. These directories are passed to the code generator via the `-I/--proto_path` option
+Specify additional directories in which to search for imports in .proto files. The directories are searched in the order given. You may specify directories _outside_ of the 
+project directory. The directories are passed to the `protoc` code generator via the `-I/--proto_path` option
 together with `Protobuf_StandardImportsPath` and `ProtoRoot` directories.
 
 __Specifying multiple values in properties__
