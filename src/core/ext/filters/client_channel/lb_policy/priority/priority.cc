@@ -276,9 +276,11 @@ class PriorityLb : public LoadBalancingPolicy {
   void ChoosePriorityLocked();
 
   // Sets the specified priority as the current priority.
-  // Deactivates any children at lower priorities.
+  // Optionally deactivates any children at lower priorities.
   // Returns the child's picker to the channel.
-  void SetCurrentPriorityLocked(uint32_t priority);
+  void SetCurrentPriorityLocked(int32_t priority,
+                                bool deactivate_lower_priorities,
+                                const char* reason);
 
   const Duration child_failover_timeout_;
 
@@ -298,10 +300,6 @@ class PriorityLb : public LoadBalancingPolicy {
   std::map<std::string, OrphanablePtr<ChildPriority>> children_;
   // The priority that is being used.
   uint32_t current_priority_ = UINT32_MAX;
-  // Points to the current child from before the most recent update.
-  // We will continue to use this child until we decide which of the new
-  // children to use.
-  ChildPriority* current_child_from_before_update_ = nullptr;
 };
 
 //
@@ -354,15 +352,6 @@ void PriorityLb::UpdateLocked(UpdateArgs args) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
     gpr_log(GPR_INFO, "[priority_lb %p] received update", this);
   }
-  // Save current child.
-  if (current_priority_ != UINT32_MAX) {
-    const std::string& child_name = config_->priorities()[current_priority_];
-    auto* child = children_[child_name].get();
-    GPR_ASSERT(child != nullptr);
-    if (child->connectivity_state() == GRPC_CHANNEL_READY) {
-      current_child_from_before_update_ = children_[child_name].get();
-    }
-  }
   // Update config.
   config_ = std::move(args.config);
   // Update args.
@@ -407,33 +396,6 @@ void PriorityLb::HandleChildConnectivityStateChangeLocked(
   // all children.  This ensures that we don't incorrectly do the wrong
   // thing while state is inconsistent.
   if (update_in_progress_) return;
-  // Special case for the child that was the current child before the
-  // most recent update.
-  if (child == current_child_from_before_update_) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
-      gpr_log(GPR_INFO,
-              "[priority_lb %p] state update for current child from before "
-              "config update",
-              this);
-    }
-    if (child->connectivity_state() == GRPC_CHANNEL_READY ||
-        child->connectivity_state() == GRPC_CHANNEL_IDLE) {
-      // If it's still READY or IDLE, we stick with this child, so pass
-      // the new picker up to our parent.
-      channel_control_helper()->UpdateState(child->connectivity_state(),
-                                            child->connectivity_status(),
-                                            child->GetPicker());
-    } else {
-      // If it's no longer READY or IDLE, we should stop using it.
-      // We already started trying other priorities as a result of the
-      // update, but calling ChoosePriorityLocked() ensures that we will
-      // properly select between CONNECTING and TRANSIENT_FAILURE as the
-      // new state to report to our parent.
-      current_child_from_before_update_ = nullptr;
-      ChoosePriorityLocked();
-    }
-    return;
-  }
   // Otherwise, find the child's priority.
   uint32_t child_priority = GetChildPriorityLocked(child->name());
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
@@ -448,22 +410,12 @@ void PriorityLb::HandleChildConnectivityStateChangeLocked(
 }
 
 void PriorityLb::DeleteChild(ChildPriority* child) {
-  // If this was the current child from before the most recent update,
-  // stop using it.  We already started trying other priorities as a
-  // result of the update, but calling ChoosePriorityLocked() ensures that
-  // we will properly select between CONNECTING and TRANSIENT_FAILURE as the
-  // new state to report to our parent.
-  if (current_child_from_before_update_ == child) {
-    current_child_from_before_update_ = nullptr;
-    ChoosePriorityLocked();
-  }
   children_.erase(child->name());
 }
 
 void PriorityLb::ChoosePriorityLocked() {
   // If priority list is empty, report TF.
   if (config_->priorities().empty()) {
-    current_child_from_before_update_ = nullptr;
     absl::Status status =
         absl::UnavailableError("priority policy has empty priority list");
     channel_control_helper()->UpdateState(
@@ -483,52 +435,30 @@ void PriorityLb::ChoosePriorityLocked() {
               priority, child_name.c_str());
     }
     auto& child = children_[child_name];
+    // Create child if needed.
     if (child == nullptr) {
-      // If we're not still using an old child from before the last
-      // update, report CONNECTING here.
-      // This is probably not strictly necessary, since the child should
-      // immediately report CONNECTING and cause us to report that state
-      // anyway, but we do this just in case the child fails to report
-      // state before UpdateLocked() returns.
-      if (current_child_from_before_update_ == nullptr) {
-        channel_control_helper()->UpdateState(
-            GRPC_CHANNEL_CONNECTING, absl::Status(),
-            absl::make_unique<QueuePicker>(Ref(DEBUG_LOCATION, "QueuePicker")));
-      }
-      current_priority_ = priority;
       child = MakeOrphanable<ChildPriority>(
           Ref(DEBUG_LOCATION, "ChildPriority"), child_name);
       auto child_config = config_->children().find(child_name);
       GPR_DEBUG_ASSERT(child_config != config_->children().end());
       child->UpdateLocked(child_config->second.config,
                           child_config->second.ignore_reresolution_requests);
-      return;
+    } else {
+      // The child already exists.  Reactivate if needed.
+      child->MaybeReactivateLocked();
     }
-    // The child already exists.
-    child->MaybeReactivateLocked();
-    // If the child is in state READY or IDLE, switch to it.
+    // Select this child if it is in states READY or IDLE.
     if (child->connectivity_state() == GRPC_CHANNEL_READY ||
         child->connectivity_state() == GRPC_CHANNEL_IDLE) {
-      SetCurrentPriorityLocked(priority);
+      SetCurrentPriorityLocked(
+          priority, /*deactivate_lower_priorities=*/true,
+          ConnectivityStateName(child->connectivity_state()));
       return;
     }
-    // Child is not READY or IDLE.
-    // If its failover timer is still pending, give it time to fire.
+    // Select this child if its failover timer is pending.
     if (child->FailoverTimerPending()) {
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
-        gpr_log(GPR_INFO,
-                "[priority_lb %p] priority %u, child %s: child still "
-                "attempting to connect, will wait",
-                this, priority, child_name.c_str());
-      }
-      current_priority_ = priority;
-      // If we're not still using an old child from before the last
-      // update, report CONNECTING here.
-      if (current_child_from_before_update_ == nullptr) {
-        channel_control_helper()->UpdateState(child->connectivity_state(),
-                                              child->connectivity_status(),
-                                              child->GetPicker());
-      }
+      SetCurrentPriorityLocked(priority, /*deactivate_lower_priorities=*/false,
+                               "failover timer pending");
       return;
     }
     // Child has been failing for a while.  Move on to the next priority.
@@ -559,9 +489,8 @@ void PriorityLb::ChoosePriorityLocked() {
     auto& child = children_[child_name];
     GPR_ASSERT(child != nullptr);
     if (child->connectivity_state() == GRPC_CHANNEL_CONNECTING) {
-      channel_control_helper()->UpdateState(child->connectivity_state(),
-                                            child->connectivity_status(),
-                                            child->GetPicker());
+      SetCurrentPriorityLocked(priority, /*deactivate_lower_priorities=*/false,
+                               "CONNECTING (pass 2)");
       return;
     }
   }
@@ -570,31 +499,34 @@ void PriorityLb::ChoosePriorityLocked() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
     gpr_log(GPR_INFO,
             "[priority_lb %p] no priority in CONNECTING, delegating to "
-            "lowest priority child %s",
-            this, child_name.c_str());
+            "lowest priority child",
+            this);
   }
-  auto& child = children_[child_name];
-  GPR_ASSERT(child != nullptr);
-  channel_control_helper()->UpdateState(child->connectivity_state(),
-                                        child->connectivity_status(),
-                                        child->GetPicker());
+  SetCurrentPriorityLocked(config_->priorities().size() - 1,
+                           /*deactivate_lower_priorities=*/false,
+                           "no usable children");
 }
 
-void PriorityLb::SetCurrentPriorityLocked(uint32_t priority) {
+void PriorityLb::SetCurrentPriorityLocked(int32_t priority,
+                                          bool deactivate_lower_priorities,
+                                          const char* reason) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
-    gpr_log(GPR_INFO, "[priority_lb %p] selected priority %u, child %s", this,
-            priority, config_->priorities()[priority].c_str());
+    gpr_log(GPR_INFO,
+            "[priority_lb %p] selecting priority %u, child %s (%s, "
+            "deactivate_lower_priorities=%d)",
+            this, priority, config_->priorities()[priority].c_str(), reason,
+            deactivate_lower_priorities);
   }
   current_priority_ = priority;
-  current_child_from_before_update_ = nullptr;
-  // Deactivate lower priorities.
-  for (uint32_t p = priority + 1; p < config_->priorities().size(); ++p) {
-    const std::string& child_name = config_->priorities()[p];
-    auto it = children_.find(child_name);
-    if (it != children_.end()) it->second->MaybeDeactivateLocked();
+  if (deactivate_lower_priorities) {
+    for (uint32_t p = priority + 1; p < config_->priorities().size(); ++p) {
+      const std::string& child_name = config_->priorities()[p];
+      auto it = children_.find(child_name);
+      if (it != children_.end()) it->second->MaybeDeactivateLocked();
+    }
   }
-  // Update picker.
   auto& child = children_[config_->priorities()[priority]];
+  GPR_ASSERT(child != nullptr);
   channel_control_helper()->UpdateState(child->connectivity_state(),
                                         child->connectivity_status(),
                                         child->GetPicker());
