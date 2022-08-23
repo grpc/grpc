@@ -160,9 +160,8 @@ class RingHash : public LoadBalancingPolicy {
  private:
   ~RingHash() override;
 
-  // Forward declarations.
+  // Forward declaration.
   class RingHashSubchannelList;
-  class Ring;
 
   // Data for a particular subchannel in a subchannel list.
   // This subclass adds the following functionality:
@@ -211,35 +210,24 @@ class RingHash : public LoadBalancingPolicy {
     absl::Status connectivity_status_ ABSL_GUARDED_BY(&mu_);
   };
 
-  // A list of subchannels.
+  // A list of subchannels and the ring containing those subchannels.
   class RingHashSubchannelList
       : public SubchannelList<RingHashSubchannelList, RingHashSubchannelData> {
    public:
+    struct RingEntry {
+      uint64_t hash;
+      RingHashSubchannelData* subchannel;
+    };
+
     RingHashSubchannelList(RingHash* policy, ServerAddressList addresses,
-                           const ChannelArgs& args)
-        : SubchannelList(policy,
-                         (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)
-                              ? "RingHashSubchannelList"
-                              : nullptr),
-                         std::move(addresses), policy->channel_control_helper(),
-                         args),
-          num_idle_(num_subchannels()),
-          ring_(MakeRefCounted<Ring>(policy, Ref(DEBUG_LOCATION, "Ring"))) {
-      // Need to maintain a ref to the LB policy as long as we maintain
-      // any references to subchannels, since the subchannels'
-      // pollset_sets will include the LB policy's pollset_set.
-      policy->Ref(DEBUG_LOCATION, "subchannel_list").release();
-    }
+                           const ChannelArgs& args);
 
     ~RingHashSubchannelList() override {
       RingHash* p = static_cast<RingHash*>(policy());
       p->Unref(DEBUG_LOCATION, "subchannel_list");
     }
 
-    void Orphan() override {
-      ring_.reset(DEBUG_LOCATION, "RingHashSubchannelList::Orphan()");
-      SubchannelList::Orphan();
-    }
+    const std::vector<RingEntry>& ring() const { return ring_; }
 
     // Updates the counters of subchannels in each state when a
     // subchannel transitions from old_state to new_state.
@@ -270,7 +258,7 @@ class RingHash : public LoadBalancingPolicy {
     size_t num_connecting_ = 0;
     size_t num_transient_failure_ = 0;
 
-    RefCountedPtr<Ring> ring_;
+    std::vector<RingEntry> ring_;
 
     // The index of the subchannel currently doing an internally
     // triggered connection attempt, if any.
@@ -283,32 +271,15 @@ class RingHash : public LoadBalancingPolicy {
     absl::Status last_failure_;
   };
 
-  class Ring : public RefCounted<Ring> {
-   public:
-    struct Entry {
-      uint64_t hash;
-      RingHashSubchannelData* subchannel;
-    };
-
-    Ring(RingHash* parent,
-         RefCountedPtr<RingHashSubchannelList> subchannel_list);
-
-    const std::vector<Entry>& ring() const { return ring_; }
-
-   private:
-    RefCountedPtr<RingHashSubchannelList> subchannel_list_;
-    std::vector<Entry> ring_;
-  };
-
   class Picker : public SubchannelPicker {
    public:
-    Picker(RefCountedPtr<RingHash> parent, RefCountedPtr<Ring> ring)
-        : parent_(std::move(parent)), ring_(std::move(ring)) {}
+    explicit Picker(RefCountedPtr<RingHashSubchannelList> subchannel_list)
+        : subchannel_list_(std::move(subchannel_list)) {}
 
     ~Picker() override {
-      // Hop into WorkSerializer to unref the ring, since that may
+      // Hop into WorkSerializer to unref the subchannel list, since that may
       // trigger the unreffing of the underlying subchannels.
-      MakeOrphanable<RingUnreffer>(std::move(parent_), std::move(ring_));
+      MakeOrphanable<WorkSerializerRunner>(std::move(subchannel_list_));
     }
 
     PickResult Pick(PickArgs args) override;
@@ -317,8 +288,9 @@ class RingHash : public LoadBalancingPolicy {
     // An interface for running a callback in the control plane WorkSerializer.
     class WorkSerializerRunner : public Orphanable {
      public:
-      explicit WorkSerializerRunner(RefCountedPtr<RingHash> ring_hash_lb)
-          : ring_hash_lb_(std::move(ring_hash_lb)) {
+      explicit WorkSerializerRunner(
+          RefCountedPtr<RingHashSubchannelList> subchannel_list)
+          : subchannel_list_(std::move(subchannel_list)) {
         GRPC_CLOSURE_INIT(&closure_, RunInExecCtx, this, nullptr);
       }
 
@@ -332,12 +304,14 @@ class RingHash : public LoadBalancingPolicy {
       virtual void Run() {}
 
      protected:
-      RingHash* ring_hash_lb() const { return ring_hash_lb_.get(); }
+      RingHash* ring_hash_lb() const {
+        return static_cast<RingHash*>(subchannel_list_->policy());
+      }
 
      private:
       static void RunInExecCtx(void* arg, grpc_error_handle /*error*/) {
         auto* self = static_cast<SubchannelConnectionAttempter*>(arg);
-        self->ring_hash_lb_->work_serializer()->Run(
+        self->ring_hash_lb()->work_serializer()->Run(
             [self]() {
               self->Run();
               delete self;
@@ -345,7 +319,7 @@ class RingHash : public LoadBalancingPolicy {
             DEBUG_LOCATION);
       }
 
-      RefCountedPtr<RingHash> ring_hash_lb_;
+      RefCountedPtr<RingHashSubchannelList> subchannel_list_;
       grpc_closure closure_;
     };
 
@@ -354,8 +328,8 @@ class RingHash : public LoadBalancingPolicy {
     class SubchannelConnectionAttempter : public WorkSerializerRunner {
      public:
       explicit SubchannelConnectionAttempter(
-          RefCountedPtr<RingHash> ring_hash_lb)
-          : WorkSerializerRunner(std::move(ring_hash_lb)) {}
+          RefCountedPtr<RingHashSubchannelList> subchannel_list)
+          : WorkSerializerRunner(std::move(subchannel_list)) {}
 
       void AddSubchannel(RefCountedPtr<SubchannelInterface> subchannel) {
         subchannels_.push_back(std::move(subchannel));
@@ -373,21 +347,7 @@ class RingHash : public LoadBalancingPolicy {
       std::vector<RefCountedPtr<SubchannelInterface>> subchannels_;
     };
 
-    // A fire-and-forget class that unrefs the ring in the control plane
-    // WorkSerializer.
-    class RingUnreffer : public WorkSerializerRunner {
-     public:
-      RingUnreffer(RefCountedPtr<RingHash> ring_hash_lb,
-                   RefCountedPtr<Ring> ring)
-          : WorkSerializerRunner(std::move(ring_hash_lb)),
-            ring_(std::move(ring)) {}
-
-     private:
-      RefCountedPtr<Ring> ring_;
-    };
-
-    RefCountedPtr<RingHash> parent_;
-    RefCountedPtr<Ring> ring_;
+    RefCountedPtr<RingHashSubchannelList> subchannel_list_;
   };
 
   void ShutdownLocked() override;
@@ -403,111 +363,6 @@ class RingHash : public LoadBalancingPolicy {
 };
 
 //
-// RingHash::Ring
-//
-
-RingHash::Ring::Ring(RingHash* parent,
-                     RefCountedPtr<RingHashSubchannelList> subchannel_list)
-    : subchannel_list_(std::move(subchannel_list)) {
-  size_t num_subchannels = subchannel_list_->num_subchannels();
-  // Store the weights while finding the sum.
-  struct AddressWeight {
-    std::string address;
-    // Default weight is 1 for the cases where a weight is not provided,
-    // each occurrence of the address will be counted a weight value of 1.
-    uint32_t weight = 1;
-    double normalized_weight;
-  };
-  std::vector<AddressWeight> address_weights;
-  size_t sum = 0;
-  address_weights.reserve(num_subchannels);
-  for (size_t i = 0; i < num_subchannels; ++i) {
-    RingHashSubchannelData* sd = subchannel_list_->subchannel(i);
-    const ServerAddressWeightAttribute* weight_attribute = static_cast<
-        const ServerAddressWeightAttribute*>(sd->address().GetAttribute(
-        ServerAddressWeightAttribute::kServerAddressWeightAttributeKey));
-    AddressWeight address_weight;
-    address_weight.address =
-        grpc_sockaddr_to_string(&sd->address().address(), false).value();
-    // Weight should never be zero, but ignore it just in case, since
-    // that value would screw up the ring-building algorithm.
-    if (weight_attribute != nullptr && weight_attribute->weight() > 0) {
-      address_weight.weight = weight_attribute->weight();
-    }
-    sum += address_weight.weight;
-    address_weights.push_back(std::move(address_weight));
-  }
-  // Calculating normalized weights and find min and max.
-  double min_normalized_weight = 1.0;
-  double max_normalized_weight = 0.0;
-  for (auto& address : address_weights) {
-    address.normalized_weight = static_cast<double>(address.weight) / sum;
-    min_normalized_weight =
-        std::min(address.normalized_weight, min_normalized_weight);
-    max_normalized_weight =
-        std::max(address.normalized_weight, max_normalized_weight);
-  }
-  // Scale up the number of hashes per host such that the least-weighted host
-  // gets a whole number of hashes on the ring. Other hosts might not end up
-  // with whole numbers, and that's fine (the ring-building algorithm below can
-  // handle this). This preserves the original implementation's behavior: when
-  // weights aren't provided, all hosts should get an equal number of hashes. In
-  // the case where this number exceeds the max_ring_size, it's scaled back down
-  // to fit.
-  const size_t min_ring_size = parent->config_->min_ring_size();
-  const size_t max_ring_size = parent->config_->max_ring_size();
-  const double scale = std::min(
-      std::ceil(min_normalized_weight * min_ring_size) / min_normalized_weight,
-      static_cast<double>(max_ring_size));
-  // Reserve memory for the entire ring up front.
-  const size_t ring_size = std::ceil(scale);
-  ring_.reserve(ring_size);
-  // Populate the hash ring by walking through the (host, weight) pairs in
-  // normalized_host_weights, and generating (scale * weight) hashes for each
-  // host. Since these aren't necessarily whole numbers, we maintain running
-  // sums -- current_hashes and target_hashes -- which allows us to populate the
-  // ring in a mostly stable way.
-  absl::InlinedVector<char, 196> hash_key_buffer;
-  double current_hashes = 0.0;
-  double target_hashes = 0.0;
-  uint64_t min_hashes_per_host = ring_size;
-  uint64_t max_hashes_per_host = 0;
-  for (size_t i = 0; i < num_subchannels; ++i) {
-    const std::string& address_string = address_weights[i].address;
-    hash_key_buffer.assign(address_string.begin(), address_string.end());
-    hash_key_buffer.emplace_back('_');
-    auto offset_start = hash_key_buffer.end();
-    target_hashes += scale * address_weights[i].normalized_weight;
-    size_t count = 0;
-    while (current_hashes < target_hashes) {
-      const std::string count_str = absl::StrCat(count);
-      hash_key_buffer.insert(offset_start, count_str.begin(), count_str.end());
-      absl::string_view hash_key(hash_key_buffer.data(),
-                                 hash_key_buffer.size());
-      const uint64_t hash = XXH64(hash_key.data(), hash_key.size(), 0);
-      ring_.push_back({hash, subchannel_list_->subchannel(i)});
-      ++count;
-      ++current_hashes;
-      hash_key_buffer.erase(offset_start, hash_key_buffer.end());
-    }
-    min_hashes_per_host =
-        std::min(static_cast<uint64_t>(i), min_hashes_per_host);
-    max_hashes_per_host =
-        std::max(static_cast<uint64_t>(i), max_hashes_per_host);
-  }
-  std::sort(ring_.begin(), ring_.end(),
-            [](const Entry& lhs, const Entry& rhs) -> bool {
-              return lhs.hash < rhs.hash;
-            });
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)) {
-    gpr_log(GPR_INFO,
-            "[RH %p] created ring %p from subchannel_list=%p "
-            "with %" PRIuPTR " ring entries",
-            parent, this, subchannel_list_.get(), ring_.size());
-  }
-}
-
-//
 // RingHash::Picker
 //
 
@@ -520,7 +375,7 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
     return PickResult::Fail(
         absl::InternalError("ring hash value is not a number"));
   }
-  const std::vector<Ring::Entry>& ring = ring_->ring();
+  const auto& ring = subchannel_list_->ring();
   // Ported from https://github.com/RJ/ketama/blob/master/libketama/ketama.c
   // (ketama_get_server) NOTE: The algorithm depends on using signed integers
   // for lowp, highp, and first_index. Do not change them!
@@ -553,7 +408,9 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
       [&](RefCountedPtr<SubchannelInterface> subchannel) {
         if (subchannel_connection_attempter == nullptr) {
           subchannel_connection_attempter =
-              MakeOrphanable<SubchannelConnectionAttempter>(parent_);
+              MakeOrphanable<SubchannelConnectionAttempter>(
+                  subchannel_list_->Ref(DEBUG_LOCATION,
+                                        "SubchannelConnectionAttempter"));
         }
         subchannel_connection_attempter->AddSubchannel(std::move(subchannel));
       };
@@ -578,7 +435,7 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
   bool found_second_subchannel = false;
   bool found_first_non_failed = false;
   for (size_t i = 1; i < ring.size(); ++i) {
-    const Ring::Entry& entry = ring[(first_index + i) % ring.size()];
+    const auto& entry = ring[(first_index + i) % ring.size()];
     if (entry.subchannel == ring[first_index].subchannel) {
       continue;
     }
@@ -621,6 +478,117 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
 //
 // RingHash::RingHashSubchannelList
 //
+
+RingHash::RingHashSubchannelList::RingHashSubchannelList(
+    RingHash* policy, ServerAddressList addresses, const ChannelArgs& args)
+    : SubchannelList(policy,
+                     (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)
+                          ? "RingHashSubchannelList"
+                          : nullptr),
+                     std::move(addresses), policy->channel_control_helper(),
+                     args),
+      num_idle_(num_subchannels()) {
+  // Need to maintain a ref to the LB policy as long as we maintain
+  // any references to subchannels, since the subchannels'
+  // pollset_sets will include the LB policy's pollset_set.
+  policy->Ref(DEBUG_LOCATION, "subchannel_list").release();
+  // Construct the ring.
+  // Store the weights while finding the sum.
+  struct AddressWeight {
+    std::string address;
+    // Default weight is 1 for the cases where a weight is not provided,
+    // each occurrence of the address will be counted a weight value of 1.
+    uint32_t weight = 1;
+    double normalized_weight;
+  };
+  std::vector<AddressWeight> address_weights;
+  size_t sum = 0;
+  address_weights.reserve(num_subchannels());
+  for (size_t i = 0; i < num_subchannels(); ++i) {
+    RingHashSubchannelData* sd = subchannel(i);
+    const ServerAddressWeightAttribute* weight_attribute = static_cast<
+        const ServerAddressWeightAttribute*>(sd->address().GetAttribute(
+        ServerAddressWeightAttribute::kServerAddressWeightAttributeKey));
+    AddressWeight address_weight;
+    address_weight.address =
+        grpc_sockaddr_to_string(&sd->address().address(), false).value();
+    // Weight should never be zero, but ignore it just in case, since
+    // that value would screw up the ring-building algorithm.
+    if (weight_attribute != nullptr && weight_attribute->weight() > 0) {
+      address_weight.weight = weight_attribute->weight();
+    }
+    sum += address_weight.weight;
+    address_weights.push_back(std::move(address_weight));
+  }
+  // Calculating normalized weights and find min and max.
+  double min_normalized_weight = 1.0;
+  double max_normalized_weight = 0.0;
+  for (auto& address : address_weights) {
+    address.normalized_weight = static_cast<double>(address.weight) / sum;
+    min_normalized_weight =
+        std::min(address.normalized_weight, min_normalized_weight);
+    max_normalized_weight =
+        std::max(address.normalized_weight, max_normalized_weight);
+  }
+  // Scale up the number of hashes per host such that the least-weighted host
+  // gets a whole number of hashes on the ring. Other hosts might not end up
+  // with whole numbers, and that's fine (the ring-building algorithm below can
+  // handle this). This preserves the original implementation's behavior: when
+  // weights aren't provided, all hosts should get an equal number of hashes. In
+  // the case where this number exceeds the max_ring_size, it's scaled back down
+  // to fit.
+  const size_t min_ring_size = policy->config_->min_ring_size();
+  const size_t max_ring_size = policy->config_->max_ring_size();
+  const double scale = std::min(
+      std::ceil(min_normalized_weight * min_ring_size) / min_normalized_weight,
+      static_cast<double>(max_ring_size));
+  // Reserve memory for the entire ring up front.
+  const size_t ring_size = std::ceil(scale);
+  ring_.reserve(ring_size);
+  // Populate the hash ring by walking through the (host, weight) pairs in
+  // normalized_host_weights, and generating (scale * weight) hashes for each
+  // host. Since these aren't necessarily whole numbers, we maintain running
+  // sums -- current_hashes and target_hashes -- which allows us to populate the
+  // ring in a mostly stable way.
+  absl::InlinedVector<char, 196> hash_key_buffer;
+  double current_hashes = 0.0;
+  double target_hashes = 0.0;
+  uint64_t min_hashes_per_host = ring_size;
+  uint64_t max_hashes_per_host = 0;
+  for (size_t i = 0; i < num_subchannels(); ++i) {
+    const std::string& address_string = address_weights[i].address;
+    hash_key_buffer.assign(address_string.begin(), address_string.end());
+    hash_key_buffer.emplace_back('_');
+    auto offset_start = hash_key_buffer.end();
+    target_hashes += scale * address_weights[i].normalized_weight;
+    size_t count = 0;
+    while (current_hashes < target_hashes) {
+      const std::string count_str = absl::StrCat(count);
+      hash_key_buffer.insert(offset_start, count_str.begin(), count_str.end());
+      absl::string_view hash_key(hash_key_buffer.data(),
+                                 hash_key_buffer.size());
+      const uint64_t hash = XXH64(hash_key.data(), hash_key.size(), 0);
+      ring_.push_back({hash, subchannel(i)});
+      ++count;
+      ++current_hashes;
+      hash_key_buffer.erase(offset_start, hash_key_buffer.end());
+    }
+    min_hashes_per_host =
+        std::min(static_cast<uint64_t>(i), min_hashes_per_host);
+    max_hashes_per_host =
+        std::max(static_cast<uint64_t>(i), max_hashes_per_host);
+  }
+  std::sort(ring_.begin(), ring_.end(),
+            [](const RingHashSubchannelList::RingEntry& lhs,
+               const RingHashSubchannelList::RingEntry& rhs) -> bool {
+              return lhs.hash < rhs.hash;
+            });
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)) {
+    gpr_log(GPR_INFO,
+            "[RH %p] created subchannel list %p with %" PRIuPTR " ring entries",
+            policy, this, ring_.size());
+  }
+}
 
 void RingHash::RingHashSubchannelList::UpdateStateCountersLocked(
     grpc_connectivity_state old_state, grpc_connectivity_state new_state) {
@@ -710,8 +678,7 @@ void RingHash::RingHashSubchannelList::UpdateRingHashConnectivityStateLocked(
   // Note that we use our own picker regardless of connectivity state.
   p->channel_control_helper()->UpdateState(
       state, status,
-      absl::make_unique<Picker>(p->Ref(DEBUG_LOCATION, "RingHashPicker"),
-                                ring_));
+      absl::make_unique<Picker>(Ref(DEBUG_LOCATION, "RingHashPicker")));
   // While the ring_hash policy is reporting TRANSIENT_FAILURE, it will
   // not be getting any pick requests from the priority policy.
   // However, because the ring_hash policy does not attempt to
