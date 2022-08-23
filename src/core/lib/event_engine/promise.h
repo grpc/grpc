@@ -15,6 +15,8 @@
 #define GRPC_CORE_LIB_EVENT_ENGINE_PROMISE_H
 #include <grpc/support/port_platform.h>
 
+#include "absl/time/time.h"
+
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/sync.h"
@@ -30,12 +32,19 @@ namespace experimental {
 template <typename T>
 class Promise {
  public:
+  Promise() = default;
+  // Initialize a default value that will be returned if WaitWithTimeout times
+  // out
+  explicit Promise(T&& val) : val_(val) {}
   // The getter will wait until the setter has been called, and will return the
   // value passed during Set.
-  T& Get() {
+  T& Get() { return WaitWithTimeout(absl::Hours(1)); }
+  // The getter will wait with timeout until the setter has been called, and
+  // will return the value passed during Set.
+  T& WaitWithTimeout(absl::Duration d) {
     grpc_core::MutexLock lock(&mu_);
     if (!set_) {
-      cv_.Wait(&mu_);
+      cv_.WaitWithTimeout(&mu_, d);
     }
     return val_;
   }

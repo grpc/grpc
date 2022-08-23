@@ -46,7 +46,6 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/promise/arena_promise.h"
-#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/alts/alts_credentials.h"
@@ -115,6 +114,7 @@ class grpc_alts_channel_security_connector final
   }
 
   void check_peer(tsi_peer peer, grpc_endpoint* /*ep*/,
+                  const grpc_core::ChannelArgs& /*args*/,
                   grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
                   grpc_closure* on_peer_checked) override {
     alts_check_peer(peer, auth_context, on_peer_checked);
@@ -173,6 +173,7 @@ class grpc_alts_server_security_connector final
   }
 
   void check_peer(tsi_peer peer, grpc_endpoint* /*ep*/,
+                  const grpc_core::ChannelArgs& /*args*/,
                   grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
                   grpc_closure* on_peer_checked) override {
     alts_check_peer(peer, auth_context, on_peer_checked);

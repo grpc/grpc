@@ -341,7 +341,6 @@ class Server : public InternallyRefCounted<Server>,
     grpc_closure recv_initial_metadata_batch_complete_;
 
     grpc_metadata_batch* recv_initial_metadata_ = nullptr;
-    uint32_t recv_initial_metadata_flags_ = 0;
     grpc_closure recv_initial_metadata_ready_;
     grpc_closure* original_recv_initial_metadata_ready_;
     grpc_error_handle recv_initial_metadata_error_ = GRPC_ERROR_NONE;

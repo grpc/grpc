@@ -49,11 +49,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
-#include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/ext/filters/client_channel/lb_policy/subchannel_list.h"
-#include "src/core/ext/filters/client_channel/lb_policy_factory.h"
-#include "src/core/ext/filters/client_channel/lb_policy_registry.h"
-#include "src/core/ext/filters/client_channel/subchannel_interface.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
@@ -69,6 +65,10 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/load_balancing/lb_policy.h"
+#include "src/core/lib/load_balancing/lb_policy_factory.h"
+#include "src/core/lib/load_balancing/lb_policy_registry.h"
+#include "src/core/lib/load_balancing/subchannel_interface.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
@@ -838,6 +838,7 @@ void RingHash::UpdateLocked(UpdateArgs args) {
   }
   latest_pending_subchannel_list_ = MakeOrphanable<RingHashSubchannelList>(
       this, std::move(addresses), args.args);
+  latest_pending_subchannel_list_->StartWatchingLocked();
   // If we have no existing list or the new list is empty, immediately
   // promote the new list.
   // Otherwise, do nothing; the new list will be promoted when the

@@ -253,16 +253,19 @@ bool ValueInJsonArray(const Json::Array& array, const char* value) {
 
 std::string ChooseServiceConfig(char* service_config_choice_json,
                                 grpc_error_handle* error) {
-  Json json = Json::Parse(service_config_choice_json, error);
-  if (!GRPC_ERROR_IS_NONE(*error)) return "";
-  if (json.type() != Json::Type::ARRAY) {
+  auto json = Json::Parse(service_config_choice_json);
+  if (!json.ok()) {
+    *error = absl_status_to_grpc_error(json.status());
+    return "";
+  }
+  if (json->type() != Json::Type::ARRAY) {
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Service Config Choices, error: should be of type array");
     return "";
   }
   const Json* service_config = nullptr;
   std::vector<grpc_error_handle> error_list;
-  for (const Json& choice : json.array_value()) {
+  for (const Json& choice : json->array_value()) {
     if (choice.type() != Json::Type::OBJECT) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "Service Config Choice, error: should be of type object"));
@@ -407,22 +410,21 @@ AresClientChannelDNSResolver::AresRequestWrapper::OnResolvedLocked(
       grpc_error_handle service_config_error = GRPC_ERROR_NONE;
       std::string service_config_string =
           ChooseServiceConfig(service_config_json_, &service_config_error);
-      RefCountedPtr<ServiceConfig> service_config;
-      if (GRPC_ERROR_IS_NONE(service_config_error) &&
-          !service_config_string.empty()) {
-        GRPC_CARES_TRACE_LOG("resolver:%p selected service config choice: %s",
-                             this, service_config_string.c_str());
-        service_config = ServiceConfigImpl::Create(resolver_->channel_args(),
-                                                   service_config_string,
-                                                   &service_config_error);
-      }
       if (!GRPC_ERROR_IS_NONE(service_config_error)) {
         result.service_config = absl::UnavailableError(
             absl::StrCat("failed to parse service config: ",
                          grpc_error_std_string(service_config_error)));
         GRPC_ERROR_UNREF(service_config_error);
-      } else {
-        result.service_config = std::move(service_config);
+      } else if (!service_config_string.empty()) {
+        GRPC_CARES_TRACE_LOG("resolver:%p selected service config choice: %s",
+                             this, service_config_string.c_str());
+        result.service_config = ServiceConfigImpl::Create(
+            resolver_->channel_args(), service_config_string);
+        if (!result.service_config.ok()) {
+          result.service_config = absl::UnavailableError(
+              absl::StrCat("failed to parse service config: ",
+                           result.service_config.status().message()));
+        }
       }
     }
     if (balancer_addresses_ != nullptr) {

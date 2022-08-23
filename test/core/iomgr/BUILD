@@ -44,6 +44,7 @@ grpc_cc_test(
     srcs = ["combiner_test.cc"],
     exec_properties = LARGE_MACHINE,
     external_deps = ["gtest"],
+    flaky = True,
     language = "C++",
     tags = ["no_windows"],  # LARGE_MACHINE is not configured for windows RBE
     deps = [
@@ -280,6 +281,21 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "pollset_windows_starvation_test",
+    srcs = ["pollset_windows_starvation_test.cc"],
+    language = "C++",
+    tags = [
+        "no_linux",
+        "no_mac",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "tcp_server_posix_test",
     srcs = ["tcp_server_posix_test.cc"],
     external_deps = ["gtest"],
@@ -328,11 +344,13 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    flaky = True,
     language = "C++",
     tags = [
         # TODO(apolcyn): This test is failing on Windows at entry, enable once passing.
         # See e.g. https://source.cloud.google.com/results/invocations/6716596a-c9e1-4780-85ed-890d8758d582/targets
         "no_windows",
+        "cpu:10",
     ],
     deps = [
         "//:gpr",

@@ -19,19 +19,23 @@
 #include <stdint.h>
 #include <string.h>
 
+#include <memory>
+
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/propagation_bits.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/useful.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/test_config.h"
 
-#define MAX_CONNECTION_IDLE_MS 500
+#define MAX_CONNECTION_IDLE_MS 2000
 #define MAX_CONNECTION_AGE_MS 9999
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
@@ -81,7 +85,8 @@ static void simple_request_body(grpc_end2end_test_config /*config*/,
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
-  op->flags = 0;
+  op->flags = GRPC_INITIAL_METADATA_WAIT_FOR_READY |
+              GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET;
   op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
@@ -151,7 +156,6 @@ static void simple_request_body(grpc_end2end_test_config /*config*/,
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
-  GPR_ASSERT(0 == call_details.flags);
   GPR_ASSERT(was_cancelled == 0);
 
   grpc_slice_unref(details);
@@ -169,11 +173,11 @@ static void test_max_connection_idle(grpc_end2end_test_config config) {
   grpc_connectivity_state state = GRPC_CHANNEL_IDLE;
   grpc_core::CqVerifier cqv(f.cq);
 
-  grpc_arg client_a[1];
-  client_a[0].type = GRPC_ARG_INTEGER;
-  client_a[0].key =
-      const_cast<char*>("grpc.testing.fixed_reconnect_backoff_ms");
-  client_a[0].value.integer = 1000;
+  auto client_args = grpc_core::ChannelArgs()
+                         .Set(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS, 1000)
+                         .Set(GRPC_ARG_MAX_RECONNECT_BACKOFF_MS, 1000)
+                         .Set(GRPC_ARG_MIN_RECONNECT_BACKOFF_MS, 5000)
+                         .ToC();
   grpc_arg server_a[2];
   server_a[0].type = GRPC_ARG_INTEGER;
   server_a[0].key = const_cast<char*>(GRPC_ARG_MAX_CONNECTION_IDLE_MS);
@@ -181,10 +185,9 @@ static void test_max_connection_idle(grpc_end2end_test_config config) {
   server_a[1].type = GRPC_ARG_INTEGER;
   server_a[1].key = const_cast<char*>(GRPC_ARG_MAX_CONNECTION_AGE_MS);
   server_a[1].value.integer = MAX_CONNECTION_AGE_MS;
-  grpc_channel_args client_args = {GPR_ARRAY_SIZE(client_a), client_a};
   grpc_channel_args server_args = {GPR_ARRAY_SIZE(server_a), server_a};
 
-  config.init_client(&f, &client_args);
+  config.init_client(&f, client_args.get());
   config.init_server(&f, &server_args);
 
   /* check that we're still in idle, and start connecting */
@@ -194,7 +197,7 @@ static void test_max_connection_idle(grpc_end2end_test_config config) {
      READY is reached */
   while (state != GRPC_CHANNEL_READY) {
     grpc_channel_watch_connectivity_state(
-        f.client, state, grpc_timeout_seconds_to_deadline(3), f.cq, tag(99));
+        f.client, state, grpc_timeout_seconds_to_deadline(10), f.cq, tag(99));
     cqv.Expect(tag(99), true);
     cqv.Verify();
     state = grpc_channel_check_connectivity_state(f.client, 0);
@@ -209,7 +212,8 @@ static void test_max_connection_idle(grpc_end2end_test_config config) {
   /* wait for the channel to reach its maximum idle time */
   grpc_channel_watch_connectivity_state(
       f.client, GRPC_CHANNEL_READY,
-      grpc_timeout_milliseconds_to_deadline(MAX_CONNECTION_IDLE_MS + 3000),
+      gpr_time_add(grpc_timeout_milliseconds_to_deadline(3000),
+                   gpr_time_from_millis(MAX_CONNECTION_IDLE_MS, GPR_TIMESPAN)),
       f.cq, tag(99));
   cqv.Expect(tag(99), true);
   cqv.Verify();

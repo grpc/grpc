@@ -24,6 +24,8 @@
 #include <vector>
 
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -32,14 +34,12 @@
 
 #include <grpc/support/alloc.h>
 
-#include "src/core/ext/xds/certificate_provider_factory.h"
-#include "src/core/ext/xds/certificate_provider_registry.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/json/json_util.h"
 #include "src/core/lib/security/credentials/channel_creds_registry.h"
+#include "src/core/lib/transport/error_utils.h"
 
 namespace grpc_core {
 
@@ -178,20 +178,27 @@ bool XdsBootstrap::XdsServer::IgnoreResourceDeletion() const {
 //
 
 std::unique_ptr<XdsBootstrap> XdsBootstrap::Create(
-    absl::string_view json_string, grpc_error_handle* error) {
-  Json json = Json::Parse(json_string, error);
-  if (!GRPC_ERROR_IS_NONE(*error)) {
-    grpc_error_handle error_out =
-        GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-            "Failed to parse bootstrap JSON string", error, 1);
-    GRPC_ERROR_UNREF(*error);
-    *error = error_out;
+    absl::string_view json_string,
+    std::unique_ptr<XdsCertificateProviderPluginMapInterface>
+        certificate_provider_plugin_map,
+    grpc_error_handle* error) {
+  auto json = Json::Parse(json_string);
+  if (!json.ok()) {
+    *error = GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+        "Failed to parse bootstrap JSON string: ", json.status().ToString()));
     return nullptr;
   }
-  return absl::make_unique<XdsBootstrap>(std::move(json), error);
+  return absl::make_unique<XdsBootstrap>(
+      std::move(*json), std::move(certificate_provider_plugin_map), error);
 }
 
-XdsBootstrap::XdsBootstrap(Json json, grpc_error_handle* error) {
+XdsBootstrap::XdsBootstrap(
+    Json json,
+    std::unique_ptr<XdsCertificateProviderPluginMapInterface>
+        certificate_provider_plugin_map,
+    grpc_error_handle* error)
+    : certificate_provider_plugin_map_(
+          std::move(certificate_provider_plugin_map)) {
   if (json.type() != Json::Type::OBJECT) {
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "malformed JSON in bootstrap file");
@@ -470,36 +477,25 @@ grpc_error_handle XdsBootstrap::ParseCertificateProvider(
         "\"plugin_name\" field is not a string"));
   } else {
     std::string plugin_name = std::move(*(it->second.mutable_string_value()));
-    CertificateProviderFactory* factory =
-        CertificateProviderRegistry::LookupCertificateProviderFactory(
-            plugin_name);
-    if (factory == nullptr) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
-          absl::StrCat("Unrecognized plugin name: ", plugin_name)));
-    } else {
-      RefCountedPtr<CertificateProviderFactory::Config> config;
-      it = certificate_provider_json->mutable_object()->find("config");
-      if (it != certificate_provider_json->mutable_object()->end()) {
-        if (it->second.type() != Json::Type::OBJECT) {
-          error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "\"config\" field is not an object"));
-        } else {
-          grpc_error_handle parse_error = GRPC_ERROR_NONE;
-          config = factory->CreateCertificateProviderConfig(it->second,
-                                                            &parse_error);
-          if (!GRPC_ERROR_IS_NONE(parse_error)) {
-            error_list.push_back(parse_error);
-          }
-        }
+    it = certificate_provider_json->mutable_object()->find("config");
+    if (it != certificate_provider_json->mutable_object()->end()) {
+      if (it->second.type() != Json::Type::OBJECT) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "\"config\" field is not an object"));
       } else {
-        // "config" is an optional field, so create an empty JSON object.
-        grpc_error_handle parse_error = GRPC_ERROR_NONE;
-        config = factory->CreateCertificateProviderConfig(Json::Object(),
-                                                          &parse_error);
-        if (!GRPC_ERROR_IS_NONE(parse_error)) error_list.push_back(parse_error);
+        absl::Status status = certificate_provider_plugin_map_->AddPlugin(
+            instance_name, plugin_name, it->second);
+        if (!status.ok()) {
+          error_list.push_back(absl_status_to_grpc_error(status));
+        }
       }
-      certificate_providers_.insert(
-          {instance_name, {std::move(plugin_name), std::move(config)}});
+    } else {
+      // "config" is an optional field, so create an empty JSON object.
+      absl::Status status = certificate_provider_plugin_map_->AddPlugin(
+          instance_name, plugin_name, Json::Object());
+      if (!status.ok()) {
+        error_list.push_back(absl_status_to_grpc_error(status));
+      }
     }
   }
   return GRPC_ERROR_CREATE_FROM_VECTOR_AND_CPP_STRING(
@@ -566,17 +562,8 @@ std::string XdsBootstrap::ToString() const {
     parts.push_back("      },\n");
   }
   parts.push_back("}");
-  parts.push_back("certificate_providers={\n");
-  for (const auto& entry : certificate_providers_) {
-    parts.push_back(
-        absl::StrFormat("  %s={\n"
-                        "    plugin_name=%s\n"
-                        "    config=%s\n"
-                        "  },\n",
-                        entry.first, entry.second.plugin_name,
-                        entry.second.config->ToString()));
-  }
-  parts.push_back("}");
+  parts.push_back("certificate_providers=");
+  parts.push_back(certificate_provider_plugin_map_->ToString());
   return absl::StrJoin(parts, "");
 }
 

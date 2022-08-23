@@ -36,17 +36,17 @@
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/ext/filters/client_channel/lb_policy/subchannel_list.h"
-#include "src/core/ext/filters/client_channel/lb_policy_factory.h"
-#include "src/core/ext/filters/client_channel/lb_policy_registry.h"
-#include "src/core/ext/filters/client_channel/subchannel_interface.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/load_balancing/lb_policy.h"
+#include "src/core/lib/load_balancing/lb_policy_factory.h"
+#include "src/core/lib/load_balancing/lb_policy_registry.h"
+#include "src/core/lib/load_balancing/subchannel_interface.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
@@ -229,6 +229,7 @@ void PickFirst::AttemptToConnectUsingLatestUpdateArgsLocked() {
   }
   latest_pending_subchannel_list_ = MakeOrphanable<PickFirstSubchannelList>(
       this, std::move(addresses), latest_update_args_.args);
+  latest_pending_subchannel_list_->StartWatchingLocked();
   // Empty update or no valid subchannels.  Put the channel in
   // TRANSIENT_FAILURE.
   if (latest_pending_subchannel_list_->num_subchannels() == 0) {

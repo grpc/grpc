@@ -28,6 +28,7 @@ grpc_cc_library(
     hdrs = ["test_service_impl.h"],
     external_deps = [
         "gtest",
+        "absl/synchronization",
     ],
     deps = [
         "//src/proto/grpc/testing:echo_proto",
@@ -124,6 +125,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    flaky = True,
     tags = [
         "no_test_android",  # android_cc_test doesn't work with data dependency.
         "no_test_ios",
@@ -150,7 +152,6 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    flaky = True,  # TODO(b/161828686)
     tags = [
         "no_test_android",  # android_cc_test doesn't work with data dependency.
         "no_test_ios",
@@ -234,6 +235,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    flaky = True,
     deps = [
         ":interceptors_util",
         ":test_service_impl",
@@ -512,6 +514,7 @@ grpc_cc_test(
         "gtest",
         "absl/types:optional",
     ],
+    flaky = True,
     tags = ["no_test_ios"],
     deps = [
         ":counted_service",
@@ -687,6 +690,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    flaky = True,
     tags = [
         "no_test_ios",
         "no_windows",
@@ -937,6 +941,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    flaky = True,
     deps = [
         "//:grpc++",
         "//:grpcpp_orca_service",

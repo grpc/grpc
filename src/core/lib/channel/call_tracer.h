@@ -50,7 +50,7 @@ class CallTracer {
     // Please refer to `grpc_transport_stream_op_batch_payload` for details on
     // arguments.
     virtual void RecordSendInitialMetadata(
-        grpc_metadata_batch* send_initial_metadata, uint32_t flags) = 0;
+        grpc_metadata_batch* send_initial_metadata) = 0;
     // TODO(yashkt): We are using gpr_atm here instead of absl::string_view
     // since that's what the transport API uses, and performing an atomic load
     // is unnecessary if the census tracer does not need it at present. Fix this

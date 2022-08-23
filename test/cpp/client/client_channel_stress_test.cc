@@ -63,7 +63,7 @@ namespace {
 
 const size_t kNumBackends = 10;
 const size_t kNumBalancers = 5;
-const size_t kNumClientThreads = 100;
+const size_t kNumClientThreads = 10;
 const int kResolutionUpdateIntervalMs = 50;
 const int kServerlistUpdateIntervalMs = 10;
 const int kTestDurationSec = 30;
@@ -240,11 +240,10 @@ class ClientChannelStressTest {
   static grpc_core::Resolver::Result MakeResolverResult(
       const std::vector<AddressData>& balancer_address_data) {
     grpc_core::Resolver::Result result;
-    grpc_error_handle error = GRPC_ERROR_NONE;
     result.service_config = grpc_core::ServiceConfigImpl::Create(
-        grpc_core::ChannelArgs(), "{\"loadBalancingConfig\":[{\"grpclb\":{}}]}",
-        &error);
-    GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+        grpc_core::ChannelArgs(),
+        "{\"loadBalancingConfig\":[{\"grpclb\":{}}]}");
+    GPR_ASSERT(result.service_config.ok());
     grpc_core::ServerAddressList balancer_addresses =
         CreateAddressListFromAddressDataList(balancer_address_data);
     result.args = grpc_core::SetGrpcLbBalancerAddresses(

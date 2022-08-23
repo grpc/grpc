@@ -111,6 +111,7 @@ grpc_status_code PerformCall(grpc_channel* channel, grpc_server* server,
   grpc_core::CqVerifier cqv(cq);
   grpc_op ops[6];
   grpc_op* op;
+  grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array request_metadata_recv;
   grpc_call_details call_details;
@@ -123,6 +124,7 @@ grpc_status_code PerformCall(grpc_channel* channel, grpc_server* server,
                                grpc_slice_from_static_string("/foo"), nullptr,
                                deadline, nullptr);
   GPR_ASSERT(c);
+  grpc_metadata_array_init(&initial_metadata_recv);
   grpc_metadata_array_init(&trailing_metadata_recv);
   grpc_metadata_array_init(&request_metadata_recv);
   grpc_call_details_init(&call_details);
@@ -137,6 +139,11 @@ grpc_status_code PerformCall(grpc_channel* channel, grpc_server* server,
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
+  op->flags = 0;
+  op->reserved = nullptr;
+  op++;
+  op->op = GRPC_OP_RECV_INITIAL_METADATA;
+  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
   op->flags = 0;
   op->reserved = nullptr;
   op++;
@@ -155,6 +162,7 @@ grpc_status_code PerformCall(grpc_channel* channel, grpc_server* server,
   cqv.Verify();
   // cleanup
   grpc_slice_unref(details);
+  grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
@@ -232,6 +240,7 @@ grpc_status_code PerformWaitingCall(grpc_channel* channel, grpc_server* server,
   grpc_core::CqVerifier cqv(cq);
   grpc_op ops[6];
   grpc_op* op;
+  grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array request_metadata_recv;
   grpc_call_details call_details;
@@ -244,6 +253,7 @@ grpc_status_code PerformWaitingCall(grpc_channel* channel, grpc_server* server,
                                grpc_slice_from_static_string("/foo"), nullptr,
                                deadline, nullptr);
   GPR_ASSERT(c);
+  grpc_metadata_array_init(&initial_metadata_recv);
   grpc_metadata_array_init(&trailing_metadata_recv);
   grpc_metadata_array_init(&request_metadata_recv);
   grpc_call_details_init(&call_details);
@@ -258,6 +268,11 @@ grpc_status_code PerformWaitingCall(grpc_channel* channel, grpc_server* server,
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
+  op->flags = 0;
+  op->reserved = nullptr;
+  op++;
+  op->op = GRPC_OP_RECV_INITIAL_METADATA;
+  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
   op->flags = 0;
   op->reserved = nullptr;
   op++;
@@ -282,6 +297,7 @@ grpc_status_code PerformWaitingCall(grpc_channel* channel, grpc_server* server,
   cqv.Verify(grpc_core::Duration::Seconds(60));
   // cleanup
   grpc_slice_unref(details);
+  grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
@@ -323,8 +339,11 @@ void VerifyChannelDisconnected(grpc_channel* channel,
   GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
   GPR_ASSERT(ev.tag == reinterpret_cast<void*>(2000));
   GPR_ASSERT(ev.success == 0);
-  GPR_ASSERT(grpc_channel_check_connectivity_state(channel, 0) !=
-             GRPC_CHANNEL_READY);
+  // We are intentionally not checking the connectivity state since it is
+  // propagated in an asynchronous manner which means that we might see an older
+  // state. We would eventually get the correct state, but since we have already
+  // verified that the ping has failed, checking the connectivity state is not
+  // necessary.
 }
 
 class KeepaliveThrottlingTest : public ::testing::Test {
