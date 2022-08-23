@@ -254,11 +254,6 @@ class PriorityLb : public LoadBalancingPolicy {
   // the child is not in the current priority list.
   uint32_t GetChildPriorityLocked(const std::string& child_name) const;
 
-  // Called when a child's connectivity state has changed.
-  // May propagate the update to the channel or trigger choosing a new
-  // priority.
-  void HandleChildConnectivityStateChangeLocked(ChildPriority* child);
-
   // Deletes a child.  Called when the child's deactivation timer fires.
   void DeleteChild(ChildPriority* child);
 
@@ -386,27 +381,6 @@ uint32_t PriorityLb::GetChildPriorityLocked(
     if (config_->priorities()[priority] == child_name) return priority;
   }
   return UINT32_MAX;
-}
-
-void PriorityLb::HandleChildConnectivityStateChangeLocked(
-    ChildPriority* child) {
-  // If we're in the process of propagating an update from our parent to
-  // our children, ignore any updates that come from the children.  We
-  // will instead choose a new priority once the update has been seen by
-  // all children.  This ensures that we don't incorrectly do the wrong
-  // thing while state is inconsistent.
-  if (update_in_progress_) return;
-  // Otherwise, find the child's priority.
-  uint32_t child_priority = GetChildPriorityLocked(child->name());
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
-    gpr_log(GPR_INFO,
-            "[priority_lb %p] state update for priority %u, child %s, current "
-            "priority %u",
-            this, child_priority, child->name().c_str(), current_priority_);
-  }
-  // Unconditionally call ChoosePriorityLocked().  It should do the
-  // right thing based on the state of all children.
-  ChoosePriorityLocked();
 }
 
 void PriorityLb::DeleteChild(ChildPriority* child) {
@@ -788,8 +762,17 @@ void PriorityLb::ChildPriority::OnConnectivityStateUpdateLocked(
     seen_ready_or_idle_since_transient_failure_ = false;
     failover_timer_.reset();
   }
-  // Notify the parent policy.
-  priority_policy_->HandleChildConnectivityStateChangeLocked(this);
+  // Call the LB policy's ChoosePriorityLocked() to choose a priority to
+  // use based on the updated state of this child.
+  //
+  // Note that if we're in the process of propagating an update from our
+  // parent to our children, we skip this, because we don't want to
+  // choose a new priority based on inconsistent state.  Instead, the
+  // policy will choose a new priority once the update has been seen by
+  // all children.
+  if (!priority_policy_->update_in_progress_) {
+    priority_policy_->ChoosePriorityLocked();
+  }
 }
 
 void PriorityLb::ChildPriority::MaybeDeactivateLocked() {
