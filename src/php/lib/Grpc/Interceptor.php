@@ -19,6 +19,8 @@
 
 namespace Grpc;
 
+use Grpc\Internal\InterceptorChannel;
+
 /**
  * Represents an interceptor that intercept RPC invocations before call starts.
  * There is one proposal related to the argument $deserialize under the review.
@@ -80,10 +82,10 @@ class Interceptor
     {
         if (is_array($interceptors)) {
             for ($i = count($interceptors) - 1; $i >= 0; $i--) {
-                $channel = new Internal\InterceptorChannel($channel, $interceptors[$i]);
+                $channel = new InterceptorChannel($channel, $interceptors[$i]);
             }
         } else {
-            $channel =  new Internal\InterceptorChannel($channel, $interceptors);
+            $channel =  new InterceptorChannel($channel, $interceptors);
         }
         return $channel;
     }

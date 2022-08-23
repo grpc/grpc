@@ -19,6 +19,8 @@
 
 namespace Grpc;
 
+use Grpc\Internal\InterceptorChannel;
+
 /**
  * Base class for generated client stubs. Stub methods are expected to call
  * _simpleRequest or _streamRequest and return the result.

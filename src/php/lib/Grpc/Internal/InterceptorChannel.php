@@ -19,18 +19,29 @@
 
 namespace Grpc\Internal;
 
+use Grpc\Channel;
+use Grpc\Interceptor;
+
 /**
- * This is a PRIVATE API and can change without notice.
+ * This is a PRIVATE API and can be changed without notice.
  */
-class InterceptorChannel extends \Grpc\Channel
+class InterceptorChannel extends Channel
 {
+  /**
+   * @var Channel|InterceptorChannel|null
+   */
     private $next = null;
+    /**
+     * @var Interceptor
+     */
     private $interceptor;
 
     /**
      * @param Channel|InterceptorChannel $channel An already created Channel
      * or InterceptorChannel object (optional)
      * @param Interceptor  $interceptor
+     *
+     * @throws \Exception
      */
     public function __construct($channel, $interceptor)
     {
@@ -44,31 +55,49 @@ class InterceptorChannel extends \Grpc\Channel
         $this->next = $channel;
     }
 
+    /**
+     * @return Channel|static
+     */
     public function getNext()
     {
         return $this->next;
     }
 
+    /**
+     * @return Interceptor
+     */
     public function getInterceptor()
     {
         return $this->interceptor;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function getTarget()
     {
         return $this->getNext()->getTarget();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function watchConnectivityState($new_state, $deadline)
     {
         return $this->getNext()->watchConnectivityState($new_state, $deadline);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function getConnectivityState($try_to_connect = false)
     {
         return $this->getNext()->getConnectivityState($try_to_connect);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function close()
     {
         return $this->getNext()->close();

@@ -29,6 +29,9 @@ abstract class AbstractCall
      * @var Call
      */
     protected $call;
+    /**
+     * @var callback|array&callable
+     */
     protected $deserialize;
     protected $metadata;
     protected $trailing_metadata;
@@ -39,8 +42,9 @@ abstract class AbstractCall
      * @param Channel  $channel     The channel to communicate on
      * @param string   $method      The method to call on the
      *                              remote server
-     * @param callback $deserialize A callback function to deserialize
-     *                              the response
+     * @param callback|array&callable $deserialize A callback function
+     * to deserialize the response. It MUST be an array&callable
+     * when the method {@see _deserializeResponse() } is not overridden.
      * @param array    $options     Call options (optional)
      */
     public function __construct(Channel $channel,
@@ -122,12 +126,12 @@ abstract class AbstractCall
      *
      * @param string $value The binary value to deserialize
      *
-     * @return mixed The deserialized value
+     * @return mixed|object|null The deserialized value
      */
     protected function _deserializeResponse($value)
     {
         if ($value === null) {
-            return;
+            return null;
         }
         list($className, $deserializeFunc) = $this->deserialize;
         $obj = new $className();
