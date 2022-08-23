@@ -495,13 +495,6 @@ void PriorityLb::ChoosePriorityLocked() {
     }
   }
   // Did not find any child in CONNECTING, delegate to last child.
-  const std::string& child_name = config_->priorities().back();
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
-    gpr_log(GPR_INFO,
-            "[priority_lb %p] no priority in CONNECTING, delegating to "
-            "lowest priority child",
-            this);
-  }
   SetCurrentPriorityLocked(config_->priorities().size() - 1,
                            /*deactivate_lower_priorities=*/false,
                            "no usable children");
