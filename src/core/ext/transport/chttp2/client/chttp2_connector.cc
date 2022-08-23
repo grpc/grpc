@@ -289,17 +289,20 @@ class Chttp2SecureClientChannelFactory : public ClientChannelFactory {
           "security connector already present in channel args.");
     }
     // Find the authority to use in the security connector.
-    std::string authority =
-        args.GetOwnedString(GRPC_ARG_DEFAULT_AUTHORITY).value();
+    absl::optional<std::string> authority =
+        args.GetOwnedString(GRPC_ARG_DEFAULT_AUTHORITY);
+    if (!authority.has_value()) {
+      return absl::InternalError("authority not present in channel args");
+    }
     // Create the security connector using the credentials and target name.
     RefCountedPtr<grpc_channel_security_connector>
         subchannel_security_connector =
             channel_credentials->create_security_connector(
-                /*call_creds=*/nullptr, authority.c_str(), &args);
+                /*call_creds=*/nullptr, authority->c_str(), &args);
     if (subchannel_security_connector == nullptr) {
       return absl::InternalError(absl::StrFormat(
           "Failed to create secure subchannel for secure name '%s'",
-          authority));
+          *authority));
     }
     return args.SetObject(std::move(subchannel_security_connector));
   }
