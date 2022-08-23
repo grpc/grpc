@@ -47,6 +47,9 @@ void TmpFile::RewriteFile(absl::string_view data) {
   GPR_ASSERT(!new_name.empty());
 #ifdef GPR_WINDOWS
   // Remove the old file.
+  // On Windows rename requires that the new name not exist, whereas
+  // on posix systems rename does an atomic replacement of the new
+  // name.
   GPR_ASSERT(remove(name_.c_str()) == 0);
 #endif
   // Rename the new file to the original name.
