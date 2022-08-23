@@ -308,7 +308,7 @@ class RingHash : public LoadBalancingPolicy {
     ~Picker() override {
       // Hop into WorkSerializer to unref the ring, since that may
       // trigger the unreffing of the underlying subchannels.
-      new RingUnreffer(std::move(parent_), std::move(ring_));
+      MakeOrphanable<RingUnreffer>(std::move(parent_), std::move(ring_));
     }
 
     PickResult Pick(PickArgs args) override;
