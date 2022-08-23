@@ -141,7 +141,7 @@ void EventEngineTimerTest::ScheduleCheckCB(
 
 TEST_F(EventEngineTimerTest, StressTestTimersNotCalledBeforeScheduled) {
   auto engine = this->NewEventEngine();
-  constexpr int thread_count = 100;
+  constexpr int thread_count = 10;
   constexpr int call_count_per_thread = 100;
   constexpr float timeout_min_seconds = 1;
   constexpr float timeout_max_seconds = 10;

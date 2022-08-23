@@ -12,15 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import dataclasses
+import datetime
 import enum
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Set
 
 from googleapiclient import discovery
 import googleapiclient.errors
-# TODO(sergiitk): replace with tenacity
-import retrying
 
+from framework.helpers import retryers
 from framework.infrastructure import gcp
 
 logger = logging.getLogger(__name__)
@@ -29,6 +29,7 @@ logger = logging.getLogger(__name__)
 class ComputeV1(gcp.api.GcpProjectApiResource):  # pylint: disable=too-many-public-methods
     # TODO(sergiitk): move someplace better
     _WAIT_FOR_BACKEND_SEC = 60 * 10
+    _WAIT_FOR_BACKEND_SLEEP_SEC = 4
     _WAIT_FOR_OPERATION_SEC = 60 * 10
 
     @dataclasses.dataclass(frozen=True)
@@ -289,33 +290,35 @@ class ComputeV1(gcp.api.GcpProjectApiResource):  # pylint: disable=too-many-publ
         self._delete_resource(self.api.globalForwardingRules(),
                               'forwardingRule', name)
 
-    @staticmethod
-    def _network_endpoint_group_not_ready(neg):
-        return not neg or neg.get('size', 0) == 0
-
-    def wait_for_network_endpoint_group(self, name, zone):
-
-        @retrying.retry(retry_on_result=self._network_endpoint_group_not_ready,
-                        stop_max_delay=60 * 1000,
-                        wait_fixed=2 * 1000)
-        def _wait_for_network_endpoint_group_ready():
-            try:
-                neg = self.get_network_endpoint_group(name, zone)
-                logger.debug(
-                    'Waiting for endpoints: NEG %s in zone %s, '
-                    'current count %s', neg['name'], zone, neg.get('size'))
-            except googleapiclient.errors.HttpError as error:
-                # noinspection PyProtectedMember
-                reason = error._get_reason()
-                logger.debug('Retrying NEG load, got %s, details %s',
-                             error.resp.status, reason)
-                raise
-            return neg
-
-        network_endpoint_group = _wait_for_network_endpoint_group_ready()
+    def wait_for_network_endpoint_group(self,
+                                        name: str,
+                                        zone: str,
+                                        *,
+                                        timeout_sec=_WAIT_FOR_BACKEND_SEC,
+                                        wait_sec=_WAIT_FOR_BACKEND_SLEEP_SEC):
+        retryer = retryers.constant_retryer(
+            wait_fixed=datetime.timedelta(seconds=wait_sec),
+            timeout=datetime.timedelta(seconds=timeout_sec),
+            check_result=lambda neg: neg and neg.get('size', 0) > 0)
+        network_endpoint_group = retryer(
+            self._retry_network_endpoint_group_ready, name, zone)
         # TODO(sergiitk): dataclass
         return self.ZonalGcpResource(network_endpoint_group['name'],
                                      network_endpoint_group['selfLink'], zone)
+
+    def _retry_network_endpoint_group_ready(self, name: str, zone: str):
+        try:
+            neg = self.get_network_endpoint_group(name, zone)
+            logger.debug(
+                'Waiting for endpoints: NEG %s in zone %s, '
+                'current count %s', neg['name'], zone, neg.get('size'))
+        except googleapiclient.errors.HttpError as error:
+            # noinspection PyProtectedMember
+            reason = error._get_reason()
+            logger.debug('Retrying NEG load, got %s, details %s',
+                         error.resp.status, reason)
+            raise
+        return neg
 
     def get_network_endpoint_group(self, name, zone):
         neg = self.api.networkEndpointGroups().get(project=self.project,
@@ -325,44 +328,43 @@ class ComputeV1(gcp.api.GcpProjectApiResource):  # pylint: disable=too-many-publ
         return neg
 
     def wait_for_backends_healthy_status(
-        self,
-        backend_service,
-        backends,
-        timeout_sec=_WAIT_FOR_BACKEND_SEC,
-        wait_sec=4,
-    ):
+            self,
+            backend_service: GcpResource,
+            backends: Set[ZonalGcpResource],
+            *,
+            timeout_sec: int = _WAIT_FOR_BACKEND_SEC,
+            wait_sec: int = _WAIT_FOR_BACKEND_SLEEP_SEC):
+        retryer = retryers.constant_retryer(
+            wait_fixed=datetime.timedelta(seconds=wait_sec),
+            timeout=datetime.timedelta(seconds=timeout_sec),
+            check_result=lambda result: result)
         pending = set(backends)
+        retryer(self._retry_backends_health, backend_service, pending)
 
-        @retrying.retry(retry_on_result=lambda result: not result,
-                        stop_max_delay=timeout_sec * 1000,
-                        wait_fixed=wait_sec * 1000)
-        def _retry_backends_health():
-            for backend in pending:
-                result = self.get_backend_service_backend_health(
-                    backend_service, backend)
+    def _retry_backends_health(self, backend_service: GcpResource,
+                               pending: Set[ZonalGcpResource]):
+        for backend in pending:
+            result = self.get_backend_service_backend_health(
+                backend_service, backend)
+            if 'healthStatus' not in result:
+                logger.debug('Waiting for instances: backend %s, zone %s',
+                             backend.name, backend.zone)
+                continue
 
-                if 'healthStatus' not in result:
-                    logger.debug('Waiting for instances: backend %s, zone %s',
-                                 backend.name, backend.zone)
-                    continue
+            backend_healthy = True
+            for instance in result['healthStatus']:
+                logger.debug('Backend %s in zone %s: instance %s:%s health: %s',
+                             backend.name, backend.zone, instance['ipAddress'],
+                             instance['port'], instance['healthState'])
+                if instance['healthState'] != 'HEALTHY':
+                    backend_healthy = False
 
-                backend_healthy = True
-                for instance in result['healthStatus']:
-                    logger.debug(
-                        'Backend %s in zone %s: instance %s:%s health: %s',
-                        backend.name, backend.zone, instance['ipAddress'],
-                        instance['port'], instance['healthState'])
-                    if instance['healthState'] != 'HEALTHY':
-                        backend_healthy = False
+            if backend_healthy:
+                logger.info('Backend %s in zone %s reported healthy',
+                            backend.name, backend.zone)
+                pending.remove(backend)
 
-                if backend_healthy:
-                    logger.info('Backend %s in zone %s reported healthy',
-                                backend.name, backend.zone)
-                    pending.remove(backend)
-
-            return not pending
-
-        _retry_backends_health()
+        return not pending
 
     def get_backend_service_backend_health(self, backend_service, backend):
         return self.api.backendServices().getHealth(
