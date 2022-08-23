@@ -16,4 +16,4 @@
 dir=$(dirname "${0}")
 cd "${dir}/../.."
 tools/bazel test `tools/bazel query "attr(tags, '\\bgrpc-fuzzer\\b', //test/...)"` \
-  -c dbg --config fuzzer_asan --test_output=errors
+  -c dbg --config fuzzer_asan --test_output=errors || true
