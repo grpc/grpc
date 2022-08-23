@@ -4701,7 +4701,6 @@ grpc_cc_library(
         "lb_policy_factory",
         "lb_policy_registry",
         "orphanable",
-        "ref_counted",
         "ref_counted_ptr",
         "server_address",
         "sockaddr_utils",
