@@ -18,13 +18,14 @@ import contextlib
 import datetime
 import logging
 import pathlib
-from typing import Optional
+from typing import List, Optional
 
 import mako.template
 import yaml
 
 import framework.helpers.datetime
 import framework.helpers.highlighter
+import framework.helpers.rand
 from framework.infrastructure import gcp
 from framework.infrastructure import k8s
 from framework.test_app.runners import base_runner
@@ -198,6 +199,12 @@ class KubernetesBaseRunner(base_runner.BaseRunner):
         return resource
 
     def _create_deployment(self, template, **kwargs) -> k8s.V1Deployment:
+        # Automatically apply random deployment_id to use in the matchLabels
+        # to prevent selecting pods in the same namespace belonging to
+        # a different deployment.
+        if 'deployment_id' not in kwargs:
+            kwargs['deployment_id'] = framework.helpers.rand.rand_string(
+                lowercase=True)
         deployment = self._create_from_template(template, **kwargs)
         if not isinstance(deployment, k8s.V1Deployment):
             raise _RunnerError('Expected V1Deployment to be created '
@@ -275,8 +282,9 @@ class KubernetesBaseRunner(base_runner.BaseRunner):
         logger.debug('Namespace %s deleted', self.k8s_namespace.name)
 
     def _wait_deployment_with_available_replicas(self, name, count=1, **kwargs):
-        logger.info('Waiting for deployment %s to have %s available replica(s)',
-                    name, count)
+        logger.info(
+            'Waiting for deployment %s to report %s '
+            'available replica(s)', name, count)
         self.k8s_namespace.wait_for_deployment_available_replicas(
             name, count, **kwargs)
         deployment = self.k8s_namespace.get_deployment(name)
@@ -284,12 +292,28 @@ class KubernetesBaseRunner(base_runner.BaseRunner):
                     deployment.metadata.name,
                     deployment.status.available_replicas)
 
-    def _wait_pod_started(self, name, **kwargs):
+    def _wait_deployment_pod_count(self,
+                                   deployment: k8s.V1Deployment,
+                                   count: int = 1,
+                                   **kwargs) -> List[str]:
+        logger.info('Waiting for deployment %s to initialize %s pod(s)',
+                    deployment.metadata.name, count)
+        self.k8s_namespace.wait_for_deployment_replica_count(
+            deployment, count, **kwargs)
+        pods = self.k8s_namespace.list_deployment_pods(deployment)
+        pod_names = [pod.metadata.name for pod in pods]
+        logger.info('Deployment %s initialized %i pod(s): %s',
+                    deployment.metadata.name, count, pod_names)
+        # Pods may not  be started yet, just return the names.
+        return pod_names
+
+    def _wait_pod_started(self, name, **kwargs) -> k8s.V1Pod:
         logger.info('Waiting for pod %s to start', name)
         self.k8s_namespace.wait_for_pod_started(name, **kwargs)
         pod = self.k8s_namespace.get_pod(name)
         logger.info('Pod %s ready, IP: %s', pod.metadata.name,
                     pod.status.pod_ip)
+        return pod
 
     def _wait_service_neg(self, name, service_port, **kwargs):
         logger.info('Waiting for NEG for service %s', name)

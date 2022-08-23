@@ -166,6 +166,7 @@ grpc_cc_test(
     name = "secure_endpoint_test",
     srcs = ["secure_endpoint_test.cc"],
     external_deps = ["gtest"],
+    flaky = True,
     language = "C++",
     deps = [
         "//:gpr",
@@ -353,6 +354,7 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:server1.pem",
     ],
     external_deps = ["gtest"],
+    flaky = True,
     language = "C++",
     deps = [
         "//:gpr",
@@ -404,6 +406,7 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:server1.pem",
     ],
     external_deps = ["gtest"],
+    flaky = True,
     language = "C++",
     deps = [
         "//:gpr",

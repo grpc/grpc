@@ -84,7 +84,8 @@ TEST_P(CdsTest, InvalidClusterStillExistsIfPreviouslyCached) {
   auto cluster = default_cluster_;
   cluster.set_type(Cluster::STATIC);
   balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state = WaitForCdsNack(DEBUG_LOCATION, StatusCode::OK);
+  const auto response_state =
+      WaitForCdsNack(DEBUG_LOCATION, RpcOptions(), StatusCode::OK);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::ContainsRegex(absl::StrCat(
@@ -477,7 +478,9 @@ TEST_P(EdsTest, SameBackendListedMultipleTimes) {
   EdsResourceArgs args({{"locality0", endpoints}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // We need to wait for the backend to come online.
-  WaitForAllBackends(DEBUG_LOCATION);
+  WaitForAllBackends(DEBUG_LOCATION, /*start_index=*/0, /*stop_index=*/0,
+                     /*check_status=*/nullptr, WaitForBackendOptions(),
+                     RpcOptions().set_timeout_ms(2000));
   // Send kNumRpcsPerAddress RPCs per server.
   const size_t kNumRpcsPerAddress = 10;
   CheckRpcSendOk(DEBUG_LOCATION, kNumRpcsPerAddress * endpoints.size());

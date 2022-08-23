@@ -64,6 +64,8 @@ class OutlierDetectionTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
     def is_supported(config: skips.TestConfig) -> bool:
         if config.client_lang in _Lang.CPP | _Lang.PYTHON:
             return config.version_gte('v1.48.x')
+        if config.client_lang == _Lang.JAVA:
+            return config.version_gte('v1.49.x')
         if config.client_lang == _Lang.NODE:
             return config.version_gte('v1.6.x')
         return False
@@ -115,7 +117,7 @@ class OutlierDetectionTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
                 rpc_types=rpc_types,
                 metadata=(
                     (RpcTypeUnaryCall, 'rpc-behavior',
-                     f'hostname={test_servers[0].pod_name} error-code-2'),))
+                     f'hostname={test_servers[0].hostname} error-code-2'),))
             self.assertRpcsEventuallyGoToGivenServers(test_client,
                                                       test_servers[1:])
 
