@@ -128,10 +128,9 @@ TEST_P(HistogramTest, IncHistogram) {
       threads.front().join();
       threads.pop();
     }
-    threads.emplace([test_values = std::move(p.second), run,
-                     cur_bucket = p.first]() mutable {
-      run(std::move(test_values), cur_bucket);
-    });
+    threads.emplace(
+        [test_values = std::move(p.second), run,
+         cur_bucket = p.first]() mutable { run(test_values, cur_bucket); });
   }
   while (!threads.empty()) {
     threads.front().join();
