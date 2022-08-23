@@ -29,7 +29,7 @@ grpc_fuzzer(
     ],
     deps = [
         "//:exec_ctx",
-        "//:gpr_base",
+        "//:gpr",
         "//:grpc",
         "//:uri_parser",
     ],
@@ -38,11 +38,14 @@ grpc_fuzzer(
 grpc_cc_test(
     name = "uri_parser_test",
     srcs = ["uri_parser_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/status",
+        "gtest",
+    ],
     language = "C++",
-    tags = ["nofixdeps"],
     deps = [
         "//:grpc",
-        "//test/core/util:grpc_test_util",
+        "//:uri_parser",
+        "//test/core/util:grpc_test_util_unsecure",
     ],
 )

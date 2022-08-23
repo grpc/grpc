@@ -202,18 +202,16 @@ void UrlExternalAccountCredentials::OnRetrieveSubjectTokenInternal(
   absl::string_view response_body(ctx_->response.body,
                                   ctx_->response.body_length);
   if (format_type_ == "json") {
-    grpc_error_handle error = GRPC_ERROR_NONE;
-    Json response_json = Json::Parse(response_body, &error);
-    if (!GRPC_ERROR_IS_NONE(error) ||
-        response_json.type() != Json::Type::OBJECT) {
+    auto response_json = Json::Parse(response_body);
+    if (!response_json.ok() || response_json->type() != Json::Type::OBJECT) {
       FinishRetrieveSubjectToken(
           "", GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                   "The format of response is not a valid json object."));
       return;
     }
     auto response_it =
-        response_json.object_value().find(format_subject_token_field_name_);
-    if (response_it == response_json.object_value().end()) {
+        response_json->object_value().find(format_subject_token_field_name_);
+    if (response_it == response_json->object_value().end()) {
       FinishRetrieveSubjectToken("", GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                                          "Subject token field not present."));
       return;

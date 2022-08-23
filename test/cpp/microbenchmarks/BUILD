@@ -57,6 +57,7 @@ grpc_cc_library(
     deps = [
         "//:grpc++_unsecure",
         "//src/proto/grpc/testing:echo_proto",
+        "//test/core/util:grpc_test_util_base",
         "//test/core/util:grpc_test_util_unsecure",
         "//test/cpp/util:test_config",
     ],
@@ -79,6 +80,7 @@ grpc_cc_library(
         "//:grpc++",
         "//src/proto/grpc/testing:echo_proto",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
         "//test/cpp/util:test_config",
     ],
 )
@@ -203,6 +205,7 @@ grpc_cc_test(
         "bm_fullstack_streaming_ping_pong.cc",
     ],
     args = grpc_benchmark_args(),
+    flaky = True,
     tags = [
         "no_mac",  # to emulate "excluded_poll_engines: poll"
         "no_windows",
@@ -248,6 +251,7 @@ grpc_cc_test(
         "bm_fullstack_unary_ping_pong.cc",
     ],
     args = grpc_benchmark_args(),
+    flaky = True,
     tags = [
         "no_mac",  # to emulate "excluded_poll_engines: poll"
         "no_windows",
@@ -300,7 +304,9 @@ grpc_cc_test(
         "no_mac",
         "no_windows",
     ],
-    deps = [":helpers"],
+    deps = [
+        ":helpers",
+    ],
 )
 
 grpc_cc_library(

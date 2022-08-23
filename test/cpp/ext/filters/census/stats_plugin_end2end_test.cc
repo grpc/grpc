@@ -29,6 +29,7 @@
 #include "opencensus/stats/testing/test_utils.h"
 #include "opencensus/tags/tag_map.h"
 #include "opencensus/tags/with_tag_map.h"
+#include "opencensus/trace/exporter/span_exporter.h"
 
 #include <grpc++/grpc++.h>
 #include <grpcpp/opencensus.h>
@@ -38,6 +39,17 @@
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
+
+namespace opencensus {
+namespace trace {
+namespace exporter {
+class SpanExporterTestPeer {
+ public:
+  static constexpr auto& ExportForTesting = SpanExporter::ExportForTesting;
+};
+}  // namespace exporter
+}  // namespace trace
+}  // namespace opencensus
 
 namespace grpc {
 namespace testing {
@@ -85,9 +97,58 @@ class EchoServer final : public TestServiceImpl {
   }
 };
 
+// A handler that records exported traces. Traces can later be retrieved and
+// inspected.
+class ExportedTracesRecorder
+    : public ::opencensus::trace::exporter::SpanExporter::Handler {
+ public:
+  ExportedTracesRecorder() : is_recording_(false) {}
+  void Export(const std::vector<::opencensus::trace::exporter::SpanData>& spans)
+      override {
+    absl::MutexLock lock(&mutex_);
+    if (is_recording_) {
+      for (auto const& span : spans) {
+        recorded_spans_.push_back(span);
+      }
+    }
+  }
+
+  void StartRecording() {
+    absl::MutexLock lock(&mutex_);
+    ASSERT_FALSE(is_recording_);
+    is_recording_ = true;
+  }
+
+  void StopRecording() {
+    absl::MutexLock lock(&mutex_);
+    ASSERT_TRUE(is_recording_);
+    is_recording_ = false;
+  }
+
+  std::vector<::opencensus::trace::exporter::SpanData> GetAndClearSpans() {
+    absl::MutexLock lock(&mutex_);
+    return std::move(recorded_spans_);
+  }
+
+ private:
+  // This mutex is necessary as the SpanExporter runs a loop on a separate
+  // thread which periodically exports spans.
+  absl::Mutex mutex_;
+  bool is_recording_ ABSL_GUARDED_BY(mutex_);
+  std::vector<::opencensus::trace::exporter::SpanData> recorded_spans_
+      ABSL_GUARDED_BY(mutex_);
+};
+
 class StatsPluginEnd2EndTest : public ::testing::Test {
  protected:
-  static void SetUpTestCase() { RegisterOpenCensusPlugin(); }
+  static void SetUpTestCase() {
+    RegisterOpenCensusPlugin();
+    // OpenCensus C++ has no API to unregister a previously-registered handler,
+    // therefore we register this handler once, and enable/disable recording in
+    // the individual tests.
+    ::opencensus::trace::exporter::SpanExporter::RegisterHandler(
+        absl::WrapUnique(traces_recorder_));
+  }
 
   void SetUp() override {
     // Set up a synchronous server on a different thread to avoid the asynch
@@ -128,7 +189,11 @@ class StatsPluginEnd2EndTest : public ::testing::Test {
   std::thread server_thread_;
 
   std::unique_ptr<EchoTestService::Stub> stub_;
+  static ExportedTracesRecorder* traces_recorder_;
 };
+
+ExportedTracesRecorder* StatsPluginEnd2EndTest::traces_recorder_ =
+    new ExportedTracesRecorder();
 
 TEST_F(StatsPluginEnd2EndTest, ErrorCount) {
   const auto client_method_descriptor =
@@ -565,7 +630,60 @@ TEST_F(StatsPluginEnd2EndTest, TestApplicationCensusContextFlows) {
   EXPECT_TRUE(status.ok());
 }
 
+TEST_F(StatsPluginEnd2EndTest, TestAllSpansAreExported) {
+  {
+    // Client spans are ended when the ClientContext's destructor is invoked.
+    auto channel = CreateChannel(server_address_, InsecureChannelCredentials());
+    ResetStub(channel);
+    EchoRequest request;
+    request.set_message("foo");
+    EchoResponse response;
+
+    grpc::ClientContext context;
+    ::opencensus::trace::AlwaysSampler always_sampler;
+    ::opencensus::trace::StartSpanOptions options;
+    options.sampler = &always_sampler;
+    auto sampling_span =
+        ::opencensus::trace::Span::StartSpan("sampling", nullptr, options);
+    grpc::CensusContext app_census_context("root", &sampling_span,
+                                           ::opencensus::tags::TagMap{});
+    context.set_census_context(
+        reinterpret_cast<census_context*>(&app_census_context));
+    context.AddMetadata(kExpectedTraceIdKey,
+                        app_census_context.Span().context().trace_id().ToHex());
+    traces_recorder_->StartRecording();
+    grpc::Status status = stub_->Echo(&context, request, &response);
+    EXPECT_TRUE(status.ok());
+  }
+  absl::SleepFor(absl::Milliseconds(500));
+  ::opencensus::trace::exporter::SpanExporterTestPeer::ExportForTesting();
+  traces_recorder_->StopRecording();
+  auto recorded_spans = traces_recorder_->GetAndClearSpans();
+  auto GetSpanByName = [&recorded_spans](absl::string_view name) {
+    return std::find_if(
+        recorded_spans.begin(), recorded_spans.end(),
+        [name](auto const& span_data) { return span_data.name() == name; });
+  };
+  // We never ended the two spans created in the scope above, so we don't
+  // expect them to be exported.
+  ASSERT_EQ(3, recorded_spans.size());
+  auto sent_span_data =
+      GetSpanByName(absl::StrCat("Sent.", client_method_name_));
+  ASSERT_NE(sent_span_data, recorded_spans.end());
+  auto attempt_span_data =
+      GetSpanByName(absl::StrCat("Attempt.", client_method_name_));
+  ASSERT_NE(attempt_span_data, recorded_spans.end());
+  EXPECT_EQ(sent_span_data->context().span_id(),
+            attempt_span_data->parent_span_id());
+  auto recv_span_data =
+      GetSpanByName(absl::StrCat("Recv.", server_method_name_));
+  ASSERT_NE(recv_span_data, recorded_spans.end());
+  EXPECT_EQ(attempt_span_data->context().span_id(),
+            recv_span_data->parent_span_id());
+}
+
 }  // namespace
+
 }  // namespace testing
 }  // namespace grpc
 

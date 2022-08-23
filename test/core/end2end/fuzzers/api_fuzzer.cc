@@ -29,8 +29,6 @@
 #include <utility>
 #include <vector>
 
-#include <google/protobuf/repeated_ptr_field.h>
-
 #include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -53,7 +51,7 @@
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channelz.h"
-#include "src/core/lib/event_engine/event_engine_factory.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/time.h"
@@ -80,9 +78,10 @@
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/util/passthru_endpoint.h"
 
+// IWYU pragma: no_include <google/protobuf/repeated_ptr_field.h>
+
 // Applicable when simulating channel actions. Prevents overflows.
-static constexpr uint64_t kMaxWaitMs =
-    31536000000;  // 1 year (24 * 365 * 3600 * 1000)
+static constexpr uint64_t kMaxWaitMs = grpc_core::Duration::Hours(1).millis();
 // Applicable when simulating channel actions. Prevents overflows.
 static constexpr uint64_t kMaxAddNReadableBytes = (2 * 1024 * 1024);  // 2GB
 // Applicable when simulating channel actions. Prevents overflows.

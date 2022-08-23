@@ -32,22 +32,20 @@
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
 #include "absl/types/optional.h"
+#include "upb/arena.h"
 
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/status.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/xds/upb_utils.h"
 #include "src/core/ext/xds/xds_api.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_client_stats.h"
 #include "src/core/lib/backoff/backoff.h"
-#include "src/core/lib/event_engine/event_engine_factory.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 #define GRPC_XDS_INITIAL_CONNECT_BACKOFF_SECONDS 1
@@ -151,8 +149,7 @@ class XdsClient::ChannelState::AdsCallState
     absl::Status ProcessAdsResponseFields(AdsResponseFields fields) override
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
 
-    void ParseResource(const XdsEncodingContext& context, size_t idx,
-                       absl::string_view type_url,
+    void ParseResource(upb_Arena* arena, size_t idx, absl::string_view type_url,
                        absl::string_view serialized_resource) override
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
 
@@ -279,11 +276,9 @@ class XdsClient::ChannelState::AdsCallState
   };
 
   struct ResourceTypeState {
-    ~ResourceTypeState() { GRPC_ERROR_UNREF(error); }
-
-    // Nonce and error for this resource type.
+    // Nonce and status for this resource type.
     std::string nonce;
-    grpc_error_handle error = GRPC_ERROR_NONE;
+    absl::Status status;
 
     // Subscribed resources of this type.
     std::map<std::string /*authority*/,
@@ -693,7 +688,7 @@ void UpdateResourceMetadataNacked(const std::string& version,
 }  // namespace
 
 void XdsClient::ChannelState::AdsCallState::AdsResponseParser::ParseResource(
-    const XdsEncodingContext& context, size_t idx, absl::string_view type_url,
+    upb_Arena* arena, size_t idx, absl::string_view type_url,
     absl::string_view serialized_resource) {
   // Check the type_url of the resource.
   bool is_v2 = false;
@@ -704,6 +699,9 @@ void XdsClient::ChannelState::AdsCallState::AdsResponseParser::ParseResource(
     return;
   }
   // Parse the resource.
+  XdsResourceType::DecodeContext context = {
+      xds_client(), ads_call_state_->chand()->server_, &grpc_xds_client_trace,
+      xds_client()->symtab_.ptr(), arena};
   absl::StatusOr<XdsResourceType::DecodeResult> result =
       result_.type->Decode(context, serialized_resource, is_v2);
   if (!result.ok()) {
@@ -886,8 +884,7 @@ void XdsClient::ChannelState::AdsCallState::SendMessageLocked(
       chand()->server_,
       chand()->server_.ShouldUseV3() ? type->type_url() : type->v2_type_url(),
       chand()->resource_type_version_map_[type], state.nonce,
-      ResourceNamesForRequest(type), GRPC_ERROR_REF(state.error),
-      !sent_initial_message_);
+      ResourceNamesForRequest(type), state.status, !sent_initial_message_);
   sent_initial_message_ = true;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO,
@@ -896,10 +893,9 @@ void XdsClient::ChannelState::AdsCallState::SendMessageLocked(
             xds_client(), chand()->server_.server_uri.c_str(),
             std::string(type->type_url()).c_str(),
             chand()->resource_type_version_map_[type].c_str(),
-            state.nonce.c_str(), grpc_error_std_string(state.error).c_str());
+            state.nonce.c_str(), state.status.ToString().c_str());
   }
-  GRPC_ERROR_UNREF(state.error);
-  state.error = GRPC_ERROR_NONE;
+  state.status = absl::OkStatus();
   call_->SendMessage(std::move(serialized_message));
   send_message_pending_ = true;
 }
@@ -977,18 +973,16 @@ void XdsClient::ChannelState::AdsCallState::OnRecvMessage(
       state.nonce = result.nonce;
       // If we got an error, set state.error so that we'll NACK the update.
       if (!result.errors.empty()) {
-        std::string error = absl::StrJoin(result.errors, "; ");
+        state.status = absl::UnavailableError(
+            absl::StrCat("xDS response validation errors: [",
+                         absl::StrJoin(result.errors, "; "), "]"));
         gpr_log(GPR_ERROR,
                 "[xds_client %p] xds server %s: ADS response invalid for "
                 "resource "
-                "type %s version %s, will NACK: nonce=%s error=%s",
+                "type %s version %s, will NACK: nonce=%s status=%s",
                 xds_client(), chand()->server_.server_uri.c_str(),
                 result.type_url.c_str(), result.version.c_str(),
-                state.nonce.c_str(), error.c_str());
-        GRPC_ERROR_UNREF(state.error);
-        state.error = grpc_error_set_int(
-            GRPC_ERROR_CREATE_FROM_CPP_STRING(error),
-            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
+                state.nonce.c_str(), state.status.ToString().c_str());
       }
       // Delete resources not seen in update if needed.
       if (result.type->AllResourcesRequiredInSotW()) {
@@ -1293,15 +1287,14 @@ void XdsClient::ChannelState::LrsCallState::OnRecvMessage(
   bool send_all_clusters = false;
   std::set<std::string> new_cluster_names;
   Duration new_load_reporting_interval;
-  grpc_error_handle parse_error = xds_client()->api_.ParseLrsResponse(
+  absl::Status status = xds_client()->api_.ParseLrsResponse(
       payload, &send_all_clusters, &new_cluster_names,
       &new_load_reporting_interval);
-  if (!GRPC_ERROR_IS_NONE(parse_error)) {
+  if (!status.ok()) {
     gpr_log(GPR_ERROR,
             "[xds_client %p] xds server %s: LRS response parsing failed: %s",
             xds_client(), chand()->server_.server_uri.c_str(),
-            grpc_error_std_string(parse_error).c_str());
-    GRPC_ERROR_UNREF(parse_error);
+            status.ToString().c_str());
     return;
   }
   seen_response_ = true;
@@ -1392,10 +1385,7 @@ XdsClient::XdsClient(std::unique_ptr<XdsBootstrap> bootstrap,
       transport_factory_(std::move(transport_factory)),
       request_timeout_(resource_request_timeout),
       xds_federation_enabled_(XdsFederationEnabled()),
-      certificate_provider_store_(MakeOrphanable<CertificateProviderStore>(
-          bootstrap_->certificate_providers())),
-      api_(this, &grpc_xds_client_trace, bootstrap_->node(),
-           &bootstrap_->certificate_providers(), &symtab_) {
+      api_(this, &grpc_xds_client_trace, bootstrap_->node(), &symtab_) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO, "[xds_client %p] creating xds client", this);
   }

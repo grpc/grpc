@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC Core"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 26.0.0
+PROJECT_NUMBER         = 27.0.0
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -901,8 +901,6 @@ src/core/ext/filters/client_channel/health/health_check_client.cc \
 src/core/ext/filters/client_channel/health/health_check_client.h \
 src/core/ext/filters/client_channel/http_proxy.cc \
 src/core/ext/filters/client_channel/http_proxy.h \
-src/core/ext/filters/client_channel/lb_policy.cc \
-src/core/ext/filters/client_channel/lb_policy.h \
 src/core/ext/filters/client_channel/lb_policy/address_filtering.cc \
 src/core/ext/filters/client_channel/lb_policy/address_filtering.h \
 src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h \
@@ -936,9 +934,6 @@ src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h \
 src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_impl.cc \
 src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc \
 src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_resolver.cc \
-src/core/ext/filters/client_channel/lb_policy_factory.h \
-src/core/ext/filters/client_channel/lb_policy_registry.cc \
-src/core/ext/filters/client_channel/lb_policy_registry.h \
 src/core/ext/filters/client_channel/local_subchannel_pool.cc \
 src/core/ext/filters/client_channel/local_subchannel_pool.h \
 src/core/ext/filters/client_channel/proxy_mapper.h \
@@ -979,7 +974,6 @@ src/core/ext/filters/client_channel/retry_throttle.h \
 src/core/ext/filters/client_channel/service_config_channel_arg_filter.cc \
 src/core/ext/filters/client_channel/subchannel.cc \
 src/core/ext/filters/client_channel/subchannel.h \
-src/core/ext/filters/client_channel/subchannel_interface.h \
 src/core/ext/filters/client_channel/subchannel_interface_internal.h \
 src/core/ext/filters/client_channel/subchannel_pool_interface.cc \
 src/core/ext/filters/client_channel/subchannel_pool_interface.h \
@@ -1739,28 +1733,43 @@ src/core/lib/debug/trace.cc \
 src/core/lib/debug/trace.h \
 src/core/lib/event_engine/channel_args_endpoint_config.cc \
 src/core/lib/event_engine/channel_args_endpoint_config.h \
+src/core/lib/event_engine/default_event_engine.cc \
+src/core/lib/event_engine/default_event_engine.h \
 src/core/lib/event_engine/default_event_engine_factory.cc \
 src/core/lib/event_engine/default_event_engine_factory.h \
-src/core/lib/event_engine/event_engine.cc \
-src/core/lib/event_engine/event_engine_factory.h \
+src/core/lib/event_engine/executor/executor.h \
+src/core/lib/event_engine/executor/threaded_executor.cc \
+src/core/lib/event_engine/executor/threaded_executor.h \
+src/core/lib/event_engine/forkable.cc \
+src/core/lib/event_engine/forkable.h \
 src/core/lib/event_engine/handle_containers.h \
-src/core/lib/event_engine/iomgr_engine/iomgr_engine.cc \
-src/core/lib/event_engine/iomgr_engine/iomgr_engine.h \
-src/core/lib/event_engine/iomgr_engine/thread_pool.cc \
-src/core/lib/event_engine/iomgr_engine/thread_pool.h \
-src/core/lib/event_engine/iomgr_engine/timer.cc \
-src/core/lib/event_engine/iomgr_engine/timer.h \
-src/core/lib/event_engine/iomgr_engine/timer_heap.cc \
-src/core/lib/event_engine/iomgr_engine/timer_heap.h \
-src/core/lib/event_engine/iomgr_engine/timer_manager.cc \
-src/core/lib/event_engine/iomgr_engine/timer_manager.h \
 src/core/lib/event_engine/memory_allocator.cc \
+src/core/lib/event_engine/poller.h \
+src/core/lib/event_engine/posix_engine/posix_engine.cc \
+src/core/lib/event_engine/posix_engine/posix_engine.h \
+src/core/lib/event_engine/posix_engine/timer.cc \
+src/core/lib/event_engine/posix_engine/timer.h \
+src/core/lib/event_engine/posix_engine/timer_heap.cc \
+src/core/lib/event_engine/posix_engine/timer_heap.h \
+src/core/lib/event_engine/posix_engine/timer_manager.cc \
+src/core/lib/event_engine/posix_engine/timer_manager.h \
 src/core/lib/event_engine/promise.h \
 src/core/lib/event_engine/resolved_address.cc \
 src/core/lib/event_engine/slice.cc \
 src/core/lib/event_engine/slice_buffer.cc \
+src/core/lib/event_engine/socket_notifier.h \
+src/core/lib/event_engine/thread_pool.cc \
+src/core/lib/event_engine/thread_pool.h \
 src/core/lib/event_engine/trace.cc \
 src/core/lib/event_engine/trace.h \
+src/core/lib/event_engine/utils.cc \
+src/core/lib/event_engine/utils.h \
+src/core/lib/event_engine/windows/iocp.cc \
+src/core/lib/event_engine/windows/iocp.h \
+src/core/lib/event_engine/windows/win_socket.cc \
+src/core/lib/event_engine/windows/win_socket.h \
+src/core/lib/event_engine/windows/windows_engine.cc \
+src/core/lib/event_engine/windows/windows_engine.h \
 src/core/lib/gpr/README.md \
 src/core/lib/gpr/alloc.cc \
 src/core/lib/gpr/alloc.h \
@@ -1827,6 +1836,7 @@ src/core/lib/gprpp/match.h \
 src/core/lib/gprpp/memory.h \
 src/core/lib/gprpp/mpscq.cc \
 src/core/lib/gprpp/mpscq.h \
+src/core/lib/gprpp/no_destruct.h \
 src/core/lib/gprpp/orphanable.h \
 src/core/lib/gprpp/overload.h \
 src/core/lib/gprpp/ref_counted.h \
@@ -1994,10 +2004,19 @@ src/core/lib/iomgr/wakeup_fd_pipe.h \
 src/core/lib/iomgr/wakeup_fd_posix.cc \
 src/core/lib/iomgr/wakeup_fd_posix.h \
 src/core/lib/json/json.h \
+src/core/lib/json/json_args.h \
+src/core/lib/json/json_object_loader.cc \
+src/core/lib/json/json_object_loader.h \
 src/core/lib/json/json_reader.cc \
 src/core/lib/json/json_util.cc \
 src/core/lib/json/json_util.h \
 src/core/lib/json/json_writer.cc \
+src/core/lib/load_balancing/lb_policy.cc \
+src/core/lib/load_balancing/lb_policy.h \
+src/core/lib/load_balancing/lb_policy_factory.h \
+src/core/lib/load_balancing/lb_policy_registry.cc \
+src/core/lib/load_balancing/lb_policy_registry.h \
+src/core/lib/load_balancing/subchannel_interface.h \
 src/core/lib/matchers/matchers.cc \
 src/core/lib/matchers/matchers.h \
 src/core/lib/profiling/basic_timers.cc \
@@ -2012,7 +2031,6 @@ src/core/lib/promise/detail/basic_seq.h \
 src/core/lib/promise/detail/promise_factory.h \
 src/core/lib/promise/detail/promise_like.h \
 src/core/lib/promise/detail/status.h \
-src/core/lib/promise/detail/switch.h \
 src/core/lib/promise/exec_ctx_wakeup_scheduler.h \
 src/core/lib/promise/intra_activity_waiter.h \
 src/core/lib/promise/latch.h \
