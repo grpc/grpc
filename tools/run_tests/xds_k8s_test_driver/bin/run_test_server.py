@@ -34,6 +34,9 @@ _SECURE = flags.DEFINE_bool("secure",
 _REUSE_NAMESPACE = flags.DEFINE_bool("reuse_namespace",
                                      default=True,
                                      help="Use existing namespace if exists")
+_REUSE_SERVICE = flags.DEFINE_bool("reuse_service",
+                                   default=False,
+                                   help="Use existing service if exists")
 _CLEANUP_NAMESPACE = flags.DEFINE_bool(
     "cleanup_namespace",
     default=False,
@@ -71,7 +74,8 @@ def main(argv):
         gcp_api_manager=gcp.api.GcpApiManager(),
         gcp_service_account=gcp_service_account,
         network=xds_flags.NETWORK.value,
-        reuse_namespace=_REUSE_NAMESPACE.value)
+        reuse_namespace=_REUSE_NAMESPACE.value,
+        reuse_service=_REUSE_SERVICE.value)
 
     if _SECURE.value:
         runner_kwargs.update(

@@ -7,7 +7,7 @@ Work in progress. Internal APIs may and will change. Please refrain from making
 changes to this codebase at the moment.
 
 ### Stabilization roadmap 
-- [ ] Replace retrying with tenacity
+- [x] Replace retrying with tenacity
 - [x] Generate namespace for each test to prevent resource name conflicts and
       allow running tests in parallel
 - [x] Security: run server and client in separate namespaces

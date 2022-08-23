@@ -23,6 +23,8 @@
 
 #include <gtest/gtest.h>
 
+#include "absl/synchronization/notification.h"
+
 #include <grpc/support/log.h>
 #include <grpcpp/alarm.h>
 #include <grpcpp/security/credentials.h>
@@ -570,6 +572,7 @@ CallbackTestServiceImpl::BidiStream(CallbackServerContext* context) {
       delete this;
     }
     void OnCancel() override {
+      cancel_notification_.Notify();
       EXPECT_TRUE(setup_done_);
       EXPECT_TRUE(ctx_->IsCancelled());
       FinishOnce(Status::CANCELLED);
@@ -589,6 +592,7 @@ CallbackTestServiceImpl::BidiStream(CallbackServerContext* context) {
           }
         }
       } else if (client_try_cancel_) {
+        cancel_notification_.WaitForNotificationWithTimeout(absl::Seconds(10));
         EXPECT_TRUE(ctx_->IsCancelled());
       }
 
@@ -631,6 +635,7 @@ CallbackTestServiceImpl::BidiStream(CallbackServerContext* context) {
     bool setup_done_{false};
     std::thread finish_thread_;
     bool client_try_cancel_ = false;
+    absl::Notification cancel_notification_;
   };
 
   return new Reactor(context);
