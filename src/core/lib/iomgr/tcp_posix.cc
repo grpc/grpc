@@ -481,7 +481,7 @@ struct grpc_tcp {
   /* Used by the endpoint read function to distinguish the very first read call
    * from the rest */
   bool is_first_read;
-  bool has_posted_reclaimer;
+  bool has_posted_reclaimer ABSL_GUARDED_BY(read_mu) = false;
   double target_length;
   double bytes_read_this_round;
   grpc_core::RefCount refcount;
@@ -791,8 +791,8 @@ static void perform_reclamation(grpc_tcp* tcp)
   if (tcp->incoming_buffer != nullptr) {
     grpc_slice_buffer_reset_and_unref_internal(tcp->incoming_buffer);
   }
-  tcp->read_mu.Unlock();
   tcp->has_posted_reclaimer = false;
+  tcp->read_mu.Unlock();
 }
 
 static void maybe_post_reclaimer(grpc_tcp* tcp)
@@ -1964,7 +1964,6 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   tcp->bytes_read_this_round = 0;
   /* Will be set to false by the very first endpoint read function */
   tcp->is_first_read = true;
-  tcp->has_posted_reclaimer = false;
   tcp->bytes_counter = -1;
   tcp->socket_ts_enabled = false;
   tcp->ts_capable = true;
