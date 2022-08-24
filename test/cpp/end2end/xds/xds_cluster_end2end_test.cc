@@ -259,13 +259,12 @@ TEST_P(CdsTest, CircuitBreaking) {
   }
   // Sending a RPC now should fail, the error message should tell us
   // we hit the max concurrent requests limit and got dropped.
-  Status status = SendRpc();
-  EXPECT_FALSE(status.ok());
-  EXPECT_EQ(status.error_message(), "circuit breaker drop");
-  // Cancel one RPC to allow another one through
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                      "circuit breaker drop");
+  // Cancel one RPC to allow another one through.
   rpcs[0].CancelRpc();
-  status = SendRpc();
-  EXPECT_TRUE(status.ok());
+  CheckRpcSendOk(DEBUG_LOCATION);
+  // Clean up.
   for (size_t i = 1; i < kMaxConcurrentRequests; ++i) {
     rpcs[i].CancelRpc();
   }
@@ -300,13 +299,12 @@ TEST_P(CdsTest, CircuitBreakingMultipleChannelsShareCallCounter) {
   }
   // Sending a RPC now should fail, the error message should tell us
   // we hit the max concurrent requests limit and got dropped.
-  Status status = SendRpc();
-  EXPECT_FALSE(status.ok());
-  EXPECT_EQ(status.error_message(), "circuit breaker drop");
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                      "circuit breaker drop");
   // Cancel one RPC to allow another one through
   rpcs[0].CancelRpc();
-  status = SendRpc();
-  EXPECT_TRUE(status.ok());
+  CheckRpcSendOk(DEBUG_LOCATION);
+  // Clean up.
   for (size_t i = 1; i < kMaxConcurrentRequests; ++i) {
     rpcs[i].CancelRpc();
   }
@@ -550,11 +548,15 @@ TEST_P(EdsTest, AllServersUnreachableFailFast) {
   }
   EdsResourceArgs args({{"locality0", std::move(endpoints)}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  const Status status = SendRpc(RpcOptions().set_timeout_ms(kRpcTimeoutMs));
   // The error shouldn't be DEADLINE_EXCEEDED because timeout is set to 5
   // seconds, and we should disocver in that time that the target backend is
   // down.
-  EXPECT_EQ(StatusCode::UNAVAILABLE, status.error_code());
+  CheckRpcSendFailure(
+      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+      "connections to all backends failing; last error: "
+      "(UNKNOWN: Failed to connect to remote host: Connection refused|"
+      "UNAVAILABLE: Failed to connect to remote host: FD shutdown)",
+      RpcOptions().set_timeout_ms(kRpcTimeoutMs));
 }
 
 // Tests that RPCs fail when the backends are down, and will succeed again
