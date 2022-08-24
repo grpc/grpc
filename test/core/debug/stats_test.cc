@@ -63,9 +63,10 @@ TEST(StatsTest, IncSpecificCounter) {
   std::unique_ptr<Snapshot> snapshot(new Snapshot);
 
   grpc_core::ExecCtx exec_ctx;
-  GRPC_STATS_INC_SYSCALL_POLL();
+  GRPC_STATS_INC_CLIENT_CALLS_CREATED();
 
-  EXPECT_EQ(snapshot->delta().counters[GRPC_STATS_COUNTER_SYSCALL_POLL], 1);
+  EXPECT_EQ(snapshot->delta().counters[GRPC_STATS_COUNTER_CLIENT_CALLS_CREATED],
+            1);
 }
 
 static int FindExpectedBucket(int i, int j) {

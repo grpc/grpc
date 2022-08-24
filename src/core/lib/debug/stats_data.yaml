@@ -30,29 +30,6 @@
   doc: Number of client subchannels created
 - counter: server_channels_created
   doc: Number of server channels created
-# polling
-- counter: syscall_poll
-  doc: Number of polling syscalls (epoll_wait, poll, etc) made by this process
-- histogram: poll_events_returned
-  max: 1024
-  buckets: 128
-  doc: How many events are called for each syscall_poll
-- counter: pollset_kick
-  doc: How many polling wakeups were performed by the process
-- counter: pollset_kicked_without_poller
-  doc: How many times was a polling wakeup requested without an active poller
-- counter: pollset_kicked_again
-  doc: How many times was the same polling worker awoken repeatedly before
-       waking up
-- counter: pollset_kick_wakeup_fd
-  doc: How many times was an eventfd used as the wakeup vector for a polling
-       wakeup
-- counter: pollset_kick_wakeup_cv
-  doc: How many times was a condition variable used as the wakeup vector for a
-       polling wakeup
-- counter: pollset_kick_own_thread
-  doc: How many times could a polling wakeup be satisfied by keeping the waking
-       thread awake?
 # stats system
 - counter: histogram_slow_lookups
   doc: Number of times histogram increments went through the slow
