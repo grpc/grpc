@@ -237,7 +237,7 @@ TimerManager::~TimerManager() {
     grpc_core::MutexLock lock(&mu_);
     collector.Collect(std::move(completed_threads_));
     if (thread_count_ == 0) break;
-    cv_.Wait(&mu_);
+    cv_.WaitWithTimeout(&mu_, absl::Milliseconds(50));
   }
 }
 
