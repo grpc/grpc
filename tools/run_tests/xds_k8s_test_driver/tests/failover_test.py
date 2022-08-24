@@ -60,7 +60,9 @@ class FailoverTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
             xds_server_uri=self.xds_server_uri,
             network=self.network,
             debug_use_port_forwarding=self.debug_use_port_forwarding,
-            reuse_namespace=True)
+            # This runner's namespace created in the secondary cluster,
+            # so it's not reused and must be cleaned up.
+            reuse_namespace=False)
 
     def cleanup(self):
         super().cleanup()
