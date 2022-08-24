@@ -59,8 +59,7 @@ class NativeDNSResolver : public DNSResolver {
   bool Cancel(TaskHandle handle) override;
 
  private:
-  NativeDNSResolver();
-  std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine_;
+  NativeDNSResolver() = default;
 };
 
 }  // namespace grpc_core

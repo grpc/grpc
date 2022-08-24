@@ -78,9 +78,6 @@ class NativeDNSRequest {
 
 }  // namespace
 
-NativeDNSResolver::NativeDNSResolver()
-    : engine_(grpc_event_engine::experimental::GetDefaultEventEngine()) {}
-
 NativeDNSResolver* NativeDNSResolver::GetOrCreate() {
   static NativeDNSResolver* instance = new NativeDNSResolver();
   return instance;
@@ -184,7 +181,7 @@ DNSResolver::TaskHandle NativeDNSResolver::LookupSRV(
     absl::string_view /* name */, Duration /* timeout */,
     grpc_pollset_set* /* interested_parties */,
     absl::string_view /* name_server */) {
-  engine_->Run([on_resolved] {
+  grpc_event_engine::experimental::GetDefaultEventEngine()->Run([on_resolved] {
     on_resolved(absl::UnimplementedError(
         "The Native resolver does not support looking up SRV records"));
   });
@@ -197,7 +194,7 @@ DNSResolver::TaskHandle NativeDNSResolver::LookupTXT(
     grpc_pollset_set* /* interested_parties */,
     absl::string_view /* name_server */) {
   // Not supported
-  engine_->Run([on_resolved] {
+  grpc_event_engine::experimental::GetDefaultEventEngine()->Run([on_resolved] {
     on_resolved(absl::UnimplementedError(
         "The Native resolver does not support looking up TXT records"));
   });
