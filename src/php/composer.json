@@ -6,6 +6,7 @@
   "require": {
     "php": ">=7.0.0",
     "ext-grpc": "*",
+    "ext-json": "*",
     "google/protobuf": "^v3.3.0"
   },
   "require-dev": {
