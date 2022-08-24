@@ -649,6 +649,12 @@ void OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
         }
       } else if (!config_->CountingEnabled()) {
         // If counting is not enabled, reset state.
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
+          gpr_log(GPR_INFO,
+                  "[outlier_detection_lb %p] counting disabled; disabling "
+                  "ejection for %s (%p)",
+                  this, address_key.c_str(), subchannel_state.get());
+        }
         subchannel_state->DisableEjection();
       }
       current_addresses.emplace(address_key);
