@@ -183,7 +183,12 @@ class KubernetesServerRunner(k8s_base_runner.KubernetesBaseRunner):
 
         pod_names = self._wait_deployment_pod_count(self.deployment,
                                                     replica_count)
-        pods = [self._wait_pod_started(pod_name) for pod_name in pod_names]
+        pods = []
+        for pod_name in pod_names:
+            pod = self._wait_pod_started(pod_name)
+            pods.append(pod)
+            if self.should_collect_logs:
+                self._start_logging_pod(pod)
 
         # Verify the deployment reports all pods started as well.
         self._wait_deployment_with_available_replicas(self.deployment_name,

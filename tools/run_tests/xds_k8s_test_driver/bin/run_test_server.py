@@ -95,6 +95,9 @@ def main(argv):
             test_port=xds_flags.SERVER_PORT.value,
             maintenance_port=xds_flags.SERVER_MAINTENANCE_PORT.value,
             secure_mode=_SECURE.value)
+        if server_runner.should_collect_logs:
+            logger.info('Waiting for log collection...')
+            server_runner.log_stop_event.wait(timeout=25)
 
     elif _CMD.value == 'cleanup':
         logger.info('Cleanup server')
