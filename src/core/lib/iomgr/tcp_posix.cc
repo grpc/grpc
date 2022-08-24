@@ -481,7 +481,7 @@ struct grpc_tcp {
   /* Used by the endpoint read function to distinguish the very first read call
    * from the rest */
   bool is_first_read;
-  bool has_posted_reclaimer;
+  bool has_posted_reclaimer ABSL_GUARDED_BY(read_mu) = false;
   double target_length;
   double bytes_read_this_round;
   grpc_core::RefCount refcount;
@@ -792,8 +792,8 @@ static void perform_reclamation(grpc_tcp* tcp)
   if (tcp->incoming_buffer != nullptr) {
     grpc_slice_buffer_reset_and_unref_internal(tcp->incoming_buffer);
   }
-  tcp->read_mu.Unlock();
   tcp->has_posted_reclaimer = false;
+  tcp->read_mu.Unlock();
 }
 
 static void maybe_post_reclaimer(grpc_tcp* tcp)
@@ -828,17 +828,17 @@ static void tcp_trace_read(grpc_tcp* tcp, grpc_error_handle error)
   }
 }
 
-static void update_rcvlowat(grpc_tcp* tcp) {
+static void update_rcvlowat(grpc_tcp* tcp)
+    ABSL_EXCLUSIVE_LOCKS_REQUIRED(tcp->read_mu) {
   // TODO(ctiller): check supported & enabled, allow some adjustments instead of
   // hardcoding things.
 
   static constexpr int kRcvLowatMax = 16 * 1024 * 1024;
   static constexpr int kRcvLowatThreshold = 16 * 1024;
 
-  // We still do not know the RPC size. Do not set SO_RCVLOWAT.
-  if (tcp->set_rcvlowat <= 1 && tcp->min_progress_size <= 1) return;
-
-  int remaining = std::min(tcp->min_progress_size, kRcvLowatMax);
+  int remaining = std::min(static_cast<int>(tcp->incoming_buffer->length),
+                           tcp->min_progress_size);
+  remaining = std::min(remaining, kRcvLowatMax);
 
   // Setting SO_RCVLOWAT for small quantities does not save on CPU.
   if (remaining < kRcvLowatThreshold) {
@@ -851,6 +851,9 @@ static void update_rcvlowat(grpc_tcp* tcp) {
   if (!tcp->tcp_zerocopy_send_ctx.enabled() && remaining > 0) {
     remaining -= kRcvLowatThreshold;
   }
+
+  // We still do not know the RPC size. Do not set SO_RCVLOWAT.
+  if (tcp->set_rcvlowat <= 1 && remaining <= 1) return;
 
   // Previous value is still valid. No change needed in SO_RCVLOWAT.
   if (tcp->set_rcvlowat == remaining) {
@@ -2006,7 +2009,6 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   tcp->bytes_read_this_round = 0;
   /* Will be set to false by the very first endpoint read function */
   tcp->is_first_read = true;
-  tcp->has_posted_reclaimer = false;
   tcp->bytes_counter = -1;
   tcp->socket_ts_enabled = false;
   tcp->ts_capable = true;
