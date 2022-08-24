@@ -81,7 +81,6 @@ class KubernetesClientRunner(k8s_base_runner.KubernetesBaseRunner):
         # Mutable state
         self.deployment: Optional[k8s.V1Deployment] = None
         self.service_account: Optional[k8s.V1ServiceAccount] = None
-        self.port_forwarder: Optional[k8s.PortForwarder] = None
 
     # TODO(sergiitk): make rpc UnaryCall enum or get it from proto
     def run(  # pylint: disable=arguments-differ
@@ -147,28 +146,19 @@ class KubernetesClientRunner(k8s_base_runner.KubernetesBaseRunner):
         # Verify the deployment reports all pods started as well.
         self._wait_deployment_with_available_replicas(self.deployment_name)
 
-        # Experimental, for local debugging.
-        pod_ip = pod.status.pod_ip
-        rpc_port = self.stats_port
-        rpc_host = None
         if self.debug_use_port_forwarding:
-            logger.info('LOCAL DEV MODE: Enabling port forwarding to %s:%s',
-                        pod_ip, self.stats_port)
-            self.port_forwarder = self.k8s_namespace.port_forward_pod(
-                pod, remote_port=self.stats_port)
-            rpc_port = self.port_forwarder.local_port
-            rpc_host = self.port_forwarder.local_address
+            pf = self._start_port_forwarding_pod(pod, self.stats_port)
+            rpc_port, rpc_host = pf.local_port, pf.local_address
+        else:
+            rpc_port, rpc_host = self.stats_port, None
 
-        return XdsTestClient(ip=pod_ip,
+        return XdsTestClient(ip=pod.status.pod_ip,
                              rpc_port=rpc_port,
                              server_target=server_target,
-                             rpc_host=rpc_host,
-                             hostname=pod_name)
+                             hostname=pod_name,
+                             rpc_host=rpc_host)
 
     def cleanup(self, *, force=False, force_namespace=False):  # pylint: disable=arguments-differ
-        if self.port_forwarder:
-            self.port_forwarder.close()
-            self.port_forwarder = None
         if self.deployment or force:
             self._delete_deployment(self.deployment_name)
             self.deployment = None
