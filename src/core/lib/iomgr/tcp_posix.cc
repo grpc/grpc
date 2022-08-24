@@ -1008,35 +1008,38 @@ static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error)
 
 static void maybe_make_read_slices(grpc_tcp* tcp)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(tcp->read_mu) {
+  static const int kBigAlloc = 64 * 1024;
+  static const int kSmallAlloc = 8 * 1024;
   if (tcp->incoming_buffer->length <
       static_cast<size_t>(tcp->min_progress_size)) {
-    // If memory usage begins to be high drop down to just one entry in the
-    // iovec, so as to reduce the possibility of stranding more memory than we
-    // otherwise need.
-    const size_t max_read_iovec =
-        tcp->memory_owner.GetPressureInfo().pressure_control_value > 0.8
-            ? 1
-            : MAX_READ_IOVEC;
-    const size_t target_length =
-        std::max(static_cast<int>(tcp->target_length), tcp->min_progress_size);
-    bool allocated_any_64k = false;
-    while (tcp->incoming_buffer->length < target_length &&
-           tcp->incoming_buffer->count < max_read_iovec) {
-      const int extra_wanted =
-          target_length - static_cast<int>(tcp->incoming_buffer->length);
-      int alloc_size;
-      if (extra_wanted >= 64 * 1024 || allocated_any_64k) {
-        alloc_size = 64 * 1024;
-        allocated_any_64k = true;
+    size_t allocate_length = tcp->min_progress_size;
+    const size_t target_length = static_cast<size_t>(tcp->target_length);
+    // If memory pressure is low and we think there will be more than
+    // min_progress_size bytes to read, allocate a bit more.
+    const bool low_memory_pressure =
+        tcp->memory_owner.GetPressureInfo().pressure_control_value < 0.8;
+    if (low_memory_pressure && target_length > allocate_length) {
+      allocate_length = target_length;
+    }
+    int extra_wanted =
+        allocate_length - static_cast<int>(tcp->incoming_buffer->length);
+    if (extra_wanted >=
+        (low_memory_pressure ? kSmallAlloc * 3 / 2 : kBigAlloc)) {
+      while (extra_wanted > 0) {
+        extra_wanted -= kBigAlloc;
+        grpc_slice_buffer_add_indexed(tcp->incoming_buffer,
+                                      tcp->memory_owner.MakeSlice(kBigAlloc));
         GRPC_STATS_INC_TCP_READ_ALLOC_64K();
-      } else {
-        alloc_size = 8 * 1024;
+      }
+    } else {
+      while (extra_wanted > 0) {
+        extra_wanted -= kSmallAlloc;
+        grpc_slice_buffer_add_indexed(tcp->incoming_buffer,
+                                      tcp->memory_owner.MakeSlice(kSmallAlloc));
         GRPC_STATS_INC_TCP_READ_ALLOC_8K();
       }
-      grpc_slice_buffer_add_indexed(tcp->incoming_buffer,
-                                    tcp->memory_owner.MakeSlice(alloc_size));
-      maybe_post_reclaimer(tcp);
     }
+    maybe_post_reclaimer(tcp);
   }
 }
 
