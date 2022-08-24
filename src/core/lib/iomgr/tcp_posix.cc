@@ -489,6 +489,7 @@ struct grpc_tcp {
 
   int min_read_chunk_size;
   int max_read_chunk_size;
+  int set_rcvlowat = 0;
 
   /* garbage after the last read */
   grpc_slice_buffer last_read_buffer;
@@ -827,6 +828,45 @@ static void tcp_trace_read(grpc_tcp* tcp, grpc_error_handle error)
   }
 }
 
+static void update_rcvlowat(grpc_tcp* tcp) {
+  // TODO(ctiller): check supported & enabled, allow some adjustments instead of
+  // hardcoding things.
+
+  static constexpr int kRcvLowatMax = 16 * 1024 * 1024;
+  static constexpr int kRcvLowatThreshold = 16 * 1024;
+
+  // We still do not know the RPC size. Do not set SO_RCVLOWAT.
+  if (tcp->set_rcvlowat <= 1 && tcp->min_progress_size <= 1) return;
+
+  int remaining = std::min(tcp->min_progress_size, kRcvLowatMax);
+
+  // Setting SO_RCVLOWAT for small quantities does not save on CPU.
+  if (remaining < kRcvLowatThreshold) {
+    remaining = 0;
+  }
+
+  // If zerocopy is off, wake shortly before the full RPC is here. More can
+  // show up partway through recvmsg() since it takes a while to copy data.
+  // So an early wakeup aids latency.
+  if (!tcp->tcp_zerocopy_send_ctx.enabled() && remaining > 0) {
+    remaining -= kRcvLowatThreshold;
+  }
+
+  // Previous value is still valid. No change needed in SO_RCVLOWAT.
+  if (tcp->set_rcvlowat == remaining) {
+    return;
+  }
+  if (setsockopt(tcp->fd, SOL_SOCKET, SO_RCVLOWAT, &remaining,
+                 sizeof(remaining)) != 0) {
+    gpr_log(GPR_ERROR, "%s",
+            absl::StrCat("Cannot set SO_RCVLOWAT on fd=", tcp->fd,
+                         " err=", strerror(errno))
+                .c_str());
+    return;
+  }
+  tcp->set_rcvlowat = remaining;
+}
+
 /* Returns true if data available to read or error other than EAGAIN. */
 #define MAX_READ_IOVEC 256
 static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error)
@@ -877,6 +917,8 @@ static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error)
 
     GRPC_STATS_INC_TCP_READ_OFFER(tcp->incoming_buffer->length);
     GRPC_STATS_INC_TCP_READ_OFFER_IOV_SIZE(tcp->incoming_buffer->count);
+
+    update_rcvlowat(tcp);
 
     do {
       GPR_TIMER_SCOPE("recvmsg", 0);
