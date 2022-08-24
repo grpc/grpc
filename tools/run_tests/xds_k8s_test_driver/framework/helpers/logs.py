@@ -34,7 +34,7 @@ def log_get_root_dir() -> pathlib.Path:
 
 def log_dir_mkdir(name: str) -> pathlib.Path:
     """Creates and returns a subdir with the given name in the log folder."""
-    if not (0 < len(pathlib.Path(name).parts) < 2):
+    if len(pathlib.Path(name).parts) != 1:
         raise ValueError(f'Dir name must be a single component; got: {name}')
     if ".." in name:
         raise ValueError(f'Dir name must not be above the log root.')

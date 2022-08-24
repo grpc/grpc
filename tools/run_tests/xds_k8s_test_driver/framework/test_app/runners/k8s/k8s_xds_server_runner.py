@@ -95,7 +95,7 @@ class KubernetesServerRunner(k8s_base_runner.KubernetesBaseRunner):
         self.service_account: Optional[k8s.V1ServiceAccount] = None
         self.service: Optional[k8s.V1Service] = None
 
-    def run(  # pylint: disable=arguments-differ
+    def run(  # pylint: disable=arguments-differ,too-many-branches
             self,
             *,
             test_port: int = DEFAULT_TEST_PORT,
