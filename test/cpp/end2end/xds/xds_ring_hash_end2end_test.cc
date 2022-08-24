@@ -373,10 +373,14 @@ TEST_P(RingHashTest, HeaderHashing) {
       {"address_hash", CreateMetadataValueThatHashesToBackend(2)}};
   std::vector<std::pair<std::string, std::string>> metadata3 = {
       {"address_hash", CreateMetadataValueThatHashesToBackend(3)}};
-  const auto rpc_options = RpcOptions().set_metadata(std::move(metadata));
-  const auto rpc_options1 = RpcOptions().set_metadata(std::move(metadata1));
-  const auto rpc_options2 = RpcOptions().set_metadata(std::move(metadata2));
-  const auto rpc_options3 = RpcOptions().set_metadata(std::move(metadata3));
+  const auto rpc_options =
+      RpcOptions().set_metadata(std::move(metadata)).set_timeout_ms(5000);
+  const auto rpc_options1 =
+      RpcOptions().set_metadata(std::move(metadata1)).set_timeout_ms(5000);
+  const auto rpc_options2 =
+      RpcOptions().set_metadata(std::move(metadata2)).set_timeout_ms(5000);
+  const auto rpc_options3 =
+      RpcOptions().set_metadata(std::move(metadata3)).set_timeout_ms(5000);
   WaitForBackend(DEBUG_LOCATION, 0, /*check_status=*/nullptr,
                  WaitForBackendOptions(), rpc_options);
   WaitForBackend(DEBUG_LOCATION, 1, /*check_status=*/nullptr,
@@ -448,7 +452,7 @@ TEST_P(RingHashTest, NoHashPolicy) {
   CreateAndStartBackends(2);
   const double kDistribution50Percent = 0.5;
   const double kErrorTolerance = 0.05;
-  const uint32_t kRpcTimeoutMs = 10000;
+  const uint32_t kRpcTimeoutMs = 20000;
   const size_t kNumRpcs =
       ComputeIdealNumRpcs(kDistribution50Percent, kErrorTolerance);
   auto cluster = default_cluster_;
@@ -479,7 +483,7 @@ TEST_P(RingHashTest, EndpointWeights) {
   const double kDistribution50Percent = 0.5;
   const double kDistribution25Percent = 0.25;
   const double kErrorTolerance = 0.05;
-  const uint32_t kRpcTimeoutMs = 10000;
+  const uint32_t kRpcTimeoutMs = 20000;
   const size_t kNumRpcs =
       ComputeIdealNumRpcs(kDistribution50Percent, kErrorTolerance);
   auto cluster = default_cluster_;
@@ -551,7 +555,7 @@ TEST_P(RingHashTest, HashOnHeaderThatIsNotPresent) {
   CreateAndStartBackends(2);
   const double kDistribution50Percent = 0.5;
   const double kErrorTolerance = 0.05;
-  const uint32_t kRpcTimeoutMs = 10000;
+  const uint32_t kRpcTimeoutMs = 20000;
   const size_t kNumRpcs =
       ComputeIdealNumRpcs(kDistribution50Percent, kErrorTolerance);
   auto cluster = default_cluster_;
@@ -592,7 +596,7 @@ TEST_P(RingHashTest, UnsupportedHashPolicyDefaultToRandomHashing) {
   CreateAndStartBackends(2);
   const double kDistribution50Percent = 0.5;
   const double kErrorTolerance = 0.05;
-  const uint32_t kRpcTimeoutMs = 10000;
+  const uint32_t kRpcTimeoutMs = 20000;
   const size_t kNumRpcs =
       ComputeIdealNumRpcs(kDistribution50Percent, kErrorTolerance);
   auto cluster = default_cluster_;
@@ -639,7 +643,7 @@ TEST_P(RingHashTest, RandomHashingDistributionAccordingToEndpointWeight) {
   const double kWeight33Percent = static_cast<double>(kWeight1) / kWeightTotal;
   const double kWeight66Percent = static_cast<double>(kWeight2) / kWeightTotal;
   const double kErrorTolerance = 0.05;
-  const uint32_t kRpcTimeoutMs = 10000;
+  const uint32_t kRpcTimeoutMs = 20000;
   const size_t kNumRpcs =
       ComputeIdealNumRpcs(kWeight33Percent, kErrorTolerance);
   auto cluster = default_cluster_;
@@ -679,7 +683,7 @@ TEST_P(RingHashTest,
   const double kWeight20Percent = static_cast<double>(kWeight1) / kWeightTotal;
   const double kWeight80Percent = static_cast<double>(kWeight2) / kWeightTotal;
   const double kErrorTolerance = 0.05;
-  const uint32_t kRpcTimeoutMs = 10000;
+  const uint32_t kRpcTimeoutMs = 20000;
   const size_t kNumRpcs =
       ComputeIdealNumRpcs(kWeight20Percent, kErrorTolerance);
   auto cluster = default_cluster_;
