@@ -1557,7 +1557,9 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateWeights) {
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(balancer_.get(), new_route_config);
-  WaitForAllBackends(DEBUG_LOCATION, 0, 1);
+  WaitForAllBackends(DEBUG_LOCATION, /*start_index=*/0, /*stop_index=*/1,
+                     /*check_status=*/nullptr, WaitForBackendOptions(),
+                     RpcOptions().set_timeout_ms(2000));
   WaitForAllBackends(DEBUG_LOCATION, 1, 3, /*check_status=*/nullptr,
                      WaitForBackendOptions(),
                      RpcOptions().set_rpc_service(SERVICE_ECHO1));
