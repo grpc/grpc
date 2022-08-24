@@ -139,7 +139,7 @@ TEST_P(RingHashTest, AggregateClusterFallBackFromRingHashAtStartup) {
                                    new_route_config);
   // Verifying that we are using ring hash as only 1 endpoint is receiving all
   // the traffic.
-  CheckRpcSendOk(DEBUG_LOCATION, 100);
+  CheckRpcSendOk(DEBUG_LOCATION, 100, RpcOptions().set_timeout_ms(5000));
   bool found = false;
   for (size_t i = 0; i < backends_.size(); ++i) {
     if (backends_[i]->backend_service()->request_count() > 0) {
@@ -289,7 +289,7 @@ TEST_P(RingHashTest,
   SetUpChannel(&channel_args);
   // Start an RPC in the background.
   LongRunningRpc rpc;
-  rpc.StartRpc(stub_.get(), RpcOptions());
+  rpc.StartRpc(stub_.get(), RpcOptions().set_timeout_ms(5000));
   // Wait for connection attempt to the backend.
   hold->Wait();
   // Channel should report CONNECTING here, and any RPC should be queued.
@@ -303,7 +303,7 @@ TEST_P(RingHashTest,
   // because if the priority policy fails to update the picker, then the
   // pick for the first RPC will not be retried.
   LongRunningRpc rpc2;
-  rpc2.StartRpc(stub_.get(), RpcOptions());
+  rpc2.StartRpc(stub_.get(), RpcOptions().set_timeout_ms(5000));
   // Allow the connection attempt to complete.
   hold->Resume();
   // Now the RPCs should complete successfully.
@@ -334,7 +334,7 @@ TEST_P(RingHashTest, ChannelIdHashing) {
                                    new_route_config);
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  CheckRpcSendOk(DEBUG_LOCATION, 100);
+  CheckRpcSendOk(DEBUG_LOCATION, 100, RpcOptions().set_timeout_ms(5000));
   bool found = false;
   for (size_t i = 0; i < backends_.size(); ++i) {
     if (backends_[i]->backend_service()->request_count() > 0) {
