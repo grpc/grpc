@@ -1312,7 +1312,7 @@ TEST_F(PickFirstTest, PendingUpdateAndSelectedSubchannelFails) {
   auto stub = BuildStub(channel);
   // Create a number of servers, but only start 1 of them.
   CreateServers(2);
-  StartServer(0);
+  StartServers(2);
   // Initially resolve to first server and make sure it connects.
   gpr_log(GPR_INFO, "Phase 1: Connect to first server.");
   response_generator.SetNextResolution({servers_[0]->port_});
@@ -1321,11 +1321,7 @@ TEST_F(PickFirstTest, PendingUpdateAndSelectedSubchannelFails) {
   ConnectionAttemptInjector injector;
   auto hold = injector.AddHold(servers_[1]->port_);
   // Send a resolution update with the remaining servers, none of which are
-  // running yet, so the update will stay pending.  Note that it's important
-  // to have multiple servers here, or else the test will be flaky; with only
-  // one server, the pending subchannel list has already gone into
-  // TRANSIENT_FAILURE due to hitting the end of the list by the time we
-  // check the state.
+  // running yet, so the update will stay pending.
   gpr_log(GPR_INFO,
           "Phase 2: Resolver update pointing to remaining "
           "(not started) servers.");
@@ -1337,7 +1333,6 @@ TEST_F(PickFirstTest, PendingUpdateAndSelectedSubchannelFails) {
   hold->Wait();
   // RPCs will continue to be sent to the first server.
   CheckRpcSendOk(DEBUG_LOCATION, stub);
-  hold->Resume();
   // Now stop the first server, so that the current subchannel list
   // fails.  This should cause us to immediately swap over to the
   // pending list, even though it's not yet connected.  The state should
@@ -1346,18 +1341,13 @@ TEST_F(PickFirstTest, PendingUpdateAndSelectedSubchannelFails) {
   gpr_log(GPR_INFO, "Phase 3: Stopping first server.");
   servers_[0]->Shutdown();
   WaitForChannelNotReady(channel.get());
-  // TODO(roth): This should always return CONNECTING, but it's flaky
-  // between that and TRANSIENT_FAILURE.  I suspect that this problem
-  // will go away once we move the backoff code out of the subchannel
-  // and into the LB policies.
   EXPECT_THAT(channel->GetState(false),
-              ::testing::AnyOf(GRPC_CHANNEL_CONNECTING,
-                               GRPC_CHANNEL_TRANSIENT_FAILURE));
-  // Now start the second server.
-  gpr_log(GPR_INFO, "Phase 4: Starting second server.");
-  StartServer(1);
-  // The channel should go to READY state and RPCs should go to the
-  // second server.
+              ::testing::AnyOf(GRPC_CHANNEL_CONNECTING));
+  // Resume connection attempt to second server now that first server is down.
+  // The channel should go to READY state and RPCs should go to the second
+  // server.
+  hold->Resume();
+  gpr_log(GPR_INFO, "Phase 4: Connect to second server.");
   WaitForChannelReady(channel.get());
   WaitForServer(DEBUG_LOCATION, stub, 1, [](const Status& status) {
     EXPECT_EQ(StatusCode::UNAVAILABLE, status.error_code());
