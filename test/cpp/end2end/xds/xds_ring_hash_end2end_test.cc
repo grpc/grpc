@@ -29,7 +29,7 @@
 #include "src/core/lib/gpr/env.h"
 #include "src/proto/grpc/testing/xds/v3/aggregate_cluster.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h"
-#include "test/cpp/end2end/connection_delay_injector.h"
+#include "test/cpp/end2end/connection_attempt_injector.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 
 namespace grpc {
@@ -212,9 +212,9 @@ TEST_P(RingHashTest,
         std::move(result));
   }
   // Inject connection delay to make this act more realistically.
-  ConnectionDelayInjector delay_injector(
-      grpc_core::Duration::Milliseconds(500) * grpc_test_slowdown_factor());
-  delay_injector.Start();
+  ConnectionAttemptInjector injector;
+  injector.SetDelay(grpc_core::Duration::Milliseconds(500) *
+                    grpc_test_slowdown_factor());
   // Send RPC.  Need the timeout to be long enough to account for the
   // subchannel connection delays.
   CheckRpcSendOk(DEBUG_LOCATION, 1, RpcOptions().set_timeout_ms(5000));
@@ -280,8 +280,7 @@ TEST_P(RingHashTest,
         std::move(result));
   }
   // Set up connection attempt injector.
-  ConnectionHoldInjector injector;
-  injector.Start();
+  ConnectionAttemptInjector injector;
   auto hold = injector.AddHold(backends_[0]->port());
   // Increase subchannel backoff time, so that subchannels stay in
   // TRANSIENT_FAILURE for long enough to trigger potential problems.
@@ -789,8 +788,7 @@ TEST_P(RingHashTest, ContinuesConnectingWithoutPicks) {
                                    new_route_config);
   // Start connection attempt injector and add a hold for the P0
   // connection attempt.
-  ConnectionHoldInjector injector;
-  injector.Start();
+  ConnectionAttemptInjector injector;
   auto hold = injector.AddHold(non_existant_endpoint.port);
   // A long-running RPC, just used to send the RPC in another thread.
   LongRunningRpc rpc;
@@ -835,8 +833,7 @@ TEST_P(RingHashTest, ContinuesConnectingWithoutPicksOneSubchannelAtATime) {
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    new_route_config);
   // Start connection attempt injector.
-  ConnectionHoldInjector injector;
-  injector.Start();
+  ConnectionAttemptInjector injector;
   auto hold_non_existant0 = injector.AddHold(non_existant_endpoint0.port);
   auto hold_non_existant1 = injector.AddHold(non_existant_endpoint1.port);
   auto hold_non_existant2 = injector.AddHold(non_existant_endpoint2.port);
