@@ -30,7 +30,7 @@ abstract class AbstractCall
      */
     protected $call;
     /**
-     * @var callback|array&callable
+     * @var callback|array{ 0: class-string, 1: string}&callable
      */
     protected $deserialize;
     protected $metadata;
@@ -42,10 +42,10 @@ abstract class AbstractCall
      * @param Channel  $channel     The channel to communicate on
      * @param string   $method      The method to call on the
      *                              remote server
-     * @param callback|array&callable $deserialize A callback function
+     * @param callback|callable&array{ 0: class-string, 1: string} $deserialize A callback function
      * to deserialize the response. It MUST be an array&callable
      * when the method {@see _deserializeResponse() } is not overridden.
-     * @param array    $options     Call options (optional)
+     * @param array<string,mixed> $options Call options (optional)
      */
     public function __construct(Channel $channel,
                                 $method,

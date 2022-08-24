@@ -18,27 +18,67 @@
  */
 namespace Grpc;
 
+use Grpc\Internal\InterceptorChannel;
+
 /**
  * Default call invoker in the gRPC stub.
  */
 class DefaultCallInvoker implements CallInvoker
 {
+    /**
+     * @param string $hostname
+     * @param array<string,mixed> $opts
+     *
+     * @return Channel
+     */
     public function createChannelFactory($hostname, $opts) {
         return new Channel($hostname, $opts);
     }
 
+    /**
+     * @param Channel|InterceptorChannel   $channel
+     * @param string $method
+     * @param array{ 0: class-string, 1: string}&callable $deserialize A function that deserializes the response
+     * @param array<string,mixed> $options
+     *
+     * @return UnaryCall
+     */
     public function UnaryCall($channel, $method, $deserialize, $options) {
         return new UnaryCall($channel, $method, $deserialize, $options);
     }
 
+    /**
+     * @param Channel|InterceptorChannel   $channel
+     * @param string $method
+     * @param array{ 0: class-string, 1: string}&callable $deserialize A function that deserializes the response
+     * @param array<string,mixed> $options
+     *
+     * @return ClientStreamingCall
+     */
     public function ClientStreamingCall($channel, $method, $deserialize, $options) {
         return new ClientStreamingCall($channel, $method, $deserialize, $options);
     }
 
+    /**
+     * @param Channel|InterceptorChannel   $channel
+     * @param string $method
+     * @param array{ 0: class-string, 1: string}&callable $deserialize A function that deserializes the response
+     * @param array<string,mixed> $options
+     *
+     * @return ServerStreamingCall
+     */
     public function ServerStreamingCall($channel, $method, $deserialize, $options) {
         return new ServerStreamingCall($channel, $method, $deserialize, $options);
     }
 
+    /**
+     * @param Channel|InterceptorChannel   $channel
+     * @param string $method
+     * @param array{ 0: class-string, 1: string}&callable $deserialize A function that deserializes the response
+     * @param array<string,mixed> $options
+     *
+     * @return BidiStreamingCall
+     */
     public function BidiStreamingCall($channel, $method, $deserialize, $options) {
         return new BidiStreamingCall($channel, $method, $deserialize, $options);
     }

@@ -28,6 +28,11 @@ use Grpc\Internal\InterceptorChannel;
  */
 class Interceptor
 {
+    /**
+     * @param string $method The method string
+     * @param callback|callable&array{ 0: class-string, 1: string} $deserialize A function that deserializes the response
+     * @param callable $continuation
+     */
     public function interceptUnaryUnary(
         $method,
         $argument,
@@ -39,6 +44,11 @@ class Interceptor
         return $continuation($method, $argument, $deserialize, $metadata, $options);
     }
 
+    /**
+     * @param string $method The method string
+     * @param callback|callable&array{ 0: class-string, 1: string} $deserialize A function that deserializes the response
+     * @param callable $continuation
+     */
     public function interceptStreamUnary(
         $method,
         $deserialize,
@@ -49,6 +59,11 @@ class Interceptor
         return $continuation($method, $deserialize, $metadata, $options);
     }
 
+    /**
+     * @param string $method The method string
+     * @param callback|callable&array{ 0: class-string, 1: string} $deserialize A function that deserializes the response
+     * @param callable $continuation
+     */
     public function interceptUnaryStream(
         $method,
         $argument,
@@ -60,6 +75,11 @@ class Interceptor
         return $continuation($method, $argument, $deserialize, $metadata, $options);
     }
 
+    /**
+     * @param string $method The method string
+     * @param callback|callable&array{ 0: class-string, 1: string} $deserialize A function that deserializes the response
+     * @param callable $continuation
+     */
     public function interceptStreamStream(
         $method,
         $deserialize,
@@ -77,6 +97,7 @@ class Interceptor
      * @param Interceptor|Interceptor[] $interceptors interceptors to be added
      *
      * @return InterceptorChannel
+     * @throws \Exception
      */
     public static function intercept($channel, $interceptors)
     {
