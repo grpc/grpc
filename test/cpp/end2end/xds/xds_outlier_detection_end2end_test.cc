@@ -66,8 +66,8 @@ TEST_P(OutlierDetectionTest, SuccessRateEjectionAndUnejection) {
   auto* interval = cluster.mutable_outlier_detection()->mutable_interval();
   auto* base_time =
       cluster.mutable_outlier_detection()->mutable_base_ejection_time();
-  interval->set_seconds(1);
-  base_time->set_seconds(1);
+  interval->set_seconds(1 * grpc_test_slowdown_factor());
+  base_time->set_seconds(1 * grpc_test_slowdown_factor());
   cluster.mutable_outlier_detection()
       ->mutable_success_rate_stdev_factor()
       ->set_value(100);
@@ -113,12 +113,14 @@ TEST_P(OutlierDetectionTest, SuccessRateEjectionAndUnejection) {
   // This tells us that backend 0 has been ejected.
   // It should take no more than one ejection timer interval.
   WaitForBackend(DEBUG_LOCATION, 1, /*check_status=*/nullptr,
-                 WaitForBackendOptions().set_timeout_ms(3000),
+                 WaitForBackendOptions().set_timeout_ms(
+                     3000 * grpc_test_slowdown_factor()),
                  rpc_options);
   // Now wait for traffic aimed at backend 0 to switch back to backend 0.
   // This tells us that backend 0 has been unejected.
   WaitForBackend(DEBUG_LOCATION, 0, /*check_status=*/nullptr,
-                 WaitForBackendOptions().set_timeout_ms(3000),
+                 WaitForBackendOptions().set_timeout_ms(
+                     3000 * grpc_test_slowdown_factor()),
                  rpc_options);
 }
 
@@ -134,7 +136,7 @@ TEST_P(OutlierDetectionTest, SuccessRateMaxPercent) {
   // Any failure will cause an potential ejection with the probability of 100%
   // (to eliminate flakiness of the test).
   auto* interval = cluster.mutable_outlier_detection()->mutable_interval();
-  interval->set_seconds(1);
+  interval->set_seconds(1 * grpc_test_slowdown_factor());
   cluster.mutable_outlier_detection()
       ->mutable_success_rate_stdev_factor()
       ->set_value(100);
@@ -188,7 +190,8 @@ TEST_P(OutlierDetectionTest, SuccessRateMaxPercent) {
                       RpcOptions()
                           .set_metadata(std::move(metadata1))
                           .set_server_expected_error(StatusCode::CANCELLED));
-  absl::Time deadline = absl::Now() + absl::Seconds(3);
+  absl::Time deadline =
+      absl::Now() + absl::Seconds(3) * grpc_test_slowdown_factor();
   while (true) {
     ResetBackendCounters();
     CheckRpcSendOk(DEBUG_LOCATION, 1, rpc_options);
@@ -239,8 +242,8 @@ TEST_P(OutlierDetectionTest, SuccessRateStdevFactor) {
   auto* interval = cluster.mutable_outlier_detection()->mutable_interval();
   auto* base_time =
       cluster.mutable_outlier_detection()->mutable_base_ejection_time();
-  interval->set_seconds(1);
-  base_time->set_seconds(1);
+  interval->set_seconds(1 * grpc_test_slowdown_factor());
+  base_time->set_seconds(1 * grpc_test_slowdown_factor());
   // We know a stdev factor of 100 will ensure the ejection occurs, so setting
   // it to something higher like 1000 to test that ejection will not occur.
   // Note this parameter is the only difference between this test and
@@ -286,7 +289,8 @@ TEST_P(OutlierDetectionTest, SuccessRateStdevFactor) {
                       RpcOptions()
                           .set_metadata(std::move(metadata))
                           .set_server_expected_error(StatusCode::CANCELLED));
-  gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(3000));
+  gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(
+      3000 * grpc_test_slowdown_factor()));
   ResetBackendCounters();
   // 1 backend experenced failure, but since the stdev_factor is high, no
   // backend will be noticed as an outlier so no ejection.
@@ -309,8 +313,8 @@ TEST_P(OutlierDetectionTest, SuccessRateEnforcementPercentage) {
   auto* interval = cluster.mutable_outlier_detection()->mutable_interval();
   auto* base_time =
       cluster.mutable_outlier_detection()->mutable_base_ejection_time();
-  interval->set_seconds(1);
-  base_time->set_seconds(1);
+  interval->set_seconds(1 * grpc_test_slowdown_factor());
+  base_time->set_seconds(1 * grpc_test_slowdown_factor());
   cluster.mutable_outlier_detection()
       ->mutable_success_rate_stdev_factor()
       ->set_value(100);
@@ -355,7 +359,8 @@ TEST_P(OutlierDetectionTest, SuccessRateEnforcementPercentage) {
                       RpcOptions()
                           .set_metadata(std::move(metadata))
                           .set_server_expected_error(StatusCode::CANCELLED));
-  gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(3000));
+  gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(
+      3000 * grpc_test_slowdown_factor()));
   ResetBackendCounters();
   // 1 backend experenced failure, but since the enforcement percentage is 0, no
   // backend will be ejected.
@@ -378,7 +383,7 @@ TEST_P(OutlierDetectionTest, SuccessRateMinimumHosts) {
   // Any failure will cause an potential ejection with the probability of 100%
   // (to eliminate flakiness of the test).
   auto* interval = cluster.mutable_outlier_detection()->mutable_interval();
-  interval->set_seconds(1);
+  interval->set_seconds(1 * grpc_test_slowdown_factor());
   cluster.mutable_outlier_detection()
       ->mutable_success_rate_stdev_factor()
       ->set_value(100);
@@ -423,7 +428,8 @@ TEST_P(OutlierDetectionTest, SuccessRateMinimumHosts) {
                       RpcOptions()
                           .set_metadata(std::move(metadata))
                           .set_server_expected_error(StatusCode::CANCELLED));
-  gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(3000));
+  gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(
+      3000 * grpc_test_slowdown_factor()));
   ResetBackendCounters();
   // All traffic still reaching the original backends and no backends are
   // ejected.
@@ -446,7 +452,7 @@ TEST_P(OutlierDetectionTest, SuccessRateRequestVolume) {
   // Any failure will cause an potential ejection with the probability of 100%
   // (to eliminate flakiness of the test).
   auto* interval = cluster.mutable_outlier_detection()->mutable_interval();
-  interval->set_seconds(1);
+  interval->set_seconds(1 * grpc_test_slowdown_factor());
   cluster.mutable_outlier_detection()
       ->mutable_success_rate_stdev_factor()
       ->set_value(100);
@@ -492,7 +498,8 @@ TEST_P(OutlierDetectionTest, SuccessRateRequestVolume) {
                       RpcOptions()
                           .set_metadata(std::move(metadata))
                           .set_server_expected_error(StatusCode::CANCELLED));
-  gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(3000));
+  gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(
+      3000 * grpc_test_slowdown_factor()));
   ResetBackendCounters();
   // All traffic still reaching the original backends and no backends are
   // ejected.
@@ -521,10 +528,10 @@ TEST_P(OutlierDetectionTest, FailurePercentageEjectionAndUnejection) {
   // Any failure will cause an potential ejection with the probability of 100%
   // (to eliminate flakiness of the test).
   auto* interval = cluster.mutable_outlier_detection()->mutable_interval();
-  interval->set_seconds(1);
+  interval->set_seconds(1 * grpc_test_slowdown_factor());
   auto* base_time =
       cluster.mutable_outlier_detection()->mutable_base_ejection_time();
-  base_time->set_seconds(3);
+  base_time->set_seconds(3 * grpc_test_slowdown_factor());
   cluster.mutable_outlier_detection()
       ->mutable_failure_percentage_threshold()
       ->set_value(0);
@@ -566,7 +573,8 @@ TEST_P(OutlierDetectionTest, FailurePercentageEjectionAndUnejection) {
                           .set_metadata(std::move(metadata))
                           .set_server_expected_error(StatusCode::CANCELLED));
   WaitForBackend(DEBUG_LOCATION, 1, /*check_status=*/nullptr,
-                 WaitForBackendOptions().set_timeout_ms(3000),
+                 WaitForBackendOptions().set_timeout_ms(
+                     3000 * grpc_test_slowdown_factor()),
                  rpc_options);
   // 1 backend is ejected all traffic going to the ejected backend should now
   // all be going to the other backend.
@@ -577,7 +585,8 @@ TEST_P(OutlierDetectionTest, FailurePercentageEjectionAndUnejection) {
   // Now wait for traffic aimed at backend 0 to switch back to backend 0.
   // This tells us that backend 0 has been unejected.
   WaitForBackend(DEBUG_LOCATION, 0, /*check_status=*/nullptr,
-                 WaitForBackendOptions().set_timeout_ms(200000),
+                 WaitForBackendOptions().set_timeout_ms(
+                     30000 * grpc_test_slowdown_factor()),
                  rpc_options);
   // Verify that rpcs go to their expectedly hashed backends.
   CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options);
@@ -598,7 +607,7 @@ TEST_P(OutlierDetectionTest, FailurePercentageMaxPercentage) {
   // Any failure will cause an potential ejection with the probability of 100%
   // (to eliminate flakiness of the test).
   auto* interval = cluster.mutable_outlier_detection()->mutable_interval();
-  interval->set_seconds(1);
+  interval->set_seconds(1 * grpc_test_slowdown_factor());
   cluster.mutable_outlier_detection()
       ->mutable_failure_percentage_threshold()
       ->set_value(0);
@@ -652,7 +661,8 @@ TEST_P(OutlierDetectionTest, FailurePercentageMaxPercentage) {
                       RpcOptions()
                           .set_metadata(std::move(metadata1))
                           .set_server_expected_error(StatusCode::CANCELLED));
-  absl::Time deadline = absl::Now() + absl::Seconds(3);
+  absl::Time deadline =
+      absl::Now() + absl::Seconds(3) * grpc_test_slowdown_factor();
   while (true) {
     ResetBackendCounters();
     CheckRpcSendOk(DEBUG_LOCATION, 1, rpc_options);
@@ -698,10 +708,10 @@ TEST_P(OutlierDetectionTest, FailurePercentageThreshold) {
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
   auto* interval = cluster.mutable_outlier_detection()->mutable_interval();
-  interval->set_seconds(1);
+  interval->set_seconds(1 * grpc_test_slowdown_factor());
   auto* base_time =
       cluster.mutable_outlier_detection()->mutable_base_ejection_time();
-  base_time->set_seconds(1);
+  base_time->set_seconds(1 * grpc_test_slowdown_factor());
   // Setup outlier failure percentage parameter to 50
   // Note this parameter is the only difference between this test and
   // FailurePercentageEjectionAndUnejection (ejection portion, value set to 0)
@@ -747,7 +757,8 @@ TEST_P(OutlierDetectionTest, FailurePercentageThreshold) {
                       RpcOptions()
                           .set_metadata(std::move(metadata))
                           .set_server_expected_error(StatusCode::CANCELLED));
-  gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(3000));
+  gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(
+      3000 * grpc_test_slowdown_factor()));
   ResetBackendCounters();
   // 1 backend experenced 1 failure, but since the threshold is 50 % no
   // backend will be noticed as an outlier so no ejection.
@@ -768,10 +779,10 @@ TEST_P(OutlierDetectionTest, FailurePercentageEnforcementPercentage) {
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
   auto* interval = cluster.mutable_outlier_detection()->mutable_interval();
-  interval->set_seconds(1);
+  interval->set_seconds(1 * grpc_test_slowdown_factor());
   auto* base_time =
       cluster.mutable_outlier_detection()->mutable_base_ejection_time();
-  base_time->set_seconds(1);
+  base_time->set_seconds(1 * grpc_test_slowdown_factor());
   cluster.mutable_outlier_detection()
       ->mutable_failure_percentage_threshold()
       ->set_value(0);
@@ -817,7 +828,8 @@ TEST_P(OutlierDetectionTest, FailurePercentageEnforcementPercentage) {
                       RpcOptions()
                           .set_metadata(std::move(metadata))
                           .set_server_expected_error(StatusCode::CANCELLED));
-  gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(3000));
+  gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(
+      3000 * grpc_test_slowdown_factor()));
   ResetBackendCounters();
   // 1 backend experenced failure, but since the enforcement percentage is 0, no
   // backend will be ejected.
@@ -840,7 +852,7 @@ TEST_P(OutlierDetectionTest, FailurePercentageMinimumHosts) {
   // Any failure will cause an potential ejection with the probability of 100%
   // (to eliminate flakiness of the test).
   auto* interval = cluster.mutable_outlier_detection()->mutable_interval();
-  interval->set_seconds(1);
+  interval->set_seconds(1 * grpc_test_slowdown_factor());
   cluster.mutable_outlier_detection()
       ->mutable_failure_percentage_threshold()
       ->set_value(0);
@@ -886,7 +898,8 @@ TEST_P(OutlierDetectionTest, FailurePercentageMinimumHosts) {
                       RpcOptions()
                           .set_metadata(std::move(metadata))
                           .set_server_expected_error(StatusCode::CANCELLED));
-  gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(3000));
+  gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(
+      3000 * grpc_test_slowdown_factor()));
   ResetBackendCounters();
   // All traffic still reaching the original backends and no backends are
   // ejected.
@@ -910,7 +923,7 @@ TEST_P(OutlierDetectionTest, FailurePercentageRequestVolume) {
   // Any failure will cause an potential ejection with the probability of 100%
   // (to eliminate flakiness of the test).
   auto* interval = cluster.mutable_outlier_detection()->mutable_interval();
-  interval->set_seconds(1);
+  interval->set_seconds(1 * grpc_test_slowdown_factor());
   cluster.mutable_outlier_detection()
       ->mutable_failure_percentage_threshold()
       ->set_value(0);
@@ -957,7 +970,8 @@ TEST_P(OutlierDetectionTest, FailurePercentageRequestVolume) {
                       RpcOptions()
                           .set_metadata(std::move(metadata))
                           .set_server_expected_error(StatusCode::CANCELLED));
-  gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(3000));
+  gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(
+      3000 * grpc_test_slowdown_factor()));
   ResetBackendCounters();
   // All traffic still reaching the original backends and no backends are
   // ejected.
@@ -982,7 +996,7 @@ TEST_P(OutlierDetectionTest, SuccessRateAndFailurePercentage) {
   // Any failure will cause an potential ejection with the probability of 100%
   // (to eliminate flakiness of the test).
   auto* interval = cluster.mutable_outlier_detection()->mutable_interval();
-  interval->set_seconds(1);
+  interval->set_seconds(1 * grpc_test_slowdown_factor());
   cluster.mutable_outlier_detection()
       ->mutable_max_ejection_percent()
       ->set_value(50);
@@ -1068,7 +1082,8 @@ TEST_P(OutlierDetectionTest, SuccessRateAndFailurePercentage) {
       DEBUG_LOCATION, StatusCode::CANCELLED, "",
       RpcOptions().set_metadata(metadata2).set_server_expected_error(
           StatusCode::CANCELLED));
-  absl::Time deadline = absl::Now() + absl::Seconds(3);
+  absl::Time deadline =
+      absl::Now() + absl::Seconds(3) * grpc_test_slowdown_factor();
   std::vector<size_t> idx = {0, 1, 2, 3};
   while (true) {
     ResetBackendCounters();
@@ -1120,8 +1135,8 @@ TEST_P(OutlierDetectionTest, SuccessRateAndFailurePercentageBothDisabled) {
   auto* interval = cluster.mutable_outlier_detection()->mutable_interval();
   auto* base_time =
       cluster.mutable_outlier_detection()->mutable_base_ejection_time();
-  interval->set_seconds(1);
-  base_time->set_seconds(1);
+  interval->set_seconds(1 * grpc_test_slowdown_factor());
+  base_time->set_seconds(1 * grpc_test_slowdown_factor());
   balancer_->ads_service()->SetCdsResource(cluster);
   auto new_route_config = default_route_config_;
   auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
@@ -1149,7 +1164,8 @@ TEST_P(OutlierDetectionTest, SuccessRateAndFailurePercentageBothDisabled) {
                       RpcOptions()
                           .set_metadata(std::move(metadata))
                           .set_server_expected_error(StatusCode::CANCELLED));
-  gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(3000));
+  gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(
+      3000 * grpc_test_slowdown_factor()));
   ResetBackendCounters();
   // 1 backend experenced failure, but since there is no counting there is no
   // ejection.  Both backends are still getting the RPCs intended for them.
@@ -1170,7 +1186,7 @@ TEST_P(OutlierDetectionTest,
   // Any failure will cause an potential ejection with the probability of 100%
   // (to eliminate flakiness of the test).
   auto* interval = cluster.mutable_outlier_detection()->mutable_interval();
-  interval->set_seconds(1);
+  interval->set_seconds(1 * grpc_test_slowdown_factor());
   cluster.mutable_outlier_detection()
       ->mutable_max_ejection_percent()
       ->set_value(50);
@@ -1252,7 +1268,8 @@ TEST_P(OutlierDetectionTest,
       DEBUG_LOCATION, StatusCode::CANCELLED, "",
       RpcOptions().set_metadata(metadata2).set_server_expected_error(
           StatusCode::CANCELLED));
-  gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(3000));
+  gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(
+      3000 * grpc_test_slowdown_factor()));
   ResetBackendCounters();
   CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options);
   CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options1);
@@ -1276,10 +1293,10 @@ TEST_P(OutlierDetectionTest, DisableOutlierDetectionWhileAddressesAreEjected) {
   // Any failure will cause an potential ejection with the probability of 100%
   // (to eliminate flakiness of the test).
   auto* interval = cluster.mutable_outlier_detection()->mutable_interval();
-  interval->set_seconds(1);
+  interval->set_seconds(1 * grpc_test_slowdown_factor());
   auto* base_time =
       cluster.mutable_outlier_detection()->mutable_base_ejection_time();
-  base_time->set_seconds(3);
+  base_time->set_seconds(3 * grpc_test_slowdown_factor());
   cluster.mutable_outlier_detection()
       ->mutable_failure_percentage_threshold()
       ->set_value(0);
@@ -1321,7 +1338,8 @@ TEST_P(OutlierDetectionTest, DisableOutlierDetectionWhileAddressesAreEjected) {
       RpcOptions().set_metadata(metadata).set_server_expected_error(
           StatusCode::CANCELLED));
   WaitForBackend(DEBUG_LOCATION, 1, /*check_status=*/nullptr,
-                 WaitForBackendOptions().set_timeout_ms(3000),
+                 WaitForBackendOptions().set_timeout_ms(
+                     3000 * grpc_test_slowdown_factor()),
                  rpc_options);
   // 1 backend is ejected all traffic going to the ejected backend should now
   // all be going to the other backend.
