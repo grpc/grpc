@@ -1310,8 +1310,6 @@ TEST_F(PickFirstTest, PendingUpdateAndSelectedSubchannelFails) {
   auto channel =
       BuildChannel("", response_generator);  // pick_first is the default.
   auto stub = BuildStub(channel);
-  // Create a number of servers, but only start 1 of them.
-  CreateServers(2);
   StartServers(2);
   // Initially resolve to first server and make sure it connects.
   gpr_log(GPR_INFO, "Phase 1: Connect to first server.");
