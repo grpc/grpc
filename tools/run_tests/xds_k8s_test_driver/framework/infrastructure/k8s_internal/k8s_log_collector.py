@@ -58,9 +58,13 @@ class PodLogCollector(threading.Thread):
         super().__init__(name=f'pod-log-{pod_name}', daemon=True)
 
     def run(self):
-        logger.info('Starting log collection on a thread %s', self.name)
+        logger.info('Starting log collection thread %i for %s', self.ident,
+                    self.pod_name)
         try:
-            self._out_stream = open(self.log_path, 'w', errors='ignore')
+            self._out_stream = open(self.log_path,
+                                    'w',
+                                    errors='ignore',
+                                    encoding="utf-8")
             while not self.stop_event.is_set():
                 self._stream_log()
         finally:
