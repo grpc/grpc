@@ -828,7 +828,7 @@ static void tcp_trace_read(grpc_tcp* tcp, grpc_error_handle error)
 }
 
 /* Returns true if data available to read or error other than EAGAIN. */
-#define MAX_READ_IOVEC 16
+#define MAX_READ_IOVEC 256
 static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(tcp->read_mu) {
   GPR_TIMER_SCOPE("tcp_do_read", 0);
