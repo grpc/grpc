@@ -40,6 +40,7 @@
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/http_filter_rbac.grpc.pb.h"
+#include "test/core/util/build.h"
 #include "test/core/util/port.h"
 #include "test/cpp/end2end/counted_service.h"
 #include "test/cpp/end2end/test_service_impl.h"
@@ -720,7 +721,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
     // Dev note: If a timeout or Deadline Exceeded error is occurring in an XDS
     // end2end test, consider changing that test's timeout instead of this
     // global default.
-    int timeout_ms = 1000;
+    int timeout_ms = BuiltUnderMsan() ? 2000 : 1000;
     bool wait_for_ready = false;
     std::vector<std::pair<std::string, std::string>> metadata;
     // These options are used by the backend service impl.
