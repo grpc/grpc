@@ -115,7 +115,9 @@ TEST_P(CdsTest, AcceptsEdsConfigSourceOfTypeAds) {
   balancer_->ads_service()->SetCdsResource(cluster);
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForAllBackends(DEBUG_LOCATION);
+  WaitForAllBackends(DEBUG_LOCATION, /*start_index=*/0, /*stop_index=*/0,
+                     /*check_status=*/nullptr, WaitForBackendOptions(),
+                     RpcOptions().set_timeout_ms(5000));
   auto response_state = balancer_->ads_service()->cds_response_state();
   ASSERT_TRUE(response_state.has_value());
   EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
@@ -199,7 +201,8 @@ TEST_P(CdsTest, EdsServiceNameDefaultsToClusterName) {
   Cluster cluster = default_cluster_;
   cluster.mutable_eds_cluster_config()->clear_service_name();
   balancer_->ads_service()->SetCdsResource(cluster);
-  CheckRpcSendOk(DEBUG_LOCATION);
+  CheckRpcSendOk(DEBUG_LOCATION, /*times=*/1,
+                 RpcOptions().set_timeout_ms(5000));
 }
 
 // Tests switching over from one cluster to another.
