@@ -1014,16 +1014,17 @@ static void maybe_make_read_slices(grpc_tcp* tcp)
         tcp->memory_owner.GetPressureInfo().pressure_control_value > 0.8
             ? 1
             : MAX_READ_IOVEC;
-    while (tcp->incoming_buffer->length <
-               static_cast<size_t>(tcp->min_progress_size) &&
+    const size_t target_length =
+        std::max(static_cast<int>(tcp->target_length), tcp->min_progress_size);
+    bool allocated_any_64k = false;
+    while (tcp->incoming_buffer->length < target_length &&
            tcp->incoming_buffer->count < max_read_iovec) {
-      const int target_length = std::max(static_cast<int>(tcp->target_length),
-                                         tcp->min_progress_size);
       const int extra_wanted =
           target_length - static_cast<int>(tcp->incoming_buffer->length);
       int alloc_size;
-      if (extra_wanted >= 64 * 1024) {
+      if (extra_wanted >= 64 * 1024 || allocated_any_64k) {
         alloc_size = 64 * 1024;
+        allocated_any_64k = true;
         GRPC_STATS_INC_TCP_READ_ALLOC_64K();
       } else {
         alloc_size = 8 * 1024;
