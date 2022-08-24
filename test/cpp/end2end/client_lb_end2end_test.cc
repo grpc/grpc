@@ -1255,6 +1255,7 @@ TEST_F(PickFirstTest, CheckStateBeforeStartWatch) {
   WaitForServer(DEBUG_LOCATION, stub_1, 0);
   gpr_log(GPR_INFO, "****** CHANNEL 1 CONNECTED *******");
   servers_[0]->Shutdown();
+  EXPECT_TRUE(WaitForChannelNotReady(channel_1.get()));
   // Channel 1 will receive a re-resolution containing the same server. It will
   // create a new subchannel and hold a ref to it.
   StartServers(1, ports);
