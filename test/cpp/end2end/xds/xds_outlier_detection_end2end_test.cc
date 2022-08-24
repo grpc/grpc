@@ -120,13 +120,13 @@ TEST_P(OutlierDetectionTest, SuccessRateEjectionAndUnejection) {
   // It should take no more than one ejection timer interval.
   WaitForBackend(DEBUG_LOCATION, 1, /*check_status=*/nullptr,
                  WaitForBackendOptions().set_timeout_ms(
-                     10 * get_test_interval() / absl::Milliseconds(1)),
+                     3 * get_test_interval() / absl::Milliseconds(1)),
                  rpc_options);
   // Now wait for traffic aimed at backend 0 to switch back to backend 0.
   // This tells us that backend 0 has been unejected.
   WaitForBackend(DEBUG_LOCATION, 0, /*check_status=*/nullptr,
                  WaitForBackendOptions().set_timeout_ms(
-                     10 * get_test_interval() / absl::Milliseconds(1)),
+                     3 * get_test_interval() / absl::Milliseconds(1)),
                  rpc_options);
 }
 
@@ -187,8 +187,7 @@ TEST_P(OutlierDetectionTest, SuccessRateMaxPercent) {
                  WaitForBackendOptions(), rpc_options2);
   WaitForBackend(DEBUG_LOCATION, 3, /*check_status=*/nullptr,
                  WaitForBackendOptions(), rpc_options3);
-  // Cause 2 error and wait for 1 outlier detection interval to pass to cause
-  // the backend to be ejected.
+  // Cause 2 errors and wait until one ejection happens.
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::CANCELLED, "",
                       RpcOptions()
                           .set_metadata(std::move(metadata))
@@ -197,13 +196,20 @@ TEST_P(OutlierDetectionTest, SuccessRateMaxPercent) {
                       RpcOptions()
                           .set_metadata(std::move(metadata1))
                           .set_server_expected_error(StatusCode::CANCELLED));
-  CheckRpcSendOk(DEBUG_LOCATION, 1, rpc_options2);
-  CheckRpcSendOk(DEBUG_LOCATION, 1, rpc_options3);
-  gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(
-      10 * get_test_interval() / absl::Milliseconds(1)));
-  ResetBackendCounters();
+  absl::Time deadline = absl::Now() + 3 * get_test_interval();
+  while (true) {
+    ResetBackendCounters();
+    CheckRpcSendOk(DEBUG_LOCATION, 1, rpc_options);
+    CheckRpcSendOk(DEBUG_LOCATION, 1, rpc_options1);
+    if (!SeenAllBackends(0, 2)) {
+      break;
+    }
+    EXPECT_LE(absl::Now(), deadline);
+    if (absl::Now() >= deadline) break;
+  }
   // 1 backend should be ejected, trafficed picked up by another backend.
   // No other backend should be ejected.
+  ResetBackendCounters();
   CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options);
   CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options1);
   CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options2);
@@ -289,7 +295,7 @@ TEST_P(OutlierDetectionTest, SuccessRateStdevFactor) {
                           .set_metadata(std::move(metadata))
                           .set_server_expected_error(StatusCode::CANCELLED));
   gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(
-      10 * get_test_interval() / absl::Milliseconds(1)));
+      3 * get_test_interval() / absl::Milliseconds(1)));
   ResetBackendCounters();
   // 1 backend experenced failure, but since the stdev_factor is high, no
   // backend will be noticed as an outlier so no ejection.
@@ -359,7 +365,7 @@ TEST_P(OutlierDetectionTest, SuccessRateEnforcementPercentage) {
                           .set_metadata(std::move(metadata))
                           .set_server_expected_error(StatusCode::CANCELLED));
   gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(
-      10 * get_test_interval() / absl::Milliseconds(1)));
+      3 * get_test_interval() / absl::Milliseconds(1)));
   ResetBackendCounters();
   // 1 backend experenced failure, but since the enforcement percentage is 0, no
   // backend will be ejected.
@@ -428,7 +434,7 @@ TEST_P(OutlierDetectionTest, SuccessRateMinimumHosts) {
                           .set_metadata(std::move(metadata))
                           .set_server_expected_error(StatusCode::CANCELLED));
   gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(
-      10 * get_test_interval() / absl::Milliseconds(1)));
+      3 * get_test_interval() / absl::Milliseconds(1)));
   ResetBackendCounters();
   // All traffic still reaching the original backends and no backends are
   // ejected.
@@ -498,7 +504,7 @@ TEST_P(OutlierDetectionTest, SuccessRateRequestVolume) {
                           .set_metadata(std::move(metadata))
                           .set_server_expected_error(StatusCode::CANCELLED));
   gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(
-      10 * get_test_interval() / absl::Milliseconds(1)));
+      3 * get_test_interval() / absl::Milliseconds(1)));
   ResetBackendCounters();
   // All traffic still reaching the original backends and no backends are
   // ejected.
@@ -530,7 +536,7 @@ TEST_P(OutlierDetectionTest, FailurePercentageEjectionAndUnejection) {
   interval->set_seconds(get_test_interval() / absl::Seconds(1));
   auto* base_time =
       cluster.mutable_outlier_detection()->mutable_base_ejection_time();
-  base_time->set_seconds(10 * get_test_interval() / absl::Seconds(1));
+  base_time->set_seconds(3 * get_test_interval() / absl::Seconds(1));
   cluster.mutable_outlier_detection()
       ->mutable_failure_percentage_threshold()
       ->set_value(0);
@@ -573,7 +579,7 @@ TEST_P(OutlierDetectionTest, FailurePercentageEjectionAndUnejection) {
                           .set_server_expected_error(StatusCode::CANCELLED));
   WaitForBackend(DEBUG_LOCATION, 1, /*check_status=*/nullptr,
                  WaitForBackendOptions().set_timeout_ms(
-                     10 * get_test_interval() / absl::Milliseconds(1)),
+                     3 * get_test_interval() / absl::Milliseconds(1)),
                  rpc_options);
   // 1 backend is ejected all traffic going to the ejected backend should now
   // all be going to the other backend.
@@ -651,8 +657,7 @@ TEST_P(OutlierDetectionTest, FailurePercentageMaxPercentage) {
                  WaitForBackendOptions(), rpc_options2);
   WaitForBackend(DEBUG_LOCATION, 3, /*check_status=*/nullptr,
                  WaitForBackendOptions(), rpc_options3);
-  // Cause 2 error and wait for 1 outlier detection interval to pass to cause
-  // the backend to be ejected.
+  // Cause 2 errors and wait until one ejection happens.
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::CANCELLED, "",
                       RpcOptions()
                           .set_metadata(std::move(metadata))
@@ -661,11 +666,20 @@ TEST_P(OutlierDetectionTest, FailurePercentageMaxPercentage) {
                       RpcOptions()
                           .set_metadata(std::move(metadata1))
                           .set_server_expected_error(StatusCode::CANCELLED));
-  gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(
-      10 * get_test_interval() / absl::Milliseconds(1)));
-  ResetBackendCounters();
+  absl::Time deadline = absl::Now() + 3 * get_test_interval();
+  while (true) {
+    ResetBackendCounters();
+    CheckRpcSendOk(DEBUG_LOCATION, 1, rpc_options);
+    CheckRpcSendOk(DEBUG_LOCATION, 1, rpc_options1);
+    if (!SeenAllBackends(0, 2)) {
+      break;
+    }
+    EXPECT_LE(absl::Now(), deadline);
+    if (absl::Now() >= deadline) break;
+  }
   // 1 backend should be ejected, trafficed picked up by another backend.
   // No other backend should be ejected.
+  ResetBackendCounters();
   CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options);
   CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options1);
   CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options2);
@@ -748,7 +762,7 @@ TEST_P(OutlierDetectionTest, FailurePercentageThreshold) {
                           .set_metadata(std::move(metadata))
                           .set_server_expected_error(StatusCode::CANCELLED));
   gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(
-      10 * get_test_interval() / absl::Milliseconds(1)));
+      3 * get_test_interval() / absl::Milliseconds(1)));
   ResetBackendCounters();
   // 1 backend experenced 1 failure, but since the threshold is 50 % no
   // backend will be noticed as an outlier so no ejection.
@@ -819,7 +833,7 @@ TEST_P(OutlierDetectionTest, FailurePercentageEnforcementPercentage) {
                           .set_metadata(std::move(metadata))
                           .set_server_expected_error(StatusCode::CANCELLED));
   gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(
-      10 * get_test_interval() / absl::Milliseconds(1)));
+      3 * get_test_interval() / absl::Milliseconds(1)));
   ResetBackendCounters();
   // 1 backend experenced failure, but since the enforcement percentage is 0, no
   // backend will be ejected.
@@ -889,7 +903,7 @@ TEST_P(OutlierDetectionTest, FailurePercentageMinimumHosts) {
                           .set_metadata(std::move(metadata))
                           .set_server_expected_error(StatusCode::CANCELLED));
   gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(
-      10 * get_test_interval() / absl::Milliseconds(1)));
+      3 * get_test_interval() / absl::Milliseconds(1)));
   ResetBackendCounters();
   // All traffic still reaching the original backends and no backends are
   // ejected.
@@ -961,7 +975,7 @@ TEST_P(OutlierDetectionTest, FailurePercentageRequestVolume) {
                           .set_metadata(std::move(metadata))
                           .set_server_expected_error(StatusCode::CANCELLED));
   gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(
-      10 * get_test_interval() / absl::Milliseconds(1)));
+      3 * get_test_interval() / absl::Milliseconds(1)));
   ResetBackendCounters();
   // All traffic still reaching the original backends and no backends are
   // ejected.
@@ -1048,13 +1062,13 @@ TEST_P(OutlierDetectionTest, SuccessRateAndFailurePercentage) {
                  WaitForBackendOptions(), rpc_options2);
   WaitForBackend(DEBUG_LOCATION, 3, /*check_status=*/nullptr,
                  WaitForBackendOptions(), rpc_options3);
-  // Cause 2 errors on 1 backend and 1 error on 2 backends and wait for 1
-  // outlier detection interval to pass. The 2 errors to the 1 backend will make
-  // exactly 1 outlier from the success rate algorithm; all 4 errors will make 3
-  // outliers from the failure pecentage algorithm because the threahold is set
-  // to 0. I have verified through debug logs we eject 1 backend because of
-  // success rate, 1 backend because of failure percentage; but as we attempt to
-  // eject another backend because of failure percentage we will stop as we have
+  // Cause 2 errors on 1 backend and 1 error on 2 backends and wait for 2
+  // backends to be ejected. The 2 errors to the 1 backend will make exactly 1
+  // outlier from the success rate algorithm; all 4 errors will make 3 outliers
+  // from the failure pecentage algorithm because the threahold is set to 0. I
+  // have verified through debug logs we eject 1 backend because of success
+  // rate, 1 backend because of failure percentage; but as we attempt to eject
+  // another backend because of failure percentage we will stop as we have
   // reached our 50% limit.
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::CANCELLED, "",
@@ -1072,8 +1086,20 @@ TEST_P(OutlierDetectionTest, SuccessRateAndFailurePercentage) {
       DEBUG_LOCATION, StatusCode::CANCELLED, "",
       RpcOptions().set_metadata(metadata2).set_server_expected_error(
           StatusCode::CANCELLED));
-  gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(
-      10 * get_test_interval() / absl::Milliseconds(1)));
+  absl::Time deadline = absl::Now() + 3 * get_test_interval();
+  std::vector<size_t> idx = {0, 1, 2, 3};
+  while (true) {
+    ResetBackendCounters();
+    CheckRpcSendOk(DEBUG_LOCATION, 1, rpc_options);
+    CheckRpcSendOk(DEBUG_LOCATION, 1, rpc_options1);
+    CheckRpcSendOk(DEBUG_LOCATION, 1, rpc_options2);
+    CheckRpcSendOk(DEBUG_LOCATION, 1, rpc_options3);
+    if (std::count_if(idx.begin(), idx.end(),
+                      [this](size_t i) { return SeenBackend(i); }) == 2)
+      break;
+    EXPECT_LE(absl::Now(), deadline);
+    if (absl::Now() >= deadline) break;
+  }
   ResetBackendCounters();
   CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options);
   CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options1);
@@ -1142,7 +1168,7 @@ TEST_P(OutlierDetectionTest, SuccessRateAndFailurePercentageBothDisabled) {
                           .set_metadata(std::move(metadata))
                           .set_server_expected_error(StatusCode::CANCELLED));
   gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(
-      10 * get_test_interval() / absl::Milliseconds(1)));
+      3 * get_test_interval() / absl::Milliseconds(1)));
   ResetBackendCounters();
   // 1 backend experenced failure, but since there is no counting there is no
   // ejection.  Both backends are still getting the RPCs intended for them.
@@ -1246,7 +1272,7 @@ TEST_P(OutlierDetectionTest,
       RpcOptions().set_metadata(metadata2).set_server_expected_error(
           StatusCode::CANCELLED));
   gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(
-      10 * get_test_interval() / absl::Milliseconds(1)));
+      3 * get_test_interval() / absl::Milliseconds(1)));
   ResetBackendCounters();
   CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options);
   CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options1);
@@ -1273,7 +1299,7 @@ TEST_P(OutlierDetectionTest, DisableOutlierDetectionWhileAddressesAreEjected) {
   interval->set_seconds(get_test_interval() / absl::Seconds(1));
   auto* base_time =
       cluster.mutable_outlier_detection()->mutable_base_ejection_time();
-  base_time->set_seconds(10 * get_test_interval() / absl::Seconds(1));
+  base_time->set_seconds(3 * get_test_interval() / absl::Seconds(1));
   cluster.mutable_outlier_detection()
       ->mutable_failure_percentage_threshold()
       ->set_value(0);
@@ -1316,7 +1342,7 @@ TEST_P(OutlierDetectionTest, DisableOutlierDetectionWhileAddressesAreEjected) {
           StatusCode::CANCELLED));
   WaitForBackend(DEBUG_LOCATION, 1, /*check_status=*/nullptr,
                  WaitForBackendOptions().set_timeout_ms(
-                     10 * get_test_interval() / absl::Milliseconds(1)),
+                     3 * get_test_interval() / absl::Milliseconds(1)),
                  rpc_options);
   // 1 backend is ejected all traffic going to the ejected backend should now
   // all be going to the other backend.
