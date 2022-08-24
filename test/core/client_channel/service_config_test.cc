@@ -473,15 +473,10 @@ TEST_F(ErroredParsersScopingTest, MethodParams) {
 class ClientChannelParserTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    builder_ = std::make_unique<CoreConfiguration::WithSubstituteBuilder>(
-        BuildCoreConfiguration);
     EXPECT_EQ(CoreConfiguration::Get().service_config_parser().GetParserIndex(
                   "client_channel"),
               0);
   }
-
- private:
-  std::unique_ptr<CoreConfiguration::WithSubstituteBuilder> builder_;
 };
 
 TEST_F(ClientChannelParserTest, ValidLoadBalancingConfigPickFirst) {

@@ -1904,7 +1904,7 @@ class GrpcLbFactory : public LoadBalancingPolicyFactory {
 //
 
 namespace grpc_core {
-void RegisterGrpcLbLoadReportingFilter(CoreConfiguration::Builder* builder) {
+void RegisterGrpcLbPolicy(CoreConfiguration::Builder* builder) {
   builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
       absl::make_unique<GrpcLbFactory>());
   builder->channel_init()->RegisterStage(

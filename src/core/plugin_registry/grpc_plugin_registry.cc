@@ -31,7 +31,6 @@ void grpc_client_channel_init(void);
 void grpc_client_channel_shutdown(void);
 void grpc_resolver_dns_ares_init(void);
 void grpc_resolver_dns_ares_shutdown(void);
-namespace grpc_core {}  // namespace grpc_core
 
 void grpc_register_built_in_plugins(void) {
   grpc_register_plugin(grpc_client_channel_init, grpc_client_channel_shutdown);
@@ -49,8 +48,7 @@ extern void SecurityRegisterHandshakerFactories(
 extern void RegisterClientAuthorityFilter(CoreConfiguration::Builder* builder);
 extern void RegisterChannelIdleFilters(CoreConfiguration::Builder* builder);
 extern void RegisterDeadlineFilter(CoreConfiguration::Builder* builder);
-extern void RegisterGrpcLbLoadReportingFilter(
-    CoreConfiguration::Builder* builder);
+extern void RegisterGrpcLbPolicy(CoreConfiguration::Builder* builder);
 extern void RegisterHttpFilters(CoreConfiguration::Builder* builder);
 extern void RegisterMessageSizeFilter(CoreConfiguration::Builder* builder);
 extern void RegisterSecurityFilters(CoreConfiguration::Builder* builder);
@@ -66,8 +64,7 @@ extern void RegisterFakeResolver(CoreConfiguration::Builder* builder);
 extern void RegisterPriorityLbPolicy(CoreConfiguration::Builder* builder);
 extern void RegisterOutlierDetectionLbPolicy(
     CoreConfiguration::Builder* builder);
-extern void RegisterWeightedAverageLbPolicy(
-    CoreConfiguration::Builder* builder);
+extern void RegisterWeightedTargetLbPolicy(CoreConfiguration::Builder* builder);
 extern void RegisterPickFirstLbPolicy(CoreConfiguration::Builder* builder);
 extern void RegisterRoundRobinLbPolicy(CoreConfiguration::Builder* builder);
 extern void RegisterRingHashLbPolicy(CoreConfiguration::Builder* builder);
@@ -86,7 +83,7 @@ void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
   RegisterTCPConnectHandshaker(builder);
   RegisterPriorityLbPolicy(builder);
   RegisterOutlierDetectionLbPolicy(builder);
-  RegisterWeightedAverageLbPolicy(builder);
+  RegisterWeightedTargetLbPolicy(builder);
   RegisterPickFirstLbPolicy(builder);
   RegisterRoundRobinLbPolicy(builder);
   RegisterRingHashLbPolicy(builder);
@@ -94,7 +91,7 @@ void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
   SecurityRegisterHandshakerFactories(builder);
   RegisterClientAuthorityFilter(builder);
   RegisterChannelIdleFilters(builder);
-  RegisterGrpcLbLoadReportingFilter(builder);
+  RegisterGrpcLbPolicy(builder);
   RegisterHttpFilters(builder);
   RegisterDeadlineFilter(builder);
   RegisterMessageSizeFilter(builder);
