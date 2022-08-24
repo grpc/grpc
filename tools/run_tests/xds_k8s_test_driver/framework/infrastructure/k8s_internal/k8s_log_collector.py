@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import fileinput
 import logging
 import os
 import pathlib
@@ -21,8 +20,6 @@ from typing import Any, Callable, Optional, TextIO
 from kubernetes import client
 from kubernetes.watch import watch
 
-from framework.infrastructure import k8s
-
 logger = logging.getLogger(__name__)
 
 
@@ -31,6 +28,7 @@ class PodLogCollector(threading.Thread):
     pod_name: str
     namespace_name: str
     stop_event: threading.Event
+    drain_event: threading.Event
     log_path: pathlib.Path
     log_to_stdout: bool
     error_backoff_sec: int
@@ -41,18 +39,20 @@ class PodLogCollector(threading.Thread):
     def __init__(self,
                  *,
                  pod_name: str,
-                 k8s_namespace: k8s.KubernetesNamespace,
+                 namespace_name: str,
+                 read_pod_log_fn: Callable[..., Any],
                  stop_event: threading.Event,
                  log_path: pathlib.Path,
                  log_to_stdout: bool = False,
                  error_backoff_sec: int = 1):
         self.pod_name = pod_name
-        self.namespace_name = k8s_namespace.name
+        self.namespace_name = namespace_name
         self.stop_event = stop_event
+        self.drain_event = threading.Event()
         self.log_path = log_path
         self.log_to_stdout = log_to_stdout
         self.error_backoff_sec = error_backoff_sec
-        self._read_pod_log_fn = k8s_namespace.api.core.read_namespaced_pod_log
+        self._read_pod_log_fn = read_pod_log_fn
         self._out_stream = None
         self._watcher = None
         super().__init__(name=f'pod-log-{pod_name}', daemon=True)
@@ -60,13 +60,18 @@ class PodLogCollector(threading.Thread):
     def run(self):
         logger.info('Starting log collection on a thread %s', self.name)
         try:
-            self._out_stream = open(self.log_path, "wx", errors='ignore')
+            self._out_stream = open(self.log_path, 'w', errors='ignore')
             while not self.stop_event.is_set():
                 self._stream_log()
         finally:
-            self.stop()
+            self._stop()
 
-    def stop(self):
+    def flush(self):
+        if self._out_stream:
+            self._out_stream.flush()
+            os.fsync(self._out_stream.fileno())
+
+    def _stop(self):
         if self._watcher is not None:
             self._watcher.stop()
             self._watcher = None
@@ -75,6 +80,7 @@ class PodLogCollector(threading.Thread):
                         force_flush=True)
             self._out_stream.close()
             self._out_stream = None
+        self.drain_event.set()
 
     def _stream_log(self):
         try:
@@ -100,14 +106,13 @@ class PodLogCollector(threading.Thread):
             self._write(msg)
             # Every message check if a stop is requested.
             if self.stop_event.is_set():
-                self.stop()
+                self._stop()
                 return
 
     def _write(self, msg: str, force_flush: bool = False):
         self._out_stream.write(msg)
         self._out_stream.write("\n")
         if force_flush:
-            self._out_stream.flush()
-            os.fsync(self._out_stream.fileno())
+            self.flush()
         if self.log_to_stdout:
             logger.info(msg)

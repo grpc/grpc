@@ -44,6 +44,7 @@ class KubernetesBaseRunner(base_runner.BaseRunner):
     TEMPLATE_DIR_RELATIVE_PATH = f'../../../../{TEMPLATE_DIR_NAME}'
     ROLE_WORKLOAD_IDENTITY_USER = 'roles/iam.workloadIdentityUser'
     pod_port_forwarders: List[k8s.PortForwarder]
+    pod_log_collectors: List[k8s.PodLogCollector]
 
     def __init__(self,
                  k8s_namespace,
@@ -59,7 +60,8 @@ class KubernetesBaseRunner(base_runner.BaseRunner):
 
         # Mutable state
         self.namespace: Optional[k8s.V1Namespace] = None
-        self.pod_port_forwarders: List[k8s.PortForwarder] = []
+        self.pod_port_forwarders = []
+        self.pod_log_collectors = []
 
     def run(self, **kwargs):
         del kwargs
@@ -74,11 +76,26 @@ class KubernetesBaseRunner(base_runner.BaseRunner):
             self.delete_namespace()
             self.namespace = None
 
-    def _stop_pod_dependencies(self):
+    def stop_pod_dependencies(self, *, log_drain_sec: int = 0):
+        # Signal to stop logging early so less drain time needed.
         self.stop_logging_if_needed()
-        for port_forwarder in self.pod_port_forwarders:
-            port_forwarder.close()
+
+        # Stop port forwarders if any.
+        for pod_port_forwarder in self.pod_port_forwarders:
+            pod_port_forwarder.close()
         self.pod_port_forwarders = []
+
+        for pod_log_collector in self.pod_log_collectors:
+            if log_drain_sec > 0 and not pod_log_collector.drain_event.is_set():
+                logger.info("Draining logs for %s, timeout %i sec",
+                            pod_log_collector.pod_name, log_drain_sec)
+                # The close will happen normally at the next message.
+                pod_log_collector.drain_event.wait(timeout=log_drain_sec)
+            # Note this will be called from the main thread and may cause
+            # a race for the log file. Still, at least it'll flush the buffers.
+            pod_log_collector.flush()
+
+        self.pod_log_collectors = []
 
     @classmethod
     def _render_template(cls, template_file, **kwargs):
@@ -239,7 +256,7 @@ class KubernetesBaseRunner(base_runner.BaseRunner):
         return service
 
     def _delete_deployment(self, name, wait_for_deletion=True):
-        self._stop_pod_dependencies()
+        self.stop_pod_dependencies()
         logger.info('Deleting deployment %s', name)
         try:
             self.k8s_namespace.delete_deployment(name)
@@ -325,8 +342,7 @@ class KubernetesBaseRunner(base_runner.BaseRunner):
                     pod.status.pod_ip)
         return pod
 
-    def _start_port_forwarding_pod(self,
-                                   pod: k8s.V1Pod,
+    def _start_port_forwarding_pod(self, pod: k8s.V1Pod,
                                    remote_port: int) -> k8s.PortForwarder:
         logger.info('LOCAL DEV MODE: Enabling port forwarding to %s:%s',
                     pod.status.pod_ip, remote_port)
@@ -341,14 +357,15 @@ class KubernetesBaseRunner(base_runner.BaseRunner):
         pod_name = pod.metadata.name
         logfile_name = f'{self.k8s_namespace.name}_{pod_name}.log'
         log_path = self.logs_subdir / logfile_name
-        logger.info('Enabling log collection from pod %s to %s',
-                    pod_name,
-                    log_path.relative_to(self.logs_subdir.parent.name))
-        return self.k8s_namespace.pod_start_logging(
+        logger.info('Enabling log collection from pod %s to %s', pod_name,
+                    log_path.relative_to(self.logs_subdir.parent.parent))
+        pod_log_collector = self.k8s_namespace.pod_start_logging(
             pod_name=pod_name,
             log_path=log_path,
             log_stop_event=self.log_stop_event,
             log_to_stdout=log_to_stdout)
+        self.pod_log_collectors.append(pod_log_collector)
+        return pod_log_collector
 
     def _wait_service_neg(self, name, service_port, **kwargs):
         logger.info('Waiting for NEG for service %s', name)

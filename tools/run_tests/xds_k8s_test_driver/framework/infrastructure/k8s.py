@@ -26,14 +26,14 @@ import yaml
 
 from framework.helpers import retryers
 import framework.helpers.highlighter
-from framework.infrastructure.k8s import k8s_log_collector
-from framework.infrastructure.k8s import k8s_port_forwarder
+from framework.infrastructure.k8s_internal import k8s_log_collector
+from framework.infrastructure.k8s_internal import k8s_port_forwarder
 
 logger = logging.getLogger(__name__)
 # Type aliases
 _HighlighterYaml = framework.helpers.highlighter.HighlighterYaml
-PortForwarder = k8s_port_forwarder.PortForwarder
 PodLogCollector = k8s_log_collector.PodLogCollector
+PortForwarder = k8s_port_forwarder.PortForwarder
 V1Deployment = client.V1Deployment
 V1ServiceAccount = client.V1ServiceAccount
 V1Pod = client.V1Pod
@@ -302,10 +302,11 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
         remote_port: int,
         local_port: Optional[int] = None,
         local_address: Optional[str] = None,
-    ) -> PortForwarder:
-        pf = PortForwarder(self.api.context, self.name,
-                           f"pod/{pod.metadata.name}", remote_port, local_port,
-                           local_address)
+    ) -> k8s_port_forwarder.PortForwarder:
+        pf = k8s_port_forwarder.PortForwarder(self.api.context, self.name,
+                                              f"pod/{pod.metadata.name}",
+                                              remote_port, local_port,
+                                              local_address)
         pf.connect()
         return pf
 
@@ -315,11 +316,13 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
                           log_path: pathlib.Path,
                           log_stop_event: threading.Event,
                           log_to_stdout: bool = False) -> PodLogCollector:
-        pod_log_collector = PodLogCollector(pod_name=pod_name,
-                                            k8s_namespace=self,
-                                            stop_event=log_stop_event,
-                                            log_path=log_path,
-                                            log_to_stdout=log_to_stdout)
+        pod_log_collector = PodLogCollector(
+            pod_name=pod_name,
+            namespace_name=self.name,
+            read_pod_log_fn=self.api.core.read_namespaced_pod_log,
+            stop_event=log_stop_event,
+            log_path=log_path,
+            log_to_stdout=log_to_stdout)
         pod_log_collector.start()
         return pod_log_collector
 
