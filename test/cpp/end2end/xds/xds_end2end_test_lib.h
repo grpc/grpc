@@ -717,6 +717,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
   struct RpcOptions {
     RpcService service = SERVICE_ECHO;
     RpcMethod method = METHOD_ECHO;
+    // Dev note: If a timeout or Deadline Exceeded error is occurring in an XDS
+    // end2end test, consider changing that test's timeout instead of this
+    // global default.
     int timeout_ms = 1000;
     bool wait_for_ready = false;
     std::vector<std::pair<std::string, std::string>> metadata;
