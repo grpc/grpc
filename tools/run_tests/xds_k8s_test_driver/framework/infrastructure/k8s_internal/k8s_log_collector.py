@@ -31,6 +31,7 @@ class PodLogCollector(threading.Thread):
     drain_event: threading.Event
     log_path: pathlib.Path
     log_to_stdout: bool
+    log_timestamps: bool
     error_backoff_sec: int
     _out_stream: Optional[TextIO]
     _watcher: Optional[watch.Watch]
@@ -44,6 +45,7 @@ class PodLogCollector(threading.Thread):
                  stop_event: threading.Event,
                  log_path: pathlib.Path,
                  log_to_stdout: bool = False,
+                 log_timestamps: bool = False,
                  error_backoff_sec: int = 1):
         self.pod_name = pod_name
         self.namespace_name = namespace_name
@@ -51,6 +53,7 @@ class PodLogCollector(threading.Thread):
         self.drain_event = threading.Event()
         self.log_path = log_path
         self.log_to_stdout = log_to_stdout
+        self.log_timestamps = log_timestamps
         self.error_backoff_sec = error_backoff_sec
         self._read_pod_log_fn = read_pod_log_fn
         self._out_stream = None
@@ -105,7 +108,7 @@ class PodLogCollector(threading.Thread):
         for msg in self._watcher.stream(self._read_pod_log_fn,
                                         name=self.pod_name,
                                         namespace=self.namespace_name,
-                                        timestamps=True,
+                                        timestamps=self.log_timestamps,
                                         follow=True):
             self._write(msg)
             # Every message check if a stop is requested.
