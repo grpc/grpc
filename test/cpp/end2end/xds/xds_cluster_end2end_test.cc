@@ -25,7 +25,7 @@
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "test/cpp/end2end/connection_delay_injector.h"
+#include "test/cpp/end2end/connection_attempt_injector.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 
 namespace grpc {
@@ -1153,8 +1153,7 @@ TEST_P(FailoverTest, ReportsConnectingDuringFailover) {
       {"locality1", CreateEndpointsForBackends(), kDefaultLocalityWeight, 1},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  ConnectionHoldInjector injector;
-  injector.Start();
+  ConnectionAttemptInjector injector;
   auto hold = injector.AddHold(backends_[0]->port());
   // Start an RPC in the background, which should cause the channel to
   // try to connect.
