@@ -99,10 +99,11 @@ class KubernetesServerRunner(k8s_base_runner.KubernetesBaseRunner):
     def run(  # pylint: disable=arguments-differ
             self,
             *,
-            test_port=DEFAULT_TEST_PORT,
-            maintenance_port=None,
-            secure_mode=False,
-            replica_count=1) -> List[XdsTestServer]:
+            test_port: int = DEFAULT_TEST_PORT,
+            maintenance_port: Optional[int] = None,
+            secure_mode: bool = False,
+            replica_count: int = 1,
+            log_to_stdout: bool = False) -> List[XdsTestServer]:
         # Implementation detail: in secure mode, maintenance ("backchannel")
         # port must be different from the test port so communication with
         # maintenance services can be reached independently from the security
@@ -188,7 +189,7 @@ class KubernetesServerRunner(k8s_base_runner.KubernetesBaseRunner):
             pod = self._wait_pod_started(pod_name)
             pods.append(pod)
             if self.should_collect_logs:
-                self._start_logging_pod(pod)
+                self._start_logging_pod(pod, log_to_stdout=log_to_stdout)
 
         # Verify the deployment reports all pods started as well.
         self._wait_deployment_with_available_replicas(self.deployment_name,

@@ -318,15 +318,22 @@ class KubernetesBaseRunner(base_runner.BaseRunner):
                     pod.status.pod_ip)
         return pod
 
-    def _start_logging_pod(self, pod: k8s.V1Pod):
+    def _start_logging_pod(self,
+                           pod: k8s.V1Pod,
+                           *,
+                           log_to_stdout: bool = False):
         pod_name = pod.metadata.name
-        logfile_name = f'{self.k8s_namespace.name}_{pod_name}.log'
-        logger.info('Enabling log collection from pod %s to %s/%s/%s', pod_name,
-                    self.logs_subdir.parent.name, self.logs_subdir.name,
-                    logfile_name)
-        logfile = self.logs_subdir / logfile_name
-        self.k8s_namespace.pod_start_logging(pod_name, logfile,
-                                             self.log_stop_event)
+        if self.should_collect_logs:
+            logfile_name = f'{self.k8s_namespace.name}_{pod_name}.log'
+            log_path = self.logs_subdir / logfile_name
+            logger.info('Enabling log collection from pod %s to %s',
+                        pod_name,
+                        log_path.relative_to(self.logs_subdir.parent.name))
+            self.k8s_namespace.pod_start_logging(
+                pod_name=pod_name,
+                log_path=log_path,
+                log_stop_event=self.log_stop_event,
+                log_to_stdout=log_to_stdout)
 
     def _wait_service_neg(self, name, service_port, **kwargs):
         logger.info('Waiting for NEG for service %s', name)

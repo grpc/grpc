@@ -17,23 +17,23 @@ import json
 import logging
 import pathlib
 import threading
-import time
 from typing import List, Optional, Tuple
 
 from kubernetes import client
 from kubernetes import utils
-from kubernetes import watch
 import kubernetes.config
 import yaml
 
 from framework.helpers import retryers
 import framework.helpers.highlighter
+from framework.infrastructure.k8s import k8s_log_collector
 from framework.infrastructure.k8s import k8s_port_forwarder
 
 logger = logging.getLogger(__name__)
 # Type aliases
 _HighlighterYaml = framework.helpers.highlighter.HighlighterYaml
 PortForwarder = k8s_port_forwarder.PortForwarder
+PodLogCollector = k8s_log_collector.PodLogCollector
 V1Deployment = client.V1Deployment
 V1ServiceAccount = client.V1ServiceAccount
 V1Pod = client.V1Pod
@@ -309,49 +309,19 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
         pf.connect()
         return pf
 
-    def pod_start_logging(self, pod_name: str, logfile: pathlib.Path,
-                          log_stop_event: threading.Event):
-        t = threading.Thread(target=self.pod_stream_append_log,
-                             args=(pod_name, logfile, log_stop_event),
-                             daemon=True)
-        t.start()
-
-    def pod_stream_append_log(self,
-                              pod_name: str,
-                              logfile: pathlib.Path,
-                              log_stop_event: threading.Event,
-                              *,
-                              backoff_seconds: int = 1):
-        logger.info('Starting log collection on a thread')
-        query_restarted = False
-        read_namespaced_pod_log = self.api.core.read_namespaced_pod_log
-        with open(logfile, "w") as stream:
-            while not log_stop_event.is_set():
-                try:
-                    if query_restarted:
-                        stream.write(
-                            "Restarted log fetching. Attempting to read from "
-                            "the beginning, but truncation may have occurred.\n"
-                        )
-
-                    watcher = watch.Watch()
-                    for msg in watcher.stream(read_namespaced_pod_log,
-                                              name=pod_name,
-                                              namespace=self.name,
-                                              timestamps=True,
-                                              follow=True):
-                        logger.info(msg)
-                        stream.write(msg)
-                        stream.write("\n")
-                        stream.flush()
-                    if log_stop_event.is_set():
-                        watcher.stop()
-                except ApiException as e:
-                    stream.write(f"Exception fetching logs: {e}\n")
-                    query_restarted = True
-                    time.sleep(backoff_seconds)
-                finally:
-                    stream.flush()
+    def pod_start_logging(self,
+                          *,
+                          pod_name: str,
+                          log_path: pathlib.Path,
+                          log_stop_event: threading.Event,
+                          log_to_stdout: bool = False) -> PodLogCollector:
+        pod_log_collector = PodLogCollector(pod_name=pod_name,
+                                            k8s_namespace=self,
+                                            stop_event=log_stop_event,
+                                            log_path=log_path,
+                                            log_to_stdout=log_to_stdout)
+        pod_log_collector.start()
+        return pod_log_collector
 
     def _pretty_format_statuses(self,
                                 k8s_objects: List[Optional[object]]) -> str:
