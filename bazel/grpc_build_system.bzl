@@ -53,6 +53,12 @@ def if_windows(a):
         "//conditions:default": [],
     })
 
+def if_mac_else(a, b):
+    return select({
+        "//:mac_x86_64": a,
+        "//conditions:default": b,
+    })
+
 def _get_external_deps(external_deps):
     ret = []
     for dep in external_deps:
@@ -369,7 +375,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         "exec_compatible_with": exec_compatible_with,
         "exec_properties": exec_properties,
         "shard_count": shard_count,
-        "flaky": flaky,
+        "flaky": if_mac_else(True, flaky),
         "linkstatic": linkstatic,
     }
 
@@ -484,7 +490,7 @@ def grpc_sh_test(name, srcs = [], args = [], data = [], uses_polling = True, siz
         "exec_compatible_with": exec_compatible_with,
         "exec_properties": exec_properties,
         "shard_count": shard_count,
-        "flaky": flaky,
+        "flaky": if_mac_else(True, flaky),
     }
     if not uses_polling:
         native.sh_test(
