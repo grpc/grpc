@@ -39,7 +39,7 @@ _PRINT_RESPONSE = flags.DEFINE_bool("print_response",
 _FOLLOW = flags.DEFINE_bool("follow",
                             default=False,
                             help="Follow pod logs. "
-                            "Requires --should_collect_logs")
+                            "Requires --collect_app_logs")
 _CONFIG_MESH = flags.DEFINE_bool(
     "config_mesh",
     default=None,
@@ -116,7 +116,8 @@ def main(argv):
             qps=_QPS.value,
             print_response=_PRINT_RESPONSE.value,
             secure_mode=_SECURE.value,
-            config_mesh=_CONFIG_MESH.value)
+            config_mesh=_CONFIG_MESH.value,
+            log_to_stdout=_FOLLOW.value)
         if client_runner.should_collect_logs and _FOLLOW.value:
             print('Following pod logs. Press Ctrl+C top stop')
             signal.signal(signal.SIGINT, make_sigint_handler(client_runner))

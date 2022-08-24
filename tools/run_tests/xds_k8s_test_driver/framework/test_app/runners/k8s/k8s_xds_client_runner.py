@@ -92,7 +92,8 @@ class KubernetesClientRunner(k8s_base_runner.KubernetesBaseRunner):
             metadata='',
             secure_mode=False,
             config_mesh=None,
-            print_response=False) -> XdsTestClient:
+            print_response=False,
+            log_to_stdout: bool = False) -> XdsTestClient:
         logger.info(
             'Deploying xDS test client "%s" to k8s namespace %s: '
             'server_target=%s rpc=%s qps=%s metadata=%r secure_mode=%s '
@@ -142,6 +143,8 @@ class KubernetesClientRunner(k8s_base_runner.KubernetesBaseRunner):
         # Load test client pod. We need only one client at the moment
         pod_name = self._wait_deployment_pod_count(self.deployment)[0]
         pod: k8s.V1Pod = self._wait_pod_started(pod_name)
+        if self.should_collect_logs:
+            self._start_logging_pod(pod, log_to_stdout=log_to_stdout)
 
         # Verify the deployment reports all pods started as well.
         self._wait_deployment_with_available_replicas(self.deployment_name)

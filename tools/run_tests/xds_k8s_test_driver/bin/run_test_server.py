@@ -41,7 +41,7 @@ _REUSE_SERVICE = flags.DEFINE_bool("reuse_service",
 _FOLLOW = flags.DEFINE_bool("follow",
                             default=False,
                             help="Follow pod logs. "
-                            "Requires --should_collect_logs")
+                            "Requires --collect_app_logs")
 _CLEANUP_NAMESPACE = flags.DEFINE_bool(
     "cleanup_namespace",
     default=False,
