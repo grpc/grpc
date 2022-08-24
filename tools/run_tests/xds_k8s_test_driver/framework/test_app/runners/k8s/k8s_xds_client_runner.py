@@ -140,16 +140,17 @@ class KubernetesClientRunner(k8s_base_runner.KubernetesBaseRunner):
             config_mesh=config_mesh,
             print_response=print_response)
 
+        # Load test client pod. We need only one client at the moment
+        pod_name = self._wait_deployment_pod_count(self.deployment)[0]
+        pod: k8s.V1Pod = self._wait_pod_started(pod_name)
+
+        # Verify the deployment reports all pods started as well.
         self._wait_deployment_with_available_replicas(self.deployment_name)
 
-        # Load test client pod. We need only one client at the moment
-        pod = self.k8s_namespace.list_deployment_pods(self.deployment)[0]
-        self._wait_pod_started(pod.metadata.name)
+        # Experimental, for local debugging.
         pod_ip = pod.status.pod_ip
         rpc_port = self.stats_port
         rpc_host = None
-
-        # Experimental, for local debugging.
         if self.debug_use_port_forwarding:
             logger.info('LOCAL DEV MODE: Enabling port forwarding to %s:%s',
                         pod_ip, self.stats_port)
@@ -162,7 +163,7 @@ class KubernetesClientRunner(k8s_base_runner.KubernetesBaseRunner):
                              rpc_port=rpc_port,
                              server_target=server_target,
                              rpc_host=rpc_host,
-                             hostname=pod.metadata.name)
+                             hostname=pod_name)
 
     def cleanup(self, *, force=False, force_namespace=False):  # pylint: disable=arguments-differ
         if self.port_forwarder:
