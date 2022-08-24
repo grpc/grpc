@@ -1311,13 +1311,15 @@ TEST_F(PickFirstTest, PendingUpdateAndSelectedSubchannelFails) {
       BuildChannel("", response_generator);  // pick_first is the default.
   auto stub = BuildStub(channel);
   // Create a number of servers, but only start 1 of them.
-  CreateServers(10);
+  CreateServers(2);
   StartServer(0);
   // Initially resolve to first server and make sure it connects.
   gpr_log(GPR_INFO, "Phase 1: Connect to first server.");
   response_generator.SetNextResolution({servers_[0]->port_});
   CheckRpcSendOk(DEBUG_LOCATION, stub, true /* wait_for_ready */);
   EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_READY);
+  ConnectionAttemptInjector injector;
+  auto hold = injector.AddHold(servers_[1]->port_);
   // Send a resolution update with the remaining servers, none of which are
   // running yet, so the update will stay pending.  Note that it's important
   // to have multiple servers here, or else the test will be flaky; with only
@@ -1328,8 +1330,14 @@ TEST_F(PickFirstTest, PendingUpdateAndSelectedSubchannelFails) {
           "Phase 2: Resolver update pointing to remaining "
           "(not started) servers.");
   response_generator.SetNextResolution(GetServersPorts(1 /* start_index */));
+  // Add hold before connection attempt to ensure RPCs will be sent to first
+  // server. Otherwise, pending subchannel list might already have gone into
+  // TRANSIENT_FAILURE due to hitting the end of the server list by the time
+  // we check the state.
+  hold->Wait();
   // RPCs will continue to be sent to the first server.
   CheckRpcSendOk(DEBUG_LOCATION, stub);
+  hold->Resume();
   // Now stop the first server, so that the current subchannel list
   // fails.  This should cause us to immediately swap over to the
   // pending list, even though it's not yet connected.  The state should
