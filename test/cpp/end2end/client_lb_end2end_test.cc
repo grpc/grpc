@@ -71,7 +71,7 @@
 #include "test/core/util/resolve_localhost_ip46.h"
 #include "test/core/util/test_config.h"
 #include "test/core/util/test_lb_policies.h"
-#include "test/cpp/end2end/connection_delay_injector.h"
+#include "test/cpp/end2end/connection_attempt_injector.h"
 #include "test/cpp/end2end/test_service_impl.h"
 
 using grpc::testing::EchoRequest;
@@ -798,9 +798,9 @@ TEST_F(PickFirstTest, BackOffMinReconnect) {
   response_generator.SetNextResolution(ports);
   // Make connection delay a 10% longer than it's willing to in order to make
   // sure we are hitting the codepath that waits for the min reconnect backoff.
-  ConnectionDelayInjector delay_injector(
+  ConnectionAttemptInjector injector;
+  injector.SetDelay(
       grpc_core::Duration::Milliseconds(kMinReconnectBackOffMs * 1.10));
-  delay_injector.Start();
   const gpr_timespec t0 = gpr_now(GPR_CLOCK_MONOTONIC);
   channel->WaitForConnected(
       grpc_timeout_milliseconds_to_deadline(kMinReconnectBackOffMs * 2));
@@ -850,8 +850,7 @@ TEST_F(PickFirstTest, ResetConnectionBackoff) {
 TEST_F(ClientLbEnd2endTest,
        ResetConnectionBackoffNextAttemptStartsImmediately) {
   // Start connection injector.
-  ConnectionHoldInjector injector;
-  injector.Start();
+  ConnectionAttemptInjector injector;
   // Create client.
   const int port = grpc_pick_unused_port_or_die();
   ChannelArguments args;
@@ -897,8 +896,7 @@ TEST_F(
     PickFirstTest,
     TriesAllSubchannelsBeforeReportingTransientFailureWithSubchannelSharing) {
   // Start connection injector.
-  ConnectionHoldInjector injector;
-  injector.Start();
+  ConnectionAttemptInjector injector;
   // Get 5 unused ports.  Each channel will have 2 unique ports followed
   // by a common port.
   std::vector<int> ports1 = {grpc_pick_unused_port_or_die(),
@@ -1683,8 +1681,7 @@ TEST_F(RoundRobinTest, TransientFailureAtStartup) {
 
 TEST_F(RoundRobinTest, StaysInTransientFailureInSubsequentConnecting) {
   // Start connection injector.
-  ConnectionHoldInjector injector;
-  injector.Start();
+  ConnectionAttemptInjector injector;
   // Get port.
   const int port = grpc_pick_unused_port_or_die();
   // Create channel.
@@ -1723,8 +1720,7 @@ TEST_F(RoundRobinTest, StaysInTransientFailureInSubsequentConnecting) {
 
 TEST_F(RoundRobinTest, ReportsLatestStatusInTransientFailure) {
   // Start connection injector.
-  ConnectionHoldInjector injector;
-  injector.Start();
+  ConnectionAttemptInjector injector;
   // Get port.
   const std::vector<int> ports = {grpc_pick_unused_port_or_die(),
                                   grpc_pick_unused_port_or_die()};
@@ -1774,8 +1770,7 @@ TEST_F(RoundRobinTest, ReportsLatestStatusInTransientFailure) {
 
 TEST_F(RoundRobinTest, DoesNotFailRpcsUponDisconnection) {
   // Start connection injector.
-  ConnectionHoldInjector injector;
-  injector.Start();
+  ConnectionAttemptInjector injector;
   // Start server.
   StartServers(1);
   // Create channel.

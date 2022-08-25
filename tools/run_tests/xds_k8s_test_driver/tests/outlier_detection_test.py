@@ -24,7 +24,7 @@ from framework.helpers import skips
 
 logger = logging.getLogger(__name__)
 flags.adopt_module_key_flags(xds_k8s_testcase)
-flags.mark_flag_as_required('server_image_universal')
+flags.mark_flag_as_required('server_image_canonical')
 
 # Type aliases
 RpcTypeUnaryCall = xds_url_map_testcase.RpcTypeUnaryCall
@@ -58,7 +58,7 @@ class OutlierDetectionTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
         if cls.lang_spec.client_lang != _Lang.JAVA:
             # TODO(mlumish): Once rpc-behavior supported by a language, make the
             #                override version-conditional.
-            cls.server_image = xds_k8s_flags.SERVER_IMAGE_UNIVERSAL.value
+            cls.server_image = xds_k8s_flags.SERVER_IMAGE_CANONICAL.value
 
     @staticmethod
     def is_supported(config: skips.TestConfig) -> bool:

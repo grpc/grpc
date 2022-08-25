@@ -51,7 +51,7 @@ class AffinityTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
         # because the python server doesn't yet support set_not_serving RPC.
         # TODO(https://github.com/grpc/grpc/issues/30635): Remove when resolved.
         if cls.lang_spec.client_lang == _Lang.PYTHON:
-            cls.server_image = xds_k8s_flags.SERVER_IMAGE_UNIVERSAL.value
+            cls.server_image = xds_k8s_flags.SERVER_IMAGE_CANONICAL.value
 
     @staticmethod
     def is_supported(config: skips.TestConfig) -> bool:
