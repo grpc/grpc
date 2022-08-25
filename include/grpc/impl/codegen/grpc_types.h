@@ -368,6 +368,10 @@ typedef struct {
    balancer before using fallback backend addresses from the resolver.
    If 0, enter fallback mode immediately. Default value is 10000. */
 #define GRPC_ARG_GRPCLB_FALLBACK_TIMEOUT_MS "grpc.grpclb_fallback_timeout_ms"
+/* The set of channel args to be passed to the channel established to the grpclb
+ * server. If unset, the same channel args of the parent channel will be used
+ * for the channel to the grpclb server. */
+#define GRPC_ARG_GRPCLB_CHANNEL_ARGS "grpc.grpclb_channel_args"
 /* Timeout in milliseconds to wait for the child of a specific priority to
    complete its initial connection attempt before the priority LB policy fails
    over to the next priority. Default value is 10 seconds. */

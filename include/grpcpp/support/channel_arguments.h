@@ -70,6 +70,9 @@ class ChannelArguments {
   /// the resolver.
   void SetGrpclbFallbackTimeout(int fallback_timeout);
 
+  /// Set the channel args to be used for the channel to grpclb server.
+  void SetGrpclbChannelArgs(const ChannelArguments& grpclb_channel_args);
+
   /// Set a mutator for the underlying socket.
   void SetSocketMutator(grpc_socket_mutator* mutator);
 

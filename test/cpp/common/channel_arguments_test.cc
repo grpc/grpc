@@ -22,6 +22,7 @@
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/support/channel_arguments.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/socket_mutator.h"
@@ -251,6 +252,28 @@ TEST_F(ChannelArgumentsTest, SetUserAgentPrefix) {
     }
   }
   EXPECT_TRUE(found);
+}
+
+TEST_F(ChannelArgumentsTest, SetGrpclbChannelArgs) {
+  VerifyDefaultChannelArgs();
+  ChannelArguments grpclb_channel_args;
+  // Specify some channels args to be set only for the grpclb channel.
+  grpclb_channel_args.SetInt("key0", 123);
+  grpclb_channel_args.SetString("key1", "hello-world");
+  std::string key2("key2");
+  grpclb_channel_args.SetPointerWithVtable("key2", &key2, &pointer_vtable_);
+  channel_args_.SetGrpclbChannelArgs(grpclb_channel_args);
+
+  // Verify that the grplb specific channel args are retrievable in using the
+  // GRPC_ARG_GRPCLB_CHANNEL_ARGS channel arg name.
+  grpc_core::ChannelArgs args =
+      grpc_core::ChannelArgs::FromC(channel_args_.c_channel_args());
+  EXPECT_TRUE(args.Contains(GRPC_ARG_GRPCLB_CHANNEL_ARGS));
+  grpc_core::ChannelArgs grpclb_args = grpc_core::ChannelArgs::FromC(
+      args.GetPointer<grpc_channel_args>(GRPC_ARG_GRPCLB_CHANNEL_ARGS));
+  EXPECT_EQ(grpclb_args.GetInt("key0"), 123);
+  EXPECT_EQ(grpclb_args.GetString("key1"), "hello-world");
+  EXPECT_EQ(grpclb_args.GetVoidPointer("key2"), &key2);
 }
 
 }  // namespace testing

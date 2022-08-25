@@ -29,10 +29,34 @@
 #include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/config.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/socket_mutator.h"
 
 namespace grpc {
+
+static const grpc_arg_pointer_vtable* GrpcChannelArgsVTable() {
+  static const grpc_arg_pointer_vtable tbl = {
+      // copy
+      [](void* p) -> void* {
+        return p == nullptr
+                   ? nullptr
+                   : grpc_channel_args_copy(static_cast<grpc_channel_args*>(p));
+      },
+      // destroy
+      [](void* p) {
+        if (p != nullptr) {
+          grpc_channel_args_destroy(static_cast<grpc_channel_args*>(p));
+        }
+      },
+      // compare
+      [](void* p1, void* p2) {
+        return grpc_channel_args_compare(static_cast<grpc_channel_args*>(p1),
+                                         static_cast<grpc_channel_args*>(p2));
+      },
+  };
+  return &tbl;
+};
 
 ChannelArguments::ChannelArguments() {
   // This will be ignored if used on the server side.
@@ -91,6 +115,14 @@ void ChannelArguments::SetCompressionAlgorithm(
 
 void ChannelArguments::SetGrpclbFallbackTimeout(int fallback_timeout) {
   SetInt(GRPC_ARG_GRPCLB_FALLBACK_TIMEOUT_MS, fallback_timeout);
+}
+
+void ChannelArguments::SetGrpclbChannelArgs(
+    const ChannelArguments& grpclb_channel_args) {
+  auto c_args = grpclb_channel_args.c_channel_args();
+  SetPointerWithVtable(GRPC_ARG_GRPCLB_CHANNEL_ARGS,
+                       grpc_channel_args_copy(&c_args),
+                       GrpcChannelArgsVTable());
 }
 
 void ChannelArguments::SetSocketMutator(grpc_socket_mutator* mutator) {
