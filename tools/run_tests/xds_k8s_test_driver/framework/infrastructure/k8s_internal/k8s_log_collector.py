@@ -50,6 +50,9 @@ class PodLogCollector(threading.Thread):
         self.pod_name = pod_name
         self.namespace_name = namespace_name
         self.stop_event = stop_event
+        # Used to indicate log draining happened. Turned out to be not as useful
+        # in cases when the logging happens rarely because the blocking happens
+        # in the native code, which doesn't yield until the next log message.
         self.drain_event = threading.Event()
         self.log_path = log_path
         self.log_to_stdout = log_to_stdout
@@ -74,6 +77,7 @@ class PodLogCollector(threading.Thread):
             self._stop()
 
     def flush(self):
+        """Flushes the log file buffer. May be called from the main thread."""
         if self._out_stream:
             self._out_stream.flush()
             os.fsync(self._out_stream.fileno())

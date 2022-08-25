@@ -11,6 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+# TODO(sergiitk): to k8s/ package, and get rid of k8s_internal, which is only
+#   added to get around circular dependencies caused by k8s.py clashing with
+#   k8s/__init__.py
 import datetime
 import functools
 import json
@@ -315,14 +318,16 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
                           pod_name: str,
                           log_path: pathlib.Path,
                           log_stop_event: threading.Event,
-                          log_to_stdout: bool = False) -> PodLogCollector:
+                          log_to_stdout: bool = False,
+                          log_timestamps: bool = False) -> PodLogCollector:
         pod_log_collector = PodLogCollector(
             pod_name=pod_name,
             namespace_name=self.name,
             read_pod_log_fn=self.api.core.read_namespaced_pod_log,
             stop_event=log_stop_event,
             log_path=log_path,
-            log_to_stdout=log_to_stdout)
+            log_to_stdout=log_to_stdout,
+            log_timestamps=log_timestamps)
         pod_log_collector.start()
         return pod_log_collector
 

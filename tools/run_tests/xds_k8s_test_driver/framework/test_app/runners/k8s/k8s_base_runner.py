@@ -363,7 +363,11 @@ class KubernetesBaseRunner(base_runner.BaseRunner):
             pod_name=pod_name,
             log_path=log_path,
             log_stop_event=self.log_stop_event,
-            log_to_stdout=log_to_stdout)
+            log_to_stdout=log_to_stdout,
+            # Timestamps are enabled because not all language implementations
+            # include them.
+            # TODO(sergiitk): Make this setting language-specific.
+            log_timestamps=True)
         self.pod_log_collectors.append(pod_log_collector)
         return pod_log_collector
 
