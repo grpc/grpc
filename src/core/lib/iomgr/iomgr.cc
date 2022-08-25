@@ -46,7 +46,7 @@ GPR_GLOBAL_CONFIG_DEFINE_BOOL(grpc_abort_on_leaks, false,
                               "gRPC objects are leaked past grpc_shutdown()");
 
 GPR_GLOBAL_CONFIG_DEFINE_BOOL(
-    grpc_experimental_enable_tcp_frame_size_tuning, false,
+    grpc_experimental_enable_tcp_frame_size_tuning, true,
     "If set, enables TCP to use RPC size estimation made by higher layers. TCP "
     "would not indicate completion of a read operation until a specified "
     "number of bytes have been read over the socket. Buffers are also "

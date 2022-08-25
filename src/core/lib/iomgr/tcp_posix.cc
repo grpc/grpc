@@ -921,8 +921,6 @@ static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error)
     GRPC_STATS_INC_TCP_READ_OFFER(tcp->incoming_buffer->length);
     GRPC_STATS_INC_TCP_READ_OFFER_IOV_SIZE(tcp->incoming_buffer->count);
 
-    update_rcvlowat(tcp);
-
     do {
       GPR_TIMER_SCOPE("recvmsg", 0);
       GRPC_STATS_INC_SYSCALL_READ();
@@ -1100,6 +1098,7 @@ static void tcp_handle_read(void* arg /* grpc_tcp */, grpc_error_handle error) {
     maybe_make_read_slices(tcp);
     if (!tcp_do_read(tcp, &tcp_read_error)) {
       /* We've consumed the edge, request a new one */
+      update_rcvlowat(tcp);
       tcp->read_mu.Unlock();
       notify_on_read(tcp);
       return;
@@ -1129,19 +1128,24 @@ static void tcp_read(grpc_endpoint* ep, grpc_slice_buffer* incoming_buffer,
       tcp->frame_size_tuning_enabled ? min_progress_size : 1;
   grpc_slice_buffer_reset_and_unref_internal(incoming_buffer);
   grpc_slice_buffer_swap(incoming_buffer, &tcp->last_read_buffer);
-  tcp->read_mu.Unlock();
   TCP_REF(tcp, "read");
   if (tcp->is_first_read) {
+    update_rcvlowat(tcp);
+    tcp->read_mu.Unlock();
     /* Endpoint read called for the very first time. Register read callback with
      * the polling engine */
     tcp->is_first_read = false;
     notify_on_read(tcp);
   } else if (!urgent && tcp->inq == 0) {
+    update_rcvlowat(tcp);
+    tcp->read_mu.Unlock();
     /* Upper layer asked to read more but we know there is no pending data
      * to read from previous reads. So, wait for POLLIN.
      */
     notify_on_read(tcp);
   } else {
+    update_rcvlowat(tcp);
+    tcp->read_mu.Unlock();
     /* Not the first time. We may or may not have more bytes available. In any
      * case call tcp->read_done_closure (i.e tcp_handle_read()) which does the
      * right thing (i.e calls tcp_do_read() which either reads the available
