@@ -28,10 +28,10 @@ set +ex
 # but we want to exit if there's a failure
 set -e
 
-echo "rvm install ruby-3.0"
-time rvm install ruby-3.0
-echo "rvm --default use ruby-3.0"
-rvm --default use ruby-3.0
+echo "rvm install ruby-2.7"
+time rvm install ruby-2.7
+echo "rvm --default use ruby-2.7"
+rvm --default use ruby-2.7
 
 # restore the original echo and exit on failure behavior
 set -ex
