@@ -1127,7 +1127,9 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
                    goaway_text == "too_many_pings")) {
     gpr_log(GPR_ERROR,
             "Received a GOAWAY with error code ENHANCE_YOUR_CALM and debug "
-            "data equal to \"too_many_pings\"");
+            "data equal to \"too_many_pings\". Current keepalive time (before "
+            "throttling): %s",
+            t->keepalive_time.ToString().c_str());
     constexpr int max_keepalive_time_millis =
         INT_MAX / KEEPALIVE_TIME_BACKOFF_MULTIPLIER;
     int throttled_keepalive_time =
