@@ -825,6 +825,11 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
                       const size_t times = 1,
                       const RpcOptions& rpc_options = RpcOptions());
 
+  void CheckRpcSendOk(const grpc_core::DebugLocation& debug_location,
+                      const size_t times = 1) {
+    CheckRpcSendOk(debug_location, times, RpcOptions().set_timeout_ms(5000));
+  }
+
   // Sends one RPC, which must fail with the specified status code and
   // a message matching the specified regex.
   void CheckRpcSendFailure(const grpc_core::DebugLocation& debug_location,
