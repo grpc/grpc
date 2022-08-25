@@ -200,16 +200,7 @@ class Duration {
     }
     return *this;
   }
-  Duration& operator*=(int64_t multiplier) {
-    if (millis_ == std::numeric_limits<int64_t>::max()) {
-      *this = multiplier < 0 ? NegativeInfinity() : Infinity();
-    } else if (millis_ == std::numeric_limits<int64_t>::min()) {
-      *this = multiplier < 0 ? Infinity() : NegativeInfinity();
-    } else {
-      millis_ *= multiplier;
-    }
-    return *this;
-  }
+  Duration& operator*=(double multiplier);
   Duration& operator+=(Duration other) {
     millis_ += other.millis_;
     return *this;
@@ -295,6 +286,11 @@ inline Duration Duration::FromSecondsAsDouble(double seconds) {
     return NegativeInfinity();
   }
   return Milliseconds(static_cast<int64_t>(millis));
+}
+
+inline Duration& Duration::operator*=(double multiplier) {
+  *this = *this * multiplier;
+  return *this;
 }
 
 inline Timestamp& Timestamp::operator+=(Duration duration) {
