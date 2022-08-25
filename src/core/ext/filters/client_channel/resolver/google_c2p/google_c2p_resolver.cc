@@ -454,8 +454,6 @@ class ExperimentalGoogleCloud2ProdResolverFactory : public ResolverFactory {
   }
 };
 
-};
-
 }  // namespace
 
 void RegisterCloud2ProdResolver(CoreConfiguration::Builder* builder) {
