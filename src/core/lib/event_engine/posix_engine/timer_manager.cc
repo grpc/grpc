@@ -88,7 +88,7 @@ void TimerManager::RunSomeTimers(
       // if there's no thread waiting with a timeout, kick an existing untimed
       // waiter so that the next deadline is not missed
       if (!has_timed_waiter_) {
-        cv_.Signal();
+        cv_kick_.Signal();
       }
     }
   }
@@ -151,8 +151,8 @@ bool TimerManager::WaitUntil(grpc_core::Timestamp next) {
       }
     }
 
-    cv_.WaitWithTimeout(&mu_,
-                        absl::Milliseconds((next - host_.Now()).millis()));
+    cv_kick_.WaitWithTimeout(&mu_,
+                             absl::Milliseconds((next - host_.Now()).millis()));
 
     // if this was the timed waiter, then we need to check timers, and flag
     // that there's now no timed waiter... we'll look for a replacement if
@@ -203,7 +203,7 @@ void TimerManager::RunThread(void* arg) {
     thread->self->thread_count_--;
     thread->self->completed_threads_.push_back(std::move(thread->thread));
   }
-  thread->self->cv_.Signal();
+  thread->self->cv_threadcount_.Signal();
 }
 
 TimerManager::TimerManager() : host_(this) {
@@ -230,14 +230,14 @@ TimerManager::~TimerManager() {
   {
     grpc_core::MutexLock lock(&mu_);
     shutdown_ = true;
-    cv_.SignalAll();
+    cv_kick_.SignalAll();
   }
   while (true) {
     ThreadCollector collector;
     grpc_core::MutexLock lock(&mu_);
     collector.Collect(std::move(completed_threads_));
     if (thread_count_ == 0) break;
-    cv_.Wait(&mu_);
+    cv_threadcount_.Wait(&mu_);
   }
 }
 
@@ -249,7 +249,7 @@ void TimerManager::Kick() {
   timed_waiter_deadline_ = grpc_core::Timestamp::InfFuture();
   ++timed_waiter_generation_;
   kicked_ = true;
-  cv_.Signal();
+  cv_kick_.Signal();
 }
 
 void TimerManager::PrepareFork() {
@@ -257,14 +257,14 @@ void TimerManager::PrepareFork() {
     grpc_core::MutexLock lock(&mu_);
     forking_ = true;
     prefork_thread_count_ = thread_count_;
-    cv_.SignalAll();
+    cv_kick_.SignalAll();
   }
   while (true) {
     grpc_core::MutexLock lock(&mu_);
     ThreadCollector collector;
     collector.Collect(std::move(completed_threads_));
     if (thread_count_ == 0) break;
-    cv_.Wait(&mu_);
+    cv_threadcount_.Wait(&mu_);
   }
 }
 

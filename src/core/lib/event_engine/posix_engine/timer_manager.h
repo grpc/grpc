@@ -86,7 +86,8 @@ class TimerManager final : public grpc_event_engine::experimental::Forkable {
   void Kick();
 
   grpc_core::Mutex mu_;
-  grpc_core::CondVar cv_;
+  grpc_core::CondVar cv_threadcount_;
+  grpc_core::CondVar cv_kick_;
   Host host_;
   // number of threads in the system
   size_t thread_count_ ABSL_GUARDED_BY(mu_) = 0;
