@@ -444,7 +444,6 @@ def targets():
         # Ruby
         RubyDistribTest('linux',
                         'x64',
-                        'x64',
                         'stretch',
                         ruby_version='ruby_2_6',
                         source=True,
