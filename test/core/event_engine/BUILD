@@ -55,6 +55,7 @@ grpc_cc_test(
     language = "C++",
     uses_polling = False,
     deps = [
+        "//:channel_args",
         "//:gpr_platform",
         "//:grpc",
         "//test/core/util:grpc_test_util_unsecure",

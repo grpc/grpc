@@ -35,6 +35,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:arena",
+        "//:exec_ctx",
         "//:gpr",
         "//:grpc",
         "//:ref_counted_ptr",

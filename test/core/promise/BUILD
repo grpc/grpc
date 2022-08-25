@@ -222,8 +222,14 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//:channel_args",
+        "//:channel_stack_builder",
+        "//:closure",
+        "//:error",
+        "//:exec_ctx",
         "//:grpc",
         "//:grpc_base",
+        "//:slice",
         "//:try_seq",
     ],
 )

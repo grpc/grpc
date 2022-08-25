@@ -65,9 +65,15 @@ grpc_cc_library(
     external_deps = [],
     deps = [
         ":fake_binder",
+        "//:channel_args",
+        "//:channel_stack_builder",
+        "//:closure",
+        "//:error",
+        "//:exec_ctx",
         "//:grpc++_base",
         "//:grpc++_binder",
         "//:grpc_base",
+        "//:slice",
     ],
 )
 

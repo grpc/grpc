@@ -75,7 +75,13 @@ grpc_cc_library(
         "no_mac",
     ],
     deps = [
+        "//:channel_args",
+        "//:channel_stack_builder",
+        "//:closure",
+        "//:error",
+        "//:exec_ctx",
         "//:gpr_platform",
         "//:grpc_base",
+        "//:slice",
     ],
 )

@@ -76,11 +76,17 @@ grpc_cc_test(
     language = "C++",
     tags = ["no_test_ios"],
     deps = [
+        "//:channel_args",
+        "//:channel_stack_builder",
+        "//:closure",
+        "//:error",
+        "//:exec_ctx",
         "//:gpr",
         "//:grpc",
         "//:grpc_base",
         "//:grpc_opencensus_plugin",
         "//:grpc_xds_channel_stack_modifier",
+        "//:slice",
         "//test/core/util:grpc_test_util",
     ],
 )
