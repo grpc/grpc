@@ -908,16 +908,34 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
       size_t stop_index = 0,
       std::function<void(const RpcResult&)> check_status = nullptr,
       const WaitForBackendOptions& wait_options = WaitForBackendOptions(),
-      const RpcOptions& rpc_options = RpcOptions());
+      const RpcOptions& rpc_options);
+
+  size_t WaitForAllBackends(
+      const grpc_core::DebugLocation& debug_location, size_t start_index = 0,
+      size_t stop_index = 0,
+      std::function<void(const RpcResult&)> check_status = nullptr,
+      const WaitForBackendOptions& wait_options = WaitForBackendOptions()) {
+    WaitForAllBackends(debug_location, start_index, stop_index, check_status,
+                       wait_options, RpcOptions().set_timeout_ms(5000));
+  }
 
   // Sends RPCs until the backend at index backend_idx sees requests.
   void WaitForBackend(
       const grpc_core::DebugLocation& debug_location, size_t backend_idx,
       std::function<void(const RpcResult&)> check_status = nullptr,
       const WaitForBackendOptions& wait_options = WaitForBackendOptions(),
-      const RpcOptions& rpc_options = RpcOptions()) {
+      const RpcOptions& rpc_options) {
     WaitForAllBackends(debug_location, backend_idx, backend_idx + 1,
                        check_status, wait_options, rpc_options);
+  }
+
+  void WaitForBackend(
+      const grpc_core::DebugLocation& debug_location, size_t backend_idx,
+      std::function<void(const RpcResult&)> check_status = nullptr,
+      const WaitForBackendOptions& wait_options = WaitForBackendOptions()) {
+    WaitForAllBackends(debug_location, backend_idx, backend_idx + 1,
+                       check_status, wait_options,
+                       RpcOptions().set_timeout_ms(5000));
   }
 
   //

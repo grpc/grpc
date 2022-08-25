@@ -103,7 +103,7 @@ TEST_P(LogicalDNSClusterTest, Basic) {
         std::move(result));
   }
   // RPCs should succeed.
-  CheckRpcSendOk(DEBUG_LOCATION);
+  CheckRpcSendOk(DEBUG_LOCATION, 1, RpcOptions().set_timeout_ms(5000));
 }
 
 TEST_P(LogicalDNSClusterTest, MissingLoadAssignment) {
