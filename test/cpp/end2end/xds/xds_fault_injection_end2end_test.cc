@@ -230,9 +230,8 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelay) {
   // Config fault injection via different setup
   SetFilterConfig(http_fault);
   // Send kNumRpcs RPCs and count the delays.
-  RpcOptions rpc_options = RpcOptions()
-                               .set_timeout(kRpcTimeout)
-                               .set_skip_cancelled_check(true);
+  RpcOptions rpc_options =
+      RpcOptions().set_timeout(kRpcTimeout).set_skip_cancelled_check(true);
   std::vector<ConcurrentRpc> rpcs =
       SendConcurrentRpcs(DEBUG_LOCATION, stub_.get(), kNumRpcs, rpc_options);
   size_t num_delayed = 0;
