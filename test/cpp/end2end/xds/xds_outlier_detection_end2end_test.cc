@@ -1092,8 +1092,9 @@ TEST_P(OutlierDetectionTest, SuccessRateAndFailurePercentage) {
     CheckRpcSendOk(DEBUG_LOCATION, 1, rpc_options2);
     CheckRpcSendOk(DEBUG_LOCATION, 1, rpc_options3);
     if (std::count_if(idx.begin(), idx.end(),
-                      [this](size_t i) { return SeenBackend(i); }) == 2)
+                      [this](size_t i) { return SeenBackend(i); }) == 2) {
       break;
+    }
     EXPECT_LE(absl::Now(), deadline);
     if (absl::Now() >= deadline) break;
   }
