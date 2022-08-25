@@ -193,11 +193,13 @@ namespace Grpc.Core.Tests
         [Test]
         public async Task ServerStreamingCall_CancelAfterServerHasFinished()
         {
-            // Test to verify the fix for https://github.com/grpc/grpc/issues/17761 that was
-            // fixed in c-core https://github.com/grpc/grpc/issues/18234
+            // Test to verify the fix for https://github.com/grpc/grpc/issues/17761.
+            // Fix appears to have happened in c-core between tags v1.30.0 (broken) and v1.31.0-pre1 (fixed).
+            //
             // Scenario: the client cancels the request after the server has already successfully
             // returned the results but before the client starts reading.
-            // Expected behaviour is that the client sees a Cancelled status.
+            //
+            // Expected behaviour is that the client sees a Cancelled status and no messages received.
 
             helper.ServerStreamingHandler = new ServerStreamingServerMethod<string, string>(async (request, responseStream, context) => {
                 await responseStream.WriteAsync("abc");
