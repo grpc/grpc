@@ -28,10 +28,10 @@ set +ex
 # but we want to exit if there's a failure
 set -e
 
-echo "rvm install ruby-2.6"
-time rvm install ruby-2.6
-echo "rvm --default use ruby-2.6"
-rvm --default use ruby-2.6
+echo "rvm install ruby-2.5.7"
+time rvm install ruby-2.5.7
+echo "rvm --default use ruby-2.5.7"
+rvm --default use ruby-2.5.7
 
 # restore the original echo and exit on failure behavior
 set -ex
@@ -40,7 +40,7 @@ set -ex
 ruby --version
 
 # Bundler is required for grpc ruby artifact build.
-gem install bundler
+gem install bundler -v 1.17.3
 
 # log gem versions for easier debugging if things go wrong
 gem list || true
