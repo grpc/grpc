@@ -89,7 +89,7 @@ RUN \curl -sSL https://get.rvm.io | bash -s stable
 # Install Ruby 2.7
 RUN apt-get update && apt-get install -y procps && apt-get clean
 RUN /bin/bash -l -c "rvm install ruby-2.7"
-RUN /bin/bash -l -c "rvm use --default ruby-2.7""
+RUN /bin/bash -l -c "rvm use --default ruby-2.7"
 RUN /bin/bash -l -c "echo 'gem: --no-document' > ~/.gemrc"
 RUN /bin/bash -l -c "echo 'export PATH=/usr/local/rvm/bin:$PATH' >> ~/.bashrc"
 RUN /bin/bash -l -c "echo 'rvm --default use ruby-2.7' >> ~/.bashrc"
