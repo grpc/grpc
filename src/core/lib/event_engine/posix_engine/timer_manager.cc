@@ -88,7 +88,7 @@ void TimerManager::RunSomeTimers(
       // if there's no thread waiting with a timeout, kick an existing untimed
       // waiter so that the next deadline is not missed
       if (!has_timed_waiter_) {
-        cv_kick_.Signal();
+        cv_wait_.Signal();
       }
     }
   }
@@ -151,7 +151,7 @@ bool TimerManager::WaitUntil(grpc_core::Timestamp next) {
       }
     }
 
-    cv_kick_.WaitWithTimeout(&mu_,
+    cv_wait_.WaitWithTimeout(&mu_,
                              absl::Milliseconds((next - host_.Now()).millis()));
 
     // if this was the timed waiter, then we need to check timers, and flag
@@ -198,12 +198,14 @@ void TimerManager::MainLoop() {
 void TimerManager::RunThread(void* arg) {
   std::unique_ptr<RunThreadArgs> thread(static_cast<RunThreadArgs*>(arg));
   thread->self->MainLoop();
+  bool signal = false;
   {
     grpc_core::MutexLock lock(&thread->self->mu_);
     thread->self->thread_count_--;
+    signal = thread->self->thread_count_ == 0;
     thread->self->completed_threads_.push_back(std::move(thread->thread));
   }
-  thread->self->cv_threadcount_.Signal();
+  if (signal) thread->self->cv_threadcount_.Signal();
 }
 
 TimerManager::TimerManager() : host_(this) {
@@ -230,7 +232,7 @@ TimerManager::~TimerManager() {
   {
     grpc_core::MutexLock lock(&mu_);
     shutdown_ = true;
-    cv_kick_.SignalAll();
+    cv_wait_.SignalAll();
   }
   while (true) {
     ThreadCollector collector;
@@ -249,7 +251,7 @@ void TimerManager::Kick() {
   timed_waiter_deadline_ = grpc_core::Timestamp::InfFuture();
   ++timed_waiter_generation_;
   kicked_ = true;
-  cv_kick_.Signal();
+  cv_wait_.Signal();
 }
 
 void TimerManager::PrepareFork() {
@@ -257,7 +259,7 @@ void TimerManager::PrepareFork() {
     grpc_core::MutexLock lock(&mu_);
     forking_ = true;
     prefork_thread_count_ = thread_count_;
-    cv_kick_.SignalAll();
+    cv_wait_.SignalAll();
   }
   while (true) {
     grpc_core::MutexLock lock(&mu_);
