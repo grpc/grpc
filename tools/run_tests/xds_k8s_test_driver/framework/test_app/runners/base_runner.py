@@ -62,7 +62,7 @@ class BaseRunner(metaclass=ABCMeta):
             raise ValueError('Log collection is not enabled.')
         return self._log_stop_event
 
-    def stop_logging_if_needed(self):
+    def maybe_stop_logging(self):
         if self.should_collect_logs and not self.log_stop_event.is_set():
             self.log_stop_event.set()
 

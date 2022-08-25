@@ -78,7 +78,7 @@ class KubernetesBaseRunner(base_runner.BaseRunner):
 
     def stop_pod_dependencies(self, *, log_drain_sec: int = 0):
         # Signal to stop logging early so less drain time needed.
-        self.stop_logging_if_needed()
+        self.maybe_stop_logging()
 
         # Stop port forwarders if any.
         for pod_port_forwarder in self.pod_port_forwarders:
