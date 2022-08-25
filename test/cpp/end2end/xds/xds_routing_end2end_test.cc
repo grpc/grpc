@@ -1967,34 +1967,34 @@ TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
       t0 + (kTimeoutGrpcHeaderMax * grpc_test_slowdown_factor());
   grpc_core::Timestamp t2 =
       t0 + (kTimeoutMaxStreamDuration * grpc_test_slowdown_factor());
-  CheckRpcSendFailure(
-      DEBUG_LOCATION, StatusCode::DEADLINE_EXCEEDED, "Deadline Exceeded",
-      RpcOptions()
-          .set_rpc_service(SERVICE_ECHO1)
-          .set_rpc_method(METHOD_ECHO1)
-          .set_wait_for_ready(true)
-          .set_timeout_ms(kTimeoutApplication.millis()));
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::DEADLINE_EXCEEDED,
+                      "Deadline Exceeded",
+                      RpcOptions()
+                          .set_rpc_service(SERVICE_ECHO1)
+                          .set_rpc_method(METHOD_ECHO1)
+                          .set_wait_for_ready(true)
+                          .set_timeout_ms(kTimeoutApplication.millis()));
   EXPECT_THAT(NowFromCycleCounter(), AdjustedClockInRange(t1, t2));
   // Test max_stream_duration of 2.5 seconds applied
   t0 = NowFromCycleCounter();
   t1 = t0 + (kTimeoutMaxStreamDuration * grpc_test_slowdown_factor());
   t2 = t0 + (kTimeoutHttpMaxStreamDuration * grpc_test_slowdown_factor());
-  CheckRpcSendFailure(
-      DEBUG_LOCATION, StatusCode::DEADLINE_EXCEEDED, "Deadline Exceeded",
-      RpcOptions()
-          .set_rpc_service(SERVICE_ECHO2)
-          .set_rpc_method(METHOD_ECHO2)
-          .set_wait_for_ready(true)
-          .set_timeout_ms(kTimeoutApplication.millis()));
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::DEADLINE_EXCEEDED,
+                      "Deadline Exceeded",
+                      RpcOptions()
+                          .set_rpc_service(SERVICE_ECHO2)
+                          .set_rpc_method(METHOD_ECHO2)
+                          .set_wait_for_ready(true)
+                          .set_timeout_ms(kTimeoutApplication.millis()));
   EXPECT_THAT(NowFromCycleCounter(), AdjustedClockInRange(t1, t2));
   // Test http_stream_duration of 3.5 seconds applied
   t0 = NowFromCycleCounter();
   t1 = t0 + (kTimeoutHttpMaxStreamDuration * grpc_test_slowdown_factor());
   t2 = t0 + (kTimeoutApplication * grpc_test_slowdown_factor());
-  CheckRpcSendFailure(
-      DEBUG_LOCATION, StatusCode::DEADLINE_EXCEEDED, "Deadline Exceeded",
-      RpcOptions().set_wait_for_ready(true).set_timeout_ms(
-          kTimeoutApplication.millis()));
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::DEADLINE_EXCEEDED,
+                      "Deadline Exceeded",
+                      RpcOptions().set_wait_for_ready(true).set_timeout_ms(
+                          kTimeoutApplication.millis()));
   EXPECT_THAT(NowFromCycleCounter(), AdjustedClockInRange(t1, t2));
 }
 
@@ -2116,10 +2116,10 @@ TEST_P(LdsRdsTest, XdsRoutingApplyApplicationTimeoutWhenHttpTimeoutExplicit) {
                                    default_route_config_);
   // Test application timeout is applied for route 1
   auto t0 = system_clock::now();
-  CheckRpcSendFailure(
-      DEBUG_LOCATION, StatusCode::DEADLINE_EXCEEDED, "Deadline Exceeded",
-      RpcOptions().set_wait_for_ready(true).set_timeout_ms(
-          kTimeoutApplication.millis()));
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::DEADLINE_EXCEEDED,
+                      "Deadline Exceeded",
+                      RpcOptions().set_wait_for_ready(true).set_timeout_ms(
+                          kTimeoutApplication.millis()));
   auto elapsed_nano_seconds =
       std::chrono::duration_cast<std::chrono::nanoseconds>(system_clock::now() -
                                                            t0);
@@ -2136,10 +2136,10 @@ TEST_P(LdsRdsTest, XdsRoutingWithOnlyApplicationTimeout) {
   EdsResourceArgs args({{"locality0", {MakeNonExistantEndpoint()}}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   auto t0 = system_clock::now();
-  CheckRpcSendFailure(
-      DEBUG_LOCATION, StatusCode::DEADLINE_EXCEEDED, "Deadline Exceeded",
-      RpcOptions().set_wait_for_ready(true).set_timeout_ms(
-          kTimeoutApplication.millis()));
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::DEADLINE_EXCEEDED,
+                      "Deadline Exceeded",
+                      RpcOptions().set_wait_for_ready(true).set_timeout_ms(
+                          kTimeoutApplication.millis()));
   auto elapsed_nano_seconds =
       std::chrono::duration_cast<std::chrono::nanoseconds>(system_clock::now() -
                                                            t0);

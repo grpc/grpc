@@ -1026,8 +1026,7 @@ absl::optional<AdsServiceImpl::ResponseState> XdsEnd2endTest::WaitForNack(
 }
 
 void XdsEnd2endTest::SetProtoDuration(
-    grpc_core::Duration duration,
-    google::protobuf::Duration* duration_proto) {
+    grpc_core::Duration duration, google::protobuf::Duration* duration_proto) {
   duration *= grpc_test_slowdown_factor();
   gpr_timespec ts = duration.as_timespec();
   duration_proto->set_seconds(ts.tv_sec);
