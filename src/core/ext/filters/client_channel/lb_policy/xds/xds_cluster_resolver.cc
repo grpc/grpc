@@ -925,7 +925,8 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
       }
       if (discovery_config.lrs_load_reporting_server.has_value()) {
         xds_cluster_impl_config["lrsLoadReportingServer"] =
-            discovery_config.lrs_load_reporting_server->ToJson();
+            XdsBootstrap::XdsServerToJson(
+                *discovery_config.lrs_load_reporting_server);
       }
       Json locality_picking_policy;
       if (XdsOutlierDetectionEnabled()) {
@@ -1191,7 +1192,7 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
       } else {
         grpc_error_handle parse_error;
         discovery_mechanism->lrs_load_reporting_server.emplace(
-            XdsBootstrap::XdsServer::Parse(it->second, &parse_error));
+            XdsBootstrap::XdsServerParse(it->second, &parse_error));
         if (!GRPC_ERROR_IS_NONE(parse_error)) {
           error_list.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
               absl::StrCat("errors parsing lrs_load_reporting_server")));

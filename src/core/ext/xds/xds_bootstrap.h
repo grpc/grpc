@@ -51,7 +51,7 @@ class XdsCertificateProviderPluginMapInterface {
   virtual std::string ToString() const = 0;
 };
 
-class XdsBootstrap {
+class XdsBootstrapInterface {
  public:
   struct Node {
     std::string id;
@@ -67,8 +67,6 @@ class XdsBootstrap {
     std::string channel_creds_type;
     Json channel_creds_config;
     std::set<std::string> server_features;
-
-    static XdsServer Parse(const Json& json, grpc_error_handle* error);
 
     bool operator==(const XdsServer& other) const {
       return (server_uri == other.server_uri &&
@@ -87,8 +85,6 @@ class XdsBootstrap {
       return false;
     }
 
-    Json::Object ToJson() const;
-
     bool ShouldUseV3() const;
     bool IgnoreResourceDeletion() const;
   };
@@ -98,6 +94,30 @@ class XdsBootstrap {
     std::vector<XdsServer> xds_servers;
   };
 
+  virtual ~XdsBootstrapInterface() = default;
+
+  virtual std::string ToString() const = 0;
+
+  // TODO(roth): We currently support only one server. Fix this when we
+  // add support for fallback for the xds channel.
+  virtual const XdsServer& server() const = 0;
+  virtual const Node* node() const = 0;
+  virtual const std::string& client_default_listener_resource_name_template()
+      const = 0;
+  virtual const std::string& server_listener_resource_name_template() const = 0;
+  virtual const std::map<std::string, Authority>& authorities() const = 0;
+
+  // Returns a pointer to the specified authority, or null if it does
+  // not exist in this bootstrap config.
+  virtual const Authority* LookupAuthority(const std::string& name) const = 0;
+
+  // A utility method to check that an xDS server exists in this
+  // bootstrap config.
+  bool XdsServerExists(const XdsServer& server) const;
+};
+
+class XdsBootstrap : public XdsBootstrapInterface {
+ public:
   // Creates bootstrap object from json_string.
   // If *error is not GRPC_ERROR_NONE after returning, then there was an
   // error parsing the contents.
@@ -113,28 +133,29 @@ class XdsBootstrap {
                    certificate_provider_plugin_map,
                grpc_error_handle* error);
 
-  std::string ToString() const;
+  std::string ToString() const override;
 
-  // TODO(roth): We currently support only one server. Fix this when we
-  // add support for fallback for the xds channel.
-  const XdsServer& server() const { return servers_[0]; }
-  const Node* node() const { return node_.get(); }
-  const std::string& client_default_listener_resource_name_template() const {
+  const XdsServer& server() const override { return servers_[0]; }
+  const Node* node() const override { return node_.get(); }
+  const std::string& client_default_listener_resource_name_template()
+      const override {
     return client_default_listener_resource_name_template_;
   }
-  const std::string& server_listener_resource_name_template() const {
+  const std::string& server_listener_resource_name_template() const override {
     return server_listener_resource_name_template_;
   }
-  const std::map<std::string, Authority>& authorities() const {
+  const std::map<std::string, Authority>& authorities() const override {
     return authorities_;
   }
-  const Authority* LookupAuthority(const std::string& name) const;
+  const Authority* LookupAuthority(const std::string& name) const override;
+
   const XdsCertificateProviderPluginMapInterface*
   certificate_provider_plugin_map() const {
     return certificate_provider_plugin_map_.get();
   }
-  // A util method to check that an xds server exists in this bootstrap file.
-  bool XdsServerExists(const XdsServer& server) const;
+
+  static XdsServer XdsServerParse(const Json& json, grpc_error_handle* error);
+  static Json::Object XdsServerToJson(const XdsServer& server);
 
  private:
   grpc_error_handle ParseXdsServerList(Json* json,

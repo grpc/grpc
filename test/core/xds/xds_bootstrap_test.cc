@@ -804,11 +804,11 @@ TEST(XdsBootstrapTest, XdsServerToJsonAndParse) {
   ASSERT_TRUE(json.ok()) << json.status();
   grpc_error_handle error = GRPC_ERROR_NONE;
   XdsBootstrap::XdsServer xds_server =
-      XdsBootstrap::XdsServer::Parse(*json, &error);
+      XdsBootstrap::XdsServerParse(*json, &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
-  Json::Object output = xds_server.ToJson();
+  Json::Object output = XdsBootstrap::XdsServerToJson(xds_server);
   XdsBootstrap::XdsServer output_xds_server =
-      XdsBootstrap::XdsServer::Parse(output, &error);
+      XdsBootstrap::XdsServerParse(output, &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
   gpr_unsetenv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
 }

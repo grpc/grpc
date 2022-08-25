@@ -112,7 +112,7 @@ grpc_error_handle ParseChannelCredsArray(const Json::Array& json,
 // XdsBootstrap::XdsServer
 //
 
-XdsBootstrap::XdsServer XdsBootstrap::XdsServer::Parse(
+XdsBootstrap::XdsServer XdsBootstrap::XdsServerParse(
     const Json& json, grpc_error_handle* error) {
   std::vector<grpc_error_handle> error_list;
   XdsServer server;
@@ -144,18 +144,18 @@ XdsBootstrap::XdsServer XdsBootstrap::XdsServer::Parse(
   return server;
 }
 
-Json::Object XdsBootstrap::XdsServer::ToJson() const {
-  Json::Object channel_creds_json{{"type", channel_creds_type}};
-  if (channel_creds_config.type() != Json::Type::JSON_NULL) {
-    channel_creds_json["config"] = channel_creds_config;
+Json::Object XdsBootstrap::XdsServerToJson(const XdsServer& server) {
+  Json::Object channel_creds_json{{"type", server.channel_creds_type}};
+  if (server.channel_creds_config.type() != Json::Type::JSON_NULL) {
+    channel_creds_json["config"] = server.channel_creds_config;
   }
   Json::Object json{
-      {"server_uri", server_uri},
+      {"server_uri", server.server_uri},
       {"channel_creds", Json::Array{std::move(channel_creds_json)}},
   };
-  if (!server_features.empty()) {
+  if (!server.server_features.empty()) {
     Json::Array server_features_json;
-    for (auto& feature : server_features) {
+    for (auto& feature : server.server_features) {
       server_features_json.emplace_back(feature);
     }
     json["server_features"] = std::move(server_features_json);
@@ -163,12 +163,12 @@ Json::Object XdsBootstrap::XdsServer::ToJson() const {
   return json;
 }
 
-bool XdsBootstrap::XdsServer::ShouldUseV3() const {
+bool XdsBootstrapInterface::XdsServer::ShouldUseV3() const {
   return server_features.find(std::string(kServerFeatureXdsV3)) !=
          server_features.end();
 }
 
-bool XdsBootstrap::XdsServer::IgnoreResourceDeletion() const {
+bool XdsBootstrapInterface::XdsServer::IgnoreResourceDeletion() const {
   return server_features.find(std::string(
              kServerFeatureIgnoreResourceDeletion)) != server_features.end();
 }
@@ -283,10 +283,10 @@ const XdsBootstrap::Authority* XdsBootstrap::LookupAuthority(
   return nullptr;
 }
 
-bool XdsBootstrap::XdsServerExists(
+bool XdsBootstrapInterface::XdsServerExists(
     const XdsBootstrap::XdsServer& server) const {
-  if (server == servers_[0]) return true;
-  for (auto& authority : authorities_) {
+  if (server == this->server()) return true;
+  for (auto& authority : authorities()) {
     for (auto& xds_server : authority.second.xds_servers) {
       if (server == xds_server) return true;
     }
@@ -304,7 +304,7 @@ grpc_error_handle XdsBootstrap::ParseXdsServerList(
           absl::StrCat("array element ", i, " is not an object")));
     } else {
       grpc_error_handle parse_error;
-      servers->emplace_back(XdsServer::Parse(child, &parse_error));
+      servers->emplace_back(XdsServerParse(child, &parse_error));
       if (!GRPC_ERROR_IS_NONE(parse_error)) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
             absl::StrCat("errors parsing index ", i)));

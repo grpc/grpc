@@ -761,7 +761,7 @@ class XdsClusterImplLbFactory : public LoadBalancingPolicyFactory {
             "field:lrsLoadReportingServer error:type should be object");
       } else {
         grpc_error_handle parser_error;
-        lrs_load_reporting_server = XdsBootstrap::XdsServer::Parse(
+        lrs_load_reporting_server = XdsBootstrap::XdsServerParse(
             it->second.object_value(), &parser_error);
         if (!GRPC_ERROR_IS_NONE(parser_error)) {
           errors.emplace_back(
