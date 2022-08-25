@@ -1005,7 +1005,8 @@ absl::optional<AdsServiceImpl::ResponseState> XdsEnd2endTest::WaitForNack(
     std::function<absl::optional<AdsServiceImpl::ResponseState>()> get_state,
     const RpcOptions& rpc_options, StatusCode expected_status) {
   absl::optional<AdsServiceImpl::ResponseState> response_state;
-  auto deadline = absl::Now() + absl::Seconds(30);
+  auto deadline =
+      absl::Now() + (absl::Seconds(30) * grpc_test_slowdown_factor());
   auto continue_predicate = [&]() {
     if (absl::Now() >= deadline) {
       return false;
