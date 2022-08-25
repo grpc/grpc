@@ -1017,7 +1017,9 @@ TEST_P(LdsRdsTest, XdsRoutingPathMatching) {
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(balancer_.get(), new_route_config);
-  WaitForAllBackends(DEBUG_LOCATION, 0, 2);
+  WaitForAllBackends(DEBUG_LOCATION, 0, 2, /*check_status=*/nullptr,
+                     WaitForBackendOptions(),
+                     RpcOptions().set_timeout_ms(5000));
   CheckRpcSendOk(DEBUG_LOCATION, kNumEchoRpcs,
                  RpcOptions().set_wait_for_ready(true));
   CheckRpcSendOk(DEBUG_LOCATION, kNumEcho1Rpcs,
@@ -1557,13 +1559,17 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateWeights) {
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(balancer_.get(), new_route_config);
-  WaitForAllBackends(DEBUG_LOCATION, 0, 1);
-  WaitForAllBackends(DEBUG_LOCATION, 1, 3, /*check_status=*/nullptr,
+  WaitForAllBackends(DEBUG_LOCATION, 0, 1, /*check_status=*/nullptr,
                      WaitForBackendOptions(),
-                     RpcOptions().set_rpc_service(SERVICE_ECHO1));
-  CheckRpcSendOk(DEBUG_LOCATION, kNumEchoRpcs);
-  CheckRpcSendOk(DEBUG_LOCATION, kNumEcho1Rpcs7525,
-                 RpcOptions().set_rpc_service(SERVICE_ECHO1));
+                     RpcOptions().set_timeout_ms(5000));
+  WaitForAllBackends(
+      DEBUG_LOCATION, 1, 3, /*check_status=*/nullptr, WaitForBackendOptions(),
+      RpcOptions().set_rpc_service(SERVICE_ECHO1).set_timeout_ms(5000));
+  CheckRpcSendOk(DEBUG_LOCATION, kNumEchoRpcs,
+                 RpcOptions().set_timeout_ms(5000));
+  CheckRpcSendOk(
+      DEBUG_LOCATION, kNumEcho1Rpcs7525,
+      RpcOptions().set_rpc_service(SERVICE_ECHO1).set_timeout_ms(5000));
   // Make sure RPCs all go to the correct backend.
   EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[0]->backend_service1()->request_count());
@@ -1590,10 +1596,14 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateWeights) {
   default_route->mutable_route()->set_cluster(kNewCluster3Name);
   SetRouteConfiguration(balancer_.get(), new_route_config);
   ResetBackendCounters();
-  WaitForAllBackends(DEBUG_LOCATION, 3, 4);
-  CheckRpcSendOk(DEBUG_LOCATION, kNumEchoRpcs);
-  CheckRpcSendOk(DEBUG_LOCATION, kNumEcho1Rpcs5050,
-                 RpcOptions().set_rpc_service(SERVICE_ECHO1));
+  WaitForAllBackends(DEBUG_LOCATION, 3, 4, /*check_status=*/nullptr,
+                     WaitForBackendOptions(),
+                     RpcOptions().set_timeout_ms(5000));
+  CheckRpcSendOk(DEBUG_LOCATION, kNumEchoRpcs,
+                 RpcOptions().set_timeout_ms(5000));
+  CheckRpcSendOk(
+      DEBUG_LOCATION, kNumEcho1Rpcs5050,
+      RpcOptions().set_rpc_service(SERVICE_ECHO1).set_timeout_ms(5000));
   // Make sure RPCs all go to the correct backend.
   EXPECT_EQ(0, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[0]->backend_service1()->request_count());
