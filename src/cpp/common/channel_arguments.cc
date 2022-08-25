@@ -120,8 +120,7 @@ void ChannelArguments::SetGrpclbFallbackTimeout(int fallback_timeout) {
 void ChannelArguments::SetGrpclbChannelArgs(
     const ChannelArguments& grpclb_channel_args) {
   auto c_args = grpclb_channel_args.c_channel_args();
-  SetPointerWithVtable(GRPC_ARG_GRPCLB_CHANNEL_ARGS,
-                       grpc_channel_args_copy(&c_args),
+  SetPointerWithVtable(GRPC_ARG_GRPCLB_CHANNEL_ARGS, &c_args,
                        GrpcChannelArgsVTable());
 }
 
