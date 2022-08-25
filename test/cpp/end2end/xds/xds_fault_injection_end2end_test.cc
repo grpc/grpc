@@ -275,7 +275,8 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelayViaHeaders) {
   SetFilterConfig(http_fault);
   // Send kNumRpcs RPCs and count the delays.
   std::vector<std::pair<std::string, std::string>> metadata = {
-      {"x-envoy-fault-delay-request", std::to_string(kFixedDelay.millis())},
+      {"x-envoy-fault-delay-request",
+       std::to_string(kFixedDelay.millis() * grpc_test_slowdown_factor())},
       {"x-envoy-fault-delay-request-percentage",
        std::to_string(kDelayPercentage)},
   };
