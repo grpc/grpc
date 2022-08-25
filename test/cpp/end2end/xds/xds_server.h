@@ -853,7 +853,8 @@ class LrsServiceImpl : public std::enable_shared_from_this<LrsServiceImpl> {
           }
         }
         response.mutable_load_reporting_interval()->set_seconds(
-            parent_->client_load_reporting_interval_seconds_);
+            parent_->client_load_reporting_interval_seconds_ *
+            grpc_test_slowdown_factor());
         stream->Write(response);
         CountedService<typename RpcApi::Service>::IncreaseResponseCount();
         // Wait for report.

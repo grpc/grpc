@@ -200,6 +200,16 @@ class Duration {
     }
     return *this;
   }
+  Duration& operator*=(int64_t multiplier) {
+    if (millis_ == std::numeric_limits<int64_t>::max()) {
+      *this = multiplier < 0 ? NegativeInfinity() : Infinity();
+    } else if (millis_ == std::numeric_limits<int64_t>::min()) {
+      *this = multiplier < 0 ? Infinity() : NegativeInfinity();
+    } else {
+      millis_ *= multiplier;
+    }
+    return *this;
+  }
   Duration& operator+=(Duration other) {
     millis_ += other.millis_;
     return *this;

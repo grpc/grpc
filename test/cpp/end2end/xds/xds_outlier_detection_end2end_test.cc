@@ -63,23 +63,15 @@ TEST_P(OutlierDetectionTest, SuccessRateEjectionAndUnejection) {
   // Setup outlier failure percentage parameters.
   // Any failure will cause an potential ejection with the probability of 100%
   // (to eliminate flakiness of the test).
-  auto* interval = cluster.mutable_outlier_detection()->mutable_interval();
-  auto* base_time =
-      cluster.mutable_outlier_detection()->mutable_base_ejection_time();
-  interval->set_nanos(100000000 * grpc_test_slowdown_factor());
-  base_time->set_seconds(1 * grpc_test_slowdown_factor());
-  cluster.mutable_outlier_detection()
-      ->mutable_success_rate_stdev_factor()
-      ->set_value(100);
-  cluster.mutable_outlier_detection()
-      ->mutable_enforcing_success_rate()
-      ->set_value(100);
-  cluster.mutable_outlier_detection()
-      ->mutable_success_rate_minimum_hosts()
-      ->set_value(1);
-  cluster.mutable_outlier_detection()
-      ->mutable_success_rate_request_volume()
-      ->set_value(1);
+  auto* outlier_detection = cluster.mutable_outlier_detection();
+  SetProtoDuration(grpc_core::Duration::FromSecondsAndNanoseconds(0, 100000000),
+                   outlier_detection->mutable_interval());
+  SetProtoDuration(grpc_core::Duration::Seconds(1),
+                   outlier_detection->mutable_base_ejection_time());
+  outlier_detection->mutable_success_rate_stdev_factor()->set_value(100);
+  outlier_detection->mutable_enforcing_success_rate()->set_value(100);
+  outlier_detection->mutable_success_rate_minimum_hosts()->set_value(1);
+  outlier_detection->mutable_success_rate_request_volume()->set_value(1);
   balancer_->ads_service()->SetCdsResource(cluster);
   auto new_route_config = default_route_config_;
   auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
@@ -136,20 +128,13 @@ TEST_P(OutlierDetectionTest, SuccessRateMaxPercent) {
   // Setup outlier failure percentage parameters.
   // Any failure will cause an potential ejection with the probability of 100%
   // (to eliminate flakiness of the test).
-  auto* duration = cluster.mutable_outlier_detection()->mutable_interval();
-  duration->set_nanos(100000000 * grpc_test_slowdown_factor());
-  cluster.mutable_outlier_detection()
-      ->mutable_success_rate_stdev_factor()
-      ->set_value(100);
-  cluster.mutable_outlier_detection()
-      ->mutable_enforcing_success_rate()
-      ->set_value(100);
-  cluster.mutable_outlier_detection()
-      ->mutable_success_rate_minimum_hosts()
-      ->set_value(1);
-  cluster.mutable_outlier_detection()
-      ->mutable_success_rate_request_volume()
-      ->set_value(1);
+  auto* outlier_detection = cluster.mutable_outlier_detection();
+  SetProtoDuration(grpc_core::Duration::FromSecondsAndNanoseconds(0, 100000000),
+                   outlier_detection->mutable_interval());
+  outlier_detection->mutable_success_rate_stdev_factor()->set_value(100);
+  outlier_detection->mutable_enforcing_success_rate()->set_value(100);
+  outlier_detection->mutable_success_rate_minimum_hosts()->set_value(1);
+  outlier_detection->mutable_success_rate_request_volume()->set_value(1);
   balancer_->ads_service()->SetCdsResource(cluster);
   auto new_route_config = default_route_config_;
   auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
@@ -232,29 +217,21 @@ TEST_P(OutlierDetectionTest, SuccessRateStdevFactor) {
   // Setup outlier failure percentage parameters.
   // Any failure will cause an potential ejection with the probability of 100%
   // (to eliminate flakiness of the test).
-  auto* interval = cluster.mutable_outlier_detection()->mutable_interval();
-  auto* base_time =
-      cluster.mutable_outlier_detection()->mutable_base_ejection_time();
-  interval->set_nanos(100000000 * grpc_test_slowdown_factor());
-  base_time->set_seconds(1 * grpc_test_slowdown_factor());
+  auto* outlier_detection = cluster.mutable_outlier_detection();
+  SetProtoDuration(grpc_core::Duration::FromSecondsAndNanoseconds(0, 100000000),
+                   outlier_detection->mutable_interval());
+  SetProtoDuration(grpc_core::Duration::Seconds(1),
+                   outlier_detection->mutable_base_ejection_time());
   // We know a stdev factor of 100 will ensure the ejection occurs, so setting
   // it to something higher like 1000 to test that ejection will not occur.
   // Note this parameter is the only difference between this test and
   // SuccessRateEjectionAndUnejection (ejection portion, value set to 100) and
   // this one value changes means the difference between not ejecting in this
   // test and ejecting in the other test.
-  cluster.mutable_outlier_detection()
-      ->mutable_success_rate_stdev_factor()
-      ->set_value(1000);
-  cluster.mutable_outlier_detection()
-      ->mutable_enforcing_success_rate()
-      ->set_value(100);
-  cluster.mutable_outlier_detection()
-      ->mutable_success_rate_minimum_hosts()
-      ->set_value(1);
-  cluster.mutable_outlier_detection()
-      ->mutable_success_rate_request_volume()
-      ->set_value(1);
+  outlier_detection->mutable_success_rate_stdev_factor()->set_value(1000);
+  outlier_detection->mutable_enforcing_success_rate()->set_value(100);
+  outlier_detection->mutable_success_rate_minimum_hosts()->set_value(1);
+  outlier_detection->mutable_success_rate_request_volume()->set_value(1);
   balancer_->ads_service()->SetCdsResource(cluster);
   auto new_route_config = default_route_config_;
   auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
@@ -302,28 +279,20 @@ TEST_P(OutlierDetectionTest, SuccessRateEnforcementPercentage) {
   CreateAndStartBackends(2);
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
-  auto* interval = cluster.mutable_outlier_detection()->mutable_interval();
-  auto* base_time =
-      cluster.mutable_outlier_detection()->mutable_base_ejection_time();
-  interval->set_nanos(100000000 * grpc_test_slowdown_factor());
-  base_time->set_seconds(1 * grpc_test_slowdown_factor());
-  cluster.mutable_outlier_detection()
-      ->mutable_success_rate_stdev_factor()
-      ->set_value(100);
+  auto* outlier_detection = cluster.mutable_outlier_detection();
+  SetProtoDuration(grpc_core::Duration::FromSecondsAndNanoseconds(0, 100000000),
+                   outlier_detection->mutable_interval());
+  SetProtoDuration(grpc_core::Duration::Seconds(1),
+                   outlier_detection->mutable_base_ejection_time());
+  outlier_detection->mutable_success_rate_stdev_factor()->set_value(100);
   // Setting enforcing_success_rate to 0 to ensure we will never eject.
   // Note this parameter is the only difference between this test and
   // SuccessRateEjectionAndUnejection (ejection portion, value set to 100) and
   // this one value changes means the difference between guaranteed not ejecting
   // in this test and guaranteed ejecting in the other test.
-  cluster.mutable_outlier_detection()
-      ->mutable_enforcing_success_rate()
-      ->set_value(0);
-  cluster.mutable_outlier_detection()
-      ->mutable_success_rate_minimum_hosts()
-      ->set_value(1);
-  cluster.mutable_outlier_detection()
-      ->mutable_success_rate_request_volume()
-      ->set_value(1);
+  outlier_detection->mutable_enforcing_success_rate()->set_value(0);
+  outlier_detection->mutable_success_rate_minimum_hosts()->set_value(1);
+  outlier_detection->mutable_success_rate_request_volume()->set_value(1);
   balancer_->ads_service()->SetCdsResource(cluster);
   auto new_route_config = default_route_config_;
   auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
@@ -373,25 +342,18 @@ TEST_P(OutlierDetectionTest, SuccessRateMinimumHosts) {
   // Setup outlier failure percentage parameters.
   // Any failure will cause an potential ejection with the probability of 100%
   // (to eliminate flakiness of the test).
-  auto* duration = cluster.mutable_outlier_detection()->mutable_interval();
-  duration->set_nanos(100000000 * grpc_test_slowdown_factor());
-  cluster.mutable_outlier_detection()
-      ->mutable_success_rate_stdev_factor()
-      ->set_value(100);
-  cluster.mutable_outlier_detection()
-      ->mutable_enforcing_success_rate()
-      ->set_value(100);
+  auto* outlier_detection = cluster.mutable_outlier_detection();
+  SetProtoDuration(grpc_core::Duration::FromSecondsAndNanoseconds(0, 100000000),
+                   outlier_detection->mutable_interval());
+  outlier_detection->mutable_success_rate_stdev_factor()->set_value(100);
+  outlier_detection->mutable_enforcing_success_rate()->set_value(100);
   // Set success_rate_minimum_hosts to 3 when we only have 2 backends
   // Note this parameter is the only difference between this test and
   // SuccessRateEjectionAndUnejection (ejection portion, value set to 1) and
   // this one value changes means the difference between not ejecting in this
   // test and ejecting in the other test.
-  cluster.mutable_outlier_detection()
-      ->mutable_success_rate_minimum_hosts()
-      ->set_value(3);
-  cluster.mutable_outlier_detection()
-      ->mutable_success_rate_request_volume()
-      ->set_value(1);
+  outlier_detection->mutable_success_rate_minimum_hosts()->set_value(3);
+  outlier_detection->mutable_success_rate_request_volume()->set_value(1);
   balancer_->ads_service()->SetCdsResource(cluster);
   auto new_route_config = default_route_config_;
   auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
@@ -441,26 +403,19 @@ TEST_P(OutlierDetectionTest, SuccessRateRequestVolume) {
   // Setup outlier failure percentage parameters.
   // Any failure will cause an potential ejection with the probability of 100%
   // (to eliminate flakiness of the test).
-  auto* duration = cluster.mutable_outlier_detection()->mutable_interval();
-  duration->set_nanos(100000000 * grpc_test_slowdown_factor());
-  cluster.mutable_outlier_detection()
-      ->mutable_success_rate_stdev_factor()
-      ->set_value(100);
-  cluster.mutable_outlier_detection()
-      ->mutable_enforcing_success_rate()
-      ->set_value(100);
-  cluster.mutable_outlier_detection()
-      ->mutable_success_rate_minimum_hosts()
-      ->set_value(1);
+  auto* outlier_detection = cluster.mutable_outlier_detection();
+  SetProtoDuration(grpc_core::Duration::FromSecondsAndNanoseconds(0, 100000000),
+                   outlier_detection->mutable_interval());
+  outlier_detection->mutable_success_rate_stdev_factor()->set_value(100);
+  outlier_detection->mutable_enforcing_success_rate()->set_value(100);
+  outlier_detection->mutable_success_rate_minimum_hosts()->set_value(1);
   // Set success_rate_request_volume to 4 when we only send 3 RPC in the
   // interval.
   // Note this parameter is the only difference between this test and
   // SuccessRateEjectionAndUnejection (ejection portion, value set to 1) and
   // this one value changes means the difference between not ejecting in this
   // test and ejecting in the other test.
-  cluster.mutable_outlier_detection()
-      ->mutable_success_rate_request_volume()
-      ->set_value(4);
+  outlier_detection->mutable_success_rate_request_volume()->set_value(4);
   balancer_->ads_service()->SetCdsResource(cluster);
   auto new_route_config = default_route_config_;
   auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
@@ -516,23 +471,15 @@ TEST_P(OutlierDetectionTest, FailurePercentageEjectionAndUnejection) {
   // Setup outlier failure percentage parameters.
   // Any failure will cause an potential ejection with the probability of 100%
   // (to eliminate flakiness of the test).
-  auto* interval = cluster.mutable_outlier_detection()->mutable_interval();
-  interval->set_nanos(100000000 * grpc_test_slowdown_factor());
-  auto* base_time =
-      cluster.mutable_outlier_detection()->mutable_base_ejection_time();
-  base_time->set_seconds(1 * grpc_test_slowdown_factor());
-  cluster.mutable_outlier_detection()
-      ->mutable_failure_percentage_threshold()
-      ->set_value(0);
-  cluster.mutable_outlier_detection()
-      ->mutable_enforcing_failure_percentage()
-      ->set_value(100);
-  cluster.mutable_outlier_detection()
-      ->mutable_failure_percentage_minimum_hosts()
-      ->set_value(1);
-  cluster.mutable_outlier_detection()
-      ->mutable_failure_percentage_request_volume()
-      ->set_value(1);
+  auto* outlier_detection = cluster.mutable_outlier_detection();
+  SetProtoDuration(grpc_core::Duration::FromSecondsAndNanoseconds(0, 100000000),
+                   outlier_detection->mutable_interval());
+  SetProtoDuration(grpc_core::Duration::Seconds(1),
+                   outlier_detection->mutable_base_ejection_time());
+  outlier_detection->mutable_failure_percentage_threshold()->set_value(0);
+  outlier_detection->mutable_enforcing_failure_percentage()->set_value(100);
+  outlier_detection->mutable_failure_percentage_minimum_hosts()->set_value(1);
+  outlier_detection->mutable_failure_percentage_request_volume()->set_value(1);
   balancer_->ads_service()->SetCdsResource(cluster);
   auto new_route_config = default_route_config_;
   auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
@@ -590,20 +537,13 @@ TEST_P(OutlierDetectionTest, FailurePercentageMaxPercentage) {
   // Setup outlier failure percentage parameters.
   // Any failure will cause an potential ejection with the probability of 100%
   // (to eliminate flakiness of the test).
-  auto* duration = cluster.mutable_outlier_detection()->mutable_interval();
-  duration->set_nanos(100000000 * grpc_test_slowdown_factor());
-  cluster.mutable_outlier_detection()
-      ->mutable_failure_percentage_threshold()
-      ->set_value(0);
-  cluster.mutable_outlier_detection()
-      ->mutable_enforcing_failure_percentage()
-      ->set_value(100);
-  cluster.mutable_outlier_detection()
-      ->mutable_failure_percentage_minimum_hosts()
-      ->set_value(1);
-  cluster.mutable_outlier_detection()
-      ->mutable_failure_percentage_request_volume()
-      ->set_value(1);
+  auto* outlier_detection = cluster.mutable_outlier_detection();
+  SetProtoDuration(grpc_core::Duration::FromSecondsAndNanoseconds(0, 100000000),
+                   outlier_detection->mutable_interval());
+  outlier_detection->mutable_failure_percentage_threshold()->set_value(0);
+  outlier_detection->mutable_enforcing_failure_percentage()->set_value(100);
+  outlier_detection->mutable_failure_percentage_minimum_hosts()->set_value(1);
+  outlier_detection->mutable_failure_percentage_request_volume()->set_value(1);
   balancer_->ads_service()->SetCdsResource(cluster);
   auto new_route_config = default_route_config_;
   auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
@@ -681,28 +621,20 @@ TEST_P(OutlierDetectionTest, FailurePercentageThreshold) {
   CreateAndStartBackends(2);
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
-  auto* interval = cluster.mutable_outlier_detection()->mutable_interval();
-  interval->set_nanos(100000000 * grpc_test_slowdown_factor());
-  auto* base_time =
-      cluster.mutable_outlier_detection()->mutable_base_ejection_time();
-  base_time->set_seconds(1 * grpc_test_slowdown_factor());
+  auto* outlier_detection = cluster.mutable_outlier_detection();
+  SetProtoDuration(grpc_core::Duration::FromSecondsAndNanoseconds(0, 100000000),
+                   outlier_detection->mutable_interval());
+  SetProtoDuration(grpc_core::Duration::Seconds(1),
+                   outlier_detection->mutable_base_ejection_time());
   // Setup outlier failure percentage parameter to 50
   // Note this parameter is the only difference between this test and
   // FailurePercentageEjectionAndUnejection (ejection portion, value set to 0)
   // and this one value changes means the difference between not ejecting in
   // this test and ejecting in the other test.
-  cluster.mutable_outlier_detection()
-      ->mutable_failure_percentage_threshold()
-      ->set_value(50);
-  cluster.mutable_outlier_detection()
-      ->mutable_enforcing_failure_percentage()
-      ->set_value(100);
-  cluster.mutable_outlier_detection()
-      ->mutable_failure_percentage_minimum_hosts()
-      ->set_value(1);
-  cluster.mutable_outlier_detection()
-      ->mutable_failure_percentage_request_volume()
-      ->set_value(1);
+  outlier_detection->mutable_failure_percentage_threshold()->set_value(50);
+  outlier_detection->mutable_enforcing_failure_percentage()->set_value(100);
+  outlier_detection->mutable_failure_percentage_minimum_hosts()->set_value(1);
+  outlier_detection->mutable_failure_percentage_request_volume()->set_value(1);
   balancer_->ads_service()->SetCdsResource(cluster);
   auto new_route_config = default_route_config_;
   auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
@@ -751,28 +683,20 @@ TEST_P(OutlierDetectionTest, FailurePercentageEnforcementPercentage) {
   CreateAndStartBackends(2);
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
-  auto* interval = cluster.mutable_outlier_detection()->mutable_interval();
-  interval->set_nanos(100000000 * grpc_test_slowdown_factor());
-  auto* base_time =
-      cluster.mutable_outlier_detection()->mutable_base_ejection_time();
-  base_time->set_seconds(1 * grpc_test_slowdown_factor());
-  cluster.mutable_outlier_detection()
-      ->mutable_failure_percentage_threshold()
-      ->set_value(0);
+  auto* outlier_detection = cluster.mutable_outlier_detection();
+  SetProtoDuration(grpc_core::Duration::FromSecondsAndNanoseconds(0, 100000000),
+                   outlier_detection->mutable_interval());
+  SetProtoDuration(grpc_core::Duration::Seconds(1),
+                   outlier_detection->mutable_base_ejection_time());
+  outlier_detection->mutable_failure_percentage_threshold()->set_value(0);
   // Setting enforcing_success_rate to 0 to ensure we will never eject.
   // Note this parameter is the only difference between this test and
   // FailurePercentageEjectionAndUnejection (ejection portion, value set to 100)
   // and this one value changes means the difference between guaranteed not
   // ejecting in this test and guaranteed ejecting in the other test.
-  cluster.mutable_outlier_detection()
-      ->mutable_enforcing_failure_percentage()
-      ->set_value(0);
-  cluster.mutable_outlier_detection()
-      ->mutable_failure_percentage_minimum_hosts()
-      ->set_value(1);
-  cluster.mutable_outlier_detection()
-      ->mutable_failure_percentage_request_volume()
-      ->set_value(1);
+  outlier_detection->mutable_enforcing_failure_percentage()->set_value(0);
+  outlier_detection->mutable_failure_percentage_minimum_hosts()->set_value(1);
+  outlier_detection->mutable_failure_percentage_request_volume()->set_value(1);
   balancer_->ads_service()->SetCdsResource(cluster);
   auto new_route_config = default_route_config_;
   auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
@@ -823,14 +747,11 @@ TEST_P(OutlierDetectionTest, FailurePercentageMinimumHosts) {
   // Setup outlier failure percentage parameters.
   // Any failure will cause an potential ejection with the probability of 100%
   // (to eliminate flakiness of the test).
-  auto* duration = cluster.mutable_outlier_detection()->mutable_interval();
-  duration->set_nanos(100000000 * grpc_test_slowdown_factor());
-  cluster.mutable_outlier_detection()
-      ->mutable_failure_percentage_threshold()
-      ->set_value(0);
-  cluster.mutable_outlier_detection()
-      ->mutable_enforcing_failure_percentage()
-      ->set_value(100);
+  auto* outlier_detection = cluster.mutable_outlier_detection();
+  SetProtoDuration(grpc_core::Duration::FromSecondsAndNanoseconds(0, 100000000),
+                   outlier_detection->mutable_interval());
+  outlier_detection->mutable_failure_percentage_threshold()->set_value(0);
+  outlier_detection->mutable_enforcing_failure_percentage()->set_value(100);
   // Set failure_percentage_minimum_hosts to 3 when we only have 2 backends
   // Note this parameter is the only difference between this test and
   // FailurePercentageEjectionAndUnejection (ejection portion, value set to 1)
@@ -893,26 +814,19 @@ TEST_P(OutlierDetectionTest, FailurePercentageRequestVolume) {
   // Setup outlier failure percentage parameters.
   // Any failure will cause an potential ejection with the probability of 100%
   // (to eliminate flakiness of the test).
-  auto* duration = cluster.mutable_outlier_detection()->mutable_interval();
-  duration->set_nanos(100000000 * grpc_test_slowdown_factor());
-  cluster.mutable_outlier_detection()
-      ->mutable_failure_percentage_threshold()
-      ->set_value(0);
-  cluster.mutable_outlier_detection()
-      ->mutable_enforcing_failure_percentage()
-      ->set_value(100);
-  cluster.mutable_outlier_detection()
-      ->mutable_failure_percentage_minimum_hosts()
-      ->set_value(1);
+  auto* outlier_detection = cluster.mutable_outlier_detection();
+  SetProtoDuration(grpc_core::Duration::FromSecondsAndNanoseconds(0, 100000000),
+                   outlier_detection->mutable_interval());
+  outlier_detection->mutable_failure_percentage_threshold()->set_value(0);
+  outlier_detection->mutable_enforcing_failure_percentage()->set_value(100);
+  outlier_detection->mutable_failure_percentage_minimum_hosts()->set_value(1);
   // Set failure_percentage_request_volume to 4 when we only send 3 RPC in the
   // interval.
   // // Note this parameter is the only difference between this test and
   // FailurePercentageEjectionAndUnejection (ejection portion, value set to 1)
   // and this one value changes means the difference between not ejecting in
   // this test and ejecting in the other test.
-  cluster.mutable_outlier_detection()
-      ->mutable_failure_percentage_request_volume()
-      ->set_value(4);
+  outlier_detection->mutable_failure_percentage_request_volume()->set_value(4);
   balancer_->ads_service()->SetCdsResource(cluster);
   auto new_route_config = default_route_config_;
   auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
@@ -965,37 +879,20 @@ TEST_P(OutlierDetectionTest, SuccessRateAndFailurePercentage) {
   // Setup outlier failure percentage parameters.
   // Any failure will cause an potential ejection with the probability of 100%
   // (to eliminate flakiness of the test).
-  auto* interval = cluster.mutable_outlier_detection()->mutable_interval();
-  interval->set_nanos(100000000 * grpc_test_slowdown_factor());
-  cluster.mutable_outlier_detection()
-      ->mutable_max_ejection_percent()
-      ->set_value(50);
+  auto* outlier_detection = cluster.mutable_outlier_detection();
+  SetProtoDuration(grpc_core::Duration::FromSecondsAndNanoseconds(0, 100000000),
+                   outlier_detection->mutable_interval());
+  outlier_detection->mutable_max_ejection_percent()->set_value(50);
   // This stdev of 500 will ensure the number of ok RPC and error RPC we send
   // will make 1 outlier out of the 4 backends.
-  cluster.mutable_outlier_detection()
-      ->mutable_success_rate_stdev_factor()
-      ->set_value(500);
-  cluster.mutable_outlier_detection()
-      ->mutable_enforcing_success_rate()
-      ->set_value(100);
-  cluster.mutable_outlier_detection()
-      ->mutable_success_rate_minimum_hosts()
-      ->set_value(1);
-  cluster.mutable_outlier_detection()
-      ->mutable_success_rate_request_volume()
-      ->set_value(1);
-  cluster.mutable_outlier_detection()
-      ->mutable_failure_percentage_threshold()
-      ->set_value(0);
-  cluster.mutable_outlier_detection()
-      ->mutable_enforcing_failure_percentage()
-      ->set_value(100);
-  cluster.mutable_outlier_detection()
-      ->mutable_failure_percentage_minimum_hosts()
-      ->set_value(1);
-  cluster.mutable_outlier_detection()
-      ->mutable_failure_percentage_request_volume()
-      ->set_value(1);
+  outlier_detection->mutable_success_rate_stdev_factor()->set_value(500);
+  outlier_detection->mutable_enforcing_success_rate()->set_value(100);
+  outlier_detection->mutable_success_rate_minimum_hosts()->set_value(1);
+  outlier_detection->mutable_success_rate_request_volume()->set_value(1);
+  outlier_detection->mutable_failure_percentage_threshold()->set_value(0);
+  outlier_detection->mutable_enforcing_failure_percentage()->set_value(100);
+  outlier_detection->mutable_failure_percentage_minimum_hosts()->set_value(1);
+  outlier_detection->mutable_failure_percentage_request_volume()->set_value(1);
   balancer_->ads_service()->SetCdsResource(cluster);
   auto new_route_config = default_route_config_;
   auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
@@ -1075,7 +972,7 @@ TEST_P(OutlierDetectionTest, SuccessRateAndFailurePercentage) {
 }
 
 // Tests SuccessRate and FailurePercentage both unconfigured;
-// This is the case where according to the RFC we need to instruct the picker
+// This is the case where according to the gRFC we need to instruct the picker
 // not to do counting or even start the timer. The result of not counting is
 // that there will be no ejection taking place since we can't do any
 // calculations.
@@ -1085,14 +982,11 @@ TEST_P(OutlierDetectionTest, SuccessRateAndFailurePercentageBothDisabled) {
   CreateAndStartBackends(2);
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
-  // Setup outlier failure percentage parameters.
-  // Any failure will cause an potential ejection with the probability of 100%
-  // (to eliminate flakiness of the test).
-  auto* interval = cluster.mutable_outlier_detection()->mutable_interval();
-  auto* base_time =
-      cluster.mutable_outlier_detection()->mutable_base_ejection_time();
-  interval->set_nanos(100000000 * grpc_test_slowdown_factor());
-  base_time->set_seconds(1 * grpc_test_slowdown_factor());
+  auto* outlier_detection = cluster.mutable_outlier_detection();
+  SetProtoDuration(grpc_core::Duration::FromSecondsAndNanoseconds(0, 100000000),
+                   outlier_detection->mutable_interval());
+  SetProtoDuration(grpc_core::Duration::Seconds(1),
+                   outlier_detection->mutable_base_ejection_time());
   balancer_->ads_service()->SetCdsResource(cluster);
   auto new_route_config = default_route_config_;
   auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
@@ -1140,37 +1034,20 @@ TEST_P(OutlierDetectionTest,
   // Setup outlier failure percentage parameters.
   // Any failure will cause an potential ejection with the probability of 100%
   // (to eliminate flakiness of the test).
-  auto* interval = cluster.mutable_outlier_detection()->mutable_interval();
-  interval->set_nanos(100000000 * grpc_test_slowdown_factor());
-  cluster.mutable_outlier_detection()
-      ->mutable_max_ejection_percent()
-      ->set_value(50);
+  auto* outlier_detection = cluster.mutable_outlier_detection();
+  SetProtoDuration(grpc_core::Duration::FromSecondsAndNanoseconds(0, 100000000),
+                   outlier_detection->mutable_interval());
+  outlier_detection->mutable_max_ejection_percent()->set_value(50);
   // This stdev of 500 will ensure the number of ok RPC and error RPC we send
   // will make 1 outlier out of the 4 backends.
-  cluster.mutable_outlier_detection()
-      ->mutable_success_rate_stdev_factor()
-      ->set_value(500);
-  cluster.mutable_outlier_detection()
-      ->mutable_enforcing_success_rate()
-      ->set_value(100);
-  cluster.mutable_outlier_detection()
-      ->mutable_success_rate_minimum_hosts()
-      ->set_value(1);
-  cluster.mutable_outlier_detection()
-      ->mutable_success_rate_request_volume()
-      ->set_value(1);
-  cluster.mutable_outlier_detection()
-      ->mutable_failure_percentage_threshold()
-      ->set_value(0);
-  cluster.mutable_outlier_detection()
-      ->mutable_enforcing_failure_percentage()
-      ->set_value(100);
-  cluster.mutable_outlier_detection()
-      ->mutable_failure_percentage_minimum_hosts()
-      ->set_value(1);
-  cluster.mutable_outlier_detection()
-      ->mutable_failure_percentage_request_volume()
-      ->set_value(1);
+  outlier_detection->mutable_success_rate_stdev_factor()->set_value(500);
+  outlier_detection->mutable_enforcing_success_rate()->set_value(100);
+  outlier_detection->mutable_success_rate_minimum_hosts()->set_value(1);
+  outlier_detection->mutable_success_rate_request_volume()->set_value(1);
+  outlier_detection->mutable_failure_percentage_threshold()->set_value(0);
+  outlier_detection->mutable_enforcing_failure_percentage()->set_value(100);
+  outlier_detection->mutable_failure_percentage_minimum_hosts()->set_value(1);
+  outlier_detection->mutable_failure_percentage_request_volume()->set_value(1);
   balancer_->ads_service()->SetCdsResource(cluster);
   auto new_route_config = default_route_config_;
   auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
@@ -1246,23 +1123,15 @@ TEST_P(OutlierDetectionTest, DisableOutlierDetectionWhileAddressesAreEjected) {
   // Setup outlier failure percentage parameters.
   // Any failure will cause an potential ejection with the probability of 100%
   // (to eliminate flakiness of the test).
-  auto* interval = cluster.mutable_outlier_detection()->mutable_interval();
-  interval->set_nanos(100000000 * grpc_test_slowdown_factor());
-  auto* base_time =
-      cluster.mutable_outlier_detection()->mutable_base_ejection_time();
-  base_time->set_seconds(1 * grpc_test_slowdown_factor());
-  cluster.mutable_outlier_detection()
-      ->mutable_failure_percentage_threshold()
-      ->set_value(0);
-  cluster.mutable_outlier_detection()
-      ->mutable_enforcing_failure_percentage()
-      ->set_value(100);
-  cluster.mutable_outlier_detection()
-      ->mutable_failure_percentage_minimum_hosts()
-      ->set_value(1);
-  cluster.mutable_outlier_detection()
-      ->mutable_failure_percentage_request_volume()
-      ->set_value(1);
+  auto* outlier_detection = cluster.mutable_outlier_detection();
+  SetProtoDuration(grpc_core::Duration::FromSecondsAndNanoseconds(0, 100000000),
+                   outlier_detection->mutable_interval());
+  SetProtoDuration(grpc_core::Duration::Seconds(1),
+                   outlier_detection->mutable_base_ejection_time());
+  outlier_detection->mutable_failure_percentage_threshold()->set_value(0);
+  outlier_detection->mutable_enforcing_failure_percentage()->set_value(100);
+  outlier_detection->mutable_failure_percentage_minimum_hosts()->set_value(1);
+  outlier_detection->mutable_failure_percentage_request_volume()->set_value(1);
   balancer_->ads_service()->SetCdsResource(cluster);
   auto new_route_config = default_route_config_;
   auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);

@@ -225,8 +225,8 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelay) {
   auto* delay_percentage = http_fault.mutable_delay()->mutable_percentage();
   delay_percentage->set_numerator(kDelayPercentagePerHundred);
   delay_percentage->set_denominator(FractionalPercent::HUNDRED);
-  auto* fixed_delay = http_fault.mutable_delay()->mutable_fixed_delay();
-  fixed_delay->set_seconds(kFixedDelaySeconds);
+  SetProtoDuration(grpc_core::Duration::Seconds(kFixedDelaySeconds),
+                   http_fault.mutable_delay()->mutable_fixed_delay());
   // Config fault injection via different setup
   SetFilterConfig(http_fault);
   // Send kNumRpcs RPCs and count the delays.
@@ -314,8 +314,8 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionAbortAfterDelayForStreamCall) {
   auto* delay_percentage = http_fault.mutable_delay()->mutable_percentage();
   delay_percentage->set_numerator(100);  // Always inject DELAY!
   delay_percentage->set_denominator(FractionalPercent::HUNDRED);
-  auto* fixed_delay = http_fault.mutable_delay()->mutable_fixed_delay();
-  fixed_delay->set_seconds(kFixedDelaySeconds);
+  SetProtoDuration(grpc_core::Duration::Seconds(kFixedDelaySeconds),
+                   http_fault.mutable_delay()->mutable_fixed_delay());
   // Config fault injection via different setup
   SetFilterConfig(http_fault);
   // Send a stream RPC and check its status code
@@ -360,8 +360,8 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionAlwaysDelayPercentageAbort) {
   auto* delay_percentage = http_fault.mutable_delay()->mutable_percentage();
   delay_percentage->set_numerator(1000000);  // Always inject DELAY!
   delay_percentage->set_denominator(FractionalPercent::MILLION);
-  auto* fixed_delay = http_fault.mutable_delay()->mutable_fixed_delay();
-  fixed_delay->set_seconds(kFixedDelaySeconds);
+  SetProtoDuration(grpc_core::Duration::Seconds(kFixedDelaySeconds),
+                   http_fault.mutable_delay()->mutable_fixed_delay());
   // Config fault injection via different setup
   SetFilterConfig(http_fault);
   // Allow the channel to connect to one backends, so the herd of queued RPCs
@@ -421,8 +421,8 @@ TEST_P(FaultInjectionTest,
   auto* delay_percentage = http_fault.mutable_delay()->mutable_percentage();
   delay_percentage->set_numerator(100);  // Always inject DELAY!
   delay_percentage->set_denominator(FractionalPercent::HUNDRED);
-  auto* fixed_delay = http_fault.mutable_delay()->mutable_fixed_delay();
-  fixed_delay->set_seconds(kFixedDelaySeconds);
+  SetProtoDuration(grpc_core::Duration::Seconds(kFixedDelaySeconds),
+                   http_fault.mutable_delay()->mutable_fixed_delay());
   // Config fault injection via different setup
   SetFilterConfig(http_fault);
   // Allow the channel to connect to one backends, so the herd of queued RPCs
@@ -464,8 +464,8 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionMaxFault) {
   delay_percentage->set_numerator(
       kAlwaysDelayPercentage);  // Always inject DELAY!
   delay_percentage->set_denominator(FractionalPercent::HUNDRED);
-  auto* fixed_delay = http_fault.mutable_delay()->mutable_fixed_delay();
-  fixed_delay->set_seconds(kLongDelaySeconds);
+  SetProtoDuration(grpc_core::Duration::Seconds(kLongDelaySeconds),
+                   http_fault.mutable_delay()->mutable_fixed_delay());
   http_fault.mutable_max_active_faults()->set_value(kMaxFault);
   // Config fault injection via different setup
   SetFilterConfig(http_fault);
@@ -510,8 +510,8 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionBidiStreamDelayOk) {
   auto* delay_percentage = http_fault.mutable_delay()->mutable_percentage();
   delay_percentage->set_numerator(kDelayPercentagePerHundred);
   delay_percentage->set_denominator(FractionalPercent::HUNDRED);
-  auto* fixed_delay = http_fault.mutable_delay()->mutable_fixed_delay();
-  fixed_delay->set_seconds(kFixedDelaySeconds);
+  SetProtoDuration(grpc_core::Duration::Seconds(kFixedDelaySeconds),
+                   http_fault.mutable_delay()->mutable_fixed_delay());
   // Config fault injection via different setup
   SetFilterConfig(http_fault);
   ClientContext context;
@@ -541,8 +541,8 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionBidiStreamDelayError) {
   auto* delay_percentage = http_fault.mutable_delay()->mutable_percentage();
   delay_percentage->set_numerator(kDelayPercentagePerHundred);
   delay_percentage->set_denominator(FractionalPercent::HUNDRED);
-  auto* fixed_delay = http_fault.mutable_delay()->mutable_fixed_delay();
-  fixed_delay->set_seconds(kFixedDelaySeconds);
+  SetProtoDuration(grpc_core::Duration::Seconds(kFixedDelaySeconds),
+                   http_fault.mutable_delay()->mutable_fixed_delay());
   // Config fault injection via different setup
   SetFilterConfig(http_fault);
   ClientContext context;

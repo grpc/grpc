@@ -1024,6 +1024,15 @@ absl::optional<AdsServiceImpl::ResponseState> XdsEnd2endTest::WaitForNack(
   return response_state;
 }
 
+void XdsEnd2endTest::SetProtoDuration(
+    grpc_core::Duration duration,
+    google::protobuf::Duration* duration_proto) {
+  duration *= grpc_test_slowdown_factor();
+  gpr_timespec ts = duration.as_timespec();
+  duration_proto->set_seconds(ts.tv_sec);
+  duration_proto->set_nanos(ts.tv_nsec);
+}
+
 std::string XdsEnd2endTest::ReadFile(const char* file_path) {
   grpc_slice slice;
   GPR_ASSERT(

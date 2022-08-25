@@ -720,6 +720,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
     // Dev note: If a timeout or Deadline Exceeded error is occurring in an XDS
     // end2end test, consider changing that test's timeout instead of this
     // global default.
+    // Will be multiplied by grpc_test_slowdown_factor().
     int timeout_ms = 1000;
     bool wait_for_ready = false;
     std::vector<std::pair<std::string, std::string>> metadata;
@@ -884,6 +885,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
     // If true, resets the backend counters before returning.
     bool reset_counters = true;
     // How long to wait for the backend(s) to see requests.
+    // Will be multiplied by grpc_test_slowdown_factor().
     int timeout_ms = 5000;
 
     WaitForBackendOptions() {}
@@ -1011,6 +1013,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
     return grpc_core::Timestamp::FromTimespecRoundDown(
         gpr_now(GPR_CLOCK_MONOTONIC));
   }
+
+  // Sets duration_proto to duration times grpc_test_slowdown_factor().
+  static void SetProtoDuration(grpc_core::Duration duration,
+                               google::protobuf::Duration* duration_proto);
 
   // Returns the number of RPCs needed to pass error_tolerance at 99.99994%
   // chance. Rolling dices in drop/fault-injection generates a binomial
