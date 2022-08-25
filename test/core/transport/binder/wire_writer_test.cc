@@ -21,7 +21,7 @@
 
 #include "absl/memory/memory.h"
 
-#include <grpcpp/impl/grpc_library.h>
+#include <grpcpp/grpc_library.h>
 
 #include "test/core/transport/binder/mock_objects.h"
 #include "test/core/util/test_config.h"
@@ -36,8 +36,7 @@ MATCHER_P(StrEqInt8Ptr, target, "") {
 }
 
 TEST(WireWriterTest, RpcCall) {
-  grpc::internal::GrpcLibrary init_lib;
-  init_lib.init();
+  grpc::GrpcLibrary init_lib;
   // Required because wire writer uses combiner internally.
   grpc_core::ExecCtx exec_ctx;
   auto mock_binder = absl::make_unique<MockBinder>();
@@ -257,7 +256,6 @@ TEST(WireWriterTest, RpcCall) {
     grpc_core::ExecCtx::Get()->Flush();
   }
   grpc_core::ExecCtx::Get()->Flush();
-  init_lib.shutdown();
 }
 
 }  // namespace grpc_binder

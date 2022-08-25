@@ -29,11 +29,11 @@
 #include <grpc/support/atm.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/completion_queue.h>
+#include <grpcpp/grpc_library.h>
 #include <grpcpp/health_check_service_interface.h>
 #include <grpcpp/impl/call.h>
 #include <grpcpp/impl/codegen/client_interceptor.h>
 #include <grpcpp/impl/codegen/completion_queue.h>
-#include <grpcpp/impl/codegen/grpc_library.h>
 #include <grpcpp/impl/codegen/server_interface.h>
 #include <grpcpp/impl/rpc_service_method.h>
 #include <grpcpp/security/server_credentials.h>
@@ -56,7 +56,7 @@ class ExternalConnectionAcceptorImpl;
 ///
 /// Use a \a grpc::ServerBuilder to create, configure, and start
 /// \a Server instances.
-class Server : public ServerInterface, private GrpcLibraryCodegen {
+class Server : public ServerInterface, private GrpcLibrary {
  public:
   ~Server() ABSL_LOCKS_EXCLUDED(mu_) override;
 

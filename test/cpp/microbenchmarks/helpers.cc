@@ -28,13 +28,9 @@ LibraryInitializer::LibraryInitializer() {
   g_libraryInitializer = this;
 
   g_gli_initializer.summon();
-  init_lib_.init();
 }
 
-LibraryInitializer::~LibraryInitializer() {
-  g_libraryInitializer = nullptr;
-  init_lib_.shutdown();
-}
+LibraryInitializer::~LibraryInitializer() { g_libraryInitializer = nullptr; }
 
 LibraryInitializer& LibraryInitializer::get() {
   GPR_ASSERT(g_libraryInitializer != nullptr);

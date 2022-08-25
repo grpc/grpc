@@ -27,6 +27,7 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 #include <grpcpp/completion_queue.h>
+#include <grpcpp/grpc_library.h>
 #include <grpcpp/impl/codegen/completion_queue_tag.h>
 #include <grpcpp/impl/grpc_library.h>
 
@@ -125,12 +126,12 @@ CallbackAlternativeCQ g_callback_alternative_cq;
 
 }  // namespace
 
-// 'CompletionQueue' constructor can safely call GrpcLibraryCodegen(false) here
-// i.e not have GrpcLibraryCodegen call grpc_init(). This is because, to create
-// a 'grpc_completion_queue' instance (which is being passed as the input to
-// this constructor), one must have already called grpc_init().
+// 'CompletionQueue' constructor can safely call GrpcLibrary(false) here i.e not
+// have GrpcLibrary call grpc_init(). This is because, to create a
+// 'grpc_completion_queue' instance (which is being passed as the input to this
+// constructor), one must have already called grpc_init().
 CompletionQueue::CompletionQueue(grpc_completion_queue* take)
-    : GrpcLibraryCodegen(false), cq_(take) {
+    : GrpcLibrary(false), cq_(take) {
   InitialAvalanching();
 }
 

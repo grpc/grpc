@@ -24,15 +24,14 @@
 #include <functional>
 
 #include <grpc/grpc.h>
+#include <grpcpp/grpc_library.h>
 #include <grpcpp/impl/codegen/completion_queue.h>
 #include <grpcpp/impl/codegen/completion_queue_tag.h>
-#include <grpcpp/impl/codegen/grpc_library.h>
 #include <grpcpp/impl/codegen/time.h>
-#include <grpcpp/impl/grpc_library.h>
 
 namespace grpc {
 
-class Alarm : private grpc::GrpcLibraryCodegen {
+class Alarm : private grpc::GrpcLibrary {
  public:
   /// Create an unset completion queue alarm
   Alarm();
