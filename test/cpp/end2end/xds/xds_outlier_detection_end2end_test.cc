@@ -96,8 +96,10 @@ TEST_P(OutlierDetectionTest, SuccessRateEjectionAndUnejection) {
       {"address_hash", CreateMetadataValueThatHashesToBackend(0)}};
   std::vector<std::pair<std::string, std::string>> metadata1 = {
       {"address_hash", CreateMetadataValueThatHashesToBackend(1)}};
-  const auto rpc_options = RpcOptions().set_metadata(metadata);
-  const auto rpc_options1 = RpcOptions().set_metadata(std::move(metadata1));
+  const auto rpc_options =
+      RpcOptions().set_metadata(metadata).set_timeout_ms(5000);
+  const auto rpc_options1 =
+      RpcOptions().set_metadata(std::move(metadata1)).set_timeout_ms(5000);
   WaitForBackend(DEBUG_LOCATION, 0, /*check_status=*/nullptr,
                  WaitForBackendOptions(), rpc_options);
   WaitForBackend(DEBUG_LOCATION, 1, /*check_status=*/nullptr,
@@ -170,10 +172,14 @@ TEST_P(OutlierDetectionTest, SuccessRateMaxPercent) {
       {"address_hash", CreateMetadataValueThatHashesToBackend(2)}};
   std::vector<std::pair<std::string, std::string>> metadata3 = {
       {"address_hash", CreateMetadataValueThatHashesToBackend(3)}};
-  const auto rpc_options = RpcOptions().set_metadata(metadata);
-  const auto rpc_options1 = RpcOptions().set_metadata(metadata1);
-  const auto rpc_options2 = RpcOptions().set_metadata(metadata2);
-  const auto rpc_options3 = RpcOptions().set_metadata(metadata3);
+  const auto rpc_options =
+      RpcOptions().set_metadata(metadata).set_timeout_ms(5000);
+  const auto rpc_options1 =
+      RpcOptions().set_metadata(metadata1).set_timeout_ms(5000);
+  const auto rpc_options2 =
+      RpcOptions().set_metadata(metadata2).set_timeout_ms(5000);
+  const auto rpc_options3 =
+      RpcOptions().set_metadata(metadata3).set_timeout_ms(5000);
   WaitForBackend(DEBUG_LOCATION, 0, /*check_status=*/nullptr,
                  WaitForBackendOptions(), rpc_options);
   WaitForBackend(DEBUG_LOCATION, 1, /*check_status=*/nullptr,
@@ -271,8 +277,10 @@ TEST_P(OutlierDetectionTest, SuccessRateStdevFactor) {
       {"address_hash", CreateMetadataValueThatHashesToBackend(0)}};
   std::vector<std::pair<std::string, std::string>> metadata1 = {
       {"address_hash", CreateMetadataValueThatHashesToBackend(1)}};
-  const auto rpc_options = RpcOptions().set_metadata(metadata);
-  const auto rpc_options1 = RpcOptions().set_metadata(std::move(metadata1));
+  const auto rpc_options =
+      RpcOptions().set_metadata(metadata).set_timeout_ms(5000);
+  const auto rpc_options1 =
+      RpcOptions().set_metadata(std::move(metadata1)).set_timeout_ms(5000);
   WaitForBackend(DEBUG_LOCATION, 0, /*check_status=*/nullptr,
                  WaitForBackendOptions(), rpc_options);
   WaitForBackend(DEBUG_LOCATION, 1, /*check_status=*/nullptr,
@@ -340,8 +348,10 @@ TEST_P(OutlierDetectionTest, SuccessRateEnforcementPercentage) {
       {"address_hash", CreateMetadataValueThatHashesToBackend(0)}};
   std::vector<std::pair<std::string, std::string>> metadata1 = {
       {"address_hash", CreateMetadataValueThatHashesToBackend(1)}};
-  const auto rpc_options = RpcOptions().set_metadata(metadata);
-  const auto rpc_options1 = RpcOptions().set_metadata(std::move(metadata1));
+  const auto rpc_options =
+      RpcOptions().set_metadata(metadata).set_timeout_ms(5000);
+  const auto rpc_options1 =
+      RpcOptions().set_metadata(std::move(metadata1)).set_timeout_ms(5000);
   WaitForBackend(DEBUG_LOCATION, 0, /*check_status=*/nullptr,
                  WaitForBackendOptions(), rpc_options);
   WaitForBackend(DEBUG_LOCATION, 1, /*check_status=*/nullptr,
@@ -408,8 +418,10 @@ TEST_P(OutlierDetectionTest, SuccessRateMinimumHosts) {
       {"address_hash", CreateMetadataValueThatHashesToBackend(0)}};
   std::vector<std::pair<std::string, std::string>> metadata1 = {
       {"address_hash", CreateMetadataValueThatHashesToBackend(1)}};
-  const auto rpc_options = RpcOptions().set_metadata(metadata);
-  const auto rpc_options1 = RpcOptions().set_metadata(std::move(metadata1));
+  const auto rpc_options =
+      RpcOptions().set_metadata(metadata).set_timeout_ms(5000);
+  const auto rpc_options1 =
+      RpcOptions().set_metadata(std::move(metadata1)).set_timeout_ms(5000);
   WaitForBackend(DEBUG_LOCATION, 0, /*check_status=*/nullptr,
                  WaitForBackendOptions(), rpc_options);
   WaitForBackend(DEBUG_LOCATION, 1, /*check_status=*/nullptr,
@@ -549,8 +561,10 @@ TEST_P(OutlierDetectionTest, FailurePercentageEjectionAndUnejection) {
       {"address_hash", CreateMetadataValueThatHashesToBackend(0)}};
   std::vector<std::pair<std::string, std::string>> metadata1 = {
       {"address_hash", CreateMetadataValueThatHashesToBackend(1)}};
-  const auto rpc_options = RpcOptions().set_metadata(metadata);
-  const auto rpc_options1 = RpcOptions().set_metadata(std::move(metadata1));
+  const auto rpc_options =
+      RpcOptions().set_metadata(metadata).set_timeout_ms(5000);
+  const auto rpc_options1 =
+      RpcOptions().set_metadata(std::move(metadata1)).set_timeout_ms(5000);
   WaitForBackend(DEBUG_LOCATION, 0, /*check_status=*/nullptr,
                  WaitForBackendOptions(), rpc_options);
   WaitForBackend(DEBUG_LOCATION, 1, /*check_status=*/nullptr,
@@ -624,10 +638,14 @@ TEST_P(OutlierDetectionTest, FailurePercentageMaxPercentage) {
       {"address_hash", CreateMetadataValueThatHashesToBackend(2)}};
   std::vector<std::pair<std::string, std::string>> metadata3 = {
       {"address_hash", CreateMetadataValueThatHashesToBackend(3)}};
-  const auto rpc_options = RpcOptions().set_metadata(metadata);
-  const auto rpc_options1 = RpcOptions().set_metadata(metadata1);
-  const auto rpc_options2 = RpcOptions().set_metadata(metadata2);
-  const auto rpc_options3 = RpcOptions().set_metadata(metadata3);
+  const auto rpc_options =
+      RpcOptions().set_metadata(metadata).set_timeout_ms(5000);
+  const auto rpc_options1 =
+      RpcOptions().set_metadata(metadata1).set_timeout_ms(5000);
+  const auto rpc_options2 =
+      RpcOptions().set_metadata(metadata2).set_timeout_ms(5000);
+  const auto rpc_options3 =
+      RpcOptions().set_metadata(metadata3).set_timeout_ms(5000);
   WaitForBackend(DEBUG_LOCATION, 0, /*check_status=*/nullptr,
                  WaitForBackendOptions(), rpc_options);
   WaitForBackend(DEBUG_LOCATION, 1, /*check_status=*/nullptr,
@@ -719,8 +737,10 @@ TEST_P(OutlierDetectionTest, FailurePercentageThreshold) {
       {"address_hash", CreateMetadataValueThatHashesToBackend(0)}};
   std::vector<std::pair<std::string, std::string>> metadata1 = {
       {"address_hash", CreateMetadataValueThatHashesToBackend(1)}};
-  const auto rpc_options = RpcOptions().set_metadata(metadata);
-  const auto rpc_options1 = RpcOptions().set_metadata(std::move(metadata1));
+  const auto rpc_options =
+      RpcOptions().set_metadata(metadata).set_timeout_ms(5000);
+  const auto rpc_options1 =
+      RpcOptions().set_metadata(std::move(metadata1)).set_timeout_ms(5000);
   WaitForBackend(DEBUG_LOCATION, 0, /*check_status=*/nullptr,
                  WaitForBackendOptions(), rpc_options);
   WaitForBackend(DEBUG_LOCATION, 1, /*check_status=*/nullptr,
@@ -789,8 +809,10 @@ TEST_P(OutlierDetectionTest, FailurePercentageEnforcementPercentage) {
       {"address_hash", CreateMetadataValueThatHashesToBackend(0)}};
   std::vector<std::pair<std::string, std::string>> metadata1 = {
       {"address_hash", CreateMetadataValueThatHashesToBackend(1)}};
-  const auto rpc_options = RpcOptions().set_metadata(metadata);
-  const auto rpc_options1 = RpcOptions().set_metadata(std::move(metadata1));
+  const auto rpc_options =
+      RpcOptions().set_metadata(metadata).set_timeout_ms(5000);
+  const auto rpc_options1 =
+      RpcOptions().set_metadata(std::move(metadata1)).set_timeout_ms(5000);
   WaitForBackend(DEBUG_LOCATION, 0, /*check_status=*/nullptr,
                  WaitForBackendOptions(), rpc_options);
   WaitForBackend(DEBUG_LOCATION, 1, /*check_status=*/nullptr,
@@ -858,8 +880,10 @@ TEST_P(OutlierDetectionTest, FailurePercentageMinimumHosts) {
       {"address_hash", CreateMetadataValueThatHashesToBackend(0)}};
   std::vector<std::pair<std::string, std::string>> metadata1 = {
       {"address_hash", CreateMetadataValueThatHashesToBackend(1)}};
-  const auto rpc_options = RpcOptions().set_metadata(metadata);
-  const auto rpc_options1 = RpcOptions().set_metadata(std::move(metadata1));
+  const auto rpc_options =
+      RpcOptions().set_metadata(metadata).set_timeout_ms(5000);
+  const auto rpc_options1 =
+      RpcOptions().set_metadata(std::move(metadata1)).set_timeout_ms(5000);
   WaitForBackend(DEBUG_LOCATION, 0, /*check_status=*/nullptr,
                  WaitForBackendOptions(), rpc_options);
   WaitForBackend(DEBUG_LOCATION, 1, /*check_status=*/nullptr,
@@ -929,8 +953,10 @@ TEST_P(OutlierDetectionTest, FailurePercentageRequestVolume) {
       {"address_hash", CreateMetadataValueThatHashesToBackend(0)}};
   std::vector<std::pair<std::string, std::string>> metadata1 = {
       {"address_hash", CreateMetadataValueThatHashesToBackend(1)}};
-  const auto rpc_options = RpcOptions().set_metadata(metadata);
-  const auto rpc_options1 = RpcOptions().set_metadata(std::move(metadata1));
+  const auto rpc_options =
+      RpcOptions().set_metadata(metadata).set_timeout_ms(5000);
+  const auto rpc_options1 =
+      RpcOptions().set_metadata(std::move(metadata1)).set_timeout_ms(5000);
   WaitForBackend(DEBUG_LOCATION, 0, /*check_status=*/nullptr,
                  WaitForBackendOptions(), rpc_options);
   WaitForBackend(DEBUG_LOCATION, 1, /*check_status=*/nullptr,
@@ -1016,10 +1042,14 @@ TEST_P(OutlierDetectionTest, SuccessRateAndFailurePercentage) {
       {"address_hash", CreateMetadataValueThatHashesToBackend(2)}};
   std::vector<std::pair<std::string, std::string>> metadata3 = {
       {"address_hash", CreateMetadataValueThatHashesToBackend(3)}};
-  const auto rpc_options = RpcOptions().set_metadata(metadata);
-  const auto rpc_options1 = RpcOptions().set_metadata(metadata1);
-  const auto rpc_options2 = RpcOptions().set_metadata(metadata2);
-  const auto rpc_options3 = RpcOptions().set_metadata(metadata3);
+  const auto rpc_options =
+      RpcOptions().set_metadata(metadata).set_timeout_ms(5000);
+  const auto rpc_options1 =
+      RpcOptions().set_metadata(metadata1).set_timeout_ms(5000);
+  const auto rpc_options2 =
+      RpcOptions().set_metadata(metadata2).set_timeout_ms(5000);
+  const auto rpc_options3 =
+      RpcOptions().set_metadata(metadata3).set_timeout_ms(5000);
   WaitForBackend(DEBUG_LOCATION, 0, /*check_status=*/nullptr,
                  WaitForBackendOptions(), rpc_options);
   WaitForBackend(DEBUG_LOCATION, 1, /*check_status=*/nullptr,
@@ -1109,8 +1139,10 @@ TEST_P(OutlierDetectionTest, SuccessRateAndFailurePercentageBothDisabled) {
       {"address_hash", CreateMetadataValueThatHashesToBackend(0)}};
   std::vector<std::pair<std::string, std::string>> metadata1 = {
       {"address_hash", CreateMetadataValueThatHashesToBackend(1)}};
-  const auto rpc_options = RpcOptions().set_metadata(metadata);
-  const auto rpc_options1 = RpcOptions().set_metadata(std::move(metadata1));
+  const auto rpc_options =
+      RpcOptions().set_metadata(metadata).set_timeout_ms(5000);
+  const auto rpc_options1 =
+      RpcOptions().set_metadata(std::move(metadata1)).set_timeout_ms(5000);
   WaitForBackend(DEBUG_LOCATION, 0, /*check_status=*/nullptr,
                  WaitForBackendOptions(), rpc_options);
   WaitForBackend(DEBUG_LOCATION, 1, /*check_status=*/nullptr,
@@ -1191,10 +1223,14 @@ TEST_P(OutlierDetectionTest,
       {"address_hash", CreateMetadataValueThatHashesToBackend(2)}};
   std::vector<std::pair<std::string, std::string>> metadata3 = {
       {"address_hash", CreateMetadataValueThatHashesToBackend(3)}};
-  const auto rpc_options = RpcOptions().set_metadata(metadata);
-  const auto rpc_options1 = RpcOptions().set_metadata(metadata1);
-  const auto rpc_options2 = RpcOptions().set_metadata(metadata2);
-  const auto rpc_options3 = RpcOptions().set_metadata(metadata3);
+  const auto rpc_options =
+      RpcOptions().set_metadata(metadata).set_timeout_ms(5000);
+  const auto rpc_options1 =
+      RpcOptions().set_metadata(metadata1).set_timeout_ms(5000);
+  const auto rpc_options2 =
+      RpcOptions().set_metadata(metadata2).set_timeout_ms(5000);
+  const auto rpc_options3 =
+      RpcOptions().set_metadata(metadata3).set_timeout_ms(5000);
   WaitForBackend(DEBUG_LOCATION, 0, /*check_status=*/nullptr,
                  WaitForBackendOptions(), rpc_options);
   WaitForBackend(DEBUG_LOCATION, 1, /*check_status=*/nullptr,
@@ -1279,8 +1315,10 @@ TEST_P(OutlierDetectionTest, DisableOutlierDetectionWhileAddressesAreEjected) {
       {"address_hash", CreateMetadataValueThatHashesToBackend(0)}};
   std::vector<std::pair<std::string, std::string>> metadata1 = {
       {"address_hash", CreateMetadataValueThatHashesToBackend(1)}};
-  const auto rpc_options = RpcOptions().set_metadata(metadata);
-  const auto rpc_options1 = RpcOptions().set_metadata(std::move(metadata1));
+  const auto rpc_options =
+      RpcOptions().set_metadata(metadata).set_timeout_ms(5000);
+  const auto rpc_options1 =
+      RpcOptions().set_metadata(std::move(metadata1)).set_timeout_ms(5000);
   WaitForBackend(DEBUG_LOCATION, 0, /*check_status=*/nullptr,
                  WaitForBackendOptions(), rpc_options);
   WaitForBackend(DEBUG_LOCATION, 1, /*check_status=*/nullptr,
