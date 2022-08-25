@@ -427,10 +427,14 @@ TEST_P(RingHashTest, HeaderHashingWithRegexRewrite) {
       {"address_hash", CreateMetadataValueThatHashesToBackend(2)}};
   std::vector<std::pair<std::string, std::string>> metadata3 = {
       {"address_hash", CreateMetadataValueThatHashesToBackend(3)}};
-  const auto rpc_options = RpcOptions().set_metadata(std::move(metadata));
-  const auto rpc_options1 = RpcOptions().set_metadata(std::move(metadata1));
-  const auto rpc_options2 = RpcOptions().set_metadata(std::move(metadata2));
-  const auto rpc_options3 = RpcOptions().set_metadata(std::move(metadata3));
+  const auto rpc_options =
+      RpcOptions().set_metadata(std::move(metadata)).set_timeout_ms(5000);
+  const auto rpc_options1 =
+      RpcOptions().set_metadata(std::move(metadata1)).set_timeout_ms(5000);
+  const auto rpc_options2 =
+      RpcOptions().set_metadata(std::move(metadata2)).set_timeout_ms(5000);
+  const auto rpc_options3 =
+      RpcOptions().set_metadata(std::move(metadata3)).set_timeout_ms(5000);
   CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options);
   CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options1);
   CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options2);
@@ -544,7 +548,7 @@ TEST_P(RingHashTest, ContinuesPastTerminalPolicyThatDoesNotProduceResult) {
   std::vector<std::pair<std::string, std::string>> metadata = {
       {"address_hash", CreateMetadataValueThatHashesToBackend(0)}};
   const auto rpc_options = RpcOptions().set_metadata(std::move(metadata));
-  CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options);
+  CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options.set_timeout_ms(5000));
   EXPECT_EQ(backends_[0]->backend_service()->request_count(), 100);
   EXPECT_EQ(backends_[1]->backend_service()->request_count(), 0);
 }
@@ -735,7 +739,8 @@ TEST_P(RingHashTest, FixedHashingTerminalPolicy) {
       {"fixed_string", "fixed_value"},
       {"random_string", absl::StrFormat("%" PRIu32, rand())},
   };
-  const auto rpc_options = RpcOptions().set_metadata(std::move(metadata));
+  const auto rpc_options =
+      RpcOptions().set_metadata(std::move(metadata)).set_timeout_ms(5000);
   CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options);
   bool found = false;
   for (size_t i = 0; i < backends_.size(); ++i) {
@@ -766,7 +771,7 @@ TEST_P(RingHashTest, IdleToReady) {
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
-  CheckRpcSendOk(DEBUG_LOCATION);
+  CheckRpcSendOk(DEBUG_LOCATION, 1, RpcOptions().set_timeout_ms(5000));
   EXPECT_EQ(GRPC_CHANNEL_READY, channel_->GetState(false));
 }
 
@@ -919,7 +924,8 @@ TEST_P(RingHashTest, TransientFailureCheckNextOne) {
   std::vector<std::pair<std::string, std::string>> metadata = {
       {"address_hash",
        CreateMetadataValueThatHashesToBackendPort(unused_port)}};
-  const auto rpc_options = RpcOptions().set_metadata(std::move(metadata));
+  const auto rpc_options =
+      RpcOptions().set_metadata(std::move(metadata)).set_timeout_ms(5000);
   WaitForBackend(DEBUG_LOCATION, 0, /*check_status=*/nullptr,
                  WaitForBackendOptions(), rpc_options);
   CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options);
@@ -948,7 +954,8 @@ TEST_P(RingHashTest, SwitchToLowerPrioirtyAndThenBack) {
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   std::vector<std::pair<std::string, std::string>> metadata = {
       {"address_hash", CreateMetadataValueThatHashesToBackend(0)}};
-  const auto rpc_options = RpcOptions().set_metadata(std::move(metadata));
+  const auto rpc_options =
+      RpcOptions().set_metadata(std::move(metadata)).set_timeout_ms(5000);
   WaitForBackend(DEBUG_LOCATION, 0, /*check_status=*/nullptr,
                  WaitForBackendOptions(), rpc_options);
   backends_[0]->StopListeningAndSendGoaways();
@@ -1137,7 +1144,7 @@ TEST_P(RingHashTest, UnsupportedHashPolicyUntilChannelIdHashing) {
                                    new_route_config);
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  CheckRpcSendOk(DEBUG_LOCATION, 100);
+  CheckRpcSendOk(DEBUG_LOCATION, 100, RpcOptions().set_timeout_ms(5000));
   bool found = false;
   for (size_t i = 0; i < backends_.size(); ++i) {
     if (backends_[i]->backend_service()->request_count() > 0) {
