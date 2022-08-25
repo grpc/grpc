@@ -969,7 +969,7 @@ TEST_P(EdsTest, DropPerTenThousand) {
   // Send kNumRpcs RPCs and count the drops.
   size_t num_drops = SendRpcsAndCountFailuresWithMessage(
       DEBUG_LOCATION, kNumRpcs, StatusCode::UNAVAILABLE,
-      kStatusMessageDropPrefix);
+      kStatusMessageDropPrefix, RpcOptions().set_timeout_ms(2000));
   // The drop rate should be roughly equal to the expectation.
   const double seen_drop_rate = static_cast<double>(num_drops) / kNumRpcs;
   EXPECT_THAT(seen_drop_rate,
