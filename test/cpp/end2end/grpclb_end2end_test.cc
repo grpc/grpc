@@ -1027,8 +1027,8 @@ TEST_F(SingleBalancerTest, AllServersUnreachableFailFast) {
 
 TEST_F(SingleBalancerTest, Fallback) {
   SetNextResolutionAllBalancers();
-  const int kFallbackTimeoutMs = 200 * grpc_test_slowdown_factor();
-  const int kServerlistDelayMs = 2500 * grpc_test_slowdown_factor();
+  const int kFallbackTimeoutMs = 40 * grpc_test_slowdown_factor();
+  const int kServerlistDelayMs = 500 * grpc_test_slowdown_factor();
   const size_t kNumBackendsInResolution = backends_.size() / 2;
 
   ResetStub(kFallbackTimeoutMs);
