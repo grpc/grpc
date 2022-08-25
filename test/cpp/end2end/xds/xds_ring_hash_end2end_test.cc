@@ -452,7 +452,7 @@ TEST_P(RingHashTest, NoHashPolicy) {
   CreateAndStartBackends(2);
   const double kDistribution50Percent = 0.5;
   const double kErrorTolerance = 0.05;
-  const uint32_t kRpcTimeoutMs = 20000;
+  const uint32_t kRpcTimeoutMs = 10000;
   const size_t kNumRpcs =
       ComputeIdealNumRpcs(kDistribution50Percent, kErrorTolerance);
   auto cluster = default_cluster_;
@@ -466,7 +466,7 @@ TEST_P(RingHashTest, NoHashPolicy) {
   // TODO(donnadionne): remove extended timeout after ring creation
   // optimization.
   WaitForAllBackends(DEBUG_LOCATION, 0, 2, /*check_status=*/nullptr,
-                     WaitForBackendOptions(),
+                     WaitForBackendOptions().set_timeout_ms(kRpcTimeoutMs),
                      RpcOptions().set_timeout_ms(kRpcTimeoutMs));
   CheckRpcSendOk(DEBUG_LOCATION, kNumRpcs);
   const int request_count_1 = backends_[0]->backend_service()->request_count();
@@ -483,7 +483,7 @@ TEST_P(RingHashTest, EndpointWeights) {
   const double kDistribution50Percent = 0.5;
   const double kDistribution25Percent = 0.25;
   const double kErrorTolerance = 0.05;
-  const uint32_t kRpcTimeoutMs = 20000;
+  const uint32_t kRpcTimeoutMs = 10000;
   const size_t kNumRpcs =
       ComputeIdealNumRpcs(kDistribution50Percent, kErrorTolerance);
   auto cluster = default_cluster_;
@@ -507,7 +507,7 @@ TEST_P(RingHashTest, EndpointWeights) {
   // TODO(donnadionne): remove extended timeout after ring creation
   // optimization.
   WaitForAllBackends(DEBUG_LOCATION, 0, 3, /*check_status=*/nullptr,
-                     WaitForBackendOptions(),
+                     WaitForBackendOptions().set_timeout_ms(kRpcTimeoutMs),
                      RpcOptions().set_timeout_ms(kRpcTimeoutMs));
   CheckRpcSendOk(DEBUG_LOCATION, kNumRpcs);
   // Endpoint 2 should see 50% of traffic, and endpoints 0 and 1 should
@@ -555,7 +555,7 @@ TEST_P(RingHashTest, HashOnHeaderThatIsNotPresent) {
   CreateAndStartBackends(2);
   const double kDistribution50Percent = 0.5;
   const double kErrorTolerance = 0.05;
-  const uint32_t kRpcTimeoutMs = 20000;
+  const uint32_t kRpcTimeoutMs = 10000;
   const size_t kNumRpcs =
       ComputeIdealNumRpcs(kDistribution50Percent, kErrorTolerance);
   auto cluster = default_cluster_;
@@ -579,7 +579,7 @@ TEST_P(RingHashTest, HashOnHeaderThatIsNotPresent) {
   // TODO(donnadionne): remove extended timeout after ring creation
   // optimization.
   WaitForAllBackends(DEBUG_LOCATION, 0, 2, /*check_status=*/nullptr,
-                     WaitForBackendOptions(),
+                     WaitForBackendOptions().set_timeout_ms(kRpcTimeoutMs),
                      RpcOptions().set_timeout_ms(kRpcTimeoutMs));
   CheckRpcSendOk(DEBUG_LOCATION, kNumRpcs, rpc_options);
   const int request_count_1 = backends_[0]->backend_service()->request_count();
@@ -596,7 +596,7 @@ TEST_P(RingHashTest, UnsupportedHashPolicyDefaultToRandomHashing) {
   CreateAndStartBackends(2);
   const double kDistribution50Percent = 0.5;
   const double kErrorTolerance = 0.05;
-  const uint32_t kRpcTimeoutMs = 20000;
+  const uint32_t kRpcTimeoutMs = 10000;
   const size_t kNumRpcs =
       ComputeIdealNumRpcs(kDistribution50Percent, kErrorTolerance);
   auto cluster = default_cluster_;
@@ -622,7 +622,7 @@ TEST_P(RingHashTest, UnsupportedHashPolicyDefaultToRandomHashing) {
   // TODO(donnadionne): remove extended timeout after ring creation
   // optimization.
   WaitForAllBackends(DEBUG_LOCATION, 0, 2, /*check_status=*/nullptr,
-                     WaitForBackendOptions(),
+                     WaitForBackendOptions().set_timeout_ms(kRpcTimeoutMs),
                      RpcOptions().set_timeout_ms(kRpcTimeoutMs));
   CheckRpcSendOk(DEBUG_LOCATION, kNumRpcs);
   const int request_count_1 = backends_[0]->backend_service()->request_count();
@@ -643,7 +643,7 @@ TEST_P(RingHashTest, RandomHashingDistributionAccordingToEndpointWeight) {
   const double kWeight33Percent = static_cast<double>(kWeight1) / kWeightTotal;
   const double kWeight66Percent = static_cast<double>(kWeight2) / kWeightTotal;
   const double kErrorTolerance = 0.05;
-  const uint32_t kRpcTimeoutMs = 20000;
+  const uint32_t kRpcTimeoutMs = 10000;
   const size_t kNumRpcs =
       ComputeIdealNumRpcs(kWeight33Percent, kErrorTolerance);
   auto cluster = default_cluster_;
@@ -659,7 +659,7 @@ TEST_P(RingHashTest, RandomHashingDistributionAccordingToEndpointWeight) {
   // TODO(donnadionne): remove extended timeout after ring creation
   // optimization.
   WaitForAllBackends(DEBUG_LOCATION, 0, 2, /*check_status=*/nullptr,
-                     WaitForBackendOptions(),
+                     WaitForBackendOptions().set_timeout_ms(kRpcTimeoutMs),
                      RpcOptions().set_timeout_ms(kRpcTimeoutMs));
   CheckRpcSendOk(DEBUG_LOCATION, kNumRpcs);
   const int weight_33_request_count =
@@ -683,7 +683,7 @@ TEST_P(RingHashTest,
   const double kWeight20Percent = static_cast<double>(kWeight1) / kWeightTotal;
   const double kWeight80Percent = static_cast<double>(kWeight2) / kWeightTotal;
   const double kErrorTolerance = 0.05;
-  const uint32_t kRpcTimeoutMs = 20000;
+  const uint32_t kRpcTimeoutMs = 10000;
   const size_t kNumRpcs =
       ComputeIdealNumRpcs(kWeight20Percent, kErrorTolerance);
   auto cluster = default_cluster_;
@@ -699,7 +699,7 @@ TEST_P(RingHashTest,
   // TODO(donnadionne): remove extended timeout after ring creation
   // optimization.
   WaitForAllBackends(DEBUG_LOCATION, 0, 2, /*check_status=*/nullptr,
-                     WaitForBackendOptions(),
+                     WaitForBackendOptions().set_timeout_ms(kRpcTimeoutMs),
                      RpcOptions().set_timeout_ms(kRpcTimeoutMs));
   CheckRpcSendOk(DEBUG_LOCATION, kNumRpcs);
   const int weight_20_request_count =
