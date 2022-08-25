@@ -1973,7 +1973,7 @@ TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
                           .set_rpc_service(SERVICE_ECHO1)
                           .set_rpc_method(METHOD_ECHO1)
                           .set_wait_for_ready(true)
-                          .set_timeout_ms(kTimeoutApplication.millis()));
+                          .set_timeout(kTimeoutApplication));
   EXPECT_THAT(NowFromCycleCounter(), AdjustedClockInRange(t1, t2));
   // Test max_stream_duration of 2.5 seconds applied
   t0 = NowFromCycleCounter();
@@ -1985,7 +1985,7 @@ TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
                           .set_rpc_service(SERVICE_ECHO2)
                           .set_rpc_method(METHOD_ECHO2)
                           .set_wait_for_ready(true)
-                          .set_timeout_ms(kTimeoutApplication.millis()));
+                          .set_timeout(kTimeoutApplication));
   EXPECT_THAT(NowFromCycleCounter(), AdjustedClockInRange(t1, t2));
   // Test http_stream_duration of 3.5 seconds applied
   t0 = NowFromCycleCounter();
@@ -1993,8 +1993,8 @@ TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
   t2 = t0 + (kTimeoutApplication * grpc_test_slowdown_factor());
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::DEADLINE_EXCEEDED,
                       "Deadline Exceeded",
-                      RpcOptions().set_wait_for_ready(true).set_timeout_ms(
-                          kTimeoutApplication.millis()));
+                      RpcOptions().set_wait_for_ready(true).set_timeout(
+                          kTimeoutApplication));
   EXPECT_THAT(NowFromCycleCounter(), AdjustedClockInRange(t1, t2));
 }
 
@@ -2071,7 +2071,7 @@ TEST_P(LdsRdsTest, XdsRoutingApplyApplicationTimeoutWhenXdsTimeoutExplicit) {
                           .set_rpc_service(SERVICE_ECHO1)
                           .set_rpc_method(METHOD_ECHO1)
                           .set_wait_for_ready(true)
-                          .set_timeout_ms(kTimeoutApplication.millis()));
+                          .set_timeout(kTimeoutApplication));
   auto elapsed_nano_seconds =
       std::chrono::duration_cast<std::chrono::nanoseconds>(system_clock::now() -
                                                            t0);
@@ -2086,7 +2086,7 @@ TEST_P(LdsRdsTest, XdsRoutingApplyApplicationTimeoutWhenXdsTimeoutExplicit) {
                           .set_rpc_service(SERVICE_ECHO2)
                           .set_rpc_method(METHOD_ECHO2)
                           .set_wait_for_ready(true)
-                          .set_timeout_ms(kTimeoutApplication.millis()));
+                          .set_timeout(kTimeoutApplication));
   elapsed_nano_seconds = std::chrono::duration_cast<std::chrono::nanoseconds>(
       system_clock::now() - t0);
   EXPECT_GT(
@@ -2118,8 +2118,8 @@ TEST_P(LdsRdsTest, XdsRoutingApplyApplicationTimeoutWhenHttpTimeoutExplicit) {
   auto t0 = system_clock::now();
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::DEADLINE_EXCEEDED,
                       "Deadline Exceeded",
-                      RpcOptions().set_wait_for_ready(true).set_timeout_ms(
-                          kTimeoutApplication.millis()));
+                      RpcOptions().set_wait_for_ready(true).set_timeout(
+                          kTimeoutApplication));
   auto elapsed_nano_seconds =
       std::chrono::duration_cast<std::chrono::nanoseconds>(system_clock::now() -
                                                            t0);
@@ -2138,8 +2138,8 @@ TEST_P(LdsRdsTest, XdsRoutingWithOnlyApplicationTimeout) {
   auto t0 = system_clock::now();
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::DEADLINE_EXCEEDED,
                       "Deadline Exceeded",
-                      RpcOptions().set_wait_for_ready(true).set_timeout_ms(
-                          kTimeoutApplication.millis()));
+                      RpcOptions().set_wait_for_ready(true).set_timeout(
+                          kTimeoutApplication));
   auto elapsed_nano_seconds =
       std::chrono::duration_cast<std::chrono::nanoseconds>(system_clock::now() -
                                                            t0);

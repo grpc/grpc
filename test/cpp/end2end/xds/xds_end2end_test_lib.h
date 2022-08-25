@@ -748,6 +748,11 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
       return *this;
     }
 
+    RpcOptions& set_timeout(grpc_core::Duration timeout) {
+      timeout_ms = timeout.millis();
+      return *this;
+    }
+
     RpcOptions& set_wait_for_ready(bool rpc_wait_for_ready) {
       wait_for_ready = rpc_wait_for_ready;
       return *this;
