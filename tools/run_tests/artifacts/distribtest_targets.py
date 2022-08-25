@@ -453,7 +453,6 @@ def targets():
                         'stretch',
                         ruby_version='ruby_2_7',
                         presubmit=True),
-        RubyDistribTest('linux', 'x64', 'stretch', ruby_version='ruby_3_0'),
         RubyDistribTest('linux', 'x64', 'centos7'),
         RubyDistribTest('linux', 'x64', 'ubuntu1604'),
         RubyDistribTest('linux', 'x64', 'ubuntu1804', presubmit=True),
