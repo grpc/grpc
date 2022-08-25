@@ -717,11 +717,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
   struct RpcOptions {
     RpcService service = SERVICE_ECHO;
     RpcMethod method = METHOD_ECHO;
-    // Dev note: If a timeout or Deadline Exceeded error is occurring in an XDS
-    // end2end test, consider changing that test's timeout instead of this
-    // global default.
     // Will be multiplied by grpc_test_slowdown_factor().
-    int timeout_ms = 1000;
+    int timeout_ms = 5000;
     bool wait_for_ready = false;
     std::vector<std::pair<std::string, std::string>> metadata;
     // These options are used by the backend service impl.
@@ -823,7 +820,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
   };
   void SendRpcsUntil(const grpc_core::DebugLocation& debug_location,
                      std::function<bool(const RpcResult&)> continue_predicate,
-                     int timeout_ms = 5000,
+                     int timeout_ms = 15000,
                      const RpcOptions& rpc_options = RpcOptions());
 
   // Sends the specified number of RPCs and fails if the RPC fails.
@@ -891,7 +888,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
     bool reset_counters = true;
     // How long to wait for the backend(s) to see requests.
     // Will be multiplied by grpc_test_slowdown_factor().
-    int timeout_ms = 5000;
+    int timeout_ms = 15000;
 
     WaitForBackendOptions() {}
 
