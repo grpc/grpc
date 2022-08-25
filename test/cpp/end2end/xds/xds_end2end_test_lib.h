@@ -823,7 +823,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
   // Sends the specified number of RPCs and fails if the RPC fails.
   void CheckRpcSendOk(const grpc_core::DebugLocation& debug_location,
                       const size_t times = 1,
-                      const RpcOptions& rpc_options = RpcOptions());
+                      const RpcOptions& rpc_options = RpcOptions().set_timeout_ms(5000));
 
   // Sends one RPC, which must fail with the specified status code and
   // a message matching the specified regex.
@@ -908,14 +908,14 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
       size_t stop_index = 0,
       std::function<void(const RpcResult&)> check_status = nullptr,
       const WaitForBackendOptions& wait_options = WaitForBackendOptions(),
-      const RpcOptions& rpc_options = RpcOptions());
+      const RpcOptions& rpc_options = RpcOptions().set_timeout_ms(5000));
 
   // Sends RPCs until the backend at index backend_idx sees requests.
   void WaitForBackend(
       const grpc_core::DebugLocation& debug_location, size_t backend_idx,
       std::function<void(const RpcResult&)> check_status = nullptr,
       const WaitForBackendOptions& wait_options = WaitForBackendOptions(),
-      const RpcOptions& rpc_options = RpcOptions()) {
+      const RpcOptions& rpc_options = RpcOptions().set_timeout_ms(5000)) {
     WaitForAllBackends(debug_location, backend_idx, backend_idx + 1,
                        check_status, wait_options, rpc_options);
   }
