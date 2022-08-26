@@ -14,18 +14,13 @@
 // limitations under the License.
 //
 
-#include "src/core/ext/xds/xds_bootstrap.h"
-
-#include <regex>
+#include "src/core/ext/xds/xds_bootstrap_grpc.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_format.h"
-
-#include <grpc/grpc.h>
-#include <grpc/slice.h>
 
 #include "src/core/ext/xds/certificate_provider_registry.h"
 #include "src/core/ext/xds/xds_client_grpc.h"
@@ -121,7 +116,7 @@ TEST(XdsBootstrapTest, Basic) {
   auto json = Json::Parse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
   grpc_error_handle error = GRPC_ERROR_NONE;
-  XdsBootstrap bootstrap(
+  GrpcXdsBootstrap bootstrap(
       std::move(*json),
       absl::make_unique<GrpcXdsCertificateProviderPluginMap>(), &error);
   EXPECT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
@@ -189,7 +184,7 @@ TEST(XdsBootstrapTest, ValidWithoutNode) {
   auto json = Json::Parse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
   grpc_error_handle error = GRPC_ERROR_NONE;
-  XdsBootstrap bootstrap(
+  GrpcXdsBootstrap bootstrap(
       std::move(*json),
       absl::make_unique<GrpcXdsCertificateProviderPluginMap>(), &error);
   EXPECT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
@@ -211,7 +206,7 @@ TEST(XdsBootstrapTest, InsecureCreds) {
   auto json = Json::Parse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
   grpc_error_handle error = GRPC_ERROR_NONE;
-  XdsBootstrap bootstrap(
+  GrpcXdsBootstrap bootstrap(
       std::move(*json),
       absl::make_unique<GrpcXdsCertificateProviderPluginMap>(), &error);
   EXPECT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
@@ -249,7 +244,7 @@ TEST(XdsBootstrapTest, GoogleDefaultCreds) {
   auto json = Json::Parse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
   grpc_error_handle error = GRPC_ERROR_NONE;
-  XdsBootstrap bootstrap(
+  GrpcXdsBootstrap bootstrap(
       std::move(*json),
       absl::make_unique<GrpcXdsCertificateProviderPluginMap>(), &error);
   EXPECT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
@@ -270,7 +265,7 @@ TEST(XdsBootstrapTest, MissingChannelCreds) {
   auto json = Json::Parse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
   grpc_error_handle error = GRPC_ERROR_NONE;
-  XdsBootstrap bootstrap(
+  GrpcXdsBootstrap bootstrap(
       std::move(*json),
       absl::make_unique<GrpcXdsCertificateProviderPluginMap>(), &error);
   EXPECT_THAT(
@@ -292,7 +287,7 @@ TEST(XdsBootstrapTest, NoKnownChannelCreds) {
   auto json = Json::Parse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
   grpc_error_handle error = GRPC_ERROR_NONE;
-  XdsBootstrap bootstrap(
+  GrpcXdsBootstrap bootstrap(
       std::move(*json),
       absl::make_unique<GrpcXdsCertificateProviderPluginMap>(), &error);
   EXPECT_THAT(grpc_error_std_string(error),
@@ -305,7 +300,7 @@ TEST(XdsBootstrapTest, MissingXdsServers) {
   auto json = Json::Parse("{}");
   ASSERT_TRUE(json.ok()) << json.status();
   grpc_error_handle error = GRPC_ERROR_NONE;
-  XdsBootstrap bootstrap(
+  GrpcXdsBootstrap bootstrap(
       std::move(*json),
       absl::make_unique<GrpcXdsCertificateProviderPluginMap>(), &error);
   EXPECT_THAT(grpc_error_std_string(error),
@@ -324,7 +319,7 @@ TEST(XdsBootstrapTest, TopFieldsWrongTypes) {
   auto json = Json::Parse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
   grpc_error_handle error = GRPC_ERROR_NONE;
-  XdsBootstrap bootstrap(
+  GrpcXdsBootstrap bootstrap(
       std::move(*json),
       absl::make_unique<GrpcXdsCertificateProviderPluginMap>(), &error);
   EXPECT_THAT(grpc_error_std_string(error),
@@ -346,7 +341,7 @@ TEST(XdsBootstrapTest, XdsServerMissingServerUri) {
   auto json = Json::Parse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
   grpc_error_handle error = GRPC_ERROR_NONE;
-  XdsBootstrap bootstrap(
+  GrpcXdsBootstrap bootstrap(
       std::move(*json),
       absl::make_unique<GrpcXdsCertificateProviderPluginMap>(), &error);
   EXPECT_THAT(
@@ -371,7 +366,7 @@ TEST(XdsBootstrapTest, XdsServerUriAndCredsWrongTypes) {
   auto json = Json::Parse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
   grpc_error_handle error = GRPC_ERROR_NONE;
-  XdsBootstrap bootstrap(
+  GrpcXdsBootstrap bootstrap(
       std::move(*json),
       absl::make_unique<GrpcXdsCertificateProviderPluginMap>(), &error);
   EXPECT_THAT(grpc_error_std_string(error),
@@ -402,7 +397,7 @@ TEST(XdsBootstrapTest, ChannelCredsFieldsWrongTypes) {
   auto json = Json::Parse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
   grpc_error_handle error = GRPC_ERROR_NONE;
-  XdsBootstrap bootstrap(
+  GrpcXdsBootstrap bootstrap(
       std::move(*json),
       absl::make_unique<GrpcXdsCertificateProviderPluginMap>(), &error);
   EXPECT_THAT(
@@ -430,7 +425,7 @@ TEST(XdsBootstrapTest, NodeFieldsWrongTypes) {
   auto json = Json::Parse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
   grpc_error_handle error = GRPC_ERROR_NONE;
-  XdsBootstrap bootstrap(
+  GrpcXdsBootstrap bootstrap(
       std::move(*json),
       absl::make_unique<GrpcXdsCertificateProviderPluginMap>(), &error);
   EXPECT_THAT(grpc_error_std_string(error),
@@ -456,7 +451,7 @@ TEST(XdsBootstrapTest, LocalityFieldsWrongType) {
   auto json = Json::Parse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
   grpc_error_handle error = GRPC_ERROR_NONE;
-  XdsBootstrap bootstrap(
+  GrpcXdsBootstrap bootstrap(
       std::move(*json),
       absl::make_unique<GrpcXdsCertificateProviderPluginMap>(), &error);
   EXPECT_THAT(grpc_error_std_string(error),
@@ -484,7 +479,7 @@ TEST(XdsBootstrapTest, CertificateProvidersElementWrongType) {
   auto json = Json::Parse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
   grpc_error_handle error = GRPC_ERROR_NONE;
-  XdsBootstrap bootstrap(
+  GrpcXdsBootstrap bootstrap(
       std::move(*json),
       absl::make_unique<GrpcXdsCertificateProviderPluginMap>(), &error);
   EXPECT_THAT(grpc_error_std_string(error),
@@ -512,7 +507,7 @@ TEST(XdsBootstrapTest, CertificateProvidersPluginNameWrongType) {
   auto json = Json::Parse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
   grpc_error_handle error = GRPC_ERROR_NONE;
-  XdsBootstrap bootstrap(
+  GrpcXdsBootstrap bootstrap(
       std::move(*json),
       absl::make_unique<GrpcXdsCertificateProviderPluginMap>(), &error);
   EXPECT_THAT(grpc_error_std_string(error),
@@ -541,7 +536,7 @@ TEST(XdsBootstrapTest, CertificateProvidersUnrecognizedPluginName) {
   auto json = Json::Parse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
   grpc_error_handle error = GRPC_ERROR_NONE;
-  XdsBootstrap bootstrap(
+  GrpcXdsBootstrap bootstrap(
       std::move(*json),
       absl::make_unique<GrpcXdsCertificateProviderPluginMap>(), &error);
   EXPECT_THAT(grpc_error_std_string(error),
@@ -584,7 +579,7 @@ TEST(XdsBootstrapTest, AuthorityXdsServerInvalidResourceTemplate) {
   auto json = Json::Parse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
   grpc_error_handle error = GRPC_ERROR_NONE;
-  XdsBootstrap bootstrap(
+  GrpcXdsBootstrap bootstrap(
       std::move(*json),
       absl::make_unique<GrpcXdsCertificateProviderPluginMap>(), &error);
   EXPECT_THAT(grpc_error_std_string(error),
@@ -618,7 +613,7 @@ TEST(XdsBootstrapTest, AuthorityXdsServerMissingServerUri) {
   auto json = Json::Parse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
   grpc_error_handle error = GRPC_ERROR_NONE;
-  XdsBootstrap bootstrap(
+  GrpcXdsBootstrap bootstrap(
       std::move(*json),
       absl::make_unique<GrpcXdsCertificateProviderPluginMap>(), &error);
   EXPECT_THAT(
@@ -703,7 +698,7 @@ TEST(XdsBootstrapTest, CertificateProvidersFakePluginParsingError) {
   auto json = Json::Parse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
   grpc_error_handle error = GRPC_ERROR_NONE;
-  XdsBootstrap bootstrap(
+  GrpcXdsBootstrap bootstrap(
       std::move(*json),
       absl::make_unique<GrpcXdsCertificateProviderPluginMap>(), &error);
   EXPECT_THAT(grpc_error_std_string(error),
@@ -735,7 +730,7 @@ TEST(XdsBootstrapTest, CertificateProvidersFakePluginParsingSuccess) {
   auto json = Json::Parse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
   grpc_error_handle error = GRPC_ERROR_NONE;
-  XdsBootstrap bootstrap(
+  GrpcXdsBootstrap bootstrap(
       std::move(*json),
       absl::make_unique<GrpcXdsCertificateProviderPluginMap>(), &error);
   ASSERT_TRUE(GRPC_ERROR_IS_NONE(error)) << grpc_error_std_string(error);
@@ -770,7 +765,7 @@ TEST(XdsBootstrapTest, CertificateProvidersFakePluginEmptyConfig) {
   auto json = Json::Parse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
   grpc_error_handle error = GRPC_ERROR_NONE;
-  XdsBootstrap bootstrap(
+  GrpcXdsBootstrap bootstrap(
       std::move(*json),
       absl::make_unique<GrpcXdsCertificateProviderPluginMap>(), &error);
   ASSERT_TRUE(GRPC_ERROR_IS_NONE(error)) << grpc_error_std_string(error);
@@ -804,11 +799,11 @@ TEST(XdsBootstrapTest, XdsServerToJsonAndParse) {
   ASSERT_TRUE(json.ok()) << json.status();
   grpc_error_handle error = GRPC_ERROR_NONE;
   XdsBootstrap::XdsServer xds_server =
-      XdsBootstrap::XdsServerParse(*json, &error);
+      GrpcXdsBootstrap::XdsServerParse(*json, &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
-  Json::Object output = XdsBootstrap::XdsServerToJson(xds_server);
+  Json::Object output = GrpcXdsBootstrap::XdsServerToJson(xds_server);
   XdsBootstrap::XdsServer output_xds_server =
-      XdsBootstrap::XdsServerParse(output, &error);
+      GrpcXdsBootstrap::XdsServerParse(output, &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
   gpr_unsetenv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
 }
