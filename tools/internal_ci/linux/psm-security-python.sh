@@ -172,6 +172,7 @@ main() {
   fi
   build_docker_images_if_needed
   # Run tests
+  cd "${TEST_DRIVER_FULL_DIR}"
   local failed_tests=0
   test_suites=("baseline_test" "security_test" "authz_test")
   for test in "${test_suites[@]}"; do
