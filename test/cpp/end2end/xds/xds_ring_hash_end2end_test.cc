@@ -285,7 +285,8 @@ TEST_P(RingHashTest,
   // Increase subchannel backoff time, so that subchannels stay in
   // TRANSIENT_FAILURE for long enough to trigger potential problems.
   ChannelArguments channel_args;
-  channel_args.SetInt(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS, 10000);
+  channel_args.SetInt(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS,
+                      10000 * grpc_test_slowdown_factor());
   SetUpChannel(&channel_args);
   // Start an RPC in the background.
   LongRunningRpc rpc;

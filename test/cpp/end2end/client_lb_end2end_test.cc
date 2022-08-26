@@ -581,7 +581,8 @@ TEST_F(ClientLbEnd2endTest, ChannelIdleness) {
   StartServers(kNumServers);
   // Set max idle time and build the channel.
   ChannelArguments args;
-  args.SetInt(GRPC_ARG_CLIENT_IDLE_TIMEOUT_MS, 1000);
+  args.SetInt(GRPC_ARG_CLIENT_IDLE_TIMEOUT_MS,
+              1000 * grpc_test_slowdown_factor());
   auto response_generator = BuildResolverResponseGenerator();
   auto channel = BuildChannel("", response_generator, args);
   auto stub = BuildStub(channel);
@@ -732,7 +733,8 @@ TEST_F(PickFirstTest, ProcessPending) {
 TEST_F(PickFirstTest, SelectsReadyAtStartup) {
   ChannelArguments args;
   constexpr int kInitialBackOffMs = 5000;
-  args.SetInt(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS, kInitialBackOffMs);
+  args.SetInt(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS,
+              kInitialBackOffMs * grpc_test_slowdown_factor());
   // Create 2 servers, but start only the second one.
   std::vector<int> ports = {grpc_pick_unused_port_or_die(),
                             grpc_pick_unused_port_or_die()};
@@ -758,7 +760,8 @@ TEST_F(PickFirstTest, SelectsReadyAtStartup) {
 TEST_F(PickFirstTest, BackOffInitialReconnect) {
   ChannelArguments args;
   constexpr int kInitialBackOffMs = 100;
-  args.SetInt(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS, kInitialBackOffMs);
+  args.SetInt(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS,
+              kInitialBackOffMs * grpc_test_slowdown_factor());
   const std::vector<int> ports = {grpc_pick_unused_port_or_die()};
   const gpr_timespec t0 = gpr_now(GPR_CLOCK_MONOTONIC);
   auto response_generator = BuildResolverResponseGenerator();
@@ -779,7 +782,8 @@ TEST_F(PickFirstTest, BackOffInitialReconnect) {
   gpr_log(GPR_DEBUG, "Waited %" PRId64 " milliseconds", waited.millis());
   // We should have waited at least kInitialBackOffMs. We substract one to
   // account for test and precision accuracy drift.
-  EXPECT_GE(waited.millis(), kInitialBackOffMs - 1);
+  EXPECT_GE(waited.millis(),
+            (kInitialBackOffMs * grpc_test_slowdown_factor()) - 1);
   // But not much more.
   EXPECT_GT(
       gpr_time_cmp(
@@ -790,7 +794,8 @@ TEST_F(PickFirstTest, BackOffInitialReconnect) {
 TEST_F(PickFirstTest, BackOffMinReconnect) {
   ChannelArguments args;
   constexpr int kMinReconnectBackOffMs = 1000;
-  args.SetInt(GRPC_ARG_MIN_RECONNECT_BACKOFF_MS, kMinReconnectBackOffMs);
+  args.SetInt(GRPC_ARG_MIN_RECONNECT_BACKOFF_MS,
+              kMinReconnectBackOffMs * grpc_test_slowdown_factor());
   const std::vector<int> ports = {grpc_pick_unused_port_or_die()};
   auto response_generator = BuildResolverResponseGenerator();
   auto channel = BuildChannel("pick_first", response_generator, args);
@@ -799,8 +804,8 @@ TEST_F(PickFirstTest, BackOffMinReconnect) {
   // Make connection delay a 10% longer than it's willing to in order to make
   // sure we are hitting the codepath that waits for the min reconnect backoff.
   ConnectionAttemptInjector injector;
-  injector.SetDelay(
-      grpc_core::Duration::Milliseconds(kMinReconnectBackOffMs * 1.10));
+  injector.SetDelay(grpc_core::Duration::Milliseconds(
+      kMinReconnectBackOffMs * grpc_test_slowdown_factor() * 1.10));
   const gpr_timespec t0 = gpr_now(GPR_CLOCK_MONOTONIC);
   channel->WaitForConnected(
       grpc_timeout_milliseconds_to_deadline(kMinReconnectBackOffMs * 2));
@@ -810,13 +815,15 @@ TEST_F(PickFirstTest, BackOffMinReconnect) {
   gpr_log(GPR_DEBUG, "Waited %" PRId64 " milliseconds", waited.millis());
   // We should have waited at least kMinReconnectBackOffMs. We substract one to
   // account for test and precision accuracy drift.
-  EXPECT_GE(waited.millis(), kMinReconnectBackOffMs - 1);
+  EXPECT_GE(waited.millis(),
+            (kMinReconnectBackOffMs * grpc_test_slowdown_factor()) - 1);
 }
 
 TEST_F(PickFirstTest, ResetConnectionBackoff) {
   ChannelArguments args;
   constexpr int kInitialBackOffMs = 1000;
-  args.SetInt(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS, kInitialBackOffMs);
+  args.SetInt(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS,
+              kInitialBackOffMs * grpc_test_slowdown_factor());
   const std::vector<int> ports = {grpc_pick_unused_port_or_die()};
   auto response_generator = BuildResolverResponseGenerator();
   auto channel = BuildChannel("pick_first", response_generator, args);
@@ -844,7 +851,7 @@ TEST_F(PickFirstTest, ResetConnectionBackoff) {
       grpc_core::Duration::FromTimespec(gpr_time_sub(t1, t0));
   gpr_log(GPR_DEBUG, "Waited %" PRId64 " milliseconds", waited.millis());
   // We should have waited less than kInitialBackOffMs.
-  EXPECT_LT(waited.millis(), kInitialBackOffMs);
+  EXPECT_LT(waited.millis(), kInitialBackOffMs * grpc_test_slowdown_factor());
 }
 
 TEST_F(ClientLbEnd2endTest,
@@ -854,8 +861,9 @@ TEST_F(ClientLbEnd2endTest,
   // Create client.
   const int port = grpc_pick_unused_port_or_die();
   ChannelArguments args;
-  const int kInitialBackOffMs = 5000 * grpc_test_slowdown_factor();
-  args.SetInt(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS, kInitialBackOffMs);
+  const int kInitialBackOffMs = 5000;
+  args.SetInt(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS,
+              kInitialBackOffMs * grpc_test_slowdown_factor());
   auto response_generator = BuildResolverResponseGenerator();
   auto channel = BuildChannel("pick_first", response_generator, args);
   auto stub = BuildStub(channel);
