@@ -66,6 +66,15 @@ bool XdsBootstrap::XdsServer::IgnoreResourceDeletion() const {
 // XdsBootstrap
 //
 
+const XdsBootstrap::Authority* XdsBootstrap::LookupAuthority(
+    const std::string& name) const {
+  auto it = authorities().find(name);
+  if (it != authorities().end()) {
+    return &it->second;
+  }
+  return nullptr;
+}
+
 bool XdsBootstrap::XdsServerExists(
     const XdsBootstrap::XdsServer& server) const {
   if (server == this->server()) return true;

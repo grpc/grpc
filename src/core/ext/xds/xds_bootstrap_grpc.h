@@ -79,7 +79,6 @@ class GrpcXdsBootstrap : public XdsBootstrap {
   const std::map<std::string, Authority>& authorities() const override {
     return authorities_;
   }
-  const Authority* LookupAuthority(const std::string& name) const override;
 
   const XdsCertificateProviderPluginMapInterface*
   certificate_provider_plugin_map() const {

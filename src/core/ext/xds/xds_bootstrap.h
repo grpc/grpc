@@ -88,7 +88,7 @@ class XdsBootstrap {
 
   // Returns a pointer to the specified authority, or null if it does
   // not exist in this bootstrap config.
-  virtual const Authority* LookupAuthority(const std::string& name) const = 0;
+  const Authority* LookupAuthority(const std::string& name) const;
 
   // A utility method to check that an xDS server exists in this
   // bootstrap config.
