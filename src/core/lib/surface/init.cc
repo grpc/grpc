@@ -39,6 +39,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/forkable.h"
+#include "src/core/lib/event_engine/posix_engine/timer_manager.h"
 #include "src/core/lib/gprpp/fork.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"
@@ -171,7 +172,6 @@ void grpc_shutdown_internal_locked(void)
   int i;
   {
     grpc_core::ExecCtx exec_ctx(0);
-    grpc_event_engine::experimental::ResetDefaultEventEngine();
     grpc_iomgr_shutdown_background_closure();
     {
       grpc_timer_manager_set_threading(false);  // shutdown timer_manager thread
@@ -181,6 +181,7 @@ void grpc_shutdown_internal_locked(void)
         }
       }
     }
+    grpc_event_engine::experimental::ResetDefaultEventEngine();
     grpc_iomgr_shutdown();
     gpr_timers_global_destroy();
     grpc_tracer_shutdown();
@@ -210,6 +211,8 @@ void grpc_shutdown(void) {
     grpc_core::ApplicationCallbackExecCtx* acec =
         grpc_core::ApplicationCallbackExecCtx::Get();
     if (!grpc_iomgr_is_any_background_poller_thread() &&
+        !grpc_event_engine::posix_engine::TimerManager::
+            IsTimerManagerThread() &&
         (acec == nullptr ||
          (acec->Flags() & GRPC_APP_CALLBACK_EXEC_CTX_FLAG_IS_INTERNAL_THREAD) ==
              0)) {

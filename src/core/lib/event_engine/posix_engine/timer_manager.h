@@ -60,6 +60,8 @@ class TimerManager final : public grpc_event_engine::experimental::Forkable {
   void PostforkParent() override;
   void PostforkChild() override;
 
+  static bool IsTimerManagerThread();
+
  private:
   struct RunThreadArgs {
     TimerManager* self;
