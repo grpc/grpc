@@ -44,13 +44,9 @@ bool XdsFederationEnabled() {
 // XdsBootstrap::XdsServer
 //
 
-namespace {
-
-const absl::string_view kServerFeatureXdsV3 = "xds_v3";
-const absl::string_view kServerFeatureIgnoreResourceDeletion =
-    "ignore_resource_deletion";
-
-}  // namespace
+constexpr absl::string_view XdsBootstrap::XdsServer::kServerFeatureXdsV3;
+constexpr absl::string_view
+    XdsBootstrap::XdsServer::kServerFeatureIgnoreResourceDeletion;
 
 bool XdsBootstrap::XdsServer::ShouldUseV3() const {
   return server_features.find(std::string(kServerFeatureXdsV3)) !=

@@ -42,6 +42,10 @@ class XdsBootstrap {
   };
 
   struct XdsServer {
+    static constexpr absl::string_view kServerFeatureXdsV3 = "xds_v3";
+    static constexpr absl::string_view kServerFeatureIgnoreResourceDeletion =
+        "ignore_resource_deletion";
+
     std::string server_uri;
     std::string channel_creds_type;
     Json channel_creds_config;

@@ -41,11 +41,6 @@ namespace grpc_core {
 
 namespace {
 
-// FIXME: share with xds_bootstrap.cc?
-const absl::string_view kServerFeatureXdsV3 = "xds_v3";
-const absl::string_view kServerFeatureIgnoreResourceDeletion =
-    "ignore_resource_deletion";
-
 grpc_error_handle ParseChannelCreds(const Json::Object& json, size_t idx,
                                     XdsBootstrap::XdsServer* server) {
   std::vector<grpc_error_handle> error_list;
@@ -489,9 +484,10 @@ XdsBootstrap::XdsServer GrpcXdsBootstrap::XdsServerParse(
   if (server_features_array != nullptr) {
     for (const Json& feature_json : *server_features_array) {
       if (feature_json.type() == Json::Type::STRING &&
-          (feature_json.string_value() == kServerFeatureXdsV3 ||
+          (feature_json.string_value() ==
+               XdsBootstrap::XdsServer::kServerFeatureXdsV3 ||
            feature_json.string_value() ==
-               kServerFeatureIgnoreResourceDeletion)) {
+               XdsBootstrap::XdsServer::kServerFeatureIgnoreResourceDeletion)) {
         server.server_features.insert(feature_json.string_value());
       }
     }
