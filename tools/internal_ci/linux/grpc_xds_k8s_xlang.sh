@@ -50,6 +50,8 @@ run_test() {
   local server_image_name="${IMAGE_REPO}/${slang}-server:${tag}"
   local client_image_name="${IMAGE_REPO}/${clang}-client:${tag}"
   # TODO(sanjaypujare): skip test if image not found (by using gcloud_gcr_list_image_tags)
+  local out_dir="${TEST_XML_OUTPUT_DIR}/${tag}/${clang}-${slang}"
+  mkdir -pv "${out_dir}"
   set -x
   python -m "tests.security_test" \
     --flagfile="${TEST_DRIVER_FLAGFILE}" \
@@ -57,9 +59,12 @@ run_test() {
     --server_image="${server_image_name}" \
     --client_image="${client_image_name}" \
     --testing_version="${TESTING_VERSION}" \
-    --xml_output_file="${TEST_XML_OUTPUT_DIR}/${tag}/${clang}-${slang}/sponge_log.xml" \
+    --nocheck_local_certs \
     --force_cleanup \
-    --nocheck_local_certs
+    --collect_app_logs \
+    --log_dir="${out_dir}" \
+    --xml_output_file="${out_dir}/sponge_log.xml" \
+    |& tee "${out_dir}/sponge_log.log"
 }
 
 #######################################
