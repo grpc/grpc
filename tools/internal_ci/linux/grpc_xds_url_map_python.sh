@@ -104,7 +104,7 @@ run_test() {
   set -x
   python3 -m "tests.${test_name}" \
     --flagfile="${TEST_DRIVER_FLAGFILE}" \
-    --flagfile="config/url-map.cfg"
+    --flagfile="config/url-map.cfg" \
     --kube_context="${KUBE_CONTEXT}" \
     --client_image="${CLIENT_IMAGE_NAME}:${GIT_COMMIT}" \
     --testing_version="${TESTING_VERSION}" \
