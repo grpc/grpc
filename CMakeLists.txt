@@ -3363,7 +3363,6 @@ foreach(_hdr
   include/grpcpp/impl/call.h
   include/grpcpp/impl/channel_argument_option.h
   include/grpcpp/impl/client_unary_call.h
-  include/grpcpp/impl/codegen/async_generic_service.h
   include/grpcpp/impl/codegen/async_stream.h
   include/grpcpp/impl/codegen/async_unary_call.h
   include/grpcpp/impl/codegen/byte_buffer.h
@@ -4033,7 +4032,6 @@ foreach(_hdr
   include/grpcpp/impl/call.h
   include/grpcpp/impl/channel_argument_option.h
   include/grpcpp/impl/client_unary_call.h
-  include/grpcpp/impl/codegen/async_generic_service.h
   include/grpcpp/impl/codegen/async_stream.h
   include/grpcpp/impl/codegen/async_unary_call.h
   include/grpcpp/impl/codegen/byte_buffer.h
