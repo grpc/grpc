@@ -586,7 +586,6 @@ static void run_poller(void* bp, grpc_error_handle /*error_ignored*/) {
   gpr_mu_lock(p->pollset_mu);
   grpc_core::Timestamp deadline =
       grpc_core::ExecCtx::Get()->Now() + grpc_core::Duration::Seconds(10);
-  GRPC_STATS_INC_TCP_BACKUP_POLLER_POLLS();
   GRPC_LOG_IF_ERROR(
       "backup_poller:pollset_work",
       grpc_pollset_work(BACKUP_POLLER_POLLSET(p), nullptr, deadline));
@@ -647,7 +646,6 @@ static void cover_self(grpc_tcp* tcp) {
     g_backup_poller = p;
     grpc_pollset_init(BACKUP_POLLER_POLLSET(p), &p->pollset_mu);
     g_backup_poller_mu->Unlock();
-    GRPC_STATS_INC_TCP_BACKUP_POLLERS_CREATED();
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
       gpr_log(GPR_INFO, "BACKUP_POLLER:%p create", p);
     }
@@ -1028,12 +1026,11 @@ static void maybe_make_read_slices(grpc_tcp* tcp)
         std::max(tcp->min_read_chunk_size, tcp->min_progress_size);
     int max_read_chunk_size =
         std::max(tcp->max_read_chunk_size, tcp->min_progress_size);
-    grpc_slice_buffer_add_indexed(
-        tcp->incoming_buffer,
-        tcp->memory_owner.MakeSlice(grpc_core::MemoryRequest(
-            min_read_chunk_size,
-            grpc_core::Clamp(extra_wanted, min_read_chunk_size,
-                             max_read_chunk_size))));
+    grpc_slice slice = tcp->memory_owner.MakeSlice(grpc_core::MemoryRequest(
+        min_read_chunk_size, grpc_core::Clamp(extra_wanted, min_read_chunk_size,
+                                              max_read_chunk_size)));
+    GRPC_STATS_INC_TCP_READ_ALLOCATION(GRPC_SLICE_LENGTH(slice));
+    grpc_slice_buffer_add_indexed(tcp->incoming_buffer, slice);
     maybe_post_reclaimer(tcp);
   }
 }

@@ -278,7 +278,6 @@ with open('src/core/lib/debug/stats_data.h', 'w') as H:
     print("  GRPC_STATS_HISTOGRAM_BUCKETS = %d" % first_slot, file=H)
     print("} grpc_stats_histogram_constants;", file=H)
 
-    print("#if defined(GRPC_COLLECT_STATS) || !defined(NDEBUG)", file=H)
     for ctr in inst_map['Counter']:
         print(("#define GRPC_STATS_INC_%s() " +
                "GRPC_STATS_INC_COUNTER(GRPC_STATS_COUNTER_%s)") %
@@ -290,15 +289,6 @@ with open('src/core/lib/debug/stats_data.h', 'w') as H:
             % (histogram.name.upper(), histogram.name.lower()),
             file=H)
         print("void grpc_stats_inc_%s(int x);" % histogram.name.lower(), file=H)
-
-    print("#else", file=H)
-    for ctr in inst_map['Counter']:
-        print(("#define GRPC_STATS_INC_%s() ") % (ctr.name.upper()), file=H)
-    for histogram in inst_map['Histogram']:
-        print("#define GRPC_STATS_INC_%s(value)" % (histogram.name.upper()),
-              file=H)
-    print("#endif /* defined(GRPC_COLLECT_STATS) || !defined(NDEBUG) */",
-          file=H)
 
     for i, tbl in enumerate(static_tables):
         print("extern const %s grpc_stats_table_%d[%d];" %
