@@ -58,10 +58,11 @@ TEST(TimerManagerTest, StressTest) {
     // Wait for all callbacks to have been called
     while (called.load(std::memory_order_relaxed) < kTimerCount) {
       exec_ctx.InvalidateNow();
-      if (exec_ctx.Now() > test_deadline)
+      if (exec_ctx.Now() > test_deadline) {
         FAIL() << "Deadline exceeded. "
                << called.load(std::memory_order_relaxed) << "/" << kTimerCount
                << " callbacks executed";
+      }
       gpr_log(GPR_DEBUG, "Processed %d/%d callbacks",
               called.load(std::memory_order_relaxed), kTimerCount);
       absl::SleepFor(absl::Milliseconds(333));

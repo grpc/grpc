@@ -252,7 +252,8 @@ TimerManager::~TimerManager() {
     collector.Collect(std::move(completed_threads_));
     if (thread_count_ == 0) break;
     if (grpc_event_engine_timer_trace.enabled()) {
-      gpr_log(GPR_DEBUG, "TimerManager::%p waiting for threads to finish", this);
+      gpr_log(GPR_DEBUG, "TimerManager::%p waiting for threads to finish",
+              this);
     }
     cv_.Wait(&mu_);
   }
