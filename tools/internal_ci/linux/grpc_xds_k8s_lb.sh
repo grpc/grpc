@@ -111,6 +111,7 @@ run_test() {
     --server_image="${SERVER_IMAGE_NAME}:${GIT_COMMIT}" \
     --client_image="${CLIENT_IMAGE_NAME}:${GIT_COMMIT}" \
     --testing_version="${TESTING_VERSION}" \
+    --force_cleanup \
     --collect_app_logs \
     --log_dir="${out_dir}" \
     --xml_output_file="${out_dir}/sponge_log.xml" \
@@ -176,7 +177,6 @@ main() {
   if (( failed_tests > 0 )); then
     exit 1
   fi
-
 }
 
 main "$@"
