@@ -428,9 +428,9 @@ grpc_cc_library(
         "grpc_trace",
         "http_connect_handshaker",
         "iomgr_timer",
+        "posix_event_engine_timer_manager",
         "slice",
         "tcp_connect_handshaker",
-        "posix_event_engine_timer_manager",
     ],
 )
 
