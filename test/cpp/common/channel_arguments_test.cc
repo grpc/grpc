@@ -22,7 +22,6 @@
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/support/channel_arguments.h>
 
-#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/socket_mutator.h"
