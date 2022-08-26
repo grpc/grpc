@@ -29,6 +29,7 @@
 #include <grpc/impl/codegen/grpc_types.h>
 
 #include "src/core/ext/xds/certificate_provider_store.h"
+#include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/lib/channel/channel_args.h"

@@ -19,6 +19,7 @@
 #include "src/core/ext/xds/xds_bootstrap.h"
 
 #include <set>
+#include <utility>
 #include <vector>
 
 #include "absl/strings/string_view.h"

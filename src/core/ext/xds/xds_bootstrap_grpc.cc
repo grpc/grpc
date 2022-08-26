@@ -20,6 +20,8 @@
 
 #include <stdlib.h>
 
+#include <algorithm>
+#include <set>
 #include <utility>
 #include <vector>
 

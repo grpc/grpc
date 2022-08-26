@@ -24,6 +24,8 @@
 #include <string>
 #include <vector>
 
+#include "absl/strings/string_view.h"
+
 #include "src/core/lib/json/json.h"
 
 namespace grpc_core {
