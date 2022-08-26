@@ -2360,6 +2360,7 @@ grpc_cc_library(
         "forkable",
         "gpr",
         "gpr_codegen",
+        "grpc_trace",
         "posix_event_engine_timer",
         "time",
     ],

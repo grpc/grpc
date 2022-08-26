@@ -32,10 +32,13 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/thd.h"
 
 namespace grpc_event_engine {
 namespace posix_engine {
+
+grpc_core::DebugOnlyTraceFlag grpc_event_engine_timer_trace(false, "timer");
 
 namespace {
 class ThreadCollector {
@@ -197,6 +200,10 @@ void TimerManager::MainLoop() {
 
 void TimerManager::RunThread(void* arg) {
   std::unique_ptr<RunThreadArgs> thread(static_cast<RunThreadArgs*>(arg));
+  if (grpc_event_engine_timer_trace.enabled()) {
+    gpr_log(GPR_DEBUG, "TimerManager::%p starting thread::%p", thread->self,
+            &thread->thread);
+  }
   thread->self->MainLoop();
   {
     grpc_core::MutexLock lock(&thread->self->mu_);
@@ -204,6 +211,10 @@ void TimerManager::RunThread(void* arg) {
     thread->self->completed_threads_.push_back(std::move(thread->thread));
   }
   thread->self->cv_.Signal();
+  if (grpc_event_engine_timer_trace.enabled()) {
+    gpr_log(GPR_DEBUG, "TimerManager::%p thread::%p finished", thread->self,
+            &thread->thread);
+  }
 }
 
 TimerManager::TimerManager() : host_(this) {
@@ -227,6 +238,9 @@ bool TimerManager::TimerCancel(Timer* timer) {
 }
 
 TimerManager::~TimerManager() {
+  if (grpc_event_engine_timer_trace.enabled()) {
+    gpr_log(GPR_DEBUG, "TimerManager::%p shutting down", this);
+  }
   {
     grpc_core::MutexLock lock(&mu_);
     shutdown_ = true;
@@ -237,7 +251,13 @@ TimerManager::~TimerManager() {
     grpc_core::MutexLock lock(&mu_);
     collector.Collect(std::move(completed_threads_));
     if (thread_count_ == 0) break;
+    if (grpc_event_engine_timer_trace.enabled()) {
+      gpr_log(GPR_DEBUG, "TimerManager::%p waiting for threads to finish", this);
+    }
     cv_.Wait(&mu_);
+  }
+  if (grpc_event_engine_timer_trace.enabled()) {
+    gpr_log(GPR_DEBUG, "TimerManager::%p shutdown complete", this);
   }
 }
 
