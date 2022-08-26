@@ -32,7 +32,10 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gprpp/thd.h"
+
+static GPR_THREAD_LOCAL(bool) g_timer_thread = false;
 
 namespace grpc_event_engine {
 namespace posix_engine {
@@ -196,6 +199,7 @@ void TimerManager::MainLoop() {
 }
 
 void TimerManager::RunThread(void* arg) {
+  g_timer_thread = true;
   std::unique_ptr<RunThreadArgs> thread(static_cast<RunThreadArgs*>(arg));
   thread->self->Run(std::move(thread->thread));
 }
@@ -207,6 +211,8 @@ void TimerManager::Run(grpc_core::Thread thread) {
   thread_count_--;
   if (thread_count_ == 0) cv_threadcount_.Signal();
 }
+
+bool TimerManager::IsTimerManagerThread() { return g_timer_thread; }
 
 TimerManager::TimerManager() : host_(this) {
   timer_list_ = absl::make_unique<TimerList>(&host_);
