@@ -23,6 +23,8 @@
 #include <memory>
 #include <utility>
 
+#include <grpc/support/log.h>
+
 #include "src/core/lib/gprpp/thd.h"
 
 namespace grpc_event_engine {
