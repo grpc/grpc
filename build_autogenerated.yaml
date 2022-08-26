@@ -715,6 +715,7 @@ libs:
   - src/core/ext/xds/upb_utils.h
   - src/core/ext/xds/xds_api.h
   - src/core/ext/xds/xds_bootstrap.h
+  - src/core/ext/xds/xds_bootstrap_grpc.h
   - src/core/ext/xds/xds_certificate_provider.h
   - src/core/ext/xds/xds_channel_args.h
   - src/core/ext/xds/xds_channel_stack_modifier.h
@@ -1420,6 +1421,7 @@ libs:
   - src/core/ext/xds/file_watcher_certificate_provider_factory.cc
   - src/core/ext/xds/xds_api.cc
   - src/core/ext/xds/xds_bootstrap.cc
+  - src/core/ext/xds/xds_bootstrap_grpc.cc
   - src/core/ext/xds/xds_certificate_provider.cc
   - src/core/ext/xds/xds_channel_stack_modifier.cc
   - src/core/ext/xds/xds_client.cc
