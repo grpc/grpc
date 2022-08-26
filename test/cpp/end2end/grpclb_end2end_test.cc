@@ -107,27 +107,6 @@ const char g_kCallCredsMdValue[] = "... receive me";
 // The backend should not see this user-agent string.
 constexpr char kGrpclbSpecificUserAgentString[] = "grpc-grpclb-test-user-agent";
 
-//  VTable for grpc_channel_args type used to specify channel args for channels
-//  to grpclb load balancers.
-const grpc_arg_pointer_vtable* GrpcChannelArgsVTable() {
-  static const grpc_arg_pointer_vtable tbl = {
-      // copy
-      [](void* p) -> void* {
-        return grpc_channel_args_copy(static_cast<grpc_channel_args*>(p));
-      },
-      // destroy
-      [](void* p) {
-        grpc_channel_args_destroy(static_cast<grpc_channel_args*>(p));
-      },
-      // compare
-      [](void* p1, void* p2) {
-        return grpc_channel_args_compare(static_cast<grpc_channel_args*>(p1),
-                                         static_cast<grpc_channel_args*>(p2));
-      },
-  };
-  return &tbl;
-};
-
 class BackendServiceImpl : public BackendService {
  public:
   BackendServiceImpl() {}
@@ -138,7 +117,7 @@ class BackendServiceImpl : public BackendService {
     // using GRPC_ARG_GRPCLB_CHANNEL_ARGS.
     auto it = context->client_metadata().find("user-agent");
     if (it != context->client_metadata().end()) {
-      GPR_ASSERT(!it->second.starts_with(kGrpclbSpecificUserAgentString));
+      EXPECT_FALSE(it->second.starts_with(kGrpclbSpecificUserAgentString));
     }
     // Backend should receive the call credentials metadata.
     auto call_credentials_entry =
@@ -234,8 +213,11 @@ class BalancerServiceImpl : public BalancerService {
       // specifically configured at the client using
       // GRPC_ARG_GRPCLB_CHANNEL_ARGS
       auto it = context->client_metadata().find("user-agent");
-      GPR_ASSERT((it != context->client_metadata().end()));
-      GPR_ASSERT((it->second.starts_with(kGrpclbSpecificUserAgentString)));
+      EXPECT_TRUE(it != context->client_metadata().end());
+      if (it != context->client_metadata().end()) {
+        EXPECT_THAT(std::string(it->second.data(), it->second.length()),
+                    ::testing::StartsWith(kGrpclbSpecificUserAgentString));
+      }
       // Balancer shouldn't receive the call credentials metadata.
       EXPECT_EQ(context->client_metadata().find(g_kCallCredsMdKey),
                 context->client_metadata().end());
@@ -463,11 +445,26 @@ class GrpclbEnd2endTest : public ::testing::Test {
       args.SetInt(GRPC_ARG_GRPCLB_SUBCHANNEL_CACHE_INTERVAL_MS,
                   subchannel_cache_delay_ms * grpc_test_slowdown_factor());
     }
+    static const grpc_arg_pointer_vtable channel_args_vtable = {
+        // copy
+        [](void* p) -> void* {
+          return grpc_channel_args_copy(static_cast<grpc_channel_args*>(p));
+        },
+        // destroy
+        [](void* p) {
+          grpc_channel_args_destroy(static_cast<grpc_channel_args*>(p));
+        },
+        // compare
+        [](void* p1, void* p2) {
+          return grpc_channel_args_compare(static_cast<grpc_channel_args*>(p1),
+                                           static_cast<grpc_channel_args*>(p2));
+        },
+    };
     // Specify channel args for the channel to the load balancer.
     args.SetPointerWithVtable(
-        GRPC_ARG_GRPCLB_CHANNEL_ARGS,
+        GRPC_ARG_EXPERIMENTAL_GRPCLB_CHANNEL_ARGS,
         const_cast<grpc_channel_args*>(grpclb_channel_args.ToC().get()),
-        GrpcChannelArgsVTable());
+        &channel_args_vtable);
     std::ostringstream uri;
     uri << "fake:///" << kApplicationTargetName_;
     // TODO(dgq): templatize tests to run everything using both secure and

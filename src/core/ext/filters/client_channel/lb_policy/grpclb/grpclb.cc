@@ -1360,7 +1360,8 @@ ChannelArgs BuildBalancerChannelArgs(
     const ChannelArgs& args) {
   ChannelArgs grpclb_channel_args;
   const grpc_channel_args* lb_channel_specific_args =
-      args.GetPointer<grpc_channel_args>(GRPC_ARG_GRPCLB_CHANNEL_ARGS);
+      args.GetPointer<grpc_channel_args>(
+          GRPC_ARG_EXPERIMENTAL_GRPCLB_CHANNEL_ARGS);
   if (lb_channel_specific_args != nullptr) {
     grpclb_channel_args = ChannelArgs::FromC(lb_channel_specific_args);
   } else {
