@@ -116,7 +116,6 @@ run_test() {
     --log_dir="${out_dir}" \
     --xml_output_file="${out_dir}/sponge_log.xml" \
     |& tee "${out_dir}/sponge_log.log"
-  set +x
 }
 
 #######################################
