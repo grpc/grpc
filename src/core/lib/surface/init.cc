@@ -37,6 +37,7 @@
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/forkable.h"
 #include "src/core/lib/gprpp/fork.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -170,6 +171,7 @@ void grpc_shutdown_internal_locked(void)
   int i;
   {
     grpc_core::ExecCtx exec_ctx(0);
+    grpc_event_engine::experimental::ResetDefaultEventEngine();
     grpc_iomgr_shutdown_background_closure();
     {
       grpc_timer_manager_set_threading(false);  // shutdown timer_manager thread
