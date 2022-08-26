@@ -103,10 +103,9 @@ using BalancerService = CountedService<LoadBalancer::Service>;
 const char g_kCallCredsMdKey[] = "Balancer should not ...";
 const char g_kCallCredsMdValue[] = "... receive me";
 
-// A dummy user agent string sent by the client only to the grpclb loadbalancer.
+// A test user agent string sent by the client only to the grpclb loadbalancer.
 // The backend should not see this user-agent string.
-constexpr char kGrpclbSpecificUserAgentString[] =
-    "grpc-grpclb-dummy-user-agent";
+constexpr char kGrpclbSpecificUserAgentString[] = "grpc-grpclb-test-user-agent";
 
 //  VTable for grpc_channel_args type used to specify channel args for channels
 //  to grpclb load balancers.
@@ -135,7 +134,7 @@ class BackendServiceImpl : public BackendService {
 
   Status Echo(ServerContext* context, const EchoRequest* request,
               EchoResponse* response) override {
-    // The backend should not see a dummy user agent configured at the client
+    // The backend should not see a test user agent configured at the client
     // using GRPC_ARG_GRPCLB_CHANNEL_ARGS.
     auto it = context->client_metadata().find("user-agent");
     if (it != context->client_metadata().end()) {
@@ -231,7 +230,7 @@ class BalancerServiceImpl : public BalancerService {
       if (serverlist_done_) goto done;
     }
     {
-      // The loadbalancer should see a dummy user agent because it was
+      // The loadbalancer should see a test user agent because it was
       // specifically configured at the client using
       // GRPC_ARG_GRPCLB_CHANNEL_ARGS
       auto it = context->client_metadata().find("user-agent");
