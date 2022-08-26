@@ -21,7 +21,6 @@
 #include "src/cpp/server/load_reporter/load_reporter.h"
 
 #include <inttypes.h>
-#include <stdint.h>
 #include <stdio.h>
 
 #include <chrono>
@@ -32,7 +31,6 @@
 
 #include <google/protobuf/duration.pb.h>
 
-#include "opencensus/stats/internal/set_aggregation_window.h"
 #include "opencensus/tags/tag_key.h"
 
 #include <grpc/support/log.h>
@@ -66,8 +64,8 @@ CensusViewProvider::CensusViewProvider()
           .set_description(
               "Delta count of calls started broken down by <token, host, "
               "user_id>.");
-  ::opencensus::stats::SetAggregationWindow(
-      ::opencensus::stats::AggregationWindow::Delta(), &vd_start_count);
+  SetAggregationWindow(::opencensus::stats::AggregationWindow::Delta(),
+                       &vd_start_count);
   view_descriptor_map_.emplace(kViewStartCount, vd_start_count);
   // Four views related to ending a call.
   // If this view is set as Count of kMeasureEndBytesSent (in hope of saving one
@@ -86,8 +84,8 @@ CensusViewProvider::CensusViewProvider()
           .set_description(
               "Delta count of calls ended broken down by <token, host, "
               "user_id, status>.");
-  ::opencensus::stats::SetAggregationWindow(
-      ::opencensus::stats::AggregationWindow::Delta(), &vd_end_count);
+  SetAggregationWindow(::opencensus::stats::AggregationWindow::Delta(),
+                       &vd_end_count);
   view_descriptor_map_.emplace(kViewEndCount, vd_end_count);
   auto vd_end_bytes_sent =
       ::opencensus::stats::ViewDescriptor()
@@ -101,8 +99,8 @@ CensusViewProvider::CensusViewProvider()
           .set_description(
               "Delta sum of bytes sent broken down by <token, host, user_id, "
               "status>.");
-  ::opencensus::stats::SetAggregationWindow(
-      ::opencensus::stats::AggregationWindow::Delta(), &vd_end_bytes_sent);
+  SetAggregationWindow(::opencensus::stats::AggregationWindow::Delta(),
+                       &vd_end_bytes_sent);
   view_descriptor_map_.emplace(kViewEndBytesSent, vd_end_bytes_sent);
   auto vd_end_bytes_received =
       ::opencensus::stats::ViewDescriptor()
@@ -116,8 +114,8 @@ CensusViewProvider::CensusViewProvider()
           .set_description(
               "Delta sum of bytes received broken down by <token, host, "
               "user_id, status>.");
-  ::opencensus::stats::SetAggregationWindow(
-      ::opencensus::stats::AggregationWindow::Delta(), &vd_end_bytes_received);
+  SetAggregationWindow(::opencensus::stats::AggregationWindow::Delta(),
+                       &vd_end_bytes_received);
   view_descriptor_map_.emplace(kViewEndBytesReceived, vd_end_bytes_received);
   auto vd_end_latency_ms =
       ::opencensus::stats::ViewDescriptor()
@@ -131,8 +129,8 @@ CensusViewProvider::CensusViewProvider()
           .set_description(
               "Delta sum of latency in ms broken down by <token, host, "
               "user_id, status>.");
-  ::opencensus::stats::SetAggregationWindow(
-      ::opencensus::stats::AggregationWindow::Delta(), &vd_end_latency_ms);
+  SetAggregationWindow(::opencensus::stats::AggregationWindow::Delta(),
+                       &vd_end_latency_ms);
   view_descriptor_map_.emplace(kViewEndLatencyMs, vd_end_latency_ms);
   // Two views related to other call metrics.
   auto vd_metric_call_count =
@@ -147,8 +145,8 @@ CensusViewProvider::CensusViewProvider()
           .set_description(
               "Delta count of calls broken down by <token, host, user_id, "
               "metric_name>.");
-  ::opencensus::stats::SetAggregationWindow(
-      ::opencensus::stats::AggregationWindow::Delta(), &vd_metric_call_count);
+  SetAggregationWindow(::opencensus::stats::AggregationWindow::Delta(),
+                       &vd_metric_call_count);
   view_descriptor_map_.emplace(kViewOtherCallMetricCount, vd_metric_call_count);
   auto vd_metric_value =
       ::opencensus::stats::ViewDescriptor()
@@ -162,8 +160,8 @@ CensusViewProvider::CensusViewProvider()
           .set_description(
               "Delta sum of call metric value broken down "
               "by <token, host, user_id, metric_name>.");
-  ::opencensus::stats::SetAggregationWindow(
-      ::opencensus::stats::AggregationWindow::Delta(), &vd_metric_value);
+  SetAggregationWindow(::opencensus::stats::AggregationWindow::Delta(),
+                       &vd_metric_value);
   view_descriptor_map_.emplace(kViewOtherCallMetricValue, vd_metric_value);
 }
 

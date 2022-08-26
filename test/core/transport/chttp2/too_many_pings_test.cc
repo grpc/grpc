@@ -339,8 +339,11 @@ void VerifyChannelDisconnected(grpc_channel* channel,
   GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
   GPR_ASSERT(ev.tag == reinterpret_cast<void*>(2000));
   GPR_ASSERT(ev.success == 0);
-  GPR_ASSERT(grpc_channel_check_connectivity_state(channel, 0) !=
-             GRPC_CHANNEL_READY);
+  // We are intentionally not checking the connectivity state since it is
+  // propagated in an asynchronous manner which means that we might see an older
+  // state. We would eventually get the correct state, but since we have already
+  // verified that the ping has failed, checking the connectivity state is not
+  // necessary.
 }
 
 class KeepaliveThrottlingTest : public ::testing::Test {

@@ -50,6 +50,7 @@ grpc_cc_test(
     name = "event_poller_posix_test",
     srcs = ["event_poller_posix_test.cc"],
     external_deps = ["gtest"],
+    flaky = True,
     language = "C++",
     tags = [
         "no_windows",
@@ -96,6 +97,22 @@ grpc_cc_test(
     deps = [
         "//:posix_event_engine_wakeup_fd_posix_eventfd",
         "//:posix_event_engine_wakeup_fd_posix_pipe",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "traced_buffer_list_test",
+    srcs = ["traced_buffer_list_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    tags = [
+        "no_windows",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:posix_event_engine_traced_buffer_list",
         "//test/core/util:grpc_test_util",
     ],
 )

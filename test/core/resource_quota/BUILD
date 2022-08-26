@@ -52,6 +52,9 @@ grpc_cc_test(
     srcs = ["memory_quota_test.cc"],
     external_deps = ["gtest"],
     language = "c++",
+    tags = [
+        "cpu:10",
+    ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -69,6 +72,7 @@ grpc_cc_test(
         "absl/memory",
         "gtest",
     ],
+    flaky = True,
     language = "c++",
     uses_event_engine = False,
     uses_polling = False,

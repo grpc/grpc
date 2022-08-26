@@ -359,26 +359,29 @@ TEST(AtomicWakerTest, ThreadStress) {
   std::atomic<int> not_armed{0};
   AtomicWaker waker;
 
-  threads.reserve(90);
-  for (int i = 0; i < 30; i++) {
+  threads.reserve(15);
+  for (int i = 0; i < 5; i++) {
     threads.emplace_back([&] {
       while (!done.load(std::memory_order_relaxed)) {
         waker.Wakeup();
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
       }
     });
   }
-  for (int i = 0; i < 30; i++) {
+  for (int i = 0; i < 5; i++) {
     threads.emplace_back([&] {
       while (!done.load(std::memory_order_relaxed)) {
         waker.Set(Waker(new TestWakeable(&wakeups, &drops)));
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
       }
     });
   }
-  for (int i = 0; i < 30; i++) {
+  for (int i = 0; i < 5; i++) {
     threads.emplace_back([&] {
       while (!done.load(std::memory_order_relaxed)) {
         (waker.Armed() ? &armed : &not_armed)
             ->fetch_add(1, std::memory_order_relaxed);
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
       }
     });
   }

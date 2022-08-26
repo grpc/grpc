@@ -385,7 +385,7 @@ class XdsSecurityTest : public XdsEnd2endTest {
             // error message here.
             return false;
           },
-          /* timeout_ms= */ 20 * 1000);
+          /* timeout_ms= */ 20 * 1000, RpcOptions().set_timeout_ms(5000));
     } else {
       backends_[backend_index_]->backend_service()->ResetCounters();
       SendRpcsUntil(
@@ -409,7 +409,7 @@ class XdsSecurityTest : public XdsEnd2endTest {
                       expected_authenticated_identity);
             return false;
           },
-          /* timeout_ms= */ 20 * 1000, RpcOptions());
+          /* timeout_ms= */ 20 * 1000, RpcOptions().set_timeout_ms(5000));
     }
   }
 
@@ -435,7 +435,8 @@ TEST_P(XdsSecurityTest, UnknownTransportSocket) {
   auto* transport_socket = cluster.mutable_transport_socket();
   transport_socket->set_name("unknown_transport_socket");
   balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
+  const auto response_state =
+      WaitForCdsNack(DEBUG_LOCATION, RpcOptions().set_timeout_ms(5000));
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr(
@@ -448,7 +449,8 @@ TEST_P(XdsSecurityTest,
   auto* transport_socket = cluster.mutable_transport_socket();
   transport_socket->set_name("envoy.transport_sockets.tls");
   balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
+  const auto response_state =
+      WaitForCdsNack(DEBUG_LOCATION, RpcOptions().set_timeout_ms(5000));
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("TLS configuration provided but no "
@@ -467,7 +469,8 @@ TEST_P(
   *validation_context->add_match_subject_alt_names() = server_san_exact_;
   transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
   balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
+  const auto response_state =
+      WaitForCdsNack(DEBUG_LOCATION, RpcOptions().set_timeout_ms(5000));
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("TLS configuration provided but no "
@@ -486,7 +489,8 @@ TEST_P(
       ->set_instance_name(std::string("fake_plugin1"));
   transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
   balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
+  const auto response_state =
+      WaitForCdsNack(DEBUG_LOCATION, RpcOptions().set_timeout_ms(5000));
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("TLS configuration provided but no "
@@ -512,7 +516,8 @@ TEST_P(XdsSecurityTest, RegexSanMatcherDoesNotAllowIgnoreCase) {
   *validation_context->add_match_subject_alt_names() = matcher;
   transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
   balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
+  const auto response_state =
+      WaitForCdsNack(DEBUG_LOCATION, RpcOptions().set_timeout_ms(5000));
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr(
@@ -530,7 +535,8 @@ TEST_P(XdsSecurityTest, UnknownRootCertificateProvider) {
       ->set_instance_name("unknown");
   transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
   balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
+  const auto response_state =
+      WaitForCdsNack(DEBUG_LOCATION, RpcOptions().set_timeout_ms(5000));
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr(
@@ -552,7 +558,8 @@ TEST_P(XdsSecurityTest, UnknownIdentityCertificateProvider) {
       ->set_instance_name("fake_plugin1");
   transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
   balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
+  const auto response_state =
+      WaitForCdsNack(DEBUG_LOCATION, RpcOptions().set_timeout_ms(5000));
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr(
@@ -575,7 +582,8 @@ TEST_P(XdsSecurityTest,
       ->add_verify_certificate_spki("spki");
   transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
   balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
+  const auto response_state =
+      WaitForCdsNack(DEBUG_LOCATION, RpcOptions().set_timeout_ms(5000));
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(
       response_state->error_message,
@@ -599,7 +607,8 @@ TEST_P(XdsSecurityTest,
       ->add_verify_certificate_hash("hash");
   transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
   balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
+  const auto response_state =
+      WaitForCdsNack(DEBUG_LOCATION, RpcOptions().set_timeout_ms(5000));
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(
       response_state->error_message,
@@ -624,7 +633,8 @@ TEST_P(XdsSecurityTest,
       ->set_value(true);
   transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
   balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
+  const auto response_state =
+      WaitForCdsNack(DEBUG_LOCATION, RpcOptions().set_timeout_ms(5000));
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(
       response_state->error_message,
@@ -647,7 +657,8 @@ TEST_P(XdsSecurityTest, NacksCertificateValidationContextWithCrl) {
       ->mutable_crl();
   transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
   balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
+  const auto response_state =
+      WaitForCdsNack(DEBUG_LOCATION, RpcOptions().set_timeout_ms(5000));
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(
       response_state->error_message,
@@ -670,7 +681,8 @@ TEST_P(XdsSecurityTest,
       ->mutable_custom_validator_config();
   transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
   balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
+  const auto response_state =
+      WaitForCdsNack(DEBUG_LOCATION, RpcOptions().set_timeout_ms(5000));
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(
       response_state->error_message,
@@ -688,7 +700,8 @@ TEST_P(XdsSecurityTest, NacksValidationContextSdsSecretConfig) {
       ->mutable_validation_context_sds_secret_config();
   transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
   balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
+  const auto response_state =
+      WaitForCdsNack(DEBUG_LOCATION, RpcOptions().set_timeout_ms(5000));
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(
       response_state->error_message,
@@ -708,7 +721,8 @@ TEST_P(XdsSecurityTest, NacksTlsParams) {
   upstream_tls_context.mutable_common_tls_context()->mutable_tls_params();
   transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
   balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
+  const auto response_state =
+      WaitForCdsNack(DEBUG_LOCATION, RpcOptions().set_timeout_ms(5000));
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("tls_params unsupported"));
@@ -728,7 +742,8 @@ TEST_P(XdsSecurityTest, NacksCustomHandshaker) {
       ->mutable_custom_handshaker();
   transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
   balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
+  const auto response_state =
+      WaitForCdsNack(DEBUG_LOCATION, RpcOptions().set_timeout_ms(5000));
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("custom_handshaker unsupported"));
@@ -747,7 +762,8 @@ TEST_P(XdsSecurityTest, NacksTlsCertificates) {
   upstream_tls_context.mutable_common_tls_context()->add_tls_certificates();
   transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
   balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
+  const auto response_state =
+      WaitForCdsNack(DEBUG_LOCATION, RpcOptions().set_timeout_ms(5000));
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("tls_certificates unsupported"));
@@ -767,7 +783,8 @@ TEST_P(XdsSecurityTest, NacksTlsCertificateSdsSecretConfigs) {
       ->add_tls_certificate_sds_secret_configs();
   transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
   balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
+  const auto response_state =
+      WaitForCdsNack(DEBUG_LOCATION, RpcOptions().set_timeout_ms(5000));
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(
       response_state->error_message,
@@ -787,7 +804,7 @@ TEST_P(XdsSecurityTest, TestTlsConfigurationInCombinedValidationContext) {
       ->set_instance_name("fake_plugin1");
   transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
   balancer_->ads_service()->SetCdsResource(cluster);
-  CheckRpcSendOk(DEBUG_LOCATION);
+  CheckRpcSendOk(DEBUG_LOCATION, 1, RpcOptions().set_timeout_ms(5000));
 }
 
 // TODO(yashykt): Remove this test once we stop supporting old fields
@@ -804,7 +821,7 @@ TEST_P(XdsSecurityTest,
       ->set_instance_name("fake_plugin1");
   transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
   balancer_->ads_service()->SetCdsResource(cluster);
-  CheckRpcSendOk(DEBUG_LOCATION);
+  CheckRpcSendOk(DEBUG_LOCATION, 1, RpcOptions().set_timeout_ms(5000));
 }
 
 TEST_P(XdsSecurityTest, TestMtlsConfigurationWithNoSanMatchers) {
