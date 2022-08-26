@@ -73,6 +73,29 @@ grpc_socket_mutator_vtable test_mutator_vtable = {
 TestSocketMutator::TestSocketMutator() {
   grpc_socket_mutator_init(this, &test_mutator_vtable);
 }
+
+//
+//  VTable for grpc_channel_args type.
+//
+const grpc_arg_pointer_vtable* GrpcChannelArgsVTable() {
+  static const grpc_arg_pointer_vtable tbl = {
+      // copy
+      [](void* p) -> void* {
+        return grpc_channel_args_copy(static_cast<grpc_channel_args*>(p));
+      },
+      // destroy
+      [](void* p) {
+        grpc_channel_args_destroy(static_cast<grpc_channel_args*>(p));
+      },
+      // compare
+      [](void* p1, void* p2) {
+        return grpc_channel_args_compare(static_cast<grpc_channel_args*>(p1),
+                                         static_cast<grpc_channel_args*>(p2));
+      },
+  };
+  return &tbl;
+};
+
 }  // namespace
 
 class ChannelArgumentsTest : public ::testing::Test {
@@ -272,9 +295,13 @@ TEST_F(ChannelArgumentsTest, SetGrpclbChannelArgs) {
   a->type = GRPC_ARG_POINTER;
   a->value.pointer.p = &key2;
   a->value.pointer.vtable = &pointer_vtable_;
-  grpc_channel_args grpclb_channel_args = {.num_args = 3, .args = args_array};
+  grpc_channel_args grpclb_channel_args;
+  grpclb_channel_args.num_args = 3;
+  grpclb_channel_args.args = args_array;
 
-  channel_args_.SetPointer(GRPC_ARG_GRPCLB_CHANNEL_ARGS, &grpclb_channel_args);
+  channel_args_.SetPointerWithVtable(GRPC_ARG_GRPCLB_CHANNEL_ARGS,
+                                     &grpclb_channel_args,
+                                     GrpcChannelArgsVTable());
 
   // Verify that the grplb specific channel args are retrievable in using the
   // GRPC_ARG_GRPCLB_CHANNEL_ARGS channel arg name.
