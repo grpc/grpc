@@ -32,6 +32,7 @@ grpc_cc_library(
     ],
     deps = [
         "//src/proto/grpc/testing:echo_proto",
+        "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
 )
