@@ -1339,7 +1339,7 @@ TEST_F(PickFirstTest, PendingUpdateAndSelectedSubchannelFails) {
   gpr_log(GPR_INFO, "Phase 3: Stopping first server.");
   servers_[0]->Shutdown();
   WaitForChannelNotReady(channel.get());
-  EXPECT_THAT(channel->GetState(false), GRPC_CHANNEL_CONNECTING);
+  EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_CONNECTING);
   // Resume connection attempt to second server now that first server is down.
   // The channel should go to READY state and RPCs should go to the second
   // server.
