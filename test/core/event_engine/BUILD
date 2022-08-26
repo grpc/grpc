@@ -49,6 +49,20 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "thread_pool_test",
+    srcs = ["thread_pool_test.cc"],
+    external_deps = [
+        "absl/time",
+        "gtest",
+    ],
+    deps = [
+        "//:event_engine_thread_pool",
+        "//:gpr",
+        "//:gpr_platform",
+    ],
+)
+
+grpc_cc_test(
     name = "endpoint_config_test",
     srcs = ["endpoint_config_test.cc"],
     external_deps = ["gtest"],
