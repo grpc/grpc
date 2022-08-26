@@ -14,8 +14,6 @@
 // limitations under the License.
 //
 
-#include "src/core/ext/xds/xds_bootstrap_grpc.h"
-
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -23,6 +21,7 @@
 #include "absl/strings/str_format.h"
 
 #include "src/core/ext/xds/certificate_provider_registry.h"
+#include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_client_grpc.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/tmpfile.h"
