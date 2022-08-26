@@ -52,13 +52,12 @@ grpc_cc_test(
     name = "thread_pool_test",
     srcs = ["thread_pool_test.cc"],
     external_deps = [
-        "absl/time",
+        "absl/synchronization",
         "gtest",
     ],
     deps = [
         "//:event_engine_thread_pool",
         "//:gpr",
-        "//:gpr_platform",
     ],
 )
 

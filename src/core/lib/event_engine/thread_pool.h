@@ -23,14 +23,12 @@
 
 #include <memory>
 #include <queue>
-#include <vector>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/functional/any_invocable.h"
 
 #include "src/core/lib/event_engine/forkable.h"
 #include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/thd.h"
 
 namespace grpc_event_engine {
 namespace experimental {
