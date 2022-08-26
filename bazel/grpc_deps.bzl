@@ -171,16 +171,6 @@ def grpc_deps():
     )
 
     native.bind(
-        name = "opencensus-trace-stackdriver_exporter",
-        actual = "@io_opencensus_cpp//opencensus/exporters/trace/stackdriver:stackdriver_exporter",
-    )
-
-    native.bind(
-        name = "opencensus-stats-stackdriver_exporter",
-        actual = "@io_opencensus_cpp//opencensus/exporters/stats/stackdriver:stackdriver_exporter",
-    )
-
-    native.bind(
         name = "libuv",
         actual = "@com_github_libuv_libuv//:libuv",
     )
