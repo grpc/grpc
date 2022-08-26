@@ -123,6 +123,7 @@ def _get_resultstore_data(api_key, invocation_id):
     # that limit, the 'nextPageToken' field is included in the request to get
     # subsequent data, so keep requesting until 'nextPageToken' field is omitted.
     while True:
+        # See https://github.com/googleapis/googleapis/blob/master/google/devtools/resultstore/v2/action.proto for the API spec.
         req = urllib.request.Request(
             url=
             'https://resultstore.googleapis.com/v2/invocations/%s/targets/-/configuredTargets/-/actions?key=%s&pageToken=%s&fields=next_page_token,actions.id,actions.status_attributes,actions.timing,actions.test_action'
@@ -143,6 +144,116 @@ def _get_resultstore_data(api_key, invocation_id):
             break
         page_token = results['nextPageToken']
     return all_actions
+
+
+def _try_parse_resultstore_test_action(action, invocation_id):
+    """Analyzes resultstore test action and converts it to bigquery rows."""
+    # Filter out non-test related data, such as build results.
+    if 'testAction' not in action:
+        return None
+    # Some test results contain the fileProcessingErrors field, which indicates
+    # an issue with parsing results individual test cases.
+    if 'fileProcessingErrors' in action:
+        test_cases = [{
+            'testCase': {
+                'caseName': str(action['id']['actionId']),
+            }
+        }]
+    # Test timeouts have a different dictionary structure compared to pass and
+    # fail results.
+    elif action['statusAttributes']['status'] == 'TIMED_OUT':
+        test_cases = [{
+            'testCase': {
+                'caseName': str(action['id']['actionId']),
+                'timedOut': True
+            }
+        }]
+    # When RBE believes its infrastructure is failing, it will abort and
+    # mark running tests as UNKNOWN. These infrastructure failures may be
+    # related to our tests, so we should investigate if specific tests are
+    # repeatedly being marked as UNKNOWN.
+    elif action['statusAttributes']['status'] == 'UNKNOWN':
+        test_cases = [{
+            'testCase': {
+                'caseName': str(action['id']['actionId']),
+                'unknown': True
+            }
+        }]
+        # Take the timestamp from the previous action, which should be
+        # a close approximation.
+        action['timing'] = {
+            'startTime':
+                resultstore_actions[index - 1]['timing']['startTime']
+        }
+    elif 'testSuite' not in action['testAction']:
+        return None
+    elif 'tests' not in action['testAction']['testSuite']:
+        return None
+    else:
+        test_cases = []
+        for tests_item in action['testAction']['testSuite']['tests']:
+            test_cases += tests_item['testSuite']['tests']
+    bq_rows = []
+    for test_case in test_cases:
+        if any(s in test_case['testCase'] for s in ['errors', 'failures']):
+            result = 'FAILED'
+        elif 'timedOut' in test_case['testCase']:
+            result = 'TIMEOUT'
+        elif 'unknown' in test_case['testCase']:
+            result = 'UNKNOWN'
+        else:
+            result = 'PASSED'
+        try:
+            bq_rows.append({
+                'insertId': str(uuid.uuid4()),
+                'json': {
+                    'job_name':
+                        os.getenv('KOKORO_JOB_NAME'),
+                    'build_id':
+                        os.getenv('KOKORO_BUILD_NUMBER'),
+                    'build_url':
+                        'https://source.cloud.google.com/results/invocations/%s'
+                        % invocation_id,
+                    'test_target':
+                        action['id']['targetId'],
+                    'test_class_name':
+                        test_case['testCase'].get('className', ''),
+                    'test_case':
+                        test_case['testCase']['caseName'],
+                    'result':
+                        result,
+                    'timestamp':
+                        action['timing']['startTime'],
+                    'duration':
+                        _parse_test_duration(action['timing']['duration']),
+                }
+            })
+        except Exception as e:
+            print(('Failed to parse test result. Error: %s' % str(e)))
+            print((json.dumps(test_case, indent=4)))
+            bq_rows.append({
+                'insertId': str(uuid.uuid4()),
+                'json': {
+                    'job_name':
+                        os.getenv('KOKORO_JOB_NAME'),
+                    'build_id':
+                        os.getenv('KOKORO_BUILD_NUMBER'),
+                    'build_url':
+                        'https://source.cloud.google.com/results/invocations/%s'
+                        % invocation_id,
+                    'test_target':
+                        action['id']['targetId'],
+                    'test_class_name':
+                        'N/A',
+                    'test_case':
+                        'N/A',
+                    'result':
+                        'UNPARSEABLE',
+                    'timestamp':
+                        'N/A',
+                }
+            })
+    return bq_rows
 
 
 if __name__ == "__main__":
@@ -186,122 +297,22 @@ if __name__ == "__main__":
 
     # google.devtools.resultstore.v2.Action schema:
     # https://github.com/googleapis/googleapis/blob/master/google/devtools/resultstore/v2/action.proto
-    bq_rows = []
+    all_bq_rows = []
     for index, action in enumerate(resultstore_actions):
-        # Filter out non-test related data, such as build results.
-        if 'testAction' not in action:
-            continue
-        # Some test results contain the fileProcessingErrors field, which indicates
-        # an issue with parsing results individual test cases.
-        if 'fileProcessingErrors' in action:
-            test_cases = [{
-                'testCase': {
-                    'caseName': str(action['id']['actionId']),
-                }
-            }]
-        # Test timeouts have a different dictionary structure compared to pass and
-        # fail results.
-        elif action['statusAttributes']['status'] == 'TIMED_OUT':
-            test_cases = [{
-                'testCase': {
-                    'caseName': str(action['id']['actionId']),
-                    'timedOut': True
-                }
-            }]
-        # When RBE believes its infrastructure is failing, it will abort and
-        # mark running tests as UNKNOWN. These infrastructure failures may be
-        # related to our tests, so we should investigate if specific tests are
-        # repeatedly being marked as UNKNOWN.
-        elif action['statusAttributes']['status'] == 'UNKNOWN':
-            test_cases = [{
-                'testCase': {
-                    'caseName': str(action['id']['actionId']),
-                    'unknown': True
-                }
-            }]
-            # Take the timestamp from the previous action, which should be
-            # a close approximation.
-            action['timing'] = {
-                'startTime':
-                    resultstore_actions[index - 1]['timing']['startTime']
-            }
-        elif 'testSuite' not in action['testAction']:
-            continue
-        elif 'tests' not in action['testAction']['testSuite']:
-            continue
-        else:
-            test_cases = []
-            for tests_item in action['testAction']['testSuite']['tests']:
-                test_cases += tests_item['testSuite']['tests']
-        for test_case in test_cases:
-            if any(s in test_case['testCase'] for s in ['errors', 'failures']):
-                result = 'FAILED'
-            elif 'timedOut' in test_case['testCase']:
-                result = 'TIMEOUT'
-            elif 'unknown' in test_case['testCase']:
-                result = 'UNKNOWN'
-            else:
-                result = 'PASSED'
-            try:
-                bq_rows.append({
-                    'insertId': str(uuid.uuid4()),
-                    'json': {
-                        'job_name':
-                            os.getenv('KOKORO_JOB_NAME'),
-                        'build_id':
-                            os.getenv('KOKORO_BUILD_NUMBER'),
-                        'build_url':
-                            'https://source.cloud.google.com/results/invocations/%s'
-                            % invocation_id,
-                        'test_target':
-                            action['id']['targetId'],
-                        'test_class_name':
-                            test_case['testCase'].get('className', ''),
-                        'test_case':
-                            test_case['testCase']['caseName'],
-                        'result':
-                            result,
-                        'timestamp':
-                            action['timing']['startTime'],
-                        'duration':
-                            _parse_test_duration(action['timing']['duration']),
-                    }
-                })
-            except Exception as e:
-                print(('Failed to parse test result. Error: %s' % str(e)))
-                print((json.dumps(test_case, indent=4)))
-                bq_rows.append({
-                    'insertId': str(uuid.uuid4()),
-                    'json': {
-                        'job_name':
-                            os.getenv('KOKORO_JOB_NAME'),
-                        'build_id':
-                            os.getenv('KOKORO_BUILD_NUMBER'),
-                        'build_url':
-                            'https://source.cloud.google.com/results/invocations/%s'
-                            % invocation_id,
-                        'test_target':
-                            action['id']['targetId'],
-                        'test_class_name':
-                            'N/A',
-                        'test_case':
-                            'N/A',
-                        'result':
-                            'UNPARSEABLE',
-                        'timestamp':
-                            'N/A',
-                    }
-                })
+        # try to parse the action as resultstore TestAction and convert to BigQuery rows.
+        bq_rows =_try_parse_resultstore_test_action(action, invocation_id)
+        if bq_rows:
+            all_bq_rows.extend(bq_rows)
 
     if args.bq_dump_file:
         with open(args.bq_dump_file, 'w') as f:
-            json.dump(bq_rows, f, indent=4, sort_keys=True)
+            json.dump(all_bq_rows, f, indent=4, sort_keys=True)
         print(('Dumped BQ data to file %s' % args.bq_dump_file))
 
     if not args.skip_upload:
         # BigQuery sometimes fails with large uploads, so batch 1,000 rows at a time.
         MAX_ROWS = 1000
-        for i in range(0, len(bq_rows), MAX_ROWS):
-            _upload_results_to_bq(bq_rows[i:i + MAX_ROWS])
+        for i in range(0, len(all_bq_rows), MAX_ROWS):
+            _upload_results_to_bq(all_bq_rows[i:i + MAX_ROWS])
     else:
         print('Skipped upload to bigquery.')
