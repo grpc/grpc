@@ -138,7 +138,7 @@ std::string GetHeaderIncludes(grpc_generator::File* file,
     static const char* headers_strs[] = {
         "functional",
         "grpcpp/impl/codegen/async_generic_service.h",
-        "grpcpp/impl/codegen/async_stream.h",
+        "grpcpp/support/async_stream.h",
         "grpcpp/impl/codegen/async_unary_call.h",
         "grpcpp/impl/codegen/client_callback.h",
         "grpcpp/impl/codegen/client_context.h",
@@ -1648,7 +1648,7 @@ std::string GetSourceIncludes(grpc_generator::File* file,
     std::map<std::string, std::string> vars;
     static const char* headers_strs[] = {
         "functional",
-        "grpcpp/impl/codegen/async_stream.h",
+        "grpcpp/support/async_stream.h",
         "grpcpp/impl/codegen/async_unary_call.h",
         "grpcpp/impl/codegen/channel_interface.h",
         "grpcpp/impl/codegen/client_unary_call.h",
@@ -2184,7 +2184,7 @@ std::string GetMockIncludes(grpc_generator::File* file,
     std::map<std::string, std::string> vars;
 
     static const char* headers_strs[] = {
-        "grpcpp/impl/codegen/async_stream.h",
+        "grpcpp/support/async_stream.h",
         "grpcpp/impl/codegen/sync_stream.h",
     };
     std::vector<std::string> headers(headers_strs, array_end(headers_strs));
