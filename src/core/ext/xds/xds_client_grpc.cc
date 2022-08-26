@@ -198,7 +198,7 @@ GrpcXdsClient::GrpcXdsClient(std::unique_ptr<XdsBootstrap> bootstrap,
           static_cast<const GrpcXdsCertificateProviderPluginMap*>(
               static_cast<const GrpcXdsBootstrap&>(this->bootstrap())
                   .certificate_provider_plugin_map())
-                      ->plugin_map())) {}
+              ->plugin_map())) {}
 
 GrpcXdsClient::~GrpcXdsClient() {
   MutexLock lock(g_mu);

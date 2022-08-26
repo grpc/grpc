@@ -229,7 +229,7 @@ grpc_error_handle GrpcXdsBootstrap::ParseAuthorities(Json* json) {
 }
 
 grpc_error_handle GrpcXdsBootstrap::ParseAuthority(Json* json,
-                                               const std::string& name) {
+                                                   const std::string& name) {
   std::vector<grpc_error_handle> error_list;
   Authority authority;
   auto it =
