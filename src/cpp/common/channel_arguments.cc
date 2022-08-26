@@ -39,15 +39,11 @@ static const grpc_arg_pointer_vtable* GrpcChannelArgsVTable() {
   static const grpc_arg_pointer_vtable tbl = {
       // copy
       [](void* p) -> void* {
-        return p == nullptr
-                   ? nullptr
-                   : grpc_channel_args_copy(static_cast<grpc_channel_args*>(p));
+        return grpc_channel_args_copy(static_cast<grpc_channel_args*>(p));
       },
       // destroy
       [](void* p) {
-        if (p != nullptr) {
-          grpc_channel_args_destroy(static_cast<grpc_channel_args*>(p));
-        }
+        grpc_channel_args_destroy(static_cast<grpc_channel_args*>(p));
       },
       // compare
       [](void* p1, void* p2) {
@@ -115,13 +111,6 @@ void ChannelArguments::SetCompressionAlgorithm(
 
 void ChannelArguments::SetGrpclbFallbackTimeout(int fallback_timeout) {
   SetInt(GRPC_ARG_GRPCLB_FALLBACK_TIMEOUT_MS, fallback_timeout);
-}
-
-void ChannelArguments::SetGrpclbChannelArgs(
-    const ChannelArguments& grpclb_channel_args) {
-  auto c_args = grpclb_channel_args.c_channel_args();
-  SetPointerWithVtable(GRPC_ARG_GRPCLB_CHANNEL_ARGS, &c_args,
-                       GrpcChannelArgsVTable());
 }
 
 void ChannelArguments::SetSocketMutator(grpc_socket_mutator* mutator) {
@@ -213,6 +202,12 @@ void ChannelArguments::SetInt(const std::string& key, int value) {
 }
 
 void ChannelArguments::SetPointer(const std::string& key, void* value) {
+  if (key == GRPC_ARG_GRPCLB_CHANNEL_ARGS) {
+    SetPointerWithVtable(GRPC_ARG_GRPCLB_CHANNEL_ARGS,
+                         static_cast<grpc_channel_args*>(value),
+                         GrpcChannelArgsVTable());
+    return;
+  }
   static const grpc_arg_pointer_vtable vtable = {
       &PointerVtableMembers::Copy, &PointerVtableMembers::Destroy,
       &PointerVtableMembers::Compare};

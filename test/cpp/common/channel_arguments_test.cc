@@ -256,13 +256,25 @@ TEST_F(ChannelArgumentsTest, SetUserAgentPrefix) {
 
 TEST_F(ChannelArgumentsTest, SetGrpclbChannelArgs) {
   VerifyDefaultChannelArgs();
-  ChannelArguments grpclb_channel_args;
   // Specify some channels args to be set only for the grpclb channel.
-  grpclb_channel_args.SetInt("key0", 123);
-  grpclb_channel_args.SetString("key1", "hello-world");
+  grpc_arg args_array[3];
+  grpc_arg* a = args_array;
+  a->key = const_cast<char*>("key0");
+  a->type = GRPC_ARG_INTEGER;
+  a->value.integer = static_cast<int>(123);
+  a++;
+  a->key = const_cast<char*>("key1");
+  a->type = GRPC_ARG_STRING;
+  a->value.string = const_cast<char*>("hello-world");
+  a++;
   std::string key2("key2");
-  grpclb_channel_args.SetPointerWithVtable("key2", &key2, &pointer_vtable_);
-  channel_args_.SetGrpclbChannelArgs(grpclb_channel_args);
+  a->key = const_cast<char*>("key2");
+  a->type = GRPC_ARG_POINTER;
+  a->value.pointer.p = &key2;
+  a->value.pointer.vtable = &pointer_vtable_;
+  grpc_channel_args grpclb_channel_args = {.num_args = 3, .args = args_array};
+
+  channel_args_.SetPointer(GRPC_ARG_GRPCLB_CHANNEL_ARGS, &grpclb_channel_args);
 
   // Verify that the grplb specific channel args are retrievable in using the
   // GRPC_ARG_GRPCLB_CHANNEL_ARGS channel arg name.

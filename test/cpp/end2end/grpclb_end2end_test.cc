@@ -45,6 +45,7 @@
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/lib/address_utils/parse_address.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/sockaddr.h"
@@ -102,12 +103,23 @@ using BalancerService = CountedService<LoadBalancer::Service>;
 const char g_kCallCredsMdKey[] = "Balancer should not ...";
 const char g_kCallCredsMdValue[] = "... receive me";
 
+// A dummy user agent string sent by the client only to the grpclb loadbalancer.
+// The backend should not see this user-agent string.
+constexpr char kGrpclbSpecificUserAgentString[] =
+    "grpc-grpclb-dummy-user-agent";
+
 class BackendServiceImpl : public BackendService {
  public:
   BackendServiceImpl() {}
 
   Status Echo(ServerContext* context, const EchoRequest* request,
               EchoResponse* response) override {
+    // The backend should not see a dummy user agent configured at the client
+    // using GRPC_ARG_GRPCLB_CHANNEL_ARGS.
+    auto it = context->client_metadata().find("user-agent");
+    if (it != context->client_metadata().end()) {
+      EXPECT_FALSE(it->second.starts_with(kGrpclbSpecificUserAgentString));
+    }
     // Backend should receive the call credentials metadata.
     auto call_credentials_entry =
         context->client_metadata().find(g_kCallCredsMdKey);
@@ -198,6 +210,12 @@ class BalancerServiceImpl : public BalancerService {
       if (serverlist_done_) goto done;
     }
     {
+      // The loadbalancer should see a dummy user agent because it was
+      // specifically configured at the client using
+      // GRPC_ARG_GRPCLB_CHANNEL_ARGS
+      auto it = context->client_metadata().find("user-agent");
+      EXPECT_TRUE(it != context->client_metadata().end());
+      EXPECT_TRUE(it->second.starts_with(kGrpclbSpecificUserAgentString));
       // Balancer shouldn't receive the call credentials metadata.
       EXPECT_EQ(context->client_metadata().find(g_kCallCredsMdKey),
                 context->client_metadata().end());
@@ -406,17 +424,29 @@ class GrpclbEnd2endTest : public ::testing::Test {
   void ResetStub(int fallback_timeout = 0,
                  const std::string& expected_targets = "",
                  int subchannel_cache_delay_ms = 0) {
+    // Send a separate user agent string for the grpclb load balancer alone.
+    grpc_core::ChannelArgs grpclb_channel_args;
+    // Set a special user agent string for the grpclb load balancer. It
+    // will be verified at the load balancer.
+    grpclb_channel_args = grpclb_channel_args.Set(
+        GRPC_ARG_PRIMARY_USER_AGENT_STRING, kGrpclbSpecificUserAgentString);
     ChannelArguments args;
     if (fallback_timeout > 0) args.SetGrpclbFallbackTimeout(fallback_timeout);
     args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
                     response_generator_.get());
     if (!expected_targets.empty()) {
       args.SetString(GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS, expected_targets);
+      grpclb_channel_args = grpclb_channel_args.Set(
+          GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS, expected_targets);
     }
     if (subchannel_cache_delay_ms > 0) {
       args.SetInt(GRPC_ARG_GRPCLB_SUBCHANNEL_CACHE_INTERVAL_MS,
                   subchannel_cache_delay_ms * grpc_test_slowdown_factor());
     }
+    auto grpclb_c_channel_args = grpclb_channel_args.ToC().release();
+    args.SetPointer(GRPC_ARG_GRPCLB_CHANNEL_ARGS,
+                    const_cast<grpc_channel_args*>(grpclb_c_channel_args));
+    grpc_channel_args_destroy(grpclb_c_channel_args);
     std::ostringstream uri;
     uri << "fake:///" << kApplicationTargetName_;
     // TODO(dgq): templatize tests to run everything using both secure and

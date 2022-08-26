@@ -1358,18 +1358,11 @@ ServerAddressList ExtractBalancerAddresses(const ChannelArgs& args) {
 ChannelArgs BuildBalancerChannelArgs(
     FakeResolverResponseGenerator* response_generator,
     const ChannelArgs& args) {
-  // Create channel args for channel credentials that does not contain bearer
-  // token credentials.
-  auto* channel_credentials = args.GetObject<grpc_channel_credentials>();
-  GPR_ASSERT(channel_credentials != nullptr);
-  RefCountedPtr<grpc_channel_credentials> creds_sans_call_creds =
-      channel_credentials->duplicate_without_call_credentials();
-  GPR_ASSERT(creds_sans_call_creds != nullptr);
-
   ChannelArgs grpclb_channel_args;
-  if (args.Contains(GRPC_ARG_GRPCLB_CHANNEL_ARGS)) {
-    grpclb_channel_args = ChannelArgs::FromC(
-        args.GetPointer<grpc_channel_args>(GRPC_ARG_GRPCLB_CHANNEL_ARGS));
+  const grpc_channel_args* lb_channel_specific_args =
+      args.GetPointer<grpc_channel_args>(GRPC_ARG_GRPCLB_CHANNEL_ARGS);
+  if (lb_channel_specific_args != nullptr) {
+    grpclb_channel_args = ChannelArgs::FromC(lb_channel_specific_args);
   } else {
     // Set grpclb_channel_args based on the parent channel's channel args.
     grpclb_channel_args =
@@ -1405,7 +1398,13 @@ ChannelArgs BuildBalancerChannelArgs(
             // credentials.
             .Remove(GRPC_ARG_CHANNEL_CREDENTIALS);
   }
-
+  // Create channel args for channel credentials that does not contain bearer
+  // token credentials.
+  auto* channel_credentials = args.GetObject<grpc_channel_credentials>();
+  GPR_ASSERT(channel_credentials != nullptr);
+  RefCountedPtr<grpc_channel_credentials> creds_sans_call_creds =
+      channel_credentials->duplicate_without_call_credentials();
+  GPR_ASSERT(creds_sans_call_creds != nullptr);
   return grpclb_channel_args
       // A channel arg indicating the target is a grpclb load balancer.
       .Set(GRPC_ARG_ADDRESS_IS_GRPCLB_LOAD_BALANCER, 1)
