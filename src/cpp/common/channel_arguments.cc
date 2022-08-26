@@ -35,25 +35,6 @@
 
 namespace grpc {
 
-static const grpc_arg_pointer_vtable* GrpcChannelArgsVTable() {
-  static const grpc_arg_pointer_vtable tbl = {
-      // copy
-      [](void* p) -> void* {
-        return grpc_channel_args_copy(static_cast<grpc_channel_args*>(p));
-      },
-      // destroy
-      [](void* p) {
-        grpc_channel_args_destroy(static_cast<grpc_channel_args*>(p));
-      },
-      // compare
-      [](void* p1, void* p2) {
-        return grpc_channel_args_compare(static_cast<grpc_channel_args*>(p1),
-                                         static_cast<grpc_channel_args*>(p2));
-      },
-  };
-  return &tbl;
-};
-
 ChannelArguments::ChannelArguments() {
   // This will be ignored if used on the server side.
   SetString(GRPC_ARG_PRIMARY_USER_AGENT_STRING, "grpc-c++/" + grpc::Version());
@@ -202,12 +183,6 @@ void ChannelArguments::SetInt(const std::string& key, int value) {
 }
 
 void ChannelArguments::SetPointer(const std::string& key, void* value) {
-  if (key == GRPC_ARG_GRPCLB_CHANNEL_ARGS) {
-    SetPointerWithVtable(GRPC_ARG_GRPCLB_CHANNEL_ARGS,
-                         static_cast<grpc_channel_args*>(value),
-                         GrpcChannelArgsVTable());
-    return;
-  }
   static const grpc_arg_pointer_vtable vtable = {
       &PointerVtableMembers::Copy, &PointerVtableMembers::Destroy,
       &PointerVtableMembers::Compare};
