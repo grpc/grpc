@@ -16,7 +16,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/cpp/ext/gcp_observability/gcp_observability.h"
+#include "src/cpp/ext/gcp/observability.h"
 
 #include <stdint.h>
 

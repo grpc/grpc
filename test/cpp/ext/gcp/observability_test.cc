@@ -14,7 +14,7 @@
 // limitations under the License.
 //
 
-#include "src/cpp/ext/gcp_observability/gcp_observability.h"
+#include "src/cpp/ext/gcp/observability.h"
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"

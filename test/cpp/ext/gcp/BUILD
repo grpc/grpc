@@ -16,19 +16,19 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 
 licenses(["notice"])
 
-grpc_package(name = "test/cpp/ext/gcp_observability")
+grpc_package(name = "test/cpp/ext/gcp")
 
 grpc_cc_test(
-    name = "gcp_observability_test",
+    name = "observability_test",
     srcs = [
-        "gcp_observability_test.cc",
+        "observability_test.cc",
     ],
     external_deps = [
         "gtest",
     ],
     language = "C++",
     deps = [
-        "//:grpcpp_gcp_observability",
+        "//src/cpp/ext/gcp:observability",
         "//test/cpp/util:test_util",
     ],
 )
