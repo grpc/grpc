@@ -42,6 +42,33 @@ grpc_cc_test(
     ],
 )
 
+grpc_cc_test(
+    name = "bm_exec_ctx",
+    srcs = ["bm_exec_ctx.cc"],
+    external_deps = [
+        "benchmark",
+    ],
+    deps = [
+        ":helpers",
+        "//:grpc++",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "bm_event_engine_run",
+    srcs = ["bm_event_engine_run.cc"],
+    external_deps = [
+        "benchmark",
+    ],
+    deps = [
+        ":helpers",
+        "//:common_event_engine_closures",
+        # "//:grpc++",
+        # "//test/core/util:grpc_test_util",
+    ],
+)
+
 grpc_cc_library(
     name = "helpers",
     testonly = 1,
