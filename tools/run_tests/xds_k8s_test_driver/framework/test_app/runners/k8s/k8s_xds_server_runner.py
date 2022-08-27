@@ -94,15 +94,15 @@ class KubernetesServerRunner(k8s_base_runner.KubernetesBaseRunner):
         self.deployment: Optional[k8s.V1Deployment] = None
         self.service_account: Optional[k8s.V1ServiceAccount] = None
         self.service: Optional[k8s.V1Service] = None
-        self.port_forwarders: List[k8s.PortForwarder] = []
 
-    def run(  # pylint: disable=arguments-differ
+    def run(  # pylint: disable=arguments-differ,too-many-branches
             self,
             *,
-            test_port=DEFAULT_TEST_PORT,
-            maintenance_port=None,
-            secure_mode=False,
-            replica_count=1) -> List[XdsTestServer]:
+            test_port: int = DEFAULT_TEST_PORT,
+            maintenance_port: Optional[int] = None,
+            secure_mode: bool = False,
+            replica_count: int = 1,
+            log_to_stdout: bool = False) -> List[XdsTestServer]:
         # Implementation detail: in secure mode, maintenance ("backchannel")
         # port must be different from the test port so communication with
         # maintenance services can be reached independently from the security
@@ -183,40 +183,34 @@ class KubernetesServerRunner(k8s_base_runner.KubernetesBaseRunner):
 
         pod_names = self._wait_deployment_pod_count(self.deployment,
                                                     replica_count)
-        pods = [self._wait_pod_started(pod_name) for pod_name in pod_names]
+        pods = []
+        for pod_name in pod_names:
+            pod = self._wait_pod_started(pod_name)
+            pods.append(pod)
+            if self.should_collect_logs:
+                self._start_logging_pod(pod, log_to_stdout=log_to_stdout)
 
         # Verify the deployment reports all pods started as well.
         self._wait_deployment_with_available_replicas(self.deployment_name,
                                                       replica_count)
         servers = []
         for pod in pods:
-            pod_ip = pod.status.pod_ip
-            rpc_host = None
-            # Experimental, for local debugging.
-            local_port = maintenance_port
             if self.debug_use_port_forwarding:
-                logger.info('LOCAL DEV MODE: Enabling port forwarding to %s:%s',
-                            pod_ip, maintenance_port)
-                port_forwarder = self.k8s_namespace.port_forward_pod(
-                    pod, remote_port=maintenance_port)
-                self.port_forwarders.append(port_forwarder)
-                local_port = port_forwarder.local_port
-                rpc_host = port_forwarder.local_address
+                pf = self._start_port_forwarding_pod(pod, maintenance_port)
+                rpc_port, rpc_host = pf.local_port, pf.local_address
+            else:
+                rpc_port, rpc_host = maintenance_port, None
 
             servers.append(
-                XdsTestServer(ip=pod_ip,
+                XdsTestServer(ip=pod.status.pod_ip,
                               rpc_port=test_port,
                               hostname=pod.metadata.name,
-                              maintenance_port=local_port,
+                              maintenance_port=rpc_port,
                               secure_mode=secure_mode,
                               rpc_host=rpc_host))
         return servers
 
     def cleanup(self, *, force=False, force_namespace=False):  # pylint: disable=arguments-differ
-        if self.port_forwarders:
-            for port_forwarder in self.port_forwarders:
-                port_forwarder.close()
-            self.port_forwarders = []
         if self.deployment or force:
             self._delete_deployment(self.deployment_name)
             self.deployment = None
