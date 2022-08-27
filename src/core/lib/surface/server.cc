@@ -45,7 +45,6 @@
 #include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/mpscq.h"
@@ -275,14 +274,12 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
       RequestedCall* rc =
           reinterpret_cast<RequestedCall*>(requests_per_cq_[cq_idx].TryPop());
       if (rc != nullptr) {
-        GRPC_STATS_INC_SERVER_CQS_CHECKED(i);
         calld->SetState(CallData::CallState::ACTIVATED);
         calld->Publish(cq_idx, rc);
         return;
       }
     }
     // No cq to take the request found; queue it on the slow list.
-    GRPC_STATS_INC_SERVER_SLOWPATH_REQUESTS_QUEUED();
     // We need to ensure that all the queues are empty.  We do this under
     // the server mu_call_ lock to ensure that if something is added to
     // an empty request queue, it will block until the call is actually
@@ -306,7 +303,6 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
         return;
       }
     }
-    GRPC_STATS_INC_SERVER_CQS_CHECKED(loop_count + requests_per_cq_.size());
     calld->SetState(CallData::CallState::ACTIVATED);
     calld->Publish(cq_idx, rc);
   }
@@ -1525,7 +1521,6 @@ grpc_call_error grpc_server_request_call(
     grpc_completion_queue* cq_for_notification, void* tag) {
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
-  GRPC_STATS_INC_SERVER_REQUESTED_CALLS();
   GRPC_API_TRACE(
       "grpc_server_request_call("
       "server=%p, call=%p, details=%p, initial_metadata=%p, "
@@ -1546,7 +1541,6 @@ grpc_call_error grpc_server_request_registered_call(
     grpc_completion_queue* cq_for_notification, void* tag_new) {
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
-  GRPC_STATS_INC_SERVER_REQUESTED_CALLS();
   auto* rm =
       static_cast<grpc_core::Server::RegisteredMethod*>(registered_method);
   GRPC_API_TRACE(

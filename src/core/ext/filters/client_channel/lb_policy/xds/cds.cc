@@ -39,7 +39,7 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h"
 #include "src/core/ext/xds/certificate_provider_store.h"
-#include "src/core/ext/xds/xds_bootstrap.h"
+#include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_certificate_provider.h"
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_client_grpc.h"
@@ -93,7 +93,7 @@ class CdsLbConfig : public LoadBalancingPolicy::Config {
 // CDS LB policy.
 class CdsLb : public LoadBalancingPolicy {
  public:
-  CdsLb(RefCountedPtr<XdsClient> xds_client, Args args);
+  CdsLb(RefCountedPtr<GrpcXdsClient> xds_client, Args args);
 
   absl::string_view name() const override { return kCds; }
 
@@ -195,7 +195,7 @@ class CdsLb : public LoadBalancingPolicy {
   ChannelArgs args_;
 
   // The xds client.
-  RefCountedPtr<XdsClient> xds_client_;
+  RefCountedPtr<GrpcXdsClient> xds_client_;
 
   // Maps from cluster name to the state for that cluster.
   // The root of the tree is config_->cluster().
@@ -258,7 +258,7 @@ void CdsLb::Helper::AddTraceEvent(TraceSeverity severity,
 // CdsLb
 //
 
-CdsLb::CdsLb(RefCountedPtr<XdsClient> xds_client, Args args)
+CdsLb::CdsLb(RefCountedPtr<GrpcXdsClient> xds_client, Args args)
     : LoadBalancingPolicy(std::move(args)), xds_client_(std::move(xds_client)) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
     gpr_log(GPR_INFO, "[cdslb %p] created -- using xds client %p", this,
@@ -444,8 +444,8 @@ absl::StatusOr<bool> CdsLb::GenerateDiscoveryMechanismForCluster(
       break;
   }
   if (state.update->lrs_load_reporting_server.has_value()) {
-    mechanism["lrsLoadReportingServer"] =
-        state.update->lrs_load_reporting_server->ToJson();
+    mechanism["lrsLoadReportingServer"] = GrpcXdsBootstrap::XdsServerToJson(
+        *state.update->lrs_load_reporting_server);
   }
   discovery_mechanisms->emplace_back(std::move(mechanism));
   return true;
