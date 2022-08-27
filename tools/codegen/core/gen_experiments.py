@@ -21,8 +21,8 @@ import ctypes
 import json
 import math
 import os
-import sys
 import re
+import sys
 
 import yaml
 
@@ -30,6 +30,7 @@ with open('src/core/lib/experiments/experiments.yaml') as f:
     attrs = yaml.load(f.read())
 
 print(attrs)
+
 
 def c_str(s, encoding='ascii'):
     if isinstance(s, str):
@@ -83,7 +84,6 @@ EXPERIMENT_METADATA = """struct ExperimentMetadata {
   bool (*is_enabled)();
 };"""
 
-
 with open('src/core/lib/experiments/experiments.h', 'w') as H:
     put_copyright(H)
 
@@ -106,12 +106,13 @@ with open('src/core/lib/experiments/experiments.h', 'w') as H:
     print(EXPERIMENT_METADATA, file=H)
     print(file=H)
     print("constexpr const size_t kNumExperiments = %d;" % len(attrs), file=H)
-    print("extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];", file=H)
+    print(
+        "extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];",
+        file=H)
     print(file=H)
     print("}  // namespace grpc_core", file=H)
     print(file=H)
     print("#endif  // GRPC_CORE_LIB_EXPERIMENTS_EXPERIMENTS_H", file=H)
-
 
 with open('src/core/lib/experiments/experiments.cc', 'w') as C:
     put_copyright(C)
@@ -125,22 +126,29 @@ with open('src/core/lib/experiments/experiments.cc', 'w') as C:
     print("#include \"src/core/lib/gprpp/global_config.h\"", file=C)
     print(file=C)
     for attr in attrs:
-        print("GPR_GLOBAL_CONFIG_DEFINE_BOOL(grpc_experimental_enable_%s, %s, %s);" % (
-            attr['name'], 'true' if attr['default'] else 'false', c_str(attr['description'])), file=C)
+        print(
+            "GPR_GLOBAL_CONFIG_DEFINE_BOOL(grpc_experimental_enable_%s, %s, %s);"
+            % (attr['name'], 'true' if attr['default'] else 'false',
+               c_str(attr['description'])),
+            file=C)
     print(file=C)
     print("namespace grpc_core {", file=C)
     print(file=C)
     for attr in attrs:
         print("bool Is%sEnabled() {" % snake_to_pascal(attr['name']), file=C)
-        print("  static const bool enabled = GPR_GLOBAL_CONFIG_GET(grpc_experimental_enable_%s);" % attr['name'], file=C)
+        print(
+            "  static const bool enabled = GPR_GLOBAL_CONFIG_GET(grpc_experimental_enable_%s);"
+            % attr['name'],
+            file=C)
         print("  return enabled;", file=C)
         print("}", file=C)
     print(file=C)
     print("const ExperimentMetadata g_experiment_metadata[] = {", file=C)
     for attr in attrs:
-        print("  {%s, %s, %s, Is%sEnabled}," % (
-            c_str(attr['name']), c_str(attr['description']),
-            'true' if attr['default'] else 'false', snake_to_pascal(attr['name'])), file=C)
+        print("  {%s, %s, %s, Is%sEnabled}," %
+              (c_str(attr['name']), c_str(attr['description']), 'true'
+               if attr['default'] else 'false', snake_to_pascal(attr['name'])),
+              file=C)
     print("};", file=C)
     print(file=C)
     print("}  // namespace grpc_core", file=C)
@@ -149,6 +157,7 @@ for file in os.scandir("tools/internal_ci/linux/experiments"):
     os.remove(file.path)
 for file in os.scandir("tools/internal_ci/linux/pull_request/experiments"):
     os.remove(file.path)
+
 
 def edit_config(src, attr):
     with open(src) as f:
@@ -161,10 +170,11 @@ def edit_config(src, attr):
     for line in config:
         if in_env_vars:
             if line.startswith("}"):
-                assert(env_var_key)
-                assert(env_var_value)
+                assert (env_var_key)
+                assert (env_var_value)
                 if env_var_key == "BAZEL_FLAGS":
-                    env_var_value += " --test_env=GRPC_EXPERIMENT_%s=true" % attr['name'].upper()
+                    env_var_value += " --test_env=GRPC_EXPERIMENT_%s=true" % attr[
+                        'name'].upper()
                 out.append("  key: \"%s\"" % env_var_key)
                 out.append("  value: \"%s\"" % env_var_value)
                 in_env_vars = False
@@ -178,7 +188,7 @@ def edit_config(src, attr):
                 continue
         out.append(line)
         if line.startswith("env_vars {"):
-            assert(not in_env_vars)
+            assert (not in_env_vars)
             in_env_vars = True
             env_var_key = None
             env_var_value = None
@@ -190,9 +200,20 @@ def edit_config(src, attr):
     out.append("")
     return '\n'.join(out)
 
+
 for attr in attrs:
-    if 'tests' not in attr or not attr['tests']: continue
-    with open("tools/internal_ci/linux/experiments/grpc_bazel_rbe_asan_experiment_%s.cfg" % attr['name'], 'w') as CFG:
-        CFG.write(edit_config("tools/internal_ci/linux/grpc_bazel_rbe_asan.cfg", attr))
-    with open("tools/internal_ci/linux/pull_request/experiments/grpc_bazel_rbe_asan_experiment_%s.cfg" % attr['name'], 'w') as CFG:
-        CFG.write(edit_config("tools/internal_ci/linux/pull_request/grpc_bazel_rbe_asan.cfg", attr))
+    if 'tests' not in attr or not attr['tests']:
+        continue
+    with open(
+            "tools/internal_ci/linux/experiments/grpc_bazel_rbe_asan_experiment_%s.cfg"
+            % attr['name'], 'w') as CFG:
+        CFG.write(
+            edit_config("tools/internal_ci/linux/grpc_bazel_rbe_asan.cfg",
+                        attr))
+    with open(
+            "tools/internal_ci/linux/pull_request/experiments/grpc_bazel_rbe_asan_experiment_%s.cfg"
+            % attr['name'], 'w') as CFG:
+        CFG.write(
+            edit_config(
+                "tools/internal_ci/linux/pull_request/grpc_bazel_rbe_asan.cfg",
+                attr))
