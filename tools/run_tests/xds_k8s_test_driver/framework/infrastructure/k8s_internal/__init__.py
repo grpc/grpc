@@ -1,4 +1,4 @@
-# Copyright 2021 gRPC authors.
+# Copyright 2022 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,16 +11,3 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-# Config file for the internal CI (in protobuf text format)
-
-# Location of the continuous shell script in repository.
-build_file: "grpc/tools/internal_ci/linux/psm-security-python.sh"
-timeout_mins: 240
-action {
-  define_artifacts {
-    regex: "artifacts/**/*sponge_log.xml"
-    regex: "artifacts/**/*.log"
-    strip_prefix: "artifacts"
-  }
-}

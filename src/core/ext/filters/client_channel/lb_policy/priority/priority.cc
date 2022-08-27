@@ -846,7 +846,14 @@ void PriorityLb::ChildPriority::OnConnectivityStateUpdateLocked(
   // Store the state and picker.
   connectivity_state_ = state;
   connectivity_status_ = status;
-  picker_wrapper_ = MakeRefCounted<RefCountedPicker>(std::move(picker));
+  // When the failover timer fires, this method will be called with picker
+  // set to null, because we want to consider the child to be in
+  // TRANSIENT_FAILURE, but we have no new picker to report.  In that case,
+  // just keep using the old picker, in case we wind up delegating to this
+  // child when all priorities are failing.
+  if (picker != nullptr) {
+    picker_wrapper_ = MakeRefCounted<RefCountedPicker>(std::move(picker));
+  }
   // If we transition to state CONNECTING and we've not seen
   // TRANSIENT_FAILURE more recently than READY or IDLE, start failover
   // timer if not already pending.

@@ -59,7 +59,7 @@
 #include "src/core/ext/transport/chttp2/transport/stream_map.h"
 #include "src/core/ext/transport/chttp2/transport/varint.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/debug/stats.h"
+#include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/bitset.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -793,85 +793,12 @@ static void set_write_state(grpc_chttp2_transport* t,
   }
 }
 
-static void inc_initiate_write_reason(
-    grpc_chttp2_initiate_write_reason reason) {
-  switch (reason) {
-    case GRPC_CHTTP2_INITIATE_WRITE_INITIAL_WRITE:
-      GRPC_STATS_INC_HTTP2_INITIATE_WRITE_DUE_TO_INITIAL_WRITE();
-      break;
-    case GRPC_CHTTP2_INITIATE_WRITE_START_NEW_STREAM:
-      GRPC_STATS_INC_HTTP2_INITIATE_WRITE_DUE_TO_START_NEW_STREAM();
-      break;
-    case GRPC_CHTTP2_INITIATE_WRITE_SEND_MESSAGE:
-      GRPC_STATS_INC_HTTP2_INITIATE_WRITE_DUE_TO_SEND_MESSAGE();
-      break;
-    case GRPC_CHTTP2_INITIATE_WRITE_SEND_INITIAL_METADATA:
-      GRPC_STATS_INC_HTTP2_INITIATE_WRITE_DUE_TO_SEND_INITIAL_METADATA();
-      break;
-    case GRPC_CHTTP2_INITIATE_WRITE_SEND_TRAILING_METADATA:
-      GRPC_STATS_INC_HTTP2_INITIATE_WRITE_DUE_TO_SEND_TRAILING_METADATA();
-      break;
-    case GRPC_CHTTP2_INITIATE_WRITE_RETRY_SEND_PING:
-      GRPC_STATS_INC_HTTP2_INITIATE_WRITE_DUE_TO_RETRY_SEND_PING();
-      break;
-    case GRPC_CHTTP2_INITIATE_WRITE_CONTINUE_PINGS:
-      GRPC_STATS_INC_HTTP2_INITIATE_WRITE_DUE_TO_CONTINUE_PINGS();
-      break;
-    case GRPC_CHTTP2_INITIATE_WRITE_GOAWAY_SENT:
-      GRPC_STATS_INC_HTTP2_INITIATE_WRITE_DUE_TO_GOAWAY_SENT();
-      break;
-    case GRPC_CHTTP2_INITIATE_WRITE_RST_STREAM:
-      GRPC_STATS_INC_HTTP2_INITIATE_WRITE_DUE_TO_RST_STREAM();
-      break;
-    case GRPC_CHTTP2_INITIATE_WRITE_CLOSE_FROM_API:
-      GRPC_STATS_INC_HTTP2_INITIATE_WRITE_DUE_TO_CLOSE_FROM_API();
-      break;
-    case GRPC_CHTTP2_INITIATE_WRITE_STREAM_FLOW_CONTROL:
-      GRPC_STATS_INC_HTTP2_INITIATE_WRITE_DUE_TO_STREAM_FLOW_CONTROL();
-      break;
-    case GRPC_CHTTP2_INITIATE_WRITE_TRANSPORT_FLOW_CONTROL:
-      GRPC_STATS_INC_HTTP2_INITIATE_WRITE_DUE_TO_TRANSPORT_FLOW_CONTROL();
-      break;
-    case GRPC_CHTTP2_INITIATE_WRITE_SEND_SETTINGS:
-      GRPC_STATS_INC_HTTP2_INITIATE_WRITE_DUE_TO_SEND_SETTINGS();
-      break;
-    case GRPC_CHTTP2_INITIATE_WRITE_SETTINGS_ACK:
-      GRPC_STATS_INC_HTTP2_INITIATE_WRITE_DUE_TO_SETTINGS_ACK();
-      break;
-    case GRPC_CHTTP2_INITIATE_WRITE_FLOW_CONTROL_UNSTALLED_BY_SETTING:
-      GRPC_STATS_INC_HTTP2_INITIATE_WRITE_DUE_TO_FLOW_CONTROL_UNSTALLED_BY_SETTING();
-      break;
-    case GRPC_CHTTP2_INITIATE_WRITE_FLOW_CONTROL_UNSTALLED_BY_UPDATE:
-      GRPC_STATS_INC_HTTP2_INITIATE_WRITE_DUE_TO_FLOW_CONTROL_UNSTALLED_BY_UPDATE();
-      break;
-    case GRPC_CHTTP2_INITIATE_WRITE_APPLICATION_PING:
-      GRPC_STATS_INC_HTTP2_INITIATE_WRITE_DUE_TO_APPLICATION_PING();
-      break;
-    case GRPC_CHTTP2_INITIATE_WRITE_BDP_PING:
-      GRPC_STATS_INC_HTTP2_INITIATE_WRITE_DUE_TO_BDP_ESTIMATOR_PING();
-      break;
-    case GRPC_CHTTP2_INITIATE_WRITE_KEEPALIVE_PING:
-      GRPC_STATS_INC_HTTP2_INITIATE_WRITE_DUE_TO_KEEPALIVE_PING();
-      break;
-    case GRPC_CHTTP2_INITIATE_WRITE_TRANSPORT_FLOW_CONTROL_UNSTALLED:
-      GRPC_STATS_INC_HTTP2_INITIATE_WRITE_DUE_TO_TRANSPORT_FLOW_CONTROL_UNSTALLED();
-      break;
-    case GRPC_CHTTP2_INITIATE_WRITE_PING_RESPONSE:
-      GRPC_STATS_INC_HTTP2_INITIATE_WRITE_DUE_TO_PING_RESPONSE();
-      break;
-    case GRPC_CHTTP2_INITIATE_WRITE_FORCE_RST_STREAM:
-      GRPC_STATS_INC_HTTP2_INITIATE_WRITE_DUE_TO_FORCE_RST_STREAM();
-      break;
-  }
-}
-
 void grpc_chttp2_initiate_write(grpc_chttp2_transport* t,
                                 grpc_chttp2_initiate_write_reason reason) {
   GPR_TIMER_SCOPE("grpc_chttp2_initiate_write", 0);
 
   switch (t->write_state) {
     case GRPC_CHTTP2_WRITE_STATE_IDLE:
-      inc_initiate_write_reason(reason);
       set_write_state(t, GRPC_CHTTP2_WRITE_STATE_WRITING,
                       grpc_chttp2_initiate_write_reason_string(reason));
       GRPC_CHTTP2_REF_TRANSPORT(t, "writing");
@@ -933,9 +860,6 @@ static void write_action_begin_locked(void* gt,
     r = grpc_chttp2_begin_write(t);
   }
   if (r.writing) {
-    if (r.partial) {
-      GRPC_STATS_INC_HTTP2_PARTIAL_WRITES();
-    }
     set_write_state(t,
                     r.partial ? GRPC_CHTTP2_WRITE_STATE_WRITING_WITH_MORE
                               : GRPC_CHTTP2_WRITE_STATE_WRITING,
@@ -955,7 +879,6 @@ static void write_action_begin_locked(void* gt,
       continue_read_action_locked(t);
     }
   } else {
-    GRPC_STATS_INC_HTTP2_SPURIOUS_WRITES_BEGUN();
     set_write_state(t, GRPC_CHTTP2_WRITE_STATE_IDLE, "begin writing nothing");
     GRPC_CHTTP2_UNREF_TRANSPORT(t, "writing");
   }
@@ -1125,8 +1048,10 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
                    goaway_error == GRPC_HTTP2_ENHANCE_YOUR_CALM &&
                    goaway_text == "too_many_pings")) {
     gpr_log(GPR_ERROR,
-            "Received a GOAWAY with error code ENHANCE_YOUR_CALM and debug "
-            "data equal to \"too_many_pings\"");
+            "%s: Received a GOAWAY with error code ENHANCE_YOUR_CALM and debug "
+            "data equal to \"too_many_pings\". Current keepalive time (before "
+            "throttling): %s",
+            t->peer_string.c_str(), t->keepalive_time.ToString().c_str());
     constexpr int max_keepalive_time_millis =
         INT_MAX / KEEPALIVE_TIME_BACKOFF_MULTIPLIER;
     int throttled_keepalive_time =
@@ -1298,8 +1223,6 @@ static void perform_stream_op_locked(void* stream_op,
   grpc_transport_stream_op_batch_payload* op_payload = op->payload;
   grpc_chttp2_transport* t = s->t;
 
-  GRPC_STATS_INC_HTTP2_OP_BATCHES();
-
   s->context = op->payload->context;
   s->traced = op->is_traced;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
@@ -1327,7 +1250,6 @@ static void perform_stream_op_locked(void* stream_op,
   }
 
   if (op->cancel_stream) {
-    GRPC_STATS_INC_HTTP2_OP_CANCEL();
     grpc_chttp2_cancel_stream(t, s, op_payload->cancel_stream.cancel_error);
   }
 
@@ -1335,7 +1257,6 @@ static void perform_stream_op_locked(void* stream_op,
     if (t->is_client && t->channelz_socket != nullptr) {
       t->channelz_socket->RecordStreamStartedFromLocal();
     }
-    GRPC_STATS_INC_HTTP2_OP_SEND_INITIAL_METADATA();
     GPR_ASSERT(s->send_initial_metadata_finished == nullptr);
     on_complete->next_data.scratch |= CLOSURE_BARRIER_MAY_COVER_WRITE;
 
@@ -1393,7 +1314,6 @@ static void perform_stream_op_locked(void* stream_op,
   }
 
   if (op->send_message) {
-    GRPC_STATS_INC_HTTP2_OP_SEND_MESSAGE();
     t->num_messages_in_next_write++;
     GRPC_STATS_INC_HTTP2_SEND_MESSAGE_SIZE(
         op->payload->send_message.send_message->Length());
@@ -1470,7 +1390,6 @@ static void perform_stream_op_locked(void* stream_op,
   }
 
   if (op->send_trailing_metadata) {
-    GRPC_STATS_INC_HTTP2_OP_SEND_TRAILING_METADATA();
     GPR_ASSERT(s->send_trailing_metadata_finished == nullptr);
     on_complete->next_data.scratch |= CLOSURE_BARRIER_MAY_COVER_WRITE;
     s->send_trailing_metadata_finished = add_closure_barrier(on_complete);
@@ -1502,7 +1421,6 @@ static void perform_stream_op_locked(void* stream_op,
   }
 
   if (op->recv_initial_metadata) {
-    GRPC_STATS_INC_HTTP2_OP_RECV_INITIAL_METADATA();
     GPR_ASSERT(s->recv_initial_metadata_ready == nullptr);
     s->recv_initial_metadata_ready =
         op_payload->recv_initial_metadata.recv_initial_metadata_ready;
@@ -1518,7 +1436,6 @@ static void perform_stream_op_locked(void* stream_op,
   }
 
   if (op->recv_message) {
-    GRPC_STATS_INC_HTTP2_OP_RECV_MESSAGE();
     GPR_ASSERT(s->recv_message_ready == nullptr);
     s->recv_message_ready = op_payload->recv_message.recv_message_ready;
     s->recv_message = op_payload->recv_message.recv_message;
@@ -1530,7 +1447,6 @@ static void perform_stream_op_locked(void* stream_op,
   }
 
   if (op->recv_trailing_metadata) {
-    GRPC_STATS_INC_HTTP2_OP_RECV_TRAILING_METADATA();
     GPR_ASSERT(s->collecting_stats == nullptr);
     s->collecting_stats = op_payload->recv_trailing_metadata.collect_stats;
     GPR_ASSERT(s->recv_trailing_metadata_finished == nullptr);

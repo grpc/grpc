@@ -50,7 +50,7 @@ TEST(ForkTest, Init) {
 // because tsan threads can take a while to spawn/join.
 #define THREAD_DELAY_MS 6000
 #define THREAD_DELAY_EPSILON 1500
-#define CONCURRENT_TEST_THREADS 100
+#define CONCURRENT_TEST_THREADS 10
 
 static void sleeping_thd(void* arg) {
   int64_t sleep_ms = reinterpret_cast<int64_t>(arg);
@@ -71,8 +71,8 @@ TEST(ForkTest, ThdCount) {
   gpr_timespec est_end_time =
       gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                    gpr_time_from_millis(THREAD_DELAY_MS, GPR_TIMESPAN));
-  gpr_timespec tolerance =
-      gpr_time_from_millis(THREAD_DELAY_EPSILON, GPR_TIMESPAN);
+  gpr_timespec tolerance = gpr_time_from_millis(
+      THREAD_DELAY_EPSILON * grpc_test_slowdown_factor(), GPR_TIMESPAN);
   for (int i = 0; i < CONCURRENT_TEST_THREADS; i++) {
     intptr_t sleep_time_ms =
         (i * THREAD_DELAY_MS) / (CONCURRENT_TEST_THREADS - 1);
