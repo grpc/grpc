@@ -395,6 +395,17 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "experiments",
+    srcs = ["src/core/lib/experiments/experiments.cc"],
+    hdrs = ["src/core/lib/experiments/experiments.h"],
+    language = "c++",
+    deps = [
+        "gpr",
+        "gpr_platform",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_unsecure",
     srcs = [
         "src/core/lib/surface/init.cc",
@@ -3128,6 +3139,7 @@ grpc_cc_library(
         "error",
         "event_engine_common",
         "exec_ctx",
+        "experiments",
         "gpr",
         "gpr_codegen",
         "gpr_tls",
