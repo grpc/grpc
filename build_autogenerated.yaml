@@ -715,6 +715,7 @@ libs:
   - src/core/ext/xds/upb_utils.h
   - src/core/ext/xds/xds_api.h
   - src/core/ext/xds/xds_bootstrap.h
+  - src/core/ext/xds/xds_bootstrap_grpc.h
   - src/core/ext/xds/xds_certificate_provider.h
   - src/core/ext/xds/xds_channel_args.h
   - src/core/ext/xds/xds_channel_stack_modifier.h
@@ -1421,6 +1422,7 @@ libs:
   - src/core/ext/xds/file_watcher_certificate_provider_factory.cc
   - src/core/ext/xds/xds_api.cc
   - src/core/ext/xds/xds_bootstrap.cc
+  - src/core/ext/xds/xds_bootstrap_grpc.cc
   - src/core/ext/xds/xds_certificate_provider.cc
   - src/core/ext/xds/xds_channel_stack_modifier.cc
   - src/core/ext/xds/xds_client.cc
@@ -3423,6 +3425,7 @@ targets:
   - mac
 - name: fling_stream_test
   build: test
+  run: false
   language: c
   headers:
   - test/core/end2end/data/ssl_test_data.h
@@ -3663,6 +3666,7 @@ targets:
 - name: activity_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - src/core/lib/gprpp/atomic_utils.h
@@ -3835,6 +3839,7 @@ targets:
 - name: alts_concurrent_connectivity_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
@@ -5037,6 +5042,7 @@ targets:
 - name: client_interceptors_end2end_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/cpp/end2end/interceptors_util.h
@@ -5059,7 +5065,7 @@ targets:
   headers:
   - src/cpp/server/orca/orca_interceptor.h
   - test/core/util/test_lb_policies.h
-  - test/cpp/end2end/connection_delay_injector.h
+  - test/cpp/end2end/connection_attempt_injector.h
   - test/cpp/end2end/test_service_impl.h
   src:
   - src/proto/grpc/testing/duplicate/echo_duplicate.proto
@@ -5071,7 +5077,7 @@ targets:
   - src/cpp/server/orca/orca_service.cc
   - test/core/util/test_lb_policies.cc
   - test/cpp/end2end/client_lb_end2end_test.cc
-  - test/cpp/end2end/connection_delay_injector.cc
+  - test/cpp/end2end/connection_attempt_injector.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - grpc++_test_util
@@ -5082,6 +5088,7 @@ targets:
 - name: client_ssl_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers: []
   src:
@@ -5152,6 +5159,7 @@ targets:
 - name: combiner_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/core/util/cmdline.h
@@ -5201,7 +5209,6 @@ targets:
 - name: completion_queue_threading_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers: []
   src:
@@ -5449,6 +5456,7 @@ targets:
 - name: end2end_binder_transport_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/core/transport/binder/end2end/fake_binder.h
@@ -5465,6 +5473,9 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - grpc++_test_util
+  platforms:
+  - linux
+  - posix
 - name: end2end_test
   gtest: true
   build: test
@@ -5759,6 +5770,7 @@ targets:
 - name: event_poller_posix_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - src/core/lib/event_engine/common_closures.h
@@ -6706,6 +6718,7 @@ targets:
 - name: grpc_tls_certificate_provider_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/core/util/cmdline.h
@@ -6808,6 +6821,7 @@ targets:
 - name: grpc_tls_credentials_options_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/core/util/cmdline.h
@@ -7168,6 +7182,7 @@ targets:
 - name: httpscli_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/core/http/httpcli_test_util.h
@@ -8057,6 +8072,7 @@ targets:
 - name: orca_service_end2end_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers: []
   src:
@@ -8183,6 +8199,7 @@ targets:
 - name: periodic_update_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - src/core/ext/upb-generated/google/protobuf/any.upb.h
@@ -8957,6 +8974,7 @@ targets:
 - name: rls_end2end_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/core/util/test_lb_policies.h
@@ -9007,6 +9025,7 @@ targets:
 - name: secure_endpoint_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/core/iomgr/endpoint_tests.h
@@ -9095,7 +9114,6 @@ targets:
 - name: sequential_connectivity_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers: []
   src:
@@ -9371,7 +9389,6 @@ targets:
 - name: settings_timeout_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - test/core/util/cmdline.h
@@ -9687,6 +9704,7 @@ targets:
 - name: stranded_event_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
@@ -10400,6 +10418,7 @@ targets:
 - name: timer_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers: []
   src:
@@ -10479,6 +10498,7 @@ targets:
 - name: too_many_pings_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
@@ -10974,6 +10994,7 @@ targets:
 - name: work_serializer_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers: []
   src:
@@ -11051,7 +11072,7 @@ targets:
   run: false
   language: c++
   headers:
-  - test/cpp/end2end/connection_delay_injector.h
+  - test/cpp/end2end/connection_attempt_injector.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h
@@ -11091,7 +11112,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/route.proto
   - src/proto/grpc/testing/xds/v3/router.proto
   - src/proto/grpc/testing/xds/v3/string.proto
-  - test/cpp/end2end/connection_delay_injector.cc
+  - test/cpp/end2end/connection_attempt_injector.cc
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/xds/xds_cluster_end2end_test.cc
   - test/cpp/end2end/xds/xds_end2end_test_lib.cc
@@ -11109,7 +11130,7 @@ targets:
   run: false
   language: c++
   headers:
-  - test/cpp/end2end/connection_delay_injector.h
+  - test/cpp/end2end/connection_attempt_injector.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h
@@ -11150,7 +11171,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/route.proto
   - src/proto/grpc/testing/xds/v3/router.proto
   - src/proto/grpc/testing/xds/v3/string.proto
-  - test/cpp/end2end/connection_delay_injector.cc
+  - test/cpp/end2end/connection_attempt_injector.cc
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/xds/xds_cluster_type_end2end_test.cc
   - test/cpp/end2end/xds/xds_end2end_test_lib.cc
@@ -11165,6 +11186,7 @@ targets:
 - name: xds_core_end2end_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/cpp/end2end/counted_service.h
@@ -11392,6 +11414,7 @@ targets:
 - name: xds_fault_injection_end2end_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/cpp/end2end/counted_service.h
@@ -11535,6 +11558,7 @@ targets:
 - name: xds_outlier_detection_end2end_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/cpp/end2end/counted_service.h
@@ -11596,7 +11620,7 @@ targets:
   run: false
   language: c++
   headers:
-  - test/cpp/end2end/connection_delay_injector.h
+  - test/cpp/end2end/connection_attempt_injector.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h
@@ -11637,7 +11661,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/route.proto
   - src/proto/grpc/testing/xds/v3/router.proto
   - src/proto/grpc/testing/xds/v3/string.proto
-  - test/cpp/end2end/connection_delay_injector.cc
+  - test/cpp/end2end/connection_attempt_injector.cc
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/xds/xds_end2end_test_lib.cc
   - test/cpp/end2end/xds/xds_ring_hash_end2end_test.cc
@@ -11652,6 +11676,7 @@ targets:
 - name: xds_rls_end2end_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/cpp/end2end/counted_service.h

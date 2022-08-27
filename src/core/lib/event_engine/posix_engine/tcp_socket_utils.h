@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_TCP_SOCKET_UTILS_H
-#define GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_TCP_SOCKET_UTILS_H
+#ifndef GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_TCP_SOCKET_UTILS_H
+#define GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_TCP_SOCKET_UTILS_H
 
 #include <grpc/support/port_platform.h>
 
@@ -157,7 +157,7 @@ class PosixSocketWrapper {
   // Set SO_REUSEPORT
   absl::Status SetSocketReusePort(int reuse);
 
-  // Set TCP_USER_TIMEOUT
+  // Override default Tcp user timeout values if necessary.
   void TrySetSocketTcpUserTimeout(const PosixTcpOptions& options,
                                   bool is_client);
 
@@ -223,6 +223,11 @@ class PosixSocketWrapper {
   int Fd() const { return fd_; }
 
   // Static methods
+
+  // Configure default values for tcp user timeout to be used by client
+  // and server side sockets.
+  void ConfigureDefaultTcpUserTimeout(bool enable, int timeout, bool is_client);
+
   // Return true if SO_REUSEPORT is supported
   static bool IsSocketReusePortSupported();
 
@@ -262,4 +267,4 @@ class PosixSocketWrapper {
 }  // namespace posix_engine
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_TCP_SOCKET_UTILS_H
+#endif  // GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_TCP_SOCKET_UTILS_H

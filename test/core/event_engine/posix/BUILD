@@ -50,6 +50,7 @@ grpc_cc_test(
     name = "event_poller_posix_test",
     srcs = ["event_poller_posix_test.cc"],
     external_deps = ["gtest"],
+    flaky = True,
     language = "C++",
     tags = [
         "no_windows",
@@ -101,6 +102,22 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "traced_buffer_list_test",
+    srcs = ["traced_buffer_list_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    tags = [
+        "no_windows",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:posix_event_engine_traced_buffer_list",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "tcp_posix_socket_utils_test",
     srcs = ["tcp_posix_socket_utils_test.cc"],
     external_deps = ["gtest"],
@@ -114,22 +131,6 @@ grpc_cc_test(
         "//:event_engine_common",
         "//:posix_event_engine_tcp_socket_utils",
         "//:socket_mutator",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
-    name = "traced_buffer_list_test",
-    srcs = ["traced_buffer_list_test.cc"],
-    external_deps = ["gtest"],
-    language = "C++",
-    tags = [
-        "no_windows",
-    ],
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        "//:posix_event_engine_traced_buffer_list",
         "//test/core/util:grpc_test_util",
     ],
 )

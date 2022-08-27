@@ -24,6 +24,7 @@
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/activity.h"
+#include "src/core/lib/promise/poll.h"
 
 namespace grpc_core {
 
@@ -46,6 +47,7 @@ Poll<absl::Status> Sleep::operator()() {
     // cpu? - to avoid allocating/deallocating on fast paths.
     closure_ = new ActiveClosure(deadline_);
   }
+  if (closure_->HasRun()) return absl::OkStatus();
   return Pending{};
 }
 
@@ -58,7 +60,7 @@ void Sleep::ActiveClosure::Run() {
   ApplicationCallbackExecCtx callback_exec_ctx;
   ExecCtx exec_ctx;
   auto waker = std::move(waker_);
-  if (refs_.Unref()) {
+  if (Unref()) {
     delete this;
   } else {
     waker.Wakeup();
@@ -69,9 +71,19 @@ void Sleep::ActiveClosure::Cancel() {
   // If we cancel correctly then we must own both refs still and can simply
   // delete without unreffing twice, otherwise try unreffing since this may be
   // the last owned ref.
-  if (GetDefaultEventEngine()->Cancel(timer_handle_) || refs_.Unref()) {
+  if (GetDefaultEventEngine()->Cancel(timer_handle_) || Unref()) {
     delete this;
   }
+}
+
+bool Sleep::ActiveClosure::Unref() {
+  return (refs_.fetch_sub(1, std::memory_order_acq_rel) == 1);
+}
+
+bool Sleep::ActiveClosure::HasRun() const {
+  // If the closure has run (ie woken up the activity) then it will have
+  // decremented this ref count once.
+  return refs_.load(std::memory_order_acquire) == 1;
 }
 
 }  // namespace grpc_core

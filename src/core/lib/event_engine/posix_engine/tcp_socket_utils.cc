@@ -16,7 +16,7 @@
 
 #include <netinet/in.h>
 
-#include "grpc/event_engine/event_engine.h"
+#include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/iomgr/port.h"
 
@@ -62,6 +62,14 @@ int AdjustValue(int default_value, int min_value, int max_value,
   }
   return *actual_value;
 }
+
+// The default values for TCP_USER_TIMEOUT are currently configured to be in
+// line with the default values of KEEPALIVE_TIMEOUT as proposed in
+// https://github.com/grpc/proposal/blob/master/A18-tcp-user-timeout.md */
+int kDefaultClientUserTimeoutMs = 20000;
+int kDefaultServerUserTimeoutMs = 20000;
+bool kDefaultClientUserTimeoutEnabled = false;
+bool kDefaultServerUserTimeoutEnabled = true;
 
 #ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
 
@@ -520,13 +528,25 @@ absl::Status PosixSocketWrapper::SetSocketLowLatency(int low_latency) {
 static std::atomic<int> g_socket_supports_tcp_user_timeout(
     SOCKET_SUPPORTS_TCP_USER_TIMEOUT_DEFAULT);
 
+void PosixSocketWrapper::ConfigureDefaultTcpUserTimeout(bool enable,
+                                                        int timeout,
+                                                        bool is_client) {
+  if (is_client) {
+    kDefaultClientUserTimeoutEnabled = enable;
+    if (timeout > 0) {
+      kDefaultClientUserTimeoutMs = timeout;
+    }
+  } else {
+    kDefaultServerUserTimeoutEnabled = enable;
+    if (timeout > 0) {
+      kDefaultServerUserTimeoutMs = timeout;
+    }
+  }
+}
+
 // Set TCP_USER_TIMEOUT
 void PosixSocketWrapper::TrySetSocketTcpUserTimeout(
     const PosixTcpOptions& options, bool is_client) {
-  static int kDefaultClientUserTimeoutMs = 20000;
-  static int kDefaultServerUserTimeoutMs = 20000;
-  static bool kDefaultClientUserTimeoutEnabled = false;
-  static bool kDefaultServerUserTimeoutEnabled = true;
   if (g_socket_supports_tcp_user_timeout.load() < 0) {
     return;
   }
@@ -728,6 +748,10 @@ absl::Status PosixSocketWrapper::SetSocketLowLatency(int /*low_latency*/) {
 absl::Status PosixSocketWrapper::SetSocketReusePort(int /*reuse*/) {
   GPR_ASSERT(false && "unimplemented");
 }
+
+void PosixSocketWrapper::ConfigureDefaultTcpUserTimeout(bool /*enable*/,
+                                                        int /*timeout*/,
+                                                        bool /*is_client*/) {}
 
 void PosixSocketWrapper::TrySetSocketTcpUserTimeout(
     const PosixTcpOptions& /*options*/, bool /*is_client*/) {

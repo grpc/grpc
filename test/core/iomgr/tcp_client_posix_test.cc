@@ -172,8 +172,7 @@ void test_fails(void) {
   GRPC_CLOSURE_INIT(&done, must_fail, nullptr, grpc_schedule_on_exec_ctx);
   int64_t connection_handle = grpc_tcp_client_connect(
       &done, &g_connecting, g_pollset_set,
-      grpc_event_engine::experimental::ChannelArgsEndpointConfig(
-          grpc_core::ChannelArgs{}),
+      grpc_event_engine::experimental::ChannelArgsEndpointConfig(),
       &resolved_addr, grpc_core::Timestamp::InfFuture());
   gpr_mu_lock(g_mu);
 
@@ -264,8 +263,7 @@ void test_fails_bad_addr_no_leak(void) {
   GRPC_CLOSURE_INIT(&done, must_fail, nullptr, grpc_schedule_on_exec_ctx);
   grpc_tcp_client_connect(
       &done, &g_connecting, g_pollset_set,
-      grpc_event_engine::experimental::ChannelArgsEndpointConfig(
-          grpc_core::ChannelArgs{}),
+      grpc_event_engine::experimental::ChannelArgsEndpointConfig(),
       &resolved_addr, grpc_core::Timestamp::InfFuture());
   gpr_mu_lock(g_mu);
   while (g_connections_complete == connections_complete_before) {

@@ -187,26 +187,28 @@ std::string CqVerifier::ToString() const {
   return absl::StrJoin(expectations, "\n");
 }
 
-void CqVerifier::FailNoEventReceived() const {
-  gpr_log(GPR_ERROR, "no event received, but expected:%s", ToString().c_str());
+void CqVerifier::FailNoEventReceived(const SourceLocation& location) const {
+  gpr_log(GPR_ERROR, "[%s:%d] no event received, but expected:%s",
+          location.file(), location.line(), ToString().c_str());
   abort();
 }
 
-void CqVerifier::FailUnexpectedEvent(grpc_event* ev) const {
-  gpr_log(GPR_ERROR, "cq returned unexpected event: %s",
-          grpc_event_string(ev).c_str());
+void CqVerifier::FailUnexpectedEvent(grpc_event* ev,
+                                     const SourceLocation& location) const {
+  gpr_log(GPR_ERROR, "[%s:%d] cq returned unexpected event: %s",
+          location.file(), location.line(), grpc_event_string(ev).c_str());
   gpr_log(GPR_ERROR, "expected tags:\n%s", ToString().c_str());
   abort();
 }
 
-void CqVerifier::Verify(Duration timeout) {
+void CqVerifier::Verify(Duration timeout, SourceLocation location) {
   const gpr_timespec deadline =
       grpc_timeout_milliseconds_to_deadline(timeout.millis());
   while (!expectations_.empty()) {
     grpc_event ev = grpc_completion_queue_next(cq_, deadline, nullptr);
     if (ev.type == GRPC_QUEUE_TIMEOUT) break;
     if (ev.type != GRPC_OP_COMPLETE) {
-      FailUnexpectedEvent(&ev);
+      FailUnexpectedEvent(&ev, location);
     }
     bool found = false;
     for (auto it = expectations_.begin(); it != expectations_.end(); ++it) {
@@ -222,13 +224,13 @@ void CqVerifier::Verify(Duration timeout) {
             return true;
           });
       if (!expected) {
-        FailUnexpectedEvent(&ev);
+        FailUnexpectedEvent(&ev, location);
       }
       expectations_.erase(it);
       found = true;
       break;
     }
-    if (!found) FailUnexpectedEvent(&ev);
+    if (!found) FailUnexpectedEvent(&ev, location);
     if (AllMaybes()) break;
   }
   expectations_.erase(
@@ -237,7 +239,7 @@ void CqVerifier::Verify(Duration timeout) {
                        return absl::holds_alternative<Maybe>(e.result);
                      }),
       expectations_.end());
-  if (!expectations_.empty()) FailNoEventReceived();
+  if (!expectations_.empty()) FailNoEventReceived(location);
 }
 
 bool CqVerifier::AllMaybes() const {
@@ -247,14 +249,13 @@ bool CqVerifier::AllMaybes() const {
   return true;
 }
 
-void CqVerifier::VerifyEmpty(Duration timeout) {
+void CqVerifier::VerifyEmpty(Duration timeout, SourceLocation location) {
   const gpr_timespec deadline =
       gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC), timeout.as_timespec());
   GPR_ASSERT(expectations_.empty());
   grpc_event ev = grpc_completion_queue_next(cq_, deadline, nullptr);
   if (ev.type != GRPC_QUEUE_TIMEOUT) {
-    gpr_log(GPR_ERROR, "unexpected event (expected nothing): %s",
-            grpc_event_string(&ev).c_str());
+    FailUnexpectedEvent(&ev, location);
   }
 }
 

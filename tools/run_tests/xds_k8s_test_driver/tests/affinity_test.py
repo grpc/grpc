@@ -19,6 +19,7 @@ from absl import flags
 from absl.testing import absltest
 from google.protobuf import json_format
 
+from framework import xds_k8s_flags
 from framework import xds_k8s_testcase
 from framework import xds_url_map_testcase
 from framework.helpers import skips
@@ -42,6 +43,15 @@ _RPC_COUNT = 100
 
 
 class AffinityTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        # Force the python client to use the reference server image (Java)
+        # because the python server doesn't yet support set_not_serving RPC.
+        # TODO(https://github.com/grpc/grpc/issues/30635): Remove when resolved.
+        if cls.lang_spec.client_lang == _Lang.PYTHON:
+            cls.server_image = xds_k8s_flags.SERVER_IMAGE_CANONICAL.value
 
     @staticmethod
     def is_supported(config: skips.TestConfig) -> bool:
@@ -129,11 +139,9 @@ class AffinityTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
                 rpc_distribution.raw['rpcsByPeer'].keys())[0]
 
         with self.subTest('11_turn_down_server_in_use'):
-            for s in test_servers:
-                if s.pod_name == first_backend_inuse:
-                    logging.info('setting backend %s to NOT_SERVING',
-                                 s.pod_name)
-                    s.set_not_serving()
+            for server in test_servers:
+                if server.hostname == first_backend_inuse:
+                    server.set_not_serving()
 
         with self.subTest('12_wait_for_unhealth_status_propagation'):
             deadline = time.time() + _TD_PROPAGATE_TIMEOUT

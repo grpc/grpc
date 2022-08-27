@@ -40,6 +40,8 @@ from framework.rpc import grpc_csds
 from framework.rpc import grpc_testing
 from framework.test_app import client_app
 from framework.test_app import server_app
+from framework.test_app.runners.k8s import k8s_xds_client_runner
+from framework.test_app.runners.k8s import k8s_xds_server_runner
 
 logger = logging.getLogger(__name__)
 # TODO(yashkt): We will no longer need this flag once Core exposes local certs
@@ -57,8 +59,8 @@ TrafficDirectorAppNetManager = traffic_director.TrafficDirectorAppNetManager
 TrafficDirectorSecureManager = traffic_director.TrafficDirectorSecureManager
 XdsTestServer = server_app.XdsTestServer
 XdsTestClient = client_app.XdsTestClient
-KubernetesServerRunner = server_app.KubernetesServerRunner
-KubernetesClientRunner = client_app.KubernetesClientRunner
+KubernetesServerRunner = k8s_xds_server_runner.KubernetesServerRunner
+KubernetesClientRunner = k8s_xds_client_runner.KubernetesClientRunner
 LoadBalancerStatsResponse = grpc_testing.LoadBalancerStatsResponse
 _ChannelState = grpc_channelz.ChannelState
 _timedelta = datetime.timedelta
@@ -245,11 +247,11 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
         before_stats = test_client.get_load_balancer_accumulated_stats()
         response_type = 'LoadBalancerAccumulatedStatsResponse'
         logging.info('Received %s from test client %s: before:\n%s',
-                     response_type, test_client.ip, before_stats)
+                     response_type, test_client.hostname, before_stats)
         time.sleep(duration.total_seconds())
         after_stats = test_client.get_load_balancer_accumulated_stats()
         logging.info('Received %s from test client %s: after:\n%s',
-                     response_type, test_client.ip, after_stats)
+                     response_type, test_client.hostname, after_stats)
 
         diff_stats = self.diffAccumulatedStatsPerMethod(before_stats,
                                                         after_stats)
@@ -281,20 +283,20 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
     def _assertRpcsEventuallyGoToGivenServers(self, test_client: XdsTestClient,
                                               servers: List[XdsTestServer],
                                               num_rpcs: int):
-        server_names = [server.pod_name for server in servers]
-        logger.info('Verifying RPCs go to %s', server_names)
+        server_hostnames = [server.hostname for server in servers]
+        logger.info('Verifying RPCs go to servers %s', server_hostnames)
         lb_stats = self.getClientRpcStats(test_client, num_rpcs)
         failed = int(lb_stats.num_failures)
         self.assertLessEqual(
             failed,
             0,
             msg=f'Expected all RPCs to succeed: {failed} of {num_rpcs} failed')
-        for server_name in server_names:
-            self.assertIn(server_name, lb_stats.rpcs_by_peer,
-                          f'{server_name} did not receive RPCs')
-        for peer in lb_stats.rpcs_by_peer.keys():
-            self.assertIn(peer, server_names,
-                          f'Unexpected server {peer} received RPCs')
+        for server_hostname in server_hostnames:
+            self.assertIn(server_hostname, lb_stats.rpcs_by_peer,
+                          f'Server {server_hostname} did not receive RPCs')
+        for server_hostname in lb_stats.rpcs_by_peer.keys():
+            self.assertIn(server_hostname, server_hostnames,
+                          f'Unexpected server {server_hostname} received RPCs')
 
     def assertXdsConfigExists(self, test_client: XdsTestClient):
         config = test_client.csds.fetch_client_status(log_level=logging.INFO)
@@ -377,7 +379,7 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
         lb_stats = test_client.get_load_balancer_stats(num_rpcs=num_rpcs)
         logger.info(
             'Received LoadBalancerStatsResponse from test client %s:\n%s',
-            test_client.ip, lb_stats)
+            test_client.hostname, lb_stats)
         return lb_stats
 
     def assertAllBackendsReceivedRpcs(self, lb_stats):
