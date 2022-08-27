@@ -16,12 +16,14 @@
 
 #include "src/core/lib/transport/error_utils.h"
 
-#include <gtest/gtest.h>
+#include <stdint.h>
+
+#include <vector>
 
 #include "absl/status/status.h"
+#include "gtest/gtest.h"
 
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/slice/slice_internal.h"
 #include "test/core/util/test_config.h"
 
 namespace {

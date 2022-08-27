@@ -14,8 +14,11 @@
 
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 
-#include <gtest/gtest.h>
+#include <memory>
 
+#include "gtest/gtest.h"
+
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 
