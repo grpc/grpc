@@ -157,7 +157,7 @@ class PosixSocketWrapper {
   // Set SO_REUSEPORT
   absl::Status SetSocketReusePort(int reuse);
 
-  // Set TCP_USER_TIMEOUT
+  // Override default Tcp user timeout values if necessary.
   void TrySetSocketTcpUserTimeout(const PosixTcpOptions& options,
                                   bool is_client);
 
@@ -223,6 +223,11 @@ class PosixSocketWrapper {
   int Fd() const { return fd_; }
 
   // Static methods
+
+  // Configure default values for tcp user timeout to be used by client
+  // and server side sockets.
+  void ConfigureDefaultTcpUserTimeout(bool enable, int timeout, bool is_client);
+
   // Return true if SO_REUSEPORT is supported
   static bool IsSocketReusePortSupported();
 
