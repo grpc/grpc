@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-- experiment:
-  name: tcp_frame_size_tuning
+- name: tcp_frame_size_tuning
   description:
     If set, enables TCP to use RPC size estimation made by higher layers.
     TCP would not indicate completion of a read operation until a specified
@@ -21,3 +20,6 @@
     Buffers are also allocated according to estimated RPC sizes.
   default: false
   expiry: 2022/09/01
+  tests:
+  - test/core/iomgr:all
+  - test/cpp/end2end:all
