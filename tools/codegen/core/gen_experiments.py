@@ -210,12 +210,13 @@ for attr in attrs:
                 "tools/internal_ci/linux/experiments/grpc_bazel_rbe_%s_experiment_%s.cfg"
                 % (test_config, attr['name']), 'w') as CFG:
             CFG.write(
-                edit_config("tools/internal_ci/linux/grpc_bazel_rbe_%s.cfg" % test_config,
-                            attr))
+                edit_config(
+                    "tools/internal_ci/linux/grpc_bazel_rbe_%s.cfg" %
+                    test_config, attr))
         with open(
                 "tools/internal_ci/linux/pull_request/experiments/grpc_bazel_rbe_%s_experiment_%s.cfg"
                 % (test_config, attr['name']), 'w') as CFG:
             CFG.write(
                 edit_config(
-                    "tools/internal_ci/linux/pull_request/grpc_bazel_rbe_%s.cfg" % test_config,
-                    attr))
+                    "tools/internal_ci/linux/pull_request/grpc_bazel_rbe_%s.cfg"
+                    % test_config, attr))
