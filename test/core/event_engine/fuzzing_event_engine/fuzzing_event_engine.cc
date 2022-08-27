@@ -99,6 +99,9 @@ gpr_timespec FuzzingEventEngine::NowAsTimespec(gpr_clock_type clock_type) {
 }
 
 gpr_timespec FuzzingEventEngine::GlobalNowImpl(gpr_clock_type clock_type) {
+  if (g_fuzzing_event_engine == nullptr) {
+    return gpr_inf_future(clock_type);
+  }
   GPR_ASSERT(g_fuzzing_event_engine != nullptr);
   grpc_core::MutexLock lock(&g_fuzzing_event_engine->mu_);
   return g_fuzzing_event_engine->NowAsTimespec(clock_type);
