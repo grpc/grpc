@@ -76,6 +76,14 @@ def put_copyright(file):
         put_banner([file], [line[2:].rstrip() for line in copyright])
 
 
+EXPERIMENT_METADATA = """struct ExperimentMetadata {
+  const char* name;
+  const char* description;
+  bool default_value;
+  bool (*is_enabled)();
+};"""
+
+
 with open('src/core/lib/experiments/experiments.h', 'w') as H:
     put_copyright(H)
 
@@ -87,6 +95,7 @@ with open('src/core/lib/experiments/experiments.h', 'w') as H:
     print("#define GRPC_CORE_LIB_EXPERIMENTS_EXPERIMENTS_H", file=H)
     print(file=H)
     print("#include <grpc/support/port_platform.h>", file=H)
+    print(file=H)
     print("#include <stddef.h>", file=H)
     print(file=H)
     print("namespace grpc_core {", file=H)
@@ -94,19 +103,14 @@ with open('src/core/lib/experiments/experiments.h', 'w') as H:
     for attr in attrs:
         print("bool Is%sEnabled();" % snake_to_pascal(attr['name']), file=H)
     print(file=H)
-    print("""struct ExperimentMetadata {
-    const char* name;
-    const char* description;
-    bool default_value;
-    bool (*is_enabled)();
-};""", file=H)
+    print(EXPERIMENT_METADATA, file=H)
     print(file=H)
     print("constexpr const size_t kNumExperiments = %d;" % len(attrs), file=H)
     print("extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];", file=H)
     print(file=H)
     print("}  // namespace grpc_core", file=H)
     print(file=H)
-    print("#endif // GRPC_CORE_LIB_EXPERIMENTS_EXPERIMENTS_H", file=H)
+    print("#endif  // GRPC_CORE_LIB_EXPERIMENTS_EXPERIMENTS_H", file=H)
 
 
 with open('src/core/lib/experiments/experiments.cc', 'w') as C:

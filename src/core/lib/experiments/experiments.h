@@ -22,6 +22,7 @@
 #define GRPC_CORE_LIB_EXPERIMENTS_EXPERIMENTS_H
 
 #include <grpc/support/port_platform.h>
+
 #include <stddef.h>
 
 namespace grpc_core {
@@ -29,10 +30,10 @@ namespace grpc_core {
 bool IsTcpFrameSizeTuningEnabled();
 
 struct ExperimentMetadata {
-    const char* name;
-    const char* description;
-    bool default_value;
-    bool (*is_enabled)();
+  const char* name;
+  const char* description;
+  bool default_value;
+  bool (*is_enabled)();
 };
 
 constexpr const size_t kNumExperiments = 1;
@@ -40,4 +41,4 @@ extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];
 
 }  // namespace grpc_core
 
-#endif // GRPC_CORE_LIB_EXPERIMENTS_EXPERIMENTS_H
+#endif  // GRPC_CORE_LIB_EXPERIMENTS_EXPERIMENTS_H
