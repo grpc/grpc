@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import logging
+import signal
 
 from absl import app
 from absl import flags
@@ -37,6 +38,10 @@ _REUSE_NAMESPACE = flags.DEFINE_bool("reuse_namespace",
 _REUSE_SERVICE = flags.DEFINE_bool("reuse_service",
                                    default=False,
                                    help="Use existing service if exists")
+_FOLLOW = flags.DEFINE_bool("follow",
+                            default=False,
+                            help="Follow pod logs. "
+                            "Requires --collect_app_logs")
 _CLEANUP_NAMESPACE = flags.DEFINE_bool(
     "cleanup_namespace",
     default=False,
@@ -48,6 +53,16 @@ flags.mark_flag_as_required("resource_suffix")
 
 # Type aliases
 _KubernetesServerRunner = k8s_xds_server_runner.KubernetesServerRunner
+
+
+def make_sigint_handler(server_runner: _KubernetesServerRunner):
+
+    def sigint_handler(sig, frame):
+        del sig, frame
+        print('Caught Ctrl+C. Shutting down the logs')
+        server_runner.stop_pod_dependencies(log_drain_sec=3)
+
+    return sigint_handler
 
 
 def main(argv):
@@ -94,7 +109,12 @@ def main(argv):
         server_runner.run(
             test_port=xds_flags.SERVER_PORT.value,
             maintenance_port=xds_flags.SERVER_MAINTENANCE_PORT.value,
-            secure_mode=_SECURE.value)
+            secure_mode=_SECURE.value,
+            log_to_stdout=_FOLLOW.value)
+        if server_runner.should_collect_logs and _FOLLOW.value:
+            print('Following pod logs. Press Ctrl+C top stop')
+            signal.signal(signal.SIGINT, make_sigint_handler(server_runner))
+            signal.pause()
 
     elif _CMD.value == 'cleanup':
         logger.info('Cleanup server')

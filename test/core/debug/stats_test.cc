@@ -63,9 +63,10 @@ TEST(StatsTest, IncSpecificCounter) {
   std::unique_ptr<Snapshot> snapshot(new Snapshot);
 
   grpc_core::ExecCtx exec_ctx;
-  GRPC_STATS_INC_SYSCALL_POLL();
+  GRPC_STATS_INC_CLIENT_CALLS_CREATED();
 
-  EXPECT_EQ(snapshot->delta().counters[GRPC_STATS_COUNTER_SYSCALL_POLL], 1);
+  EXPECT_EQ(snapshot->delta().counters[GRPC_STATS_COUNTER_CLIENT_CALLS_CREATED],
+            1);
 }
 
 static int FindExpectedBucket(int i, int j) {
@@ -145,19 +146,10 @@ INSTANTIATE_TEST_SUITE_P(HistogramTestCases, HistogramTest,
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-/* Only run this test if GRPC_COLLECT_STATS is defined or if it is a debug
- * build.
- */
-#if defined(GRPC_COLLECT_STATS) || !defined(NDEBUG)
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   grpc_init();
   int ret = RUN_ALL_TESTS();
   grpc_shutdown();
   return ret;
-#else
-  // Avoid unused parameter warning for conditional parameters.
-  (void)argc;
-  (void)argv;
-#endif
 }
