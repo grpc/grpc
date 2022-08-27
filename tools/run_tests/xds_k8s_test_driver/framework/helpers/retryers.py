@@ -26,6 +26,7 @@ from typing import Any, Callable, List, Optional, Tuple, Type
 
 import tenacity
 from tenacity import _utils as tenacity_utils
+from tenacity import compat as tenacity_compat
 from tenacity import stop
 from tenacity import wait
 from tenacity.retry import retry_base
@@ -79,7 +80,7 @@ def exponential_retryer_with_timeout(
                     wait=wait.wait_exponential(min=wait_min.total_seconds(),
                                                max=wait_max.total_seconds()),
                     stop=stop.stop_after_delay(timeout.total_seconds()),
-                    before_sleep=tenacity.before_sleep_log(logger, log_level),
+                    before_sleep=_before_sleep_log(logger, log_level),
                     retry_error_callback=retry_error_callback)
 
 
@@ -111,7 +112,7 @@ def constant_retryer(*,
     return Retrying(retry=tenacity.retry_any(*retry_conditions),
                     wait=wait.wait_fixed(wait_fixed.total_seconds()),
                     stop=stop.stop_any(*stops),
-                    before_sleep=tenacity.before_sleep_log(logger, log_level),
+                    before_sleep=_before_sleep_log(logger, log_level),
                     retry_error_callback=retry_error_callback)
 
 
@@ -157,6 +158,40 @@ def _safe_check_result(check_result: CheckResultFn,
             return False
 
     return _check_result_wrapped
+
+
+def _before_sleep_log(logger, log_level, exc_info=False):
+    """Same as tenacity.before_sleep_log, but only logs primitive return values.
+    This is not useful when the return value is a dump of a large object.
+    """
+
+    def log_it(retry_state):
+        if retry_state.outcome.failed:
+            ex = retry_state.outcome.exception()
+            verb, value = 'raised', '%s: %s' % (type(ex).__name__, ex)
+
+            if exc_info:
+                local_exc_info = tenacity_compat.get_exc_info_from_future(
+                    retry_state.outcome)
+            else:
+                local_exc_info = False
+        else:
+            local_exc_info = False  # exc_info does not apply when no exception
+            result = retry_state.outcome.result()
+            if isinstance(result, (int, bool, str)):
+                verb, value = 'returned', result
+            else:
+                verb, value = 'returned type', type(result)
+
+        logger.log(log_level,
+                   "Retrying %s in %s seconds as it %s %s.",
+                   tenacity_utils.get_callback_name(retry_state.fn),
+                   getattr(retry_state.next_action, 'sleep'),
+                   verb,
+                   value,
+                   exc_info=local_exc_info)
+
+    return log_it
 
 
 class RetryError(tenacity.RetryError):
