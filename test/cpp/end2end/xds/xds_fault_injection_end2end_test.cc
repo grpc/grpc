@@ -149,7 +149,9 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageAbort) {
   const uint32_t kAbortPercentagePerHundred = 50;
   const double kAbortRate = kAbortPercentagePerHundred / 100.0;
   const double kErrorTolerance = 0.1;
-  const size_t kNumRpcs = ComputeIdealNumRpcs(kAbortRate, kErrorTolerance);
+  // Choose a number of RPCs that's a multiple of 100 for a higher chance of
+  // reaching the mean.
+  const size_t kNumRpcs = 500;
   // Create an EDS resource
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
@@ -177,7 +179,9 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageAbortViaHeaders) {
   const uint32_t kAbortPercentage = 50;
   const double kAbortRate = kAbortPercentage / 100.0;
   const double kErrorTolerance = 0.1;
-  const size_t kNumRpcs = ComputeIdealNumRpcs(kAbortRate, kErrorTolerance);
+  // Choose a number of RPCs that's a multiple of 100 for a higher chance of
+  // reaching the mean.
+  const size_t kNumRpcs = 500;
   // Create an EDS resource
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
@@ -209,7 +213,9 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelay) {
   const uint32_t kDelayPercentagePerHundred = 50;
   const double kDelayRate = kDelayPercentagePerHundred / 100.0;
   const double kErrorTolerance = 0.1;
-  const size_t kNumRpcs = ComputeIdealNumRpcs(kDelayRate, kErrorTolerance);
+  // Choose a number of RPCs that's a multiple of 100 for a higher chance of
+  // reaching the mean.
+  const size_t kNumRpcs = 500;
   const size_t kMaxConcurrentRequests = kNumRpcs;
   // Create an EDS resource
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
@@ -255,7 +261,9 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelayViaHeaders) {
   const uint32_t kDelayPercentage = 50;
   const double kDelayRate = kDelayPercentage / 100.0;
   const double kErrorTolerance = 0.1;
-  const size_t kNumRpcs = ComputeIdealNumRpcs(kDelayRate, kErrorTolerance);
+  // Choose a number of RPCs that's a multiple of 100 for a higher chance of
+  // reaching the mean.
+  const size_t kNumRpcs = 500;
   const size_t kMaxConcurrentRequests = kNumRpcs;
   // Create an EDS resource
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
@@ -339,7 +347,9 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionAlwaysDelayPercentageAbort) {
   const uint32_t kConnectionTimeoutMilliseconds =
       10 * 1000;  // 10s should not reach
   const double kErrorTolerance = 0.1;
-  const size_t kNumRpcs = ComputeIdealNumRpcs(kAbortRate, kErrorTolerance);
+  // Choose a number of RPCs that's a multiple of 100 for a higher chance of
+  // reaching the mean.
+  const size_t kNumRpcs = 500;
   const size_t kMaxConcurrentRequests = kNumRpcs;
   // Create an EDS resource
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
