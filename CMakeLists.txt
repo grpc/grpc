@@ -2116,6 +2116,7 @@ add_library(grpc
   src/core/lib/event_engine/windows/iocp.cc
   src/core/lib/event_engine/windows/win_socket.cc
   src/core/lib/event_engine/windows/windows_engine.cc
+  src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
   src/core/lib/gprpp/time_averaged_stats.cc
@@ -2742,6 +2743,7 @@ add_library(grpc_unsecure
   src/core/lib/event_engine/windows/iocp.cc
   src/core/lib/event_engine/windows/win_socket.cc
   src/core/lib/event_engine/windows/windows_engine.cc
+  src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
   src/core/lib/gprpp/time_averaged_stats.cc
