@@ -3506,6 +3506,7 @@ targets:
   - mac
 - name: goaway_server_test
   build: test
+  run: false
   language: c
   headers:
   - test/core/end2end/cq_verifier.h
@@ -11136,6 +11137,7 @@ targets:
 - name: xds_csds_end2end_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - src/cpp/server/csds/csds.h
