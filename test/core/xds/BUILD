@@ -27,7 +27,7 @@ grpc_cc_test(
     language = "C++",
     deps = [
         "//:gpr",
-        "//:grpc",
+        "//:grpc_xds_client",
         "//test/core/util:grpc_test_util",
     ],
 )

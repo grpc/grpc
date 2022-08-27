@@ -40,7 +40,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
-#include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/spinlock.h"
 #include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gprpp/atomic_utils.h"
@@ -489,17 +488,9 @@ grpc_cq_completion* CqEventQueue::Pop() {
   grpc_cq_completion* c = nullptr;
 
   if (gpr_spinlock_trylock(&queue_lock_)) {
-    GRPC_STATS_INC_CQ_EV_QUEUE_TRYLOCK_SUCCESSES();
-
     bool is_empty = false;
     c = reinterpret_cast<grpc_cq_completion*>(queue_.PopAndCheckEnd(&is_empty));
     gpr_spinlock_unlock(&queue_lock_);
-
-    if (c == nullptr && !is_empty) {
-      GRPC_STATS_INC_CQ_EV_QUEUE_TRANSIENT_POP_FAILURES();
-    }
-  } else {
-    GRPC_STATS_INC_CQ_EV_QUEUE_TRYLOCK_FAILURES();
   }
 
   if (c) {
@@ -526,7 +517,6 @@ grpc_completion_queue* grpc_completion_queue_create_internal(
       &g_poller_vtable_by_poller_type[polling_type];
 
   grpc_core::ExecCtx exec_ctx;
-  GRPC_STATS_INC_CQS_CREATED();
 
   cq = static_cast<grpc_completion_queue*>(
       gpr_zalloc(sizeof(grpc_completion_queue) + vtable->data_size +

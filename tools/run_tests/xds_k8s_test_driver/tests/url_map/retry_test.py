@@ -104,7 +104,7 @@ class TestRetryUpTo3AttemptsAndFail(xds_url_map_testcase.XdsUrlMapTestCase):
                                 metadata=[
                                     (RpcTypeUnaryCall,
                                      _RPC_BEHAVIOR_HEADER_NAME,
-                                     'error-code-14,succeed-on-retry-attempt-4')
+                                     'succeed-on-retry-attempt-4,error-code-14')
                                 ],
                                 num_rpcs=_NUM_RPCS)
         self.assertRpcStatusCode(test_client,
@@ -145,7 +145,7 @@ class TestRetryUpTo4AttemptsAndSucceed(xds_url_map_testcase.XdsUrlMapTestCase):
                                 metadata=[
                                     (RpcTypeUnaryCall,
                                      _RPC_BEHAVIOR_HEADER_NAME,
-                                     'error-code-14,succeed-on-retry-attempt-4')
+                                     'succeed-on-retry-attempt-4,error-code-14')
                                 ],
                                 num_rpcs=_NUM_RPCS)
         self.assertRpcStatusCode(test_client,
