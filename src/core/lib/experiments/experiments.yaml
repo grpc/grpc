@@ -23,3 +23,4 @@
   tests:
   - test/core/iomgr:all
   - test/cpp/end2end:all
+  test_configs: [asan, tsan, dbg, opt]

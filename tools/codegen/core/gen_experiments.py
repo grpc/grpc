@@ -204,16 +204,18 @@ def edit_config(src, attr):
 for attr in attrs:
     if 'tests' not in attr or not attr['tests']:
         continue
-    with open(
-            "tools/internal_ci/linux/experiments/grpc_bazel_rbe_asan_experiment_%s.cfg"
-            % attr['name'], 'w') as CFG:
-        CFG.write(
-            edit_config("tools/internal_ci/linux/grpc_bazel_rbe_asan.cfg",
-                        attr))
-    with open(
-            "tools/internal_ci/linux/pull_request/experiments/grpc_bazel_rbe_asan_experiment_%s.cfg"
-            % attr['name'], 'w') as CFG:
-        CFG.write(
-            edit_config(
-                "tools/internal_ci/linux/pull_request/grpc_bazel_rbe_asan.cfg",
-                attr))
+    test_configs = attr['test_configs'] if 'test_configs' in attr else ['asan']
+    for test_config in test_configs:
+        with open(
+                "tools/internal_ci/linux/experiments/grpc_bazel_rbe_%s_experiment_%s.cfg"
+                % (test_config, attr['name']), 'w') as CFG:
+            CFG.write(
+                edit_config("tools/internal_ci/linux/grpc_bazel_rbe_%s.cfg" % test_config,
+                            attr))
+        with open(
+                "tools/internal_ci/linux/pull_request/experiments/grpc_bazel_rbe_%s_experiment_%s.cfg"
+                % (test_config, attr['name']), 'w') as CFG:
+            CFG.write(
+                edit_config(
+                    "tools/internal_ci/linux/pull_request/grpc_bazel_rbe_%s.cfg" % test_config,
+                    attr))
