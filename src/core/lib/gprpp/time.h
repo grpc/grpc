@@ -200,6 +200,7 @@ class Duration {
     }
     return *this;
   }
+  Duration& operator*=(double multiplier);
   Duration& operator+=(Duration other) {
     millis_ += other.millis_;
     return *this;
@@ -285,6 +286,11 @@ inline Duration Duration::FromSecondsAsDouble(double seconds) {
     return NegativeInfinity();
   }
   return Milliseconds(static_cast<int64_t>(millis));
+}
+
+inline Duration& Duration::operator*=(double multiplier) {
+  *this = *this * multiplier;
+  return *this;
 }
 
 inline Timestamp& Timestamp::operator+=(Duration duration) {

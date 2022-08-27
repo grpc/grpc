@@ -176,7 +176,7 @@ TEST_F(BinderServerTest, CreateChannelWithEndpointBinderMultipleConnections) {
   std::unique_ptr<grpc::Server> server = server_builder.BuildAndStart();
   void* raw_endpoint_binder = grpc::experimental::binder::GetEndpointBinder(
       "example.service.multiple.connections");
-  constexpr size_t kNumThreads = 128;
+  constexpr size_t kNumThreads = 10;
 
   auto thread_fn = [&](size_t id) {
     std::unique_ptr<grpc_binder::Binder> endpoint_binder =
@@ -225,7 +225,7 @@ TEST_F(BinderServerTest, CreateChannelWithEndpointBinderParallelRequests) {
   std::unique_ptr<grpc::testing::EchoTestService::Stub> stub =
       grpc::testing::EchoTestService::NewStub(channel);
 
-  constexpr size_t kNumRequests = 128;
+  constexpr size_t kNumRequests = 10;
 
   auto thread_fn = [&](size_t id) {
     grpc::testing::EchoRequest request;
