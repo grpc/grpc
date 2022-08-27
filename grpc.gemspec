@@ -874,6 +874,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/xds/xds_api.h )
   s.files += %w( src/core/ext/xds/xds_bootstrap.cc )
   s.files += %w( src/core/ext/xds/xds_bootstrap.h )
+  s.files += %w( src/core/ext/xds/xds_bootstrap_grpc.cc )
+  s.files += %w( src/core/ext/xds/xds_bootstrap_grpc.h )
   s.files += %w( src/core/ext/xds/xds_certificate_provider.cc )
   s.files += %w( src/core/ext/xds/xds_certificate_provider.h )
   s.files += %w( src/core/ext/xds/xds_channel_args.h )
