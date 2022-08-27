@@ -34,6 +34,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -103,8 +104,8 @@ class FailPolicyFactory : public LoadBalancingPolicyFactory {
   }
 };
 
-void RegisterFailPolicy() {
-  LoadBalancingPolicyRegistry::Builder::RegisterLoadBalancingPolicyFactory(
+void RegisterFailPolicy(CoreConfiguration::Builder* builder) {
+  builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
       absl::make_unique<FailPolicyFactory>());
 }
 
@@ -278,4 +279,6 @@ void retry_lb_fail(grpc_end2end_test_config config) {
   test_retry_lb_fail(config);
 }
 
-void retry_lb_fail_pre_init(void) { grpc_core::RegisterFailPolicy(); }
+void retry_lb_fail_pre_init(void) {
+  grpc_core::CoreConfiguration::RegisterBuilder(grpc_core::RegisterFailPolicy);
+}

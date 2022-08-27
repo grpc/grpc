@@ -33,9 +33,9 @@ namespace grpc_core {
 // A class that makes it easy to gracefully switch child policies.
 //
 // Callers should instantiate this instead of using
-// LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy().  Once
-// instantiated, this object will automatically take care of
-// constructing the child policy as needed upon receiving an update.
+// CoreConfiguration::Get().lb_policy_registry().CreateLoadBalancingPolicy().
+// Once instantiated, this object will automatically take care of constructing
+// the child policy as needed upon receiving an update.
 class ChildPolicyHandler : public LoadBalancingPolicy {
  public:
   ChildPolicyHandler(Args args, TraceFlag* tracer)
