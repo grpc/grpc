@@ -114,7 +114,7 @@ TEST(WorkSerializerTest, ExecuteMany) {
   grpc_core::WorkSerializer lock;
   {
     std::vector<std::unique_ptr<TestThread>> threads;
-    for (size_t i = 0; i < 100; ++i) {
+    for (size_t i = 0; i < 10; ++i) {
       threads.push_back(absl::make_unique<TestThread>(&lock));
     }
   }
@@ -175,7 +175,7 @@ TEST(WorkSerializerTest, ExecuteManyScheduleAndDrain) {
   grpc_core::WorkSerializer lock;
   {
     std::vector<std::unique_ptr<TestThreadScheduleAndDrain>> threads;
-    for (size_t i = 0; i < 100; ++i) {
+    for (size_t i = 0; i < 10; ++i) {
       threads.push_back(absl::make_unique<TestThreadScheduleAndDrain>(&lock));
     }
   }
@@ -186,7 +186,7 @@ TEST(WorkSerializerTest, ExecuteManyMixedRunScheduleAndDrain) {
   {
     std::vector<std::unique_ptr<TestThread>> run_threads;
     std::vector<std::unique_ptr<TestThreadScheduleAndDrain>> schedule_threads;
-    for (size_t i = 0; i < 50; ++i) {
+    for (size_t i = 0; i < 10; ++i) {
       run_threads.push_back(absl::make_unique<TestThread>(&lock));
       schedule_threads.push_back(
           absl::make_unique<TestThreadScheduleAndDrain>(&lock));
@@ -219,10 +219,10 @@ TEST(WorkSerializerTest, WorkSerializerDestructionRace) {
 // serializer destruction.
 TEST(WorkSerializerTest, WorkSerializerDestructionRaceMultipleThreads) {
   auto lock = std::make_shared<grpc_core::WorkSerializer>();
-  absl::Barrier barrier(51);
+  absl::Barrier barrier(11);
   std::vector<std::thread> threads;
-  threads.reserve(50);
-  for (int i = 0; i < 50; ++i) {
+  threads.reserve(10);
+  for (int i = 0; i < 10; ++i) {
     threads.emplace_back([lock, &barrier]() mutable {
       barrier.Block();
       lock->Run([lock]() mutable { lock.reset(); }, DEBUG_LOCATION);

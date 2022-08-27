@@ -38,12 +38,8 @@
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/ext/filters/client_channel/lb_policy/address_filtering.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
-#include "src/core/ext/filters/client_channel/lb_policy_factory.h"
-#include "src/core/ext/filters/client_channel/lb_policy_registry.h"
-#include "src/core/ext/filters/client_channel/subchannel_interface.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -58,6 +54,10 @@
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/load_balancing/lb_policy.h"
+#include "src/core/lib/load_balancing/lb_policy_factory.h"
+#include "src/core/lib/load_balancing/lb_policy_registry.h"
+#include "src/core/lib/load_balancing/subchannel_interface.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
@@ -845,7 +845,14 @@ void PriorityLb::ChildPriority::OnConnectivityStateUpdateLocked(
   // Store the state and picker.
   connectivity_state_ = state;
   connectivity_status_ = status;
-  picker_wrapper_ = MakeRefCounted<RefCountedPicker>(std::move(picker));
+  // When the failover timer fires, this method will be called with picker
+  // set to null, because we want to consider the child to be in
+  // TRANSIENT_FAILURE, but we have no new picker to report.  In that case,
+  // just keep using the old picker, in case we wind up delegating to this
+  // child when all priorities are failing.
+  if (picker != nullptr) {
+    picker_wrapper_ = MakeRefCounted<RefCountedPicker>(std::move(picker));
+  }
   // If we transition to state CONNECTING and we've not seen
   // TRANSIENT_FAILURE more recently than READY or IDLE, start failover
   // timer if not already pending.

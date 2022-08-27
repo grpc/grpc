@@ -26,7 +26,7 @@ grpc_cc_library(
     external_deps = ["gtest"],
     visibility = ["//test/core:__subpackages__"],
     deps = [
-        "//:gpr_base",
+        "//:gpr",
     ],
 )
 
@@ -37,7 +37,7 @@ grpc_cc_library(
     external_deps = ["gtest"],
     visibility = ["//test/core:__subpackages__"],
     deps = [
-        "//:gpr_base",
+        "//:gpr",
     ],
 )
 
@@ -228,6 +228,7 @@ grpc_cc_test(
     name = "activity_test",
     srcs = ["activity_test.cc"],
     external_deps = ["gtest"],
+    flaky = True,
     language = "c++",
     uses_event_engine = False,
     uses_polling = False,

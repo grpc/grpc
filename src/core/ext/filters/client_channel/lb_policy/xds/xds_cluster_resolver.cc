@@ -39,18 +39,15 @@
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/ext/filters/client_channel/lb_policy/address_filtering.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 #include "src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h"
 #include "src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
-#include "src/core/ext/filters/client_channel/lb_policy_factory.h"
-#include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
-#include "src/core/ext/filters/client_channel/subchannel_interface.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
+#include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_client_grpc.h"
 #include "src/core/ext/xds/xds_client_stats.h"
@@ -63,11 +60,14 @@
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/load_balancing/lb_policy.h"
+#include "src/core/lib/load_balancing/lb_policy_factory.h"
+#include "src/core/lib/load_balancing/lb_policy_registry.h"
+#include "src/core/lib/load_balancing/subchannel_interface.h"
 #include "src/core/lib/resolver/resolver.h"
 #include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/resolver/server_address.h"
@@ -926,7 +926,8 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
       }
       if (discovery_config.lrs_load_reporting_server.has_value()) {
         xds_cluster_impl_config["lrsLoadReportingServer"] =
-            discovery_config.lrs_load_reporting_server->ToJson();
+            GrpcXdsBootstrap::XdsServerToJson(
+                *discovery_config.lrs_load_reporting_server);
       }
       Json locality_picking_policy;
       if (XdsOutlierDetectionEnabled()) {
@@ -934,10 +935,6 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
         if (discovery_entry.config().outlier_detection_lb_config.has_value()) {
           outlier_detection_config =
               discovery_entry.config().outlier_detection_lb_config.value();
-        } else {
-          // outlier detection will be a no-op
-          outlier_detection_config["interval"] =
-              Duration::Infinity().ToJsonString();
         }
         outlier_detection_config["childPolicy"] = Json::Array{Json::Object{
             {"xds_cluster_impl_experimental",
@@ -1196,7 +1193,7 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
       } else {
         grpc_error_handle parse_error;
         discovery_mechanism->lrs_load_reporting_server.emplace(
-            XdsBootstrap::XdsServer::Parse(it->second, &parse_error));
+            GrpcXdsBootstrap::XdsServerParse(it->second, &parse_error));
         if (!GRPC_ERROR_IS_NONE(parse_error)) {
           error_list.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
               absl::StrCat("errors parsing lrs_load_reporting_server")));
@@ -1297,8 +1294,30 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
           static_cast<XdsClusterResolverLbConfig*>(old_config);
       XdsClusterResolverLbConfig* new_xds_cluster_resolver_config =
           static_cast<XdsClusterResolverLbConfig*>(new_config);
-      return old_xds_cluster_resolver_config->discovery_mechanisms() !=
-             new_xds_cluster_resolver_config->discovery_mechanisms();
+      if (old_xds_cluster_resolver_config->discovery_mechanisms().size() !=
+          new_xds_cluster_resolver_config->discovery_mechanisms().size()) {
+        return true;
+      }
+      for (size_t i = 0;
+           i < old_xds_cluster_resolver_config->discovery_mechanisms().size();
+           ++i) {
+        auto& old_discovery_mechanism =
+            old_xds_cluster_resolver_config->discovery_mechanisms()[i];
+        auto& new_discovery_mechanism =
+            new_xds_cluster_resolver_config->discovery_mechanisms()[i];
+        if (old_discovery_mechanism.type != new_discovery_mechanism.type ||
+            old_discovery_mechanism.cluster_name !=
+                new_discovery_mechanism.cluster_name ||
+            old_discovery_mechanism.eds_service_name !=
+                new_discovery_mechanism.eds_service_name ||
+            old_discovery_mechanism.dns_hostname !=
+                new_discovery_mechanism.dns_hostname ||
+            !(old_discovery_mechanism.lrs_load_reporting_server ==
+              new_discovery_mechanism.lrs_load_reporting_server)) {
+          return true;
+        }
+      }
+      return false;
     }
 
     OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(

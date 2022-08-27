@@ -45,7 +45,6 @@
 #include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/mpscq.h"
@@ -80,7 +79,6 @@ struct Server::RequestedCall {
         cq_bound_to_call(call_cq),
         call(call_arg),
         initial_metadata(initial_md) {
-    details->reserved = nullptr;
     data.batch.details = details;
   }
 
@@ -276,14 +274,12 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
       RequestedCall* rc =
           reinterpret_cast<RequestedCall*>(requests_per_cq_[cq_idx].TryPop());
       if (rc != nullptr) {
-        GRPC_STATS_INC_SERVER_CQS_CHECKED(i);
         calld->SetState(CallData::CallState::ACTIVATED);
         calld->Publish(cq_idx, rc);
         return;
       }
     }
     // No cq to take the request found; queue it on the slow list.
-    GRPC_STATS_INC_SERVER_SLOWPATH_REQUESTS_QUEUED();
     // We need to ensure that all the queues are empty.  We do this under
     // the server mu_call_ lock to ensure that if something is added to
     // an empty request queue, it will block until the call is actually
@@ -307,7 +303,6 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
         return;
       }
     }
-    GRPC_STATS_INC_SERVER_CQS_CHECKED(loop_count + requests_per_cq_.size());
     calld->SetState(CallData::CallState::ACTIVATED);
     calld->Publish(cq_idx, rc);
   }
@@ -1250,7 +1245,6 @@ void Server::CallData::Publish(size_t cq_idx, RequestedCall* rc) {
           grpc_slice_ref_internal(path_->c_slice());
       rc->data.batch.details->deadline =
           deadline_.as_timespec(GPR_CLOCK_MONOTONIC);
-      rc->data.batch.details->flags = recv_initial_metadata_flags_;
       break;
     case RequestedCall::Type::REGISTERED_CALL:
       *rc->data.registered.deadline =
@@ -1349,15 +1343,12 @@ void Server::CallData::RecvInitialMetadataBatchComplete(
 void Server::CallData::StartTransportStreamOpBatchImpl(
     grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
   if (batch->recv_initial_metadata) {
-    GPR_ASSERT(batch->payload->recv_initial_metadata.recv_flags == nullptr);
     recv_initial_metadata_ =
         batch->payload->recv_initial_metadata.recv_initial_metadata;
     original_recv_initial_metadata_ready_ =
         batch->payload->recv_initial_metadata.recv_initial_metadata_ready;
     batch->payload->recv_initial_metadata.recv_initial_metadata_ready =
         &recv_initial_metadata_ready_;
-    batch->payload->recv_initial_metadata.recv_flags =
-        &recv_initial_metadata_flags_;
   }
   if (batch->recv_trailing_metadata) {
     original_recv_trailing_metadata_ready_ =
@@ -1530,7 +1521,6 @@ grpc_call_error grpc_server_request_call(
     grpc_completion_queue* cq_for_notification, void* tag) {
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
-  GRPC_STATS_INC_SERVER_REQUESTED_CALLS();
   GRPC_API_TRACE(
       "grpc_server_request_call("
       "server=%p, call=%p, details=%p, initial_metadata=%p, "
@@ -1551,7 +1541,6 @@ grpc_call_error grpc_server_request_registered_call(
     grpc_completion_queue* cq_for_notification, void* tag_new) {
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
-  GRPC_STATS_INC_SERVER_REQUESTED_CALLS();
   auto* rm =
       static_cast<grpc_core::Server::RegisteredMethod*>(registered_method);
   GRPC_API_TRACE(

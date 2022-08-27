@@ -30,10 +30,9 @@
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "envoy/admin/v3/config_dump_shared.upb.h"
+#include "upb/arena.h"
 #include "upb/def.hpp"
 
-#include "src/core/ext/xds/certificate_provider_store.h"
-#include "src/core/ext/xds/upb_utils.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_client_stats.h"
 #include "src/core/lib/debug/trace.h"
@@ -45,7 +44,6 @@ namespace grpc_core {
 class XdsClient;
 
 // TODO(roth): When we have time, split this into multiple pieces:
-// - a common upb-based parsing framework (combine with XdsEncodingContext)
 // - ADS request/response handling
 // - LRS request/response handling
 // - CSDS response generation
@@ -69,7 +67,7 @@ class XdsApi {
     virtual absl::Status ProcessAdsResponseFields(AdsResponseFields fields) = 0;
 
     // Called to parse each individual resource in the ADS response.
-    virtual void ParseResource(const XdsEncodingContext& context, size_t idx,
+    virtual void ParseResource(upb_Arena* arena, size_t idx,
                                absl::string_view type_url,
                                absl::string_view serialized_resource) = 0;
   };
@@ -142,7 +140,6 @@ class XdsApi {
                 "");
 
   XdsApi(XdsClient* client, TraceFlag* tracer, const XdsBootstrap::Node* node,
-         const CertificateProviderStore::PluginDefinitionMap* map,
          upb::SymbolTable* symtab);
 
   // Creates an ADS request.
@@ -181,9 +178,7 @@ class XdsApi {
   XdsClient* client_;
   TraceFlag* tracer_;
   const XdsBootstrap::Node* node_;  // Do not own.
-  const CertificateProviderStore::PluginDefinitionMap*
-      certificate_provider_definition_map_;  // Do not own.
-  upb::SymbolTable* symtab_;                 // Do not own.
+  upb::SymbolTable* symtab_;        // Do not own.
   const std::string build_version_;
   const std::string user_agent_name_;
   const std::string user_agent_version_;
