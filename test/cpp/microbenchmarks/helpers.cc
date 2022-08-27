@@ -59,11 +59,6 @@ void TrackCounters::AddLabel(const std::string& label) {
 }
 
 void TrackCounters::AddToLabel(std::ostream& out, benchmark::State& state) {
-  // Use the parameters to avoid unused-parameter warnings depending on the
-  // #define's present
-  (void)out;
-  (void)state;
-#ifdef GRPC_COLLECT_STATS
   grpc_stats_data stats_end;
   grpc_stats_collect(&stats_end);
   grpc_stats_data stats;
@@ -75,9 +70,10 @@ void TrackCounters::AddToLabel(std::ostream& out, benchmark::State& state) {
   }
   for (int i = 0; i < GRPC_STATS_HISTOGRAM_COUNT; i++) {
     out << " " << grpc_stats_histogram_name[i] << "-median:"
-        << grpc_stats_histo_percentile(&stats, (grpc_stats_histograms)i, 50.0)
+        << grpc_stats_histo_percentile(
+               &stats, static_cast<grpc_stats_histograms>(i), 50.0)
         << " " << grpc_stats_histogram_name[i] << "-99p:"
-        << grpc_stats_histo_percentile(&stats, (grpc_stats_histograms)i, 99.0);
+        << grpc_stats_histo_percentile(
+               &stats, static_cast<grpc_stats_histograms>(i), 99.0);
   }
-#endif
 }
