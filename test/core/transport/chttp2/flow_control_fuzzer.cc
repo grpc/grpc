@@ -28,8 +28,6 @@
 #include <utility>
 #include <vector>
 
-#include <google/protobuf/repeated_ptr_field.h>
-
 #include "absl/base/attributes.h"
 #include "absl/memory/memory.h"
 #include "absl/status/status.h"
@@ -49,6 +47,8 @@
 #include "src/core/lib/transport/bdp_estimator.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/transport/chttp2/flow_control_fuzzer.pb.h"
+
+// IWYU pragma: no_include <google/protobuf/repeated_ptr_field.h>
 
 bool squelch = true;
 

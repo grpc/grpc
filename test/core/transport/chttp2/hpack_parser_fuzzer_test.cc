@@ -20,8 +20,6 @@
 #include <memory>
 #include <string>
 
-#include <google/protobuf/repeated_ptr_field.h>
-
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
@@ -37,6 +35,8 @@
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/transport/chttp2/hpack_parser_fuzzer.pb.h"
+
+// IWYU pragma: no_include <google/protobuf/repeated_ptr_field.h>
 
 bool squelch = true;
 bool leak_check = true;
