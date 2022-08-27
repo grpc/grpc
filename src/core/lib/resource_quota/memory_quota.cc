@@ -40,7 +40,7 @@
 GPR_GLOBAL_CONFIG_DEFINE_BOOL(grpc_experimental_smooth_memory_presure, false,
                               "smooth the value of memory pressure over time");
 GPR_GLOBAL_CONFIG_DEFINE_BOOL(
-    grpc_experimental_enable_periodic_resource_quota_reclamation, false,
+    grpc_experimental_enable_periodic_resource_quota_reclamation, true,
     "Enable experimental feature to reclaim resource quota periodically");
 GPR_GLOBAL_CONFIG_DEFINE_INT32(
     grpc_experimental_max_quota_buffer_size, 1024 * 1024,
