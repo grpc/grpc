@@ -63,7 +63,6 @@ grpc_iocp_work_status grpc_iocp_work(grpc_core::Timestamp deadline) {
   LPOVERLAPPED overlapped;
   grpc_winsocket* socket;
   grpc_winsocket_callback_info* info;
-  GRPC_STATS_INC_SYSCALL_POLL();
   success =
       GetQueuedCompletionStatus(g_iocp, &bytes, &completion_key, &overlapped,
                                 deadline_to_millis_timeout(deadline));

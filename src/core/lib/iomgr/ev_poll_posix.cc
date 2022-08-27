@@ -771,7 +771,6 @@ static grpc_error_handle pollset_kick_ext(grpc_pollset* p,
                                           uint32_t flags) {
   GPR_TIMER_SCOPE("pollset_kick_ext", 0);
   grpc_error_handle error = GRPC_ERROR_NONE;
-  GRPC_STATS_INC_POLLSET_KICK();
 
   /* pollset->mu already held */
   if (specific_worker != nullptr) {
@@ -1024,7 +1023,6 @@ static grpc_error_handle pollset_work(grpc_pollset* pollset,
       /* TODO(vpai): Consider first doing a 0 timeout poll here to avoid
          even going into the blocking annotation if possible */
       GRPC_SCHEDULING_START_BLOCKING_REGION;
-      GRPC_STATS_INC_SYSCALL_POLL();
       r = grpc_poll_function(pfds, pfd_count, timeout);
       GRPC_SCHEDULING_END_BLOCKING_REGION;
 
