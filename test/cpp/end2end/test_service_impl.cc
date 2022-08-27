@@ -23,6 +23,8 @@
 
 #include <gtest/gtest.h>
 
+#include "absl/synchronization/notification.h"
+
 #include <grpc/support/log.h>
 #include <grpcpp/alarm.h>
 #include <grpcpp/security/credentials.h>
@@ -161,7 +163,8 @@ ServerUnaryReactor* CallbackTestServiceImpl::Echo(
         // Set an alarm for that much time
         alarm_.Set(
             gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                         gpr_time_from_micros(req_->param().server_sleep_us(),
+                         gpr_time_from_micros(req_->param().server_sleep_us() *
+                                                  grpc_test_slowdown_factor(),
                                               GPR_TIMESPAN)),
             [this](bool ok) { NonDelayed(ok); });
         return;
@@ -248,7 +251,8 @@ ServerUnaryReactor* CallbackTestServiceImpl::Echo(
       } else if (req_->has_param() && req_->param().server_cancel_after_us()) {
         alarm_.Set(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                                 gpr_time_from_micros(
-                                    req_->param().server_cancel_after_us(),
+                                    req_->param().server_cancel_after_us() *
+                                        grpc_test_slowdown_factor(),
                                     GPR_TIMESPAN)),
                    [this](bool) { Finish(Status::CANCELLED); });
         return;
@@ -570,6 +574,7 @@ CallbackTestServiceImpl::BidiStream(CallbackServerContext* context) {
       delete this;
     }
     void OnCancel() override {
+      cancel_notification_.Notify();
       EXPECT_TRUE(setup_done_);
       EXPECT_TRUE(ctx_->IsCancelled());
       FinishOnce(Status::CANCELLED);
@@ -589,6 +594,7 @@ CallbackTestServiceImpl::BidiStream(CallbackServerContext* context) {
           }
         }
       } else if (client_try_cancel_) {
+        cancel_notification_.WaitForNotificationWithTimeout(absl::Seconds(10));
         EXPECT_TRUE(ctx_->IsCancelled());
       }
 
@@ -631,6 +637,7 @@ CallbackTestServiceImpl::BidiStream(CallbackServerContext* context) {
     bool setup_done_{false};
     std::thread finish_thread_;
     bool client_try_cancel_ = false;
+    absl::Notification cancel_notification_;
   };
 
   return new Reactor(context);

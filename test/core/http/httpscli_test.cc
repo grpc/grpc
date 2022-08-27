@@ -231,7 +231,7 @@ TEST_F(HttpsCliTest, CancelGetDuringSSLHandshake) {
           kWaitForClientToSendFirstBytes,
       grpc_core::testing::FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
   // Use multiple threads to try to trigger races etc.
-  int kNumThreads = 100;
+  int kNumThreads = 10;
   std::vector<std::thread> threads;
   threads.reserve(kNumThreads);
   for (int i = 0; i < kNumThreads; i++) {

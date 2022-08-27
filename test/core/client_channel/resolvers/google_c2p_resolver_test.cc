@@ -71,7 +71,7 @@ TEST(DestroyGoogleC2pChannelWithActiveConnectStressTest,
           kWaitForClientToSendFirstBytes,
       grpc_core::testing::FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
   std::vector<std::unique_ptr<std::thread>> threads;
-  const int kNumThreads = 100;
+  const int kNumThreads = 10;
   threads.reserve(kNumThreads);
   for (int i = 0; i < kNumThreads; i++) {
     threads.emplace_back(
@@ -90,7 +90,7 @@ TEST(DestroyGoogleC2pChannelWithActiveConnectStressTest,
   int port = grpc_pick_unused_port_or_die();
   std::string address = absl::StrFormat("[::1]:%d", port);
   std::vector<std::unique_ptr<std::thread>> threads;
-  const int kNumThreads = 100;
+  const int kNumThreads = 10;
   threads.reserve(kNumThreads);
   for (int i = 0; i < kNumThreads; i++) {
     threads.emplace_back(

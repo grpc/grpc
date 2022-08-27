@@ -230,7 +230,7 @@ TEST(MemoryQuotaStressTest, MainTest) {
         "platform independent, we simply skip this test in 32-bit builds.");
     GTEST_SKIP();
   }
-  grpc_core::StressTest(16, 64).Run(8);
+  grpc_core::StressTest(16, 20).Run(8);
 }
 
 int main(int argc, char** argv) {

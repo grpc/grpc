@@ -31,6 +31,8 @@
 
 namespace grpc_core {
 
+class XdsClient;
+
 // Interface for an xDS resource type.
 // Used to inject type-specific logic into XdsClient.
 class XdsResourceType {

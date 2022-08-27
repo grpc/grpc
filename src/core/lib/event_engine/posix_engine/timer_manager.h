@@ -60,6 +60,8 @@ class TimerManager final : public grpc_event_engine::experimental::Forkable {
   void PostforkParent() override;
   void PostforkChild() override;
 
+  static bool IsTimerManagerThread();
+
  private:
   struct RunThreadArgs {
     TimerManager* self;
@@ -80,13 +82,33 @@ class TimerManager final : public grpc_event_engine::experimental::Forkable {
 
   void StartThread() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   static void RunThread(void* arg);
+  void Run(grpc_core::Thread thread);
   void MainLoop();
   void RunSomeTimers(std::vector<experimental::EventEngine::Closure*> timers);
   bool WaitUntil(grpc_core::Timestamp next);
   void Kick();
 
   grpc_core::Mutex mu_;
-  grpc_core::CondVar cv_;
+  // Condvar associated with decrementing the thread count.
+  // Threads will signal this when thread count reaches zero, and the forking
+  // code *or* the destructor will wait upon it.
+  grpc_core::CondVar cv_threadcount_;
+  // Condvar associated with threads waiting to wakeup and work.
+  // Threads wait on this until either a timeout is reached or another thread is
+  // needed to wait for a timeout.
+  // On shutdown we SignalAll against this to wake up all threads and have them
+  // finish.
+  // On kick we Signal against this to wake up at least one thread (but not
+  // all)! Similarly when we note that no thread is watching timers.
+  //
+  // This is a different condvar than cv_threadcount_!
+  // If this were the same:
+  // - thread exits would require a SignalAll to ensure that the specific thread
+  //   we want to wake is woken up.
+  // - kicks would need to signal all threads to avoid having the kick absorbed
+  //   by a shutdown thread and cause a deadlock, leading to thundering herd
+  //   problems in the common case.
+  grpc_core::CondVar cv_wait_;
   Host host_;
   // number of threads in the system
   size_t thread_count_ ABSL_GUARDED_BY(mu_) = 0;
