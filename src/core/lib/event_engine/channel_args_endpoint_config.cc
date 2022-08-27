@@ -15,11 +15,7 @@
 
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 
-#include <string>
-
 #include "absl/types/optional.h"
-
-#include <grpc/event_engine/endpoint_config.h>
 
 #include "src/core/lib/channel/channel_args.h"
 

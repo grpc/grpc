@@ -26,9 +26,9 @@
 using ::grpc_event_engine::experimental::ChannelArgsEndpointConfig;
 
 TEST(EndpointConfigTest, CanSRetrieveValuesFromChannelArgs) {
-  grpc_arg arg = grpc_channel_arg_integer_create(const_cast<char*>("arst"), 3);
-  const grpc_channel_args args = {1, &arg};
-  ChannelArgsEndpointConfig config(grpc_core::ChannelArgs::FromC(&args));
+  grpc_core::ChannelArgs args;
+  args = args.Set("arst", 3);
+  ChannelArgsEndpointConfig config(args);
   EXPECT_EQ(*config.GetInt("arst"), 3);
 }
 

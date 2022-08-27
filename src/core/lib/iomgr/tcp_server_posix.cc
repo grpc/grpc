@@ -280,7 +280,7 @@ static void on_read(void* arg, grpc_error_handle err) {
         read_notifier_pollset, acceptor);
   }
 
-  GPR_UNREACHABLE_CODE(return);
+  GPR_UNREACHABLE_CODE(return );
 
 error:
   gpr_mu_lock(&sp->server->mu);

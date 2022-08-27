@@ -146,11 +146,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "gamma"  # @unused
+g_stands_for = "galley"  # @unused
 
-core_version = "26.0.0"  # @unused
+core_version = "27.0.0"  # @unused
 
-version = "1.49.0-dev"  # @unused
+version = "1.50.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -428,6 +428,7 @@ grpc_cc_library(
         "grpc_trace",
         "http_connect_handshaker",
         "iomgr_timer",
+        "posix_event_engine_timer_manager",
         "slice",
         "tcp_connect_handshaker",
     ],
@@ -493,6 +494,7 @@ grpc_cc_library(
         "grpc_trace",
         "http_connect_handshaker",
         "iomgr_timer",
+        "posix_event_engine_timer_manager",
         "slice",
         "tcp_connect_handshaker",
     ],
@@ -1273,7 +1275,6 @@ grpc_cc_library(
         "exec_ctx",
         "gpr",
         "poll",
-        "ref_counted",
         "time",
     ],
 )
@@ -2238,6 +2239,7 @@ grpc_cc_library(
     deps = [
         "gpr",
         "gpr_platform",
+        "no_destruct",
     ],
 )
 
@@ -2361,6 +2363,7 @@ grpc_cc_library(
         "forkable",
         "gpr",
         "gpr_codegen",
+        "gpr_tls",
         "posix_event_engine_timer",
         "time",
     ],
@@ -3881,7 +3884,9 @@ grpc_cc_library(
         "src/core/ext/filters/fault_injection/service_config_parser.h",
     ],
     external_deps = [
+        "absl/base:core_headers",
         "absl/memory",
+        "absl/random",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -4175,6 +4180,7 @@ grpc_cc_library(
         "src/core/ext/xds/file_watcher_certificate_provider_factory.cc",
         "src/core/ext/xds/xds_api.cc",
         "src/core/ext/xds/xds_bootstrap.cc",
+        "src/core/ext/xds/xds_bootstrap_grpc.cc",
         "src/core/ext/xds/xds_certificate_provider.cc",
         "src/core/ext/xds/xds_client.cc",
         "src/core/ext/xds/xds_client_grpc.cc",
@@ -4202,6 +4208,7 @@ grpc_cc_library(
         "src/core/ext/xds/upb_utils.h",
         "src/core/ext/xds/xds_api.h",
         "src/core/ext/xds/xds_bootstrap.h",
+        "src/core/ext/xds/xds_bootstrap_grpc.h",
         "src/core/ext/xds/xds_certificate_provider.h",
         "src/core/ext/xds/xds_channel_args.h",
         "src/core/ext/xds/xds_client.h",
@@ -4660,12 +4667,12 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "debug_location",
+        "dual_ref_counted",
         "gpr",
         "grpc_base",
         "grpc_codegen",
         "iomgr_fwd",
         "lb_policy",
-        "orphanable",
         "ref_counted_ptr",
         "server_address",
         "subchannel_interface",
@@ -4738,7 +4745,6 @@ grpc_cc_library(
         "lb_policy_factory",
         "lb_policy_registry",
         "orphanable",
-        "ref_counted",
         "ref_counted_ptr",
         "server_address",
         "sockaddr_utils",

@@ -983,7 +983,7 @@ TEST_F(SingleBalancerTest, SecureNamingDeathTest) {
 TEST_F(SingleBalancerTest, InitiallyEmptyServerlist) {
   SetNextResolutionAllBalancers();
   const int kServerlistDelayMs = 500 * grpc_test_slowdown_factor();
-  const int kCallDeadlineMs = kServerlistDelayMs * 2;
+  const int kCallDeadlineMs = kServerlistDelayMs * 10;
   // First response is an empty serverlist, sent right away.
   ScheduleResponseForBalancer(0, LoadBalanceResponse(), 0);
   // Send non-empty serverlist only after kServerlistDelayMs

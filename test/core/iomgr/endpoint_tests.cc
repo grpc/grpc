@@ -136,7 +136,7 @@ static void read_and_write_test_read_handler(void* data,
   state->bytes_read += count_slices(
       state->incoming.slices, state->incoming.count, &state->current_read_data);
   if (state->bytes_read == state->target_bytes || !GRPC_ERROR_IS_NONE(error)) {
-    gpr_log(GPR_INFO, "Read handler done");
+    gpr_log(GPR_DEBUG, "Read handler done");
     gpr_mu_lock(g_mu);
     state->read_done = 1 + (GRPC_ERROR_IS_NONE(error));
     GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, nullptr));
@@ -185,7 +185,7 @@ static void read_and_write_test_write_handler(void* data,
     }
   }
 
-  gpr_log(GPR_INFO, "Write handler done");
+  gpr_log(GPR_DEBUG, "Write handler done");
   gpr_mu_lock(g_mu);
   state->write_done = 1 + (GRPC_ERROR_IS_NONE(error));
   GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, nullptr));
@@ -205,7 +205,7 @@ static void read_and_write_test(grpc_endpoint_test_config config,
       begin_test(config, "read_and_write_test", slice_size);
   grpc_core::ExecCtx exec_ctx;
   auto deadline = grpc_core::Timestamp::FromTimespecRoundUp(
-      grpc_timeout_seconds_to_deadline(60));
+      grpc_timeout_seconds_to_deadline(300));
   gpr_log(GPR_DEBUG,
           "num_bytes=%" PRIuPTR " write_size=%" PRIuPTR " slice_size=%" PRIuPTR
           " shutdown=%d",
@@ -348,7 +348,7 @@ void grpc_endpoint_tests(grpc_endpoint_test_config config,
   g_pollset = pollset;
   g_mu = mu;
   multiple_shutdown_test(config);
-  for (int i = 1; i <= 8192; i = i * 2) {
+  for (int i = 1; i <= 10000; i = i * 10) {
     read_and_write_test(config, 10000000, 100000, 8192, i, false);
     read_and_write_test(config, 1000000, 100000, 1, i, false);
     read_and_write_test(config, 100000000, 100000, 1, i, true);
