@@ -127,13 +127,16 @@ with open('src/core/lib/experiments/experiments.cc', 'w') as C:
     print(file=C)
     print("namespace {", file=C)
     for attr in attrs:
-        print("const char* const description_%s = %s;" % (attr['name'], c_str(attr['description'])), file=C)
+        print("const char* const description_%s = %s;" %
+              (attr['name'], c_str(attr['description'])),
+              file=C)
     print("}", file=C)
     print(file=C)
     for attr in attrs:
         print(
             "GPR_GLOBAL_CONFIG_DEFINE_BOOL(grpc_experimental_enable_%s, %s, description_%s);"
-            % (attr['name'], 'true' if attr['default'] else 'false', attr['name']),
+            % (attr['name'], 'true' if attr['default'] else 'false',
+               attr['name']),
             file=C)
     print(file=C)
     print("namespace grpc_core {", file=C)
