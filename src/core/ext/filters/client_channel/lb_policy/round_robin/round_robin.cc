@@ -37,6 +37,7 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy/subchannel_list.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -182,12 +183,12 @@ class RoundRobin : public LoadBalancingPolicy {
   void ShutdownLocked() override;
 
   // List of subchannels.
-  OrphanablePtr<RoundRobinSubchannelList> subchannel_list_;
+  RefCountedPtr<RoundRobinSubchannelList> subchannel_list_;
   // Latest pending subchannel list.
   // When we get an updated address list, we create a new subchannel list
   // for it here, and we wait to swap it into subchannel_list_ until the new
   // list becomes READY.
-  OrphanablePtr<RoundRobinSubchannelList> latest_pending_subchannel_list_;
+  RefCountedPtr<RoundRobinSubchannelList> latest_pending_subchannel_list_;
 
   bool shutdown_ = false;
 };
@@ -288,7 +289,7 @@ void RoundRobin::UpdateLocked(UpdateArgs args) {
     gpr_log(GPR_INFO, "[RR %p] replacing previous pending subchannel list %p",
             this, latest_pending_subchannel_list_.get());
   }
-  latest_pending_subchannel_list_ = MakeOrphanable<RoundRobinSubchannelList>(
+  latest_pending_subchannel_list_ = MakeRefCounted<RoundRobinSubchannelList>(
       this, std::move(addresses), args.args);
   latest_pending_subchannel_list_->StartWatchingLocked();
   // If the new list is empty, immediately promote it to
@@ -520,12 +521,9 @@ class RoundRobinFactory : public LoadBalancingPolicyFactory {
 
 }  // namespace
 
-}  // namespace grpc_core
-
-void grpc_lb_policy_round_robin_init() {
-  grpc_core::LoadBalancingPolicyRegistry::Builder::
-      RegisterLoadBalancingPolicyFactory(
-          absl::make_unique<grpc_core::RoundRobinFactory>());
+void RegisterRoundRobinLbPolicy(CoreConfiguration::Builder* builder) {
+  builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
+      absl::make_unique<RoundRobinFactory>());
 }
 
-void grpc_lb_policy_round_robin_shutdown() {}
+}  // namespace grpc_core

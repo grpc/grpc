@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "test/cpp/end2end/connection_delay_injector.h"
+#include "test/cpp/end2end/connection_attempt_injector.h"
 
 #include <memory>
 
@@ -29,7 +29,7 @@ namespace grpc {
 namespace testing {
 
 //
-// ConnectionAttemptInjector
+// ConnectionAttemptInjector static setup
 //
 
 namespace {
@@ -39,17 +39,30 @@ grpc_tcp_client_vtable* g_original_vtable = nullptr;
 grpc_core::Mutex* g_mu = nullptr;
 ConnectionAttemptInjector* g_injector ABSL_GUARDED_BY(*g_mu) = nullptr;
 
-int64_t TcpConnectWithDelay(grpc_closure* closure, grpc_endpoint** ep,
-                            grpc_pollset_set* interested_parties,
-                            const grpc_channel_args* channel_args,
-                            const grpc_resolved_address* addr,
-                            grpc_core::Timestamp deadline) {
+}  // namespace
+
+grpc_tcp_client_vtable ConnectionAttemptInjector::kDelayedConnectVTable = {
+    ConnectionAttemptInjector::TcpConnect,
+    ConnectionAttemptInjector::TcpConnectCancel};
+
+void ConnectionAttemptInjector::Init() {
+  g_mu = new grpc_core::Mutex();
+  g_original_vtable = grpc_tcp_client_impl;
+  grpc_tcp_client_impl = &kDelayedConnectVTable;
+}
+
+int64_t ConnectionAttemptInjector::TcpConnect(
+    grpc_closure* closure, grpc_endpoint** ep,
+    grpc_pollset_set* interested_parties, const grpc_channel_args* channel_args,
+    const grpc_resolved_address* addr, grpc_core::Timestamp deadline) {
   grpc_core::MutexLock lock(g_mu);
+  // If there's no injector, use the original vtable.
   if (g_injector == nullptr) {
     g_original_vtable->connect(closure, ep, interested_parties, channel_args,
                                addr, deadline);
     return 0;
   }
+  // Otherwise, use the injector.
   g_injector->HandleConnection(closure, ep, interested_parties, channel_args,
                                addr, deadline);
   return 0;
@@ -60,25 +73,16 @@ int64_t TcpConnectWithDelay(grpc_closure* closure, grpc_endpoint** ep,
 // g_original_vtable->cancel_connect(). If the attempt has not actually been
 // started, it should mark the connect request as cancelled, so that when the
 // request is resumed, it will not actually proceed.
-bool TcpConnectCancel(int64_t /*connection_handle*/) { return false; }
-
-grpc_tcp_client_vtable kDelayedConnectVTable = {TcpConnectWithDelay,
-                                                TcpConnectCancel};
-
-}  // namespace
-
-void ConnectionAttemptInjector::Init() {
-  g_mu = new grpc_core::Mutex();
-  g_original_vtable = grpc_tcp_client_impl;
-  grpc_tcp_client_impl = &kDelayedConnectVTable;
+bool ConnectionAttemptInjector::TcpConnectCancel(
+    int64_t /*connection_handle*/) {
+  return false;
 }
 
-ConnectionAttemptInjector::~ConnectionAttemptInjector() {
-  grpc_core::MutexLock lock(g_mu);
-  g_injector = nullptr;
-}
+//
+// ConnectionAttemptInjector instance
+//
 
-void ConnectionAttemptInjector::Start() {
+ConnectionAttemptInjector::ConnectionAttemptInjector() {
   // Fail if ConnectionAttemptInjector::Init() was not called after
   // grpc_init() to inject the vtable.
   GPR_ASSERT(grpc_tcp_client_impl == &kDelayedConnectVTable);
@@ -87,12 +91,93 @@ void ConnectionAttemptInjector::Start() {
   g_injector = this;
 }
 
-void ConnectionAttemptInjector::AttemptConnection(
+ConnectionAttemptInjector::~ConnectionAttemptInjector() {
+  grpc_core::MutexLock lock(g_mu);
+  g_injector = nullptr;
+}
+
+std::unique_ptr<ConnectionAttemptInjector::Hold>
+ConnectionAttemptInjector::AddHold(int port, bool intercept_completion) {
+  grpc_core::MutexLock lock(&mu_);
+  auto hold = absl::make_unique<Hold>(this, port, intercept_completion);
+  holds_.push_back(hold.get());
+  return hold;
+}
+
+void ConnectionAttemptInjector::SetDelay(grpc_core::Duration delay) {
+  grpc_core::MutexLock lock(&mu_);
+  delay_ = delay;
+}
+
+void ConnectionAttemptInjector::HandleConnection(
     grpc_closure* closure, grpc_endpoint** ep,
     grpc_pollset_set* interested_parties, const grpc_channel_args* channel_args,
     const grpc_resolved_address* addr, grpc_core::Timestamp deadline) {
+  const int port = grpc_sockaddr_get_port(addr);
+  gpr_log(GPR_INFO, "==> HandleConnection(): port=%d", port);
+  {
+    grpc_core::MutexLock lock(&mu_);
+    // First, check if there's a hold request for this port.
+    for (auto it = holds_.begin(); it != holds_.end(); ++it) {
+      Hold* hold = *it;
+      if (port == hold->port_) {
+        gpr_log(GPR_INFO, "*** INTERCEPTING CONNECTION ATTEMPT");
+        if (hold->intercept_completion_) {
+          hold->original_on_complete_ = closure;
+          closure = GRPC_CLOSURE_INIT(&hold->on_complete_, Hold::OnComplete,
+                                      hold, nullptr);
+        }
+        hold->queued_attempt_ = absl::make_unique<QueuedAttempt>(
+            closure, ep, interested_parties, channel_args, addr, deadline);
+        hold->start_cv_.Signal();
+        holds_.erase(it);
+        return;
+      }
+    }
+    // Otherwise, if there's a configured delay, impose it.
+    if (delay_.has_value()) {
+      new InjectedDelay(*delay_, closure, ep, interested_parties, channel_args,
+                        addr, deadline);
+      return;
+    }
+  }
+  // Anything we're not holding or delaying should proceed normally.
   g_original_vtable->connect(closure, ep, interested_parties, channel_args,
                              addr, deadline);
+}
+
+//
+// ConnectionAttemptInjector::QueuedAttempt
+//
+
+ConnectionAttemptInjector::QueuedAttempt::QueuedAttempt(
+    grpc_closure* closure, grpc_endpoint** ep,
+    grpc_pollset_set* interested_parties, const grpc_channel_args* channel_args,
+    const grpc_resolved_address* addr, grpc_core::Timestamp deadline)
+    : closure_(closure),
+      endpoint_(ep),
+      interested_parties_(interested_parties),
+      channel_args_(grpc_channel_args_copy(channel_args)),
+      deadline_(deadline) {
+  memcpy(&address_, addr, sizeof(address_));
+}
+
+ConnectionAttemptInjector::QueuedAttempt::~QueuedAttempt() {
+  GPR_ASSERT(closure_ == nullptr);
+  grpc_channel_args_destroy(channel_args_);
+}
+
+void ConnectionAttemptInjector::QueuedAttempt::Resume() {
+  GPR_ASSERT(closure_ != nullptr);
+  g_original_vtable->connect(closure_, endpoint_, interested_parties_,
+                             channel_args_, &address_, deadline_);
+  closure_ = nullptr;
+}
+
+void ConnectionAttemptInjector::QueuedAttempt::Fail(grpc_error_handle error) {
+  GPR_ASSERT(closure_ != nullptr);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure_, error);
+  closure_ = nullptr;
 }
 
 //
@@ -113,34 +198,21 @@ ConnectionAttemptInjector::InjectedDelay::InjectedDelay(
 void ConnectionAttemptInjector::InjectedDelay::TimerCallback(
     void* arg, grpc_error_handle /*error*/) {
   auto* self = static_cast<InjectedDelay*>(arg);
-  self->BeforeResumingAction();
   self->attempt_.Resume();
   delete self;
 }
 
 //
-// ConnectionDelayInjector
+// ConnectionAttemptInjector::Hold
 //
 
-void ConnectionDelayInjector::HandleConnection(
-    grpc_closure* closure, grpc_endpoint** ep,
-    grpc_pollset_set* interested_parties, const grpc_channel_args* channel_args,
-    const grpc_resolved_address* addr, grpc_core::Timestamp deadline) {
-  new InjectedDelay(duration_, closure, ep, interested_parties, channel_args,
-                    addr, deadline);
-}
-
-//
-// ConnectionHoldInjector::Hold
-//
-
-ConnectionHoldInjector::Hold::Hold(ConnectionHoldInjector* injector, int port,
-                                   bool intercept_completion)
+ConnectionAttemptInjector::Hold::Hold(ConnectionAttemptInjector* injector,
+                                      int port, bool intercept_completion)
     : injector_(injector),
       port_(port),
       intercept_completion_(intercept_completion) {}
 
-void ConnectionHoldInjector::Hold::Wait() {
+void ConnectionAttemptInjector::Hold::Wait() {
   gpr_log(GPR_INFO, "=== WAITING FOR CONNECTION ATTEMPT ON PORT %d ===", port_);
   grpc_core::MutexLock lock(&injector_->mu_);
   while (queued_attempt_ == nullptr) {
@@ -149,7 +221,7 @@ void ConnectionHoldInjector::Hold::Wait() {
   gpr_log(GPR_INFO, "=== CONNECTION ATTEMPT STARTED ON PORT %d ===", port_);
 }
 
-void ConnectionHoldInjector::Hold::Resume() {
+void ConnectionAttemptInjector::Hold::Resume() {
   gpr_log(GPR_INFO, "=== RESUMING CONNECTION ATTEMPT ON PORT %d ===", port_);
   grpc_core::ExecCtx exec_ctx;
   std::unique_ptr<QueuedAttempt> attempt;
@@ -160,7 +232,7 @@ void ConnectionHoldInjector::Hold::Resume() {
   attempt->Resume();
 }
 
-void ConnectionHoldInjector::Hold::Fail(grpc_error_handle error) {
+void ConnectionAttemptInjector::Hold::Fail(grpc_error_handle error) {
   gpr_log(GPR_INFO, "=== FAILING CONNECTION ATTEMPT ON PORT %d ===", port_);
   grpc_core::ExecCtx exec_ctx;
   std::unique_ptr<QueuedAttempt> attempt;
@@ -171,7 +243,7 @@ void ConnectionHoldInjector::Hold::Fail(grpc_error_handle error) {
   attempt->Fail(error);
 }
 
-void ConnectionHoldInjector::Hold::WaitForCompletion() {
+void ConnectionAttemptInjector::Hold::WaitForCompletion() {
   gpr_log(GPR_INFO,
           "=== WAITING FOR CONNECTION COMPLETION ON PORT %d ===", port_);
   grpc_core::MutexLock lock(&injector_->mu_);
@@ -181,13 +253,13 @@ void ConnectionHoldInjector::Hold::WaitForCompletion() {
   gpr_log(GPR_INFO, "=== CONNECTION COMPLETED ON PORT %d ===", port_);
 }
 
-bool ConnectionHoldInjector::Hold::IsStarted() {
+bool ConnectionAttemptInjector::Hold::IsStarted() {
   grpc_core::MutexLock lock(&injector_->mu_);
   return !start_cv_.WaitWithDeadline(&injector_->mu_, absl::Now());
 }
 
-void ConnectionHoldInjector::Hold::OnComplete(void* arg,
-                                              grpc_error_handle error) {
+void ConnectionAttemptInjector::Hold::OnComplete(void* arg,
+                                                 grpc_error_handle error) {
   auto* self = static_cast<Hold*>(arg);
   grpc_closure* on_complete;
   {
@@ -197,48 +269,6 @@ void ConnectionHoldInjector::Hold::OnComplete(void* arg,
     self->complete_cv_.Signal();
   }
   grpc_core::Closure::Run(DEBUG_LOCATION, on_complete, GRPC_ERROR_REF(error));
-}
-
-//
-// ConnectionHoldInjector
-//
-
-std::unique_ptr<ConnectionHoldInjector::Hold> ConnectionHoldInjector::AddHold(
-    int port, bool intercept_completion) {
-  grpc_core::MutexLock lock(&mu_);
-  auto hold = absl::make_unique<Hold>(this, port, intercept_completion);
-  holds_.push_back(hold.get());
-  return hold;
-}
-
-void ConnectionHoldInjector::HandleConnection(
-    grpc_closure* closure, grpc_endpoint** ep,
-    grpc_pollset_set* interested_parties, const grpc_channel_args* channel_args,
-    const grpc_resolved_address* addr, grpc_core::Timestamp deadline) {
-  const int port = grpc_sockaddr_get_port(addr);
-  gpr_log(GPR_INFO, "==> HandleConnection(): port=%d", port);
-  {
-    grpc_core::MutexLock lock(&mu_);
-    for (auto it = holds_.begin(); it != holds_.end(); ++it) {
-      Hold* hold = *it;
-      if (port == hold->port_) {
-        gpr_log(GPR_INFO, "*** INTERCEPTING CONNECTION ATTEMPT");
-        if (hold->intercept_completion_) {
-          hold->original_on_complete_ = closure;
-          closure = GRPC_CLOSURE_INIT(&hold->on_complete_, Hold::OnComplete,
-                                      hold, nullptr);
-        }
-        hold->queued_attempt_ = absl::make_unique<QueuedAttempt>(
-            closure, ep, interested_parties, channel_args, addr, deadline);
-        hold->start_cv_.Signal();
-        holds_.erase(it);
-        return;
-      }
-    }
-  }
-  // Anything we're not holding should proceed normally.
-  AttemptConnection(closure, ep, interested_parties, channel_args, addr,
-                    deadline);
 }
 
 }  // namespace testing

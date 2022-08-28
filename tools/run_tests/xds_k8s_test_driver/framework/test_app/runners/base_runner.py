@@ -16,8 +16,19 @@ Common functionality for running xDS Test Client and Server remotely.
 """
 from abc import ABCMeta
 from abc import abstractmethod
+import functools
+import pathlib
+import threading
 from typing import Dict, Optional
 import urllib.parse
+
+from absl import flags
+
+from framework import xds_flags
+from framework.helpers import logs
+
+flags.adopt_module_key_flags(logs)
+_LOGS_SUBDIR = 'test_app_logs'
 
 
 class RunnerError(Exception):
@@ -25,6 +36,35 @@ class RunnerError(Exception):
 
 
 class BaseRunner(metaclass=ABCMeta):
+    _logs_subdir: Optional[pathlib.Path] = None
+    _log_stop_event: Optional[threading.Event] = None
+
+    def __init__(self):
+        if xds_flags.COLLECT_APP_LOGS.value:
+            self._logs_subdir = logs.log_dir_mkdir(_LOGS_SUBDIR)
+            self._log_stop_event = threading.Event()
+
+    @property
+    @functools.lru_cache(None)
+    def should_collect_logs(self) -> bool:
+        return self._logs_subdir is not None
+
+    @property
+    @functools.lru_cache(None)
+    def logs_subdir(self) -> pathlib.Path:
+        if not self.should_collect_logs:
+            raise FileNotFoundError('Log collection is not enabled.')
+        return self._logs_subdir
+
+    @property
+    def log_stop_event(self) -> threading.Event:
+        if not self.should_collect_logs:
+            raise ValueError('Log collection is not enabled.')
+        return self._log_stop_event
+
+    def maybe_stop_logging(self):
+        if self.should_collect_logs and not self.log_stop_event.is_set():
+            self.log_stop_event.set()
 
     @abstractmethod
     def run(self, **kwargs):

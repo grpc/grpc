@@ -44,7 +44,7 @@ class FailoverTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
         # because the python server doesn't yet support set_not_serving RPC.
         # TODO(https://github.com/grpc/grpc/issues/30635): Remove when resolved.
         if cls.lang_spec.client_lang == _Lang.PYTHON:
-            cls.server_image = xds_k8s_flags.SERVER_IMAGE_UNIVERSAL.value
+            cls.server_image = xds_k8s_flags.SERVER_IMAGE_CANONICAL.value
 
     def setUp(self):
         super().setUp()
@@ -60,7 +60,9 @@ class FailoverTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
             xds_server_uri=self.xds_server_uri,
             network=self.network,
             debug_use_port_forwarding=self.debug_use_port_forwarding,
-            reuse_namespace=True)
+            # This runner's namespace created in the secondary cluster,
+            # so it's not reused and must be cleaned up.
+            reuse_namespace=False)
 
     def cleanup(self):
         super().cleanup()
