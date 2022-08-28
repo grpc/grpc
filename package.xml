@@ -1227,9 +1227,6 @@
     <file baseinstalldir="/" name="src/core/lib/load_balancing/subchannel_interface.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/matchers/matchers.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/matchers/matchers.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/profiling/basic_timers.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/profiling/stap_timers.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/profiling/timers.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/activity.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/activity.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/arena_promise.h" role="src" />

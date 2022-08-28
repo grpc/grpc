@@ -2021,9 +2021,6 @@ src/core/lib/load_balancing/lb_policy_registry.h \
 src/core/lib/load_balancing/subchannel_interface.h \
 src/core/lib/matchers/matchers.cc \
 src/core/lib/matchers/matchers.h \
-src/core/lib/profiling/basic_timers.cc \
-src/core/lib/profiling/stap_timers.cc \
-src/core/lib/profiling/timers.h \
 src/core/lib/promise/activity.cc \
 src/core/lib/promise/activity.h \
 src/core/lib/promise/arena_promise.h \
