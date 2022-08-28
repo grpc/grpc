@@ -23,14 +23,36 @@ import math
 import os
 import re
 import sys
+import datetime
 
 import yaml
 
 with open('src/core/lib/experiments/experiments.yaml') as f:
-    attrs = yaml.load(f.read())
+    attrs = yaml.load(f.read(), Loader=yaml.FullLoader)
 
-print(attrs)
 
+error = False
+for attr in attrs:
+    if 'name' not in attr:
+        print("experiment with no name: %r" % attr)
+        error = True
+        continue
+    if 'description' not in attr:
+        print("no description for experiment %s" % attr['name'])
+        error = True
+    if 'default' not in attr:
+        print("no default for experiment %s" % attr['name'])
+        error = True
+    if 'expiry' not in attr:
+        print("no expiry for experiment %s" % attr['name'])
+        error = True
+    expiry = datetime.datetime.strptime(attr['expiry'], '%Y/%m/%d').date()
+    if expiry < datetime.date.today():
+        print("experiment %s expired on %s" % (attr['name'], attr['expiry']))
+        error = True
+    
+if error:
+    sys.exit(1)
 
 def c_str(s, encoding='ascii'):
     if isinstance(s, str):
