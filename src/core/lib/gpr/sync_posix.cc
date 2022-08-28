@@ -29,8 +29,6 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/profiling/timers.h"
-
 #ifdef GPR_LOW_LEVEL_COUNTERS
 gpr_atm gpr_mu_locks = 0;
 gpr_atm gpr_counter_atm_cas = 0;
@@ -60,7 +58,6 @@ void gpr_mu_lock(gpr_mu* mu) {
 #ifdef GPR_LOW_LEVEL_COUNTERS
   GPR_ATM_INC_COUNTER(gpr_mu_locks);
 #endif
-  GPR_TIMER_SCOPE("gpr_mu_lock", 0);
 #ifdef GRPC_ASAN_ENABLED
   GPR_ASSERT(pthread_mutex_lock(&mu->mutex) == 0);
 #else
@@ -69,7 +66,6 @@ void gpr_mu_lock(gpr_mu* mu) {
 }
 
 void gpr_mu_unlock(gpr_mu* mu) {
-  GPR_TIMER_SCOPE("gpr_mu_unlock", 0);
 #ifdef GRPC_ASAN_ENABLED
   GPR_ASSERT(pthread_mutex_unlock(&mu->mutex) == 0);
 #else
@@ -78,7 +74,6 @@ void gpr_mu_unlock(gpr_mu* mu) {
 }
 
 int gpr_mu_trylock(gpr_mu* mu) {
-  GPR_TIMER_SCOPE("gpr_mu_trylock", 0);
   int err = 0;
 #ifdef GRPC_ASAN_ENABLED
   err = pthread_mutex_trylock(&mu->mutex);

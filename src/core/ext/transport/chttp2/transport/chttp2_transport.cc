@@ -73,7 +73,6 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/timer.h"
-#include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
@@ -716,21 +715,18 @@ grpc_chttp2_stream::~grpc_chttp2_stream() {
 static int init_stream(grpc_transport* gt, grpc_stream* gs,
                        grpc_stream_refcount* refcount, const void* server_data,
                        grpc_core::Arena* arena) {
-  GPR_TIMER_SCOPE("init_stream", 0);
   grpc_chttp2_transport* t = reinterpret_cast<grpc_chttp2_transport*>(gt);
   new (gs) grpc_chttp2_stream(t, refcount, server_data, arena);
   return 0;
 }
 
 static void destroy_stream_locked(void* sp, grpc_error_handle /*error*/) {
-  GPR_TIMER_SCOPE("destroy_stream", 0);
   grpc_chttp2_stream* s = static_cast<grpc_chttp2_stream*>(sp);
   s->~grpc_chttp2_stream();
 }
 
 static void destroy_stream(grpc_transport* gt, grpc_stream* gs,
                            grpc_closure* then_schedule_closure) {
-  GPR_TIMER_SCOPE("destroy_stream", 0);
   grpc_chttp2_transport* t = reinterpret_cast<grpc_chttp2_transport*>(gt);
   grpc_chttp2_stream* s = reinterpret_cast<grpc_chttp2_stream*>(gs);
 
@@ -795,8 +791,6 @@ static void set_write_state(grpc_chttp2_transport* t,
 
 void grpc_chttp2_initiate_write(grpc_chttp2_transport* t,
                                 grpc_chttp2_initiate_write_reason reason) {
-  GPR_TIMER_SCOPE("grpc_chttp2_initiate_write", 0);
-
   switch (t->write_state) {
     case GRPC_CHTTP2_WRITE_STATE_IDLE:
       set_write_state(t, GRPC_CHTTP2_WRITE_STATE_WRITING,
@@ -850,7 +844,6 @@ static const char* begin_writing_desc(bool partial) {
 
 static void write_action_begin_locked(void* gt,
                                       grpc_error_handle /*error_ignored*/) {
-  GPR_TIMER_SCOPE("write_action_begin_locked", 0);
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(gt);
   GPR_ASSERT(t->write_state != GRPC_CHTTP2_WRITE_STATE_IDLE);
   grpc_chttp2_begin_write_result r;
@@ -885,7 +878,6 @@ static void write_action_begin_locked(void* gt,
 }
 
 static void write_action(void* gt, grpc_error_handle /*error*/) {
-  GPR_TIMER_SCOPE("write_action", 0);
   static bool kEnablePeerStateBasedFraming =
       GPR_GLOBAL_CONFIG_GET(grpc_experimental_enable_peer_state_based_framing);
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(gt);
@@ -918,7 +910,6 @@ static void write_action_end(void* tp, grpc_error_handle error) {
 // Callback from the grpc_endpoint after bytes have been written by calling
 // sendmsg
 static void write_action_end_locked(void* tp, grpc_error_handle error) {
-  GPR_TIMER_SCOPE("terminate_writing_with_lock", 0);
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(tp);
 
   bool closed = false;
@@ -940,11 +931,9 @@ static void write_action_end_locked(void* tp, grpc_error_handle error) {
     case GRPC_CHTTP2_WRITE_STATE_IDLE:
       GPR_UNREACHABLE_CODE(break);
     case GRPC_CHTTP2_WRITE_STATE_WRITING:
-      GPR_TIMER_MARK("state=writing", 0);
       set_write_state(t, GRPC_CHTTP2_WRITE_STATE_IDLE, "finish writing");
       break;
     case GRPC_CHTTP2_WRITE_STATE_WRITING_WITH_MORE:
-      GPR_TIMER_MARK("state=writing_stale_no_poller", 0);
       set_write_state(t, GRPC_CHTTP2_WRITE_STATE_WRITING, "continue writing");
       GRPC_CHTTP2_REF_TRANSPORT(t, "writing");
       // If the transport is closed, we will retry writing on the endpoint
@@ -1214,8 +1203,6 @@ static void log_metadata(const grpc_metadata_batch* md_batch, uint32_t id,
 
 static void perform_stream_op_locked(void* stream_op,
                                      grpc_error_handle /*error_ignored*/) {
-  GPR_TIMER_SCOPE("perform_stream_op_locked", 0);
-
   grpc_transport_stream_op_batch* op =
       static_cast<grpc_transport_stream_op_batch*>(stream_op);
   grpc_chttp2_stream* s =
@@ -1468,7 +1455,6 @@ static void perform_stream_op_locked(void* stream_op,
 
 static void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
                               grpc_transport_stream_op_batch* op) {
-  GPR_TIMER_SCOPE("perform_stream_op", 0);
   grpc_chttp2_transport* t = reinterpret_cast<grpc_chttp2_transport*>(gt);
   grpc_chttp2_stream* s = reinterpret_cast<grpc_chttp2_stream*>(gs);
 
@@ -2389,8 +2375,6 @@ static void read_action(void* tp, grpc_error_handle error) {
 }
 
 static void read_action_locked(void* tp, grpc_error_handle error) {
-  GPR_TIMER_SCOPE("reading_action_locked", 0);
-
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(tp);
 
   (void)GRPC_ERROR_REF(error);
@@ -2405,7 +2389,6 @@ static void read_action_locked(void* tp, grpc_error_handle error) {
   std::swap(err, error);
   GRPC_ERROR_UNREF(err);
   if (GRPC_ERROR_IS_NONE(t->closed_with_error)) {
-    GPR_TIMER_SCOPE("reading_action.parse", 0);
     size_t i = 0;
     grpc_error_handle errors[3] = {GRPC_ERROR_REF(error), GRPC_ERROR_NONE,
                                    GRPC_ERROR_NONE};
@@ -2422,7 +2405,6 @@ static void read_action_locked(void* tp, grpc_error_handle error) {
       GRPC_ERROR_UNREF(errors[i]);
     }
 
-    GPR_TIMER_SCOPE("post_parse_locked", 0);
     if (t->initial_window_update != 0) {
       if (t->initial_window_update > 0) {
         grpc_chttp2_stream* s;
@@ -2436,7 +2418,6 @@ static void read_action_locked(void* tp, grpc_error_handle error) {
     }
   }
 
-  GPR_TIMER_SCOPE("post_reading_action_locked", 0);
   bool keep_reading = false;
   if (GRPC_ERROR_IS_NONE(error) && !GRPC_ERROR_IS_NONE(t->closed_with_error)) {
     error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(

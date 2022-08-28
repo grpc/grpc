@@ -25,7 +25,6 @@
 
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/profiling/timers.h"
 
 static void exec_ctx_run(grpc_closure* closure) {
 #ifndef NDEBUG
@@ -60,7 +59,6 @@ ApplicationCallbackExecCtx::callback_exec_ctx_;
 
 bool ExecCtx::Flush() {
   bool did_something = false;
-  GPR_TIMER_SCOPE("grpc_exec_ctx_flush", 0);
   for (;;) {
     if (!grpc_closure_list_empty(closure_list_)) {
       grpc_closure* c = closure_list_.head;

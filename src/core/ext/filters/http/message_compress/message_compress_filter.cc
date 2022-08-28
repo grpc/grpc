@@ -40,7 +40,6 @@
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/transport/metadata_batch.h"
@@ -227,7 +226,6 @@ void CallData::ForwardSendMessageBatch(void* elem_arg,
 
 void CallData::CompressStartTransportStreamOpBatch(
     grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
-  GPR_TIMER_SCOPE("compress_start_transport_stream_op_batch", 0);
   // Handle cancel_stream.
   if (batch->cancel_stream) {
     GRPC_ERROR_UNREF(cancel_error_);
