@@ -18,18 +18,17 @@ from __future__ import print_function
 
 import collections
 import ctypes
+import datetime
 import json
 import math
 import os
 import re
 import sys
-import datetime
 
 import yaml
 
 with open('src/core/lib/experiments/experiments.yaml') as f:
     attrs = yaml.load(f.read(), Loader=yaml.FullLoader)
-
 
 error = False
 today = datetime.date.today()
@@ -53,12 +52,13 @@ for attr in attrs:
         print("experiment %s expired on %s" % (attr['name'], attr['expiry']))
         error = True
     if expiry > two_quarters_from_now:
-        print("experiment %s expires far in the future on %s" % (
-            attr['name'], attr['expiry']))
+        print("experiment %s expires far in the future on %s" %
+              (attr['name'], attr['expiry']))
         error = True
-    
+
 if error:
     sys.exit(1)
+
 
 def c_str(s, encoding='ascii'):
     if isinstance(s, str):
