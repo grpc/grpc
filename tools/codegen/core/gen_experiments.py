@@ -33,7 +33,7 @@ with open('src/core/lib/experiments/experiments.yaml') as f:
 
 error = False
 today = datetime.date.today()
-a_quarter_from_now = today + datetime.timedelta(days=90)
+two_quarters_from_now = today + datetime.timedelta(days=180)
 for attr in attrs:
     if 'name' not in attr:
         print("experiment with no name: %r" % attr)
@@ -52,7 +52,7 @@ for attr in attrs:
     if expiry < today:
         print("experiment %s expired on %s" % (attr['name'], attr['expiry']))
         error = True
-    if expiry > a_quarter_from_now:
+    if expiry > two_quarters_from_now:
         print("experiment %s expires far in the future on %s" % (
             attr['name'], attr['expiry']))
         error = True
