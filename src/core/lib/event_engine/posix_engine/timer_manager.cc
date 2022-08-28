@@ -35,7 +35,7 @@
 #include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gprpp/thd.h"
 
-static GPR_THREAD_LOCAL(bool) g_timer_thread = false;
+static GPR_THREAD_LOCAL(bool) g_timer_thread;
 
 namespace grpc_event_engine {
 namespace posix_engine {
