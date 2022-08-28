@@ -24,12 +24,16 @@
 
 #include "src/core/lib/gprpp/global_config.h"
 
-GPR_GLOBAL_CONFIG_DEFINE_BOOL(
-    grpc_experimental_enable_tcp_frame_size_tuning, false,
+namespace {
+const char* const description_tcp_frame_size_tuning =
     "If set, enables TCP to use RPC size estimation made by higher layers. TCP "
     "would not indicate completion of a read operation until a specified "
     "number of bytes have been read over the socket. Buffers are also "
-    "allocated according to estimated RPC sizes.");
+    "allocated according to estimated RPC sizes.";
+}
+
+GPR_GLOBAL_CONFIG_DEFINE_BOOL(grpc_experimental_enable_tcp_frame_size_tuning,
+                              false, description_tcp_frame_size_tuning);
 
 namespace grpc_core {
 
@@ -40,12 +44,8 @@ bool IsTcpFrameSizeTuningEnabled() {
 }
 
 const ExperimentMetadata g_experiment_metadata[] = {
-    {"tcp_frame_size_tuning",
-     "If set, enables TCP to use RPC size estimation made by higher layers. "
-     "TCP would not indicate completion of a read operation until a specified "
-     "number of bytes have been read over the socket. Buffers are also "
-     "allocated according to estimated RPC sizes.",
-     false, IsTcpFrameSizeTuningEnabled},
+    {"tcp_frame_size_tuning", description_tcp_frame_size_tuning, false,
+     IsTcpFrameSizeTuningEnabled},
 };
 
 }  // namespace grpc_core
