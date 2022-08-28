@@ -85,12 +85,13 @@ absl::StatusOr<std::unique_ptr<ServiceConfigParser::ParsedConfig>>
 ClientChannelServiceConfigParser::ParseGlobalParams(const ChannelArgs& /*args*/,
                                                     const Json& json) {
   std::vector<grpc_error_handle> error_list;
+  const auto& lb_policy_registry =
+      CoreConfiguration::Get().lb_policy_registry();
   // Parse LB config.
   RefCountedPtr<LoadBalancingPolicy::Config> parsed_lb_config;
   auto it = json.object_value().find("loadBalancingConfig");
   if (it != json.object_value().end()) {
-    auto config =
-        LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(it->second);
+    auto config = lb_policy_registry.ParseLoadBalancingConfig(it->second);
     if (!config.ok()) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
           "field:loadBalancingConfig error:", config.status().message())));
@@ -111,8 +112,8 @@ ClientChannelServiceConfigParser::ParseGlobalParams(const ChannelArgs& /*args*/,
         lb_policy_name[i] = tolower(lb_policy_name[i]);
       }
       bool requires_config = false;
-      if (!LoadBalancingPolicyRegistry::LoadBalancingPolicyExists(
-              lb_policy_name.c_str(), &requires_config)) {
+      if (!lb_policy_registry.LoadBalancingPolicyExists(lb_policy_name.c_str(),
+                                                        &requires_config)) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "field:loadBalancingPolicy error:Unknown lb policy"));
       } else if (requires_config) {

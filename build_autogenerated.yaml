@@ -715,6 +715,7 @@ libs:
   - src/core/ext/xds/upb_utils.h
   - src/core/ext/xds/xds_api.h
   - src/core/ext/xds/xds_bootstrap.h
+  - src/core/ext/xds/xds_bootstrap_grpc.h
   - src/core/ext/xds/xds_certificate_provider.h
   - src/core/ext/xds/xds_channel_args.h
   - src/core/ext/xds/xds_channel_stack_modifier.h
@@ -1420,6 +1421,7 @@ libs:
   - src/core/ext/xds/file_watcher_certificate_provider_factory.cc
   - src/core/ext/xds/xds_api.cc
   - src/core/ext/xds/xds_bootstrap.cc
+  - src/core/ext/xds/xds_bootstrap_grpc.cc
   - src/core/ext/xds/xds_certificate_provider.cc
   - src/core/ext/xds/xds_channel_stack_modifier.cc
   - src/core/ext/xds/xds_client.cc
@@ -5059,7 +5061,7 @@ targets:
   headers:
   - src/cpp/server/orca/orca_interceptor.h
   - test/core/util/test_lb_policies.h
-  - test/cpp/end2end/connection_delay_injector.h
+  - test/cpp/end2end/connection_attempt_injector.h
   - test/cpp/end2end/test_service_impl.h
   src:
   - src/proto/grpc/testing/duplicate/echo_duplicate.proto
@@ -5071,7 +5073,7 @@ targets:
   - src/cpp/server/orca/orca_service.cc
   - test/core/util/test_lb_policies.cc
   - test/cpp/end2end/client_lb_end2end_test.cc
-  - test/cpp/end2end/connection_delay_injector.cc
+  - test/cpp/end2end/connection_attempt_injector.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - grpc++_test_util
@@ -10931,7 +10933,7 @@ targets:
   run: false
   language: c++
   headers:
-  - test/cpp/end2end/connection_delay_injector.h
+  - test/cpp/end2end/connection_attempt_injector.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h
@@ -10971,7 +10973,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/route.proto
   - src/proto/grpc/testing/xds/v3/router.proto
   - src/proto/grpc/testing/xds/v3/string.proto
-  - test/cpp/end2end/connection_delay_injector.cc
+  - test/cpp/end2end/connection_attempt_injector.cc
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/xds/xds_cluster_end2end_test.cc
   - test/cpp/end2end/xds/xds_end2end_test_lib.cc
@@ -10989,7 +10991,7 @@ targets:
   run: false
   language: c++
   headers:
-  - test/cpp/end2end/connection_delay_injector.h
+  - test/cpp/end2end/connection_attempt_injector.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h
@@ -11030,7 +11032,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/route.proto
   - src/proto/grpc/testing/xds/v3/router.proto
   - src/proto/grpc/testing/xds/v3/string.proto
-  - test/cpp/end2end/connection_delay_injector.cc
+  - test/cpp/end2end/connection_attempt_injector.cc
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/xds/xds_cluster_type_end2end_test.cc
   - test/cpp/end2end/xds/xds_end2end_test_lib.cc
@@ -11479,7 +11481,7 @@ targets:
   run: false
   language: c++
   headers:
-  - test/cpp/end2end/connection_delay_injector.h
+  - test/cpp/end2end/connection_attempt_injector.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h
@@ -11520,7 +11522,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/route.proto
   - src/proto/grpc/testing/xds/v3/router.proto
   - src/proto/grpc/testing/xds/v3/string.proto
-  - test/cpp/end2end/connection_delay_injector.cc
+  - test/cpp/end2end/connection_attempt_injector.cc
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/xds/xds_end2end_test_lib.cc
   - test/cpp/end2end/xds/xds_ring_hash_end2end_test.cc

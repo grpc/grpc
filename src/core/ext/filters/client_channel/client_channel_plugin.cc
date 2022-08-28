@@ -26,12 +26,10 @@
 #include "src/core/ext/filters/client_channel/retry_service_config.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/load_balancing/lb_policy_registry.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 
 void grpc_client_channel_init(void) {
-  grpc_core::LoadBalancingPolicyRegistry::Builder::InitRegistry();
   grpc_core::ProxyMapperRegistry::Init();
   grpc_core::RegisterHttpProxyMapper();
   grpc_client_channel_global_init_backup_polling();
@@ -39,7 +37,6 @@ void grpc_client_channel_init(void) {
 
 void grpc_client_channel_shutdown(void) {
   grpc_core::ProxyMapperRegistry::Shutdown();
-  grpc_core::LoadBalancingPolicyRegistry::Builder::ShutdownRegistry();
 }
 
 namespace grpc_core {

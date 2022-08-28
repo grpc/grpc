@@ -127,9 +127,7 @@ void CallCombiner::Start(grpc_closure* closure, grpc_error_handle error,
     gpr_log(GPR_INFO, "  size: %" PRIdPTR " -> %" PRIdPTR, prev_size,
             prev_size + 1);
   }
-  GRPC_STATS_INC_CALL_COMBINER_LOCKS_SCHEDULED_ITEMS();
   if (prev_size == 0) {
-    GRPC_STATS_INC_CALL_COMBINER_LOCKS_INITIATED();
     GPR_TIMER_MARK("call_combiner_initiate", 0);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_call_combiner_trace)) {
       gpr_log(GPR_INFO, "  EXECUTING IMMEDIATELY");
@@ -192,7 +190,6 @@ void CallCombiner::Stop(DEBUG_ARGS const char* reason) {
 }
 
 void CallCombiner::SetNotifyOnCancel(grpc_closure* closure) {
-  GRPC_STATS_INC_CALL_COMBINER_SET_NOTIFY_ON_CANCEL();
   while (true) {
     // Decode original state.
     gpr_atm original_state = gpr_atm_acq_load(&cancel_state_);
@@ -235,7 +232,6 @@ void CallCombiner::SetNotifyOnCancel(grpc_closure* closure) {
 }
 
 void CallCombiner::Cancel(grpc_error_handle error) {
-  GRPC_STATS_INC_CALL_COMBINER_CANCELLED();
   intptr_t status_ptr = internal::StatusAllocHeapPtr(error);
   gpr_atm new_state = kErrorBit | status_ptr;
   while (true) {

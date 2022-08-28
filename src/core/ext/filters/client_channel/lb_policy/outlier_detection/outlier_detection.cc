@@ -48,6 +48,7 @@
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
@@ -649,6 +650,12 @@ void OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
         }
       } else if (!config_->CountingEnabled()) {
         // If counting is not enabled, reset state.
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
+          gpr_log(GPR_INFO,
+                  "[outlier_detection_lb %p] counting disabled; disabling "
+                  "ejection for %s (%p)",
+                  this, address_key.c_str(), subchannel_state.get());
+        }
         subchannel_state->DisableEjection();
       }
       current_addresses.emplace(address_key);
@@ -1099,8 +1106,9 @@ class OutlierDetectionLbFactory : public LoadBalancingPolicyFactory {
     if (it == json.object_value().end()) {
       errors.emplace_back("field:childPolicy error:required field missing");
     } else {
-      auto child_policy_config =
-          LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(it->second);
+      auto child_policy_config = CoreConfiguration::Get()
+                                     .lb_policy_registry()
+                                     .ParseLoadBalancingConfig(it->second);
       if (!child_policy_config.ok()) {
         errors.emplace_back(
             absl::StrCat("error parsing childPolicy field: ",
@@ -1125,18 +1133,11 @@ class OutlierDetectionLbFactory : public LoadBalancingPolicyFactory {
 
 }  // namespace
 
-}  // namespace grpc_core
-
-//
-// Plugin registration
-//
-
-void grpc_lb_policy_outlier_detection_init() {
-  if (grpc_core::XdsOutlierDetectionEnabled()) {
-    grpc_core::LoadBalancingPolicyRegistry::Builder::
-        RegisterLoadBalancingPolicyFactory(
-            absl::make_unique<grpc_core::OutlierDetectionLbFactory>());
+void RegisterOutlierDetectionLbPolicy(CoreConfiguration::Builder* builder) {
+  if (XdsOutlierDetectionEnabled()) {
+    builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
+        absl::make_unique<OutlierDetectionLbFactory>());
   }
 }
 
-void grpc_lb_policy_outlier_detection_shutdown() {}
+}  // namespace grpc_core
