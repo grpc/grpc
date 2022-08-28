@@ -15,6 +15,9 @@
 
 set -ex
 
+# avoid slow finalization after the script has exited.
+source $(dirname $0)/../../../tools/internal_ci/helper_scripts/move_src_tree_and_respawn_itself_rc
+
 # Enter the gRPC repo root
 cd $(dirname $0)/../../..
 
@@ -22,6 +25,13 @@ cat tools/internal_ci/linux/grpc_sample_fuzzers_failure_explanation.txt
 
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
-export DOCKERFILE_DIR=tools/dockerfile/test/cxx_debian11_x64
-export DOCKER_RUN_SCRIPT=tools/internal_ci/linux/grpc_sample_fuzzers_in_docker.sh
-exec tools/run_tests/dockerize/build_and_run_docker.sh
+# make sure bazel is available
+tools/bazel version
+
+python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path bazel_rbe
+
+bazel_rbe/bazel_wrapper \
+  --bazelrc=tools/remote_build/linux_kokoro.bazelrc \
+  test \
+  -c dbg --config fuzzer_asan --test_output=errors \
+  `tools/bazel query "attr(tags, '\\bgrpc-fuzzer\\b', //test/...)"`
