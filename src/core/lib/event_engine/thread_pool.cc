@@ -30,31 +30,22 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-void ThreadPool::StartThread(std::weak_ptr<Queue> weak_queue,
-                             std::shared_ptr<ThreadCount> thread_count) {
-  struct Arg {
-    std::weak_ptr<Queue> weak_queue;
-    std::shared_ptr<ThreadCount> thread_count;
-  };
-  thread_count->Add();
+void ThreadPool::StartThread(StatePtr state) {
+  state->thread_count.Add();
   grpc_core::Thread(
       "event_engine",
       [](void* arg) {
-        auto a = *std::unique_ptr<Arg>(static_cast<Arg*>(arg));
-        ThreadFunc(std::move(a.weak_queue), std::move(a.thread_count));
+        ThreadFunc(*std::unique_ptr<StatePtr>(static_cast<StatePtr*>(arg)));
       },
-      new Arg{weak_queue, thread_count}, nullptr,
+      new StatePtr(state), nullptr,
       grpc_core::Thread::Options().set_tracked(false).set_joinable(false))
       .Start();
 }
 
-void ThreadPool::ThreadFunc(std::weak_ptr<Queue> weak_queue,
-                            std::shared_ptr<ThreadCount> thread_count) {
-  if (auto queue = weak_queue.lock()) {
-    while (queue->Step()) {
-    }
+void ThreadPool::ThreadFunc(StatePtr state) {
+  while (state->queue.Step()) {
   }
-  thread_count->Remove();
+  state->thread_count.Remove();
 }
 
 bool ThreadPool::Queue::Step() {
@@ -87,15 +78,15 @@ bool ThreadPool::Queue::Step() {
 ThreadPool::ThreadPool(int reserve_threads)
     : reserve_threads_(reserve_threads) {
   for (int i = 0; i < reserve_threads; i++) {
-    StartThread(queue_, thread_count_);
+    StartThread(state_);
   }
 }
 
-ThreadPool::~ThreadPool() { queue_->SetShutdown(); }
+ThreadPool::~ThreadPool() { state_->queue.SetShutdown(); }
 
 void ThreadPool::Add(absl::AnyInvocable<void()> callback) {
-  if (queue_->Add(std::move(callback))) {
-    StartThread(queue_, thread_count_);
+  if (state_->queue.Add(std::move(callback))) {
+    StartThread(state_);
   }
 }
 
@@ -115,8 +106,11 @@ bool ThreadPool::Queue::Add(absl::AnyInvocable<void()> callback) {
 
 void ThreadPool::Queue::SetState(State state) {
   grpc_core::MutexLock lock(&mu_);
-  GPR_ASSERT(state_ == State::kRunning);
-  GPR_ASSERT(state != State::kRunning);
+  if (state == State::kRunning) {
+    GPR_ASSERT(state_ != State::kRunning);
+  } else {
+    GPR_ASSERT(state_ == State::kRunning);
+  }
   state_ = state;
   cv_.SignalAll();
 }
@@ -142,22 +136,18 @@ void ThreadPool::ThreadCount::Quiesce() {
 }
 
 void ThreadPool::PrepareFork() {
-  queue_->SetForking();
-  thread_count_->Quiesce();
-  queue_ = nullptr;
+  state_->queue.SetForking();
+  state_->thread_count.Quiesce();
 }
 
-void ThreadPool::PostforkParent() {
-  queue_ = std::make_shared<Queue>(reserve_threads_);
-  for (int i = 0; i < reserve_threads_; i++) {
-    StartThread(queue_, thread_count_);
-  }
-}
+void ThreadPool::PostforkParent() { Postfork(); }
 
-void ThreadPool::PostforkChild() {
-  queue_ = std::make_shared<Queue>(reserve_threads_);
+void ThreadPool::PostforkChild() { Postfork(); }
+
+void ThreadPool::Postfork() {
+  state_->queue.Reset();
   for (int i = 0; i < reserve_threads_; i++) {
-    StartThread(queue_, thread_count_);
+    StartThread(state_);
   }
 }
 

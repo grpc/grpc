@@ -53,6 +53,7 @@ class ThreadPool final : public grpc_event_engine::experimental::Forkable {
     void SetShutdown() { SetState(State::kShutdown); }
     void SetForking() { SetState(State::kForking); }
     bool Add(absl::AnyInvocable<void()> callback);
+    void Reset() { SetState(State::kRunning); }
 
    private:
     enum class State { kRunning, kShutdown, kForking };
@@ -71,6 +72,7 @@ class ThreadPool final : public grpc_event_engine::experimental::Forkable {
    public:
     void Add();
     void Remove();
+    // Block until all threads have stopped.
     void Quiesce();
 
    private:
@@ -79,15 +81,20 @@ class ThreadPool final : public grpc_event_engine::experimental::Forkable {
     int threads_ ABSL_GUARDED_BY(mu_) = 0;
   };
 
-  static void ThreadFunc(std::weak_ptr<Queue> weak_queue,
-                         std::shared_ptr<ThreadCount> thread_count);
-  static void StartThread(std::weak_ptr<Queue> weak_queue,
-                          std::shared_ptr<ThreadCount> thread_count);
+  struct State {
+    explicit State(int reserve_threads) : queue(reserve_threads) {}
+    Queue queue;
+    ThreadCount thread_count;
+  };
+
+  using StatePtr = std::shared_ptr<State>;
+
+  static void ThreadFunc(StatePtr state);
+  static void StartThread(StatePtr state);
+  void Postfork();
 
   const int reserve_threads_;
-  std::shared_ptr<Queue> queue_ = std::make_shared<Queue>(reserve_threads_);
-  const std::shared_ptr<ThreadCount> thread_count_ =
-      std::make_shared<ThreadCount>();
+  const StatePtr state_ = std::make_shared<State>(reserve_threads_);
 };
 
 }  // namespace experimental
