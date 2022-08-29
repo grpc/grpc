@@ -43,7 +43,7 @@ grpc_cc_library(
     testonly = True,
     hdrs = ["call_checker.h"],
     language = "c++",
-    deps = ["//:gpr"],
+    deps = [],
 )
 
 grpc_cc_test(

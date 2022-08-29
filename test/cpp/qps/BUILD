@@ -199,7 +199,7 @@ grpc_cc_library(
     name = "usage_timer",
     srcs = ["usage_timer.cc"],
     hdrs = ["usage_timer.h"],
-    deps = ["//:gpr"],
+    deps = [],
 )
 
 grpc_cc_binary(
