@@ -61,6 +61,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_trace.h"
+#include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/useful.h"
@@ -1295,7 +1296,8 @@ void ClientChannel::OnResolverErrorLocked(absl::Status status) {
     {
       MutexLock lock(&resolution_mu_);
       // Update resolver transient failure.
-      resolver_transient_failure_error_ = status;
+      resolver_transient_failure_error_ =
+          MaybeRewriteIllegalStatusCode(status, "resolver");
       // Process calls that were queued waiting for the resolver result.
       for (ResolverQueuedCall* call = resolver_queued_calls_; call != nullptr;
            call = call->next) {
@@ -2167,7 +2169,8 @@ grpc_error_handle ClientChannel::CallData::ApplyServiceConfigToCallLocked(
     ConfigSelector::CallConfig call_config =
         config_selector->GetCallConfig({&path_, initial_metadata, arena_});
     if (!call_config.status.ok()) {
-      return absl_status_to_grpc_error(call_config.status);
+      return absl_status_to_grpc_error(
+          MaybeRewriteIllegalStatusCode(call_config.status, "ConfigSelector"));
     }
     // Create a ClientChannelServiceConfigCallData for the call.  This stores
     // a ref to the ServiceConfig and caches the right set of parsed configs
@@ -3160,11 +3163,8 @@ bool ClientChannel::LoadBalancedCall::PickSubchannelLocked(
             // attempt's final status.
             if (!initial_metadata_batch->GetOrCreatePointer(WaitForReady())
                      ->value) {
-              grpc_error_handle lb_error =
-                  absl_status_to_grpc_error(fail_pick->status);
-              *error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                  "Failed to pick subchannel", &lb_error, 1);
-              GRPC_ERROR_UNREF(lb_error);
+              *error = absl_status_to_grpc_error(
+                  MaybeRewriteIllegalStatusCode(fail_pick->status, "LB pick"));
               MaybeRemoveCallFromLbQueuedCallsLocked();
               return true;
             }
@@ -3180,9 +3180,11 @@ bool ClientChannel::LoadBalancedCall::PickSubchannelLocked(
               gpr_log(GPR_INFO, "chand=%p lb_call=%p: LB pick dropped: %s",
                       chand_, this, drop_pick->status.ToString().c_str());
             }
-            *error =
-                grpc_error_set_int(absl_status_to_grpc_error(drop_pick->status),
-                                   GRPC_ERROR_INT_LB_POLICY_DROP, 1);
+            *error = grpc_error_set_int(
+                absl_status_to_grpc_error(
+                    MaybeRewriteIllegalStatusCode(drop_pick->status,
+                                                  "LB drop")),
+                GRPC_ERROR_INT_LB_POLICY_DROP, 1);
             MaybeRemoveCallFromLbQueuedCallsLocked();
             return true;
           });
