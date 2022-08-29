@@ -1179,6 +1179,17 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "packed_table",
+    hdrs = ["src/core/lib/gprpp/packed_table.h"],
+    language = "c++",
+    deps = [
+        "gpr_public_hdrs",
+        "sorted_pack",
+        "table",
+    ],
+)
+
+grpc_cc_library(
     name = "bitset",
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/bitset.h"],
@@ -3141,6 +3152,7 @@ grpc_cc_library(
         "latch",
         "memory_quota",
         "orphanable",
+        "packed_table",
         "percent_encoding",
         "poll",
         "pollset_set",
@@ -3697,6 +3709,15 @@ grpc_cc_library(
         "promise",
         "ref_counted_ptr",
     ],
+)
+
+grpc_cc_library(
+    name = "sorted_pack",
+    hdrs = [
+        "src/core/lib/gprpp/sorted_pack.h",
+    ],
+    language = "c++",
+    deps = ["gpr_platform"],
 )
 
 grpc_cc_library(
