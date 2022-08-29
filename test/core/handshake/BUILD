@@ -31,7 +31,6 @@ grpc_cc_test(
     language = "C++",
     tags = ["no_windows"],
     deps = [
-        "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
@@ -43,7 +42,6 @@ grpc_cc_library(
     hdrs = ["server_ssl_common.h"],
     tags = ["no_windows"],
     deps = [
-        "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
@@ -62,7 +60,6 @@ grpc_cc_test(
     tags = ["no_windows"],
     deps = [
         ":server_ssl_common",
-        "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
@@ -81,7 +78,6 @@ grpc_cc_test(
     tags = ["no_windows"],
     deps = [
         ":server_ssl_common",
-        "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
@@ -99,7 +95,7 @@ grpc_cc_test(
 #    language = "C++",
 #    tags = ["no_mac", no_windows"],
 #    deps = [
-#        "//:gpr",
+#
 #        "//:grpc",
 #        "//test/core/util:grpc_test_util",
 #    ],

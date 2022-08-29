@@ -32,7 +32,6 @@ grpc_cc_library(
         "@grpc:endpoint_tests",
     ],
     deps = [
-        "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
@@ -48,7 +47,6 @@ grpc_cc_test(
     language = "C++",
     tags = ["no_windows"],  # LARGE_MACHINE is not configured for windows RBE
     deps = [
-        "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
@@ -62,7 +60,6 @@ grpc_cc_test(
     language = "C++",
     deps = [
         ":endpoint_tests",
-        "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
@@ -80,7 +77,6 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         ":endpoint_tests",
-        "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
@@ -93,7 +89,6 @@ grpc_cc_test(
     language = "C++",
     tags = ["no_windows"],
     deps = [
-        "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
@@ -107,7 +102,6 @@ grpc_cc_test(
     language = "C++",
     tags = ["no_windows"],
     deps = [
-        "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
@@ -120,7 +114,6 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "C++",
     deps = [
-        "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
@@ -135,7 +128,6 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
@@ -157,7 +149,6 @@ grpc_cc_test(
     language = "C++",
     tags = ["no_windows"],
     deps = [
-        "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
@@ -179,7 +170,6 @@ grpc_cc_test(
     language = "C++",
     tags = ["no_windows"],
     deps = [
-        "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
@@ -195,7 +185,6 @@ grpc_cc_test(
     ],
     language = "C++",
     deps = [
-        "//:gpr",
         "//:grpc",
         "//test/core/util:fake_udp_and_tcp_server",
         "//test/core/util:grpc_test_util",
@@ -213,7 +202,6 @@ grpc_cc_test(
     ],
     language = "C++",
     deps = [
-        "//:gpr",
         "//:grpc",
         "//test/core/util:fake_udp_and_tcp_server",
         "//test/core/util:grpc_test_util",
@@ -229,7 +217,6 @@ grpc_cc_test(
     language = "C++",
     tags = ["no_windows"],
     deps = [
-        "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
@@ -243,7 +230,6 @@ grpc_cc_test(
     language = "C++",
     tags = ["no_windows"],
     deps = [
-        "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
@@ -260,7 +246,6 @@ grpc_cc_test(
     ],
     deps = [
         ":endpoint_tests",
-        "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
@@ -273,7 +258,6 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "C++",
     deps = [
-        "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
@@ -289,7 +273,6 @@ grpc_cc_test(
         "no_mac",
     ],
     deps = [
-        "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
@@ -302,7 +285,6 @@ grpc_cc_test(
     language = "C++",
     tags = ["no_windows"],
     deps = [
-        "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
@@ -317,7 +299,6 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
@@ -331,7 +312,6 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
@@ -353,7 +333,6 @@ grpc_cc_test(
         "cpu:10",
     ],
     deps = [
-        "//:gpr",
         "//:grpc",
         "//test/core/end2end:cq_verifier",
         "//test/core/util:grpc_test_util",

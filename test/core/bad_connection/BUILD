@@ -26,7 +26,6 @@ grpc_cc_binary(
     language = "C++",
     tags = ["no_windows"],
     deps = [
-        "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],

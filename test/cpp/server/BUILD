@@ -75,7 +75,6 @@ grpc_cc_test(
         "gtest",
     ],
     deps = [
-        "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//test/core/util:grpc_test_util",
@@ -98,7 +97,6 @@ grpc_cc_test(
     # since we don't support servers on iOS.
     tags = ["no_test_ios"],
     deps = [
-        "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//:grpc++_authorization_provider",

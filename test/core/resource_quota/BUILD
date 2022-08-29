@@ -32,7 +32,6 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:arena",
-        "//:gpr",
         "//:grpc",
         "//:ref_counted_ptr",
         "//:resource_quota",
@@ -78,7 +77,6 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:exec_ctx",
-        "//:gpr",
         "//:periodic_update",
     ],
 )
@@ -124,7 +122,6 @@ grpc_cc_test(
     deps = [
         "//:event_engine_memory_allocator",
         "//:exec_ctx",
-        "//:gpr",
         "//:memory_quota",
     ],
 )
@@ -149,7 +146,6 @@ grpc_proto_fuzzer(
         "//:error",
         "//:event_engine_memory_allocator",
         "//:exec_ctx",
-        "//:gpr",
         "//:grpc_trace",
         "//:memory_quota",
         "//:useful",

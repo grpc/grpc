@@ -28,7 +28,6 @@ grpc_cc_test(
         "gtest",
     ],
     deps = [
-        "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//src/proto/grpc/lb/v1:load_balancer_proto",

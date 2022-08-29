@@ -34,7 +34,6 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//:gpr",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -49,7 +48,6 @@ grpc_cc_test(
     uses_event_engine = True,  # engines should behave appropriately on Fork
     uses_polling = False,
     deps = [
-        "//:gpr",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -64,7 +62,6 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//:gpr",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -80,7 +77,6 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//:gpr",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -156,7 +152,6 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//:gpr",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -171,7 +166,6 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//:gpr",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -238,7 +232,6 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//:gpr",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -253,7 +246,6 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
@@ -269,7 +261,6 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//:gpr",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -284,7 +275,6 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//:gpr",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -383,7 +373,6 @@ grpc_cc_test(
         "no_windows",  # LARGE_MACHINE is not configured for windows RBE
     ],
     deps = [
-        "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],

@@ -105,7 +105,6 @@ grpc_cc_test(
     ],
     tags = ["no_test_ios"],
     deps = [
-        "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//src/proto/grpc/health/v1:health_proto",
@@ -134,7 +133,6 @@ grpc_cc_test(
     ],
     deps = [
         ":test_service_impl",
-        "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//src/proto/grpc/testing:echo_messages_proto",
@@ -159,7 +157,6 @@ grpc_cc_test(
         "no_windows",
     ],
     deps = [
-        "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//src/proto/grpc/testing:echo_messages_proto",
@@ -180,7 +177,6 @@ grpc_cc_binary(
     ],
     deps = [
         ":test_service_impl",
-        "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//src/proto/grpc/testing:echo_messages_proto",
@@ -201,7 +197,6 @@ grpc_cc_test(
     deps = [
         ":interceptors_util",
         ":test_service_impl",
-        "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//src/proto/grpc/testing:echo_messages_proto",
@@ -220,7 +215,6 @@ grpc_cc_test(
     ],
     deps = [
         ":test_service_impl",
-        "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//src/proto/grpc/testing:echo_messages_proto",
@@ -240,7 +234,6 @@ grpc_cc_test(
     deps = [
         ":interceptors_util",
         ":test_service_impl",
-        "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//src/proto/grpc/testing:echo_messages_proto",
@@ -261,7 +254,6 @@ grpc_cc_library(
     deps = [
         ":interceptors_util",
         ":test_service_impl",
-        "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//:grpc++_test",
@@ -292,7 +284,6 @@ grpc_cc_test(
     tags = ["no_test_ios"],
     deps = [
         ":test_service_impl",
-        "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//:grpcpp_channelz",
@@ -311,7 +302,6 @@ grpc_cc_test(
         "gtest",
     ],
     deps = [
-        "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//src/proto/grpc/testing:echo_messages_proto",
@@ -341,7 +331,6 @@ grpc_cc_test(
         "gtest",
     ],
     deps = [
-        "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//src/proto/grpc/testing:echo_messages_proto",
@@ -358,7 +347,6 @@ grpc_cc_test(
         "gtest",
     ],
     deps = [
-        "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//src/proto/grpc/testing:echo_messages_proto",
@@ -376,7 +364,6 @@ grpc_cc_test(
         "gtest",
     ],
     deps = [
-        "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//src/proto/grpc/testing:echo_messages_proto",
@@ -396,7 +383,6 @@ grpc_cc_test(
     deps = [
         ":test_health_check_service_impl",
         ":test_service_impl",
-        "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//src/proto/grpc/health/v1:health_proto",
@@ -416,7 +402,6 @@ grpc_cc_test(
     ],
     deps = [
         ":test_service_impl",
-        "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//src/proto/grpc/testing:echo_messages_proto",
@@ -435,7 +420,6 @@ grpc_cc_test(
     ],
     deps = [
         ":test_service_impl",
-        "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//src/proto/grpc/testing:echo_messages_proto",
@@ -453,7 +437,6 @@ grpc_cc_test(
         "gtest",
     ],
     deps = [
-        "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//:grpc++_test",
@@ -472,7 +455,6 @@ grpc_cc_test(
         "gtest",
     ],
     deps = [
-        "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//src/proto/grpc/testing:echo_messages_proto",
@@ -493,7 +475,6 @@ grpc_cc_test(
     deps = [
         ":connection_attempt_injector",
         ":test_service_impl",
-        "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//:grpcpp_orca_interceptor",
@@ -521,7 +502,6 @@ grpc_cc_test(
         ":counted_service",
         ":rls_server",
         ":test_service_impl",
-        "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//src/proto/grpc/lookup/v1:rls_proto",
@@ -543,7 +523,6 @@ grpc_cc_test(
     ],
     deps = [
         ":test_service_impl",
-        "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//src/proto/grpc/testing:echo_messages_proto",
@@ -565,7 +544,6 @@ grpc_cc_test(
     deps = [
         ":counted_service",
         ":test_service_impl",
-        "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//:grpc_resolver_fake",
@@ -587,7 +565,6 @@ grpc_cc_test(
     ],
     deps = [
         ":test_service_impl",
-        "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//:grpc++_reflection",
@@ -608,7 +585,6 @@ grpc_cc_test(
     ],
     deps = [
         ":test_service_impl",
-        "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//src/proto/grpc/testing:echo_messages_proto",
@@ -634,7 +610,6 @@ grpc_cc_test(
         "no_windows",
     ],
     deps = [
-        "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//src/proto/grpc/testing:echo_messages_proto",
@@ -654,7 +629,6 @@ grpc_cc_binary(
         "gtest",
     ],
     deps = [
-        "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//src/proto/grpc/testing:echo_messages_proto",
@@ -675,7 +649,6 @@ grpc_cc_test(
     deps = [
         ":interceptors_util",
         ":test_service_impl",
-        "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//src/proto/grpc/testing:echo_messages_proto",
@@ -719,7 +692,6 @@ grpc_cc_test(
     ],
     deps = [
         ":test_service_impl",
-        "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//src/proto/grpc/testing:echo_messages_proto",
@@ -736,7 +708,6 @@ grpc_cc_test(
         "gtest",
     ],
     deps = [
-        "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//src/proto/grpc/testing:echo_messages_proto",
@@ -755,7 +726,6 @@ grpc_cc_test(
     ],
     tags = ["no_windows"],
     deps = [
-        "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//src/proto/grpc/testing:echo_messages_proto",
@@ -776,7 +746,6 @@ grpc_cc_test(
     shard_count = 5,
     tags = ["no_windows"],  # TODO(jtattermusch): fix test on windows
     deps = [
-        "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//src/proto/grpc/testing:echo_messages_proto",
@@ -804,7 +773,6 @@ grpc_cc_test(
     ],
     deps = [
         ":test_service_impl",
-        "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//src/proto/grpc/testing:echo_messages_proto",
@@ -823,7 +791,6 @@ grpc_cc_test(
     ],
     deps = [
         ":test_service_impl",
-        "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//src/proto/grpc/testing:echo_messages_proto",
@@ -842,7 +809,6 @@ grpc_cc_test(
     ],
     deps = [
         ":test_service_impl",
-        "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//src/proto/grpc/testing:echo_messages_proto",
@@ -861,7 +827,6 @@ grpc_cc_test(
     ],
     deps = [
         ":test_service_impl",
-        "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//src/proto/grpc/testing:echo_messages_proto",
@@ -901,7 +866,6 @@ grpc_cc_test(
     ],
     deps = [
         ":test_service_impl",
-        "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//:grpc++_authorization_provider",
@@ -926,7 +890,6 @@ grpc_cc_test(
         "gtest",
     ],
     deps = [
-        "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//src/proto/grpc/testing:echo_messages_proto",

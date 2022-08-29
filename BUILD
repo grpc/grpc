@@ -1252,6 +1252,7 @@ grpc_cc_library(
         "include/grpc/support/string_util.h",
     ],
     deps = [
+        "gpr_alloc",
         "gpr_platform",
     ],
 )
@@ -1942,6 +1943,7 @@ grpc_cc_library(
         "poll",
         "promise_factory",
         "promise_status",
+        "time",
     ],
 )
 

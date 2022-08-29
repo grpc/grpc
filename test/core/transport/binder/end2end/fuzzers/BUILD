@@ -39,7 +39,6 @@ grpc_cc_library(
     public_hdrs = ["fuzzer_utils.h"],
     deps = [
         "binder_transport_fuzzer_proto",
-        "//:gpr",
         "//:grpc++",
         "//:grpc++_base",
         "//:grpc_base",
@@ -61,7 +60,6 @@ grpc_proto_fuzzer(
     deps = [
         "binder_transport_fuzzer_proto",
         ":fuzzer_utils",
-        "//:gpr",
         "//:grpc++",
         "//:grpc++_base",
         "//:grpc_base",
@@ -83,7 +81,6 @@ grpc_proto_fuzzer(
     deps = [
         "binder_transport_fuzzer_proto",
         ":fuzzer_utils",
-        "//:gpr",
         "//:grpc++",
         "//:grpc++_base",
         "//:grpc_base",

@@ -24,7 +24,6 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "C++",
     deps = [
-        "//:gpr",
         "//:grpc",
         "//:grpc_base",
         "//test/core/tsi/alts/crypt:alts_crypt_test_util",
@@ -38,7 +37,6 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "C++",
     deps = [
-        "//:gpr",
         "//:grpc",
         "//test/core/tsi/alts/crypt:alts_crypt_test_util",
         "//test/core/util:grpc_test_util",
@@ -51,7 +49,6 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "C++",
     deps = [
-        "//:gpr",
         "//:grpc",
         "//:grpc_base",
         "//test/core/tsi/alts/crypt:alts_crypt_test_util",

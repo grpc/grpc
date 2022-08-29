@@ -28,7 +28,6 @@ grpc_cc_test(
     language = "C++",
     deps = [
         ":alts_crypt_test_util",
-        "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
@@ -39,7 +38,6 @@ grpc_cc_library(
     srcs = ["gsec_test_util.cc"],
     hdrs = ["gsec_test_util.h"],
     deps = [
-        "//:gpr",
         "//:grpc",
     ],
 )

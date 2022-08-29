@@ -26,7 +26,6 @@ grpc_cc_test(
     ],
     language = "C++",
     deps = [
-        "//:gpr",
         "//:grpc_xds_client",
         "//test/core/util:grpc_test_util",
     ],
@@ -38,7 +37,6 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "C++",
     deps = [
-        "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
@@ -50,7 +48,6 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "C++",
     deps = [
-        "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
@@ -62,7 +59,6 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "C++",
     deps = [
-        "//:gpr",
         "//:grpc",
         "//:grpc_google_mesh_ca_certificate_provider_factory",
         "//test/core/util:grpc_test_util",
@@ -76,7 +72,6 @@ grpc_cc_test(
     language = "C++",
     tags = ["no_test_ios"],
     deps = [
-        "//:gpr",
         "//:grpc",
         "//:grpc_base",
         "//:grpc_opencensus_plugin",
@@ -91,7 +86,6 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "C++",
     deps = [
-        "//:gpr",
         "//:grpc",
         "//:grpc_secure",
         "//test/core/util:grpc_test_util",
@@ -105,7 +99,6 @@ grpc_cc_test(
     language = "C++",
     uses_polling = False,
     deps = [
-        "//:gpr",
         "//:grpc",
         "//src/proto/grpc/testing/xds/v3:cluster_proto",
         "//src/proto/grpc/testing/xds/v3:ring_hash_proto",

@@ -39,7 +39,6 @@ grpc_cc_test(
     srcs = ["cancel_ares_query_test.cc"],
     external_deps = ["gtest"],
     deps = [
-        "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//test/core/end2end:cq_verifier",

@@ -29,7 +29,6 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
@@ -43,7 +42,6 @@ grpc_cc_test(
     ],
     language = "C++",
     deps = [
-        "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
@@ -58,7 +56,6 @@ grpc_cc_test(
     ],
     language = "C++",
     deps = [
-        "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
@@ -73,7 +70,6 @@ grpc_cc_test(
     ],
     language = "C++",
     deps = [
-        "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
@@ -88,7 +84,6 @@ grpc_cc_test(
     ],
     language = "C++",
     deps = [
-        "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
@@ -102,7 +97,6 @@ grpc_cc_test(
     ],
     language = "C++",
     deps = [
-        "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
@@ -117,7 +111,6 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
@@ -134,7 +127,6 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",

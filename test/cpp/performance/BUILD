@@ -26,7 +26,6 @@ grpc_cc_test(
     ],
     tags = ["no_windows"],
     deps = [
-        "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//src/proto/grpc/testing:echo_proto",

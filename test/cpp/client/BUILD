@@ -30,7 +30,6 @@ grpc_cc_test(
         "gtest",
     ],
     deps = [
-        "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//test/core/util:grpc_test_util",
@@ -54,7 +53,6 @@ grpc_cc_test(
     ],
     deps = [
         "//:exec_ctx",
-        "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//:grpc_resolver_fake",
@@ -76,7 +74,6 @@ grpc_cc_test(
         "nomsan",  # 4/22/22 - seems to tickle the RBE compiler badly causing timeouts
     ],
     deps = [
-        "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//:grpc_resolver_fake",

@@ -26,7 +26,6 @@ grpc_cc_test(
     ],
     language = "C++",
     deps = [
-        "//:gpr",
         "//:grpc",
         "//:grpc_resolver_binder",
         "//test/core/util:grpc_test_util",
@@ -39,7 +38,6 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "C++",
     deps = [
-        "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
@@ -51,7 +49,6 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "C++",
     deps = [
-        "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
@@ -63,7 +60,6 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "C++",
     deps = [
-        "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
@@ -75,7 +71,6 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "C++",
     deps = [
-        "//:gpr",
         "//:grpc",
         "//:grpc_resolver_fake",
         "//test/core/util:grpc_test_util",
@@ -91,7 +86,6 @@ grpc_cc_test(
     ],
     language = "C++",
     deps = [
-        "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//test/core/util:fake_udp_and_tcp_server",

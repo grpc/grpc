@@ -28,7 +28,6 @@ grpc_cc_test(
         "gtest",
     ],
     deps = [
-        "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//:grpc++_test",
@@ -45,7 +44,6 @@ grpc_cc_test(
         "gtest",
     ],
     deps = [
-        "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//:grpc++_test",
@@ -61,7 +59,6 @@ grpc_cc_test(
         "gtest",
     ],
     deps = [
-        "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//:grpc++_test",

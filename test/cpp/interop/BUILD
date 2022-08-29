@@ -213,7 +213,6 @@ grpc_cc_binary(
     ],
     tags = ["no_windows"],
     deps = [
-        "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//test/core/util:grpc_test_util",

@@ -33,7 +33,6 @@ grpc_cc_library(
         "absl/flags:parse",
     ],
     deps = [
-        "//:gpr",
     ],
 )
 
@@ -340,7 +339,6 @@ grpc_cc_binary(
         "no_windows",  # unistd.h
     ],
     deps = [
-        "//:gpr",
         "//:grpc++",
         "//:grpcpp_channelz",
         "//src/proto/grpc/channelz:channelz_proto",
@@ -368,7 +366,6 @@ grpc_cc_test(
         "no_windows",  # unistd.h
     ],
     deps = [
-        "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//:grpcpp_channelz",
@@ -388,7 +385,6 @@ grpc_cc_library(
         "tls_test_utils.h",
     ],
     deps = [
-        "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//test/core/util:grpc_test_util",

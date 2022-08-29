@@ -413,7 +413,7 @@ void WeightedTargetLb::UpdateStateLocked() {
         break;
       }
       default:
-        GPR_UNREACHABLE_CODE(return);
+        GPR_UNREACHABLE_CODE(return );
     }
   }
   // Determine aggregated connectivity state.

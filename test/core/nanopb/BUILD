@@ -26,7 +26,6 @@ grpc_fuzzer(
     language = "C++",
     tags = ["no_windows"],
     deps = [
-        "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
@@ -39,7 +38,6 @@ grpc_fuzzer(
     language = "C++",
     tags = ["no_windows"],
     deps = [
-        "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],

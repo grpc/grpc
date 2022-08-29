@@ -455,7 +455,6 @@ def grpc_end2end_tests():
                 ":end2end_tests",
                 "//test/core/util:grpc_test_util",
                 "//:grpc",
-                "//:gpr",
                 "//test/core/compression:args_utils",
                 "//:grpc_http_filters",
             ],

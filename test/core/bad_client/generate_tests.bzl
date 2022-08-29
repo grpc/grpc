@@ -47,7 +47,6 @@ def grpc_bad_client_tests():
         deps = [
             "//test/core/util:grpc_test_util",
             "//:grpc",
-            "//:gpr",
             "//test/core/end2end:cq_verifier",
             "//:grpc_http_filters",
         ],

@@ -28,6 +28,7 @@ grpc_cc_library(
     hdrs = ["memstats.h"],
     external_deps = [
         "absl/types:optional",
+        "absl/strings",
     ],
     tags = [
         "bazel_only",
@@ -35,7 +36,7 @@ grpc_cc_library(
         "no_windows",
     ],
     deps = [
-        "//:gpr",
+        "//:gpr_log",
     ],
 )
 
@@ -54,7 +55,6 @@ grpc_cc_binary(
     ],
     deps = [
         ":memstats",
-        "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
@@ -76,7 +76,6 @@ grpc_cc_binary(
     ],
     deps = [
         ":memstats",
-        "//:gpr",
         "//:grpc",
         "//test/core/end2end:ssl_test_data",
         "//test/core/util:grpc_test_util",
@@ -101,7 +100,6 @@ grpc_cc_binary(
     ],
     deps = [
         ":memstats",
-        "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//src/proto/grpc/testing:benchmark_service_proto",
@@ -127,7 +125,6 @@ grpc_cc_binary(
     ],
     deps = [
         ":memstats",
-        "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//src/proto/grpc/testing:benchmark_service_proto",
@@ -161,7 +158,6 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",

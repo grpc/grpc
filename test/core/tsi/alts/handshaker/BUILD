@@ -46,7 +46,6 @@ grpc_cc_test(
     language = "C++",
     deps = [
         ":alts_handshaker_service_api_test_lib",
-        "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],

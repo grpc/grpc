@@ -35,7 +35,6 @@ def generate_resolver_component_tests():
                 "//test/core/util:grpc_test_util%s" % unsecure_build_config_suffix,
                 "//:grpc++%s" % unsecure_build_config_suffix,
                 "//:grpc%s" % unsecure_build_config_suffix,
-                "//:gpr",
                 "//test/cpp/util:test_config",
             ],
             tags = ["no_windows"],
@@ -57,7 +56,6 @@ def generate_resolver_component_tests():
                 "//test/core/util:fake_udp_and_tcp_server",
                 "//:grpc++%s" % unsecure_build_config_suffix,
                 "//:grpc%s" % unsecure_build_config_suffix,
-                "//:gpr",
                 "//test/cpp/util:test_config",
             ],
             tags = ["no_windows"],
@@ -75,7 +73,6 @@ def generate_resolver_component_tests():
                 "//test/core/util:grpc_test_util",
                 "//:grpc++",
                 "//:grpc",
-                "//:gpr",
                 "//test/cpp/util:test_config",
             ],
             data = [

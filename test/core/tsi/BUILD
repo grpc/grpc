@@ -37,7 +37,6 @@ grpc_cc_test(
     language = "C++",
     deps = [
         ":transport_security_test_lib",
-        "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
@@ -51,7 +50,6 @@ grpc_cc_test(
     ],
     language = "C++",
     deps = [
-        "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
@@ -80,7 +78,6 @@ grpc_cc_test(
     tags = ["no_windows"],
     deps = [
         ":transport_security_test_lib",
-        "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
@@ -104,7 +101,6 @@ grpc_cc_test(
     tags = ["no_windows"],
     deps = [
         ":transport_security_test_lib",
-        "//:gpr",
         "//:grpc",
         "//:tsi",
         "//test/core/util:grpc_test_util",
@@ -117,7 +113,6 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "C++",
     deps = [
-        "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],

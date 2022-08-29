@@ -81,7 +81,6 @@ def json_run_localhost_batch():
                 "//test/cpp/qps:qps_worker",
             ],
             deps = [
-                "//:gpr",
                 "//test/core/util:grpc_test_util",
                 "//test/cpp/util:test_config",
                 "//test/cpp/util:test_util",

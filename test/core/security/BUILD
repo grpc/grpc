@@ -26,7 +26,6 @@ grpc_fuzzer(
     language = "C++",
     tags = ["no_windows"],
     deps = [
-        "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
@@ -45,7 +44,6 @@ grpc_fuzzer(
     language = "C++",
     tags = ["no_windows"],
     deps = [
-        "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
@@ -69,7 +67,6 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
@@ -82,7 +79,6 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "C++",
     deps = [
-        "//:gpr",
         "//:grpc",
         "//:grpc_cel_engine",
         "//test/core/util:grpc_test_util",
@@ -96,7 +92,6 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "C++",
     deps = [
-        "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
@@ -109,7 +104,6 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "C++",
     deps = [
-        "//:gpr",
         "//:grpc",
         "//:grpc_secure",
         "//test/core/util:grpc_test_util",
@@ -123,7 +117,6 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "C++",
     deps = [
-        "//:gpr",
         "//:grpc",
         "//:grpc_authorization_base",
         "//:grpc_secure",
@@ -140,7 +133,6 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
@@ -155,7 +147,6 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
@@ -169,7 +160,6 @@ grpc_cc_test(
     flaky = True,
     language = "C++",
     deps = [
-        "//:gpr",
         "//:grpc",
         "//test/core/iomgr:endpoint_tests",
         "//test/core/util:grpc_test_util",
@@ -183,7 +173,6 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "C++",
     deps = [
-        "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
@@ -204,7 +193,6 @@ grpc_cc_test(
     ],
     language = "C++",
     deps = [
-        "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
@@ -217,7 +205,6 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "C++",
     deps = [
-        "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
@@ -229,7 +216,6 @@ grpc_cc_binary(
     srcs = ["create_jwt.cc"],
     language = "C++",
     deps = [
-        "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
@@ -242,7 +228,6 @@ grpc_cc_binary(
     language = "C++",
     deps = [
         ":oauth2_utils",
-        "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//test/core/util:grpc_test_util",
@@ -255,7 +240,6 @@ grpc_cc_binary(
     srcs = ["verify_jwt.cc"],
     language = "C++",
     deps = [
-        "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
@@ -268,7 +252,6 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "C++",
     deps = [
-        "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
@@ -281,7 +264,6 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "C++",
     deps = [
-        "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
@@ -294,7 +276,6 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "C++",
     deps = [
-        "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
@@ -307,7 +288,6 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "C++",
     deps = [
-        "//:gpr",
         "//:grpc",
         "//:grpc_base",
         "//:grpc_secure",
@@ -333,7 +313,6 @@ grpc_cc_test(
     ],
     language = "C++",
     deps = [
-        "//:gpr",
         "//:grpc",
         "//:grpc_secure",
         "//test/core/util:grpc_test_util",
@@ -357,7 +336,6 @@ grpc_cc_test(
     flaky = True,
     language = "C++",
     deps = [
-        "//:gpr",
         "//:grpc",
         "//:grpc_secure",
         "//test/core/util:grpc_test_util",
@@ -371,7 +349,6 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "C++",
     deps = [
-        "//:gpr",
         "//:grpc",
         "//:grpc_secure",
         "//test/core/util:grpc_test_util",
@@ -385,7 +362,6 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "C++",
     deps = [
-        "//:gpr",
         "//:grpc",
         "//:grpc_secure",
         "//test/core/util:grpc_test_util",
@@ -409,7 +385,6 @@ grpc_cc_test(
     flaky = True,
     language = "C++",
     deps = [
-        "//:gpr",
         "//:grpc",
         "//:grpc_secure",
         "//test/core/util:grpc_test_util",
@@ -423,7 +398,6 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "C++",
     deps = [
-        "//:gpr",
         "//:grpc",
         "//:grpc_secure",
         "//test/core/util:grpc_test_util",
@@ -438,7 +412,6 @@ grpc_cc_test(
         "gtest",
     ],
     deps = [
-        "//:gpr",
         "//:grpc",
         "//:grpc_secure",
         "//test/core/util:grpc_test_util",
@@ -453,7 +426,6 @@ grpc_cc_test(
         "gtest",
     ],
     deps = [
-        "//:gpr",
         "//:grpc",
         "//:grpc_secure",
         "//test/core/util:grpc_test_util",
@@ -467,7 +439,6 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "C++",
     deps = [
-        "//:gpr",
         "//:grpc",
         "//:grpc_secure",
         "//test/core/util:grpc_test_util",
@@ -481,7 +452,6 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "C++",
     deps = [
-        "//:gpr",
         "//:grpc",
         "//:grpc_authorization_provider",
         "//test/core/util:grpc_test_util",
@@ -495,7 +465,6 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "C++",
     deps = [
-        "//:gpr",
         "//:grpc",
         "//:grpc_rbac_engine",
         "//test/core/util:grpc_test_util",
@@ -509,7 +478,6 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "C++",
     deps = [
-        "//:gpr",
         "//:grpc",
         "//:grpc_rbac_engine",
         "//test/core/util:grpc_test_util",
@@ -528,7 +496,6 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "C++",
     deps = [
-        "//:gpr",
         "//:grpc",
         "//:grpc_authorization_provider",
         "//test/core/util:grpc_test_util",
@@ -544,7 +511,6 @@ grpc_cc_test(
     ],
     language = "C++",
     deps = [
-        "//:gpr",
         "//:grpc",
         "//:grpc_secure",
         "//test/core/util:grpc_test_util",

@@ -40,7 +40,6 @@ grpc_cc_test(
     flaky = True,
     tags = ["no_windows"],
     deps = [
-        "//:gpr",
         "//:grpc",
         "//:lb_load_reporter",
         "//:lb_server_load_reporting_filter",
@@ -55,7 +54,6 @@ grpc_cc_test(
         "gtest",
     ],
     deps = [
-        "//:gpr",
         "//:grpc",
         "//:lb_get_cpu_stats",
         "//test/core/util:grpc_test_util",
