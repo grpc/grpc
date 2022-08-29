@@ -2127,11 +2127,19 @@ class ClientLbPickArgsTest : public ClientLbEnd2endTest {
   }
 
   static void SetUpTestCase() {
+    grpc_core::CoreConfiguration::Reset();
+    grpc_core::CoreConfiguration::RegisterBuilder(
+        [](grpc_core::CoreConfiguration::Builder* builder) {
+          grpc_core::RegisterTestPickArgsLoadBalancingPolicy(builder,
+                                                             SavePickArgs);
+        });
     grpc_init();
-    grpc_core::RegisterTestPickArgsLoadBalancingPolicy(SavePickArgs);
   }
 
-  static void TearDownTestCase() { grpc_shutdown(); }
+  static void TearDownTestCase() {
+    grpc_shutdown();
+    grpc_core::CoreConfiguration::Reset();
+  }
 
   std::vector<grpc_core::PickArgsSeen> args_seen_list() {
     grpc_core::MutexLock lock(&mu_);
@@ -2224,12 +2232,19 @@ class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
   }
 
   static void SetUpTestCase() {
+    grpc_core::CoreConfiguration::Reset();
+    grpc_core::CoreConfiguration::RegisterBuilder(
+        [](grpc_core::CoreConfiguration::Builder* builder) {
+          grpc_core::RegisterInterceptRecvTrailingMetadataLoadBalancingPolicy(
+              builder, ReportTrailerIntercepted);
+        });
     grpc_init();
-    grpc_core::RegisterInterceptRecvTrailingMetadataLoadBalancingPolicy(
-        ReportTrailerIntercepted);
   }
 
-  static void TearDownTestCase() { grpc_shutdown(); }
+  static void TearDownTestCase() {
+    grpc_shutdown();
+    grpc_core::CoreConfiguration::Reset();
+  }
 
   int num_trailers_intercepted() {
     grpc_core::MutexLock lock(&mu_);
@@ -2498,11 +2513,19 @@ class ClientLbAddressTest : public ClientLbEnd2endTest {
   }
 
   static void SetUpTestCase() {
+    grpc_core::CoreConfiguration::Reset();
+    grpc_core::CoreConfiguration::RegisterBuilder(
+        [](grpc_core::CoreConfiguration::Builder* builder) {
+          grpc_core::RegisterAddressTestLoadBalancingPolicy(builder,
+                                                            SaveAddress);
+        });
     grpc_init();
-    grpc_core::RegisterAddressTestLoadBalancingPolicy(SaveAddress);
   }
 
-  static void TearDownTestCase() { grpc_shutdown(); }
+  static void TearDownTestCase() {
+    grpc_shutdown();
+    grpc_core::CoreConfiguration::Reset();
+  }
 
   const std::vector<std::string>& addresses_seen() {
     grpc_core::MutexLock lock(&mu_);
@@ -2563,12 +2586,19 @@ class OobBackendMetricTest : public ClientLbEnd2endTest {
   }
 
   static void SetUpTestCase() {
+    grpc_core::CoreConfiguration::Reset();
+    grpc_core::CoreConfiguration::RegisterBuilder(
+        [](grpc_core::CoreConfiguration::Builder* builder) {
+          grpc_core::RegisterOobBackendMetricTestLoadBalancingPolicy(
+              builder, BackendMetricCallback);
+        });
     grpc_init();
-    grpc_core::RegisterOobBackendMetricTestLoadBalancingPolicy(
-        BackendMetricCallback);
   }
 
-  static void TearDownTestCase() { grpc_shutdown(); }
+  static void TearDownTestCase() {
+    grpc_shutdown();
+    grpc_core::CoreConfiguration::Reset();
+  }
 
   absl::optional<BackendMetricReport> GetBackendMetricReport() {
     grpc_core::MutexLock lock(&mu_);

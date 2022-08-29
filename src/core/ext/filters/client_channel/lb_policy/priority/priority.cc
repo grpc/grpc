@@ -41,6 +41,7 @@
 #include "src/core/ext/filters/client_channel/lb_policy/address_filtering.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -983,8 +984,9 @@ class PriorityLbFactory : public LoadBalancingPolicyFactory {
                                  "be type boolean"));
               }
             }
-            auto config = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
-                it2->second);
+            auto config = CoreConfiguration::Get()
+                              .lb_policy_registry()
+                              .ParseLoadBalancingConfig(it2->second);
             if (!config.ok()) {
               errors.emplace_back(
                   absl::StrCat("field:children key:", child_name, ": ",
@@ -1038,16 +1040,9 @@ class PriorityLbFactory : public LoadBalancingPolicyFactory {
 
 }  // namespace
 
-}  // namespace grpc_core
-
-//
-// Plugin registration
-//
-
-void grpc_lb_policy_priority_init() {
-  grpc_core::LoadBalancingPolicyRegistry::Builder::
-      RegisterLoadBalancingPolicyFactory(
-          absl::make_unique<grpc_core::PriorityLbFactory>());
+void RegisterPriorityLbPolicy(CoreConfiguration::Builder* builder) {
+  builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
+      absl::make_unique<PriorityLbFactory>());
 }
 
-void grpc_lb_policy_priority_shutdown() {}
+}  // namespace grpc_core
