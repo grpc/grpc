@@ -47,7 +47,7 @@ namespace {
 
 void TryConnectAndDestroy(const char* fake_metadata_server_address) {
   grpc::ChannelArguments args;
-  std::string target = "google-c2p-experimental:///servername_not_used";
+  std::string target = "google-c2p:///servername_not_used";
   args.SetInt("grpc.testing.google_c2p_resolver_pretend_running_on_gcp", 1);
   args.SetString("grpc.testing.google_c2p_resolver_metadata_server_override",
                  fake_metadata_server_address);
