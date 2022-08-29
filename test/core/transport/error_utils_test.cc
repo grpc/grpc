@@ -20,10 +20,51 @@
 
 #include "absl/status/status.h"
 
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "test/core/util/test_config.h"
 
 namespace {
+
+TEST(ErrorUtilsTest, GetErrorGetStatusNone) {
+  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_status_code code;
+  std::string message;
+  grpc_error_get_status(error, grpc_core::Timestamp(), &code, &message, nullptr,
+                        nullptr);
+  ASSERT_EQ(code, GRPC_STATUS_OK);
+  ASSERT_EQ(message, "");
+}
+
+TEST(ErrorUtilsTest, GetErrorGetStatusFlat) {
+  grpc_error_handle error =
+      grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING("Msg"),
+                         GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_CANCELLED);
+  grpc_status_code code;
+  std::string message;
+  grpc_error_get_status(error, grpc_core::Timestamp(), &code, &message, nullptr,
+                        nullptr);
+  ASSERT_EQ(code, GRPC_STATUS_CANCELLED);
+  ASSERT_EQ(message, "Msg");
+  GRPC_ERROR_UNREF(error);
+}
+
+TEST(ErrorUtilsTest, GetErrorGetStatusChild) {
+  std::vector<grpc_error_handle> children = {
+      GRPC_ERROR_CREATE_FROM_STATIC_STRING("Child1"),
+      grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING("Child2"),
+                         GRPC_ERROR_INT_GRPC_STATUS,
+                         GRPC_STATUS_RESOURCE_EXHAUSTED),
+  };
+  grpc_error_handle error = GRPC_ERROR_CREATE_FROM_VECTOR("Parent", &children);
+  grpc_status_code code;
+  std::string message;
+  grpc_error_get_status(error, grpc_core::Timestamp(), &code, &message, nullptr,
+                        nullptr);
+  ASSERT_EQ(code, GRPC_STATUS_RESOURCE_EXHAUSTED);
+  ASSERT_EQ(message, "Child2");
+  GRPC_ERROR_UNREF(error);
+}
 
 // ---- Ok Status ----
 TEST(ErrorUtilsTest, AbslOkToGrpcError) {

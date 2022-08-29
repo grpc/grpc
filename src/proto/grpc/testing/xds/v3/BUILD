@@ -92,6 +92,7 @@ grpc_proto_library(
         "base_proto",
         "config_source_proto",
         "endpoint_proto",
+        "extension_proto",
         "outlier_detection_proto",
     ],
 )
@@ -373,6 +374,49 @@ grpc_proto_library(
     deps = [
         "rbac_proto",
     ],
+)
+
+grpc_proto_library(
+    name = "ring_hash_proto",
+    srcs = [
+        "ring_hash.proto",
+    ],
+    well_known_protos = True,
+)
+
+grpc_proto_library(
+    name = "round_robin_proto",
+    srcs = [
+        "round_robin.proto",
+    ],
+    well_known_protos = True,
+)
+
+grpc_proto_library(
+    name = "wrr_locality_proto",
+    srcs = [
+        "wrr_locality.proto",
+    ],
+    well_known_protos = True,
+    deps = [
+        "cluster_proto",
+    ],
+)
+
+grpc_proto_library(
+    name = "typed_struct_proto",
+    srcs = [
+        "typed_struct.proto",
+    ],
+    well_known_protos = True,
+)
+
+grpc_proto_library(
+    name = "udpa_typed_struct_proto",
+    srcs = [
+        "udpa_typed_struct.proto",
+    ],
+    well_known_protos = True,
 )
 
 py_proto_library(

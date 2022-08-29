@@ -18,27 +18,29 @@
 
 #include "src/core/lib/gprpp/fork.h"
 
+#include <gtest/gtest.h>
+
 #include "src/core/lib/gprpp/thd.h"
 #include "test/core/util/test_config.h"
 
-static void test_init() {
-  GPR_ASSERT(!grpc_core::Fork::Enabled());
+TEST(ForkTest, Init) {
+  ASSERT_FALSE(grpc_core::Fork::Enabled());
 
   // Default fork support (disabled)
   grpc_core::Fork::GlobalInit();
-  GPR_ASSERT(!grpc_core::Fork::Enabled());
+  ASSERT_FALSE(grpc_core::Fork::Enabled());
   grpc_core::Fork::GlobalShutdown();
 
   // Explicitly disabled fork support
   grpc_core::Fork::Enable(false);
   grpc_core::Fork::GlobalInit();
-  GPR_ASSERT(!grpc_core::Fork::Enabled());
+  ASSERT_FALSE(grpc_core::Fork::Enabled());
   grpc_core::Fork::GlobalShutdown();
 
   // Explicitly enabled fork support
   grpc_core::Fork::Enable(true);
   grpc_core::Fork::GlobalInit();
-  GPR_ASSERT(grpc_core::Fork::Enabled());
+  ASSERT_TRUE(grpc_core::Fork::Enabled());
   grpc_core::Fork::GlobalShutdown();
 }
 
@@ -48,7 +50,7 @@ static void test_init() {
 // because tsan threads can take a while to spawn/join.
 #define THREAD_DELAY_MS 6000
 #define THREAD_DELAY_EPSILON 1500
-#define CONCURRENT_TEST_THREADS 100
+#define CONCURRENT_TEST_THREADS 10
 
 static void sleeping_thd(void* arg) {
   int64_t sleep_ms = reinterpret_cast<int64_t>(arg);
@@ -56,7 +58,7 @@ static void sleeping_thd(void* arg) {
                                gpr_time_from_millis(sleep_ms, GPR_TIMESPAN)));
 }
 
-static void test_thd_count() {
+TEST(ForkTest, ThdCount) {
   // Test no active threads
   grpc_core::Fork::Enable(true);
   grpc_core::Fork::GlobalInit();
@@ -69,8 +71,8 @@ static void test_thd_count() {
   gpr_timespec est_end_time =
       gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                    gpr_time_from_millis(THREAD_DELAY_MS, GPR_TIMESPAN));
-  gpr_timespec tolerance =
-      gpr_time_from_millis(THREAD_DELAY_EPSILON, GPR_TIMESPAN);
+  gpr_timespec tolerance = gpr_time_from_millis(
+      THREAD_DELAY_EPSILON * grpc_test_slowdown_factor(), GPR_TIMESPAN);
   for (int i = 0; i < CONCURRENT_TEST_THREADS; i++) {
     intptr_t sleep_time_ms =
         (i * THREAD_DELAY_MS) / (CONCURRENT_TEST_THREADS - 1);
@@ -83,7 +85,7 @@ static void test_thd_count() {
   for (auto& thd : thds) {
     thd.Join();
   }
-  GPR_ASSERT(gpr_time_similar(end_time, est_end_time, tolerance));
+  ASSERT_TRUE(gpr_time_similar(end_time, est_end_time, tolerance));
   grpc_core::Fork::GlobalShutdown();
 }
 
@@ -93,23 +95,23 @@ static void exec_ctx_thread(void* arg) {
   *exec_ctx_created = true;
 }
 
-static void test_exec_count() {
+TEST(ForkTest, ExecCount) {
   grpc_core::Fork::Enable(true);
   grpc_core::Fork::GlobalInit();
 
   grpc_core::Fork::IncExecCtxCount();
-  GPR_ASSERT(grpc_core::Fork::BlockExecCtx());
+  ASSERT_TRUE(grpc_core::Fork::BlockExecCtx());
   grpc_core::Fork::DecExecCtxCount();
   grpc_core::Fork::AllowExecCtx();
 
   grpc_core::Fork::IncExecCtxCount();
   grpc_core::Fork::IncExecCtxCount();
-  GPR_ASSERT(!grpc_core::Fork::BlockExecCtx());
+  ASSERT_FALSE(grpc_core::Fork::BlockExecCtx());
   grpc_core::Fork::DecExecCtxCount();
   grpc_core::Fork::DecExecCtxCount();
 
   grpc_core::Fork::IncExecCtxCount();
-  GPR_ASSERT(grpc_core::Fork::BlockExecCtx());
+  ASSERT_TRUE(grpc_core::Fork::BlockExecCtx());
   grpc_core::Fork::DecExecCtxCount();
   grpc_core::Fork::AllowExecCtx();
 
@@ -118,22 +120,19 @@ static void test_exec_count() {
   grpc_core::Thread thd =
       grpc_core::Thread("grpc_fork_test", exec_ctx_thread, &exec_ctx_created);
   grpc_core::Fork::IncExecCtxCount();
-  GPR_ASSERT(grpc_core::Fork::BlockExecCtx());
+  ASSERT_TRUE(grpc_core::Fork::BlockExecCtx());
   grpc_core::Fork::DecExecCtxCount();
   thd.Start();
   gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                                gpr_time_from_seconds(1, GPR_TIMESPAN)));
-  GPR_ASSERT(!exec_ctx_created);
+  ASSERT_FALSE(exec_ctx_created);
   grpc_core::Fork::AllowExecCtx();
   thd.Join();  // This ensure that the call got un-blocked
   grpc_core::Fork::GlobalShutdown();
 }
 
-int main(int argc, char* argv[]) {
+int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
-  test_init();
-  test_thd_count();
-  test_exec_count();
-
-  return 0;
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }

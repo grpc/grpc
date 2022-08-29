@@ -20,8 +20,13 @@
 
 #include "src/core/lib/security/security_connector/ssl/ssl_security_connector.h"
 
-#include <stdbool.h>
+#include <stdint.h>
+#include <string.h>
 
+#include <string>
+#include <utility>
+
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
@@ -29,28 +34,34 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/transport/chttp2/alpn/alpn.h"
-#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
+#include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/ssl/ssl_credentials.h"
-#include "src/core/lib/security/security_connector/load_system_roots.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
 #include "src/core/lib/transport/handshaker.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security.h"
+#include "src/core/tsi/transport_security_interface.h"
 
 namespace {
 grpc_error_handle ssl_check_peer(
     const char* peer_name, const tsi_peer* peer,
     grpc_core::RefCountedPtr<grpc_auth_context>* auth_context) {
   grpc_error_handle error = grpc_ssl_check_alpn(peer);
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     return error;
   }
   /* Check the peer name if specified. */
@@ -120,7 +131,7 @@ class grpc_ssl_channel_security_connector final
     return GRPC_SECURITY_OK;
   }
 
-  void add_handshakers(const grpc_channel_args* args,
+  void add_handshakers(const grpc_core::ChannelArgs& args,
                        grpc_pollset_set* /*interested_parties*/,
                        grpc_core::HandshakeManager* handshake_mgr) override {
     // Instantiate TSI handshaker.
@@ -141,13 +152,14 @@ class grpc_ssl_channel_security_connector final
   }
 
   void check_peer(tsi_peer peer, grpc_endpoint* /*ep*/,
+                  const grpc_core::ChannelArgs& /*args*/,
                   grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
                   grpc_closure* on_peer_checked) override {
     const char* target_name = overridden_target_name_.empty()
                                   ? target_name_.c_str()
                                   : overridden_target_name_.c_str();
     grpc_error_handle error = ssl_check_peer(target_name, &peer, auth_context);
-    if (error == GRPC_ERROR_NONE &&
+    if (GRPC_ERROR_IS_NONE(error) &&
         verify_options_->verify_peer_callback != nullptr) {
       const tsi_peer_property* p =
           tsi_peer_get_property_by_name(&peer, TSI_X509_PEM_CERT_PROPERTY);
@@ -266,7 +278,7 @@ class grpc_ssl_server_security_connector
     return GRPC_SECURITY_OK;
   }
 
-  void add_handshakers(const grpc_channel_args* args,
+  void add_handshakers(const grpc_core::ChannelArgs& args,
                        grpc_pollset_set* /*interested_parties*/,
                        grpc_core::HandshakeManager* handshake_mgr) override {
     // Instantiate TSI handshaker.
@@ -285,6 +297,7 @@ class grpc_ssl_server_security_connector
   }
 
   void check_peer(tsi_peer peer, grpc_endpoint* /*ep*/,
+                  const grpc_core::ChannelArgs& /*args*/,
                   grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
                   grpc_closure* on_peer_checked) override {
     grpc_error_handle error = ssl_check_peer(nullptr, &peer, auth_context);

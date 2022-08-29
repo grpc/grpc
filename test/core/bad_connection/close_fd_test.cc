@@ -21,6 +21,7 @@
  * an RPC call is in progress.
  *
  */
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/port.h"
 
 // This test won't work except with posix sockets enabled
@@ -101,7 +102,8 @@ static void client_setup_transport(grpc_transport* transport) {
 static void init_client() {
   grpc_core::ExecCtx exec_ctx;
   grpc_transport* transport;
-  transport = grpc_create_chttp2_transport(nullptr, g_ctx.ep->client, true);
+  transport = grpc_create_chttp2_transport(grpc_core::ChannelArgs(),
+                                           g_ctx.ep->client, true);
   client_setup_transport(transport);
   GPR_ASSERT(g_ctx.client);
   grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
@@ -114,7 +116,8 @@ static void init_server() {
   g_ctx.server = grpc_server_create(nullptr, nullptr);
   grpc_server_register_completion_queue(g_ctx.server, g_ctx.cq, nullptr);
   grpc_server_start(g_ctx.server);
-  transport = grpc_create_chttp2_transport(nullptr, g_ctx.ep->server, false);
+  transport = grpc_create_chttp2_transport(grpc_core::ChannelArgs(),
+                                           g_ctx.ep->server, false);
   server_setup_transport(transport);
   grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
 }

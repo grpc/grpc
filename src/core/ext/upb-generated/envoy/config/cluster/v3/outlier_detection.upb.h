@@ -55,11 +55,15 @@ UPB_INLINE envoy_config_cluster_v3_OutlierDetection* envoy_config_cluster_v3_Out
   return ret;
 }
 UPB_INLINE char* envoy_config_cluster_v3_OutlierDetection_serialize(const envoy_config_cluster_v3_OutlierDetection* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_cluster_v3_OutlierDetection_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_cluster_v3_OutlierDetection_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_config_cluster_v3_OutlierDetection_serialize_ex(const envoy_config_cluster_v3_OutlierDetection* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_cluster_v3_OutlierDetection_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_cluster_v3_OutlierDetection_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE bool envoy_config_cluster_v3_OutlierDetection_has_consecutive_5xx(const envoy_config_cluster_v3_OutlierDetection* msg) {
   return _upb_hasbit(msg, 1);

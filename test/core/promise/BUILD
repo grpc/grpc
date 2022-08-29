@@ -25,9 +25,7 @@ grpc_cc_library(
     hdrs = ["test_wakeup_schedulers.h"],
     external_deps = ["gtest"],
     visibility = ["//test/core:__subpackages__"],
-    deps = [
-        "//test/core/util:grpc_suppressions",
-    ],
+    deps = [],
 )
 
 grpc_cc_library(
@@ -36,9 +34,7 @@ grpc_cc_library(
     hdrs = ["test_context.h"],
     external_deps = ["gtest"],
     visibility = ["//test/core:__subpackages__"],
-    deps = [
-        "//test/core/util:grpc_suppressions",
-    ],
+    deps = [],
 )
 
 grpc_cc_test(
@@ -50,7 +46,6 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:poll",
-        "//test/core/util:grpc_suppressions",
     ],
 )
 
@@ -63,7 +58,6 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:context",
-        "//test/core/util:grpc_suppressions",
     ],
 )
 
@@ -76,7 +70,6 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:promise",
-        "//test/core/util:grpc_suppressions",
     ],
 )
 
@@ -91,7 +84,6 @@ grpc_cc_test(
         ":test_context",
         "//:arena_promise",
         "//:resource_quota",
-        "//test/core/util:grpc_suppressions",
     ],
 )
 
@@ -110,7 +102,6 @@ grpc_cc_test(
     deps = [
         "//:map",
         "//:promise",
-        "//test/core/util:grpc_suppressions",
     ],
 )
 
@@ -123,7 +114,6 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:race",
-        "//test/core/util:grpc_suppressions",
     ],
 )
 
@@ -140,7 +130,6 @@ grpc_cc_test(
     deps = [
         "//:promise",
         "//:promise_factory",
-        "//test/core/util:grpc_suppressions",
     ],
 )
 
@@ -153,7 +142,6 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:if",
-        "//test/core/util:grpc_suppressions",
     ],
 )
 
@@ -167,7 +155,6 @@ grpc_cc_test(
     deps = [
         "//:loop",
         "//:seq",
-        "//test/core/util:grpc_suppressions",
     ],
 )
 
@@ -180,7 +167,6 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:join",
-        "//test/core/util:grpc_suppressions",
     ],
 )
 
@@ -193,7 +179,6 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:try_join",
-        "//test/core/util:grpc_suppressions",
     ],
 )
 
@@ -206,7 +191,6 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:seq",
-        "//test/core/util:grpc_suppressions",
     ],
 )
 
@@ -219,7 +203,6 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:try_seq",
-        "//test/core/util:grpc_suppressions",
     ],
 )
 
@@ -234,7 +217,6 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc_base",
         "//:try_seq",
-        "//test/core/util:grpc_suppressions",
     ],
 )
 
@@ -242,6 +224,7 @@ grpc_cc_test(
     name = "activity_test",
     srcs = ["activity_test.cc"],
     external_deps = ["gtest"],
+    flaky = True,
     language = "c++",
     uses_event_engine = False,
     uses_polling = False,
@@ -252,7 +235,6 @@ grpc_cc_test(
         "//:promise",
         "//:seq",
         "//:wait_set",
-        "//test/core/util:grpc_suppressions",
     ],
 )
 
@@ -268,7 +250,6 @@ grpc_cc_test(
         "//:join",
         "//:latch",
         "//:seq",
-        "//test/core/util:grpc_suppressions",
     ],
 )
 
@@ -284,7 +265,6 @@ grpc_cc_test(
         "//:observable",
         "//:promise",
         "//:seq",
-        "//test/core/util:grpc_suppressions",
     ],
 )
 
@@ -304,7 +284,6 @@ grpc_cc_test(
         "//:pipe",
         "//:resource_quota",
         "//:seq",
-        "//test/core/util:grpc_suppressions",
     ],
 )
 
@@ -322,7 +301,6 @@ grpc_cc_test(
         "//:promise",
         "//:resource_quota",
         "//:seq",
-        "//test/core/util:grpc_suppressions",
     ],
 )
 
@@ -355,7 +333,6 @@ grpc_cc_test(
     deps = [
         "//:activity",
         "//:exec_ctx_wakeup_scheduler",
-        "//test/core/util:grpc_suppressions",
     ],
 )
 
@@ -372,9 +349,9 @@ grpc_cc_test(
     deps = [
         "test_wakeup_schedulers",
         "//:activity",
+        "//:exec_ctx",
         "//:grpc",
         "//:sleep",
-        "//test/core/util:grpc_suppressions",
     ],
 )
 
@@ -390,6 +367,5 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:call_push_pull",
-        "//test/core/util:grpc_suppressions",
     ],
 )

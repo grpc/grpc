@@ -16,8 +16,6 @@
  *
  */
 
-// IWYU pragma: no_include <ext/alloc_traits.h>
-
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/chttp2/transport/hpack_parser_table.h"

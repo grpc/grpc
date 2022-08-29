@@ -29,6 +29,7 @@ grpc_fuzzer(
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -47,6 +48,7 @@ grpc_fuzzer(
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -62,6 +64,7 @@ grpc_cc_library(
 grpc_cc_test(
     name = "auth_context_test",
     srcs = ["auth_context_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,
@@ -69,6 +72,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -82,6 +86,7 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc_cel_engine",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -94,6 +99,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -107,6 +113,7 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc_secure",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -121,12 +128,14 @@ grpc_cc_test(
         "//:grpc_authorization_base",
         "//:grpc_secure",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
 grpc_cc_test(
     name = "json_token_test",
     srcs = ["json_token_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,
@@ -134,12 +143,14 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
 grpc_cc_test(
     name = "jwt_verifier_test",
     srcs = ["jwt_verifier_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,
@@ -147,35 +158,41 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
 grpc_cc_test(
     name = "secure_endpoint_test",
     srcs = ["secure_endpoint_test.cc"],
+    external_deps = ["gtest"],
+    flaky = True,
     language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
         "//test/core/iomgr:endpoint_tests",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
 grpc_cc_test(
     name = "security_connector_test",
     srcs = ["security_connector_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
 grpc_cc_test(
-    name = "linux_system_roots_test",
-    srcs = ["linux_system_roots_test.cc"],
+    name = "system_roots_test",
+    srcs = ["system_roots_test.cc"],
     data = [
         "//test/core/security/etc:bundle.pem",
         "//test/core/security/etc:test_roots/cert1.pem",
@@ -190,17 +207,20 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
 grpc_cc_test(
     name = "ssl_credentials_test",
     srcs = ["ssl_credentials_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -212,6 +232,7 @@ grpc_cc_binary(
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -225,6 +246,7 @@ grpc_cc_binary(
         "//:grpc",
         "//:grpc++",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -236,45 +258,53 @@ grpc_cc_binary(
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
 grpc_cc_test(
     name = "check_gcp_environment_linux_test",
     srcs = ["check_gcp_environment_linux_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
 grpc_cc_test(
     name = "check_gcp_environment_windows_test",
     srcs = ["check_gcp_environment_windows_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
 grpc_cc_test(
     name = "grpc_alts_credentials_options_test",
     srcs = ["grpc_alts_credentials_options_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
 grpc_cc_test(
     name = "alts_security_connector_test",
     srcs = ["alts_security_connector_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     deps = [
         "//:gpr",
@@ -282,6 +312,7 @@ grpc_cc_test(
         "//:grpc_base",
         "//:grpc_secure",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -306,6 +337,7 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc_secure",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -322,12 +354,14 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:server1.pem",
     ],
     external_deps = ["gtest"],
+    flaky = True,
     language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
         "//:grpc_secure",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -341,6 +375,7 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc_secure",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -354,6 +389,7 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc_secure",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -370,12 +406,14 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:server1.pem",
     ],
     external_deps = ["gtest"],
+    flaky = True,
     language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
         "//:grpc_secure",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -389,6 +427,7 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc_secure",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -403,6 +442,7 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc_secure",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -417,6 +457,7 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc_secure",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -430,6 +471,7 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc_secure",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -443,6 +485,7 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc_authorization_provider",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -456,6 +499,7 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc_rbac_engine",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -469,6 +513,7 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc_rbac_engine",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -487,6 +532,7 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc_authorization_provider",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -502,5 +548,6 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc_secure",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )

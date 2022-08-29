@@ -27,7 +27,6 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/alloc.h"
-#include "src/core/lib/promise/poll.h"
 
 grpc_core::TraceFlag grpc_trace_channel(false, "channel");
 grpc_core::TraceFlag grpc_trace_channel_stack(false, "channel_stack");
@@ -143,8 +142,8 @@ grpc_error_handle grpc_channel_stack_init(
     elems[i].channel_data = user_data;
     grpc_error_handle error =
         elems[i].filter->init_channel_elem(&elems[i], &args);
-    if (error != GRPC_ERROR_NONE) {
-      if (first_error == GRPC_ERROR_NONE) {
+    if (!GRPC_ERROR_IS_NONE(error)) {
+      if (GRPC_ERROR_IS_NONE(first_error)) {
         first_error = error;
       } else {
         GRPC_ERROR_UNREF(error);
@@ -205,8 +204,8 @@ grpc_error_handle grpc_call_stack_init(
   for (size_t i = 0; i < count; i++) {
     grpc_error_handle error =
         call_elems[i].filter->init_call_elem(&call_elems[i], elem_args);
-    if (error != GRPC_ERROR_NONE) {
-      if (first_error == GRPC_ERROR_NONE) {
+    if (!GRPC_ERROR_IS_NONE(error)) {
+      if (GRPC_ERROR_IS_NONE(first_error)) {
         first_error = error;
       } else {
         GRPC_ERROR_UNREF(error);

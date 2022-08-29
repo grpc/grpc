@@ -101,8 +101,6 @@ CLASSIFIERS = [
     'Development Status :: 5 - Production/Stable',
     'Programming Language :: Python',
     'Programming Language :: Python :: 3',
-    'Programming Language :: Python :: 3.5',
-    'Programming Language :: Python :: 3.6',
     'Programming Language :: Python :: 3.7',
     'Programming Language :: Python :: 3.8',
     'Programming Language :: Python :: 3.9',
@@ -216,11 +214,11 @@ def check_linker_need_libatomic():
         return False
     # Double-check to see if -latomic actually can solve the problem.
     # https://github.com/grpc/grpc/issues/22491
-    cpp_test = subprocess.Popen(
-        [cxx, '-x', 'c++', '-std=c++14', '-', '-latomic'],
-        stdin=PIPE,
-        stdout=PIPE,
-        stderr=PIPE)
+    cpp_test = subprocess.Popen(cxx +
+                                ['-x', 'c++', '-std=c++14', '-', '-latomic'],
+                                stdin=PIPE,
+                                stdout=PIPE,
+                                stderr=PIPE)
     cpp_test.communicate(input=code_test)
     return cpp_test.returncode == 0
 
@@ -552,7 +550,7 @@ setuptools.setup(
     packages=list(PACKAGES),
     package_dir=PACKAGE_DIRECTORIES,
     package_data=PACKAGE_DATA,
-    python_requires='>=3.6',
+    python_requires='>=3.7',
     install_requires=INSTALL_REQUIRES,
     extras_require=EXTRAS_REQUIRES,
     setup_requires=SETUP_REQUIRES,

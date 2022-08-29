@@ -55,7 +55,7 @@
 #include "src/core/lib/promise/latch.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
-#include "src/core/lib/transport/byte_stream.h"
+#include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport_fwd.h"
@@ -69,6 +69,17 @@ struct grpc_transport_stream_op_batch_payload;
 #define GRPC_PROTOCOL_VERSION_MIN_MINOR 1
 
 #define GRPC_ARG_TRANSPORT "grpc.internal.transport"
+
+/** Internal bit flag for grpc_begin_message's \a flags signaling the use of
+ * compression for the message. (Does not apply for stream compression.) */
+#define GRPC_WRITE_INTERNAL_COMPRESS (0x80000000u)
+/** Internal bit flag for determining whether the message was compressed and had
+ * to be decompressed by the message_decompress filter. (Does not apply for
+ * stream compression.) */
+#define GRPC_WRITE_INTERNAL_TEST_ONLY_WAS_COMPRESSED (0x40000000u)
+/** Mask of all valid internal flags. */
+#define GRPC_WRITE_INTERNAL_USED_MASK \
+  (GRPC_WRITE_INTERNAL_COMPRESS | GRPC_WRITE_INTERNAL_TEST_ONLY_WAS_COMPRESSED)
 
 namespace grpc_core {
 // TODO(ctiller): eliminate once MetadataHandle is constructable directly.
@@ -331,17 +342,8 @@ struct grpc_transport_stream_op_batch_payload {
   explicit grpc_transport_stream_op_batch_payload(
       grpc_call_context_element* context)
       : context(context) {}
-  ~grpc_transport_stream_op_batch_payload() {
-    // We don't really own `send_message`, so release ownership and let the
-    // owner clean the data.
-    (void)send_message.send_message.release();
-  }
-
   struct {
     grpc_metadata_batch* send_initial_metadata = nullptr;
-    /** Iff send_initial_metadata != NULL, flags associated with
-        send_initial_metadata: a bitfield of GRPC_INITIAL_METADATA_xxx */
-    uint32_t send_initial_metadata_flags = 0;
     // If non-NULL, will be set by the transport to the peer string (a char*).
     // The transport retains ownership of the string.
     // Note: This pointer may be used by the transport after the
@@ -365,7 +367,8 @@ struct grpc_transport_stream_op_batch_payload {
     // the op gets down to the transport) takes ownership.
     // The batch's on_complete will not be called until after the byte
     // stream is orphaned.
-    grpc_core::OrphanablePtr<grpc_core::ByteStream> send_message;
+    grpc_core::SliceBuffer* send_message;
+    uint32_t flags = 0;
     // Set by the transport if the stream has been closed for writes. If this
     // is set and send message op is present, we set the operation to be a
     // failure without sending a cancel OP down the stack. This is so that the
@@ -382,10 +385,6 @@ struct grpc_transport_stream_op_batch_payload {
 
   struct {
     grpc_metadata_batch* recv_initial_metadata = nullptr;
-    // Flags are used only on the server side.  If non-null, will be set to
-    // a bitfield of the GRPC_INITIAL_METADATA_xxx macros (e.g., to
-    // indicate if the call is idempotent).
-    uint32_t* recv_flags = nullptr;
     /** Should be enqueued when initial metadata is ready to be processed. */
     grpc_closure* recv_initial_metadata_ready = nullptr;
     // If not NULL, will be set to true if trailing metadata is
@@ -404,10 +403,11 @@ struct grpc_transport_stream_op_batch_payload {
   } recv_initial_metadata;
 
   struct {
-    // Will be set by the transport to point to the byte stream
-    // containing a received message.
-    // Will be NULL if trailing metadata is received instead of a message.
-    grpc_core::OrphanablePtr<grpc_core::ByteStream>* recv_message = nullptr;
+    // Will be set by the transport to point to the byte stream containing a
+    // received message. Will be nullopt if trailing metadata is received
+    // instead of a message.
+    absl::optional<grpc_core::SliceBuffer>* recv_message = nullptr;
+    uint32_t* flags = nullptr;
     // Was this recv_message failed for reasons other than a clean end-of-stream
     bool* call_failed_before_recv_message = nullptr;
     /** Should be enqueued when one message is ready to be processed. */

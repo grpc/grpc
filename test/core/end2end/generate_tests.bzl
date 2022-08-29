@@ -20,6 +20,7 @@ load(
     "grpc_cc_library",
     "grpc_sh_test",
 )
+load("flaky.bzl", "FLAKY_TESTS")
 
 def _fixture_options(
         fullstack = True,
@@ -36,8 +37,10 @@ def _fixture_options(
         supports_write_buffering = True,
         client_channel = True,
         supports_msvc = True,
-        flaky_tests = [],
+        supports_retry = None,
         tags = []):
+    if supports_retry == None:
+        supports_retry = client_channel
     return struct(
         fullstack = fullstack,
         includes_proxy = includes_proxy,
@@ -53,7 +56,7 @@ def _fixture_options(
         client_channel = client_channel,
         supports_msvc = supports_msvc,
         _platforms = _platforms,
-        flaky_tests = flaky_tests,
+        supports_retry = supports_retry,
         tags = tags,
     )
 
@@ -73,11 +76,13 @@ END2END_FIXTURES = {
         tags = ["no_test_ios"],
     ),
     "h2_full": _fixture_options(),
+    "h2_full_no_retry": _fixture_options(supports_retry = False),
     "h2_full+pipe": _fixture_options(_platforms = ["linux"]),
     "h2_full+trace": _fixture_options(tracing = True),
     "h2_http_proxy": _fixture_options(supports_proxy_auth = True),
     "h2_insecure": _fixture_options(secure = True),
-    "h2_oauth2": _fixture_options(),
+    "h2_oauth2_tls12": _fixture_options(),
+    "h2_oauth2_tls13": _fixture_options(),
     "h2_proxy": _fixture_options(includes_proxy = True),
     "h2_sockpair_1byte": _fixture_options(
         fullstack = False,
@@ -96,9 +101,14 @@ END2END_FIXTURES = {
         tracing = True,
         client_channel = False,
     ),
-    "h2_ssl": _fixture_options(secure = True),
-    "h2_ssl_cred_reload": _fixture_options(secure = True),
-    "h2_tls": _fixture_options(secure = True),
+    "h2_ssl_tls12": _fixture_options(secure = True),
+    "h2_ssl_tls13": _fixture_options(secure = True),
+    "h2_ssl_cred_reload_tls12": _fixture_options(secure = True),
+    "h2_ssl_cred_reload_tls13": _fixture_options(secure = True),
+    "h2_tls_simple": _fixture_options(secure = True),
+    "h2_tls_static_async_tls1_3": _fixture_options(secure = True),
+    "h2_tls_certwatch_sync_tls1_2": _fixture_options(secure = True),
+    "h2_tls_certwatch_async_tls1_3": _fixture_options(secure = True),
     "h2_local_abstract_uds_percent_encoded": _fixture_options(
         secure = True,
         dns_resolver = False,
@@ -130,6 +140,10 @@ END2END_FIXTURES = {
         dns_resolver = False,
         _platforms = ["linux", "mac", "posix"],
     ),
+    "h2_uds_abstract": _fixture_options(
+        dns_resolver = False,
+        _platforms = ["linux", "posix"],
+    ),
     "inproc": _fixture_options(
         secure = True,
         fullstack = False,
@@ -155,6 +169,7 @@ def _test_options(
         needs_proxy_auth = False,
         needs_write_buffering = False,
         needs_client_channel = False,
+        needs_retry = False,
         short_name = None,
         exclude_pollers = []):
     return struct(
@@ -170,6 +185,7 @@ def _test_options(
         needs_proxy_auth = needs_proxy_auth,
         needs_write_buffering = needs_write_buffering,
         needs_client_channel = needs_client_channel,
+        needs_retry = needs_retry,
         short_name = short_name,
         exclude_pollers = exclude_pollers,
     )
@@ -250,81 +266,89 @@ END2END_TESTS = {
     "registered_call": _test_options(),
     "request_with_flags": _test_options(proxyable = False),
     "request_with_payload": _test_options(),
-    "retry": _test_options(needs_client_channel = True),
-    "retry_cancellation": _test_options(needs_client_channel = True),
-    "retry_cancel_during_delay": _test_options(needs_client_channel = True),
+    "retry": _test_options(needs_client_channel = True, needs_retry = True),
+    "retry_cancellation": _test_options(needs_client_channel = True, needs_retry = True),
+    "retry_cancel_during_delay": _test_options(needs_client_channel = True, needs_retry = True),
     "retry_cancel_with_multiple_send_batches": _test_options(
         # TODO(jtattermusch): too long bazel test name makes the test flaky on Windows RBE
         # See b/151617965
         short_name = "retry_cancel3",
         needs_client_channel = True,
+        needs_retry = True,
     ),
     "retry_cancel_after_first_attempt_starts": _test_options(
         # TODO(jtattermusch): too long bazel test name makes the test flaky on Windows RBE
         # See b/151617965
         short_name = "retry_cancel4",
         needs_client_channel = True,
+        needs_retry = True,
     ),
-    "retry_disabled": _test_options(needs_client_channel = True),
-    "retry_exceeds_buffer_size_in_delay": _test_options(needs_client_channel = True),
+    "retry_disabled": _test_options(needs_client_channel = True, needs_retry = True),
+    "retry_exceeds_buffer_size_in_delay": _test_options(needs_client_channel = True, needs_retry = True),
     "retry_exceeds_buffer_size_in_initial_batch": _test_options(
         needs_client_channel = True,
         # TODO(jtattermusch): too long bazel test name makes the test flaky on Windows RBE
         # See b/151617965
         short_name = "retry_exceeds_buffer_size_in_init",
+        needs_retry = True,
     ),
     "retry_exceeds_buffer_size_in_subsequent_batch": _test_options(
         needs_client_channel = True,
         # TODO(jtattermusch): too long bazel test name makes the test flaky on Windows RBE
         # See b/151617965
         short_name = "retry_exceeds_buffer_size_in_subseq",
+        needs_retry = True,
     ),
-    "retry_lb_drop": _test_options(needs_client_channel = True),
-    "retry_lb_fail": _test_options(needs_client_channel = True),
-    "retry_non_retriable_status": _test_options(needs_client_channel = True),
+    "retry_lb_drop": _test_options(needs_client_channel = True, needs_retry = True),
+    "retry_lb_fail": _test_options(needs_client_channel = True, needs_retry = True),
+    "retry_non_retriable_status": _test_options(needs_client_channel = True, needs_retry = True),
     "retry_non_retriable_status_before_recv_trailing_metadata_started": _test_options(
         needs_client_channel = True,
         # TODO(jtattermusch): too long bazel test name makes the test flaky on Windows RBE
         # See b/151617965
         short_name = "retry_non_retriable_status2",
+        needs_retry = True,
     ),
-    "retry_per_attempt_recv_timeout": _test_options(needs_client_channel = True),
+    "retry_per_attempt_recv_timeout": _test_options(needs_client_channel = True, needs_retry = True),
     "retry_per_attempt_recv_timeout_on_last_attempt": _test_options(
         needs_client_channel = True,
         # TODO(jtattermusch): too long bazel test name makes the test flaky on Windows RBE
         # See b/151617965
         short_name = "retry_per_attempt_recv_timeout2",
+        needs_retry = True,
     ),
-    "retry_recv_initial_metadata": _test_options(needs_client_channel = True),
-    "retry_recv_message": _test_options(needs_client_channel = True),
-    "retry_recv_message_replay": _test_options(needs_client_channel = True),
-    "retry_recv_trailing_metadata_error": _test_options(needs_client_channel = True),
-    "retry_send_initial_metadata_refs": _test_options(needs_client_channel = True),
-    "retry_send_op_fails": _test_options(needs_client_channel = True),
-    "retry_send_recv_batch": _test_options(needs_client_channel = True),
-    "retry_server_pushback_delay": _test_options(needs_client_channel = True),
-    "retry_server_pushback_disabled": _test_options(needs_client_channel = True),
-    "retry_streaming": _test_options(needs_client_channel = True),
-    "retry_streaming_after_commit": _test_options(needs_client_channel = True),
+    "retry_recv_initial_metadata": _test_options(needs_client_channel = True, needs_retry = True),
+    "retry_recv_message": _test_options(needs_client_channel = True, needs_retry = True),
+    "retry_recv_message_replay": _test_options(needs_client_channel = True, needs_retry = True),
+    "retry_recv_trailing_metadata_error": _test_options(needs_client_channel = True, needs_retry = True),
+    "retry_send_initial_metadata_refs": _test_options(needs_client_channel = True, needs_retry = True),
+    "retry_send_op_fails": _test_options(needs_client_channel = True, needs_retry = True),
+    "retry_send_recv_batch": _test_options(needs_client_channel = True, needs_retry = True),
+    "retry_server_pushback_delay": _test_options(needs_client_channel = True, needs_retry = True),
+    "retry_server_pushback_disabled": _test_options(needs_client_channel = True, needs_retry = True),
+    "retry_streaming": _test_options(needs_client_channel = True, needs_retry = True),
+    "retry_streaming_after_commit": _test_options(needs_client_channel = True, needs_retry = True),
     "retry_streaming_succeeds_before_replay_finished": _test_options(
         needs_client_channel = True,
         # TODO(jtattermusch): too long bazel test name makes the test flaky on Windows RBE
         # See b/151617965
         short_name = "retry_streaming2",
+        needs_retry = True,
     ),
-    "retry_throttled": _test_options(needs_client_channel = True),
-    "retry_too_many_attempts": _test_options(needs_client_channel = True),
-    "retry_transparent_goaway": _test_options(needs_client_channel = True),
-    "retry_transparent_not_sent_on_wire": _test_options(needs_client_channel = True),
+    "retry_throttled": _test_options(needs_client_channel = True, needs_retry = True),
+    "retry_too_many_attempts": _test_options(needs_client_channel = True, needs_retry = True),
+    "retry_transparent_goaway": _test_options(needs_client_channel = True, needs_retry = True),
+    "retry_transparent_not_sent_on_wire": _test_options(needs_client_channel = True, needs_retry = True),
     "retry_transparent_max_concurrent_streams": _test_options(
         needs_client_channel = True,
         proxyable = False,
         # TODO(jtattermusch): too long bazel test name makes the test flaky on Windows RBE
         # See b/151617965
         short_name = "retry_transparent_mcs",
+        needs_retry = True,
     ),
-    "retry_unref_before_finish": _test_options(needs_client_channel = True),
-    "retry_unref_before_recv": _test_options(needs_client_channel = True),
+    "retry_unref_before_finish": _test_options(needs_client_channel = True, needs_retry = True),
+    "retry_unref_before_recv": _test_options(needs_client_channel = True, needs_retry = True),
     "server_finishes_request": _test_options(),
     "server_streaming": _test_options(needs_http2 = True),
     "shutdown_finishes_calls": _test_options(),
@@ -375,6 +399,9 @@ def _compatible(fopt, topt):
     if topt.needs_client_channel:
         if not fopt.client_channel:
             return False
+    if topt.needs_retry:
+        if not fopt.supports_retry:
+            return False
     return True
 
 def _platform_support_tags(fopt):
@@ -409,13 +436,14 @@ def grpc_end2end_tests():
             "//test/core/util:test_lb_policies",
             "//:grpc_authorization_provider",
             "//test/core/compression:args_utils",
+            "//:grpc_http_filters",
         ],
     )
     for f, fopt in END2END_FIXTURES.items():
         bin_name = "%s_test" % f
         grpc_cc_binary(
             name = bin_name,
-            srcs = ["fixtures/%s.cc" % f],
+            srcs = ["fixtures/%s.cc" % f, "fixtures/h2_tls_common.h"],
             language = "C++",
             testonly = 1,
             data = [
@@ -429,6 +457,7 @@ def grpc_end2end_tests():
                 "//:grpc",
                 "//:gpr",
                 "//test/core/compression:args_utils",
+                "//:grpc_http_filters",
             ],
             tags = _platform_support_tags(fopt) + fopt.tags,
         )
@@ -436,14 +465,15 @@ def grpc_end2end_tests():
             if not _compatible(fopt, topt):
                 continue
             test_short_name = str(t) if not topt.short_name else topt.short_name
+            name = "%s_test@%s" % (f, test_short_name)
             grpc_sh_test(
-                name = "%s_test@%s" % (f, test_short_name),
+                name = name,
                 srcs = ["run.sh"],
                 data = [":" + bin_name],
                 args = ["$(location %s)" % bin_name, t],
                 tags = _platform_support_tags(fopt) + fopt.tags + [
                     "no_test_ios",
                 ],
-                flaky = t in fopt.flaky_tests,
+                flaky = name in FLAKY_TESTS,
                 exclude_pollers = topt.exclude_pollers,
             )

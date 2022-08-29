@@ -23,6 +23,7 @@ src/python/grpcio_*/build/
 src/python/grpcio_*/LICENSE
 src/python/grpcio_status/grpc_status/google/rpc/status.proto
 yapf_virtual_environment/
+isort_virtual_environment/
 
 # Node installation output
 node_modules
@@ -151,6 +152,7 @@ bloaty-build/
 **/cmake/build/
 
 # Visual Studio Code artifacts
+.cache/*
 .vscode/*
 .history/
 
@@ -173,4 +175,7 @@ iwyu_files.txt
 iwyu_files0.txt
 iwyu/
 iwyu_build/
+
+# fuzzer logs
+fuzz-*.log
 

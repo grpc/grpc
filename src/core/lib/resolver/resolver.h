@@ -19,10 +19,12 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <string>
+
 #include "absl/status/statusor.h"
 
-#include <grpc/impl/codegen/grpc_types.h>
-
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/resolver/server_address.h"
@@ -64,16 +66,7 @@ class Resolver : public InternallyRefCounted<Resolver> {
     std::string resolution_note;
     // TODO(roth): Before making this a public API, figure out a way to
     // avoid exposing channel args this way.
-    const grpc_channel_args* args = nullptr;
-
-    // TODO(roth): Remove everything below once grpc_channel_args is
-    // converted to a copyable and movable C++ object.
-    Result() = default;
-    ~Result();
-    Result(const Result& other);
-    Result(Result&& other) noexcept;
-    Result& operator=(const Result& other);
-    Result& operator=(Result&& other) noexcept;
+    ChannelArgs args;
   };
 
   /// A proxy object used by the resolver to return results to the

@@ -26,6 +26,8 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:server1.key",
         "//src/core/tsi/test_creds:server1.pem",
     ],
+    external_deps = ["gtest"],
+    flaky = True,
     language = "C++",
     tags = ["no_windows"],
     deps = [
@@ -55,6 +57,7 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:server1.key",
         "//src/core/tsi/test_creds:server1.pem",
     ],
+    external_deps = ["gtest"],
     language = "C++",
     tags = ["no_windows"],
     deps = [
@@ -73,6 +76,7 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:server1.key",
         "//src/core/tsi/test_creds:server1.pem",
     ],
+    external_deps = ["gtest"],
     language = "C++",
     tags = ["no_windows"],
     deps = [

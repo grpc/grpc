@@ -21,12 +21,32 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "absl/status/status.h"
+#include <map>
+#include <string>
 
+#include "absl/base/thread_annotations.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
+
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/security/context/security_context.h"
-#include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
-#include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
+#include "src/core/lib/promise/arena_promise.h"
+#include "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h"
+#include "src/core/lib/security/security_connector/security_connector.h"
+#include "src/core/lib/security/security_connector/ssl_utils.h"
+#include "src/core/lib/transport/handshaker.h"
+#include "src/core/tsi/ssl/key_logging/ssl_key_logging.h"
+#include "src/core/tsi/ssl_transport_security.h"
+#include "src/core/tsi/transport_security_interface.h"
 
 using TlsSessionKeyLogger = tsi::TlsSessionKeyLoggerCache::TlsSessionKeyLogger;
 
@@ -54,11 +74,11 @@ class TlsChannelSecurityConnector final
 
   ~TlsChannelSecurityConnector() override;
 
-  void add_handshakers(const grpc_channel_args* args,
+  void add_handshakers(const ChannelArgs& args,
                        grpc_pollset_set* interested_parties,
                        HandshakeManager* handshake_mgr) override;
 
-  void check_peer(tsi_peer peer, grpc_endpoint* ep,
+  void check_peer(tsi_peer peer, grpc_endpoint* ep, const ChannelArgs& /*args*/,
                   RefCountedPtr<grpc_auth_context>* auth_context,
                   grpc_closure* on_peer_checked) override;
 
@@ -167,11 +187,11 @@ class TlsServerSecurityConnector final : public grpc_server_security_connector {
       RefCountedPtr<grpc_tls_credentials_options> options);
   ~TlsServerSecurityConnector() override;
 
-  void add_handshakers(const grpc_channel_args* args,
+  void add_handshakers(const ChannelArgs& args,
                        grpc_pollset_set* interested_parties,
                        HandshakeManager* handshake_mgr) override;
 
-  void check_peer(tsi_peer peer, grpc_endpoint* ep,
+  void check_peer(tsi_peer peer, grpc_endpoint* ep, const ChannelArgs& /*args*/,
                   RefCountedPtr<grpc_auth_context>* auth_context,
                   grpc_closure* on_peer_checked) override;
 

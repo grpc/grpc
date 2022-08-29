@@ -18,22 +18,42 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stdint.h>
+#include <stdlib.h>
+
+#include <cmath>
+#include <memory>
+#include <string>
+#include <utility>
+
+#include "absl/status/statusor.h"
+
+#include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/http/parser.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/polling_entity.h"
+#include "src/core/lib/iomgr/pollset.h"
+#include "src/core/lib/uri/uri_parser.h"
 #include "test/core/util/test_config.h"
 
 #ifdef GRPC_TEST_PICK_PORT
-#include <math.h>
 #include <string.h>
 
 #include "absl/strings/str_format.h"
 
 #include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/http/httpcli.h"
+#include "src/core/lib/security/credentials/credentials.h"
 #include "test/core/util/port_server_client.h"
 
 typedef struct freereq {
@@ -133,7 +153,7 @@ static void got_port_from_server(void* arg, grpc_error_handle error) {
   int failed = 0;
   grpc_http_response* response = &pr->response;
 
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     failed = 1;
     gpr_log(GPR_DEBUG, "failed port pick from server: retrying [%s]",
             grpc_error_std_string(error).c_str());

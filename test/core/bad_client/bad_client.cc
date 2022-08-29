@@ -214,12 +214,11 @@ void grpc_run_bad_client_test(
                                   GRPC_BAD_CLIENT_REGISTERED_HOST,
                                   GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER, 0);
   grpc_server_start(a.server);
-  const grpc_channel_args* channel_args = grpc_core::CoreConfiguration::Get()
-                                              .channel_args_preconditioning()
-                                              .PreconditionChannelArgs(nullptr)
-                                              .ToC();
-  transport = grpc_create_chttp2_transport(channel_args, sfd.server, false);
-  grpc_channel_args_destroy(channel_args);
+  transport =
+      grpc_create_chttp2_transport(grpc_core::CoreConfiguration::Get()
+                                       .channel_args_preconditioning()
+                                       .PreconditionChannelArgs(nullptr),
+                                   sfd.server, false);
   server_setup_transport(&a, transport);
   grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
 
@@ -323,7 +322,7 @@ void server_verifier_request_call(grpc_server* server,
   grpc_call_error error;
   grpc_call* s;
   grpc_call_details call_details;
-  cq_verifier* cqv = cq_verifier_create(cq);
+  grpc_core::CqVerifier cqv(cq);
   grpc_metadata_array request_metadata_recv;
 
   grpc_call_details_init(&call_details);
@@ -332,8 +331,8 @@ void server_verifier_request_call(grpc_server* server,
   error = grpc_server_request_call(server, &s, &call_details,
                                    &request_metadata_recv, cq, cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(101), true);
+  cqv.Verify();
 
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.host, "localhost"));
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo/bar"));
@@ -341,5 +340,4 @@ void server_verifier_request_call(grpc_server* server,
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
   grpc_call_unref(s);
-  cq_verifier_destroy(cqv);
 }

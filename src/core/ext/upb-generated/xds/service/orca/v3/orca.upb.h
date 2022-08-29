@@ -53,11 +53,15 @@ UPB_INLINE xds_service_orca_v3_OrcaLoadReportRequest* xds_service_orca_v3_OrcaLo
   return ret;
 }
 UPB_INLINE char* xds_service_orca_v3_OrcaLoadReportRequest_serialize(const xds_service_orca_v3_OrcaLoadReportRequest* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &xds_service_orca_v3_OrcaLoadReportRequest_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &xds_service_orca_v3_OrcaLoadReportRequest_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* xds_service_orca_v3_OrcaLoadReportRequest_serialize_ex(const xds_service_orca_v3_OrcaLoadReportRequest* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &xds_service_orca_v3_OrcaLoadReportRequest_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &xds_service_orca_v3_OrcaLoadReportRequest_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE bool xds_service_orca_v3_OrcaLoadReportRequest_has_report_interval(const xds_service_orca_v3_OrcaLoadReportRequest* msg) {
   return _upb_hasbit(msg, 1);

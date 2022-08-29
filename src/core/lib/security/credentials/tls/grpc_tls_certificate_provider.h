@@ -19,20 +19,25 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <string.h>
+#include <map>
+#include <string>
 
-#include "absl/container/inlined_vector.h"
+#include "absl/base/thread_annotations.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 
 #include <grpc/grpc_security.h>
+#include <grpc/support/log.h>
+#include <grpc/support/sync.h>
 
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
-#include "src/core/lib/iomgr/load_file.h"
-#include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 
@@ -73,6 +78,12 @@ struct grpc_tls_certificate_provider
   // should use a unique string instance, which should be returned by all
   // instances of that provider implementation.
   virtual grpc_core::UniqueTypeName type() const = 0;
+
+  static absl::string_view ChannelArgName();
+  static int ChannelArgsCompare(const grpc_tls_certificate_provider* a,
+                                const grpc_tls_certificate_provider* b) {
+    return a->Compare(b);
+  }
 
  private:
   // Implementation for `Compare` method intended to be overridden by

@@ -31,6 +31,7 @@
 #include <utility>
 
 #include "absl/base/attributes.h"
+#include "absl/status/status.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -57,14 +58,6 @@
 #include "src/core/lib/transport/transport.h"
 
 // IWYU pragma: no_include <type_traits>
-
-#if __cplusplus > 201103L
-#define GRPC_HPACK_CONSTEXPR_FN constexpr
-#define GRPC_HPACK_CONSTEXPR_VALUE constexpr
-#else
-#define GRPC_HPACK_CONSTEXPR_FN
-#define GRPC_HPACK_CONSTEXPR_VALUE const
-#endif
 
 namespace grpc_core {
 
@@ -453,7 +446,7 @@ constexpr char kBase64Alphabet[] =
 // any complicated runtime logic.
 struct Base64InverseTable {
   uint8_t table[256]{};
-  GRPC_HPACK_CONSTEXPR_FN Base64InverseTable() {
+  constexpr Base64InverseTable() {
     for (int i = 0; i < 256; i++) {
       table[i] = 255;
     }
@@ -465,7 +458,7 @@ struct Base64InverseTable {
   }
 };
 
-GRPC_HPACK_CONSTEXPR_VALUE Base64InverseTable kBase64InverseTable;
+constexpr Base64InverseTable kBase64InverseTable;
 }  // namespace
 
 // Input tracks the current byte through the input data and provides it
@@ -600,7 +593,7 @@ class HPackParser::Input {
   // Set the current error - allows the rest of the code not to need to pass
   // around StatusOr<> which would be prohibitive here.
   GPR_ATTRIBUTE_NOINLINE void SetError(grpc_error_handle error) {
-    if (error_ != GRPC_ERROR_NONE || eof_error_) {
+    if (!GRPC_ERROR_IS_NONE(error_) || eof_error_) {
       GRPC_ERROR_UNREF(error);
       return;
     }
@@ -613,7 +606,7 @@ class HPackParser::Input {
   template <typename F, typename T>
   GPR_ATTRIBUTE_NOINLINE T MaybeSetErrorAndReturn(F error_factory,
                                                   T return_value) {
-    if (error_ != GRPC_ERROR_NONE || eof_error_) return return_value;
+    if (!GRPC_ERROR_IS_NONE(error_) || eof_error_) return return_value;
     error_ = error_factory();
     begin_ = end_;
     return return_value;
@@ -623,7 +616,7 @@ class HPackParser::Input {
   // is a common case)
   template <typename T>
   T UnexpectedEOF(T return_value) {
-    if (error_ != GRPC_ERROR_NONE) return return_value;
+    if (!GRPC_ERROR_IS_NONE(error_)) return return_value;
     eof_error_ = true;
     return return_value;
   }
@@ -1089,7 +1082,7 @@ class HPackParser::Parser {
     auto r = EmitHeader(*md);
     // Add to the hpack table
     grpc_error_handle err = table_->Add(std::move(*md));
-    if (GPR_UNLIKELY(err != GRPC_ERROR_NONE)) {
+    if (GPR_UNLIKELY(!GRPC_ERROR_IS_NONE(err))) {
       input_->SetError(err);
       return false;
     };
@@ -1185,7 +1178,7 @@ class HPackParser::Parser {
     }
     (*dynamic_table_updates_allowed_)--;
     grpc_error_handle err = table_->SetCurrentTableSize(*size);
-    if (err != GRPC_ERROR_NONE) {
+    if (!GRPC_ERROR_IS_NONE(err)) {
       input_->SetError(err);
       return false;
     }
@@ -1360,7 +1353,7 @@ grpc_error_handle grpc_chttp2_header_parser_parse(void* hpack_parser,
     s->stats.incoming.header_bytes += GRPC_SLICE_LENGTH(slice);
   }
   grpc_error_handle error = parser->Parse(slice, is_last != 0);
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     return error;
   }
   if (is_last) {

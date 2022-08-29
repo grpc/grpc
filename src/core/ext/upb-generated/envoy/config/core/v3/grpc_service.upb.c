@@ -39,7 +39,7 @@ static const upb_MiniTable_Field envoy_config_core_v3_GrpcService__fields[4] = {
 const upb_MiniTable envoy_config_core_v3_GrpcService_msginit = {
   &envoy_config_core_v3_GrpcService_submsgs[0],
   &envoy_config_core_v3_GrpcService__fields[0],
-  UPB_SIZE(20, 40), 4, kUpb_ExtMode_NonExtendable, 3, 255, 0,
+  UPB_SIZE(24, 32), 4, kUpb_ExtMode_NonExtendable, 3, 255, 0,
 };
 
 static const upb_MiniTable_Field envoy_config_core_v3_GrpcService_EnvoyGrpc__fields[2] = {
@@ -50,7 +50,7 @@ static const upb_MiniTable_Field envoy_config_core_v3_GrpcService_EnvoyGrpc__fie
 const upb_MiniTable envoy_config_core_v3_GrpcService_EnvoyGrpc_msginit = {
   NULL,
   &envoy_config_core_v3_GrpcService_EnvoyGrpc__fields[0],
-  UPB_SIZE(16, 40), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 32), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_core_v3_GrpcService_GoogleGrpc_submsgs[5] = {
@@ -75,7 +75,7 @@ static const upb_MiniTable_Field envoy_config_core_v3_GrpcService_GoogleGrpc__fi
 const upb_MiniTable envoy_config_core_v3_GrpcService_GoogleGrpc_msginit = {
   &envoy_config_core_v3_GrpcService_GoogleGrpc_submsgs[0],
   &envoy_config_core_v3_GrpcService_GoogleGrpc__fields[0],
-  UPB_SIZE(48, 104), 8, kUpb_ExtMode_NonExtendable, 8, 255, 0,
+  UPB_SIZE(48, 96), 8, kUpb_ExtMode_NonExtendable, 8, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_core_v3_GrpcService_GoogleGrpc_SslCredentials_submsgs[3] = {
@@ -93,13 +93,13 @@ static const upb_MiniTable_Field envoy_config_core_v3_GrpcService_GoogleGrpc_Ssl
 const upb_MiniTable envoy_config_core_v3_GrpcService_GoogleGrpc_SslCredentials_msginit = {
   &envoy_config_core_v3_GrpcService_GoogleGrpc_SslCredentials_submsgs[0],
   &envoy_config_core_v3_GrpcService_GoogleGrpc_SslCredentials__fields[0],
-  UPB_SIZE(16, 40), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
+  UPB_SIZE(16, 32), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
 };
 
 const upb_MiniTable envoy_config_core_v3_GrpcService_GoogleGrpc_GoogleLocalCredentials_msginit = {
   NULL,
   NULL,
-  UPB_SIZE(0, 8), 0, kUpb_ExtMode_NonExtendable, 0, 255, 0,
+  UPB_SIZE(0, 0), 0, kUpb_ExtMode_NonExtendable, 0, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelCredentials_submsgs[3] = {
@@ -117,7 +117,7 @@ static const upb_MiniTable_Field envoy_config_core_v3_GrpcService_GoogleGrpc_Cha
 const upb_MiniTable envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelCredentials_msginit = {
   &envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelCredentials_submsgs[0],
   &envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelCredentials__fields[0],
-  UPB_SIZE(8, 24), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
+  UPB_SIZE(8, 16), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials_submsgs[5] = {
@@ -141,7 +141,7 @@ static const upb_MiniTable_Field envoy_config_core_v3_GrpcService_GoogleGrpc_Cal
 const upb_MiniTable envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials_msginit = {
   &envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials_submsgs[0],
   &envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials__fields[0],
-  UPB_SIZE(12, 24), 7, kUpb_ExtMode_NonExtendable, 7, 255, 0,
+  UPB_SIZE(16, 24), 7, kUpb_ExtMode_NonExtendable, 7, 255, 0,
 };
 
 static const upb_MiniTable_Field envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials_ServiceAccountJWTAccessCredentials__fields[2] = {
@@ -163,7 +163,7 @@ static const upb_MiniTable_Field envoy_config_core_v3_GrpcService_GoogleGrpc_Cal
 const upb_MiniTable envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials_GoogleIAMCredentials_msginit = {
   NULL,
   &envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials_GoogleIAMCredentials__fields[0],
-  UPB_SIZE(16, 40), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 32), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials_MetadataCredentialsFromPlugin_submsgs[1] = {
@@ -178,7 +178,7 @@ static const upb_MiniTable_Field envoy_config_core_v3_GrpcService_GoogleGrpc_Cal
 const upb_MiniTable envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials_MetadataCredentialsFromPlugin_msginit = {
   &envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials_MetadataCredentialsFromPlugin_submsgs[0],
   &envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials_MetadataCredentialsFromPlugin__fields[0],
-  UPB_SIZE(16, 40), 2, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(16, 32), 2, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable_Field envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials_StsService__fields[9] = {
@@ -196,7 +196,7 @@ static const upb_MiniTable_Field envoy_config_core_v3_GrpcService_GoogleGrpc_Cal
 const upb_MiniTable envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials_StsService_msginit = {
   NULL,
   &envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials_StsService__fields[0],
-  UPB_SIZE(72, 152), 9, kUpb_ExtMode_NonExtendable, 9, 255, 0,
+  UPB_SIZE(72, 144), 9, kUpb_ExtMode_NonExtendable, 9, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_submsgs[1] = {
@@ -210,7 +210,7 @@ static const upb_MiniTable_Field envoy_config_core_v3_GrpcService_GoogleGrpc_Cha
 const upb_MiniTable envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_msginit = {
   &envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_submsgs[0],
   &envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs__fields[0],
-  UPB_SIZE(4, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable_Field envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_Value__fields[2] = {
@@ -221,7 +221,7 @@ static const upb_MiniTable_Field envoy_config_core_v3_GrpcService_GoogleGrpc_Cha
 const upb_MiniTable envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_Value_msginit = {
   NULL,
   &envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_Value__fields[0],
-  UPB_SIZE(12, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_ArgsEntry_submsgs[1] = {

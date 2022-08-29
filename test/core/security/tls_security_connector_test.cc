@@ -28,10 +28,14 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/iomgr/load_file.h"
+#include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
+#include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 #include "src/core/lib/security/credentials/tls/tls_credentials.h"
+#include "src/core/lib/security/security_connector/ssl_utils_config.h"
 #include "src/core/tsi/transport_security.h"
 #include "test/core/util/test_config.h"
 #include "test/core/util/tls_utils.h"
@@ -158,10 +162,9 @@ TEST_F(TlsSecurityConnectorTest,
   options->set_identity_cert_name(kIdentityCertName);
   RefCountedPtr<TlsCredentials> credential =
       MakeRefCounted<TlsCredentials>(options);
-  grpc_channel_args* new_args = nullptr;
+  ChannelArgs new_args;
   RefCountedPtr<grpc_channel_security_connector> connector =
-      credential->create_security_connector(nullptr, kTargetName, nullptr,
-                                            &new_args);
+      credential->create_security_connector(nullptr, kTargetName, &new_args);
   EXPECT_NE(connector, nullptr);
   TlsChannelSecurityConnector* tls_connector =
       static_cast<TlsChannelSecurityConnector*>(connector.get());
@@ -174,7 +177,6 @@ TEST_F(TlsSecurityConnectorTest,
   EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
   EXPECT_EQ(tls_connector->RootCertsForTesting(), root_cert_1_);
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), identity_pairs_1_);
-  grpc_channel_args_destroy(new_args);
 }
 
 TEST_F(TlsSecurityConnectorTest,
@@ -184,15 +186,14 @@ TEST_F(TlsSecurityConnectorTest,
       MakeRefCounted<grpc_tls_credentials_options>();
   RefCountedPtr<TlsCredentials> root_credential =
       MakeRefCounted<TlsCredentials>(root_options);
-  grpc_channel_args* root_new_args = nullptr;
+  ChannelArgs root_new_args;
   RefCountedPtr<grpc_channel_security_connector> root_connector =
       root_credential->create_security_connector(nullptr, "some_target",
-                                                 nullptr, &root_new_args);
+                                                 &root_new_args);
   EXPECT_NE(root_connector, nullptr);
   TlsChannelSecurityConnector* tls_root_connector =
       static_cast<TlsChannelSecurityConnector*>(root_connector.get());
   EXPECT_NE(tls_root_connector->ClientHandshakerFactoryForTesting(), nullptr);
-  grpc_channel_args_destroy(root_new_args);
 }
 
 TEST_F(TlsSecurityConnectorTest,
@@ -211,10 +212,10 @@ TEST_F(TlsSecurityConnectorTest,
   root_options->set_identity_cert_name(kIdentityCertName);
   RefCountedPtr<TlsCredentials> root_credential =
       MakeRefCounted<TlsCredentials>(root_options);
-  grpc_channel_args* root_new_args = nullptr;
+  ChannelArgs root_new_args;
   RefCountedPtr<grpc_channel_security_connector> root_connector =
       root_credential->create_security_connector(nullptr, "some_target",
-                                                 nullptr, &root_new_args);
+                                                 &root_new_args);
   EXPECT_NE(root_connector, nullptr);
   TlsChannelSecurityConnector* tls_root_connector =
       static_cast<TlsChannelSecurityConnector*>(root_connector.get());
@@ -225,7 +226,6 @@ TEST_F(TlsSecurityConnectorTest,
   distributor->SetKeyMaterials(kRootCertName, root_cert_1_, absl::nullopt);
   EXPECT_NE(tls_root_connector->ClientHandshakerFactoryForTesting(), nullptr);
   EXPECT_NE(tls_root_connector->RootCertsForTesting(), root_cert_1_);
-  grpc_channel_args_destroy(root_new_args);
 }
 
 TEST_F(TlsSecurityConnectorTest,
@@ -245,10 +245,10 @@ TEST_F(TlsSecurityConnectorTest,
   root_options->set_root_cert_name(kRootCertName);
   RefCountedPtr<TlsCredentials> root_credential =
       MakeRefCounted<TlsCredentials>(root_options);
-  grpc_channel_args* root_new_args = nullptr;
+  ChannelArgs root_new_args;
   RefCountedPtr<grpc_channel_security_connector> root_connector =
       root_credential->create_security_connector(nullptr, "some_target",
-                                                 nullptr, &root_new_args);
+                                                 &root_new_args);
   EXPECT_NE(root_connector, nullptr);
   TlsChannelSecurityConnector* tls_root_connector =
       static_cast<TlsChannelSecurityConnector*>(root_connector.get());
@@ -257,7 +257,6 @@ TEST_F(TlsSecurityConnectorTest,
   distributor->SetKeyMaterials(kRootCertName, root_cert_1_, absl::nullopt);
   EXPECT_NE(tls_root_connector->ClientHandshakerFactoryForTesting(), nullptr);
   EXPECT_EQ(tls_root_connector->RootCertsForTesting(), root_cert_1_);
-  grpc_channel_args_destroy(root_new_args);
 }
 
 TEST_F(TlsSecurityConnectorTest,
@@ -278,10 +277,9 @@ TEST_F(TlsSecurityConnectorTest,
   options->set_identity_cert_name(kIdentityCertName);
   RefCountedPtr<TlsCredentials> credential =
       MakeRefCounted<TlsCredentials>(options);
-  grpc_channel_args* new_args = nullptr;
+  ChannelArgs new_args;
   RefCountedPtr<grpc_channel_security_connector> connector =
-      credential->create_security_connector(nullptr, kTargetName, nullptr,
-                                            &new_args);
+      credential->create_security_connector(nullptr, kTargetName, &new_args);
   EXPECT_NE(connector, nullptr);
   TlsChannelSecurityConnector* tls_connector =
       static_cast<TlsChannelSecurityConnector*>(connector.get());
@@ -295,7 +293,6 @@ TEST_F(TlsSecurityConnectorTest,
   EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
   EXPECT_EQ(tls_connector->RootCertsForTesting(), root_cert_0_);
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), identity_pairs_0_);
-  grpc_channel_args_destroy(new_args);
 }
 
 TEST_F(TlsSecurityConnectorTest,
@@ -316,10 +313,9 @@ TEST_F(TlsSecurityConnectorTest,
   options->set_identity_cert_name(kIdentityCertName);
   RefCountedPtr<TlsCredentials> credential =
       MakeRefCounted<TlsCredentials>(options);
-  grpc_channel_args* new_args = nullptr;
+  ChannelArgs new_args;
   RefCountedPtr<grpc_channel_security_connector> connector =
-      credential->create_security_connector(nullptr, kTargetName, nullptr,
-                                            &new_args);
+      credential->create_security_connector(nullptr, kTargetName, &new_args);
   EXPECT_NE(connector, nullptr);
   TlsChannelSecurityConnector* tls_connector =
       static_cast<TlsChannelSecurityConnector*>(connector.get());
@@ -337,7 +333,6 @@ TEST_F(TlsSecurityConnectorTest,
   EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
   EXPECT_EQ(tls_connector->RootCertsForTesting(), root_cert_0_);
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), identity_pairs_0_);
-  grpc_channel_args_destroy(new_args);
 }
 
 TEST_F(TlsSecurityConnectorTest,
@@ -346,10 +341,9 @@ TEST_F(TlsSecurityConnectorTest,
       MakeRefCounted<grpc_tls_credentials_options>();
   RefCountedPtr<TlsCredentials> credential =
       MakeRefCounted<TlsCredentials>(options);
-  grpc_channel_args* new_args = nullptr;
+  ChannelArgs new_args;
   RefCountedPtr<grpc_channel_security_connector> connector =
-      credential->create_security_connector(nullptr, nullptr, nullptr,
-                                            &new_args);
+      credential->create_security_connector(nullptr, nullptr, &new_args);
   EXPECT_EQ(connector, nullptr);
 }
 
@@ -388,10 +382,9 @@ TEST_F(TlsSecurityConnectorTest,
   options->set_check_call_host(false);
   RefCountedPtr<TlsCredentials> credential =
       MakeRefCounted<TlsCredentials>(options);
-  grpc_channel_args* new_args = nullptr;
+  ChannelArgs new_args;
   RefCountedPtr<grpc_channel_security_connector> connector =
-      credential->create_security_connector(nullptr, kTargetName, nullptr,
-                                            &new_args);
+      credential->create_security_connector(nullptr, kTargetName, &new_args);
   EXPECT_NE(connector, nullptr);
   TlsChannelSecurityConnector* tls_connector =
       static_cast<TlsChannelSecurityConnector*>(connector.get());
@@ -409,8 +402,9 @@ TEST_F(TlsSecurityConnectorTest,
   ExecCtx exec_ctx;
   grpc_closure* on_peer_checked = GRPC_CLOSURE_CREATE(
       VerifyExpectedErrorCallback, nullptr, grpc_schedule_on_exec_ctx);
-  tls_connector->check_peer(peer, nullptr, &auth_context, on_peer_checked);
-  grpc_channel_args_destroy(new_args);
+  ChannelArgs args;
+  tls_connector->check_peer(peer, nullptr, args, &auth_context,
+                            on_peer_checked);
 }
 
 TEST_F(TlsSecurityConnectorTest,
@@ -424,10 +418,9 @@ TEST_F(TlsSecurityConnectorTest,
   options->set_check_call_host(false);
   RefCountedPtr<TlsCredentials> credential =
       MakeRefCounted<TlsCredentials>(options);
-  grpc_channel_args* new_args = nullptr;
+  ChannelArgs new_args;
   RefCountedPtr<grpc_channel_security_connector> connector =
-      credential->create_security_connector(nullptr, kTargetName, nullptr,
-                                            &new_args);
+      credential->create_security_connector(nullptr, kTargetName, &new_args);
   EXPECT_NE(connector, nullptr);
   TlsChannelSecurityConnector* tls_connector =
       static_cast<TlsChannelSecurityConnector*>(connector.get());
@@ -449,8 +442,8 @@ TEST_F(TlsSecurityConnectorTest,
   grpc_closure* on_peer_checked = GRPC_CLOSURE_CREATE(
       VerifyExpectedErrorCallback, const_cast<char*>(expected_error_msg),
       grpc_schedule_on_exec_ctx);
-  tls_connector->check_peer(peer, nullptr, &auth_context, on_peer_checked);
-  grpc_channel_args_destroy(new_args);
+  tls_connector->check_peer(peer, nullptr, new_args, &auth_context,
+                            on_peer_checked);
 }
 
 TEST_F(TlsSecurityConnectorTest,
@@ -466,12 +459,14 @@ TEST_F(TlsSecurityConnectorTest,
   options->set_root_cert_name(kRootCertName);
   RefCountedPtr<TlsCredentials> credential =
       MakeRefCounted<TlsCredentials>(options);
+  ChannelArgs connector_args;
+  ChannelArgs other_connector_args;
   RefCountedPtr<grpc_channel_security_connector> connector =
-      credential->create_security_connector(nullptr, kTargetName, nullptr,
-                                            nullptr);
+      credential->create_security_connector(nullptr, kTargetName,
+                                            &connector_args);
   RefCountedPtr<grpc_channel_security_connector> other_connector =
-      credential->create_security_connector(nullptr, kTargetName, nullptr,
-                                            nullptr);
+      credential->create_security_connector(nullptr, kTargetName,
+                                            &other_connector_args);
   // Comparing the equality of security connectors generated from the same
   // channel credentials with same settings should succeed.
   EXPECT_EQ(connector->cmp(other_connector.get()), 0);
@@ -490,9 +485,10 @@ TEST_F(TlsSecurityConnectorTest,
   options->set_root_cert_name(kRootCertName);
   RefCountedPtr<TlsCredentials> credential =
       MakeRefCounted<TlsCredentials>(options);
+  ChannelArgs connector_args;
   RefCountedPtr<grpc_channel_security_connector> connector =
-      credential->create_security_connector(nullptr, kTargetName, nullptr,
-                                            nullptr);
+      credential->create_security_connector(nullptr, kTargetName,
+                                            &connector_args);
   auto other_options = MakeRefCounted<grpc_tls_credentials_options>();
   other_options->set_certificate_provider(provider);
   other_options->set_watch_root_cert(true);
@@ -500,9 +496,10 @@ TEST_F(TlsSecurityConnectorTest,
   other_options->set_watch_identity_pair(true);
   RefCountedPtr<TlsCredentials> other_credential =
       MakeRefCounted<TlsCredentials>(other_options);
+  ChannelArgs other_connector_args;
   RefCountedPtr<grpc_channel_security_connector> other_connector =
-      other_credential->create_security_connector(nullptr, kTargetName, nullptr,
-                                                  nullptr);
+      other_credential->create_security_connector(nullptr, kTargetName,
+                                                  &other_connector_args);
   // Comparing the equality of security connectors generated from different
   // channel credentials should fail.
   EXPECT_NE(connector->cmp(other_connector.get()), 0);
@@ -521,15 +518,17 @@ TEST_F(TlsSecurityConnectorTest,
   options->set_root_cert_name(kRootCertName);
   RefCountedPtr<TlsCredentials> credential =
       MakeRefCounted<TlsCredentials>(options);
+  ChannelArgs connector_args;
   RefCountedPtr<grpc_channel_security_connector> connector =
-      credential->create_security_connector(nullptr, kTargetName, nullptr,
-                                            nullptr);
+      credential->create_security_connector(nullptr, kTargetName,
+                                            &connector_args);
   grpc_call_credentials* call_creds =
       grpc_md_only_test_credentials_create("", "");
+  ChannelArgs other_connector_args;
   RefCountedPtr<grpc_channel_security_connector> other_connector =
       credential->create_security_connector(
           RefCountedPtr<grpc_call_credentials>(call_creds), kTargetName,
-          nullptr, nullptr);
+          &other_connector_args);
   // Comparing the equality of security connectors generated with different call
   // credentials should fail.
   EXPECT_NE(connector->cmp(other_connector.get()), 0);
@@ -548,11 +547,13 @@ TEST_F(TlsSecurityConnectorTest,
   options->set_root_cert_name(kRootCertName);
   RefCountedPtr<TlsCredentials> credential =
       MakeRefCounted<TlsCredentials>(options);
+  ChannelArgs connector_args;
+  ChannelArgs other_connector_args;
   RefCountedPtr<grpc_channel_security_connector> connector =
-      credential->create_security_connector(nullptr, kTargetName, nullptr,
-                                            nullptr);
+      credential->create_security_connector(nullptr, kTargetName,
+                                            &connector_args);
   RefCountedPtr<grpc_channel_security_connector> other_connector =
-      credential->create_security_connector(nullptr, "", nullptr, nullptr);
+      credential->create_security_connector(nullptr, "", &other_connector_args);
   // Comparing the equality of security connectors generated with different
   // target names should fail.
   EXPECT_NE(connector->cmp(other_connector.get()), 0);
@@ -570,10 +571,9 @@ TEST_F(TlsSecurityConnectorTest,
   options->set_check_call_host(false);
   RefCountedPtr<TlsCredentials> credential =
       MakeRefCounted<TlsCredentials>(options);
-  grpc_channel_args* new_args = nullptr;
+  ChannelArgs new_args;
   RefCountedPtr<grpc_channel_security_connector> connector =
-      credential->create_security_connector(nullptr, kTargetName, nullptr,
-                                            &new_args);
+      credential->create_security_connector(nullptr, kTargetName, &new_args);
   EXPECT_NE(connector, nullptr);
   TlsChannelSecurityConnector* tls_connector =
       static_cast<TlsChannelSecurityConnector*>(connector.get());
@@ -591,8 +591,8 @@ TEST_F(TlsSecurityConnectorTest,
   ExecCtx exec_ctx;
   grpc_closure* on_peer_checked = GRPC_CLOSURE_CREATE(
       VerifyExpectedErrorCallback, nullptr, grpc_schedule_on_exec_ctx);
-  tls_connector->check_peer(peer, nullptr, &auth_context, on_peer_checked);
-  grpc_channel_args_destroy(new_args);
+  tls_connector->check_peer(peer, nullptr, new_args, &auth_context,
+                            on_peer_checked);
   core_external_verifier->Unref();
 }
 
@@ -607,10 +607,9 @@ TEST_F(TlsSecurityConnectorTest,
   options->set_check_call_host(false);
   RefCountedPtr<TlsCredentials> credential =
       MakeRefCounted<TlsCredentials>(options);
-  grpc_channel_args* new_args = nullptr;
+  ChannelArgs new_args;
   RefCountedPtr<grpc_channel_security_connector> connector =
-      credential->create_security_connector(nullptr, kTargetName, nullptr,
-                                            &new_args);
+      credential->create_security_connector(nullptr, kTargetName, &new_args);
   EXPECT_NE(connector, nullptr);
   TlsChannelSecurityConnector* tls_connector =
       static_cast<TlsChannelSecurityConnector*>(connector.get());
@@ -632,8 +631,8 @@ TEST_F(TlsSecurityConnectorTest,
   grpc_closure* on_peer_checked = GRPC_CLOSURE_CREATE(
       VerifyExpectedErrorCallback, const_cast<char*>(expected_error_msg),
       grpc_schedule_on_exec_ctx);
-  tls_connector->check_peer(peer, nullptr, &auth_context, on_peer_checked);
-  grpc_channel_args_destroy(new_args);
+  tls_connector->check_peer(peer, nullptr, new_args, &auth_context,
+                            on_peer_checked);
   core_external_verifier->Unref();
 }
 
@@ -646,10 +645,9 @@ TEST_F(TlsSecurityConnectorTest,
   options->set_check_call_host(false);
   RefCountedPtr<TlsCredentials> credential =
       MakeRefCounted<TlsCredentials>(options);
-  grpc_channel_args* new_args = nullptr;
+  ChannelArgs new_args;
   RefCountedPtr<grpc_channel_security_connector> connector =
-      credential->create_security_connector(nullptr, kTargetName, nullptr,
-                                            &new_args);
+      credential->create_security_connector(nullptr, kTargetName, &new_args);
   EXPECT_NE(connector, nullptr);
   TlsChannelSecurityConnector* tls_connector =
       static_cast<TlsChannelSecurityConnector*>(connector.get());
@@ -683,8 +681,8 @@ TEST_F(TlsSecurityConnectorTest,
   ExecCtx exec_ctx;
   grpc_closure* on_peer_checked = GRPC_CLOSURE_CREATE(
       VerifyExpectedErrorCallback, nullptr, grpc_schedule_on_exec_ctx);
-  tls_connector->check_peer(peer, nullptr, &auth_context, on_peer_checked);
-  grpc_channel_args_destroy(new_args);
+  tls_connector->check_peer(peer, nullptr, new_args, &auth_context,
+                            on_peer_checked);
 }
 
 TEST_F(TlsSecurityConnectorTest,
@@ -695,10 +693,9 @@ TEST_F(TlsSecurityConnectorTest,
   options->set_certificate_verifier(hostname_certificate_verifier_.Ref());
   RefCountedPtr<TlsCredentials> credential =
       MakeRefCounted<TlsCredentials>(options);
-  grpc_channel_args* new_args = nullptr;
+  ChannelArgs new_args;
   RefCountedPtr<grpc_channel_security_connector> connector =
-      credential->create_security_connector(nullptr, kTargetName, nullptr,
-                                            &new_args);
+      credential->create_security_connector(nullptr, kTargetName, &new_args);
   EXPECT_NE(connector, nullptr);
   TlsChannelSecurityConnector* tls_connector =
       static_cast<TlsChannelSecurityConnector*>(connector.get());
@@ -737,8 +734,8 @@ TEST_F(TlsSecurityConnectorTest,
   grpc_closure* on_peer_checked = GRPC_CLOSURE_CREATE(
       VerifyExpectedErrorCallback, const_cast<char*>(expected_error_msg),
       grpc_schedule_on_exec_ctx);
-  tls_connector->check_peer(peer, nullptr, &auth_context, on_peer_checked);
-  grpc_channel_args_destroy(new_args);
+  tls_connector->check_peer(peer, nullptr, new_args, &auth_context,
+                            on_peer_checked);
 }
 
 //
@@ -764,7 +761,7 @@ TEST_F(TlsSecurityConnectorTest,
   RefCountedPtr<TlsServerCredentials> credential =
       MakeRefCounted<TlsServerCredentials>(options);
   RefCountedPtr<grpc_server_security_connector> connector =
-      credential->create_security_connector(nullptr);
+      credential->create_security_connector(ChannelArgs());
   EXPECT_NE(connector, nullptr);
   TlsServerSecurityConnector* tls_connector =
       static_cast<TlsServerSecurityConnector*>(connector.get());
@@ -801,7 +798,7 @@ TEST_F(TlsSecurityConnectorTest,
   RefCountedPtr<TlsServerCredentials> identity_credential =
       MakeRefCounted<TlsServerCredentials>(identity_options);
   RefCountedPtr<grpc_server_security_connector> identity_connector =
-      identity_credential->create_security_connector(nullptr);
+      identity_credential->create_security_connector(ChannelArgs());
   EXPECT_NE(identity_connector, nullptr);
   TlsServerSecurityConnector* tls_identity_connector =
       static_cast<TlsServerSecurityConnector*>(identity_connector.get());
@@ -837,7 +834,7 @@ TEST_F(TlsSecurityConnectorTest,
   RefCountedPtr<TlsServerCredentials> credential =
       MakeRefCounted<TlsServerCredentials>(options);
   RefCountedPtr<grpc_server_security_connector> connector =
-      credential->create_security_connector(nullptr);
+      credential->create_security_connector(ChannelArgs());
   EXPECT_NE(connector, nullptr);
   TlsServerSecurityConnector* tls_connector =
       static_cast<TlsServerSecurityConnector*>(connector.get());
@@ -871,7 +868,7 @@ TEST_F(TlsSecurityConnectorTest,
   RefCountedPtr<TlsServerCredentials> credential =
       MakeRefCounted<TlsServerCredentials>(options);
   RefCountedPtr<grpc_server_security_connector> connector =
-      credential->create_security_connector(nullptr);
+      credential->create_security_connector(ChannelArgs());
   EXPECT_NE(connector, nullptr);
   TlsServerSecurityConnector* tls_connector =
       static_cast<TlsServerSecurityConnector*>(connector.get());
@@ -923,9 +920,9 @@ TEST_F(TlsSecurityConnectorTest,
   RefCountedPtr<TlsServerCredentials> credential =
       MakeRefCounted<TlsServerCredentials>(options);
   RefCountedPtr<grpc_server_security_connector> connector =
-      credential->create_security_connector(nullptr);
+      credential->create_security_connector(ChannelArgs());
   RefCountedPtr<grpc_server_security_connector> other_connector =
-      credential->create_security_connector(nullptr);
+      credential->create_security_connector(ChannelArgs());
   // Comparing the equality of security connectors generated from the same
   // server credentials with same settings should succeed.
   EXPECT_EQ(connector->cmp(other_connector.get()), 0);
@@ -946,11 +943,11 @@ TEST_F(TlsSecurityConnectorTest,
   RefCountedPtr<TlsServerCredentials> credential =
       MakeRefCounted<TlsServerCredentials>(options);
   RefCountedPtr<grpc_server_security_connector> connector =
-      credential->create_security_connector(nullptr);
+      credential->create_security_connector(ChannelArgs());
   RefCountedPtr<TlsServerCredentials> other_credential =
       MakeRefCounted<TlsServerCredentials>(options);
   RefCountedPtr<grpc_server_security_connector> other_connector =
-      other_credential->create_security_connector(nullptr);
+      other_credential->create_security_connector(ChannelArgs());
   // Comparing the equality of security connectors generated from different
   // server credentials should fail.
   EXPECT_NE(connector->cmp(other_connector.get()), 0);
@@ -973,7 +970,7 @@ TEST_F(TlsSecurityConnectorTest,
   options->set_certificate_provider(std::move(provider));
   options->set_watch_identity_pair(true);
   auto credentials = MakeRefCounted<TlsServerCredentials>(options);
-  auto connector = credentials->create_security_connector(nullptr);
+  auto connector = credentials->create_security_connector(ChannelArgs());
   // Construct a basic TSI Peer.
   tsi_peer peer;
   GPR_ASSERT(tsi_construct_peer(2, &peer) == TSI_OK);
@@ -987,7 +984,8 @@ TEST_F(TlsSecurityConnectorTest,
   ExecCtx exec_ctx;
   grpc_closure* on_peer_checked = GRPC_CLOSURE_CREATE(
       VerifyExpectedErrorCallback, nullptr, grpc_schedule_on_exec_ctx);
-  connector->check_peer(peer, nullptr, &auth_context, on_peer_checked);
+  ChannelArgs args;
+  connector->check_peer(peer, nullptr, args, &auth_context, on_peer_checked);
 }
 
 TEST_F(TlsSecurityConnectorTest,
@@ -1003,7 +1001,7 @@ TEST_F(TlsSecurityConnectorTest,
   options->set_certificate_provider(std::move(provider));
   options->set_watch_identity_pair(true);
   auto credentials = MakeRefCounted<TlsServerCredentials>(options);
-  auto connector = credentials->create_security_connector(nullptr);
+  auto connector = credentials->create_security_connector(ChannelArgs());
   // Construct a basic TSI Peer.
   tsi_peer peer;
   GPR_ASSERT(tsi_construct_peer(2, &peer) == TSI_OK);
@@ -1021,7 +1019,8 @@ TEST_F(TlsSecurityConnectorTest,
   grpc_closure* on_peer_checked = GRPC_CLOSURE_CREATE(
       VerifyExpectedErrorCallback, const_cast<char*>(expected_error_msg),
       grpc_schedule_on_exec_ctx);
-  connector->check_peer(peer, nullptr, &auth_context, on_peer_checked);
+  ChannelArgs args;
+  connector->check_peer(peer, nullptr, args, &auth_context, on_peer_checked);
 }
 
 TEST_F(TlsSecurityConnectorTest,
@@ -1037,7 +1036,7 @@ TEST_F(TlsSecurityConnectorTest,
   options->set_certificate_provider(std::move(provider));
   options->set_watch_identity_pair(true);
   auto credentials = MakeRefCounted<TlsServerCredentials>(options);
-  auto connector = credentials->create_security_connector(nullptr);
+  auto connector = credentials->create_security_connector(ChannelArgs());
   // Construct a basic TSI Peer.
   tsi_peer peer;
   GPR_ASSERT(tsi_construct_peer(2, &peer) == TSI_OK);
@@ -1051,7 +1050,8 @@ TEST_F(TlsSecurityConnectorTest,
   ExecCtx exec_ctx;
   grpc_closure* on_peer_checked = GRPC_CLOSURE_CREATE(
       VerifyExpectedErrorCallback, nullptr, grpc_schedule_on_exec_ctx);
-  connector->check_peer(peer, nullptr, &auth_context, on_peer_checked);
+  ChannelArgs args;
+  connector->check_peer(peer, nullptr, args, &auth_context, on_peer_checked);
   core_external_verifier->Unref();
 }
 
@@ -1069,7 +1069,7 @@ TEST_F(TlsSecurityConnectorTest,
   options->set_certificate_provider(std::move(provider));
   options->set_watch_identity_pair(true);
   auto credentials = MakeRefCounted<TlsServerCredentials>(options);
-  auto connector = credentials->create_security_connector(nullptr);
+  auto connector = credentials->create_security_connector(ChannelArgs());
   // Construct a basic TSI Peer.
   tsi_peer peer;
   GPR_ASSERT(tsi_construct_peer(2, &peer) == TSI_OK);
@@ -1087,7 +1087,8 @@ TEST_F(TlsSecurityConnectorTest,
   grpc_closure* on_peer_checked = GRPC_CLOSURE_CREATE(
       VerifyExpectedErrorCallback, const_cast<char*>(expected_error_msg),
       grpc_schedule_on_exec_ctx);
-  connector->check_peer(peer, nullptr, &auth_context, on_peer_checked);
+  ChannelArgs args;
+  connector->check_peer(peer, nullptr, args, &auth_context, on_peer_checked);
   core_external_verifier->Unref();
 }
 

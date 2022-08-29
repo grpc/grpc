@@ -42,7 +42,6 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/channel.h"
@@ -61,8 +60,8 @@ const grpc_channel_filter LameClientFilter::kFilter =
     MakePromiseBasedFilter<LameClientFilter, FilterEndpoint::kClient,
                            kFilterIsLast>("lame-client");
 
-absl::StatusOr<LameClientFilter> LameClientFilter::Create(ChannelArgs args,
-                                                          ChannelFilter::Args) {
+absl::StatusOr<LameClientFilter> LameClientFilter::Create(
+    const ChannelArgs& args, ChannelFilter::Args) {
   return LameClientFilter(
       *args.GetPointer<absl::Status>(GRPC_ARG_LAME_FILTER_ERROR));
 }

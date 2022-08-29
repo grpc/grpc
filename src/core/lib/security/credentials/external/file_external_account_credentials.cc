@@ -17,10 +17,18 @@
 
 #include "src/core/lib/security/credentials/external/file_external_account_credentials.h"
 
-#include <fstream>
+#include <map>
+#include <utility>
+
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
+
+#include <grpc/slice.h>
 
 #include "src/core/lib/iomgr/load_file.h"
+#include "src/core/lib/json/json.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/slice/slice_refcount.h"
 
 namespace grpc_core {
 
@@ -30,7 +38,7 @@ FileExternalAccountCredentials::Create(Options options,
                                        grpc_error_handle* error) {
   auto creds = MakeRefCounted<FileExternalAccountCredentials>(
       std::move(options), std::move(scopes), error);
-  if (*error == GRPC_ERROR_NONE) {
+  if (GRPC_ERROR_IS_NONE(*error)) {
     return creds;
   } else {
     return nullptr;
@@ -101,22 +109,21 @@ void FileExternalAccountCredentials::RetrieveSubjectToken(
   // request because it may have changed since the last request.
   grpc_error_handle error =
       grpc_load_file(file_.c_str(), 0, &content_slice.slice);
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     cb("", error);
     return;
   }
   absl::string_view content = StringViewFromSlice(content_slice.slice);
   if (format_type_ == "json") {
-    Json content_json = Json::Parse(content, &error);
-    if (error != GRPC_ERROR_NONE || content_json.type() != Json::Type::OBJECT) {
+    auto content_json = Json::Parse(content);
+    if (!content_json.ok() || content_json->type() != Json::Type::OBJECT) {
       cb("", GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                  "The content of the file is not a valid json object."));
-      GRPC_ERROR_UNREF(error);
       return;
     }
     auto content_it =
-        content_json.object_value().find(format_subject_token_field_name_);
-    if (content_it == content_json.object_value().end()) {
+        content_json->object_value().find(format_subject_token_field_name_);
+    if (content_it == content_json->object_value().end()) {
       cb("", GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                  "Subject token field not present."));
       return;

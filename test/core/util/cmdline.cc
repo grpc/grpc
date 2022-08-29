@@ -20,8 +20,10 @@
 
 #include <limits.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
+#include <algorithm>
 #include <vector>
 
 #include "absl/strings/str_cat.h"
@@ -30,9 +32,7 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/memory.h"
 
 typedef enum { ARGTYPE_INT, ARGTYPE_BOOL, ARGTYPE_STRING } argtype;

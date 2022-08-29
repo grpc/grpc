@@ -16,9 +16,18 @@
 
 #include "src/core/lib/security/authorization/cel_authorization_engine.h"
 
-#include "absl/memory/memory.h"
+#include <stddef.h>
 
-#include "src/core/lib/address_utils/sockaddr_utils.h"
+#include <algorithm>
+#include <utility>
+
+#include "absl/memory/memory.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
+#include "absl/types/span.h"
+#include "upb/upb.h"
+
+#include <grpc/support/log.h>
 
 namespace grpc_core {
 

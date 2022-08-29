@@ -19,6 +19,26 @@ licenses(["notice"])
 
 grpc_package(name = "test/core/resource_quota")
 
+grpc_cc_test(
+    name = "arena_test",
+    srcs = ["arena_test.cc"],
+    external_deps = [
+        "absl/memory",
+        "absl/strings",
+        "gtest",
+    ],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:arena",
+        "//:gpr",
+        "//:grpc",
+        "//:ref_counted_ptr",
+        "//:resource_quota",
+    ],
+)
+
 grpc_cc_library(
     name = "call_checker",
     testonly = True,
@@ -30,52 +50,68 @@ grpc_cc_library(
 grpc_cc_test(
     name = "memory_quota_test",
     srcs = ["memory_quota_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
+    external_deps = ["gtest"],
     language = "c++",
+    tags = [
+        "cpu:10",
+    ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
         "call_checker",
+        "//:exec_ctx",
         "//:memory_quota",
-        "//test/core/util:grpc_suppressions",
+        "//:slice_refcount",
+    ],
+)
+
+grpc_cc_test(
+    name = "periodic_update_test",
+    srcs = ["periodic_update_test.cc"],
+    external_deps = [
+        "absl/memory",
+        "gtest",
+    ],
+    flaky = True,
+    language = "c++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:exec_ctx",
+        "//:gpr",
+        "//:periodic_update",
     ],
 )
 
 grpc_cc_test(
     name = "thread_quota_test",
     srcs = ["thread_quota_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
+    external_deps = ["gtest"],
     language = "c++",
     uses_event_engine = False,
     uses_polling = False,
-    deps = [
-        "//:thread_quota",
-        "//test/core/util:grpc_suppressions",
-    ],
+    deps = ["//:thread_quota"],
 )
 
 grpc_cc_test(
     name = "resource_quota_test",
     srcs = ["resource_quota_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
+    external_deps = ["gtest"],
     language = "c++",
     uses_event_engine = False,
     uses_polling = False,
-    deps = [
-        "//:resource_quota",
-        "//test/core/util:grpc_suppressions",
-    ],
+    deps = ["//:resource_quota"],
 )
 
 grpc_cc_test(
     name = "memory_quota_stress_test",
     srcs = ["memory_quota_stress_test.cc"],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/strings",
+        "absl/types:optional",
+        "gtest",
+    ],
     language = "c++",
     # We only run this test under Linux, and really only care about the
     # TSAN results.
@@ -86,8 +122,10 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//:event_engine_memory_allocator",
+        "//:exec_ctx",
+        "//:gpr",
         "//:memory_quota",
-        "//test/core/util:grpc_suppressions",
     ],
 )
 
@@ -95,6 +133,10 @@ grpc_proto_fuzzer(
     name = "memory_quota_fuzzer",
     srcs = ["memory_quota_fuzzer.cc"],
     corpus = "memory_quota_fuzzer_corpus",
+    external_deps = [
+        "absl/strings",
+        "absl/types:optional",
+    ],
     language = "C++",
     proto = "memory_quota_fuzzer.proto",
     tags = ["no_windows"],
@@ -102,7 +144,14 @@ grpc_proto_fuzzer(
     uses_polling = False,
     deps = [
         "call_checker",
+        "//:closure",
+        "//:debug_location",
+        "//:error",
+        "//:event_engine_memory_allocator",
+        "//:exec_ctx",
+        "//:gpr",
+        "//:grpc_trace",
         "//:memory_quota",
-        "//test/core/util:grpc_test_util",
+        "//:useful",
     ],
 )

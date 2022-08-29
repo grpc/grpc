@@ -43,15 +43,24 @@ argp.add_argument('-j', '--jobs', type=int, default=multiprocessing.cpu_count())
 args = argp.parse_args()
 
 _INTERESTING = {
-    'client call':
+    'call/client':
         (rb'client call memory usage: ([0-9\.]+) bytes per call', float),
-    'server call':
+    'call/server':
         (rb'server call memory usage: ([0-9\.]+) bytes per call', float),
+    'channel/client':
+        (rb'client channel memory usage: ([0-9\.]+) bytes per channel', float),
+    'channel/server':
+        (rb'server channel memory usage: ([0-9\.]+) bytes per channel', float),
 }
 
 _SCENARIOS = {
     'default': [],
-    'minstack': ['--minstack'],
+    'minstack': ['--scenario_config=minstack'],
+}
+
+_BENCHMARKS = {
+    'call': ['--benchmark_names=call', '--size=50000'],
+    'channel': ['--benchmark_names=channel', '--size=10000'],
 }
 
 
@@ -62,21 +71,23 @@ def _run():
         'test/core/memory_usage/memory_usage_test'
     ])
     ret = {}
-    for scenario, extra_args in _SCENARIOS.items():
-        try:
-            output = subprocess.check_output([
-                'bazel-bin/test/core/memory_usage/memory_usage_test',
-                '--warmup=10000',
-                '--benchmark=50000',
-            ] + extra_args)
-        except subprocess.CalledProcessError as e:
-            print('Error running benchmark:', e)
-            continue
-        for line in output.splitlines():
-            for key, (pattern, conversion) in _INTERESTING.items():
-                m = re.match(pattern, line)
-                if m:
-                    ret[scenario + ': ' + key] = conversion(m.group(1))
+    for name, benchmark_args in _BENCHMARKS.items():
+        for scenario, extra_args in _SCENARIOS.items():
+            #TODO(chenancy) Remove when minstack is implemented for channel
+            if name == 'channel' and scenario == 'minstack':
+                continue
+            try:
+                output = subprocess.check_output([
+                    'bazel-bin/test/core/memory_usage/memory_usage_test',
+                ] + benchmark_args + extra_args)
+            except subprocess.CalledProcessError as e:
+                print('Error running benchmark:', e)
+                continue
+            for line in output.splitlines():
+                for key, (pattern, conversion) in _INTERESTING.items():
+                    m = re.match(pattern, line)
+                    if m:
+                        ret[scenario + ': ' + key] = conversion(m.group(1))
     return ret
 
 
@@ -101,7 +112,8 @@ if old is None:
         text += '{}: {}\n'.format(key, value)
 else:
     print(cur, old)
-    diff_size = 0
+    call_diff_size = 0
+    channel_diff_size = 0
     for scenario in _SCENARIOS.keys():
         for key, value in sorted(_INTERESTING.items()):
             key = scenario + ': ' + key
@@ -109,11 +121,19 @@ else:
                 if key not in old:
                     text += '{}: {}\n'.format(key, cur[key])
                 else:
-                    diff_size += cur[key] - old[key]
                     text += '{}: {} -> {}\n'.format(key, old[key], cur[key])
+                    if 'call' in key:
+                        call_diff_size += cur[key] - old[key]
+                    else:
+                        channel_diff_size += cur[key] - old[key]
 
-    print("DIFF_SIZE: %f" % diff_size)
-    check_on_pr.label_increase_decrease_on_pr('per-call-memory', diff_size, 64)
+    print("CALL_DIFF_SIZE: %f" % call_diff_size)
+    print("CHANNEL_DIFF_SIZE: %f" % channel_diff_size)
+    check_on_pr.label_increase_decrease_on_pr('per-call-memory', call_diff_size,
+                                              64)
+    check_on_pr.label_increase_decrease_on_pr('per-channel-memory',
+                                              channel_diff_size, 1000)
+    #TODO(chennancy)Change significant value when minstack also runs for channel
 
 print(text)
 check_on_pr.check_on_pr('Memory Difference', '```\n%s\n```' % text)

@@ -33,4 +33,10 @@
     }                                              \
   } while (0)
 
+#ifndef NDEBUG
+#define GPR_DEBUG_ASSERT_INTERNAL(x) GPR_ASSERT_INTERNAL(x)
+#else
+#define GPR_DEBUG_ASSERT_INTERNAL(x)
+#endif
+
 #endif  // GRPC_CORE_LIB_GPR_ASSERT_INTERNAL_H

@@ -14,11 +14,22 @@
 // limitations under the License.
 //
 
-#include <deque>
+#ifndef TLS_UTILS_H
+#define TLS_UTILS_H
 
+#include <deque>
+#include <string>
+
+#include "absl/base/thread_annotations.h"
+#include "absl/strings/string_view.h"
+
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/status.h>
+
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
-#include "test/core/util/test_config.h"
 
 namespace grpc_core {
 
@@ -134,3 +145,5 @@ class AsyncExternalVerifier {
 }  // namespace testing
 
 }  // namespace grpc_core
+
+#endif

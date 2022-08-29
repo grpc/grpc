@@ -198,9 +198,10 @@ TEST_P(XdsClientTest, MultipleBadCdsResources) {
       {"cluster", kClusterName2},
   };
   CheckRpcSendFailure(
-      DEBUG_LOCATION,
-      CheckRpcSendFailureOptions().set_rpc_options(
-          RpcOptions().set_metadata(std::move(metadata_cluster_2))));
+      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+      "cluster_name_2: UNAVAILABLE: invalid resource: INVALID_ARGUMENT:.*"
+      "errors parsing CDS resource.*DiscoveryType is not valid.*",
+      RpcOptions().set_metadata(std::move(metadata_cluster_2)));
 }
 
 TEST_P(XdsClientTest, XdsStreamErrorPropagation) {
@@ -243,8 +244,7 @@ TEST_P(GlobalXdsClientTest, MultipleChannelsShareXdsClient) {
   // Create second channel and tell it to connect to kNewServerName.
   auto channel2 = CreateChannel(/*failover_timeout_ms=*/0, kNewServerName);
   channel2->GetState(/*try_to_connect=*/true);
-  ASSERT_TRUE(
-      channel2->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100)));
+  ASSERT_TRUE(channel2->WaitForConnected(grpc_timeout_seconds_to_deadline(1)));
   // Make sure there's only one client connected.
   EXPECT_EQ(1UL, balancer_->ads_service()->clients().size());
 }
@@ -268,8 +268,7 @@ TEST_P(
   // Create second channel and tell it to connect to kNewServerName.
   auto channel2 = CreateChannel(/*failover_timeout_ms=*/0, kNewServerName);
   channel2->GetState(/*try_to_connect=*/true);
-  ASSERT_TRUE(
-      channel2->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100)));
+  ASSERT_TRUE(channel2->WaitForConnected(grpc_timeout_seconds_to_deadline(1)));
   // Now, destroy the new channel, send an EDS update to use a different backend
   // and test that the channel switches to that backend.
   channel2.reset();
@@ -360,7 +359,8 @@ TEST_P(GlobalXdsClientTest, InvalidListenerStillExistsIfPreviouslyCached) {
   auto listener = default_listener_;
   listener.clear_api_listener();
   balancer_->ads_service()->SetLdsResource(listener);
-  const auto response_state = WaitForLdsNack(DEBUG_LOCATION, StatusCode::OK);
+  const auto response_state =
+      WaitForLdsNack(DEBUG_LOCATION, RpcOptions(), StatusCode::OK);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::ContainsRegex(absl::StrCat(
@@ -378,7 +378,7 @@ class TimeoutTest : public XdsEnd2endTest {
  protected:
   void SetUp() override {
     InitClient(BootstrapBuilder(), /*lb_expected_authority=*/"",
-               /*xds_resource_does_not_exist_timeout_ms=*/500);
+               /*xds_resource_does_not_exist_timeout_ms=*/2000);
   }
 };
 
@@ -394,12 +394,18 @@ INSTANTIATE_TEST_SUITE_P(
 
 TEST_P(TimeoutTest, LdsServerIgnoresRequest) {
   balancer_->ads_service()->IgnoreResourceType(kLdsTypeUrl);
-  CheckRpcSendFailure(DEBUG_LOCATION);
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                      absl::StrCat("empty address list: ", kServerName,
+                                   ": xDS listener resource does not exist"),
+                      RpcOptions().set_timeout_ms(4000));
 }
 
 TEST_P(TimeoutTest, LdsResourceNotPresentInRequest) {
   balancer_->ads_service()->UnsetResource(kLdsTypeUrl, kServerName);
-  CheckRpcSendFailure(DEBUG_LOCATION);
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                      absl::StrCat("empty address list: ", kServerName,
+                                   ": xDS listener resource does not exist"),
+                      RpcOptions().set_timeout_ms(4000));
 }
 
 TEST_P(TimeoutTest, LdsSecondResourceNotPresentInRequest) {
@@ -410,31 +416,42 @@ TEST_P(TimeoutTest, LdsSecondResourceNotPresentInRequest) {
   CreateAndStartBackends(1);
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForAllBackends(DEBUG_LOCATION);
+  CheckRpcSendOk(DEBUG_LOCATION, 1, RpcOptions().set_timeout_ms(4000));
   // Create second channel for a new server name.
   // This should fail because there is no LDS resource for this server name.
-  auto channel2 =
-      CreateChannel(/*failover_timeout_ms=*/0, "new-server.example.com");
+  const char* kNewServerName = "new-server.example.com";
+  auto channel2 = CreateChannel(/*failover_timeout_ms=*/0, kNewServerName);
   auto stub2 = grpc::testing::EchoTestService::NewStub(channel2);
   ClientContext context;
   EchoRequest request;
   EchoResponse response;
   RpcOptions rpc_options;
-  rpc_options.SetupRpc(&context, &request);
+  rpc_options.set_timeout_ms(4000).SetupRpc(&context, &request);
   auto status =
       SendRpcMethod(stub2.get(), rpc_options, &context, request, &response);
   EXPECT_EQ(StatusCode::UNAVAILABLE, status.error_code());
+  EXPECT_THAT(status.error_message(),
+              absl::StrCat("empty address list: ", kNewServerName,
+                           ": xDS listener resource does not exist"));
 }
 
 TEST_P(TimeoutTest, RdsServerIgnoresRequest) {
   balancer_->ads_service()->IgnoreResourceType(kRdsTypeUrl);
-  CheckRpcSendFailure(DEBUG_LOCATION);
+  CheckRpcSendFailure(
+      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+      absl::StrCat("empty address list: ", kDefaultRouteConfigurationName,
+                   ": xDS route configuration resource does not exist"),
+      RpcOptions().set_timeout_ms(4000));
 }
 
 TEST_P(TimeoutTest, RdsResourceNotPresentInRequest) {
   balancer_->ads_service()->UnsetResource(kRdsTypeUrl,
                                           kDefaultRouteConfigurationName);
-  CheckRpcSendFailure(DEBUG_LOCATION);
+  CheckRpcSendFailure(
+      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+      absl::StrCat("empty address list: ", kDefaultRouteConfigurationName,
+                   ": xDS route configuration resource does not exist"),
+      RpcOptions().set_timeout_ms(4000));
 }
 
 TEST_P(TimeoutTest, RdsSecondResourceNotPresentInRequest) {
@@ -445,18 +462,19 @@ TEST_P(TimeoutTest, RdsSecondResourceNotPresentInRequest) {
   CreateAndStartBackends(1);
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  CheckRpcSendOk(DEBUG_LOCATION, 1, RpcOptions().set_timeout_ms(4000));
   // Add listener for 2nd channel, but no RDS resource.
   const char* kNewServerName = "new-server.example.com";
+  const char* kNewRouteConfigName = "rds_resource_does_not_exist";
   Listener listener = default_listener_;
   listener.set_name(kNewServerName);
   HttpConnectionManager http_connection_manager =
       ClientHcmAccessor().Unpack(listener);
   auto* rds = http_connection_manager.mutable_rds();
-  rds->set_route_config_name("rds_resource_does_not_exist");
+  rds->set_route_config_name(kNewRouteConfigName);
   rds->mutable_config_source()->mutable_self();
   ClientHcmAccessor().Pack(http_connection_manager, &listener);
   balancer_->ads_service()->SetLdsResource(listener);
-  WaitForAllBackends(DEBUG_LOCATION);
   // Create second channel for a new server name.
   // This should fail because the LDS resource points to a non-existent RDS
   // resource.
@@ -466,27 +484,37 @@ TEST_P(TimeoutTest, RdsSecondResourceNotPresentInRequest) {
   EchoRequest request;
   EchoResponse response;
   RpcOptions rpc_options;
-  rpc_options.SetupRpc(&context, &request);
+  rpc_options.set_timeout_ms(4000).SetupRpc(&context, &request);
   auto status =
       SendRpcMethod(stub2.get(), rpc_options, &context, request, &response);
   EXPECT_EQ(StatusCode::UNAVAILABLE, status.error_code());
+  EXPECT_THAT(
+      status.error_message(),
+      absl::StrCat("empty address list: ", kNewRouteConfigName,
+                   ": xDS route configuration resource does not exist"));
 }
 
 TEST_P(TimeoutTest, CdsServerIgnoresRequest) {
   balancer_->ads_service()->IgnoreResourceType(kCdsTypeUrl);
-  CheckRpcSendFailure(DEBUG_LOCATION);
+  CheckRpcSendFailure(
+      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+      absl::StrCat("CDS resource \"", kDefaultClusterName, "\" does not exist"),
+      RpcOptions().set_timeout_ms(4000));
 }
 
 TEST_P(TimeoutTest, CdsResourceNotPresentInRequest) {
   balancer_->ads_service()->UnsetResource(kCdsTypeUrl, kDefaultClusterName);
-  CheckRpcSendFailure(DEBUG_LOCATION);
+  CheckRpcSendFailure(
+      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+      absl::StrCat("CDS resource \"", kDefaultClusterName, "\" does not exist"),
+      RpcOptions().set_timeout_ms(4000));
 }
 
 TEST_P(TimeoutTest, CdsSecondResourceNotPresentInRequest) {
   CreateAndStartBackends(1);
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForAllBackends(DEBUG_LOCATION);
+  CheckRpcSendOk(DEBUG_LOCATION, 1, RpcOptions().set_timeout_ms(4000));
   // Change route config to point to non-existing cluster.
   const char* kNewClusterName = "new_cluster_name";
   RouteConfiguration route_config = default_route_config_;
@@ -497,34 +525,43 @@ TEST_P(TimeoutTest, CdsSecondResourceNotPresentInRequest) {
   balancer_->ads_service()->SetRdsResource(route_config);
   // New cluster times out.
   // May need to wait a bit for the change to propagate to the client.
-  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(10);
-  bool error_seen = false;
-  do {
-    auto status = SendRpc();
-    if (status.error_code() == StatusCode::UNAVAILABLE) {
-      error_seen = true;
-      break;
-    }
-  } while (gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), deadline) < 0);
-  EXPECT_TRUE(error_seen);
+  SendRpcsUntil(
+      DEBUG_LOCATION,
+      [&](const RpcResult& result) {
+        if (result.status.ok()) return true;  // Keep going.
+        EXPECT_EQ(StatusCode::UNAVAILABLE, result.status.error_code());
+        EXPECT_EQ(absl::StrCat("CDS resource \"", kNewClusterName,
+                               "\" does not exist"),
+                  result.status.error_message());
+        return false;
+      },
+      /*timeout_ms=*/30000, RpcOptions().set_timeout_ms(4000));
 }
 
 TEST_P(TimeoutTest, EdsServerIgnoresRequest) {
   balancer_->ads_service()->IgnoreResourceType(kEdsTypeUrl);
-  CheckRpcSendFailure(DEBUG_LOCATION);
+  CheckRpcSendFailure(
+      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+      "no children in weighted_target policy: EDS resource eds_service_name "
+      "does not exist",
+      RpcOptions().set_timeout_ms(4000));
 }
 
 TEST_P(TimeoutTest, EdsResourceNotPresentInRequest) {
   // No need to remove EDS resource, since the test suite does not add it
   // by default.
-  CheckRpcSendFailure(DEBUG_LOCATION);
+  CheckRpcSendFailure(
+      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+      "no children in weighted_target policy: EDS resource eds_service_name "
+      "does not exist",
+      RpcOptions().set_timeout_ms(4000));
 }
 
 TEST_P(TimeoutTest, EdsSecondResourceNotPresentInRequest) {
   CreateAndStartBackends(1);
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForAllBackends(DEBUG_LOCATION);
+  CheckRpcSendOk(DEBUG_LOCATION, 1, RpcOptions().set_timeout_ms(4000));
   // New cluster that points to a non-existant EDS resource.
   const char* kNewClusterName = "new_cluster_name";
   Cluster cluster = default_cluster_;
@@ -541,23 +578,25 @@ TEST_P(TimeoutTest, EdsSecondResourceNotPresentInRequest) {
   balancer_->ads_service()->SetRdsResource(route_config);
   // New EDS resource times out.
   // May need to wait a bit for the RDS change to propagate to the client.
-  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(10);
-  bool error_seen = false;
-  do {
-    auto status = SendRpc(RpcOptions().set_rpc_method(METHOD_ECHO1));
-    if (status.error_code() == StatusCode::UNAVAILABLE) {
-      error_seen = true;
-      break;
-    }
-  } while (gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), deadline) < 0);
-  EXPECT_TRUE(error_seen);
+  SendRpcsUntil(
+      DEBUG_LOCATION,
+      [](const RpcResult& result) {
+        if (result.status.ok()) return true;  // Keep going.
+        EXPECT_EQ(StatusCode::UNAVAILABLE, result.status.error_code());
+        EXPECT_EQ(result.status.error_message(),
+                  "no children in weighted_target policy: EDS resource "
+                  "eds_service_name_does_not_exist does not exist");
+        return false;
+      },
+      /*timeout_ms=*/30000,
+      RpcOptions().set_rpc_method(METHOD_ECHO1).set_timeout_ms(4000));
 }
 
 TEST_P(TimeoutTest, ServerDoesNotResendAfterAdsStreamRestart) {
   CreateAndStartBackends(1);
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForAllBackends(DEBUG_LOCATION);
+  CheckRpcSendOk(DEBUG_LOCATION, 1, RpcOptions().set_timeout_ms(4000));
   // Stop balancer.
   balancer_->Shutdown();
   // Tell balancer to require minimum version 1 for all resource types
@@ -577,7 +616,7 @@ TEST_P(TimeoutTest, ServerDoesNotResendAfterAdsStreamRestart) {
   // be sure that the channel continues to use the resources from before
   // the restart.
   absl::Time deadline =
-      absl::Now() + (absl::Seconds(5) * grpc_test_slowdown_factor());
+      absl::Now() + (absl::Seconds(30) * grpc_test_slowdown_factor());
   do {
     CheckRpcSendOk(DEBUG_LOCATION);
   } while (absl::Now() < deadline);
@@ -600,7 +639,10 @@ TEST_P(BootstrapSourceTest, Vanilla) {
   CreateAndStartBackends(1);
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForAllBackends(DEBUG_LOCATION);
+  // Increase timeout, since kBootstrapFromFile takes more time on busy
+  // test machines.  (We've seen at least one occurrence where it's
+  // taken over 10 seconds.)
+  CheckRpcSendOk(DEBUG_LOCATION, 1, RpcOptions().set_timeout_ms(15000));
 }
 
 //
@@ -743,16 +785,13 @@ TEST_P(XdsFederationTest, FederationTargetAuthorityDefaultResourceTemplate) {
                                    new_route_config);
   // Ensure update has reached and send 10 RPCs to the current stub.
   WaitForAllBackends(DEBUG_LOCATION, 0, 1);
-  // Create second channel to new target uri and send 1 RPC .
+  // Create second channel to new target uri and send 1 RPC.
   auto channel2 =
       CreateChannel(/*failover_timeout_ms=*/0, kNewServerName, kAuthority);
-  channel2->GetState(/*try_to_connect=*/true);
-  ASSERT_TRUE(
-      channel2->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100)));
   auto stub2 = grpc::testing::EchoTestService::NewStub(channel2);
   ClientContext context;
   EchoRequest request;
-  request.set_message(kRequestMessage);
+  RpcOptions().SetupRpc(&context, &request);
   EchoResponse response;
   grpc::Status status = stub2->Echo(&context, request, &response);
   EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
@@ -817,16 +856,13 @@ TEST_P(XdsFederationTest, FederationTargetAuthorityWithResourceTemplate) {
                                    new_route_config);
   // Ensure update has reached and send 10 RPCs to the current stub.
   WaitForAllBackends(DEBUG_LOCATION, 0, 1);
-  // Create second channel to new target uri and send 1 RPC .
+  // Create second channel to new target uri and send 1 RPC.
   auto channel2 =
       CreateChannel(/*failover_timeout_ms=*/0, kNewServerName, kAuthority);
-  channel2->GetState(/*try_to_connect=*/true);
-  ASSERT_TRUE(
-      channel2->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100)));
   auto stub2 = grpc::testing::EchoTestService::NewStub(channel2);
   ClientContext context;
   EchoRequest request;
-  request.set_message(kRequestMessage);
+  RpcOptions().SetupRpc(&context, &request);
   EchoResponse response;
   grpc::Status status = stub2->Echo(&context, request, &response);
   EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
@@ -854,7 +890,7 @@ TEST_P(XdsFederationTest, TargetUriAuthorityUnknown) {
   auto stub2 = grpc::testing::EchoTestService::NewStub(channel2);
   ClientContext context;
   EchoRequest request;
-  request.set_message(kRequestMessage);
+  RpcOptions().SetupRpc(&context, &request);
   EchoResponse response;
   grpc::Status status = stub2->Echo(&context, request, &response);
   EXPECT_EQ(status.error_code(), StatusCode::UNAVAILABLE);
@@ -895,7 +931,7 @@ TEST_P(XdsFederationTest, RdsResourceNameAuthorityUnknown) {
   auto stub2 = grpc::testing::EchoTestService::NewStub(channel2);
   ClientContext context;
   EchoRequest request;
-  request.set_message(kRequestMessage);
+  RpcOptions().SetupRpc(&context, &request);
   EchoResponse response;
   grpc::Status status = stub2->Echo(&context, request, &response);
   EXPECT_EQ(status.error_code(), StatusCode::UNAVAILABLE);
@@ -946,7 +982,7 @@ TEST_P(XdsFederationTest, CdsResourceNameAuthorityUnknown) {
   auto stub2 = grpc::testing::EchoTestService::NewStub(channel2);
   ClientContext context;
   EchoRequest request;
-  request.set_message(kRequestMessage);
+  RpcOptions().SetupRpc(&context, &request);
   EchoResponse response;
   grpc::Status status = stub2->Echo(&context, request, &response);
   EXPECT_EQ(status.error_code(), StatusCode::UNAVAILABLE);
@@ -1006,13 +1042,16 @@ TEST_P(XdsFederationTest, EdsResourceNameAuthorityUnknown) {
   auto stub2 = grpc::testing::EchoTestService::NewStub(channel2);
   ClientContext context;
   EchoRequest request;
-  request.set_message(kRequestMessage);
+  RpcOptions().SetupRpc(&context, &request);
   EchoResponse response;
   grpc::Status status = stub2->Echo(&context, request, &response);
   EXPECT_EQ(status.error_code(), StatusCode::UNAVAILABLE);
-  // TODO(roth): Improve this error message as part of
-  // https://github.com/grpc/grpc/issues/22883.
-  EXPECT_EQ(status.error_message(), "no ready priority");
+  EXPECT_EQ(
+      status.error_message(),
+      "no children in weighted_target policy: EDS watcher error for resource "
+      "xdstp://xds.unknown.com/envoy.config.endpoint.v3.ClusterLoadAssignment/"
+      "edsservice_name (UNAVAILABLE: authority \"xds.unknown.com\" not "
+      "present in bootstrap config)");
   ASSERT_EQ(GRPC_CHANNEL_TRANSIENT_FAILURE, channel2->GetState(false));
 }
 
@@ -1211,19 +1250,17 @@ TEST_P(XdsFederationLoadReportingTest, FederationMultipleLoadReportingTest) {
   listener.set_name(kNewListenerName);
   SetListenerAndRouteConfiguration(authority_balancer_.get(), listener,
                                    new_route_config);
-  // Ensure update has reached and send 10 RPCs to the current stub.
+  // Send kNumRpcsToDefaultBalancer RPCs to the current stub.
   CheckRpcSendOk(DEBUG_LOCATION, kNumRpcsToDefaultBalancer);
-  // Create second channel to new target uri and send 1 RPC .
+  // Create second channel to new target uri.
   auto channel2 =
       CreateChannel(/*failover_timeout_ms=*/0, kNewServerName, kAuthority);
-  channel2->GetState(/*try_to_connect=*/true);
-  ASSERT_TRUE(
-      channel2->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100)));
   auto stub2 = grpc::testing::EchoTestService::NewStub(channel2);
+  // Send kNumRpcsToAuthorityBalancer on the second channel.
   for (size_t i = 0; i < kNumRpcsToAuthorityBalancer; ++i) {
     ClientContext context;
     EchoRequest request;
-    request.set_message(kRequestMessage);
+    RpcOptions().SetupRpc(&context, &request);
     EchoResponse response;
     grpc::Status status = stub2->Echo(&context, request, &response);
     EXPECT_TRUE(status.ok()) << "code=" << status.error_code()

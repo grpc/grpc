@@ -382,7 +382,7 @@ cdef object _watch_connectivity_state(
           state.c_connectivity_completion_queue, <cpython.PyObject *>tag)
       state.connectivity_due.add(tag)
     else:
-      raise ValueError('Cannot invoke RPC: %s' % state.closed_reason)
+      raise ValueError('Cannot monitor channel state: %s' % state.closed_reason)
   completed_tag, event = _latent_event(
       state.c_connectivity_completion_queue, None)
   with state.condition:

@@ -16,6 +16,7 @@
 
 #include <string.h>
 
+#include <grpc/compression.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/compression/compression_internal.h"

@@ -18,19 +18,12 @@
 
 #include "src/core/lib/resolver/resolver_registry.h"
 
-#include <string.h>
-
-#include <vector>
-
-#include "absl/memory/memory.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
-
-#include "src/core/lib/resolver/resolver_registry.h"
 
 namespace grpc_core {
 
@@ -78,7 +71,7 @@ bool ResolverRegistry::IsValidTarget(absl::string_view target) const {
 }
 
 OrphanablePtr<Resolver> ResolverRegistry::CreateResolver(
-    absl::string_view target, const grpc_channel_args* args,
+    absl::string_view target, const ChannelArgs& args,
     grpc_pollset_set* pollset_set,
     std::shared_ptr<WorkSerializer> work_serializer,
     std::unique_ptr<Resolver::ResultHandler> result_handler) const {

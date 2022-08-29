@@ -43,7 +43,6 @@
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/detail/basic_seq.h"
 #include "src/core/lib/promise/latch.h"
-#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/percent_encoding.h"
@@ -147,8 +146,8 @@ HttpClientFilter::HttpClientFilter(HttpSchemeMetadata::ValueType scheme,
       user_agent_(std::move(user_agent)),
       test_only_use_put_requests_(test_only_use_put_requests) {}
 
-absl::StatusOr<HttpClientFilter> HttpClientFilter::Create(ChannelArgs args,
-                                                          ChannelFilter::Args) {
+absl::StatusOr<HttpClientFilter> HttpClientFilter::Create(
+    const ChannelArgs& args, ChannelFilter::Args) {
   auto* transport = args.GetObject<grpc_transport>();
   if (transport == nullptr) {
     return absl::InvalidArgumentError("HttpClientFilter needs a transport");

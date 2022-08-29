@@ -33,10 +33,11 @@
 #include "src/core/lib/gpr/spinlock.h"
 #include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/gprpp/time_averaged_stats.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/port.h"
-#include "src/core/lib/iomgr/time_averaged_stats.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/timer_heap.h"
 
@@ -60,7 +61,7 @@ grpc_core::TraceFlag grpc_timer_check_trace(false, "timer_check");
  */
 struct timer_shard {
   gpr_mu mu;
-  grpc_time_averaged_stats stats;
+  grpc_core::ManualConstructor<grpc_core::TimeAveragedStats> stats;
   /* All and only timers with deadlines < this will be in the heap. */
   grpc_core::Timestamp queue_deadline_cap;
   /* The deadline of the next timer due in this shard. */
@@ -259,8 +260,7 @@ static void timer_list_init() {
   for (i = 0; i < g_num_shards; i++) {
     timer_shard* shard = &g_shards[i];
     gpr_mu_init(&shard->mu);
-    grpc_time_averaged_stats_init(&shard->stats, 1.0 / ADD_DEADLINE_SCALE, 0.1,
-                                  0.5);
+    shard->stats.Init(1.0 / ADD_DEADLINE_SCALE, 0.1, 0.5);
     shard->queue_deadline_cap = g_shared_mutables.min_timer;
     shard->shard_queue_index = i;
     grpc_timer_heap_init(&shard->heap);
@@ -367,8 +367,7 @@ static void timer_init(grpc_timer* timer, grpc_core::Timestamp deadline,
     return;
   }
 
-  grpc_time_averaged_stats_add_sample(&shard->stats,
-                                      (deadline - now).millis() / 1000.0);
+  shard->stats->AddSample((deadline - now).millis() / 1000.0);
 
   ADD_TO_HASH_TABLE(timer);
 
@@ -473,8 +472,7 @@ static void timer_cancel(grpc_timer* timer) {
 static bool refill_heap(timer_shard* shard, grpc_core::Timestamp now) {
   /* Compute the new queue window width and bound by the limits: */
   double computed_deadline_delta =
-      grpc_time_averaged_stats_update_average(&shard->stats) *
-      ADD_DEADLINE_SCALE;
+      shard->stats->UpdateAverage() * ADD_DEADLINE_SCALE;
   double deadline_delta =
       grpc_core::Clamp(computed_deadline_delta, MIN_QUEUE_WINDOW_DURATION,
                        MAX_QUEUE_WINDOW_DURATION);

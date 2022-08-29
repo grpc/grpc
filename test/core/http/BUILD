@@ -70,6 +70,7 @@ grpc_cc_library(
         "//:gpr",
         "//test/core/end2end:ssl_test_data",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
@@ -107,6 +108,7 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:server1.pem",
     ],
     external_deps = ["gtest"],
+    flaky = True,
     language = "C++",
     tags = ["no_windows"],
     deps = [
@@ -123,6 +125,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "parser_test",
     srcs = ["parser_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,
@@ -131,17 +134,20 @@ grpc_cc_test(
         "//:grpc",
         "//test/core/end2end:ssl_test_data",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
 
 grpc_cc_test(
     name = "format_request_test",
     srcs = ["format_request_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
         "//test/core/end2end:ssl_test_data",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
