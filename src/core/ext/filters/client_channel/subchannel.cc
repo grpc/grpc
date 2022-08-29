@@ -27,6 +27,9 @@
 #include <utility>
 
 #include "absl/status/statusor.h"
+#include "absl/strings/cord.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/grpc_types.h>
