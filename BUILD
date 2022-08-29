@@ -4199,6 +4199,7 @@ grpc_cc_library(
     ],
     language = "c++",
     tags = ["nofixdeps"],
+    visibility = ["@grpc:xds_client_core"],
     deps = [
         "backoff",
         "debug_location",
