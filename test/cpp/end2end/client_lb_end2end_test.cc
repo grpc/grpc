@@ -176,6 +176,11 @@ class FakeResolverResponseGeneratorWrapper {
     response_generator_->SetFailureOnReresolution();
   }
 
+  void SetResponse(grpc_core::Resolver::Result result) {
+    grpc_core::ExecCtx exec_ctx;
+    response_generator_->SetResponse(std::move(result));
+  }
+
   grpc_core::FakeResolverResponseGenerator* Get() const {
     return response_generator_.get();
   }
@@ -2679,6 +2684,55 @@ TEST_F(OobBackendMetricTest, Basic) {
     }
     gpr_sleep_until(grpc_timeout_seconds_to_deadline(1));
   }
+}
+
+//
+// tests rewriting of control plane status codes
+//
+
+class ControlPlaneStatusRewritingTest : public ClientLbEnd2endTest {
+ protected:
+  static void SetUpTestCase() {
+    grpc_core::CoreConfiguration::Reset();
+    grpc_core::CoreConfiguration::RegisterBuilder(
+        [](grpc_core::CoreConfiguration::Builder* builder) {
+          grpc_core::RegisterFailLoadBalancingPolicy(
+              builder, absl::AbortedError("nope"));
+        });
+    grpc_init();
+  }
+
+  static void TearDownTestCase() {
+    grpc_shutdown();
+    grpc_core::CoreConfiguration::Reset();
+  }
+};
+
+TEST_F(ControlPlaneStatusRewritingTest, RewritesFromLb) {
+  // Start client.
+  auto response_generator = BuildResolverResponseGenerator();
+  auto channel = BuildChannel("fail_lb", response_generator);
+  auto stub = BuildStub(channel);
+  response_generator.SetNextResolution(GetServersPorts());
+  // Send an RPC, verify that status was rewritten.
+  CheckRpcSendFailure(
+      DEBUG_LOCATION, stub, StatusCode::INTERNAL,
+      "illegal status code from LB pick; original status: ABORTED: nope");
+}
+
+TEST_F(ControlPlaneStatusRewritingTest, RewritesFromResolver) {
+  // Start client.
+  auto response_generator = BuildResolverResponseGenerator();
+  auto channel = BuildChannel("pick_first", response_generator);
+  auto stub = BuildStub(channel);
+  grpc_core::Resolver::Result result;
+  result.service_config = absl::AbortedError("nope");
+  result.addresses.emplace();
+  response_generator.SetResponse(std::move(result));
+  // Send an RPC, verify that status was rewritten.
+  CheckRpcSendFailure(
+      DEBUG_LOCATION, stub, StatusCode::INTERNAL,
+      "illegal status code from resolver; original status: ABORTED: nope");
 }
 
 }  // namespace
