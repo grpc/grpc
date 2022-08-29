@@ -47,8 +47,6 @@
 static gpr_mu* g_mu;
 static grpc_pollset* g_pollset;
 
-GPR_GLOBAL_CONFIG_DECLARE_BOOL(grpc_experimental_enable_tcp_frame_size_tuning);
-
 /*
    General test notes:
 

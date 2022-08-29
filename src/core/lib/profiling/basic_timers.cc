@@ -33,7 +33,6 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gpr/tls.h"
-#include "src/core/lib/gprpp/global_config.h"
 #include "src/core/lib/profiling/timers.h"
 
 typedef enum { BEGIN = '{', END = '}', MARK = '.' } marker_type;

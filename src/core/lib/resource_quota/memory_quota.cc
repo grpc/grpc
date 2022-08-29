@@ -28,7 +28,6 @@
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/gprpp/global_config_env.h"
 #include "src/core/lib/gprpp/mpscq.h"
 #include "src/core/lib/promise/exec_ctx_wakeup_scheduler.h"
 #include "src/core/lib/promise/loop.h"
@@ -36,18 +35,6 @@
 #include "src/core/lib/promise/race.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/resource_quota/trace.h"
-
-GPR_GLOBAL_CONFIG_DEFINE_BOOL(grpc_experimental_smooth_memory_presure, false,
-                              "smooth the value of memory pressure over time");
-GPR_GLOBAL_CONFIG_DEFINE_BOOL(
-    grpc_experimental_enable_periodic_resource_quota_reclamation, false,
-    "Enable experimental feature to reclaim resource quota periodically");
-GPR_GLOBAL_CONFIG_DEFINE_INT32(
-    grpc_experimental_max_quota_buffer_size, 1024 * 1024,
-    "Maximum size for one memory allocators buffer size against a quota");
-GPR_GLOBAL_CONFIG_DEFINE_INT32(
-    grpc_experimental_resource_quota_set_point, 95,
-    "Ask the resource quota to target this percentage of total quota usage.");
 
 namespace grpc_core {
 

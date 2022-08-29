@@ -34,7 +34,6 @@
 #include <grpc/event_engine/memory_request.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/gprpp/global_config_generic.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -43,10 +42,8 @@
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/periodic_update.h"
 
-GPR_GLOBAL_CONFIG_DECLARE_BOOL(grpc_experimental_smooth_memory_presure);
 GPR_GLOBAL_CONFIG_DECLARE_BOOL(
     grpc_experimental_enable_periodic_resource_quota_reclamation);
-GPR_GLOBAL_CONFIG_DECLARE_INT32(grpc_experimental_max_quota_buffer_size);
 
 namespace grpc_core {
 

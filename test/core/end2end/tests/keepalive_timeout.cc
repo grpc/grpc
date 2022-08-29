@@ -29,7 +29,6 @@
 
 #include "src/core/ext/transport/chttp2/transport/frame_ping.h"
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/gprpp/global_config_generic.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/port.h"
 #include "test/core/end2end/cq_verifier.h"

@@ -16,8 +16,6 @@
  *
  */
 
-#include "src/core/lib/gprpp/global_config_env.h"
-
 #include <stdio.h>
 #include <string.h>
 
@@ -51,10 +49,6 @@ class GlobalConfigEnvTest : public ::testing::Test {
 };
 
 }  // namespace
-
-GPR_GLOBAL_CONFIG_DEFINE_BOOL(bool_var, true, "");
-GPR_GLOBAL_CONFIG_DEFINE_INT32(int32_var, 1234, "");
-GPR_GLOBAL_CONFIG_DEFINE_STRING(string_var, "Apple", "");
 
 TEST_F(GlobalConfigEnvTest, BoolWithEnvTest) {
   const char* bool_var_name = "BOOL_VAR";

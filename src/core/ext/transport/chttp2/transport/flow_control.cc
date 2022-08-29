@@ -36,16 +36,10 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/gprpp/global_config_env.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 
 grpc_core::TraceFlag grpc_flowctl_trace(false, "flowctl");
-
-GPR_GLOBAL_CONFIG_DEFINE_BOOL(
-    grpc_experimental_broad_flow_control_range, false,
-    "Use an enlarged memory pressure range for scaling flow control when using "
-    "a resource quota.");
 
 namespace grpc_core {
 namespace chttp2 {

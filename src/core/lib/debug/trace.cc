@@ -28,11 +28,6 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-GPR_GLOBAL_CONFIG_DEFINE_STRING(
-    grpc_trace, "",
-    "A comma separated list of tracers that provide additional insight into "
-    "how gRPC C core is processing requests via debug logs.");
-
 int grpc_tracer_set_enabled(const char* name, int enabled);
 
 namespace grpc_core {

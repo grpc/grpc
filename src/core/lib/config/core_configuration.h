@@ -20,6 +20,8 @@
 #include <atomic>
 #include <functional>
 
+#include "config_var_metadata.h"
+
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args_preconditioning.h"
@@ -161,6 +163,8 @@ class CoreConfiguration {
 
   // Accessors
 
+  const ConfigVars& config_vars() const { return config_vars_; }
+
   const ChannelArgsPreconditioning& channel_args_preconditioning() const {
     return channel_args_preconditioning_;
   }
@@ -205,6 +209,7 @@ class CoreConfiguration {
   // Default builder
   static void (*default_builder_)(CoreConfiguration::Builder*);
 
+  ConfigVars config_vars_;
   ChannelArgsPreconditioning channel_args_preconditioning_;
   ChannelInit channel_init_;
   HandshakerRegistry handshaker_registry_;

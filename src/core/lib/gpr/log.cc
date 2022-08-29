@@ -26,7 +26,6 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gprpp/global_config.h"
 
 #ifndef GPR_DEFAULT_LOG_VERBOSITY_STRING
 #define GPR_DEFAULT_LOG_VERBOSITY_STRING "ERROR"

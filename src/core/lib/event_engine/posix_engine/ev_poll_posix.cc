@@ -56,10 +56,7 @@
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h"
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h"
 #include "src/core/lib/gprpp/fork.h"
-#include "src/core/lib/gprpp/global_config.h"
 #include "src/core/lib/gprpp/time.h"
-
-GPR_GLOBAL_CONFIG_DECLARE_STRING(grpc_poll_strategy);
 
 using ::grpc_event_engine::posix_engine::WakeupFd;
 

@@ -16,8 +16,6 @@
  *
  */
 
-#include "src/core/lib/gprpp/global_config.h"
-
 #include <stdio.h>
 #include <string.h>
 
@@ -28,12 +26,6 @@
 
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gprpp/memory.h"
-
-GPR_GLOBAL_CONFIG_DECLARE_BOOL(bool_var);
-
-GPR_GLOBAL_CONFIG_DEFINE_BOOL(bool_var, false, "");
-GPR_GLOBAL_CONFIG_DEFINE_INT32(int32_var, 0, "");
-GPR_GLOBAL_CONFIG_DEFINE_STRING(string_var, "", "");
 
 TEST(GlobalConfigTest, BoolTest) {
   EXPECT_FALSE(GPR_GLOBAL_CONFIG_GET(bool_var));

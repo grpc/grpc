@@ -97,8 +97,6 @@ typedef size_t msg_iovlen_type;
 
 extern grpc_core::TraceFlag grpc_tcp_trace;
 
-GPR_GLOBAL_CONFIG_DECLARE_BOOL(grpc_experimental_enable_tcp_frame_size_tuning);
-
 namespace grpc_core {
 
 class TcpZerocopySendRecord {

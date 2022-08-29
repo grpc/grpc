@@ -23,10 +23,6 @@
 /** Config variable that points to the default SSL roots file. This file
     must be a PEM encoded file with all the roots such as the one that can be
     downloaded from https://pki.google.com/roots.pem. */
-GPR_GLOBAL_CONFIG_DEFINE_STRING(grpc_default_ssl_roots_file_path, "",
-                                "Path to the default SSL roots file.");
 
 /** Config variable used as a flag to enable/disable loading system root
     certificates from the OS trust store. */
-GPR_GLOBAL_CONFIG_DEFINE_BOOL(grpc_not_use_system_ssl_roots, false,
-                              "Disable loading system root certificates.");
