@@ -10274,6 +10274,17 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
+- name: timer_manager_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/event_engine/common_closures.h
+  src:
+  - test/core/event_engine/posix/timer_manager_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: timer_test
   gtest: true
   build: test

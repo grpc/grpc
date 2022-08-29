@@ -2376,6 +2376,7 @@ grpc_cc_library(
         "gpr",
         "gpr_codegen",
         "gpr_tls",
+        "grpc_trace",
         "posix_event_engine_timer",
         "time",
     ],
