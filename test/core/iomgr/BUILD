@@ -60,6 +60,7 @@ grpc_cc_test(
     srcs = ["endpoint_pair_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
+    tags = ["endpoint_test"],
     deps = [
         ":endpoint_tests",
         "//:gpr",
@@ -241,7 +242,7 @@ grpc_cc_test(
     srcs = ["tcp_client_posix_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
-    tags = ["no_windows"],
+    tags = ["no_windows","endpoint_test"],
     deps = [
         "//:gpr",
         "//:grpc",
@@ -255,6 +256,7 @@ grpc_cc_test(
     srcs = ["tcp_posix_test.cc"],
     language = "C++",
     tags = [
+        "endpoint_test",
         "no_mac",  # TODO(jtattermusch): Reenable once https://github.com/grpc/grpc/issues/21282 is fixed.
         "no_windows",
     ],

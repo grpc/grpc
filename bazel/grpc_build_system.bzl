@@ -29,6 +29,7 @@ Contains macros used throughout the repo.
 
 load("//bazel:cc_grpc_library.bzl", "cc_grpc_library")
 load("//bazel:copts.bzl", "GRPC_DEFAULT_COPTS")
+load("//bazel:experiments.bzl", "EXPERIMENTS")
 load("@upb//bazel:upb_proto_library.bzl", "upb_proto_library", "upb_proto_reflection_library")
 load("@build_bazel_rules_apple//apple:ios.bzl", "ios_unit_test")
 load("@build_bazel_rules_apple//apple/testing/default_runner:ios_test_runner.bzl", "ios_test_runner")
@@ -258,7 +259,7 @@ def ios_cc_test(
             deps = ios_test_deps,
         )
 
-def expand_tests_for_each_poller_and_engine(name, srcs, deps, tags, args, exclude_pollers, uses_event_engine):
+def expand_tests_for_each_poller_and_engine_and_experiment(name, srcs, deps, tags, args, exclude_pollers, uses_event_engine):
     """Common logic used to parameterize tests for every poller and EventEngine.
 
     Args:
@@ -325,7 +326,23 @@ def expand_tests_for_each_poller_and_engine(name, srcs, deps, tags, args, exclud
                 "tags": test_tags,
                 "args": test_args,
             })
-    return poller_config
+
+    experiments = {}
+    for tag in tags:
+        if tag not in EXPERIMENTS: continue
+        for experiment in EXPERIMENTS[tag]:
+            experiments[experiment] = 1
+    experiments = list(experiments.keys())
+
+    experiment_config = list(poller_config)
+    for experiment in experiments:
+        for config in poller_config:
+            config = dict(config)
+            config["name"] = config["name"] + "@experiment=" + experiment
+            config["args"] = config["args"] + ["--experiment=" + experiment]
+            experiment_config.append(config)
+
+    return experiment_config
 
 def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], uses_polling = True, language = "C++", size = "medium", timeout = None, tags = [], exec_compatible_with = [], exec_properties = {}, shard_count = None, flaky = None, copts = [], linkstatic = None, exclude_pollers = [], uses_event_engine = True):
     """A cc_test target for use in the gRPC repo.
@@ -394,7 +411,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         )
         return
 
-    for poller_config in expand_tests_for_each_poller_and_engine(name, srcs, core_deps, tags, args, exclude_pollers, uses_event_engine):
+    for poller_config in expand_tests_for_each_poller_and_engine_and_experiment(name, srcs, core_deps, tags, args, exclude_pollers, uses_event_engine):
         native.cc_test(
             name = poller_config["name"],
             srcs = poller_config["srcs"],
@@ -496,7 +513,7 @@ def grpc_sh_test(name, srcs = [], args = [], data = [], uses_polling = True, siz
         )
         return
 
-    for poller_config in expand_tests_for_each_poller_and_engine(name, srcs, [], tags, args, exclude_pollers, uses_event_engine):
+    for poller_config in expand_tests_for_each_poller_and_engine_and_experiment(name, srcs, [], tags, args, exclude_pollers, uses_event_engine):
         native.sh_test(
             name = poller_config["name"],
             srcs = poller_config["srcs"],

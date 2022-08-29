@@ -188,7 +188,10 @@ with open('src/core/lib/experiments/experiments.cc', 'w') as C:
     print(file=C)
     print("}  // namespace grpc_core", file=C)
 
-for file in os.scandir("tools/internal_ci/linux/experiments"):
-    os.remove(file.path)
-for file in os.scandir("tools/internal_ci/linux/pull_request/experiments"):
-    os.remove(file.path)
+tags_to_experiments = collections.defaultdict(list)
+for attr in attrs:
+    for tag in attr['test_tags']:
+        tags_to_experiments[tag].append(attr['name'])
+
+with open('bazel/experiments.bzl', 'w') as B:
+    print("EXPERIMENTS=%r" % dict(tags_to_experiments), file=B)

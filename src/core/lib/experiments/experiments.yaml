@@ -20,3 +20,4 @@
     Buffers are also allocated according to estimated RPC sizes.
   default: false
   expiry: 2022/09/01
+  test_tags: ["endpoint_test", "core_end2end_test"]
