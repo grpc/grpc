@@ -39,6 +39,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/forkable.h"
 #include "src/core/lib/gprpp/fork.h"
+#include "src/core/lib/gprpp/global_config.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -52,7 +53,6 @@
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/gprpp/global_config.h"
 
 /* (generated) built in registry of plugins */
 extern void grpc_register_built_in_plugins(void);

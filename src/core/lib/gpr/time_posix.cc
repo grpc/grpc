@@ -18,8 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gpr/assert_internal.h"
+#include "src/core/lib/gpr/time_precise.h"
 
 #ifdef GPR_POSIX_TIME
 
@@ -149,8 +149,8 @@ gpr_timespec gpr_now(gpr_clock_type clock_type) {
 #endif
   // validate clock type
   GPR_ASSERT_INTERNAL(clock_type == GPR_CLOCK_MONOTONIC ||
-             clock_type == GPR_CLOCK_REALTIME ||
-             clock_type == GPR_CLOCK_PRECISE);
+                      clock_type == GPR_CLOCK_REALTIME ||
+                      clock_type == GPR_CLOCK_PRECISE);
   gpr_timespec ts = gpr_now_impl(clock_type);
   // tv_nsecs must be in the range [0, 1e9).
   GPR_ASSERT_INTERNAL(ts.tv_nsec >= 0 && ts.tv_nsec < 1e9);

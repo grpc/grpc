@@ -16,8 +16,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <stddef.h>
-
 #include <string>
 
 #include <grpc/event_engine/event_engine.h>

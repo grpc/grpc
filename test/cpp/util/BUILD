@@ -141,8 +141,8 @@ grpc_cc_library(
     ],
     deps = [
         ":grpc++_proto_reflection_desc_db",
-        "//:grpc++",
         "//:gpr_sync",
+        "//:grpc++",
         "//src/proto/grpc/reflection/v1alpha:reflection_proto",
     ],
 )

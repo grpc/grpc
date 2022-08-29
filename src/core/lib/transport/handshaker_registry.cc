@@ -22,7 +22,6 @@
 
 #include <stddef.h>
 
-#include <algorithm>
 #include <utility>
 
 namespace grpc_core {

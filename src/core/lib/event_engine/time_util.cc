@@ -16,8 +16,10 @@
 #include "src/core/lib/event_engine/time_util.h"
 
 #include <chrono>
+#include <limits>
 
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/gpr/useful.h"
 
