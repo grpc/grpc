@@ -2890,6 +2890,7 @@ grpc_cc_library(
         "gpr",
         "grpc_codegen",
         "useful",
+    ],
 )
 
 grpc_cc_library(
