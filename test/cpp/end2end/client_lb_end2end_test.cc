@@ -46,6 +46,7 @@
 #include <grpcpp/server_builder.h>
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
+#include "src/core/ext/filters/client_channel/config_selector.h"
 #include "src/core/ext/filters/client_channel/global_subchannel_pool.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/lib/address_utils/parse_address.h"
@@ -2733,6 +2734,44 @@ TEST_F(ControlPlaneStatusRewritingTest, RewritesFromResolver) {
   CheckRpcSendFailure(
       DEBUG_LOCATION, stub, StatusCode::INTERNAL,
       "illegal status code from resolver; original status: ABORTED: nope");
+}
+
+TEST_F(ControlPlaneStatusRewritingTest, RewritesFromConfigSelector) {
+  class FailConfigSelector : public grpc_core::ConfigSelector {
+   public:
+    explicit FailConfigSelector(absl::Status status)
+        : status_(std::move(status)) {}
+    const char* name() const override { return "FailConfigSelector"; }
+    bool Equals(const ConfigSelector* other) const override {
+      return status_ == static_cast<const FailConfigSelector*>(other)->status_;
+    }
+    CallConfig GetCallConfig(GetCallConfigArgs args) override {
+      CallConfig config;
+      config.status = status_;
+      return config;
+    }
+
+   private:
+    absl::Status status_;
+  };
+  // Start client.
+  auto response_generator = BuildResolverResponseGenerator();
+  auto channel = BuildChannel("pick_first", response_generator);
+  auto stub = BuildStub(channel);
+  auto config_selector =
+      grpc_core::MakeRefCounted<FailConfigSelector>(absl::AbortedError("nope"));
+  grpc_core::Resolver::Result result;
+  result.addresses.emplace();
+  result.service_config = grpc_core::ServiceConfigImpl::Create(
+      grpc_core::ChannelArgs(), "{}");
+  ASSERT_TRUE(result.service_config.ok()) << result.service_config.status();
+  result.args = grpc_core::ChannelArgs().SetObject(config_selector);
+  response_generator.SetResponse(std::move(result));
+  // Send an RPC, verify that status was rewritten.
+  CheckRpcSendFailure(
+      DEBUG_LOCATION, stub, StatusCode::INTERNAL,
+      "illegal status code from ConfigSelector; original status: "
+      "ABORTED: nope");
 }
 
 }  // namespace

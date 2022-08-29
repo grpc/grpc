@@ -1396,8 +1396,7 @@ void ClientChannel::UpdateServiceConfigInControlPlaneLocked(
     RefCountedPtr<ConfigSelector> config_selector, std::string lb_policy_name) {
   std::string service_config_json(service_config->json_string());
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_trace)) {
-    gpr_log(GPR_INFO,
-            "chand=%p: resolver returned updated service config: \"%s\"", this,
+    gpr_log(GPR_INFO, "chand=%p: using service config: \"%s\"", this,
             service_config_json.c_str());
   }
   // Save service config.
