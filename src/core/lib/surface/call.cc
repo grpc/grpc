@@ -768,6 +768,7 @@ void FilterStackCall::CancelWithError(grpc_error_handle error) {
     GRPC_ERROR_UNREF(error);
     return;
   }
+  gpr_atm_rel_store(&peer_string_, 0);
   InternalRef("termination");
   // Inform the call combiner of the cancellation, so that it can cancel
   // any in-flight asynchronous actions that may be holding the call
