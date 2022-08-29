@@ -226,7 +226,8 @@ class PosixSocketWrapper {
 
   // Configure default values for tcp user timeout to be used by client
   // and server side sockets.
-  void ConfigureDefaultTcpUserTimeout(bool enable, int timeout, bool is_client);
+  static void ConfigureDefaultTcpUserTimeout(bool enable, int timeout,
+                                             bool is_client);
 
   // Return true if SO_REUSEPORT is supported
   static bool IsSocketReusePortSupported();
