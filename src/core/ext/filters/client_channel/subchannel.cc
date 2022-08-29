@@ -63,10 +63,6 @@
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
 
-// Strong and weak refs.
-#define INTERNAL_REF_BITS 16
-#define STRONG_REF_MASK (~(gpr_atm)((1 << INTERNAL_REF_BITS) - 1))
-
 // Backoff parameters.
 #define GRPC_SUBCHANNEL_INITIAL_CONNECT_BACKOFF_SECONDS 1
 #define GRPC_SUBCHANNEL_RECONNECT_BACKOFF_MULTIPLIER 1.6
@@ -838,7 +834,18 @@ const char* SubchannelConnectivityStateChangeString(
 void Subchannel::SetConnectivityStateLocked(grpc_connectivity_state state,
                                             const absl::Status& status) {
   state_ = state;
-  status_ = status;
+  if (status.ok()) {
+    status_ = status;
+  } else {
+    // Augment status message to include IP address.
+    status_ = absl::Status(status.code(),
+                           absl::StrCat(grpc_sockaddr_to_uri(&key_.address())
+                                            .value_or("<unknown address type>"),
+                                        ": ", status.message()));
+    status.ForEachPayload(
+        [this](absl::string_view key, const absl::Cord& value)
+            ABSL_NO_THREAD_SAFETY_ANALYSIS { status_.SetPayload(key, value); });
+  }
   if (channelz_node_ != nullptr) {
     channelz_node_->UpdateConnectivityState(state);
     channelz_node_->AddTraceEvent(
@@ -847,9 +854,9 @@ void Subchannel::SetConnectivityStateLocked(grpc_connectivity_state state,
             SubchannelConnectivityStateChangeString(state)));
   }
   // Notify non-health watchers.
-  watcher_list_.NotifyLocked(state, status);
+  watcher_list_.NotifyLocked(state, status_);
   // Notify health watchers.
-  health_watcher_map_.NotifyLocked(state, status);
+  health_watcher_map_.NotifyLocked(state, status_);
 }
 
 void Subchannel::OnRetryTimer() {
