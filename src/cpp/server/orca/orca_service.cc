@@ -49,12 +49,14 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/event_engine/time_util.h"
 
 namespace grpc {
 namespace experimental {
 
 using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::GetDefaultEventEngine;
+using ::grpc_event_engine::experimental::ToEventEngineDuration;
 
 //
 // OrcaService::Reactor
@@ -128,7 +130,7 @@ class OrcaService::Reactor : public ServerWriteReactor<ByteBuffer>,
     grpc::internal::MutexLock lock(&timer_mu_);
     if (cancelled_) return false;
     timer_handle_ = GetDefaultEventEngine()->RunAfter(
-        report_interval_,
+        ToEventEngineDuration(report_interval_),
         [self = Ref(DEBUG_LOCATION, "Orca Service")] { self->OnTimer(); });
     return true;
   }

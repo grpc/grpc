@@ -41,9 +41,5 @@ grpc_core::Timestamp ToTimestamp(grpc_core::Timestamp now,
          grpc_core::Duration::Milliseconds(1);
 }
 
-size_t Milliseconds(EventEngine::Duration d) {
-  return std::chrono::duration_cast<std::chrono::milliseconds>(d).count();
-}
-
 }  // namespace experimental
 }  // namespace grpc_event_engine

@@ -50,6 +50,7 @@
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/event_engine/time_util.h"
 #include "src/core/lib/gpr/alloc.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -83,7 +84,9 @@
                     GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(SubchannelCall)))
 
 namespace grpc_core {
+using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::GetDefaultEventEngine;
+using ::grpc_event_engine::experimental::ToEventEngineDuration;
 
 TraceFlag grpc_trace_subchannel(false, "subchannel");
 DebugOnlyTraceFlag grpc_trace_subchannel_refcount(false, "subchannel_refcount");
@@ -900,13 +903,15 @@ void Subchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
   // time, then the timer will fire immediately, and we will quickly
   // transition back to IDLE.
   if (connecting_result_.transport == nullptr || !PublishTransportLocked()) {
-    const Duration time_until_next_attempt =
-        next_attempt_time_ - ExecCtx::Get()->Now();
+    const EventEngine::Duration time_until_next_attempt =
+        ToEventEngineDuration(next_attempt_time_ - ExecCtx::Get()->Now());
     gpr_log(GPR_INFO,
             "subchannel %p %s: connect failed (%s), backing off for %" PRId64
             " ms",
             this, key_.ToString().c_str(), grpc_error_std_string(error).c_str(),
-            time_until_next_attempt.millis());
+            std::chrono::duration_cast<std::chrono::milliseconds>(
+                time_until_next_attempt)
+                .count());
     SetConnectivityStateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE,
                                grpc_error_to_absl_status(error));
     retry_timer_handle_ = GetDefaultEventEngine()->RunAfter(

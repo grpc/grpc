@@ -42,6 +42,7 @@
 #include "src/core/ext/xds/xds_client_stats.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/event_engine/time_util.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -58,6 +59,7 @@ namespace grpc_core {
 
 using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::GetDefaultEventEngine;
+using ::grpc_event_engine::experimental::ToEventEngineDuration;
 
 TraceFlag grpc_xds_client_trace(false, "xds_client");
 TraceFlag grpc_xds_client_refcount_trace(false, "xds_client_refcount");
@@ -192,7 +194,7 @@ class XdsClient::ChannelState::AdsCallState
       // Start timer.
       ads_calld_ = std::move(ads_calld);
       timer_handle_ = GetDefaultEventEngine()->RunAfter(
-          ads_calld_->xds_client()->request_timeout_,
+          ToEventEngineDuration(ads_calld_->xds_client()->request_timeout_),
           [self = Ref(DEBUG_LOCATION, "timer")]() {
             ApplicationCallbackExecCtx callback_exec_ctx;
             ExecCtx exec_ctx;
@@ -609,7 +611,7 @@ void XdsClient::ChannelState::RetryableCall<T>::StartRetryTimerLocked() {
             timeout.millis());
   }
   timer_handle_ = GetDefaultEventEngine()->RunAfter(
-      timeout,
+      ToEventEngineDuration(timeout),
       [self = this->Ref(DEBUG_LOCATION, "RetryableCall+retry_timer_start")]() {
         ApplicationCallbackExecCtx callback_exec_ctx;
         ExecCtx exec_ctx;
@@ -1114,13 +1116,14 @@ void XdsClient::ChannelState::LrsCallState::Reporter::Orphan() {
 
 void XdsClient::ChannelState::LrsCallState::Reporter::
     ScheduleNextReportLocked() {
-  timer_handle_ = GetDefaultEventEngine()->RunAfter(report_interval_, [this]() {
-    ApplicationCallbackExecCtx callback_exec_ctx;
-    ExecCtx exec_ctx;
-    if (OnNextReportTimer()) {
-      Unref(DEBUG_LOCATION, "OnNextReportTimer()");
-    }
-  });
+  timer_handle_ = GetDefaultEventEngine()->RunAfter(
+      ToEventEngineDuration(report_interval_), [this]() {
+        ApplicationCallbackExecCtx callback_exec_ctx;
+        ExecCtx exec_ctx;
+        if (OnNextReportTimer()) {
+          Unref(DEBUG_LOCATION, "OnNextReportTimer()");
+        }
+      });
 }
 
 bool XdsClient::ChannelState::LrsCallState::Reporter::OnNextReportTimer() {

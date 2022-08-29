@@ -32,6 +32,7 @@
 #include "absl/memory/memory.h"
 
 #include <grpc/grpc.h>
+#include <grpc/support/sync.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/create_channel.h>
 #include <grpcpp/grpcpp.h>
