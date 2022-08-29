@@ -42,6 +42,7 @@ grpc_cc_test(
     ],
     deps = [
         "//:forkable",
+        "//:gpr_log",
         "//:gpr_platform",
         "//:grpc_unsecure",
     ],
@@ -92,5 +93,6 @@ grpc_cc_library(
     external_deps = ["absl/strings"],
     deps = [
         "//:event_engine_base_hdrs",
+        "//:gpr_tmpfile",
     ],
 )

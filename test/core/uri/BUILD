@@ -29,6 +29,7 @@ grpc_fuzzer(
     ],
     deps = [
         "//:exec_ctx",
+        "//:gpr_alloc",
         "//:grpc",
         "//:uri_parser",
     ],

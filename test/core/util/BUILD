@@ -124,6 +124,10 @@ grpc_cc_library(
         "stack_tracer",
         "//:channel_args_preconditioning",
         "//:config",
+        "//:gpr_env",
+        "//:gpr_sync",
+        "//:gpr_thd",
+        "//:gpr_tmpfile",
         "//:grpc",
         "//:grpc_public_hdrs",
         "//:grpc_security_base",
@@ -161,6 +165,9 @@ grpc_cc_library(
         "stack_tracer",
         "//:channel_args_preconditioning",
         "//:config",
+        "//:gpr_env",
+        "//:gpr_stat",
+        "//:gpr_sync",
         "//:grpc_security_base",
         "//:grpc_sockaddr",
         "//:grpc_unsecure",
@@ -186,6 +193,7 @@ grpc_cc_test(
     deps = [
         "grpc_test_util",
         "grpc_test_util_base",
+        "//:gpr_log",
         "//:useful",
     ],
 )
@@ -265,6 +273,7 @@ grpc_cc_test(
     deps = [
         "grpc_test_util",
         "stack_tracer",
+        "//:gpr_log",
     ],
 )
 
@@ -314,6 +323,7 @@ grpc_cc_library(
     language = "C++",
     deps = [
         "grpc_test_util",
+        "//:gpr_stat",
         "//:grpc",
         "//:resolved_address",
         "//:sockaddr_utils",

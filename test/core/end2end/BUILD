@@ -32,6 +32,7 @@ grpc_cc_library(
     visibility = ["//test:__subpackages__"],
     deps = [
         "//:debug_location",
+        "//:gpr_log",
         "//:grpc",
         "//:match",
         "//:time",
@@ -64,6 +65,9 @@ grpc_cc_library(
     deps = [
         "//:channel_args_preconditioning",
         "//:config",
+        "//:gpr_host_port",
+        "//:gpr_memory",
+        "//:gpr_thd",
         "//:grpc",
         "//:httpcli",
         "//:iomgr_fwd",
@@ -82,6 +86,8 @@ grpc_cc_library(
     hdrs = ["fixtures/proxy.h"],
     language = "C++",
     deps = [
+        "//:gpr_host_port",
+        "//:gpr_thd",
         "//:grpc",
         "//:grpc_codegen",
         "//:grpc_public_hdrs",
@@ -98,6 +104,7 @@ grpc_cc_library(
     ],
     language = "C++",
     deps = [
+        "//:gpr_log",
         "//:grpc",
         "//:grpc_public_hdrs",
     ],
@@ -109,6 +116,9 @@ grpc_cc_test(
     language = "C++",
     deps = [
         "cq_verifier",
+        "//:gpr_host_port",
+        "//:gpr_string",
+        "//:gpr_thd",
         "//:grpc",
         "//:grpc_codegen",
         "//:grpc_public_hdrs",
@@ -123,6 +133,7 @@ grpc_cc_test(
     language = "C++",
     deps = [
         "cq_verifier",
+        "//:gpr_host_port",
         "//:grpc",
         "//:grpc_codegen",
         "//:grpc_public_hdrs",
@@ -142,6 +153,7 @@ grpc_cc_test(
     tags = ["no_windows"],
     deps = [
         "cq_verifier",
+        "//:gpr_host_port",
         "//:grpc",
         "//:grpc_codegen",
         "//:grpc_public_hdrs",
@@ -166,6 +178,7 @@ grpc_cc_test(
         "cq_verifier",
         "//:debug_location",
         "//:default_event_engine",
+        "//:gpr_tmpfile",
         "//:grpc",
         "//:grpc_codegen",
         "//:grpc_public_hdrs",
@@ -187,6 +200,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "local_util",
+        "//:gpr_host_port",
         "//:grpc",
         "//:grpc_codegen",
         "//:grpc_public_hdrs",
@@ -202,6 +216,7 @@ grpc_cc_test(
     language = "C++",
     deps = [
         "cq_verifier",
+        "//:gpr_host_port",
         "//:gpr_platform",
         "//:grpc",
         "//:grpc_codegen",
@@ -216,6 +231,7 @@ grpc_cc_test(
     language = "C++",
     deps = [
         "//:grpc",
+        "//:time",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -227,6 +243,7 @@ grpc_cc_test(
     deps = [
         "cq_verifier",
         "//:exec_ctx",
+        "//:gpr_tmpfile",
         "//:grpc",
         "//:grpc_codegen",
         "//:grpc_public_hdrs",
@@ -252,6 +269,8 @@ grpc_cc_test(
     language = "C++",
     deps = [
         "cq_verifier",
+        "//:global_config",
+        "//:gpr_host_port",
         "//:grpc",
         "//:grpc_codegen",
         "//:grpc_public_hdrs",
