@@ -581,7 +581,8 @@ TEST_F(ClientLbEnd2endTest, ChannelIdleness) {
   StartServers(kNumServers);
   // Set max idle time and build the channel.
   ChannelArguments args;
-  args.SetInt(GRPC_ARG_CLIENT_IDLE_TIMEOUT_MS, 1000);
+  args.SetInt(GRPC_ARG_CLIENT_IDLE_TIMEOUT_MS,
+              1000 * grpc_test_slowdown_factor());
   auto response_generator = BuildResolverResponseGenerator();
   auto channel = BuildChannel("", response_generator, args);
   auto stub = BuildStub(channel);
@@ -732,7 +733,8 @@ TEST_F(PickFirstTest, ProcessPending) {
 TEST_F(PickFirstTest, SelectsReadyAtStartup) {
   ChannelArguments args;
   constexpr int kInitialBackOffMs = 5000;
-  args.SetInt(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS, kInitialBackOffMs);
+  args.SetInt(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS,
+              kInitialBackOffMs * grpc_test_slowdown_factor());
   // Create 2 servers, but start only the second one.
   std::vector<int> ports = {grpc_pick_unused_port_or_die(),
                             grpc_pick_unused_port_or_die()};
@@ -758,7 +760,8 @@ TEST_F(PickFirstTest, SelectsReadyAtStartup) {
 TEST_F(PickFirstTest, BackOffInitialReconnect) {
   ChannelArguments args;
   constexpr int kInitialBackOffMs = 100;
-  args.SetInt(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS, kInitialBackOffMs);
+  args.SetInt(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS,
+              kInitialBackOffMs * grpc_test_slowdown_factor());
   const std::vector<int> ports = {grpc_pick_unused_port_or_die()};
   const gpr_timespec t0 = gpr_now(GPR_CLOCK_MONOTONIC);
   auto response_generator = BuildResolverResponseGenerator();
@@ -779,7 +782,8 @@ TEST_F(PickFirstTest, BackOffInitialReconnect) {
   gpr_log(GPR_DEBUG, "Waited %" PRId64 " milliseconds", waited.millis());
   // We should have waited at least kInitialBackOffMs. We substract one to
   // account for test and precision accuracy drift.
-  EXPECT_GE(waited.millis(), kInitialBackOffMs - 1);
+  EXPECT_GE(waited.millis(),
+            (kInitialBackOffMs * grpc_test_slowdown_factor()) - 1);
   // But not much more.
   EXPECT_GT(
       gpr_time_cmp(
@@ -790,7 +794,8 @@ TEST_F(PickFirstTest, BackOffInitialReconnect) {
 TEST_F(PickFirstTest, BackOffMinReconnect) {
   ChannelArguments args;
   constexpr int kMinReconnectBackOffMs = 1000;
-  args.SetInt(GRPC_ARG_MIN_RECONNECT_BACKOFF_MS, kMinReconnectBackOffMs);
+  args.SetInt(GRPC_ARG_MIN_RECONNECT_BACKOFF_MS,
+              kMinReconnectBackOffMs * grpc_test_slowdown_factor());
   const std::vector<int> ports = {grpc_pick_unused_port_or_die()};
   auto response_generator = BuildResolverResponseGenerator();
   auto channel = BuildChannel("pick_first", response_generator, args);
@@ -799,8 +804,8 @@ TEST_F(PickFirstTest, BackOffMinReconnect) {
   // Make connection delay a 10% longer than it's willing to in order to make
   // sure we are hitting the codepath that waits for the min reconnect backoff.
   ConnectionAttemptInjector injector;
-  injector.SetDelay(
-      grpc_core::Duration::Milliseconds(kMinReconnectBackOffMs * 1.10));
+  injector.SetDelay(grpc_core::Duration::Milliseconds(
+      kMinReconnectBackOffMs * grpc_test_slowdown_factor() * 1.10));
   const gpr_timespec t0 = gpr_now(GPR_CLOCK_MONOTONIC);
   channel->WaitForConnected(
       grpc_timeout_milliseconds_to_deadline(kMinReconnectBackOffMs * 2));
@@ -810,13 +815,15 @@ TEST_F(PickFirstTest, BackOffMinReconnect) {
   gpr_log(GPR_DEBUG, "Waited %" PRId64 " milliseconds", waited.millis());
   // We should have waited at least kMinReconnectBackOffMs. We substract one to
   // account for test and precision accuracy drift.
-  EXPECT_GE(waited.millis(), kMinReconnectBackOffMs - 1);
+  EXPECT_GE(waited.millis(),
+            (kMinReconnectBackOffMs * grpc_test_slowdown_factor()) - 1);
 }
 
 TEST_F(PickFirstTest, ResetConnectionBackoff) {
   ChannelArguments args;
   constexpr int kInitialBackOffMs = 1000;
-  args.SetInt(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS, kInitialBackOffMs);
+  args.SetInt(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS,
+              kInitialBackOffMs * grpc_test_slowdown_factor());
   const std::vector<int> ports = {grpc_pick_unused_port_or_die()};
   auto response_generator = BuildResolverResponseGenerator();
   auto channel = BuildChannel("pick_first", response_generator, args);
@@ -844,7 +851,7 @@ TEST_F(PickFirstTest, ResetConnectionBackoff) {
       grpc_core::Duration::FromTimespec(gpr_time_sub(t1, t0));
   gpr_log(GPR_DEBUG, "Waited %" PRId64 " milliseconds", waited.millis());
   // We should have waited less than kInitialBackOffMs.
-  EXPECT_LT(waited.millis(), kInitialBackOffMs);
+  EXPECT_LT(waited.millis(), kInitialBackOffMs * grpc_test_slowdown_factor());
 }
 
 TEST_F(ClientLbEnd2endTest,
@@ -854,8 +861,9 @@ TEST_F(ClientLbEnd2endTest,
   // Create client.
   const int port = grpc_pick_unused_port_or_die();
   ChannelArguments args;
-  const int kInitialBackOffMs = 5000 * grpc_test_slowdown_factor();
-  args.SetInt(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS, kInitialBackOffMs);
+  const int kInitialBackOffMs = 5000;
+  args.SetInt(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS,
+              kInitialBackOffMs * grpc_test_slowdown_factor());
   auto response_generator = BuildResolverResponseGenerator();
   auto channel = BuildChannel("pick_first", response_generator, args);
   auto stub = BuildStub(channel);
@@ -1310,24 +1318,25 @@ TEST_F(PickFirstTest, PendingUpdateAndSelectedSubchannelFails) {
   auto channel =
       BuildChannel("", response_generator);  // pick_first is the default.
   auto stub = BuildStub(channel);
-  // Create a number of servers, but only start 1 of them.
-  CreateServers(10);
-  StartServer(0);
+  StartServers(2);
   // Initially resolve to first server and make sure it connects.
   gpr_log(GPR_INFO, "Phase 1: Connect to first server.");
   response_generator.SetNextResolution({servers_[0]->port_});
   CheckRpcSendOk(DEBUG_LOCATION, stub, true /* wait_for_ready */);
   EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_READY);
+  ConnectionAttemptInjector injector;
+  auto hold = injector.AddHold(servers_[1]->port_);
   // Send a resolution update with the remaining servers, none of which are
-  // running yet, so the update will stay pending.  Note that it's important
-  // to have multiple servers here, or else the test will be flaky; with only
-  // one server, the pending subchannel list has already gone into
-  // TRANSIENT_FAILURE due to hitting the end of the list by the time we
-  // check the state.
+  // running yet, so the update will stay pending.
   gpr_log(GPR_INFO,
           "Phase 2: Resolver update pointing to remaining "
           "(not started) servers.");
   response_generator.SetNextResolution(GetServersPorts(1 /* start_index */));
+  // Add hold before connection attempt to ensure RPCs will be sent to first
+  // server. Otherwise, pending subchannel list might already have gone into
+  // TRANSIENT_FAILURE due to hitting the end of the server list by the time
+  // we check the state.
+  hold->Wait();
   // RPCs will continue to be sent to the first server.
   CheckRpcSendOk(DEBUG_LOCATION, stub);
   // Now stop the first server, so that the current subchannel list
@@ -1338,18 +1347,12 @@ TEST_F(PickFirstTest, PendingUpdateAndSelectedSubchannelFails) {
   gpr_log(GPR_INFO, "Phase 3: Stopping first server.");
   servers_[0]->Shutdown();
   WaitForChannelNotReady(channel.get());
-  // TODO(roth): This should always return CONNECTING, but it's flaky
-  // between that and TRANSIENT_FAILURE.  I suspect that this problem
-  // will go away once we move the backoff code out of the subchannel
-  // and into the LB policies.
-  EXPECT_THAT(channel->GetState(false),
-              ::testing::AnyOf(GRPC_CHANNEL_CONNECTING,
-                               GRPC_CHANNEL_TRANSIENT_FAILURE));
-  // Now start the second server.
-  gpr_log(GPR_INFO, "Phase 4: Starting second server.");
-  StartServer(1);
-  // The channel should go to READY state and RPCs should go to the
-  // second server.
+  EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_CONNECTING);
+  // Resume connection attempt to second server now that first server is down.
+  // The channel should go to READY state and RPCs should go to the second
+  // server.
+  gpr_log(GPR_INFO, "Phase 4: Resuming connection attempt to second server.");
+  hold->Resume();
   WaitForChannelReady(channel.get());
   WaitForServer(DEBUG_LOCATION, stub, 1, [](const Status& status) {
     EXPECT_EQ(StatusCode::UNAVAILABLE, status.error_code());
@@ -2123,11 +2126,19 @@ class ClientLbPickArgsTest : public ClientLbEnd2endTest {
   }
 
   static void SetUpTestCase() {
+    grpc_core::CoreConfiguration::Reset();
+    grpc_core::CoreConfiguration::RegisterBuilder(
+        [](grpc_core::CoreConfiguration::Builder* builder) {
+          grpc_core::RegisterTestPickArgsLoadBalancingPolicy(builder,
+                                                             SavePickArgs);
+        });
     grpc_init();
-    grpc_core::RegisterTestPickArgsLoadBalancingPolicy(SavePickArgs);
   }
 
-  static void TearDownTestCase() { grpc_shutdown(); }
+  static void TearDownTestCase() {
+    grpc_shutdown();
+    grpc_core::CoreConfiguration::Reset();
+  }
 
   std::vector<grpc_core::PickArgsSeen> args_seen_list() {
     grpc_core::MutexLock lock(&mu_);
@@ -2220,12 +2231,19 @@ class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
   }
 
   static void SetUpTestCase() {
+    grpc_core::CoreConfiguration::Reset();
+    grpc_core::CoreConfiguration::RegisterBuilder(
+        [](grpc_core::CoreConfiguration::Builder* builder) {
+          grpc_core::RegisterInterceptRecvTrailingMetadataLoadBalancingPolicy(
+              builder, ReportTrailerIntercepted);
+        });
     grpc_init();
-    grpc_core::RegisterInterceptRecvTrailingMetadataLoadBalancingPolicy(
-        ReportTrailerIntercepted);
   }
 
-  static void TearDownTestCase() { grpc_shutdown(); }
+  static void TearDownTestCase() {
+    grpc_shutdown();
+    grpc_core::CoreConfiguration::Reset();
+  }
 
   int num_trailers_intercepted() {
     grpc_core::MutexLock lock(&mu_);
@@ -2494,11 +2512,19 @@ class ClientLbAddressTest : public ClientLbEnd2endTest {
   }
 
   static void SetUpTestCase() {
+    grpc_core::CoreConfiguration::Reset();
+    grpc_core::CoreConfiguration::RegisterBuilder(
+        [](grpc_core::CoreConfiguration::Builder* builder) {
+          grpc_core::RegisterAddressTestLoadBalancingPolicy(builder,
+                                                            SaveAddress);
+        });
     grpc_init();
-    grpc_core::RegisterAddressTestLoadBalancingPolicy(SaveAddress);
   }
 
-  static void TearDownTestCase() { grpc_shutdown(); }
+  static void TearDownTestCase() {
+    grpc_shutdown();
+    grpc_core::CoreConfiguration::Reset();
+  }
 
   const std::vector<std::string>& addresses_seen() {
     grpc_core::MutexLock lock(&mu_);
@@ -2559,12 +2585,19 @@ class OobBackendMetricTest : public ClientLbEnd2endTest {
   }
 
   static void SetUpTestCase() {
+    grpc_core::CoreConfiguration::Reset();
+    grpc_core::CoreConfiguration::RegisterBuilder(
+        [](grpc_core::CoreConfiguration::Builder* builder) {
+          grpc_core::RegisterOobBackendMetricTestLoadBalancingPolicy(
+              builder, BackendMetricCallback);
+        });
     grpc_init();
-    grpc_core::RegisterOobBackendMetricTestLoadBalancingPolicy(
-        BackendMetricCallback);
   }
 
-  static void TearDownTestCase() { grpc_shutdown(); }
+  static void TearDownTestCase() {
+    grpc_shutdown();
+    grpc_core::CoreConfiguration::Reset();
+  }
 
   absl::optional<BackendMetricReport> GetBackendMetricReport() {
     grpc_core::MutexLock lock(&mu_);

@@ -33,6 +33,7 @@
 #include "src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
@@ -66,8 +67,9 @@ class ForwardingLoadBalancingPolicy : public LoadBalancingPolicy {
     delegate_args.work_serializer = work_serializer();
     delegate_args.channel_control_helper = std::move(delegating_helper);
     delegate_args.args = channel_args();
-    delegate_ = LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
-        delegate_policy_name, std::move(delegate_args));
+    delegate_ =
+        CoreConfiguration::Get().lb_policy_registry().CreateLoadBalancingPolicy(
+            delegate_policy_name, std::move(delegate_args));
     grpc_pollset_set_add_pollset_set(delegate_->interested_parties(),
                                      interested_parties());
   }
@@ -657,31 +659,35 @@ class OobBackendMetricTestFactory : public LoadBalancingPolicyFactory {
 }  // namespace
 
 void RegisterTestPickArgsLoadBalancingPolicy(
-    TestPickArgsCallback cb, absl::string_view delegate_policy_name) {
-  LoadBalancingPolicyRegistry::Builder::RegisterLoadBalancingPolicyFactory(
+    CoreConfiguration::Builder* builder, TestPickArgsCallback cb,
+    absl::string_view delegate_policy_name) {
+  builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
       absl::make_unique<TestPickArgsLbFactory>(std::move(cb),
                                                delegate_policy_name));
 }
 
 void RegisterInterceptRecvTrailingMetadataLoadBalancingPolicy(
+    CoreConfiguration::Builder* builder,
     InterceptRecvTrailingMetadataCallback cb) {
-  LoadBalancingPolicyRegistry::Builder::RegisterLoadBalancingPolicyFactory(
+  builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
       absl::make_unique<InterceptTrailingFactory>(std::move(cb)));
 }
 
-void RegisterAddressTestLoadBalancingPolicy(AddressTestCallback cb) {
-  LoadBalancingPolicyRegistry::Builder::RegisterLoadBalancingPolicyFactory(
+void RegisterAddressTestLoadBalancingPolicy(CoreConfiguration::Builder* builder,
+                                            AddressTestCallback cb) {
+  builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
       absl::make_unique<AddressTestFactory>(std::move(cb)));
 }
 
-void RegisterFixedAddressLoadBalancingPolicy() {
-  LoadBalancingPolicyRegistry::Builder::RegisterLoadBalancingPolicyFactory(
+void RegisterFixedAddressLoadBalancingPolicy(
+    CoreConfiguration::Builder* builder) {
+  builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
       absl::make_unique<FixedAddressFactory>());
 }
 
 void RegisterOobBackendMetricTestLoadBalancingPolicy(
-    OobBackendMetricCallback cb) {
-  LoadBalancingPolicyRegistry::Builder::RegisterLoadBalancingPolicyFactory(
+    CoreConfiguration::Builder* builder, OobBackendMetricCallback cb) {
+  builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
       absl::make_unique<OobBackendMetricTestFactory>(std::move(cb)));
 }
 
