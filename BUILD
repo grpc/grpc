@@ -6116,6 +6116,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "resource_quota",
         "resource_quota_trace",
+        "seq",
         "slice",
         "slice_refcount",
         "try_seq",
