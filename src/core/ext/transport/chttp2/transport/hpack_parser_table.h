@@ -26,6 +26,7 @@
 #include <vector>
 
 #include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
+#include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/parsed_metadata.h"
@@ -35,8 +36,8 @@ namespace grpc_core {
 // HPACK header table
 class HPackTable {
  public:
-  HPackTable();
-  ~HPackTable();
+  HPackTable() = default;
+  ~HPackTable() = default;
 
   HPackTable(const HPackTable&) = delete;
   HPackTable& operator=(const HPackTable&) = delete;
@@ -55,7 +56,7 @@ class HPackTable {
     // reading the core static metadata table here; at that point we'd need our
     // own singleton static metadata in the correct order.
     if (index <= hpack_constants::kLastStaticEntry) {
-      return &static_metadata_.memento[index - 1];
+      return &NoDestructSingleton<StaticMementos>::Get()->memento[index - 1];
     } else {
       return LookupDynamic(index);
     }
@@ -72,7 +73,6 @@ class HPackTable {
     StaticMementos();
     Memento memento[hpack_constants::kLastStaticEntry];
   };
-  static const StaticMementos& GetStaticMementos() GPR_ATTRIBUTE_NOINLINE;
 
   class MementoRingBuffer {
    public:
@@ -123,8 +123,6 @@ class HPackTable {
   uint32_t current_table_bytes_ = hpack_constants::kInitialTableSize;
   // HPack table entries
   MementoRingBuffer entries_;
-  // Mementos for static data
-  const StaticMementos& static_metadata_;
 };
 
 }  // namespace grpc_core

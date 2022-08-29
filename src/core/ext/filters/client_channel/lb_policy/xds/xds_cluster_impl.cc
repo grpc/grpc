@@ -44,11 +44,13 @@
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
+#include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_client_grpc.h"
 #include "src/core/ext/xds/xds_client_stats.h"
 #include "src/core/ext/xds/xds_endpoint.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -105,7 +107,8 @@ class CircuitBreakerCallCounterMap {
   std::map<Key, CallCounter*> map_ ABSL_GUARDED_BY(mu_);
 };
 
-CircuitBreakerCallCounterMap* g_call_counter_map = nullptr;
+CircuitBreakerCallCounterMap* const g_call_counter_map =
+    new CircuitBreakerCallCounterMap;
 
 RefCountedPtr<CircuitBreakerCallCounterMap::CallCounter>
 CircuitBreakerCallCounterMap::GetOrCreate(const std::string& cluster,
@@ -723,8 +726,9 @@ class XdsClusterImplLbFactory : public LoadBalancingPolicyFactory {
     if (it == json.object_value().end()) {
       errors.emplace_back("field:childPolicy error:required field missing");
     } else {
-      auto config =
-          LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(it->second);
+      auto config = CoreConfiguration::Get()
+                        .lb_policy_registry()
+                        .ParseLoadBalancingConfig(it->second);
       if (!config.ok()) {
         errors.emplace_back(absl::StrCat("field:childPolicy error:",
                                          config.status().message()));
@@ -761,7 +765,7 @@ class XdsClusterImplLbFactory : public LoadBalancingPolicyFactory {
             "field:lrsLoadReportingServer error:type should be object");
       } else {
         grpc_error_handle parser_error;
-        lrs_load_reporting_server = XdsBootstrap::XdsServer::Parse(
+        lrs_load_reporting_server = GrpcXdsBootstrap::XdsServerParse(
             it->second.object_value(), &parser_error);
         if (!GRPC_ERROR_IS_NONE(parser_error)) {
           errors.emplace_back(
@@ -862,19 +866,9 @@ class XdsClusterImplLbFactory : public LoadBalancingPolicyFactory {
 
 }  // namespace
 
+void RegisterXdsClusterImplLbPolicy(CoreConfiguration::Builder* builder) {
+  builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
+      absl::make_unique<XdsClusterImplLbFactory>());
+}
+
 }  // namespace grpc_core
-
-//
-// Plugin registration
-//
-
-void grpc_lb_policy_xds_cluster_impl_init() {
-  grpc_core::g_call_counter_map = new grpc_core::CircuitBreakerCallCounterMap();
-  grpc_core::LoadBalancingPolicyRegistry::Builder::
-      RegisterLoadBalancingPolicyFactory(
-          absl::make_unique<grpc_core::XdsClusterImplLbFactory>());
-}
-
-void grpc_lb_policy_xds_cluster_impl_shutdown() {
-  delete grpc_core::g_call_counter_map;
-}
