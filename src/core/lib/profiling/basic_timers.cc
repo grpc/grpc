@@ -78,7 +78,7 @@ static int g_writing_enabled = 1;
 
 static const char* output_filename() {
   if (output_filename_or_null == NULL) {
-    output_filename_or_null = "latency_trace.txt";
+    return "latency_trace.txt";
   }
   return output_filename_or_null;
 }

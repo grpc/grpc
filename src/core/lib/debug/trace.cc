@@ -148,6 +148,9 @@ void grpc_tracer_init(const char* env_var_name) {
   (void)env_var_name;  // suppress unused variable error
   grpc_tracer_init();
 }
+namespace {
+char* g_trace_filename = nullptr;
+}  // namespace
 
 void grpc_tracer_init() {
   grpc_core::UniquePtr<char> value = GPR_GLOBAL_CONFIG_GET(grpc_trace);
@@ -155,11 +158,14 @@ void grpc_tracer_init() {
   grpc_core::UniquePtr<char> trace_filename =
       GPR_GLOBAL_CONFIG_GET(grpc_latency_trace);
   if (strlen(trace_filename.get()) > 0) {
-    gpr_timers_set_log_filename(trace_filename.release());
+    g_trace_filename = trace_filename.release();
+    gpr_timers_set_log_filename(g_trace_filename);
   }
 }
 
-void grpc_tracer_shutdown(void) {}
+void grpc_tracer_shutdown(void) {
+  delete g_trace_filename;
+}
 
 int grpc_tracer_set_enabled(const char* name, int enabled) {
   return grpc_core::TraceFlagList::Set(name, enabled != 0);

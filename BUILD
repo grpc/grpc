@@ -3638,6 +3638,7 @@ grpc_cc_library(
         "gpr_string",
         "gpr_sync",
         "gpr_thd",
+        "gpr_time_util",
         "gpr_timers",
         "gpr_tls",
         "grpc_codegen",
