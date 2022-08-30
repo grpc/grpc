@@ -292,14 +292,6 @@
       ],
     },
     {
-      'target_name': 'gpr',
-      'type': 'static_library',
-      'dependencies': [
-      ],
-      'sources': [
-      ],
-    },
-    {
       'target_name': 'grpc',
       'type': 'static_library',
       'dependencies': [
@@ -326,7 +318,6 @@
         'absl/types:span',
         'absl/types:variant',
         'absl/utility:utility',
-        'gpr',
         'address_sorting',
         'upb',
       ],
@@ -1128,7 +1119,6 @@
         'absl/types:span',
         'absl/types:variant',
         'absl/utility:utility',
-        'gpr',
         'address_sorting',
         'upb',
       ],

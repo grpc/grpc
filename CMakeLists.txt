@@ -1512,101 +1512,6 @@ endforeach()
 
 endif()
 
-add_library(gpr
-)
-
-set_target_properties(gpr PROPERTIES
-  VERSION ${gRPC_CORE_VERSION}
-  SOVERSION ${gRPC_CORE_SOVERSION}
-)
-
-if(WIN32 AND MSVC)
-  set_target_properties(gpr PROPERTIES COMPILE_PDB_NAME "gpr"
-    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
-  )
-  if(gRPC_INSTALL)
-    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/gpr.pdb
-      DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
-    )
-  endif()
-endif()
-
-target_include_directories(gpr
-  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-)
-target_link_libraries(gpr
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-)
-if(_gRPC_PLATFORM_ANDROID)
-  target_link_libraries(gpr
-    android
-    log
-  )
-endif()
-
-foreach(_hdr
-  include/grpc/impl/codegen/atm.h
-  include/grpc/impl/codegen/atm_gcc_atomic.h
-  include/grpc/impl/codegen/atm_gcc_sync.h
-  include/grpc/impl/codegen/atm_windows.h
-  include/grpc/impl/codegen/fork.h
-  include/grpc/impl/codegen/gpr_slice.h
-  include/grpc/impl/codegen/gpr_types.h
-  include/grpc/impl/codegen/log.h
-  include/grpc/impl/codegen/port_platform.h
-  include/grpc/impl/codegen/sync.h
-  include/grpc/impl/codegen/sync_abseil.h
-  include/grpc/impl/codegen/sync_custom.h
-  include/grpc/impl/codegen/sync_generic.h
-  include/grpc/impl/codegen/sync_posix.h
-  include/grpc/impl/codegen/sync_windows.h
-  include/grpc/support/alloc.h
-  include/grpc/support/atm.h
-  include/grpc/support/atm_gcc_atomic.h
-  include/grpc/support/atm_gcc_sync.h
-  include/grpc/support/atm_windows.h
-  include/grpc/support/cpu.h
-  include/grpc/support/log.h
-  include/grpc/support/log_windows.h
-  include/grpc/support/port_platform.h
-  include/grpc/support/string_util.h
-  include/grpc/support/sync.h
-  include/grpc/support/sync_abseil.h
-  include/grpc/support/sync_custom.h
-  include/grpc/support/sync_generic.h
-  include/grpc/support/sync_posix.h
-  include/grpc/support/sync_windows.h
-  include/grpc/support/thd_id.h
-  include/grpc/support/time.h
-)
-  string(REPLACE "include/" "" _path ${_hdr})
-  get_filename_component(_path ${_path} PATH)
-  install(FILES ${_hdr}
-    DESTINATION "${gRPC_INSTALL_INCLUDEDIR}/${_path}"
-  )
-endforeach()
-
-
-if(gRPC_INSTALL)
-  install(TARGETS gpr EXPORT gRPCTargets
-    RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
-    BUNDLE DESTINATION  ${gRPC_INSTALL_BINDIR}
-    LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
-  )
-endif()
-
-
 add_library(grpc
   src/core/ext/filters/census/grpc_context.cc
   src/core/ext/filters/channel_idle/channel_idle_filter.cc
@@ -2395,7 +2300,6 @@ target_link_libraries(grpc
   absl::span
   absl::variant
   absl::utility
-  gpr
   ${_gRPC_SSL_LIBRARIES}
   address_sorting
   upb
@@ -3020,7 +2924,6 @@ target_link_libraries(grpc_unsecure
   absl::span
   absl::variant
   absl::utility
-  gpr
   address_sorting
   upb
 )
@@ -5106,7 +5009,6 @@ target_link_libraries(activity_test
   absl::optional
   absl::variant
   absl::utility
-  gpr
 )
 
 
@@ -5979,7 +5881,6 @@ target_link_libraries(arena_promise_test
   absl::optional
   absl::variant
   absl::utility
-  gpr
   upb
 )
 
@@ -7798,7 +7699,6 @@ target_link_libraries(chunked_vector_test
   absl::optional
   absl::variant
   absl::utility
-  gpr
   upb
 )
 
@@ -9885,7 +9785,6 @@ target_link_libraries(exec_ctx_wakeup_scheduler_test
   absl::optional
   absl::variant
   absl::utility
-  gpr
   upb
 )
 
@@ -10356,7 +10255,6 @@ target_link_libraries(flow_control_test
   absl::optional
   absl::variant
   absl::utility
-  gpr
   upb
 )
 
@@ -10472,7 +10370,6 @@ target_link_libraries(for_each_test
   absl::optional
   absl::variant
   absl::utility
-  gpr
   upb
 )
 
@@ -13336,7 +13233,6 @@ target_link_libraries(latch_test
   absl::optional
   absl::variant
   absl::utility
-  gpr
 )
 
 
@@ -13764,7 +13660,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     absl::optional
     absl::variant
     absl::utility
-    gpr
     upb
   )
 
@@ -13876,7 +13771,6 @@ target_link_libraries(memory_quota_test
   absl::optional
   absl::variant
   absl::utility
-  gpr
   upb
 )
 
@@ -14260,6 +14154,7 @@ add_executable(no_destruct_test
   src/core/lib/gpr/tmpfile_windows.cc
   src/core/lib/gpr/wrap_memcpy.cc
   src/core/lib/gprpp/global_config_env.cc
+  src/core/lib/gprpp/host_port.cc
   src/core/lib/gprpp/stat_posix.cc
   src/core/lib/gprpp/stat_windows.cc
   src/core/lib/profiling/basic_timers.cc
@@ -14295,7 +14190,6 @@ target_link_libraries(no_destruct_test
   absl::str_format
   absl::strings
   absl::variant
-  gpr
 )
 
 
@@ -14466,7 +14360,6 @@ target_link_libraries(observable_test
   absl::optional
   absl::variant
   absl::utility
-  gpr
 )
 
 
@@ -14955,7 +14848,6 @@ target_link_libraries(periodic_update_test
   absl::time
   absl::optional
   absl::variant
-  gpr
   upb
 )
 
@@ -15116,7 +15008,6 @@ target_link_libraries(pipe_test
   absl::optional
   absl::variant
   absl::utility
-  gpr
   upb
 )
 
@@ -16206,7 +16097,6 @@ target_link_libraries(resource_quota_test
   absl::optional
   absl::variant
   absl::utility
-  gpr
   upb
 )
 
@@ -17415,6 +17305,7 @@ add_executable(single_set_ptr_test
   src/core/lib/gpr/wrap_memcpy.cc
   src/core/lib/gprpp/examine_stack.cc
   src/core/lib/gprpp/global_config_env.cc
+  src/core/lib/gprpp/host_port.cc
   src/core/lib/gprpp/stat_posix.cc
   src/core/lib/gprpp/stat_windows.cc
   src/core/lib/gprpp/time.cc
@@ -17452,7 +17343,6 @@ target_link_libraries(single_set_ptr_test
   absl::strings
   absl::optional
   absl::variant
-  gpr
 )
 
 
@@ -17521,6 +17411,7 @@ add_executable(slice_string_helpers_test
   src/core/lib/gpr/wrap_memcpy.cc
   src/core/lib/gprpp/examine_stack.cc
   src/core/lib/gprpp/global_config_env.cc
+  src/core/lib/gprpp/host_port.cc
   src/core/lib/gprpp/stat_posix.cc
   src/core/lib/gprpp/stat_windows.cc
   src/core/lib/gprpp/time.cc
@@ -17562,7 +17453,6 @@ target_link_libraries(slice_string_helpers_test
   absl::strings
   absl::optional
   absl::variant
-  gpr
 )
 
 
@@ -18677,7 +18567,6 @@ target_link_libraries(test_core_event_engine_posix_timer_heap_test
   absl::time
   absl::optional
   absl::variant
-  gpr
 )
 
 
@@ -18765,7 +18654,6 @@ target_link_libraries(test_core_event_engine_posix_timer_list_test
   absl::time
   absl::optional
   absl::variant
-  gpr
 )
 
 
@@ -19340,7 +19228,6 @@ target_link_libraries(thread_quota_test
   absl::time
   absl::optional
   absl::variant
-  gpr
 )
 
 
@@ -21740,6 +21627,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/tls.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/tls.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/tls.grpc.pb.h
+    src/core/lib/gprpp/time_util.cc
     test/cpp/end2end/test_service_impl.cc
     test/cpp/end2end/xds/xds_end2end_test.cc
     test/cpp/end2end/xds/xds_end2end_test_lib.cc
@@ -22975,22 +22863,12 @@ function(generate_pkgconfig name description version requires
     DESTINATION "${gRPC_INSTALL_LIBDIR}/pkgconfig")
 endfunction()
 
-# gpr .pc file
-generate_pkgconfig(
-  "gpr"
-  "gRPC platform support library"
-  "${gRPC_CORE_VERSION}"
-  ""
-  "-lgpr"
-  ""
-  "gpr.pc")
-
 # grpc .pc file
 generate_pkgconfig(
   "gRPC"
   "high performance general RPC framework"
   "${gRPC_CORE_VERSION}"
-  "gpr openssl absl_any_invocable absl_base absl_bind_front absl_cord absl_core_headers absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_memory absl_optional absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant"
+  "openssl absl_any_invocable absl_base absl_bind_front absl_cord absl_core_headers absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_memory absl_optional absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant"
   "-lgrpc -laddress_sorting -lre2 -lupb -lcares -lz"
   ""
   "grpc.pc")
@@ -23000,7 +22878,7 @@ generate_pkgconfig(
   "gRPC unsecure"
   "high performance general RPC framework without SSL"
   "${gRPC_CORE_VERSION}"
-  "gpr absl_any_invocable absl_base absl_bind_front absl_cord absl_core_headers absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_memory absl_optional absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant"
+  "['absl_any_invocable', 'absl_base', 'absl_bind_front', 'absl_cord', 'absl_core_headers', 'absl_flat_hash_map', 'absl_flat_hash_set', 'absl_function_ref', 'absl_hash', 'absl_inlined_vector', 'absl_memory', 'absl_optional', 'absl_random_random', 'absl_span', 'absl_status', 'absl_statusor', 'absl_str_format', 'absl_strings', 'absl_synchronization', 'absl_time', 'absl_type_traits', 'absl_utility', 'absl_variant']"
   "-lgrpc_unsecure"
   ""
   "grpc_unsecure.pc")
