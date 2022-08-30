@@ -28,10 +28,16 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/global_config.h"
+#include "src/core/lib/profiling/timers.h"
+
 GPR_GLOBAL_CONFIG_DEFINE_STRING(
     grpc_trace, "",
     "A comma separated list of tracers that provide additional insight into "
     "how gRPC C core is processing requests via debug logs.");
+
+GPR_GLOBAL_CONFIG_DEFINE_STRING(grpc_latency_trace, "latency_trace.txt",
+                                "Output file name for latency trace")
 
 int grpc_tracer_set_enabled(const char* name, int enabled);
 
@@ -146,6 +152,11 @@ void grpc_tracer_init(const char* env_var_name) {
 void grpc_tracer_init() {
   grpc_core::UniquePtr<char> value = GPR_GLOBAL_CONFIG_GET(grpc_trace);
   parse(value.get());
+  grpc_core::UniquePtr<char> trace_filename =
+      GPR_GLOBAL_CONFIG_GET(grpc_latency_trace);
+  if (strlen(trace_filename.get()) > 0) {
+    gpr_timers_set_log_filename(trace_filename.release());
+  }
 }
 
 void grpc_tracer_shutdown(void) {}

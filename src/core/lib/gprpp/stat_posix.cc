@@ -16,6 +16,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stdio.h>
+
 // IWYU pragma: no_include <bits/struct_stat.h>
 
 #include <string.h>
@@ -28,19 +30,18 @@
 #include <errno.h>
 #include <sys/stat.h>
 
-#include <grpc/support/log.h>
-
+#include "src/core/lib/gpr/assert_internal.h"
 #include "src/core/lib/gprpp/stat.h"
 
 namespace grpc_core {
 
 absl::Status GetFileModificationTime(const char* filename, time_t* timestamp) {
-  GPR_ASSERT(filename != nullptr);
-  GPR_ASSERT(timestamp != nullptr);
+  GPR_ASSERT_INTERNAL(filename != nullptr);
+  GPR_ASSERT_INTERNAL(timestamp != nullptr);
   struct stat buf;
   if (stat(filename, &buf) != 0) {
     const char* error_msg = strerror(errno);
-    gpr_log(GPR_ERROR, "stat failed for filename %s with error %s.", filename,
+    fprintf(stderr, "stat failed for filename %s with error %s.", filename,
             error_msg);
     return absl::Status(absl::StatusCode::kInternal, error_msg);
   }

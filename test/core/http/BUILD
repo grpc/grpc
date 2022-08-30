@@ -85,6 +85,7 @@ grpc_cc_test(
     tags = ["no_windows"],
     deps = [
         ":httpcli_test_util",
+        "//:gpr_time_util",
         "//:grpc",
         "//test/core/end2end:ssl_test_data",
         "//test/core/util:fake_udp_and_tcp_server",
@@ -109,6 +110,7 @@ grpc_cc_test(
     tags = ["no_windows"],
     deps = [
         ":httpcli_test_util",
+        "//:gpr_time_util",
         "//:grpc",
         "//test/core/end2end:ssl_test_data",
         "//test/core/util:fake_udp_and_tcp_server",

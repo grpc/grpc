@@ -627,7 +627,7 @@ grpc_cc_library(
         "gpr_env",
         "gpr_log",
         "gpr_platform",
-        "gpr_string_util",
+        "gpr_string",
         "grpc",
         "grpc++_base",
         "grpc++_codegen_base",
@@ -947,7 +947,7 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = GPR_PUBLIC_HDRS,
     deps = [
-        "gpr_log",
+        "gpr_assert_internal",
         "gpr_platform",
     ],
 )
@@ -989,7 +989,6 @@ grpc_cc_library(
         "gpr_memory",
         "gpr_platform",
         "gpr_string",
-        "gpr_string_util",
     ],
 )
 
@@ -1069,7 +1068,6 @@ grpc_cc_library(
         "gpr_assert_internal",
         "gpr_platform",
         "gpr_string",
-        "gpr_string_util",
         "gpr_tmpfile",
         "useful",
     ],
@@ -1201,13 +1199,16 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    # TODO(hork): consider splitting circular dependency between gpr_string and gpr_string_util
     name = "gpr_string",
     srcs = [
         "src/core/lib/gpr/string.cc",
         "src/core/lib/gpr/string_posix.cc",
+        "src/core/lib/gpr/string_util_windows.cc",
         "src/core/lib/gpr/string_windows.cc",
     ],
     hdrs = [
+        "include/grpc/support/string_util.h",
         "src/core/lib/gpr/string.h",
         "src/core/lib/gpr/string_windows.h",
     ],
@@ -1216,28 +1217,11 @@ grpc_cc_library(
     public_hdrs = [
     ],
     deps = [
+        "gpr",
         "gpr_alloc",
         "gpr_codegen",
         "gpr_platform",
-        "gpr_string_util",
         "useful",
-    ],
-)
-
-grpc_cc_library(
-    name = "gpr_string_util",
-    srcs = [
-        "src/core/lib/gpr/string_util_windows.cc",
-    ],
-    language = "c++",
-    public_hdrs = [
-        "include/grpc/support/string_util.h",
-    ],
-    deps = [
-        "gpr",
-        "gpr_alloc",
-        "gpr_platform",
-        "gpr_string",
     ],
 )
 
@@ -1298,7 +1282,6 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "global_config",
         "gpr_platform",
         "gpr_stat",
         "gpr_tls",
@@ -1486,7 +1469,6 @@ grpc_cc_library(
         "gpr_alloc",
         "gpr_atm",
         "gpr_codegen",
-        "gpr_host_port",
         "gpr_platform",
         "gpr_string",
         "gpr_tls",
@@ -1504,7 +1486,9 @@ grpc_cc_library(
     deps = [
         "global_config",
         "gpr_codegen",
+        "gpr_log",
         "gpr_memory",
+        "gpr_timers",
         "grpc_codegen",
         "grpc_public_hdrs",
     ],
@@ -6221,7 +6205,7 @@ grpc_cc_library(
         "gpr_alloc",
         "gpr_log",
         "gpr_platform",
-        "gpr_string_util",
+        "gpr_string",
         "grpc_base",
         "grpc_client_channel",
         "grpc_security_base",
@@ -6264,7 +6248,7 @@ grpc_cc_library(
         "gpr_alloc",
         "gpr_log",
         "gpr_platform",
-        "gpr_string_util",
+        "gpr_string",
         "grpc_base",
         "grpc_codegen",
         "grpc_security_base",
@@ -6304,7 +6288,7 @@ grpc_cc_library(
         "gpr_host_port",
         "gpr_log",
         "gpr_platform",
-        "gpr_string_util",
+        "gpr_string",
         "gpr_sync",
         "grpc_base",
         "grpc_codegen",
@@ -6492,7 +6476,6 @@ grpc_cc_library(
         "gpr_memory",
         "gpr_platform",
         "gpr_string",
-        "gpr_string_util",
         "gpr_sync",
         "grpc_base",
         "grpc_credentials_util",
@@ -6540,7 +6523,7 @@ grpc_cc_library(
         "gpr_log",
         "gpr_memory",
         "gpr_platform",
-        "gpr_string_util",
+        "gpr_string",
         "grpc_base",
         "grpc_credentials_util",
         "grpc_security_base",
@@ -6595,7 +6578,7 @@ grpc_cc_library(
         "gpr_log",
         "gpr_memory",
         "gpr_platform",
-        "gpr_string_util",
+        "gpr_string",
         "grpc_base",
         "grpc_credentials_util",
         "grpc_oauth2_credentials",
@@ -6631,7 +6614,7 @@ grpc_cc_library(
         "gpr_alloc",
         "gpr_log",
         "gpr_platform",
-        "gpr_string_util",
+        "gpr_string",
         "grpc_base",
         "grpc_codegen",
         "grpc_security_base",
@@ -6799,7 +6782,7 @@ grpc_cc_library(
         "gpr_log",
         "gpr_memory",
         "gpr_platform",
-        "gpr_string_util",
+        "gpr_string",
         "grpc_base",
         "grpc_security_base",
         "json",
@@ -6865,7 +6848,7 @@ grpc_cc_library(
         "gpr_log",
         "gpr_memory",
         "gpr_platform",
-        "gpr_string_util",
+        "gpr_string",
         "gpr_sync",
         "gpr_thd",
         "grpc_base",
@@ -6896,7 +6879,7 @@ grpc_cc_library(
         "gpr_log",
         "gpr_memory",
         "gpr_platform",
-        "gpr_string_util",
+        "gpr_string",
         "gpr_sync",
         "grpc_base",
         "grpc_codegen",
@@ -6935,7 +6918,7 @@ grpc_cc_library(
         "gpr_log",
         "gpr_memory",
         "gpr_platform",
-        "gpr_string_util",
+        "gpr_string",
         "gpr_sync",
         "gpr_thd",
         "grpc_base",
@@ -7055,7 +7038,7 @@ grpc_cc_library(
     deps = [
         "gpr_codegen",
         "gpr_platform",
-        "gpr_string_util",
+        "gpr_string",
         "gpr_sync",
         "gpr_thd",
         "grpc_authorization_base",

@@ -437,6 +437,7 @@ def grpc_end2end_tests():
             "//:grpc_authorization_provider",
             "//test/core/compression:args_utils",
             "//:grpc_http_filters",
+            "//:gpr_time_util",
         ],
     )
     for f, fopt in END2END_FIXTURES.items():
