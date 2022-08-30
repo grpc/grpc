@@ -95,8 +95,9 @@ gpr_timespec grpc_timeout_milliseconds_to_deadline(int64_t time_ms) {
 namespace {
 void RmArg(int i, int* argc, char** argv) {
   --(*argc);
-  if (i < *argc) {
-    memmove(argv + i, argv + i + 1, (*argc - i) * sizeof(*argv));
+  while (i < *argc) {
+    argv[i] = argv[i + 1];
+    ++i;
   }
 }
 
