@@ -242,7 +242,10 @@ grpc_cc_test(
     srcs = ["tcp_client_posix_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
-    tags = ["no_windows","endpoint_test"],
+    tags = [
+        "endpoint_test",
+        "no_windows",
+    ],
     deps = [
         "//:gpr",
         "//:grpc",
