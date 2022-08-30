@@ -51,7 +51,6 @@
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/pollset.h"
-#include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/event_string.h"
 
@@ -503,8 +502,6 @@ grpc_cq_completion* CqEventQueue::Pop() {
 grpc_completion_queue* grpc_completion_queue_create_internal(
     grpc_cq_completion_type completion_type, grpc_cq_polling_type polling_type,
     grpc_completion_queue_functor* shutdown_callback) {
-  GPR_TIMER_SCOPE("grpc_completion_queue_create_internal", 0);
-
   grpc_completion_queue* cq;
 
   GRPC_API_TRACE(
@@ -680,8 +677,6 @@ static void cq_end_op_for_next(
     grpc_completion_queue* cq, void* tag, grpc_error_handle error,
     void (*done)(void* done_arg, grpc_cq_completion* storage), void* done_arg,
     grpc_cq_completion* storage, bool /*internal*/) {
-  GPR_TIMER_SCOPE("cq_end_op_for_next", 0);
-
   if (GRPC_TRACE_FLAG_ENABLED(grpc_api_trace) ||
       (GRPC_TRACE_FLAG_ENABLED(grpc_trace_operation_failures) &&
        !GRPC_ERROR_IS_NONE(error))) {
@@ -758,8 +753,6 @@ static void cq_end_op_for_pluck(
     grpc_completion_queue* cq, void* tag, grpc_error_handle error,
     void (*done)(void* done_arg, grpc_cq_completion* storage), void* done_arg,
     grpc_cq_completion* storage, bool /*internal*/) {
-  GPR_TIMER_SCOPE("cq_end_op_for_pluck", 0);
-
   cq_pluck_data* cqd = static_cast<cq_pluck_data*> DATA_FROM_CQ(cq);
   int is_success = (GRPC_ERROR_IS_NONE(error));
 
@@ -828,8 +821,6 @@ static void cq_end_op_for_callback(
     grpc_completion_queue* cq, void* tag, grpc_error_handle error,
     void (*done)(void* done_arg, grpc_cq_completion* storage), void* done_arg,
     grpc_cq_completion* storage, bool internal) {
-  GPR_TIMER_SCOPE("cq_end_op_for_callback", 0);
-
   cq_callback_data* cqd = static_cast<cq_callback_data*> DATA_FROM_CQ(cq);
 
   if (GRPC_TRACE_FLAG_ENABLED(grpc_api_trace) ||
@@ -950,8 +941,6 @@ static void dump_pending_tags(grpc_completion_queue* /*cq*/) {}
 
 static grpc_event cq_next(grpc_completion_queue* cq, gpr_timespec deadline,
                           void* reserved) {
-  GPR_TIMER_SCOPE("grpc_completion_queue_next", 0);
-
   grpc_event ret;
   cq_next_data* cqd = static_cast<cq_next_data*> DATA_FROM_CQ(cq);
 
@@ -1195,8 +1184,6 @@ class ExecCtxPluck : public grpc_core::ExecCtx {
 
 static grpc_event cq_pluck(grpc_completion_queue* cq, void* tag,
                            gpr_timespec deadline, void* reserved) {
-  GPR_TIMER_SCOPE("grpc_completion_queue_pluck", 0);
-
   grpc_event ret;
   grpc_cq_completion* c;
   grpc_cq_completion* prev;
@@ -1402,7 +1389,6 @@ static void cq_shutdown_callback(grpc_completion_queue* cq) {
 /* Shutdown simply drops a ref that we reserved at creation time; if we drop
    to zero here, then enter shutdown mode and wake up any waiters */
 void grpc_completion_queue_shutdown(grpc_completion_queue* cq) {
-  GPR_TIMER_SCOPE("grpc_completion_queue_shutdown", 0);
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   GRPC_API_TRACE("grpc_completion_queue_shutdown(cq=%p)", 1, (cq));
@@ -1410,7 +1396,6 @@ void grpc_completion_queue_shutdown(grpc_completion_queue* cq) {
 }
 
 void grpc_completion_queue_destroy(grpc_completion_queue* cq) {
-  GPR_TIMER_SCOPE("grpc_completion_queue_destroy", 0);
   GRPC_API_TRACE("grpc_completion_queue_destroy(cq=%p)", 1, (cq));
   grpc_completion_queue_shutdown(cq);
 
