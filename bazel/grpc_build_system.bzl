@@ -329,7 +329,8 @@ def expand_tests_for_each_poller_and_engine_and_experiment(name, srcs, deps, tag
 
     experiments = {}
     for tag in tags:
-        if tag not in EXPERIMENTS: continue
+        if tag not in EXPERIMENTS:
+            continue
         for experiment in EXPERIMENTS[tag]:
             experiments[experiment] = 1
     experiments = list(experiments.keys())
