@@ -67,12 +67,18 @@ class ClientAuthFilterTest : public ::testing::Test {
                 ->CreateMemoryAllocator("test")),
         arena_(MakeScopedArena(1024, &memory_allocator_)),
         initial_metadata_batch_(arena_.get()),
-        trailing_metadata_batch_(arena_.get()) {}
-
-  void SetUp() override {
-    target_ = Slice::FromStaticString("localhost:1234");
+        trailing_metadata_batch_(arena_.get()),
+        target_(Slice::FromStaticString("localhost:1234")),
+        channel_creds_(grpc_fake_transport_security_credentials_create()) {
     initial_metadata_batch_.Set(HttpAuthorityMetadata(), target_.Ref());
-    channel_creds_.reset(grpc_fake_transport_security_credentials_create());
+  }
+
+  ~ClientAuthFilterTest() override {
+    for (size_t i = 0; i < GRPC_CONTEXT_COUNT; ++i) {
+      if (call_context_[i].destroy != nullptr) {
+        call_context_[i].destroy(call_context_[i].value);
+      }
+    }
   }
 
   ChannelArgs MakeChannelArgs(absl::Status status_for_call_creds) {
@@ -93,9 +99,9 @@ class ClientAuthFilterTest : public ::testing::Test {
 
   MemoryAllocator memory_allocator_;
   ScopedArenaPtr arena_;
-  Slice target_;
   grpc_metadata_batch initial_metadata_batch_;
   grpc_metadata_batch trailing_metadata_batch_;
+  Slice target_;
   RefCountedPtr<grpc_channel_credentials> channel_creds_;
   grpc_call_context_element call_context_[GRPC_CONTEXT_COUNT];
 };
