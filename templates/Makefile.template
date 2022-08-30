@@ -832,7 +832,7 @@
 
   # Add private ABSEIL target which contains all sources used by all baselib libraries.
   <%
-    # Collect all abseil source and header files used by gpr, grpc, so on.
+    # Collect all abseil source and header files used by grpc, etc.
     used_abseil_rules = set()
     for lib in libs:
       if lib.get("baselib"):

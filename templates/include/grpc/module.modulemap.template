@@ -20,7 +20,7 @@
 
   grpc_public_headers = {
       file for lib in libs for file in lib.get('public_headers', [])
-      if lib.name in ("grpc", "gpr")
+      if lib.name == "grpc"
   }
 
   event_engine_files = {

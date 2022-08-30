@@ -4319,7 +4319,6 @@ target_link_libraries(gen_hpack_tables
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc
-  gpr
 )
 
 

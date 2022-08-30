@@ -25,7 +25,6 @@ targets:
   - tools/codegen/core/gen_hpack_tables.cc
   deps:
   - grpc
-  - gpr
   uses_polling: false
 configs:
   asan:
