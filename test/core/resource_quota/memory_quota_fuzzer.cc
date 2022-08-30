@@ -192,4 +192,5 @@ DEFINE_PROTO_FUZZER(const memory_quota_fuzzer::Msg& msg) {
   gpr_log_verbosity_init();
   grpc_tracer_init();
   grpc_core::testing::Fuzzer().Run(msg);
+  grpc_tracer_shutdown();
 }
