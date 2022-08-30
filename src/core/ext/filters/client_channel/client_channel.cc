@@ -3180,9 +3180,8 @@ bool ClientChannel::LoadBalancedCall::PickSubchannelLocked(
                       chand_, this, drop_pick->status.ToString().c_str());
             }
             *error = grpc_error_set_int(
-                absl_status_to_grpc_error(
-                    MaybeRewriteIllegalStatusCode(drop_pick->status,
-                                                  "LB drop")),
+                absl_status_to_grpc_error(MaybeRewriteIllegalStatusCode(
+                    drop_pick->status, "LB drop")),
                 GRPC_ERROR_INT_LB_POLICY_DROP, 1);
             MaybeRemoveCallFromLbQueuedCallsLocked();
             return true;

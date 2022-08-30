@@ -39,16 +39,15 @@ class ClientAuthFilterTest : public ::testing::Test {
         : grpc_call_credentials(GRPC_SECURITY_NONE),
           status_(std::move(status)) {}
 
-    grpc_core::UniqueTypeName type() const override {
-      static grpc_core::UniqueTypeName::Factory kFactory("FailCallCreds");
+    UniqueTypeName type() const override {
+      static UniqueTypeName::Factory kFactory("FailCallCreds");
       return kFactory.Create();
     }
 
-    grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientMetadataHandle>>
-    GetRequestMetadata(grpc_core::ClientMetadataHandle initial_metadata,
-                       const GetRequestMetadataArgs* args) override {
-      return Immediate<absl::StatusOr<grpc_core::ClientMetadataHandle>>(
-          status_);
+    ArenaPromise<absl::StatusOr<ClientMetadataHandle>> GetRequestMetadata(
+        ClientMetadataHandle initial_metadata,
+        const GetRequestMetadataArgs* args) override {
+      return Immediate<absl::StatusOr<ClientMetadataHandle>>(status_);
     }
 
     int cmp_impl(const grpc_call_credentials* other) const override {
@@ -63,8 +62,8 @@ class ClientAuthFilterTest : public ::testing::Test {
 
   ClientAuthFilterTest()
       : memory_allocator_(
-            ResourceQuota::Default()->memory_quota()
-                ->CreateMemoryAllocator("test")),
+            ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
+                "test")),
         arena_(MakeScopedArena(1024, &memory_allocator_)),
         initial_metadata_batch_(arena_.get()),
         trailing_metadata_batch_(arena_.get()),
@@ -92,8 +91,7 @@ class ClientAuthFilterTest : public ::testing::Test {
     absl::string_view security_level = "TSI_SECURITY_NONE";
     auth_context->add_property(GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME,
                                security_level.data(), security_level.size());
-    return args
-        .SetObject(std::move(security_connector))
+    return args.SetObject(std::move(security_connector))
         .SetObject(std::move(auth_context));
   }
 

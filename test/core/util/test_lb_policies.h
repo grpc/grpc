@@ -19,6 +19,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <atomic>
 #include <functional>
 #include <string>
 #include <utility>

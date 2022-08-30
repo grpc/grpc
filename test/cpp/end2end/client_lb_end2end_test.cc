@@ -2762,8 +2762,8 @@ TEST_F(ControlPlaneStatusRewritingTest, RewritesFromConfigSelector) {
       grpc_core::MakeRefCounted<FailConfigSelector>(absl::AbortedError("nope"));
   grpc_core::Resolver::Result result;
   result.addresses.emplace();
-  result.service_config = grpc_core::ServiceConfigImpl::Create(
-      grpc_core::ChannelArgs(), "{}");
+  result.service_config =
+      grpc_core::ServiceConfigImpl::Create(grpc_core::ChannelArgs(), "{}");
   ASSERT_TRUE(result.service_config.ok()) << result.service_config.status();
   result.args = grpc_core::ChannelArgs().SetObject(config_selector);
   response_generator.SetResponse(std::move(result));
