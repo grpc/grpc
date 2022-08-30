@@ -23,12 +23,13 @@
 #include "src/core/lib/security/transport/auth_filters.h"
 #include "test/core/promise/test_context.h"
 
+// TODO(roth): Need to add a lot more tests here.  I created this file
+// as part of adding a feature, and I added tests only for the feature I
+// was adding.  When we have time, we need to go back and write
+// comprehensive tests for all of the functionality in the filter.
+
 namespace grpc_core {
 namespace {
-
-// FIXME: move into ClientAuthFilterTest?
-auto* g_memory_allocator = new MemoryAllocator(
-    ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
 
 class ClientAuthFilterTest : public ::testing::Test {
  protected:
@@ -60,8 +61,17 @@ class ClientAuthFilterTest : public ::testing::Test {
     absl::Status status_;
   };
 
+  ClientAuthFilterTest()
+      : memory_allocator_(
+            ResourceQuota::Default()->memory_quota()
+                ->CreateMemoryAllocator("test")),
+        arena_(MakeScopedArena(1024, &memory_allocator_)),
+        initial_metadata_batch_(arena_.get()),
+        trailing_metadata_batch_(arena_.get()) {}
+
   void SetUp() override {
     target_ = Slice::FromStaticString("localhost:1234");
+    initial_metadata_batch_.Set(HttpAuthorityMetadata(), target_.Ref());
     channel_creds_.reset(grpc_fake_transport_security_credentials_create());
   }
 
@@ -81,8 +91,13 @@ class ClientAuthFilterTest : public ::testing::Test {
         .SetObject(std::move(auth_context));
   }
 
+  MemoryAllocator memory_allocator_;
+  ScopedArenaPtr arena_;
   Slice target_;
+  grpc_metadata_batch initial_metadata_batch_;
+  grpc_metadata_batch trailing_metadata_batch_;
   RefCountedPtr<grpc_channel_credentials> channel_creds_;
+  grpc_call_context_element call_context_[GRPC_CONTEXT_COUNT];
 };
 
 TEST_F(ClientAuthFilterTest, CreateFailsWithoutRequiredChannelArgs) {
@@ -100,24 +115,19 @@ TEST_F(ClientAuthFilterTest, CallCredsFails) {
   auto filter = ClientAuthFilter::Create(
       MakeChannelArgs(absl::UnauthenticatedError("access denied")),
       ChannelFilter::Args());
-  auto arena = MakeScopedArena(1024, g_memory_allocator);
-  grpc_metadata_batch initial_metadata_batch(arena.get());
-  initial_metadata_batch.Set(HttpAuthorityMetadata(), target_.Ref());
-  grpc_metadata_batch trailing_metadata_batch(arena.get());
   // TODO(ctiller): use Activity here, once it's ready.
-  TestContext<Arena> context(arena.get());
-  grpc_call_context_element call_context[GRPC_CONTEXT_COUNT];
-  TestContext<grpc_call_context_element> promise_call_context(call_context);
+  TestContext<Arena> context(arena_.get());
+  TestContext<grpc_call_context_element> promise_call_context(call_context_);
   auto promise = filter->MakeCallPromise(
       CallArgs{
-          ClientMetadataHandle::TestOnlyWrap(&initial_metadata_batch),
+          ClientMetadataHandle::TestOnlyWrap(&initial_metadata_batch_),
           nullptr,
       },
       [&](CallArgs call_args) {
         return ArenaPromise<ServerMetadataHandle>(
             [&]() -> Poll<ServerMetadataHandle> {
               return ServerMetadataHandle::TestOnlyWrap(
-                  &trailing_metadata_batch);
+                  &trailing_metadata_batch_);
             });
       });
   auto result = promise();
@@ -136,24 +146,19 @@ TEST_F(ClientAuthFilterTest, CallCredsFails) {
 TEST_F(ClientAuthFilterTest, RewritesInvalidStatusFromCallCreds) {
   auto filter = ClientAuthFilter::Create(
       MakeChannelArgs(absl::AbortedError("nope")), ChannelFilter::Args());
-  auto arena = MakeScopedArena(1024, g_memory_allocator);
-  grpc_metadata_batch initial_metadata_batch(arena.get());
-  initial_metadata_batch.Set(HttpAuthorityMetadata(), target_.Ref());
-  grpc_metadata_batch trailing_metadata_batch(arena.get());
   // TODO(ctiller): use Activity here, once it's ready.
-  TestContext<Arena> context(arena.get());
-  grpc_call_context_element call_context[GRPC_CONTEXT_COUNT];
-  TestContext<grpc_call_context_element> promise_call_context(call_context);
+  TestContext<Arena> context(arena_.get());
+  TestContext<grpc_call_context_element> promise_call_context(call_context_);
   auto promise = filter->MakeCallPromise(
       CallArgs{
-          ClientMetadataHandle::TestOnlyWrap(&initial_metadata_batch),
+          ClientMetadataHandle::TestOnlyWrap(&initial_metadata_batch_),
           nullptr,
       },
       [&](CallArgs call_args) {
         return ArenaPromise<ServerMetadataHandle>(
             [&]() -> Poll<ServerMetadataHandle> {
               return ServerMetadataHandle::TestOnlyWrap(
-                  &trailing_metadata_batch);
+                  &trailing_metadata_batch_);
             });
       });
   auto result = promise();
