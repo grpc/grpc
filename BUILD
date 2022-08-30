@@ -2387,6 +2387,7 @@ grpc_cc_library(
     ],
     deps = [
         "gpr_platform",
+        "gpr_sync",
         "grpc_codegen",
     ],
 )
