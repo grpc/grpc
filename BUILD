@@ -898,6 +898,45 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "gpr",
+    srcs = [],
+    language = "c++",
+    public_hdrs = GPR_PUBLIC_HDRS,
+    tags = [
+        "avoid_dep",
+        "nofixdeps",
+    ],
+    visibility = ["@grpc:public"],
+    deps = [
+        "gpr_alloc",
+        "gpr_atm",
+        "gpr_codegen",
+        "gpr_cpu",
+        "gpr_env",
+        "gpr_fork",
+        "gpr_host_port",
+        "gpr_log",
+        "gpr_log_internal",
+        "gpr_manual_constructor",
+        "gpr_memory",
+        "gpr_mpscq",
+        "gpr_murmur_hash",
+        "gpr_platform",
+        "gpr_public_hdrs",
+        "gpr_spinlock",
+        "gpr_stat",
+        "gpr_status_helper",
+        "gpr_string",
+        "gpr_sync",
+        "gpr_thd",
+        "gpr_time_util",
+        "gpr_timers",
+        "gpr_tls",
+        "gpr_tmpfile",
+    ],
+)
+
+grpc_cc_library(
     name = "gpr_host_port",
     srcs = [
         "src/core/lib/gprpp/host_port.cc",
