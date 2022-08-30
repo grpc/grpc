@@ -56,7 +56,7 @@ class HPackTable {
     // reading the core static metadata table here; at that point we'd need our
     // own singleton static metadata in the correct order.
     if (index <= hpack_constants::kLastStaticEntry) {
-      return &NoDestructSingleton<StaticMementos>::Get()->memento[index - 1];
+      return &static_mementos_->memento[index - 1];
     } else {
       return LookupDynamic(index);
     }
@@ -114,6 +114,11 @@ class HPackTable {
 
   void EvictOne();
 
+  static const StaticMementos* GetStaticMementos() {
+    static const NoDestruct<StaticMementos> static_mementos;
+    return static_mementos.get();
+  }
+
   // The amount of memory used by the table, according to the hpack algorithm
   uint32_t mem_used_ = 0;
   // The max memory allowed to be used by the table, according to the hpack
@@ -123,6 +128,8 @@ class HPackTable {
   uint32_t current_table_bytes_ = hpack_constants::kInitialTableSize;
   // HPack table entries
   MementoRingBuffer entries_;
+  // Static mementos
+  const StaticMementos* const static_mementos_ = GetStaticMementos();
 };
 
 }  // namespace grpc_core
