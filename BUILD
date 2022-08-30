@@ -884,16 +884,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "fork",
-    srcs = [
-        "src/core/lib/gprpp/fork.cc",
-    ],
-    hdrs=[
-        "src/core/lib/gprpp/fork.h",
-    ]
-)
-
-grpc_cc_library(
     name = "gpr",
     srcs = [
         "src/core/lib/gpr/alloc.cc",
@@ -927,6 +917,7 @@ grpc_cc_library(
         "src/core/lib/gpr/tmpfile_posix.cc",
         "src/core/lib/gpr/tmpfile_windows.cc",
         "src/core/lib/gpr/wrap_memcpy.cc",
+        "src/core/lib/gprpp/fork.cc",
         "src/core/lib/gprpp/host_port.cc",
         "src/core/lib/gprpp/mpscq.cc",
         "src/core/lib/gprpp/stat_posix.cc",
@@ -946,6 +937,7 @@ grpc_cc_library(
         "src/core/lib/gpr/string_windows.h",
         "src/core/lib/gpr/time_precise.h",
         "src/core/lib/gpr/tmpfile.h",
+        "src/core/lib/gprpp/fork.h",
         "src/core/lib/gprpp/host_port.h",
         "src/core/lib/gprpp/manual_constructor.h",
         "src/core/lib/gprpp/memory.h",
@@ -976,6 +968,7 @@ grpc_cc_library(
     ],
     visibility = ["@grpc:public"],
     deps = [
+        "config_vars",
         "construct_destruct",
         "examine_stack",
         "gpr_tls",
@@ -1113,10 +1106,46 @@ grpc_cc_library(
     public_hdrs = GRPC_PUBLIC_HDRS,
     visibility = ["@grpc:trace"],
     deps = [
+        "config_vars",
         "gpr",
         "gpr_codegen",
         "grpc_codegen",
         "grpc_public_hdrs",
+    ],
+)
+
+grpc_cc_library(
+    name = "parse_config_var",
+    srcs = [
+        "src/core/lib/config/parse_config_var.cc",
+    ],
+    hdrs = [
+        "src/core/lib/config/parse_config_var.h",
+    ],
+    external_deps = [
+        "absl/strings",
+        "absl/types:optional",
+    ],
+)
+
+grpc_cc_library(
+    name = "config_vars",
+    srcs = [
+        "src/core/lib/config/config_vars.cc",
+    ],
+    hdrs = [
+        "src/core/lib/config/config_var_metadata.h",
+        "src/core/lib/config/config_vars.h",
+    ],
+    external_deps = [
+        "absl/strings",
+        "absl/types:optional",
+        "absl/types:span",
+        "absl/types:variant",
+    ],
+    deps = [
+        "gpr_platform",
+        "parse_config_var",
     ],
 )
 
@@ -1866,6 +1895,7 @@ grpc_cc_library(
     ],
     deps = [
         "activity",
+        "config_vars",
         "event_engine_memory_allocator",
         "exec_ctx_wakeup_scheduler",
         "gpr",
@@ -3124,6 +3154,7 @@ grpc_cc_library(
         "chunked_vector",
         "closure",
         "config",
+        "config_vars",
         "cpp_impl_of",
         "debug_location",
         "default_event_engine",
@@ -3595,6 +3626,7 @@ grpc_cc_library(
         "channel_init",
         "channel_stack_type",
         "config",
+        "config_vars",
         "construct_destruct",
         "debug_location",
         "default_event_engine",
@@ -5133,6 +5165,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "config",
+        "config_vars",
         "debug_location",
         "gpr",
         "grpc_base",
@@ -5178,6 +5211,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "config",
+        "config_vars",
         "debug_location",
         "event_engine_common",
         "gpr",
@@ -6132,6 +6166,7 @@ grpc_cc_library(
     language = "c++",
     visibility = ["@grpc:public"],
     deps = [
+        "config_vars",
         "gpr",
         "grpc_base",
         "grpc_security_base",

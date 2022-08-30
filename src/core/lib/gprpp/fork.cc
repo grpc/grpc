@@ -25,7 +25,7 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/config/config_vars.h"
 
 /*
  * NOTE: FORKING IS NOT GENERALLY SUPPORTED, THIS IS ONLY INTENDED TO WORK
@@ -155,9 +155,8 @@ class ThreadState {
 
 void Fork::GlobalInit() {
   if (!override_enabled_) {
-    support_enabled_.store(
-        CoreConfiguration::Get().config_vars().EnableForkSupport(),
-        std::memory_order_relaxed);
+    support_enabled_.store(ConfigVars::Get().EnableForkSupport(),
+                           std::memory_order_relaxed);
   }
   if (support_enabled_.load(std::memory_order_relaxed)) {
     exec_ctx_state_ = new internal::ExecCtxState();

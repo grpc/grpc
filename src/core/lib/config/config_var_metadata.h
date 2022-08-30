@@ -32,7 +32,7 @@ struct ConfigVarMetadata {
   template <typename T>
   struct TypeSpecificInfo {
     T default_value;
-    T (ConfigVars::*configured_value)();
+    T (ConfigVars::*configured_value)() const;
   };
   using Bool = TypeSpecificInfo<bool>;
   using String = TypeSpecificInfo<absl::string_view>;

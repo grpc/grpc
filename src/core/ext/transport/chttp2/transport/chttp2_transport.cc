@@ -879,8 +879,6 @@ static void write_action_begin_locked(void* gt,
 
 static void write_action(void* gt, grpc_error_handle /*error*/) {
   GPR_TIMER_SCOPE("write_action", 0);
-  static bool kEnablePeerStateBasedFraming =
-      GPR_GLOBAL_CONFIG_GET(grpc_experimental_enable_peer_state_based_framing);
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(gt);
   void* cl = t->cl;
   t->cl = nullptr;
@@ -890,7 +888,7 @@ static void write_action(void* gt, grpc_error_handle /*error*/) {
   // size. With this logic, the sender would automatically reduce the sending
   // frame size as well.
   int max_frame_size =
-      kEnablePeerStateBasedFraming
+      grpc_core::ConfigVars::Get().EnablePeerStateBasedFraming()
           ? 2 * t->settings[GRPC_PEER_SETTINGS]
                            [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE]
           : INT_MAX;

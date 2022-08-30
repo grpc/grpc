@@ -1,12 +1,12 @@
 /*
  * Copyright 2022 gRPC authors.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -23,41 +23,96 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <string>
 #include <functional>
+#include <string>
+
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "absl/types/span.h"
+
 #include "src/core/lib/config/config_var_metadata.h"
 
 namespace grpc_core {
 
 class ConfigVars {
  public:
-  using LoadFunction = std::function<absl::optional<std::string>(absl::string_view)>;
+  using LoadFunction =
+      std::function<absl::optional<std::string>(absl::string_view)>;
   explicit ConfigVars(LoadFunction load);
   ConfigVars(const ConfigVars&) = delete;
   ConfigVars& operator=(const ConfigVars&) = delete;
-  int32_t ClientChannelBackupPollIntervalMs() const { return client_channel_backup_poll_interval_ms_; }
+  // Get the core configuration; if it does not exist, create it.
+  static const ConfigVars& Get();
+  // Drop the config vars. Users must ensure no other threads are
+  // accessing the configuration.
+  static void Reset();
+  // Declares the interval in ms between two backup polls on client channels.
+  // These polls are run in the timer thread so that gRPC can process connection
+  // failures while there is no active polling thread. They help reconnect
+  // disconnected client channels (mostly due to idleness), so that the next RPC
+  // on this channel won't fail. Set to 0 to turn off the backup polls.
+  int32_t ClientChannelBackupPollIntervalMs() const {
+    return client_channel_backup_poll_interval_ms_;
+  }
+  // Declares which DNS resolver to use. The default is ares if gRPC is built
+  // with c-ares support. Otherwise, the value of this environment variable is
+  // ignored.
   absl::string_view DnsResolver() const { return dns_resolver_; }
-  bool EnablePeerStateBasedFraming() const { return enable_peer_state_based_framing_; }
+  // If set, the max sizes of frames sent to lower layers is controlled based on
+  // the peer's memory pressure which is reflected in its max http2 frame size.
+  bool EnablePeerStateBasedFraming() const {
+    return enable_peer_state_based_framing_;
+  }
+  // Use an enlarged memory pressure range for scaling flow control when using a
+  // resource quota.
   bool BroadFlowControlRange() const { return broad_flow_control_range_; }
+  // A comma separated list of tracers that provide additional insight into how
+  // gRPC C core is processing requests via debug logs.
   absl::string_view Trace() const { return trace_; }
+  // Default gRPC logging verbosity
   absl::string_view Verbosity() const { return verbosity_; }
-  absl::string_view StacktraceMinloglevel() const { return stacktrace_minloglevel_; }
+  // Messages logged at the same or higher level than this will print stacktrace
+  absl::string_view StacktraceMinloglevel() const {
+    return stacktrace_minloglevel_;
+  }
+  // Enable fork support
   bool EnableForkSupport() const { return enable_fork_support_; }
+  // Declares which polling engines to try when starting gRPC. This is a
+  // comma-separated list of engines, which are tried in priority order first ->
+  // last.
   absl::string_view PollStrategy() const { return poll_strategy_; }
+  // A debugging aid to cause a call to abort() when gRPC objects are leaked
+  // past grpc_shutdown()
   bool AbortOnLeaks() const { return abort_on_leaks_; }
-  bool EnableTcpFrameSizeTuning() const { return enable_tcp_frame_size_tuning_; }
+  // If set, enables TCP to use RPC size estimation made by higher layers. TCP
+  // would not indicate completion of a read operation until a specified number
+  // of bytes have been read over the socket. Buffers are also allocated
+  // according to estimated RPC sizes.
+  bool EnableTcpFrameSizeTuning() const {
+    return enable_tcp_frame_size_tuning_;
+  }
+  // Smooth the value of memory pressure over time
   bool SmoothMemoryPressure() const { return smooth_memory_pressure_; }
-  bool EnablePeriodicResourceQuotaReclamation() const { return enable_periodic_resource_quota_reclamation_; }
+  // Enable experimental feature to reclaim resource quota periodically
+  bool EnablePeriodicResourceQuotaReclamation() const {
+    return enable_periodic_resource_quota_reclamation_;
+  }
+  // Maximum size for one memory allocators buffer size against a quota
   int32_t MaxQuotaBufferSize() const { return max_quota_buffer_size_; }
+  // Ask the resource quota to target this percentage of total quota usage.
   int32_t ResourceQuotaSetPoint() const { return resource_quota_set_point_; }
+  // Custom directory to SSL Roots
   absl::string_view SystemSslRootsDir() const { return system_ssl_roots_dir_; }
-  absl::string_view DefaultSslRootsFilePath() const { return default_ssl_roots_file_path_; }
+  // Path to the default SSL roots file.
+  absl::string_view DefaultSslRootsFilePath() const {
+    return default_ssl_roots_file_path_;
+  }
+  // Disable loading system root certificates.
   bool NotUseSystemSslRoots() const { return not_use_system_ssl_roots_; }
+  // A colon separated list of cipher suites to use with OpenSSL
   absl::string_view SslCipherSuites() const { return ssl_cipher_suites_; }
   static absl::Span<const ConfigVarMetadata> metadata();
+
  private:
   int32_t client_channel_backup_poll_interval_ms_;
   int32_t max_quota_buffer_size_;

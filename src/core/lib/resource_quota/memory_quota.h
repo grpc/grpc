@@ -34,6 +34,7 @@
 #include <grpc/event_engine/memory_request.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -41,9 +42,6 @@
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/periodic_update.h"
-
-GPR_GLOBAL_CONFIG_DECLARE_BOOL(
-    grpc_experimental_enable_periodic_resource_quota_reclamation);
 
 namespace grpc_core {
 
@@ -367,9 +365,11 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
     // from  0 to non-zero, then we have more to do, otherwise, we're actually
     // done.
     size_t prev_free = free_bytes_.fetch_add(n, std::memory_order_release);
-    if ((max_quota_buffer_size() > 0 &&
-         prev_free + n > max_quota_buffer_size()) ||
-        (periodic_donate_back() && donate_back_.Tick([](Duration) {}))) {
+    const auto& config = ConfigVars::Get();
+    if ((config.MaxQuotaBufferSize() > 0 &&
+         prev_free + n > config.MaxQuotaBufferSize()) ||
+        (config.EnablePeriodicResourceQuotaReclamation() &&
+         donate_back_.Tick([](Duration) {}))) {
       // Try to immediately return some free'ed memory back to the total quota.
       MaybeDonateBack();
     }
@@ -397,16 +397,6 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
   absl::string_view name() const { return name_; }
 
  private:
-  static bool periodic_donate_back() {
-    static const bool value = GPR_GLOBAL_CONFIG_GET(
-        grpc_experimental_enable_periodic_resource_quota_reclamation);
-    return value;
-  }
-  static size_t max_quota_buffer_size() {
-    static const size_t value =
-        GPR_GLOBAL_CONFIG_GET(grpc_experimental_max_quota_buffer_size);
-    return value;
-  }
   // Primitive reservation function.
   absl::optional<size_t> TryReserve(MemoryRequest request) GRPC_MUST_USE_RESULT;
   // This function may be invoked during a memory release operation.

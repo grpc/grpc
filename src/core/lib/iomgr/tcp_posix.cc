@@ -464,12 +464,6 @@ using grpc_core::TcpZerocopySendRecord;
 
 namespace {
 
-bool ExperimentalTcpFrameSizeTuningEnabled() {
-  static const bool kEnableTcpFrameSizeTuning =
-      GPR_GLOBAL_CONFIG_GET(grpc_experimental_enable_tcp_frame_size_tuning);
-  return kEnableTcpFrameSizeTuning;
-}
-
 struct grpc_tcp {
   grpc_tcp(int max_sends, size_t send_bytes_threshold)
       : tcp_zerocopy_send_ctx(max_sends, send_bytes_threshold) {}
@@ -1959,7 +1953,8 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   tcp->socket_ts_enabled = false;
   tcp->ts_capable = true;
   tcp->outgoing_buffer_arg = nullptr;
-  tcp->frame_size_tuning_enabled = ExperimentalTcpFrameSizeTuningEnabled();
+  tcp->frame_size_tuning_enabled =
+      grpc_core::ConfigVars::Get().EnableTcpFrameSizeTuning();
   tcp->min_progress_size = 1;
   if (tcp_tx_zerocopy_enabled && !tcp->tcp_zerocopy_send_ctx.memory_limited()) {
 #ifdef GRPC_LINUX_ERRQUEUE

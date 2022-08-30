@@ -246,13 +246,15 @@ absl::optional<size_t> GrpcMemoryAllocatorImpl::TryReserve(
 }
 
 void GrpcMemoryAllocatorImpl::MaybeDonateBack() {
+  const auto& config = ConfigVars::Get();
   size_t free = free_bytes_.load(std::memory_order_relaxed);
   while (free > 0) {
     size_t ret = 0;
-    if (max_quota_buffer_size() > 0 && free > max_quota_buffer_size() / 2) {
-      ret = std::max(ret, free - max_quota_buffer_size() / 2);
+    if (config.MaxQuotaBufferSize() > 0 &&
+        free > config.MaxQuotaBufferSize() / 2) {
+      ret = std::max(ret, free - config.MaxQuotaBufferSize() / 2);
     }
-    if (periodic_donate_back()) {
+    if (config.EnablePeriodicResourceQuotaReclamation()) {
       ret = std::max(ret, free > 8192 ? free / 2 : free);
     }
     const size_t new_free = free - ret;
@@ -450,8 +452,6 @@ void BasicMemoryQuota::Return(size_t amount) {
 }
 
 BasicMemoryQuota::PressureInfo BasicMemoryQuota::GetPressureInfo() {
-  static const bool kSmoothMemoryPressure =
-      GPR_GLOBAL_CONFIG_GET(grpc_experimental_smooth_memory_presure);
   double free = free_bytes_.load();
   if (free < 0) free = 0;
   size_t quota_size = quota_size_.load();
@@ -459,7 +459,7 @@ BasicMemoryQuota::PressureInfo BasicMemoryQuota::GetPressureInfo() {
   if (size < 1) return PressureInfo{1, 1, 1};
   PressureInfo pressure_info;
   pressure_info.instantaneous_pressure = std::max(0.0, (size - free) / size);
-  if (kSmoothMemoryPressure) {
+  if (ConfigVars::Get().SmoothMemoryPressure()) {
     pressure_info.pressure_control_value =
         pressure_tracker_.AddSampleAndGetControlValue(
             pressure_info.instantaneous_pressure);
@@ -550,9 +550,6 @@ std::string PressureController::DebugString() const {
 }
 
 double PressureTracker::AddSampleAndGetControlValue(double sample) {
-  static const double kSetPoint =
-      GPR_GLOBAL_CONFIG_GET(grpc_experimental_resource_quota_set_point) / 100.0;
-
   double max_so_far = max_this_round_.load(std::memory_order_relaxed);
   if (sample > max_so_far) {
     max_this_round_.compare_exchange_weak(max_so_far, sample,
@@ -573,7 +570,8 @@ double PressureTracker::AddSampleAndGetControlValue(double sample) {
       // Under very high memory pressure we... just max things out.
       report = controller_.Update(1e99);
     } else {
-      report = controller_.Update(current_estimate - kSetPoint);
+      report = controller_.Update(
+          current_estimate - ConfigVars::Get().ResourceQuotaSetPoint() / 100.0);
     }
     if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
       gpr_log(GPR_INFO, "RQ: pressure:%lf report:%lf controller:%s",

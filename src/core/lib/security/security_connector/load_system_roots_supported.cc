@@ -36,6 +36,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/error.h"
@@ -149,9 +150,9 @@ grpc_slice CreateRootCertsBundle(const char* certs_directory) {
 grpc_slice LoadSystemRootCerts() {
   grpc_slice result = grpc_empty_slice();
   // Prioritize user-specified custom directory if flag is set.
-  UniquePtr<char> custom_dir = GPR_GLOBAL_CONFIG_GET(grpc_system_ssl_roots_dir);
-  if (strlen(custom_dir.get()) > 0) {
-    result = CreateRootCertsBundle(custom_dir.get());
+  auto custom_dir = ConfigVars::Get().SystemSslRootsDir();
+  if (!custom_dir.empty()) {
+    result = CreateRootCertsBundle(std::string(custom_dir).c_str());
   }
   // If the custom directory is empty/invalid/not specified, fallback to
   // distribution-specific directory.

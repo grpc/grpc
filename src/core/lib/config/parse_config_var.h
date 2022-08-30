@@ -23,7 +23,7 @@ namespace grpc_core {
 int32_t ParseConfigVar(absl::optional<std::string> value,
                        int32_t default_value);
 std::string ParseConfigVar(absl::optional<std::string> value,
-                           absl::string_view default_value);
+                           const char* default_value);
 bool ParseConfigVar(absl::optional<std::string> value, bool default_value);
 
 }  // namespace grpc_core
