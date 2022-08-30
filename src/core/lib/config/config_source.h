@@ -12,20 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_CONFIG_PARSE_CONFIG_VAR_H
-#define GRPC_CORE_LIB_CONFIG_PARSE_CONFIG_VAR_H
+#ifndef GRPC_CORE_LIB_CONFIG_CONFIG_SOURCE_H
+#define GRPC_CORE_LIB_CONFIG_CONFIG_SOURCE_H
 
-#include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-
-namespace grpc_core {
-
-int32_t ParseConfigVar(absl::optional<std::string> value,
-                       int32_t default_value);
-std::string ParseConfigVar(absl::optional<std::string> value,
-                           const char* default_value);
-bool ParseConfigVar(absl::optional<std::string> value, bool default_value);
-
-}  // namespace grpc_core
+#include "src/core/lib/config/config_from_environment.h"
 
 #endif

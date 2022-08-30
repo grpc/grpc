@@ -23,6 +23,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <atomic>
 #include <functional>
 #include <string>
 
@@ -36,13 +37,14 @@ namespace grpc_core {
 
 class ConfigVars {
  public:
-  using LoadFunction =
-      std::function<absl::optional<std::string>(absl::string_view)>;
-  explicit ConfigVars(LoadFunction load);
   ConfigVars(const ConfigVars&) = delete;
   ConfigVars& operator=(const ConfigVars&) = delete;
   // Get the core configuration; if it does not exist, create it.
-  static const ConfigVars& Get();
+  static const ConfigVars& Get() {
+    auto* p = config_vars_.load(std::memory_order_acquire);
+    if (p != nullptr) return *p;
+    return Load();
+  }
   // Drop the config vars. Users must ensure no other threads are
   // accessing the configuration.
   static void Reset();
@@ -114,6 +116,9 @@ class ConfigVars {
   static absl::Span<const ConfigVarMetadata> metadata();
 
  private:
+  ConfigVars();
+  static const ConfigVars& Load();
+  static std::atomic<ConfigVars*> config_vars_;
   int32_t client_channel_backup_poll_interval_ms_;
   int32_t max_quota_buffer_size_;
   int32_t resource_quota_set_point_;

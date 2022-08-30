@@ -164,6 +164,7 @@ with open('src/core/lib/config/config_vars.h', 'w') as H:
     print(file=H)
     print("#include <string>", file=H)
     print("#include <functional>", file=H)
+    print("#include <atomic>", file=H)
     print("#include \"absl/strings/string_view.h\"", file=H)
     print("#include \"absl/types/optional.h\"", file=H)
     print("#include \"absl/types/span.h\"", file=H)
@@ -173,12 +174,14 @@ with open('src/core/lib/config/config_vars.h', 'w') as H:
     print(file=H)
     print("class ConfigVars {",file=H)
     print(" public:",file=H)
-    print("  using LoadFunction = std::function<absl::optional<std::string>(absl::string_view)>;", file=H)
-    print("  explicit ConfigVars(LoadFunction load);",file=H)
     print("  ConfigVars(const ConfigVars&) = delete;",file=H)
     print("  ConfigVars& operator=(const ConfigVars&) = delete;",file=H)
     print("  // Get the core configuration; if it does not exist, create it.", file=H)
-    print("  static const ConfigVars& Get();", file=H)
+    print("  static const ConfigVars& Get() {", file=H)
+    print("    auto* p = config_vars_.load(std::memory_order_acquire);", file=H)
+    print("    if (p != nullptr) return *p;", file=H)
+    print("    return Load();", file=H)
+    print("  }",file=H)
     print("  // Drop the config vars. Users must ensure no other threads are", file=H)
     print("  // accessing the configuration.", file=H)
     print("  static void Reset();", file=H)
@@ -189,6 +192,9 @@ with open('src/core/lib/config/config_vars.h', 'w') as H:
             RETURN_TYPE[attr['type']], snake_to_pascal(name(attr)), name(attr)),file=H)
     print("  static absl::Span<const ConfigVarMetadata> metadata();",file=H)
     print(" private:",file=H)
+    print("  ConfigVars();",file=H)
+    print("  static const ConfigVars& Load();",file=H)
+    print("  static std::atomic<ConfigVars*> config_vars_;",file=H)
     for attr in attrs_in_packing_order:
         print("  %s %s_;" % (
             MEMBER_TYPE[attr['type']], name(attr)),file=H)
@@ -208,26 +214,37 @@ with open('src/core/lib/config/config_vars.cc', 'w') as C:
     print("#include <grpc/support/port_platform.h>", file=C)
     print("#include <vector>", file=C)
     print("#include \"src/core/lib/config/config_vars.h\"", file=C)
-    print("#include \"src/core/lib/config/parse_config_var.h\"", file=C)
+    print("#include \"src/core/lib/config/config_source.h\"", file=C)
     print(file=C)
     print("namespace {", file=C)
     for attr in attrs:
         print("const char* const description_%s = %s;" %
               (name(attr), c_str(attr['description'])),
               file=C)
+    for attr in attrs:
         if attr['type'] == "string":
             print("const char* const default_%s = %s;" %
                 (name(attr), c_str(attr['default'])),
                 file=C)
+    for attr in attrs:
+        print("GRPC_CONFIG_DEFINE_%s(%s, description_%s, %s);" % (
+            attr["type"].upper(),
+            var_name(attr),
+            name(attr),
+            DEFAULT_VALUE[attr['type']](attr['default'], name(attr))
+                    )            ,file=C)
     print("}", file=C)
     print(file=C)
     print("namespace grpc_core {", file=C)
     print(file=C)
-    print("ConfigVars::ConfigVars(LoadFunction load) :", file=C)
-    print(",".join("%s_(ParseConfigVar(load(%s), %s))" % (
-        name(attr),c_str(name(attr)), 
-        DEFAULT_VALUE[attr['type']](attr['default'], 
-        name(attr))) for attr in attrs_in_packing_order), file=C)
+    print("ConfigVars::ConfigVars() :", file=C)
+    print(",".join("%s_(GRPC_CONFIG_LOAD_%s(%s, description_%s, %s))" % (
+        name(attr),
+        attr['type'].upper(), 
+        var_name(attr),
+        name(attr),
+        DEFAULT_VALUE[attr['type']](attr['default'], name(attr))
+        ) for attr in attrs_in_packing_order), file=C)
     print("{}", file=C)
     print(file=C)
     print("absl::Span<const ConfigVarMetadata> ConfigVars::metadata() {",file=C)
