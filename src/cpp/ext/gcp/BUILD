@@ -47,7 +47,7 @@ grpc_cc_library(
     tags = ["nofixdeps"],
     visibility = ["//test:__subpackages__"],
     deps = [
-        "//:gpr",
+        "//:gpr_platform",
         "//:grpc_opencensus_plugin",
     ],
 )

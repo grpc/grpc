@@ -372,16 +372,6 @@ GRPCXX_PUBLIC_HDRS = [
 ]
 
 grpc_cc_library(
-    name = "gpr",
-    language = "c++",
-    public_hdrs = GPR_PUBLIC_HDRS,
-    standalone = True,
-    tags = ["avoid_dep"],
-    visibility = ["@grpc:public"],
-    deps = ["gpr_codegen"],
-)
-
-grpc_cc_library(
     name = "channel_fwd",
     hdrs = [
         "src/core/lib/channel/channel_fwd.h",
@@ -1219,9 +1209,9 @@ grpc_cc_library(
     public_hdrs = [
     ],
     deps = [
-        "gpr",
         "gpr_alloc",
         "gpr_codegen",
+        "gpr_host_port",
         "gpr_platform",
         "useful",
     ],
@@ -2679,7 +2669,7 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/gprpp/time_averaged_stats.h",
     ],
-    deps = ["gpr"],
+    deps = ["gpr_platform"],
 )
 
 grpc_cc_library(
@@ -3369,7 +3359,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/pollset_set.h",
     ],
     deps = [
-        "gpr",
+        "gpr_platform",
         "iomgr_fwd",
     ],
 )
@@ -4789,7 +4779,6 @@ grpc_cc_library(
         "event_engine_time_util",
         "exec_ctx",
         "google_rpc_status_upb",
-        "gpr",
         "gpr_codegen",
         "gpr_env",
         "gpr_string",
@@ -8136,7 +8125,7 @@ grpc_cc_library(
     name = "json_args",
     hdrs = ["src/core/lib/json/json_args.h"],
     external_deps = ["absl/strings"],
-    deps = ["gpr"],
+    deps = ["gpr_platform"],
 )
 
 grpc_cc_library(
