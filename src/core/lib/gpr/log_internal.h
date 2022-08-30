@@ -33,6 +33,17 @@
     }                                              \
   } while (0)
 
+namespace grpc_core {
+
+/** a lightweight alternative to gpr_log, used to break cyclical dependencies on
+ * internal targets. */
+void gpr_log_error_internal(const char* file, int line, const char* message);
+
+}  // namespace grpc_core
+
+#define GPR_LOG_ERROR_INTERNAL(format, ...) \
+  fprintf(stderr, "[%s:%d] " format, __FILE__, __LINE__, __VA_ARGS__)
+
 #ifndef NDEBUG
 #define GPR_DEBUG_ASSERT_INTERNAL(x) GPR_ASSERT_INTERNAL(x)
 #else

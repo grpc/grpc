@@ -947,7 +947,7 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = GPR_PUBLIC_HDRS,
     deps = [
-        "gpr_assert_internal",
+        "gpr_log_internal",
         "gpr_platform",
     ],
 )
@@ -1005,7 +1005,7 @@ grpc_cc_library(
         "include/grpc/support/alloc.h",
     ],
     deps = [
-        "gpr_assert_internal",
+        "gpr_log_internal",
         "gpr_platform",
         "gpr_timers",
     ],
@@ -1065,7 +1065,7 @@ grpc_cc_library(
     public_hdrs = [
     ],
     deps = [
-        "gpr_assert_internal",
+        "gpr_log_internal",
         "gpr_platform",
         "gpr_string",
         "gpr_tmpfile",
@@ -1441,9 +1441,9 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "gpr_assert_internal",
+    name = "gpr_log_internal",
     hdrs = [
-        "src/core/lib/gpr/assert_internal.h",
+        "src/core/lib/gpr/log_internal.h",
     ],
     language = "c++",
     deps = ["gpr_platform"],
@@ -1486,8 +1486,8 @@ grpc_cc_library(
     visibility = ["@grpc:trace"],
     deps = [
         "global_config",
-        "gpr_assert_internal",
         "gpr_codegen",
+        "gpr_log_internal",
         "gpr_memory",
         "gpr_timers",
         "grpc_codegen",
@@ -2499,9 +2499,9 @@ grpc_cc_library(
         "include/grpc/support/time.h",
     ],
     deps = [
-        "gpr_assert_internal",
         "gpr_atm",
         "gpr_codegen",
+        "gpr_log_internal",
         "gpr_platform",
         "useful",
     ],

@@ -22,7 +22,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include "src/core/lib/gpr/assert_internal.h"
+#include "src/core/lib/gpr/log_internal.h"
 #include "src/core/lib/gprpp/stat.h"
 
 namespace grpc_core {
@@ -33,8 +33,8 @@ absl::Status GetFileModificationTime(const char* filename, time_t* timestamp) {
   struct _stat buf;
   if (_stat(filename, &buf) != 0) {
     const char* error_msg = strerror(errno);
-    fprintf(stderr, "_stat failed for filename %s with error %s.", filename,
-            error_msg);
+    GPR_LOG_ERROR_INTERNAL("_stat failed for filename %s with error %s.",
+                           filename, error_msg);
     return absl::Status(absl::StatusCode::kInternal, error_msg);
   }
   // Last file/directory modification time.

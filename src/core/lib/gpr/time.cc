@@ -26,7 +26,7 @@
 
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gpr/assert_internal.h"
+#include "src/core/lib/gpr/log_internal.h"
 
 int gpr_time_cmp(gpr_timespec a, gpr_timespec b) {
   int cmp = (a.tv_sec > b.tv_sec) - (a.tv_sec < b.tv_sec);

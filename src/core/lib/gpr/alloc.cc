@@ -23,7 +23,7 @@
 
 #include <grpc/support/alloc.h>
 
-#include "src/core/lib/gpr/assert_internal.h"
+#include "src/core/lib/gpr/log_internal.h"
 #include "src/core/lib/profiling/timers.h"
 
 void* gpr_malloc(size_t size) {

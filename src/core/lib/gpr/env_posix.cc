@@ -24,7 +24,7 @@
 
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/gpr/assert_internal.h"
+#include "src/core/lib/gpr/log_internal.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 

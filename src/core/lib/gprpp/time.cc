@@ -26,7 +26,7 @@
 
 #include <grpc/impl/codegen/gpr_types.h>
 
-#include "src/core/lib/gpr/assert_internal.h"
+#include "src/core/lib/gpr/log_internal.h"
 
 namespace grpc_core {
 

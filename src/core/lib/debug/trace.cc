@@ -27,7 +27,7 @@
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 
-#include "src/core/lib/gpr/assert_internal.h"
+#include "src/core/lib/gpr/log_internal.h"
 #include "src/core/lib/gprpp/global_config.h"
 #include "src/core/lib/profiling/timers.h"
 
@@ -69,7 +69,7 @@ bool TraceFlagList::Set(const char* name, bool enabled) {
     }
     // check for unknowns, but ignore "", to allow to GRPC_TRACE=
     if (!found && 0 != strcmp(name, "")) {
-      fprintf(stderr, "Unknown trace var: '%s'", name);
+      GPR_LOG_ERROR_INTERNAL("Unknown trace var: '%s'", name);
       return false; /* early return */
     }
   }
@@ -82,10 +82,10 @@ void TraceFlagList::Add(TraceFlag* flag) {
 }
 
 void TraceFlagList::LogAllTracers() {
-  fprintf(stderr, "available tracers:");
+  GPR_LOG_ERROR_INTERNAL("%s", "available tracers:");
   TraceFlag* t;
   for (t = root_tracer_; t != nullptr; t = t->next_tracer_) {
-    fprintf(stderr, "\t%s", t->name_);
+    GPR_LOG_ERROR_INTERNAL("\t%s", t->name_);
   }
 }
 

@@ -28,7 +28,7 @@
 
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gpr/assert_internal.h"
+#include "src/core/lib/gpr/log_internal.h"
 #include "src/core/lib/gpr/time_precise.h"
 
 static LARGE_INTEGER g_start_time = []() {
