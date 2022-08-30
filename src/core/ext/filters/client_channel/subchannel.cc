@@ -847,10 +847,10 @@ void Subchannel::SetConnectivityStateLocked(grpc_connectivity_state state,
                                         ": ", status.message()));
     status.ForEachPayload(
         [this](absl::string_view key, const absl::Cord& value)
-            // Want to use ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_) here,
-            // but that won't work, because we can't pass the lock
-            // annotation through absl::Status::ForEachPayload().
-            ABSL_NO_THREAD_SAFETY_ANALYSIS { status_.SetPayload(key, value); });
+        // Want to use ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_) here,
+        // but that won't work, because we can't pass the lock
+        // annotation through absl::Status::ForEachPayload().
+        ABSL_NO_THREAD_SAFETY_ANALYSIS { status_.SetPayload(key, value); });
   }
   if (channelz_node_ != nullptr) {
     channelz_node_->UpdateConnectivityState(state);
