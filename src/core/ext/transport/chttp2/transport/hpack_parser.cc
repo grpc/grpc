@@ -49,7 +49,6 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/combiner.h"
-#include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_refcount_base.h"
 #include "src/core/lib/transport/http2_errors.h"
@@ -1343,7 +1342,6 @@ grpc_error_handle grpc_chttp2_header_parser_parse(void* hpack_parser,
                                                   grpc_chttp2_stream* s,
                                                   const grpc_slice& slice,
                                                   int is_last) {
-  GPR_TIMER_SCOPE("grpc_chttp2_header_parser_parse", 0);
   auto* parser = static_cast<grpc_core::HPackParser*>(hpack_parser);
   if (s != nullptr) {
     s->stats.incoming.header_bytes += GRPC_SLICE_LENGTH(slice);
