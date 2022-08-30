@@ -965,7 +965,9 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = GPR_PUBLIC_HDRS,
     deps = [
+        "gpr_alloc",
         "gpr_codegen",
+        "gpr_log_internal",
         "gpr_platform",
         "gpr_string",
     ],

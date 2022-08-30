@@ -18,6 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "log_internal.h"
+
 #ifdef GPR_POSIX_TMPFILE
 
 #include <errno.h>
@@ -26,10 +28,9 @@
 #include <unistd.h>
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gpr/log_internal.h"
 #include "src/core/lib/gpr/tmpfile.h"
 
 FILE* gpr_tmpfile(const char* prefix, char** tmp_filename) {
@@ -40,18 +41,19 @@ FILE* gpr_tmpfile(const char* prefix, char** tmp_filename) {
   if (tmp_filename != nullptr) *tmp_filename = nullptr;
 
   gpr_asprintf(&filename_template, "/tmp/%s_XXXXXX", prefix);
-  GPR_ASSERT(filename_template != nullptr);
+  GPR_ASSERT_INTERNAL(filename_template != nullptr);
 
   fd = mkstemp(filename_template);
   if (fd == -1) {
-    gpr_log(GPR_ERROR, "mkstemp failed for filename_template %s with error %s.",
-            filename_template, strerror(errno));
+    GPR_LOG_ERROR_INTERNAL(
+        "mkstemp failed for filename_template %s with error %s.",
+        filename_template, strerror(errno));
     goto end;
   }
   result = fdopen(fd, "w+");
   if (result == nullptr) {
-    gpr_log(GPR_ERROR, "Could not open file %s from fd %d (error = %s).",
-            filename_template, fd, strerror(errno));
+    GPR_LOG_ERROR_INTERNAL("Could not open file %s from fd %d (error = %s).",
+                           filename_template, fd, strerror(errno));
     unlink(filename_template);
     close(fd);
     goto end;

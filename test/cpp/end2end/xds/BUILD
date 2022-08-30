@@ -116,6 +116,7 @@ grpc_cc_test(
     deps = [
         ":no_op_http_filter",
         ":xds_end2end_test_lib",
+        "//:gpr_time_util",
         "//:grpc",
         "//:grpc++",
         "//:grpc_resolver_fake",
