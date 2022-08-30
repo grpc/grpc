@@ -2676,6 +2676,11 @@ static void init_keepalive_ping_locked(void* arg, grpc_error_handle error) {
     }
   } else if (error == GRPC_ERROR_CANCELLED) {
     // The keepalive ping timer may be cancelled by bdp
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
+        GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace)) {
+      gpr_log(GPR_INFO, "%s: Keepalive ping cancelled. Resetting timer.",
+              t->peer_string.c_str());
+    }
     GRPC_CHTTP2_REF_TRANSPORT(t, "init keepalive ping");
     GRPC_CLOSURE_INIT(&t->init_keepalive_ping_locked, init_keepalive_ping, t,
                       grpc_schedule_on_exec_ctx);

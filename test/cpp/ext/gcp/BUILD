@@ -1,4 +1,4 @@
-# Copyright 2016 gRPC authors.
+# Copyright 2022 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,30 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_test")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 
 licenses(["notice"])
 
-package(
-    features = [
-        "-layering_check",
-        "-parse_headers",
-    ],
-)
+grpc_package(name = "test/cpp/ext/gcp")
 
 grpc_cc_test(
-    name = "backoff_test",
-    srcs = ["backoff_test.cc"],
+    name = "observability_test",
+    srcs = [
+        "observability_test.cc",
+    ],
     external_deps = [
         "gtest",
     ],
     language = "C++",
-    uses_event_engine = False,
-    uses_polling = False,
     deps = [
-        "//:backoff",
-        "//:exec_ctx",
-        "//:time",
-        "//test/core/util:grpc_test_util",
+        "//src/cpp/ext/gcp:observability",
+        "//test/cpp/util:test_util",
     ],
 )
