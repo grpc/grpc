@@ -48,22 +48,30 @@ typedef intptr_t gpr_atm;
   __atomic_fetch_add((p), (intptr_t)(delta), __ATOMIC_ACQ_REL)
 
 static __inline int gpr_atm_no_barrier_cas(gpr_atm* p, gpr_atm o, gpr_atm n) {
-  return __atomic_compare_exchange_n(p, &o, n, false, __ATOMIC_RELAXED,
+  // Need to be c89 compatible, so we can't use false for the fourth argument.
+  // NOLINTNEXTLINE(modernize-use-bool-literals)
+  return __atomic_compare_exchange_n(p, &o, n, 0, __ATOMIC_RELAXED,
                                      __ATOMIC_RELAXED);
 }
 
 static __inline int gpr_atm_acq_cas(gpr_atm* p, gpr_atm o, gpr_atm n) {
-  return __atomic_compare_exchange_n(p, &o, n, false, __ATOMIC_ACQUIRE,
+  // Need to be c89 compatible, so we can't use false for the fourth argument.
+  // NOLINTNEXTLINE(modernize-use-bool-literals)
+  return __atomic_compare_exchange_n(p, &o, n, 0, __ATOMIC_ACQUIRE,
                                      __ATOMIC_RELAXED);
 }
 
 static __inline int gpr_atm_rel_cas(gpr_atm* p, gpr_atm o, gpr_atm n) {
-  return __atomic_compare_exchange_n(p, &o, n, false, __ATOMIC_RELEASE,
+  // Need to be c89 compatible, so we can't use false for the fourth argument.
+  // NOLINTNEXTLINE(modernize-use-bool-literals)
+  return __atomic_compare_exchange_n(p, &o, n, 0, __ATOMIC_RELEASE,
                                      __ATOMIC_RELAXED);
 }
 
 static __inline int gpr_atm_full_cas(gpr_atm* p, gpr_atm o, gpr_atm n) {
-  return __atomic_compare_exchange_n(p, &o, n, false, __ATOMIC_ACQ_REL,
+  // Need to be c89 compatible, so we can't use false for the fourth argument.
+  // NOLINTNEXTLINE(modernize-use-bool-literals)
+  return __atomic_compare_exchange_n(p, &o, n, 0, __ATOMIC_ACQ_REL,
                                      __ATOMIC_RELAXED);
 }
 
