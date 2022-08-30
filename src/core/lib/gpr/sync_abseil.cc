@@ -33,8 +33,6 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/profiling/timers.h"
-
 #ifdef GPR_LOW_LEVEL_COUNTERS
 gpr_atm gpr_mu_locks = 0;
 gpr_atm gpr_counter_atm_cas = 0;
@@ -52,17 +50,14 @@ void gpr_mu_destroy(gpr_mu* mu) {
 }
 
 void gpr_mu_lock(gpr_mu* mu) ABSL_NO_THREAD_SAFETY_ANALYSIS {
-  GPR_TIMER_SCOPE("gpr_mu_lock", 0);
   reinterpret_cast<absl::Mutex*>(mu)->Lock();
 }
 
 void gpr_mu_unlock(gpr_mu* mu) ABSL_NO_THREAD_SAFETY_ANALYSIS {
-  GPR_TIMER_SCOPE("gpr_mu_unlock", 0);
   reinterpret_cast<absl::Mutex*>(mu)->Unlock();
 }
 
 int gpr_mu_trylock(gpr_mu* mu) {
-  GPR_TIMER_SCOPE("gpr_mu_trylock", 0);
   return reinterpret_cast<absl::Mutex*>(mu)->TryLock();
 }
 
@@ -79,7 +74,6 @@ void gpr_cv_destroy(gpr_cv* cv) {
 }
 
 int gpr_cv_wait(gpr_cv* cv, gpr_mu* mu, gpr_timespec abs_deadline) {
-  GPR_TIMER_SCOPE("gpr_cv_wait", 0);
   if (gpr_time_cmp(abs_deadline, gpr_inf_future(abs_deadline.clock_type)) ==
       0) {
     reinterpret_cast<absl::CondVar*>(cv)->Wait(
@@ -94,12 +88,10 @@ int gpr_cv_wait(gpr_cv* cv, gpr_mu* mu, gpr_timespec abs_deadline) {
 }
 
 void gpr_cv_signal(gpr_cv* cv) {
-  GPR_TIMER_MARK("gpr_cv_signal", 0);
   reinterpret_cast<absl::CondVar*>(cv)->Signal();
 }
 
 void gpr_cv_broadcast(gpr_cv* cv) {
-  GPR_TIMER_MARK("gpr_cv_broadcast", 0);
   reinterpret_cast<absl::CondVar*>(cv)->SignalAll();
 }
 

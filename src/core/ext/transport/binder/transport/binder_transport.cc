@@ -103,7 +103,6 @@ static void register_stream_locked(void* arg, grpc_error_handle /*error*/) {
 static int init_stream(grpc_transport* gt, grpc_stream* gs,
                        grpc_stream_refcount* refcount, const void* server_data,
                        grpc_core::Arena* arena) {
-  GPR_TIMER_SCOPE("init_stream", 0);
   gpr_log(GPR_INFO, "%s = %p %p %p %p %p", __func__, gt, gs, refcount,
           server_data, arena);
   // Note that this function is not locked and may be invoked concurrently
@@ -563,7 +562,6 @@ static void perform_stream_op_locked(void* stream_op,
 
 static void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
                               grpc_transport_stream_op_batch* op) {
-  GPR_TIMER_SCOPE("perform_stream_op", 0);
   grpc_binder_transport* gbt = reinterpret_cast<grpc_binder_transport*>(gt);
   grpc_binder_stream* gbs = reinterpret_cast<grpc_binder_stream*>(gs);
   gpr_log(GPR_INFO, "%s = %p %p %p is_client = %d", __func__, gt, gs, op,
