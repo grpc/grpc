@@ -42,6 +42,7 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/context.h"
+#include "src/core/lib/promise/detail/basic_seq.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/try_seq.h"
@@ -159,17 +160,15 @@ ArenaPromise<absl::StatusOr<CallArgs>> ClientAuthFilter::GetCallCredsMetadata(
 
   auto client_initial_metadata = std::move(call_args.client_initial_metadata);
   return TrySeq(
-      Seq(
-        creds->GetRequestMetadata(std::move(client_initial_metadata), &args_),
-        [](absl::StatusOr<ClientMetadataHandle> new_metadata) mutable {
-          if (!new_metadata.ok()) {
-            return absl::StatusOr<ClientMetadataHandle>(
-                MaybeRewriteIllegalStatusCode(new_metadata.status(),
-                                              "call credentials"));
-          }
-          return new_metadata;
-        }
-      ),
+      Seq(creds->GetRequestMetadata(std::move(client_initial_metadata), &args_),
+          [](absl::StatusOr<ClientMetadataHandle> new_metadata) mutable {
+            if (!new_metadata.ok()) {
+              return absl::StatusOr<ClientMetadataHandle>(
+                  MaybeRewriteIllegalStatusCode(new_metadata.status(),
+                                                "call credentials"));
+            }
+            return new_metadata;
+          }),
       [call_args =
            std::move(call_args)](ClientMetadataHandle new_metadata) mutable {
         call_args.client_initial_metadata = std::move(new_metadata);

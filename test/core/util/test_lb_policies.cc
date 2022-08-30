@@ -684,8 +684,7 @@ class FailPolicy : public LoadBalancingPolicy {
   class FailPicker : public SubchannelPicker {
    public:
     FailPicker(absl::Status status, std::atomic<int>* pick_counter)
-        : status_(std::move(status)),
-          pick_counter_(pick_counter) {}
+        : status_(std::move(status)), pick_counter_(pick_counter) {}
 
     PickResult Pick(PickArgs /*args*/) override {
       if (pick_counter_ != nullptr) pick_counter_->fetch_add(1);

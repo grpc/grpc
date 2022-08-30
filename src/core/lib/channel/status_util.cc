@@ -22,6 +22,8 @@
 
 #include <string.h>
 
+#include "absl/strings/str_cat.h"
+
 #include "src/core/lib/gpr/useful.h"
 
 struct status_string_entry {
@@ -124,9 +126,9 @@ absl::Status MaybeRewriteIllegalStatusCode(const absl::Status& status,
     case absl::StatusCode::kAborted:
     case absl::StatusCode::kOutOfRange:
     case absl::StatusCode::kDataLoss: {
-      return absl::InternalError(absl::StrCat(
-          "illegal status code from ", source, "; original status: ",
-          status.ToString()));
+      return absl::InternalError(
+          absl::StrCat("illegal status code from ", source,
+                       "; original status: ", status.ToString()));
     }
     default:
       return status;

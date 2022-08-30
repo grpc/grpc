@@ -6091,6 +6091,7 @@ grpc_cc_library(
         "activity",
         "arena",
         "arena_promise",
+        "basic_seq",
         "channel_args",
         "channel_fwd",
         "closure",
