@@ -953,7 +953,6 @@ grpc_cc_library(
         "gpr_public_hdrs",
         "gpr_spinlock",
         "gpr_stat",
-        "gpr_status_helper",
         "gpr_string",
         "gpr_sync",
         "gpr_thd",
@@ -961,6 +960,7 @@ grpc_cc_library(
         "gpr_timers",
         "gpr_tls",
         "gpr_tmpfile",
+        "status_helper",
     ],
 )
 
@@ -1225,36 +1225,6 @@ grpc_cc_library(
     public_hdrs = [
     ],
     deps = ["gpr_public_hdrs"],
-)
-
-grpc_cc_library(
-    name = "gpr_status_helper",
-    srcs = [
-        "src/core/lib/gprpp/status_helper.cc",
-    ],
-    hdrs = [
-        "src/core/lib/gprpp/status_helper.h",
-    ],
-    external_deps = [
-        "absl/status",
-        "absl/strings",
-        "absl/strings:cord",
-        "absl/time",
-        "absl/types:optional",
-        "upb_lib",
-    ],
-    language = "c++",
-    public_hdrs = [
-    ],
-    deps = [
-        "debug_location",
-        "google_rpc_status_upb",
-        "gpr_log",
-        "gpr_platform",
-        "percent_encoding",
-        "protobuf_any_upb",
-        "slice",
-    ],
 )
 
 grpc_cc_library(
@@ -2517,7 +2487,6 @@ grpc_cc_library(
     tags = ["nofixdeps"],
     deps = [
         "gpr_spinlock",
-        "gpr_status_helper",
         "grpc_codegen",
         "grpc_trace",
         "slice",
@@ -4980,7 +4949,6 @@ grpc_cc_library(
         "gpr_host_port",
         "gpr_memory",
         "gpr_platform",
-        "gpr_status_helper",
         "gpr_string",
         "gpr_sync",
         "grpc_base",
