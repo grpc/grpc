@@ -60,17 +60,6 @@ if test "$PHP_GRPC" != "no"; then
 
   PHP_ADD_LIBPATH($GRPC_LIBDIR)
 
-  PHP_CHECK_LIBRARY(gpr,gpr_now,
-  [
-    PHP_ADD_LIBRARY(gpr,,GRPC_SHARED_LIBADD)
-    PHP_ADD_LIBRARY(gpr)
-    AC_DEFINE(HAVE_GPRLIB,1,[ ])
-  ],[
-    AC_MSG_ERROR([wrong gpr lib version or lib not found])
-  ],[
-    -L$GRPC_LIBDIR
-  ])
-
   PHP_CHECK_LIBRARY(grpc,grpc_channel_destroy,
   [
     PHP_ADD_LIBRARY(grpc,,GRPC_SHARED_LIBADD)

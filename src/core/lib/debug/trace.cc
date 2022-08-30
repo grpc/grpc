@@ -163,7 +163,7 @@ void grpc_tracer_init() {
   }
 }
 
-void grpc_tracer_shutdown(void) { delete g_trace_filename; }
+void grpc_tracer_shutdown(void) { gpr_free(g_trace_filename); }
 
 int grpc_tracer_set_enabled(const char* name, int enabled) {
   return grpc_core::TraceFlagList::Set(name, enabled != 0);
