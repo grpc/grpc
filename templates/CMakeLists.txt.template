@@ -229,7 +229,7 @@
   set(gRPC_ABSL_PROVIDER "module" CACHE STRING "Provider of absl library")
   set_property(CACHE gRPC_ABSL_PROVIDER PROPERTY STRINGS "module" "package")
   <%
-    # Collect all abseil rules used by gpr, grpc, so on.
+    # Collect all abseil rules used by grpc, etc.
     used_abseil_rules = set()
     for lib in libs:
       if lib.get("baselib"):
@@ -707,14 +707,6 @@
   % endfor
   )
   % endif
-  % if lib.name in ["gpr"]:
-  if(_gRPC_PLATFORM_ANDROID)
-    target_link_libraries(gpr
-      android
-      log
-    )
-  endif()
-  % endif
   % if lib.name in ["grpc", "grpc_cronet", "grpc_test_util", \
                     "grpc_test_util_unsecure", "grpc_unsecure", \
                     "grpc++_cronet"]:
@@ -855,22 +847,12 @@
       DESTINATION "<%text>${gRPC_INSTALL_LIBDIR}/pkgconfig</%text>")
   endfunction()
 
-  # gpr .pc file
-  generate_pkgconfig(
-    "gpr"
-    "gRPC platform support library"
-    "<%text>${gRPC_CORE_VERSION}</%text>"
-    "${" ".join(list_abseil_pkg_targets("gpr"))}"
-    "${" ".join(("-l" + l) for l in ["gpr"])}"
-    ""
-    "gpr.pc")
-
   # grpc .pc file
   generate_pkgconfig(
     "gRPC"
     "high performance general RPC framework"
     "<%text>${gRPC_CORE_VERSION}</%text>"
-    "${" ".join(["gpr", "openssl"] + list_abseil_pkg_targets("grpc"))}"
+    "${" ".join(["openssl"] + list_abseil_pkg_targets("grpc"))}"
     "${" ".join(("-l" + l) for l in ["grpc", "address_sorting", "re2", "upb", "cares", "z"])}"
     ""
     "grpc.pc")
@@ -880,7 +862,7 @@
     "gRPC unsecure"
     "high performance general RPC framework without SSL"
     "<%text>${gRPC_CORE_VERSION}</%text>"
-    "${" ".join(["gpr"] + list_abseil_pkg_targets("grpc_unsecure"))}"
+    "${list_abseil_pkg_targets("grpc_unsecure")}"
     "${" ".join(("-l" + l) for l in ["grpc_unsecure"])}"
     ""
     "grpc_unsecure.pc")

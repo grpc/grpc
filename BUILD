@@ -916,7 +916,7 @@ grpc_cc_library(
     ],
     visibility = ["@grpc:public"],
     deps = [
-        "gpr_log",
+        "gpr_log_internal",
         "gpr_platform",
     ],
 )

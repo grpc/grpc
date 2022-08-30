@@ -316,14 +316,14 @@ def _compute_transitive_metadata(
     For the collapsed_deps, the algorithm improved cases like:
 
     The result in the past:
-        end2end_tests -> [grpc_test_util, grpc, gpr, address_sorting, upb]
-        grpc_test_util -> [grpc, gpr, address_sorting, upb, ...]
-        grpc -> [gpr, address_sorting, upb, ...]
+        end2end_tests -> [grpc_test_util, grpc, address_sorting, upb]
+        grpc_test_util -> [grpc, address_sorting, upb, ...]
+        grpc -> [address_sorting, upb, ...]
 
     The result of the algorithm:
         end2end_tests -> [grpc_test_util]
         grpc_test_util -> [grpc]
-        grpc -> [gpr, address_sorting, upb, ...]
+        grpc -> [address_sorting, upb, ...]
     """
     bazel_rule = bazel_rules[rule_name]
     direct_deps = _extract_deps(bazel_rule, bazel_rules)
@@ -867,10 +867,6 @@ _BUILD_EXTRA_METADATA = {
         'build': 'all',
         '_RENAME': 'address_sorting'
     },
-    'gpr': {
-        'language': 'c',
-        'build': 'all',
-    },
     'grpc': {
         'language': 'c',
         'build': 'all',
@@ -1205,7 +1201,7 @@ update_test_metadata_with_transitive_metadata(all_extra_metadata, bazel_rules)
 #            'public_headers': ['include/grpc/byte_buffer.h', ... ],
 #            'headers': ['src/core/ext/filters/client_channel/client_channel.h', ... ],
 #            'src': ['src/core/lib/surface/init.cc', ... ],
-#            'deps': ['gpr', 'address_sorting', ...],
+#            'deps': ['address_sorting', ...],
 #            ... }
 all_targets_dict = _generate_build_metadata(all_extra_metadata, bazel_rules)
 

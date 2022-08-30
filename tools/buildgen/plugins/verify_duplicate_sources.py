@@ -23,8 +23,8 @@ def mako_plugin(dictionary):
     """
     errors = []
     target_groups = (
-        ('gpr', 'grpc', 'grpc++'),
-        ('gpr', 'grpc_unsecure', 'grpc++_unsecure'),
+        ('grpc', 'grpc++'),
+        ('grpc_unsecure', 'grpc++_unsecure'),
     )
     lib_map = {lib['name']: lib for lib in dictionary.get('libs')}
     for target_group in target_groups:

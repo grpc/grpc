@@ -57,7 +57,7 @@ def mako_plugin(dictionary):
     headers = []
 
     for lib in dictionary['libs']:
-        if lib['name'] in ['grpc', 'gpr']:
+        if lib['name'] == 'grpc':
             headers.extend(lib['public_headers'])
 
     apis.extend(list_c_apis(sorted(set(headers))))
