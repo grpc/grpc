@@ -180,7 +180,6 @@
         'grpc_test_util',
       ],
       'sources': [
-        'src/core/lib/gprpp/time_util.cc',
         'src/core/lib/security/authorization/grpc_authorization_policy_provider.cc',
         'src/core/lib/security/authorization/rbac_translator.cc',
         'test/core/compression/args_utils.cc',
@@ -814,6 +813,7 @@
         'src/core/lib/gprpp/thd_windows.cc',
         'src/core/lib/gprpp/time.cc',
         'src/core/lib/gprpp/time_averaged_stats.cc',
+        'src/core/lib/gprpp/time_util.cc',
         'src/core/lib/gprpp/work_serializer.cc',
         'src/core/lib/http/format_request.cc',
         'src/core/lib/http/httpcli.cc',
@@ -1311,6 +1311,7 @@
         'src/core/lib/gprpp/thd_windows.cc',
         'src/core/lib/gprpp/time.cc',
         'src/core/lib/gprpp/time_averaged_stats.cc',
+        'src/core/lib/gprpp/time_util.cc',
         'src/core/lib/gprpp/work_serializer.cc',
         'src/core/lib/http/format_request.cc',
         'src/core/lib/http/httpcli.cc',

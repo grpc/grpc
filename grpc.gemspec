@@ -1088,6 +1088,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/gprpp/time.h )
   s.files += %w( src/core/lib/gprpp/time_averaged_stats.cc )
   s.files += %w( src/core/lib/gprpp/time_averaged_stats.h )
+  s.files += %w( src/core/lib/gprpp/time_util.cc )
+  s.files += %w( src/core/lib/gprpp/time_util.h )
   s.files += %w( src/core/lib/gprpp/unique_type_name.h )
   s.files += %w( src/core/lib/gprpp/work_serializer.cc )
   s.files += %w( src/core/lib/gprpp/work_serializer.h )

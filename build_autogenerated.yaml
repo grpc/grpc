@@ -30,7 +30,6 @@ libs:
   - include/grpc/status.h
   - include/grpc/support/workaround_list.h
   headers:
-  - src/core/lib/gprpp/time_util.h
   - src/core/lib/security/authorization/grpc_authorization_policy_provider.h
   - src/core/lib/security/authorization/rbac_translator.h
   - test/core/compression/args_utils.h
@@ -43,7 +42,6 @@ libs:
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/util/test_lb_policies.h
   src:
-  - src/core/lib/gprpp/time_util.cc
   - src/core/lib/security/authorization/grpc_authorization_policy_provider.cc
   - src/core/lib/security/authorization/rbac_translator.cc
   - test/core/compression/args_utils.cc
@@ -708,6 +706,7 @@ libs:
   - src/core/lib/gprpp/thd.h
   - src/core/lib/gprpp/time.h
   - src/core/lib/gprpp/time_averaged_stats.h
+  - src/core/lib/gprpp/time_util.h
   - src/core/lib/gprpp/unique_type_name.h
   - src/core/lib/gprpp/work_serializer.h
   - src/core/lib/http/format_request.h
@@ -1435,6 +1434,7 @@ libs:
   - src/core/lib/gprpp/thd_windows.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/gprpp/time_averaged_stats.cc
+  - src/core/lib/gprpp/time_util.cc
   - src/core/lib/gprpp/work_serializer.cc
   - src/core/lib/http/format_request.cc
   - src/core/lib/http/httpcli.cc
@@ -2004,6 +2004,7 @@ libs:
   - src/core/lib/gprpp/thd.h
   - src/core/lib/gprpp/time.h
   - src/core/lib/gprpp/time_averaged_stats.h
+  - src/core/lib/gprpp/time_util.h
   - src/core/lib/gprpp/unique_type_name.h
   - src/core/lib/gprpp/work_serializer.h
   - src/core/lib/http/format_request.h
@@ -2371,6 +2372,7 @@ libs:
   - src/core/lib/gprpp/thd_windows.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/gprpp/time_averaged_stats.cc
+  - src/core/lib/gprpp/time_util.cc
   - src/core/lib/gprpp/work_serializer.cc
   - src/core/lib/http/format_request.cc
   - src/core/lib/http/httpcli.cc
@@ -3747,6 +3749,7 @@ targets:
   - src/core/lib/gprpp/stat.h
   - src/core/lib/gprpp/sync.h
   - src/core/lib/gprpp/time.h
+  - src/core/lib/gprpp/time_util.h
   - src/core/lib/profiling/timers.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/context.h
@@ -3795,6 +3798,7 @@ targets:
   - src/core/lib/gprpp/stat_posix.cc
   - src/core/lib/gprpp/stat_windows.cc
   - src/core/lib/gprpp/time.cc
+  - src/core/lib/gprpp/time_util.cc
   - src/core/lib/profiling/basic_timers.cc
   - src/core/lib/profiling/stap_timers.cc
   - src/core/lib/promise/activity.cc
@@ -4172,6 +4176,7 @@ targets:
   - src/core/lib/gprpp/sync.h
   - src/core/lib/gprpp/thd.h
   - src/core/lib/gprpp/time.h
+  - src/core/lib/gprpp/time_util.h
   - src/core/lib/iomgr/closure.h
   - src/core/lib/iomgr/combiner.h
   - src/core/lib/iomgr/error.h
@@ -4252,6 +4257,7 @@ targets:
   - src/core/lib/gprpp/thd_posix.cc
   - src/core/lib/gprpp/thd_windows.cc
   - src/core/lib/gprpp/time.cc
+  - src/core/lib/gprpp/time_util.cc
   - src/core/lib/iomgr/combiner.cc
   - src/core/lib/iomgr/error.cc
   - src/core/lib/iomgr/exec_ctx.cc
@@ -5099,6 +5105,7 @@ targets:
   - src/core/lib/gprpp/sync.h
   - src/core/lib/gprpp/thd.h
   - src/core/lib/gprpp/time.h
+  - src/core/lib/gprpp/time_util.h
   - src/core/lib/iomgr/closure.h
   - src/core/lib/iomgr/combiner.h
   - src/core/lib/iomgr/error.h
@@ -5177,6 +5184,7 @@ targets:
   - src/core/lib/gprpp/thd_posix.cc
   - src/core/lib/gprpp/thd_windows.cc
   - src/core/lib/gprpp/time.cc
+  - src/core/lib/gprpp/time_util.cc
   - src/core/lib/iomgr/combiner.cc
   - src/core/lib/iomgr/error.cc
   - src/core/lib/iomgr/exec_ctx.cc
@@ -6138,6 +6146,7 @@ targets:
   - src/core/lib/gprpp/sync.h
   - src/core/lib/gprpp/thd.h
   - src/core/lib/gprpp/time.h
+  - src/core/lib/gprpp/time_util.h
   - src/core/lib/iomgr/closure.h
   - src/core/lib/iomgr/combiner.h
   - src/core/lib/iomgr/error.h
@@ -6204,6 +6213,7 @@ targets:
   - src/core/lib/gprpp/thd_posix.cc
   - src/core/lib/gprpp/thd_windows.cc
   - src/core/lib/gprpp/time.cc
+  - src/core/lib/gprpp/time_util.cc
   - src/core/lib/iomgr/combiner.cc
   - src/core/lib/iomgr/error.cc
   - src/core/lib/iomgr/exec_ctx.cc
@@ -6470,6 +6480,7 @@ targets:
   - src/core/lib/gprpp/sync.h
   - src/core/lib/gprpp/thd.h
   - src/core/lib/gprpp/time.h
+  - src/core/lib/gprpp/time_util.h
   - src/core/lib/iomgr/closure.h
   - src/core/lib/iomgr/combiner.h
   - src/core/lib/iomgr/error.h
@@ -6550,6 +6561,7 @@ targets:
   - src/core/lib/gprpp/thd_posix.cc
   - src/core/lib/gprpp/thd_windows.cc
   - src/core/lib/gprpp/time.cc
+  - src/core/lib/gprpp/time_util.cc
   - src/core/lib/iomgr/combiner.cc
   - src/core/lib/iomgr/error.cc
   - src/core/lib/iomgr/exec_ctx.cc
@@ -6630,6 +6642,7 @@ targets:
   - src/core/lib/gprpp/sync.h
   - src/core/lib/gprpp/thd.h
   - src/core/lib/gprpp/time.h
+  - src/core/lib/gprpp/time_util.h
   - src/core/lib/iomgr/closure.h
   - src/core/lib/iomgr/combiner.h
   - src/core/lib/iomgr/error.h
@@ -6716,6 +6729,7 @@ targets:
   - src/core/lib/gprpp/thd_posix.cc
   - src/core/lib/gprpp/thd_windows.cc
   - src/core/lib/gprpp/time.cc
+  - src/core/lib/gprpp/time_util.cc
   - src/core/lib/iomgr/combiner.cc
   - src/core/lib/iomgr/error.cc
   - src/core/lib/iomgr/exec_ctx.cc
@@ -7665,11 +7679,9 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/gprpp/time_util.h
   - test/core/http/httpcli_test_util.h
   - test/core/util/fake_udp_and_tcp_server.h
   src:
-  - src/core/lib/gprpp/time_util.cc
   - test/core/http/httpcli_test.cc
   - test/core/http/httpcli_test_util.cc
   - test/core/util/fake_udp_and_tcp_server.cc
@@ -7685,11 +7697,9 @@ targets:
   run: false
   language: c++
   headers:
-  - src/core/lib/gprpp/time_util.h
   - test/core/http/httpcli_test_util.h
   - test/core/util/fake_udp_and_tcp_server.h
   src:
-  - src/core/lib/gprpp/time_util.cc
   - test/core/http/httpcli_test_util.cc
   - test/core/http/httpscli_test.cc
   - test/core/util/fake_udp_and_tcp_server.cc
@@ -8035,6 +8045,7 @@ targets:
   - src/core/lib/gprpp/stat.h
   - src/core/lib/gprpp/sync.h
   - src/core/lib/gprpp/time.h
+  - src/core/lib/gprpp/time_util.h
   - src/core/lib/profiling/timers.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/context.h
@@ -8083,6 +8094,7 @@ targets:
   - src/core/lib/gprpp/stat_posix.cc
   - src/core/lib/gprpp/stat_windows.cc
   - src/core/lib/gprpp/time.cc
+  - src/core/lib/gprpp/time_util.cc
   - src/core/lib/profiling/basic_timers.cc
   - src/core/lib/profiling/stap_timers.cc
   - src/core/lib/promise/activity.cc
@@ -8298,6 +8310,7 @@ targets:
   - src/core/lib/gprpp/sync.h
   - src/core/lib/gprpp/thd.h
   - src/core/lib/gprpp/time.h
+  - src/core/lib/gprpp/time_util.h
   - src/core/lib/iomgr/closure.h
   - src/core/lib/iomgr/combiner.h
   - src/core/lib/iomgr/error.h
@@ -8373,6 +8386,7 @@ targets:
   - src/core/lib/gprpp/thd_posix.cc
   - src/core/lib/gprpp/thd_windows.cc
   - src/core/lib/gprpp/time.cc
+  - src/core/lib/gprpp/time_util.cc
   - src/core/lib/iomgr/combiner.cc
   - src/core/lib/iomgr/error.cc
   - src/core/lib/iomgr/exec_ctx.cc
@@ -8451,6 +8465,7 @@ targets:
   - src/core/lib/gprpp/sync.h
   - src/core/lib/gprpp/thd.h
   - src/core/lib/gprpp/time.h
+  - src/core/lib/gprpp/time_util.h
   - src/core/lib/iomgr/closure.h
   - src/core/lib/iomgr/combiner.h
   - src/core/lib/iomgr/error.h
@@ -8527,6 +8542,7 @@ targets:
   - src/core/lib/gprpp/thd_posix.cc
   - src/core/lib/gprpp/thd_windows.cc
   - src/core/lib/gprpp/time.cc
+  - src/core/lib/gprpp/time_util.cc
   - src/core/lib/iomgr/combiner.cc
   - src/core/lib/iomgr/error.cc
   - src/core/lib/iomgr/exec_ctx.cc
@@ -8812,6 +8828,7 @@ targets:
   - src/core/lib/gprpp/stat.h
   - src/core/lib/gprpp/sync.h
   - src/core/lib/gprpp/time.h
+  - src/core/lib/gprpp/time_util.h
   - src/core/lib/profiling/timers.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/context.h
@@ -8859,6 +8876,7 @@ targets:
   - src/core/lib/gprpp/stat_posix.cc
   - src/core/lib/gprpp/stat_windows.cc
   - src/core/lib/gprpp/time.cc
+  - src/core/lib/gprpp/time_util.cc
   - src/core/lib/profiling/basic_timers.cc
   - src/core/lib/profiling/stap_timers.cc
   - src/core/lib/promise/activity.cc
@@ -9065,6 +9083,7 @@ targets:
   - src/core/lib/gprpp/sync.h
   - src/core/lib/gprpp/thd.h
   - src/core/lib/gprpp/time.h
+  - src/core/lib/gprpp/time_util.h
   - src/core/lib/iomgr/closure.h
   - src/core/lib/iomgr/combiner.h
   - src/core/lib/iomgr/error.h
@@ -9125,6 +9144,7 @@ targets:
   - src/core/lib/gprpp/thd_posix.cc
   - src/core/lib/gprpp/thd_windows.cc
   - src/core/lib/gprpp/time.cc
+  - src/core/lib/gprpp/time_util.cc
   - src/core/lib/iomgr/combiner.cc
   - src/core/lib/iomgr/error.cc
   - src/core/lib/iomgr/exec_ctx.cc
@@ -9230,6 +9250,7 @@ targets:
   - src/core/lib/gprpp/sync.h
   - src/core/lib/gprpp/thd.h
   - src/core/lib/gprpp/time.h
+  - src/core/lib/gprpp/time_util.h
   - src/core/lib/iomgr/closure.h
   - src/core/lib/iomgr/combiner.h
   - src/core/lib/iomgr/error.h
@@ -9314,6 +9335,7 @@ targets:
   - src/core/lib/gprpp/thd_posix.cc
   - src/core/lib/gprpp/thd_windows.cc
   - src/core/lib/gprpp/time.cc
+  - src/core/lib/gprpp/time_util.cc
   - src/core/lib/iomgr/combiner.cc
   - src/core/lib/iomgr/error.cc
   - src/core/lib/iomgr/exec_ctx.cc
@@ -9866,6 +9888,7 @@ targets:
   - src/core/lib/gprpp/sync.h
   - src/core/lib/gprpp/thd.h
   - src/core/lib/gprpp/time.h
+  - src/core/lib/gprpp/time_util.h
   - src/core/lib/iomgr/closure.h
   - src/core/lib/iomgr/combiner.h
   - src/core/lib/iomgr/error.h
@@ -9943,6 +9966,7 @@ targets:
   - src/core/lib/gprpp/thd_posix.cc
   - src/core/lib/gprpp/thd_windows.cc
   - src/core/lib/gprpp/time.cc
+  - src/core/lib/gprpp/time_util.cc
   - src/core/lib/iomgr/combiner.cc
   - src/core/lib/iomgr/error.cc
   - src/core/lib/iomgr/exec_ctx.cc
@@ -10568,6 +10592,7 @@ targets:
   - src/core/lib/gprpp/stat.h
   - src/core/lib/gprpp/sync.h
   - src/core/lib/gprpp/time.h
+  - src/core/lib/gprpp/time_util.h
   - src/core/lib/profiling/timers.h
   - src/core/lib/slice/slice.h
   - src/core/lib/slice/slice_internal.h
@@ -10609,6 +10634,7 @@ targets:
   - src/core/lib/gprpp/stat_posix.cc
   - src/core/lib/gprpp/stat_windows.cc
   - src/core/lib/gprpp/time.cc
+  - src/core/lib/gprpp/time_util.cc
   - src/core/lib/profiling/basic_timers.cc
   - src/core/lib/profiling/stap_timers.cc
   - src/core/lib/slice/slice.cc
@@ -11168,6 +11194,7 @@ targets:
   - src/core/lib/gprpp/sync.h
   - src/core/lib/gprpp/time.h
   - src/core/lib/gprpp/time_averaged_stats.h
+  - src/core/lib/gprpp/time_util.h
   - src/core/lib/profiling/timers.h
   src:
   - src/core/lib/debug/trace.cc
@@ -11210,6 +11237,7 @@ targets:
   - src/core/lib/gprpp/stat_windows.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/gprpp/time_averaged_stats.cc
+  - src/core/lib/gprpp/time_util.cc
   - src/core/lib/profiling/basic_timers.cc
   - src/core/lib/profiling/stap_timers.cc
   - test/core/event_engine/posix/timer_heap_test.cc
@@ -11254,6 +11282,7 @@ targets:
   - src/core/lib/gprpp/sync.h
   - src/core/lib/gprpp/time.h
   - src/core/lib/gprpp/time_averaged_stats.h
+  - src/core/lib/gprpp/time_util.h
   - src/core/lib/profiling/timers.h
   src:
   - src/core/lib/debug/trace.cc
@@ -11296,6 +11325,7 @@ targets:
   - src/core/lib/gprpp/stat_windows.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/gprpp/time_averaged_stats.cc
+  - src/core/lib/gprpp/time_util.cc
   - src/core/lib/profiling/basic_timers.cc
   - src/core/lib/profiling/stap_timers.cc
   - test/core/event_engine/posix/timer_list_test.cc
@@ -11539,6 +11569,7 @@ targets:
   - src/core/lib/gprpp/stat.h
   - src/core/lib/gprpp/sync.h
   - src/core/lib/gprpp/time.h
+  - src/core/lib/gprpp/time_util.h
   - src/core/lib/profiling/timers.h
   - src/core/lib/resource_quota/thread_quota.h
   src:
@@ -11575,6 +11606,7 @@ targets:
   - src/core/lib/gprpp/stat_posix.cc
   - src/core/lib/gprpp/stat_windows.cc
   - src/core/lib/gprpp/time.cc
+  - src/core/lib/gprpp/time_util.cc
   - src/core/lib/profiling/basic_timers.cc
   - src/core/lib/profiling/stap_timers.cc
   - src/core/lib/resource_quota/thread_quota.cc
@@ -11627,10 +11659,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - src/core/lib/gprpp/time_util.h
+  headers: []
   src:
-  - src/core/lib/gprpp/time_util.cc
   - test/core/gprpp/time_util_test.cc
   deps:
   - grpc_test_util
@@ -12623,7 +12653,6 @@ targets:
   run: false
   language: c++
   headers:
-  - src/core/lib/gprpp/time_util.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/no_op_http_filter.h
@@ -12670,7 +12699,6 @@ targets:
   - src/proto/grpc/testing/xds/v3/router.proto
   - src/proto/grpc/testing/xds/v3/string.proto
   - src/proto/grpc/testing/xds/v3/tls.proto
-  - src/core/lib/gprpp/time_util.cc
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/xds/xds_end2end_test.cc
   - test/cpp/end2end/xds/xds_end2end_test_lib.cc

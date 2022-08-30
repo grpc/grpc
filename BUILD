@@ -1240,6 +1240,7 @@ grpc_cc_library(
         "gpr_host_port",
         "gpr_log",
         "gpr_platform",
+        "gpr_time_util",
         "gpr_timers",
         "time",
     ],

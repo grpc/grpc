@@ -532,6 +532,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/gprpp/thd_windows.cc \
     src/core/lib/gprpp/time.cc \
     src/core/lib/gprpp/time_averaged_stats.cc \
+    src/core/lib/gprpp/time_util.cc \
     src/core/lib/gprpp/work_serializer.cc \
     src/core/lib/http/format_request.cc \
     src/core/lib/http/httpcli.cc \

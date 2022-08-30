@@ -22,7 +22,6 @@
 #include <limits.h>
 
 #include <algorithm>
-#include <chrono>
 #include <memory>
 #include <new>
 #include <utility>
@@ -906,13 +905,11 @@ void Subchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
   if (connecting_result_.transport == nullptr || !PublishTransportLocked()) {
     const EventEngine::Duration time_until_next_attempt =
         ToEventEngineDuration(next_attempt_time_ - ExecCtx::Get()->Now());
-    gpr_log(GPR_INFO,
-            "subchannel %p %s: connect failed (%s), backing off for %" PRId64
-            " ms",
-            this, key_.ToString().c_str(), grpc_error_std_string(error).c_str(),
-            std::chrono::duration_cast<std::chrono::milliseconds>(
-                time_until_next_attempt)
-                .count());
+    gpr_log(
+        GPR_INFO,
+        "subchannel %p %s: connect failed (%s), backing off for %" PRId64 " ms",
+        this, key_.ToString().c_str(), grpc_error_std_string(error).c_str(),
+        grpc_event_engine::experimental::Milliseconds(time_until_next_attempt));
     SetConnectivityStateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE,
                                grpc_error_to_absl_status(error));
     retry_timer_handle_ = GetDefaultEventEngine()->RunAfter(

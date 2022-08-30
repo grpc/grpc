@@ -1339,7 +1339,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_library(end2end_tests
-  src/core/lib/gprpp/time_util.cc
   src/core/lib/security/authorization/grpc_authorization_policy_provider.cc
   src/core/lib/security/authorization/rbac_translator.cc
   test/core/compression/args_utils.cc
@@ -2005,6 +2004,7 @@ add_library(grpc
   src/core/lib/gprpp/thd_windows.cc
   src/core/lib/gprpp/time.cc
   src/core/lib/gprpp/time_averaged_stats.cc
+  src/core/lib/gprpp/time_util.cc
   src/core/lib/gprpp/work_serializer.cc
   src/core/lib/http/format_request.cc
   src/core/lib/http/httpcli.cc
@@ -2693,6 +2693,7 @@ add_library(grpc_unsecure
   src/core/lib/gprpp/thd_windows.cc
   src/core/lib/gprpp/time.cc
   src/core/lib/gprpp/time_averaged_stats.cc
+  src/core/lib/gprpp/time_util.cc
   src/core/lib/gprpp/work_serializer.cc
   src/core/lib/http/format_request.cc
   src/core/lib/http/httpcli.cc
@@ -4964,6 +4965,7 @@ add_executable(activity_test
   src/core/lib/gprpp/stat_posix.cc
   src/core/lib/gprpp/stat_windows.cc
   src/core/lib/gprpp/time.cc
+  src/core/lib/gprpp/time_util.cc
   src/core/lib/profiling/basic_timers.cc
   src/core/lib/profiling/stap_timers.cc
   src/core/lib/promise/activity.cc
@@ -5821,6 +5823,7 @@ add_executable(arena_promise_test
   src/core/lib/gprpp/thd_posix.cc
   src/core/lib/gprpp/thd_windows.cc
   src/core/lib/gprpp/time.cc
+  src/core/lib/gprpp/time_util.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/exec_ctx.cc
@@ -7639,6 +7642,7 @@ add_executable(chunked_vector_test
   src/core/lib/gprpp/thd_posix.cc
   src/core/lib/gprpp/thd_windows.cc
   src/core/lib/gprpp/time.cc
+  src/core/lib/gprpp/time_util.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/exec_ctx.cc
@@ -9732,6 +9736,7 @@ add_executable(exec_ctx_wakeup_scheduler_test
   src/core/lib/gprpp/thd_posix.cc
   src/core/lib/gprpp/thd_windows.cc
   src/core/lib/gprpp/time.cc
+  src/core/lib/gprpp/time_util.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/exec_ctx.cc
@@ -10194,6 +10199,7 @@ add_executable(flow_control_test
   src/core/lib/gprpp/thd_posix.cc
   src/core/lib/gprpp/thd_windows.cc
   src/core/lib/gprpp/time.cc
+  src/core/lib/gprpp/time_util.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/exec_ctx.cc
@@ -10308,6 +10314,7 @@ add_executable(for_each_test
   src/core/lib/gprpp/thd_posix.cc
   src/core/lib/gprpp/thd_windows.cc
   src/core/lib/gprpp/time.cc
+  src/core/lib/gprpp/time_util.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/exec_ctx.cc
@@ -12372,7 +12379,6 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(httpcli_test
-    src/core/lib/gprpp/time_util.cc
     test/core/http/httpcli_test.cc
     test/core/http/httpcli_test_util.cc
     test/core/util/fake_udp_and_tcp_server.cc
@@ -12412,7 +12418,6 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(httpscli_test
-    src/core/lib/gprpp/time_util.cc
     test/core/http/httpcli_test_util.cc
     test/core/http/httpscli_test.cc
     test/core/util/fake_udp_and_tcp_server.cc
@@ -13190,6 +13195,7 @@ add_executable(latch_test
   src/core/lib/gprpp/stat_posix.cc
   src/core/lib/gprpp/stat_windows.cc
   src/core/lib/gprpp/time.cc
+  src/core/lib/gprpp/time_util.cc
   src/core/lib/profiling/basic_timers.cc
   src/core/lib/profiling/stap_timers.cc
   src/core/lib/promise/activity.cc
@@ -13603,6 +13609,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     src/core/lib/gprpp/thd_posix.cc
     src/core/lib/gprpp/thd_windows.cc
     src/core/lib/gprpp/time.cc
+    src/core/lib/gprpp/time_util.cc
     src/core/lib/iomgr/combiner.cc
     src/core/lib/iomgr/error.cc
     src/core/lib/iomgr/exec_ctx.cc
@@ -13714,6 +13721,7 @@ add_executable(memory_quota_test
   src/core/lib/gprpp/thd_posix.cc
   src/core/lib/gprpp/thd_windows.cc
   src/core/lib/gprpp/time.cc
+  src/core/lib/gprpp/time_util.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/exec_ctx.cc
@@ -14315,6 +14323,7 @@ add_executable(observable_test
   src/core/lib/gprpp/stat_posix.cc
   src/core/lib/gprpp/stat_windows.cc
   src/core/lib/gprpp/time.cc
+  src/core/lib/gprpp/time_util.cc
   src/core/lib/profiling/basic_timers.cc
   src/core/lib/profiling/stap_timers.cc
   src/core/lib/promise/activity.cc
@@ -14796,6 +14805,7 @@ add_executable(periodic_update_test
   src/core/lib/gprpp/thd_posix.cc
   src/core/lib/gprpp/thd_windows.cc
   src/core/lib/gprpp/time.cc
+  src/core/lib/gprpp/time_util.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/exec_ctx.cc
@@ -14948,6 +14958,7 @@ add_executable(pipe_test
   src/core/lib/gprpp/thd_posix.cc
   src/core/lib/gprpp/thd_windows.cc
   src/core/lib/gprpp/time.cc
+  src/core/lib/gprpp/time_util.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/exec_ctx.cc
@@ -16038,6 +16049,7 @@ add_executable(resource_quota_test
   src/core/lib/gprpp/thd_posix.cc
   src/core/lib/gprpp/thd_windows.cc
   src/core/lib/gprpp/time.cc
+  src/core/lib/gprpp/time_util.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/exec_ctx.cc
@@ -17418,6 +17430,7 @@ add_executable(slice_string_helpers_test
   src/core/lib/gprpp/stat_posix.cc
   src/core/lib/gprpp/stat_windows.cc
   src/core/lib/gprpp/time.cc
+  src/core/lib/gprpp/time_util.cc
   src/core/lib/profiling/basic_timers.cc
   src/core/lib/profiling/stap_timers.cc
   src/core/lib/slice/slice.cc
@@ -18533,6 +18546,7 @@ add_executable(test_core_event_engine_posix_timer_heap_test
   src/core/lib/gprpp/stat_windows.cc
   src/core/lib/gprpp/time.cc
   src/core/lib/gprpp/time_averaged_stats.cc
+  src/core/lib/gprpp/time_util.cc
   src/core/lib/profiling/basic_timers.cc
   src/core/lib/profiling/stap_timers.cc
   test/core/event_engine/posix/timer_heap_test.cc
@@ -18620,6 +18634,7 @@ add_executable(test_core_event_engine_posix_timer_list_test
   src/core/lib/gprpp/stat_windows.cc
   src/core/lib/gprpp/time.cc
   src/core/lib/gprpp/time_averaged_stats.cc
+  src/core/lib/gprpp/time_util.cc
   src/core/lib/profiling/basic_timers.cc
   src/core/lib/profiling/stap_timers.cc
   test/core/event_engine/posix/timer_list_test.cc
@@ -19195,6 +19210,7 @@ add_executable(thread_quota_test
   src/core/lib/gprpp/stat_posix.cc
   src/core/lib/gprpp/stat_windows.cc
   src/core/lib/gprpp/time.cc
+  src/core/lib/gprpp/time_util.cc
   src/core/lib/profiling/basic_timers.cc
   src/core/lib/profiling/stap_timers.cc
   src/core/lib/resource_quota/thread_quota.cc
@@ -19336,7 +19352,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(time_util_test
-  src/core/lib/gprpp/time_util.cc
   test/core/gprpp/time_util_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -21633,7 +21648,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/tls.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/tls.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/tls.grpc.pb.h
-    src/core/lib/gprpp/time_util.cc
     test/cpp/end2end/test_service_impl.cc
     test/cpp/end2end/xds/xds_end2end_test.cc
     test/cpp/end2end/xds/xds_end2end_test_lib.cc

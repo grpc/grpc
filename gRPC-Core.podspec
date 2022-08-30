@@ -1175,6 +1175,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/gprpp/time.h',
                       'src/core/lib/gprpp/time_averaged_stats.cc',
                       'src/core/lib/gprpp/time_averaged_stats.h',
+                      'src/core/lib/gprpp/time_util.cc',
+                      'src/core/lib/gprpp/time_util.h',
                       'src/core/lib/gprpp/unique_type_name.h',
                       'src/core/lib/gprpp/work_serializer.cc',
                       'src/core/lib/gprpp/work_serializer.h',
@@ -2228,6 +2230,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/gprpp/thd.h',
                               'src/core/lib/gprpp/time.h',
                               'src/core/lib/gprpp/time_averaged_stats.h',
+                              'src/core/lib/gprpp/time_util.h',
                               'src/core/lib/gprpp/unique_type_name.h',
                               'src/core/lib/gprpp/work_serializer.h',
                               'src/core/lib/http/format_request.h',
@@ -2556,9 +2559,7 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/debugging/stacktrace', abseil_version
     ss.dependency 'abseil/debugging/symbolize', abseil_version
 
-    ss.source_files = 'src/core/lib/gprpp/time_util.cc',
-                      'src/core/lib/gprpp/time_util.h',
-                      'src/core/lib/security/authorization/grpc_authorization_policy_provider.cc',
+    ss.source_files = 'src/core/lib/security/authorization/grpc_authorization_policy_provider.cc',
                       'src/core/lib/security/authorization/grpc_authorization_policy_provider.h',
                       'src/core/lib/security/authorization/rbac_translator.cc',
                       'src/core/lib/security/authorization/rbac_translator.h',

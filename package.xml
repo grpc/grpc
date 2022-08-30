@@ -1070,6 +1070,8 @@
     <file baseinstalldir="/" name="src/core/lib/gprpp/time.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/time_averaged_stats.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/time_averaged_stats.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/time_util.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/time_util.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/unique_type_name.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/work_serializer.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/work_serializer.h" role="src" />
