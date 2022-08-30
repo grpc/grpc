@@ -19,6 +19,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <cstring>
+
 /** abort() the process if x is zero, with rudimentary logging to prevent
    circular dependencies with gpr_log.
 
@@ -41,8 +43,16 @@ void gpr_log_error_internal(const char* file, int line, const char* message);
 
 }  // namespace grpc_core
 
-#define GPR_LOG_ERROR_INTERNAL(format, ...) \
-  fprintf(stderr, "[%s:%d] " format, __FILE__, __LINE__, __VA_ARGS__)
+#define GPR_LOG_ERROR_INTERNAL(format, ...)                       \
+  do {                                                            \
+    char f[] = __FILE__;                                          \
+    char* display_file = f;                                       \
+    char* slash_pos = strrchr(f, '/');                            \
+    if (slash_pos != nullptr) display_file = slash_pos + 1;       \
+    char prefix[60];                                              \
+    sprintf(prefix, "INTERNAL %37s:%d]", display_file, __LINE__); \
+    fprintf(stderr, "%-60s " format "\n", prefix, __VA_ARGS__);   \
+  } while (0)
 
 #ifndef NDEBUG
 #define GPR_DEBUG_ASSERT_INTERNAL(x) GPR_ASSERT_INTERNAL(x)
