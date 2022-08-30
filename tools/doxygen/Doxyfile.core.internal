@@ -1762,6 +1762,8 @@ src/core/lib/event_engine/slice_buffer.cc \
 src/core/lib/event_engine/socket_notifier.h \
 src/core/lib/event_engine/thread_pool.cc \
 src/core/lib/event_engine/thread_pool.h \
+src/core/lib/event_engine/time_util.cc \
+src/core/lib/event_engine/time_util.h \
 src/core/lib/event_engine/trace.cc \
 src/core/lib/event_engine/trace.h \
 src/core/lib/event_engine/utils.cc \
@@ -1861,8 +1863,6 @@ src/core/lib/gprpp/time.cc \
 src/core/lib/gprpp/time.h \
 src/core/lib/gprpp/time_averaged_stats.cc \
 src/core/lib/gprpp/time_averaged_stats.h \
-src/core/lib/gprpp/time_util.cc \
-src/core/lib/gprpp/time_util.h \
 src/core/lib/gprpp/unique_type_name.h \
 src/core/lib/gprpp/work_serializer.cc \
 src/core/lib/gprpp/work_serializer.h \

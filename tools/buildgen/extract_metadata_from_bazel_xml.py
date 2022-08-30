@@ -232,6 +232,7 @@ def _extract_sources(bazel_rule: BuildMetadata) -> List[str]:
 def _extract_deps(bazel_rule: BuildMetadata,
                   bazel_rules: BuildDict) -> List[str]:
     """Gets list of deps from from a bazel rule"""
+    print(f"DO NOT SUBMIT - build_rule:{bazel_rule['srcs']}")
     deps = set(bazel_rule['deps'])
     for src in bazel_rule['srcs']:
         if not src.endswith('.cc') and not src.endswith(
@@ -326,6 +327,7 @@ def _compute_transitive_metadata(
         grpc -> [gpr, address_sorting, upb, ...]
     """
     bazel_rule = bazel_rules[rule_name]
+    print(f"DO NOT SUBMIT: rule_name:{rule_name}")
     direct_deps = _extract_deps(bazel_rule, bazel_rules)
     transitive_deps = set()
     collapsed_deps = set()

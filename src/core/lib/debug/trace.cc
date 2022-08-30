@@ -26,8 +26,8 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 
+#include "src/core/lib/gpr/assert_internal.h"
 #include "src/core/lib/gprpp/global_config.h"
 #include "src/core/lib/profiling/timers.h"
 
@@ -69,7 +69,7 @@ bool TraceFlagList::Set(const char* name, bool enabled) {
     }
     // check for unknowns, but ignore "", to allow to GRPC_TRACE=
     if (!found && 0 != strcmp(name, "")) {
-      gpr_log(GPR_ERROR, "Unknown trace var: '%s'", name);
+      fprintf(stderr, "Unknown trace var: '%s'", name);
       return false; /* early return */
     }
   }
@@ -82,10 +82,10 @@ void TraceFlagList::Add(TraceFlag* flag) {
 }
 
 void TraceFlagList::LogAllTracers() {
-  gpr_log(GPR_DEBUG, "available tracers:");
+  fprintf(stderr, "available tracers:");
   TraceFlag* t;
   for (t = root_tracer_; t != nullptr; t = t->next_tracer_) {
-    gpr_log(GPR_DEBUG, "\t%s", t->name_);
+    fprintf(stderr, "\t%s", t->name_);
   }
 }
 
@@ -104,7 +104,7 @@ static void add(const char* beg, const char* end, char*** ss, size_t* ns) {
   size_t np = n + 1;
   char* s;
   size_t len;
-  GPR_ASSERT(end >= beg);
+  GPR_ASSERT_INTERNAL(end >= beg);
   len = static_cast<size_t>(end - beg);
   s = static_cast<char*>(gpr_malloc(len + 1));
   memcpy(s, beg, len);

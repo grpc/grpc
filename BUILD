@@ -1472,6 +1472,7 @@ grpc_cc_library(
         "gpr_platform",
         "gpr_string",
         "gpr_tls",
+        "grpc_trace",
         "time",
     ],
 )
@@ -1485,8 +1486,8 @@ grpc_cc_library(
     visibility = ["@grpc:trace"],
     deps = [
         "global_config",
+        "gpr_assert_internal",
         "gpr_codegen",
-        "gpr_log",
         "gpr_memory",
         "gpr_timers",
         "grpc_codegen",

@@ -971,6 +971,8 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/socket_notifier.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/thread_pool.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/thread_pool.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/time_util.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/time_util.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/trace.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/trace.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/utils.cc" role="src" />
@@ -1068,8 +1070,6 @@
     <file baseinstalldir="/" name="src/core/lib/gprpp/time.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/time_averaged_stats.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/time_averaged_stats.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gprpp/time_util.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gprpp/time_util.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/unique_type_name.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/work_serializer.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/work_serializer.h" role="src" />
