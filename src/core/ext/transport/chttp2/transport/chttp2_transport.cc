@@ -2464,7 +2464,7 @@ static void continue_read_action_locked(grpc_chttp2_transport* t) {
   GRPC_CLOSURE_INIT(&t->read_action_locked, read_action, t,
                     grpc_schedule_on_exec_ctx);
   grpc_endpoint_read(t->ep, &t->read_buffer, &t->read_action_locked, urgent,
-                     /*min_progress_size=*/1);
+                     grpc_chttp2_min_read_progress_size(t));
 }
 
 // t is reffed prior to calling the first time, and once the callback chain
