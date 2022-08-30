@@ -61,6 +61,7 @@ class ClientAuthFilterTest : public ::testing::Test {
   };
 
   void SetUp() override {
+    target_ = Slice::FromStaticString("localhost:1234");
     channel_creds_.reset(grpc_fake_transport_security_credentials_create());
   }
 
@@ -70,12 +71,17 @@ class ClientAuthFilterTest : public ::testing::Test {
         status_for_call_creds.ok()
             ? nullptr
             : MakeRefCounted<FailCallCreds>(std::move(status_for_call_creds)),
-        "localhost:1234", &args);
+        std::string(target_.as_string_view()).c_str(), &args);
+    auto auth_context = MakeRefCounted<grpc_auth_context>(nullptr);
+    absl::string_view security_level = "TSI_SECURITY_NONE";
+    auth_context->add_property(GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME,
+                               security_level.data(), security_level.size());
     return args
         .SetObject(std::move(security_connector))
-        .SetObject(MakeRefCounted<grpc_auth_context>(nullptr));
+        .SetObject(std::move(auth_context));
   }
 
+  Slice target_;
   RefCountedPtr<grpc_channel_credentials> channel_creds_;
 };
 
@@ -96,6 +102,7 @@ TEST_F(ClientAuthFilterTest, CallCredsFails) {
       ChannelFilter::Args());
   auto arena = MakeScopedArena(1024, g_memory_allocator);
   grpc_metadata_batch initial_metadata_batch(arena.get());
+  initial_metadata_batch.Set(HttpAuthorityMetadata(), target_.Ref());
   grpc_metadata_batch trailing_metadata_batch(arena.get());
   // TODO(ctiller): use Activity here, once it's ready.
   TestContext<Arena> context(arena.get());
@@ -131,6 +138,7 @@ TEST_F(ClientAuthFilterTest, RewritesInvalidStatusFromCallCreds) {
       MakeChannelArgs(absl::AbortedError("nope")), ChannelFilter::Args());
   auto arena = MakeScopedArena(1024, g_memory_allocator);
   grpc_metadata_batch initial_metadata_batch(arena.get());
+  initial_metadata_batch.Set(HttpAuthorityMetadata(), target_.Ref());
   grpc_metadata_batch trailing_metadata_batch(arena.get());
   // TODO(ctiller): use Activity here, once it's ready.
   TestContext<Arena> context(arena.get());
