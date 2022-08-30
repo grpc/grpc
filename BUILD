@@ -188,6 +188,33 @@ GPR_PUBLIC_HDRS = [
     "include/grpc/impl/codegen/sync_windows.h",
 ]
 
+# A unified set of headers for the `gpr_*` targets. This is needed to support layering check.
+# TODO(hork): delete when the 'gpr' target is split up and removed.
+GPR_INTERNAL_HEADERS = [
+    "src/core/lib/gpr/alloc.h",
+    "src/core/lib/gpr/env.h",
+    "src/core/lib/gpr/murmur_hash.h",
+    "src/core/lib/gpr/spinlock.h",
+    "src/core/lib/gpr/string.h",
+    "src/core/lib/gpr/string_windows.h",
+    "src/core/lib/gpr/time_precise.h",
+    "src/core/lib/gpr/tmpfile.h",
+    "src/core/lib/gprpp/fork.h",
+    "src/core/lib/gprpp/global_config.h",
+    "src/core/lib/gprpp/global_config_custom.h",
+    "src/core/lib/gprpp/global_config_env.h",
+    "src/core/lib/gprpp/global_config_generic.h",
+    "src/core/lib/gprpp/host_port.h",
+    "src/core/lib/gprpp/manual_constructor.h",
+    "src/core/lib/gprpp/memory.h",
+    "src/core/lib/gprpp/mpscq.h",
+    "src/core/lib/gprpp/stat.h",
+    "src/core/lib/gprpp/sync.h",
+    "src/core/lib/gprpp/thd.h",
+    "src/core/lib/gprpp/time_util.h",
+    "src/core/lib/profiling/timers.h",
+]
+
 GRPC_PUBLIC_HDRS = [
     "include/grpc/byte_buffer.h",
     "include/grpc/byte_buffer_reader.h",
@@ -900,6 +927,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "gpr",
     srcs = [],
+    hdrs = GPR_INTERNAL_HEADERS,
     language = "c++",
     public_hdrs = GPR_PUBLIC_HDRS,
     tags = [
