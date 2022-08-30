@@ -10566,6 +10566,7 @@ targets:
   - src/core/lib/gprpp/host_port.h
   - src/core/lib/gprpp/memory.h
   - src/core/lib/gprpp/stat.h
+  - src/core/lib/gprpp/sync.h
   - src/core/lib/gprpp/time.h
   - src/core/lib/profiling/timers.h
   - src/core/lib/slice/slice.h
@@ -10590,6 +10591,10 @@ targets:
   - src/core/lib/gpr/string_posix.cc
   - src/core/lib/gpr/string_util_windows.cc
   - src/core/lib/gpr/string_windows.cc
+  - src/core/lib/gpr/sync.cc
+  - src/core/lib/gpr/sync_abseil.cc
+  - src/core/lib/gpr/sync_posix.cc
+  - src/core/lib/gpr/sync_windows.cc
   - src/core/lib/gpr/time.cc
   - src/core/lib/gpr/time_posix.cc
   - src/core/lib/gpr/time_precise.cc
@@ -10611,10 +10616,13 @@ targets:
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/slice/slice_string_helpers_test.cc
   deps:
+  - absl/base:base
   - absl/base:core_headers
   - absl/status:status
   - absl/strings:str_format
   - absl/strings:strings
+  - absl/synchronization:synchronization
+  - absl/time:time
   - absl/types:optional
   - absl/types:variant
   uses_polling: false

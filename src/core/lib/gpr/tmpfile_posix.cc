@@ -18,8 +18,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "log_internal.h"
-
 #ifdef GPR_POSIX_TMPFILE
 
 #include <errno.h>

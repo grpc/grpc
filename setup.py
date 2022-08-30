@@ -442,8 +442,7 @@ def cython_extensions_and_necessity():
     prefix = 'libs/' + config + '/'
     if USE_PREBUILT_GRPC_CORE:
         extra_objects = [
-            prefix + 'libares.a', 
-            prefix + 'libboringssl.a',
+            prefix + 'libares.a', prefix + 'libboringssl.a',
             prefix + 'libgrpc.a'
         ]
         core_c_files = []

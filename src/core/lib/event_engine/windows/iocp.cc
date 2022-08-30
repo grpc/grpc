@@ -22,8 +22,8 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log_windows.h>
 
-#include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/event_engine/time_util.h"
+#include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/event_engine/windows/iocp.h"
 #include "src/core/lib/event_engine/windows/win_socket.h"
 

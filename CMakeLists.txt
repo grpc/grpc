@@ -17400,6 +17400,10 @@ add_executable(slice_string_helpers_test
   src/core/lib/gpr/string_posix.cc
   src/core/lib/gpr/string_util_windows.cc
   src/core/lib/gpr/string_windows.cc
+  src/core/lib/gpr/sync.cc
+  src/core/lib/gpr/sync_abseil.cc
+  src/core/lib/gpr/sync_posix.cc
+  src/core/lib/gpr/sync_windows.cc
   src/core/lib/gpr/time.cc
   src/core/lib/gpr/time_posix.cc
   src/core/lib/gpr/time_precise.cc
@@ -17446,10 +17450,13 @@ target_include_directories(slice_string_helpers_test
 target_link_libraries(slice_string_helpers_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::base
   absl::core_headers
   absl::status
   absl::str_format
   absl::strings
+  absl::synchronization
+  absl::time
   absl::optional
   absl::variant
 )
