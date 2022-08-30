@@ -18,8 +18,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "log_internal.h"
-
 #include "src/core/lib/gpr/log_internal.h"
 #include "src/core/lib/gpr/time_precise.h"
 

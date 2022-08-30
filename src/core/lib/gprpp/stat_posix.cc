@@ -16,8 +16,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <stdio.h>
-
 // IWYU pragma: no_include <bits/struct_stat.h>
 
 #include <string.h>

@@ -705,8 +705,8 @@ libs:
   - src/core/lib/event_engine/windows/win_socket.h
   - src/core/lib/event_engine/windows/windows_engine.h
   - src/core/lib/gpr/alloc.h
-  - src/core/lib/gpr/assert_internal.h
   - src/core/lib/gpr/env.h
+  - src/core/lib/gpr/log_internal.h
   - src/core/lib/gpr/murmur_hash.h
   - src/core/lib/gpr/spinlock.h
   - src/core/lib/gpr/string.h
@@ -2002,8 +2002,8 @@ libs:
   - src/core/lib/event_engine/windows/win_socket.h
   - src/core/lib/event_engine/windows/windows_engine.h
   - src/core/lib/gpr/alloc.h
-  - src/core/lib/gpr/assert_internal.h
   - src/core/lib/gpr/env.h
+  - src/core/lib/gpr/log_internal.h
   - src/core/lib/gpr/murmur_hash.h
   - src/core/lib/gpr/spinlock.h
   - src/core/lib/gpr/string.h
@@ -3763,8 +3763,8 @@ targets:
   headers:
   - src/core/lib/debug/trace.h
   - src/core/lib/gpr/alloc.h
-  - src/core/lib/gpr/assert_internal.h
   - src/core/lib/gpr/env.h
+  - src/core/lib/gpr/log_internal.h
   - src/core/lib/gpr/string.h
   - src/core/lib/gpr/string_windows.h
   - src/core/lib/gpr/time_precise.h
@@ -4181,8 +4181,8 @@ targets:
   - src/core/ext/upb-generated/google/rpc/status.upb.h
   - src/core/lib/debug/trace.h
   - src/core/lib/gpr/alloc.h
-  - src/core/lib/gpr/assert_internal.h
   - src/core/lib/gpr/env.h
+  - src/core/lib/gpr/log_internal.h
   - src/core/lib/gpr/murmur_hash.h
   - src/core/lib/gpr/spinlock.h
   - src/core/lib/gpr/string.h
@@ -5108,8 +5108,8 @@ targets:
   - src/core/ext/upb-generated/google/rpc/status.upb.h
   - src/core/lib/debug/trace.h
   - src/core/lib/gpr/alloc.h
-  - src/core/lib/gpr/assert_internal.h
   - src/core/lib/gpr/env.h
+  - src/core/lib/gpr/log_internal.h
   - src/core/lib/gpr/murmur_hash.h
   - src/core/lib/gpr/spinlock.h
   - src/core/lib/gpr/string.h
@@ -6150,8 +6150,8 @@ targets:
   - src/core/ext/upb-generated/google/rpc/status.upb.h
   - src/core/lib/debug/trace.h
   - src/core/lib/gpr/alloc.h
-  - src/core/lib/gpr/assert_internal.h
   - src/core/lib/gpr/env.h
+  - src/core/lib/gpr/log_internal.h
   - src/core/lib/gpr/murmur_hash.h
   - src/core/lib/gpr/spinlock.h
   - src/core/lib/gpr/string.h
@@ -6482,8 +6482,8 @@ targets:
   - src/core/ext/upb-generated/google/rpc/status.upb.h
   - src/core/lib/debug/trace.h
   - src/core/lib/gpr/alloc.h
-  - src/core/lib/gpr/assert_internal.h
   - src/core/lib/gpr/env.h
+  - src/core/lib/gpr/log_internal.h
   - src/core/lib/gpr/murmur_hash.h
   - src/core/lib/gpr/spinlock.h
   - src/core/lib/gpr/string.h
@@ -6643,8 +6643,8 @@ targets:
   - src/core/ext/upb-generated/google/rpc/status.upb.h
   - src/core/lib/debug/trace.h
   - src/core/lib/gpr/alloc.h
-  - src/core/lib/gpr/assert_internal.h
   - src/core/lib/gpr/env.h
+  - src/core/lib/gpr/log_internal.h
   - src/core/lib/gpr/murmur_hash.h
   - src/core/lib/gpr/spinlock.h
   - src/core/lib/gpr/string.h
@@ -8057,8 +8057,8 @@ targets:
   headers:
   - src/core/lib/debug/trace.h
   - src/core/lib/gpr/alloc.h
-  - src/core/lib/gpr/assert_internal.h
   - src/core/lib/gpr/env.h
+  - src/core/lib/gpr/log_internal.h
   - src/core/lib/gpr/string.h
   - src/core/lib/gpr/string_windows.h
   - src/core/lib/gpr/time_precise.h
@@ -8314,8 +8314,8 @@ targets:
   - src/core/ext/upb-generated/google/rpc/status.upb.h
   - src/core/lib/debug/trace.h
   - src/core/lib/gpr/alloc.h
-  - src/core/lib/gpr/assert_internal.h
   - src/core/lib/gpr/env.h
+  - src/core/lib/gpr/log_internal.h
   - src/core/lib/gpr/murmur_hash.h
   - src/core/lib/gpr/spinlock.h
   - src/core/lib/gpr/string.h
@@ -8468,8 +8468,8 @@ targets:
   - src/core/ext/upb-generated/google/rpc/status.upb.h
   - src/core/lib/debug/trace.h
   - src/core/lib/gpr/alloc.h
-  - src/core/lib/gpr/assert_internal.h
   - src/core/lib/gpr/env.h
+  - src/core/lib/gpr/log_internal.h
   - src/core/lib/gpr/murmur_hash.h
   - src/core/lib/gpr/spinlock.h
   - src/core/lib/gpr/string.h
@@ -8765,8 +8765,8 @@ targets:
   headers:
   - src/core/lib/debug/trace.h
   - src/core/lib/gpr/alloc.h
-  - src/core/lib/gpr/assert_internal.h
   - src/core/lib/gpr/env.h
+  - src/core/lib/gpr/log_internal.h
   - src/core/lib/gpr/string.h
   - src/core/lib/gpr/string_windows.h
   - src/core/lib/gpr/tls.h
@@ -8837,8 +8837,8 @@ targets:
   headers:
   - src/core/lib/debug/trace.h
   - src/core/lib/gpr/alloc.h
-  - src/core/lib/gpr/assert_internal.h
   - src/core/lib/gpr/env.h
+  - src/core/lib/gpr/log_internal.h
   - src/core/lib/gpr/string.h
   - src/core/lib/gpr/string_windows.h
   - src/core/lib/gpr/time_precise.h
@@ -9088,8 +9088,8 @@ targets:
   - src/core/ext/upb-generated/google/rpc/status.upb.h
   - src/core/lib/debug/trace.h
   - src/core/lib/gpr/alloc.h
-  - src/core/lib/gpr/assert_internal.h
   - src/core/lib/gpr/env.h
+  - src/core/lib/gpr/log_internal.h
   - src/core/lib/gpr/murmur_hash.h
   - src/core/lib/gpr/spinlock.h
   - src/core/lib/gpr/string.h
@@ -9248,8 +9248,8 @@ targets:
   - src/core/ext/upb-generated/google/rpc/status.upb.h
   - src/core/lib/debug/trace.h
   - src/core/lib/gpr/alloc.h
-  - src/core/lib/gpr/assert_internal.h
   - src/core/lib/gpr/env.h
+  - src/core/lib/gpr/log_internal.h
   - src/core/lib/gpr/murmur_hash.h
   - src/core/lib/gpr/spinlock.h
   - src/core/lib/gpr/string.h
@@ -9885,8 +9885,8 @@ targets:
   - src/core/ext/upb-generated/google/rpc/status.upb.h
   - src/core/lib/debug/trace.h
   - src/core/lib/gpr/alloc.h
-  - src/core/lib/gpr/assert_internal.h
   - src/core/lib/gpr/env.h
+  - src/core/lib/gpr/log_internal.h
   - src/core/lib/gpr/murmur_hash.h
   - src/core/lib/gpr/spinlock.h
   - src/core/lib/gpr/string.h
@@ -10526,8 +10526,8 @@ targets:
   headers:
   - src/core/lib/debug/trace.h
   - src/core/lib/gpr/alloc.h
-  - src/core/lib/gpr/assert_internal.h
   - src/core/lib/gpr/env.h
+  - src/core/lib/gpr/log_internal.h
   - src/core/lib/gpr/string.h
   - src/core/lib/gpr/string_windows.h
   - src/core/lib/gpr/time_precise.h
@@ -10602,8 +10602,8 @@ targets:
   headers:
   - src/core/lib/debug/trace.h
   - src/core/lib/gpr/alloc.h
-  - src/core/lib/gpr/assert_internal.h
   - src/core/lib/gpr/env.h
+  - src/core/lib/gpr/log_internal.h
   - src/core/lib/gpr/murmur_hash.h
   - src/core/lib/gpr/string.h
   - src/core/lib/gpr/string_windows.h
@@ -11192,8 +11192,8 @@ targets:
   - src/core/lib/event_engine/posix_engine/timer.h
   - src/core/lib/event_engine/posix_engine/timer_heap.h
   - src/core/lib/gpr/alloc.h
-  - src/core/lib/gpr/assert_internal.h
   - src/core/lib/gpr/env.h
+  - src/core/lib/gpr/log_internal.h
   - src/core/lib/gpr/string.h
   - src/core/lib/gpr/string_windows.h
   - src/core/lib/gpr/time_precise.h
@@ -11280,8 +11280,8 @@ targets:
   - src/core/lib/event_engine/posix_engine/timer.h
   - src/core/lib/event_engine/posix_engine/timer_heap.h
   - src/core/lib/gpr/alloc.h
-  - src/core/lib/gpr/assert_internal.h
   - src/core/lib/gpr/env.h
+  - src/core/lib/gpr/log_internal.h
   - src/core/lib/gpr/string.h
   - src/core/lib/gpr/string_windows.h
   - src/core/lib/gpr/time_precise.h
@@ -11383,7 +11383,7 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/gpr/assert_internal.h
+  - src/core/lib/gpr/log_internal.h
   - src/core/lib/gpr/time_precise.h
   - src/core/lib/gpr/useful.h
   - src/core/lib/gprpp/time.h
@@ -11563,8 +11563,8 @@ targets:
   headers:
   - src/core/lib/debug/trace.h
   - src/core/lib/gpr/alloc.h
-  - src/core/lib/gpr/assert_internal.h
   - src/core/lib/gpr/env.h
+  - src/core/lib/gpr/log_internal.h
   - src/core/lib/gpr/string.h
   - src/core/lib/gpr/string_windows.h
   - src/core/lib/gpr/time_precise.h

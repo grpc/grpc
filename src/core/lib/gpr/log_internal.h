@@ -11,8 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef GRPC_CORE_LIB_GPR_ASSERT_INTERNAL_H
-#define GRPC_CORE_LIB_GPR_ASSERT_INTERNAL_H
+#ifndef GRPC_CORE_LIB_GPR_LOG_INTERNAL_H
+#define GRPC_CORE_LIB_GPR_LOG_INTERNAL_H
 
 #include <grpc/support/port_platform.h>
 
@@ -60,4 +60,4 @@ void gpr_log_error_internal(const char* file, int line, const char* message);
 #define GPR_DEBUG_ASSERT_INTERNAL(x)
 #endif
 
-#endif  // GRPC_CORE_LIB_GPR_ASSERT_INTERNAL_H
+#endif  // GRPC_CORE_LIB_GPR_LOG_INTERNAL_H

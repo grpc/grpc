@@ -1986,7 +1986,6 @@ src/core/lib/event_engine/windows/windows_engine.cc \
 src/core/lib/event_engine/windows/windows_engine.h \
 src/core/lib/gpr/alloc.cc \
 src/core/lib/gpr/alloc.h \
-src/core/lib/gpr/assert_internal.h \
 src/core/lib/gpr/atm.cc \
 src/core/lib/gpr/cpu_iphone.cc \
 src/core/lib/gpr/cpu_linux.cc \
@@ -1998,6 +1997,7 @@ src/core/lib/gpr/env_posix.cc \
 src/core/lib/gpr/env_windows.cc \
 src/core/lib/gpr/log.cc \
 src/core/lib/gpr/log_android.cc \
+src/core/lib/gpr/log_internal.h \
 src/core/lib/gpr/log_linux.cc \
 src/core/lib/gpr/log_posix.cc \
 src/core/lib/gpr/log_windows.cc \
