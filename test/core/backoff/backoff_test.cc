@@ -22,9 +22,6 @@
 
 #include <gtest/gtest.h>
 
-#include <grpc/grpc.h>
-#include <grpc/support/log.h>
-
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/util/test_config.h"
