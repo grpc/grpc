@@ -22,7 +22,7 @@
 #import <grpc/grpc_cronet.h>
 #import <grpcpp/create_channel.h>
 #import <grpcpp/impl/codegen/client_context.h>
-#import <grpcpp/impl/codegen/config.h>
+#import <grpcpp/support/config.h>
 #import <grpcpp/resource_quota.h>
 #import <grpcpp/security/cronet_credentials.h>
 #import <grpcpp/server_builder.h>

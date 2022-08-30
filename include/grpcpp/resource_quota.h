@@ -21,8 +21,8 @@
 
 struct grpc_resource_quota;
 
-#include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/grpc_library.h>
+#include <grpcpp/support/config.h>
 
 namespace grpc {
 

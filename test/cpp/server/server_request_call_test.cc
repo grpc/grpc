@@ -22,10 +22,10 @@
 
 #include <grpc/support/log.h>
 #include <grpcpp/create_channel.h>
-#include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
+#include <grpcpp/support/config.h>
 
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
