@@ -341,6 +341,10 @@ def expand_tests_for_each_poller_and_engine_and_experiment(name, srcs, deps, tag
             config = dict(config)
             config["name"] = config["name"] + "@experiment=" + experiment
             config["args"] = config["args"] + ["--experiment=" + experiment]
+            tags = config["tags"]
+            if "bazel_only" not in tags:
+                tags = tags + ["bazel_only"]
+            config["tags"] = tags
             experiment_config.append(config)
 
     return experiment_config
