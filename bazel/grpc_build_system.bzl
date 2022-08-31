@@ -342,9 +342,17 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_event_engin
             config["name"] = config["name"] + "@experiment=" + experiment
             config["args"] = config["args"] + ["--experiment=" + experiment]
             tags = config["tags"]
-            # We don't want to run tests for experiments on cmake builds ever
-            if "bazel_only" not in tags:
-                tags = tags + ["bazel_only"]
+            must_have_tags = [
+                # We don't run experiments on cmake builds
+                "bazel_only",
+                # Nor on windows
+                "no_windows",
+                # Nor on mac
+                "no_mac",
+            ]
+            for tag in must_have_tags:
+                if tag not in tags:
+                    tags = tags + [tag]
             config["tags"] = tags
             experiment_config.append(config)
 
