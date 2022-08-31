@@ -29,12 +29,6 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
-#ifdef GPR_LOW_LEVEL_COUNTERS
-gpr_atm gpr_mu_locks = 0;
-gpr_atm gpr_counter_atm_cas = 0;
-gpr_atm gpr_counter_atm_add = 0;
-#endif
-
 void gpr_mu_init(gpr_mu* mu) {
 #ifdef GRPC_ASAN_ENABLED
   GPR_ASSERT(pthread_mutex_init(&mu->mutex, nullptr) == 0);
@@ -55,9 +49,6 @@ void gpr_mu_destroy(gpr_mu* mu) {
 }
 
 void gpr_mu_lock(gpr_mu* mu) {
-#ifdef GPR_LOW_LEVEL_COUNTERS
-  GPR_ATM_INC_COUNTER(gpr_mu_locks);
-#endif
 #ifdef GRPC_ASAN_ENABLED
   GPR_ASSERT(pthread_mutex_lock(&mu->mutex) == 0);
 #else

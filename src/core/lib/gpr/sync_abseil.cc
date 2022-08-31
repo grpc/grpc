@@ -33,12 +33,6 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
-#ifdef GPR_LOW_LEVEL_COUNTERS
-gpr_atm gpr_mu_locks = 0;
-gpr_atm gpr_counter_atm_cas = 0;
-gpr_atm gpr_counter_atm_add = 0;
-#endif
-
 void gpr_mu_init(gpr_mu* mu) {
   static_assert(sizeof(gpr_mu) == sizeof(absl::Mutex),
                 "gpr_mu and Mutex must be the same size");

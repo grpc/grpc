@@ -207,7 +207,7 @@ PosixOracleEndpoint::PosixOracleEndpoint(int socket_fd)
 
 void PosixOracleEndpoint::Shutdown() {
   absl::MutexLock lock(&mu_);
-  if (absl::exchange(is_shutdown_, true)) {
+  if (std::exchange(is_shutdown_, true)) {
     return;
   }
   read_ops_channel_.Set(ReadOperation());
@@ -298,7 +298,7 @@ PosixOracleListener::PosixOracleListener(
 absl::Status PosixOracleListener::Start() {
   absl::MutexLock lock(&mu_);
   GPR_ASSERT(!listener_fds_.empty());
-  if (absl::exchange(is_started_, true)) {
+  if (std::exchange(is_started_, true)) {
     return absl::InternalError("Cannot start listener more than once ...");
   }
   serve_ = grpc_core::Thread(
