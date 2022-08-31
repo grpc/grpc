@@ -91,7 +91,10 @@ def snake_to_pascal(s):
 def put_banner(files, banner, prefix):
     for f in files:
         for line in banner:
-            print('%s %s' % (prefix, line), file=f)
+            if not line:
+                print(prefix, file=f)
+            else:
+                print('%s %s' % (prefix, line), file=f)
         print(file=f)
 
 
@@ -215,4 +218,11 @@ with open('bazel/experiments.bzl', 'w') as B:
         "\"\"\"Dictionary of tags to experiments so we know when to test different experiments.\"\"\"",
         file=B)
 
-    print("EXPERIMENTS=%r" % dict(tags_to_experiments), file=B)
+    print(file=B)
+    print("EXPERIMENTS = {",file=B)
+    for tag, experiments in sorted(tags_to_experiments.items()):
+        print("  \"%s\": [" % tag, file=B)
+        for experiment in sorted(experiments):
+            print("    \"%s\"," % experiment, file=B)
+        print("  ],", file=B)
+    print("}", file=B)
