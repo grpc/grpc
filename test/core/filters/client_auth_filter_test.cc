@@ -45,8 +45,8 @@ class ClientAuthFilterTest : public ::testing::Test {
     }
 
     ArenaPromise<absl::StatusOr<ClientMetadataHandle>> GetRequestMetadata(
-        ClientMetadataHandle initial_metadata,
-        const GetRequestMetadataArgs* args) override {
+        ClientMetadataHandle /*initial_metadata*/,
+        const GetRequestMetadataArgs* /*args*/) override {
       return Immediate<absl::StatusOr<ClientMetadataHandle>>(status_);
     }
 
@@ -127,7 +127,7 @@ TEST_F(ClientAuthFilterTest, CallCredsFails) {
           ClientMetadataHandle::TestOnlyWrap(&initial_metadata_batch_),
           nullptr,
       },
-      [&](CallArgs call_args) {
+      [&](CallArgs /*call_args*/) {
         return ArenaPromise<ServerMetadataHandle>(
             [&]() -> Poll<ServerMetadataHandle> {
               return ServerMetadataHandle::TestOnlyWrap(
@@ -159,7 +159,7 @@ TEST_F(ClientAuthFilterTest, RewritesInvalidStatusFromCallCreds) {
           ClientMetadataHandle::TestOnlyWrap(&initial_metadata_batch_),
           nullptr,
       },
-      [&](CallArgs call_args) {
+      [&](CallArgs /*call_args*/) {
         return ArenaPromise<ServerMetadataHandle>(
             [&]() -> Poll<ServerMetadataHandle> {
               return ServerMetadataHandle::TestOnlyWrap(
