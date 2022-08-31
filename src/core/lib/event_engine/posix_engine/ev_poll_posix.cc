@@ -27,7 +27,6 @@
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "absl/utility/utility.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/codegen/gpr_types.h>
@@ -62,7 +61,7 @@
 #include "src/core/lib/gprpp/global_config.h"
 #include "src/core/lib/gprpp/time.h"
 
-    GPR_GLOBAL_CONFIG_DECLARE_STRING(grpc_poll_strategy);
+GPR_GLOBAL_CONFIG_DECLARE_STRING(grpc_poll_strategy);
 
 static const intptr_t kClosureNotReady = 0;
 static const intptr_t kClosureReady = 1;
@@ -837,51 +836,50 @@ PollPoller* GetPollPoller(Scheduler* scheduler, bool use_phony_poll) {
 
 #else /* GRPC_POSIX_SOCKET_EV_POLL */
 
-    namespace grpc_event_engine {
-  namespace posix_engine {
+namespace grpc_event_engine {
+namespace posix_engine {
 
-  using ::grpc_event_engine::experimental::EventEngine;
-  using ::grpc_event_engine::experimental::Poller;
+using ::grpc_event_engine::experimental::EventEngine;
+using ::grpc_event_engine::experimental::Poller;
 
-  PollPoller::PollPoller(Scheduler* /* engine */) {
-    GPR_ASSERT(false && "unimplemented");
-  }
+PollPoller::PollPoller(Scheduler* /* engine */) {
+  GPR_ASSERT(false && "unimplemented");
+}
 
-  void PollPoller::Shutdown() { GPR_ASSERT(false && "unimplemented"); }
+void PollPoller::Shutdown() { GPR_ASSERT(false && "unimplemented"); }
 
-  PollPoller::~PollPoller() { GPR_ASSERT(false && "unimplemented"); }
+PollPoller::~PollPoller() { GPR_ASSERT(false && "unimplemented"); }
 
-  EventHandle* PollPoller::CreateHandle(int /*fd*/, absl::string_view /*name*/,
-                                        bool /*track_err*/) {
-    GPR_ASSERT(false && "unimplemented");
-  }
+EventHandle* PollPoller::CreateHandle(int /*fd*/, absl::string_view /*name*/,
+                                      bool /*track_err*/) {
+  GPR_ASSERT(false && "unimplemented");
+}
 
-  Poller::WorkResult PollPoller::Work(EventEngine::Duration /*timeout*/) {
-    GPR_ASSERT(false && "unimplemented");
-  }
+Poller::WorkResult PollPoller::Work(EventEngine::Duration /*timeout*/) {
+  GPR_ASSERT(false && "unimplemented");
+}
 
-  void PollPoller::Kick() { GPR_ASSERT(false && "unimplemented"); }
+void PollPoller::Kick() { GPR_ASSERT(false && "unimplemented"); }
 
-  // If GRPC_LINUX_EPOLL is not defined, it means epoll is not available. Return
-  // nullptr.
-  PollPoller* GetPollPoller(Scheduler* /*scheduler*/,
-                            bool /* use_phony_poll */) {
-    return nullptr;
-  }
+// If GRPC_LINUX_EPOLL is not defined, it means epoll is not available. Return
+// nullptr.
+PollPoller* GetPollPoller(Scheduler* /*scheduler*/, bool /* use_phony_poll */) {
+  return nullptr;
+}
 
-  void PollPoller::KickExternal(bool /*ext*/) {
-    GPR_ASSERT(false && "unimplemented");
-  }
+void PollPoller::KickExternal(bool /*ext*/) {
+  GPR_ASSERT(false && "unimplemented");
+}
 
-  void PollPoller::PollerHandlesListAddHandle(PollEventHandle* /*handle*/) {
-    GPR_ASSERT(false && "unimplemented");
-  }
+void PollPoller::PollerHandlesListAddHandle(PollEventHandle* /*handle*/) {
+  GPR_ASSERT(false && "unimplemented");
+}
 
-  void PollPoller::PollerHandlesListRemoveHandle(PollEventHandle* /*handle*/) {
-    GPR_ASSERT(false && "unimplemented");
-  }
+void PollPoller::PollerHandlesListRemoveHandle(PollEventHandle* /*handle*/) {
+  GPR_ASSERT(false && "unimplemented");
+}
 
-  }  // namespace posix_engine
+}  // namespace posix_engine
 }  // namespace grpc_event_engine
 
 #endif /* GRPC_POSIX_SOCKET_EV_POLL */
