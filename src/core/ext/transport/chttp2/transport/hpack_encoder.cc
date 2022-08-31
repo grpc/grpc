@@ -24,8 +24,6 @@
 #include <cstdint>
 #include <memory>
 
-#include "absl/utility/utility.h"
-
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/log.h>
@@ -663,7 +661,7 @@ HPackCompressor::Framer::Framer(const EncodeHeaderOptions& options,
       stats_(options.stats),
       compressor_(compressor),
       prefix_(BeginFrame()) {
-  if (absl::exchange(compressor_->advertise_table_size_change_, false)) {
+  if (std::exchange(compressor_->advertise_table_size_change_, false)) {
     AdvertiseTableSizeChange();
   }
 }
