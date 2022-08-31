@@ -221,8 +221,8 @@ with open('bazel/experiments.bzl', 'w') as B:
     print(file=B)
     print("EXPERIMENTS = {", file=B)
     for tag, experiments in sorted(tags_to_experiments.items()):
-        print("  \"%s\": [" % tag, file=B)
+        print("    \"%s\": [" % tag, file=B)
         for experiment in sorted(experiments):
-            print("    \"%s\"," % experiment, file=B)
-        print("  ],", file=B)
+            print("        \"%s\"," % experiment, file=B)
+        print("    ],", file=B)
     print("}", file=B)
