@@ -430,8 +430,9 @@ void PriorityLb::ChoosePriorityLocked() {
       GPR_DEBUG_ASSERT(child_config != config_->children().end());
       // TODO(roth): If the child reports a non-OK status with the
       // update, we need to propagate that back to the resolver somehow.
-      child->UpdateLocked(child_config->second.config,
-                          child_config->second.ignore_reresolution_requests);
+      (void)child->UpdateLocked(
+          child_config->second.config,
+          child_config->second.ignore_reresolution_requests);
     } else {
       // The child already exists.  Reactivate if needed.
       child->MaybeReactivateLocked();

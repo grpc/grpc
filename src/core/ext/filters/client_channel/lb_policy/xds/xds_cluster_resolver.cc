@@ -760,7 +760,7 @@ void XdsClusterResolverLb::OnEndpointChanged(size_t index,
   // Update child policy.
   // TODO(roth): If the child policy reports an error with the update,
   // we need to propagate that error back to the resolver somehow.
-  UpdateChildPolicyLocked();
+  (void)UpdateChildPolicyLocked();
 }
 
 void XdsClusterResolverLb::OnError(size_t index, std::string resolution_note) {

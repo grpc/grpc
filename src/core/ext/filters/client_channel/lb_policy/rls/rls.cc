@@ -1811,7 +1811,7 @@ void RlsLb::RlsRequest::OnRlsCallCompleteLocked(grpc_error_handle error) {
   for (ChildPolicyWrapper* child : child_policies_to_finish_update) {
     // TODO(roth): If the child reports an error with the update, we
     // need to propagate that back to the resolver somehow.
-    child->MaybeFinishUpdate();
+    (void)child->MaybeFinishUpdate();
   }
 }
 

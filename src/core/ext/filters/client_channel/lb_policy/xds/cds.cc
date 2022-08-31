@@ -557,7 +557,7 @@ void CdsLb::OnClusterChanged(const std::string& name,
     }
     // TODO(roth): If the child policy reports an error with the update,
     // we need to propagate the error to the resolver somehow.
-    child_policy_->UpdateLocked(std::move(args));
+    (void)child_policy_->UpdateLocked(std::move(args));
   }
   // Remove entries in watchers_ for any clusters not in clusters_added
   for (auto it = watchers_.begin(); it != watchers_.end();) {
