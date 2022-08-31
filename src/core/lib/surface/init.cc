@@ -46,7 +46,6 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/timer_manager.h"
-#include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/security/authorization/grpc_server_authz_filter.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
@@ -154,7 +153,6 @@ void grpc_init(void) {
     grpc_fork_handlers_auto_register();
     grpc_core::ApplicationCallbackExecCtx::GlobalInit();
     grpc_iomgr_init();
-    gpr_timers_global_init();
     for (int i = 0; i < g_number_of_plugins; i++) {
       if (g_all_of_the_plugins[i].init != nullptr) {
         g_all_of_the_plugins[i].init();
@@ -183,7 +181,6 @@ void grpc_shutdown_internal_locked(void)
     }
     grpc_event_engine::experimental::ResetDefaultEventEngine();
     grpc_iomgr_shutdown();
-    gpr_timers_global_destroy();
     grpc_tracer_shutdown();
     grpc_core::Fork::GlobalShutdown();
   }
