@@ -19,8 +19,10 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <functional>
 #include <string>
 
+#include "absl/status/status.h"
 #include "absl/status/statusor.h"
 
 #include "src/core/lib/channel/channel_args.h"
@@ -67,6 +69,14 @@ class Resolver : public InternallyRefCounted<Resolver> {
     // TODO(roth): Before making this a public API, figure out a way to
     // avoid exposing channel args this way.
     ChannelArgs args;
+    // If non-null, this callback will be invoked when the LB policy has
+    // processed the result.  The status value passed to the callback
+    // indicates whether the LB policy accepted the update.  For polling
+    // resolvers, if the reported status is non-OK, then the resolver
+    // should put itself into backoff to retry the resolution later.
+    // The resolver impl must not call ResultHandler::ReportResult()
+    // again until after this callback has been invoked.
+    std::function<void(absl::Status)> result_health_callback;
   };
 
   /// A proxy object used by the resolver to return results to the

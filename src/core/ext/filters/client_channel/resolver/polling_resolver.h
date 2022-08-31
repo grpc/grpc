@@ -77,6 +77,8 @@ class PollingResolver : public Resolver {
 
   void OnRequestCompleteLocked(Result result);
 
+  void GetResultStatus(absl::Status status);
+
   static void OnNextResolution(void* arg, grpc_error_handle error);
   void OnNextResolutionLocked(grpc_error_handle error);
 

@@ -126,42 +126,65 @@ void PollingResolver::OnRequestCompleteLocked(Result result) {
   }
   request_.reset();
   if (!shutdown_) {
-    if (result.service_config.ok() && result.addresses.ok()) {
-      // Reset backoff state so that we start from the beginning when the
-      // next request gets triggered.
-      backoff_.Reset();
-    } else {
-      if (GPR_UNLIKELY(tracer_ != nullptr && tracer_->enabled())) {
-        gpr_log(GPR_INFO,
-                "[polling resolver %p] resolution failed (will retry): "
-                "address status \"%s\"; service config status \"%s\"",
-                this, result.addresses.status().ToString().c_str(),
-                result.service_config.status().ToString().c_str());
-      }
-      // Set up for retry.
-      // InvalidateNow to avoid getting stuck re-initializing this timer
-      // in a loop while draining the currently-held WorkSerializer.
-      // Also see https://github.com/grpc/grpc/issues/26079.
-      ExecCtx::Get()->InvalidateNow();
-      Timestamp next_try = backoff_.NextAttemptTime();
-      Duration timeout = next_try - ExecCtx::Get()->Now();
-      GPR_ASSERT(!have_next_resolution_timer_);
-      have_next_resolution_timer_ = true;
-      if (GPR_UNLIKELY(tracer_ != nullptr && tracer_->enabled())) {
-        if (timeout > Duration::Zero()) {
-          gpr_log(GPR_INFO, "[polling resolver %p] retrying in %" PRId64 " ms",
-                  this, timeout.millis());
-        } else {
-          gpr_log(GPR_INFO, "[polling resolver %p] retrying immediately", this);
-        }
-      }
-      Ref(DEBUG_LOCATION, "next_resolution_timer").release();
-      GRPC_CLOSURE_INIT(&on_next_resolution_, OnNextResolution, this, nullptr);
-      grpc_timer_init(&next_resolution_timer_, next_try, &on_next_resolution_);
+    if (GPR_UNLIKELY(tracer_ != nullptr && tracer_->enabled())) {
+      gpr_log(GPR_INFO,
+              "[polling resolver %p] returning result: "
+              "addresses=%s, service_config=%s",
+              this,
+              result.addresses.ok()
+                  ? absl::StrCat("<", result.addresses->size(), " addresses>")
+                        .c_str()
+                  : result.addresses.status().ToString().c_str(),
+              result.service_config.ok()
+                  ? (*result.service_config == nullptr
+                         ? "<null>"
+                         : std::string((*result.service_config)->json_string())
+                               .c_str())
+                  : result.service_config.status().ToString().c_str());
     }
+    GPR_ASSERT(result.result_health_callback == nullptr);
+    RefCountedPtr<PollingResolver> self =
+        Ref(DEBUG_LOCATION, "result_health_callback");
+    result.result_health_callback =
+        [self = std::move(self)](absl::Status status) {
+          self->GetResultStatus(std::move(status));
+        };
     result_handler_->ReportResult(std::move(result));
   }
   Unref(DEBUG_LOCATION, "OnRequestComplete");
+}
+
+void PollingResolver::GetResultStatus(absl::Status status) {
+  if (GPR_UNLIKELY(tracer_ != nullptr && tracer_->enabled())) {
+    gpr_log(GPR_INFO, "[polling resolver %p] result status from channel: %s",
+            this, status.ToString().c_str());
+  }
+  if (status.ok()) {
+    // Reset backoff state so that we start from the beginning when the
+    // next request gets triggered.
+    backoff_.Reset();
+  } else {
+    // Set up for retry.
+    // InvalidateNow to avoid getting stuck re-initializing this timer
+    // in a loop while draining the currently-held WorkSerializer.
+    // Also see https://github.com/grpc/grpc/issues/26079.
+    ExecCtx::Get()->InvalidateNow();
+    Timestamp next_try = backoff_.NextAttemptTime();
+    Duration timeout = next_try - ExecCtx::Get()->Now();
+    GPR_ASSERT(!have_next_resolution_timer_);
+    have_next_resolution_timer_ = true;
+    if (GPR_UNLIKELY(tracer_ != nullptr && tracer_->enabled())) {
+      if (timeout > Duration::Zero()) {
+        gpr_log(GPR_INFO, "[polling resolver %p] retrying in %" PRId64 " ms",
+                this, timeout.millis());
+      } else {
+        gpr_log(GPR_INFO, "[polling resolver %p] retrying immediately", this);
+      }
+    }
+    Ref(DEBUG_LOCATION, "next_resolution_timer").release();
+    GRPC_CLOSURE_INIT(&on_next_resolution_, OnNextResolution, this, nullptr);
+    grpc_timer_init(&next_resolution_timer_, next_try, &on_next_resolution_);
+  }
 }
 
 void PollingResolver::MaybeStartResolvingLocked() {
