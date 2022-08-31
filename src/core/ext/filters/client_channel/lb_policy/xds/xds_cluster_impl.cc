@@ -270,8 +270,8 @@ class XdsClusterImplLb : public LoadBalancingPolicy {
   OrphanablePtr<LoadBalancingPolicy> CreateChildPolicyLocked(
       const ChannelArgs& args);
   absl::Status UpdateChildPolicyLocked(
-      absl::StatusOr<ServerAddressList> addresses,
-      std::string resolution_note, const ChannelArgs& args);
+      absl::StatusOr<ServerAddressList> addresses, std::string resolution_note,
+      const ChannelArgs& args);
 
   void MaybeUpdatePickerLocked();
 
