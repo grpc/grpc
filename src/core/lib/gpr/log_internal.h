@@ -15,6 +15,7 @@
 #define GRPC_CORE_LIB_GPR_LOG_INTERNAL_H
 
 #include <grpc/support/port_platform.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 

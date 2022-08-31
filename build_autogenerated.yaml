@@ -208,8 +208,6 @@ libs:
   headers:
   - src/core/lib/gpr/alloc.h
   - src/core/lib/gpr/env.h
-  - src/core/lib/gpr/murmur_hash.h
-  - src/core/lib/gpr/spinlock.h
   - src/core/lib/gpr/string.h
   - src/core/lib/gpr/string_windows.h
   - src/core/lib/gpr/time_precise.h
@@ -224,7 +222,6 @@ libs:
   - src/core/lib/gprpp/global_config_env.h
   - src/core/lib/gprpp/global_config_generic.h
   - src/core/lib/gprpp/host_port.h
-  - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/memory.h
   - src/core/lib/gprpp/mpscq.h
   - src/core/lib/gprpp/stat.h
@@ -246,7 +243,6 @@ libs:
   - src/core/lib/gpr/log_linux.cc
   - src/core/lib/gpr/log_posix.cc
   - src/core/lib/gpr/log_windows.cc
-  - src/core/lib/gpr/murmur_hash.cc
   - src/core/lib/gpr/string.cc
   - src/core/lib/gpr/string_posix.cc
   - src/core/lib/gpr/string_util_windows.cc
@@ -335,7 +331,6 @@ libs:
   - include/grpc/slice_buffer.h
   - include/grpc/status.h
   - include/grpc/support/alloc.h
-  - include/grpc/support/atm.h
   - include/grpc/support/atm_gcc_atomic.h
   - include/grpc/support/atm_gcc_sync.h
   - include/grpc/support/atm_windows.h
@@ -795,12 +790,15 @@ libs:
   - src/core/lib/event_engine/windows/iocp.h
   - src/core/lib/event_engine/windows/win_socket.h
   - src/core/lib/event_engine/windows/windows_engine.h
+  - src/core/lib/gpr/murmur_hash.h
+  - src/core/lib/gpr/spinlock.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/chunked_vector.h
   - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/debug_location.h
   - src/core/lib/gprpp/dual_ref_counted.h
+  - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/match.h
   - src/core/lib/gprpp/no_destruct.h
   - src/core/lib/gprpp/orphanable.h
@@ -1496,6 +1494,7 @@ libs:
   - src/core/lib/event_engine/windows/iocp.cc
   - src/core/lib/event_engine/windows/win_socket.cc
   - src/core/lib/event_engine/windows/windows_engine.cc
+  - src/core/lib/gpr/murmur_hash.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/gprpp/time_averaged_stats.cc
@@ -1855,7 +1854,6 @@ libs:
   - include/grpc/slice_buffer.h
   - include/grpc/status.h
   - include/grpc/support/alloc.h
-  - include/grpc/support/atm.h
   - include/grpc/support/atm_gcc_atomic.h
   - include/grpc/support/atm_gcc_sync.h
   - include/grpc/support/atm_windows.h
@@ -2010,12 +2008,15 @@ libs:
   - src/core/lib/event_engine/windows/iocp.h
   - src/core/lib/event_engine/windows/win_socket.h
   - src/core/lib/event_engine/windows/windows_engine.h
+  - src/core/lib/gpr/murmur_hash.h
+  - src/core/lib/gpr/spinlock.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/chunked_vector.h
   - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/debug_location.h
   - src/core/lib/gprpp/dual_ref_counted.h
+  - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/match.h
   - src/core/lib/gprpp/no_destruct.h
   - src/core/lib/gprpp/orphanable.h
@@ -2351,6 +2352,7 @@ libs:
   - src/core/lib/event_engine/windows/iocp.cc
   - src/core/lib/event_engine/windows/win_socket.cc
   - src/core/lib/event_engine/windows/windows_engine.cc
+  - src/core/lib/gpr/murmur_hash.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/gprpp/time_averaged_stats.cc
@@ -4043,10 +4045,13 @@ targets:
   - src/core/ext/upb-generated/google/protobuf/any.upb.h
   - src/core/ext/upb-generated/google/rpc/status.upb.h
   - src/core/lib/debug/trace.h
+  - src/core/lib/gpr/murmur_hash.h
+  - src/core/lib/gpr/spinlock.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/debug_location.h
+  - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/no_destruct.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
@@ -4090,6 +4095,7 @@ targets:
   - src/core/ext/upb-generated/google/rpc/status.upb.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/memory_allocator.cc
+  - src/core/lib/gpr/murmur_hash.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/iomgr/combiner.cc
@@ -4890,11 +4896,14 @@ targets:
   - src/core/ext/upb-generated/google/protobuf/any.upb.h
   - src/core/ext/upb-generated/google/rpc/status.upb.h
   - src/core/lib/debug/trace.h
+  - src/core/lib/gpr/murmur_hash.h
+  - src/core/lib/gpr/spinlock.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/chunked_vector.h
   - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/debug_location.h
+  - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/no_destruct.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
@@ -4936,6 +4945,7 @@ targets:
   - src/core/ext/upb-generated/google/rpc/status.upb.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/memory_allocator.cc
+  - src/core/lib/gpr/murmur_hash.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/iomgr/combiner.cc
@@ -5854,9 +5864,12 @@ targets:
   - src/core/ext/upb-generated/google/protobuf/any.upb.h
   - src/core/ext/upb-generated/google/rpc/status.upb.h
   - src/core/lib/debug/trace.h
+  - src/core/lib/gpr/murmur_hash.h
+  - src/core/lib/gpr/spinlock.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/debug_location.h
+  - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/no_destruct.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
@@ -5886,6 +5899,7 @@ targets:
   - src/core/ext/upb-generated/google/protobuf/any.upb.c
   - src/core/ext/upb-generated/google/rpc/status.upb.c
   - src/core/lib/debug/trace.cc
+  - src/core/lib/gpr/murmur_hash.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/iomgr/combiner.cc
@@ -6109,10 +6123,13 @@ targets:
   - src/core/ext/upb-generated/google/protobuf/any.upb.h
   - src/core/ext/upb-generated/google/rpc/status.upb.h
   - src/core/lib/debug/trace.h
+  - src/core/lib/gpr/murmur_hash.h
+  - src/core/lib/gpr/spinlock.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/debug_location.h
+  - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/no_destruct.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
@@ -6156,6 +6173,7 @@ targets:
   - src/core/ext/upb-generated/google/rpc/status.upb.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/memory_allocator.cc
+  - src/core/lib/gpr/murmur_hash.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/iomgr/combiner.cc
@@ -6193,10 +6211,13 @@ targets:
   - src/core/ext/upb-generated/google/protobuf/any.upb.h
   - src/core/ext/upb-generated/google/rpc/status.upb.h
   - src/core/lib/debug/trace.h
+  - src/core/lib/gpr/murmur_hash.h
+  - src/core/lib/gpr/spinlock.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/debug_location.h
+  - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/no_destruct.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
@@ -6246,6 +6267,7 @@ targets:
   - src/core/ext/upb-generated/google/rpc/status.upb.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/memory_allocator.cc
+  - src/core/lib/gpr/murmur_hash.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/iomgr/combiner.cc
@@ -7712,9 +7734,12 @@ targets:
   - src/core/ext/upb-generated/google/protobuf/any.upb.h
   - src/core/ext/upb-generated/google/rpc/status.upb.h
   - src/core/lib/debug/trace.h
+  - src/core/lib/gpr/murmur_hash.h
+  - src/core/lib/gpr/spinlock.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/debug_location.h
+  - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/no_destruct.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
@@ -7753,6 +7778,7 @@ targets:
   - src/core/ext/upb-generated/google/rpc/status.upb.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/memory_allocator.cc
+  - src/core/lib/gpr/murmur_hash.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/iomgr/combiner.cc
@@ -7789,9 +7815,12 @@ targets:
   - src/core/ext/upb-generated/google/protobuf/any.upb.h
   - src/core/ext/upb-generated/google/rpc/status.upb.h
   - src/core/lib/debug/trace.h
+  - src/core/lib/gpr/murmur_hash.h
+  - src/core/lib/gpr/spinlock.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/debug_location.h
+  - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/no_destruct.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
@@ -7831,6 +7860,7 @@ targets:
   - src/core/ext/upb-generated/google/rpc/status.upb.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/memory_allocator.cc
+  - src/core/lib/gpr/murmur_hash.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/iomgr/combiner.cc
@@ -8225,8 +8255,11 @@ targets:
   - src/core/ext/upb-generated/google/protobuf/any.upb.h
   - src/core/ext/upb-generated/google/rpc/status.upb.h
   - src/core/lib/debug/trace.h
+  - src/core/lib/gpr/murmur_hash.h
+  - src/core/lib/gpr/spinlock.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/debug_location.h
+  - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/status_helper.h
   - src/core/lib/gprpp/time.h
   - src/core/lib/iomgr/closure.h
@@ -8246,6 +8279,7 @@ targets:
   - src/core/ext/upb-generated/google/protobuf/any.upb.c
   - src/core/ext/upb-generated/google/rpc/status.upb.c
   - src/core/lib/debug/trace.cc
+  - src/core/lib/gpr/murmur_hash.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/iomgr/combiner.cc
@@ -8308,10 +8342,13 @@ targets:
   - src/core/ext/upb-generated/google/protobuf/any.upb.h
   - src/core/ext/upb-generated/google/rpc/status.upb.h
   - src/core/lib/debug/trace.h
+  - src/core/lib/gpr/murmur_hash.h
+  - src/core/lib/gpr/spinlock.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/debug_location.h
+  - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/no_destruct.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
@@ -8359,6 +8396,7 @@ targets:
   - src/core/ext/upb-generated/google/rpc/status.upb.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/memory_allocator.cc
+  - src/core/lib/gpr/murmur_hash.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/iomgr/combiner.cc
@@ -8863,10 +8901,13 @@ targets:
   - src/core/ext/upb-generated/google/protobuf/any.upb.h
   - src/core/ext/upb-generated/google/rpc/status.upb.h
   - src/core/lib/debug/trace.h
+  - src/core/lib/gpr/murmur_hash.h
+  - src/core/lib/gpr/spinlock.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/debug_location.h
+  - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/no_destruct.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
@@ -8907,6 +8948,7 @@ targets:
   - src/core/ext/upb-generated/google/rpc/status.upb.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/memory_allocator.cc
+  - src/core/lib/gpr/murmur_hash.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/iomgr/combiner.cc
@@ -9447,12 +9489,14 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/lib/gpr/murmur_hash.h
   - src/core/lib/slice/slice.h
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
   src:
+  - src/core/lib/gpr/murmur_hash.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
