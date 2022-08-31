@@ -24,10 +24,10 @@
 #include <stdlib.h>
 
 #include <new>
+#include <utility>
 
 #include "absl/meta/type_traits.h"
 #include "absl/types/optional.h"
-#include "absl/utility/utility.h"
 
 #include <grpc/compression.h>
 #include <grpc/impl/codegen/compression_types.h>
@@ -203,7 +203,7 @@ void CallData::FinishSendMessage(grpc_call_element* elem) {
       }
     }
   }
-  grpc_call_next_op(elem, absl::exchange(send_message_batch_, nullptr));
+  grpc_call_next_op(elem, std::exchange(send_message_batch_, nullptr));
 }
 
 void CallData::FailSendMessageBatchInCallCombiner(void* calld_arg,
