@@ -51,6 +51,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -96,12 +97,6 @@ typedef size_t msg_iovlen_type;
 #endif
 
 extern grpc_core::TraceFlag grpc_tcp_trace;
-
-GPR_GLOBAL_CONFIG_DECLARE_BOOL(grpc_experimental_enable_tcp_frame_size_tuning);
-GPR_GLOBAL_CONFIG_DEFINE_BOOL(
-    grpc_experimental_tcp_read_chunks, false,
-    "Allocate only 8kb or 64kb chunks for TCP reads to reduce pressure on "
-    "malloc to recycle arbitrary large blocks");
 
 namespace grpc_core {
 
@@ -469,12 +464,6 @@ using grpc_core::TcpZerocopySendCtx;
 using grpc_core::TcpZerocopySendRecord;
 
 namespace {
-
-bool ExperimentalTcpFrameSizeTuningEnabled() {
-  static const bool kEnableTcpFrameSizeTuning =
-      GPR_GLOBAL_CONFIG_GET(grpc_experimental_enable_tcp_frame_size_tuning);
-  return kEnableTcpFrameSizeTuning;
-}
 
 struct grpc_tcp {
   grpc_tcp(int max_sends, size_t send_bytes_threshold)
@@ -1053,9 +1042,7 @@ static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error)
 
 static void maybe_make_read_slices(grpc_tcp* tcp)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(tcp->read_mu) {
-  static const bool kChunkedAlloc =
-      GPR_GLOBAL_CONFIG_GET(grpc_experimental_tcp_read_chunks);
-  if (kChunkedAlloc) {
+  if (grpc_core::IsTcpReadChunksEnabled()) {
     static const int kBigAlloc = 64 * 1024;
     static const int kSmallAlloc = 8 * 1024;
     if (tcp->incoming_buffer->length <
@@ -2047,7 +2034,7 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   tcp->socket_ts_enabled = false;
   tcp->ts_capable = true;
   tcp->outgoing_buffer_arg = nullptr;
-  tcp->frame_size_tuning_enabled = ExperimentalTcpFrameSizeTuningEnabled();
+  tcp->frame_size_tuning_enabled = grpc_core::IsTcpFrameSizeTuningEnabled();
   tcp->min_progress_size = 1;
   if (tcp_tx_zerocopy_enabled && !tcp->tcp_zerocopy_send_ctx.memory_limited()) {
 #ifdef GRPC_LINUX_ERRQUEUE
