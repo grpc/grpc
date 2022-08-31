@@ -26,10 +26,16 @@ const char* const description_tcp_frame_size_tuning =
     "would not indicate completion of a read operation until a specified "
     "number of bytes have been read over the socket. Buffers are also "
     "allocated according to estimated RPC sizes.";
-}
+const char* const description_promise_based_client_call =
+    "If set, use the new gRPC promise based call code when it's appropriate "
+    "(ie when all filters in a stack are promise based)";
+}  // namespace
 
 GPR_GLOBAL_CONFIG_DEFINE_BOOL(grpc_experimental_enable_tcp_frame_size_tuning,
                               false, description_tcp_frame_size_tuning);
+GPR_GLOBAL_CONFIG_DEFINE_BOOL(
+    grpc_experimental_enable_promise_based_client_call, false,
+    description_promise_based_client_call);
 
 namespace grpc_core {
 
@@ -38,10 +44,17 @@ bool IsTcpFrameSizeTuningEnabled() {
       GPR_GLOBAL_CONFIG_GET(grpc_experimental_enable_tcp_frame_size_tuning);
   return enabled;
 }
+bool IsPromiseBasedClientCallEnabled() {
+  static const bool enabled =
+      GPR_GLOBAL_CONFIG_GET(grpc_experimental_enable_promise_based_client_call);
+  return enabled;
+}
 
 const ExperimentMetadata g_experiment_metadata[] = {
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning, false,
      IsTcpFrameSizeTuningEnabled},
+    {"promise_based_client_call", description_promise_based_client_call, false,
+     IsPromiseBasedClientCallEnabled},
 };
 
 }  // namespace grpc_core

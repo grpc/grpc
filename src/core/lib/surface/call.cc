@@ -64,6 +64,7 @@
 #include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gpr/alloc.h"
 #include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gpr/useful.h"
@@ -102,9 +103,6 @@ grpc_core::TraceFlag grpc_call_error_trace(false, "call_error");
 grpc_core::TraceFlag grpc_compression_trace(false, "compression");
 grpc_core::TraceFlag grpc_call_trace(false, "call");
 grpc_core::TraceFlag grpc_call_refcount_trace(false, "call_refcount");
-
-GPR_GLOBAL_CONFIG_DEFINE_BOOL(grpc_experimental_enable_promise_based_call, true,
-                              "enable promise based calls");
 
 namespace grpc_core {
 
@@ -203,6 +201,8 @@ class Call : public CppImplOf<Call, grpc_call> {
   void set_send_deadline(Timestamp send_deadline) {
     send_deadline_ = send_deadline;
   }
+
+  void ClearPeerString() { gpr_atm_rel_store(&peer_string_, 0); }
 
  private:
   RefCountedPtr<Channel> channel_;
@@ -837,7 +837,7 @@ void FilterStackCall::CancelWithError(grpc_error_handle error) {
     GRPC_ERROR_UNREF(error);
     return;
   }
-  gpr_atm_rel_store(&peer_string_, 0);
+  ClearPeerString();
   InternalRef("termination");
   // Inform the call combiner of the cancellation, so that it can cancel
   // any in-flight asynchronous actions that may be holding the call
@@ -2823,9 +2823,8 @@ size_t grpc_call_get_initial_size_estimate() {
 
 grpc_error_handle grpc_call_create(grpc_call_create_args* args,
                                    grpc_call** out_call) {
-  static const bool kAllowPromises =
-      GPR_GLOBAL_CONFIG_GET(grpc_experimental_enable_promise_based_call);
-  if (kAllowPromises && args->channel->is_promising()) {
+  if (grpc_core::IsPromiseBasedClientCallEnabled() &&
+      args->channel->is_promising()) {
     if (args->server_transport_data == nullptr) {
       return grpc_core::MakePromiseBasedCall<grpc_core::ClientPromiseBasedCall>(
           args, out_call);
