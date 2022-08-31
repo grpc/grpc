@@ -1164,9 +1164,11 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
     grpc_error_handle cl_err =
         grpc_core::internal::StatusMoveFromHeapPtr(closure->error_data.error);
     if (GRPC_ERROR_IS_NONE(cl_err)) {
-      cl_err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat("Error in HTTP transport completing operation: ", desc,
-                       " write_state=", write_state_name(t->write_state)));
+      cl_err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(absl::StrCat(
+          "Error in HTTP transport completing operation: ", desc,
+          " write_state=", write_state_name(t->write_state), " refs=",
+          closure->next_data.scratch / CLOSURE_BARRIER_FIRST_REF_BIT, " flags=",
+          closure->next_data.scratch % CLOSURE_BARRIER_FIRST_REF_BIT));
       cl_err = grpc_error_set_str(cl_err, GRPC_ERROR_STR_TARGET_ADDRESS,
                                   t->peer_string);
     }
