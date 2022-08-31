@@ -20,10 +20,13 @@
 
 #include <inttypes.h>
 
+#include <functional>
 #include <utility>
+#include <vector>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
 
@@ -36,6 +39,7 @@
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/service_config/service_config.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 namespace grpc_core {
@@ -145,10 +149,10 @@ void PollingResolver::OnRequestCompleteLocked(Result result) {
     GPR_ASSERT(result.result_health_callback == nullptr);
     RefCountedPtr<PollingResolver> self =
         Ref(DEBUG_LOCATION, "result_health_callback");
-    result.result_health_callback =
-        [self = std::move(self)](absl::Status status) {
-          self->GetResultStatus(std::move(status));
-        };
+    result.result_health_callback = [self =
+                                         std::move(self)](absl::Status status) {
+      self->GetResultStatus(std::move(status));
+    };
     result_handler_->ReportResult(std::move(result));
   }
   Unref(DEBUG_LOCATION, "OnRequestComplete");

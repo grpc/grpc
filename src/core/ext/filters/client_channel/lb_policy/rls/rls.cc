@@ -2009,8 +2009,8 @@ absl::Status RlsLb::UpdateLocked(UpdateArgs args) {
     }
     absl::Status status = default_child_policy_->MaybeFinishUpdate();
     if (!status.ok()) {
-      errors.emplace_back(absl::StrCat(
-          "target ", config_->default_target(), ": ", status.ToString()));
+      errors.emplace_back(absl::StrCat("target ", config_->default_target(),
+                                       ": ", status.ToString()));
     }
   }
   update_in_progress_ = false;

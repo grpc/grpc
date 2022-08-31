@@ -336,8 +336,8 @@ absl::Status WeightedTargetLb::UpdateLocked(UpdateArgs args) {
     } else {
       addresses = address_map.status();
     }
-    absl::Status status = target->UpdateLocked(
-        config, std::move(addresses), args.resolution_note, args.args);
+    absl::Status status = target->UpdateLocked(config, std::move(addresses),
+                                               args.resolution_note, args.args);
     if (!status.ok()) {
       errors.emplace_back(
           absl::StrCat("child ", name, ": ", status.ToString()));
