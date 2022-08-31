@@ -305,10 +305,10 @@ def grpc_cc_library(name,
     for src in hdrs + public_hdrs + srcs:
         filename = '%s%s' % ((parsing_path + '/' if parsing_path else ''), src)
         for line in open(filename):
-            m = re.search(r'#include <(.*)>', line)
+            m = re.search(r'^#include <(.*)>', line)
             if m:
                 inc.add(m.group(1))
-            m = re.search(r'#include "(.*)"', line)
+            m = re.search(r'^#include "(.*)"', line)
             if m:
                 inc.add(m.group(1))
             if 'grpc::g_glip' in line or 'grpc::g_core_codegen_interface' in line:

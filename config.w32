@@ -583,8 +583,6 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\load_balancing\\lb_policy.cc " +
     "src\\core\\lib\\load_balancing\\lb_policy_registry.cc " +
     "src\\core\\lib\\matchers\\matchers.cc " +
-    "src\\core\\lib\\profiling\\basic_timers.cc " +
-    "src\\core\\lib\\profiling\\stap_timers.cc " +
     "src\\core\\lib\\promise\\activity.cc " +
     "src\\core\\lib\\promise\\sleep.cc " +
     "src\\core\\lib\\resolver\\resolver.cc " +
@@ -1463,7 +1461,6 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\json");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\load_balancing");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\matchers");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\profiling");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\promise");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\resolver");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\resource_quota");

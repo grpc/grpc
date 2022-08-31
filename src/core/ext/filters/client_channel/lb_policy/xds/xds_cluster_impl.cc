@@ -50,6 +50,7 @@
 #include "src/core/ext/xds/xds_client_stats.h"
 #include "src/core/ext/xds/xds_endpoint.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -106,7 +107,8 @@ class CircuitBreakerCallCounterMap {
   std::map<Key, CallCounter*> map_ ABSL_GUARDED_BY(mu_);
 };
 
-CircuitBreakerCallCounterMap* g_call_counter_map = nullptr;
+CircuitBreakerCallCounterMap* const g_call_counter_map =
+    new CircuitBreakerCallCounterMap;
 
 RefCountedPtr<CircuitBreakerCallCounterMap::CallCounter>
 CircuitBreakerCallCounterMap::GetOrCreate(const std::string& cluster,
@@ -724,8 +726,9 @@ class XdsClusterImplLbFactory : public LoadBalancingPolicyFactory {
     if (it == json.object_value().end()) {
       errors.emplace_back("field:childPolicy error:required field missing");
     } else {
-      auto config =
-          LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(it->second);
+      auto config = CoreConfiguration::Get()
+                        .lb_policy_registry()
+                        .ParseLoadBalancingConfig(it->second);
       if (!config.ok()) {
         errors.emplace_back(absl::StrCat("field:childPolicy error:",
                                          config.status().message()));
@@ -863,19 +866,9 @@ class XdsClusterImplLbFactory : public LoadBalancingPolicyFactory {
 
 }  // namespace
 
+void RegisterXdsClusterImplLbPolicy(CoreConfiguration::Builder* builder) {
+  builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
+      absl::make_unique<XdsClusterImplLbFactory>());
+}
+
 }  // namespace grpc_core
-
-//
-// Plugin registration
-//
-
-void grpc_lb_policy_xds_cluster_impl_init() {
-  grpc_core::g_call_counter_map = new grpc_core::CircuitBreakerCallCounterMap();
-  grpc_core::LoadBalancingPolicyRegistry::Builder::
-      RegisterLoadBalancingPolicyFactory(
-          absl::make_unique<grpc_core::XdsClusterImplLbFactory>());
-}
-
-void grpc_lb_policy_xds_cluster_impl_shutdown() {
-  delete grpc_core::g_call_counter_map;
-}

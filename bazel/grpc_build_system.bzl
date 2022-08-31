@@ -104,6 +104,7 @@ def _update_visibility(visibility):
         "tsi_interface": PRIVATE,
         "tsi": PRIVATE,
         "xds": PRIVATE,
+        "xds_client_core": PRIVATE,
     }
     final_visibility = []
     for rule in visibility:

@@ -47,6 +47,21 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "timer_manager_test",
+    srcs = ["timer_manager_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:common_event_engine_closures",
+        "//:exec_ctx",
+        "//:posix_event_engine_timer_manager",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "event_poller_posix_test",
     srcs = ["event_poller_posix_test.cc"],
     external_deps = ["gtest"],
