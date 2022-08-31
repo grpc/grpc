@@ -53,6 +53,9 @@ for attr in attrs:
     if 'expiry' not in attr:
         print("no expiry for experiment %s" % attr['name'])
         error = True
+    if 'owner' not in attr:
+        print("no owner for experiment %s" % attr['name'])
+        error = True
     expiry = datetime.datetime.strptime(attr['expiry'], '%Y/%m/%d').date()
     if expiry < today:
         print("experiment %s expired on %s" % (attr['name'], attr['expiry']))
