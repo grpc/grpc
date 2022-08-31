@@ -39,7 +39,7 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h"
 #include "src/core/ext/xds/certificate_provider_store.h"
-#include "src/core/ext/xds/xds_bootstrap.h"
+#include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_certificate_provider.h"
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_client_grpc.h"
@@ -47,6 +47,7 @@
 #include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/ext/xds/xds_resource_type_impl.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -444,8 +445,8 @@ absl::StatusOr<bool> CdsLb::GenerateDiscoveryMechanismForCluster(
       break;
   }
   if (state.update->lrs_load_reporting_server.has_value()) {
-    mechanism["lrsLoadReportingServer"] =
-        state.update->lrs_load_reporting_server->ToJson();
+    mechanism["lrsLoadReportingServer"] = GrpcXdsBootstrap::XdsServerToJson(
+        *state.update->lrs_load_reporting_server);
   }
   discovery_mechanisms->emplace_back(std::move(mechanism));
   return true;
@@ -517,7 +518,9 @@ void CdsLb::OnClusterChanged(const std::string& name,
               this, json_str.c_str());
     }
     grpc_error_handle error = GRPC_ERROR_NONE;
-    auto config = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(json);
+    auto config =
+        CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
+            json);
     if (!config.ok()) {
       OnError(name, absl::UnavailableError(config.status().message()));
       return;
@@ -528,8 +531,10 @@ void CdsLb::OnClusterChanged(const std::string& name,
       args.work_serializer = work_serializer();
       args.args = args_;
       args.channel_control_helper = absl::make_unique<Helper>(Ref());
-      child_policy_ = LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
-          (*config)->name(), std::move(args));
+      child_policy_ =
+          CoreConfiguration::Get()
+              .lb_policy_registry()
+              .CreateLoadBalancingPolicy((*config)->name(), std::move(args));
       if (child_policy_ == nullptr) {
         OnError(name, absl::UnavailableError("failed to create child policy"));
         return;
@@ -756,16 +761,9 @@ class CdsLbFactory : public LoadBalancingPolicyFactory {
 
 }  // namespace
 
-}  // namespace grpc_core
-
-//
-// Plugin registration
-//
-
-void grpc_lb_policy_cds_init() {
-  grpc_core::LoadBalancingPolicyRegistry::Builder::
-      RegisterLoadBalancingPolicyFactory(
-          absl::make_unique<grpc_core::CdsLbFactory>());
+void RegisterCdsLbPolicy(CoreConfiguration::Builder* builder) {
+  builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
+      absl::make_unique<CdsLbFactory>());
 }
 
-void grpc_lb_policy_cds_shutdown() {}
+}  // namespace grpc_core

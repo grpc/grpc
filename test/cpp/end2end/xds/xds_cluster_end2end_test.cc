@@ -25,7 +25,7 @@
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "test/cpp/end2end/connection_delay_injector.h"
+#include "test/cpp/end2end/connection_attempt_injector.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 
 namespace grpc {
@@ -115,7 +115,9 @@ TEST_P(CdsTest, AcceptsEdsConfigSourceOfTypeAds) {
   balancer_->ads_service()->SetCdsResource(cluster);
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForAllBackends(DEBUG_LOCATION);
+  WaitForAllBackends(DEBUG_LOCATION, /*start_index=*/0, /*stop_index=*/0,
+                     /*check_status=*/nullptr, WaitForBackendOptions(),
+                     RpcOptions().set_timeout_ms(5000));
   auto response_state = balancer_->ads_service()->cds_response_state();
   ASSERT_TRUE(response_state.has_value());
   EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
@@ -199,7 +201,8 @@ TEST_P(CdsTest, EdsServiceNameDefaultsToClusterName) {
   Cluster cluster = default_cluster_;
   cluster.mutable_eds_cluster_config()->clear_service_name();
   balancer_->ads_service()->SetCdsResource(cluster);
-  CheckRpcSendOk(DEBUG_LOCATION);
+  CheckRpcSendOk(DEBUG_LOCATION, /*times=*/1,
+                 RpcOptions().set_timeout_ms(5000));
 }
 
 // Tests switching over from one cluster to another.
@@ -259,13 +262,12 @@ TEST_P(CdsTest, CircuitBreaking) {
   }
   // Sending a RPC now should fail, the error message should tell us
   // we hit the max concurrent requests limit and got dropped.
-  Status status = SendRpc();
-  EXPECT_FALSE(status.ok());
-  EXPECT_EQ(status.error_message(), "circuit breaker drop");
-  // Cancel one RPC to allow another one through
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                      "circuit breaker drop");
+  // Cancel one RPC to allow another one through.
   rpcs[0].CancelRpc();
-  status = SendRpc();
-  EXPECT_TRUE(status.ok());
+  CheckRpcSendOk(DEBUG_LOCATION);
+  // Clean up.
   for (size_t i = 1; i < kMaxConcurrentRequests; ++i) {
     rpcs[i].CancelRpc();
   }
@@ -300,13 +302,12 @@ TEST_P(CdsTest, CircuitBreakingMultipleChannelsShareCallCounter) {
   }
   // Sending a RPC now should fail, the error message should tell us
   // we hit the max concurrent requests limit and got dropped.
-  Status status = SendRpc();
-  EXPECT_FALSE(status.ok());
-  EXPECT_EQ(status.error_message(), "circuit breaker drop");
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                      "circuit breaker drop");
   // Cancel one RPC to allow another one through
   rpcs[0].CancelRpc();
-  status = SendRpc();
-  EXPECT_TRUE(status.ok());
+  CheckRpcSendOk(DEBUG_LOCATION);
+  // Clean up.
   for (size_t i = 1; i < kMaxConcurrentRequests; ++i) {
     rpcs[i].CancelRpc();
   }
@@ -550,11 +551,16 @@ TEST_P(EdsTest, AllServersUnreachableFailFast) {
   }
   EdsResourceArgs args({{"locality0", std::move(endpoints)}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  const Status status = SendRpc(RpcOptions().set_timeout_ms(kRpcTimeoutMs));
   // The error shouldn't be DEADLINE_EXCEEDED because timeout is set to 5
   // seconds, and we should disocver in that time that the target backend is
   // down.
-  EXPECT_EQ(StatusCode::UNAVAILABLE, status.error_code());
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                      "connections to all backends failing; last error: "
+                      "(UNKNOWN: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+                      "Failed to connect to remote host: Connection refused|"
+                      "UNAVAILABLE: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+                      "Failed to connect to remote host: FD shutdown)",
+                      RpcOptions().set_timeout_ms(kRpcTimeoutMs));
 }
 
 // Tests that RPCs fail when the backends are down, and will succeed again
@@ -575,11 +581,12 @@ TEST_P(EdsTest, BackendsRestart) {
               ::testing::AnyOf(::testing::Eq(GRPC_CHANNEL_TRANSIENT_FAILURE),
                                ::testing::Eq(GRPC_CHANNEL_CONNECTING)));
   // RPCs should fail.
-  CheckRpcSendFailure(
-      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      "connections to all backends failing; last error: "
-      "(UNKNOWN: Failed to connect to remote host: Connection refused|"
-      "UNAVAILABLE: Failed to connect to remote host: FD shutdown)");
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                      "connections to all backends failing; last error: "
+                      "(UNKNOWN: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+                      "Failed to connect to remote host: Connection refused|"
+                      "UNAVAILABLE: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+                      "Failed to connect to remote host: FD shutdown)");
   // Restart all backends.  RPCs should start succeeding again.
   StartAllBackends();
   CheckRpcSendOk(DEBUG_LOCATION, 1,
@@ -1153,8 +1160,7 @@ TEST_P(FailoverTest, ReportsConnectingDuringFailover) {
       {"locality1", CreateEndpointsForBackends(), kDefaultLocalityWeight, 1},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  ConnectionHoldInjector injector;
-  injector.Start();
+  ConnectionAttemptInjector injector;
   auto hold = injector.AddHold(backends_[0]->port());
   // Start an RPC in the background, which should cause the channel to
   // try to connect.
@@ -1213,8 +1219,10 @@ TEST_P(FailoverTest, UpdateInitialUnavailable) {
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   constexpr char kErrorMessageRegex[] =
       "connections to all backends failing; last error: "
-      "(UNKNOWN: Failed to connect to remote host: Connection refused|"
-      "UNAVAILABLE: Failed to connect to remote host: FD shutdown)";
+      "(UNKNOWN: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+      "Failed to connect to remote host: Connection refused|"
+      "UNAVAILABLE: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+      "Failed to connect to remote host: FD shutdown)";
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
                       kErrorMessageRegex);
   args = EdsResourceArgs({

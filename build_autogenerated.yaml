@@ -24,6 +24,14 @@ libs:
   - include/grpc/grpc_posix.h
   - include/grpc/grpc_security.h
   - include/grpc/grpc_security_constants.h
+  - include/grpc/impl/codegen/byte_buffer.h
+  - include/grpc/impl/codegen/byte_buffer_reader.h
+  - include/grpc/impl/codegen/compression_types.h
+  - include/grpc/impl/codegen/connectivity_state.h
+  - include/grpc/impl/codegen/grpc_types.h
+  - include/grpc/impl/codegen/propagation_bits.h
+  - include/grpc/impl/codegen/slice.h
+  - include/grpc/impl/codegen/status.h
   - include/grpc/load_reporting.h
   - include/grpc/slice.h
   - include/grpc/slice_buffer.h
@@ -223,7 +231,6 @@ libs:
   - src/core/lib/gprpp/sync.h
   - src/core/lib/gprpp/thd.h
   - src/core/lib/gprpp/time_util.h
-  - src/core/lib/profiling/timers.h
   src:
   - src/core/lib/gpr/alloc.cc
   - src/core/lib/gpr/atm.cc
@@ -266,8 +273,6 @@ libs:
   - src/core/lib/gprpp/thd_posix.cc
   - src/core/lib/gprpp/thd_windows.cc
   - src/core/lib/gprpp/time_util.cc
-  - src/core/lib/profiling/basic_timers.cc
-  - src/core/lib/profiling/stap_timers.cc
   deps:
   - absl/base:base
   - absl/base:core_headers
@@ -306,11 +311,19 @@ libs:
   - include/grpc/impl/codegen/atm_gcc_atomic.h
   - include/grpc/impl/codegen/atm_gcc_sync.h
   - include/grpc/impl/codegen/atm_windows.h
+  - include/grpc/impl/codegen/byte_buffer.h
+  - include/grpc/impl/codegen/byte_buffer_reader.h
+  - include/grpc/impl/codegen/compression_types.h
+  - include/grpc/impl/codegen/connectivity_state.h
   - include/grpc/impl/codegen/fork.h
   - include/grpc/impl/codegen/gpr_slice.h
   - include/grpc/impl/codegen/gpr_types.h
+  - include/grpc/impl/codegen/grpc_types.h
   - include/grpc/impl/codegen/log.h
   - include/grpc/impl/codegen/port_platform.h
+  - include/grpc/impl/codegen/propagation_bits.h
+  - include/grpc/impl/codegen/slice.h
+  - include/grpc/impl/codegen/status.h
   - include/grpc/impl/codegen/sync.h
   - include/grpc/impl/codegen/sync_abseil.h
   - include/grpc/impl/codegen/sync_custom.h
@@ -715,6 +728,7 @@ libs:
   - src/core/ext/xds/upb_utils.h
   - src/core/ext/xds/xds_api.h
   - src/core/ext/xds/xds_bootstrap.h
+  - src/core/ext/xds/xds_bootstrap_grpc.h
   - src/core/ext/xds/xds_certificate_provider.h
   - src/core/ext/xds/xds_channel_args.h
   - src/core/ext/xds/xds_channel_stack_modifier.h
@@ -791,9 +805,11 @@ libs:
   - src/core/lib/gprpp/no_destruct.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/overload.h
+  - src/core/lib/gprpp/packed_table.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
   - src/core/lib/gprpp/single_set_ptr.h
+  - src/core/lib/gprpp/sorted_pack.h
   - src/core/lib/gprpp/status_helper.h
   - src/core/lib/gprpp/table.h
   - src/core/lib/gprpp/time.h
@@ -1420,6 +1436,7 @@ libs:
   - src/core/ext/xds/file_watcher_certificate_provider_factory.cc
   - src/core/ext/xds/xds_api.cc
   - src/core/ext/xds/xds_bootstrap.cc
+  - src/core/ext/xds/xds_bootstrap_grpc.cc
   - src/core/ext/xds/xds_certificate_provider.cc
   - src/core/ext/xds/xds_channel_stack_modifier.cc
   - src/core/ext/xds/xds_client.cc
@@ -1814,11 +1831,19 @@ libs:
   - include/grpc/impl/codegen/atm_gcc_atomic.h
   - include/grpc/impl/codegen/atm_gcc_sync.h
   - include/grpc/impl/codegen/atm_windows.h
+  - include/grpc/impl/codegen/byte_buffer.h
+  - include/grpc/impl/codegen/byte_buffer_reader.h
+  - include/grpc/impl/codegen/compression_types.h
+  - include/grpc/impl/codegen/connectivity_state.h
   - include/grpc/impl/codegen/fork.h
   - include/grpc/impl/codegen/gpr_slice.h
   - include/grpc/impl/codegen/gpr_types.h
+  - include/grpc/impl/codegen/grpc_types.h
   - include/grpc/impl/codegen/log.h
   - include/grpc/impl/codegen/port_platform.h
+  - include/grpc/impl/codegen/propagation_bits.h
+  - include/grpc/impl/codegen/slice.h
+  - include/grpc/impl/codegen/status.h
   - include/grpc/impl/codegen/sync.h
   - include/grpc/impl/codegen/sync_abseil.h
   - include/grpc/impl/codegen/sync_custom.h
@@ -1995,9 +2020,11 @@ libs:
   - src/core/lib/gprpp/no_destruct.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/overload.h
+  - src/core/lib/gprpp/packed_table.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
   - src/core/lib/gprpp/single_set_ptr.h
+  - src/core/lib/gprpp/sorted_pack.h
   - src/core/lib/gprpp/status_helper.h
   - src/core/lib/gprpp/table.h
   - src/core/lib/gprpp/time.h
@@ -3504,6 +3531,7 @@ targets:
   - mac
 - name: goaway_server_test
   build: test
+  run: false
   language: c
   headers:
   - test/core/end2end/cq_verifier.h
@@ -5059,7 +5087,7 @@ targets:
   headers:
   - src/cpp/server/orca/orca_interceptor.h
   - test/core/util/test_lb_policies.h
-  - test/cpp/end2end/connection_delay_injector.h
+  - test/cpp/end2end/connection_attempt_injector.h
   - test/cpp/end2end/test_service_impl.h
   src:
   - src/proto/grpc/testing/duplicate/echo_duplicate.proto
@@ -5071,7 +5099,7 @@ targets:
   - src/cpp/server/orca/orca_service.cc
   - test/core/util/test_lb_policies.cc
   - test/cpp/end2end/client_lb_end2end_test.cc
-  - test/cpp/end2end/connection_delay_injector.cc
+  - test/cpp/end2end/connection_attempt_injector.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - grpc++_test_util
@@ -9499,6 +9527,16 @@ targets:
   - linux
   - posix
   - mac
+- name: sorted_pack_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/gprpp/sorted_pack.h
+  src:
+  - test/core/gprpp/sorted_pack_test.cc
+  deps: []
+  uses_polling: false
 - name: spinlock_test
   gtest: true
   build: test
@@ -10258,6 +10296,17 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
+- name: timer_manager_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/event_engine/common_closures.h
+  src:
+  - test/core/event_engine/posix/timer_manager_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: timer_test
   gtest: true
   build: test
@@ -10915,7 +10964,7 @@ targets:
   run: false
   language: c++
   headers:
-  - test/cpp/end2end/connection_delay_injector.h
+  - test/cpp/end2end/connection_attempt_injector.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h
@@ -10955,7 +11004,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/route.proto
   - src/proto/grpc/testing/xds/v3/router.proto
   - src/proto/grpc/testing/xds/v3/string.proto
-  - test/cpp/end2end/connection_delay_injector.cc
+  - test/cpp/end2end/connection_attempt_injector.cc
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/xds/xds_cluster_end2end_test.cc
   - test/cpp/end2end/xds/xds_end2end_test_lib.cc
@@ -10973,7 +11022,7 @@ targets:
   run: false
   language: c++
   headers:
-  - test/cpp/end2end/connection_delay_injector.h
+  - test/cpp/end2end/connection_attempt_injector.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h
@@ -11014,7 +11063,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/route.proto
   - src/proto/grpc/testing/xds/v3/router.proto
   - src/proto/grpc/testing/xds/v3/string.proto
-  - test/cpp/end2end/connection_delay_injector.cc
+  - test/cpp/end2end/connection_attempt_injector.cc
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/xds/xds_cluster_type_end2end_test.cc
   - test/cpp/end2end/xds/xds_end2end_test_lib.cc
@@ -11134,6 +11183,7 @@ targets:
 - name: xds_csds_end2end_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - src/cpp/server/csds/csds.h
@@ -11463,7 +11513,7 @@ targets:
   run: false
   language: c++
   headers:
-  - test/cpp/end2end/connection_delay_injector.h
+  - test/cpp/end2end/connection_attempt_injector.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h
@@ -11504,7 +11554,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/route.proto
   - src/proto/grpc/testing/xds/v3/router.proto
   - src/proto/grpc/testing/xds/v3/string.proto
-  - test/cpp/end2end/connection_delay_injector.cc
+  - test/cpp/end2end/connection_attempt_injector.cc
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/xds/xds_end2end_test_lib.cc
   - test/cpp/end2end/xds/xds_ring_hash_end2end_test.cc

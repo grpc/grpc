@@ -47,6 +47,7 @@
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
+#include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_client_grpc.h"
 #include "src/core/ext/xds/xds_client_stats.h"
@@ -925,7 +926,8 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
       }
       if (discovery_config.lrs_load_reporting_server.has_value()) {
         xds_cluster_impl_config["lrsLoadReportingServer"] =
-            discovery_config.lrs_load_reporting_server->ToJson();
+            GrpcXdsBootstrap::XdsServerToJson(
+                *discovery_config.lrs_load_reporting_server);
       }
       Json locality_picking_policy;
       if (XdsOutlierDetectionEnabled()) {
@@ -974,7 +976,9 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
         "[xds_cluster_resolver_lb %p] generated config for child policy: %s",
         this, json_str.c_str());
   }
-  auto config = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(json);
+  auto config =
+      CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
+          json);
   if (!config.ok()) {
     // This should never happen, but if it does, we basically have no
     // way to fix it, so we put the channel in TRANSIENT_FAILURE.
@@ -1027,7 +1031,7 @@ XdsClusterResolverLb::CreateChildPolicyLocked(const ChannelArgs& args) {
   lb_policy_args.channel_control_helper =
       absl::make_unique<Helper>(Ref(DEBUG_LOCATION, "Helper"));
   OrphanablePtr<LoadBalancingPolicy> lb_policy =
-      LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
+      CoreConfiguration::Get().lb_policy_registry().CreateLoadBalancingPolicy(
           "priority_experimental", std::move(lb_policy_args));
   if (GPR_UNLIKELY(lb_policy == nullptr)) {
     gpr_log(GPR_ERROR,
@@ -1191,7 +1195,7 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
       } else {
         grpc_error_handle parse_error;
         discovery_mechanism->lrs_load_reporting_server.emplace(
-            XdsBootstrap::XdsServer::Parse(it->second, &parse_error));
+            GrpcXdsBootstrap::XdsServerParse(it->second, &parse_error));
         if (!GRPC_ERROR_IS_NONE(parse_error)) {
           error_list.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
               absl::StrCat("errors parsing lrs_load_reporting_server")));
@@ -1333,16 +1337,9 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
 
 }  // namespace
 
-}  // namespace grpc_core
-
-//
-// Plugin registration
-//
-
-void grpc_lb_policy_xds_cluster_resolver_init() {
-  grpc_core::LoadBalancingPolicyRegistry::Builder::
-      RegisterLoadBalancingPolicyFactory(
-          absl::make_unique<grpc_core::XdsClusterResolverLbFactory>());
+void RegisterXdsClusterResolverLbPolicy(CoreConfiguration::Builder* builder) {
+  builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
+      absl::make_unique<XdsClusterResolverLbFactory>());
 }
 
-void grpc_lb_policy_xds_cluster_resolver_shutdown() {}
+}  // namespace grpc_core

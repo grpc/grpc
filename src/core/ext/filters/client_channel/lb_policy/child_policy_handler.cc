@@ -29,6 +29,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
@@ -311,8 +312,9 @@ bool ChildPolicyHandler::ConfigChangeRequiresNewPolicyInstance(
 OrphanablePtr<LoadBalancingPolicy>
 ChildPolicyHandler::CreateLoadBalancingPolicy(
     absl::string_view name, LoadBalancingPolicy::Args args) const {
-  return LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
-      name, std::move(args));
+  return CoreConfiguration::Get()
+      .lb_policy_registry()
+      .CreateLoadBalancingPolicy(name, std::move(args));
 }
 
 }  // namespace grpc_core
