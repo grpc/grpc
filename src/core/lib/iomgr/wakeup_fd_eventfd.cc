@@ -29,7 +29,6 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
-#include "src/core/lib/profiling/timers.h"
 
 static grpc_error_handle eventfd_create(grpc_wakeup_fd* fd_info) {
   fd_info->read_fd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
@@ -53,7 +52,6 @@ static grpc_error_handle eventfd_consume(grpc_wakeup_fd* fd_info) {
 }
 
 static grpc_error_handle eventfd_wakeup(grpc_wakeup_fd* fd_info) {
-  GPR_TIMER_SCOPE("eventfd_wakeup", 0);
   int err;
   do {
     err = eventfd_write(fd_info->read_fd, 1);

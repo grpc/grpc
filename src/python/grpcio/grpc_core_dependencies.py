@@ -591,8 +591,6 @@ CORE_SOURCE_FILES = [
     'src/core/lib/load_balancing/lb_policy.cc',
     'src/core/lib/load_balancing/lb_policy_registry.cc',
     'src/core/lib/matchers/matchers.cc',
-    'src/core/lib/profiling/basic_timers.cc',
-    'src/core/lib/profiling/stap_timers.cc',
     'src/core/lib/promise/activity.cc',
     'src/core/lib/promise/sleep.cc',
     'src/core/lib/resolver/resolver.cc',
