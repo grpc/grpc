@@ -487,6 +487,7 @@ def grpc_end2end_tests():
                 args = ["$(location %s)" % bin_name, t],
                 tags = _platform_support_tags(fopt) + fopt.tags + [
                     "no_test_ios",
+                    "core_end2end_test",
                 ],
                 flaky = name in FLAKY_TESTS,
                 exclude_pollers = topt.exclude_pollers,
