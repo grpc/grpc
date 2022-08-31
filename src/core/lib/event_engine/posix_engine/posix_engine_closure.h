@@ -20,7 +20,6 @@
 
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
-#include "absl/utility/utility.h"
 
 #include <grpc/event_engine/event_engine.h>
 
@@ -43,7 +42,7 @@ class IomgrEngineClosure final
   ~IomgrEngineClosure() final = default;
   void SetStatus(absl::Status status) { status_ = status; }
   void Run() override {
-    cb_(absl::exchange(status_, absl::OkStatus()));
+    cb_(std::exchange(status_, absl::OkStatus()));
     if (!is_permanent_) {
       delete this;
     }
