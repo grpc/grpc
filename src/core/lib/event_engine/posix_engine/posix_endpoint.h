@@ -34,7 +34,6 @@ namespace posix_engine {
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 
-using ::grpc_event_engine::experimental::EndpointConfig;
 using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::SliceBuffer;
 
@@ -161,9 +160,9 @@ class PosixEndpoint : public EventEngine::Endpoint {
  public:
   PosixEndpoint(EventHandle* handle, PosixEngineClosure* on_shutdown,
                 std::shared_ptr<EventEngine> engine,
-                const EndpointConfig& config)
+                const PosixTcpOptions& options)
       : impl_(new PosixEndpointImpl(handle, on_shutdown, std::move(engine),
-                                    TcpOptionsFromEndpointConfig(config))) {}
+                                    options)) {}
 
   void Read(absl::AnyInvocable<void(absl::Status)> on_read, SliceBuffer* buffer,
             const EventEngine::Endpoint::ReadArgs* args) override {
@@ -228,7 +227,7 @@ class PosixEndpoint : public EventEngine::Endpoint {
 // the event engine is alive for the lifetime of the endpoint.
 std::unique_ptr<PosixEndpoint> CreatePosixEndpoint(
     EventHandle* handle, PosixEngineClosure* on_shutdown,
-    std::shared_ptr<EventEngine> engine, const EndpointConfig& config);
+    std::shared_ptr<EventEngine> engine, const PosixTcpOptions& options);
 
 }  // namespace posix_engine
 }  // namespace grpc_event_engine

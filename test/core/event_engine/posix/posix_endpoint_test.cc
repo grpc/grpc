@@ -201,7 +201,8 @@ CreateConnectedEndpoints(PosixEventPoller* poller, bool is_zero_copy_enabled,
                                         poller->Kick();
                                       }
                                     }),
-                                GetPosixEE(), config),
+                                GetPosixEE(),
+                                TcpOptionsFromEndpointConfig(config)),
             std::move(server_endpoint)));
     server_endpoint_promise.Reset();
   }

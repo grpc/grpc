@@ -30,9 +30,12 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/event_engine/slice_buffer.h>
+#include <grpc/grpc.h>
 
 #include "src/core/lib/event_engine/executor/threaded_executor.h"
 #include "src/core/lib/event_engine/handle_containers.h"
+#include "src/core/lib/event_engine/posix_engine/event_poller_posix_default.h"
+#include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/posix_engine/timer_manager.h"
 #include "src/core/lib/gprpp/sync.h"
 
@@ -41,7 +44,8 @@ namespace experimental {
 
 // An iomgr-based Posix EventEngine implementation.
 // All methods require an ExecCtx to already exist on the thread's stack.
-class PosixEventEngine final : public EventEngine {
+class PosixEventEngine final : public EventEngine,
+                               std::enable_shared_from_this<PosixEventEngine> {
  public:
   class PosixEndpoint : public EventEngine::Endpoint {
    public:
@@ -107,6 +111,12 @@ class PosixEventEngine final : public EventEngine {
   EventEngine::TaskHandle RunAfterInternal(Duration when,
                                            absl::AnyInvocable<void()> cb);
 
+  ConnectionHandle ConnectInternal(
+      grpc_event_engine::posix_engine::PosixSocketWrapper sock,
+      OnConnectCallback on_connect, const ResolvedAddress& addr,
+      const grpc_event_engine::posix_engine::PosixTcpOptions& options,
+      Duration timeout);
+  grpc_event_engine::posix_engine::PosixEventPoller* poller_ = nullptr;
   posix_engine::TimerManager timer_manager_;
   ThreadedExecutor executor_{2};
 

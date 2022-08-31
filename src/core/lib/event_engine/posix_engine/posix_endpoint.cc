@@ -1377,11 +1377,11 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
 
 std::unique_ptr<PosixEndpoint> CreatePosixEndpoint(
     EventHandle* handle, PosixEngineClosure* on_shutdown,
-    std::shared_ptr<EventEngine> engine, const EndpointConfig& config) {
+    std::shared_ptr<EventEngine> engine, const PosixTcpOptions& options) {
   GPR_ASSERT(handle != nullptr);
   GPR_ASSERT(engine != nullptr);
   return absl::make_unique<PosixEndpoint>(handle, on_shutdown,
-                                          std::move(engine), config);
+                                          std::move(engine), options);
 }
 
 }  // namespace posix_engine
@@ -1397,7 +1397,8 @@ using ::grpc_event_engine::experimental::EventEngine;
 
 std::unique_ptr<PosixEndpoint> CreatePosixEndpoint(
     EventHandle* /*handle*/, PosixEngineClosure* /*on_shutdown*/,
-    std::shared_ptr<EventEngine> /*engine*/, const EndpointConfig& /*config*/) {
+    std::shared_ptr<EventEngine> /*engine*/,
+    const PosixTcpOptions& /*options*/) {
   GPR_ASSERT(false && "Cannot create PosixEndpoint on this platform");
 }
 
