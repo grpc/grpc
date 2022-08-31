@@ -59,11 +59,12 @@ class FailPolicy : public LoadBalancingPolicy {
 
   absl::string_view name() const override { return kFailPolicyName; }
 
-  void UpdateLocked(UpdateArgs) override {
+  absl::Status UpdateLocked(UpdateArgs) override {
     absl::Status status = absl::AbortedError("LB pick failed");
     channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE, status,
         absl::make_unique<FailPicker>(status));
+    return absl::OkStatus();
   }
 
   void ResetBackoffLocked() override {}
