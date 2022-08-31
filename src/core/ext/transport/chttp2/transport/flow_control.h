@@ -25,11 +25,11 @@
 
 #include <iosfwd>
 #include <string>
+#include <utility>
 
 #include "absl/functional/function_ref.h"
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
-#include "absl/utility/utility.h"
 
 #include <grpc/support/log.h>
 
@@ -170,7 +170,7 @@ class TransportFlowControl final {
     // Reads the flow control data and returns an actionable struct that will
     // tell chttp2 exactly what it needs to do
     FlowControlAction MakeAction() {
-      return absl::exchange(tfc_, nullptr)->UpdateAction(FlowControlAction());
+      return std::exchange(tfc_, nullptr)->UpdateAction(FlowControlAction());
     }
 
     // Notify of data receipt. Returns OkStatus if the data was accepted,

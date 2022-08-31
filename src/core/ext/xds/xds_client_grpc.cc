@@ -153,7 +153,7 @@ absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GrpcXdsClient::GetOrCreate(
       GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_BOOTSTRAP_CONFIG);
   if (bootstrap_config.has_value()) {
     grpc_error_handle error = GRPC_ERROR_NONE;
-    std::unique_ptr<XdsBootstrap> bootstrap = XdsBootstrap::Create(
+    std::unique_ptr<GrpcXdsBootstrap> bootstrap = GrpcXdsBootstrap::Create(
         *bootstrap_config, std::move(certificate_provider_plugin_map), &error);
     if (!GRPC_ERROR_IS_NONE(error)) return grpc_error_to_absl_status(error);
     grpc_channel_args* xds_channel_args = args.GetPointer<grpc_channel_args>(
@@ -176,7 +176,7 @@ absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GrpcXdsClient::GetOrCreate(
   }
   // Parse bootstrap.
   grpc_error_handle error = GRPC_ERROR_NONE;
-  std::unique_ptr<XdsBootstrap> bootstrap = XdsBootstrap::Create(
+  std::unique_ptr<GrpcXdsBootstrap> bootstrap = GrpcXdsBootstrap::Create(
       *bootstrap_contents, std::move(certificate_provider_plugin_map), &error);
   if (!GRPC_ERROR_IS_NONE(error)) return grpc_error_to_absl_status(error);
   // Instantiate XdsClient.
@@ -196,7 +196,8 @@ GrpcXdsClient::GrpcXdsClient(std::unique_ptr<XdsBootstrap> bootstrap,
                        .value_or(Duration::Seconds(15)))),
       certificate_provider_store_(MakeOrphanable<CertificateProviderStore>(
           static_cast<const GrpcXdsCertificateProviderPluginMap*>(
-              this->bootstrap().certificate_provider_plugin_map())
+              static_cast<const GrpcXdsBootstrap&>(this->bootstrap())
+                  .certificate_provider_plugin_map())
               ->plugin_map())) {}
 
 GrpcXdsClient::~GrpcXdsClient() {

@@ -23,10 +23,10 @@
 #include <atomic>
 #include <list>
 #include <memory>
+#include <utility>
 
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
-#include "absl/utility/utility.h"
 
 #include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/support/log.h>
@@ -625,8 +625,8 @@ absl::Status PollPoller::Work(grpc_core::Timestamp deadline,
   struct pollfd pollfd_space[inline_elements];
   PollEventHandle* watcher_space[inline_elements];
   mu_.Lock();
-  if (absl::exchange(was_kicked_, false) &&
-      absl::exchange(was_kicked_ext_, false)) {
+  if (std::exchange(was_kicked_, false) &&
+      std::exchange(was_kicked_ext_, false)) {
     // External kick. Need to break out.
     mu_.Unlock();
     return absl::Status(absl::StatusCode::kInternal, "Kicked");
@@ -782,8 +782,8 @@ absl::Status PollPoller::Work(grpc_core::Timestamp deadline,
       gpr_free(pfds);
     }
     mu_.Lock();
-    if (absl::exchange(was_kicked_, false) &&
-        absl::exchange(was_kicked_ext_, false)) {
+    if (std::exchange(was_kicked_, false) &&
+        std::exchange(was_kicked_ext_, false)) {
       // External kick. Need to break out.
       error = absl::Status(absl::StatusCode::kInternal, "Kicked");
       break;

@@ -29,7 +29,7 @@
 
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/pollset.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "test/core/util/test_tcp_server.h"
 
