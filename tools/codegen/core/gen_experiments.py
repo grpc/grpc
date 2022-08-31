@@ -14,6 +14,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""
+Generate experiment related code artifacts. 
+
+Invoke as: tools/codegen/core/gen_experiments.py
+Experiment definitions are in src/core/lib/experiments/experiments.yaml
+"""
+
 from __future__ import print_function
 
 import collections
@@ -37,7 +44,7 @@ for attr in attrs:
     if 'name' not in attr:
         print("experiment with no name: %r" % attr)
         error = True
-        continue
+        continue # can't run other diagnostics because we don't know a name
     if 'description' not in attr:
         print("no description for experiment %s" % attr['name'])
         error = True
@@ -54,6 +61,7 @@ for attr in attrs:
     if expiry > two_quarters_from_now:
         print("experiment %s expires far in the future on %s" %
               (attr['name'], attr['expiry']))
+        print("expiry should be no more than two quarters from now")
         error = True
 
 if error:

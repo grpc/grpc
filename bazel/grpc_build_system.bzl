@@ -259,8 +259,8 @@ def ios_cc_test(
             deps = ios_test_deps,
         )
 
-def expand_tests_for_each_poller_and_engine_and_experiment(name, srcs, deps, tags, args, exclude_pollers, uses_event_engine):
-    """Common logic used to parameterize tests for every poller and EventEngine.
+def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_event_engine):
+    """Common logic used to parameterize tests for every poller and EventEngine and experiment.
 
     Args:
         name: base name of the test
@@ -342,6 +342,7 @@ def expand_tests_for_each_poller_and_engine_and_experiment(name, srcs, deps, tag
             config["name"] = config["name"] + "@experiment=" + experiment
             config["args"] = config["args"] + ["--experiment=" + experiment]
             tags = config["tags"]
+            # We don't want to run tests for experiments on cmake builds ever
             if "bazel_only" not in tags:
                 tags = tags + ["bazel_only"]
             config["tags"] = tags
@@ -416,7 +417,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         )
         return
 
-    for poller_config in expand_tests_for_each_poller_and_engine_and_experiment(name, srcs, core_deps, tags, args, exclude_pollers, uses_event_engine):
+    for poller_config in expand_tests(name, srcs, core_deps, tags, args, exclude_pollers, uses_event_engine):
         native.cc_test(
             name = poller_config["name"],
             srcs = poller_config["srcs"],
@@ -518,7 +519,7 @@ def grpc_sh_test(name, srcs = [], args = [], data = [], uses_polling = True, siz
         )
         return
 
-    for poller_config in expand_tests_for_each_poller_and_engine_and_experiment(name, srcs, [], tags, args, exclude_pollers, uses_event_engine):
+    for poller_config in expand_tests(name, srcs, [], tags, args, exclude_pollers, uses_event_engine):
         native.sh_test(
             name = poller_config["name"],
             srcs = poller_config["srcs"],
