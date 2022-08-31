@@ -1726,13 +1726,6 @@ void RetryFilter::CallData::CallAttempt::BatchData::RunClosuresForCompletedCall(
 
 void RetryFilter::CallData::CallAttempt::BatchData::RecvTrailingMetadataReady(
     void* arg, grpc_error_handle error) {
-  // Add a ref to the outer call stack. This works around a TSAN reported
-  // failure that we do not understand, but since we expect the lifetime of
-  // this code to be relatively short we think it's OK to work around for now.
-  // TSAN failure:
-  // https://source.cloud.google.com/results/invocations/5b122974-4977-4862-beb1-dc1af9fbbd1d/targets/%2F%2Ftest%2Fcore%2Fend2end:h2_census_test@max_concurrent_streams@poller%3Dpoll/log
-  RefCountedPtr<grpc_call_stack> owning_call_stack =
-      static_cast<BatchData*>(arg)->call_attempt_->calld_->owning_call_->Ref();
   RefCountedPtr<BatchData> batch_data(static_cast<BatchData*>(arg));
   CallAttempt* call_attempt = batch_data->call_attempt_;
   CallData* calld = call_attempt->calld_;
