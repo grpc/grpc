@@ -455,6 +455,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\event_engine\\windows\\iocp.cc " +
     "src\\core\\lib\\event_engine\\windows\\win_socket.cc " +
     "src\\core\\lib\\event_engine\\windows\\windows_engine.cc " +
+    "src\\core\\lib\\experiments\\experiments.cc " +
     "src\\core\\lib\\gpr\\alloc.cc " +
     "src\\core\\lib\\gpr\\atm.cc " +
     "src\\core\\lib\\gpr\\cpu_iphone.cc " +
@@ -1454,6 +1455,7 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\event_engine\\executor");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\event_engine\\posix_engine");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\event_engine\\windows");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\experiments");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\gpr");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\gprpp");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\http");
