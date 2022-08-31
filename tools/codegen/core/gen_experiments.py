@@ -13,7 +13,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """
 Generate experiment related code artifacts. 
 
@@ -44,7 +43,7 @@ for attr in attrs:
     if 'name' not in attr:
         print("experiment with no name: %r" % attr)
         error = True
-        continue # can't run other diagnostics because we don't know a name
+        continue  # can't run other diagnostics because we don't know a name
     if 'description' not in attr:
         print("no description for experiment %s" % attr['name'])
         error = True
