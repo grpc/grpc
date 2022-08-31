@@ -1358,7 +1358,6 @@ RetryFilter::CallData::CallAttempt::BatchData::~BatchData() {
             call_attempt_.get(), this);
   }
   GRPC_CALL_STACK_UNREF(call_attempt_->calld_->owning_call_, "Retry BatchData");
-  call_attempt_.reset(DEBUG_LOCATION, "~BatchData");
 }
 
 void RetryFilter::CallData::CallAttempt::BatchData::
