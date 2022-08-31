@@ -73,7 +73,6 @@
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
 #include "src/core/lib/load_balancing/subchannel_interface.h"
-#include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/service_config/service_config_call_data.h"
@@ -1112,8 +1111,9 @@ RefCountedPtr<LoadBalancingPolicy::Config> ChooseLbPolicy(
     policy_name = resolver_result.args.GetString(GRPC_ARG_LB_POLICY_NAME);
     bool requires_config = false;
     if (policy_name.has_value() &&
-        (!LoadBalancingPolicyRegistry::LoadBalancingPolicyExists(
-             *policy_name, &requires_config) ||
+        (!CoreConfiguration::Get()
+              .lb_policy_registry()
+              .LoadBalancingPolicyExists(*policy_name, &requires_config) ||
          requires_config)) {
       if (requires_config) {
         gpr_log(GPR_ERROR,
@@ -1137,7 +1137,8 @@ RefCountedPtr<LoadBalancingPolicy::Config> ChooseLbPolicy(
       {std::string(*policy_name), Json::Object{}},
   }};
   auto lb_policy_config =
-      LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(config_json);
+      CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
+          config_json);
   // The policy name came from one of three places:
   // - The deprecated loadBalancingPolicy field in the service config,
   //   in which case the code in ClientChannelServiceConfigParser
@@ -1852,7 +1853,6 @@ void ClientChannel::CallData::Destroy(
 
 void ClientChannel::CallData::StartTransportStreamOpBatch(
     grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
-  GPR_TIMER_SCOPE("cc_start_transport_stream_op_batch", 0);
   CallData* calld = static_cast<CallData*>(elem->call_data);
   ClientChannel* chand = static_cast<ClientChannel*>(elem->channel_data);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace) &&

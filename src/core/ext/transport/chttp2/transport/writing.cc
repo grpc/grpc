@@ -57,7 +57,6 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/timer.h"
-#include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/bdp_estimator.h"
@@ -266,17 +265,6 @@ class WriteContext {
  public:
   explicit WriteContext(grpc_chttp2_transport* t) : t_(t) {
     GRPC_STATS_INC_HTTP2_WRITES_BEGUN();
-    GPR_TIMER_SCOPE("grpc_chttp2_begin_write", 0);
-  }
-
-  // TODO(ctiller): make this the destructor
-  void FlushStats() {
-    GRPC_STATS_INC_HTTP2_SEND_INITIAL_METADATA_PER_WRITE(
-        initial_metadata_writes_);
-    GRPC_STATS_INC_HTTP2_SEND_MESSAGE_PER_WRITE(message_writes_);
-    GRPC_STATS_INC_HTTP2_SEND_TRAILING_METADATA_PER_WRITE(
-        trailing_metadata_writes_);
-    GRPC_STATS_INC_HTTP2_SEND_FLOWCTL_PER_WRITE(flow_control_writes_);
   }
 
   void FlushSettings() {
@@ -515,9 +503,11 @@ class StreamWriteContext {
 
     if (!data_send_context.AnyOutgoing()) {
       if (t_->flow_control.remote_window() <= 0) {
+        GRPC_STATS_INC_HTTP2_TRANSPORT_STALLS();
         report_stall(t_, s_, "transport");
         grpc_chttp2_list_add_stalled_by_transport(t_, s_);
       } else if (data_send_context.stream_remote_window() <= 0) {
+        GRPC_STATS_INC_HTTP2_STREAM_STALLS();
         report_stall(t_, s_, "stream");
         grpc_chttp2_list_add_stalled_by_stream(t_, s_);
       }
@@ -672,7 +662,6 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
 }
 
 void grpc_chttp2_end_write(grpc_chttp2_transport* t, grpc_error_handle error) {
-  GPR_TIMER_SCOPE("grpc_chttp2_end_write", 0);
   grpc_chttp2_stream* s;
 
   if (t->channelz_socket != nullptr) {

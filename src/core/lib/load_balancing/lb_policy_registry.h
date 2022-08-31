@@ -19,6 +19,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <map>
 #include <memory>
 
 #include "absl/status/statusor.h"
@@ -39,30 +40,41 @@ class LoadBalancingPolicyRegistry {
   /// initialization and shutdown.
   class Builder {
    public:
-    /// Global initialization and shutdown hooks.
-    static void InitRegistry();
-    static void ShutdownRegistry();
-
     /// Registers an LB policy factory.  The factory will be used to create an
     /// LB policy whose name matches that of the factory.
-    static void RegisterLoadBalancingPolicyFactory(
+    void RegisterLoadBalancingPolicyFactory(
         std::unique_ptr<LoadBalancingPolicyFactory> factory);
+
+    LoadBalancingPolicyRegistry Build();
+
+   private:
+    std::map<absl::string_view, std::unique_ptr<LoadBalancingPolicyFactory>>
+        factories_;
   };
 
   /// Creates an LB policy of the type specified by \a name.
-  static OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
-      absl::string_view name, LoadBalancingPolicy::Args args);
+  OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
+      absl::string_view name, LoadBalancingPolicy::Args args) const;
 
   /// Returns true if the LB policy factory specified by \a name exists in this
   /// registry. If the load balancing policy requires a config to be specified
   /// then sets \a requires_config to true.
-  static bool LoadBalancingPolicyExists(absl::string_view name,
-                                        bool* requires_config);
+  bool LoadBalancingPolicyExists(absl::string_view name,
+                                 bool* requires_config) const;
 
   /// Returns a parsed object of the load balancing policy to be used from a
   /// LoadBalancingConfig array \a json.
-  static absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
-  ParseLoadBalancingConfig(const Json& json);
+  absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
+  ParseLoadBalancingConfig(const Json& json) const;
+
+ private:
+  LoadBalancingPolicyFactory* GetLoadBalancingPolicyFactory(
+      absl::string_view name) const;
+  absl::StatusOr<Json::Object::const_iterator> ParseLoadBalancingConfigHelper(
+      const Json& lb_config_array) const;
+
+  std::map<absl::string_view, std::unique_ptr<LoadBalancingPolicyFactory>>
+      factories_;
 };
 
 }  // namespace grpc_core

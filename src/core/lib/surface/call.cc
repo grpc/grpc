@@ -77,7 +77,6 @@
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/polling_entity.h"
-#include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/context.h"
@@ -623,8 +622,6 @@ class FilterStackCall final : public Call {
 
 grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
                                           grpc_call** out_call) {
-  GPR_TIMER_SCOPE("grpc_call_create", 0);
-
   Channel* channel = args->channel.get();
 
   auto add_init_error = [](grpc_error_handle* composite,
@@ -746,7 +743,6 @@ void FilterStackCall::ReleaseCall(void* call, grpc_error_handle /*error*/) {
 }
 
 void FilterStackCall::DestroyCall(void* call, grpc_error_handle /*error*/) {
-  GPR_TIMER_SCOPE("destroy_call", 0);
   auto* c = static_cast<FilterStackCall*>(call);
   c->recv_initial_metadata_.Clear();
   c->recv_trailing_metadata_.Clear();
@@ -773,8 +769,6 @@ void FilterStackCall::DestroyCall(void* call, grpc_error_handle /*error*/) {
 
 void FilterStackCall::ExternalUnref() {
   if (GPR_LIKELY(!ext_ref_.Unref())) return;
-
-  GPR_TIMER_SCOPE("grpc_call_unref", 0);
 
   ApplicationCallbackExecCtx callback_exec_ctx;
   ExecCtx exec_ctx;
@@ -805,7 +799,6 @@ void FilterStackCall::ExecuteBatch(grpc_transport_stream_op_batch* batch,
   // This is called via the call combiner to start sending a batch down
   // the filter stack.
   auto execute_batch_in_call_combiner = [](void* arg, grpc_error_handle) {
-    GPR_TIMER_SCOPE("execute_batch_in_call_combiner", 0);
     grpc_transport_stream_op_batch* batch =
         static_cast<grpc_transport_stream_op_batch*>(arg);
     auto* call =
@@ -844,6 +837,7 @@ void FilterStackCall::CancelWithError(grpc_error_handle error) {
     GRPC_ERROR_UNREF(error);
     return;
   }
+  gpr_atm_rel_store(&peer_string_, 0);
   InternalRef("termination");
   // Inform the call combiner of the cancellation, so that it can cancel
   // any in-flight asynchronous actions that may be holding the call
@@ -995,7 +989,6 @@ void FilterStackCall::PublishAppMetadata(grpc_metadata_batch* b,
   if (b->count() == 0) return;
   if (!is_client() && is_trailing) return;
   if (is_trailing && buffered_metadata_[1] == nullptr) return;
-  GPR_TIMER_SCOPE("publish_app_metadata", 0);
   grpc_metadata_array* dest;
   dest = buffered_metadata_[is_trailing];
   if (dest->count + b->count() > dest->capacity) {
@@ -1276,7 +1269,6 @@ void FilterStackCall::BatchControl::ReceivingInitialMetadataReady(
     call->RecvInitialFilter(md);
 
     /* TODO(ctiller): this could be moved into recv_initial_filter now */
-    GPR_TIMER_SCOPE("validate_filtered_metadata", 0);
     ValidateFilteredMetadata();
 
     absl::optional<Timestamp> deadline = md->get(GrpcTimeoutMetadata());
@@ -1363,8 +1355,6 @@ void EndOpImmediately(grpc_completion_queue* cq, void* notify_tag,
 grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
                                             void* notify_tag,
                                             bool is_notify_tag_closure) {
-  GPR_TIMER_SCOPE("call_start_batch", 0);
-
   size_t i;
   const grpc_op* op;
   BatchControl* bctl;

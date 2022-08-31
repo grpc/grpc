@@ -170,7 +170,7 @@ TEST_F(EventEngineClientTest, ConnectExchangeBidiDataTransferTest) {
 TEST_F(EventEngineClientTest, MultipleIPv6ConnectionsToOneOracleListenerTest) {
   grpc_core::ExecCtx ctx;
   static constexpr int kNumListenerAddresses = 10;  // N
-  static constexpr int kNumConnections = 100;       // M
+  static constexpr int kNumConnections = 10;        // M
   auto oracle_ee = this->NewOracleEventEngine();
   auto test_ee = this->NewEventEngine();
   auto memory_quota = std::make_unique<grpc_core::MemoryQuota>("bar");

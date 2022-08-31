@@ -58,7 +58,6 @@
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/lib/iomgr/tcp_posix.h"
-#include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/trace.h"
@@ -586,7 +585,6 @@ static void run_poller(void* bp, grpc_error_handle /*error_ignored*/) {
   gpr_mu_lock(p->pollset_mu);
   grpc_core::Timestamp deadline =
       grpc_core::ExecCtx::Get()->Now() + grpc_core::Duration::Seconds(10);
-  GRPC_STATS_INC_TCP_BACKUP_POLLER_POLLS();
   GRPC_LOG_IF_ERROR(
       "backup_poller:pollset_work",
       grpc_pollset_work(BACKUP_POLLER_POLLSET(p), nullptr, deadline));
@@ -647,7 +645,6 @@ static void cover_self(grpc_tcp* tcp) {
     g_backup_poller = p;
     grpc_pollset_init(BACKUP_POLLER_POLLSET(p), &p->pollset_mu);
     g_backup_poller_mu->Unlock();
-    GRPC_STATS_INC_TCP_BACKUP_POLLERS_CREATED();
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
       gpr_log(GPR_INFO, "BACKUP_POLLER:%p create", p);
     }
@@ -833,7 +830,6 @@ static void tcp_trace_read(grpc_tcp* tcp, grpc_error_handle error)
 #define MAX_READ_IOVEC 4
 static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(tcp->read_mu) {
-  GPR_TIMER_SCOPE("tcp_do_read", 0);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "TCP:%p do_read", tcp);
   }
@@ -881,7 +877,6 @@ static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error)
     GRPC_STATS_INC_TCP_READ_OFFER_IOV_SIZE(tcp->incoming_buffer->count);
 
     do {
-      GPR_TIMER_SCOPE("recvmsg", 0);
       GRPC_STATS_INC_SYSCALL_READ();
       read_bytes = recvmsg(tcp->fd, &msg, 0);
     } while (read_bytes < 0 && errno == EINTR);
@@ -1028,12 +1023,11 @@ static void maybe_make_read_slices(grpc_tcp* tcp)
         std::max(tcp->min_read_chunk_size, tcp->min_progress_size);
     int max_read_chunk_size =
         std::max(tcp->max_read_chunk_size, tcp->min_progress_size);
-    grpc_slice_buffer_add_indexed(
-        tcp->incoming_buffer,
-        tcp->memory_owner.MakeSlice(grpc_core::MemoryRequest(
-            min_read_chunk_size,
-            grpc_core::Clamp(extra_wanted, min_read_chunk_size,
-                             max_read_chunk_size))));
+    grpc_slice slice = tcp->memory_owner.MakeSlice(grpc_core::MemoryRequest(
+        min_read_chunk_size, grpc_core::Clamp(extra_wanted, min_read_chunk_size,
+                                              max_read_chunk_size)));
+    GRPC_STATS_INC_TCP_READ_ALLOCATION(GRPC_SLICE_LENGTH(slice));
+    grpc_slice_buffer_add_indexed(tcp->incoming_buffer, slice);
     maybe_post_reclaimer(tcp);
   }
 }
@@ -1106,7 +1100,6 @@ static void tcp_read(grpc_endpoint* ep, grpc_slice_buffer* incoming_buffer,
  * of bytes sent. */
 ssize_t tcp_send(int fd, const struct msghdr* msg, int* saved_errno,
                  int additional_flags = 0) {
-  GPR_TIMER_SCOPE("sendmsg", 1);
   ssize_t sent_length;
   do {
     /* TODO(klempner): Cork if this is a partial write */
@@ -1748,7 +1741,6 @@ static void tcp_handle_write(void* arg /* grpc_tcp */,
 
 static void tcp_write(grpc_endpoint* ep, grpc_slice_buffer* buf,
                       grpc_closure* cb, void* arg, int /*max_frame_size*/) {
-  GPR_TIMER_SCOPE("tcp_write", 0);
   grpc_tcp* tcp = reinterpret_cast<grpc_tcp*>(ep);
   grpc_error_handle error = GRPC_ERROR_NONE;
   TcpZerocopySendRecord* zerocopy_send_record = nullptr;

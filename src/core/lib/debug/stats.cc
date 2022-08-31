@@ -26,6 +26,7 @@
 #include <algorithm>
 #include <vector>
 
+#include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 
@@ -142,28 +143,32 @@ double grpc_stats_histo_percentile(const grpc_stats_data* stats,
       static_cast<double>(count) * percentile / 100.0);
 }
 
+namespace {
+template <typename I>
+std::string ArrayToJson(const I* values, size_t count) {
+  std::vector<std::string> parts;
+  for (size_t i = 0; i < count; i++) {
+    parts.push_back(absl::StrFormat("%d", values[i]));
+  }
+  return absl::StrCat("[", absl::StrJoin(parts, ","), "]");
+}
+}  // namespace
+
 std::string grpc_stats_data_as_json(const grpc_stats_data* data) {
   std::vector<std::string> parts;
-  parts.push_back("{");
   for (size_t i = 0; i < GRPC_STATS_COUNTER_COUNT; i++) {
     parts.push_back(absl::StrFormat(
         "\"%s\": %" PRIdPTR, grpc_stats_counter_name[i], data->counters[i]));
   }
   for (size_t i = 0; i < GRPC_STATS_HISTOGRAM_COUNT; i++) {
-    parts.push_back(absl::StrFormat("\"%s\": [", grpc_stats_histogram_name[i]));
-    for (int j = 0; j < grpc_stats_histo_buckets[i]; j++) {
-      parts.push_back(
-          absl::StrFormat("%s%" PRIdPTR, j == 0 ? "" : ",",
-                          data->histograms[grpc_stats_histo_start[i] + j]));
-    }
+    parts.push_back(absl::StrFormat(
+        "\"%s\": %s", grpc_stats_histogram_name[i],
+        ArrayToJson(data->histograms + grpc_stats_histo_start[i],
+                    grpc_stats_histo_buckets[i])));
     parts.push_back(
-        absl::StrFormat("], \"%s_bkt\": [", grpc_stats_histogram_name[i]));
-    for (int j = 0; j < grpc_stats_histo_buckets[i]; j++) {
-      parts.push_back(absl::StrFormat(
-          "%s%d", j == 0 ? "" : ",", grpc_stats_histo_bucket_boundaries[i][j]));
-    }
-    parts.push_back("]");
+        absl::StrFormat("\"%s_bkt\": %s", grpc_stats_histogram_name[i],
+                        ArrayToJson(grpc_stats_histo_bucket_boundaries[i],
+                                    grpc_stats_histo_buckets[i])));
   }
-  parts.push_back("}");
-  return absl::StrJoin(parts, "");
+  return absl::StrCat("{", absl::StrJoin(parts, ", "), "}");
 }

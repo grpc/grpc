@@ -31,7 +31,6 @@
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/mpscq.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/profiling/timers.h"
 
 struct grpc_closure;
 typedef struct grpc_closure grpc_closure;

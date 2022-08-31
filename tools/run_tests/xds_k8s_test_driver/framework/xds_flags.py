@@ -127,6 +127,13 @@ FORCE_CLEANUP = flags.DEFINE_bool(
     default=False,
     help="Force resource cleanup, even if not created by this test run")
 
+COLLECT_APP_LOGS = flags.DEFINE_bool(
+    'collect_app_logs',
+    default=False,
+    help=('Collect the logs of the xDS Test Client and Server\n'
+          f'into the test_app_logs/ directory under the log directory.\n'
+          'See --log_dir description for configuring the log directory.'))
+
 # Needed to configure urllib3 socket timeout, which is infinity by default.
 SOCKET_DEFAULT_TIMEOUT = flags.DEFINE_float(
     "socket_default_timeout",

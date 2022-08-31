@@ -75,6 +75,13 @@ TEST(DurationTest, Infinities) {
             Duration::NegativeInfinity());
 }
 
+TEST(DurationTest, Multiplication) {
+  Duration d = Duration::Seconds(5);
+  EXPECT_EQ(d * 2, Duration::Seconds(10));
+  d *= 3;
+  EXPECT_EQ(d, Duration::Seconds(15));
+}
+
 TEST(DurationTest, FromTimespan) {
   EXPECT_EQ(Duration::FromTimespec(gpr_time_from_millis(1234, GPR_TIMESPAN)),
             Duration::Milliseconds(1234));
