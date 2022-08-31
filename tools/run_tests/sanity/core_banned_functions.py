@@ -57,7 +57,10 @@ BANNED_EXCEPT = {
     'std::random_device': [
         'src/core/ext/filters/client_channel/lb_policy/rls/rls.cc',
         'src/core/ext/filters/client_channel/resolver/google_c2p/google_c2p_resolver.cc',
-    ]
+    ],
+
+    # Use `std::exchange()` instead.
+    'absl::exchange': []
 }
 
 errors = 0

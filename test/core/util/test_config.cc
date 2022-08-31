@@ -20,13 +20,13 @@
 
 #include <inttypes.h>
 #include <stdlib.h>
-#include <string.h>
 
 #include <string>
 
 #include "absl/debugging/failure_signal_handler.h"
 #include "absl/status/status.h"
 #include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/grpc.h>
@@ -94,8 +94,9 @@ gpr_timespec grpc_timeout_milliseconds_to_deadline(int64_t time_ms) {
 namespace {
 void RmArg(int i, int* argc, char** argv) {
   --(*argc);
-  if (i < *argc) {
-    memmove(argv + i, argv + i + 1, *argc - i);
+  while (i < *argc) {
+    argv[i] = argv[i + 1];
+    ++i;
   }
 }
 
@@ -104,6 +105,7 @@ void ParseTestArgs(int* argc, char** argv) {
   // flags to look for and consume
   const absl::string_view poller_flag{"--poller="};
   const absl::string_view engine_flag{"--engine="};
+  const absl::string_view experiment_flag{"--experiment="};
   int i = 1;
   while (i < *argc) {
     if (absl::StartsWith(argv[i], poller_flag)) {
@@ -120,6 +122,15 @@ void ParseTestArgs(int* argc, char** argv) {
         gpr_log(GPR_ERROR, "%s", engine_set.ToString().c_str());
         GPR_ASSERT(false);
       }
+      // remove the spent argv
+      RmArg(i, argc, argv);
+      continue;
+    }
+    if (absl::StartsWith(argv[i], experiment_flag)) {
+      gpr_setenv(
+          absl::StrCat("GRPC_EXPERIMENT_", argv[i] + experiment_flag.length())
+              .c_str(),
+          "true");
       // remove the spent argv
       RmArg(i, argc, argv);
       continue;

@@ -403,6 +403,17 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "experiments",
+    srcs = ["src/core/lib/experiments/experiments.cc"],
+    hdrs = ["src/core/lib/experiments/experiments.h"],
+    language = "c++",
+    deps = [
+        "gpr",
+        "gpr_platform",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_unsecure",
     srcs = [
         "src/core/lib/surface/init.cc",
@@ -1549,7 +1560,6 @@ grpc_cc_library(
         "absl/status",
         "absl/types:optional",
         "absl/types:variant",
-        "absl/utility",
     ],
     language = "c++",
     public_hdrs = [
@@ -1895,7 +1905,6 @@ grpc_cc_library(
         "absl/status",
         "absl/strings",
         "absl/types:optional",
-        "absl/utility",
     ],
     deps = [
         "activity",
@@ -1942,7 +1951,6 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/resource_quota/arena.h",
     ],
-    external_deps = ["absl/utility"],
     deps = [
         "construct_destruct",
         "context",
@@ -2434,7 +2442,6 @@ grpc_cc_library(
     external_deps = [
         "absl/functional:any_invocable",
         "absl/status",
-        "absl/utility",
     ],
     deps = [
         "event_engine_base_hdrs",
@@ -2574,7 +2581,6 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/synchronization",
-        "absl/utility",
     ],
     deps = [
         "gpr",
@@ -3185,6 +3191,7 @@ grpc_cc_library(
         "error",
         "event_engine_common",
         "exec_ctx",
+        "experiments",
         "gpr",
         "gpr_tls",
         "grpc_public_hdrs",
@@ -3637,7 +3644,6 @@ grpc_cc_library(
         "absl/strings:cord",
         "absl/types:optional",
         "absl/types:variant",
-        "absl/utility",
         "upb_lib",
     ],
     language = "c++",
@@ -3938,7 +3944,6 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/types:optional",
-        "absl/utility",
     ],
     language = "c++",
     deps = [
@@ -4023,7 +4028,6 @@ grpc_cc_library(
         "absl/strings",
         "absl/strings:str_format",
         "absl/types:optional",
-        "absl/utility",
     ],
     language = "c++",
     visibility = ["@grpc:http"],
@@ -6579,7 +6583,6 @@ grpc_cc_library(
         "absl/strings",
         "absl/strings:str_format",
         "absl/types:optional",
-        "absl/utility",
     ],
     deps = [
         "bdp_estimator",
@@ -6647,7 +6650,6 @@ grpc_cc_library(
         "absl/types:optional",
         "absl/types:span",
         "absl/types:variant",
-        "absl/utility",
     ],
     language = "c++",
     visibility = ["@grpc:grpclb"],
@@ -6804,7 +6806,6 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/types:optional",
-        "absl/utility",
     ],
     language = "c++",
     deps = [
