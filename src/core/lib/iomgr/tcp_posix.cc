@@ -823,8 +823,10 @@ static void tcp_trace_read(grpc_tcp* tcp, grpc_error_handle error)
 
 static void update_rcvlowat(grpc_tcp* tcp)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(tcp->read_mu) {
-  // TODO(ctiller): check supported & enabled, allow some adjustments instead of
-  // hardcoding things.
+  if (!grpc_core::IsTcpRcvLowatEnabled()) return;
+
+  // TODO(ctiller): Check if supported by OS.
+  // TODO(ctiller): Allow some adjustments instead of hardcoding things.
 
   static constexpr int kRcvLowatMax = 16 * 1024 * 1024;
   static constexpr int kRcvLowatThreshold = 16 * 1024;

@@ -29,12 +29,16 @@ const char* const description_tcp_frame_size_tuning =
 const char* const description_tcp_read_chunks =
     "Allocate only 8kb or 64kb chunks for TCP reads to reduce pressure on "
     "malloc to recycle arbitrary large blocks.";
+const char* const description_tcp_rcv_lowat =
+    "Use SO_RCVLOWAT to avoid wakeups on the read path.";
 }  // namespace
 
 GPR_GLOBAL_CONFIG_DEFINE_BOOL(grpc_experimental_enable_tcp_frame_size_tuning,
                               false, description_tcp_frame_size_tuning);
 GPR_GLOBAL_CONFIG_DEFINE_BOOL(grpc_experimental_enable_tcp_read_chunks, false,
                               description_tcp_read_chunks);
+GPR_GLOBAL_CONFIG_DEFINE_BOOL(grpc_experimental_enable_tcp_rcv_lowat, false,
+                              description_tcp_rcv_lowat);
 
 namespace grpc_core {
 
@@ -48,12 +52,18 @@ bool IsTcpReadChunksEnabled() {
       GPR_GLOBAL_CONFIG_GET(grpc_experimental_enable_tcp_read_chunks);
   return enabled;
 }
+bool IsTcpRcvLowatEnabled() {
+  static const bool enabled =
+      GPR_GLOBAL_CONFIG_GET(grpc_experimental_enable_tcp_rcv_lowat);
+  return enabled;
+}
 
 const ExperimentMetadata g_experiment_metadata[] = {
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning, false,
      IsTcpFrameSizeTuningEnabled},
     {"tcp_read_chunks", description_tcp_read_chunks, false,
      IsTcpReadChunksEnabled},
+    {"tcp_rcv_lowat", description_tcp_rcv_lowat, false, IsTcpRcvLowatEnabled},
 };
 
 }  // namespace grpc_core
