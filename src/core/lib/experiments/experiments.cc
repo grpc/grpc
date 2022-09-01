@@ -18,8 +18,6 @@
 
 #include "src/core/lib/experiments/experiments.h"
 
-#include "src/core/lib/gprpp/global_config.h"
-
 namespace {
 const char* const description_tcp_frame_size_tuning =
     "If set, enables TCP to use RPC size estimation made by higher layers. TCP "
@@ -31,29 +29,11 @@ const char* const description_tcp_read_chunks =
     "malloc to recycle arbitrary large blocks.";
 }  // namespace
 
-GPR_GLOBAL_CONFIG_DEFINE_BOOL(grpc_experimental_enable_tcp_frame_size_tuning,
-                              false, description_tcp_frame_size_tuning);
-GPR_GLOBAL_CONFIG_DEFINE_BOOL(grpc_experimental_enable_tcp_read_chunks, false,
-                              description_tcp_read_chunks);
-
 namespace grpc_core {
 
-bool IsTcpFrameSizeTuningEnabled() {
-  static const bool enabled =
-      GPR_GLOBAL_CONFIG_GET(grpc_experimental_enable_tcp_frame_size_tuning);
-  return enabled;
-}
-bool IsTcpReadChunksEnabled() {
-  static const bool enabled =
-      GPR_GLOBAL_CONFIG_GET(grpc_experimental_enable_tcp_read_chunks);
-  return enabled;
-}
-
 const ExperimentMetadata g_experiment_metadata[] = {
-    {"tcp_frame_size_tuning", description_tcp_frame_size_tuning, false,
-     IsTcpFrameSizeTuningEnabled},
-    {"tcp_read_chunks", description_tcp_read_chunks, false,
-     IsTcpReadChunksEnabled},
+    {"tcp_frame_size_tuning", description_tcp_frame_size_tuning, false},
+    {"tcp_read_chunks", description_tcp_read_chunks, false},
 };
 
 }  // namespace grpc_core

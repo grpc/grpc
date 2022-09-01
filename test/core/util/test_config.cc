@@ -127,10 +127,7 @@ void ParseTestArgs(int* argc, char** argv) {
       continue;
     }
     if (absl::StartsWith(argv[i], experiment_flag)) {
-      gpr_setenv(
-          absl::StrCat("GRPC_EXPERIMENT_", argv[i] + experiment_flag.length())
-              .c_str(),
-          "true");
+      gpr_setenv("GRPC_EXPERIMENTS", argv[i] + experiment_flag.length());
       // remove the spent argv
       RmArg(i, argc, argv);
       continue;
