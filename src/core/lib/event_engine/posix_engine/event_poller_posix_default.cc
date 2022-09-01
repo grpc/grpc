@@ -36,10 +36,10 @@ bool PollStrategyMatches(absl::string_view strategy, absl::string_view want) {
 
 }  // namespace
 
-EventPoller* GetDefaultPoller(Scheduler* scheduler) {
+PosixEventPoller* GetDefaultPoller(Scheduler* scheduler) {
   grpc_core::UniquePtr<char> poll_strategy =
       GPR_GLOBAL_CONFIG_GET(grpc_poll_strategy);
-  EventPoller* poller = nullptr;
+  PosixEventPoller* poller = nullptr;
   auto strings = absl::StrSplit(poll_strategy.get(), ',');
   for (auto it = strings.begin(); it != strings.end() && poller == nullptr;
        it++) {
