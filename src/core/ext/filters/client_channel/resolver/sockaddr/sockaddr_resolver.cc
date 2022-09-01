@@ -23,6 +23,7 @@
 
 #include "absl/memory/memory.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 
 #include "src/core/lib/channel/channel_args.h"
@@ -77,15 +78,22 @@ class SockaddrResolverFactory final : public ResolverFactory {
   }
 
   OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override {
-    auto addresses =
-        CoreConfiguration::Get().address_parser_registry().Parse(args.uri);
-    if (!addresses.ok()) return nullptr;
-    ServerAddressList server_addresses;
-    server_addresses.reserve(addresses->size());
-    for (auto address : *addresses) {
-      server_addresses.emplace_back(address, ChannelArgs());
+    std::vector<ServerAddress> addresses;
+    for (absl::string_view ith_path : absl::StrSplit(args.uri.path(), ',')) {
+      if (ith_path.empty()) {
+        // Skip targets which are empty.
+        continue;
+      }
+      auto address = CoreConfiguration::Get().address_parser_registry().Parse(
+          *URI::Create(args.uri.scheme(), "", std::string(ith_path), {}, ""));
+      if (!address.ok()) {
+        gpr_log(GPR_ERROR, "Failed to parse address: %s",
+                address.status().ToString().c_str());
+        return nullptr;
+      }
+      addresses.emplace_back(*address, ChannelArgs{});
     }
-    return MakeOrphanable<SockaddrResolver>(std::move(server_addresses),
+    return MakeOrphanable<SockaddrResolver>(std::move(addresses),
                                             std::move(args));
   }
 

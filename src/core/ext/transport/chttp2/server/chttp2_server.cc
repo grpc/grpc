@@ -918,18 +918,19 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
     auto uri = URI::Parse(parsed_addr);
     const auto& address_parser_registry =
         CoreConfiguration::Get().address_parser_registry();
-    absl::StatusOr<std::vector<grpc_resolved_address>> resolved_or;
+    std::vector<grpc_resolved_address> addresses;
     if (uri.ok() && address_parser_registry.HasScheme(uri->scheme())) {
-      resolved_or = address_parser_registry.Parse(*uri);
+      auto address = address_parser_registry.Parse(*uri);
+      if (!address.ok()) return address.status();
+      addresses.push_back(*address);
     } else {
-      resolved_or =
+      auto resolved =
           GetDNSResolver()->LookupHostnameBlocking(parsed_addr, "https");
-    }
-    if (!resolved_or.ok()) {
-      return absl_status_to_grpc_error(resolved_or.status());
+      if (!resolved.ok()) return resolved.status();
+      addresses = std::move(*resolved);
     }
     // Create a listener for each resolved address.
-    for (auto& addr : *resolved_or) {
+    for (auto& addr : addresses) {
       // If address has a wildcard port (0), use the same port as a previous
       // listener.
       if (*port_num != -1 && grpc_sockaddr_get_port(&addr) == 0) {
@@ -948,17 +949,17 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
         }
       }
     }
-    if (error_list.size() == resolved_or->size()) {
+    if (error_list.size() == addresses.size()) {
       std::string msg = absl::StrFormat(
           "No address added out of total %" PRIuPTR " resolved for '%s'",
-          resolved_or->size(), addr);
+          addresses.size(), addr);
       return GRPC_ERROR_CREATE_REFERENCING_FROM_COPIED_STRING(
           msg.c_str(), error_list.data(), error_list.size());
     } else if (!error_list.empty()) {
       std::string msg = absl::StrFormat(
           "Only %" PRIuPTR " addresses added out of total %" PRIuPTR
           " resolved",
-          resolved_or->size() - error_list.size(), resolved_or->size());
+          addresses.size() - error_list.size(), addresses.size());
       error = GRPC_ERROR_CREATE_REFERENCING_FROM_COPIED_STRING(
           msg.c_str(), error_list.data(), error_list.size());
       gpr_log(GPR_INFO, "WARNING: %s", grpc_error_std_string(error).c_str());

@@ -56,11 +56,7 @@ class AddressParserRegistry {
   AddressParserRegistry& operator=(AddressParserRegistry&&) = default;
 
   // Parse URI using an appropriate parser, return a list of resolved addresses.
-  absl::StatusOr<std::vector<grpc_resolved_address>> Parse(
-      const URI& uri) const;
-
-  absl::StatusOr<grpc_resolved_address> ParseSingleAddress(
-      const URI& uri) const;
+  absl::StatusOr<grpc_resolved_address> Parse(const URI& uri) const;
 
   // Does the registry have a given scheme?
   bool HasScheme(absl::string_view scheme) const;

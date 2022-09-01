@@ -40,24 +40,7 @@ AddressParserRegistry AddressParserRegistry::Builder::Build() {
   return AddressParserRegistry(std::move(parsers_));
 }
 
-absl::StatusOr<std::vector<grpc_resolved_address>> AddressParserRegistry::Parse(
-    const URI& uri) const {
-  auto parser = GetParser(uri);
-  if (!parser.ok()) return parser.status();
-  std::vector<grpc_resolved_address> addresses;
-  for (absl::string_view ith_path : absl::StrSplit(uri.path(), ',')) {
-    if (ith_path.empty()) {
-      // Skip targets which are empty.
-      continue;
-    }
-    auto address = (**parser)(ith_path);
-    if (!address.ok()) return address.status();
-    addresses.emplace_back(*address);
-  }
-  return addresses;
-}
-
-absl::StatusOr<grpc_resolved_address> AddressParserRegistry::ParseSingleAddress(
+absl::StatusOr<grpc_resolved_address> AddressParserRegistry::Parse(
     const URI& uri) const {
   auto parser = GetParser(uri);
   if (!parser.ok()) return parser.status();

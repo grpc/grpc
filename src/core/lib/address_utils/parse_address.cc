@@ -294,9 +294,8 @@ bool grpc_parse_ipv6(const grpc_core::URI& uri,
 
 bool grpc_parse_uri(const grpc_core::URI& uri,
                     grpc_resolved_address* resolved_addr) {
-  auto r = grpc_core::CoreConfiguration::Get()
-               .address_parser_registry()
-               .ParseSingleAddress(uri);
+  auto r =
+      grpc_core::CoreConfiguration::Get().address_parser_registry().Parse(uri);
   if (!r.ok()) {
     gpr_log(GPR_ERROR, "Can't parse scheme '%s': %s", uri.scheme().c_str(),
             r.status().ToString().c_str());
