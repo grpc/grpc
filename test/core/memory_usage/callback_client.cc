@@ -22,13 +22,13 @@
 #include <chrono>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
 #include "absl/strings/string_view.h"
 #include "absl/synchronization/notification.h"
-#include "absl/utility/utility.h"
 
 #include <grpc/support/log.h>
 #include <grpcpp/grpcpp.h>
@@ -154,7 +154,7 @@ int main(int argc, char** argv) {
 
   // Checking that all channels are still open
   for (int i = 0; i < size; ++i) {
-    GPR_ASSERT(!absl::exchange(channels_list[i], nullptr)
+    GPR_ASSERT(!std::exchange(channels_list[i], nullptr)
                     ->WaitForStateChange(GRPC_CHANNEL_READY,
                                          std::chrono::system_clock::now() +
                                              std::chrono::milliseconds(1)));

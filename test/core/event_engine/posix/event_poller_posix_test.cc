@@ -14,6 +14,13 @@
 
 #include <ostream>
 
+#include "absl/functional/any_invocable.h"
+#include "absl/time/time.h"
+#include "absl/types/variant.h"
+
+#include "src/core/lib/event_engine/poller.h"
+#include "src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.h"
+#include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h"
 #include "src/core/lib/iomgr/port.h"
 
 // This test won't work except with posix sockets enabled
@@ -42,19 +49,23 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller_posix_default.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
+#include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h"
+#include "src/core/lib/event_engine/promise.h"
+#include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/gprpp/global_config.h"
 #include "test/core/util/port.h"
 
 GPR_GLOBAL_CONFIG_DECLARE_STRING(grpc_poll_strategy);
 
-using ::grpc_event_engine::posix_engine::EventPoller;
+using ::grpc_event_engine::posix_engine::PosixEventPoller;
 
 static gpr_mu g_mu;
-static EventPoller* g_event_poller = nullptr;
+static PosixEventPoller* g_event_poller = nullptr;
 
 // buffer size used to send and receive data.
 // 1024 is the minimal value to set TCP send and receive buffer.
@@ -69,6 +80,12 @@ static EventPoller* g_event_poller = nullptr;
 namespace grpc_event_engine {
 namespace posix_engine {
 
+using ::grpc_event_engine::experimental::Poller;
+using ::grpc_event_engine::experimental::Promise;
+using ::grpc_event_engine::experimental::SelfDeletingClosure;
+using ::grpc_event_engine::posix_engine::PosixEventPoller;
+using namespace std::chrono_literals;
+
 namespace {
 
 class TestScheduler : public Scheduler {
@@ -76,6 +93,10 @@ class TestScheduler : public Scheduler {
   explicit TestScheduler(experimental::EventEngine* engine) : engine_(engine) {}
   void Run(experimental::EventEngine::Closure* closure) override {
     engine_->Run(closure);
+  }
+
+  void Run(absl::AnyInvocable<void()> cb) override {
+    engine_->Run(std::move(cb));
   }
 
  private:
@@ -125,7 +146,7 @@ typedef struct {
   EventHandle* em_fd;       /* listening fd */
   ssize_t read_bytes_total; /* total number of received bytes */
   int done;                 /* set to 1 when a server finishes serving */
-  IomgrEngineClosure* listen_closure;
+  PosixEngineClosure* listen_closure;
 } server;
 
 void ServerInit(server* sv) {
@@ -139,7 +160,7 @@ typedef struct {
   server* sv;              /* not owned by a single session */
   EventHandle* em_fd;      /* fd to read upload bytes */
   char read_buf[BUF_SIZE]; /* buffer to store upload bytes */
-  IomgrEngineClosure* session_read_closure;
+  PosixEngineClosure* session_read_closure;
 } session;
 
 // Called when an upload session can be safely shutdown.
@@ -185,7 +206,7 @@ void SessionReadCb(session* se, absl::Status status) {
     // in the polling thread, such that polling only happens after this
     // callback, and will catch read edge event if data is available again
     // before notify_on_read.
-    se->session_read_closure = IomgrEngineClosure::TestOnlyToClosure(
+    se->session_read_closure = PosixEngineClosure::TestOnlyToClosure(
         [se](absl::Status status) { SessionReadCb(se, status); });
     se->em_fd->NotifyOnRead(se->session_read_closure);
   }
@@ -220,7 +241,7 @@ void ListenCb(server* sv, absl::Status status) {
                 reinterpret_cast<struct sockaddr*>(&ss), &slen);
   } while (fd < 0 && errno == EINTR);
   if (fd < 0 && errno == EAGAIN) {
-    sv->listen_closure = IomgrEngineClosure::TestOnlyToClosure(
+    sv->listen_closure = PosixEngineClosure::TestOnlyToClosure(
         [sv](absl::Status status) { ListenCb(sv, status); });
     listen_em_fd->NotifyOnRead(sv->listen_closure);
     return;
@@ -232,10 +253,10 @@ void ListenCb(server* sv, absl::Status status) {
   se = static_cast<session*>(gpr_malloc(sizeof(*se)));
   se->sv = sv;
   se->em_fd = g_event_poller->CreateHandle(fd, "listener", false);
-  se->session_read_closure = IomgrEngineClosure::TestOnlyToClosure(
+  se->session_read_closure = PosixEngineClosure::TestOnlyToClosure(
       [se](absl::Status status) { SessionReadCb(se, status); });
   se->em_fd->NotifyOnRead(se->session_read_closure);
-  sv->listen_closure = IomgrEngineClosure::TestOnlyToClosure(
+  sv->listen_closure = PosixEngineClosure::TestOnlyToClosure(
       [sv](absl::Status status) { ListenCb(sv, status); });
   listen_em_fd->NotifyOnRead(sv->listen_closure);
 }
@@ -258,7 +279,7 @@ int ServerStart(server* sv) {
   EXPECT_EQ(listen(fd, MAX_NUM_FD), 0);
 
   sv->em_fd = g_event_poller->CreateHandle(fd, "server", false);
-  sv->listen_closure = IomgrEngineClosure::TestOnlyToClosure(
+  sv->listen_closure = PosixEngineClosure::TestOnlyToClosure(
       [sv](absl::Status status) { ListenCb(sv, status); });
   sv->em_fd->NotifyOnRead(sv->listen_closure);
   return port;
@@ -275,7 +296,7 @@ typedef struct {
   // notify_on_write to schedule another write.
   int client_write_cnt;
   int done;
-  IomgrEngineClosure* write_closure;
+  PosixEngineClosure* write_closure;
 } client;
 
 void ClientInit(client* cl) {
@@ -312,7 +333,7 @@ void ClientSessionWrite(client* cl, absl::Status status) {
   EXPECT_EQ(errno, EAGAIN);
   gpr_mu_lock(&g_mu);
   if (cl->client_write_cnt < CLIENT_TOTAL_WRITE_CNT) {
-    cl->write_closure = IomgrEngineClosure::TestOnlyToClosure(
+    cl->write_closure = PosixEngineClosure::TestOnlyToClosure(
         [cl](absl::Status status) { ClientSessionWrite(cl, status); });
     cl->client_write_cnt++;
     gpr_mu_unlock(&g_mu);
@@ -351,16 +372,18 @@ void ClientStart(client* cl, int port) {
 
 // Wait for the signal to shutdown client and server.
 void WaitAndShutdown(server* sv, client* cl) {
-  std::vector<EventHandle*> pending_events;
+  Poller::WorkResult result;
   gpr_mu_lock(&g_mu);
   while (!sv->done || !cl->done) {
     gpr_mu_unlock(&g_mu);
-    (void)g_event_poller->Work(grpc_core::Timestamp::InfFuture(),
-                               pending_events);
-    for (auto it = pending_events.begin(); it != pending_events.end(); ++it) {
-      (*it)->ExecutePendingActions();
+    result = g_event_poller->Work(24h);
+    if (absl::holds_alternative<Poller::Events>(result)) {
+      auto pending_events = absl::get<Poller::Events>(result);
+      for (auto it = pending_events.begin(); it != pending_events.end(); ++it) {
+        (*it)->Run();
+      }
+      pending_events.clear();
     }
-    pending_events.clear();
     gpr_mu_lock(&g_mu);
   }
   gpr_mu_unlock(&g_mu);
@@ -382,12 +405,19 @@ class EventPollerTest : public ::testing::TestWithParam<std::string> {
     EXPECT_NE(scheduler_, nullptr);
     GPR_GLOBAL_CONFIG_SET(grpc_poll_strategy, GetParam().c_str());
     g_event_poller = GetDefaultPoller(scheduler_.get());
+    if (g_event_poller != nullptr) {
+      EXPECT_EQ(g_event_poller->Name(), GetParam());
+    }
   }
+
   void TearDown() override {
     if (g_event_poller != nullptr) {
       g_event_poller->Shutdown();
     }
   }
+
+ public:
+  TestScheduler* Scheduler() { return scheduler_.get(); }
 
  private:
   std::unique_ptr<grpc_event_engine::experimental::PosixEventEngine> engine_;
@@ -449,9 +479,9 @@ TEST_P(EventPollerTest, TestEventPollerHandleChange) {
   if (g_event_poller == nullptr) {
     return;
   }
-  IomgrEngineClosure* first_closure = IomgrEngineClosure::TestOnlyToClosure(
+  PosixEngineClosure* first_closure = PosixEngineClosure::TestOnlyToClosure(
       [a = &a](absl::Status status) { FirstReadCallback(a, status); });
-  IomgrEngineClosure* second_closure = IomgrEngineClosure::TestOnlyToClosure(
+  PosixEngineClosure* second_closure = PosixEngineClosure::TestOnlyToClosure(
       [b = &b](absl::Status status) { SecondReadCallback(b, status); });
   InitChangeData(&a);
   InitChangeData(&b);
@@ -473,16 +503,19 @@ TEST_P(EventPollerTest, TestEventPollerHandleChange) {
 
   // And now wait for it to run.
   auto poller_work = [](FdChangeData* fdc) {
-    std::vector<EventHandle*> pending_events;
+    Poller::WorkResult result;
     gpr_mu_lock(&g_mu);
     while (fdc->cb_that_ran == nullptr) {
       gpr_mu_unlock(&g_mu);
-      (void)g_event_poller->Work(grpc_core::Timestamp::InfFuture(),
-                                 pending_events);
-      for (auto it = pending_events.begin(); it != pending_events.end(); ++it) {
-        (*it)->ExecutePendingActions();
+      result = g_event_poller->Work(24h);
+      if (absl::holds_alternative<Poller::Events>(result)) {
+        auto pending_events = absl::get<Poller::Events>(result);
+        for (auto it = pending_events.begin(); it != pending_events.end();
+             ++it) {
+          (*it)->Run();
+        }
+        pending_events.clear();
       }
-      pending_events.clear();
       gpr_mu_lock(&g_mu);
     }
   };
@@ -513,7 +546,192 @@ TEST_P(EventPollerTest, TestEventPollerHandleChange) {
   close(sv[1]);
 }
 
-INSTANTIATE_TEST_SUITE_P(EventPoller, EventPollerTest,
+std::atomic<int> kTotalActiveWakeupFdHandles{0};
+
+// A helper class representing one file descriptor. Its implemented using
+// a WakeupFd. It registers itself with the poller and waits to be notified
+// of read events. Upon receiving a read event, (1) it processes it,
+// (2) registes to be notified of the next read event and (3) schedules
+// generation of the next read event. The Fd orphanes itself after processing
+// a specified number of read events.
+class WakeupFdHandle : public grpc_core::DualRefCounted<WakeupFdHandle> {
+ public:
+  WakeupFdHandle(int num_wakeups, Scheduler* scheduler,
+                 PosixEventPoller* poller)
+      : num_wakeups_(num_wakeups),
+        scheduler_(scheduler),
+        poller_(poller),
+        on_read_(
+            PosixEngineClosure::ToPermanentClosure([this](absl::Status status) {
+              EXPECT_TRUE(status.ok());
+              status = ReadPipe();
+              if (!status.ok()) {
+                // Rarely epoll1 poller may generate an EPOLLHUP - which is a
+                // spurious wakeup. Poll based poller may also likely generate a
+                // lot of spurious wakeups because of the level triggered nature
+                // of poll In such cases do not bother changing the number of
+                // wakeups received.
+                EXPECT_EQ(status, absl::InternalError("Spurious Wakeup"));
+                handle_->NotifyOnRead(on_read_);
+                return;
+              }
+              if (--num_wakeups_ == 0) {
+                // This should invoke the registered NotifyOnRead callbacks with
+                // the shutdown error. When those callbacks call Unref(), the
+                // WakeupFdHandle should call OrphanHandle in the Unref() method
+                // implementation.
+                handle_->ShutdownHandle(absl::InternalError("Shutting down"));
+                Unref();
+              } else {
+                handle_->NotifyOnRead(on_read_);
+                Ref().release();
+                // Schedule next wakeup to trigger the registered NotifyOnRead
+                // callback.
+                scheduler_->Run(SelfDeletingClosure::Create([this]() {
+                  // Send next wakeup.
+                  EXPECT_TRUE(wakeup_fd_->Wakeup().ok());
+                  Unref();
+                }));
+              }
+            })) {
+    WeakRef().release();
+    ++kTotalActiveWakeupFdHandles;
+    EXPECT_GT(num_wakeups_, 0);
+    EXPECT_NE(scheduler_, nullptr);
+    EXPECT_NE(poller_, nullptr);
+    wakeup_fd_ = *PipeWakeupFd::CreatePipeWakeupFd();
+    handle_ = poller_->CreateHandle(wakeup_fd_->ReadFd(), "test", false);
+    EXPECT_NE(handle_, nullptr);
+    handle_->NotifyOnRead(on_read_);
+    //  Send a wakeup initially.
+    EXPECT_TRUE(wakeup_fd_->Wakeup().ok());
+  }
+
+  ~WakeupFdHandle() override { delete on_read_; }
+
+  void Orphan() override {
+    // Once the handle has orphaned itself, decrement
+    // kTotalActiveWakeupFdHandles. Once all handles have orphaned themselves,
+    // send a Kick to the poller.
+    handle_->OrphanHandle(
+        PosixEngineClosure::TestOnlyToClosure(
+            [poller = poller_, wakeupfd_handle = this](absl::Status status) {
+              EXPECT_TRUE(status.ok());
+              if (--kTotalActiveWakeupFdHandles == 0) {
+                poller->Kick();
+              }
+              wakeupfd_handle->WeakUnref();
+            }),
+        nullptr, "");
+  }
+
+ private:
+  absl::Status ReadPipe() {
+    char buf[128];
+    ssize_t r;
+    int total_bytes_read = 0;
+    for (;;) {
+      r = read(wakeup_fd_->ReadFd(), buf, sizeof(buf));
+      if (r > 0) {
+        total_bytes_read += r;
+        continue;
+      }
+      if (r == 0) return absl::OkStatus();
+      switch (errno) {
+        case EAGAIN:
+          return total_bytes_read > 0 ? absl::OkStatus()
+                                      : absl::InternalError("Spurious Wakeup");
+        case EINTR:
+          continue;
+        default:
+          return absl::Status(absl::StatusCode::kInternal,
+                              absl::StrCat("read: ", strerror(errno)));
+      }
+    }
+  }
+  int num_wakeups_;
+  Scheduler* scheduler_;
+  PosixEventPoller* poller_;
+  PosixEngineClosure* on_read_;
+  std::unique_ptr<WakeupFd> wakeup_fd_;
+  EventHandle* handle_;
+};
+
+// A helper class to create Fds and drive the polling for these Fds. It
+// repeatedly calls the Work(..) method on the poller to get pet pending events,
+// then schedules another parallel Work(..) instantiation and processes these
+// pending events. This continues until all Fds have orphaned themselves.
+class Worker : public grpc_core::DualRefCounted<Worker> {
+ public:
+  Worker(Scheduler* scheduler, PosixEventPoller* poller, int num_handles,
+         int num_wakeups_per_handle)
+      : scheduler_(scheduler), poller_(poller) {
+    handles_.reserve(num_handles);
+    for (int i = 0; i < num_handles; i++) {
+      handles_.push_back(
+          new WakeupFdHandle(num_wakeups_per_handle, scheduler_, poller_));
+    }
+    WeakRef().release();
+  }
+  void Orphan() override { promise.Set(true); }
+  void Start() {
+    // Start executing Work(..).
+    scheduler_->Run([this]() { Work(); });
+  }
+
+  void Wait() {
+    EXPECT_TRUE(promise.WaitWithTimeout(absl::Seconds(60)));
+    WeakUnref();
+  }
+
+ private:
+  void Work() {
+    auto result = g_event_poller->Work(24h);
+    if (absl::holds_alternative<Poller::Events>(result)) {
+      // Schedule next work instantiation immediately and take a Ref for
+      // the next instantiation.
+      Ref().release();
+      scheduler_->Run([this]() { Work(); });
+      // Process pending events of current Work(..) instantiation.
+      auto pending_events = absl::get<Poller::Events>(result);
+      for (auto it = pending_events.begin(); it != pending_events.end(); ++it) {
+        (*it)->Run();
+      }
+      pending_events.clear();
+      // Corresponds to the Ref taken for the current instantiation.
+      Unref();
+    } else {
+      // The poller got kicked. This can only happen when all the Fds have
+      // orphaned themselves.
+      EXPECT_TRUE(absl::holds_alternative<Poller::Kicked>(result));
+      Unref();
+    }
+  }
+  Scheduler* scheduler_;
+  PosixEventPoller* poller_;
+  Promise<bool> promise;
+  std::vector<WakeupFdHandle*> handles_;
+};
+
+// This test creates kNumHandles file descriptors and kNumWakeupsPerHandle
+// separate read events to the created Fds. The Fds use the NotifyOnRead API to
+// wait for a read event, upon receiving a read event they process it
+// immediately and schedule the wait for the next read event. A new read event
+// is also generated for each fd in parallel after the previous one is
+// processed.
+TEST_P(EventPollerTest, TestMultipleHandles) {
+  static constexpr int kNumHandles = 100;
+  static constexpr int kNumWakeupsPerHandle = 100;
+  if (g_event_poller == nullptr) {
+    return;
+  }
+  Worker* worker = new Worker(Scheduler(), g_event_poller, kNumHandles,
+                              kNumWakeupsPerHandle);
+  worker->Start();
+  worker->Wait();
+}
+
+INSTANTIATE_TEST_SUITE_P(PosixEventPoller, EventPollerTest,
                          ::testing::ValuesIn({std::string("epoll1"),
                                               std::string("poll")}),
                          &TestScenarioName);

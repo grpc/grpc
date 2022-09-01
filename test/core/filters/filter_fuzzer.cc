@@ -274,7 +274,7 @@ class MainLoop {
 
   void Run(const filter_fuzzer::Action& action, GlobalObjects* globals) {
     ExecCtx exec_ctx;
-    for (auto id : absl::exchange(wakeups_, {})) {
+    for (auto id : std::exchange(wakeups_, {})) {
       if (auto* call = GetCall(id)) call->Wakeup();
     }
     switch (action.type_case()) {
@@ -459,7 +459,7 @@ class MainLoop {
     void RecvInitialMetadata(const filter_fuzzer::Metadata& metadata) {
       if (server_initial_metadata_ == nullptr) {
         LoadMetadata(metadata, &server_initial_metadata_);
-        if (auto* latch = absl::exchange(
+        if (auto* latch = std::exchange(
                 unset_incoming_server_initial_metadata_latch_, nullptr)) {
           ScopedContext context(this);
           latch->Set(server_initial_metadata_.get());
@@ -501,7 +501,7 @@ class MainLoop {
         call_->context_ = this;
       }
       ~ScopedContext() {
-        while (bool step = absl::exchange(continue_, false)) {
+        while (bool step = std::exchange(continue_, false)) {
           call_->Step();
         }
         GPR_ASSERT(call_->context_ == this);
