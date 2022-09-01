@@ -164,8 +164,8 @@ ArenaPromise<absl::StatusOr<CallArgs>> ClientAuthFilter::GetCallCredsMetadata(
           [](absl::StatusOr<ClientMetadataHandle> new_metadata) mutable {
             if (!new_metadata.ok()) {
               return absl::StatusOr<ClientMetadataHandle>(
-                  MaybeRewriteIllegalStatusCode(
-                      std::move(new_metadata.status()), "call credentials"));
+                  MaybeRewriteIllegalStatusCode(new_metadata.status(),
+                                                "call credentials"));
             }
             return new_metadata;
           }),
