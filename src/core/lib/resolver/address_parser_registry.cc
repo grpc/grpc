@@ -30,10 +30,8 @@ namespace grpc_core {
 
 void AddressParserRegistry::Builder::AddScheme(absl::string_view scheme,
                                                AddressParser parser) {
-  for (const auto& parser : parsers_) {
-    GPR_ASSERT(parser.scheme != scheme);
-  }
-  parsers_.emplace_back(Parser{scheme, std::move(parser)});
+  GPR_ASSERT(parsers_.find(scheme) == parsers_.end());
+  parsers_.emplace(scheme, std::move(parser));
 }
 
 AddressParserRegistry AddressParserRegistry::Builder::Build() {
@@ -60,19 +58,14 @@ absl::StatusOr<const AddressParser*> AddressParserRegistry::GetParser(
     return absl::InvalidArgumentError(absl::StrCat(
         "authority-based URIs not supported by the ", uri.scheme(), " scheme"));
   }
-  for (const auto& parser : parsers_) {
-    if (parser.scheme != uri.scheme()) continue;
-    return &parser.parser;
-  }
+  auto it = parsers_.find(uri.scheme());
+  if (it != parsers_.end()) return &it->second;
   return absl::InvalidArgumentError(
       absl::StrCat("Unsupported URI scheme: ", uri.scheme()));
 }
 
 bool AddressParserRegistry::HasScheme(absl::string_view scheme) const {
-  for (const auto& parser : parsers_) {
-    if (parser.scheme == scheme) return true;
-  }
-  return false;
+  return parsers_.count(scheme) != 0;
 }
 
 }  // namespace grpc_core

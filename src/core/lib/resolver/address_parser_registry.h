@@ -18,8 +18,8 @@
 #include <grpc/support/port_platform.h>
 
 #include <functional>
+#include <map>
 #include <utility>
-#include <vector>
 
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
@@ -35,12 +35,6 @@ using AddressParser =
 // Handle mapping of address-like URIs to grpc_resolved_address structs.
 // Used by the sockaddr resolver and server construction to parse addresses.
 class AddressParserRegistry {
- private:
-  struct Parser {
-    absl::string_view scheme;
-    AddressParser parser;
-  };
-
  public:
   class Builder {
    public:
@@ -49,7 +43,7 @@ class AddressParserRegistry {
     AddressParserRegistry Build();
 
    private:
-    std::vector<Parser> parsers_;
+    std::map<absl::string_view, AddressParser> parsers_;
   };
 
   AddressParserRegistry(AddressParserRegistry&&) = default;
@@ -63,14 +57,15 @@ class AddressParserRegistry {
 
  private:
   AddressParserRegistry() = delete;
-  explicit AddressParserRegistry(std::vector<Parser> parsers)
+  explicit AddressParserRegistry(
+      std::map<absl::string_view, AddressParser> parsers)
       : parsers_(std::move(parsers)) {}
   AddressParserRegistry(const AddressParserRegistry&) = delete;
   AddressParserRegistry& operator=(const AddressParserRegistry&) = delete;
 
   absl::StatusOr<const AddressParser*> GetParser(const URI& uri) const;
 
-  std::vector<Parser> parsers_;
+  std::map<absl::string_view, AddressParser> parsers_;
 };
 
 }  // namespace grpc_core
