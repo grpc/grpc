@@ -248,7 +248,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
     std::map<RefCountedPtr<XdsLocalityName>, LocalityState,
              XdsLocalityName::Less>
         locality_stats;
-    Timestamp last_report_time = ExecCtx::Get()->Now();
+    Timestamp last_report_time = Timestamp::Now();
   };
 
   // Load report data.

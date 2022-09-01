@@ -28,6 +28,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gpr/time_precise.h"
+#include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gpr/useful.h"
 
 namespace grpc_core {
@@ -61,6 +62,30 @@ class Duration;
 // Timestamp represents a discrete point in time.
 class Timestamp {
  public:
+  // Base interface for time providers.
+  class Source {
+   public:
+    // Return the current time.
+    virtual Timestamp Now() = 0;
+
+   protected:
+    ~Source() = default;
+  };
+
+  class ScopedSource : public Source {
+   public:
+    ScopedSource() : previous_(std::exchange(source_, this)) {}
+    ScopedSource(const ScopedSource&) = delete;
+    ScopedSource& operator=(const ScopedSource&) = delete;
+
+   protected:
+    ~ScopedSource() { source_ = previous_; }
+    Source* previous() const { return previous_; }
+
+   private:
+    Source* const previous_;
+  };
+
   constexpr Timestamp() = default;
   // Constructs a Timestamp from a gpr_timespec.
   static Timestamp FromTimespecRoundDown(gpr_timespec t);
@@ -69,6 +94,8 @@ class Timestamp {
   // Construct a Timestamp from a gpr_cycle_counter.
   static Timestamp FromCycleCounterRoundUp(gpr_cycle_counter c);
   static Timestamp FromCycleCounterRoundDown(gpr_cycle_counter c);
+
+  static Timestamp Now() { return source_->Now(); }
 
   static constexpr Timestamp FromMillisecondsAfterProcessEpoch(int64_t millis) {
     return Timestamp(millis);
@@ -116,6 +143,18 @@ class Timestamp {
   explicit constexpr Timestamp(int64_t millis) : millis_(millis) {}
 
   int64_t millis_ = 0;
+  static GPR_THREAD_LOCAL(Timestamp::Source*) source_;
+};
+
+class ScopedTimeCache final : public Timestamp::ScopedSource {
+ public:
+  Timestamp Now() override;
+
+  void Invalidate() { cached_time_ = absl::nullopt; }
+  void TestOnlySetNow(Timestamp now) { cached_time_ = now; }
+
+ private:
+  absl::optional<Timestamp> cached_time_;
 };
 
 // Duration represents a span of time.

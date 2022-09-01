@@ -2103,6 +2103,7 @@ grpc_cc_library(
         "event_engine_base_hdrs",
         "gpr",
         "gpr_codegen",
+        "no_destruct",
         "useful",
     ],
 )

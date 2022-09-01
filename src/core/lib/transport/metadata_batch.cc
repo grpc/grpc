@@ -120,11 +120,11 @@ GrpcTimeoutMetadata::ValueType GrpcTimeoutMetadata::MementoToValue(
   if (timeout == Duration::Infinity()) {
     return Timestamp::InfFuture();
   }
-  return ExecCtx::Get()->Now() + timeout;
+  return Timestamp::Now() + timeout;
 }
 
 Slice GrpcTimeoutMetadata::Encode(ValueType x) {
-  return Timeout::FromDuration(x - ExecCtx::Get()->Now()).Encode();
+  return Timeout::FromDuration(x - Timestamp::Now()).Encode();
 }
 
 TeMetadata::MementoType TeMetadata::ParseMemento(

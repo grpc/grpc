@@ -163,7 +163,7 @@ void FlowControlFuzzer::Perform(const flow_control_fuzzer::Action& action) {
                                             kMaxAdvanceTimeMillis),
                                       GPR_TIMESPAN));
       exec_ctx.InvalidateNow();
-      if (exec_ctx.Now() >= next_bdp_ping_) {
+      if (Timestamp::Now() >= next_bdp_ping_) {
         scheduled_write_ = true;
       }
     } break;
@@ -290,7 +290,7 @@ void FlowControlFuzzer::Perform(const flow_control_fuzzer::Action& action) {
   }
   if (scheduled_write_) {
     SendToRemote send;
-    if (exec_ctx.Now() >= next_bdp_ping_) {
+    if (Timestamp::Now() >= next_bdp_ping_) {
       if (auto* bdp = tfc_->bdp_estimator()) {
         bdp->SchedulePing();
         bdp->StartPing();

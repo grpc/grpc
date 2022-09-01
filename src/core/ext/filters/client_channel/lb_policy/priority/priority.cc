@@ -517,7 +517,7 @@ PriorityLb::ChildPriority::DeactivationTimer::DeactivationTimer(
   }
   GRPC_CLOSURE_INIT(&on_timer_, OnTimer, this, nullptr);
   Ref(DEBUG_LOCATION, "Timer").release();
-  grpc_timer_init(&timer_, ExecCtx::Get()->Now() + kChildRetentionInterval,
+  grpc_timer_init(&timer_, Timestamp::Now() + kChildRetentionInterval,
                   &on_timer_);
 }
 
@@ -579,7 +579,7 @@ PriorityLb::ChildPriority::FailoverTimer::FailoverTimer(
   Ref(DEBUG_LOCATION, "Timer").release();
   grpc_timer_init(
       &timer_,
-      ExecCtx::Get()->Now() +
+      Timestamp::Now() +
           child_priority_->priority_policy_->child_failover_timeout_,
       &on_timer_);
 }

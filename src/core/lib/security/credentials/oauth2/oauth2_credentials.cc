@@ -335,7 +335,7 @@ grpc_oauth2_token_fetcher_credentials::GetRequestMetadata(
   if (start_fetch) {
     fetch_oauth2(new grpc_credentials_metadata_request(Ref()), &pollent_,
                  on_oauth2_token_fetcher_http_response,
-                 grpc_core::ExecCtx::Get()->Now() + refresh_threshold);
+                 grpc_core::Timestamp::Now() + refresh_threshold);
   }
   return
       [pending_request]()

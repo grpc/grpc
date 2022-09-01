@@ -252,7 +252,7 @@ bool FaultInjectionFilter::InjectionDecision::HaveActiveFaultsQuota() const {
 Timestamp FaultInjectionFilter::InjectionDecision::DelayUntil() {
   if (delay_time_ != Duration::Zero() && HaveActiveFaultsQuota()) {
     active_fault_ = FaultHandle{true};
-    return ExecCtx::Get()->Now() + delay_time_;
+    return Timestamp::Now() + delay_time_;
   }
   return Timestamp::InfPast();
 }

@@ -128,7 +128,7 @@ void SubchannelStreamClient::StartRetryTimerLocked() {
   if (GPR_UNLIKELY(tracer_ != nullptr)) {
     gpr_log(GPR_INFO, "%s %p: SubchannelStreamClient health check call lost...",
             tracer_, this);
-    Duration timeout = next_try - ExecCtx::Get()->Now();
+    Duration timeout = next_try - Timestamp::Now();
     if (timeout > Duration::Zero()) {
       gpr_log(GPR_INFO, "%s %p: ... will retry in %" PRId64 "ms.", tracer_,
               this, timeout.millis());

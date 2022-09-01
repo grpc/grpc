@@ -297,7 +297,7 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
                                base_ejection_time_in_millis * multiplier_,
                                std::max(base_ejection_time_in_millis,
                                         max_ejection_time_in_millis)));
-        if (change_time < ExecCtx::Get()->Now()) {
+        if (change_time < Timestamp::Now()) {
           Uneject();
           return true;
         }
@@ -616,8 +616,7 @@ void OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
       gpr_log(GPR_INFO, "[outlier_detection_lb %p] starting timer", this);
     }
-    ejection_timer_ =
-        MakeOrphanable<EjectionTimer>(Ref(), ExecCtx::Get()->Now());
+    ejection_timer_ = MakeOrphanable<EjectionTimer>(Ref(), Timestamp::Now());
     for (const auto& p : subchannel_state_map_) {
       p.second->RotateBucket();  // Reset call counters.
     }
@@ -836,7 +835,7 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked(grpc_error_handle error) {
     std::map<SubchannelState*, double> failure_percentage_ejection_candidates;
     size_t ejected_host_count = 0;
     double success_rate_sum = 0;
-    auto time_now = ExecCtx::Get()->Now();
+    auto time_now = Timestamp::Now();
     auto& config = parent_->config_->outlier_detection_config();
     for (auto& state : parent_->subchannel_state_map_) {
       auto* subchannel_state = state.second.get();
@@ -1007,7 +1006,7 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked(grpc_error_handle error) {
     }
     timer_pending_ = false;
     parent_->ejection_timer_ =
-        MakeOrphanable<EjectionTimer>(parent_, ExecCtx::Get()->Now());
+        MakeOrphanable<EjectionTimer>(parent_, Timestamp::Now());
   }
   Unref(DEBUG_LOCATION, "Timer");
   GRPC_ERROR_UNREF(error);

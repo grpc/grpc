@@ -521,7 +521,7 @@ void HPackCompressor::Framer::EncodeRepeatingSliceValue(
 }
 
 void HPackCompressor::Framer::Encode(GrpcTimeoutMetadata, Timestamp deadline) {
-  Timeout timeout = Timeout::FromDuration(deadline - ExecCtx::Get()->Now());
+  Timeout timeout = Timeout::FromDuration(deadline - Timestamp::Now());
   for (auto it = compressor_->previous_timeouts_.begin();
        it != compressor_->previous_timeouts_.end(); ++it) {
     double ratio = timeout.RatioVersus(it->timeout);
