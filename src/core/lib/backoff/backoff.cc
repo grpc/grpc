@@ -22,8 +22,6 @@
 
 #include <algorithm>
 
-#include "src/core/lib/iomgr/exec_ctx.h"
-
 namespace grpc_core {
 
 BackOff::BackOff(const Options& options) : options_(options) { Reset(); }
