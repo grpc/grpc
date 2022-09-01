@@ -790,6 +790,7 @@ libs:
   - src/core/lib/event_engine/promise.h
   - src/core/lib/event_engine/socket_notifier.h
   - src/core/lib/event_engine/thread_pool.h
+  - src/core/lib/event_engine/time_util.h
   - src/core/lib/event_engine/trace.h
   - src/core/lib/event_engine/utils.h
   - src/core/lib/event_engine/windows/iocp.h
@@ -1492,6 +1493,7 @@ libs:
   - src/core/lib/event_engine/slice.cc
   - src/core/lib/event_engine/slice_buffer.cc
   - src/core/lib/event_engine/thread_pool.cc
+  - src/core/lib/event_engine/time_util.cc
   - src/core/lib/event_engine/trace.cc
   - src/core/lib/event_engine/utils.cc
   - src/core/lib/event_engine/windows/iocp.cc
@@ -2007,6 +2009,7 @@ libs:
   - src/core/lib/event_engine/promise.h
   - src/core/lib/event_engine/socket_notifier.h
   - src/core/lib/event_engine/thread_pool.h
+  - src/core/lib/event_engine/time_util.h
   - src/core/lib/event_engine/trace.h
   - src/core/lib/event_engine/utils.h
   - src/core/lib/event_engine/windows/iocp.h
@@ -2349,6 +2352,7 @@ libs:
   - src/core/lib/event_engine/slice.cc
   - src/core/lib/event_engine/slice_buffer.cc
   - src/core/lib/event_engine/thread_pool.cc
+  - src/core/lib/event_engine/time_util.cc
   - src/core/lib/event_engine/trace.cc
   - src/core/lib/event_engine/utils.cc
   - src/core/lib/event_engine/windows/iocp.cc
@@ -5799,6 +5803,7 @@ targets:
   run: false
   language: c++
   headers:
+  - src/core/lib/event_engine/common_closures.h
   - src/core/lib/event_engine/posix_engine/ev_epoll1_linux.h
   - src/core/lib/event_engine/posix_engine/ev_poll_posix.h
   - src/core/lib/event_engine/posix_engine/event_poller.h

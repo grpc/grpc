@@ -109,4 +109,6 @@ if [ $? -ne 0 ]
 then
     echo "Iwyu edited some files. Here is the diff of files edited by iwyu:"
     git --no-pager diff
+    # Exit with a non zero error code to ensure sanity checks fail accordingly.
+    exit 1
 fi

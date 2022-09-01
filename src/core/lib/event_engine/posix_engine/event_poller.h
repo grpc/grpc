@@ -16,15 +16,16 @@
 #define GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_EVENT_POLLER_H
 #include <grpc/support/port_platform.h>
 
-#include <vector>
+#include <string>
 
+#include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/event_engine/event_engine.h>
 
+#include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
-#include "src/core/lib/gprpp/time.h"
 
 namespace grpc_event_engine {
 namespace posix_engine {
@@ -32,6 +33,7 @@ namespace posix_engine {
 class Scheduler {
  public:
   virtual void Run(experimental::EventEngine::Closure* closure) = 0;
+  virtual void Run(absl::AnyInvocable<void()>) = 0;
   virtual ~Scheduler() = default;
 };
 
@@ -41,21 +43,34 @@ class EventHandle {
   // Delete the handle and optionally close the underlying file descriptor if
   // release_fd != nullptr. The on_done closure is scheduled to be invoked
   // after the operation is complete. After this operation, NotifyXXX and SetXXX
-  // operations cannot be performed on the handle.
-  virtual void OrphanHandle(IomgrEngineClosure* on_done, int* release_fd,
+  // operations cannot be performed on the handle. In general, this method
+  // should only be called after ShutdownHandle and after all existing NotifyXXX
+  // closures have run and there is no waiting NotifyXXX closure.
+  virtual void OrphanHandle(PosixEngineClosure* on_done, int* release_fd,
                             absl::string_view reason) = 0;
-  // Shutdown a handle. After this operation, NotifyXXX and SetXXX operations
-  // cannot be performed.
+  // Shutdown a handle. If there is an attempt to call NotifyXXX operations
+  // after Shutdown handle, those closures will be run immediately with the
+  // absl::Status provided here being passed to the callbacks enclosed within
+  // the PosixEngineClosure object.
   virtual void ShutdownHandle(absl::Status why) = 0;
   // Schedule on_read to be invoked when the underlying file descriptor
-  // becomes readable.
-  virtual void NotifyOnRead(IomgrEngineClosure* on_read) = 0;
+  // becomes readable. When the on_read closure is run, it may check
+  // if the handle is shutdown using the IsHandleShutdown method and take
+  // appropriate actions (for instance it should not try to invoke another
+  // recursive NotifyOnRead if the handle is shutdown).
+  virtual void NotifyOnRead(PosixEngineClosure* on_read) = 0;
   // Schedule on_write to be invoked when the underlying file descriptor
-  // becomes writable.
-  virtual void NotifyOnWrite(IomgrEngineClosure* on_write) = 0;
+  // becomes writable. When the on_write closure is run, it may check
+  // if the handle is shutdown using the IsHandleShutdown method and take
+  // appropriate actions (for instance it should not try to invoke another
+  // recursive NotifyOnWrite if the handle is shutdown).
+  virtual void NotifyOnWrite(PosixEngineClosure* on_write) = 0;
   // Schedule on_error to be invoked when the underlying file descriptor
-  // encounters errors.
-  virtual void NotifyOnError(IomgrEngineClosure* on_error) = 0;
+  // encounters errors. When the on_error closure is run, it may check
+  // if the handle is shutdown using the IsHandleShutdown method and take
+  // appropriate actions (for instance it should not try to invoke another
+  // recursive NotifyOnError if the handle is shutdown).
+  virtual void NotifyOnError(PosixEngineClosure* on_error) = 0;
   // Force set a readable event on the underlying file descriptor.
   virtual void SetReadable() = 0;
   // Force set a writable event on the underlying file descriptor.
@@ -64,17 +79,15 @@ class EventHandle {
   virtual void SetHasError() = 0;
   // Returns true if the handle has been shutdown.
   virtual bool IsHandleShutdown() = 0;
-  // Execute any pending actions that may have been set to a handle after the
-  // last invocation of Work(...) function.
-  virtual void ExecutePendingActions() = 0;
   virtual ~EventHandle() = default;
 };
 
-class EventPoller {
+class PosixEventPoller : public grpc_event_engine::experimental::Poller {
  public:
   // Return an opaque handle to perform actions on the provided file descriptor.
   virtual EventHandle* CreateHandle(int fd, absl::string_view name,
                                     bool track_err) = 0;
+  virtual std::string Name() = 0;
   // Shuts down and deletes the poller. It is legal to call this function
   // only when no other poller method is in progress. For instance, it is
   // not safe to call this method, while a thread is blocked on Work(...).
@@ -84,19 +97,7 @@ class EventPoller {
   //    thread to return.
   // 3. Call Shutdown() on the poller.
   virtual void Shutdown() = 0;
-  // Poll all the underlying file descriptors for the specified period
-  // and return a vector containing a list of handles which have pending
-  // events. The calling thread should invoke ExecutePendingActions on each
-  // returned handle to take the necessary pending actions. Only one thread
-  // may invoke the Work function at any given point in time. The Work(...)
-  // method returns an absl Non-OK status if it was Kicked.
-  virtual absl::Status Work(grpc_core::Timestamp deadline,
-                            std::vector<EventHandle*>& pending_events) = 0;
-  // Trigger the thread executing Work(..) to break out as soon as possible.
-  // This function is useful in tests. It may also be used to break a thread
-  // out of Work(...) before calling Shutdown() on the poller.
-  virtual void Kick() = 0;
-  virtual ~EventPoller() = default;
+  ~PosixEventPoller() override = default;
 };
 
 }  // namespace posix_engine
