@@ -25,8 +25,6 @@
 
 #include <algorithm>
 
-#include "src/core/lib/iomgr/exec_ctx.h"
-
 grpc_core::TraceFlag grpc_bdp_estimator_trace(false, "bdp_estimator");
 
 namespace grpc_core {

@@ -45,7 +45,6 @@
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/work_serializer.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 namespace grpc_core {
