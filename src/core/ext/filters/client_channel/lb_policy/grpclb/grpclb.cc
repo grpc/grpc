@@ -1801,7 +1801,9 @@ void GrpcLb::CreateOrUpdateChildPolicyLocked() {
     gpr_log(GPR_INFO, "[grpclb %p] Updating child policy handler %p", this,
             child_policy_.get());
   }
-  child_policy_->UpdateLocked(std::move(update_args));
+  // TODO(roth): If we're in fallback mode and the child policy rejects the
+  // update, we should propagate that failure back to the resolver somehow.
+  (void)child_policy_->UpdateLocked(std::move(update_args));
 }
 
 //
