@@ -154,17 +154,17 @@ namespace Grpc.Core.Internal
                     return streamingReadTcs.Task;
                 }
 
-                if (IsInErrorStateClientOnly)
+                if (IsFinishedWithNonOkStatusClientOnly)
                 {
-                    // The gRPC call has already failed with an error, so return that error in
-                    // any subsequent MoveNext attempts.
-                    // Without this check an InvalidOperationException would have been thrown
-                    // instead of the expected RcpException.
+                    // The gRPC call has already failed with an error. 
 
                     if (streamingReadTcs == null)
                     {
+                        // Return an empty result rather than starting a new read.
+                        // MoveNext will interpret this as end of stream and error handling will
+                        // happen as expected.
                         streamingReadTcs = new TaskCompletionSource<TRead>();
-                        streamingReadTcs.SetException(GetRpcExceptionClientOnly());
+                        streamingReadTcs.SetResult(default(TRead));
                     }
 
                     return streamingReadTcs.Task;
@@ -182,13 +182,20 @@ namespace Grpc.Core.Internal
         /// <summary>
         /// If there are no more pending actions and no new actions can be started, releases
         /// the underlying native resources.
+        /// Only call when myLock is held.
         /// </summary>
         protected bool ReleaseResourcesIfPossible()
         {
             if (!disposed && call != null)
             {
+                // Have sends completed?
                 bool noMoreSendCompletions = streamingWriteTcs == null && (halfcloseRequested || cancelRequested || finished);
-                bool readingFinished = readingDone || IsInErrorStateClientOnly;
+
+                // Have reads completed (normally or with error)?
+                // Not sure if the check for "streamingReadTcs == null" is necessary (indicating no pending reads) if an error status
+                // has already been received since I don't think a new read would be started.
+                bool readingFinished = readingDone || (IsFinishedWithNonOkStatusClientOnly && streamingReadTcs == null);
+
                 if (noMoreSendCompletions && readingFinished && finished && !receiveResponseHeadersPending)
                 {
                     ReleaseResources();
@@ -212,9 +219,10 @@ namespace Grpc.Core.Internal
         /// <summary>
         /// Client - returns true if the client has received an error status in the
         /// OnReceivedStatusOnClient callback.
-        /// Server - always returns true as this is a client side method.
+        /// Server - always returns false as this is a client side method.
+        /// Only access when myLock is held.
         /// </summary>
-        protected abstract bool IsInErrorStateClientOnly
+        protected abstract bool IsFinishedWithNonOkStatusClientOnly
         {
             get;
         }

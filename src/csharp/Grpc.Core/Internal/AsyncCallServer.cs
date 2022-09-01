@@ -186,7 +186,7 @@ namespace Grpc.Core.Internal
         {
             throw new InvalidOperationException("Call be only called for client calls");
         }
-        protected override bool IsInErrorStateClientOnly
+        protected override bool IsFinishedWithNonOkStatusClientOnly
         {
             get { return false; }
         }
