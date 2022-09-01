@@ -2924,7 +2924,7 @@ grpc_cc_library(
         "gpr",
         "resolved_address",
         "uri_parser",
-    ]
+    ],
 )
 
 grpc_cc_library(
@@ -3198,8 +3198,8 @@ grpc_cc_library(
     tags = ["nofixdeps"],
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
-        "address_parser_registry",
         "activity",
+        "address_parser_registry",
         "arena",
         "arena_promise",
         "atomic_utils",
@@ -5401,6 +5401,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/memory",
+        "absl/status",
         "absl/status:statusor",
         "absl/strings",
     ],
