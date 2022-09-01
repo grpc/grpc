@@ -1165,7 +1165,6 @@ static void tcp_read(grpc_endpoint* ep, grpc_slice_buffer* incoming_buffer,
      */
     notify_on_read(tcp);
   } else {
-    update_rcvlowat(tcp);
     tcp->read_mu.Unlock();
     /* Not the first time. We may or may not have more bytes available. In any
      * case call tcp->read_done_closure (i.e tcp_handle_read()) which does the
