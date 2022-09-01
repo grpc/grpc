@@ -409,9 +409,9 @@ EventEngine::ConnectionHandle PosixEventEngine::ConnectInternal(
     return {0, 0};
   }
 
-  AsyncConnect* ac =
-      new AsyncConnect(std::move(on_connect), shared_from_this(), &executor_,
-                       handle, options, addr_uri.value(), connection_id);
+  AsyncConnect* ac = new AsyncConnect(std::move(on_connect), shared_from_this(),
+                                      &executor_, handle, std::move(allocator),
+                                      options, addr_uri.value(), connection_id);
 
   int shard_number = connection_id % (*g_connection_shards).size();
   struct ConnectionShard* shard = &(*g_connection_shards)[shard_number];
@@ -515,7 +515,7 @@ bool PosixEventEngine::CancelConnect(EventEngine::ConnectionHandle handle) {
 
 EventEngine::ConnectionHandle PosixEventEngine::Connect(
     OnConnectCallback on_connect, const ResolvedAddress& addr,
-    const EndpointConfig& args, MemoryAllocator /*memory_allocator*/,
+    const EndpointConfig& args, MemoryAllocator memory_allocator,
     Duration timeout) {
   EventEngine::ResolvedAddress mapped_addr;
   PosixTcpOptions options = TcpOptionsFromEndpointConfig(args);
@@ -526,8 +526,8 @@ EventEngine::ConnectionHandle PosixEventEngine::Connect(
          status = socket.status()]() mutable { on_connect(status); });
     return {0, 0};
   }
-  return ConnectInternal(*socket, std::move(on_connect), mapped_addr, options,
-                         timeout);
+  return ConnectInternal(*socket, std::move(on_connect), mapped_addr,
+                         std::move(memory_allocator), options, timeout);
 }
 
 absl::StatusOr<std::unique_ptr<EventEngine::Listener>>
