@@ -2326,6 +2326,23 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "event_engine_work_queue",
+    srcs = [],
+    hdrs = [
+        "src/core/lib/event_engine/workqueue.h",
+    ],
+    external_deps = [
+        "absl/base",
+        "absl/cleanup",
+    ],
+    deps = [
+        "exec_ctx",
+        "gpr",
+        "time",
+    ],
+)
+
+grpc_cc_library(
     name = "event_engine_threaded_executor",
     srcs = [
         "src/core/lib/event_engine/executor/threaded_executor.cc",
