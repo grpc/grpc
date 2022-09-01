@@ -81,7 +81,8 @@ class WorkQueue {
   }
 
   // Returns the number of elements in the queue
-  // TODO(hork): this is an expensive method.
+  // TODO(hork): this is an expensive method. consider caching the size in an
+  // atomic.
   size_t Size() {
     grpc_core::MutexLock lock(&mu_);
     return elements_.size() +

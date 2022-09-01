@@ -26,6 +26,7 @@ using ::grpc_event_engine::experimental::WorkQueue;
 TEST(WorkQueueTest, StartsEmpty) {
   WorkQueue<int> queue;
   ASSERT_TRUE(queue.Empty());
+  ASSERT_EQ(queue.Size(), 0);
 }
 
 TEST(WorkQueueTest, BecomesEmptyOnPopFront) {
@@ -61,7 +62,7 @@ TEST(WorkQueueTest, PopFrontIsFIFO) {
   ASSERT_TRUE(queue.Empty());
 }
 
-TEST(WorkQueueTest, PopBackIsIIFO) {
+TEST(WorkQueueTest, PopBackIsLIFO) {
   WorkQueue<int> queue;
   queue.Add(1);
   queue.Add(2);
@@ -137,14 +138,14 @@ TEST(WorkQueueTest, ThreadedStress) {
   EXPECT_EQ(queue.Size(), 0);
 }
 
-TEST(WorkQueueTest, StressLargeObjects) {
+TEST(WorkQueueTest, StressLargerObjects) {
   struct Element {
-    char storage[250 * 1024];  // 250Kb
+    char storage[100 * 1024];  // 100KB
   };
   WorkQueue<Element> queue;
   constexpr int thd_count = 20;
   constexpr int element_count_per_thd = 50;
-  // The queue should never exceed 250Mb, and will likely remain much smaller
+  // The queue should never exceed 100Mb, and will likely remain much smaller
   std::vector<std::thread> threads;
   threads.reserve(thd_count);
   for (int i = 0; i < thd_count; i++) {
