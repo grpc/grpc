@@ -37,7 +37,6 @@
 
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/global_config_env.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 
 grpc_core::TraceFlag grpc_flowctl_trace(false, "flowctl");

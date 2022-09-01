@@ -24,7 +24,6 @@
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/transport/timeout_encoding.h"
 
 namespace grpc_core {

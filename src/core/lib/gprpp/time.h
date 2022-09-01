@@ -22,6 +22,9 @@
 #include <limits>
 #include <ostream>
 #include <string>
+#include <utility>
+
+#include "absl/types/optional.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/codegen/gpr_types.h>
