@@ -1576,8 +1576,13 @@ absl::Status GrpcLb::UpdateBalancerChannelLocked(const ChannelArgs& args) {
   // Make sure that GRPC_ARG_LB_POLICY_NAME is set in channel args,
   // since we use this to trigger the client_load_reporting filter.
   args_ = args.Set(GRPC_ARG_LB_POLICY_NAME, "grpclb");
-  // Construct args for balancer channel.
+  // Get balancer addresses.
   ServerAddressList balancer_addresses = ExtractBalancerAddresses(args);
+  absl::Status status;
+  if (balancer_addresses.empty()) {
+    status = absl::UnavailableError("balancer address list must be non-empty");
+  }
+  // Construct args for balancer channel.
   ChannelArgs lb_channel_args =
       BuildBalancerChannelArgs(response_generator_.get(), args);
   // Create balancer channel if needed.
@@ -1606,10 +1611,6 @@ absl::Status GrpcLb::UpdateBalancerChannelLocked(const ChannelArgs& args) {
   result.args = lb_channel_args;
   response_generator_->SetResponse(std::move(result));
   // Return status.
-  absl::Status status;
-  if (balancer_addresses.empty()) {
-    status = absl::UnavailableError("balancer address list must be non-empty");
-  }
   return status;
 }
 
