@@ -2422,14 +2422,15 @@ grpc_cc_library(
         "src/core/lib/event_engine/posix_engine/event_poller.h",
     ],
     external_deps = [
+        "absl/functional:any_invocable",
         "absl/status",
         "absl/strings",
     ],
     deps = [
         "event_engine_base_hdrs",
+        "event_engine_poller",
         "gpr_platform",
         "posix_event_engine_closure",
-        "time",
     ],
 )
 
@@ -2548,6 +2549,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/functional:any_invocable",
         "absl/memory",
         "absl/status",
         "absl/status:statusor",
@@ -2555,15 +2557,17 @@ grpc_cc_library(
         "absl/synchronization",
     ],
     deps = [
+        "common_event_engine_closures",
+        "event_engine_base_hdrs",
+        "event_engine_poller",
+        "event_engine_time_util",
         "gpr",
-        "gpr_codegen",
         "iomgr_port",
         "posix_event_engine_closure",
         "posix_event_engine_event_poller",
         "posix_event_engine_lockfree_event",
         "posix_event_engine_wakeup_fd_posix",
         "posix_event_engine_wakeup_fd_posix_default",
-        "time",
     ],
 )
 
@@ -2577,12 +2581,17 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/functional:any_invocable",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
         "absl/synchronization",
     ],
     deps = [
+        "common_event_engine_closures",
+        "event_engine_base_hdrs",
+        "event_engine_poller",
+        "event_engine_time_util",
         "gpr",
         "gpr_codegen",
         "iomgr_port",
@@ -2737,8 +2746,8 @@ grpc_cc_library(
         "event_engine_executor",
         "event_engine_poller",
         "event_engine_socket_notifier",
+        "event_engine_time_util",
         "event_engine_trace",
-        "event_engine_utils",
         "gpr",
         "gpr_platform",
     ],
