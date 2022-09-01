@@ -177,7 +177,7 @@ TEST_F(ClientAuthFilterTest, RewritesInvalidStatusFromCallCreds) {
       (*server_metadata)->get_pointer(GrpcMessageMetadata());
   ASSERT_TRUE(message_md != nullptr);
   EXPECT_EQ(message_md->as_string_view(),
-            "illegal status code from call credentials; original status: "
+            "Illegal status code from call credentials; original status: "
             "ABORTED: nope");
   (*server_metadata)->~ServerMetadata();
 }

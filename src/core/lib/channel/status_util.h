@@ -66,7 +66,7 @@ class StatusCodeSet {
 // Optionally rewrites a status as per
 // https://github.com/grpc/proposal/blob/master/A54-restrict-control-plane-status-codes.md.
 // The source parameter indicates where the status came from.
-absl::Status MaybeRewriteIllegalStatusCode(const absl::Status& status,
+absl::Status MaybeRewriteIllegalStatusCode(absl::Status status,
                                            absl::string_view source);
 
 }  // namespace grpc_core

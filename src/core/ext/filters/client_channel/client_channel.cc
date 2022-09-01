@@ -2168,8 +2168,8 @@ grpc_error_handle ClientChannel::CallData::ApplyServiceConfigToCallLocked(
     ConfigSelector::CallConfig call_config =
         config_selector->GetCallConfig({&path_, initial_metadata, arena_});
     if (!call_config.status.ok()) {
-      return absl_status_to_grpc_error(
-          MaybeRewriteIllegalStatusCode(call_config.status, "ConfigSelector"));
+      return absl_status_to_grpc_error(MaybeRewriteIllegalStatusCode(
+          std::move(call_config.status), "ConfigSelector"));
     }
     // Create a ClientChannelServiceConfigCallData for the call.  This stores
     // a ref to the ServiceConfig and caches the right set of parsed configs
@@ -3162,8 +3162,8 @@ bool ClientChannel::LoadBalancedCall::PickSubchannelLocked(
             // attempt's final status.
             if (!initial_metadata_batch->GetOrCreatePointer(WaitForReady())
                      ->value) {
-              *error = absl_status_to_grpc_error(
-                  MaybeRewriteIllegalStatusCode(fail_pick->status, "LB pick"));
+              *error = absl_status_to_grpc_error(MaybeRewriteIllegalStatusCode(
+                  std::move(fail_pick->status), "LB pick"));
               MaybeRemoveCallFromLbQueuedCallsLocked();
               return true;
             }
@@ -3181,7 +3181,7 @@ bool ClientChannel::LoadBalancedCall::PickSubchannelLocked(
             }
             *error = grpc_error_set_int(
                 absl_status_to_grpc_error(MaybeRewriteIllegalStatusCode(
-                    drop_pick->status, "LB drop")),
+                    std::move(drop_pick->status), "LB drop")),
                 GRPC_ERROR_INT_LB_POLICY_DROP, 1);
             MaybeRemoveCallFromLbQueuedCallsLocked();
             return true;

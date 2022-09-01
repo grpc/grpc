@@ -114,7 +114,7 @@ bool grpc_status_code_from_int(int status_int, grpc_status_code* status) {
 
 namespace grpc_core {
 
-absl::Status MaybeRewriteIllegalStatusCode(const absl::Status& status,
+absl::Status MaybeRewriteIllegalStatusCode(absl::Status status,
                                            absl::string_view source) {
   switch (status.code()) {
     // The set of disallowed codes, as per
@@ -127,7 +127,7 @@ absl::Status MaybeRewriteIllegalStatusCode(const absl::Status& status,
     case absl::StatusCode::kOutOfRange:
     case absl::StatusCode::kDataLoss: {
       return absl::InternalError(
-          absl::StrCat("illegal status code from ", source,
+          absl::StrCat("Illegal status code from ", source,
                        "; original status: ", status.ToString()));
     }
     default:

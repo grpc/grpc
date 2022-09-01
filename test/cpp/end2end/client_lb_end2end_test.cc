@@ -2718,7 +2718,7 @@ TEST_F(ControlPlaneStatusRewritingTest, RewritesFromLb) {
   // Send an RPC, verify that status was rewritten.
   CheckRpcSendFailure(
       DEBUG_LOCATION, stub, StatusCode::INTERNAL,
-      "illegal status code from LB pick; original status: ABORTED: nope");
+      "Illegal status code from LB pick; original status: ABORTED: nope");
 }
 
 TEST_F(ControlPlaneStatusRewritingTest, RewritesFromResolver) {
@@ -2733,7 +2733,7 @@ TEST_F(ControlPlaneStatusRewritingTest, RewritesFromResolver) {
   // Send an RPC, verify that status was rewritten.
   CheckRpcSendFailure(
       DEBUG_LOCATION, stub, StatusCode::INTERNAL,
-      "illegal status code from resolver; original status: ABORTED: nope");
+      "Illegal status code from resolver; original status: ABORTED: nope");
 }
 
 TEST_F(ControlPlaneStatusRewritingTest, RewritesFromConfigSelector) {
@@ -2770,7 +2770,7 @@ TEST_F(ControlPlaneStatusRewritingTest, RewritesFromConfigSelector) {
   // Send an RPC, verify that status was rewritten.
   CheckRpcSendFailure(
       DEBUG_LOCATION, stub, StatusCode::INTERNAL,
-      "illegal status code from ConfigSelector; original status: "
+      "Illegal status code from ConfigSelector; original status: "
       "ABORTED: nope");
 }
 
