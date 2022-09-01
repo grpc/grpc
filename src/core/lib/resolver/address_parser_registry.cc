@@ -16,13 +16,11 @@
 
 #include "src/core/lib/resolver/address_parser_registry.h"
 
-#include <algorithm>
 #include <string>
 
 #include "absl/status/status.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
-#include "absl/strings/str_split.h"
 
 #include <grpc/support/log.h>
 
