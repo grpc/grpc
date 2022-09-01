@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM quay.io/pypa/musllinux_1_1_i686:2021-11-15-a808c18
+FROM quay.io/pypa/musllinux_1_1_i686:2022-08-29-0fd77fa
 
 ###################################
 # Install Python build requirements
@@ -21,6 +21,7 @@ RUN /opt/python/cp37-cp37m/bin/pip install --upgrade cython
 RUN /opt/python/cp38-cp38/bin/pip install --upgrade cython
 RUN /opt/python/cp39-cp39/bin/pip install --upgrade cython
 RUN /opt/python/cp310-cp310/bin/pip install --upgrade cython
+RUN /opt/python/cp311-cp311/bin/pip install --upgrade cython
 
 #=================
 # Install ccache
