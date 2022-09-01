@@ -176,6 +176,7 @@ class ExecCtx {
     }
   }
 
+  Timestamp Now() { return Timestamp::Now(); }
   void InvalidateNow() { time_cache_.Invalidate(); }
   void SetNowIomgrShutdown() {
     // We get to do a test only set now on this path just because iomgr
