@@ -24,6 +24,7 @@
 namespace grpc_core {
 
 bool IsTcpFrameSizeTuningEnabled();
+bool IsTcpReadChunksEnabled();
 
 struct ExperimentMetadata {
   const char* name;
@@ -32,7 +33,7 @@ struct ExperimentMetadata {
   bool (*is_enabled)();
 };
 
-constexpr const size_t kNumExperiments = 1;
+constexpr const size_t kNumExperiments = 2;
 extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];
 
 }  // namespace grpc_core
