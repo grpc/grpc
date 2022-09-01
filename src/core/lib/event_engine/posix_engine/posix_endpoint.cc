@@ -70,6 +70,7 @@ namespace grpc_event_engine {
 namespace posix_engine {
 
 using ::grpc_event_engine::experimental::EventEngine;
+using ::grpc_event_engine::experimental::MemoryAllocator;
 using ::grpc_event_engine::experimental::Slice;
 using ::grpc_event_engine::experimental::SliceBuffer;
 
@@ -1313,6 +1314,7 @@ PosixEndpointImpl ::~PosixEndpointImpl() {
 PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
                                      PosixEngineClosure* on_done,
                                      std::shared_ptr<EventEngine> engine,
+                                     MemoryAllocator&& /*allocator*/,
                                      const PosixTcpOptions& options)
     : on_done_(on_done),
       traced_buffers_(),
@@ -1377,11 +1379,12 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
 
 std::unique_ptr<PosixEndpoint> CreatePosixEndpoint(
     EventHandle* handle, PosixEngineClosure* on_shutdown,
-    std::shared_ptr<EventEngine> engine, const PosixTcpOptions& options) {
+    std::shared_ptr<EventEngine> engine, MemoryAllocator&& allocator,
+    const PosixTcpOptions& options) {
   GPR_ASSERT(handle != nullptr);
   GPR_ASSERT(engine != nullptr);
-  return absl::make_unique<PosixEndpoint>(handle, on_shutdown,
-                                          std::move(engine), options);
+  return absl::make_unique<PosixEndpoint>(
+      handle, on_shutdown, std::move(engine), std::move(allocator), options);
 }
 
 }  // namespace posix_engine

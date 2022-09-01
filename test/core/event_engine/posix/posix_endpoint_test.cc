@@ -192,17 +192,21 @@ CreateConnectedEndpoints(PosixEventPoller* poller, bool is_zero_copy_enabled,
     auto server_endpoint = std::move(server_endpoint_promise.Get());
     EXPECT_NE(server_endpoint, nullptr);
     ++g_num_active_connections;
+    PosixTcpOptions options = TcpOptionsFromEndpointConfig(config);
     connections.push_back(
         std::make_tuple<std::unique_ptr<Endpoint>, std::unique_ptr<Endpoint>>(
-            CreatePosixEndpoint(handle,
-                                PosixEngineClosure::TestOnlyToClosure(
-                                    [poller](absl::Status /*status*/) {
-                                      if (--g_num_active_connections == 0) {
-                                        poller->Kick();
-                                      }
-                                    }),
-                                GetPosixEE(),
-                                TcpOptionsFromEndpointConfig(config)),
+            CreatePosixEndpoint(
+                handle,
+                PosixEngineClosure::TestOnlyToClosure(
+                    [poller](absl::Status /*status*/) {
+                      if (--g_num_active_connections == 0) {
+                        poller->Kick();
+                      }
+                    }),
+                GetPosixEE(),
+                options.resource_quota->memory_quota()->CreateMemoryAllocator(
+                    "test"),
+                options),
             std::move(server_endpoint)));
     server_endpoint_promise.Reset();
   }

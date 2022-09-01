@@ -114,6 +114,7 @@ class PosixEventEngine final : public EventEngine,
   ConnectionHandle ConnectInternal(
       grpc_event_engine::posix_engine::PosixSocketWrapper sock,
       OnConnectCallback on_connect, const ResolvedAddress& addr,
+      MemoryAllocator&& allocator,
       const grpc_event_engine::posix_engine::PosixTcpOptions& options,
       Duration timeout);
   grpc_event_engine::posix_engine::PosixEventPoller* poller_ = nullptr;

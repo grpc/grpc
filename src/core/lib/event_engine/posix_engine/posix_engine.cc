@@ -24,6 +24,7 @@
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 
+#include "grpc/event_engine/memory_allocator.h"
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
@@ -73,12 +74,14 @@ class AsyncConnect {
  public:
   AsyncConnect(EventEngine::OnConnectCallback on_connect,
                std::shared_ptr<EventEngine> engine, ThreadedExecutor* executor,
-               EventHandle* fd, const PosixTcpOptions& options,
-               std::string resolved_addr_str, int64_t connection_handle)
+               EventHandle* fd, MemoryAllocator&& allocator,
+               const PosixTcpOptions& options, std::string resolved_addr_str,
+               int64_t connection_handle)
       : on_connect_(std::move(on_connect)),
         engine_(engine),
         executor_(executor),
         fd_(fd),
+        allocator_(std::move(allocator)),
         options_(options),
         resolved_addr_str_(resolved_addr_str),
         connection_handle_(connection_handle) {}
@@ -158,7 +161,7 @@ class AsyncConnect {
     }
   }
 
-  void OnWritable(absl::Status status) {
+  void OnWritable(absl::Status status) ABSL_NO_THREAD_SAFETY_ANALYSIS {
     int so_error = 0;
     socklen_t so_error_size;
     int err;
@@ -175,6 +178,7 @@ class AsyncConnect {
     engine_->Cancel(alarm_handle_);
 
     auto on_writable_finish = absl::MakeCleanup([&]() -> void {
+      mu_.AssertHeld();
       if (!connect_cancelled) {
         int shard_number = connection_handle_ % (*g_connection_shards).size();
         struct ConnectionShard* shard = &(*g_connection_shards)[shard_number];
@@ -226,7 +230,8 @@ class AsyncConnect {
 
     switch (so_error) {
       case 0:
-        ep = CreatePosixEndpoint(fd, nullptr, engine_, options_);
+        ep = CreatePosixEndpoint(fd, nullptr, engine_, std::move(allocator_),
+                                 options_);
         fd = nullptr;
         break;
       case ENOBUFS:
@@ -272,6 +277,7 @@ class AsyncConnect {
   EventEngine::TaskHandle alarm_handle_;
   int refs_{2};
   EventHandle* fd_;
+  MemoryAllocator allocator_;
   PosixTcpOptions options_;
   std::string resolved_addr_str_;
   int64_t connection_handle_ = 0;
@@ -358,8 +364,8 @@ absl::StatusOr<PosixSocketWrapper> TcpClientPrepareSocket(
 
 EventEngine::ConnectionHandle PosixEventEngine::ConnectInternal(
     PosixSocketWrapper sock, OnConnectCallback on_connect,
-    const ResolvedAddress& addr, const PosixTcpOptions& options,
-    Duration timeout) {
+    const ResolvedAddress& addr, MemoryAllocator&& allocator,
+    const PosixTcpOptions& options, Duration timeout) {
   int err;
   do {
     err = connect(sock.Fd(), addr.address(), addr.size());
@@ -387,10 +393,9 @@ EventEngine::ConnectionHandle PosixEventEngine::ConnectInternal(
     // Connection already succeded. Return 0 to discourage any cancellation
     // attempts.
     Run([on_connect = std::move(on_connect),
-         ep = std::move(CreatePosixEndpoint(handle, nullptr, shared_from_this(),
-                                            options))]() mutable {
-      on_connect(std::move(ep));
-    });
+         ep = std::move(CreatePosixEndpoint(
+             handle, nullptr, shared_from_this(), std::move(allocator),
+             options))]() mutable { on_connect(std::move(ep)); });
     return {0, 0};
   }
   if (errno != EWOULDBLOCK && errno != EINPROGRESS) {
