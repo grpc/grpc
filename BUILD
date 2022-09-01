@@ -2114,6 +2114,7 @@ grpc_cc_library(
         "gpr",
         "gpr_codegen",
         "gpr_tls",
+        "no_destruct",
         "useful",
     ],
 )
