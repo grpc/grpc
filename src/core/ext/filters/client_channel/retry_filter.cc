@@ -33,7 +33,6 @@
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
 #include "absl/types/optional.h"
-#include "absl/utility/utility.h"
 
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/slice.h>
@@ -2366,7 +2365,7 @@ void RetryFilter::CallData::MaybeCacheSendOpsForBatch(PendingBatch* pending) {
   // Set up cache for send_message ops.
   if (batch->send_message) {
     SliceBuffer* cache = arena_->New<SliceBuffer>(std::move(
-        *absl::exchange(batch->payload->send_message.send_message, nullptr)));
+        *std::exchange(batch->payload->send_message.send_message, nullptr)));
     send_messages_.push_back({cache, batch->payload->send_message.flags});
   }
   // Save metadata batch for send_trailing_metadata ops.
@@ -2393,7 +2392,7 @@ void RetryFilter::CallData::FreeCachedSendMessage(size_t idx) {
               "chand=%p calld=%p: destroying send_messages[%" PRIuPTR "]",
               chand_, this, idx);
     }
-    Destruct(absl::exchange(send_messages_[idx].slices, nullptr));
+    Destruct(std::exchange(send_messages_[idx].slices, nullptr));
   }
 }
 

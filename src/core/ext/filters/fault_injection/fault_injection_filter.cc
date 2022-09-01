@@ -31,7 +31,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-#include "absl/utility/utility.h"
 
 #include <grpc/status.h>
 #include <grpc/support/log.h>
@@ -97,7 +96,7 @@ class FaultHandle {
   FaultHandle(const FaultHandle&) = delete;
   FaultHandle& operator=(const FaultHandle&) = delete;
   FaultHandle(FaultHandle&& other) noexcept
-      : active_(absl::exchange(other.active_, false)) {}
+      : active_(std::exchange(other.active_, false)) {}
   FaultHandle& operator=(FaultHandle&& other) noexcept {
     std::swap(active_, other.active_);
     return *this;
