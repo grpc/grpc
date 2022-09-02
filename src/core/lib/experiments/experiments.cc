@@ -27,6 +27,8 @@ const char* const description_tcp_frame_size_tuning =
 const char* const description_tcp_read_chunks =
     "Allocate only 8kb or 64kb chunks for TCP reads to reduce pressure on "
     "malloc to recycle arbitrary large blocks.";
+const char* const description_tcp_rcv_lowat =
+    "Use SO_RCVLOWAT to avoid wakeups on the read path.";
 }  // namespace
 
 namespace grpc_core {
@@ -34,6 +36,7 @@ namespace grpc_core {
 const ExperimentMetadata g_experiment_metadata[] = {
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning, false},
     {"tcp_read_chunks", description_tcp_read_chunks, false},
+    {"tcp_rcv_lowat", description_tcp_rcv_lowat, false},
 };
 
 }  // namespace grpc_core
