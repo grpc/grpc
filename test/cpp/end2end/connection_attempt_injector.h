@@ -17,7 +17,7 @@
 
 #include <memory>
 
-#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/timer.h"
@@ -123,7 +123,7 @@ class ConnectionAttemptInjector final {
    public:
     QueuedAttempt(grpc_closure* closure, grpc_endpoint** ep,
                   grpc_pollset_set* interested_parties,
-                  const grpc_channel_args* channel_args,
+                  const grpc_event_engine::experimental::EndpointConfig& config,
                   const grpc_resolved_address* addr,
                   grpc_core::Timestamp deadline);
     ~QueuedAttempt();
@@ -138,7 +138,7 @@ class ConnectionAttemptInjector final {
     grpc_closure* closure_;
     grpc_endpoint** endpoint_;
     grpc_pollset_set* interested_parties_;
-    const grpc_channel_args* channel_args_;
+    grpc_event_engine::experimental::ChannelArgsEndpointConfig config_;
     grpc_resolved_address address_;
     grpc_core::Timestamp deadline_;
   };
@@ -150,7 +150,7 @@ class ConnectionAttemptInjector final {
 
     InjectedDelay(grpc_core::Duration duration, grpc_closure* closure,
                   grpc_endpoint** ep, grpc_pollset_set* interested_parties,
-                  const grpc_channel_args* channel_args,
+                  const grpc_event_engine::experimental::EndpointConfig& config,
                   const grpc_resolved_address* addr,
                   grpc_core::Timestamp deadline);
 
@@ -163,25 +163,25 @@ class ConnectionAttemptInjector final {
   };
 
   // Invoked for every TCP connection attempt.
-  void HandleConnection(grpc_closure* closure, grpc_endpoint** ep,
-                        grpc_pollset_set* interested_parties,
-                        const grpc_channel_args* channel_args,
-                        const grpc_resolved_address* addr,
-                        grpc_core::Timestamp deadline);
+  void HandleConnection(
+      grpc_closure* closure, grpc_endpoint** ep,
+      grpc_pollset_set* interested_parties,
+      const grpc_event_engine::experimental::EndpointConfig& config,
+      const grpc_resolved_address* addr, grpc_core::Timestamp deadline);
 
-  static void AttemptConnection(grpc_closure* closure, grpc_endpoint** ep,
-                                grpc_pollset_set* interested_parties,
-                                const grpc_channel_args* channel_args,
-                                const grpc_resolved_address* addr,
-                                grpc_core::Timestamp deadline);
+  static void AttemptConnection(
+      grpc_closure* closure, grpc_endpoint** ep,
+      grpc_pollset_set* interested_parties,
+      const grpc_event_engine::experimental::EndpointConfig& config,
+      const grpc_resolved_address* addr, grpc_core::Timestamp deadline);
 
   // Replacement iomgr tcp_connect vtable functions that use the current
   // ConnectionAttemptInjector object.
-  static int64_t TcpConnect(grpc_closure* closure, grpc_endpoint** ep,
-                            grpc_pollset_set* interested_parties,
-                            const grpc_channel_args* channel_args,
-                            const grpc_resolved_address* addr,
-                            grpc_core::Timestamp deadline);
+  static int64_t TcpConnect(
+      grpc_closure* closure, grpc_endpoint** ep,
+      grpc_pollset_set* interested_parties,
+      const grpc_event_engine::experimental::EndpointConfig& config,
+      const grpc_resolved_address* addr, grpc_core::Timestamp deadline);
   static bool TcpConnectCancel(int64_t connection_handle);
 
   std::vector<Hold*> holds_ ABSL_GUARDED_BY(&mu_);
