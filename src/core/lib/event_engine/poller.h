@@ -30,20 +30,21 @@ namespace experimental {
 // Work(...).
 class Poller {
  public:
-  // This initial vector size may need to be tuned
-  using Events = absl::InlinedVector<EventEngine::Closure*, 5>;
+  struct Ok {};
   struct DeadlineExceeded {};
   struct Kicked {};
-  using WorkResult = absl::variant<Events, DeadlineExceeded, Kicked>;
+  using WorkResult = absl::variant<Ok, DeadlineExceeded, Kicked>;
 
   virtual ~Poller() = default;
-  // Poll once for events, returning a collection of Closures to be executed.
+  // Poll once for events and process received events.
   //
   // Returns:
   //  * absl::AbortedError if it was Kicked.
   //  * absl::DeadlineExceeded if timeout occurred
   //  * A collection of closures to execute, otherwise
-  virtual WorkResult Work(EventEngine::Duration timeout) = 0;
+  virtual WorkResult Work(
+      EventEngine::Duration timeout,
+      absl::FunctionRef<void()> call_before_processing_events) = 0;
   // Trigger the threads executing Work(..) to break out as soon as possible.
   virtual void Kick() = 0;
 };

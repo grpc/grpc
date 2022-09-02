@@ -44,7 +44,8 @@ class PollPoller : public PosixEventPoller {
   EventHandle* CreateHandle(int fd, absl::string_view name,
                             bool track_err) override;
   Poller::WorkResult Work(
-      grpc_event_engine::experimental::EventEngine::Duration timeout) override;
+      grpc_event_engine::experimental::EventEngine::Duration timeout,
+      absl::FunctionRef<void()> call_before_processing_events) override;
   std::string Name() override { return "poll"; }
   void Kick() override;
   Scheduler* GetScheduler() { return scheduler_; }

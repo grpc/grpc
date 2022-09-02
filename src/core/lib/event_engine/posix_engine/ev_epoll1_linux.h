@@ -49,7 +49,8 @@ class Epoll1Poller : public PosixEventPoller {
   EventHandle* CreateHandle(int fd, absl::string_view name,
                             bool track_err) override;
   Poller::WorkResult Work(
-      grpc_event_engine::experimental::EventEngine::Duration timeout) override;
+      grpc_event_engine::experimental::EventEngine::Duration timeout,
+      absl::FunctionRef<void()> call_before_processing_events) override;
   std::string Name() override { return "epoll1"; }
   void Kick() override;
   Scheduler* GetScheduler() { return scheduler_; }
@@ -57,6 +58,8 @@ class Epoll1Poller : public PosixEventPoller {
   ~Epoll1Poller() override;
 
  private:
+  // This initial vector size may need to be tuned
+  using Events = absl::InlinedVector<Epoll1EventHandle*, 5>;
   // Process the epoll events found by DoEpollWait() function.
   // - g_epoll_set.cursor points to the index of the first event to be processed
   // - This function then processes up-to max_epoll_events_to_handle and
@@ -65,7 +68,7 @@ class Epoll1Poller : public PosixEventPoller {
   // function. It also returns the list of closures to run to take action
   // on file descriptors that became readable/writable.
   bool ProcessEpollEvents(int max_epoll_events_to_handle,
-                          Poller::Events& pending_events);
+                          Events& pending_events);
   //  Do epoll_wait and store the events in g_epoll_set.events field. This does
   //  not "process" any of the events yet; that is done in ProcessEpollEvents().
   //  See ProcessEpollEvents() function for more details. It returns the number
