@@ -59,14 +59,12 @@ FakeXdsTransportFactory::FakeStreamingCall::GetMessageFromClient() {
   // Note: Can't use std::move() here, since that counter-intuitively
   // leaves the absl::optional<> containing a moved-from object, and
   // here we need it to be containing nullopt.
-  auto from_client_message =
-      std::exchange(from_client_message_, absl::nullopt);
+  auto from_client_message = std::exchange(from_client_message_, absl::nullopt);
   RefCountedPtr<FakeStreamingCall> self = Ref();
-  GetDefaultEventEngine()->Run(
-      [self = std::move(self)]() {
-        ExecCtx exec_ctx;
-        self->event_handler_->OnRequestSent(/*ok=*/true);
-      });
+  GetDefaultEventEngine()->Run([self = std::move(self)]() {
+    ExecCtx exec_ctx;
+    self->event_handler_->OnRequestSent(/*ok=*/true);
+  });
   return from_client_message;
 }
 
@@ -143,20 +141,18 @@ void FakeXdsTransportFactory::TriggerConnectionFailure(
 }
 
 RefCountedPtr<FakeXdsTransportFactory::FakeStreamingCall>
-FakeXdsTransportFactory::GetStream(
-    const XdsBootstrap::XdsServer& server, const char* method) {
+FakeXdsTransportFactory::GetStream(const XdsBootstrap::XdsServer& server,
+                                   const char* method) {
   auto transport = GetTransport(server);
   return transport->GetStream(method);
 }
 
 RefCountedPtr<FakeXdsTransportFactory::FakeXdsTransport>
-FakeXdsTransportFactory::GetTransport(
-    const XdsBootstrap::XdsServer& server) {
+FakeXdsTransportFactory::GetTransport(const XdsBootstrap::XdsServer& server) {
   MutexLock lock(&mu_);
   RefCountedPtr<FakeXdsTransport> transport = transport_map_[server];
   GPR_ASSERT(transport != nullptr);
   return transport;
 }
-
 
 }  // namespace grpc_core
