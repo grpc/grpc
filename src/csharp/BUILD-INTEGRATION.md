@@ -91,7 +91,7 @@ button](https://stackoverflow.com/a/9770061). Click on it, and choose "Add as
 link". If you do not select this option, Visual Studio will copy files to the
 project directory instead.
 
-Alternatively, you can also specify `AdditionalImportDirs` and provide a list of directories to search for imported .proto files. The directories and searched in the order given.
+Alternatively, you can also specify `AdditionalImportDirs` and provide a list of directories to search for imported .proto files. The directories are searched in the order given.
 
 Eg.
 
