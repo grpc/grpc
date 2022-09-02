@@ -21,8 +21,11 @@
 
 namespace grpc_core {
 
+// Return true if experiment \a experiment_id is enabled.
+// Experiments are numbered by their order in the g_experiment_metadata array
+// declared in experiments.h.
 bool IsExperimentEnabled(size_t experiment_id);
 
-}
+}  // namespace grpc_core
 
 #endif

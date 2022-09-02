@@ -35,6 +35,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/buffer_list.h"
 #include "src/core/lib/iomgr/ev_posix.h"
@@ -46,8 +47,6 @@
 
 static gpr_mu* g_mu;
 static grpc_pollset* g_pollset;
-
-GPR_GLOBAL_CONFIG_DECLARE_BOOL(grpc_experimental_enable_tcp_frame_size_tuning);
 
 /*
    General test notes:
@@ -188,7 +187,9 @@ static void read_cb(void* user_data, grpc_error_handle error) {
   current_data = state->read_bytes % 256;
   // The number of bytes read each time this callback is invoked must be >=
   // the min_progress_size.
-  GPR_ASSERT(state->min_progress_size <= state->incoming.length);
+  if (grpc_core::IsTcpFrameSizeTuningEnabled()) {
+    GPR_ASSERT(state->min_progress_size <= state->incoming.length);
+  }
   read_bytes = count_slices(state->incoming.slices, state->incoming.count,
                             &current_data);
   state->read_bytes += read_bytes;
@@ -671,7 +672,6 @@ static void destroy_pollset(void* p, grpc_error_handle /*error*/) {
 int main(int argc, char** argv) {
   grpc_closure destroyed;
   grpc::testing::TestEnvironment env(&argc, argv);
-  GPR_GLOBAL_CONFIG_SET(grpc_experimental_enable_tcp_frame_size_tuning, true);
   grpc_init();
   grpc_core::grpc_tcp_set_write_timestamps_callback(timestamps_verifier);
   {
