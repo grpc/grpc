@@ -59,12 +59,14 @@ WinSocket* IOCP::Watch(SOCKET socket) {
 
 void IOCP::Shutdown() {
   while (outstanding_kicks_.load() > 0) {
-    Work(std::chrono::hours(42));
+    Work(std::chrono::hours(42), []() {});
   }
   GPR_ASSERT(CloseHandle(iocp_handle_));
 }
 
-Poller::WorkResult IOCP::Work(EventEngine::Duration timeout) {
+Poller::WorkResult IOCP::Work(
+    EventEngine::Duration timeout,
+    absl::FunctionRef<void()> call_before_processing_events) {
   static const absl::Status kDeadlineExceeded = absl::DeadlineExceededError(
       absl::StrFormat("IOCP::%p: Received no completions", this));
   static const absl::Status kKicked =
@@ -109,10 +111,15 @@ Poller::WorkResult IOCP::Work(EventEngine::Duration timeout) {
   } else {
     info->GetOverlappedResult();
   }
-  if (info->closure() != nullptr) return Events{info->closure()};
+  if (info->closure() != nullptr) {
+    call_before_processing_events();
+    executor_->Run(info->closure());
+    return Poller::Ok{};
+  }
   // No callback registered. Set ready and return an empty set
   info->SetReady();
-  return Events{};
+  call_before_processing_events();
+  return Poller::Ok{};
 }
 
 void IOCP::Kick() {

@@ -42,7 +42,9 @@ class IOCP final : public Poller {
 
   // interface methods
   void Shutdown();
-  WorkResult Work(EventEngine::Duration timeout) override;
+  WorkResult Work(
+      EventEngine::Duration timeout,
+      absl::FunctionRef<void()> call_before_processing_events) override;
   void Kick() override;
 
   WinSocket* Watch(SOCKET socket);
