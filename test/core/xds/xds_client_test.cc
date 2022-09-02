@@ -143,7 +143,7 @@ class XdsClientTest : public ::testing::Test {
   class FooWatcher : public XdsFooResourceType::WatcherInterface {
    public:
     absl::optional<XdsFooResource> GetNextResource() {
-      grpc_core::MutexLock lock(&mu_);
+      MutexLock lock(&mu_);
       if (queue_.empty()) return absl::nullopt;
       XdsFooResource foo = std::move(queue_.front());
       queue_.pop_front();
@@ -151,7 +151,7 @@ class XdsClientTest : public ::testing::Test {
     }
 
     absl::optional<absl::Status> GetNextError() {
-      grpc_core::MutexLock lock(&mu_);
+      MutexLock lock(&mu_);
       if (error_queue_.empty()) return absl::nullopt;
       absl::Status status = std::move(error_queue_.front());
       error_queue_.pop_front();
@@ -160,18 +160,18 @@ class XdsClientTest : public ::testing::Test {
 
    private:
     void OnResourceChanged(XdsFooResource foo) override {
-      grpc_core::MutexLock lock(&mu_);
+      MutexLock lock(&mu_);
       queue_.push_back(std::move(foo));
     }
     void OnError(absl::Status status) override {
-      grpc_core::MutexLock lock(&mu_);
+      MutexLock lock(&mu_);
       error_queue_.push_back(std::move(status));
     }
     void OnResourceDoesNotExist() override {
       ASSERT_TRUE(false) << "OnResourceDoesNotExist() called";
     }
 
-    grpc_core::Mutex mu_;
+    Mutex mu_;
     std::deque<XdsFooResource> queue_ ABSL_GUARDED_BY(&mu_);
     std::deque<absl::Status> error_queue_ ABSL_GUARDED_BY(&mu_);
   };
@@ -208,7 +208,7 @@ class XdsClientTest : public ::testing::Test {
 
   void CheckRequestNode(const DiscoveryRequest& request) {
     EXPECT_EQ(request.node().id(), xds_client_->bootstrap().node()->id);
-// FIXME: check other node fields
+    // FIXME: check other node fields
   }
 
   RefCountedPtr<FakeXdsTransportFactory> transport_factory_;

@@ -12,8 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_cc_library",
-     "grpc_package")
+load(
+    "//bazel:grpc_build_system.bzl",
+    "grpc_cc_library",
+    "grpc_cc_test",
+    "grpc_package",
+)
 
 grpc_package(name = "test/core/xds")
 
@@ -120,18 +124,18 @@ grpc_cc_test(
 
 grpc_cc_library(
     name = "xds_transport_fake",
+    testonly = True,
     srcs = ["xds_transport_fake.cc"],
     hdrs = ["xds_transport_fake.h"],
     external_deps = [
         "absl/strings",
         "absl/types:optional",
     ],
-    testonly = True,
     language = "C++",
     deps = [
-        "//:xds_client",
         "//:orphanable",
         "//:ref_counted_ptr",
+        "//:xds_client",
     ],
 )
 
