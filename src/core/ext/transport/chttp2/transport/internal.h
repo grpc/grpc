@@ -782,4 +782,6 @@ void grpc_chttp2_retry_initiate_ping(void* tp, grpc_error_handle error);
 
 void schedule_bdp_ping_locked(grpc_chttp2_transport* t);
 
+uint32_t grpc_chttp2_min_read_progress_size(grpc_chttp2_transport* t);
+
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INTERNAL_H */

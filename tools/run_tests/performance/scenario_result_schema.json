@@ -152,6 +152,16 @@
       },
       {
         "mode": "NULLABLE",
+        "name": "core_tcp_read_alloc_8k",
+        "type": "INTEGER"
+      },
+      {
+        "mode": "NULLABLE",
+        "name": "core_tcp_read_alloc_64k",
+        "type": "INTEGER"
+      },
+      {
+        "mode": "NULLABLE",
         "name": "core_http2_settings_writes",
         "type": "INTEGER"
       },
@@ -248,31 +258,6 @@
       {
         "mode": "NULLABLE",
         "name": "core_tcp_write_iov_size_99p",
-        "type": "FLOAT"
-      },
-      {
-        "mode": "NULLABLE",
-        "name": "core_tcp_read_allocation",
-        "type": "STRING"
-      },
-      {
-        "mode": "NULLABLE",
-        "name": "core_tcp_read_allocation_bkts",
-        "type": "STRING"
-      },
-      {
-        "mode": "NULLABLE",
-        "name": "core_tcp_read_allocation_50p",
-        "type": "FLOAT"
-      },
-      {
-        "mode": "NULLABLE",
-        "name": "core_tcp_read_allocation_95p",
-        "type": "FLOAT"
-      },
-      {
-        "mode": "NULLABLE",
-        "name": "core_tcp_read_allocation_99p",
         "type": "FLOAT"
       },
       {
@@ -444,6 +429,16 @@
       },
       {
         "mode": "NULLABLE",
+        "name": "core_tcp_read_alloc_8k",
+        "type": "INTEGER"
+      },
+      {
+        "mode": "NULLABLE",
+        "name": "core_tcp_read_alloc_64k",
+        "type": "INTEGER"
+      },
+      {
+        "mode": "NULLABLE",
         "name": "core_http2_settings_writes",
         "type": "INTEGER"
       },
@@ -540,31 +535,6 @@
       {
         "mode": "NULLABLE",
         "name": "core_tcp_write_iov_size_99p",
-        "type": "FLOAT"
-      },
-      {
-        "mode": "NULLABLE",
-        "name": "core_tcp_read_allocation",
-        "type": "STRING"
-      },
-      {
-        "mode": "NULLABLE",
-        "name": "core_tcp_read_allocation_bkts",
-        "type": "STRING"
-      },
-      {
-        "mode": "NULLABLE",
-        "name": "core_tcp_read_allocation_50p",
-        "type": "FLOAT"
-      },
-      {
-        "mode": "NULLABLE",
-        "name": "core_tcp_read_allocation_95p",
-        "type": "FLOAT"
-      },
-      {
-        "mode": "NULLABLE",
-        "name": "core_tcp_read_allocation_99p",
         "type": "FLOAT"
       },
       {

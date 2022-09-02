@@ -20,9 +20,6 @@
     }
   },
   {
-    "config": "basicprof"
-  },
-  {
     "config": "c++-compat"
   },
   {
@@ -69,9 +66,6 @@
   },
   {
     "config": "opt"
-  },
-  {
-    "config": "stapprof"
   },
   {
     "config": "tsan",

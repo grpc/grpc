@@ -22,11 +22,11 @@
 #include <atomic>
 #include <list>
 #include <memory>
+#include <utility>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "absl/utility/utility.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/codegen/gpr_types.h>
@@ -801,8 +801,8 @@ Poller::WorkResult PollPoller::Work(EventEngine::Duration timeout) {
     // End of poll iteration. Update how much time is remaining.
     timeout_ms -= PollElapsedTimeToMillis(start);
     mu_.Lock();
-    if (absl::exchange(was_kicked_, false) &&
-        absl::exchange(was_kicked_ext_, false)) {
+    if (std::exchange(was_kicked_, false) &&
+        std::exchange(was_kicked_ext_, false)) {
       // External kick. Need to break out.
       was_kicked_ext = true;
       break;

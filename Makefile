@@ -98,14 +98,6 @@ LDXX_asan-trace-cmp = clang++
 CPPFLAGS_asan-trace-cmp = -O0 -fsanitize-coverage=edge,trace-pc-guard -fsanitize-coverage=trace-cmp -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
 LDFLAGS_asan-trace-cmp = -fsanitize=address
 
-VALID_CONFIG_basicprof = 1
-CC_basicprof = $(DEFAULT_CC)
-CXX_basicprof = $(DEFAULT_CXX)
-LD_basicprof = $(DEFAULT_CC)
-LDXX_basicprof = $(DEFAULT_CXX)
-CPPFLAGS_basicprof = -O2 -DGRPC_BASIC_PROFILER -DGRPC_TIMERS_RDTSC
-DEFINES_basicprof = NDEBUG
-
 VALID_CONFIG_c++-compat = 1
 CC_c++-compat = $(DEFAULT_CC)
 CXX_c++-compat = $(DEFAULT_CXX)
@@ -210,14 +202,6 @@ LD_opt = $(DEFAULT_CC)
 LDXX_opt = $(DEFAULT_CXX)
 CPPFLAGS_opt = -O2 -Wframe-larger-than=16384
 DEFINES_opt = NDEBUG
-
-VALID_CONFIG_stapprof = 1
-CC_stapprof = $(DEFAULT_CC)
-CXX_stapprof = $(DEFAULT_CXX)
-LD_stapprof = $(DEFAULT_CC)
-LDXX_stapprof = $(DEFAULT_CXX)
-CPPFLAGS_stapprof = -O2 -DGRPC_STAP_PROFILER
-DEFINES_stapprof = NDEBUG
 
 VALID_CONFIG_tsan = 1
 REQUIRE_CUSTOM_LIBRARIES_tsan = 1
@@ -780,18 +764,6 @@ cache.mk::
 	$(E) "[MAKE]    Generating $@"
 	$(Q) echo "$(CACHE_MK)" | tr , '\n' >$@
 
-ifeq ($(CONFIG),stapprof)
-src/core/profiling/stap_timers.c: $(GENDIR)/src/core/profiling/stap_probes.h
-ifeq ($(HAS_SYSTEMTAP),true)
-$(GENDIR)/src/core/profiling/stap_probes.h: src/core/profiling/stap_probes.d
-	$(E) "[DTRACE]  Compiling $<"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(DTRACE) -C -h -s $< -o $@
-else
-$(GENDIR)/src/core/profiling/stap_probes.h: systemtap_dep_error stop
-endif
-endif
-
 $(OBJDIR)/$(CONFIG)/%.o : %.c
 	$(E) "[C]       Compiling $<"
 	$(Q) mkdir -p `dirname $@`
@@ -936,8 +908,6 @@ LIBGPR_SRC = \
     src/core/lib/gprpp/thd_posix.cc \
     src/core/lib/gprpp/thd_windows.cc \
     src/core/lib/gprpp/time_util.cc \
-    src/core/lib/profiling/basic_timers.cc \
-    src/core/lib/profiling/stap_timers.cc \
 
 PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/atm.h \
@@ -1471,6 +1441,7 @@ LIBGRPC_SRC = \
     src/core/lib/event_engine/windows/iocp.cc \
     src/core/lib/event_engine/windows/win_socket.cc \
     src/core/lib/event_engine/windows/windows_engine.cc \
+    src/core/lib/experiments/experiments.cc \
     src/core/lib/gprpp/status_helper.cc \
     src/core/lib/gprpp/time.cc \
     src/core/lib/gprpp/time_averaged_stats.cc \
@@ -1728,11 +1699,19 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
     include/grpc/impl/codegen/atm_gcc_sync.h \
     include/grpc/impl/codegen/atm_windows.h \
+    include/grpc/impl/codegen/byte_buffer.h \
+    include/grpc/impl/codegen/byte_buffer_reader.h \
+    include/grpc/impl/codegen/compression_types.h \
+    include/grpc/impl/codegen/connectivity_state.h \
     include/grpc/impl/codegen/fork.h \
     include/grpc/impl/codegen/gpr_slice.h \
     include/grpc/impl/codegen/gpr_types.h \
+    include/grpc/impl/codegen/grpc_types.h \
     include/grpc/impl/codegen/log.h \
     include/grpc/impl/codegen/port_platform.h \
+    include/grpc/impl/codegen/propagation_bits.h \
+    include/grpc/impl/codegen/slice.h \
+    include/grpc/impl/codegen/status.h \
     include/grpc/impl/codegen/sync.h \
     include/grpc/impl/codegen/sync_abseil.h \
     include/grpc/impl/codegen/sync_custom.h \
@@ -1962,6 +1941,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/event_engine/windows/iocp.cc \
     src/core/lib/event_engine/windows/win_socket.cc \
     src/core/lib/event_engine/windows/windows_engine.cc \
+    src/core/lib/experiments/experiments.cc \
     src/core/lib/gprpp/status_helper.cc \
     src/core/lib/gprpp/time.cc \
     src/core/lib/gprpp/time_averaged_stats.cc \
@@ -2155,11 +2135,19 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
     include/grpc/impl/codegen/atm_gcc_sync.h \
     include/grpc/impl/codegen/atm_windows.h \
+    include/grpc/impl/codegen/byte_buffer.h \
+    include/grpc/impl/codegen/byte_buffer_reader.h \
+    include/grpc/impl/codegen/compression_types.h \
+    include/grpc/impl/codegen/connectivity_state.h \
     include/grpc/impl/codegen/fork.h \
     include/grpc/impl/codegen/gpr_slice.h \
     include/grpc/impl/codegen/gpr_types.h \
+    include/grpc/impl/codegen/grpc_types.h \
     include/grpc/impl/codegen/log.h \
     include/grpc/impl/codegen/port_platform.h \
+    include/grpc/impl/codegen/propagation_bits.h \
+    include/grpc/impl/codegen/slice.h \
+    include/grpc/impl/codegen/status.h \
     include/grpc/impl/codegen/sync.h \
     include/grpc/impl/codegen/sync_abseil.h \
     include/grpc/impl/codegen/sync_custom.h \
