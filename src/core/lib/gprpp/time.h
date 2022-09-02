@@ -70,6 +70,7 @@ class Timestamp {
    public:
     // Return the current time.
     virtual Timestamp Now() = 0;
+    virtual void InvalidateCache() {}
 
    protected:
     ~Source() = default;
@@ -80,6 +81,7 @@ class Timestamp {
     ScopedSource() : previous_(std::exchange(source_, this)) {}
     ScopedSource(const ScopedSource&) = delete;
     ScopedSource& operator=(const ScopedSource&) = delete;
+    virtual void InvalidateCache() override { previous_->InvalidateCache(); }
 
    protected:
     ~ScopedSource() { source_ = previous_; }
@@ -153,7 +155,10 @@ class ScopedTimeCache final : public Timestamp::ScopedSource {
  public:
   Timestamp Now() override;
 
-  void Invalidate() { cached_time_ = absl::nullopt; }
+  void InvalidateCache() override {
+    cached_time_ = absl::nullopt;
+    Timestamp::ScopedSource::InvalidateCache();
+  }
   void TestOnlySetNow(Timestamp now) { cached_time_ = now; }
 
  private:
