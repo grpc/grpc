@@ -8251,6 +8251,7 @@ targets:
   - src/core/lib/debug/trace.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/debug_location.h
+  - src/core/lib/gprpp/no_destruct.h
   - src/core/lib/gprpp/status_helper.h
   - src/core/lib/gprpp/time.h
   - src/core/lib/iomgr/closure.h
@@ -10003,6 +10004,7 @@ targets:
   - src/core/lib/event_engine/posix_engine/timer.h
   - src/core/lib/event_engine/posix_engine/timer_heap.h
   - src/core/lib/gprpp/bitset.h
+  - src/core/lib/gprpp/no_destruct.h
   - src/core/lib/gprpp/time.h
   - src/core/lib/gprpp/time_averaged_stats.h
   src:
@@ -10023,6 +10025,7 @@ targets:
   headers:
   - src/core/lib/event_engine/posix_engine/timer.h
   - src/core/lib/event_engine/posix_engine/timer_heap.h
+  - src/core/lib/gprpp/no_destruct.h
   - src/core/lib/gprpp/time.h
   - src/core/lib/gprpp/time_averaged_stats.h
   src:
@@ -10061,6 +10064,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/lib/gprpp/no_destruct.h
   - src/core/lib/gprpp/time.h
   src:
   - src/core/lib/gprpp/time.cc
