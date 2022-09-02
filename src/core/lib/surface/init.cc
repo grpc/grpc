@@ -40,7 +40,7 @@
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/forkable.h"
 #include "src/core/lib/event_engine/posix_engine/timer_manager.h"
-#include "src/core/lib/experiments/experiments.h"
+#include "src/core/lib/experiments/config.h"
 #include "src/core/lib/gprpp/fork.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"
