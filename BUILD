@@ -2557,7 +2557,6 @@ grpc_cc_library(
         "absl/synchronization",
     ],
     deps = [
-        "common_event_engine_closures",
         "event_engine_base_hdrs",
         "event_engine_poller",
         "event_engine_time_util",
