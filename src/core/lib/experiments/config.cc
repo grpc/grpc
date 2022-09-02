@@ -20,6 +20,7 @@
 #include <string>
 
 #include "absl/strings/ascii.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 
@@ -31,7 +32,9 @@
 
 GPR_GLOBAL_CONFIG_DEFINE_STRING(
     grpc_experiments, "",
-    "List of grpc experiments to enable (or with a '-' prefix to disable).");
+    "List of grpc experiments to enable (or with a '-' prefix to disable). "
+    "Enable experiment 'list_experiments' to see a list of experiments that "
+    "are built into this binary.");
 
 namespace grpc_core {
 
@@ -87,6 +90,25 @@ bool IsExperimentEnabled(size_t experiment_id) {
       LoadExperimentsFromConfigVariable()};
   // Normal path: just return the value;
   return experiments->enabled[experiment_id];
+}
+
+void PrintExperimentsList() {
+  size_t max_experiment_length = 0;
+  for (size_t i = 0; i < kNumExperiments; i++) {
+    max_experiment_length =
+        std::max(max_experiment_length, strlen(g_experiment_metadata[i].name));
+  }
+  for (size_t i = 0; i < kNumExperiments; i++) {
+    gpr_log(
+        GPR_DEBUG, "%s",
+        absl::StrCat("gRPC EXPERIMENT ", g_experiment_metadata[i].name,
+                     std::string(max_experiment_length -
+                                     strlen(g_experiment_metadata[i].name) + 1,
+                                 ' '),
+                     IsExperimentEnabled(i) ? "ON " : "OFF", " (default:",
+                     g_experiment_metadata->default_value ? "ON" : "OFF", ")")
+            .c_str());
+  }
 }
 
 }  // namespace grpc_core

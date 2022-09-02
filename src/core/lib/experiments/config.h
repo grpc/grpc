@@ -26,6 +26,9 @@ namespace grpc_core {
 // declared in experiments.h.
 bool IsExperimentEnabled(size_t experiment_id);
 
+// Print out a list of all experiments that are built into this binary.
+void PrintExperimentsList();
+
 }  // namespace grpc_core
 
 #endif  // GRPC_CORE_LIB_EXPERIMENTS_CONFIG_H
