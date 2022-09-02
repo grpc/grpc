@@ -598,6 +598,7 @@ def grpc_objc_library(
         data = [],
         deps = [],
         defines = [],
+        sdk_frameworks = [],
         includes = [],
         visibility = ["//visibility:public"]):
     """The grpc version of objc_library, only used for the Objective-C library compilation
@@ -611,6 +612,7 @@ def grpc_objc_library(
         testonly: Whether the binary is for tests only.
         data: any other bundle resources
         defines: preprocessors
+        sdk_frameworks: sdks
         includes: added to search path, always [the path to objc directory]
         deps: dependencies
         visibility: visibility, default to public
@@ -628,6 +630,7 @@ def grpc_objc_library(
         deps = deps,
         defines = defines,
         includes = includes,
+        sdk_frameworks = sdk_frameworks,
         visibility = visibility,
     )
 
