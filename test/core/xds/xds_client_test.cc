@@ -261,10 +261,9 @@ TEST_F(XdsClientTest, BasicWatch) {
   auto stream = transport_factory_->GetStream(
       xds_client_->bootstrap().server(), FakeXdsTransportFactory::kAdsMethod);
   ASSERT_TRUE(stream != nullptr);
-  // XdsClient should have sent a request on the ADS stream.
+  // XdsClient should have sent a subscription request on the ADS stream.
   auto request = GetRequest(stream.get());
   ASSERT_TRUE(request.has_value());
-  // Check the request contents.
   CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
                /*version_info=*/"", /*response_nonce=*/"",
                /*error_detail=*/absl::OkStatus(),
@@ -295,6 +294,14 @@ TEST_F(XdsClientTest, BasicWatch) {
                /*version_info=*/"1", /*response_nonce=*/"A",
                /*error_detail=*/absl::OkStatus(),
                /*resource_names=*/{"foo1"});
+  // Cancel watch.
+  CancelFooWatch(watcher.get(), "foo1");
+  // XdsClient should send an unsubscription request.
+  request = GetRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"1", /*response_nonce=*/"A",
+               /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
 }
 
 }  // namespace
