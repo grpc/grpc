@@ -79,6 +79,50 @@ static char get_utf8_safe_char(char c) {
   return static_cast<unsigned char>(c) < 128 ? c : 32;
 }
 
+uint32_t grpc_chttp2_min_read_progress_size(grpc_chttp2_transport* t) {
+  switch (t->deframe_state) {
+    case GRPC_DTS_CLIENT_PREFIX_0:
+    case GRPC_DTS_CLIENT_PREFIX_1:
+    case GRPC_DTS_CLIENT_PREFIX_2:
+    case GRPC_DTS_CLIENT_PREFIX_3:
+    case GRPC_DTS_CLIENT_PREFIX_4:
+    case GRPC_DTS_CLIENT_PREFIX_5:
+    case GRPC_DTS_CLIENT_PREFIX_6:
+    case GRPC_DTS_CLIENT_PREFIX_7:
+    case GRPC_DTS_CLIENT_PREFIX_8:
+    case GRPC_DTS_CLIENT_PREFIX_9:
+    case GRPC_DTS_CLIENT_PREFIX_10:
+    case GRPC_DTS_CLIENT_PREFIX_11:
+    case GRPC_DTS_CLIENT_PREFIX_12:
+    case GRPC_DTS_CLIENT_PREFIX_13:
+    case GRPC_DTS_CLIENT_PREFIX_14:
+    case GRPC_DTS_CLIENT_PREFIX_15:
+    case GRPC_DTS_CLIENT_PREFIX_16:
+    case GRPC_DTS_CLIENT_PREFIX_17:
+    case GRPC_DTS_CLIENT_PREFIX_18:
+    case GRPC_DTS_CLIENT_PREFIX_19:
+    case GRPC_DTS_CLIENT_PREFIX_20:
+    case GRPC_DTS_CLIENT_PREFIX_21:
+    case GRPC_DTS_CLIENT_PREFIX_22:
+    case GRPC_DTS_CLIENT_PREFIX_23:
+      // Need the client prefix *and* the first fixed header to make progress.
+      return 9 + 24 - (t->deframe_state - GRPC_DTS_CLIENT_PREFIX_0);
+    case GRPC_DTS_FH_0:
+    case GRPC_DTS_FH_1:
+    case GRPC_DTS_FH_2:
+    case GRPC_DTS_FH_3:
+    case GRPC_DTS_FH_4:
+    case GRPC_DTS_FH_5:
+    case GRPC_DTS_FH_6:
+    case GRPC_DTS_FH_7:
+    case GRPC_DTS_FH_8:
+      return 9 - (t->deframe_state - GRPC_DTS_FH_0);
+    case GRPC_DTS_FRAME:
+      return t->incoming_frame_size;
+  }
+  GPR_UNREACHABLE_CODE(return 1);
+}
+
 grpc_error_handle grpc_chttp2_perform_read(grpc_chttp2_transport* t,
                                            const grpc_slice& slice) {
   const uint8_t* beg = GRPC_SLICE_START_PTR(slice);

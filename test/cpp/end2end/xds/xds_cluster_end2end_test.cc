@@ -554,12 +554,13 @@ TEST_P(EdsTest, AllServersUnreachableFailFast) {
   // The error shouldn't be DEADLINE_EXCEEDED because timeout is set to 5
   // seconds, and we should disocver in that time that the target backend is
   // down.
-  CheckRpcSendFailure(
-      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      "connections to all backends failing; last error: "
-      "(UNKNOWN: Failed to connect to remote host: Connection refused|"
-      "UNAVAILABLE: Failed to connect to remote host: FD shutdown)",
-      RpcOptions().set_timeout_ms(kRpcTimeoutMs));
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                      "connections to all backends failing; last error: "
+                      "(UNKNOWN: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+                      "Failed to connect to remote host: Connection refused|"
+                      "UNAVAILABLE: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+                      "Failed to connect to remote host: FD shutdown)",
+                      RpcOptions().set_timeout_ms(kRpcTimeoutMs));
 }
 
 // Tests that RPCs fail when the backends are down, and will succeed again
@@ -580,11 +581,12 @@ TEST_P(EdsTest, BackendsRestart) {
               ::testing::AnyOf(::testing::Eq(GRPC_CHANNEL_TRANSIENT_FAILURE),
                                ::testing::Eq(GRPC_CHANNEL_CONNECTING)));
   // RPCs should fail.
-  CheckRpcSendFailure(
-      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      "connections to all backends failing; last error: "
-      "(UNKNOWN: Failed to connect to remote host: Connection refused|"
-      "UNAVAILABLE: Failed to connect to remote host: FD shutdown)");
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                      "connections to all backends failing; last error: "
+                      "(UNKNOWN: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+                      "Failed to connect to remote host: Connection refused|"
+                      "UNAVAILABLE: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+                      "Failed to connect to remote host: FD shutdown)");
   // Restart all backends.  RPCs should start succeeding again.
   StartAllBackends();
   CheckRpcSendOk(DEBUG_LOCATION, 1,
@@ -1217,8 +1219,10 @@ TEST_P(FailoverTest, UpdateInitialUnavailable) {
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   constexpr char kErrorMessageRegex[] =
       "connections to all backends failing; last error: "
-      "(UNKNOWN: Failed to connect to remote host: Connection refused|"
-      "UNAVAILABLE: Failed to connect to remote host: FD shutdown)";
+      "(UNKNOWN: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+      "Failed to connect to remote host: Connection refused|"
+      "UNAVAILABLE: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+      "Failed to connect to remote host: FD shutdown)";
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
                       kErrorMessageRegex);
   args = EdsResourceArgs({

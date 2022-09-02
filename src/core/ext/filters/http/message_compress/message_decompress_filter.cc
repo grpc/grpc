@@ -40,7 +40,6 @@
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
@@ -274,7 +273,6 @@ void CallData::DecompressStartTransportStreamOpBatch(
 
 void DecompressStartTransportStreamOpBatch(
     grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
-  GPR_TIMER_SCOPE("decompress_start_transport_stream_op_batch", 0);
   CallData* calld = static_cast<CallData*>(elem->call_data);
   calld->DecompressStartTransportStreamOpBatch(elem, batch);
 }
