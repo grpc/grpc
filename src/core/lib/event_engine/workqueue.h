@@ -43,12 +43,13 @@ namespace experimental {
 template <typename T>
 class WorkQueue {
  public:
-  static const grpc_core::Timestamp kInvalidTimestamp;
+  // comparable to Timestamp::milliseconds_after_process_epoch()
+  static const int64_t kInvalidTimestamp;
 
   class Storage {
    public:
     Storage() = default;
-    Storage(T element, grpc_core::Timestamp enqueued)
+    Storage(T element, int64_t enqueued)
         : element_(element), enqueued_(enqueued) {}
     ~Storage() = default;
     // not copyable
@@ -62,12 +63,12 @@ class WorkQueue {
       std::swap(enqueued_, other.enqueued_);
       return *this;
     }
-    grpc_core::Timestamp enqueued() const { return enqueued_; }
+    int64_t enqueued() const { return enqueued_; }
     T&& TakeElement() { return std::move(element_); }
 
    private:
     T element_;
-    grpc_core::Timestamp enqueued_ = kInvalidTimestamp;
+    int64_t enqueued_ = kInvalidTimestamp;
   };
 
   WorkQueue() = default;
@@ -93,12 +94,19 @@ class WorkQueue {
   // Returns the Timestamp of when the most recently-added element was
   // enqueued.
   grpc_core::Timestamp OldestEnqueuedTimestamp() const {
-    grpc_core::Timestamp front_of_queue_timestamp =
+    int64_t front_of_queue_timestamp =
         oldest_enqueued_timestamp_.load(std::memory_order_relaxed);
-    return front_of_queue_timestamp != kInvalidTimestamp
-               ? front_of_queue_timestamp
-               : most_recent_element_enqueue_timestamp_.load(
-                     std::memory_order_relaxed);
+    if (front_of_queue_timestamp != kInvalidTimestamp) {
+      return grpc_core::Timestamp::FromMillisecondsAfterProcessEpoch(
+          front_of_queue_timestamp);
+    }
+    int64_t most_recent_millis =
+        most_recent_element_enqueue_timestamp_.load(std::memory_order_relaxed);
+    if (most_recent_millis == kInvalidTimestamp) {
+      return grpc_core::Timestamp::InfPast();
+    }
+    return grpc_core::Timestamp::FromMillisecondsAfterProcessEpoch(
+        most_recent_millis);
   }
   // Returns the next (oldest) element from the queue, or nullopt if empty
   absl::optional<T> PopFront() ABSL_LOCKS_EXCLUDED(mu_) {
@@ -130,10 +138,10 @@ class WorkQueue {
   void Add(T element) {
     grpc_core::ExecCtx exec_ctx;
     T previous_most_recent;
-    grpc_core::Timestamp previous_ts;
+    int64_t previous_ts;
     {
       absl::optional<T> tmp_element;
-      auto now = exec_ctx.Now();
+      int64_t now = exec_ctx.Now().milliseconds_after_process_epoch();
       {
         absl::base_internal::SpinLockHolder lock(&most_recent_element_lock_);
         tmp_element = std::exchange(most_recent_element_, element);
@@ -220,16 +228,14 @@ class WorkQueue {
   absl::base_internal::SpinLock ABSL_ACQUIRED_AFTER(mu_)
       most_recent_element_lock_;
   // TODO(hork): consider ABSL_CACHELINE_ALIGNED
-  std::atomic<grpc_core::Timestamp> most_recent_element_enqueue_timestamp_{
+  std::atomic<int64_t> most_recent_element_enqueue_timestamp_{
       kInvalidTimestamp};
-  std::atomic<grpc_core::Timestamp> oldest_enqueued_timestamp_{
-      kInvalidTimestamp};
+  std::atomic<int64_t> oldest_enqueued_timestamp_{kInvalidTimestamp};
   grpc_core::Mutex mu_;
 };
 
 template <typename T>
-const grpc_core::Timestamp WorkQueue<T>::kInvalidTimestamp =
-    grpc_core::Timestamp::InfPast();
+const int64_t WorkQueue<T>::kInvalidTimestamp = -1;
 
 }  // namespace experimental
 }  // namespace grpc_event_engine
