@@ -81,7 +81,7 @@ class Timestamp {
     ScopedSource() : previous_(std::exchange(source_, this)) {}
     ScopedSource(const ScopedSource&) = delete;
     ScopedSource& operator=(const ScopedSource&) = delete;
-    virtual void InvalidateCache() override { previous_->InvalidateCache(); }
+    void InvalidateCache() override { previous_->InvalidateCache(); }
 
    protected:
     ~ScopedSource() { source_ = previous_; }
