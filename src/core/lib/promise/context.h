@@ -77,7 +77,7 @@ T* GetContext() {
 // Given a promise and a context, return a promise that has that context set.
 template <typename T, typename F>
 promise_detail::WithContext<T, F> WithContext(F f, T* context) {
-  return promise_detail::WithContext<T, F>(f, context);
+  return promise_detail::WithContext<T, F>(std::move(f), context);
 }
 
 }  // namespace grpc_core

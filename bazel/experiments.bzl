@@ -20,8 +20,12 @@ EXPERIMENTS = {
     "core_end2end_test": [
         "promise_based_client_call",
         "tcp_frame_size_tuning",
+        "tcp_rcv_lowat",
+        "tcp_read_chunks",
     ],
     "endpoint_test": [
         "tcp_frame_size_tuning",
+        "tcp_rcv_lowat",
+        "tcp_read_chunks",
     ],
 }
