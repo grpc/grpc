@@ -288,7 +288,7 @@ void TransportFlowControl::UpdateSetting(
         (delta <= -*desired_value / 5 || delta >= *desired_value / 5)) {
       *desired_value = new_desired_value;
       (action->*set)(FlowControlAction::Urgency::QUEUE_UPDATE,
-        static_cast<uint32_t>(*desired_value));
+                     static_cast<uint32_t>(*desired_value));
     }
   }
 }
