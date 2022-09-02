@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef EXPERIMENTS_PARSER_H
-#define EXPERIMENTS_PARSER_H
+#ifndef GRPC_CORE_LIB_EXPERIMENTS_CONFIG_H
+#define GRPC_CORE_LIB_EXPERIMENTS_CONFIG_H
 
 #include <grpc/support/port_platform.h>
 
-#include "absl/strings/string_view.h"
+#include <stddef.h>
 
 namespace grpc_core {
 
@@ -28,4 +28,4 @@ bool IsExperimentEnabled(size_t experiment_id);
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_CORE_LIB_EXPERIMENTS_CONFIG_H

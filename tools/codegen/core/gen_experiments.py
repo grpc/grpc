@@ -141,7 +141,9 @@ with open('src/core/lib/experiments/experiments.h', 'w') as H:
     print("namespace grpc_core {", file=H)
     print(file=H)
     for i, attr in enumerate(attrs):
-        print("inline bool Is%sEnabled() { return IsExperimentEnabled(%d); }" % (snake_to_pascal(attr['name']), i), file=H)
+        print("inline bool Is%sEnabled() { return IsExperimentEnabled(%d); }" %
+              (snake_to_pascal(attr['name']), i),
+              file=H)
     print(file=H)
     print(EXPERIMENT_METADATA, file=H)
     print(file=H)
@@ -177,8 +179,8 @@ with open('src/core/lib/experiments/experiments.cc', 'w') as C:
     print("const ExperimentMetadata g_experiment_metadata[] = {", file=C)
     for attr in attrs:
         print("  {%s, description_%s, %s}," %
-              (c_str(attr['name']), attr['name'], 'true'
-               if attr['default'] else 'false'),
+              (c_str(attr['name']), attr['name'],
+               'true' if attr['default'] else 'false'),
               file=C)
     print("};", file=C)
     print(file=C)
