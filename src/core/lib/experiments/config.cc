@@ -32,9 +32,7 @@
 
 GPR_GLOBAL_CONFIG_DEFINE_STRING(
     grpc_experiments, "",
-    "List of grpc experiments to enable (or with a '-' prefix to disable). "
-    "Enable experiment 'list_experiments' to see a list of experiments that "
-    "are built into this binary.");
+    "List of grpc experiments to enable (or with a '-' prefix to disable).");
 
 namespace grpc_core {
 
