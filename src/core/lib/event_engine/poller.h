@@ -36,12 +36,14 @@ class Poller {
   using WorkResult = absl::variant<Ok, DeadlineExceeded, Kicked>;
 
   virtual ~Poller() = default;
-  // Poll once for events and process received events.
+  // Poll once for events and process received events. The callback function
+  // is expected to be invoked prior to processing received events.
   //
   // Returns:
-  //  * absl::AbortedError if it was Kicked.
-  //  * absl::DeadlineExceeded if timeout occurred
-  //  * A collection of closures to execute, otherwise
+  //  * Poller::Kicked if it was Kicked.
+  //  * Poller::DeadlineExceeded if timeout occurred
+  //  * Poller::Ok, otherwise indicating that the callback function was invoked
+  //    and some events were processed.
   virtual WorkResult Work(
       EventEngine::Duration timeout,
       absl::FunctionRef<void()> call_before_processing_events) = 0;
