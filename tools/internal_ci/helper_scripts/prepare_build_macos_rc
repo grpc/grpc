@@ -163,7 +163,7 @@ then
   # TODO(rbellevi): Figure out a way to securely update these versions
   # automatically.
   # Install Python 3.11 if it doesn't exist
-  if [ ! -f "/usr/local/bin/python3.10" ]; then
+  if [ ! -f "/usr/local/bin/python3.11" ]; then
     time curl -O https://www.python.org/ftp/python/3.11.0/python-3.11.0rc1-macos11.pkg
     echo "eec3f817797b1d61f48f29b96ac0443ea19f3170  python-3.11.0rc1-macos11.pkg" > /tmp/python_installer_checksum.sha256
     shasum -c /tmp/python_installer_checksum.sha256
