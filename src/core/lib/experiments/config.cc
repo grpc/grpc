@@ -45,6 +45,7 @@ bool IsExperimentEnabled(size_t experiment_id) {
     for (auto experiment :
          absl::StrSplit(absl::string_view(experiments_str.get()), ',')) {
       experiment = absl::StripAsciiWhitespace(experiment);
+      if (experiment.empty()) continue;
       bool enable = true;
       if (experiment[0] == '-') {
         enable = false;
