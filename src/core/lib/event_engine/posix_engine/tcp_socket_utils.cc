@@ -247,8 +247,6 @@ absl::StatusOr<std::string> SockaddrToString(
   const int save_errno = errno;
   EventEngine::ResolvedAddress addr_normalized;
   if (normalize && SockaddrIsV4Mapped(resolved_addr, &addr_normalized)) {
-    std::cout << "Is V4 mapped is true" << std::endl;
-    fflush(stdout);
     resolved_addr = &addr_normalized;
   }
   const sockaddr* addr =

@@ -154,6 +154,7 @@ void SetIPv6ScopeId(EventEngine::ResolvedAddress* addr, uint32_t scope_id) {
   addr6->sin6_scope_id = scope_id;
 }
 
+#ifdef GRPC_HAVE_UNIX_SOCKET
 absl::StatusOr<EventEngine::ResolvedAddress> UnixSockaddrPopulate(
     absl::string_view path) {
   EventEngine::ResolvedAddress resolved_addr;
@@ -189,9 +190,10 @@ absl::StatusOr<EventEngine::ResolvedAddress> UnixAbstractSockaddrPopulate(
   un->sun_path[0] = '\0';
   path.copy(un->sun_path + 1, path.size());
   return EventEngine::ResolvedAddress(
-      reinterpret_cast<sockaddr*>(un),
+      resolved_addr.address(),
       static_cast<socklen_t>(sizeof(un->sun_family) + path.size() + 1));
 }
+#endif
 
 }  // namespace
 
@@ -250,7 +252,7 @@ TEST(TcpPosixSocketUtilsTest, SocketOptionsTest) {
   close(sock);
 }
 
-TEST(SockAddrUtilsTest, SockAddrIsV4Mapped) {
+TEST(SockAddrUtilsTest, SockAddrIsV4MappedTest) {
   // v4mapped input should succeed.
   EventEngine::ResolvedAddress input6 = MakeAddr6(kMapped, sizeof(kMapped));
   ASSERT_TRUE(SockaddrIsV4Mapped(&input6, nullptr));
@@ -355,12 +357,6 @@ TEST(TcpPosixSocketUtilsTest, SockAddrToStringTest) {
   inputun = *UnixAbstractSockaddrPopulate(max_abspath);
   EXPECT_EQ(SockaddrToString(&inputun, true).value(),
             absl::StrCat(std::string(1, '\0'), max_abspath));
-
-  inputun = *UnixAbstractSockaddrPopulate("");
-  inputun = EventEngine::ResolvedAddress(inputun.address(),
-                                         sizeof(sock_un->sun_family));
-  EXPECT_EQ(SockaddrToString(&inputun, true).status(),
-            absl::InvalidArgumentError("Empty UDS abstract path"));
 #endif
 }
 
