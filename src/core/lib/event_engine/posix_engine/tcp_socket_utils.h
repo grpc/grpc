@@ -133,6 +133,15 @@ int Accept4(int sockfd,
             grpc_event_engine::experimental::EventEngine::ResolvedAddress& addr,
             int nonblock, int cloexec);
 
+bool SockaddrIsV4Mapped(const EventEngine::ResolvedAddress* resolved_addr,
+                        EventEngine::ResolvedAddress* resolved_addr4_out);
+
+bool SockaddrToV4Mapped(const EventEngine::ResolvedAddress* resolved_addr,
+                        EventEngine::ResolvedAddress* resolved_addr6_out);
+
+absl::StatusOr<std::string> SockaddrToString(
+    const EventEngine::ResolvedAddress* resolved_addr, bool normalize);
+
 class PosixSocketWrapper {
  public:
   explicit PosixSocketWrapper(int fd) : fd_(fd) { GPR_ASSERT(fd_ > 0); }
