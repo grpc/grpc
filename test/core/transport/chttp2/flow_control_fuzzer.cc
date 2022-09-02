@@ -12,15 +12,42 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <limits>
-#include <queue>
+#include <inttypes.h>
+#include <stdio.h>
+#include <stdlib.h>
 
+#include <algorithm>
+#include <cstdint>
+#include <deque>
+#include <functional>
+#include <limits>
+#include <map>
+#include <memory>
+#include <queue>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "absl/base/attributes.h"
+#include "absl/memory/memory.h"
+#include "absl/status/status.h"
+#include "absl/types/optional.h"
+
+#include <grpc/event_engine/memory_request.h>
 #include <grpc/grpc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/time.h>
 
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
+#include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/lib/transport/bdp_estimator.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/transport/chttp2/flow_control_fuzzer.pb.h"
+
+// IWYU pragma: no_include <google/protobuf/repeated_ptr_field.h>
 
 bool squelch = true;
 
@@ -274,7 +301,7 @@ void FlowControlFuzzer::Perform(const flow_control_fuzzer::Action& action) {
         queued_initial_window_size_.has_value()) {
       sending_initial_window_size_ = true;
       send.initial_window_size =
-          absl::exchange(queued_initial_window_size_, absl::nullopt);
+          std::exchange(queued_initial_window_size_, absl::nullopt);
     }
     while (!streams_to_update_.empty()) {
       auto* stream = GetStream(streams_to_update_.front());

@@ -37,14 +37,16 @@
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/forkable.h"
+#include "src/core/lib/event_engine/posix_engine/timer_manager.h"
+#include "src/core/lib/experiments/config.h"
 #include "src/core/lib/gprpp/fork.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/timer_manager.h"
-#include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/security/authorization/grpc_server_authz_filter.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
@@ -119,6 +121,7 @@ static void do_basic_init(void) {
   g_shutting_down_cv = new grpc_core::CondVar();
   grpc_register_built_in_plugins();
   gpr_time_init();
+  grpc_core::PrintExperimentsList();
 }
 
 typedef struct grpc_plugin {
@@ -152,7 +155,6 @@ void grpc_init(void) {
     grpc_fork_handlers_auto_register();
     grpc_core::ApplicationCallbackExecCtx::GlobalInit();
     grpc_iomgr_init();
-    gpr_timers_global_init();
     for (int i = 0; i < g_number_of_plugins; i++) {
       if (g_all_of_the_plugins[i].init != nullptr) {
         g_all_of_the_plugins[i].init();
@@ -179,8 +181,8 @@ void grpc_shutdown_internal_locked(void)
         }
       }
     }
+    grpc_event_engine::experimental::ResetDefaultEventEngine();
     grpc_iomgr_shutdown();
-    gpr_timers_global_destroy();
     grpc_tracer_shutdown();
     grpc_core::Fork::GlobalShutdown();
   }
@@ -208,6 +210,8 @@ void grpc_shutdown(void) {
     grpc_core::ApplicationCallbackExecCtx* acec =
         grpc_core::ApplicationCallbackExecCtx::Get();
     if (!grpc_iomgr_is_any_background_poller_thread() &&
+        !grpc_event_engine::posix_engine::TimerManager::
+            IsTimerManagerThread() &&
         (acec == nullptr ||
          (acec->Flags() & GRPC_APP_CALLBACK_EXEC_CTX_FLAG_IS_INTERNAL_THREAD) ==
              0)) {
