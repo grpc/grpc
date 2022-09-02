@@ -514,7 +514,7 @@ function(protobuf_generate_grpc_cpp_with_import_path_correction FILE_LOCATION IM
          --plugin=protoc-gen-grpc=${_gRPC_CPP_PLUGIN}
          ${_protobuf_include_path}
          ${REL_FIL}
-    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${FILE_LOCATION} ${ABS_FIL} ${_gRPC_PROTOBUF_PROTOC} grpc_cpp_plugin
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${FILE_LOCATION} ${ABS_FIL} ${_gRPC_PROTOBUF_PROTOC} ${_gRPC_CPP_PLUGIN}
     WORKING_DIRECTORY ${_gRPC_PROTO_SRCS_DIR}
     COMMENT "Running gRPC C++ protocol buffer compiler for ${IMPORT_PATH}"
     VERBATIM)
@@ -2126,6 +2126,7 @@ add_library(grpc
   src/core/lib/event_engine/windows/iocp.cc
   src/core/lib/event_engine/windows/win_socket.cc
   src/core/lib/event_engine/windows/windows_engine.cc
+  src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
@@ -2762,6 +2763,7 @@ add_library(grpc_unsecure
   src/core/lib/event_engine/windows/iocp.cc
   src/core/lib/event_engine/windows/win_socket.cc
   src/core/lib/event_engine/windows/windows_engine.cc
+  src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc

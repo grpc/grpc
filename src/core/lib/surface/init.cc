@@ -40,6 +40,7 @@
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/forkable.h"
 #include "src/core/lib/event_engine/posix_engine/timer_manager.h"
+#include "src/core/lib/experiments/config.h"
 #include "src/core/lib/gprpp/fork.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"
@@ -120,6 +121,7 @@ static void do_basic_init(void) {
   g_shutting_down_cv = new grpc_core::CondVar();
   grpc_register_built_in_plugins();
   gpr_time_init();
+  grpc_core::PrintExperimentsList();
 }
 
 typedef struct grpc_plugin {
