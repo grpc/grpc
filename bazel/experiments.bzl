@@ -19,10 +19,12 @@
 EXPERIMENTS = {
     "core_end2end_test": [
         "tcp_frame_size_tuning",
+        "tcp_rcv_lowat",
         "tcp_read_chunks",
     ],
     "endpoint_test": [
         "tcp_frame_size_tuning",
+        "tcp_rcv_lowat",
         "tcp_read_chunks",
     ],
 }
