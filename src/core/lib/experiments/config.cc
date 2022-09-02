@@ -16,6 +16,9 @@
 
 #include "src/core/lib/experiments/config.h"
 
+#include <string.h>
+
+#include <algorithm>
 #include <memory>
 #include <string>
 
