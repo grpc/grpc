@@ -41,6 +41,22 @@ static void BM_WorkQueueIntptrPopFront(benchmark::State& state) {
 }
 BENCHMARK(BM_WorkQueueIntptrPopFront)->Range(1, 4096);
 
+static void BM_WorkQueueIntptrPopBack(benchmark::State& state) {
+  WorkQueue<intptr_t> queue;
+  int element_count = state.range(0);
+  for (auto _ : state) {
+    int cnt = 0;
+    for (int i = 0; i < element_count; i++) queue.Add(1);
+    absl::optional<intptr_t> popped;
+    cnt = 0;
+    do {
+      popped = queue.PopBack();
+      if (popped.has_value()) ++cnt;
+    } while (cnt < element_count);
+  }
+  state.SetItemsProcessed(element_count * state.iterations());
+}
+BENCHMARK(BM_WorkQueueIntptrPopBack)->Range(1, 4096);
 }  // namespace
 
 // Some distros have RunSpecifiedBenchmarks under the benchmark namespace,
