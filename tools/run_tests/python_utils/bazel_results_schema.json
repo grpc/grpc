@@ -1,0 +1,87 @@
+[
+  {
+    "mode": "NULLABLE",
+    "name": "invocation_id",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "invocation_property_kokoro_job_name",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "invocation_property_kokoro_build_number",
+    "type": "INTEGER"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "invocation_property_kokoro_resultstore_url",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "invocation_property_kokoro_sponge_url",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "invocation_property_kokoro_github_commit",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "invocation_property_build_user",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "invocation_property_bazel_version",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "invocation_status",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "invocation_start_time",
+    "type": "TIMESTAMP"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "invocation_duration",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "timestamp",
+    "type": "TIMESTAMP"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "test_target",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "test_class_name",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "test_case",
+    "type": "STRING"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "duration",
+    "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "result",
+    "type": "STRING"
+  }
+]
