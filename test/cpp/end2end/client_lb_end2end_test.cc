@@ -30,6 +30,7 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 
+#include <grpc/event_engine/endpoint_config.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
@@ -46,6 +47,7 @@
 #include <grpcpp/server_builder.h>
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
+#include "src/core/ext/filters/client_channel/config_selector.h"
 #include "src/core/ext/filters/client_channel/global_subchannel_pool.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/lib/address_utils/parse_address.h"
@@ -174,6 +176,11 @@ class FakeResolverResponseGeneratorWrapper {
   void SetFailureOnReresolution() {
     grpc_core::ExecCtx exec_ctx;
     response_generator_->SetFailureOnReresolution();
+  }
+
+  void SetResponse(grpc_core::Resolver::Result result) {
+    grpc_core::ExecCtx exec_ctx;
+    response_generator_->SetResponse(std::move(result));
   }
 
   grpc_core::FakeResolverResponseGenerator* Get() const {
@@ -2682,6 +2689,93 @@ TEST_F(OobBackendMetricTest, Basic) {
     }
     gpr_sleep_until(grpc_timeout_seconds_to_deadline(1));
   }
+}
+
+//
+// tests rewriting of control plane status codes
+//
+
+class ControlPlaneStatusRewritingTest : public ClientLbEnd2endTest {
+ protected:
+  static void SetUpTestCase() {
+    grpc_core::CoreConfiguration::Reset();
+    grpc_core::CoreConfiguration::RegisterBuilder(
+        [](grpc_core::CoreConfiguration::Builder* builder) {
+          grpc_core::RegisterFailLoadBalancingPolicy(
+              builder, absl::AbortedError("nope"));
+        });
+    grpc_init();
+  }
+
+  static void TearDownTestCase() {
+    grpc_shutdown();
+    grpc_core::CoreConfiguration::Reset();
+  }
+};
+
+TEST_F(ControlPlaneStatusRewritingTest, RewritesFromLb) {
+  // Start client.
+  auto response_generator = BuildResolverResponseGenerator();
+  auto channel = BuildChannel("fail_lb", response_generator);
+  auto stub = BuildStub(channel);
+  response_generator.SetNextResolution(GetServersPorts());
+  // Send an RPC, verify that status was rewritten.
+  CheckRpcSendFailure(
+      DEBUG_LOCATION, stub, StatusCode::INTERNAL,
+      "Illegal status code from LB pick; original status: ABORTED: nope");
+}
+
+TEST_F(ControlPlaneStatusRewritingTest, RewritesFromResolver) {
+  // Start client.
+  auto response_generator = BuildResolverResponseGenerator();
+  auto channel = BuildChannel("pick_first", response_generator);
+  auto stub = BuildStub(channel);
+  grpc_core::Resolver::Result result;
+  result.service_config = absl::AbortedError("nope");
+  result.addresses.emplace();
+  response_generator.SetResponse(std::move(result));
+  // Send an RPC, verify that status was rewritten.
+  CheckRpcSendFailure(
+      DEBUG_LOCATION, stub, StatusCode::INTERNAL,
+      "Illegal status code from resolver; original status: ABORTED: nope");
+}
+
+TEST_F(ControlPlaneStatusRewritingTest, RewritesFromConfigSelector) {
+  class FailConfigSelector : public grpc_core::ConfigSelector {
+   public:
+    explicit FailConfigSelector(absl::Status status)
+        : status_(std::move(status)) {}
+    const char* name() const override { return "FailConfigSelector"; }
+    bool Equals(const ConfigSelector* other) const override {
+      return status_ == static_cast<const FailConfigSelector*>(other)->status_;
+    }
+    CallConfig GetCallConfig(GetCallConfigArgs /*args*/) override {
+      CallConfig config;
+      config.status = status_;
+      return config;
+    }
+
+   private:
+    absl::Status status_;
+  };
+  // Start client.
+  auto response_generator = BuildResolverResponseGenerator();
+  auto channel = BuildChannel("pick_first", response_generator);
+  auto stub = BuildStub(channel);
+  auto config_selector =
+      grpc_core::MakeRefCounted<FailConfigSelector>(absl::AbortedError("nope"));
+  grpc_core::Resolver::Result result;
+  result.addresses.emplace();
+  result.service_config =
+      grpc_core::ServiceConfigImpl::Create(grpc_core::ChannelArgs(), "{}");
+  ASSERT_TRUE(result.service_config.ok()) << result.service_config.status();
+  result.args = grpc_core::ChannelArgs().SetObject(config_selector);
+  response_generator.SetResponse(std::move(result));
+  // Send an RPC, verify that status was rewritten.
+  CheckRpcSendFailure(
+      DEBUG_LOCATION, stub, StatusCode::INTERNAL,
+      "Illegal status code from ConfigSelector; original status: "
+      "ABORTED: nope");
 }
 
 }  // namespace

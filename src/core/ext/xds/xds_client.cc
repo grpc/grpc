@@ -151,8 +151,11 @@ class XdsClient::ChannelState::AdsCallState
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
 
     void ParseResource(upb_Arena* arena, size_t idx, absl::string_view type_url,
+                       absl::string_view resource_name,
                        absl::string_view serialized_resource) override
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
+
+    void ResourceWrapperParsingFailed(size_t idx) override;
 
     Result TakeResult() { return std::move(result_); }
 
@@ -690,13 +693,16 @@ void UpdateResourceMetadataNacked(const std::string& version,
 
 void XdsClient::ChannelState::AdsCallState::AdsResponseParser::ParseResource(
     upb_Arena* arena, size_t idx, absl::string_view type_url,
-    absl::string_view serialized_resource) {
+    absl::string_view resource_name, absl::string_view serialized_resource) {
+  std::string error_prefix = absl::StrCat(
+      "resource index ", idx, ": ",
+      resource_name.empty() ? "" : absl::StrCat(resource_name, ": "));
   // Check the type_url of the resource.
   bool is_v2 = false;
   if (!result_.type->IsType(type_url, &is_v2)) {
     result_.errors.emplace_back(
-        absl::StrCat("resource index ", idx, ": incorrect resource type ",
-                     type_url, " (should be ", result_.type_url, ")"));
+        absl::StrCat(error_prefix, "incorrect resource type ", type_url,
+                     " (should be ", result_.type_url, ")"));
     return;
   }
   // Parse the resource.
@@ -707,25 +713,29 @@ void XdsClient::ChannelState::AdsCallState::AdsResponseParser::ParseResource(
       result_.type->Decode(context, serialized_resource, is_v2);
   if (!result.ok()) {
     result_.errors.emplace_back(
-        absl::StrCat("resource index ", idx, ": ", result.status().ToString()));
+        absl::StrCat(error_prefix, result.status().ToString()));
     return;
   }
   // Check the resource name.
-  auto resource_name =
-      xds_client()->ParseXdsResourceName(result->name, result_.type);
-  if (!resource_name.ok()) {
-    result_.errors.emplace_back(absl::StrCat(
-        "resource index ", idx, ": Cannot parse xDS resource name \"",
-        result->name, "\""));
+  if (resource_name.empty()) {
+    resource_name = result->name;
+    error_prefix =
+        absl::StrCat("resource index ", idx, ": ", resource_name, ": ");
+  }
+  auto parsed_resource_name =
+      xds_client()->ParseXdsResourceName(resource_name, result_.type);
+  if (!parsed_resource_name.ok()) {
+    result_.errors.emplace_back(
+        absl::StrCat(error_prefix, "Cannot parse xDS resource name"));
     return;
   }
   // Cancel resource-does-not-exist timer, if needed.
   auto timer_it = ads_call_state_->state_map_.find(result_.type);
   if (timer_it != ads_call_state_->state_map_.end()) {
-    auto it =
-        timer_it->second.subscribed_resources.find(resource_name->authority);
+    auto it = timer_it->second.subscribed_resources.find(
+        parsed_resource_name->authority);
     if (it != timer_it->second.subscribed_resources.end()) {
-      auto res_it = it->second.find(resource_name->key);
+      auto res_it = it->second.find(parsed_resource_name->key);
       if (res_it != it->second.end()) {
         res_it->second->MaybeCancelTimer();
       }
@@ -733,7 +743,7 @@ void XdsClient::ChannelState::AdsCallState::AdsResponseParser::ParseResource(
   }
   // Lookup the authority in the cache.
   auto authority_it =
-      xds_client()->authority_state_map_.find(resource_name->authority);
+      xds_client()->authority_state_map_.find(parsed_resource_name->authority);
   if (authority_it == xds_client()->authority_state_map_.end()) {
     return;  // Skip resource -- we don't have a subscription for it.
   }
@@ -745,14 +755,15 @@ void XdsClient::ChannelState::AdsCallState::AdsResponseParser::ParseResource(
   }
   auto& type_map = type_it->second;
   // Found type, so look up resource key.
-  auto it = type_map.find(resource_name->key);
+  auto it = type_map.find(parsed_resource_name->key);
   if (it == type_map.end()) {
     return;  // Skip resource -- we don't have a subscription for it.
   }
   ResourceState& resource_state = it->second;
   // If needed, record that we've seen this resource.
   if (result_.type->AllResourcesRequiredInSotW()) {
-    result_.resources_seen[resource_name->authority].insert(resource_name->key);
+    result_.resources_seen[parsed_resource_name->authority].insert(
+        parsed_resource_name->key);
   }
   // If we previously ignored the resource's deletion, log that we're
   // now re-adding it.
@@ -762,14 +773,14 @@ void XdsClient::ChannelState::AdsCallState::AdsResponseParser::ParseResource(
             "resource for which we previously ignored a deletion: type %s "
             "name %s",
             xds_client(), ads_call_state_->chand()->server_.server_uri.c_str(),
-            std::string(type_url).c_str(), result->name.c_str());
+            std::string(type_url).c_str(), std::string(resource_name).c_str());
     resource_state.ignored_deletion = false;
   }
   // Update resource state based on whether the resource is valid.
   if (!result->resource.ok()) {
     result_.errors.emplace_back(absl::StrCat(
-        "resource index ", idx, ": ", result->name,
-        ": validation error: ", result->resource.status().ToString()));
+        error_prefix,
+        "validation error: ", result->resource.status().ToString()));
     xds_client()->NotifyWatchersOnErrorLocked(
         resource_state.watchers,
         absl::UnavailableError(absl::StrCat(
@@ -788,7 +799,8 @@ void XdsClient::ChannelState::AdsCallState::AdsResponseParser::ParseResource(
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
       gpr_log(GPR_INFO,
               "[xds_client %p] %s resource %s identical to current, ignoring.",
-              xds_client(), result_.type_url.c_str(), result->name.c_str());
+              xds_client(), result_.type_url.c_str(),
+              std::string(resource_name).c_str());
     }
     return;
   }
@@ -809,6 +821,12 @@ void XdsClient::ChannelState::AdsCallState::AdsResponseParser::ParseResource(
             delete value;
           },
       DEBUG_LOCATION);
+}
+
+void XdsClient::ChannelState::AdsCallState::AdsResponseParser::
+    ResourceWrapperParsingFailed(size_t idx) {
+  result_.errors.emplace_back(absl::StrCat(
+      "resource index ", idx, ": Can't decode Resource proto wrapper"));
 }
 
 //

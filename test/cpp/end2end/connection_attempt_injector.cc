@@ -25,6 +25,8 @@
 // defined in tcp_client.cc
 extern grpc_tcp_client_vtable* grpc_tcp_client_impl;
 
+using ::grpc_event_engine::experimental::EndpointConfig;
+
 namespace grpc {
 namespace testing {
 
@@ -53,18 +55,18 @@ void ConnectionAttemptInjector::Init() {
 
 int64_t ConnectionAttemptInjector::TcpConnect(
     grpc_closure* closure, grpc_endpoint** ep,
-    grpc_pollset_set* interested_parties, const grpc_channel_args* channel_args,
+    grpc_pollset_set* interested_parties, const EndpointConfig& config,
     const grpc_resolved_address* addr, grpc_core::Timestamp deadline) {
   grpc_core::MutexLock lock(g_mu);
   // If there's no injector, use the original vtable.
   if (g_injector == nullptr) {
-    g_original_vtable->connect(closure, ep, interested_parties, channel_args,
-                               addr, deadline);
+    g_original_vtable->connect(closure, ep, interested_parties, config, addr,
+                               deadline);
     return 0;
   }
   // Otherwise, use the injector.
-  g_injector->HandleConnection(closure, ep, interested_parties, channel_args,
-                               addr, deadline);
+  g_injector->HandleConnection(closure, ep, interested_parties, config, addr,
+                               deadline);
   return 0;
 }
 
@@ -111,7 +113,7 @@ void ConnectionAttemptInjector::SetDelay(grpc_core::Duration delay) {
 
 void ConnectionAttemptInjector::HandleConnection(
     grpc_closure* closure, grpc_endpoint** ep,
-    grpc_pollset_set* interested_parties, const grpc_channel_args* channel_args,
+    grpc_pollset_set* interested_parties, const EndpointConfig& config,
     const grpc_resolved_address* addr, grpc_core::Timestamp deadline) {
   const int port = grpc_sockaddr_get_port(addr);
   gpr_log(GPR_INFO, "==> HandleConnection(): port=%d", port);
@@ -128,7 +130,7 @@ void ConnectionAttemptInjector::HandleConnection(
                                       hold, nullptr);
         }
         hold->queued_attempt_ = absl::make_unique<QueuedAttempt>(
-            closure, ep, interested_parties, channel_args, addr, deadline);
+            closure, ep, interested_parties, config, addr, deadline);
         hold->start_cv_.Signal();
         holds_.erase(it);
         return;
@@ -136,14 +138,14 @@ void ConnectionAttemptInjector::HandleConnection(
     }
     // Otherwise, if there's a configured delay, impose it.
     if (delay_.has_value()) {
-      new InjectedDelay(*delay_, closure, ep, interested_parties, channel_args,
-                        addr, deadline);
+      new InjectedDelay(*delay_, closure, ep, interested_parties, config, addr,
+                        deadline);
       return;
     }
   }
   // Anything we're not holding or delaying should proceed normally.
-  g_original_vtable->connect(closure, ep, interested_parties, channel_args,
-                             addr, deadline);
+  g_original_vtable->connect(closure, ep, interested_parties, config, addr,
+                             deadline);
 }
 
 //
@@ -152,25 +154,25 @@ void ConnectionAttemptInjector::HandleConnection(
 
 ConnectionAttemptInjector::QueuedAttempt::QueuedAttempt(
     grpc_closure* closure, grpc_endpoint** ep,
-    grpc_pollset_set* interested_parties, const grpc_channel_args* channel_args,
+    grpc_pollset_set* interested_parties, const EndpointConfig& config,
     const grpc_resolved_address* addr, grpc_core::Timestamp deadline)
     : closure_(closure),
       endpoint_(ep),
       interested_parties_(interested_parties),
-      channel_args_(grpc_channel_args_copy(channel_args)),
+      config_(*reinterpret_cast<const grpc_event_engine::experimental::
+                                    ChannelArgsEndpointConfig*>(&config)),
       deadline_(deadline) {
   memcpy(&address_, addr, sizeof(address_));
 }
 
 ConnectionAttemptInjector::QueuedAttempt::~QueuedAttempt() {
   GPR_ASSERT(closure_ == nullptr);
-  grpc_channel_args_destroy(channel_args_);
 }
 
 void ConnectionAttemptInjector::QueuedAttempt::Resume() {
   GPR_ASSERT(closure_ != nullptr);
-  g_original_vtable->connect(closure_, endpoint_, interested_parties_,
-                             channel_args_, &address_, deadline_);
+  g_original_vtable->connect(closure_, endpoint_, interested_parties_, config_,
+                             &address_, deadline_);
   closure_ = nullptr;
 }
 
@@ -186,9 +188,9 @@ void ConnectionAttemptInjector::QueuedAttempt::Fail(grpc_error_handle error) {
 
 ConnectionAttemptInjector::InjectedDelay::InjectedDelay(
     grpc_core::Duration duration, grpc_closure* closure, grpc_endpoint** ep,
-    grpc_pollset_set* interested_parties, const grpc_channel_args* channel_args,
+    grpc_pollset_set* interested_parties, const EndpointConfig& config,
     const grpc_resolved_address* addr, grpc_core::Timestamp deadline)
-    : attempt_(closure, ep, interested_parties, channel_args, addr, deadline) {
+    : attempt_(closure, ep, interested_parties, config, addr, deadline) {
   GRPC_CLOSURE_INIT(&timer_callback_, TimerCallback, this, nullptr);
   grpc_core::Timestamp now = grpc_core::Timestamp::Now();
   duration = std::min(duration, deadline - now);

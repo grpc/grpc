@@ -37,11 +37,14 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/channel/promise_based_filter.h"
+#include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/context.h"
+#include "src/core/lib/promise/detail/basic_seq.h"
 #include "src/core/lib/promise/promise.h"
+#include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/security/context/security_context.h"
@@ -157,7 +160,15 @@ ArenaPromise<absl::StatusOr<CallArgs>> ClientAuthFilter::GetCallCredsMetadata(
 
   auto client_initial_metadata = std::move(call_args.client_initial_metadata);
   return TrySeq(
-      creds->GetRequestMetadata(std::move(client_initial_metadata), &args_),
+      Seq(creds->GetRequestMetadata(std::move(client_initial_metadata), &args_),
+          [](absl::StatusOr<ClientMetadataHandle> new_metadata) mutable {
+            if (!new_metadata.ok()) {
+              return absl::StatusOr<ClientMetadataHandle>(
+                  MaybeRewriteIllegalStatusCode(new_metadata.status(),
+                                                "call credentials"));
+            }
+            return new_metadata;
+          }),
       [call_args =
            std::move(call_args)](ClientMetadataHandle new_metadata) mutable {
         call_args.client_initial_metadata = std::move(new_metadata);

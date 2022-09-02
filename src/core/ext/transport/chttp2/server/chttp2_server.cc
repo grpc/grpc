@@ -54,6 +54,7 @@
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -87,7 +88,7 @@
 #ifdef GPR_SUPPORT_CHANNELS_FROM_FD
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/iomgr/tcp_posix.h"
+#include "src/core/lib/iomgr/tcp_client_posix.h"
 #endif  // GPR_SUPPORT_CHANNELS_FROM_FD
 
 namespace grpc_core {
@@ -155,7 +156,8 @@ class Chttp2ServerListener : public Server::ListenerInterface {
 
       void Start(grpc_endpoint* endpoint, const ChannelArgs& args);
 
-      // Needed to be able to grab an external ref in ActiveConnection::Start()
+      // Needed to be able to grab an external ref in
+      // ActiveConnection::Start()
       using InternallyRefCounted<HandshakingState>::Ref;
 
      private:
@@ -200,8 +202,8 @@ class Chttp2ServerListener : public Server::ListenerInterface {
     // Set by HandshakingState before the handshaking begins and reset when
     // handshaking is done.
     OrphanablePtr<HandshakingState> handshaking_state_ ABSL_GUARDED_BY(&mu_);
-    // Set by HandshakingState when handshaking is done and a valid transport is
-    // created.
+    // Set by HandshakingState when handshaking is done and a valid transport
+    // is created.
     grpc_chttp2_transport* transport_ ABSL_GUARDED_BY(&mu_) = nullptr;
     grpc_closure on_close_;
     grpc_timer drain_grace_timer_;
@@ -227,11 +229,11 @@ class Chttp2ServerListener : public Server::ListenerInterface {
                               grpc_closure* destroy_done);
 
   // The interface required by RefCountedPtr<> has been manually implemented
-  // here to take a ref on tcp_server_ instead. Note that, the handshaker needs
-  // tcp_server_ to exist for the lifetime of the handshake since it's needed by
-  // acceptor. Sharing refs between the listener and tcp_server_ is just an
-  // optimization to avoid taking additional refs on the listener, since
-  // TcpServerShutdownComplete already holds a ref to the listener.
+  // here to take a ref on tcp_server_ instead. Note that, the handshaker
+  // needs tcp_server_ to exist for the lifetime of the handshake since it's
+  // needed by acceptor. Sharing refs between the listener and tcp_server_ is
+  // just an optimization to avoid taking additional refs on the listener,
+  // since TcpServerShutdownComplete already holds a ref to the listener.
   void IncrementRefCount() { grpc_tcp_server_ref(tcp_server_); }
   void IncrementRefCount(const DebugLocation& /* location */,
                          const char* /* reason */) {
@@ -344,8 +346,8 @@ void Chttp2ServerListener::ConfigFetcherWatcher::StopServing() {
     listener_->is_serving_ = false;
     connections = std::move(listener_->connections_);
   }
-  // Send GOAWAYs on the transports so that they disconnected when existing RPCs
-  // finish.
+  // Send GOAWAYs on the transports so that they disconnected when existing
+  // RPCs finish.
   for (auto& connection : connections) {
     connection.first->SendGoAway();
   }
@@ -486,9 +488,9 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
           self->Ref().release();  // Held by OnReceiveSettings().
           GRPC_CLOSURE_INIT(&self->on_receive_settings_, OnReceiveSettings,
                             self, grpc_schedule_on_exec_ctx);
-          // If the listener has been configured with a config fetcher, we need
-          // to watch on the transport being closed so that we can an updated
-          // list of active connections.
+          // If the listener has been configured with a config fetcher, we
+          // need to watch on the transport being closed so that we can an
+          // updated list of active connections.
           grpc_closure* on_close = nullptr;
           if (self->connection_->listener_->config_fetcher_watcher_ !=
               nullptr) {
@@ -627,8 +629,8 @@ void Chttp2ServerListener::ActiveConnection::OnClose(
   {
     MutexLock listener_lock(&self->listener_->mu_);
     MutexLock connection_lock(&self->mu_);
-    // The node was already deleted from the connections_ list if the connection
-    // is shutdown.
+    // The node was already deleted from the connections_ list if the
+    // connection is shutdown.
     if (!self->shutdown_) {
       auto it = self->listener_->connections_.find(self);
       if (it != self->listener_->connections_.end()) {
@@ -678,8 +680,10 @@ grpc_error_handle Chttp2ServerListener::Create(
     grpc_error_handle error = GRPC_ERROR_NONE;
     // Create Chttp2ServerListener.
     listener = new Chttp2ServerListener(server, args, args_modifier);
-    error = grpc_tcp_server_create(&listener->tcp_server_shutdown_complete_,
-                                   args.ToC().get(), &listener->tcp_server_);
+    error = grpc_tcp_server_create(
+        &listener->tcp_server_shutdown_complete_,
+        grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
+        &listener->tcp_server_);
     if (!GRPC_ERROR_IS_NONE(error)) return error;
     if (server->config_fetcher() != nullptr) {
       listener->resolved_address_ = *addr;
@@ -724,9 +728,10 @@ grpc_error_handle Chttp2ServerListener::CreateWithAcceptor(
     Chttp2ServerArgsModifier args_modifier) {
   Chttp2ServerListener* listener =
       new Chttp2ServerListener(server, args, args_modifier);
-  grpc_error_handle error =
-      grpc_tcp_server_create(&listener->tcp_server_shutdown_complete_,
-                             args.ToC().get(), &listener->tcp_server_);
+  grpc_error_handle error = grpc_tcp_server_create(
+      &listener->tcp_server_shutdown_complete_,
+      grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
+      &listener->tcp_server_);
   if (!GRPC_ERROR_IS_NONE(error)) {
     delete listener;
     return error;
@@ -1072,8 +1077,10 @@ void grpc_server_add_channel_from_fd(grpc_server* server, int fd,
   std::string name = absl::StrCat("fd:", fd);
   auto memory_quota =
       server_args.GetObject<grpc_core::ResourceQuota>()->memory_quota();
-  grpc_endpoint* server_endpoint = grpc_tcp_create(
-      grpc_fd_create(fd, name.c_str(), true), server_args.ToC().get(), name);
+  grpc_endpoint* server_endpoint = grpc_tcp_create_from_fd(
+      grpc_fd_create(fd, name.c_str(), true),
+      grpc_event_engine::experimental::ChannelArgsEndpointConfig(server_args),
+      name);
   grpc_transport* transport = grpc_create_chttp2_transport(
       server_args, server_endpoint, false /* is_client */
   );

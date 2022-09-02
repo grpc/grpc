@@ -40,9 +40,9 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -142,11 +142,11 @@ class Client {
     EventState state;
     auto args = CoreConfiguration::Get()
                     .channel_args_preconditioning()
-                    .PreconditionChannelArgs(nullptr)
-                    .ToC();
-    grpc_tcp_client_connect(state.closure(), &endpoint_, pollset_set,
-                            args.get(), addresses_or->data(),
-                            Timestamp::Now() + Duration::Seconds(1));
+                    .PreconditionChannelArgs(nullptr);
+    grpc_tcp_client_connect(
+        state.closure(), &endpoint_, pollset_set,
+        grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
+        addresses_or->data(), Timestamp::Now() + Duration::Seconds(1));
     ASSERT_TRUE(PollUntilDone(&state, Timestamp::InfFuture()));
     ASSERT_EQ(GRPC_ERROR_NONE, state.error());
     grpc_pollset_set_destroy(pollset_set);
