@@ -19,6 +19,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <deque>
 #include <functional>
 #include <memory>
 #include <string>
@@ -44,25 +45,42 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
    public:
     explicit FakeStreamingCall(
         std::unique_ptr<StreamingCall::EventHandler> event_handler)
-        : event_handler_(std::move(event_handler)) {}
-    ~FakeStreamingCall() override;
+        : event_handler_(MakeRefCounted<RefCountedEventHandler>(
+                             std::move(event_handler))) {}
+
+    void Orphan() override;
 
     using StreamingCall::Ref;  // Make it public.
 
     absl::optional<std::string> GetMessageFromClient();
 
     void SendMessageToClient(absl::string_view payload);
-    void SendStatusToClient(absl::Status status);
-
-    void Orphan() override { Unref(); }
+    void MaybeSendStatusToClient(absl::Status status);
 
    private:
+    class RefCountedEventHandler : public RefCounted<RefCountedEventHandler> {
+     public:
+      explicit RefCountedEventHandler(
+          std::unique_ptr<StreamingCall::EventHandler> event_handler)
+          : event_handler_(std::move(event_handler)) {}
+
+      void OnRequestSent(bool ok) { event_handler_->OnRequestSent(ok); }
+      void OnRecvMessage(absl::string_view payload) {
+        event_handler_->OnRecvMessage(payload);
+      }
+      void OnStatusReceived(absl::Status status) {
+        event_handler_->OnStatusReceived(std::move(status));
+      }
+
+     private:
+      std::unique_ptr<StreamingCall::EventHandler> event_handler_;
+    };
+
     void SendMessage(std::string payload) override;
 
-    std::unique_ptr<StreamingCall::EventHandler> event_handler_;
-
     Mutex mu_;
-    absl::optional<std::string> from_client_message_ ABSL_GUARDED_BY(&mu_);
+    RefCountedPtr<RefCountedEventHandler> event_handler_ ABSL_GUARDED_BY(&mu_);
+    std::deque<std::string> from_client_messages_ ABSL_GUARDED_BY(&mu_);
     bool status_sent_ ABSL_GUARDED_BY(&mu_) = false;
   };
 
@@ -85,17 +103,15 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
         std::function<void(absl::Status)> on_connectivity_failure)
         : on_connectivity_failure_(std::move(on_connectivity_failure)) {}
 
+    void Orphan() override;
+
     using XdsTransport::Ref;  // Make it public.
 
-    void TriggerConnectionFailure(absl::Status status) {
-      on_connectivity_failure_(std::move(status));
-    }
+    void TriggerConnectionFailure(absl::Status status);
 
     RefCountedPtr<FakeStreamingCall> GetStream(const char* method);
 
     void RemoveStream(const char* method, FakeStreamingCall* call);
-
-    void Orphan() override { Unref(); }
 
    private:
     OrphanablePtr<StreamingCall> CreateStreamingCall(
@@ -104,8 +120,9 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
 
     void ResetBackoff() override {}
 
-    std::function<void(absl::Status)> on_connectivity_failure_;
     Mutex mu_;
+    std::function<void(absl::Status)> on_connectivity_failure_
+        ABSL_GUARDED_BY(&mu_);
     std::map<std::string /*method*/, RefCountedPtr<FakeStreamingCall>>
         active_calls_ ABSL_GUARDED_BY(&mu_);
   };

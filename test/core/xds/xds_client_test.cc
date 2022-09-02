@@ -201,7 +201,7 @@ class XdsClientTest : public ::testing::Test {
     if (!message.has_value()) return absl::nullopt;
     DiscoveryRequest request;
     bool success = request.ParseFromString(*message);
-    EXPECT_TRUE(success);
+    EXPECT_TRUE(success) << "Failed to deserialize DiscoveryRequest";
     if (!success) return absl::nullopt;
     return std::move(request);
   }
@@ -213,13 +213,14 @@ class XdsClientTest : public ::testing::Test {
 
   RefCountedPtr<FakeXdsTransportFactory> transport_factory_;
   RefCountedPtr<XdsClient> xds_client_;
-  ExecCtx exec_ctx_;
 };
 
 TEST_F(XdsClientTest, BasicWatch) {
   InitXdsClient();
   // Start a watch for "foo1".
   auto watcher = StartFooWatch("foo1");
+  // Watcher should initially not see any resource reported.
+  EXPECT_FALSE(watcher->GetNextResource().has_value());
   // XdsClient should have created an ADS stream.
   auto stream = transport_factory_->GetStream(
       xds_client_->bootstrap().server(), FakeXdsTransportFactory::kAdsMethod);
@@ -254,6 +255,16 @@ TEST_F(XdsClientTest, BasicWatch) {
   ASSERT_TRUE(resource.has_value());
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 6);
+  // XdsClient should have sent an ACK message to the xDS server.
+  request = GetRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  EXPECT_EQ(request->version_info(), "1");
+  EXPECT_EQ(request->response_nonce(), "A");
+  EXPECT_FALSE(request->has_error_detail());
+  EXPECT_EQ(request->type_url(),
+            absl::StrCat("type.googleapis.com/",
+                         XdsFooResourceType::Get()->type_url()));
+  EXPECT_THAT(request->resource_names(), ::testing::ElementsAre("foo1"));
 }
 
 }  // namespace
