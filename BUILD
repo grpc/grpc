@@ -404,12 +404,20 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "experiments",
-    srcs = ["src/core/lib/experiments/experiments.cc"],
-    hdrs = ["src/core/lib/experiments/experiments.h"],
+    srcs = [
+        "src/core/lib/experiments/config.cc",
+        "src/core/lib/experiments/experiments.cc",
+    ],
+    hdrs = [
+        "src/core/lib/experiments/config.h",
+        "src/core/lib/experiments/experiments.h",
+    ],
+    external_deps = ["absl/strings"],
     language = "c++",
     deps = [
         "gpr",
         "gpr_platform",
+        "no_destruct",
     ],
 )
 
@@ -435,6 +443,7 @@ grpc_cc_library(
         "channel_stack_type",
         "config",
         "default_event_engine",
+        "experiments",
         "forkable",
         "gpr",
         "grpc_authorization_base",
@@ -498,6 +507,7 @@ grpc_cc_library(
         "channel_stack_type",
         "config",
         "default_event_engine",
+        "experiments",
         "forkable",
         "gpr",
         "grpc_alts_credentials",

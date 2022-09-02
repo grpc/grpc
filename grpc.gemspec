@@ -1001,6 +1001,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/event_engine/windows/win_socket.h )
   s.files += %w( src/core/lib/event_engine/windows/windows_engine.cc )
   s.files += %w( src/core/lib/event_engine/windows/windows_engine.h )
+  s.files += %w( src/core/lib/experiments/config.cc )
+  s.files += %w( src/core/lib/experiments/config.h )
   s.files += %w( src/core/lib/experiments/experiments.cc )
   s.files += %w( src/core/lib/experiments/experiments.h )
   s.files += %w( src/core/lib/gpr/alloc.cc )
