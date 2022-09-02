@@ -2946,20 +2946,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-<<<<<<< HEAD
-    name = "socket_mutator",
-    srcs = [
-        "src/core/lib/iomgr/socket_mutator.cc",
-    ],
-    hdrs = [
-        "src/core/lib/iomgr/socket_mutator.h",
-    ],
-    deps = [
-        "channel_args",
-        "gpr",
-        "grpc_codegen",
-        "useful",
-=======
     name = "backoff",
     srcs = [
         "src/core/lib/backoff/backoff.cc",
