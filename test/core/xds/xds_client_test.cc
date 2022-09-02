@@ -176,6 +176,8 @@ class XdsClientTest : public ::testing::Test {
     std::deque<absl::Status> error_queue_ ABSL_GUARDED_BY(&mu_);
   };
 
+  // Sets transport_factory_ and initializes xds_client_ with the
+  // specified bootstrap config.
   void InitXdsClient(FakeXdsBootstrap::Builder bootstrap_builder =
                          FakeXdsBootstrap::Builder()) {
     auto transport_factory = MakeOrphanable<FakeXdsTransportFactory>();
@@ -184,16 +186,19 @@ class XdsClientTest : public ::testing::Test {
                                             std::move(transport_factory));
   }
 
+  // Starts a watch for the named resource.
   RefCountedPtr<FooWatcher> StartFooWatch(absl::string_view resource_name) {
     auto watcher = MakeRefCounted<FooWatcher>();
     XdsFooResourceType::StartWatch(xds_client_.get(), resource_name, watcher);
     return watcher;
   }
 
+  // Cancels the specified watch.
   void CancelFooWatch(FooWatcher* watcher, absl::string_view resource_name) {
     XdsFooResourceType::CancelWatch(xds_client_.get(), resource_name, watcher);
   }
 
+  // Gets the latest request sent to the fake xDS server.
   absl::optional<DiscoveryRequest> GetRequest(
       FakeXdsTransportFactory::FakeStreamingCall* stream) {
     auto message = stream->GetMessageFromClient();
@@ -206,8 +211,39 @@ class XdsClientTest : public ::testing::Test {
     return std::move(request);
   }
 
-  void CheckRequestNode(const DiscoveryRequest& request) {
-    EXPECT_EQ(request.node().id(), xds_client_->bootstrap().node()->id);
+  // Helper function to check the fields of a DiscoveryRequest.
+  void CheckRequest(
+      const DiscoveryRequest& request, absl::string_view type_url,
+      absl::string_view version_info, absl::string_view response_nonce,
+      absl::Status error_detail, std::set<absl::string_view> resource_names,
+      SourceLocation location = SourceLocation()) {
+    EXPECT_EQ(request.type_url(),
+              absl::StrCat("type.googleapis.com/", type_url));
+    EXPECT_EQ(request.version_info(), version_info)
+        << location.file() << ":" << location.line();
+    EXPECT_EQ(request.response_nonce(), response_nonce)
+        << location.file() << ":" << location.line();
+    if (error_detail.ok()) {
+      EXPECT_FALSE(request.has_error_detail())
+          << location.file() << ":" << location.line();
+    } else {
+      EXPECT_EQ(request.error_detail().code(),
+                static_cast<int>(error_detail.code()))
+          << location.file() << ":" << location.line();
+      EXPECT_EQ(request.error_detail().message(), error_detail.message())
+          << location.file() << ":" << location.line();
+    }
+    EXPECT_THAT(request.resource_names(),
+                ::testing::UnorderedElementsAreArray(resource_names))
+        << location.file() << ":" << location.line();
+  }
+
+  // Helper function to check the contents of the node message in a
+  // request against the client's node info.
+  void CheckRequestNode(const DiscoveryRequest& request,
+                        SourceLocation location = SourceLocation()) {
+    EXPECT_EQ(request.node().id(), xds_client_->bootstrap().node()->id)
+        << location.file() << ":" << location.line();
     // FIXME: check other node fields
   }
 
@@ -229,14 +265,11 @@ TEST_F(XdsClientTest, BasicWatch) {
   auto request = GetRequest(stream.get());
   ASSERT_TRUE(request.has_value());
   // Check the request contents.
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"", /*response_nonce=*/"",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"foo1"});
   CheckRequestNode(*request);
-  EXPECT_EQ(request->version_info(), "");
-  EXPECT_EQ(request->response_nonce(), "");
-  EXPECT_FALSE(request->has_error_detail());
-  EXPECT_EQ(request->type_url(),
-            absl::StrCat("type.googleapis.com/",
-                         XdsFooResourceType::Get()->type_url()));
-  EXPECT_THAT(request->resource_names(), ::testing::ElementsAre("foo1"));
   // Send a response.
   DiscoveryResponse response;
   response.set_version_info("1");
@@ -258,13 +291,10 @@ TEST_F(XdsClientTest, BasicWatch) {
   // XdsClient should have sent an ACK message to the xDS server.
   request = GetRequest(stream.get());
   ASSERT_TRUE(request.has_value());
-  EXPECT_EQ(request->version_info(), "1");
-  EXPECT_EQ(request->response_nonce(), "A");
-  EXPECT_FALSE(request->has_error_detail());
-  EXPECT_EQ(request->type_url(),
-            absl::StrCat("type.googleapis.com/",
-                         XdsFooResourceType::Get()->type_url()));
-  EXPECT_THAT(request->resource_names(), ::testing::ElementsAre("foo1"));
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"1", /*response_nonce=*/"A",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"foo1"});
 }
 
 }  // namespace
