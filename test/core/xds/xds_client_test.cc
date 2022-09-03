@@ -268,7 +268,7 @@ TEST_F(XdsClientTest, BasicWatch) {
                /*version_info=*/"", /*response_nonce=*/"",
                /*error_detail=*/absl::OkStatus(),
                /*resource_names=*/{"foo1"});
-  CheckRequestNode(*request);
+  CheckRequestNode(*request);  // Should be present on the first request.
   // Send a response.
   DiscoveryResponse response;
   response.set_version_info("1");
@@ -301,6 +301,99 @@ TEST_F(XdsClientTest, BasicWatch) {
   ASSERT_TRUE(request.has_value());
   CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
                /*version_info=*/"1", /*response_nonce=*/"A",
+               /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
+}
+
+TEST_F(XdsClientTest, SubscribeToMultipleResources) {
+  InitXdsClient();
+  // Start a watch for "foo1".
+  auto watcher = StartFooWatch("foo1");
+  // Watcher should initially not see any resource reported.
+  EXPECT_FALSE(watcher->GetNextResource().has_value());
+  // XdsClient should have created an ADS stream.
+  auto stream = transport_factory_->GetStream(
+      xds_client_->bootstrap().server(), FakeXdsTransportFactory::kAdsMethod);
+  ASSERT_TRUE(stream != nullptr);
+  // XdsClient should have sent a subscription request on the ADS stream.
+  auto request = GetRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"", /*response_nonce=*/"",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"foo1"});
+  CheckRequestNode(*request);  // Should be present on the first request.
+  // Send a response.
+  DiscoveryResponse response;
+  response.set_version_info("1");
+  response.set_nonce("A");
+  response.set_type_url(absl::StrCat("type.googleapis.com/",
+                                     XdsFooResourceType::Get()->type_url()));
+  auto* res = response.add_resources();
+  res->set_value("{\"name\":\"foo1\",\"value\":6}");
+  res->set_type_url(absl::StrCat("type.googleapis.com/",
+                                 XdsFooResourceType::Get()->type_url()));
+  std::string serialized_response;
+  ASSERT_TRUE(response.SerializeToString(&serialized_response));
+  stream->SendMessageToClient(serialized_response);
+  // XdsClient should have delivered the response to the watcher.
+  auto resource = watcher->GetNextResource();
+  ASSERT_TRUE(resource.has_value());
+  EXPECT_EQ(resource->name, "foo1");
+  EXPECT_EQ(resource->value, 6);
+  // XdsClient should have sent an ACK message to the xDS server.
+  request = GetRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"1", /*response_nonce=*/"A",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"foo1"});
+  // Start a watch for "foo2".
+  auto watcher2 = StartFooWatch("foo2");
+  // XdsClient should have sent a subscription request on the ADS stream.
+  request = GetRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"1", /*response_nonce=*/"A",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"foo1", "foo2"});
+  // Send a response.
+  response.Clear();
+  response.set_version_info("1");
+  response.set_nonce("B");
+  response.set_type_url(absl::StrCat("type.googleapis.com/",
+                                     XdsFooResourceType::Get()->type_url()));
+  res = response.add_resources();
+  res->set_value("{\"name\":\"foo2\",\"value\":7}");
+  res->set_type_url(absl::StrCat("type.googleapis.com/",
+                                 XdsFooResourceType::Get()->type_url()));
+  ASSERT_TRUE(response.SerializeToString(&serialized_response));
+  stream->SendMessageToClient(serialized_response);
+  // XdsClient should have delivered the response to the watcher.
+  resource = watcher2->GetNextResource();
+  ASSERT_TRUE(resource.has_value());
+  EXPECT_EQ(resource->name, "foo2");
+  EXPECT_EQ(resource->value, 7);
+  // XdsClient should have sent an ACK message to the xDS server.
+  request = GetRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"1", /*response_nonce=*/"B",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"foo1", "foo2"});
+  // Cancel watch for "foo1".
+  CancelFooWatch(watcher.get(), "foo1");
+  // XdsClient should send an unsubscription request.
+  request = GetRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"1", /*response_nonce=*/"B",
+               /*error_detail=*/absl::OkStatus(), /*resource_names=*/{"foo2"});
+  // Now cancel watch for "foo2".
+  CancelFooWatch(watcher2.get(), "foo2");
+  request = GetRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"1", /*response_nonce=*/"B",
                /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
 }
 
