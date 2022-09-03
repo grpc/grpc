@@ -12,13 +12,13 @@ which can then be integrated into a C++ MSBuild project.
 Install and integrate vcpkg and follow instructions for 
 [MSBuild integration](https://vcpkg.io/en/docs/users/buildsystems/msbuild-integration.html).
 The better outcome is to use the "Manifest" method to integrate packages per project, 
-rather than user-wide integration, because the per-project tool paths will be placed in a project-relative path.
+rather than user-wide integration, so that the per-project tool paths are placed in a project-relative path.
 
-Add "grpc" as a dependency to the vcpkg manifest file (or for user-wide integration, install the package using the vcpkg command line)
+Add "grpc" as a dependency to the vcpkg manifest file (or for user-wide integration, install the package using the vcpkg command line).
 
-In the C++ MSBuild project settings, create convenient properties to locate the installed tools 
-(configure the paths as appropriate for your install):
-```
+In the C++ MSBuild project settings, create properties to conveniently locate the installed tools 
+(configure the paths as appropriate for the install):
+```xml
 <PropertyGroup>
   <VcpkgInstallRoot>$(MSBuildThisFileDirectory)vcpkg_installed\x64-windows\x64-windows\</VcpkgInstallRoot>
   <Protobuf_ProtocFullPath>$(VcpkgInstallRoot)tools\protobuf\protoc.exe</Protobuf_ProtocFullPath>
@@ -27,7 +27,7 @@ In the C++ MSBuild project settings, create convenient properties to locate the 
 </PropertyGroup>
 ```
 Set up a prebuild event to generate the C++ code:
-```
+```xml
 <PreBuildEvent>
   <Message>Generate gRPC code</Message>
   <Command>
@@ -38,10 +38,10 @@ Set up a prebuild event to generate the C++ code:
   </Command>
 </PreBuildEvent>
 ```
-The generated source files can be added to the project manually; or since the code 
-is dynamically generated, it would be nice to also compile it dynamically.
+The generated source files can be added to the project manually, but since the code 
+is dynamically generated, it's ideal to also dynamically compile it.
 C++ MSBuild does not by default support this, 
-but can be made to partially [support dynamic inputs](https://docs.microsoft.com/en-us/cpp/build/reference/vcxproj-files-and-wildcards):
+but can be made to [partially support dynamic inputs](https://docs.microsoft.com/en-us/cpp/build/reference/vcxproj-files-and-wildcards):
 ```
   <ItemGroup Label="Compile generated gRPC code">
     <_WildCardClCompile Include="*.pb.cc" />
