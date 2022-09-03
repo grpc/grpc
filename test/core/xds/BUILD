@@ -144,6 +144,8 @@ grpc_cc_test(
     srcs = ["xds_client_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
+    uses_event_engine = True,
+    uses_polling = False,
     deps = [
         ":xds_transport_fake",
         "//:xds_client",

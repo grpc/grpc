@@ -60,6 +60,7 @@ void FakeXdsTransportFactory::FakeStreamingCall::SendMessage(
     std::string payload) {
   MutexLock lock(&mu_);
   from_client_messages_.push_back(std::move(payload));
+  cv_.Signal();
   // Can't call event_handler_->OnRequestSent() synchronously, since that
   // operation will trigger code in XdsClient that acquires its mutex, but it
   // was already holding its mutex when it called us, so it would deadlock.
@@ -72,9 +73,12 @@ void FakeXdsTransportFactory::FakeStreamingCall::SendMessage(
 }
 
 absl::optional<std::string>
-FakeXdsTransportFactory::FakeStreamingCall::GetMessageFromClient() {
+FakeXdsTransportFactory::FakeStreamingCall::GetMessageFromClient(
+    absl::Duration timeout) {
   MutexLock lock(&mu_);
-  if (from_client_messages_.empty()) return absl::nullopt;
+  while (from_client_messages_.empty()) {
+    if (cv_.WaitWithTimeout(&mu_, timeout)) return absl::nullopt;
+  }
   std::string payload = from_client_messages_.front();
   from_client_messages_.pop_front();
   return payload;

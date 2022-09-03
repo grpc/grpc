@@ -10991,6 +10991,7 @@ targets:
   - test/core/xds/xds_transport_fake.cc
   deps:
   - grpc_test_util
+  uses_polling: false
 - name: xds_cluster_end2end_test
   gtest: true
   build: test

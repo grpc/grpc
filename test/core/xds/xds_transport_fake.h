@@ -52,7 +52,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
 
     using StreamingCall::Ref;  // Make it public.
 
-    absl::optional<std::string> GetMessageFromClient();
+    absl::optional<std::string> GetMessageFromClient(absl::Duration timeout);
 
     void SendMessageToClient(absl::string_view payload);
     void MaybeSendStatusToClient(absl::Status status);
@@ -79,6 +79,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
     void SendMessage(std::string payload) override;
 
     Mutex mu_;
+    CondVar cv_ ABSL_GUARDED_BY(&mu_);
     RefCountedPtr<RefCountedEventHandler> event_handler_ ABSL_GUARDED_BY(&mu_);
     std::deque<std::string> from_client_messages_ ABSL_GUARDED_BY(&mu_);
     bool status_sent_ ABSL_GUARDED_BY(&mu_) = false;

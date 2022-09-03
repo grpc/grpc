@@ -144,7 +144,12 @@ class XdsClientTest : public ::testing::Test {
    public:
     absl::optional<XdsFooResource> GetNextResource() {
       MutexLock lock(&mu_);
-      if (queue_.empty()) return absl::nullopt;
+      while (queue_.empty()) {
+        if (cv_.WaitWithTimeout(
+                &mu_, absl::Seconds(1) * grpc_test_slowdown_factor())) {
+          return absl::nullopt;
+        }
+      }
       XdsFooResource foo = std::move(queue_.front());
       queue_.pop_front();
       return foo;
@@ -152,7 +157,12 @@ class XdsClientTest : public ::testing::Test {
 
     absl::optional<absl::Status> GetNextError() {
       MutexLock lock(&mu_);
-      if (error_queue_.empty()) return absl::nullopt;
+      while (error_queue_.empty()) {
+        if (cv_.WaitWithTimeout(
+                &mu_, absl::Seconds(1) * grpc_test_slowdown_factor())) {
+          return absl::nullopt;
+        }
+      }
       absl::Status status = std::move(error_queue_.front());
       error_queue_.pop_front();
       return status;
@@ -162,16 +172,19 @@ class XdsClientTest : public ::testing::Test {
     void OnResourceChanged(XdsFooResource foo) override {
       MutexLock lock(&mu_);
       queue_.push_back(std::move(foo));
+      cv_.Signal();
     }
     void OnError(absl::Status status) override {
       MutexLock lock(&mu_);
       error_queue_.push_back(std::move(status));
+      cv_.Signal();
     }
     void OnResourceDoesNotExist() override {
       ASSERT_TRUE(false) << "OnResourceDoesNotExist() called";
     }
 
     Mutex mu_;
+    CondVar cv_ ABSL_GUARDED_BY(&mu_);
     std::deque<XdsFooResource> queue_ ABSL_GUARDED_BY(&mu_);
     std::deque<absl::Status> error_queue_ ABSL_GUARDED_BY(&mu_);
   };
@@ -200,13 +213,16 @@ class XdsClientTest : public ::testing::Test {
 
   // Gets the latest request sent to the fake xDS server.
   absl::optional<DiscoveryRequest> GetRequest(
-      FakeXdsTransportFactory::FakeStreamingCall* stream) {
-    auto message = stream->GetMessageFromClient();
-    EXPECT_TRUE(message.has_value());
+      FakeXdsTransportFactory::FakeStreamingCall* stream,
+      SourceLocation location = SourceLocation()) {
+    auto message = stream->GetMessageFromClient(
+        absl::Seconds(1) * grpc_test_slowdown_factor());
     if (!message.has_value()) return absl::nullopt;
     DiscoveryRequest request;
     bool success = request.ParseFromString(*message);
-    EXPECT_TRUE(success) << "Failed to deserialize DiscoveryRequest";
+    EXPECT_TRUE(success)
+        << "Failed to deserialize DiscoveryRequest at " << location.file()
+        << ":" << location.line();
     if (!success) return absl::nullopt;
     return std::move(request);
   }
@@ -296,12 +312,14 @@ TEST_F(XdsClientTest, BasicWatch) {
                /*resource_names=*/{"foo1"});
   // Cancel watch.
   CancelFooWatch(watcher.get(), "foo1");
-  // XdsClient should send an unsubscription request.
+  // The XdsClient may or may not send an unsubscription message
+  // before it closes the transport, depending on callback timing.
   request = GetRequest(stream.get());
-  ASSERT_TRUE(request.has_value());
-  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
-               /*version_info=*/"1", /*response_nonce=*/"A",
-               /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
+  if (request.has_value()) {
+    CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+                 /*version_info=*/"1", /*response_nonce=*/"A",
+                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
+  }
 }
 
 TEST_F(XdsClientTest, SubscribeToMultipleResources) {
@@ -390,11 +408,14 @@ TEST_F(XdsClientTest, SubscribeToMultipleResources) {
                /*error_detail=*/absl::OkStatus(), /*resource_names=*/{"foo2"});
   // Now cancel watch for "foo2".
   CancelFooWatch(watcher2.get(), "foo2");
+  // The XdsClient may or may not send another unsubscription message
+  // before it closes the transport, depending on callback timing.
   request = GetRequest(stream.get());
-  ASSERT_TRUE(request.has_value());
-  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
-               /*version_info=*/"1", /*response_nonce=*/"B",
-               /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
+  if (request.has_value()) {
+    CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+                 /*version_info=*/"1", /*response_nonce=*/"B",
+                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
+  }
 }
 
 }  // namespace
