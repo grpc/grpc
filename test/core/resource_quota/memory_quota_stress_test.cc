@@ -36,6 +36,7 @@
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
+#include "test/core/util/test_config.h"
 
 namespace grpc_core {
 
@@ -234,6 +235,7 @@ TEST(MemoryQuotaStressTest, MainTest) {
 }
 
 int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

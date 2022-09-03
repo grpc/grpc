@@ -84,10 +84,14 @@ grpc_cc_test(
     language = "c++",
     uses_event_engine = False,
     uses_polling = False,
+    tags = [
+        "resource_quota_test",
+    ],
     deps = [
         ":test_context",
         "//:arena_promise",
         "//:resource_quota",
+        "//test/core/util:grpc_test_util_unsecure",
     ],
 )
 

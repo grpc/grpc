@@ -415,16 +415,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
             **test_args
         )
     if not uses_polling:
-        # the test behavior doesn't depend on polling, just generate the test
-        native.cc_test(
-            name = name,
-            srcs = srcs,
-            tags = tags + ["no_uses_polling"],
-            deps = core_deps,
-            args = args,
-            **test_args
-        )
-        return
+        tags = tags + ["no_uses_polling"]
 
     for poller_config in expand_tests(name, srcs, core_deps, tags, args, exclude_pollers, uses_event_engine):
         native.cc_test(

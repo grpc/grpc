@@ -28,6 +28,7 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice_refcount.h"
 #include "test/core/resource_quota/call_checker.h"
+#include "test/core/util/test_config.h"
 
 namespace grpc_core {
 namespace testing {
@@ -264,6 +265,7 @@ TEST(PressureTrackerTest, ManyThreads) {
 void grpc_set_default_iomgr_platform() {}
 
 int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   gpr_log_verbosity_init();
   return RUN_ALL_TESTS();

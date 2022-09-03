@@ -37,6 +37,7 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
+#include "test/core/util/test_config.h"
 
 using grpc_core::Arena;
 
@@ -166,6 +167,7 @@ TEST(ArenaTest, ConcurrentManagedNew) {
 }
 
 int main(int argc, char* argv[]) {
+  grpc::testing::TestEnvironment(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

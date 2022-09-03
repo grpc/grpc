@@ -27,4 +27,9 @@ EXPERIMENTS = {
         "tcp_rcv_lowat",
         "tcp_read_chunks",
     ],
+    "resource_quota_test": [
+        "memory_pressure_controller",
+        "periodic_resource_quota_reclamation",
+        "unconstrained_max_quota_buffer_size",
+    ],
 }
