@@ -125,8 +125,8 @@ class XdsClientTest : public ::testing::Test {
     absl::string_view type_url() const override { return "test.v3.foo"; }
     absl::string_view v2_type_url() const override { return "test.v2.foo"; }
     absl::StatusOr<DecodeResult> Decode(
-        const XdsResourceType::DecodeContext& context,
-        absl::string_view serialized_resource, bool is_v2) const override {
+        const XdsResourceType::DecodeContext& /*context*/,
+        absl::string_view serialized_resource, bool /*is_v2*/) const override {
       auto json = Json::Parse(serialized_resource);
       if (!json.ok()) return json.status();
       absl::StatusOr<XdsFooResource> foo = LoadFromJson<XdsFooResource>(*json);
@@ -141,7 +141,7 @@ class XdsClientTest : public ::testing::Test {
       }
       return std::move(result);
     }
-    void InitUpbSymtab(upb_DefPool* symtab) const override {}
+    void InitUpbSymtab(upb_DefPool* /*symtab*/) const override {}
   };
 
   // A watcher implementation that queues delivered watches.
