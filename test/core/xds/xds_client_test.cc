@@ -194,6 +194,40 @@ class XdsClientTest : public ::testing::Test {
     std::deque<absl::Status> error_queue_ ABSL_GUARDED_BY(&mu_);
   };
 
+  // A helper class to build and serialize a DiscoveryResponse.
+  class ResponseBuilder {
+   public:
+    explicit ResponseBuilder(absl::string_view type_url) {
+      response_.set_type_url(absl::StrCat("type.googleapis.com/", type_url));
+    }
+
+    ResponseBuilder& set_version_info(absl::string_view version_info) {
+      response_.set_version_info(std::string(version_info));
+      return *this;
+    }
+    ResponseBuilder& set_nonce(absl::string_view nonce) {
+      response_.set_nonce(std::string(nonce));
+      return *this;
+    }
+
+    ResponseBuilder& AddResource(absl::string_view type_url,
+                                 absl::string_view value) {
+      auto* resource = response_.add_resources();
+      resource->set_type_url(absl::StrCat("type.googleapis.com/", type_url));
+      resource->set_value(std::string(value));
+      return *this;
+    }
+
+    std::string Serialize() {
+      std::string serialized_response;
+      EXPECT_TRUE(response_.SerializeToString(&serialized_response));
+      return serialized_response;
+    }
+
+   private:
+    DiscoveryResponse response_;
+  };
+
   // Sets transport_factory_ and initializes xds_client_ with the
   // specified bootstrap config.
   void InitXdsClient(FakeXdsBootstrap::Builder bootstrap_builder =
@@ -318,6 +352,8 @@ class XdsClientTest : public ::testing::Test {
     }
   }
 
+  // Helper function to find the "build_version" field, which was
+  // removed in v3, but which we still populate in v2.
   static absl::optional<std::string> GetBuildVersion(
       const envoy::config::core::v3::Node& node) {
     const auto& unknown_field_set =
@@ -352,18 +388,13 @@ TEST_F(XdsClientTest, BasicWatch) {
                /*resource_names=*/{"foo1"});
   CheckRequestNode(*request);  // Should be present on the first request.
   // Send a response.
-  DiscoveryResponse response;
-  response.set_version_info("1");
-  response.set_nonce("A");
-  response.set_type_url(absl::StrCat("type.googleapis.com/",
-                                     XdsFooResourceType::Get()->type_url()));
-  auto* res = response.add_resources();
-  res->set_value("{\"name\":\"foo1\",\"value\":6}");
-  res->set_type_url(absl::StrCat("type.googleapis.com/",
-                                 XdsFooResourceType::Get()->type_url()));
-  std::string serialized_response;
-  ASSERT_TRUE(response.SerializeToString(&serialized_response));
-  stream->SendMessageToClient(serialized_response);
+  stream->SendMessageToClient(
+      ResponseBuilder(XdsFooResourceType::Get()->type_url())
+          .set_version_info("1")
+          .set_nonce("A")
+          .AddResource(XdsFooResourceType::Get()->type_url(),
+                       "{\"name\":\"foo1\",\"value\":6}")
+          .Serialize());
   // XdsClient should have delivered the response to the watcher.
   auto resource = watcher->GetNextResource();
   ASSERT_TRUE(resource.has_value());
@@ -408,18 +439,13 @@ TEST_F(XdsClientTest, BasicWatchV2) {
   // Node Should be present on the first request.
   CheckRequestNode(*request, /*check_build_version=*/true);
   // Send a response.
-  DiscoveryResponse response;
-  response.set_version_info("1");
-  response.set_nonce("A");
-  response.set_type_url(absl::StrCat("type.googleapis.com/",
-                                     XdsFooResourceType::Get()->type_url()));
-  auto* res = response.add_resources();
-  res->set_value("{\"name\":\"foo1\",\"value\":6}");
-  res->set_type_url(absl::StrCat("type.googleapis.com/",
-                                 XdsFooResourceType::Get()->type_url()));
-  std::string serialized_response;
-  ASSERT_TRUE(response.SerializeToString(&serialized_response));
-  stream->SendMessageToClient(serialized_response);
+  stream->SendMessageToClient(
+      ResponseBuilder(XdsFooResourceType::Get()->type_url())
+          .set_version_info("1")
+          .set_nonce("A")
+          .AddResource(XdsFooResourceType::Get()->type_url(),
+                       "{\"name\":\"foo1\",\"value\":6}")
+          .Serialize());
   // XdsClient should have delivered the response to the watcher.
   auto resource = watcher->GetNextResource();
   ASSERT_TRUE(resource.has_value());
@@ -463,18 +489,13 @@ TEST_F(XdsClientTest, SubscribeToMultipleResources) {
                /*resource_names=*/{"foo1"});
   CheckRequestNode(*request);  // Should be present on the first request.
   // Send a response.
-  DiscoveryResponse response;
-  response.set_version_info("1");
-  response.set_nonce("A");
-  response.set_type_url(absl::StrCat("type.googleapis.com/",
-                                     XdsFooResourceType::Get()->type_url()));
-  auto* res = response.add_resources();
-  res->set_value("{\"name\":\"foo1\",\"value\":6}");
-  res->set_type_url(absl::StrCat("type.googleapis.com/",
-                                 XdsFooResourceType::Get()->type_url()));
-  std::string serialized_response;
-  ASSERT_TRUE(response.SerializeToString(&serialized_response));
-  stream->SendMessageToClient(serialized_response);
+  stream->SendMessageToClient(
+      ResponseBuilder(XdsFooResourceType::Get()->type_url())
+          .set_version_info("1")
+          .set_nonce("A")
+          .AddResource(XdsFooResourceType::Get()->type_url(),
+                       "{\"name\":\"foo1\",\"value\":6}")
+          .Serialize());
   // XdsClient should have delivered the response to the watcher.
   auto resource = watcher->GetNextResource();
   ASSERT_TRUE(resource.has_value());
@@ -497,17 +518,13 @@ TEST_F(XdsClientTest, SubscribeToMultipleResources) {
                /*error_detail=*/absl::OkStatus(),
                /*resource_names=*/{"foo1", "foo2"});
   // Send a response.
-  response.Clear();
-  response.set_version_info("1");
-  response.set_nonce("B");
-  response.set_type_url(absl::StrCat("type.googleapis.com/",
-                                     XdsFooResourceType::Get()->type_url()));
-  res = response.add_resources();
-  res->set_value("{\"name\":\"foo2\",\"value\":7}");
-  res->set_type_url(absl::StrCat("type.googleapis.com/",
-                                 XdsFooResourceType::Get()->type_url()));
-  ASSERT_TRUE(response.SerializeToString(&serialized_response));
-  stream->SendMessageToClient(serialized_response);
+  stream->SendMessageToClient(
+      ResponseBuilder(XdsFooResourceType::Get()->type_url())
+          .set_version_info("1")
+          .set_nonce("B")
+          .AddResource(XdsFooResourceType::Get()->type_url(),
+                       "{\"name\":\"foo2\",\"value\":7}")
+          .Serialize());
   // XdsClient should have delivered the response to the watcher.
   resource = watcher2->GetNextResource();
   ASSERT_TRUE(resource.has_value());
