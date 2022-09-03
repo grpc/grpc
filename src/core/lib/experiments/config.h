@@ -11,20 +11,24 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
+#ifndef GRPC_CORE_LIB_EXPERIMENTS_CONFIG_H
+#define GRPC_CORE_LIB_EXPERIMENTS_CONFIG_H
+
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/event_engine/time_util.h"
+#include <stddef.h>
 
-#include <chrono>
+namespace grpc_core {
 
-#include <grpc/event_engine/event_engine.h>
+// Return true if experiment \a experiment_id is enabled.
+// Experiments are numbered by their order in the g_experiment_metadata array
+// declared in experiments.h.
+bool IsExperimentEnabled(size_t experiment_id);
 
-namespace grpc_event_engine {
-namespace experimental {
+// Print out a list of all experiments that are built into this binary.
+void PrintExperimentsList();
 
-size_t Milliseconds(EventEngine::Duration d) {
-  return std::chrono::duration_cast<std::chrono::milliseconds>(d).count();
-}
+}  // namespace grpc_core
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+#endif  // GRPC_CORE_LIB_EXPERIMENTS_CONFIG_H

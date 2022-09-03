@@ -32,6 +32,21 @@
     number of bytes have been read over the socket.
     Buffers are also allocated according to estimated RPC sizes.
   default: false
-  expiry: 2022/09/01
+  expiry: 2022/10/01
+  owner: ctiller@google.com
+  test_tags: ["endpoint_test", "core_end2end_test"]
+- name: tcp_read_chunks
+  description:
+    Allocate only 8kb or 64kb chunks for TCP reads to reduce pressure on
+    malloc to recycle arbitrary large blocks.
+  default: false
+  expiry: 2022/10/01
+  owner: ctiller@google.com
+  test_tags: ["endpoint_test", "core_end2end_test"]
+- name: tcp_rcv_lowat
+  description:
+    Use SO_RCVLOWAT to avoid wakeups on the read path.
+  default: false
+  expiry: 2022/10/01
   owner: ctiller@google.com
   test_tags: ["endpoint_test", "core_end2end_test"]
