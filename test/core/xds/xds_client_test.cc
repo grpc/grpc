@@ -246,8 +246,8 @@ class XdsClientTest : public ::testing::Test {
   // specified bootstrap config.
   void InitXdsClient(
       FakeXdsBootstrap::Builder bootstrap_builder = FakeXdsBootstrap::Builder(),
-      Duration resource_request_timeout =
-          Duration::Seconds(15) * grpc_test_slowdown_factor()) {
+      Duration resource_request_timeout = Duration::Seconds(15) *
+                                          grpc_test_slowdown_factor()) {
     auto transport_factory = MakeOrphanable<FakeXdsTransportFactory>();
     transport_factory_ = transport_factory->Ref();
     xds_client_ = MakeRefCounted<XdsClient>(bootstrap_builder.Build(),
@@ -884,14 +884,13 @@ TEST_F(XdsClientTest, StreamClosedByServer) {
   auto error = watcher->GetNextError();
   ASSERT_TRUE(error.has_value());
   EXPECT_EQ(error->code(), absl::StatusCode::kUnavailable);
-  EXPECT_EQ(
-      error->message(),
-      "xDS call failed: xDS server: default_xds_server, "
-      "ADS call status: OK (node ID:xds_client_test)")
+  EXPECT_EQ(error->message(),
+            "xDS call failed: xDS server: default_xds_server, "
+            "ADS call status: OK (node ID:xds_client_test)")
       << *error;
   // XdsClient should create a new stream.
-  stream = transport_factory_->GetStream(
-      xds_client_->bootstrap().server(), FakeXdsTransportFactory::kAdsMethod);
+  stream = transport_factory_->GetStream(xds_client_->bootstrap().server(),
+                                         FakeXdsTransportFactory::kAdsMethod);
   ASSERT_TRUE(stream != nullptr);
   // XdsClient sends a subscription request.
   request = GetRequest(stream.get());
@@ -956,10 +955,9 @@ TEST_F(XdsClientTest, ConnectionFails) {
   auto error = watcher->GetNextError();
   ASSERT_TRUE(error.has_value());
   EXPECT_EQ(error->code(), absl::StatusCode::kUnavailable);
-  EXPECT_EQ(
-      error->message(),
-      "xds channel in TRANSIENT_FAILURE, connectivity error: "
-      "UNAVAILABLE: connection failed (node ID:xds_client_test)")
+  EXPECT_EQ(error->message(),
+            "xds channel in TRANSIENT_FAILURE, connectivity error: "
+            "UNAVAILABLE: connection failed (node ID:xds_client_test)")
       << *error;
   // Inside the XdsTransport interface, the channel will eventually
   // reconnect, and the call will proceed.  None of that will be visible

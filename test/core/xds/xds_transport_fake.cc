@@ -176,8 +176,8 @@ OrphanablePtr<XdsTransportFactory::XdsTransport::StreamingCall>
 FakeXdsTransportFactory::FakeXdsTransport::CreateStreamingCall(
     const char* method,
     std::unique_ptr<StreamingCall::EventHandler> event_handler) {
-  auto call = MakeOrphanable<FakeStreamingCall>(
-      Ref(), method, std::move(event_handler));
+  auto call = MakeOrphanable<FakeStreamingCall>(Ref(), method,
+                                                std::move(event_handler));
   MutexLock lock(&mu_);
   active_calls_[method] = call->Ref();
   cv_.Signal();
