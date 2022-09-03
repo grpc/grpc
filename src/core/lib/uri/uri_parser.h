@@ -67,6 +67,21 @@ class URI {
 
   const std::string& scheme() const { return scheme_; }
   const std::string& authority() const { return authority_; }
+  // get userinfo (username:password) part of authority
+  absl::optional<absl::string_view> userinfo() const {
+    // Split on last '@' to separate decoded userinfo from host
+    // See also https://github.com/grpc/grpc/issues/26548
+    auto at = authority_.rfind('@');
+    if (at == std::string::npos) return absl::nullopt;
+    return authority_.substr(0, at);
+  }
+  // get netloc (host:port) part of authority
+  absl::string_view netloc() const {
+    auto at = authority_.rfind('@');
+    if (at == std::string::npos) return authority_;
+    return authority_.substr(at + 1);
+  }
+
   const std::string& path() const { return path_; }
   // Stores the *last* value appearing for each repeated key in the query
   // string. If you need to capture repeated query parameters, use

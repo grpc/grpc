@@ -120,30 +120,11 @@ absl::optional<std::string> GetHttpProxyServer(
             uri->scheme().c_str());
     return absl::nullopt;
   }
-  // Split on '@' to separate user credentials from host
-  char** authority_strs = nullptr;
-  size_t authority_nstrs;
-  gpr_string_split(uri->authority().c_str(), "@", &authority_strs,
-                   &authority_nstrs);
-  GPR_ASSERT(authority_nstrs != 0);  // should have at least 1 string
-  absl::optional<std::string> proxy_name;
-  if (authority_nstrs == 1) {
-    // User cred not present in authority
-    proxy_name = authority_strs[0];
-  } else if (authority_nstrs == 2) {
-    // User cred found
-    *user_cred = authority_strs[0];
-    proxy_name = authority_strs[1];
+
+  if (*user_cred = uri->userinfo()) {
     gpr_log(GPR_DEBUG, "userinfo found in proxy URI");
-  } else {
-    // Bad authority
-    proxy_name = absl::nullopt;
   }
-  for (size_t i = 0; i < authority_nstrs; i++) {
-    gpr_free(authority_strs[i]);
-  }
-  gpr_free(authority_strs);
-  return proxy_name;
+  return std::string(uri->netloc());
 }
 
 // Adds the default port if target does not contain a port.
