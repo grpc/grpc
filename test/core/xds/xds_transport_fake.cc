@@ -54,6 +54,7 @@ void FakeXdsTransportFactory::FakeStreamingCall::Orphan() {
     });
     status_sent_ = true;
   }
+  transport_->RemoveStream(method_, this);
   Unref();
 }
 
@@ -141,7 +142,13 @@ RefCountedPtr<FakeXdsTransportFactory::FakeStreamingCall>
 FakeXdsTransportFactory::FakeXdsTransport::GetStream(const char* method) {
   MutexLock lock(&mu_);
   auto it = active_calls_.find(method);
-  if (it == active_calls_.end()) return nullptr;
+  while (it == active_calls_.end() || it->second == nullptr) {
+    if (cv_.WaitWithTimeout(&mu_,
+                            absl::Seconds(5) * grpc_test_slowdown_factor())) {
+      return nullptr;
+    }
+    it = active_calls_.find(method);
+  }
   return it->second;
 }
 
@@ -158,9 +165,11 @@ OrphanablePtr<XdsTransportFactory::XdsTransport::StreamingCall>
 FakeXdsTransportFactory::FakeXdsTransport::CreateStreamingCall(
     const char* method,
     std::unique_ptr<StreamingCall::EventHandler> event_handler) {
-  auto call = MakeOrphanable<FakeStreamingCall>(std::move(event_handler));
+  auto call = MakeOrphanable<FakeStreamingCall>(
+      Ref(), method, std::move(event_handler));
   MutexLock lock(&mu_);
   active_calls_[method] = call->Ref();
+  cv_.Signal();
   return call;
 }
 

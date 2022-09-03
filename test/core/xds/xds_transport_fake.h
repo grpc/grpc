@@ -36,6 +36,9 @@
 namespace grpc_core {
 
 class FakeXdsTransportFactory : public XdsTransportFactory {
+ private:
+  class FakeXdsTransport;
+
  public:
   static constexpr char kAdsMethod[] =
       "/envoy.service.discovery.v3.AggregatedDiscoveryService/"
@@ -46,9 +49,12 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
 
   class FakeStreamingCall : public XdsTransport::StreamingCall {
    public:
-    explicit FakeStreamingCall(
+    FakeStreamingCall(
+        RefCountedPtr<FakeXdsTransport> transport, const char* method,
         std::unique_ptr<StreamingCall::EventHandler> event_handler)
-        : event_handler_(MakeRefCounted<RefCountedEventHandler>(
+        : transport_(std::move(transport)),
+          method_(method),
+          event_handler_(MakeRefCounted<RefCountedEventHandler>(
               std::move(event_handler))) {}
 
     void Orphan() override;
@@ -81,8 +87,11 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
 
     void SendMessage(std::string payload) override;
 
+    RefCountedPtr<FakeXdsTransport> transport_;
+    const char* method_;
+
     Mutex mu_;
-    CondVar cv_ ABSL_GUARDED_BY(&mu_);
+    CondVar cv_;
     RefCountedPtr<RefCountedEventHandler> event_handler_ ABSL_GUARDED_BY(&mu_);
     std::deque<std::string> from_client_messages_ ABSL_GUARDED_BY(&mu_);
     bool status_sent_ ABSL_GUARDED_BY(&mu_) = false;
@@ -125,6 +134,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
     void ResetBackoff() override {}
 
     Mutex mu_;
+    CondVar cv_;
     std::function<void(absl::Status)> on_connectivity_failure_
         ABSL_GUARDED_BY(&mu_);
     std::map<std::string /*method*/, RefCountedPtr<FakeStreamingCall>>
