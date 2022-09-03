@@ -71,6 +71,7 @@ TEST(MemoryQuotaTest, CreateAllocatorNoOp) {
 }
 
 TEST(MemoryQuotaTest, CreateObjectFromAllocator) {
+  ExecCtx exec_ctx;
   MemoryQuota memory_quota("foo");
   auto memory_allocator = memory_quota.CreateMemoryAllocator("bar");
   auto object = memory_allocator.MakeUnique<Sized<4096>>();
@@ -114,6 +115,7 @@ TEST(MemoryQuotaTest, ReserveRangeNoPressure) {
   auto memory_allocator = memory_quota.CreateMemoryAllocator("bar");
   size_t total = 0;
   for (int i = 0; i < 10000; i++) {
+    ExecCtx exec_ctx;
     auto n = memory_allocator.Reserve(MemoryRequest(100, 40000));
     EXPECT_EQ(n, 40000);
     total += n;
@@ -126,16 +128,19 @@ TEST(MemoryQuotaTest, MakeSlice) {
   auto memory_allocator = memory_quota.CreateMemoryAllocator("bar");
   std::vector<grpc_slice> slices;
   for (int i = 1; i < 1000; i++) {
+    ExecCtx exec_ctx;
     int min = i;
     int max = 10 * i - 9;
     slices.push_back(memory_allocator.MakeSlice(MemoryRequest(min, max)));
   }
+  ExecCtx exec_ctx;
   for (grpc_slice slice : slices) {
     grpc_slice_unref_internal(slice);
   }
 }
 
 TEST(MemoryQuotaTest, ContainerAllocator) {
+  ExecCtx exec_ctx;
   MemoryQuota memory_quota("foo");
   auto memory_allocator = memory_quota.CreateMemoryAllocator("bar");
   Vector<int> vec(&memory_allocator);

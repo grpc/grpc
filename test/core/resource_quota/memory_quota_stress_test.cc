@@ -56,6 +56,12 @@ class StressTest {
     }
   }
 
+  ~StressTest() {
+    ExecCtx exec_ctx;
+    allocators_.clear();
+    quotas_.clear();
+  }
+
   // Run the thread for some period of time.
   void Run(int seconds) {
     std::vector<std::thread> threads;

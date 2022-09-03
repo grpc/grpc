@@ -22,6 +22,7 @@
 #include <grpc/event_engine/memory_allocator.h>
 
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "test/core/promise/test_context.h"
@@ -33,6 +34,7 @@ static auto* g_memory_allocator = new MemoryAllocator(
     ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
 
 TEST(ArenaPromiseTest, AllocatedWorks) {
+  ExecCtx exec_ctx;
   auto arena = MakeScopedArena(1024, g_memory_allocator);
   TestContext<Arena> context(arena.get());
   int x = 42;
@@ -43,6 +45,7 @@ TEST(ArenaPromiseTest, AllocatedWorks) {
 }
 
 TEST(ArenaPromiseTest, DestructionWorks) {
+  ExecCtx exec_ctx;
   auto arena = MakeScopedArena(1024, g_memory_allocator);
   TestContext<Arena> context(arena.get());
   auto x = std::make_shared<int>(42);
@@ -52,6 +55,7 @@ TEST(ArenaPromiseTest, DestructionWorks) {
 }
 
 TEST(ArenaPromiseTest, MoveAssignmentWorks) {
+  ExecCtx exec_ctx;
   auto arena = MakeScopedArena(1024, g_memory_allocator);
   TestContext<Arena> context(arena.get());
   auto x = std::make_shared<int>(42);
