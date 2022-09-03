@@ -258,9 +258,48 @@ class XdsClientTest : public ::testing::Test {
   // request against the client's node info.
   void CheckRequestNode(const DiscoveryRequest& request,
                         SourceLocation location = SourceLocation()) {
+    // These fields come from the bootstrap config.
     EXPECT_EQ(request.node().id(), xds_client_->bootstrap().node()->id)
         << location.file() << ":" << location.line();
-    // FIXME: check other node fields
+    EXPECT_EQ(request.node().cluster(),
+              xds_client_->bootstrap().node()->cluster)
+        << location.file() << ":" << location.line();
+    EXPECT_EQ(request.node().locality().region(),
+              xds_client_->bootstrap().node()->locality_region)
+        << location.file() << ":" << location.line();
+    EXPECT_EQ(request.node().locality().zone(),
+              xds_client_->bootstrap().node()->locality_zone)
+        << location.file() << ":" << location.line();
+    EXPECT_EQ(request.node().locality().sub_zone(),
+              xds_client_->bootstrap().node()->locality_sub_zone)
+        << location.file() << ":" << location.line();
+    if (xds_client_->bootstrap().node()->metadata.type() ==
+        Json::Type::JSON_NULL) {
+      EXPECT_FALSE(request.node().has_metadata())
+          << location.file() << ":" << location.line();
+    } else {
+      std::string metadata_json_str;
+      auto status = MessageToJsonString(
+          request.node().metadata(), &metadata_json_str,
+          google::protobuf::util::JsonPrintOptions());
+      ASSERT_TRUE(status.ok())
+          << status << " on " << location.file() << ":" << location.line();
+      auto metadata_json = Json::Parse(metadata_json_str);
+      ASSERT_TRUE(metadata_json.ok())
+          << metadata_json.status() << " on " << location.file() << ":"
+          << location.line();
+      EXPECT_EQ(*metadata_json, xds_client_->bootstrap().node()->metadata)
+          << location.file() << ":" << location.line() << ":\nexpected: "
+          << xds_client_->bootstrap().node()->metadata.Dump()
+          << "\nactual: " << metadata_json->Dump();
+    }
+    // These are hard-coded by XdsClient.
+    EXPECT_EQ(request.node().user_agent_name(),
+              absl::StrCat("gRPC C-core ", GPR_PLATFORM_STRING))
+        << location.file() << ":" << location.line();
+    EXPECT_EQ(request.node().user_agent_version(),
+              absl::StrCat("C-core ", grpc_version_string()))
+        << location.file() << ":" << location.line();
   }
 
   RefCountedPtr<FakeXdsTransportFactory> transport_factory_;
