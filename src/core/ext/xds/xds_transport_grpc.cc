@@ -233,7 +233,9 @@ class GrpcXdsTransportFactory::GrpcXdsTransport::StateWatcher
   void OnConnectivityStateChange(grpc_connectivity_state new_state,
                                  const absl::Status& status) override {
     if (new_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-      on_connectivity_failure_(status);
+      on_connectivity_failure_(absl::Status(
+          status.code(),
+          absl::StrCat("channel in TRANSIENT_FAILURE: ", status.message())));
     }
   }
 

@@ -188,8 +188,9 @@ class XdsClient : public DualRefCounted<XdsClient> {
     void MaybeStartLrsCall();
     void StopLrsCallLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
 
-    bool HasAdsCall() const;
-    bool HasActiveAdsCall() const;
+    // Returns non-OK if there has been an error since the last time the
+    // ADS stream saw a response.
+    const absl::Status& status() const { return status_; }
 
     void SubscribeLocked(const XdsResourceType* type,
                          const XdsResourceName& name)
@@ -200,8 +201,11 @@ class XdsClient : public DualRefCounted<XdsClient> {
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
 
    private:
-    void OnConnectivityStateChange(absl::Status status);
-    void OnConnectivityStateChangeLocked(absl::Status status)
+    void OnConnectivityFailure(absl::Status status);
+
+    // Enqueues error notifications to watchers.  Caller must drain
+    // XdsClient::work_serializer_ after releasing the lock.
+    void SetChannelStatusLocked(absl::Status status)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
 
     // The owning xds client.
@@ -220,6 +224,8 @@ class XdsClient : public DualRefCounted<XdsClient> {
     // Stores the most recent accepted resource version for each resource type.
     std::map<const XdsResourceType*, std::string /*version*/>
         resource_type_version_map_;
+
+    absl::Status status_;
   };
 
   struct ResourceState {
@@ -261,9 +267,6 @@ class XdsClient : public DualRefCounted<XdsClient> {
     LoadReportMap load_report_map;
   };
 
-  // Sends an error notification to all watchers.
-  void NotifyOnErrorLocked(absl::Status status)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   // Sends an error notification to a specific set of watchers.
   void NotifyWatchersOnErrorLocked(
       const std::map<ResourceWatcherInterface*,
