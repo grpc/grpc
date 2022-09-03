@@ -35,6 +35,7 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/global_config_env.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
