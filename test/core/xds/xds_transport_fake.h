@@ -62,7 +62,8 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
     using StreamingCall::Ref;  // Make it public.
 
     bool HaveMessageFromClient();
-    absl::optional<std::string> GetMessageFromClient(absl::Duration timeout);
+    absl::optional<std::string> WaitForMessageFromClient(
+        absl::Duration timeout);
 
     void SendMessageToClient(absl::string_view payload);
     void MaybeSendStatusToClient(absl::Status status);
@@ -105,8 +106,9 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
   void TriggerConnectionFailure(const XdsBootstrap::XdsServer& server,
                                 absl::Status status);
 
-  RefCountedPtr<FakeStreamingCall> GetStream(
-      const XdsBootstrap::XdsServer& server, const char* method);
+  RefCountedPtr<FakeStreamingCall> WaitForStream(
+      const XdsBootstrap::XdsServer& server, const char* method,
+      absl::Duration timeout);
 
   void Orphan() override { Unref(); }
 
@@ -125,7 +127,8 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
 
     void TriggerConnectionFailure(absl::Status status);
 
-    RefCountedPtr<FakeStreamingCall> GetStream(const char* method);
+    RefCountedPtr<FakeStreamingCall> WaitForStream(const char* method,
+                                                   absl::Duration timeout);
 
     void RemoveStream(const char* method, FakeStreamingCall* call);
 

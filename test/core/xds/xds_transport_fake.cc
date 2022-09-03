@@ -80,7 +80,7 @@ bool FakeXdsTransportFactory::FakeStreamingCall::HaveMessageFromClient() {
 }
 
 absl::optional<std::string>
-FakeXdsTransportFactory::FakeStreamingCall::GetMessageFromClient(
+FakeXdsTransportFactory::FakeStreamingCall::WaitForMessageFromClient(
     absl::Duration timeout) {
   MutexLock lock(&mu_);
   while (from_client_messages_.empty()) {
@@ -150,12 +150,12 @@ void FakeXdsTransportFactory::FakeXdsTransport::Orphan() {
 }
 
 RefCountedPtr<FakeXdsTransportFactory::FakeStreamingCall>
-FakeXdsTransportFactory::FakeXdsTransport::GetStream(const char* method) {
+FakeXdsTransportFactory::FakeXdsTransport::WaitForStream(
+    const char* method, absl::Duration timeout) {
   MutexLock lock(&mu_);
   auto it = active_calls_.find(method);
   while (it == active_calls_.end() || it->second == nullptr) {
-    if (cv_.WaitWithTimeout(&mu_,
-                            absl::Seconds(5) * grpc_test_slowdown_factor())) {
+    if (cv_.WaitWithTimeout(&mu_, timeout * grpc_test_slowdown_factor())) {
       return nullptr;
     }
     it = active_calls_.find(method);
@@ -212,10 +212,11 @@ void FakeXdsTransportFactory::TriggerConnectionFailure(
 }
 
 RefCountedPtr<FakeXdsTransportFactory::FakeStreamingCall>
-FakeXdsTransportFactory::GetStream(const XdsBootstrap::XdsServer& server,
-                                   const char* method) {
+FakeXdsTransportFactory::WaitForStream(const XdsBootstrap::XdsServer& server,
+                                       const char* method,
+                                       absl::Duration timeout) {
   auto transport = GetTransport(server);
-  return transport->GetStream(method);
+  return transport->WaitForStream(method, timeout);
 }
 
 RefCountedPtr<FakeXdsTransportFactory::FakeXdsTransport>
