@@ -167,7 +167,7 @@ OrphanablePtr<XdsTransportFactory::XdsTransport>
 FakeXdsTransportFactory::Create(
     const XdsBootstrap::XdsServer& server,
     std::function<void(absl::Status)> on_connectivity_failure,
-    absl::Status* status) {
+    absl::Status* /*status*/) {
   auto transport =
       MakeOrphanable<FakeXdsTransport>(std::move(on_connectivity_failure));
   MutexLock lock(&mu_);
