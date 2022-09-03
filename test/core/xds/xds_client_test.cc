@@ -930,6 +930,74 @@ TEST_F(XdsClientTest, StreamClosedByServer) {
   }
 }
 
+TEST_F(XdsClientTest, ConnectionFails) {
+  InitXdsClient();
+  // Start a watch for "foo1".
+  auto watcher = StartFooWatch("foo1");
+  // Watcher should initially not see any resource reported.
+  EXPECT_FALSE(watcher->GetNextResource().has_value());
+  // XdsClient should have created an ADS stream.
+  auto stream = transport_factory_->GetStream(
+      xds_client_->bootstrap().server(), FakeXdsTransportFactory::kAdsMethod);
+  ASSERT_TRUE(stream != nullptr);
+  // XdsClient should have sent a subscription request on the ADS stream.
+  auto request = GetRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"", /*response_nonce=*/"",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"foo1"});
+  CheckRequestNode(*request);  // Should be present on the first request.
+  // Transport reports connection failure.
+  transport_factory_->TriggerConnectionFailure(
+      xds_client_->bootstrap().server(),
+      absl::UnavailableError("connection failed"));
+  // XdsClient should report an error to the watcher.
+  auto error = watcher->GetNextError();
+  ASSERT_TRUE(error.has_value());
+  EXPECT_EQ(error->code(), absl::StatusCode::kUnavailable);
+  EXPECT_EQ(
+      error->message(),
+      "xds channel in TRANSIENT_FAILURE, connectivity error: "
+      "UNAVAILABLE: connection failed (node ID:xds_client_test)")
+      << *error;
+  // Inside the XdsTransport interface, the channel will eventually
+  // reconnect, and the call will proceed.  None of that will be visible
+  // to the XdsClient, because the call uses wait_for_ready.  So here,
+  // to simulate the connection being established, all we need to do is
+  // allow the stream to proceed.
+  // Server sends a response.
+  stream->SendMessageToClient(
+      ResponseBuilder(XdsFooResourceType::Get()->type_url())
+          .set_version_info("1")
+          .set_nonce("A")
+          .AddResource(XdsFooResourceType::Get()->type_url(),
+                       "{\"name\":\"foo1\",\"value\":6}")
+          .Serialize());
+  // XdsClient should have delivered the response to the watcher.
+  auto resource = watcher->GetNextResource();
+  ASSERT_TRUE(resource.has_value());
+  EXPECT_EQ(resource->name, "foo1");
+  EXPECT_EQ(resource->value, 6);
+  // XdsClient should have sent an ACK message to the xDS server.
+  request = GetRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"1", /*response_nonce=*/"A",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"foo1"});
+  // Cancel watch.
+  CancelFooWatch(watcher.get(), "foo1");
+  // The XdsClient may or may not send an unsubscription message
+  // before it closes the transport, depending on callback timing.
+  request = GetRequest(stream.get());
+  if (request.has_value()) {
+    CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+                 /*version_info=*/"1", /*response_nonce=*/"A",
+                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
+  }
+}
+
 TEST_F(XdsClientTest, BasicWatchV2) {
   InitXdsClient(FakeXdsBootstrap::Builder().set_use_v2());
   // Start a watch for "foo1".

@@ -123,9 +123,15 @@ void FakeXdsTransportFactory::FakeStreamingCall::MaybeSendStatusToClient(
 
 void FakeXdsTransportFactory::FakeXdsTransport::TriggerConnectionFailure(
     absl::Status status) {
-  MutexLock lock(&mu_);
-  if (on_connectivity_failure_ == nullptr) return;
-  on_connectivity_failure_(std::move(status));
+  RefCountedPtr<RefCountedOnConnectivityFailure> on_connectivity_failure;
+  {
+    MutexLock lock(&mu_);
+    on_connectivity_failure = on_connectivity_failure_->Ref();
+  }
+  ExecCtx exec_ctx;
+  if (on_connectivity_failure != nullptr) {
+    on_connectivity_failure->Run(std::move(status));
+  }
 }
 
 void FakeXdsTransportFactory::FakeXdsTransport::Orphan() {
@@ -137,7 +143,7 @@ void FakeXdsTransportFactory::FakeXdsTransport::Orphan() {
     GetDefaultEventEngine()->Run([on_connectivity_failure = std::move(
                                       on_connectivity_failure_)]() mutable {
       ExecCtx exec_ctx;
-      on_connectivity_failure = nullptr;  // Destroys it.
+      on_connectivity_failure.reset();
     });
   }
   Unref();

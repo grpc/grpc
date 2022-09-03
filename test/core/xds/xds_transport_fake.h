@@ -115,7 +115,9 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
    public:
     explicit FakeXdsTransport(
         std::function<void(absl::Status)> on_connectivity_failure)
-        : on_connectivity_failure_(std::move(on_connectivity_failure)) {}
+        : on_connectivity_failure_(
+              MakeRefCounted<RefCountedOnConnectivityFailure>(
+                  std::move(on_connectivity_failure))) {}
 
     void Orphan() override;
 
@@ -128,6 +130,21 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
     void RemoveStream(const char* method, FakeStreamingCall* call);
 
    private:
+    class RefCountedOnConnectivityFailure
+        : public RefCounted<RefCountedOnConnectivityFailure> {
+     public:
+      explicit RefCountedOnConnectivityFailure(
+          std::function<void(absl::Status)> on_connectivity_failure)
+          : on_connectivity_failure_(std::move(on_connectivity_failure)) {}
+
+      void Run(absl::Status status) {
+        on_connectivity_failure_(std::move(status));
+      }
+
+     private:
+      std::function<void(absl::Status)> on_connectivity_failure_;
+    };
+
     OrphanablePtr<StreamingCall> CreateStreamingCall(
         const char* method,
         std::unique_ptr<StreamingCall::EventHandler> event_handler) override;
@@ -136,7 +153,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
 
     Mutex mu_;
     CondVar cv_;
-    std::function<void(absl::Status)> on_connectivity_failure_
+    RefCountedPtr<RefCountedOnConnectivityFailure> on_connectivity_failure_
         ABSL_GUARDED_BY(&mu_);
     std::map<std::string /*method*/, RefCountedPtr<FakeStreamingCall>>
         active_calls_ ABSL_GUARDED_BY(&mu_);
