@@ -35,7 +35,6 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gprpp/global_config_generic.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
