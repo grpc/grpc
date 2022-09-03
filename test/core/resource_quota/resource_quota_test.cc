@@ -34,7 +34,7 @@ TEST(ResourceQuotaTest, Works) {
 void grpc_set_default_iomgr_platform() {}
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment(&argc, argv);
+  grpc::testing::TestEnvironment give_me_a_name(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

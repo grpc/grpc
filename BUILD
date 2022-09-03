@@ -6610,6 +6610,7 @@ grpc_cc_library(
     deps = [
         "bdp_estimator",
         "exec_ctx",
+        "experiments",
         "gpr",
         "grpc_trace",
         "memory_quota",
