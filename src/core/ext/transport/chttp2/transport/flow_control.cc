@@ -341,6 +341,7 @@ FlowControlAction TransportFlowControl::PeriodicUpdate() {
       // Though initial window 'could' drop to 0, we keep the floor at
       // kMinInitialWindowSize
       UpdateSetting(
+          GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE,
           &target_initial_window_size_,
           static_cast<int32_t>(Clamp(target, double(kMinInitialWindowSize),
                                      double(kMaxInitialWindowSize))),
@@ -350,7 +351,7 @@ FlowControlAction TransportFlowControl::PeriodicUpdate() {
       double bw_dbl = bdp_estimator_.EstimateBandwidth();
       // we target the max of BDP or bandwidth in microseconds.
       UpdateSetting(
-          &target_frame_size_,
+          GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE, &target_frame_size_,
           static_cast<int32_t>(Clamp(
               std::max(
                   static_cast<int32_t>(Clamp(bw_dbl, 0.0, double(INT_MAX))) /

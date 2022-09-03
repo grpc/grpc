@@ -28,4 +28,7 @@ EXPERIMENTS = {
         "tcp_rcv_lowat",
         "tcp_read_chunks",
     ],
+    "flow_control_test": [
+        "flow_control_fixes",
+    ],
 }
