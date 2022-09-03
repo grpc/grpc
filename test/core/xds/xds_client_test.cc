@@ -254,14 +254,13 @@ class XdsClientTest : public ::testing::Test {
   absl::optional<DiscoveryRequest> GetRequest(
       FakeXdsTransportFactory::FakeStreamingCall* stream,
       SourceLocation location = SourceLocation()) {
-    auto message = stream->GetMessageFromClient(
-        absl::Seconds(1) * grpc_test_slowdown_factor());
+    auto message = stream->GetMessageFromClient(absl::Seconds(1) *
+                                                grpc_test_slowdown_factor());
     if (!message.has_value()) return absl::nullopt;
     DiscoveryRequest request;
     bool success = request.ParseFromString(*message);
-    EXPECT_TRUE(success)
-        << "Failed to deserialize DiscoveryRequest at " << location.file()
-        << ":" << location.line();
+    EXPECT_TRUE(success) << "Failed to deserialize DiscoveryRequest at "
+                         << location.file() << ":" << location.line();
     if (!success) return absl::nullopt;
     return std::move(request);
   }
@@ -320,9 +319,9 @@ class XdsClientTest : public ::testing::Test {
           << location.file() << ":" << location.line();
     } else {
       std::string metadata_json_str;
-      auto status = MessageToJsonString(
-          request.node().metadata(), &metadata_json_str,
-          google::protobuf::util::JsonPrintOptions());
+      auto status =
+          MessageToJsonString(request.node().metadata(), &metadata_json_str,
+                              google::protobuf::util::JsonPrintOptions());
       ASSERT_TRUE(status.ok())
           << status << " on " << location.file() << ":" << location.line();
       auto metadata_json = Json::Parse(metadata_json_str);
@@ -330,8 +329,8 @@ class XdsClientTest : public ::testing::Test {
           << metadata_json.status() << " on " << location.file() << ":"
           << location.line();
       EXPECT_EQ(*metadata_json, xds_client_->bootstrap().node()->metadata)
-          << location.file() << ":" << location.line() << ":\nexpected: "
-          << xds_client_->bootstrap().node()->metadata.Dump()
+          << location.file() << ":" << location.line()
+          << ":\nexpected: " << xds_client_->bootstrap().node()->metadata.Dump()
           << "\nactual: " << metadata_json->Dump();
     }
     // These are hard-coded by XdsClient.
