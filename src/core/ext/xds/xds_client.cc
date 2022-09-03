@@ -1538,6 +1538,40 @@ void XdsClient::WatchResource(const XdsResourceType* type,
             delete value;
           },
           DEBUG_LOCATION);
+    } else if (resource_state.meta.client_status ==
+               XdsApi::ResourceMetadata::DOES_NOT_EXIST) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+        gpr_log(GPR_INFO,
+                "[xds_client %p] reporting cached does-not-exist for %s", this,
+                std::string(name).c_str());
+      }
+      work_serializer_.Schedule(
+          [watcher]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) {
+            watcher->OnResourceDoesNotExist();
+          },
+          DEBUG_LOCATION);
+    } else if (resource_state.meta.client_status ==
+               XdsApi::ResourceMetadata::NACKED) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+        gpr_log(
+            GPR_INFO,
+            "[xds_client %p] reporting cached validation failure for %s: %s",
+            this, std::string(name).c_str(),
+            resource_state.meta.failed_details.c_str());
+      }
+      std::string details = resource_state.meta.failed_details;
+      const auto* node = bootstrap_->node();
+      if (node != nullptr) {
+        details = absl::StrCat(details, " (node ID:", bootstrap_->node()->id,
+                               ")");
+      }
+      work_serializer_.Schedule(
+          [watcher, details = std::move(details)]()
+              ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) {
+            watcher->OnError(absl::UnavailableError(absl::StrCat(
+                "invalid resource: ", details)));
+          },
+          DEBUG_LOCATION);
     }
     // If the authority doesn't yet have a channel, set it, creating it if
     // needed.

@@ -873,15 +873,29 @@ TEST_F(XdsClientTest, ResourceValidationFailure) {
           "validation error: INVALID_ARGUMENT: errors validating JSON: "
           "[field:value error:is not a number]]"),
       /*resource_names=*/{"foo1"});
-  // Server sends an updated version of the resource.
+  // Start a second watch for the same resource.  It should immediately
+  // receive the same error.
+  auto watcher2 = StartFooWatch("foo1");
+  error = watcher2->WaitForNextError();
+  ASSERT_TRUE(error.has_value());
+  EXPECT_EQ(error->code(), absl::StatusCode::kUnavailable);
+  EXPECT_EQ(error->message(),
+            "invalid resource: INVALID_ARGUMENT: errors validating JSON: "
+            "[field:value error:is not a number] (node ID:xds_client_test)")
+      << *error;
+  // Now server sends an updated version of the resource.
   stream->SendMessageToClient(
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
           .set_version_info("2")
           .set_nonce("B")
           .AddResource(XdsFooResource{"foo1", 9})
           .Serialize());
-  // XdsClient should have delivered the response to the watcher.
+  // XdsClient should deliver the response to both watchers.
   auto resource = watcher->WaitForNextResource();
+  ASSERT_TRUE(resource.has_value());
+  EXPECT_EQ(resource->name, "foo1");
+  EXPECT_EQ(resource->value, 9);
+  resource = watcher2->WaitForNextResource();
   ASSERT_TRUE(resource.has_value());
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 9);
@@ -894,6 +908,7 @@ TEST_F(XdsClientTest, ResourceValidationFailure) {
                /*resource_names=*/{"foo1"});
   // Cancel watch.
   CancelFooWatch(watcher.get(), "foo1");
+  CancelFooWatch(watcher2.get(), "foo1");
   // The XdsClient may or may not send an unsubscription message
   // before it closes the transport, depending on callback timing.
   request = WaitForRequest(stream.get());
@@ -1141,7 +1156,10 @@ TEST_F(XdsClientTest, ResourceDoesNotExist) {
   // Do not send a response, but wait for the resource to be reported as
   // not existing.
   EXPECT_TRUE(watcher->WaitForDoesNotExist(absl::Seconds(5)));
-// FIXME: start a new watcher here for the same resource and show that it gets the same notification
+  // Start a new watcher for the same resource.  It should immediately
+  // receive the same does-not-exist notification.
+  auto watcher2 = StartFooWatch("foo1");
+  EXPECT_TRUE(watcher2->WaitForDoesNotExist(absl::Seconds(1)));
   // Now server sends a response.
   stream->SendMessageToClient(
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
@@ -1149,8 +1167,12 @@ TEST_F(XdsClientTest, ResourceDoesNotExist) {
           .set_nonce("A")
           .AddResource(XdsFooResource{"foo1", 6})
           .Serialize());
-  // XdsClient should have delivered the response to the watcher.
+  // XdsClient should have delivered the response to the watchers.
   auto resource = watcher->WaitForNextResource();
+  ASSERT_TRUE(resource.has_value());
+  EXPECT_EQ(resource->name, "foo1");
+  EXPECT_EQ(resource->value, 6);
+  resource = watcher2->WaitForNextResource();
   ASSERT_TRUE(resource.has_value());
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 6);
@@ -1163,6 +1185,7 @@ TEST_F(XdsClientTest, ResourceDoesNotExist) {
                /*resource_names=*/{"foo1"});
   // Cancel watch.
   CancelFooWatch(watcher.get(), "foo1");
+  CancelFooWatch(watcher2.get(), "foo1");
   // The XdsClient may or may not send an unsubscription message
   // before it closes the transport, depending on callback timing.
   request = WaitForRequest(stream.get());
