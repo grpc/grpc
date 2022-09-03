@@ -788,9 +788,8 @@ void XdsClient::ChannelState::AdsCallState::AdsResponseParser::ParseResource(
     result_.errors.emplace_back(
         absl::StrCat(error_prefix, "validation error: ", status.ToString()));
     xds_client()->NotifyWatchersOnErrorLocked(
-        resource_state.watchers,
-        absl::UnavailableError(
-            absl::StrCat("invalid resource: ", status.ToString())));
+        resource_state.watchers, absl::UnavailableError(absl::StrCat(
+                                     "invalid resource: ", status.ToString())));
     UpdateResourceMetadataNacked(result_.version, status.ToString(),
                                  update_time_, &resource_state.meta);
     return;
