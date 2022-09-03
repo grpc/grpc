@@ -61,6 +61,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
 
     using StreamingCall::Ref;  // Make it public.
 
+    bool HaveMessageFromClient();
     absl::optional<std::string> GetMessageFromClient(absl::Duration timeout);
 
     void SendMessageToClient(absl::string_view payload);

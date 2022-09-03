@@ -74,6 +74,11 @@ void FakeXdsTransportFactory::FakeStreamingCall::SendMessage(
       });
 }
 
+bool FakeXdsTransportFactory::FakeStreamingCall::HaveMessageFromClient() {
+  MutexLock lock(&mu_);
+  return !from_client_messages_.empty();
+}
+
 absl::optional<std::string>
 FakeXdsTransportFactory::FakeStreamingCall::GetMessageFromClient(
     absl::Duration timeout) {
