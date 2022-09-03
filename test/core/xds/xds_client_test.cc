@@ -212,11 +212,11 @@ class XdsClientTest : public ::testing::Test {
   }
 
   // Helper function to check the fields of a DiscoveryRequest.
-  void CheckRequest(
-      const DiscoveryRequest& request, absl::string_view type_url,
-      absl::string_view version_info, absl::string_view response_nonce,
-      absl::Status error_detail, std::set<absl::string_view> resource_names,
-      SourceLocation location = SourceLocation()) {
+  void CheckRequest(const DiscoveryRequest& request, absl::string_view type_url,
+                    absl::string_view version_info,
+                    absl::string_view response_nonce, absl::Status error_detail,
+                    std::set<absl::string_view> resource_names,
+                    SourceLocation location = SourceLocation()) {
     EXPECT_EQ(request.type_url(),
               absl::StrCat("type.googleapis.com/", type_url));
     EXPECT_EQ(request.version_info(), version_info)

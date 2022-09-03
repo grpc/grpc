@@ -45,13 +45,12 @@ void FakeXdsTransportFactory::FakeStreamingCall::Orphan() {
     // synchronously, since those operations will trigger code in
     // XdsClient that acquires its mutex, but it was already holding its
     // mutex when it called us, so it would deadlock.
-    GetDefaultEventEngine()->Run(
-      [event_handler = std::move(event_handler_),
-       status_sent = status_sent_]() mutable {
-        ExecCtx exec_ctx;
-        if (!status_sent) event_handler->OnStatusReceived(absl::OkStatus());
-        event_handler.reset();
-      });
+    GetDefaultEventEngine()->Run([event_handler = std::move(event_handler_),
+                                  status_sent = status_sent_]() mutable {
+      ExecCtx exec_ctx;
+      if (!status_sent) event_handler->OnStatusReceived(absl::OkStatus());
+      event_handler.reset();
+    });
     status_sent_ = true;
   }
   Unref();
@@ -65,11 +64,11 @@ void FakeXdsTransportFactory::FakeStreamingCall::SendMessage(
   // operation will trigger code in XdsClient that acquires its mutex, but it
   // was already holding its mutex when it called us, so it would deadlock.
   GetDefaultEventEngine()->Run(
-    [event_handler = event_handler_->Ref()]() mutable {
-      ExecCtx exec_ctx;
-      event_handler->OnRequestSent(/*ok=*/true);
-      event_handler.reset();
-    });
+      [event_handler = event_handler_->Ref()]() mutable {
+        ExecCtx exec_ctx;
+        event_handler->OnRequestSent(/*ok=*/true);
+        event_handler.reset();
+      });
 }
 
 absl::optional<std::string>
@@ -122,12 +121,11 @@ void FakeXdsTransportFactory::FakeXdsTransport::Orphan() {
     // Can't destroy on_connectivity_failure_ synchronously, since that
     // operation will trigger code in XdsClient that acquires its mutex, but
     // it was already holding its mutex when it called us, so it would deadlock.
-    GetDefaultEventEngine()->Run(
-      [on_connectivity_failure = std::move(on_connectivity_failure_)]()
-          mutable {
-        ExecCtx exec_ctx;
-        on_connectivity_failure = nullptr;  // Destroys it.
-      });
+    GetDefaultEventEngine()->Run([on_connectivity_failure = std::move(
+                                      on_connectivity_failure_)]() mutable {
+      ExecCtx exec_ctx;
+      on_connectivity_failure = nullptr;  // Destroys it.
+    });
   }
   Unref();
 }

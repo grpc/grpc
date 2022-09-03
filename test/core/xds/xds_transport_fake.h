@@ -46,7 +46,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
     explicit FakeStreamingCall(
         std::unique_ptr<StreamingCall::EventHandler> event_handler)
         : event_handler_(MakeRefCounted<RefCountedEventHandler>(
-                             std::move(event_handler))) {}
+              std::move(event_handler))) {}
 
     void Orphan() override;
 
