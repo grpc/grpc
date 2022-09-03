@@ -40,6 +40,9 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
   static constexpr char kAdsMethod[] =
       "/envoy.service.discovery.v3.AggregatedDiscoveryService/"
       "StreamAggregatedResources";
+  static constexpr char kAdsV2Method[] =
+      "/envoy.service.discovery.v2.AggregatedDiscoveryService/"
+      "StreamAggregatedResources";
 
   class FakeStreamingCall : public XdsTransport::StreamingCall {
    public:

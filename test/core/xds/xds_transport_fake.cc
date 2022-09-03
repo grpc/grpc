@@ -166,6 +166,7 @@ FakeXdsTransportFactory::FakeXdsTransport::CreateStreamingCall(
 //
 
 constexpr char FakeXdsTransportFactory::kAdsMethod[];
+constexpr char FakeXdsTransportFactory::kAdsV2Method[];
 
 OrphanablePtr<XdsTransportFactory::XdsTransport>
 FakeXdsTransportFactory::Create(

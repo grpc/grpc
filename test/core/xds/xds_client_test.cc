@@ -52,7 +52,7 @@ class XdsClientTest : public ::testing::Test {
         server_.server_uri = "default_xds_server";
         server_.server_features.insert(
             std::string(XdsServer::kServerFeatureXdsV3));
-        node_ = absl::make_unique<Node>();
+        node_.emplace();
         node_->id = "xds_client_test";
       }
 
@@ -60,7 +60,12 @@ class XdsClientTest : public ::testing::Test {
         server_ = std::move(server);
         return *this;
       }
-      Builder& set_node(std::unique_ptr<Node> node) {
+      Builder& set_use_v2() {
+        server_.server_features.erase(
+            std::string(XdsServer::kServerFeatureXdsV3));
+        return *this;
+      }
+      Builder& set_node(absl::optional<Node> node) {
         node_ = std::move(node);
         return *this;
       }
@@ -78,21 +83,21 @@ class XdsClientTest : public ::testing::Test {
 
      private:
       XdsServer server_;
-      std::unique_ptr<Node> node_;
+      absl::optional<Node> node_;
       std::map<std::string, Authority> authorities_;
     };
 
     std::string ToString() const override { return "<fake>"; }
 
     const XdsServer& server() const override { return server_; }
-    const Node* node() const override { return node_.get(); }
+    const Node* node() const override { return &node_.value(); }
     const std::map<std::string, Authority>& authorities() const override {
       return authorities_;
     }
 
    private:
     XdsServer server_;
-    std::unique_ptr<Node> node_;
+    absl::optional<Node> node_;
     std::map<std::string, Authority> authorities_;
   };
 
@@ -234,7 +239,8 @@ class XdsClientTest : public ::testing::Test {
                     std::set<absl::string_view> resource_names,
                     SourceLocation location = SourceLocation()) {
     EXPECT_EQ(request.type_url(),
-              absl::StrCat("type.googleapis.com/", type_url));
+              absl::StrCat("type.googleapis.com/", type_url))
+        << location.file() << ":" << location.line();
     EXPECT_EQ(request.version_info(), version_info)
         << location.file() << ":" << location.line();
     EXPECT_EQ(request.response_nonce(), response_nonce)
@@ -257,6 +263,7 @@ class XdsClientTest : public ::testing::Test {
   // Helper function to check the contents of the node message in a
   // request against the client's node info.
   void CheckRequestNode(const DiscoveryRequest& request,
+                        bool check_build_version = false,
                         SourceLocation location = SourceLocation()) {
     // These fields come from the bootstrap config.
     EXPECT_EQ(request.node().id(), xds_client_->bootstrap().node()->id)
@@ -300,6 +307,26 @@ class XdsClientTest : public ::testing::Test {
     EXPECT_EQ(request.node().user_agent_version(),
               absl::StrCat("C-core ", grpc_version_string()))
         << location.file() << ":" << location.line();
+    if (check_build_version) {
+      auto build_version = GetBuildVersion(request.node());
+      ASSERT_TRUE(build_version.has_value())
+          << location.file() << ":" << location.line();
+      EXPECT_EQ(*build_version,
+                absl::StrCat("gRPC C-core ", GPR_PLATFORM_STRING, " ",
+                             grpc_version_string()))
+          << location.file() << ":" << location.line();
+    }
+  }
+
+  static absl::optional<std::string> GetBuildVersion(
+      const envoy::config::core::v3::Node& node) {
+    const auto& unknown_field_set =
+        node.GetReflection()->GetUnknownFields(node);
+    for (int i = 0; i < unknown_field_set.field_count(); ++i) {
+      const auto& unknown_field = unknown_field_set.field(i);
+      if (unknown_field.number() == 5) return unknown_field.length_delimited();
+    }
+    return absl::nullopt;
   }
 
   RefCountedPtr<FakeXdsTransportFactory> transport_factory_;
@@ -356,6 +383,62 @@ TEST_F(XdsClientTest, BasicWatch) {
   request = GetRequest(stream.get());
   if (request.has_value()) {
     CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+                 /*version_info=*/"1", /*response_nonce=*/"A",
+                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
+  }
+}
+
+TEST_F(XdsClientTest, BasicWatchV2) {
+  InitXdsClient(FakeXdsBootstrap::Builder().set_use_v2());
+  // Start a watch for "foo1".
+  auto watcher = StartFooWatch("foo1");
+  // Watcher should initially not see any resource reported.
+  EXPECT_FALSE(watcher->GetNextResource().has_value());
+  // XdsClient should have created an ADS stream.
+  auto stream = transport_factory_->GetStream(
+      xds_client_->bootstrap().server(), FakeXdsTransportFactory::kAdsV2Method);
+  ASSERT_TRUE(stream != nullptr);
+  // XdsClient should have sent a subscription request on the ADS stream.
+  auto request = GetRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->v2_type_url(),
+               /*version_info=*/"", /*response_nonce=*/"",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"foo1"});
+  // Node Should be present on the first request.
+  CheckRequestNode(*request, /*check_build_version=*/true);
+  // Send a response.
+  DiscoveryResponse response;
+  response.set_version_info("1");
+  response.set_nonce("A");
+  response.set_type_url(absl::StrCat("type.googleapis.com/",
+                                     XdsFooResourceType::Get()->type_url()));
+  auto* res = response.add_resources();
+  res->set_value("{\"name\":\"foo1\",\"value\":6}");
+  res->set_type_url(absl::StrCat("type.googleapis.com/",
+                                 XdsFooResourceType::Get()->type_url()));
+  std::string serialized_response;
+  ASSERT_TRUE(response.SerializeToString(&serialized_response));
+  stream->SendMessageToClient(serialized_response);
+  // XdsClient should have delivered the response to the watcher.
+  auto resource = watcher->GetNextResource();
+  ASSERT_TRUE(resource.has_value());
+  EXPECT_EQ(resource->name, "foo1");
+  EXPECT_EQ(resource->value, 6);
+  // XdsClient should have sent an ACK message to the xDS server.
+  request = GetRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->v2_type_url(),
+               /*version_info=*/"1", /*response_nonce=*/"A",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"foo1"});
+  // Cancel watch.
+  CancelFooWatch(watcher.get(), "foo1");
+  // The XdsClient may or may not send an unsubscription message
+  // before it closes the transport, depending on callback timing.
+  request = GetRequest(stream.get());
+  if (request.has_value()) {
+    CheckRequest(*request, XdsFooResourceType::Get()->v2_type_url(),
                  /*version_info=*/"1", /*response_nonce=*/"A",
                  /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
   }
