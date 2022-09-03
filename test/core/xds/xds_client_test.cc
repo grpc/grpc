@@ -136,6 +136,12 @@ class XdsClientTest : public ::testing::Test {
       absl::StatusOr<XdsFooResource> foo = LoadFromJson<XdsFooResource>(*json);
       DecodeResult result;
       if (!foo.ok()) {
+        auto it = json->object_value().find("name");
+        if (it == json->object_value().end()) {
+          return absl::InvalidArgumentError(
+              "cannot determine name for invalid resource");
+        }
+        result.name = it->second.string_value();
         result.resource = foo.status();
       } else {
         result.name = foo->name;
@@ -242,6 +248,21 @@ class XdsClientTest : public ::testing::Test {
       if (in_resource_wrapper) {
         envoy::service::discovery::v3::Resource resource_wrapper;
         resource_wrapper.set_name(resource.name);
+        *resource_wrapper.mutable_resource() = std::move(*res);
+        res->PackFrom(resource_wrapper);
+      }
+      return *this;
+    }
+
+    ResponseBuilder& AddInvalidResource(
+        absl::string_view type_url, absl::string_view value,
+        absl::string_view resource_wrapper_name = "") {
+      auto* res = response_.add_resources();
+      res->set_type_url(absl::StrCat("type.googleapis.com/", type_url));
+      res->set_value(std::string(value));
+      if (!resource_wrapper_name.empty()) {
+        envoy::service::discovery::v3::Resource resource_wrapper;
+        resource_wrapper.set_name(std::string(resource_wrapper_name));
         *resource_wrapper.mutable_resource() = std::move(*res);
         res->PackFrom(resource_wrapper);
       }
@@ -496,6 +517,81 @@ TEST_F(XdsClientTest, UpdateFromServer) {
           .Serialize());
   // XdsClient should have delivered the response to the watcher.
   resource = watcher->GetNextResource();
+  ASSERT_TRUE(resource.has_value());
+  EXPECT_EQ(resource->name, "foo1");
+  EXPECT_EQ(resource->value, 9);
+  // XdsClient should have sent an ACK message to the xDS server.
+  request = GetRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"2", /*response_nonce=*/"B",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"foo1"});
+  // Cancel watch.
+  CancelFooWatch(watcher.get(), "foo1");
+  // The XdsClient may or may not send an unsubscription message
+  // before it closes the transport, depending on callback timing.
+  request = GetRequest(stream.get());
+  if (request.has_value()) {
+    CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+                 /*version_info=*/"2", /*response_nonce=*/"B",
+                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
+  }
+}
+
+TEST_F(XdsClientTest, ResourceValidationFailure) {
+  InitXdsClient();
+  // Start a watch for "foo1".
+  auto watcher = StartFooWatch("foo1");
+  // Watcher should initially not see any resource reported.
+  EXPECT_FALSE(watcher->GetNextResource().has_value());
+  // XdsClient should have created an ADS stream.
+  auto stream = transport_factory_->GetStream(
+      xds_client_->bootstrap().server(), FakeXdsTransportFactory::kAdsMethod);
+  ASSERT_TRUE(stream != nullptr);
+  // XdsClient should have sent a subscription request on the ADS stream.
+  auto request = GetRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"", /*response_nonce=*/"",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"foo1"});
+  CheckRequestNode(*request);  // Should be present on the first request.
+  // Send a response containing an invalid resource.
+  stream->SendMessageToClient(
+      ResponseBuilder(XdsFooResourceType::Get()->type_url())
+          .set_version_info("1")
+          .set_nonce("A")
+          .AddInvalidResource(XdsFooResourceType::Get()->type_url(),
+                              "{\"name\":\"foo1\",\"value\":[]}")
+          .Serialize());
+  // XdsClient should deliver an error to the watcher.
+  auto error = watcher->GetNextError();
+  ASSERT_TRUE(error.has_value());
+  EXPECT_EQ(error->code(), absl::StatusCode::kUnavailable);
+  EXPECT_EQ(error->message(),
+            "invalid resource: INVALID_ARGUMENT: errors validating JSON: "
+            "[field:value error:is not a number] (node ID:xds_client_test)")
+      << *error;
+  // XdsClient should NACK the update.
+  request = GetRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"", /*response_nonce=*/"A",
+               /*error_detail=*/absl::InvalidArgumentError(
+                  "xDS response validation errors: [resource index 0: foo1: "
+                  "validation error: INVALID_ARGUMENT: errors validating JSON: "
+                  "[field:value error:is not a number]]"),
+               /*resource_names=*/{"foo1"});
+  // Server sends an updated version of the resource.
+  stream->SendMessageToClient(
+      ResponseBuilder(XdsFooResourceType::Get()->type_url())
+          .set_version_info("2")
+          .set_nonce("B")
+          .AddResource(XdsFooResource{"foo1", 9})
+          .Serialize());
+  // XdsClient should have delivered the response to the watcher.
+  auto resource = watcher->GetNextResource();
   ASSERT_TRUE(resource.has_value());
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 9);
