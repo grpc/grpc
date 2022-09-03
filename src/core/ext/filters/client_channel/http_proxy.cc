@@ -90,29 +90,20 @@ absl::optional<std::string> GetHttpProxyServer(
             uri->scheme().c_str());
     return absl::nullopt;
   }
-  /* Split on '@' to separate user credentials from host */
-  char** authority_strs = nullptr;
-  size_t authority_nstrs;
-  gpr_string_split(uri->authority().c_str(), "@", &authority_strs,
-                   &authority_nstrs);
-  GPR_ASSERT(authority_nstrs != 0); /* should have at least 1 string */
+  /* Split on last '@' to separate user credentials from host
+     See also https://github.com/grpc/grpc/issues/26548
+   */
+  std::size_t at = uri->authority().rfind('@');
   absl::optional<std::string> proxy_name;
-  if (authority_nstrs == 1) {
+  if (at == std::string::npos) {
     /* User cred not present in authority */
-    proxy_name = authority_strs[0];
-  } else if (authority_nstrs == 2) {
-    /* User cred found */
-    *user_cred = authority_strs[0];
-    proxy_name = authority_strs[1];
-    gpr_log(GPR_DEBUG, "userinfo found in proxy URI");
+    proxy_name = uri->authority();
   } else {
-    /* Bad authority */
-    proxy_name = absl::nullopt;
+    /* User cred found */
+    *user_cred = uri->authority().substr(0, at);
+    proxy_name = uri->authority().substr(at + 1, uri->authority().size() - at - 1);
+    gpr_log(GPR_DEBUG, "userinfo found in proxy URI");
   }
-  for (size_t i = 0; i < authority_nstrs; i++) {
-    gpr_free(authority_strs[i]);
-  }
-  gpr_free(authority_strs);
   return proxy_name;
 }
 

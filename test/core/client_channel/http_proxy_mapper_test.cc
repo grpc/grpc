@@ -41,6 +41,26 @@ class ScopedSetEnv {
   ~ScopedSetEnv() { UnsetEnv("no_proxy"); }
 };
 
+// Test that userinfo of proxy is correctly parsed
+// https://github.com/grpc/grpc/issues/26548
+TEST(ProxyTest, UserInfo) {
+  std::map<std::string, std::string> test_cases = {
+    // echo -n user:pass | base64
+    {"user:pass", "dXNlcjpwYXNz"},
+    // echo -n user@google.com:pass | base64
+    {"user%40google.com:pass", "dXNlckBnb29nbGUuY29tOnBhc3M="},
+  };
+  for (const auto& test_case : test_cases) {
+    auto args = ChannelArgs().Set(GRPC_ARG_HTTP_PROXY, absl::StrCat("http://", test_case.first, "@proxy.google.com"));
+    EXPECT_EQ(HttpProxyMapper().MapName("dns:///test.google.com:443", &args),
+              "proxy.google.com");
+    EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_SERVER),
+              "test.google.com:443");
+    EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_HEADERS),
+              absl::StrCat("Proxy-Authorization:Basic ", test_case.second));
+  }
+}
+
 // Test that an empty no_proxy works as expected, i.e., proxy is used.
 TEST(NoProxyTest, EmptyList) {
   ScopedSetEnv no_proxy("");
