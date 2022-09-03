@@ -29,6 +29,7 @@
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "test/core/util/test_config.h"
 
 using grpc_event_engine::experimental::GetDefaultEventEngine;
 
@@ -77,7 +78,9 @@ FakeXdsTransportFactory::FakeStreamingCall::GetMessageFromClient(
     absl::Duration timeout) {
   MutexLock lock(&mu_);
   while (from_client_messages_.empty()) {
-    if (cv_.WaitWithTimeout(&mu_, timeout)) return absl::nullopt;
+    if (cv_.WaitWithTimeout(&mu_, timeout * grpc_test_slowdown_factor())) {
+      return absl::nullopt;
+    }
   }
   std::string payload = from_client_messages_.front();
   from_client_messages_.pop_front();

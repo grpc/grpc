@@ -136,6 +136,7 @@ grpc_cc_library(
         "//:orphanable",
         "//:ref_counted_ptr",
         "//:xds_client",
+        "//test/core/util:grpc_test_util",
     ],
 )
 
