@@ -187,6 +187,21 @@
       },
       {
         "mode": "NULLABLE",
+        "name": "core_cq_pluck_creates",
+        "type": "INTEGER"
+      },
+      {
+        "mode": "NULLABLE",
+        "name": "core_cq_next_creates",
+        "type": "INTEGER"
+      },
+      {
+        "mode": "NULLABLE",
+        "name": "core_cq_callback_creates",
+        "type": "INTEGER"
+      },
+      {
+        "mode": "NULLABLE",
         "name": "core_call_initial_size",
         "type": "STRING"
       },
@@ -460,6 +475,21 @@
       {
         "mode": "NULLABLE",
         "name": "core_http2_stream_stalls",
+        "type": "INTEGER"
+      },
+      {
+        "mode": "NULLABLE",
+        "name": "core_cq_pluck_creates",
+        "type": "INTEGER"
+      },
+      {
+        "mode": "NULLABLE",
+        "name": "core_cq_next_creates",
+        "type": "INTEGER"
+      },
+      {
+        "mode": "NULLABLE",
+        "name": "core_cq_callback_creates",
         "type": "INTEGER"
       },
       {
