@@ -708,19 +708,24 @@ void XdsClient::ChannelState::AdsCallState::AdsResponseParser::ParseResource(
   XdsResourceType::DecodeContext context = {
       xds_client(), ads_call_state_->chand()->server_, &grpc_xds_client_trace,
       xds_client()->symtab_.ptr(), arena};
-  absl::StatusOr<XdsResourceType::DecodeResult> result =
+  absl::StatusOr<XdsResourceType::DecodeResult> decode_result =
       result_.type->Decode(context, serialized_resource, is_v2);
-  if (!result.ok()) {
-    result_.errors.emplace_back(
-        absl::StrCat(error_prefix, result.status().ToString()));
-    return;
+  // If we didn't already have the resource name from the Resource
+  // wrapper, try to get it from the decoding result.
+  if (resource_name.empty()) {
+    if (decode_result.ok()) {
+      resource_name = decode_result->name;
+      error_prefix =
+          absl::StrCat("resource index ", idx, ": ", resource_name, ": ");
+    } else {
+      // We don't have any way of determining the resource name, so
+      // there's nothing more we can do here.
+      result_.errors.emplace_back(
+          absl::StrCat(error_prefix, decode_result.status().ToString()));
+      return;
+    }
   }
   // Check the resource name.
-  if (resource_name.empty()) {
-    resource_name = result->name;
-    error_prefix =
-        absl::StrCat("resource index ", idx, ": ", resource_name, ": ");
-  }
   auto parsed_resource_name =
       xds_client()->ParseXdsResourceName(resource_name, result_.type);
   if (!parsed_resource_name.ok()) {
@@ -776,16 +781,17 @@ void XdsClient::ChannelState::AdsCallState::AdsResponseParser::ParseResource(
     resource_state.ignored_deletion = false;
   }
   // Update resource state based on whether the resource is valid.
-  if (!result->resource.ok()) {
-    result_.errors.emplace_back(absl::StrCat(
-        error_prefix,
-        "validation error: ", result->resource.status().ToString()));
+  if (!decode_result.ok() || !decode_result->resource.ok()) {
+    const absl::Status& status = decode_result.ok()
+                                     ? decode_result->resource.status()
+                                     : decode_result.status();
+    result_.errors.emplace_back(
+        absl::StrCat(error_prefix, "validation error: ", status.ToString()));
     xds_client()->NotifyWatchersOnErrorLocked(
         resource_state.watchers,
-        absl::UnavailableError(absl::StrCat(
-            "invalid resource: ", result->resource.status().ToString())));
-    UpdateResourceMetadataNacked(result_.version,
-                                 result->resource.status().ToString(),
+        absl::UnavailableError(
+            absl::StrCat("invalid resource: ", status.ToString())));
+    UpdateResourceMetadataNacked(result_.version, status.ToString(),
                                  update_time_, &resource_state.meta);
     return;
   }
@@ -794,7 +800,7 @@ void XdsClient::ChannelState::AdsCallState::AdsResponseParser::ParseResource(
   // If it didn't change, ignore it.
   if (resource_state.resource != nullptr &&
       result_.type->ResourcesEqual(resource_state.resource.get(),
-                                   result->resource->get())) {
+                                   decode_result->resource->get())) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
       gpr_log(GPR_INFO,
               "[xds_client %p] %s resource %s identical to current, ignoring.",
@@ -804,7 +810,7 @@ void XdsClient::ChannelState::AdsCallState::AdsResponseParser::ParseResource(
     return;
   }
   // Update the resource state.
-  resource_state.resource = std::move(*result->resource);
+  resource_state.resource = std::move(*decode_result->resource);
   resource_state.meta = CreateResourceMetadataAcked(
       std::string(serialized_resource), result_.version, update_time_);
   // Notify watchers.
@@ -989,7 +995,7 @@ void XdsClient::ChannelState::AdsCallState::OnRecvMessage(
       // Update nonce.
       auto& state = state_map_[result.type];
       state.nonce = result.nonce;
-      // If we got an error, set state.error so that we'll NACK the update.
+      // If we got an error, set state.status so that we'll NACK the update.
       if (!result.errors.empty()) {
         state.status = absl::UnavailableError(
             absl::StrCat("xDS response validation errors: [",
