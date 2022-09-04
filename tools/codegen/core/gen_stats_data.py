@@ -74,6 +74,7 @@ for attr in attrs:
 def dbl2u64(d):
     return ctypes.c_ulonglong.from_buffer(ctypes.c_double(d)).value
 
+
 def u642dbl(d):
     return ctypes.c_double.from_buffer(ctypes.c_ulonglong(d)).value
 
@@ -144,7 +145,7 @@ def merge_cases(cases):
     l = len(cases)
     if l == 1:
         return cases[0][1]
-    left_len = l//2
+    left_len = l // 2
     left = cases[0:left_len]
     right = cases[left_len:]
     return 'if (value < %d) {\n%s\n} else {\n%s\n}' % (
@@ -175,7 +176,8 @@ def gen_bucket_code(shape):
     #print first_nontrivial, shift_data, bounds
     #if shift_data is not None: print [hex(x >> shift_data[0]) for x in code_bounds[first_nontrivial:]]
     if first_nontrivial is None:
-        return ('return grpc_core::Clamp(value, 0, %d);\n' % shape.max, bounds_idx)
+        return ('return grpc_core::Clamp(value, 0, %d);\n' % shape.max,
+                bounds_idx)
     cases = [(0, 'return 0;'), (first_nontrivial, 'return value;')]
     if done_trivial:
         first_nontrivial_code = dbl2u64(first_nontrivial)
@@ -189,15 +191,21 @@ def gen_bucket_code(shape):
                     break
             code_bounds = [dbl2u64(x) - first_nontrivial_code for x in bounds]
             shift_data = find_ideal_shift(code_bounds[code_bounds_index:],
-                                        65536)
-            if not shift_data: break
-            map_table = gen_map_table(code_bounds[code_bounds_index:], shift_data)
-            if not map_table: break
-            if map_table[-1] < 8: break
+                                          65536)
+            if not shift_data:
+                break
+            map_table = gen_map_table(code_bounds[code_bounds_index:],
+                                      shift_data)
+            if not map_table:
+                break
+            if map_table[-1] < 8:
+                break
             map_table_idx = decl_static_table(map_table,
-                                            type_for_uint_table(map_table))
-            last_code = ((len(map_table)-1) << shift_data[0]) + first_nontrivial_code
-            code += '// first_nontrivial_code=%d\n// last_code=%d [%f]\n' % (first_nontrivial_code, last_code, u642dbl(last_code))
+                                              type_for_uint_table(map_table))
+            last_code = (
+                (len(map_table) - 1) << shift_data[0]) + first_nontrivial_code
+            code += '// first_nontrivial_code=%d\n// last_code=%d [%f]\n' % (
+                first_nontrivial_code, last_code, u642dbl(last_code))
             code += 'DblUint val;\n'
             code += 'val.dbl = value;\n'
             code += 'const int bucket = '
@@ -205,12 +213,13 @@ def gen_bucket_code(shape):
                 map_table_idx, first_nontrivial_code, shift_data[0],
                 code_bounds_index)
             code += 'return bucket - (value < grpc_stats_table_%d[bucket]);' % bounds_idx
-            cases.append((int(u642dbl(last_code))+1, code))
+            cases.append((int(u642dbl(last_code)) + 1, code))
             first_nontrivial_code = last_code
     last = u642dbl(last_code) + 1
     for i, b in enumerate(bounds[:-2]):
-        if bounds[i+1] < last: continue
-        cases.append((bounds[i+1], 'return %d;' % i))
+        if bounds[i + 1] < last:
+            continue
+        cases.append((bounds[i + 1], 'return %d;' % i))
     cases.append((None, 'return %d;' % (len(bounds) - 2)))
     return (merge_cases(cases), bounds_idx)
 
@@ -227,8 +236,7 @@ def put_banner(files, banner):
 
 shapes = set()
 for histogram in inst_map['Histogram']:
-    shapes.add(Shape(max = histogram.max, buckets = histogram.buckets))
-
+    shapes.add(Shape(max=histogram.max, buckets=histogram.buckets))
 
 with open('src/core/lib/debug/stats_data.h', 'w') as H:
     # copy-paste copyright notice from this file
@@ -256,7 +264,8 @@ with open('src/core/lib/debug/stats_data.h', 'w') as H:
     print(file=H)
     print("#include <grpc/support/port_platform.h>", file=H)
     print(file=H)
-    print("// IWYU pragma: private, include \"src/core/lib/debug/stats.h\"", file=H)
+    print("// IWYU pragma: private, include \"src/core/lib/debug/stats.h\"",
+          file=H)
     print(file=H)
 
     for typename, instances in sorted(inst_map.items()):
@@ -299,11 +308,14 @@ with open('src/core/lib/debug/stats_data.h', 'w') as H:
     for histogram in inst_map['Histogram']:
         print(
             "#define GRPC_STATS_INC_%s(value) GRPC_STATS_INC_HISTOGRAM(GRPC_STATS_HISTOGRAM_%s, grpc_core::BucketForHistogramValue_%d_%d(static_cast<int>(value)))"
-            % (histogram.name.upper(), histogram.name.upper(), histogram.max, histogram.buckets),
+            % (histogram.name.upper(), histogram.name.upper(), histogram.max,
+               histogram.buckets),
             file=H)
-    print("namespace grpc_core {",file=H)
+    print("namespace grpc_core {", file=H)
     for shape in shapes:
-        print("int BucketForHistogramValue_%d_%d(int value);" % (shape.max, shape.buckets), file=H)
+        print("int BucketForHistogramValue_%d_%d(int value);" %
+              (shape.max, shape.buckets),
+              file=H)
     print("}", file=H)
 
     for i, tbl in enumerate(static_tables):
@@ -400,11 +412,14 @@ with open('src/core/lib/debug/stats_data.cc', 'w') as C:
           file=C)
     print("const int *const grpc_stats_histo_bucket_boundaries[%d] = {%s};" %
           (len(inst_map['Histogram']), ','.join(
-              'grpc_stats_table_%d' % histo_bucket_boundaries[Shape(h.max, h.buckets)] for h in inst_map['Histogram'])),
+              'grpc_stats_table_%d' %
+              histo_bucket_boundaries[Shape(h.max, h.buckets)]
+              for h in inst_map['Histogram'])),
           file=C)
     print("int (*const grpc_stats_get_bucket[%d])(int value) = {%s};" %
           (len(inst_map['Histogram']), ','.join(
-              'grpc_core::BucketForHistogramValue_%d_%d' % (histogram.max, histogram.buckets)
+              'grpc_core::BucketForHistogramValue_%d_%d' %
+              (histogram.max, histogram.buckets)
               for histogram in inst_map['Histogram'])),
           file=C)
 
