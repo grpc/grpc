@@ -1023,6 +1023,7 @@ grpc_cc_library(
         "examine_stack",
         "gpr_tls",
         "grpc_codegen",
+        "no_destruct",
         "useful",
     ],
 )
@@ -1251,7 +1252,7 @@ grpc_cc_library(
     public_hdrs = ["src/core/lib/gprpp/no_destruct.h"],
     deps = [
         "construct_destruct",
-        "gpr",
+        "gpr_platform",
     ],
 )
 
