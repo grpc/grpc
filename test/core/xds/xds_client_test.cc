@@ -181,12 +181,12 @@ class XdsClientTest : public ::testing::Test {
       if (!WaitForEventLocked(timeout)) return absl::nullopt;
       Event& event = queue_.front();
       if (!absl::holds_alternative<XdsFooResource>(event)) {
-        EXPECT_TRUE(false)
-            << "got unexpected event "
-            << (absl::holds_alternative<absl::Status>(event)
-                    ? "error"
-                    : "does-not-exist")
-            << " at " << location.file() << ":" << location.line();
+        EXPECT_TRUE(false) << "got unexpected event "
+                           << (absl::holds_alternative<absl::Status>(event)
+                                   ? "error"
+                                   : "does-not-exist")
+                           << " at " << location.file() << ":"
+                           << location.line();
         return absl::nullopt;
       }
       XdsFooResource foo = std::move(absl::get<XdsFooResource>(event));
@@ -201,12 +201,12 @@ class XdsClientTest : public ::testing::Test {
       if (!WaitForEventLocked(timeout)) return absl::nullopt;
       Event& event = queue_.front();
       if (!absl::holds_alternative<absl::Status>(event)) {
-        EXPECT_TRUE(false)
-            << "got unexpected event "
-            << (absl::holds_alternative<XdsFooResource>(event)
-                    ? "resource"
-                    : "does-not-exist")
-            << " at " << location.file() << ":" << location.line();
+        EXPECT_TRUE(false) << "got unexpected event "
+                           << (absl::holds_alternative<XdsFooResource>(event)
+                                   ? "resource"
+                                   : "does-not-exist")
+                           << " at " << location.file() << ":"
+                           << location.line();
         return absl::nullopt;
       }
       absl::Status error = std::move(absl::get<absl::Status>(event));
@@ -220,12 +220,12 @@ class XdsClientTest : public ::testing::Test {
       if (!WaitForEventLocked(timeout)) return false;
       Event& event = queue_.front();
       if (!absl::holds_alternative<DoesNotExist>(event)) {
-        EXPECT_TRUE(false)
-            << "got unexpected event "
-            << (absl::holds_alternative<XdsFooResource>(event)
-                    ? "resource"
-                    : "error")
-            << " at " << location.file() << ":" << location.line();
+        EXPECT_TRUE(false) << "got unexpected event "
+                           << (absl::holds_alternative<XdsFooResource>(event)
+                                   ? "resource"
+                                   : "error")
+                           << " at " << location.file() << ":"
+                           << location.line();
         return false;
       }
       queue_.pop_front();
