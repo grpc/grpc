@@ -40,8 +40,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/ext/xds/certificate_provider_factory.h"
-#include "src/core/ext/xds/certificate_provider_registry.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_channel_args.h"
 #include "src/core/ext/xds/xds_cluster_specifier_plugin.h"
@@ -61,6 +59,8 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/security/certificate_provider/certificate_provider_factory.h"
+#include "src/core/lib/security/certificate_provider/certificate_provider_registry.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/transport/error_utils.h"
