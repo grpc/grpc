@@ -122,6 +122,9 @@ static void do_basic_init(void) {
   grpc_register_built_in_plugins();
   gpr_time_init();
   grpc_core::PrintExperimentsList();
+  grpc_core::Fork::GlobalInit();
+  grpc_event_engine::experimental::RegisterForkHandlers();
+  grpc_fork_handlers_auto_register();
 }
 
 typedef struct grpc_plugin {
@@ -150,9 +153,6 @@ void grpc_init(void) {
       g_shutting_down = false;
       g_shutting_down_cv->SignalAll();
     }
-    grpc_core::Fork::GlobalInit();
-    grpc_event_engine::experimental::RegisterForkHandlers();
-    grpc_fork_handlers_auto_register();
     grpc_core::ApplicationCallbackExecCtx::GlobalInit();
     grpc_iomgr_init();
     for (int i = 0; i < g_number_of_plugins; i++) {
@@ -184,7 +184,6 @@ void grpc_shutdown_internal_locked(void)
     grpc_event_engine::experimental::ResetDefaultEventEngine();
     grpc_iomgr_shutdown();
     grpc_tracer_shutdown();
-    grpc_core::Fork::GlobalShutdown();
   }
   grpc_core::ApplicationCallbackExecCtx::GlobalShutdown();
   g_shutting_down = false;
