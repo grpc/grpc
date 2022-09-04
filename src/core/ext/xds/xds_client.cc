@@ -1564,8 +1564,7 @@ void XdsClient::WatchResource(const XdsResourceType* type,
       std::string details = resource_state.meta.failed_details;
       const auto* node = bootstrap_->node();
       if (node != nullptr) {
-        details =
-            absl::StrCat(details, " (node ID:", bootstrap_->node()->id, ")");
+        absl::StrAppend(&details, " (node ID:", bootstrap_->node()->id, ")");
       }
       work_serializer_.Schedule(
           [watcher, details = std::move(details)]()
@@ -1866,7 +1865,7 @@ void XdsClient::NotifyWatchersOnErrorLocked(
                                     " (node ID:", bootstrap_->node()->id, ")"));
   }
   work_serializer_.Schedule(
-      [watchers = std::move(watchers), status = std::move(status)]()
+      [watchers = watchers, status = std::move(status)]()
           ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) {
             for (const auto& p : watchers) {
               p.first->OnError(status);
@@ -1879,12 +1878,11 @@ void XdsClient::NotifyWatchersOnResourceDoesNotExist(
     const std::map<ResourceWatcherInterface*,
                    RefCountedPtr<ResourceWatcherInterface>>& watchers) {
   work_serializer_.Schedule(
-      [watchers = std::move(watchers)]()
-          ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) {
-            for (const auto& p : watchers) {
-              p.first->OnResourceDoesNotExist();
-            }
-          },
+      [watchers = watchers]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) {
+        for (const auto& p : watchers) {
+          p.first->OnResourceDoesNotExist();
+        }
+      },
       DEBUG_LOCATION);
 }
 

@@ -24,6 +24,8 @@
 #include <memory>
 #include <utility>
 
+#include "absl/strings/str_cat.h"
+
 #include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/grpc.h>

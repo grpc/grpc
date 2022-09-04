@@ -87,11 +87,10 @@ TEST_P(CdsTest, InvalidClusterStillExistsIfPreviouslyCached) {
   const auto response_state =
       WaitForCdsNack(DEBUG_LOCATION, RpcOptions(), StatusCode::OK);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_EQ(
-      response_state->error_message,
-      "xDS response validation errors: [resource index 0: cluster_name: "
-      "INVALID_ARGUMENT: errors parsing CDS resource: ["
-      "DiscoveryType is not valid.]]");
+  EXPECT_EQ(response_state->error_message,
+            "xDS response validation errors: [resource index 0: cluster_name: "
+            "INVALID_ARGUMENT: errors parsing CDS resource: ["
+            "DiscoveryType is not valid.]]");
   CheckRpcSendOk(DEBUG_LOCATION);
 }
 
