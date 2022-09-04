@@ -24,6 +24,7 @@
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/slice.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/gpr/time_precise.h"
@@ -90,18 +91,17 @@ class DynamicFilters : public RefCounted<DynamicFilters> {
   };
 
   static RefCountedPtr<DynamicFilters> Create(
-      const grpc_channel_args* args,
-      std::vector<const grpc_channel_filter*> filters);
+      const ChannelArgs& args, std::vector<const grpc_channel_filter*> filters);
 
-  explicit DynamicFilters(grpc_channel_stack* channel_stack)
-      : channel_stack_(channel_stack) {}
+  explicit DynamicFilters(RefCountedPtr<grpc_channel_stack> channel_stack)
+      : channel_stack_(std::move(channel_stack)) {}
 
   ~DynamicFilters() override;
 
   RefCountedPtr<Call> CreateCall(Call::Args args, grpc_error_handle* error);
 
  private:
-  grpc_channel_stack* channel_stack_;
+  RefCountedPtr<grpc_channel_stack> channel_stack_;
 };
 
 }  // namespace grpc_core
