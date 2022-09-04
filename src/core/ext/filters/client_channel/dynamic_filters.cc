@@ -163,10 +163,6 @@ RefCountedPtr<DynamicFilters> DynamicFilters::Create(
   return MakeRefCounted<DynamicFilters>(std::move(p.value()));
 }
 
-DynamicFilters::~DynamicFilters() {
-  GRPC_CHANNEL_STACK_UNREF(channel_stack_, "~DynamicFilters");
-}
-
 RefCountedPtr<DynamicFilters::Call> DynamicFilters::CreateCall(
     DynamicFilters::Call::Args args, grpc_error_handle* error) {
   size_t allocation_size = GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(Call)) +

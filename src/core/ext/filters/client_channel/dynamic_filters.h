@@ -96,8 +96,6 @@ class DynamicFilters : public RefCounted<DynamicFilters> {
   explicit DynamicFilters(RefCountedPtr<grpc_channel_stack> channel_stack)
       : channel_stack_(std::move(channel_stack)) {}
 
-  ~DynamicFilters() override;
-
   RefCountedPtr<Call> CreateCall(Call::Args args, grpc_error_handle* error);
 
  private:
