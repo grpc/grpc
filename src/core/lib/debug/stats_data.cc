@@ -142,84 +142,123 @@ const uint8_t grpc_stats_table_11[33] = {
     17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32};
 namespace grpc_core {
 int BucketForHistogramValue_16777216_64(int value) {
-  if (value <= 0) return 0;
-  if (value < 5) return value;
-  if (value < 131072) {
-    DblUint val;
-    val.dbl = value;
-    const int bucket =
-        grpc_stats_table_1[((val.uint - 4617315517961601024ull) >> 50)] + 5;
-    return bucket - (value < grpc_stats_table_0[bucket]);
-  }
   if (value < 3670016) {
-    DblUint val;
-    val.dbl = value;
-    const int bucket =
-        grpc_stats_table_2[((val.uint - 4683743612465315840ull) >> 50)] + 45;
-    return bucket - (value < grpc_stats_table_0[bucket]);
+    if (value < 5) {
+      if (value < 0) {
+        return 0;
+      } else {
+        return value;
+      }
+    } else {
+      if (value < 131072) {
+        DblUint val;
+        val.dbl = value;
+        const int bucket =
+            grpc_stats_table_1[((val.uint - 4617315517961601024ull) >> 50)] + 5;
+        return bucket - (value < grpc_stats_table_0[bucket]);
+      } else {
+        DblUint val;
+        val.dbl = value;
+        const int bucket =
+            grpc_stats_table_2[((val.uint - 4683743612465315840ull) >> 50)] +
+            45;
+        return bucket - (value < grpc_stats_table_0[bucket]);
+      }
+    }
+  } else {
+    if (value < 13114801) {
+      if (value < 10485760) {
+        DblUint val;
+        val.dbl = value;
+        const int bucket =
+            grpc_stats_table_3[((val.uint - 4705135710695325696ull) >> 50)] +
+            58;
+        return bucket - (value < grpc_stats_table_0[bucket]);
+      } else {
+        return 63;
+      }
+    } else {
+      return 64;
+    }
   }
-  if (value < 10485760) {
-    DblUint val;
-    val.dbl = value;
-    const int bucket =
-        grpc_stats_table_3[((val.uint - 4705135710695325696ull) >> 50)] + 58;
-    return bucket - (value < grpc_stats_table_0[bucket]);
-  }
-  if (value < 13114801) return 63;
-  return 64;
 }
 int BucketForHistogramValue_1024_64(int value) {
-  if (value <= 0) return 0;
-  if (value < 13) return value;
-  if (value < 116) {
-    DblUint val;
-    val.dbl = value;
-    const int bucket =
-        grpc_stats_table_5[((val.uint - 4623507967449235456ull) >> 48)] + 13;
-    return bucket - (value < grpc_stats_table_4[bucket]);
-  }
   if (value < 400) {
-    DblUint val;
-    val.dbl = value;
-    const int bucket =
-        grpc_stats_table_6[((val.uint - 4637863191261478912ull) >> 48)] + 36;
-    return bucket - (value < grpc_stats_table_4[bucket]);
+    if (value < 13) {
+      if (value < 0) {
+        return 0;
+      } else {
+        return value;
+      }
+    } else {
+      if (value < 116) {
+        DblUint val;
+        val.dbl = value;
+        const int bucket =
+            grpc_stats_table_5[((val.uint - 4623507967449235456ull) >> 48)] +
+            13;
+        return bucket - (value < grpc_stats_table_4[bucket]);
+      } else {
+        DblUint val;
+        val.dbl = value;
+        const int bucket =
+            grpc_stats_table_6[((val.uint - 4637863191261478912ull) >> 48)] +
+            36;
+        return bucket - (value < grpc_stats_table_4[bucket]);
+      }
+    }
+  } else {
+    if (value < 928) {
+      if (value < 672) {
+        DblUint val;
+        val.dbl = value;
+        const int bucket =
+            grpc_stats_table_7[((val.uint - 4645744490609377280ull) >> 48)] +
+            52;
+        return bucket - (value < grpc_stats_table_4[bucket]);
+      } else {
+        DblUint val;
+        val.dbl = value;
+        const int bucket =
+            grpc_stats_table_8[((val.uint - 4649122190329905152ull) >> 49)] +
+            59;
+        return bucket - (value < grpc_stats_table_4[bucket]);
+      }
+    } else {
+      if (value < 952) {
+        return 63;
+      } else {
+        return 64;
+      }
+    }
   }
-  if (value < 672) {
-    DblUint val;
-    val.dbl = value;
-    const int bucket =
-        grpc_stats_table_7[((val.uint - 4645744490609377280ull) >> 48)] + 52;
-    return bucket - (value < grpc_stats_table_4[bucket]);
-  }
-  if (value < 928) {
-    DblUint val;
-    val.dbl = value;
-    const int bucket =
-        grpc_stats_table_8[((val.uint - 4649122190329905152ull) >> 49)] + 59;
-    return bucket - (value < grpc_stats_table_4[bucket]);
-  }
-  if (value < 952) return 63;
-  return 64;
 }
 int BucketForHistogramValue_262144_64(int value) {
-  if (value <= 0) return 0;
-  if (value < 6) return value;
   if (value < 896) {
-    DblUint val;
-    val.dbl = value;
-    const int bucket =
-        grpc_stats_table_10[((val.uint - 4618441417868443648ull) >> 49)] + 6;
-    return bucket - (value < grpc_stats_table_9[bucket]);
+    if (value < 6) {
+      if (value < 0) {
+        return 0;
+      } else {
+        return value;
+      }
+    } else {
+      DblUint val;
+      val.dbl = value;
+      const int bucket =
+          grpc_stats_table_10[((val.uint - 4618441417868443648ull) >> 49)] + 6;
+      return bucket - (value < grpc_stats_table_9[bucket]);
+    }
+  } else {
+    if (value < 229376) {
+      DblUint val;
+      val.dbl = value;
+      const int bucket =
+          grpc_stats_table_11[((val.uint - 4651092515166879744ull) >> 50)] + 32;
+      return bucket - (value < grpc_stats_table_9[bucket]);
+    } else {
+      return 64;
+    }
   }
-  if (value < 229376) {
-    DblUint val;
-    val.dbl = value;
-    const int bucket =
-        grpc_stats_table_11[((val.uint - 4651092515166879744ull) >> 50)] + 32;
-    return bucket - (value < grpc_stats_table_9[bucket]);
-  }
-  return 64;
 }
 }  // namespace grpc_core
 const int grpc_stats_histo_buckets[7] = {64, 64, 64, 64, 64, 64, 64};

@@ -143,6 +143,18 @@ def type_for_uint_table(table):
         return 'uint64_t'
 
 
+def merge_cases(cases):
+    l = len(cases)
+    if l == 1:
+        return cases[0][1]
+    right_len = l//2
+    left_len = l - right_len
+    left = cases[0:left_len]
+    right = cases[left_len:]
+    return 'if (value < %d) {\n%s\n} else {\n%s\n}' % (
+        left[-1][0], merge_cases(left), merge_cases(right))
+
+
 def gen_bucket_code(shape):
     bounds = [0, 1]
     done_trivial = False
@@ -166,45 +178,42 @@ def gen_bucket_code(shape):
     bounds_idx = decl_static_table(bounds, 'int')
     #print first_nontrivial, shift_data, bounds
     #if shift_data is not None: print [hex(x >> shift_data[0]) for x in code_bounds[first_nontrivial:]]
-    code = ''
-    code += 'if (value <= 0) return 0;\n'
     if first_nontrivial is None:
-        code += 'return std::min(value, %d));\n' % (shape.max)
-    else:
-        code += 'if (value < %d) return value;\n' % first_nontrivial
-        if done_trivial:
-            first_nontrivial_code = dbl2u64(first_nontrivial)
-            while True:
-                first_nontrivial = u642dbl(first_nontrivial_code)
-                code_bounds_index = None
-                for i, b in enumerate(bounds):
-                    if b > first_nontrivial:
-                        code_bounds_index = i
-                        break
-                code_bounds = [dbl2u64(x) - first_nontrivial_code for x in bounds]
-                shift_data = find_ideal_shift(code_bounds[code_bounds_index:],
-                                            65536)
-                if not shift_data: break
-                map_table = gen_map_table(code_bounds[code_bounds_index:], shift_data)
-                if len(map_table) < 4: break
-                map_table_idx = decl_static_table(map_table,
-                                                type_for_uint_table(map_table))
-                last_code = (map_table[-1] << shift_data[0]) + first_nontrivial_code
-                code += 'if (value < %d) {\n' % u642dbl(last_code)
-                code += 'DblUint val;\n'
-                code += 'val.dbl = value;\n'
-                code += 'const int bucket = '
-                code += 'grpc_stats_table_%d[((val.uint - %dull) >> %d)] + %d;\n' % (
-                    map_table_idx, first_nontrivial_code, shift_data[0],
-                    code_bounds_index)
-                code += 'return bucket - (value < grpc_stats_table_%d[bucket]);\n' % bounds_idx
-                code += '}\n'
-                first_nontrivial_code = last_code
-        for i, b in enumerate(bounds[:-1]):
-            if first_nontrivial > b: continue
-            code += 'if (value < %d) return %d;\n' % (b, i)
-        code += 'return %d;\n' % (len(bounds)-1)
-    return (code, bounds_idx)
+        return ('return grpc_core::Clamp(value, 0, %d);\n' % shape.max, bounds_idx)
+    cases = [(0, 'return 0;'), (first_nontrivial, 'return value;')]
+    if done_trivial:
+        first_nontrivial_code = dbl2u64(first_nontrivial)
+        while True:
+            code = ''
+            first_nontrivial = u642dbl(first_nontrivial_code)
+            code_bounds_index = None
+            for i, b in enumerate(bounds):
+                if b > first_nontrivial:
+                    code_bounds_index = i
+                    break
+            code_bounds = [dbl2u64(x) - first_nontrivial_code for x in bounds]
+            shift_data = find_ideal_shift(code_bounds[code_bounds_index:],
+                                        65536)
+            if not shift_data: break
+            map_table = gen_map_table(code_bounds[code_bounds_index:], shift_data)
+            if len(map_table) < 4: break
+            map_table_idx = decl_static_table(map_table,
+                                            type_for_uint_table(map_table))
+            last_code = (map_table[-1] << shift_data[0]) + first_nontrivial_code
+            code += 'DblUint val;\n'
+            code += 'val.dbl = value;\n'
+            code += 'const int bucket = '
+            code += 'grpc_stats_table_%d[((val.uint - %dull) >> %d)] + %d;\n' % (
+                map_table_idx, first_nontrivial_code, shift_data[0],
+                code_bounds_index)
+            code += 'return bucket - (value < grpc_stats_table_%d[bucket]);' % bounds_idx
+            cases.append((int(u642dbl(last_code)), code))
+            first_nontrivial_code = last_code
+    for i, b in enumerate(bounds[:-1]):
+        if first_nontrivial > b: continue
+        cases.append((b, 'return %d;' % i))
+    cases.append((None, 'return %d;' % (len(bounds) - 1)))
+    return (merge_cases(cases), bounds_idx)
 
 
 # utility: print a big comment block into a set of files
