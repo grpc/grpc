@@ -24,9 +24,8 @@
 #include <string>
 #include <utility>
 
-#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -34,6 +33,7 @@
 #include "src/core/lib/channel/channel_stack_builder_impl.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/alloc.h"
+#include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/surface/lame_client.h"
 
 // Conversion between call and call stack.
