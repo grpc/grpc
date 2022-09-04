@@ -142,7 +142,7 @@ const uint8_t grpc_stats_table_11[33] = {
     17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32};
 namespace grpc_core {
 int BucketForHistogramValue_16777216_64(int value) {
-  if (value < 3670016) {
+  if (value < 131072) {
     if (value < 5) {
       if (value < 0) {
         return 0;
@@ -150,35 +150,31 @@ int BucketForHistogramValue_16777216_64(int value) {
         return value;
       }
     } else {
-      if (value < 131072) {
-        DblUint val;
-        val.dbl = value;
-        const int bucket =
-            grpc_stats_table_1[((val.uint - 4617315517961601024ull) >> 50)] + 5;
-        return bucket - (value < grpc_stats_table_0[bucket]);
-      } else {
+      DblUint val;
+      val.dbl = value;
+      const int bucket =
+          grpc_stats_table_1[((val.uint - 4617315517961601024ull) >> 50)] + 5;
+      return bucket - (value < grpc_stats_table_0[bucket]);
+    }
+  } else {
+    if (value < 10485760) {
+      if (value < 3670016) {
         DblUint val;
         val.dbl = value;
         const int bucket =
             grpc_stats_table_2[((val.uint - 4683743612465315840ull) >> 50)] +
             45;
         return bucket - (value < grpc_stats_table_0[bucket]);
-      }
-    }
-  } else {
-    if (value < 13114801) {
-      if (value < 10485760) {
+      } else {
         DblUint val;
         val.dbl = value;
         const int bucket =
             grpc_stats_table_3[((val.uint - 4705135710695325696ull) >> 50)] +
             58;
         return bucket - (value < grpc_stats_table_0[bucket]);
-      } else {
-        return 63;
       }
     } else {
-      return 64;
+      return 63;
     }
   }
 }
@@ -225,11 +221,7 @@ int BucketForHistogramValue_1024_64(int value) {
         return bucket - (value < grpc_stats_table_4[bucket]);
       }
     } else {
-      if (value < 952) {
-        return 63;
-      } else {
-        return 64;
-      }
+      return 63;
     }
   }
 }
@@ -256,7 +248,7 @@ int BucketForHistogramValue_262144_64(int value) {
           grpc_stats_table_11[((val.uint - 4651092515166879744ull) >> 50)] + 32;
       return bucket - (value < grpc_stats_table_9[bucket]);
     } else {
-      return 64;
+      return 63;
     }
   }
 }
