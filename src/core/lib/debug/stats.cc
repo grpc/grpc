@@ -16,22 +16,19 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/debug/stats.h"
 
+#include <grpc/support/port_platform.h>
 #include <inttypes.h>
 #include <string.h>
-
+#include <grpc/support/alloc.h>
+#include <grpc/support/cpu.h>
 #include <algorithm>
 #include <vector>
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/cpu.h>
 
 namespace grpc_core {
 Stats* const g_stats_data = [] {
@@ -67,21 +64,12 @@ void grpc_stats_diff(const grpc_stats_data* b, const grpc_stats_data* a,
   }
 }
 
-int grpc_stats_histo_find_bucket_slow(int value, const int* table,
-                                      int table_size) {
-  GRPC_STATS_INC_HISTOGRAM_SLOW_LOOKUPS();
-  const int* const start = table;
-  while (table_size > 0) {
-    int step = table_size / 2;
-    const int* it = table + step;
-    if (value >= *it) {
-      table = it + 1;
-      table_size -= step + 1;
-    } else {
-      table_size = step;
-    }
-  }
-  return static_cast<int>(table - start) - 1;
+void grpc_stats_inc_histogram_value(int histogram, int value) {
+  const int bucket = grpc_stats_get_bucket[histogram](value);
+  gpr_atm_no_barrier_fetch_add(
+      &GRPC_THREAD_STATS_DATA()
+           ->histograms[grpc_stats_histo_start[histogram] + bucket],
+      1);
 }
 
 size_t grpc_stats_histo_count(const grpc_stats_data* stats,

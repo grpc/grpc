@@ -99,16 +99,14 @@ def find_ideal_shift(mapped_bounds, max_size):
             best = (shift_bits, n, table_size)
         elif best[1] < n:
             best = (shift_bits, n, table_size)
-    print(best)
     return best
 
 
 def gen_map_table(mapped_bounds, shift_data):
+    #print("gen_map_table(%s, %s)" % (mapped_bounds, shift_data))
     tbl = []
     cur = 0
-    print(mapped_bounds)
     mapped_bounds = [x >> shift_data[0] for x in mapped_bounds]
-    print(mapped_bounds)
     for i in range(0, mapped_bounds[shift_data[1] - 1]):
         while i > mapped_bounds[cur]:
             cur += 1
@@ -125,7 +123,6 @@ def decl_static_table(values, type):
     for i, vp in enumerate(static_tables):
         if v == vp:
             return i
-    print("ADD TABLE: %s %r" % (type, values))
     r = len(static_tables)
     static_tables.append(v)
     return r
@@ -147,8 +144,7 @@ def merge_cases(cases):
     l = len(cases)
     if l == 1:
         return cases[0][1]
-    right_len = l//2
-    left_len = l - right_len
+    left_len = l//2
     left = cases[0:left_len]
     right = cases[left_len:]
     return 'if (value < %d) {\n%s\n} else {\n%s\n}' % (
@@ -196,10 +192,12 @@ def gen_bucket_code(shape):
                                         65536)
             if not shift_data: break
             map_table = gen_map_table(code_bounds[code_bounds_index:], shift_data)
-            if len(map_table) < 4: break
+            if not map_table: break
+            if map_table[-1] < 8: break
             map_table_idx = decl_static_table(map_table,
                                             type_for_uint_table(map_table))
-            last_code = (map_table[-1] << shift_data[0]) + first_nontrivial_code
+            last_code = ((len(map_table)-1) << shift_data[0]) + first_nontrivial_code
+            code += '// first_nontrivial_code=%d\n// last_code=%d [%f]\n' % (first_nontrivial_code, last_code, u642dbl(last_code))
             code += 'DblUint val;\n'
             code += 'val.dbl = value;\n'
             code += 'const int bucket = '
@@ -207,11 +205,12 @@ def gen_bucket_code(shape):
                 map_table_idx, first_nontrivial_code, shift_data[0],
                 code_bounds_index)
             code += 'return bucket - (value < grpc_stats_table_%d[bucket]);' % bounds_idx
-            cases.append((int(u642dbl(last_code)), code))
+            cases.append((int(u642dbl(last_code))+1, code))
             first_nontrivial_code = last_code
+    last = u642dbl(last_code) + 1
     for i, b in enumerate(bounds[:-2]):
-        if first_nontrivial > b: continue
-        cases.append((b, 'return %d;' % i))
+        if bounds[i+1] < last: continue
+        cases.append((bounds[i+1], 'return %d;' % i))
     cases.append((None, 'return %d;' % (len(bounds) - 2)))
     return (merge_cases(cases), bounds_idx)
 
@@ -358,10 +357,10 @@ with open('src/core/lib/debug/stats_data.cc', 'w') as C:
     print(file=C)
 
     histo_code = []
-    histo_bucket_boundaries = []
+    histo_bucket_boundaries = {}
     for shape in shapes:
         code, bounds_idx = gen_bucket_code(shape)
-        histo_bucket_boundaries.append(bounds_idx)
+        histo_bucket_boundaries[shape] = bounds_idx
         histo_code.append(code)
 
     print("namespace { union DblUint { double dbl; uint64_t uint; }; }", file=C)
@@ -401,7 +400,7 @@ with open('src/core/lib/debug/stats_data.cc', 'w') as C:
           file=C)
     print("const int *const grpc_stats_histo_bucket_boundaries[%d] = {%s};" %
           (len(inst_map['Histogram']), ','.join(
-              'grpc_stats_table_%d' % x for x in histo_bucket_boundaries)),
+              'grpc_stats_table_%d' % histo_bucket_boundaries[Shape(h.max, h.buckets)] for h in inst_map['Histogram'])),
           file=C)
     print("int (*const grpc_stats_get_bucket[%d])(int value) = {%s};" %
           (len(inst_map['Histogram']), ','.join(

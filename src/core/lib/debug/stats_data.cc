@@ -97,31 +97,20 @@ const uint8_t grpc_stats_table_1[87] = {
     24, 25, 25, 26, 27, 27, 28, 29, 29, 30, 31, 31, 32, 33, 34, 34, 35, 36,
     36, 37, 38, 39, 39, 40, 41, 41, 42, 43, 44, 44, 45, 45, 46, 47, 48, 48,
     49, 50, 51, 51, 52, 53, 53, 54, 55, 56, 56, 57, 58, 58, 59};
-const uint8_t grpc_stats_table_2[28] = {0,  1,  1,  2,  3,  4,  4,  5,  5,  6,
-                                        7,  8,  8,  9,  10, 11, 11, 12, 13, 13,
-                                        14, 15, 16, 16, 17, 18, 18, 19};
-const uint8_t grpc_stats_table_3[9] = {0, 1, 2, 3, 3, 4, 5, 5, 6};
-const int grpc_stats_table_4[65] = {
+const int grpc_stats_table_2[65] = {
     0,   1,   2,   3,   4,   5,   6,   7,   8,   9,   10,  11,  12,
     14,  16,  18,  20,  22,  24,  27,  30,  33,  36,  39,  43,  47,
     51,  56,  61,  66,  72,  78,  85,  92,  100, 109, 118, 128, 139,
     151, 164, 178, 193, 209, 226, 244, 264, 285, 308, 333, 359, 387,
     418, 451, 486, 524, 565, 609, 656, 707, 762, 821, 884, 952, 1024};
-const uint8_t grpc_stats_table_5[102] = {
+const uint8_t grpc_stats_table_3[102] = {
     0,  0,  0,  1,  1,  1,  1,  2,  2,  3,  3,  4,  4,  5,  5,  6,  6,
     6,  7,  7,  7,  8,  8,  9,  9,  10, 11, 11, 12, 12, 13, 13, 14, 14,
     14, 15, 15, 16, 16, 17, 17, 18, 19, 19, 20, 20, 21, 21, 22, 22, 23,
     23, 24, 24, 24, 25, 26, 27, 27, 28, 28, 29, 29, 30, 30, 31, 31, 32,
     32, 33, 33, 34, 35, 35, 36, 37, 37, 38, 38, 39, 39, 40, 40, 41, 41,
     42, 42, 43, 44, 44, 45, 46, 46, 47, 48, 48, 49, 49, 50, 50, 51, 51};
-const uint8_t grpc_stats_table_6[51] = {
-    0,  1,  1,  1,  2,  3,  4,  4,  5,  5,  6,  6,  7,  7,  8,  8,  9,
-    9,  10, 10, 11, 12, 12, 13, 14, 14, 15, 15, 16, 16, 17, 17, 18, 18,
-    19, 19, 20, 21, 21, 22, 23, 23, 24, 25, 25, 26, 26, 27, 27, 28, 28};
-const uint8_t grpc_stats_table_7[23] = {0, 0, 1, 1, 2, 2,  3,  3,  4,  5,  5, 6,
-                                        7, 7, 8, 9, 9, 10, 10, 11, 11, 12, 12};
-const uint8_t grpc_stats_table_8[5] = {0, 1, 2, 3, 4};
-const int grpc_stats_table_9[65] = {
+const int grpc_stats_table_4[65] = {
     0,      1,      2,      3,      4,     5,     7,     9,     11,    14,
     17,     21,     26,     32,     39,    47,    57,    68,    82,    98,
     117,    140,    167,    199,    238,   284,   339,   404,   482,   575,
@@ -129,7 +118,7 @@ const int grpc_stats_table_9[65] = {
     3945,   4699,   5597,   6667,   7941,  9459,  11267, 13420, 15984, 19038,
     22676,  27009,  32169,  38315,  45635, 54353, 64737, 77104, 91834, 109378,
     130273, 155159, 184799, 220100, 262144};
-const uint8_t grpc_stats_table_10[124] = {
+const uint8_t grpc_stats_table_5[124] = {
     0,  0,  0,  1,  1,  1,  2,  2,  3,  3,  3,  4,  4,  5,  5,  6,  6,  6,
     7,  7,  7,  8,  9,  9,  10, 10, 10, 11, 11, 12, 12, 13, 13, 14, 14, 15,
     15, 16, 16, 17, 17, 18, 18, 19, 19, 20, 20, 21, 21, 22, 22, 22, 23, 24,
@@ -137,116 +126,65 @@ const uint8_t grpc_stats_table_10[124] = {
     33, 34, 34, 34, 35, 35, 36, 37, 37, 37, 38, 38, 39, 39, 40, 40, 41, 41,
     42, 42, 43, 43, 44, 44, 45, 45, 46, 46, 47, 47, 48, 48, 49, 49, 50, 50,
     51, 51, 52, 52, 53, 53, 54, 54, 55, 55, 56, 56, 57, 57, 58, 58};
-const uint8_t grpc_stats_table_11[33] = {
-    0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12, 13, 14, 15, 16,
-    17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32};
 namespace grpc_core {
 int BucketForHistogramValue_16777216_64(int value) {
-  if (value < 131072) {
-    if (value < 5) {
-      if (value < 0) {
-        return 0;
-      } else {
-        return value;
-      }
+  if (value < 5) {
+    if (value < 0) {
+      return 0;
     } else {
+      return value;
+    }
+  } else {
+    if (value < 14680065) {
+      // first_nontrivial_code=4617315517961601024
+      // last_code=4714142909950066688 [14680064.000000]
       DblUint val;
       val.dbl = value;
       const int bucket =
           grpc_stats_table_1[((val.uint - 4617315517961601024ull) >> 50)] + 5;
       return bucket - (value < grpc_stats_table_0[bucket]);
-    }
-  } else {
-    if (value < 10485760) {
-      if (value < 3670016) {
-        DblUint val;
-        val.dbl = value;
-        const int bucket =
-            grpc_stats_table_2[((val.uint - 4683743612465315840ull) >> 50)] +
-            45;
-        return bucket - (value < grpc_stats_table_0[bucket]);
-      } else {
-        DblUint val;
-        val.dbl = value;
-        const int bucket =
-            grpc_stats_table_3[((val.uint - 4705135710695325696ull) >> 50)] +
-            58;
-        return bucket - (value < grpc_stats_table_0[bucket]);
-      }
     } else {
       return 63;
     }
   }
 }
 int BucketForHistogramValue_1024_64(int value) {
-  if (value < 400) {
-    if (value < 13) {
-      if (value < 0) {
-        return 0;
-      } else {
-        return value;
-      }
+  if (value < 13) {
+    if (value < 0) {
+      return 0;
     } else {
-      if (value < 116) {
-        DblUint val;
-        val.dbl = value;
-        const int bucket =
-            grpc_stats_table_5[((val.uint - 4623507967449235456ull) >> 48)] +
-            13;
-        return bucket - (value < grpc_stats_table_4[bucket]);
-      } else {
-        DblUint val;
-        val.dbl = value;
-        const int bucket =
-            grpc_stats_table_6[((val.uint - 4637863191261478912ull) >> 48)] +
-            36;
-        return bucket - (value < grpc_stats_table_4[bucket]);
-      }
+      return value;
     }
   } else {
-    if (value < 928) {
-      if (value < 672) {
-        DblUint val;
-        val.dbl = value;
-        const int bucket =
-            grpc_stats_table_7[((val.uint - 4645744490609377280ull) >> 48)] +
-            52;
-        return bucket - (value < grpc_stats_table_4[bucket]);
-      } else {
-        DblUint val;
-        val.dbl = value;
-        const int bucket =
-            grpc_stats_table_8[((val.uint - 4649122190329905152ull) >> 49)] +
-            59;
-        return bucket - (value < grpc_stats_table_4[bucket]);
-      }
+    if (value < 993) {
+      // first_nontrivial_code=4623507967449235456
+      // last_code=4651936940097011712 [992.000000]
+      DblUint val;
+      val.dbl = value;
+      const int bucket =
+          grpc_stats_table_3[((val.uint - 4623507967449235456ull) >> 48)] + 13;
+      return bucket - (value < grpc_stats_table_2[bucket]);
     } else {
       return 63;
     }
   }
 }
 int BucketForHistogramValue_262144_64(int value) {
-  if (value < 896) {
-    if (value < 6) {
-      if (value < 0) {
-        return 0;
-      } else {
-        return value;
-      }
+  if (value < 6) {
+    if (value < 0) {
+      return 0;
     } else {
-      DblUint val;
-      val.dbl = value;
-      const int bucket =
-          grpc_stats_table_10[((val.uint - 4618441417868443648ull) >> 49)] + 6;
-      return bucket - (value < grpc_stats_table_9[bucket]);
+      return value;
     }
   } else {
-    if (value < 229376) {
+    if (value < 245761) {
+      // first_nontrivial_code=4618441417868443648
+      // last_code=4687684262139265024 [245760.000000]
       DblUint val;
       val.dbl = value;
       const int bucket =
-          grpc_stats_table_11[((val.uint - 4651092515166879744ull) >> 50)] + 32;
-      return bucket - (value < grpc_stats_table_9[bucket]);
+          grpc_stats_table_5[((val.uint - 4618441417868443648ull) >> 49)] + 6;
+      return bucket - (value < grpc_stats_table_4[bucket]);
     } else {
       return 63;
     }
@@ -256,7 +194,9 @@ int BucketForHistogramValue_262144_64(int value) {
 const int grpc_stats_histo_buckets[7] = {64, 64, 64, 64, 64, 64, 64};
 const int grpc_stats_histo_start[7] = {0, 64, 128, 192, 256, 320, 384};
 const int* const grpc_stats_histo_bucket_boundaries[7] = {
-    grpc_stats_table_0, grpc_stats_table_4, grpc_stats_table_9};
+    grpc_stats_table_4, grpc_stats_table_0, grpc_stats_table_2,
+    grpc_stats_table_0, grpc_stats_table_0, grpc_stats_table_2,
+    grpc_stats_table_0};
 int (*const grpc_stats_get_bucket[7])(int value) = {
     grpc_core::BucketForHistogramValue_262144_64,
     grpc_core::BucketForHistogramValue_16777216_64,
