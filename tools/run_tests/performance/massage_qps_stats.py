@@ -65,6 +65,13 @@ def massage_qps_stats(scenario_result):
             stats[
                 "core_http2_stream_stalls"] = massage_qps_stats_helpers.counter(
                     core_stats, "http2_stream_stalls")
+            stats["core_cq_pluck_creates"] = massage_qps_stats_helpers.counter(
+                core_stats, "cq_pluck_creates")
+            stats["core_cq_next_creates"] = massage_qps_stats_helpers.counter(
+                core_stats, "cq_next_creates")
+            stats[
+                "core_cq_callback_creates"] = massage_qps_stats_helpers.counter(
+                    core_stats, "cq_callback_creates")
             h = massage_qps_stats_helpers.histogram(core_stats,
                                                     "call_initial_size")
             stats["core_call_initial_size"] = ",".join(

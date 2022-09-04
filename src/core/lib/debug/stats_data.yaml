@@ -78,3 +78,10 @@
   doc: Number of times sending was completely stalled by the transport flow control window
 - counter: http2_stream_stalls
   doc: Number of times sending was completely stalled by the stream flow control window
+# completion queues
+- counter: cq_pluck_creates
+  doc: Number of completion queues created for cq_pluck (indicates sync api usage)
+- counter: cq_next_creates
+  doc: Number of completion queues created for cq_next (indicates cq async api usage)
+- counter: cq_callback_creates
+  doc: Number of completion queues created for cq_callback (indicates callback api usage)
