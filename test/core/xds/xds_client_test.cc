@@ -903,8 +903,8 @@ TEST_F(XdsClientTest, ResourceValidationFailure) {
       /*version_info=*/"", /*response_nonce=*/"A",
       /*error_detail=*/
       absl::InvalidArgumentError(
-          "xDS response validation errors: [resource index 0: foo1: "
-          "validation error: INVALID_ARGUMENT: errors validating JSON: "
+          "xDS response validation errors: ["
+          "resource index 0: foo1: INVALID_ARGUMENT: errors validating JSON: "
           "[field:value error:is not a number]]"),
       /*resource_names=*/{"foo1"});
   // Start a second watch for the same resource.  It should immediately
@@ -1052,14 +1052,14 @@ TEST_F(XdsClientTest, ResourceValidationFailureMultipleResources) {
                absl::InvalidArgumentError(
                    "xDS response validation errors: ["
                    // foo1
-                   "resource index 0: foo1: validation error: "
+                   "resource index 0: foo1: "
                    "INVALID_ARGUMENT: errors validating JSON: "
                    "[field:value error:is not a number]; "
                    // foo2 (name not known)
                    "resource index 1: INVALID_ARGUMENT: JSON parsing failed: "
                    "[JSON parse error at index 15]; "
                    // foo3
-                   "resource index 2: foo3: validation error: "
+                   "resource index 2: foo3: "
                    "INVALID_ARGUMENT: JSON parsing failed: "
                    "[JSON parse error at index 15]]"),
                /*resource_names=*/{"foo1", "foo2", "foo3", "foo4"});
@@ -1140,8 +1140,8 @@ TEST_F(XdsClientTest, ResourceValidationFailureForCachedResource) {
       /*version_info=*/"1", /*response_nonce=*/"B",
       /*error_detail=*/
       absl::InvalidArgumentError(
-          "xDS response validation errors: [resource index 0: foo1: "
-          "validation error: INVALID_ARGUMENT: errors validating JSON: "
+          "xDS response validation errors: ["
+          "resource index 0: foo1: INVALID_ARGUMENT: errors validating JSON: "
           "[field:value error:is not a number]]"),
       /*resource_names=*/{"foo1"});
   // Start a second watcher for the same resource.  Even though the last

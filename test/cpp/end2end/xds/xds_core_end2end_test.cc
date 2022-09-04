@@ -189,11 +189,11 @@ TEST_P(XdsClientTest, MultipleBadCdsResources) {
           "INVALID_ARGUMENT: Can't parse Cluster resource.; "
           "resource index 3: ",
           kClusterName2,
-          ": validation error: INVALID_ARGUMENT: errors parsing CDS resource: "
+          ": INVALID_ARGUMENT: errors parsing CDS resource: "
           "[DiscoveryType is not valid.]; "
           "resource index 4: ",
           kClusterName3,
-          ": validation error: INVALID_ARGUMENT: errors parsing CDS resource: "
+          ": INVALID_ARGUMENT: errors parsing CDS resource: "
           "[DiscoveryType is not valid.]]"));
   // RPCs for default cluster should succeed.
   std::vector<std::pair<std::string, std::string>> metadata_default_cluster = {
@@ -312,11 +312,11 @@ TEST_P(GlobalXdsClientTest, MultipleBadLdsResources) {
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::ContainsRegex(absl::StrCat(
-                  kServerName,
-                  ": validation error.*"
-                  "Listener has neither address nor ApiListener.*")));
+  EXPECT_EQ(
+      response_state->error_message,
+      "xDS response validation errors: ["
+      "resource index 0: server.example.com: "
+      "INVALID_ARGUMENT: Listener has neither address nor ApiListener]");
   // Need to create a second channel to subscribe to a second LDS resource.
   auto channel2 = CreateChannel(0, kServerName2);
   auto stub2 = grpc::testing::EchoTestService::NewStub(channel2);
@@ -330,16 +330,13 @@ TEST_P(GlobalXdsClientTest, MultipleBadLdsResources) {
     // Wait for second NACK to be reported to xDS server.
     const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
     ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-    EXPECT_THAT(response_state->error_message,
-                ::testing::ContainsRegex(absl::StrCat(
-                    kServerName,
-                    ": validation error.*"
-                    "Listener has neither address nor ApiListener.*")));
-    EXPECT_THAT(response_state->error_message,
-                ::testing::ContainsRegex(absl::StrCat(
-                    kServerName2,
-                    ": validation error.*"
-                    "Listener has neither address nor ApiListener.*")));
+    EXPECT_EQ(
+        response_state->error_message,
+        "xDS response validation errors: ["
+        "resource index 0: server.other.com: "
+        "INVALID_ARGUMENT: Listener has neither address nor ApiListener; "
+        "resource index 1: server.example.com: "
+        "INVALID_ARGUMENT: Listener has neither address nor ApiListener]");
   }
   // Now start a new channel with a third server name, this one with a
   // valid resource.
@@ -371,11 +368,11 @@ TEST_P(GlobalXdsClientTest, InvalidListenerStillExistsIfPreviouslyCached) {
   const auto response_state =
       WaitForLdsNack(DEBUG_LOCATION, RpcOptions(), StatusCode::OK);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::ContainsRegex(absl::StrCat(
-                  kServerName,
-                  ": validation error.*"
-                  "Listener has neither address nor ApiListener")));
+  EXPECT_EQ(
+      response_state->error_message,
+      "xDS response validation errors: ["
+      "resource index 0: server.example.com: "
+      "INVALID_ARGUMENT: Listener has neither address nor ApiListener]");
   CheckRpcSendOk(DEBUG_LOCATION);
 }
 

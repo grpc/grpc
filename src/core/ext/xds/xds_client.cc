@@ -749,6 +749,14 @@ void XdsClient::ChannelState::AdsCallState::AdsResponseParser::ParseResource(
       return;
     }
   }
+  // If decoding failed, make sure we include the error in the NACK.
+  const absl::Status& decode_status = decode_result.ok()
+                                          ? decode_result->resource.status()
+                                          : decode_result.status();
+  if (!decode_status.ok()) {
+    result_.errors.emplace_back(
+        absl::StrCat(error_prefix, decode_status.ToString()));
+  }
   // Check the resource name.
   auto parsed_resource_name =
       xds_client()->ParseXdsResourceName(resource_name, result_.type);
@@ -805,16 +813,12 @@ void XdsClient::ChannelState::AdsCallState::AdsResponseParser::ParseResource(
     resource_state.ignored_deletion = false;
   }
   // Update resource state based on whether the resource is valid.
-  if (!decode_result.ok() || !decode_result->resource.ok()) {
-    const absl::Status& status = decode_result.ok()
-                                     ? decode_result->resource.status()
-                                     : decode_result.status();
-    result_.errors.emplace_back(
-        absl::StrCat(error_prefix, "validation error: ", status.ToString()));
+  if (!decode_status.ok()) {
     xds_client()->NotifyWatchersOnErrorLocked(
-        resource_state.watchers, absl::UnavailableError(absl::StrCat(
-                                     "invalid resource: ", status.ToString())));
-    UpdateResourceMetadataNacked(result_.version, status.ToString(),
+        resource_state.watchers,
+        absl::UnavailableError(absl::StrCat("invalid resource: ",
+                                            decode_status.ToString())));
+    UpdateResourceMetadataNacked(result_.version, decode_status.ToString(),
                                  update_time_, &resource_state.meta);
     return;
   }
