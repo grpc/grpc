@@ -101,8 +101,169 @@ class XdsClientTest : public ::testing::Test {
     std::map<std::string, Authority> authorities_;
   };
 
-  // A fake xDS resource type called "test.v3.foo".
-  // The payload is a JSON string that parses to an XdsFooResource struct.
+  // A template for a test xDS resource type with an associated watcher impl.
+  // For simplicity, we use JSON instead of proto for serialization.
+  // The specified ResourceStruct must provide the following:
+  // - a static JsonLoader() method, as described in json_object_loader.h
+  // - an AsJsonString() method that returns the object in JSON string form
+  // - a static TypeUrl() method that returns the V3 resource type
+  // - a static TypeUrlV2() method that returns the V2 resource type
+  template <typename ResourceStruct>
+  class XdsTestResourceType
+      : public XdsResourceTypeImpl<XdsTestResourceType<ResourceStruct>,
+                                   ResourceStruct> {
+   public:
+    // A watcher implementation that queues delivered watches.
+    class Watcher
+        : public XdsResourceTypeImpl<XdsTestResourceType<ResourceStruct>,
+                                     ResourceStruct>::WatcherInterface {
+     public:
+      bool ExpectNoEvent(absl::Duration timeout) {
+        MutexLock lock(&mu_);
+        return !WaitForEventLocked(timeout);
+      }
+
+      bool HasEvent() {
+        MutexLock lock(&mu_);
+        return !queue_.empty();
+      }
+
+      absl::optional<ResourceStruct> WaitForNextResource(
+          absl::Duration timeout = absl::Seconds(1),
+          SourceLocation location = SourceLocation()) {
+        MutexLock lock(&mu_);
+        if (!WaitForEventLocked(timeout)) return absl::nullopt;
+        Event& event = queue_.front();
+        if (!absl::holds_alternative<ResourceStruct>(event)) {
+          EXPECT_TRUE(false)
+              << "got unexpected event "
+              << (absl::holds_alternative<absl::Status>(event)
+                      ? "error"
+                      : "does-not-exist")
+              << " at " << location.file() << ":" << location.line();
+          return absl::nullopt;
+        }
+        ResourceStruct foo = std::move(absl::get<ResourceStruct>(event));
+        queue_.pop_front();
+        return std::move(foo);
+      }
+
+      absl::optional<absl::Status> WaitForNextError(
+          absl::Duration timeout = absl::Seconds(1),
+          SourceLocation location = SourceLocation()) {
+        MutexLock lock(&mu_);
+        if (!WaitForEventLocked(timeout)) return absl::nullopt;
+        Event& event = queue_.front();
+        if (!absl::holds_alternative<absl::Status>(event)) {
+          EXPECT_TRUE(false)
+              << "got unexpected event "
+              << (absl::holds_alternative<ResourceStruct>(event)
+                      ? "resource"
+                      : "does-not-exist")
+              << " at " << location.file() << ":" << location.line();
+          return absl::nullopt;
+        }
+        absl::Status error = std::move(absl::get<absl::Status>(event));
+        queue_.pop_front();
+        return std::move(error);
+      }
+
+      bool WaitForDoesNotExist(absl::Duration timeout,
+                               SourceLocation location = SourceLocation()) {
+        MutexLock lock(&mu_);
+        if (!WaitForEventLocked(timeout)) return false;
+        Event& event = queue_.front();
+        if (!absl::holds_alternative<DoesNotExist>(event)) {
+          EXPECT_TRUE(false)
+              << "got unexpected event "
+              << (absl::holds_alternative<ResourceStruct>(event) ? "resource"
+                                                                 : "error")
+              << " at " << location.file() << ":" << location.line();
+          return false;
+        }
+        queue_.pop_front();
+        return true;
+      }
+
+     private:
+      struct DoesNotExist {};
+      using Event = absl::variant<ResourceStruct, absl::Status, DoesNotExist>;
+
+      void OnResourceChanged(ResourceStruct foo) override {
+        MutexLock lock(&mu_);
+        queue_.push_back(std::move(foo));
+        cv_.Signal();
+      }
+      void OnError(absl::Status status) override {
+        MutexLock lock(&mu_);
+        queue_.push_back(std::move(status));
+        cv_.Signal();
+      }
+      void OnResourceDoesNotExist() override {
+        MutexLock lock(&mu_);
+        queue_.push_back(DoesNotExist());
+        cv_.Signal();
+      }
+
+      bool WaitForEventLocked(absl::Duration timeout)
+          ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_) {
+        while (queue_.empty()) {
+          if (cv_.WaitWithTimeout(&mu_,
+                                  timeout * grpc_test_slowdown_factor())) {
+            return false;
+          }
+        }
+        return true;
+      }
+
+      Mutex mu_;
+      CondVar cv_;
+      std::deque<Event> queue_ ABSL_GUARDED_BY(&mu_);
+    };
+
+    absl::string_view type_url() const override {
+      return ResourceStruct::TypeUrl();
+    }
+    absl::string_view v2_type_url() const override {
+      return ResourceStruct::TypeUrlV2();
+    }
+    absl::StatusOr<XdsResourceType::DecodeResult> Decode(
+        const XdsResourceType::DecodeContext& /*context*/,
+        absl::string_view serialized_resource, bool /*is_v2*/) const override {
+      auto json = Json::Parse(serialized_resource);
+      if (!json.ok()) return json.status();
+      absl::StatusOr<ResourceStruct> foo = LoadFromJson<ResourceStruct>(*json);
+      XdsResourceType::DecodeResult result;
+      if (!foo.ok()) {
+        auto it = json->object_value().find("name");
+        if (it == json->object_value().end()) {
+          return absl::InvalidArgumentError(
+              "cannot determine name for invalid resource");
+        }
+        result.name = it->second.string_value();
+        result.resource = foo.status();
+      } else {
+        result.name = foo->name;
+        auto resource = absl::make_unique<typename XdsResourceTypeImpl<
+            XdsTestResourceType<ResourceStruct>,
+            ResourceStruct>::ResourceDataSubclass>();
+        resource->resource = std::move(*foo);
+        result.resource = std::move(resource);
+      }
+      return std::move(result);
+    }
+    void InitUpbSymtab(upb_DefPool* /*symtab*/) const override {}
+
+    static google::protobuf::Any EncodeAsAny(const ResourceStruct& resource) {
+      google::protobuf::Any any;
+      any.set_type_url(
+          absl::StrCat("type.googleapis.com/", ResourceStruct::TypeUrl()));
+      any.set_value(resource.AsJsonString());
+      return any;
+    }
+  };
+
+  // A fake "Foo" xDS resource type.
   struct XdsFooResource {
     std::string name;
     uint32_t value;
@@ -122,150 +283,38 @@ class XdsClientTest : public ::testing::Test {
                                       .Finish();
       return loader;
     }
+
+    static absl::string_view TypeUrl() { return "test.v3.foo"; }
+    static absl::string_view TypeUrlV2() { return "test.v2.foo"; }
   };
-  class XdsFooResourceType
-      : public XdsResourceTypeImpl<XdsFooResourceType, XdsFooResource> {
-   public:
-    absl::string_view type_url() const override { return "test.v3.foo"; }
-    absl::string_view v2_type_url() const override { return "test.v2.foo"; }
-    absl::StatusOr<DecodeResult> Decode(
-        const XdsResourceType::DecodeContext& /*context*/,
-        absl::string_view serialized_resource, bool /*is_v2*/) const override {
-      auto json = Json::Parse(serialized_resource);
-      if (!json.ok()) return json.status();
-      absl::StatusOr<XdsFooResource> foo = LoadFromJson<XdsFooResource>(*json);
-      DecodeResult result;
-      if (!foo.ok()) {
-        auto it = json->object_value().find("name");
-        if (it == json->object_value().end()) {
-          return absl::InvalidArgumentError(
-              "cannot determine name for invalid resource");
-        }
-        result.name = it->second.string_value();
-        result.resource = foo.status();
-      } else {
-        result.name = foo->name;
-        auto resource = absl::make_unique<ResourceDataSubclass>();
-        resource->resource = std::move(*foo);
-        result.resource = std::move(resource);
-      }
-      return std::move(result);
-    }
-    void InitUpbSymtab(upb_DefPool* /*symtab*/) const override {}
+  using XdsFooResourceType = XdsTestResourceType<XdsFooResource>;
 
-    static google::protobuf::Any EncodeAsAny(const XdsFooResource& resource) {
-      google::protobuf::Any any;
-      any.set_type_url(absl::StrCat("type.googleapis.com/", Get()->type_url()));
-      any.set_value(resource.AsJsonString());
-      return any;
+  // A fake "Bar" xDS resource type.
+  struct XdsBarResource {
+    std::string name;
+    std::string value;
+
+    bool operator==(const XdsBarResource& other) const {
+      return name == other.name && value == other.value;
     }
+
+    std::string AsJsonString() const {
+      return absl::StrCat("{\"name\":\"", name, "\",\"value\":\"", value,
+                          "\"}");
+    }
+
+    static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
+      static const auto* loader = JsonObjectLoader<XdsBarResource>()
+                                      .Field("name", &XdsBarResource::name)
+                                      .Field("value", &XdsBarResource::value)
+                                      .Finish();
+      return loader;
+    }
+
+    static absl::string_view TypeUrl() { return "test.v3.bar"; }
+    static absl::string_view TypeUrlV2() { return "test.v2.bar"; }
   };
-
-  // A watcher implementation that queues delivered watches.
-  class FooWatcher : public XdsFooResourceType::WatcherInterface {
-   public:
-    bool ExpectNoEvent(absl::Duration timeout) {
-      MutexLock lock(&mu_);
-      return !WaitForEventLocked(timeout);
-    }
-
-    bool HasEvent() {
-      MutexLock lock(&mu_);
-      return !queue_.empty();
-    }
-
-    absl::optional<XdsFooResource> WaitForNextResource(
-        absl::Duration timeout = absl::Seconds(1),
-        SourceLocation location = SourceLocation()) {
-      MutexLock lock(&mu_);
-      if (!WaitForEventLocked(timeout)) return absl::nullopt;
-      Event& event = queue_.front();
-      if (!absl::holds_alternative<XdsFooResource>(event)) {
-        EXPECT_TRUE(false) << "got unexpected event "
-                           << (absl::holds_alternative<absl::Status>(event)
-                                   ? "error"
-                                   : "does-not-exist")
-                           << " at " << location.file() << ":"
-                           << location.line();
-        return absl::nullopt;
-      }
-      XdsFooResource foo = std::move(absl::get<XdsFooResource>(event));
-      queue_.pop_front();
-      return std::move(foo);
-    }
-
-    absl::optional<absl::Status> WaitForNextError(
-        absl::Duration timeout = absl::Seconds(1),
-        SourceLocation location = SourceLocation()) {
-      MutexLock lock(&mu_);
-      if (!WaitForEventLocked(timeout)) return absl::nullopt;
-      Event& event = queue_.front();
-      if (!absl::holds_alternative<absl::Status>(event)) {
-        EXPECT_TRUE(false) << "got unexpected event "
-                           << (absl::holds_alternative<XdsFooResource>(event)
-                                   ? "resource"
-                                   : "does-not-exist")
-                           << " at " << location.file() << ":"
-                           << location.line();
-        return absl::nullopt;
-      }
-      absl::Status error = std::move(absl::get<absl::Status>(event));
-      queue_.pop_front();
-      return std::move(error);
-    }
-
-    bool WaitForDoesNotExist(absl::Duration timeout,
-                             SourceLocation location = SourceLocation()) {
-      MutexLock lock(&mu_);
-      if (!WaitForEventLocked(timeout)) return false;
-      Event& event = queue_.front();
-      if (!absl::holds_alternative<DoesNotExist>(event)) {
-        EXPECT_TRUE(false) << "got unexpected event "
-                           << (absl::holds_alternative<XdsFooResource>(event)
-                                   ? "resource"
-                                   : "error")
-                           << " at " << location.file() << ":"
-                           << location.line();
-        return false;
-      }
-      queue_.pop_front();
-      return true;
-    }
-
-   private:
-    struct DoesNotExist {};
-    using Event = absl::variant<XdsFooResource, absl::Status, DoesNotExist>;
-
-    void OnResourceChanged(XdsFooResource foo) override {
-      MutexLock lock(&mu_);
-      queue_.push_back(std::move(foo));
-      cv_.Signal();
-    }
-    void OnError(absl::Status status) override {
-      MutexLock lock(&mu_);
-      queue_.push_back(std::move(status));
-      cv_.Signal();
-    }
-    void OnResourceDoesNotExist() override {
-      MutexLock lock(&mu_);
-      queue_.push_back(DoesNotExist());
-      cv_.Signal();
-    }
-
-    bool WaitForEventLocked(absl::Duration timeout)
-        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_) {
-      while (queue_.empty()) {
-        if (cv_.WaitWithTimeout(&mu_, timeout * grpc_test_slowdown_factor())) {
-          return false;
-        }
-      }
-      return true;
-    }
-
-    Mutex mu_;
-    CondVar cv_;
-    std::deque<Event> queue_ ABSL_GUARDED_BY(&mu_);
-  };
+  using XdsBarResourceType = XdsTestResourceType<XdsBarResource>;
 
   // A helper class to build and serialize a DiscoveryResponse.
   class ResponseBuilder {
@@ -283,10 +332,12 @@ class XdsClientTest : public ::testing::Test {
       return *this;
     }
 
-    ResponseBuilder& AddResource(const XdsFooResource& resource,
-                                 bool in_resource_wrapper = false) {
+    template <typename ResourceType>
+    ResponseBuilder& AddResource(
+        const decltype(ResourceType::ResourceDataSubclass::resource)& resource,
+        bool in_resource_wrapper = false) {
       auto* res = response_.add_resources();
-      *res = XdsFooResourceType::EncodeAsAny(resource);
+      *res = ResourceType::EncodeAsAny(resource);
       if (in_resource_wrapper) {
         envoy::service::discovery::v3::Resource resource_wrapper;
         resource_wrapper.set_name(resource.name);
@@ -294,6 +345,16 @@ class XdsClientTest : public ::testing::Test {
         res->PackFrom(resource_wrapper);
       }
       return *this;
+    }
+
+    ResponseBuilder& AddFooResource(const XdsFooResource& resource,
+                                    bool in_resource_wrapper = false) {
+      return AddResource<XdsFooResourceType>(resource, in_resource_wrapper);
+    }
+
+    ResponseBuilder& AddBarResource(const XdsBarResource& resource,
+                                    bool in_resource_wrapper = false) {
+      return AddResource<XdsBarResourceType>(resource, in_resource_wrapper);
     }
 
     ResponseBuilder& AddInvalidResource(
@@ -334,17 +395,31 @@ class XdsClientTest : public ::testing::Test {
                                             resource_request_timeout);
   }
 
-  // Starts a watch for the named resource.
-  RefCountedPtr<FooWatcher> StartFooWatch(absl::string_view resource_name) {
-    auto watcher = MakeRefCounted<FooWatcher>();
+  // Starts and cancels a watch for a Foo resource.
+  RefCountedPtr<XdsFooResourceType::Watcher> StartFooWatch(
+      absl::string_view resource_name) {
+    auto watcher = MakeRefCounted<XdsFooResourceType::Watcher>();
     XdsFooResourceType::StartWatch(xds_client_.get(), resource_name, watcher);
     return watcher;
   }
-
-  // Cancels the specified watch.
-  void CancelFooWatch(FooWatcher* watcher, absl::string_view resource_name,
+  void CancelFooWatch(XdsFooResourceType::Watcher* watcher,
+                      absl::string_view resource_name,
                       bool delay_unsubscription = false) {
     XdsFooResourceType::CancelWatch(xds_client_.get(), resource_name, watcher,
+                                    delay_unsubscription);
+  }
+
+  // Starts and cancels a watch for a Bar resource.
+  RefCountedPtr<XdsBarResourceType::Watcher> StartBarWatch(
+      absl::string_view resource_name) {
+    auto watcher = MakeRefCounted<XdsBarResourceType::Watcher>();
+    XdsBarResourceType::StartWatch(xds_client_.get(), resource_name, watcher);
+    return watcher;
+  }
+  void CancelBarWatch(XdsBarResourceType::Watcher* watcher,
+                      absl::string_view resource_name,
+                      bool delay_unsubscription = false) {
+    XdsBarResourceType::CancelWatch(xds_client_.get(), resource_name, watcher,
                                     delay_unsubscription);
   }
 
@@ -496,7 +571,7 @@ TEST_F(XdsClientTest, BasicWatch) {
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
           .set_version_info("1")
           .set_nonce("A")
-          .AddResource(XdsFooResource{"foo1", 6})
+          .AddFooResource(XdsFooResource{"foo1", 6})
           .Serialize());
   // XdsClient should have delivered the response to the watcher.
   auto resource = watcher->WaitForNextResource();
@@ -544,7 +619,7 @@ TEST_F(XdsClientTest, UpdateFromServer) {
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
           .set_version_info("1")
           .set_nonce("A")
-          .AddResource(XdsFooResource{"foo1", 6})
+          .AddFooResource(XdsFooResource{"foo1", 6})
           .Serialize());
   // XdsClient should have delivered the response to the watcher.
   auto resource = watcher->WaitForNextResource();
@@ -563,7 +638,7 @@ TEST_F(XdsClientTest, UpdateFromServer) {
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
           .set_version_info("2")
           .set_nonce("B")
-          .AddResource(XdsFooResource{"foo1", 9})
+          .AddFooResource(XdsFooResource{"foo1", 9})
           .Serialize());
   // XdsClient should have delivered the response to the watcher.
   resource = watcher->WaitForNextResource();
@@ -611,7 +686,7 @@ TEST_F(XdsClientTest, MultipleWatchersForSameResource) {
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
           .set_version_info("1")
           .set_nonce("A")
-          .AddResource(XdsFooResource{"foo1", 6})
+          .AddFooResource(XdsFooResource{"foo1", 6})
           .Serialize());
   // XdsClient should have delivered the response to the watcher.
   auto resource = watcher->WaitForNextResource();
@@ -640,7 +715,7 @@ TEST_F(XdsClientTest, MultipleWatchersForSameResource) {
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
           .set_version_info("2")
           .set_nonce("B")
-          .AddResource(XdsFooResource{"foo1", 9})
+          .AddFooResource(XdsFooResource{"foo1", 9})
           .Serialize());
   // XdsClient should deliver the response to both watchers.
   resource = watcher->WaitForNextResource();
@@ -696,7 +771,7 @@ TEST_F(XdsClientTest, SubscribeToMultipleResources) {
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
           .set_version_info("1")
           .set_nonce("A")
-          .AddResource(XdsFooResource{"foo1", 6})
+          .AddFooResource(XdsFooResource{"foo1", 6})
           .Serialize());
   // XdsClient should have delivered the response to the watcher.
   auto resource = watcher->WaitForNextResource();
@@ -724,7 +799,7 @@ TEST_F(XdsClientTest, SubscribeToMultipleResources) {
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
           .set_version_info("1")
           .set_nonce("B")
-          .AddResource(XdsFooResource{"foo2", 7})
+          .AddFooResource(XdsFooResource{"foo2", 7})
           .Serialize());
   // XdsClient should have delivered the response to the watcher.
   resource = watcher2->WaitForNextResource();
@@ -780,7 +855,7 @@ TEST_F(XdsClientTest, UpdateContainsOnlyChangedResource) {
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
           .set_version_info("1")
           .set_nonce("A")
-          .AddResource(XdsFooResource{"foo1", 6})
+          .AddFooResource(XdsFooResource{"foo1", 6})
           .Serialize());
   // XdsClient should have delivered the response to the watcher.
   auto resource = watcher->WaitForNextResource();
@@ -808,7 +883,7 @@ TEST_F(XdsClientTest, UpdateContainsOnlyChangedResource) {
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
           .set_version_info("1")
           .set_nonce("B")
-          .AddResource(XdsFooResource{"foo2", 7})
+          .AddFooResource(XdsFooResource{"foo2", 7})
           .Serialize());
   // XdsClient should have delivered the response to the watcher.
   resource = watcher2->WaitForNextResource();
@@ -827,7 +902,7 @@ TEST_F(XdsClientTest, UpdateContainsOnlyChangedResource) {
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
           .set_version_info("2")
           .set_nonce("C")
-          .AddResource(XdsFooResource{"foo1", 9})
+          .AddFooResource(XdsFooResource{"foo1", 9})
           .Serialize());
   // XdsClient should have delivered the response to the watcher.
   resource = watcher->WaitForNextResource();
@@ -922,7 +997,7 @@ TEST_F(XdsClientTest, ResourceValidationFailure) {
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
           .set_version_info("2")
           .set_nonce("B")
-          .AddResource(XdsFooResource{"foo1", 9})
+          .AddFooResource(XdsFooResource{"foo1", 9})
           .Serialize());
   // XdsClient should deliver the response to both watchers.
   auto resource = watcher->WaitForNextResource();
@@ -1017,7 +1092,7 @@ TEST_F(XdsClientTest, ResourceValidationFailureMultipleResources) {
                               "{\"name\":\"foo3,\"value\":6}",
                               /*resource_wrapper_name=*/"foo3")
           // foo4: valid resource.
-          .AddResource(XdsFooResource{"foo4", 5})
+          .AddFooResource(XdsFooResource{"foo4", 5})
           .Serialize());
   // XdsClient should deliver an error to the watchers for foo1 and foo3.
   auto error = watcher->WaitForNextError();
@@ -1100,7 +1175,7 @@ TEST_F(XdsClientTest, ResourceValidationFailureForCachedResource) {
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
           .set_version_info("1")
           .set_nonce("A")
-          .AddResource(XdsFooResource{"foo1", 6})
+          .AddFooResource(XdsFooResource{"foo1", 6})
           .Serialize());
   // XdsClient should have delivered the response to the watcher.
   auto resource = watcher->WaitForNextResource();
@@ -1199,7 +1274,7 @@ TEST_F(XdsClientTest, ResourceDoesNotExist) {
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
           .set_version_info("1")
           .set_nonce("A")
-          .AddResource(XdsFooResource{"foo1", 6})
+          .AddFooResource(XdsFooResource{"foo1", 6})
           .Serialize());
   // XdsClient should have delivered the response to the watchers.
   auto resource = watcher->WaitForNextResource();
@@ -1252,7 +1327,7 @@ TEST_F(XdsClientTest, StreamClosedByServer) {
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
           .set_version_info("1")
           .set_nonce("A")
-          .AddResource(XdsFooResource{"foo1", 6})
+          .AddFooResource(XdsFooResource{"foo1", 6})
           .Serialize());
   // XdsClient should have delivered the response to the watcher.
   auto resource = watcher->WaitForNextResource();
@@ -1326,8 +1401,8 @@ TEST_F(XdsClientTest, StreamClosedByServer) {
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
           .set_version_info("1")
           .set_nonce("B")
-          .AddResource(XdsFooResource{"foo1", 6})
-          .AddResource(XdsFooResource{"foo2", 7})
+          .AddFooResource(XdsFooResource{"foo1", 6})
+          .AddFooResource(XdsFooResource{"foo2", 7})
           .Serialize());
   // Watchers for foo1 do NOT get an update, since the resource has not changed.
   EXPECT_FALSE(watcher->WaitForNextResource());
@@ -1382,7 +1457,7 @@ TEST_F(XdsClientTest, StreamClosedByServerAndResourcesNotResentOnNewStream) {
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
           .set_version_info("1")
           .set_nonce("A")
-          .AddResource(XdsFooResource{"foo1", 6})
+          .AddFooResource(XdsFooResource{"foo1", 6})
           .Serialize());
   // XdsClient should have delivered the response to the watcher.
   auto resource = watcher->WaitForNextResource();
@@ -1485,7 +1560,7 @@ TEST_F(XdsClientTest, ConnectionFails) {
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
           .set_version_info("1")
           .set_nonce("A")
-          .AddResource(XdsFooResource{"foo1", 6})
+          .AddFooResource(XdsFooResource{"foo1", 6})
           .Serialize());
   // XdsClient should have delivered the response to the watchers.
   auto resource = watcher->WaitForNextResource();
@@ -1537,7 +1612,8 @@ TEST_F(XdsClientTest, ResourceWrappedInResourceMessage) {
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
           .set_version_info("1")
           .set_nonce("A")
-          .AddResource(XdsFooResource{"foo1", 6}, /*in_resource_wrapper=*/true)
+          .AddFooResource(XdsFooResource{"foo1", 6},
+                          /*in_resource_wrapper=*/true)
           .Serialize());
   // XdsClient should have delivered the response to the watcher.
   auto resource = watcher->WaitForNextResource();
@@ -1559,6 +1635,92 @@ TEST_F(XdsClientTest, ResourceWrappedInResourceMessage) {
   if (request.has_value()) {
     CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
                  /*version_info=*/"1", /*response_nonce=*/"A",
+                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
+  }
+}
+
+TEST_F(XdsClientTest, MultipleResourceTypes) {
+  InitXdsClient();
+  // Start a watch for "foo1".
+  auto watcher = StartFooWatch("foo1");
+  // Watcher should initially not see any resource reported.
+  EXPECT_FALSE(watcher->HasEvent());
+  // XdsClient should have created an ADS stream.
+  auto stream = WaitForAdsStream();
+  ASSERT_TRUE(stream != nullptr);
+  // XdsClient should have sent a subscription request on the ADS stream.
+  auto request = WaitForRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"", /*response_nonce=*/"",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"foo1"});
+  CheckRequestNode(*request);  // Should be present on the first request.
+  // Send a response.
+  stream->SendMessageToClient(
+      ResponseBuilder(XdsFooResourceType::Get()->type_url())
+          .set_version_info("1")
+          .set_nonce("A")
+          .AddFooResource(XdsFooResource{"foo1", 6})
+          .Serialize());
+  // XdsClient should have delivered the response to the watcher.
+  auto resource = watcher->WaitForNextResource();
+  ASSERT_TRUE(resource.has_value());
+  EXPECT_EQ(resource->name, "foo1");
+  EXPECT_EQ(resource->value, 6);
+  // XdsClient should have sent an ACK message to the xDS server.
+  request = WaitForRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"1", /*response_nonce=*/"A",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"foo1"});
+  // Start a watch for "bar1".
+  auto watcher2 = StartBarWatch("bar1");
+  // XdsClient should have sent a subscription request on the ADS stream.
+  // Note that version and nonce here do NOT use the values for Foo,
+  // since each resource type has its own state.
+  request = WaitForRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsBarResourceType::Get()->type_url(),
+               /*version_info=*/"", /*response_nonce=*/"",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"bar1"});
+  // Send a response.
+  stream->SendMessageToClient(
+      ResponseBuilder(XdsBarResourceType::Get()->type_url())
+          .set_version_info("2")
+          .set_nonce("B")
+          .AddBarResource(XdsBarResource{"bar1", "whee"})
+          .Serialize());
+  // XdsClient should have delivered the response to the watcher.
+  auto resource2 = watcher2->WaitForNextResource();
+  ASSERT_TRUE(resource2.has_value());
+  EXPECT_EQ(resource2->name, "bar1");
+  EXPECT_EQ(resource2->value, "whee");
+  // XdsClient should have sent an ACK message to the xDS server.
+  request = WaitForRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsBarResourceType::Get()->type_url(),
+               /*version_info=*/"2", /*response_nonce=*/"B",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"bar1"});
+  // Cancel watch for "foo1".
+  CancelFooWatch(watcher.get(), "foo1");
+  // XdsClient should send an unsubscription request.
+  request = WaitForRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"1", /*response_nonce=*/"A",
+               /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
+  // Now cancel watch for "bar1".
+  CancelBarWatch(watcher2.get(), "bar1");
+  // The XdsClient may or may not send another unsubscription message
+  // before it closes the transport, depending on callback timing.
+  request = WaitForRequest(stream.get());
+  if (request.has_value()) {
+    CheckRequest(*request, XdsBarResourceType::Get()->type_url(),
+                 /*version_info=*/"2", /*response_nonce=*/"B",
                  /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
   }
 }
@@ -1588,7 +1750,7 @@ TEST_F(XdsClientTest, BasicWatchV2) {
       ResponseBuilder(XdsFooResourceType::Get()->v2_type_url())
           .set_version_info("1")
           .set_nonce("A")
-          .AddResource(XdsFooResource{"foo1", 6})
+          .AddFooResource(XdsFooResource{"foo1", 6})
           .Serialize());
   // XdsClient should have delivered the response to the watcher.
   auto resource = watcher->WaitForNextResource();
@@ -1615,7 +1777,6 @@ TEST_F(XdsClientTest, BasicWatchV2) {
 }
 
 // FIXME: tests to add:
-// - tests for multiple resource types
 // - various federation tests from e2e tests
 // - test that a channel failure only sends errors to watchers for the
 //   channel that failed
