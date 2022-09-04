@@ -539,8 +539,8 @@ static void BM_IsolatedFilter(benchmark::State& state) {
       "channel_stack_init",
       grpc_channel_stack_init(1, FilterDestroy, channel_stack,
                               filters.empty() ? nullptr : &filters[0],
-                              filters.size(), channel_args.ToC().get(),
-                              "CHANNEL", channel_stack)));
+                              filters.size(), channel_args, "CHANNEL",
+                              channel_stack)));
   grpc_core::ExecCtx::Get()->Flush();
   grpc_call_stack* call_stack =
       static_cast<grpc_call_stack*>(gpr_zalloc(channel_stack->call_stack_size));
