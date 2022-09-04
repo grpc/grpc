@@ -270,6 +270,7 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
         tags: base tags
         args: base args
         exclude_pollers: list of poller names to exclude for this set of tests.
+        uses_polling: set to False if the test is not sensitive to polling methodology.
         uses_event_engine: set to False if the test is not sensitive to
             EventEngine implementation differences
 
