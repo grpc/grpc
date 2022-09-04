@@ -162,54 +162,80 @@ class XdsClientTest : public ::testing::Test {
   };
 
   // A watcher implementation that queues delivered watches.
-// FIXME: need to change the API here such that all 3 types of events
-// are returned in a single queue, so that we can tell the order in
-// which they were received
   class FooWatcher : public XdsFooResourceType::WatcherInterface {
    public:
-    absl::optional<XdsFooResource> WaitForNextResource(
-        absl::Duration timeout = absl::Seconds(1)) {
+    bool ExpectNoEvent(absl::Duration timeout) {
       MutexLock lock(&mu_);
-      while (queue_.empty()) {
-        if (cv_.WaitWithTimeout(&mu_, timeout * grpc_test_slowdown_factor())) {
-          return absl::nullopt;
-        }
-      }
-      XdsFooResource foo = std::move(queue_.front());
-      queue_.pop_front();
-      return foo;
+      return !WaitForEventLocked(timeout);
     }
 
-    bool HasError() {
+    bool HasEvent() {
       MutexLock lock(&mu_);
-      return !error_queue_.empty();
+      return !queue_.empty();
+    }
+
+    absl::optional<XdsFooResource> WaitForNextResource(
+        absl::Duration timeout = absl::Seconds(1),
+        SourceLocation location = SourceLocation()) {
+      MutexLock lock(&mu_);
+      if (!WaitForEventLocked(timeout)) return absl::nullopt;
+      Event& event = queue_.front();
+      if (!absl::holds_alternative<XdsFooResource>(event)) {
+        EXPECT_TRUE(false)
+            << "got unexpected event "
+            << (absl::holds_alternative<absl::Status>(event)
+                    ? "error"
+                    : "does-not-exist")
+            << " at " << location.file() << ":" << location.line();
+        return absl::nullopt;
+      }
+      XdsFooResource foo = std::move(absl::get<XdsFooResource>(event));
+      queue_.pop_front();
+      return std::move(foo);
     }
 
     absl::optional<absl::Status> WaitForNextError(
-        absl::Duration timeout = absl::Seconds(1)) {
+        absl::Duration timeout = absl::Seconds(1),
+        SourceLocation location = SourceLocation()) {
       MutexLock lock(&mu_);
-      while (error_queue_.empty()) {
-        if (cv_.WaitWithTimeout(&mu_, timeout * grpc_test_slowdown_factor())) {
-          return absl::nullopt;
-        }
+      if (!WaitForEventLocked(timeout)) return absl::nullopt;
+      Event& event = queue_.front();
+      if (!absl::holds_alternative<absl::Status>(event)) {
+        EXPECT_TRUE(false)
+            << "got unexpected event "
+            << (absl::holds_alternative<XdsFooResource>(event)
+                    ? "resource"
+                    : "does-not-exist")
+            << " at " << location.file() << ":" << location.line();
+        return absl::nullopt;
       }
-      absl::Status status = std::move(error_queue_.front());
-      error_queue_.pop_front();
-      return status;
+      absl::Status error = std::move(absl::get<absl::Status>(event));
+      queue_.pop_front();
+      return std::move(error);
     }
 
-    bool WaitForDoesNotExist(absl::Duration timeout) {
+    bool WaitForDoesNotExist(absl::Duration timeout,
+                             SourceLocation location = SourceLocation()) {
       MutexLock lock(&mu_);
-      while (!does_not_exist_) {
-        if (cv_.WaitWithTimeout(&mu_, timeout * grpc_test_slowdown_factor())) {
-          return false;
-        }
+      if (!WaitForEventLocked(timeout)) return false;
+      Event& event = queue_.front();
+      if (!absl::holds_alternative<DoesNotExist>(event)) {
+        EXPECT_TRUE(false)
+            << "got unexpected event "
+            << (absl::holds_alternative<XdsFooResource>(event)
+                    ? "resource"
+                    : "error")
+            << " at " << location.file() << ":" << location.line();
+        return false;
       }
-      does_not_exist_ = false;  // Reset in case we ask again later.
+      queue_.pop_front();
       return true;
     }
 
    private:
+    struct DoesNotExist {};
+    using Event = absl::variant<XdsFooResource, absl::Status, DoesNotExist>;
+
     void OnResourceChanged(XdsFooResource foo) override {
       MutexLock lock(&mu_);
       queue_.push_back(std::move(foo));
@@ -217,20 +243,28 @@ class XdsClientTest : public ::testing::Test {
     }
     void OnError(absl::Status status) override {
       MutexLock lock(&mu_);
-      error_queue_.push_back(std::move(status));
+      queue_.push_back(std::move(status));
       cv_.Signal();
     }
     void OnResourceDoesNotExist() override {
       MutexLock lock(&mu_);
-      does_not_exist_ = true;
+      queue_.push_back(DoesNotExist());
       cv_.Signal();
+    }
+
+    bool WaitForEventLocked(absl::Duration timeout)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_) {
+      while (queue_.empty()) {
+        if (cv_.WaitWithTimeout(&mu_, timeout * grpc_test_slowdown_factor())) {
+          return false;
+        }
+      }
+      return true;
     }
 
     Mutex mu_;
     CondVar cv_;
-    std::deque<XdsFooResource> queue_ ABSL_GUARDED_BY(&mu_);
-    std::deque<absl::Status> error_queue_ ABSL_GUARDED_BY(&mu_);
-    bool does_not_exist_ ABSL_GUARDED_BY(&mu_) = false;
+    std::deque<Event> queue_ ABSL_GUARDED_BY(&mu_);
   };
 
   // A helper class to build and serialize a DiscoveryResponse.
@@ -445,7 +479,7 @@ TEST_F(XdsClientTest, BasicWatch) {
   // Start a watch for "foo1".
   auto watcher = StartFooWatch("foo1");
   // Watcher should initially not see any resource reported.
-  EXPECT_FALSE(watcher->WaitForNextResource().has_value());
+  EXPECT_FALSE(watcher->HasEvent());
   // XdsClient should have created an ADS stream.
   auto stream = WaitForAdsStream();
   ASSERT_TRUE(stream != nullptr);
@@ -493,7 +527,7 @@ TEST_F(XdsClientTest, UpdateFromServer) {
   // Start a watch for "foo1".
   auto watcher = StartFooWatch("foo1");
   // Watcher should initially not see any resource reported.
-  EXPECT_FALSE(watcher->WaitForNextResource().has_value());
+  EXPECT_FALSE(watcher->HasEvent());
   // XdsClient should have created an ADS stream.
   auto stream = WaitForAdsStream();
   ASSERT_TRUE(stream != nullptr);
@@ -560,7 +594,7 @@ TEST_F(XdsClientTest, MultipleWatchersForSameResource) {
   // Start a watch for "foo1".
   auto watcher = StartFooWatch("foo1");
   // Watcher should initially not see any resource reported.
-  EXPECT_FALSE(watcher->WaitForNextResource().has_value());
+  EXPECT_FALSE(watcher->HasEvent());
   // XdsClient should have created an ADS stream.
   auto stream = WaitForAdsStream();
   ASSERT_TRUE(stream != nullptr);
@@ -645,7 +679,7 @@ TEST_F(XdsClientTest, SubscribeToMultipleResources) {
   // Start a watch for "foo1".
   auto watcher = StartFooWatch("foo1");
   // Watcher should initially not see any resource reported.
-  EXPECT_FALSE(watcher->WaitForNextResource().has_value());
+  EXPECT_FALSE(watcher->HasEvent());
   // XdsClient should have created an ADS stream.
   auto stream = WaitForAdsStream();
   ASSERT_TRUE(stream != nullptr);
@@ -729,7 +763,7 @@ TEST_F(XdsClientTest, UpdateContainsOnlyChangedResource) {
   // Start a watch for "foo1".
   auto watcher = StartFooWatch("foo1");
   // Watcher should initially not see any resource reported.
-  EXPECT_FALSE(watcher->WaitForNextResource().has_value());
+  EXPECT_FALSE(watcher->HasEvent());
   // XdsClient should have created an ADS stream.
   auto stream = WaitForAdsStream();
   ASSERT_TRUE(stream != nullptr);
@@ -832,7 +866,7 @@ TEST_F(XdsClientTest, ResourceValidationFailure) {
   // Start a watch for "foo1".
   auto watcher = StartFooWatch("foo1");
   // Watcher should initially not see any resource reported.
-  EXPECT_FALSE(watcher->WaitForNextResource().has_value());
+  EXPECT_FALSE(watcher->HasEvent());
   // XdsClient should have created an ADS stream.
   auto stream = WaitForAdsStream();
   ASSERT_TRUE(stream != nullptr);
@@ -924,7 +958,7 @@ TEST_F(XdsClientTest, ResourceValidationFailureMultipleResources) {
   // Start a watch for "foo1".
   auto watcher = StartFooWatch("foo1");
   // Watcher should initially not see any resource reported.
-  EXPECT_FALSE(watcher->WaitForNextResource().has_value());
+  EXPECT_FALSE(watcher->HasEvent());
   // XdsClient should have created an ADS stream.
   auto stream = WaitForAdsStream();
   ASSERT_TRUE(stream != nullptr);
@@ -1002,7 +1036,7 @@ TEST_F(XdsClientTest, ResourceValidationFailureMultipleResources) {
       << *error;
   // It cannot delivery an error for foo2, because the client doesn't know
   // that that resource in the response was actually supposed to be foo2.
-  EXPECT_FALSE(watcher2->HasError());
+  EXPECT_FALSE(watcher2->HasEvent());
   // It will delivery a valid resource update for foo4.
   auto resource = watcher4->WaitForNextResource();
   ASSERT_TRUE(resource.has_value());
@@ -1049,7 +1083,7 @@ TEST_F(XdsClientTest, ResourceValidationFailureForCachedResource) {
   // Start a watch for "foo1".
   auto watcher = StartFooWatch("foo1");
   // Watcher should initially not see any resource reported.
-  EXPECT_FALSE(watcher->WaitForNextResource().has_value());
+  EXPECT_FALSE(watcher->HasEvent());
   // XdsClient should have created an ADS stream.
   auto stream = WaitForAdsStream();
   ASSERT_TRUE(stream != nullptr);
@@ -1141,7 +1175,7 @@ TEST_F(XdsClientTest, ResourceDoesNotExist) {
   // Start a watch for "foo1".
   auto watcher = StartFooWatch("foo1");
   // Watcher should initially not see any resource reported.
-  EXPECT_FALSE(watcher->WaitForNextResource().has_value());
+  EXPECT_FALSE(watcher->HasEvent());
   // XdsClient should have created an ADS stream.
   auto stream = WaitForAdsStream();
   ASSERT_TRUE(stream != nullptr);
@@ -1201,7 +1235,7 @@ TEST_F(XdsClientTest, StreamClosedByServer) {
   // Start a watch for "foo1".
   auto watcher = StartFooWatch("foo1");
   // Watcher should initially not see any resource reported.
-  EXPECT_FALSE(watcher->WaitForNextResource().has_value());
+  EXPECT_FALSE(watcher->HasEvent());
   // XdsClient should have created an ADS stream.
   auto stream = WaitForAdsStream();
   ASSERT_TRUE(stream != nullptr);
@@ -1331,7 +1365,7 @@ TEST_F(XdsClientTest, StreamClosedByServerAndResourcesNotResentOnNewStream) {
   // Start a watch for "foo1".
   auto watcher = StartFooWatch("foo1");
   // Watcher should initially not see any resource reported.
-  EXPECT_FALSE(watcher->WaitForNextResource().has_value());
+  EXPECT_FALSE(watcher->HasEvent());
   // XdsClient should have created an ADS stream.
   auto stream = WaitForAdsStream();
   ASSERT_TRUE(stream != nullptr);
@@ -1387,9 +1421,9 @@ TEST_F(XdsClientTest, StreamClosedByServerAndResourcesNotResentOnNewStream) {
   CheckRequestNode(*request);  // Should be present on the first request.
   // Server does NOT send the resource again.
   // Watcher should not get any update, since the resource has not changed.
-  EXPECT_FALSE(watcher->WaitForNextResource());
-  EXPECT_FALSE(watcher->HasError());
-  EXPECT_FALSE(watcher->WaitForDoesNotExist(absl::Seconds(5)));
+  // We wait 5s here to ensure we don't trigger the resource-does-not-exist
+  // timeout.
+  EXPECT_TRUE(watcher->ExpectNoEvent(absl::Seconds(5)));
   // Cancel watch.
   CancelFooWatch(watcher.get(), "foo1");
   // The XdsClient may or may not send an unsubscription message
@@ -1407,7 +1441,7 @@ TEST_F(XdsClientTest, ConnectionFails) {
   // Start a watch for "foo1".
   auto watcher = StartFooWatch("foo1");
   // Watcher should initially not see any resource reported.
-  EXPECT_FALSE(watcher->WaitForNextResource().has_value());
+  EXPECT_FALSE(watcher->HasEvent());
   // XdsClient should have created an ADS stream.
   auto stream = WaitForAdsStream();
   ASSERT_TRUE(stream != nullptr);
@@ -1486,7 +1520,7 @@ TEST_F(XdsClientTest, ResourceWrappedInResourceMessage) {
   // Start a watch for "foo1".
   auto watcher = StartFooWatch("foo1");
   // Watcher should initially not see any resource reported.
-  EXPECT_FALSE(watcher->WaitForNextResource().has_value());
+  EXPECT_FALSE(watcher->HasEvent());
   // XdsClient should have created an ADS stream.
   auto stream = WaitForAdsStream();
   ASSERT_TRUE(stream != nullptr);
@@ -1534,7 +1568,7 @@ TEST_F(XdsClientTest, BasicWatchV2) {
   // Start a watch for "foo1".
   auto watcher = StartFooWatch("foo1");
   // Watcher should initially not see any resource reported.
-  EXPECT_FALSE(watcher->WaitForNextResource().has_value());
+  EXPECT_FALSE(watcher->HasEvent());
   // XdsClient should have created an ADS stream.
   auto stream = transport_factory_->WaitForStream(
       xds_client_->bootstrap().server(), FakeXdsTransportFactory::kAdsV2Method,
@@ -1581,6 +1615,7 @@ TEST_F(XdsClientTest, BasicWatchV2) {
 }
 
 // FIXME: tests to add:
+// - tests for multiple resource types
 // - various federation tests from e2e tests
 // - test that a channel failure only sends errors to watchers for the
 //   channel that failed
