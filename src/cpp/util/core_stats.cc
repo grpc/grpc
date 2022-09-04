@@ -19,9 +19,11 @@
 #include "src/cpp/util/core_stats.h"
 
 #include <string.h>
+
+#include <string>
+
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
-#include <string>
 
 // IWYU pragma: no_include <google/protobuf/repeated_ptr_field.h>
 

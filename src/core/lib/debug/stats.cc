@@ -16,19 +16,22 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/debug/stats.h"
 
-#include <grpc/support/port_platform.h>
 #include <inttypes.h>
 #include <string.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/cpu.h>
+
 #include <algorithm>
 #include <vector>
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
+
+#include <grpc/support/alloc.h>
+#include <grpc/support/cpu.h>
 
 namespace grpc_core {
 Stats* const g_stats_data = [] {
