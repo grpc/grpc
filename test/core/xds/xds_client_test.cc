@@ -2010,9 +2010,8 @@ TEST_F(XdsClientTest, FederationWithUnknownAuthority) {
   auto error = watcher->WaitForNextError();
   ASSERT_TRUE(error.has_value());
   EXPECT_EQ(error->code(), absl::StatusCode::kUnavailable);
-  EXPECT_EQ(
-      error->message(),
-      "authority \"xds.example.com\" not present in bootstrap config")
+  EXPECT_EQ(error->message(),
+            "authority \"xds.example.com\" not present in bootstrap config")
       << *error;
 }
 

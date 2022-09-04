@@ -1497,8 +1497,8 @@ void XdsClient::WatchResource(const XdsResourceType* type,
   };
   auto resource_name = ParseXdsResourceName(name, type);
   if (!resource_name.ok()) {
-    fail(absl::UnavailableError(absl::StrCat(
-        "Unable to parse resource name ", name)));
+    fail(absl::UnavailableError(
+        absl::StrCat("Unable to parse resource name ", name)));
     return;
   }
   // Find server to use.
