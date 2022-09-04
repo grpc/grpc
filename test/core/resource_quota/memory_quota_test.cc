@@ -266,9 +266,6 @@ TEST(PressureTrackerTest, ManyThreads) {
 
 }  // namespace grpc_core
 
-// Hook needed to run ExecCtx outside of iomgr.
-void grpc_set_default_iomgr_platform() {}
-
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment give_me_a_name(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
