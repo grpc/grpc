@@ -16,6 +16,8 @@
 
 #ifdef GPR_WINDOWS
 
+namespace grpc_core {
+
 #if defined UNICODE || defined _UNICODE
 TcharString CharToTchar(std::string input) {
   int needed = MultiByteToWideChar(CP_UTF8, 0, input.c_str(), -1, NULL, 0);
@@ -38,5 +40,7 @@ std::string TcharToChar(TcharString input) {
 TcharString CharToTchar(std::string input) { return input; }
 std::string TcharToChar(TcharString input) { return input; }
 #endif
+
+}  // namespace grpc_core
 
 #endif
