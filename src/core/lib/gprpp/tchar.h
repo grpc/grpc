@@ -12,12 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_TCHAR_H
-#define GRPC_TCHAR_H
+#ifndef GRPC_CORE_LIB_GPRPP_TCHAR_H
+#define GRPC_CORE_LIB_GPRPP_TCHAR_H
 
 #include <grpc/support/port_platform.h>
-
-#include <string>
 
 namespace grpc_core {
 
@@ -30,4 +28,4 @@ std::string TcharToChar(TcharString input);
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_CORE_LIB_GPRPP_TCHAR_H
