@@ -17,17 +17,17 @@
 
 #include <grpc/support/port_platform.h>
 
+#ifdef GPR_WINDOWS
 #include <string>
 
 namespace grpc_core {
 
-#ifdef GPR_WINDOWS
 using TcharString = std::basic_string<TCHAR>;
 
 TcharString CharToTchar(std::string input);
 std::string TcharToChar(TcharString input);
-#endif
 
 }  // namespace grpc_core
+#endif
 
 #endif  // GRPC_CORE_LIB_GPRPP_TCHAR_H
