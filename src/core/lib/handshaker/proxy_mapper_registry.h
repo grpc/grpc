@@ -50,6 +50,12 @@ class ProxyMapperRegistry {
     ProxyMapperList mappers_;
   };
 
+  ~ProxyMapperRegistry() = default;
+  ProxyMapperRegistry(const ProxyMapperRegistry&) = delete;
+  ProxyMapperRegistry& operator=(const ProxyMapperRegistry&) = delete;
+  ProxyMapperRegistry(ProxyMapperRegistry&&) = default;
+  ProxyMapperRegistry& operator=(ProxyMapperRegistry&&) = default;
+
   absl::optional<std::string> MapName(absl::string_view server_uri,
                                       ChannelArgs* args) const;
 
@@ -57,6 +63,8 @@ class ProxyMapperRegistry {
       const grpc_resolved_address& address, ChannelArgs* args) const;
 
  private:
+  ProxyMapperRegistry() = default;
+
   ProxyMapperList mappers_;
 };
 

@@ -38,6 +38,12 @@ void ProxyMapperRegistry::Builder::Register(
   }
 }
 
+ProxyMapperRegistry ProxyMapperRegistry::Builder::Build() {
+  ProxyMapperRegistry registry;
+  registry.mappers_ = std::move(mappers_);
+  return registry;
+}
+
 absl::optional<std::string> ProxyMapperRegistry::MapName(
     absl::string_view server_uri, ChannelArgs* args) const {
   ChannelArgs args_backup = *args;
