@@ -200,7 +200,7 @@ def gen_bucket_code(shape):
                 break
             if map_table[-1] < 8:
                 break
-            map_table_idx = decl_static_table(map_table,
+            map_table_idx = decl_static_table([x + code_bounds_index for x in map_table],
                                               type_for_uint_table(map_table))
             last_code = (
                 (len(map_table) - 1) << shift_data[0]) + first_nontrivial_code
@@ -209,9 +209,8 @@ def gen_bucket_code(shape):
             code += 'DblUint val;\n'
             code += 'val.dbl = value;\n'
             code += 'const int bucket = '
-            code += 'grpc_stats_table_%d[((val.uint - %dull) >> %d)] + %d;\n' % (
-                map_table_idx, first_nontrivial_code, shift_data[0],
-                code_bounds_index)
+            code += 'grpc_stats_table_%d[((val.uint - %dull) >> %d)];\n' % (
+                map_table_idx, first_nontrivial_code, shift_data[0])
             code += 'return bucket - (value < grpc_stats_table_%d[bucket]);' % bounds_idx
             cases.append((int(u642dbl(last_code)) + 1, code))
             first_nontrivial_code = last_code
