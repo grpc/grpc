@@ -41,7 +41,6 @@ struct ConfigVarMetadata {
 
   absl::string_view name;
   absl::string_view description;
-  bool experiment;
 
   Types type_specific_info;
 };

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-- config: client_channel_backup_poll_interval_ms
+- name: client_channel_backup_poll_interval_ms
   type: int
   default: 5000
   description:
@@ -22,37 +22,20 @@
     They help reconnect disconnected client channels (mostly due to
     idleness), so that the next RPC on this channel won't fail. Set to 0 to
     turn off the backup polls.
-- config: dns_resolver
+- name: dns_resolver
   default:
   type: string
   description:
     Declares which DNS resolver to use. The default is ares if gRPC is built
     with c-ares support. Otherwise, the value of this environment variable is
     ignored.
-- experiment: enable_peer_state_based_framing
-  type: bool
-  default: false
-  owner: vigneshbabu@google.com
-  expiry: 2022/12/01
-  description:
-    If set, the max sizes of frames sent to lower layers is controlled based
-    on the peer's memory pressure which is reflected in its max http2 frame
-    size.
-- experiment: broad_flow_control_range
-  type: bool
-  default: false
-  owner: ctiller@google.com
-  expiry: 2022/12/01
-  description:
-    Use an enlarged memory pressure range for scaling flow control when using
-    a resource quota.
-- config: trace
+- name: trace
   type: string
   default:
   description:
     A comma separated list of tracers that provide additional insight into
     how gRPC C core is processing requests via debug logs.
-- config: verbosity
+- name: verbosity
   type: string
   prelude: |
     #ifndef GPR_DEFAULT_LOG_VERBOSITY_STRING
@@ -61,12 +44,12 @@
   default: GPR_DEFAULT_LOG_VERBOSITY_STRING
   description:
     Default gRPC logging verbosity
-- config: stacktrace_minloglevel
+- name: stacktrace_minloglevel
   type: string
   default:
   description:
     Messages logged at the same or higher level than this will print stacktrace
-- config: enable_fork_support
+- name: enable_fork_support
   type: bool
   description: Enable fork support
   prelude: |
@@ -76,69 +59,32 @@
     #define GRPC_ENABLE_FORK_SUPPORT_DEFAULT false
     #endif  // GRPC_ENABLE_FORK_SUPPORT
   default: GRPC_ENABLE_FORK_SUPPORT_DEFAULT
-- config: poll_strategy
+- name: poll_strategy
   type: string
   description:
     Declares which polling engines to try when starting gRPC.
     This is a comma-separated list of engines, which are tried in priority
     order first -> last.
   default: all
-- config: abort_on_leaks
+- name: abort_on_leaks
   type: bool
   default: false
   description:
     A debugging aid to cause a call to abort() when gRPC objects are leaked
     past grpc_shutdown()
-- experiment: enable_tcp_frame_size_tuning
-  type: bool
-  default: false
-  owner: vigneshbabu@google.com
-  expiry: 2022/12/01
-  description:
-    If set, enables TCP to use RPC size estimation made by higher layers.
-    TCP would not indicate completion of a read operation until a specified
-    number of bytes have been read over the socket. Buffers are also
-    allocated according to estimated RPC sizes.
-- experiment: smooth_memory_pressure
-  type: bool
-  default: false
-  owner: ctiller@google.com
-  expiry: 2022/12/01
-  description: Smooth the value of memory pressure over time
-- experiment: enable_periodic_resource_quota_reclamation
-  type: bool
-  default: false
-  owner: ctiller@google.com
-  expiry: 2022/12/01
-  description:
-    Enable experimental feature to reclaim resource quota periodically
-- experiment: max_quota_buffer_size
-  type: int
-  default: 1024 * 1024
-  owner: ctiller@google.com
-  expiry: 2022/12/01
-  description:
-    Maximum size for one memory allocators buffer size against a quota
-- experiment: resource_quota_set_point
-  type: int
-  default: 95
-  owner: ctiller@google.com
-  expiry: 2022/12/01
-  description:
-    Ask the resource quota to target this percentage of total quota usage.
-- config: system_ssl_roots_dir
+- name: system_ssl_roots_dir
   type: string
   default:
   description: Custom directory to SSL Roots
-- config: default_ssl_roots_file_path
+- name: default_ssl_roots_file_path
   type: string
   default:
   description: Path to the default SSL roots file.
-- config: not_use_system_ssl_roots
+- name: not_use_system_ssl_roots
   type: bool
   default: false
   description: Disable loading system root certificates.
-- config: ssl_cipher_suites
+- name: ssl_cipher_suites
   type: string
   description: A colon separated list of cipher suites to use with OpenSSL
   default: "TLS_AES_128_GCM_SHA256:\

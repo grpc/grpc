@@ -30,49 +30,23 @@ import yaml
 with open('src/core/lib/config/config_vars.yaml') as f:
     attrs = yaml.load(f.read(), Loader=yaml.FullLoader)
 
-def name(attr):
-    if 'config' in attr: return attr['config']
-    return attr['experiment']
-
-def var_name(attr):
-    if 'config' in attr: return 'grpc_' + attr['config']
-    return 'grpc_experimental_' + attr['experiment']
-
 error = False
 today = datetime.date.today()
 two_quarters_from_now = today + datetime.timedelta(days=180)
 for attr in attrs:
-    if 'config' not in attr and 'experiment' not in attr:
-        print("not a config or an experiment: %r" % attr)
+    if 'name' not in attr:
+        print("config has no name: %r" % attr)
         error = True
         continue
-    if 'config' in attr and 'experiment' in attr:
-        print("can't be both a config and an experiment: %r", attr)
-        error = True
-    if 'config' in attr and attr['config'].startswith('experiment'):
-        print("use 'experiment:' for experiments, not 'config:': %r", attr)
+    if 'experiment' in attr['name']:
+        print('use experiment system for experiments')
         error = True
     if 'description' not in attr:
-        print("no description for %s" % name(attr))
+        print("no description for %s" % attr['name'])
         error = True
     if 'default' not in attr:
-        print("no default for %s" % name(attr))
+        print("no default for %s" % attr['name'])
         error = True
-    if 'experiment' in attr:
-        if 'expiry' not in attr:
-            print("no expiry for experiment %s" % name(attr))
-            error = True
-        expiry = datetime.datetime.strptime(attr['expiry'], '%Y/%m/%d').date()
-        if expiry < today:
-            print("experiment %s expired on %s" % (name(attr), attr['expiry']))
-            error = True
-        if expiry > two_quarters_from_now:
-            print("experiment %s expires far in the future on %s" %
-                (name(attr), attr['expiry']))
-            error = True
-        if 'owner' not in attr:
-            print("no owner for experiment %s", name(attr))
-            error = True
 
 if error:
     sys.exit(1)
@@ -189,7 +163,7 @@ with open('src/core/lib/config/config_vars.h', 'w') as H:
         for line in attr['description'].splitlines():
             print("  // %s" % line, file=H)
         print("  %s %s() const { return %s_; }" % (
-            RETURN_TYPE[attr['type']], snake_to_pascal(name(attr)), name(attr)),file=H)
+            RETURN_TYPE[attr['type']], snake_to_pascal(attr['name']), attr['name']),file=H)
     print("  static absl::Span<const ConfigVarMetadata> metadata();",file=H)
     print(" private:",file=H)
     print("  ConfigVars();",file=H)
@@ -197,7 +171,7 @@ with open('src/core/lib/config/config_vars.h', 'w') as H:
     print("  static std::atomic<ConfigVars*> config_vars_;",file=H)
     for attr in attrs_in_packing_order:
         print("  %s %s_;" % (
-            MEMBER_TYPE[attr['type']], name(attr)),file=H)
+            MEMBER_TYPE[attr['type']], attr['name']),file=H)
     print("};",file=H)
     print(file=H)
     print("}  // namespace grpc_core", file=H)
@@ -219,19 +193,19 @@ with open('src/core/lib/config/config_vars.cc', 'w') as C:
     print("namespace {", file=C)
     for attr in attrs:
         print("const char* const description_%s = %s;" %
-              (name(attr), c_str(attr['description'])),
+              (attr['name'], c_str(attr['description'])),
               file=C)
     for attr in attrs:
         if attr['type'] == "string":
             print("const char* const default_%s = %s;" %
-                (name(attr), c_str(attr['default'])),
+                (attr['name'], c_str(attr['default'])),
                 file=C)
     for attr in attrs:
         print("GRPC_CONFIG_DEFINE_%s(%s, description_%s, %s);" % (
             attr["type"].upper(),
-            var_name(attr),
-            name(attr),
-            DEFAULT_VALUE[attr['type']](attr['default'], name(attr))
+            'grpc_' + attr['name'],
+            attr['name'],
+            DEFAULT_VALUE[attr['type']](attr['default'], attr['name'])
                     )            ,file=C)
     print("}", file=C)
     print(file=C)
@@ -239,11 +213,11 @@ with open('src/core/lib/config/config_vars.cc', 'w') as C:
     print(file=C)
     print("ConfigVars::ConfigVars() :", file=C)
     print(",".join("%s_(GRPC_CONFIG_LOAD_%s(%s, description_%s, %s))" % (
-        name(attr),
+        attr['name'],
         attr['type'].upper(), 
-        var_name(attr),
-        name(attr),
-        DEFAULT_VALUE[attr['type']](attr['default'], name(attr))
+        'grpc_' + attr['name'],
+        attr['name'],
+        DEFAULT_VALUE[attr['type']](attr['default'], attr['name'])
         ) for attr in attrs_in_packing_order), file=C)
     print("{}", file=C)
     print(file=C)
@@ -251,13 +225,12 @@ with open('src/core/lib/config/config_vars.cc', 'w') as C:
     print("  static const auto* metadata = new std::vector<ConfigVarMetadata>{",file=C)
     for attr in attrs:
         print("    {", file=C)
-        print("      %s," % c_str(name(attr)), file=C)
-        print("      description_%s," % name(attr), file=C)
-        print("      %s," % ('true' if 'experiment' in attr else 'false'), file=C)
+        print("      %s," % c_str(attr['name']), file=C)
+        print("      description_%s," % attr['name'], file=C)
         print("      ConfigVarMetadata::%s{%s, &ConfigVars::%s}," % (
             snake_to_pascal(attr['type']),
-            DEFAULT_VALUE[attr['type']](attr['default'], name(attr)),
-            snake_to_pascal(name(attr))), file=C)
+            DEFAULT_VALUE[attr['type']](attr['default'], attr['name']),
+            snake_to_pascal(attr['name'])), file=C)
         print("    },", file=C)
     print("  };",file=C)
     print("  return *metadata;",file=C)

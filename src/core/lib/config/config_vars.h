@@ -60,14 +60,6 @@ class ConfigVars {
   // with c-ares support. Otherwise, the value of this environment variable is
   // ignored.
   absl::string_view DnsResolver() const { return dns_resolver_; }
-  // If set, the max sizes of frames sent to lower layers is controlled based on
-  // the peer's memory pressure which is reflected in its max http2 frame size.
-  bool EnablePeerStateBasedFraming() const {
-    return enable_peer_state_based_framing_;
-  }
-  // Use an enlarged memory pressure range for scaling flow control when using a
-  // resource quota.
-  bool BroadFlowControlRange() const { return broad_flow_control_range_; }
   // A comma separated list of tracers that provide additional insight into how
   // gRPC C core is processing requests via debug logs.
   absl::string_view Trace() const { return trace_; }
@@ -86,23 +78,6 @@ class ConfigVars {
   // A debugging aid to cause a call to abort() when gRPC objects are leaked
   // past grpc_shutdown()
   bool AbortOnLeaks() const { return abort_on_leaks_; }
-  // If set, enables TCP to use RPC size estimation made by higher layers. TCP
-  // would not indicate completion of a read operation until a specified number
-  // of bytes have been read over the socket. Buffers are also allocated
-  // according to estimated RPC sizes.
-  bool EnableTcpFrameSizeTuning() const {
-    return enable_tcp_frame_size_tuning_;
-  }
-  // Smooth the value of memory pressure over time
-  bool SmoothMemoryPressure() const { return smooth_memory_pressure_; }
-  // Enable experimental feature to reclaim resource quota periodically
-  bool EnablePeriodicResourceQuotaReclamation() const {
-    return enable_periodic_resource_quota_reclamation_;
-  }
-  // Maximum size for one memory allocators buffer size against a quota
-  int32_t MaxQuotaBufferSize() const { return max_quota_buffer_size_; }
-  // Ask the resource quota to target this percentage of total quota usage.
-  int32_t ResourceQuotaSetPoint() const { return resource_quota_set_point_; }
   // Custom directory to SSL Roots
   absl::string_view SystemSslRootsDir() const { return system_ssl_roots_dir_; }
   // Path to the default SSL roots file.
@@ -120,15 +95,8 @@ class ConfigVars {
   static const ConfigVars& Load();
   static std::atomic<ConfigVars*> config_vars_;
   int32_t client_channel_backup_poll_interval_ms_;
-  int32_t max_quota_buffer_size_;
-  int32_t resource_quota_set_point_;
-  bool enable_peer_state_based_framing_;
-  bool broad_flow_control_range_;
   bool enable_fork_support_;
   bool abort_on_leaks_;
-  bool enable_tcp_frame_size_tuning_;
-  bool smooth_memory_pressure_;
-  bool enable_periodic_resource_quota_reclamation_;
   bool not_use_system_ssl_roots_;
   std::string dns_resolver_;
   std::string trace_;

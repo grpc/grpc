@@ -38,13 +38,6 @@ const char* const description_dns_resolver =
     "Declares which DNS resolver to use. The default is ares if gRPC is built "
     "with c-ares support. Otherwise, the value of this environment variable is "
     "ignored.";
-const char* const description_enable_peer_state_based_framing =
-    "If set, the max sizes of frames sent to lower layers is controlled based "
-    "on the peer's memory pressure which is reflected in its max http2 frame "
-    "size.";
-const char* const description_broad_flow_control_range =
-    "Use an enlarged memory pressure range for scaling flow control when using "
-    "a resource quota.";
 const char* const description_trace =
     "A comma separated list of tracers that provide additional insight into "
     "how gRPC C core is processing requests via debug logs.";
@@ -60,19 +53,6 @@ const char* const description_poll_strategy =
 const char* const description_abort_on_leaks =
     "A debugging aid to cause a call to abort() when gRPC objects are leaked "
     "past grpc_shutdown()";
-const char* const description_enable_tcp_frame_size_tuning =
-    "If set, enables TCP to use RPC size estimation made by higher layers. TCP "
-    "would not indicate completion of a read operation until a specified "
-    "number of bytes have been read over the socket. Buffers are also "
-    "allocated according to estimated RPC sizes.";
-const char* const description_smooth_memory_pressure =
-    "Smooth the value of memory pressure over time";
-const char* const description_enable_periodic_resource_quota_reclamation =
-    "Enable experimental feature to reclaim resource quota periodically";
-const char* const description_max_quota_buffer_size =
-    "Maximum size for one memory allocators buffer size against a quota";
-const char* const description_resource_quota_set_point =
-    "Ask the resource quota to target this percentage of total quota usage.";
 const char* const description_system_ssl_roots_dir =
     "Custom directory to SSL Roots";
 const char* const description_default_ssl_roots_file_path =
@@ -97,10 +77,6 @@ GRPC_CONFIG_DEFINE_INT(grpc_client_channel_backup_poll_interval_ms,
                        5000);
 GRPC_CONFIG_DEFINE_STRING(grpc_dns_resolver, description_dns_resolver,
                           default_dns_resolver);
-GRPC_CONFIG_DEFINE_BOOL(grpc_experimental_enable_peer_state_based_framing,
-                        description_enable_peer_state_based_framing, false);
-GRPC_CONFIG_DEFINE_BOOL(grpc_experimental_broad_flow_control_range,
-                        description_broad_flow_control_range, false);
 GRPC_CONFIG_DEFINE_STRING(grpc_trace, description_trace, default_trace);
 GRPC_CONFIG_DEFINE_STRING(grpc_verbosity, description_verbosity,
                           default_verbosity);
@@ -112,17 +88,6 @@ GRPC_CONFIG_DEFINE_BOOL(grpc_enable_fork_support,
 GRPC_CONFIG_DEFINE_STRING(grpc_poll_strategy, description_poll_strategy,
                           default_poll_strategy);
 GRPC_CONFIG_DEFINE_BOOL(grpc_abort_on_leaks, description_abort_on_leaks, false);
-GRPC_CONFIG_DEFINE_BOOL(grpc_experimental_enable_tcp_frame_size_tuning,
-                        description_enable_tcp_frame_size_tuning, false);
-GRPC_CONFIG_DEFINE_BOOL(grpc_experimental_smooth_memory_pressure,
-                        description_smooth_memory_pressure, false);
-GRPC_CONFIG_DEFINE_BOOL(
-    grpc_experimental_enable_periodic_resource_quota_reclamation,
-    description_enable_periodic_resource_quota_reclamation, false);
-GRPC_CONFIG_DEFINE_INT(grpc_experimental_max_quota_buffer_size,
-                       description_max_quota_buffer_size, 1024 * 1024);
-GRPC_CONFIG_DEFINE_INT(grpc_experimental_resource_quota_set_point,
-                       description_resource_quota_set_point, 95);
 GRPC_CONFIG_DEFINE_STRING(grpc_system_ssl_roots_dir,
                           description_system_ssl_roots_dir,
                           default_system_ssl_roots_dir);
@@ -141,31 +106,10 @@ ConfigVars::ConfigVars()
     : client_channel_backup_poll_interval_ms_(GRPC_CONFIG_LOAD_INT(
           grpc_client_channel_backup_poll_interval_ms,
           description_client_channel_backup_poll_interval_ms, 5000)),
-      max_quota_buffer_size_(
-          GRPC_CONFIG_LOAD_INT(grpc_experimental_max_quota_buffer_size,
-                               description_max_quota_buffer_size, 1024 * 1024)),
-      resource_quota_set_point_(
-          GRPC_CONFIG_LOAD_INT(grpc_experimental_resource_quota_set_point,
-                               description_resource_quota_set_point, 95)),
-      enable_peer_state_based_framing_(GRPC_CONFIG_LOAD_BOOL(
-          grpc_experimental_enable_peer_state_based_framing,
-          description_enable_peer_state_based_framing, false)),
-      broad_flow_control_range_(
-          GRPC_CONFIG_LOAD_BOOL(grpc_experimental_broad_flow_control_range,
-                                description_broad_flow_control_range, false)),
       enable_fork_support_(GRPC_CONFIG_LOAD_BOOL(
           grpc_enable_fork_support, description_enable_fork_support, true)),
       abort_on_leaks_(GRPC_CONFIG_LOAD_BOOL(grpc_abort_on_leaks,
                                             description_abort_on_leaks, false)),
-      enable_tcp_frame_size_tuning_(GRPC_CONFIG_LOAD_BOOL(
-          grpc_experimental_enable_tcp_frame_size_tuning,
-          description_enable_tcp_frame_size_tuning, false)),
-      smooth_memory_pressure_(
-          GRPC_CONFIG_LOAD_BOOL(grpc_experimental_smooth_memory_pressure,
-                                description_smooth_memory_pressure, false)),
-      enable_periodic_resource_quota_reclamation_(GRPC_CONFIG_LOAD_BOOL(
-          grpc_experimental_enable_periodic_resource_quota_reclamation,
-          description_enable_periodic_resource_quota_reclamation, false)),
       not_use_system_ssl_roots_(
           GRPC_CONFIG_LOAD_BOOL(grpc_not_use_system_ssl_roots,
                                 description_not_use_system_ssl_roots, false)),
@@ -197,123 +141,67 @@ absl::Span<const ConfigVarMetadata> ConfigVars::metadata() {
       {
           "client_channel_backup_poll_interval_ms",
           description_client_channel_backup_poll_interval_ms,
-          false,
           ConfigVarMetadata::Int{
               5000, &ConfigVars::ClientChannelBackupPollIntervalMs},
       },
       {
           "dns_resolver",
           description_dns_resolver,
-          false,
           ConfigVarMetadata::String{default_dns_resolver,
                                     &ConfigVars::DnsResolver},
       },
       {
-          "enable_peer_state_based_framing",
-          description_enable_peer_state_based_framing,
-          true,
-          ConfigVarMetadata::Bool{false,
-                                  &ConfigVars::EnablePeerStateBasedFraming},
-      },
-      {
-          "broad_flow_control_range",
-          description_broad_flow_control_range,
-          true,
-          ConfigVarMetadata::Bool{false, &ConfigVars::BroadFlowControlRange},
-      },
-      {
           "trace",
           description_trace,
-          false,
           ConfigVarMetadata::String{default_trace, &ConfigVars::Trace},
       },
       {
           "verbosity",
           description_verbosity,
-          false,
           ConfigVarMetadata::String{default_verbosity, &ConfigVars::Verbosity},
       },
       {
           "stacktrace_minloglevel",
           description_stacktrace_minloglevel,
-          false,
           ConfigVarMetadata::String{default_stacktrace_minloglevel,
                                     &ConfigVars::StacktraceMinloglevel},
       },
       {
           "enable_fork_support",
           description_enable_fork_support,
-          false,
           ConfigVarMetadata::Bool{true, &ConfigVars::EnableForkSupport},
       },
       {
           "poll_strategy",
           description_poll_strategy,
-          false,
           ConfigVarMetadata::String{default_poll_strategy,
                                     &ConfigVars::PollStrategy},
       },
       {
           "abort_on_leaks",
           description_abort_on_leaks,
-          false,
           ConfigVarMetadata::Bool{false, &ConfigVars::AbortOnLeaks},
-      },
-      {
-          "enable_tcp_frame_size_tuning",
-          description_enable_tcp_frame_size_tuning,
-          true,
-          ConfigVarMetadata::Bool{false, &ConfigVars::EnableTcpFrameSizeTuning},
-      },
-      {
-          "smooth_memory_pressure",
-          description_smooth_memory_pressure,
-          true,
-          ConfigVarMetadata::Bool{false, &ConfigVars::SmoothMemoryPressure},
-      },
-      {
-          "enable_periodic_resource_quota_reclamation",
-          description_enable_periodic_resource_quota_reclamation,
-          true,
-          ConfigVarMetadata::Bool{
-              false, &ConfigVars::EnablePeriodicResourceQuotaReclamation},
-      },
-      {
-          "max_quota_buffer_size",
-          description_max_quota_buffer_size,
-          true,
-          ConfigVarMetadata::Int{1024 * 1024, &ConfigVars::MaxQuotaBufferSize},
-      },
-      {
-          "resource_quota_set_point",
-          description_resource_quota_set_point,
-          true,
-          ConfigVarMetadata::Int{95, &ConfigVars::ResourceQuotaSetPoint},
       },
       {
           "system_ssl_roots_dir",
           description_system_ssl_roots_dir,
-          false,
           ConfigVarMetadata::String{default_system_ssl_roots_dir,
                                     &ConfigVars::SystemSslRootsDir},
       },
       {
           "default_ssl_roots_file_path",
           description_default_ssl_roots_file_path,
-          false,
           ConfigVarMetadata::String{default_default_ssl_roots_file_path,
                                     &ConfigVars::DefaultSslRootsFilePath},
       },
       {
           "not_use_system_ssl_roots",
           description_not_use_system_ssl_roots,
-          false,
           ConfigVarMetadata::Bool{false, &ConfigVars::NotUseSystemSslRoots},
       },
       {
           "ssl_cipher_suites",
           description_ssl_cipher_suites,
-          false,
           ConfigVarMetadata::String{default_ssl_cipher_suites,
                                     &ConfigVars::SslCipherSuites},
       },
