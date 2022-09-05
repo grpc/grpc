@@ -14,6 +14,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/gprpp/tchar.h"
+
 #ifdef GPR_WINDOWS
 
 namespace grpc_core {
