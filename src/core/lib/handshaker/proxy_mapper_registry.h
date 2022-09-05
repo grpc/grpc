@@ -16,13 +16,15 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_PROXY_MAPPER_REGISTRY_H
-#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_PROXY_MAPPER_REGISTRY_H
+#ifndef GRPC_CORE_LIB_HANDSHAKER_PROXY_MAPPER_REGISTRY_H
+#define GRPC_CORE_LIB_HANDSHAKER_PROXY_MAPPER_REGISTRY_H
 
 #include <grpc/support/port_platform.h>
 
+#include <algorithm>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
@@ -70,4 +72,4 @@ class ProxyMapperRegistry {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_PROXY_MAPPER_REGISTRY_H */
+#endif /* GRPC_CORE_LIB_HANDSHAKER_PROXY_MAPPER_REGISTRY_H */
