@@ -28,7 +28,6 @@
 
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gpr/string_windows.h"
 #include "src/core/lib/gprpp/tchar.h"
 
 char* gpr_getenv(const char* name) {
