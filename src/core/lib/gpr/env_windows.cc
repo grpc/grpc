@@ -29,45 +29,30 @@
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/string_windows.h"
+#include "src/core/lib/gprpp/tchar.h"
 
 char* gpr_getenv(const char* name) {
   char* result = NULL;
-  DWORD size;
   LPTSTR tresult = NULL;
-  LPTSTR tname = gpr_char_to_tchar(name);
+  auto tname = grpc_core::CharToTchar(name);
   DWORD ret;
 
-  ret = GetEnvironmentVariable(tname, NULL, 0);
-  if (ret == 0) {
-    gpr_free(tname);
-    return NULL;
-  }
-  size = ret * (DWORD)sizeof(TCHAR);
-  tresult = (LPTSTR)gpr_malloc(size);
-  ret = GetEnvironmentVariable(tname, tresult, size);
-  gpr_free(tname);
-  if (ret == 0) {
-    gpr_free(tresult);
-    return NULL;
-  }
-  result = gpr_tchar_to_char(tresult);
-  gpr_free(tresult);
-  return result;
+  ret = GetEnvironmentVariable(tname.c_str(), NULL, 0);
+  if (ret == 0) return NULL;
+  std::unique_ptr<TCHAR[]> tresult(new TCHAR[ret]);
+  ret = GetEnvironmentVariable(tname.c_str(), tresult.get(), size);
+  if (ret == 0) return NULL;
+  return gpr_strdup(grpc_core::TcharToChar(tresult).c_str());
 }
 
 void gpr_setenv(const char* name, const char* value) {
-  LPTSTR tname = gpr_char_to_tchar(name);
-  LPTSTR tvalue = gpr_char_to_tchar(value);
-  BOOL res = SetEnvironmentVariable(tname, tvalue);
-  gpr_free(tname);
-  gpr_free(tvalue);
+  BOOL res = SetEnvironmentVariable(grpc_core::CharToTchar(name).c_str(),
+                                    grpc_core::CharToTchar(value).c_str());
   GPR_ASSERT(res);
 }
 
 void gpr_unsetenv(const char* name) {
-  LPTSTR tname = gpr_char_to_tchar(name);
-  BOOL res = SetEnvironmentVariable(tname, NULL);
-  gpr_free(tname);
+  BOOL res = SetEnvironmentVariable(grpc_core::CharToTchar(name).c_str(), NULL);
   GPR_ASSERT(res);
 }
 

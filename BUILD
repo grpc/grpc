@@ -620,6 +620,16 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "tchar",
+    hdrs = [
+        "src/core/lib/gprpp/tchar.h",
+    ],
+    srcs = [
+        "src/core/lib/gprpp/tchar.cc",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc++_internals",
     srcs = [
         "src/cpp/client/insecure_credentials.cc",
