@@ -200,8 +200,9 @@ def gen_bucket_code(shape):
                 break
             if map_table[-1] < 8:
                 break
-            map_table_idx = decl_static_table([x + code_bounds_index for x in map_table],
-                                              type_for_uint_table(map_table))
+            map_table_idx = decl_static_table(
+                [x + code_bounds_index for x in map_table],
+                type_for_uint_table(map_table))
             last_code = (
                 (len(map_table) - 1) << shift_data[0]) + first_nontrivial_code
             code += '// first_nontrivial_code=%d\n// last_code=%d [%f]\n' % (
