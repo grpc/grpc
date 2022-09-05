@@ -142,6 +142,8 @@ TEST_P(XdsClientTest, MultipleBadCdsResources) {
   constexpr char kClusterName2[] = "cluster_name_2";
   constexpr char kClusterName3[] = "cluster_name_3";
   CreateAndStartBackends(1);
+  balancer_->ads_service()->set_inject_bad_resources_for_resource_type(
+      kCdsTypeUrl);
   // Add cluster with unsupported type.
   auto cluster = default_cluster_;
   cluster.set_name(kClusterName2);
@@ -178,14 +180,21 @@ TEST_P(XdsClientTest, MultipleBadCdsResources) {
   // Send RPC.
   const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(
+  EXPECT_EQ(
       response_state->error_message,
-      ::testing::ContainsRegex(absl::StrCat(kClusterName2,
-                                            ": validation error.*"
-                                            "DiscoveryType is not valid.*",
-                                            kClusterName3,
-                                            ": validation error.*"
-                                            "DiscoveryType is not valid")));
+      absl::StrCat(
+          "xDS response validation errors: ["
+          "resource index 0: Can't decode Resource proto wrapper; ",
+          "resource index 1: foo: "
+          "INVALID_ARGUMENT: Can't parse Cluster resource.; "
+          "resource index 3: ",
+          kClusterName2,
+          ": validation error: INVALID_ARGUMENT: errors parsing CDS resource: "
+          "[DiscoveryType is not valid.]; "
+          "resource index 4: ",
+          kClusterName3,
+          ": validation error: INVALID_ARGUMENT: errors parsing CDS resource: "
+          "[DiscoveryType is not valid.]]"));
   // RPCs for default cluster should succeed.
   std::vector<std::pair<std::string, std::string>> metadata_default_cluster = {
       {"cluster", kDefaultClusterName},

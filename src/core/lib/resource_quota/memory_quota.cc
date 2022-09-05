@@ -24,7 +24,6 @@
 
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
-#include "absl/utility/utility.h"
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/useful.h"
@@ -178,7 +177,7 @@ void GrpcMemoryAllocatorImpl::Shutdown() {
     shutdown_ = true;
     memory_quota = memory_quota_;
     for (size_t i = 0; i < kNumReclamationPasses; i++) {
-      reclamation_handles[i] = absl::exchange(reclamation_handles_[i], nullptr);
+      reclamation_handles[i] = std::exchange(reclamation_handles_[i], nullptr);
     }
   }
 }
@@ -479,7 +478,7 @@ namespace memory_quota_detail {
 
 double PressureController::Update(double error) {
   bool is_low = error < 0;
-  bool was_low = absl::exchange(last_was_low_, is_low);
+  bool was_low = std::exchange(last_was_low_, is_low);
   double new_control;  // leave unset to compiler can note bad branches
   if (is_low && was_low) {
     // Memory pressure is too low this round, and was last round too.

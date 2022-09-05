@@ -449,11 +449,14 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\event_engine\\slice.cc " +
     "src\\core\\lib\\event_engine\\slice_buffer.cc " +
     "src\\core\\lib\\event_engine\\thread_pool.cc " +
+    "src\\core\\lib\\event_engine\\time_util.cc " +
     "src\\core\\lib\\event_engine\\trace.cc " +
     "src\\core\\lib\\event_engine\\utils.cc " +
     "src\\core\\lib\\event_engine\\windows\\iocp.cc " +
     "src\\core\\lib\\event_engine\\windows\\win_socket.cc " +
     "src\\core\\lib\\event_engine\\windows\\windows_engine.cc " +
+    "src\\core\\lib\\experiments\\config.cc " +
+    "src\\core\\lib\\experiments\\experiments.cc " +
     "src\\core\\lib\\gpr\\alloc.cc " +
     "src\\core\\lib\\gpr\\atm.cc " +
     "src\\core\\lib\\gpr\\cpu_iphone.cc " +
@@ -582,8 +585,6 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\load_balancing\\lb_policy.cc " +
     "src\\core\\lib\\load_balancing\\lb_policy_registry.cc " +
     "src\\core\\lib\\matchers\\matchers.cc " +
-    "src\\core\\lib\\profiling\\basic_timers.cc " +
-    "src\\core\\lib\\profiling\\stap_timers.cc " +
     "src\\core\\lib\\promise\\activity.cc " +
     "src\\core\\lib\\promise\\sleep.cc " +
     "src\\core\\lib\\resolver\\resolver.cc " +
@@ -1455,6 +1456,7 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\event_engine\\executor");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\event_engine\\posix_engine");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\event_engine\\windows");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\experiments");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\gpr");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\gprpp");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\http");
@@ -1462,7 +1464,6 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\json");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\load_balancing");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\matchers");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\profiling");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\promise");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\resolver");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\resource_quota");
