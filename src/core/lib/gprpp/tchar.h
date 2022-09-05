@@ -17,6 +17,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <string>
+
 namespace grpc_core {
 
 #ifdef GPR_WINDOWS
