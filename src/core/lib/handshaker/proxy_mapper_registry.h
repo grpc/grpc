@@ -27,28 +27,37 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
-#include "src/core/ext/filters/client_channel/proxy_mapper.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/handshaker/proxy_mapper.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 
 namespace grpc_core {
 
 class ProxyMapperRegistry {
+  using ProxyMapperList = std::vector<std::unique_ptr<ProxyMapperInterface>>;
+
  public:
-  static void Init();
-  static void Shutdown();
+  class Builder {
+   public:
+    /// Registers a new proxy mapper.
+    /// If \a at_start is true, the new mapper will be at the beginning of
+    /// the list.  Otherwise, it will be added to the end.
+    void Register(bool at_start, std::unique_ptr<ProxyMapperInterface> mapper);
 
-  /// Registers a new proxy mapper.
-  /// If \a at_start is true, the new mapper will be at the beginning of
-  /// the list.  Otherwise, it will be added to the end.
-  static void Register(bool at_start,
-                       std::unique_ptr<ProxyMapperInterface> mapper);
+    ProxyMapperRegistry Build();
 
-  static absl::optional<std::string> MapName(absl::string_view server_uri,
-                                             ChannelArgs* args);
+   private:
+    ProxyMapperList mappers_;
+  };
 
-  static absl::optional<grpc_resolved_address> MapAddress(
-      const grpc_resolved_address& address, ChannelArgs* args);
+  absl::optional<std::string> MapName(absl::string_view server_uri,
+                                      ChannelArgs* args) const;
+
+  absl::optional<grpc_resolved_address> MapAddress(
+      const grpc_resolved_address& address, ChannelArgs* args) const;
+
+ private:
+  ProxyMapperList mappers_;
 };
 
 }  // namespace grpc_core

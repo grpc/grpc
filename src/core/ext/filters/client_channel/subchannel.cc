@@ -38,7 +38,6 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/health/health_check_client.h"
-#include "src/core/ext/filters/client_channel/proxy_mapper_registry.h"
 #include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
 #include "src/core/ext/filters/client_channel/subchannel_stream_client.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
@@ -58,6 +57,7 @@
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/handshaker/proxy_mapper_registry.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/surface/channel_init.h"
@@ -642,7 +642,9 @@ Subchannel::Subchannel(SubchannelKey key,
                     grpc_schedule_on_exec_ctx);
   // Check proxy mapper to determine address to connect to and channel
   // args to use.
-  address_for_connect_ = ProxyMapperRegistry::MapAddress(key_.address(), &args_)
+  address_for_connect_ = CoreConfiguration::Get()
+                             .proxy_mapper_registry()
+                             .MapAddress(key_.address(), &args_)
                              .value_or(key_.address());
   // Initialize channelz.
   const bool channelz_enabled = args_.GetBool(GRPC_ARG_ENABLE_CHANNELZ)
