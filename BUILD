@@ -260,7 +260,6 @@ GRPCXX_SRCS = [
     "src/cpp/util/status.cc",
     "src/cpp/util/string_ref.cc",
     "src/cpp/util/time_cc.cc",
-    "src/cpp/codegen/codegen_init.cc",
 ]
 
 GRPCXX_HDRS = [
@@ -7135,12 +7134,11 @@ grpc_cc_library(
     ],
 )
 
-# TODO(chengyuc): kept this target for compatibility purpose
-# This should be removed in a future PR.
 grpc_cc_library(
     name = "grpc++_codegen_base_src",
-    # To avoid from violating ODR for building on Windows
-    srcs = [],
+    srcs = [
+        "src/cpp/codegen/codegen_init.cc",
+    ],
     language = "c++",
     tags = ["nofixdeps"],
     deps = [
