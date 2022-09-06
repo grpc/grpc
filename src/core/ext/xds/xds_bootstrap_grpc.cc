@@ -33,12 +33,14 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 
+#include "src/core/ext/xds/certificate_provider_factory.h"
 #include "src/core/ext/xds/certificate_provider_registry.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/json/json_util.h"
 #include "src/core/lib/security/credentials/channel_creds_registry.h"
-#include "src/core/lib/transport/error_utils.h"
 
 namespace grpc_core {
 

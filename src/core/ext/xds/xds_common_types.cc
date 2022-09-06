@@ -21,6 +21,7 @@
 #include <stddef.h>
 
 #include <algorithm>
+#include <map>
 #include <utility>
 
 #include "absl/status/status.h"
@@ -37,6 +38,7 @@
 #include "upb/upb.h"
 #include "xds/type/v3/typed_struct.upb.h"
 
+#include "src/core/ext/xds/certificate_provider_store.h"
 #include "src/core/ext/xds/upb_utils.h"
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_client.h"
