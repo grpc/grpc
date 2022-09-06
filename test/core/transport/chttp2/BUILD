@@ -111,9 +111,9 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
+    tags = ["flow_control_test"],
     uses_event_engine = False,
     uses_polling = False,
-    tags = ["flow_control_test"],
     deps = [
         "//:chttp2_flow_control",
         "//:resource_quota",
@@ -267,7 +267,10 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
-    tags = ["flow_control_test", "no_windows"],  # LARGE_MACHINE is not configured for windows RBE
+    tags = [
+        "flow_control_test",
+        "no_windows",
+    ],  # LARGE_MACHINE is not configured for windows RBE
     deps = [
         "//:gpr",
         "//:grpc",
