@@ -68,6 +68,8 @@ class OutlierDetectionTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
             return config.version_gte('v1.49.x')
         if config.client_lang == _Lang.NODE:
             return config.version_gte('v1.6.x')
+        if config.client_lang == _Lang.GO:
+            return config.version_gte('master')
         return False
 
     def test_outlier_detection(self) -> None:
