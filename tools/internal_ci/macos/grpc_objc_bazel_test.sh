@@ -105,7 +105,7 @@ objc_bazel_tests/bazel_wrapper \
   --test_env HOST_PORT_LOCAL=localhost:$PLAIN_PORT \
   --test_env HOST_PORT_LOCALSSL=localhost:$TLS_PORT \
   --test_env FLAKE_TEST_REPEATS=1 \
-  --test_env GRPC_TRACE=subchannel,tcp,api \
+  --test_env GRPC_TRACE=subchannel,http,tcp,api \
   --runs_per_test 200 \
   --local_test_jobs=1 \
   --compilation_mode=dbg \
