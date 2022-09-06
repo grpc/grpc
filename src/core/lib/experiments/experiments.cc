@@ -29,6 +29,12 @@ const char* const description_tcp_read_chunks =
     "malloc to recycle arbitrary large blocks.";
 const char* const description_tcp_rcv_lowat =
     "Use SO_RCVLOWAT to avoid wakeups on the read path.";
+const char* const description_memory_pressure_controller =
+    "New memory pressure controller";
+const char* const description_periodic_resource_quota_reclamation =
+    "Periodically return memory to the resource quota";
+const char* const description_unconstrained_max_quota_buffer_size =
+    "Discard the cap on the max free pool size for one memory allocator";
 }  // namespace
 
 namespace grpc_core {
@@ -37,6 +43,12 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning, false},
     {"tcp_read_chunks", description_tcp_read_chunks, false},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat, false},
+    {"memory_pressure_controller", description_memory_pressure_controller,
+     false},
+    {"periodic_resource_quota_reclamation",
+     description_periodic_resource_quota_reclamation, false},
+    {"unconstrained_max_quota_buffer_size",
+     description_unconstrained_max_quota_buffer_size, false},
 };
 
 }  // namespace grpc_core

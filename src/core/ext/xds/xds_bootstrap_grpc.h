@@ -56,17 +56,16 @@ class GrpcXdsBootstrap : public XdsBootstrap {
   const Node* node() const override {
     return node_.has_value() ? &*node_ : nullptr;
   }
-  const std::string& client_default_listener_resource_name_template()
-      const override {
-    return client_default_listener_resource_name_template_;
-  }
-  const std::string& server_listener_resource_name_template() const override {
-    return server_listener_resource_name_template_;
-  }
   const std::map<std::string, Authority>& authorities() const override {
     return authorities_;
   }
 
+  const std::string& client_default_listener_resource_name_template() const {
+    return client_default_listener_resource_name_template_;
+  }
+  const std::string& server_listener_resource_name_template() const {
+    return server_listener_resource_name_template_;
+  }
   const CertificateProviderStore::PluginDefinitionMap& certificate_providers()
       const {
     return certificate_providers_;

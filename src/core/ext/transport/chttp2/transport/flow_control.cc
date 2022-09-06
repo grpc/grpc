@@ -35,6 +35,7 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/global_config_env.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -288,15 +289,13 @@ void TransportFlowControl::UpdateSetting(
 }
 
 FlowControlAction TransportFlowControl::PeriodicUpdate() {
-  static const bool kSmoothMemoryPressure =
-      GPR_GLOBAL_CONFIG_GET(grpc_experimental_smooth_memory_presure);
   FlowControlAction action;
   if (enable_bdp_probe_) {
     // get bdp estimate and update initial_window accordingly.
     // target might change based on how much memory pressure we are under
     // TODO(ncteisen): experiment with setting target to be huge under low
     // memory pressure.
-    double target = kSmoothMemoryPressure
+    double target = IsMemoryPressureControllerEnabled()
                         ? TargetInitialWindowSizeBasedOnMemoryPressureAndBdp()
                         : pow(2, SmoothLogBdp(TargetLogBdp()));
     if (g_test_only_transport_target_window_estimates_mocker != nullptr) {

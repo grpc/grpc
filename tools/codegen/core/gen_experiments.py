@@ -187,9 +187,14 @@ with open('src/core/lib/experiments/experiments.cc', 'w') as C:
     print("}  // namespace grpc_core", file=C)
 
 tags_to_experiments = collections.defaultdict(list)
+tags_to_negated_experiments = collections.defaultdict(list)
 for attr in attrs:
-    for tag in attr['test_tags']:
-        tags_to_experiments[tag].append(attr['name'])
+    if attr['default']:
+        for tag in attr['test_tags']:
+            tags_to_negated_experiments[tag].append(attr['name'])
+    else:
+        for tag in attr['test_tags']:
+            tags_to_experiments[tag].append(attr['name'])
 
 with open('bazel/experiments.bzl', 'w') as B:
     put_copyright(B, "#")
@@ -206,6 +211,14 @@ with open('bazel/experiments.bzl', 'w') as B:
     print(file=B)
     print("EXPERIMENTS = {", file=B)
     for tag, experiments in sorted(tags_to_experiments.items()):
+        print("    \"%s\": [" % tag, file=B)
+        for experiment in sorted(experiments):
+            print("        \"%s\"," % experiment, file=B)
+        print("    ],", file=B)
+    print("}", file=B)
+    print(file=B)
+    print("NEGATED_EXPERIMENTS = {", file=B)
+    for tag, experiments in sorted(tags_to_negated_experiments.items()):
         print("    \"%s\": [" % tag, file=B)
         for experiment in sorted(experiments):
             print("        \"%s\"," % experiment, file=B)
