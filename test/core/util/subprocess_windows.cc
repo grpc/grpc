@@ -31,6 +31,8 @@
 #include "src/core/lib/gprpp/tchar.h"
 #include "test/core/util/subprocess.h"
 
+#include "absl/strings/str_join.h"
+
 struct gpr_subprocess {
   PROCESS_INFORMATION pi;
   int joined;
@@ -52,7 +54,7 @@ gpr_subprocess* gpr_subprocess_create(int argc, const char** argv) {
   si.cb = sizeof(si);
   memset(&pi, 0, sizeof(pi));
 
-  if (!CreateProcess(NULL, args.c_str(), NULL, NULL, FALSE,
+  if (!CreateProcess(NULL, args.data(), NULL, NULL, FALSE,
                      CREATE_NEW_PROCESS_GROUP, NULL, NULL, &si, &pi)) {
     return NULL;
   }
