@@ -43,14 +43,13 @@ FILE* gpr_tmpfile(const char* prefix, char** tmp_filename_out) {
 
   /* Convert our prefix to TCHAR. */
   grpc_core::TcharString template_string = grpc_core::CharToTchar(prefix);
-  GPR_ASSERT(template_string);
 
   /* Get the path to the best temporary folder available. */
   status = GetTempPath(MAX_PATH, tmp_path);
   if (status == 0 || status > MAX_PATH) goto end;
 
   /* Generate a unique filename with our template + temporary path. */
-  success = GetTempFileName(tmp_path, template_string, 0, tmp_filename);
+  success = GetTempFileName(tmp_path, template_string.c_str(), 0, tmp_filename);
   if (!success) goto end;
 
   /* Open a file there. */
@@ -62,7 +61,6 @@ end:
         gpr_strdup(grpc_core::TcharToChar(tmp_filename).c_str());
   }
 
-  gpr_free(template_string);
   return result;
 }
 
