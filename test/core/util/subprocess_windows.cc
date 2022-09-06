@@ -24,14 +24,14 @@
 #include <tchar.h>
 #include <windows.h>
 
+#include "absl/strings/str_join.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/tchar.h"
 #include "test/core/util/subprocess.h"
-
-#include "absl/strings/str_join.h"
 
 struct gpr_subprocess {
   PROCESS_INFORMATION pi;

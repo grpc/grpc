@@ -40,7 +40,8 @@ char* gpr_getenv(const char* name) {
   ret = GetEnvironmentVariable(tname.c_str(), NULL, 0);
   if (ret == 0) return NULL;
   std::unique_ptr<TCHAR[]> tresult(new TCHAR[ret]);
-  ret = GetEnvironmentVariable(tname.c_str(), tresult.get(), ret * sizeof(TCHAR));
+  ret =
+      GetEnvironmentVariable(tname.c_str(), tresult.get(), ret * sizeof(TCHAR));
   if (ret == 0) return NULL;
   return gpr_strdup(grpc_core::TcharToChar(tresult.get()).c_str());
 }
