@@ -181,6 +181,7 @@ def gen_bucket_code(shape):
     cases = [(0, 'return 0;'), (first_nontrivial, 'return value;')]
     if done_trivial:
         first_nontrivial_code = dbl2u64(first_nontrivial)
+        last_code = first_nontrivial_code
         while True:
             code = ''
             first_nontrivial = u642dbl(first_nontrivial_code)
@@ -214,11 +215,11 @@ def gen_bucket_code(shape):
             code += 'return bucket - (value < grpc_stats_table_%d[bucket]);' % bounds_idx
             cases.append((int(u642dbl(last_code)) + 1, code))
             first_nontrivial_code = last_code
-    last = u642dbl(last_code) + 1
-    for i, b in enumerate(bounds[:-2]):
-        if bounds[i + 1] < last:
-            continue
-        cases.append((bounds[i + 1], 'return %d;' % i))
+        last = u642dbl(last_code) + 1
+        for i, b in enumerate(bounds[:-2]):
+            if bounds[i + 1] < last:
+                continue
+            cases.append((bounds[i + 1], 'return %d;' % i))
     cases.append((None, 'return %d;' % (len(bounds) - 2)))
     return (merge_cases(cases), bounds_idx)
 
