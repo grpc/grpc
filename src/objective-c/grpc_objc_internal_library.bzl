@@ -66,6 +66,7 @@ def grpc_objc_ios_unit_test(
         name = name,
         minimum_os_version = "9.0",
         runner = test_runner,
+        tags = ["exclusive"],
         deps = deps,
     )
 
