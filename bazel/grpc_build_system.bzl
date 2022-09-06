@@ -29,7 +29,7 @@ Contains macros used throughout the repo.
 
 load("//bazel:cc_grpc_library.bzl", "cc_grpc_library")
 load("//bazel:copts.bzl", "GRPC_DEFAULT_COPTS")
-load("//bazel:experiments.bzl", "EXPERIMENTS")
+load("//bazel:experiments.bzl", "EXPERIMENTS", "NEGATED_EXPERIMENTS")
 load("@upb//bazel:upb_proto_library.bzl", "upb_proto_library", "upb_proto_reflection_library")
 load("@build_bazel_rules_apple//apple:ios.bzl", "ios_unit_test")
 load("@build_bazel_rules_apple//apple/testing/default_runner:ios_test_runner.bzl", "ios_test_runner")
@@ -336,12 +336,39 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_event_engin
             experiments[experiment] = 1
     experiments = list(experiments.keys())
 
+    negated_experiments = {}
+    for tag in tags:
+        if tag not in NEGATED_EXPERIMENTS:
+            continue
+        for experiment in NEGATED_EXPERIMENTS[tag]:
+            negated_experiments[experiment] = 1
+    negated_experiments = list(negated_experiments.keys())
+
     experiment_config = list(poller_config)
     for experiment in experiments:
         for config in poller_config:
             config = dict(config)
             config["name"] = config["name"] + "@experiment=" + experiment
             config["args"] = config["args"] + ["--experiment=" + experiment]
+            tags = config["tags"]
+            must_have_tags = [
+                # We don't run experiments on cmake builds
+                "bazel_only",
+                # Nor on windows
+                "no_windows",
+                # Nor on mac
+                "no_mac",
+            ]
+            for tag in must_have_tags:
+                if tag not in tags:
+                    tags = tags + [tag]
+            config["tags"] = tags
+            experiment_config.append(config)
+    for experiment in negated_experiments:
+        for config in poller_config:
+            config = dict(config)
+            config["name"] = config["name"] + "@experiment=no_" + experiment
+            config["args"] = config["args"] + ["--experiment=-" + experiment]
             tags = config["tags"]
             must_have_tags = [
                 # We don't run experiments on cmake builds
