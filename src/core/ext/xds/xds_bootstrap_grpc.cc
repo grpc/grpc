@@ -378,7 +378,7 @@ grpc_error_handle GrpcXdsBootstrap::ParseCertificateProvider(
         config_json = it->second;
       }
     } else {
-      // "config" is an optional field, so use an empty JSON object.
+      // "config" is an optional field, so default to an empty JSON object.
       config_json = Json::Object();
     }
     // Try to instantiate the provider.
@@ -463,7 +463,7 @@ std::string GrpcXdsBootstrap::ToString() const {
                         entry.second.xds_servers[0].channel_creds_type));
     parts.push_back("      },\n");
   }
-  parts.push_back("}");
+  parts.push_back("}\n");
   parts.push_back("certificate_providers={\n");
   for (const auto& entry : certificate_providers_) {
     parts.push_back(
