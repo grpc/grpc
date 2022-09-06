@@ -29,6 +29,10 @@ const char* const description_tcp_read_chunks =
     "malloc to recycle arbitrary large blocks.";
 const char* const description_tcp_rcv_lowat =
     "Use SO_RCVLOWAT to avoid wakeups on the read path.";
+const char* const description_peer_state_based_framing =
+    "If set, the max sizes of frames sent to lower layers is controlled based "
+    "on the peer's memory pressure which is reflected in its max http2 frame "
+    "size.";
 }  // namespace
 
 namespace grpc_core {
@@ -37,6 +41,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning, false},
     {"tcp_read_chunks", description_tcp_read_chunks, false},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat, false},
+    {"peer_state_based_framing", description_peer_state_based_framing, false},
 };
 
 }  // namespace grpc_core

@@ -60,6 +60,7 @@
 #include "src/core/ext/transport/chttp2/transport/varint.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/stats_data.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/bitset.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -90,12 +91,6 @@
 #include "src/core/lib/transport/status_conversion.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/lib/transport/transport_impl.h"
-
-GPR_GLOBAL_CONFIG_DEFINE_BOOL(
-    grpc_experimental_enable_peer_state_based_framing, false,
-    "If set, the max sizes of frames sent to lower layers is controlled based "
-    "on the peer's memory pressure which is reflected in its max http2 frame "
-    "size.");
 
 #define DEFAULT_CONNECTION_WINDOW_TARGET (1024 * 1024)
 #define MAX_WINDOW 0x7fffffffu
@@ -878,18 +873,16 @@ static void write_action_begin_locked(void* gt,
 }
 
 static void write_action(void* gt, grpc_error_handle /*error*/) {
-  static bool kEnablePeerStateBasedFraming =
-      GPR_GLOBAL_CONFIG_GET(grpc_experimental_enable_peer_state_based_framing);
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(gt);
   void* cl = t->cl;
   t->cl = nullptr;
-  // If grpc_experimental_enable_peer_state_based_framing is set to true,
+  // If the peer_state_based_framing experiment is set to true,
   // choose max_frame_size as 2 * max http2 frame size of peer. If peer is under
   // high memory pressure, then it would advertise a smaller max http2 frame
   // size. With this logic, the sender would automatically reduce the sending
   // frame size as well.
   int max_frame_size =
-      kEnablePeerStateBasedFraming
+      grpc_core::IsPeerStateBasedFramingEnabled()
           ? 2 * t->settings[GRPC_PEER_SETTINGS]
                            [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE]
           : INT_MAX;

@@ -18,6 +18,7 @@
 
 EXPERIMENTS = {
     "core_end2end_test": [
+        "peer_state_based_framing",
         "tcp_frame_size_tuning",
         "tcp_rcv_lowat",
         "tcp_read_chunks",

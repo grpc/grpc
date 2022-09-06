@@ -50,3 +50,12 @@
   expiry: 2022/10/01
   owner: ctiller@google.com
   test_tags: ["endpoint_test", "core_end2end_test"]
+- name: peer_state_based_framing
+  description:
+    If set, the max sizes of frames sent to lower layers is controlled based
+    on the peer's memory pressure which is reflected in its max http2 frame
+    size.
+  default: false
+  expiry: 2022/11/01
+  owner: vigneshbabu@google.com
+  test_tags: ["core_end2end_test"]
