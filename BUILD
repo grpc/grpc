@@ -404,12 +404,20 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "experiments",
-    srcs = ["src/core/lib/experiments/experiments.cc"],
-    hdrs = ["src/core/lib/experiments/experiments.h"],
+    srcs = [
+        "src/core/lib/experiments/config.cc",
+        "src/core/lib/experiments/experiments.cc",
+    ],
+    hdrs = [
+        "src/core/lib/experiments/config.h",
+        "src/core/lib/experiments/experiments.h",
+    ],
+    external_deps = ["absl/strings"],
     language = "c++",
     deps = [
         "gpr",
         "gpr_platform",
+        "no_destruct",
     ],
 )
 
@@ -435,6 +443,7 @@ grpc_cc_library(
         "channel_stack_type",
         "config",
         "default_event_engine",
+        "experiments",
         "forkable",
         "gpr",
         "grpc_authorization_base",
@@ -498,6 +507,7 @@ grpc_cc_library(
         "channel_stack_type",
         "config",
         "default_event_engine",
+        "experiments",
         "forkable",
         "gpr",
         "grpc_alts_credentials",
@@ -1910,6 +1920,7 @@ grpc_cc_library(
         "activity",
         "event_engine_memory_allocator",
         "exec_ctx_wakeup_scheduler",
+        "experiments",
         "gpr",
         "grpc_trace",
         "loop",
@@ -2255,6 +2266,7 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/time",
+        "absl/types:optional",
         "absl/functional:any_invocable",
     ],
     tags = ["nofixdeps"],
@@ -6598,6 +6610,7 @@ grpc_cc_library(
     deps = [
         "bdp_estimator",
         "exec_ctx",
+        "experiments",
         "gpr",
         "grpc_trace",
         "memory_quota",

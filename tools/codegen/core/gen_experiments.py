@@ -120,7 +120,6 @@ EXPERIMENT_METADATA = """struct ExperimentMetadata {
   const char* name;
   const char* description;
   bool default_value;
-  bool (*is_enabled)();
 };"""
 
 with open('src/core/lib/experiments/experiments.h', 'w') as H:
@@ -137,11 +136,14 @@ with open('src/core/lib/experiments/experiments.h', 'w') as H:
     print("#include <grpc/support/port_platform.h>", file=H)
     print(file=H)
     print("#include <stddef.h>", file=H)
+    print("#include \"src/core/lib/experiments/config.h\"", file=H)
     print(file=H)
     print("namespace grpc_core {", file=H)
     print(file=H)
-    for attr in attrs:
-        print("bool Is%sEnabled();" % snake_to_pascal(attr['name']), file=H)
+    for i, attr in enumerate(attrs):
+        print("inline bool Is%sEnabled() { return IsExperimentEnabled(%d); }" %
+              (snake_to_pascal(attr['name']), i),
+              file=H)
     print(file=H)
     print(EXPERIMENT_METADATA, file=H)
     print(file=H)
@@ -164,7 +166,6 @@ with open('src/core/lib/experiments/experiments.cc', 'w') as C:
 
     print("#include <grpc/support/port_platform.h>", file=C)
     print("#include \"src/core/lib/experiments/experiments.h\"", file=C)
-    print("#include \"src/core/lib/gprpp/global_config.h\"", file=C)
     print(file=C)
     print("namespace {", file=C)
     for attr in attrs:
@@ -173,38 +174,27 @@ with open('src/core/lib/experiments/experiments.cc', 'w') as C:
               file=C)
     print("}", file=C)
     print(file=C)
-    for attr in attrs:
-        print(
-            "GPR_GLOBAL_CONFIG_DEFINE_BOOL(grpc_experimental_enable_%s, %s, description_%s);"
-            % (attr['name'], 'true' if attr['default'] else 'false',
-               attr['name']),
-            file=C)
-    print(file=C)
     print("namespace grpc_core {", file=C)
-    print(file=C)
-    for attr in attrs:
-        print("bool Is%sEnabled() {" % snake_to_pascal(attr['name']), file=C)
-        print(
-            "  static const bool enabled = GPR_GLOBAL_CONFIG_GET(grpc_experimental_enable_%s);"
-            % attr['name'],
-            file=C)
-        print("  return enabled;", file=C)
-        print("}", file=C)
     print(file=C)
     print("const ExperimentMetadata g_experiment_metadata[] = {", file=C)
     for attr in attrs:
-        print("  {%s, description_%s, %s, Is%sEnabled}," %
-              (c_str(attr['name']), attr['name'], 'true'
-               if attr['default'] else 'false', snake_to_pascal(attr['name'])),
+        print("  {%s, description_%s, %s}," %
+              (c_str(attr['name']), attr['name'],
+               'true' if attr['default'] else 'false'),
               file=C)
     print("};", file=C)
     print(file=C)
     print("}  // namespace grpc_core", file=C)
 
 tags_to_experiments = collections.defaultdict(list)
+tags_to_negated_experiments = collections.defaultdict(list)
 for attr in attrs:
-    for tag in attr['test_tags']:
-        tags_to_experiments[tag].append(attr['name'])
+    if attr['default']:
+        for tag in attr['test_tags']:
+            tags_to_negated_experiments[tag].append(attr['name'])
+    else:
+        for tag in attr['test_tags']:
+            tags_to_experiments[tag].append(attr['name'])
 
 with open('bazel/experiments.bzl', 'w') as B:
     put_copyright(B, "#")
@@ -221,6 +211,14 @@ with open('bazel/experiments.bzl', 'w') as B:
     print(file=B)
     print("EXPERIMENTS = {", file=B)
     for tag, experiments in sorted(tags_to_experiments.items()):
+        print("    \"%s\": [" % tag, file=B)
+        for experiment in sorted(experiments):
+            print("        \"%s\"," % experiment, file=B)
+        print("    ],", file=B)
+    print("}", file=B)
+    print(file=B)
+    print("NEGATED_EXPERIMENTS = {", file=B)
+    for tag, experiments in sorted(tags_to_negated_experiments.items()):
         print("    \"%s\": [" % tag, file=B)
         for experiment in sorted(experiments):
             print("        \"%s\"," % experiment, file=B)

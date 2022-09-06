@@ -1,4 +1,4 @@
-// Copyright 2021 gRPC authors.
+// Copyright 2022 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,26 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/lib/resource_quota/resource_quota.h"
+#ifndef GRPC_CORE_LIB_EXPERIMENTS_CONFIG_H
+#define GRPC_CORE_LIB_EXPERIMENTS_CONFIG_H
 
-#include "gtest/gtest.h"
+#include <grpc/support/port_platform.h>
 
-#include "test/core/util/test_config.h"
+#include <stddef.h>
 
 namespace grpc_core {
-namespace testing {
 
-TEST(ResourceQuotaTest, Works) {
-  auto q = MakeRefCounted<ResourceQuota>("foo");
-  EXPECT_NE(q->thread_quota(), nullptr);
-  EXPECT_NE(q->memory_quota(), nullptr);
-}
+// Return true if experiment \a experiment_id is enabled.
+// Experiments are numbered by their order in the g_experiment_metadata array
+// declared in experiments.h.
+bool IsExperimentEnabled(size_t experiment_id);
 
-}  // namespace testing
+// Print out a list of all experiments that are built into this binary.
+void PrintExperimentsList();
+
 }  // namespace grpc_core
 
-int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment give_me_a_name(&argc, argv);
-  ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
-}
+#endif  // GRPC_CORE_LIB_EXPERIMENTS_CONFIG_H
