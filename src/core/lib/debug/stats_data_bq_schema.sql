@@ -12,4 +12,7 @@ http2_settings_writes_per_iteration:FLOAT,
 http2_pings_sent_per_iteration:FLOAT,
 http2_writes_begun_per_iteration:FLOAT,
 http2_transport_stalls_per_iteration:FLOAT,
-http2_stream_stalls_per_iteration:FLOAT
+http2_stream_stalls_per_iteration:FLOAT,
+cq_pluck_creates_per_iteration:FLOAT,
+cq_next_creates_per_iteration:FLOAT,
+cq_callback_creates_per_iteration:FLOAT
