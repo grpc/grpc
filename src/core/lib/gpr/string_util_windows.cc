@@ -47,7 +47,7 @@ char* gpr_format_message(int messageid) {
       NULL, (DWORD)messageid, MAKELANGID(LANG_ENGLISH, SUBLANG_DEFAULT),
       (LPTSTR)(&tmessage), 0, NULL);
   if (status == 0) return gpr_strdup("Unable to retrieve error string");
-  message = grpc_core::TcharToChar(tmessage);
+  auto message = grpc_core::TcharToChar(tmessage);
   LocalFree(tmessage);
   return gpr_strdup(message.c_str());
 }
