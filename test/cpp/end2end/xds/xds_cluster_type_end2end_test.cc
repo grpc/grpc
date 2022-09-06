@@ -21,6 +21,8 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 
+#include <grpc/event_engine/endpoint_config.h>
+
 #include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
@@ -28,7 +30,7 @@
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "src/proto/grpc/testing/xds/v3/aggregate_cluster.grpc.pb.h"
-#include "test/cpp/end2end/connection_delay_injector.h"
+#include "test/cpp/end2end/connection_attempt_injector.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 
 namespace grpc {
@@ -435,8 +437,7 @@ TEST_P(AggregateClusterTest, FallBackWithConnectivityChurn) {
   custom_cluster->mutable_typed_config()->PackFrom(cluster_config);
   balancer_->ads_service()->SetCdsResource(cluster);
   // Start connection injector.
-  ConnectionHoldInjector injector;
-  injector.Start();
+  ConnectionAttemptInjector injector;
   auto hold0 = injector.AddHold(backends_[0]->port());
   auto hold1 = injector.AddHold(backends_[1]->port());
   // Start long-running RPC in the background.

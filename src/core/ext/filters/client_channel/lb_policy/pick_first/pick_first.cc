@@ -38,6 +38,7 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy/subchannel_list.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -162,9 +163,9 @@ class PickFirst : public LoadBalancingPolicy {
   // Lateset update args.
   UpdateArgs latest_update_args_;
   // All our subchannels.
-  OrphanablePtr<PickFirstSubchannelList> subchannel_list_;
+  RefCountedPtr<PickFirstSubchannelList> subchannel_list_;
   // Latest pending subchannel list.
-  OrphanablePtr<PickFirstSubchannelList> latest_pending_subchannel_list_;
+  RefCountedPtr<PickFirstSubchannelList> latest_pending_subchannel_list_;
   // Selected subchannel in \a subchannel_list_.
   PickFirstSubchannelData* selected_ = nullptr;
   // Are we in IDLE state?
@@ -227,7 +228,7 @@ void PickFirst::AttemptToConnectUsingLatestUpdateArgsLocked() {
             "[PF %p] Shutting down previous pending subchannel list %p", this,
             latest_pending_subchannel_list_.get());
   }
-  latest_pending_subchannel_list_ = MakeOrphanable<PickFirstSubchannelList>(
+  latest_pending_subchannel_list_ = MakeRefCounted<PickFirstSubchannelList>(
       this, std::move(addresses), latest_update_args_.args);
   latest_pending_subchannel_list_->StartWatchingLocked();
   // Empty update or no valid subchannels.  Put the channel in
@@ -527,12 +528,9 @@ class PickFirstFactory : public LoadBalancingPolicyFactory {
 
 }  // namespace
 
-}  // namespace grpc_core
-
-void grpc_lb_policy_pick_first_init() {
-  grpc_core::LoadBalancingPolicyRegistry::Builder::
-      RegisterLoadBalancingPolicyFactory(
-          absl::make_unique<grpc_core::PickFirstFactory>());
+void RegisterPickFirstLbPolicy(CoreConfiguration::Builder* builder) {
+  builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
+      absl::make_unique<PickFirstFactory>());
 }
 
-void grpc_lb_policy_pick_first_shutdown() {}
+}  // namespace grpc_core

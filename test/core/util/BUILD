@@ -84,10 +84,11 @@ grpc_cc_library(
         "absl/strings:str_format",
     ],
     language = "C++",
+    tags = ["nofixdeps"],
     deps = [
         "//:arena",
         "//:debug_location",
-        "//:gpr_base",
+        "//:gpr",
         "//:grpc_authorization_base",
         "//:grpc_base",
         "//:grpc_security_base",
@@ -124,14 +125,14 @@ grpc_cc_library(
         "stack_tracer",
         "//:channel_args_preconditioning",
         "//:config",
-        "//:gpr_base",
+        "//:gpr",
         "//:grpc",
-        "//:grpc_base",
         "//:grpc_public_hdrs",
         "//:grpc_security_base",
         "//:grpc_sockaddr",
         "//:grpc_trace",
         "//:httpcli",
+        "//:iomgr_fwd",
         "//:iomgr_port",
         "//:orphanable",
         "//:ref_counted_ptr",
@@ -162,12 +163,12 @@ grpc_cc_library(
         "stack_tracer",
         "//:channel_args_preconditioning",
         "//:config",
-        "//:gpr_base",
-        "//:grpc_base",
+        "//:gpr",
         "//:grpc_security_base",
         "//:grpc_sockaddr",
         "//:grpc_unsecure",
         "//:httpcli",
+        "//:iomgr_fwd",
         "//:iomgr_port",
         "//:orphanable",
         "//:ref_counted_ptr",
@@ -188,7 +189,7 @@ grpc_cc_test(
     deps = [
         "grpc_test_util",
         "grpc_test_util_base",
-        "//:gpr_base",
+        "//:gpr",
         "//:useful",
     ],
 )
@@ -224,7 +225,7 @@ grpc_cc_test(
     deps = [
         "grpc_test_util",
         "grpc_test_util_base",
-        "//:gpr_base",
+        "//:gpr",
     ],
 )
 
@@ -269,7 +270,7 @@ grpc_cc_test(
     deps = [
         "grpc_test_util",
         "stack_tracer",
-        "//:gpr_base",
+        "//:gpr",
     ],
 )
 
@@ -286,10 +287,10 @@ grpc_cc_library(
         "absl/types:variant",
     ],
     deps = [
-        "//:gpr_base",
+        "//:config",
+        "//:gpr",
         "//:grpc",
         "//:grpc_backend_metric_data",
-        "//:grpc_base",
         "//:grpc_client_channel",
         "//:json",
         "//:json_util",
@@ -297,6 +298,7 @@ grpc_cc_library(
         "//:lb_policy_factory",
         "//:lb_policy_registry",
         "//:orphanable",
+        "//:pollset_set",
         "//:ref_counted_ptr",
         "//:resolved_address",
         "//:server_address",
@@ -318,9 +320,8 @@ grpc_cc_library(
     language = "C++",
     deps = [
         "grpc_test_util",
-        "//:gpr_base",
+        "//:gpr",
         "//:grpc",
-        "//:grpc_base",
         "//:resolved_address",
         "//:sockaddr_utils",
     ],

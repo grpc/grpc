@@ -428,6 +428,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/xds/file_watcher_certificate_provider_factory.cc \
     src/core/ext/xds/xds_api.cc \
     src/core/ext/xds/xds_bootstrap.cc \
+    src/core/ext/xds/xds_bootstrap_grpc.cc \
     src/core/ext/xds/xds_certificate_provider.cc \
     src/core/ext/xds/xds_channel_stack_modifier.cc \
     src/core/ext/xds/xds_client.cc \
@@ -469,9 +470,10 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/debug/stats_data.cc \
     src/core/lib/debug/trace.cc \
     src/core/lib/event_engine/channel_args_endpoint_config.cc \
+    src/core/lib/event_engine/default_event_engine.cc \
     src/core/lib/event_engine/default_event_engine_factory.cc \
-    src/core/lib/event_engine/event_engine.cc \
     src/core/lib/event_engine/executor/threaded_executor.cc \
+    src/core/lib/event_engine/forkable.cc \
     src/core/lib/event_engine/memory_allocator.cc \
     src/core/lib/event_engine/posix_engine/posix_engine.cc \
     src/core/lib/event_engine/posix_engine/timer.cc \
@@ -481,11 +483,14 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/event_engine/slice.cc \
     src/core/lib/event_engine/slice_buffer.cc \
     src/core/lib/event_engine/thread_pool.cc \
+    src/core/lib/event_engine/time_util.cc \
     src/core/lib/event_engine/trace.cc \
     src/core/lib/event_engine/utils.cc \
     src/core/lib/event_engine/windows/iocp.cc \
     src/core/lib/event_engine/windows/win_socket.cc \
     src/core/lib/event_engine/windows/windows_engine.cc \
+    src/core/lib/experiments/config.cc \
+    src/core/lib/experiments/experiments.cc \
     src/core/lib/gpr/alloc.cc \
     src/core/lib/gpr/atm.cc \
     src/core/lib/gpr/cpu_iphone.cc \
@@ -614,8 +619,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/load_balancing/lb_policy.cc \
     src/core/lib/load_balancing/lb_policy_registry.cc \
     src/core/lib/matchers/matchers.cc \
-    src/core/lib/profiling/basic_timers.cc \
-    src/core/lib/profiling/stap_timers.cc \
     src/core/lib/promise/activity.cc \
     src/core/lib/promise/sleep.cc \
     src/core/lib/resolver/resolver.cc \
@@ -1190,7 +1193,7 @@ if test "$PHP_GRPC" != "no"; then
     -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DGRPC_ARES=0 \
     -DGRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK=1 \
     -DGRPC_XDS_USER_AGENT_NAME_SUFFIX='"\"PHP\""' \
-    -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX='"\"1.49.0dev\""')
+    -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX='"\"1.50.0dev\""')
 
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/census)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/channel_idle)
@@ -1331,6 +1334,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/event_engine/executor)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/event_engine/posix_engine)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/event_engine/windows)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/experiments)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gpr)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gprpp)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/http)
@@ -1338,7 +1342,6 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/json)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/load_balancing)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/matchers)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/profiling)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/promise)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/resolver)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/resource_quota)

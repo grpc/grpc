@@ -44,9 +44,13 @@ _ClientStatusRequest = csds_pb2.ClientStatusRequest
 class CsdsClient(framework.rpc.grpc.GrpcClientHelper):
     stub: csds_pb2_grpc.ClientStatusDiscoveryServiceStub
 
-    def __init__(self, channel: grpc.Channel):
+    def __init__(self,
+                 channel: grpc.Channel,
+                 *,
+                 log_target: Optional[str] = ''):
         super().__init__(channel,
-                         csds_pb2_grpc.ClientStatusDiscoveryServiceStub)
+                         csds_pb2_grpc.ClientStatusDiscoveryServiceStub,
+                         log_target=log_target)
 
     def fetch_client_status(self, **kwargs) -> Optional[ClientConfig]:
         """Fetches the active xDS configurations."""

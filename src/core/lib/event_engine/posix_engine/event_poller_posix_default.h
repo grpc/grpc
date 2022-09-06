@@ -20,12 +20,12 @@
 namespace grpc_event_engine {
 namespace posix_engine {
 
-class EventPoller;
+class PosixEventPoller;
 class Scheduler;
 
 // Return an instance of an event poller which is tied to the specified
 // scheduler.
-EventPoller* GetDefaultPoller(Scheduler* scheduler);
+PosixEventPoller* GetDefaultPoller(Scheduler* scheduler);
 
 }  // namespace posix_engine
 }  // namespace grpc_event_engine

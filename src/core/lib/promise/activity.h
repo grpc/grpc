@@ -28,12 +28,12 @@
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
-#include "absl/utility/utility.h"
 
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gprpp/construct_destruct.h"
+#include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/promise/context.h"
@@ -56,15 +56,25 @@ class Wakeable {
   inline ~Wakeable() {}
 };
 
+namespace activity_detail {
+struct Unwakeable final : public Wakeable {
+  void Wakeup() override {}
+  void Drop() override {}
+};
+static Unwakeable* unwakeable() {
+  return NoDestructSingleton<Unwakeable>::Get();
+}
+}  // namespace activity_detail
+
+class AtomicWaker;
+
 // An owning reference to a Wakeable.
 // This type is non-copyable but movable.
 class Waker {
  public:
   explicit Waker(Wakeable* wakeable) : wakeable_(wakeable) {}
-  Waker() : Waker(nullptr) {}
-  ~Waker() {
-    if (wakeable_ != nullptr) wakeable_->Drop();
-  }
+  Waker() : Waker(activity_detail::unwakeable()) {}
+  ~Waker() { wakeable_->Drop(); }
   Waker(const Waker&) = delete;
   Waker& operator=(const Waker&) = delete;
   Waker(Waker&& other) noexcept : wakeable_(other.Take()) {}
@@ -74,9 +84,7 @@ class Waker {
   }
 
   // Wake the underlying activity.
-  void Wakeup() {
-    if (auto* wakeable = Take()) wakeable->Wakeup();
-  }
+  void Wakeup() { Take()->Wakeup(); }
 
   template <typename H>
   friend H AbslHashValue(H h, const Waker& w) {
@@ -88,9 +96,48 @@ class Waker {
   }
 
  private:
-  Wakeable* Take() { return absl::exchange(wakeable_, nullptr); }
+  friend class AtomicWaker;
+
+  Wakeable* Take() {
+    return std::exchange(wakeable_, activity_detail::unwakeable());
+  }
 
   Wakeable* wakeable_;
+};
+
+// An atomic variant of Waker - this type is non-copyable and non-movable.
+class AtomicWaker {
+ public:
+  explicit AtomicWaker(Wakeable* wakeable) : wakeable_(wakeable) {}
+  AtomicWaker() : AtomicWaker(activity_detail::unwakeable()) {}
+  explicit AtomicWaker(Waker waker) : AtomicWaker(waker.Take()) {}
+  ~AtomicWaker() { wakeable_.load(std::memory_order_acquire)->Drop(); }
+  AtomicWaker(const AtomicWaker&) = delete;
+  AtomicWaker& operator=(const AtomicWaker&) = delete;
+  AtomicWaker(AtomicWaker&& other) noexcept = delete;
+  AtomicWaker& operator=(AtomicWaker&& other) noexcept = delete;
+
+  // Wake the underlying activity.
+  void Wakeup() { Take()->Wakeup(); }
+
+  // Return true if there is a not-unwakeable wakeable present.
+  bool Armed() const noexcept {
+    return wakeable_.load(std::memory_order_relaxed) !=
+           activity_detail::unwakeable();
+  }
+
+  // Set to some new waker
+  void Set(Waker waker) {
+    wakeable_.exchange(waker.Take(), std::memory_order_acq_rel)->Wakeup();
+  }
+
+ private:
+  Wakeable* Take() {
+    return wakeable_.exchange(activity_detail::unwakeable(),
+                              std::memory_order_acq_rel);
+  }
+
+  std::atomic<Wakeable*> wakeable_;
 };
 
 // An Activity tracks execution of a single promise.
@@ -267,7 +314,7 @@ class FreestandingActivity : public Activity, private Wakeable {
   // Check if we got an internal wakeup since the last time this function was
   // called.
   ActionDuringRun GotActionDuringRun() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-    return absl::exchange(action_during_run_, ActionDuringRun::kNone);
+    return std::exchange(action_during_run_, ActionDuringRun::kNone);
   }
 
   // Implementors of Wakeable::Wakeup should call this after the wakeup has

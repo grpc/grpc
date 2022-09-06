@@ -574,12 +574,12 @@ TEST_F(GrpcTlsCertificateDistributorTest, SetKeyMaterialsInCallback) {
                                                  kIdentityCert1Contents))));
     CancelWatch(watcher_state_1);
   };
-  // Start 1000 threads that will register a watcher to a new cert name, verify
+  // Start 10 threads that will register a watcher to a new cert name, verify
   // the key materials being set, and then cancel the watcher, to make sure the
   // lock mechanism in the distributor is safe.
   std::vector<std::thread> threads;
-  threads.reserve(1000);
-  for (int i = 0; i < 1000; ++i) {
+  threads.reserve(10);
+  for (int i = 0; i < 10; ++i) {
     threads.emplace_back(verify_function, std::to_string(i));
   }
   for (auto& th : threads) {

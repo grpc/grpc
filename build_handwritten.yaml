@@ -12,11 +12,11 @@ settings:
   '#08': Use "-preN" suffixes to identify pre-release versions
   '#09': Per-language overrides are possible with (eg) ruby_version tag here
   '#10': See the expand_version.py for all the quirks here
-  core_version: 26.0.0
+  core_version: 27.0.0
   csharp_major_version: 2
-  g_stands_for: gamma
-  protobuf_version: 3.21.4
-  version: 1.49.0-dev
+  g_stands_for: galley
+  protobuf_version: 3.21.5
+  version: 1.50.0-dev
 targets:
 - name: gen_hpack_tables
   build: tool
@@ -64,9 +64,6 @@ configs:
     test_environ:
       ASAN_OPTIONS: detect_leaks=1:color=always
       LSAN_OPTIONS: suppressions=test/core/util/lsan_suppressions.txt:report_objects=1
-  basicprof:
-    CPPFLAGS: -O2 -DGRPC_BASIC_PROFILER -DGRPC_TIMERS_RDTSC
-    DEFINES: NDEBUG
   c++-compat:
     CFLAGS: -Wc++-compat
     CPPFLAGS: -O0
@@ -127,9 +124,6 @@ configs:
     DEFINES: NDEBUG
   opt:
     CPPFLAGS: -O2 -Wframe-larger-than=16384
-    DEFINES: NDEBUG
-  stapprof:
-    CPPFLAGS: -O2 -DGRPC_STAP_PROFILER
     DEFINES: NDEBUG
   tsan:
     CC: clang

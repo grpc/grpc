@@ -13,8 +13,8 @@
  <date>2019-09-24</date>
  <time>16:06:07</time>
  <version>
-  <release>1.49.0dev</release>
-  <api>1.49.0dev</api>
+  <release>1.50.0dev</release>
+  <api>1.50.0dev</api>
  </version>
  <stability>
   <release>beta</release>
@@ -22,7 +22,7 @@
  </stability>
  <license>Apache 2.0</license>
  <notes>
-- gRPC Core 1.49.0 update
+- gRPC Core 1.50.0 update
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -854,6 +854,8 @@
     <file baseinstalldir="/" name="src/core/ext/xds/xds_api.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_bootstrap.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_bootstrap.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_bootstrap_grpc.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_bootstrap_grpc.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_certificate_provider.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_certificate_provider.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_channel_args.h" role="src" />
@@ -942,13 +944,15 @@
     <file baseinstalldir="/" name="src/core/lib/debug/trace.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/channel_args_endpoint_config.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/channel_args_endpoint_config.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/default_event_engine.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/default_event_engine.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/default_event_engine_factory.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/default_event_engine_factory.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/event_engine/event_engine.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/event_engine/event_engine_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/executor/executor.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/executor/threaded_executor.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/executor/threaded_executor.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/forkable.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/forkable.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/handle_containers.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/memory_allocator.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/poller.h" role="src" />
@@ -967,6 +971,8 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/socket_notifier.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/thread_pool.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/thread_pool.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/time_util.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/time_util.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/trace.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/trace.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/utils.cc" role="src" />
@@ -977,6 +983,10 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/windows/win_socket.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/windows/windows_engine.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/windows/windows_engine.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/experiments/config.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/experiments/config.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/experiments/experiments.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/experiments/experiments.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/alloc.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/alloc.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/atm.cc" role="src" />
@@ -1044,9 +1054,11 @@
     <file baseinstalldir="/" name="src/core/lib/gprpp/no_destruct.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/orphanable.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/overload.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/packed_table.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/ref_counted.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/ref_counted_ptr.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/single_set_ptr.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/sorted_pack.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/stat.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/stat_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/stat_windows.cc" role="src" />
@@ -1223,9 +1235,6 @@
     <file baseinstalldir="/" name="src/core/lib/load_balancing/subchannel_interface.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/matchers/matchers.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/matchers/matchers.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/profiling/basic_timers.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/profiling/stap_timers.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/profiling/timers.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/activity.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/activity.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/arena_promise.h" role="src" />
@@ -1235,7 +1244,6 @@
     <file baseinstalldir="/" name="src/core/lib/promise/detail/promise_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/detail/promise_like.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/detail/status.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/promise/detail/switch.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/exec_ctx_wakeup_scheduler.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/intra_activity_waiter.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/latch.h" role="src" />

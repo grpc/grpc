@@ -47,9 +47,25 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "timer_manager_test",
+    srcs = ["timer_manager_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:common_event_engine_closures",
+        "//:exec_ctx",
+        "//:posix_event_engine_timer_manager",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "event_poller_posix_test",
     srcs = ["event_poller_posix_test.cc"],
     external_deps = ["gtest"],
+    flaky = True,
     language = "C++",
     tags = [
         "no_windows",
@@ -57,6 +73,8 @@ grpc_cc_test(
     uses_event_engine = True,
     uses_polling = True,
     deps = [
+        "//:common_event_engine_closures",
+        "//:event_engine_poller",
         "//:posix_event_engine",
         "//:posix_event_engine_closure",
         "//:posix_event_engine_event_poller",
@@ -94,6 +112,22 @@ grpc_cc_test(
     deps = [
         "//:posix_event_engine_wakeup_fd_posix_eventfd",
         "//:posix_event_engine_wakeup_fd_posix_pipe",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "traced_buffer_list_test",
+    srcs = ["traced_buffer_list_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    tags = [
+        "no_windows",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:posix_event_engine_traced_buffer_list",
         "//test/core/util:grpc_test_util",
     ],
 )

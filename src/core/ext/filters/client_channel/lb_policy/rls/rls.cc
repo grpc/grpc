@@ -790,8 +790,9 @@ void RlsLb::ChildPolicyWrapper::StartUpdate() {
         lb_policy_.get(), this, target_.c_str(),
         child_policy_config.Dump().c_str());
   }
-  auto config = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
-      child_policy_config);
+  auto config =
+      CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
+          child_policy_config);
   // Returned RLS target fails the validation.
   if (!config.ok()) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
@@ -2441,8 +2442,9 @@ grpc_error_handle ValidateChildPolicyList(
       child_policy_config_target_field_name, target, child_policy_config);
   if (!GRPC_ERROR_IS_NONE(error)) return error;
   // Parse the config.
-  auto parsed_config = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
-      *child_policy_config);
+  auto parsed_config =
+      CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
+          *child_policy_config);
   if (!parsed_config.ok()) {
     return absl_status_to_grpc_error(parsed_config.status());
   }
@@ -2558,8 +2560,8 @@ class RlsLbFactory : public LoadBalancingPolicyFactory {
 
 }  //  namespace
 
-void RlsLbPluginInit() {
-  LoadBalancingPolicyRegistry::Builder::RegisterLoadBalancingPolicyFactory(
+void RegisterRlsLbPolicy(CoreConfiguration::Builder* builder) {
+  builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
       absl::make_unique<RlsLbFactory>());
 }
 

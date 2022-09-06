@@ -40,7 +40,7 @@
 
 #include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/gprpp/chunked_vector.h"
-#include "src/core/lib/gprpp/table.h"
+#include "src/core/lib/gprpp/packed_table.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
@@ -93,7 +93,7 @@ struct ContentTypeMetadata {
   // gRPC says that content-type can be application/grpc[;something]
   // Core has only ever verified the prefix.
   // IF we want to start verifying more, we can expand this type.
-  enum ValueType {
+  enum ValueType : uint8_t {
     kApplicationGrpc,
     kEmpty,
     kInvalid,
@@ -112,7 +112,7 @@ struct ContentTypeMetadata {
 // scheme metadata trait.
 struct HttpSchemeMetadata {
   static constexpr bool kRepeatable = false;
-  enum ValueType {
+  enum ValueType : uint8_t {
     kHttp,
     kHttps,
     kInvalid,
@@ -134,7 +134,7 @@ struct HttpSchemeMetadata {
 // method metadata trait.
 struct HttpMethodMetadata {
   static constexpr bool kRepeatable = false;
-  enum ValueType {
+  enum ValueType : uint8_t {
     kPost,
     kGet,
     kPut,
@@ -1045,7 +1045,9 @@ class MetadataMap {
   //    void Encode(string_view key, Slice value);
   template <typename Encoder>
   void Encode(Encoder* encoder) const {
-    table_.ForEach(metadata_detail::EncodeWrapper<Encoder>{encoder});
+    table_.template ForEachIn<metadata_detail::EncodeWrapper<Encoder>,
+                              Value<Traits>...>(
+        metadata_detail::EncodeWrapper<Encoder>{encoder});
     for (const auto& unk : unknown_) {
       encoder->Encode(unk.first, unk.second);
     }
@@ -1222,7 +1224,7 @@ class MetadataMap {
   using Value = metadata_detail::Value<Which>;
 
   // Table of known metadata types.
-  Table<Value<Traits>...> table_;
+  PackedTable<Value<Traits>...> table_;
   metadata_detail::UnknownMap unknown_;
 };
 

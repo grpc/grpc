@@ -14,20 +14,15 @@
 // limitations under the License.
 //
 
-#include "src/core/ext/xds/xds_bootstrap.h"
-
-#include <regex>
-
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_format.h"
 
-#include <grpc/grpc.h>
-#include <grpc/slice.h>
-
 #include "src/core/ext/xds/certificate_provider_registry.h"
+#include "src/core/ext/xds/xds_bootstrap_grpc.h"
+#include "src/core/ext/xds/xds_client_grpc.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/tmpfile.h"
 #include "test/core/util/test_config.h"
@@ -117,12 +112,15 @@ TEST(XdsBootstrapTest, Basic) {
       "  \"server_listener_resource_name_template\": \"example/resource\","
       "  \"ignore\": {}"
       "}";
-  auto bootstrap = XdsBootstrap::Create(json_str);
-  ASSERT_TRUE(bootstrap.ok()) << bootstrap.status();
+  auto bootstrap_or = GrpcXdsBootstrap::Create(json_str);
+  ASSERT_TRUE(bootstrap_or.ok()) << bootstrap_or.status();
+  auto bootstrap = std::move(*bootstrap_or);
   EXPECT_EQ(bootstrap->server().server_uri, "fake:///lb");
-  EXPECT_EQ(bootstrap->server().channel_creds.type, "fake");
-  EXPECT_TRUE(bootstrap->server().channel_creds.config.empty())
-      << Json{bootstrap->server().channel_creds.config}.Dump();
+  EXPECT_EQ(bootstrap->server().channel_creds_type, "fake");
+  EXPECT_EQ(bootstrap->server().channel_creds_config.type(), Json::Type::OBJECT)
+      << bootstrap->server().channel_creds_config.Dump();
+  EXPECT_TRUE(bootstrap->server().channel_creds_config.object_value().empty())
+      << bootstrap->server().channel_creds_config.Dump();
   EXPECT_EQ(bootstrap->authorities().size(), 2);
   const XdsBootstrap::Authority* authority1 =
       bootstrap->LookupAuthority("xds.example.com");
@@ -132,9 +130,13 @@ TEST(XdsBootstrapTest, Basic) {
             "server/%s");
   EXPECT_EQ(authority1->xds_servers.size(), 1);
   EXPECT_EQ(authority1->xds_servers[0].server_uri, "fake:///xds_server");
-  EXPECT_EQ(authority1->xds_servers[0].channel_creds.type, "fake");
-  EXPECT_TRUE(authority1->xds_servers[0].channel_creds.config.empty())
-      << Json{authority1->xds_servers[0].channel_creds.config}.Dump();
+  EXPECT_EQ(authority1->xds_servers[0].channel_creds_type, "fake");
+  EXPECT_EQ(authority1->xds_servers[0].channel_creds_config.type(),
+            Json::Type::OBJECT)
+      << authority1->xds_servers[0].channel_creds_config.Dump();
+  EXPECT_TRUE(
+      authority1->xds_servers[0].channel_creds_config.object_value().empty())
+      << authority1->xds_servers[0].channel_creds_config.Dump();
   const XdsBootstrap::Authority* authority2 =
       bootstrap->LookupAuthority("xds.example2.com");
   ASSERT_NE(authority2, nullptr);
@@ -143,16 +145,21 @@ TEST(XdsBootstrapTest, Basic) {
             "server/%s");
   EXPECT_EQ(authority2->xds_servers.size(), 1);
   EXPECT_EQ(authority2->xds_servers[0].server_uri, "fake:///xds_server2");
-  EXPECT_EQ(authority2->xds_servers[0].channel_creds.type, "fake");
-  EXPECT_TRUE(authority2->xds_servers[0].channel_creds.config.empty())
-      << Json{authority2->xds_servers[0].channel_creds.config}.Dump();
+  EXPECT_EQ(authority2->xds_servers[0].channel_creds_type, "fake");
+  EXPECT_EQ(authority2->xds_servers[0].channel_creds_config.type(),
+            Json::Type::OBJECT)
+      << authority2->xds_servers[0].channel_creds_config.Dump();
+  EXPECT_TRUE(
+      authority2->xds_servers[0].channel_creds_config.object_value().empty())
+      << authority2->xds_servers[0].channel_creds_config.Dump();
   ASSERT_NE(bootstrap->node(), nullptr);
   EXPECT_EQ(bootstrap->node()->id, "foo");
   EXPECT_EQ(bootstrap->node()->cluster, "bar");
-  EXPECT_EQ(bootstrap->node()->locality.region, "milky_way");
-  EXPECT_EQ(bootstrap->node()->locality.zone, "sol_system");
-  EXPECT_EQ(bootstrap->node()->locality.sub_zone, "earth");
-  EXPECT_THAT(bootstrap->node()->metadata,
+  EXPECT_EQ(bootstrap->node()->locality_region, "milky_way");
+  EXPECT_EQ(bootstrap->node()->locality_zone, "sol_system");
+  EXPECT_EQ(bootstrap->node()->locality_sub_zone, "earth");
+  EXPECT_EQ(bootstrap->node()->metadata.type(), Json::Type::OBJECT);
+  EXPECT_THAT(bootstrap->node()->metadata.object_value(),
               ::testing::ElementsAre(
                   ::testing::Pair(
                       ::testing::Eq("bar"),
@@ -179,10 +186,11 @@ TEST(XdsBootstrapTest, ValidWithoutNode) {
       "    }"
       "  ]"
       "}";
-  auto bootstrap = XdsBootstrap::Create(json_str);
-  ASSERT_TRUE(bootstrap.ok()) << bootstrap.status();
+  auto bootstrap_or = GrpcXdsBootstrap::Create(json_str);
+  ASSERT_TRUE(bootstrap_or.ok()) << bootstrap_or.status();
+  auto bootstrap = std::move(*bootstrap_or);
   EXPECT_EQ(bootstrap->server().server_uri, "fake:///lb");
-  EXPECT_EQ(bootstrap->server().channel_creds.type, "fake");
+  EXPECT_EQ(bootstrap->server().channel_creds_type, "fake");
   EXPECT_EQ(bootstrap->node(), nullptr);
 }
 
@@ -196,10 +204,11 @@ TEST(XdsBootstrapTest, InsecureCreds) {
       "    }"
       "  ]"
       "}";
-  auto bootstrap = XdsBootstrap::Create(json_str);
-  ASSERT_TRUE(bootstrap.ok()) << bootstrap.status();
+  auto bootstrap_or = GrpcXdsBootstrap::Create(json_str);
+  ASSERT_TRUE(bootstrap_or.ok()) << bootstrap_or.status();
+  auto bootstrap = std::move(*bootstrap_or);
   EXPECT_EQ(bootstrap->server().server_uri, "fake:///lb");
-  EXPECT_EQ(bootstrap->server().channel_creds.type, "insecure");
+  EXPECT_EQ(bootstrap->server().channel_creds_type, "insecure");
   EXPECT_EQ(bootstrap->node(), nullptr);
 }
 
@@ -229,10 +238,11 @@ TEST(XdsBootstrapTest, GoogleDefaultCreds) {
       "    }"
       "  ]"
       "}";
-  auto bootstrap = XdsBootstrap::Create(json_str);
-  ASSERT_TRUE(bootstrap.ok()) << bootstrap.status();
+  auto bootstrap_or = GrpcXdsBootstrap::Create(json_str);
+  ASSERT_TRUE(bootstrap_or.ok()) << bootstrap_or.status();
+  auto bootstrap = std::move(*bootstrap_or);
   EXPECT_EQ(bootstrap->server().server_uri, "fake:///lb");
-  EXPECT_EQ(bootstrap->server().channel_creds.type, "google_default");
+  EXPECT_EQ(bootstrap->server().channel_creds_type, "google_default");
   EXPECT_EQ(bootstrap->node(), nullptr);
 }
 
@@ -245,7 +255,7 @@ TEST(XdsBootstrapTest, MissingChannelCreds) {
       "    }"
       "  ]"
       "}";
-  auto bootstrap = XdsBootstrap::Create(json_str);
+  auto bootstrap = GrpcXdsBootstrap::Create(json_str);
   EXPECT_EQ(bootstrap.status().message(),
             "errors validating JSON: ["
             "field:xds_servers[0].channel_creds error:field not present]")
@@ -262,7 +272,7 @@ TEST(XdsBootstrapTest, NoKnownChannelCreds) {
       "    }"
       "  ]"
       "}";
-  auto bootstrap = XdsBootstrap::Create(json_str);
+  auto bootstrap = GrpcXdsBootstrap::Create(json_str);
   EXPECT_EQ(bootstrap.status().message(),
             "errors validating JSON: ["
             "field:xds_servers[0].channel_creds "
@@ -271,7 +281,7 @@ TEST(XdsBootstrapTest, NoKnownChannelCreds) {
 }
 
 TEST(XdsBootstrapTest, MissingXdsServers) {
-  auto bootstrap = XdsBootstrap::Create("{}");
+  auto bootstrap = GrpcXdsBootstrap::Create("{}");
   EXPECT_EQ(
       bootstrap.status().message(),
       "errors validating JSON: [field:xds_servers error:field not present]")
@@ -286,7 +296,7 @@ TEST(XdsBootstrapTest, TopFieldsWrongTypes) {
       "  \"server_listener_resource_name_template\":1,"
       "  \"certificate_providers\":1"
       "}";
-  auto bootstrap = XdsBootstrap::Create(json_str);
+  auto bootstrap = GrpcXdsBootstrap::Create(json_str);
   EXPECT_EQ(
       bootstrap.status().message(),
       "errors validating JSON: ["
@@ -302,7 +312,7 @@ TEST(XdsBootstrapTest, XdsServerMissingFields) {
       "{"
       "  \"xds_servers\":[{}]"
       "}";
-  auto bootstrap = XdsBootstrap::Create(json_str);
+  auto bootstrap = GrpcXdsBootstrap::Create(json_str);
   EXPECT_EQ(bootstrap.status().message(),
             "errors validating JSON: ["
             "field:xds_servers[0].channel_creds error:field not present; "
@@ -320,7 +330,7 @@ TEST(XdsBootstrapTest, XdsServerUriAndCredsWrongTypes) {
       "    }"
       "  ]"
       "}";
-  auto bootstrap = XdsBootstrap::Create(json_str);
+  auto bootstrap = GrpcXdsBootstrap::Create(json_str);
   EXPECT_EQ(bootstrap.status().message(),
             "errors validating JSON: ["
             "field:xds_servers[0].channel_creds error:is not an array; "
@@ -343,7 +353,7 @@ TEST(XdsBootstrapTest, ChannelCredsFieldsWrongTypes) {
       "    }"
       "  ]"
       "}";
-  auto bootstrap = XdsBootstrap::Create(json_str);
+  auto bootstrap = GrpcXdsBootstrap::Create(json_str);
   EXPECT_EQ(
       bootstrap.status().message(),
       "errors validating JSON: ["
@@ -362,7 +372,7 @@ TEST(XdsBootstrapTest, NodeFieldsWrongTypes) {
       "    \"metadata\":0"
       "  }"
       "}";
-  auto bootstrap = XdsBootstrap::Create(json_str);
+  auto bootstrap = GrpcXdsBootstrap::Create(json_str);
   EXPECT_EQ(bootstrap.status().message(),
             "errors validating JSON: ["
             "field:node.cluster error:is not a string; "
@@ -384,7 +394,7 @@ TEST(XdsBootstrapTest, LocalityFieldsWrongType) {
       "    }"
       "  }"
       "}";
-  auto bootstrap = XdsBootstrap::Create(json_str);
+  auto bootstrap = GrpcXdsBootstrap::Create(json_str);
   EXPECT_EQ(bootstrap.status().message(),
             "errors validating JSON: ["
             "field:node.locality.region error:is not a string; "
@@ -407,7 +417,7 @@ TEST(XdsBootstrapTest, CertificateProvidersElementWrongType) {
       "    \"plugin\":1"
       "  }"
       "}";
-  auto bootstrap = XdsBootstrap::Create(json_str);
+  auto bootstrap = GrpcXdsBootstrap::Create(json_str);
   EXPECT_EQ(bootstrap.status().message(),
             "errors validating JSON: ["
             "field:certificate_providers[\"plugin\"] error:is not an object]")
@@ -429,7 +439,7 @@ TEST(XdsBootstrapTest, CertificateProvidersPluginNameWrongType) {
       "    }"
       "  }"
       "}";
-  auto bootstrap = XdsBootstrap::Create(json_str);
+  auto bootstrap = GrpcXdsBootstrap::Create(json_str);
   EXPECT_EQ(bootstrap.status().message(),
             "errors validating JSON: ["
             "field:certificate_providers[\"plugin\"].plugin_name error:"
@@ -452,7 +462,7 @@ TEST(XdsBootstrapTest, CertificateProvidersUnrecognizedPluginName) {
       "    }"
       "  }"
       "}";
-  auto bootstrap = XdsBootstrap::Create(json_str);
+  auto bootstrap = GrpcXdsBootstrap::Create(json_str);
   EXPECT_EQ(bootstrap.status().message(),
             "errors validating JSON: ["
             "field:certificate_providers[\"plugin\"].plugin_name error:"
@@ -489,7 +499,7 @@ TEST(XdsBootstrapTest, AuthorityXdsServerInvalidResourceTemplate) {
       "    }"
       "  }"
       "}";
-  auto bootstrap = XdsBootstrap::Create(json_str);
+  auto bootstrap = GrpcXdsBootstrap::Create(json_str);
   EXPECT_EQ(bootstrap.status().message(),
             "errors validating JSON: ["
             "field:authorities[\"xds.example.com\"]"
@@ -518,7 +528,7 @@ TEST(XdsBootstrapTest, AuthorityXdsServerMissingServerUri) {
       "    }"
       "  }"
       "}";
-  auto bootstrap = XdsBootstrap::Create(json_str);
+  auto bootstrap = GrpcXdsBootstrap::Create(json_str);
   EXPECT_EQ(
       bootstrap.status().message(),
       "errors validating JSON: ["
@@ -597,7 +607,7 @@ TEST(XdsBootstrapTest, CertificateProvidersFakePluginParsingError) {
       "    }"
       "  }"
       "}";
-  auto bootstrap = XdsBootstrap::Create(json_str);
+  auto bootstrap = GrpcXdsBootstrap::Create(json_str);
   EXPECT_THAT(
       // Explicit conversion to std::string to work around
       // https://github.com/google/googletest/issues/3949.
@@ -627,8 +637,9 @@ TEST(XdsBootstrapTest, CertificateProvidersFakePluginParsingSuccess) {
       "    }"
       "  }"
       "}";
-  auto bootstrap = XdsBootstrap::Create(json_str);
-  ASSERT_TRUE(bootstrap.ok()) << bootstrap.status();
+  auto bootstrap_or = GrpcXdsBootstrap::Create(json_str);
+  ASSERT_TRUE(bootstrap_or.ok()) << bootstrap_or.status();
+  auto bootstrap = std::move(*bootstrap_or);
   const CertificateProviderStore::PluginDefinition& fake_plugin =
       bootstrap->certificate_providers().at("fake_plugin");
   ASSERT_EQ(fake_plugin.plugin_name, "fake");
@@ -654,8 +665,9 @@ TEST(XdsBootstrapTest, CertificateProvidersFakePluginEmptyConfig) {
       "    }"
       "  }"
       "}";
-  auto bootstrap = XdsBootstrap::Create(json_str);
-  ASSERT_TRUE(bootstrap.ok()) << bootstrap.status();
+  auto bootstrap_or = GrpcXdsBootstrap::Create(json_str);
+  ASSERT_TRUE(bootstrap_or.ok()) << bootstrap_or.status();
+  auto bootstrap = std::move(*bootstrap_or);
   const CertificateProviderStore::PluginDefinition& fake_plugin =
       bootstrap->certificate_providers().at("fake_plugin");
   ASSERT_EQ(fake_plugin.plugin_name, "fake");
@@ -681,11 +693,11 @@ TEST(XdsBootstrapTest, XdsServerToJsonAndParse) {
       "    }";
   auto json = Json::Parse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
-  auto xds_server = LoadFromJson<XdsBootstrap::XdsServer>(*json);
+  auto xds_server = GrpcXdsBootstrap::XdsServerParse(*json);
   ASSERT_TRUE(xds_server.ok()) << xds_server.status();
-  Json::Object output = xds_server->ToJson();
-  auto output_xds_server = LoadFromJson<XdsBootstrap::XdsServer>(output);
-  ASSERT_TRUE(output_xds_server.ok()) << xds_server.status();
+  Json::Object output = GrpcXdsBootstrap::XdsServerToJson(*xds_server);
+  auto output_xds_server = GrpcXdsBootstrap::XdsServerParse(output);
+  ASSERT_TRUE(output_xds_server.ok()) << output_xds_server.status();
   EXPECT_EQ(*xds_server, *output_xds_server);
   gpr_unsetenv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
 }

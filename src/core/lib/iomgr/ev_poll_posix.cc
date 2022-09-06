@@ -48,7 +48,6 @@
 #include "src/core/lib/iomgr/ev_poll_posix.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
-#include "src/core/lib/profiling/timers.h"
 
 #define GRPC_POLLSET_KICK_BROADCAST ((grpc_pollset_worker*)1)
 
@@ -769,14 +768,11 @@ static void kick_append_error(grpc_error_handle* composite,
 static grpc_error_handle pollset_kick_ext(grpc_pollset* p,
                                           grpc_pollset_worker* specific_worker,
                                           uint32_t flags) {
-  GPR_TIMER_SCOPE("pollset_kick_ext", 0);
   grpc_error_handle error = GRPC_ERROR_NONE;
-  GRPC_STATS_INC_POLLSET_KICK();
 
   /* pollset->mu already held */
   if (specific_worker != nullptr) {
     if (specific_worker == GRPC_POLLSET_KICK_BROADCAST) {
-      GPR_TIMER_SCOPE("pollset_kick_ext.broadcast", 0);
       GPR_ASSERT((flags & GRPC_POLLSET_REEVALUATE_POLLING_ON_WAKEUP) == 0);
       for (specific_worker = p->root_worker.next;
            specific_worker != &p->root_worker;
@@ -786,7 +782,6 @@ static grpc_error_handle pollset_kick_ext(grpc_pollset* p,
       }
       p->kicked_without_pollers = true;
     } else if (g_current_thread_worker != specific_worker) {
-      GPR_TIMER_MARK("different_thread_worker", 0);
       if ((flags & GRPC_POLLSET_REEVALUATE_POLLING_ON_WAKEUP) != 0) {
         specific_worker->reevaluate_polling_on_wakeup = true;
       }
@@ -794,7 +789,6 @@ static grpc_error_handle pollset_kick_ext(grpc_pollset* p,
       kick_append_error(&error,
                         grpc_wakeup_fd_wakeup(&specific_worker->wakeup_fd->fd));
     } else if ((flags & GRPC_POLLSET_CAN_KICK_SELF) != 0) {
-      GPR_TIMER_MARK("kick_yoself", 0);
       if ((flags & GRPC_POLLSET_REEVALUATE_POLLING_ON_WAKEUP) != 0) {
         specific_worker->reevaluate_polling_on_wakeup = true;
       }
@@ -804,11 +798,9 @@ static grpc_error_handle pollset_kick_ext(grpc_pollset* p,
     }
   } else if (g_current_thread_poller != p) {
     GPR_ASSERT((flags & GRPC_POLLSET_REEVALUATE_POLLING_ON_WAKEUP) == 0);
-    GPR_TIMER_MARK("kick_anonymous", 0);
     specific_worker = pop_front_worker(p);
     if (specific_worker != nullptr) {
       if (g_current_thread_worker == specific_worker) {
-        GPR_TIMER_MARK("kick_anonymous_not_self", 0);
         push_back_worker(p, specific_worker);
         specific_worker = pop_front_worker(p);
         if ((flags & GRPC_POLLSET_CAN_KICK_SELF) == 0 &&
@@ -818,13 +810,11 @@ static grpc_error_handle pollset_kick_ext(grpc_pollset* p,
         }
       }
       if (specific_worker != nullptr) {
-        GPR_TIMER_MARK("finally_kick", 0);
         push_back_worker(p, specific_worker);
         kick_append_error(
             &error, grpc_wakeup_fd_wakeup(&specific_worker->wakeup_fd->fd));
       }
     } else {
-      GPR_TIMER_MARK("kicked_no_pollers", 0);
       p->kicked_without_pollers = true;
     }
   }
@@ -914,7 +904,6 @@ static void work_combine_error(grpc_error_handle* composite,
 static grpc_error_handle pollset_work(grpc_pollset* pollset,
                                       grpc_pollset_worker** worker_hdl,
                                       grpc_core::Timestamp deadline) {
-  GPR_TIMER_SCOPE("pollset_work", 0);
   grpc_pollset_worker worker;
   if (worker_hdl) *worker_hdl = &worker;
   grpc_error_handle error = GRPC_ERROR_NONE;
@@ -948,7 +937,6 @@ static grpc_error_handle pollset_work(grpc_pollset* pollset,
   worker.kicked_specifically = 0;
   /* If we're shutting down then we don't execute any extended work */
   if (pollset->shutting_down) {
-    GPR_TIMER_MARK("pollset_work.shutting_down", 0);
     goto done;
   }
   /* Start polling, and keep doing so while we're being asked to
@@ -965,7 +953,6 @@ static grpc_error_handle pollset_work(grpc_pollset* pollset,
         added_worker = 1;
         g_current_thread_worker = &worker;
       }
-      GPR_TIMER_SCOPE("maybe_work_and_unlock", 0);
 #define POLLOUT_CHECK (POLLOUT | POLLHUP | POLLERR)
 #define POLLIN_CHECK (POLLIN | POLLHUP | POLLERR)
 
@@ -1024,7 +1011,6 @@ static grpc_error_handle pollset_work(grpc_pollset* pollset,
       /* TODO(vpai): Consider first doing a 0 timeout poll here to avoid
          even going into the blocking annotation if possible */
       GRPC_SCHEDULING_START_BLOCKING_REGION;
-      GRPC_STATS_INC_SYSCALL_POLL();
       r = grpc_poll_function(pfds, pfd_count, timeout);
       GRPC_SCHEDULING_END_BLOCKING_REGION;
 
@@ -1090,7 +1076,6 @@ static grpc_error_handle pollset_work(grpc_pollset* pollset,
 
       locked = 0;
     } else {
-      GPR_TIMER_MARK("pollset_work.kicked_without_pollers", 0);
       pollset->kicked_without_pollers = 0;
     }
   /* Finished execution - start cleaning up.
