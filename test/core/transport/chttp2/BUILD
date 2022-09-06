@@ -254,7 +254,6 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "remove_stream_from_stalled_lists_test",
-    tags = ["flow_control_test"],
     srcs = ["remove_stream_from_stalled_lists_test.cc"],
     # use LARGE_MACHINE because this test needs a certaim amount
     # of parallelism in order to reproduce the original crash that it's meant
@@ -268,7 +267,7 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
-    tags = ["no_windows"],  # LARGE_MACHINE is not configured for windows RBE
+    tags = ["flow_control_test", "no_windows"],  # LARGE_MACHINE is not configured for windows RBE
     deps = [
         "//:gpr",
         "//:grpc",
