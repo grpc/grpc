@@ -473,7 +473,7 @@ namespace Grpc.Core.Internal.Tests
         }
 
         [Test]
-        public void ServerStreaming_CancelCall1()
+        public void ServerStreaming_CancelCall_Issue8451_1()
         {
             // Test client cancelling the call before the reading the server stream to the end.
             // Test for resource leak https://github.com/grpc/grpc/issues/8451
@@ -517,7 +517,7 @@ namespace Grpc.Core.Internal.Tests
         }
 
         [Test]
-        public void ServerStreaming_CancelCall2()
+        public void ServerStreaming_CancelCall_Issue8451_2()
         {
             // Test client cancelling the call before the reading the server stream to the end.
             // Test for resource leak https://github.com/grpc/grpc/issues/8451
@@ -528,9 +528,9 @@ namespace Grpc.Core.Internal.Tests
             // or there is an error (such as server unavailable) that MoveNext throws the correct exception.
 
             // This test is testing the order:
-            // OnReceivedResponseHeaders
             // Cancel (which could be because of a Dispose or explicit cancel)
             // OnReceivedStatusOnClient
+            // OnReceivedResponseHeaders
             // MoveNext - fails with Exception
 
             asyncCall.StartServerStreamingCall("request1");
@@ -559,7 +559,7 @@ namespace Grpc.Core.Internal.Tests
         }
 
         [Test]
-        public void ServerStreaming_CancelCall3()
+        public void ServerStreaming_CancelCall_Issue8451_3()
         {
             // Test client cancelling the call before the reading the server stream to the end.
             // Test for resource leak https://github.com/grpc/grpc/issues/8451
@@ -604,6 +604,136 @@ namespace Grpc.Core.Internal.Tests
 
             // read some more data - this should fail as the call has been cancelled
             var ex = Assert.ThrowsAsync<RpcException>(async () => await responseStream.MoveNext());
+            Assert.AreEqual(Status.DefaultCancelled, ex.Status);
+
+            // Check that the resources have been released and that the client no longer references the call
+            Assert.AreEqual(0, channel.GetCallReferenceCount());
+            Assert.IsTrue(fakeCall.IsDisposed);
+        }
+
+        [Test]
+        public void ServerStreaming_CancelCall_Issue8451_4()
+        {
+            // Test client cancelling the call before the reading the server stream to the end.
+            // Test for resource leak https://github.com/grpc/grpc/issues/8451
+
+            // The callbacks OnReceivedResponseHeaders, OnReceivedStatusOnClient and OnReceivedMessage may
+            // occur in any order together with calls to MoveNext. We need to test that the resources
+            // are released correctly no matter the order of the calls, and that when the call is cancelled
+            // or there is an error (such as server unavailable) that MoveNext throws the correct exception.
+
+            // This case tests the case when OnReceivedStatusOnClient occurs before the OnReceivedMessage 
+            // for data already inflight.
+
+            // This test is testing the order:
+            // OnReceivedResponseHeaders
+            // MoveNext task started
+            // Cancel
+            // OnReceivedStatusOnClient
+            // OnReceivedMessage
+            // MoveNext task completes OK
+            // another MoveNext - fails with Exception
+
+            asyncCall.StartServerStreamingCall("request1");
+            var responseStream = new ClientResponseStream<string, string>(asyncCall);
+
+            // Check that the client has a reference to exactly one call
+            Assert.AreEqual(1, channel.GetCallReferenceCount());
+            // Check that the call is not yet disposed
+            Assert.IsFalse(fakeCall.IsDisposed);
+
+            fakeCall.ReceivedResponseHeadersCallback.OnReceivedResponseHeaders(true, new Metadata());
+            Assert.AreEqual(0, asyncCall.ResponseHeadersAsync.Result.Count);
+
+            // Prime for a read - this sets the OnReceivedMessage callback handler in fakeCall
+            // indicating that we are waiting to receive some data
+            var readTask1 = responseStream.MoveNext();
+
+            // Cancel the call
+            asyncCall.Cancel();
+            // Not yet disposed
+            Assert.IsFalse(fakeCall.IsDisposed);
+
+            // Trigger ReceivedStatusOnClientCallback to be called with a Cancelled status.
+            fakeCall.ReceivedStatusOnClientCallback.OnReceivedStatusOnClient(true, new ClientSideStatus(Status.DefaultCancelled, new Metadata()));
+
+            // Check not yet disposed the call as there is data inflight
+            Assert.IsFalse(fakeCall.IsDisposed);
+
+            // Read some data. Although we've already received this cancel status this will succeed as the 
+            // the data was already inflight. Note: called with "success = true"
+            fakeCall.ReceivedMessageCallback.OnReceivedMessage(true, CreateResponsePayload());
+            Assert.IsTrue(readTask1.Result);
+            Assert.AreEqual("response1", responseStream.Current);
+
+            // check has disposed the call as there is no more data inflight and we previously received an error status
+            Assert.IsTrue(fakeCall.IsDisposed);
+
+            // Read some more data - this should fail as the call has been cancelled
+            var ex = Assert.ThrowsAsync<RpcException>(async () => await responseStream.MoveNext());
+            Assert.AreEqual(Status.DefaultCancelled, ex.Status);
+
+            // Check that the resources have been released and that the client no longer references the call
+            Assert.AreEqual(0, channel.GetCallReferenceCount());
+            Assert.IsTrue(fakeCall.IsDisposed);
+        }
+
+        [Test]
+        public void ServerStreaming_CancelCall_Issue8451_5()
+        {
+            // Test client cancelling the call before the reading the server stream to the end.
+            // Test for resource leak https://github.com/grpc/grpc/issues/8451
+
+            // The callbacks OnReceivedResponseHeaders, OnReceivedStatusOnClient and OnReceivedMessage may
+            // occur in any order together with calls to MoveNext. We need to test that the resources
+            // are released correctly no matter the order of the calls, and that when the call is cancelled
+            // or there is an error (such as server unavailable) that MoveNext throws the correct exception.
+
+            // This case tests the case when OnReceivedStatusOnClient occurs before the OnReceivedMessage 
+            // for data already inflight.
+
+            // Same as ServerStreaming_CancelCall_Issue8451_4() but with "success = false" in the 
+            // OnReceivedMessage callback
+
+            // This test is testing the order:
+            // OnReceivedResponseHeaders
+            // MoveNext task started
+            // Cancel
+            // OnReceivedStatusOnClient
+            // OnReceivedMessage (with success = false)
+            // MoveNext task completes with error
+
+            asyncCall.StartServerStreamingCall("request1");
+            var responseStream = new ClientResponseStream<string, string>(asyncCall);
+
+            // Check that the client has a reference to exactly one call
+            Assert.AreEqual(1, channel.GetCallReferenceCount());
+            // Check that the call is not yet disposed
+            Assert.IsFalse(fakeCall.IsDisposed);
+
+            fakeCall.ReceivedResponseHeadersCallback.OnReceivedResponseHeaders(true, new Metadata());
+            Assert.AreEqual(0, asyncCall.ResponseHeadersAsync.Result.Count);
+
+            // Prime for a read - this sets the OnReceivedMessage callback handler in fakeCall
+            // indicating that we are waiting to receive some data
+            var readTask1 = responseStream.MoveNext();
+
+            // Cancel the call
+            asyncCall.Cancel();
+            // Not yet disposed
+            Assert.IsFalse(fakeCall.IsDisposed);
+
+            // Trigger ReceivedStatusOnClientCallback to be called with a Cancelled status.
+            fakeCall.ReceivedStatusOnClientCallback.OnReceivedStatusOnClient(true, new ClientSideStatus(Status.DefaultCancelled, new Metadata()));
+
+            // Check not yet disposed the call as there is data inflight
+            Assert.IsFalse(fakeCall.IsDisposed);
+
+            // Read some data. 
+            // Note: being called with "success = false" - this may occur if the native code
+            // completes the callback indicating that there has already been an error
+            fakeCall.ReceivedMessageCallback.OnReceivedMessage(false, CreateResponsePayload());
+            var ex = Assert.ThrowsAsync<RpcException>(async () => await readTask1);
             Assert.AreEqual(Status.DefaultCancelled, ex.Status);
 
             // Check that the resources have been released and that the client no longer references the call
