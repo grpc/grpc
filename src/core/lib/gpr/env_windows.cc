@@ -34,14 +34,13 @@
 
 char* gpr_getenv(const char* name) {
   char* result = NULL;
-  LPTSTR tresult = NULL;
   auto tname = grpc_core::CharToTchar(name);
   DWORD ret;
 
   ret = GetEnvironmentVariable(tname.c_str(), NULL, 0);
   if (ret == 0) return NULL;
   std::unique_ptr<TCHAR[]> tresult(new TCHAR[ret]);
-  ret = GetEnvironmentVariable(tname.c_str(), tresult.get(), size);
+  ret = GetEnvironmentVariable(tname.c_str(), tresult.get(), ret * sizeof(TCHAR));
   if (ret == 0) return NULL;
   return gpr_strdup(grpc_core::TcharToChar(tresult.get()).c_str());
 }
