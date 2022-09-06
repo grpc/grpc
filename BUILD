@@ -836,7 +836,6 @@ grpc_cc_library(
         "src/cpp/server/insecure_server_credentials.cc",
     ],
     language = "c++",
-    standalone = True,
     tags = [
         "avoid_dep",
         "nofixdeps",
