@@ -50,3 +50,24 @@
   expiry: 2022/10/01
   owner: ctiller@google.com
   test_tags: ["endpoint_test", "core_end2end_test"]
+- name: memory_pressure_controller
+  description:
+    New memory pressure controller
+  default: false
+  expiry: 2022/10/01
+  owner: ctiller@google.com
+  test_tags: [resource_quota_test]
+- name: periodic_resource_quota_reclamation
+  description:
+    Periodically return memory to the resource quota
+  default: false
+  expiry: 2022/10/01
+  owner: ctiller@google.com
+  test_tags: [resource_quota_test]
+- name: unconstrained_max_quota_buffer_size
+  description:
+    Discard the cap on the max free pool size for one memory allocator
+  default: false
+  expiry: 2022/10/01
+  owner: ctiller@google.com
+  test_tags: [resource_quota_test]

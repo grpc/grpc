@@ -1920,6 +1920,7 @@ grpc_cc_library(
         "activity",
         "event_engine_memory_allocator",
         "exec_ctx_wakeup_scheduler",
+        "experiments",
         "gpr",
         "grpc_trace",
         "loop",
@@ -6609,6 +6610,7 @@ grpc_cc_library(
     deps = [
         "bdp_estimator",
         "exec_ctx",
+        "experiments",
         "gpr",
         "grpc_trace",
         "memory_quota",

@@ -260,7 +260,7 @@ def ios_cc_test(
             deps = ios_test_deps,
         )
 
-def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_event_engine):
+def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, uses_event_engine):
     """Common logic used to parameterize tests for every poller and EventEngine and experiment.
 
     Args:
@@ -270,6 +270,7 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_event_engin
         tags: base tags
         args: base args
         exclude_pollers: list of poller names to exclude for this set of tests.
+        uses_polling: set to False if the test is not sensitive to polling methodology.
         uses_event_engine: set to False if the test is not sensitive to
             EventEngine implementation differences
 
@@ -278,30 +279,9 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_event_engin
     """
     poller_config = []
 
-    # On linux we run the same test with the default EventEngine, once for each
-    # poller
-    for poller in POLLERS:
-        if poller in exclude_pollers:
-            continue
-        poller_config.append({
-            "name": name + "@poller=" + poller,
-            "srcs": srcs,
-            "deps": deps,
-            "tags": (tags + EVENT_ENGINES["default"]["tags"] + [
-                "no_windows",
-                "no_mac",
-                "bazel_only",
-            ]),
-            "args": args + ["--poller=" + poller],
-        })
+    if not uses_polling:
+        tags = tags + ["no_uses_polling"]
 
-    # Now generate one test for each subsequent EventEngine, all using the
-    # default poller. These tests will have `@engine=<name>` appended to the
-    # test target name. If a test target name has no `@engine=<name>` component,
-    # that indicates that the default EventEngine is being used.
-    if not uses_event_engine:
-        # The poller tests exercise the default engine on Linux. This test
-        # handles other platforms.
         poller_config.append({
             "name": name,
             "srcs": srcs,
@@ -310,23 +290,55 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_event_engin
             "args": args,
         })
     else:
-        for engine_name, engine in EVENT_ENGINES.items():
-            test_name = name + "@engine=" + engine_name
-            test_tags = tags + engine["tags"] + ["bazel_only"]
-            test_args = args + ["--engine=" + engine_name]
-            if engine_name == "default":
-                # The poller tests exercise the default engine on Linux.
-                # This test handles other platforms.
-                test_name = name
-                test_tags = tags + engine["tags"] + ["no_linux"]
-                test_args = args
+        # On linux we run the same test with the default EventEngine, once for each
+        # poller
+        for poller in POLLERS:
+            if poller in exclude_pollers:
+                continue
             poller_config.append({
-                "name": test_name,
+                "name": name + "@poller=" + poller,
                 "srcs": srcs,
                 "deps": deps,
-                "tags": test_tags,
-                "args": test_args,
+                "tags": (tags + EVENT_ENGINES["default"]["tags"] + [
+                    "no_windows",
+                    "no_mac",
+                    "bazel_only",
+                ]),
+                "args": args + ["--poller=" + poller],
             })
+
+        # Now generate one test for each subsequent EventEngine, all using the
+        # default poller. These tests will have `@engine=<name>` appended to the
+        # test target name. If a test target name has no `@engine=<name>` component,
+        # that indicates that the default EventEngine is being used.
+        if not uses_event_engine:
+            # The poller tests exercise the default engine on Linux. This test
+            # handles other platforms.
+            poller_config.append({
+                "name": name,
+                "srcs": srcs,
+                "deps": deps,
+                "tags": tags + ["no_linux"],
+                "args": args,
+            })
+        else:
+            for engine_name, engine in EVENT_ENGINES.items():
+                test_name = name + "@engine=" + engine_name
+                test_tags = tags + engine["tags"] + ["bazel_only"]
+                test_args = args + ["--engine=" + engine_name]
+                if engine_name == "default":
+                    # The poller tests exercise the default engine on Linux.
+                    # This test handles other platforms.
+                    test_name = name
+                    test_tags = tags + engine["tags"] + ["no_linux"]
+                    test_args = args
+                poller_config.append({
+                    "name": test_name,
+                    "srcs": srcs,
+                    "deps": deps,
+                    "tags": test_tags,
+                    "args": test_args,
+                })
 
     experiments = {}
     for tag in tags:
@@ -441,19 +453,8 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
             args = args,
             **test_args
         )
-    if not uses_polling:
-        # the test behavior doesn't depend on polling, just generate the test
-        native.cc_test(
-            name = name,
-            srcs = srcs,
-            tags = tags + ["no_uses_polling"],
-            deps = core_deps,
-            args = args,
-            **test_args
-        )
-        return
 
-    for poller_config in expand_tests(name, srcs, core_deps, tags, args, exclude_pollers, uses_event_engine):
+    for poller_config in expand_tests(name, srcs, core_deps, tags, args, exclude_pollers, uses_polling, uses_event_engine):
         native.cc_test(
             name = poller_config["name"],
             srcs = poller_config["srcs"],
@@ -545,17 +546,8 @@ def grpc_sh_test(name, srcs = [], args = [], data = [], uses_polling = True, siz
         "shard_count": shard_count,
         "flaky": flaky,
     }
-    if not uses_polling:
-        native.sh_test(
-            name = name,
-            srcs = srcs,
-            args = args,
-            tags = tags,
-            **test_args
-        )
-        return
 
-    for poller_config in expand_tests(name, srcs, [], tags, args, exclude_pollers, uses_event_engine):
+    for poller_config in expand_tests(name, srcs, [], tags, args, exclude_pollers, uses_polling, uses_event_engine):
         native.sh_test(
             name = poller_config["name"],
             srcs = poller_config["srcs"],
