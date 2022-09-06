@@ -611,10 +611,13 @@ def grpc_objc_library(
         name,
         srcs = [],
         hdrs = [],
+        non_arc_srcs = [],
         textual_hdrs = [],
+        testonly = False,
         data = [],
         deps = [],
         defines = [],
+        sdk_frameworks = [],
         includes = [],
         visibility = ["//visibility:public"]):
     """The grpc version of objc_library, only used for the Objective-C library compilation
@@ -623,9 +626,12 @@ def grpc_objc_library(
         name: name of target
         hdrs: public headers
         srcs: all source files (.m)
+        non_arc_srcs: list of Objective-C files that DO NOT use ARC.
         textual_hdrs: private headers
+        testonly: Whether the binary is for tests only.
         data: any other bundle resources
         defines: preprocessors
+        sdk_frameworks: sdks
         includes: added to search path, always [the path to objc directory]
         deps: dependencies
         visibility: visibility, default to public
@@ -635,11 +641,15 @@ def grpc_objc_library(
         name = name,
         hdrs = hdrs,
         srcs = srcs,
+        non_arc_srcs = non_arc_srcs,
         textual_hdrs = textual_hdrs,
+        copts = GRPC_DEFAULT_COPTS + ["-ObjC++", "-std=gnu++14"],
+        testonly = testonly,
         data = data,
         deps = deps,
         defines = defines,
         includes = includes,
+        sdk_frameworks = sdk_frameworks,
         visibility = visibility,
     )
 
