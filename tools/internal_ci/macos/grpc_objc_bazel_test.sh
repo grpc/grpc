@@ -48,13 +48,13 @@ TEST_TARGETS=(
   # TODO(jtattermusch): ideally we'd say "//src/objective-c/tests/..." but not all the targets currently build
   # TODO(jtattermusch): make //src/objective-c/tests:TvTests test pass with bazel
   //src/objective-c/tests:InteropTestsLocalCleartext
-  //src/objective-c/tests:InteropTestsLocalSSL
-  //src/objective-c/tests:InteropTestsRemote
-  //src/objective-c/tests:MacTests
-  //src/objective-c/tests:UnitTests
+  #//src/objective-c/tests:InteropTestsLocalSSL
+  #//src/objective-c/tests:InteropTestsRemote
+  #//src/objective-c/tests:MacTests
+  #//src/objective-c/tests:UnitTests
   # codegen plugin tests
-  //src/objective-c/tests:objc_codegen_plugin_test
-  //src/objective-c/tests:objc_codegen_plugin_option_test
+  #//src/objective-c/tests:objc_codegen_plugin_test
+  #//src/objective-c/tests:objc_codegen_plugin_option_test
 )
 
 # === BEGIN SECTION: run interop_server on the background ====
@@ -88,6 +88,10 @@ trap 'echo "KILLING interop_server binaries running on the background"; kill -9 
 
 python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path objc_bazel_tests
 
+
+# TODO: adjust timeout
+# TODO: new toolchain https://github.com/bazelbuild/rules_apple and apple_support
+
 # NOTE: When using bazel to run the tests, test env variables like GRPC_VERBOSITY or GRPC_TRACE
 # seem to be correctly applied to the test environment even when running tests on a simulator.
 # The below configuration runs all the tests with --test_env=GRPC_VERBOSITY=debug, which makes
@@ -100,7 +104,11 @@ objc_bazel_tests/bazel_wrapper \
   $BAZEL_FLAGS \
   --test_env HOST_PORT_LOCAL=localhost:$PLAIN_PORT \
   --test_env HOST_PORT_LOCALSSL=localhost:$TLS_PORT \
-  --test_env FLAKE_TEST_REPEATS=3 \
+  --test_env FLAKE_TEST_REPEATS=1 \
+  --test_env GRPC_TRACE=subchannel,tcp,api \
+  --runs_per_test 200 \
+  --local_test_jobs=1 \
+  --compilation_mode=dbg \
   -- \
   "${EXAMPLE_TARGETS[@]}" \
   "${TEST_TARGETS[@]}"

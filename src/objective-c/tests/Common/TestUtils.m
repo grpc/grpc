@@ -29,7 +29,7 @@
 static const NSUInteger kGRPCDefaultTestFlakeRepeats = 2;
 
 // Default interop local test timeout.
-const NSTimeInterval GRPCInteropTestTimeoutDefault = 3.0;
+const NSTimeInterval GRPCInteropTestTimeoutDefault = 15.0;
 
 NSString *GRPCGetLocalInteropTestServerAddressPlainText() {
   static NSString *address;
