@@ -294,8 +294,6 @@ void TransportFlowControl::UpdateSetting(
 }
 
 FlowControlAction TransportFlowControl::PeriodicUpdate() {
-  static const bool kSmoothMemoryPressure =
-      GPR_GLOBAL_CONFIG_GET(grpc_experimental_smooth_memory_presure);
   FlowControlAction action;
   if (enable_bdp_probe_) {
     if (IsFlowControlFixesEnabled()) {
@@ -304,7 +302,7 @@ FlowControlAction TransportFlowControl::PeriodicUpdate() {
       // TODO(ncteisen): experiment with setting target to be huge under low
       // memory pressure.
       uint32_t target = static_cast<uint32_t>(RoundUpToPowerOf2(
-          Clamp(kSmoothMemoryPressure
+          Clamp(IsMemoryPressureControllerEnabled()
                     ? TargetInitialWindowSizeBasedOnMemoryPressureAndBdp()
                     : pow(2, SmoothLogBdp(TargetLogBdp())),
                 0.0, static_cast<double>(kMaxInitialWindowSize))));
@@ -329,7 +327,7 @@ FlowControlAction TransportFlowControl::PeriodicUpdate() {
       // target might change based on how much memory pressure we are under
       // TODO(ncteisen): experiment with setting target to be huge under low
       // memory pressure.
-      double target = kSmoothMemoryPressure
+      double target = IsMemoryPressureControllerEnabled()
                           ? TargetInitialWindowSizeBasedOnMemoryPressureAndBdp()
                           : pow(2, SmoothLogBdp(TargetLogBdp()));
       if (g_test_only_transport_target_window_estimates_mocker != nullptr) {
@@ -346,7 +344,6 @@ FlowControlAction TransportFlowControl::PeriodicUpdate() {
           static_cast<int32_t>(Clamp(target, double(kMinInitialWindowSize),
                                      double(kMaxInitialWindowSize))),
           &action, &FlowControlAction::set_send_initial_window_update);
-
       // get bandwidth estimate and update max_frame accordingly.
       double bw_dbl = bdp_estimator_.EstimateBandwidth();
       // we target the max of BDP or bandwidth in microseconds.

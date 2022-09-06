@@ -1920,6 +1920,7 @@ grpc_cc_library(
         "activity",
         "event_engine_memory_allocator",
         "exec_ctx_wakeup_scheduler",
+        "experiments",
         "gpr",
         "grpc_trace",
         "loop",
