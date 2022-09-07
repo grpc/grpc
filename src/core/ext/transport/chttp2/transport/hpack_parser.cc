@@ -20,6 +20,7 @@
 
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 
+#include <assert.h>
 #include <inttypes.h>
 #include <stddef.h>
 #include <stdlib.h>
