@@ -44,6 +44,12 @@ struct Experiments {
   bool enabled[kNumExperiments];
 };
 
+struct ForcedExperiment {
+  bool forced = false;
+  bool value;
+};
+ForcedExperiment g_forced_experiments[kNumExperiments];
+
 GPR_ATTRIBUTE_NOINLINE Experiments LoadExperimentsFromConfigVariable() {
   // Set defaults from metadata.
   Experiments experiments;
@@ -100,16 +106,36 @@ void PrintExperimentsList() {
         std::max(max_experiment_length, strlen(g_experiment_metadata[i].name));
   }
   for (size_t i = 0; i < kNumExperiments; i++) {
-    gpr_log(
-        GPR_DEBUG, "%s",
-        absl::StrCat("gRPC EXPERIMENT ", g_experiment_metadata[i].name,
-                     std::string(max_experiment_length -
-                                     strlen(g_experiment_metadata[i].name) + 1,
-                                 ' '),
-                     IsExperimentEnabled(i) ? "ON " : "OFF", " (default:",
-                     g_experiment_metadata->default_value ? "ON" : "OFF", ")")
-            .c_str());
+    gpr_log(GPR_DEBUG, "%s",
+            absl::StrCat(
+                "gRPC EXPERIMENT ", g_experiment_metadata[i].name,
+                std::string(max_experiment_length -
+                                strlen(g_experiment_metadata[i].name) + 1,
+                            ' '),
+                IsExperimentEnabled(i) ? "ON " : "OFF", " (default:",
+                g_experiment_metadata->default_value ? "ON" : "OFF",
+                g_forced_experiments[i].forced
+                    ? absl::StrCat(" force:",
+                                   g_forced_experiments[i].value ? "ON" : "OFF")
+                    : std::string(),
+                ")")
+                .c_str());
   }
+}
+
+void ForceEnableExperiment(absl::string_view experiment, bool enable) {
+  for (size_t i = 0; i < kNumExperiments; i++) {
+    if (g_experiment_metadata[i].name != experiment) continue;
+    if (g_forced_experiments[i].forced) {
+      GPR_ASSERT(g_forced_experiments[i].value == enable);
+    } else {
+      g_forced_experiments[i].forced = true;
+      g_forced_experiments[i].value = enable;
+    }
+    return;
+  }
+  gpr_log(GPR_INFO, "gRPC EXPERIMENT %s not found to force %s",
+          std::string(experiment).c_str(), enable ? "enable" : "disable");
 }
 
 }  // namespace grpc_core
