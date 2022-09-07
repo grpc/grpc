@@ -389,6 +389,8 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
                 "no_windows",
                 # Nor on mac
                 "no_mac",
+                # Nor on arm64
+                "no_arm64",
             ]
             for tag in must_have_tags:
                 if tag not in tags:
