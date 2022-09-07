@@ -6731,6 +6731,7 @@ grpc_cc_library(
         "chttp2_flow_control",
         "debug_location",
         "decode_huff",
+        "experiments",
         "gpr",
         "grpc_base",
         "grpc_codegen",
