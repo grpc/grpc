@@ -127,8 +127,9 @@ CertificateProviderInstanceParse(
                   certificate_provider_instance_proto))};
   const auto& bootstrap =
       static_cast<const GrpcXdsBootstrap&>(context.client->bootstrap());
-  if (!bootstrap.certificate_provider_plugin_map()->HasPlugin(
-          certificate_provider_plugin_instance.instance_name)) {
+  if (bootstrap.certificate_providers().find(
+          certificate_provider_plugin_instance.instance_name) ==
+      bootstrap.certificate_providers().end()) {
     return absl::InvalidArgumentError(
         absl::StrCat("Unrecognized certificate provider instance name: ",
                      certificate_provider_plugin_instance.instance_name));
@@ -151,8 +152,9 @@ CertificateProviderPluginInstanceParse(
                   certificate_provider_plugin_instance_proto))};
   const auto& bootstrap =
       static_cast<const GrpcXdsBootstrap&>(context.client->bootstrap());
-  if (!bootstrap.certificate_provider_plugin_map()->HasPlugin(
-          certificate_provider_plugin_instance.instance_name)) {
+  if (bootstrap.certificate_providers().find(
+          certificate_provider_plugin_instance.instance_name) ==
+      bootstrap.certificate_providers().end()) {
     return absl::InvalidArgumentError(
         absl::StrCat("Unrecognized certificate provider instance name: ",
                      certificate_provider_plugin_instance.instance_name));
