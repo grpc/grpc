@@ -91,6 +91,12 @@ INTEROP_SERVER_BINARY=bazel-bin/test/cpp/interop/interop_server
 trap 'echo "KILLING interop_server binaries running on the background"; kill -9 $(jobs -p)' EXIT
 # === END SECTION: run interop_server on the background ====
 
+# Environment variables that will be visible to objc tests.
+OBJC_TEST_ENV_ARGS=(
+  --test_env=HOST_PORT_LOCAL=localhost:$PLAIN_PORT
+  --test_env=HOST_PORT_LOCALSSL=localhost:$TLS_PORT
+)
+
 python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path objc_bazel_tests
 
 # NOTE: When using bazel to run the tests, test env variables like GRPC_VERBOSITY or GRPC_TRACE
@@ -103,9 +109,7 @@ objc_bazel_tests/bazel_wrapper \
   --google_credentials="${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json" \
   "${BAZEL_REMOTE_CACHE_ARGS[@]}" \
   $BAZEL_FLAGS \
-  --test_env HOST_PORT_LOCAL=localhost:$PLAIN_PORT \
-  --test_env HOST_PORT_LOCALSSL=localhost:$TLS_PORT \
-  --test_env FLAKE_TEST_REPEATS=3 \
+  "${OBJC_TEST_ENV_ARGS[@]}" \
   -- \
   "${EXAMPLE_TARGETS[@]}" \
   "${TEST_TARGETS[@]}"
