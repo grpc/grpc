@@ -225,19 +225,27 @@ absl::StatusOr<XdsClusterResource> CdsResourceParse(
     // Check the EDS config source.
     const envoy_config_cluster_v3_Cluster_EdsClusterConfig* eds_cluster_config =
         envoy_config_cluster_v3_Cluster_eds_cluster_config(cluster);
-    const envoy_config_core_v3_ConfigSource* eds_config =
-        envoy_config_cluster_v3_Cluster_EdsClusterConfig_eds_config(
-            eds_cluster_config);
-    if (!envoy_config_core_v3_ConfigSource_has_ads(eds_config) &&
-        !envoy_config_core_v3_ConfigSource_has_self(eds_config)) {
-      errors.emplace_back("EDS ConfigSource is not ADS or SELF.");
-    }
-    // Record EDS service_name (if any).
-    upb_StringView service_name =
-        envoy_config_cluster_v3_Cluster_EdsClusterConfig_service_name(
-            eds_cluster_config);
-    if (service_name.size != 0) {
-      cds_update.eds_service_name = UpbStringToStdString(service_name);
+    if (eds_cluster_config == nullptr) {
+      errors.emplace_back("eds_cluster_config not present");
+    } else {
+      const envoy_config_core_v3_ConfigSource* eds_config =
+          envoy_config_cluster_v3_Cluster_EdsClusterConfig_eds_config(
+              eds_cluster_config);
+      if (eds_config == nullptr) {
+        errors.emplace_back("eds_cluster_config.eds_config not present");
+      } else {
+        if (!envoy_config_core_v3_ConfigSource_has_ads(eds_config) &&
+            !envoy_config_core_v3_ConfigSource_has_self(eds_config)) {
+          errors.emplace_back("EDS ConfigSource is not ADS or SELF.");
+        }
+        // Record EDS service_name (if any).
+        upb_StringView service_name =
+            envoy_config_cluster_v3_Cluster_EdsClusterConfig_service_name(
+                eds_cluster_config);
+        if (service_name.size != 0) {
+          cds_update.eds_service_name = UpbStringToStdString(service_name);
+        }
+      }
     }
   } else if (envoy_config_cluster_v3_Cluster_type(cluster) ==
              envoy_config_cluster_v3_Cluster_LOGICAL_DNS) {
