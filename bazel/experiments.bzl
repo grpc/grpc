@@ -32,6 +32,9 @@ EXPERIMENTS = {
     "flow_control_test": [
         "flow_control_fixes",
     ],
+    "hpack_test": [
+        "new_hpack_huffman_decoder",
+    ],
     "resource_quota_test": [
         "memory_pressure_controller",
         "periodic_resource_quota_reclamation",

@@ -140,6 +140,7 @@ grpc_cc_test(
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,
+    tags = ["hpack_test"],
     deps = [
         "//:gpr",
         "//:grpc",
@@ -155,6 +156,7 @@ grpc_cc_test(
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,
+    tags = ["hpack_test"],
     deps = [
         "//:gpr",
         "//:grpc",
@@ -170,6 +172,7 @@ grpc_cc_test(
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,
+    tags = ["hpack_test"],
     deps = [
         "//:gpr",
         "//:grpc",
