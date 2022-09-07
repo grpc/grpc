@@ -138,9 +138,9 @@ grpc_cc_test(
     srcs = ["hpack_encoder_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
+    tags = ["hpack_test"],
     uses_event_engine = False,
     uses_polling = False,
-    tags = ["hpack_test"],
     deps = [
         "//:gpr",
         "//:grpc",
@@ -154,9 +154,9 @@ grpc_cc_test(
     srcs = ["hpack_parser_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
+    tags = ["hpack_test"],
     uses_event_engine = False,
     uses_polling = False,
-    tags = ["hpack_test"],
     deps = [
         "//:gpr",
         "//:grpc",
@@ -170,9 +170,9 @@ grpc_cc_test(
     srcs = ["hpack_parser_table_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
+    tags = ["hpack_test"],
     uses_event_engine = False,
     uses_polling = False,
-    tags = ["hpack_test"],
     deps = [
         "//:gpr",
         "//:grpc",
