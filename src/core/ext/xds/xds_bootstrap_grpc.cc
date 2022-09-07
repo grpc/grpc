@@ -65,12 +65,12 @@ struct BootstrapJson {
     ChannelCreds channel_creds;
     std::set<std::string> server_features;
 
-    XdsBootstrap::XdsServer ToXdsServer() const {
+    XdsBootstrap::XdsServer Take() {
       XdsBootstrap::XdsServer server;
-      server.server_uri = server_uri;
-      server.channel_creds_type = channel_creds.type;
-      server.channel_creds_config = channel_creds.config;
-      server.server_features = server_features;
+      server.server_uri = std::move(server_uri);
+      server.channel_creds_type = std::move(channel_creds.type);
+      server.channel_creds_config = std::move(channel_creds.config);
+      server.server_features = std::move(server_features);
       return server;
     }
 
@@ -159,14 +159,14 @@ struct BootstrapJson {
     Locality locality;
     Json::Object metadata;
 
-    XdsBootstrap::Node ToNode() const {
+    XdsBootstrap::Node Take() {
       XdsBootstrap::Node node;
-      node.id = id;
-      node.cluster = cluster;
-      node.locality_region = locality.region;
-      node.locality_zone = locality.zone;
-      node.locality_sub_zone = locality.sub_zone;
-      node.metadata = metadata;
+      node.id = std::move(id);
+      node.cluster = std::move(cluster);
+      node.locality_region = std::move(locality.region);
+      node.locality_zone = std::move(locality.zone);
+      node.locality_sub_zone = std::move(locality.sub_zone);
+      node.metadata = std::move(metadata);
       return node;
     }
 
@@ -186,12 +186,12 @@ struct BootstrapJson {
     std::string client_listener_resource_name_template;
     std::vector<XdsServer> xds_servers;
 
-    XdsBootstrap::Authority ToAuthority() const {
+    XdsBootstrap::Authority Take() {
       XdsBootstrap::Authority authority;
       authority.client_listener_resource_name_template =
-          client_listener_resource_name_template;
-      for (const auto& server : xds_servers) {
-        authority.xds_servers.push_back(server.ToXdsServer());
+          std::move(client_listener_resource_name_template);
+      for (auto& server : xds_servers) {
+        authority.xds_servers.push_back(server.Take());
       }
       return authority;
     }
@@ -283,13 +283,13 @@ absl::StatusOr<std::unique_ptr<GrpcXdsBootstrap>> GrpcXdsBootstrap::Create(
   if (!bootstrap_json.ok()) return bootstrap_json.status();
   std::vector<XdsServer> servers;
   for (auto& server : bootstrap_json->servers) {
-    servers.emplace_back(server.ToXdsServer());
+    servers.emplace_back(server.Take());
   }
   absl::optional<Node> node;
-  if (bootstrap_json->node.has_value()) node = bootstrap_json->node->ToNode();
+  if (bootstrap_json->node.has_value()) node = bootstrap_json->node->Take();
   std::map<std::string, Authority> authorities;
-  for (const auto& p : bootstrap_json->authorities) {
-    authorities[p.first] = p.second.ToAuthority();
+  for (auto& p : bootstrap_json->authorities) {
+    authorities.emplace(std::move(p.first), p.second.Take());
   }
   return absl::make_unique<GrpcXdsBootstrap>(
       std::move(servers), std::move(node),
@@ -390,7 +390,7 @@ absl::StatusOr<XdsBootstrap::XdsServer> GrpcXdsBootstrap::XdsServerParse(
     const Json& json) {
   auto xds_server = LoadFromJson<BootstrapJson::XdsServer>(json);
   if (!xds_server.ok()) return xds_server.status();
-  return xds_server->ToXdsServer();
+  return xds_server->Take();
 }
 
 Json::Object GrpcXdsBootstrap::XdsServerToJson(const XdsServer& server) {
