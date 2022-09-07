@@ -53,6 +53,9 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "observability_config",
+    srcs = [
+        "observability_config.cc",
+    ],
     hdrs = [
         "observability_config.h",
     ],
@@ -60,6 +63,7 @@ grpc_cc_library(
     visibility = ["//test:__subpackages__"],
     deps = [
         "//:gpr",
+        "//:grpc_base",
         "//:json_object_loader",
     ],
 )
