@@ -148,8 +148,6 @@ void grpc_tracer_init() {
   parse(value.get());
 }
 
-void grpc_tracer_shutdown(void) {}
-
 int grpc_tracer_set_enabled(const char* name, int enabled) {
   return grpc_core::TraceFlagList::Set(name, enabled != 0);
 }

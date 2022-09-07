@@ -122,6 +122,7 @@ static void do_basic_init(void) {
   grpc_register_built_in_plugins();
   gpr_time_init();
   grpc_core::PrintExperimentsList();
+  grpc_tracer_init();
 }
 
 typedef struct grpc_plugin {
@@ -159,7 +160,6 @@ void grpc_init(void) {
         g_all_of_the_plugins[i].init();
       }
     }
-    grpc_tracer_init();
     grpc_iomgr_start();
   }
 
@@ -182,7 +182,6 @@ void grpc_shutdown_internal_locked(void)
     }
     grpc_event_engine::experimental::ResetDefaultEventEngine();
     grpc_iomgr_shutdown();
-    grpc_tracer_shutdown();
     grpc_core::Fork::GlobalShutdown();
   }
   g_shutting_down = false;
