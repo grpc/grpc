@@ -36,7 +36,7 @@ std::string TcharToChar(TcharString input) {
   if (needed <= 0) return std::string();
   std::string ret(needed, '\0');
   WideCharToMultiByte(CP_UTF8, 0, input.c_str(), -1,
-                      const_cast<LPTSTR>(ret.data()), needed, NULL, NULL);
+                      const_cast<LPSTR>(ret.data()), needed, NULL, NULL);
   return ret;
 }
 #else
