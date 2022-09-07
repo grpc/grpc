@@ -76,22 +76,4 @@ void TrackCounters::AddToLabel(std::ostream& out, benchmark::State& state) {
         << grpc_stats_histo_percentile(
                &stats, static_cast<grpc_stats_histograms>(i), 99.0);
   }
-#ifdef GPR_LOW_LEVEL_COUNTERS
-  out << " locks/iter:"
-      << ((double)(gpr_atm_no_barrier_load(&gpr_mu_locks) -
-                   mu_locks_at_start_) /
-          (double)state.iterations())
-      << " atm_cas/iter:"
-      << ((double)(gpr_atm_no_barrier_load(&gpr_counter_atm_cas) -
-                   atm_cas_at_start_) /
-          (double)state.iterations())
-      << " atm_add/iter:"
-      << ((double)(gpr_atm_no_barrier_load(&gpr_counter_atm_add) -
-                   atm_add_at_start_) /
-          (double)state.iterations())
-      << " nows/iter:"
-      << ((double)(gpr_atm_no_barrier_load(&gpr_now_call_count) -
-                   now_calls_at_start_) /
-          (double)state.iterations());
-#endif
 }

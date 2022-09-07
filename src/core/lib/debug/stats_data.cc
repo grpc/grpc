@@ -32,9 +32,11 @@ const char* grpc_stats_counter_name[GRPC_STATS_COUNTER_COUNT] = {
     "client_channels_created", "client_subchannels_created",
     "server_channels_created", "histogram_slow_lookups",
     "syscall_write",           "syscall_read",
+    "tcp_read_alloc_8k",       "tcp_read_alloc_64k",
     "http2_settings_writes",   "http2_pings_sent",
     "http2_writes_begun",      "http2_transport_stalls",
-    "http2_stream_stalls",
+    "http2_stream_stalls",     "cq_pluck_creates",
+    "cq_next_creates",         "cq_callback_creates",
 };
 const char* grpc_stats_counter_doc[GRPC_STATS_COUNTER_COUNT] = {
     "Number of client side calls created by this process",
@@ -47,6 +49,8 @@ const char* grpc_stats_counter_doc[GRPC_STATS_COUNTER_COUNT] = {
     "Number of write syscalls (or equivalent - eg sendmsg) made by this "
     "process",
     "Number of read syscalls (or equivalent - eg recvmsg) made by this process",
+    "Number of 8k allocations by the TCP subsystem for reading",
+    "Number of 64k allocations by the TCP subsystem for reading",
     "Number of settings frames sent",
     "Number of HTTP2 pings sent by process",
     "Number of HTTP2 writes initiated",
@@ -54,17 +58,22 @@ const char* grpc_stats_counter_doc[GRPC_STATS_COUNTER_COUNT] = {
     "control window",
     "Number of times sending was completely stalled by the stream flow control "
     "window",
+    "Number of completion queues created for cq_pluck (indicates sync api "
+    "usage)",
+    "Number of completion queues created for cq_next (indicates cq async api "
+    "usage)",
+    "Number of completion queues created for cq_callback (indicates callback "
+    "api usage)",
 };
 const char* grpc_stats_histogram_name[GRPC_STATS_HISTOGRAM_COUNT] = {
-    "call_initial_size",       "tcp_write_size",          "tcp_write_iov_size",
-    "tcp_read_allocation",     "tcp_read_size",           "tcp_read_offer",
-    "tcp_read_offer_iov_size", "http2_send_message_size",
+    "call_initial_size",       "tcp_write_size", "tcp_write_iov_size",
+    "tcp_read_size",           "tcp_read_offer", "tcp_read_offer_iov_size",
+    "http2_send_message_size",
 };
 const char* grpc_stats_histogram_doc[GRPC_STATS_HISTOGRAM_COUNT] = {
     "Initial size of the grpc_call arena created at call start",
     "Number of bytes offered to each syscall_write",
     "Number of byte segments offered to each syscall_write",
-    "Number of bytes allocated in each slice by tcp reads",
     "Number of bytes received by each syscall_read",
     "Number of bytes offered to each syscall_read",
     "Number of byte segments offered to each syscall_read",
@@ -184,29 +193,6 @@ void grpc_stats_inc_tcp_write_iov_size(int value) {
       GRPC_STATS_HISTOGRAM_TCP_WRITE_IOV_SIZE,
       grpc_stats_histo_find_bucket_slow(value, grpc_stats_table_4, 64));
 }
-void grpc_stats_inc_tcp_read_allocation(int value) {
-  value = grpc_core::Clamp(value, 0, 16777216);
-  if (value < 5) {
-    GRPC_STATS_INC_HISTOGRAM(GRPC_STATS_HISTOGRAM_TCP_READ_ALLOCATION, value);
-    return;
-  }
-  union {
-    double dbl;
-    uint64_t uint;
-  } _val, _bkt;
-  _val.dbl = value;
-  if (_val.uint < 4683743612465315840ull) {
-    int bucket =
-        grpc_stats_table_3[((_val.uint - 4617315517961601024ull) >> 50)] + 5;
-    _bkt.dbl = grpc_stats_table_2[bucket];
-    bucket -= (_val.uint < _bkt.uint);
-    GRPC_STATS_INC_HISTOGRAM(GRPC_STATS_HISTOGRAM_TCP_READ_ALLOCATION, bucket);
-    return;
-  }
-  GRPC_STATS_INC_HISTOGRAM(
-      GRPC_STATS_HISTOGRAM_TCP_READ_ALLOCATION,
-      grpc_stats_histo_find_bucket_slow(value, grpc_stats_table_2, 64));
-}
 void grpc_stats_inc_tcp_read_size(int value) {
   value = grpc_core::Clamp(value, 0, 16777216);
   if (value < 5) {
@@ -303,17 +289,16 @@ void grpc_stats_inc_http2_send_message_size(int value) {
       GRPC_STATS_HISTOGRAM_HTTP2_SEND_MESSAGE_SIZE,
       grpc_stats_histo_find_bucket_slow(value, grpc_stats_table_2, 64));
 }
-const int grpc_stats_histo_buckets[8] = {64, 64, 64, 64, 64, 64, 64, 64};
-const int grpc_stats_histo_start[8] = {0, 64, 128, 192, 256, 320, 384, 448};
-const int* const grpc_stats_histo_bucket_boundaries[8] = {
+const int grpc_stats_histo_buckets[7] = {64, 64, 64, 64, 64, 64, 64};
+const int grpc_stats_histo_start[7] = {0, 64, 128, 192, 256, 320, 384};
+const int* const grpc_stats_histo_bucket_boundaries[7] = {
     grpc_stats_table_0, grpc_stats_table_2, grpc_stats_table_4,
-    grpc_stats_table_2, grpc_stats_table_2, grpc_stats_table_2,
-    grpc_stats_table_4, grpc_stats_table_2};
-void (*const grpc_stats_inc_histogram[8])(int x) = {
+    grpc_stats_table_2, grpc_stats_table_2, grpc_stats_table_4,
+    grpc_stats_table_2};
+void (*const grpc_stats_inc_histogram[7])(int x) = {
     grpc_stats_inc_call_initial_size,
     grpc_stats_inc_tcp_write_size,
     grpc_stats_inc_tcp_write_iov_size,
-    grpc_stats_inc_tcp_read_allocation,
     grpc_stats_inc_tcp_read_size,
     grpc_stats_inc_tcp_read_offer,
     grpc_stats_inc_tcp_read_offer_iov_size,
