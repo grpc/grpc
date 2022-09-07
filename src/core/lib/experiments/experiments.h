@@ -28,14 +28,15 @@ namespace grpc_core {
 inline bool IsTcpFrameSizeTuningEnabled() { return IsExperimentEnabled(0); }
 inline bool IsTcpReadChunksEnabled() { return IsExperimentEnabled(1); }
 inline bool IsTcpRcvLowatEnabled() { return IsExperimentEnabled(2); }
+inline bool IsFlowControlFixesEnabled() { return IsExperimentEnabled(3); }
 inline bool IsMemoryPressureControllerEnabled() {
-  return IsExperimentEnabled(3);
-}
-inline bool IsPeriodicResourceQuotaReclamationEnabled() {
   return IsExperimentEnabled(4);
 }
-inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() {
+inline bool IsPeriodicResourceQuotaReclamationEnabled() {
   return IsExperimentEnabled(5);
+}
+inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() {
+  return IsExperimentEnabled(6);
 }
 
 struct ExperimentMetadata {
@@ -44,7 +45,7 @@ struct ExperimentMetadata {
   bool default_value;
 };
 
-constexpr const size_t kNumExperiments = 6;
+constexpr const size_t kNumExperiments = 7;
 extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];
 
 }  // namespace grpc_core

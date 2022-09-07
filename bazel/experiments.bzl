@@ -18,6 +18,7 @@
 
 EXPERIMENTS = {
     "core_end2end_test": [
+        "flow_control_fixes",
         "tcp_frame_size_tuning",
         "tcp_rcv_lowat",
         "tcp_read_chunks",
@@ -26,6 +27,9 @@ EXPERIMENTS = {
         "tcp_frame_size_tuning",
         "tcp_rcv_lowat",
         "tcp_read_chunks",
+    ],
+    "flow_control_test": [
+        "flow_control_fixes",
     ],
     "resource_quota_test": [
         "memory_pressure_controller",
