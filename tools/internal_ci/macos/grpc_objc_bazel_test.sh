@@ -106,7 +106,6 @@ objc_bazel_tests/bazel_wrapper \
   --test_env HOST_PORT_LOCALSSL=localhost:$TLS_PORT \
   --test_env FLAKE_TEST_REPEATS=1 \
   --test_env GRPC_TRACE=all \
-  --test_env GRPC_CFSTREAM_RUN_LOOP=1 \
   --runs_per_test 200 \
   --local_test_jobs=1 \
   --compilation_mode=dbg \
