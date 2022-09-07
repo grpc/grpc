@@ -25,6 +25,7 @@
 #   core_end2end_tests: all tests, fixtures in the core end2end suite
 #   endpoint_test:      endpoint related iomgr tests
 #   flow_control_test:  tests pertaining explicitly to flow control
+#   hpack_test:         hpack encode/decode tests
 
 - name: tcp_frame_size_tuning
   description:
