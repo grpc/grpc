@@ -17,6 +17,8 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "src/core/ext/xds/xds_bootstrap_grpc.h"
+#include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_cluster.h"
 #include "src/proto/grpc/testing/xds/v3/aggregate_cluster.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h"
@@ -34,13 +36,36 @@ TraceFlag xds_cluster_resource_type_test_trace(
 
 class XdsClusterTest : public ::testing::Test {
  protected:
+  XdsClusterTest() {
+    grpc_error_handle error = GRPC_ERROR_NONE;
+    auto bootstrap = GrpcXdsBootstrap::Create(
+        "{\n"
+        "  \"xds_servers\": [\n"
+        "    {\n"
+        "      \"server_uri\": \"xds.example.com\",\n"
+        "      \"channel_creds\": [\n"
+        "        {\"type\": \"google_default\"}\n"
+        "      ]\n"
+        "    }\n"
+        "  ]\n"
+        "}",
+        &error);
+    if (!GRPC_ERROR_IS_NONE(error)) {
+      gpr_log(GPR_ERROR, "Error parsing bootstrap: %s",
+              grpc_error_std_string(error).c_str());
+      GPR_ASSERT(false);
+    }
+    xds_client_ = MakeRefCounted<XdsClient>(std::move(bootstrap),
+                                            /*transport_factory=*/nullptr);
+  }
+
+  RefCountedPtr<XdsClient> xds_client_;
   XdsBootstrap::XdsServer xds_server_ = {"xds.example.com", "", Json(), {}};
   upb::DefPool upb_def_pool_;
   upb::Arena upb_arena_;
   XdsResourceType::DecodeContext decode_context_ = {
-      nullptr,  // XdsClient
-      xds_server_, &xds_cluster_resource_type_test_trace, upb_def_pool_.ptr(),
-      upb_arena_.ptr()};
+      xds_client_.get(), xds_server_, &xds_cluster_resource_type_test_trace,
+      upb_def_pool_.ptr(), upb_arena_.ptr()};
 };
 
 TEST_F(XdsClusterTest, Definition) {
