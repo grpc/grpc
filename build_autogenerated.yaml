@@ -4583,15 +4583,6 @@ targets:
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
-- name: certificate_provider_registry_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/client_channel/certificate_provider_registry_test.cc
-  deps:
-  - grpc_test_util
 - name: certificate_provider_store_test
   gtest: true
   build: test
@@ -9737,6 +9728,15 @@ targets:
   - linux
   - posix
   - mac
+- name: test_core_client_channel_certificate_provider_registry_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/client_channel/certificate_provider_registry_test.cc
+  deps:
+  - grpc_test_util
 - name: test_core_event_engine_posix_timer_heap_test
   gtest: true
   build: test
@@ -9847,6 +9847,15 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
+- name: test_core_security_certificate_provider_registry_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/security/certificate_provider_registry_test.cc
+  deps:
+  - grpc_test_util
 - name: test_core_security_credentials_test
   gtest: true
   build: test
