@@ -506,38 +506,40 @@ void MaybeLogCluster(const XdsResourceType::DecodeContext& context,
 
 }  // namespace
 
-absl::StatusOr<XdsResourceType::DecodeResult> XdsClusterResourceType::Decode(
+XdsResourceType::DecodeResult XdsClusterResourceType::Decode(
     const XdsResourceType::DecodeContext& context,
     absl::string_view serialized_resource, bool is_v2) const {
+  DecodeResult result;
   // Parse serialized proto.
   auto* resource = envoy_config_cluster_v3_Cluster_parse(
       serialized_resource.data(), serialized_resource.size(), context.arena);
   if (resource == nullptr) {
-    return absl::InvalidArgumentError("Can't parse Cluster resource.");
+    result.resource =
+        absl::InvalidArgumentError("Can't parse Cluster resource.");
+    return result;
   }
   MaybeLogCluster(context, resource);
   // Validate resource.
-  DecodeResult result;
   result.name =
       UpbStringToStdString(envoy_config_cluster_v3_Cluster_name(resource));
   auto cds_resource = CdsResourceParse(context, resource, is_v2);
   if (!cds_resource.ok()) {
     if (GRPC_TRACE_FLAG_ENABLED(*context.tracer)) {
       gpr_log(GPR_ERROR, "[xds_client %p] invalid Cluster %s: %s",
-              context.client, result.name.c_str(),
+              context.client, result.name->c_str(),
               cds_resource.status().ToString().c_str());
     }
     result.resource = cds_resource.status();
   } else {
     if (GRPC_TRACE_FLAG_ENABLED(*context.tracer)) {
       gpr_log(GPR_INFO, "[xds_client %p] parsed Cluster %s: %s", context.client,
-              result.name.c_str(), cds_resource->ToString().c_str());
+              result.name->c_str(), cds_resource->ToString().c_str());
     }
     auto resource = absl::make_unique<ResourceDataSubclass>();
     resource->resource = std::move(*cds_resource);
     result.resource = std::move(resource);
   }
-  return std::move(result);
+  return result;
 }
 
 }  // namespace grpc_core
