@@ -33,8 +33,10 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 
 #include "src/core/ext/xds/certificate_provider_factory.h"
+#include "src/core/ext/xds/certificate_provider_registry.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/security/credentials/channel_creds_registry.h"
@@ -369,7 +371,7 @@ std::string GrpcXdsBootstrap::ToString() const {
                         entry.second.xds_servers[0].channel_creds_type));
     parts.push_back("      },\n");
   }
-  parts.push_back("}");
+  parts.push_back("}\n");
   parts.push_back("certificate_providers={\n");
   for (const auto& entry : certificate_providers_) {
     parts.push_back(

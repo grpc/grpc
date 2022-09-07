@@ -35,6 +35,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/xds/xds_bootstrap.h"
+#include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_channel_args.h"
 #include "src/core/ext/xds/xds_cluster_specifier_plugin.h"
 #include "src/core/ext/xds/xds_http_filters.h"
