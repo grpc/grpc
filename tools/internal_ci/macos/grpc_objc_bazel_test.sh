@@ -90,7 +90,6 @@ trap 'echo "KILLING interop_server binaries running on the background"; kill -9 
 OBJC_TEST_ENV_ARGS=(
   --test_env=HOST_PORT_LOCAL=localhost:$PLAIN_PORT
   --test_env=HOST_PORT_LOCALSSL=localhost:$TLS_PORT
-  --test_env=FLAKE_TEST_REPEATS=3
   # suspect that many objc test flakes are due to a bug in CFStream implementation
   # when running on a macOS host (which is necessary for our tests)
   # See b/133182964, b/238246590
