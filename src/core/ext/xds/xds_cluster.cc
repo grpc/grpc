@@ -110,6 +110,7 @@ absl::StatusOr<CommonTlsContext> UpstreamTlsContextParse(
   // Record Upstream tls context
   absl::string_view name = UpbStringToAbsl(
       envoy_config_core_v3_TransportSocket_name(transport_socket));
+// FIXME: this should key on extension type, not name
   if (name != "envoy.transport_sockets.tls") {
     return absl::InvalidArgumentError(
         absl::StrCat("Unrecognized transport socket: ", name));
@@ -262,6 +263,7 @@ absl::StatusOr<XdsClusterResource> CdsResourceParse(
       upb_StringView type_name =
           envoy_config_cluster_v3_Cluster_CustomClusterType_name(
               custom_cluster_type);
+// FIXME: this should key on extension type, not name
       if (UpbStringToAbsl(type_name) != "envoy.clusters.aggregate") {
         errors.emplace_back("DiscoveryType is not valid.");
       } else {

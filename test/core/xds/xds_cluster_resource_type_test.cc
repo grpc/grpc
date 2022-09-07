@@ -22,10 +22,12 @@
 #include "src/core/ext/xds/xds_cluster.h"
 #include "src/proto/grpc/testing/xds/v3/aggregate_cluster.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h"
+#include "src/proto/grpc/testing/xds/v3/tls.grpc.pb.h"
 #include "test/core/util/test_config.h"
 
 using envoy::config::cluster::v3::Cluster;
 using envoy::extensions::clusters::aggregate::v3::ClusterConfig;
+using envoy::extensions::transport_sockets::tls::v3::UpstreamTlsContext;
 
 namespace grpc_core {
 namespace testing {
@@ -36,7 +38,14 @@ TraceFlag xds_cluster_resource_type_test_trace(
 
 class XdsClusterTest : public ::testing::Test {
  protected:
-  XdsClusterTest() {
+  XdsClusterTest()
+      : xds_client_(MakeXdsClient()),
+        decode_context_{
+            xds_client_.get(), xds_server_,
+            &xds_cluster_resource_type_test_trace, upb_def_pool_.ptr(),
+            upb_arena_.ptr()} {}
+
+  static RefCountedPtr<XdsClient> MakeXdsClient() {
     grpc_error_handle error = GRPC_ERROR_NONE;
     auto bootstrap = GrpcXdsBootstrap::Create(
         "{\n"
@@ -55,17 +64,15 @@ class XdsClusterTest : public ::testing::Test {
               grpc_error_std_string(error).c_str());
       GPR_ASSERT(false);
     }
-    xds_client_ = MakeRefCounted<XdsClient>(std::move(bootstrap),
-                                            /*transport_factory=*/nullptr);
+    return MakeRefCounted<XdsClient>(std::move(bootstrap),
+                                     /*transport_factory=*/nullptr);
   }
 
   RefCountedPtr<XdsClient> xds_client_;
   XdsBootstrap::XdsServer xds_server_ = {"xds.example.com", "", Json(), {}};
   upb::DefPool upb_def_pool_;
   upb::Arena upb_arena_;
-  XdsResourceType::DecodeContext decode_context_ = {
-      xds_client_.get(), xds_server_, &xds_cluster_resource_type_test_trace,
-      upb_def_pool_.ptr(), upb_arena_.ptr()};
+  XdsResourceType::DecodeContext decode_context_;
 };
 
 TEST_F(XdsClusterTest, Definition) {
@@ -746,6 +753,76 @@ TEST_F(LbPolicyTest, UnsupportedPolicy) {
       "errors parsing CDS resource: [LB policy is not supported.]")
       << decode_result.resource.status();
 }
+
+using TlsConfigTest = XdsClusterTest;
+
+// FIXME: add
+#if 0
+TEST_F(TlsConfigTest, MinimumValidConfig) {
+  Cluster cluster;
+  cluster.set_name("foo");
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  auto* transport_socket = cluster.mutable_transport_socket();
+  transport_socket->set_name("envoy.transport_sockets.tls");
+  UpstreamTlsContext upstream_tls_context;
+  auto* common_tls_context = upstream_tls_context.mutable_common_tls_context();
+  auto* validation_context = common_tls_context->mutable_validation_context();
+  auto* cert_provider =
+      validation_context->mutable_ca_certificate_provider_instance();
+  cert_provider->set_instance_name("fake");
+  cert_provider->set_certificate_name("cert_name");
+  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result = resource_type->Decode(
+      decode_context_, serialized_resource, /*is_v2=*/false);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource = static_cast<XdsClusterResourceType::ResourceDataSubclass*>(
+                       decode_result.resource->get())
+                       ->resource;
+  EXPECT_EQ(resource.cluster_type, resource.EDS);
+  EXPECT_EQ(resource.eds_service_name, "");
+  EXPECT_EQ(resource.lb_policy, "ROUND_ROBIN");
+}
+#endif
+
+TEST_F(TlsConfigTest, UnknownCertificateProviderInstance) {
+  Cluster cluster;
+  cluster.set_name("foo");
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  auto* transport_socket = cluster.mutable_transport_socket();
+  transport_socket->set_name("envoy.transport_sockets.tls");
+  UpstreamTlsContext upstream_tls_context;
+  auto* cert_provider = upstream_tls_context.mutable_common_tls_context()
+                            ->mutable_validation_context()
+                            ->mutable_ca_certificate_provider_instance();
+  cert_provider->set_instance_name("fake");
+  cert_provider->set_certificate_name("cert_name");
+  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result = resource_type->Decode(
+      decode_context_, serialized_resource, /*is_v2=*/false);
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(
+      decode_result.resource.status().message(),
+      "errors parsing CDS resource: [Error parsing security configuration: "
+      "Error parsing UpstreamTlsContext: Errors parsing CommonTlsContext: "
+      "[Errors parsing CertificateValidationContext: "
+      "Unrecognized certificate provider instance name: fake]]")
+      << decode_result.resource.status();
+}
+
+
 
 // FIXME: add tests for OD validation described in
 // https://github.com/grpc/proposal/blob/master/A50-xds-outlier-detection.md#validation

@@ -507,6 +507,7 @@ DownstreamTlsContextParse(
     const envoy_config_core_v3_TransportSocket* transport_socket) {
   absl::string_view name = UpbStringToAbsl(
       envoy_config_core_v3_TransportSocket_name(transport_socket));
+// FIXME: this should key on extension type, not name
   if (name != "envoy.transport_sockets.tls") {
     return absl::InvalidArgumentError(
         absl::StrCat("Unrecognized transport socket: ", name));
