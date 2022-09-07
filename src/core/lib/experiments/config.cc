@@ -19,6 +19,7 @@
 #include <string.h>
 
 #include <algorithm>
+#include <atomic>
 #include <memory>
 #include <string>
 
@@ -50,7 +51,10 @@ struct ForcedExperiment {
 };
 ForcedExperiment g_forced_experiments[kNumExperiments];
 
+std::atomic<bool> g_loaded;
+
 GPR_ATTRIBUTE_NOINLINE Experiments LoadExperimentsFromConfigVariable() {
+  GPR_ASSERT(g_loaded.exchange(true, std::memory_order_relaxed) == false);
   // Set defaults from metadata.
   Experiments experiments;
   for (size_t i = 0; i < kNumExperiments; i++) {
@@ -124,6 +128,7 @@ void PrintExperimentsList() {
 }
 
 void ForceEnableExperiment(absl::string_view experiment, bool enable) {
+  GPR_ASSERT(g_loaded.load(std::memory_order_relaxed) == false);
   for (size_t i = 0; i < kNumExperiments; i++) {
     if (g_experiment_metadata[i].name != experiment) continue;
     if (g_forced_experiments[i].forced) {
