@@ -620,6 +620,17 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "tchar",
+    srcs = [
+        "src/core/lib/gprpp/tchar.cc",
+    ],
+    hdrs = [
+        "src/core/lib/gprpp/tchar.h",
+    ],
+    deps = ["gpr_platform"],
+)
+
+grpc_cc_library(
     name = "grpc++_internals",
     srcs = [
         "src/cpp/client/insecure_credentials.cc",
@@ -982,7 +993,6 @@ grpc_cc_library(
         "src/core/lib/gpr/murmur_hash.h",
         "src/core/lib/gpr/spinlock.h",
         "src/core/lib/gpr/string.h",
-        "src/core/lib/gpr/string_windows.h",
         "src/core/lib/gpr/time_precise.h",
         "src/core/lib/gpr/tmpfile.h",
         "src/core/lib/gprpp/fork.h",
@@ -1023,6 +1033,7 @@ grpc_cc_library(
         "examine_stack",
         "gpr_tls",
         "grpc_codegen",
+        "tchar",
         "useful",
     ],
 )
