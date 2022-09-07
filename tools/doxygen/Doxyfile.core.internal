@@ -1800,7 +1800,6 @@ src/core/lib/gpr/string.h \
 src/core/lib/gpr/string_posix.cc \
 src/core/lib/gpr/string_util_windows.cc \
 src/core/lib/gpr/string_windows.cc \
-src/core/lib/gpr/string_windows.h \
 src/core/lib/gpr/sync.cc \
 src/core/lib/gpr/sync_abseil.cc \
 src/core/lib/gpr/sync_posix.cc \
@@ -1856,6 +1855,8 @@ src/core/lib/gprpp/status_helper.cc \
 src/core/lib/gprpp/status_helper.h \
 src/core/lib/gprpp/sync.h \
 src/core/lib/gprpp/table.h \
+src/core/lib/gprpp/tchar.cc \
+src/core/lib/gprpp/tchar.h \
 src/core/lib/gprpp/thd.h \
 src/core/lib/gprpp/thd_posix.cc \
 src/core/lib/gprpp/thd_windows.cc \

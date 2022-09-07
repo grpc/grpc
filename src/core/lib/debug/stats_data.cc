@@ -35,7 +35,8 @@ const char* grpc_stats_counter_name[GRPC_STATS_COUNTER_COUNT] = {
     "tcp_read_alloc_8k",       "tcp_read_alloc_64k",
     "http2_settings_writes",   "http2_pings_sent",
     "http2_writes_begun",      "http2_transport_stalls",
-    "http2_stream_stalls",
+    "http2_stream_stalls",     "cq_pluck_creates",
+    "cq_next_creates",         "cq_callback_creates",
 };
 const char* grpc_stats_counter_doc[GRPC_STATS_COUNTER_COUNT] = {
     "Number of client side calls created by this process",
@@ -57,6 +58,12 @@ const char* grpc_stats_counter_doc[GRPC_STATS_COUNTER_COUNT] = {
     "control window",
     "Number of times sending was completely stalled by the stream flow control "
     "window",
+    "Number of completion queues created for cq_pluck (indicates sync api "
+    "usage)",
+    "Number of completion queues created for cq_next (indicates cq async api "
+    "usage)",
+    "Number of completion queues created for cq_callback (indicates callback "
+    "api usage)",
 };
 const char* grpc_stats_histogram_name[GRPC_STATS_HISTOGRAM_COUNT] = {
     "call_initial_size",       "tcp_write_size", "tcp_write_iov_size",
