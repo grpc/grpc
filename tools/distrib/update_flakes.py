@@ -59,6 +59,8 @@ client = bigquery.Client()
 for row in client.query(
         update_flakes_query.QUERY.format(
             lookback_hours=lookback_hours)).result():
+    if "/macos/" in row.job_name:
+        continue  # we know mac stuff is flaky
     if row.test_binary not in tests:
         m = re.match(r'^//test/core/end2end:([^@]*)@([^@]*)(.*)',
                      row.test_binary)

@@ -87,9 +87,6 @@ class XdsBootstrap {
   // add support for fallback for the xds channel.
   virtual const XdsServer& server() const = 0;
   virtual const Node* node() const = 0;
-  virtual const std::string& client_default_listener_resource_name_template()
-      const = 0;
-  virtual const std::string& server_listener_resource_name_template() const = 0;
   virtual const std::map<std::string, Authority>& authorities() const = 0;
 
   // Returns a pointer to the specified authority, or null if it does

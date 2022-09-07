@@ -153,7 +153,6 @@ void grpc_init(void) {
       g_shutting_down = false;
       g_shutting_down_cv->SignalAll();
     }
-    grpc_core::ApplicationCallbackExecCtx::GlobalInit();
     grpc_iomgr_init();
     for (int i = 0; i < g_number_of_plugins; i++) {
       if (g_all_of_the_plugins[i].init != nullptr) {
@@ -185,7 +184,6 @@ void grpc_shutdown_internal_locked(void)
     grpc_iomgr_shutdown();
     grpc_tracer_shutdown();
   }
-  grpc_core::ApplicationCallbackExecCtx::GlobalShutdown();
   g_shutting_down = false;
   g_shutting_down_cv->SignalAll();
 }
