@@ -106,9 +106,12 @@ TEST_F(XdsClusterTest, MinimumValidConfig) {
                        ->resource;
   EXPECT_EQ(resource.cluster_type, resource.EDS);
   EXPECT_EQ(resource.eds_service_name, "");
+  EXPECT_EQ(resource.lb_policy, "ROUND_ROBIN");
 }
 
-TEST_F(XdsClusterTest, EdsConfigSourceAds) {
+using ClusterTypeTest = XdsClusterTest;
+
+TEST_F(ClusterTypeTest, EdsConfigSourceAds) {
   Cluster cluster;
   cluster.set_name("foo");
   cluster.set_type(cluster.EDS);
@@ -128,7 +131,7 @@ TEST_F(XdsClusterTest, EdsConfigSourceAds) {
   EXPECT_EQ(resource.eds_service_name, "");
 }
 
-TEST_F(XdsClusterTest, EdsServiceName) {
+TEST_F(ClusterTypeTest, EdsServiceName) {
   Cluster cluster;
   cluster.set_name("foo");
   cluster.set_type(cluster.EDS);
@@ -150,7 +153,7 @@ TEST_F(XdsClusterTest, EdsServiceName) {
   EXPECT_EQ(resource.eds_service_name, "bar");
 }
 
-TEST_F(XdsClusterTest, DiscoveryTypeNotPresent) {
+TEST_F(ClusterTypeTest, DiscoveryTypeNotPresent) {
   Cluster cluster;
   cluster.set_name("foo");
   std::string serialized_resource;
@@ -167,7 +170,7 @@ TEST_F(XdsClusterTest, DiscoveryTypeNotPresent) {
       << decode_result.resource.status();
 }
 
-TEST_F(XdsClusterTest, EdsClusterConfigMissing) {
+TEST_F(ClusterTypeTest, EdsClusterConfigMissing) {
   Cluster cluster;
   cluster.set_name("foo");
   cluster.set_type(cluster.EDS);
@@ -185,7 +188,7 @@ TEST_F(XdsClusterTest, EdsClusterConfigMissing) {
       << decode_result.resource.status();
 }
 
-TEST_F(XdsClusterTest, EdsConfigSourceMissing) {
+TEST_F(ClusterTypeTest, EdsConfigSourceMissing) {
   Cluster cluster;
   cluster.set_name("foo");
   cluster.set_type(cluster.EDS);
@@ -205,7 +208,7 @@ TEST_F(XdsClusterTest, EdsConfigSourceMissing) {
       << decode_result.resource.status();
 }
 
-TEST_F(XdsClusterTest, EdsConfigSourceWrongType) {
+TEST_F(ClusterTypeTest, EdsConfigSourceWrongType) {
   Cluster cluster;
   cluster.set_name("foo");
   cluster.set_type(cluster.EDS);
@@ -225,7 +228,7 @@ TEST_F(XdsClusterTest, EdsConfigSourceWrongType) {
       << decode_result.resource.status();
 }
 
-TEST_F(XdsClusterTest, LogicalDnsValid) {
+TEST_F(ClusterTypeTest, LogicalDnsValid) {
   Cluster cluster;
   cluster.set_name("foo");
   cluster.set_type(cluster.LOGICAL_DNS);
@@ -252,7 +255,7 @@ TEST_F(XdsClusterTest, LogicalDnsValid) {
   EXPECT_EQ(resource.dns_hostname, "server.example.com:443");
 }
 
-TEST_F(XdsClusterTest, LogicalDnsMissingLoadAssignment) {
+TEST_F(ClusterTypeTest, LogicalDnsMissingLoadAssignment) {
   Cluster cluster;
   cluster.set_name("foo");
   cluster.set_type(cluster.LOGICAL_DNS);
@@ -271,7 +274,7 @@ TEST_F(XdsClusterTest, LogicalDnsMissingLoadAssignment) {
       << decode_result.resource.status();
 }
 
-TEST_F(XdsClusterTest, LogicalDnsMissingLocalities) {
+TEST_F(ClusterTypeTest, LogicalDnsMissingLocalities) {
   Cluster cluster;
   cluster.set_name("foo");
   cluster.set_type(cluster.LOGICAL_DNS);
@@ -292,7 +295,7 @@ TEST_F(XdsClusterTest, LogicalDnsMissingLocalities) {
       << decode_result.resource.status();
 }
 
-TEST_F(XdsClusterTest, LogicalDnsTooManyLocalities) {
+TEST_F(ClusterTypeTest, LogicalDnsTooManyLocalities) {
   Cluster cluster;
   cluster.set_name("foo");
   cluster.set_type(cluster.LOGICAL_DNS);
@@ -314,7 +317,7 @@ TEST_F(XdsClusterTest, LogicalDnsTooManyLocalities) {
       << decode_result.resource.status();
 }
 
-TEST_F(XdsClusterTest, LogicalDnsLocalityMissingEndpoints) {
+TEST_F(ClusterTypeTest, LogicalDnsLocalityMissingEndpoints) {
   Cluster cluster;
   cluster.set_name("foo");
   cluster.set_type(cluster.LOGICAL_DNS);
@@ -335,7 +338,7 @@ TEST_F(XdsClusterTest, LogicalDnsLocalityMissingEndpoints) {
       << decode_result.resource.status();
 }
 
-TEST_F(XdsClusterTest, LogicalDnsLocalityTooManyEndpoints) {
+TEST_F(ClusterTypeTest, LogicalDnsLocalityTooManyEndpoints) {
   Cluster cluster;
   cluster.set_name("foo");
   cluster.set_type(cluster.LOGICAL_DNS);
@@ -358,7 +361,7 @@ TEST_F(XdsClusterTest, LogicalDnsLocalityTooManyEndpoints) {
       << decode_result.resource.status();
 }
 
-TEST_F(XdsClusterTest, LogicalDnsEndpointMissing) {
+TEST_F(ClusterTypeTest, LogicalDnsEndpointMissing) {
   Cluster cluster;
   cluster.set_name("foo");
   cluster.set_type(cluster.LOGICAL_DNS);
@@ -377,7 +380,7 @@ TEST_F(XdsClusterTest, LogicalDnsEndpointMissing) {
       << decode_result.resource.status();
 }
 
-TEST_F(XdsClusterTest, LogicalDnsAddressMissing) {
+TEST_F(ClusterTypeTest, LogicalDnsAddressMissing) {
   Cluster cluster;
   cluster.set_name("foo");
   cluster.set_type(cluster.LOGICAL_DNS);
@@ -399,7 +402,7 @@ TEST_F(XdsClusterTest, LogicalDnsAddressMissing) {
       << decode_result.resource.status();
 }
 
-TEST_F(XdsClusterTest, LogicalDnsSocketAddressMissing) {
+TEST_F(ClusterTypeTest, LogicalDnsSocketAddressMissing) {
   Cluster cluster;
   cluster.set_name("foo");
   cluster.set_type(cluster.LOGICAL_DNS);
@@ -423,7 +426,7 @@ TEST_F(XdsClusterTest, LogicalDnsSocketAddressMissing) {
       << decode_result.resource.status();
 }
 
-TEST_F(XdsClusterTest, LogicalDnsSocketAddressAddressMissing) {
+TEST_F(ClusterTypeTest, LogicalDnsSocketAddressAddressMissing) {
   Cluster cluster;
   cluster.set_name("foo");
   cluster.set_type(cluster.LOGICAL_DNS);
@@ -447,7 +450,7 @@ TEST_F(XdsClusterTest, LogicalDnsSocketAddressAddressMissing) {
       << decode_result.resource.status();
 }
 
-TEST_F(XdsClusterTest, LogicalDnsResolverNameSet) {
+TEST_F(ClusterTypeTest, LogicalDnsResolverNameSet) {
   Cluster cluster;
   cluster.set_name("foo");
   cluster.set_type(cluster.LOGICAL_DNS);
@@ -473,7 +476,7 @@ TEST_F(XdsClusterTest, LogicalDnsResolverNameSet) {
       << decode_result.resource.status();
 }
 
-TEST_F(XdsClusterTest, LogicalDnsSocketAddressAddressNotSet) {
+TEST_F(ClusterTypeTest, LogicalDnsSocketAddressAddressNotSet) {
   Cluster cluster;
   cluster.set_name("foo");
   cluster.set_type(cluster.LOGICAL_DNS);
@@ -498,7 +501,7 @@ TEST_F(XdsClusterTest, LogicalDnsSocketAddressAddressNotSet) {
       << decode_result.resource.status();
 }
 
-TEST_F(XdsClusterTest, LogicalDnsSocketAddressPortNotSet) {
+TEST_F(ClusterTypeTest, LogicalDnsSocketAddressPortNotSet) {
   Cluster cluster;
   cluster.set_name("foo");
   cluster.set_type(cluster.LOGICAL_DNS);
@@ -524,7 +527,7 @@ TEST_F(XdsClusterTest, LogicalDnsSocketAddressPortNotSet) {
       << decode_result.resource.status();
 }
 
-TEST_F(XdsClusterTest, AggregateClusterValid) {
+TEST_F(ClusterTypeTest, AggregateClusterValid) {
   Cluster cluster;
   cluster.set_name("foo");
   cluster.mutable_cluster_type()->set_name("envoy.clusters.aggregate");
@@ -550,7 +553,7 @@ TEST_F(XdsClusterTest, AggregateClusterValid) {
               ::testing::ElementsAre("bar", "baz", "quux"));
 }
 
-TEST_F(XdsClusterTest, AggregateClusterUnparseableProto) {
+TEST_F(ClusterTypeTest, AggregateClusterUnparseableProto) {
   Cluster cluster;
   cluster.set_name("foo");
   cluster.mutable_cluster_type()->set_name("envoy.clusters.aggregate");
@@ -570,6 +573,177 @@ TEST_F(XdsClusterTest, AggregateClusterUnparseableProto) {
   EXPECT_EQ(
       decode_result.resource.status().message(),
       "errors parsing CDS resource: [Can't parse aggregate cluster.]")
+      << decode_result.resource.status();
+}
+
+using LbPolicyTest = XdsClusterTest;
+
+TEST_F(LbPolicyTest, LbPolicyRingHash) {
+  Cluster cluster;
+  cluster.set_name("foo");
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  cluster.set_lb_policy(cluster.RING_HASH);
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result = resource_type->Decode(
+      decode_context_, serialized_resource, /*is_v2=*/false);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource = static_cast<XdsClusterResourceType::ResourceDataSubclass*>(
+                       decode_result.resource->get())
+                       ->resource;
+  EXPECT_EQ(resource.lb_policy, "RING_HASH");
+  EXPECT_EQ(resource.min_ring_size, 1024);
+  EXPECT_EQ(resource.max_ring_size, 8388608);
+}
+
+TEST_F(LbPolicyTest, LbPolicyRingHashSetMinAndMaxRingSize) {
+  Cluster cluster;
+  cluster.set_name("foo");
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  cluster.set_lb_policy(cluster.RING_HASH);
+  auto* ring_hash_config = cluster.mutable_ring_hash_lb_config();
+  ring_hash_config->mutable_minimum_ring_size()->set_value(2048);
+  ring_hash_config->mutable_maximum_ring_size()->set_value(4096);
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result = resource_type->Decode(
+      decode_context_, serialized_resource, /*is_v2=*/false);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource = static_cast<XdsClusterResourceType::ResourceDataSubclass*>(
+                       decode_result.resource->get())
+                       ->resource;
+  EXPECT_EQ(resource.lb_policy, "RING_HASH");
+  EXPECT_EQ(resource.min_ring_size, 2048);
+  EXPECT_EQ(resource.max_ring_size, 4096);
+}
+
+TEST_F(LbPolicyTest, LbPolicyRingHashSetMinAndMaxRingSizeToZero) {
+  Cluster cluster;
+  cluster.set_name("foo");
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  cluster.set_lb_policy(cluster.RING_HASH);
+  auto* ring_hash_config = cluster.mutable_ring_hash_lb_config();
+  ring_hash_config->mutable_minimum_ring_size()->set_value(0);
+  ring_hash_config->mutable_maximum_ring_size()->set_value(0);
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result = resource_type->Decode(
+      decode_context_, serialized_resource, /*is_v2=*/false);
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(
+      decode_result.resource.status().message(),
+      "errors parsing CDS resource: ["
+      "max_ring_size is not in the range of 1 to 8388608.; "
+      "min_ring_size is not in the range of 1 to 8388608.]")
+      << decode_result.resource.status();
+}
+
+TEST_F(LbPolicyTest, LbPolicyRingHashSetMinAndMaxRingSizeTooLarge) {
+  Cluster cluster;
+  cluster.set_name("foo");
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  cluster.set_lb_policy(cluster.RING_HASH);
+  auto* ring_hash_config = cluster.mutable_ring_hash_lb_config();
+  ring_hash_config->mutable_minimum_ring_size()->set_value(8388609);
+  ring_hash_config->mutable_maximum_ring_size()->set_value(8388609);
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result = resource_type->Decode(
+      decode_context_, serialized_resource, /*is_v2=*/false);
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(
+      decode_result.resource.status().message(),
+      "errors parsing CDS resource: ["
+      "max_ring_size is not in the range of 1 to 8388608.; "
+      "min_ring_size is not in the range of 1 to 8388608.]")
+      << decode_result.resource.status();
+}
+
+TEST_F(LbPolicyTest, LbPolicyRingHashSetMinRingSizeLargerThanMaxRingSize) {
+  Cluster cluster;
+  cluster.set_name("foo");
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  cluster.set_lb_policy(cluster.RING_HASH);
+  auto* ring_hash_config = cluster.mutable_ring_hash_lb_config();
+  ring_hash_config->mutable_minimum_ring_size()->set_value(1025);
+  ring_hash_config->mutable_maximum_ring_size()->set_value(1024);
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result = resource_type->Decode(
+      decode_context_, serialized_resource, /*is_v2=*/false);
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(
+      decode_result.resource.status().message(),
+      "errors parsing CDS resource: ["
+      "min_ring_size cannot be greater than max_ring_size.]")
+      << decode_result.resource.status();
+}
+
+TEST_F(LbPolicyTest, LbPolicyRingHashUnsupportedHashFunction) {
+  Cluster cluster;
+  cluster.set_name("foo");
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  cluster.set_lb_policy(cluster.RING_HASH);
+  cluster.mutable_ring_hash_lb_config()->set_hash_function(
+      envoy::config::cluster::v3::Cluster::RingHashLbConfig::MURMUR_HASH_2);
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result = resource_type->Decode(
+      decode_context_, serialized_resource, /*is_v2=*/false);
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(
+      decode_result.resource.status().message(),
+      "errors parsing CDS resource: ["
+      "ring hash lb config has invalid hash function.]")
+      << decode_result.resource.status();
+}
+
+TEST_F(LbPolicyTest, UnsupportedPolicy) {
+  Cluster cluster;
+  cluster.set_name("foo");
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  cluster.set_lb_policy(cluster.MAGLEV);
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result = resource_type->Decode(
+      decode_context_, serialized_resource, /*is_v2=*/false);
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(
+      decode_result.resource.status().message(),
+      "errors parsing CDS resource: [LB policy is not supported.]")
       << decode_result.resource.status();
 }
 
