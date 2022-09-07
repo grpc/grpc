@@ -356,6 +356,16 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
             negated_experiments[experiment] = 1
     negated_experiments = list(negated_experiments.keys())
 
+    must_have_tags = [
+        # We don't run experiments on cmake builds
+        "bazel_only",
+        # Nor on windows
+        "no_windows",
+        # Nor on mac
+        "no_mac",
+        # Nor on arm64
+        "no_arm64",
+    ]
     experiment_config = list(poller_config)
     for experiment in experiments:
         for config in poller_config:
@@ -363,14 +373,6 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
             config["name"] = config["name"] + "@experiment=" + experiment
             config["args"] = config["args"] + ["--experiment=" + experiment]
             tags = config["tags"]
-            must_have_tags = [
-                # We don't run experiments on cmake builds
-                "bazel_only",
-                # Nor on windows
-                "no_windows",
-                # Nor on mac
-                "no_mac",
-            ]
             for tag in must_have_tags:
                 if tag not in tags:
                     tags = tags + [tag]
@@ -382,14 +384,6 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
             config["name"] = config["name"] + "@experiment=no_" + experiment
             config["args"] = config["args"] + ["--experiment=-" + experiment]
             tags = config["tags"]
-            must_have_tags = [
-                # We don't run experiments on cmake builds
-                "bazel_only",
-                # Nor on windows
-                "no_windows",
-                # Nor on mac
-                "no_mac",
-            ]
             for tag in must_have_tags:
                 if tag not in tags:
                     tags = tags + [tag]
