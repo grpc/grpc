@@ -211,7 +211,6 @@ libs:
   - src/core/lib/gpr/murmur_hash.h
   - src/core/lib/gpr/spinlock.h
   - src/core/lib/gpr/string.h
-  - src/core/lib/gpr/string_windows.h
   - src/core/lib/gpr/time_precise.h
   - src/core/lib/gpr/tls.h
   - src/core/lib/gpr/tmpfile.h
@@ -229,6 +228,7 @@ libs:
   - src/core/lib/gprpp/mpscq.h
   - src/core/lib/gprpp/stat.h
   - src/core/lib/gprpp/sync.h
+  - src/core/lib/gprpp/tchar.h
   - src/core/lib/gprpp/thd.h
   - src/core/lib/gprpp/time_util.h
   src:
@@ -270,6 +270,7 @@ libs:
   - src/core/lib/gprpp/mpscq.cc
   - src/core/lib/gprpp/stat_posix.cc
   - src/core/lib/gprpp/stat_windows.cc
+  - src/core/lib/gprpp/tchar.cc
   - src/core/lib/gprpp/thd_posix.cc
   - src/core/lib/gprpp/thd_windows.cc
   - src/core/lib/gprpp/time_util.cc
@@ -3462,7 +3463,6 @@ targets:
   - mac
 - name: fling_stream_test
   build: test
-  run: false
   language: c
   headers:
   - test/core/end2end/data/ssl_test_data.h
@@ -3547,7 +3547,6 @@ targets:
   - mac
 - name: goaway_server_test
   build: test
-  run: false
   language: c
   headers:
   - test/core/end2end/cq_verifier.h
@@ -5024,7 +5023,6 @@ targets:
 - name: client_interceptors_end2end_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - test/cpp/end2end/interceptors_util.h
@@ -5070,7 +5068,6 @@ targets:
 - name: client_ssl_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers: []
   src:
@@ -5752,7 +5749,6 @@ targets:
 - name: event_poller_posix_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - src/core/lib/event_engine/common_closures.h
@@ -6710,7 +6706,6 @@ targets:
 - name: grpc_tls_certificate_provider_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - test/core/util/cmdline.h
@@ -6813,7 +6808,6 @@ targets:
 - name: grpc_tls_credentials_options_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - test/core/util/cmdline.h
@@ -7174,7 +7168,6 @@ targets:
 - name: httpscli_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - test/core/http/httpcli_test_util.h
@@ -7936,7 +7929,6 @@ targets:
 - name: orca_service_end2end_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers: []
   src:
@@ -9466,7 +9458,6 @@ targets:
 - name: stranded_event_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
@@ -10961,7 +10952,6 @@ targets:
 - name: xds_csds_end2end_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - src/cpp/server/csds/csds.h
@@ -11347,7 +11337,6 @@ targets:
 - name: xds_rls_end2end_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - test/cpp/end2end/counted_service.h

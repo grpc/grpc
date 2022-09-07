@@ -531,6 +531,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/gprpp/stat_posix.cc \
     src/core/lib/gprpp/stat_windows.cc \
     src/core/lib/gprpp/status_helper.cc \
+    src/core/lib/gprpp/tchar.cc \
     src/core/lib/gprpp/thd_posix.cc \
     src/core/lib/gprpp/thd_windows.cc \
     src/core/lib/gprpp/time.cc \

@@ -21,6 +21,7 @@
 #include <stddef.h>
 
 #include <algorithm>
+#include <map>
 #include <utility>
 
 #include "absl/status/status.h"
@@ -37,6 +38,7 @@
 #include "upb/upb.h"
 #include "xds/type/v3/typed_struct.upb.h"
 
+#include "src/core/ext/xds/certificate_provider_store.h"
 #include "src/core/ext/xds/upb_utils.h"
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_client.h"
@@ -127,8 +129,9 @@ CertificateProviderInstanceParse(
                   certificate_provider_instance_proto))};
   const auto& bootstrap =
       static_cast<const GrpcXdsBootstrap&>(context.client->bootstrap());
-  if (!bootstrap.certificate_provider_plugin_map()->HasPlugin(
-          certificate_provider_plugin_instance.instance_name)) {
+  if (bootstrap.certificate_providers().find(
+          certificate_provider_plugin_instance.instance_name) ==
+      bootstrap.certificate_providers().end()) {
     return absl::InvalidArgumentError(
         absl::StrCat("Unrecognized certificate provider instance name: ",
                      certificate_provider_plugin_instance.instance_name));
@@ -151,8 +154,9 @@ CertificateProviderPluginInstanceParse(
                   certificate_provider_plugin_instance_proto))};
   const auto& bootstrap =
       static_cast<const GrpcXdsBootstrap&>(context.client->bootstrap());
-  if (!bootstrap.certificate_provider_plugin_map()->HasPlugin(
-          certificate_provider_plugin_instance.instance_name)) {
+  if (bootstrap.certificate_providers().find(
+          certificate_provider_plugin_instance.instance_name) ==
+      bootstrap.certificate_providers().end()) {
     return absl::InvalidArgumentError(
         absl::StrCat("Unrecognized certificate provider instance name: ",
                      certificate_provider_plugin_instance.instance_name));
