@@ -36,7 +36,6 @@
 #include "absl/types/optional.h"
 
 #include "src/core/ext/xds/certificate_provider_factory.h"
-#include "src/core/ext/xds/certificate_provider_registry.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/security/credentials/channel_creds_registry.h"
@@ -289,7 +288,7 @@ absl::StatusOr<std::unique_ptr<GrpcXdsBootstrap>> GrpcXdsBootstrap::Create(
   if (bootstrap_json->node.has_value()) node = bootstrap_json->node->Take();
   std::map<std::string, Authority> authorities;
   for (auto& p : bootstrap_json->authorities) {
-    authorities.emplace(std::move(p.first), p.second.Take());
+    authorities.emplace(p.first, p.second.Take());
   }
   return absl::make_unique<GrpcXdsBootstrap>(
       std::move(servers), std::move(node),
