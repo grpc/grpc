@@ -22,9 +22,9 @@
 
 #include "src/core/lib/debug/stats_data.h"
 
-#include <stdint.h>
-
 #include "src/core/lib/debug/stats.h"
+#include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 
 namespace {
 union DblUint {
