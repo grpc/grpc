@@ -160,15 +160,6 @@ CPPFLAGS_msan = -O0 -stdlib=libc++ -fsanitize-coverage=edge,trace-pc-guard -fsan
 LDFLAGS_msan = -stdlib=libc++ -fsanitize=memory -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -fPIE -pie $(if $(JENKINS_BUILD),-Wl$(comma)-Ttext-segment=0x7e0000000000,)
 DEFINES_msan = NDEBUG
 
-VALID_CONFIG_mutrace = 1
-CC_mutrace = $(DEFAULT_CC)
-CXX_mutrace = $(DEFAULT_CXX)
-LD_mutrace = $(DEFAULT_CC)
-LDXX_mutrace = $(DEFAULT_CXX)
-CPPFLAGS_mutrace = -O3 -fno-omit-frame-pointer
-LDFLAGS_mutrace = -rdynamic
-DEFINES_mutrace = NDEBUG
-
 VALID_CONFIG_noexcept = 1
 CC_noexcept = $(DEFAULT_CC)
 CXX_noexcept = $(DEFAULT_CXX)
