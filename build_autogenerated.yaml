@@ -722,8 +722,6 @@ libs:
   - src/core/ext/upbdefs-generated/xds/type/matcher/v3/regex.upbdefs.h
   - src/core/ext/upbdefs-generated/xds/type/matcher/v3/string.upbdefs.h
   - src/core/ext/upbdefs-generated/xds/type/v3/typed_struct.upbdefs.h
-  - src/core/ext/xds/certificate_provider_factory.h
-  - src/core/ext/xds/certificate_provider_registry.h
   - src/core/ext/xds/certificate_provider_store.h
   - src/core/ext/xds/file_watcher_certificate_provider_factory.h
   - src/core/ext/xds/upb_utils.h
@@ -931,6 +929,8 @@ libs:
   - src/core/lib/security/authorization/grpc_server_authz_filter.h
   - src/core/lib/security/authorization/matchers.h
   - src/core/lib/security/authorization/rbac_policy.h
+  - src/core/lib/security/certificate_provider/certificate_provider_factory.h
+  - src/core/lib/security/certificate_provider/certificate_provider_registry.h
   - src/core/lib/security/context/security_context.h
   - src/core/lib/security/credentials/alts/alts_credentials.h
   - src/core/lib/security/credentials/alts/check_gcp_environment.h
@@ -1435,7 +1435,6 @@ libs:
   - src/core/ext/upbdefs-generated/xds/type/matcher/v3/regex.upbdefs.c
   - src/core/ext/upbdefs-generated/xds/type/matcher/v3/string.upbdefs.c
   - src/core/ext/upbdefs-generated/xds/type/v3/typed_struct.upbdefs.c
-  - src/core/ext/xds/certificate_provider_registry.cc
   - src/core/ext/xds/certificate_provider_store.cc
   - src/core/ext/xds/file_watcher_certificate_provider_factory.cc
   - src/core/ext/xds/xds_api.cc
@@ -1608,6 +1607,7 @@ libs:
   - src/core/lib/security/authorization/grpc_server_authz_filter.cc
   - src/core/lib/security/authorization/matchers.cc
   - src/core/lib/security/authorization/rbac_policy.cc
+  - src/core/lib/security/certificate_provider/certificate_provider_registry.cc
   - src/core/lib/security/context/security_context.cc
   - src/core/lib/security/credentials/alts/alts_credentials.cc
   - src/core/lib/security/credentials/alts/check_gcp_environment.cc
@@ -4589,7 +4589,7 @@ targets:
   language: c++
   headers: []
   src:
-  - test/core/client_channel/certificate_provider_registry_test.cc
+  - test/core/security/certificate_provider_registry_test.cc
   deps:
   - grpc_test_util
 - name: certificate_provider_store_test

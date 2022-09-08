@@ -4351,9 +4351,37 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "certificate_provider_factory",
+    hdrs = [
+        "src/core/lib/security/certificate_provider/certificate_provider_factory.h",
+    ],
+    deps = [
+        "gpr",
+        "grpc_base",
+        "json",
+        "ref_counted",
+        "ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
+    name = "certificate_provider_registry",
+    srcs = [
+        "src/core/lib/security/certificate_provider/certificate_provider_registry.cc",
+    ],
+    hdrs = [
+        "src/core/lib/security/certificate_provider/certificate_provider_registry.h",
+    ],
+    external_deps = ["absl/strings"],
+    deps = [
+        "certificate_provider_factory",
+        "gpr_public_hdrs",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_xds_client",
     srcs = [
-        "src/core/ext/xds/certificate_provider_registry.cc",
         "src/core/ext/xds/certificate_provider_store.cc",
         "src/core/ext/xds/file_watcher_certificate_provider_factory.cc",
         "src/core/ext/xds/xds_bootstrap_grpc.cc",
@@ -4374,8 +4402,6 @@ grpc_cc_library(
         "src/core/lib/security/credentials/xds/xds_credentials.cc",
     ],
     hdrs = [
-        "src/core/ext/xds/certificate_provider_factory.h",
-        "src/core/ext/xds/certificate_provider_registry.h",
         "src/core/ext/xds/certificate_provider_store.h",
         "src/core/ext/xds/file_watcher_certificate_provider_factory.h",
         "src/core/ext/xds/xds_bootstrap_grpc.h",
@@ -4414,6 +4440,8 @@ grpc_cc_library(
     language = "c++",
     tags = ["nofixdeps"],
     deps = [
+        "certificate_provider_factory",
+        "certificate_provider_registry",
         "channel_creds_registry",
         "channel_fwd",
         "config",
@@ -4610,11 +4638,11 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "certificate_provider_factory",
         "error",
         "gpr_platform",
         "grpc_tls_credentials",
         "grpc_trace",
-        "grpc_xds_client",
         "json",
         "json_util",
         "ref_counted_ptr",
