@@ -82,6 +82,7 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
+        "absl/types:span",
     ],
     language = "C++",
     tags = ["nofixdeps"],

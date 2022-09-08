@@ -695,6 +695,17 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "tchar",
+    srcs = [
+        "src/core/lib/gprpp/tchar.cc",
+    ],
+    hdrs = [
+        "src/core/lib/gprpp/tchar.h",
+    ],
+    deps = ["gpr_platform"],
+)
+
+grpc_cc_library(
     name = "grpc++_binder",
     srcs = [
         "src/core/ext/transport/binder/client/binder_connector.cc",
@@ -990,7 +1001,6 @@ grpc_cc_library(
         "src/core/lib/gpr/murmur_hash.h",
         "src/core/lib/gpr/spinlock.h",
         "src/core/lib/gpr/string.h",
-        "src/core/lib/gpr/string_windows.h",
         "src/core/lib/gpr/time_precise.h",
         "src/core/lib/gpr/tmpfile.h",
         "src/core/lib/gprpp/fork.h",
@@ -1031,6 +1041,7 @@ grpc_cc_library(
         "examine_stack",
         "gpr_tls",
         "grpc_codegen",
+        "tchar",
         "useful",
     ],
 )
@@ -1928,6 +1939,7 @@ grpc_cc_library(
         "activity",
         "event_engine_memory_allocator",
         "exec_ctx_wakeup_scheduler",
+        "experiments",
         "gpr",
         "grpc_trace",
         "loop",
@@ -3067,7 +3079,6 @@ grpc_cc_library(
     ],
     hdrs = [
         "src/core/lib/transport/error_utils.h",
-        "src/core/lib/transport/http2_errors.h",
         "src/core/lib/address_utils/parse_address.h",
         "src/core/lib/channel/call_finalization.h",
         "src/core/lib/channel/call_tracer.h",
@@ -3225,6 +3236,8 @@ grpc_cc_library(
         "grpc_public_hdrs",
         "grpc_sockaddr",
         "grpc_trace",
+        "handshaker_registry",
+        "http2_errors",
         "iomgr_fwd",
         "iomgr_port",
         "iomgr_timer",
@@ -3253,6 +3266,13 @@ grpc_cc_library(
         "uri_parser",
         "useful",
         "work_serializer",
+    ],
+)
+
+grpc_cc_library(
+    name = "http2_errors",
+    hdrs = [
+        "src/core/lib/transport/http2_errors.h",
     ],
 )
 
@@ -3841,6 +3861,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_codegen",
         "grpc_trace",
+        "http2_errors",
         "idle_filter_state",
         "loop",
         "orphanable",
@@ -6617,11 +6638,28 @@ grpc_cc_library(
     deps = [
         "bdp_estimator",
         "exec_ctx",
+        "experiments",
         "gpr",
         "grpc_trace",
+        "http2_settings",
         "memory_quota",
         "pid_controller",
         "time",
+        "useful",
+    ],
+)
+
+grpc_cc_library(
+    name = "http2_settings",
+    srcs = [
+        "src/core/ext/transport/chttp2/transport/http2_settings.cc",
+    ],
+    hdrs = [
+        "src/core/ext/transport/chttp2/transport/http2_settings.h",
+    ],
+    deps = [
+        "gpr_platform",
+        "http2_errors",
         "useful",
     ],
 )
@@ -6642,7 +6680,6 @@ grpc_cc_library(
         "src/core/ext/transport/chttp2/transport/hpack_encoder.cc",
         "src/core/ext/transport/chttp2/transport/hpack_parser.cc",
         "src/core/ext/transport/chttp2/transport/hpack_parser_table.cc",
-        "src/core/ext/transport/chttp2/transport/http2_settings.cc",
         "src/core/ext/transport/chttp2/transport/huffsyms.cc",
         "src/core/ext/transport/chttp2/transport/parsing.cc",
         "src/core/ext/transport/chttp2/transport/stream_lists.cc",
@@ -6665,7 +6702,6 @@ grpc_cc_library(
         "src/core/ext/transport/chttp2/transport/hpack_encoder.h",
         "src/core/ext/transport/chttp2/transport/hpack_parser.h",
         "src/core/ext/transport/chttp2/transport/hpack_parser_table.h",
-        "src/core/ext/transport/chttp2/transport/http2_settings.h",
         "src/core/ext/transport/chttp2/transport/huffsyms.h",
         "src/core/ext/transport/chttp2/transport/internal.h",
         "src/core/ext/transport/chttp2/transport/stream_map.h",
@@ -6696,6 +6732,8 @@ grpc_cc_library(
         "grpc_trace",
         "hpack_constants",
         "hpack_encoder_table",
+        "http2_errors",
+        "http2_settings",
         "httpcli",
         "iomgr_fwd",
         "iomgr_timer",

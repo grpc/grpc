@@ -24,6 +24,7 @@
 # Well known test tags:
 #   core_end2end_tests: all tests, fixtures in the core end2end suite
 #   endpoint_test:      endpoint related iomgr tests
+#   flow_control_test:  tests pertaining explicitly to flow control
 
 - name: tcp_frame_size_tuning
   description:
@@ -50,3 +51,31 @@
   expiry: 2022/10/01
   owner: ctiller@google.com
   test_tags: ["endpoint_test", "core_end2end_test"]
+- name: flow_control_fixes
+  description:
+    Various fixes for flow control, max frame size setting.
+  default: false
+  expiry: 2022/10/01
+  owner: ctiller@google.com
+  test_tags: ["core_end2end_test", "flow_control_test"]
+- name: memory_pressure_controller
+  description:
+    New memory pressure controller
+  default: false
+  expiry: 2022/10/01
+  owner: ctiller@google.com
+  test_tags: [resource_quota_test]
+- name: periodic_resource_quota_reclamation
+  description:
+    Periodically return memory to the resource quota
+  default: false
+  expiry: 2022/10/01
+  owner: ctiller@google.com
+  test_tags: [resource_quota_test]
+- name: unconstrained_max_quota_buffer_size
+  description:
+    Discard the cap on the max free pool size for one memory allocator
+  default: false
+  expiry: 2022/10/01
+  owner: ctiller@google.com
+  test_tags: [resource_quota_test]
