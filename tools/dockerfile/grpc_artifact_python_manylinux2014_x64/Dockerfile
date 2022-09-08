@@ -14,7 +14,7 @@
 
 # Docker file for building gRPC manylinux Python artifacts.
 
-FROM quay.io/pypa/manylinux2014_x86_64:2022-08-29-0fd77fa
+FROM quay.io/pypa/manylinux2014_x86_64:2021-08-26-12e5da0
 
 # manylinux_2_17 is the preferred alias of manylinux2014
 ENV AUDITWHEEL_PLAT manylinux_2_17_$AUDITWHEEL_ARCH
@@ -29,7 +29,6 @@ RUN /opt/python/cp37-cp37m/bin/pip install --upgrade cython
 RUN /opt/python/cp38-cp38/bin/pip install --upgrade cython
 RUN /opt/python/cp39-cp39/bin/pip install --upgrade cython
 RUN /opt/python/cp310-cp310/bin/pip install --upgrade cython
-RUN /opt/python/cp311-cp311/bin/pip install --upgrade cython
 
 #=================
 # Install ccache
@@ -44,3 +43,5 @@ RUN curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/downloa
     && make -j4 && make install \
     && cd ../.. \
     && rm -rf ccache-4.5.1 ccache.tar.gz
+
+RUN git config --global --add safe.directory /var/local/git/grpc
