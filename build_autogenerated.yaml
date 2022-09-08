@@ -226,6 +226,7 @@ libs:
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/memory.h
   - src/core/lib/gprpp/mpscq.h
+  - src/core/lib/gprpp/no_destruct.h
   - src/core/lib/gprpp/stat.h
   - src/core/lib/gprpp/sync.h
   - src/core/lib/gprpp/tchar.h
@@ -722,8 +723,6 @@ libs:
   - src/core/ext/upbdefs-generated/xds/type/matcher/v3/regex.upbdefs.h
   - src/core/ext/upbdefs-generated/xds/type/matcher/v3/string.upbdefs.h
   - src/core/ext/upbdefs-generated/xds/type/v3/typed_struct.upbdefs.h
-  - src/core/ext/xds/certificate_provider_factory.h
-  - src/core/ext/xds/certificate_provider_registry.h
   - src/core/ext/xds/certificate_provider_store.h
   - src/core/ext/xds/file_watcher_certificate_provider_factory.h
   - src/core/ext/xds/upb_utils.h
@@ -806,7 +805,6 @@ libs:
   - src/core/lib/gprpp/debug_location.h
   - src/core/lib/gprpp/dual_ref_counted.h
   - src/core/lib/gprpp/match.h
-  - src/core/lib/gprpp/no_destruct.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/overload.h
   - src/core/lib/gprpp/packed_table.h
@@ -931,6 +929,8 @@ libs:
   - src/core/lib/security/authorization/grpc_server_authz_filter.h
   - src/core/lib/security/authorization/matchers.h
   - src/core/lib/security/authorization/rbac_policy.h
+  - src/core/lib/security/certificate_provider/certificate_provider_factory.h
+  - src/core/lib/security/certificate_provider/certificate_provider_registry.h
   - src/core/lib/security/context/security_context.h
   - src/core/lib/security/credentials/alts/alts_credentials.h
   - src/core/lib/security/credentials/alts/check_gcp_environment.h
@@ -1435,7 +1435,6 @@ libs:
   - src/core/ext/upbdefs-generated/xds/type/matcher/v3/regex.upbdefs.c
   - src/core/ext/upbdefs-generated/xds/type/matcher/v3/string.upbdefs.c
   - src/core/ext/upbdefs-generated/xds/type/v3/typed_struct.upbdefs.c
-  - src/core/ext/xds/certificate_provider_registry.cc
   - src/core/ext/xds/certificate_provider_store.cc
   - src/core/ext/xds/file_watcher_certificate_provider_factory.cc
   - src/core/ext/xds/xds_api.cc
@@ -1608,6 +1607,7 @@ libs:
   - src/core/lib/security/authorization/grpc_server_authz_filter.cc
   - src/core/lib/security/authorization/matchers.cc
   - src/core/lib/security/authorization/rbac_policy.cc
+  - src/core/lib/security/certificate_provider/certificate_provider_registry.cc
   - src/core/lib/security/context/security_context.cc
   - src/core/lib/security/credentials/alts/alts_credentials.cc
   - src/core/lib/security/credentials/alts/check_gcp_environment.cc
@@ -2027,7 +2027,6 @@ libs:
   - src/core/lib/gprpp/debug_location.h
   - src/core/lib/gprpp/dual_ref_counted.h
   - src/core/lib/gprpp/match.h
-  - src/core/lib/gprpp/no_destruct.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/overload.h
   - src/core/lib/gprpp/packed_table.h
@@ -3705,7 +3704,6 @@ targets:
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/debug_location.h
-  - src/core/lib/gprpp/no_destruct.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
@@ -4603,7 +4601,7 @@ targets:
   language: c++
   headers: []
   src:
-  - test/core/client_channel/certificate_provider_registry_test.cc
+  - test/core/security/certificate_provider_registry_test.cc
   deps:
   - grpc_test_util
 - name: certificate_provider_store_test
@@ -4852,7 +4850,6 @@ targets:
   - src/core/lib/gprpp/chunked_vector.h
   - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/debug_location.h
-  - src/core/lib/gprpp/no_destruct.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
@@ -5839,7 +5836,6 @@ targets:
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/debug_location.h
-  - src/core/lib/gprpp/no_destruct.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
@@ -6111,7 +6107,6 @@ targets:
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/debug_location.h
-  - src/core/lib/gprpp/no_destruct.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
@@ -6201,7 +6196,6 @@ targets:
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/debug_location.h
-  - src/core/lib/gprpp/no_destruct.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
@@ -7528,7 +7522,6 @@ targets:
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/debug_location.h
-  - src/core/lib/gprpp/no_destruct.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
@@ -7882,11 +7875,11 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/lib/gprpp/construct_destruct.h
   - src/core/lib/gprpp/no_destruct.h
   src:
   - test/core/gprpp/no_destruct_test.cc
-  deps:
-  - gpr
+  deps: []
   uses_polling: false
 - name: nonblocking_test
   gtest: true
@@ -7917,7 +7910,6 @@ targets:
   headers:
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/debug_location.h
-  - src/core/lib/gprpp/no_destruct.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
@@ -8188,7 +8180,6 @@ targets:
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/debug_location.h
-  - src/core/lib/gprpp/no_destruct.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h

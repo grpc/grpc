@@ -35,7 +35,7 @@
   default: false
   expiry: 2022/10/01
   owner: ctiller@google.com
-  test_tags: ["endpoint_test", "core_end2end_test"]
+  test_tags: ["endpoint_test", "flow_control_test"]
 - name: tcp_read_chunks
   description:
     Allocate only 8kb or 64kb chunks for TCP reads to reduce pressure on
@@ -43,21 +43,21 @@
   default: false
   expiry: 2022/10/01
   owner: ctiller@google.com
-  test_tags: ["endpoint_test", "core_end2end_test"]
+  test_tags: ["endpoint_test", "flow_control_test"]
 - name: tcp_rcv_lowat
   description:
     Use SO_RCVLOWAT to avoid wakeups on the read path.
   default: false
   expiry: 2022/10/01
   owner: ctiller@google.com
-  test_tags: ["endpoint_test", "core_end2end_test"]
+  test_tags: ["endpoint_test", "flow_control_test"]
 - name: flow_control_fixes
   description:
     Various fixes for flow control, max frame size setting.
   default: false
   expiry: 2022/10/01
   owner: ctiller@google.com
-  test_tags: ["core_end2end_test", "flow_control_test"]
+  test_tags: ["flow_control_test"]
 - name: memory_pressure_controller
   description:
     New memory pressure controller

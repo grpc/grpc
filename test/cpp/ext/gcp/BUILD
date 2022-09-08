@@ -32,18 +32,3 @@ grpc_cc_test(
         "//test/cpp/util:test_util",
     ],
 )
-
-grpc_cc_test(
-    name = "observability_config_test",
-    srcs = [
-        "observability_config_test.cc",
-    ],
-    external_deps = [
-        "gtest",
-    ],
-    language = "C++",
-    deps = [
-        "//src/cpp/ext/gcp:observability_config",
-        "//test/cpp/util:test_util",
-    ],
-)
