@@ -15,7 +15,13 @@
 # Format of each entry:
 # name:        name of the experiment
 # description: description of the experiment
-# default:     boolean - does this experiment default on
+# default:     one of:
+#              - false   - the experiment defaults to off
+#              - debug   - the experiment defaults to on in debug,
+#                          off in release
+#              - release - the experiment defaults to on in release,
+#                          off in debug
+#              - true    - the experiment defaults to on
 # expiry:      when is the next time this experiment *must* be updated
 #              (date, YYYY/MM/DD)
 # test_tags:   a set of bazel tags, that if a test declares them signals
@@ -40,7 +46,7 @@
   description:
     Allocate only 8kb or 64kb chunks for TCP reads to reduce pressure on
     malloc to recycle arbitrary large blocks.
-  default: false
+  default: debug
   expiry: 2022/10/01
   owner: ctiller@google.com
   test_tags: ["endpoint_test", "flow_control_test"]

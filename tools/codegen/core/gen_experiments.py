@@ -36,6 +36,13 @@ import yaml
 with open('src/core/lib/experiments/experiments.yaml') as f:
     attrs = yaml.load(f.read(), Loader=yaml.FullLoader)
 
+DEFAULTS = {
+    False: 'false',
+    True: 'true',
+    'debug': 'kDefaultForDebugOnly',
+    'release': 'kDefaultForReleaseOnly',
+}
+
 error = False
 today = datetime.date.today()
 two_quarters_from_now = today + datetime.timedelta(days=180)
@@ -49,6 +56,10 @@ for attr in attrs:
         error = True
     if 'default' not in attr:
         print("no default for experiment %s" % attr['name'])
+        error = True
+    if attr['default'] not in DEFAULTS:
+        print("invalid default for experiment %s: %r" % (attr['name'],
+                                                        attr['default']))
         error = True
     if 'expiry' not in attr:
         print("no expiry for experiment %s" % attr['name'])
@@ -172,6 +183,19 @@ with open('src/core/lib/experiments/experiments.cc', 'w') as C:
         print("const char* const description_%s = %s;" %
               (attr['name'], c_str(attr['description'])),
               file=C)
+    have_defaults = set(DEFAULTS[attr['default']] for attr in attrs)
+    if 'kDefaultForDebugOnly' in have_defaults or 'kDefaultForReleaseOnly' in have_defaults:
+        print("#ifdef NDEBUG", file=C)
+        if 'kDefaultForDebugOnly' in have_defaults:
+            print("const bool kDefaultForDebugOnly = false;", file=C)
+        if 'kDefaultForReleaseOnly' in have_defaults:
+            print("const bool kDefaultForReleaseOnly = true;", file=C)
+        print("#else", file=C)
+        if 'kDefaultForDebugOnly' in have_defaults:
+            print("const bool kDefaultForDebugOnly = true;", file=C)
+        if 'kDefaultForReleaseOnly' in have_defaults:
+            print("const bool kDefaultForReleaseOnly = false;", file=C)
+        print("#endif", file=C)
     print("}", file=C)
     print(file=C)
     print("namespace grpc_core {", file=C)
@@ -180,7 +204,7 @@ with open('src/core/lib/experiments/experiments.cc', 'w') as C:
     for attr in attrs:
         print("  {%s, description_%s, %s}," %
               (c_str(attr['name']), attr['name'],
-               'true' if attr['default'] else 'false'),
+               DEFAULTS[attr['default']]),
               file=C)
     print("};", file=C)
     print(file=C)

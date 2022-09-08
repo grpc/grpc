@@ -20,13 +20,11 @@ EXPERIMENTS = {
     "endpoint_test": [
         "tcp_frame_size_tuning",
         "tcp_rcv_lowat",
-        "tcp_read_chunks",
     ],
     "flow_control_test": [
         "flow_control_fixes",
         "tcp_frame_size_tuning",
         "tcp_rcv_lowat",
-        "tcp_read_chunks",
     ],
     "resource_quota_test": [
         "memory_pressure_controller",
@@ -36,4 +34,10 @@ EXPERIMENTS = {
 }
 
 NEGATED_EXPERIMENTS = {
+    "endpoint_test": [
+        "tcp_read_chunks",
+    ],
+    "flow_control_test": [
+        "tcp_read_chunks",
+    ],
 }

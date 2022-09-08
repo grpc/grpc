@@ -37,13 +37,18 @@ const char* const description_periodic_resource_quota_reclamation =
     "Periodically return memory to the resource quota";
 const char* const description_unconstrained_max_quota_buffer_size =
     "Discard the cap on the max free pool size for one memory allocator";
+#ifdef NDEBUG
+const bool kDefaultForDebugOnly = false;
+#else
+const bool kDefaultForDebugOnly = true;
+#endif
 }  // namespace
 
 namespace grpc_core {
 
 const ExperimentMetadata g_experiment_metadata[] = {
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning, false},
-    {"tcp_read_chunks", description_tcp_read_chunks, false},
+    {"tcp_read_chunks", description_tcp_read_chunks, kDefaultForDebugOnly},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat, false},
     {"flow_control_fixes", description_flow_control_fixes, false},
     {"memory_pressure_controller", description_memory_pressure_controller,
