@@ -13747,7 +13747,6 @@ target_include_directories(no_destruct_test
 target_link_libraries(no_destruct_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  gpr
 )
 
 
