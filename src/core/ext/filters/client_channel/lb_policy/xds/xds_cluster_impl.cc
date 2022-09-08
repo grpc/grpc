@@ -148,7 +148,7 @@ class XdsClusterImplLbConfig : public LoadBalancingPolicy::Config {
   XdsClusterImplLbConfig(
       RefCountedPtr<LoadBalancingPolicy::Config> child_policy,
       std::string cluster_name, std::string eds_service_name,
-      absl::optional<XdsBootstrap::XdsServer> lrs_load_reporting_server,
+      absl::optional<GrpcXdsBootstrap::GrpcXdsServer> lrs_load_reporting_server,
       uint32_t max_concurrent_requests,
       RefCountedPtr<XdsEndpointResource::DropConfig> drop_config)
       : child_policy_(std::move(child_policy)),
@@ -165,8 +165,8 @@ class XdsClusterImplLbConfig : public LoadBalancingPolicy::Config {
   }
   const std::string& cluster_name() const { return cluster_name_; }
   const std::string& eds_service_name() const { return eds_service_name_; }
-  const absl::optional<XdsBootstrap::XdsServer>& lrs_load_reporting_server()
-      const {
+  const absl::optional<GrpcXdsBootstrap::GrpcXdsServer>&
+  lrs_load_reporting_server() const {
     return lrs_load_reporting_server_;
   };
   uint32_t max_concurrent_requests() const { return max_concurrent_requests_; }
@@ -178,7 +178,7 @@ class XdsClusterImplLbConfig : public LoadBalancingPolicy::Config {
   RefCountedPtr<LoadBalancingPolicy::Config> child_policy_;
   std::string cluster_name_;
   std::string eds_service_name_;
-  absl::optional<XdsBootstrap::XdsServer> lrs_load_reporting_server_;
+  absl::optional<GrpcXdsBootstrap::GrpcXdsServer> lrs_load_reporting_server_;
   uint32_t max_concurrent_requests_;
   RefCountedPtr<XdsEndpointResource::DropConfig> drop_config_;
 };
@@ -501,7 +501,8 @@ void XdsClusterImplLb::UpdateLocked(UpdateArgs args) {
                 "[xds_cluster_impl_lb %p] Failed to get cluster drop stats for "
                 "LRS server %s, cluster %s, EDS service name %s, load "
                 "reporting for drops will not be done.",
-                this, config_->lrs_load_reporting_server()->server_uri.c_str(),
+                this,
+                config_->lrs_load_reporting_server()->server_uri().c_str(),
                 config_->cluster_name().c_str(),
                 config_->eds_service_name().c_str());
       }
@@ -640,7 +641,8 @@ RefCountedPtr<SubchannelInterface> XdsClusterImplLb::Helper::CreateSubchannel(
             "not be generated (not wrapping subchannel)",
             this,
             xds_cluster_impl_policy_->config_->lrs_load_reporting_server()
-                ->server_uri.c_str(),
+                ->server_uri()
+                .c_str(),
             xds_cluster_impl_policy_->config_->cluster_name().c_str(),
             xds_cluster_impl_policy_->config_->eds_service_name().c_str());
   }
@@ -756,7 +758,7 @@ class XdsClusterImplLbFactory : public LoadBalancingPolicyFactory {
       }
     }
     // LRS load reporting server name.
-    absl::optional<XdsBootstrap::XdsServer> lrs_load_reporting_server;
+    absl::optional<GrpcXdsBootstrap::GrpcXdsServer> lrs_load_reporting_server;
     it = json.object_value().find("lrsLoadReportingServer");
     if (it != json.object_value().end()) {
       if (it->second.type() != Json::Type::OBJECT) {
@@ -764,7 +766,7 @@ class XdsClusterImplLbFactory : public LoadBalancingPolicyFactory {
             "field:lrsLoadReportingServer error:type should be object");
       } else {
         auto xds_server =
-            GrpcXdsBootstrap::XdsServerParse(it->second.object_value());
+            LoadFromJson<GrpcXdsBootstrap::GrpcXdsServer>(it->second);
         if (!xds_server.ok()) {
           errors.emplace_back(
               absl::StrCat("error parsing lrs_load_reporting_server: ",
