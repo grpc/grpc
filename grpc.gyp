@@ -1369,6 +1369,7 @@
         'src/core/lib/security/authorization/authorization_policy_provider_vtable.cc',
         'src/core/lib/security/authorization/evaluate_args.cc',
         'src/core/lib/security/authorization/grpc_server_authz_filter.cc',
+        'src/core/lib/security/certificate_provider/certificate_provider_registry.cc',
         'src/core/lib/security/context/security_context.cc',
         'src/core/lib/security/credentials/call_creds_util.cc',
         'src/core/lib/security/credentials/composite/composite_credentials.cc',

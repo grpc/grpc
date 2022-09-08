@@ -22,6 +22,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <memory>
+#include <vector>
 
 #include "absl/strings/string_view.h"
 
