@@ -43,6 +43,13 @@ DEFAULTS = {
     'release': 'kDefaultForReleaseOnly',
 }
 
+BZL_LIST_FOR_DEFAULTS = {
+    False: 'off',
+    True: 'on',
+    'debug': 'dbg',
+    'release': 'opt',
+}
+
 error = False
 today = datetime.date.today()
 two_quarters_from_now = today + datetime.timedelta(days=180)
@@ -210,15 +217,13 @@ with open('src/core/lib/experiments/experiments.cc', 'w') as C:
     print(file=C)
     print("}  // namespace grpc_core", file=C)
 
-tags_to_experiments = collections.defaultdict(list)
-tags_to_negated_experiments = collections.defaultdict(list)
+bzl_to_tags_to_experiments = dict(
+    (key, collections.defaultdict(list))
+    for key in BZL_LIST_FOR_DEFAULTS.keys())
+
 for attr in attrs:
-    if attr['default']:
-        for tag in attr['test_tags']:
-            tags_to_negated_experiments[tag].append(attr['name'])
-    else:
-        for tag in attr['test_tags']:
-            tags_to_experiments[tag].append(attr['name'])
+    for tag in attr['test_tags']:
+        bzl_to_tags_to_experiments[attr['default']][tag].append(attr['name'])
 
 with open('bazel/experiments.bzl', 'w') as B:
     put_copyright(B, "#")
@@ -232,19 +237,19 @@ with open('bazel/experiments.bzl', 'w') as B:
         "\"\"\"Dictionary of tags to experiments so we know when to test different experiments.\"\"\"",
         file=B)
 
+    bzl_to_tags_to_experiments = sorted(
+        (BZL_LIST_FOR_DEFAULTS[default], tags_to_experiments)
+        for default, tags_to_experiments in bzl_to_tags_to_experiments.items()
+    )
+
     print(file=B)
     print("EXPERIMENTS = {", file=B)
-    for tag, experiments in sorted(tags_to_experiments.items()):
-        print("    \"%s\": [" % tag, file=B)
-        for experiment in sorted(experiments):
-            print("        \"%s\"," % experiment, file=B)
-        print("    ],", file=B)
-    print("}", file=B)
-    print(file=B)
-    print("NEGATED_EXPERIMENTS = {", file=B)
-    for tag, experiments in sorted(tags_to_negated_experiments.items()):
-        print("    \"%s\": [" % tag, file=B)
-        for experiment in sorted(experiments):
-            print("        \"%s\"," % experiment, file=B)
-        print("    ],", file=B)
+    for key, tags_to_experiments in bzl_to_tags_to_experiments:
+        print("    \"%s\": {" % key, file=B)
+        for tag, experiments in sorted(tags_to_experiments.items()):
+            print("        \"%s\": [" % tag, file=B)
+            for experiment in sorted(experiments):
+                print("            \"%s\"," % experiment, file=B)
+            print("        ],", file=B)
+        print("    },", file=B)
     print("}", file=B)

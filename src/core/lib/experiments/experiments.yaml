@@ -46,7 +46,7 @@
   description:
     Allocate only 8kb or 64kb chunks for TCP reads to reduce pressure on
     malloc to recycle arbitrary large blocks.
-  default: debug
+  default: false
   expiry: 2022/10/01
   owner: ctiller@google.com
   test_tags: ["endpoint_test", "flow_control_test"]

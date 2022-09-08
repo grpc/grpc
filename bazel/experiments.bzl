@@ -17,27 +17,28 @@
 """Dictionary of tags to experiments so we know when to test different experiments."""
 
 EXPERIMENTS = {
-    "endpoint_test": [
-        "tcp_frame_size_tuning",
-        "tcp_rcv_lowat",
-    ],
-    "flow_control_test": [
-        "flow_control_fixes",
-        "tcp_frame_size_tuning",
-        "tcp_rcv_lowat",
-    ],
-    "resource_quota_test": [
-        "memory_pressure_controller",
-        "periodic_resource_quota_reclamation",
-        "unconstrained_max_quota_buffer_size",
-    ],
-}
-
-NEGATED_EXPERIMENTS = {
-    "endpoint_test": [
-        "tcp_read_chunks",
-    ],
-    "flow_control_test": [
-        "tcp_read_chunks",
-    ],
+    "dbg": {
+    },
+    "off": {
+        "endpoint_test": [
+            "tcp_frame_size_tuning",
+            "tcp_rcv_lowat",
+            "tcp_read_chunks",
+        ],
+        "flow_control_test": [
+            "flow_control_fixes",
+            "tcp_frame_size_tuning",
+            "tcp_rcv_lowat",
+            "tcp_read_chunks",
+        ],
+        "resource_quota_test": [
+            "memory_pressure_controller",
+            "periodic_resource_quota_reclamation",
+            "unconstrained_max_quota_buffer_size",
+        ],
+    },
+    "on": {
+    },
+    "opt": {
+    },
 }
