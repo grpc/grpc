@@ -107,23 +107,6 @@ CFLAGS_c++-compat = -Wc++-compat
 CPPFLAGS_c++-compat = -O0
 DEFINES_c++-compat = _DEBUG DEBUG
 
-VALID_CONFIG_counters = 1
-CC_counters = $(DEFAULT_CC)
-CXX_counters = $(DEFAULT_CXX)
-LD_counters = $(DEFAULT_CC)
-LDXX_counters = $(DEFAULT_CXX)
-CPPFLAGS_counters = -O2 -DGPR_LOW_LEVEL_COUNTERS
-DEFINES_counters = NDEBUG
-
-VALID_CONFIG_counters_with_memory_counter = 1
-CC_counters_with_memory_counter = $(DEFAULT_CC)
-CXX_counters_with_memory_counter = $(DEFAULT_CXX)
-LD_counters_with_memory_counter = $(DEFAULT_CC)
-LDXX_counters_with_memory_counter = $(DEFAULT_CXX)
-CPPFLAGS_counters_with_memory_counter = -O2 -DGPR_LOW_LEVEL_COUNTERS -DGPR_WRAP_MEMORY_COUNTER
-LDFLAGS_counters_with_memory_counter = -Wl,--wrap=malloc -Wl,--wrap=calloc -Wl,--wrap=realloc -Wl,--wrap=free
-DEFINES_counters_with_memory_counter = NDEBUG
-
 VALID_CONFIG_dbg = 1
 CC_dbg = $(DEFAULT_CC)
 CXX_dbg = $(DEFAULT_CXX)

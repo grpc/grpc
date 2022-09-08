@@ -23,12 +23,6 @@
     "config": "c++-compat"
   },
   {
-    "config": "counters"
-  },
-  {
-    "config": "counters_with_memory_counter"
-  },
-  {
     "config": "dbg"
   },
   {
