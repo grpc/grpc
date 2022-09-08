@@ -17,12 +17,6 @@
 """Dictionary of tags to experiments so we know when to test different experiments."""
 
 EXPERIMENTS = {
-    "core_end2end_test": [
-        "flow_control_fixes",
-        "tcp_frame_size_tuning",
-        "tcp_rcv_lowat",
-        "tcp_read_chunks",
-    ],
     "endpoint_test": [
         "tcp_frame_size_tuning",
         "tcp_rcv_lowat",
@@ -30,6 +24,9 @@ EXPERIMENTS = {
     ],
     "flow_control_test": [
         "flow_control_fixes",
+        "tcp_frame_size_tuning",
+        "tcp_rcv_lowat",
+        "tcp_read_chunks",
     ],
     "resource_quota_test": [
         "memory_pressure_controller",
