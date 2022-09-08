@@ -441,7 +441,6 @@ grpc_cc_library(
     deps = [
         "channel_init",
         "channel_stack_type",
-        "grpc_client_channel",
         "config",
         "default_event_engine",
         "experiments",
@@ -449,6 +448,7 @@ grpc_cc_library(
         "gpr",
         "grpc_authorization_base",
         "grpc_base",
+        "grpc_client_channel",
         "grpc_common",
         "grpc_http_filters",
         "grpc_security_base",
