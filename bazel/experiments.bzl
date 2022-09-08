@@ -24,6 +24,7 @@ EXPERIMENTS = {
     ],
     "flow_control_test": [
         "flow_control_fixes",
+        "peer_state_based_framing",
         "tcp_frame_size_tuning",
         "tcp_rcv_lowat",
         "tcp_read_chunks",

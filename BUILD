@@ -6754,6 +6754,7 @@ grpc_cc_library(
         "bitset",
         "chttp2_flow_control",
         "debug_location",
+        "experiments",
         "gpr",
         "grpc_base",
         "grpc_codegen",
