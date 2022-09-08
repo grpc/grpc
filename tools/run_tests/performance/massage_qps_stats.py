@@ -39,9 +39,6 @@ def massage_qps_stats(scenario_result):
             stats[
                 "core_server_channels_created"] = massage_qps_stats_helpers.counter(
                     core_stats, "server_channels_created")
-            stats[
-                "core_histogram_slow_lookups"] = massage_qps_stats_helpers.counter(
-                    core_stats, "histogram_slow_lookups")
             stats["core_syscall_write"] = massage_qps_stats_helpers.counter(
                 core_stats, "syscall_write")
             stats["core_syscall_read"] = massage_qps_stats_helpers.counter(

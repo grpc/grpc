@@ -377,6 +377,82 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/support/sync_stream.h",
     "include/grpcpp/support/time.h",
     "include/grpcpp/support/validate_service_config.h",
+    "include/grpc++/impl/codegen/async_stream.h",
+    "include/grpc++/impl/codegen/async_unary_call.h",
+    "include/grpc++/impl/codegen/byte_buffer.h",
+    "include/grpc++/impl/codegen/call_hook.h",
+    "include/grpc++/impl/codegen/call.h",
+    "include/grpc++/impl/codegen/channel_interface.h",
+    "include/grpc++/impl/codegen/client_context.h",
+    "include/grpc++/impl/codegen/client_unary_call.h",
+    "include/grpc++/impl/codegen/completion_queue_tag.h",
+    "include/grpc++/impl/codegen/completion_queue.h",
+    "include/grpc++/impl/codegen/config.h",
+    "include/grpc++/impl/codegen/core_codegen_interface.h",
+    "include/grpc++/impl/codegen/create_auth_context.h",
+    "include/grpc++/impl/codegen/grpc_library.h",
+    "include/grpc++/impl/codegen/metadata_map.h",
+    "include/grpc++/impl/codegen/method_handler_impl.h",
+    "include/grpc++/impl/codegen/rpc_method.h",
+    "include/grpc++/impl/codegen/rpc_service_method.h",
+    "include/grpc++/impl/codegen/security/auth_context.h",
+    "include/grpc++/impl/codegen/serialization_traits.h",
+    "include/grpc++/impl/codegen/server_context.h",
+    "include/grpc++/impl/codegen/server_interface.h",
+    "include/grpc++/impl/codegen/service_type.h",
+    "include/grpc++/impl/codegen/slice.h",
+    "include/grpc++/impl/codegen/status_code_enum.h",
+    "include/grpc++/impl/codegen/status.h",
+    "include/grpc++/impl/codegen/string_ref.h",
+    "include/grpc++/impl/codegen/stub_options.h",
+    "include/grpc++/impl/codegen/sync_stream.h",
+    "include/grpc++/impl/codegen/time.h",
+    "include/grpcpp/impl/codegen/async_generic_service.h",
+    "include/grpcpp/impl/codegen/async_stream.h",
+    "include/grpcpp/impl/codegen/async_unary_call.h",
+    "include/grpcpp/impl/codegen/byte_buffer.h",
+    "include/grpcpp/impl/codegen/call_hook.h",
+    "include/grpcpp/impl/codegen/call_op_set_interface.h",
+    "include/grpcpp/impl/codegen/call_op_set.h",
+    "include/grpcpp/impl/codegen/call.h",
+    "include/grpcpp/impl/codegen/callback_common.h",
+    "include/grpcpp/impl/codegen/channel_interface.h",
+    "include/grpcpp/impl/codegen/client_callback.h",
+    "include/grpcpp/impl/codegen/client_context.h",
+    "include/grpcpp/impl/codegen/client_interceptor.h",
+    "include/grpcpp/impl/codegen/client_unary_call.h",
+    "include/grpcpp/impl/codegen/completion_queue_tag.h",
+    "include/grpcpp/impl/codegen/completion_queue.h",
+    "include/grpcpp/impl/codegen/config.h",
+    "include/grpcpp/impl/codegen/core_codegen_interface.h",
+    "include/grpcpp/impl/codegen/create_auth_context.h",
+    "include/grpcpp/impl/codegen/delegating_channel.h",
+    "include/grpcpp/impl/codegen/grpc_library.h",
+    "include/grpcpp/impl/codegen/intercepted_channel.h",
+    "include/grpcpp/impl/codegen/interceptor_common.h",
+    "include/grpcpp/impl/codegen/interceptor.h",
+    "include/grpcpp/impl/codegen/message_allocator.h",
+    "include/grpcpp/impl/codegen/metadata_map.h",
+    "include/grpcpp/impl/codegen/method_handler_impl.h",
+    "include/grpcpp/impl/codegen/method_handler.h",
+    "include/grpcpp/impl/codegen/rpc_method.h",
+    "include/grpcpp/impl/codegen/rpc_service_method.h",
+    "include/grpcpp/impl/codegen/security/auth_context.h",
+    "include/grpcpp/impl/codegen/serialization_traits.h",
+    "include/grpcpp/impl/codegen/server_callback_handlers.h",
+    "include/grpcpp/impl/codegen/server_callback.h",
+    "include/grpcpp/impl/codegen/server_context.h",
+    "include/grpcpp/impl/codegen/server_interceptor.h",
+    "include/grpcpp/impl/codegen/server_interface.h",
+    "include/grpcpp/impl/codegen/service_type.h",
+    "include/grpcpp/impl/codegen/slice.h",
+    "include/grpcpp/impl/codegen/status_code_enum.h",
+    "include/grpcpp/impl/codegen/status.h",
+    "include/grpcpp/impl/codegen/string_ref.h",
+    "include/grpcpp/impl/codegen/stub_options.h",
+    "include/grpcpp/impl/codegen/sync_stream.h",
+    "include/grpcpp/impl/codegen/time.h",
+    "include/grpcpp/impl/codegen/sync.h",
 ]
 
 grpc_cc_library(
@@ -608,13 +684,12 @@ grpc_cc_library(
             ],
         },
     ],
-    standalone = True,
     tags = ["nofixdeps"],
     visibility = [
         "@grpc:public",
     ],
     deps = [
-        "grpc++_internals",
+        "grpc++_base",
         "slice",
     ],
 )
@@ -628,58 +703,6 @@ grpc_cc_library(
         "src/core/lib/gprpp/tchar.h",
     ],
     deps = ["gpr_platform"],
-)
-
-grpc_cc_library(
-    name = "grpc++_internals",
-    srcs = [
-        "src/cpp/client/insecure_credentials.cc",
-        "src/cpp/client/secure_credentials.cc",
-        "src/cpp/common/auth_property_iterator.cc",
-        "src/cpp/common/secure_auth_context.cc",
-        "src/cpp/common/secure_channel_arguments.cc",
-        "src/cpp/common/secure_create_auth_context.cc",
-        "src/cpp/common/tls_certificate_provider.cc",
-        "src/cpp/common/tls_certificate_verifier.cc",
-        "src/cpp/common/tls_credentials_options.cc",
-        "src/cpp/server/insecure_server_credentials.cc",
-        "src/cpp/server/secure_server_credentials.cc",
-    ],
-    hdrs = [
-        "src/cpp/client/secure_credentials.h",
-        "src/cpp/common/secure_auth_context.h",
-        "src/cpp/server/secure_server_credentials.h",
-    ],
-    external_deps = [
-        "absl/status",
-        "absl/status:statusor",
-        "absl/synchronization",
-        "absl/container:inlined_vector",
-        "absl/strings",
-        "protobuf_headers",
-    ],
-    language = "c++",
-    public_hdrs = GRPCXX_PUBLIC_HDRS,
-    tags = ["nofixdeps"],
-    deps = [
-        "error",
-        "gpr",
-        "gpr_codegen",
-        "grpc",
-        "grpc++_base",
-        "grpc++_codegen_base",
-        "grpc++_codegen_base_src",
-        "grpc++_codegen_proto",
-        "grpc++_internal_hdrs_only",
-        "grpc_base",
-        "grpc_codegen",
-        "grpc_credentials_util",
-        "grpc_security_base",
-        "json",
-        "ref_counted_ptr",
-        "slice",
-        "slice_refcount",
-    ],
 )
 
 grpc_cc_library(
@@ -790,7 +813,7 @@ grpc_cc_library(
     deps = [
         "gpr",
         "grpc",
-        "grpc++_internals",
+        "grpc++_base",
     ],
 )
 
@@ -811,7 +834,7 @@ grpc_cc_library(
     deps = [
         "gpr",
         "grpc",
-        "grpc++_internals",
+        "grpc++_base",
     ],
 )
 
@@ -823,7 +846,6 @@ grpc_cc_library(
         "src/cpp/server/insecure_server_credentials.cc",
     ],
     language = "c++",
-    standalone = True,
     tags = [
         "avoid_dep",
         "nofixdeps",
@@ -903,20 +925,6 @@ grpc_cc_library(
         "grpc_base",
         "grpc_codegen",
         "grpc_trace",
-    ],
-)
-
-grpc_cc_library(
-    name = "grpc++_internal_hdrs_only",
-    hdrs = [
-        "include/grpcpp/impl/codegen/sync.h",
-    ],
-    external_deps = [
-        "absl/synchronization",
-    ],
-    tags = ["nofixdeps"],
-    deps = [
-        "gpr_codegen",
     ],
 )
 
@@ -1033,6 +1041,7 @@ grpc_cc_library(
         "examine_stack",
         "gpr_tls",
         "grpc_codegen",
+        "no_destruct",
         "tchar",
         "useful",
     ],
@@ -1262,7 +1271,7 @@ grpc_cc_library(
     public_hdrs = ["src/core/lib/gprpp/no_destruct.h"],
     deps = [
         "construct_destruct",
-        "gpr",
+        "gpr_platform",
     ],
 )
 
@@ -4351,9 +4360,37 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "certificate_provider_factory",
+    hdrs = [
+        "src/core/lib/security/certificate_provider/certificate_provider_factory.h",
+    ],
+    deps = [
+        "gpr",
+        "grpc_base",
+        "json",
+        "ref_counted",
+        "ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
+    name = "certificate_provider_registry",
+    srcs = [
+        "src/core/lib/security/certificate_provider/certificate_provider_registry.cc",
+    ],
+    hdrs = [
+        "src/core/lib/security/certificate_provider/certificate_provider_registry.h",
+    ],
+    external_deps = ["absl/strings"],
+    deps = [
+        "certificate_provider_factory",
+        "gpr_public_hdrs",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_xds_client",
     srcs = [
-        "src/core/ext/xds/certificate_provider_registry.cc",
         "src/core/ext/xds/certificate_provider_store.cc",
         "src/core/ext/xds/file_watcher_certificate_provider_factory.cc",
         "src/core/ext/xds/xds_bootstrap_grpc.cc",
@@ -4374,8 +4411,6 @@ grpc_cc_library(
         "src/core/lib/security/credentials/xds/xds_credentials.cc",
     ],
     hdrs = [
-        "src/core/ext/xds/certificate_provider_factory.h",
-        "src/core/ext/xds/certificate_provider_registry.h",
         "src/core/ext/xds/certificate_provider_store.h",
         "src/core/ext/xds/file_watcher_certificate_provider_factory.h",
         "src/core/ext/xds/xds_bootstrap_grpc.h",
@@ -4414,6 +4449,8 @@ grpc_cc_library(
     language = "c++",
     tags = ["nofixdeps"],
     deps = [
+        "certificate_provider_factory",
+        "certificate_provider_registry",
         "channel_creds_registry",
         "channel_fwd",
         "config",
@@ -4610,11 +4647,11 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "certificate_provider_factory",
         "error",
         "gpr_platform",
         "grpc_tls_credentials",
         "grpc_trace",
-        "grpc_xds_client",
         "json",
         "json_util",
         "ref_counted_ptr",
@@ -6717,6 +6754,7 @@ grpc_cc_library(
         "bitset",
         "chttp2_flow_control",
         "debug_location",
+        "experiments",
         "gpr",
         "grpc_base",
         "grpc_codegen",
@@ -6959,8 +6997,24 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "grpc++_base",
-    srcs = GRPCXX_SRCS,
-    hdrs = GRPCXX_HDRS,
+    srcs = GRPCXX_SRCS + [
+        "src/cpp/client/insecure_credentials.cc",
+        "src/cpp/client/secure_credentials.cc",
+        "src/cpp/common/auth_property_iterator.cc",
+        "src/cpp/common/secure_auth_context.cc",
+        "src/cpp/common/secure_channel_arguments.cc",
+        "src/cpp/common/secure_create_auth_context.cc",
+        "src/cpp/common/tls_certificate_provider.cc",
+        "src/cpp/common/tls_certificate_verifier.cc",
+        "src/cpp/common/tls_credentials_options.cc",
+        "src/cpp/server/insecure_server_credentials.cc",
+        "src/cpp/server/secure_server_credentials.cc",
+    ],
+    hdrs = GRPCXX_HDRS + [
+        "src/cpp/client/secure_credentials.h",
+        "src/cpp/common/secure_auth_context.h",
+        "src/cpp/server/secure_server_credentials.h",
+    ],
     external_deps = [
         "absl/base:core_headers",
         "absl/status",
@@ -6970,6 +7024,7 @@ grpc_cc_library(
         "absl/memory",
         "upb_lib",
         "protobuf_headers",
+        "absl/container:inlined_vector",
     ],
     language = "c++",
     public_hdrs = GRPCXX_PUBLIC_HDRS,
@@ -6979,30 +7034,37 @@ grpc_cc_library(
         "arena",
         "channel_init",
         "config",
+        "error",
         "gpr",
         "gpr_codegen",
         "grpc",
         "grpc++_codegen_base",
         "grpc++_codegen_base_src",
-        "grpc++_internal_hdrs_only",
+        "grpc++_codegen_proto",
         "grpc_base",
         "grpc_codegen",
+        "grpc_credentials_util",
         "grpc_health_upb",
+        "grpc_security_base",
         "grpc_service_config",
         "grpc_service_config_impl",
         "grpc_trace",
         "grpc_transport_inproc",
         "grpcpp_call_metric_recorder",
         "iomgr_timer",
+        "json",
         "ref_counted",
         "ref_counted_ptr",
         "resource_quota",
         "slice",
+        "slice_refcount",
         "time",
         "useful",
     ],
 )
 
+# TODO(chengyuc): Give it another try to merge this to `grpc++_base` after
+# codegen files are removed.
 grpc_cc_library(
     name = "grpc++_base_unsecure",
     srcs = GRPCXX_SRCS,
@@ -7032,7 +7094,6 @@ grpc_cc_library(
         "gpr_codegen",
         "grpc++_codegen_base",
         "grpc++_codegen_base_src",
-        "grpc++_internal_hdrs_only",
         "grpc_base",
         "grpc_codegen",
         "grpc_health_upb",
@@ -7136,7 +7197,7 @@ grpc_cc_library(
     tags = ["nofixdeps"],
     visibility = ["@grpc:public"],
     deps = [
-        "grpc++_internal_hdrs_only",
+        "grpc++_public_hdrs",
         "grpc_codegen",
     ],
 )
@@ -7234,7 +7295,6 @@ grpc_cc_library(
     deps = [
         "arena",
         "grpc++_codegen_base",
-        "grpc++_internal_hdrs_only",
         "grpc++_public_hdrs",
         "grpc_backend_metric_data",
         "xds_orca_upb",
@@ -7285,7 +7345,6 @@ grpc_cc_library(
         "gpr",
         "grpc++",
         "grpc++_codegen_base",
-        "grpc++_internal_hdrs_only",
         "grpc_base",
         "protobuf_duration_upb",
         "ref_counted",
@@ -7342,8 +7401,8 @@ grpc_cc_library(
     deps = [
         "gpr",
         "grpc",
+        "grpc++_base",
         "grpc++_codegen_base",
-        "grpc++_internals",
         "//src/proto/grpc/testing/xds/v3:csds_proto",
     ],
     alwayslink = 1,

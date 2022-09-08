@@ -64,6 +64,7 @@ grpc_cc_library(
     deps = [
         "//:gpr",
         "//:grpc_base",
+        "//:json_args",
         "//:json_object_loader",
     ],
 )
