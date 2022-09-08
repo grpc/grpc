@@ -22,8 +22,8 @@
 
 #include <gmock/gmock.h>
 
-#include "src/core/ext/xds/certificate_provider_registry.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
+#include "src/core/lib/security/certificate_provider/certificate_provider_registry.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
