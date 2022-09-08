@@ -32,26 +32,36 @@ namespace grpc_core {
 // Global registry for all the certificate provider plugins.
 class CertificateProviderRegistry {
  public:
+  class Builder {
+   public:
+    // Register a provider with the registry. Can only be called after calling
+    // InitRegistry(). The key of the factory is extracted from factory
+    // parameter with method CertificateProviderFactory::name. If the same key
+    // is registered twice, an exception is raised.
+    void RegisterCertificateProviderFactory(
+        std::unique_ptr<CertificateProviderFactory> factory);
+
+    CertificateProviderRegistry Build();
+
+   private:
+    std::vector<std::unique_ptr<CertificateProviderFactory>> factories_;
+  };
+
+  CertificateProviderRegistry(const CertificateProviderRegistry&) = delete;
+  CertificateProviderRegistry& operator=(const CertificateProviderRegistry&) =
+      delete;
+  CertificateProviderRegistry(CertificateProviderRegistry&&) = default;
+  CertificateProviderRegistry& operator=(CertificateProviderRegistry&&) =
+      default;
+
   // Returns the factory for the plugin keyed by name.
-  static CertificateProviderFactory* LookupCertificateProviderFactory(
-      absl::string_view name);
+  CertificateProviderFactory* LookupCertificateProviderFactory(
+      absl::string_view name) const;
 
-  // The following methods are used to create and populate the
-  // CertificateProviderRegistry. NOT THREAD SAFE -- to be used only during
-  // global gRPC initialization and shutdown.
+ private:
+  CertificateProviderRegistry() = default;
 
-  // Global initialization of the registry.
-  static void InitRegistry();
-
-  // Global shutdown of the registry.
-  static void ShutdownRegistry();
-
-  // Register a provider with the registry. Can only be called after calling
-  // InitRegistry(). The key of the factory is extracted from factory
-  // parameter with method CertificateProviderFactory::name. If the same key
-  // is registered twice, an exception is raised.
-  static void RegisterCertificateProviderFactory(
-      std::unique_ptr<CertificateProviderFactory> factory);
+  std::vector<std::unique_ptr<CertificateProviderFactory>> factories_;
 };
 
 }  // namespace grpc_core

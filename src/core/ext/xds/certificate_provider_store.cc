@@ -22,6 +22,7 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/security/certificate_provider/certificate_provider_registry.h"
 
 namespace grpc_core {
@@ -70,8 +71,10 @@ CertificateProviderStore::CreateCertificateProviderLocked(
     return nullptr;
   }
   CertificateProviderFactory* factory =
-      CertificateProviderRegistry::LookupCertificateProviderFactory(
-          plugin_config_it->second.plugin_name);
+      CoreConfiguration::Get()
+          .certificate_provider_registry()
+          .LookupCertificateProviderFactory(
+              plugin_config_it->second.plugin_name);
   if (factory == nullptr) {
     // This should never happen since an entry is only inserted in the
     // plugin_config_map_ if the corresponding factory was found when parsing
