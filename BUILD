@@ -4503,6 +4503,7 @@ grpc_cc_library(
         "grpc_transport_chttp2_client_connector",
         "iomgr_timer",
         "json",
+        "json_object_loader",
         "json_util",
         "lb_policy_registry",
         "match",
