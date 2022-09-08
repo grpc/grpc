@@ -50,16 +50,3 @@ grpc_cc_library(
         "//:grpc_opencensus_plugin",
     ],
 )
-
-grpc_cc_library(
-    name = "observability_config",
-    hdrs = [
-        "observability_config.h",
-    ],
-    language = "c++",
-    visibility = ["//test:__subpackages__"],
-    deps = [
-        "//:gpr",
-        "//:json_object_loader",
-    ],
-)
