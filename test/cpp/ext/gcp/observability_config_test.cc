@@ -34,7 +34,8 @@ TEST(GcpObservabilityConfigJsonParsingTest, Basic) {
         "enabled": true
       },
       "cloud_trace": {
-        "enabled": true
+        "enabled": true,
+        "sampling_rate": 0.05
       },
       "project_id": "project"
     })json";
@@ -47,6 +48,7 @@ TEST(GcpObservabilityConfigJsonParsingTest, Basic) {
   EXPECT_TRUE(config.cloud_logging.enabled);
   EXPECT_TRUE(config.cloud_monitoring.enabled);
   EXPECT_TRUE(config.cloud_trace.enabled);
+  EXPECT_FLOAT_EQ(config.cloud_trace.sampling_rate, 0.05);
   EXPECT_EQ(config.project_id, "project");
 }
 

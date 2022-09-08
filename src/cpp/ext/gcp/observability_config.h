@@ -54,12 +54,14 @@ struct GcpObservabilityConfig {
 
   struct CloudTrace {
     bool enabled = false;
+    float sampling_rate = 0;
 
     static const grpc_core::JsonLoaderInterface* JsonLoader(
         const grpc_core::JsonArgs&) {
       static const auto* loader =
           grpc_core::JsonObjectLoader<CloudTrace>()
               .OptionalField("enabled", &CloudTrace::enabled)
+              .OptionalField("sampling_rate", &CloudTrace::sampling_rate)
               .Finish();
       return loader;
     }
