@@ -354,7 +354,7 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
         # format: <mode>: (enabled_target_tags, disabled_target_tags)
         "dbg": (["noopt"], ["nodbg"]),
         "opt": (["nodbg"], ["nodbg"]),
-        "on":  ([], None),
+        "on": ([], None),
         "off": (None, []),
     }
 
