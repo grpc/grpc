@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_EXT_XDS_CERTIFICATE_PROVIDER_REGISTRY_H
-#define GRPC_CORE_EXT_XDS_CERTIFICATE_PROVIDER_REGISTRY_H
+#ifndef GRPC_CORE_LIB_SECURITY_CERTIFICATE_PROVIDER_CERTIFICATE_PROVIDER_REGISTRY_H
+#define GRPC_CORE_LIB_SECURITY_CERTIFICATE_PROVIDER_CERTIFICATE_PROVIDER_REGISTRY_H
 
 #include <grpc/support/port_platform.h>
 
@@ -25,7 +25,7 @@
 
 #include "absl/strings/string_view.h"
 
-#include "src/core/ext/xds/certificate_provider_factory.h"
+#include "src/core/lib/security/certificate_provider/certificate_provider_factory.h"
 
 namespace grpc_core {
 
@@ -56,4 +56,4 @@ class CertificateProviderRegistry {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_XDS_CERTIFICATE_PROVIDER_REGISTRY_H
+#endif  // GRPC_CORE_LIB_SECURITY_CERTIFICATE_PROVIDER_CERTIFICATE_PROVIDER_REGISTRY_H

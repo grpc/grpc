@@ -18,7 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/xds/certificate_provider_registry.h"
+#include "src/core/lib/security/certificate_provider/certificate_provider_registry.h"
 
 #include <string.h>
 
