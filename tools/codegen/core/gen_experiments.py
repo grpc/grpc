@@ -65,8 +65,8 @@ for attr in attrs:
         print("no default for experiment %s" % attr['name'])
         error = True
     if attr['default'] not in DEFAULTS:
-        print("invalid default for experiment %s: %r" % (attr['name'],
-                                                        attr['default']))
+        print("invalid default for experiment %s: %r" %
+              (attr['name'], attr['default']))
         error = True
     if 'expiry' not in attr:
         print("no expiry for experiment %s" % attr['name'])
@@ -210,16 +210,14 @@ with open('src/core/lib/experiments/experiments.cc', 'w') as C:
     print("const ExperimentMetadata g_experiment_metadata[] = {", file=C)
     for attr in attrs:
         print("  {%s, description_%s, %s}," %
-              (c_str(attr['name']), attr['name'],
-               DEFAULTS[attr['default']]),
+              (c_str(attr['name']), attr['name'], DEFAULTS[attr['default']]),
               file=C)
     print("};", file=C)
     print(file=C)
     print("}  // namespace grpc_core", file=C)
 
-bzl_to_tags_to_experiments = dict(
-    (key, collections.defaultdict(list))
-    for key in BZL_LIST_FOR_DEFAULTS.keys())
+bzl_to_tags_to_experiments = dict((key, collections.defaultdict(list))
+                                  for key in BZL_LIST_FOR_DEFAULTS.keys())
 
 for attr in attrs:
     for tag in attr['test_tags']:
@@ -239,8 +237,7 @@ with open('bazel/experiments.bzl', 'w') as B:
 
     bzl_to_tags_to_experiments = sorted(
         (BZL_LIST_FOR_DEFAULTS[default], tags_to_experiments)
-        for default, tags_to_experiments in bzl_to_tags_to_experiments.items()
-    )
+        for default, tags_to_experiments in bzl_to_tags_to_experiments.items())
 
     print(file=B)
     print("EXPERIMENTS = {", file=B)
