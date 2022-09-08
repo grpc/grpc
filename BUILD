@@ -664,6 +664,7 @@ grpc_cc_library(
     deps = [
         "error",
         "gpr",
+        "gpr_codegen",
         "grpc",
         "grpc++_base",
         "grpc++_codegen_base",
@@ -915,7 +916,7 @@ grpc_cc_library(
     ],
     tags = ["nofixdeps"],
     deps = [
-        "gpr",
+        "gpr_codegen",
     ],
 )
 
