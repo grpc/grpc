@@ -166,6 +166,7 @@ TEST_P(EnvParsingTest, Basic) {
   EXPECT_EQ(config->project_id, "project");
 }
 
+// Test that JSON parsing errors are propagated as expected.
 TEST_P(EnvParsingTest, BadJson) {
   SetConfig("{");
   auto config = GcpObservabilityConfig::ReadFromEnv();
@@ -176,6 +177,7 @@ TEST_P(EnvParsingTest, BadJson) {
       << config.status().message();
 }
 
+// Make sure that GCP config errors are propagated as expected.
 TEST_P(EnvParsingTest, BadGcpConfig) {
   SetConfig(R"json({
       "project_id": 123
