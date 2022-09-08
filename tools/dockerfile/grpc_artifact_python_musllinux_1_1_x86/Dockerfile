@@ -37,4 +37,4 @@ RUN curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/downloa
     && cd ../.. \
     && rm -rf ccache-4.5.1 ccache.tar.gz
 
-RUN git config --global --add safe.directory /var/local/git/grpc
+RUN git config --global --add safe.directory /var/local/jenkins/grpc
