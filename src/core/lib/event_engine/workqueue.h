@@ -22,7 +22,6 @@
 #include <deque>
 #include <utility>
 
-#include "absl/base/internal/spinlock.h"
 #include "absl/base/thread_annotations.h"
 #include "absl/cleanup/cleanup.h"
 #include "absl/synchronization/mutex.h"
@@ -37,9 +36,9 @@ namespace experimental {
 
 // A fast work queue based lightly on an internal Google implementation.
 //
-// This uses atomics and lightweight spinlocks to access the most recent element
-// in the queue, making it fast for LIFO operations. Accessing the oldest (next)
-// element requires taking a mutex lock.
+// This uses atomics to access the most recent element in the queue, making it
+// fast for LIFO operations. Accessing the oldest (next) element requires taking
+// a mutex lock.
 template <typename T>
 class WorkQueue {
  public:
@@ -143,7 +142,7 @@ class WorkQueue {
       absl::optional<T> tmp_element;
       int64_t now = exec_ctx.Now().milliseconds_after_process_epoch();
       {
-        absl::base_internal::SpinLockHolder lock(&most_recent_element_lock_);
+        grpc_core::MutexLock lock(&most_recent_element_lock_);
         tmp_element = std::exchange(most_recent_element_, element);
         previous_ts = most_recent_element_enqueue_timestamp_.exchange(
             now, std::memory_order_relaxed);
@@ -225,8 +224,7 @@ class WorkQueue {
   // The most recently enqueued element. This is reserved from work stealing
   absl::optional<T> most_recent_element_
       ABSL_GUARDED_BY(most_recent_element_lock_);
-  absl::base_internal::SpinLock ABSL_ACQUIRED_AFTER(mu_)
-      most_recent_element_lock_;
+  grpc_core::Mutex ABSL_ACQUIRED_AFTER(mu_) most_recent_element_lock_;
   // TODO(hork): consider ABSL_CACHELINE_ALIGNED
   std::atomic<int64_t> most_recent_element_enqueue_timestamp_{
       kInvalidTimestamp};
