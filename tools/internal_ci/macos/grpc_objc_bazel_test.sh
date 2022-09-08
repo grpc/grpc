@@ -23,6 +23,11 @@ cd $(dirname $0)/../../..
 
 source tools/internal_ci/helper_scripts/prepare_build_macos_rc
 
+# Make sure actions run by bazel can find python3.
+# Without this the build will fail with "env: python3: No such file or directory".
+# When on kokoro MacOS Mojave image.
+sudo ln -s $(which python3) /usr/bin/python3 || true
+
 # make sure bazel is available
 tools/bazel version
 
