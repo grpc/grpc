@@ -103,7 +103,8 @@ const int grpc_stats_table_2[21] = {
 const uint8_t grpc_stats_table_3[23] = {2,  3,  3,  4,  5,  6,  7,  8,
                                         8,  9,  10, 11, 12, 12, 13, 14,
                                         15, 16, 16, 17, 18, 19, 20};
-const int grpc_stats_table_4[11] = {0, 1, 2, 4, 7, 12, 20, 32, 51, 81, 128};
+const int grpc_stats_table_4[11] = {0, 1, 2, 4, 7, 11, 17, 26, 38, 56, 80};
+const uint8_t grpc_stats_table_5[9] = {3, 3, 4, 5, 6, 6, 7, 8, 9};
 namespace grpc_core {
 int BucketForHistogramValue_32768_24(int value) {
   if (value < 3) {
@@ -147,41 +148,27 @@ int BucketForHistogramValue_16777216_20(int value) {
     }
   }
 }
-int BucketForHistogramValue_128_10(int value) {
-  if (value < 12) {
-    if (value < 3) {
-      if (value < 0) {
-        return 0;
-      } else {
-        return value;
-      }
+int BucketForHistogramValue_80_10(int value) {
+  if (value < 3) {
+    if (value < 0) {
+      return 0;
     } else {
-      if (value < 4) {
-        return 2;
-      } else {
-        if (value < 7) {
-          return 3;
-        } else {
-          return 4;
-        }
-      }
+      return value;
     }
   } else {
-    if (value < 32) {
-      if (value < 20) {
-        return 5;
-      } else {
-        return 6;
-      }
+    if (value < 49) {
+      // first_nontrivial_code=4613937818241073152
+      // last_code=4631952216750555136 [48.000000]
+      DblUint val;
+      val.dbl = value;
+      const int bucket =
+          grpc_stats_table_5[((val.uint - 4613937818241073152ull) >> 51)];
+      return bucket - (value < grpc_stats_table_4[bucket]);
     } else {
-      if (value < 51) {
-        return 7;
+      if (value < 56) {
+        return 8;
       } else {
-        if (value < 81) {
-          return 8;
-        } else {
-          return 9;
-        }
+        return 9;
       }
     }
   }
@@ -196,8 +183,8 @@ const int* const grpc_stats_histo_bucket_boundaries[7] = {
 int (*const grpc_stats_get_bucket[7])(int value) = {
     grpc_core::BucketForHistogramValue_32768_24,
     grpc_core::BucketForHistogramValue_16777216_20,
-    grpc_core::BucketForHistogramValue_128_10,
+    grpc_core::BucketForHistogramValue_80_10,
     grpc_core::BucketForHistogramValue_16777216_20,
     grpc_core::BucketForHistogramValue_16777216_20,
-    grpc_core::BucketForHistogramValue_128_10,
+    grpc_core::BucketForHistogramValue_80_10,
     grpc_core::BucketForHistogramValue_16777216_20};

@@ -40,7 +40,7 @@
   buckets: 20
   doc: Number of bytes offered to each syscall_write
 - histogram: tcp_write_iov_size
-  max: 128
+  max: 80
   buckets: 10
   doc: Number of byte segments offered to each syscall_write
 - counter: tcp_read_alloc_8k
@@ -56,7 +56,7 @@
   buckets: 20
   doc: Number of bytes offered to each syscall_read
 - histogram: tcp_read_offer_iov_size
-  max: 128
+  max: 80
   buckets: 10
   doc: Number of byte segments offered to each syscall_read
 # chttp2

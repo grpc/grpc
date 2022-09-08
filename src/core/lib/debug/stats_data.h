@@ -121,7 +121,7 @@ typedef enum {
 #define GRPC_STATS_INC_TCP_WRITE_IOV_SIZE(value) \
   GRPC_STATS_INC_HISTOGRAM(                      \
       GRPC_STATS_HISTOGRAM_TCP_WRITE_IOV_SIZE,   \
-      grpc_core::BucketForHistogramValue_128_10(static_cast<int>(value)))
+      grpc_core::BucketForHistogramValue_80_10(static_cast<int>(value)))
 #define GRPC_STATS_INC_TCP_READ_SIZE(value) \
   GRPC_STATS_INC_HISTOGRAM(                 \
       GRPC_STATS_HISTOGRAM_TCP_READ_SIZE,   \
@@ -133,7 +133,7 @@ typedef enum {
 #define GRPC_STATS_INC_TCP_READ_OFFER_IOV_SIZE(value) \
   GRPC_STATS_INC_HISTOGRAM(                           \
       GRPC_STATS_HISTOGRAM_TCP_READ_OFFER_IOV_SIZE,   \
-      grpc_core::BucketForHistogramValue_128_10(static_cast<int>(value)))
+      grpc_core::BucketForHistogramValue_80_10(static_cast<int>(value)))
 #define GRPC_STATS_INC_HTTP2_SEND_MESSAGE_SIZE(value) \
   GRPC_STATS_INC_HISTOGRAM(                           \
       GRPC_STATS_HISTOGRAM_HTTP2_SEND_MESSAGE_SIZE,   \
@@ -141,7 +141,7 @@ typedef enum {
 namespace grpc_core {
 int BucketForHistogramValue_32768_24(int value);
 int BucketForHistogramValue_16777216_20(int value);
-int BucketForHistogramValue_128_10(int value);
+int BucketForHistogramValue_80_10(int value);
 }  // namespace grpc_core
 extern const int grpc_stats_histo_buckets[7];
 extern const int grpc_stats_histo_start[7];
