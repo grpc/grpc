@@ -19,6 +19,8 @@
 
 #include <stddef.h>
 
+#include "absl/strings/string_view.h"
+
 namespace grpc_core {
 
 // Return true if experiment \a experiment_id is enabled.
@@ -28,6 +30,13 @@ bool IsExperimentEnabled(size_t experiment_id);
 
 // Print out a list of all experiments that are built into this binary.
 void PrintExperimentsList();
+
+// Force an experiment to be on or off.
+// Must be called before experiments are configured (the first
+// IsExperimentEnabled call).
+// If the experiment does not exist, emits a warning but continues execution.
+// If this is called twice for the same experiment, both calls must agree.
+void ForceEnableExperiment(absl::string_view experiment_name, bool enable);
 
 }  // namespace grpc_core
 
