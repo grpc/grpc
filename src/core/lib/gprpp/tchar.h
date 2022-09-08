@@ -1,4 +1,4 @@
-// Copyright 2021 gRPC authors.
+// Copyright 2022 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,26 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/lib/resource_quota/resource_quota.h"
+#ifndef GRPC_CORE_LIB_GPRPP_TCHAR_H
+#define GRPC_CORE_LIB_GPRPP_TCHAR_H
 
-#include "gtest/gtest.h"
+#include <grpc/support/port_platform.h>
 
-#include "test/core/util/test_config.h"
+#ifdef GPR_WINDOWS
+#include <string>
 
 namespace grpc_core {
-namespace testing {
 
-TEST(ResourceQuotaTest, Works) {
-  auto q = MakeRefCounted<ResourceQuota>("foo");
-  EXPECT_NE(q->thread_quota(), nullptr);
-  EXPECT_NE(q->memory_quota(), nullptr);
-}
+using TcharString = std::basic_string<TCHAR>;
 
-}  // namespace testing
+TcharString CharToTchar(std::string input);
+std::string TcharToChar(TcharString input);
+
 }  // namespace grpc_core
+#endif
 
-int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment give_me_a_name(&argc, argv);
-  ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
-}
+#endif  // GRPC_CORE_LIB_GPRPP_TCHAR_H

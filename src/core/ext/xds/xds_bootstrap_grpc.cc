@@ -33,11 +33,15 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_util.h"
+#include "src/core/lib/security/certificate_provider/certificate_provider_factory.h"
+#include "src/core/lib/security/certificate_provider/certificate_provider_registry.h"
 #include "src/core/lib/security/credentials/channel_creds_registry.h"
-#include "src/core/lib/transport/error_utils.h"
 
 namespace grpc_core {
 
@@ -97,27 +101,17 @@ grpc_error_handle ParseChannelCredsArray(const Json::Array& json,
 //
 
 std::unique_ptr<GrpcXdsBootstrap> GrpcXdsBootstrap::Create(
-    absl::string_view json_string,
-    std::unique_ptr<XdsCertificateProviderPluginMapInterface>
-        certificate_provider_plugin_map,
-    grpc_error_handle* error) {
+    absl::string_view json_string, grpc_error_handle* error) {
   auto json = Json::Parse(json_string);
   if (!json.ok()) {
     *error = GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
         "Failed to parse bootstrap JSON string: ", json.status().ToString()));
     return nullptr;
   }
-  return absl::make_unique<GrpcXdsBootstrap>(
-      std::move(*json), std::move(certificate_provider_plugin_map), error);
+  return absl::make_unique<GrpcXdsBootstrap>(std::move(*json), error);
 }
 
-GrpcXdsBootstrap::GrpcXdsBootstrap(
-    Json json,
-    std::unique_ptr<XdsCertificateProviderPluginMapInterface>
-        certificate_provider_plugin_map,
-    grpc_error_handle* error)
-    : certificate_provider_plugin_map_(
-          std::move(certificate_provider_plugin_map)) {
+GrpcXdsBootstrap::GrpcXdsBootstrap(Json json, grpc_error_handle* error) {
   if (json.type() != Json::Type::OBJECT) {
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "malformed JSON in bootstrap file");
@@ -376,24 +370,36 @@ grpc_error_handle GrpcXdsBootstrap::ParseCertificateProvider(
         "\"plugin_name\" field is not a string"));
   } else {
     std::string plugin_name = std::move(*(it->second.mutable_string_value()));
+    // Find config JSON.
+    absl::optional<Json> config_json;
     it = certificate_provider_json->mutable_object()->find("config");
     if (it != certificate_provider_json->mutable_object()->end()) {
       if (it->second.type() != Json::Type::OBJECT) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "\"config\" field is not an object"));
       } else {
-        absl::Status status = certificate_provider_plugin_map_->AddPlugin(
-            instance_name, plugin_name, it->second);
-        if (!status.ok()) {
-          error_list.push_back(absl_status_to_grpc_error(status));
-        }
+        config_json = it->second;
       }
     } else {
-      // "config" is an optional field, so create an empty JSON object.
-      absl::Status status = certificate_provider_plugin_map_->AddPlugin(
-          instance_name, plugin_name, Json::Object());
-      if (!status.ok()) {
-        error_list.push_back(absl_status_to_grpc_error(status));
+      // "config" is an optional field, so default to an empty JSON object.
+      config_json = Json::Object();
+    }
+    // Try to instantiate the provider.
+    CertificateProviderFactory* factory =
+        CertificateProviderRegistry::LookupCertificateProviderFactory(
+            plugin_name);
+    if (factory == nullptr) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
+          absl::StrCat("Unrecognized plugin name: ", plugin_name)));
+    } else if (config_json.has_value()) {
+      grpc_error_handle parse_error = GRPC_ERROR_NONE;
+      RefCountedPtr<CertificateProviderFactory::Config> config =
+          factory->CreateCertificateProviderConfig(*config_json, &parse_error);
+      if (!GRPC_ERROR_IS_NONE(parse_error)) {
+        error_list.push_back(parse_error);
+      } else {
+        certificate_providers_.insert(
+            {instance_name, {std::move(plugin_name), std::move(config)}});
       }
     }
   }
@@ -460,9 +466,18 @@ std::string GrpcXdsBootstrap::ToString() const {
                         entry.second.xds_servers[0].channel_creds_type));
     parts.push_back("      },\n");
   }
+  parts.push_back("}\n");
+  parts.push_back("certificate_providers={\n");
+  for (const auto& entry : certificate_providers_) {
+    parts.push_back(
+        absl::StrFormat("  %s={\n"
+                        "    plugin_name=%s\n"
+                        "    config=%s\n"
+                        "  },\n",
+                        entry.first, entry.second.plugin_name,
+                        entry.second.config->ToString()));
+  }
   parts.push_back("}");
-  parts.push_back("certificate_providers=");
-  parts.push_back(certificate_provider_plugin_map_->ToString());
   return absl::StrJoin(parts, "");
 }
 

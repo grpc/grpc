@@ -22,7 +22,7 @@
 
 #include <grpc/support/log.h>
 
-#include "src/core/ext/xds/certificate_provider_registry.h"
+#include "src/core/lib/security/certificate_provider/certificate_provider_registry.h"
 
 namespace grpc_core {
 

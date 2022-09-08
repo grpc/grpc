@@ -22,9 +22,11 @@
 #include <grpc/event_engine/memory_allocator.h>
 
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "test/core/promise/test_context.h"
+#include "test/core/util/test_config.h"
 
 namespace grpc_core {
 
@@ -32,6 +34,7 @@ static auto* g_memory_allocator = new MemoryAllocator(
     ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
 
 TEST(ArenaPromiseTest, AllocatedWorks) {
+  ExecCtx exec_ctx;
   auto arena = MakeScopedArena(1024, g_memory_allocator);
   TestContext<Arena> context(arena.get());
   int x = 42;
@@ -42,6 +45,7 @@ TEST(ArenaPromiseTest, AllocatedWorks) {
 }
 
 TEST(ArenaPromiseTest, DestructionWorks) {
+  ExecCtx exec_ctx;
   auto arena = MakeScopedArena(1024, g_memory_allocator);
   TestContext<Arena> context(arena.get());
   auto x = std::make_shared<int>(42);
@@ -51,6 +55,7 @@ TEST(ArenaPromiseTest, DestructionWorks) {
 }
 
 TEST(ArenaPromiseTest, MoveAssignmentWorks) {
+  ExecCtx exec_ctx;
   auto arena = MakeScopedArena(1024, g_memory_allocator);
   TestContext<Arena> context(arena.get());
   auto x = std::make_shared<int>(42);
@@ -61,6 +66,7 @@ TEST(ArenaPromiseTest, MoveAssignmentWorks) {
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment give_me_a_name(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }
