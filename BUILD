@@ -829,7 +829,6 @@ grpc_cc_library(
     public_hdrs = [
         "include/grpcpp/xds_server_builder.h",
     ],
-    tags = ["nofixdeps"],
     visibility = ["@grpc:xds"],
     deps = [
         "gpr",
