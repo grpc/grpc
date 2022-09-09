@@ -60,3 +60,5 @@ ENV CXX ${CROSS_TRIPLE}-g++
 # truncate it.
 # TODO(jtattermusch): Remove this hack when possible.
 RUN echo "# file contents removed to avoid resetting PATH set by the docker image" >/etc/profile
+
+RUN git config --global --add safe.directory /var/local/jenkins/grpc
