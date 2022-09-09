@@ -897,11 +897,9 @@ grpc_cc_library(
     ],
     language = "c++",
     standalone = True,
-    tags = ["nofixdeps"],
     visibility = ["@grpc:tsi"],
     deps = [
         "alts_upb",
-        "alts_util",
         "gpr",
         "grpc++",
         "grpc_base",
