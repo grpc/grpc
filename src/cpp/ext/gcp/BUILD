@@ -59,12 +59,20 @@ grpc_cc_library(
     hdrs = [
         "observability_config.h",
     ],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+    ],
     language = "c++",
     visibility = ["//test:__subpackages__"],
     deps = [
         "//:gpr",
         "//:grpc_base",
+        "//:grpc_public_hdrs",
+        "//:json",
         "//:json_args",
         "//:json_object_loader",
+        "//:slice_refcount",
     ],
 )

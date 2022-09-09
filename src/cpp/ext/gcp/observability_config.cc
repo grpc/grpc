@@ -18,8 +18,21 @@
 
 #include "src/cpp/ext/gcp/observability_config.h"
 
+#include <memory>
+
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
+
+#include <grpc/slice.h>
+#include <grpc/status.h>
+
 #include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/load_file.h"
+#include "src/core/lib/json/json.h"
+#include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/transport/error_utils.h"
 
 namespace grpc {
