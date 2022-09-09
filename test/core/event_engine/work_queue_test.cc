@@ -18,141 +18,140 @@
 #include <gtest/gtest.h>
 
 #include "src/core/lib/event_engine/workqueue.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/util/test_config.h"
 
 namespace {
+using ::grpc_event_engine::experimental::AnyInvocableClosure;
+using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::WorkQueue;
 
 TEST(WorkQueueTest, StartsEmpty) {
-  WorkQueue<int> queue;
+  WorkQueue queue;
   ASSERT_TRUE(queue.Empty());
   ASSERT_EQ(queue.Size(), 0);
 }
 
-TEST(WorkQueueTest, BecomesEmptyOnPopFront) {
-  WorkQueue<int> queue;
-  queue.Add(1);
+TEST(WorkQueueTest, TakesClosures) {
+  WorkQueue queue;
+  bool ran = false;
+  AnyInvocableClosure closure([&ran] { ran = true; });
+  queue.Add(&closure);
   ASSERT_EQ(queue.Size(), 1);
   ASSERT_FALSE(queue.Empty());
-  ASSERT_EQ(queue.PopFront(), 1);
+  absl::optional<EventEngine::Closure*> popped = queue.PopFront();
+  ASSERT_TRUE(popped.has_value());
+  (*popped)->Run();
+  ASSERT_TRUE(ran);
+  ASSERT_TRUE(queue.Empty());
+}
+
+TEST(WorkQueueTest, TakesAnyInvocables) {
+  WorkQueue queue;
+  bool ran = false;
+  queue.Add([&ran] { ran = true; });
+  ASSERT_EQ(queue.Size(), 1);
+  ASSERT_FALSE(queue.Empty());
+  absl::optional<EventEngine::Closure*> popped = queue.PopFront();
+  ASSERT_TRUE(popped.has_value());
+  (*popped)->Run();
+  ASSERT_TRUE(ran);
   ASSERT_TRUE(queue.Empty());
 }
 
 TEST(WorkQueueTest, BecomesEmptyOnPopBack) {
-  WorkQueue<int> queue;
-  queue.Add(1);
+  WorkQueue queue;
+  bool ran = false;
+  queue.Add([&ran] { ran = true; });
   ASSERT_EQ(queue.Size(), 1);
   ASSERT_FALSE(queue.Empty());
-  ASSERT_EQ(queue.PopBack(), 1);
+  absl::optional<EventEngine::Closure*> closure = queue.PopBack();
+  ASSERT_TRUE(closure.has_value());
+  (*closure)->Run();
+  ASSERT_TRUE(ran);
   ASSERT_TRUE(queue.Empty());
 }
 
 TEST(WorkQueueTest, PopFrontIsFIFO) {
-  WorkQueue<int> queue;
-  queue.Add(1);
-  queue.Add(2);
-  queue.Add(3);
-  queue.Add(4);
-  ASSERT_EQ(queue.Size(), 4);
-  ASSERT_FALSE(queue.Empty());
-  ASSERT_EQ(queue.PopFront(), 1);
-  ASSERT_EQ(queue.PopFront(), 2);
-  ASSERT_EQ(queue.PopFront(), 3);
-  ASSERT_EQ(queue.PopFront(), 4);
+  WorkQueue queue;
+  int flag = 0;
+  queue.Add([&flag] { flag |= 1; });
+  queue.Add([&flag] { flag |= 2; });
+  ASSERT_EQ(queue.Size(), 2);
+  (*queue.PopFront())->Run();
+  EXPECT_TRUE(flag & 1);
+  EXPECT_FALSE(flag & 2);
+  (*queue.PopFront())->Run();
+  EXPECT_TRUE(flag & 1);
+  EXPECT_TRUE(flag & 2);
   ASSERT_TRUE(queue.Empty());
 }
 
 TEST(WorkQueueTest, PopBackIsLIFO) {
-  WorkQueue<int> queue;
-  queue.Add(1);
-  queue.Add(2);
-  queue.Add(3);
-  queue.Add(4);
-  ASSERT_EQ(queue.Size(), 4);
-  ASSERT_FALSE(queue.Empty());
-  ASSERT_EQ(queue.PopBack(), 4);
-  ASSERT_EQ(queue.PopBack(), 3);
-  ASSERT_EQ(queue.PopBack(), 2);
-  ASSERT_EQ(queue.PopBack(), 1);
+  WorkQueue queue;
+  int flag = 0;
+  queue.Add([&flag] { flag |= 1; });
+  queue.Add([&flag] { flag |= 2; });
+  ASSERT_EQ(queue.Size(), 2);
+  (*queue.PopBack())->Run();
+  EXPECT_FALSE(flag & 1);
+  EXPECT_TRUE(flag & 2);
+  (*queue.PopBack())->Run();
+  EXPECT_TRUE(flag & 1);
+  EXPECT_TRUE(flag & 2);
   ASSERT_TRUE(queue.Empty());
 }
 
 TEST(WorkQueueTest, OldestEnqueuedTimestampIsSane) {
-  WorkQueue<int> queue;
-  ASSERT_EQ(queue.OldestEnqueuedTimestamp(), grpc_core::Timestamp::InfPast());
-  queue.Add(42);
   grpc_core::ExecCtx exec_ctx;
-  ASSERT_LE(queue.OldestEnqueuedTimestamp(), exec_ctx.Now());
-  queue.PopFront();
+  WorkQueue queue;
   ASSERT_EQ(queue.OldestEnqueuedTimestamp(), grpc_core::Timestamp::InfPast());
+  queue.Add([] {});
+  ASSERT_LE(queue.OldestEnqueuedTimestamp(), exec_ctx.Now());
+  auto popped = queue.PopFront();
+  ASSERT_EQ(queue.OldestEnqueuedTimestamp(), grpc_core::Timestamp::InfPast());
+  // prevent leaks by executing or deleting the closure
+  delete *popped;
 }
 
 TEST(WorkQueueTest, OldestEnqueuedTimestampOrderingIsCorrect) {
-  WorkQueue<int> queue;
+  WorkQueue queue;
   grpc_core::ExecCtx exec_ctx;
-  queue.Add(42);
+  AnyInvocableClosure closure([] {});
+  queue.Add(&closure);
   absl::SleepFor(absl::Milliseconds(2));
-  queue.Add(43);
+  queue.Add(&closure);
   absl::SleepFor(absl::Milliseconds(2));
-  queue.Add(44);
+  queue.Add(&closure);
   absl::SleepFor(absl::Milliseconds(2));
   auto oldest_ts = queue.OldestEnqueuedTimestamp();
   ASSERT_LE(oldest_ts, exec_ctx.Now());
-  absl::optional<int> popped;
+  absl::optional<EventEngine::Closure*> popped;
   // pop the oldest, and ensure the next oldest is younger
-  do {
-    popped = queue.PopFront();
-  } while (!popped.has_value());
+  popped = queue.PopFront();
+  ASSERT_TRUE(popped.has_value());
   auto second_oldest_ts = queue.OldestEnqueuedTimestamp();
   ASSERT_GT(second_oldest_ts, oldest_ts);
   // pop the oldest, and ensure the last one is youngest
-  do {
-    popped = queue.PopFront();
-  } while (!popped.has_value());
+  popped = queue.PopFront();
+  ASSERT_TRUE(popped.has_value());
   auto youngest_ts = queue.OldestEnqueuedTimestamp();
   ASSERT_GT(youngest_ts, second_oldest_ts);
   ASSERT_GT(youngest_ts, oldest_ts);
 }
 
 TEST(WorkQueueTest, ThreadedStress) {
-  WorkQueue<int> queue;
+  WorkQueue queue;
   constexpr int thd_count = 33;
   constexpr int element_count_per_thd = 3333;
   std::vector<std::thread> threads;
   threads.reserve(thd_count);
+  AnyInvocableClosure closure([]{});
   for (int i = 0; i < thd_count; i++) {
     threads.emplace_back([&] {
       int cnt = 0;
       do {
-        queue.Add(42);
-        ++cnt;
-      } while (cnt < element_count_per_thd);
-      cnt = 0;
-      do {
-        if (queue.PopFront().has_value()) ++cnt;
-      } while (cnt < element_count_per_thd);
-    });
-  }
-  for (auto& thd : threads) thd.join();
-  EXPECT_TRUE(queue.Empty());
-  EXPECT_EQ(queue.Size(), 0);
-}
-
-TEST(WorkQueueTest, StressLargerObjects) {
-  struct Element {
-    char storage[100 * 1024];  // 100KB
-  };
-  WorkQueue<Element> queue;
-  constexpr int thd_count = 20;
-  constexpr int element_count_per_thd = 50;
-  // The queue should never exceed 100Mb, and will likely remain much smaller
-  std::vector<std::thread> threads;
-  threads.reserve(thd_count);
-  for (int i = 0; i < thd_count; i++) {
-    threads.emplace_back([&] {
-      int cnt = 0;
-      do {
-        queue.Add(Element{"qwfparst"});
+        queue.Add(&closure);
         ++cnt;
       } while (cnt < element_count_per_thd);
       cnt = 0;

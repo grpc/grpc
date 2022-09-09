@@ -30,18 +30,20 @@
 
 namespace {
 
+using ::grpc_event_engine::experimental::AnyInvocableClosure;
+using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::WorkQueue;
 
 grpc_core::Mutex globalMu;
-std::vector<WorkQueue<intptr_t>*>* globalWorkQueueList;
-std::vector<std::deque<intptr_t>*>* globalDequeList;
+std::vector<WorkQueue*>* globalWorkQueueList;
+std::vector<std::deque<EventEngine::Closure*>*>* globalDequeList;
 std::vector<grpc_core::Mutex>* globalDequeMutexList;
 
 static void GlobalSetup(const benchmark::State& state) {
   // called for every test, resets all state
-  globalWorkQueueList = new std::vector<WorkQueue<intptr_t>*>();
+  globalWorkQueueList = new std::vector<WorkQueue*>();
   globalWorkQueueList->reserve(state.threads());
-  globalDequeList = new std::vector<std::deque<intptr_t>*>();
+  globalDequeList = new std::vector<std::deque<EventEngine::Closure*>*>();
   globalDequeList->reserve(state.threads());
   globalDequeMutexList = new std::vector<grpc_core::Mutex>(
       std::vector<grpc_core::Mutex>(state.threads()));
@@ -55,12 +57,13 @@ static void GlobalTeardown(const benchmark::State& /* state */) {
 }
 
 static void BM_WorkQueueIntptrPopFront(benchmark::State& state) {
-  WorkQueue<intptr_t> queue;
+  WorkQueue queue;
+  grpc_event_engine::experimental::AnyInvocableClosure closure([] {});
   int element_count = state.range(0);
   for (auto _ : state) {
     int cnt = 0;
-    for (int i = 0; i < element_count; i++) queue.Add(1);
-    absl::optional<intptr_t> popped;
+    for (int i = 0; i < element_count; i++) queue.Add(&closure);
+    absl::optional<EventEngine::Closure*> popped;
     cnt = 0;
     do {
       popped = queue.PopFront();
@@ -80,14 +83,14 @@ BENCHMARK(BM_WorkQueueIntptrPopFront)
     ->MeasureProcessCPUTime();
 
 static void BM_MultithreadedWorkQueuePopBack(benchmark::State& state) {
-  if (state.thread_index() == 0)
-    (*globalWorkQueueList)[0] = new WorkQueue<intptr_t>();
+  if (state.thread_index() == 0) (*globalWorkQueueList)[0] = new WorkQueue();
+  AnyInvocableClosure closure([] {});
   int element_count = state.range(0);
   for (auto _ : state) {
     int cnt = 0;
     auto* queue = (*globalWorkQueueList)[0];
-    for (int i = 0; i < element_count; i++) queue->Add(1);
-    absl::optional<intptr_t> popped;
+    for (int i = 0; i < element_count; i++) queue->Add(&closure);
+    absl::optional<EventEngine::Closure*> popped;
     cnt = 0;
     do {
       popped = queue->PopBack();
@@ -113,21 +116,23 @@ BENCHMARK(BM_MultithreadedWorkQueuePopBack)
     ->ThreadPerCpu();
 
 static void BM_StdDequeLIFO(benchmark::State& state) {
-  if (state.thread_index() == 0)
-    (*globalDequeList)[0] = new std::deque<intptr_t>();
+  if (state.thread_index() == 0) {
+    (*globalDequeList)[0] = new std::deque<EventEngine::Closure*>();
+  }
   auto& mu = (*globalDequeMutexList)[0];
   int element_count = state.range(0);
+  AnyInvocableClosure closure([] {});
   for (auto _ : state) {
     auto* queue = (*globalDequeList)[0];
     for (int i = 0; i < element_count; i++) {
       grpc_core::MutexLock lock(&mu);
-      queue->emplace_back(1);
+      queue->emplace_back(&closure);
     }
     for (int i = 0; i < element_count; i++) {
       grpc_core::MutexLock lock(&mu);
-      intptr_t popped = queue->back();
+      EventEngine::Closure* popped = queue->back();
       queue->pop_back();
-      assert(popped == 1);
+      assert(popped != nullptr);
     }
   }
   state.counters["Added"] = element_count * state.iterations();
@@ -160,17 +165,18 @@ void PerThreadArguments(benchmark::internal::Benchmark* b) {
 }
 
 static void BM_WorkQueuePerThread(benchmark::State& state) {
-  WorkQueue<intptr_t> local_queue;
+  WorkQueue local_queue;
   {
     grpc_core::MutexLock lock(&globalMu);
     (*globalWorkQueueList)[state.thread_index()] = &local_queue;
   }
+  AnyInvocableClosure closure([] {});
   int element_count = state.range(0);
   float pct_fill = state.range(1) / 100.0;
   for (auto _ : state) {
     // sparsely populate a queue
     for (int i = 0; i < std::ceil(element_count * pct_fill); i++) {
-      local_queue.Add(1);
+      local_queue.Add(&closure);
     }
     // attempt to pop from all thread queues `element_count` times
     int pop_attempts = 0;
@@ -199,16 +205,17 @@ static void BM_WorkQueuePerThread(benchmark::State& state) {
 BENCHMARK(BM_WorkQueuePerThread)->Apply(PerThreadArguments);
 
 static void BM_StdDequePerThread(benchmark::State& state) {
-  std::deque<intptr_t> local_queue;
+  std::deque<EventEngine::Closure*> local_queue;
   (*globalDequeList)[state.thread_index()] = &local_queue;
   int element_count = state.range(0);
   float pct_fill = state.range(1) / 100.0;
+  AnyInvocableClosure closure([] {});
   auto& local_mu = (*globalDequeMutexList)[state.thread_index()];
   for (auto _ : state) {
     // sparsely populate a queue
     for (int i = 0; i < std::ceil(element_count * pct_fill); i++) {
       grpc_core::MutexLock lock(&local_mu);
-      local_queue.emplace_back(1);
+      local_queue.emplace_back(&closure);
     }
     int pop_attempts = 0;
     auto iq = globalDequeList->begin();
@@ -217,7 +224,7 @@ static void BM_StdDequePerThread(benchmark::State& state) {
       {
         grpc_core::MutexLock lock(&*mu);
         if (!(*iq)->empty()) {
-          assert((*iq)->back() == 1);
+          assert((*iq)->back() != nullptr);
           (*iq)->pop_back();
         }
       }

@@ -2359,7 +2359,9 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "event_engine_work_queue",
-    srcs = [],
+    srcs = [
+        "src/core/lib/event_engine/workqueue.cc",
+    ],
     hdrs = [
         "src/core/lib/event_engine/workqueue.h",
     ],
@@ -2368,6 +2370,7 @@ grpc_cc_library(
         "absl/cleanup",
     ],
     deps = [
+        "common_event_engine_closures",
         "exec_ctx",
         "gpr",
         "time",
