@@ -957,8 +957,8 @@ grpc_cc_library(
         "include/grpc/support/atm.h",
     ],
     deps = [
-        "gpr_public_hdrs",
         "gpr_platform",
+        "gpr_public_hdrs",
         "useful",
     ],
 )
