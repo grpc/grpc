@@ -3249,7 +3249,6 @@ grpc_cc_library(
         "src/core/lib/surface/validate_metadata.h",
         "src/core/lib/transport/connectivity_state.h",
         "src/core/lib/transport/error_utils.h",
-        "src/core/lib/transport/http2_errors.h",
         "src/core/lib/transport/metadata_batch.h",
         "src/core/lib/transport/parsed_metadata.h",
         "src/core/lib/transport/status_conversion.h",
