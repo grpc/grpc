@@ -26,7 +26,6 @@
 #include "absl/debugging/failure_signal_handler.h"
 #include "absl/status/status.h"
 #include "absl/strings/match.h"
-#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/grpc.h>
@@ -127,10 +126,7 @@ void ParseTestArgs(int* argc, char** argv) {
       continue;
     }
     if (absl::StartsWith(argv[i], experiment_flag)) {
-      gpr_setenv(
-          absl::StrCat("GRPC_EXPERIMENT_", argv[i] + experiment_flag.length())
-              .c_str(),
-          "true");
+      gpr_setenv("GRPC_EXPERIMENTS", argv[i] + experiment_flag.length());
       // remove the spent argv
       RmArg(i, argc, argv);
       continue;

@@ -59,11 +59,11 @@
 #include "src/core/ext/transport/chttp2/transport/stream_map.h"
 #include "src/core/ext/transport/chttp2/transport/varint.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/debug/stats_data.h"
+#include "src/core/lib/debug/stats.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/bitset.h"
 #include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/global_config_env.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/time.h"
@@ -90,12 +90,6 @@
 #include "src/core/lib/transport/status_conversion.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/lib/transport/transport_impl.h"
-
-GPR_GLOBAL_CONFIG_DEFINE_BOOL(
-    grpc_experimental_enable_peer_state_based_framing, false,
-    "If set, the max sizes of frames sent to lower layers is controlled based "
-    "on the peer's memory pressure which is reflected in its max http2 frame "
-    "size.");
 
 #define DEFAULT_CONNECTION_WINDOW_TARGET (1024 * 1024)
 #define MAX_WINDOW 0x7fffffffu
@@ -878,18 +872,16 @@ static void write_action_begin_locked(void* gt,
 }
 
 static void write_action(void* gt, grpc_error_handle /*error*/) {
-  static bool kEnablePeerStateBasedFraming =
-      GPR_GLOBAL_CONFIG_GET(grpc_experimental_enable_peer_state_based_framing);
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(gt);
   void* cl = t->cl;
   t->cl = nullptr;
-  // If grpc_experimental_enable_peer_state_based_framing is set to true,
+  // If the peer_state_based_framing experiment is set to true,
   // choose max_frame_size as 2 * max http2 frame size of peer. If peer is under
   // high memory pressure, then it would advertise a smaller max http2 frame
   // size. With this logic, the sender would automatically reduce the sending
   // frame size as well.
   int max_frame_size =
-      kEnablePeerStateBasedFraming
+      grpc_core::IsPeerStateBasedFramingEnabled()
           ? 2 * t->settings[GRPC_PEER_SETTINGS]
                            [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE]
           : INT_MAX;
@@ -1164,8 +1156,11 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
     grpc_error_handle cl_err =
         grpc_core::internal::StatusMoveFromHeapPtr(closure->error_data.error);
     if (GRPC_ERROR_IS_NONE(cl_err)) {
-      cl_err = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "Error in HTTP transport completing operation");
+      cl_err = GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+          "Error in HTTP transport completing operation: ", desc,
+          " write_state=", write_state_name(t->write_state), " refs=",
+          closure->next_data.scratch / CLOSURE_BARRIER_FIRST_REF_BIT, " flags=",
+          closure->next_data.scratch % CLOSURE_BARRIER_FIRST_REF_BIT));
       cl_err = grpc_error_set_str(cl_err, GRPC_ERROR_STR_TARGET_ADDRESS,
                                   t->peer_string);
     }

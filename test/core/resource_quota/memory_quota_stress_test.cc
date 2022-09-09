@@ -36,6 +36,7 @@
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
+#include "test/core/util/test_config.h"
 
 namespace grpc_core {
 
@@ -53,6 +54,12 @@ class StressTest {
       allocators_.emplace_back(quotas_[dist(g)].CreateMemoryOwner(
           absl::StrCat("allocator[", i, "]")));
     }
+  }
+
+  ~StressTest() {
+    ExecCtx exec_ctx;
+    allocators_.clear();
+    quotas_.clear();
   }
 
   // Run the thread for some period of time.
@@ -234,6 +241,7 @@ TEST(MemoryQuotaStressTest, MainTest) {
 }
 
 int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment give_me_a_name(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

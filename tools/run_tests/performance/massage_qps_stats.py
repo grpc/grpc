@@ -39,13 +39,15 @@ def massage_qps_stats(scenario_result):
             stats[
                 "core_server_channels_created"] = massage_qps_stats_helpers.counter(
                     core_stats, "server_channels_created")
-            stats[
-                "core_histogram_slow_lookups"] = massage_qps_stats_helpers.counter(
-                    core_stats, "histogram_slow_lookups")
             stats["core_syscall_write"] = massage_qps_stats_helpers.counter(
                 core_stats, "syscall_write")
             stats["core_syscall_read"] = massage_qps_stats_helpers.counter(
                 core_stats, "syscall_read")
+            stats["core_tcp_read_alloc_8k"] = massage_qps_stats_helpers.counter(
+                core_stats, "tcp_read_alloc_8k")
+            stats[
+                "core_tcp_read_alloc_64k"] = massage_qps_stats_helpers.counter(
+                    core_stats, "tcp_read_alloc_64k")
             stats[
                 "core_http2_settings_writes"] = massage_qps_stats_helpers.counter(
                     core_stats, "http2_settings_writes")
@@ -60,6 +62,13 @@ def massage_qps_stats(scenario_result):
             stats[
                 "core_http2_stream_stalls"] = massage_qps_stats_helpers.counter(
                     core_stats, "http2_stream_stalls")
+            stats["core_cq_pluck_creates"] = massage_qps_stats_helpers.counter(
+                core_stats, "cq_pluck_creates")
+            stats["core_cq_next_creates"] = massage_qps_stats_helpers.counter(
+                core_stats, "cq_next_creates")
+            stats[
+                "core_cq_callback_creates"] = massage_qps_stats_helpers.counter(
+                    core_stats, "cq_callback_creates")
             h = massage_qps_stats_helpers.histogram(core_stats,
                                                     "call_initial_size")
             stats["core_call_initial_size"] = ",".join(
@@ -103,21 +112,6 @@ def massage_qps_stats(scenario_result):
                     h.buckets, 95, h.boundaries)
             stats[
                 "core_tcp_write_iov_size_99p"] = massage_qps_stats_helpers.percentile(
-                    h.buckets, 99, h.boundaries)
-            h = massage_qps_stats_helpers.histogram(core_stats,
-                                                    "tcp_read_allocation")
-            stats["core_tcp_read_allocation"] = ",".join(
-                "%f" % x for x in h.buckets)
-            stats["core_tcp_read_allocation_bkts"] = ",".join(
-                "%f" % x for x in h.boundaries)
-            stats[
-                "core_tcp_read_allocation_50p"] = massage_qps_stats_helpers.percentile(
-                    h.buckets, 50, h.boundaries)
-            stats[
-                "core_tcp_read_allocation_95p"] = massage_qps_stats_helpers.percentile(
-                    h.buckets, 95, h.boundaries)
-            stats[
-                "core_tcp_read_allocation_99p"] = massage_qps_stats_helpers.percentile(
                     h.buckets, 99, h.boundaries)
             h = massage_qps_stats_helpers.histogram(core_stats, "tcp_read_size")
             stats["core_tcp_read_size"] = ",".join("%f" % x for x in h.buckets)

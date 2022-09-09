@@ -65,7 +65,6 @@ grpc_cc_test(
     name = "event_poller_posix_test",
     srcs = ["event_poller_posix_test.cc"],
     external_deps = ["gtest"],
-    flaky = True,
     language = "C++",
     tags = [
         "no_windows",
@@ -73,6 +72,8 @@ grpc_cc_test(
     uses_event_engine = True,
     uses_polling = True,
     deps = [
+        "//:common_event_engine_closures",
+        "//:event_engine_poller",
         "//:posix_event_engine",
         "//:posix_event_engine_closure",
         "//:posix_event_engine_event_poller",
