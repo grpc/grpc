@@ -40,7 +40,7 @@ std::vector<WorkQueue*>* globalWorkQueueList;
 std::vector<std::deque<EventEngine::Closure*>*>* globalDequeList;
 std::vector<grpc_core::Mutex>* globalDequeMutexList;
 
-static void GlobalSetup(const benchmark::State& state) {
+void GlobalSetup(const benchmark::State& state) {
   // called for every test, resets all state
   globalWorkQueueList = new std::vector<WorkQueue*>();
   globalWorkQueueList->reserve(state.threads());
@@ -50,14 +50,14 @@ static void GlobalSetup(const benchmark::State& state) {
       std::vector<grpc_core::Mutex>(state.threads()));
 }
 
-static void GlobalTeardown(const benchmark::State& /* state */) {
+void GlobalTeardown(const benchmark::State& /* state */) {
   // called for every test, resets all state
   delete globalWorkQueueList;
   delete globalDequeList;
   delete globalDequeMutexList;
 }
 
-static void BM_WorkQueueIntptrPopFront(benchmark::State& state) {
+void BM_WorkQueueIntptrPopFront(benchmark::State& state) {
   WorkQueue queue;
   grpc_event_engine::experimental::AnyInvocableClosure closure([] {});
   int element_count = state.range(0);
@@ -83,7 +83,7 @@ BENCHMARK(BM_WorkQueueIntptrPopFront)
     ->UseRealTime()
     ->MeasureProcessCPUTime();
 
-static void BM_MultithreadedWorkQueuePopBack(benchmark::State& state) {
+void BM_MultithreadedWorkQueuePopBack(benchmark::State& state) {
   if (state.thread_index() == 0) (*globalWorkQueueList)[0] = new WorkQueue();
   AnyInvocableClosure closure([] {});
   int element_count = state.range(0);
@@ -116,7 +116,7 @@ BENCHMARK(BM_MultithreadedWorkQueuePopBack)
     ->Threads(4)
     ->ThreadPerCpu();
 
-static void BM_WorkQueueClosureExecution(benchmark::State& state) {
+void BM_WorkQueueClosureExecution(benchmark::State& state) {
   WorkQueue queue;
   int element_count = state.range(0);
   int run_count = 0;
@@ -139,13 +139,14 @@ BENCHMARK(BM_WorkQueueClosureExecution)
     ->UseRealTime()
     ->MeasureProcessCPUTime();
 
-static void BM_WorkQueueAnyInvocableExecution(benchmark::State& state) {
+void BM_WorkQueueAnyInvocableExecution(benchmark::State& state) {
   WorkQueue queue;
   int element_count = state.range(0);
   int run_count = 0;
   for (auto _ : state) {
-    for (int i = 0; i < element_count; i++)
+    for (int i = 0; i < element_count; i++) {
       queue.Add([&run_count] { ++run_count; });
+    }
     do {
       (*queue.PopFront())->Run();
     } while (run_count < element_count);
@@ -161,7 +162,7 @@ BENCHMARK(BM_WorkQueueAnyInvocableExecution)
     ->UseRealTime()
     ->MeasureProcessCPUTime();
 
-static void BM_StdDequeLIFO(benchmark::State& state) {
+void BM_StdDequeLIFO(benchmark::State& state) {
   if (state.thread_index() == 0) {
     (*globalDequeList)[0] = new std::deque<EventEngine::Closure*>();
   }
@@ -210,7 +211,7 @@ void PerThreadArguments(benchmark::internal::Benchmark* b) {
       ->ThreadPerCpu();
 }
 
-static void BM_WorkQueuePerThread(benchmark::State& state) {
+void BM_WorkQueuePerThread(benchmark::State& state) {
   WorkQueue local_queue;
   {
     grpc_core::MutexLock lock(&globalMu);
@@ -250,7 +251,7 @@ static void BM_WorkQueuePerThread(benchmark::State& state) {
 }
 BENCHMARK(BM_WorkQueuePerThread)->Apply(PerThreadArguments);
 
-static void BM_StdDequePerThread(benchmark::State& state) {
+void BM_StdDequePerThread(benchmark::State& state) {
   std::deque<EventEngine::Closure*> local_queue;
   (*globalDequeList)[state.thread_index()] = &local_queue;
   int element_count = state.range(0);

@@ -99,19 +99,6 @@ grpc_cc_test(
     ],
 )
 
-grpc_cc_test(
-    name = "bm_work_queue",
-    srcs = ["bm_work_queue.cc"],
-    external_deps = [
-        "benchmark",
-    ],
-    deps = [
-        "//:event_engine_work_queue",
-        "//test/core/util:grpc_test_util",
-        "//test/cpp/util:test_config",
-    ],
-)
-
 grpc_cc_library(
     name = "test_init",
     srcs = ["test_init.cc"],
