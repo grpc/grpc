@@ -4905,6 +4905,7 @@ grpc_cc_library(
         "channel_args",
         "config",
         "debug_location",
+        "error",
         "gpr",
         "grpc_base",
         "grpc_client_channel",
