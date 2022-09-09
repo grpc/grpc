@@ -25,6 +25,7 @@
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
 #include "src/core/lib/resolver/resolver_registry.h"
+#include "src/core/lib/security/certificate_provider/certificate_provider_registry.h"
 #include "src/core/lib/security/credentials/channel_creds_registry.h"
 #include "src/core/lib/service_config/service_config_parser.h"
 #include "src/core/lib/surface/channel_init.h"
@@ -69,6 +70,10 @@ class CoreConfiguration {
       return &lb_policy_registry_;
     }
 
+    CertificateProviderRegistry::Builder* certificate_provider_registry() {
+      return &certificate_provider_registry_;
+    }
+
    private:
     friend class CoreConfiguration;
 
@@ -79,6 +84,7 @@ class CoreConfiguration {
     ServiceConfigParser::Builder service_config_parser_;
     ResolverRegistry::Builder resolver_registry_;
     LoadBalancingPolicyRegistry::Builder lb_policy_registry_;
+    CertificateProviderRegistry::Builder certificate_provider_registry_;
 
     Builder();
     CoreConfiguration* Build();
@@ -187,6 +193,10 @@ class CoreConfiguration {
     return lb_policy_registry_;
   }
 
+  const CertificateProviderRegistry& certificate_provider_registry() const {
+    return certificate_provider_registry_;
+  }
+
   static void SetDefaultBuilder(void (*builder)(CoreConfiguration::Builder*)) {
     default_builder_ = builder;
   }
@@ -212,6 +222,7 @@ class CoreConfiguration {
   ServiceConfigParser service_config_parser_;
   ResolverRegistry resolver_registry_;
   LoadBalancingPolicyRegistry lb_policy_registry_;
+  CertificateProviderRegistry certificate_provider_registry_;
 };
 
 extern void BuildCoreConfiguration(CoreConfiguration::Builder* builder);

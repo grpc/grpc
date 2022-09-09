@@ -523,6 +523,7 @@ grpc_cc_library(
         "gpr",
         "grpc_authorization_base",
         "grpc_base",
+        "grpc_client_channel",
         "grpc_common",
         "grpc_http_filters",
         "grpc_security_base",
@@ -1197,7 +1198,6 @@ grpc_cc_library(
         "include/grpc/impl/codegen/port_platform.h",
         "include/grpc/support/port_platform.h",
     ],
-    tags = ["nofixdeps"],
 )
 
 grpc_cc_library(
@@ -1225,6 +1225,7 @@ grpc_cc_library(
     ],
     visibility = ["@grpc:client_channel"],
     deps = [
+        "certificate_provider_registry",
         "channel_args_preconditioning",
         "channel_creds_registry",
         "channel_init",
@@ -2046,7 +2047,6 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/resource_quota/trace.h",
     ],
-    tags = ["nofixdeps"],
     deps = [
         "gpr_platform",
         "grpc_trace",
@@ -2831,14 +2831,12 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/container:flat_hash_set",
+        "absl/hash",
     ],
-    tags = ["nofixdeps"],
     deps = [
         "event_engine_base_hdrs",
-        "event_engine_trace",
         "gpr",
         "gpr_platform",
-        "ref_counted",
         "slice",
         "slice_refcount",
     ],
@@ -2852,8 +2850,8 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/event_engine/trace.h",
     ],
-    tags = ["nofixdeps"],
     deps = [
+        "gpr",
         "gpr_platform",
         "grpc_trace",
     ],
@@ -4401,8 +4399,9 @@ grpc_cc_library(
         "src/core/lib/security/certificate_provider/certificate_provider_factory.h",
     ],
     deps = [
+        "error",
         "gpr",
-        "grpc_base",
+        "grpc_public_hdrs",
         "json",
         "ref_counted",
         "ref_counted_ptr",
@@ -4546,7 +4545,6 @@ grpc_cc_library(
         "grpc_transport_chttp2_client_connector",
         "iomgr_timer",
         "json",
-        "json_object_loader",
         "json_util",
         "lb_policy_registry",
         "match",
@@ -4789,7 +4787,6 @@ grpc_cc_library(
         "grpc_trace",
         "grpc_xds_client",
         "json",
-        "json_object_loader",
         "lb_policy",
         "lb_policy_factory",
         "lb_policy_registry",
@@ -4831,7 +4828,6 @@ grpc_cc_library(
         "grpc_trace",
         "grpc_xds_client",
         "json",
-        "json_object_loader",
         "lb_policy",
         "lb_policy_factory",
         "lb_policy_registry",
@@ -7315,16 +7311,14 @@ grpc_cc_library(
         "src/cpp/server/orca/call_metric_recorder.cc",
     ],
     external_deps = [
-        "upb_lib",
-        "absl/memory",
         "absl/strings",
         "absl/types:optional",
+        "upb_lib",
     ],
     language = "c++",
     public_hdrs = [
         "include/grpcpp/ext/call_metric_recorder.h",
     ],
-    tags = ["nofixdeps"],
     visibility = ["@grpc:public"],
     deps = [
         "arena",
