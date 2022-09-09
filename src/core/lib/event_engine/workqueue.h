@@ -150,7 +150,7 @@ class WorkQueue {
       if (!tmp_element.has_value() || previous_ts == kInvalidTimestamp) return;
       previous_most_recent = std::move(*tmp_element);
     }
-    absl::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(&mu_);
     if (elements_.empty()) {
       oldest_enqueued_timestamp_.store(previous_ts, std::memory_order_relaxed);
     }
