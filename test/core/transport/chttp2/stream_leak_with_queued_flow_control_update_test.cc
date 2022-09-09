@@ -160,25 +160,15 @@ void FinishCall(grpc_call* call, grpc_completion_queue* cq) {
   op->op = GRPC_OP_RECV_MESSAGE;
   op->data.recv_message.recv_message = &recv_payload;
   op++;
-  grpc_call_error error = grpc_call_start_batch(
-      call, ops, static_cast<size_t>(op - ops), tag, nullptr);
-  GPR_ASSERT(GRPC_CALL_OK == error);
-  grpc_event event = grpc_completion_queue_next(
-      cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
-  GPR_ASSERT(event.type == GRPC_OP_COMPLETE);
-  GPR_ASSERT(event.success);
-  GPR_ASSERT(event.tag == tag);
-  memset(ops, 0, sizeof(ops));
-  op = ops;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op++;
-  error = grpc_call_start_batch(call, ops, static_cast<size_t>(op - ops), tag,
+  grpc_call_error error = grpc_call_start_batch(call, ops, static_cast<size_t>(op - ops), tag,
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  event = grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME),
+  grpc_event event = grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME),
                                      nullptr);
   GPR_ASSERT(event.type == GRPC_OP_COMPLETE);
   GPR_ASSERT(event.success);
