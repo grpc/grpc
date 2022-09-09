@@ -185,8 +185,6 @@ TEST(Chttp2, TestStreamDoesntLeakWhenItsWriteClosedAndThenReadClosedWhileReading
     // cause chttp2 to initiate a write and so dodge the bug we're trying to
     // repro.
     grpc_arg args[] = {
-      //grpc_channel_arg_integer_create(
-      //    const_cast<char*>(GRPC_ARG_KEEPALIVE_TIME_MS), 0),
       grpc_channel_arg_integer_create(
           const_cast<char*>(GRPC_ARG_HTTP2_BDP_PROBE), 0)
     };
