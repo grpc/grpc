@@ -60,23 +60,17 @@ class FakeCertificateProviderFactory2 : public CertificateProviderFactory {
 };
 
 TEST(CertificateProviderRegistryTest, Basic) {
-  CertificateProviderRegistry::InitRegistry();
+  CertificateProviderRegistry::Builder b;
   auto* fake_factory_1 = new FakeCertificateProviderFactory1;
   auto* fake_factory_2 = new FakeCertificateProviderFactory2;
-  CertificateProviderRegistry::RegisterCertificateProviderFactory(
+  b.RegisterCertificateProviderFactory(
       std::unique_ptr<CertificateProviderFactory>(fake_factory_1));
-  CertificateProviderRegistry::RegisterCertificateProviderFactory(
+  b.RegisterCertificateProviderFactory(
       std::unique_ptr<CertificateProviderFactory>(fake_factory_2));
-  EXPECT_EQ(
-      CertificateProviderRegistry::LookupCertificateProviderFactory("fake1"),
-      fake_factory_1);
-  EXPECT_EQ(
-      CertificateProviderRegistry::LookupCertificateProviderFactory("fake2"),
-      fake_factory_2);
-  EXPECT_EQ(
-      CertificateProviderRegistry::LookupCertificateProviderFactory("fake3"),
-      nullptr);
-  CertificateProviderRegistry::ShutdownRegistry();
+  auto r = b.Build();
+  EXPECT_EQ(r.LookupCertificateProviderFactory("fake1"), fake_factory_1);
+  EXPECT_EQ(r.LookupCertificateProviderFactory("fake2"), fake_factory_2);
+  EXPECT_EQ(r.LookupCertificateProviderFactory("fake3"), nullptr);
 }
 
 }  // namespace

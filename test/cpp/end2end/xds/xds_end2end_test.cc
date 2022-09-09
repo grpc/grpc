@@ -68,6 +68,7 @@
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/time_precise.h"
@@ -4050,14 +4051,21 @@ int main(int argc, char** argv) {
 #endif
   grpc::testing::FakeCertificateProvider::CertDataMapWrapper cert_data_map_1;
   grpc::testing::g_fake1_cert_data_map = &cert_data_map_1;
-  grpc_core::CertificateProviderRegistry::RegisterCertificateProviderFactory(
-      absl::make_unique<grpc::testing::FakeCertificateProviderFactory>(
-          "fake1", grpc::testing::g_fake1_cert_data_map));
   grpc::testing::FakeCertificateProvider::CertDataMapWrapper cert_data_map_2;
   grpc::testing::g_fake2_cert_data_map = &cert_data_map_2;
-  grpc_core::CertificateProviderRegistry::RegisterCertificateProviderFactory(
-      absl::make_unique<grpc::testing::FakeCertificateProviderFactory>(
-          "fake2", grpc::testing::g_fake2_cert_data_map));
+  grpc_core::CoreConfiguration::RegisterBuilder(
+      [](grpc_core::CoreConfiguration::Builder* builder) {
+        builder->certificate_provider_registry()
+            ->RegisterCertificateProviderFactory(
+                absl::make_unique<
+                    grpc::testing::FakeCertificateProviderFactory>(
+                    "fake1", grpc::testing::g_fake1_cert_data_map));
+        builder->certificate_provider_registry()
+            ->RegisterCertificateProviderFactory(
+                absl::make_unique<
+                    grpc::testing::FakeCertificateProviderFactory>(
+                    "fake2", grpc::testing::g_fake2_cert_data_map));
+      });
   grpc_init();
   grpc_core::XdsHttpFilterRegistry::RegisterFilter(
       absl::make_unique<grpc::testing::NoOpHttpFilter>(

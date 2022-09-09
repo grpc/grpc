@@ -18,7 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/filters/client_channel/proxy_mapper_registry.h"
+#include "src/core/lib/handshaker/proxy_mapper_registry.h"
 
 #include <algorithm>
 #include <memory>
@@ -29,46 +29,25 @@
 
 namespace grpc_core {
 
-namespace {
-
-using ProxyMapperList = std::vector<std::unique_ptr<ProxyMapperInterface>>;
-ProxyMapperList* g_proxy_mapper_list;
-
-}  // namespace
-
-void ProxyMapperRegistry::Init() {
-  if (g_proxy_mapper_list == nullptr) {
-    g_proxy_mapper_list = new ProxyMapperList();
-  }
-}
-
-void ProxyMapperRegistry::Shutdown() {
-  delete g_proxy_mapper_list;
-  // Clean up in case we re-initialze later.
-  // TODO(roth): This should ideally live in Init().  However, if we did this
-  // there, then we would do it AFTER we start registering proxy mappers from
-  // third-party plugins, so they'd never show up (and would leak memory).
-  // We probably need some sort of dependency system for plugins to fix
-  // this.
-  g_proxy_mapper_list = nullptr;
-}
-
-void ProxyMapperRegistry::Register(
+void ProxyMapperRegistry::Builder::Register(
     bool at_start, std::unique_ptr<ProxyMapperInterface> mapper) {
-  Init();
   if (at_start) {
-    g_proxy_mapper_list->insert(g_proxy_mapper_list->begin(),
-                                std::move(mapper));
+    mappers_.insert(mappers_.begin(), std::move(mapper));
   } else {
-    g_proxy_mapper_list->emplace_back(std::move(mapper));
+    mappers_.emplace_back(std::move(mapper));
   }
+}
+
+ProxyMapperRegistry ProxyMapperRegistry::Builder::Build() {
+  ProxyMapperRegistry registry;
+  registry.mappers_ = std::move(mappers_);
+  return registry;
 }
 
 absl::optional<std::string> ProxyMapperRegistry::MapName(
-    absl::string_view server_uri, ChannelArgs* args) {
-  Init();
+    absl::string_view server_uri, ChannelArgs* args) const {
   ChannelArgs args_backup = *args;
-  for (const auto& mapper : *g_proxy_mapper_list) {
+  for (const auto& mapper : mappers_) {
     *args = args_backup;
     auto r = mapper->MapName(server_uri, args);
     if (r.has_value()) return r;
@@ -78,10 +57,9 @@ absl::optional<std::string> ProxyMapperRegistry::MapName(
 }
 
 absl::optional<grpc_resolved_address> ProxyMapperRegistry::MapAddress(
-    const grpc_resolved_address& address, ChannelArgs* args) {
-  Init();
+    const grpc_resolved_address& address, ChannelArgs* args) const {
   ChannelArgs args_backup = *args;
-  for (const auto& mapper : *g_proxy_mapper_list) {
+  for (const auto& mapper : mappers_) {
     *args = args_backup;
     auto r = mapper->MapAddress(address, args);
     if (r.has_value()) return r;
