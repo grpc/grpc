@@ -33,6 +33,7 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
+#include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
@@ -126,6 +127,7 @@ static void do_basic_init(void) {
   grpc_event_engine::experimental::RegisterForkHandlers();
   grpc_fork_handlers_auto_register();
   grpc_tracer_init();
+  grpc_client_channel_global_init_backup_polling();
 }
 
 typedef struct grpc_plugin {

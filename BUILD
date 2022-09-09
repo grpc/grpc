@@ -523,6 +523,7 @@ grpc_cc_library(
         "gpr",
         "grpc_authorization_base",
         "grpc_base",
+        "grpc_client_channel",
         "grpc_common",
         "grpc_http_filters",
         "grpc_security_base",

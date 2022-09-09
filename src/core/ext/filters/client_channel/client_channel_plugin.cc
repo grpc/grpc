@@ -18,7 +18,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/http_proxy.h"
 #include "src/core/ext/filters/client_channel/proxy_mapper_registry.h"
@@ -32,7 +31,6 @@
 void grpc_client_channel_init(void) {
   grpc_core::ProxyMapperRegistry::Init();
   grpc_core::RegisterHttpProxyMapper();
-  grpc_client_channel_global_init_backup_polling();
 }
 
 void grpc_client_channel_shutdown(void) {
