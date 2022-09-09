@@ -40,12 +40,10 @@ WorkQueue::Storage::Storage(absl::AnyInvocable<void()> callback) noexcept
 
 WorkQueue::Storage::Storage(Storage&& other) noexcept
     : closure_(other.closure_),
-      invocable_closure_(other.invocable_closure_),
       enqueued_(other.enqueued_) {}
 
 WorkQueue::Storage& WorkQueue::Storage::operator=(Storage&& other) noexcept {
   std::swap(closure_, other.closure_);
-  std::swap(invocable_closure_, other.invocable_closure_);
   std::swap(enqueued_, other.enqueued_);
   return *this;
 }

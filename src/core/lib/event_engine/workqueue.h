@@ -68,9 +68,6 @@ class WorkQueue {
 
    private:
     EventEngine::Closure* closure_ = nullptr;
-    typename std::aligned_storage<sizeof(AnyInvocableClosure),
-                                  alignof(AnyInvocableClosure)>::type
-        invocable_closure_;
     int64_t enqueued_ = kInvalidTimestamp;
   };
 
