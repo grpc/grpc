@@ -536,3 +536,15 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util_base",
     ],
 )
+
+grpc_cc_test(
+    name = "certificate_provider_registry_test",
+    srcs = ["certificate_provider_registry_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)

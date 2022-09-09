@@ -1845,9 +1845,6 @@ src/core/ext/upbdefs-generated/xds/type/matcher/v3/string.upbdefs.c \
 src/core/ext/upbdefs-generated/xds/type/matcher/v3/string.upbdefs.h \
 src/core/ext/upbdefs-generated/xds/type/v3/typed_struct.upbdefs.c \
 src/core/ext/upbdefs-generated/xds/type/v3/typed_struct.upbdefs.h \
-src/core/ext/xds/certificate_provider_factory.h \
-src/core/ext/xds/certificate_provider_registry.cc \
-src/core/ext/xds/certificate_provider_registry.h \
 src/core/ext/xds/certificate_provider_store.cc \
 src/core/ext/xds/certificate_provider_store.h \
 src/core/ext/xds/file_watcher_certificate_provider_factory.cc \
@@ -2294,6 +2291,9 @@ src/core/lib/security/authorization/matchers.cc \
 src/core/lib/security/authorization/matchers.h \
 src/core/lib/security/authorization/rbac_policy.cc \
 src/core/lib/security/authorization/rbac_policy.h \
+src/core/lib/security/certificate_provider/certificate_provider_factory.h \
+src/core/lib/security/certificate_provider/certificate_provider_registry.cc \
+src/core/lib/security/certificate_provider/certificate_provider_registry.h \
 src/core/lib/security/context/security_context.cc \
 src/core/lib/security/context/security_context.h \
 src/core/lib/security/credentials/alts/alts_credentials.cc \

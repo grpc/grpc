@@ -60,6 +60,7 @@ grpc_cc_library(
     visibility = ["//test:__subpackages__"],
     deps = [
         "//:gpr",
+        "//:json_args",
         "//:json_object_loader",
     ],
 )
