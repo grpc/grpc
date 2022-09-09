@@ -737,10 +737,14 @@ void ClientChannel::ExternalConnectivityWatcher::Notify(
   // Hop back into the work_serializer to clean up.
   // Not needed in state SHUTDOWN, because the tracker will
   // automatically remove all watchers in that case.
+  // Note: The callback takes a ref in case the ref inside the state tracker
+  // gets removed before the callback runs via a SHUTDOWN notification.
   if (state != GRPC_CHANNEL_SHUTDOWN) {
+    Ref(DEBUG_LOCATION, "RemoveWatcherLocked()").release();
     chand_->work_serializer_->Run(
         [this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand_->work_serializer_) {
           RemoveWatcherLocked();
+          Unref(DEBUG_LOCATION, "RemoveWatcherLocked()");
         },
         DEBUG_LOCATION);
   }
@@ -754,9 +758,13 @@ void ClientChannel::ExternalConnectivityWatcher::Cancel() {
   }
   ExecCtx::Run(DEBUG_LOCATION, on_complete_, GRPC_ERROR_CANCELLED);
   // Hop back into the work_serializer to clean up.
+  // Note: The callback takes a ref in case the ref inside the state tracker
+  // gets removed before the callback runs via a SHUTDOWN notification.
+  Ref(DEBUG_LOCATION, "RemoveWatcherLocked()").release();
   chand_->work_serializer_->Run(
       [this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand_->work_serializer_) {
         RemoveWatcherLocked();
+        Unref(DEBUG_LOCATION, "RemoveWatcherLocked()");
       },
       DEBUG_LOCATION);
 }
