@@ -76,6 +76,18 @@ TEST(UsefulTest, SaturatingAdd) {
             std::numeric_limits<int64_t>::min());
 }
 
+TEST(UsefulTest, RoundUpToPowerOf2) {
+  EXPECT_EQ(RoundUpToPowerOf2(0), 0);
+  EXPECT_EQ(RoundUpToPowerOf2(1), 1);
+  EXPECT_EQ(RoundUpToPowerOf2(2), 2);
+  EXPECT_EQ(RoundUpToPowerOf2(3), 4);
+  EXPECT_EQ(RoundUpToPowerOf2(4), 4);
+  EXPECT_EQ(RoundUpToPowerOf2(5), 8);
+  EXPECT_EQ(RoundUpToPowerOf2(6), 8);
+  EXPECT_EQ(RoundUpToPowerOf2(7), 8);
+  EXPECT_EQ(RoundUpToPowerOf2(8), 8);
+}
+
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
