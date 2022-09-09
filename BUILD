@@ -2861,14 +2861,12 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/container:flat_hash_set",
+        "absl/hash",
     ],
-    tags = ["nofixdeps"],
     deps = [
         "event_engine_base_hdrs",
-        "event_engine_trace",
         "gpr",
         "gpr_platform",
-        "ref_counted",
         "slice",
         "slice_refcount",
     ],
@@ -2882,8 +2880,8 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/event_engine/trace.h",
     ],
-    tags = ["nofixdeps"],
     deps = [
+        "gpr",
         "gpr_platform",
         "grpc_trace",
     ],
