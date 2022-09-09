@@ -112,7 +112,6 @@ $Python310x64Config = @{
 }
 Install-Python @Python310x64Config
 
-# TODO: Automate updating this somehow.
 # Python 3.11
 $Python311x86Config = @{
     PythonVersion = "3.11.0"

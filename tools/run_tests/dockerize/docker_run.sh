@@ -21,8 +21,6 @@ set -e
 if [ "${RELATIVE_COPY_PATH}" == "" ]
 then
   mkdir -p /var/local/git
-  set -x
-  id -u
   git clone "${EXTERNAL_GIT_ROOT}" /var/local/git/grpc
   # clone gRPC submodules, use data from locally cloned submodules where possible
   # TODO: figure out a way to eliminate this following shellcheck suppressions

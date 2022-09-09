@@ -160,8 +160,6 @@ then
     time sudo installer -pkg ./python-3.10.5-macos11.pkg -target /
   fi
 
-  # TODO(rbellevi): Figure out a way to securely update these versions
-  # automatically.
   # Install Python 3.11 if it doesn't exist
   if [ ! -f "/usr/local/bin/python3.11" ]; then
     time curl -O https://www.python.org/ftp/python/3.11.0/python-3.11.0rc1-macos11.pkg
