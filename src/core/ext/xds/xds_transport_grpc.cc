@@ -52,6 +52,7 @@
 #include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
+#include "src/core/lib/surface/init_internally.h"
 #include "src/core/lib/surface/lame_client.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
@@ -330,14 +331,14 @@ GrpcXdsTransportFactory::GrpcXdsTransportFactory(const ChannelArgs& args)
       interested_parties_(grpc_pollset_set_create()) {
   // Calling grpc_init to ensure gRPC does not shut down until the XdsClient is
   // destroyed.
-  grpc_init();
+  InitInternally();
 }
 
 GrpcXdsTransportFactory::~GrpcXdsTransportFactory() {
   grpc_pollset_set_destroy(interested_parties_);
   // Calling grpc_shutdown to ensure gRPC does not shut down until the XdsClient
   // is destroyed.
-  grpc_shutdown();
+  ShutdownInternally();
 }
 
 OrphanablePtr<XdsTransportFactory::XdsTransport>

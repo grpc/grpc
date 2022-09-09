@@ -498,6 +498,12 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "init_internally",
+    srcs = ["src/core/lib/surface/init_internally.cc"],
+    hdrs = ["src/core/lib/surface/init_internally.h"],
+)
+
+grpc_cc_library(
     name = "grpc_unsecure",
     srcs = [
         "src/core/lib/surface/init.cc",
@@ -529,6 +535,7 @@ grpc_cc_library(
         "grpc_security_base",
         "grpc_trace",
         "http_connect_handshaker",
+        "init_internally",
         "iomgr_timer",
         "posix_event_engine_timer_manager",
         "slice",
@@ -610,6 +617,7 @@ grpc_cc_library(
         "http_connect_handshaker",
         "httpcli",
         "httpcli_ssl_credentials",
+        "init_internally",
         "iomgr_timer",
         "json",
         "posix_event_engine_timer_manager",
@@ -3233,6 +3241,7 @@ grpc_cc_library(
         "exec_ctx",
         "experiments",
         "gpr",
+        "init_internally",
         "gpr_tls",
         "grpc_public_hdrs",
         "grpc_sockaddr",
@@ -3721,6 +3730,7 @@ grpc_cc_library(
         "grpc_service_config_impl",
         "grpc_trace",
         "http_connect_handshaker",
+        "init_internally",
         "iomgr_fwd",
         "iomgr_timer",
         "json",
@@ -4498,6 +4508,7 @@ grpc_cc_library(
         "grpc_client_channel",
         "grpc_codegen",
         "grpc_credentials_util",
+        "init_internally",
         "grpc_fake_credentials",
         "grpc_fault_injection_filter",
         "grpc_lb_xds_channel_args",
