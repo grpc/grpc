@@ -1,7 +1,35 @@
-#include "usr/local/google/home/apolcyn/grpc/test/core/transport/chttp2/stream_leak_with_queued_flow_control_update.h"
+#include <grpc/support/port_platform.h>
 
-#include "testing/base/public/gmock.h"
-#include "testing/base/public/gunit.h"
+#include <string.h>
+
+#include <algorithm>
+#include <functional>
+#include <memory>
+#include <string>
+#include <thread>
+#include <vector>
+
+#include <gtest/gtest.h>
+
+#include "third_party/absl/strings/str_cat.h"
+
+#include <grpc/byte_buffer.h>
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
+#include <grpc/support/log.h>
+#include <grpc/support/time.h>
+
+#include "src/core/ext/filters/client_channel/backup_poller.h"
+#include "src/core/ext/transport/chttp2/transport/flow_control.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gprpp/global_config_generic.h"
+#include "src/core/lib/gprpp/host_port.h"
+#include "src/core/lib/gprpp/sync.h"
+#include "test/core/util/port.h"
+#include "test/core/util/test_config.h"
 
 namespace {
 
