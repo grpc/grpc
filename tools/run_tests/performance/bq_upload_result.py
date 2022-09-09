@@ -148,7 +148,6 @@ def _flatten_result_inplace(scenario_result):
         'serverCpuUsage', None)
     scenario_result['summary'].pop('successfulRequestsPerSecond', None)
     scenario_result['summary'].pop('failedRequestsPerSecond', None)
-    massage_qps_stats.massage_qps_stats(scenario_result)
 
 
 def _populate_metadata_inplace(scenario_result):

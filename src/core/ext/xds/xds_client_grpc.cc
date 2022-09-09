@@ -19,18 +19,12 @@
 #include "src/core/ext/xds/xds_client_grpc.h"
 
 #include <algorithm>
-#include <map>
 #include <memory>
 #include <string>
 #include <utility>
-#include <vector>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
@@ -40,9 +34,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/ext/xds/certificate_provider_factory.h"
-#include "src/core/ext/xds/certificate_provider_registry.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
+#include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_channel_args.h"
 #include "src/core/ext/xds/xds_cluster_specifier_plugin.h"
 #include "src/core/ext/xds/xds_http_filters.h"
@@ -60,7 +53,6 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/load_file.h"
-#include "src/core/lib/json/json.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/transport/error_utils.h"
@@ -149,13 +141,11 @@ absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GrpcXdsClient::GetOrCreate(
   absl::optional<absl::string_view> bootstrap_config = args.GetString(
       GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_BOOTSTRAP_CONFIG);
   if (bootstrap_config.has_value()) {
-    grpc_error_handle error = GRPC_ERROR_NONE;
-    std::unique_ptr<GrpcXdsBootstrap> bootstrap =
-        GrpcXdsBootstrap::Create(*bootstrap_config, &error);
-    if (!GRPC_ERROR_IS_NONE(error)) return grpc_error_to_absl_status(error);
+    auto bootstrap = GrpcXdsBootstrap::Create(*bootstrap_config);
+    if (!bootstrap.ok()) return bootstrap.status();
     grpc_channel_args* xds_channel_args = args.GetPointer<grpc_channel_args>(
         GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_CLIENT_CHANNEL_ARGS);
-    return MakeRefCounted<GrpcXdsClient>(std::move(bootstrap),
+    return MakeRefCounted<GrpcXdsClient>(std::move(*bootstrap),
                                          ChannelArgs::FromC(xds_channel_args));
   }
   // Otherwise, use the global instance.
@@ -172,18 +162,16 @@ absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GrpcXdsClient::GetOrCreate(
             bootstrap_contents->c_str());
   }
   // Parse bootstrap.
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  std::unique_ptr<GrpcXdsBootstrap> bootstrap =
-      GrpcXdsBootstrap::Create(*bootstrap_contents, &error);
-  if (!GRPC_ERROR_IS_NONE(error)) return grpc_error_to_absl_status(error);
+  auto bootstrap = GrpcXdsBootstrap::Create(*bootstrap_contents);
+  if (!bootstrap.ok()) return bootstrap.status();
   // Instantiate XdsClient.
   auto xds_client = MakeRefCounted<GrpcXdsClient>(
-      std::move(bootstrap), ChannelArgs::FromC(g_channel_args));
+      std::move(*bootstrap), ChannelArgs::FromC(g_channel_args));
   g_xds_client = xds_client.get();
   return xds_client;
 }
 
-GrpcXdsClient::GrpcXdsClient(std::unique_ptr<XdsBootstrap> bootstrap,
+GrpcXdsClient::GrpcXdsClient(std::unique_ptr<GrpcXdsBootstrap> bootstrap,
                              const ChannelArgs& args)
     : XdsClient(
           std::move(bootstrap), MakeOrphanable<GrpcXdsTransportFactory>(args),

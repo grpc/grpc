@@ -51,30 +51,100 @@ class XdsClientTest : public ::testing::Test {
   // fields however they want.
   class FakeXdsBootstrap : public XdsBootstrap {
    public:
-    class Builder {
+    class FakeNode : public Node {
      public:
-      Builder() {
-        server_.server_uri = "default_xds_server";
-        server_.server_features.insert(
-            std::string(XdsServer::kServerFeatureXdsV3));
-        node_.emplace();
-        node_->id = "xds_client_test";
+      const std::string& id() const override { return id_; }
+      const std::string& cluster() const override { return cluster_; }
+      const std::string& locality_region() const override {
+        return locality_region_;
+      }
+      const std::string& locality_zone() const override {
+        return locality_zone_;
+      }
+      const std::string& locality_sub_zone() const override {
+        return locality_sub_zone_;
+      }
+      const Json::Object& metadata() const override { return metadata_; }
+
+      void set_id(std::string id) { id_ = std::move(id); }
+      void set_cluster(std::string cluster) { cluster_ = std::move(cluster); }
+      void set_locality_region(std::string locality_region) {
+        locality_region_ = std::move(locality_region);
+      }
+      void set_locality_zone(std::string locality_zone) {
+        locality_zone_ = std::move(locality_zone);
+      }
+      void set_locality_sub_zone(std::string locality_sub_zone) {
+        locality_sub_zone_ = std::move(locality_sub_zone);
+      }
+      void set_metadata(Json::Object metadata) {
+        metadata_ = std::move(metadata);
       }
 
-      Builder& set_server(XdsServer server) {
+     private:
+      std::string id_ = "xds_client_test";
+      std::string cluster_;
+      std::string locality_region_;
+      std::string locality_zone_;
+      std::string locality_sub_zone_;
+      Json::Object metadata_;
+    };
+
+    class FakeXdsServer : public XdsServer {
+     public:
+      const std::string& server_uri() const override { return server_uri_; }
+      bool ShouldUseV3() const override { return use_v3_; }
+      bool IgnoreResourceDeletion() const override {
+        return ignore_resource_deletion_;
+      }
+      bool operator==(const XdsServer& other) const override {
+        const auto& o = static_cast<const FakeXdsServer&>(other);
+        return server_uri_ == o.server_uri_ && use_v3_ == o.use_v3_ &&
+               ignore_resource_deletion_ == o.ignore_resource_deletion_;
+      }
+
+      void set_server_uri(std::string server_uri) {
+        server_uri_ = std::move(server_uri);
+      }
+      void set_use_v3(bool use_v3) { use_v3_ = use_v3; }
+      void set_ignore_resource_deletion(bool ignore_resource_deletion) {
+        ignore_resource_deletion_ = ignore_resource_deletion;
+      }
+
+     private:
+      std::string server_uri_ = "default_xds_server";
+      bool use_v3_ = true;
+      bool ignore_resource_deletion_ = false;
+    };
+
+    class FakeAuthority : public Authority {
+     public:
+      const XdsServer* server() const override {
+        return server_.has_value() ? &*server_ : nullptr;
+      }
+
+      void set_server(absl::optional<FakeXdsServer> server) {
         server_ = std::move(server);
-        return *this;
       }
+
+     private:
+      absl::optional<FakeXdsServer> server_;
+    };
+
+    class Builder {
+     public:
+      Builder() { node_.emplace(); }
+
       Builder& set_use_v2() {
-        server_.server_features.erase(
-            std::string(XdsServer::kServerFeatureXdsV3));
+        server_.set_use_v3(false);
         return *this;
       }
-      Builder& set_node(absl::optional<Node> node) {
-        node_ = std::move(node);
+      Builder& set_node_id(std::string id) {
+        if (!node_.has_value()) node_.emplace();
+        node_->set_id(std::move(id));
         return *this;
       }
-      Builder& AddAuthority(std::string name, Authority authority) {
+      Builder& AddAuthority(std::string name, FakeAuthority authority) {
         authorities_[std::move(name)] = std::move(authority);
         return *this;
       }
@@ -87,23 +157,39 @@ class XdsClientTest : public ::testing::Test {
       }
 
      private:
-      XdsServer server_;
-      absl::optional<Node> node_;
-      std::map<std::string, Authority> authorities_;
+      FakeXdsServer server_;
+      absl::optional<FakeNode> node_;
+      std::map<std::string, FakeAuthority> authorities_;
     };
 
     std::string ToString() const override { return "<fake>"; }
 
     const XdsServer& server() const override { return server_; }
-    const Node* node() const override { return &node_.value(); }
-    const std::map<std::string, Authority>& authorities() const override {
-      return authorities_;
+    const Node* node() const override {
+      return node_.has_value() ? &*node_ : nullptr;
+    }
+    const Authority* LookupAuthority(const std::string& name) const override {
+      auto it = authorities_.find(name);
+      if (it == authorities_.end()) return nullptr;
+      return &it->second;
+    }
+    const XdsServer* FindXdsServer(const XdsServer& server) const override {
+      const auto& fake_server = static_cast<const FakeXdsServer&>(server);
+      if (fake_server == server_) return &server_;
+      for (const auto& p : authorities_) {
+        const auto* authority_server =
+            static_cast<const FakeXdsServer*>(p.second.server());
+        if (authority_server != nullptr && *authority_server == fake_server) {
+          return authority_server;
+        }
+      }
+      return nullptr;
     }
 
    private:
-    XdsServer server_;
-    absl::optional<Node> node_;
-    std::map<std::string, Authority> authorities_;
+    FakeXdsServer server_;
+    absl::optional<FakeNode> node_;
+    std::map<std::string, FakeAuthority> authorities_;
   };
 
   // A template for a test xDS resource type with an associated watcher impl.
@@ -232,30 +318,32 @@ class XdsClientTest : public ::testing::Test {
     absl::string_view v2_type_url() const override {
       return ResourceStruct::TypeUrlV2();
     }
-    absl::StatusOr<XdsResourceType::DecodeResult> Decode(
+    XdsResourceType::DecodeResult Decode(
         const XdsResourceType::DecodeContext& /*context*/,
         absl::string_view serialized_resource, bool /*is_v2*/) const override {
       auto json = Json::Parse(serialized_resource);
-      if (!json.ok()) return json.status();
-      absl::StatusOr<ResourceStruct> foo = LoadFromJson<ResourceStruct>(*json);
       XdsResourceType::DecodeResult result;
-      if (!foo.ok()) {
-        auto it = json->object_value().find("name");
-        if (it == json->object_value().end()) {
-          return absl::InvalidArgumentError(
-              "cannot determine name for invalid resource");
-        }
-        result.name = it->second.string_value();
-        result.resource = foo.status();
+      if (!json.ok()) {
+        result.resource = json.status();
       } else {
-        result.name = foo->name;
-        auto resource = absl::make_unique<typename XdsResourceTypeImpl<
-            XdsTestResourceType<ResourceStruct>,
-            ResourceStruct>::ResourceDataSubclass>();
-        resource->resource = std::move(*foo);
-        result.resource = std::move(resource);
+        absl::StatusOr<ResourceStruct> foo =
+            LoadFromJson<ResourceStruct>(*json);
+        if (!foo.ok()) {
+          auto it = json->object_value().find("name");
+          if (it != json->object_value().end()) {
+            result.name = it->second.string_value();
+          }
+          result.resource = foo.status();
+        } else {
+          result.name = foo->name;
+          auto resource = absl::make_unique<typename XdsResourceTypeImpl<
+              XdsTestResourceType<ResourceStruct>,
+              ResourceStruct>::ResourceDataSubclass>();
+          resource->resource = std::move(*foo);
+          result.resource = std::move(resource);
+        }
       }
-      return std::move(result);
+      return result;
     }
     void InitUpbSymtab(upb_DefPool* /*symtab*/) const override {}
 
@@ -443,9 +531,18 @@ class XdsClientTest : public ::testing::Test {
   RefCountedPtr<FakeXdsTransportFactory::FakeStreamingCall> WaitForAdsStream(
       const XdsBootstrap::XdsServer& server,
       absl::Duration timeout = absl::Seconds(5)) {
+    const auto* xds_server = xds_client_->bootstrap().FindXdsServer(server);
+    GPR_ASSERT(xds_server != nullptr);
     return transport_factory_->WaitForStream(
-        server, FakeXdsTransportFactory::kAdsMethod,
+        *xds_server, FakeXdsTransportFactory::kAdsMethod,
         timeout * grpc_test_slowdown_factor());
+  }
+
+  void TriggerConnectionFailure(const XdsBootstrap::XdsServer& server,
+                                absl::Status status) {
+    const auto* xds_server = xds_client_->bootstrap().FindXdsServer(server);
+    GPR_ASSERT(xds_server != nullptr);
+    transport_factory_->TriggerConnectionFailure(*xds_server, status);
   }
 
   RefCountedPtr<FakeXdsTransportFactory::FakeStreamingCall> WaitForAdsStream(
@@ -503,22 +600,21 @@ class XdsClientTest : public ::testing::Test {
                         bool check_build_version = false,
                         SourceLocation location = SourceLocation()) {
     // These fields come from the bootstrap config.
-    EXPECT_EQ(request.node().id(), xds_client_->bootstrap().node()->id)
+    EXPECT_EQ(request.node().id(), xds_client_->bootstrap().node()->id())
         << location.file() << ":" << location.line();
     EXPECT_EQ(request.node().cluster(),
-              xds_client_->bootstrap().node()->cluster)
+              xds_client_->bootstrap().node()->cluster())
         << location.file() << ":" << location.line();
     EXPECT_EQ(request.node().locality().region(),
-              xds_client_->bootstrap().node()->locality_region)
+              xds_client_->bootstrap().node()->locality_region())
         << location.file() << ":" << location.line();
     EXPECT_EQ(request.node().locality().zone(),
-              xds_client_->bootstrap().node()->locality_zone)
+              xds_client_->bootstrap().node()->locality_zone())
         << location.file() << ":" << location.line();
     EXPECT_EQ(request.node().locality().sub_zone(),
-              xds_client_->bootstrap().node()->locality_sub_zone)
+              xds_client_->bootstrap().node()->locality_sub_zone())
         << location.file() << ":" << location.line();
-    if (xds_client_->bootstrap().node()->metadata.type() ==
-        Json::Type::JSON_NULL) {
+    if (xds_client_->bootstrap().node()->metadata().empty()) {
       EXPECT_FALSE(request.node().has_metadata())
           << location.file() << ":" << location.line();
     } else {
@@ -532,9 +628,10 @@ class XdsClientTest : public ::testing::Test {
       ASSERT_TRUE(metadata_json.ok())
           << metadata_json.status() << " on " << location.file() << ":"
           << location.line();
-      EXPECT_EQ(*metadata_json, xds_client_->bootstrap().node()->metadata)
+      EXPECT_EQ(*metadata_json, xds_client_->bootstrap().node()->metadata())
           << location.file() << ":" << location.line()
-          << ":\nexpected: " << xds_client_->bootstrap().node()->metadata.Dump()
+          << ":\nexpected: "
+          << Json{xds_client_->bootstrap().node()->metadata()}.Dump()
           << "\nactual: " << metadata_json->Dump();
     }
     // These are hard-coded by XdsClient.
@@ -1552,9 +1649,8 @@ TEST_F(XdsClientTest, ConnectionFails) {
                /*resource_names=*/{"foo1"});
   CheckRequestNode(*request);  // Should be present on the first request.
   // Transport reports connection failure.
-  transport_factory_->TriggerConnectionFailure(
-      xds_client_->bootstrap().server(),
-      absl::UnavailableError("connection failed"));
+  TriggerConnectionFailure(xds_client_->bootstrap().server(),
+                           absl::UnavailableError("connection failed"));
   // XdsClient should report an error to the watcher.
   auto error = watcher->WaitForNextError();
   ASSERT_TRUE(error.has_value());
@@ -1804,11 +1900,10 @@ TEST_F(XdsClientTest, Federation) {
   constexpr char kAuthority[] = "xds.example.com";
   const std::string kXdstpResourceName = absl::StrCat(
       "xdstp://", kAuthority, "/", XdsFooResource::TypeUrl(), "/foo2");
-  XdsBootstrap::Authority authority;
-  authority.xds_servers.emplace_back();
-  authority.xds_servers.back().server_uri = "other_xds_server";
-  authority.xds_servers.back().server_features.insert(
-      std::string(XdsBootstrap::XdsServer::kServerFeatureXdsV3));
+  FakeXdsBootstrap::FakeXdsServer authority_server;
+  authority_server.set_server_uri("other_xds_server");
+  FakeXdsBootstrap::FakeAuthority authority;
+  authority.set_server(authority_server);
   InitXdsClient(
       FakeXdsBootstrap::Builder().AddAuthority(kAuthority, authority));
   // Start a watch for "foo1".
@@ -1850,7 +1945,7 @@ TEST_F(XdsClientTest, Federation) {
   // Watcher should initially not see any resource reported.
   EXPECT_FALSE(watcher2->HasEvent());
   // XdsClient will create a new stream to the server for this authority.
-  auto stream2 = WaitForAdsStream(authority.xds_servers[0]);
+  auto stream2 = WaitForAdsStream(authority_server);
   ASSERT_TRUE(stream2 != nullptr);
   // XdsClient should have sent a subscription request on the ADS stream.
   // Note that version and nonce here do NOT use the values for Foo,
@@ -1909,7 +2004,7 @@ TEST_F(XdsClientTest, FederationAuthorityDefaultsToTopLevelXdsServer) {
   // Authority does not specify any xDS servers, so XdsClient will use
   // the top-level xDS server in the bootstrap config for this authority.
   InitXdsClient(FakeXdsBootstrap::Builder().AddAuthority(
-      kAuthority, XdsBootstrap::Authority()));
+      kAuthority, FakeXdsBootstrap::FakeAuthority()));
   // Start a watch for "foo1".
   auto watcher = StartFooWatch("foo1");
   // Watcher should initially not see any resource reported.
@@ -2088,11 +2183,10 @@ TEST_F(XdsClientTest, FederationChannelFailureReportedToWatchers) {
   constexpr char kAuthority[] = "xds.example.com";
   const std::string kXdstpResourceName = absl::StrCat(
       "xdstp://", kAuthority, "/", XdsFooResource::TypeUrl(), "/foo2");
-  XdsBootstrap::Authority authority;
-  authority.xds_servers.emplace_back();
-  authority.xds_servers.back().server_uri = "other_xds_server";
-  authority.xds_servers.back().server_features.insert(
-      std::string(XdsBootstrap::XdsServer::kServerFeatureXdsV3));
+  FakeXdsBootstrap::FakeXdsServer authority_server;
+  authority_server.set_server_uri("other_xds_server");
+  FakeXdsBootstrap::FakeAuthority authority;
+  authority.set_server(authority_server);
   InitXdsClient(
       FakeXdsBootstrap::Builder().AddAuthority(kAuthority, authority));
   // Start a watch for "foo1".
@@ -2134,7 +2228,7 @@ TEST_F(XdsClientTest, FederationChannelFailureReportedToWatchers) {
   // Watcher should initially not see any resource reported.
   EXPECT_FALSE(watcher2->HasEvent());
   // XdsClient will create a new stream to the server for this authority.
-  auto stream2 = WaitForAdsStream(authority.xds_servers[0]);
+  auto stream2 = WaitForAdsStream(authority_server);
   ASSERT_TRUE(stream2 != nullptr);
   // XdsClient should have sent a subscription request on the ADS stream.
   // Note that version and nonce here do NOT use the values for Foo,
@@ -2166,8 +2260,8 @@ TEST_F(XdsClientTest, FederationChannelFailureReportedToWatchers) {
                /*error_detail=*/absl::OkStatus(),
                /*resource_names=*/{kXdstpResourceName});
   // Now cause a channel failure on the stream to the authority's xDS server.
-  transport_factory_->TriggerConnectionFailure(
-      authority.xds_servers[0], absl::UnavailableError("connection failed"));
+  TriggerConnectionFailure(authority_server,
+                           absl::UnavailableError("connection failed"));
   // The watcher for the xdstp resource name should see the error.
   auto error = watcher2->WaitForNextError();
   ASSERT_TRUE(error.has_value());

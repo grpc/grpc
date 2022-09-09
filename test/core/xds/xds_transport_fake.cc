@@ -199,7 +199,7 @@ FakeXdsTransportFactory::Create(
   auto transport =
       MakeOrphanable<FakeXdsTransport>(std::move(on_connectivity_failure));
   MutexLock lock(&mu_);
-  auto& entry = transport_map_[server];
+  auto& entry = transport_map_[&server];
   GPR_ASSERT(entry == nullptr);
   entry = transport->Ref();
   return transport;
@@ -222,7 +222,7 @@ FakeXdsTransportFactory::WaitForStream(const XdsBootstrap::XdsServer& server,
 RefCountedPtr<FakeXdsTransportFactory::FakeXdsTransport>
 FakeXdsTransportFactory::GetTransport(const XdsBootstrap::XdsServer& server) {
   MutexLock lock(&mu_);
-  RefCountedPtr<FakeXdsTransport> transport = transport_map_[server];
+  RefCountedPtr<FakeXdsTransport> transport = transport_map_[&server];
   GPR_ASSERT(transport != nullptr);
   return transport;
 }

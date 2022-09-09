@@ -27,7 +27,7 @@
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
 
-#include "src/core/ext/xds/xds_bootstrap.h"
+#include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_transport.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -171,7 +171,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
       const XdsBootstrap::XdsServer& server);
 
   Mutex mu_;
-  std::map<const XdsBootstrap::XdsServer, RefCountedPtr<FakeXdsTransport>>
+  std::map<const XdsBootstrap::XdsServer*, RefCountedPtr<FakeXdsTransport>>
       transport_map_ ABSL_GUARDED_BY(&mu_);
 };
 

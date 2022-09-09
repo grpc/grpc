@@ -29,19 +29,16 @@ TEST(ForkTest, Init) {
   // Default fork support (disabled)
   grpc_core::Fork::GlobalInit();
   ASSERT_FALSE(grpc_core::Fork::Enabled());
-  grpc_core::Fork::GlobalShutdown();
 
   // Explicitly disabled fork support
   grpc_core::Fork::Enable(false);
   grpc_core::Fork::GlobalInit();
   ASSERT_FALSE(grpc_core::Fork::Enabled());
-  grpc_core::Fork::GlobalShutdown();
 
   // Explicitly enabled fork support
   grpc_core::Fork::Enable(true);
   grpc_core::Fork::GlobalInit();
   ASSERT_TRUE(grpc_core::Fork::Enabled());
-  grpc_core::Fork::GlobalShutdown();
 }
 
 // This spawns CONCURRENT_TEST_THREADS that last up to
@@ -63,7 +60,6 @@ TEST(ForkTest, ThdCount) {
   grpc_core::Fork::Enable(true);
   grpc_core::Fork::GlobalInit();
   grpc_core::Fork::AwaitThreads();
-  grpc_core::Fork::GlobalShutdown();
 
   grpc_core::Fork::Enable(true);
   grpc_core::Fork::GlobalInit();
@@ -86,7 +82,6 @@ TEST(ForkTest, ThdCount) {
     thd.Join();
   }
   ASSERT_TRUE(gpr_time_similar(end_time, est_end_time, tolerance));
-  grpc_core::Fork::GlobalShutdown();
 }
 
 static void exec_ctx_thread(void* arg) {
@@ -128,7 +123,6 @@ TEST(ForkTest, ExecCount) {
   ASSERT_FALSE(exec_ctx_created);
   grpc_core::Fork::AllowExecCtx();
   thd.Join();  // This ensure that the call got un-blocked
-  grpc_core::Fork::GlobalShutdown();
 }
 
 int main(int argc, char** argv) {
