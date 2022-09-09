@@ -874,11 +874,8 @@ grpc_cc_library(
     ],
     language = "c++",
     standalone = True,
-    tags = ["nofixdeps"],
     visibility = ["@grpc:public"],
-    deps = [
-        "grpc++",
-    ],
+    deps = ["grpc++"],
 )
 
 grpc_cc_library(
