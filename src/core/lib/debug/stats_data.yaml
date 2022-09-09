@@ -30,10 +30,6 @@
   doc: Number of client subchannels created
 - counter: server_channels_created
   doc: Number of server channels created
-# stats system
-- counter: histogram_slow_lookups
-  doc: Number of times histogram increments went through the slow
-       (binary search) path
 # tcp
 - counter: syscall_write
   doc: Number of write syscalls (or equivalent - eg sendmsg) made by this process
@@ -47,10 +43,10 @@
   max: 1024
   buckets: 64
   doc: Number of byte segments offered to each syscall_write
-- histogram: tcp_read_allocation
-  max: 16777216
-  buckets: 64
-  doc: Number of bytes allocated in each slice by tcp reads
+- counter: tcp_read_alloc_8k
+  doc: Number of 8k allocations by the TCP subsystem for reading
+- counter: tcp_read_alloc_64k
+  doc: Number of 64k allocations by the TCP subsystem for reading
 - histogram: tcp_read_size
   max: 16777216
   buckets: 64
@@ -78,3 +74,10 @@
   doc: Number of times sending was completely stalled by the transport flow control window
 - counter: http2_stream_stalls
   doc: Number of times sending was completely stalled by the stream flow control window
+# completion queues
+- counter: cq_pluck_creates
+  doc: Number of completion queues created for cq_pluck (indicates sync api usage)
+- counter: cq_next_creates
+  doc: Number of completion queues created for cq_next (indicates cq async api usage)
+- counter: cq_callback_creates
+  doc: Number of completion queues created for cq_callback (indicates callback api usage)

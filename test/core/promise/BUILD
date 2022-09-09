@@ -82,12 +82,16 @@ grpc_cc_test(
     srcs = ["arena_promise_test.cc"],
     external_deps = ["gtest"],
     language = "c++",
+    tags = [
+        "resource_quota_test",
+    ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
         ":test_context",
         "//:arena_promise",
         "//:resource_quota",
+        "//test/core/util:grpc_test_util_unsecure",
     ],
 )
 

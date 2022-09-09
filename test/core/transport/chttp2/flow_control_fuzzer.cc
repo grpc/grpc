@@ -32,7 +32,6 @@
 #include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
-#include "absl/utility/utility.h"
 
 #include <grpc/event_engine/memory_request.h>
 #include <grpc/grpc.h>
@@ -302,7 +301,7 @@ void FlowControlFuzzer::Perform(const flow_control_fuzzer::Action& action) {
         queued_initial_window_size_.has_value()) {
       sending_initial_window_size_ = true;
       send.initial_window_size =
-          absl::exchange(queued_initial_window_size_, absl::nullopt);
+          std::exchange(queued_initial_window_size_, absl::nullopt);
     }
     while (!streams_to_update_.empty()) {
       auto* stream = GetStream(streams_to_update_.front());
@@ -342,7 +341,6 @@ void FlowControlFuzzer::PerformAction(FlowControlAction action,
                [this, stream]() { streams_to_update_.push(stream->id); });
   with_urgency(action.send_transport_update(), []() {});
   with_urgency(action.send_initial_window_update(), [this, &action]() {
-    GPR_ASSERT(action.initial_window_size() >= chttp2::kMinInitialWindowSize);
     GPR_ASSERT(action.initial_window_size() <= chttp2::kMaxInitialWindowSize);
     queued_initial_window_size_ = action.initial_window_size();
   });

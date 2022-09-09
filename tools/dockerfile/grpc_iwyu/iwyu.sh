@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -ex
+set -x
 
 cd ${IWYU_ROOT}
 
@@ -104,3 +104,11 @@ ${IWYU_ROOT}/iwyu/fix_includes.py \
   --nosafe_headers                \
   --ignore_re='^(include/.*|src/core/lib/security/credentials/tls/grpc_tls_credentials_options\.h)' \
   < iwyu.out
+
+if [ $? -ne 0 ] 
+then
+    echo "Iwyu edited some files. Here is the diff of files edited by iwyu:"
+    git --no-pager diff
+    # Exit with a non zero error code to ensure sanity checks fail accordingly.
+    exit 1
+fi

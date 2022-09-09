@@ -98,14 +98,6 @@ LDXX_asan-trace-cmp = clang++
 CPPFLAGS_asan-trace-cmp = -O0 -fsanitize-coverage=edge,trace-pc-guard -fsanitize-coverage=trace-cmp -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
 LDFLAGS_asan-trace-cmp = -fsanitize=address
 
-VALID_CONFIG_basicprof = 1
-CC_basicprof = $(DEFAULT_CC)
-CXX_basicprof = $(DEFAULT_CXX)
-LD_basicprof = $(DEFAULT_CC)
-LDXX_basicprof = $(DEFAULT_CXX)
-CPPFLAGS_basicprof = -O2 -DGRPC_BASIC_PROFILER -DGRPC_TIMERS_RDTSC
-DEFINES_basicprof = NDEBUG
-
 VALID_CONFIG_c++-compat = 1
 CC_c++-compat = $(DEFAULT_CC)
 CXX_c++-compat = $(DEFAULT_CXX)
@@ -114,23 +106,6 @@ LDXX_c++-compat = $(DEFAULT_CXX)
 CFLAGS_c++-compat = -Wc++-compat
 CPPFLAGS_c++-compat = -O0
 DEFINES_c++-compat = _DEBUG DEBUG
-
-VALID_CONFIG_counters = 1
-CC_counters = $(DEFAULT_CC)
-CXX_counters = $(DEFAULT_CXX)
-LD_counters = $(DEFAULT_CC)
-LDXX_counters = $(DEFAULT_CXX)
-CPPFLAGS_counters = -O2 -DGPR_LOW_LEVEL_COUNTERS
-DEFINES_counters = NDEBUG
-
-VALID_CONFIG_counters_with_memory_counter = 1
-CC_counters_with_memory_counter = $(DEFAULT_CC)
-CXX_counters_with_memory_counter = $(DEFAULT_CXX)
-LD_counters_with_memory_counter = $(DEFAULT_CC)
-LDXX_counters_with_memory_counter = $(DEFAULT_CXX)
-CPPFLAGS_counters_with_memory_counter = -O2 -DGPR_LOW_LEVEL_COUNTERS -DGPR_WRAP_MEMORY_COUNTER
-LDFLAGS_counters_with_memory_counter = -Wl,--wrap=malloc -Wl,--wrap=calloc -Wl,--wrap=realloc -Wl,--wrap=free
-DEFINES_counters_with_memory_counter = NDEBUG
 
 VALID_CONFIG_dbg = 1
 CC_dbg = $(DEFAULT_CC)
@@ -185,15 +160,6 @@ CPPFLAGS_msan = -O0 -stdlib=libc++ -fsanitize-coverage=edge,trace-pc-guard -fsan
 LDFLAGS_msan = -stdlib=libc++ -fsanitize=memory -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -fPIE -pie $(if $(JENKINS_BUILD),-Wl$(comma)-Ttext-segment=0x7e0000000000,)
 DEFINES_msan = NDEBUG
 
-VALID_CONFIG_mutrace = 1
-CC_mutrace = $(DEFAULT_CC)
-CXX_mutrace = $(DEFAULT_CXX)
-LD_mutrace = $(DEFAULT_CC)
-LDXX_mutrace = $(DEFAULT_CXX)
-CPPFLAGS_mutrace = -O3 -fno-omit-frame-pointer
-LDFLAGS_mutrace = -rdynamic
-DEFINES_mutrace = NDEBUG
-
 VALID_CONFIG_noexcept = 1
 CC_noexcept = $(DEFAULT_CC)
 CXX_noexcept = $(DEFAULT_CXX)
@@ -210,14 +176,6 @@ LD_opt = $(DEFAULT_CC)
 LDXX_opt = $(DEFAULT_CXX)
 CPPFLAGS_opt = -O2 -Wframe-larger-than=16384
 DEFINES_opt = NDEBUG
-
-VALID_CONFIG_stapprof = 1
-CC_stapprof = $(DEFAULT_CC)
-CXX_stapprof = $(DEFAULT_CXX)
-LD_stapprof = $(DEFAULT_CC)
-LDXX_stapprof = $(DEFAULT_CXX)
-CPPFLAGS_stapprof = -O2 -DGRPC_STAP_PROFILER
-DEFINES_stapprof = NDEBUG
 
 VALID_CONFIG_tsan = 1
 REQUIRE_CUSTOM_LIBRARIES_tsan = 1
@@ -780,18 +738,6 @@ cache.mk::
 	$(E) "[MAKE]    Generating $@"
 	$(Q) echo "$(CACHE_MK)" | tr , '\n' >$@
 
-ifeq ($(CONFIG),stapprof)
-src/core/profiling/stap_timers.c: $(GENDIR)/src/core/profiling/stap_probes.h
-ifeq ($(HAS_SYSTEMTAP),true)
-$(GENDIR)/src/core/profiling/stap_probes.h: src/core/profiling/stap_probes.d
-	$(E) "[DTRACE]  Compiling $<"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(DTRACE) -C -h -s $< -o $@
-else
-$(GENDIR)/src/core/profiling/stap_probes.h: systemtap_dep_error stop
-endif
-endif
-
 $(OBJDIR)/$(CONFIG)/%.o : %.c
 	$(E) "[C]       Compiling $<"
 	$(Q) mkdir -p `dirname $@`
@@ -909,7 +855,6 @@ LIBGPR_SRC = \
     src/core/lib/gpr/log_linux.cc \
     src/core/lib/gpr/log_posix.cc \
     src/core/lib/gpr/log_windows.cc \
-    src/core/lib/gpr/murmur_hash.cc \
     src/core/lib/gpr/string.cc \
     src/core/lib/gpr/string_posix.cc \
     src/core/lib/gpr/string_util_windows.cc \
@@ -933,11 +878,10 @@ LIBGPR_SRC = \
     src/core/lib/gprpp/mpscq.cc \
     src/core/lib/gprpp/stat_posix.cc \
     src/core/lib/gprpp/stat_windows.cc \
+    src/core/lib/gprpp/tchar.cc \
     src/core/lib/gprpp/thd_posix.cc \
     src/core/lib/gprpp/thd_windows.cc \
     src/core/lib/gprpp/time_util.cc \
-    src/core/lib/profiling/basic_timers.cc \
-    src/core/lib/profiling/stap_timers.cc \
 
 PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/atm.h \
@@ -1405,7 +1349,6 @@ LIBGRPC_SRC = \
     src/core/ext/upbdefs-generated/xds/type/matcher/v3/regex.upbdefs.c \
     src/core/ext/upbdefs-generated/xds/type/matcher/v3/string.upbdefs.c \
     src/core/ext/upbdefs-generated/xds/type/v3/typed_struct.upbdefs.c \
-    src/core/ext/xds/certificate_provider_registry.cc \
     src/core/ext/xds/certificate_provider_store.cc \
     src/core/ext/xds/file_watcher_certificate_provider_factory.cc \
     src/core/ext/xds/xds_api.cc \
@@ -1465,11 +1408,15 @@ LIBGRPC_SRC = \
     src/core/lib/event_engine/slice.cc \
     src/core/lib/event_engine/slice_buffer.cc \
     src/core/lib/event_engine/thread_pool.cc \
+    src/core/lib/event_engine/time_util.cc \
     src/core/lib/event_engine/trace.cc \
     src/core/lib/event_engine/utils.cc \
     src/core/lib/event_engine/windows/iocp.cc \
     src/core/lib/event_engine/windows/win_socket.cc \
     src/core/lib/event_engine/windows/windows_engine.cc \
+    src/core/lib/experiments/config.cc \
+    src/core/lib/experiments/experiments.cc \
+    src/core/lib/gpr/murmur_hash.cc \
     src/core/lib/gprpp/status_helper.cc \
     src/core/lib/gprpp/time.cc \
     src/core/lib/gprpp/time_averaged_stats.cc \
@@ -1575,6 +1522,7 @@ LIBGRPC_SRC = \
     src/core/lib/security/authorization/grpc_server_authz_filter.cc \
     src/core/lib/security/authorization/matchers.cc \
     src/core/lib/security/authorization/rbac_policy.cc \
+    src/core/lib/security/certificate_provider/certificate_provider_registry.cc \
     src/core/lib/security/context/security_context.cc \
     src/core/lib/security/credentials/alts/alts_credentials.cc \
     src/core/lib/security/credentials/alts/check_gcp_environment.cc \
@@ -1727,11 +1675,19 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
     include/grpc/impl/codegen/atm_gcc_sync.h \
     include/grpc/impl/codegen/atm_windows.h \
+    include/grpc/impl/codegen/byte_buffer.h \
+    include/grpc/impl/codegen/byte_buffer_reader.h \
+    include/grpc/impl/codegen/compression_types.h \
+    include/grpc/impl/codegen/connectivity_state.h \
     include/grpc/impl/codegen/fork.h \
     include/grpc/impl/codegen/gpr_slice.h \
     include/grpc/impl/codegen/gpr_types.h \
+    include/grpc/impl/codegen/grpc_types.h \
     include/grpc/impl/codegen/log.h \
     include/grpc/impl/codegen/port_platform.h \
+    include/grpc/impl/codegen/propagation_bits.h \
+    include/grpc/impl/codegen/slice.h \
+    include/grpc/impl/codegen/status.h \
     include/grpc/impl/codegen/sync.h \
     include/grpc/impl/codegen/sync_abseil.h \
     include/grpc/impl/codegen/sync_custom.h \
@@ -1743,7 +1699,6 @@ PUBLIC_HEADERS_C += \
     include/grpc/slice_buffer.h \
     include/grpc/status.h \
     include/grpc/support/alloc.h \
-    include/grpc/support/atm.h \
     include/grpc/support/atm_gcc_atomic.h \
     include/grpc/support/atm_gcc_sync.h \
     include/grpc/support/atm_windows.h \
@@ -1955,11 +1910,15 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/event_engine/slice.cc \
     src/core/lib/event_engine/slice_buffer.cc \
     src/core/lib/event_engine/thread_pool.cc \
+    src/core/lib/event_engine/time_util.cc \
     src/core/lib/event_engine/trace.cc \
     src/core/lib/event_engine/utils.cc \
     src/core/lib/event_engine/windows/iocp.cc \
     src/core/lib/event_engine/windows/win_socket.cc \
     src/core/lib/event_engine/windows/windows_engine.cc \
+    src/core/lib/experiments/config.cc \
+    src/core/lib/experiments/experiments.cc \
+    src/core/lib/gpr/murmur_hash.cc \
     src/core/lib/gprpp/status_helper.cc \
     src/core/lib/gprpp/time.cc \
     src/core/lib/gprpp/time_averaged_stats.cc \
@@ -2153,11 +2112,19 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
     include/grpc/impl/codegen/atm_gcc_sync.h \
     include/grpc/impl/codegen/atm_windows.h \
+    include/grpc/impl/codegen/byte_buffer.h \
+    include/grpc/impl/codegen/byte_buffer_reader.h \
+    include/grpc/impl/codegen/compression_types.h \
+    include/grpc/impl/codegen/connectivity_state.h \
     include/grpc/impl/codegen/fork.h \
     include/grpc/impl/codegen/gpr_slice.h \
     include/grpc/impl/codegen/gpr_types.h \
+    include/grpc/impl/codegen/grpc_types.h \
     include/grpc/impl/codegen/log.h \
     include/grpc/impl/codegen/port_platform.h \
+    include/grpc/impl/codegen/propagation_bits.h \
+    include/grpc/impl/codegen/slice.h \
+    include/grpc/impl/codegen/status.h \
     include/grpc/impl/codegen/sync.h \
     include/grpc/impl/codegen/sync_abseil.h \
     include/grpc/impl/codegen/sync_custom.h \
@@ -2169,7 +2136,6 @@ PUBLIC_HEADERS_C += \
     include/grpc/slice_buffer.h \
     include/grpc/status.h \
     include/grpc/support/alloc.h \
-    include/grpc/support/atm.h \
     include/grpc/support/atm_gcc_atomic.h \
     include/grpc/support/atm_gcc_sync.h \
     include/grpc/support/atm_windows.h \
@@ -3171,7 +3137,6 @@ src/core/ext/upbdefs-generated/xds/type/matcher/v3/matcher.upbdefs.c: $(OPENSSL_
 src/core/ext/upbdefs-generated/xds/type/matcher/v3/regex.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/xds/type/matcher/v3/string.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/xds/type/v3/typed_struct.upbdefs.c: $(OPENSSL_DEP)
-src/core/ext/xds/certificate_provider_registry.cc: $(OPENSSL_DEP)
 src/core/ext/xds/certificate_provider_store.cc: $(OPENSSL_DEP)
 src/core/ext/xds/file_watcher_certificate_provider_factory.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_api.cc: $(OPENSSL_DEP)
@@ -3201,6 +3166,7 @@ src/core/lib/matchers/matchers.cc: $(OPENSSL_DEP)
 src/core/lib/security/authorization/grpc_authorization_engine.cc: $(OPENSSL_DEP)
 src/core/lib/security/authorization/matchers.cc: $(OPENSSL_DEP)
 src/core/lib/security/authorization/rbac_policy.cc: $(OPENSSL_DEP)
+src/core/lib/security/certificate_provider/certificate_provider_registry.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/alts/alts_credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/alts/check_gcp_environment.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc: $(OPENSSL_DEP)

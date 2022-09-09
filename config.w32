@@ -389,7 +389,6 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\upbdefs-generated\\xds\\type\\matcher\\v3\\regex.upbdefs.c " +
     "src\\core\\ext\\upbdefs-generated\\xds\\type\\matcher\\v3\\string.upbdefs.c " +
     "src\\core\\ext\\upbdefs-generated\\xds\\type\\v3\\typed_struct.upbdefs.c " +
-    "src\\core\\ext\\xds\\certificate_provider_registry.cc " +
     "src\\core\\ext\\xds\\certificate_provider_store.cc " +
     "src\\core\\ext\\xds\\file_watcher_certificate_provider_factory.cc " +
     "src\\core\\ext\\xds\\xds_api.cc " +
@@ -449,11 +448,14 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\event_engine\\slice.cc " +
     "src\\core\\lib\\event_engine\\slice_buffer.cc " +
     "src\\core\\lib\\event_engine\\thread_pool.cc " +
+    "src\\core\\lib\\event_engine\\time_util.cc " +
     "src\\core\\lib\\event_engine\\trace.cc " +
     "src\\core\\lib\\event_engine\\utils.cc " +
     "src\\core\\lib\\event_engine\\windows\\iocp.cc " +
     "src\\core\\lib\\event_engine\\windows\\win_socket.cc " +
     "src\\core\\lib\\event_engine\\windows\\windows_engine.cc " +
+    "src\\core\\lib\\experiments\\config.cc " +
+    "src\\core\\lib\\experiments\\experiments.cc " +
     "src\\core\\lib\\gpr\\alloc.cc " +
     "src\\core\\lib\\gpr\\atm.cc " +
     "src\\core\\lib\\gpr\\cpu_iphone.cc " +
@@ -493,6 +495,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\gprpp\\stat_posix.cc " +
     "src\\core\\lib\\gprpp\\stat_windows.cc " +
     "src\\core\\lib\\gprpp\\status_helper.cc " +
+    "src\\core\\lib\\gprpp\\tchar.cc " +
     "src\\core\\lib\\gprpp\\thd_posix.cc " +
     "src\\core\\lib\\gprpp\\thd_windows.cc " +
     "src\\core\\lib\\gprpp\\time.cc " +
@@ -582,8 +585,6 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\load_balancing\\lb_policy.cc " +
     "src\\core\\lib\\load_balancing\\lb_policy_registry.cc " +
     "src\\core\\lib\\matchers\\matchers.cc " +
-    "src\\core\\lib\\profiling\\basic_timers.cc " +
-    "src\\core\\lib\\profiling\\stap_timers.cc " +
     "src\\core\\lib\\promise\\activity.cc " +
     "src\\core\\lib\\promise\\sleep.cc " +
     "src\\core\\lib\\resolver\\resolver.cc " +
@@ -602,6 +603,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\security\\authorization\\grpc_server_authz_filter.cc " +
     "src\\core\\lib\\security\\authorization\\matchers.cc " +
     "src\\core\\lib\\security\\authorization\\rbac_policy.cc " +
+    "src\\core\\lib\\security\\certificate_provider\\certificate_provider_registry.cc " +
     "src\\core\\lib\\security\\context\\security_context.cc " +
     "src\\core\\lib\\security\\credentials\\alts\\alts_credentials.cc " +
     "src\\core\\lib\\security\\credentials\\alts\\check_gcp_environment.cc " +
@@ -1455,6 +1457,7 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\event_engine\\executor");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\event_engine\\posix_engine");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\event_engine\\windows");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\experiments");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\gpr");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\gprpp");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\http");
@@ -1462,12 +1465,12 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\json");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\load_balancing");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\matchers");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\profiling");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\promise");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\resolver");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\resource_quota");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\authorization");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\certificate_provider");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\context");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\credentials");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\credentials\\alts");

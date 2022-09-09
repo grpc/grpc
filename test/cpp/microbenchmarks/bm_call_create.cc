@@ -44,7 +44,6 @@
 #include "src/core/lib/channel/connected_channel.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/call_combiner.h"
-#include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/transport_impl.h"
@@ -156,7 +155,6 @@ static void BM_LameChannelCallCreateCpp(benchmark::State& state) {
   grpc::testing::EchoResponse recv_response;
   grpc::Status recv_status;
   for (auto _ : state) {
-    GPR_TIMER_SCOPE("BenchmarkCycle", 0);
     grpc::ClientContext cli_ctx;
     auto reader = stub->AsyncEcho(&cli_ctx, send_request, &cq);
     reader->Finish(&recv_response, &recv_status, tag(0));
@@ -191,7 +189,6 @@ static void BM_LameChannelCallCreateCore(benchmark::State& state) {
   void* rc = grpc_channel_register_call(
       channel, "/grpc.testing.EchoTestService/Echo", nullptr, nullptr);
   for (auto _ : state) {
-    GPR_TIMER_SCOPE("BenchmarkCycle", 0);
     grpc_call* call = grpc_channel_create_registered_call(
         channel, nullptr, GRPC_PROPAGATE_DEFAULTS, cq, rc,
         gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
@@ -265,7 +262,6 @@ static void BM_LameChannelCallCreateCoreSeparateBatch(benchmark::State& state) {
   void* rc = grpc_channel_register_call(
       channel, "/grpc.testing.EchoTestService/Echo", nullptr, nullptr);
   for (auto _ : state) {
-    GPR_TIMER_SCOPE("BenchmarkCycle", 0);
     grpc_call* call = grpc_channel_create_registered_call(
         channel, nullptr, GRPC_PROPAGATE_DEFAULTS, cq, rc,
         gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
@@ -565,7 +561,6 @@ static void BM_IsolatedFilter(benchmark::State& state) {
       grpc_core::Arena::Create(kArenaSize, g_memory_allocator),
       nullptr};
   while (state.KeepRunning()) {
-    GPR_TIMER_SCOPE("BenchmarkCycle", 0);
     GRPC_ERROR_UNREF(
         grpc_call_stack_init(channel_stack, 1, DoNothing, nullptr, &call_args));
     typename TestOp::Op op(&test_op_data, call_stack, call_args.arena);
@@ -751,7 +746,6 @@ static void BM_IsolatedCall_NoOp(benchmark::State& state) {
   void* method_hdl = grpc_channel_register_call(fixture.channel(), "/foo/bar",
                                                 nullptr, nullptr);
   for (auto _ : state) {
-    GPR_TIMER_SCOPE("BenchmarkCycle", 0);
     grpc_call_unref(grpc_channel_create_registered_call(
         fixture.channel(), nullptr, GRPC_PROPAGATE_DEFAULTS, fixture.cq(),
         method_hdl, deadline, nullptr));
@@ -790,7 +784,6 @@ static void BM_IsolatedCall_Unary(benchmark::State& state) {
   ops[5].data.recv_status_on_client.status_details = &status_details;
   ops[5].data.recv_status_on_client.trailing_metadata = &recv_trailing_metadata;
   for (auto _ : state) {
-    GPR_TIMER_SCOPE("BenchmarkCycle", 0);
     grpc_call* call = grpc_channel_create_registered_call(
         fixture.channel(), nullptr, GRPC_PROPAGATE_DEFAULTS, fixture.cq(),
         method_hdl, deadline, nullptr);
@@ -833,7 +826,6 @@ static void BM_IsolatedCall_StreamingSend(benchmark::State& state) {
   ops[0].op = GRPC_OP_SEND_MESSAGE;
   ops[0].data.send_message.send_message = send_message;
   for (auto _ : state) {
-    GPR_TIMER_SCOPE("BenchmarkCycle", 0);
     grpc_call_start_batch(call, ops, 1, tag(2), nullptr);
     grpc_completion_queue_next(fixture.cq(),
                                gpr_inf_future(GPR_CLOCK_MONOTONIC), nullptr);

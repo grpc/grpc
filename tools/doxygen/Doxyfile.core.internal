@@ -1631,9 +1631,6 @@ src/core/ext/upbdefs-generated/xds/type/matcher/v3/string.upbdefs.c \
 src/core/ext/upbdefs-generated/xds/type/matcher/v3/string.upbdefs.h \
 src/core/ext/upbdefs-generated/xds/type/v3/typed_struct.upbdefs.c \
 src/core/ext/upbdefs-generated/xds/type/v3/typed_struct.upbdefs.h \
-src/core/ext/xds/certificate_provider_factory.h \
-src/core/ext/xds/certificate_provider_registry.cc \
-src/core/ext/xds/certificate_provider_registry.h \
 src/core/ext/xds/certificate_provider_store.cc \
 src/core/ext/xds/certificate_provider_store.h \
 src/core/ext/xds/file_watcher_certificate_provider_factory.cc \
@@ -1762,6 +1759,8 @@ src/core/lib/event_engine/slice_buffer.cc \
 src/core/lib/event_engine/socket_notifier.h \
 src/core/lib/event_engine/thread_pool.cc \
 src/core/lib/event_engine/thread_pool.h \
+src/core/lib/event_engine/time_util.cc \
+src/core/lib/event_engine/time_util.h \
 src/core/lib/event_engine/trace.cc \
 src/core/lib/event_engine/trace.h \
 src/core/lib/event_engine/utils.cc \
@@ -1772,6 +1771,10 @@ src/core/lib/event_engine/windows/win_socket.cc \
 src/core/lib/event_engine/windows/win_socket.h \
 src/core/lib/event_engine/windows/windows_engine.cc \
 src/core/lib/event_engine/windows/windows_engine.h \
+src/core/lib/experiments/config.cc \
+src/core/lib/experiments/config.h \
+src/core/lib/experiments/experiments.cc \
+src/core/lib/experiments/experiments.h \
 src/core/lib/gpr/README.md \
 src/core/lib/gpr/alloc.cc \
 src/core/lib/gpr/alloc.h \
@@ -1797,7 +1800,6 @@ src/core/lib/gpr/string.h \
 src/core/lib/gpr/string_posix.cc \
 src/core/lib/gpr/string_util_windows.cc \
 src/core/lib/gpr/string_windows.cc \
-src/core/lib/gpr/string_windows.h \
 src/core/lib/gpr/sync.cc \
 src/core/lib/gpr/sync_abseil.cc \
 src/core/lib/gpr/sync_posix.cc \
@@ -1841,9 +1843,11 @@ src/core/lib/gprpp/mpscq.h \
 src/core/lib/gprpp/no_destruct.h \
 src/core/lib/gprpp/orphanable.h \
 src/core/lib/gprpp/overload.h \
+src/core/lib/gprpp/packed_table.h \
 src/core/lib/gprpp/ref_counted.h \
 src/core/lib/gprpp/ref_counted_ptr.h \
 src/core/lib/gprpp/single_set_ptr.h \
+src/core/lib/gprpp/sorted_pack.h \
 src/core/lib/gprpp/stat.h \
 src/core/lib/gprpp/stat_posix.cc \
 src/core/lib/gprpp/stat_windows.cc \
@@ -1851,6 +1855,8 @@ src/core/lib/gprpp/status_helper.cc \
 src/core/lib/gprpp/status_helper.h \
 src/core/lib/gprpp/sync.h \
 src/core/lib/gprpp/table.h \
+src/core/lib/gprpp/tchar.cc \
+src/core/lib/gprpp/tchar.h \
 src/core/lib/gprpp/thd.h \
 src/core/lib/gprpp/thd_posix.cc \
 src/core/lib/gprpp/thd_windows.cc \
@@ -2021,9 +2027,6 @@ src/core/lib/load_balancing/lb_policy_registry.h \
 src/core/lib/load_balancing/subchannel_interface.h \
 src/core/lib/matchers/matchers.cc \
 src/core/lib/matchers/matchers.h \
-src/core/lib/profiling/basic_timers.cc \
-src/core/lib/profiling/stap_timers.cc \
-src/core/lib/profiling/timers.h \
 src/core/lib/promise/activity.cc \
 src/core/lib/promise/activity.h \
 src/core/lib/promise/arena_promise.h \
@@ -2079,6 +2082,9 @@ src/core/lib/security/authorization/matchers.cc \
 src/core/lib/security/authorization/matchers.h \
 src/core/lib/security/authorization/rbac_policy.cc \
 src/core/lib/security/authorization/rbac_policy.h \
+src/core/lib/security/certificate_provider/certificate_provider_factory.h \
+src/core/lib/security/certificate_provider/certificate_provider_registry.cc \
+src/core/lib/security/certificate_provider/certificate_provider_registry.h \
 src/core/lib/security/context/security_context.cc \
 src/core/lib/security/context/security_context.h \
 src/core/lib/security/credentials/alts/alts_credentials.cc \
