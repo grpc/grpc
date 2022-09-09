@@ -41,7 +41,7 @@ class XdsClusterTest : public ::testing::Test {
   XdsClusterTest()
       : xds_client_(MakeXdsClient()),
         decode_context_{
-            xds_client_.get(), xds_server_,
+            xds_client_.get(), xds_client_->bootstrap().server(),
             &xds_cluster_resource_type_test_trace, upb_def_pool_.ptr(),
             upb_arena_.ptr()} {}
 
@@ -57,19 +57,17 @@ class XdsClusterTest : public ::testing::Test {
         "      ]\n"
         "    }\n"
         "  ]\n"
-        "}",
-        &error);
-    if (!GRPC_ERROR_IS_NONE(error)) {
+        "}");
+    if (!bootstrap.ok()) {
       gpr_log(GPR_ERROR, "Error parsing bootstrap: %s",
-              grpc_error_std_string(error).c_str());
+              bootstrap.status().ToString().c_str());
       GPR_ASSERT(false);
     }
-    return MakeRefCounted<XdsClient>(std::move(bootstrap),
+    return MakeRefCounted<XdsClient>(std::move(*bootstrap),
                                      /*transport_factory=*/nullptr);
   }
 
   RefCountedPtr<XdsClient> xds_client_;
-  XdsBootstrap::XdsServer xds_server_ = {"xds.example.com", "", Json(), {}};
   upb::DefPool upb_def_pool_;
   upb::Arena upb_arena_;
   XdsResourceType::DecodeContext decode_context_;
