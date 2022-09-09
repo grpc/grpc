@@ -79,12 +79,12 @@ TEST(WorkQueueTest, PopBackIsLIFO) {
 
 TEST(WorkQueueTest, OldestEnqueuedTimestampIsSane) {
   WorkQueue<int> queue;
-  ASSERT_EQ(queue.OldestEnqueuedTimestamp(), queue.kInvalidTimestamp);
+  ASSERT_EQ(queue.OldestEnqueuedTimestamp(), grpc_core::Timestamp::InfPast());
   queue.Add(42);
   grpc_core::ExecCtx exec_ctx;
   ASSERT_LE(queue.OldestEnqueuedTimestamp(), exec_ctx.Now());
   queue.PopFront();
-  ASSERT_EQ(queue.OldestEnqueuedTimestamp(), queue.kInvalidTimestamp);
+  ASSERT_EQ(queue.OldestEnqueuedTimestamp(), grpc_core::Timestamp::InfPast());
 }
 
 TEST(WorkQueueTest, OldestEnqueuedTimestampOrderingIsCorrect) {
