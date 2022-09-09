@@ -2817,8 +2817,8 @@ grpc_cc_library(
         "src/core/lib/event_engine/trace.h",
     ],
     deps = [
+        "gpr",
         "gpr_platform",
-        "gpr_public_hdrs",
         "grpc_trace",
     ],
 )
