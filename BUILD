@@ -7284,16 +7284,14 @@ grpc_cc_library(
         "src/cpp/server/orca/call_metric_recorder.cc",
     ],
     external_deps = [
-        "upb_lib",
-        "absl/memory",
         "absl/strings",
         "absl/types:optional",
+        "upb_lib",
     ],
     language = "c++",
     public_hdrs = [
         "include/grpcpp/ext/call_metric_recorder.h",
     ],
-    tags = ["nofixdeps"],
     visibility = ["@grpc:public"],
     deps = [
         "arena",
