@@ -2105,10 +2105,11 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/iomgr/error.h",
     ],
-    tags = ["nofixdeps"],
+    external_deps = ["absl/status"],
     deps = [
         "gpr",
         "grpc_codegen",
+        "grpc_public_hdrs",
         "grpc_trace",
         "slice",
         "slice_refcount",
