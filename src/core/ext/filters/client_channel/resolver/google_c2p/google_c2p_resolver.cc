@@ -414,28 +414,8 @@ void GoogleCloud2ProdResolver::StartXdsResolver() {
 
 class GoogleCloud2ProdResolverFactory : public ResolverFactory {
  public:
-  absl::string_view scheme() const override { return "google-c2p"; }
-
-  bool IsValidUri(const URI& uri) const override {
-    if (GPR_UNLIKELY(!uri.authority().empty())) {
-      gpr_log(GPR_ERROR, "google-c2p URI scheme does not support authorities");
-      return false;
-    }
-    return true;
-  }
-
-  OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override {
-    if (!IsValidUri(args.uri)) return nullptr;
-    return MakeOrphanable<GoogleCloud2ProdResolver>(std::move(args));
-  }
-};
-
-// TODO(apolcyn): remove this class after user code has updated to the
-// stable "google-c2p" URI scheme.
-class ExperimentalGoogleCloud2ProdResolverFactory : public ResolverFactory {
- public:
-  absl::string_view scheme() const override {
-    return "google-c2p-experimental";
+  bool ImplementsScheme(absl::string_view scheme) const override {
+    return scheme == "google-c2p" || scheme == "google-c2p-experimental";
   }
 
   bool IsValidUri(const URI& uri) const override {
@@ -459,8 +439,6 @@ class ExperimentalGoogleCloud2ProdResolverFactory : public ResolverFactory {
 void RegisterCloud2ProdResolver(CoreConfiguration::Builder* builder) {
   builder->resolver_registry()->RegisterResolverFactory(
       absl::make_unique<GoogleCloud2ProdResolverFactory>());
-  builder->resolver_registry()->RegisterResolverFactory(
-      absl::make_unique<ExperimentalGoogleCloud2ProdResolverFactory>());
 }
 
 }  // namespace grpc_core

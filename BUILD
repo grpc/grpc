@@ -1194,6 +1194,7 @@ grpc_cc_library(
     ],
     visibility = ["@grpc:client_channel"],
     deps = [
+        "address_parser_registry",
         "channel_args_preconditioning",
         "channel_creds_registry",
         "channel_init",
@@ -2939,6 +2940,26 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "address_parser_registry",
+    srcs = [
+        "src/core/lib/resolver/address_parser_registry.cc",
+    ],
+    hdrs = [
+        "src/core/lib/resolver/address_parser_registry.h",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+    ],
+    deps = [
+        "gpr",
+        "resolved_address",
+        "uri_parser",
+    ],
+)
+
+grpc_cc_library(
     name = "backoff",
     srcs = [
         "src/core/lib/backoff/backoff.cc",
@@ -3209,6 +3230,7 @@ grpc_cc_library(
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
         "activity",
+        "address_parser_registry",
         "arena",
         "arena_promise",
         "atomic_utils",
@@ -5448,18 +5470,18 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/memory",
+        "absl/status",
         "absl/status:statusor",
         "absl/strings",
     ],
     language = "c++",
     deps = [
+        "address_parser_registry",
         "config",
         "gpr",
         "grpc_base",
         "grpc_resolver",
-        "iomgr_port",
         "orphanable",
-        "resolved_address",
         "server_address",
         "uri_parser",
     ],
@@ -6862,6 +6884,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "address_parser_registry",
         "config",
         "debug_location",
         "gpr",

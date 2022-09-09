@@ -24,6 +24,7 @@
 
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
+#include "src/core/lib/resolver/address_parser_registry.h"
 #include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/security/credentials/channel_creds_registry.h"
 #include "src/core/lib/service_config/service_config_parser.h"
@@ -65,6 +66,10 @@ class CoreConfiguration {
       return &resolver_registry_;
     }
 
+    AddressParserRegistry::Builder* address_parser_registry() {
+      return &address_parser_registry_;
+    }
+
     LoadBalancingPolicyRegistry::Builder* lb_policy_registry() {
       return &lb_policy_registry_;
     }
@@ -78,6 +83,7 @@ class CoreConfiguration {
     ChannelCredsRegistry<>::Builder channel_creds_registry_;
     ServiceConfigParser::Builder service_config_parser_;
     ResolverRegistry::Builder resolver_registry_;
+    AddressParserRegistry::Builder address_parser_registry_;
     LoadBalancingPolicyRegistry::Builder lb_policy_registry_;
 
     Builder();
@@ -183,6 +189,10 @@ class CoreConfiguration {
     return resolver_registry_;
   }
 
+  const AddressParserRegistry& address_parser_registry() const {
+    return address_parser_registry_;
+  }
+
   const LoadBalancingPolicyRegistry& lb_policy_registry() const {
     return lb_policy_registry_;
   }
@@ -211,6 +221,7 @@ class CoreConfiguration {
   ChannelCredsRegistry<> channel_creds_registry_;
   ServiceConfigParser service_config_parser_;
   ResolverRegistry resolver_registry_;
+  AddressParserRegistry address_parser_registry_;
   LoadBalancingPolicyRegistry lb_policy_registry_;
 };
 

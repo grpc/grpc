@@ -36,8 +36,6 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
-#include "absl/strings/string_view.h"
-#include "absl/strings/strip.h"
 #include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
@@ -69,7 +67,7 @@
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/iomgr/timer.h"
-#include "src/core/lib/iomgr/unix_sockets_posix.h"
+#include "src/core/lib/resolver/address_parser_registry.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/security/credentials/credentials.h"
@@ -78,7 +76,6 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/server.h"
-#include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/handshaker.h"
 #include "src/core/lib/transport/handshaker_registry.h"
 #include "src/core/lib/transport/transport.h"
@@ -93,9 +90,6 @@
 
 namespace grpc_core {
 namespace {
-
-const char kUnixUriPrefix[] = "unix:";
-const char kUnixAbstractUriPrefix[] = "unix-abstract:";
 
 class Chttp2ServerListener : public Server::ListenerInterface {
  public:
@@ -920,28 +914,27 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
                                                     args_modifier);
   }
   *port_num = -1;
-  absl::StatusOr<std::vector<grpc_resolved_address>> resolved_or;
   std::vector<grpc_error_handle> error_list;
   std::string parsed_addr = URI::PercentDecode(addr);
-  absl::string_view parsed_addr_unprefixed{parsed_addr};
   // Using lambda to avoid use of goto.
   grpc_error_handle error = [&]() {
     grpc_error_handle error = GRPC_ERROR_NONE;
-    if (absl::ConsumePrefix(&parsed_addr_unprefixed, kUnixUriPrefix)) {
-      resolved_or = grpc_resolve_unix_domain_address(parsed_addr_unprefixed);
-    } else if (absl::ConsumePrefix(&parsed_addr_unprefixed,
-                                   kUnixAbstractUriPrefix)) {
-      resolved_or =
-          grpc_resolve_unix_abstract_domain_address(parsed_addr_unprefixed);
+    auto uri = URI::Parse(parsed_addr);
+    const auto& address_parser_registry =
+        CoreConfiguration::Get().address_parser_registry();
+    std::vector<grpc_resolved_address> addresses;
+    if (uri.ok() && address_parser_registry.HasScheme(uri->scheme())) {
+      auto address = address_parser_registry.Parse(*uri);
+      if (!address.ok()) return address.status();
+      addresses.push_back(*address);
     } else {
-      resolved_or =
+      auto resolved =
           GetDNSResolver()->LookupHostnameBlocking(parsed_addr, "https");
-    }
-    if (!resolved_or.ok()) {
-      return absl_status_to_grpc_error(resolved_or.status());
+      if (!resolved.ok()) return resolved.status();
+      addresses = std::move(*resolved);
     }
     // Create a listener for each resolved address.
-    for (auto& addr : *resolved_or) {
+    for (auto& addr : addresses) {
       // If address has a wildcard port (0), use the same port as a previous
       // listener.
       if (*port_num != -1 && grpc_sockaddr_get_port(&addr) == 0) {
@@ -960,17 +953,17 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
         }
       }
     }
-    if (error_list.size() == resolved_or->size()) {
+    if (error_list.size() == addresses.size()) {
       std::string msg = absl::StrFormat(
           "No address added out of total %" PRIuPTR " resolved for '%s'",
-          resolved_or->size(), addr);
+          addresses.size(), addr);
       return GRPC_ERROR_CREATE_REFERENCING_FROM_COPIED_STRING(
           msg.c_str(), error_list.data(), error_list.size());
     } else if (!error_list.empty()) {
       std::string msg = absl::StrFormat(
           "Only %" PRIuPTR " addresses added out of total %" PRIuPTR
           " resolved",
-          resolved_or->size() - error_list.size(), resolved_or->size());
+          addresses.size() - error_list.size(), addresses.size());
       error = GRPC_ERROR_CREATE_REFERENCING_FROM_COPIED_STRING(
           msg.c_str(), error_list.data(), error_list.size());
       gpr_log(GPR_INFO, "WARNING: %s", grpc_error_std_string(error).c_str());

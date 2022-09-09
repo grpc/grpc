@@ -54,9 +54,8 @@ class ResolverFactory {
  public:
   virtual ~ResolverFactory() {}
 
-  /// Returns the URI scheme that this factory implements.
-  /// Caller does NOT take ownership of result.
-  virtual absl::string_view scheme() const = 0;
+  /// Returns true if the factory implements \a scheme, false otherwise.
+  virtual bool ImplementsScheme(absl::string_view scheme) const = 0;
 
   /// Returns a bool indicating whether the input uri is valid to create a
   /// resolver.

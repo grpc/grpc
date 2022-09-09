@@ -61,6 +61,7 @@ extern void RegisterNativeDnsResolver(CoreConfiguration::Builder* builder);
 extern void RegisterAresDnsResolver(CoreConfiguration::Builder* builder);
 extern void RegisterSockaddrResolver(CoreConfiguration::Builder* builder);
 extern void RegisterFakeResolver(CoreConfiguration::Builder* builder);
+extern void RegisterDefaultAddressParsers(CoreConfiguration::Builder* builder);
 extern void RegisterPriorityLbPolicy(CoreConfiguration::Builder* builder);
 extern void RegisterOutlierDetectionLbPolicy(
     CoreConfiguration::Builder* builder);
@@ -100,6 +101,7 @@ void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
   FaultInjectionFilterRegister(builder);
   RegisterAresDnsResolver(builder);
   RegisterNativeDnsResolver(builder);
+  RegisterDefaultAddressParsers(builder);  // After DNS resolvers.
   RegisterSockaddrResolver(builder);
   RegisterFakeResolver(builder);
 #ifdef GPR_SUPPORT_BINDER_TRANSPORT

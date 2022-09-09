@@ -452,7 +452,9 @@ AresClientChannelDNSResolver::AresRequestWrapper::OnResolvedLocked(
 
 class AresClientChannelDNSResolverFactory : public ResolverFactory {
  public:
-  absl::string_view scheme() const override { return "dns"; }
+  bool ImplementsScheme(absl::string_view scheme) const override {
+    return scheme == "dns";
+  }
 
   bool IsValidUri(const URI& uri) const override {
     if (absl::StripPrefix(uri.path(), "/").empty()) {
