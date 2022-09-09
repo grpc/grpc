@@ -115,6 +115,51 @@ BENCHMARK(BM_MultithreadedWorkQueuePopBack)
     ->Threads(4)
     ->ThreadPerCpu();
 
+static void BM_WorkQueueClosureExecution(benchmark::State& state) {
+  WorkQueue queue;
+  int element_count = state.range(0);
+  int run_count = 0;
+  grpc_event_engine::experimental::AnyInvocableClosure closure(
+      [&run_count] { ++run_count; });
+  for (auto _ : state) {
+    for (int i = 0; i < element_count; i++) queue.Add(&closure);
+    do {
+      (*queue.PopFront())->Run();
+    } while (run_count < element_count);
+    run_count = 0;
+  }
+  state.counters["Added"] = element_count * state.iterations();
+  state.counters["Popped"] = state.counters["Added"];
+  state.counters["Steal Rate"] =
+      benchmark::Counter(state.counters["Popped"], benchmark::Counter::kIsRate);
+}
+BENCHMARK(BM_WorkQueueClosureExecution)
+    ->Range(8, 128)
+    ->UseRealTime()
+    ->MeasureProcessCPUTime();
+
+static void BM_WorkQueueAnyInvocableExecution(benchmark::State& state) {
+  WorkQueue queue;
+  int element_count = state.range(0);
+  int run_count = 0;
+  for (auto _ : state) {
+    for (int i = 0; i < element_count; i++)
+      queue.Add([&run_count] { ++run_count; });
+    do {
+      (*queue.PopFront())->Run();
+    } while (run_count < element_count);
+    run_count = 0;
+  }
+  state.counters["Added"] = element_count * state.iterations();
+  state.counters["Popped"] = state.counters["Added"];
+  state.counters["Steal Rate"] =
+      benchmark::Counter(state.counters["Popped"], benchmark::Counter::kIsRate);
+}
+BENCHMARK(BM_WorkQueueAnyInvocableExecution)
+    ->Range(8, 128)
+    ->UseRealTime()
+    ->MeasureProcessCPUTime();
+
 static void BM_StdDequeLIFO(benchmark::State& state) {
   if (state.thread_index() == 0) {
     (*globalDequeList)[0] = new std::deque<EventEngine::Closure*>();
