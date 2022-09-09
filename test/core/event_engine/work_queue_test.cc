@@ -17,6 +17,7 @@
 
 #include <gtest/gtest.h>
 
+#include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/workqueue.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/util/test_config.h"
@@ -146,7 +147,7 @@ TEST(WorkQueueTest, ThreadedStress) {
   constexpr int element_count_per_thd = 3333;
   std::vector<std::thread> threads;
   threads.reserve(thd_count);
-  AnyInvocableClosure closure([]{});
+  AnyInvocableClosure closure([] {});
   for (int i = 0; i < thd_count; i++) {
     threads.emplace_back([&] {
       int cnt = 0;

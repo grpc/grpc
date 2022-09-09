@@ -17,15 +17,17 @@
 #include <grpc/support/port_platform.h>
 
 #include <stddef.h>
+#include <stdint.h>
 
 #include <atomic>
 #include <deque>
-#include <utility>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/functional/any_invocable.h"
 #include "absl/types/optional.h"
 
-#include "src/core/lib/event_engine/common_closures.h"
+#include <grpc/event_engine/event_engine.h>
+
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
 

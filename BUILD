@@ -2366,11 +2366,13 @@ grpc_cc_library(
         "src/core/lib/event_engine/workqueue.h",
     ],
     external_deps = [
-        "absl/base",
-        "absl/cleanup",
+        "absl/base:core_headers",
+        "absl/functional:any_invocable",
+        "absl/types:optional",
     ],
     deps = [
         "common_event_engine_closures",
+        "event_engine_base_hdrs",
         "exec_ctx",
         "gpr",
         "time",

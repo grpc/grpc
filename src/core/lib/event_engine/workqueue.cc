@@ -13,12 +13,15 @@
 // limitations under the License.
 #include <grpc/support/port_platform.h>
 
-#include "workqueue.h"
+#include "src/core/lib/event_engine/workqueue.h"
 
-#include "common_closures.h"
+#include <cstdint>
+#include <memory>
+#include <utility>
+
+#include "absl/functional/any_invocable.h"
 
 #include "src/core/lib/event_engine/common_closures.h"
-#include "src/core/lib/event_engine/workqueue.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
 namespace grpc_event_engine {
@@ -39,8 +42,7 @@ WorkQueue::Storage::Storage(absl::AnyInvocable<void()> callback) noexcept
 }
 
 WorkQueue::Storage::Storage(Storage&& other) noexcept
-    : closure_(other.closure_),
-      enqueued_(other.enqueued_) {}
+    : closure_(other.closure_), enqueued_(other.enqueued_) {}
 
 WorkQueue::Storage& WorkQueue::Storage::operator=(Storage&& other) noexcept {
   std::swap(closure_, other.closure_);
@@ -48,11 +50,7 @@ WorkQueue::Storage& WorkQueue::Storage::operator=(Storage&& other) noexcept {
   return *this;
 }
 
-EventEngine::Closure* WorkQueue::Storage::closure() {
-  return closure_;
-//   if (closure_ != nullptr) return closure_;
-//   return reinterpret_cast<EventEngine::Closure*>(&invocable_closure_);
-}
+EventEngine::Closure* WorkQueue::Storage::closure() { return closure_; }
 
 // ------ WorkQueue -----------------------------------------------------------
 
