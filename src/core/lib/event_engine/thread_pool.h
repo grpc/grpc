@@ -52,6 +52,8 @@ class ThreadPool final : public grpc_event_engine::experimental::Forkable {
     bool Step();
     void SetShutdown() { SetState(State::kShutdown); }
     void SetForking() { SetState(State::kForking); }
+    // Add a callback to the queue.
+    // Return true if we should also spin up a new thread.
     bool Add(absl::AnyInvocable<void()> callback);
     void Reset() { SetState(State::kRunning); }
 
