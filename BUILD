@@ -497,6 +497,13 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "init_internally",
+    srcs = ["src/core/lib/surface/init_internally.cc"],
+    hdrs = ["src/core/lib/surface/init_internally.h"],
+    deps = ["gpr_platform"],
+)
+
+grpc_cc_library(
     name = "grpc_unsecure",
     srcs = [
         "src/core/lib/surface/init.cc",
@@ -529,6 +536,7 @@ grpc_cc_library(
         "grpc_security_base",
         "grpc_trace",
         "http_connect_handshaker",
+        "init_internally",
         "iomgr_timer",
         "posix_event_engine_timer_manager",
         "slice",
@@ -610,6 +618,7 @@ grpc_cc_library(
         "http_connect_handshaker",
         "httpcli",
         "httpcli_ssl_credentials",
+        "init_internally",
         "iomgr_timer",
         "json",
         "posix_event_engine_timer_manager",
@@ -3306,6 +3315,7 @@ grpc_cc_library(
         "grpc_trace",
         "handshaker_registry",
         "http2_errors",
+        "init_internally",
         "iomgr_fwd",
         "iomgr_port",
         "iomgr_timer",
@@ -3789,6 +3799,7 @@ grpc_cc_library(
         "grpc_service_config_impl",
         "grpc_trace",
         "http_connect_handshaker",
+        "init_internally",
         "iomgr_fwd",
         "iomgr_timer",
         "json",
@@ -4579,6 +4590,7 @@ grpc_cc_library(
         "grpc_tls_credentials",
         "grpc_trace",
         "grpc_transport_chttp2_client_connector",
+        "init_internally",
         "iomgr_timer",
         "json",
         "json_util",

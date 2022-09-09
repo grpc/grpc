@@ -31,7 +31,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
-#include <grpc/grpc.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
@@ -62,6 +61,7 @@
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
+#include "src/core/lib/surface/init_internally.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
 
@@ -636,7 +636,7 @@ Subchannel::Subchannel(SubchannelKey key,
   // before the last subchannel destruction, then there maybe race conditions
   // triggering segmentation faults. To prevent this issue, we call a grpc_init
   // here and a grpc_shutdown in the subchannel destructor.
-  grpc_init();
+  InitInternally();
   GRPC_STATS_INC_CLIENT_SUBCHANNELS_CREATED();
   GRPC_CLOSURE_INIT(&on_connecting_finished_, OnConnectingFinished, this,
                     grpc_schedule_on_exec_ctx);
@@ -672,7 +672,7 @@ Subchannel::~Subchannel() {
   connector_.reset();
   grpc_pollset_set_destroy(pollset_set_);
   // grpc_shutdown is called here because grpc_init is called in the ctor.
-  grpc_shutdown();
+  ShutdownInternally();
 }
 
 RefCountedPtr<Subchannel> Subchannel::Create(

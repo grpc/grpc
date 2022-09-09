@@ -999,6 +999,7 @@ libs:
   - src/core/lib/surface/completion_queue_factory.h
   - src/core/lib/surface/event_string.h
   - src/core/lib/surface/init.h
+  - src/core/lib/surface/init_internally.h
   - src/core/lib/surface/lame_client.h
   - src/core/lib/surface/server.h
   - src/core/lib/surface/validate_metadata.h
@@ -1686,6 +1687,7 @@ libs:
   - src/core/lib/surface/completion_queue_factory.cc
   - src/core/lib/surface/event_string.cc
   - src/core/lib/surface/init.cc
+  - src/core/lib/surface/init_internally.cc
   - src/core/lib/surface/lame_client.cc
   - src/core/lib/surface/metadata_array.cc
   - src/core/lib/surface/server.cc
@@ -2191,6 +2193,7 @@ libs:
   - src/core/lib/surface/completion_queue_factory.h
   - src/core/lib/surface/event_string.h
   - src/core/lib/surface/init.h
+  - src/core/lib/surface/init_internally.h
   - src/core/lib/surface/lame_client.h
   - src/core/lib/surface/server.h
   - src/core/lib/surface/validate_metadata.h
@@ -2512,6 +2515,7 @@ libs:
   - src/core/lib/surface/completion_queue_factory.cc
   - src/core/lib/surface/event_string.cc
   - src/core/lib/surface/init.cc
+  - src/core/lib/surface/init_internally.cc
   - src/core/lib/surface/lame_client.cc
   - src/core/lib/surface/metadata_array.cc
   - src/core/lib/surface/server.cc

@@ -1458,6 +1458,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/surface/event_string.h )
   s.files += %w( src/core/lib/surface/init.cc )
   s.files += %w( src/core/lib/surface/init.h )
+  s.files += %w( src/core/lib/surface/init_internally.cc )
+  s.files += %w( src/core/lib/surface/init_internally.h )
   s.files += %w( src/core/lib/surface/lame_client.cc )
   s.files += %w( src/core/lib/surface/lame_client.h )
   s.files += %w( src/core/lib/surface/metadata_array.cc )
