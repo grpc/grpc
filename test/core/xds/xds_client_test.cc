@@ -627,8 +627,7 @@ class XdsClientTest : public ::testing::Test {
           << metadata_json.status() << " on " << location.file() << ":"
           << location.line();
       EXPECT_EQ(*metadata_json, xds_client_->bootstrap().node()->metadata())
-          << location.file() << ":" << location.line()
-          << ":\nexpected: "
+          << location.file() << ":" << location.line() << ":\nexpected: "
           << Json{xds_client_->bootstrap().node()->metadata()}.Dump()
           << "\nactual: " << metadata_json->Dump();
     }

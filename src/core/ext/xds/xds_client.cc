@@ -528,10 +528,9 @@ void XdsClient::ChannelState::OnConnectivityFailure(absl::Status status) {
 
 void XdsClient::ChannelState::SetChannelStatusLocked(absl::Status status) {
   if (shutting_down_) return;
-  status = absl::Status(
-      status.code(),
-      absl::StrCat("xDS channel for server ", server_.server_uri(), ": ",
-                   status.message()));
+  status = absl::Status(status.code(), absl::StrCat("xDS channel for server ",
+                                                    server_.server_uri(), ": ",
+                                                    status.message()));
   gpr_log(GPR_INFO, "[xds_client %p] %s", xds_client(),
           status.ToString().c_str());
   // If the node ID is set, append that to the status message that we send to
@@ -540,8 +539,8 @@ void XdsClient::ChannelState::SetChannelStatusLocked(absl::Status status) {
   if (node != nullptr) {
     status = absl::Status(
         status.code(),
-        absl::StrCat(status.message(), " (node ID:",
-                     xds_client_->bootstrap_->node()->id(), ")"));
+        absl::StrCat(status.message(),
+                     " (node ID:", xds_client_->bootstrap_->node()->id(), ")"));
   }
   // Save status in channel, so that we can immediately generate an
   // error for any new watchers that may be started.
