@@ -28,18 +28,18 @@ namespace grpc_core {
 inline bool IsTcpFrameSizeTuningEnabled() { return IsExperimentEnabled(0); }
 inline bool IsTcpReadChunksEnabled() { return IsExperimentEnabled(1); }
 inline bool IsTcpRcvLowatEnabled() { return IsExperimentEnabled(2); }
-inline bool IsPromiseBasedClientCallEnabled() { return IsExperimentEnabled(3); }
-inline bool IsPeerStateBasedFramingEnabled() { return IsExperimentEnabled(4); }
-inline bool IsFlowControlFixesEnabled() { return IsExperimentEnabled(5); }
+inline bool IsPeerStateBasedFramingEnabled() { return IsExperimentEnabled(3); }
+inline bool IsFlowControlFixesEnabled() { return IsExperimentEnabled(4); }
 inline bool IsMemoryPressureControllerEnabled() {
-  return IsExperimentEnabled(6);
+  return IsExperimentEnabled(5);
 }
 inline bool IsPeriodicResourceQuotaReclamationEnabled() {
-  return IsExperimentEnabled(7);
+  return IsExperimentEnabled(6);
 }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() {
-  return IsExperimentEnabled(8);
+  return IsExperimentEnabled(7);
 }
+inline bool IsPromiseBasedClientCallEnabled() { return IsExperimentEnabled(8); }
 
 struct ExperimentMetadata {
   const char* name;
