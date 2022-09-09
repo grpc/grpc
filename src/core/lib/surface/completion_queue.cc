@@ -40,6 +40,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
+#include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/spinlock.h"
 #include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gprpp/atomic_utils.h"
@@ -508,6 +509,18 @@ grpc_completion_queue* grpc_completion_queue_create_internal(
       "grpc_completion_queue_create_internal(completion_type=%d, "
       "polling_type=%d)",
       2, (completion_type, polling_type));
+
+  switch (completion_type) {
+    case GRPC_CQ_NEXT:
+      GRPC_STATS_INC_CQ_NEXT_CREATES();
+      break;
+    case GRPC_CQ_PLUCK:
+      GRPC_STATS_INC_CQ_PLUCK_CREATES();
+      break;
+    case GRPC_CQ_CALLBACK:
+      GRPC_STATS_INC_CQ_CALLBACK_CREATES();
+      break;
+  }
 
   const cq_vtable* vtable = &g_cq_vtable[completion_type];
   const cq_poller_vtable* poller_vtable =

@@ -168,7 +168,6 @@ grpc_cc_test(
         "absl/status:statusor",
         "absl/strings",
     ],
-    flaky = True,
     language = "C++",
     deps = [
         "cq_verifier",

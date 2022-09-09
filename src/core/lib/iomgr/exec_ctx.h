@@ -320,12 +320,6 @@ class ApplicationCallbackExecCtx {
     ctx->tail_ = functor;
   }
 
-  /** Global initialization for ApplicationCallbackExecCtx. Called by init. */
-  static void GlobalInit(void) {}
-
-  /** Global shutdown for ApplicationCallbackExecCtx. Called by init. */
-  static void GlobalShutdown(void) {}
-
   static bool Available() { return Get() != nullptr; }
 
  private:
