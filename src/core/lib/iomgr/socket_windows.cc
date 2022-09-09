@@ -64,6 +64,7 @@ SOCKET grpc_winsocket_wrapped_socket(grpc_winsocket* socket) {
 void grpc_winsocket_shutdown(grpc_winsocket* winsocket) {
   /* Grab the function pointer for DisconnectEx for that specific socket.
      It may change depending on the interface. */
+  gpr_log(GPR_INFO, "apolcyn grpc_winsocket_shutdown winsocket=%p", winsocket);
   int status;
   GUID guid = WSAID_DISCONNECTEX;
   LPFN_DISCONNECTEX DisconnectEx;
@@ -89,10 +90,12 @@ void grpc_winsocket_shutdown(grpc_winsocket* winsocket) {
             utf8_message);
     gpr_free(utf8_message);
   }
+  gpr_log(GPR_INFO, "apolcyn grpc_winsocket_shutdown winsocket=%p closesocket", winsocket);
   closesocket(winsocket->socket);
 }
 
 static void destroy(grpc_winsocket* winsocket) {
+  gpr_log(GPR_INFO, "apolcyn destroy winsocket=%p", winsocket);
   grpc_iomgr_unregister_object(&winsocket->iomgr_object);
   gpr_mu_destroy(&winsocket->state_mu);
   gpr_free(winsocket);
@@ -105,10 +108,13 @@ static bool check_destroyable(grpc_winsocket* winsocket) {
 }
 
 void grpc_winsocket_destroy(grpc_winsocket* winsocket) {
+  gpr_log(GPR_INFO, "apolcyn grpc_winsocket_destroy winsocket=%p", winsocket);
   gpr_mu_lock(&winsocket->state_mu);
   GPR_ASSERT(!winsocket->destroy_called);
   winsocket->destroy_called = true;
   bool should_destroy = check_destroyable(winsocket);
+  gpr_log(GPR_INFO, "apolcyn grpc_winsocket_destroy winsocket=%p should_destroy=%d destroy_called=%d write_info.closure=%p read_info.closure=%p",
+          winsocket, should_destroy, winsocket->destroy_called, winsocket->write_info.closure, winsocket->read_info.closure);
   gpr_mu_unlock(&winsocket->state_mu);
   if (should_destroy) destroy(winsocket);
 }
