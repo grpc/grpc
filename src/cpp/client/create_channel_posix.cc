@@ -26,7 +26,7 @@
 #include <grpc/grpc_security.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpcpp/channel.h>
-#include <grpcpp/grpc_library.h>
+#include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/client_interceptor.h>
 #include <grpcpp/support/config.h>
@@ -41,7 +41,7 @@ class ChannelArguments;
 
 std::shared_ptr<Channel> CreateInsecureChannelFromFd(const std::string& target,
                                                      int fd) {
-  GrpcLibrary init_lib;
+  internal::GrpcLibrary init_lib;
   grpc_channel_credentials* creds = grpc_insecure_credentials_create();
   auto channel = CreateChannelInternal(
       "", grpc_channel_create_from_fd(target.c_str(), fd, creds, nullptr),
@@ -53,7 +53,7 @@ std::shared_ptr<Channel> CreateInsecureChannelFromFd(const std::string& target,
 
 std::shared_ptr<Channel> CreateCustomInsecureChannelFromFd(
     const std::string& target, int fd, const grpc::ChannelArguments& args) {
-  GrpcLibrary init_lib;
+  internal::GrpcLibrary init_lib;
   grpc_channel_args channel_args;
   args.SetChannelArgs(&channel_args);
   grpc_channel_credentials* creds = grpc_insecure_credentials_create();
@@ -73,7 +73,7 @@ std::shared_ptr<Channel> CreateCustomInsecureChannelWithInterceptorsFromFd(
     std::vector<
         std::unique_ptr<grpc::experimental::ClientInterceptorFactoryInterface>>
         interceptor_creators) {
-  GrpcLibrary init_lib;
+  internal::GrpcLibrary init_lib;
   grpc_channel_args channel_args;
   args.SetChannelArgs(&channel_args);
   grpc_channel_credentials* creds = grpc_insecure_credentials_create();

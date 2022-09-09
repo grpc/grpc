@@ -36,7 +36,6 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 #include <grpcpp/channel.h>
-#include <grpcpp/grpc_library.h>
 #include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/security/tls_credentials_options.h>
 #include <grpcpp/support/channel_arguments.h>
@@ -116,14 +115,14 @@ std::shared_ptr<CallCredentials> WrapCallCredentials(
 }  // namespace
 
 std::shared_ptr<ChannelCredentials> GoogleDefaultCredentials() {
-  grpc::GrpcLibrary init;  // To call grpc_init().
+  grpc::internal::GrpcLibrary init;  // To call grpc_init().
   return internal::WrapChannelCredentials(
       grpc_google_default_credentials_create(nullptr));
 }
 
 std::shared_ptr<CallCredentials> ExternalAccountCredentials(
     const grpc::string& json_string, const std::vector<grpc::string>& scopes) {
-  grpc::GrpcLibrary init;  // To call grpc_init().
+  grpc::internal::GrpcLibrary init;  // To call grpc_init().
   return WrapCallCredentials(grpc_external_account_credentials_create(
       json_string.c_str(), absl::StrJoin(scopes, ",").c_str()));
 }
@@ -131,7 +130,7 @@ std::shared_ptr<CallCredentials> ExternalAccountCredentials(
 // Builds SSL Credentials given SSL specific options
 std::shared_ptr<ChannelCredentials> SslCredentials(
     const SslCredentialsOptions& options) {
-  grpc::GrpcLibrary init;  // To call grpc_init().
+  grpc::internal::GrpcLibrary init;  // To call grpc_init().
   grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {
       options.pem_private_key.c_str(), options.pem_cert_chain.c_str()};
 
@@ -280,7 +279,7 @@ std::shared_ptr<CallCredentials> StsCredentials(
 std::shared_ptr<CallCredentials> MetadataCredentialsFromPlugin(
     std::unique_ptr<MetadataCredentialsPlugin> plugin,
     grpc_security_level min_security_level) {
-  grpc::GrpcLibrary init;  // To call grpc_init().
+  grpc::internal::GrpcLibrary init;  // To call grpc_init().
   const char* type = plugin->GetType();
   grpc::MetadataCredentialsPluginWrapper* wrapper =
       new grpc::MetadataCredentialsPluginWrapper(std::move(plugin));
@@ -295,7 +294,7 @@ std::shared_ptr<CallCredentials> MetadataCredentialsFromPlugin(
 // Builds ALTS Credentials given ALTS specific options
 std::shared_ptr<ChannelCredentials> AltsCredentials(
     const AltsCredentialsOptions& options) {
-  grpc::GrpcLibrary init;  // To call grpc_init().
+  grpc::internal::GrpcLibrary init;  // To call grpc_init().
   grpc_alts_credentials_options* c_options =
       grpc_alts_credentials_client_options_create();
   for (const auto& service_account : options.target_service_accounts) {
@@ -310,7 +309,7 @@ std::shared_ptr<ChannelCredentials> AltsCredentials(
 // Builds Local Credentials
 std::shared_ptr<ChannelCredentials> LocalCredentials(
     grpc_local_connect_type type) {
-  grpc::GrpcLibrary init;  // To call grpc_init().
+  grpc::internal::GrpcLibrary init;  // To call grpc_init().
   return internal::WrapChannelCredentials(grpc_local_credentials_create(type));
 }
 
@@ -325,7 +324,7 @@ std::shared_ptr<ChannelCredentials> TlsCredentials(
 
 // Builds credentials for use when running in GCE
 std::shared_ptr<CallCredentials> GoogleComputeEngineCredentials() {
-  grpc::GrpcLibrary init;  // To call grpc_init().
+  grpc::internal::GrpcLibrary init;  // To call grpc_init().
   return WrapCallCredentials(
       grpc_google_compute_engine_credentials_create(nullptr));
 }
@@ -333,7 +332,7 @@ std::shared_ptr<CallCredentials> GoogleComputeEngineCredentials() {
 // Builds JWT credentials.
 std::shared_ptr<CallCredentials> ServiceAccountJWTAccessCredentials(
     const std::string& json_key, long token_lifetime_seconds) {
-  grpc::GrpcLibrary init;  // To call grpc_init().
+  grpc::internal::GrpcLibrary init;  // To call grpc_init().
   if (token_lifetime_seconds <= 0) {
     gpr_log(GPR_ERROR,
             "Trying to create JWTCredentials with non-positive lifetime");
@@ -348,7 +347,7 @@ std::shared_ptr<CallCredentials> ServiceAccountJWTAccessCredentials(
 // Builds refresh token credentials.
 std::shared_ptr<CallCredentials> GoogleRefreshTokenCredentials(
     const std::string& json_refresh_token) {
-  grpc::GrpcLibrary init;  // To call grpc_init().
+  grpc::internal::GrpcLibrary init;  // To call grpc_init().
   return WrapCallCredentials(grpc_google_refresh_token_credentials_create(
       json_refresh_token.c_str(), nullptr));
 }
@@ -356,7 +355,7 @@ std::shared_ptr<CallCredentials> GoogleRefreshTokenCredentials(
 // Builds access token credentials.
 std::shared_ptr<CallCredentials> AccessTokenCredentials(
     const std::string& access_token) {
-  grpc::GrpcLibrary init;  // To call grpc_init().
+  grpc::internal::GrpcLibrary init;  // To call grpc_init().
   return WrapCallCredentials(
       grpc_access_token_credentials_create(access_token.c_str(), nullptr));
 }
@@ -365,7 +364,7 @@ std::shared_ptr<CallCredentials> AccessTokenCredentials(
 std::shared_ptr<CallCredentials> GoogleIAMCredentials(
     const std::string& authorization_token,
     const std::string& authority_selector) {
-  grpc::GrpcLibrary init;  // To call grpc_init().
+  grpc::internal::GrpcLibrary init;  // To call grpc_init().
   return WrapCallCredentials(grpc_google_iam_credentials_create(
       authorization_token.c_str(), authority_selector.c_str(), nullptr));
 }
@@ -405,7 +404,7 @@ std::shared_ptr<CallCredentials> CompositeCallCredentials(
 
 std::shared_ptr<CallCredentials> MetadataCredentialsFromPlugin(
     std::unique_ptr<MetadataCredentialsPlugin> plugin) {
-  grpc::GrpcLibrary init;  // To call grpc_init().
+  grpc::internal::GrpcLibrary init;  // To call grpc_init().
   const char* type = plugin->GetType();
   grpc::MetadataCredentialsPluginWrapper* wrapper =
       new grpc::MetadataCredentialsPluginWrapper(std::move(plugin));

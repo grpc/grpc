@@ -29,6 +29,25 @@ namespace grpc {
 
 namespace internal {
 
+/// Classes that require gRPC to be initialized should inherit from this class.
+class GrpcLibrary {
+ public:
+  explicit GrpcLibrary(bool call_grpc_init = true) : grpc_init_called_(false) {
+    if (call_grpc_init) {
+      grpc_init();
+      grpc_init_called_ = true;
+    }
+  }
+  virtual ~GrpcLibrary() {
+    if (grpc_init_called_) {
+      grpc_shutdown();
+    }
+  }
+
+ private:
+  bool grpc_init_called_;
+};
+
 /// Instantiating this class ensures the proper initialization of gRPC.
 class GrpcLibraryInitializer final {
  public:

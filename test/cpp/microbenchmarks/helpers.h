@@ -26,7 +26,6 @@
 
 #include <benchmark/benchmark.h>
 
-#include <grpcpp/grpc_library.h>
 #include <grpcpp/impl/grpc_library.h>
 
 #include "src/core/lib/debug/stats.h"
@@ -39,7 +38,7 @@ class LibraryInitializer {
   static LibraryInitializer& get();
 
  private:
-  grpc::GrpcLibrary init_lib_;
+  grpc::internal::GrpcLibrary init_lib_;
 };
 
 class TrackCounters {

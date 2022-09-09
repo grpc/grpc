@@ -32,7 +32,7 @@
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/status.h>
 #include <grpcpp/channel.h>
-#include <grpcpp/grpc_library.h>
+#include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/client_interceptor.h>
@@ -106,7 +106,7 @@ grpc_sts_credentials_options StsCredentialsCppToCoreOptions(
 
 }  // namespace experimental
 
-class MetadataCredentialsPluginWrapper final : private GrpcLibrary {
+class MetadataCredentialsPluginWrapper final : private internal::GrpcLibrary {
  public:
   static void Destroy(void* wrapper);
   static int GetMetadata(

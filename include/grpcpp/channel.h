@@ -22,13 +22,13 @@
 #include <memory>
 
 #include <grpc/grpc.h>
-#include <grpcpp/grpc_library.h>
 #include <grpcpp/impl/call.h>
 #include <grpcpp/impl/codegen/channel_interface.h>
 #include <grpcpp/impl/codegen/client_interceptor.h>
 #include <grpcpp/impl/codegen/completion_queue.h>
 #include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/sync.h>
+#include <grpcpp/impl/grpc_library.h>
 
 struct grpc_channel;
 
@@ -54,7 +54,7 @@ void ChannelResetConnectionBackoff(Channel* channel);
 class Channel final : public grpc::ChannelInterface,
                       public grpc::internal::CallHook,
                       public std::enable_shared_from_this<Channel>,
-                      private grpc::GrpcLibrary {
+                      private grpc::internal::GrpcLibrary {
  public:
   ~Channel() override;
 
