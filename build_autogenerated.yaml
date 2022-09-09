@@ -1006,6 +1006,7 @@ libs:
   - src/core/lib/surface/server.h
   - src/core/lib/surface/validate_metadata.h
   - src/core/lib/transport/bdp_estimator.h
+  - src/core/lib/transport/call_fragments.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/error_utils.h
   - src/core/lib/transport/handshaker.h
@@ -1013,7 +1014,6 @@ libs:
   - src/core/lib/transport/handshaker_registry.h
   - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/http_connect_handshaker.h
-  - src/core/lib/transport/call_fragments.h
   - src/core/lib/transport/metadata_batch.h
   - src/core/lib/transport/parsed_metadata.h
   - src/core/lib/transport/pid_controller.h
@@ -1695,12 +1695,12 @@ libs:
   - src/core/lib/surface/validate_metadata.cc
   - src/core/lib/surface/version.cc
   - src/core/lib/transport/bdp_estimator.cc
+  - src/core/lib/transport/call_fragments.cc
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/error_utils.cc
   - src/core/lib/transport/handshaker.cc
   - src/core/lib/transport/handshaker_registry.cc
   - src/core/lib/transport/http_connect_handshaker.cc
-  - src/core/lib/transport/metadata_allocator.cc
   - src/core/lib/transport/metadata_batch.cc
   - src/core/lib/transport/parsed_metadata.cc
   - src/core/lib/transport/pid_controller.cc
@@ -2196,6 +2196,7 @@ libs:
   - src/core/lib/surface/server.h
   - src/core/lib/surface/validate_metadata.h
   - src/core/lib/transport/bdp_estimator.h
+  - src/core/lib/transport/call_fragments.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/error_utils.h
   - src/core/lib/transport/handshaker.h
@@ -2203,7 +2204,6 @@ libs:
   - src/core/lib/transport/handshaker_registry.h
   - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/http_connect_handshaker.h
-  - src/core/lib/transport/call_fragments.h
   - src/core/lib/transport/metadata_batch.h
   - src/core/lib/transport/parsed_metadata.h
   - src/core/lib/transport/pid_controller.h
@@ -2518,12 +2518,12 @@ libs:
   - src/core/lib/surface/validate_metadata.cc
   - src/core/lib/surface/version.cc
   - src/core/lib/transport/bdp_estimator.cc
+  - src/core/lib/transport/call_fragments.cc
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/error_utils.cc
   - src/core/lib/transport/handshaker.cc
   - src/core/lib/transport/handshaker_registry.cc
   - src/core/lib/transport/http_connect_handshaker.cc
-  - src/core/lib/transport/metadata_allocator.cc
   - src/core/lib/transport/metadata_batch.cc
   - src/core/lib/transport/parsed_metadata.cc
   - src/core/lib/transport/pid_controller.cc
@@ -4520,6 +4520,16 @@ targets:
   - test/core/promise/test_context.h
   src:
   - test/core/channel/call_finalization_test.cc
+  deps:
+  - grpc_test_util
+- name: call_fragments_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/promise/test_context.h
+  src:
+  - test/core/transport/call_fragments_test.cc
   deps:
   - grpc_test_util
 - name: call_push_pull_test
@@ -7780,16 +7790,6 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: metadata_allocator_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - test/core/promise/test_context.h
-  src:
-  - test/core/transport/metadata_allocator_test.cc
-  deps:
-  - grpc_test_util
 - name: metadata_map_test
   gtest: true
   build: test
