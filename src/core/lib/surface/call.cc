@@ -1981,7 +1981,7 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
     kReceiveMessage,
   };
 
-  constexpr const char* PauseReasonString(PauseReason reason) {
+  static constexpr const char* PauseReasonString(PauseReason reason) {
     switch (reason) {
       case PauseReason::kStartingBatch:
         return "StartingBatch";
