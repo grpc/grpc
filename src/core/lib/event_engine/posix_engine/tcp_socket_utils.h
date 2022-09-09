@@ -162,6 +162,12 @@ class PosixSocketWrapper {
 
   ~PosixSocketWrapper() = default;
 
+  // Instruct the kernel to wait for specified number of bytes to be received on
+  // the socket before generating an interrupt for packet receive. If the call
+  // succeeds, it returns the number of bytes (wait threshold) that was actually
+  // set.
+  absl::StatusOr<int> SetSocketRcvLowat(int bytes);
+
   // Set socket to use zerocopy
   absl::Status SetSocketZeroCopy();
 

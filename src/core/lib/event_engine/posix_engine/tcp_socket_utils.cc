@@ -306,6 +306,19 @@ absl::StatusOr<std::string> SockaddrToString(
   return out;
 }
 
+// Instruct the kernel to wait for specified number of bytes to be received on
+// the socket before generating an interrupt for packet receive. If the call
+// succeeds, it returns the number of bytes (wait threshold) that was actually
+// set.
+absl::StatusOr<int> PosixSocketWrapper::SetSocketRcvLowat(int bytes) {
+  if (setsockopt(fd_, SOL_SOCKET, SO_RCVLOWAT, &bytes, sizeof(bytes)) != 0) {
+    return absl::Status(
+        absl::StatusCode::kInternal,
+        absl::StrCat("setsockopt(SO_RCVLOWAT): ", strerror(errno)));
+  }
+  return bytes;
+}
+
 // Set a socket to use zerocopy
 absl::Status PosixSocketWrapper::SetSocketZeroCopy() {
 #ifdef GRPC_LINUX_ERRQUEUE
@@ -757,6 +770,10 @@ bool SockaddrToV4Mapped(const EventEngine::ResolvedAddress* /*resolved_addr*/,
 
 absl::StatusOr<std::string> SockaddrToString(
     const EventEngine::ResolvedAddress* /*resolved_addr*/, bool /*normalize*/) {
+  GPR_ASSERT(false && "unimplemented");
+}
+
+absl::StatusOr<int> PosixSocketWrapper::SetSocketRcvLowat(int /*bytes*/) {
   GPR_ASSERT(false && "unimplemented");
 }
 
