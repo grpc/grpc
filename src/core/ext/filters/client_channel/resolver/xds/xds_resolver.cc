@@ -814,8 +814,7 @@ void XdsResolver::StartLocked() {
   if (!uri_.authority().empty()) {
     // target_uri.authority is set case
     const auto* authority_config =
-        static_cast<const GrpcXdsBootstrap::GrpcAuthority*>(
-            xds_client_->bootstrap().LookupAuthority(uri_.authority()));
+        xds_client_->bootstrap().LookupAuthority(uri_.authority());
     if (authority_config == nullptr) {
       absl::Status status = absl::UnavailableError(
           absl::StrCat("Invalid target URI -- authority not found for ",
@@ -828,7 +827,7 @@ void XdsResolver::StartLocked() {
       return;
     }
     std::string name_template =
-        authority_config->client_listener_resource_name_template();
+        authority_config->client_listener_resource_name_template;
     if (name_template.empty()) {
       name_template = absl::StrCat(
           "xdstp://", URI::PercentEncodeAuthority(uri_.authority()),

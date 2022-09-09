@@ -28,7 +28,6 @@
 
 #include <grpc/grpc.h>
 
-#include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
@@ -59,8 +58,7 @@ absl::StatusOr<Json::Array> ConvertXdsPolicy(LoadBalancingPolicyProto policy) {
   std::string serialized_policy = policy.SerializeAsString();
   upb::Arena arena;
   upb::SymbolTable symtab;
-  XdsResourceType::DecodeContext context = {nullptr,
-                                            GrpcXdsBootstrap::GrpcXdsServer(),
+  XdsResourceType::DecodeContext context = {nullptr, XdsBootstrap::XdsServer(),
                                             nullptr, symtab.ptr(), arena.ptr()};
   auto* upb_policy = envoy_config_cluster_v3_LoadBalancingPolicy_parse(
       serialized_policy.data(), serialized_policy.size(), arena.ptr());

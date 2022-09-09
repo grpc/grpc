@@ -53,7 +53,7 @@ XdsClusterDropStats::XdsClusterDropStats(
       eds_service_name_(eds_service_name) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO, "[xds_client %p] created drop stats %p for {%s, %s, %s}",
-            xds_client_.get(), this, lrs_server_.server_uri().c_str(),
+            xds_client_.get(), this, lrs_server_.server_uri.c_str(),
             std::string(cluster_name_).c_str(),
             std::string(eds_service_name_).c_str());
   }
@@ -63,7 +63,7 @@ XdsClusterDropStats::~XdsClusterDropStats() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO,
             "[xds_client %p] destroying drop stats %p for {%s, %s, %s}",
-            xds_client_.get(), this, lrs_server_.server_uri().c_str(),
+            xds_client_.get(), this, lrs_server_.server_uri.c_str(),
             std::string(cluster_name_).c_str(),
             std::string(eds_service_name_).c_str());
   }
@@ -108,7 +108,7 @@ XdsClusterLocalityStats::XdsClusterLocalityStats(
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO,
             "[xds_client %p] created locality stats %p for {%s, %s, %s, %s}",
-            xds_client_.get(), this, lrs_server_.server_uri().c_str(),
+            xds_client_.get(), this, lrs_server_.server_uri.c_str(),
             std::string(cluster_name_).c_str(),
             std::string(eds_service_name_).c_str(),
             name_->AsHumanReadableString().c_str());
@@ -119,7 +119,7 @@ XdsClusterLocalityStats::~XdsClusterLocalityStats() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO,
             "[xds_client %p] destroying locality stats %p for {%s, %s, %s, %s}",
-            xds_client_.get(), this, lrs_server_.server_uri().c_str(),
+            xds_client_.get(), this, lrs_server_.server_uri.c_str(),
             std::string(cluster_name_).c_str(),
             std::string(eds_service_name_).c_str(),
             name_->AsHumanReadableString().c_str());
