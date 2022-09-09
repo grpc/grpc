@@ -31,7 +31,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
-#include <grpc/grpc.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
