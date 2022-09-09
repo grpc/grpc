@@ -27,39 +27,39 @@ namespace internal {
 
 struct GcpObservabilityConfig {
   struct CloudLogging {
-    bool enabled = false;
+    bool disabled = false;
 
     static const grpc_core::JsonLoaderInterface* JsonLoader(
         const grpc_core::JsonArgs&) {
       static const auto* loader =
           grpc_core::JsonObjectLoader<CloudLogging>()
-              .OptionalField("enabled", &CloudLogging::enabled)
+              .OptionalField("disabled", &CloudLogging::disabled)
               .Finish();
       return loader;
     }
   };
 
   struct CloudMonitoring {
-    bool enabled = false;
+    bool disabled = false;
 
     static const grpc_core::JsonLoaderInterface* JsonLoader(
         const grpc_core::JsonArgs&) {
       static const auto* loader =
           grpc_core::JsonObjectLoader<CloudMonitoring>()
-              .OptionalField("enabled", &CloudMonitoring::enabled)
+              .OptionalField("disabled", &CloudMonitoring::disabled)
               .Finish();
       return loader;
     }
   };
 
   struct CloudTrace {
-    bool enabled = false;
+    bool disabled = false;
 
     static const grpc_core::JsonLoaderInterface* JsonLoader(
         const grpc_core::JsonArgs&) {
       static const auto* loader =
           grpc_core::JsonObjectLoader<CloudTrace>()
-              .OptionalField("enabled", &CloudTrace::enabled)
+              .OptionalField("disabled", &CloudTrace::disabled)
               .Finish();
       return loader;
     }
