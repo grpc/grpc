@@ -165,11 +165,11 @@ void FinishCall(grpc_call* call, grpc_completion_queue* cq) {
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op++;
-  grpc_call_error error = grpc_call_start_batch(call, ops, static_cast<size_t>(op - ops), tag,
-                                nullptr);
+  grpc_call_error error = grpc_call_start_batch(
+      call, ops, static_cast<size_t>(op - ops), tag, nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  grpc_event event = grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME),
-                                     nullptr);
+  grpc_event event = grpc_completion_queue_next(
+      cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
   GPR_ASSERT(event.type == GRPC_OP_COMPLETE);
   GPR_ASSERT(event.success);
   GPR_ASSERT(event.tag == tag);
@@ -257,8 +257,10 @@ int main(int argc, char** argv) {
   // De-couple this test from the specifics of how stream flow control update
   // urgencies are calculated. The bug we're after manifests when a stream
   // flow control update with queuing urgency is added after the stream is
-  // otherwise shut down, leaving a dangling reference that won't get flushed
-  // out since nothing will initiatie a write on the transport.
+  // otherwise shut down, leaving a reference that won't get flushed out since
+  // nothing will initiatie a write on the transport.
+  // Note: RPCs in this test don't send any data, so there's never a real need
+  // to send a flow control update immediately.
   grpc_core::chttp2::g_test_ony_force_queue_urgency_for_stream_window_updates =
       true;
   grpc::testing::TestEnvironment env(&argc, argv);
