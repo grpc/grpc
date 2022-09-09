@@ -17,6 +17,9 @@
 
 namespace grpc_core {
 
+// Function pointers that should be used in preference to grpc_init,
+// grpc_shutdown from within core, but otherwise do the same thing.
+// Avoids a build dependency cycle between grpc and grpc_base (and friends).
 extern void (*InitInternally)();
 extern void (*ShutdownInternally)();
 
