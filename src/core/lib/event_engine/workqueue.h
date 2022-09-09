@@ -165,17 +165,20 @@ class WorkQueue {
     // Do not block the worker if there are other workers trying to pop
     // tasks from this queue.
     if (!mu_.TryLock()) return absl::nullopt;
-    auto mu_cleanup = absl::MakeCleanup([this]() {
-      mu_.AssertHeld();
-      mu_.Unlock();
-    });
+    auto ret = PopLocked(front);
+    mu_.Unlock();
+    return ret;
+  }
+
+  // Internal implementation, helps with thread safety analysis in TryLockAndPop
+  absl::optional<T> PopLocked(bool front) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     if (GPR_UNLIKELY(elements_.empty())) {
       if (most_recent_element_enqueue_timestamp_.load(
               std::memory_order_relaxed) == kInvalidTimestamp) {
         return absl::nullopt;
       }
       if (!most_recent_element_lock_.TryLock()) return absl::nullopt;
-      absl::optional<T> ret = absl::nullopt;
+      absl::optional<T> ret;
       if (GPR_LIKELY(most_recent_element_.has_value())) {
         most_recent_element_enqueue_timestamp_.store(kInvalidTimestamp,
                                                      std::memory_order_relaxed);

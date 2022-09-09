@@ -47,7 +47,7 @@ static void GlobalSetup(const benchmark::State& state) {
       std::vector<grpc_core::Mutex>(state.threads()));
 }
 
-static void GlobalTeardown(const benchmark::State& state) {
+static void GlobalTeardown(const benchmark::State& /* state */) {
   // called for every test, resets all state
   delete globalWorkQueueList;
   delete globalDequeList;
