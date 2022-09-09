@@ -225,7 +225,8 @@ TEST(Chttp2, TestStreamDoesntLeakWhenItsWriteClosedAndThenReadClosedWhileReading
       }
       gpr_log(GPR_INFO, "grpc_iomgr_count_objects_for_testing() returned %ld, keep waiting until it reaches 1 (only the server listen socket should remain)", active_fds);
       grpc_event event = grpc_completion_queue_next(
-        cq, grpc_timeout_seconds_to_deadline(5), nullptr);
+        cq, gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC), gpr_time_from_seconds(1, GPR_TIMESPAN)),
+        nullptr);
       GPR_ASSERT(event.type == GRPC_QUEUE_TIMEOUT);
     }
     if (!success) {
