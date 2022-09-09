@@ -30,74 +30,31 @@
 
 namespace grpc_core {
 
-namespace {
-
-class RegistryState {
- public:
-  void RegisterCertificateProviderFactory(
-      std::unique_ptr<CertificateProviderFactory> factory) {
-    gpr_log(GPR_DEBUG, "registering certificate provider factory for \"%s\"",
-            factory->name());
-    for (size_t i = 0; i < factories_.size(); ++i) {
-      GPR_ASSERT(strcmp(factories_[i]->name(), factory->name()) != 0);
-    }
-    factories_.push_back(std::move(factory));
+void CertificateProviderRegistry::Builder::RegisterCertificateProviderFactory(
+    std::unique_ptr<CertificateProviderFactory> factory) {
+  gpr_log(GPR_DEBUG, "registering certificate provider factory for \"%s\"",
+          factory->name());
+  for (size_t i = 0; i < factories_.size(); ++i) {
+    GPR_ASSERT(strcmp(factories_[i]->name(), factory->name()) != 0);
   }
+  factories_.push_back(std::move(factory));
+}
 
-  CertificateProviderFactory* LookupCertificateProviderFactory(
-      absl::string_view name) const {
-    for (size_t i = 0; i < factories_.size(); ++i) {
-      if (name == factories_[i]->name()) {
-        return factories_[i].get();
-      }
-    }
-    return nullptr;
-  }
-
- private:
-  std::vector<std::unique_ptr<CertificateProviderFactory>> factories_;
-};
-
-RegistryState* g_state = nullptr;
-
-}  // namespace
-
-//
-// CertificateProviderRegistry
-//
+CertificateProviderRegistry CertificateProviderRegistry::Builder::Build() {
+  CertificateProviderRegistry r;
+  r.factories_ = std::move(factories_);
+  return r;
+}
 
 CertificateProviderFactory*
 CertificateProviderRegistry::LookupCertificateProviderFactory(
-    absl::string_view name) {
-  GPR_ASSERT(g_state != nullptr);
-  return g_state->LookupCertificateProviderFactory(name);
-}
-
-void CertificateProviderRegistry::InitRegistry() {
-  if (g_state == nullptr) g_state = new RegistryState();
-}
-
-void CertificateProviderRegistry::ShutdownRegistry() {
-  delete g_state;
-  g_state = nullptr;
-}
-
-void CertificateProviderRegistry::RegisterCertificateProviderFactory(
-    std::unique_ptr<CertificateProviderFactory> factory) {
-  InitRegistry();
-  g_state->RegisterCertificateProviderFactory(std::move(factory));
+    absl::string_view name) const {
+  for (size_t i = 0; i < factories_.size(); ++i) {
+    if (name == factories_[i]->name()) {
+      return factories_[i].get();
+    }
+  }
+  return nullptr;
 }
 
 }  // namespace grpc_core
-
-//
-// Plugin registration
-//
-
-void grpc_certificate_provider_registry_init() {
-  grpc_core::CertificateProviderRegistry::InitRegistry();
-}
-
-void grpc_certificate_provider_registry_shutdown() {
-  grpc_core::CertificateProviderRegistry::ShutdownRegistry();
-}

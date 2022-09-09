@@ -386,8 +386,9 @@ grpc_error_handle GrpcXdsBootstrap::ParseCertificateProvider(
     }
     // Try to instantiate the provider.
     CertificateProviderFactory* factory =
-        CertificateProviderRegistry::LookupCertificateProviderFactory(
-            plugin_name);
+        CoreConfiguration::Get()
+            .certificate_provider_registry()
+            .LookupCertificateProviderFactory(plugin_name);
     if (factory == nullptr) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
           absl::StrCat("Unrecognized plugin name: ", plugin_name)));

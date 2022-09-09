@@ -19,6 +19,8 @@
 
 #include <string>
 
+#include "absl/status/statusor.h"
+
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
 
@@ -27,39 +29,41 @@ namespace internal {
 
 struct GcpObservabilityConfig {
   struct CloudLogging {
-    bool enabled = false;
+    bool disabled = false;
 
     static const grpc_core::JsonLoaderInterface* JsonLoader(
         const grpc_core::JsonArgs&) {
       static const auto* loader =
           grpc_core::JsonObjectLoader<CloudLogging>()
-              .OptionalField("enabled", &CloudLogging::enabled)
+              .OptionalField("disabled", &CloudLogging::disabled)
               .Finish();
       return loader;
     }
   };
 
   struct CloudMonitoring {
-    bool enabled = false;
+    bool disabled = false;
 
     static const grpc_core::JsonLoaderInterface* JsonLoader(
         const grpc_core::JsonArgs&) {
       static const auto* loader =
           grpc_core::JsonObjectLoader<CloudMonitoring>()
-              .OptionalField("enabled", &CloudMonitoring::enabled)
+              .OptionalField("disabled", &CloudMonitoring::disabled)
               .Finish();
       return loader;
     }
   };
 
   struct CloudTrace {
-    bool enabled = false;
+    bool disabled = false;
+    float sampling_rate = 0;
 
     static const grpc_core::JsonLoaderInterface* JsonLoader(
         const grpc_core::JsonArgs&) {
       static const auto* loader =
           grpc_core::JsonObjectLoader<CloudTrace>()
-              .OptionalField("enabled", &CloudTrace::enabled)
+              .OptionalField("disabled", &CloudTrace::disabled)
+              .OptionalField("sampling_rate", &CloudTrace::sampling_rate)
               .Finish();
       return loader;
     }
@@ -83,6 +87,12 @@ struct GcpObservabilityConfig {
             .Finish();
     return loader;
   }
+
+  // Tries to load the contents of GcpObservabilityConfig from the file located
+  // by the value of environment variable `GRPC_OBSERVABILITY_CONFIG_FILE`. If
+  // `GRPC_OBSERVABILITY_CONFIG_FILE` is unset, falls back to
+  // `GRPC_OBSERVABILITY_CONFIG`.
+  static absl::StatusOr<GcpObservabilityConfig> ReadFromEnv();
 };
 
 }  // namespace internal
