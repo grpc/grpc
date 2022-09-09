@@ -180,6 +180,7 @@ def _test_options(
         needs_client_channel = False,
         needs_retry = False,
         short_name = None,
+        tags = [],
         exclude_pollers = []):
     return struct(
         needs_fullstack = needs_fullstack,
@@ -197,6 +198,7 @@ def _test_options(
         needs_client_channel = needs_client_channel,
         needs_retry = needs_retry,
         short_name = short_name,
+        tags = tags,
         exclude_pollers = exclude_pollers,
     )
 
@@ -251,7 +253,7 @@ END2END_TESTS = {
         exclude_inproc = True,
     ),
     "high_initial_seqno": _test_options(),
-    "invoke_large_request": _test_options(exclude_1byte = True),
+    "invoke_large_request": _test_options(exclude_1byte = True, tags = ["flow_control_test"]),
     "keepalive_timeout": _test_options(proxyable = False, needs_http2 = True),
     "large_metadata": _test_options(exclude_1byte = True),
     "max_concurrent_streams": _test_options(
@@ -271,7 +273,7 @@ END2END_TESTS = {
     # end2end_tests.cc, which are not generated because they would depend on OpenCensus while
     # OpenCensus can only be built via Bazel so far.
     # 'load_reporting_hook': _test_options(),
-    "ping_pong_streaming": _test_options(),
+    "ping_pong_streaming": _test_options(tags = ["flow_control_test"]),
     "ping": _test_options(needs_fullstack = True, proxyable = False),
     "proxy_auth": _test_options(needs_proxy_auth = True),
     "registered_call": _test_options(),
@@ -485,7 +487,7 @@ def grpc_end2end_tests():
                 srcs = ["run.sh"],
                 data = [":" + bin_name],
                 args = ["$(location %s)" % bin_name, t],
-                tags = _platform_support_tags(fopt) + fopt.tags + [
+                tags = _platform_support_tags(fopt) + fopt.tags + topt.tags + [
                     "no_test_ios",
                     "core_end2end_test",
                 ],

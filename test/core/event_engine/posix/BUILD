@@ -65,7 +65,6 @@ grpc_cc_test(
     name = "event_poller_posix_test",
     srcs = ["event_poller_posix_test.cc"],
     external_deps = ["gtest"],
-    flaky = True,
     language = "C++",
     tags = [
         "no_windows",

@@ -87,18 +87,35 @@ static int FindExpectedBucket(int i, int j) {
 
 class HistogramTest : public ::testing::TestWithParam<int> {};
 
+TEST_P(HistogramTest, CheckBucket) {
+  const int kHistogram = GetParam();
+  int max_bucket_boundary =
+      grpc_stats_histo_bucket_boundaries[kHistogram]
+                                        [grpc_stats_histo_buckets[kHistogram] -
+                                         1];
+  for (int i = -1000; i < max_bucket_boundary + 1000; i++) {
+    ASSERT_EQ(FindExpectedBucket(kHistogram, i),
+              grpc_stats_get_bucket[kHistogram](i))
+        << "i=" << i << " expect_bucket="
+        << grpc_stats_histo_bucket_boundaries[kHistogram]
+                                             [FindExpectedBucket(kHistogram, i)]
+        << " actual_bucket="
+        << grpc_stats_histo_bucket_boundaries[kHistogram]
+                                             [grpc_stats_get_bucket[kHistogram](
+                                                 i)];
+  }
+}
+
 TEST_P(HistogramTest, IncHistogram) {
   const int kHistogram = GetParam();
   std::queue<std::thread> threads;
   auto run = [kHistogram](const std::vector<int>& test_values,
                           int expected_bucket) {
-    gpr_log(GPR_DEBUG, "expected_bucket:%d nvalues=%" PRIdPTR, expected_bucket,
-            test_values.size());
     grpc_core::ExecCtx exec_ctx;
     for (auto j : test_values) {
       std::unique_ptr<Snapshot> snapshot(new Snapshot);
 
-      grpc_stats_inc_histogram[kHistogram](j);
+      grpc_stats_inc_histogram_value(kHistogram, j);
 
       auto delta = snapshot->delta();
 
