@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_SRC_CORE_LIB_SURFACE_INIT_INTERNALLY_H
-#define GRPC_SRC_CORE_LIB_SURFACE_INIT_INTERNALLY_H
+#ifndef GRPC_CORE_LIB_SURFACE_INIT_INTERNALLY_H
+#define GRPC_CORE_LIB_SURFACE_INIT_INTERNALLY_H
 
 namespace grpc_core {
 
@@ -22,4 +22,4 @@ extern void (*ShutdownInternally)();
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_CORE_LIB_SURFACE_INIT_INTERNALLY_H
