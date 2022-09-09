@@ -78,14 +78,16 @@ static size_t count_objects(void) {
   return n;
 }
 
-size_t grpc_iomgr_count_objects_for_testing(void) { return count_objects(); }
-
 static void dump_objects(const char* kind) {
   grpc_iomgr_object* obj;
   for (obj = g_root_object.next; obj != &g_root_object; obj = obj->next) {
     gpr_log(GPR_DEBUG, "%s OBJECT: %s %p", kind, obj->name, obj);
   }
 }
+
+size_t grpc_iomgr_count_objects_for_testing(void) {
+  dump_objects("STILL_ACTIVE");
+  return count_objects(); }
 
 void grpc_iomgr_shutdown() {
   gpr_timespec shutdown_deadline = gpr_time_add(

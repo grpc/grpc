@@ -28,6 +28,7 @@
 #include "src/core/lib/gprpp/global_config_generic.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/iomgr/iomgr.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
@@ -211,8 +212,27 @@ TEST(Chttp2, TestStreamDoesntLeakWhenItsWriteClosedAndThenReadClosedWhileReading
     grpc_call_unref(call);
     gpr_log(GPR_INFO, "apolcyn now destroy channel");
     grpc_channel_destroy(channel);
-    gpr_log(GPR_INFO, "apolcyn now sleep forever. test server address: %s", server.address().c_str());
-    sleep(100000);
+    gpr_timespec deadline = grpc_timeout_seconds_to_deadline(120);
+    bool success = false;
+    for (;;) {
+      size_t active_fds = grpc_iomgr_count_objects_for_testing();
+      if (active_fds == 1) {
+        success = true;
+        break;
+      }
+      if (gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), deadline) > 0) {
+        break;
+      }
+      gpr_log(GPR_INFO, "grpc_iomgr_count_objects_for_testing() returned %ld, keep waiting until it reaches 1 (only the server listen socket should remain)", active_fds);
+      grpc_event event = grpc_completion_queue_next(
+        cq, grpc_timeout_seconds_to_deadline(5), nullptr);
+      GPR_ASSERT(event.type == GRPC_QUEUE_TIMEOUT);
+    }
+    if (!success) {
+      gpr_log(GPR_INFO, "grpc_iomgr_count_objects_for_testing() never returned 1 (only the server listen socket should remain). "
+              "It's likely this test has triggered a connection leak.");
+      GPR_ASSERT(0);
+    }
   }
   grpc_completion_queue_shutdown(cq);
   while (grpc_completion_queue_next(
@@ -226,11 +246,12 @@ TEST(Chttp2, TestStreamDoesntLeakWhenItsWriteClosedAndThenReadClosedWhileReading
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  // Disable the backup poller to be certain it won't clean up a leaked
-  // file descriptor (which we shouldn't need it for). For this test, we
-  // want a leaked file descriptor to show up as a loud failure like a
-  // memory leak.
-  GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 0);
+  // De-couple this test from the specifics of how stream flow control update
+  // urgencies are calculated. The bug we're after manifests when a stream
+  // flow control update with queuing urgency is added after the stream is
+  // otherwise shut down, leaving a dangling reference that won't get flushed
+  // out since nothing will initiatie a write on the transport.
+  grpc_core::chttp2::g_test_ony_force_queue_urgency_for_stream_window_updates = true;
   grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   auto result = RUN_ALL_TESTS();
