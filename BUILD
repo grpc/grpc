@@ -1165,7 +1165,6 @@ grpc_cc_library(
         "include/grpc/impl/codegen/port_platform.h",
         "include/grpc/support/port_platform.h",
     ],
-    tags = ["nofixdeps"],
 )
 
 grpc_cc_library(
