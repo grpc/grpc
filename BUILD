@@ -2688,7 +2688,10 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/status",
+        "absl/strings",
         "absl/strings:str_format",
+        "absl/types:optional",
+        "absl/utility",
     ],
     deps = [
         "event_engine_base_hdrs",
@@ -2697,6 +2700,7 @@ grpc_cc_library(
         "iomgr_port",
         "resource_quota",
         "socket_mutator",
+        "useful",
     ],
 )
 

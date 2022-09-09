@@ -14,10 +14,18 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <errno.h>
+#include <inttypes.h>
+#include <limits.h>
+
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 
 #include <grpc/event_engine/event_engine.h>
 
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
@@ -31,6 +39,7 @@
 #include <unistd.h>
 #endif
 
+#include <atomic>
 #include <cstring>
 
 #include "absl/status/status.h"
