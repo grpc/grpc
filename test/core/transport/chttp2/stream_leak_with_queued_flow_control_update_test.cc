@@ -208,7 +208,6 @@ TEST(Chttp2, TestStreamDoesntLeakWhenItsWriteClosedAndThenReadClosedWhileReading
     // ensure connections aren't leaked
     gpr_log(GPR_INFO, "The channel has been destroyed, wait for to shut down and close...");
     gpr_timespec deadline = grpc_timeout_seconds_to_deadline(120);
-    gpr_log(GPR_INFO
     bool success = false;
     for (;;) {
       size_t active_fds = grpc_iomgr_count_objects_for_testing();
