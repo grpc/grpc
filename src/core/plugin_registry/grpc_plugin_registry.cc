@@ -27,13 +27,10 @@
 
 extern void grpc_register_extra_plugins(void);
 
-void grpc_client_channel_init(void);
-void grpc_client_channel_shutdown(void);
 void grpc_resolver_dns_ares_init(void);
 void grpc_resolver_dns_ares_shutdown(void);
 
 void grpc_register_built_in_plugins(void) {
-  grpc_register_plugin(grpc_client_channel_init, grpc_client_channel_shutdown);
   grpc_register_plugin(grpc_resolver_dns_ares_init,
                        grpc_resolver_dns_ares_shutdown);
   grpc_register_extra_plugins();

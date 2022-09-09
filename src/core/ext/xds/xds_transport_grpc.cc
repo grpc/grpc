@@ -34,6 +34,7 @@
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
+#include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -247,11 +248,11 @@ class GrpcXdsTransportFactory::GrpcXdsTransport::StateWatcher
 namespace {
 
 grpc_channel* CreateXdsChannel(const ChannelArgs& args,
-                               const XdsBootstrap::XdsServer& server) {
+                               const GrpcXdsBootstrap::GrpcXdsServer& server) {
   RefCountedPtr<grpc_channel_credentials> channel_creds =
       CoreConfiguration::Get().channel_creds_registry().CreateChannelCreds(
-          server.channel_creds_type, server.channel_creds_config);
-  return grpc_channel_create(server.server_uri.c_str(), channel_creds.get(),
+          server.channel_creds_type(), server.channel_creds_config());
+  return grpc_channel_create(server.server_uri().c_str(), channel_creds.get(),
                              args.ToC().get());
 }
 
@@ -268,7 +269,9 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcXdsTransport(
     std::function<void(absl::Status)> on_connectivity_failure,
     absl::Status* status)
     : factory_(factory) {
-  channel_ = CreateXdsChannel(factory->args_, server);
+  channel_ = CreateXdsChannel(
+      factory->args_,
+      static_cast<const GrpcXdsBootstrap::GrpcXdsServer&>(server));
   GPR_ASSERT(channel_ != nullptr);
   if (IsLameChannel(channel_)) {
     *status = absl::UnavailableError("xds client has a lame channel");

@@ -33,6 +33,7 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
+#include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
@@ -122,6 +123,11 @@ static void do_basic_init(void) {
   grpc_register_built_in_plugins();
   gpr_time_init();
   grpc_core::PrintExperimentsList();
+  grpc_core::Fork::GlobalInit();
+  grpc_event_engine::experimental::RegisterForkHandlers();
+  grpc_fork_handlers_auto_register();
+  grpc_tracer_init();
+  grpc_client_channel_global_init_backup_polling();
 }
 
 typedef struct grpc_plugin {
@@ -150,17 +156,12 @@ void grpc_init(void) {
       g_shutting_down = false;
       g_shutting_down_cv->SignalAll();
     }
-    grpc_core::Fork::GlobalInit();
-    grpc_event_engine::experimental::RegisterForkHandlers();
-    grpc_fork_handlers_auto_register();
-    grpc_core::ApplicationCallbackExecCtx::GlobalInit();
     grpc_iomgr_init();
     for (int i = 0; i < g_number_of_plugins; i++) {
       if (g_all_of_the_plugins[i].init != nullptr) {
         g_all_of_the_plugins[i].init();
       }
     }
-    grpc_tracer_init();
     grpc_iomgr_start();
   }
 
@@ -183,10 +184,7 @@ void grpc_shutdown_internal_locked(void)
     }
     grpc_event_engine::experimental::ResetDefaultEventEngine();
     grpc_iomgr_shutdown();
-    grpc_tracer_shutdown();
-    grpc_core::Fork::GlobalShutdown();
   }
-  grpc_core::ApplicationCallbackExecCtx::GlobalShutdown();
   g_shutting_down = false;
   g_shutting_down_cv->SignalAll();
 }

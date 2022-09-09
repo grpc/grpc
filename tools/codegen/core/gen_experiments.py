@@ -36,6 +36,20 @@ import yaml
 with open('src/core/lib/experiments/experiments.yaml') as f:
     attrs = yaml.load(f.read(), Loader=yaml.FullLoader)
 
+DEFAULTS = {
+    False: 'false',
+    True: 'true',
+    'debug': 'kDefaultForDebugOnly',
+    'release': 'kDefaultForReleaseOnly',
+}
+
+BZL_LIST_FOR_DEFAULTS = {
+    False: 'off',
+    True: 'on',
+    'debug': 'dbg',
+    'release': 'opt',
+}
+
 error = False
 today = datetime.date.today()
 two_quarters_from_now = today + datetime.timedelta(days=180)
@@ -49,6 +63,10 @@ for attr in attrs:
         error = True
     if 'default' not in attr:
         print("no default for experiment %s" % attr['name'])
+        error = True
+    if attr['default'] not in DEFAULTS:
+        print("invalid default for experiment %s: %r" %
+              (attr['name'], attr['default']))
         error = True
     if 'expiry' not in attr:
         print("no expiry for experiment %s" % attr['name'])
@@ -172,6 +190,19 @@ with open('src/core/lib/experiments/experiments.cc', 'w') as C:
         print("const char* const description_%s = %s;" %
               (attr['name'], c_str(attr['description'])),
               file=C)
+    have_defaults = set(DEFAULTS[attr['default']] for attr in attrs)
+    if 'kDefaultForDebugOnly' in have_defaults or 'kDefaultForReleaseOnly' in have_defaults:
+        print("#ifdef NDEBUG", file=C)
+        if 'kDefaultForDebugOnly' in have_defaults:
+            print("const bool kDefaultForDebugOnly = false;", file=C)
+        if 'kDefaultForReleaseOnly' in have_defaults:
+            print("const bool kDefaultForReleaseOnly = true;", file=C)
+        print("#else", file=C)
+        if 'kDefaultForDebugOnly' in have_defaults:
+            print("const bool kDefaultForDebugOnly = true;", file=C)
+        if 'kDefaultForReleaseOnly' in have_defaults:
+            print("const bool kDefaultForReleaseOnly = false;", file=C)
+        print("#endif", file=C)
     print("}", file=C)
     print(file=C)
     print("namespace grpc_core {", file=C)
@@ -179,17 +210,18 @@ with open('src/core/lib/experiments/experiments.cc', 'w') as C:
     print("const ExperimentMetadata g_experiment_metadata[] = {", file=C)
     for attr in attrs:
         print("  {%s, description_%s, %s}," %
-              (c_str(attr['name']), attr['name'],
-               'true' if attr['default'] else 'false'),
+              (c_str(attr['name']), attr['name'], DEFAULTS[attr['default']]),
               file=C)
     print("};", file=C)
     print(file=C)
     print("}  // namespace grpc_core", file=C)
 
-tags_to_experiments = collections.defaultdict(list)
+bzl_to_tags_to_experiments = dict((key, collections.defaultdict(list))
+                                  for key in BZL_LIST_FOR_DEFAULTS.keys())
+
 for attr in attrs:
     for tag in attr['test_tags']:
-        tags_to_experiments[tag].append(attr['name'])
+        bzl_to_tags_to_experiments[attr['default']][tag].append(attr['name'])
 
 with open('bazel/experiments.bzl', 'w') as B:
     put_copyright(B, "#")
@@ -203,11 +235,18 @@ with open('bazel/experiments.bzl', 'w') as B:
         "\"\"\"Dictionary of tags to experiments so we know when to test different experiments.\"\"\"",
         file=B)
 
+    bzl_to_tags_to_experiments = sorted(
+        (BZL_LIST_FOR_DEFAULTS[default], tags_to_experiments)
+        for default, tags_to_experiments in bzl_to_tags_to_experiments.items())
+
     print(file=B)
     print("EXPERIMENTS = {", file=B)
-    for tag, experiments in sorted(tags_to_experiments.items()):
-        print("    \"%s\": [" % tag, file=B)
-        for experiment in sorted(experiments):
-            print("        \"%s\"," % experiment, file=B)
-        print("    ],", file=B)
+    for key, tags_to_experiments in bzl_to_tags_to_experiments:
+        print("    \"%s\": {" % key, file=B)
+        for tag, experiments in sorted(tags_to_experiments.items()):
+            print("        \"%s\": [" % tag, file=B)
+            for experiment in sorted(experiments):
+                print("            \"%s\"," % experiment, file=B)
+            print("        ],", file=B)
+        print("    },", file=B)
     print("}", file=B)
