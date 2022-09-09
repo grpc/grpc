@@ -951,7 +951,6 @@ include/grpcpp/ext/call_metric_recorder.h \
 include/grpcpp/ext/health_check_service_server_builder_option.h \
 include/grpcpp/generic/async_generic_service.h \
 include/grpcpp/generic/generic_stub.h \
-include/grpcpp/grpc_library.h \
 include/grpcpp/grpcpp.h \
 include/grpcpp/health_check_service_interface.h \
 include/grpcpp/impl/call.h \
