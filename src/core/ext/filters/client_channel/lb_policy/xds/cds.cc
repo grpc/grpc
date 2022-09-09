@@ -445,8 +445,8 @@ absl::StatusOr<bool> CdsLb::GenerateDiscoveryMechanismForCluster(
       break;
   }
   if (state.update->lrs_load_reporting_server.has_value()) {
-    mechanism["lrsLoadReportingServer"] =
-        state.update->lrs_load_reporting_server->ToJson();
+    mechanism["lrsLoadReportingServer"] = GrpcXdsBootstrap::XdsServerToJson(
+        *state.update->lrs_load_reporting_server);
   }
   discovery_mechanisms->emplace_back(std::move(mechanism));
   return true;

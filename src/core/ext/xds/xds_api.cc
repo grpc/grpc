@@ -201,34 +201,34 @@ void PopulateNode(const XdsApiContext& context, const XdsBootstrap::Node* node,
                   const std::string& user_agent_version,
                   envoy_config_core_v3_Node* node_msg) {
   if (node != nullptr) {
-    if (!node->id().empty()) {
+    if (!node->id.empty()) {
       envoy_config_core_v3_Node_set_id(node_msg,
-                                       StdStringToUpbString(node->id()));
+                                       StdStringToUpbString(node->id));
     }
-    if (!node->cluster().empty()) {
+    if (!node->cluster.empty()) {
       envoy_config_core_v3_Node_set_cluster(
-          node_msg, StdStringToUpbString(node->cluster()));
+          node_msg, StdStringToUpbString(node->cluster));
     }
-    if (!node->metadata().empty()) {
+    if (!node->metadata.object_value().empty()) {
       google_protobuf_Struct* metadata =
           envoy_config_core_v3_Node_mutable_metadata(node_msg, context.arena);
-      PopulateMetadata(context, metadata, node->metadata());
+      PopulateMetadata(context, metadata, node->metadata.object_value());
     }
-    if (!node->locality_region().empty() || !node->locality_zone().empty() ||
-        !node->locality_sub_zone().empty()) {
+    if (!node->locality_region.empty() || !node->locality_zone.empty() ||
+        !node->locality_sub_zone.empty()) {
       envoy_config_core_v3_Locality* locality =
           envoy_config_core_v3_Node_mutable_locality(node_msg, context.arena);
-      if (!node->locality_region().empty()) {
+      if (!node->locality_region.empty()) {
         envoy_config_core_v3_Locality_set_region(
-            locality, StdStringToUpbString(node->locality_region()));
+            locality, StdStringToUpbString(node->locality_region));
       }
-      if (!node->locality_zone().empty()) {
+      if (!node->locality_zone.empty()) {
         envoy_config_core_v3_Locality_set_zone(
-            locality, StdStringToUpbString(node->locality_zone()));
+            locality, StdStringToUpbString(node->locality_zone));
       }
-      if (!node->locality_sub_zone().empty()) {
+      if (!node->locality_sub_zone.empty()) {
         envoy_config_core_v3_Locality_set_sub_zone(
-            locality, StdStringToUpbString(node->locality_sub_zone()));
+            locality, StdStringToUpbString(node->locality_sub_zone));
       }
     }
   }
