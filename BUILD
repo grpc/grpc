@@ -2072,7 +2072,6 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/resource_quota/trace.h",
     ],
-    tags = ["nofixdeps"],
     deps = [
         "gpr_platform",
         "grpc_trace",
