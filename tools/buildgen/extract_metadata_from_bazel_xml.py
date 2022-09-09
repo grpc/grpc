@@ -123,6 +123,7 @@ def _rule_dict_from_xml_node(rule_xml_node):
         'generator_function': None,
         'size': None,
         'flaky': False,
+        'actual': None,
     }
     for child in rule_xml_node:
         # all the metadata we want is stored under "list" tags
@@ -138,6 +139,10 @@ def _rule_dict_from_xml_node(rule_xml_node):
             bool_name = child.attrib['name']
             if bool_name in ['flaky']:
                 result[bool_name] = child.attrib['value'] == 'true'
+        if child.tag == 'label':
+            label_name = child.attrib['name']
+            if label_name in ['actual'] and 'value' in child.attrib:
+                result[label_name] = child.attrib['value']
     return result
 
 
@@ -158,6 +163,7 @@ def _extract_rules_from_bazel_xml(xml_tree):
                     'proto_library',
                     'upb_proto_library',
                     'upb_proto_reflection_library',
+                    'alias',
             ]:
                 if rule_name in result:
                     raise Exception('Rule %s already present' % rule_name)
@@ -462,6 +468,12 @@ def update_test_metadata_with_transitive_metadata(
             lib_dict['language'] = 'c++'
 
 
+def _get_actual_rule(bazel_rules, rule):
+    while rule != None and rule['actual'] != None:
+        rule = bazel_rules.get(rule['actual'], None)
+    return rule
+
+
 def _get_transitive_protos(bazel_rules, t):
     que = [
         t,
@@ -471,6 +483,7 @@ def _get_transitive_protos(bazel_rules, t):
     while que:
         name = que.pop(0)
         rule = bazel_rules.get(name, None)
+        rule = _get_actual_rule(bazel_rules, rule)
         if rule:
             for dep in rule['deps']:
                 if dep not in visited:
