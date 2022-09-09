@@ -1601,6 +1601,12 @@ static dispatch_once_t initGlobalInterceptorFactory;
 
 - (void)testKeepaliveWithV2API {
   GRPCTestRunWithFlakeRepeats(self, ^(GRPCTestWaiter waiterBlock, GRPCTestAssert assertBlock) {
+    // The test is highly flaky when ran as part of InteropTestsRemote
+    // TODO(jtattermusch): fix and re-enable the test.
+    if ([[self class] isRemoteTest]) {
+      return;
+    }
+
     RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
     if ([[self class] transport] == gGRPCCoreCronetID) {
       // Cronet does not support keepalive
