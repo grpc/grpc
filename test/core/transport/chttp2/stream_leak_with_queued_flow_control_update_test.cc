@@ -60,6 +60,11 @@ class TestServer {
 
   ~TestServer() {
     grpc_server_shutdown_and_notify(server_, cq_, this /* tag */);
+    grpc_event event = grpc_completion_queue_next(
+        cq_, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
+    GPR_ASSERT(event.type == GRPC_OP_COMPLETE);
+    GPR_ASSERT(event.success);
+    GPR_ASSERT(event.tag == this);
     grpc_server_destroy(server_);
   }
 
