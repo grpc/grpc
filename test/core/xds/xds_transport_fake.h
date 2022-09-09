@@ -171,7 +171,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
       const XdsBootstrap::XdsServer& server);
 
   Mutex mu_;
-  std::map<const XdsBootstrap::XdsServer, RefCountedPtr<FakeXdsTransport>>
+  std::map<const XdsBootstrap::XdsServer*, RefCountedPtr<FakeXdsTransport>>
       transport_map_ ABSL_GUARDED_BY(&mu_);
 };
 
