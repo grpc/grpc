@@ -29,7 +29,7 @@ Contains macros used throughout the repo.
 
 load("//bazel:cc_grpc_library.bzl", "cc_grpc_library")
 load("//bazel:copts.bzl", "GRPC_DEFAULT_COPTS")
-load("//bazel:experiments.bzl", "EXPERIMENTS", "NEGATED_EXPERIMENTS")
+load("//bazel:experiments.bzl", "EXPERIMENTS")
 load("@upb//bazel:upb_proto_library.bzl", "upb_proto_library", "upb_proto_reflection_library")
 load("@build_bazel_rules_apple//apple:ios.bzl", "ios_unit_test")
 load("@build_bazel_rules_apple//apple/testing/default_runner:ios_test_runner.bzl", "ios_test_runner")
@@ -341,20 +341,22 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
                 })
 
     experiments = {}
-    for tag in tags:
-        if tag not in EXPERIMENTS:
-            continue
-        for experiment in EXPERIMENTS[tag]:
-            experiments[experiment] = 1
-    experiments = list(experiments.keys())
+    for mode, tag_to_experiments in EXPERIMENTS.items():
+        experiments[mode] = {}
+        for tag in tags:
+            if tag not in tag_to_experiments:
+                continue
+            for experiment in tag_to_experiments[tag]:
+                experiments[mode][experiment] = 1
+        experiments[mode] = list(experiments[mode].keys())
 
-    negated_experiments = {}
-    for tag in tags:
-        if tag not in NEGATED_EXPERIMENTS:
-            continue
-        for experiment in NEGATED_EXPERIMENTS[tag]:
-            negated_experiments[experiment] = 1
-    negated_experiments = list(negated_experiments.keys())
+    mode_config = {
+        # format: <mode>: (enabled_target_tags, disabled_target_tags)
+        "dbg": (["noopt"], ["nodbg"]),
+        "opt": (["nodbg"], ["noopt"]),
+        "on": ([], None),
+        "off": (None, []),
+    }
 
     must_have_tags = [
         # We don't run experiments on cmake builds
@@ -367,29 +369,32 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
         "no_arm64",
     ]
     experiment_config = list(poller_config)
-    for experiment in experiments:
-        for config in poller_config:
-            config = dict(config)
-            config["name"] = config["name"] + "@experiment=" + experiment
-            config["args"] = config["args"] + ["--experiment=" + experiment]
-            tags = config["tags"]
-            for tag in must_have_tags:
-                if tag not in tags:
-                    tags = tags + [tag]
-            config["tags"] = tags
-            experiment_config.append(config)
-    for experiment in negated_experiments:
-        for config in poller_config:
-            config = dict(config)
-            config["name"] = config["name"] + "@experiment=no_" + experiment
-            config["args"] = config["args"] + ["--experiment=-" + experiment]
-            tags = config["tags"]
-            for tag in must_have_tags:
-                if tag not in tags:
-                    tags = tags + [tag]
-            config["tags"] = tags
-            experiment_config.append(config)
-
+    for mode, config in mode_config.items():
+        enabled_tags, disabled_tags = config
+        if enabled_tags != None:
+            for experiment in experiments[mode]:
+                for config in poller_config:
+                    config = dict(config)
+                    config["name"] = config["name"] + "@experiment=" + experiment
+                    config["args"] = config["args"] + ["--experiment=" + experiment]
+                    tags = config["tags"]
+                    for tag in must_have_tags + enabled_tags:
+                        if tag not in tags:
+                            tags = tags + [tag]
+                    config["tags"] = tags
+                    experiment_config.append(config)
+        if disabled_tags != None:
+            for experiment in experiments[mode]:
+                for config in poller_config:
+                    config = dict(config)
+                    config["name"] = config["name"] + "@experiment=no_" + experiment
+                    config["args"] = config["args"] + ["--experiment=-" + experiment]
+                    tags = config["tags"]
+                    for tag in must_have_tags + disabled_tags:
+                        if tag not in tags:
+                            tags = tags + [tag]
+                    config["tags"] = tags
+                    experiment_config.append(config)
     return experiment_config
 
 def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], uses_polling = True, language = "C++", size = "medium", timeout = None, tags = [], exec_compatible_with = [], exec_properties = {}, shard_count = None, flaky = None, copts = [], linkstatic = None, exclude_pollers = [], uses_event_engine = True):

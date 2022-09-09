@@ -477,8 +477,8 @@ class CLanguage(object):
 
         if compiler == 'default' or compiler == 'cmake':
             return ('debian11', [])
-        elif compiler == 'gcc6':
-            return ('gcc_6', [])
+        elif compiler == 'gcc7':
+            return ('gcc_7', [])
         elif compiler == 'gcc10.2':
             return ('debian11', [])
         elif compiler == 'gcc10.2_openssl102':
@@ -1485,7 +1485,7 @@ argp.add_argument(
     '--compiler',
     choices=[
         'default',
-        'gcc6',
+        'gcc7',
         'gcc10.2',
         'gcc10.2_openssl102',
         'gcc12',
