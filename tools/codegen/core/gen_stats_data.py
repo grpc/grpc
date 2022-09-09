@@ -365,8 +365,7 @@ with open('src/core/lib/debug/stats_data.cc', 'w') as C:
     print(file=C)
     print("#include \"src/core/lib/debug/stats.h\"", file=C)
     print("#include \"src/core/lib/debug/stats_data.h\"", file=C)
-    print("#include \"src/core/lib/gpr/useful.h\"", file=C)
-    print("#include \"src/core/lib/iomgr/exec_ctx.h\"", file=C)
+    print("#include <stdint.h>", file=C)
     print(file=C)
 
     histo_code = []
