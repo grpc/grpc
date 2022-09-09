@@ -785,6 +785,7 @@ static void set_write_state(grpc_chttp2_transport* t,
 
 void grpc_chttp2_initiate_write(grpc_chttp2_transport* t,
                                 grpc_chttp2_initiate_write_reason reason) {
+  gpr_log(GPR_INFO, "apolcyn is_client=%d transport initiate write reason=%s", t->is_client, grpc_chttp2_initiate_write_reason_string(reason));
   switch (t->write_state) {
     case GRPC_CHTTP2_WRITE_STATE_IDLE:
       set_write_state(t, GRPC_CHTTP2_WRITE_STATE_WRITING,
@@ -885,6 +886,7 @@ static void write_action(void* gt, grpc_error_handle /*error*/) {
           ? 2 * t->settings[GRPC_PEER_SETTINGS]
                            [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE]
           : INT_MAX;
+  gpr_log(GPR_INFO, "apolcyn is_client=%d transport endpoint write", t->is_client);
   grpc_endpoint_write(
       t->ep, &t->outbuf,
       GRPC_CLOSURE_INIT(&t->write_action_end_locked, write_action_end, t,
@@ -1425,6 +1427,7 @@ static void perform_stream_op_locked(void* stream_op,
     s->recv_message_flags = op_payload->recv_message.flags;
     s->call_failed_before_recv_message =
         op_payload->recv_message.call_failed_before_recv_message;
+    gpr_log(GPR_INFO, "apolcyn call maybe complete recv trailing from perform stream op recv message");
     grpc_chttp2_maybe_complete_recv_trailing_metadata(t, s);
   }
 
@@ -1437,6 +1440,7 @@ static void perform_stream_op_locked(void* stream_op,
     s->recv_trailing_metadata =
         op_payload->recv_trailing_metadata.recv_trailing_metadata;
     s->final_metadata_requested = true;
+    gpr_log(GPR_INFO, "apolcyn call maybe complete recv trailing from perform stream op recv trailing");
     grpc_chttp2_maybe_complete_recv_trailing_metadata(t, s);
   }
 
@@ -1892,6 +1896,7 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* t,
 
 void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_chttp2_transport* t,
                                                        grpc_chttp2_stream* s) {
+  gpr_log(GPR_INFO, "apolcyn call maybe complete recv message from maybe complete recv trailing md");
   grpc_chttp2_maybe_complete_recv_message(t, s);
   if (s->recv_trailing_metadata_finished != nullptr && s->read_closed &&
       s->write_closed) {
@@ -1986,6 +1991,7 @@ void grpc_chttp2_fake_status(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
           grpc_core::Slice::FromCopiedBuffer(message));
     }
     s->published_metadata[1] = GRPC_METADATA_SYNTHESIZED_FROM_FAKE;
+    gpr_log(GPR_INFO, "apolcyn call maybe complete recv trailing from fake status");
     grpc_chttp2_maybe_complete_recv_trailing_metadata(t, s);
   }
 
@@ -2071,6 +2077,7 @@ void grpc_chttp2_mark_stream_closed(grpc_chttp2_transport* t,
     if (!GRPC_ERROR_IS_NONE(overall_error)) {
       grpc_chttp2_fake_status(t, s, overall_error);
     }
+    gpr_log(GPR_INFO, "apolcyn call maybe complete recv trailing from already closed mark stream closed");
     grpc_chttp2_maybe_complete_recv_trailing_metadata(t, s);
     return;
   }
@@ -2091,6 +2098,7 @@ void grpc_chttp2_mark_stream_closed(grpc_chttp2_transport* t,
     grpc_error_handle overall_error =
         removal_error(GRPC_ERROR_REF(error), s, "Stream removed");
     if (s->id != 0) {
+      gpr_log(GPR_INFO, "apolcyn remove_stream from mark stream closed");
       remove_stream(t, s->id, GRPC_ERROR_REF(overall_error));
     } else {
       // Purge streams waiting on concurrency still waiting for id assignment
@@ -2107,9 +2115,11 @@ void grpc_chttp2_mark_stream_closed(grpc_chttp2_transport* t,
       }
     }
     grpc_chttp2_maybe_complete_recv_initial_metadata(t, s);
+    gpr_log(GPR_INFO, "apolcyn call maybe complete recv message from mark stream closed");
     grpc_chttp2_maybe_complete_recv_message(t, s);
   }
   if (became_closed) {
+    gpr_log(GPR_INFO, "apolcyn call maybe complete recv trailing from became closed mark stream closed");
     grpc_chttp2_maybe_complete_recv_trailing_metadata(t, s);
     GRPC_CHTTP2_STREAM_UNREF(s, "chttp2");
   }
@@ -2328,6 +2338,7 @@ static void WithUrgency(grpc_chttp2_transport* t,
 void grpc_chttp2_act_on_flowctl_action(
     const grpc_core::chttp2::FlowControlAction& action,
     grpc_chttp2_transport* t, grpc_chttp2_stream* s) {
+  gpr_log(GPR_INFO, "apolcyn s=%p t=%p is_client=%d stream act on flow control action: %s", s, t, t->is_client, action.DebugString().c_str());
   WithUrgency(t, action.send_stream_update(),
               GRPC_CHTTP2_INITIATE_WRITE_STREAM_FLOW_CONTROL, [t, s]() {
                 if (s->id != 0) {

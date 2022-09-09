@@ -184,8 +184,8 @@ TEST(Chttp2, TestStreamDoesntLeakWhenItsWriteClosedAndThenReadClosedWhileReading
     // cause chttp2 to initiate a write and so dodge the bug we're trying to
     // repro.
     grpc_arg args[] = {
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_KEEPALIVE_TIME_MS), 0),
+      //grpc_channel_arg_integer_create(
+      //    const_cast<char*>(GRPC_ARG_KEEPALIVE_TIME_MS), 0),
       grpc_channel_arg_integer_create(
           const_cast<char*>(GRPC_ARG_HTTP2_BDP_PROBE), 0)
     };
@@ -193,7 +193,7 @@ TEST(Chttp2, TestStreamDoesntLeakWhenItsWriteClosedAndThenReadClosedWhileReading
     TestServer server(cq, &channel_args);
     grpc_channel_credentials* creds = grpc_insecure_credentials_create();
     grpc_channel* channel = grpc_channel_create(
-        absl::StrCat("ipv6:", server.address()).c_str(), creds, &channel_args);
+        absl::StrCat("ipv6:", server.address()).c_str(), creds, nullptr);
     grpc_channel_credentials_release(creds);
     grpc_call* call = grpc_channel_create_call(
         channel, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
