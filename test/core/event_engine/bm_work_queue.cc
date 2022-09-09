@@ -25,6 +25,7 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/workqueue.h"
 #include "test/core/util/test_config.h"
 
