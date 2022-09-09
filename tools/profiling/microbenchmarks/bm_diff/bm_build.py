@@ -46,9 +46,6 @@ def _args():
         help=
         'Unique name of this build. To be used as a handle to pass to the other bm* scripts'
     )
-    argp.add_argument('--counters', dest='counters', action='store_true')
-    argp.add_argument('--no-counters', dest='counters', action='store_false')
-    argp.set_defaults(counters=True)
     args = argp.parse_args()
     assert args.name
     return args
@@ -75,14 +72,12 @@ def _build_config_and_copy(cfg, benchmarks, dest_dir):
     ] + [cfg_dir])
 
 
-def build(name, benchmarks, jobs, counters):
+def build(name, benchmarks, jobs):
     dest_dir = 'bm_diff_%s' % name
     shutil.rmtree(dest_dir, ignore_errors=True)
     _build_config_and_copy('opt', benchmarks, dest_dir)
-    if counters:
-        _build_config_and_copy('counters', benchmarks, dest_dir)
 
 
 if __name__ == '__main__':
     args = _args()
-    build(args.name, args.benchmarks, args.jobs, args.counters)
+    build(args.name, args.benchmarks, args.jobs)
