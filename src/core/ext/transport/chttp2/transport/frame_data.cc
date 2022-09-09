@@ -141,7 +141,6 @@ grpc_error_handle grpc_chttp2_data_parser_parse(void* /*parser*/,
                                                 int is_last) {
   grpc_slice_ref_internal(slice);
   grpc_slice_buffer_add(&s->frame_storage, slice);
-  gpr_log(GPR_INFO, "apolcyn call maybe complete recv message from data parser parse is_last=%d s->received_last_frame=%d", is_last, s->received_last_frame);
   grpc_chttp2_maybe_complete_recv_message(t, s);
 
   if (is_last && s->received_last_frame) {

@@ -629,7 +629,6 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
   /* for each grpc_chttp2_stream that's become writable, frame it's data
      (according to available window sizes) and add to the output buffer */
   while (grpc_chttp2_stream* s = ctx.NextStream()) {
-    gpr_log(GPR_INFO, "apolcyn s=%p t=%p is_client=%d begin write for stream", s, t, t->is_client);
     StreamWriteContext stream_ctx(&ctx, s);
     size_t orig_len = t->outbuf.length;
     stream_ctx.FlushInitialMetadata();

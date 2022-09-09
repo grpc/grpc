@@ -85,9 +85,7 @@ static void dump_objects(const char* kind) {
   }
 }
 
-size_t grpc_iomgr_count_objects_for_testing(void) {
-  dump_objects("STILL_ACTIVE");
-  return count_objects(); }
+size_t grpc_iomgr_count_objects_for_testing(void) { return count_objects(); }
 
 void grpc_iomgr_shutdown() {
   gpr_timespec shutdown_deadline = gpr_time_add(
