@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_TRANSPORT_METADATA_ALLOCATOR_H
-#define GRPC_CORE_LIB_TRANSPORT_METADATA_ALLOCATOR_H
+#ifndef GRPC_CORE_LIB_TRANSPORT_CALL_FRAGMENTS_H
+#define GRPC_CORE_LIB_TRANSPORT_CALL_FRAGMENTS_H
 
 #include <grpc/support/port_platform.h>
 
@@ -232,4 +232,4 @@ void FragmentHandle<T>::DestroyHandle() {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_TRANSPORT_METADATA_ALLOCATOR_H
+#endif  // GRPC_CORE_LIB_TRANSPORT_CALL_FRAGMENTS_H
