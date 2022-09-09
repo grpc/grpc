@@ -137,11 +137,6 @@
       },
       {
         "mode": "NULLABLE",
-        "name": "core_histogram_slow_lookups",
-        "type": "INTEGER"
-      },
-      {
-        "mode": "NULLABLE",
         "name": "core_syscall_write",
         "type": "INTEGER"
       },
@@ -183,6 +178,21 @@
       {
         "mode": "NULLABLE",
         "name": "core_http2_stream_stalls",
+        "type": "INTEGER"
+      },
+      {
+        "mode": "NULLABLE",
+        "name": "core_cq_pluck_creates",
+        "type": "INTEGER"
+      },
+      {
+        "mode": "NULLABLE",
+        "name": "core_cq_next_creates",
+        "type": "INTEGER"
+      },
+      {
+        "mode": "NULLABLE",
+        "name": "core_cq_callback_creates",
         "type": "INTEGER"
       },
       {
@@ -414,11 +424,6 @@
       },
       {
         "mode": "NULLABLE",
-        "name": "core_histogram_slow_lookups",
-        "type": "INTEGER"
-      },
-      {
-        "mode": "NULLABLE",
         "name": "core_syscall_write",
         "type": "INTEGER"
       },
@@ -460,6 +465,21 @@
       {
         "mode": "NULLABLE",
         "name": "core_http2_stream_stalls",
+        "type": "INTEGER"
+      },
+      {
+        "mode": "NULLABLE",
+        "name": "core_cq_pluck_creates",
+        "type": "INTEGER"
+      },
+      {
+        "mode": "NULLABLE",
+        "name": "core_cq_next_creates",
+        "type": "INTEGER"
+      },
+      {
+        "mode": "NULLABLE",
+        "name": "core_cq_callback_creates",
         "type": "INTEGER"
       },
       {

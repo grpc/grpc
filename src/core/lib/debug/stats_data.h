@@ -23,13 +23,14 @@
 
 #include <grpc/support/port_platform.h>
 
+// IWYU pragma: private, include "src/core/lib/debug/stats.h"
+
 typedef enum {
   GRPC_STATS_COUNTER_CLIENT_CALLS_CREATED,
   GRPC_STATS_COUNTER_SERVER_CALLS_CREATED,
   GRPC_STATS_COUNTER_CLIENT_CHANNELS_CREATED,
   GRPC_STATS_COUNTER_CLIENT_SUBCHANNELS_CREATED,
   GRPC_STATS_COUNTER_SERVER_CHANNELS_CREATED,
-  GRPC_STATS_COUNTER_HISTOGRAM_SLOW_LOOKUPS,
   GRPC_STATS_COUNTER_SYSCALL_WRITE,
   GRPC_STATS_COUNTER_SYSCALL_READ,
   GRPC_STATS_COUNTER_TCP_READ_ALLOC_8K,
@@ -39,6 +40,9 @@ typedef enum {
   GRPC_STATS_COUNTER_HTTP2_WRITES_BEGUN,
   GRPC_STATS_COUNTER_HTTP2_TRANSPORT_STALLS,
   GRPC_STATS_COUNTER_HTTP2_STREAM_STALLS,
+  GRPC_STATS_COUNTER_CQ_PLUCK_CREATES,
+  GRPC_STATS_COUNTER_CQ_NEXT_CREATES,
+  GRPC_STATS_COUNTER_CQ_CALLBACK_CREATES,
   GRPC_STATS_COUNTER_COUNT
 } grpc_stats_counters;
 extern const char* grpc_stats_counter_name[GRPC_STATS_COUNTER_COUNT];
@@ -82,8 +86,6 @@ typedef enum {
   GRPC_STATS_INC_COUNTER(GRPC_STATS_COUNTER_CLIENT_SUBCHANNELS_CREATED)
 #define GRPC_STATS_INC_SERVER_CHANNELS_CREATED() \
   GRPC_STATS_INC_COUNTER(GRPC_STATS_COUNTER_SERVER_CHANNELS_CREATED)
-#define GRPC_STATS_INC_HISTOGRAM_SLOW_LOOKUPS() \
-  GRPC_STATS_INC_COUNTER(GRPC_STATS_COUNTER_HISTOGRAM_SLOW_LOOKUPS)
 #define GRPC_STATS_INC_SYSCALL_WRITE() \
   GRPC_STATS_INC_COUNTER(GRPC_STATS_COUNTER_SYSCALL_WRITE)
 #define GRPC_STATS_INC_SYSCALL_READ() \
@@ -102,30 +104,48 @@ typedef enum {
   GRPC_STATS_INC_COUNTER(GRPC_STATS_COUNTER_HTTP2_TRANSPORT_STALLS)
 #define GRPC_STATS_INC_HTTP2_STREAM_STALLS() \
   GRPC_STATS_INC_COUNTER(GRPC_STATS_COUNTER_HTTP2_STREAM_STALLS)
+#define GRPC_STATS_INC_CQ_PLUCK_CREATES() \
+  GRPC_STATS_INC_COUNTER(GRPC_STATS_COUNTER_CQ_PLUCK_CREATES)
+#define GRPC_STATS_INC_CQ_NEXT_CREATES() \
+  GRPC_STATS_INC_COUNTER(GRPC_STATS_COUNTER_CQ_NEXT_CREATES)
+#define GRPC_STATS_INC_CQ_CALLBACK_CREATES() \
+  GRPC_STATS_INC_COUNTER(GRPC_STATS_COUNTER_CQ_CALLBACK_CREATES)
 #define GRPC_STATS_INC_CALL_INITIAL_SIZE(value) \
-  grpc_stats_inc_call_initial_size((int)(value))
-void grpc_stats_inc_call_initial_size(int x);
+  GRPC_STATS_INC_HISTOGRAM(                     \
+      GRPC_STATS_HISTOGRAM_CALL_INITIAL_SIZE,   \
+      grpc_core::BucketForHistogramValue_262144_64(static_cast<int>(value)))
 #define GRPC_STATS_INC_TCP_WRITE_SIZE(value) \
-  grpc_stats_inc_tcp_write_size((int)(value))
-void grpc_stats_inc_tcp_write_size(int x);
+  GRPC_STATS_INC_HISTOGRAM(                  \
+      GRPC_STATS_HISTOGRAM_TCP_WRITE_SIZE,   \
+      grpc_core::BucketForHistogramValue_16777216_64(static_cast<int>(value)))
 #define GRPC_STATS_INC_TCP_WRITE_IOV_SIZE(value) \
-  grpc_stats_inc_tcp_write_iov_size((int)(value))
-void grpc_stats_inc_tcp_write_iov_size(int x);
+  GRPC_STATS_INC_HISTOGRAM(                      \
+      GRPC_STATS_HISTOGRAM_TCP_WRITE_IOV_SIZE,   \
+      grpc_core::BucketForHistogramValue_1024_64(static_cast<int>(value)))
 #define GRPC_STATS_INC_TCP_READ_SIZE(value) \
-  grpc_stats_inc_tcp_read_size((int)(value))
-void grpc_stats_inc_tcp_read_size(int x);
+  GRPC_STATS_INC_HISTOGRAM(                 \
+      GRPC_STATS_HISTOGRAM_TCP_READ_SIZE,   \
+      grpc_core::BucketForHistogramValue_16777216_64(static_cast<int>(value)))
 #define GRPC_STATS_INC_TCP_READ_OFFER(value) \
-  grpc_stats_inc_tcp_read_offer((int)(value))
-void grpc_stats_inc_tcp_read_offer(int x);
+  GRPC_STATS_INC_HISTOGRAM(                  \
+      GRPC_STATS_HISTOGRAM_TCP_READ_OFFER,   \
+      grpc_core::BucketForHistogramValue_16777216_64(static_cast<int>(value)))
 #define GRPC_STATS_INC_TCP_READ_OFFER_IOV_SIZE(value) \
-  grpc_stats_inc_tcp_read_offer_iov_size((int)(value))
-void grpc_stats_inc_tcp_read_offer_iov_size(int x);
+  GRPC_STATS_INC_HISTOGRAM(                           \
+      GRPC_STATS_HISTOGRAM_TCP_READ_OFFER_IOV_SIZE,   \
+      grpc_core::BucketForHistogramValue_1024_64(static_cast<int>(value)))
 #define GRPC_STATS_INC_HTTP2_SEND_MESSAGE_SIZE(value) \
-  grpc_stats_inc_http2_send_message_size((int)(value))
-void grpc_stats_inc_http2_send_message_size(int x);
+  GRPC_STATS_INC_HISTOGRAM(                           \
+      GRPC_STATS_HISTOGRAM_HTTP2_SEND_MESSAGE_SIZE,   \
+      grpc_core::BucketForHistogramValue_16777216_64(static_cast<int>(value)))
+namespace grpc_core {
+int BucketForHistogramValue_16777216_64(int value);
+int BucketForHistogramValue_1024_64(int value);
+int BucketForHistogramValue_262144_64(int value);
+}  // namespace grpc_core
 extern const int grpc_stats_histo_buckets[7];
 extern const int grpc_stats_histo_start[7];
 extern const int* const grpc_stats_histo_bucket_boundaries[7];
-extern void (*const grpc_stats_inc_histogram[7])(int x);
+extern int (*const grpc_stats_get_bucket[7])(int value);
 
 #endif /* GRPC_CORE_LIB_DEBUG_STATS_DATA_H */

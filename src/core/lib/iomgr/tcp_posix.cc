@@ -48,7 +48,6 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
@@ -466,8 +465,12 @@ using grpc_core::TcpZerocopySendRecord;
 namespace {
 
 struct grpc_tcp {
-  grpc_tcp(int max_sends, size_t send_bytes_threshold)
-      : tcp_zerocopy_send_ctx(max_sends, send_bytes_threshold) {}
+  explicit grpc_tcp(const grpc_core::PosixTcpOptions& tcp_options)
+      : min_read_chunk_size(tcp_options.tcp_min_read_chunk_size),
+        max_read_chunk_size(tcp_options.tcp_max_read_chunk_size),
+        tcp_zerocopy_send_ctx(
+            tcp_options.tcp_tx_zerocopy_max_simultaneous_sends,
+            tcp_options.tcp_tx_zerocopy_send_bytes_threshold) {}
   grpc_endpoint base;
   grpc_fd* em_fd;
   int fd;
@@ -482,6 +485,7 @@ struct grpc_tcp {
 
   int min_read_chunk_size;
   int max_read_chunk_size;
+  int set_rcvlowat = 0;
 
   /* garbage after the last read */
   grpc_slice_buffer last_read_buffer;
@@ -820,6 +824,50 @@ static void tcp_trace_read(grpc_tcp* tcp, grpc_error_handle error)
   }
 }
 
+static void update_rcvlowat(grpc_tcp* tcp)
+    ABSL_EXCLUSIVE_LOCKS_REQUIRED(tcp->read_mu) {
+  if (!grpc_core::IsTcpRcvLowatEnabled()) return;
+
+  // TODO(ctiller): Check if supported by OS.
+  // TODO(ctiller): Allow some adjustments instead of hardcoding things.
+
+  static constexpr int kRcvLowatMax = 16 * 1024 * 1024;
+  static constexpr int kRcvLowatThreshold = 16 * 1024;
+
+  int remaining = std::min(static_cast<int>(tcp->incoming_buffer->length),
+                           tcp->min_progress_size);
+  remaining = std::min(remaining, kRcvLowatMax);
+
+  // Setting SO_RCVLOWAT for small quantities does not save on CPU.
+  if (remaining < kRcvLowatThreshold) {
+    remaining = 0;
+  }
+
+  // If zerocopy is off, wake shortly before the full RPC is here. More can
+  // show up partway through recvmsg() since it takes a while to copy data.
+  // So an early wakeup aids latency.
+  if (!tcp->tcp_zerocopy_send_ctx.enabled() && remaining > 0) {
+    remaining -= kRcvLowatThreshold;
+  }
+
+  // We still do not know the RPC size. Do not set SO_RCVLOWAT.
+  if (tcp->set_rcvlowat <= 1 && remaining <= 1) return;
+
+  // Previous value is still valid. No change needed in SO_RCVLOWAT.
+  if (tcp->set_rcvlowat == remaining) {
+    return;
+  }
+  if (setsockopt(tcp->fd, SOL_SOCKET, SO_RCVLOWAT, &remaining,
+                 sizeof(remaining)) != 0) {
+    gpr_log(GPR_ERROR, "%s",
+            absl::StrCat("Cannot set SO_RCVLOWAT on fd=", tcp->fd,
+                         " err=", strerror(errno))
+                .c_str());
+    return;
+  }
+  tcp->set_rcvlowat = remaining;
+}
+
 /* Returns true if data available to read or error other than EAGAIN. */
 #define MAX_READ_IOVEC 64
 static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error)
@@ -1074,6 +1122,7 @@ static void tcp_handle_read(void* arg /* grpc_tcp */, grpc_error_handle error) {
     maybe_make_read_slices(tcp);
     if (!tcp_do_read(tcp, &tcp_read_error)) {
       /* We've consumed the edge, request a new one */
+      update_rcvlowat(tcp);
       tcp->read_mu.Unlock();
       notify_on_read(tcp);
       return;
@@ -1103,19 +1152,23 @@ static void tcp_read(grpc_endpoint* ep, grpc_slice_buffer* incoming_buffer,
       tcp->frame_size_tuning_enabled ? min_progress_size : 1;
   grpc_slice_buffer_reset_and_unref_internal(incoming_buffer);
   grpc_slice_buffer_swap(incoming_buffer, &tcp->last_read_buffer);
-  tcp->read_mu.Unlock();
   TCP_REF(tcp, "read");
   if (tcp->is_first_read) {
+    update_rcvlowat(tcp);
+    tcp->read_mu.Unlock();
     /* Endpoint read called for the very first time. Register read callback with
      * the polling engine */
     tcp->is_first_read = false;
     notify_on_read(tcp);
   } else if (!urgent && tcp->inq == 0) {
+    update_rcvlowat(tcp);
+    tcp->read_mu.Unlock();
     /* Upper layer asked to read more but we know there is no pending data
      * to read from previous reads. So, wait for POLLIN.
      */
     notify_on_read(tcp);
   } else {
+    tcp->read_mu.Unlock();
     /* Not the first time. We may or may not have more bytes available. In any
      * case call tcp->read_done_closure (i.e tcp_handle_read()) which does the
      * right thing (i.e calls tcp_do_read() which either reads the available
@@ -1891,72 +1944,16 @@ static const grpc_endpoint_vtable vtable = {tcp_read,
                                             tcp_get_fd,
                                             tcp_can_track_err};
 
-#define MAX_CHUNK_SIZE (32 * 1024 * 1024)
-
 grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
-                               const grpc_channel_args* channel_args,
+                               const grpc_core::PosixTcpOptions& options,
                                absl::string_view peer_string) {
-  static constexpr bool kZerocpTxEnabledDefault = false;
-  int tcp_read_chunk_size = GRPC_TCP_DEFAULT_READ_SLICE_SIZE;
-  int tcp_max_read_chunk_size = 4 * 1024 * 1024;
-  int tcp_min_read_chunk_size = 256;
-  bool tcp_tx_zerocopy_enabled = kZerocpTxEnabledDefault;
-  int tcp_tx_zerocopy_send_bytes_thresh =
-      grpc_core::TcpZerocopySendCtx::kDefaultSendBytesThreshold;
-  int tcp_tx_zerocopy_max_simult_sends =
-      grpc_core::TcpZerocopySendCtx::kDefaultMaxSends;
-  if (channel_args != nullptr) {
-    for (size_t i = 0; i < channel_args->num_args; i++) {
-      if (0 ==
-          strcmp(channel_args->args[i].key, GRPC_ARG_TCP_READ_CHUNK_SIZE)) {
-        grpc_integer_options options = {tcp_read_chunk_size, 1, MAX_CHUNK_SIZE};
-        tcp_read_chunk_size =
-            grpc_channel_arg_get_integer(&channel_args->args[i], options);
-      } else if (0 == strcmp(channel_args->args[i].key,
-                             GRPC_ARG_TCP_MIN_READ_CHUNK_SIZE)) {
-        grpc_integer_options options = {tcp_read_chunk_size, 1, MAX_CHUNK_SIZE};
-        tcp_min_read_chunk_size =
-            grpc_channel_arg_get_integer(&channel_args->args[i], options);
-      } else if (0 == strcmp(channel_args->args[i].key,
-                             GRPC_ARG_TCP_MAX_READ_CHUNK_SIZE)) {
-        grpc_integer_options options = {tcp_read_chunk_size, 1, MAX_CHUNK_SIZE};
-        tcp_max_read_chunk_size =
-            grpc_channel_arg_get_integer(&channel_args->args[i], options);
-      } else if (0 == strcmp(channel_args->args[i].key,
-                             GRPC_ARG_TCP_TX_ZEROCOPY_ENABLED)) {
-        tcp_tx_zerocopy_enabled = grpc_channel_arg_get_bool(
-            &channel_args->args[i], kZerocpTxEnabledDefault);
-      } else if (0 == strcmp(channel_args->args[i].key,
-                             GRPC_ARG_TCP_TX_ZEROCOPY_SEND_BYTES_THRESHOLD)) {
-        grpc_integer_options options = {
-            grpc_core::TcpZerocopySendCtx::kDefaultSendBytesThreshold, 0,
-            INT_MAX};
-        tcp_tx_zerocopy_send_bytes_thresh =
-            grpc_channel_arg_get_integer(&channel_args->args[i], options);
-      } else if (0 == strcmp(channel_args->args[i].key,
-                             GRPC_ARG_TCP_TX_ZEROCOPY_MAX_SIMULT_SENDS)) {
-        grpc_integer_options options = {
-            grpc_core::TcpZerocopySendCtx::kDefaultMaxSends, 0, INT_MAX};
-        tcp_tx_zerocopy_max_simult_sends =
-            grpc_channel_arg_get_integer(&channel_args->args[i], options);
-      }
-    }
-  }
-
-  if (tcp_min_read_chunk_size > tcp_max_read_chunk_size) {
-    tcp_min_read_chunk_size = tcp_max_read_chunk_size;
-  }
-  tcp_read_chunk_size = grpc_core::Clamp(
-      tcp_read_chunk_size, tcp_min_read_chunk_size, tcp_max_read_chunk_size);
-
-  grpc_tcp* tcp = new grpc_tcp(tcp_tx_zerocopy_max_simult_sends,
-                               tcp_tx_zerocopy_send_bytes_thresh);
+  grpc_tcp* tcp = new grpc_tcp(options);
   tcp->base.vtable = &vtable;
   tcp->peer_string = std::string(peer_string);
   tcp->fd = grpc_fd_wrapped_fd(em_fd);
-  tcp->memory_owner = grpc_core::ResourceQuotaFromChannelArgs(channel_args)
-                          ->memory_quota()
-                          ->CreateMemoryOwner(peer_string);
+  GPR_ASSERT(options.resource_quota != nullptr);
+  tcp->memory_owner =
+      options.resource_quota->memory_quota()->CreateMemoryOwner(peer_string);
   tcp->self_reservation = tcp->memory_owner.MakeReservation(sizeof(grpc_tcp));
   grpc_resolved_address resolved_local_addr;
   memset(&resolved_local_addr, 0, sizeof(resolved_local_addr));
@@ -1975,9 +1972,7 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   tcp->current_zerocopy_send = nullptr;
   tcp->release_fd_cb = nullptr;
   tcp->release_fd = nullptr;
-  tcp->target_length = static_cast<double>(tcp_read_chunk_size);
-  tcp->min_read_chunk_size = tcp_min_read_chunk_size;
-  tcp->max_read_chunk_size = tcp_max_read_chunk_size;
+  tcp->target_length = static_cast<double>(options.tcp_read_chunk_size);
   tcp->bytes_read_this_round = 0;
   /* Will be set to false by the very first endpoint read function */
   tcp->is_first_read = true;
@@ -1987,7 +1982,8 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   tcp->outgoing_buffer_arg = nullptr;
   tcp->frame_size_tuning_enabled = grpc_core::IsTcpFrameSizeTuningEnabled();
   tcp->min_progress_size = 1;
-  if (tcp_tx_zerocopy_enabled && !tcp->tcp_zerocopy_send_ctx.memory_limited()) {
+  if (options.tcp_tx_zero_copy_enabled &&
+      !tcp->tcp_zerocopy_send_ctx.memory_limited()) {
 #ifdef GRPC_LINUX_ERRQUEUE
     const int enable = 1;
     auto err =

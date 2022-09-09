@@ -74,7 +74,6 @@ grpc_cc_test(
         ":fling_client",
         ":fling_server",
     ],
-    flaky = True,
     tags = [
         "no_windows",
         "requires-net:ipv4",

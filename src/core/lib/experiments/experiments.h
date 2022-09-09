@@ -21,19 +21,32 @@
 
 #include <stddef.h>
 
+#include "src/core/lib/experiments/config.h"
+
 namespace grpc_core {
 
-bool IsTcpFrameSizeTuningEnabled();
-bool IsTcpReadChunksEnabled();
+inline bool IsTcpFrameSizeTuningEnabled() { return IsExperimentEnabled(0); }
+inline bool IsTcpReadChunksEnabled() { return IsExperimentEnabled(1); }
+inline bool IsTcpRcvLowatEnabled() { return IsExperimentEnabled(2); }
+inline bool IsPeerStateBasedFramingEnabled() { return IsExperimentEnabled(3); }
+inline bool IsFlowControlFixesEnabled() { return IsExperimentEnabled(4); }
+inline bool IsMemoryPressureControllerEnabled() {
+  return IsExperimentEnabled(5);
+}
+inline bool IsPeriodicResourceQuotaReclamationEnabled() {
+  return IsExperimentEnabled(6);
+}
+inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() {
+  return IsExperimentEnabled(7);
+}
 
 struct ExperimentMetadata {
   const char* name;
   const char* description;
   bool default_value;
-  bool (*is_enabled)();
 };
 
-constexpr const size_t kNumExperiments = 2;
+constexpr const size_t kNumExperiments = 8;
 extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];
 
 }  // namespace grpc_core
