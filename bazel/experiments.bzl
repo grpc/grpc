@@ -20,7 +20,7 @@ EXPERIMENTS = {
     "dbg": {
     },
     "off": {
-        "core_end2end_test": [
+        "core_end2end_tests": [
             "new_hpack_huffman_decoder",
         ],
         "endpoint_test": [

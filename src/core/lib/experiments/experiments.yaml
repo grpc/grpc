@@ -101,4 +101,4 @@
   default: false
   expiry: 2022/10/01
   owner: ctiller@google.com
-  test_tags: ["core_end2end_test", "hpack_test"]
+  test_tags: ["core_end2end_tests", "hpack_test"]
