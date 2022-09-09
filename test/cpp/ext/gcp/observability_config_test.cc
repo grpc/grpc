@@ -19,6 +19,10 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
+#include <grpc/support/alloc.h>
+
+#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gpr/tmpfile.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc {
@@ -66,6 +70,135 @@ TEST(GcpObservabilityConfigJsonParsingTest, Defaults) {
   EXPECT_FALSE(config.cloud_trace.enabled);
   EXPECT_TRUE(config.project_id.empty());
 }
+
+TEST(GcpEnvParsingTest, NoEnvironmentVariableSet) {
+  auto config = GcpObservabilityConfig::ReadFromEnv();
+  EXPECT_EQ(config.status(),
+            absl::FailedPreconditionError(
+                "Environment variables GRPC_OBSERVABILITY_CONFIG_FILE or "
+                "GRPC_OBSERVABILITY_CONFIG "
+                "not defined"));
+}
+
+TEST(GcpEnvParsingTest, ConfigFileDoesNotExist) {
+  gpr_setenv("GRPC_OBSERVABILITY_CONFIG_FILE",
+             "/tmp/gcp_observability_config_does_not_exist");
+
+  auto config = GcpObservabilityConfig::ReadFromEnv();
+
+  EXPECT_EQ(config.status(),
+            absl::FailedPreconditionError("Failed to load file"));
+
+  gpr_unsetenv("GRPC_OBSERVABILITY_CONFIG_FILE");
+}
+
+class EnvParsingTestType {
+ public:
+  enum class ConfigSource {
+    kFile,
+    kEnvVar,
+  };
+
+  EnvParsingTestType& set_config_source(ConfigSource config_source) {
+    config_source_ = config_source;
+    return *this;
+  }
+
+  ConfigSource config_source() const { return config_source_; }
+
+  std::string ToString() const {
+    std::string ret_val;
+    if (config_source_ == ConfigSource::kFile) {
+      absl::StrAppend(&ret_val, "ConfigFromFile");
+    } else if (config_source_ == ConfigSource::kEnvVar) {
+      absl::StrAppend(&ret_val, "ConfigFromEnvVar");
+    }
+    return ret_val;
+  }
+
+  static std::string Name(
+      const ::testing::TestParamInfo<EnvParsingTestType>& info) {
+    return info.param.ToString();
+  }
+
+ private:
+  ConfigSource config_source_;
+};
+
+class EnvParsingTest : public ::testing::TestWithParam<EnvParsingTestType> {
+ protected:
+  ~EnvParsingTest() override {
+    if (GetParam().config_source() == EnvParsingTestType::ConfigSource::kFile) {
+      if (tmp_file_name != nullptr) {
+        gpr_unsetenv("GRPC_OBSERVABILITY_CONFIG_FILE");
+        remove(tmp_file_name);
+        gpr_free(tmp_file_name);
+      }
+    } else if (GetParam().config_source() ==
+               EnvParsingTestType::ConfigSource::kEnvVar) {
+      gpr_unsetenv("GRPC_OBSERVABILITY_CONFIG");
+    }
+  }
+
+  void SetConfig(const char* json) {
+    if (GetParam().config_source() == EnvParsingTestType::ConfigSource::kFile) {
+      ASSERT_EQ(tmp_file_name, nullptr);
+      FILE* tmp_config_file =
+          gpr_tmpfile("gcp_observability_config", &tmp_file_name);
+      fputs(json, tmp_config_file);
+      fclose(tmp_config_file);
+      gpr_setenv("GRPC_OBSERVABILITY_CONFIG_FILE", tmp_file_name);
+    } else if (GetParam().config_source() ==
+               EnvParsingTestType::ConfigSource::kEnvVar) {
+      gpr_setenv("GRPC_OBSERVABILITY_CONFIG", json);
+    }
+  }
+
+ private:
+  char* tmp_file_name = nullptr;
+};
+
+TEST_P(EnvParsingTest, Basic) {
+  SetConfig(R"json({
+      "project_id": "project"
+    })json");
+  auto config = GcpObservabilityConfig::ReadFromEnv();
+
+  ASSERT_TRUE(config.ok());
+  EXPECT_EQ(config->project_id, "project");
+}
+
+// Test that JSON parsing errors are propagated as expected.
+TEST_P(EnvParsingTest, BadJson) {
+  SetConfig("{");
+  auto config = GcpObservabilityConfig::ReadFromEnv();
+
+  EXPECT_EQ(config.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_THAT(config.status().message(),
+              ::testing::HasSubstr("JSON parsing failed"))
+      << config.status().message();
+}
+
+// Make sure that GCP config errors are propagated as expected.
+TEST_P(EnvParsingTest, BadGcpConfig) {
+  SetConfig(R"json({
+      "project_id": 123
+    })json");
+  auto config = GcpObservabilityConfig::ReadFromEnv();
+
+  EXPECT_EQ(config.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_THAT(config.status().message(),
+              ::testing::HasSubstr("field:project_id error:is not a string"))
+      << config.status().message();
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    GcpObservabilityConfigTest, EnvParsingTest,
+    ::testing::Values(EnvParsingTestType().set_config_source(
+                          EnvParsingTestType::ConfigSource::kFile),
+                      EnvParsingTestType().set_config_source(
+                          EnvParsingTestType::ConfigSource::kEnvVar)),
+    &EnvParsingTestType::Name);
 
 }  // namespace
 }  // namespace internal

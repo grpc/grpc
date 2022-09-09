@@ -19,6 +19,8 @@
 
 #include <string>
 
+#include "absl/status/statusor.h"
+
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
 
@@ -85,6 +87,12 @@ struct GcpObservabilityConfig {
             .Finish();
     return loader;
   }
+
+  // Tries to load the contents of GcpObservabilityConfig from the file located
+  // by the value of environment variable `GRPC_OBSERVABILITY_CONFIG_FILE`. If
+  // `GRPC_OBSERVABILITY_CONFIG_FILE` is unset, falls back to
+  // `GRPC_OBSERVABILITY_CONFIG`.
+  static absl::StatusOr<GcpObservabilityConfig> ReadFromEnv();
 };
 
 }  // namespace internal
