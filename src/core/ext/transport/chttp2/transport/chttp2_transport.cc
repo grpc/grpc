@@ -2094,7 +2094,8 @@ void grpc_chttp2_mark_stream_closed(grpc_chttp2_transport* t,
   if (became_closed) {
     grpc_chttp2_maybe_complete_recv_trailing_metadata(t, s);
     if (s->id != 0) {
-      remove_stream(t, s->id, removal_error(GRPC_ERROR_REF(error), s, "Stream removed"));
+      remove_stream(t, s->id,
+                    removal_error(GRPC_ERROR_REF(error), s, "Stream removed"));
     } else {
       // Purge streams waiting on concurrency still waiting for id assignment
       grpc_chttp2_list_remove_waiting_for_concurrency(t, s);

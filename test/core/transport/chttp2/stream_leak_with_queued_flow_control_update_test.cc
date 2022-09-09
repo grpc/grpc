@@ -36,7 +36,9 @@ namespace {
 
 class TestServer {
  public:
-  explicit TestServer(grpc_completion_queue* cq, grpc_channel_args* channel_args) : cq_(cq) {
+  explicit TestServer(grpc_completion_queue* cq,
+                      grpc_channel_args* channel_args)
+      : cq_(cq) {
     server_ = grpc_server_create(channel_args, nullptr);
     address_ = grpc_core::JoinHostPort("[::1]", grpc_pick_unused_port_or_die());
     grpc_server_register_completion_queue(server_, cq_, nullptr);
@@ -63,11 +65,10 @@ class TestServer {
     // request a call
     void* tag = this;
     grpc_call_error error = grpc_server_request_call(
-      server_, &call, &call_details, &request_metadata_recv, cq_,
-      cq_, tag);
+        server_, &call, &call_details, &request_metadata_recv, cq_, cq_, tag);
     GPR_ASSERT(error == GRPC_CALL_OK);
     grpc_event event = grpc_completion_queue_next(
-          cq_, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
+        cq_, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
     GPR_ASSERT(event.type == GRPC_OP_COMPLETE);
     grpc_call_details_destroy(&call_details);
     grpc_metadata_array_destroy(&request_metadata_recv);
@@ -88,11 +89,11 @@ class TestServer {
     grpc_slice status_details = grpc_slice_from_static_string("xyz");
     op->data.send_status_from_server.status_details = &status_details;
     op++;
-    error = grpc_call_start_batch(
-        call, ops, static_cast<size_t>(op - ops), tag, nullptr);
+    error = grpc_call_start_batch(call, ops, static_cast<size_t>(op - ops), tag,
+                                  nullptr);
     GPR_ASSERT(error == GRPC_CALL_OK);
-    event = grpc_completion_queue_next(
-        cq_, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
+    event = grpc_completion_queue_next(cq_, gpr_inf_future(GPR_CLOCK_REALTIME),
+                                       nullptr);
     GPR_ASSERT(event.type == GRPC_OP_COMPLETE);
     GPR_ASSERT(event.success);
     GPR_ASSERT(event.tag == tag);
@@ -107,7 +108,7 @@ class TestServer {
   std::string address_;
 };
 
-void StartCallAndCloseWrites(grpc_call* call, grpc_completion_queue *cq) {
+void StartCallAndCloseWrites(grpc_call* call, grpc_completion_queue* cq) {
   grpc_op ops[2];
   grpc_op* op;
   memset(ops, 0, sizeof(ops));
@@ -127,7 +128,7 @@ void StartCallAndCloseWrites(grpc_call* call, grpc_completion_queue *cq) {
   GPR_ASSERT(event.tag == tag);
 }
 
-void FinishCall(grpc_call* call, grpc_completion_queue *cq) {
+void FinishCall(grpc_call* call, grpc_completion_queue* cq) {
   grpc_op ops[3];
   grpc_op* op;
   grpc_metadata_array initial_metadata_recv;
@@ -163,11 +164,11 @@ void FinishCall(grpc_call* call, grpc_completion_queue *cq) {
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op++;
-  error = grpc_call_start_batch(
-      call, ops, static_cast<size_t>(op - ops), tag, nullptr);
+  error = grpc_call_start_batch(call, ops, static_cast<size_t>(op - ops), tag,
+                                nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  event = grpc_completion_queue_next(
-      cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
+  event = grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME),
+                                     nullptr);
   GPR_ASSERT(event.type == GRPC_OP_COMPLETE);
   GPR_ASSERT(event.success);
   GPR_ASSERT(event.tag == tag);
@@ -178,26 +179,26 @@ void FinishCall(grpc_call* call, grpc_completion_queue *cq) {
   grpc_slice_unref(details);
 }
 
-TEST(Chttp2, TestStreamDoesntLeakWhenItsWriteClosedAndThenReadClosedWhileReadingMessage) {
+TEST(
+    Chttp2,
+    TestStreamDoesntLeakWhenItsWriteClosedAndThenReadClosedWhileReadingMessage) {
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
   {
     // Prevent pings from client to server and server to client, since they can
     // cause chttp2 to initiate a write and so dodge the bug we're trying to
     // repro.
-    grpc_arg args[] = {
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_HTTP2_BDP_PROBE), 0)
-    };
+    grpc_arg args[] = {grpc_channel_arg_integer_create(
+        const_cast<char*>(GRPC_ARG_HTTP2_BDP_PROBE), 0)};
     grpc_channel_args channel_args = {GPR_ARRAY_SIZE(args), args};
     TestServer server(cq, &channel_args);
     grpc_channel_credentials* creds = grpc_insecure_credentials_create();
     grpc_channel* channel = grpc_channel_create(
         absl::StrCat("ipv6:", server.address()).c_str(), creds, nullptr);
     grpc_channel_credentials_release(creds);
-    grpc_call* call = grpc_channel_create_call(
-        channel, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
-        grpc_slice_from_static_string("/foo"), nullptr,
-        gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
+    grpc_call* call =
+        grpc_channel_create_call(channel, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
+                                 grpc_slice_from_static_string("/foo"), nullptr,
+                                 gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
     // Start the call. It's important for our repro to close writes before
     // reading the response.
     StartCallAndCloseWrites(call, cq);
@@ -206,7 +207,9 @@ TEST(Chttp2, TestStreamDoesntLeakWhenItsWriteClosedAndThenReadClosedWhileReading
     grpc_call_unref(call);
     grpc_channel_destroy(channel);
     // ensure connections aren't leaked
-    gpr_log(GPR_INFO, "The channel has been destroyed, wait for to shut down and close...");
+    gpr_log(
+        GPR_INFO,
+        "The channel has been destroyed, wait for to shut down and close...");
     gpr_timespec deadline = grpc_timeout_seconds_to_deadline(120);
     bool success = false;
     for (;;) {
@@ -218,22 +221,30 @@ TEST(Chttp2, TestStreamDoesntLeakWhenItsWriteClosedAndThenReadClosedWhileReading
       if (gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), deadline) > 0) {
         break;
       }
-      gpr_log(GPR_INFO, "grpc_iomgr_count_objects_for_testing() returned %ld, keep waiting until it reaches 1 (only the server listen socket should remain)", active_fds);
+      gpr_log(
+          GPR_INFO,
+          "grpc_iomgr_count_objects_for_testing() returned %ld, keep waiting "
+          "until it reaches 1 (only the server listen socket should remain)",
+          active_fds);
       grpc_event event = grpc_completion_queue_next(
-        cq, gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC), gpr_time_from_seconds(1, GPR_TIMESPAN)),
-        nullptr);
+          cq,
+          gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                       gpr_time_from_seconds(1, GPR_TIMESPAN)),
+          nullptr);
       GPR_ASSERT(event.type == GRPC_QUEUE_TIMEOUT);
     }
     if (!success) {
-      gpr_log(GPR_INFO, "grpc_iomgr_count_objects_for_testing() never returned 1 (only the server listen socket should remain). "
+      gpr_log(GPR_INFO,
+              "grpc_iomgr_count_objects_for_testing() never returned 1 (only "
+              "the server listen socket should remain). "
               "It's likely this test has triggered a connection leak.");
       GPR_ASSERT(0);
     }
   }
   grpc_completion_queue_shutdown(cq);
-  while (grpc_completion_queue_next(
-                 cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr)
-                 .type != GRPC_QUEUE_SHUTDOWN) {
+  while (grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME),
+                                    nullptr)
+             .type != GRPC_QUEUE_SHUTDOWN) {
   }
   grpc_completion_queue_destroy(cq);
 }
@@ -247,7 +258,8 @@ int main(int argc, char** argv) {
   // flow control update with queuing urgency is added after the stream is
   // otherwise shut down, leaving a dangling reference that won't get flushed
   // out since nothing will initiatie a write on the transport.
-  grpc_core::chttp2::g_test_ony_force_queue_urgency_for_stream_window_updates = true;
+  grpc_core::chttp2::g_test_ony_force_queue_urgency_for_stream_window_updates =
+      true;
   grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   auto result = RUN_ALL_TESTS();
