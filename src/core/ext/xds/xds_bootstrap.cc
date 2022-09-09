@@ -18,12 +18,6 @@
 
 #include "src/core/ext/xds/xds_bootstrap.h"
 
-#include <set>
-#include <utility>
-#include <vector>
-
-#include "absl/strings/string_view.h"
-
 #include <grpc/support/alloc.h>
 
 #include "src/core/lib/gpr/env.h"
