@@ -4625,7 +4625,6 @@ grpc_cc_library(
         "absl/strings",
     ],
     language = "c++",
-    tags = ["nofixdeps"],
     deps = [
         "channel_creds_registry",
         "config",
