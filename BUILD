@@ -1251,6 +1251,7 @@ grpc_cc_library(
     ],
     visibility = ["@grpc:client_channel"],
     deps = [
+        "certificate_provider_registry",
         "channel_args_preconditioning",
         "channel_creds_registry",
         "channel_init",
@@ -4433,8 +4434,9 @@ grpc_cc_library(
         "src/core/lib/security/certificate_provider/certificate_provider_factory.h",
     ],
     deps = [
+        "error",
         "gpr",
-        "grpc_base",
+        "grpc_public_hdrs",
         "json",
         "ref_counted",
         "ref_counted_ptr",
