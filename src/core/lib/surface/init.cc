@@ -33,6 +33,7 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
+#include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
@@ -54,6 +55,7 @@
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
+#include "src/core/lib/surface/init_internally.h"
 
 /* (generated) built in registry of plugins */
 extern void grpc_register_built_in_plugins(void);
@@ -116,6 +118,8 @@ void RegisterSecurityFilters(CoreConfiguration::Builder* builder) {
 }  // namespace grpc_core
 
 static void do_basic_init(void) {
+  grpc_core::InitInternally = grpc_init;
+  grpc_core::ShutdownInternally = grpc_shutdown;
   gpr_log_verbosity_init();
   g_init_mu = new grpc_core::Mutex();
   g_shutting_down_cv = new grpc_core::CondVar();
@@ -126,6 +130,7 @@ static void do_basic_init(void) {
   grpc_event_engine::experimental::RegisterForkHandlers();
   grpc_fork_handlers_auto_register();
   grpc_tracer_init();
+  grpc_client_channel_global_init_backup_polling();
 }
 
 typedef struct grpc_plugin {

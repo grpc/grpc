@@ -24,6 +24,7 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/security/certificate_provider/certificate_provider_registry.h"
 
@@ -48,8 +49,9 @@ void CertificateProviderStore::PluginDefinition::JsonPostLoad(
   CertificateProviderFactory* factory = nullptr;
   if (!plugin_name.empty()) {
     ScopedField field(errors, ".plugin_name");
-    factory = CertificateProviderRegistry::LookupCertificateProviderFactory(
-        plugin_name);
+    factory = CoreConfiguration::Get()
+                  .certificate_provider_registry()
+                  .LookupCertificateProviderFactory(plugin_name);
     if (factory == nullptr) {
       errors->AddError(absl::StrCat("Unrecognized plugin name: ", plugin_name));
       return;  // No point checking config.
@@ -126,8 +128,10 @@ CertificateProviderStore::CreateCertificateProviderLocked(
     return nullptr;
   }
   CertificateProviderFactory* factory =
-      CertificateProviderRegistry::LookupCertificateProviderFactory(
-          plugin_config_it->second.plugin_name);
+      CoreConfiguration::Get()
+          .certificate_provider_registry()
+          .LookupCertificateProviderFactory(
+              plugin_config_it->second.plugin_name);
   if (factory == nullptr) {
     // This should never happen since an entry is only inserted in the
     // plugin_config_map_ if the corresponding factory was found when parsing

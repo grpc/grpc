@@ -114,6 +114,7 @@ grpc_cc_test(
     deps = [
         "cq_verifier",
         "//:gpr",
+        "//:gpr_atm",
         "//:grpc",
         "//:grpc_codegen",
         "//:grpc_public_hdrs",
