@@ -45,6 +45,7 @@ CoreConfiguration::CoreConfiguration(Builder* builder)
       service_config_parser_(builder->service_config_parser_.Build()),
       resolver_registry_(builder->resolver_registry_.Build()),
       lb_policy_registry_(builder->lb_policy_registry_.Build()),
+      proxy_mapper_registry_(builder->proxy_mapper_registry_.Build()),
       certificate_provider_registry_(
           builder->certificate_provider_registry_.Build()) {}
 

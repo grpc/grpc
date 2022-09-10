@@ -497,6 +497,13 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "init_internally",
+    srcs = ["src/core/lib/surface/init_internally.cc"],
+    hdrs = ["src/core/lib/surface/init_internally.h"],
+    deps = ["gpr_platform"],
+)
+
+grpc_cc_library(
     name = "grpc_unsecure",
     srcs = [
         "src/core/lib/surface/init.cc",
@@ -529,6 +536,7 @@ grpc_cc_library(
         "grpc_security_base",
         "grpc_trace",
         "http_connect_handshaker",
+        "init_internally",
         "iomgr_timer",
         "posix_event_engine_timer_manager",
         "slice",
@@ -610,6 +618,7 @@ grpc_cc_library(
         "http_connect_handshaker",
         "httpcli",
         "httpcli_ssl_credentials",
+        "init_internally",
         "iomgr_timer",
         "json",
         "posix_event_engine_timer_manager",
@@ -1260,6 +1269,7 @@ grpc_cc_library(
         "grpc_resolver",
         "handshaker_registry",
         "lb_policy_registry",
+        "proxy_mapper_registry",
         "service_config_parser",
     ],
 )
@@ -3311,6 +3321,7 @@ grpc_cc_library(
         "grpc_trace",
         "handshaker_registry",
         "http2_errors",
+        "init_internally",
         "iomgr_fwd",
         "iomgr_port",
         "iomgr_timer",
@@ -3702,6 +3713,36 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "proxy_mapper",
+    hdrs = ["src/core/lib/handshaker/proxy_mapper.h"],
+    external_deps = [
+        "absl/strings",
+        "absl/types:optional",
+    ],
+    deps = [
+        "channel_args",
+        "gpr_platform",
+        "resolved_address",
+    ],
+)
+
+grpc_cc_library(
+    name = "proxy_mapper_registry",
+    srcs = ["src/core/lib/handshaker/proxy_mapper_registry.cc"],
+    hdrs = ["src/core/lib/handshaker/proxy_mapper_registry.h"],
+    external_deps = [
+        "absl/strings",
+        "absl/types:optional",
+    ],
+    deps = [
+        "channel_args",
+        "gpr_platform",
+        "proxy_mapper",
+        "resolved_address",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_client_channel",
     srcs = [
         "src/core/ext/filters/client_channel/backend_metric.cc",
@@ -3719,7 +3760,6 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc",
         "src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.cc",
         "src/core/ext/filters/client_channel/local_subchannel_pool.cc",
-        "src/core/ext/filters/client_channel/proxy_mapper_registry.cc",
         "src/core/ext/filters/client_channel/resolver_result_parsing.cc",
         "src/core/ext/filters/client_channel/retry_filter.cc",
         "src/core/ext/filters/client_channel/retry_service_config.cc",
@@ -3744,8 +3784,6 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h",
         "src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.h",
         "src/core/ext/filters/client_channel/local_subchannel_pool.h",
-        "src/core/ext/filters/client_channel/proxy_mapper.h",
-        "src/core/ext/filters/client_channel/proxy_mapper_registry.h",
         "src/core/ext/filters/client_channel/resolver_result_parsing.h",
         "src/core/ext/filters/client_channel/retry_filter.h",
         "src/core/ext/filters/client_channel/retry_service_config.h",
@@ -3794,6 +3832,7 @@ grpc_cc_library(
         "grpc_service_config_impl",
         "grpc_trace",
         "http_connect_handshaker",
+        "init_internally",
         "iomgr_fwd",
         "iomgr_timer",
         "json",
@@ -3804,6 +3843,8 @@ grpc_cc_library(
         "orphanable",
         "pollset_set",
         "protobuf_duration_upb",
+        "proxy_mapper",
+        "proxy_mapper_registry",
         "ref_counted",
         "ref_counted_ptr",
         "resolved_address",
@@ -4587,8 +4628,10 @@ grpc_cc_library(
         "grpc_trace",
         "grpc_transport_chttp2_client_connector",
         "iomgr_fwd",
+        "init_internally",
         "iomgr_timer",
         "json",
+        "json_object_loader",
         "json_util",
         "lb_policy_registry",
         "match",
@@ -4834,6 +4877,7 @@ grpc_cc_library(
         "grpc_trace",
         "grpc_xds_client",
         "json",
+        "json_object_loader",
         "lb_policy",
         "lb_policy_factory",
         "lb_policy_registry",
@@ -4875,6 +4919,7 @@ grpc_cc_library(
         "grpc_trace",
         "grpc_xds_client",
         "json",
+        "json_object_loader",
         "lb_policy",
         "lb_policy_factory",
         "lb_policy_registry",

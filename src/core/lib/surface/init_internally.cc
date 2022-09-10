@@ -1,5 +1,4 @@
-//
-// Copyright 2019 gRPC authors.
+// Copyright 2022 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,27 +11,14 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/xds/xds_bootstrap.h"
-
-#include <grpc/support/alloc.h>
-
-#include "src/core/lib/gpr/env.h"
-#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/surface/init_internally.h"
 
 namespace grpc_core {
 
-// TODO(donnadionne): check to see if federation is enabled, this will be
-// removed once federation is fully integrated and enabled by default.
-bool XdsFederationEnabled() {
-  char* value = gpr_getenv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
-  bool parsed_value;
-  bool parse_succeeded = gpr_parse_bool_value(value, &parsed_value);
-  gpr_free(value);
-  return parse_succeeded && parsed_value;
-}
+void (*InitInternally)();
+void (*ShutdownInternally)();
 
 }  // namespace grpc_core
