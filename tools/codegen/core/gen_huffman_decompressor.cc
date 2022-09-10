@@ -456,7 +456,8 @@ class BuildCtx {
   void AddMatchBody(TableBuilder* table_builder, std::string index,
                     std::string ofs, const MatchCase& match_case, bool is_top,
                     bool refill, int depth, Sink* out);
-  void AddDone(SymSet start_syms, int num_bits, Sink* out);
+  void AddDone(SymSet start_syms, int num_bits, bool all_ones_so_far,
+               Sink* out);
 
   int NewId() { return next_id_++; }
   int MaxBitsForTop() const { return max_bits_for_depth_[0]; }
@@ -1007,12 +1008,18 @@ class FunMaker {
 ///////////////////////////////////////////////////////////////////////////////
 // BuildCtx implementation
 
-void BuildCtx::AddDone(SymSet start_syms, int num_bits, Sink* out) {
+void BuildCtx::AddDone(SymSet start_syms, int num_bits, bool all_ones_so_far,
+                       Sink* out) {
   out->Add("done_ = true;");
-  if (num_bits == 1) return;
+  if (num_bits == 1) {
+    if (!all_ones_so_far) out->Add("ok_ = false;");
+    return;
+  }
   // we must have 0 < buffer_len_ < num_bits
   auto s = out->Add<Switch>("buffer_len_");
-  s->Case("0")->Add("break;");
+  auto c0 = s->Case("0");
+  if (!all_ones_so_far) c0->Add("ok_ = false;");
+  c0->Add("break;");
   for (int i = 1; i < num_bits; i++) {
     auto c = s->Case(absl::StrCat(i));
     SymSet maybe;
@@ -1021,7 +1028,11 @@ void BuildCtx::AddDone(SymSet start_syms, int num_bits, Sink* out) {
       maybe.push_back(sym);
     }
     if (maybe.empty()) {
-      c->Add("ok_ = (buffer_ & ((1<<buffer_len_)-1)) == (1<<buffer_len_)-1;");
+      if (all_ones_so_far) {
+        c->Add("ok_ = (buffer_ & ((1<<buffer_len_)-1)) == (1<<buffer_len_)-1;");
+      } else {
+        c->Add("ok_ = false;");
+      }
       c->Add("return;");
       continue;
     }
@@ -1092,15 +1103,12 @@ void BuildCtx::AddStep(SymSet start_syms, int num_bits, bool is_top,
           " sym_len=", sym.length, " sym_bits=", sym.bits,
           " consumed_len=", consumed_len, " consumed_mask=", consumed_mask,
           " all_ones_so_far=", all_ones_so_far));
-      if (all_ones_so_far) {
-        AddDone(start_syms, num_bits, fun_maker_->CallNewFun("Done", ifblk));
-      } else {
-        ifblk->Add("done_ = true;");
-        ifblk->Add("ok_ = false;");
-      }
+      AddDone(start_syms, num_bits, all_ones_so_far,
+              fun_maker_->CallNewFun("Done", ifblk));
       ifblk->Add("return;");
     } else {
-      AddDone(start_syms, num_bits, fun_maker_->CallNewFun("Done", ifblk));
+      AddDone(start_syms, num_bits, true,
+              fun_maker_->CallNewFun("Done", ifblk));
       ifblk->Add("break;");
     }
     out->Add("}");

@@ -71,9 +71,11 @@ class HuffDecoderCommon {
   static inline uint64_t GetEmit10(size_t, size_t emit) {
     return table10_0_emit_[emit];
   }
-  static inline uint64_t GetOp11(size_t i) { return table11_0_ops_[i]; }
-  static inline uint64_t GetEmit11(size_t, size_t emit) {
-    return table11_0_emit_[emit];
+  static inline uint64_t GetOp11(size_t i) {
+    return table11_ops_[i >> 5][i & 0x1f];
+  }
+  static inline uint64_t GetEmit11(size_t i, size_t emit) {
+    return table11_emit_[i >> 5][emit];
   }
   static inline uint64_t GetOp6(size_t i) {
     return table6_ops_[i >> 6][i & 0x3f];
@@ -85,9 +87,7 @@ class HuffDecoderCommon {
   static inline uint64_t GetEmit13(size_t, size_t emit) {
     return table13_0_emit_[emit];
   }
-  static inline uint64_t GetOp14(size_t i) {
-    return table14_0_inner_[table14_0_outer_[i]];
-  }
+  static inline uint64_t GetOp14(size_t i) { return table14_0_ops_[i]; }
   static inline uint64_t GetEmit14(size_t, size_t emit) {
     return table14_0_emit_[emit];
   }
@@ -112,37 +112,37 @@ class HuffDecoderCommon {
     return table17_0_emit_[emit];
   }
   static inline uint64_t GetOp18(size_t i) {
-    return table17_0_inner_[table18_0_outer_[i]];
+    return table17_0_inner_[table17_0_outer_[i]];
   }
   static inline uint64_t GetEmit18(size_t, size_t emit) {
     return table18_0_emit_[emit];
   }
   static inline uint64_t GetOp19(size_t i) {
-    return table17_0_inner_[table18_0_outer_[i]];
+    return table17_0_inner_[table17_0_outer_[i]];
   }
   static inline uint64_t GetEmit19(size_t, size_t emit) {
     return table19_0_emit_[emit];
   }
   static inline uint64_t GetOp20(size_t i) {
-    return table17_0_inner_[table18_0_outer_[i]];
+    return table17_0_inner_[table17_0_outer_[i]];
   }
   static inline uint64_t GetEmit20(size_t, size_t emit) {
     return table20_0_emit_[emit];
   }
   static inline uint64_t GetOp21(size_t i) {
-    return table17_0_inner_[table18_0_outer_[i]];
+    return table17_0_inner_[table17_0_outer_[i]];
   }
   static inline uint64_t GetEmit21(size_t, size_t emit) {
     return table21_0_emit_[emit];
   }
   static inline uint64_t GetOp22(size_t i) {
-    return table17_0_inner_[table18_0_outer_[i]];
+    return table17_0_inner_[table17_0_outer_[i]];
   }
   static inline uint64_t GetEmit22(size_t, size_t emit) {
     return table22_0_emit_[emit];
   }
   static inline uint64_t GetOp23(size_t i) {
-    return table23_0_inner_[table23_0_outer_[i]];
+    return table5_0_inner_[table23_0_outer_[i]];
   }
   static inline uint64_t GetEmit23(size_t, size_t emit) {
     return table23_0_emit_[emit];
@@ -172,10 +172,16 @@ class HuffDecoderCommon {
     return table26_0_emit_[emit];
   }
   static inline uint64_t GetOp28(size_t i) {
-    return table28_0_inner_[table23_0_outer_[i]];
+    return table28_0_inner_[table5_0_outer_[i]];
   }
   static inline uint64_t GetEmit28(size_t, size_t emit) {
     return table28_0_emit_[emit];
+  }
+  static inline uint64_t GetOp30(size_t i) {
+    return table30_0_inner_[table24_0_outer_[i]];
+  }
+  static inline uint64_t GetEmit30(size_t, size_t emit) {
+    return table30_0_emit_[emit];
   }
   static inline uint64_t GetOp29(size_t i) {
     return table29_0_inner_[table29_0_outer_[i]];
@@ -212,8 +218,12 @@ class HuffDecoderCommon {
   static const uint8_t table9_0_outer_[16];
   static const uint8_t table10_0_emit_[12];
   static const uint8_t table10_0_ops_[32];
-  static const uint8_t table11_0_emit_[14];
-  static const uint8_t table11_0_ops_[64];
+  static const uint8_t table11_0_emit_[3];
+  static const uint8_t table11_0_ops_[32];
+  static const uint8_t table11_1_emit_[11];
+  static const uint8_t table11_1_ops_[32];
+  static const uint8_t* const table11_emit_[2];
+  static const uint8_t* const table11_ops_[2];
   static const uint8_t table6_0_emit_[3];
   static const uint8_t table6_0_ops_[64];
   static const uint8_t table6_1_emit_[14];
@@ -223,8 +233,7 @@ class HuffDecoderCommon {
   static const uint8_t table13_0_emit_[3];
   static const uint8_t table13_0_ops_[16];
   static const uint8_t table14_0_emit_[11];
-  static const uint8_t table14_0_inner_[13];
-  static const uint8_t table14_0_outer_[32];
+  static const uint8_t table14_0_ops_[32];
   static const uint8_t table15_0_emit_[24];
   static const uint8_t table15_0_ops_[64];
   static const uint8_t table16_0_emit_[50];
@@ -236,13 +245,11 @@ class HuffDecoderCommon {
   static const uint8_t table17_0_inner_[2];
   static const uint8_t table17_0_outer_[2];
   static const uint8_t table18_0_emit_[2];
-  static const uint8_t table18_0_outer_[2];
   static const uint8_t table19_0_emit_[2];
   static const uint8_t table20_0_emit_[2];
   static const uint8_t table21_0_emit_[2];
   static const uint8_t table22_0_emit_[2];
   static const uint8_t table23_0_emit_[4];
-  static const uint8_t table23_0_inner_[4];
   static const uint8_t table23_0_outer_[4];
   static const uint8_t table24_0_emit_[8];
   static const uint8_t table24_0_inner_[8];
@@ -258,6 +265,8 @@ class HuffDecoderCommon {
   static const uint8_t table26_0_outer_[32];
   static const uint8_t table28_0_emit_[3];
   static const uint8_t table28_0_inner_[4];
+  static const uint8_t table30_0_emit_[7];
+  static const uint8_t table30_0_inner_[8];
   static const uint8_t table29_0_emit_[9];
   static const uint8_t table29_0_inner_[9];
   static const uint8_t table29_0_outer_[16];
@@ -383,8 +392,7 @@ class HuffDecoder : public HuffDecoderCommon {
     if (!RefillTo2()) {
       // some=0/2;n=33 sym_len=10 sym_bits=1016 consumed_len=8 consumed_mask=254
       // all_ones_so_far=0
-      done_ = true;
-      ok_ = false;
+      Done1();
       return;
     }
     const auto index = (buffer_ >> (buffer_len_ - 2)) & 0x3;
@@ -403,11 +411,24 @@ class HuffDecoder : public HuffDecoderCommon {
     }
     return true;
   }
+  void Done1() {
+    done_ = true;
+    switch (buffer_len_) {
+      case 0: {
+        ok_ = false;
+        break;
+      }
+      case 1: {
+        ok_ = false;
+        return;
+      }
+    }
+  }
   void DecodeStep1() {
     if (!RefillTo7()) {
       // some=18/5;n=0 sym_len=13 sym_bits=8184 consumed_len=8 consumed_mask=255
       // all_ones_so_far=1
-      Done1();
+      Done2();
       return;
     }
     const auto index = (buffer_ >> (buffer_len_ - 7)) & 0x7f;
@@ -440,7 +461,7 @@ class HuffDecoder : public HuffDecoderCommon {
     }
     return true;
   }
-  void Done1() {
+  void Done2() {
     done_ = true;
     switch (buffer_len_) {
       case 0: {
@@ -531,7 +552,7 @@ class HuffDecoder : public HuffDecoderCommon {
     if (!RefillTo8()) {
       // some=d8/8;n=1 sym_len=23 sym_bits=8388568 consumed_len=15
       // consumed_mask=32767 all_ones_so_far=1
-      Done2();
+      Done3();
       return;
     }
     const auto index = (buffer_ >> (buffer_len_ - 8)) & 0xff;
@@ -590,7 +611,7 @@ class HuffDecoder : public HuffDecoderCommon {
       }
     }
   }
-  void Done2() {
+  void Done3() {
     done_ = true;
     switch (buffer_len_) {
       case 0: {
@@ -668,8 +689,7 @@ class HuffDecoder : public HuffDecoderCommon {
     if (!RefillTo1()) {
       // some=0/1;n=9 sym_len=24 sym_bits=16777194 consumed_len=23
       // consumed_mask=8388597 all_ones_so_far=0
-      done_ = true;
-      ok_ = false;
+      Done4();
       return;
     }
     const auto index = (buffer_ >> (buffer_len_ - 1)) & 0x1;
@@ -687,12 +707,15 @@ class HuffDecoder : public HuffDecoderCommon {
     }
     return true;
   }
+  void Done4() {
+    done_ = true;
+    ok_ = false;
+  }
   void DecodeStep4() {
     if (!RefillTo1()) {
       // some=0/1;n=144 sym_len=24 sym_bits=16777196 consumed_len=23
       // consumed_mask=8388598 all_ones_so_far=0
-      done_ = true;
-      ok_ = false;
+      Done5();
       return;
     }
     const auto index = (buffer_ >> (buffer_len_ - 1)) & 0x1;
@@ -702,12 +725,15 @@ class HuffDecoder : public HuffDecoderCommon {
     const auto emit_ofs = op >> 1;
     sink_(GetEmit18(index, emit_ofs + 0));
   }
+  void Done5() {
+    done_ = true;
+    ok_ = false;
+  }
   void DecodeStep5() {
     if (!RefillTo1()) {
       // some=0/1;n=148 sym_len=24 sym_bits=16777198 consumed_len=23
       // consumed_mask=8388599 all_ones_so_far=0
-      done_ = true;
-      ok_ = false;
+      Done6();
       return;
     }
     const auto index = (buffer_ >> (buffer_len_ - 1)) & 0x1;
@@ -717,12 +743,15 @@ class HuffDecoder : public HuffDecoderCommon {
     const auto emit_ofs = op >> 1;
     sink_(GetEmit19(index, emit_ofs + 0));
   }
+  void Done6() {
+    done_ = true;
+    ok_ = false;
+  }
   void DecodeStep6() {
     if (!RefillTo1()) {
       // some=0/1;n=171 sym_len=24 sym_bits=16777200 consumed_len=23
       // consumed_mask=8388600 all_ones_so_far=0
-      done_ = true;
-      ok_ = false;
+      Done7();
       return;
     }
     const auto index = (buffer_ >> (buffer_len_ - 1)) & 0x1;
@@ -732,12 +761,15 @@ class HuffDecoder : public HuffDecoderCommon {
     const auto emit_ofs = op >> 1;
     sink_(GetEmit20(index, emit_ofs + 0));
   }
+  void Done7() {
+    done_ = true;
+    ok_ = false;
+  }
   void DecodeStep7() {
     if (!RefillTo1()) {
       // some=0/1;n=215 sym_len=24 sym_bits=16777202 consumed_len=23
       // consumed_mask=8388601 all_ones_so_far=0
-      done_ = true;
-      ok_ = false;
+      Done8();
       return;
     }
     const auto index = (buffer_ >> (buffer_len_ - 1)) & 0x1;
@@ -747,12 +779,15 @@ class HuffDecoder : public HuffDecoderCommon {
     const auto emit_ofs = op >> 1;
     sink_(GetEmit21(index, emit_ofs + 0));
   }
+  void Done8() {
+    done_ = true;
+    ok_ = false;
+  }
   void DecodeStep8() {
     if (!RefillTo1()) {
       // some=0/1;n=236 sym_len=24 sym_bits=16777204 consumed_len=23
       // consumed_mask=8388602 all_ones_so_far=0
-      done_ = true;
-      ok_ = false;
+      Done9();
       return;
     }
     const auto index = (buffer_ >> (buffer_len_ - 1)) & 0x1;
@@ -762,12 +797,15 @@ class HuffDecoder : public HuffDecoderCommon {
     const auto emit_ofs = op >> 1;
     sink_(GetEmit22(index, emit_ofs + 0));
   }
+  void Done9() {
+    done_ = true;
+    ok_ = false;
+  }
   void DecodeStep9() {
     if (!RefillTo2()) {
       // some=0/2;n=199 sym_len=25 sym_bits=33554412 consumed_len=23
       // consumed_mask=8388603 all_ones_so_far=0
-      done_ = true;
-      ok_ = false;
+      Done10();
       return;
     }
     const auto index = (buffer_ >> (buffer_len_ - 2)) & 0x3;
@@ -777,12 +815,24 @@ class HuffDecoder : public HuffDecoderCommon {
     const auto emit_ofs = op >> 2;
     sink_(GetEmit23(index, emit_ofs + 0));
   }
+  void Done10() {
+    done_ = true;
+    switch (buffer_len_) {
+      case 0: {
+        ok_ = false;
+        break;
+      }
+      case 1: {
+        ok_ = false;
+        return;
+      }
+    }
+  }
   void DecodeStep10() {
     if (!RefillTo3()) {
       // some=0/3;n=192 sym_len=26 sym_bits=67108832 consumed_len=23
       // consumed_mask=8388604 all_ones_so_far=0
-      done_ = true;
-      ok_ = false;
+      Done11();
       return;
     }
     const auto index = (buffer_ >> (buffer_len_ - 3)) & 0x7;
@@ -802,12 +852,25 @@ class HuffDecoder : public HuffDecoderCommon {
     }
     return true;
   }
+  void Done11() {
+    done_ = true;
+    switch (buffer_len_) {
+      case 0: {
+        ok_ = false;
+        break;
+      }
+      case 1:
+      case 2: {
+        ok_ = false;
+        return;
+      }
+    }
+  }
   void DecodeStep11() {
     if (!RefillTo4()) {
       // some=0/4;n=211 sym_len=27 sym_bits=134217696 consumed_len=23
       // consumed_mask=8388606 all_ones_so_far=0
-      done_ = true;
-      ok_ = false;
+      Done12();
       return;
     }
     const auto index = (buffer_ >> (buffer_len_ - 4)) & 0xf;
@@ -828,11 +891,26 @@ class HuffDecoder : public HuffDecoderCommon {
     }
     return true;
   }
+  void Done12() {
+    done_ = true;
+    switch (buffer_len_) {
+      case 0: {
+        ok_ = false;
+        break;
+      }
+      case 1:
+      case 2:
+      case 3: {
+        ok_ = false;
+        return;
+      }
+    }
+  }
   void DecodeStep12() {
     if (!RefillTo5()) {
       // some=2/5;n=2 sym_len=28 sym_bits=268435426 consumed_len=23
       // consumed_mask=8388607 all_ones_so_far=1
-      Done3();
+      Done13();
       return;
     }
     const auto index = (buffer_ >> (buffer_len_ - 5)) & 0x1f;
@@ -863,7 +941,7 @@ class HuffDecoder : public HuffDecoderCommon {
     }
     return true;
   }
-  void Done3() {
+  void Done13() {
     done_ = true;
     switch (buffer_len_) {
       case 0: {
@@ -896,7 +974,7 @@ class HuffDecoder : public HuffDecoderCommon {
     if (!RefillTo2()) {
       // some=0/2;n=10 sym_len=30 sym_bits=1073741820 consumed_len=28
       // consumed_mask=268435455 all_ones_so_far=1
-      Done4();
+      Done14();
       return;
     }
     const auto index = (buffer_ >> (buffer_len_ - 2)) & 0x3;
@@ -916,7 +994,7 @@ class HuffDecoder : public HuffDecoderCommon {
       }
     }
   }
-  void Done4() {
+  void Done14() {
     done_ = true;
     switch (buffer_len_) {
       case 0: {
@@ -932,8 +1010,7 @@ class HuffDecoder : public HuffDecoderCommon {
     if (!RefillTo4()) {
       // some=e/4;n=203 sym_len=27 sym_bits=134217694 consumed_len=23
       // consumed_mask=8388605 all_ones_so_far=0
-      done_ = true;
-      ok_ = false;
+      Done15();
       return;
     }
     const auto index = (buffer_ >> (buffer_len_ - 4)) & 0xf;
@@ -942,6 +1019,35 @@ class HuffDecoder : public HuffDecoderCommon {
     buffer_len_ -= consumed;
     const auto emit_ofs = op >> 3;
     sink_(GetEmit29(index, emit_ofs + 0));
+  }
+  void Done15() {
+    done_ = true;
+    switch (buffer_len_) {
+      case 3: {
+        const auto index = buffer_ & 7;
+        const auto op = GetOp30(index);
+        switch (op & 3) {
+          case 1: {
+            ok_ = false;
+            break;
+          }
+          case 2: {
+            sink_(GetEmit30(index, op >> 2));
+            break;
+          }
+        }
+        return;
+      }
+      case 0: {
+        ok_ = false;
+        break;
+      }
+      case 1:
+      case 2: {
+        ok_ = false;
+        return;
+      }
+    }
   }
   F sink_;
   const uint8_t* begin_;
