@@ -452,10 +452,11 @@ class BuildCtx {
         fun_maker_(fun_maker) {}
 
   void AddStep(SymSet start_syms, int num_bits, bool is_top, bool refill,
-               bool is_done, int depth, Sink* out);
+               int depth, Sink* out);
   void AddMatchBody(TableBuilder* table_builder, std::string index,
                     std::string ofs, const MatchCase& match_case, bool is_top,
-                    bool refill, bool is_done, int depth, Sink* out);
+                    bool refill, int depth, Sink* out);
+  void AddDone(SymSet start_syms, int num_bits, Sink* out);
 
   int NewId() { return next_id_++; }
   int MaxBitsForTop() const { return max_bits_for_depth_[0]; }
@@ -1006,8 +1007,76 @@ class FunMaker {
 ///////////////////////////////////////////////////////////////////////////////
 // BuildCtx implementation
 
+void BuildCtx::AddDone(SymSet start_syms, int num_bits, Sink* out) {
+  out->Add("done_ = true;");
+  if (num_bits == 1) return;
+  // we must have 0 < buffer_len_ < num_bits
+  auto s = out->Add<Switch>("buffer_len_");
+  s->Case("0")->Add("break;");
+  for (int i = 1; i < num_bits; i++) {
+    auto c = s->Case(absl::StrCat(i));
+    SymSet maybe;
+    for (auto sym : start_syms) {
+      if (sym.bits.length() > i) continue;
+      maybe.push_back(sym);
+    }
+    if (maybe.empty()) {
+      c->Add("ok_ = (buffer_ & ((1<<buffer_len_)-1)) == (1<<buffer_len_)-1;");
+      c->Add("return;");
+      continue;
+    }
+    TableBuilder table_builder(this);
+    enum Cases {
+      kNoEmitOk,
+      kFail,
+      kEmitOk,
+    };
+    for (size_t n = 0; n < (1 << i); n++) {
+      if (n == (1 << i) - 1) {
+        table_builder.Add(kNoEmitOk, {}, 0);
+        goto next;
+      }
+      for (auto sym : maybe) {
+        if ((n >> (i - sym.bits.length())) == sym.bits.mask()) {
+          if (i != sym.bits.length() &&
+              (n & ((1 << (i - sym.bits.length())) - 1)) !=
+                  ((1 << (i - sym.bits.length())) - 1)) {
+            table_builder.Add(kFail, {}, 0);
+            goto next;
+          }
+          table_builder.Add(kEmitOk, {static_cast<uint8_t>(sym.symbol)}, 0);
+          goto next;
+        }
+      }
+      table_builder.Add(kFail, {}, 0);
+    next:;
+    }
+    table_builder.Build();
+    c->Add(absl::StrCat("const auto index = buffer_ & ", (1 << i) - 1, ";"));
+    c->Add(absl::StrCat("const auto op = ", table_builder.OpAccessor("index"),
+                        ";"));
+    if (table_builder.ConsumeBits() != 0) {
+      fprintf(stderr, "consume bits = %d\n", table_builder.ConsumeBits());
+      abort();
+    }
+    auto s_fin = c->Add<Switch>(
+        absl::StrCat("op & ", (1 << table_builder.MatchBits()) - 1));
+    auto emit_ok = s_fin->Case(absl::StrCat(kEmitOk));
+    emit_ok->Add(absl::StrCat(
+        "sink_(",
+        table_builder.EmitAccessor(
+            "index", absl::StrCat("op >>", table_builder.MatchBits())),
+        ");"));
+    emit_ok->Add("break;");
+    auto fail = s_fin->Case(absl::StrCat(kFail));
+    fail->Add("ok_ = false;");
+    fail->Add("break;");
+    c->Add("return;");
+  }
+}
+
 void BuildCtx::AddStep(SymSet start_syms, int num_bits, bool is_top,
-                       bool refill, bool is_done, int depth, Sink* out) {
+                       bool refill, int depth, Sink* out) {
   TableBuilder table_builder(this);
   if (refill) {
     out->Add(absl::StrCat("if (!", fun_maker_->RefillTo(num_bits), ") {"));
@@ -1024,13 +1093,14 @@ void BuildCtx::AddStep(SymSet start_syms, int num_bits, bool is_top,
           " consumed_len=", consumed_len, " consumed_mask=", consumed_mask,
           " all_ones_so_far=", all_ones_so_far));
       if (all_ones_so_far) {
-        ifblk->Add("CheckOkAtEnd();");
+        AddDone(start_syms, num_bits, fun_maker_->CallNewFun("Done", ifblk));
       } else {
+        ifblk->Add("done_ = true;");
         ifblk->Add("ok_ = false;");
       }
       ifblk->Add("return;");
     } else {
-      ifblk->Add("Done();");
+      AddDone(start_syms, num_bits, fun_maker_->CallNewFun("Done", ifblk));
       ifblk->Add("break;");
     }
     out->Add("}");
@@ -1065,23 +1135,13 @@ void BuildCtx::AddStep(SymSet start_syms, int num_bits, bool is_top,
       absl::StrCat("const auto op = ", table_builder.OpAccessor("index"), ";"));
   out->Add(absl::StrCat("const int consumed = op & ",
                         (1 << table_builder.ConsumeBits()) - 1, ";"));
-  if (is_done) {
-    out->Add("if (consumed > max_emit_len) {");
-    out->Add(absl::StrCat("  buffer_ >>= ", MaxBitsForTop() - 1,
-                          " - max_emit_len;"));
-    out->Add("  buffer_len_ = max_emit_len;");
-    out->Add("  CheckOkAtEnd();");
-    out->Add("  return;");
-    out->Add("}");
-  }
   out->Add("buffer_len_ -= consumed;");
   out->Add(absl::StrCat("const auto emit_ofs = op >> ",
                         table_builder.ConsumeBits() + table_builder.MatchBits(),
                         ";"));
   if (match_cases.size() == 1) {
     AddMatchBody(&table_builder, "index", "emit_ofs",
-                 match_cases.begin()->first, is_top, refill, is_done, depth,
-                 out);
+                 match_cases.begin()->first, is_top, refill, depth, out);
   } else {
     auto s = out->Add<Switch>(
         absl::StrCat("(op >> ", table_builder.ConsumeBits(), ") & ",
@@ -1089,7 +1149,7 @@ void BuildCtx::AddStep(SymSet start_syms, int num_bits, bool is_top,
     for (auto kv : match_cases) {
       auto c = s->Case(absl::StrCat(kv.second));
       AddMatchBody(&table_builder, "index", "emit_ofs", kv.first, is_top,
-                   refill, is_done, depth, c);
+                   refill, depth, c);
       c->Add("break;");
     }
   }
@@ -1097,8 +1157,7 @@ void BuildCtx::AddStep(SymSet start_syms, int num_bits, bool is_top,
 
 void BuildCtx::AddMatchBody(TableBuilder* table_builder, std::string index,
                             std::string ofs, const MatchCase& match_case,
-                            bool is_top, bool refill, bool is_done, int depth,
-                            Sink* out) {
+                            bool is_top, bool refill, int depth, Sink* out) {
   if (absl::holds_alternative<End>(match_case)) {
     out->Add("begin_ = end_;");
     out->Add("buffer_len_ = 0;");
@@ -1112,11 +1171,8 @@ void BuildCtx::AddMatchBody(TableBuilder* table_builder, std::string index,
               depth + 1 >= max_bits_for_depth_.size()
                   ? max_bits
                   : std::min(max_bits, max_bits_for_depth_[depth + 1]),
-              false, true, false, depth + 1,
+              false, true, depth + 1,
               fun_maker_->CallNewFun("DecodeStep", out));
-    }
-    if (is_done) {
-      out->Add("buffer_len_ += consumed;");
     }
     return;
   }
@@ -1175,8 +1231,10 @@ BuildOutput Build(std::vector<int> max_bits_for_depth) {
       "HuffDecoder(F sink, const uint8_t* begin, const uint8_t* end) : "
       "sink_(sink), begin_(begin), end_(end) {}");
   // finalizer
+  /*
   prv->Add("void Done() {");
   auto done = prv->Add<Indent>();
+  done->Add("done_ = true;");
   done->Add("if (buffer_len_ == 0) return;");
   done->Add("const int max_emit_len = buffer_len_;");
   done->Add(absl::StrCat("if (buffer_len_ < ", ctx.MaxBitsForTop() - 1, ") {"));
@@ -1190,13 +1248,14 @@ BuildOutput Build(std::vector<int> max_bits_for_depth) {
   ctx.AddStep(AllSyms(), ctx.MaxBitsForTop() - 1, false, false, true, 1, done);
   done->Add("CheckOkAtEnd();");
   prv->Add("}");
-  prv->Add("void CheckOkAtEnd() {");
+  prv->Add("void Done() {");
   auto check_ok = prv->Add<Indent>();
   check_ok->Add("done_ = true;");
   check_ok->Add("if (buffer_len_ == 0) return;");
   check_ok->Add("const uint64_t mask = (1 << buffer_len_) - 1;");
   check_ok->Add(absl::StrCat("if ((buffer_ & mask) != mask) ok_ = false;"));
   prv->Add("}");
+*/
   // members
   prv->Add("F sink_;");
   prv->Add("const uint8_t* begin_;");
@@ -1209,7 +1268,7 @@ BuildOutput Build(std::vector<int> max_bits_for_depth) {
   pub->Add("bool Run() {");
   auto body = pub->Add<Indent>();
   body->Add("while (!done_) {");
-  ctx.AddStep(AllSyms(), ctx.MaxBitsForTop(), true, true, false, 0,
+  ctx.AddStep(AllSyms(), ctx.MaxBitsForTop(), true, true, 0,
               body->Add<Indent>());
   body->Add("}");
   body->Add("return ok_;");
@@ -1275,9 +1334,10 @@ int main(void) {
     threads.front().join();
     threads.pop();
   }
-  // Choose the variation that generates the least code.
+  // Choose the variation that generates the least code, weighted towards header
+  // length
   for (auto& r : results) {
-    size_t l = r->header.length() + r->source.length();
+    size_t l = 5 * r->header.length() + r->source.length();
     if (l < best_len) {
       best_len = l;
       best = std::move(*r);
