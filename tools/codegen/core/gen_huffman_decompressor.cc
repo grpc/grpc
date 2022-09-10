@@ -1043,7 +1043,7 @@ void BuildCtx::AddDone(SymSet start_syms, int num_bits, bool all_ones_so_far,
       kEmitOk,
     };
     for (size_t n = 0; n < (1 << i); n++) {
-      if (n == (1 << i) - 1) {
+      if (all_ones_so_far && n == (1 << i) - 1) {
         table_builder.Add(kNoEmitOk, {}, 0);
         goto next;
       }
