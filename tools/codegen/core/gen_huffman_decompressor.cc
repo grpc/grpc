@@ -890,41 +890,20 @@ class TableBuilder {
   // the smallest footprint.
   std::unique_ptr<EncodeOption> Choose() const {
     std::unique_ptr<EncodeOption> chosen;
-    struct Measure {
-      std::unique_ptr<EncodeOption> best;
-      size_t best_size;
-      std::thread thread;
-      Measure(const TableBuilder* builder, size_t slice_bits)
-          : thread{[this, builder, slice_bits] {
-              auto raw = builder->MakeTable(slice_bits);
-              std::unique_ptr<NestedTable> nested;
-              size_t nested_size;
-              std::thread measure_nested([&raw, &nested, &nested_size] {
-                nested = raw->MakeNestedTable();
-                nested_size = nested->Size();
-              });
-              size_t raw_size = raw->Size();
-              measure_nested.join();
-              if (raw_size < best_size) {
-                best = std::move(raw);
-                best_size = raw_size;
-              } else {
-                best = std::move(nested);
-                best_size = nested_size;
-              }
-            }} {};
-    };
-    std::vector<std::unique_ptr<Measure>> options;
+    size_t best_size = std::numeric_limits<size_t>::max();
     for (size_t slice_bits = 0; (1 << slice_bits) < elems_.size();
          slice_bits++) {
-      options.emplace_back(absl::make_unique<Measure>(this, slice_bits));
-    }
-    size_t best_size = std::numeric_limits<size_t>::max();
-    for (auto& option : options) {
-      option->thread.join();
-      if (option->best_size < best_size) {
-        chosen = std::move(option->best);
-        best_size = option->best_size;
+      auto raw = MakeTable(slice_bits);
+      size_t raw_size = raw->Size();
+      auto nested = raw->MakeNestedTable();
+      size_t nested_size = nested->Size();
+      if (raw_size < best_size) {
+        chosen = std::move(raw);
+        best_size = raw_size;
+      }
+      if (nested_size < best_size) {
+        chosen = std::move(nested);
+        best_size = nested_size;
       }
     }
     return chosen;
@@ -986,8 +965,8 @@ class FunMaker {
     if (have_reads_.count(bytes_needed) == 0) {
       have_reads_.insert(bytes_needed);
       auto fn = NewFun(absl::StrCat("Read", bytes_needed), "bool");
-      fn->Add(
-          absl::StrCat("if (begin_+", bytes_needed, " > end_) return false;"));
+      fn->Add(absl::StrCat("if (end_ - begin_ < ", bytes_needed,
+                           ") return false;"));
       fn->Add(absl::StrCat("buffer_ <<= ", 8 * bytes_needed, ";"));
       for (int i = 0; i < bytes_needed; i++) {
         fn->Add(absl::StrCat("buffer_ |= static_cast<uint64_t>(*begin_++) << ",
