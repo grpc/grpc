@@ -1038,11 +1038,11 @@ void BuildCtx::AddDone(SymSet start_syms, int num_bits, Sink* out) {
       }
       for (auto sym : maybe) {
         if ((n >> (i - sym.bits.length())) == sym.bits.mask()) {
-          if (i != sym.bits.length() &&
-              (n & ((1 << (i - sym.bits.length())) - 1)) !=
-                  ((1 << (i - sym.bits.length())) - 1)) {
-            table_builder.Add(kFail, {}, 0);
-            goto next;
+          for (int j = 0; j < (i - sym.bits.length()); j++) {
+            if ((n & (1 << j)) == 0) {
+              table_builder.Add(kFail, {}, 0);
+              goto next;
+            }
           }
           table_builder.Add(kEmitOk, {static_cast<uint8_t>(sym.symbol)}, 0);
           goto next;
