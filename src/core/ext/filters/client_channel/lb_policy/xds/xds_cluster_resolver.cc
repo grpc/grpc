@@ -64,6 +64,7 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_object_loader.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
@@ -92,7 +93,7 @@ class XdsClusterResolverLbConfig : public LoadBalancingPolicy::Config {
  public:
   struct DiscoveryMechanism {
     std::string cluster_name;
-    absl::optional<XdsBootstrap::XdsServer> lrs_load_reporting_server;
+    absl::optional<GrpcXdsBootstrap::GrpcXdsServer> lrs_load_reporting_server;
     uint32_t max_concurrent_requests;
     enum DiscoveryMechanismType {
       EDS,
@@ -930,8 +931,7 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
       }
       if (discovery_config.lrs_load_reporting_server.has_value()) {
         xds_cluster_impl_config["lrsLoadReportingServer"] =
-            GrpcXdsBootstrap::XdsServerToJson(
-                *discovery_config.lrs_load_reporting_server);
+            discovery_config.lrs_load_reporting_server->ToJson();
       }
       Json locality_picking_policy;
       if (XdsOutlierDetectionEnabled()) {
@@ -1197,13 +1197,15 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "field:lrsLoadReportingServer error:type should be object"));
       } else {
-        grpc_error_handle parse_error;
-        discovery_mechanism->lrs_load_reporting_server.emplace(
-            GrpcXdsBootstrap::XdsServerParse(it->second, &parse_error));
-        if (!GRPC_ERROR_IS_NONE(parse_error)) {
+        auto xds_server =
+            LoadFromJson<GrpcXdsBootstrap::GrpcXdsServer>(it->second);
+        if (!xds_server.ok()) {
           error_list.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
-              absl::StrCat("errors parsing lrs_load_reporting_server")));
-          error_list.push_back(parse_error);
+              absl::StrCat("error parsing lrs_load_reporting_server: ",
+                           xds_server.status().ToString())));
+        } else {
+          discovery_mechanism->lrs_load_reporting_server.emplace(
+              std::move(*xds_server));
         }
       }
     }

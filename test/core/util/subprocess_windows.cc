@@ -24,11 +24,14 @@
 #include <tchar.h>
 #include <windows.h>
 
+#include "absl/strings/str_join.h"
+#include "absl/types/span.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gpr/string_windows.h"
+#include "src/core/lib/gprpp/tchar.h"
 #include "test/core/util/subprocess.h"
 
 struct gpr_subprocess {
@@ -45,22 +48,17 @@ gpr_subprocess* gpr_subprocess_create(int argc, const char** argv) {
   STARTUPINFO si;
   PROCESS_INFORMATION pi;
 
-  char* args = gpr_strjoin_sep(argv, (size_t)argc, " ", NULL);
-  TCHAR* args_tchar;
-
-  args_tchar = gpr_char_to_tchar(args);
-  gpr_free(args);
+  grpc_core::TcharString args = grpc_core::CharToTchar(
+      absl::StrJoin(absl::Span<const char*>(argv, argc), " "));
 
   memset(&si, 0, sizeof(si));
   si.cb = sizeof(si);
   memset(&pi, 0, sizeof(pi));
 
-  if (!CreateProcess(NULL, args_tchar, NULL, NULL, FALSE,
+  if (!CreateProcess(NULL, const_cast<LPTSTR>(args.c_str()), NULL, NULL, FALSE,
                      CREATE_NEW_PROCESS_GROUP, NULL, NULL, &si, &pi)) {
-    gpr_free(args_tchar);
     return NULL;
   }
-  gpr_free(args_tchar);
 
   r = (gpr_subprocess*)gpr_malloc(sizeof(gpr_subprocess));
   memset(r, 0, sizeof(*r));

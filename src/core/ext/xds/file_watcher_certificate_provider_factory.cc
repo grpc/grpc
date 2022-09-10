@@ -31,8 +31,9 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
-#include "src/core/ext/xds/certificate_provider_registry.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/json/json_util.h"
+#include "src/core/lib/security/certificate_provider/certificate_provider_registry.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 
 namespace grpc_core {
@@ -143,11 +144,10 @@ FileWatcherCertificateProviderFactory::CreateCertificateProvider(
       file_watcher_config->refresh_interval().millis() / GPR_MS_PER_SEC);
 }
 
-void FileWatcherCertificateProviderInit() {
-  CertificateProviderRegistry::RegisterCertificateProviderFactory(
+void RegisterFileWatcherCertificateProvider(
+    CoreConfiguration::Builder* builder) {
+  builder->certificate_provider_registry()->RegisterCertificateProviderFactory(
       absl::make_unique<FileWatcherCertificateProviderFactory>());
 }
-
-void FileWatcherCertificateProviderShutdown() {}
 
 }  // namespace grpc_core

@@ -350,7 +350,6 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:server1.pem",
     ],
     external_deps = ["gtest"],
-    flaky = True,
     language = "C++",
     deps = [
         "//:gpr",
@@ -399,7 +398,6 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:server1.pem",
     ],
     external_deps = ["gtest"],
-    flaky = True,
     language = "C++",
     deps = [
         "//:gpr",
@@ -536,5 +534,17 @@ grpc_cc_test(
         "//:grpc",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
+    ],
+)
+
+grpc_cc_test(
+    name = "certificate_provider_registry_test",
+    srcs = ["certificate_provider_registry_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
     ],
 )
