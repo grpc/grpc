@@ -51,12 +51,12 @@ grpc_fuzzer(
     name = "decode_huff_fuzzer",
     srcs = ["decode_huff_fuzzer.cc"],
     corpus = "decode_huff_corpus",
-    language = "C++",
-    tags = ["no_windows"],
     external_deps = [
         "absl/types:optional",
         "absl/strings",
     ],
+    language = "C++",
+    tags = ["no_windows"],
     deps = [
         "//:decode_huff",
         "//:huffsyms",
