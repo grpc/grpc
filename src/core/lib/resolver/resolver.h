@@ -86,9 +86,6 @@ class Resolver : public InternallyRefCounted<Resolver> {
     virtual ~ResultHandler() {}
 
     /// Reports a result to the channel.
-    // TODO(roth): Add a mechanism for the resolver to get back a signal
-    // indicating if the result was accepted by the LB policy, so that it
-    // knows whether to go into backoff to retry to resolution.
     virtual void ReportResult(Result result) = 0;  // NOLINT
   };
 
