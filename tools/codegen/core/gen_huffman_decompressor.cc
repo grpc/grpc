@@ -1098,11 +1098,6 @@ void BuildCtx::AddStep(SymSet start_syms, int num_bits, bool is_top,
       int consumed_len = (sym.length - some.bits.length());
       uint32_t consumed_mask = sym.bits >> some.bits.length();
       bool all_ones_so_far = consumed_mask == ((1 << consumed_len) - 1);
-      ifblk->Add(absl::StrCat(
-          "// some=", some.bits.ToString(), ";n=", some.symbol,
-          " sym_len=", sym.length, " sym_bits=", sym.bits,
-          " consumed_len=", consumed_len, " consumed_mask=", consumed_mask,
-          " all_ones_so_far=", all_ones_so_far));
       AddDone(start_syms, num_bits, all_ones_so_far,
               fun_maker_->CallNewFun("Done", ifblk));
       ifblk->Add("return;");
