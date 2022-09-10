@@ -97,7 +97,7 @@ class XdsClientTest : public ::testing::Test {
       bool IgnoreResourceDeletion() const override {
         return ignore_resource_deletion_;
       }
-      bool operator==(const XdsServer& other) const override {
+      bool Equals(const XdsServer& other) const override {
         const auto& o = static_cast<const FakeXdsServer&>(other);
         return server_uri_ == o.server_uri_ && use_v3_ == o.use_v3_ &&
                ignore_resource_deletion_ == o.ignore_resource_deletion_;
