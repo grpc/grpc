@@ -210,7 +210,7 @@ task 'gem:native', [:plat] do |t, args|
     end
 
     # Truncate grpc_c.ruby file because it is used for Windows only and we don't want
-    # it to take up space in the gems that don't target windows.
+    # it to take up space in the gems that don't target Windows.
     File.truncate(GRPC_RUBY_BINARY, 0)
 
     unix_platforms.each do |plat|
