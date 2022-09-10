@@ -76,6 +76,9 @@ class Resolver : public InternallyRefCounted<Resolver> {
     // should put itself into backoff to retry the resolution later.
     // The resolver impl must not call ResultHandler::ReportResult()
     // again until after this callback has been invoked.
+    // The callback will be invoked within the channel's WorkSerializer.
+    // It may or may not be invoked before ResultHandler::ReportResult()
+    // returns, which is why it's a separate callback.
     std::function<void(absl::Status)> result_health_callback;
   };
 
