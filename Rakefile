@@ -21,6 +21,8 @@ spec = Gem::Specification.load('grpc.gemspec')
 Gem::PackageTask.new(spec) do |pkg|
 end
 
+GRPC_RUBY_BINARY = 'grpc_c.ruby'
+
 # Add the extension compiler task
 Rake::ExtensionTask.new('grpc_c', spec) do |ext|
   ext.source_pattern = '**/*.{c,h}'
@@ -77,8 +79,6 @@ namespace :suite do
     end
   end
 end
-
-GRPC_RUBY_BINARY = 'grpc_c.ruby'
 
 desc 'Build the Windows gRPC DLLs for Ruby. The argument contains the list of platforms for which to build dll. Empty placeholder files will be created for platforms that were not selected.'
 task 'dlls', [:plat] do |t, args|
