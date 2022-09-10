@@ -95,10 +95,10 @@ task 'dlls', [:plat] do |t, args|
   selected_build_configs = []
   build_configs.each do |config|
     if plat_list.include?(config[:platform])
-      # build the DLL (as grpc_c.*.ruby)
+      # build the DLL as grpc_c.ruby
       selected_build_configs.append(config)
     else
-      # create an empty grpc_c.*.ruby file as a placeholder
+      # create an empty grpc_c.ruby file as a placeholder
       FileUtils.touch GRPC_RUBY_BINARY
     end
   end
