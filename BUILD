@@ -6814,7 +6814,6 @@ grpc_cc_library(
     hdrs = [
         "src/core/ext/transport/chttp2/transport/decode_huff.h",
     ],
-    deps = ["gpr_platform"],
 )
 
 grpc_cc_library(
