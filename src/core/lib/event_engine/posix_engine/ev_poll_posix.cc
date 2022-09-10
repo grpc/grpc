@@ -639,9 +639,8 @@ PollPoller::~PollPoller() {
   GPR_ASSERT(poll_handles_list_head_ == nullptr);
 }
 
-Poller::WorkResult PollPoller::Work(
-    EventEngine::Duration timeout,
-    absl::FunctionRef<void()> call_before_processing_events) {
+Poller::WorkResult PollPoller::Work(EventEngine::Duration timeout,
+                                    absl::FunctionRef<void()> poll_again) {
   // Avoid malloc for small number of elements.
   enum { inline_elements = 96 };
   struct pollfd pollfd_space[inline_elements];
@@ -810,17 +809,18 @@ Poller::WorkResult PollPoller::Work(
   mu_.Unlock();
   if (pending_events.empty()) {
     if (was_kicked_ext) {
-      return Poller::Kicked{};
+      return Poller::WorkResult::kKicked;
     }
-    return Poller::DeadlineExceeded{};
+    return Poller::WorkResult::kDeadlineExceeded;
   }
   // Invoke the provided callback.
   call_before_processing_events();
   // Process all pending events inline.
   for (auto& it : pending_events) {
-    (*it).ExecutePendingActions();
+    it->ExecutePendingActions();
   }
-  return Poller::Ok{};
+  return Poller::WorkResult::kOk;
+  ;
 }
 
 void PollPoller::Shutdown() {

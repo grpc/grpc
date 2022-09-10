@@ -66,7 +66,7 @@ void IOCP::Shutdown() {
 
 Poller::WorkResult IOCP::Work(
     EventEngine::Duration timeout,
-    absl::FunctionRef<void()> call_before_processing_events) {
+    absl::FunctionRef<void()> poll_again) {
   static const absl::Status kDeadlineExceeded = absl::DeadlineExceededError(
       absl::StrFormat("IOCP::%p: Received no completions", this));
   static const absl::Status kKicked =
@@ -84,7 +84,7 @@ Poller::WorkResult IOCP::Work(
     if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {
       gpr_log(GPR_DEBUG, "IOCP::%p deadline exceeded", this);
     }
-    return Poller::DeadlineExceeded{};
+    return Poller::WorkResult::kDeadlineExceeded;
   }
   GPR_ASSERT(completion_key && overlapped);
   if (overlapped == &kick_overlap_) {
@@ -93,7 +93,7 @@ Poller::WorkResult IOCP::Work(
     }
     outstanding_kicks_.fetch_sub(1);
     if (completion_key == (ULONG_PTR)&kick_token_) {
-      return Poller::Kicked{};
+      return Poller::WorkResult::kKicked;
     }
     gpr_log(GPR_ERROR, "Unknown custom completion key: %p", completion_key);
     abort();
@@ -112,14 +112,14 @@ Poller::WorkResult IOCP::Work(
     info->GetOverlappedResult();
   }
   if (info->closure() != nullptr) {
-    call_before_processing_events();
+    poll_again();
     executor_->Run(info->closure());
-    return Poller::Ok{};
+    return Poller::WorkResult::kOk;
   }
   // No callback registered. Set ready and return an empty set
   info->SetReady();
-  call_before_processing_events();
-  return Poller::Ok{};
+  poll_again();
+  return Poller::WorkResult::kOk;
 }
 
 void IOCP::Kick() {

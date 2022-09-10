@@ -521,13 +521,12 @@ void Epoll1EventHandle::SetHasError() { error_closure_->SetReady(); }
 // Kick(). If there is a Kick(), it collects and processes any previously
 // un-processed events. If there are no un-processed events, it returns
 // Poller::WorkResult::Kicked{}
-Poller::WorkResult Epoll1Poller::Work(
-    EventEngine::Duration timeout,
-    absl::FunctionRef<void()> call_before_processing_events) {
+Poller::WorkResult Epoll1Poller::Work(EventEngine::Duration timeout,
+                                      absl::FunctionRef<void()> poll_again) {
   Events pending_events;
   if (g_epoll_set_.cursor == g_epoll_set_.num_events) {
     if (DoEpollWait(timeout) == 0) {
-      return Poller::DeadlineExceeded{};
+      return Poller::WorkResult::kDeadlineExceeded;
     }
   }
   {
@@ -539,16 +538,16 @@ Poller::WorkResult Epoll1Poller::Work(
       was_kicked_ = false;
     }
     if (pending_events.empty()) {
-      return Poller::Kicked{};
+      return Poller::WorkResult::kKicked;
     }
   }
   // Invoke the provided callback.
   call_before_processing_events();
   // Process all pending events inline.
   for (auto& it : pending_events) {
-    (*it).ExecutePendingActions();
+    it->ExecutePendingActions();
   }
-  return Poller::Ok{};
+  return Poller::WorkResult::kOk;
 }
 
 void Epoll1Poller::Kick() {

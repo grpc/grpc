@@ -377,7 +377,7 @@ void WaitAndShutdown(server* sv, client* cl) {
   while (!sv->done || !cl->done) {
     gpr_mu_unlock(&g_mu);
     result = g_event_poller->Work(24h, []() {});
-    ASSERT_FALSE(absl::holds_alternative<Poller::DeadlineExceeded>(result));
+    ASSERT_FALSE(result == Poller::WorkResult::kDeadlineExceeded);
     gpr_mu_lock(&g_mu);
   }
   gpr_mu_unlock(&g_mu);
@@ -502,7 +502,7 @@ TEST_P(EventPollerTest, TestEventPollerHandleChange) {
     while (fdc->cb_that_ran == nullptr) {
       gpr_mu_unlock(&g_mu);
       result = g_event_poller->Work(24h, []() {});
-      ASSERT_FALSE(absl::holds_alternative<Poller::DeadlineExceeded>(result));
+      ASSERT_FALSE(result == Poller::WorkResult::kDeadlineExceeded);
       gpr_mu_lock(&g_mu);
     }
   };
@@ -679,11 +679,11 @@ class Worker : public grpc_core::DualRefCounted<Worker> {
       Ref().release();
       scheduler_->Run([this]() { Work(); });
     });
-    ASSERT_TRUE(absl::holds_alternative<Poller::Ok>(result) ||
-                absl::holds_alternative<Poller::Kicked>(result));
+    ASSERT_TRUE(result == Poller::WorkResult::kOk ||
+                result == Poller::WorkResult::kKicked);
     // Corresponds to the Ref taken for the current instantiation. If the
-    // result was Poller::Kicked, then the next work instantiation would not
-    // have been scheduled.
+    // result was Poller::WorkResult::kKicked, then the next work instantiation
+    // would not have been scheduled.
     Unref();
   }
   Scheduler* scheduler_;

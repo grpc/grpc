@@ -50,7 +50,7 @@ class Epoll1Poller : public PosixEventPoller {
                             bool track_err) override;
   Poller::WorkResult Work(
       grpc_event_engine::experimental::EventEngine::Duration timeout,
-      absl::FunctionRef<void()> call_before_processing_events) override;
+      absl::FunctionRef<void()> poll_again) override;
   std::string Name() override { return "epoll1"; }
   void Kick() override;
   Scheduler* GetScheduler() { return scheduler_; }
