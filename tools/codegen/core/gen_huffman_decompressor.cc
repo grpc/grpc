@@ -1019,7 +1019,7 @@ void BuildCtx::AddDone(SymSet start_syms, int num_bits, bool all_ones_so_far,
   auto s = out->Add<Switch>("buffer_len_");
   auto c0 = s->Case("0");
   if (!all_ones_so_far) c0->Add("ok_ = false;");
-  c0->Add("break;");
+  c0->Add("return;");
   for (int i = 1; i < num_bits; i++) {
     auto c = s->Case(absl::StrCat(i));
     SymSet maybe;
@@ -1203,11 +1203,13 @@ BuildOutput Build(std::vector<int> max_bits_for_depth) {
   auto src = absl::make_unique<Sink>();
   hdr->Add<Prelude>();
   src->Add<Prelude>();
-  hdr->Add("#ifndef SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_DECODE_HUFF_H");
-  hdr->Add("#define SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_DECODE_HUFF_H");
+  hdr->Add("#ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_DECODE_HUFF_H");
+  hdr->Add("#define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_DECODE_HUFF_H");
   src->Add(
       "#include \"src/core/ext/transport/chttp2/transport/decode_huff.h\"");
   hdr->Add("#include <cstddef>");
+  hdr->Add("#include <grpc/support/port_platform.h>");
+  src->Add("#include <grpc/support/port_platform.h>");
   hdr->Add("#include <cstdint>");
   hdr->Add(
       absl::StrCat("// GEOMETRY: ", absl::StrJoin(max_bits_for_depth, ",")));
@@ -1225,7 +1227,7 @@ BuildOutput Build(std::vector<int> max_bits_for_depth) {
   auto prv = hdr->Add<Indent>();
   FunMaker fun_maker(prv->Add<Sink>());
   hdr->Add("};");
-  hdr->Add("#endif");
+  hdr->Add("#endif  // GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_DECODE_HUFF_H");
   auto global_values = src->Add<Indent>();
   BuildCtx ctx(std::move(max_bits_for_depth), global_fns, global_decls,
                global_values, &fun_maker);
@@ -1233,32 +1235,6 @@ BuildOutput Build(std::vector<int> max_bits_for_depth) {
   pub->Add(
       "HuffDecoder(F sink, const uint8_t* begin, const uint8_t* end) : "
       "sink_(sink), begin_(begin), end_(end) {}");
-  // finalizer
-  /*
-  prv->Add("void Done() {");
-  auto done = prv->Add<Indent>();
-  done->Add("done_ = true;");
-  done->Add("if (buffer_len_ == 0) return;");
-  done->Add("const int max_emit_len = buffer_len_;");
-  done->Add(absl::StrCat("if (buffer_len_ < ", ctx.MaxBitsForTop() - 1, ") {"));
-  auto fix = done->Add<Indent>();
-  fix->Add(absl::StrCat("buffer_ = (buffer_ << (", ctx.MaxBitsForTop() - 1,
-                        "-buffer_len_)) | "
-                        "((uint64_t(1) << (",
-                        ctx.MaxBitsForTop() - 1, " - buffer_len_)) - 1);"));
-  fix->Add(absl::StrCat("buffer_len_ = ", ctx.MaxBitsForTop() - 1, ";"));
-  done->Add("}");
-  ctx.AddStep(AllSyms(), ctx.MaxBitsForTop() - 1, false, false, true, 1, done);
-  done->Add("CheckOkAtEnd();");
-  prv->Add("}");
-  prv->Add("void Done() {");
-  auto check_ok = prv->Add<Indent>();
-  check_ok->Add("done_ = true;");
-  check_ok->Add("if (buffer_len_ == 0) return;");
-  check_ok->Add("const uint64_t mask = (1 << buffer_len_) - 1;");
-  check_ok->Add(absl::StrCat("if ((buffer_ & mask) != mask) ok_ = false;"));
-  prv->Add("}");
-*/
   // members
   prv->Add("F sink_;");
   prv->Add("const uint8_t* begin_;");
