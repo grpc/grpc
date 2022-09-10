@@ -13,7 +13,7 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
-load("//test/core/util:grpc_fuzzer.bzl", "grpc_proto_fuzzer")
+load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer", "grpc_proto_fuzzer")
 load("//bazel:custom_exec_properties.bzl", "LARGE_MACHINE")
 
 licenses(["notice"])
@@ -44,6 +44,22 @@ grpc_proto_fuzzer(
     deps = [
         "//:chttp2_flow_control",
         "//:gpr",
+    ],
+)
+
+grpc_fuzzer(
+    name = "decode_huff_fuzzer",
+    srcs = ["decode_huff_fuzzer.cc"],
+    corpus = "decode_huff_corpus",
+    language = "C++",
+    tags = ["no_windows"],
+    external_deps = [
+        "absl/types:optional",
+        "absl/strings",
+    ],
+    deps = [
+        "//:decode_huff",
+        "//:huffsyms",
     ],
 )
 

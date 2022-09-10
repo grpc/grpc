@@ -452,10 +452,10 @@ class BuildCtx {
         fun_maker_(fun_maker) {}
 
   void AddStep(SymSet start_syms, int num_bits, bool is_top, bool refill,
-               int depth, Sink* out);
+               bool is_done, int depth, Sink* out);
   void AddMatchBody(TableBuilder* table_builder, std::string index,
                     std::string ofs, const MatchCase& match_case, bool is_top,
-                    bool refill, int depth, Sink* out);
+                    bool refill, bool is_done, int depth, Sink* out);
 
   int NewId() { return next_id_++; }
   int MaxBitsForTop() const { return max_bits_for_depth_[0]; }
@@ -1007,13 +1007,27 @@ class FunMaker {
 // BuildCtx implementation
 
 void BuildCtx::AddStep(SymSet start_syms, int num_bits, bool is_top,
-                       bool refill, int depth, Sink* out) {
+                       bool refill, bool is_done, int depth, Sink* out) {
   TableBuilder table_builder(this);
   if (refill) {
     out->Add(absl::StrCat("if (!", fun_maker_->RefillTo(num_bits), ") {"));
     auto ifblk = out->Add<Indent>();
     if (!is_top) {
-      ifblk->Add("CheckOkAtEnd();");
+      Sym some = start_syms[0];
+      auto sym = grpc_chttp2_huffsyms[some.symbol];
+      int consumed_len = (sym.length - some.bits.length());
+      uint32_t consumed_mask = sym.bits >> some.bits.length();
+      bool all_ones_so_far = consumed_mask == ((1 << consumed_len) - 1);
+      ifblk->Add(absl::StrCat(
+          "// some=", some.bits.ToString(), ";n=", some.symbol,
+          " sym_len=", sym.length, " sym_bits=", sym.bits,
+          " consumed_len=", consumed_len, " consumed_mask=", consumed_mask,
+          " all_ones_so_far=", all_ones_so_far));
+      if (all_ones_so_far) {
+        ifblk->Add("CheckOkAtEnd();");
+      } else {
+        ifblk->Add("ok_ = false;");
+      }
       ifblk->Add("return;");
     } else {
       ifblk->Add("Done();");
@@ -1049,14 +1063,25 @@ void BuildCtx::AddStep(SymSet start_syms, int num_bits, bool is_top,
   table_builder.Build();
   out->Add(
       absl::StrCat("const auto op = ", table_builder.OpAccessor("index"), ";"));
-  out->Add(absl::StrCat("buffer_len_ -= op & ",
+  out->Add(absl::StrCat("const int consumed = op & ",
                         (1 << table_builder.ConsumeBits()) - 1, ";"));
+  if (is_done) {
+    out->Add("if (consumed > max_emit_len) {");
+    out->Add(absl::StrCat("  buffer_ >>= ", MaxBitsForTop() - 1,
+                          " - max_emit_len;"));
+    out->Add("  buffer_len_ = max_emit_len;");
+    out->Add("  CheckOkAtEnd();");
+    out->Add("  return;");
+    out->Add("}");
+  }
+  out->Add("buffer_len_ -= consumed;");
   out->Add(absl::StrCat("const auto emit_ofs = op >> ",
                         table_builder.ConsumeBits() + table_builder.MatchBits(),
                         ";"));
   if (match_cases.size() == 1) {
     AddMatchBody(&table_builder, "index", "emit_ofs",
-                 match_cases.begin()->first, is_top, refill, depth, out);
+                 match_cases.begin()->first, is_top, refill, is_done, depth,
+                 out);
   } else {
     auto s = out->Add<Switch>(
         absl::StrCat("(op >> ", table_builder.ConsumeBits(), ") & ",
@@ -1064,7 +1089,7 @@ void BuildCtx::AddStep(SymSet start_syms, int num_bits, bool is_top,
     for (auto kv : match_cases) {
       auto c = s->Case(absl::StrCat(kv.second));
       AddMatchBody(&table_builder, "index", "emit_ofs", kv.first, is_top,
-                   refill, depth, c);
+                   refill, is_done, depth, c);
       c->Add("break;");
     }
   }
@@ -1072,7 +1097,8 @@ void BuildCtx::AddStep(SymSet start_syms, int num_bits, bool is_top,
 
 void BuildCtx::AddMatchBody(TableBuilder* table_builder, std::string index,
                             std::string ofs, const MatchCase& match_case,
-                            bool is_top, bool refill, int depth, Sink* out) {
+                            bool is_top, bool refill, bool is_done, int depth,
+                            Sink* out) {
   if (absl::holds_alternative<End>(match_case)) {
     out->Add("begin_ = end_;");
     out->Add("buffer_len_ = 0;");
@@ -1086,8 +1112,11 @@ void BuildCtx::AddMatchBody(TableBuilder* table_builder, std::string index,
               depth + 1 >= max_bits_for_depth_.size()
                   ? max_bits
                   : std::min(max_bits, max_bits_for_depth_[depth + 1]),
-              false, true, depth + 1,
+              false, true, false, depth + 1,
               fun_maker_->CallNewFun("DecodeStep", out));
+    }
+    if (is_done) {
+      out->Add("buffer_len_ += consumed;");
     }
     return;
   }
@@ -1148,6 +1177,8 @@ BuildOutput Build(std::vector<int> max_bits_for_depth) {
   // finalizer
   prv->Add("void Done() {");
   auto done = prv->Add<Indent>();
+  done->Add("if (buffer_len_ == 0) return;");
+  done->Add("const int max_emit_len = buffer_len_;");
   done->Add(absl::StrCat("if (buffer_len_ < ", ctx.MaxBitsForTop() - 1, ") {"));
   auto fix = done->Add<Indent>();
   fix->Add(absl::StrCat("buffer_ = (buffer_ << (", ctx.MaxBitsForTop() - 1,
@@ -1156,7 +1187,7 @@ BuildOutput Build(std::vector<int> max_bits_for_depth) {
                         ctx.MaxBitsForTop() - 1, " - buffer_len_)) - 1);"));
   fix->Add(absl::StrCat("buffer_len_ = ", ctx.MaxBitsForTop() - 1, ";"));
   done->Add("}");
-  ctx.AddStep(AllSyms(), ctx.MaxBitsForTop() - 1, false, false, 1, done);
+  ctx.AddStep(AllSyms(), ctx.MaxBitsForTop() - 1, false, false, true, 1, done);
   done->Add("CheckOkAtEnd();");
   prv->Add("}");
   prv->Add("void CheckOkAtEnd() {");
@@ -1178,7 +1209,7 @@ BuildOutput Build(std::vector<int> max_bits_for_depth) {
   pub->Add("bool Run() {");
   auto body = pub->Add<Indent>();
   body->Add("while (!done_) {");
-  ctx.AddStep(AllSyms(), ctx.MaxBitsForTop(), true, true, 0,
+  ctx.AddStep(AllSyms(), ctx.MaxBitsForTop(), true, true, false, 0,
               body->Add<Indent>());
   body->Add("}");
   body->Add("return ok_;");
