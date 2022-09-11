@@ -988,10 +988,6 @@
     <file baseinstalldir="/" name="src/core/lib/gpr/cpu_linux.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/cpu_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/cpu_windows.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/env.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/env_linux.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/env_posix.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/env_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/log.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/log_android.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/log_linux.cc" role="src" />
@@ -1028,6 +1024,10 @@
     <file baseinstalldir="/" name="src/core/lib/gprpp/cpp_impl_of.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/debug_location.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/dual_ref_counted.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/env.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/env_linux.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/env_posix.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/env_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/examine_stack.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/examine_stack.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/fork.cc" role="src" />

@@ -23,8 +23,8 @@
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_client_grpc.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/tmpfile.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/security/certificate_provider/certificate_provider_registry.h"
 #include "test/core/util/test_config.h"
 

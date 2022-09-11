@@ -42,7 +42,7 @@
 #include <grpcpp/support/slice.h>
 #include <grpcpp/support/status.h>
 
-#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/executor.h"

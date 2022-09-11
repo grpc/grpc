@@ -24,7 +24,7 @@
 
 #include <memory>
 
-#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/tchar.h"
 
 namespace grpc_core {

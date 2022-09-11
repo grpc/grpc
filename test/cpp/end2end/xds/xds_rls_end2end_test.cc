@@ -22,7 +22,7 @@
 #include "absl/strings/str_cat.h"
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
-#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/proto/grpc/lookup/v1/rls.grpc.pb.h"
 #include "src/proto/grpc/lookup/v1/rls.pb.h"
 #include "src/proto/grpc/lookup/v1/rls_config.pb.h"

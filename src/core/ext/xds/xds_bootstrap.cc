@@ -20,8 +20,8 @@
 
 #include <grpc/support/alloc.h>
 
-#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/env.h"
 
 namespace grpc_core {
 

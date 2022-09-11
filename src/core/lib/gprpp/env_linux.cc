@@ -30,8 +30,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/env.h"
 
 namespace grpc_core {
 

@@ -34,7 +34,7 @@
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
 
-#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/proto/grpc/testing/worker_service.grpc.pb.h"
 #include "test/core/util/port.h"

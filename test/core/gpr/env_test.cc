@@ -16,7 +16,7 @@
  *
  */
 
-#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gprpp/env.h"
 
 #include <stdio.h>
 #include <string.h>

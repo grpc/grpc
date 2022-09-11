@@ -20,7 +20,7 @@
 
 #include "src/core/ext/filters/client_channel/http_proxy.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/transport/http_connect_handshaker.h"
 #include "test/core/util/test_config.h"
 

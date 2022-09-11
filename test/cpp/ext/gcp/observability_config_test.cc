@@ -21,8 +21,8 @@
 
 #include <grpc/support/alloc.h>
 
-#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/tmpfile.h"
+#include "src/core/lib/gprpp/env.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc {

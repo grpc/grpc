@@ -33,7 +33,7 @@
 #include <grpcpp/client_context.h>
 #include <grpcpp/xds_server_builder.h>
 
-#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/cpp/server/secure_server_credentials.h"

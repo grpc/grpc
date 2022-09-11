@@ -42,7 +42,7 @@
 #include <grpcpp/test/channel_test_peer.h>
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
-#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
