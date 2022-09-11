@@ -237,8 +237,10 @@ shapes = set()
 for histogram in inst_map['Histogram']:
     shapes.add(Shape(max=histogram.max, buckets=histogram.buckets))
 
+
 def snake_to_pascal(name):
     return ''.join([x.capitalize() for x in name.split('_')])
+
 
 with open('src/core/lib/debug/stats_data.h', 'w') as H:
     # copy-paste copyright notice from this file
@@ -282,10 +284,13 @@ with open('src/core/lib/debug/stats_data.h', 'w') as H:
         print(" private:", file=H)
         print("  uint64_t buckets_[%d]{};" % shape.buckets, file=H)
         print("};", file=H)
-        print("class HistogramCollector_%d_%d {" % (shape.max, shape.buckets), file=H)
+        print("class HistogramCollector_%d_%d {" % (shape.max, shape.buckets),
+              file=H)
         print(" public:", file=H)
         print("  void Increment(int value) {", file=H)
-        print("    buckets_[Histogram_%d_%d::BucketFor(value)]" % (shape.max, shape.buckets), file=H)
+        print("    buckets_[Histogram_%d_%d::BucketFor(value)]" %
+              (shape.max, shape.buckets),
+              file=H)
         print("        .fetch_add(1, std::memory_order_relaxed);", file=H)
         print("  }", file=H)
         print(" private:", file=H)
@@ -304,10 +309,18 @@ with open('src/core/lib/debug/stats_data.h', 'w') as H:
         print("    k%s," % snake_to_pascal(ctr.name), file=H)
     print("    COUNT", file=H)
     print("  };", file=H)
-    print("  static const absl::string_view counter_name[static_cast<int>(Counter::COUNT)];", file=H)
-    print("  static const absl::string_view histogram_name[static_cast<int>(Histogram::COUNT)];", file=H)
-    print("  static const absl::string_view counter_doc[static_cast<int>(Counter::COUNT)];", file=H)
-    print("  static const absl::string_view histogram_doc[static_cast<int>(Histogram::COUNT)];", file=H)
+    print(
+        "  static const absl::string_view counter_name[static_cast<int>(Counter::COUNT)];",
+        file=H)
+    print(
+        "  static const absl::string_view histogram_name[static_cast<int>(Histogram::COUNT)];",
+        file=H)
+    print(
+        "  static const absl::string_view counter_doc[static_cast<int>(Counter::COUNT)];",
+        file=H)
+    print(
+        "  static const absl::string_view histogram_doc[static_cast<int>(Histogram::COUNT)];",
+        file=H)
     print("  union {", file=H)
     print("    struct {", file=H)
     for ctr in inst_map['Counter']:
@@ -316,27 +329,36 @@ with open('src/core/lib/debug/stats_data.h', 'w') as H:
     print("    uint64_t counters[static_cast<int>(Counter::COUNT)];", file=H)
     print("  };", file=H)
     for ctr in inst_map['Histogram']:
-        print("  Histogram_%d_%d %s;" % (ctr.max, ctr.buckets, ctr.name), file=H)
+        print("  Histogram_%d_%d %s;" % (ctr.max, ctr.buckets, ctr.name),
+              file=H)
     print("  HistogramView histogram(Histogram which) const;", file=H)
     print("};", file=H)
     print("class GlobalStatsCollector {", file=H)
     print(" public:", file=H)
     print("  void Collect(GlobalStats* output);", file=H)
     for ctr in inst_map['Counter']:
-        print("  void Increment%s() { per_cpu().%s_.fetch_add(1, std::memory_order_relaxed); }" % (
-            snake_to_pascal(ctr.name), ctr.name), file=H)
+        print(
+            "  void Increment%s() { per_cpu().%s_.fetch_add(1, std::memory_order_relaxed); }"
+            % (snake_to_pascal(ctr.name), ctr.name),
+            file=H)
     for ctr in inst_map['Histogram']:
-        print("  void Increment%s(int value) { per_cpu().%s_.Increment(value); }" % (
-            snake_to_pascal(ctr.name), ctr.name), file=H)
+        print(
+            "  void Increment%s(int value) { per_cpu().%s_.Increment(value); }"
+            % (snake_to_pascal(ctr.name), ctr.name),
+            file=H)
     print(" private:", file=H)
     print("  struct PerCpu {", file=H)
     for ctr in inst_map['Counter']:
         print("    std::atomic<uint64_t> %s_;" % ctr.name, file=H)
     for ctr in inst_map['Histogram']:
-        print("    HistogramCollector_%d_%d %s_;" % (ctr.max, ctr.buckets, ctr.name), file=H)
+        print("    HistogramCollector_%d_%d %s_;" %
+              (ctr.max, ctr.buckets, ctr.name),
+              file=H)
     print("  };", file=H)
     print("  std::unique_ptr<PerCpu[]> per_cpu_;", file=H)
-    print("  PerCpu& per_cpu() { return per_cpu_[grpc_core::ExecCtx::Get()->starting_cpu()]; }", file=H)
+    print(
+        "  PerCpu& per_cpu() { return per_cpu_[grpc_core::ExecCtx::Get()->starting_cpu()]; }",
+        file=H)
     print("};", file=H)
     print("}", file=H)
 
@@ -382,15 +404,17 @@ with open('src/core/lib/debug/stats_data.cc', 'w') as C:
     print("namespace { union DblUint { double dbl; uint64_t uint; }; }", file=C)
 
     for typename, instances in sorted(inst_map.items()):
-        print("const absl::string_view GlobalStats::%s_name[static_cast<int>(%s::COUNT)] = {" %
-              (typename.lower(), typename),
-              file=C)
+        print(
+            "const absl::string_view GlobalStats::%s_name[static_cast<int>(%s::COUNT)] = {"
+            % (typename.lower(), typename),
+            file=C)
         for inst in instances:
             print("  %s," % c_str(inst.name), file=C)
         print("};", file=C)
-        print("const absl::string_view GlobalStats::%s_doc[static_cast<int>(%s::COUNT)] = {" %
-              (typename.lower(), typename),
-              file=C)
+        print(
+            "const absl::string_view GlobalStats::%s_doc[static_cast<int>(%s::COUNT)] = {"
+            % (typename.lower(), typename),
+            file=C)
         for inst in instances:
             print("  %s," % c_str(inst.doc), file=C)
         print("};", file=C)
@@ -407,13 +431,17 @@ with open('src/core/lib/debug/stats_data.cc', 'w') as C:
               (shape.max, shape.buckets, code),
               file=C)
 
-    print("HistogramView GlobalStats::histogram(Histogram which) const {", file=C)
+    print("HistogramView GlobalStats::histogram(Histogram which) const {",
+          file=C)
     print("  switch (which) {", file=C)
     print("    default: GPR_UNREACHABLE_CODE(return HistogramView());", file=C)
     for inst in inst_map['Histogram']:
         print("    case Histogram::k%s:" % snake_to_pascal(inst.name), file=C)
-        print("      return HistogramView{&Histogram_%d_%d::BucketFor, kStatsTable%d, %d, %s.buckets()};" %
-              (inst.max, inst.buckets, histo_bucket_boundaries[Shape(inst.max, inst.buckets)], inst.buckets, inst.name), file=C)
+        print(
+            "      return HistogramView{&Histogram_%d_%d::BucketFor, kStatsTable%d, %d, %s.buckets()};"
+            % (inst.max, inst.buckets, histo_bucket_boundaries[Shape(
+                inst.max, inst.buckets)], inst.buckets, inst.name),
+            file=C)
     print("  }", file=C)
     print("}", file=C)
 
