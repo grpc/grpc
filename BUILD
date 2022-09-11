@@ -7162,6 +7162,7 @@ grpc_cc_library(
         "absl/strings",
         "absl/synchronization",
         "absl/memory",
+        "absl/types:optional",
         "upb_lib",
         "protobuf_headers",
         "absl/container:inlined_vector",
