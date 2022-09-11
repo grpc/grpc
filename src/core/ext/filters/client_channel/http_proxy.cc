@@ -73,7 +73,6 @@ absl::optional<std::string> GetHttpProxyServer(
    */
   absl::optional<std::string> uri_str =
       args.GetOwnedString(GRPC_ARG_HTTP_PROXY);
-
   if (!uri_str.has_value()) uri_str = GetEnv("grpc_proxy");
   if (!uri_str.has_value()) uri_str = GetEnv("https_proxy");
   if (!uri_str.has_value()) uri_str = GetEnv("http_proxy");
