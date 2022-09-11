@@ -64,9 +64,8 @@ void IOCP::Shutdown() {
   GPR_ASSERT(CloseHandle(iocp_handle_));
 }
 
-Poller::WorkResult IOCP::Work(
-    EventEngine::Duration timeout,
-    absl::FunctionRef<void()> poll_again) {
+Poller::WorkResult IOCP::Work(EventEngine::Duration timeout,
+                              absl::FunctionRef<void()> poll_again) {
   static const absl::Status kDeadlineExceeded = absl::DeadlineExceededError(
       absl::StrFormat("IOCP::%p: Received no completions", this));
   static const absl::Status kKicked =
