@@ -1192,6 +1192,8 @@ BuildOutput Build(std::vector<int> max_bits_for_depth) {
   hdr->Add("#include <cstdint>");
   hdr->Add(
       absl::StrCat("// GEOMETRY: ", absl::StrJoin(max_bits_for_depth, ",")));
+  hdr->Add("namespace grpc_core {");
+  src->Add("namespace grpc_core {");
   hdr->Add("class HuffDecoderCommon {");
   hdr->Add(" protected:");
   auto global_fns = hdr->Add<Indent>();
@@ -1206,8 +1208,10 @@ BuildOutput Build(std::vector<int> max_bits_for_depth) {
   auto prv = hdr->Add<Indent>();
   FunMaker fun_maker(prv->Add<Sink>());
   hdr->Add("};");
+  hdr->Add("}  // namespace grpc_core");
   hdr->Add("#endif  // GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_DECODE_HUFF_H");
   auto global_values = src->Add<Indent>();
+  src->Add("}  // namespace grpc_core");
   BuildCtx ctx(std::move(max_bits_for_depth), global_fns, global_decls,
                global_values, &fun_maker);
   // constructor

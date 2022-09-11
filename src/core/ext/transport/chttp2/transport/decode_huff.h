@@ -23,6 +23,7 @@
 #include <cstddef>
 #include <cstdint>
 // GEOMETRY: 8,7,8,5
+namespace grpc_core {
 class HuffDecoderCommon {
  protected:
   static inline uint64_t GetOp2(size_t i) { return table2_0_ops_[i]; }
@@ -114,31 +115,31 @@ class HuffDecoderCommon {
     return table17_0_emit_[emit];
   }
   static inline uint64_t GetOp18(size_t i) {
-    return table18_0_inner_[table17_0_outer_[i]];
+    return table18_0_inner_[table18_0_outer_[i]];
   }
   static inline uint64_t GetEmit18(size_t, size_t emit) {
     return table18_0_emit_[emit];
   }
   static inline uint64_t GetOp19(size_t i) {
-    return table18_0_inner_[table17_0_outer_[i]];
+    return table17_0_inner_[table18_0_outer_[i]];
   }
   static inline uint64_t GetEmit19(size_t, size_t emit) {
     return table19_0_emit_[emit];
   }
   static inline uint64_t GetOp20(size_t i) {
-    return table18_0_inner_[table17_0_outer_[i]];
+    return table17_0_inner_[table18_0_outer_[i]];
   }
   static inline uint64_t GetEmit20(size_t, size_t emit) {
     return table20_0_emit_[emit];
   }
   static inline uint64_t GetOp21(size_t i) {
-    return table18_0_inner_[table17_0_outer_[i]];
+    return table17_0_inner_[table18_0_outer_[i]];
   }
   static inline uint64_t GetEmit21(size_t, size_t emit) {
     return table21_0_emit_[emit];
   }
   static inline uint64_t GetOp22(size_t i) {
-    return table18_0_inner_[table17_0_outer_[i]];
+    return table17_0_inner_[table18_0_outer_[i]];
   }
   static inline uint64_t GetEmit22(size_t, size_t emit) {
     return table22_0_emit_[emit];
@@ -245,6 +246,7 @@ class HuffDecoderCommon {
   static const uint8_t table17_0_outer_[2];
   static const uint8_t table18_0_emit_[2];
   static const uint8_t table18_0_inner_[2];
+  static const uint8_t table18_0_outer_[2];
   static const uint8_t table19_0_emit_[2];
   static const uint8_t table20_0_emit_[2];
   static const uint8_t table21_0_emit_[2];
@@ -1012,4 +1014,5 @@ class HuffDecoder : public HuffDecoderCommon {
   bool ok_ = true;
   bool done_ = false;
 };
+}  // namespace grpc_core
 #endif  // GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_DECODE_HUFF_H

@@ -81,7 +81,9 @@ absl::optional<std::vector<uint8_t>> DecodeHuffFast(const uint8_t* begin,
                                                     const uint8_t* end) {
   std::vector<uint8_t> v;
   auto f = [&](uint8_t x) { v.push_back(x); };
-  if (!HuffDecoder<decltype(f)>(f, begin, end).Run()) return absl::nullopt;
+  if (!grpc_core::HuffDecoder<decltype(f)>(f, begin, end).Run()) {
+    return absl::nullopt;
+  }
   return v;
 }
 

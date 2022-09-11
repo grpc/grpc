@@ -19,6 +19,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/chttp2/transport/decode_huff.h"
+namespace grpc_core {
 const uint8_t HuffDecoderCommon::table2_0_emit_[10] = {
     0x30, 0x31, 0x32, 0x61, 0x63, 0x65, 0x69, 0x6f, 0x73, 0x74};
 const uint8_t HuffDecoderCommon::table2_0_ops_[32] = {
@@ -235,6 +236,7 @@ const uint8_t HuffDecoderCommon::table17_0_inner_[2] = {0x01, 0x03};
 const uint8_t HuffDecoderCommon::table17_0_outer_[2] = {0, 1};
 const uint8_t HuffDecoderCommon::table18_0_emit_[2] = {0x90, 0x91};
 const uint8_t HuffDecoderCommon::table18_0_inner_[2] = {0x01, 0x03};
+const uint8_t HuffDecoderCommon::table18_0_outer_[2] = {0, 1};
 const uint8_t HuffDecoderCommon::table19_0_emit_[2] = {0x94, 0x9f};
 const uint8_t HuffDecoderCommon::table20_0_emit_[2] = {0xab, 0xce};
 const uint8_t HuffDecoderCommon::table21_0_emit_[2] = {0xd7, 0xe1};
@@ -282,3 +284,4 @@ const uint8_t HuffDecoderCommon::table29_0_inner_[9] = {
     0x03, 0x0b, 0x13, 0x1b, 0x23, 0x2b, 0x33, 0x3c, 0x44};
 const uint8_t HuffDecoderCommon::table29_0_outer_[16] = {
     0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 8};
+}  // namespace grpc_core

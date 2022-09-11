@@ -63,6 +63,23 @@ grpc_fuzzer(
     ],
 )
 
+grpc_fuzzer(
+    name = "encode_decode_huff_fuzzer",
+    srcs = ["encode_decode_huff_fuzzer.cc"],
+    corpus = "encode_decode_huff_fuzzer_corpus",
+    external_deps = [
+        "absl/types:optional",
+        "absl/strings",
+    ],
+    language = "C++",
+    tags = ["no_windows"],
+    deps = [
+        "//:decode_huff",
+        "//:huffsyms",
+        "//:grpc",
+    ],
+)
+
 grpc_cc_test(
     name = "alpn_test",
     srcs = ["alpn_test.cc"],
