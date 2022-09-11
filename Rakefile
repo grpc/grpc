@@ -21,7 +21,7 @@ spec = Gem::Specification.load('grpc.gemspec')
 Gem::PackageTask.new(spec) do |pkg|
 end
 
-GRPC_RUBY_BINARY = 'grpc_c.ruby'
+GRPC_WINDOWS_BINARY = 'grpc_c.ruby'
 
 # Add the extension compiler task
 Rake::ExtensionTask.new('grpc_c', spec) do |ext|
@@ -40,7 +40,7 @@ Rake::ExtensionTask.new('grpc_c', spec) do |ext|
       |file| file.start_with?(
         "src/ruby/bin/", "src/ruby/ext/", "src/ruby/lib/", "src/ruby/pb/")
     }
-    spec.files += ['etc/roots.pem', GRPC_RUBY_BINARY]
+    spec.files += ['etc/roots.pem', GRPC_WINDOWS_BINARY]
   end
 end
 
@@ -99,7 +99,7 @@ task 'dlls', [:plat] do |t, args|
       selected_build_configs.append(config)
     else
       # create an empty grpc_c.ruby file as a placeholder
-      FileUtils.touch GRPC_RUBY_BINARY
+      FileUtils.touch GRPC_WINDOWS_BINARY
     end
   end
 
@@ -135,7 +135,7 @@ task 'dlls', [:plat] do |t, args|
       gem update --system --no-document && \
       #{env} #{env_comp} make -j#{nproc_override} #{out} && \
       #{opt[:cross]}-strip -x -S #{out} && \
-      cp #{out} #{GRPC_RUBY_BINARY}
+      cp #{out} #{GRPC_WINDOWS_BINARY}
     EOT
   end
 end
@@ -153,7 +153,7 @@ task 'gem:native', [:plat] do |t, args|
       fail "Cannot pass platform as an argument when on Darwin."
     end
 
-    FileUtils.touch GRPC_RUBY_BINARY
+    FileUtils.touch GRPC_WINDOWS_BINARY
     unless '2.5' == /(\d+\.\d+)/.match(RUBY_VERSION).to_s
       fail "rake gem:native (the rake task to build the binary packages) is being " \
         "invoked on macos with ruby #{RUBY_VERSION}. The ruby macos artifact " \
@@ -209,9 +209,8 @@ task 'gem:native', [:plat] do |t, args|
       EOT
     end
 
-    # Truncate grpc_c.ruby file because it is used for Windows only and we don't want
-    # it to take up space in the gems that don't target Windows.
-    File.truncate(GRPC_RUBY_BINARY, 0)
+    # Truncate grpc_c.ruby file to save space in gems that don't target Windows.
+    File.truncate(GRPC_WINDOWS_BINARY, 0)
 
     unix_platforms.each do |plat|
       run_rake_compiler(plat, <<~EOT)
