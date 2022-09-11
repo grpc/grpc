@@ -1035,7 +1035,6 @@ grpc_cc_library(
     deps = [
         "gpr_platform",
         "tchar",
-        "useful",
     ],
 )
 
@@ -6307,6 +6306,7 @@ grpc_cc_library(
         "absl/strings",
         "absl/strings:str_format",
         "absl/time",
+        "absl/types:optional",
         "libcrypto",
     ],
     language = "c++",
