@@ -14,6 +14,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <algorithm>
 #include <cstdint>
@@ -28,7 +29,6 @@
 
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/decode_huff.h"
-#include "src/core/ext/transport/chttp2/transport/huffsyms.h"
 
 bool squelch = true;
 bool leak_check = true;
