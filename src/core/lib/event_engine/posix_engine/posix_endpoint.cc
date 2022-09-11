@@ -26,9 +26,13 @@
 #include <grpc/event_engine/slice.h>
 #include <grpc/event_engine/slice_buffer.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/internal_errqueue.h"
+#include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
+#include "src/core/lib/experiments/experiments.h"
+#include "src/core/lib/gprpp/global_config_generic.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 #include <linux/netlink.h>  // IWYU pragma: keep
@@ -62,7 +66,7 @@ typedef GRPC_MSG_IOVLEN_TYPE msg_iovlen_type;
 #else
 typedef size_t msg_iovlen_type;
 #endif
-#define MAX_READ_IOVEC 4
+#define MAX_READ_IOVEC 64
 
 GPR_GLOBAL_CONFIG_DECLARE_BOOL(grpc_experimental_enable_tcp_frame_size_tuning);
 
@@ -709,23 +713,100 @@ void PosixEndpointImpl::MaybePostReclaimer() {
   }
 }
 
+void PosixEndpointImpl::UpdateRcvLowat() {
+  if (!grpc_core::IsTcpRcvLowatEnabled()) return;
+
+  // TODO(ctiller): Check if supported by OS.
+  // TODO(ctiller): Allow some adjustments instead of hardcoding things.
+
+  static constexpr int kRcvLowatMax = 16 * 1024 * 1024;
+  static constexpr int kRcvLowatThreshold = 16 * 1024;
+
+  int remaining = std::min(static_cast<int>(incoming_buffer_->Length()),
+                           min_progress_size_);
+  remaining = std::min(remaining, kRcvLowatMax);
+
+  // Setting SO_RCVLOWAT for small quantities does not save on CPU.
+  if (remaining < kRcvLowatThreshold) {
+    remaining = 0;
+  }
+
+  // If zerocopy is off, wake shortly before the full RPC is here. More can
+  // show up partway through recvmsg() since it takes a while to copy data.
+  // So an early wakeup aids latency.
+  if (!tcp_zerocopy_send_ctx_->enabled() && remaining > 0) {
+    remaining -= kRcvLowatThreshold;
+  }
+
+  // We still do not know the RPC size. Do not set SO_RCVLOWAT.
+  if (set_rcvlowat_ <= 1 && remaining <= 1) return;
+
+  // Previous value is still valid. No change needed in SO_RCVLOWAT.
+  if (set_rcvlowat_ == remaining) {
+    return;
+  }
+  auto result = sock_.SetSocketRcvLowat(remaining);
+  if (result.ok()) {
+    set_rcvlowat_ = *result;
+  } else {
+    gpr_log(GPR_ERROR, "%s",
+            absl::StrCat("ERROR in SO_RCVLOWAT: ", result.status().message())
+                .c_str());
+  }
+}
+
 void PosixEndpointImpl::MaybeMakeReadSlices() {
-  if (incoming_buffer_->Length() < static_cast<size_t>(min_progress_size_) &&
-      incoming_buffer_->Count() < MAX_READ_IOVEC) {
-    int target_length =
-        std::max(static_cast<int>(target_length_), min_progress_size_);
-    int extra_wanted =
-        target_length - static_cast<int>(incoming_buffer_->Length());
-    int min_read_chunk_size =
-        std::max(min_read_chunk_size_, min_progress_size_);
-    int max_read_chunk_size =
-        std::max(max_read_chunk_size_, min_progress_size_);
-    incoming_buffer_->AppendIndexed(
-        Slice(memory_owner_.MakeSlice(grpc_core::MemoryRequest(
-            min_read_chunk_size,
-            grpc_core::Clamp(extra_wanted, min_read_chunk_size,
-                             max_read_chunk_size)))));
-    MaybePostReclaimer();
+  if (grpc_core::IsTcpReadChunksEnabled()) {
+    static const int kBigAlloc = 64 * 1024;
+    static const int kSmallAlloc = 8 * 1024;
+    if (incoming_buffer_->Length() < static_cast<size_t>(min_progress_size_)) {
+      size_t allocate_length = min_progress_size_;
+      const size_t target_length = static_cast<size_t>(target_length_);
+      // If memory pressure is low and we think there will be more than
+      // min_progress_size bytes to read, allocate a bit more.
+      const bool low_memory_pressure =
+          memory_owner_.GetPressureInfo().pressure_control_value < 0.8;
+      if (low_memory_pressure && target_length > allocate_length) {
+        allocate_length = target_length;
+      }
+      int extra_wanted =
+          allocate_length - static_cast<int>(incoming_buffer_->Length());
+      if (extra_wanted >=
+          (low_memory_pressure ? kSmallAlloc * 3 / 2 : kBigAlloc)) {
+        while (extra_wanted > 0) {
+          extra_wanted -= kBigAlloc;
+          incoming_buffer_->AppendIndexed(
+              Slice(memory_owner_.MakeSlice(kBigAlloc)));
+          // GRPC_STATS_INC_TCP_READ_ALLOC_64K();
+        }
+      } else {
+        while (extra_wanted > 0) {
+          extra_wanted -= kSmallAlloc;
+          incoming_buffer_->AppendIndexed(
+              Slice(memory_owner_.MakeSlice(kSmallAlloc)));
+          // GRPC_STATS_INC_TCP_READ_ALLOC_8K();
+        }
+      }
+      MaybePostReclaimer();
+    }
+  } else {
+    if (incoming_buffer_->Length() < static_cast<size_t>(min_progress_size_) &&
+        incoming_buffer_->Count() < MAX_READ_IOVEC) {
+      int target_length =
+          std::max(static_cast<int>(target_length_), min_progress_size_);
+      int extra_wanted =
+          target_length - static_cast<int>(incoming_buffer_->Length());
+      int min_read_chunk_size =
+          std::max(min_read_chunk_size_, min_progress_size_);
+      int max_read_chunk_size =
+          std::max(max_read_chunk_size_, min_progress_size_);
+      incoming_buffer_->AppendIndexed(
+          Slice(memory_owner_.MakeSlice(grpc_core::MemoryRequest(
+              min_read_chunk_size,
+              grpc_core::Clamp(extra_wanted, min_read_chunk_size,
+                               max_read_chunk_size)))));
+      MaybePostReclaimer();
+    }
   }
 }
 
@@ -1318,7 +1399,8 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
       traced_buffers_(),
       handle_(handle),
       poller_(handle->Poller()),
-      engine_(engine) {
+      engine_(engine),
+      sock_(PosixSocketWrapper(handle->WrappedFd())) {
   PosixSocketWrapper sock(handle->WrappedFd());
   fd_ = handle_->WrappedFd();
   GPR_ASSERT(options.resource_quota != nullptr);

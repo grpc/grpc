@@ -67,6 +67,7 @@ class PosixEndpointImpl {
       delete this;
     }
   }
+  void UpdateRcvLowat() ABSL_EXCLUSIVE_LOCKS_REQUIRED(read_mu_);
   void HandleWrite(absl::Status status);
   void HandleError(absl::Status status);
   void HandleRead(absl::Status status);
@@ -96,12 +97,14 @@ class PosixEndpointImpl {
 #endif
   absl::Mutex read_mu_;
   absl::Mutex traced_buffer_mu_;
+  PosixSocketWrapper sock_;
   int fd_;
   bool is_first_read_ = true;
-  bool has_posted_reclaimer_ = false;
+  bool has_posted_reclaimer_ ABSL_GUARDED_BY(read_mu_) = false;
   double target_length_;
   int min_read_chunk_size_;
   int max_read_chunk_size_;
+  int set_rcvlowat_ = 0;
   double bytes_read_this_round_ = 0;
   std::atomic<int> ref_count_{1};
 
