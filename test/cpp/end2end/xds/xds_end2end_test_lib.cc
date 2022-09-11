@@ -522,8 +522,8 @@ void XdsEnd2endTest::TearDown() {
   // Clear global xDS channel args, since they will go out of scope
   // when this test object is destroyed.
   grpc_core::internal::SetXdsChannelArgsForTest(nullptr);
-  gpr_unsetenv("GRPC_XDS_BOOTSTRAP");
-  gpr_unsetenv("GRPC_XDS_BOOTSTRAP_CONFIG");
+  grpc_core::UnsetEnv("GRPC_XDS_BOOTSTRAP");
+  grpc_core::UnsetEnv("GRPC_XDS_BOOTSTRAP_CONFIG");
   if (bootstrap_file_ != nullptr) {
     remove(bootstrap_file_);
     gpr_free(bootstrap_file_);
@@ -751,12 +751,12 @@ void XdsEnd2endTest::InitClient(BootstrapBuilder builder,
   if (GetParam().use_v2()) builder.SetV2();
   bootstrap_ = builder.Build();
   if (GetParam().bootstrap_source() == XdsTestType::kBootstrapFromEnvVar) {
-    gpr_setenv("GRPC_XDS_BOOTSTRAP_CONFIG", bootstrap_.c_str());
+    grpc_core::SetEnv("GRPC_XDS_BOOTSTRAP_CONFIG", bootstrap_.c_str());
   } else if (GetParam().bootstrap_source() == XdsTestType::kBootstrapFromFile) {
     FILE* out = gpr_tmpfile("xds_bootstrap_v3", &bootstrap_file_);
     fputs(bootstrap_.c_str(), out);
     fclose(out);
-    gpr_setenv("GRPC_XDS_BOOTSTRAP", bootstrap_file_);
+    grpc_core::SetEnv("GRPC_XDS_BOOTSTRAP", bootstrap_file_);
   }
   if (GetParam().bootstrap_source() != XdsTestType::kBootstrapFromChannelArg) {
     // If getting bootstrap from channel arg, we'll pass these args in

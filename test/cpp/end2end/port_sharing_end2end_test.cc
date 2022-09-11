@@ -313,7 +313,7 @@ std::vector<TestScenario> CreateTestScenarios() {
 
 #if TARGET_OS_IPHONE
   // Workaround Apple CFStream bug
-  gpr_setenv("grpc_cfstream", "0");
+  grpc_core::SetEnv("grpc_cfstream", "0");
 #endif
 
   credentials_types = GetCredentialsProvider()->GetSecureCredentialsTypeList();

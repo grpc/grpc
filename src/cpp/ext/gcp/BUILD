@@ -67,6 +67,7 @@ grpc_cc_library(
     language = "c++",
     visibility = ["//test:__subpackages__"],
     deps = [
+        "//:env",
         "//:gpr",
         "//:grpc_base",
         "//:grpc_public_hdrs",

@@ -28,10 +28,10 @@ namespace grpc_core {
 // TODO(donnadionne): check to see if federation is enabled, this will be
 // removed once federation is fully integrated and enabled by default.
 bool XdsFederationEnabled() {
-  char* value = gpr_getenv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
+  auto value = grpc_core::GetEnv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
+  if (!value.has_value()) return false;
   bool parsed_value;
-  bool parse_succeeded = gpr_parse_bool_value(value, &parsed_value);
-  gpr_free(value);
+  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
   return parse_succeeded && parsed_value;
 }
 

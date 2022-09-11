@@ -60,14 +60,16 @@ void SetGlobalConfigEnvErrorFunction(GlobalConfigEnvErrorFunctionType func) {
 }
 
 UniquePtr<char> GlobalConfigEnv::GetValue() {
-  return UniquePtr<char>(gpr_getenv(GetName()));
+  auto env = grpc_core::GetEnv(GetName());
+  return UniquePtr<char>(env.has_value() ? gpr_strdup(env.value().c_str())
+                                         : nullptr);
 }
 
 void GlobalConfigEnv::SetValue(const char* value) {
-  gpr_setenv(GetName(), value);
+  grpc_core::SetEnv(GetName(), value);
 }
 
-void GlobalConfigEnv::Unset() { gpr_unsetenv(GetName()); }
+void GlobalConfigEnv::Unset() { grpc_core::UnsetEnv(GetName()); }
 
 char* GlobalConfigEnv::GetName() {
   // This makes sure that name_ is in a canonical form having uppercase

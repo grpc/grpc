@@ -101,7 +101,7 @@ int main(int argc, char** argv) {
     first = false;
   }
 
-  gpr_setenv("QPS_WORKERS", env.str().c_str());
+  grpc_core::SetEnv("QPS_WORKERS", env.str().c_str());
   std::vector<std::string> args = {bin_dir + "/qps_json_driver"};
   for (int i = 1; i < argc; i++) {
     args.push_back(argv[i]);

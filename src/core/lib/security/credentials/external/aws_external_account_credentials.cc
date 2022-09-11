@@ -237,12 +237,12 @@ void AwsExternalAccountCredentials::AddMetadataRequestHeaders(
 }
 
 void AwsExternalAccountCredentials::RetrieveRegion() {
-  UniquePtr<char> region_from_env(gpr_getenv(kRegionEnvVar));
-  if (region_from_env == nullptr) {
-    region_from_env = UniquePtr<char>(gpr_getenv(kDefaultRegionEnvVar));
+  auto region_from_env = grpc_core::GetEnv(kRegionEnvVar);
+  if (!region_from_env.has_value()) {
+    region_from_env = grpc_core::GetEnv(kDefaultRegionEnvVar);
   }
-  if (region_from_env != nullptr) {
-    region_ = std::string(region_from_env.get());
+  if (region_from_env.has_value()) {
+    region_ = std::move(*region_from_env);
     if (url_.empty()) {
       RetrieveSigningKeys();
     } else {
@@ -350,15 +350,14 @@ void AwsExternalAccountCredentials::OnRetrieveRoleNameInternal(
 }
 
 void AwsExternalAccountCredentials::RetrieveSigningKeys() {
-  UniquePtr<char> access_key_id_from_env(gpr_getenv(kAccessKeyIdEnvVar));
-  UniquePtr<char> secret_access_key_from_env(
-      gpr_getenv(kSecretAccessKeyEnvVar));
-  UniquePtr<char> token_from_env(gpr_getenv(kSessionTokenEnvVar));
-  if (access_key_id_from_env != nullptr &&
-      secret_access_key_from_env != nullptr && token_from_env != nullptr) {
-    access_key_id_ = std::string(access_key_id_from_env.get());
-    secret_access_key_ = std::string(secret_access_key_from_env.get());
-    token_ = std::string(token_from_env.get());
+  auto access_key_id_from_env = grpc_core::GetEnv(kAccessKeyIdEnvVar);
+  auto secret_access_key_from_env = grpc_core::GetEnv(kSecretAccessKeyEnvVar);
+  auto token_from_env = grpc_core::GetEnv(kSessionTokenEnvVar);
+  if (access_key_id_from_env.has_value() &&
+      secret_access_key_from_env.has_value() && token_from_env.has_value()) {
+    access_key_id_ = std::move(*access_key_id_from_env);
+    secret_access_key_ = std::move(*secret_access_key_from_env);
+    token_ = std::move(*token_from_env);
     BuildSubjectToken();
     return;
   }

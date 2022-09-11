@@ -285,8 +285,8 @@ GoogleCloud2ProdResolver::GoogleCloud2ProdResolver(ResolverArgs args)
       // they may be talking to a completely different xDS server than we
       // want to.
       // TODO(roth): When we implement xDS federation, remove this constraint.
-      UniquePtr<char>(gpr_getenv("GRPC_XDS_BOOTSTRAP")) != nullptr ||
-      UniquePtr<char>(gpr_getenv("GRPC_XDS_BOOTSTRAP_CONFIG")) != nullptr) {
+      grpc_core::GetEnv("GRPC_XDS_BOOTSTRAP").has_value() ||
+      grpc_core::GetEnv("GRPC_XDS_BOOTSTRAP_CONFIG").has_value()) {
     using_dns_ = true;
     child_resolver_ =
         CoreConfiguration::Get().resolver_registry().CreateResolver(
@@ -373,11 +373,11 @@ void GoogleCloud2ProdResolver::StartXdsResolver() {
     };
   }
   // Allow the TD server uri to be overridden for testing purposes.
-  UniquePtr<char> override_server(
-      gpr_getenv("GRPC_TEST_ONLY_GOOGLE_C2P_RESOLVER_TRAFFIC_DIRECTOR_URI"));
+  auto override_server = grpc_core::GetEnv(
+      "GRPC_TEST_ONLY_GOOGLE_C2P_RESOLVER_TRAFFIC_DIRECTOR_URI");
   const char* server_uri =
-      override_server != nullptr && strlen(override_server.get()) > 0
-          ? override_server.get()
+      override_server.has_value() && !override_server->empty()
+          ? override_server->c_str()
           : "directpath-pa.googleapis.com";
   Json xds_server = Json::Array{
       Json::Object{

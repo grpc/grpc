@@ -399,10 +399,9 @@ static grpc_core::RefCountedPtr<grpc_call_credentials> make_default_call_creds(
   grpc_error_handle err;
 
   /* First, try the environment variable. */
-  char* path_from_env = gpr_getenv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR);
-  if (path_from_env != nullptr) {
-    err = create_default_creds_from_path(path_from_env, &call_creds);
-    gpr_free(path_from_env);
+  auto path_from_env = grpc_core::GetEnv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR);
+  if (path_from_env.has_value()) {
+    err = create_default_creds_from_path(*path_from_env, &call_creds);
     if (GRPC_ERROR_IS_NONE(err)) return call_creds;
     *error = grpc_error_add_child(*error, err);
   }

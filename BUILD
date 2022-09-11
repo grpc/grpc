@@ -1022,6 +1022,24 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "env",
+    srcs = [
+        "src/core/lib/gpr/env_linux.cc",
+        "src/core/lib/gpr/env_posix.cc",
+        "src/core/lib/gpr/env_windows.cc",
+    ],
+    hdrs = [
+        "src/core/lib/gpr/env.h",
+    ],
+    external_deps = ["absl/types:optional"],
+    deps = [
+        "gpr_platform",
+        "tchar",
+        "useful",
+    ],
+)
+
+grpc_cc_library(
     name = "gpr",
     srcs = [
         "src/core/lib/gpr/alloc.cc",
@@ -1029,9 +1047,6 @@ grpc_cc_library(
         "src/core/lib/gpr/cpu_linux.cc",
         "src/core/lib/gpr/cpu_posix.cc",
         "src/core/lib/gpr/cpu_windows.cc",
-        "src/core/lib/gpr/env_linux.cc",
-        "src/core/lib/gpr/env_posix.cc",
-        "src/core/lib/gpr/env_windows.cc",
         "src/core/lib/gpr/log.cc",
         "src/core/lib/gpr/log_android.cc",
         "src/core/lib/gpr/log_linux.cc",
@@ -1065,7 +1080,6 @@ grpc_cc_library(
     ],
     hdrs = [
         "src/core/lib/gpr/alloc.h",
-        "src/core/lib/gpr/env.h",
         "src/core/lib/gpr/string.h",
         "src/core/lib/gpr/time_precise.h",
         "src/core/lib/gpr/tmpfile.h",
@@ -1107,7 +1121,7 @@ grpc_cc_library(
         "gpr_atm",
         "gpr_tls",
         "grpc_codegen",
-        "no_destruct",
+        "no_destruct","env",
         "tchar",
         "useful",
     ],
@@ -3813,6 +3827,7 @@ grpc_cc_library(
         "debug_location",
         "default_event_engine",
         "dual_ref_counted",
+        "env",
         "gpr",
         "gpr_atm",
         "gpr_codegen",
@@ -4438,7 +4453,7 @@ grpc_cc_library(
     deps = [
         "backoff",
         "debug_location",
-        "default_event_engine",
+        "default_event_engine","env",
         "dual_ref_counted",
         "envoy_admin_upb",
         "envoy_config_core_upb",
@@ -4565,7 +4580,7 @@ grpc_cc_library(
         "channel_creds_registry",
         "channel_fwd",
         "config",
-        "debug_location",
+        "debug_location","env",
         "default_event_engine",
         "envoy_admin_upb",
         "envoy_config_cluster_upb",
@@ -5148,6 +5163,7 @@ grpc_cc_library(
         "closure",
         "config",
         "debug_location",
+        "env",
         "exec_ctx",
         "gpr",
         "grpc_base",
@@ -5718,6 +5734,7 @@ grpc_cc_library(
         "alts_util",
         "config",
         "debug_location",
+        "env",
         "gpr",
         "grpc_base",
         "grpc_codegen",
@@ -6061,7 +6078,7 @@ grpc_cc_library(
     tags = ["nofixdeps"],
     deps = [
         "alts_util",
-        "gpr",
+        "gpr","env",
         "grpc_alts_credentials",
         "grpc_base",
         "grpc_codegen",
@@ -6290,6 +6307,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "env",
         "gpr",
         "grpc_base",
         "grpc_credentials_util",
@@ -7157,7 +7175,7 @@ grpc_cc_library(
         "gpr_codegen",
         "gpr_manual_constructor",
         "grpc",
-        "grpc++_codegen_base",
+        "grpc++_codegen_base","env",
         "grpc++_codegen_base_src",
         "grpc++_codegen_proto",
         "grpc_base",

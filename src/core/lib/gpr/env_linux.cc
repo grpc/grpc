@@ -30,14 +30,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
-
 #include "src/core/lib/gpr/env.h"
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
 
-char* gpr_getenv(const char* name) {
+namespace grpc_core {
+
+absl::optional<std::string> GetEnv(const char* name) {
   char* result = nullptr;
 #if defined(GPR_BACKWARDS_COMPATIBILITY_MODE)
   typedef char* (*getenv_type)(const char*);
@@ -59,17 +57,20 @@ char* gpr_getenv(const char* name) {
 #else
   result = getenv(name);
 #endif
-  return result == nullptr ? result : gpr_strdup(result);
+  if (result == nullptr) return absl::nullopt;
+  return result;
 }
 
-void gpr_setenv(const char* name, const char* value) {
+void SetEnv(const char* name, const char* value) {
   int res = setenv(name, value, 1);
-  GPR_ASSERT(res == 0);
+  if (res != 0) abort();
 }
 
-void gpr_unsetenv(const char* name) {
+void UnsetEnv(const char* name) {
   int res = unsetenv(name);
-  GPR_ASSERT(res == 0);
+  if (res != 0) abort();
 }
+
+}  // namespace grpc_core
 
 #endif /* GPR_LINUX_ENV */

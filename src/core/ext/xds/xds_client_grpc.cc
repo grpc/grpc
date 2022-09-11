@@ -93,31 +93,31 @@ namespace {
 
 absl::StatusOr<std::string> GetBootstrapContents(const char* fallback_config) {
   // First, try GRPC_XDS_BOOTSTRAP env var.
-  UniquePtr<char> path(gpr_getenv("GRPC_XDS_BOOTSTRAP"));
-  if (path != nullptr) {
+  auto path = grpc_core::GetEnv("GRPC_XDS_BOOTSTRAP");
+  if (path.has_value()) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
       gpr_log(GPR_INFO,
               "Got bootstrap file location from GRPC_XDS_BOOTSTRAP "
               "environment variable: %s",
-              path.get());
+              path->c_str());
     }
     grpc_slice contents;
     grpc_error_handle error =
-        grpc_load_file(path.get(), /*add_null_terminator=*/true, &contents);
+        grpc_load_file(path->c_str(), /*add_null_terminator=*/true, &contents);
     if (!GRPC_ERROR_IS_NONE(error)) return grpc_error_to_absl_status(error);
     std::string contents_str(StringViewFromSlice(contents));
     grpc_slice_unref_internal(contents);
     return contents_str;
   }
   // Next, try GRPC_XDS_BOOTSTRAP_CONFIG env var.
-  UniquePtr<char> env_config(gpr_getenv("GRPC_XDS_BOOTSTRAP_CONFIG"));
-  if (env_config != nullptr) {
+  auto env_config = grpc_core::GetEnv("GRPC_XDS_BOOTSTRAP_CONFIG");
+  if (env_config.has_value()) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
       gpr_log(GPR_INFO,
               "Got bootstrap contents from GRPC_XDS_BOOTSTRAP_CONFIG "
               "environment variable");
     }
-    return env_config.get();
+    return std::move(*env_config);
   }
   // Finally, try fallback config.
   if (fallback_config != nullptr) {

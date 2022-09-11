@@ -73,16 +73,10 @@ absl::optional<std::string> GetHttpProxyServer(
    */
   absl::optional<std::string> uri_str =
       args.GetOwnedString(GRPC_ARG_HTTP_PROXY);
-  auto get_env = [](const char* name) -> absl::optional<std::string> {
-    char* v = gpr_getenv(name);
-    if (v == nullptr) return absl::nullopt;
-    std::string s(v);
-    gpr_free(v);
-    return s;
-  };
-  if (!uri_str.has_value()) uri_str = get_env("grpc_proxy");
-  if (!uri_str.has_value()) uri_str = get_env("https_proxy");
-  if (!uri_str.has_value()) uri_str = get_env("http_proxy");
+
+  if (!uri_str.has_value()) uri_str = GetEnv("grpc_proxy");
+  if (!uri_str.has_value()) uri_str = GetEnv("https_proxy");
+  if (!uri_str.has_value()) uri_str = GetEnv("http_proxy");
   if (!uri_str.has_value()) return absl::nullopt;
   // an emtpy value means "don't use proxy"
   if (uri_str->empty()) return absl::nullopt;
@@ -158,11 +152,11 @@ absl::optional<std::string> HttpProxyMapper::MapName(
     return absl::nullopt;
   }
   /* Prefer using 'no_grpc_proxy'. Fallback on 'no_proxy' if it is not set. */
-  auto no_proxy_str = UniquePtr<char>(gpr_getenv("no_grpc_proxy"));
-  if (no_proxy_str == nullptr) {
-    no_proxy_str = UniquePtr<char>(gpr_getenv("no_proxy"));
+  auto no_proxy_str = grpc_core::GetEnv("no_grpc_proxy");
+  if (!no_proxy_str.has_value()) {
+    no_proxy_str = grpc_core::GetEnv("no_proxy");
   }
-  if (no_proxy_str != nullptr) {
+  if (no_proxy_str.has_value()) {
     bool use_proxy = true;
     std::string server_host;
     std::string server_port;
@@ -174,7 +168,7 @@ absl::optional<std::string> HttpProxyMapper::MapName(
               std::string(server_uri).c_str());
     } else {
       std::vector<absl::string_view> no_proxy_hosts =
-          absl::StrSplit(no_proxy_str.get(), ',', absl::SkipEmpty());
+          absl::StrSplit(*no_proxy_str, ',', absl::SkipEmpty());
       for (const auto& no_proxy_entry : no_proxy_hosts) {
         if (absl::EndsWithIgnoreCase(server_host, no_proxy_entry)) {
           gpr_log(GPR_INFO, "not using proxy for host in no_proxy list '%s'",
