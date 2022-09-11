@@ -23,129 +23,246 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <atomic>
+
+#include "src/core/lib/debug/histogram_view.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+
 // IWYU pragma: private, include "src/core/lib/debug/stats.h"
 
-typedef enum {
-  GRPC_STATS_COUNTER_CLIENT_CALLS_CREATED,
-  GRPC_STATS_COUNTER_SERVER_CALLS_CREATED,
-  GRPC_STATS_COUNTER_CLIENT_CHANNELS_CREATED,
-  GRPC_STATS_COUNTER_CLIENT_SUBCHANNELS_CREATED,
-  GRPC_STATS_COUNTER_SERVER_CHANNELS_CREATED,
-  GRPC_STATS_COUNTER_SYSCALL_WRITE,
-  GRPC_STATS_COUNTER_SYSCALL_READ,
-  GRPC_STATS_COUNTER_TCP_READ_ALLOC_8K,
-  GRPC_STATS_COUNTER_TCP_READ_ALLOC_64K,
-  GRPC_STATS_COUNTER_HTTP2_SETTINGS_WRITES,
-  GRPC_STATS_COUNTER_HTTP2_PINGS_SENT,
-  GRPC_STATS_COUNTER_HTTP2_WRITES_BEGUN,
-  GRPC_STATS_COUNTER_HTTP2_TRANSPORT_STALLS,
-  GRPC_STATS_COUNTER_HTTP2_STREAM_STALLS,
-  GRPC_STATS_COUNTER_CQ_PLUCK_CREATES,
-  GRPC_STATS_COUNTER_CQ_NEXT_CREATES,
-  GRPC_STATS_COUNTER_CQ_CALLBACK_CREATES,
-  GRPC_STATS_COUNTER_COUNT
-} grpc_stats_counters;
-extern const char* grpc_stats_counter_name[GRPC_STATS_COUNTER_COUNT];
-extern const char* grpc_stats_counter_doc[GRPC_STATS_COUNTER_COUNT];
-typedef enum {
-  GRPC_STATS_HISTOGRAM_CALL_INITIAL_SIZE,
-  GRPC_STATS_HISTOGRAM_TCP_WRITE_SIZE,
-  GRPC_STATS_HISTOGRAM_TCP_WRITE_IOV_SIZE,
-  GRPC_STATS_HISTOGRAM_TCP_READ_SIZE,
-  GRPC_STATS_HISTOGRAM_TCP_READ_OFFER,
-  GRPC_STATS_HISTOGRAM_TCP_READ_OFFER_IOV_SIZE,
-  GRPC_STATS_HISTOGRAM_HTTP2_SEND_MESSAGE_SIZE,
-  GRPC_STATS_HISTOGRAM_COUNT
-} grpc_stats_histograms;
-extern const char* grpc_stats_histogram_name[GRPC_STATS_HISTOGRAM_COUNT];
-extern const char* grpc_stats_histogram_doc[GRPC_STATS_HISTOGRAM_COUNT];
-typedef enum {
-  GRPC_STATS_HISTOGRAM_CALL_INITIAL_SIZE_FIRST_SLOT = 0,
-  GRPC_STATS_HISTOGRAM_CALL_INITIAL_SIZE_BUCKETS = 24,
-  GRPC_STATS_HISTOGRAM_TCP_WRITE_SIZE_FIRST_SLOT = 24,
-  GRPC_STATS_HISTOGRAM_TCP_WRITE_SIZE_BUCKETS = 20,
-  GRPC_STATS_HISTOGRAM_TCP_WRITE_IOV_SIZE_FIRST_SLOT = 44,
-  GRPC_STATS_HISTOGRAM_TCP_WRITE_IOV_SIZE_BUCKETS = 10,
-  GRPC_STATS_HISTOGRAM_TCP_READ_SIZE_FIRST_SLOT = 54,
-  GRPC_STATS_HISTOGRAM_TCP_READ_SIZE_BUCKETS = 20,
-  GRPC_STATS_HISTOGRAM_TCP_READ_OFFER_FIRST_SLOT = 74,
-  GRPC_STATS_HISTOGRAM_TCP_READ_OFFER_BUCKETS = 20,
-  GRPC_STATS_HISTOGRAM_TCP_READ_OFFER_IOV_SIZE_FIRST_SLOT = 94,
-  GRPC_STATS_HISTOGRAM_TCP_READ_OFFER_IOV_SIZE_BUCKETS = 10,
-  GRPC_STATS_HISTOGRAM_HTTP2_SEND_MESSAGE_SIZE_FIRST_SLOT = 104,
-  GRPC_STATS_HISTOGRAM_HTTP2_SEND_MESSAGE_SIZE_BUCKETS = 20,
-  GRPC_STATS_HISTOGRAM_BUCKETS = 124
-} grpc_stats_histogram_constants;
-#define GRPC_STATS_INC_CLIENT_CALLS_CREATED() \
-  GRPC_STATS_INC_COUNTER(GRPC_STATS_COUNTER_CLIENT_CALLS_CREATED)
-#define GRPC_STATS_INC_SERVER_CALLS_CREATED() \
-  GRPC_STATS_INC_COUNTER(GRPC_STATS_COUNTER_SERVER_CALLS_CREATED)
-#define GRPC_STATS_INC_CLIENT_CHANNELS_CREATED() \
-  GRPC_STATS_INC_COUNTER(GRPC_STATS_COUNTER_CLIENT_CHANNELS_CREATED)
-#define GRPC_STATS_INC_CLIENT_SUBCHANNELS_CREATED() \
-  GRPC_STATS_INC_COUNTER(GRPC_STATS_COUNTER_CLIENT_SUBCHANNELS_CREATED)
-#define GRPC_STATS_INC_SERVER_CHANNELS_CREATED() \
-  GRPC_STATS_INC_COUNTER(GRPC_STATS_COUNTER_SERVER_CHANNELS_CREATED)
-#define GRPC_STATS_INC_SYSCALL_WRITE() \
-  GRPC_STATS_INC_COUNTER(GRPC_STATS_COUNTER_SYSCALL_WRITE)
-#define GRPC_STATS_INC_SYSCALL_READ() \
-  GRPC_STATS_INC_COUNTER(GRPC_STATS_COUNTER_SYSCALL_READ)
-#define GRPC_STATS_INC_TCP_READ_ALLOC_8K() \
-  GRPC_STATS_INC_COUNTER(GRPC_STATS_COUNTER_TCP_READ_ALLOC_8K)
-#define GRPC_STATS_INC_TCP_READ_ALLOC_64K() \
-  GRPC_STATS_INC_COUNTER(GRPC_STATS_COUNTER_TCP_READ_ALLOC_64K)
-#define GRPC_STATS_INC_HTTP2_SETTINGS_WRITES() \
-  GRPC_STATS_INC_COUNTER(GRPC_STATS_COUNTER_HTTP2_SETTINGS_WRITES)
-#define GRPC_STATS_INC_HTTP2_PINGS_SENT() \
-  GRPC_STATS_INC_COUNTER(GRPC_STATS_COUNTER_HTTP2_PINGS_SENT)
-#define GRPC_STATS_INC_HTTP2_WRITES_BEGUN() \
-  GRPC_STATS_INC_COUNTER(GRPC_STATS_COUNTER_HTTP2_WRITES_BEGUN)
-#define GRPC_STATS_INC_HTTP2_TRANSPORT_STALLS() \
-  GRPC_STATS_INC_COUNTER(GRPC_STATS_COUNTER_HTTP2_TRANSPORT_STALLS)
-#define GRPC_STATS_INC_HTTP2_STREAM_STALLS() \
-  GRPC_STATS_INC_COUNTER(GRPC_STATS_COUNTER_HTTP2_STREAM_STALLS)
-#define GRPC_STATS_INC_CQ_PLUCK_CREATES() \
-  GRPC_STATS_INC_COUNTER(GRPC_STATS_COUNTER_CQ_PLUCK_CREATES)
-#define GRPC_STATS_INC_CQ_NEXT_CREATES() \
-  GRPC_STATS_INC_COUNTER(GRPC_STATS_COUNTER_CQ_NEXT_CREATES)
-#define GRPC_STATS_INC_CQ_CALLBACK_CREATES() \
-  GRPC_STATS_INC_COUNTER(GRPC_STATS_COUNTER_CQ_CALLBACK_CREATES)
-#define GRPC_STATS_INC_CALL_INITIAL_SIZE(value) \
-  GRPC_STATS_INC_HISTOGRAM(                     \
-      GRPC_STATS_HISTOGRAM_CALL_INITIAL_SIZE,   \
-      grpc_core::BucketForHistogramValue_32768_24(static_cast<int>(value)))
-#define GRPC_STATS_INC_TCP_WRITE_SIZE(value) \
-  GRPC_STATS_INC_HISTOGRAM(                  \
-      GRPC_STATS_HISTOGRAM_TCP_WRITE_SIZE,   \
-      grpc_core::BucketForHistogramValue_16777216_20(static_cast<int>(value)))
-#define GRPC_STATS_INC_TCP_WRITE_IOV_SIZE(value) \
-  GRPC_STATS_INC_HISTOGRAM(                      \
-      GRPC_STATS_HISTOGRAM_TCP_WRITE_IOV_SIZE,   \
-      grpc_core::BucketForHistogramValue_80_10(static_cast<int>(value)))
-#define GRPC_STATS_INC_TCP_READ_SIZE(value) \
-  GRPC_STATS_INC_HISTOGRAM(                 \
-      GRPC_STATS_HISTOGRAM_TCP_READ_SIZE,   \
-      grpc_core::BucketForHistogramValue_16777216_20(static_cast<int>(value)))
-#define GRPC_STATS_INC_TCP_READ_OFFER(value) \
-  GRPC_STATS_INC_HISTOGRAM(                  \
-      GRPC_STATS_HISTOGRAM_TCP_READ_OFFER,   \
-      grpc_core::BucketForHistogramValue_16777216_20(static_cast<int>(value)))
-#define GRPC_STATS_INC_TCP_READ_OFFER_IOV_SIZE(value) \
-  GRPC_STATS_INC_HISTOGRAM(                           \
-      GRPC_STATS_HISTOGRAM_TCP_READ_OFFER_IOV_SIZE,   \
-      grpc_core::BucketForHistogramValue_80_10(static_cast<int>(value)))
-#define GRPC_STATS_INC_HTTP2_SEND_MESSAGE_SIZE(value) \
-  GRPC_STATS_INC_HISTOGRAM(                           \
-      GRPC_STATS_HISTOGRAM_HTTP2_SEND_MESSAGE_SIZE,   \
-      grpc_core::BucketForHistogramValue_16777216_20(static_cast<int>(value)))
 namespace grpc_core {
-int BucketForHistogramValue_32768_24(int value);
-int BucketForHistogramValue_16777216_20(int value);
-int BucketForHistogramValue_80_10(int value);
+class Histogram_32768_24 {
+ public:
+  static int BucketFor(int value);
+  const uint64_t* buckets() const { return buckets_; }
+
+ private:
+  uint64_t buckets_[24]{};
+};
+class HistogramCollector_32768_24 {
+ public:
+  void Increment(int value) {
+    buckets_[Histogram_32768_24::BucketFor(value)].fetch_add(
+        1, std::memory_order_relaxed);
+  }
+
+ private:
+  std::atomic<uint64_t> buckets_[24]{};
+};
+class Histogram_16777216_20 {
+ public:
+  static int BucketFor(int value);
+  const uint64_t* buckets() const { return buckets_; }
+
+ private:
+  uint64_t buckets_[20]{};
+};
+class HistogramCollector_16777216_20 {
+ public:
+  void Increment(int value) {
+    buckets_[Histogram_16777216_20::BucketFor(value)].fetch_add(
+        1, std::memory_order_relaxed);
+  }
+
+ private:
+  std::atomic<uint64_t> buckets_[20]{};
+};
+class Histogram_80_10 {
+ public:
+  static int BucketFor(int value);
+  const uint64_t* buckets() const { return buckets_; }
+
+ private:
+  uint64_t buckets_[10]{};
+};
+class HistogramCollector_80_10 {
+ public:
+  void Increment(int value) {
+    buckets_[Histogram_80_10::BucketFor(value)].fetch_add(
+        1, std::memory_order_relaxed);
+  }
+
+ private:
+  std::atomic<uint64_t> buckets_[10]{};
+};
+class GlobalStatsCollector;
+struct GlobalStats {
+  enum class Counter {
+    kClientCallsCreated,
+    kServerCallsCreated,
+    kClientChannelsCreated,
+    kClientSubchannelsCreated,
+    kServerChannelsCreated,
+    kSyscallWrite,
+    kSyscallRead,
+    kTcpReadAlloc8k,
+    kTcpReadAlloc64k,
+    kHttp2SettingsWrites,
+    kHttp2PingsSent,
+    kHttp2WritesBegun,
+    kHttp2TransportStalls,
+    kHttp2StreamStalls,
+    kCqPluckCreates,
+    kCqNextCreates,
+    kCqCallbackCreates,
+    COUNT
+  };
+  enum class Histogram {
+    kCallInitialSize,
+    kTcpWriteSize,
+    kTcpWriteIovSize,
+    kTcpReadSize,
+    kTcpReadOffer,
+    kTcpReadOfferIovSize,
+    kHttp2SendMessageSize,
+    COUNT
+  };
+  static const absl::string_view counter_name[static_cast<int>(Counter::COUNT)];
+  static const absl::string_view
+      histogram_name[static_cast<int>(Histogram::COUNT)];
+  static const absl::string_view counter_doc[static_cast<int>(Counter::COUNT)];
+  static const absl::string_view
+      histogram_doc[static_cast<int>(Histogram::COUNT)];
+  union {
+    struct {
+      uint64_t client_calls_created;
+      uint64_t server_calls_created;
+      uint64_t client_channels_created;
+      uint64_t client_subchannels_created;
+      uint64_t server_channels_created;
+      uint64_t syscall_write;
+      uint64_t syscall_read;
+      uint64_t tcp_read_alloc_8k;
+      uint64_t tcp_read_alloc_64k;
+      uint64_t http2_settings_writes;
+      uint64_t http2_pings_sent;
+      uint64_t http2_writes_begun;
+      uint64_t http2_transport_stalls;
+      uint64_t http2_stream_stalls;
+      uint64_t cq_pluck_creates;
+      uint64_t cq_next_creates;
+      uint64_t cq_callback_creates;
+    };
+    uint64_t counters[static_cast<int>(Counter::COUNT)];
+  };
+  Histogram_32768_24 call_initial_size;
+  Histogram_16777216_20 tcp_write_size;
+  Histogram_80_10 tcp_write_iov_size;
+  Histogram_16777216_20 tcp_read_size;
+  Histogram_16777216_20 tcp_read_offer;
+  Histogram_80_10 tcp_read_offer_iov_size;
+  Histogram_16777216_20 http2_send_message_size;
+  HistogramView histogram(Histogram which) const;
+};
+class GlobalStatsCollector {
+ public:
+  void Collect(GlobalStats* output);
+  void IncrementClientCallsCreated() {
+    per_cpu().client_calls_created_.fetch_add(1, std::memory_order_relaxed);
+  }
+  void IncrementServerCallsCreated() {
+    per_cpu().server_calls_created_.fetch_add(1, std::memory_order_relaxed);
+  }
+  void IncrementClientChannelsCreated() {
+    per_cpu().client_channels_created_.fetch_add(1, std::memory_order_relaxed);
+  }
+  void IncrementClientSubchannelsCreated() {
+    per_cpu().client_subchannels_created_.fetch_add(1,
+                                                    std::memory_order_relaxed);
+  }
+  void IncrementServerChannelsCreated() {
+    per_cpu().server_channels_created_.fetch_add(1, std::memory_order_relaxed);
+  }
+  void IncrementSyscallWrite() {
+    per_cpu().syscall_write_.fetch_add(1, std::memory_order_relaxed);
+  }
+  void IncrementSyscallRead() {
+    per_cpu().syscall_read_.fetch_add(1, std::memory_order_relaxed);
+  }
+  void IncrementTcpReadAlloc8k() {
+    per_cpu().tcp_read_alloc_8k_.fetch_add(1, std::memory_order_relaxed);
+  }
+  void IncrementTcpReadAlloc64k() {
+    per_cpu().tcp_read_alloc_64k_.fetch_add(1, std::memory_order_relaxed);
+  }
+  void IncrementHttp2SettingsWrites() {
+    per_cpu().http2_settings_writes_.fetch_add(1, std::memory_order_relaxed);
+  }
+  void IncrementHttp2PingsSent() {
+    per_cpu().http2_pings_sent_.fetch_add(1, std::memory_order_relaxed);
+  }
+  void IncrementHttp2WritesBegun() {
+    per_cpu().http2_writes_begun_.fetch_add(1, std::memory_order_relaxed);
+  }
+  void IncrementHttp2TransportStalls() {
+    per_cpu().http2_transport_stalls_.fetch_add(1, std::memory_order_relaxed);
+  }
+  void IncrementHttp2StreamStalls() {
+    per_cpu().http2_stream_stalls_.fetch_add(1, std::memory_order_relaxed);
+  }
+  void IncrementCqPluckCreates() {
+    per_cpu().cq_pluck_creates_.fetch_add(1, std::memory_order_relaxed);
+  }
+  void IncrementCqNextCreates() {
+    per_cpu().cq_next_creates_.fetch_add(1, std::memory_order_relaxed);
+  }
+  void IncrementCqCallbackCreates() {
+    per_cpu().cq_callback_creates_.fetch_add(1, std::memory_order_relaxed);
+  }
+  void IncrementCallInitialSize(int value) {
+    per_cpu().call_initial_size_.Increment(value);
+  }
+  void IncrementTcpWriteSize(int value) {
+    per_cpu().tcp_write_size_.Increment(value);
+  }
+  void IncrementTcpWriteIovSize(int value) {
+    per_cpu().tcp_write_iov_size_.Increment(value);
+  }
+  void IncrementTcpReadSize(int value) {
+    per_cpu().tcp_read_size_.Increment(value);
+  }
+  void IncrementTcpReadOffer(int value) {
+    per_cpu().tcp_read_offer_.Increment(value);
+  }
+  void IncrementTcpReadOfferIovSize(int value) {
+    per_cpu().tcp_read_offer_iov_size_.Increment(value);
+  }
+  void IncrementHttp2SendMessageSize(int value) {
+    per_cpu().http2_send_message_size_.Increment(value);
+  }
+
+ private:
+  struct PerCpu {
+    std::atomic<uint64_t> client_calls_created_;
+    std::atomic<uint64_t> server_calls_created_;
+    std::atomic<uint64_t> client_channels_created_;
+    std::atomic<uint64_t> client_subchannels_created_;
+    std::atomic<uint64_t> server_channels_created_;
+    std::atomic<uint64_t> syscall_write_;
+    std::atomic<uint64_t> syscall_read_;
+    std::atomic<uint64_t> tcp_read_alloc_8k_;
+    std::atomic<uint64_t> tcp_read_alloc_64k_;
+    std::atomic<uint64_t> http2_settings_writes_;
+    std::atomic<uint64_t> http2_pings_sent_;
+    std::atomic<uint64_t> http2_writes_begun_;
+    std::atomic<uint64_t> http2_transport_stalls_;
+    std::atomic<uint64_t> http2_stream_stalls_;
+    std::atomic<uint64_t> cq_pluck_creates_;
+    std::atomic<uint64_t> cq_next_creates_;
+    std::atomic<uint64_t> cq_callback_creates_;
+    HistogramCollector_32768_24 call_initial_size_;
+    HistogramCollector_16777216_20 tcp_write_size_;
+    HistogramCollector_80_10 tcp_write_iov_size_;
+    HistogramCollector_16777216_20 tcp_read_size_;
+    HistogramCollector_16777216_20 tcp_read_offer_;
+    HistogramCollector_80_10 tcp_read_offer_iov_size_;
+    HistogramCollector_16777216_20 http2_send_message_size_;
+  };
+  std::unique_ptr<PerCpu[]> per_cpu_;
+  PerCpu& per_cpu() {
+    return per_cpu_[grpc_core::ExecCtx::Get()->starting_cpu()];
+  }
+};
 }  // namespace grpc_core
-extern const int grpc_stats_histo_buckets[7];
-extern const int grpc_stats_histo_start[7];
-extern const int* const grpc_stats_histo_bucket_boundaries[7];
-extern int (*const grpc_stats_get_bucket[7])(int value);
 
 #endif /* GRPC_CORE_LIB_DEBUG_STATS_DATA_H */

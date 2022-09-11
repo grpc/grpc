@@ -30,31 +30,6 @@
 #include "src/core/lib/debug/stats_data.h"  // IWYU pragma: export
 #include "src/core/lib/iomgr/exec_ctx.h"
 
-typedef struct grpc_stats_data {
-  gpr_atm counters[GRPC_STATS_COUNTER_COUNT];
-  gpr_atm histograms[GRPC_STATS_HISTOGRAM_BUCKETS];
-} grpc_stats_data;
-
-namespace grpc_core {
-struct Stats {
-  size_t num_cores;
-  grpc_stats_data per_cpu[0];
-};
-extern Stats* const g_stats_data;
-}  // namespace grpc_core
-
-#define GRPC_THREAD_STATS_DATA() \
-  (&::grpc_core::g_stats_data    \
-        ->per_cpu[grpc_core::ExecCtx::Get()->starting_cpu()])
-
-#define GRPC_STATS_INC_COUNTER(ctr) \
-  (gpr_atm_no_barrier_fetch_add(&GRPC_THREAD_STATS_DATA()->counters[(ctr)], 1))
-
-#define GRPC_STATS_INC_HISTOGRAM(histogram, index)                             \
-  (gpr_atm_no_barrier_fetch_add(                                               \
-      &GRPC_THREAD_STATS_DATA()->histograms[histogram##_FIRST_SLOT + (index)], \
-      1))
-
 void grpc_stats_collect(grpc_stats_data* output);
 // c = b-a
 void grpc_stats_diff(const grpc_stats_data* b, const grpc_stats_data* a,
