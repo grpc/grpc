@@ -259,9 +259,7 @@ class GlobalStatsCollector {
     HistogramCollector_16777216_20 http2_send_message_size_;
   };
   std::unique_ptr<PerCpu[]> per_cpu_;
-  PerCpu& per_cpu() {
-    return per_cpu_[grpc_core::ExecCtx::Get()->starting_cpu()];
-  }
+  PerCpu& per_cpu() { return per_cpu_[ExecCtx::Get()->starting_cpu()]; }
 };
 }  // namespace grpc_core
 
