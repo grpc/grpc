@@ -252,26 +252,18 @@ class Worker : public grpc_core::DualRefCounted<Worker> {
 
  private:
   void Work() {
-    auto result = poller_->Work(24h);
-    if (absl::holds_alternative<Poller::Events>(result)) {
+    auto result = poller_->Work(24h, [this]() {
       // Schedule next work instantiation immediately and take a Ref for
       // the next instantiation.
       Ref().release();
       engine_->Run([this]() { Work(); });
-      // Process pending events of current Work(..) instantiation.
-      auto pending_events = absl::get<Poller::Events>(result);
-      for (auto it = pending_events.begin(); it != pending_events.end(); ++it) {
-        (*it)->Run();
-      }
-      pending_events.clear();
-      // Corresponds to the Ref taken for the current instantiation.
-      Unref();
-    } else {
-      // The poller got kicked. This can only happen when all the Fds have
-      // orphaned themselves.
-      EXPECT_TRUE(absl::holds_alternative<Poller::Kicked>(result));
-      Unref();
-    }
+    });
+    ASSERT_TRUE(result == Poller::WorkResult::kOk ||
+                result == Poller::WorkResult::kKicked);
+    // Corresponds to the Ref taken for the current instantiation. If the
+    // result was Poller::WorkResult::kKicked, then the next work instantiation
+    // would not have been scheduled.
+    Unref();
   }
   std::shared_ptr<EventEngine> engine_;
   PosixEventPoller* poller_;
