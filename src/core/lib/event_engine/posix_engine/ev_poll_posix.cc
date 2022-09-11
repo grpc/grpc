@@ -814,7 +814,7 @@ Poller::WorkResult PollPoller::Work(EventEngine::Duration timeout,
     return Poller::WorkResult::kDeadlineExceeded;
   }
   // Invoke the provided callback.
-  call_before_processing_events();
+  poll_again();
   // Process all pending events inline.
   for (auto& it : pending_events) {
     it->ExecutePendingActions();
@@ -860,9 +860,8 @@ EventHandle* PollPoller::CreateHandle(int /*fd*/, absl::string_view /*name*/,
   GPR_ASSERT(false && "unimplemented");
 }
 
-Poller::WorkResult PollPoller::Work(
-    EventEngine::Duration /*timeout*/,
-    absl::FunctionRef<void()> /*call_before_processing_events*/) {
+Poller::WorkResult PollPoller::Work(EventEngine::Duration /*timeout*/,
+                                    absl::FunctionRef<void()> /*poll_again*/) {
   GPR_ASSERT(false && "unimplemented");
 }
 

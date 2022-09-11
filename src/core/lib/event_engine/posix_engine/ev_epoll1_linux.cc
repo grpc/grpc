@@ -603,7 +603,7 @@ int Epoll1Poller::DoEpollWait(EventEngine::Duration /*timeout*/) {
 
 Poller::WorkResult Epoll1Poller::Work(
     EventEngine::Duration /*timeout*/,
-    absl::FunctionRef<void()> /*call_before_processing_events*/) {
+    absl::FunctionRef<void()> /*poll_again*/) {
   GPR_ASSERT(false && "unimplemented");
 }
 
