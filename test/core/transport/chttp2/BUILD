@@ -75,8 +75,8 @@ grpc_fuzzer(
     tags = ["no_windows"],
     deps = [
         "//:decode_huff",
-        "//:huffsyms",
         "//:grpc",
+        "//:huffsyms",
     ],
 )
 
