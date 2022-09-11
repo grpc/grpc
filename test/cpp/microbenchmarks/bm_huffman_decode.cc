@@ -45,8 +45,8 @@ static void BM_Decode(benchmark::State& state) {
   auto add = [&output](uint8_t c) { output.push_back(c); };
   for (auto _ : state) {
     output.clear();
-    HuffDecoder<decltype(add)>(add, kInput->data(),
-                               kInput->data() + kInput->size())
+    grpc_core::HuffDecoder<decltype(add)>(add, kInput->data(),
+                                          kInput->data() + kInput->size())
         .Run();
   }
 }
