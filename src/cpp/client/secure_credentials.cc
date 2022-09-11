@@ -27,11 +27,11 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_join.h"
+#include "absl/types/optional.h"
 
 #include <grpc/grpc_security_constants.h>
 #include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/slice.h>
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>

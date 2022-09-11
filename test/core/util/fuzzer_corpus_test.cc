@@ -28,6 +28,7 @@
 
 #include "absl/flags/flag.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 #include "gtest/gtest.h"
 
 #include <grpc/slice.h>

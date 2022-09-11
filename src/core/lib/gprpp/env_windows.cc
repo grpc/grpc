@@ -41,13 +41,13 @@ absl::optional<std::string> GetEnv(const char* name) {
 }
 
 void SetEnv(const char* name, const char* value) {
-  BOOL res = SetEnvironmentVariable(grpc_core::CharToTchar(name).c_str(),
-                                    grpc_core::CharToTchar(value).c_str());
+  BOOL res = SetEnvironmentVariable(CharToTchar(name).c_str(),
+                                    CharToTchar(value).c_str());
   if (!res) abort();
 }
 
-void grpc_core::UnsetEnv(const char* name) {
-  BOOL res = SetEnvironmentVariable(grpc_core::CharToTchar(name).c_str(), NULL);
+void UnsetEnv(const char* name) {
+  BOOL res = SetEnvironmentVariable(CharToTchar(name).c_str(), NULL);
   if (!res) abort();
 }
 

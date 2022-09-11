@@ -45,7 +45,6 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/env.h"
-#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -93,7 +92,7 @@ namespace {
 
 absl::StatusOr<std::string> GetBootstrapContents(const char* fallback_config) {
   // First, try GRPC_XDS_BOOTSTRAP env var.
-  auto path = grpc_core::GetEnv("GRPC_XDS_BOOTSTRAP");
+  auto path = GetEnv("GRPC_XDS_BOOTSTRAP");
   if (path.has_value()) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
       gpr_log(GPR_INFO,
@@ -110,7 +109,7 @@ absl::StatusOr<std::string> GetBootstrapContents(const char* fallback_config) {
     return contents_str;
   }
   // Next, try GRPC_XDS_BOOTSTRAP_CONFIG env var.
-  auto env_config = grpc_core::GetEnv("GRPC_XDS_BOOTSTRAP_CONFIG");
+  auto env_config = GetEnv("GRPC_XDS_BOOTSTRAP_CONFIG");
   if (env_config.has_value()) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
       gpr_log(GPR_INFO,

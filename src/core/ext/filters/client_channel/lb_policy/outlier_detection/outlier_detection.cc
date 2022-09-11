@@ -42,7 +42,6 @@
 #include "absl/types/variant.h"
 
 #include <grpc/impl/codegen/connectivity_state.h>
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
@@ -78,7 +77,7 @@ TraceFlag grpc_outlier_detection_lb_trace(false, "outlier_detection_lb");
 
 // TODO(donnadionne): Remove once outlier detection is no longer experimental
 bool XdsOutlierDetectionEnabled() {
-  auto value = grpc_core::GetEnv("GRPC_EXPERIMENTAL_ENABLE_OUTLIER_DETECTION");
+  auto value = GetEnv("GRPC_EXPERIMENTAL_ENABLE_OUTLIER_DETECTION");
   if (!value.has_value()) return false;
   bool parsed_value;
   bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);

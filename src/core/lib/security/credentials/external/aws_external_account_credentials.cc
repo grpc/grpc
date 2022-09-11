@@ -29,6 +29,7 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_replace.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -37,7 +38,6 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/gprpp/env.h"
-#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/http/httpcli_ssl_credentials.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/json/json.h"
@@ -237,9 +237,9 @@ void AwsExternalAccountCredentials::AddMetadataRequestHeaders(
 }
 
 void AwsExternalAccountCredentials::RetrieveRegion() {
-  auto region_from_env = grpc_core::GetEnv(kRegionEnvVar);
+  auto region_from_env = GetEnv(kRegionEnvVar);
   if (!region_from_env.has_value()) {
-    region_from_env = grpc_core::GetEnv(kDefaultRegionEnvVar);
+    region_from_env = GetEnv(kDefaultRegionEnvVar);
   }
   if (region_from_env.has_value()) {
     region_ = std::move(*region_from_env);
@@ -350,9 +350,9 @@ void AwsExternalAccountCredentials::OnRetrieveRoleNameInternal(
 }
 
 void AwsExternalAccountCredentials::RetrieveSigningKeys() {
-  auto access_key_id_from_env = grpc_core::GetEnv(kAccessKeyIdEnvVar);
-  auto secret_access_key_from_env = grpc_core::GetEnv(kSecretAccessKeyEnvVar);
-  auto token_from_env = grpc_core::GetEnv(kSessionTokenEnvVar);
+  auto access_key_id_from_env = GetEnv(kAccessKeyIdEnvVar);
+  auto secret_access_key_from_env = GetEnv(kSecretAccessKeyEnvVar);
+  auto token_from_env = GetEnv(kSessionTokenEnvVar);
   if (access_key_id_from_env.has_value() &&
       secret_access_key_from_env.has_value() && token_from_env.has_value()) {
     access_key_id_ = std::move(*access_key_id_from_env);

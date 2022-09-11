@@ -23,14 +23,15 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <string>
+
+#include "absl/types/optional.h"
+
 #ifdef GPR_LINUX_ENV
 
-#include <dlfcn.h>
 #include <features.h>
 #include <stdlib.h>
-#include <string.h>
 
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/env.h"
 
 namespace grpc_core {

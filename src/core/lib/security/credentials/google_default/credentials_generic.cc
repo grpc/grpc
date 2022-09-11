@@ -21,8 +21,8 @@
 #include <string>
 
 #include "absl/strings/str_cat.h"
+#include "absl/types/optional.h"
 
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/env.h"
