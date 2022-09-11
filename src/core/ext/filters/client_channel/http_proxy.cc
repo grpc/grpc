@@ -152,9 +152,9 @@ absl::optional<std::string> HttpProxyMapper::MapName(
     return absl::nullopt;
   }
   /* Prefer using 'no_grpc_proxy'. Fallback on 'no_proxy' if it is not set. */
-  auto no_proxy_str = grpc_core::GetEnv("no_grpc_proxy");
+  auto no_proxy_str = GetEnv("no_grpc_proxy");
   if (!no_proxy_str.has_value()) {
-    no_proxy_str = grpc_core::GetEnv("no_proxy");
+    no_proxy_str = GetEnv("no_proxy");
   }
   if (no_proxy_str.has_value()) {
     bool use_proxy = true;
