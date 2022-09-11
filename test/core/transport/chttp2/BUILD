@@ -66,7 +66,7 @@ grpc_fuzzer(
 grpc_fuzzer(
     name = "encode_decode_huff_fuzzer",
     srcs = ["encode_decode_huff_fuzzer.cc"],
-    corpus = "encode_decode_huff_fuzzer_corpus",
+    corpus = "encode_decode_huff_corpus",
     external_deps = [
         "absl/types:optional",
         "absl/strings",
