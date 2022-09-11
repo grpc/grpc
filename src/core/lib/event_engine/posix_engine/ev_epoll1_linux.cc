@@ -542,7 +542,7 @@ Poller::WorkResult Epoll1Poller::Work(EventEngine::Duration timeout,
     }
   }
   // Invoke the provided callback.
-  call_before_processing_events();
+  poll_again();
   // Process all pending events inline.
   for (auto& it : pending_events) {
     it->ExecutePendingActions();
