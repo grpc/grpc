@@ -85,6 +85,8 @@ TEST_F(EventEngineClientTest, ConnectToNonExistentListenerTest) {
   auto test_ee = this->NewEventEngine();
   Promise<std::unique_ptr<EventEngine::Endpoint>> client_endpoint_promise;
   auto memory_quota = absl::make_unique<grpc_core::MemoryQuota>("bar");
+  std::string target_addr = absl::StrCat(
+      "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die()));
   // Create a test EventEngine client endpoint and connect to a non existent
   // listener.
   ChannelArgsEndpointConfig config;
@@ -95,7 +97,7 @@ TEST_F(EventEngineClientTest, ConnectToNonExistentListenerTest) {
         EXPECT_FALSE(status.ok());
         client_endpoint_promise.Set(nullptr);
       },
-      URIToResolvedAddress("ipv6:[::1]:7000"), config,
+      URIToResolvedAddress(target_addr), config,
       memory_quota->CreateMemoryAllocator("conn-1"), 24h);
 
   auto client_endpoint = std::move(client_endpoint_promise.Get());

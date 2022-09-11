@@ -107,23 +107,6 @@ CFLAGS_c++-compat = -Wc++-compat
 CPPFLAGS_c++-compat = -O0
 DEFINES_c++-compat = _DEBUG DEBUG
 
-VALID_CONFIG_counters = 1
-CC_counters = $(DEFAULT_CC)
-CXX_counters = $(DEFAULT_CXX)
-LD_counters = $(DEFAULT_CC)
-LDXX_counters = $(DEFAULT_CXX)
-CPPFLAGS_counters = -O2 -DGPR_LOW_LEVEL_COUNTERS
-DEFINES_counters = NDEBUG
-
-VALID_CONFIG_counters_with_memory_counter = 1
-CC_counters_with_memory_counter = $(DEFAULT_CC)
-CXX_counters_with_memory_counter = $(DEFAULT_CXX)
-LD_counters_with_memory_counter = $(DEFAULT_CC)
-LDXX_counters_with_memory_counter = $(DEFAULT_CXX)
-CPPFLAGS_counters_with_memory_counter = -O2 -DGPR_LOW_LEVEL_COUNTERS -DGPR_WRAP_MEMORY_COUNTER
-LDFLAGS_counters_with_memory_counter = -Wl,--wrap=malloc -Wl,--wrap=calloc -Wl,--wrap=realloc -Wl,--wrap=free
-DEFINES_counters_with_memory_counter = NDEBUG
-
 VALID_CONFIG_dbg = 1
 CC_dbg = $(DEFAULT_CC)
 CXX_dbg = $(DEFAULT_CXX)
@@ -176,15 +159,6 @@ LDXX_msan = clang++
 CPPFLAGS_msan = -O0 -stdlib=libc++ -fsanitize-coverage=edge,trace-pc-guard -fsanitize=memory -fsanitize-memory-track-origins -fsanitize-memory-use-after-dtor -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -Wno-unused-command-line-argument -fPIE -pie -DGPR_NO_DIRECT_SYSCALLS
 LDFLAGS_msan = -stdlib=libc++ -fsanitize=memory -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -fPIE -pie $(if $(JENKINS_BUILD),-Wl$(comma)-Ttext-segment=0x7e0000000000,)
 DEFINES_msan = NDEBUG
-
-VALID_CONFIG_mutrace = 1
-CC_mutrace = $(DEFAULT_CC)
-CXX_mutrace = $(DEFAULT_CXX)
-LD_mutrace = $(DEFAULT_CC)
-LDXX_mutrace = $(DEFAULT_CXX)
-CPPFLAGS_mutrace = -O3 -fno-omit-frame-pointer
-LDFLAGS_mutrace = -rdynamic
-DEFINES_mutrace = NDEBUG
 
 VALID_CONFIG_noexcept = 1
 CC_noexcept = $(DEFAULT_CC)
@@ -881,7 +855,6 @@ LIBGPR_SRC = \
     src/core/lib/gpr/log_linux.cc \
     src/core/lib/gpr/log_posix.cc \
     src/core/lib/gpr/log_windows.cc \
-    src/core/lib/gpr/murmur_hash.cc \
     src/core/lib/gpr/string.cc \
     src/core/lib/gpr/string_posix.cc \
     src/core/lib/gpr/string_util_windows.cc \
@@ -905,6 +878,7 @@ LIBGPR_SRC = \
     src/core/lib/gprpp/mpscq.cc \
     src/core/lib/gprpp/stat_posix.cc \
     src/core/lib/gprpp/stat_windows.cc \
+    src/core/lib/gprpp/tchar.cc \
     src/core/lib/gprpp/thd_posix.cc \
     src/core/lib/gprpp/thd_windows.cc \
     src/core/lib/gprpp/time_util.cc \
@@ -1027,7 +1001,6 @@ LIBGRPC_SRC = \
     src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_resolver.cc \
     src/core/ext/filters/client_channel/local_subchannel_pool.cc \
-    src/core/ext/filters/client_channel/proxy_mapper_registry.cc \
     src/core/ext/filters/client_channel/resolver/binder/binder_resolver.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc \
@@ -1375,7 +1348,6 @@ LIBGRPC_SRC = \
     src/core/ext/upbdefs-generated/xds/type/matcher/v3/regex.upbdefs.c \
     src/core/ext/upbdefs-generated/xds/type/matcher/v3/string.upbdefs.c \
     src/core/ext/upbdefs-generated/xds/type/v3/typed_struct.upbdefs.c \
-    src/core/ext/xds/certificate_provider_registry.cc \
     src/core/ext/xds/certificate_provider_store.cc \
     src/core/ext/xds/file_watcher_certificate_provider_factory.cc \
     src/core/ext/xds/xds_api.cc \
@@ -1441,11 +1413,14 @@ LIBGRPC_SRC = \
     src/core/lib/event_engine/windows/iocp.cc \
     src/core/lib/event_engine/windows/win_socket.cc \
     src/core/lib/event_engine/windows/windows_engine.cc \
+    src/core/lib/experiments/config.cc \
     src/core/lib/experiments/experiments.cc \
+    src/core/lib/gpr/murmur_hash.cc \
     src/core/lib/gprpp/status_helper.cc \
     src/core/lib/gprpp/time.cc \
     src/core/lib/gprpp/time_averaged_stats.cc \
     src/core/lib/gprpp/work_serializer.cc \
+    src/core/lib/handshaker/proxy_mapper_registry.cc \
     src/core/lib/http/format_request.cc \
     src/core/lib/http/httpcli.cc \
     src/core/lib/http/httpcli_security_connector.cc \
@@ -1547,6 +1522,7 @@ LIBGRPC_SRC = \
     src/core/lib/security/authorization/grpc_server_authz_filter.cc \
     src/core/lib/security/authorization/matchers.cc \
     src/core/lib/security/authorization/rbac_policy.cc \
+    src/core/lib/security/certificate_provider/certificate_provider_registry.cc \
     src/core/lib/security/context/security_context.cc \
     src/core/lib/security/credentials/alts/alts_credentials.cc \
     src/core/lib/security/credentials/alts/check_gcp_environment.cc \
@@ -1626,6 +1602,7 @@ LIBGRPC_SRC = \
     src/core/lib/surface/completion_queue_factory.cc \
     src/core/lib/surface/event_string.cc \
     src/core/lib/surface/init.cc \
+    src/core/lib/surface/init_internally.cc \
     src/core/lib/surface/lame_client.cc \
     src/core/lib/surface/metadata_array.cc \
     src/core/lib/surface/server.cc \
@@ -1723,7 +1700,6 @@ PUBLIC_HEADERS_C += \
     include/grpc/slice_buffer.h \
     include/grpc/status.h \
     include/grpc/support/alloc.h \
-    include/grpc/support/atm.h \
     include/grpc/support/atm_gcc_atomic.h \
     include/grpc/support/atm_gcc_sync.h \
     include/grpc/support/atm_windows.h \
@@ -1827,7 +1803,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc \
     src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc \
     src/core/ext/filters/client_channel/local_subchannel_pool.cc \
-    src/core/ext/filters/client_channel/proxy_mapper_registry.cc \
     src/core/ext/filters/client_channel/resolver/binder/binder_resolver.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc \
@@ -1941,11 +1916,14 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/event_engine/windows/iocp.cc \
     src/core/lib/event_engine/windows/win_socket.cc \
     src/core/lib/event_engine/windows/windows_engine.cc \
+    src/core/lib/experiments/config.cc \
     src/core/lib/experiments/experiments.cc \
+    src/core/lib/gpr/murmur_hash.cc \
     src/core/lib/gprpp/status_helper.cc \
     src/core/lib/gprpp/time.cc \
     src/core/lib/gprpp/time_averaged_stats.cc \
     src/core/lib/gprpp/work_serializer.cc \
+    src/core/lib/handshaker/proxy_mapper_registry.cc \
     src/core/lib/http/format_request.cc \
     src/core/lib/http/httpcli.cc \
     src/core/lib/http/parser.cc \
@@ -2042,6 +2020,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/security/authorization/authorization_policy_provider_vtable.cc \
     src/core/lib/security/authorization/evaluate_args.cc \
     src/core/lib/security/authorization/grpc_server_authz_filter.cc \
+    src/core/lib/security/certificate_provider/certificate_provider_registry.cc \
     src/core/lib/security/context/security_context.cc \
     src/core/lib/security/credentials/call_creds_util.cc \
     src/core/lib/security/credentials/composite/composite_credentials.cc \
@@ -2086,6 +2065,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/surface/completion_queue_factory.cc \
     src/core/lib/surface/event_string.cc \
     src/core/lib/surface/init.cc \
+    src/core/lib/surface/init_internally.cc \
     src/core/lib/surface/lame_client.cc \
     src/core/lib/surface/metadata_array.cc \
     src/core/lib/surface/server.cc \
@@ -2159,7 +2139,6 @@ PUBLIC_HEADERS_C += \
     include/grpc/slice_buffer.h \
     include/grpc/status.h \
     include/grpc/support/alloc.h \
-    include/grpc/support/atm.h \
     include/grpc/support/atm_gcc_atomic.h \
     include/grpc/support/atm_gcc_sync.h \
     include/grpc/support/atm_windows.h \
@@ -3161,7 +3140,6 @@ src/core/ext/upbdefs-generated/xds/type/matcher/v3/matcher.upbdefs.c: $(OPENSSL_
 src/core/ext/upbdefs-generated/xds/type/matcher/v3/regex.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/xds/type/matcher/v3/string.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/xds/type/v3/typed_struct.upbdefs.c: $(OPENSSL_DEP)
-src/core/ext/xds/certificate_provider_registry.cc: $(OPENSSL_DEP)
 src/core/ext/xds/certificate_provider_store.cc: $(OPENSSL_DEP)
 src/core/ext/xds/file_watcher_certificate_provider_factory.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_api.cc: $(OPENSSL_DEP)

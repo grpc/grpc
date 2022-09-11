@@ -199,13 +199,21 @@ namespace Grpc.Tools.Tests
             "Import google/protobuf/empty.proto but not used.")]
         [TestCase("../Protos/greet.proto(14) : error in column=10: \"name\" is already defined in \"Greet.HelloRequest\".", null, 0, 0, null)]
         [TestCase("../Protos/greet.proto: Import \"google / protobuf / empty.proto\" was listed twice.", null, 0, 0, null)]
+        [TestCase("[libprotobuf WARNING T:\\altsrc\\github\\...\\csharp\\csharp_enum.cc:74] Duplicate enum value Work (originally Work) in PhoneType; adding underscore to distinguish",
+            "T:\\altsrc\\github\\...\\csharp\\csharp_enum.cc",
+            74, 0,
+            "Duplicate enum value Work (originally Work) in PhoneType; adding underscore to distinguish")]
+        [TestCase("[libprotobuf ERROR T:\\path\\...\\filename:23] Some message", null, 0, 0, null)]
+        [TestCase("[libprotobuf FATAL T:\\path\\...\\filename:23] Some message", null, 0, 0, null)]
         public void WarningsParsed(string stderr, string file, int line, int col, string message)
         {
             _task.StdErrMessages.Add(stderr);
 
+            bool matched = false;
             _mockEngine
                 .Setup(me => me.LogWarningEvent(It.IsAny<BuildWarningEventArgs>()))
                 .Callback((BuildWarningEventArgs e) => {
+                    matched = true;
                     if (file != null)
                     {
                         Assert.AreEqual(file, e.File);
@@ -221,6 +229,14 @@ namespace Grpc.Tools.Tests
 
             bool result = _task.Execute();
             Assert.IsFalse(result);
+
+            // To get here in the test then either the event fired and the values matched
+            // or the event did not fire (input did not parse as a warning).
+            // If it did not parse as a warning then check that the expected message is null
+            if (!matched && message != null)
+            {
+                Assert.Fail($"Expected match: {message}");
+            }
         }
 
         [TestCase(
@@ -237,13 +253,21 @@ namespace Grpc.Tools.Tests
             "Import \"google / protobuf / empty.proto\" was listed twice.")]
         [TestCase("../Protos/greet.proto(19) : warning in column=5 : warning : When enum name is stripped and label is PascalCased (Zero) this value label conflicts with Zero.", null, 0, 0, null)]
         [TestCase("../Protos/greet.proto: warning: Import google/protobuf/empty.proto but not used.", null, 0, 0, null)]
+        [TestCase("[libprotobuf WARNING T:\\altsrc\\github\\...\\csharp\\csharp_enum.cc:74] Duplicate enum value Work (originally Work) in PhoneType; adding underscore to distinguish",
+            null, 0, 0, null)]
+        [TestCase("[libprotobuf ERROR T:\\path\\...\\filename:23] Some message",
+            "T:\\path\\...\\filename", 23, 0, "ERROR Some message")]
+        [TestCase("[libprotobuf FATAL T:\\path\\...\\filename:23] Some message",
+            "T:\\path\\...\\filename", 23, 0, "FATAL Some message")]
         public void ErrorsParsed(string stderr, string file, int line, int col, string message)
         {
             _task.StdErrMessages.Add(stderr);
 
+            bool matched = false;
             _mockEngine
                 .Setup(me => me.LogErrorEvent(It.IsAny<BuildErrorEventArgs>()))
                 .Callback((BuildErrorEventArgs e) => {
+                    matched = true;
                     if (file != null)
                     {
                         Assert.AreEqual(file, e.File);
@@ -262,8 +286,17 @@ namespace Grpc.Tools.Tests
                     }
                 });
 
+
             bool result = _task.Execute();
             Assert.IsFalse(result);
+
+            // To get here in the test then either the event fired and the values matched
+            // or the event did not fire (input did not parse as an error).
+            // If it did not parse as an error then check that the expected message is null
+            if (!matched && message != null)
+            {
+                Assert.Fail($"Expected match: {message}");
+            }
         }
     };
 }

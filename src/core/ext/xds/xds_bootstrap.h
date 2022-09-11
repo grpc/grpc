@@ -19,12 +19,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <map>
-#include <set>
 #include <string>
-#include <vector>
-
-#include "absl/strings/string_view.h"
 
 #include "src/core/lib/json/json.h"
 
@@ -34,49 +29,38 @@ bool XdsFederationEnabled();
 
 class XdsBootstrap {
  public:
-  struct Node {
-    std::string id;
-    std::string cluster;
-    std::string locality_region;
-    std::string locality_zone;
-    std::string locality_sub_zone;
-    Json metadata;
+  class Node {
+   public:
+    virtual ~Node() = default;
+
+    virtual const std::string& id() const = 0;
+    virtual const std::string& cluster() const = 0;
+    virtual const std::string& locality_region() const = 0;
+    virtual const std::string& locality_zone() const = 0;
+    virtual const std::string& locality_sub_zone() const = 0;
+    virtual const Json::Object& metadata() const = 0;
   };
 
-  struct XdsServer {
-    static constexpr absl::string_view kServerFeatureXdsV3 = "xds_v3";
-    static constexpr absl::string_view kServerFeatureIgnoreResourceDeletion =
-        "ignore_resource_deletion";
+  class XdsServer {
+   public:
+    virtual ~XdsServer() = default;
 
-    std::string server_uri;
-    std::string channel_creds_type;
-    Json channel_creds_config;
-    std::set<std::string> server_features;
+    virtual const std::string& server_uri() const = 0;
+    virtual bool ShouldUseV3() const = 0;
+    virtual bool IgnoreResourceDeletion() const = 0;
 
-    bool operator==(const XdsServer& other) const {
-      return (server_uri == other.server_uri &&
-              channel_creds_type == other.channel_creds_type &&
-              channel_creds_config == other.channel_creds_config &&
-              server_features == other.server_features);
+    virtual bool Equals(const XdsServer& other) const = 0;
+
+    friend bool operator==(const XdsServer& a, const XdsServer& b) {
+      return a.Equals(b);
     }
-
-    bool operator<(const XdsServer& other) const {
-      if (server_uri < other.server_uri) return true;
-      if (channel_creds_type < other.channel_creds_type) return true;
-      if (channel_creds_config.Dump() < other.channel_creds_config.Dump()) {
-        return true;
-      }
-      if (server_features < other.server_features) return true;
-      return false;
-    }
-
-    bool ShouldUseV3() const;
-    bool IgnoreResourceDeletion() const;
   };
 
-  struct Authority {
-    std::string client_listener_resource_name_template;
-    std::vector<XdsServer> xds_servers;
+  class Authority {
+   public:
+    virtual ~Authority() = default;
+
+    virtual const XdsServer* server() const = 0;
   };
 
   virtual ~XdsBootstrap() = default;
@@ -86,19 +70,18 @@ class XdsBootstrap {
   // TODO(roth): We currently support only one server. Fix this when we
   // add support for fallback for the xds channel.
   virtual const XdsServer& server() const = 0;
+
+  // Returns the node information, or null if not present in the bootstrap
+  // config.
   virtual const Node* node() const = 0;
-  virtual const std::string& client_default_listener_resource_name_template()
-      const = 0;
-  virtual const std::string& server_listener_resource_name_template() const = 0;
-  virtual const std::map<std::string, Authority>& authorities() const = 0;
 
   // Returns a pointer to the specified authority, or null if it does
   // not exist in this bootstrap config.
-  const Authority* LookupAuthority(const std::string& name) const;
+  virtual const Authority* LookupAuthority(const std::string& name) const = 0;
 
-  // A utility method to check that an xDS server exists in this
-  // bootstrap config.
-  bool XdsServerExists(const XdsServer& server) const;
+  // If the server exists in the bootstrap config, returns a pointer to
+  // the XdsServer instance in the config.  Otherwise, returns null.
+  virtual const XdsServer* FindXdsServer(const XdsServer& server) const = 0;
 };
 
 }  // namespace grpc_core
