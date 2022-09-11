@@ -2773,6 +2773,7 @@ grpc_cc_library(
     ],
     deps = [
         "event_engine_base_hdrs",
+        "experiments",
         "gpr",
         "iomgr_port",
         "posix_event_engine_closure",

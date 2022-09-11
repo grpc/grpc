@@ -68,8 +68,6 @@ typedef size_t msg_iovlen_type;
 #endif
 #define MAX_READ_IOVEC 64
 
-GPR_GLOBAL_CONFIG_DECLARE_BOOL(grpc_experimental_enable_tcp_frame_size_tuning);
-
 namespace grpc_event_engine {
 namespace posix_engine {
 
@@ -78,12 +76,6 @@ using ::grpc_event_engine::experimental::Slice;
 using ::grpc_event_engine::experimental::SliceBuffer;
 
 namespace {
-
-bool ExperimentalTcpFrameSizeTuningEnabled() {
-  static const bool kEnableTcpFrameSizeTuning =
-      GPR_GLOBAL_CONFIG_GET(grpc_experimental_enable_tcp_frame_size_tuning);
-  return kEnableTcpFrameSizeTuning;
-}
 
 // A wrapper around sendmsg. It sends \a msg over \a fd and returns the number
 // of bytes sent.
@@ -1395,12 +1387,12 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
                                      PosixEngineClosure* on_done,
                                      std::shared_ptr<EventEngine> engine,
                                      const PosixTcpOptions& options)
-    : on_done_(on_done),
+    : sock_(PosixSocketWrapper(handle->WrappedFd())),
+      on_done_(on_done),
       traced_buffers_(),
       handle_(handle),
       poller_(handle->Poller()),
-      engine_(engine),
-      sock_(PosixSocketWrapper(handle->WrappedFd())) {
+      engine_(engine) {
   PosixSocketWrapper sock(handle->WrappedFd());
   fd_ = handle_->WrappedFd();
   GPR_ASSERT(options.resource_quota != nullptr);
@@ -1416,7 +1408,7 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
   tcp_zerocopy_send_ctx_ = absl::make_unique<TcpZerocopySendCtx>(
       options.tcp_tx_zerocopy_max_simultaneous_sends,
       options.tcp_tx_zerocopy_send_bytes_threshold);
-  frame_size_tuning_enabled_ = ExperimentalTcpFrameSizeTuningEnabled();
+  frame_size_tuning_enabled_ = grpc_core::IsTcpFrameSizeTuningEnabled();
   if (options.tcp_tx_zero_copy_enabled &&
       !tcp_zerocopy_send_ctx_->memory_limited() && poller_->CanTrackErrors()) {
 #ifdef GRPC_LINUX_ERRQUEUE
