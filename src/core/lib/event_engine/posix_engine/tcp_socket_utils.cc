@@ -32,6 +32,7 @@
 #ifdef GRPC_LINUX_TCP_H
 #include <linux/tcp.h>
 #else
+#include <netinet/in.h>  // IWYU pragma: keep
 #include <netinet/tcp.h>
 #endif
 #include <fcntl.h>
