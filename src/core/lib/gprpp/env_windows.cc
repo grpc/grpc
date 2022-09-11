@@ -30,12 +30,9 @@
 namespace grpc_core {
 
 absl::optional<std::string> GetEnv(const char* name) {
-  char* result = NULL;
   auto tname = grpc_core::CharToTchar(name);
-  DWORD ret;
-
-  ret = GetEnvironmentVariable(tname.c_str(), NULL, 0);
-  if (ret == 0) return NULL;
+  DWORD ret = GetEnvironmentVariable(tname.c_str(), NULL, 0);
+  if (ret == 0) return absl::nullopt;
   std::unique_ptr<TCHAR[]> tresult(new TCHAR[ret]);
   ret =
       GetEnvironmentVariable(tname.c_str(), tresult.get(), ret * sizeof(TCHAR));
