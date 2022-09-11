@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_GPR_ENV_H
-#define GRPC_CORE_LIB_GPR_ENV_H
+#ifndef GRPC_CORE_LIB_GPRPP_ENV_H
+#define GRPC_CORE_LIB_GPRPP_ENV_H
 
 #include <grpc/support/port_platform.h>
 
@@ -50,4 +50,4 @@ void MaybeSetEnv(const char* name, const absl::optional<T>& value) {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_GPR_ENV_H */
+#endif /* GRPC_CORE_LIB_GPRPP_ENV_H */

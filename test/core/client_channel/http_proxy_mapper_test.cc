@@ -30,12 +30,10 @@ namespace {
 
 class ScopedSetEnv {
  public:
-  explicit ScopedSetEnv(const char* value) {
-    grpc_core::SetEnv("no_proxy", value);
-  }
+  explicit ScopedSetEnv(const char* value) { SetEnv("no_proxy", value); }
   ScopedSetEnv(const ScopedSetEnv&) = delete;
   ScopedSetEnv& operator=(const ScopedSetEnv&) = delete;
-  ~ScopedSetEnv() { grpc_core::UnsetEnv("no_proxy"); }
+  ~ScopedSetEnv() { UnsetEnv("no_proxy"); }
 };
 
 // Test that an empty no_proxy works as expected, i.e., proxy is used.
