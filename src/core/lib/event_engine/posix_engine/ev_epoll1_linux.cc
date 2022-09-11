@@ -20,7 +20,6 @@
 #include <atomic>
 #include <memory>
 
-#include "absl/functional/any_invocable.h"
 #include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -115,10 +114,7 @@ class Epoll1EventHandle : public EventHandle {
       pending_error_.store(true, std::memory_order_release);
     }
 
-    if (pending_read || pending_write || pending_error) {
-      return true;
-    }
-    return false;
+    return pending_read || pending_write || pending_error;
   }
   int WrappedFd() override { return fd_; }
   void OrphanHandle(PosixEngineClosure* on_done, int* release_fd,

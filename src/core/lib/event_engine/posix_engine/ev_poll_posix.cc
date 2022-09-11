@@ -24,6 +24,7 @@
 #include <memory>
 #include <utility>
 
+#include "absl/container/inlined_vector.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
