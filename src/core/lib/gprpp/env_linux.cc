@@ -29,6 +29,10 @@
 
 #ifdef GPR_LINUX_ENV
 
+#if defined(GPR_BACKWARDS_COMPATIBILITY_MODE)
+#include <dlfcn.h>
+#endif
+
 #include <features.h>
 #include <stdlib.h>
 
@@ -44,9 +48,8 @@ absl::optional<std::string> GetEnv(const char* name) {
   /* Check to see which getenv variant is supported (go from most
    * to least secure) */
   if (getenv_func == nullptr) {
-    const char* names[] = {"secure_getenv", "__secure_getenv", "getenv"};
-    for (size_t i = 0; i < GPR_ARRAY_SIZE(names); i++) {
-      getenv_func = (getenv_type)dlsym(RTLD_DEFAULT, names[i]);
+    for (auto name : {"secure_getenv", "__secure_getenv", "getenv"}) {
+      getenv_func = reinterpret_cast<getenv_type>(dlsym(RTLD_DEFAULT, name));
       if (getenv_func != nullptr) {
         break;
       }
