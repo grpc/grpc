@@ -2294,10 +2294,7 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/event_engine/poller.h",
     ],
-    external_deps = [
-        "absl/container:inlined_vector",
-        "absl/types:variant",
-    ],
+    external_deps = ["absl/functional:function_ref"],
     deps = [
         "event_engine_base_hdrs",
         "gpr_platform",
@@ -2558,7 +2555,6 @@ grpc_cc_library(
         "absl/synchronization",
     ],
     deps = [
-        "common_event_engine_closures",
         "event_engine_base_hdrs",
         "event_engine_poller",
         "event_engine_time_util",
