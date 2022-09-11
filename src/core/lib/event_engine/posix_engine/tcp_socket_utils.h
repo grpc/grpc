@@ -17,11 +17,22 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <sys/socket.h>
+
+#include <functional>
+#include <string>
+#include <utility>
+
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/utility/utility.h"
+
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/socket_mutator.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
@@ -133,12 +144,26 @@ int Accept4(int sockfd,
             grpc_event_engine::experimental::EventEngine::ResolvedAddress& addr,
             int nonblock, int cloexec);
 
+// Returns true if resolved_addr is an IPv4-mapped IPv6 address within the
+//  ::ffff:0.0.0.0/96 range, or false otherwise.
+
+//  If resolved_addr4_out is non-NULL, the inner IPv4 address will be copied
+//  here when returning true.
 bool SockaddrIsV4Mapped(const EventEngine::ResolvedAddress* resolved_addr,
                         EventEngine::ResolvedAddress* resolved_addr4_out);
 
+// If resolved_addr is an AF_INET address, writes the corresponding
+// ::ffff:0.0.0.0/96 address to resolved_addr6_out and returns true.  Otherwise
+// returns false.
 bool SockaddrToV4Mapped(const EventEngine::ResolvedAddress* resolved_addr,
                         EventEngine::ResolvedAddress* resolved_addr6_out);
 
+// Converts a EventEngine::ResolvedAddress into a newly-allocated human-readable
+// string.
+//
+// Currently, only the AF_INET, AF_INET6, and AF_UNIX families are recognized.
+// If the normalize flag is enabled, ::ffff:0.0.0.0/96 IPv6 addresses are
+// displayed as plain IPv4.
 absl::StatusOr<std::string> SockaddrToString(
     const EventEngine::ResolvedAddress* resolved_addr, bool normalize);
 
@@ -147,6 +172,12 @@ class PosixSocketWrapper {
   explicit PosixSocketWrapper(int fd) : fd_(fd) { GPR_ASSERT(fd_ > 0); }
 
   ~PosixSocketWrapper() = default;
+
+  // Instruct the kernel to wait for specified number of bytes to be received on
+  // the socket before generating an interrupt for packet receive. If the call
+  // succeeds, it returns the number of bytes (wait threshold) that was actually
+  // set.
+  absl::StatusOr<int> SetSocketRcvLowat(int bytes);
 
   // Set socket to use zerocopy
   absl::Status SetSocketZeroCopy();

@@ -2709,15 +2709,21 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
         "absl/strings:str_format",
+        "absl/types:optional",
+        "absl/utility",
     ],
     deps = [
         "event_engine_base_hdrs",
         "gpr",
         "grpc_codegen",
         "iomgr_port",
+        "ref_counted_ptr",
         "resource_quota",
         "socket_mutator",
+        "useful",
     ],
 )
 

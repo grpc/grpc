@@ -14,16 +14,25 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <errno.h>
+#include <inttypes.h>
+#include <limits.h>
+
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 
 #include <grpc/event_engine/event_engine.h>
 
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
 #ifdef GRPC_LINUX_TCP_H
 #include <linux/tcp.h>
 #else
+#include <netinet/in.h>  // IWYU pragma: keep
 #include <netinet/tcp.h>
 #endif
 #include <fcntl.h>
@@ -31,6 +40,7 @@
 #include <unistd.h>
 #endif
 
+#include <atomic>
 #include <cstring>
 
 #include "absl/status/status.h"
@@ -247,8 +257,6 @@ absl::StatusOr<std::string> SockaddrToString(
   const int save_errno = errno;
   EventEngine::ResolvedAddress addr_normalized;
   if (normalize && SockaddrIsV4Mapped(resolved_addr, &addr_normalized)) {
-    std::cout << "Is V4 mapped is true" << std::endl;
-    fflush(stdout);
     resolved_addr = &addr_normalized;
   }
   const sockaddr* addr =
@@ -306,6 +314,19 @@ absl::StatusOr<std::string> SockaddrToString(
   // This is probably redundant, but we wouldn't want to log the wrong error.
   errno = save_errno;
   return out;
+}
+
+// Instruct the kernel to wait for specified number of bytes to be received on
+// the socket before generating an interrupt for packet receive. If the call
+// succeeds, it returns the number of bytes (wait threshold) that was actually
+// set.
+absl::StatusOr<int> PosixSocketWrapper::SetSocketRcvLowat(int bytes) {
+  if (setsockopt(fd_, SOL_SOCKET, SO_RCVLOWAT, &bytes, sizeof(bytes)) != 0) {
+    return absl::Status(
+        absl::StatusCode::kInternal,
+        absl::StrCat("setsockopt(SO_RCVLOWAT): ", strerror(errno)));
+  }
+  return bytes;
 }
 
 // Set a socket to use zerocopy
@@ -759,6 +780,10 @@ bool SockaddrToV4Mapped(const EventEngine::ResolvedAddress* /*resolved_addr*/,
 
 absl::StatusOr<std::string> SockaddrToString(
     const EventEngine::ResolvedAddress* /*resolved_addr*/, bool /*normalize*/) {
+  GPR_ASSERT(false && "unimplemented");
+}
+
+absl::StatusOr<int> PosixSocketWrapper::SetSocketRcvLowat(int /*bytes*/) {
   GPR_ASSERT(false && "unimplemented");
 }
 
