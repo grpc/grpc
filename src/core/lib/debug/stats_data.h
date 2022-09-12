@@ -61,20 +61,20 @@ extern const char* grpc_stats_histogram_name[GRPC_STATS_HISTOGRAM_COUNT];
 extern const char* grpc_stats_histogram_doc[GRPC_STATS_HISTOGRAM_COUNT];
 typedef enum {
   GRPC_STATS_HISTOGRAM_CALL_INITIAL_SIZE_FIRST_SLOT = 0,
-  GRPC_STATS_HISTOGRAM_CALL_INITIAL_SIZE_BUCKETS = 64,
-  GRPC_STATS_HISTOGRAM_TCP_WRITE_SIZE_FIRST_SLOT = 64,
-  GRPC_STATS_HISTOGRAM_TCP_WRITE_SIZE_BUCKETS = 64,
-  GRPC_STATS_HISTOGRAM_TCP_WRITE_IOV_SIZE_FIRST_SLOT = 128,
-  GRPC_STATS_HISTOGRAM_TCP_WRITE_IOV_SIZE_BUCKETS = 64,
-  GRPC_STATS_HISTOGRAM_TCP_READ_SIZE_FIRST_SLOT = 192,
-  GRPC_STATS_HISTOGRAM_TCP_READ_SIZE_BUCKETS = 64,
-  GRPC_STATS_HISTOGRAM_TCP_READ_OFFER_FIRST_SLOT = 256,
-  GRPC_STATS_HISTOGRAM_TCP_READ_OFFER_BUCKETS = 64,
-  GRPC_STATS_HISTOGRAM_TCP_READ_OFFER_IOV_SIZE_FIRST_SLOT = 320,
-  GRPC_STATS_HISTOGRAM_TCP_READ_OFFER_IOV_SIZE_BUCKETS = 64,
-  GRPC_STATS_HISTOGRAM_HTTP2_SEND_MESSAGE_SIZE_FIRST_SLOT = 384,
-  GRPC_STATS_HISTOGRAM_HTTP2_SEND_MESSAGE_SIZE_BUCKETS = 64,
-  GRPC_STATS_HISTOGRAM_BUCKETS = 448
+  GRPC_STATS_HISTOGRAM_CALL_INITIAL_SIZE_BUCKETS = 24,
+  GRPC_STATS_HISTOGRAM_TCP_WRITE_SIZE_FIRST_SLOT = 24,
+  GRPC_STATS_HISTOGRAM_TCP_WRITE_SIZE_BUCKETS = 20,
+  GRPC_STATS_HISTOGRAM_TCP_WRITE_IOV_SIZE_FIRST_SLOT = 44,
+  GRPC_STATS_HISTOGRAM_TCP_WRITE_IOV_SIZE_BUCKETS = 10,
+  GRPC_STATS_HISTOGRAM_TCP_READ_SIZE_FIRST_SLOT = 54,
+  GRPC_STATS_HISTOGRAM_TCP_READ_SIZE_BUCKETS = 20,
+  GRPC_STATS_HISTOGRAM_TCP_READ_OFFER_FIRST_SLOT = 74,
+  GRPC_STATS_HISTOGRAM_TCP_READ_OFFER_BUCKETS = 20,
+  GRPC_STATS_HISTOGRAM_TCP_READ_OFFER_IOV_SIZE_FIRST_SLOT = 94,
+  GRPC_STATS_HISTOGRAM_TCP_READ_OFFER_IOV_SIZE_BUCKETS = 10,
+  GRPC_STATS_HISTOGRAM_HTTP2_SEND_MESSAGE_SIZE_FIRST_SLOT = 104,
+  GRPC_STATS_HISTOGRAM_HTTP2_SEND_MESSAGE_SIZE_BUCKETS = 20,
+  GRPC_STATS_HISTOGRAM_BUCKETS = 124
 } grpc_stats_histogram_constants;
 #define GRPC_STATS_INC_CLIENT_CALLS_CREATED() \
   GRPC_STATS_INC_COUNTER(GRPC_STATS_COUNTER_CLIENT_CALLS_CREATED)
@@ -113,35 +113,35 @@ typedef enum {
 #define GRPC_STATS_INC_CALL_INITIAL_SIZE(value) \
   GRPC_STATS_INC_HISTOGRAM(                     \
       GRPC_STATS_HISTOGRAM_CALL_INITIAL_SIZE,   \
-      grpc_core::BucketForHistogramValue_262144_64(static_cast<int>(value)))
+      grpc_core::BucketForHistogramValue_32768_24(static_cast<int>(value)))
 #define GRPC_STATS_INC_TCP_WRITE_SIZE(value) \
   GRPC_STATS_INC_HISTOGRAM(                  \
       GRPC_STATS_HISTOGRAM_TCP_WRITE_SIZE,   \
-      grpc_core::BucketForHistogramValue_16777216_64(static_cast<int>(value)))
+      grpc_core::BucketForHistogramValue_16777216_20(static_cast<int>(value)))
 #define GRPC_STATS_INC_TCP_WRITE_IOV_SIZE(value) \
   GRPC_STATS_INC_HISTOGRAM(                      \
       GRPC_STATS_HISTOGRAM_TCP_WRITE_IOV_SIZE,   \
-      grpc_core::BucketForHistogramValue_1024_64(static_cast<int>(value)))
+      grpc_core::BucketForHistogramValue_80_10(static_cast<int>(value)))
 #define GRPC_STATS_INC_TCP_READ_SIZE(value) \
   GRPC_STATS_INC_HISTOGRAM(                 \
       GRPC_STATS_HISTOGRAM_TCP_READ_SIZE,   \
-      grpc_core::BucketForHistogramValue_16777216_64(static_cast<int>(value)))
+      grpc_core::BucketForHistogramValue_16777216_20(static_cast<int>(value)))
 #define GRPC_STATS_INC_TCP_READ_OFFER(value) \
   GRPC_STATS_INC_HISTOGRAM(                  \
       GRPC_STATS_HISTOGRAM_TCP_READ_OFFER,   \
-      grpc_core::BucketForHistogramValue_16777216_64(static_cast<int>(value)))
+      grpc_core::BucketForHistogramValue_16777216_20(static_cast<int>(value)))
 #define GRPC_STATS_INC_TCP_READ_OFFER_IOV_SIZE(value) \
   GRPC_STATS_INC_HISTOGRAM(                           \
       GRPC_STATS_HISTOGRAM_TCP_READ_OFFER_IOV_SIZE,   \
-      grpc_core::BucketForHistogramValue_1024_64(static_cast<int>(value)))
+      grpc_core::BucketForHistogramValue_80_10(static_cast<int>(value)))
 #define GRPC_STATS_INC_HTTP2_SEND_MESSAGE_SIZE(value) \
   GRPC_STATS_INC_HISTOGRAM(                           \
       GRPC_STATS_HISTOGRAM_HTTP2_SEND_MESSAGE_SIZE,   \
-      grpc_core::BucketForHistogramValue_16777216_64(static_cast<int>(value)))
+      grpc_core::BucketForHistogramValue_16777216_20(static_cast<int>(value)))
 namespace grpc_core {
-int BucketForHistogramValue_16777216_64(int value);
-int BucketForHistogramValue_1024_64(int value);
-int BucketForHistogramValue_262144_64(int value);
+int BucketForHistogramValue_32768_24(int value);
+int BucketForHistogramValue_16777216_20(int value);
+int BucketForHistogramValue_80_10(int value);
 }  // namespace grpc_core
 extern const int grpc_stats_histo_buckets[7];
 extern const int grpc_stats_histo_start[7];

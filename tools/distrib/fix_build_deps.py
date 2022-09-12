@@ -395,6 +395,7 @@ args = parser.parse_args()
 
 for dirname in [
         "",
+        "src/cpp/ext/gcp",
         "test/core/uri",
         "test/core/util",
         "test/core/end2end",
