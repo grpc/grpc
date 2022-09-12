@@ -666,7 +666,6 @@ grpc_cc_library(
     visibility = ["@grpc:public"],
     deps = [
         "grpc_public_hdrs",
-        "init_internally",
     ],
 )
 
@@ -700,7 +699,6 @@ grpc_cc_library(
     ],
     deps = [
         "grpc++_base",
-        "init_internally",
         "slice",
     ],
 )

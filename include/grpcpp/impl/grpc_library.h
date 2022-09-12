@@ -21,10 +21,9 @@
 
 #include <iostream>
 
+#include <grpc/grpc.h>
 #include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/core_codegen.h>
-
-#include "src/core/lib/surface/init_internally.h"
 
 namespace grpc {
 
@@ -35,13 +34,13 @@ class GrpcLibrary {
  public:
   explicit GrpcLibrary(bool call_grpc_init = true) : grpc_init_called_(false) {
     if (call_grpc_init) {
-      grpc_core::InitInternally();
+      grpc_init();
       grpc_init_called_ = true;
     }
   }
   virtual ~GrpcLibrary() {
     if (grpc_init_called_) {
-      grpc_core::ShutdownInternally();
+      grpc_shutdown();
     }
   }
 
