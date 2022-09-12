@@ -28,6 +28,7 @@
 
 #include "src/core/ext/transport/binder/client/channel_create_impl.h"
 #include "src/core/ext/transport/binder/server/binder_server.h"
+#include "src/core/lib/surface/init_internally.h"
 #include "test/core/transport/binder/end2end/fake_binder.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
@@ -68,7 +69,7 @@ std::shared_ptr<ServerCredentials> BinderServerCredentials() {
 
 std::shared_ptr<grpc::Channel> CreateBinderChannel(
     std::unique_ptr<grpc_binder::Binder> endpoint_binder) {
-  grpc_init();
+  grpc_core::InitInternally();
 
   return grpc::CreateChannelInternal(
       "",
