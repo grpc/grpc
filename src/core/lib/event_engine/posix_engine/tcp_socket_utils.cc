@@ -267,7 +267,12 @@ absl::StatusOr<std::string> SockaddrToString(
     const sockaddr_un* addr_un = reinterpret_cast<const sockaddr_un*>(addr);
     bool abstract = addr_un->sun_path[0] == '\0';
     if (abstract) {
-      int len = resolved_addr->size() - sizeof(addr->sa_family);
+#ifdef GPR_APPLE
+      int len = resolved_addr->size() - sizeof(addr_un->sun_family) -
+                sizeof(addr_un->sun_len);
+#else
+      int len = resolved_addr->size() - sizeof(addr_un->sun_family);
+#endif
       if (len <= 0) {
         return absl::InvalidArgumentError("Empty UDS abstract path");
       }
