@@ -281,9 +281,15 @@ with open('src/core/lib/debug/stats_data.h', 'w') as H:
         print(" public:", file=H)
         print("  static int BucketFor(int value);", file=H)
         print("  const uint64_t* buckets() const { return buckets_; }", file=H)
-        print("  friend Histogram_%d_%d operator-(const Histogram_%d_%d& left, const Histogram_%d_%d& right);" % (shape.max, shape.buckets, shape.max, shape.buckets, shape.max, shape.buckets), file=H)
+        print(
+            "  friend Histogram_%d_%d operator-(const Histogram_%d_%d& left, const Histogram_%d_%d& right);"
+            % (shape.max, shape.buckets, shape.max, shape.buckets, shape.max,
+               shape.buckets),
+            file=H)
         print(" private:", file=H)
-        print("  friend class HistogramCollector_%d_%d;" % (shape.max, shape.buckets), file=H)
+        print("  friend class HistogramCollector_%d_%d;" %
+              (shape.max, shape.buckets),
+              file=H)
         print("  uint64_t buckets_[%d]{};" % shape.buckets, file=H)
         print("};", file=H)
         print("class HistogramCollector_%d_%d {" % (shape.max, shape.buckets),
@@ -295,7 +301,9 @@ with open('src/core/lib/debug/stats_data.h', 'w') as H:
               file=H)
         print("        .fetch_add(1, std::memory_order_relaxed);", file=H)
         print("  }", file=H)
-        print("  void Collect(Histogram_%d_%d* result) const;" % (shape.max, shape.buckets), file=H)
+        print("  void Collect(Histogram_%d_%d* result) const;" %
+              (shape.max, shape.buckets),
+              file=H)
         print(" private:", file=H)
         print("  std::atomic<uint64_t> buckets_[%d]{};" % shape.buckets, file=H)
         print("};", file=H)
@@ -334,7 +342,9 @@ with open('src/core/lib/debug/stats_data.h', 'w') as H:
         print("  Histogram_%d_%d %s;" % (ctr.max, ctr.buckets, ctr.name),
               file=H)
     print("  HistogramView histogram(Histogram which) const;", file=H)
-    print("  std::unique_ptr<GlobalStats> Diff(const GlobalStats& other) const;", file=H)
+    print(
+        "  std::unique_ptr<GlobalStats> Diff(const GlobalStats& other) const;",
+        file=H)
     print("};", file=H)
     print("class GlobalStatsCollector {", file=H)
     print(" public:", file=H)
@@ -403,15 +413,25 @@ with open('src/core/lib/debug/stats_data.cc', 'w') as C:
     print("namespace { union DblUint { double dbl; uint64_t uint; }; }", file=C)
 
     for shape in shapes:
-        print("void HistogramCollector_%d_%d::Collect(Histogram_%d_%d* result) const {" % (shape.max, shape.buckets, shape.max, shape.buckets), file=C)
+        print(
+            "void HistogramCollector_%d_%d::Collect(Histogram_%d_%d* result) const {"
+            % (shape.max, shape.buckets, shape.max, shape.buckets),
+            file=C)
         print("  for (int i=0; i<%d; i++) {" % shape.buckets, file=C)
-        print("    result->buckets_[i] += buckets_[i].load(std::memory_order_relaxed);", file=C)
+        print(
+            "    result->buckets_[i] += buckets_[i].load(std::memory_order_relaxed);",
+            file=C)
         print("  }", file=C)
         print("}", file=C)
-        print("Histogram_%d_%d operator-(const Histogram_%d_%d& left, const Histogram_%d_%d& right) {" % (shape.max, shape.buckets, shape.max, shape.buckets, shape.max, shape.buckets), file=C)
+        print(
+            "Histogram_%d_%d operator-(const Histogram_%d_%d& left, const Histogram_%d_%d& right) {"
+            % (shape.max, shape.buckets, shape.max, shape.buckets, shape.max,
+               shape.buckets),
+            file=C)
         print("  Histogram_%d_%d result;" % (shape.max, shape.buckets), file=C)
         print("  for (int i=0; i<%d; i++) {" % shape.buckets, file=C)
-        print("    result.buckets_[i] = left.buckets_[i] - right.buckets_[i];", file=C)
+        print("    result.buckets_[i] = left.buckets_[i] - right.buckets_[i];",
+              file=C)
         print("  }", file=C)
         print("  return result;", file=C)
         print("}", file=C)
@@ -458,23 +478,31 @@ with open('src/core/lib/debug/stats_data.cc', 'w') as C:
     print("  }", file=C)
     print("}", file=C)
 
-    print("std::unique_ptr<GlobalStats> GlobalStatsCollector::Collect() const {", file=C)
+    print(
+        "std::unique_ptr<GlobalStats> GlobalStatsCollector::Collect() const {",
+        file=C)
     print("  auto result = absl::make_unique<GlobalStats>();", file=C)
     print("  for (const auto& data : data_) {", file=C)
     for ctr in inst_map['Counter']:
-        print("    result->%s += data.%s.load(std::memory_order_relaxed);" % (ctr.name, ctr.name), file=C)
+        print("    result->%s += data.%s.load(std::memory_order_relaxed);" %
+              (ctr.name, ctr.name),
+              file=C)
     for h in inst_map['Histogram']:
         print("    data.%s.Collect(&result->%s);" % (h.name, h.name), file=C)
     print("  }", file=C)
     print("  return result;", file=C)
     print("}", file=C)
 
-    print("std::unique_ptr<GlobalStats> GlobalStats::Diff(const GlobalStats& other) const {", file=C)
+    print(
+        "std::unique_ptr<GlobalStats> GlobalStats::Diff(const GlobalStats& other) const {",
+        file=C)
     print("  auto result = absl::make_unique<GlobalStats>();", file=C)
     for ctr in inst_map['Counter']:
-        print("  result->%s = %s - other.%s;" % (ctr.name, ctr.name, ctr.name), file=C)
+        print("  result->%s = %s - other.%s;" % (ctr.name, ctr.name, ctr.name),
+              file=C)
     for h in inst_map['Histogram']:
-        print("  result->%s = %s - other.%s;" % (h.name, h.name, h.name), file=C)
+        print("  result->%s = %s - other.%s;" % (h.name, h.name, h.name),
+              file=C)
     print("  return result;", file=C)
     print("}", file=C)
 

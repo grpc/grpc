@@ -930,6 +930,8 @@
     <file baseinstalldir="/" name="src/core/lib/compression/message_compress.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/config/core_configuration.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/config/core_configuration.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/debug/histogram_view.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/debug/histogram_view.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/debug/stats.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/debug/stats.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/debug/stats_data.cc" role="src" />
@@ -1048,6 +1050,7 @@
     <file baseinstalldir="/" name="src/core/lib/gprpp/orphanable.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/overload.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/packed_table.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/per_cpu.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/ref_counted.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/ref_counted_ptr.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/single_set_ptr.h" role="src" />

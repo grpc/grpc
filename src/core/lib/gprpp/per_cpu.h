@@ -15,6 +15,8 @@
 #ifndef GRPC_CORE_LIB_GPRPP_PER_CPU_H
 #define GRPC_CORE_LIB_GPRPP_PER_CPU_H
 
+#include <grpc/support/port_platform.h>
+
 #include <cstddef>
 #include <memory>
 
@@ -41,4 +43,4 @@ class PerCpu {
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_CORE_LIB_GPRPP_PER_CPU_H

@@ -37,20 +37,19 @@ namespace testing {
 
 class Snapshot {
  public:
-  std::unique_ptr<grpc_core::GlobalStats> delta() {
+  std::unique_ptr<GlobalStats> delta() {
     auto now = global_stats().Collect();
     return now->Diff(*begin_);
   }
 
  private:
-  std::unique_ptr<grpc_core::GlobalStats> begin_ =
-      grpc_core::global_stats().Collect();
+  std::unique_ptr<GlobalStats> begin_ = global_stats().Collect();
 };
 
 TEST(StatsTest, IncSpecificCounter) {
   std::unique_ptr<Snapshot> snapshot(new Snapshot);
 
-  grpc_core::ExecCtx exec_ctx;
+  ExecCtx exec_ctx;
   global_stats().IncrementClientCallsCreated();
 
   EXPECT_EQ(snapshot->delta()->client_calls_created, 1);
@@ -96,7 +95,7 @@ TEST_P(HistogramTest, IncHistogram) {
   std::queue<std::thread> threads;
   auto run = [kHistogram](const std::vector<int>& test_values,
                           int expected_bucket) {
-    grpc_core::ExecCtx exec_ctx;
+    ExecCtx exec_ctx;
     for (auto j : test_values) {
       std::unique_ptr<Snapshot> snapshot(new Snapshot);
 
