@@ -9725,6 +9725,7 @@ target_link_libraries(exec_ctx_wakeup_scheduler_test
   absl::any_invocable
   absl::type_traits
   absl::statusor
+  absl::utility
   gpr
   upb
 )

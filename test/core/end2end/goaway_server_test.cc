@@ -82,12 +82,11 @@ static void set_resolve_port(int port) {
 
 namespace {
 
-grpc_core::DNSResolver* g_default_dns_resolver;
-
 class TestDNSResolver : public grpc_core::DNSResolver {
  public:
-  TestDNSResolver()
-      : engine_(grpc_event_engine::experimental::GetDefaultEventEngine()) {}
+  TestDNSResolver(std::shared_ptr<grpc_core::DNSResolver> default_resolver)
+      : default_resolver_(std::move(default_resolver)),
+        engine_(grpc_event_engine::experimental::GetDefaultEventEngine()) {}
   TaskHandle LookupHostname(
       std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
           on_resolved,
@@ -95,9 +94,9 @@ class TestDNSResolver : public grpc_core::DNSResolver {
       grpc_core::Duration timeout, grpc_pollset_set* interested_parties,
       absl::string_view name_server) override {
     if (name != "test") {
-      return g_default_dns_resolver->LookupHostname(
-          std::move(on_resolved), name, default_port, timeout,
-          interested_parties, name_server);
+      return default_resolver_->LookupHostname(std::move(on_resolved), name,
+                                               default_port, timeout,
+                                               interested_parties, name_server);
     }
     MakeDNSRequest(std::move(on_resolved));
     return kNullHandle;
@@ -105,7 +104,7 @@ class TestDNSResolver : public grpc_core::DNSResolver {
 
   absl::StatusOr<std::vector<grpc_resolved_address>> LookupHostnameBlocking(
       absl::string_view name, absl::string_view default_port) override {
-    return g_default_dns_resolver->LookupHostnameBlocking(name, default_port);
+    return default_resolver_->LookupHostnameBlocking(name, default_port);
   }
 
   TaskHandle LookupSRV(
@@ -159,6 +158,7 @@ class TestDNSResolver : public grpc_core::DNSResolver {
                                                  std::move(addrs));
     }
   }
+  std::shared_ptr<grpc_core::DNSResolver> default_resolver_;
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine_;
 };
 
@@ -210,9 +210,8 @@ int main(int argc, char** argv) {
 
   gpr_mu_init(&g_mu);
   grpc_init();
-  g_default_dns_resolver = grpc_core::GetDNSResolver();
-  auto* resolver = new TestDNSResolver();
-  grpc_core::SetDNSResolver(resolver);
+  grpc_core::ResetDNSResolver(
+      absl::make_unique<TestDNSResolver>(grpc_core::GetDNSResolver()));
   iomgr_dns_lookup_ares = grpc_dns_lookup_hostname_ares;
   iomgr_cancel_ares_request = grpc_cancel_ares_request;
   grpc_dns_lookup_hostname_ares = my_dns_lookup_ares;
@@ -443,8 +442,6 @@ int main(int argc, char** argv) {
 
   grpc_completion_queue_destroy(cq);
 
-  grpc_core::SetDNSResolver(g_default_dns_resolver);
-  delete resolver;
   grpc_shutdown();
   gpr_mu_destroy(&g_mu);
 

@@ -1659,6 +1659,7 @@ grpc_cc_library(
         "absl/status",
         "absl/types:optional",
         "absl/types:variant",
+        "absl/utility",
     ],
     language = "c++",
     public_hdrs = [
@@ -3376,6 +3377,7 @@ grpc_cc_library(
         "json",
         "latch",
         "memory_quota",
+        "no_destruct",
         "orphanable",
         "packed_table",
         "poll",

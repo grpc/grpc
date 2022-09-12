@@ -50,6 +50,7 @@ static void iomgr_platform_shutdown(void) {
   grpc_tcp_posix_shutdown();
   grpc_event_engine_shutdown();
   grpc_wakeup_fd_global_destroy();
+  grpc_core::ResetDNSResolver(nullptr);  // delete the resolver
 }
 
 static void iomgr_platform_shutdown_background_closure(void) {
@@ -79,7 +80,8 @@ void grpc_set_default_iomgr_platform() {
   grpc_set_timer_impl(&grpc_generic_timer_vtable);
   grpc_set_pollset_vtable(&grpc_posix_pollset_vtable);
   grpc_set_pollset_set_vtable(&grpc_posix_pollset_set_vtable);
-  grpc_core::SetDNSResolver(grpc_core::NativeDNSResolver::GetOrCreate());
+  grpc_core::ResetDNSResolver(
+      absl::make_unique<grpc_core::NativeDNSResolver>());
   grpc_tcp_client_global_init();
   grpc_set_iomgr_platform_vtable(&vtable);
 }

@@ -171,7 +171,8 @@ HttpRequest::HttpRequest(
       resource_quota_(ResourceQuotaFromChannelArgs(channel_args_)),
       pollent_(pollent),
       pollset_set_(grpc_pollset_set_create()),
-      test_only_generate_response_(std::move(test_only_generate_response)) {
+      test_only_generate_response_(std::move(test_only_generate_response)),
+      resolver_(GetDNSResolver()) {
   grpc_http_parser_init(&parser_, GRPC_HTTP_RESPONSE, response);
   grpc_slice_buffer_init(&incoming_);
   grpc_slice_buffer_init(&outgoing_);
@@ -209,7 +210,7 @@ void HttpRequest::Start() {
     return;
   }
   Ref().release();  // ref held by pending DNS resolution
-  dns_request_handle_ = GetDNSResolver()->LookupHostname(
+  dns_request_handle_ = resolver_->LookupHostname(
       absl::bind_front(&HttpRequest::OnResolved, this), uri_.authority(),
       uri_.scheme(), kDefaultDNSRequestTimeout, pollset_set_,
       /*name_server=*/"");
@@ -222,7 +223,7 @@ void HttpRequest::Orphan() {
     cancelled_ = true;
     // cancel potentially pending DNS resolution.
     if (dns_request_handle_.has_value() &&
-        GetDNSResolver()->Cancel(dns_request_handle_.value())) {
+        resolver_->Cancel(dns_request_handle_.value())) {
       Finish(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "cancelled during DNS resolution"));
       Unref();

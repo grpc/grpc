@@ -178,11 +178,7 @@ class FuzzerDNSResolver : public grpc_core::DNSResolver {
     grpc_timer timer_;
   };
 
-  // Gets the singleton instance, possibly creating it first
-  static FuzzerDNSResolver* GetOrCreate(FuzzingEventEngine* engine) {
-    static FuzzerDNSResolver* instance = new FuzzerDNSResolver(engine);
-    return instance;
-  }
+  explicit FuzzerDNSResolver(FuzzingEventEngine* engine) : engine_(engine) {}
 
   TaskHandle LookupHostname(
       std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
@@ -231,7 +227,6 @@ class FuzzerDNSResolver : public grpc_core::DNSResolver {
   bool Cancel(TaskHandle /*handle*/) override { return false; }
 
  private:
-  explicit FuzzerDNSResolver(FuzzingEventEngine* engine) : engine_(engine) {}
   FuzzingEventEngine* engine_;
 };
 
@@ -838,7 +833,8 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Executor::SetThreadingAll(false);
   }
-  grpc_core::SetDNSResolver(FuzzerDNSResolver::GetOrCreate(engine.get()));
+  grpc_core::ResetDNSResolver(
+      absl::make_unique<FuzzerDNSResolver>(engine.get()));
   grpc_dns_lookup_hostname_ares = my_dns_lookup_ares;
   grpc_cancel_ares_request = my_cancel_ares_request;
 

@@ -21,12 +21,12 @@
 #include <stdlib.h>
 
 #include <algorithm>
+#include <atomic>
 
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
 
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "test/core/util/test_config.h"
