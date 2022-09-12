@@ -785,7 +785,7 @@ static void set_write_state(grpc_chttp2_transport* t,
 
 void grpc_chttp2_initiate_write(grpc_chttp2_transport* t,
                                 grpc_chttp2_initiate_write_reason reason) {
-  gpr_log(GPR_INFO, "apolcyn t=%p is_client=%d initiate_write", t, s->is_client);
+  gpr_log(GPR_INFO, "apolcyn t=%p is_client=%d initiate_write reason=%s", t, t->is_client, grpc_chttp2_initiate_write_reason_string(reason));
   switch (t->write_state) {
     case GRPC_CHTTP2_WRITE_STATE_IDLE:
       set_write_state(t, GRPC_CHTTP2_WRITE_STATE_WRITING,
@@ -886,7 +886,7 @@ static void write_action(void* gt, grpc_error_handle /*error*/) {
           ? 2 * t->settings[GRPC_PEER_SETTINGS]
                            [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE]
           : INT_MAX;
-  gpr_log(GPR_INFO, "apolcyn t=%p is_client=%d endpoint_write", t, s->is_client);
+  gpr_log(GPR_INFO, "apolcyn t=%p is_client=%d endpoint_write", t, t->is_client);
   grpc_endpoint_write(
       t->ep, &t->outbuf,
       GRPC_CLOSURE_INIT(&t->write_action_end_locked, write_action_end, t,
@@ -2322,7 +2322,7 @@ void grpc_chttp2_act_on_flowctl_action(
   WithUrgency(t, action.send_stream_update(),
               GRPC_CHTTP2_INITIATE_WRITE_STREAM_FLOW_CONTROL, [t, s]() {
                 if (s->id != 0) {
-                  gpr_log(GPR_INFO, "apolcyn s=%p t=%p is_client=%d act_on_flowctl_action mark_stream_writable", s, t, s->is_client);
+                  gpr_log(GPR_INFO, "apolcyn s=%p t=%p is_client=%d act_on_flowctl_action mark_stream_writable", s, t, t->is_client);
                   grpc_chttp2_mark_stream_writable(t, s);
                 }
               });

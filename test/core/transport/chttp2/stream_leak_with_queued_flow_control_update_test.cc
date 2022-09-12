@@ -83,10 +83,13 @@ class TestServer {
     GPR_ASSERT(event.type == GRPC_OP_COMPLETE);
     grpc_call_details_destroy(&call_details);
     grpc_metadata_array_destroy(&request_metadata_recv);
+    grpc_slice response_payload_slice = grpc_slice_from_static_string("a");
+    grpc_byte_buffer* response_payload =
+        grpc_raw_byte_buffer_create(&response_payload_slice, 1);
     GPR_ASSERT(event.success);
     GPR_ASSERT(event.tag == tag);
     // send a response
-    grpc_op ops[3];
+    grpc_op ops[4];
     grpc_op* op;
     memset(ops, 0, sizeof(ops));
     op = ops;
@@ -94,6 +97,9 @@ class TestServer {
     op++;
     op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
     op->data.recv_close_on_server.cancelled = &was_cancelled;
+    op++;
+    op->op = GRPC_OP_SEND_MESSAGE;
+    op->data.send_message.send_message = response_payload;
     op++;
     op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
     op->data.send_status_from_server.status = GRPC_STATUS_OK;
