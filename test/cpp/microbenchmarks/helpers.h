@@ -29,6 +29,7 @@
 #include <grpcpp/impl/grpc_library.h>
 
 #include "src/core/lib/debug/stats.h"
+#include "src/core/lib/debug/stats_data.h"
 
 class LibraryInitializer {
  public:

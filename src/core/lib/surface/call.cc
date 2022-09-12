@@ -54,6 +54,7 @@
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/debug/stats.h"
+#include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/gpr/alloc.h"
 #include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gprpp/cpp_impl_of.h"
@@ -531,7 +532,7 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
   grpc_error_handle error = GRPC_ERROR_NONE;
   grpc_channel_stack* channel_stack = channel->channel_stack();
   size_t initial_size = channel->CallSizeEstimate();
-  GRPC_STATS_INC_CALL_INITIAL_SIZE(initial_size);
+  global_stats().IncrementCallInitialSize(initial_size);
   size_t call_alloc_size =
       GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(FilterStackCall)) +
       channel_stack->call_stack_size;
@@ -548,7 +549,7 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
     call->final_op_.client.status_details = nullptr;
     call->final_op_.client.status = nullptr;
     call->final_op_.client.error_string = nullptr;
-    GRPC_STATS_INC_CLIENT_CALLS_CREATED();
+    global_stats().IncrementClientCallsCreated();
     path = grpc_slice_ref_internal(args->path->c_slice());
     call->send_initial_metadata_.Set(HttpPathMetadata(),
                                      std::move(*args->path));
@@ -557,7 +558,7 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
                                        std::move(*args->authority));
     }
   } else {
-    GRPC_STATS_INC_SERVER_CALLS_CREATED();
+    global_stats().IncrementServerCallsCreated();
     call->final_op_.server.cancelled = nullptr;
     call->final_op_.server.core_server = args->server;
   }

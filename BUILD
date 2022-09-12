@@ -3044,6 +3044,65 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "histogram_view",
+    srcs = [
+        "src/core/lib/debug/histogram_view.cc",
+    ],
+    hdrs = [
+        "src/core/lib/debug/histogram_view.h",
+    ],
+    deps = ["gpr"],
+)
+
+grpc_cc_library(
+    name = "stats_data",
+    srcs = [
+        "src/core/lib/debug/stats_data.cc",
+    ],
+    hdrs = [
+        "src/core/lib/debug/stats_data.h",
+    ],
+    deps = [
+        "exec_ctx",
+        "gpr_platform",
+        "histogram_view",
+        "per_cpu",
+    ],
+)
+
+grpc_cc_library(
+    name = "stats",
+    srcs = [
+        "src/core/lib/debug/stats.cc",
+    ],
+    hdrs = [
+        "src/core/lib/debug/stats.h",
+    ],
+    external_deps = [
+        "absl/strings",
+        "absl/types:span",
+    ],
+    deps = [
+        "gpr",
+        "gpr_atm",
+        "histogram_view",
+        "no_destruct",
+        "stats_data",
+    ],
+)
+
+grpc_cc_library(
+    name = "per_cpu",
+    hdrs = [
+        "src/core/lib/gprpp/per_cpu.h",
+    ],
+    deps = [
+        "exec_ctx",
+        "gpr",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_base",
     srcs = [
         "src/core/lib/address_utils/parse_address.cc",
@@ -3058,8 +3117,6 @@ grpc_cc_library(
         "src/core/lib/compression/compression.cc",
         "src/core/lib/compression/compression_internal.cc",
         "src/core/lib/compression/message_compress.cc",
-        "src/core/lib/debug/stats.cc",
-        "src/core/lib/debug/stats_data.cc",
         "src/core/lib/event_engine/channel_args_endpoint_config.cc",
         "src/core/lib/iomgr/buffer_list.cc",
         "src/core/lib/iomgr/call_combiner.cc",
@@ -3168,8 +3225,6 @@ grpc_cc_library(
         "src/core/lib/compression/compression_internal.h",
         "src/core/lib/resource_quota/api.h",
         "src/core/lib/compression/message_compress.h",
-        "src/core/lib/debug/stats.h",
-        "src/core/lib/debug/stats_data.h",
         "src/core/lib/event_engine/channel_args_endpoint_config.h",
         "src/core/lib/event_engine/promise.h",
         "src/core/lib/iomgr/block_annotate.h",
@@ -3337,6 +3392,8 @@ grpc_cc_library(
         "slice_buffer",
         "slice_refcount",
         "sockaddr_utils",
+        "stats",
+        "stats_data",
         "status_helper",
         "table",
         "thread_quota",
@@ -3850,6 +3907,8 @@ grpc_cc_library(
         "slice_buffer",
         "slice_refcount",
         "sockaddr_utils",
+        "stats",
+        "stats_data",
         "subchannel_interface",
         "time",
         "transport_fwd",
@@ -6895,6 +6954,8 @@ grpc_cc_library(
         "slice",
         "slice_buffer",
         "slice_refcount",
+        "stats",
+        "stats_data",
         "status_helper",
         "time",
         "transport_fwd",
@@ -7591,7 +7652,8 @@ grpc_cc_library(
     deps = [
         "gpr",
         "gpr_atm",
-        "grpc_base",
+        "stats",
+        "stats_data",
         "//src/proto/grpc/core:stats_proto",
     ],
 )

@@ -29,6 +29,7 @@
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/debug/stats_data.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc {
@@ -36,8 +37,6 @@ namespace testing {
 
 class Snapshot {
  public:
-  Snapshot() { grpc_stats_collect(&begin_); }
-
   grpc_stats_data delta() {
     grpc_stats_data now;
     grpc_stats_collect(&now);
@@ -47,7 +46,8 @@ class Snapshot {
   }
 
  private:
-  grpc_stats_data begin_;
+  std::unique_ptr<grpc_core::GlobalStats> begin_ =
+      grpc_core::global_stats().Collect();
 };
 
 TEST(StatsTest, IncCounters) {

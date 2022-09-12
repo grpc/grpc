@@ -26,6 +26,10 @@ struct HistogramView {
   const int* bucket_boundaries;
   int num_buckets;
   const uint64_t* buckets;
+
+  double Percentile(double p) const;
+  double Count() const;
+  double ThresholdForCountBelow(double count_below) const;
 };
 
 }  // namespace grpc_core

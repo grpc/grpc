@@ -24,8 +24,6 @@
 
 #include <stdint.h>
 
-#include "src/core/lib/debug/stats.h"
-
 namespace grpc_core {
 namespace {
 union DblUint {
@@ -33,6 +31,22 @@ union DblUint {
   uint64_t uint;
 };
 }  // namespace
+void HistogramCollector_32768_24::Collect(Histogram_32768_24* result) const {
+  for (int i = 0; i < 24; i++) {
+    result->buckets_[i] += buckets_[i].load(std::memory_order_relaxed);
+  }
+}
+void HistogramCollector_16777216_20::Collect(
+    Histogram_16777216_20* result) const {
+  for (int i = 0; i < 20; i++) {
+    result->buckets_[i] += buckets_[i].load(std::memory_order_relaxed);
+  }
+}
+void HistogramCollector_80_10::Collect(Histogram_80_10* result) const {
+  for (int i = 0; i < 10; i++) {
+    result->buckets_[i] += buckets_[i].load(std::memory_order_relaxed);
+  }
+}
 const absl::string_view
     GlobalStats::counter_name[static_cast<int>(Counter::COUNT)] = {
         "client_calls_created",
@@ -199,5 +213,50 @@ HistogramView GlobalStats::histogram(Histogram which) const {
       return HistogramView{&Histogram_16777216_20::BucketFor, kStatsTable2, 20,
                            http2_send_message_size.buckets()};
   }
+}
+std::unique_ptr<GlobalStats> GlobalStatsCollector::Collect() const {
+  auto result = absl::make_unique<GlobalStats>();
+  for (const auto& data : data_) {
+    result->client_calls_created +=
+        data.client_calls_created.load(std::memory_order_relaxed);
+    result->server_calls_created +=
+        data.server_calls_created.load(std::memory_order_relaxed);
+    result->client_channels_created +=
+        data.client_channels_created.load(std::memory_order_relaxed);
+    result->client_subchannels_created +=
+        data.client_subchannels_created.load(std::memory_order_relaxed);
+    result->server_channels_created +=
+        data.server_channels_created.load(std::memory_order_relaxed);
+    result->syscall_write += data.syscall_write.load(std::memory_order_relaxed);
+    result->syscall_read += data.syscall_read.load(std::memory_order_relaxed);
+    result->tcp_read_alloc_8k +=
+        data.tcp_read_alloc_8k.load(std::memory_order_relaxed);
+    result->tcp_read_alloc_64k +=
+        data.tcp_read_alloc_64k.load(std::memory_order_relaxed);
+    result->http2_settings_writes +=
+        data.http2_settings_writes.load(std::memory_order_relaxed);
+    result->http2_pings_sent +=
+        data.http2_pings_sent.load(std::memory_order_relaxed);
+    result->http2_writes_begun +=
+        data.http2_writes_begun.load(std::memory_order_relaxed);
+    result->http2_transport_stalls +=
+        data.http2_transport_stalls.load(std::memory_order_relaxed);
+    result->http2_stream_stalls +=
+        data.http2_stream_stalls.load(std::memory_order_relaxed);
+    result->cq_pluck_creates +=
+        data.cq_pluck_creates.load(std::memory_order_relaxed);
+    result->cq_next_creates +=
+        data.cq_next_creates.load(std::memory_order_relaxed);
+    result->cq_callback_creates +=
+        data.cq_callback_creates.load(std::memory_order_relaxed);
+    data.call_initial_size.Collect(&result->call_initial_size);
+    data.tcp_write_size.Collect(&result->tcp_write_size);
+    data.tcp_write_iov_size.Collect(&result->tcp_write_iov_size);
+    data.tcp_read_size.Collect(&result->tcp_read_size);
+    data.tcp_read_offer.Collect(&result->tcp_read_offer);
+    data.tcp_read_offer_iov_size.Collect(&result->tcp_read_offer_iov_size);
+    data.http2_send_message_size.Collect(&result->http2_send_message_size);
+  }
+  return result;
 }
 }  // namespace grpc_core

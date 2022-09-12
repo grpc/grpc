@@ -24,22 +24,43 @@
 #include <stddef.h>
 
 #include <string>
+#include <vector>
+
+#include "absl/strings/string_view.h"
+#include "absl/types/span.h"
 
 #include <grpc/support/atm.h>
 
-#include "src/core/lib/debug/stats_data.h"  // IWYU pragma: export
-#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/debug/histogram_view.h"
+#include "src/core/lib/debug/stats_data.h"
+#include "src/core/lib/gprpp/no_destruct.h"
 
-void grpc_stats_collect(grpc_stats_data* output);
-// c = b-a
-void grpc_stats_diff(const grpc_stats_data* b, const grpc_stats_data* a,
-                     grpc_stats_data* c);
-std::string grpc_stats_data_as_json(const grpc_stats_data* data);
-double grpc_stats_histo_percentile(const grpc_stats_data* stats,
-                                   grpc_stats_histograms histogram,
-                                   double percentile);
-size_t grpc_stats_histo_count(const grpc_stats_data* stats,
-                              grpc_stats_histograms histogram);
-void grpc_stats_inc_histogram_value(int histogram, int value);
+namespace grpc_core {
+
+inline GlobalStatsCollector& global_stats() {
+  return *NoDestructSingleton<GlobalStatsCollector>::Get();
+}
+
+namespace stats_detail {
+std::string StatsAsJson(absl::Span<const uint64_t> counters,
+                        absl::Span<const absl::string_view> counter_name,
+                        absl::Span<const HistogramView> histograms,
+                        absl::Span<const absl::string_view> histogram_name);
+}
+
+template <typename T>
+std::string StatsAsJson(T* data) {
+  std::vector<HistogramView> histograms;
+  for (int i = 0; i < static_cast<int>(T::Histogram::COUNT); i++) {
+    histograms.push_back(
+        data->histogram(static_cast<typename T::Histogram>(i)));
+  }
+  return stats_detail::StatsAsJson(
+      absl::Span<const uint64_t>(data->counters,
+                                 static_cast<int>(T::Counter::COUNT)),
+      T::counter_name, histograms, T::histogram_name);
+}
+
+}  // namespace grpc_core
 
 #endif  // GRPC_CORE_LIB_DEBUG_STATS_H

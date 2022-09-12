@@ -270,18 +270,19 @@ with open('src/core/lib/debug/stats_data.h', 'w') as H:
     print("#include <atomic>", file=H)
     print("#include \"src/core/lib/iomgr/exec_ctx.h\"", file=H)
     print("#include \"src/core/lib/debug/histogram_view.h\"", file=H)
-    print(file=H)
-    print("// IWYU pragma: private, include \"src/core/lib/debug/stats.h\"",
-          file=H)
+    print("#include \"src/core/lib/gprpp/per_cpu.h\"", file=H)
     print(file=H)
     print("namespace grpc_core {", file=H)
 
     for shape in shapes:
+        print("class HistogramCollector_%d_%d;" % (shape.max, shape.buckets),
+              file=H)
         print("class Histogram_%d_%d {" % (shape.max, shape.buckets), file=H)
         print(" public:", file=H)
         print("  static int BucketFor(int value);", file=H)
         print("  const uint64_t* buckets() const { return buckets_; }", file=H)
         print(" private:", file=H)
+        print("  friend class HistogramCollector_%d_%d;" % (shape.max, shape.buckets), file=H)
         print("  uint64_t buckets_[%d]{};" % shape.buckets, file=H)
         print("};", file=H)
         print("class HistogramCollector_%d_%d {" % (shape.max, shape.buckets),
@@ -293,11 +294,11 @@ with open('src/core/lib/debug/stats_data.h', 'w') as H:
               file=H)
         print("        .fetch_add(1, std::memory_order_relaxed);", file=H)
         print("  }", file=H)
+        print("  void Collect(Histogram_%d_%d* result) const;" % (shape.max, shape.buckets), file=H)
         print(" private:", file=H)
         print("  std::atomic<uint64_t> buckets_[%d]{};" % shape.buckets, file=H)
         print("};", file=H)
 
-    print("class GlobalStatsCollector;", file=H)
     print("struct GlobalStats {", file=H)
     print("  enum class Counter {", file=H)
     for ctr in inst_map['Counter']:
@@ -335,30 +336,27 @@ with open('src/core/lib/debug/stats_data.h', 'w') as H:
     print("};", file=H)
     print("class GlobalStatsCollector {", file=H)
     print(" public:", file=H)
-    print("  void Collect(GlobalStats* output);", file=H)
+    print("  std::unique_ptr<GlobalStats> Collect() const;", file=H)
     for ctr in inst_map['Counter']:
         print(
-            "  void Increment%s() { per_cpu().%s_.fetch_add(1, std::memory_order_relaxed); }"
+            "  void Increment%s() { data_.this_cpu().%s.fetch_add(1, std::memory_order_relaxed); }"
             % (snake_to_pascal(ctr.name), ctr.name),
             file=H)
     for ctr in inst_map['Histogram']:
         print(
-            "  void Increment%s(int value) { per_cpu().%s_.Increment(value); }"
+            "  void Increment%s(int value) { data_.this_cpu().%s.Increment(value); }"
             % (snake_to_pascal(ctr.name), ctr.name),
             file=H)
     print(" private:", file=H)
-    print("  struct PerCpu {", file=H)
+    print("  struct Data {", file=H)
     for ctr in inst_map['Counter']:
-        print("    std::atomic<uint64_t> %s_;" % ctr.name, file=H)
+        print("    std::atomic<uint64_t> %s;" % ctr.name, file=H)
     for ctr in inst_map['Histogram']:
-        print("    HistogramCollector_%d_%d %s_;" %
+        print("    HistogramCollector_%d_%d %s;" %
               (ctr.max, ctr.buckets, ctr.name),
               file=H)
     print("  };", file=H)
-    print("  std::unique_ptr<PerCpu[]> per_cpu_;", file=H)
-    print(
-        "  PerCpu& per_cpu() { return per_cpu_[grpc_core::ExecCtx::Get()->starting_cpu()]; }",
-        file=H)
+    print("  PerCpu<Data> data_;", file=H)
     print("};", file=H)
     print("}", file=H)
 
@@ -388,7 +386,6 @@ with open('src/core/lib/debug/stats_data.cc', 'w') as C:
 
     print("#include <grpc/support/port_platform.h>", file=C)
     print(file=C)
-    print("#include \"src/core/lib/debug/stats.h\"", file=C)
     print("#include \"src/core/lib/debug/stats_data.h\"", file=C)
     print("#include <stdint.h>", file=C)
     print(file=C)
@@ -402,6 +399,13 @@ with open('src/core/lib/debug/stats_data.cc', 'w') as C:
 
     print("namespace grpc_core {", file=C)
     print("namespace { union DblUint { double dbl; uint64_t uint; }; }", file=C)
+
+    for shape in shapes:
+        print("void HistogramCollector_%d_%d::Collect(Histogram_%d_%d* result) const {" % (shape.max, shape.buckets, shape.max, shape.buckets), file=C)
+        print("  for (int i=0; i<%d; i++) {" % shape.buckets, file=C)
+        print("    result->buckets_[i] += buckets_[i].load(std::memory_order_relaxed);", file=C)
+        print("  }", file=C)
+        print("}", file=C)
 
     for typename, instances in sorted(inst_map.items()):
         print(
@@ -443,6 +447,17 @@ with open('src/core/lib/debug/stats_data.cc', 'w') as C:
                 inst.max, inst.buckets)], inst.buckets, inst.name),
             file=C)
     print("  }", file=C)
+    print("}", file=C)
+
+    print("std::unique_ptr<GlobalStats> GlobalStatsCollector::Collect() const {", file=C)
+    print("  auto result = absl::make_unique<GlobalStats>();", file=C)
+    print("  for (const auto& data : data_) {", file=C)
+    for ctr in inst_map['Counter']:
+        print("    result->%s += data.%s.load(std::memory_order_relaxed);" % (ctr.name, ctr.name), file=C)
+    for h in inst_map['Histogram']:
+        print("    data.%s.Collect(&result->%s);" % (h.name, h.name), file=C)
+    print("  }", file=C)
+    print("  return result;", file=C)
     print("}", file=C)
 
     print("}", file=C)
