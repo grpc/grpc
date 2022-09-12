@@ -32,10 +32,12 @@
 #include "src/core/lib/event_engine/posix_engine/internal_errqueue.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gprpp/global_config_generic.h"
+
+#ifdef GRPC_LINUX_ERRQUEUE
+#include <linux/netlink.h>  // IWYU pragma: keep
+#endif
 
 #ifdef GRPC_POSIX_SOCKET_TCP
-#include <linux/netlink.h>  // IWYU pragma: keep
 
 #ifndef SOL_TCP
 #define SOL_TCP IPPROTO_TCP
@@ -223,7 +225,7 @@ class TcpZerocopySendCtx {
 
   // True if we were unable to allocate the various bookkeeping structures at
   // transport initialization time. If memory limited, we do not zerocopy.
-  bool memory_limited() const { return memory_limited_; }
+  bool MemoryLimited() const { return memory_limited_; }
 
   // TCP send zerocopy maintains an implicit sequence number for every
   // successful sendmsg() with zerocopy enabled; the kernel later gives us an
@@ -306,17 +308,17 @@ class TcpZerocopySendCtx {
     return free_send_records_size_ == max_sends_;
   }
 
-  bool enabled() const { return enabled_; }
+  bool Enabled() const { return enabled_; }
 
-  void set_enabled(bool enabled) {
-    GPR_DEBUG_ASSERT(!enabled || !memory_limited());
+  void SetEnabled(bool enabled) {
+    GPR_DEBUG_ASSERT(!enabled || !MemoryLimited());
     enabled_ = enabled;
   }
 
   // Only use zerocopy if we are sending at least this many bytes. The
   // additional overhead of reading the error queue for notifications means that
   // zerocopy is not useful for small transfers.
-  size_t threshold_bytes() const { return threshold_bytes_; }
+  size_t ThresholdBytes() const { return threshold_bytes_; }
 
   // Expected to be called by handler reading messages from the err queue.
   // It is used to indicate that some OMem meory is now available. It returns
@@ -726,7 +728,7 @@ void PosixEndpointImpl::UpdateRcvLowat() {
   // If zerocopy is off, wake shortly before the full RPC is here. More can
   // show up partway through recvmsg() since it takes a while to copy data.
   // So an early wakeup aids latency.
-  if (!tcp_zerocopy_send_ctx_->enabled() && remaining > 0) {
+  if (!tcp_zerocopy_send_ctx_->Enabled() && remaining > 0) {
     remaining -= kRcvLowatThreshold;
   }
 
@@ -860,8 +862,8 @@ TcpZerocopySendRecord* PosixEndpointImpl::TcpGetSendZerocopyRecord(
     SliceBuffer& buf) {
   TcpZerocopySendRecord* zerocopy_send_record = nullptr;
   const bool use_zerocopy =
-      tcp_zerocopy_send_ctx_->enabled() &&
-      tcp_zerocopy_send_ctx_->threshold_bytes() < buf.Length();
+      tcp_zerocopy_send_ctx_->Enabled() &&
+      tcp_zerocopy_send_ctx_->ThresholdBytes() < buf.Length();
   if (use_zerocopy) {
     zerocopy_send_record = tcp_zerocopy_send_ctx_->GetSendRecord();
     if (zerocopy_send_record == nullptr) {
@@ -1410,13 +1412,13 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
       options.tcp_tx_zerocopy_send_bytes_threshold);
   frame_size_tuning_enabled_ = grpc_core::IsTcpFrameSizeTuningEnabled();
   if (options.tcp_tx_zero_copy_enabled &&
-      !tcp_zerocopy_send_ctx_->memory_limited() && poller_->CanTrackErrors()) {
+      !tcp_zerocopy_send_ctx_->MemoryLimited() && poller_->CanTrackErrors()) {
 #ifdef GRPC_LINUX_ERRQUEUE
     const int enable = 1;
     auto err =
         setsockopt(fd_, SOL_SOCKET, SO_ZEROCOPY, &enable, sizeof(enable));
     if (err == 0) {
-      tcp_zerocopy_send_ctx_->set_enabled(true);
+      tcp_zerocopy_send_ctx_->SetEnabled(true);
     } else {
       gpr_log(GPR_ERROR, "Failed to set zerocopy options on the socket.");
     }
