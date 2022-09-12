@@ -24,8 +24,6 @@
 #include <memory>
 #include <utility>
 
-#include "absl/strings/str_cat.h"
-
 #include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/grpc.h>
@@ -237,9 +235,7 @@ class GrpcXdsTransportFactory::GrpcXdsTransport::StateWatcher
   void OnConnectivityStateChange(grpc_connectivity_state new_state,
                                  const absl::Status& status) override {
     if (new_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-      on_connectivity_failure_(absl::Status(
-          status.code(),
-          absl::StrCat("channel in TRANSIENT_FAILURE: ", status.message())));
+      on_connectivity_failure_(status);
     }
   }
 

@@ -51,7 +51,7 @@
 //   struct Foo {
 //     int a;
 //     int b;
-//     static const JsonLoaderInterface* JsonLoader(const JsonArgs& args) {
+//     static const JsonLoaderInterface* JsonLoader() {
 //       // Note: Field names must be string constants; they are not copied.
 //       static const auto* loader = JsonObjectLoader<Foo>()
 //           .Field("a", &Foo::a)
@@ -60,10 +60,7 @@
 //       return loader;
 //     }
 //     // Optional; omit if no post-processing needed.
-//     void JsonPostLoad(const Json& source, const JsonArgs& args,
-//                       ErrorList* errors) {
-//       ++a;
-//     }
+//     void JsonPostLoad(const Json& source, ErrorList* errors) { ++a; }
 //   };
 // Now we can load Foo objects from JSON:
 //   absl::StatusOr<Foo> foo = LoadFromJson<Foo>(json);
