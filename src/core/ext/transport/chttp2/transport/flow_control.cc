@@ -398,6 +398,8 @@ FlowControlAction StreamFlowControl::UpdateAction(FlowControlAction action) {
     return action;
   }
   const int64_t desired_announce_size = DesiredAnnounceSize();
+  gpr_log(GPR_INFO, "apolcyn StreamFlowControl::UpdateAction desired_announce_size_=%d min_progress_size_=%d announced_window_delta_=%d",
+          desired_announce_size, min_progress_size_, announced_window_delta_);
   if (desired_announce_size > 0) {
     if ((min_progress_size_ > 0 && announced_window_delta_ <= 0) ||
         desired_announce_size >= 8192) {

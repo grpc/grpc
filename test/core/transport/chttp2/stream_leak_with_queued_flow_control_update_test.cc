@@ -261,8 +261,8 @@ int main(int argc, char** argv) {
   // nothing will initiatie a write on the transport.
   // Note: RPCs in this test don't send any data, so there's never a real need
   // to send a flow control update immediately.
-  grpc_core::chttp2::g_test_ony_force_queue_urgency_for_stream_window_updates =
-      true;
+  //grpc_core::chttp2::g_test_ony_force_queue_urgency_for_stream_window_updates =
+  //    true;
   grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   auto result = RUN_ALL_TESTS();

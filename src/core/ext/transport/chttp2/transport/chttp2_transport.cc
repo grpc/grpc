@@ -1815,6 +1815,7 @@ void grpc_chttp2_maybe_complete_recv_initial_metadata(grpc_chttp2_transport* t,
 
 void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* t,
                                              grpc_chttp2_stream* s) {
+  gpr_log(GPR_INFO, "apolcyn s=%p t=%p is_client=%d maybe_complete_recv_message s->recv_message_ready=%p", s, t, t->is_client, s->recv_message_ready);
   if (s->recv_message_ready == nullptr) return;
 
   grpc_core::chttp2::StreamFlowControl::IncomingUpdateContext upd(
@@ -1905,6 +1906,7 @@ static void remove_stream(grpc_chttp2_transport* t, uint32_t id,
                           grpc_error_handle error) {
   grpc_chttp2_stream* s = static_cast<grpc_chttp2_stream*>(
       grpc_chttp2_stream_map_delete(&t->stream_map, id));
+  gpr_log(GPR_INFO, "apolcyn s=%p t=%p is_client=%d remove_stream", s, t, t->is_client);
   GPR_DEBUG_ASSERT(s);
   if (t->incoming_stream == s) {
     t->incoming_stream = nullptr;
@@ -2053,6 +2055,8 @@ void grpc_chttp2_fail_pending_writes(grpc_chttp2_transport* t,
 void grpc_chttp2_mark_stream_closed(grpc_chttp2_transport* t,
                                     grpc_chttp2_stream* s, int close_reads,
                                     int close_writes, grpc_error_handle error) {
+  gpr_log(GPR_INFO, "apolcyn s=%p t=%p is_client=%d mark_stream_closed close_reads=%d close_writes=%d error=%s",
+          s, t, t->is_client, close_reads, close_writes, grpc_error_std_string(error).c_str());
   if (s->read_closed && s->write_closed) {
     // already closed, but we should still fake the status if needed.
     grpc_error_handle overall_error = removal_error(error, s, "Stream removed");
