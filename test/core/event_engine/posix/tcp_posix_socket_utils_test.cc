@@ -179,8 +179,8 @@ absl::StatusOr<EventEngine::ResolvedAddress> UnixAbstractSockaddrPopulate(
   EventEngine::ResolvedAddress resolved_addr;
   memset(const_cast<sockaddr*>(resolved_addr.address()), 0,
          resolved_addr.size());
-  struct sockaddr_un* un = reinterpret_cast<struct sockaddr_un*>(
-      const_cast<sockaddr*>(resolved_addr.address()));
+  struct sockaddr* addr = const_cast<sockaddr*>(resolved_addr.address());
+  struct sockaddr_un* un = reinterpret_cast<struct sockaddr_un*>(addr);
   const size_t maxlen = sizeof(un->sun_path) - 1;
   if (path.size() > maxlen) {
     return absl::InternalError(absl::StrCat(
@@ -189,9 +189,14 @@ absl::StatusOr<EventEngine::ResolvedAddress> UnixAbstractSockaddrPopulate(
   un->sun_family = AF_UNIX;
   un->sun_path[0] = '\0';
   path.copy(un->sun_path + 1, path.size());
+#ifdef GPR_APPLE
   return EventEngine::ResolvedAddress(
-      resolved_addr.address(),
-      static_cast<socklen_t>(sizeof(un->sun_family) + path.size() + 1));
+      addr, static_cast<socklen_t>(sizeof(un->sun_len) +
+                                   sizeof(un->sun_family) + path.size() + 1));
+#else
+  return EventEngine::ResolvedAddress(
+      addr, static_cast<socklen_t>(sizeof(un->sun_family) + path.size() + 1));
+#endif
 }
 #endif
 
@@ -349,13 +354,15 @@ TEST(TcpPosixSocketUtilsTest, SockAddrToStringTest) {
   EXPECT_EQ(SockaddrToString(&inputun, true).status(),
             absl::InvalidArgumentError("UDS path is not null-terminated"));
 
-  inputun = *UnixAbstractSockaddrPopulate("some_unix_path");
-  EXPECT_EQ(SockaddrToString(&inputun, true).value(),
+  EventEngine::ResolvedAddress inputun2 =
+      *UnixAbstractSockaddrPopulate("some_unix_path");
+  EXPECT_EQ(SockaddrToString(&inputun2, true).value(),
             absl::StrCat(std::string(1, '\0'), "some_unix_path"));
 
   std::string max_abspath(sizeof(sock_un->sun_path) - 1, '\0');
-  inputun = *UnixAbstractSockaddrPopulate(max_abspath);
-  EXPECT_EQ(SockaddrToString(&inputun, true).value(),
+  EventEngine::ResolvedAddress inputun3 =
+      *UnixAbstractSockaddrPopulate(max_abspath);
+  EXPECT_EQ(SockaddrToString(&inputun3, true).value(),
             absl::StrCat(std::string(1, '\0'), max_abspath));
 #endif
 }
