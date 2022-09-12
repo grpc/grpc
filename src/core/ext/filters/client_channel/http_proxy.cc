@@ -39,12 +39,12 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/filters/client_channel/proxy_mapper_registry.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/handshaker/proxy_mapper_registry.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/slice/b64.h"
 #include "src/core/lib/transport/http_connect_handshaker.h"
@@ -199,8 +199,8 @@ absl::optional<std::string> HttpProxyMapper::MapName(
   return name_to_resolve;
 }
 
-void RegisterHttpProxyMapper() {
-  ProxyMapperRegistry::Register(
+void RegisterHttpProxyMapper(CoreConfiguration::Builder* builder) {
+  builder->proxy_mapper_registry()->Register(
       true /* at_start */,
       std::unique_ptr<ProxyMapperInterface>(new HttpProxyMapper()));
 }
