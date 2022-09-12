@@ -291,7 +291,9 @@ class Item {
  public:
   virtual ~Item() = default;
   virtual std::vector<std::string> ToLines() const = 0;
-  std::string ToString() const { return absl::StrJoin(ToLines(), "\n"); }
+  std::string ToString() const {
+    return absl::StrCat(absl::StrJoin(ToLines(), "\n"), "\n");
+  }
 };
 using ItemPtr = std::unique_ptr<Item>;
 

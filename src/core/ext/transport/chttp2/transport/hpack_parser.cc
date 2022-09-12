@@ -766,14 +766,14 @@ class HPackParser::String {
   // decoded byte.
   template <typename Out>
   static bool ParseHuff(Input* input, uint32_t length, Out output) {
+    // If there's insufficient bytes remaining, return now.
+    if (input->remaining() < length) {
+      return input->UnexpectedEOF(false);
+    }
+    // Grab the byte range, and iterate through it.
+    const uint8_t* p = input->cur_ptr();
+    input->Advance(length);
     if (IsNewHpackHuffmanDecoderEnabled()) {
-      // If there's insufficient bytes remaining, return now.
-      if (input->remaining() < length) {
-        return input->UnexpectedEOF(false);
-      }
-      // Grab the byte range, and iterate through it.
-      const uint8_t* p = input->cur_ptr();
-      input->Advance(length);
       return HuffDecoder<Out>(output, p, p + length).Run();
     } else {
       int16_t state = 0;
@@ -791,13 +791,6 @@ class HPackParser::String {
         }
         state = next;
       };
-      // If there's insufficient bytes remaining, return now.
-      if (input->remaining() < length) {
-        return input->UnexpectedEOF(false);
-      }
-      // Grab the byte range, and iterate through it.
-      const uint8_t* p = input->cur_ptr();
-      input->Advance(length);
       for (uint32_t i = 0; i < length; i++) {
         nibble(p[i] >> 4);
         nibble(p[i] & 0xf);
