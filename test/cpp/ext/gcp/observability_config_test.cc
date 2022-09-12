@@ -32,13 +32,13 @@ namespace {
 TEST(GcpObservabilityConfigJsonParsingTest, Basic) {
   const char* json_str = R"json({
       "cloud_logging": {
-        "enabled": true
+        "disabled": true
       },
       "cloud_monitoring": {
-        "enabled": true
+        "disabled": true
       },
       "cloud_trace": {
-        "enabled": true,
+        "disabled": true,
         "sampling_rate": 0.05
       },
       "project_id": "project"
@@ -49,9 +49,9 @@ TEST(GcpObservabilityConfigJsonParsingTest, Basic) {
   auto config = grpc_core::LoadFromJson<GcpObservabilityConfig>(
       *json, grpc_core::JsonArgs(), &errors);
   ASSERT_TRUE(errors.ok()) << errors.status();
-  EXPECT_TRUE(config.cloud_logging.enabled);
-  EXPECT_TRUE(config.cloud_monitoring.enabled);
-  EXPECT_TRUE(config.cloud_trace.enabled);
+  EXPECT_TRUE(config.cloud_logging.disabled);
+  EXPECT_TRUE(config.cloud_monitoring.disabled);
+  EXPECT_TRUE(config.cloud_trace.disabled);
   EXPECT_FLOAT_EQ(config.cloud_trace.sampling_rate, 0.05);
   EXPECT_EQ(config.project_id, "project");
 }
@@ -65,9 +65,10 @@ TEST(GcpObservabilityConfigJsonParsingTest, Defaults) {
   auto config = grpc_core::LoadFromJson<GcpObservabilityConfig>(
       *json, grpc_core::JsonArgs(), &errors);
   ASSERT_TRUE(errors.ok()) << errors.status();
-  EXPECT_FALSE(config.cloud_logging.enabled);
-  EXPECT_FALSE(config.cloud_monitoring.enabled);
-  EXPECT_FALSE(config.cloud_trace.enabled);
+  EXPECT_FALSE(config.cloud_logging.disabled);
+  EXPECT_FALSE(config.cloud_monitoring.disabled);
+  EXPECT_FALSE(config.cloud_trace.disabled);
+  EXPECT_FLOAT_EQ(config.cloud_trace.sampling_rate, 0);
   EXPECT_TRUE(config.project_id.empty());
 }
 
