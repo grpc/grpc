@@ -111,9 +111,9 @@ class PollingResolver : public Resolver {
   /// state for handling interactions between re-resolution requests and
   /// result health callbacks
   enum class ResultStatusState {
-      kNone,
-      kResultHealthCallbackPending,
-      kReresolutionRequestedWhileCallbackWasPending,
+    kNone,
+    kResultHealthCallbackPending,
+    kReresolutionRequestedWhileCallbackWasPending,
   };
   ResultStatusState result_status_state_ = ResultStatusState::kNone;
 };
