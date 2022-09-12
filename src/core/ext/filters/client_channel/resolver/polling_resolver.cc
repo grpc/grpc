@@ -179,7 +179,7 @@ void PollingResolver::GetResultStatus(absl::Status status) {
     backoff_.Reset();
     // If a re-resolution attempt was requested while the result-status
     // callback was pending, trigger a new request now.
-    if (absl::exchange(result_status_state_, ResultStatusState::kNone) ==
+    if (std::exchange(result_status_state_, ResultStatusState::kNone) ==
         ResultStatusState::kReresolutionRequestedWhileCallbackWasPending) {
       MaybeStartResolvingLocked();
     }
