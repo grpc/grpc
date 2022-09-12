@@ -771,14 +771,12 @@ void PosixEndpointImpl::MaybeMakeReadSlices() {
           extra_wanted -= kBigAlloc;
           incoming_buffer_->AppendIndexed(
               Slice(memory_owner_.MakeSlice(kBigAlloc)));
-          // GRPC_STATS_INC_TCP_READ_ALLOC_64K();
         }
       } else {
         while (extra_wanted > 0) {
           extra_wanted -= kSmallAlloc;
           incoming_buffer_->AppendIndexed(
               Slice(memory_owner_.MakeSlice(kSmallAlloc)));
-          // GRPC_STATS_INC_TCP_READ_ALLOC_8K();
         }
       }
       MaybePostReclaimer();
