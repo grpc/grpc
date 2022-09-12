@@ -1118,9 +1118,6 @@ src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc \
 src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_resolver.cc \
 src/core/ext/filters/client_channel/local_subchannel_pool.cc \
 src/core/ext/filters/client_channel/local_subchannel_pool.h \
-src/core/ext/filters/client_channel/proxy_mapper.h \
-src/core/ext/filters/client_channel/proxy_mapper_registry.cc \
-src/core/ext/filters/client_channel/proxy_mapper_registry.h \
 src/core/ext/filters/client_channel/resolver/binder/binder_resolver.cc \
 src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc \
 src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h \
@@ -1843,9 +1840,6 @@ src/core/ext/upbdefs-generated/xds/type/matcher/v3/string.upbdefs.c \
 src/core/ext/upbdefs-generated/xds/type/matcher/v3/string.upbdefs.h \
 src/core/ext/upbdefs-generated/xds/type/v3/typed_struct.upbdefs.c \
 src/core/ext/upbdefs-generated/xds/type/v3/typed_struct.upbdefs.h \
-src/core/ext/xds/certificate_provider_factory.h \
-src/core/ext/xds/certificate_provider_registry.cc \
-src/core/ext/xds/certificate_provider_registry.h \
 src/core/ext/xds/certificate_provider_store.cc \
 src/core/ext/xds/certificate_provider_store.h \
 src/core/ext/xds/file_watcher_certificate_provider_factory.cc \
@@ -1855,6 +1849,8 @@ src/core/ext/xds/xds_api.cc \
 src/core/ext/xds/xds_api.h \
 src/core/ext/xds/xds_bootstrap.cc \
 src/core/ext/xds/xds_bootstrap.h \
+src/core/ext/xds/xds_bootstrap_grpc.cc \
+src/core/ext/xds/xds_bootstrap_grpc.h \
 src/core/ext/xds/xds_certificate_provider.cc \
 src/core/ext/xds/xds_certificate_provider.h \
 src/core/ext/xds/xds_channel_args.h \
@@ -1970,6 +1966,8 @@ src/core/lib/event_engine/slice_buffer.cc \
 src/core/lib/event_engine/socket_notifier.h \
 src/core/lib/event_engine/thread_pool.cc \
 src/core/lib/event_engine/thread_pool.h \
+src/core/lib/event_engine/time_util.cc \
+src/core/lib/event_engine/time_util.h \
 src/core/lib/event_engine/trace.cc \
 src/core/lib/event_engine/trace.h \
 src/core/lib/event_engine/utils.cc \
@@ -1980,6 +1978,10 @@ src/core/lib/event_engine/windows/win_socket.cc \
 src/core/lib/event_engine/windows/win_socket.h \
 src/core/lib/event_engine/windows/windows_engine.cc \
 src/core/lib/event_engine/windows/windows_engine.h \
+src/core/lib/experiments/config.cc \
+src/core/lib/experiments/config.h \
+src/core/lib/experiments/experiments.cc \
+src/core/lib/experiments/experiments.h \
 src/core/lib/gpr/alloc.cc \
 src/core/lib/gpr/alloc.h \
 src/core/lib/gpr/atm.cc \
@@ -2004,7 +2006,6 @@ src/core/lib/gpr/string.h \
 src/core/lib/gpr/string_posix.cc \
 src/core/lib/gpr/string_util_windows.cc \
 src/core/lib/gpr/string_windows.cc \
-src/core/lib/gpr/string_windows.h \
 src/core/lib/gpr/sync.cc \
 src/core/lib/gpr/sync_abseil.cc \
 src/core/lib/gpr/sync_posix.cc \
@@ -2047,9 +2048,11 @@ src/core/lib/gprpp/mpscq.h \
 src/core/lib/gprpp/no_destruct.h \
 src/core/lib/gprpp/orphanable.h \
 src/core/lib/gprpp/overload.h \
+src/core/lib/gprpp/packed_table.h \
 src/core/lib/gprpp/ref_counted.h \
 src/core/lib/gprpp/ref_counted_ptr.h \
 src/core/lib/gprpp/single_set_ptr.h \
+src/core/lib/gprpp/sorted_pack.h \
 src/core/lib/gprpp/stat.h \
 src/core/lib/gprpp/stat_posix.cc \
 src/core/lib/gprpp/stat_windows.cc \
@@ -2057,6 +2060,8 @@ src/core/lib/gprpp/status_helper.cc \
 src/core/lib/gprpp/status_helper.h \
 src/core/lib/gprpp/sync.h \
 src/core/lib/gprpp/table.h \
+src/core/lib/gprpp/tchar.cc \
+src/core/lib/gprpp/tchar.h \
 src/core/lib/gprpp/thd.h \
 src/core/lib/gprpp/thd_posix.cc \
 src/core/lib/gprpp/thd_windows.cc \
@@ -2069,6 +2074,9 @@ src/core/lib/gprpp/time_util.h \
 src/core/lib/gprpp/unique_type_name.h \
 src/core/lib/gprpp/work_serializer.cc \
 src/core/lib/gprpp/work_serializer.h \
+src/core/lib/handshaker/proxy_mapper.h \
+src/core/lib/handshaker/proxy_mapper_registry.cc \
+src/core/lib/handshaker/proxy_mapper_registry.h \
 src/core/lib/http/format_request.cc \
 src/core/lib/http/format_request.h \
 src/core/lib/http/httpcli.cc \
@@ -2226,9 +2234,6 @@ src/core/lib/load_balancing/lb_policy_registry.h \
 src/core/lib/load_balancing/subchannel_interface.h \
 src/core/lib/matchers/matchers.cc \
 src/core/lib/matchers/matchers.h \
-src/core/lib/profiling/basic_timers.cc \
-src/core/lib/profiling/stap_timers.cc \
-src/core/lib/profiling/timers.h \
 src/core/lib/promise/activity.cc \
 src/core/lib/promise/activity.h \
 src/core/lib/promise/arena_promise.h \
@@ -2284,6 +2289,9 @@ src/core/lib/security/authorization/matchers.cc \
 src/core/lib/security/authorization/matchers.h \
 src/core/lib/security/authorization/rbac_policy.cc \
 src/core/lib/security/authorization/rbac_policy.h \
+src/core/lib/security/certificate_provider/certificate_provider_factory.h \
+src/core/lib/security/certificate_provider/certificate_provider_registry.cc \
+src/core/lib/security/certificate_provider/certificate_provider_registry.h \
 src/core/lib/security/context/security_context.cc \
 src/core/lib/security/context/security_context.h \
 src/core/lib/security/credentials/alts/alts_credentials.cc \
@@ -2433,6 +2441,8 @@ src/core/lib/surface/event_string.cc \
 src/core/lib/surface/event_string.h \
 src/core/lib/surface/init.cc \
 src/core/lib/surface/init.h \
+src/core/lib/surface/init_internally.cc \
+src/core/lib/surface/init_internally.h \
 src/core/lib/surface/lame_client.cc \
 src/core/lib/surface/lame_client.h \
 src/core/lib/surface/metadata_array.cc \

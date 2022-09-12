@@ -78,9 +78,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
   ~XdsClient() override;
 
   const XdsBootstrap& bootstrap() const {
-    // bootstrap_ is guaranteed to be non-null since XdsClient::GetOrCreate()
-    // would return a null object if bootstrap_ was null.
-    return *bootstrap_;
+    return *bootstrap_;  // ctor asserts that it is non-null
   }
 
   XdsTransportFactory* transport_factory() const {
@@ -213,7 +211,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
     // The owning xds client.
     WeakRefCountedPtr<XdsClient> xds_client_;
 
-    const XdsBootstrap::XdsServer& server_;
+    const XdsBootstrap::XdsServer& server_;  // Owned by bootstrap.
 
     OrphanablePtr<XdsTransportFactory::XdsTransport> transport_;
 
@@ -318,14 +316,16 @@ class XdsClient : public DualRefCounted<XdsClient> {
       v2_resource_types_ ABSL_GUARDED_BY(mu_);
   upb::SymbolTable symtab_ ABSL_GUARDED_BY(mu_);
 
-  //  Map of existing xDS server channels.
-  std::map<XdsBootstrap::XdsServer, ChannelState*> xds_server_channel_map_
-      ABSL_GUARDED_BY(mu_);
+  // Map of existing xDS server channels.
+  // Key is owned by the bootstrap config.
+  std::map<const XdsBootstrap::XdsServer*, ChannelState*>
+      xds_server_channel_map_ ABSL_GUARDED_BY(mu_);
 
   std::map<std::string /*authority*/, AuthorityState> authority_state_map_
       ABSL_GUARDED_BY(mu_);
 
-  std::map<XdsBootstrap::XdsServer, LoadReportServer>
+  // Key is owned by the bootstrap config.
+  std::map<const XdsBootstrap::XdsServer*, LoadReportServer>
       xds_load_report_server_map_ ABSL_GUARDED_BY(mu_);
 
   // Stores started watchers whose resource name was not parsed successfully,

@@ -22,7 +22,6 @@
 #include "absl/base/attributes.h"
 #include "absl/memory/memory.h"
 #include "absl/types/variant.h"
-#include "absl/utility/utility.h"
 
 #include <grpc/status.h>
 
@@ -136,7 +135,7 @@ BaseCallData::CapturedBatch& BaseCallData::CapturedBatch::operator=(
 }
 
 void BaseCallData::CapturedBatch::ResumeWith(Flusher* releaser) {
-  auto* batch = absl::exchange(batch_, nullptr);
+  auto* batch = std::exchange(batch_, nullptr);
   GPR_ASSERT(batch != nullptr);
   uintptr_t& refcnt = *RefCountField(batch);
   if (refcnt == 0) return;  // refcnt==0 ==> cancelled
@@ -146,7 +145,7 @@ void BaseCallData::CapturedBatch::ResumeWith(Flusher* releaser) {
 }
 
 void BaseCallData::CapturedBatch::CompleteWith(Flusher* releaser) {
-  auto* batch = absl::exchange(batch_, nullptr);
+  auto* batch = std::exchange(batch_, nullptr);
   GPR_ASSERT(batch != nullptr);
   uintptr_t& refcnt = *RefCountField(batch);
   if (refcnt == 0) return;  // refcnt==0 ==> cancelled
@@ -157,7 +156,7 @@ void BaseCallData::CapturedBatch::CompleteWith(Flusher* releaser) {
 
 void BaseCallData::CapturedBatch::CancelWith(grpc_error_handle error,
                                              Flusher* releaser) {
-  auto* batch = absl::exchange(batch_, nullptr);
+  auto* batch = std::exchange(batch_, nullptr);
   GPR_ASSERT(batch != nullptr);
   uintptr_t& refcnt = *RefCountField(batch);
   if (refcnt == 0) {
@@ -284,8 +283,8 @@ class ClientCallData::PollContext {
             self_->recv_initial_metadata_->state =
                 RecvInitialMetadata::kResponded;
             flusher_->AddClosure(
-                absl::exchange(self_->recv_initial_metadata_->original_on_ready,
-                               nullptr),
+                std::exchange(self_->recv_initial_metadata_->original_on_ready,
+                              nullptr),
                 GRPC_ERROR_NONE,
                 "wake_inside_combiner:recv_initial_metadata_ready");
           }
@@ -312,8 +311,8 @@ class ClientCallData::PollContext {
             }
             self_->recv_trailing_state_ = RecvTrailingState::kResponded;
             flusher_->AddClosure(
-                absl::exchange(self_->original_recv_trailing_metadata_ready_,
-                               nullptr),
+                std::exchange(self_->original_recv_trailing_metadata_ready_,
+                              nullptr),
                 GRPC_ERROR_NONE, "wake_inside_combiner:recv_trailing_ready:1");
             if (self_->recv_initial_metadata_ != nullptr) {
               switch (self_->recv_initial_metadata_->state) {
@@ -336,7 +335,7 @@ class ClientCallData::PollContext {
                   self_->recv_initial_metadata_->state =
                       RecvInitialMetadata::kResponded;
                   flusher_->AddClosure(
-                      absl::exchange(
+                      std::exchange(
                           self_->recv_initial_metadata_->original_on_ready,
                           nullptr),
                       GRPC_ERROR_CANCELLED,
@@ -378,7 +377,7 @@ class ClientCallData::PollContext {
                   self_->recv_initial_metadata_->state =
                       RecvInitialMetadata::kResponded;
                   flusher_->AddClosure(
-                      absl::exchange(
+                      std::exchange(
                           self_->recv_initial_metadata_->original_on_ready,
                           nullptr),
                       GRPC_ERROR_REF(error),
@@ -421,8 +420,8 @@ class ClientCallData::PollContext {
         if (self_->recv_trailing_state_ == RecvTrailingState::kComplete) {
           self_->recv_trailing_state_ = RecvTrailingState::kResponded;
           flusher_->AddClosure(
-              absl::exchange(self_->original_recv_trailing_metadata_ready_,
-                             nullptr),
+              std::exchange(self_->original_recv_trailing_metadata_ready_,
+                            nullptr),
               GRPC_ERROR_NONE, "wake_inside_combiner:recv_trailing_ready:2");
         }
         break;
@@ -648,7 +647,7 @@ void ClientCallData::Cancel(grpc_error_handle error) {
         recv_initial_metadata_->state = RecvInitialMetadata::kResponded;
         GRPC_CALL_COMBINER_START(
             call_combiner(),
-            absl::exchange(recv_initial_metadata_->original_on_ready, nullptr),
+            std::exchange(recv_initial_metadata_->original_on_ready, nullptr),
             GRPC_ERROR_REF(error), "propagate cancellation");
         break;
       case RecvInitialMetadata::kInitial:
@@ -703,13 +702,13 @@ void ClientCallData::RecvInitialMetadataReady(grpc_error_handle error) {
   if (!GRPC_ERROR_IS_NONE(error)) {
     recv_initial_metadata_->state = RecvInitialMetadata::kResponded;
     flusher.AddClosure(
-        absl::exchange(recv_initial_metadata_->original_on_ready, nullptr),
+        std::exchange(recv_initial_metadata_->original_on_ready, nullptr),
         GRPC_ERROR_REF(error), "propagate cancellation");
   } else if (send_initial_state_ == SendInitialState::kCancelled ||
              recv_trailing_state_ == RecvTrailingState::kResponded) {
     recv_initial_metadata_->state = RecvInitialMetadata::kResponded;
     flusher.AddClosure(
-        absl::exchange(recv_initial_metadata_->original_on_ready, nullptr),
+        std::exchange(recv_initial_metadata_->original_on_ready, nullptr),
         GRPC_ERROR_REF(cancelled_error_), "propagate cancellation");
   }
   WakeInsideCombiner(&flusher);
@@ -829,7 +828,7 @@ void ClientCallData::RecvTrailingMetadataReady(grpc_error_handle error) {
   // forward the callback up with the same error.
   if (recv_trailing_state_ == RecvTrailingState::kCancelled) {
     if (grpc_closure* call_closure =
-            absl::exchange(original_recv_trailing_metadata_ready_, nullptr)) {
+            std::exchange(original_recv_trailing_metadata_ready_, nullptr)) {
       flusher.AddClosure(call_closure, GRPC_ERROR_REF(error),
                          "propagate failure");
     }
@@ -1082,7 +1081,7 @@ void ServerCallData::Cancel(grpc_error_handle error, Flusher* flusher) {
     send_initial_metadata_->state = SendInitialMetadata::kCancelled;
   }
   if (auto* closure =
-          absl::exchange(original_recv_initial_metadata_ready_, nullptr)) {
+          std::exchange(original_recv_initial_metadata_ready_, nullptr)) {
     flusher->AddClosure(closure, GRPC_ERROR_REF(error),
                         "original_recv_initial_metadata");
   }
@@ -1160,7 +1159,7 @@ void ServerCallData::RecvInitialMetadataReady(grpc_error_handle error) {
   if (!GRPC_ERROR_IS_NONE(error)) {
     recv_initial_state_ = RecvInitialState::kResponded;
     flusher.AddClosure(
-        absl::exchange(original_recv_initial_metadata_ready_, nullptr),
+        std::exchange(original_recv_initial_metadata_ready_, nullptr),
         GRPC_ERROR_REF(error), "propagate error");
     return;
   }
@@ -1180,7 +1179,7 @@ void ServerCallData::RecvInitialMetadataReady(grpc_error_handle error) {
   // Poll once.
   WakeInsideCombiner(&flusher);
   if (auto* closure =
-          absl::exchange(original_recv_initial_metadata_ready_, nullptr)) {
+          std::exchange(original_recv_initial_metadata_ready_, nullptr)) {
     flusher.AddClosure(closure, GRPC_ERROR_NONE,
                        "original_recv_initial_metadata");
   }

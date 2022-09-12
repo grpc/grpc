@@ -149,8 +149,11 @@ class XdsClient::ChannelState::AdsCallState
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
 
     void ParseResource(upb_Arena* arena, size_t idx, absl::string_view type_url,
+                       absl::string_view resource_name,
                        absl::string_view serialized_resource) override
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
+
+    void ResourceWrapperParsingFailed(size_t idx) override;
 
     Result TakeResult() { return std::move(result_); }
 
@@ -229,7 +232,7 @@ class XdsClient::ChannelState::AdsCallState
                     "[xds_client %p] xds server %s: timeout obtaining resource "
                     "{type=%s name=%s} from xds server",
                     ads_calld_->xds_client(),
-                    ads_calld_->chand()->server_.server_uri.c_str(),
+                    ads_calld_->chand()->server_.server_uri().c_str(),
                     std::string(type_->type_url()).c_str(),
                     XdsClient::ConstructFullXdsResourceName(
                         name_.authority, type_->type_url(), name_.key)
@@ -422,7 +425,7 @@ XdsClient::ChannelState::ChannelState(WeakRefCountedPtr<XdsClient> xds_client,
       server_(server) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO, "[xds_client %p] creating channel to %s",
-            xds_client_.get(), server.server_uri.c_str());
+            xds_client_.get(), server.server_uri().c_str());
   }
   absl::Status status;
   transport_ = xds_client_->transport_factory_->Create(
@@ -439,7 +442,7 @@ XdsClient::ChannelState::ChannelState(WeakRefCountedPtr<XdsClient> xds_client,
 XdsClient::ChannelState::~ChannelState() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO, "[xds_client %p] destroying xds channel %p for server %s",
-            xds_client(), this, server_.server_uri.c_str());
+            xds_client(), this, server_.server_uri().c_str());
   }
   xds_client_.reset(DEBUG_LOCATION, "ChannelState");
 }
@@ -454,7 +457,7 @@ void XdsClient::ChannelState::Orphan() ABSL_NO_THREAD_SAFETY_ANALYSIS {
   // At this time, all strong refs are removed, remove from channel map to
   // prevent subsequent subscription from trying to use this ChannelState as
   // it is shutting down.
-  xds_client_->xds_server_channel_map_.erase(server_);
+  xds_client_->xds_server_channel_map_.erase(&server_);
   ads_calld_.reset();
   lrs_calld_.reset();
 }
@@ -482,7 +485,7 @@ void XdsClient::ChannelState::MaybeStartLrsCall() {
 }
 
 void XdsClient::ChannelState::StopLrsCallLocked() {
-  xds_client_->xds_load_report_server_map_.erase(server_);
+  xds_client_->xds_load_report_server_map_.erase(&server_);
   lrs_calld_.reset();
 }
 
@@ -533,7 +536,7 @@ void XdsClient::ChannelState::OnConnectivityStateChangeLocked(
     gpr_log(GPR_INFO,
             "[xds_client %p] xds channel for server %s in "
             "state TRANSIENT_FAILURE: %s",
-            xds_client(), server_.server_uri.c_str(),
+            xds_client(), server_.server_uri().c_str(),
             status.ToString().c_str());
     xds_client_->NotifyOnErrorLocked(absl::UnavailableError(
         absl::StrCat("xds channel in TRANSIENT_FAILURE, connectivity error: ",
@@ -588,7 +591,7 @@ void XdsClient::ChannelState::RetryableCall<T>::StartNewCallLocked() {
     gpr_log(GPR_INFO,
             "[xds_client %p] xds server %s: start new call from retryable "
             "call %p",
-            chand()->xds_client(), chand()->server_.server_uri.c_str(), this);
+            chand()->xds_client(), chand()->server_.server_uri().c_str(), this);
   }
   calld_ = MakeOrphanable<T>(
       this->Ref(DEBUG_LOCATION, "RetryableCall+start_new_call"));
@@ -604,7 +607,7 @@ void XdsClient::ChannelState::RetryableCall<T>::StartRetryTimerLocked() {
     gpr_log(GPR_INFO,
             "[xds_client %p] xds server %s: call attempt failed; "
             "retry timer will fire in %" PRId64 "ms.",
-            chand()->xds_client(), chand()->server_.server_uri.c_str(),
+            chand()->xds_client(), chand()->server_.server_uri().c_str(),
             timeout.millis());
   }
   timer_handle_ = chand()->xds_client()->engine()->RunAfter(
@@ -626,7 +629,8 @@ void XdsClient::ChannelState::RetryableCall<T>::OnRetryTimer() {
       gpr_log(GPR_INFO,
               "[xds_client %p] xds server %s: retry timer fired (retryable "
               "call: %p)",
-              chand()->xds_client(), chand()->server_.server_uri.c_str(), this);
+              chand()->xds_client(), chand()->server_.server_uri().c_str(),
+              this);
     }
     StartNewCallLocked();
   }
@@ -644,7 +648,7 @@ absl::Status XdsClient::ChannelState::AdsCallState::AdsResponseParser::
         "[xds_client %p] xds server %s: received ADS response: type_url=%s, "
         "version=%s, nonce=%s, num_resources=%" PRIuPTR,
         ads_call_state_->xds_client(),
-        ads_call_state_->chand()->server_.server_uri.c_str(),
+        ads_call_state_->chand()->server_.server_uri().c_str(),
         fields.type_url.c_str(), fields.version.c_str(), fields.nonce.c_str(),
         fields.num_resources);
   }
@@ -688,13 +692,16 @@ void UpdateResourceMetadataNacked(const std::string& version,
 
 void XdsClient::ChannelState::AdsCallState::AdsResponseParser::ParseResource(
     upb_Arena* arena, size_t idx, absl::string_view type_url,
-    absl::string_view serialized_resource) {
+    absl::string_view resource_name, absl::string_view serialized_resource) {
+  std::string error_prefix = absl::StrCat(
+      "resource index ", idx, ": ",
+      resource_name.empty() ? "" : absl::StrCat(resource_name, ": "));
   // Check the type_url of the resource.
   bool is_v2 = false;
   if (!result_.type->IsType(type_url, &is_v2)) {
     result_.errors.emplace_back(
-        absl::StrCat("resource index ", idx, ": incorrect resource type ",
-                     type_url, " (should be ", result_.type_url, ")"));
+        absl::StrCat(error_prefix, "incorrect resource type ", type_url,
+                     " (should be ", result_.type_url, ")"));
     return;
   }
   // Parse the resource.
@@ -705,25 +712,29 @@ void XdsClient::ChannelState::AdsCallState::AdsResponseParser::ParseResource(
       result_.type->Decode(context, serialized_resource, is_v2);
   if (!result.ok()) {
     result_.errors.emplace_back(
-        absl::StrCat("resource index ", idx, ": ", result.status().ToString()));
+        absl::StrCat(error_prefix, result.status().ToString()));
     return;
   }
   // Check the resource name.
-  auto resource_name =
-      xds_client()->ParseXdsResourceName(result->name, result_.type);
-  if (!resource_name.ok()) {
-    result_.errors.emplace_back(absl::StrCat(
-        "resource index ", idx, ": Cannot parse xDS resource name \"",
-        result->name, "\""));
+  if (resource_name.empty()) {
+    resource_name = result->name;
+    error_prefix =
+        absl::StrCat("resource index ", idx, ": ", resource_name, ": ");
+  }
+  auto parsed_resource_name =
+      xds_client()->ParseXdsResourceName(resource_name, result_.type);
+  if (!parsed_resource_name.ok()) {
+    result_.errors.emplace_back(
+        absl::StrCat(error_prefix, "Cannot parse xDS resource name"));
     return;
   }
   // Cancel resource-does-not-exist timer, if needed.
   auto timer_it = ads_call_state_->state_map_.find(result_.type);
   if (timer_it != ads_call_state_->state_map_.end()) {
-    auto it =
-        timer_it->second.subscribed_resources.find(resource_name->authority);
+    auto it = timer_it->second.subscribed_resources.find(
+        parsed_resource_name->authority);
     if (it != timer_it->second.subscribed_resources.end()) {
-      auto res_it = it->second.find(resource_name->key);
+      auto res_it = it->second.find(parsed_resource_name->key);
       if (res_it != it->second.end()) {
         res_it->second->MaybeCancelTimer();
       }
@@ -731,7 +742,7 @@ void XdsClient::ChannelState::AdsCallState::AdsResponseParser::ParseResource(
   }
   // Lookup the authority in the cache.
   auto authority_it =
-      xds_client()->authority_state_map_.find(resource_name->authority);
+      xds_client()->authority_state_map_.find(parsed_resource_name->authority);
   if (authority_it == xds_client()->authority_state_map_.end()) {
     return;  // Skip resource -- we don't have a subscription for it.
   }
@@ -743,14 +754,15 @@ void XdsClient::ChannelState::AdsCallState::AdsResponseParser::ParseResource(
   }
   auto& type_map = type_it->second;
   // Found type, so look up resource key.
-  auto it = type_map.find(resource_name->key);
+  auto it = type_map.find(parsed_resource_name->key);
   if (it == type_map.end()) {
     return;  // Skip resource -- we don't have a subscription for it.
   }
   ResourceState& resource_state = it->second;
   // If needed, record that we've seen this resource.
   if (result_.type->AllResourcesRequiredInSotW()) {
-    result_.resources_seen[resource_name->authority].insert(resource_name->key);
+    result_.resources_seen[parsed_resource_name->authority].insert(
+        parsed_resource_name->key);
   }
   // If we previously ignored the resource's deletion, log that we're
   // now re-adding it.
@@ -759,15 +771,16 @@ void XdsClient::ChannelState::AdsCallState::AdsResponseParser::ParseResource(
             "[xds_client %p] xds server %s: server returned new version of "
             "resource for which we previously ignored a deletion: type %s "
             "name %s",
-            xds_client(), ads_call_state_->chand()->server_.server_uri.c_str(),
-            std::string(type_url).c_str(), result->name.c_str());
+            xds_client(),
+            ads_call_state_->chand()->server_.server_uri().c_str(),
+            std::string(type_url).c_str(), std::string(resource_name).c_str());
     resource_state.ignored_deletion = false;
   }
   // Update resource state based on whether the resource is valid.
   if (!result->resource.ok()) {
     result_.errors.emplace_back(absl::StrCat(
-        "resource index ", idx, ": ", result->name,
-        ": validation error: ", result->resource.status().ToString()));
+        error_prefix,
+        "validation error: ", result->resource.status().ToString()));
     xds_client()->NotifyWatchersOnErrorLocked(
         resource_state.watchers,
         absl::UnavailableError(absl::StrCat(
@@ -786,7 +799,8 @@ void XdsClient::ChannelState::AdsCallState::AdsResponseParser::ParseResource(
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
       gpr_log(GPR_INFO,
               "[xds_client %p] %s resource %s identical to current, ignoring.",
-              xds_client(), result_.type_url.c_str(), result->name.c_str());
+              xds_client(), result_.type_url.c_str(),
+              std::string(resource_name).c_str());
     }
     return;
   }
@@ -807,6 +821,12 @@ void XdsClient::ChannelState::AdsCallState::AdsResponseParser::ParseResource(
             delete value;
           },
       DEBUG_LOCATION);
+}
+
+void XdsClient::ChannelState::AdsCallState::AdsResponseParser::
+    ResourceWrapperParsingFailed(size_t idx) {
+  result_.errors.emplace_back(absl::StrCat(
+      "resource index ", idx, ": Can't decode Resource proto wrapper"));
 }
 
 //
@@ -839,7 +859,7 @@ XdsClient::ChannelState::AdsCallState::AdsCallState(
     gpr_log(GPR_INFO,
             "[xds_client %p] xds server %s: starting ADS call "
             "(calld: %p, call: %p)",
-            xds_client(), chand()->server_.server_uri.c_str(), this,
+            xds_client(), chand()->server_.server_uri().c_str(), this,
             call_.get());
   }
   // If this is a reconnect, add any necessary subscriptions from what's
@@ -889,7 +909,7 @@ void XdsClient::ChannelState::AdsCallState::SendMessageLocked(
     gpr_log(GPR_INFO,
             "[xds_client %p] xds server %s: sending ADS request: type=%s "
             "version=%s nonce=%s error=%s",
-            xds_client(), chand()->server_.server_uri.c_str(),
+            xds_client(), chand()->server_.server_uri().c_str(),
             std::string(type->type_url()).c_str(),
             chand()->resource_type_version_map_[type].c_str(),
             state.nonce.c_str(), state.status.ToString().c_str());
@@ -962,7 +982,7 @@ void XdsClient::ChannelState::AdsCallState::OnRecvMessage(
       gpr_log(GPR_ERROR,
               "[xds_client %p] xds server %s: error parsing ADS response (%s) "
               "-- ignoring",
-              xds_client(), chand()->server_.server_uri.c_str(),
+              xds_client(), chand()->server_.server_uri().c_str(),
               status.ToString().c_str());
     } else {
       seen_response_ = true;
@@ -979,7 +999,7 @@ void XdsClient::ChannelState::AdsCallState::OnRecvMessage(
                 "[xds_client %p] xds server %s: ADS response invalid for "
                 "resource "
                 "type %s version %s, will NACK: nonce=%s status=%s",
-                xds_client(), chand()->server_.server_uri.c_str(),
+                xds_client(), chand()->server_.server_uri().c_str(),
                 result.type_url.c_str(), result.version.c_str(),
                 state.nonce.c_str(), state.status.ToString().c_str());
       }
@@ -1014,7 +1034,7 @@ void XdsClient::ChannelState::AdsCallState::OnRecvMessage(
                   gpr_log(GPR_ERROR,
                           "[xds_client %p] xds server %s: ignoring deletion "
                           "for resource type %s name %s",
-                          xds_client(), chand()->server_.server_uri.c_str(),
+                          xds_client(), chand()->server_.server_uri().c_str(),
                           result.type_url.c_str(),
                           XdsClient::ConstructFullXdsResourceName(
                               authority, result.type_url.c_str(), resource_key)
@@ -1056,8 +1076,8 @@ void XdsClient::ChannelState::AdsCallState::OnStatusReceived(
       gpr_log(GPR_INFO,
               "[xds_client %p] xds server %s: ADS call status received "
               "(chand=%p, ads_calld=%p, call=%p): %s",
-              xds_client(), chand()->server_.server_uri.c_str(), chand(), this,
-              call_.get(), status.ToString().c_str());
+              xds_client(), chand()->server_.server_uri().c_str(), chand(),
+              this, call_.get(), status.ToString().c_str());
     }
     // Ignore status from a stale call.
     if (IsCurrentCallOnChannel()) {
@@ -1066,7 +1086,7 @@ void XdsClient::ChannelState::AdsCallState::OnStatusReceived(
       // Send error to all watchers.
       xds_client()->NotifyOnErrorLocked(absl::UnavailableError(absl::StrFormat(
           "xDS call failed: xDS server: %s, ADS call status: %s",
-          chand()->server_.server_uri, status.ToString().c_str())));
+          chand()->server_.server_uri(), status.ToString().c_str())));
     }
   }
   xds_client()->work_serializer_.DrainQueue();
@@ -1158,7 +1178,7 @@ bool XdsClient::ChannelState::LrsCallState::Reporter::SendReportLocked() {
   last_report_counters_were_zero_ = LoadReportCountersAreZero(snapshot);
   if (old_val && last_report_counters_were_zero_) {
     auto it = xds_client()->xds_load_report_server_map_.find(
-        parent_->chand()->server_);
+        &parent_->chand()->server_);
     if (it == xds_client()->xds_load_report_server_map_.end() ||
         it->second.load_report_map.empty()) {
       it->second.channel_state->StopLrsCallLocked();
@@ -1184,8 +1204,8 @@ void XdsClient::ChannelState::LrsCallState::Reporter::OnReportDoneLocked() {
   // we just ignore the completion and wait for the timer to fire.
   if (timer_handle_.has_value()) return;
   // If there are no more registered stats to report, cancel the call.
-  auto it =
-      xds_client()->xds_load_report_server_map_.find(parent_->chand()->server_);
+  auto it = xds_client()->xds_load_report_server_map_.find(
+      &parent_->chand()->server_);
   if (it == xds_client()->xds_load_report_server_map_.end()) return;
   if (it->second.load_report_map.empty()) {
     if (it->second.channel_state != nullptr) {
@@ -1228,7 +1248,7 @@ XdsClient::ChannelState::LrsCallState::LrsCallState(
     gpr_log(GPR_INFO,
             "[xds_client %p] xds server %s: starting LRS call (calld=%p, "
             "call=%p)",
-            xds_client(), chand()->server_.server_uri.c_str(), this,
+            xds_client(), chand()->server_.server_uri().c_str(), this,
             call_.get());
   }
   // Send the initial request.
@@ -1292,7 +1312,7 @@ void XdsClient::ChannelState::LrsCallState::OnRecvMessage(
   if (!status.ok()) {
     gpr_log(GPR_ERROR,
             "[xds_client %p] xds server %s: LRS response parsing failed: %s",
-            xds_client(), chand()->server_.server_uri.c_str(),
+            xds_client(), chand()->server_.server_uri().c_str(),
             status.ToString().c_str());
     return;
   }
@@ -1303,7 +1323,7 @@ void XdsClient::ChannelState::LrsCallState::OnRecvMessage(
         "[xds_client %p] xds server %s: LRS response received, %" PRIuPTR
         " cluster names, send_all_clusters=%d, load_report_interval=%" PRId64
         "ms",
-        xds_client(), chand()->server_.server_uri.c_str(),
+        xds_client(), chand()->server_.server_uri().c_str(),
         new_cluster_names.size(), send_all_clusters,
         new_load_reporting_interval.millis());
     size_t i = 0;
@@ -1320,7 +1340,7 @@ void XdsClient::ChannelState::LrsCallState::OnRecvMessage(
       gpr_log(GPR_INFO,
               "[xds_client %p] xds server %s: increased load_report_interval "
               "to minimum value %dms",
-              xds_client(), chand()->server_.server_uri.c_str(),
+              xds_client(), chand()->server_.server_uri().c_str(),
               GRPC_XDS_MIN_CLIENT_LOAD_REPORTING_INTERVAL_MS);
     }
   }
@@ -1332,7 +1352,7 @@ void XdsClient::ChannelState::LrsCallState::OnRecvMessage(
       gpr_log(GPR_INFO,
               "[xds_client %p] xds server %s: incoming LRS response identical "
               "to current, ignoring.",
-              xds_client(), chand()->server_.server_uri.c_str());
+              xds_client(), chand()->server_.server_uri().c_str());
     }
     return;
   }
@@ -1353,7 +1373,7 @@ void XdsClient::ChannelState::LrsCallState::OnStatusReceived(
     gpr_log(GPR_INFO,
             "[xds_client %p] xds server %s: LRS call status received "
             "(chand=%p, calld=%p, call=%p): %s",
-            xds_client(), chand()->server_.server_uri.c_str(), chand(), this,
+            xds_client(), chand()->server_.server_uri().c_str(), chand(), this,
             call_.get(), status.ToString().c_str());
   }
   // Ignore status from a stale call.
@@ -1389,6 +1409,7 @@ XdsClient::XdsClient(std::unique_ptr<XdsBootstrap> bootstrap,
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO, "[xds_client %p] creating xds client", this);
   }
+  GPR_ASSERT(bootstrap_ != nullptr);
 }
 
 XdsClient::~XdsClient() {
@@ -1417,14 +1438,14 @@ void XdsClient::Orphan() {
 
 RefCountedPtr<XdsClient::ChannelState> XdsClient::GetOrCreateChannelStateLocked(
     const XdsBootstrap::XdsServer& server, const char* reason) {
-  auto it = xds_server_channel_map_.find(server);
+  auto it = xds_server_channel_map_.find(&server);
   if (it != xds_server_channel_map_.end()) {
     return it->second->Ref(DEBUG_LOCATION, reason);
   }
   // Channel not found, so create a new one.
   auto channel_state = MakeRefCounted<ChannelState>(
       WeakRef(DEBUG_LOCATION, "ChannelState"), server);
-  xds_server_channel_map_[server] = channel_state.get();
+  xds_server_channel_map_[&server] = channel_state.get();
   return channel_state;
 }
 
@@ -1464,9 +1485,7 @@ void XdsClient::WatchResource(const XdsResourceType* type,
                        "\" not present in bootstrap config")));
       return;
     }
-    if (!authority->xds_servers.empty()) {
-      xds_server = &authority->xds_servers[0];
-    }
+    xds_server = authority->server();
   }
   if (xds_server == nullptr) xds_server = &bootstrap_->server();
   {
@@ -1616,7 +1635,8 @@ std::string XdsClient::ConstructFullXdsResourceName(
 RefCountedPtr<XdsClusterDropStats> XdsClient::AddClusterDropStats(
     const XdsBootstrap::XdsServer& xds_server, absl::string_view cluster_name,
     absl::string_view eds_service_name) {
-  if (!bootstrap_->XdsServerExists(xds_server)) return nullptr;
+  const auto* server = bootstrap_->FindXdsServer(xds_server);
+  if (server == nullptr) return nullptr;
   auto key =
       std::make_pair(std::string(cluster_name), std::string(eds_service_name));
   RefCountedPtr<XdsClusterDropStats> cluster_drop_stats;
@@ -1628,11 +1648,10 @@ RefCountedPtr<XdsClusterDropStats> XdsClient::AddClusterDropStats(
     // XdsBootstrap::XdsServer and strings
     // in the load_report_map_ key, so that they have the same lifetime.
     auto server_it =
-        xds_load_report_server_map_.emplace(xds_server, LoadReportServer())
-            .first;
+        xds_load_report_server_map_.emplace(server, LoadReportServer()).first;
     if (server_it->second.channel_state == nullptr) {
       server_it->second.channel_state = GetOrCreateChannelStateLocked(
-          xds_server, "load report map (drop stats)");
+          *server, "load report map (drop stats)");
     }
     auto load_report_it = server_it->second.load_report_map
                               .emplace(std::move(key), LoadReportState())
@@ -1647,7 +1666,7 @@ RefCountedPtr<XdsClusterDropStats> XdsClient::AddClusterDropStats(
             load_report_state.drop_stats->GetSnapshotAndReset();
       }
       cluster_drop_stats = MakeRefCounted<XdsClusterDropStats>(
-          Ref(DEBUG_LOCATION, "DropStats"), server_it->first,
+          Ref(DEBUG_LOCATION, "DropStats"), *server,
           load_report_it->first.first /*cluster_name*/,
           load_report_it->first.second /*eds_service_name*/);
       load_report_state.drop_stats = cluster_drop_stats.get();
@@ -1662,8 +1681,10 @@ void XdsClient::RemoveClusterDropStats(
     const XdsBootstrap::XdsServer& xds_server, absl::string_view cluster_name,
     absl::string_view eds_service_name,
     XdsClusterDropStats* cluster_drop_stats) {
+  const auto* server = bootstrap_->FindXdsServer(xds_server);
+  if (server == nullptr) return;
   MutexLock lock(&mu_);
-  auto server_it = xds_load_report_server_map_.find(xds_server);
+  auto server_it = xds_load_report_server_map_.find(server);
   if (server_it == xds_load_report_server_map_.end()) return;
   auto load_report_it = server_it->second.load_report_map.find(
       std::make_pair(std::string(cluster_name), std::string(eds_service_name)));
@@ -1682,7 +1703,8 @@ RefCountedPtr<XdsClusterLocalityStats> XdsClient::AddClusterLocalityStats(
     const XdsBootstrap::XdsServer& xds_server, absl::string_view cluster_name,
     absl::string_view eds_service_name,
     RefCountedPtr<XdsLocalityName> locality) {
-  if (!bootstrap_->XdsServerExists(xds_server)) return nullptr;
+  const auto* server = bootstrap_->FindXdsServer(xds_server);
+  if (server == nullptr) return nullptr;
   auto key =
       std::make_pair(std::string(cluster_name), std::string(eds_service_name));
   RefCountedPtr<XdsClusterLocalityStats> cluster_locality_stats;
@@ -1694,11 +1716,10 @@ RefCountedPtr<XdsClusterLocalityStats> XdsClient::AddClusterLocalityStats(
     // XdsBootstrap::XdsServer and strings
     // in the load_report_map_ key, so that they have the same lifetime.
     auto server_it =
-        xds_load_report_server_map_.emplace(xds_server, LoadReportServer())
-            .first;
+        xds_load_report_server_map_.emplace(server, LoadReportServer()).first;
     if (server_it->second.channel_state == nullptr) {
       server_it->second.channel_state = GetOrCreateChannelStateLocked(
-          xds_server, "load report map (locality stats)");
+          *server, "load report map (locality stats)");
     }
     auto load_report_it = server_it->second.load_report_map
                               .emplace(std::move(key), LoadReportState())
@@ -1715,7 +1736,7 @@ RefCountedPtr<XdsClusterLocalityStats> XdsClient::AddClusterLocalityStats(
             locality_state.locality_stats->GetSnapshotAndReset();
       }
       cluster_locality_stats = MakeRefCounted<XdsClusterLocalityStats>(
-          Ref(DEBUG_LOCATION, "LocalityStats"), server_it->first,
+          Ref(DEBUG_LOCATION, "LocalityStats"), *server,
           load_report_it->first.first /*cluster_name*/,
           load_report_it->first.second /*eds_service_name*/,
           std::move(locality));
@@ -1732,8 +1753,10 @@ void XdsClient::RemoveClusterLocalityStats(
     absl::string_view eds_service_name,
     const RefCountedPtr<XdsLocalityName>& locality,
     XdsClusterLocalityStats* cluster_locality_stats) {
+  const auto* server = bootstrap_->FindXdsServer(xds_server);
+  if (server == nullptr) return;
   MutexLock lock(&mu_);
-  auto server_it = xds_load_report_server_map_.find(xds_server);
+  auto server_it = xds_load_report_server_map_.find(server);
   if (server_it == xds_load_report_server_map_.end()) return;
   auto load_report_it = server_it->second.load_report_map.find(
       std::make_pair(std::string(cluster_name), std::string(eds_service_name)));
@@ -1762,8 +1785,8 @@ void XdsClient::NotifyOnErrorLocked(absl::Status status) {
   const auto* node = bootstrap_->node();
   if (node != nullptr) {
     status = absl::Status(
-        status.code(), absl::StrCat(status.message(),
-                                    " (node ID:", bootstrap_->node()->id, ")"));
+        status.code(),
+        absl::StrCat(status.message(), " (node ID:", node->id(), ")"));
   }
   std::set<RefCountedPtr<ResourceWatcherInterface>> watchers;
   for (const auto& a : authority_state_map_) {     // authority
@@ -1793,8 +1816,8 @@ void XdsClient::NotifyWatchersOnErrorLocked(
   const auto* node = bootstrap_->node();
   if (node != nullptr) {
     status = absl::Status(
-        status.code(), absl::StrCat(status.message(),
-                                    " (node ID:", bootstrap_->node()->id, ")"));
+        status.code(),
+        absl::StrCat(status.message(), " (node ID:", node->id(), ")"));
   }
   work_serializer_.Schedule(
       [watchers, status]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) {
@@ -1824,7 +1847,7 @@ XdsApi::ClusterLoadReportMap XdsClient::BuildLoadReportSnapshotLocked(
     gpr_log(GPR_INFO, "[xds_client %p] start building load report", this);
   }
   XdsApi::ClusterLoadReportMap snapshot_map;
-  auto server_it = xds_load_report_server_map_.find(xds_server);
+  auto server_it = xds_load_report_server_map_.find(&xds_server);
   if (server_it == xds_load_report_server_map_.end()) return snapshot_map;
   auto& load_report_map = server_it->second.load_report_map;
   for (auto load_report_it = load_report_map.begin();
