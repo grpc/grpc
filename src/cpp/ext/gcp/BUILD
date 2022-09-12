@@ -53,14 +53,28 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "observability_config",
+    srcs = [
+        "observability_config.cc",
+    ],
     hdrs = [
         "observability_config.h",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
     ],
     language = "c++",
     visibility = ["//test:__subpackages__"],
     deps = [
+        "//:error",
         "//:gpr",
+        "//:grpc_base",
+        "//:grpc_public_hdrs",
+        "//:json",
         "//:json_args",
         "//:json_object_loader",
+        "//:slice",
+        "//:slice_refcount",
     ],
 )

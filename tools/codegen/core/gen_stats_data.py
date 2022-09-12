@@ -181,6 +181,7 @@ def gen_bucket_code(shape):
     cases = [(0, 'return 0;'), (first_nontrivial, 'return value;')]
     if done_trivial:
         first_nontrivial_code = dbl2u64(first_nontrivial)
+        last_code = first_nontrivial_code
         while True:
             code = ''
             first_nontrivial = u642dbl(first_nontrivial_code)
@@ -198,7 +199,7 @@ def gen_bucket_code(shape):
                                       shift_data)
             if not map_table:
                 break
-            if map_table[-1] < 8:
+            if map_table[-1] < 5:
                 break
             map_table_idx = decl_static_table(
                 [x + code_bounds_index for x in map_table],
@@ -215,11 +216,11 @@ def gen_bucket_code(shape):
             code += 'return bucket - (value < grpc_stats_table_%d[bucket]);' % bounds_idx
             cases.append((int(u642dbl(last_code)) + 1, code))
             first_nontrivial_code = last_code
-    last = u642dbl(last_code) + 1
-    for i, b in enumerate(bounds[:-2]):
-        if bounds[i + 1] < last:
-            continue
-        cases.append((bounds[i + 1], 'return %d;' % i))
+        last = u642dbl(last_code) + 1
+        for i, b in enumerate(bounds[:-2]):
+            if bounds[i + 1] < last:
+                continue
+            cases.append((bounds[i + 1], 'return %d;' % i))
     cases.append((None, 'return %d;' % (len(bounds) - 2)))
     return (merge_cases(cases), bounds_idx)
 
@@ -364,8 +365,7 @@ with open('src/core/lib/debug/stats_data.cc', 'w') as C:
     print(file=C)
     print("#include \"src/core/lib/debug/stats.h\"", file=C)
     print("#include \"src/core/lib/debug/stats_data.h\"", file=C)
-    print("#include \"src/core/lib/gpr/useful.h\"", file=C)
-    print("#include \"src/core/lib/iomgr/exec_ctx.h\"", file=C)
+    print("#include <stdint.h>", file=C)
     print(file=C)
 
     histo_code = []
