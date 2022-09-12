@@ -125,11 +125,10 @@ CallbackAlternativeCQ g_callback_alternative_cq;
 
 }  // namespace
 
-// 'CompletionQueue' constructor can safely call GrpcLibrary(false) here i.e not
-// have GrpcLibrary call `grpc_core::InitInternally()`. This is because, to
-// create a 'grpc_completion_queue' instance (which is being passed as the input
-// to this constructor), one must have already called
-// `grpc_core::InitInternally()`.
+// 'CompletionQueue' constructor can safely call GrpcLibraryCodegen(false) here
+// i.e not have GrpcLibraryCodegen call grpc_init(). This is because, to create
+// a 'grpc_completion_queue' instance (which is being passed as the input to
+// this constructor), one must have already called grpc_init().
 CompletionQueue::CompletionQueue(grpc_completion_queue* take)
     : GrpcLibrary(false), cq_(take) {
   InitialAvalanching();

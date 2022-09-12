@@ -664,9 +664,7 @@ grpc_cc_library(
         "nofixdeps",
     ],
     visibility = ["@grpc:public"],
-    deps = [
-        "grpc_public_hdrs",
-    ],
+    deps = ["grpc_public_hdrs"],
 )
 
 grpc_cc_library(
@@ -796,7 +794,6 @@ grpc_cc_library(
         "grpc_base",
         "grpc_client_channel",
         "grpc_codegen",
-        "init_internally",
         "iomgr_fwd",
         "iomgr_port",
         "orphanable",
@@ -7187,7 +7184,6 @@ grpc_cc_library(
         "grpc_trace",
         "grpc_transport_inproc",
         "grpcpp_call_metric_recorder",
-        "init_internally",
         "iomgr_timer",
         "json",
         "ref_counted",
@@ -7244,7 +7240,6 @@ grpc_cc_library(
         "grpc_transport_inproc",
         "grpc_unsecure",
         "grpcpp_call_metric_recorder",
-        "init_internally",
         "iomgr_timer",
         "ref_counted",
         "ref_counted_ptr",

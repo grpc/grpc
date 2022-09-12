@@ -53,7 +53,6 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/surface/channel.h"
-#include "src/core/lib/surface/init_internally.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/cpp/client/create_channel_internal.h"
 
@@ -100,7 +99,7 @@ std::shared_ptr<grpc::Channel> CreateCustomBinderChannel(
     void* jni_env_void, jobject application, absl::string_view uri,
     std::shared_ptr<grpc::experimental::binder::SecurityPolicy> security_policy,
     const ChannelArguments& args) {
-  grpc_core::InitInternally();
+  grpc_init();
 
   GPR_ASSERT(jni_env_void != nullptr);
   GPR_ASSERT(security_policy != nullptr);
