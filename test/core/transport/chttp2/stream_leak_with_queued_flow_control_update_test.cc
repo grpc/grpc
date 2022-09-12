@@ -156,13 +156,30 @@ void FinishCall(grpc_call* call, grpc_completion_queue* cq) {
   grpc_slice details;
   grpc_byte_buffer* recv_payload = nullptr;
   void* tag = call;
+  // Recv initial md and message
   memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
   op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
   op++;
-  // Even though the server isn't sending a message, it's important
+  op->op = GRPC_OP_RECV_MESSAGE;
+  op->data.recv_message.recv_message = &recv_payload;
+  op++;
+  grpc_call_error error = grpc_call_start_batch(
+      call, ops, static_cast<size_t>(op - ops), tag, nullptr);
+  GPR_ASSERT(GRPC_CALL_OK == error);
+  grpc_event event = grpc_completion_queue_next(
+      cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
+  GPR_ASSERT(event.type == GRPC_OP_COMPLETE);
+  GPR_ASSERT(event.success);
+  GPR_ASSERT(event.tag == tag);
+  grpc_byte_buffer_destroy(recv_payload);
+  recv_payload = nullptr;
+  // Recv message again, and status.
+  // Even though the server isn't sending a second message, it's important
   // for our repro that we attempt to receive one.
+  memset(ops, 0, sizeof(ops));
+  op = ops;
   op->op = GRPC_OP_RECV_MESSAGE;
   op->data.recv_message.recv_message = &recv_payload;
   op++;
@@ -171,10 +188,10 @@ void FinishCall(grpc_call* call, grpc_completion_queue* cq) {
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op++;
-  grpc_call_error error = grpc_call_start_batch(
+  error = grpc_call_start_batch(
       call, ops, static_cast<size_t>(op - ops), tag, nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  grpc_event event = grpc_completion_queue_next(
+  event = grpc_completion_queue_next(
       cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
   GPR_ASSERT(event.type == GRPC_OP_COMPLETE);
   GPR_ASSERT(event.success);
