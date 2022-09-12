@@ -35,6 +35,8 @@ class Histogram_32768_24 {
  public:
   static int BucketFor(int value);
   const uint64_t* buckets() const { return buckets_; }
+  friend Histogram_32768_24 operator-(const Histogram_32768_24& left,
+                                      const Histogram_32768_24& right);
 
  private:
   friend class HistogramCollector_32768_24;
@@ -56,6 +58,8 @@ class Histogram_16777216_20 {
  public:
   static int BucketFor(int value);
   const uint64_t* buckets() const { return buckets_; }
+  friend Histogram_16777216_20 operator-(const Histogram_16777216_20& left,
+                                         const Histogram_16777216_20& right);
 
  private:
   friend class HistogramCollector_16777216_20;
@@ -77,6 +81,8 @@ class Histogram_80_10 {
  public:
   static int BucketFor(int value);
   const uint64_t* buckets() const { return buckets_; }
+  friend Histogram_80_10 operator-(const Histogram_80_10& left,
+                                   const Histogram_80_10& right);
 
  private:
   friend class HistogramCollector_80_10;
@@ -160,6 +166,7 @@ struct GlobalStats {
   Histogram_80_10 tcp_read_offer_iov_size;
   Histogram_16777216_20 http2_send_message_size;
   HistogramView histogram(Histogram which) const;
+  std::unique_ptr<GlobalStats> Diff(const GlobalStats& other) const;
 };
 class GlobalStatsCollector {
  public:

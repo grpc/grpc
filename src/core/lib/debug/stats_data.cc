@@ -36,16 +36,40 @@ void HistogramCollector_32768_24::Collect(Histogram_32768_24* result) const {
     result->buckets_[i] += buckets_[i].load(std::memory_order_relaxed);
   }
 }
+Histogram_32768_24 operator-(const Histogram_32768_24& left,
+                             const Histogram_32768_24& right) {
+  Histogram_32768_24 result;
+  for (int i = 0; i < 24; i++) {
+    result.buckets_[i] = left.buckets_[i] - right.buckets_[i];
+  }
+  return result;
+}
 void HistogramCollector_16777216_20::Collect(
     Histogram_16777216_20* result) const {
   for (int i = 0; i < 20; i++) {
     result->buckets_[i] += buckets_[i].load(std::memory_order_relaxed);
   }
 }
+Histogram_16777216_20 operator-(const Histogram_16777216_20& left,
+                                const Histogram_16777216_20& right) {
+  Histogram_16777216_20 result;
+  for (int i = 0; i < 20; i++) {
+    result.buckets_[i] = left.buckets_[i] - right.buckets_[i];
+  }
+  return result;
+}
 void HistogramCollector_80_10::Collect(Histogram_80_10* result) const {
   for (int i = 0; i < 10; i++) {
     result->buckets_[i] += buckets_[i].load(std::memory_order_relaxed);
   }
+}
+Histogram_80_10 operator-(const Histogram_80_10& left,
+                          const Histogram_80_10& right) {
+  Histogram_80_10 result;
+  for (int i = 0; i < 10; i++) {
+    result.buckets_[i] = left.buckets_[i] - right.buckets_[i];
+  }
+  return result;
 }
 const absl::string_view
     GlobalStats::counter_name[static_cast<int>(Counter::COUNT)] = {
@@ -257,6 +281,43 @@ std::unique_ptr<GlobalStats> GlobalStatsCollector::Collect() const {
     data.tcp_read_offer_iov_size.Collect(&result->tcp_read_offer_iov_size);
     data.http2_send_message_size.Collect(&result->http2_send_message_size);
   }
+  return result;
+}
+std::unique_ptr<GlobalStats> GlobalStats::Diff(const GlobalStats& other) const {
+  auto result = absl::make_unique<GlobalStats>();
+  result->client_calls_created =
+      client_calls_created - other.client_calls_created;
+  result->server_calls_created =
+      server_calls_created - other.server_calls_created;
+  result->client_channels_created =
+      client_channels_created - other.client_channels_created;
+  result->client_subchannels_created =
+      client_subchannels_created - other.client_subchannels_created;
+  result->server_channels_created =
+      server_channels_created - other.server_channels_created;
+  result->syscall_write = syscall_write - other.syscall_write;
+  result->syscall_read = syscall_read - other.syscall_read;
+  result->tcp_read_alloc_8k = tcp_read_alloc_8k - other.tcp_read_alloc_8k;
+  result->tcp_read_alloc_64k = tcp_read_alloc_64k - other.tcp_read_alloc_64k;
+  result->http2_settings_writes =
+      http2_settings_writes - other.http2_settings_writes;
+  result->http2_pings_sent = http2_pings_sent - other.http2_pings_sent;
+  result->http2_writes_begun = http2_writes_begun - other.http2_writes_begun;
+  result->http2_transport_stalls =
+      http2_transport_stalls - other.http2_transport_stalls;
+  result->http2_stream_stalls = http2_stream_stalls - other.http2_stream_stalls;
+  result->cq_pluck_creates = cq_pluck_creates - other.cq_pluck_creates;
+  result->cq_next_creates = cq_next_creates - other.cq_next_creates;
+  result->cq_callback_creates = cq_callback_creates - other.cq_callback_creates;
+  result->call_initial_size = call_initial_size - other.call_initial_size;
+  result->tcp_write_size = tcp_write_size - other.tcp_write_size;
+  result->tcp_write_iov_size = tcp_write_iov_size - other.tcp_write_iov_size;
+  result->tcp_read_size = tcp_read_size - other.tcp_read_size;
+  result->tcp_read_offer = tcp_read_offer - other.tcp_read_offer;
+  result->tcp_read_offer_iov_size =
+      tcp_read_offer_iov_size - other.tcp_read_offer_iov_size;
+  result->http2_send_message_size =
+      http2_send_message_size - other.http2_send_message_size;
   return result;
 }
 }  // namespace grpc_core

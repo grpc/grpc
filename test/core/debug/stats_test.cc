@@ -32,17 +32,14 @@
 #include "src/core/lib/debug/stats_data.h"
 #include "test/core/util/test_config.h"
 
-namespace grpc {
+namespace grpc_core {
 namespace testing {
 
 class Snapshot {
  public:
-  grpc_stats_data delta() {
-    grpc_stats_data now;
-    grpc_stats_collect(&now);
-    grpc_stats_data delta;
-    grpc_stats_diff(&now, &begin_, &delta);
-    return delta;
+  std::unique_ptr<grpc_core::GlobalStats> delta() {
+    auto now = global_stats().Collect();
+    return now->Diff(*begin_);
   }
 
  private:
@@ -50,25 +47,13 @@ class Snapshot {
       grpc_core::global_stats().Collect();
 };
 
-TEST(StatsTest, IncCounters) {
-  for (int i = 0; i < GRPC_STATS_COUNTER_COUNT; i++) {
-    std::unique_ptr<Snapshot> snapshot(new Snapshot);
-
-    grpc_core::ExecCtx exec_ctx;
-    GRPC_STATS_INC_COUNTER((grpc_stats_counters)i);
-
-    EXPECT_EQ(snapshot->delta().counters[i], 1);
-  }
-}
-
 TEST(StatsTest, IncSpecificCounter) {
   std::unique_ptr<Snapshot> snapshot(new Snapshot);
 
   grpc_core::ExecCtx exec_ctx;
-  GRPC_STATS_INC_CLIENT_CALLS_CREATED();
+  global_stats().IncrementClientCallsCreated();
 
-  EXPECT_EQ(snapshot->delta().counters[GRPC_STATS_COUNTER_CLIENT_CALLS_CREATED],
-            1);
+  EXPECT_EQ(snapshot->delta()->client_calls_created, 1);
 }
 
 static int FindExpectedBucket(int i, int j) {
@@ -160,7 +145,7 @@ INSTANTIATE_TEST_SUITE_P(HistogramTestCases, HistogramTest,
                          ::testing::Range<int>(0, GRPC_STATS_HISTOGRAM_COUNT));
 
 }  // namespace testing
-}  // namespace grpc
+}  // namespace grpc_core
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
