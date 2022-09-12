@@ -110,9 +110,9 @@ absl::StatusOr<RefCountedPtr<Channel>> Channel::CreateWithBuilder(
     ChannelStackBuilder* builder) {
   auto channel_args = builder->channel_args();
   if (builder->channel_stack_type() == GRPC_SERVER_CHANNEL) {
-    grpc_core::global_stats().IncrementServerChannelsCreated();
+    global_stats().IncrementServerChannelsCreated();
   } else {
-    grpc_core::global_stats().IncrementClientChannelsCreated();
+    global_stats().IncrementClientChannelsCreated();
   }
   absl::StatusOr<RefCountedPtr<grpc_channel_stack>> r = builder->Build();
   if (!r.ok()) {

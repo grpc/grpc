@@ -1390,6 +1390,7 @@ LIBGRPC_SRC = \
     src/core/lib/compression/compression_internal.cc \
     src/core/lib/compression/message_compress.cc \
     src/core/lib/config/core_configuration.cc \
+    src/core/lib/debug/histogram_view.cc \
     src/core/lib/debug/stats.cc \
     src/core/lib/debug/stats_data.cc \
     src/core/lib/debug/trace.cc \
@@ -1893,6 +1894,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/compression/compression_internal.cc \
     src/core/lib/compression/message_compress.cc \
     src/core/lib/config/core_configuration.cc \
+    src/core/lib/debug/histogram_view.cc \
     src/core/lib/debug/stats.cc \
     src/core/lib/debug/stats_data.cc \
     src/core/lib/debug/trace.cc \
