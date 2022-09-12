@@ -378,7 +378,6 @@ class TestOnlyTransportTargetWindowEstimatesMocker {
 
 extern TestOnlyTransportTargetWindowEstimatesMocker*
     g_test_only_transport_target_window_estimates_mocker;
-extern bool g_test_ony_force_queue_urgency_for_stream_window_updates;
 
 }  // namespace chttp2
 }  // namespace grpc_core

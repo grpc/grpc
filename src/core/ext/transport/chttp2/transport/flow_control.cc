@@ -48,7 +48,6 @@ namespace chttp2 {
 
 TestOnlyTransportTargetWindowEstimatesMocker*
     g_test_only_transport_target_window_estimates_mocker;
-bool g_test_ony_force_queue_urgency_for_stream_window_updates;
 
 namespace {
 
@@ -390,13 +389,6 @@ uint32_t StreamFlowControl::DesiredAnnounceSize() const {
 }
 
 FlowControlAction StreamFlowControl::UpdateAction(FlowControlAction action) {
-  if (g_test_ony_force_queue_urgency_for_stream_window_updates) {
-    gpr_log(GPR_INFO,
-            "Overriding urgency of stream flow control update to QUEUE_UPDATE "
-            "due to test-only flag");
-    action.set_send_stream_update(FlowControlAction::Urgency::QUEUE_UPDATE);
-    return action;
-  }
   const int64_t desired_announce_size = DesiredAnnounceSize();
   if (desired_announce_size > 0) {
     if ((min_progress_size_ > 0 && announced_window_delta_ <= 0) ||

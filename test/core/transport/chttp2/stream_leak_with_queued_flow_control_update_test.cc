@@ -30,7 +30,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
-#include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/host_port.h"
@@ -277,15 +276,6 @@ TEST(
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  // De-couple this test from the specifics of how stream flow control update
-  // urgencies are calculated. The bug we're after manifests when a stream
-  // flow control update with queuing urgency is added after the stream is
-  // otherwise shut down, leaving a reference that won't get flushed out since
-  // nothing will initiatie a write on the transport.
-  // Note: RPCs in this test don't send any data, so there's never a real need
-  // to send a flow control update immediately.
-  //grpc_core::chttp2::g_test_ony_force_queue_urgency_for_stream_window_updates =
-  //    true;
   grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   auto result = RUN_ALL_TESTS();
