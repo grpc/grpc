@@ -2293,7 +2293,7 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/event_engine/poller.h",
     ],
-    external_deps = ["absl/functional:function_ref"],
+    external_deps = ["absl/functional:any_invocable"],
     deps = [
         "event_engine_base_hdrs",
         "gpr_platform",
@@ -2546,7 +2546,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
-        "absl/container:inlined_vector",
+        "absl/functional:any_invocable",
         "absl/functional:function_ref",
         "absl/memory",
         "absl/status",
@@ -2580,7 +2580,6 @@ grpc_cc_library(
         "absl/base:core_headers",
         "absl/container:inlined_vector",
         "absl/functional:any_invocable",
-        "absl/functional:function_ref",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",

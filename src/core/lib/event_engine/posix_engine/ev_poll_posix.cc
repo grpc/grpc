@@ -641,7 +641,7 @@ PollPoller::~PollPoller() {
 }
 
 Poller::WorkResult PollPoller::Work(EventEngine::Duration timeout,
-                                    absl::FunctionRef<void()> poll_again) {
+                                    absl::AnyInvocable<void()> poll_again) {
   // Avoid malloc for small number of elements.
   enum { inline_elements = 96 };
   struct pollfd pollfd_space[inline_elements];
@@ -814,8 +814,8 @@ Poller::WorkResult PollPoller::Work(EventEngine::Duration timeout,
     }
     return Poller::WorkResult::kDeadlineExceeded;
   }
-  // Invoke the provided callback.
-  poll_again();
+  // Schedule the provided callback.
+  scheduler_->Run(std::move(poll_again));
   // Process all pending events inline.
   for (auto& it : pending_events) {
     it->ExecutePendingActions();
@@ -862,7 +862,7 @@ EventHandle* PollPoller::CreateHandle(int /*fd*/, absl::string_view /*name*/,
 }
 
 Poller::WorkResult PollPoller::Work(EventEngine::Duration /*timeout*/,
-                                    absl::FunctionRef<void()> /*poll_again*/) {
+                                    absl::AnyInvocable<void()> /*poll_again*/) {
   GPR_ASSERT(false && "unimplemented");
 }
 

@@ -65,7 +65,7 @@ void IOCP::Shutdown() {
 }
 
 Poller::WorkResult IOCP::Work(EventEngine::Duration timeout,
-                              absl::FunctionRef<void()> poll_again) {
+                              absl::AnyInvocable<void()> poll_again) {
   static const absl::Status kDeadlineExceeded = absl::DeadlineExceededError(
       absl::StrFormat("IOCP::%p: Received no completions", this));
   static const absl::Status kKicked =
@@ -111,13 +111,13 @@ Poller::WorkResult IOCP::Work(EventEngine::Duration timeout,
     info->GetOverlappedResult();
   }
   if (info->closure() != nullptr) {
-    poll_again();
+    executor_->Run(std::move(poll_again));
     executor_->Run(info->closure());
     return Poller::WorkResult::kOk;
   }
   // No callback registered. Set ready and return an empty set
   info->SetReady();
-  poll_again();
+  executor_->Run(std::move(poll_again));
   return Poller::WorkResult::kOk;
 }
 
