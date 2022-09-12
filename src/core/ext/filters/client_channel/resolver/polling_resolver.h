@@ -108,6 +108,14 @@ class PollingResolver : public Resolver {
   absl::optional<Timestamp> last_resolution_timestamp_;
   /// retry backoff state
   BackOff backoff_;
+  /// state for handling interactions between re-resolution requests and
+  /// result health callbacks
+  enum class ResultStatusState {
+      kNone,
+      kResultHealthCallbackPending,
+      kReresolutionRequestedWhileCallbackWasPending,
+  };
+  ResultStatusState result_status_state_ = ResultStatusState::kNone;
 };
 
 }  // namespace grpc_core

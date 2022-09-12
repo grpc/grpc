@@ -73,7 +73,16 @@ void PollingResolver::StartLocked() { MaybeStartResolvingLocked(); }
 
 void PollingResolver::RequestReresolutionLocked() {
   if (request_ == nullptr) {
-    MaybeStartResolvingLocked();
+    // If we're still waiting for a result-health callback from the last
+    // result we reported, don't trigger the re-resolution until we get
+    // that callback.
+    if (result_status_state_ ==
+        ResultStatusState::kResultHealthCallbackPending) {
+      result_status_state_ =
+          ResultStatusState::kReresolutionRequestedWhileCallbackWasPending;
+    } else {
+      MaybeStartResolvingLocked();
+    }
   }
 }
 
@@ -153,6 +162,7 @@ void PollingResolver::OnRequestCompleteLocked(Result result) {
                                          std::move(self)](absl::Status status) {
       self->GetResultStatus(std::move(status));
     };
+    result_status_state_ = ResultStatusState::kResultHealthCallbackPending;
     result_handler_->ReportResult(std::move(result));
   }
   Unref(DEBUG_LOCATION, "OnRequestComplete");
@@ -167,6 +177,12 @@ void PollingResolver::GetResultStatus(absl::Status status) {
     // Reset backoff state so that we start from the beginning when the
     // next request gets triggered.
     backoff_.Reset();
+    // If a re-resolution attempt was requested while the result-status
+    // callback was pending, trigger a new request now.
+    if (absl::exchange(result_status_state_, ResultStatusState::kNone) ==
+        ResultStatusState::kReresolutionRequestedWhileCallbackWasPending) {
+      MaybeStartResolvingLocked();
+    }
   } else {
     // Set up for retry.
     // InvalidateNow to avoid getting stuck re-initializing this timer
@@ -188,6 +204,10 @@ void PollingResolver::GetResultStatus(absl::Status status) {
     Ref(DEBUG_LOCATION, "next_resolution_timer").release();
     GRPC_CLOSURE_INIT(&on_next_resolution_, OnNextResolution, this, nullptr);
     grpc_timer_init(&next_resolution_timer_, next_try, &on_next_resolution_);
+    // Reset result_status_state_.  Note that even if re-resolution was
+    // requested while the result-health callback was pending, we can
+    // ignore it here, because we are in backoff to re-resolve anyway.
+    result_status_state_ = ResultStatusState::kNone;
   }
 }
 
