@@ -1817,7 +1817,7 @@ void grpc_chttp2_maybe_complete_recv_initial_metadata(grpc_chttp2_transport* t,
 
 void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* t,
                                              grpc_chttp2_stream* s) {
-  gpr_log(GPR_INFO, "apolcyn s=%p t=%p is_client=%d maybe_complete_recv_message s->recv_message_ready=%p BEGIN", s, t, t->is_client, s->recv_message_ready);
+  gpr_log(GPR_INFO, "apolcyn s=%p t=%p is_client=%d maybe_complete_recv_message s->recv_message_ready=%p &s->flow_control=%p BEGIN", s, t, t->is_client, s->recv_message_ready, &s->flow_control);
   if (s->recv_message_ready == nullptr) return;
 
   grpc_core::chttp2::StreamFlowControl::IncomingUpdateContext upd(
