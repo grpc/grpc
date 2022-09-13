@@ -218,15 +218,17 @@ void EnsureConnectionsArentLeaked(grpc_completion_queue* cq) {
   for (;;) {
     // TODO(apolcyn): grpc_iomgr_count_objects_for_testing() is an internal
     // and unstable API. Consider a different method of detecting leaks if
-    // it becomes no longer useable. Perhaps use
+    // it becomes no longer useable. For example, perhaps use
     // TestOnlySetGlobalHttp2TransportDestructCallback to check whether
-    // transports are still around, for example. Note: at the time of writing,
-    // this test is  meant to repro a chttp2 stream leak, which also holds on
-    // to transports and iomgr objects.
+    // transports are still around. Note: the main goal of this test is to
+    // try to repro a chttp2 stream leak, which also holds on to transports
+    // and iomgr objects, so anything that can detect leaks of transports or
+    // sockets should suffice.
     size_t active_fds = grpc_iomgr_count_objects_for_testing();
     // We should arrive at exactly one iomgr object for the server's listener
-    // socket, because we haven't destroyed the server yet. The test may not
-    // be doing what we think it's doing if this isn't the case.
+    // socket, because we haven't destroyed the server yet. This somewhat
+    // relies on iomgr implementation details; see above TODO if that becomes
+    // problematic.
     if (active_fds == 1) return;
     if (gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), overall_deadline) > 0) {
       gpr_log(GPR_INFO,
@@ -254,7 +256,7 @@ TEST(
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
   {
     // Prevent pings from client to server and server to client, since they can
-    // cause chttp2 to initiate a write and so dodge the bug we're trying to
+    // cause chttp2 to initiate writes and thus dodge the bug we're trying to
     // repro.
     auto channel_args =
         grpc_core::ChannelArgs().Set(GRPC_ARG_HTTP2_BDP_PROBE, 0);
@@ -280,7 +282,7 @@ TEST(
     // Do some polling to let the client to pick up the message and status off
     // the wire, *before* it begins the RECV_MESSAGE and RECV_STATUS ops.
     // The timeout here just needs to be long enough that the client has
-    // most likely read message and status off the wire by the time it's done.
+    // most likely reads everything the server sent it by the time it's done.
     GPR_ASSERT(grpc_completion_queue_next(
                    cq, grpc_timeout_milliseconds_to_deadline(20), nullptr)
                    .type == GRPC_QUEUE_TIMEOUT);
@@ -294,7 +296,7 @@ TEST(
     grpc_channel_destroy(channel);
     // There should be nothing to prevent stream and transport objects from
     // shutdown and destruction at this point. So check that this happens.
-    // The timeout isn't important, and is set long enough so that it's
+    // The timeout is somewhat arbitrary, and is set long enough so that it's
     // extremely unlikely to be hit due to CPU starvation.
     EnsureConnectionsArentLeaked(cq);
   }
