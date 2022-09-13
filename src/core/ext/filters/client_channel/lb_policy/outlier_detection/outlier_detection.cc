@@ -123,7 +123,7 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
 
   absl::string_view name() const override { return kOutlierDetection; }
 
-  void UpdateLocked(UpdateArgs args) override;
+  absl::Status UpdateLocked(UpdateArgs args) override;
   void ExitIdleLocked() override;
   void ResetBackoffLocked() override;
 
@@ -592,7 +592,7 @@ void OutlierDetectionLb::ResetBackoffLocked() {
   if (child_policy_ != nullptr) child_policy_->ResetBackoffLocked();
 }
 
-void OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
+absl::Status OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
     gpr_log(GPR_INFO, "[outlier_detection_lb %p] Received update", this);
   }
@@ -689,7 +689,7 @@ void OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
             "[outlier_detection_lb %p] Updating child policy handler %p", this,
             child_policy_.get());
   }
-  child_policy_->UpdateLocked(std::move(update_args));
+  return child_policy_->UpdateLocked(std::move(update_args));
 }
 
 void OutlierDetectionLb::MaybeUpdatePickerLocked() {

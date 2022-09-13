@@ -38,6 +38,8 @@ grpc_cc_library(
         "observability.h",
     ],
     external_deps = [
+        "absl/status",
+        "absl/status:statusor",
         "opencensus-trace",
         "opencensus-trace-stackdriver_exporter",
         "opencensus-stats-stackdriver_exporter",
@@ -46,7 +48,9 @@ grpc_cc_library(
     tags = ["nofixdeps"],
     visibility = ["//test:__subpackages__"],
     deps = [
+        ":observability_config",
         "//:gpr",
+        "//:grpc++_public_hdrs",
         "//:grpc_opencensus_plugin",
     ],
 )
