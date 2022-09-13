@@ -23,6 +23,9 @@
 #include <memory>
 #include <utility>
 
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
+
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/thd.h"
