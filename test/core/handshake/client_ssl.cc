@@ -20,7 +20,6 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#include <gtest/gtest.h>
 #include <openssl/crypto.h>
 #include <openssl/evp.h>
 

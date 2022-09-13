@@ -18,8 +18,6 @@
 
 #include <string.h>
 
-#include <gtest/gtest.h>
-
 #include "gtest/gtest.h"
 
 #include <grpc/byte_buffer.h>

@@ -18,8 +18,6 @@
 
 #include <stddef.h>
 
-#include <gtest/gtest.h>
-
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/time/civil_time.h"

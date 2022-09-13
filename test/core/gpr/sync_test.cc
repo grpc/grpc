@@ -21,8 +21,6 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#include <gtest/gtest.h>
-
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>

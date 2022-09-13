@@ -18,8 +18,6 @@
 
 #include <stdio.h>
 
-#include <gtest/gtest.h>
-
 #include "gtest/gtest.h"
 
 #include <grpc/support/alloc.h>

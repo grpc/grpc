@@ -25,7 +25,6 @@
 #include <google/protobuf/any.pb.h>
 #include <google/protobuf/struct.pb.h>
 #include <google/protobuf/wrappers.pb.h>
-#include <gtest/gtest.h>
 
 #include "absl/memory/memory.h"
 #include "absl/status/status.h"

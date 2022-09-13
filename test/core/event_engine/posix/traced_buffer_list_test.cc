@@ -17,8 +17,6 @@
 #include <linux/errqueue.h>
 #include <time.h>
 
-#include <gtest/gtest.h>
-
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>

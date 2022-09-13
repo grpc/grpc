@@ -16,7 +16,6 @@
 
 #include <sys/socket.h>
 
-#include <cstring>
 #include <memory>
 #include <string>
 #include <utility>

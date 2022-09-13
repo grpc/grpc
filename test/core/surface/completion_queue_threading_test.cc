@@ -19,8 +19,6 @@
 #include <inttypes.h>
 #include <stdlib.h>
 
-#include <gtest/gtest.h>
-
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>

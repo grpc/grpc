@@ -25,8 +25,6 @@
 
 #include <array>
 
-#include <gtest/gtest.h>
-
 #include "gtest/gtest.h"
 
 #include "src/core/lib/gprpp/thd.h"

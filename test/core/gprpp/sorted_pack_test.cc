@@ -16,8 +16,6 @@
 
 #include <vector>
 
-#include <gtest/gtest.h>
-
 #include "gtest/gtest.h"
 
 using grpc_core::WithSortedPack;

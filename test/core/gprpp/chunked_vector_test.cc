@@ -17,8 +17,6 @@
 #include <algorithm>
 #include <memory>
 
-#include <gtest/gtest.h>
-
 #include "gtest/gtest.h"
 
 #include <grpc/event_engine/memory_allocator.h>

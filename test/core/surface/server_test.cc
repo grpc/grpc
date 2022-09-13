@@ -20,8 +20,6 @@
 
 #include <string>
 
-#include <gtest/gtest.h>
-
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "gtest/gtest.h"

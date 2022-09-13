@@ -18,8 +18,6 @@
 
 #include "src/core/lib/gpr/env.h"
 
-#include <gtest/gtest.h>
-
 #include "gtest/gtest.h"
 
 #include <grpc/support/alloc.h>

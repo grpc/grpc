@@ -18,8 +18,6 @@
 
 #include <utility>
 
-#include <gtest/gtest.h>
-
 #include "gtest/gtest.h"
 
 #include <grpc/event_engine/slice.h>

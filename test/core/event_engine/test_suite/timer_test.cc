@@ -20,8 +20,6 @@
 #include <thread>
 #include <vector>
 
-#include <gtest/gtest.h>
-
 #include "absl/base/thread_annotations.h"
 #include "absl/functional/bind_front.h"
 #include "absl/time/clock.h"

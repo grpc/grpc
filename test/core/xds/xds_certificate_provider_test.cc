@@ -18,8 +18,6 @@
 
 #include "src/core/ext/xds/xds_certificate_provider.h"
 
-#include <gtest/gtest.h>
-
 #include "absl/types/optional.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"

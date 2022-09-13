@@ -18,8 +18,6 @@
 
 #include <utility>
 
-#include <gtest/gtest.h>
-
 #include "absl/functional/any_invocable.h"
 #include "absl/time/time.h"
 #include "gtest/gtest.h"

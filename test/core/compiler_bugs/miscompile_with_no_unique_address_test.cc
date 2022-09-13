@@ -14,8 +14,6 @@
 
 #include <grpc/impl/codegen/port_platform.h>
 
-#include <gtest/gtest.h>
-
 #include "gtest/gtest.h"
 
 // Make a template argument to test which bit pattern remains in A's destructor

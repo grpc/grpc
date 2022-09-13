@@ -20,8 +20,6 @@
 
 #include <chrono>
 
-#include <gtest/gtest.h>
-
 #include "absl/synchronization/notification.h"
 #include "gtest/gtest.h"
 

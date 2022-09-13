@@ -27,8 +27,6 @@
 #include <utility>
 #include <vector>
 
-#include <gtest/gtest.h>
-
 #include "absl/container/inlined_vector.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"

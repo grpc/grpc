@@ -18,8 +18,6 @@
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
 
-#include <gtest/gtest.h>
-
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>

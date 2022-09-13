@@ -18,8 +18,6 @@
 
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 
-#include <gtest/gtest.h>
-
 #include "gtest/gtest.h"
 
 #include <grpc/support/log.h>

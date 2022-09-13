@@ -20,8 +20,6 @@
 
 #include "src/core/lib/gprpp/thd.h"
 
-#include <gtest/gtest.h>
-
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>

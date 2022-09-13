@@ -18,8 +18,6 @@
 
 #include "src/core/lib/gprpp/orphanable.h"
 
-#include <gtest/gtest.h>
-
 #include "gtest/gtest.h"
 
 #include "test/core/util/test_config.h"

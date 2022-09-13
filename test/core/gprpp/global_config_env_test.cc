@@ -20,8 +20,6 @@
 
 #include <string.h>
 
-#include <gtest/gtest.h>
-
 #include "gtest/gtest.h"
 
 #include "src/core/lib/gpr/env.h"

@@ -18,8 +18,6 @@
 
 #include "src/core/ext/filters/client_channel/retry_throttle.h"
 
-#include <gtest/gtest.h>
-
 #include "gtest/gtest.h"
 
 #include "test/core/util/test_config.h"
