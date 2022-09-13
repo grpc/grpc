@@ -24,7 +24,12 @@
 namespace {
 
 TEST(GcpObservabilityTest, RegistrationTest) {
-  grpc::experimental::GcpObservabilityInit();
+  auto status = grpc::experimental::GcpObservabilityInit();
+  EXPECT_EQ(status,
+            absl::FailedPreconditionError(
+                "Environment variables GRPC_OBSERVABILITY_CONFIG_FILE or "
+                "GRPC_OBSERVABILITY_CONFIG "
+                "not defined"));
 }
 
 }  // namespace

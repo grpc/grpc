@@ -1,5 +1,4 @@
-#!/usr/bin/env bash
-# Copyright 2021 The gRPC authors.
+# Copyright 2012 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,15 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -ex
+load("//bazel:grpc_build_system.bzl", "grpc_cc_binary")
 
-cd "$(dirname "$0")"
-
-GITHUB_URL="https://github.com"
-REPO="bazelbuild/bazel"
-
-VERSION=$(curl -v "${GITHUB_URL}/${REPO}/releases/latest" 2>/dev/stdout | \
-  grep "location:" | \
-  grep -o "[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*")
-
-./test_single_bazel_version.sh "$VERSION"
+grpc_cc_binary(
+    name = "gen_huffman_decompressor",
+    srcs = ["gen_huffman_decompressor.cc"],
+    external_deps = [
+        "absl/strings",
+        "absl/memory",
+        "absl/types:optional",
+        "absl/types:variant",
+        "libcrypto",
+    ],
+    deps = ["//:huffsyms"],
+)
