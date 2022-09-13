@@ -73,7 +73,9 @@ class ReadAheadHandshakerFactory : public HandshakerFactory {
                       HandshakeManager* handshake_mgr) override {
     handshake_mgr->Add(MakeRefCounted<ReadAheadHandshaker>());
   }
-  HandshakerPriority Priority() override { return kSecurity; }
+  HandshakerPriority Priority() override {
+    return grpc_core::HandshakerPriority::kSecurity;
+  }
   ~ReadAheadHandshakerFactory() override = default;
 };
 
