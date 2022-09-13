@@ -1,4 +1,4 @@
-// Copyright 2022 The gRPC Authors
+// Copyright 2022 gRPC Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -83,17 +83,17 @@ class PosixEndpointImpl {
   bool TcpFlushZerocopy(TcpZerocopySendRecord* record, absl::Status& status);
   bool TcpFlush(absl::Status& status);
   void TcpShutdownTracedBufferList();
+  void UnrefMaybePutZerocopySendRecord(TcpZerocopySendRecord* record);
+  void ZerocopyDisableAndWaitForRemaining();
+  bool WriteWithTimestamps(struct msghdr* msg, size_t sending_length,
+                           ssize_t* sent_length, int* saved_errno,
+                           int additional_flags);
 #ifdef GRPC_LINUX_ERRQUEUE
   // Reads \a cmsg to process zerocopy control messages.
   bool ProcessErrors();
   void ProcessZerocopy(struct cmsghdr* cmsg);
   // Reads \a cmsg to derive timestamps from the control messages.
   struct cmsghdr* ProcessTimestamp(msghdr* msg, struct cmsghdr* cmsg);
-  void ZerocopyDisableAndWaitForRemaining();
-  void UnrefMaybePutZerocopySendRecord(TcpZerocopySendRecord* record);
-  bool WriteWithTimestamps(struct msghdr* msg, size_t sending_length,
-                           ssize_t* sent_length, int* saved_errno,
-                           int additional_flags);
 #endif
   absl::Mutex read_mu_;
   absl::Mutex traced_buffer_mu_;

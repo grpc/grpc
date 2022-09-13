@@ -1,4 +1,4 @@
-// Copyright 2022 The gRPC Authors
+// Copyright 2022 gRPC Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -32,12 +32,12 @@
 #include "src/core/lib/event_engine/posix_engine/internal_errqueue.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/experiments/experiments.h"
+#include "src/core/lib/gprpp/global_config_generic.h"
 
+#ifdef GRPC_POSIX_SOCKET_TCP
 #ifdef GRPC_LINUX_ERRQUEUE
 #include <linux/netlink.h>  // IWYU pragma: keep
 #endif
-
-#ifdef GRPC_POSIX_SOCKET_TCP
 
 #ifndef SOL_TCP
 #define SOL_TCP IPPROTO_TCP
@@ -90,6 +90,7 @@ ssize_t TcpSend(int fd, const struct msghdr* msg, int* saved_errno,
   return sent_length;
 }
 
+#ifdef GRPC_LINUX_ERRQUEUE
 // Whether the cmsg received from error queue is of the IPv4 or IPv6 levels.
 bool CmsgIsIpLevel(const cmsghdr& cmsg) {
   return (cmsg.cmsg_level == SOL_IPV6 && cmsg.cmsg_type == IPV6_RECVERR) ||
@@ -103,6 +104,7 @@ bool CmsgIsZeroCopy(const cmsghdr& cmsg) {
   auto serr = reinterpret_cast<const sock_extended_err*> CMSG_DATA(&cmsg);
   return serr->ee_errno == 0 && serr->ee_origin == SO_EE_ORIGIN_ZEROCOPY;
 }
+#endif  // GRPC_LINUX_ERRQUEUE
 
 }  // namespace
 
@@ -458,7 +460,7 @@ class TcpZerocopySendCtx {
   std::unordered_map<uint32_t, TcpZerocopySendRecord*> ctx_lookup_;
   bool memory_limited_ = false;
   bool is_in_write_ = false;
-  OMemState zcopy_enobuf_state_ = OMemState::OPEN;
+  OMemState zcopy_enobuf_state_;
 };
 
 #if defined(IOV_MAX) && IOV_MAX < 260
@@ -771,12 +773,14 @@ void PosixEndpointImpl::MaybeMakeReadSlices() {
           extra_wanted -= kBigAlloc;
           incoming_buffer_->AppendIndexed(
               Slice(memory_owner_.MakeSlice(kBigAlloc)));
+          // GRPC_STATS_INC_TCP_READ_ALLOC_64K();
         }
       } else {
         while (extra_wanted > 0) {
           extra_wanted -= kSmallAlloc;
           incoming_buffer_->AppendIndexed(
               Slice(memory_owner_.MakeSlice(kSmallAlloc)));
+          // GRPC_STATS_INC_TCP_READ_ALLOC_8K();
         }
       }
       MaybePostReclaimer();
@@ -1101,6 +1105,16 @@ TcpZerocopySendRecord* PosixEndpointImpl::TcpGetSendZerocopyRecord(
 
 void PosixEndpointImpl::HandleError(absl::Status /*status*/) {
   GPR_ASSERT(false && "Error handling not supported on this platform");
+}
+
+void PosixEndpointImpl::ZerocopyDisableAndWaitForRemaining() {}
+
+bool PosixEndpointImpl::WriteWithTimestamps(struct msghdr* /*msg*/,
+                                            size_t /*sending_length*/,
+                                            ssize_t* /*sent_length*/,
+                                            int* /*saved_errno*/,
+                                            int /*additional_flags*/) {
+  GPR_ASSERT(false && "Write with timestamps not supported for this platform");
 }
 #endif /* GRPC_LINUX_ERRQUEUE */
 
