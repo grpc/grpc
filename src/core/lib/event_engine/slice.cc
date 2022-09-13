@@ -24,7 +24,6 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/slice/slice_refcount_base.h"
 
 namespace grpc_event_engine {

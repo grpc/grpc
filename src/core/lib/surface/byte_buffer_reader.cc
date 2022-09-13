@@ -28,7 +28,6 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/slice/slice_refcount.h"
 
 int grpc_byte_buffer_reader_init(grpc_byte_buffer_reader* reader,
                                  grpc_byte_buffer* buffer) {

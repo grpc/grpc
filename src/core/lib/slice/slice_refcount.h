@@ -19,10 +19,6 @@
 
 #include <stdint.h>
 
-#include <grpc/slice.h>
-
-#include "src/core/lib/slice/slice_refcount_base.h"
-
 namespace grpc_core {
 
 extern uint32_t g_hash_seed;

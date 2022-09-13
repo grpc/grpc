@@ -21,8 +21,6 @@
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 
-#include "src/core/lib/slice/slice_refcount.h"
-
 namespace grpc_event_engine {
 namespace experimental {
 

@@ -33,6 +33,7 @@
 #include <grpc/grpc_security.h>
 #include <grpc/grpc_security_constants.h>
 #include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/slice.h>
 #include <grpc/status.h>
 
 #include "src/core/lib/debug/trace.h"
@@ -45,7 +46,6 @@
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/security/credentials/call_creds_util.h"
 #include "src/core/lib/security/credentials/credentials.h"
-#include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/transport/transport.h"
 
 extern grpc_core::TraceFlag grpc_plugin_credentials_trace;

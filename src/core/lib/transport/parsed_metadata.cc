@@ -16,8 +16,6 @@
 
 #include "src/core/lib/transport/parsed_metadata.h"
 
-#include "src/core/lib/slice/slice_refcount.h"
-
 namespace grpc_core {
 namespace metadata_detail {
 

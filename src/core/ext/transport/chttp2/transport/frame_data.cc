@@ -30,7 +30,6 @@
 
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/slice/slice_buffer.h"
-#include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/transport/transport.h"
 
 absl::Status grpc_chttp2_data_parser_begin_frame(uint8_t flags,

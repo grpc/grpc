@@ -30,7 +30,6 @@
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/slice/slice_refcount_base.h"
 
 // Herein lies grpc_core::Slice and its team of thin wrappers around grpc_slice.

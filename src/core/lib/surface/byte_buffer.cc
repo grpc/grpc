@@ -28,8 +28,6 @@
 #include <grpc/support/alloc.h>
 
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_refcount.h"
 
 grpc_byte_buffer* grpc_raw_byte_buffer_create(grpc_slice* slices,
                                               size_t nslices) {
