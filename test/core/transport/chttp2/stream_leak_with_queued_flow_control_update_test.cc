@@ -16,6 +16,7 @@
 
 #include <string.h>
 
+#include <thread>
 #include <string>
 
 #include "absl/strings/str_cat.h"
@@ -64,32 +65,33 @@ class TestServer {
     grpc_server_destroy(server_);
   }
 
-  void HandleOneRpc() {
+  void ReceiveCallAndSendMessage() {
+    gpr_log(GPR_INFO, "ReceiveCallAndSendMessage BEGIN");
     grpc_call_details call_details;
     grpc_call_details_init(&call_details);
-    grpc_call* call = nullptr;
     grpc_metadata_array request_metadata_recv;
     grpc_metadata_array_init(&request_metadata_recv);
     int was_cancelled;
     // request a call
     void* tag = this;
+    GPR_ASSERT(call_ == nullptr);
     grpc_call_error error = grpc_server_request_call(
-        server_, &call, &call_details, &request_metadata_recv, cq_, cq_, tag);
+        server_, &call_, &call_details, &request_metadata_recv, cq_, cq_, tag);
     GPR_ASSERT(error == GRPC_CALL_OK);
     grpc_event event = grpc_completion_queue_next(
         cq_, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
     GPR_ASSERT(event.type == GRPC_OP_COMPLETE);
     grpc_call_details_destroy(&call_details);
     grpc_metadata_array_destroy(&request_metadata_recv);
-    grpc_slice response_payload_slice = grpc_slice_from_static_string("a");
-    grpc_byte_buffer* response_payload =
-        grpc_raw_byte_buffer_create(&response_payload_slice, 1);
     GPR_ASSERT(event.success);
     GPR_ASSERT(event.tag == tag);
     // Send a response with a 1-byte payload. The 1-byte length is important
     // because it's enough to get the client to *queue* a flow control update,
     // but not long enough to get the client to initiate a write on that update.
-    grpc_op ops[4];
+    grpc_slice response_payload_slice = grpc_slice_from_static_string("a");
+    grpc_byte_buffer* response_payload =
+        grpc_raw_byte_buffer_create(&response_payload_slice, 1);
+    grpc_op ops[3];
     grpc_op* op;
     memset(ops, 0, sizeof(ops));
     op = ops;
@@ -101,20 +103,40 @@ class TestServer {
     op->op = GRPC_OP_SEND_MESSAGE;
     op->data.send_message.send_message = response_payload;
     op++;
-    op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
-    op->data.send_status_from_server.status = GRPC_STATUS_OK;
-    grpc_slice status_details = grpc_slice_from_static_string("xyz");
-    op->data.send_status_from_server.status_details = &status_details;
-    op++;
-    error = grpc_call_start_batch(call, ops, static_cast<size_t>(op - ops), tag,
+    error = grpc_call_start_batch(call_, ops, static_cast<size_t>(op - ops), tag,
                                   nullptr);
     GPR_ASSERT(error == GRPC_CALL_OK);
+    gpr_log(GPR_INFO, "ReceiveCallAndSendMessage poll CQ");
     event = grpc_completion_queue_next(cq_, gpr_inf_future(GPR_CLOCK_REALTIME),
                                        nullptr);
     GPR_ASSERT(event.type == GRPC_OP_COMPLETE);
     GPR_ASSERT(event.success);
     GPR_ASSERT(event.tag == tag);
-    grpc_call_unref(call);
+    gpr_log(GPR_INFO, "ReceiveCallAndSendMessage END");
+  }
+
+  void SendStatus() {
+    gpr_log(GPR_INFO, "SendStatus BEGIN");
+    GPR_ASSERT(call_ != nullptr);
+    grpc_op ops[1];
+    void* tag = this;
+    grpc_op* op;
+    memset(ops, 0, sizeof(ops));
+    op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
+    op->data.send_status_from_server.status = GRPC_STATUS_OK;
+    grpc_slice status_details = grpc_slice_from_static_string("xyz");
+    op->data.send_status_from_server.status_details = &status_details;
+    op++;
+    grpc_call_error error = grpc_call_start_batch(call_, ops, static_cast<size_t>(op - ops), tag,
+                                  nullptr);
+    GPR_ASSERT(error == GRPC_CALL_OK);
+    grpc_event event = grpc_completion_queue_next(cq_, gpr_inf_future(GPR_CLOCK_REALTIME),
+                                       nullptr);
+    GPR_ASSERT(event.type == GRPC_OP_COMPLETE);
+    GPR_ASSERT(event.success);
+    GPR_ASSERT(event.tag == tag);
+    grpc_call_unref(call_);
+    gpr_log(GPR_INFO, "SendStatus END");
   }
 
   std::string address() const { return address_; }
@@ -123,9 +145,11 @@ class TestServer {
   grpc_server* server_;
   grpc_completion_queue* cq_;
   std::string address_;
+  grpc_call* call_ = nullptr;
 };
 
 void StartCallAndCloseWrites(grpc_call* call, grpc_completion_queue* cq) {
+  gpr_log(GPR_INFO, "StartCallAndCloseWrites BEGIN");
   grpc_op ops[2];
   grpc_op* op;
   memset(ops, 0, sizeof(ops));
@@ -143,17 +167,15 @@ void StartCallAndCloseWrites(grpc_call* call, grpc_completion_queue* cq) {
   GPR_ASSERT(event.type == GRPC_OP_COMPLETE);
   GPR_ASSERT(event.success);
   GPR_ASSERT(event.tag == tag);
+  gpr_log(GPR_INFO, "StartCallAndCloseWrites END");
 }
 
-void FinishCall(grpc_call* call, grpc_completion_queue* cq) {
-  grpc_op ops[3];
+void ReceiveFirstMessage(grpc_call* call, grpc_completion_queue* cq) {
+  gpr_log(GPR_INFO, "ReceiveFirstMessage BEGIN");
+  grpc_op ops[2];
   grpc_op* op;
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array_init(&initial_metadata_recv);
-  grpc_metadata_array trailing_metadata_recv;
-  grpc_metadata_array_init(&trailing_metadata_recv);
-  grpc_status_code status = GRPC_STATUS_UNKNOWN;
-  grpc_slice details;
   grpc_byte_buffer* recv_payload = nullptr;
   void* tag = call;
   // Receive initial md and message. This is important because
@@ -175,8 +197,20 @@ void FinishCall(grpc_call* call, grpc_completion_queue* cq) {
   GPR_ASSERT(event.type == GRPC_OP_COMPLETE);
   GPR_ASSERT(event.success);
   GPR_ASSERT(event.tag == tag);
+  grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_byte_buffer_destroy(recv_payload);
-  recv_payload = nullptr;
+  gpr_log(GPR_INFO, "ReceiveFirstMessage END");
+}
+
+void FinishCall(grpc_call* call, grpc_completion_queue* cq) {
+  gpr_log(GPR_INFO, "FinishCall BEGIN");
+  grpc_op ops[1];
+  grpc_op* op;
+  grpc_metadata_array trailing_metadata_recv;
+  grpc_metadata_array_init(&trailing_metadata_recv);
+  grpc_status_code status = GRPC_STATUS_UNKNOWN;
+  grpc_slice details;
+  void* tag = call;
   // Attempt to receive a message again, and a status. The attempt
   // to RECV_MESSAGE op will come up with nothing, because the server isn't
   // sending a second message. However, it's important for our repro that
@@ -185,58 +219,26 @@ void FinishCall(grpc_call* call, grpc_completion_queue* cq) {
   // a stream that's in the process of shutting down.
   memset(ops, 0, sizeof(ops));
   op = ops;
-  op->op = GRPC_OP_RECV_MESSAGE;
-  op->data.recv_message.recv_message = &recv_payload;
-  op++;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op++;
-  error = grpc_call_start_batch(call, ops, static_cast<size_t>(op - ops), tag,
+  grpc_call_error error = grpc_call_start_batch(call, ops, static_cast<size_t>(op - ops), tag,
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  event = grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME),
+  grpc_event event = grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME),
                                      nullptr);
   GPR_ASSERT(event.type == GRPC_OP_COMPLETE);
   GPR_ASSERT(event.success);
   GPR_ASSERT(event.tag == tag);
   EXPECT_EQ(status, GRPC_STATUS_OK);
-  grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
-  grpc_byte_buffer_destroy(recv_payload);
   grpc_slice_unref(details);
+  gpr_log(GPR_INFO, "FinishCall END");
 }
 
-TEST(
-    Chttp2,
-    TestStreamDoesntLeakWhenItsWriteClosedAndThenReadClosedWhileReadingMessage) {
-  grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
-  {
-    // Prevent pings from client to server and server to client, since they can
-    // cause chttp2 to initiate a write and so dodge the bug we're trying to
-    // repro.
-    auto channel_args =
-        grpc_core::ChannelArgs().Set(GRPC_ARG_HTTP2_BDP_PROBE, 0);
-    TestServer server(cq,
-                      const_cast<grpc_channel_args*>(channel_args.ToC().get()));
-    grpc_channel_credentials* creds = grpc_insecure_credentials_create();
-    grpc_channel* channel =
-        grpc_channel_create(absl::StrCat("ipv6:", server.address()).c_str(),
-                            creds, channel_args.ToC().get());
-    grpc_channel_credentials_release(creds);
-    grpc_call* call =
-        grpc_channel_create_call(channel, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
-                                 grpc_slice_from_static_string("/foo"), nullptr,
-                                 gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
-    // Start the call. It's important for our repro to close writes before
-    // reading the response.
-    StartCallAndCloseWrites(call, cq);
-    server.HandleOneRpc();
-    FinishCall(call, cq);
-    grpc_call_unref(call);
-    grpc_channel_destroy(channel);
-    // ensure connections aren't leaked
+void EnsureConnectionsArentLeaked(grpc_completion_queue* cq) {
     gpr_log(
         GPR_INFO,
         "The channel has been destroyed, wait for to shut down and close...");
@@ -277,6 +279,54 @@ TEST(
               "It's likely this test has triggered a connection leak.");
       GPR_ASSERT(0);
     }
+}
+
+TEST(
+    Chttp2,
+    TestStreamDoesntLeakWhenItsWriteClosedAndThenReadClosedWhileReadingMessage) {
+  grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
+  {
+    // Prevent pings from client to server and server to client, since they can
+    // cause chttp2 to initiate a write and so dodge the bug we're trying to
+    // repro.
+    auto channel_args =
+        grpc_core::ChannelArgs().Set(GRPC_ARG_HTTP2_BDP_PROBE, 0);
+    TestServer server(cq,
+                      const_cast<grpc_channel_args*>(channel_args.ToC().get()));
+    grpc_channel_credentials* creds = grpc_insecure_credentials_create();
+    grpc_channel* channel =
+        grpc_channel_create(absl::StrCat("ipv6:", server.address()).c_str(),
+                            creds, channel_args.ToC().get());
+    grpc_channel_credentials_release(creds);
+    grpc_call* call =
+        grpc_channel_create_call(channel, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
+                                 grpc_slice_from_static_string("/foo"), nullptr,
+                                 gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
+    // Start the call. It's important for our repro to close writes before
+    // reading the response.
+    StartCallAndCloseWrites(call, cq);
+    // Send a small message from server to client
+    server.ReceiveCallAndSendMessage();
+    //  // Poll for a bit extra, to be extra sure that the client transport reads
+    //  // the status and marks the stream "read closed" (the CQ is shared by both
+    //  // client and server).
+    //  GPR_ASSERT(grpc_completion_queue_next(
+    //      cq,
+    //      grpc_timeout_milliseconds_to_deadline(100),
+    //      nullptr).type == GRPC_QUEUE_TIMEOUT);
+    ReceiveFirstMessage(call, cq);
+    std::thread send_status_thd([&server]() {
+      // Sleep for a tad before sending status, to make it highly likely that
+      // the client initiates the next batch of RECV_MESSAGE and RECV_STATUS
+      // stream ops BEFORE it actually reads the status off the wire.
+      gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(100));
+      server.SendStatus();
+    });
+    FinishCall(call, cq);
+    send_status_thd.join();
+    grpc_call_unref(call);
+    grpc_channel_destroy(channel);
+    EnsureConnectionsArentLeaked(cq);
   }
   grpc_completion_queue_shutdown(cq);
   while (grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME),
