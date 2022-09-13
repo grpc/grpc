@@ -114,17 +114,11 @@ TEST_F(IOCPTest, ClientReceivesNotificationOfServerSend) {
     wrapped_server_socket->NotifyOnWrite(on_write);
   }
   // Doing work for WSASend
-  auto work_result = iocp.Work(std::chrono::seconds(10));
-  ASSERT_TRUE(absl::holds_alternative<Poller::Events>(work_result));
-  Poller::Events closures = absl::get<Poller::Events>(work_result);
-  ASSERT_EQ(closures.size(), 1);
-  executor.Run(closures[0]);
+  auto work_result = iocp.Work(std::chrono::seconds(10), []() {});
+  ASSERT_TRUE(work_result == Poller::WorkResult::kOk);
   // Doing work for WSARecv
-  work_result = iocp.Work(std::chrono::seconds(10));
-  ASSERT_TRUE(absl::holds_alternative<Poller::Events>(work_result));
-  closures = absl::get<Poller::Events>(work_result);
-  ASSERT_EQ(closures.size(), 1);
-  executor.Run(closures[0]);
+  work_result = iocp.Work(std::chrono::seconds(10), []() {});
+  ASSERT_TRUE(work_result == Poller::WorkResult::kOk);
   // wait for the callbacks to run
   ASSERT_TRUE(read_called.WaitWithTimeout(absl::Seconds(10)));
   ASSERT_TRUE(write_called.WaitWithTimeout(absl::Seconds(10)));
@@ -185,11 +179,9 @@ TEST_F(IOCPTest, IocpWorkTimeoutDueToNoNotificationRegistered) {
                          &write_overlapped, NULL);
     EXPECT_EQ(status, 0);
   }
-  // IOCP::Work without any notification callbacks should return no Events.
-  auto work_result = iocp.Work(std::chrono::seconds(2));
-  ASSERT_TRUE(absl::holds_alternative<Poller::Events>(work_result));
-  Poller::Events closures = absl::get<Poller::Events>(work_result);
-  ASSERT_EQ(closures.size(), 0);
+  // IOCP::Work without any notification callbacks should still return Ok.
+  auto work_result = iocp.Work(std::chrono::seconds(2), []() {});
+  ASSERT_TRUE(work_result == Poller::WorkResult::kOk);
   // register the closure, which should trigger it immediately.
   wrapped_client_socket->NotifyOnRead(on_read);
   // wait for the callbacks to run
@@ -205,8 +197,8 @@ TEST_F(IOCPTest, KickWorks) {
   IOCP iocp(&executor);
   Promise<bool> kicked{false};
   executor.Run([&iocp, &kicked] {
-    Poller::WorkResult result = iocp.Work(std::chrono::seconds(30));
-    ASSERT_TRUE(absl::holds_alternative<Poller::Kicked>(result));
+    Poller::WorkResult result = iocp.Work(std::chrono::seconds(30), []() {});
+    ASSERT_TRUE(result == Poller::WorkResult::kKicked);
     kicked.Set(true);
   });
   executor.Run([&iocp] {
@@ -228,13 +220,13 @@ TEST_F(IOCPTest, KickThenShutdownCasusesNextWorkerToBeKicked) {
   iocp.Kick();
   iocp.Kick();
   // Assert the next two WorkResults are kicks
-  auto result = iocp.Work(std::chrono::milliseconds(1));
-  ASSERT_TRUE(absl::holds_alternative<Poller::Kicked>(result));
-  result = iocp.Work(std::chrono::milliseconds(1));
-  ASSERT_TRUE(absl::holds_alternative<Poller::Kicked>(result));
+  auto result = iocp.Work(std::chrono::milliseconds(1), []() {});
+  ASSERT_TRUE(result == Poller::WorkResult::kKicked);
+  result = iocp.Work(std::chrono::milliseconds(1), []() {});
+  ASSERT_TRUE(result == Poller::WorkResult::kKicked);
   // followed by a DeadlineExceeded
-  result = iocp.Work(std::chrono::milliseconds(1));
-  ASSERT_TRUE(absl::holds_alternative<Poller::DeadlineExceeded>(result));
+  result = iocp.Work(std::chrono::milliseconds(1), []() {});
+  ASSERT_TRUE(result == Poller::WorkResult::kDeadlineExceeded);
 }
 
 TEST_F(IOCPTest, CrashOnWatchingAClosedSocket) {
@@ -270,13 +262,8 @@ TEST_F(IOCPTest, StressTestThousandsOfSockets) {
       std::thread iocp_worker([&iocp, &executor] {
         Poller::WorkResult result;
         do {
-          result = iocp.Work(std::chrono::seconds(1));
-          if (absl::holds_alternative<Poller::Events>(result)) {
-            for (auto& event : absl::get<Poller::Events>(result)) {
-              executor.Run(event);
-            }
-          }
-        } while (!absl::holds_alternative<Poller::DeadlineExceeded>(result));
+          result = iocp.Work(std::chrono::seconds(1), []() {});
+        } while (result != Poller::WorkResult::kDeadlineExceeded);
       });
       for (int i = 0; i < sockets_per_thread; i++) {
         SOCKET sockpair[2];

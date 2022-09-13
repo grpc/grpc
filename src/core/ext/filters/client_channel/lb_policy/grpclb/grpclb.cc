@@ -188,7 +188,7 @@ class GrpcLb : public LoadBalancingPolicy {
 
   absl::string_view name() const override { return kGrpclb; }
 
-  void UpdateLocked(UpdateArgs args) override;
+  absl::Status UpdateLocked(UpdateArgs args) override;
   void ResetBackoffLocked() override;
 
  private:
@@ -473,7 +473,7 @@ class GrpcLb : public LoadBalancingPolicy {
   void ShutdownLocked() override;
 
   // Helper functions used in UpdateLocked().
-  void UpdateBalancerChannelLocked(const ChannelArgs& args);
+  absl::Status UpdateBalancerChannelLocked(const ChannelArgs& args);
 
   void CancelBalancerChannelConnectivityWatchLocked();
 
@@ -1358,6 +1358,47 @@ ServerAddressList ExtractBalancerAddresses(const ChannelArgs& args) {
 ChannelArgs BuildBalancerChannelArgs(
     FakeResolverResponseGenerator* response_generator,
     const ChannelArgs& args) {
+  ChannelArgs grpclb_channel_args;
+  const grpc_channel_args* lb_channel_specific_args =
+      args.GetPointer<grpc_channel_args>(
+          GRPC_ARG_EXPERIMENTAL_GRPCLB_CHANNEL_ARGS);
+  if (lb_channel_specific_args != nullptr) {
+    grpclb_channel_args = ChannelArgs::FromC(lb_channel_specific_args);
+  } else {
+    // Set grpclb_channel_args based on the parent channel's channel args.
+    grpclb_channel_args =
+        args
+            // LB policy name, since we want to use the default (pick_first) in
+            // the LB channel.
+            .Remove(GRPC_ARG_LB_POLICY_NAME)
+            // Strip out the service config, since we don't want the LB policy
+            // config specified for the parent channel to affect the LB channel.
+            .Remove(GRPC_ARG_SERVICE_CONFIG)
+            // The channel arg for the server URI, since that will be different
+            // for the LB channel than for the parent channel.  The client
+            // channel factory will re-add this arg with the right value.
+            .Remove(GRPC_ARG_SERVER_URI)
+            // The fake resolver response generator, because we are replacing it
+            // with the one from the grpclb policy, used to propagate updates to
+            // the LB channel.
+            .Remove(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR)
+            // The LB channel should use the authority indicated by the target
+            // authority table (see \a ModifyGrpclbBalancerChannelArgs),
+            // as opposed to the authority from the parent channel.
+            .Remove(GRPC_ARG_DEFAULT_AUTHORITY)
+            // Just as for \a GRPC_ARG_DEFAULT_AUTHORITY, the LB channel should
+            // be treated as a stand-alone channel and not inherit this argument
+            // from the args of the parent channel.
+            .Remove(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG)
+            // Don't want to pass down channelz node from parent; the balancer
+            // channel will get its own.
+            .Remove(GRPC_ARG_CHANNELZ_CHANNEL_NODE)
+            // Remove the channel args for channel credentials and replace it
+            // with a version that does not contain call credentials. The
+            // loadbalancer is not necessarily trusted to handle bearer token
+            // credentials.
+            .Remove(GRPC_ARG_CHANNEL_CREDENTIALS);
+  }
   // Create channel args for channel credentials that does not contain bearer
   // token credentials.
   auto* channel_credentials = args.GetObject<grpc_channel_credentials>();
@@ -1365,36 +1406,7 @@ ChannelArgs BuildBalancerChannelArgs(
   RefCountedPtr<grpc_channel_credentials> creds_sans_call_creds =
       channel_credentials->duplicate_without_call_credentials();
   GPR_ASSERT(creds_sans_call_creds != nullptr);
-  return args
-      // LB policy name, since we want to use the default (pick_first) in
-      // the LB channel.
-      .Remove(GRPC_ARG_LB_POLICY_NAME)
-      // Strip out the service config, since we don't want the LB policy
-      // config specified for the parent channel to affect the LB channel.
-      .Remove(GRPC_ARG_SERVICE_CONFIG)
-      // The channel arg for the server URI, since that will be different for
-      // the LB channel than for the parent channel.  The client channel
-      // factory will re-add this arg with the right value.
-      .Remove(GRPC_ARG_SERVER_URI)
-      // The fake resolver response generator, because we are replacing it
-      // with the one from the grpclb policy, used to propagate updates to
-      // the LB channel.
-      .Remove(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR)
-      // The LB channel should use the authority indicated by the target
-      // authority table (see \a ModifyGrpclbBalancerChannelArgs),
-      // as opposed to the authority from the parent channel.
-      .Remove(GRPC_ARG_DEFAULT_AUTHORITY)
-      // Just as for \a GRPC_ARG_DEFAULT_AUTHORITY, the LB channel should be
-      // treated as a stand-alone channel and not inherit this argument from the
-      // args of the parent channel.
-      .Remove(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG)
-      // Don't want to pass down channelz node from parent; the balancer
-      // channel will get its own.
-      .Remove(GRPC_ARG_CHANNELZ_CHANNEL_NODE)
-      // Remove the channel args for channel credentials and replace it
-      // with a version that does not contain call credentials. The loadbalancer
-      // is not necessarily trusted to handle bearer token credentials.
-      .Remove(GRPC_ARG_CHANNEL_CREDENTIALS)
+  return grpclb_channel_args
       // A channel arg indicating the target is a grpclb load balancer.
       .Set(GRPC_ARG_ADDRESS_IS_GRPCLB_LOAD_BALANCER, 1)
       // Tells channelz that this is an internal channel.
@@ -1512,7 +1524,7 @@ void GrpcLb::ResetBackoffLocked() {
   }
 }
 
-void GrpcLb::UpdateLocked(UpdateArgs args) {
+absl::Status GrpcLb::UpdateLocked(UpdateArgs args) {
   const bool is_initial_update = lb_channel_ == nullptr;
   config_ = args.config;
   GPR_ASSERT(config_ != nullptr);
@@ -1528,7 +1540,7 @@ void GrpcLb::UpdateLocked(UpdateArgs args) {
   }
   resolution_note_ = std::move(args.resolution_note);
   // Update balancer channel.
-  UpdateBalancerChannelLocked(args.args);
+  absl::Status status = UpdateBalancerChannelLocked(args.args);
   // Update the existing child policy, if any.
   if (child_policy_ != nullptr) CreateOrUpdateChildPolicyLocked();
   // If this is the initial update, start the fallback-at-startup checks
@@ -1553,18 +1565,24 @@ void GrpcLb::UpdateLocked(UpdateArgs args) {
     // Start balancer call.
     StartBalancerCallLocked();
   }
+  return status;
 }
 
 //
 // helpers for UpdateLocked()
 //
 
-void GrpcLb::UpdateBalancerChannelLocked(const ChannelArgs& args) {
+absl::Status GrpcLb::UpdateBalancerChannelLocked(const ChannelArgs& args) {
   // Make sure that GRPC_ARG_LB_POLICY_NAME is set in channel args,
   // since we use this to trigger the client_load_reporting filter.
   args_ = args.Set(GRPC_ARG_LB_POLICY_NAME, "grpclb");
-  // Construct args for balancer channel.
+  // Get balancer addresses.
   ServerAddressList balancer_addresses = ExtractBalancerAddresses(args);
+  absl::Status status;
+  if (balancer_addresses.empty()) {
+    status = absl::UnavailableError("balancer address list must be non-empty");
+  }
+  // Construct args for balancer channel.
   ChannelArgs lb_channel_args =
       BuildBalancerChannelArgs(response_generator_.get(), args);
   // Create balancer channel if needed.
@@ -1592,6 +1610,8 @@ void GrpcLb::UpdateBalancerChannelLocked(const ChannelArgs& args) {
   result.addresses = std::move(balancer_addresses);
   result.args = lb_channel_args;
   response_generator_->SetResponse(std::move(result));
+  // Return status.
+  return status;
 }
 
 void GrpcLb::CancelBalancerChannelConnectivityWatchLocked() {
@@ -1782,7 +1802,9 @@ void GrpcLb::CreateOrUpdateChildPolicyLocked() {
     gpr_log(GPR_INFO, "[grpclb %p] Updating child policy handler %p", this,
             child_policy_.get());
   }
-  child_policy_->UpdateLocked(std::move(update_args));
+  // TODO(roth): If we're in fallback mode and the child policy rejects the
+  // update, we should propagate that failure back to the resolver somehow.
+  (void)child_policy_->UpdateLocked(std::move(update_args));
 }
 
 //

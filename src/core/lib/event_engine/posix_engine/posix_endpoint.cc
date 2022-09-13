@@ -1,4 +1,4 @@
-// Copyright 2022 The gRPC Authors
+// Copyright 2022 gRPC Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -26,12 +26,18 @@
 #include <grpc/event_engine/slice.h>
 #include <grpc/event_engine/slice_buffer.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/internal_errqueue.h"
+#include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
+#include "src/core/lib/experiments/experiments.h"
+#include "src/core/lib/gprpp/global_config_generic.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP
+#ifdef GRPC_LINUX_ERRQUEUE
 #include <linux/netlink.h>  // IWYU pragma: keep
+#endif
 
 #ifndef SOL_TCP
 #define SOL_TCP IPPROTO_TCP
@@ -62,9 +68,7 @@ typedef GRPC_MSG_IOVLEN_TYPE msg_iovlen_type;
 #else
 typedef size_t msg_iovlen_type;
 #endif
-#define MAX_READ_IOVEC 4
-
-GPR_GLOBAL_CONFIG_DECLARE_BOOL(grpc_experimental_enable_tcp_frame_size_tuning);
+#define MAX_READ_IOVEC 64
 
 namespace grpc_event_engine {
 namespace posix_engine {
@@ -75,12 +79,6 @@ using ::grpc_event_engine::experimental::Slice;
 using ::grpc_event_engine::experimental::SliceBuffer;
 
 namespace {
-
-bool ExperimentalTcpFrameSizeTuningEnabled() {
-  static const bool kEnableTcpFrameSizeTuning =
-      GPR_GLOBAL_CONFIG_GET(grpc_experimental_enable_tcp_frame_size_tuning);
-  return kEnableTcpFrameSizeTuning;
-}
 
 // A wrapper around sendmsg. It sends \a msg over \a fd and returns the number
 // of bytes sent.
@@ -93,6 +91,7 @@ ssize_t TcpSend(int fd, const struct msghdr* msg, int* saved_errno,
   return sent_length;
 }
 
+#ifdef GRPC_LINUX_ERRQUEUE
 // Whether the cmsg received from error queue is of the IPv4 or IPv6 levels.
 bool CmsgIsIpLevel(const cmsghdr& cmsg) {
   return (cmsg.cmsg_level == SOL_IPV6 && cmsg.cmsg_type == IPV6_RECVERR) ||
@@ -106,6 +105,7 @@ bool CmsgIsZeroCopy(const cmsghdr& cmsg) {
   auto serr = reinterpret_cast<const sock_extended_err*> CMSG_DATA(&cmsg);
   return serr->ee_errno == 0 && serr->ee_origin == SO_EE_ORIGIN_ZEROCOPY;
 }
+#endif  // GRPC_LINUX_ERRQUEUE
 
 }  // namespace
 
@@ -228,7 +228,7 @@ class TcpZerocopySendCtx {
 
   // True if we were unable to allocate the various bookkeeping structures at
   // transport initialization time. If memory limited, we do not zerocopy.
-  bool memory_limited() const { return memory_limited_; }
+  bool MemoryLimited() const { return memory_limited_; }
 
   // TCP send zerocopy maintains an implicit sequence number for every
   // successful sendmsg() with zerocopy enabled; the kernel later gives us an
@@ -311,17 +311,17 @@ class TcpZerocopySendCtx {
     return free_send_records_size_ == max_sends_;
   }
 
-  bool enabled() const { return enabled_; }
+  bool Enabled() const { return enabled_; }
 
-  void set_enabled(bool enabled) {
-    GPR_DEBUG_ASSERT(!enabled || !memory_limited());
+  void SetEnabled(bool enabled) {
+    GPR_DEBUG_ASSERT(!enabled || !MemoryLimited());
     enabled_ = enabled;
   }
 
   // Only use zerocopy if we are sending at least this many bytes. The
   // additional overhead of reading the error queue for notifications means that
   // zerocopy is not useful for small transfers.
-  size_t threshold_bytes() const { return threshold_bytes_; }
+  size_t ThresholdBytes() const { return threshold_bytes_; }
 
   // Expected to be called by handler reading messages from the err queue.
   // It is used to indicate that some OMem meory is now available. It returns
@@ -461,7 +461,7 @@ class TcpZerocopySendCtx {
   std::unordered_map<uint32_t, TcpZerocopySendRecord*> ctx_lookup_;
   bool memory_limited_ = false;
   bool is_in_write_ = false;
-  OMemState zcopy_enobuf_state_;
+  OMemState zcopy_enobuf_state_ = OMemState::OPEN;
 };
 
 #if defined(IOV_MAX) && IOV_MAX < 260
@@ -710,23 +710,100 @@ void PosixEndpointImpl::MaybePostReclaimer() {
   }
 }
 
+void PosixEndpointImpl::UpdateRcvLowat() {
+  if (!grpc_core::IsTcpRcvLowatEnabled()) return;
+
+  // TODO(ctiller): Check if supported by OS.
+  // TODO(ctiller): Allow some adjustments instead of hardcoding things.
+
+  static constexpr int kRcvLowatMax = 16 * 1024 * 1024;
+  static constexpr int kRcvLowatThreshold = 16 * 1024;
+
+  int remaining = std::min(static_cast<int>(incoming_buffer_->Length()),
+                           min_progress_size_);
+  remaining = std::min(remaining, kRcvLowatMax);
+
+  // Setting SO_RCVLOWAT for small quantities does not save on CPU.
+  if (remaining < kRcvLowatThreshold) {
+    remaining = 0;
+  }
+
+  // If zerocopy is off, wake shortly before the full RPC is here. More can
+  // show up partway through recvmsg() since it takes a while to copy data.
+  // So an early wakeup aids latency.
+  if (!tcp_zerocopy_send_ctx_->Enabled() && remaining > 0) {
+    remaining -= kRcvLowatThreshold;
+  }
+
+  // We still do not know the RPC size. Do not set SO_RCVLOWAT.
+  if (set_rcvlowat_ <= 1 && remaining <= 1) return;
+
+  // Previous value is still valid. No change needed in SO_RCVLOWAT.
+  if (set_rcvlowat_ == remaining) {
+    return;
+  }
+  auto result = sock_.SetSocketRcvLowat(remaining);
+  if (result.ok()) {
+    set_rcvlowat_ = *result;
+  } else {
+    gpr_log(GPR_ERROR, "%s",
+            absl::StrCat("ERROR in SO_RCVLOWAT: ", result.status().message())
+                .c_str());
+  }
+}
+
 void PosixEndpointImpl::MaybeMakeReadSlices() {
-  if (incoming_buffer_->Length() < static_cast<size_t>(min_progress_size_) &&
-      incoming_buffer_->Count() < MAX_READ_IOVEC) {
-    int target_length =
-        std::max(static_cast<int>(target_length_), min_progress_size_);
-    int extra_wanted =
-        target_length - static_cast<int>(incoming_buffer_->Length());
-    int min_read_chunk_size =
-        std::max(min_read_chunk_size_, min_progress_size_);
-    int max_read_chunk_size =
-        std::max(max_read_chunk_size_, min_progress_size_);
-    incoming_buffer_->AppendIndexed(
-        Slice(memory_owner_.MakeSlice(grpc_core::MemoryRequest(
-            min_read_chunk_size,
-            grpc_core::Clamp(extra_wanted, min_read_chunk_size,
-                             max_read_chunk_size)))));
-    MaybePostReclaimer();
+  if (grpc_core::IsTcpReadChunksEnabled()) {
+    static const int kBigAlloc = 64 * 1024;
+    static const int kSmallAlloc = 8 * 1024;
+    if (incoming_buffer_->Length() < static_cast<size_t>(min_progress_size_)) {
+      size_t allocate_length = min_progress_size_;
+      const size_t target_length = static_cast<size_t>(target_length_);
+      // If memory pressure is low and we think there will be more than
+      // min_progress_size bytes to read, allocate a bit more.
+      const bool low_memory_pressure =
+          memory_owner_.GetPressureInfo().pressure_control_value < 0.8;
+      if (low_memory_pressure && target_length > allocate_length) {
+        allocate_length = target_length;
+      }
+      int extra_wanted =
+          allocate_length - static_cast<int>(incoming_buffer_->Length());
+      if (extra_wanted >=
+          (low_memory_pressure ? kSmallAlloc * 3 / 2 : kBigAlloc)) {
+        while (extra_wanted > 0) {
+          extra_wanted -= kBigAlloc;
+          incoming_buffer_->AppendIndexed(
+              Slice(memory_owner_.MakeSlice(kBigAlloc)));
+          // GRPC_STATS_INC_TCP_READ_ALLOC_64K();
+        }
+      } else {
+        while (extra_wanted > 0) {
+          extra_wanted -= kSmallAlloc;
+          incoming_buffer_->AppendIndexed(
+              Slice(memory_owner_.MakeSlice(kSmallAlloc)));
+          // GRPC_STATS_INC_TCP_READ_ALLOC_8K();
+        }
+      }
+      MaybePostReclaimer();
+    }
+  } else {
+    if (incoming_buffer_->Length() < static_cast<size_t>(min_progress_size_) &&
+        incoming_buffer_->Count() < MAX_READ_IOVEC) {
+      int target_length =
+          std::max(static_cast<int>(target_length_), min_progress_size_);
+      int extra_wanted =
+          target_length - static_cast<int>(incoming_buffer_->Length());
+      int min_read_chunk_size =
+          std::max(min_read_chunk_size_, min_progress_size_);
+      int max_read_chunk_size =
+          std::max(max_read_chunk_size_, min_progress_size_);
+      incoming_buffer_->AppendIndexed(
+          Slice(memory_owner_.MakeSlice(grpc_core::MemoryRequest(
+              min_read_chunk_size,
+              grpc_core::Clamp(extra_wanted, min_read_chunk_size,
+                               max_read_chunk_size)))));
+      MaybePostReclaimer();
+    }
   }
 }
 
@@ -788,8 +865,8 @@ TcpZerocopySendRecord* PosixEndpointImpl::TcpGetSendZerocopyRecord(
     SliceBuffer& buf) {
   TcpZerocopySendRecord* zerocopy_send_record = nullptr;
   const bool use_zerocopy =
-      tcp_zerocopy_send_ctx_->enabled() &&
-      tcp_zerocopy_send_ctx_->threshold_bytes() < buf.Length();
+      tcp_zerocopy_send_ctx_->Enabled() &&
+      tcp_zerocopy_send_ctx_->ThresholdBytes() < buf.Length();
   if (use_zerocopy) {
     zerocopy_send_record = tcp_zerocopy_send_ctx_->GetSendRecord();
     if (zerocopy_send_record == nullptr) {
@@ -874,13 +951,6 @@ bool PosixEndpointImpl::ProcessErrors() {
     if (!seen) {
       return processed_err;
     }
-  }
-}
-
-void PosixEndpointImpl::UnrefMaybePutZerocopySendRecord(
-    TcpZerocopySendRecord* record) {
-  if (record->Unref()) {
-    tcp_zerocopy_send_ctx_->PutSendRecord(record);
   }
 }
 
@@ -1030,7 +1100,24 @@ TcpZerocopySendRecord* PosixEndpointImpl::TcpGetSendZerocopyRecord(
 void PosixEndpointImpl::HandleError(absl::Status /*status*/) {
   GPR_ASSERT(false && "Error handling not supported on this platform");
 }
+
+void PosixEndpointImpl::ZerocopyDisableAndWaitForRemaining() {}
+
+bool PosixEndpointImpl::WriteWithTimestamps(struct msghdr* /*msg*/,
+                                            size_t /*sending_length*/,
+                                            ssize_t* /*sent_length*/,
+                                            int* /*saved_errno*/,
+                                            int /*additional_flags*/) {
+  GPR_ASSERT(false && "Write with timestamps not supported for this platform");
+}
 #endif /* GRPC_LINUX_ERRQUEUE */
+
+void PosixEndpointImpl::UnrefMaybePutZerocopySendRecord(
+    TcpZerocopySendRecord* record) {
+  if (record->Unref()) {
+    tcp_zerocopy_send_ctx_->PutSendRecord(record);
+  }
+}
 
 // If outgoing_buffer_arg is filled, shuts down the list early, so that any
 // release operations needed can be performed on the arg.
@@ -1316,7 +1403,8 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
                                      std::shared_ptr<EventEngine> engine,
                                      MemoryAllocator&& /*allocator*/,
                                      const PosixTcpOptions& options)
-    : on_done_(on_done),
+    : sock_(PosixSocketWrapper(handle->WrappedFd())),
+      on_done_(on_done),
       traced_buffers_(),
       handle_(handle),
       poller_(handle->Poller()),
@@ -1336,15 +1424,15 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
   tcp_zerocopy_send_ctx_ = absl::make_unique<TcpZerocopySendCtx>(
       options.tcp_tx_zerocopy_max_simultaneous_sends,
       options.tcp_tx_zerocopy_send_bytes_threshold);
-  frame_size_tuning_enabled_ = ExperimentalTcpFrameSizeTuningEnabled();
+  frame_size_tuning_enabled_ = grpc_core::IsTcpFrameSizeTuningEnabled();
   if (options.tcp_tx_zero_copy_enabled &&
-      !tcp_zerocopy_send_ctx_->memory_limited() && poller_->CanTrackErrors()) {
+      !tcp_zerocopy_send_ctx_->MemoryLimited() && poller_->CanTrackErrors()) {
 #ifdef GRPC_LINUX_ERRQUEUE
     const int enable = 1;
     auto err =
         setsockopt(fd_, SOL_SOCKET, SO_ZEROCOPY, &enable, sizeof(enable));
     if (err == 0) {
-      tcp_zerocopy_send_ctx_->set_enabled(true);
+      tcp_zerocopy_send_ctx_->SetEnabled(true);
     } else {
       gpr_log(GPR_ERROR, "Failed to set zerocopy options on the socket.");
     }

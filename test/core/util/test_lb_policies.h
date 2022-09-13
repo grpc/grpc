@@ -19,6 +19,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <atomic>
 #include <functional>
 #include <string>
 #include <utility>
@@ -82,6 +83,13 @@ using OobBackendMetricCallback =
 // cb for each OOB backend metric report on each subchannel.
 void RegisterOobBackendMetricTestLoadBalancingPolicy(
     CoreConfiguration::Builder* builder, OobBackendMetricCallback cb);
+
+// Registers an LB policy called "fail_lb" that fails all picks with the
+// specified status.  If pick_counter is non-null, it will be
+// incremented for each pick.
+void RegisterFailLoadBalancingPolicy(CoreConfiguration::Builder* builder,
+                                     absl::Status status,
+                                     std::atomic<int>* pick_counter = nullptr);
 
 }  // namespace grpc_core
 

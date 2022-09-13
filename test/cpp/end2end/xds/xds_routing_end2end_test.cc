@@ -1836,8 +1836,10 @@ TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClustersWithPickingDelays) {
   // that the client has received the update and attempted to connect.
   constexpr char kErrorMessageRegex[] =
       "connections to all backends failing; last error: "
-      "(UNKNOWN: Failed to connect to remote host: Connection refused|"
-      "UNAVAILABLE: Failed to connect to remote host: FD shutdown)";
+      "(UNKNOWN: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+      "Failed to connect to remote host: Connection refused|"
+      "UNAVAILABLE: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+      "Failed to connect to remote host: FD shutdown)";
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
                       kErrorMessageRegex);
   // Now create a new cluster, pointing to backend 1.

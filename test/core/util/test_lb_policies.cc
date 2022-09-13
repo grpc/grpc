@@ -76,8 +76,8 @@ class ForwardingLoadBalancingPolicy : public LoadBalancingPolicy {
 
   ~ForwardingLoadBalancingPolicy() override = default;
 
-  void UpdateLocked(UpdateArgs args) override {
-    delegate_->UpdateLocked(std::move(args));
+  absl::Status UpdateLocked(UpdateArgs args) override {
+    return delegate_->UpdateLocked(std::move(args));
   }
 
   void ExitIdleLocked() override { delegate_->ExitIdleLocked(); }
@@ -454,7 +454,7 @@ class FixedAddressLoadBalancingPolicy : public ForwardingLoadBalancingPolicy {
 
   absl::string_view name() const override { return kFixedAddressLbPolicyName; }
 
-  void UpdateLocked(UpdateArgs args) override {
+  absl::Status UpdateLocked(UpdateArgs args) override {
     auto* config = static_cast<FixedAddressConfig*>(args.config.get());
     gpr_log(GPR_INFO, "%s: update URI: %s", kFixedAddressLbPolicyName,
             config->address().c_str());
@@ -471,7 +471,7 @@ class FixedAddressLoadBalancingPolicy : public ForwardingLoadBalancingPolicy {
               kFixedAddressLbPolicyName, uri.status().ToString().c_str());
       args.resolution_note = "no address in fixed_address_lb policy";
     }
-    ForwardingLoadBalancingPolicy::UpdateLocked(std::move(args));
+    return ForwardingLoadBalancingPolicy::UpdateLocked(std::move(args));
   }
 
  private:
@@ -656,6 +656,78 @@ class OobBackendMetricTestFactory : public LoadBalancingPolicyFactory {
   OobBackendMetricCallback cb_;
 };
 
+//
+// FailLoadBalancingPolicy
+//
+
+constexpr char kFailPolicyName[] = "fail_lb";
+
+class FailPolicy : public LoadBalancingPolicy {
+ public:
+  FailPolicy(Args args, absl::Status status, std::atomic<int>* pick_counter)
+      : LoadBalancingPolicy(std::move(args)),
+        status_(std::move(status)),
+        pick_counter_(pick_counter) {}
+
+  absl::string_view name() const override { return kFailPolicyName; }
+
+  absl::Status UpdateLocked(UpdateArgs) override {
+    channel_control_helper()->UpdateState(
+        GRPC_CHANNEL_TRANSIENT_FAILURE, status_,
+        absl::make_unique<FailPicker>(status_, pick_counter_));
+    return absl::OkStatus();
+  }
+
+  void ResetBackoffLocked() override {}
+  void ShutdownLocked() override {}
+
+ private:
+  class FailPicker : public SubchannelPicker {
+   public:
+    FailPicker(absl::Status status, std::atomic<int>* pick_counter)
+        : status_(std::move(status)), pick_counter_(pick_counter) {}
+
+    PickResult Pick(PickArgs /*args*/) override {
+      if (pick_counter_ != nullptr) pick_counter_->fetch_add(1);
+      return PickResult::Fail(status_);
+    }
+
+   private:
+    absl::Status status_;
+    std::atomic<int>* pick_counter_;
+  };
+
+  absl::Status status_;
+  std::atomic<int>* pick_counter_;
+};
+
+class FailLbConfig : public LoadBalancingPolicy::Config {
+ public:
+  absl::string_view name() const override { return kFailPolicyName; }
+};
+
+class FailLbFactory : public LoadBalancingPolicyFactory {
+ public:
+  FailLbFactory(absl::Status status, std::atomic<int>* pick_counter)
+      : status_(std::move(status)), pick_counter_(pick_counter) {}
+
+  OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
+      LoadBalancingPolicy::Args args) const override {
+    return MakeOrphanable<FailPolicy>(std::move(args), status_, pick_counter_);
+  }
+
+  absl::string_view name() const override { return kFailPolicyName; }
+
+  absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
+  ParseLoadBalancingConfig(const Json& /*json*/) const override {
+    return MakeRefCounted<FailLbConfig>();
+  }
+
+ private:
+  absl::Status status_;
+  std::atomic<int>* pick_counter_;
+};
+
 }  // namespace
 
 void RegisterTestPickArgsLoadBalancingPolicy(
@@ -689,6 +761,13 @@ void RegisterOobBackendMetricTestLoadBalancingPolicy(
     CoreConfiguration::Builder* builder, OobBackendMetricCallback cb) {
   builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
       absl::make_unique<OobBackendMetricTestFactory>(std::move(cb)));
+}
+
+void RegisterFailLoadBalancingPolicy(CoreConfiguration::Builder* builder,
+                                     absl::Status status,
+                                     std::atomic<int>* pick_counter) {
+  builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
+      absl::make_unique<FailLbFactory>(std::move(status), pick_counter));
 }
 
 }  // namespace grpc_core

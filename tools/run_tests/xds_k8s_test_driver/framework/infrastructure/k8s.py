@@ -94,6 +94,7 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
     WAIT_MEDIUM_SLEEP_SEC: int = 10
     WAIT_LONG_TIMEOUT_SEC: int = 10 * 60
     WAIT_LONG_SLEEP_SEC: int = 30
+    WAIT_POD_START_TIMEOUT_SEC: int = 3 * 60
 
     def __init__(self, api: KubernetesApiManager, name: str):
         self._highlighter = _HighlighterYaml()
@@ -283,7 +284,7 @@ class KubernetesNamespace:  # pylint: disable=too-many-public-methods
 
     def wait_for_pod_started(self,
                              pod_name: str,
-                             timeout_sec: int = WAIT_SHORT_TIMEOUT_SEC,
+                             timeout_sec: int = WAIT_POD_START_TIMEOUT_SEC,
                              wait_sec: int = WAIT_SHORT_SLEEP_SEC) -> None:
         timeout = datetime.timedelta(seconds=timeout_sec)
         retryer = retryers.constant_retryer(

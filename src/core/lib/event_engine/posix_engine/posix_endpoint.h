@@ -1,4 +1,4 @@
-// Copyright 2022 The gRPC Authors
+// Copyright 2022 gRPC Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_POSIX_ENDPOINT_H
-#define GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_POSIX_ENDPOINT_H
+#ifndef GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_ENDPOINT_H
+#define GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_ENDPOINT_H
 
 #include <grpc/support/port_platform.h>
 
 #include <memory>
 
-#include "grpc/event_engine/endpoint_config.h"
+#include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/slice_buffer.h>
 
@@ -68,6 +68,7 @@ class PosixEndpointImpl {
       delete this;
     }
   }
+  void UpdateRcvLowat() ABSL_EXCLUSIVE_LOCKS_REQUIRED(read_mu_);
   void HandleWrite(absl::Status status);
   void HandleError(absl::Status status);
   void HandleRead(absl::Status status);
@@ -83,26 +84,28 @@ class PosixEndpointImpl {
   bool TcpFlushZerocopy(TcpZerocopySendRecord* record, absl::Status& status);
   bool TcpFlush(absl::Status& status);
   void TcpShutdownTracedBufferList();
+  void UnrefMaybePutZerocopySendRecord(TcpZerocopySendRecord* record);
+  void ZerocopyDisableAndWaitForRemaining();
+  bool WriteWithTimestamps(struct msghdr* msg, size_t sending_length,
+                           ssize_t* sent_length, int* saved_errno,
+                           int additional_flags);
 #ifdef GRPC_LINUX_ERRQUEUE
   // Reads \a cmsg to process zerocopy control messages.
   bool ProcessErrors();
   void ProcessZerocopy(struct cmsghdr* cmsg);
   // Reads \a cmsg to derive timestamps from the control messages.
   struct cmsghdr* ProcessTimestamp(msghdr* msg, struct cmsghdr* cmsg);
-  void ZerocopyDisableAndWaitForRemaining();
-  void UnrefMaybePutZerocopySendRecord(TcpZerocopySendRecord* record);
-  bool WriteWithTimestamps(struct msghdr* msg, size_t sending_length,
-                           ssize_t* sent_length, int* saved_errno,
-                           int additional_flags);
 #endif
   absl::Mutex read_mu_;
   absl::Mutex traced_buffer_mu_;
+  PosixSocketWrapper sock_;
   int fd_;
   bool is_first_read_ = true;
-  bool has_posted_reclaimer_ = false;
+  bool has_posted_reclaimer_ ABSL_GUARDED_BY(read_mu_) = false;
   double target_length_;
   int min_read_chunk_size_;
   int max_read_chunk_size_;
+  int set_rcvlowat_ = 0;
   double bytes_read_this_round_ = 0;
   std::atomic<int> ref_count_{1};
 
@@ -235,4 +238,4 @@ std::unique_ptr<PosixEndpoint> CreatePosixEndpoint(
 }  // namespace posix_engine
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_POSIX_ENDPOINT_H
+#endif  // GRPC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_ENDPOINT_H

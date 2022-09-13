@@ -19,6 +19,7 @@
 
 #include <atomic>
 #include <memory>
+#include <utility>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/memory/memory.h"
@@ -45,7 +46,6 @@
 
 #include "absl/synchronization/mutex.h"
 
-#include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/lockfree_event.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
@@ -61,7 +61,6 @@ using ::grpc_event_engine::posix_engine::WakeupFd;
 namespace grpc_event_engine {
 namespace posix_engine {
 
-using ::grpc_event_engine::experimental::AnyInvocableClosure;
 using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::Poller;
 using ::grpc_event_engine::posix_engine::LockfreeEvent;
@@ -73,7 +72,6 @@ class Epoll1EventHandle : public EventHandle {
       : fd_(fd),
         list_(this),
         poller_(poller),
-        exec_actions_closure_([this]() { ExecutePendingActions(); }),
         read_closure_(absl::make_unique<LockfreeEvent>(poller->GetScheduler())),
         write_closure_(
             absl::make_unique<LockfreeEvent>(poller->GetScheduler())),
@@ -96,8 +94,8 @@ class Epoll1EventHandle : public EventHandle {
     pending_error_.store(false, std::memory_order_relaxed);
   }
   Epoll1Poller* Poller() override { return poller_; }
-  EventEngine::Closure* SetPendingActions(bool pending_read, bool pending_write,
-                                          bool pending_error) {
+  bool SetPendingActions(bool pending_read, bool pending_write,
+                         bool pending_error) {
     // Another thread may be executing ExecutePendingActions() at this point
     // This is possible for instance, if one instantiation of Work(..) sets
     // an fd to be readable while the next instantiation of Work(...) may
@@ -118,10 +116,7 @@ class Epoll1EventHandle : public EventHandle {
       pending_error_.store(true, std::memory_order_release);
     }
 
-    if (pending_read || pending_write || pending_error) {
-      return &exec_actions_closure_;
-    }
-    return nullptr;
+    return pending_read || pending_write || pending_error;
   }
   int WrappedFd() override { return fd_; }
   void OrphanHandle(PosixEngineClosure* on_done, int* release_fd,
@@ -167,7 +162,6 @@ class Epoll1EventHandle : public EventHandle {
   std::atomic<bool> pending_error_{false};
   Epoll1Poller::HandlesList list_;
   Epoll1Poller* poller_;
-  AnyInvocableClosure exec_actions_closure_;
   std::unique_ptr<LockfreeEvent> read_closure_;
   std::unique_ptr<LockfreeEvent> write_closure_;
   std::unique_ptr<LockfreeEvent> error_closure_;
@@ -432,7 +426,7 @@ EventHandle* Epoll1Poller::CreateHandle(int fd, absl::string_view /*name*/,
 // function. It also returns the list of closures to run to take action
 // on file descriptors that became readable/writable.
 bool Epoll1Poller::ProcessEpollEvents(int max_epoll_events_to_handle,
-                                      Poller::Events& pending_events) {
+                                      Events& pending_events) {
   int64_t num_events = g_epoll_set_.num_events;
   int64_t cursor = g_epoll_set_.cursor;
   bool was_kicked = false;
@@ -454,10 +448,10 @@ bool Epoll1Poller::ProcessEpollEvents(int max_epoll_events_to_handle,
       bool read_ev = (ev->events & (EPOLLIN | EPOLLPRI)) != 0;
       bool write_ev = (ev->events & EPOLLOUT) != 0;
       bool err_fallback = error && !track_err;
-      if (EventEngine::Closure* closure = handle->SetPendingActions(
-              read_ev || cancel || err_fallback,
-              write_ev || cancel || err_fallback, error && !err_fallback)) {
-        pending_events.push_back(closure);
+      if (handle->SetPendingActions(read_ev || cancel || err_fallback,
+                                    write_ev || cancel || err_fallback,
+                                    error && !err_fallback)) {
+        pending_events.push_back(handle);
       }
     }
   }
@@ -522,13 +516,15 @@ void Epoll1EventHandle::SetWritable() { write_closure_->SetReady(); }
 void Epoll1EventHandle::SetHasError() { error_closure_->SetReady(); }
 
 // Polls the registered Fds for events until timeout is reached or there is a
-// Kick(). If there is a Kick(), it returns any previously un-processed events.
-// If there are no un-processed events, it returns Poller::WorkResult::Kicked{}
-Poller::WorkResult Epoll1Poller::Work(EventEngine::Duration timeout) {
-  Poller::Events pending_events;
+// Kick(). If there is a Kick(), it collects and processes any previously
+// un-processed events. If there are no un-processed events, it returns
+// Poller::WorkResult::Kicked{}
+Poller::WorkResult Epoll1Poller::Work(EventEngine::Duration timeout,
+                                      absl::AnyInvocable<void()> poll_again) {
+  Events pending_events;
   if (g_epoll_set_.cursor == g_epoll_set_.num_events) {
     if (DoEpollWait(timeout) == 0) {
-      return Poller::DeadlineExceeded{};
+      return Poller::WorkResult::kDeadlineExceeded;
     }
   }
   {
@@ -540,10 +536,16 @@ Poller::WorkResult Epoll1Poller::Work(EventEngine::Duration timeout) {
       was_kicked_ = false;
     }
     if (pending_events.empty()) {
-      return Poller::Kicked{};
+      return Poller::WorkResult::kKicked;
     }
-    return pending_events;
   }
+  // Schduler the provided callback.
+  scheduler_->Run(std::move(poll_again));
+  // Process all pending events inline.
+  for (auto& it : pending_events) {
+    it->ExecutePendingActions();
+  }
+  return Poller::WorkResult::kOk;
 }
 
 void Epoll1Poller::Kick() {
@@ -589,7 +591,7 @@ EventHandle* Epoll1Poller::CreateHandle(int /*fd*/, absl::string_view /*name*/,
 }
 
 bool Epoll1Poller::ProcessEpollEvents(int /*max_epoll_events_to_handle*/,
-                                      Poller::Events& /*pending_events*/) {
+                                      Events& /*pending_events*/) {
   GPR_ASSERT(false && "unimplemented");
 }
 
@@ -597,7 +599,9 @@ int Epoll1Poller::DoEpollWait(EventEngine::Duration /*timeout*/) {
   GPR_ASSERT(false && "unimplemented");
 }
 
-Poller::WorkResult Epoll1Poller::Work(EventEngine::Duration /*timeout*/) {
+Poller::WorkResult Epoll1Poller::Work(
+    EventEngine::Duration /*timeout*/,
+    absl::AnyInvocable<void()> /*poll_again*/) {
   GPR_ASSERT(false && "unimplemented");
 }
 
