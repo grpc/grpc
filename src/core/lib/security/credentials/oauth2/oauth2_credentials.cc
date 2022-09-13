@@ -616,8 +616,8 @@ class StsTokenFetcherCredentials
         *body = gpr_strdup(body_str.c_str());
         *body_length = body_str.size();
       }
-      grpc_slice_unref_internal(subject_token);
-      grpc_slice_unref_internal(actor_token);
+      grpc_slice_unref(subject_token);
+      grpc_slice_unref(actor_token);
       return err;
     };
 

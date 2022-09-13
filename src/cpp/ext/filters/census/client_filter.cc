@@ -224,7 +224,7 @@ void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordEnd(
 
 OpenCensusCallTracer::OpenCensusCallTracer(const grpc_call_element_args* args)
     : call_context_(args->context),
-      path_(grpc_slice_ref_internal(args->path)),
+      path_(grpc_slice_ref(args->path)),
       method_(GetMethod(path_)),
       arena_(args->arena) {}
 

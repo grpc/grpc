@@ -155,7 +155,7 @@ void Chttp2Connector::OnHandshakeDone(void* arg, grpc_error_handle error) {
           // point this can be removed.
           grpc_endpoint_shutdown(args->endpoint, GRPC_ERROR_REF(error));
           grpc_endpoint_destroy(args->endpoint);
-          grpc_slice_buffer_destroy_internal(args->read_buffer);
+          grpc_slice_buffer_destroy(args->read_buffer);
           gpr_free(args->read_buffer);
         }
       } else {

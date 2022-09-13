@@ -71,7 +71,7 @@ absl::StatusOr<std::string> ReadPolicyFromFile(absl::string_view policy_path) {
     return status;
   }
   std::string policy_contents(StringViewFromSlice(policy_slice));
-  grpc_slice_unref_internal(policy_slice);
+  grpc_slice_unref(policy_slice);
   return policy_contents;
 }
 

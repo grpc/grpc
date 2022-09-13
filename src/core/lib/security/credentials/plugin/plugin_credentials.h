@@ -81,8 +81,8 @@ struct grpc_plugin_credentials final : public grpc_call_credentials {
     ~PendingRequest() override {
       grpc_auth_metadata_context_reset(&context_);
       for (size_t i = 0; i < metadata_.size(); i++) {
-        grpc_slice_unref_internal(metadata_[i].key);
-        grpc_slice_unref_internal(metadata_[i].value);
+        grpc_slice_unref(metadata_[i].key);
+        grpc_slice_unref(metadata_[i].value);
       }
     }
 

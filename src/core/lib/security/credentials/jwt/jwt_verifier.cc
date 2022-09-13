@@ -114,7 +114,7 @@ static Json parse_json_part_from_jwt(const char* str, size_t len) {
   }
   absl::string_view string = grpc_core::StringViewFromSlice(slice);
   auto json = Json::Parse(string);
-  grpc_slice_unref_internal(slice);
+  grpc_slice_unref(slice);
   if (!json.ok()) {
     gpr_log(GPR_ERROR, "JSON parse error: %s",
             json.status().ToString().c_str());
@@ -396,8 +396,8 @@ static verifier_cb_ctx* verifier_cb_ctx_create(
 void verifier_cb_ctx_destroy(verifier_cb_ctx* ctx) {
   if (ctx->audience != nullptr) gpr_free(ctx->audience);
   if (ctx->claims != nullptr) grpc_jwt_claims_destroy(ctx->claims);
-  grpc_slice_unref_internal(ctx->signature);
-  grpc_slice_unref_internal(ctx->signed_data);
+  grpc_slice_unref(ctx->signature);
+  grpc_slice_unref(ctx->signed_data);
   jose_header_destroy(ctx->header);
   for (size_t i = 0; i < HTTP_RESPONSE_COUNT; i++) {
     grpc_http_response_destroy(&ctx->responses[i]);
@@ -487,7 +487,7 @@ static BIGNUM* bignum_from_base64(const char* b64) {
   }
   result = BN_bin2bn(GRPC_SLICE_START_PTR(bin),
                      TSI_SIZE_AS_SIZE(GRPC_SLICE_LENGTH(bin)), nullptr);
-  grpc_slice_unref_internal(bin);
+  grpc_slice_unref(bin);
   return result;
 }
 

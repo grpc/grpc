@@ -352,14 +352,14 @@ class DynamicTerminationFilter::CallData {
 
  private:
   explicit CallData(const grpc_call_element_args& args)
-      : path_(grpc_slice_ref_internal(args.path)),
+      : path_(grpc_slice_ref(args.path)),
         deadline_(args.deadline),
         arena_(args.arena),
         owning_call_(args.call_stack),
         call_combiner_(args.call_combiner),
         call_context_(args.context) {}
 
-  ~CallData() { grpc_slice_unref_internal(path_); }
+  ~CallData() { grpc_slice_unref(path_); }
 
   grpc_slice path_;  // Request path.
   Timestamp deadline_;
@@ -1828,7 +1828,7 @@ ClientChannel::CallData::CallData(grpc_call_element* elem,
                       GPR_LIKELY(chand.deadline_checking_enabled_)
                           ? args.deadline
                           : Timestamp::InfFuture()),
-      path_(grpc_slice_ref_internal(args.path)),
+      path_(grpc_slice_ref(args.path)),
       call_start_time_(args.start_time),
       deadline_(args.deadline),
       arena_(args.arena),
@@ -1841,7 +1841,7 @@ ClientChannel::CallData::CallData(grpc_call_element* elem,
 }
 
 ClientChannel::CallData::~CallData() {
-  grpc_slice_unref_internal(path_);
+  grpc_slice_unref(path_);
   GRPC_ERROR_UNREF(cancel_error_);
   // Make sure there are no remaining pending batches.
   for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
@@ -2556,7 +2556,7 @@ ClientChannel::LoadBalancedCall::LoadBalancedCall(
               ? "LoadBalancedCall"
               : nullptr),
       chand_(chand),
-      path_(grpc_slice_ref_internal(args.path)),
+      path_(grpc_slice_ref(args.path)),
       deadline_(args.deadline),
       arena_(args.arena),
       owning_call_(args.call_stack),

@@ -29,14 +29,14 @@ extern uint32_t g_hash_seed;
 
 }  // namespace grpc_core
 
-inline const grpc_slice& grpc_slice_ref_internal(const grpc_slice& slice) {
+inline grpc_slice grpc_slice_ref(grpc_slice slice) {
   if (reinterpret_cast<uintptr_t>(slice.refcount) > 1) {
     slice.refcount->Ref();
   }
   return slice;
 }
 
-inline void grpc_slice_unref_internal(const grpc_slice& slice) {
+inline void grpc_slice_unref(grpc_slice slice) {
   if (reinterpret_cast<uintptr_t>(slice.refcount) > 1) {
     slice.refcount->Unref();
   }

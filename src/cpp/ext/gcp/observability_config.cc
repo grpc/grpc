@@ -56,7 +56,7 @@ absl::StatusOr<std::string> GetGcpObservabilityConfigContents() {
           error, GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_FAILED_PRECONDITION));
     }
     std::string contents_str(grpc_core::StringViewFromSlice(contents));
-    grpc_slice_unref_internal(contents);
+    grpc_slice_unref(contents);
     return contents_str;
   }
   // Next, try GRPC_OBSERVABILITY_CONFIG env var.

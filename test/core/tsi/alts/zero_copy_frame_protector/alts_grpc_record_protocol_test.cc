@@ -278,10 +278,10 @@ static void alts_grpc_record_protocol_test_var_destroy(
   if (var == nullptr) {
     return;
   }
-  grpc_slice_buffer_destroy_internal(&var->original_sb);
-  grpc_slice_buffer_destroy_internal(&var->duplicate_sb);
-  grpc_slice_buffer_destroy_internal(&var->protected_sb);
-  grpc_slice_buffer_destroy_internal(&var->unprotected_sb);
+  grpc_slice_buffer_destroy(&var->original_sb);
+  grpc_slice_buffer_destroy(&var->duplicate_sb);
+  grpc_slice_buffer_destroy(&var->protected_sb);
+  grpc_slice_buffer_destroy(&var->unprotected_sb);
   gpr_free(var);
 }
 
@@ -317,8 +317,8 @@ static void empty_seal_unseal(alts_grpc_record_protocol* sender,
     alts_grpc_record_protocol_test_var* var =
         alts_grpc_record_protocol_test_var_create();
     /* Seals and then unseals empty payload.  */
-    grpc_slice_buffer_reset_and_unref_internal(&var->original_sb);
-    grpc_slice_buffer_reset_and_unref_internal(&var->duplicate_sb);
+    grpc_slice_buffer_reset_and_unref(&var->original_sb);
+    grpc_slice_buffer_reset_and_unref(&var->duplicate_sb);
     tsi_result status = alts_grpc_record_protocol_protect(
         sender, &var->original_sb, &var->protected_sb);
     ASSERT_EQ(status, TSI_OK);
@@ -343,7 +343,7 @@ static void unsync_seal_unseal(alts_grpc_record_protocol* sender,
   status = alts_grpc_record_protocol_protect(sender, &var->original_sb,
                                              &var->protected_sb);
   ASSERT_EQ(status, TSI_OK);
-  grpc_slice_buffer_reset_and_unref_internal(&var->protected_sb);
+  grpc_slice_buffer_reset_and_unref(&var->protected_sb);
   /* Seals again.  */
   status = alts_grpc_record_protocol_protect(sender, &var->duplicate_sb,
                                              &var->protected_sb);
@@ -403,7 +403,7 @@ static void input_check(alts_grpc_record_protocol* rp) {
   status =
       alts_grpc_record_protocol_unprotect(rp, &temp_sb, &var->unprotected_sb);
   ASSERT_EQ(status, TSI_INVALID_ARGUMENT);
-  grpc_slice_buffer_destroy_internal(&temp_sb);
+  grpc_slice_buffer_destroy(&temp_sb);
   alts_grpc_record_protocol_test_var_destroy(var);
   grpc_core::ExecCtx::Get()->Flush();
 }

@@ -184,7 +184,7 @@ grpc_slice EncodeHeaderIntoBytes(
   verify_frames(output, is_eof);
 
   grpc_slice ret = grpc_slice_merge(output.slices, output.count);
-  grpc_slice_buffer_destroy_internal(&output);
+  grpc_slice_buffer_destroy(&output);
 
   return ret;
 }
@@ -238,7 +238,7 @@ TEST(HpackEncoderTest, GrpcTraceBinMetadataIndexing) {
   EXPECT_THAT(encoded_header,
               HasLiteralHeaderFieldNewNameFlagIncrementalIndexing());
 
-  grpc_slice_unref_internal(encoded_header);
+  grpc_slice_unref(encoded_header);
 }
 
 TEST(HpackEncoderTest, GrpcTraceBinMetadataNoIndexing) {
@@ -251,7 +251,7 @@ TEST(HpackEncoderTest, GrpcTraceBinMetadataNoIndexing) {
                std::string(long_value_size, 'a')}});
   EXPECT_THAT(encoded_header, HasLiteralHeaderFieldNewNameFlagNoIndexing());
 
-  grpc_slice_unref_internal(encoded_header);
+  grpc_slice_unref(encoded_header);
 }
 
 TEST(HpackEncoderTest, TestGrpcTagsBinMetadataIndexing) {
@@ -263,7 +263,7 @@ TEST(HpackEncoderTest, TestGrpcTagsBinMetadataIndexing) {
   EXPECT_THAT(encoded_header,
               HasLiteralHeaderFieldNewNameFlagIncrementalIndexing());
 
-  grpc_slice_unref_internal(encoded_header);
+  grpc_slice_unref(encoded_header);
 }
 
 TEST(HpackEncoderTest, TestGrpcTagsBinMetadataNoIndexing) {
@@ -276,7 +276,7 @@ TEST(HpackEncoderTest, TestGrpcTagsBinMetadataNoIndexing) {
                std::string(long_value_size, 'a')}});
   EXPECT_THAT(encoded_header, HasLiteralHeaderFieldNewNameFlagNoIndexing());
 
-  grpc_slice_unref_internal(encoded_header);
+  grpc_slice_unref(encoded_header);
 }
 
 TEST(HpackEncoderTest, UserAgentMetadataIndexing) {
@@ -287,7 +287,7 @@ TEST(HpackEncoderTest, UserAgentMetadataIndexing) {
   EXPECT_THAT(encoded_header,
               HasLiteralHeaderFieldNewNameFlagIncrementalIndexing());
 
-  grpc_slice_unref_internal(encoded_header);
+  grpc_slice_unref(encoded_header);
 }
 
 TEST(HpackEncoderTest, UserAgentMetadataNoIndexing) {
@@ -300,7 +300,7 @@ TEST(HpackEncoderTest, UserAgentMetadataNoIndexing) {
                                      std::string(long_value_size, 'a')}});
   EXPECT_THAT(encoded_header, HasLiteralHeaderFieldNewNameFlagNoIndexing());
 
-  grpc_slice_unref_internal(encoded_header);
+  grpc_slice_unref(encoded_header);
 }
 
 static void verify_continuation_headers(const char* key, const char* value,
@@ -321,7 +321,7 @@ static void verify_continuation_headers(const char* key, const char* value,
       &stats /* stats */};
   g_compressor->EncodeHeaders(hopt, b, &output);
   verify_frames(output, is_eof);
-  grpc_slice_buffer_destroy_internal(&output);
+  grpc_slice_buffer_destroy(&output);
 }
 
 TEST(HpackEncoderTest, TestContinuationHeaders) {

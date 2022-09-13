@@ -135,7 +135,7 @@ TEST(MemoryQuotaTest, MakeSlice) {
   }
   ExecCtx exec_ctx;
   for (grpc_slice slice : slices) {
-    grpc_slice_unref_internal(slice);
+    grpc_slice_unref(slice);
   }
 }
 

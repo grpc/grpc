@@ -320,10 +320,9 @@ grpc_call* grpc_channel_create_call(grpc_channel* channel,
   grpc_core::ExecCtx exec_ctx;
   grpc_call* call = grpc_channel_create_call_internal(
       channel, parent_call, propagation_mask, completion_queue, nullptr,
-      grpc_core::Slice(grpc_slice_ref_internal(method)),
-      host != nullptr
-          ? absl::optional<grpc_core::Slice>(grpc_slice_ref_internal(*host))
-          : absl::nullopt,
+      grpc_core::Slice(grpc_slice_ref(method)),
+      host != nullptr ? absl::optional<grpc_core::Slice>(grpc_slice_ref(*host))
+                      : absl::nullopt,
       grpc_core::Timestamp::FromTimespecRoundUp(deadline));
 
   return call;
@@ -337,9 +336,8 @@ grpc_call* grpc_channel_create_pollset_set_call(
   return grpc_channel_create_call_internal(
       channel, parent_call, propagation_mask, nullptr, pollset_set,
       grpc_core::Slice(method),
-      host != nullptr
-          ? absl::optional<grpc_core::Slice>(grpc_slice_ref_internal(*host))
-          : absl::nullopt,
+      host != nullptr ? absl::optional<grpc_core::Slice>(grpc_slice_ref(*host))
+                      : absl::nullopt,
       deadline);
 }
 

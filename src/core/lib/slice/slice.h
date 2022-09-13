@@ -110,7 +110,7 @@ class BaseSlice {
     return grpc_slice_is_equivalent(slice_, other.slice_);
   }
 
-  uint32_t Hash() const { return grpc_slice_hash_internal(slice_); }
+  uint32_t Hash() const { return grpc_slice_hash(slice_); }
 
  protected:
   BaseSlice() : slice_(EmptySlice()) {}
@@ -249,7 +249,7 @@ class MutableSlice : public slice_detail::BaseSlice,
       : slice_detail::BaseSlice(slice) {
     GPR_DEBUG_ASSERT(slice.refcount == nullptr || slice.refcount->IsUnique());
   }
-  ~MutableSlice() { grpc_slice_unref_internal(c_slice()); }
+  ~MutableSlice() { grpc_slice_unref(c_slice()); }
 
   MutableSlice(const MutableSlice&) = delete;
   MutableSlice& operator=(const MutableSlice&) = delete;
@@ -284,7 +284,7 @@ class Slice : public slice_detail::BaseSlice,
               public slice_detail::StaticConstructors<Slice> {
  public:
   Slice() = default;
-  ~Slice() { grpc_slice_unref_internal(c_slice()); }
+  ~Slice() { grpc_slice_unref(c_slice()); }
   explicit Slice(const grpc_slice& slice) : slice_detail::BaseSlice(slice) {}
   explicit Slice(slice_detail::BaseSlice&& other)
       : slice_detail::BaseSlice(other.TakeCSlice()) {}
@@ -326,7 +326,7 @@ class Slice : public slice_detail::BaseSlice,
     if (c_slice().refcount == grpc_slice_refcount::NoopRefcount()) {
       return Slice(grpc_slice_copy(c_slice()));
     }
-    return Slice(grpc_slice_ref_internal(c_slice()));
+    return Slice(grpc_slice_ref(c_slice()));
   }
 
   // TakeMutable returns a MutableSlice, and leaves the current slice in an
@@ -365,7 +365,7 @@ class Slice : public slice_detail::BaseSlice,
     return Slice(grpc_slice_split_tail(c_slice_ptr(), split));
   }
 
-  Slice Ref() const { return Slice(grpc_slice_ref_internal(c_slice())); }
+  Slice Ref() const { return Slice(grpc_slice_ref(c_slice())); }
 
   Slice Copy() const { return Slice(grpc_slice_copy(c_slice())); }
 

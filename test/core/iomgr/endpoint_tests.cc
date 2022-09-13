@@ -273,8 +273,8 @@ static void read_and_write_test(grpc_endpoint_test_config config,
   grpc_core::ExecCtx::Get()->Flush();
 
   end_test(config);
-  grpc_slice_buffer_destroy_internal(&state.outgoing);
-  grpc_slice_buffer_destroy_internal(&state.incoming);
+  grpc_slice_buffer_destroy(&state.outgoing);
+  grpc_slice_buffer_destroy(&state.incoming);
   grpc_endpoint_destroy(state.read_ep);
   grpc_endpoint_destroy(state.write_ep);
 }
@@ -336,7 +336,7 @@ static void multiple_shutdown_test(grpc_endpoint_test_config config) {
                          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Test Shutdown"));
   wait_for_fail_count(&fail_count, 3);
 
-  grpc_slice_buffer_destroy_internal(&slice_buffer);
+  grpc_slice_buffer_destroy(&slice_buffer);
 
   grpc_endpoint_destroy(f.client_ep);
   grpc_endpoint_destroy(f.server_ep);

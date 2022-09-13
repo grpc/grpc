@@ -229,7 +229,7 @@ grpc::Status StsCredentialsOptionsFromEnv(StsCredentialsOptions* options) {
   grpc::Status status;
   // NOLINTNEXTLINE(clang-diagnostic-unused-lambda-capture)
   auto cleanup = [&json_string, &sts_creds_path, &error, &status]() {
-    grpc_slice_unref_internal(json_string);
+    grpc_slice_unref(json_string);
     gpr_free(sts_creds_path);
     GRPC_ERROR_UNREF(error);
     return status;

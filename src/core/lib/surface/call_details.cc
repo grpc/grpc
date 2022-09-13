@@ -36,6 +36,6 @@ void grpc_call_details_init(grpc_call_details* details) {
 void grpc_call_details_destroy(grpc_call_details* details) {
   GRPC_API_TRACE("grpc_call_details_destroy(details=%p)", 1, (details));
   grpc_core::ExecCtx exec_ctx;
-  grpc_slice_unref_internal(details->method);
-  grpc_slice_unref_internal(details->host);
+  grpc_slice_unref(details->method);
+  grpc_slice_unref(details->host);
 }

@@ -297,7 +297,7 @@ FileWatcherCertificateProvider::ReadRootCertificatesFromFile(
     return absl::nullopt;
   }
   std::string root_cert(StringViewFromSlice(root_slice));
-  grpc_slice_unref_internal(root_slice);
+  grpc_slice_unref(root_slice);
   return root_cert;
 }
 
@@ -319,7 +319,7 @@ FileWatcherCertificateProvider::ReadIdentityKeyCertPairFromFiles(
     const std::string& identity_certificate_path) {
   struct SliceWrapper {
     grpc_slice slice = grpc_empty_slice();
-    ~SliceWrapper() { grpc_slice_unref_internal(slice); }
+    ~SliceWrapper() { grpc_slice_unref(slice); }
   };
   const int kNumRetryAttempts = 3;
   for (int i = 0; i < kNumRetryAttempts; ++i) {
