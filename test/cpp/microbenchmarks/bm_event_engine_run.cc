@@ -217,7 +217,7 @@ void BM_EventEngine_Closure_FanOut(benchmark::State& state) {
         });
   }
   for (auto _ : state) {
-    GPR_DEBUG_ASSERT(gCnt.load() == 0);
+    GPR_DEBUG_ASSERT(gCnt.load(std::memory_order_relaxed) == 0);
     engine->Run(closures[params.depth + 1]);
     gDone.Get();
     // cleanup
