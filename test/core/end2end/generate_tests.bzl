@@ -357,7 +357,7 @@ END2END_TESTS = {
     "shutdown_finishes_tags": _test_options(),
     "simple_delayed_request": _test_options(needs_fullstack = True),
     "simple_metadata": _test_options(),
-    "simple_request": _test_options(tags = ["event_engine_client"]),
+    "simple_request": _test_options(),
     "streaming_error_response": _test_options(),
     "trailing_metadata": _test_options(),
     "authority_not_supported": _test_options(),
