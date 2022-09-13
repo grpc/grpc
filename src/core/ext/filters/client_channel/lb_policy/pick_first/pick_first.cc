@@ -69,7 +69,7 @@ class PickFirst : public LoadBalancingPolicy {
 
   absl::string_view name() const override { return kPickFirst; }
 
-  absl::Status UpdateLocked(UpdateArgs args) override;
+  void UpdateLocked(UpdateArgs args) override;
   void ExitIdleLocked() override;
   void ResetBackoffLocked() override;
 
@@ -232,7 +232,7 @@ void PickFirst::AttemptToConnectUsingLatestUpdateArgsLocked() {
       this, std::move(addresses), latest_update_args_.args);
   latest_pending_subchannel_list_->StartWatchingLocked();
   // Empty update or no valid subchannels.  Put the channel in
-  // TRANSIENT_FAILURE and request re-resolution.
+  // TRANSIENT_FAILURE.
   if (latest_pending_subchannel_list_->num_subchannels() == 0) {
     absl::Status status =
         latest_update_args_.addresses.ok()
@@ -242,7 +242,6 @@ void PickFirst::AttemptToConnectUsingLatestUpdateArgsLocked() {
     channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE, status,
         absl::make_unique<TransientFailurePicker>(status));
-    channel_control_helper()->RequestReresolution();
   }
   // Otherwise, if this is the initial update, report CONNECTING.
   else if (subchannel_list_.get() == nullptr) {
@@ -264,7 +263,7 @@ void PickFirst::AttemptToConnectUsingLatestUpdateArgsLocked() {
   }
 }
 
-absl::Status PickFirst::UpdateLocked(UpdateArgs args) {
+void PickFirst::UpdateLocked(UpdateArgs args) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
     if (args.addresses.ok()) {
       gpr_log(GPR_INFO,
@@ -277,13 +276,6 @@ absl::Status PickFirst::UpdateLocked(UpdateArgs args) {
   }
   // Add GRPC_ARG_INHIBIT_HEALTH_CHECKING channel arg.
   args.args = args.args.Set(GRPC_ARG_INHIBIT_HEALTH_CHECKING, 1);
-  // Set return status based on the address list.
-  absl::Status status;
-  if (!args.addresses.ok()) {
-    status = args.addresses.status();
-  } else if (args.addresses->empty()) {
-    status = absl::UnavailableError("address list must not be empty");
-  }
   // If the update contains a resolver error and we have a previous update
   // that was not a resolver error, keep using the previous addresses.
   if (!args.addresses.ok() && latest_update_args_.config != nullptr) {
@@ -296,7 +288,6 @@ absl::Status PickFirst::UpdateLocked(UpdateArgs args) {
   if (!idle_) {
     AttemptToConnectUsingLatestUpdateArgsLocked();
   }
-  return status;
 }
 
 void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
