@@ -213,7 +213,7 @@ void ReceiveFirstMessage(grpc_call* call, grpc_completion_queue* cq) {
   gpr_log(GPR_INFO, "ReceiveFirstMessage END");
 }
 
-void FinishCall(grpc_call* call, grpc_completion_queue* cq) {
+void FinishCall(grpc_call* call, grpc_completion_queue* cq, bool attempt_receive_message) {
   gpr_log(GPR_INFO, "FinishCall BEGIN");
   grpc_op ops[2];
   grpc_op* op;
@@ -232,9 +232,11 @@ void FinishCall(grpc_call* call, grpc_completion_queue* cq) {
   // a stream that's in the process of shutting down.
   memset(ops, 0, sizeof(ops));
   op = ops;
-  op->op = GRPC_OP_RECV_MESSAGE;
-  op->data.recv_message.recv_message = &recv_payload;
-  op++;
+  if (attempt_receive_message) {
+    op->op = GRPC_OP_RECV_MESSAGE;
+    op->data.recv_message.recv_message = &recv_payload;
+    op++;
+  }
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
@@ -343,7 +345,7 @@ TEST(
       gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(100));
       server.SendStatus();
     });
-    FinishCall(call, cq);
+    FinishCall(call, cq, false /* attempt_receive_message */);
     send_status_thd.join();
     grpc_call_unref(call);
     grpc_channel_destroy(channel);
