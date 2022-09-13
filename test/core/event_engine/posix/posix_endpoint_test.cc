@@ -252,18 +252,20 @@ class Worker : public grpc_core::DualRefCounted<Worker> {
 
  private:
   void Work() {
-    auto result = poller_->Work(24h, [this]() {
+    auto result = poller_->Work(24h, [self = Ref()]() {
       // Schedule next work instantiation immediately and take a Ref for
       // the next instantiation.
-      Ref().release();
-      engine_->Run([this]() { Work(); });
+      self->Work();
     });
     ASSERT_TRUE(result == Poller::WorkResult::kOk ||
                 result == Poller::WorkResult::kKicked);
     // Corresponds to the Ref taken for the current instantiation. If the
     // result was Poller::WorkResult::kKicked, then the next work instantiation
-    // would not have been scheduled.
-    Unref();
+    // would not have been scheduled and the poll_again callback would have
+    // been deleted.
+    if (result == Poller::WorkResult::kKicked) {
+      Unref();
+    }
   }
   std::shared_ptr<EventEngine> engine_;
   PosixEventPoller* poller_;
