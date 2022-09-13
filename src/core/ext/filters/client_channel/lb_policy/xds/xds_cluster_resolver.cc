@@ -140,7 +140,7 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
 
   absl::string_view name() const override { return kXdsClusterResolver; }
 
-  void UpdateLocked(UpdateArgs args) override;
+  absl::Status UpdateLocked(UpdateArgs args) override;
   void ResetBackoffLocked() override;
   void ExitIdleLocked() override;
 
@@ -382,7 +382,7 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
 
   void MaybeDestroyChildPolicyLocked();
 
-  void UpdateChildPolicyLocked();
+  absl::Status UpdateChildPolicyLocked();
   OrphanablePtr<LoadBalancingPolicy> CreateChildPolicyLocked(
       const ChannelArgs& args);
   ServerAddressList CreateChildPolicyAddressesLocked();
@@ -612,7 +612,7 @@ void XdsClusterResolverLb::MaybeDestroyChildPolicyLocked() {
   }
 }
 
-void XdsClusterResolverLb::UpdateLocked(UpdateArgs args) {
+absl::Status XdsClusterResolverLb::UpdateLocked(UpdateArgs args) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_cluster_resolver_trace)) {
     gpr_log(GPR_INFO, "[xds_cluster_resolver_lb %p] Received update", this);
   }
@@ -623,7 +623,8 @@ void XdsClusterResolverLb::UpdateLocked(UpdateArgs args) {
   // Update args.
   args_ = std::move(args.args);
   // Update child policy if needed.
-  if (child_policy_ != nullptr) UpdateChildPolicyLocked();
+  absl::Status status;
+  if (child_policy_ != nullptr) status = UpdateChildPolicyLocked();
   // Create endpoint watcher if needed.
   if (is_initial_update) {
     for (const auto& config : config_->discovery_mechanisms()) {
@@ -649,6 +650,7 @@ void XdsClusterResolverLb::UpdateLocked(UpdateArgs args) {
       discovery_mechanism.discovery_mechanism->Start();
     }
   }
+  return status;
 }
 
 void XdsClusterResolverLb::ResetBackoffLocked() {
@@ -757,7 +759,9 @@ void XdsClusterResolverLb::OnEndpointChanged(size_t index,
     if (!mechanism.latest_update.has_value()) return;
   }
   // Update child policy.
-  UpdateChildPolicyLocked();
+  // TODO(roth): If the child policy reports an error with the update,
+  // we need to propagate that error back to the resolver somehow.
+  (void)UpdateChildPolicyLocked();
 }
 
 void XdsClusterResolverLb::OnError(size_t index, std::string resolution_note) {
@@ -998,11 +1002,11 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
   return std::move(*config);
 }
 
-void XdsClusterResolverLb::UpdateChildPolicyLocked() {
-  if (shutting_down_) return;
+absl::Status XdsClusterResolverLb::UpdateChildPolicyLocked() {
+  if (shutting_down_) return absl::OkStatus();
   UpdateArgs update_args;
   update_args.config = CreateChildPolicyConfigLocked();
-  if (update_args.config == nullptr) return;
+  if (update_args.config == nullptr) return absl::OkStatus();
   update_args.addresses = CreateChildPolicyAddressesLocked();
   update_args.resolution_note = CreateChildPolicyResolutionNoteLocked();
   update_args.args = CreateChildPolicyArgsLocked(args_);
@@ -1013,7 +1017,7 @@ void XdsClusterResolverLb::UpdateChildPolicyLocked() {
     gpr_log(GPR_INFO, "[xds_cluster_resolver_lb %p] Updating child policy %p",
             this, child_policy_.get());
   }
-  child_policy_->UpdateLocked(std::move(update_args));
+  return child_policy_->UpdateLocked(std::move(update_args));
 }
 
 ChannelArgs XdsClusterResolverLb::CreateChildPolicyArgsLocked(
