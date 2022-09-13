@@ -128,7 +128,7 @@ END2END_FIXTURES = {
         secure = True,
         dns_resolver = False,
         _platforms = ["linux", "mac", "posix"],
-        tags = ["requires-net:ipv4", "requires-net:loopback"],
+        tags = ["requires-net:ipv4", "requires-net:loopback", "event_engine_client"],
     ),
     "h2_local_ipv6": _fixture_options(
         secure = True,
@@ -357,7 +357,7 @@ END2END_TESTS = {
     "shutdown_finishes_tags": _test_options(),
     "simple_delayed_request": _test_options(needs_fullstack = True),
     "simple_metadata": _test_options(),
-    "simple_request": _test_options(),
+    "simple_request": _test_options(tags = ["event_engine_client"]),
     "streaming_error_response": _test_options(),
     "trailing_metadata": _test_options(),
     "authority_not_supported": _test_options(),
