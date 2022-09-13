@@ -13,15 +13,7 @@
 // limitations under the License.
 
 #include <grpc/support/port_platform.h>
-
 #include <string.h>
-
-#include <thread>
-#include <string>
-
-#include "absl/strings/str_cat.h"
-#include "gtest/gtest.h"
-
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -30,8 +22,10 @@
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
+#include <string>
 
-#include "src/core/lib/slice/slice_string_helpers.h"
+#include "absl/strings/str_cat.h"
+#include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/iomgr.h"
