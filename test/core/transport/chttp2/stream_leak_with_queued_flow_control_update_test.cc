@@ -76,9 +76,9 @@ class TestServer {
     int was_cancelled;
     // request a call
     void* tag = this;
-    GPR_ASSERT(call_ == nullptr);
+    grpc_call* call;
     grpc_call_error error = grpc_server_request_call(
-        server_, &call_, &call_details, &request_metadata_recv, cq_, cq_, tag);
+        server_, &call, &call_details, &request_metadata_recv, cq_, cq_, tag);
     GPR_ASSERT(error == GRPC_CALL_OK);
     grpc_event event = grpc_completion_queue_next(
         cq_, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
@@ -109,7 +109,7 @@ class TestServer {
     op->data.send_status_from_server.status = GRPC_STATUS_OK;
     op->data.send_status_from_server.status_details = &status_details;
     op++;
-    error = grpc_call_start_batch(call_, ops, static_cast<size_t>(op - ops), tag,
+    error = grpc_call_start_batch(call, ops, static_cast<size_t>(op - ops), tag,
                                   nullptr);
     GPR_ASSERT(error == GRPC_CALL_OK);
     gpr_log(GPR_INFO, "HandleRpc poll CQ");
@@ -118,6 +118,7 @@ class TestServer {
     GPR_ASSERT(event.type == GRPC_OP_COMPLETE);
     GPR_ASSERT(event.success);
     GPR_ASSERT(event.tag == tag);
+    grpc_call_unref(call);
     gpr_log(GPR_INFO, "HandleRpc END");
   }
 
@@ -127,7 +128,6 @@ class TestServer {
   grpc_server* server_;
   grpc_completion_queue* cq_;
   std::string address_;
-  grpc_call* call_ = nullptr;
 };
 
 void StartCallAndCloseWrites(grpc_call* call, grpc_completion_queue* cq) {
@@ -206,8 +206,15 @@ void FinishCall(grpc_call* call, grpc_completion_queue* cq) {
 void EnsureConnectionsArentLeaked(grpc_completion_queue* cq) {
     gpr_log(
         GPR_INFO,
-        "The channel has been destroyed, wait for to shut down and close...");
-    gpr_timespec deadline = grpc_timeout_seconds_to_deadline(120);
+        "The channel has been destroyed, wait for it to shut down and close...");
+    // Do a quick initial poll to try to exit the test early if things have
+    // already cleaned up.
+    GPR_ASSERT(grpc_completion_queue_next(
+        cq,
+        gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                     gpr_time_from_millis(1, GPR_TIMESPAN)),
+        nullptr).type == GRPC_QUEUE_TIMEOUT);
+    gpr_timespec overall_deadline = grpc_timeout_seconds_to_deadline(120);
     bool success = false;
     for (;;) {
       // TODO(apolcyn): grpc_iomgr_count_objects_for_testing() is an internal
@@ -218,31 +225,27 @@ void EnsureConnectionsArentLeaked(grpc_completion_queue* cq) {
       // this test is  meant to repro a chttp2 stream leak, which also holds on
       // to transports and iomgr objects.
       size_t active_fds = grpc_iomgr_count_objects_for_testing();
-      if (active_fds == 1) {
-        success = true;
-        break;
-      }
-      if (gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), deadline) > 0) {
-        break;
+      // We should arrive at exactly one iomgr object for the server's listener
+      // socket, because we haven't destroyed the server yet. The test may not
+      // be doing what we think it's doing if this isn't the case.
+      if (active_fds == 1) return;
+      if (gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), overall_deadline) > 0) {
+        gpr_log(GPR_INFO,
+                "grpc_iomgr_count_objects_for_testing() never returned 1 (only "
+                "the server listen socket should remain). "
+                "It's likely this test has triggered a connection leak.");
+        GPR_ASSERT(0);
       }
       gpr_log(
           GPR_INFO,
           "grpc_iomgr_count_objects_for_testing() returned %ld, keep waiting "
           "until it reaches 1 (only the server listen socket should remain)",
           active_fds);
-      grpc_event event = grpc_completion_queue_next(
+      GPR_ASSERT(grpc_completion_queue_next(
           cq,
           gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                        gpr_time_from_seconds(1, GPR_TIMESPAN)),
-          nullptr);
-      GPR_ASSERT(event.type == GRPC_QUEUE_TIMEOUT);
-    }
-    if (!success) {
-      gpr_log(GPR_INFO,
-              "grpc_iomgr_count_objects_for_testing() never returned 1 (only "
-              "the server listen socket should remain). "
-              "It's likely this test has triggered a connection leak.");
-      GPR_ASSERT(0);
+          nullptr).type == GRPC_QUEUE_TIMEOUT);
     }
 }
 

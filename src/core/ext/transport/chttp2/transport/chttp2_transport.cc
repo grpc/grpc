@@ -223,6 +223,7 @@ void TestOnlyGlobalHttp2TransportDisableTransientFailureStateNotification(
 //
 
 grpc_chttp2_transport::~grpc_chttp2_transport() {
+  gpr_log(GPR_INFO, "apolcyn t=%p is_client=%d transport dtor", this, is_client);
   size_t i;
 
   if (channelz_socket != nullptr) {
@@ -2332,7 +2333,7 @@ void grpc_chttp2_act_on_flowctl_action(
     grpc_chttp2_transport* t, grpc_chttp2_stream* s) {
   WithUrgency(t, action.send_stream_update(),
               GRPC_CHTTP2_INITIATE_WRITE_STREAM_FLOW_CONTROL, [t, s]() {
-                if (s->id != 0) {
+                if (s->id != 0 && !s->read_closed) {
                   gpr_log(GPR_INFO, "apolcyn s=%p t=%p is_client=%d act_on_flowctl_action mark_stream_writable", s, t, t->is_client);
                   grpc_chttp2_mark_stream_writable(t, s);
                 }
