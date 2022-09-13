@@ -19,6 +19,7 @@
 
 #include <atomic>
 #include <memory>
+#include <utility>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/memory/memory.h"
@@ -115,10 +116,7 @@ class Epoll1EventHandle : public EventHandle {
       pending_error_.store(true, std::memory_order_release);
     }
 
-    if (pending_read || pending_write || pending_error) {
-      return true;
-    }
-    return false;
+    return pending_read || pending_write || pending_error;
   }
   int WrappedFd() override { return fd_; }
   void OrphanHandle(PosixEngineClosure* on_done, int* release_fd,
@@ -522,7 +520,7 @@ void Epoll1EventHandle::SetHasError() { error_closure_->SetReady(); }
 // un-processed events. If there are no un-processed events, it returns
 // Poller::WorkResult::Kicked{}
 Poller::WorkResult Epoll1Poller::Work(EventEngine::Duration timeout,
-                                      absl::FunctionRef<void()> poll_again) {
+                                      absl::AnyInvocable<void()> poll_again) {
   Events pending_events;
   if (g_epoll_set_.cursor == g_epoll_set_.num_events) {
     if (DoEpollWait(timeout) == 0) {
@@ -541,8 +539,8 @@ Poller::WorkResult Epoll1Poller::Work(EventEngine::Duration timeout,
       return Poller::WorkResult::kKicked;
     }
   }
-  // Invoke the provided callback.
-  poll_again();
+  // Schduler the provided callback.
+  scheduler_->Run(std::move(poll_again));
   // Process all pending events inline.
   for (auto& it : pending_events) {
     it->ExecutePendingActions();
@@ -603,7 +601,7 @@ int Epoll1Poller::DoEpollWait(EventEngine::Duration /*timeout*/) {
 
 Poller::WorkResult Epoll1Poller::Work(
     EventEngine::Duration /*timeout*/,
-    absl::FunctionRef<void()> /*poll_again*/) {
+    absl::AnyInvocable<void()> /*poll_again*/) {
   GPR_ASSERT(false && "unimplemented");
 }
 

@@ -114,17 +114,11 @@ TEST_F(IOCPTest, ClientReceivesNotificationOfServerSend) {
     wrapped_server_socket->NotifyOnWrite(on_write);
   }
   // Doing work for WSASend
-  bool cb_invoked = false;
-  auto work_result = iocp.Work(std::chrono::seconds(10),
-                               [&cb_invoked]() { cb_invoked = true; });
+  auto work_result = iocp.Work(std::chrono::seconds(10), []() {});
   ASSERT_TRUE(work_result == Poller::WorkResult::kOk);
-  ASSERT_TRUE(cb_invoked);
   // Doing work for WSARecv
-  cb_invoked = false;
-  work_result = iocp.Work(std::chrono::seconds(10),
-                          [&cb_invoked]() { cb_invoked = true; });
+  work_result = iocp.Work(std::chrono::seconds(10), []() {});
   ASSERT_TRUE(work_result == Poller::WorkResult::kOk);
-  ASSERT_TRUE(cb_invoked);
   // wait for the callbacks to run
   ASSERT_TRUE(read_called.WaitWithTimeout(absl::Seconds(10)));
   ASSERT_TRUE(write_called.WaitWithTimeout(absl::Seconds(10)));
@@ -186,11 +180,8 @@ TEST_F(IOCPTest, IocpWorkTimeoutDueToNoNotificationRegistered) {
     EXPECT_EQ(status, 0);
   }
   // IOCP::Work without any notification callbacks should still return Ok.
-  bool cb_invoked = false;
-  auto work_result = iocp.Work(std::chrono::seconds(2),
-                               [&cb_invoked]() { cb_invoked = true; });
+  auto work_result = iocp.Work(std::chrono::seconds(2), []() {});
   ASSERT_TRUE(work_result == Poller::WorkResult::kOk);
-  ASSERT_TRUE(cb_invoked);
   // register the closure, which should trigger it immediately.
   wrapped_client_socket->NotifyOnRead(on_read);
   // wait for the callbacks to run
@@ -206,11 +197,8 @@ TEST_F(IOCPTest, KickWorks) {
   IOCP iocp(&executor);
   Promise<bool> kicked{false};
   executor.Run([&iocp, &kicked] {
-    bool cb_invoked = false;
-    Poller::WorkResult result = iocp.Work(
-        std::chrono::seconds(30), [&cb_invoked]() { cb_invoked = true; });
+    Poller::WorkResult result = iocp.Work(std::chrono::seconds(30), []() {});
     ASSERT_TRUE(result == Poller::WorkResult::kKicked);
-    ASSERT_FALSE(cb_invoked);
     kicked.Set(true);
   });
   executor.Run([&iocp] {
@@ -231,21 +219,14 @@ TEST_F(IOCPTest, KickThenShutdownCasusesNextWorkerToBeKicked) {
   // kick twice
   iocp.Kick();
   iocp.Kick();
-  bool cb_invoked = false;
   // Assert the next two WorkResults are kicks
-  auto result = iocp.Work(std::chrono::milliseconds(1),
-                          [&cb_invoked]() { cb_invoked = true; });
+  auto result = iocp.Work(std::chrono::milliseconds(1), []() {});
   ASSERT_TRUE(result == Poller::WorkResult::kKicked);
-  ASSERT_FALSE(cb_invoked);
-  result = iocp.Work(std::chrono::milliseconds(1),
-                     [&cb_invoked]() { cb_invoked = true; });
+  result = iocp.Work(std::chrono::milliseconds(1), []() {});
   ASSERT_TRUE(result == Poller::WorkResult::kKicked);
-  ASSERT_FALSE(cb_invoked);
   // followed by a DeadlineExceeded
-  result = iocp.Work(std::chrono::milliseconds(1),
-                     [&cb_invoked]() { cb_invoked = true; });
+  result = iocp.Work(std::chrono::milliseconds(1), []() {});
   ASSERT_TRUE(result == Poller::WorkResult::kDeadlineExceeded);
-  ASSERT_FALSE(cb_invoked);
 }
 
 TEST_F(IOCPTest, CrashOnWatchingAClosedSocket) {
