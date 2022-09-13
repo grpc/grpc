@@ -7198,7 +7198,6 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/synchronization",
-        "absl/types:optional",
         "absl/memory",
         "absl/types:optional",
         "upb_lib",
