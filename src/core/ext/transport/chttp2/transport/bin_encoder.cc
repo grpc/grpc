@@ -98,7 +98,7 @@ grpc_slice grpc_chttp2_huffman_compress(const grpc_slice& input) {
   const uint8_t* in;
   uint8_t* out;
   grpc_slice output;
-  uint64_t temp = 0;
+  uint32_t temp = 0;
   uint32_t temp_length = 0;
 
   nbits = 0;
