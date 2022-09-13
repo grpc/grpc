@@ -215,8 +215,10 @@ void ReceiveFirstMessage(grpc_call* call, grpc_completion_queue* cq) {
 
 void FinishCall(grpc_call* call, grpc_completion_queue* cq, bool attempt_receive_message) {
   gpr_log(GPR_INFO, "FinishCall BEGIN");
-  grpc_op ops[2];
+  grpc_op ops[3];
   grpc_op* op;
+  grpc_metadata_array initial_metadata_recv;
+  grpc_metadata_array_init(&initial_metadata_recv);
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array_init(&trailing_metadata_recv);
   grpc_status_code status = GRPC_STATUS_UNKNOWN;
@@ -232,6 +234,9 @@ void FinishCall(grpc_call* call, grpc_completion_queue* cq, bool attempt_receive
   // a stream that's in the process of shutting down.
   memset(ops, 0, sizeof(ops));
   op = ops;
+  op->op = GRPC_OP_RECV_INITIAL_METADATA;
+  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
+  op++;
   if (attempt_receive_message) {
     op->op = GRPC_OP_RECV_MESSAGE;
     op->data.recv_message.recv_message = &recv_payload;
@@ -253,6 +258,7 @@ void FinishCall(grpc_call* call, grpc_completion_queue* cq, bool attempt_receive
   GPR_ASSERT(event.tag == tag);
   EXPECT_EQ(status, GRPC_STATUS_OK);
   EXPECT_EQ(recv_payload, nullptr);
+  grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
   gpr_log(GPR_INFO, "FinishCall got call details: %s", grpc_dump_slice(details, 0));
   gpr_log(GPR_INFO, "FinishCall got call error str: %s", error_str == nullptr ? "<null>" : error_str);
@@ -337,16 +343,22 @@ TEST(
     //      cq,
     //      grpc_timeout_milliseconds_to_deadline(100),
     //      nullptr).type == GRPC_QUEUE_TIMEOUT);
-    ReceiveFirstMessage(call, cq);
-    std::thread send_status_thd([&server]() {
-      // Sleep for a tad before sending status, to make it highly likely that
-      // the client initiates the next batch of RECV_MESSAGE and RECV_STATUS
-      // stream ops BEFORE it actually reads the status off the wire.
-      gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(100));
-      server.SendStatus();
-    });
-    FinishCall(call, cq, false /* attempt_receive_message */);
-    send_status_thd.join();
+    //ReceiveFirstMessage(call, cq);
+    //std::thread send_status_thd([&server]() {
+    //  // Sleep for a tad before sending status, to make it highly likely that
+    //  // the client initiates the next batch of RECV_MESSAGE and RECV_STATUS
+    //  // stream ops BEFORE it actually reads the status off the wire.
+    //  gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(100));
+    //  server.SendStatus();
+    //});
+    server.SendStatus();
+    // Do some polling to the client to pick up the message and status off
+    // the wire, before it's began the RECV_MESSAGE and RECV_STATUS ops.
+    GPR_ASSERT(grpc_completion_queue_next(
+        cq, grpc_timeout_milliseconds_to_deadline(10), nullptr
+        ).type == GRPC_QUEUE_TIMEOUT);
+    FinishCall(call, cq, true /* attempt_receive_message */);
+    //send_status_thd.join();
     grpc_call_unref(call);
     grpc_channel_destroy(channel);
     EnsureConnectionsArentLeaked(cq);
