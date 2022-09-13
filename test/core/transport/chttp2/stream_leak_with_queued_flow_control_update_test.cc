@@ -114,6 +114,7 @@ class TestServer {
     GPR_ASSERT(event.type == GRPC_OP_COMPLETE);
     GPR_ASSERT(event.success);
     GPR_ASSERT(event.tag == tag);
+    grpc_byte_buffer_destroy(response_payload);
     grpc_call_unref(call);
   }
 
