@@ -24,6 +24,8 @@ FROM gcr.io/oss-fuzz-base/base-builder@sha256:8a3a7b8072a93ba737b02e0c0941903f54
 # accordingly.
 # -------------------------------------------------------------------------
 
+RUN git config --global --add safe.directory /var/local/jenkins/grpc
+
 # Install basic packages
 RUN apt-get update && apt-get -y install \
   autoconf \
