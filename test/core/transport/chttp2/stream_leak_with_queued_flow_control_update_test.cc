@@ -248,7 +248,7 @@ void EnsureConnectionsArentLeaked(grpc_completion_queue* cq) {
 
 TEST(
     Chttp2,
-    TestStreamDoesntLeakWhenItsWriteClosedAndThenReadClosedWhileReadingMessage) {
+    TestStreamDoesntLeakWhenItsWriteClosedAndThenReadClosedBeforeStartOfReadingMessageAndStatus) {
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
   {
     // Prevent pings from client to server and server to client, since they can
@@ -268,9 +268,12 @@ TEST(
                                  grpc_slice_from_static_string("/foo"), nullptr,
                                  gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
     // Start the call. It's important for our repro to close writes before
-    // reading the response.
+    // reading the response, so that the client transport marks the stream
+    // both read and write closed as soon as it reads a status off the wire.
     StartCallAndCloseWrites(call, cq);
-    // Send a small message from server to client
+    // Send a small message from server to client. The message needs to be small
+    // enough such that the client will queue a stream flow control update,
+    // without flushing it out to the wire.
     server.HandleRpc();
     // Do some polling to let the client to pick up the message and status off
     // the wire, *before* it begins the RECV_MESSAGE and RECV_STATUS ops.
@@ -279,9 +282,18 @@ TEST(
     GPR_ASSERT(grpc_completion_queue_next(
         cq, grpc_timeout_milliseconds_to_deadline(20), nullptr
         ).type == GRPC_QUEUE_TIMEOUT);
+    // Perform the receive message and status. Note that the incoming bytes
+    // should already be in the client's buffers by the time we start these ops.
+    // Thus, the client should *not* need to send a flow control update to the
+    // server to ensure progress. For the purpose of our bug repro, the goal is
+    // to leave a *queued* stream flow control update.
     FinishCall(call, cq);
     grpc_call_unref(call);
     grpc_channel_destroy(channel);
+    // There should be nothing to prevent stream and transport objects from
+    // shutdown and destruction at this point. So check that this happens.
+    // The timeout isn't important, and is set long enough so that it's
+    // extremely unlikely to be hit due to CPU starvation.
     EnsureConnectionsArentLeaked(cq);
   }
   grpc_completion_queue_shutdown(cq);
