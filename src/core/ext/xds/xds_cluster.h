@@ -36,6 +36,7 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
+#include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/ext/xds/xds_resource_type.h"
 #include "src/core/ext/xds/xds_resource_type_impl.h"
@@ -61,7 +62,7 @@ struct XdsClusterResource {
 
   // The LRS server to use for load reporting.
   // If not set, load reporting will be disabled.
-  absl::optional<XdsBootstrap::XdsServer> lrs_load_reporting_server;
+  absl::optional<GrpcXdsBootstrap::GrpcXdsServer> lrs_load_reporting_server;
 
   // The LB policy to use (e.g., "ROUND_ROBIN" or "RING_HASH").
   std::string lb_policy;

@@ -36,17 +36,24 @@
 
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/thd.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
+#include "test/core/util/test_config.h"
 
 using grpc_core::Arena;
+using grpc_core::ExecCtx;
 
 static auto* g_memory_allocator = new grpc_core::MemoryAllocator(
     grpc_core::ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
         "test"));
 
-TEST(ArenaTest, NoOp) { Arena::Create(1, g_memory_allocator)->Destroy(); }
+TEST(ArenaTest, NoOp) {
+  ExecCtx exec_ctx;
+  Arena::Create(1, g_memory_allocator)->Destroy();
+}
 
 TEST(ArenaTest, ManagedNew) {
+  ExecCtx exec_ctx;
   Arena* arena = Arena::Create(1, g_memory_allocator);
   for (int i = 0; i < 100; i++) {
     arena->ManagedNew<std::unique_ptr<int>>(absl::make_unique<int>(i));
@@ -68,6 +75,7 @@ std::ostream& operator<<(std::ostream& out, const AllocShape& shape) {
 class AllocTest : public ::testing::TestWithParam<AllocShape> {};
 
 TEST_P(AllocTest, Works) {
+  ExecCtx exec_ctx;
   Arena* a = Arena::Create(GetParam().initial_size, g_memory_allocator);
   std::vector<void*> allocated;
   for (auto alloc : GetParam().allocs) {
@@ -166,6 +174,7 @@ TEST(ArenaTest, ConcurrentManagedNew) {
 }
 
 int main(int argc, char* argv[]) {
+  grpc::testing::TestEnvironment give_me_a_name(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

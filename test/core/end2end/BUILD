@@ -69,6 +69,7 @@ grpc_cc_library(
         "//:grpc",
         "//:httpcli",
         "//:iomgr_fwd",
+        "//:pollset_set",
         "//:resolved_address",
         "//:slice_refcount",
         "//:sockaddr_utils",
@@ -113,9 +114,11 @@ grpc_cc_test(
     deps = [
         "cq_verifier",
         "//:gpr",
+        "//:gpr_atm",
         "//:grpc",
         "//:grpc_codegen",
         "//:grpc_public_hdrs",
+        "//:iomgr_fwd",
         "//test/core/util:grpc_test_util",
     ],
 )

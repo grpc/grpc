@@ -67,9 +67,16 @@ class XdsApi {
     virtual absl::Status ProcessAdsResponseFields(AdsResponseFields fields) = 0;
 
     // Called to parse each individual resource in the ADS response.
+    // Note that resource_name is non-empty only when the resource was
+    // wrapped in a Resource wrapper proto.
     virtual void ParseResource(upb_Arena* arena, size_t idx,
                                absl::string_view type_url,
+                               absl::string_view resource_name,
                                absl::string_view serialized_resource) = 0;
+
+    // Called when a resource is wrapped in a Resource wrapper proto but
+    // we fail to deserialize the wrapper proto.
+    virtual void ResourceWrapperParsingFailed(size_t idx) = 0;
   };
 
   struct ClusterLoadReport {

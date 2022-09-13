@@ -22,7 +22,7 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-int64_t Milliseconds(EventEngine::Duration d) {
+size_t Milliseconds(EventEngine::Duration d) {
   return std::chrono::duration_cast<std::chrono::milliseconds>(d).count();
 }
 

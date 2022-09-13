@@ -78,10 +78,6 @@ void HPackTable::MementoRingBuffer::Rebuild(uint32_t max_entries) {
   entries_.swap(entries);
 }
 
-HPackTable::HPackTable() : static_metadata_(GetStaticMementos()) {}
-
-HPackTable::~HPackTable() = default;
-
 /* Evict one element from the table */
 void HPackTable::EvictOne() {
   auto first_entry = entries_.PopOne();
@@ -229,7 +225,7 @@ const StaticTableEntry kStaticTable[hpack_constants::kLastStaticEntry] = {
     {"www-authenticate", ""},
 };
 
-GPR_ATTRIBUTE_NOINLINE HPackTable::Memento MakeMemento(size_t i) {
+HPackTable::Memento MakeMemento(size_t i) {
   auto sm = kStaticTable[i];
   return grpc_metadata_batch::Parse(
       sm.key, Slice::FromStaticString(sm.value),
@@ -240,11 +236,6 @@ GPR_ATTRIBUTE_NOINLINE HPackTable::Memento MakeMemento(size_t i) {
 }
 
 }  // namespace
-
-auto HPackTable::GetStaticMementos() -> const StaticMementos& {
-  static const StaticMementos* const static_mementos = new StaticMementos();
-  return *static_mementos;
-}
 
 HPackTable::StaticMementos::StaticMementos() {
   for (uint32_t i = 0; i < hpack_constants::kLastStaticEntry; i++) {

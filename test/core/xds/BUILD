@@ -12,7 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
+load(
+    "//bazel:grpc_build_system.bzl",
+    "grpc_cc_library",
+    "grpc_cc_test",
+    "grpc_package",
+)
 
 grpc_package(name = "test/core/xds")
 
@@ -27,7 +32,7 @@ grpc_cc_test(
     language = "C++",
     deps = [
         "//:gpr",
-        "//:grpc",
+        "//:grpc_xds_client",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -93,7 +98,6 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//:grpc_secure",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -115,5 +119,38 @@ grpc_cc_test(
         "//src/proto/grpc/testing/xds/v3:wrr_locality_proto",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:grpc_cli_utils",
+    ],
+)
+
+grpc_cc_library(
+    name = "xds_transport_fake",
+    testonly = True,
+    srcs = ["xds_transport_fake.cc"],
+    hdrs = ["xds_transport_fake.h"],
+    external_deps = [
+        "absl/strings",
+        "absl/types:optional",
+    ],
+    language = "C++",
+    deps = [
+        "//:orphanable",
+        "//:ref_counted_ptr",
+        "//:xds_client",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "xds_client_test",
+    srcs = ["xds_client_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = True,
+    uses_polling = False,
+    deps = [
+        ":xds_transport_fake",
+        "//:xds_client",
+        "//src/proto/grpc/testing/xds/v3:discovery_proto",
+        "//test/core/util:grpc_test_util",
     ],
 )

@@ -19,8 +19,6 @@
 
 #include <utility>
 
-#include "absl/utility/utility.h"
-
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/arena.h"
@@ -47,7 +45,7 @@ class CallFinalization {
   }
 
   void Run(const grpc_call_final_info* final_info) {
-    if (Finalizer* f = absl::exchange(first_, nullptr)) f->Run(final_info);
+    if (Finalizer* f = std::exchange(first_, nullptr)) f->Run(final_info);
   }
 
  private:

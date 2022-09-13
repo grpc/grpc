@@ -43,11 +43,14 @@ class KubernetesBaseRunner(base_runner.BaseRunner):
     TEMPLATE_DIR_NAME = 'kubernetes-manifests'
     TEMPLATE_DIR_RELATIVE_PATH = f'../../../../{TEMPLATE_DIR_NAME}'
     ROLE_WORKLOAD_IDENTITY_USER = 'roles/iam.workloadIdentityUser'
+    pod_port_forwarders: List[k8s.PortForwarder]
+    pod_log_collectors: List[k8s.PodLogCollector]
 
     def __init__(self,
                  k8s_namespace,
                  namespace_template=None,
                  reuse_namespace=False):
+        super().__init__()
         self._highlighter = _HighlighterYaml()
 
         # Kubernetes namespaced resources manager
@@ -57,6 +60,8 @@ class KubernetesBaseRunner(base_runner.BaseRunner):
 
         # Mutable state
         self.namespace: Optional[k8s.V1Namespace] = None
+        self.pod_port_forwarders = []
+        self.pod_log_collectors = []
 
     def run(self, **kwargs):
         del kwargs
@@ -70,6 +75,27 @@ class KubernetesBaseRunner(base_runner.BaseRunner):
         if (self.namespace and not self.reuse_namespace) or force:
             self.delete_namespace()
             self.namespace = None
+
+    def stop_pod_dependencies(self, *, log_drain_sec: int = 0):
+        # Signal to stop logging early so less drain time needed.
+        self.maybe_stop_logging()
+
+        # Stop port forwarders if any.
+        for pod_port_forwarder in self.pod_port_forwarders:
+            pod_port_forwarder.close()
+        self.pod_port_forwarders = []
+
+        for pod_log_collector in self.pod_log_collectors:
+            if log_drain_sec > 0 and not pod_log_collector.drain_event.is_set():
+                logger.info("Draining logs for %s, timeout %i sec",
+                            pod_log_collector.pod_name, log_drain_sec)
+                # The close will happen normally at the next message.
+                pod_log_collector.drain_event.wait(timeout=log_drain_sec)
+            # Note this will be called from the main thread and may cause
+            # a race for the log file. Still, at least it'll flush the buffers.
+            pod_log_collector.flush()
+
+        self.pod_log_collectors = []
 
     @classmethod
     def _render_template(cls, template_file, **kwargs):
@@ -199,12 +225,28 @@ class KubernetesBaseRunner(base_runner.BaseRunner):
         return resource
 
     def _create_deployment(self, template, **kwargs) -> k8s.V1Deployment:
+        # Not making deployment_name an explicit kwarg to be consistent with
+        # the rest of the _create_* methods, which pass kwargs as-is
+        # to _create_from_template(), so that the kwargs dict is unpacked into
+        # template variables and their values.
+        if 'deployment_name' not in kwargs:
+            raise TypeError('Missing required keyword-only argument: '
+                            'deployment_name')
+
         # Automatically apply random deployment_id to use in the matchLabels
         # to prevent selecting pods in the same namespace belonging to
         # a different deployment.
         if 'deployment_id' not in kwargs:
-            kwargs['deployment_id'] = framework.helpers.rand.rand_string(
-                lowercase=True)
+            rand_id: str = framework.helpers.rand.rand_string(lowercase=True)
+            # Fun edge case: when rand_string() happen to generate numbers only,
+            # yaml interprets deployment_id label value as an integer,
+            # but k8s expects label values to be strings. Lol. K8s responds
+            # with a barely readable 400 Bad Request error: 'ReadString: expects
+            # \" or n, but found 9, error found in #10 byte of ...|ent_id'.
+            # Prepending deployment name forces deployment_id into a string,
+            # as well as it's just a better description.
+            kwargs['deployment_id'] = f'{kwargs["deployment_name"]}-{rand_id}'
+
         deployment = self._create_from_template(template, **kwargs)
         if not isinstance(deployment, k8s.V1Deployment):
             raise _RunnerError('Expected V1Deployment to be created '
@@ -230,6 +272,7 @@ class KubernetesBaseRunner(base_runner.BaseRunner):
         return service
 
     def _delete_deployment(self, name, wait_for_deletion=True):
+        self.stop_pod_dependencies()
         logger.info('Deleting deployment %s', name)
         try:
             self.k8s_namespace.delete_deployment(name)
@@ -314,6 +357,35 @@ class KubernetesBaseRunner(base_runner.BaseRunner):
         logger.info('Pod %s ready, IP: %s', pod.metadata.name,
                     pod.status.pod_ip)
         return pod
+
+    def _start_port_forwarding_pod(self, pod: k8s.V1Pod,
+                                   remote_port: int) -> k8s.PortForwarder:
+        logger.info('LOCAL DEV MODE: Enabling port forwarding to %s:%s',
+                    pod.status.pod_ip, remote_port)
+        port_forwarder = self.k8s_namespace.port_forward_pod(pod, remote_port)
+        self.pod_port_forwarders.append(port_forwarder)
+        return port_forwarder
+
+    def _start_logging_pod(self,
+                           pod: k8s.V1Pod,
+                           *,
+                           log_to_stdout: bool = False) -> k8s.PodLogCollector:
+        pod_name = pod.metadata.name
+        logfile_name = f'{self.k8s_namespace.name}_{pod_name}.log'
+        log_path = self.logs_subdir / logfile_name
+        logger.info('Enabling log collection from pod %s to %s', pod_name,
+                    log_path.relative_to(self.logs_subdir.parent.parent))
+        pod_log_collector = self.k8s_namespace.pod_start_logging(
+            pod_name=pod_name,
+            log_path=log_path,
+            log_stop_event=self.log_stop_event,
+            log_to_stdout=log_to_stdout,
+            # Timestamps are enabled because not all language implementations
+            # include them.
+            # TODO(sergiitk): Make this setting language-specific.
+            log_timestamps=True)
+        self.pod_log_collectors.append(pod_log_collector)
+        return pod_log_collector
 
     def _wait_service_neg(self, name, service_port, **kwargs):
         logger.info('Waiting for NEG for service %s', name)

@@ -30,6 +30,7 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 
+#include <grpc/event_engine/endpoint_config.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
@@ -46,6 +47,7 @@
 #include <grpcpp/server_builder.h>
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
+#include "src/core/ext/filters/client_channel/config_selector.h"
 #include "src/core/ext/filters/client_channel/global_subchannel_pool.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/lib/address_utils/parse_address.h"
@@ -174,6 +176,11 @@ class FakeResolverResponseGeneratorWrapper {
   void SetFailureOnReresolution() {
     grpc_core::ExecCtx exec_ctx;
     response_generator_->SetFailureOnReresolution();
+  }
+
+  void SetResponse(grpc_core::Resolver::Result result) {
+    grpc_core::ExecCtx exec_ctx;
+    response_generator_->SetResponse(std::move(result));
   }
 
   grpc_core::FakeResolverResponseGenerator* Get() const {
@@ -1189,11 +1196,12 @@ TEST_F(PickFirstTest, ReresolutionNoSelected) {
   response_generator.SetNextResolution(dead_ports);
   gpr_log(GPR_INFO, "****** INITIAL RESOLUTION SET *******");
   for (size_t i = 0; i < 10; ++i) {
-    CheckRpcSendFailure(
-        DEBUG_LOCATION, stub, StatusCode::UNAVAILABLE,
-        "failed to connect to all addresses; last error: "
-        "(UNKNOWN: Failed to connect to remote host: Connection refused|"
-        "UNAVAILABLE: Failed to connect to remote host: FD shutdown)");
+    CheckRpcSendFailure(DEBUG_LOCATION, stub, StatusCode::UNAVAILABLE,
+                        "failed to connect to all addresses; last error: "
+                        "(UNKNOWN: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+                        "Failed to connect to remote host: Connection refused|"
+                        "UNAVAILABLE: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+                        "Failed to connect to remote host: FD shutdown)");
   }
   // Set a re-resolution result that contains reachable ports, so that the
   // pick_first LB policy can recover soon.
@@ -1201,12 +1209,13 @@ TEST_F(PickFirstTest, ReresolutionNoSelected) {
   gpr_log(GPR_INFO, "****** RE-RESOLUTION SET *******");
   WaitForServer(DEBUG_LOCATION, stub, 0, [](const Status& status) {
     EXPECT_EQ(StatusCode::UNAVAILABLE, status.error_code());
-    EXPECT_THAT(
-        status.error_message(),
-        ::testing::ContainsRegex(
-            "failed to connect to all addresses; last error: "
-            "(UNKNOWN: Failed to connect to remote host: Connection refused|"
-            "UNAVAILABLE: Failed to connect to remote host: FD shutdown)"));
+    EXPECT_THAT(status.error_message(),
+                ::testing::ContainsRegex(
+                    "failed to connect to all addresses; last error: "
+                    "(UNKNOWN: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+                    "Failed to connect to remote host: Connection refused|"
+                    "UNAVAILABLE: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+                    "Failed to connect to remote host: FD shutdown)"));
   });
   CheckRpcSendOk(DEBUG_LOCATION, stub);
   EXPECT_EQ(servers_[0]->service_.request_count(), 1);
@@ -1271,10 +1280,7 @@ TEST_F(PickFirstTest, CheckStateBeforeStartWatch) {
   auto stub_2 = BuildStub(channel_2);
   response_generator_2.SetNextResolution(ports);
   gpr_log(GPR_INFO, "****** RESOLUTION SET FOR CHANNEL 2 *******");
-  WaitForServer(DEBUG_LOCATION, stub_2, 0, [](const Status& status) {
-    EXPECT_EQ(StatusCode::UNAVAILABLE, status.error_code());
-    EXPECT_EQ("failed to connect to all addresses", status.error_message());
-  });
+  WaitForServer(DEBUG_LOCATION, stub_2, 0);
   gpr_log(GPR_INFO, "****** CHANNEL 2 CONNECTED *******");
   servers_[0]->Shutdown();
   // Wait until the disconnection has triggered the connectivity notification.
@@ -1318,24 +1324,25 @@ TEST_F(PickFirstTest, PendingUpdateAndSelectedSubchannelFails) {
   auto channel =
       BuildChannel("", response_generator);  // pick_first is the default.
   auto stub = BuildStub(channel);
-  // Create a number of servers, but only start 1 of them.
-  CreateServers(10);
-  StartServer(0);
+  StartServers(2);
   // Initially resolve to first server and make sure it connects.
   gpr_log(GPR_INFO, "Phase 1: Connect to first server.");
   response_generator.SetNextResolution({servers_[0]->port_});
   CheckRpcSendOk(DEBUG_LOCATION, stub, true /* wait_for_ready */);
   EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_READY);
+  ConnectionAttemptInjector injector;
+  auto hold = injector.AddHold(servers_[1]->port_);
   // Send a resolution update with the remaining servers, none of which are
-  // running yet, so the update will stay pending.  Note that it's important
-  // to have multiple servers here, or else the test will be flaky; with only
-  // one server, the pending subchannel list has already gone into
-  // TRANSIENT_FAILURE due to hitting the end of the list by the time we
-  // check the state.
+  // running yet, so the update will stay pending.
   gpr_log(GPR_INFO,
           "Phase 2: Resolver update pointing to remaining "
           "(not started) servers.");
   response_generator.SetNextResolution(GetServersPorts(1 /* start_index */));
+  // Add hold before connection attempt to ensure RPCs will be sent to first
+  // server. Otherwise, pending subchannel list might already have gone into
+  // TRANSIENT_FAILURE due to hitting the end of the server list by the time
+  // we check the state.
+  hold->Wait();
   // RPCs will continue to be sent to the first server.
   CheckRpcSendOk(DEBUG_LOCATION, stub);
   // Now stop the first server, so that the current subchannel list
@@ -1346,23 +1353,14 @@ TEST_F(PickFirstTest, PendingUpdateAndSelectedSubchannelFails) {
   gpr_log(GPR_INFO, "Phase 3: Stopping first server.");
   servers_[0]->Shutdown();
   WaitForChannelNotReady(channel.get());
-  // TODO(roth): This should always return CONNECTING, but it's flaky
-  // between that and TRANSIENT_FAILURE.  I suspect that this problem
-  // will go away once we move the backoff code out of the subchannel
-  // and into the LB policies.
-  EXPECT_THAT(channel->GetState(false),
-              ::testing::AnyOf(GRPC_CHANNEL_CONNECTING,
-                               GRPC_CHANNEL_TRANSIENT_FAILURE));
-  // Now start the second server.
-  gpr_log(GPR_INFO, "Phase 4: Starting second server.");
-  StartServer(1);
-  // The channel should go to READY state and RPCs should go to the
-  // second server.
+  EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_CONNECTING);
+  // Resume connection attempt to second server now that first server is down.
+  // The channel should go to READY state and RPCs should go to the second
+  // server.
+  gpr_log(GPR_INFO, "Phase 4: Resuming connection attempt to second server.");
+  hold->Resume();
   WaitForChannelReady(channel.get());
-  WaitForServer(DEBUG_LOCATION, stub, 1, [](const Status& status) {
-    EXPECT_EQ(StatusCode::UNAVAILABLE, status.error_code());
-    EXPECT_EQ("failed to connect to all addresses", status.error_message());
-  });
+  WaitForServer(DEBUG_LOCATION, stub, 1);
 }
 
 TEST_F(PickFirstTest, StaysIdleUponEmptyUpdate) {
@@ -1409,11 +1407,12 @@ TEST_F(PickFirstTest,
   response_generator.SetNextResolution(ports);
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel->GetState(false));
   // Send an RPC, which should fail.
-  CheckRpcSendFailure(
-      DEBUG_LOCATION, stub, StatusCode::UNAVAILABLE,
-      "failed to connect to all addresses; last error: "
-      "(UNKNOWN: Failed to connect to remote host: Connection refused|"
-      "UNAVAILABLE: Failed to connect to remote host: FD shutdown)");
+  CheckRpcSendFailure(DEBUG_LOCATION, stub, StatusCode::UNAVAILABLE,
+                      "failed to connect to all addresses; last error: "
+                      "(UNKNOWN: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+                      "Failed to connect to remote host: Connection refused|"
+                      "UNAVAILABLE: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+                      "Failed to connect to remote host: FD shutdown)");
   // Channel should be in TRANSIENT_FAILURE.
   EXPECT_EQ(GRPC_CHANNEL_TRANSIENT_FAILURE, channel->GetState(false));
   // Now start a server on the last port.
@@ -1655,11 +1654,12 @@ TEST_F(RoundRobinTest, TransientFailure) {
     return state == GRPC_CHANNEL_TRANSIENT_FAILURE;
   };
   EXPECT_TRUE(WaitForChannelState(channel.get(), predicate));
-  CheckRpcSendFailure(
-      DEBUG_LOCATION, stub, StatusCode::UNAVAILABLE,
-      "connections to all backends failing; last error: "
-      "(UNKNOWN: Failed to connect to remote host: Connection refused|"
-      "UNAVAILABLE: Failed to connect to remote host: FD shutdown)");
+  CheckRpcSendFailure(DEBUG_LOCATION, stub, StatusCode::UNAVAILABLE,
+                      "connections to all backends failing; last error: "
+                      "(UNKNOWN: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+                      "Failed to connect to remote host: Connection refused|"
+                      "UNAVAILABLE: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+                      "Failed to connect to remote host: FD shutdown)");
 }
 
 TEST_F(RoundRobinTest, TransientFailureAtStartup) {
@@ -1680,11 +1680,12 @@ TEST_F(RoundRobinTest, TransientFailureAtStartup) {
     return state == GRPC_CHANNEL_TRANSIENT_FAILURE;
   };
   EXPECT_TRUE(WaitForChannelState(channel.get(), predicate, true));
-  CheckRpcSendFailure(
-      DEBUG_LOCATION, stub, StatusCode::UNAVAILABLE,
-      "connections to all backends failing; last error: "
-      "(UNKNOWN: Failed to connect to remote host: Connection refused|"
-      "UNAVAILABLE: Failed to connect to remote host: FD shutdown)");
+  CheckRpcSendFailure(DEBUG_LOCATION, stub, StatusCode::UNAVAILABLE,
+                      "connections to all backends failing; last error: "
+                      "(UNKNOWN: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+                      "Failed to connect to remote host: Connection refused|"
+                      "UNAVAILABLE: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+                      "Failed to connect to remote host: FD shutdown)");
 }
 
 TEST_F(RoundRobinTest, StaysInTransientFailureInSubsequentConnecting) {
@@ -1716,11 +1717,12 @@ TEST_F(RoundRobinTest, StaysInTransientFailureInSubsequentConnecting) {
   // new picker, in case it was going to incorrectly do so.
   gpr_log(GPR_INFO, "=== EXPECTING RPCs TO FAIL ===");
   for (size_t i = 0; i < 5; ++i) {
-    CheckRpcSendFailure(
-        DEBUG_LOCATION, stub, StatusCode::UNAVAILABLE,
-        "connections to all backends failing; last error: "
-        "(UNKNOWN: Failed to connect to remote host: Connection refused|"
-        "UNAVAILABLE: Failed to connect to remote host: FD shutdown)");
+    CheckRpcSendFailure(DEBUG_LOCATION, stub, StatusCode::UNAVAILABLE,
+                        "connections to all backends failing; last error: "
+                        "(UNKNOWN: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+                        "Failed to connect to remote host: Connection refused|"
+                        "UNAVAILABLE: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+                        "Failed to connect to remote host: FD shutdown)");
   }
   // Clean up.
   hold->Resume();
@@ -1739,11 +1741,12 @@ TEST_F(RoundRobinTest, ReportsLatestStatusInTransientFailure) {
   response_generator.SetNextResolution(ports);
   // Allow first connection attempts to fail normally, and check that
   // the RPC fails with the right status message.
-  CheckRpcSendFailure(
-      DEBUG_LOCATION, stub, StatusCode::UNAVAILABLE,
-      "connections to all backends failing; last error: "
-      "(UNKNOWN: Failed to connect to remote host: Connection refused|"
-      "UNAVAILABLE: Failed to connect to remote host: FD shutdown)");
+  CheckRpcSendFailure(DEBUG_LOCATION, stub, StatusCode::UNAVAILABLE,
+                      "connections to all backends failing; last error: "
+                      "(UNKNOWN: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+                      "Failed to connect to remote host: Connection refused|"
+                      "UNAVAILABLE: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+                      "Failed to connect to remote host: FD shutdown)");
   // Now intercept the next connection attempt for each port.
   auto hold1 = injector.AddHold(ports[0]);
   auto hold2 = injector.AddHold(ports[1]);
@@ -1758,17 +1761,19 @@ TEST_F(RoundRobinTest, ReportsLatestStatusInTransientFailure) {
   while (true) {
     Status status = SendRpc(stub);
     EXPECT_EQ(StatusCode::UNAVAILABLE, status.error_code());
-    if (status.error_message() ==
-        "connections to all backends failing; last error: "
-        "UNKNOWN: Survey says... Bzzzzt!") {
+    if (::testing::Matches(::testing::MatchesRegex(
+            "connections to all backends failing; last error: "
+            "UNKNOWN: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+            "Survey says... Bzzzzt!"))(status.error_message())) {
       break;
     }
-    EXPECT_THAT(
-        status.error_message(),
-        ::testing::MatchesRegex(
-            "connections to all backends failing; last error: "
-            "(UNKNOWN: Failed to connect to remote host: Connection refused|"
-            "UNAVAILABLE: Failed to connect to remote host: FD shutdown)"));
+    EXPECT_THAT(status.error_message(),
+                ::testing::MatchesRegex(
+                    "connections to all backends failing; last error: "
+                    "(UNKNOWN: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+                    "Failed to connect to remote host: Connection refused|"
+                    "UNAVAILABLE: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+                    "Failed to connect to remote host: FD shutdown)"));
     EXPECT_LT(absl::Now(), deadline);
     if (absl::Now() >= deadline) break;
   }
@@ -2131,11 +2136,19 @@ class ClientLbPickArgsTest : public ClientLbEnd2endTest {
   }
 
   static void SetUpTestCase() {
+    grpc_core::CoreConfiguration::Reset();
+    grpc_core::CoreConfiguration::RegisterBuilder(
+        [](grpc_core::CoreConfiguration::Builder* builder) {
+          grpc_core::RegisterTestPickArgsLoadBalancingPolicy(builder,
+                                                             SavePickArgs);
+        });
     grpc_init();
-    grpc_core::RegisterTestPickArgsLoadBalancingPolicy(SavePickArgs);
   }
 
-  static void TearDownTestCase() { grpc_shutdown(); }
+  static void TearDownTestCase() {
+    grpc_shutdown();
+    grpc_core::CoreConfiguration::Reset();
+  }
 
   std::vector<grpc_core::PickArgsSeen> args_seen_list() {
     grpc_core::MutexLock lock(&mu_);
@@ -2228,12 +2241,19 @@ class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
   }
 
   static void SetUpTestCase() {
+    grpc_core::CoreConfiguration::Reset();
+    grpc_core::CoreConfiguration::RegisterBuilder(
+        [](grpc_core::CoreConfiguration::Builder* builder) {
+          grpc_core::RegisterInterceptRecvTrailingMetadataLoadBalancingPolicy(
+              builder, ReportTrailerIntercepted);
+        });
     grpc_init();
-    grpc_core::RegisterInterceptRecvTrailingMetadataLoadBalancingPolicy(
-        ReportTrailerIntercepted);
   }
 
-  static void TearDownTestCase() { grpc_shutdown(); }
+  static void TearDownTestCase() {
+    grpc_shutdown();
+    grpc_core::CoreConfiguration::Reset();
+  }
 
   int num_trailers_intercepted() {
     grpc_core::MutexLock lock(&mu_);
@@ -2502,11 +2522,19 @@ class ClientLbAddressTest : public ClientLbEnd2endTest {
   }
 
   static void SetUpTestCase() {
+    grpc_core::CoreConfiguration::Reset();
+    grpc_core::CoreConfiguration::RegisterBuilder(
+        [](grpc_core::CoreConfiguration::Builder* builder) {
+          grpc_core::RegisterAddressTestLoadBalancingPolicy(builder,
+                                                            SaveAddress);
+        });
     grpc_init();
-    grpc_core::RegisterAddressTestLoadBalancingPolicy(SaveAddress);
   }
 
-  static void TearDownTestCase() { grpc_shutdown(); }
+  static void TearDownTestCase() {
+    grpc_shutdown();
+    grpc_core::CoreConfiguration::Reset();
+  }
 
   const std::vector<std::string>& addresses_seen() {
     grpc_core::MutexLock lock(&mu_);
@@ -2567,12 +2595,19 @@ class OobBackendMetricTest : public ClientLbEnd2endTest {
   }
 
   static void SetUpTestCase() {
+    grpc_core::CoreConfiguration::Reset();
+    grpc_core::CoreConfiguration::RegisterBuilder(
+        [](grpc_core::CoreConfiguration::Builder* builder) {
+          grpc_core::RegisterOobBackendMetricTestLoadBalancingPolicy(
+              builder, BackendMetricCallback);
+        });
     grpc_init();
-    grpc_core::RegisterOobBackendMetricTestLoadBalancingPolicy(
-        BackendMetricCallback);
   }
 
-  static void TearDownTestCase() { grpc_shutdown(); }
+  static void TearDownTestCase() {
+    grpc_shutdown();
+    grpc_core::CoreConfiguration::Reset();
+  }
 
   absl::optional<BackendMetricReport> GetBackendMetricReport() {
     grpc_core::MutexLock lock(&mu_);
@@ -2654,6 +2689,93 @@ TEST_F(OobBackendMetricTest, Basic) {
     }
     gpr_sleep_until(grpc_timeout_seconds_to_deadline(1));
   }
+}
+
+//
+// tests rewriting of control plane status codes
+//
+
+class ControlPlaneStatusRewritingTest : public ClientLbEnd2endTest {
+ protected:
+  static void SetUpTestCase() {
+    grpc_core::CoreConfiguration::Reset();
+    grpc_core::CoreConfiguration::RegisterBuilder(
+        [](grpc_core::CoreConfiguration::Builder* builder) {
+          grpc_core::RegisterFailLoadBalancingPolicy(
+              builder, absl::AbortedError("nope"));
+        });
+    grpc_init();
+  }
+
+  static void TearDownTestCase() {
+    grpc_shutdown();
+    grpc_core::CoreConfiguration::Reset();
+  }
+};
+
+TEST_F(ControlPlaneStatusRewritingTest, RewritesFromLb) {
+  // Start client.
+  auto response_generator = BuildResolverResponseGenerator();
+  auto channel = BuildChannel("fail_lb", response_generator);
+  auto stub = BuildStub(channel);
+  response_generator.SetNextResolution(GetServersPorts());
+  // Send an RPC, verify that status was rewritten.
+  CheckRpcSendFailure(
+      DEBUG_LOCATION, stub, StatusCode::INTERNAL,
+      "Illegal status code from LB pick; original status: ABORTED: nope");
+}
+
+TEST_F(ControlPlaneStatusRewritingTest, RewritesFromResolver) {
+  // Start client.
+  auto response_generator = BuildResolverResponseGenerator();
+  auto channel = BuildChannel("pick_first", response_generator);
+  auto stub = BuildStub(channel);
+  grpc_core::Resolver::Result result;
+  result.service_config = absl::AbortedError("nope");
+  result.addresses.emplace();
+  response_generator.SetResponse(std::move(result));
+  // Send an RPC, verify that status was rewritten.
+  CheckRpcSendFailure(
+      DEBUG_LOCATION, stub, StatusCode::INTERNAL,
+      "Illegal status code from resolver; original status: ABORTED: nope");
+}
+
+TEST_F(ControlPlaneStatusRewritingTest, RewritesFromConfigSelector) {
+  class FailConfigSelector : public grpc_core::ConfigSelector {
+   public:
+    explicit FailConfigSelector(absl::Status status)
+        : status_(std::move(status)) {}
+    const char* name() const override { return "FailConfigSelector"; }
+    bool Equals(const ConfigSelector* other) const override {
+      return status_ == static_cast<const FailConfigSelector*>(other)->status_;
+    }
+    CallConfig GetCallConfig(GetCallConfigArgs /*args*/) override {
+      CallConfig config;
+      config.status = status_;
+      return config;
+    }
+
+   private:
+    absl::Status status_;
+  };
+  // Start client.
+  auto response_generator = BuildResolverResponseGenerator();
+  auto channel = BuildChannel("pick_first", response_generator);
+  auto stub = BuildStub(channel);
+  auto config_selector =
+      grpc_core::MakeRefCounted<FailConfigSelector>(absl::AbortedError("nope"));
+  grpc_core::Resolver::Result result;
+  result.addresses.emplace();
+  result.service_config =
+      grpc_core::ServiceConfigImpl::Create(grpc_core::ChannelArgs(), "{}");
+  ASSERT_TRUE(result.service_config.ok()) << result.service_config.status();
+  result.args = grpc_core::ChannelArgs().SetObject(config_selector);
+  response_generator.SetResponse(std::move(result));
+  // Send an RPC, verify that status was rewritten.
+  CheckRpcSendFailure(
+      DEBUG_LOCATION, stub, StatusCode::INTERNAL,
+      "Illegal status code from ConfigSelector; original status: "
+      "ABORTED: nope");
 }
 
 }  // namespace
