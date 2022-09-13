@@ -191,13 +191,13 @@ void BM_EventEngine_Closure_FanOut(benchmark::State& state) {
 // TODO(hork): enable the 3 commented-out tests when the engine is fast enough.
 BENCHMARK(BM_EventEngine_Closure_FanOut)
     // ->Args({10000, 1})  // chain of callbacks scheduling callbacks
-    ->Args({1000, 1})   // chain of callbacks scheduling callbacks
-    ->Args({100, 1})    // chain of callbacks scheduling callbacks
+    ->Args({1000, 1})  // chain of callbacks scheduling callbacks
+    ->Args({100, 1})   // chain of callbacks scheduling callbacks
     // ->Args({1, 10000})  // flat scheduling of callbacks
-    ->Args({1, 1000})   // flat scheduling of callbacks
-    ->Args({1, 100})    // flat scheduling of callbacks
-    ->Args({2, 100})    // depth 2, fans out 10,101 callbacks
-    ->Args({4, 10})     // depth 4, fans out to 11,110 callbacks
+    ->Args({1, 1000})  // flat scheduling of callbacks
+    ->Args({1, 100})   // flat scheduling of callbacks
+    ->Args({2, 100})   // depth 2, fans out 10,101 callbacks
+    ->Args({4, 10})    // depth 4, fans out to 11,110 callbacks
     // ->Args({5, 6})      // depth 5, fans out to 9,330 callbacks
     ->MeasureProcessCPUTime()
     ->UseRealTime();
