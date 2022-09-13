@@ -5204,7 +5204,6 @@ targets:
   - test/core/event_engine/common_closures_test.cc
   deps:
   - grpc
-  - grpc_test_util_unsecure
 - name: completion_queue_threading_test
   gtest: true
   build: test
@@ -5614,7 +5613,6 @@ targets:
   - test/core/event_engine/endpoint_config_test.cc
   deps:
   - grpc
-  - grpc_test_util_unsecure
   uses_polling: false
 - name: endpoint_pair_test
   gtest: true
@@ -9868,12 +9866,23 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - src/core/lib/gpr/murmur_hash.h
+  - src/core/lib/slice/slice.h
+  - src/core/lib/slice/slice_internal.h
+  - src/core/lib/slice/slice_refcount.h
+  - src/core/lib/slice/slice_refcount_base.h
+  - src/core/lib/slice/slice_string_helpers.h
   src:
+  - src/core/lib/gpr/murmur_hash.cc
+  - src/core/lib/slice/slice.cc
+  - src/core/lib/slice/slice_refcount.cc
+  - src/core/lib/slice/slice_string_helpers.cc
   - test/core/event_engine/slice_buffer_test.cc
   deps:
-  - grpc
-  - grpc_test_util_unsecure
+  - absl/functional:any_invocable
+  - absl/status:statusor
+  - gpr
 - name: test_core_gpr_time_test
   gtest: true
   build: test

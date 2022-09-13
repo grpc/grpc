@@ -24,12 +24,15 @@ grpc_package(
 grpc_cc_test(
     name = "common_closures_test",
     srcs = ["common_closures_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "absl/time",
+        "gtest",
+    ],
     deps = [
         "//:common_event_engine_closures",
         "//:gpr_platform",
         "//:grpc",
-        "//test/core/util:grpc_test_util_unsecure",
     ],
 )
 
@@ -51,13 +54,15 @@ grpc_cc_test(
 grpc_cc_test(
     name = "endpoint_config_test",
     srcs = ["endpoint_config_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/types:optional",
+        "gtest",
+    ],
     language = "C++",
     uses_polling = False,
     deps = [
         "//:gpr_platform",
         "//:grpc",
-        "//test/core/util:grpc_test_util_unsecure",
     ],
 )
 
@@ -79,10 +84,9 @@ grpc_cc_test(
     external_deps = ["gtest"],
     deps = [
         "//:event_engine_base_hdrs",
+        "//:gpr",
         "//:gpr_platform",
-        "//:grpc",
         "//:slice",
-        "//test/core/util:grpc_test_util_unsecure",
     ],
 )
 
@@ -90,9 +94,9 @@ grpc_cc_library(
     name = "test_init",
     srcs = ["test_init.cc"],
     hdrs = ["test_init.h"],
-    external_deps = ["absl/strings"],
-    deps = [
-        "//:event_engine_base_hdrs",
-        "//:gpr",
+    external_deps = [
+        "absl/status",
+        "absl/strings",
     ],
+    deps = ["//:gpr"],
 )
