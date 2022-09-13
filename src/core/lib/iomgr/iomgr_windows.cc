@@ -61,6 +61,8 @@ static void iomgr_platform_init(void) {
   grpc_iocp_init();
   grpc_pollset_global_init();
   grpc_wsa_socket_flags_init();
+  grpc_core::ResetDNSResolver(
+      absl::make_unique<grpc_core::NativeDNSResolver>());
 }
 
 static void iomgr_platform_flush(void) { grpc_iocp_flush(); }
@@ -97,8 +99,6 @@ void grpc_set_default_iomgr_platform() {
   grpc_set_timer_impl(&grpc_generic_timer_vtable);
   grpc_set_pollset_vtable(&grpc_windows_pollset_vtable);
   grpc_set_pollset_set_vtable(&grpc_windows_pollset_set_vtable);
-  grpc_core::ResetDNSResolver(
-      absl::make_unique<grpc_core::NativeDNSResolver>());
   grpc_set_iomgr_platform_vtable(&vtable);
 }
 
