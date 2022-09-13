@@ -208,13 +208,13 @@ void BM_EventEngine_Closure_FanOut(benchmark::State& state) {
   auto engine = GetDefaultEventEngine();
   std::vector<EventEngine::Closure*> closures;
   closures.reserve(params.depth + 2);
-  closures[0] = nullptr;
+  closures.push_back(nullptr);
   // prepare a unique closure for each depth
   for (int i = 0; i <= params.depth; i++) {
-    closures[i + 1] =
-        new AnyInvocableClosure([i, engine, &closures, &params]() {
+    // call the previous closure (e.g., closures[2] calls closures[1] during fanout)
+    closures.push_back(new AnyInvocableClosure([i, engine, &closures, &params]() {
           ClosureFanOutCallback(closures[i], engine, params);
-        });
+        }));
   }
   for (auto _ : state) {
     GPR_DEBUG_ASSERT(gCnt.load(std::memory_order_relaxed) == 0);
