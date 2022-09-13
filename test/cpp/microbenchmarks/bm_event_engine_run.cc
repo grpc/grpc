@@ -151,8 +151,6 @@ FanoutParameters GetFanoutParameters(benchmark::State& state) {
   if (params.depth == 1 || params.fanout == 1) {
     params.limit = std::max(params.depth, params.limit);
   }
-  // gpr_log(GPR_DEBUG, "DO NOT SUBMIT: params: depth=%d, fanout=%d, limit=%d",
-  //         params.depth, params.fanout, params.limit);
   // sanity checking
   GPR_ASSERT(params.limit >= params.fanout * params.depth);
   return params;
