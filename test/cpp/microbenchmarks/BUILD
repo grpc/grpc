@@ -49,6 +49,8 @@ grpc_cc_test(
     external_deps = [
         "benchmark",
     ],
+    uses_event_engine = False,
+    uses_polling = False,
     deps = [
         ":helpers",
         "//:grpc++",

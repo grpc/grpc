@@ -48,7 +48,7 @@ void BM_EventEngine_RunLambda(benchmark::State& state) {
     for (int i = 0; i < cb_count; i++) {
       engine->Run(cb);
     }
-    GPR_ASSERT(p.Get());
+    p.Get();
     state.PauseTiming();
     p.Reset();
     cnt.store(0);
@@ -76,7 +76,7 @@ void BM_EventEngine_RunClosure(benchmark::State& state) {
     for (int i = 0; i < cb_count; i++) {
       engine->Run(&closure);
     }
-    GPR_ASSERT(p.Get());
+    p.Get();
     state.PauseTiming();
     p.Reset();
     cnt.store(0);
@@ -115,7 +115,7 @@ void BM_EventEngine_Lambda_FanOut(benchmark::State& state) {
   std::atomic_int cnt{0};
   for (auto _ : state) {
     FanOutCallback(engine, cnt, fanout, depth, limit, promise);
-    GPR_ASSERT(promise.Get());
+    promise.Get();
     // cleanup
     state.PauseTiming();
     cnt.store(0);
@@ -174,11 +174,11 @@ void BM_EventEngine_Closure_FanOut(benchmark::State& state) {
         });
   }
   for (auto _ : state) {
-    GPR_ASSERT(gCnt.load() == 0);
+    GPR_DEBUG_ASSERT(gCnt.load() == 0);
     for (int i = 0; i < fanout; i++) {
       engine->Run(closures[depth]);
     }
-    GPR_ASSERT(gDone.Get());
+    gDone.Get();
     // cleanup
     state.PauseTiming();
     gCnt.store(0);
