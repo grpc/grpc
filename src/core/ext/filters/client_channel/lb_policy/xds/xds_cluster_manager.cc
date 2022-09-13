@@ -673,7 +673,7 @@ const JsonLoaderInterface* XdsClusterManagerLbConfig::JsonLoader(
   return loader;
 }
 
-void XdsClusterManagerLbConfig::JsonPostLoad(const Json& json, const JsonArgs&,
+void XdsClusterManagerLbConfig::JsonPostLoad(const Json&, const JsonArgs&,
                                              ErrorList* errors) {
   if (cluster_map_.empty()) {
     ScopedField field(errors, ".children");
