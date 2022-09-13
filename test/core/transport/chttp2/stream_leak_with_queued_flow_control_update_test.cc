@@ -194,11 +194,11 @@ void FinishCall(grpc_call* call, grpc_completion_queue* cq) {
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op++;
-  error = grpc_call_start_batch(
-      call, ops, static_cast<size_t>(op - ops), tag, nullptr);
+  error = grpc_call_start_batch(call, ops, static_cast<size_t>(op - ops), tag,
+                                nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  event = grpc_completion_queue_next(
-      cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
+  event = grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME),
+                                     nullptr);
   GPR_ASSERT(event.type == GRPC_OP_COMPLETE);
   GPR_ASSERT(event.success);
   GPR_ASSERT(event.tag == tag);
@@ -217,11 +217,14 @@ TEST(
     // Prevent pings from client to server and server to client, since they can
     // cause chttp2 to initiate a write and so dodge the bug we're trying to
     // repro.
-    auto channel_args = grpc_core::ChannelArgs().Set(GRPC_ARG_HTTP2_BDP_PROBE, 0);
-    TestServer server(cq, const_cast<grpc_channel_args*>(channel_args.ToC().get()));
+    auto channel_args =
+        grpc_core::ChannelArgs().Set(GRPC_ARG_HTTP2_BDP_PROBE, 0);
+    TestServer server(cq,
+                      const_cast<grpc_channel_args*>(channel_args.ToC().get()));
     grpc_channel_credentials* creds = grpc_insecure_credentials_create();
-    grpc_channel* channel = grpc_channel_create(
-        absl::StrCat("ipv6:", server.address()).c_str(), creds, channel_args.ToC().get());
+    grpc_channel* channel =
+        grpc_channel_create(absl::StrCat("ipv6:", server.address()).c_str(),
+                            creds, channel_args.ToC().get());
     grpc_channel_credentials_release(creds);
     grpc_call* call =
         grpc_channel_create_call(channel, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
