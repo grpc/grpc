@@ -1428,6 +1428,7 @@ static void perform_stream_op_locked(void* stream_op,
     s->recv_message_flags = op_payload->recv_message.flags;
     s->call_failed_before_recv_message =
         op_payload->recv_message.call_failed_before_recv_message;
+    gpr_log(GPR_INFO, "apolcyn s=%p t=%p is_client=%d perform_stream_op_locked maybe_complete_recv_trailing_metadata", s, t, t->is_client);
     grpc_chttp2_maybe_complete_recv_trailing_metadata(t, s);
   }
 
@@ -1440,6 +1441,7 @@ static void perform_stream_op_locked(void* stream_op,
     s->recv_trailing_metadata =
         op_payload->recv_trailing_metadata.recv_trailing_metadata;
     s->final_metadata_requested = true;
+    gpr_log(GPR_INFO, "apolcyn s=%p t=%p is_client=%d perform_stream_op_locked maybe_complete_recv_trailing_metadata", s, t, t->is_client);
     grpc_chttp2_maybe_complete_recv_trailing_metadata(t, s);
   }
 
@@ -1889,6 +1891,7 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* t,
 
 void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_chttp2_transport* t,
                                                        grpc_chttp2_stream* s) {
+  gpr_log(GPR_INFO, "apolcyn s=%p t=%p is_client=%d maybe_complete_recv_trailing_metadata BEGIN", s, t, t->is_client);
   grpc_chttp2_maybe_complete_recv_message(t, s);
   if (s->recv_trailing_metadata_finished != nullptr && s->read_closed &&
       s->write_closed) {
@@ -1904,6 +1907,7 @@ void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_chttp2_transport* t,
       null_then_sched_closure(&s->recv_trailing_metadata_finished);
     }
   }
+  gpr_log(GPR_INFO, "apolcyn s=%p t=%p is_client=%d maybe_complete_recv_trailing_metadata END", s, t, t->is_client);
 }
 
 static void remove_stream(grpc_chttp2_transport* t, uint32_t id,
@@ -1984,6 +1988,7 @@ void grpc_chttp2_fake_status(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
           grpc_core::Slice::FromCopiedBuffer(message));
     }
     s->published_metadata[1] = GRPC_METADATA_SYNTHESIZED_FROM_FAKE;
+    gpr_log(GPR_INFO, "apolcyn s=%p t=%p is_client=%d fake_status maybe_complete_recv_trailing_metadata", s, t, t->is_client);
     grpc_chttp2_maybe_complete_recv_trailing_metadata(t, s);
   }
 
@@ -2059,7 +2064,7 @@ void grpc_chttp2_fail_pending_writes(grpc_chttp2_transport* t,
 void grpc_chttp2_mark_stream_closed(grpc_chttp2_transport* t,
                                     grpc_chttp2_stream* s, int close_reads,
                                     int close_writes, grpc_error_handle error) {
-  gpr_log(GPR_INFO, "apolcyn s=%p t=%p is_client=%d mark_stream_closed close_reads=%d close_writes=%d error=%s",
+  gpr_log(GPR_INFO, "apolcyn s=%p t=%p is_client=%d mark_stream_closed close_reads=%d close_writes=%d error=%s BEGIN",
           s, t, t->is_client, close_reads, close_writes, grpc_error_std_string(error).c_str());
   if (s->read_closed && s->write_closed) {
     // already closed, but we should still fake the status if needed.
@@ -2067,6 +2072,7 @@ void grpc_chttp2_mark_stream_closed(grpc_chttp2_transport* t,
     if (!GRPC_ERROR_IS_NONE(overall_error)) {
       grpc_chttp2_fake_status(t, s, overall_error);
     }
+    gpr_log(GPR_INFO, "apolcyn s=%p t=%p is_client=%d mark_stream_closed early out maybe_complete_recv_trailing_metadata overall_error=%s", s, t, t->is_client, grpc_error_std_string(error).c_str());
     grpc_chttp2_maybe_complete_recv_trailing_metadata(t, s);
     return;
   }
@@ -2101,6 +2107,8 @@ void grpc_chttp2_mark_stream_closed(grpc_chttp2_transport* t,
   }
   if (became_closed) {
     grpc_chttp2_maybe_complete_recv_trailing_metadata(t, s);
+    gpr_log(GPR_INFO, "apolcyn s=%p t=%p is_client=%d mark_stream_closed became_closed=%d check if we should remove stream s->id=%d",
+            s, t, t->is_client, s->id);
     if (s->id != 0) {
       remove_stream(t, s->id,
                     removal_error(GRPC_ERROR_REF(error), s, "Stream removed"));
@@ -2110,6 +2118,8 @@ void grpc_chttp2_mark_stream_closed(grpc_chttp2_transport* t,
     }
     GRPC_CHTTP2_STREAM_UNREF(s, "chttp2");
   }
+  gpr_log(GPR_INFO, "apolcyn s=%p t=%p is_client=%d mark_stream_closed close_reads=%d close_writes=%d error=%s END",
+          s, t, t->is_client, close_reads, close_writes, grpc_error_std_string(error).c_str());
   GRPC_ERROR_UNREF(error);
 }
 
