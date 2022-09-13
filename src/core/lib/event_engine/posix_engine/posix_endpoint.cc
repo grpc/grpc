@@ -953,13 +953,6 @@ bool PosixEndpointImpl::ProcessErrors() {
   }
 }
 
-void PosixEndpointImpl::UnrefMaybePutZerocopySendRecord(
-    TcpZerocopySendRecord* record) {
-  if (record->Unref()) {
-    tcp_zerocopy_send_ctx_->PutSendRecord(record);
-  }
-}
-
 void PosixEndpointImpl::ZerocopyDisableAndWaitForRemaining() {
   tcp_zerocopy_send_ctx_->Shutdown();
   while (!tcp_zerocopy_send_ctx_->AllSendRecordsEmpty()) {
@@ -1117,6 +1110,13 @@ bool PosixEndpointImpl::WriteWithTimestamps(struct msghdr* /*msg*/,
   GPR_ASSERT(false && "Write with timestamps not supported for this platform");
 }
 #endif /* GRPC_LINUX_ERRQUEUE */
+
+void PosixEndpointImpl::UnrefMaybePutZerocopySendRecord(
+    TcpZerocopySendRecord* record) {
+  if (record->Unref()) {
+    tcp_zerocopy_send_ctx_->PutSendRecord(record);
+  }
+}
 
 // If outgoing_buffer_arg is filled, shuts down the list early, so that any
 // release operations needed can be performed on the arg.

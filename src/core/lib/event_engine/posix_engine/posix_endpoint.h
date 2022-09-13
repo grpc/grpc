@@ -19,7 +19,7 @@
 
 #include <memory>
 
-#include "grpc/event_engine/endpoint_config.h"
+#include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/slice_buffer.h>
 
