@@ -223,7 +223,8 @@ void TestOnlyGlobalHttp2TransportDisableTransientFailureStateNotification(
 //
 
 grpc_chttp2_transport::~grpc_chttp2_transport() {
-  gpr_log(GPR_INFO, "apolcyn t=%p is_client=%d transport dtor", this, is_client);
+  gpr_log(GPR_INFO, "apolcyn t=%p is_client=%d transport dtor", this,
+          is_client);
   size_t i;
 
   if (channelz_socket != nullptr) {
@@ -669,7 +670,8 @@ grpc_chttp2_stream::grpc_chttp2_stream(grpc_chttp2_transport* t,
 }
 
 grpc_chttp2_stream::~grpc_chttp2_stream() {
-  gpr_log(GPR_INFO, "apolcyn s=%p t=%p is_client=%d stream dtor", this, t, t->is_client);
+  gpr_log(GPR_INFO, "apolcyn s=%p t=%p is_client=%d stream dtor", this, t,
+          t->is_client);
   grpc_chttp2_list_remove_stalled_by_stream(t, this);
   grpc_chttp2_list_remove_stalled_by_transport(t, this);
 
@@ -787,7 +789,8 @@ static void set_write_state(grpc_chttp2_transport* t,
 
 void grpc_chttp2_initiate_write(grpc_chttp2_transport* t,
                                 grpc_chttp2_initiate_write_reason reason) {
-  gpr_log(GPR_INFO, "apolcyn t=%p is_client=%d initiate_write reason=%s", t, t->is_client, grpc_chttp2_initiate_write_reason_string(reason));
+  gpr_log(GPR_INFO, "apolcyn t=%p is_client=%d initiate_write reason=%s", t,
+          t->is_client, grpc_chttp2_initiate_write_reason_string(reason));
   switch (t->write_state) {
     case GRPC_CHTTP2_WRITE_STATE_IDLE:
       set_write_state(t, GRPC_CHTTP2_WRITE_STATE_WRITING,
@@ -888,7 +891,8 @@ static void write_action(void* gt, grpc_error_handle /*error*/) {
           ? 2 * t->settings[GRPC_PEER_SETTINGS]
                            [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE]
           : INT_MAX;
-  gpr_log(GPR_INFO, "apolcyn t=%p is_client=%d endpoint_write", t, t->is_client);
+  gpr_log(GPR_INFO, "apolcyn t=%p is_client=%d endpoint_write", t,
+          t->is_client);
   grpc_endpoint_write(
       t->ep, &t->outbuf,
       GRPC_CLOSURE_INIT(&t->write_action_end_locked, write_action_end, t,
@@ -1429,7 +1433,10 @@ static void perform_stream_op_locked(void* stream_op,
     s->recv_message_flags = op_payload->recv_message.flags;
     s->call_failed_before_recv_message =
         op_payload->recv_message.call_failed_before_recv_message;
-    gpr_log(GPR_INFO, "apolcyn s=%p t=%p is_client=%d perform_stream_op_locked maybe_complete_recv_trailing_metadata", s, t, t->is_client);
+    gpr_log(GPR_INFO,
+            "apolcyn s=%p t=%p is_client=%d perform_stream_op_locked "
+            "maybe_complete_recv_trailing_metadata",
+            s, t, t->is_client);
     grpc_chttp2_maybe_complete_recv_trailing_metadata(t, s);
   }
 
@@ -1442,7 +1449,10 @@ static void perform_stream_op_locked(void* stream_op,
     s->recv_trailing_metadata =
         op_payload->recv_trailing_metadata.recv_trailing_metadata;
     s->final_metadata_requested = true;
-    gpr_log(GPR_INFO, "apolcyn s=%p t=%p is_client=%d perform_stream_op_locked maybe_complete_recv_trailing_metadata", s, t, t->is_client);
+    gpr_log(GPR_INFO,
+            "apolcyn s=%p t=%p is_client=%d perform_stream_op_locked "
+            "maybe_complete_recv_trailing_metadata",
+            s, t, t->is_client);
     grpc_chttp2_maybe_complete_recv_trailing_metadata(t, s);
   }
 
@@ -1821,7 +1831,10 @@ void grpc_chttp2_maybe_complete_recv_initial_metadata(grpc_chttp2_transport* t,
 
 void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* t,
                                              grpc_chttp2_stream* s) {
-  gpr_log(GPR_INFO, "apolcyn s=%p t=%p is_client=%d maybe_complete_recv_message s->recv_message_ready=%p &s->flow_control=%p BEGIN", s, t, t->is_client, s->recv_message_ready, &s->flow_control);
+  gpr_log(GPR_INFO,
+          "apolcyn s=%p t=%p is_client=%d maybe_complete_recv_message "
+          "s->recv_message_ready=%p &s->flow_control=%p BEGIN",
+          s, t, t->is_client, s->recv_message_ready, &s->flow_control);
   if (s->recv_message_ready == nullptr) return;
 
   grpc_core::chttp2::StreamFlowControl::IncomingUpdateContext upd(
@@ -1887,12 +1900,18 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* t,
 
   upd.SetPendingSize(s->frame_storage.length);
   grpc_chttp2_act_on_flowctl_action(upd.MakeAction(), t, s);
-  gpr_log(GPR_INFO, "apolcyn s=%p t=%p is_client=%d maybe_complete_recv_message s->recv_message_ready=%p END", s, t, t->is_client, s->recv_message_ready);
+  gpr_log(GPR_INFO,
+          "apolcyn s=%p t=%p is_client=%d maybe_complete_recv_message "
+          "s->recv_message_ready=%p END",
+          s, t, t->is_client, s->recv_message_ready);
 }
 
 void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_chttp2_transport* t,
                                                        grpc_chttp2_stream* s) {
-  gpr_log(GPR_INFO, "apolcyn s=%p t=%p is_client=%d maybe_complete_recv_trailing_metadata BEGIN", s, t, t->is_client);
+  gpr_log(GPR_INFO,
+          "apolcyn s=%p t=%p is_client=%d "
+          "maybe_complete_recv_trailing_metadata BEGIN",
+          s, t, t->is_client);
   grpc_chttp2_maybe_complete_recv_message(t, s);
   if (s->recv_trailing_metadata_finished != nullptr && s->read_closed &&
       s->write_closed) {
@@ -1908,14 +1927,18 @@ void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_chttp2_transport* t,
       null_then_sched_closure(&s->recv_trailing_metadata_finished);
     }
   }
-  gpr_log(GPR_INFO, "apolcyn s=%p t=%p is_client=%d maybe_complete_recv_trailing_metadata END", s, t, t->is_client);
+  gpr_log(GPR_INFO,
+          "apolcyn s=%p t=%p is_client=%d "
+          "maybe_complete_recv_trailing_metadata END",
+          s, t, t->is_client);
 }
 
 static void remove_stream(grpc_chttp2_transport* t, uint32_t id,
                           grpc_error_handle error) {
   grpc_chttp2_stream* s = static_cast<grpc_chttp2_stream*>(
       grpc_chttp2_stream_map_delete(&t->stream_map, id));
-  gpr_log(GPR_INFO, "apolcyn s=%p t=%p is_client=%d remove_stream", s, t, t->is_client);
+  gpr_log(GPR_INFO, "apolcyn s=%p t=%p is_client=%d remove_stream", s, t,
+          t->is_client);
   GPR_DEBUG_ASSERT(s);
   if (t->incoming_stream == s) {
     t->incoming_stream = nullptr;
@@ -1989,7 +2012,10 @@ void grpc_chttp2_fake_status(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
           grpc_core::Slice::FromCopiedBuffer(message));
     }
     s->published_metadata[1] = GRPC_METADATA_SYNTHESIZED_FROM_FAKE;
-    gpr_log(GPR_INFO, "apolcyn s=%p t=%p is_client=%d fake_status maybe_complete_recv_trailing_metadata", s, t, t->is_client);
+    gpr_log(GPR_INFO,
+            "apolcyn s=%p t=%p is_client=%d fake_status "
+            "maybe_complete_recv_trailing_metadata",
+            s, t, t->is_client);
     grpc_chttp2_maybe_complete_recv_trailing_metadata(t, s);
   }
 
@@ -2065,15 +2091,21 @@ void grpc_chttp2_fail_pending_writes(grpc_chttp2_transport* t,
 void grpc_chttp2_mark_stream_closed(grpc_chttp2_transport* t,
                                     grpc_chttp2_stream* s, int close_reads,
                                     int close_writes, grpc_error_handle error) {
-  gpr_log(GPR_INFO, "apolcyn s=%p t=%p is_client=%d mark_stream_closed close_reads=%d close_writes=%d error=%s BEGIN",
-          s, t, t->is_client, close_reads, close_writes, grpc_error_std_string(error).c_str());
+  gpr_log(GPR_INFO,
+          "apolcyn s=%p t=%p is_client=%d mark_stream_closed close_reads=%d "
+          "close_writes=%d error=%s BEGIN",
+          s, t, t->is_client, close_reads, close_writes,
+          grpc_error_std_string(error).c_str());
   if (s->read_closed && s->write_closed) {
     // already closed, but we should still fake the status if needed.
     grpc_error_handle overall_error = removal_error(error, s, "Stream removed");
     if (!GRPC_ERROR_IS_NONE(overall_error)) {
       grpc_chttp2_fake_status(t, s, overall_error);
     }
-    gpr_log(GPR_INFO, "apolcyn s=%p t=%p is_client=%d mark_stream_closed early out maybe_complete_recv_trailing_metadata overall_error=%s", s, t, t->is_client, grpc_error_std_string(error).c_str());
+    gpr_log(GPR_INFO,
+            "apolcyn s=%p t=%p is_client=%d mark_stream_closed early out "
+            "maybe_complete_recv_trailing_metadata overall_error=%s",
+            s, t, t->is_client, grpc_error_std_string(error).c_str());
     grpc_chttp2_maybe_complete_recv_trailing_metadata(t, s);
     return;
   }
@@ -2114,12 +2146,17 @@ void grpc_chttp2_mark_stream_closed(grpc_chttp2_transport* t,
   }
   if (became_closed) {
     grpc_chttp2_maybe_complete_recv_trailing_metadata(t, s);
-    gpr_log(GPR_INFO, "apolcyn s=%p t=%p is_client=%d mark_stream_closed became_closed=%d check if we should remove stream s->id=%d",
+    gpr_log(GPR_INFO,
+            "apolcyn s=%p t=%p is_client=%d mark_stream_closed "
+            "became_closed=%d check if we should remove stream s->id=%d",
             s, t, t->is_client, s->id);
     GRPC_CHTTP2_STREAM_UNREF(s, "chttp2");
   }
-  gpr_log(GPR_INFO, "apolcyn s=%p t=%p is_client=%d mark_stream_closed close_reads=%d close_writes=%d error=%s END",
-          s, t, t->is_client, close_reads, close_writes, grpc_error_std_string(error).c_str());
+  gpr_log(GPR_INFO,
+          "apolcyn s=%p t=%p is_client=%d mark_stream_closed close_reads=%d "
+          "close_writes=%d error=%s END",
+          s, t, t->is_client, close_reads, close_writes,
+          grpc_error_std_string(error).c_str());
   GRPC_ERROR_UNREF(error);
 }
 
@@ -2334,7 +2371,10 @@ void grpc_chttp2_act_on_flowctl_action(
   WithUrgency(t, action.send_stream_update(),
               GRPC_CHTTP2_INITIATE_WRITE_STREAM_FLOW_CONTROL, [t, s]() {
                 if (s->id != 0 && !s->read_closed) {
-                  gpr_log(GPR_INFO, "apolcyn s=%p t=%p is_client=%d act_on_flowctl_action mark_stream_writable", s, t, t->is_client);
+                  gpr_log(GPR_INFO,
+                          "apolcyn s=%p t=%p is_client=%d "
+                          "act_on_flowctl_action mark_stream_writable",
+                          s, t, t->is_client);
                   grpc_chttp2_mark_stream_writable(t, s);
                 }
               });

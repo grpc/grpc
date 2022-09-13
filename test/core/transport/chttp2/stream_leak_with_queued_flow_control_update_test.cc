@@ -13,7 +13,14 @@
 // limitations under the License.
 
 #include <grpc/support/port_platform.h>
+
 #include <string.h>
+
+#include <string>
+
+#include "absl/strings/str_cat.h"
+#include "gtest/gtest.h"
+
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -22,10 +29,7 @@
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
-#include <string>
 
-#include "absl/strings/str_cat.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/iomgr.h"
@@ -126,18 +130,18 @@ class TestServer {
 
 void StartCallAndCloseWrites(grpc_call* call, grpc_completion_queue* cq) {
   gpr_log(GPR_INFO, "StartCallAndCloseWrites BEGIN");
-  //grpc_slice payload_slice = grpc_slice_from_static_string("a");
-  //grpc_byte_buffer* payload =
-  //    grpc_raw_byte_buffer_create(&payload_slice, 1);
+  // grpc_slice payload_slice = grpc_slice_from_static_string("a");
+  // grpc_byte_buffer* payload =
+  //     grpc_raw_byte_buffer_create(&payload_slice, 1);
   grpc_op ops[2];
   grpc_op* op;
   memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op++;
-  //op->op = GRPC_OP_SEND_MESSAGE;
-  //op->data.send_message.send_message = payload;
-  //op++;
+  // op->op = GRPC_OP_SEND_MESSAGE;
+  // op->data.send_message.send_message = payload;
+  // op++;
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
   op++;
   void* tag = call;
@@ -149,7 +153,7 @@ void StartCallAndCloseWrites(grpc_call* call, grpc_completion_queue* cq) {
   GPR_ASSERT(event.type == GRPC_OP_COMPLETE);
   GPR_ASSERT(event.success);
   GPR_ASSERT(event.tag == tag);
-  //grpc_byte_buffer_destroy(payload);
+  // grpc_byte_buffer_destroy(payload);
   gpr_log(GPR_INFO, "StartCallAndCloseWrites END");
 }
 
@@ -165,8 +169,8 @@ void FinishCall(grpc_call* call, grpc_completion_queue* cq) {
   void* tag = call;
   // Note: we're only doing read ops here.  The goal here is to finish the call
   // with a queued stream flow control update, due to receipt of a small
-  // message. We won't do anything to explicitly initiate writes on the transport,
-  // which could accidentally flush out that queued update.
+  // message. We won't do anything to explicitly initiate writes on the
+  // transport, which could accidentally flush out that queued update.
   grpc_op ops[3];
   grpc_op* op;
   memset(ops, 0, sizeof(ops));
@@ -182,11 +186,11 @@ void FinishCall(grpc_call* call, grpc_completion_queue* cq) {
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op++;
-  grpc_call_error error = grpc_call_start_batch(call, ops, static_cast<size_t>(op - ops), tag,
-                                                nullptr);
+  grpc_call_error error = grpc_call_start_batch(
+      call, ops, static_cast<size_t>(op - ops), tag, nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  grpc_event event = grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME),
-                                     nullptr);
+  grpc_event event = grpc_completion_queue_next(
+      cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
   GPR_ASSERT(event.type == GRPC_OP_COMPLETE);
   GPR_ASSERT(event.success);
   GPR_ASSERT(event.tag == tag);
@@ -198,49 +202,50 @@ void FinishCall(grpc_call* call, grpc_completion_queue* cq) {
 }
 
 void EnsureConnectionsArentLeaked(grpc_completion_queue* cq) {
-    gpr_log(
-        GPR_INFO,
-        "The channel has been destroyed, wait for it to shut down and close...");
-    // Do a quick initial poll to try to exit the test early if things have
-    // already cleaned up.
-    GPR_ASSERT(grpc_completion_queue_next(
-        cq,
-        gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                     gpr_time_from_millis(1, GPR_TIMESPAN)),
-        nullptr).type == GRPC_QUEUE_TIMEOUT);
-    gpr_timespec overall_deadline = grpc_timeout_seconds_to_deadline(120);
-    bool success = false;
-    for (;;) {
-      // TODO(apolcyn): grpc_iomgr_count_objects_for_testing() is an internal
-      // and unstable API. Consider a different method of detecting leaks if
-      // it becomes no longer useable. Perhaps use
-      // TestOnlySetGlobalHttp2TransportDestructCallback to check whether
-      // transports are still around, for example. Note: at the time of writing,
-      // this test is  meant to repro a chttp2 stream leak, which also holds on
-      // to transports and iomgr objects.
-      size_t active_fds = grpc_iomgr_count_objects_for_testing();
-      // We should arrive at exactly one iomgr object for the server's listener
-      // socket, because we haven't destroyed the server yet. The test may not
-      // be doing what we think it's doing if this isn't the case.
-      if (active_fds == 1) return;
-      if (gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), overall_deadline) > 0) {
-        gpr_log(GPR_INFO,
-                "grpc_iomgr_count_objects_for_testing() never returned 1 (only "
-                "the server listen socket should remain). "
-                "It's likely this test has triggered a connection leak.");
-        GPR_ASSERT(0);
-      }
-      gpr_log(
-          GPR_INFO,
-          "grpc_iomgr_count_objects_for_testing() returned %ld, keep waiting "
-          "until it reaches 1 (only the server listen socket should remain)",
-          active_fds);
-      GPR_ASSERT(grpc_completion_queue_next(
-          cq,
-          gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                       gpr_time_from_seconds(1, GPR_TIMESPAN)),
-          nullptr).type == GRPC_QUEUE_TIMEOUT);
+  gpr_log(
+      GPR_INFO,
+      "The channel has been destroyed, wait for it to shut down and close...");
+  // Do a quick initial poll to try to exit the test early if things have
+  // already cleaned up.
+  GPR_ASSERT(grpc_completion_queue_next(
+                 cq,
+                 gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                              gpr_time_from_millis(1, GPR_TIMESPAN)),
+                 nullptr)
+                 .type == GRPC_QUEUE_TIMEOUT);
+  gpr_timespec overall_deadline = grpc_timeout_seconds_to_deadline(120);
+  bool success = false;
+  for (;;) {
+    // TODO(apolcyn): grpc_iomgr_count_objects_for_testing() is an internal
+    // and unstable API. Consider a different method of detecting leaks if
+    // it becomes no longer useable. Perhaps use
+    // TestOnlySetGlobalHttp2TransportDestructCallback to check whether
+    // transports are still around, for example. Note: at the time of writing,
+    // this test is  meant to repro a chttp2 stream leak, which also holds on
+    // to transports and iomgr objects.
+    size_t active_fds = grpc_iomgr_count_objects_for_testing();
+    // We should arrive at exactly one iomgr object for the server's listener
+    // socket, because we haven't destroyed the server yet. The test may not
+    // be doing what we think it's doing if this isn't the case.
+    if (active_fds == 1) return;
+    if (gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), overall_deadline) > 0) {
+      gpr_log(GPR_INFO,
+              "grpc_iomgr_count_objects_for_testing() never returned 1 (only "
+              "the server listen socket should remain). "
+              "It's likely this test has triggered a connection leak.");
+      GPR_ASSERT(0);
     }
+    gpr_log(GPR_INFO,
+            "grpc_iomgr_count_objects_for_testing() returned %ld, keep waiting "
+            "until it reaches 1 (only the server listen socket should remain)",
+            active_fds);
+    GPR_ASSERT(grpc_completion_queue_next(
+                   cq,
+                   gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                                gpr_time_from_seconds(1, GPR_TIMESPAN)),
+                   nullptr)
+                   .type == GRPC_QUEUE_TIMEOUT);
+  }
 }
 
 TEST(
@@ -277,8 +282,8 @@ TEST(
     // The timeout here just needs to be long enough that the client has
     // most likely read message and status off the wire by the time it's done.
     GPR_ASSERT(grpc_completion_queue_next(
-        cq, grpc_timeout_milliseconds_to_deadline(20), nullptr
-        ).type == GRPC_QUEUE_TIMEOUT);
+                   cq, grpc_timeout_milliseconds_to_deadline(20), nullptr)
+                   .type == GRPC_QUEUE_TIMEOUT);
     // Perform the receive message and status. Note that the incoming bytes
     // should already be in the client's buffers by the time we start these ops.
     // Thus, the client should *not* need to send a flow control update to the

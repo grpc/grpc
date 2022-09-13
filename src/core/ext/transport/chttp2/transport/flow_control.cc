@@ -393,18 +393,30 @@ FlowControlAction StreamFlowControl::UpdateAction(FlowControlAction action) {
   if (desired_announce_size > 0) {
     if ((min_progress_size_ > 0 && announced_window_delta_ <= 0) ||
         desired_announce_size >= 8192) {
-      gpr_log(GPR_INFO, "apolcyn StreamFlowControl=%p UpdateAction UPDATE_IMMEDIATELY desired_announce_size_=%d min_progress_size_=%d announced_window_delta_=%d",
-              this, desired_announce_size, min_progress_size_, announced_window_delta_);
+      gpr_log(GPR_INFO,
+              "apolcyn StreamFlowControl=%p UpdateAction UPDATE_IMMEDIATELY "
+              "desired_announce_size_=%d min_progress_size_=%d "
+              "announced_window_delta_=%d",
+              this, desired_announce_size, min_progress_size_,
+              announced_window_delta_);
       action.set_send_stream_update(
           FlowControlAction::Urgency::UPDATE_IMMEDIATELY);
     } else {
-      gpr_log(GPR_INFO, "apolcyn StreamFlowControl=%p UpdateAction QUEUE_UPDATE desired_announce_size_=%d min_progress_size_=%d announced_window_delta_=%d",
-              this, desired_announce_size, min_progress_size_, announced_window_delta_);
+      gpr_log(GPR_INFO,
+              "apolcyn StreamFlowControl=%p UpdateAction QUEUE_UPDATE "
+              "desired_announce_size_=%d min_progress_size_=%d "
+              "announced_window_delta_=%d",
+              this, desired_announce_size, min_progress_size_,
+              announced_window_delta_);
       action.set_send_stream_update(FlowControlAction::Urgency::QUEUE_UPDATE);
     }
   } else {
-    gpr_log(GPR_INFO, "apolcyn StreamFlowControl=%p UpdateAction NO_UPDATE desired_announce_size_=%d min_progress_size_=%d announced_window_delta_=%d",
-            this, desired_announce_size, min_progress_size_, announced_window_delta_);
+    gpr_log(GPR_INFO,
+            "apolcyn StreamFlowControl=%p UpdateAction NO_UPDATE "
+            "desired_announce_size_=%d min_progress_size_=%d "
+            "announced_window_delta_=%d",
+            this, desired_announce_size, min_progress_size_,
+            announced_window_delta_);
   }
   return action;
 }
