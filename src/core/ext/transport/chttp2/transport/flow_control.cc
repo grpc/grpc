@@ -398,7 +398,6 @@ FlowControlAction StreamFlowControl::UpdateAction(FlowControlAction action) {
     } else {
       action.set_send_stream_update(FlowControlAction::Urgency::QUEUE_UPDATE);
     }
-  } else {
   }
   return action;
 }
