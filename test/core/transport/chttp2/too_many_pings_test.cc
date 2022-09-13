@@ -18,40 +18,45 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <stdlib.h>
+#include <stdint.h>
 #include <string.h>
 
-#include <functional>
-#include <set>
-#include <thread>
+#include <algorithm>
+#include <map>
+#include <string>
+#include <utility>
+#include <vector>
 
-#include <gmock/gmock.h>
-
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
+#include "absl/time/time.h"
+#include "gtest/gtest.h"
 
+#include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
-#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/codegen/propagation_bits.h>
 #include <grpc/slice.h>
-#include <grpc/support/alloc.h>
+#include <grpc/status.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
-#include <grpcpp/impl/codegen/service_type.h>
-#include <grpcpp/server_builder.h>
 
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/address_utils/parse_address.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/gprpp/thd.h"
-#include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/security/credentials/alts/alts_credentials.h"
-#include "src/core/lib/security/credentials/credentials.h"
-#include "src/core/lib/security/security_connector/alts/alts_security_connector.h"
-#include "src/core/lib/slice/slice_string_helpers.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/resolved_address.h"
+#include "src/core/lib/resolver/resolver.h"
+#include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/surface/channel.h"
+#include "src/core/lib/uri/uri_parser.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -111,6 +116,7 @@ grpc_status_code PerformCall(grpc_channel* channel, grpc_server* server,
   grpc_core::CqVerifier cqv(cq);
   grpc_op ops[6];
   grpc_op* op;
+  grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array request_metadata_recv;
   grpc_call_details call_details;
@@ -123,6 +129,7 @@ grpc_status_code PerformCall(grpc_channel* channel, grpc_server* server,
                                grpc_slice_from_static_string("/foo"), nullptr,
                                deadline, nullptr);
   GPR_ASSERT(c);
+  grpc_metadata_array_init(&initial_metadata_recv);
   grpc_metadata_array_init(&trailing_metadata_recv);
   grpc_metadata_array_init(&request_metadata_recv);
   grpc_call_details_init(&call_details);
@@ -137,6 +144,11 @@ grpc_status_code PerformCall(grpc_channel* channel, grpc_server* server,
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
+  op->flags = 0;
+  op->reserved = nullptr;
+  op++;
+  op->op = GRPC_OP_RECV_INITIAL_METADATA;
+  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
   op->flags = 0;
   op->reserved = nullptr;
   op++;
@@ -155,6 +167,7 @@ grpc_status_code PerformCall(grpc_channel* channel, grpc_server* server,
   cqv.Verify();
   // cleanup
   grpc_slice_unref(details);
+  grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
@@ -232,6 +245,7 @@ grpc_status_code PerformWaitingCall(grpc_channel* channel, grpc_server* server,
   grpc_core::CqVerifier cqv(cq);
   grpc_op ops[6];
   grpc_op* op;
+  grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array request_metadata_recv;
   grpc_call_details call_details;
@@ -244,6 +258,7 @@ grpc_status_code PerformWaitingCall(grpc_channel* channel, grpc_server* server,
                                grpc_slice_from_static_string("/foo"), nullptr,
                                deadline, nullptr);
   GPR_ASSERT(c);
+  grpc_metadata_array_init(&initial_metadata_recv);
   grpc_metadata_array_init(&trailing_metadata_recv);
   grpc_metadata_array_init(&request_metadata_recv);
   grpc_call_details_init(&call_details);
@@ -258,6 +273,11 @@ grpc_status_code PerformWaitingCall(grpc_channel* channel, grpc_server* server,
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
+  op->flags = 0;
+  op->reserved = nullptr;
+  op++;
+  op->op = GRPC_OP_RECV_INITIAL_METADATA;
+  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
   op->flags = 0;
   op->reserved = nullptr;
   op++;
@@ -282,6 +302,7 @@ grpc_status_code PerformWaitingCall(grpc_channel* channel, grpc_server* server,
   cqv.Verify(grpc_core::Duration::Seconds(60));
   // cleanup
   grpc_slice_unref(details);
+  grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
@@ -323,8 +344,11 @@ void VerifyChannelDisconnected(grpc_channel* channel,
   GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
   GPR_ASSERT(ev.tag == reinterpret_cast<void*>(2000));
   GPR_ASSERT(ev.success == 0);
-  GPR_ASSERT(grpc_channel_check_connectivity_state(channel, 0) !=
-             GRPC_CHANNEL_READY);
+  // We are intentionally not checking the connectivity state since it is
+  // propagated in an asynchronous manner which means that we might see an older
+  // state. We would eventually get the correct state, but since we have already
+  // verified that the ping has failed, checking the connectivity state is not
+  // necessary.
 }
 
 class KeepaliveThrottlingTest : public ::testing::Test {

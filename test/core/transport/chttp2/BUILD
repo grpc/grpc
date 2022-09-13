@@ -111,6 +111,7 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
+    tags = ["flow_control_test"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -210,7 +211,6 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    flaky = True,  # TODO(b/148399919)
     language = "C++",
     deps = [
         "//:gpr",
@@ -225,6 +225,7 @@ grpc_cc_test(
     timeout = "long",  # Required for internal test infrastructure (cl/325757166)
     srcs = ["too_many_pings_test.cc"],
     external_deps = ["gtest"],
+    flaky = True,
     shard_count = 7,
     deps = [
         "//:gpr",
@@ -266,7 +267,10 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
-    tags = ["no_windows"],  # LARGE_MACHINE is not configured for windows RBE
+    tags = [
+        "flow_control_test",
+        "no_windows",
+    ],  # LARGE_MACHINE is not configured for windows RBE
     deps = [
         "//:gpr",
         "//:grpc",

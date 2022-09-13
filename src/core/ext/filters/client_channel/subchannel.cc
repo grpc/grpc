@@ -27,15 +27,16 @@
 #include <utility>
 
 #include "absl/status/statusor.h"
+#include "absl/strings/cord.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
-#include <grpc/grpc.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/health/health_check_client.h"
-#include "src/core/ext/filters/client_channel/proxy_mapper_registry.h"
 #include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
 #include "src/core/ext/filters/client_channel/subchannel_stream_client.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
@@ -49,23 +50,20 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/event_engine/event_engine_factory.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gpr/alloc.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/handshaker/proxy_mapper_registry.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset_set.h"
-#include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
+#include "src/core/lib/surface/init_internally.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
-
-// Strong and weak refs.
-#define INTERNAL_REF_BITS 16
-#define STRONG_REF_MASK (~(gpr_atm)((1 << INTERNAL_REF_BITS) - 1))
 
 // Backoff parameters.
 #define GRPC_SUBCHANNEL_INITIAL_CONNECT_BACKOFF_SECONDS 1
@@ -175,7 +173,6 @@ SubchannelCall::SubchannelCall(Args args, grpc_error_handle* error)
 
 void SubchannelCall::StartTransportStreamOpBatch(
     grpc_transport_stream_op_batch* batch) {
-  GPR_TIMER_SCOPE("subchannel_call_process_op", 0);
   MaybeInterceptRecvTrailingMetadata(batch);
   grpc_call_stack* call_stack = SUBCHANNEL_CALL_TO_CALL_STACK(this);
   grpc_call_element* top_elem = grpc_call_stack_element(call_stack, 0);
@@ -214,7 +211,6 @@ void SubchannelCall::Unref(const DebugLocation& /*location*/,
 }
 
 void SubchannelCall::Destroy(void* arg, grpc_error_handle /*error*/) {
-  GPR_TIMER_SCOPE("subchannel_call_destroy", 0);
   SubchannelCall* self = static_cast<SubchannelCall*>(arg);
   // Keep some members before destroying the subchannel call.
   grpc_closure* after_call_stack_destroy = self->after_call_stack_destroy_;
@@ -640,13 +636,15 @@ Subchannel::Subchannel(SubchannelKey key,
   // before the last subchannel destruction, then there maybe race conditions
   // triggering segmentation faults. To prevent this issue, we call a grpc_init
   // here and a grpc_shutdown in the subchannel destructor.
-  grpc_init();
+  InitInternally();
   GRPC_STATS_INC_CLIENT_SUBCHANNELS_CREATED();
   GRPC_CLOSURE_INIT(&on_connecting_finished_, OnConnectingFinished, this,
                     grpc_schedule_on_exec_ctx);
   // Check proxy mapper to determine address to connect to and channel
   // args to use.
-  address_for_connect_ = ProxyMapperRegistry::MapAddress(key_.address(), &args_)
+  address_for_connect_ = CoreConfiguration::Get()
+                             .proxy_mapper_registry()
+                             .MapAddress(key_.address(), &args_)
                              .value_or(key_.address());
   // Initialize channelz.
   const bool channelz_enabled = args_.GetBool(GRPC_ARG_ENABLE_CHANNELZ)
@@ -676,7 +674,7 @@ Subchannel::~Subchannel() {
   connector_.reset();
   grpc_pollset_set_destroy(pollset_set_);
   // grpc_shutdown is called here because grpc_init is called in the ctor.
-  grpc_shutdown();
+  ShutdownInternally();
 }
 
 RefCountedPtr<Subchannel> Subchannel::Create(
@@ -838,7 +836,21 @@ const char* SubchannelConnectivityStateChangeString(
 void Subchannel::SetConnectivityStateLocked(grpc_connectivity_state state,
                                             const absl::Status& status) {
   state_ = state;
-  status_ = status;
+  if (status.ok()) {
+    status_ = status;
+  } else {
+    // Augment status message to include IP address.
+    status_ = absl::Status(status.code(),
+                           absl::StrCat(grpc_sockaddr_to_uri(&key_.address())
+                                            .value_or("<unknown address type>"),
+                                        ": ", status.message()));
+    status.ForEachPayload(
+        [this](absl::string_view key, const absl::Cord& value)
+        // Want to use ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_) here,
+        // but that won't work, because we can't pass the lock
+        // annotation through absl::Status::ForEachPayload().
+        ABSL_NO_THREAD_SAFETY_ANALYSIS { status_.SetPayload(key, value); });
+  }
   if (channelz_node_ != nullptr) {
     channelz_node_->UpdateConnectivityState(state);
     channelz_node_->AddTraceEvent(
@@ -847,9 +859,9 @@ void Subchannel::SetConnectivityStateLocked(grpc_connectivity_state state,
             SubchannelConnectivityStateChangeString(state)));
   }
   // Notify non-health watchers.
-  watcher_list_.NotifyLocked(state, status);
+  watcher_list_.NotifyLocked(state, status_);
   // Notify health watchers.
-  health_watcher_map_.NotifyLocked(state, status);
+  health_watcher_map_.NotifyLocked(state, status_);
 }
 
 void Subchannel::OnRetryTimer() {

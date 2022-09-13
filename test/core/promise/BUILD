@@ -26,7 +26,7 @@ grpc_cc_library(
     external_deps = ["gtest"],
     visibility = ["//test/core:__subpackages__"],
     deps = [
-        "//:gpr_base",
+        "//:gpr",
     ],
 )
 
@@ -37,7 +37,7 @@ grpc_cc_library(
     external_deps = ["gtest"],
     visibility = ["//test/core:__subpackages__"],
     deps = [
-        "//:gpr_base",
+        "//:gpr",
     ],
 )
 
@@ -82,12 +82,16 @@ grpc_cc_test(
     srcs = ["arena_promise_test.cc"],
     external_deps = ["gtest"],
     language = "c++",
+    tags = [
+        "resource_quota_test",
+    ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
         ":test_context",
         "//:arena_promise",
         "//:resource_quota",
+        "//test/core/util:grpc_test_util_unsecure",
     ],
 )
 
@@ -228,6 +232,7 @@ grpc_cc_test(
     name = "activity_test",
     srcs = ["activity_test.cc"],
     external_deps = ["gtest"],
+    flaky = True,
     language = "c++",
     uses_event_engine = False,
     uses_polling = False,

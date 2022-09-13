@@ -99,6 +99,11 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
     wrap_resources_ = wrap_resources;
   }
 
+  void set_inject_bad_resources_for_resource_type(const std::string& type_url) {
+    grpc_core::MutexLock lock(&ads_mu_);
+    inject_bad_resources_for_resource_type_ = type_url;
+  }
+
   // Sets a resource to a particular value, overwriting any previous value.
   void SetResource(google::protobuf::Any resource, const std::string& type_url,
                    const std::string& name);
@@ -448,6 +453,23 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
           parent_->resource_types_to_ignore_.end()) {
         return;
       }
+      // Inject bad resources if needed.
+      if (parent_->inject_bad_resources_for_resource_type_ ==
+          v3_resource_type) {
+        response->emplace();
+        // Unparseable Resource wrapper.
+        auto* resource = (*response)->add_resources();
+        resource->set_type_url(
+            "type.googleapis.com/envoy.service.discovery.v3.Resource");
+        resource->set_value(std::string("\0", 1));
+        // Unparseable resource within Resource wrapper.
+        envoy::service::discovery::v3::Resource resource_wrapper;
+        resource_wrapper.set_name("foo");
+        resource = resource_wrapper.mutable_resource();
+        resource->set_type_url(v3_resource_type);
+        resource->set_value(std::string("\0", 1));
+        (*response)->add_resources()->PackFrom(resource_wrapper);
+      }
       // Look at all the resource names in the request.
       auto& subscription_name_map = (*subscription_map)[v3_resource_type];
       auto& resource_type_state = parent_->resource_map_[v3_resource_type];
@@ -690,6 +712,7 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
   ResourceMap resource_map_ ABSL_GUARDED_BY(ads_mu_);
   absl::optional<Status> forced_ads_failure_ ABSL_GUARDED_BY(ads_mu_);
   bool wrap_resources_ ABSL_GUARDED_BY(ads_mu_) = false;
+  std::string inject_bad_resources_for_resource_type_ ABSL_GUARDED_BY(ads_mu_);
 
   grpc_core::Mutex clients_mu_;
   std::set<std::string> clients_ ABSL_GUARDED_BY(clients_mu_);
@@ -853,7 +876,8 @@ class LrsServiceImpl : public std::enable_shared_from_this<LrsServiceImpl> {
           }
         }
         response.mutable_load_reporting_interval()->set_seconds(
-            parent_->client_load_reporting_interval_seconds_);
+            parent_->client_load_reporting_interval_seconds_ *
+            grpc_test_slowdown_factor());
         stream->Write(response);
         CountedService<typename RpcApi::Service>::IncreaseResponseCount();
         // Wait for report.

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <chrono>
 #include <random>
 #include <string>
 #include <thread>
@@ -36,6 +37,8 @@
 
 class EventEngineClientTest : public EventEngineTest {};
 
+using namespace std::chrono_literals;
+
 namespace {
 
 using ::grpc_event_engine::experimental::ChannelArgsEndpointConfig;
@@ -44,7 +47,6 @@ using ::grpc_event_engine::experimental::Promise;
 using ::grpc_event_engine::experimental::URIToResolvedAddress;
 using Endpoint = ::grpc_event_engine::experimental::EventEngine::Endpoint;
 using Listener = ::grpc_event_engine::experimental::EventEngine::Listener;
-using namespace std::chrono_literals;
 
 constexpr int kMinMessageSize = 1024;
 constexpr int kMaxMessageSize = 4096;
@@ -82,9 +84,12 @@ TEST_F(EventEngineClientTest, ConnectToNonExistentListenerTest) {
   grpc_core::ExecCtx ctx;
   auto test_ee = this->NewEventEngine();
   Promise<std::unique_ptr<EventEngine::Endpoint>> client_endpoint_promise;
-  auto memory_quota = std::make_unique<grpc_core::MemoryQuota>("bar");
+  auto memory_quota = absl::make_unique<grpc_core::MemoryQuota>("bar");
+  std::string target_addr = absl::StrCat(
+      "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die()));
   // Create a test EventEngine client endpoint and connect to a non existent
   // listener.
+  ChannelArgsEndpointConfig config;
   test_ee->Connect(
       [&client_endpoint_promise](
           absl::StatusOr<std::unique_ptr<Endpoint>> status) {
@@ -92,8 +97,7 @@ TEST_F(EventEngineClientTest, ConnectToNonExistentListenerTest) {
         EXPECT_FALSE(status.ok());
         client_endpoint_promise.Set(nullptr);
       },
-      URIToResolvedAddress("ipv6:[::1]:7000"),
-      ChannelArgsEndpointConfig(nullptr),
+      URIToResolvedAddress(target_addr), config,
       memory_quota->CreateMemoryAllocator("conn-1"), 24h);
 
   auto client_endpoint = std::move(client_endpoint_promise.Get());
@@ -108,7 +112,7 @@ TEST_F(EventEngineClientTest, ConnectExchangeBidiDataTransferTest) {
   grpc_core::ExecCtx ctx;
   auto oracle_ee = this->NewOracleEventEngine();
   auto test_ee = this->NewEventEngine();
-  auto memory_quota = std::make_unique<grpc_core::MemoryQuota>("bar");
+  auto memory_quota = absl::make_unique<grpc_core::MemoryQuota>("bar");
   std::string target_addr = absl::StrCat(
       "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die()));
   Promise<std::unique_ptr<EventEngine::Endpoint>> client_endpoint_promise;
@@ -121,11 +125,11 @@ TEST_F(EventEngineClientTest, ConnectExchangeBidiDataTransferTest) {
         server_endpoint_promise.Set(std::move(ep));
       };
 
+  ChannelArgsEndpointConfig config;
   auto status = oracle_ee->CreateListener(
       std::move(accept_cb),
-      [](absl::Status status) { GPR_ASSERT(status.ok()); },
-      ChannelArgsEndpointConfig(nullptr),
-      std::make_unique<grpc_core::MemoryQuota>("foo"));
+      [](absl::Status status) { GPR_ASSERT(status.ok()); }, config,
+      absl::make_unique<grpc_core::MemoryQuota>("foo"));
   EXPECT_TRUE(status.ok());
 
   std::unique_ptr<Listener> listener = std::move(*status);
@@ -143,7 +147,7 @@ TEST_F(EventEngineClientTest, ConnectExchangeBidiDataTransferTest) {
           client_endpoint_promise.Set(std::move(*status));
         }
       },
-      URIToResolvedAddress(target_addr), ChannelArgsEndpointConfig(nullptr),
+      URIToResolvedAddress(target_addr), config,
       memory_quota->CreateMemoryAllocator("conn-1"), 24h);
 
   auto client_endpoint = std::move(client_endpoint_promise.Get());
@@ -170,10 +174,10 @@ TEST_F(EventEngineClientTest, ConnectExchangeBidiDataTransferTest) {
 TEST_F(EventEngineClientTest, MultipleIPv6ConnectionsToOneOracleListenerTest) {
   grpc_core::ExecCtx ctx;
   static constexpr int kNumListenerAddresses = 10;  // N
-  static constexpr int kNumConnections = 100;       // M
+  static constexpr int kNumConnections = 10;        // M
   auto oracle_ee = this->NewOracleEventEngine();
   auto test_ee = this->NewEventEngine();
-  auto memory_quota = std::make_unique<grpc_core::MemoryQuota>("bar");
+  auto memory_quota = absl::make_unique<grpc_core::MemoryQuota>("bar");
   Promise<std::unique_ptr<EventEngine::Endpoint>> client_endpoint_promise;
   Promise<std::unique_ptr<EventEngine::Endpoint>> server_endpoint_promise;
   std::vector<std::string> target_addrs;
@@ -186,11 +190,11 @@ TEST_F(EventEngineClientTest, MultipleIPv6ConnectionsToOneOracleListenerTest) {
           grpc_core::MemoryAllocator /*memory_allocator*/) {
         server_endpoint_promise.Set(std::move(ep));
       };
+  ChannelArgsEndpointConfig config;
   auto status = oracle_ee->CreateListener(
       std::move(accept_cb),
-      [](absl::Status status) { GPR_ASSERT(status.ok()); },
-      ChannelArgsEndpointConfig(nullptr),
-      std::make_unique<grpc_core::MemoryQuota>("foo"));
+      [](absl::Status status) { GPR_ASSERT(status.ok()); }, config,
+      absl::make_unique<grpc_core::MemoryQuota>("foo"));
   EXPECT_TRUE(status.ok());
   std::unique_ptr<Listener> listener = std::move(*status);
 
@@ -207,6 +211,7 @@ TEST_F(EventEngineClientTest, MultipleIPv6ConnectionsToOneOracleListenerTest) {
     // Create a test EventEngine client endpoint and connect to a one of the
     // addresses bound to the oracle listener. Verify that the connection
     // succeeds.
+    ChannelArgsEndpointConfig config;
     test_ee->Connect(
         [&client_endpoint_promise](
             absl::StatusOr<std::unique_ptr<Endpoint>> status) {
@@ -218,8 +223,7 @@ TEST_F(EventEngineClientTest, MultipleIPv6ConnectionsToOneOracleListenerTest) {
             client_endpoint_promise.Set(std::move(*status));
           }
         },
-        URIToResolvedAddress(target_addrs[i % kNumListenerAddresses]),
-        ChannelArgsEndpointConfig(nullptr),
+        URIToResolvedAddress(target_addrs[i % kNumListenerAddresses]), config,
         memory_quota->CreateMemoryAllocator(
             absl::StrCat("conn-", std::to_string(i))),
         24h);

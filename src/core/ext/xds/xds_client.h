@@ -32,7 +32,6 @@
 #include "absl/strings/string_view.h"
 #include "upb/def.hpp"
 
-#include "src/core/ext/xds/certificate_provider_store.h"
 #include "src/core/ext/xds/xds_api.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_client_stats.h"
@@ -77,17 +76,11 @@ class XdsClient : public DualRefCounted<XdsClient> {
   ~XdsClient() override;
 
   const XdsBootstrap& bootstrap() const {
-    // bootstrap_ is guaranteed to be non-null since XdsClient::GetOrCreate()
-    // would return a null object if bootstrap_ was null.
-    return *bootstrap_;
+    return *bootstrap_;  // ctor asserts that it is non-null
   }
 
   XdsTransportFactory* transport_factory() const {
     return transport_factory_.get();
-  }
-
-  CertificateProviderStore& certificate_provider_store() {
-    return *certificate_provider_store_;
   }
 
   void Orphan() override;
@@ -212,7 +205,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
     // The owning xds client.
     WeakRefCountedPtr<XdsClient> xds_client_;
 
-    const XdsBootstrap::XdsServer& server_;
+    const XdsBootstrap::XdsServer& server_;  // Owned by bootstrap.
 
     OrphanablePtr<XdsTransportFactory::XdsTransport> transport_;
 
@@ -304,7 +297,6 @@ class XdsClient : public DualRefCounted<XdsClient> {
   OrphanablePtr<XdsTransportFactory> transport_factory_;
   const Duration request_timeout_;
   const bool xds_federation_enabled_;
-  OrphanablePtr<CertificateProviderStore> certificate_provider_store_;
   XdsApi api_;
   WorkSerializer work_serializer_;
 
@@ -317,14 +309,16 @@ class XdsClient : public DualRefCounted<XdsClient> {
       v2_resource_types_ ABSL_GUARDED_BY(mu_);
   upb::SymbolTable symtab_ ABSL_GUARDED_BY(mu_);
 
-  //  Map of existing xDS server channels.
-  std::map<XdsBootstrap::XdsServer, ChannelState*> xds_server_channel_map_
-      ABSL_GUARDED_BY(mu_);
+  // Map of existing xDS server channels.
+  // Key is owned by the bootstrap config.
+  std::map<const XdsBootstrap::XdsServer*, ChannelState*>
+      xds_server_channel_map_ ABSL_GUARDED_BY(mu_);
 
   std::map<std::string /*authority*/, AuthorityState> authority_state_map_
       ABSL_GUARDED_BY(mu_);
 
-  std::map<XdsBootstrap::XdsServer, LoadReportServer>
+  // Key is owned by the bootstrap config.
+  std::map<const XdsBootstrap::XdsServer*, LoadReportServer>
       xds_load_report_server_map_ ABSL_GUARDED_BY(mu_);
 
   // Stores started watchers whose resource name was not parsed successfully,

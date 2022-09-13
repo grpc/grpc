@@ -53,7 +53,6 @@
 #include "src/core/ext/filters/client_channel/global_subchannel_pool.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 #include "src/core/ext/filters/client_channel/local_subchannel_pool.h"
-#include "src/core/ext/filters/client_channel/proxy_mapper_registry.h"
 #include "src/core/ext/filters/client_channel/retry_filter.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/ext/filters/client_channel/subchannel_interface_internal.h"
@@ -61,19 +60,20 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_trace.h"
+#include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/work_serializer.h"
+#include "src/core/lib/handshaker/proxy_mapper_registry.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
 #include "src/core/lib/load_balancing/subchannel_interface.h"
-#include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/service_config/service_config_call_data.h"
@@ -737,10 +737,14 @@ void ClientChannel::ExternalConnectivityWatcher::Notify(
   // Hop back into the work_serializer to clean up.
   // Not needed in state SHUTDOWN, because the tracker will
   // automatically remove all watchers in that case.
+  // Note: The callback takes a ref in case the ref inside the state tracker
+  // gets removed before the callback runs via a SHUTDOWN notification.
   if (state != GRPC_CHANNEL_SHUTDOWN) {
+    Ref(DEBUG_LOCATION, "RemoveWatcherLocked()").release();
     chand_->work_serializer_->Run(
         [this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand_->work_serializer_) {
           RemoveWatcherLocked();
+          Unref(DEBUG_LOCATION, "RemoveWatcherLocked()");
         },
         DEBUG_LOCATION);
   }
@@ -754,9 +758,13 @@ void ClientChannel::ExternalConnectivityWatcher::Cancel() {
   }
   ExecCtx::Run(DEBUG_LOCATION, on_complete_, GRPC_ERROR_CANCELLED);
   // Hop back into the work_serializer to clean up.
+  // Note: The callback takes a ref in case the ref inside the state tracker
+  // gets removed before the callback runs via a SHUTDOWN notification.
+  Ref(DEBUG_LOCATION, "RemoveWatcherLocked()").release();
   chand_->work_serializer_->Run(
       [this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand_->work_serializer_) {
         RemoveWatcherLocked();
+        Unref(DEBUG_LOCATION, "RemoveWatcherLocked()");
       },
       DEBUG_LOCATION);
 }
@@ -1015,7 +1023,9 @@ ClientChannel::ClientChannel(grpc_channel_element_args* args,
         "filter");
     return;
   }
-  uri_to_resolve_ = ProxyMapperRegistry::MapName(*server_uri, &channel_args_)
+  uri_to_resolve_ = CoreConfiguration::Get()
+                        .proxy_mapper_registry()
+                        .MapName(*server_uri, &channel_args_)
                         .value_or(*server_uri);
   // Make sure the URI to resolve is valid, so that we know that
   // resolver creation will succeed later.
@@ -1112,8 +1122,9 @@ RefCountedPtr<LoadBalancingPolicy::Config> ChooseLbPolicy(
     policy_name = resolver_result.args.GetString(GRPC_ARG_LB_POLICY_NAME);
     bool requires_config = false;
     if (policy_name.has_value() &&
-        (!LoadBalancingPolicyRegistry::LoadBalancingPolicyExists(
-             *policy_name, &requires_config) ||
+        (!CoreConfiguration::Get()
+              .lb_policy_registry()
+              .LoadBalancingPolicyExists(*policy_name, &requires_config) ||
          requires_config)) {
       if (requires_config) {
         gpr_log(GPR_ERROR,
@@ -1137,7 +1148,8 @@ RefCountedPtr<LoadBalancingPolicy::Config> ChooseLbPolicy(
       {std::string(*policy_name), Json::Object{}},
   }};
   auto lb_policy_config =
-      LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(config_json);
+      CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
+          config_json);
   // The policy name came from one of three places:
   // - The deprecated loadBalancingPolicy field in the service config,
   //   in which case the code in ClientChannelServiceConfigParser
@@ -1293,7 +1305,8 @@ void ClientChannel::OnResolverErrorLocked(absl::Status status) {
     {
       MutexLock lock(&resolution_mu_);
       // Update resolver transient failure.
-      resolver_transient_failure_error_ = status;
+      resolver_transient_failure_error_ =
+          MaybeRewriteIllegalStatusCode(status, "resolver");
       // Process calls that were queued waiting for the resolver result.
       for (ResolverQueuedCall* call = resolver_queued_calls_; call != nullptr;
            call = call->next) {
@@ -1392,8 +1405,7 @@ void ClientChannel::UpdateServiceConfigInControlPlaneLocked(
     RefCountedPtr<ConfigSelector> config_selector, std::string lb_policy_name) {
   std::string service_config_json(service_config->json_string());
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_trace)) {
-    gpr_log(GPR_INFO,
-            "chand=%p: resolver returned updated service config: \"%s\"", this,
+    gpr_log(GPR_INFO, "chand=%p: using service config: \"%s\"", this,
             service_config_json.c_str());
   }
   // Save service config.
@@ -1626,6 +1638,10 @@ grpc_error_handle ClientChannel::DoPingLocked(grpc_transport_op* op) {
                 complete_pick->subchannel.get());
             RefCountedPtr<ConnectedSubchannel> connected_subchannel =
                 subchannel->connected_subchannel();
+            if (connected_subchannel == nullptr) {
+              return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                  "LB pick for ping not connected");
+            }
             connected_subchannel->Ping(op->send_ping.on_initiate,
                                        op->send_ping.on_ack);
             return GRPC_ERROR_NONE;
@@ -1848,7 +1864,6 @@ void ClientChannel::CallData::Destroy(
 
 void ClientChannel::CallData::StartTransportStreamOpBatch(
     grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
-  GPR_TIMER_SCOPE("cc_start_transport_stream_op_batch", 0);
   CallData* calld = static_cast<CallData*>(elem->call_data);
   ClientChannel* chand = static_cast<ClientChannel*>(elem->channel_data);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace) &&
@@ -2161,7 +2176,8 @@ grpc_error_handle ClientChannel::CallData::ApplyServiceConfigToCallLocked(
     ConfigSelector::CallConfig call_config =
         config_selector->GetCallConfig({&path_, initial_metadata, arena_});
     if (!call_config.status.ok()) {
-      return absl_status_to_grpc_error(call_config.status);
+      return absl_status_to_grpc_error(MaybeRewriteIllegalStatusCode(
+          std::move(call_config.status), "ConfigSelector"));
     }
     // Create a ClientChannelServiceConfigCallData for the call.  This stores
     // a ref to the ServiceConfig and caches the right set of parsed configs
@@ -3154,11 +3170,8 @@ bool ClientChannel::LoadBalancedCall::PickSubchannelLocked(
             // attempt's final status.
             if (!initial_metadata_batch->GetOrCreatePointer(WaitForReady())
                      ->value) {
-              grpc_error_handle lb_error =
-                  absl_status_to_grpc_error(fail_pick->status);
-              *error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                  "Failed to pick subchannel", &lb_error, 1);
-              GRPC_ERROR_UNREF(lb_error);
+              *error = absl_status_to_grpc_error(MaybeRewriteIllegalStatusCode(
+                  std::move(fail_pick->status), "LB pick"));
               MaybeRemoveCallFromLbQueuedCallsLocked();
               return true;
             }
@@ -3174,9 +3187,10 @@ bool ClientChannel::LoadBalancedCall::PickSubchannelLocked(
               gpr_log(GPR_INFO, "chand=%p lb_call=%p: LB pick dropped: %s",
                       chand_, this, drop_pick->status.ToString().c_str());
             }
-            *error =
-                grpc_error_set_int(absl_status_to_grpc_error(drop_pick->status),
-                                   GRPC_ERROR_INT_LB_POLICY_DROP, 1);
+            *error = grpc_error_set_int(
+                absl_status_to_grpc_error(MaybeRewriteIllegalStatusCode(
+                    std::move(drop_pick->status), "LB drop")),
+                GRPC_ERROR_INT_LB_POLICY_DROP, 1);
             MaybeRemoveCallFromLbQueuedCallsLocked();
             return true;
           });

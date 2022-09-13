@@ -121,6 +121,7 @@ grpc_cc_library(
     srcs = ["oracle_event_engine_posix.cc"],
     hdrs = ["oracle_event_engine_posix.h"],
     tags = [
+        "cpu:10",
         "no_windows",
     ],
     deps = [

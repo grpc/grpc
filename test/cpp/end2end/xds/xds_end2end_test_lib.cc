@@ -791,7 +791,8 @@ std::shared_ptr<Channel> XdsEnd2endTest::CreateChannel(
   // TODO(roth): Remove this once we enable retries by default internally.
   args->SetInt(GRPC_ARG_ENABLE_RETRIES, 1);
   if (failover_timeout_ms > 0) {
-    args->SetInt(GRPC_ARG_PRIORITY_FAILOVER_TIMEOUT_MS, failover_timeout_ms);
+    args->SetInt(GRPC_ARG_PRIORITY_FAILOVER_TIMEOUT_MS,
+                 failover_timeout_ms * grpc_test_slowdown_factor());
   }
   if (GetParam().bootstrap_source() == XdsTestType::kBootstrapFromChannelArg) {
     // We're getting the bootstrap from a channel arg, so we do the
@@ -1002,9 +1003,10 @@ size_t XdsEnd2endTest::WaitForAllBackends(
 absl::optional<AdsServiceImpl::ResponseState> XdsEnd2endTest::WaitForNack(
     const grpc_core::DebugLocation& debug_location,
     std::function<absl::optional<AdsServiceImpl::ResponseState>()> get_state,
-    StatusCode expected_status) {
+    const RpcOptions& rpc_options, StatusCode expected_status) {
   absl::optional<AdsServiceImpl::ResponseState> response_state;
-  auto deadline = absl::Now() + absl::Seconds(30);
+  auto deadline =
+      absl::Now() + (absl::Seconds(30) * grpc_test_slowdown_factor());
   auto continue_predicate = [&]() {
     if (absl::Now() >= deadline) {
       return false;
@@ -1014,13 +1016,21 @@ absl::optional<AdsServiceImpl::ResponseState> XdsEnd2endTest::WaitForNack(
            response_state->state != AdsServiceImpl::ResponseState::NACKED;
   };
   do {
-    const Status status = SendRpc();
+    const Status status = SendRpc(rpc_options);
     EXPECT_EQ(expected_status, status.error_code())
         << "code=" << status.error_code()
         << " message=" << status.error_message() << " at "
         << debug_location.file() << ":" << debug_location.line();
   } while (continue_predicate());
   return response_state;
+}
+
+void XdsEnd2endTest::SetProtoDuration(
+    grpc_core::Duration duration, google::protobuf::Duration* duration_proto) {
+  duration *= grpc_test_slowdown_factor();
+  gpr_timespec ts = duration.as_timespec();
+  duration_proto->set_seconds(ts.tv_sec);
+  duration_proto->set_nanos(ts.tv_nsec);
 }
 
 std::string XdsEnd2endTest::ReadFile(const char* file_path) {

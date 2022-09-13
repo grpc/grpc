@@ -39,6 +39,9 @@
 #include "xds/type/v3/typed_struct.upb.h"
 
 #include "src/core/ext/xds/certificate_provider_store.h"
+#include "src/core/ext/xds/upb_utils.h"
+#include "src/core/ext/xds/xds_bootstrap_grpc.h"
+#include "src/core/ext/xds/xds_client.h"
 
 namespace grpc_core {
 
@@ -113,7 +116,7 @@ namespace {
 // certificate provider instances.
 absl::StatusOr<CommonTlsContext::CertificateProviderPluginInstance>
 CertificateProviderInstanceParse(
-    const XdsEncodingContext& context,
+    const XdsResourceType::DecodeContext& context,
     const envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProviderInstance*
         certificate_provider_instance_proto) {
   CommonTlsContext::CertificateProviderPluginInstance
@@ -124,9 +127,11 @@ CertificateProviderInstanceParse(
           UpbStringToStdString(
               envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProviderInstance_certificate_name(
                   certificate_provider_instance_proto))};
-  if (context.certificate_provider_definition_map->find(
+  const auto& bootstrap =
+      static_cast<const GrpcXdsBootstrap&>(context.client->bootstrap());
+  if (bootstrap.certificate_providers().find(
           certificate_provider_plugin_instance.instance_name) ==
-      context.certificate_provider_definition_map->end()) {
+      bootstrap.certificate_providers().end()) {
     return absl::InvalidArgumentError(
         absl::StrCat("Unrecognized certificate provider instance name: ",
                      certificate_provider_plugin_instance.instance_name));
@@ -136,7 +141,7 @@ CertificateProviderInstanceParse(
 
 absl::StatusOr<CommonTlsContext::CertificateProviderPluginInstance>
 CertificateProviderPluginInstanceParse(
-    const XdsEncodingContext& context,
+    const XdsResourceType::DecodeContext& context,
     const envoy_extensions_transport_sockets_tls_v3_CertificateProviderPluginInstance*
         certificate_provider_plugin_instance_proto) {
   CommonTlsContext::CertificateProviderPluginInstance
@@ -147,9 +152,11 @@ CertificateProviderPluginInstanceParse(
           UpbStringToStdString(
               envoy_extensions_transport_sockets_tls_v3_CertificateProviderPluginInstance_certificate_name(
                   certificate_provider_plugin_instance_proto))};
-  if (context.certificate_provider_definition_map->find(
+  const auto& bootstrap =
+      static_cast<const GrpcXdsBootstrap&>(context.client->bootstrap());
+  if (bootstrap.certificate_providers().find(
           certificate_provider_plugin_instance.instance_name) ==
-      context.certificate_provider_definition_map->end()) {
+      bootstrap.certificate_providers().end()) {
     return absl::InvalidArgumentError(
         absl::StrCat("Unrecognized certificate provider instance name: ",
                      certificate_provider_plugin_instance.instance_name));
@@ -159,7 +166,7 @@ CertificateProviderPluginInstanceParse(
 
 absl::StatusOr<CommonTlsContext::CertificateValidationContext>
 CertificateValidationContextParse(
-    const XdsEncodingContext& context,
+    const XdsResourceType::DecodeContext& context,
     const envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext*
         certificate_validation_context_proto) {
   std::vector<std::string> errors;
@@ -273,7 +280,7 @@ CertificateValidationContextParse(
 }  // namespace
 
 absl::StatusOr<CommonTlsContext> CommonTlsContext::Parse(
-    const XdsEncodingContext& context,
+    const XdsResourceType::DecodeContext& context,
     const envoy_extensions_transport_sockets_tls_v3_CommonTlsContext*
         common_tls_context_proto) {
   std::vector<std::string> errors;
@@ -399,7 +406,8 @@ absl::StatusOr<CommonTlsContext> CommonTlsContext::Parse(
 }
 
 absl::StatusOr<ExtractExtensionTypeNameResult> ExtractExtensionTypeName(
-    const XdsEncodingContext& context, const google_protobuf_Any* any) {
+    const XdsResourceType::DecodeContext& context,
+    const google_protobuf_Any* any) {
   ExtractExtensionTypeNameResult result;
   result.type = UpbStringToAbsl(google_protobuf_Any_type_url(any));
   if (result.type == "type.googleapis.com/xds.type.v3.TypedStruct" ||
