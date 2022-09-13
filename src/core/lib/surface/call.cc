@@ -1117,9 +1117,7 @@ void FilterStackCall::BatchControl::PostCompletion() {
 }
 
 void FilterStackCall::BatchControl::FinishStep() {
-  gpr_log(GPR_INFO, "apolcyn FilterStackCall=%p finish batch step", this);
   if (GPR_UNLIKELY(completed_batch_step())) {
-    gpr_log(GPR_INFO, "apolcyn FilterStackCall=%p post completion", this);
     PostCompletion();
   }
 }
