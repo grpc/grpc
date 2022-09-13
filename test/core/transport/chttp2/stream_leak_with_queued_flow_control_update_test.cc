@@ -202,7 +202,6 @@ void EnsureConnectionsArentLeaked(grpc_completion_queue* cq) {
                  nullptr)
                  .type == GRPC_QUEUE_TIMEOUT);
   gpr_timespec overall_deadline = grpc_timeout_seconds_to_deadline(120);
-  bool success = false;
   for (;;) {
     // TODO(apolcyn): grpc_iomgr_count_objects_for_testing() is an internal
     // and unstable API. Consider a different method of detecting leaks if
