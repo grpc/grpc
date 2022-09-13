@@ -58,7 +58,7 @@ void BM_EventEngine_RunLambda(benchmark::State& state) {
   state.SetItemsProcessed(cb_count * state.iterations());
 }
 BENCHMARK(BM_EventEngine_RunLambda)
-    ->Range(100, 10 * 1000)
+    ->Range(100, 4096)
     ->MeasureProcessCPUTime()
     ->UseRealTime();
 
@@ -86,7 +86,7 @@ void BM_EventEngine_RunClosure(benchmark::State& state) {
   state.SetItemsProcessed(cb_count * state.iterations());
 }
 BENCHMARK(BM_EventEngine_RunClosure)
-    ->Range(100, 10000)
+    ->Range(100, 4096)
     ->MeasureProcessCPUTime()
     ->UseRealTime();
 
@@ -114,35 +114,40 @@ void BM_EventEngine_Lambda_FanOut(benchmark::State& state) {
   Promise<bool> promise{false};
   std::atomic_int cnt{0};
   for (auto _ : state) {
+    FanOutCallback(engine, cnt, fanout, depth, limit, promise);
+    GPR_ASSERT(promise.Get());
+    // cleanup
     state.PauseTiming();
     cnt.store(0);
     promise.Reset();
     state.ResumeTiming();
-    FanOutCallback(engine, cnt, fanout, depth, limit, promise);
-    GPR_ASSERT(promise.Get());
   }
   state.SetItemsProcessed(limit * state.iterations());
 }
+// TODO(hork): enable the 3 commented-out tests when the engine is fast enough.
 BENCHMARK(BM_EventEngine_Lambda_FanOut)
-    ->Args({10000, 1})  // chain of callbacks scheduling callbacks
-    ->Args({1000, 1})   // chain of callbacks scheduling callbacks
-    ->Args({100, 1})    // chain of callbacks scheduling callbacks
-    ->Args({1, 10000})  // flat scheduling of callbacks
-    ->Args({1, 1000})   // flat scheduling of callbacks
-    ->Args({1, 100})    // flat scheduling of callbacks
-    ->Args({2, 100})    // depth 2, fans out 10,101 callbacks
-    ->Args({4, 10})     // depth 4, fans out to 11,110 callbacks
-    ->Args({5, 6})      // depth 5, fans out to 9,330 callbacks
+    // ->Args({10000, 1})  // chain of callbacks scheduling callbacks
+    ->Args({1000, 1})  // chain of callbacks scheduling callbacks
+    ->Args({100, 1})   // chain of callbacks scheduling callbacks
+    // ->Args({1, 10000})  // flat scheduling of callbacks
+    ->Args({1, 1000})  // flat scheduling of callbacks
+    ->Args({1, 100})   // flat scheduling of callbacks
+    ->Args({2, 100})   // depth 2, fans out 10,101 callbacks
+    ->Args({4, 10})    // depth 4, fans out to 11,110 callbacks
+    // ->Args({5, 6})      // depth 5, fans out to 9,330 callbacks
     ->MeasureProcessCPUTime()
     ->UseRealTime();
 
+namespace {
+std::atomic_int gCnt{0};
+Promise<bool> gDone{false};
+}  // namespace
+
 void ClosureFanOutCallback(EventEngine::Closure* child_closure,
-                           EventEngine* engine, std::atomic_int& cnt,
-                           int fanout, int limit, Promise<bool>& promise) {
-  int local_cnt = cnt.fetch_add(1, std::memory_order_acq_rel);
-  gpr_log(GPR_DEBUG, "DO NOT SUBMIT: cnt=%d limit=%d", local_cnt, limit);
-  if (local_cnt == limit) {
-    promise.Set(true);
+                           EventEngine* engine, int fanout, int limit) {
+  int local_cnt = gCnt.fetch_add(1, std::memory_order_acq_rel);
+  if (local_cnt + 1 == limit) {
+    gDone.Set(true);
     return;
   }
   if (child_closure == nullptr) return;
@@ -155,27 +160,29 @@ void BM_EventEngine_Closure_FanOut(benchmark::State& state) {
   int depth = state.range(0);
   int fanout = state.range(1);
   // sum of geometric series
-  int limit = (1 - std::pow(fanout, depth + 1)) / (1 - fanout);
+  int limit = (1 - std::pow(fanout, depth + 1)) / (1 - fanout) - 1;
   if (depth == 1 || fanout == 1) limit = std::max(depth, limit);
   auto engine = GetDefaultEventEngine();
-  Promise<bool> promise{false};
-  std::atomic_int cnt{0};
   std::vector<EventEngine::Closure*> closures;
   closures.reserve(depth + 1);
   closures[0] = nullptr;
   // prepare a unique closure for each depth
-  for (int i = 1; i <= depth; i++) {
-    closures[i] = new AnyInvocableClosure([&]() {
-      ClosureFanOutCallback(closures[i - 1], engine, cnt, fanout, limit,
-                            promise);
-    });
+  for (int i = 0; i < depth; i++) {
+    closures[i + 1] =
+        new AnyInvocableClosure([i, &closures, &engine, fanout, limit]() {
+          ClosureFanOutCallback(closures[i], engine, fanout, limit);
+        });
   }
   for (auto _ : state) {
-    engine->Run(closures[depth]);
-    GPR_ASSERT(promise.Get());
+    GPR_ASSERT(gCnt.load() == 0);
+    for (int i = 0; i < fanout; i++) {
+      engine->Run(closures[depth]);
+    }
+    GPR_ASSERT(gDone.Get());
+    // cleanup
     state.PauseTiming();
-    cnt.store(0);
-    promise.Reset();
+    gCnt.store(0);
+    gDone.Reset();
     state.ResumeTiming();
   }
   state.SetItemsProcessed(limit * state.iterations());
