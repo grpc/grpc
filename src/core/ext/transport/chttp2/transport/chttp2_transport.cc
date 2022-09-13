@@ -668,6 +668,7 @@ grpc_chttp2_stream::grpc_chttp2_stream(grpc_chttp2_transport* t,
 }
 
 grpc_chttp2_stream::~grpc_chttp2_stream() {
+  gpr_log(GPR_INFO, "apolcyn s=%p t=%p is_client=%d stream dtor", this, t, t->is_client);
   grpc_chttp2_list_remove_stalled_by_stream(t, this);
   grpc_chttp2_list_remove_stalled_by_transport(t, this);
 
