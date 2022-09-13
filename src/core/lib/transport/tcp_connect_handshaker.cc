@@ -236,14 +236,16 @@ class TCPConnectHandshakerFactory : public HandshakerFactory {
     handshake_mgr->Add(
         MakeRefCounted<TCPConnectHandshaker>(interested_parties));
   }
+  HandshakerPriority Priority() override {
+    return HandshakerPriority::kTCPConnect;
+  }
   ~TCPConnectHandshakerFactory() override = default;
 };
 
 }  // namespace
 
 void RegisterTCPConnectHandshaker(CoreConfiguration::Builder* builder) {
-  builder->handshaker_registry()->RegisterHandshakerFactory(
-      true /* at_start */, HANDSHAKER_CLIENT,
+  builder->handshaker_registry()->RegisterHandshakerFactory(HANDSHAKER_CLIENT,
       absl::make_unique<TCPConnectHandshakerFactory>());
 }
 
