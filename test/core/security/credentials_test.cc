@@ -2006,7 +2006,7 @@ TEST(CredentialsTest, TestGetWellKnownGoogleCredentialsFilePath) {
   GPR_ASSERT(path.empty());
 #endif /* GPR_POSIX_ENV || GPR_LINUX_ENV */
   if (restore_home_env) {
-    MaybeSetEnv("HOME", home);
+    SetOrUnsetEnv("HOME", home);
   }
 }
 

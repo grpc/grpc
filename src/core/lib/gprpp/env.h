@@ -40,7 +40,7 @@ inline void SetEnv(const char* name, const std::string& value) {
 void UnsetEnv(const char* name);
 
 template <typename T>
-void MaybeSetEnv(const char* name, const absl::optional<T>& value) {
+void SetOrUnsetEnv(const char* name, const absl::optional<T>& value) {
   if (value.has_value()) {
     SetEnv(name, value.value());
   } else {
