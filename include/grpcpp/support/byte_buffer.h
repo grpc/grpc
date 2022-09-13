@@ -24,6 +24,7 @@
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
+#include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/serialization_traits.h>
 #include <grpcpp/support/config.h>
 #include <grpcpp/support/slice.h>
@@ -84,7 +85,7 @@ class ByteBuffer final {
     // than its advertised side effect of increasing the reference count of the
     // slices it processes, and such an increase does not affect the semantics
     // seen by the caller of this constructor.
-    buffer_ = grpc_raw_byte_buffer_create(
+    buffer_ = g_core_codegen_interface->grpc_raw_byte_buffer_create(
         reinterpret_cast<grpc_slice*>(const_cast<Slice*>(slices)), nslices);
   }
 
@@ -96,7 +97,7 @@ class ByteBuffer final {
 
   ~ByteBuffer() {
     if (buffer_) {
-      grpc_byte_buffer_destroy(buffer_);
+      g_core_codegen_interface->grpc_byte_buffer_destroy(buffer_);
     }
   }
 
@@ -109,7 +110,7 @@ class ByteBuffer final {
     }
     if (buf.buffer_) {
       // then copy
-      buffer_ = grpc_byte_buffer_copy(buf.buffer_);
+      buffer_ = g_core_codegen_interface->grpc_byte_buffer_copy(buf.buffer_);
     }
     return *this;
   }
@@ -127,7 +128,7 @@ class ByteBuffer final {
   /// Remove all data.
   void Clear() {
     if (buffer_) {
-      grpc_byte_buffer_destroy(buffer_);
+      g_core_codegen_interface->grpc_byte_buffer_destroy(buffer_);
       buffer_ = nullptr;
     }
   }
@@ -137,7 +138,9 @@ class ByteBuffer final {
   /// bbuf.Duplicate(); is equivalent to bbuf=bbuf; but is actually readable.
   /// This is not a deep copy; it is a referencing and its performance
   /// is size-independent.
-  void Duplicate() { buffer_ = grpc_byte_buffer_copy(buffer_); }
+  void Duplicate() {
+    buffer_ = g_core_codegen_interface->grpc_byte_buffer_copy(buffer_);
+  }
 
   /// Forget underlying byte buffer without destroying
   /// Use this only for un-owned byte buffers
@@ -145,7 +148,9 @@ class ByteBuffer final {
 
   /// Buffer size in bytes.
   size_t Length() const {
-    return buffer_ == nullptr ? 0 : grpc_byte_buffer_length(buffer_);
+    return buffer_ == nullptr
+               ? 0
+               : g_core_codegen_interface->grpc_byte_buffer_length(buffer_);
   }
 
   /// Swap the state of *this and *other.
@@ -225,7 +230,7 @@ class SerializationTraits<ByteBuffer, void> {
                           bool* own_buffer) {
     *buffer = source;
     *own_buffer = true;
-    return grpc::Status::OK;
+    return g_core_codegen_interface->ok();
   }
 };
 
