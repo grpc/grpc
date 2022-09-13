@@ -96,7 +96,7 @@ class XdsClusterManagerLb : public LoadBalancingPolicy {
 
   absl::string_view name() const override { return kXdsClusterManager; }
 
-  absl::Status UpdateLocked(UpdateArgs args) override;
+  void UpdateLocked(UpdateArgs args) override;
   void ExitIdleLocked() override;
   void ResetBackoffLocked() override;
 
@@ -144,10 +144,9 @@ class XdsClusterManagerLb : public LoadBalancingPolicy {
 
     void Orphan() override;
 
-    absl::Status UpdateLocked(
-        RefCountedPtr<LoadBalancingPolicy::Config> config,
-        const absl::StatusOr<ServerAddressList>& addresses,
-        const ChannelArgs& args);
+    void UpdateLocked(RefCountedPtr<LoadBalancingPolicy::Config> config,
+                      const absl::StatusOr<ServerAddressList>& addresses,
+                      const ChannelArgs& args);
     void ExitIdleLocked();
     void ResetBackoffLocked();
     void DeactivateLocked();
@@ -275,8 +274,8 @@ void XdsClusterManagerLb::ResetBackoffLocked() {
   for (auto& p : children_) p.second->ResetBackoffLocked();
 }
 
-absl::Status XdsClusterManagerLb::UpdateLocked(UpdateArgs args) {
-  if (shutting_down_) return absl::OkStatus();
+void XdsClusterManagerLb::UpdateLocked(UpdateArgs args) {
+  if (shutting_down_) return;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_cluster_manager_lb_trace)) {
     gpr_log(GPR_INFO, "[xds_cluster_manager_lb %p] Received update", this);
   }
@@ -292,7 +291,6 @@ absl::Status XdsClusterManagerLb::UpdateLocked(UpdateArgs args) {
     }
   }
   // Add or update the children in the new config.
-  std::vector<std::string> errors;
   for (const auto& p : config_->cluster_map()) {
     const std::string& name = p.first;
     const RefCountedPtr<LoadBalancingPolicy::Config>& config = p.second;
@@ -301,21 +299,10 @@ absl::Status XdsClusterManagerLb::UpdateLocked(UpdateArgs args) {
       child = MakeOrphanable<ClusterChild>(Ref(DEBUG_LOCATION, "ClusterChild"),
                                            name);
     }
-    absl::Status status =
-        child->UpdateLocked(config, args.addresses, args.args);
-    if (!status.ok()) {
-      errors.emplace_back(
-          absl::StrCat("child ", name, ": ", status.ToString()));
-    }
+    child->UpdateLocked(config, args.addresses, args.args);
   }
   update_in_progress_ = false;
   UpdateStateLocked();
-  // Return status.
-  if (!errors.empty()) {
-    return absl::UnavailableError(absl::StrCat(
-        "errors from children: [", absl::StrJoin(errors, "; "), "]"));
-  }
-  return absl::OkStatus();
 }
 
 void XdsClusterManagerLb::UpdateStateLocked() {
@@ -483,11 +470,11 @@ XdsClusterManagerLb::ClusterChild::CreateChildPolicyLocked(
   return lb_policy;
 }
 
-absl::Status XdsClusterManagerLb::ClusterChild::UpdateLocked(
+void XdsClusterManagerLb::ClusterChild::UpdateLocked(
     RefCountedPtr<LoadBalancingPolicy::Config> config,
     const absl::StatusOr<ServerAddressList>& addresses,
     const ChannelArgs& args) {
-  if (xds_cluster_manager_policy_->shutting_down_) return absl::OkStatus();
+  if (xds_cluster_manager_policy_->shutting_down_) return;
   // Update child weight.
   // Reactivate if needed.
   if (delayed_removal_timer_callback_pending_) {
@@ -512,7 +499,7 @@ absl::Status XdsClusterManagerLb::ClusterChild::UpdateLocked(
             xds_cluster_manager_policy_.get(), this, name_.c_str(),
             child_policy_.get());
   }
-  return child_policy_->UpdateLocked(std::move(update_args));
+  child_policy_->UpdateLocked(std::move(update_args));
 }
 
 void XdsClusterManagerLb::ClusterChild::ExitIdleLocked() {

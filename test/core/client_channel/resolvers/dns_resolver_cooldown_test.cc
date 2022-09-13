@@ -243,10 +243,7 @@ class ResultHandler : public grpc_core::Resolver::ResultHandler {
     state_ = state;
   }
 
-  void ReportResult(grpc_core::Resolver::Result result) override {
-    if (result.result_health_callback != nullptr) {
-      result.result_health_callback(absl::OkStatus());
-    }
+  void ReportResult(grpc_core::Resolver::Result /*result*/) override {
     ASSERT_NE(result_cb_, nullptr);
     ASSERT_NE(state_, nullptr);
     ResultCallback cb = result_cb_;
