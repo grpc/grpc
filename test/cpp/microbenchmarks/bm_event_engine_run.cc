@@ -36,12 +36,20 @@ using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 using ::grpc_event_engine::experimental::Promise;
 using ::grpc_event_engine::experimental::ResetDefaultEventEngine;
 
-void BM_EventEngine_RunLambda(benchmark::State& state) {
+std::atomic_int gCnt{0};
+Promise<bool> gDone{false};
+
+struct FanoutParameters {
+  int depth;
+  int fanout;
+  int limit;
+};
+
+void BM_EventEngine_RunSmallLambda(benchmark::State& state) {
   int cb_count = state.range(0);
-  std::atomic_int cnt{0};
   Promise<bool> p{false};
-  auto cb = [&cnt, &p, cb_count]() {
-    if (++cnt == cb_count) p.Set(true);
+  auto cb = [&p, cb_count]() {
+    if (++gCnt == cb_count) p.Set(true);
   };
   auto engine = GetDefaultEventEngine();
   for (auto _ : state) {
@@ -51,13 +59,41 @@ void BM_EventEngine_RunLambda(benchmark::State& state) {
     p.Get();
     state.PauseTiming();
     p.Reset();
-    cnt.store(0);
+    gCnt.store(0);
     state.ResumeTiming();
   }
   ResetDefaultEventEngine();
   state.SetItemsProcessed(cb_count * state.iterations());
 }
-BENCHMARK(BM_EventEngine_RunLambda)
+BENCHMARK(BM_EventEngine_RunSmallLambda)
+    ->Range(100, 4096)
+    ->MeasureProcessCPUTime()
+    ->UseRealTime();
+
+void BM_EventEngine_RunLargeLambda(benchmark::State& state) {
+  int cb_count = state.range(0);
+  Promise<bool> p{false};
+  // large lambdas require an extra allocation
+  std::string extra = "12345678";
+  auto cb = [&p, cb_count, extra]() {
+    (void)extra;
+    if (++gCnt == cb_count) p.Set(true);
+  };
+  auto engine = GetDefaultEventEngine();
+  for (auto _ : state) {
+    for (int i = 0; i < cb_count; i++) {
+      engine->Run(cb);
+    }
+    p.Get();
+    state.PauseTiming();
+    p.Reset();
+    gCnt.store(0);
+    state.ResumeTiming();
+  }
+  ResetDefaultEventEngine();
+  state.SetItemsProcessed(cb_count * state.iterations());
+}
+BENCHMARK(BM_EventEngine_RunLargeLambda)
     ->Range(100, 4096)
     ->MeasureProcessCPUTime()
     ->UseRealTime();
@@ -65,9 +101,8 @@ BENCHMARK(BM_EventEngine_RunLambda)
 void BM_EventEngine_RunClosure(benchmark::State& state) {
   int cb_count = state.range(0);
   Promise<bool> p{false};
-  std::atomic_int cnt{0};
-  AnyInvocableClosure closure([&cnt, &p, cb_count]() {
-    if (++cnt == cb_count) {
+  AnyInvocableClosure closure([&p, cb_count]() {
+    if (++gCnt == cb_count) {
       p.Set(true);
     }
   });
@@ -79,7 +114,7 @@ void BM_EventEngine_RunClosure(benchmark::State& state) {
     p.Get();
     state.PauseTiming();
     p.Reset();
-    cnt.store(0);
+    gCnt.store(0);
     state.ResumeTiming();
   }
   ResetDefaultEventEngine();
@@ -90,94 +125,59 @@ BENCHMARK(BM_EventEngine_RunClosure)
     ->MeasureProcessCPUTime()
     ->UseRealTime();
 
-void FanOutCallback(EventEngine* engine, std::atomic_int& cnt, int fanout,
-                    int depth, int limit, Promise<bool>& promise) {
-  if (++cnt == limit) {
-    promise.Set(true);
+void FanoutTestArguments(benchmark::internal::Benchmark* b) {
+  // TODO(hork): enable when the engines are fast enough to run more than 1
+  // iteration:
+  // ->Args({10000, 1})  // chain of callbacks scheduling callbacks
+  // ->Args({1, 10000})  // flat scheduling of callbacks
+  // ->Args({5, 6})      // depth 5, fans out to 9,330 callbacks
+  b->Args({1000, 1})     // chain of callbacks scheduling callbacks
+      ->Args({100, 1})   // chain of callbacks scheduling callbacks
+      ->Args({1, 1000})  // flat scheduling of callbacks
+      ->Args({1, 100})   // flat scheduling of callbacks
+      ->Args({2, 100})   // depth 2, fans out 10,101 callbacks
+      ->Args({4, 10})    // depth 4, fans out to 11,110 callbacks
+      ->UseRealTime()
+      ->MeasureProcessCPUTime();
+}
+
+FanoutParameters GetFanoutParameters(benchmark::State& state) {
+  FanoutParameters params;
+  params.depth = state.range(0);
+  params.fanout = state.range(1);
+  // sum of geometric series
+  params.limit =
+      (1 - std::pow(params.fanout, params.depth + 1)) / (1 - params.fanout);
+  if (params.depth == 1 || params.fanout == 1) {
+    params.limit = std::max(params.depth, params.limit);
+  }
+  // gpr_log(GPR_DEBUG, "DO NOT SUBMIT: params: depth=%d, fanout=%d, limit=%d",
+  //         params.depth, params.fanout, params.limit);
+  // sanity checking
+  GPR_ASSERT(params.limit >= params.fanout * params.depth);
+  return params;
+}
+
+void FanOutCallback(EventEngine* engine, const FanoutParameters& params,
+                    int processing_layer) {
+  int local_cnt = gCnt.fetch_add(1, std::memory_order_acq_rel);
+  if (local_cnt + 1 == params.limit) {
+    gDone.Set(true);
     return;
   }
-  if (depth == 0) return;
-  for (int i = 0; i < fanout; i++) {
-    engine->Run([engine, &cnt, fanout, depth, limit, &promise]() {
-      FanOutCallback(engine, cnt, fanout, depth - 1, limit, promise);
+  if (params.depth == processing_layer) return;
+  for (int i = 0; i < params.fanout; i++) {
+    engine->Run([engine, &params, processing_layer]() {
+      FanOutCallback(engine, params, processing_layer + 1);
     });
   }
 }
 
 void BM_EventEngine_Lambda_FanOut(benchmark::State& state) {
-  int depth = state.range(0);
-  int fanout = state.range(1);
-  // sum of geometric series
-  int limit = (1 - std::pow(fanout, depth + 1)) / (1 - fanout);
-  if (depth == 1 || fanout == 1) limit = std::max(depth, limit);
+  auto params = GetFanoutParameters(state);
   auto engine = GetDefaultEventEngine();
-  Promise<bool> promise{false};
-  std::atomic_int cnt{0};
   for (auto _ : state) {
-    FanOutCallback(engine, cnt, fanout, depth, limit, promise);
-    promise.Get();
-    // cleanup
-    state.PauseTiming();
-    cnt.store(0);
-    promise.Reset();
-    state.ResumeTiming();
-  }
-  state.SetItemsProcessed(limit * state.iterations());
-}
-// TODO(hork): enable the 3 commented-out tests when the engine is fast enough.
-BENCHMARK(BM_EventEngine_Lambda_FanOut)
-    // ->Args({10000, 1})  // chain of callbacks scheduling callbacks
-    ->Args({1000, 1})  // chain of callbacks scheduling callbacks
-    ->Args({100, 1})   // chain of callbacks scheduling callbacks
-    // ->Args({1, 10000})  // flat scheduling of callbacks
-    ->Args({1, 1000})  // flat scheduling of callbacks
-    ->Args({1, 100})   // flat scheduling of callbacks
-    ->Args({2, 100})   // depth 2, fans out 10,101 callbacks
-    ->Args({4, 10})    // depth 4, fans out to 11,110 callbacks
-    // ->Args({5, 6})      // depth 5, fans out to 9,330 callbacks
-    ->MeasureProcessCPUTime()
-    ->UseRealTime();
-
-namespace {
-std::atomic_int gCnt{0};
-Promise<bool> gDone{false};
-}  // namespace
-
-void ClosureFanOutCallback(EventEngine::Closure* child_closure,
-                           EventEngine* engine, int fanout, int limit) {
-  int local_cnt = gCnt.fetch_add(1, std::memory_order_acq_rel);
-  if (local_cnt + 1 == limit) {
-    gDone.Set(true);
-    return;
-  }
-  if (child_closure == nullptr) return;
-  for (int i = 0; i < fanout; i++) {
-    engine->Run(child_closure);
-  }
-}
-
-void BM_EventEngine_Closure_FanOut(benchmark::State& state) {
-  int depth = state.range(0);
-  int fanout = state.range(1);
-  // sum of geometric series
-  int limit = (1 - std::pow(fanout, depth + 1)) / (1 - fanout) - 1;
-  if (depth == 1 || fanout == 1) limit = std::max(depth, limit);
-  auto engine = GetDefaultEventEngine();
-  std::vector<EventEngine::Closure*> closures;
-  closures.reserve(depth + 1);
-  closures[0] = nullptr;
-  // prepare a unique closure for each depth
-  for (int i = 0; i < depth; i++) {
-    closures[i + 1] =
-        new AnyInvocableClosure([i, &closures, &engine, fanout, limit]() {
-          ClosureFanOutCallback(closures[i], engine, fanout, limit);
-        });
-  }
-  for (auto _ : state) {
-    GPR_DEBUG_ASSERT(gCnt.load() == 0);
-    for (int i = 0; i < fanout; i++) {
-      engine->Run(closures[depth]);
-    }
+    FanOutCallback(engine, params, /*processing_layer=*/0);
     gDone.Get();
     // cleanup
     state.PauseTiming();
@@ -185,22 +185,52 @@ void BM_EventEngine_Closure_FanOut(benchmark::State& state) {
     gDone.Reset();
     state.ResumeTiming();
   }
-  state.SetItemsProcessed(limit * state.iterations());
+  state.SetItemsProcessed(params.limit * state.iterations());
+}
+BENCHMARK(BM_EventEngine_Lambda_FanOut)->Apply(FanoutTestArguments);
+
+void ClosureFanOutCallback(EventEngine::Closure* child_closure,
+                           EventEngine* engine,
+                           const FanoutParameters& params) {
+  int local_cnt = gCnt.fetch_add(1, std::memory_order_acq_rel);
+  if (local_cnt + 1 == params.limit) {
+    gDone.Set(true);
+    return;
+  }
+  if (child_closure == nullptr) return;
+  for (int i = 0; i < params.fanout; i++) {
+    engine->Run(child_closure);
+  }
+}
+
+void BM_EventEngine_Closure_FanOut(benchmark::State& state) {
+  auto params = GetFanoutParameters(state);
+  auto engine = GetDefaultEventEngine();
+  std::vector<EventEngine::Closure*> closures;
+  closures.reserve(params.depth + 2);
+  closures[0] = nullptr;
+  // prepare a unique closure for each depth
+  for (int i = 0; i <= params.depth; i++) {
+    closures[i + 1] =
+        new AnyInvocableClosure([i, engine, &closures, &params]() {
+          ClosureFanOutCallback(closures[i], engine, params);
+        });
+  }
+  for (auto _ : state) {
+    GPR_DEBUG_ASSERT(gCnt.load() == 0);
+    engine->Run(closures[params.depth + 1]);
+    gDone.Get();
+    // cleanup
+    state.PauseTiming();
+    gCnt.store(0);
+    gDone.Reset();
+    state.ResumeTiming();
+  }
+  state.SetItemsProcessed(params.limit * state.iterations());
   for (auto i : closures) delete i;
 }
-// TODO(hork): enable the 3 commented-out tests when the engine is fast enough.
-BENCHMARK(BM_EventEngine_Closure_FanOut)
-    // ->Args({10000, 1})  // chain of callbacks scheduling callbacks
-    ->Args({1000, 1})  // chain of callbacks scheduling callbacks
-    ->Args({100, 1})   // chain of callbacks scheduling callbacks
-    // ->Args({1, 10000})  // flat scheduling of callbacks
-    ->Args({1, 1000})  // flat scheduling of callbacks
-    ->Args({1, 100})   // flat scheduling of callbacks
-    ->Args({2, 100})   // depth 2, fans out 10,101 callbacks
-    ->Args({4, 10})    // depth 4, fans out to 11,110 callbacks
-    // ->Args({5, 6})      // depth 5, fans out to 9,330 callbacks
-    ->MeasureProcessCPUTime()
-    ->UseRealTime();
+BENCHMARK(BM_EventEngine_Closure_FanOut)->Apply(FanoutTestArguments);
+
 }  // namespace
 
 // Some distros have RunSpecifiedBenchmarks under the benchmark namespace,
