@@ -39,7 +39,6 @@ inline bool IsPeriodicResourceQuotaReclamationEnabled() {
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() {
   return IsExperimentEnabled(7);
 }
-inline bool IsNewHpackHuffmanDecoderEnabled() { return IsExperimentEnabled(8); }
 
 struct ExperimentMetadata {
   const char* name;
@@ -47,7 +46,7 @@ struct ExperimentMetadata {
   bool default_value;
 };
 
-constexpr const size_t kNumExperiments = 9;
+constexpr const size_t kNumExperiments = 8;
 extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];
 
 }  // namespace grpc_core

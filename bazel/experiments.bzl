@@ -20,9 +20,6 @@ EXPERIMENTS = {
     "dbg": {
     },
     "off": {
-        "core_end2end_tests": [
-            "new_hpack_huffman_decoder",
-        ],
         "endpoint_test": [
             "tcp_frame_size_tuning",
             "tcp_rcv_lowat",
@@ -34,9 +31,6 @@ EXPERIMENTS = {
             "tcp_frame_size_tuning",
             "tcp_rcv_lowat",
             "tcp_read_chunks",
-        ],
-        "hpack_test": [
-            "new_hpack_huffman_decoder",
         ],
         "resource_quota_test": [
             "memory_pressure_controller",
