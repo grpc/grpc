@@ -25,7 +25,6 @@
 #include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "envoy/config/cluster/v3/circuit_breaker.upb.h"
 #include "envoy/config/cluster/v3/cluster.upb.h"
@@ -46,6 +45,7 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/ext/xds/upb_utils.h"
 #include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/ext/xds/xds_resource_type.h"
 #include "src/core/lib/debug/trace.h"
@@ -64,27 +64,26 @@ std::string XdsClusterResource::ToString() const {
     case EDS:
       contents.push_back("cluster_type=EDS");
       if (!eds_service_name.empty()) {
-        contents.push_back(
-            absl::StrFormat("eds_service_name=%s", eds_service_name));
+        contents.push_back(absl::StrCat("eds_service_name=", eds_service_name));
       }
       break;
     case LOGICAL_DNS:
       contents.push_back("cluster_type=LOGICAL_DNS");
-      contents.push_back(absl::StrFormat("dns_hostname=%s", dns_hostname));
+      contents.push_back(absl::StrCat("dns_hostname=", dns_hostname));
       break;
     case AGGREGATE:
       contents.push_back("cluster_type=AGGREGATE");
       contents.push_back(
-          absl::StrFormat("prioritized_cluster_names=[%s]",
-                          absl::StrJoin(prioritized_cluster_names, ", ")));
+          absl::StrCat("prioritized_cluster_names=[",
+                       absl::StrJoin(prioritized_cluster_names, ", "), "]"));
   }
   if (!common_tls_context.Empty()) {
-    contents.push_back(absl::StrFormat("common_tls_context=%s",
-                                       common_tls_context.ToString()));
+    contents.push_back(
+        absl::StrCat("common_tls_context=", common_tls_context.ToString()));
   }
   if (lrs_load_reporting_server.has_value()) {
-    contents.push_back(absl::StrFormat("lrs_load_reporting_server_name=%s",
-                                       lrs_load_reporting_server->server_uri));
+    contents.push_back(absl::StrCat("lrs_load_reporting_server_name=",
+                                    lrs_load_reporting_server->server_uri()));
   }
   contents.push_back(absl::StrCat("lb_policy=", lb_policy));
   if (lb_policy == "RING_HASH") {
@@ -92,7 +91,7 @@ std::string XdsClusterResource::ToString() const {
     contents.push_back(absl::StrCat("max_ring_size=", max_ring_size));
   }
   contents.push_back(
-      absl::StrFormat("max_concurrent_requests=%d", max_concurrent_requests));
+      absl::StrCat("max_concurrent_requests=", max_concurrent_requests));
   return absl::StrCat("{", absl::StrJoin(contents, ", "), "}");
 }
 
@@ -103,7 +102,7 @@ std::string XdsClusterResource::ToString() const {
 namespace {
 
 absl::StatusOr<CommonTlsContext> UpstreamTlsContextParse(
-    const XdsEncodingContext& context,
+    const XdsResourceType::DecodeContext& context,
     const envoy_config_core_v3_TransportSocket* transport_socket) {
   CommonTlsContext common_tls_context;
   // Record Upstream tls context
@@ -210,7 +209,7 @@ absl::Status CdsLogicalDnsParse(const envoy_config_cluster_v3_Cluster* cluster,
 }
 
 absl::StatusOr<XdsClusterResource> CdsResourceParse(
-    const XdsEncodingContext& context,
+    const XdsResourceType::DecodeContext& context,
     const envoy_config_cluster_v3_Cluster* cluster, bool /*is_v2*/) {
   XdsClusterResource cds_update;
   std::vector<std::string> errors;
@@ -352,7 +351,8 @@ absl::StatusOr<XdsClusterResource> CdsResourceParse(
     if (!envoy_config_core_v3_ConfigSource_has_self(lrs_server)) {
       errors.emplace_back("LRS ConfigSource is not self.");
     }
-    cds_update.lrs_load_reporting_server.emplace(context.server);
+    cds_update.lrs_load_reporting_server.emplace(
+        static_cast<const GrpcXdsBootstrap::GrpcXdsServer&>(context.server));
   }
   // The Cluster resource encodes the circuit breaking parameters in a list of
   // Thresholds messages, where each message specifies the parameters for a
@@ -491,7 +491,7 @@ absl::StatusOr<XdsClusterResource> CdsResourceParse(
   return cds_update;
 }
 
-void MaybeLogCluster(const XdsEncodingContext& context,
+void MaybeLogCluster(const XdsResourceType::DecodeContext& context,
                      const envoy_config_cluster_v3_Cluster* cluster) {
   if (GRPC_TRACE_FLAG_ENABLED(*context.tracer) &&
       gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
@@ -506,8 +506,8 @@ void MaybeLogCluster(const XdsEncodingContext& context,
 }  // namespace
 
 absl::StatusOr<XdsResourceType::DecodeResult> XdsClusterResourceType::Decode(
-    const XdsEncodingContext& context, absl::string_view serialized_resource,
-    bool is_v2) const {
+    const XdsResourceType::DecodeContext& context,
+    absl::string_view serialized_resource, bool is_v2) const {
   // Parse serialized proto.
   auto* resource = envoy_config_cluster_v3_Cluster_parse(
       serialized_resource.data(), serialized_resource.size(), context.arena);

@@ -20,7 +20,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "src/core/lib/event_engine/event_engine_factory.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/lockfree_event.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
@@ -36,6 +36,10 @@ class TestScheduler : public Scheduler {
   void Run(
       grpc_event_engine::experimental::EventEngine::Closure* closure) override {
     engine_->Run(closure);
+  }
+
+  void Run(absl::AnyInvocable<void()> cb) override {
+    engine_->Run(std::move(cb));
   }
 
  private:
@@ -57,7 +61,7 @@ TEST(LockFreeEventTest, BasicTest) {
   grpc_core::MutexLock lock(&mu);
   // Set NotifyOn first and then SetReady
   event.NotifyOn(
-      IomgrEngineClosure::TestOnlyToClosure([&mu, &cv](absl::Status status) {
+      PosixEngineClosure::TestOnlyToClosure([&mu, &cv](absl::Status status) {
         grpc_core::MutexLock lock(&mu);
         EXPECT_TRUE(status.ok());
         cv.Signal();
@@ -68,7 +72,7 @@ TEST(LockFreeEventTest, BasicTest) {
   // SetReady first first and then call NotifyOn
   event.SetReady();
   event.NotifyOn(
-      IomgrEngineClosure::TestOnlyToClosure([&mu, &cv](absl::Status status) {
+      PosixEngineClosure::TestOnlyToClosure([&mu, &cv](absl::Status status) {
         grpc_core::MutexLock lock(&mu);
         EXPECT_TRUE(status.ok());
         cv.Signal();
@@ -77,7 +81,7 @@ TEST(LockFreeEventTest, BasicTest) {
 
   // Set NotifyOn and then call SetShutdown
   event.NotifyOn(
-      IomgrEngineClosure::TestOnlyToClosure([&mu, &cv](absl::Status status) {
+      PosixEngineClosure::TestOnlyToClosure([&mu, &cv](absl::Status status) {
         grpc_core::MutexLock lock(&mu);
         EXPECT_FALSE(status.ok());
         EXPECT_EQ(status, absl::CancelledError("Shutdown"));
@@ -110,7 +114,7 @@ TEST(LockFreeEventTest, MultiThreadedTest) {
         }
         active++;
         if (thread_id == 0) {
-          event.NotifyOn(IomgrEngineClosure::TestOnlyToClosure(
+          event.NotifyOn(PosixEngineClosure::TestOnlyToClosure(
               [&mu, &cv, &signalled](absl::Status status) {
                 grpc_core::MutexLock lock(&mu);
                 EXPECT_TRUE(status.ok());

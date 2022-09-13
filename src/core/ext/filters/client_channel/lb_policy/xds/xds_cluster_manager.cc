@@ -37,6 +37,7 @@
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 #include "src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -654,7 +655,8 @@ void XdsClusterManagerLbConfig::Child::JsonPostLoad(const Json& json,
     return;
   }
   auto lb_config =
-      LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(it->second);
+      CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
+          it->second);
   if (!lb_config.ok()) {
     errors->AddError(lb_config.status().message());
     return;
@@ -710,16 +712,9 @@ class XdsClusterManagerLbFactory : public LoadBalancingPolicyFactory {
 
 }  // namespace
 
-}  // namespace grpc_core
-
-//
-// Plugin registration
-//
-
-void grpc_lb_policy_xds_cluster_manager_init() {
-  grpc_core::LoadBalancingPolicyRegistry::Builder::
-      RegisterLoadBalancingPolicyFactory(
-          absl::make_unique<grpc_core::XdsClusterManagerLbFactory>());
+void RegisterXdsClusterManagerLbPolicy(CoreConfiguration::Builder* builder) {
+  builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
+      absl::make_unique<XdsClusterManagerLbFactory>());
 }
 
-void grpc_lb_policy_xds_cluster_manager_shutdown() {}
+}  // namespace grpc_core

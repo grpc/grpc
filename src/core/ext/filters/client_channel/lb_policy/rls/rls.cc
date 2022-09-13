@@ -812,8 +812,9 @@ void RlsLb::ChildPolicyWrapper::StartUpdate() {
         lb_policy_.get(), this, target_.c_str(),
         child_policy_config.Dump().c_str());
   }
-  auto config = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
-      child_policy_config);
+  auto config =
+      CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
+          child_policy_config);
   // Returned RLS target fails the validation.
   if (!config.ok()) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
@@ -2450,8 +2451,9 @@ void RlsLbConfig::JsonPostLoad(const Json& json, const JsonArgs&,
                                          errors)) {
         // Parse the config.
         auto parsed_config =
-            LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
-                child_policy_config_);
+            CoreConfiguration::Get()
+                .lb_policy_registry()
+                .ParseLoadBalancingConfig(child_policy_config_);
         if (!parsed_config.ok()) {
           errors->AddError(parsed_config.status().message());
         } else {
@@ -2500,11 +2502,9 @@ class RlsLbFactory : public LoadBalancingPolicyFactory {
 
 }  //  namespace
 
-void RlsLbPluginInit() {
-  LoadBalancingPolicyRegistry::Builder::RegisterLoadBalancingPolicyFactory(
+void RegisterRlsLbPolicy(CoreConfiguration::Builder* builder) {
+  builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
       absl::make_unique<RlsLbFactory>());
 }
-
-void RlsLbPluginShutdown() {}
 
 }  // namespace grpc_core

@@ -18,23 +18,14 @@
 
 #include "src/core/lib/transport/timeout_encoding.h"
 
-#include <stdio.h>
-#include <string.h>
-
 #include <string>
 
-#include <gtest/gtest.h>
-
 #include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
+#include "gtest/gtest.h"
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-
-#include "src/core/lib/gpr/murmur_hash.h"
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/time.h"
-#include "test/core/util/test_config.h"
 
 namespace grpc_core {
 namespace {

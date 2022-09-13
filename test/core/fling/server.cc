@@ -34,7 +34,6 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/profiling/timers.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/util/cmdline.h"
 #include "test/core/util/grpc_profiler.h"
@@ -182,8 +181,6 @@ int main(int argc, char** argv) {
   const char* addr = nullptr;
 
   char* fake_argv[1];
-
-  gpr_timers_set_log_filename("latency_trace.fling_server.txt");
 
   GPR_ASSERT(argc >= 1);
   argc = 1;

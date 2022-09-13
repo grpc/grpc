@@ -477,8 +477,8 @@ class CLanguage(object):
 
         if compiler == 'default' or compiler == 'cmake':
             return ('debian11', [])
-        elif compiler == 'gcc6':
-            return ('gcc_6', [])
+        elif compiler == 'gcc7':
+            return ('gcc_7', [])
         elif compiler == 'gcc10.2':
             return ('debian11', [])
         elif compiler == 'gcc10.2_openssl102':
@@ -809,11 +809,15 @@ class RubyLanguage(object):
                                  timeout_seconds=10 * 60,
                                  environ=_FORCE_ENVIRON_FOR_WRAPPERS)
         ]
+        # TODO(apolcyn): re-enable the following tests after
+        # https://bugs.ruby-lang.org/issues/15499 is fixed:
+        # They previously worked on ruby 2.5 but needed to be disabled
+        # after dropping support for ruby 2.5:
+        #   - src/ruby/end2end/channel_state_test.rb
+        #   - src/ruby/end2end/sig_int_during_channel_watch_test.rb
         for test in [
                 'src/ruby/end2end/sig_handling_test.rb',
-                'src/ruby/end2end/channel_state_test.rb',
                 'src/ruby/end2end/channel_closing_test.rb',
-                'src/ruby/end2end/sig_int_during_channel_watch_test.rb',
                 'src/ruby/end2end/killed_client_thread_test.rb',
                 'src/ruby/end2end/forking_client_test.rb',
                 'src/ruby/end2end/grpc_class_init_test.rb',
@@ -1481,7 +1485,7 @@ argp.add_argument(
     '--compiler',
     choices=[
         'default',
-        'gcc6',
+        'gcc7',
         'gcc10.2',
         'gcc10.2_openssl102',
         'gcc12',

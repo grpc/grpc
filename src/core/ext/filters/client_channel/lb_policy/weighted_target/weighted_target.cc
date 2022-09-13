@@ -40,8 +40,9 @@
 #include "src/core/ext/filters/client_channel/lb_policy/address_filtering.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/event_engine/event_engine_factory.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -711,7 +712,8 @@ void WeightedTargetLbConfig::ChildConfig::JsonPostLoad(const Json& json,
     return;
   }
   auto lb_config =
-      LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(it->second);
+      CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
+          it->second);
   if (!lb_config.ok()) {
     errors->AddError(lb_config.status().message());
     return;
@@ -755,16 +757,9 @@ class WeightedTargetLbFactory : public LoadBalancingPolicyFactory {
 
 }  // namespace
 
-}  // namespace grpc_core
-
-//
-// Plugin registration
-//
-
-void grpc_lb_policy_weighted_target_init() {
-  grpc_core::LoadBalancingPolicyRegistry::Builder::
-      RegisterLoadBalancingPolicyFactory(
-          absl::make_unique<grpc_core::WeightedTargetLbFactory>());
+void RegisterWeightedTargetLbPolicy(CoreConfiguration::Builder* builder) {
+  builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
+      absl::make_unique<WeightedTargetLbFactory>());
 }
 
-void grpc_lb_policy_weighted_target_shutdown() {}
+}  // namespace grpc_core
