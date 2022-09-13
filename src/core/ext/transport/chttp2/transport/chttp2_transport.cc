@@ -2092,6 +2092,13 @@ void grpc_chttp2_mark_stream_closed(grpc_chttp2_transport* t,
     became_closed = true;
     grpc_error_handle overall_error =
         removal_error(GRPC_ERROR_REF(error), s, "Stream removed");
+    if (s->id != 0) {
+      remove_stream(t, s->id,
+                    removal_error(GRPC_ERROR_REF(error), s, "Stream removed"));
+    } else {
+      // Purge streams waiting on concurrency still waiting for id assignment
+      grpc_chttp2_list_remove_waiting_for_concurrency(t, s);
+    }
     if (!GRPC_ERROR_IS_NONE(overall_error)) {
       grpc_chttp2_fake_status(t, s, overall_error);
     }
@@ -2109,13 +2116,6 @@ void grpc_chttp2_mark_stream_closed(grpc_chttp2_transport* t,
     grpc_chttp2_maybe_complete_recv_trailing_metadata(t, s);
     gpr_log(GPR_INFO, "apolcyn s=%p t=%p is_client=%d mark_stream_closed became_closed=%d check if we should remove stream s->id=%d",
             s, t, t->is_client, s->id);
-    if (s->id != 0) {
-      remove_stream(t, s->id,
-                    removal_error(GRPC_ERROR_REF(error), s, "Stream removed"));
-    } else {
-      // Purge streams waiting on concurrency still waiting for id assignment
-      grpc_chttp2_list_remove_waiting_for_concurrency(t, s);
-    }
     GRPC_CHTTP2_STREAM_UNREF(s, "chttp2");
   }
   gpr_log(GPR_INFO, "apolcyn s=%p t=%p is_client=%d mark_stream_closed close_reads=%d close_writes=%d error=%s END",
