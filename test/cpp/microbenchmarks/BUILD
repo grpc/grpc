@@ -52,7 +52,6 @@ grpc_cc_test(
     deps = [
         ":helpers",
         "//:grpc++",
-        "//test/core/util:grpc_test_util",
     ],
 )
 
@@ -67,8 +66,6 @@ grpc_cc_test(
     deps = [
         ":helpers",
         "//:common_event_engine_closures",
-        # "//:grpc++",
-        # "//test/core/util:grpc_test_util",
     ],
 )
 
