@@ -65,7 +65,6 @@ class TestServer {
   }
 
   void HandleRpc() {
-    gpr_log(GPR_INFO, "HandleRpc BEGIN");
     grpc_call_details call_details;
     grpc_call_details_init(&call_details);
     grpc_metadata_array request_metadata_recv;
@@ -110,14 +109,12 @@ class TestServer {
     error = grpc_call_start_batch(call, ops, static_cast<size_t>(op - ops), tag,
                                   nullptr);
     GPR_ASSERT(error == GRPC_CALL_OK);
-    gpr_log(GPR_INFO, "HandleRpc poll CQ");
     event = grpc_completion_queue_next(cq_, gpr_inf_future(GPR_CLOCK_REALTIME),
                                        nullptr);
     GPR_ASSERT(event.type == GRPC_OP_COMPLETE);
     GPR_ASSERT(event.success);
     GPR_ASSERT(event.tag == tag);
     grpc_call_unref(call);
-    gpr_log(GPR_INFO, "HandleRpc END");
   }
 
   std::string address() const { return address_; }
@@ -129,19 +126,12 @@ class TestServer {
 };
 
 void StartCallAndCloseWrites(grpc_call* call, grpc_completion_queue* cq) {
-  gpr_log(GPR_INFO, "StartCallAndCloseWrites BEGIN");
-  // grpc_slice payload_slice = grpc_slice_from_static_string("a");
-  // grpc_byte_buffer* payload =
-  //     grpc_raw_byte_buffer_create(&payload_slice, 1);
   grpc_op ops[2];
   grpc_op* op;
   memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op++;
-  // op->op = GRPC_OP_SEND_MESSAGE;
-  // op->data.send_message.send_message = payload;
-  // op++;
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
   op++;
   void* tag = call;
@@ -153,12 +143,9 @@ void StartCallAndCloseWrites(grpc_call* call, grpc_completion_queue* cq) {
   GPR_ASSERT(event.type == GRPC_OP_COMPLETE);
   GPR_ASSERT(event.success);
   GPR_ASSERT(event.tag == tag);
-  // grpc_byte_buffer_destroy(payload);
-  gpr_log(GPR_INFO, "StartCallAndCloseWrites END");
 }
 
 void FinishCall(grpc_call* call, grpc_completion_queue* cq) {
-  gpr_log(GPR_INFO, "FinishCall BEGIN");
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array_init(&initial_metadata_recv);
   grpc_metadata_array trailing_metadata_recv;
@@ -288,9 +275,9 @@ TEST(
                    .type == GRPC_QUEUE_TIMEOUT);
     // Perform the receive message and status. Note that the incoming bytes
     // should already be in the client's buffers by the time we start these ops.
-    // Thus, the client should *not* need to send a flow control update to the
-    // server to ensure progress. For the purpose of our bug repro, the goal is
-    // to leave a *queued* stream flow control update.
+    // Thus, the client should *not* need to urgently send a flow control update
+    // to the server, to ensure progress, and it can simply queue the flow
+    // control update instead.
     FinishCall(call, cq);
     grpc_call_unref(call);
     grpc_channel_destroy(channel);
