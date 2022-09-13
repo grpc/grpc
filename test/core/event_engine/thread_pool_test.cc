@@ -21,6 +21,7 @@
 #include <gtest/gtest.h>
 
 #include "absl/synchronization/notification.h"
+#include "gtest/gtest.h"
 
 #include <grpc/support/log.h>
 
@@ -66,6 +67,25 @@ TEST(ThreadPoolTest, CanSurviveFork) {
   });
   gpr_log(GPR_INFO, "wait for notification");
   n2.WaitForNotification();
+}
+
+void ScheduleSelf(ThreadPool* p) {
+  p->Add([p] { ScheduleSelf(p); });
+}
+
+TEST(ThreadPoolDeathTest, CanDetectStucknessAtFork) {
+  ASSERT_DEATH_IF_SUPPORTED(
+      [] {
+        gpr_set_log_verbosity(GPR_LOG_SEVERITY_ERROR);
+        ThreadPool p(1);
+        ScheduleSelf(&p);
+        std::thread terminator([] {
+          std::this_thread::sleep_for(std::chrono::seconds(10));
+          abort();
+        });
+        p.PrepareFork();
+      }(),
+      "Waiting for thread pool to idle before forking");
 }
 
 }  // namespace experimental

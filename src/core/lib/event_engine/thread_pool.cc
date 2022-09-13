@@ -130,8 +130,17 @@ void ThreadPool::ThreadCount::Remove() {
 
 void ThreadPool::ThreadCount::Quiesce() {
   grpc_core::MutexLock lock(&mu_);
+  auto last_log = absl::Now();
   while (threads_ > 0) {
-    cv_.Wait(&mu_);
+    // Wait for all threads to exit.
+    // At least once every three seconds (but no faster than once per second in
+    // the event of spurious wakeups) log a message indicating we're waiting to
+    // fork.
+    cv_.WaitWithTimeout(&mu_, absl::Seconds(3));
+    if (threads_ > 0 && absl::Now() - last_log > absl::Seconds(1)) {
+      gpr_log(GPR_ERROR, "Waiting for thread pool to idle before forking");
+      last_log = absl::Now();
+    }
   }
 }
 
