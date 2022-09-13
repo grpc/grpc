@@ -87,7 +87,9 @@ class TestServer {
         grpc_raw_byte_buffer_create(&response_payload_slice, 1);
     GPR_ASSERT(event.success);
     GPR_ASSERT(event.tag == tag);
-    // send a response
+    // Send a response with a 1-byte payload. The 1-byte length is important
+    // because it's enough to get the client to *queue* a flow control update,
+    // but not long enough to get the client to initiate a write on that update.
     grpc_op ops[4];
     grpc_op* op;
     memset(ops, 0, sizeof(ops));
@@ -155,7 +157,9 @@ void FinishCall(grpc_call* call, grpc_completion_queue* cq) {
   grpc_slice details;
   grpc_byte_buffer* recv_payload = nullptr;
   void* tag = call;
-  // Recv initial md and message
+  // Receive initial md and message. This is important because
+  // we want to get the client to queue a flow control update
+  // after it's done receiving the message.
   memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
@@ -174,9 +178,12 @@ void FinishCall(grpc_call* call, grpc_completion_queue* cq) {
   GPR_ASSERT(event.tag == tag);
   grpc_byte_buffer_destroy(recv_payload);
   recv_payload = nullptr;
-  // Recv message again, and status.
-  // Even though the server isn't sending a second message, it's important
-  // for our repro that we attempt to receive one.
+  // Attempt to receive a message again, and a status. The attempt
+  // to RECV_MESSAGE op will come up with nothing, because the server isn't
+  // sending a second message. However, it's important for our repro that
+  // we attempt to receive one, so that we can trigger a previously-broken
+  // code path that would queue a flow control update (and add a new ref) on
+  // a stream that's in the process of shutting down.
   memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_RECV_MESSAGE;
@@ -210,13 +217,12 @@ TEST(
     // Prevent pings from client to server and server to client, since they can
     // cause chttp2 to initiate a write and so dodge the bug we're trying to
     // repro.
-    grpc_arg args[] = {grpc_channel_arg_integer_create(
-        const_cast<char*>(GRPC_ARG_HTTP2_BDP_PROBE), 0)};
-    grpc_channel_args channel_args = {GPR_ARRAY_SIZE(args), args};
-    TestServer server(cq, &channel_args);
+    TestServer server(cq, grpc_core::ChannelArgs().Set(GRPC_ARG_HTTP2_BDP_PROBE, 0).ToC().get());
     grpc_channel_credentials* creds = grpc_insecure_credentials_create();
     grpc_channel* channel = grpc_channel_create(
-        absl::StrCat("ipv6:", server.address()).c_str(), creds, &channel_args);
+        absl::StrCat("ipv6:", server.address()).c_str(),
+        creds,
+        grpc_core::ChannelArgs().Set(GRPC_ARG_HTTP2_BDP_PROBE, 0).ToC().get());
     grpc_channel_credentials_release(creds);
     grpc_call* call =
         grpc_channel_create_call(channel, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
