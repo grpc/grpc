@@ -618,6 +618,9 @@ class ClientSecurityHandshakerFactory : public HandshakerFactory {
                                           handshake_mgr);
     }
   }
+  HandshakerPriority Priority() override {
+    return HandshakerPriority::kSecurity;
+  }
   ~ClientSecurityHandshakerFactory() override = default;
 };
 
@@ -631,6 +634,9 @@ class ServerSecurityHandshakerFactory : public HandshakerFactory {
       security_connector->add_handshakers(args, interested_parties,
                                           handshake_mgr);
     }
+  }
+  HandshakerPriority Priority() override {
+    return HandshakerPriority::kSecurity;
   }
   ~ServerSecurityHandshakerFactory() override = default;
 };
@@ -654,11 +660,9 @@ RefCountedPtr<Handshaker> SecurityHandshakerCreate(
 }
 
 void SecurityRegisterHandshakerFactories(CoreConfiguration::Builder* builder) {
-  builder->handshaker_registry()->RegisterHandshakerFactory(
-      false /* at_start */, HANDSHAKER_CLIENT,
+  builder->handshaker_registry()->RegisterHandshakerFactory(HANDSHAKER_CLIENT,
       absl::make_unique<ClientSecurityHandshakerFactory>());
-  builder->handshaker_registry()->RegisterHandshakerFactory(
-      false /* at_start */, HANDSHAKER_SERVER,
+  builder->handshaker_registry()->RegisterHandshakerFactory(HANDSHAKER_SERVER,
       absl::make_unique<ServerSecurityHandshakerFactory>());
 }
 

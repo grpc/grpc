@@ -387,14 +387,16 @@ class HttpConnectHandshakerFactory : public HandshakerFactory {
                       HandshakeManager* handshake_mgr) override {
     handshake_mgr->Add(MakeRefCounted<HttpConnectHandshaker>());
   }
+  HandshakerPriority Priority() override {
+    return HandshakerPriority::kHTTPConnect;
+  }
   ~HttpConnectHandshakerFactory() override = default;
 };
 
 }  // namespace
 
 void RegisterHttpConnectHandshaker(CoreConfiguration::Builder* builder) {
-  builder->handshaker_registry()->RegisterHandshakerFactory(
-      true /* at_start */, HANDSHAKER_CLIENT,
+  builder->handshaker_registry()->RegisterHandshakerFactory(HANDSHAKER_CLIENT,
       absl::make_unique<HttpConnectHandshakerFactory>());
 }
 

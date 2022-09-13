@@ -35,11 +35,19 @@ namespace grpc_core {
 
 class HandshakeManager;
 
+enum class HandshakerPriority : int {
+  kPreTCPConnect,
+  kTCPConnect,
+  kHTTPConnect, 
+  kSecurity,
+};
+
 class HandshakerFactory {
  public:
   virtual void AddHandshakers(const ChannelArgs& args,
                               grpc_pollset_set* interested_parties,
                               HandshakeManager* handshake_mgr) = 0;
+  virtual HandshakerPriority Priority() = 0;
   virtual ~HandshakerFactory() = default;
 };
 
