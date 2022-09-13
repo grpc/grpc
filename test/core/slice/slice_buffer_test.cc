@@ -16,14 +16,19 @@
 
 #include "src/core/lib/slice/slice_buffer.h"
 
-#include <gmock/gmock.h>
+#include <string.h>
+
+#include <utility>
+
 #include <gtest/gtest.h>
 
-#include <grpc/event_engine/slice_buffer.h>
-#include <grpc/grpc.h>
+#include "gtest/gtest.h"
+
+#include <grpc/slice.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 
 #include "src/core/lib/slice/slice.h"
-#include "test/core/util/test_config.h"
 
 using ::grpc_core::Slice;
 using ::grpc_core::SliceBuffer;

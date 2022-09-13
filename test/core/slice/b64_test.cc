@@ -18,17 +18,21 @@
 
 #include "src/core/lib/slice/b64.h"
 
+#include <stdint.h>
 #include <string.h>
 
 #include <gtest/gtest.h>
 
-#include <grpc/grpc.h>
+#include "absl/strings/string_view.h"
+#include "gtest/gtest.h"
+
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/slice/slice_refcount.h"
 #include "test/core/util/test_config.h"
 
 static int buffers_are_equal(const unsigned char* buf1,

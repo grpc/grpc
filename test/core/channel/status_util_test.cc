@@ -20,6 +20,8 @@
 
 #include <gtest/gtest.h>
 
+#include "gtest/gtest.h"
+
 namespace grpc_core {
 namespace internal {
 namespace {

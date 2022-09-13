@@ -16,7 +16,14 @@
 //
 //
 
-#include <gmock/gmock.h>
+#include <string>
+
+#include <gtest/gtest.h>
+
+#include "absl/types/optional.h"
+#include "gtest/gtest.h"
+
+#include <grpc/grpc.h>
 
 #include "src/core/ext/filters/client_channel/http_proxy.h"
 #include "src/core/lib/channel/channel_args.h"

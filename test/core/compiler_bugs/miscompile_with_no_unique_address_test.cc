@@ -16,6 +16,8 @@
 
 #include <gtest/gtest.h>
 
+#include "gtest/gtest.h"
+
 // Make a template argument to test which bit pattern remains in A's destructor
 // to try and detect similar bugs in non-MSAN builds (none have been detected
 // yet thankfully)

@@ -18,26 +18,39 @@
 
 #include "src/core/ext/xds/xds_lb_policy_registry.h"
 
-#include <gmock/gmock.h>
+#include <algorithm>
+#include <string>
+#include <vector>
+
+#include <google/protobuf/any.pb.h>
+#include <google/protobuf/struct.pb.h>
+#include <google/protobuf/wrappers.pb.h>
 #include <gtest/gtest.h>
 
-#include "absl/strings/str_format.h"
+#include "absl/memory/memory.h"
+#include "absl/status/status.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "upb/def.hpp"
-#include "upb/upb.h"
 #include "upb/upb.hpp"
 
 #include <grpc/grpc.h>
+#include <grpc/support/log.h>
 
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
-#include "src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/ring_hash.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/round_robin.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/typed_struct.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/udpa_typed_struct.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/wrr_locality.grpc.pb.h"
+#include "src/proto/grpc/testing/xds/v3/cluster.pb.h"
+#include "src/proto/grpc/testing/xds/v3/extension.pb.h"
+#include "src/proto/grpc/testing/xds/v3/ring_hash.pb.h"
+#include "src/proto/grpc/testing/xds/v3/round_robin.pb.h"
+#include "src/proto/grpc/testing/xds/v3/typed_struct.pb.h"
+#include "src/proto/grpc/testing/xds/v3/udpa_typed_struct.pb.h"
+#include "src/proto/grpc/testing/xds/v3/wrr_locality.pb.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/config_grpc_cli.h"
 

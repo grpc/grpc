@@ -18,13 +18,11 @@
 
 #include "src/core/lib/gprpp/global_config_env.h"
 
-#include <stdio.h>
 #include <string.h>
 
 #include <gtest/gtest.h>
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
+#include "gtest/gtest.h"
 
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gprpp/memory.h"

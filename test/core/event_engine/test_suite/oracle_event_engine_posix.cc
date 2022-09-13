@@ -15,8 +15,9 @@
 #include "test/core/event_engine/test_suite/oracle_event_engine_posix.h"
 
 #include <poll.h>
-#include <sys/poll.h>
+#include <stdlib.h>
 #include <sys/socket.h>
+#include <unistd.h>
 
 #include <algorithm>
 #include <cerrno>

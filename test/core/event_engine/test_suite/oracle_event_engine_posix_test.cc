@@ -13,6 +13,10 @@
 // limitations under the License.
 #include "test/core/event_engine/test_suite/oracle_event_engine_posix.h"
 
+#include <gtest/gtest.h>
+
+#include "absl/memory/memory.h"
+
 #include "test/core/event_engine/test_suite/event_engine_test.h"
 #include "test/core/util/test_config.h"
 

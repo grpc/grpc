@@ -13,8 +13,12 @@
 // limitations under the License.
 #include <grpc/support/port_platform.h>
 
-#include <gmock/gmock.h>
+#include <memory>
+
 #include <gtest/gtest.h>
+
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>

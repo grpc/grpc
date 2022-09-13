@@ -14,9 +14,24 @@
 
 #include "src/core/ext/filters/http/client_authority_filter.h"
 
+#include <memory>
+
 #include <gtest/gtest.h>
 
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/variant.h"
+#include "gtest/gtest.h"
+
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/grpc.h>
+
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/promise/poll.h"
+#include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
+#include "src/core/lib/transport/metadata_batch.h"
 #include "test/core/promise/test_context.h"
 
 namespace grpc_core {

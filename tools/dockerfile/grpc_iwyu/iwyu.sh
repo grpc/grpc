@@ -46,19 +46,17 @@ export ENABLED_MODULES='
   src/core/ext
   src/core/lib
   src/cpp
-  test/core/end2end
-  test/core/memory_usage
-  test/core/promise
-  test/core/resource_quota
-  test/core/transport
-  test/core/uri
-  test/core/util
+  test/core
 '
 
 export DISABLED_MODULES='
   src/core/lib/gpr
   src/core/lib/iomgr
   src/core/ext/transport/binder
+  test/core/alts
+  test/core/iomgr
+  test/core/security
+  test/core/tsi
   test/core/transport/binder
 '
 

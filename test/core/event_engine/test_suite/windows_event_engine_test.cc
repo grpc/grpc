@@ -11,11 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include <grpc/grpc.h>
-
-#include "src/core/lib/event_engine/windows/windows_engine.h"
-#include "test/core/event_engine/test_suite/event_engine_test.h"
-#include "test/core/util/test_config.h"
 
 #ifdef GPR_WINDOWS
 

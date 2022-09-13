@@ -16,6 +16,8 @@
 
 #include <gtest/gtest.h>
 
+#include "gtest/gtest.h"
+
 namespace grpc_core {
 
 TEST(AvlTest, NoOp) { AVL<int, int> avl; }

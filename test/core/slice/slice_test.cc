@@ -23,19 +23,24 @@
 #include <inttypes.h>
 #include <string.h>
 
+#include <algorithm>
+#include <memory>
 #include <random>
+#include <string>
+#include <vector>
 
 #include <gtest/gtest.h>
 
 #include "absl/memory/memory.h"
+#include "absl/strings/string_view.h"
+#include "gtest/gtest.h"
 
-#include <grpc/grpc.h>
 #include <grpc/slice.h>
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/slice/slice_refcount.h"
 #include "test/core/util/build.h"
 
 TEST(GrpcSliceTest, MallocReturnsSomethingSensible) {

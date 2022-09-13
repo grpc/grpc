@@ -14,12 +14,13 @@
 
 #include "src/core/lib/json/json_object_loader.h"
 
+#include <algorithm>
 #include <cstdint>
 
-#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "absl/strings/str_join.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 namespace {

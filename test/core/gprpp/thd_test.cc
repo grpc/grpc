@@ -20,12 +20,11 @@
 
 #include "src/core/lib/gprpp/thd.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-
 #include <gtest/gtest.h>
 
-#include <grpc/support/log.h>
+#include "gtest/gtest.h"
+
+#include <grpc/grpc.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 

@@ -18,9 +18,16 @@
 
 #include "src/core/ext/xds/xds_certificate_provider.h"
 
-#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "absl/types/optional.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+
+#include <grpc/grpc.h>
+
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "test/core/util/test_config.h"
 #include "test/core/util/tls_utils.h"
 

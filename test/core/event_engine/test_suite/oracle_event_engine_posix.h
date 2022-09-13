@@ -15,23 +15,25 @@
 #ifndef GRPC_TEST_CORE_EVENT_ENGINE_TEST_SUITE_ORACLE_EVENT_ENGINE_POSIX_H_
 #define GRPC_TEST_CORE_EVENT_ENGINE_TEST_SUITE_ORACLE_EVENT_ENGINE_POSIX_H_
 
-#include <functional>
 #include <memory>
 #include <string>
-#include <unordered_map>
 #include <utility>
+#include <vector>
 
+#include "absl/base/thread_annotations.h"
+#include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "absl/time/time.h"
+#include "absl/synchronization/mutex.h"
 
+#include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/memory_allocator.h>
 #include <grpc/event_engine/slice_buffer.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/event_engine/promise.h"
 #include "src/core/lib/gprpp/thd.h"
-#include "src/core/lib/resource_quota/memory_quota.h"
 #include "test/core/event_engine/test_suite/event_engine_test_utils.h"
 
 namespace grpc_event_engine {
