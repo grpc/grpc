@@ -105,6 +105,7 @@ bool ThreadPool::Queue::Add(absl::AnyInvocable<void()> callback) {
     case State::kForking:
       return false;
   }
+  GPR_UNREACHABLE_CODE(return false);
 }
 
 void ThreadPool::Queue::SetState(State state) {
