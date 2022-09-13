@@ -68,7 +68,7 @@ class RoundRobin : public LoadBalancingPolicy {
 
   absl::string_view name() const override { return kRoundRobin; }
 
-  void UpdateLocked(UpdateArgs args) override;
+  absl::Status UpdateLocked(UpdateArgs args) override;
   void ResetBackoffLocked() override;
 
  private:
@@ -266,7 +266,7 @@ void RoundRobin::ResetBackoffLocked() {
   }
 }
 
-void RoundRobin::UpdateLocked(UpdateArgs args) {
+absl::Status RoundRobin::UpdateLocked(UpdateArgs args) {
   ServerAddressList addresses;
   if (args.addresses.ok()) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
@@ -279,9 +279,9 @@ void RoundRobin::UpdateLocked(UpdateArgs args) {
       gpr_log(GPR_INFO, "[RR %p] received update with address error: %s", this,
               args.addresses.status().ToString().c_str());
     }
-    // If we already have a subchannel list, then ignore the resolver
-    // failure and keep using the existing list.
-    if (subchannel_list_ != nullptr) return;
+    // If we already have a subchannel list, then keep using the existing
+    // list, but still report back that the update was not accepted.
+    if (subchannel_list_ != nullptr) return args.addresses.status();
   }
   // Create new subchannel list, replacing the previous pending list, if any.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace) &&
@@ -308,15 +308,17 @@ void RoundRobin::UpdateLocked(UpdateArgs args) {
     channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE, status,
         absl::make_unique<TransientFailurePicker>(status));
+    return status;
   }
   // Otherwise, if this is the initial update, immediately promote it to
   // subchannel_list_ and report CONNECTING.
-  else if (subchannel_list_.get() == nullptr) {
+  if (subchannel_list_.get() == nullptr) {
     subchannel_list_ = std::move(latest_pending_subchannel_list_);
     channel_control_helper()->UpdateState(
         GRPC_CHANNEL_CONNECTING, absl::Status(),
         absl::make_unique<QueuePicker>(Ref(DEBUG_LOCATION, "QueuePicker")));
   }
+  return absl::OkStatus();
 }
 
 //

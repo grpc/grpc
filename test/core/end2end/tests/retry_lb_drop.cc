@@ -59,9 +59,10 @@ class DropPolicy : public LoadBalancingPolicy {
 
   absl::string_view name() const override { return kDropPolicyName; }
 
-  void UpdateLocked(UpdateArgs) override {
+  absl::Status UpdateLocked(UpdateArgs) override {
     channel_control_helper()->UpdateState(GRPC_CHANNEL_READY, absl::Status(),
                                           absl::make_unique<DropPicker>());
+    return absl::OkStatus();
   }
 
   void ResetBackoffLocked() override {}

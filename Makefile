@@ -1001,7 +1001,6 @@ LIBGRPC_SRC = \
     src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_resolver.cc \
     src/core/ext/filters/client_channel/local_subchannel_pool.cc \
-    src/core/ext/filters/client_channel/proxy_mapper_registry.cc \
     src/core/ext/filters/client_channel/resolver/binder/binder_resolver.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc \
@@ -1421,6 +1420,7 @@ LIBGRPC_SRC = \
     src/core/lib/gprpp/time.cc \
     src/core/lib/gprpp/time_averaged_stats.cc \
     src/core/lib/gprpp/work_serializer.cc \
+    src/core/lib/handshaker/proxy_mapper_registry.cc \
     src/core/lib/http/format_request.cc \
     src/core/lib/http/httpcli.cc \
     src/core/lib/http/httpcli_security_connector.cc \
@@ -1602,6 +1602,7 @@ LIBGRPC_SRC = \
     src/core/lib/surface/completion_queue_factory.cc \
     src/core/lib/surface/event_string.cc \
     src/core/lib/surface/init.cc \
+    src/core/lib/surface/init_internally.cc \
     src/core/lib/surface/lame_client.cc \
     src/core/lib/surface/metadata_array.cc \
     src/core/lib/surface/server.cc \
@@ -1802,7 +1803,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc \
     src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc \
     src/core/ext/filters/client_channel/local_subchannel_pool.cc \
-    src/core/ext/filters/client_channel/proxy_mapper_registry.cc \
     src/core/ext/filters/client_channel/resolver/binder/binder_resolver.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc \
@@ -1923,6 +1923,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/gprpp/time.cc \
     src/core/lib/gprpp/time_averaged_stats.cc \
     src/core/lib/gprpp/work_serializer.cc \
+    src/core/lib/handshaker/proxy_mapper_registry.cc \
     src/core/lib/http/format_request.cc \
     src/core/lib/http/httpcli.cc \
     src/core/lib/http/parser.cc \
@@ -2019,6 +2020,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/security/authorization/authorization_policy_provider_vtable.cc \
     src/core/lib/security/authorization/evaluate_args.cc \
     src/core/lib/security/authorization/grpc_server_authz_filter.cc \
+    src/core/lib/security/certificate_provider/certificate_provider_registry.cc \
     src/core/lib/security/context/security_context.cc \
     src/core/lib/security/credentials/call_creds_util.cc \
     src/core/lib/security/credentials/composite/composite_credentials.cc \
@@ -2063,6 +2065,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/surface/completion_queue_factory.cc \
     src/core/lib/surface/event_string.cc \
     src/core/lib/surface/init.cc \
+    src/core/lib/surface/init_internally.cc \
     src/core/lib/surface/lame_client.cc \
     src/core/lib/surface/metadata_array.cc \
     src/core/lib/surface/server.cc \
@@ -3166,7 +3169,6 @@ src/core/lib/matchers/matchers.cc: $(OPENSSL_DEP)
 src/core/lib/security/authorization/grpc_authorization_engine.cc: $(OPENSSL_DEP)
 src/core/lib/security/authorization/matchers.cc: $(OPENSSL_DEP)
 src/core/lib/security/authorization/rbac_policy.cc: $(OPENSSL_DEP)
-src/core/lib/security/certificate_provider/certificate_provider_registry.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/alts/alts_credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/alts/check_gcp_environment.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc: $(OPENSSL_DEP)

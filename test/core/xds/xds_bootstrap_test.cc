@@ -22,6 +22,7 @@
 
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_client_grpc.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/security/certificate_provider/certificate_provider_registry.h"
@@ -711,9 +712,14 @@ TEST(XdsBootstrapTest, XdsServerToJsonAndParse) {
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(&argc, argv);
+  grpc_core::CoreConfiguration::RegisterBuilder(
+      [](grpc_core::CoreConfiguration::Builder* builder) {
+        builder->certificate_provider_registry()
+            ->RegisterCertificateProviderFactory(
+                absl::make_unique<
+                    grpc_core::testing::FakeCertificateProviderFactory>());
+      });
   grpc_init();
-  grpc_core::CertificateProviderRegistry::RegisterCertificateProviderFactory(
-      absl::make_unique<grpc_core::testing::FakeCertificateProviderFactory>());
   int ret = RUN_ALL_TESTS();
   grpc_shutdown();
   return ret;
