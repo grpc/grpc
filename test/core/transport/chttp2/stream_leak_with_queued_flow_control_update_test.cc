@@ -241,6 +241,13 @@ TEST(
     gpr_timespec deadline = grpc_timeout_seconds_to_deadline(120);
     bool success = false;
     for (;;) {
+      // TODO(apolcyn): grpc_iomgr_count_objects_for_testing() is an internal
+      // and unstable API. Consider a different method of detecting leaks if
+      // it becomes no longer useable. Perhaps use
+      // TestOnlySetGlobalHttp2TransportDestructCallback to check whether
+      // transports are still around, for example. Note: at the time of writing,
+      // this test is  meant to repro a chttp2 stream leak, which also holds on
+      // to transports and iomgr objects.
       size_t active_fds = grpc_iomgr_count_objects_for_testing();
       if (active_fds == 1) {
         success = true;
