@@ -20,7 +20,6 @@
 
 #include <utility>
 
-#include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 
 #include "src/core/lib/channel/channel_args.h"
@@ -44,7 +43,7 @@ class ChildPolicyHandler : public LoadBalancingPolicy {
 
   absl::string_view name() const override { return "child_policy_handler"; }
 
-  absl::Status UpdateLocked(UpdateArgs args) override;
+  void UpdateLocked(UpdateArgs args) override;
   void ExitIdleLocked() override;
   void ResetBackoffLocked() override;
 
