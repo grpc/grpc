@@ -44,6 +44,11 @@ const char* const description_unconstrained_max_quota_buffer_size =
 const char* const description_new_hpack_huffman_decoder =
     "New HPACK huffman decoder - should be much faster than the existing "
     "implementation.";
+#ifdef NDEBUG
+const bool kDefaultForDebugOnly = false;
+#else
+const bool kDefaultForDebugOnly = true;
+#endif
 }  // namespace
 
 namespace grpc_core {
@@ -60,7 +65,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_periodic_resource_quota_reclamation, false},
     {"unconstrained_max_quota_buffer_size",
      description_unconstrained_max_quota_buffer_size, false},
-    {"new_hpack_huffman_decoder", description_new_hpack_huffman_decoder, false},
+    {"new_hpack_huffman_decoder", description_new_hpack_huffman_decoder,
+     kDefaultForDebugOnly},
 };
 
 }  // namespace grpc_core
