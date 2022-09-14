@@ -9987,21 +9987,6 @@ targets:
   deps:
   - grpc++_test_config
   - grpc++_test_util
-- name: thread_pool_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - src/core/lib/event_engine/forkable.h
-  - src/core/lib/event_engine/thread_pool.h
-  src:
-  - src/core/lib/event_engine/forkable.cc
-  - src/core/lib/event_engine/thread_pool.cc
-  - test/core/event_engine/thread_pool_test.cc
-  deps:
-  - absl/container:flat_hash_set
-  - absl/functional:any_invocable
-  - gpr
 - name: thread_quota_test
   gtest: true
   build: test
