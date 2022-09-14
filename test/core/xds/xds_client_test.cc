@@ -619,7 +619,7 @@ class XdsClientTest : public ::testing::Test {
       std::string metadata_json_str;
       auto status =
           MessageToJsonString(request.node().metadata(), &metadata_json_str,
-                              google::protobuf::util::JsonPrintOptions());
+                              GRPC_CUSTOM_JSONUTIL::JsonPrintOptions());
       ASSERT_TRUE(status.ok())
           << status << " on " << location.file() << ":" << location.line();
       auto metadata_json = Json::Parse(metadata_json_str);
