@@ -16,7 +16,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "absl/functional/any_invocable.h"
+#include "absl/functional/function_ref.h"
 
 #include <grpc/event_engine/event_engine.h>
 
@@ -33,10 +33,11 @@ class Poller {
 
   virtual ~Poller() = default;
   // Poll once for events and process received events. The callback function
-  // "poll_again" is expected to be scheduled asynchronously prior to processing
-  // received events. The callback's responsibility primarily is to call
-  // Poller::Work again. This would ensure that the next polling cycle would run
-  // as quickly as possible to ensure continuous polling.
+  // "schedule_poll_again" is expected to be run synchronously prior to
+  // processing received events. The callback's responsibility primarily is to
+  // schedule Poller::Work asynchronously again. This would ensure that the next
+  // polling cycle would run as quickly as possible to ensure continuous
+  // polling.
   //
   // Returns:
   //  * Poller::WorkResult::kKicked if it was Kicked.
@@ -44,7 +45,7 @@ class Poller {
   //  * Poller::WorkResult::kOk, otherwise indicating that the callback function
   //  was scheduled to run asynchonously and some events were processed.
   virtual WorkResult Work(EventEngine::Duration timeout,
-                          absl::AnyInvocable<void()> poll_again) = 0;
+                          absl::FunctionRef<void()> schedule_poll_again) = 0;
   // Trigger the threads executing Work(..) to break out as soon as possible.
   virtual void Kick() = 0;
 };

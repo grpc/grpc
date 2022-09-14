@@ -677,10 +677,11 @@ class Worker : public grpc_core::DualRefCounted<Worker> {
 
  private:
   void Work() {
-    auto result = g_event_poller->Work(24h, [self = Ref()]() {
+    auto result = g_event_poller->Work(24h, [this]() {
       // Schedule next work instantiation immediately and take a Ref for
       // the next instantiation.
-      self->Work();
+      Ref().release();
+      scheduler_->Run([this]() { Work(); });
     });
     ASSERT_TRUE(result == Poller::WorkResult::kOk ||
                 result == Poller::WorkResult::kKicked);
@@ -688,9 +689,7 @@ class Worker : public grpc_core::DualRefCounted<Worker> {
     // result was Poller::WorkResult::kKicked, then the next work instantiation
     // would not have been scheduled and the poll_again callback should have
     // been deleted.
-    if (result == Poller::WorkResult::kKicked) {
-      Unref();
-    }
+    Unref();
   }
   Scheduler* scheduler_;
   PosixEventPoller* poller_;

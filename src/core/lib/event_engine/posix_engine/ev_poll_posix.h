@@ -22,7 +22,6 @@
 #include <string>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/functional/any_invocable.h"
 #include "absl/strings/string_view.h"
 #include "absl/synchronization/mutex.h"
 
@@ -46,7 +45,7 @@ class PollPoller : public PosixEventPoller {
                             bool track_err) override;
   Poller::WorkResult Work(
       grpc_event_engine::experimental::EventEngine::Duration timeout,
-      absl::AnyInvocable<void()> poll_again) override;
+      absl::FunctionRef<void()> schedule_poll_again) override;
   std::string Name() override { return "poll"; }
   void Kick() override;
   Scheduler* GetScheduler() { return scheduler_; }

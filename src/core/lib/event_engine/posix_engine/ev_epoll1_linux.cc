@@ -519,8 +519,9 @@ void Epoll1EventHandle::SetHasError() { error_closure_->SetReady(); }
 // Kick(). If there is a Kick(), it collects and processes any previously
 // un-processed events. If there are no un-processed events, it returns
 // Poller::WorkResult::Kicked{}
-Poller::WorkResult Epoll1Poller::Work(EventEngine::Duration timeout,
-                                      absl::AnyInvocable<void()> poll_again) {
+Poller::WorkResult Epoll1Poller::Work(
+    EventEngine::Duration timeout,
+    absl::FunctionRef<void()> schedule_poll_again) {
   Events pending_events;
   if (g_epoll_set_.cursor == g_epoll_set_.num_events) {
     if (DoEpollWait(timeout) == 0) {
@@ -539,8 +540,8 @@ Poller::WorkResult Epoll1Poller::Work(EventEngine::Duration timeout,
       return Poller::WorkResult::kKicked;
     }
   }
-  // Schedule the provided callback.
-  scheduler_->Run(std::move(poll_again));
+  // Run the provided callback.
+  schedule_poll_again();
   // Process all pending events inline.
   for (auto& it : pending_events) {
     it->ExecutePendingActions();
@@ -601,7 +602,7 @@ int Epoll1Poller::DoEpollWait(EventEngine::Duration /*timeout*/) {
 
 Poller::WorkResult Epoll1Poller::Work(
     EventEngine::Duration /*timeout*/,
-    absl::AnyInvocable<void()> /*poll_again*/) {
+    absl::FunctionRef<void()> /*schedule_poll_again*/) {
   GPR_ASSERT(false && "unimplemented");
 }
 

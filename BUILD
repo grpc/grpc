@@ -2293,7 +2293,7 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/event_engine/poller.h",
     ],
-    external_deps = ["absl/functional:any_invocable"],
+    external_deps = ["absl/functional:function_ref"],
     deps = [
         "event_engine_base_hdrs",
         "gpr_platform",
