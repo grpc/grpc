@@ -45,15 +45,15 @@ class ServerCallbackImpl final
 
   grpc::ServerUnaryReactor* UnaryCall(
       grpc::CallbackServerContext* context,
-      const grpc::testing::SimpleRequest* request,
-      grpc::testing::SimpleResponse* response) override {
+      const grpc::testing::SimpleRequest* /* request */,
+      grpc::testing::SimpleResponse* /* response */) override {
     auto* reactor = context->DefaultReactor();
     reactor->Finish(grpc::Status::OK);
     return reactor;
   }
   grpc::ServerUnaryReactor* GetBeforeSnapshot(
       grpc::CallbackServerContext* context,
-      const grpc::testing::SimpleRequest* request,
+      const grpc::testing::SimpleRequest* /* request */,
       grpc::testing::MemorySize* response) override {
     gpr_log(GPR_INFO, "BeforeSnapshot RPC CALL RECEIVED");
     response->set_rss(before_server_create);
