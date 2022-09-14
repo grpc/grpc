@@ -173,6 +173,10 @@ void FuzzingEventEngine::Run(absl::AnyInvocable<void()> closure) {
   RunAfter(Duration::zero(), std::move(closure));
 }
 
+absl::Status FuzzingEventEngine::WaitForPendingTasks(Duration timeout) {
+  return absl::UnimplementedError("Not implemented");
+}
+
 EventEngine::TaskHandle FuzzingEventEngine::RunAfter(Duration when,
                                                      Closure* closure) {
   return RunAfter(when, [closure]() { closure->Run(); });

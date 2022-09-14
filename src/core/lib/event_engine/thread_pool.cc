@@ -22,6 +22,8 @@
 
 #include <utility>
 
+#include "thread_pool.h"
+
 #include "src/core/lib/gprpp/thd.h"
 
 namespace grpc_event_engine {
@@ -130,6 +132,10 @@ void ThreadPool::Add(absl::AnyInvocable<void()> callback) {
   if (!dead_threads_.empty()) {
     ReapThreads(&dead_threads_);
   }
+}
+
+bool ThreadPool::IsBusy() {
+  return !callbacks_.empty() || threads_waiting_ != nthreads_;
 }
 
 void ThreadPool::PrepareFork() {

@@ -33,6 +33,7 @@ class ThreadedExecutor : public Executor {
   ~ThreadedExecutor() override = default;
   void Run(EventEngine::Closure* closure) override;
   void Run(absl::AnyInvocable<void()> closure) override;
+  bool IsBusy() override;
 
  private:
   ThreadPool thread_pool_;

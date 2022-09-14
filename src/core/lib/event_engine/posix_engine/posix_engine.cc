@@ -92,6 +92,18 @@ void PosixEventEngine::Run(EventEngine::Closure* closure) {
   executor_.Run(closure);
 }
 
+absl::Status PosixEventEngine::WaitForPendingTasks(Duration timeout) {
+  auto deadline = ToTimestamp(timer_manager_.Now(), timeout);
+  while (executor_.IsBusy()) {
+    if (timer_manager_.Now() > deadline) {
+      return absl::DeadlineExceededError(
+          "Timed out waiting for executor to become idle.");
+    }
+    absl::SleepFor(absl::Milliseconds(33));
+  }
+  return absl::OkStatus();
+}
+
 EventEngine::TaskHandle PosixEventEngine::RunAfterInternal(
     Duration when, absl::AnyInvocable<void()> cb) {
   auto when_ts = ToTimestamp(timer_manager_.Now(), when);

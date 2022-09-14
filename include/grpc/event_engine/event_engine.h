@@ -390,6 +390,11 @@ class EventEngine {
   /// in some scenarios. This overload is useful in situations where performance
   /// is not a critical concern.
   virtual void Run(absl::AnyInvocable<void()> closure) = 0;
+  /// Wait for all pending tasks to complete.
+  ///
+  /// This only waits for closures that were handed to \a Run, timers scheduled
+  /// using \a RunAt are not checked.
+  virtual absl::Status WaitForPendingTasks(Duration timeout) = 0;
   /// Synonymous with scheduling an alarm to run after duration \a when.
   ///
   /// The \a closure will execute when time \a when arrives unless it has been

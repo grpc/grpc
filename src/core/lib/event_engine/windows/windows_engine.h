@@ -94,6 +94,7 @@ class WindowsEventEngine : public EventEngine {
       const DNSResolver::ResolverOptions& options) override;
   void Run(Closure* closure) override;
   void Run(absl::AnyInvocable<void()> closure) override;
+  absl::Status WaitForPendingTasks(Duration timeout) override;
   TaskHandle RunAfter(Duration when, Closure* closure) override;
   TaskHandle RunAfter(Duration when,
                       absl::AnyInvocable<void()> closure) override;

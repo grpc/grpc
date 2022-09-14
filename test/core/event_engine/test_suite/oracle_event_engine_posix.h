@@ -175,6 +175,9 @@ class PosixOracleEventEngine final : public EventEngine {
   void Run(absl::AnyInvocable<void()> /*closure*/) override {
     GPR_ASSERT(false && "unimplemented");
   }
+  absl::Status WaitForPendingTasks(Duration timeout) override {
+    GPR_ASSERT(false && "unimplemented");
+  }
   TaskHandle RunAfter(EventEngine::Duration /*duration*/,
                       Closure* /*closure*/) override {
     GPR_ASSERT(false && "unimplemented");

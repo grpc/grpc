@@ -40,6 +40,7 @@ class ThreadPool final : public grpc_event_engine::experimental::Forkable {
   ~ThreadPool() override;
 
   void Add(absl::AnyInvocable<void()> callback);
+  bool IsBusy();
 
   // Forkable
   void PrepareFork() override;

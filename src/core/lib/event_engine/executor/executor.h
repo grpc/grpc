@@ -30,6 +30,7 @@ class Executor {
   virtual ~Executor() = default;
   virtual void Run(EventEngine::Closure* closure) = 0;
   virtual void Run(absl::AnyInvocable<void()> closure) = 0;
+  virtual bool IsBusy() = 0;
 };
 
 }  // namespace experimental
