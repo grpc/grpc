@@ -37,7 +37,16 @@ class BackOff {
   explicit BackOff(const Options& options);
 
   /// Returns the time at which the next attempt should start.
+  ///
+  /// Calling either \a NextAttemptTime or \a TimeoutUntilNextAttempt will
+  /// advance to the next attempt.
   Timestamp NextAttemptTime();
+
+  /// Returns the timeout before the next attempt should start.
+  ///
+  /// Calling either \a NextAttemptTime or \a TimeoutUntilNextAttempt will
+  /// advance to the next attempt.
+  Duration TimeoutUntilNextAttempt();
 
   /// Reset the backoff, so the next value returned by NextAttemptTime()
   /// will be the time of the second attempt (rather than the Nth).

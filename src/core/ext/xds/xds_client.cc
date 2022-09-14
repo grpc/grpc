@@ -624,9 +624,7 @@ void XdsClient::ChannelState::RetryableCall<T>::StartNewCallLocked() {
 template <typename T>
 void XdsClient::ChannelState::RetryableCall<T>::StartRetryTimerLocked() {
   if (shutting_down_) return;
-  const Timestamp next_attempt_time = backoff_.NextAttemptTime();
-  const Duration timeout =
-      std::max(next_attempt_time - ExecCtx::Get()->Now(), Duration::Zero());
+  const Duration timeout = backoff_.TimeoutUntilNextAttempt();
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO,
             "[xds_client %p] xds server %s: call attempt failed; "
