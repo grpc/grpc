@@ -22,7 +22,7 @@
 #include "src/core/ext/filters/http/server/http_server_filter.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack_builder_impl.h"
-#include "src/core/lib/gprpp/env.h"
+#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
@@ -585,9 +585,9 @@ DEFINE_PROTO_FUZZER(const filter_fuzzer::Msg& msg) {
   }
 
   grpc_test_only_set_slice_hash_seed(0);
-  if (squelch && !grpc_core::GetEnv("GRPC_TRACE_FUZZER").has_value()) {
-    gpr_set_log_function(dont_log);
-  }
+  char* grpc_trace_fuzzer = gpr_getenv("GRPC_TRACE_FUZZER");
+  if (squelch && grpc_trace_fuzzer == nullptr) gpr_set_log_function(dont_log);
+  gpr_free(grpc_trace_fuzzer);
   g_now = {1, 0, GPR_CLOCK_MONOTONIC};
   grpc_core::TestOnlySetProcessEpoch(g_now);
   gpr_now_impl = now_impl;

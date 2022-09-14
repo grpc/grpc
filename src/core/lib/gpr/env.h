@@ -16,38 +16,25 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_GPRPP_ENV_H
-#define GRPC_CORE_LIB_GPRPP_ENV_H
+#ifndef GRPC_CORE_LIB_GPR_ENV_H
+#define GRPC_CORE_LIB_GPR_ENV_H
 
 #include <grpc/support/port_platform.h>
 
-#include <string>
+#include <stdio.h>
 
-#include "absl/types/optional.h"
+/* Env utility functions */
 
-namespace grpc_core {
-
-// Gets the environment variable value with the specified name. */
-absl::optional<std::string> GetEnv(const char* name);
+/* Gets the environment variable value with the specified name.
+   Returns a newly allocated string. It is the responsibility of the caller to
+   gpr_free the return value if not NULL (which means that the environment
+   variable exists). */
+char* gpr_getenv(const char* name);
 
 /* Sets the environment with the specified name to the specified value. */
-void SetEnv(const char* name, const char* value);
-inline void SetEnv(const char* name, const std::string& value) {
-  SetEnv(name, value.c_str());
-}
+void gpr_setenv(const char* name, const char* value);
 
 /* Deletes the variable name from the environment. */
-void UnsetEnv(const char* name);
+void gpr_unsetenv(const char* name);
 
-template <typename T>
-void SetOrUnsetEnv(const char* name, const absl::optional<T>& value) {
-  if (value.has_value()) {
-    SetEnv(name, value.value());
-  } else {
-    UnsetEnv(name);
-  }
-}
-
-}  // namespace grpc_core
-
-#endif /* GRPC_CORE_LIB_GPRPP_ENV_H */
+#endif /* GRPC_CORE_LIB_GPR_ENV_H */

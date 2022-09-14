@@ -27,11 +27,11 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_join.h"
-#include "absl/types/optional.h"
 
 #include <grpc/grpc_security_constants.h>
 #include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/slice.h>
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
@@ -42,7 +42,7 @@
 #include <grpcpp/support/slice.h>
 #include <grpcpp/support/status.h>
 
-#include "src/core/lib/gprpp/env.h"
+#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/executor.h"
@@ -224,22 +224,23 @@ grpc::Status StsCredentialsOptionsFromEnv(StsCredentialsOptions* options) {
   }
   ClearStsCredentialsOptions(options);
   grpc_slice json_string = grpc_empty_slice();
-  auto sts_creds_path = grpc_core::GetEnv("STS_CREDENTIALS");
+  char* sts_creds_path = gpr_getenv("STS_CREDENTIALS");
   grpc_error_handle error = GRPC_ERROR_NONE;
   grpc::Status status;
   // NOLINTNEXTLINE(clang-diagnostic-unused-lambda-capture)
-  auto cleanup = [&json_string, &error, &status]() {
+  auto cleanup = [&json_string, &sts_creds_path, &error, &status]() {
     grpc_slice_unref_internal(json_string);
+    gpr_free(sts_creds_path);
     GRPC_ERROR_UNREF(error);
     return status;
   };
 
-  if (!sts_creds_path.has_value()) {
+  if (sts_creds_path == nullptr) {
     status = grpc::Status(grpc::StatusCode::NOT_FOUND,
                           "STS_CREDENTIALS environment variable not set.");
     return cleanup();
   }
-  error = grpc_load_file(sts_creds_path->c_str(), 1, &json_string);
+  error = grpc_load_file(sts_creds_path, 1, &json_string);
   if (!GRPC_ERROR_IS_NONE(error)) {
     status =
         grpc::Status(grpc::StatusCode::NOT_FOUND, grpc_error_std_string(error));

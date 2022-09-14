@@ -29,7 +29,6 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_replace.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -37,7 +36,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/gprpp/env.h"
+#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/http/httpcli_ssl_credentials.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/json/json.h"
@@ -237,12 +237,12 @@ void AwsExternalAccountCredentials::AddMetadataRequestHeaders(
 }
 
 void AwsExternalAccountCredentials::RetrieveRegion() {
-  auto region_from_env = GetEnv(kRegionEnvVar);
-  if (!region_from_env.has_value()) {
-    region_from_env = GetEnv(kDefaultRegionEnvVar);
+  UniquePtr<char> region_from_env(gpr_getenv(kRegionEnvVar));
+  if (region_from_env == nullptr) {
+    region_from_env = UniquePtr<char>(gpr_getenv(kDefaultRegionEnvVar));
   }
-  if (region_from_env.has_value()) {
-    region_ = std::move(*region_from_env);
+  if (region_from_env != nullptr) {
+    region_ = std::string(region_from_env.get());
     if (url_.empty()) {
       RetrieveSigningKeys();
     } else {
@@ -350,14 +350,15 @@ void AwsExternalAccountCredentials::OnRetrieveRoleNameInternal(
 }
 
 void AwsExternalAccountCredentials::RetrieveSigningKeys() {
-  auto access_key_id_from_env = GetEnv(kAccessKeyIdEnvVar);
-  auto secret_access_key_from_env = GetEnv(kSecretAccessKeyEnvVar);
-  auto token_from_env = GetEnv(kSessionTokenEnvVar);
-  if (access_key_id_from_env.has_value() &&
-      secret_access_key_from_env.has_value() && token_from_env.has_value()) {
-    access_key_id_ = std::move(*access_key_id_from_env);
-    secret_access_key_ = std::move(*secret_access_key_from_env);
-    token_ = std::move(*token_from_env);
+  UniquePtr<char> access_key_id_from_env(gpr_getenv(kAccessKeyIdEnvVar));
+  UniquePtr<char> secret_access_key_from_env(
+      gpr_getenv(kSecretAccessKeyEnvVar));
+  UniquePtr<char> token_from_env(gpr_getenv(kSessionTokenEnvVar));
+  if (access_key_id_from_env != nullptr &&
+      secret_access_key_from_env != nullptr && token_from_env != nullptr) {
+    access_key_id_ = std::string(access_key_id_from_env.get());
+    secret_access_key_ = std::string(secret_access_key_from_env.get());
+    token_ = std::string(token_from_env.get());
     BuildSubjectToken();
     return;
   }

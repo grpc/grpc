@@ -21,8 +21,8 @@
 
 #include <grpc/support/alloc.h>
 
+#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/tmpfile.h"
-#include "src/core/lib/gprpp/env.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc {
@@ -82,15 +82,15 @@ TEST(GcpEnvParsingTest, NoEnvironmentVariableSet) {
 }
 
 TEST(GcpEnvParsingTest, ConfigFileDoesNotExist) {
-  grpc_core::SetEnv("GRPC_OBSERVABILITY_CONFIG_FILE",
-                    "/tmp/gcp_observability_config_does_not_exist");
+  gpr_setenv("GRPC_OBSERVABILITY_CONFIG_FILE",
+             "/tmp/gcp_observability_config_does_not_exist");
 
   auto config = GcpObservabilityConfig::ReadFromEnv();
 
   EXPECT_EQ(config.status(),
             absl::FailedPreconditionError("Failed to load file"));
 
-  grpc_core::UnsetEnv("GRPC_OBSERVABILITY_CONFIG_FILE");
+  gpr_unsetenv("GRPC_OBSERVABILITY_CONFIG_FILE");
 }
 
 class EnvParsingTestType {
@@ -131,13 +131,13 @@ class EnvParsingTest : public ::testing::TestWithParam<EnvParsingTestType> {
   ~EnvParsingTest() override {
     if (GetParam().config_source() == EnvParsingTestType::ConfigSource::kFile) {
       if (tmp_file_name != nullptr) {
-        grpc_core::UnsetEnv("GRPC_OBSERVABILITY_CONFIG_FILE");
+        gpr_unsetenv("GRPC_OBSERVABILITY_CONFIG_FILE");
         remove(tmp_file_name);
         gpr_free(tmp_file_name);
       }
     } else if (GetParam().config_source() ==
                EnvParsingTestType::ConfigSource::kEnvVar) {
-      grpc_core::UnsetEnv("GRPC_OBSERVABILITY_CONFIG");
+      gpr_unsetenv("GRPC_OBSERVABILITY_CONFIG");
     }
   }
 
@@ -148,10 +148,10 @@ class EnvParsingTest : public ::testing::TestWithParam<EnvParsingTestType> {
           gpr_tmpfile("gcp_observability_config", &tmp_file_name);
       fputs(json, tmp_config_file);
       fclose(tmp_config_file);
-      grpc_core::SetEnv("GRPC_OBSERVABILITY_CONFIG_FILE", tmp_file_name);
+      gpr_setenv("GRPC_OBSERVABILITY_CONFIG_FILE", tmp_file_name);
     } else if (GetParam().config_source() ==
                EnvParsingTestType::ConfigSource::kEnvVar) {
-      grpc_core::SetEnv("GRPC_OBSERVABILITY_CONFIG", json);
+      gpr_setenv("GRPC_OBSERVABILITY_CONFIG", json);
     }
   }
 

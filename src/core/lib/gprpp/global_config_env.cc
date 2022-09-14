@@ -28,13 +28,12 @@
 #include <type_traits>
 
 #include "absl/strings/str_format.h"
-#include "absl/types/optional.h"
 
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gprpp/env.h"
 
 namespace grpc_core {
 
@@ -61,14 +60,14 @@ void SetGlobalConfigEnvErrorFunction(GlobalConfigEnvErrorFunctionType func) {
 }
 
 UniquePtr<char> GlobalConfigEnv::GetValue() {
-  auto env = GetEnv(GetName());
-  return UniquePtr<char>(env.has_value() ? gpr_strdup(env.value().c_str())
-                                         : nullptr);
+  return UniquePtr<char>(gpr_getenv(GetName()));
 }
 
-void GlobalConfigEnv::SetValue(const char* value) { SetEnv(GetName(), value); }
+void GlobalConfigEnv::SetValue(const char* value) {
+  gpr_setenv(GetName(), value);
+}
 
-void GlobalConfigEnv::Unset() { UnsetEnv(GetName()); }
+void GlobalConfigEnv::Unset() { gpr_unsetenv(GetName()); }
 
 char* GlobalConfigEnv::GetName() {
   // This makes sure that name_ is in a canonical form having uppercase

@@ -44,7 +44,7 @@
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/env.h"
+#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -399,9 +399,10 @@ static grpc_core::RefCountedPtr<grpc_call_credentials> make_default_call_creds(
   grpc_error_handle err;
 
   /* First, try the environment variable. */
-  auto path_from_env = grpc_core::GetEnv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR);
-  if (path_from_env.has_value()) {
-    err = create_default_creds_from_path(*path_from_env, &call_creds);
+  char* path_from_env = gpr_getenv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR);
+  if (path_from_env != nullptr) {
+    err = create_default_creds_from_path(path_from_env, &call_creds);
+    gpr_free(path_from_env);
     if (GRPC_ERROR_IS_NONE(err)) return call_creds;
     *error = grpc_error_add_child(*error, err);
   }
