@@ -2547,7 +2547,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/container:inlined_vector",
-        "absl/functional:any_invocable",
+        "absl/functional:function_ref",
         "absl/memory",
         "absl/status",
         "absl/status:statusor",
@@ -2580,6 +2580,7 @@ grpc_cc_library(
         "absl/base:core_headers",
         "absl/container:inlined_vector",
         "absl/functional:any_invocable",
+        "absl/functional:function_ref",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
