@@ -94,7 +94,9 @@ void ThreadPool::Add(absl::AnyInvocable<void()> callback) {
   }
 }
 
-bool ThreadPool::IsBusy() { return state_->queue.IsBusy(); }
+bool ThreadPool::IsBusy() {
+  return state_->queue.IsBusy(state_->thread_count.threads());
+}
 
 bool ThreadPool::Queue::Add(absl::AnyInvocable<void()> callback) {
   grpc_core::MutexLock lock(&mu_);
@@ -122,9 +124,9 @@ void ThreadPool::Queue::SetState(QueueState state) {
   cv_.SignalAll();
 }
 
-bool ThreadPool::Queue::IsBusy() {
+bool ThreadPool::Queue::IsBusy(int expected_idle_threads) {
   grpc_core::MutexLock lock(&mu_);
-  return !callbacks_.empty() || threads_waiting_ < reserve_threads_;
+  return !callbacks_.empty() || threads_waiting_ < expected_idle_threads;
 }
 
 void ThreadPool::ThreadCount::Add() {

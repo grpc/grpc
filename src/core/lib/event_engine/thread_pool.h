@@ -59,7 +59,7 @@ class ThreadPool final : public grpc_event_engine::experimental::Forkable {
     bool Add(absl::AnyInvocable<void()> callback);
     void Reset() { SetState(QueueState::kRunning); }
     // Returns true if callbacks are being processed or are in queue
-    bool IsBusy();
+    bool IsBusy(int expected_idle_threads);
 
    private:
     enum class QueueState { kRunning, kShutdown, kForking };
@@ -80,6 +80,10 @@ class ThreadPool final : public grpc_event_engine::experimental::Forkable {
     void Remove();
     // Block until all threads have stopped.
     void Quiesce();
+    int threads() {
+      absl::MutexLock lock(&mu_);
+      return threads_;
+    }
 
    private:
     grpc_core::Mutex mu_;

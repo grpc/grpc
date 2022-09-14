@@ -15,6 +15,7 @@
 
 #include "src/core/lib/event_engine/posix_engine/posix_engine.h"
 
+#include <algorithm>
 #include <string>
 #include <utility>
 
@@ -98,11 +99,12 @@ void PosixEventEngine::Run(EventEngine::Closure* closure) {
 absl::Status PosixEventEngine::WaitForPendingTasks(Duration timeout) {
   auto deadline = ToTimestamp(timer_manager_.Now(), timeout);
   while (executor_.IsBusy()) {
-    if (timer_manager_.Now() > deadline) {
+    grpc_core::Duration time_remaining = deadline - timer_manager_.Now();
+    if (time_remaining.millis() < 0) {
       return absl::DeadlineExceededError(
           "Timed out waiting for executor to become idle.");
     }
-    absl::SleepFor(absl::Milliseconds(33));
+    absl::SleepFor(absl::Milliseconds(std::min(33l, time_remaining.millis())));
   }
   return absl::OkStatus();
 }

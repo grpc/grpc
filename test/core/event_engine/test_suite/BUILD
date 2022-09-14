@@ -33,6 +33,18 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "executor",
+    testonly = True,
+    srcs = ["executor_test.cc"],
+    hdrs = COMMON_HEADERS,
+    deps = [
+        ":conformance_test_base_lib",
+        "//:common_event_engine_closures",
+    ],
+    alwayslink = 1,
+)
+
+grpc_cc_library(
     name = "dns",
     testonly = True,
     srcs = ["dns_test.cc"],
@@ -66,6 +78,7 @@ grpc_cc_library(
     deps = [
         ":client",
         ":dns",
+        ":executor",
         ":server",
         ":timer",
     ],
@@ -80,6 +93,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:posix_event_engine",
+        "//test/core/event_engine/test_suite:executor",
         "//test/core/event_engine/test_suite:timer",
     ],
 )
@@ -95,6 +109,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:windows_event_engine",
+        "//test/core/event_engine/test_suite:executor",
         "//test/core/event_engine/test_suite:timer",
     ],
 )
@@ -109,6 +124,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//test/core/event_engine/fuzzing_event_engine",
+        "//test/core/event_engine/test_suite:executor",
         "//test/core/event_engine/test_suite:timer",
     ],
 )
