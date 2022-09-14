@@ -154,7 +154,7 @@ class RingHash : public LoadBalancingPolicy {
 
   absl::string_view name() const override { return kRingHash; }
 
-  absl::Status UpdateLocked(UpdateArgs args) override;
+  void UpdateLocked(UpdateArgs args) override;
   void ResetBackoffLocked() override;
 
  private:
@@ -817,7 +817,7 @@ void RingHash::ResetBackoffLocked() {
   }
 }
 
-absl::Status RingHash::UpdateLocked(UpdateArgs args) {
+void RingHash::UpdateLocked(UpdateArgs args) {
   config_ = std::move(args.config);
   ServerAddressList addresses;
   if (args.addresses.ok()) {
@@ -831,9 +831,9 @@ absl::Status RingHash::UpdateLocked(UpdateArgs args) {
       gpr_log(GPR_INFO, "[RH %p] received update with addresses error: %s",
               this, args.addresses.status().ToString().c_str());
     }
-    // If we already have a subchannel list, then keep using the existing
-    // list, but still report back that the update was not accepted.
-    if (subchannel_list_ != nullptr) return args.addresses.status();
+    // If we already have a subchannel list, then ignore the resolver
+    // failure and keep using the existing list.
+    if (subchannel_list_ != nullptr) return;
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace) &&
       latest_pending_subchannel_list_ != nullptr) {
@@ -866,13 +866,12 @@ absl::Status RingHash::UpdateLocked(UpdateArgs args) {
       channel_control_helper()->UpdateState(
           GRPC_CHANNEL_TRANSIENT_FAILURE, status,
           absl::make_unique<TransientFailurePicker>(status));
-      return status;
+    } else {
+      // Otherwise, report IDLE.
+      subchannel_list_->UpdateRingHashConnectivityStateLocked(
+          /*index=*/0, /*connection_attempt_complete=*/false, absl::OkStatus());
     }
-    // Otherwise, report IDLE.
-    subchannel_list_->UpdateRingHashConnectivityStateLocked(
-        /*index=*/0, /*connection_attempt_complete=*/false, absl::OkStatus());
   }
-  return absl::OkStatus();
 }
 
 //

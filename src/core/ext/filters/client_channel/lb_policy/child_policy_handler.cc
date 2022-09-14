@@ -161,7 +161,7 @@ void ChildPolicyHandler::ShutdownLocked() {
   }
 }
 
-absl::Status ChildPolicyHandler::UpdateLocked(UpdateArgs args) {
+void ChildPolicyHandler::UpdateLocked(UpdateArgs args) {
   // If the child policy name changes, we need to create a new child
   // policy.  When this happens, we leave child_policy_ as-is and store
   // the new child policy in pending_child_policy_.  Once the new child
@@ -253,7 +253,7 @@ absl::Status ChildPolicyHandler::UpdateLocked(UpdateArgs args) {
             policy_to_update == pending_child_policy_.get() ? "pending " : "",
             policy_to_update);
   }
-  return policy_to_update->UpdateLocked(std::move(args));
+  policy_to_update->UpdateLocked(std::move(args));
 }
 
 void ChildPolicyHandler::ExitIdleLocked() {

@@ -20,14 +20,19 @@
 
 #include <stdint.h>
 
+#include <string>
 #include <utility>
 
+#include "absl/status/statusor.h"
 #include "opencensus/exporters/stats/stackdriver/stackdriver_exporter.h"
 #include "opencensus/exporters/trace/stackdriver/stackdriver_exporter.h"
 #include "opencensus/trace/sampler.h"
 #include "opencensus/trace/trace_config.h"
 
 #include <grpcpp/opencensus.h>
+#include <grpcpp/support/config.h>
+
+#include "src/cpp/ext/gcp/observability_config.h"
 
 namespace grpc {
 namespace experimental {
@@ -42,23 +47,30 @@ constexpr uint32_t kMaxMessageEvents = 128;
 constexpr uint32_t kMaxLinks = 128;
 }  // namespace
 
-void GcpObservabilityInit() {
-  // TODO(yashykt): Add code for gRPC config parsing
+absl::Status GcpObservabilityInit() {
+  auto config = grpc::internal::GcpObservabilityConfig::ReadFromEnv();
+  if (!config.ok()) {
+    return config.status();
+  }
   grpc::RegisterOpenCensusPlugin();
   grpc::RegisterOpenCensusViewsForExport();
-  // TODO(yashykt): Setup tracing and stats exporting only if enabled in config.
-  // TODO(yashykt): Get probability from config
-  opencensus::trace::TraceConfig::SetCurrentTraceParams(
-      {kMaxAttributes, kMaxAnnotations, kMaxMessageEvents, kMaxLinks,
-       opencensus::trace::ProbabilitySampler(1.0)});
-  opencensus::exporters::trace::StackdriverOptions trace_opts;
-  // TODO(yashykt): Set up project ID based on config
-  opencensus::exporters::trace::StackdriverExporter::Register(
-      std::move(trace_opts));
-  opencensus::exporters::stats::StackdriverOptions stats_opts;
-  // TODO(yashykt): Set up project ID based on config
-  opencensus::exporters::stats::StackdriverExporter::Register(
-      std::move(stats_opts));
+  if (!config->cloud_trace.disabled) {
+    opencensus::trace::TraceConfig::SetCurrentTraceParams(
+        {kMaxAttributes, kMaxAnnotations, kMaxMessageEvents, kMaxLinks,
+         opencensus::trace::ProbabilitySampler(
+             config->cloud_trace.sampling_rate)});
+    opencensus::exporters::trace::StackdriverOptions trace_opts;
+    trace_opts.project_id = config->project_id;
+    opencensus::exporters::trace::StackdriverExporter::Register(
+        std::move(trace_opts));
+  }
+  if (!config->cloud_monitoring.disabled) {
+    opencensus::exporters::stats::StackdriverOptions stats_opts;
+    stats_opts.project_id = config->project_id;
+    opencensus::exporters::stats::StackdriverExporter::Register(
+        std::move(stats_opts));
+  }
+  return absl::Status();
 }
 
 }  // namespace experimental
