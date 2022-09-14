@@ -2467,7 +2467,6 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/functional:any_invocable",
-        "absl/time",
     ],
     deps = [
         "forkable",
@@ -5459,7 +5458,6 @@ grpc_cc_library(
         "gpr",
         "grpc_base",
         "grpc_resolver",
-        "grpc_service_config",
         "grpc_trace",
         "iomgr_fwd",
         "iomgr_timer",
