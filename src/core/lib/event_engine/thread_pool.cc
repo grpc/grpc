@@ -25,6 +25,7 @@
 
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
+#include "thread_pool.h"
 
 #include <grpc/support/log.h>
 
@@ -54,7 +55,7 @@ void ThreadPool::ThreadFunc(StatePtr state) {
 bool ThreadPool::Queue::Step() {
   grpc_core::ReleasableMutexLock lock(&mu_);
   // Wait until work is available or we are shutting down.
-  while (state_ == State::kRunning && callbacks_.empty()) {
+  while (state_ == QueueState::kRunning && callbacks_.empty()) {
     // If there are too many threads waiting, then quit this thread.
     // TODO(ctiller): wait some time in this case to be sure.
     if (threads_waiting_ >= reserve_threads_) return false;
@@ -63,10 +64,10 @@ bool ThreadPool::Queue::Step() {
     threads_waiting_--;
   }
   switch (state_) {
-    case State::kRunning:
+    case QueueState::kRunning:
       break;
-    case State::kShutdown:
-    case State::kForking:
+    case QueueState::kShutdown:
+    case QueueState::kForking:
       if (!callbacks_.empty()) break;
       return false;
   }
@@ -93,30 +94,37 @@ void ThreadPool::Add(absl::AnyInvocable<void()> callback) {
   }
 }
 
+bool ThreadPool::IsBusy() { return state_->queue.IsBusy(); }
+
 bool ThreadPool::Queue::Add(absl::AnyInvocable<void()> callback) {
   grpc_core::MutexLock lock(&mu_);
   // Add works to the callbacks list
   callbacks_.push(std::move(callback));
   cv_.Signal();
   switch (state_) {
-    case State::kRunning:
-    case State::kShutdown:
+    case QueueState::kRunning:
+    case QueueState::kShutdown:
       return threads_waiting_ == 0;
-    case State::kForking:
+    case QueueState::kForking:
       return false;
   }
   GPR_UNREACHABLE_CODE(return false);
 }
 
-void ThreadPool::Queue::SetState(State state) {
+void ThreadPool::Queue::SetState(QueueState state) {
   grpc_core::MutexLock lock(&mu_);
-  if (state == State::kRunning) {
-    GPR_ASSERT(state_ != State::kRunning);
+  if (state == QueueState::kRunning) {
+    GPR_ASSERT(state_ != QueueState::kRunning);
   } else {
-    GPR_ASSERT(state_ == State::kRunning);
+    GPR_ASSERT(state_ == QueueState::kRunning);
   }
   state_ = state;
   cv_.SignalAll();
+}
+
+bool ThreadPool::Queue::IsBusy() {
+  grpc_core::MutexLock lock(&mu_);
+  return !callbacks_.empty() || threads_waiting_ < reserve_threads_;
 }
 
 void ThreadPool::ThreadCount::Add() {
@@ -146,10 +154,6 @@ void ThreadPool::ThreadCount::Quiesce() {
       last_log = absl::Now();
     }
   }
-}
-
-bool ThreadPool::IsBusy() {
-  return !callbacks_.empty() || threads_waiting_ != nthreads_;
 }
 
 void ThreadPool::PrepareFork() {
