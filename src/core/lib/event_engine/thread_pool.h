@@ -81,7 +81,7 @@ class ThreadPool final : public grpc_event_engine::experimental::Forkable {
     // Block until all threads have stopped.
     void Quiesce();
     int threads() {
-      absl::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(&mu_);
       return threads_;
     }
 

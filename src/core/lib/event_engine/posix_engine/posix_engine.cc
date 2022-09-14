@@ -104,7 +104,8 @@ absl::Status PosixEventEngine::WaitForPendingTasks(Duration timeout) {
       return absl::DeadlineExceededError(
           "Timed out waiting for executor to become idle.");
     }
-    absl::SleepFor(absl::Milliseconds(std::min(33l, time_remaining.millis())));
+    absl::SleepFor(absl::Milliseconds(
+        std::min(static_cast<int64_t>(33), time_remaining.millis())));
   }
   return absl::OkStatus();
 }
