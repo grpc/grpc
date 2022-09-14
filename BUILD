@@ -5457,7 +5457,6 @@ grpc_cc_library(
         "gpr",
         "grpc_base",
         "grpc_resolver",
-        "grpc_service_config",
         "grpc_trace",
         "iomgr_fwd",
         "iomgr_timer",
@@ -6810,6 +6809,28 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "huffsyms",
+    srcs = [
+        "src/core/ext/transport/chttp2/transport/huffsyms.cc",
+    ],
+    hdrs = [
+        "src/core/ext/transport/chttp2/transport/huffsyms.h",
+    ],
+    deps = ["gpr_platform"],
+)
+
+grpc_cc_library(
+    name = "decode_huff",
+    srcs = [
+        "src/core/ext/transport/chttp2/transport/decode_huff.cc",
+    ],
+    hdrs = [
+        "src/core/ext/transport/chttp2/transport/decode_huff.h",
+    ],
+    deps = ["gpr_platform"],
+)
+
+grpc_cc_library(
     name = "http2_settings",
     srcs = [
         "src/core/ext/transport/chttp2/transport/http2_settings.cc",
@@ -6840,7 +6861,6 @@ grpc_cc_library(
         "src/core/ext/transport/chttp2/transport/hpack_encoder.cc",
         "src/core/ext/transport/chttp2/transport/hpack_parser.cc",
         "src/core/ext/transport/chttp2/transport/hpack_parser_table.cc",
-        "src/core/ext/transport/chttp2/transport/huffsyms.cc",
         "src/core/ext/transport/chttp2/transport/parsing.cc",
         "src/core/ext/transport/chttp2/transport/stream_lists.cc",
         "src/core/ext/transport/chttp2/transport/stream_map.cc",
@@ -6862,7 +6882,6 @@ grpc_cc_library(
         "src/core/ext/transport/chttp2/transport/hpack_encoder.h",
         "src/core/ext/transport/chttp2/transport/hpack_parser.h",
         "src/core/ext/transport/chttp2/transport/hpack_parser_table.h",
-        "src/core/ext/transport/chttp2/transport/huffsyms.h",
         "src/core/ext/transport/chttp2/transport/internal.h",
         "src/core/ext/transport/chttp2/transport/stream_map.h",
         "src/core/ext/transport/chttp2/transport/varint.h",
@@ -6885,6 +6904,7 @@ grpc_cc_library(
         "bitset",
         "chttp2_flow_control",
         "debug_location",
+        "decode_huff",
         "experiments",
         "gpr",
         "gpr_atm",
@@ -6897,6 +6917,7 @@ grpc_cc_library(
         "http2_errors",
         "http2_settings",
         "httpcli",
+        "huffsyms",
         "iomgr_fwd",
         "iomgr_timer",
         "memory_quota",
