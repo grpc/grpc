@@ -22,8 +22,7 @@
 
 #include <utility>
 
-#include "thread_pool.h"
-
+#include "src/core/lib/event_engine/thread_pool.h"
 #include "src/core/lib/gprpp/thd.h"
 
 namespace grpc_event_engine {

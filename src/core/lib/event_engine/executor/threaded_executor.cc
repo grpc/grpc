@@ -32,9 +32,7 @@ void ThreadedExecutor::Run(absl::AnyInvocable<void()> closure) {
   thread_pool_.Add(std::move(closure));
 }
 
-bool ThreadedExecutor::IsBusy() {
-  return thread_pool_.IsBusy();
-}
+bool ThreadedExecutor::IsBusy() { return thread_pool_.IsBusy(); }
 
 }  // namespace experimental
 }  // namespace grpc_event_engine
