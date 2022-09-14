@@ -1975,12 +1975,14 @@ TEST_F(XdsClientTest, Federation) {
                /*resource_names=*/{kXdstpResourceName});
   // Cancel watch for "foo1".
   CancelFooWatch(watcher.get(), "foo1");
-  // XdsClient should send an unsubscription request.
+  // The XdsClient may or may not send the unsubscription message
+  // before it closes the transport, depending on callback timing.
   request = WaitForRequest(stream.get());
-  ASSERT_TRUE(request.has_value());
-  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
-               /*version_info=*/"1", /*response_nonce=*/"A",
-               /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
+  if (request.has_value()) {
+    CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+                 /*version_info=*/"1", /*response_nonce=*/"A",
+                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
+  }
   // Now cancel watch for xdstp resource name.
   CancelFooWatch(watcher2.get(), kXdstpResourceName);
   // The XdsClient may or may not send the unsubscription message
@@ -2271,12 +2273,14 @@ TEST_F(XdsClientTest, FederationChannelFailureReportedToWatchers) {
   EXPECT_FALSE(watcher->HasEvent());
   // Cancel watch for "foo1".
   CancelFooWatch(watcher.get(), "foo1");
-  // XdsClient should send an unsubscription request.
+  // The XdsClient may or may not send the unsubscription message
+  // before it closes the transport, depending on callback timing.
   request = WaitForRequest(stream.get());
-  ASSERT_TRUE(request.has_value());
-  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
-               /*version_info=*/"1", /*response_nonce=*/"A",
-               /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
+  if (request.has_value()) {
+    CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+                 /*version_info=*/"1", /*response_nonce=*/"A",
+                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
+  }
   // Now cancel watch for xdstp resource name.
   CancelFooWatch(watcher2.get(), kXdstpResourceName);
   // The XdsClient may or may not send the unsubscription message
