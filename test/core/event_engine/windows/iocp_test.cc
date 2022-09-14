@@ -126,8 +126,8 @@ TEST_F(IOCPTest, ClientReceivesNotificationOfServerSend) {
   ASSERT_EQ(closures.size(), 1);
   executor.Run(closures[0]);
   // wait for the callbacks to run
-  ASSERT_TRUE(read_called.WaitWithTimeout(absl::Seconds(10)));
-  ASSERT_TRUE(write_called.WaitWithTimeout(absl::Seconds(10)));
+  ASSERT_TRUE(read_called.Get());
+  ASSERT_TRUE(write_called.Get());
 
   delete on_read;
   delete on_write;
@@ -193,7 +193,7 @@ TEST_F(IOCPTest, IocpWorkTimeoutDueToNoNotificationRegistered) {
   // register the closure, which should trigger it immediately.
   wrapped_client_socket->NotifyOnRead(on_read);
   // wait for the callbacks to run
-  ASSERT_TRUE(read_called.WaitWithTimeout(absl::Seconds(10)));
+  ASSERT_TRUE(read_called.Get());
 
   delete on_read;
   wrapped_client_socket->MaybeShutdown(absl::OkStatus());
@@ -215,7 +215,7 @@ TEST_F(IOCPTest, KickWorks) {
     iocp.Kick();
   });
   // wait for the callbacks to run
-  ASSERT_TRUE(kicked.WaitWithTimeout(absl::Seconds(10)));
+  ASSERT_TRUE(kicked.Get());
 }
 
 TEST_F(IOCPTest, KickThenShutdownCasusesNextWorkerToBeKicked) {

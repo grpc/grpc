@@ -76,7 +76,7 @@ class GrpcXdsBootstrap : public XdsBootstrap {
     bool ShouldUseV3() const override;
     bool IgnoreResourceDeletion() const override;
 
-    bool operator==(const XdsServer& other) const override;
+    bool Equals(const XdsServer& other) const override;
 
     const std::string& channel_creds_type() const {
       return channel_creds_.type;
