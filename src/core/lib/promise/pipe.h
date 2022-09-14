@@ -111,6 +111,13 @@ class Center {
     return true;
   }
 
+  Poll<bool> AwaitAck() {
+    GPR_DEBUG_ASSERT(send_refs_ != 0);
+    if (recv_refs_ == 0) return false;
+    if (has_value_) return on_empty_.pending();
+    return true;
+  }
+
   // Try to receive a value from the pipe.
   // Return Pending if there is no value.
   // Return the value if one was retrieved.
@@ -121,9 +128,12 @@ class Center {
       if (send_refs_ == 0) return absl::nullopt;
       return on_full_.pending();
     }
+    return std::move(value_);
+  }
+
+  void AckNext() {
     has_value_ = false;
     on_empty_.Wake();
-    return std::move(value_);
   }
 
  private:
