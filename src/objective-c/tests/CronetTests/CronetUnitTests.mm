@@ -32,9 +32,9 @@
 #import <grpc/support/log.h>
 
 #import "src/core/lib/channel/channel_args.h"
-#import "src/core/lib/gpr/env.h"
 #import "src/core/lib/gpr/string.h"
 #import "src/core/lib/gpr/tmpfile.h"
+#import "src/core/lib/gprpp/env.h"
 #import "src/core/lib/gprpp/host_port.h"
 #import "test/core/end2end/data/ssl_test_data.h"
 #import "test/core/util/test_config.h"

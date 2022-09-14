@@ -42,7 +42,7 @@
 #include <grpcpp/test/channel_test_peer.h>
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
-#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
@@ -2252,7 +2252,7 @@ std::vector<TestScenario> CreateTestScenarios(bool use_proxy,
                         kClientChannelBackupPollIntervalMs);
 #if TARGET_OS_IPHONE
   // Workaround Apple CFStream bug
-  gpr_setenv("grpc_cfstream", "0");
+  grpc_core::SetEnv("grpc_cfstream", "0");
 #endif
 
   if (test_secure) {

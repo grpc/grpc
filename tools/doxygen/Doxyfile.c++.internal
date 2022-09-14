@@ -1991,10 +1991,6 @@ src/core/lib/gpr/cpu_iphone.cc \
 src/core/lib/gpr/cpu_linux.cc \
 src/core/lib/gpr/cpu_posix.cc \
 src/core/lib/gpr/cpu_windows.cc \
-src/core/lib/gpr/env.h \
-src/core/lib/gpr/env_linux.cc \
-src/core/lib/gpr/env_posix.cc \
-src/core/lib/gpr/env_windows.cc \
 src/core/lib/gpr/log.cc \
 src/core/lib/gpr/log_android.cc \
 src/core/lib/gpr/log_linux.cc \
@@ -2031,6 +2027,10 @@ src/core/lib/gprpp/construct_destruct.h \
 src/core/lib/gprpp/cpp_impl_of.h \
 src/core/lib/gprpp/debug_location.h \
 src/core/lib/gprpp/dual_ref_counted.h \
+src/core/lib/gprpp/env.h \
+src/core/lib/gprpp/env_linux.cc \
+src/core/lib/gprpp/env_posix.cc \
+src/core/lib/gprpp/env_windows.cc \
 src/core/lib/gprpp/examine_stack.cc \
 src/core/lib/gprpp/examine_stack.h \
 src/core/lib/gprpp/fork.cc \
