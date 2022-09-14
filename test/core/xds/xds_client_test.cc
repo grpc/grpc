@@ -30,7 +30,7 @@
 
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_resource_type_impl.h"
-#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_object_loader.h"
@@ -476,10 +476,10 @@ class XdsClientTest : public ::testing::Test {
   class ScopedExperimentalEnvVar {
    public:
     explicit ScopedExperimentalEnvVar(const char* env_var) : env_var_(env_var) {
-      gpr_setenv(env_var_, "true");
+      SetEnv(env_var_, "true");
     }
 
-    ~ScopedExperimentalEnvVar() { gpr_unsetenv(env_var_); }
+    ~ScopedExperimentalEnvVar() { UnsetEnv(env_var_); }
 
    private:
     const char* env_var_;

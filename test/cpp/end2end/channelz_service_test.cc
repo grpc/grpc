@@ -34,7 +34,7 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
-#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
@@ -186,7 +186,7 @@ class ChannelzServerTest : public ::testing::TestWithParam<CredentialsType> {
   static void SetUpTestCase() {
 #if TARGET_OS_IPHONE
     // Workaround Apple CFStream bug
-    gpr_setenv("grpc_cfstream", "0");
+    grpc_core::SetEnv("grpc_cfstream", "0");
 #endif
   }
   void SetUp() override {

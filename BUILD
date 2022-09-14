@@ -328,6 +328,7 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/generic/generic_stub.h",
     "include/grpcpp/grpcpp.h",
     "include/grpcpp/health_check_service_interface.h",
+    "include/grpcpp/impl/call_hook.h",
     "include/grpcpp/impl/call.h",
     "include/grpcpp/impl/channel_argument_option.h",
     "include/grpcpp/impl/client_unary_call.h",
@@ -1022,6 +1023,23 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "env",
+    srcs = [
+        "src/core/lib/gprpp/env_linux.cc",
+        "src/core/lib/gprpp/env_posix.cc",
+        "src/core/lib/gprpp/env_windows.cc",
+    ],
+    hdrs = [
+        "src/core/lib/gprpp/env.h",
+    ],
+    external_deps = ["absl/types:optional"],
+    deps = [
+        "gpr_platform",
+        "tchar",
+    ],
+)
+
+grpc_cc_library(
     name = "gpr",
     srcs = [
         "src/core/lib/gpr/alloc.cc",
@@ -1029,9 +1047,6 @@ grpc_cc_library(
         "src/core/lib/gpr/cpu_linux.cc",
         "src/core/lib/gpr/cpu_posix.cc",
         "src/core/lib/gpr/cpu_windows.cc",
-        "src/core/lib/gpr/env_linux.cc",
-        "src/core/lib/gpr/env_posix.cc",
-        "src/core/lib/gpr/env_windows.cc",
         "src/core/lib/gpr/log.cc",
         "src/core/lib/gpr/log_android.cc",
         "src/core/lib/gpr/log_linux.cc",
@@ -1065,7 +1080,6 @@ grpc_cc_library(
     ],
     hdrs = [
         "src/core/lib/gpr/alloc.h",
-        "src/core/lib/gpr/env.h",
         "src/core/lib/gpr/string.h",
         "src/core/lib/gpr/time_precise.h",
         "src/core/lib/gpr/tmpfile.h",
@@ -1103,6 +1117,7 @@ grpc_cc_library(
     visibility = ["@grpc:public"],
     deps = [
         "construct_destruct",
+        "env",
         "examine_stack",
         "gpr_atm",
         "gpr_tls",
@@ -3832,6 +3847,7 @@ grpc_cc_library(
         "debug_location",
         "default_event_engine",
         "dual_ref_counted",
+        "env",
         "gpr",
         "gpr_atm",
         "grpc_backend_metric_data",
@@ -4457,6 +4473,7 @@ grpc_cc_library(
         "debug_location",
         "default_event_engine",
         "dual_ref_counted",
+        "env",
         "envoy_admin_upb",
         "envoy_config_core_upb",
         "envoy_config_endpoint_upb",
@@ -4585,6 +4602,7 @@ grpc_cc_library(
         "config",
         "debug_location",
         "default_event_engine",
+        "env",
         "envoy_admin_upb",
         "envoy_config_cluster_upb",
         "envoy_config_cluster_upbdefs",
@@ -5168,6 +5186,8 @@ grpc_cc_library(
         "closure",
         "config",
         "debug_location",
+        "env",
+        "exec_ctx",
         "gpr",
         "grpc_base",
         "grpc_client_channel",
@@ -5735,6 +5755,7 @@ grpc_cc_library(
         "alts_util",
         "config",
         "debug_location",
+        "env",
         "gpr",
         "grpc_base",
         "grpc_codegen",
@@ -6078,6 +6099,7 @@ grpc_cc_library(
     tags = ["nofixdeps"],
     deps = [
         "alts_util",
+        "env",
         "gpr",
         "grpc_alts_credentials",
         "grpc_base",
@@ -6300,10 +6322,12 @@ grpc_cc_library(
         "absl/strings",
         "absl/strings:str_format",
         "absl/time",
+        "absl/types:optional",
         "libcrypto",
     ],
     language = "c++",
     deps = [
+        "env",
         "gpr",
         "grpc_base",
         "grpc_credentials_util",
@@ -7174,8 +7198,8 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/synchronization",
-        "absl/types:optional",
         "absl/memory",
+        "absl/types:optional",
         "upb_lib",
         "protobuf_headers",
         "absl/container:inlined_vector",
@@ -7190,6 +7214,7 @@ grpc_cc_library(
         "channel_init",
         "channel_stack_type",
         "config",
+        "env",
         "error",
         "gpr",
         "gpr_manual_constructor",
