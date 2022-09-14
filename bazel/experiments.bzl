@@ -31,6 +31,9 @@ EXPERIMENTS = {
             "tcp_rcv_lowat",
             "tcp_read_chunks",
         ],
+        "event_engine_client_test": [
+            "event_engine_client",
+        ],
         "flow_control_test": [
             "flow_control_fixes",
             "peer_state_based_framing",
