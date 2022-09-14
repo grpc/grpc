@@ -111,7 +111,7 @@ class Center {
     return true;
   }
 
-  Poll<bool> AwaitAck() {
+  Poll<bool> PollAck() {
     GPR_DEBUG_ASSERT(send_refs_ != 0);
     if (recv_refs_ == 0) return false;
     if (has_value_) return on_empty_.pending();
@@ -250,14 +250,26 @@ class Push {
     if (center_ != nullptr) center_->UnrefSend();
   }
 
-  Poll<bool> operator()() { return center_->Push(&push_); }
+  Poll<bool> operator()() {
+    if (push_.has_value()) {
+      auto r = center_->Push(&*push_);
+      if (auto* ok = absl::get_if<bool>(&r)) {
+        push_.reset();
+        if (!*ok) return false;
+      } else {
+        return Pending{};
+      }
+    }
+    GPR_DEBUG_ASSERT(!push_.has_value());
+    return center_->PollAck();
+  }
 
  private:
   friend class PipeSender<T>;
   explicit Push(pipe_detail::Center<T>* center, T push)
       : center_(center), push_(std::move(push)) {}
   Center<T>* center_;
-  T push_;
+  absl::optional<T> push_;
 };
 
 // Implementation of PipeReceiver::Next promise.
