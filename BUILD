@@ -5409,7 +5409,6 @@ grpc_cc_library(
         "gpr",
         "grpc_base",
         "grpc_resolver",
-        "grpc_service_config",
         "grpc_trace",
         "iomgr_fwd",
         "iomgr_timer",

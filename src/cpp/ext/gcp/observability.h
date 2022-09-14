@@ -21,11 +21,13 @@
 // instead of in src/, but I'm not yet sure about the naming, so keeping it here
 // till we decide.
 
+#include "absl/status/status.h"
+
 namespace grpc {
 namespace experimental {
 
 // Initialize GCP Observability for gRPC.
-void GcpObservabilityInit();
+absl::Status GcpObservabilityInit();
 
 }  // namespace experimental
 }  // namespace grpc

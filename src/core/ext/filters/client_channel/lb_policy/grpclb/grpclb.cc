@@ -188,7 +188,7 @@ class GrpcLb : public LoadBalancingPolicy {
 
   absl::string_view name() const override { return kGrpclb; }
 
-  absl::Status UpdateLocked(UpdateArgs args) override;
+  void UpdateLocked(UpdateArgs args) override;
   void ResetBackoffLocked() override;
 
  private:
@@ -473,7 +473,7 @@ class GrpcLb : public LoadBalancingPolicy {
   void ShutdownLocked() override;
 
   // Helper functions used in UpdateLocked().
-  absl::Status UpdateBalancerChannelLocked(const ChannelArgs& args);
+  void UpdateBalancerChannelLocked(const ChannelArgs& args);
 
   void CancelBalancerChannelConnectivityWatchLocked();
 
@@ -1524,7 +1524,7 @@ void GrpcLb::ResetBackoffLocked() {
   }
 }
 
-absl::Status GrpcLb::UpdateLocked(UpdateArgs args) {
+void GrpcLb::UpdateLocked(UpdateArgs args) {
   const bool is_initial_update = lb_channel_ == nullptr;
   config_ = args.config;
   GPR_ASSERT(config_ != nullptr);
@@ -1540,7 +1540,7 @@ absl::Status GrpcLb::UpdateLocked(UpdateArgs args) {
   }
   resolution_note_ = std::move(args.resolution_note);
   // Update balancer channel.
-  absl::Status status = UpdateBalancerChannelLocked(args.args);
+  UpdateBalancerChannelLocked(args.args);
   // Update the existing child policy, if any.
   if (child_policy_ != nullptr) CreateOrUpdateChildPolicyLocked();
   // If this is the initial update, start the fallback-at-startup checks
@@ -1565,24 +1565,18 @@ absl::Status GrpcLb::UpdateLocked(UpdateArgs args) {
     // Start balancer call.
     StartBalancerCallLocked();
   }
-  return status;
 }
 
 //
 // helpers for UpdateLocked()
 //
 
-absl::Status GrpcLb::UpdateBalancerChannelLocked(const ChannelArgs& args) {
+void GrpcLb::UpdateBalancerChannelLocked(const ChannelArgs& args) {
   // Make sure that GRPC_ARG_LB_POLICY_NAME is set in channel args,
   // since we use this to trigger the client_load_reporting filter.
   args_ = args.Set(GRPC_ARG_LB_POLICY_NAME, "grpclb");
-  // Get balancer addresses.
-  ServerAddressList balancer_addresses = ExtractBalancerAddresses(args);
-  absl::Status status;
-  if (balancer_addresses.empty()) {
-    status = absl::UnavailableError("balancer address list must be non-empty");
-  }
   // Construct args for balancer channel.
+  ServerAddressList balancer_addresses = ExtractBalancerAddresses(args);
   ChannelArgs lb_channel_args =
       BuildBalancerChannelArgs(response_generator_.get(), args);
   // Create balancer channel if needed.
@@ -1610,8 +1604,6 @@ absl::Status GrpcLb::UpdateBalancerChannelLocked(const ChannelArgs& args) {
   result.addresses = std::move(balancer_addresses);
   result.args = lb_channel_args;
   response_generator_->SetResponse(std::move(result));
-  // Return status.
-  return status;
 }
 
 void GrpcLb::CancelBalancerChannelConnectivityWatchLocked() {
@@ -1802,9 +1794,7 @@ void GrpcLb::CreateOrUpdateChildPolicyLocked() {
     gpr_log(GPR_INFO, "[grpclb %p] Updating child policy handler %p", this,
             child_policy_.get());
   }
-  // TODO(roth): If we're in fallback mode and the child policy rejects the
-  // update, we should propagate that failure back to the resolver somehow.
-  (void)child_policy_->UpdateLocked(std::move(update_args));
+  child_policy_->UpdateLocked(std::move(update_args));
 }
 
 //
