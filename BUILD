@@ -942,16 +942,10 @@ grpc_cc_library(
     ],
     visibility = ["@grpc:public"],
     deps = [
-        "channel_args",
-        "channel_stack_builder",
-        "closure",
-        "error",
-        "exec_ctx",
         "gpr",
         "grpc_base",
         "grpc_codegen",
         "grpc_trace",
-        "slice",
     ],
 )
 
