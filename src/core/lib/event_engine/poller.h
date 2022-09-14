@@ -33,7 +33,7 @@ class Poller {
 
   virtual ~Poller() = default;
   // Poll once for events and process received events. The callback function
-  // "poll_again" is expected to be schduled asynchronously prior to processing
+  // "poll_again" is expected to be scheduled asynchronously prior to processing
   // received events. The callback's responsibility primarily is to call
   // Poller::Work again. This would ensure that the next polling cycle would run
   // as quickly as possible to ensure continuous polling.
@@ -42,7 +42,7 @@ class Poller {
   //  * Poller::WorkResult::kKicked if it was Kicked.
   //  * Poller::WorkResult::kDeadlineExceeded if timeout occurred
   //  * Poller::WorkResult::kOk, otherwise indicating that the callback function
-  //  was schduled to run asynchonously and some events were processed.
+  //  was scheduled to run asynchonously and some events were processed.
   virtual WorkResult Work(EventEngine::Duration timeout,
                           absl::AnyInvocable<void()> poll_again) = 0;
   // Trigger the threads executing Work(..) to break out as soon as possible.

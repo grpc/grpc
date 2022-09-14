@@ -203,7 +203,7 @@ class PollEventHandle : public EventHandle {
   }
   uint32_t BeginPollLocked(uint32_t read_mask, uint32_t write_mask)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
-  bool EndPollLocked(int got_read, int got_write)
+  bool EndPollLocked(bool got_read, bool got_write)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
  private:
@@ -560,7 +560,7 @@ uint32_t PollEventHandle::BeginPollLocked(uint32_t read_mask,
   return mask;
 }
 
-bool PollEventHandle::EndPollLocked(int got_read, int got_write) {
+bool PollEventHandle::EndPollLocked(bool got_read, bool got_write) {
   if (is_orphaned_ && !IsWatched()) {
     CloseFd();
   } else if (!is_orphaned_) {
@@ -733,7 +733,7 @@ Poller::WorkResult PollPoller::Work(EventEngine::Duration timeout,
             // This case implies the fd was polled (since watch_mask > 0 and
             // the poll returned an error. Mark the fds as both readable and
             // writable.
-            if (head->EndPollLocked(1, 1)) {
+            if (head->EndPollLocked(true, true)) {
               // Its safe to add to list of pending events because
               // EndPollLocked returns true only when the handle is
               // not orphaned. But an orphan might be initiated on the handle
@@ -746,12 +746,12 @@ Poller::WorkResult PollPoller::Work(EventEngine::Duration timeout,
             // 0 and r < 0 or (3) watch_mask == 0 and r == 0. For case-1, no
             // events are pending on the fd even though the fd was polled. For
             // case-2 and 3, the fd was not polled
-            head->EndPollLocked(0, 0);
+            head->EndPollLocked(false, false);
           }
         } else {
           // It can enter this case if an orphan was invoked on the handle
           // while it was being polled.
-          head->EndPollLocked(0, 0);
+          head->EndPollLocked(false, false);
         }
         lock.Release();
         // Unref the ref taken at BeginPollLocked.
@@ -770,7 +770,7 @@ Poller::WorkResult PollPoller::Work(EventEngine::Duration timeout,
           // handle while it was being polled. If watch_mask is 0, then the fd
           // was not polled.
           head->SetWatched(-1);
-          head->EndPollLocked(0, 0);
+          head->EndPollLocked(false, false);
         } else {
           // Watched is true and watch_mask > 0
           if (pfds[i].revents & POLLHUP) {

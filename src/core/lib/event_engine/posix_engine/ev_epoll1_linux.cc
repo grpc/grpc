@@ -539,7 +539,7 @@ Poller::WorkResult Epoll1Poller::Work(EventEngine::Duration timeout,
       return Poller::WorkResult::kKicked;
     }
   }
-  // Schduler the provided callback.
+  // Schedule the provided callback.
   scheduler_->Run(std::move(poll_again));
   // Process all pending events inline.
   for (auto& it : pending_events) {
