@@ -18,69 +18,21 @@
 
 #include "src/core/ext/xds/xds_bootstrap.h"
 
-#include <set>
-#include <utility>
-#include <vector>
+#include "absl/types/optional.h"
 
-#include "absl/strings/string_view.h"
-
-#include <grpc/support/alloc.h>
-
-#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/env.h"
 
 namespace grpc_core {
 
 // TODO(donnadionne): check to see if federation is enabled, this will be
 // removed once federation is fully integrated and enabled by default.
 bool XdsFederationEnabled() {
-  char* value = gpr_getenv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
+  auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
+  if (!value.has_value()) return false;
   bool parsed_value;
-  bool parse_succeeded = gpr_parse_bool_value(value, &parsed_value);
-  gpr_free(value);
+  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
   return parse_succeeded && parsed_value;
-}
-
-//
-// XdsBootstrap::XdsServer
-//
-
-constexpr absl::string_view XdsBootstrap::XdsServer::kServerFeatureXdsV3;
-constexpr absl::string_view
-    XdsBootstrap::XdsServer::kServerFeatureIgnoreResourceDeletion;
-
-bool XdsBootstrap::XdsServer::ShouldUseV3() const {
-  return server_features.find(std::string(kServerFeatureXdsV3)) !=
-         server_features.end();
-}
-
-bool XdsBootstrap::XdsServer::IgnoreResourceDeletion() const {
-  return server_features.find(std::string(
-             kServerFeatureIgnoreResourceDeletion)) != server_features.end();
-}
-
-//
-// XdsBootstrap
-//
-
-const XdsBootstrap::Authority* XdsBootstrap::LookupAuthority(
-    const std::string& name) const {
-  auto it = authorities().find(name);
-  if (it != authorities().end()) {
-    return &it->second;
-  }
-  return nullptr;
-}
-
-bool XdsBootstrap::XdsServerExists(
-    const XdsBootstrap::XdsServer& server) const {
-  if (server == this->server()) return true;
-  for (auto& authority : authorities()) {
-    for (auto& xds_server : authority.second.xds_servers) {
-      if (server == xds_server) return true;
-    }
-  }
-  return false;
 }
 
 }  // namespace grpc_core

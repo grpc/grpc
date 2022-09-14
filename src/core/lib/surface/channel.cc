@@ -56,6 +56,7 @@
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
+#include "src/core/lib/surface/init_internally.h"
 #include "src/core/lib/transport/transport.h"
 
 // IWYU pragma: no_include <type_traits>
@@ -92,7 +93,7 @@ Channel::Channel(bool is_client, std::string target,
   // accommodate that, we call grpc_init() here and then call
   // grpc_shutdown() when the channel is actually destroyed, thus
   // ensuring that shutdown is deferred until that point.
-  grpc_init();
+  InitInternally();
   auto channelz_node = channelz_node_;
   *channel_stack_->on_destroy = [channelz_node]() {
     if (channelz_node != nullptr) {
@@ -100,7 +101,7 @@ Channel::Channel(bool is_client, std::string target,
           channelz::ChannelTrace::Severity::Info,
           grpc_slice_from_static_string("Channel destroyed"));
     }
-    grpc_shutdown();
+    ShutdownInternally();
   };
 }
 

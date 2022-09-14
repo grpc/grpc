@@ -75,7 +75,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_resolver.cc \
     src/core/ext/filters/client_channel/local_subchannel_pool.cc \
-    src/core/ext/filters/client_channel/proxy_mapper_registry.cc \
     src/core/ext/filters/client_channel/resolver/binder/binder_resolver.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc \
@@ -119,6 +118,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/transport/chttp2/transport/bin_encoder.cc \
     src/core/ext/transport/chttp2/transport/chttp2_transport.cc \
     src/core/ext/transport/chttp2/transport/context_list.cc \
+    src/core/ext/transport/chttp2/transport/decode_huff.cc \
     src/core/ext/transport/chttp2/transport/flow_control.cc \
     src/core/ext/transport/chttp2/transport/frame_data.cc \
     src/core/ext/transport/chttp2/transport/frame_goaway.cc \
@@ -423,7 +423,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upbdefs-generated/xds/type/matcher/v3/regex.upbdefs.c \
     src/core/ext/upbdefs-generated/xds/type/matcher/v3/string.upbdefs.c \
     src/core/ext/upbdefs-generated/xds/type/v3/typed_struct.upbdefs.c \
-    src/core/ext/xds/certificate_provider_registry.cc \
     src/core/ext/xds/certificate_provider_store.cc \
     src/core/ext/xds/file_watcher_certificate_provider_factory.cc \
     src/core/ext/xds/xds_api.cc \
@@ -489,6 +488,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/event_engine/windows/iocp.cc \
     src/core/lib/event_engine/windows/win_socket.cc \
     src/core/lib/event_engine/windows/windows_engine.cc \
+    src/core/lib/experiments/config.cc \
     src/core/lib/experiments/experiments.cc \
     src/core/lib/gpr/alloc.cc \
     src/core/lib/gpr/atm.cc \
@@ -496,9 +496,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/gpr/cpu_linux.cc \
     src/core/lib/gpr/cpu_posix.cc \
     src/core/lib/gpr/cpu_windows.cc \
-    src/core/lib/gpr/env_linux.cc \
-    src/core/lib/gpr/env_posix.cc \
-    src/core/lib/gpr/env_windows.cc \
     src/core/lib/gpr/log.cc \
     src/core/lib/gpr/log_android.cc \
     src/core/lib/gpr/log_linux.cc \
@@ -521,6 +518,9 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/gpr/tmpfile_posix.cc \
     src/core/lib/gpr/tmpfile_windows.cc \
     src/core/lib/gpr/wrap_memcpy.cc \
+    src/core/lib/gprpp/env_linux.cc \
+    src/core/lib/gprpp/env_posix.cc \
+    src/core/lib/gprpp/env_windows.cc \
     src/core/lib/gprpp/examine_stack.cc \
     src/core/lib/gprpp/fork.cc \
     src/core/lib/gprpp/global_config_env.cc \
@@ -529,12 +529,14 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/gprpp/stat_posix.cc \
     src/core/lib/gprpp/stat_windows.cc \
     src/core/lib/gprpp/status_helper.cc \
+    src/core/lib/gprpp/tchar.cc \
     src/core/lib/gprpp/thd_posix.cc \
     src/core/lib/gprpp/thd_windows.cc \
     src/core/lib/gprpp/time.cc \
     src/core/lib/gprpp/time_averaged_stats.cc \
     src/core/lib/gprpp/time_util.cc \
     src/core/lib/gprpp/work_serializer.cc \
+    src/core/lib/handshaker/proxy_mapper_registry.cc \
     src/core/lib/http/format_request.cc \
     src/core/lib/http/httpcli.cc \
     src/core/lib/http/httpcli_security_connector.cc \
@@ -636,6 +638,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/security/authorization/grpc_server_authz_filter.cc \
     src/core/lib/security/authorization/matchers.cc \
     src/core/lib/security/authorization/rbac_policy.cc \
+    src/core/lib/security/certificate_provider/certificate_provider_registry.cc \
     src/core/lib/security/context/security_context.cc \
     src/core/lib/security/credentials/alts/alts_credentials.cc \
     src/core/lib/security/credentials/alts/check_gcp_environment.cc \
@@ -715,6 +718,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/surface/completion_queue_factory.cc \
     src/core/lib/surface/event_string.cc \
     src/core/lib/surface/init.cc \
+    src/core/lib/surface/init_internally.cc \
     src/core/lib/surface/lame_client.cc \
     src/core/lib/surface/metadata_array.cc \
     src/core/lib/surface/server.cc \
@@ -1336,6 +1340,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/experiments)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gpr)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gprpp)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/handshaker)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/http)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/iomgr)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/json)
@@ -1345,6 +1350,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/resolver)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/resource_quota)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/authorization)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/certificate_provider)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/context)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/alts)

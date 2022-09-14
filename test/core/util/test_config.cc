@@ -26,14 +26,13 @@
 #include "absl/debugging/failure_signal_handler.h"
 #include "absl/status/status.h"
 #include "absl/strings/match.h"
-#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/surface/init.h"
 #include "test/core/event_engine/test_init.h"
 #include "test/core/util/build.h"
@@ -109,7 +108,7 @@ void ParseTestArgs(int* argc, char** argv) {
   int i = 1;
   while (i < *argc) {
     if (absl::StartsWith(argv[i], poller_flag)) {
-      gpr_setenv("GRPC_POLL_STRATEGY", argv[i] + poller_flag.length());
+      grpc_core::SetEnv("GRPC_POLL_STRATEGY", argv[i] + poller_flag.length());
       // remove the spent argv
       RmArg(i, argc, argv);
       continue;
@@ -127,10 +126,7 @@ void ParseTestArgs(int* argc, char** argv) {
       continue;
     }
     if (absl::StartsWith(argv[i], experiment_flag)) {
-      gpr_setenv(
-          absl::StrCat("GRPC_EXPERIMENT_", argv[i] + experiment_flag.length())
-              .c_str(),
-          "true");
+      grpc_core::SetEnv("GRPC_EXPERIMENTS", argv[i] + experiment_flag.length());
       // remove the spent argv
       RmArg(i, argc, argv);
       continue;

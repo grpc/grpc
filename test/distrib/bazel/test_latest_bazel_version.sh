@@ -20,8 +20,8 @@ cd "$(dirname "$0")"
 GITHUB_URL="https://github.com"
 REPO="bazelbuild/bazel"
 
-VERSION=$(curl -Ls "${GITHUB_URL}/${REPO}/releases/latest" | \
-          grep "href=.*\.tar.gz" | \
-          grep -o "[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*")
+VERSION=$(curl -v "${GITHUB_URL}/${REPO}/releases/latest" 2>/dev/stdout | \
+  grep "location:" | \
+  grep -o "[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*")
 
 ./test_single_bazel_version.sh "$VERSION"

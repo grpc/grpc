@@ -30,6 +30,7 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 
+#include <grpc/event_engine/endpoint_config.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
@@ -46,14 +47,15 @@
 #include <grpcpp/server_builder.h>
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
+#include "src/core/ext/filters/client_channel/config_selector.h"
 #include "src/core/ext/filters/client_channel/global_subchannel_pool.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/tcp_client.h"
@@ -176,6 +178,11 @@ class FakeResolverResponseGeneratorWrapper {
     response_generator_->SetFailureOnReresolution();
   }
 
+  void SetResponse(grpc_core::Resolver::Result result) {
+    grpc_core::ExecCtx exec_ctx;
+    response_generator_->SetResponse(std::move(result));
+  }
+
   grpc_core::FakeResolverResponseGenerator* Get() const {
     return response_generator_.get();
   }
@@ -235,7 +242,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
     GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
 #if TARGET_OS_IPHONE
     // Workaround Apple CFStream bug
-    gpr_setenv("grpc_cfstream", "0");
+    grpc_core::SetEnv("grpc_cfstream", "0");
 #endif
   }
 
@@ -1252,6 +1259,39 @@ TEST_F(PickFirstTest, ReconnectWithoutNewResolverResultStartsFromTopOfList) {
   WaitForServer(DEBUG_LOCATION, stub, 0);
 }
 
+TEST_F(PickFirstTest, FailsEmptyResolverUpdate) {
+  auto response_generator = BuildResolverResponseGenerator();
+  auto channel = BuildChannel("pick_first", response_generator);
+  auto stub = BuildStub(channel);
+  gpr_log(GPR_INFO, "****** SENDING INITIAL RESOLVER RESULT *******");
+  // Send a resolver result with an empty address list and a callback
+  // that triggers a notification.
+  absl::Notification notification;
+  grpc_core::Resolver::Result result;
+  result.addresses.emplace();
+  result.result_health_callback = [&](absl::Status status) {
+    EXPECT_EQ(absl::StatusCode::kUnavailable, status.code());
+    EXPECT_EQ("address list must not be empty", status.message()) << status;
+    notification.Notify();
+  };
+  response_generator.SetResponse(std::move(result));
+  // Wait for channel to report TRANSIENT_FAILURE.
+  gpr_log(GPR_INFO, "****** TELLING CHANNEL TO CONNECT *******");
+  auto predicate = [](grpc_connectivity_state state) {
+    return state == GRPC_CHANNEL_TRANSIENT_FAILURE;
+  };
+  EXPECT_TRUE(
+      WaitForChannelState(channel.get(), predicate, /*try_to_connect=*/true));
+  // Callback should have been run.
+  ASSERT_TRUE(notification.HasBeenNotified());
+  // Return a valid address.
+  gpr_log(GPR_INFO, "****** SENDING NEXT RESOLVER RESULT *******");
+  StartServers(1);
+  response_generator.SetNextResolution(GetServersPorts());
+  gpr_log(GPR_INFO, "****** SENDING WAIT_FOR_READY RPC *******");
+  CheckRpcSendOk(DEBUG_LOCATION, stub, /*wait_for_ready=*/true);
+}
+
 TEST_F(PickFirstTest, CheckStateBeforeStartWatch) {
   std::vector<int> ports = {grpc_pick_unused_port_or_die()};
   StartServers(1, ports);
@@ -1628,6 +1668,40 @@ TEST_F(RoundRobinTest, ReresolveOnSubchannelConnectionFailure) {
   }
   // Wait for the client to see server 2.
   WaitForServer(DEBUG_LOCATION, stub, 2);
+}
+
+TEST_F(RoundRobinTest, FailsEmptyResolverUpdate) {
+  auto response_generator = BuildResolverResponseGenerator();
+  auto channel = BuildChannel("round_robin", response_generator);
+  auto stub = BuildStub(channel);
+  gpr_log(GPR_INFO, "****** SENDING INITIAL RESOLVER RESULT *******");
+  // Send a resolver result with an empty address list and a callback
+  // that triggers a notification.
+  absl::Notification notification;
+  grpc_core::Resolver::Result result;
+  result.addresses.emplace();
+  result.resolution_note = "injected error";
+  result.result_health_callback = [&](absl::Status status) {
+    EXPECT_EQ(absl::StatusCode::kUnavailable, status.code());
+    EXPECT_EQ("empty address list: injected error", status.message()) << status;
+    notification.Notify();
+  };
+  response_generator.SetResponse(std::move(result));
+  // Wait for channel to report TRANSIENT_FAILURE.
+  gpr_log(GPR_INFO, "****** TELLING CHANNEL TO CONNECT *******");
+  auto predicate = [](grpc_connectivity_state state) {
+    return state == GRPC_CHANNEL_TRANSIENT_FAILURE;
+  };
+  EXPECT_TRUE(
+      WaitForChannelState(channel.get(), predicate, /*try_to_connect=*/true));
+  // Callback should have been run.
+  ASSERT_TRUE(notification.HasBeenNotified());
+  // Return a valid address.
+  gpr_log(GPR_INFO, "****** SENDING NEXT RESOLVER RESULT *******");
+  StartServers(1);
+  response_generator.SetNextResolution(GetServersPorts());
+  gpr_log(GPR_INFO, "****** SENDING WAIT_FOR_READY RPC *******");
+  CheckRpcSendOk(DEBUG_LOCATION, stub, /*wait_for_ready=*/true);
 }
 
 TEST_F(RoundRobinTest, TransientFailure) {
@@ -2682,6 +2756,93 @@ TEST_F(OobBackendMetricTest, Basic) {
     }
     gpr_sleep_until(grpc_timeout_seconds_to_deadline(1));
   }
+}
+
+//
+// tests rewriting of control plane status codes
+//
+
+class ControlPlaneStatusRewritingTest : public ClientLbEnd2endTest {
+ protected:
+  static void SetUpTestCase() {
+    grpc_core::CoreConfiguration::Reset();
+    grpc_core::CoreConfiguration::RegisterBuilder(
+        [](grpc_core::CoreConfiguration::Builder* builder) {
+          grpc_core::RegisterFailLoadBalancingPolicy(
+              builder, absl::AbortedError("nope"));
+        });
+    grpc_init();
+  }
+
+  static void TearDownTestCase() {
+    grpc_shutdown();
+    grpc_core::CoreConfiguration::Reset();
+  }
+};
+
+TEST_F(ControlPlaneStatusRewritingTest, RewritesFromLb) {
+  // Start client.
+  auto response_generator = BuildResolverResponseGenerator();
+  auto channel = BuildChannel("fail_lb", response_generator);
+  auto stub = BuildStub(channel);
+  response_generator.SetNextResolution(GetServersPorts());
+  // Send an RPC, verify that status was rewritten.
+  CheckRpcSendFailure(
+      DEBUG_LOCATION, stub, StatusCode::INTERNAL,
+      "Illegal status code from LB pick; original status: ABORTED: nope");
+}
+
+TEST_F(ControlPlaneStatusRewritingTest, RewritesFromResolver) {
+  // Start client.
+  auto response_generator = BuildResolverResponseGenerator();
+  auto channel = BuildChannel("pick_first", response_generator);
+  auto stub = BuildStub(channel);
+  grpc_core::Resolver::Result result;
+  result.service_config = absl::AbortedError("nope");
+  result.addresses.emplace();
+  response_generator.SetResponse(std::move(result));
+  // Send an RPC, verify that status was rewritten.
+  CheckRpcSendFailure(
+      DEBUG_LOCATION, stub, StatusCode::INTERNAL,
+      "Illegal status code from resolver; original status: ABORTED: nope");
+}
+
+TEST_F(ControlPlaneStatusRewritingTest, RewritesFromConfigSelector) {
+  class FailConfigSelector : public grpc_core::ConfigSelector {
+   public:
+    explicit FailConfigSelector(absl::Status status)
+        : status_(std::move(status)) {}
+    const char* name() const override { return "FailConfigSelector"; }
+    bool Equals(const ConfigSelector* other) const override {
+      return status_ == static_cast<const FailConfigSelector*>(other)->status_;
+    }
+    CallConfig GetCallConfig(GetCallConfigArgs /*args*/) override {
+      CallConfig config;
+      config.status = status_;
+      return config;
+    }
+
+   private:
+    absl::Status status_;
+  };
+  // Start client.
+  auto response_generator = BuildResolverResponseGenerator();
+  auto channel = BuildChannel("pick_first", response_generator);
+  auto stub = BuildStub(channel);
+  auto config_selector =
+      grpc_core::MakeRefCounted<FailConfigSelector>(absl::AbortedError("nope"));
+  grpc_core::Resolver::Result result;
+  result.addresses.emplace();
+  result.service_config =
+      grpc_core::ServiceConfigImpl::Create(grpc_core::ChannelArgs(), "{}");
+  ASSERT_TRUE(result.service_config.ok()) << result.service_config.status();
+  result.args = grpc_core::ChannelArgs().SetObject(config_selector);
+  response_generator.SetResponse(std::move(result));
+  // Send an RPC, verify that status was rewritten.
+  CheckRpcSendFailure(
+      DEBUG_LOCATION, stub, StatusCode::INTERNAL,
+      "Illegal status code from ConfigSelector; original status: "
+      "ABORTED: nope");
 }
 
 }  // namespace

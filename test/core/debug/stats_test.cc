@@ -19,6 +19,8 @@
 #include "src/core/lib/debug/stats.h"
 
 #include <mutex>
+#include <queue>
+#include <random>
 #include <thread>
 
 #include <gtest/gtest.h>
@@ -85,19 +87,35 @@ static int FindExpectedBucket(int i, int j) {
 
 class HistogramTest : public ::testing::TestWithParam<int> {};
 
+TEST_P(HistogramTest, CheckBucket) {
+  const int kHistogram = GetParam();
+  int max_bucket_boundary =
+      grpc_stats_histo_bucket_boundaries[kHistogram]
+                                        [grpc_stats_histo_buckets[kHistogram] -
+                                         1];
+  for (int i = -1000; i < max_bucket_boundary + 1000; i++) {
+    ASSERT_EQ(FindExpectedBucket(kHistogram, i),
+              grpc_stats_get_bucket[kHistogram](i))
+        << "i=" << i << " expect_bucket="
+        << grpc_stats_histo_bucket_boundaries[kHistogram]
+                                             [FindExpectedBucket(kHistogram, i)]
+        << " actual_bucket="
+        << grpc_stats_histo_bucket_boundaries[kHistogram]
+                                             [grpc_stats_get_bucket[kHistogram](
+                                                 i)];
+  }
+}
+
 TEST_P(HistogramTest, IncHistogram) {
   const int kHistogram = GetParam();
-  std::vector<std::thread> threads;
-  int cur_bucket = 0;
+  std::queue<std::thread> threads;
   auto run = [kHistogram](const std::vector<int>& test_values,
                           int expected_bucket) {
-    gpr_log(GPR_DEBUG, "expected_bucket:%d nvalues=%" PRIdPTR, expected_bucket,
-            test_values.size());
+    grpc_core::ExecCtx exec_ctx;
     for (auto j : test_values) {
       std::unique_ptr<Snapshot> snapshot(new Snapshot);
 
-      grpc_core::ExecCtx exec_ctx;
-      grpc_stats_inc_histogram[kHistogram](j);
+      grpc_stats_inc_histogram_value(kHistogram, j);
 
       auto delta = snapshot->delta();
 
@@ -109,33 +127,32 @@ TEST_P(HistogramTest, IncHistogram) {
           << "\nexpected_bucket:" << expected_bucket << "\nj:" << j;
     }
   };
-  std::vector<int> test_values;
   // largest bucket boundary for current histogram type.
   int max_bucket_boundary =
       grpc_stats_histo_bucket_boundaries[kHistogram]
                                         [grpc_stats_histo_buckets[kHistogram] -
                                          1];
-  for (int j = -1000; j < max_bucket_boundary + 1000;) {
+  std::map<int /* expected_bucket */, std::vector<int> /* test_values */>
+      test_values_by_expected_bucket;
+  std::random_device rd;
+  std::uniform_int_distribution<int> dist(-1000, max_bucket_boundary + 1000);
+  for (int i = 0; i < 100; i++) {
+    int j = dist(rd);
     int expected_bucket = FindExpectedBucket(kHistogram, j);
-    if (cur_bucket != expected_bucket) {
-      threads.emplace_back(
-          [test_values, run, cur_bucket]() { run(test_values, cur_bucket); });
-      cur_bucket = expected_bucket;
-      test_values.clear();
-    }
-    test_values.push_back(j);
-    if (j < max_bucket_boundary &&
-        FindExpectedBucket(kHistogram, j + 1000) == expected_bucket &&
-        FindExpectedBucket(kHistogram, j - 1000) == expected_bucket) {
-      // if we are far from bucket boundary, skip values to speed-up the tests
-      j += 500;
-    } else {
-      j++;
-    }
+    test_values_by_expected_bucket[expected_bucket].push_back(j);
   }
-  run(test_values, cur_bucket);
-  for (auto& t : threads) {
-    t.join();
+  for (auto& p : test_values_by_expected_bucket) {
+    while (threads.size() >= 10) {
+      threads.front().join();
+      threads.pop();
+    }
+    threads.emplace(
+        [test_values = std::move(p.second), run,
+         cur_bucket = p.first]() mutable { run(test_values, cur_bucket); });
+  }
+  while (!threads.empty()) {
+    threads.front().join();
+    threads.pop();
   }
 }
 

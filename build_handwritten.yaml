@@ -17,16 +17,6 @@ settings:
   g_stands_for: galley
   protobuf_version: 3.21.5
   version: 1.50.0-dev
-targets:
-- name: gen_hpack_tables
-  build: tool
-  language: c++
-  src:
-  - tools/codegen/core/gen_hpack_tables.cc
-  deps:
-  - grpc
-  - gpr
-  uses_polling: false
 configs:
   asan:
     CC: clang
@@ -68,13 +58,6 @@ configs:
     CFLAGS: -Wc++-compat
     CPPFLAGS: -O0
     DEFINES: _DEBUG DEBUG
-  counters:
-    CPPFLAGS: -O2 -DGPR_LOW_LEVEL_COUNTERS
-    DEFINES: NDEBUG
-  counters_with_memory_counter:
-    CPPFLAGS: -O2 -DGPR_LOW_LEVEL_COUNTERS -DGPR_WRAP_MEMORY_COUNTER
-    DEFINES: NDEBUG
-    LDFLAGS: -Wl,--wrap=malloc -Wl,--wrap=calloc -Wl,--wrap=realloc -Wl,--wrap=free
   dbg:
     CPPFLAGS: -O0
     DEFINES: _DEBUG DEBUG
@@ -114,10 +97,6 @@ configs:
     compile_the_world: true
     test_environ:
       MSAN_OPTIONS: poison_in_dtor=1
-  mutrace:
-    CPPFLAGS: -O3 -fno-omit-frame-pointer
-    DEFINES: NDEBUG
-    LDFLAGS: -rdynamic
   noexcept:
     CPPFLAGS: -O2 -Wframe-larger-than=16384
     CXXFLAGS: -fno-exceptions

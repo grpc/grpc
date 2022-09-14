@@ -36,6 +36,7 @@
 #include "absl/types/optional.h"
 
 #include <grpc/byte_buffer.h>
+#include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -52,8 +53,8 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
-#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -312,11 +313,11 @@ static void sched_connect(grpc_closure* closure, grpc_endpoint** ep,
       GRPC_CLOSURE_CREATE(do_connect, fc, grpc_schedule_on_exec_ctx));
 }
 
-static int64_t my_tcp_client_connect(grpc_closure* closure, grpc_endpoint** ep,
-                                     grpc_pollset_set* /*interested_parties*/,
-                                     const grpc_channel_args* /*channel_args*/,
-                                     const grpc_resolved_address* /*addr*/,
-                                     grpc_core::Timestamp deadline) {
+static int64_t my_tcp_client_connect(
+    grpc_closure* closure, grpc_endpoint** ep,
+    grpc_pollset_set* /*interested_parties*/,
+    const grpc_event_engine::experimental::EndpointConfig& /*config*/,
+    const grpc_resolved_address* /*addr*/, grpc_core::Timestamp deadline) {
   sched_connect(closure, ep, deadline.as_timespec(GPR_CLOCK_MONOTONIC));
   return 0;
 }
@@ -813,9 +814,9 @@ static grpc_channel_credentials* ReadChannelCreds(
 DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
   grpc_event_engine::experimental::ResetDefaultEventEngine();
   grpc_test_only_set_slice_hash_seed(0);
-  char* grpc_trace_fuzzer = gpr_getenv("GRPC_TRACE_FUZZER");
-  if (squelch && grpc_trace_fuzzer == nullptr) gpr_set_log_function(dont_log);
-  gpr_free(grpc_trace_fuzzer);
+  if (squelch && !grpc_core::GetEnv("GRPC_TRACE_FUZZER").has_value()) {
+    gpr_set_log_function(dont_log);
+  }
   grpc_set_tcp_client_impl(&fuzz_tcp_client_vtable);
   grpc_event_engine::experimental::SetDefaultEventEngineFactory(
       [actions = msg.event_engine_actions()]() {

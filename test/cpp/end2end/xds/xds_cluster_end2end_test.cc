@@ -87,10 +87,10 @@ TEST_P(CdsTest, InvalidClusterStillExistsIfPreviouslyCached) {
   const auto response_state =
       WaitForCdsNack(DEBUG_LOCATION, RpcOptions(), StatusCode::OK);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::ContainsRegex(absl::StrCat(
-                  kDefaultClusterName,
-                  ": validation error.*DiscoveryType is not valid")));
+  EXPECT_EQ(response_state->error_message,
+            "xDS response validation errors: [resource index 0: cluster_name: "
+            "INVALID_ARGUMENT: errors parsing CDS resource: ["
+            "DiscoveryType is not valid.]]");
   CheckRpcSendOk(DEBUG_LOCATION);
 }
 
@@ -1732,7 +1732,7 @@ int main(int argc, char** argv) {
   GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
 #if TARGET_OS_IPHONE
   // Workaround Apple CFStream bug
-  gpr_setenv("grpc_cfstream", "0");
+  grpc_core::SetEnv("grpc_cfstream", "0");
 #endif
   grpc_init();
   grpc::testing::ConnectionAttemptInjector::Init();
