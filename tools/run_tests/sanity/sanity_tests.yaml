@@ -30,6 +30,7 @@
 - script: tools/distrib/check_upb_output.sh
 - script: tools/distrib/check_pytype.sh
 - script: tools/codegen/core/gen_grpc_tls_credentials_options.py --test
+- script: tools/codegen/core/gen_experiments.py
 - script: tools/distrib/clang_format_code.sh
   cpu_cost: 1000
 - script: tools/distrib/clang_tidy_code.sh
@@ -49,4 +50,3 @@
 - script: tools/run_tests/sanity/build_banned_constructs.sh
 - script: tools/distrib/check_redundant_namespace_qualifiers.py
 - script: tools/distrib/check_namespace_qualification.py
-- script: tools/codegen/core/gen_experiments.py
