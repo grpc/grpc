@@ -38,7 +38,7 @@
 #include <grpcpp/server_builder.h>
 
 #include "src/core/lib/backoff/backoff.h"
-#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
@@ -472,7 +472,7 @@ TEST_P(CFStreamTest, ConcurrentRpc) {
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(&argc, argv);
-  gpr_setenv("grpc_cfstream", "1");
+  grpc_core::SetEnv("grpc_cfstream", "1");
   const auto result = RUN_ALL_TESTS();
   return result;
 }

@@ -1531,9 +1531,6 @@ add_library(gpr
   src/core/lib/gpr/cpu_linux.cc
   src/core/lib/gpr/cpu_posix.cc
   src/core/lib/gpr/cpu_windows.cc
-  src/core/lib/gpr/env_linux.cc
-  src/core/lib/gpr/env_posix.cc
-  src/core/lib/gpr/env_windows.cc
   src/core/lib/gpr/log.cc
   src/core/lib/gpr/log_android.cc
   src/core/lib/gpr/log_linux.cc
@@ -1555,6 +1552,9 @@ add_library(gpr
   src/core/lib/gpr/tmpfile_posix.cc
   src/core/lib/gpr/tmpfile_windows.cc
   src/core/lib/gpr/wrap_memcpy.cc
+  src/core/lib/gprpp/env_linux.cc
+  src/core/lib/gprpp/env_posix.cc
+  src/core/lib/gprpp/env_windows.cc
   src/core/lib/gprpp/examine_stack.cc
   src/core/lib/gprpp/fork.cc
   src/core/lib/gprpp/global_config_env.cc
@@ -3297,6 +3297,7 @@ foreach(_hdr
   include/grpcpp/grpcpp.h
   include/grpcpp/health_check_service_interface.h
   include/grpcpp/impl/call.h
+  include/grpcpp/impl/call_hook.h
   include/grpcpp/impl/channel_argument_option.h
   include/grpcpp/impl/client_unary_call.h
   include/grpcpp/impl/codegen/async_generic_service.h
@@ -3967,6 +3968,7 @@ foreach(_hdr
   include/grpcpp/grpcpp.h
   include/grpcpp/health_check_service_interface.h
   include/grpcpp/impl/call.h
+  include/grpcpp/impl/call_hook.h
   include/grpcpp/impl/channel_argument_option.h
   include/grpcpp/impl/client_unary_call.h
   include/grpcpp/impl/codegen/async_generic_service.h
