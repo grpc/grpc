@@ -2797,6 +2797,7 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+        "absl/time",
     ],
     deps = [
         "event_engine_base_hdrs",
@@ -2808,6 +2809,7 @@ grpc_cc_library(
         "grpc_trace",
         "posix_event_engine_timer",
         "posix_event_engine_timer_manager",
+        "time",
     ],
 )
 

@@ -20,6 +20,8 @@
 
 #include "absl/container/flat_hash_set.h"
 #include "absl/functional/any_invocable.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/log.h>
@@ -29,6 +31,7 @@
 #include "src/core/lib/event_engine/posix_engine/timer.h"
 #include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/event_engine/utils.h"
+#include "src/core/lib/gprpp/time.h"
 
 namespace grpc_event_engine {
 namespace experimental {
