@@ -33,7 +33,7 @@ bool leak_check = true;
 absl::optional<std::vector<uint8_t>> DecodeHuffSlow(const uint8_t* begin,
                                                     const uint8_t* end) {
   uint64_t bits = 0;
-  int bits_left = 0;
+  unsigned bits_left = 0;
   std::vector<uint8_t> out;
   while (true) {
     while (begin != end && bits_left < 30) {
