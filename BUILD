@@ -5187,7 +5187,6 @@ grpc_cc_library(
         "config",
         "debug_location",
         "env",
-        "exec_ctx",
         "gpr",
         "grpc_base",
         "grpc_client_channel",
