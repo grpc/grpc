@@ -31,7 +31,7 @@ TEST_F(AnyInvocableClosureTest, CallsItsFunction) {
   Promise<bool> promise;
   AnyInvocableClosure closure([&promise] { promise.Set(true); });
   closure.Run();
-  ASSERT_TRUE(promise.Get());
+  ASSERT_TRUE(promise.WaitWithTimeout(absl::Seconds(3)));
 }
 
 class SelfDeletingClosureTest : public testing::Test {};
@@ -41,7 +41,7 @@ TEST_F(SelfDeletingClosureTest, CallsItsFunction) {
   auto* closure =
       SelfDeletingClosure::Create([&promise] { promise.Set(true); });
   closure->Run();
-  ASSERT_TRUE(promise.Get());
+  ASSERT_TRUE(promise.WaitWithTimeout(absl::Seconds(3)));
   // ASAN should catch if this closure is not deleted
 }
 
@@ -52,8 +52,8 @@ TEST_F(SelfDeletingClosureTest, CallsItsFunctionAndIsDestroyed) {
       SelfDeletingClosure::Create([&fn_called] { fn_called.Set(true); },
                                   [&destroyed] { destroyed.Set(true); });
   closure->Run();
-  ASSERT_TRUE(fn_called.Get());
-  ASSERT_TRUE(destroyed.Get());
+  ASSERT_TRUE(fn_called.WaitWithTimeout(absl::Seconds(3)));
+  ASSERT_TRUE(destroyed.WaitWithTimeout(absl::Seconds(3)));
 }
 
 int main(int argc, char** argv) {

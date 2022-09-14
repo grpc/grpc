@@ -25,8 +25,8 @@ namespace experimental {
 /// A minimal promise implementation.
 ///
 /// This is light-duty, syntactical sugar around cv wait & signal, which is
-/// useful in some cases.
-/// TODO(ctiller): Find a new name for this type.
+/// useful in some cases. A more robust implementation is being worked on
+/// separately.
 template <typename T>
 class Promise {
  public:
@@ -36,10 +36,13 @@ class Promise {
   explicit Promise(T&& val) : val_(val) {}
   // The getter will wait until the setter has been called, and will return the
   // value passed during Set.
-  T& Get() {
+  T& Get() { return WaitWithTimeout(absl::Hours(1)); }
+  // The getter will wait with timeout until the setter has been called, and
+  // will return the value passed during Set.
+  T& WaitWithTimeout(absl::Duration d) {
     grpc_core::MutexLock lock(&mu_);
-    while (!set_) {
-      cv_.Wait(&mu_);
+    if (!set_) {
+      cv_.WaitWithTimeout(&mu_, d);
     }
     return val_;
   }
