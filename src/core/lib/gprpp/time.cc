@@ -146,7 +146,10 @@ GPR_THREAD_LOCAL(Timestamp::Source*)
 Timestamp::source_{NoDestructSingleton<GprNowTimeSource>::Get()};
 
 Timestamp ScopedTimeCache::Now() {
-  if (!cached_time_.has_value()) cached_time_ = previous()->Now();
+  if (!cached_time_.has_value()) {
+    previous()->InvalidateCache();
+    cached_time_ = previous()->Now();
+  }
   return cached_time_.value();
 }
 

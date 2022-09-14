@@ -73,18 +73,20 @@ class Timestamp {
     virtual void InvalidateCache() {}
 
    protected:
+    // We don't delete through this interface, so non-virtual dtor is fine.
     ~Source() = default;
   };
 
   class ScopedSource : public Source {
    public:
-    ScopedSource() : previous_(std::exchange(source_, this)) {}
+    ScopedSource()
+        : previous_(std::exchange(thread_local_time_source_, this)) {}
     ScopedSource(const ScopedSource&) = delete;
     ScopedSource& operator=(const ScopedSource&) = delete;
     void InvalidateCache() override { previous_->InvalidateCache(); }
 
    protected:
-    ~ScopedSource() { source_ = previous_; }
+    ~ScopedSource() { thread_local_time_source_ = previous_; }
     Source* previous() const { return previous_; }
 
    private:
@@ -100,7 +102,7 @@ class Timestamp {
   static Timestamp FromCycleCounterRoundUp(gpr_cycle_counter c);
   static Timestamp FromCycleCounterRoundDown(gpr_cycle_counter c);
 
-  static Timestamp Now() { return source_->Now(); }
+  static Timestamp Now() { return thread_local_time_source_->Now(); }
 
   static constexpr Timestamp FromMillisecondsAfterProcessEpoch(int64_t millis) {
     return Timestamp(millis);
@@ -148,7 +150,7 @@ class Timestamp {
   explicit constexpr Timestamp(int64_t millis) : millis_(millis) {}
 
   int64_t millis_ = 0;
-  static GPR_THREAD_LOCAL(Timestamp::Source*) source_;
+  static GPR_THREAD_LOCAL(Timestamp::Source*) thread_local_time_source_;
 };
 
 class ScopedTimeCache final : public Timestamp::ScopedSource {
