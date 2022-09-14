@@ -30,8 +30,43 @@
 
 namespace grpc_core {
 
+namespace pipe_detail {
+template <typename T>
+class Center;
+}
+
 template <typename T>
 struct Pipe;
+
+template <typename T>
+class NextResult final {
+ public:
+  explicit NextResult(pipe_detail::Center<T>* center) : center_(center) {}
+  ~NextResult();
+  NextResult(const NextResult&) = delete;
+  NextResult& operator=(const NextResult&) = delete;
+  NextResult(NextResult&& other) noexcept
+      : center_(std::exchange(other.center_, nullptr)) {}
+  NextResult& operator=(NextResult&& other) noexcept {
+    center_ = std::exchange(other.center_, nullptr);
+    return *this;
+  }
+
+  bool has_value() const;
+  const T& value() const {
+    GPR_ASSERT(has_value());
+    return **this;
+  }
+  T& value() {
+    GPR_ASSERT(has_value());
+    return **this;
+  }
+  const T& operator*() const;
+  T& operator*();
+
+ private:
+  pipe_detail::Center<T>* center_;
+};
 
 namespace pipe_detail {
 
@@ -122,21 +157,21 @@ class Center {
   // Return Pending if there is no value.
   // Return the value if one was retrieved.
   // Return nullopt if the send end is closed and no value had been pushed.
-  Poll<absl::optional<T>> Next() {
+  Poll<NextResult<T>> Next() {
     GPR_DEBUG_ASSERT(recv_refs_ != 0);
     if (!has_value_) {
-      if (send_refs_ == 0) return absl::nullopt;
+      if (send_refs_ == 0) return NextResult<T>(nullptr);
       return on_full_.pending();
     }
-    return std::move(value_);
+    return NextResult<T>(this);
   }
 
+ private:
+  friend class NextResult<T>;
   void AckNext() {
     has_value_ = false;
     on_empty_.Wake();
   }
-
- private:
   void ResetValue() {
     // Fancy dance to move out of value in the off chance that we reclaim some
     // memory earlier.
@@ -292,7 +327,7 @@ class Next {
     if (center_ != nullptr) center_->UnrefRecv();
   }
 
-  Poll<absl::optional<T>> operator()() { return center_->Next(); }
+  Poll<NextResult<T>> operator()() { return center_->Next(); }
 
  private:
   friend class PipeReceiver<T>;
@@ -310,6 +345,26 @@ pipe_detail::Push<T> PipeSender<T>::Push(T value) {
 template <typename T>
 pipe_detail::Next<T> PipeReceiver<T>::Next() {
   return pipe_detail::Next<T>(center_->RefRecv());
+}
+
+template <typename T>
+bool NextResult<T>::has_value() const {
+  return center_ != nullptr;
+}
+
+template <typename T>
+T& NextResult<T>::operator*() {
+  return center_->value_;
+}
+
+template <typename T>
+const T& NextResult<T>::operator*() const {
+  return center_->value_;
+}
+
+template <typename T>
+NextResult<T>::~NextResult() {
+  if (center_ != nullptr) center_->AckNext();
 }
 
 // A Pipe is an intra-Activity communications channel that transmits T's from

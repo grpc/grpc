@@ -54,8 +54,9 @@ TEST(PipeTest, CanSendAndReceive) {
             Join(pipe.sender.Push(42), pipe.receiver.Next()),
             // Once complete, verify successful sending and the received value
             // is 42.
-            [](std::tuple<bool, absl::optional<int>> result) {
-              EXPECT_EQ(result, std::make_tuple(true, absl::optional<int>(42)));
+            [](std::tuple<bool, NextResult<int>> result) {
+              EXPECT_TRUE(std::get<0>(result));
+              EXPECT_EQ(42, std::get<1>(result).value());
               return absl::OkStatus();
             });
       },
@@ -75,8 +76,10 @@ TEST(PipeTest, CanReceiveAndSend) {
             Join(pipe.receiver.Next(), pipe.sender.Push(42)),
             // Once complete, verify the received value is 42 and successful
             // sending.
-            [](std::tuple<absl::optional<int>, bool> result) {
-              EXPECT_EQ(result, std::make_tuple(absl::optional<int>(42), true));
+            [](std::tuple<NextResult<int>, bool> result) {
+              EXPECT_TRUE(std::get<0>(result).has_value());
+              EXPECT_EQ(*std::get<0>(result), 42);
+              EXPECT_TRUE(std::get<1>(result));
               return absl::OkStatus();
             });
       },
@@ -107,7 +110,7 @@ TEST(PipeTest, CanSeeClosedOnSend) {
                    return absl::OkStatus();
                  }),
             // Verify both that the send failed and that we executed the close.
-            [](std::tuple<bool, absl::Status> result) {
+            [](const std::tuple<bool, absl::Status>& result) {
               EXPECT_EQ(result, std::make_tuple(false, absl::OkStatus()));
               return absl::OkStatus();
             });
@@ -138,9 +141,9 @@ TEST(PipeTest, CanSeeClosedOnReceive) {
                    return absl::OkStatus();
                  }),
             // Verify we received end-of-stream and closed the sender.
-            [](std::tuple<absl::optional<int>, absl::Status> result) {
-              EXPECT_EQ(result, std::make_tuple(absl::optional<int>(),
-                                                absl::OkStatus()));
+            [](std::tuple<NextResult<int>, absl::Status> result) {
+              EXPECT_FALSE(std::get<0>(result).has_value());
+              EXPECT_EQ(std::get<1>(result), absl::OkStatus());
               return absl::OkStatus();
             });
       },
