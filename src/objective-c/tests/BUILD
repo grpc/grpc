@@ -23,7 +23,6 @@ load(
     "proto_library_objc_wrapper",
 )
 load("@build_bazel_rules_apple//apple:resources.bzl", "apple_resource_bundle")
-load("@build_bazel_rules_apple//apple:ios.bzl", "ios_application", "ios_unit_test")
 load("@build_bazel_rules_apple//apple:macos.bzl", "macos_unit_test")
 load("@build_bazel_rules_apple//apple:tvos.bzl", "tvos_application", "tvos_unit_test")
 
@@ -80,18 +79,6 @@ objc_library(
     name = "host-lib",
     srcs = glob(["Hosts/ios-host/*.m"]),
     hdrs = glob(["Hosts/ios-host/*.h"]),
-)
-
-ios_application(
-    name = "ios-host",
-    bundle_id = "grpc.objc.tests.ios-host",
-    families = [
-        "iphone",
-        "ipad",
-    ],
-    infoplists = ["Hosts/ios-host/Info.plist"],
-    minimum_os_version = "9.0",
-    deps = ["host-lib"],
 )
 
 tvos_application(
@@ -211,10 +198,8 @@ grpc_objc_ios_unit_test(
     ],
 )
 
-ios_unit_test(
+grpc_objc_ios_unit_test(
     name = "InteropTestsRemote",
-    minimum_os_version = "9.0",
-    test_host = ":ios-host",
     deps = [
         ":InteropTestsRemote-lib",
     ],
