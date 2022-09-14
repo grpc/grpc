@@ -30,7 +30,7 @@
 
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_resource_type_impl.h"
-#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_object_loader.h"
@@ -476,10 +476,10 @@ class XdsClientTest : public ::testing::Test {
   class ScopedExperimentalEnvVar {
    public:
     explicit ScopedExperimentalEnvVar(const char* env_var) : env_var_(env_var) {
-      gpr_setenv(env_var_, "true");
+      SetEnv(env_var_, "true");
     }
 
-    ~ScopedExperimentalEnvVar() { gpr_unsetenv(env_var_); }
+    ~ScopedExperimentalEnvVar() { UnsetEnv(env_var_); }
 
    private:
     const char* env_var_;
@@ -1975,12 +1975,14 @@ TEST_F(XdsClientTest, Federation) {
                /*resource_names=*/{kXdstpResourceName});
   // Cancel watch for "foo1".
   CancelFooWatch(watcher.get(), "foo1");
-  // XdsClient should send an unsubscription request.
+  // The XdsClient may or may not send the unsubscription message
+  // before it closes the transport, depending on callback timing.
   request = WaitForRequest(stream.get());
-  ASSERT_TRUE(request.has_value());
-  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
-               /*version_info=*/"1", /*response_nonce=*/"A",
-               /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
+  if (request.has_value()) {
+    CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+                 /*version_info=*/"1", /*response_nonce=*/"A",
+                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
+  }
   // Now cancel watch for xdstp resource name.
   CancelFooWatch(watcher2.get(), kXdstpResourceName);
   // The XdsClient may or may not send the unsubscription message
@@ -2271,12 +2273,14 @@ TEST_F(XdsClientTest, FederationChannelFailureReportedToWatchers) {
   EXPECT_FALSE(watcher->HasEvent());
   // Cancel watch for "foo1".
   CancelFooWatch(watcher.get(), "foo1");
-  // XdsClient should send an unsubscription request.
+  // The XdsClient may or may not send the unsubscription message
+  // before it closes the transport, depending on callback timing.
   request = WaitForRequest(stream.get());
-  ASSERT_TRUE(request.has_value());
-  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
-               /*version_info=*/"1", /*response_nonce=*/"A",
-               /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
+  if (request.has_value()) {
+    CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+                 /*version_info=*/"1", /*response_nonce=*/"A",
+                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
+  }
   // Now cancel watch for xdstp resource name.
   CancelFooWatch(watcher2.get(), kXdstpResourceName);
   // The XdsClient may or may not send the unsubscription message

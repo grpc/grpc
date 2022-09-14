@@ -16,12 +16,32 @@
  *
  */
 
-#ifndef GRPCPP_IMPL_CODEGEN_CALL_HOOK_H
-#define GRPCPP_IMPL_CODEGEN_CALL_HOOK_H
+#include <grpc/support/port_platform.h>
 
-// IWYU pragma: private
+#ifdef GPR_POSIX_ENV
 
-/// TODO(chengyuc): Remove this file after solving compatibility.
-#include <grpcpp/impl/call_hook.h>
+#include <stdlib.h>
 
-#endif  // GRPCPP_IMPL_CODEGEN_CALL_HOOK_H
+#include "src/core/lib/gprpp/env.h"
+
+namespace grpc_core {
+
+absl::optional<std::string> GetEnv(const char* name) {
+  char* result = getenv(name);
+  if (result == nullptr) return absl::nullopt;
+  return result;
+}
+
+void SetEnv(const char* name, const char* value) {
+  int res = setenv(name, value, 1);
+  if (res != 0) abort();
+}
+
+void UnsetEnv(const char* name) {
+  int res = unsetenv(name);
+  if (res != 0) abort();
+}
+
+}  // namespace grpc_core
+
+#endif /* GPR_POSIX_ENV */
