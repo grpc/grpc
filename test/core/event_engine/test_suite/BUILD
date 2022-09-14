@@ -79,6 +79,8 @@ grpc_cc_test(
     srcs = ["posix_event_engine_test.cc"],
     uses_polling = False,
     deps = [
+        ":client",
+        ":oracle_event_engine_posix",
         "//:posix_event_engine",
         "//test/core/event_engine/test_suite:timer",
     ],

@@ -17,18 +17,18 @@
 
 #include <grpc/event_engine/event_engine.h>
 
-std::function<std::unique_ptr<grpc_event_engine::experimental::EventEngine>()>*
+std::function<std::shared_ptr<grpc_event_engine::experimental::EventEngine>()>*
     g_ee_factory = nullptr;
 
-std::function<std::unique_ptr<grpc_event_engine::experimental::EventEngine>()>*
+std::function<std::shared_ptr<grpc_event_engine::experimental::EventEngine>()>*
     g_oracle_ee_factory = nullptr;
 
 void SetEventEngineFactories(
     std::function<
-        std::unique_ptr<grpc_event_engine::experimental::EventEngine>()>
+        std::shared_ptr<grpc_event_engine::experimental::EventEngine>()>
         factory,
     std::function<
-        std::unique_ptr<grpc_event_engine::experimental::EventEngine>()>
+        std::shared_ptr<grpc_event_engine::experimental::EventEngine>()>
         oracle_ee_factory) {
   testing::AddGlobalTestEnvironment(
       new EventEngineTestEnvironment(factory, oracle_ee_factory));

@@ -30,6 +30,7 @@
 #include "src/core/lib/event_engine/promise.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/uri/uri_parser.h"
 #include "test/core/event_engine/test_suite/event_engine_test.h"
 #include "test/core/event_engine/test_suite/event_engine_test_utils.h"
@@ -124,8 +125,10 @@ TEST_F(EventEngineClientTest, ConnectExchangeBidiDataTransferTest) {
           grpc_core::MemoryAllocator /*memory_allocator*/) {
         server_endpoint_promise.Set(std::move(ep));
       };
-
-  ChannelArgsEndpointConfig config;
+  grpc_core::ChannelArgs args;
+  auto quota = grpc_core::ResourceQuota::Default();
+  args = args.Set(GRPC_ARG_RESOURCE_QUOTA, quota);
+  ChannelArgsEndpointConfig config(args);
   auto status = oracle_ee->CreateListener(
       std::move(accept_cb),
       [](absl::Status status) { GPR_ASSERT(status.ok()); }, config,
@@ -190,7 +193,10 @@ TEST_F(EventEngineClientTest, MultipleIPv6ConnectionsToOneOracleListenerTest) {
           grpc_core::MemoryAllocator /*memory_allocator*/) {
         server_endpoint_promise.Set(std::move(ep));
       };
-  ChannelArgsEndpointConfig config;
+  grpc_core::ChannelArgs args;
+  auto quota = grpc_core::ResourceQuota::Default();
+  args = args.Set(GRPC_ARG_RESOURCE_QUOTA, quota);
+  ChannelArgsEndpointConfig config(args);
   auto status = oracle_ee->CreateListener(
       std::move(accept_cb),
       [](absl::Status status) { GPR_ASSERT(status.ok()); }, config,
@@ -211,7 +217,10 @@ TEST_F(EventEngineClientTest, MultipleIPv6ConnectionsToOneOracleListenerTest) {
     // Create a test EventEngine client endpoint and connect to a one of the
     // addresses bound to the oracle listener. Verify that the connection
     // succeeds.
-    ChannelArgsEndpointConfig config;
+    grpc_core::ChannelArgs args;
+    auto quota = grpc_core::ResourceQuota::Default();
+    args = args.Set(GRPC_ARG_RESOURCE_QUOTA, quota);
+    ChannelArgsEndpointConfig config(args);
     test_ee->Connect(
         [&client_endpoint_promise](
             absl::StatusOr<std::unique_ptr<Endpoint>> status) {
@@ -240,12 +249,14 @@ TEST_F(EventEngineClientTest, MultipleIPv6ConnectionsToOneOracleListenerTest) {
 
   std::vector<std::thread> threads;
   // Create one thread for each connection. For each connection, create
-  // 2 more worker threads: to exchange and verify bi-directional data transfer.
+  // 2 more worker threads: to exchange and verify bi-directional data
+  // transfer.
   threads.reserve(kNumConnections);
   for (int i = 0; i < kNumConnections; i++) {
     // For each connection, simulate a parallel bi-directional data transfer.
-    // All bi-directional transfers are run in parallel across all connections.
-    // Each bi-directional data transfer uses a random number of messages.
+    // All bi-directional transfers are run in parallel across all
+    // connections. Each bi-directional data transfer uses a random number of
+    // messages.
     threads.emplace_back([client_endpoint =
                               std::move(std::get<0>(connections[i])),
                           server_endpoint =
@@ -258,8 +269,8 @@ TEST_F(EventEngineClientTest, MultipleIPv6ConnectionsToOneOracleListenerTest) {
         grpc_core::ExecCtx ctx;
         for (int i = 0; i < kNumExchangedMessages; i++) {
           // If client_to_server is true, send from client to server and
-          // verify data read at the server. Otherwise send data from server
-          // to client and verify data read at client.
+          // verify data read at the server. Otherwise send data from
+          // server to client and verify data read at client.
           if (client_to_server) {
             EXPECT_TRUE(SendValidatePayload(GetNextSendMessage(),
                                             client_endpoint, server_endpoint)

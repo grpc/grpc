@@ -63,6 +63,7 @@
 
 GPR_GLOBAL_CONFIG_DECLARE_STRING(grpc_poll_strategy);
 
+using ::grpc_event_engine::experimental::PosixEventEngine;
 using ::grpc_event_engine::posix_engine::PosixEventPoller;
 
 static gpr_mu g_mu;
@@ -92,12 +93,24 @@ namespace {
 class TestScheduler : public Scheduler {
  public:
   explicit TestScheduler(experimental::EventEngine* engine) : engine_(engine) {}
+  TestScheduler() : engine_(nullptr){};
+  void ChangeCurrentEventEngine(experimental::EventEngine* engine) {
+    engine_ = engine;
+  }
   void Run(experimental::EventEngine::Closure* closure) override {
-    engine_->Run(closure);
+    if (engine_ != nullptr) {
+      engine_->Run(closure);
+    } else {
+      closure->Run();
+    }
   }
 
   void Run(absl::AnyInvocable<void()> cb) override {
-    engine_->Run(std::move(cb));
+    if (engine_ != nullptr) {
+      engine_->Run(std::move(cb));
+    } else {
+      cb();
+    }
   }
 
  private:
@@ -394,15 +407,14 @@ std::string TestScenarioName(
 
 class EventPollerTest : public ::testing::TestWithParam<std::string> {
   void SetUp() override {
-    engine_ =
-        absl::make_unique<grpc_event_engine::experimental::PosixEventEngine>();
-    EXPECT_NE(engine_, nullptr);
     scheduler_ =
-        absl::make_unique<grpc_event_engine::posix_engine::TestScheduler>(
-            engine_.get());
+        absl::make_unique<grpc_event_engine::posix_engine::TestScheduler>();
     EXPECT_NE(scheduler_, nullptr);
     GPR_GLOBAL_CONFIG_SET(grpc_poll_strategy, GetParam().c_str());
     g_event_poller = GetDefaultPoller(scheduler_.get());
+    engine_ = PosixEventEngine::MakeTestOnlyPosixEventEngine(g_event_poller);
+    EXPECT_NE(engine_, nullptr);
+    scheduler_->ChangeCurrentEventEngine(engine_.get());
     if (g_event_poller != nullptr) {
       EXPECT_EQ(g_event_poller->Name(), GetParam());
     }
@@ -418,7 +430,7 @@ class EventPollerTest : public ::testing::TestWithParam<std::string> {
   TestScheduler* Scheduler() { return scheduler_.get(); }
 
  private:
-  std::unique_ptr<grpc_event_engine::experimental::PosixEventEngine> engine_;
+  std::shared_ptr<grpc_event_engine::experimental::PosixEventEngine> engine_;
   std::unique_ptr<grpc_event_engine::posix_engine::TestScheduler> scheduler_;
 };
 

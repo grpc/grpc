@@ -15,6 +15,7 @@
 
 #include "src/core/lib/event_engine/posix_engine/posix_engine.h"
 #include "test/core/event_engine/test_suite/event_engine_test.h"
+#include "test/core/event_engine/test_suite/oracle_event_engine_posix.h"
 #include "test/core/util/test_config.h"
 
 int main(int argc, char** argv) {
@@ -22,9 +23,12 @@ int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   SetEventEngineFactories(
       []() {
-        return absl::make_unique<
+        return std::make_shared<
             grpc_event_engine::experimental::PosixEventEngine>();
       },
-      nullptr);
+      []() {
+        return std::make_shared<
+            grpc_event_engine::experimental::PosixOracleEventEngine>();
+      });
   return RUN_ALL_TESTS();
 }
