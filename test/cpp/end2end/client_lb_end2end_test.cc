@@ -1259,39 +1259,6 @@ TEST_F(PickFirstTest, ReconnectWithoutNewResolverResultStartsFromTopOfList) {
   WaitForServer(DEBUG_LOCATION, stub, 0);
 }
 
-TEST_F(PickFirstTest, FailsEmptyResolverUpdate) {
-  auto response_generator = BuildResolverResponseGenerator();
-  auto channel = BuildChannel("pick_first", response_generator);
-  auto stub = BuildStub(channel);
-  gpr_log(GPR_INFO, "****** SENDING INITIAL RESOLVER RESULT *******");
-  // Send a resolver result with an empty address list and a callback
-  // that triggers a notification.
-  absl::Notification notification;
-  grpc_core::Resolver::Result result;
-  result.addresses.emplace();
-  result.result_health_callback = [&](absl::Status status) {
-    EXPECT_EQ(absl::StatusCode::kUnavailable, status.code());
-    EXPECT_EQ("address list must not be empty", status.message()) << status;
-    notification.Notify();
-  };
-  response_generator.SetResponse(std::move(result));
-  // Wait for channel to report TRANSIENT_FAILURE.
-  gpr_log(GPR_INFO, "****** TELLING CHANNEL TO CONNECT *******");
-  auto predicate = [](grpc_connectivity_state state) {
-    return state == GRPC_CHANNEL_TRANSIENT_FAILURE;
-  };
-  EXPECT_TRUE(
-      WaitForChannelState(channel.get(), predicate, /*try_to_connect=*/true));
-  // Callback should have been run.
-  ASSERT_TRUE(notification.HasBeenNotified());
-  // Return a valid address.
-  gpr_log(GPR_INFO, "****** SENDING NEXT RESOLVER RESULT *******");
-  StartServers(1);
-  response_generator.SetNextResolution(GetServersPorts());
-  gpr_log(GPR_INFO, "****** SENDING WAIT_FOR_READY RPC *******");
-  CheckRpcSendOk(DEBUG_LOCATION, stub, /*wait_for_ready=*/true);
-}
-
 TEST_F(PickFirstTest, CheckStateBeforeStartWatch) {
   std::vector<int> ports = {grpc_pick_unused_port_or_die()};
   StartServers(1, ports);
@@ -1668,40 +1635,6 @@ TEST_F(RoundRobinTest, ReresolveOnSubchannelConnectionFailure) {
   }
   // Wait for the client to see server 2.
   WaitForServer(DEBUG_LOCATION, stub, 2);
-}
-
-TEST_F(RoundRobinTest, FailsEmptyResolverUpdate) {
-  auto response_generator = BuildResolverResponseGenerator();
-  auto channel = BuildChannel("round_robin", response_generator);
-  auto stub = BuildStub(channel);
-  gpr_log(GPR_INFO, "****** SENDING INITIAL RESOLVER RESULT *******");
-  // Send a resolver result with an empty address list and a callback
-  // that triggers a notification.
-  absl::Notification notification;
-  grpc_core::Resolver::Result result;
-  result.addresses.emplace();
-  result.resolution_note = "injected error";
-  result.result_health_callback = [&](absl::Status status) {
-    EXPECT_EQ(absl::StatusCode::kUnavailable, status.code());
-    EXPECT_EQ("empty address list: injected error", status.message()) << status;
-    notification.Notify();
-  };
-  response_generator.SetResponse(std::move(result));
-  // Wait for channel to report TRANSIENT_FAILURE.
-  gpr_log(GPR_INFO, "****** TELLING CHANNEL TO CONNECT *******");
-  auto predicate = [](grpc_connectivity_state state) {
-    return state == GRPC_CHANNEL_TRANSIENT_FAILURE;
-  };
-  EXPECT_TRUE(
-      WaitForChannelState(channel.get(), predicate, /*try_to_connect=*/true));
-  // Callback should have been run.
-  ASSERT_TRUE(notification.HasBeenNotified());
-  // Return a valid address.
-  gpr_log(GPR_INFO, "****** SENDING NEXT RESOLVER RESULT *******");
-  StartServers(1);
-  response_generator.SetNextResolution(GetServersPorts());
-  gpr_log(GPR_INFO, "****** SENDING WAIT_FOR_READY RPC *******");
-  CheckRpcSendOk(DEBUG_LOCATION, stub, /*wait_for_ready=*/true);
 }
 
 TEST_F(RoundRobinTest, TransientFailure) {

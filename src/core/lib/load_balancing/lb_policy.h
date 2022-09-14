@@ -353,11 +353,11 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
   /// Updates the policy with new data from the resolver.  Will be invoked
   /// immediately after LB policy is constructed, and then again whenever
-  /// the resolver returns a new result.  The returned status indicates
-  /// whether the LB policy accepted the update; if non-OK, informs
-  /// polling-based resolvers that they should go into backoff delay and
-  /// eventually reattempt the resolution.
-  virtual absl::Status UpdateLocked(UpdateArgs) = 0;  // NOLINT
+  /// the resolver returns a new result.
+  // TODO(roth): Change this to return some indication as to whether the
+  // update has been accepted, so that we can indicate to the resolver
+  // whether it should go into backoff to retry the resolution.
+  virtual void UpdateLocked(UpdateArgs) = 0;  // NOLINT
 
   /// Tries to enter a READY connectivity state.
   /// This is a no-op by default, since most LB policies never go into

@@ -208,7 +208,7 @@ class RlsLb : public LoadBalancingPolicy {
   explicit RlsLb(Args args);
 
   absl::string_view name() const override { return kRls; }
-  absl::Status UpdateLocked(UpdateArgs args) override;
+  void UpdateLocked(UpdateArgs args) override;
   void ExitIdleLocked() override;
   void ResetBackoffLocked() override;
 
@@ -293,7 +293,7 @@ class RlsLb : public LoadBalancingPolicy {
     //
     // Both methods grab the data they need from the parent object.
     void StartUpdate() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
-    absl::Status MaybeFinishUpdate() ABSL_LOCKS_EXCLUDED(&RlsLb::mu_);
+    void MaybeFinishUpdate() ABSL_LOCKS_EXCLUDED(&RlsLb::mu_);
 
     void ExitIdleLocked() {
       if (child_policy_ != nullptr) child_policy_->ExitIdleLocked();
@@ -811,10 +811,10 @@ void RlsLb::ChildPolicyWrapper::StartUpdate() {
   }
 }
 
-absl::Status RlsLb::ChildPolicyWrapper::MaybeFinishUpdate() {
+void RlsLb::ChildPolicyWrapper::MaybeFinishUpdate() {
   // If pending_config_ is not set, that means StartUpdate() failed, so
   // there's nothing to do here.
-  if (pending_config_ == nullptr) return absl::OkStatus();
+  if (pending_config_ == nullptr) return;
   // If child policy doesn't yet exist, create it.
   if (child_policy_ == nullptr) {
     Args create_args;
@@ -844,7 +844,7 @@ absl::Status RlsLb::ChildPolicyWrapper::MaybeFinishUpdate() {
   update_args.config = std::move(pending_config_);
   update_args.addresses = lb_policy_->addresses_;
   update_args.args = lb_policy_->channel_args_;
-  return child_policy_->UpdateLocked(std::move(update_args));
+  child_policy_->UpdateLocked(std::move(update_args));
 }
 
 //
@@ -1809,9 +1809,7 @@ void RlsLb::RlsRequest::OnRlsCallCompleteLocked(grpc_error_handle error) {
   // Now that we've released the lock, finish the update on any newly
   // created child policies.
   for (ChildPolicyWrapper* child : child_policies_to_finish_update) {
-    // TODO(roth): If the child reports an error with the update, we
-    // need to propagate that back to the resolver somehow.
-    (void)child->MaybeFinishUpdate();
+    child->MaybeFinishUpdate();
   }
 }
 
@@ -1899,7 +1897,7 @@ RlsLb::RlsLb(Args args)
   }
 }
 
-absl::Status RlsLb::UpdateLocked(UpdateArgs args) {
+void RlsLb::UpdateLocked(UpdateArgs args) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(GPR_INFO, "[rlslb %p] policy updated", this);
   }
@@ -1990,28 +1988,19 @@ absl::Status RlsLb::UpdateLocked(UpdateArgs args) {
     }
   }
   // Now that we've released the lock, finish update of child policies.
-  std::vector<std::string> errors;
   if (update_child_policies) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
       gpr_log(GPR_INFO, "[rlslb %p] finishing child policy updates", this);
     }
     for (auto& p : child_policy_map_) {
-      absl::Status status = p.second->MaybeFinishUpdate();
-      if (!status.ok()) {
-        errors.emplace_back(
-            absl::StrCat("target ", p.first, ": ", status.ToString()));
-      }
+      p.second->MaybeFinishUpdate();
     }
   } else if (created_default_child) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
       gpr_log(GPR_INFO, "[rlslb %p] finishing default child policy update",
               this);
     }
-    absl::Status status = default_child_policy_->MaybeFinishUpdate();
-    if (!status.ok()) {
-      errors.emplace_back(absl::StrCat("target ", config_->default_target(),
-                                       ": ", status.ToString()));
-    }
+    default_child_policy_->MaybeFinishUpdate();
   }
   update_in_progress_ = false;
   // In principle, we need to update the picker here only if the config
@@ -2021,12 +2010,6 @@ absl::Status RlsLb::UpdateLocked(UpdateArgs args) {
   // remember to update the code here.  So for now, we just unconditionally
   // update the picker here, even though it's probably redundant.
   UpdatePickerLocked();
-  // Return status.
-  if (!errors.empty()) {
-    return absl::UnavailableError(absl::StrCat(
-        "errors from children: [", absl::StrJoin(errors, "; "), "]"));
-  }
-  return absl::OkStatus();
 }
 
 void RlsLb::ExitIdleLocked() {
