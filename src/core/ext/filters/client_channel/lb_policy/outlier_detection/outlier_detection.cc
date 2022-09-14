@@ -42,6 +42,7 @@
 #include "absl/types/variant.h"
 
 #include <grpc/impl/codegen/connectivity_state.h>
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
@@ -49,9 +50,9 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -77,10 +78,10 @@ TraceFlag grpc_outlier_detection_lb_trace(false, "outlier_detection_lb");
 
 // TODO(donnadionne): Remove once outlier detection is no longer experimental
 bool XdsOutlierDetectionEnabled() {
-  auto value = GetEnv("GRPC_EXPERIMENTAL_ENABLE_OUTLIER_DETECTION");
-  if (!value.has_value()) return false;
+  char* value = gpr_getenv("GRPC_EXPERIMENTAL_ENABLE_OUTLIER_DETECTION");
   bool parsed_value;
-  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
+  bool parse_succeeded = gpr_parse_bool_value(value, &parsed_value);
+  gpr_free(value);
   return parse_succeeded && parsed_value;
 }
 

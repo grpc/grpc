@@ -18,16 +18,16 @@
 
 #include "src/cpp/ext/gcp/observability_config.h"
 
-#include <utility>
+#include <memory>
 
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 
 #include <grpc/slice.h>
 #include <grpc/status.h>
 
-#include "src/core/lib/gprpp/env.h"
+#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/json/json.h"
@@ -46,23 +46,24 @@ namespace {
 absl::StatusOr<std::string> GetGcpObservabilityConfigContents() {
   // First, try GRPC_OBSERVABILITY_CONFIG_FILE
   std::string contents_str;
-  auto path = grpc_core::GetEnv("GRPC_OBSERVABILITY_CONFIG_FILE");
-  if (path.has_value()) {
+  grpc_core::UniquePtr<char> path(gpr_getenv("GRPC_OBSERVABILITY_CONFIG_FILE"));
+  if (path != nullptr) {
     grpc_slice contents;
     grpc_error_handle error =
-        grpc_load_file(path->c_str(), /*add_null_terminator=*/true, &contents);
+        grpc_load_file(path.get(), /*add_null_terminator=*/true, &contents);
     if (!GRPC_ERROR_IS_NONE(error)) {
       return grpc_error_to_absl_status(grpc_error_set_int(
           error, GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_FAILED_PRECONDITION));
     }
     std::string contents_str(grpc_core::StringViewFromSlice(contents));
     grpc_slice_unref_internal(contents);
-    return std::move(contents_str);
+    return contents_str;
   }
   // Next, try GRPC_OBSERVABILITY_CONFIG env var.
-  auto env_config = grpc_core::GetEnv("GRPC_OBSERVABILITY_CONFIG");
-  if (env_config.has_value()) {
-    return std::move(*env_config);
+  grpc_core::UniquePtr<char> env_config(
+      gpr_getenv("GRPC_OBSERVABILITY_CONFIG"));
+  if (env_config != nullptr) {
+    return env_config.get();
   }
   // No observability config found.
   return absl::FailedPreconditionError(

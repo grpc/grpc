@@ -54,8 +54,8 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/tcp_client.h"
@@ -242,7 +242,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
     GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
 #if TARGET_OS_IPHONE
     // Workaround Apple CFStream bug
-    grpc_core::SetEnv("grpc_cfstream", "0");
+    gpr_setenv("grpc_cfstream", "0");
 #endif
   }
 
