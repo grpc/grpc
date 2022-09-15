@@ -16,16 +16,15 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
-
-#include "absl/types/variant.h"
-
 #include "src/core/lib/transport/handshaker_registry.h"
 
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
-
+#include <grpc/support/log.h>
 #include <algorithm>
 #include <utility>
+
+#include "absl/types/variant.h"
 
 namespace grpc_core {
 
