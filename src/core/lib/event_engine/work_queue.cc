@@ -86,31 +86,30 @@ grpc_core::Timestamp WorkQueue::OldestEnqueuedTimestamp() const {
       most_recent_millis);
 }
 
-absl::optional<EventEngine::Closure*> WorkQueue::PopFront()
-    ABSL_LOCKS_EXCLUDED(mu_) {
+EventEngine::Closure* WorkQueue::PopFront() ABSL_LOCKS_EXCLUDED(mu_) {
   if (oldest_enqueued_timestamp_.load(std::memory_order_relaxed) !=
       kInvalidTimestamp) {
-    absl::optional<EventEngine::Closure*> t = TryLockAndPop(/*front=*/true);
-    if (t.has_value()) return t;
+    EventEngine::Closure* t = TryLockAndPop(/*front=*/true);
+    if (t != nullptr) return t;
   }
   if (most_recent_element_enqueue_timestamp_.load(std::memory_order_relaxed) !=
       kInvalidTimestamp) {
     return TryPopMostRecentElement();
   }
-  return absl::nullopt;
+  return nullptr;
 }
 
-absl::optional<EventEngine::Closure*> WorkQueue::PopBack() {
+EventEngine::Closure* WorkQueue::PopBack() {
   if (most_recent_element_enqueue_timestamp_.load(std::memory_order_relaxed) !=
       kInvalidTimestamp) {
     return TryPopMostRecentElement();
   }
   if (oldest_enqueued_timestamp_.load(std::memory_order_relaxed) !=
       kInvalidTimestamp) {
-    absl::optional<EventEngine::Closure*> t = TryLockAndPop(/*front=*/false);
-    if (t.has_value()) return *t;
+    EventEngine::Closure* t = TryLockAndPop(/*front=*/false);
+    if (t != nullptr) return t;
   }
-  return absl::nullopt;
+  return nullptr;
 }
 
 void WorkQueue::Add(EventEngine::Closure* closure) {
@@ -144,24 +143,24 @@ void WorkQueue::AddInternal(Storage&& storage) {
   elements_.push_back(std::move(previous_most_recent));
 }
 
-absl::optional<EventEngine::Closure*> WorkQueue::TryLockAndPop(bool front)
+EventEngine::Closure* WorkQueue::TryLockAndPop(bool front)
     ABSL_LOCKS_EXCLUDED(mu_) {
   // Do not block the worker if there are other workers trying to pop
   // tasks from this queue.
-  if (!mu_.TryLock()) return absl::nullopt;
+  if (!mu_.TryLock()) return nullptr;
   auto ret = PopLocked(front);
   mu_.Unlock();
   return ret;
 }
 
-absl::optional<EventEngine::Closure*> WorkQueue::PopLocked(bool front)
+EventEngine::Closure* WorkQueue::PopLocked(bool front)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
   if (GPR_UNLIKELY(elements_.empty())) {
     if (most_recent_element_enqueue_timestamp_.load(
             std::memory_order_relaxed) == kInvalidTimestamp) {
-      return absl::nullopt;
+      return nullptr;
     }
-    if (!most_recent_element_lock_.TryLock()) return absl::nullopt;
+    if (!most_recent_element_lock_.TryLock()) return nullptr;
     absl::optional<Storage> ret;
     if (GPR_LIKELY(most_recent_element_.has_value())) {
       most_recent_element_enqueue_timestamp_.store(kInvalidTimestamp,
@@ -190,11 +189,11 @@ absl::optional<EventEngine::Closure*> WorkQueue::PopLocked(bool front)
   return ret_s.closure();
 }
 
-absl::optional<EventEngine::Closure*> WorkQueue::TryPopMostRecentElement() {
-  if (!most_recent_element_lock_.TryLock()) return absl::nullopt;
+EventEngine::Closure* WorkQueue::TryPopMostRecentElement() {
+  if (!most_recent_element_lock_.TryLock()) return nullptr;
   if (GPR_UNLIKELY(!most_recent_element_.has_value())) {
     most_recent_element_lock_.Unlock();
-    return absl::nullopt;
+    return nullptr;
   }
   most_recent_element_enqueue_timestamp_.store(kInvalidTimestamp,
                                                std::memory_order_relaxed);

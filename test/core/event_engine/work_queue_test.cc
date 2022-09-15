@@ -13,12 +13,13 @@
 // limitations under the License.
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/event_engine/work_queue.h"
+
 #include <thread>
 
 #include <gtest/gtest.h>
 
 #include "src/core/lib/event_engine/common_closures.h"
-#include "src/core/lib/event_engine/work_queue.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/util/test_config.h"
 
@@ -40,9 +41,9 @@ TEST(WorkQueueTest, TakesClosures) {
   queue.Add(&closure);
   ASSERT_EQ(queue.Size(), 1);
   ASSERT_FALSE(queue.Empty());
-  absl::optional<EventEngine::Closure*> popped = queue.PopFront();
-  ASSERT_TRUE(popped.has_value());
-  (*popped)->Run();
+  EventEngine::Closure* popped = queue.PopFront();
+  ASSERT_NE(popped, nullptr);
+  popped->Run();
   ASSERT_TRUE(ran);
   ASSERT_TRUE(queue.Empty());
 }
@@ -53,9 +54,9 @@ TEST(WorkQueueTest, TakesAnyInvocables) {
   queue.Add([&ran] { ran = true; });
   ASSERT_EQ(queue.Size(), 1);
   ASSERT_FALSE(queue.Empty());
-  absl::optional<EventEngine::Closure*> popped = queue.PopFront();
-  ASSERT_TRUE(popped.has_value());
-  (*popped)->Run();
+  EventEngine::Closure* popped = queue.PopFront();
+  ASSERT_NE(popped, nullptr);
+  popped->Run();
   ASSERT_TRUE(ran);
   ASSERT_TRUE(queue.Empty());
 }
@@ -66,9 +67,9 @@ TEST(WorkQueueTest, BecomesEmptyOnPopBack) {
   queue.Add([&ran] { ran = true; });
   ASSERT_EQ(queue.Size(), 1);
   ASSERT_FALSE(queue.Empty());
-  absl::optional<EventEngine::Closure*> closure = queue.PopBack();
-  ASSERT_TRUE(closure.has_value());
-  (*closure)->Run();
+  EventEngine::Closure* closure = queue.PopBack();
+  ASSERT_NE(closure, nullptr);
+  closure->Run();
   ASSERT_TRUE(ran);
   ASSERT_TRUE(queue.Empty());
 }
@@ -79,10 +80,10 @@ TEST(WorkQueueTest, PopFrontIsFIFO) {
   queue.Add([&flag] { flag |= 1; });
   queue.Add([&flag] { flag |= 2; });
   ASSERT_EQ(queue.Size(), 2);
-  (*queue.PopFront())->Run();
+  queue.PopFront()->Run();
   EXPECT_TRUE(flag & 1);
   EXPECT_FALSE(flag & 2);
-  (*queue.PopFront())->Run();
+  queue.PopFront()->Run();
   EXPECT_TRUE(flag & 1);
   EXPECT_TRUE(flag & 2);
   ASSERT_TRUE(queue.Empty());
@@ -94,10 +95,10 @@ TEST(WorkQueueTest, PopBackIsLIFO) {
   queue.Add([&flag] { flag |= 1; });
   queue.Add([&flag] { flag |= 2; });
   ASSERT_EQ(queue.Size(), 2);
-  (*queue.PopBack())->Run();
+  queue.PopBack()->Run();
   EXPECT_FALSE(flag & 1);
   EXPECT_TRUE(flag & 2);
-  (*queue.PopBack())->Run();
+  queue.PopBack()->Run();
   EXPECT_TRUE(flag & 1);
   EXPECT_TRUE(flag & 2);
   ASSERT_TRUE(queue.Empty());
@@ -109,10 +110,10 @@ TEST(WorkQueueTest, OldestEnqueuedTimestampIsSane) {
   ASSERT_EQ(queue.OldestEnqueuedTimestamp(), grpc_core::Timestamp::InfPast());
   queue.Add([] {});
   ASSERT_LE(queue.OldestEnqueuedTimestamp(), exec_ctx.Now());
-  auto popped = queue.PopFront();
+  auto* popped = queue.PopFront();
   ASSERT_EQ(queue.OldestEnqueuedTimestamp(), grpc_core::Timestamp::InfPast());
   // prevent leaks by executing or deleting the closure
-  delete *popped;
+  delete popped;
 }
 
 TEST(WorkQueueTest, OldestEnqueuedTimestampOrderingIsCorrect) {
@@ -127,15 +128,14 @@ TEST(WorkQueueTest, OldestEnqueuedTimestampOrderingIsCorrect) {
   absl::SleepFor(absl::Milliseconds(2));
   auto oldest_ts = queue.OldestEnqueuedTimestamp();
   ASSERT_LE(oldest_ts, exec_ctx.Now());
-  absl::optional<EventEngine::Closure*> popped;
   // pop the oldest, and ensure the next oldest is younger
-  popped = queue.PopFront();
-  ASSERT_TRUE(popped.has_value());
+  EventEngine::Closure* popped = queue.PopFront();
+  ASSERT_NE(popped, nullptr);
   auto second_oldest_ts = queue.OldestEnqueuedTimestamp();
   ASSERT_GT(second_oldest_ts, oldest_ts);
   // pop the oldest, and ensure the last one is youngest
   popped = queue.PopFront();
-  ASSERT_TRUE(popped.has_value());
+  ASSERT_NE(popped, nullptr);
   auto youngest_ts = queue.OldestEnqueuedTimestamp();
   ASSERT_GT(youngest_ts, second_oldest_ts);
   ASSERT_GT(youngest_ts, oldest_ts);
@@ -157,7 +157,7 @@ TEST(WorkQueueTest, ThreadedStress) {
       } while (cnt < element_count_per_thd);
       cnt = 0;
       do {
-        if (queue.PopFront().has_value()) ++cnt;
+        if (queue.PopFront() != nullptr) ++cnt;
       } while (cnt < element_count_per_thd);
     });
   }

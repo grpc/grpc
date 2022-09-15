@@ -83,9 +83,9 @@ class WorkQueue {
   // enqueued.
   grpc_core::Timestamp OldestEnqueuedTimestamp() const;
   // Returns the next (oldest) element from the queue, or nullopt if empty
-  absl::optional<EventEngine::Closure*> PopFront() ABSL_LOCKS_EXCLUDED(mu_);
+  EventEngine::Closure* PopFront() ABSL_LOCKS_EXCLUDED(mu_);
   // Returns the most recent element from the queue, or nullopt if empty
-  absl::optional<EventEngine::Closure*> PopBack();
+  EventEngine::Closure* PopBack();
   // Adds a closure to the back of the queue
   void Add(EventEngine::Closure* closure);
   // Wraps an AnyInvocable and adds it to the back of the queue
@@ -97,15 +97,15 @@ class WorkQueue {
   // Attempts to pop from the front of the queue (oldest).
   // This will return nullopt if the queue is empty, or if other workers
   // are already attempting to pop from this queue.
-  absl::optional<EventEngine::Closure*> TryLockAndPop(bool front)
+  EventEngine::Closure* TryLockAndPop(bool front)
       ABSL_LOCKS_EXCLUDED(mu_);
   // Internal implementation, helps with thread safety analysis in TryLockAndPop
-  absl::optional<EventEngine::Closure*> PopLocked(bool front)
+  EventEngine::Closure* PopLocked(bool front)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   // Attempts to pop from the back of the queue (most recent).
   // This will return nullopt if the queue is empty, or if other workers
   // are already attempting to pop from this queue.
-  absl::optional<EventEngine::Closure*> TryPopMostRecentElement();
+  EventEngine::Closure* TryPopMostRecentElement();
 
   // The managed items in the queue
   std::deque<Storage> elements_ ABSL_GUARDED_BY(mu_);
