@@ -23,21 +23,24 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <string>
+
+#include "absl/types/optional.h"
+
 #ifdef GPR_LINUX_ENV
 
+#if defined(GPR_BACKWARDS_COMPATIBILITY_MODE)
 #include <dlfcn.h>
+#endif
+
 #include <features.h>
 #include <stdlib.h>
-#include <string.h>
 
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
+#include "src/core/lib/gprpp/env.h"
 
-#include "src/core/lib/gpr/env.h"
-#include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gpr/useful.h"
+namespace grpc_core {
 
-char* gpr_getenv(const char* name) {
+absl::optional<std::string> GetEnv(const char* name) {
   char* result = nullptr;
 #if defined(GPR_BACKWARDS_COMPATIBILITY_MODE)
   typedef char* (*getenv_type)(const char*);
@@ -45,9 +48,8 @@ char* gpr_getenv(const char* name) {
   /* Check to see which getenv variant is supported (go from most
    * to least secure) */
   if (getenv_func == nullptr) {
-    const char* names[] = {"secure_getenv", "__secure_getenv", "getenv"};
-    for (size_t i = 0; i < GPR_ARRAY_SIZE(names); i++) {
-      getenv_func = (getenv_type)dlsym(RTLD_DEFAULT, names[i]);
+    for (auto name : {"secure_getenv", "__secure_getenv", "getenv"}) {
+      getenv_func = reinterpret_cast<getenv_type>(dlsym(RTLD_DEFAULT, name));
       if (getenv_func != nullptr) {
         break;
       }
@@ -59,17 +61,20 @@ char* gpr_getenv(const char* name) {
 #else
   result = getenv(name);
 #endif
-  return result == nullptr ? result : gpr_strdup(result);
+  if (result == nullptr) return absl::nullopt;
+  return result;
 }
 
-void gpr_setenv(const char* name, const char* value) {
+void SetEnv(const char* name, const char* value) {
   int res = setenv(name, value, 1);
-  GPR_ASSERT(res == 0);
+  if (res != 0) abort();
 }
 
-void gpr_unsetenv(const char* name) {
+void UnsetEnv(const char* name) {
   int res = unsetenv(name);
-  GPR_ASSERT(res == 0);
+  if (res != 0) abort();
 }
+
+}  // namespace grpc_core
 
 #endif /* GPR_LINUX_ENV */

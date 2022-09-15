@@ -27,7 +27,6 @@
 
 #include <grpc/impl/codegen/compression_types.h>
 #include <grpc/impl/codegen/grpc_types.h>
-#include <grpcpp/impl/codegen/byte_buffer.h>
 #include <grpcpp/impl/codegen/call.h>
 #include <grpcpp/impl/codegen/call_hook.h>
 #include <grpcpp/impl/codegen/call_op_set_interface.h>
@@ -41,6 +40,7 @@
 #include <grpcpp/impl/codegen/serialization_traits.h>
 #include <grpcpp/impl/codegen/slice.h>
 #include <grpcpp/impl/codegen/string_ref.h>
+#include <grpcpp/support/byte_buffer.h>
 
 namespace grpc {
 

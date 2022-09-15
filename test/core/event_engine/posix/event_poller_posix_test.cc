@@ -680,7 +680,7 @@ class Worker : public grpc_core::DualRefCounted<Worker> {
   }
 
   void Wait() {
-    EXPECT_TRUE(promise.WaitWithTimeout(absl::Seconds(60)));
+    EXPECT_TRUE(promise.Get());
     WeakUnref();
   }
 

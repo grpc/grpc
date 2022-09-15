@@ -847,9 +847,6 @@ LIBGPR_SRC = \
     src/core/lib/gpr/cpu_linux.cc \
     src/core/lib/gpr/cpu_posix.cc \
     src/core/lib/gpr/cpu_windows.cc \
-    src/core/lib/gpr/env_linux.cc \
-    src/core/lib/gpr/env_posix.cc \
-    src/core/lib/gpr/env_windows.cc \
     src/core/lib/gpr/log.cc \
     src/core/lib/gpr/log_android.cc \
     src/core/lib/gpr/log_linux.cc \
@@ -871,6 +868,9 @@ LIBGPR_SRC = \
     src/core/lib/gpr/tmpfile_posix.cc \
     src/core/lib/gpr/tmpfile_windows.cc \
     src/core/lib/gpr/wrap_memcpy.cc \
+    src/core/lib/gprpp/env_linux.cc \
+    src/core/lib/gprpp/env_posix.cc \
+    src/core/lib/gprpp/env_windows.cc \
     src/core/lib/gprpp/examine_stack.cc \
     src/core/lib/gprpp/fork.cc \
     src/core/lib/gprpp/global_config_env.cc \

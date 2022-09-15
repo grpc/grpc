@@ -98,7 +98,7 @@ class CdsLb : public LoadBalancingPolicy {
 
   absl::string_view name() const override { return kCds; }
 
-  void UpdateLocked(UpdateArgs args) override;
+  absl::Status UpdateLocked(UpdateArgs args) override;
   void ResetBackoffLocked() override;
   void ExitIdleLocked() override;
 
@@ -310,7 +310,7 @@ void CdsLb::ExitIdleLocked() {
   if (child_policy_ != nullptr) child_policy_->ExitIdleLocked();
 }
 
-void CdsLb::UpdateLocked(UpdateArgs args) {
+absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
   // Update config.
   auto old_config = std::move(config_);
   config_ = std::move(args.config);
@@ -338,6 +338,7 @@ void CdsLb::UpdateLocked(UpdateArgs args) {
     XdsClusterResourceType::StartWatch(xds_client_.get(), config_->cluster(),
                                        std::move(watcher));
   }
+  return absl::OkStatus();
 }
 
 // Generates the discovery mechanism config for the specified cluster name.
@@ -554,7 +555,9 @@ void CdsLb::OnClusterChanged(const std::string& name,
     } else {
       args.args = args_;
     }
-    child_policy_->UpdateLocked(std::move(args));
+    // TODO(roth): If the child policy reports an error with the update,
+    // we need to propagate the error to the resolver somehow.
+    (void)child_policy_->UpdateLocked(std::move(args));
   }
   // Remove entries in watchers_ for any clusters not in clusters_added
   for (auto it = watchers_.begin(); it != watchers_.end();) {
