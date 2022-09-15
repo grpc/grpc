@@ -90,8 +90,8 @@ class XdsClusterManagerLbConfig : public LoadBalancingPolicy::Config {
       delete;
 
   XdsClusterManagerLbConfig(XdsClusterManagerLbConfig&& other) = delete;
-  XdsClusterManagerLbConfig& operator=(
-      XdsClusterManagerLbConfig&& other) = delete;
+  XdsClusterManagerLbConfig& operator=(XdsClusterManagerLbConfig&& other) =
+      delete;
 
   absl::string_view name() const override { return kXdsClusterManager; }
 
