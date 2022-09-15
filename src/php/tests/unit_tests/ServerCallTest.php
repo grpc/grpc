@@ -58,6 +58,9 @@ class StringValue
 
 class ServerCallTest extends \PHPUnit\Framework\TestCase
 {
+    private $mockCall;
+    private $serverContext;
+
     public function setUp(): void
     {
         $this->mockCall = $this->getMockBuilder(stdClass::class)

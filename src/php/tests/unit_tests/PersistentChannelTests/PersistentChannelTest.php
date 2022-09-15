@@ -20,7 +20,7 @@
 /**
  * @group persistent_list_bound_tests
  */
-class PersistentListTest extends \PHPUnit\Framework\TestCase
+class PersistentChannelTest extends \PHPUnit\Framework\TestCase
 {
   public function setUp(): void
   {

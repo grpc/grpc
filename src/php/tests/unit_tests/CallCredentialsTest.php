@@ -19,6 +19,13 @@
 
 class CallCredentialsTest extends \PHPUnit\Framework\TestCase
 {
+    private $credentials;
+    private $call_credentials;
+    private $server;
+    private $port;
+    private $host_override;
+    private $channel;
+
     public function setUp(): void
     {
         $this->credentials = Grpc\ChannelCredentials::createSsl(

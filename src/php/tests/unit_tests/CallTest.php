@@ -20,6 +20,8 @@ class CallTest extends \PHPUnit\Framework\TestCase
 {
     public static $server;
     public static $port;
+    private $channel;
+    private $call;
 
     public static function setUpBeforeClass(): void
     {
