@@ -53,6 +53,9 @@ class NextResult final {
     return *this;
   }
 
+  using value_type = T;
+
+  void reset();
   bool has_value() const;
   const T& value() const {
     GPR_ASSERT(has_value());
@@ -90,14 +93,14 @@ class Center {
   }
 
   // Add one ref to the send side of this object, and return this.
-  Center* RefSend(SourceLocation loc = SourceLocation()) {
+  Center* RefSend() {
     send_refs_++;
     GPR_ASSERT(send_refs_ != 0);
     return this;
   }
 
   // Add one ref to the recv side of this object, and return this.
-  Center* RefRecv(SourceLocation loc = SourceLocation()) {
+  Center* RefRecv() {
     recv_refs_++;
     GPR_ASSERT(recv_refs_ != 0);
     return this;
@@ -106,7 +109,7 @@ class Center {
   // Drop a send side ref
   // If no send refs remain, wake due to send closure
   // If no refs remain, destroy this object
-  void UnrefSend(SourceLocation loc = SourceLocation()) {
+  void UnrefSend() {
     GPR_DEBUG_ASSERT(send_refs_ > 0);
     send_refs_--;
     if (0 == send_refs_) {
@@ -121,7 +124,7 @@ class Center {
   // Drop a recv side ref
   // If no recv refs remain, wake due to recv closure
   // If no refs remain, destroy this object
-  void UnrefRecv(SourceLocation loc = SourceLocation()) {
+  void UnrefRecv() {
     GPR_DEBUG_ASSERT(recv_refs_ > 0);
     recv_refs_--;
     if (0 == recv_refs_) {
@@ -340,7 +343,13 @@ class Next {
     if (center_ != nullptr) center_->UnrefRecv();
   }
 
-  Poll<NextResult<T>> operator()() { return center_->Next(); }
+  Poll<NextResult<T>> operator()() {
+    auto r = center_->Next();
+    if (!absl::holds_alternative<Pending>(r)) {
+      std::exchange(center_, nullptr)->UnrefRecv();
+    }
+    return r;
+  }
 
  private:
   friend class PipeReceiver<T>;
@@ -378,6 +387,11 @@ const T& NextResult<T>::operator*() const {
 template <typename T>
 NextResult<T>::~NextResult() {
   if (center_ != nullptr) center_->AckNext();
+}
+
+template <typename T>
+void NextResult<T>::reset() {
+  if (auto* p = std::exchange(center_, nullptr)) p->AckNext();
 }
 
 // A Pipe is an intra-Activity communications channel that transmits T's from
