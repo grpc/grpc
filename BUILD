@@ -3323,6 +3323,7 @@ grpc_cc_library(
         "channel_init",
         "channel_stack_builder",
         "channel_stack_type",
+        "notification",
         "chunked_vector",
         "closure",
         "config",
@@ -3612,6 +3613,14 @@ grpc_cc_library(
         "server_address",
         "uri_parser",
     ],
+)
+
+grpc_cc_library(
+    name = "notification",
+    hdrs = [
+        "src/core/lib/gprpp/notification.h",
+    ],
+    deps = ["gpr"],
 )
 
 grpc_cc_library(
