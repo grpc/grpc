@@ -64,12 +64,12 @@ class TimevalTest extends \PHPUnit\Framework\TestCase
         $this->assertSame('Grpc\Timeval', get_class($this->time));
     }
 
-    /**
-     * @todo in PHP 8.1+ implicit conversion from float to int is deprecated
-     */
     public function testConstructorWithFloat()
     {
-        $this->time = new Grpc\Timeval((int)123.456);
+        if (version_compare(PHP_VERSION, '8.1.0') >= 0) {
+            $this->markTestSkipped('implicit float to int cast deprecated in 8.1+');
+        }
+        $this->time = new Grpc\Timeval(123.456);
         $this->assertNotNull($this->time);
         $this->assertSame('Grpc\Timeval', get_class($this->time));
         $timeFromInt = new Grpc\Timeval(123);
