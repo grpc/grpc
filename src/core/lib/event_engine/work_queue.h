@@ -44,6 +44,25 @@ class WorkQueue {
   // comparable to Timestamp::milliseconds_after_process_epoch()
   static const int64_t kInvalidTimestamp = -1;
 
+  WorkQueue() = default;
+  // Returns whether the queue is empty
+  bool Empty() const;
+  // Returns the number of elements in the queue
+  // This method locks the queue, be mindful of performance when using it.
+  size_t Size();
+  // Returns the Timestamp of when the most recently-added element was
+  // enqueued.
+  grpc_core::Timestamp OldestEnqueuedTimestamp() const;
+  // Returns the next (oldest) element from the queue, or nullopt if empty
+  EventEngine::Closure* PopFront() ABSL_LOCKS_EXCLUDED(mu_);
+  // Returns the most recent element from the queue, or nullopt if empty
+  EventEngine::Closure* PopBack();
+  // Adds a closure to the back of the queue
+  void Add(EventEngine::Closure* closure);
+  // Wraps an AnyInvocable and adds it to the back of the queue
+  void Add(absl::AnyInvocable<void()> invocable);
+
+ private:
   class Storage {
    public:
     Storage() = default;
@@ -73,27 +92,6 @@ class WorkQueue {
     int64_t enqueued_ = kInvalidTimestamp;
   };
 
-  WorkQueue() = default;
-  // Returns whether the queue is empty
-  bool Empty() const;
-  // Returns the number of elements in the queue
-  // This method locks the queue, be mindful of performance when using it.
-  size_t Size();
-  // Returns the Timestamp of when the most recently-added element was
-  // enqueued.
-  grpc_core::Timestamp OldestEnqueuedTimestamp() const;
-  // Returns the next (oldest) element from the queue, or nullopt if empty
-  EventEngine::Closure* PopFront() ABSL_LOCKS_EXCLUDED(mu_);
-  // Returns the most recent element from the queue, or nullopt if empty
-  EventEngine::Closure* PopBack();
-  // Adds a closure to the back of the queue
-  void Add(EventEngine::Closure* closure);
-  // Wraps an AnyInvocable and adds it to the back of the queue
-  void Add(absl::AnyInvocable<void()> invocable);
-  // Common code for the Add methods
-  void AddInternal(Storage&& storage);
-
- private:
   // Attempts to pop from the front of the queue (oldest).
   // This will return nullopt if the queue is empty, or if other workers
   // are already attempting to pop from this queue.
@@ -105,6 +103,8 @@ class WorkQueue {
   // This will return nullopt if the queue is empty, or if other workers
   // are already attempting to pop from this queue.
   EventEngine::Closure* TryPopMostRecentElement();
+  // Common code for the Add methods
+  void AddInternal(Storage&& storage);
 
   // The managed items in the queue
   std::deque<Storage> elements_ ABSL_GUARDED_BY(mu_);
