@@ -478,8 +478,7 @@ class Server : public InternallyRefCounted<Server>,
   std::atomic<int> shutdown_refs_{1};
   bool shutdown_published_ ABSL_GUARDED_BY(mu_global_) = false;
   std::vector<ShutdownTag> shutdown_tags_ ABSL_GUARDED_BY(mu_global_);
-  std::unique_ptr<Notification> requests_complete_
-      ABSL_GUARDED_BY(mu_global_);
+  std::unique_ptr<Notification> requests_complete_ ABSL_GUARDED_BY(mu_global_);
 
   std::list<ChannelData*> channels_;
 
