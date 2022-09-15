@@ -23,6 +23,7 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/intra_activity_waiter.h"
 #include "src/core/lib/promise/poll.h"
@@ -89,14 +90,14 @@ class Center {
   }
 
   // Add one ref to the send side of this object, and return this.
-  Center* RefSend() {
+  Center* RefSend(SourceLocation loc = SourceLocation()) {
     send_refs_++;
     GPR_ASSERT(send_refs_ != 0);
     return this;
   }
 
   // Add one ref to the recv side of this object, and return this.
-  Center* RefRecv() {
+  Center* RefRecv(SourceLocation loc = SourceLocation()) {
     recv_refs_++;
     GPR_ASSERT(recv_refs_ != 0);
     return this;
@@ -105,7 +106,7 @@ class Center {
   // Drop a send side ref
   // If no send refs remain, wake due to send closure
   // If no refs remain, destroy this object
-  void UnrefSend() {
+  void UnrefSend(SourceLocation loc = SourceLocation()) {
     GPR_DEBUG_ASSERT(send_refs_ > 0);
     send_refs_--;
     if (0 == send_refs_) {
@@ -120,7 +121,7 @@ class Center {
   // Drop a recv side ref
   // If no recv refs remain, wake due to recv closure
   // If no refs remain, destroy this object
-  void UnrefRecv() {
+  void UnrefRecv(SourceLocation loc = SourceLocation()) {
     GPR_DEBUG_ASSERT(recv_refs_ > 0);
     recv_refs_--;
     if (0 == recv_refs_) {
@@ -168,14 +169,17 @@ class Center {
     return NextResult<T>(RefRecv());
   }
 
- private:
-  friend class NextResult<T>;
   void AckNext() {
     GPR_DEBUG_ASSERT(value_state_ == ValueState::kReady);
     value_state_ = ValueState::kAcked;
     on_empty_.Wake();
     UnrefRecv();
   }
+
+  T& value() { return value_; }
+  const T& value() const { return value_; }
+
+ private:
   void ResetValue() {
     // Fancy dance to move out of value in the off chance that we reclaim some
     // memory earlier.
@@ -295,8 +299,6 @@ class Push {
   }
 
   Poll<bool> operator()() {
-    gpr_log(GPR_INFO, "PUSH: %p center=%p value=%s", this, center_,
-            push_.has_value() ? "true" : "false");
     if (push_.has_value()) {
       auto r = center_->Push(&*push_);
       if (auto* ok = absl::get_if<bool>(&r)) {
@@ -306,7 +308,6 @@ class Push {
         return Pending{};
       }
     }
-    gpr_log(GPR_INFO, "PUSH: %p center=%p pollack", this, center_);
     GPR_DEBUG_ASSERT(!push_.has_value());
     return center_->PollAck();
   }
@@ -366,12 +367,12 @@ bool NextResult<T>::has_value() const {
 
 template <typename T>
 T& NextResult<T>::operator*() {
-  return center_->value_;
+  return center_->value();
 }
 
 template <typename T>
 const T& NextResult<T>::operator*() const {
-  return center_->value_;
+  return center_->value();
 }
 
 template <typename T>
