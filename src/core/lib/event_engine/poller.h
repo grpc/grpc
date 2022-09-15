@@ -43,7 +43,7 @@ class Poller {
   //  * Poller::WorkResult::kKicked if it was Kicked.
   //  * Poller::WorkResult::kDeadlineExceeded if timeout occurred
   //  * Poller::WorkResult::kOk, otherwise indicating that the callback function
-  //  was scheduled to run asynchonously and some events were processed.
+  //  was run synchonously before some events were processed.
   virtual WorkResult Work(EventEngine::Duration timeout,
                           absl::FunctionRef<void()> schedule_poll_again) = 0;
   // Trigger the threads executing Work(..) to break out as soon as possible.
