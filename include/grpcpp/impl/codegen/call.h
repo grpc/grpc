@@ -20,6 +20,7 @@
 
 // IWYU pragma: private
 
+/// TODO(chengyuc): Remove this file after solving compatibility.
 #include <grpcpp/impl/call.h>
 
 #endif  // GRPCPP_IMPL_CODEGEN_CALL_H
