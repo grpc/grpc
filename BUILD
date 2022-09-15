@@ -2169,6 +2169,7 @@ grpc_cc_library(
         "absl/status",
     ],
     tags = ["nofixdeps"],
+    visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
         "gpr",
         "gpr_spinlock",
