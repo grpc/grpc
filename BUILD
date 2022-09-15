@@ -2832,8 +2832,8 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/cleanup",
-        "absl/container:flat_hash_set",
         "absl/container:flat_hash_map",
+        "absl/container:flat_hash_set",
         "absl/functional:any_invocable",
         "absl/status",
         "absl/status:statusor",
