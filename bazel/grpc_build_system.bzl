@@ -286,7 +286,7 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
             "name": name,
             "srcs": srcs,
             "deps": deps,
-            "tags": tags + ["no_linux"],
+            "tags": tags,
             "args": args,
         })
     else:

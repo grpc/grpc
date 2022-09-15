@@ -199,13 +199,13 @@ libs:
   - include/grpc/support/time.h
   headers:
   - src/core/lib/gpr/alloc.h
-  - src/core/lib/gpr/env.h
   - src/core/lib/gpr/string.h
   - src/core/lib/gpr/time_precise.h
   - src/core/lib/gpr/tls.h
   - src/core/lib/gpr/tmpfile.h
   - src/core/lib/gpr/useful.h
   - src/core/lib/gprpp/construct_destruct.h
+  - src/core/lib/gprpp/env.h
   - src/core/lib/gprpp/examine_stack.h
   - src/core/lib/gprpp/fork.h
   - src/core/lib/gprpp/global_config.h
@@ -228,9 +228,6 @@ libs:
   - src/core/lib/gpr/cpu_linux.cc
   - src/core/lib/gpr/cpu_posix.cc
   - src/core/lib/gpr/cpu_windows.cc
-  - src/core/lib/gpr/env_linux.cc
-  - src/core/lib/gpr/env_posix.cc
-  - src/core/lib/gpr/env_windows.cc
   - src/core/lib/gpr/log.cc
   - src/core/lib/gpr/log_android.cc
   - src/core/lib/gpr/log_linux.cc
@@ -252,6 +249,9 @@ libs:
   - src/core/lib/gpr/tmpfile_posix.cc
   - src/core/lib/gpr/tmpfile_windows.cc
   - src/core/lib/gpr/wrap_memcpy.cc
+  - src/core/lib/gprpp/env_linux.cc
+  - src/core/lib/gprpp/env_posix.cc
+  - src/core/lib/gprpp/env_windows.cc
   - src/core/lib/gprpp/examine_stack.cc
   - src/core/lib/gprpp/fork.cc
   - src/core/lib/gprpp/global_config_env.cc
@@ -2631,6 +2631,7 @@ libs:
   - include/grpcpp/grpcpp.h
   - include/grpcpp/health_check_service_interface.h
   - include/grpcpp/impl/call.h
+  - include/grpcpp/impl/call_hook.h
   - include/grpcpp/impl/channel_argument_option.h
   - include/grpcpp/impl/client_unary_call.h
   - include/grpcpp/impl/codegen/async_generic_service.h
@@ -3045,6 +3046,7 @@ libs:
   - include/grpcpp/grpcpp.h
   - include/grpcpp/health_check_service_interface.h
   - include/grpcpp/impl/call.h
+  - include/grpcpp/impl/call_hook.h
   - include/grpcpp/impl/channel_argument_option.h
   - include/grpcpp/impl/client_unary_call.h
   - include/grpcpp/impl/codegen/async_generic_service.h
@@ -9994,21 +9996,6 @@ targets:
   deps:
   - grpc++_test_config
   - grpc++_test_util
-- name: thread_pool_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - src/core/lib/event_engine/forkable.h
-  - src/core/lib/event_engine/thread_pool.h
-  src:
-  - src/core/lib/event_engine/forkable.cc
-  - src/core/lib/event_engine/thread_pool.cc
-  - test/core/event_engine/thread_pool_test.cc
-  deps:
-  - absl/container:flat_hash_set
-  - absl/functional:any_invocable
-  - gpr
 - name: thread_quota_test
   gtest: true
   build: test
