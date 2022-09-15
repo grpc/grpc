@@ -350,7 +350,7 @@ class StreamsNotSeenTest : public ::testing::Test {
   }
 
   void WriteBuffer(grpc_slice_buffer* buffer) {
-    grpc_core::Notification on_write_done_notification_;
+    Notification on_write_done_notification_;
     GRPC_CLOSURE_INIT(&on_write_done_, OnWriteDone,
                       &on_write_done_notification_, nullptr);
     grpc_endpoint_write(tcp_, buffer, &on_write_done_, nullptr,
@@ -362,8 +362,8 @@ class StreamsNotSeenTest : public ::testing::Test {
 
   static void OnWriteDone(void* arg, grpc_error_handle error) {
     GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
-    grpc_core::Notification* on_write_done_notification_ =
-        static_cast<grpc_core::Notification*>(arg);
+    Notification* on_write_done_notification_ =
+        static_cast<Notification*>(arg);
     on_write_done_notification_->Notify();
   }
 
@@ -414,11 +414,11 @@ class StreamsNotSeenTest : public ::testing::Test {
   test_tcp_server server_;
   std::unique_ptr<std::thread> server_poll_thread_;
   grpc_endpoint* tcp_ = nullptr;
-  grpc_core::Notification connect_notification_;
+  Notification connect_notification_;
   grpc_slice_buffer read_buffer_;
   grpc_closure on_write_done_;
   grpc_closure on_read_done_;
-  grpc_core::Notification read_end_notification_;
+  Notification read_end_notification_;
   std::string read_bytes_ ABSL_GUARDED_BY(mu_);
   grpc_channel* channel_ = nullptr;
   grpc_completion_queue* cq_ = nullptr;

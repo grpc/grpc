@@ -101,7 +101,7 @@ class GracefulShutdownTest : public ::testing::Test {
                                            nullptr) == GRPC_ERROR_NONE);
     grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
     // Start polling on the client
-    grpc_core::Notification client_poller_thread_started_notification;
+    Notification client_poller_thread_started_notification;
     client_poll_thread_ = absl::make_unique<std::thread>(
         [this, &client_poller_thread_started_notification]() {
           grpc_completion_queue* client_cq =
@@ -225,7 +225,7 @@ class GracefulShutdownTest : public ::testing::Test {
   }
 
   void WriteBuffer(grpc_slice_buffer* buffer) {
-    grpc_core::Notification on_write_done_notification_;
+    Notification on_write_done_notification_;
     GRPC_CLOSURE_INIT(&on_write_done_, OnWriteDone,
                       &on_write_done_notification_, nullptr);
     grpc_endpoint_write(fds_.client, buffer, &on_write_done_, nullptr,
@@ -237,8 +237,8 @@ class GracefulShutdownTest : public ::testing::Test {
 
   static void OnWriteDone(void* arg, grpc_error_handle error) {
     GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
-    grpc_core::Notification* on_write_done_notification_ =
-        static_cast<grpc_core::Notification*>(arg);
+    Notification* on_write_done_notification_ =
+        static_cast<Notification*>(arg);
     on_write_done_notification_->Notify();
   }
 
@@ -251,7 +251,7 @@ class GracefulShutdownTest : public ::testing::Test {
   grpc_closure on_read_done_;
   Mutex mu_;
   CondVar read_cv_;
-  grpc_core::Notification read_end_notification_;
+  Notification read_end_notification_;
   grpc_slice_buffer read_buffer_;
   std::string read_bytes_ ABSL_GUARDED_BY(mu_);
   grpc_closure on_write_done_;

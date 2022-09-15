@@ -419,14 +419,14 @@ class Server : public InternallyRefCounted<Server>,
   }
   // Returns a notification pointer to wait on if there are requests in-flight,
   // or null.
-  grpc_core::Notification* ShutdownUnrefOnShutdownCall()
+  Notification* ShutdownUnrefOnShutdownCall()
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_) GRPC_MUST_USE_RESULT {
     if (shutdown_refs_.fetch_sub(1, std::memory_order_acq_rel) == 1) {
       // There is no request in-flight.
       MaybeFinishShutdown();
       return nullptr;
     }
-    requests_complete_ = absl::make_unique<grpc_core::Notification>();
+    requests_complete_ = absl::make_unique<Notification>();
     return requests_complete_.get();
   }
 
@@ -478,7 +478,7 @@ class Server : public InternallyRefCounted<Server>,
   std::atomic<int> shutdown_refs_{1};
   bool shutdown_published_ ABSL_GUARDED_BY(mu_global_) = false;
   std::vector<ShutdownTag> shutdown_tags_ ABSL_GUARDED_BY(mu_global_);
-  std::unique_ptr<grpc_core::Notification> requests_complete_
+  std::unique_ptr<Notification> requests_complete_
       ABSL_GUARDED_BY(mu_global_);
 
   std::list<ChannelData*> channels_;
