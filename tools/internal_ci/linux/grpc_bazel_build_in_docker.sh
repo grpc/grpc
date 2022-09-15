@@ -17,6 +17,9 @@
 # clang compiler to check if sources can pass a set of warning options.
 # For now //examples/android/binder/ are excluded because it needs Android
 # SDK/NDK to be installed to build
+
+set -ex
+
 python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path bazel_build_with_strict_warnings
 bazel_build_with_strict_warnings/bazel_wrapper \
   --bazelrc=tools/remote_build/include/test_locally_with_resultstore_results.bazelrc \
@@ -36,11 +39,11 @@ bazel_build_with_strict_warnings/bazel_wrapper \
 # details.
 # Test that builds with --define=grpc_no_xds=true work.
 bazel build //test/cpp/end2end:end2end_test --define=grpc_no_xds=true
+
 # Test that builds that need xDS do not build with --define=grpc_no_xds=true
 EXIT_CODE=0
 bazel build //test/cpp/end2end/xds:xds_end2end_test --define=grpc_no_xds=true || EXIT_CODE=$?
-if [ $EXIT_CODE -eq 0 ]
-then
+if [ $EXIT_CODE -eq 0 ]; then
   echo "Building xds_end2end_test succeeded even with --define=grpc_no_xds=true"
   exit 1
 fi
