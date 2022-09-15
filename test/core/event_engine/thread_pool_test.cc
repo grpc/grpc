@@ -37,7 +37,16 @@ TEST(ThreadPoolTest, CanRunClosure) {
 
 TEST(ThreadPoolTest, CanDestroyInsideClosure) {
   auto p = std::make_shared<ThreadPool>(1);
-  p->Add([p]() { std::this_thread::sleep_for(std::chrono::seconds(1)); });
+  absl::Notification n;
+  p->Add([p, &n]() mutable {
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    // This should delete the thread pool and not deadlock
+    p.reset();
+    n.Notify();
+  });
+  // Make sure we're not keeping the thread pool alive from outside the loop
+  p.reset();
+  n.WaitForNotification();
 }
 
 TEST(ThreadPoolTest, CanSurviveFork) {

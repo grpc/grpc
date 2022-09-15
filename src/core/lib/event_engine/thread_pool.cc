@@ -95,7 +95,12 @@ ThreadPool::ThreadPool(int reserve_threads)
 
 ThreadPool::~ThreadPool() {
   state_->queue.SetShutdown();
-  state_->thread_count.BlockUntilThreadCount(g_threadpool_thread ? 1 : 0);
+  // Wait until all threads are exited.
+  // Note that if this is a threadpool thread then we won't exit this thread
+  // until the callstack unwinds a little, so we need to wait for just one
+  // thread running instead of zero.
+  state_->thread_count.BlockUntilThreadCount(g_threadpool_thread ? 1 : 0,
+                                             "shutting down");
 }
 
 void ThreadPool::Add(absl::AnyInvocable<void()> callback) {
@@ -141,7 +146,8 @@ void ThreadPool::ThreadCount::Remove() {
   cv_.Signal();
 }
 
-void ThreadPool::ThreadCount::BlockUntilThreadCount(int threads) {
+void ThreadPool::ThreadCount::BlockUntilThreadCount(int threads,
+                                                    const char* why) {
   grpc_core::MutexLock lock(&mu_);
   auto last_log = absl::Now();
   while (threads_ > threads) {
@@ -151,7 +157,7 @@ void ThreadPool::ThreadCount::BlockUntilThreadCount(int threads) {
     // fork.
     cv_.WaitWithTimeout(&mu_, absl::Seconds(3));
     if (threads_ > threads && absl::Now() - last_log > absl::Seconds(1)) {
-      gpr_log(GPR_ERROR, "Waiting for thread pool to idle before forking");
+      gpr_log(GPR_ERROR, "Waiting for thread pool to idle before %s", why);
       last_log = absl::Now();
     }
   }
@@ -159,7 +165,7 @@ void ThreadPool::ThreadCount::BlockUntilThreadCount(int threads) {
 
 void ThreadPool::PrepareFork() {
   state_->queue.SetForking();
-  state_->thread_count.BlockUntilThreadCount(0);
+  state_->thread_count.BlockUntilThreadCount(0, "forking");
 }
 
 void ThreadPool::PostforkParent() { Postfork(); }

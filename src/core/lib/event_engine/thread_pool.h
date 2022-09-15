@@ -74,7 +74,7 @@ class ThreadPool final : public grpc_event_engine::experimental::Forkable {
    public:
     void Add();
     void Remove();
-    void BlockUntilThreadCount(int threads);
+    void BlockUntilThreadCount(int threads, const char* why);
 
    private:
     grpc_core::Mutex mu_;
