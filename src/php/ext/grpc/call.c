@@ -624,5 +624,10 @@ void grpc_init_call(TSRMLS_D) {
   INIT_CLASS_ENTRY(ce, "Grpc\\Call", call_methods);
   ce.create_object = create_wrapped_grpc_call;
   grpc_ce_call = zend_register_internal_class(&ce TSRMLS_CC);
+  zval property_channel_default_value;
+  ZVAL_NULL(&property_channel_default_value);
+  zend_string *property_channel_name = zend_string_init("channel", sizeof("channel") - 1, 1);
+  zend_declare_property_ex(grpc_ce_call, property_channel_name, &property_channel_default_value, ZEND_ACC_PROTECTED, NULL);
+  zend_string_release(property_channel_name);
   PHP_GRPC_INIT_HANDLER(wrapped_grpc_call, call_ce_handlers);
 }
