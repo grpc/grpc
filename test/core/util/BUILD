@@ -127,6 +127,7 @@ grpc_cc_library(
         "//:channel_args_preconditioning",
         "//:config",
         "//:env",
+        "//:error",
         "//:gpr",
         "//:gpr_atm",
         "//:grpc",
@@ -167,6 +168,7 @@ grpc_cc_library(
         "//:channel_args_preconditioning",
         "//:config",
         "//:env",
+        "//:error",
         "//:gpr",
         "//:gpr_atm",
         "//:grpc_security_base",
@@ -293,6 +295,7 @@ grpc_cc_library(
     ],
     deps = [
         "//:config",
+        "//:error",
         "//:gpr",
         "//:grpc",
         "//:grpc_backend_metric_data",

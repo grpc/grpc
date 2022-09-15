@@ -65,6 +65,7 @@ grpc_cc_library(
     deps = [
         "//:channel_args_preconditioning",
         "//:config",
+        "//:error",
         "//:gpr",
         "//:grpc",
         "//:httpcli",
@@ -113,6 +114,7 @@ grpc_cc_test(
     language = "C++",
     deps = [
         "cq_verifier",
+        "//:error",
         "//:gpr",
         "//:gpr_atm",
         "//:grpc",
@@ -149,6 +151,7 @@ grpc_cc_test(
     tags = ["no_windows"],
     deps = [
         "cq_verifier",
+        "//:error",
         "//:gpr",
         "//:grpc",
         "//:grpc_codegen",
@@ -174,6 +177,7 @@ grpc_cc_test(
         "cq_verifier",
         "//:debug_location",
         "//:default_event_engine",
+        "//:error",
         "//:gpr",
         "//:grpc",
         "//:grpc_codegen",
@@ -265,6 +269,7 @@ grpc_cc_test(
     language = "C++",
     deps = [
         "cq_verifier",
+        "//:error",
         "//:gpr",
         "//:grpc",
         "//:grpc_codegen",

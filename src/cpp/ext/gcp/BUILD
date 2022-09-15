@@ -73,6 +73,7 @@ grpc_cc_library(
     visibility = ["//test:__subpackages__"],
     deps = [
         "//:env",
+        "//:error",
         "//:gpr",
         "//:grpc_base",
         "//:grpc_public_hdrs",
