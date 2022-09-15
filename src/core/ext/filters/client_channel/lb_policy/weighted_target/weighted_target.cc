@@ -96,12 +96,8 @@ class WeightedTargetLbConfig : public LoadBalancingPolicy::Config {
   WeightedTargetLbConfig(const WeightedTargetLbConfig&) = delete;
   WeightedTargetLbConfig& operator=(const WeightedTargetLbConfig&) = delete;
 
-  WeightedTargetLbConfig(WeightedTargetLbConfig&& other) noexcept
-      : target_map_(std::move(other.target_map_)) {}
-  WeightedTargetLbConfig& operator=(WeightedTargetLbConfig&& other) noexcept {
-    target_map_ = std::move(other.target_map_);
-    return *this;
-  }
+  WeightedTargetLbConfig(WeightedTargetLbConfig&& other) = delete;
+  WeightedTargetLbConfig& operator=(WeightedTargetLbConfig&& other) = delete;
 
   absl::string_view name() const override { return kWeightedTarget; }
 
@@ -760,10 +756,8 @@ class WeightedTargetLbFactory : public LoadBalancingPolicyFactory {
           "configuration.  Please use loadBalancingConfig field of service "
           "config instead.");
     }
-    auto config = LoadFromJson<WeightedTargetLbConfig>(
+    return LoadRefCountedFromJson<WeightedTargetLbConfig>(
         json, JsonArgs(), "errors validating weighted_target LB policy config");
-    if (!config.ok()) return config.status();
-    return MakeRefCounted<WeightedTargetLbConfig>(std::move(*config));
   }
 };
 

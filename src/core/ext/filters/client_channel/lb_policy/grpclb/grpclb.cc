@@ -171,14 +171,8 @@ class GrpcLbConfig : public LoadBalancingPolicy::Config {
   GrpcLbConfig(const GrpcLbConfig&) = delete;
   GrpcLbConfig& operator=(const GrpcLbConfig&) = delete;
 
-  GrpcLbConfig(GrpcLbConfig&& other) noexcept
-      : child_policy_(std::move(other.child_policy_)),
-        service_name_(std::move(other.service_name_)) {}
-  GrpcLbConfig& operator=(GrpcLbConfig&& other) noexcept {
-    child_policy_ = std::move(other.child_policy_);
-    service_name_ = std::move(other.service_name_);
-    return *this;
-  }
+  GrpcLbConfig(GrpcLbConfig&& other) = delete;
+  GrpcLbConfig& operator=(GrpcLbConfig&& other) = delete;
 
   static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
     static const auto* loader =
@@ -1916,10 +1910,8 @@ class GrpcLbFactory : public LoadBalancingPolicyFactory {
 
   absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
   ParseLoadBalancingConfig(const Json& json) const override {
-    auto config = LoadFromJson<GrpcLbConfig>(
+    return LoadRefCountedFromJson<GrpcLbConfig>(
         json, JsonArgs(), "errors validating grpclb LB policy config");
-    if (!config.ok()) return config.status();
-    return MakeRefCounted<GrpcLbConfig>(std::move(*config));
   }
 };
 

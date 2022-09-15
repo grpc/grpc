@@ -32,6 +32,7 @@
 #include "absl/types/optional.h"
 
 #include "src/core/lib/gprpp/no_destruct.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_args.h"
@@ -595,6 +596,18 @@ absl::StatusOr<T> LoadFromJson(
   ErrorList error_list;
   T result{};
   json_detail::LoaderForType<T>()->LoadInto(json, args, &result, &error_list);
+  if (!error_list.ok()) return error_list.status(error_prefix);
+  return std::move(result);
+}
+
+template <typename T>
+absl::StatusOr<RefCountedPtr<T>> LoadRefCountedFromJson(
+    const Json& json, const JsonArgs& args = JsonArgs(),
+    absl::string_view error_prefix = "errors validating JSON") {
+  ErrorList error_list;
+  auto result = MakeRefCounted<T>();
+  json_detail::LoaderForType<T>()->LoadInto(json, args, result.get(),
+                                            &error_list);
   if (!error_list.ok()) return error_list.status(error_prefix);
   return std::move(result);
 }

@@ -130,15 +130,9 @@ class XdsClusterResolverLbConfig : public LoadBalancingPolicy::Config {
   XdsClusterResolverLbConfig& operator=(const XdsClusterResolverLbConfig&) =
       delete;
 
-  XdsClusterResolverLbConfig(XdsClusterResolverLbConfig&& other) noexcept
-      : discovery_mechanisms_(std::move(other.discovery_mechanisms_)),
-        xds_lb_policy_(std::move(other.xds_lb_policy_)) {}
+  XdsClusterResolverLbConfig(XdsClusterResolverLbConfig&& other) = delete;
   XdsClusterResolverLbConfig& operator=(
-      XdsClusterResolverLbConfig&& other) noexcept {
-    discovery_mechanisms_ = std::move(other.discovery_mechanisms_);
-    xds_lb_policy_ = std::move(other.xds_lb_policy_);
-    return *this;
-  }
+      XdsClusterResolverLbConfig&& other) = delete;
 
   absl::string_view name() const override { return kXdsClusterResolver; }
 
@@ -1244,11 +1238,9 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
         return true;
       }
     };
-    auto config = LoadFromJson<XdsClusterResolverLbConfig>(
+    return LoadRefCountedFromJson<XdsClusterResolverLbConfig>(
         json, XdsJsonArgs(),
         "errors validating xds_cluster_resolver LB policy config");
-    if (!config.ok()) return config.status();
-    return MakeRefCounted<XdsClusterResolverLbConfig>(std::move(*config));
   }
 
  private:

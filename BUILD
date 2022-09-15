@@ -7746,6 +7746,7 @@ grpc_cc_library(
         "json",
         "json_args",
         "no_destruct",
+        "ref_counted_ptr",
         "time",
     ],
 )

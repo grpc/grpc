@@ -89,12 +89,8 @@ class CdsLbConfig : public LoadBalancingPolicy::Config {
   CdsLbConfig(const CdsLbConfig&) = delete;
   CdsLbConfig& operator=(const CdsLbConfig&) = delete;
 
-  CdsLbConfig(CdsLbConfig&& other) noexcept
-      : cluster_(std::move(other.cluster_)) {}
-  CdsLbConfig& operator=(CdsLbConfig&& other) noexcept {
-    cluster_ = std::move(other.cluster_);
-    return *this;
-  }
+  CdsLbConfig(CdsLbConfig&& other) = delete;
+  CdsLbConfig& operator=(CdsLbConfig&& other) = delete;
 
   const std::string& cluster() const { return cluster_; }
   absl::string_view name() const override { return kCds; }
@@ -761,10 +757,8 @@ class CdsLbFactory : public LoadBalancingPolicyFactory {
           "field:loadBalancingPolicy error:cds policy requires configuration. "
           "Please use loadBalancingConfig field of service config instead.");
     }
-    auto config = LoadFromJson<CdsLbConfig>(
+    return LoadRefCountedFromJson<CdsLbConfig>(
         json, JsonArgs(), "errors validating cds LB policy config");
-    if (!config.ok()) return config.status();
-    return MakeRefCounted<CdsLbConfig>(std::move(*config));
   }
 };
 

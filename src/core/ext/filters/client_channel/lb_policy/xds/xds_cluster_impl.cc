@@ -149,22 +149,8 @@ class XdsClusterImplLbConfig : public LoadBalancingPolicy::Config {
   XdsClusterImplLbConfig(const XdsClusterImplLbConfig&) = delete;
   XdsClusterImplLbConfig& operator=(const XdsClusterImplLbConfig&) = delete;
 
-  XdsClusterImplLbConfig(XdsClusterImplLbConfig&& other) noexcept
-      : child_policy_(std::move(other.child_policy_)),
-        cluster_name_(std::move(other.cluster_name_)),
-        eds_service_name_(std::move(other.eds_service_name_)),
-        lrs_load_reporting_server_(std::move(other.lrs_load_reporting_server_)),
-        max_concurrent_requests_(other.max_concurrent_requests_),
-        drop_config_(std::move(other.drop_config_)) {}
-  XdsClusterImplLbConfig& operator=(XdsClusterImplLbConfig&& other) noexcept {
-    child_policy_ = std::move(other.child_policy_);
-    cluster_name_ = std::move(other.cluster_name_);
-    eds_service_name_ = std::move(other.eds_service_name_);
-    lrs_load_reporting_server_ = std::move(other.lrs_load_reporting_server_);
-    max_concurrent_requests_ = other.max_concurrent_requests_;
-    drop_config_ = std::move(other.drop_config_);
-    return *this;
-  }
+  XdsClusterImplLbConfig(XdsClusterImplLbConfig&& other) = delete;
+  XdsClusterImplLbConfig& operator=(XdsClusterImplLbConfig&& other) = delete;
 
   absl::string_view name() const override { return kXdsClusterImpl; }
 
@@ -813,11 +799,9 @@ class XdsClusterImplLbFactory : public LoadBalancingPolicyFactory {
           "configuration. Please use loadBalancingConfig field of service "
           "config instead.");
     }
-    auto config = LoadFromJson<XdsClusterImplLbConfig>(
+    return LoadRefCountedFromJson<XdsClusterImplLbConfig>(
         json, JsonArgs(),
         "errors validating xds_cluster_impl LB policy config");
-    if (!config.ok()) return config.status();
-    return MakeRefCounted<XdsClusterImplLbConfig>(std::move(*config));
   }
 };
 

@@ -97,14 +97,8 @@ class PriorityLbConfig : public LoadBalancingPolicy::Config {
   PriorityLbConfig(const PriorityLbConfig&) = delete;
   PriorityLbConfig& operator=(const PriorityLbConfig&) = delete;
 
-  PriorityLbConfig(PriorityLbConfig&& other) noexcept
-      : children_(std::move(other.children_)),
-        priorities_(std::move(other.priorities_)) {}
-  PriorityLbConfig& operator=(PriorityLbConfig&& other) noexcept {
-    children_ = std::move(other.children_);
-    priorities_ = std::move(other.priorities_);
-    return *this;
-  }
+  PriorityLbConfig(PriorityLbConfig&& other) = delete;
+  PriorityLbConfig& operator=(PriorityLbConfig&& other) = delete;
 
   absl::string_view name() const override { return kPriority; }
 
@@ -943,10 +937,8 @@ class PriorityLbFactory : public LoadBalancingPolicyFactory {
           "configuration. Please use loadBalancingConfig field of service "
           "config instead.");
     }
-    auto config = LoadFromJson<PriorityLbConfig>(
+    return LoadRefCountedFromJson<PriorityLbConfig>(
         json, JsonArgs(), "errors validating priority LB policy config");
-    if (!config.ok()) return config.status();
-    return MakeRefCounted<PriorityLbConfig>(std::move(*config));
   }
 };
 

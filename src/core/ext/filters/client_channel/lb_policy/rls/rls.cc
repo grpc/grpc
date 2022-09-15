@@ -159,26 +159,8 @@ class RlsLbConfig : public LoadBalancingPolicy::Config {
   RlsLbConfig(const RlsLbConfig&) = delete;
   RlsLbConfig& operator=(const RlsLbConfig&) = delete;
 
-  RlsLbConfig(RlsLbConfig&& other) noexcept
-      : route_lookup_config_(std::move(other.route_lookup_config_)),
-        rls_channel_service_config_(
-            std::move(other.rls_channel_service_config_)),
-        child_policy_config_(std::move(other.child_policy_config_)),
-        child_policy_config_target_field_name_(
-            std::move(other.child_policy_config_target_field_name_)),
-        default_child_policy_parsed_config_(
-            std::move(other.default_child_policy_parsed_config_)) {}
-
-  RlsLbConfig& operator=(RlsLbConfig&& other) noexcept {
-    route_lookup_config_ = std::move(other.route_lookup_config_);
-    rls_channel_service_config_ = std::move(other.rls_channel_service_config_);
-    child_policy_config_ = std::move(other.child_policy_config_);
-    child_policy_config_target_field_name_ =
-        std::move(other.child_policy_config_target_field_name_);
-    default_child_policy_parsed_config_ =
-        std::move(other.default_child_policy_parsed_config_);
-    return *this;
-  }
+  RlsLbConfig(RlsLbConfig&& other) = delete;
+  RlsLbConfig& operator=(RlsLbConfig&& other) = delete;
 
   absl::string_view name() const override { return kRls; }
 
@@ -2510,10 +2492,8 @@ class RlsLbFactory : public LoadBalancingPolicyFactory {
 
   absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
   ParseLoadBalancingConfig(const Json& json) const override {
-    auto config = LoadFromJson<RlsLbConfig>(
+    return LoadRefCountedFromJson<RlsLbConfig>(
         json, JsonArgs(), "errors validing RLS LB policy config");
-    if (!config.ok()) return config.status();
-    return MakeRefCounted<RlsLbConfig>(std::move(*config));
   }
 };
 

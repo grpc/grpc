@@ -89,13 +89,9 @@ class XdsClusterManagerLbConfig : public LoadBalancingPolicy::Config {
   XdsClusterManagerLbConfig& operator=(const XdsClusterManagerLbConfig&) =
       delete;
 
-  XdsClusterManagerLbConfig(XdsClusterManagerLbConfig&& other) noexcept
-      : cluster_map_(std::move(other.cluster_map_)) {}
+  XdsClusterManagerLbConfig(XdsClusterManagerLbConfig&& other) = delete;
   XdsClusterManagerLbConfig& operator=(
-      XdsClusterManagerLbConfig&& other) noexcept {
-    cluster_map_ = std::move(other.cluster_map_);
-    return *this;
-  }
+      XdsClusterManagerLbConfig&& other) = delete;
 
   absl::string_view name() const override { return kXdsClusterManager; }
 
@@ -717,11 +713,9 @@ class XdsClusterManagerLbFactory : public LoadBalancingPolicyFactory {
           "configuration.  Please use loadBalancingConfig field of service "
           "config instead.");
     }
-    auto config = LoadFromJson<XdsClusterManagerLbConfig>(
+    return LoadRefCountedFromJson<XdsClusterManagerLbConfig>(
         json, JsonArgs(),
         "errors validating xds_cluster_manager LB policy config");
-    if (!config.ok()) return config.status();
-    return MakeRefCounted<XdsClusterManagerLbConfig>(std::move(*config));
   }
 };
 
