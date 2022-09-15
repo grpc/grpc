@@ -89,7 +89,7 @@ const JsonLoaderInterface* RingHashConfig::JsonLoader(const JsonArgs&) {
   return loader;
 }
 
-void RingHashConfig::JsonPostLoad(const Json& json, const JsonArgs&,
+void RingHashConfig::JsonPostLoad(const Json&, const JsonArgs&,
                                   ErrorList* errors) {
   {
     ScopedField field(errors, ".min_ring_size");
