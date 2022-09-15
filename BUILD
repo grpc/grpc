@@ -1830,12 +1830,12 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "handshaker_factory",
+    external_deps = [
+        "absl/types:variant",
+    ],
     language = "c++",
     public_hdrs = [
         "src/core/lib/transport/handshaker_factory.h",
-    ],
-    external_deps = [
-        "absl/types:variant",
     ],
     deps = [
         "channel_args",
@@ -1849,12 +1849,12 @@ grpc_cc_library(
     srcs = [
         "src/core/lib/transport/handshaker_registry.cc",
     ],
+    external_deps = [
+        "absl/types:variant",
+    ],
     language = "c++",
     public_hdrs = [
         "src/core/lib/transport/handshaker_registry.h",
-    ],
-    external_deps = [
-        "absl/types:variant",
     ],
     deps = [
         "channel_args",
