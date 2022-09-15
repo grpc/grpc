@@ -24,6 +24,7 @@
 #include "gtest/gtest.h"
 
 #include <grpc/event_engine/memory_allocator.h>
+#include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/promise/activity.h"
@@ -155,6 +156,7 @@ TEST(PipeTest, CanSeeClosedOnReceive) {
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
+  gpr_log_verbosity_init();
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

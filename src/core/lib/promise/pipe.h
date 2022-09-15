@@ -85,18 +85,20 @@ class Center {
   Center() {
     send_refs_ = 1;
     recv_refs_ = 1;
-    has_value_ = false;
+    value_state_ = ValueState::kEmpty;
   }
 
   // Add one ref to the send side of this object, and return this.
   Center* RefSend() {
     send_refs_++;
+    GPR_ASSERT(send_refs_ != 0);
     return this;
   }
 
   // Add one ref to the recv side of this object, and return this.
   Center* RefRecv() {
     recv_refs_++;
+    GPR_ASSERT(recv_refs_ != 0);
     return this;
   }
 
@@ -126,7 +128,7 @@ class Center {
       on_empty_.Wake();
       if (0 == send_refs_) {
         this->~Center();
-      } else if (has_value_) {
+      } else if (value_state_ == ValueState::kReady) {
         ResetValue();
       }
     }
@@ -139,8 +141,8 @@ class Center {
   Poll<bool> Push(T* value) {
     GPR_DEBUG_ASSERT(send_refs_ != 0);
     if (recv_refs_ == 0) return false;
-    if (has_value_) return on_empty_.pending();
-    has_value_ = true;
+    if (value_state_ != ValueState::kEmpty) return on_empty_.pending();
+    value_state_ = ValueState::kReady;
     value_ = std::move(*value);
     on_full_.Wake();
     return true;
@@ -148,8 +150,8 @@ class Center {
 
   Poll<bool> PollAck() {
     GPR_DEBUG_ASSERT(send_refs_ != 0);
-    if (recv_refs_ == 0) return false;
-    if (has_value_) return on_empty_.pending();
+    if (recv_refs_ == 0) return value_state_ == ValueState::kAcked;
+    if (value_state_ != ValueState::kAcked) return on_empty_.pending();
     return true;
   }
 
@@ -159,25 +161,32 @@ class Center {
   // Return nullopt if the send end is closed and no value had been pushed.
   Poll<NextResult<T>> Next() {
     GPR_DEBUG_ASSERT(recv_refs_ != 0);
-    if (!has_value_) {
+    if (value_state_ != ValueState::kReady) {
       if (send_refs_ == 0) return NextResult<T>(nullptr);
       return on_full_.pending();
     }
-    return NextResult<T>(this);
+    return NextResult<T>(RefRecv());
   }
 
  private:
   friend class NextResult<T>;
   void AckNext() {
-    has_value_ = false;
+    GPR_DEBUG_ASSERT(value_state_ == ValueState::kReady);
+    value_state_ = ValueState::kAcked;
     on_empty_.Wake();
+    UnrefRecv();
   }
   void ResetValue() {
     // Fancy dance to move out of value in the off chance that we reclaim some
     // memory earlier.
     [](T) {}(std::move(value_));
-    has_value_ = false;
+    value_state_ = ValueState::kEmpty;
   }
+  enum class ValueState : uint8_t {
+    kEmpty,
+    kReady,
+    kAcked,
+  };
   T value_;
   // Number of sending objects.
   // 0 => send is closed.
@@ -185,10 +194,10 @@ class Center {
   uint8_t send_refs_ : 2;
   // Number of receiving objects.
   // 0 => recv is closed.
-  // 1 ref each for PipeReceiver and Next.
+  // 1 ref each for PipeReceiver, Next, and NextResult.
   uint8_t recv_refs_ : 2;
   // True iff there is a value in the pipe.
-  bool has_value_ : 1;
+  ValueState value_state_ : 2;
   IntraActivityWaiter on_empty_;
   IntraActivityWaiter on_full_;
 };
@@ -286,6 +295,8 @@ class Push {
   }
 
   Poll<bool> operator()() {
+    gpr_log(GPR_INFO, "PUSH: %p center=%p value=%s", this, center_,
+            push_.has_value() ? "true" : "false");
     if (push_.has_value()) {
       auto r = center_->Push(&*push_);
       if (auto* ok = absl::get_if<bool>(&r)) {
@@ -295,6 +306,7 @@ class Push {
         return Pending{};
       }
     }
+    gpr_log(GPR_INFO, "PUSH: %p center=%p pollack", this, center_);
     GPR_DEBUG_ASSERT(!push_.has_value());
     return center_->PollAck();
   }
