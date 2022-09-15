@@ -124,7 +124,6 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//test/core/event_engine/fuzzing_event_engine",
-        "//test/core/event_engine/test_suite:executor",
         "//test/core/event_engine/test_suite:timer",
     ],
 )
