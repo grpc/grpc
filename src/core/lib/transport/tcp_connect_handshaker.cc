@@ -245,8 +245,8 @@ class TCPConnectHandshakerFactory : public HandshakerFactory {
 }  // namespace
 
 void RegisterTCPConnectHandshaker(CoreConfiguration::Builder* builder) {
-  builder->handshaker_registry()->RegisterHandshakerFactory(HANDSHAKER_CLIENT,
-      absl::make_unique<TCPConnectHandshakerFactory>());
+  builder->handshaker_registry()->RegisterHandshakerFactory(
+      HANDSHAKER_CLIENT, absl::make_unique<TCPConnectHandshakerFactory>());
 }
 
 }  // namespace grpc_core

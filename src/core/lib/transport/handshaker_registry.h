@@ -41,7 +41,7 @@ class HandshakerRegistry {
   class Builder {
    public:
     /// Registers a new handshaker factory.  Takes ownership.
-    /// The priority of the handshaker will be used to order the handshakers 
+    /// The priority of the handshaker will be used to order the handshakers
     /// in the list.
     void RegisterHandshakerFactory(HandshakerType handshaker_type,
                                    std::unique_ptr<HandshakerFactory> factory);

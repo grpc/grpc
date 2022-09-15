@@ -38,18 +38,18 @@ namespace grpc_core {
 class HandshakeManager;
 
 // Enum representing the priority of the client handshakers.
-// The order of the client handshakers is decided by the priority. 
+// The order of the client handshakers is decided by the priority.
 // For example kPreTCPConnect handshakers are called before kTCPConnect and so
 // on.
 enum class HandshakerClientPriority : int {
   kPreTCPConnect,
   kTCPConnect,
-  kHTTPConnect, 
+  kHTTPConnect,
   kSecurity,
 };
 
 // Enum representing the priority of the server handshakers.
-// The order of the server handshakers is decided by the priority. 
+// The order of the server handshakers is decided by the priority.
 // For example kReadHeadSecurity handshakers are called before kSecurity and so
 // on.
 enum class HandshakerServerPriority : int {
@@ -57,8 +57,8 @@ enum class HandshakerServerPriority : int {
   kSecurity,
 };
 
-using HandshakerPriority = absl::variant<HandshakerClientPriority, 
-HandshakerServerPriority>;
+using HandshakerPriority =
+    absl::variant<HandshakerClientPriority, HandshakerServerPriority>;
 
 class HandshakerFactory {
  public:
@@ -66,7 +66,7 @@ class HandshakerFactory {
                               grpc_pollset_set* interested_parties,
                               HandshakeManager* handshake_mgr) = 0;
   // Return the priority associated with the handshaker.
-  // The priority can be either HandshakerClientPriority or 
+  // The priority can be either HandshakerClientPriority or
   // HandshakerServerPriority depending on the type of handshaker.
   virtual HandshakerPriority Priority() = 0;
   virtual ~HandshakerFactory() = default;
