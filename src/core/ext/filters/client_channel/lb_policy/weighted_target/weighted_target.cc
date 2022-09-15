@@ -105,7 +105,7 @@ class WeightedTargetLb : public LoadBalancingPolicy {
 
   absl::string_view name() const override { return kWeightedTarget; }
 
-  void UpdateLocked(UpdateArgs args) override;
+  absl::Status UpdateLocked(UpdateArgs args) override;
   void ResetBackoffLocked() override;
 
  private:
@@ -149,10 +149,10 @@ class WeightedTargetLb : public LoadBalancingPolicy {
 
     void Orphan() override;
 
-    void UpdateLocked(const WeightedTargetLbConfig::ChildConfig& config,
-                      absl::StatusOr<ServerAddressList> addresses,
-                      const std::string& resolution_note,
-                      const ChannelArgs& args);
+    absl::Status UpdateLocked(const WeightedTargetLbConfig::ChildConfig& config,
+                              absl::StatusOr<ServerAddressList> addresses,
+                              const std::string& resolution_note,
+                              const ChannelArgs& args);
     void ResetBackoffLocked();
     void DeactivateLocked();
 
@@ -301,8 +301,8 @@ void WeightedTargetLb::ResetBackoffLocked() {
   for (auto& p : targets_) p.second->ResetBackoffLocked();
 }
 
-void WeightedTargetLb::UpdateLocked(UpdateArgs args) {
-  if (shutting_down_) return;
+absl::Status WeightedTargetLb::UpdateLocked(UpdateArgs args) {
+  if (shutting_down_) return absl::OkStatus();
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_weighted_target_trace)) {
     gpr_log(GPR_INFO, "[weighted_target_lb %p] Received update", this);
   }
@@ -320,6 +320,7 @@ void WeightedTargetLb::UpdateLocked(UpdateArgs args) {
   // Update all children.
   absl::StatusOr<HierarchicalAddressMap> address_map =
       MakeHierarchicalAddressMap(args.addresses);
+  std::vector<std::string> errors;
   for (const auto& p : config_->target_map()) {
     const std::string& name = p.first;
     const WeightedTargetLbConfig::ChildConfig& config = p.second;
@@ -335,8 +336,12 @@ void WeightedTargetLb::UpdateLocked(UpdateArgs args) {
     } else {
       addresses = address_map.status();
     }
-    target->UpdateLocked(config, std::move(addresses), args.resolution_note,
-                         args.args);
+    absl::Status status = target->UpdateLocked(config, std::move(addresses),
+                                               args.resolution_note, args.args);
+    if (!status.ok()) {
+      errors.emplace_back(
+          absl::StrCat("child ", name, ": ", status.ToString()));
+    }
   }
   update_in_progress_ = false;
   if (config_->target_map().empty()) {
@@ -345,9 +350,15 @@ void WeightedTargetLb::UpdateLocked(UpdateArgs args) {
     channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE, status,
         absl::make_unique<TransientFailurePicker>(status));
-    return;
+    return absl::OkStatus();
   }
   UpdateStateLocked();
+  // Return status.
+  if (!errors.empty()) {
+    return absl::UnavailableError(absl::StrCat(
+        "errors from children: [", absl::StrJoin(errors, "; "), "]"));
+  }
+  return absl::OkStatus();
 }
 
 void WeightedTargetLb::UpdateStateLocked() {
@@ -553,11 +564,11 @@ WeightedTargetLb::WeightedChild::CreateChildPolicyLocked(
   return lb_policy;
 }
 
-void WeightedTargetLb::WeightedChild::UpdateLocked(
+absl::Status WeightedTargetLb::WeightedChild::UpdateLocked(
     const WeightedTargetLbConfig::ChildConfig& config,
     absl::StatusOr<ServerAddressList> addresses,
     const std::string& resolution_note, const ChannelArgs& args) {
-  if (weighted_target_policy_->shutting_down_) return;
+  if (weighted_target_policy_->shutting_down_) return absl::OkStatus();
   // Update child weight.
   weight_ = config.weight;
   // Reactivate if needed.
@@ -587,7 +598,7 @@ void WeightedTargetLb::WeightedChild::UpdateLocked(
             weighted_target_policy_.get(), this, name_.c_str(),
             child_policy_.get());
   }
-  child_policy_->UpdateLocked(std::move(update_args));
+  return child_policy_->UpdateLocked(std::move(update_args));
 }
 
 void WeightedTargetLb::WeightedChild::ResetBackoffLocked() {

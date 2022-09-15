@@ -191,7 +191,7 @@ class XdsClusterImplLb : public LoadBalancingPolicy {
 
   absl::string_view name() const override { return kXdsClusterImpl; }
 
-  void UpdateLocked(UpdateArgs args) override;
+  absl::Status UpdateLocked(UpdateArgs args) override;
   void ExitIdleLocked() override;
   void ResetBackoffLocked() override;
 
@@ -269,9 +269,9 @@ class XdsClusterImplLb : public LoadBalancingPolicy {
 
   OrphanablePtr<LoadBalancingPolicy> CreateChildPolicyLocked(
       const ChannelArgs& args);
-  void UpdateChildPolicyLocked(absl::StatusOr<ServerAddressList> addresses,
-                               std::string resolution_note,
-                               const ChannelArgs& args);
+  absl::Status UpdateChildPolicyLocked(
+      absl::StatusOr<ServerAddressList> addresses, std::string resolution_note,
+      const ChannelArgs& args);
 
   void MaybeUpdatePickerLocked();
 
@@ -483,7 +483,7 @@ void XdsClusterImplLb::ResetBackoffLocked() {
   if (child_policy_ != nullptr) child_policy_->ResetBackoffLocked();
 }
 
-void XdsClusterImplLb::UpdateLocked(UpdateArgs args) {
+absl::Status XdsClusterImplLb::UpdateLocked(UpdateArgs args) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_cluster_impl_lb_trace)) {
     gpr_log(GPR_INFO, "[xds_cluster_impl_lb %p] Received update", this);
   }
@@ -525,8 +525,8 @@ void XdsClusterImplLb::UpdateLocked(UpdateArgs args) {
     MaybeUpdatePickerLocked();
   }
   // Update child policy.
-  UpdateChildPolicyLocked(std::move(args.addresses),
-                          std::move(args.resolution_note), args.args);
+  return UpdateChildPolicyLocked(std::move(args.addresses),
+                                 std::move(args.resolution_note), args.args);
 }
 
 void XdsClusterImplLb::MaybeUpdatePickerLocked() {
@@ -582,7 +582,7 @@ OrphanablePtr<LoadBalancingPolicy> XdsClusterImplLb::CreateChildPolicyLocked(
   return lb_policy;
 }
 
-void XdsClusterImplLb::UpdateChildPolicyLocked(
+absl::Status XdsClusterImplLb::UpdateChildPolicyLocked(
     absl::StatusOr<ServerAddressList> addresses, std::string resolution_note,
     const ChannelArgs& args) {
   // Create policy if needed.
@@ -602,7 +602,7 @@ void XdsClusterImplLb::UpdateChildPolicyLocked(
             "[xds_cluster_impl_lb %p] Updating child policy handler %p", this,
             child_policy_.get());
   }
-  child_policy_->UpdateLocked(std::move(update_args));
+  return child_policy_->UpdateLocked(std::move(update_args));
 }
 
 //

@@ -16,31 +16,24 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#ifndef GRPCPP_IMPL_CALL_HOOK_H
+#define GRPCPP_IMPL_CALL_HOOK_H
 
-#ifdef GPR_POSIX_ENV
+namespace grpc {
 
-#include <stdlib.h>
+namespace internal {
+class CallOpSetInterface;
+class Call;
 
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
+/// This is an interface that Channel and Server implement to allow them to hook
+/// performing ops.
+class CallHook {
+ public:
+  virtual ~CallHook() {}
+  virtual void PerformOpsOnCall(CallOpSetInterface* ops, Call* call) = 0;
+};
+}  // namespace internal
 
-#include "src/core/lib/gpr/env.h"
-#include "src/core/lib/gpr/string.h"
+}  // namespace grpc
 
-char* gpr_getenv(const char* name) {
-  char* result = getenv(name);
-  return result == nullptr ? result : gpr_strdup(result);
-}
-
-void gpr_setenv(const char* name, const char* value) {
-  int res = setenv(name, value, 1);
-  GPR_ASSERT(res == 0);
-}
-
-void gpr_unsetenv(const char* name) {
-  int res = unsetenv(name);
-  GPR_ASSERT(res == 0);
-}
-
-#endif /* GPR_POSIX_ENV */
+#endif  // GRPCPP_IMPL_CALL_HOOK_H

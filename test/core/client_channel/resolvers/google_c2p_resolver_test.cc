@@ -37,7 +37,7 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 
-#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "test/core/util/fake_udp_and_tcp_server.h"
 #include "test/core/util/port.h"
@@ -105,7 +105,7 @@ TEST(DestroyGoogleC2pChannelWithActiveConnectStressTest,
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
-  gpr_setenv("GRPC_EXPERIMENTAL_GOOGLE_C2P_RESOLVER", "true");
+  grpc_core::SetEnv("GRPC_EXPERIMENTAL_GOOGLE_C2P_RESOLVER", "true");
   ::testing::InitGoogleTest(&argc, argv);
   grpc_init();
   auto result = RUN_ALL_TESTS();
