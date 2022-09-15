@@ -13,7 +13,7 @@
 // limitations under the License.
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/event_engine/workqueue.h"
+#include "src/core/lib/event_engine/work_queue.h"
 
 #include <cstdint>
 #include <memory>

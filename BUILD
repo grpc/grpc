@@ -2434,10 +2434,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "event_engine_work_queue",
     srcs = [
-        "src/core/lib/event_engine/workqueue.cc",
+        "src/core/lib/event_engine/work_queue.cc",
     ],
     hdrs = [
-        "src/core/lib/event_engine/workqueue.h",
+        "src/core/lib/event_engine/work_queue.h",
     ],
     external_deps = [
         "absl/base:core_headers",

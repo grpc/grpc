@@ -10764,9 +10764,9 @@ targets:
   language: c++
   headers:
   - src/core/lib/event_engine/common_closures.h
-  - src/core/lib/event_engine/workqueue.h
+  - src/core/lib/event_engine/work_queue.h
   src:
-  - src/core/lib/event_engine/workqueue.cc
+  - src/core/lib/event_engine/work_queue.cc
   - test/core/event_engine/work_queue_test.cc
   deps:
   - grpc_test_util_unsecure
