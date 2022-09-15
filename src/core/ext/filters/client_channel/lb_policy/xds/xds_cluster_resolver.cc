@@ -131,8 +131,8 @@ class XdsClusterResolverLbConfig : public LoadBalancingPolicy::Config {
       delete;
 
   XdsClusterResolverLbConfig(XdsClusterResolverLbConfig&& other) = delete;
-  XdsClusterResolverLbConfig& operator=(
-      XdsClusterResolverLbConfig&& other) = delete;
+  XdsClusterResolverLbConfig& operator=(XdsClusterResolverLbConfig&& other) =
+      delete;
 
   absl::string_view name() const override { return kXdsClusterResolver; }
 
