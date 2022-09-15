@@ -74,8 +74,7 @@ class ThreadPool final : public grpc_event_engine::experimental::Forkable {
    public:
     void Add();
     void Remove();
-    // Block until all threads have stopped.
-    void Quiesce();
+    void BlockUntilThreadCount(int threads);
 
    private:
     grpc_core::Mutex mu_;

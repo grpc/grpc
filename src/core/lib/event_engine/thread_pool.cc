@@ -28,16 +28,24 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gprpp/thd.h"
 
 namespace grpc_event_engine {
 namespace experimental {
+
+namespace {
+// TODO(drfloob): Remove this, and replace it with the WorkQueue* for the
+// current thread (with nullptr indicating not a threadpool thread).
+GPR_THREAD_LOCAL(bool) g_threadpool_thread;
+}  // namespace
 
 void ThreadPool::StartThread(StatePtr state) {
   state->thread_count.Add();
   grpc_core::Thread(
       "event_engine",
       [](void* arg) {
+        g_threadpool_thread = true;
         ThreadFunc(*std::unique_ptr<StatePtr>(static_cast<StatePtr*>(arg)));
       },
       new StatePtr(state), nullptr,
@@ -85,7 +93,10 @@ ThreadPool::ThreadPool(int reserve_threads)
   }
 }
 
-ThreadPool::~ThreadPool() { state_->queue.SetShutdown(); }
+ThreadPool::~ThreadPool() {
+  state_->queue.SetShutdown();
+  state_->thread_count.BlockUntilThreadCount(g_threadpool_thread ? 1 : 0);
+}
 
 void ThreadPool::Add(absl::AnyInvocable<void()> callback) {
   if (state_->queue.Add(std::move(callback))) {
@@ -132,16 +143,16 @@ void ThreadPool::ThreadCount::Remove() {
   }
 }
 
-void ThreadPool::ThreadCount::Quiesce() {
+void ThreadPool::ThreadCount::BlockUntilThreadCount(int threads) {
   grpc_core::MutexLock lock(&mu_);
   auto last_log = absl::Now();
-  while (threads_ > 0) {
+  while (threads_ > threads) {
     // Wait for all threads to exit.
     // At least once every three seconds (but no faster than once per second in
     // the event of spurious wakeups) log a message indicating we're waiting to
     // fork.
     cv_.WaitWithTimeout(&mu_, absl::Seconds(3));
-    if (threads_ > 0 && absl::Now() - last_log > absl::Seconds(1)) {
+    if (threads_ > threads && absl::Now() - last_log > absl::Seconds(1)) {
       gpr_log(GPR_ERROR, "Waiting for thread pool to idle before forking");
       last_log = absl::Now();
     }
@@ -150,7 +161,7 @@ void ThreadPool::ThreadCount::Quiesce() {
 
 void ThreadPool::PrepareFork() {
   state_->queue.SetForking();
-  state_->thread_count.Quiesce();
+  state_->thread_count.BlockUntilThreadCount(0);
 }
 
 void ThreadPool::PostforkParent() { Postfork(); }

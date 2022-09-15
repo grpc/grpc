@@ -2486,6 +2486,7 @@ grpc_cc_library(
     deps = [
         "forkable",
         "gpr",
+        "gpr_tls",
     ],
 )
 
