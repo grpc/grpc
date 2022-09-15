@@ -393,8 +393,9 @@ class EventEngine {
   /// Wait for all pending tasks to complete.
   ///
   /// This only waits for closures that were handed to \a Run, timers scheduled
-  /// using \a RunAt are not checked.
-  virtual absl::Status WaitForPendingTasks(Duration timeout) = 0;
+  /// using \a RunAt are not checked. If all tasks are not finished before the
+  /// timeout, the process will abort.
+  virtual void WaitForPendingTasksOrDie(Duration timeout) = 0;
   /// Synonymous with scheduling an alarm to run after duration \a when.
   ///
   /// The \a closure will execute when time \a when arrives unless it has been

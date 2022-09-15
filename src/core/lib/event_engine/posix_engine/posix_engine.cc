@@ -96,18 +96,17 @@ void PosixEventEngine::Run(EventEngine::Closure* closure) {
   executor_.Run(closure);
 }
 
-absl::Status PosixEventEngine::WaitForPendingTasks(Duration timeout) {
+void PosixEventEngine::WaitForPendingTasksOrDie(Duration timeout) {
+  // TODO(hork) backoff calculation
   auto deadline = ToTimestamp(timer_manager_.Now(), timeout);
   while (executor_.IsBusy()) {
     grpc_core::Duration time_remaining = deadline - timer_manager_.Now();
     if (time_remaining.millis() < 0) {
-      return absl::DeadlineExceededError(
-          "Timed out waiting for executor to become idle.");
+      GPR_ASSERT(false && "Timeout waiting for tasks to complete");
     }
     absl::SleepFor(absl::Milliseconds(
         std::min(static_cast<int64_t>(33), time_remaining.millis())));
   }
-  return absl::OkStatus();
 }
 
 EventEngine::TaskHandle PosixEventEngine::RunAfterInternal(

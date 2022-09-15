@@ -15,6 +15,8 @@
 
 #include <chrono>
 
+#include <gtest/gtest.h>
+
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/event_engine/common_closures.h"
@@ -46,23 +48,21 @@ TEST_F(ExecutorTest, RunsClosure) {
   ASSERT_TRUE(done.Get());
 }
 
-TEST_F(ExecutorTest, WaitForPendingReturnsImmediatelyWhenIdle) {
+TEST_F(ExecutorTest, WaitForPendingSucceedsWhenIdle) {
   auto engine = this->NewEventEngine();
-  auto status = engine->WaitForPendingTasks(EventEngine::Duration::zero());
-  ASSERT_TRUE(status.ok());
+  engine->WaitForPendingTasksOrDie(EventEngine::Duration::zero());
 }
 
 TEST_F(ExecutorTest, WaitForPendingTimesOut) {
+  GTEST_FLAG_SET(death_test_style, "threadsafe");
   auto engine = this->NewEventEngine();
   Promise<bool> closure_started{false};
   engine->Run([&] {
     closure_started.Set(true);
     absl::SleepFor(absl::Seconds(10));
-    gpr_log(GPR_DEBUG, "DO NOT SUBMIT: cb done");
   });
   ASSERT_TRUE(closure_started.Get());
-  auto status = engine->WaitForPendingTasks(10ms);
-  ASSERT_TRUE(absl::IsDeadlineExceeded(status));
+  ASSERT_DEATH({ engine->WaitForPendingTasksOrDie(10ms); }, "");
 }
 
 TEST_F(ExecutorTest, WaitForPendingWorks) {
@@ -76,12 +76,7 @@ TEST_F(ExecutorTest, WaitForPendingWorks) {
   });
   // wait for the closure to begin its execution
   ASSERT_TRUE(start_waiting.Get());
-  // ensure a zero wait fails
-  auto status = engine->WaitForPendingTasks(EventEngine::Duration::zero());
-  ASSERT_FALSE(status.ok());
-  ASSERT_TRUE(absl::IsDeadlineExceeded(status));
   // intruct the closure to finish and wait for it to complete
   resume_closure.Set(true);
-  status = engine->WaitForPendingTasks(5s);
-  ASSERT_TRUE(status.ok());
+  engine->WaitForPendingTasksOrDie(5s);
 }
