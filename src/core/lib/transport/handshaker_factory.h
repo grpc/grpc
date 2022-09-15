@@ -21,6 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/types/variant.h"
+
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 
@@ -35,18 +37,37 @@ namespace grpc_core {
 
 class HandshakeManager;
 
-enum class HandshakerPriority : int {
+// Enum representing the priority of the client handshakers.
+// The order of the client handshakers is decided by the priority. 
+// For example kPreTCPConnect handshakers are called before kTCPConnect and so
+// on.
+enum class HandshakerClientPriority : int {
   kPreTCPConnect,
   kTCPConnect,
   kHTTPConnect, 
   kSecurity,
 };
 
+// Enum representing the priority of the server handshakers.
+// The order of the server handshakers is decided by the priority. 
+// For example kReadHeadSecurity handshakers are called before kSecurity and so
+// on.
+enum class HandshakerServerPriority : int {
+  kReadHeadSecurity,
+  kSecurity,
+};
+
+using HandshakerPriority = absl::variant<HandshakerClientPriority, 
+HandshakerServerPriority>;
+
 class HandshakerFactory {
  public:
   virtual void AddHandshakers(const ChannelArgs& args,
                               grpc_pollset_set* interested_parties,
                               HandshakeManager* handshake_mgr) = 0;
+  // Return the priority associated with the handshaker.
+  // The priority can be either HandshakerClientPriority or 
+  // HandshakerServerPriority depending on the type of handshaker.
   virtual HandshakerPriority Priority() = 0;
   virtual ~HandshakerFactory() = default;
 };

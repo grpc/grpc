@@ -18,6 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/types/variant.h"
+
 #include "src/core/lib/transport/handshaker_registry.h"
 
 #include <stddef.h>
@@ -31,9 +33,21 @@ void HandshakerRegistry::Builder::RegisterHandshakerFactory(
     HandshakerType handshaker_type,
     std::unique_ptr<HandshakerFactory> factory) {
   auto& vec = factories_[handshaker_type];
+  auto priority = factory->Priority();
+  if (handshaker_type == HANDSHAKER_CLIENT) {
+    // The priority for client handshakers should be of the 
+    // type HandshakerClientPriority.
+    GPR_ASSERT(absl::get_if<HandshakerClientPriority>(&priority) !=
+               nullptr);
+  } else if (handshaker_type == HANDSHAKER_SERVER) {
+    // Similarly for Server handshakers, the priority should be of the type
+    // HandshakerServerPriority.
+    GPR_ASSERT(absl::get_if<HandshakerServerPriority>(&priority) !=
+               nullptr);
+  }
   auto where = vec.empty() ? vec.begin() : vec.end();
   for (auto iter = vec.begin(); iter != vec.end(); ++iter) {
-    if (factory->Priority() < iter->get()->Priority()) {
+    if (priority < iter->get()->Priority()) {
       where = iter;
       break;
     }

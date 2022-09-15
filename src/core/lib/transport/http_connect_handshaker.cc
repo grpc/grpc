@@ -388,7 +388,7 @@ class HttpConnectHandshakerFactory : public HandshakerFactory {
     handshake_mgr->Add(MakeRefCounted<HttpConnectHandshaker>());
   }
   HandshakerPriority Priority() override {
-    return HandshakerPriority::kHTTPConnect;
+    return HandshakerPriority{HandshakerClientPriority::kHTTPConnect};
   }
   ~HttpConnectHandshakerFactory() override = default;
 };
@@ -396,8 +396,8 @@ class HttpConnectHandshakerFactory : public HandshakerFactory {
 }  // namespace
 
 void RegisterHttpConnectHandshaker(CoreConfiguration::Builder* builder) {
-  builder->handshaker_registry()->RegisterHandshakerFactory(HANDSHAKER_CLIENT,
-      absl::make_unique<HttpConnectHandshakerFactory>());
+  builder->handshaker_registry()->RegisterHandshakerFactory(
+      HANDSHAKER_CLIENT, absl::make_unique<HttpConnectHandshakerFactory>());
 }
 
 }  // namespace grpc_core

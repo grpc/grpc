@@ -237,7 +237,7 @@ class TCPConnectHandshakerFactory : public HandshakerFactory {
         MakeRefCounted<TCPConnectHandshaker>(interested_parties));
   }
   HandshakerPriority Priority() override {
-    return HandshakerPriority::kTCPConnect;
+    return HandshakerClientPriority::kTCPConnect;
   }
   ~TCPConnectHandshakerFactory() override = default;
 };

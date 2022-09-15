@@ -1834,6 +1834,9 @@ grpc_cc_library(
     public_hdrs = [
         "src/core/lib/transport/handshaker_factory.h",
     ],
+    external_deps = [
+        "absl/types:variant",
+    ],
     deps = [
         "channel_args",
         "gpr_platform",
@@ -1849,6 +1852,9 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = [
         "src/core/lib/transport/handshaker_registry.h",
+    ],
+    external_deps = [
+        "absl/types:variant",
     ],
     deps = [
         "channel_args",
