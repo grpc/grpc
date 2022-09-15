@@ -19680,7 +19680,7 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(work_queue_test
   src/core/lib/event_engine/work_queue.cc
-  test/core/event_engine/work_queue_test.cc
+  test/core/event_engine/work_queue/work_queue_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
