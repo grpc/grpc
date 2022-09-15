@@ -138,9 +138,7 @@ void ThreadPool::ThreadCount::Add() {
 void ThreadPool::ThreadCount::Remove() {
   grpc_core::MutexLock lock(&mu_);
   --threads_;
-  if (threads_ == 0) {
-    cv_.Signal();
-  }
+  cv_.Signal();
 }
 
 void ThreadPool::ThreadCount::BlockUntilThreadCount(int threads) {
