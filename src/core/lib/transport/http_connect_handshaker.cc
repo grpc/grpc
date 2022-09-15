@@ -388,7 +388,7 @@ class HttpConnectHandshakerFactory : public HandshakerFactory {
     handshake_mgr->Add(MakeRefCounted<HttpConnectHandshaker>());
   }
   HandshakerPriority Priority() override {
-    return HandshakerPriority{HandshakerClientPriority::kHTTPConnect};
+    return HandshakerClientPriority::kHTTPConnect;
   }
   ~HttpConnectHandshakerFactory() override = default;
 };
