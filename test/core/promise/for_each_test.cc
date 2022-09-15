@@ -76,7 +76,6 @@ TEST(ForEachTest, SendThriceWithPipe) {
       MakeScopedArena(1024, g_memory_allocator));
   Mock::VerifyAndClearExpectations(&on_done);
   EXPECT_EQ(num_received, 3);
-  new int;
 }
 
 }  // namespace grpc_core
