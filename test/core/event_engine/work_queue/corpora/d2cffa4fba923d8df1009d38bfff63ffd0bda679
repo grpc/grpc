@@ -1,0 +1,58 @@
+actions {
+  add {
+    key: 10
+  }
+}
+actions {
+  add {
+    type: CALLBACK_TYPE_ANY_INVOCABLE
+  }
+}
+actions {
+  add {
+    type: CALLBACK_TYPE_ANY_INVOCABLE
+    key: 4
+  }
+}
+actions {
+  add {
+    type: CALLBACK_TYPE_ANY_INVOCABLE
+    key: 10
+  }
+}
+actions {
+  add {
+    key: 10
+  }
+}
+actions {
+  add {
+    type: CALLBACK_TYPE_ANY_INVOCABLE
+    key: 10
+  }
+}
+actions {
+  add {
+    type: CALLBACK_TYPE_ANY_INVOCABLE
+  }
+}
+actions {
+  add {
+    key: 8257536
+  }
+}
+actions {
+  add {
+    key: 10
+  }
+}
+actions {
+  add {
+    key: 8257536
+  }
+}
+actions {
+  add {
+    key: 10
+  }
+}

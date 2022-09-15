@@ -86,19 +86,6 @@ grpc_cc_test(
     ],
 )
 
-grpc_cc_test(
-    name = "work_queue_test",
-    srcs = ["work_queue_test.cc"],
-    external_deps = ["gtest"],
-    deps = [
-        "//:common_event_engine_closures",
-        "//:event_engine_work_queue",
-        "//:exec_ctx",
-        "//:gpr_platform",
-        "//test/core/util:grpc_test_util_unsecure",
-    ],
-)
-
 grpc_cc_library(
     name = "test_init",
     srcs = ["test_init.cc"],

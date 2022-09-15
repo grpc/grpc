@@ -1,0 +1,53 @@
+actions {
+  add {
+    key: 4
+  }
+}
+actions {
+  add {
+    key: 10
+  }
+}
+actions {
+  add {
+    type: CALLBACK_TYPE_ANY_INVOCABLE
+  }
+}
+actions {
+  add {
+    type: CALLBACK_TYPE_ANY_INVOCABLE
+    key: 26
+  }
+}
+actions {
+  add {
+    key: 10
+  }
+}
+actions {
+  add {
+    type: CALLBACK_TYPE_ANY_INVOCABLE
+  }
+}
+actions {
+  add {
+    type: CALLBACK_TYPE_ANY_INVOCABLE
+  }
+}
+actions {
+  add {
+    key: 10
+  }
+}
+actions {
+  add {
+  }
+}
+actions {
+  add {
+  }
+}
+actions {
+  add {
+  }
+}

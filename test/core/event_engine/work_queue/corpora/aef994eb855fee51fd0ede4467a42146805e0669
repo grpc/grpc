@@ -1,0 +1,94 @@
+actions {
+  add {
+    type: CALLBACK_TYPE_ANY_INVOCABLE
+  }
+}
+actions {
+  add {
+    key: 4
+  }
+}
+actions {
+  add {
+    type: CALLBACK_TYPE_ANY_INVOCABLE
+  }
+}
+actions {
+  add {
+    type: CALLBACK_TYPE_ANY_INVOCABLE
+  }
+}
+actions {
+  add {
+    type: CALLBACK_TYPE_ANY_INVOCABLE
+  }
+}
+actions {
+  add {
+    type: CALLBACK_TYPE_ANY_INVOCABLE
+  }
+}
+actions {
+  add {
+    type: CALLBACK_TYPE_ANY_INVOCABLE
+  }
+}
+actions {
+  add {
+    type: CALLBACK_TYPE_ANY_INVOCABLE
+  }
+}
+actions {
+  add {
+    type: CALLBACK_TYPE_ANY_INVOCABLE
+  }
+}
+actions {
+  add {
+    type: CALLBACK_TYPE_ANY_INVOCABLE
+  }
+}
+actions {
+  add {
+    type: CALLBACK_TYPE_ANY_INVOCABLE
+  }
+}
+actions {
+  add {
+    type: CALLBACK_TYPE_ANY_INVOCABLE
+  }
+}
+actions {
+  add {
+    type: CALLBACK_TYPE_ANY_INVOCABLE
+  }
+}
+actions {
+  add {
+    type: CALLBACK_TYPE_ANY_INVOCABLE
+  }
+}
+actions {
+  add {
+  }
+}
+actions {
+  add {
+    type: CALLBACK_TYPE_ANY_INVOCABLE
+  }
+}
+actions {
+  add {
+    type: CALLBACK_TYPE_ANY_INVOCABLE
+  }
+}
+actions {
+  add {
+    type: CALLBACK_TYPE_ANY_INVOCABLE
+  }
+}
+actions {
+  add {
+    type: CALLBACK_TYPE_ANY_INVOCABLE
+  }
+}

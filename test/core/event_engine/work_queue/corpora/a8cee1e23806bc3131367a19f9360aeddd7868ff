@@ -1,0 +1,66 @@
+actions {
+  add {
+    key: 1048576
+  }
+}
+actions {
+  add {
+    key: 65534
+  }
+}
+actions {
+  add {
+  }
+}
+actions {
+  add {
+  }
+}
+actions {
+  pop_back {
+  }
+}
+actions {
+}
+actions {
+  add {
+    type: CALLBACK_TYPE_ANY_INVOCABLE
+  }
+}
+actions {
+  add {
+    type: CALLBACK_TYPE_ANY_INVOCABLE
+  }
+}
+actions {
+  add {
+    type: CALLBACK_TYPE_ANY_INVOCABLE
+  }
+}
+actions {
+  pop_front {
+  }
+}
+actions {
+  add {
+    key: 1048576
+  }
+}
+actions {
+  add {
+  }
+}
+actions {
+  pop_front {
+  }
+}
+actions {
+  add {
+  }
+}
+actions {
+  add {
+    type: CALLBACK_TYPE_ANY_INVOCABLE
+    key: 1048576
+  }
+}
