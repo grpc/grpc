@@ -62,14 +62,6 @@ bool WorkQueue::Empty() const {
               kInvalidTimestamp);
 }
 
-size_t WorkQueue::Size() {
-  grpc_core::MutexLock lock(&mu_);
-  return elements_.size() + (most_recent_element_enqueue_timestamp_.load(
-                                 std::memory_order_relaxed) == kInvalidTimestamp
-                                 ? 0
-                                 : 1);
-}
-
 grpc_core::Timestamp WorkQueue::OldestEnqueuedTimestamp() const {
   int64_t front_of_queue_timestamp =
       oldest_enqueued_timestamp_.load(std::memory_order_relaxed);

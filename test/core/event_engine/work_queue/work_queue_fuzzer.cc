@@ -13,7 +13,6 @@
 // limitations under the License.
 #include <grpc/support/port_platform.h>
 
-#include <cassert>
 #include <deque>
 
 #include "absl/container/flat_hash_map.h"
@@ -46,10 +45,10 @@ class WorkQueueFuzzer {
         }
       } break;
       case work_queue_fuzzer::Action::kPopFront: {
-        // pop and discard front closure, executing to ensure memory freeing
+        // pop front closures, executing both to check they are a pair
         auto* wq_c = work_queue_.PopFront();
         if (wq_c == nullptr) {
-          assert(deque_.empty());
+          if (!work_queue_.Empty() || !deque_.empty()) abort();
         } else {
           auto* dq_c = deque_.front();
           deque_.pop_front();
@@ -58,10 +57,10 @@ class WorkQueueFuzzer {
         }
       } break;
       case work_queue_fuzzer::Action::kPopBack: {
-        // pop and discard front closure, executing to ensure memory freeing
+        // pop back closures, executing both to check they are a pair
         auto* wq_c = work_queue_.PopBack();
         if (wq_c == nullptr) {
-          assert(deque_.empty());
+          if (!work_queue_.Empty() || !deque_.empty()) abort();
         } else {
           auto* dq_c = deque_.back();
           deque_.pop_back();
@@ -118,6 +117,13 @@ class WorkQueueFuzzer {
 
   WorkQueue work_queue_;
   std::deque<EventEngine::Closure*> deque_;
+  // Closures are always added in pairs and checked in paris.
+  // When checking, each popped closure encounters one of these situations:
+  //  A) it is the first of a pair, denoted by an empty last_executed_key_, so
+  //     it sets last_executed_key_ to its own key.
+  //  B) last_executed_key_ is set, so its value must match this closure's own
+  //     key to assert that it is the other part of the pair. last_executed_key_
+  //     is then reset.
   absl::optional<int> last_executed_key_;
 };
 

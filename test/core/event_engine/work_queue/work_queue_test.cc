@@ -31,7 +31,6 @@ using ::grpc_event_engine::experimental::WorkQueue;
 TEST(WorkQueueTest, StartsEmpty) {
   WorkQueue queue;
   ASSERT_TRUE(queue.Empty());
-  ASSERT_EQ(queue.Size(), 0);
 }
 
 TEST(WorkQueueTest, TakesClosures) {
@@ -39,7 +38,6 @@ TEST(WorkQueueTest, TakesClosures) {
   bool ran = false;
   AnyInvocableClosure closure([&ran] { ran = true; });
   queue.Add(&closure);
-  ASSERT_EQ(queue.Size(), 1);
   ASSERT_FALSE(queue.Empty());
   EventEngine::Closure* popped = queue.PopFront();
   ASSERT_NE(popped, nullptr);
@@ -52,7 +50,6 @@ TEST(WorkQueueTest, TakesAnyInvocables) {
   WorkQueue queue;
   bool ran = false;
   queue.Add([&ran] { ran = true; });
-  ASSERT_EQ(queue.Size(), 1);
   ASSERT_FALSE(queue.Empty());
   EventEngine::Closure* popped = queue.PopFront();
   ASSERT_NE(popped, nullptr);
@@ -65,7 +62,6 @@ TEST(WorkQueueTest, BecomesEmptyOnPopBack) {
   WorkQueue queue;
   bool ran = false;
   queue.Add([&ran] { ran = true; });
-  ASSERT_EQ(queue.Size(), 1);
   ASSERT_FALSE(queue.Empty());
   EventEngine::Closure* closure = queue.PopBack();
   ASSERT_NE(closure, nullptr);
@@ -79,7 +75,6 @@ TEST(WorkQueueTest, PopFrontIsFIFO) {
   int flag = 0;
   queue.Add([&flag] { flag |= 1; });
   queue.Add([&flag] { flag |= 2; });
-  ASSERT_EQ(queue.Size(), 2);
   queue.PopFront()->Run();
   EXPECT_TRUE(flag & 1);
   EXPECT_FALSE(flag & 2);
@@ -94,7 +89,6 @@ TEST(WorkQueueTest, PopBackIsLIFO) {
   int flag = 0;
   queue.Add([&flag] { flag |= 1; });
   queue.Add([&flag] { flag |= 2; });
-  ASSERT_EQ(queue.Size(), 2);
   queue.PopBack()->Run();
   EXPECT_FALSE(flag & 1);
   EXPECT_TRUE(flag & 2);
@@ -167,7 +161,6 @@ TEST(WorkQueueTest, ThreadedStress) {
   }
   for (auto& thd : threads) thd.join();
   EXPECT_TRUE(queue.Empty());
-  EXPECT_EQ(queue.Size(), 0);
 }
 
 }  // namespace

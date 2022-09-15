@@ -47,9 +47,6 @@ class WorkQueue {
   WorkQueue() = default;
   // Returns whether the queue is empty
   bool Empty() const;
-  // Returns the number of elements in the queue
-  // This method locks the queue, be mindful of performance when using it.
-  size_t Size();
   // Returns the Timestamp of when the most recently-added element was
   // enqueued.
   grpc_core::Timestamp OldestEnqueuedTimestamp() const;
