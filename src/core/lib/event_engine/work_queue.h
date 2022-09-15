@@ -97,8 +97,7 @@ class WorkQueue {
   // Attempts to pop from the front of the queue (oldest).
   // This will return nullopt if the queue is empty, or if other workers
   // are already attempting to pop from this queue.
-  EventEngine::Closure* TryLockAndPop(bool front)
-      ABSL_LOCKS_EXCLUDED(mu_);
+  EventEngine::Closure* TryLockAndPop(bool front) ABSL_LOCKS_EXCLUDED(mu_);
   // Internal implementation, helps with thread safety analysis in TryLockAndPop
   EventEngine::Closure* PopLocked(bool front)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);

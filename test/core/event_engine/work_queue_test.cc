@@ -147,18 +147,22 @@ TEST(WorkQueueTest, ThreadedStress) {
   constexpr int element_count_per_thd = 3333;
   std::vector<std::thread> threads;
   threads.reserve(thd_count);
-  AnyInvocableClosure closure([] {});
+  class TestClosure : public EventEngine::Closure {
+   public:
+    void Run() { delete this; }
+  };
   for (int i = 0; i < thd_count; i++) {
     threads.emplace_back([&] {
-      int cnt = 0;
-      do {
-        queue.Add(&closure);
-        ++cnt;
-      } while (cnt < element_count_per_thd);
-      cnt = 0;
-      do {
-        if (queue.PopFront() != nullptr) ++cnt;
-      } while (cnt < element_count_per_thd);
+      for (int j = 0; j < element_count_per_thd; j++) {
+        queue.Add(new TestClosure());
+      }
+      int run_count = 0;
+      while (run_count < element_count_per_thd) {
+        if (auto* c = queue.PopFront()) {
+          c->Run();
+          ++run_count;
+        }
+      }
     });
   }
   for (auto& thd : threads) thd.join();
