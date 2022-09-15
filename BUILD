@@ -1858,6 +1858,7 @@ grpc_cc_library(
     ],
     deps = [
         "channel_args",
+        "gpr",
         "gpr_platform",
         "handshaker_factory",
         "iomgr_fwd",
