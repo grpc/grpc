@@ -18,6 +18,7 @@
 
 #include "src/core/lib/security/credentials/external/external_account_credentials.h"
 
+#include <stdint.h>
 #include <string.h>
 
 #include <algorithm>
