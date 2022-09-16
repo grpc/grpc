@@ -16,8 +16,6 @@
 #include <ostream>
 
 #include "absl/functional/any_invocable.h"
-#include "absl/time/time.h"
-#include "absl/types/variant.h"
 
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.h"
@@ -55,7 +53,6 @@
 #include "src/core/lib/event_engine/posix_engine/event_poller_posix_default.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
-#include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/gprpp/global_config.h"
@@ -82,7 +79,6 @@ namespace grpc_event_engine {
 namespace posix_engine {
 
 using ::grpc_event_engine::experimental::Poller;
-using ::grpc_event_engine::experimental::Promise;
 using ::grpc_event_engine::experimental::SelfDeletingClosure;
 using ::grpc_event_engine::posix_engine::PosixEventPoller;
 using namespace std::chrono_literals;
