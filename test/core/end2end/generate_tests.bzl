@@ -440,6 +440,9 @@ def grpc_end2end_tests():
             "//test/core/compression:args_utils",
             "//:grpc_http_filters",
         ],
+        visibility = [
+            "//src/objective-c/tests:__subpackages__",
+        ],
     )
     for f, fopt in END2END_FIXTURES.items():
         bin_name = "%s_test" % f

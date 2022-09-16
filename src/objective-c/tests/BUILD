@@ -22,6 +22,7 @@ load(
     "local_objc_grpc_library",
     "proto_library_objc_wrapper",
 )
+load("//test/core/end2end:generate_tests.bzl", "grpc_end2end_tests")
 load("@build_bazel_rules_apple//apple:resources.bzl", "apple_resource_bundle")
 load("@build_bazel_rules_apple//apple:ios.bzl", "ios_application", "ios_unit_test")
 load("@build_bazel_rules_apple//apple:macos.bzl", "macos_unit_test")
@@ -32,6 +33,8 @@ licenses(["notice"])
 package(default_visibility = ["//visibility:public"])
 
 exports_files(["LICENSE"])
+
+grpc_end2end_tests()
 
 proto_library_objc_wrapper(
     name = "messages_proto",
@@ -184,7 +187,26 @@ grpc_objc_testing_library(
     hdrs = ["MacTests/StressTests.h"],
 )
 
-grpc_objc_ios_unit_test(
+grpc_objc_testing_library(
+    name = "CronetTests-lib",
+    srcs = [
+        "ConfigureCronet.m",
+    ] + glob([
+        "CronetTests/*.m",
+        "CronetTests/*.mm",
+    ]),
+    hdrs = [
+        "ConfigureCronet.h",
+    ],
+    deps = [
+        "InteropTests-lib",
+        "//src/objective-c:grpc_objc_client_core_cronet_testing",
+        "//test/core/end2end:end2end_tests",
+        "//third_party/objective_c/Cronet:cronet_c_for_grpc",
+    ],
+)
+
+grpc_objc_testing_library(
     name = "UnitTests",
     deps = [
         ":APIv2Tests-lib",
@@ -217,6 +239,13 @@ ios_unit_test(
     test_host = ":ios-host",
     deps = [
         ":InteropTestsRemote-lib",
+    ],
+)
+
+grpc_objc_ios_unit_test(
+    name = "CronetTests",
+    deps = [
+        "CronetTests-lib",
     ],
 )
 
