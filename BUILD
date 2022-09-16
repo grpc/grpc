@@ -1746,7 +1746,10 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "pipe",
-    external_deps = ["absl/types:optional"],
+    external_deps = [
+        "absl/types:optional",
+        "absl/types:variant",
+    ],
     language = "c++",
     public_hdrs = [
         "src/core/lib/promise/pipe.h",
@@ -1754,7 +1757,6 @@ grpc_cc_library(
     deps = [
         "arena",
         "context",
-        "debug_location",
         "gpr",
         "intra_activity_waiter",
         "poll",
