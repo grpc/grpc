@@ -36,8 +36,7 @@ class SelfDeletingClosureTest : public testing::Test {};
 
 TEST_F(SelfDeletingClosureTest, CallsItsFunction) {
   grpc_core::Notification signal;
-  auto* closure =
-      SelfDeletingClosure::Create([&signal] { signal.Notify(); });
+  auto* closure = SelfDeletingClosure::Create([&signal] { signal.Notify(); });
   closure->Run();
   signal.WaitForNotification();
   // ASAN should catch if this closure is not deleted

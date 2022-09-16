@@ -741,7 +741,6 @@ libs:
   - src/core/lib/event_engine/posix_engine/timer.h
   - src/core/lib/event_engine/posix_engine/timer_heap.h
   - src/core/lib/event_engine/posix_engine/timer_manager.h
-  - src/core/lib/event_engine/promise.h
   - src/core/lib/event_engine/socket_notifier.h
   - src/core/lib/event_engine/thread_pool.h
   - src/core/lib/event_engine/time_util.h
@@ -1939,7 +1938,6 @@ libs:
   - src/core/lib/event_engine/posix_engine/timer.h
   - src/core/lib/event_engine/posix_engine/timer_heap.h
   - src/core/lib/event_engine/posix_engine/timer_manager.h
-  - src/core/lib/event_engine/promise.h
   - src/core/lib/event_engine/socket_notifier.h
   - src/core/lib/event_engine/thread_pool.h
   - src/core/lib/event_engine/time_util.h
@@ -5136,11 +5134,13 @@ targets:
   language: c++
   headers:
   - src/core/lib/event_engine/common_closures.h
+  - src/core/lib/gprpp/notification.h
   src:
   - test/core/event_engine/common_closures_test.cc
   deps:
-  - grpc
-  - grpc_test_util_unsecure
+  - absl/functional:any_invocable
+  - absl/status:statusor
+  - gpr
 - name: completion_queue_threading_test
   gtest: true
   build: test
