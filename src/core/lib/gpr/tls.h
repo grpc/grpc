@@ -88,33 +88,33 @@ class PthreadTlsImpl : TlsTypeConstrainer<T> {
   // justify the deviation.
   //
   // https://google.github.io/styleguide/cppguide.html#Static_and_Global_Variables
-  PthreadTlsImpl()
-      : keys_([]() {
-          typename std::remove_const<decltype(PthreadTlsImpl::keys_)>::type
-              keys;
-          for (pthread_key_t& key : keys) {
-            if (0 != pthread_key_create(&key, nullptr)) abort();
-          }
-          return keys;
+  PthreadTlsImpl(const PthreadTlsImpl&) = delete;
+  PthreadTlsImpl& operator=(const PthreadTlsImpl&) = delete;
+
+  // To properly ensure these invariants are upheld the `pthread_key_t` must
+  // be `const`, which means it can only be released in the destructor. This
+  // is a a violation of the style guide, since these objects are always
+  // static (see footnote) but this code is used in sufficiently narrow
+  // circumstances to justify the deviation.
+  //
+  // https://google.github.io/styleguide/cppguide.html#Static_and_Global_Variables
+  PthreadTlsImpl(T t)
+      : default_value_(t), key_([]() {
+          pthread_key_t key;
+          if (0 != pthread_key_create(
+                       &key, [](void* p) { delete static_cast<T*>(p); }))
+            abort();
+          return key;
         }()) {}
-  PthreadTlsImpl(T t) : PthreadTlsImpl() { *this = t; }
+  PthreadTlsImpl() : PthreadTlsImpl({}) {}
   ~PthreadTlsImpl() {
-    for (pthread_key_t key : keys_) {
-      if (0 != pthread_key_delete(key)) abort();
-    }
+    if (0 != pthread_key_delete(key_)) abort();
   }
 
   operator T() const {
-    T t;
-    char* dst = reinterpret_cast<char*>(&t);
-    for (pthread_key_t key : keys_) {
-      uintptr_t src = uintptr_t(pthread_getspecific(key));
-      size_t remaining = reinterpret_cast<char*>(&t + 1) - dst;
-      size_t step = std::min(sizeof(src), remaining);
-      memcpy(dst, &src, step);
-      dst += step;
-    }
-    return t;
+    auto* p = static_cast<T*>(pthread_getspecific(key_));
+    if (p == nullptr) return default_value_;
+    return *p;
   }
 
   T operator->() const {
@@ -124,22 +124,19 @@ class PthreadTlsImpl : TlsTypeConstrainer<T> {
   }
 
   T operator=(T t) {
-    char* src = reinterpret_cast<char*>(&t);
-    for (pthread_key_t key : keys_) {
-      uintptr_t dst;
-      size_t remaining = reinterpret_cast<char*>(&t + 1) - src;
-      size_t step = std::min(sizeof(dst), remaining);
-      memcpy(&dst, src, step);
-      if (0 != pthread_setspecific(key, reinterpret_cast<void*>(dst))) abort();
-      src += step;
+    auto* p = static_cast<T*>(pthread_getspecific(key_));
+    if (p == nullptr) {
+      p = new T(t);
+      if (0 != pthread_setspecific(key_, p)) abort();
+    } else {
+      *p = t;
     }
     return t;
   }
 
  private:
-  const std::array<pthread_key_t,
-                   (sizeof(T) + sizeof(void*) - 1) / sizeof(void*)>
-      keys_;
+  const T default_value_;
+  const pthread_key_t key_;
 };
 
 }  // namespace grpc_core
