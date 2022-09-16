@@ -10016,6 +10016,7 @@ targets:
   headers:
   - src/core/lib/event_engine/forkable.h
   - src/core/lib/event_engine/thread_pool.h
+  - src/core/lib/gprpp/notification.h
   src:
   - src/core/lib/event_engine/forkable.cc
   - src/core/lib/event_engine/thread_pool.cc

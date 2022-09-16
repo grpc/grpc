@@ -58,6 +58,7 @@ grpc_cc_test(
     deps = [
         "//:event_engine_thread_pool",
         "//:gpr",
+        "//:notification",
     ],
 )
 
