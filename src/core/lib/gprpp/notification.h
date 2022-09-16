@@ -18,9 +18,12 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/sync.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
 
 namespace grpc_core {
 
+// Polyfill for absl::Notification until we can use that type.
 class Notification {
  public:
   void Notify() {

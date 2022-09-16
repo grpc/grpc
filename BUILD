@@ -3323,7 +3323,6 @@ grpc_cc_library(
         "channel_init",
         "channel_stack_builder",
         "channel_stack_type",
-        "notification",
         "chunked_vector",
         "closure",
         "config",
@@ -3354,6 +3353,7 @@ grpc_cc_library(
         "json",
         "latch",
         "memory_quota",
+        "notification",
         "orphanable",
         "packed_table",
         "poll",
@@ -3620,6 +3620,7 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/gprpp/notification.h",
     ],
+    external_deps = ["absl/time"],
     deps = ["gpr"],
 )
 
