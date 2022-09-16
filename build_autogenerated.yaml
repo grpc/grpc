@@ -762,6 +762,7 @@ libs:
   - src/core/lib/gprpp/dual_ref_counted.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/match.h
+  - src/core/lib/gprpp/notification.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/overload.h
   - src/core/lib/gprpp/packed_table.h
@@ -1959,6 +1960,7 @@ libs:
   - src/core/lib/gprpp/dual_ref_counted.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/match.h
+  - src/core/lib/gprpp/notification.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/overload.h
   - src/core/lib/gprpp/packed_table.h
@@ -7853,6 +7855,17 @@ targets:
   - test/cpp/end2end/nonblocking_test.cc
   deps:
   - grpc++_test_util
+- name: notification_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/gprpp/notification.h
+  src:
+  - test/core/gprpp/notification_test.cc
+  deps:
+  - gpr
+  uses_polling: false
 - name: num_external_connectivity_watchers_test
   gtest: true
   build: test
