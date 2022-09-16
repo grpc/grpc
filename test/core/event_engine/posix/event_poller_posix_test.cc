@@ -56,7 +56,7 @@
 #include "src/core/lib/event_engine/posix_engine/posix_engine.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h"
-#include "src/core/lib/event_engine/promise.h"
+#include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/gprpp/global_config.h"
 #include "test/core/util/port.h"
@@ -664,14 +664,14 @@ class Worker : public grpc_core::DualRefCounted<Worker> {
     }
     WeakRef().release();
   }
-  void Orphan() override { promise.Set(true); }
+  void Orphan() override { signal.Notify(); }
   void Start() {
     // Start executing Work(..).
     scheduler_->Run([this]() { Work(); });
   }
 
   void Wait() {
-    EXPECT_TRUE(promise.Get());
+    signal.WaitForNotification();
     WeakUnref();
   }
 
@@ -693,7 +693,7 @@ class Worker : public grpc_core::DualRefCounted<Worker> {
   }
   Scheduler* scheduler_;
   PosixEventPoller* poller_;
-  Promise<bool> promise;
+  grpc_core::Notification signal;
   std::vector<WakeupFdHandle*> handles_;
 };
 
