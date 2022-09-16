@@ -79,8 +79,9 @@ class Timestamp {
 
   class ScopedSource : public Source {
    public:
-    ScopedSource()
-        : previous_(std::exchange(thread_local_time_source_, this)) {}
+    ScopedSource() : previous_(thread_local_time_source_) {
+      thread_local_time_source_ = this;
+    }
     ScopedSource(const ScopedSource&) = delete;
     ScopedSource& operator=(const ScopedSource&) = delete;
     void InvalidateCache() override { previous_->InvalidateCache(); }
