@@ -19,11 +19,13 @@
 
 #include <stdint.h>
 
+#include <utility>
+
 #include "absl/types/optional.h"
+#include "absl/types/variant.h"
 
 #include <grpc/support/log.h>
 
-#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/intra_activity_waiter.h"
 #include "src/core/lib/promise/poll.h"
