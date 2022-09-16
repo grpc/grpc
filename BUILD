@@ -3355,6 +3355,7 @@ grpc_cc_library(
         "json",
         "latch",
         "memory_quota",
+        "notification",
         "orphanable",
         "packed_table",
         "poll",
@@ -3614,6 +3615,15 @@ grpc_cc_library(
         "server_address",
         "uri_parser",
     ],
+)
+
+grpc_cc_library(
+    name = "notification",
+    hdrs = [
+        "src/core/lib/gprpp/notification.h",
+    ],
+    external_deps = ["absl/time"],
+    deps = ["gpr"],
 )
 
 grpc_cc_library(
