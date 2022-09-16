@@ -36,11 +36,13 @@ namespace experimental {
 class ThreadPool final : public grpc_event_engine::experimental::Forkable {
  public:
   explicit ThreadPool(int reserve_threads);
+  // Ensures the thread pool is empty before destroying it.
   ~ThreadPool() override;
 
   void Add(absl::AnyInvocable<void()> callback);
 
   // Forkable
+  // Ensures that the thread pool is empty before forking.
   void PrepareFork() override;
   void PostforkParent() override;
   void PostforkChild() override;
