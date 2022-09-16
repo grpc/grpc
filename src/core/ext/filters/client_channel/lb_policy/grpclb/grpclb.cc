@@ -188,7 +188,7 @@ class GrpcLb : public LoadBalancingPolicy {
 
   absl::string_view name() const override { return kGrpclb; }
 
-  void UpdateLocked(UpdateArgs args) override;
+  absl::Status UpdateLocked(UpdateArgs args) override;
   void ResetBackoffLocked() override;
 
  private:
@@ -473,7 +473,7 @@ class GrpcLb : public LoadBalancingPolicy {
   void ShutdownLocked() override;
 
   // Helper functions used in UpdateLocked().
-  void UpdateBalancerChannelLocked(const ChannelArgs& args);
+  absl::Status UpdateBalancerChannelLocked(const ChannelArgs& args);
 
   void CancelBalancerChannelConnectivityWatchLocked();
 
@@ -868,7 +868,7 @@ GrpcLb::BalancerCallState::BalancerCallState(
   const Timestamp deadline =
       grpclb_policy()->lb_call_timeout_ == Duration::Zero()
           ? Timestamp::InfFuture()
-          : ExecCtx::Get()->Now() + grpclb_policy()->lb_call_timeout_;
+          : Timestamp::Now() + grpclb_policy()->lb_call_timeout_;
   lb_call_ = grpc_channel_create_pollset_set_call(
       grpclb_policy()->lb_channel_, nullptr, GRPC_PROPAGATE_DEFAULTS,
       grpclb_policy_->interested_parties(),
@@ -1524,7 +1524,7 @@ void GrpcLb::ResetBackoffLocked() {
   }
 }
 
-void GrpcLb::UpdateLocked(UpdateArgs args) {
+absl::Status GrpcLb::UpdateLocked(UpdateArgs args) {
   const bool is_initial_update = lb_channel_ == nullptr;
   config_ = args.config;
   GPR_ASSERT(config_ != nullptr);
@@ -1540,7 +1540,7 @@ void GrpcLb::UpdateLocked(UpdateArgs args) {
   }
   resolution_note_ = std::move(args.resolution_note);
   // Update balancer channel.
-  UpdateBalancerChannelLocked(args.args);
+  absl::Status status = UpdateBalancerChannelLocked(args.args);
   // Update the existing child policy, if any.
   if (child_policy_ != nullptr) CreateOrUpdateChildPolicyLocked();
   // If this is the initial update, start the fallback-at-startup checks
@@ -1548,7 +1548,7 @@ void GrpcLb::UpdateLocked(UpdateArgs args) {
   if (is_initial_update) {
     fallback_at_startup_checks_pending_ = true;
     // Start timer.
-    Timestamp deadline = ExecCtx::Get()->Now() + fallback_at_startup_timeout_;
+    Timestamp deadline = Timestamp::Now() + fallback_at_startup_timeout_;
     Ref(DEBUG_LOCATION, "on_fallback_timer").release();  // Ref for callback
     grpc_timer_init(&lb_fallback_timer_, deadline, &lb_on_fallback_);
     // Start watching the channel's connectivity state.  If the channel
@@ -1565,18 +1565,24 @@ void GrpcLb::UpdateLocked(UpdateArgs args) {
     // Start balancer call.
     StartBalancerCallLocked();
   }
+  return status;
 }
 
 //
 // helpers for UpdateLocked()
 //
 
-void GrpcLb::UpdateBalancerChannelLocked(const ChannelArgs& args) {
+absl::Status GrpcLb::UpdateBalancerChannelLocked(const ChannelArgs& args) {
   // Make sure that GRPC_ARG_LB_POLICY_NAME is set in channel args,
   // since we use this to trigger the client_load_reporting filter.
   args_ = args.Set(GRPC_ARG_LB_POLICY_NAME, "grpclb");
-  // Construct args for balancer channel.
+  // Get balancer addresses.
   ServerAddressList balancer_addresses = ExtractBalancerAddresses(args);
+  absl::Status status;
+  if (balancer_addresses.empty()) {
+    status = absl::UnavailableError("balancer address list must be non-empty");
+  }
+  // Construct args for balancer channel.
   ChannelArgs lb_channel_args =
       BuildBalancerChannelArgs(response_generator_.get(), args);
   // Create balancer channel if needed.
@@ -1604,6 +1610,8 @@ void GrpcLb::UpdateBalancerChannelLocked(const ChannelArgs& args) {
   result.addresses = std::move(balancer_addresses);
   result.args = lb_channel_args;
   response_generator_->SetResponse(std::move(result));
+  // Return status.
+  return status;
 }
 
 void GrpcLb::CancelBalancerChannelConnectivityWatchLocked() {
@@ -1635,7 +1643,7 @@ void GrpcLb::StartBalancerCallRetryTimerLocked() {
   Timestamp next_try = lb_call_backoff_.NextAttemptTime();
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
     gpr_log(GPR_INFO, "[grpclb %p] Connection to LB server lost...", this);
-    Duration timeout = next_try - ExecCtx::Get()->Now();
+    Duration timeout = next_try - Timestamp::Now();
     if (timeout > Duration::Zero()) {
       gpr_log(GPR_INFO, "[grpclb %p] ... retry_timer_active in %" PRId64 "ms.",
               this, timeout.millis());
@@ -1794,7 +1802,9 @@ void GrpcLb::CreateOrUpdateChildPolicyLocked() {
     gpr_log(GPR_INFO, "[grpclb %p] Updating child policy handler %p", this,
             child_policy_.get());
   }
-  child_policy_->UpdateLocked(std::move(update_args));
+  // TODO(roth): If we're in fallback mode and the child policy rejects the
+  // update, we should propagate that failure back to the resolver somehow.
+  (void)child_policy_->UpdateLocked(std::move(update_args));
 }
 
 //
@@ -1803,7 +1813,7 @@ void GrpcLb::CreateOrUpdateChildPolicyLocked() {
 
 void GrpcLb::CacheDeletedSubchannelLocked(
     RefCountedPtr<SubchannelInterface> subchannel) {
-  Timestamp deletion_time = ExecCtx::Get()->Now() + subchannel_cache_interval_;
+  Timestamp deletion_time = Timestamp::Now() + subchannel_cache_interval_;
   cached_subchannels_[deletion_time].push_back(std::move(subchannel));
   if (!subchannel_cache_timer_pending_) {
     Ref(DEBUG_LOCATION, "OnSubchannelCacheTimer").release();

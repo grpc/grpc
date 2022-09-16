@@ -208,7 +208,7 @@ class RlsLb : public LoadBalancingPolicy {
   explicit RlsLb(Args args);
 
   absl::string_view name() const override { return kRls; }
-  void UpdateLocked(UpdateArgs args) override;
+  absl::Status UpdateLocked(UpdateArgs args) override;
   void ExitIdleLocked() override;
   void ResetBackoffLocked() override;
 
@@ -293,7 +293,7 @@ class RlsLb : public LoadBalancingPolicy {
     //
     // Both methods grab the data they need from the parent object.
     void StartUpdate() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
-    void MaybeFinishUpdate() ABSL_LOCKS_EXCLUDED(&RlsLb::mu_);
+    absl::Status MaybeFinishUpdate() ABSL_LOCKS_EXCLUDED(&RlsLb::mu_);
 
     void ExitIdleLocked() {
       if (child_policy_ != nullptr) child_policy_->ExitIdleLocked();
@@ -811,10 +811,10 @@ void RlsLb::ChildPolicyWrapper::StartUpdate() {
   }
 }
 
-void RlsLb::ChildPolicyWrapper::MaybeFinishUpdate() {
+absl::Status RlsLb::ChildPolicyWrapper::MaybeFinishUpdate() {
   // If pending_config_ is not set, that means StartUpdate() failed, so
   // there's nothing to do here.
-  if (pending_config_ == nullptr) return;
+  if (pending_config_ == nullptr) return absl::OkStatus();
   // If child policy doesn't yet exist, create it.
   if (child_policy_ == nullptr) {
     Args create_args;
@@ -844,7 +844,7 @@ void RlsLb::ChildPolicyWrapper::MaybeFinishUpdate() {
   update_args.config = std::move(pending_config_);
   update_args.addresses = lb_policy_->addresses_;
   update_args.args = lb_policy_->channel_args_;
-  child_policy_->UpdateLocked(std::move(update_args));
+  return child_policy_->UpdateLocked(std::move(update_args));
 }
 
 //
@@ -1014,7 +1014,7 @@ LoadBalancingPolicy::PickResult RlsLb::Picker::Pick(PickArgs args) {
     gpr_log(GPR_INFO, "[rlslb %p] picker=%p: request keys: %s",
             lb_policy_.get(), this, key.ToString().c_str());
   }
-  Timestamp now = ExecCtx::Get()->Now();
+  Timestamp now = Timestamp::Now();
   MutexLock lock(&lb_policy_->mu_);
   if (lb_policy_->is_shutdown_) {
     return PickResult::Fail(
@@ -1164,7 +1164,7 @@ RlsLb::Cache::Entry::Entry(RefCountedPtr<RlsLb> lb_policy,
           GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace) ? "CacheEntry" : nullptr),
       lb_policy_(std::move(lb_policy)),
       backoff_state_(MakeCacheEntryBackoff()),
-      min_expiration_time_(ExecCtx::Get()->Now() + kMinExpirationTime),
+      min_expiration_time_(Timestamp::Now() + kMinExpirationTime),
       lru_iterator_(lb_policy_->cache_.lru_list_.insert(
           lb_policy_->cache_.lru_list_.end(), key)) {}
 
@@ -1242,12 +1242,12 @@ void RlsLb::Cache::Entry::ResetBackoff() {
 }
 
 bool RlsLb::Cache::Entry::ShouldRemove() const {
-  Timestamp now = ExecCtx::Get()->Now();
+  Timestamp now = Timestamp::Now();
   return data_expiration_time_ < now && backoff_expiration_time_ < now;
 }
 
 bool RlsLb::Cache::Entry::CanEvict() const {
-  Timestamp now = ExecCtx::Get()->Now();
+  Timestamp now = Timestamp::Now();
   return min_expiration_time_ < now;
 }
 
@@ -1273,7 +1273,7 @@ RlsLb::Cache::Entry::OnRlsResponseLocked(
       backoff_state_ = MakeCacheEntryBackoff();
     }
     backoff_time_ = backoff_state_->NextAttemptTime();
-    Timestamp now = ExecCtx::Get()->Now();
+    Timestamp now = Timestamp::Now();
     backoff_expiration_time_ = now + (backoff_time_ - now) * 2;
     backoff_timer_ = MakeOrphanable<BackoffTimer>(
         Ref(DEBUG_LOCATION, "BackoffTimer"), backoff_time_);
@@ -1282,7 +1282,7 @@ RlsLb::Cache::Entry::OnRlsResponseLocked(
   }
   // Request succeeded, so store the result.
   header_data_ = std::move(response.header_data);
-  Timestamp now = ExecCtx::Get()->Now();
+  Timestamp now = Timestamp::Now();
   data_expiration_time_ = now + lb_policy_->config_->max_age();
   stale_time_ = now + lb_policy_->config_->stale_age();
   status_ = absl::OkStatus();
@@ -1348,7 +1348,7 @@ RlsLb::Cache::Entry::OnRlsResponseLocked(
 //
 
 RlsLb::Cache::Cache(RlsLb* lb_policy) : lb_policy_(lb_policy) {
-  Timestamp now = ExecCtx::Get()->Now();
+  Timestamp now = Timestamp::Now();
   lb_policy_->Ref(DEBUG_LOCATION, "CacheCleanupTimer").release();
   GRPC_CLOSURE_INIT(&timer_callback_, OnCleanupTimer, this, nullptr);
   grpc_timer_init(&cleanup_timer_, now + kCacheCleanupTimerInterval,
@@ -1431,7 +1431,7 @@ void RlsLb::Cache::OnCleanupTimer(void* arg, grpc_error_handle error) {
             ++it;
           }
         }
-        Timestamp now = ExecCtx::Get()->Now();
+        Timestamp now = Timestamp::Now();
         lb_policy.release();
         grpc_timer_init(&cache->cleanup_timer_,
                         now + kCacheCleanupTimerInterval,
@@ -1500,7 +1500,7 @@ void RlsLb::RlsChannel::StateWatcher::OnConnectivityStateChange(
 //
 
 bool RlsLb::RlsChannel::Throttle::ShouldThrottle() {
-  Timestamp now = ExecCtx::Get()->Now();
+  Timestamp now = Timestamp::Now();
   while (!requests_.empty() && now - requests_.front() > window_size_) {
     requests_.pop_front();
   }
@@ -1528,7 +1528,7 @@ bool RlsLb::RlsChannel::Throttle::ShouldThrottle() {
 }
 
 void RlsLb::RlsChannel::Throttle::RegisterResponse(bool success) {
-  Timestamp now = ExecCtx::Get()->Now();
+  Timestamp now = Timestamp::Now();
   requests_.push_back(now);
   if (!success) failures_.push_back(now);
 }
@@ -1708,7 +1708,7 @@ void RlsLb::RlsRequest::StartCallLocked() {
     MutexLock lock(&lb_policy_->mu_);
     if (lb_policy_->is_shutdown_) return;
   }
-  Timestamp now = ExecCtx::Get()->Now();
+  Timestamp now = Timestamp::Now();
   deadline_ = now + lb_policy_->config_->lookup_service_timeout();
   grpc_metadata_array_init(&recv_initial_metadata_);
   grpc_metadata_array_init(&recv_trailing_metadata_);
@@ -1809,7 +1809,9 @@ void RlsLb::RlsRequest::OnRlsCallCompleteLocked(grpc_error_handle error) {
   // Now that we've released the lock, finish the update on any newly
   // created child policies.
   for (ChildPolicyWrapper* child : child_policies_to_finish_update) {
-    child->MaybeFinishUpdate();
+    // TODO(roth): If the child reports an error with the update, we
+    // need to propagate that back to the resolver somehow.
+    (void)child->MaybeFinishUpdate();
   }
 }
 
@@ -1897,7 +1899,7 @@ RlsLb::RlsLb(Args args)
   }
 }
 
-void RlsLb::UpdateLocked(UpdateArgs args) {
+absl::Status RlsLb::UpdateLocked(UpdateArgs args) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(GPR_INFO, "[rlslb %p] policy updated", this);
   }
@@ -1988,19 +1990,28 @@ void RlsLb::UpdateLocked(UpdateArgs args) {
     }
   }
   // Now that we've released the lock, finish update of child policies.
+  std::vector<std::string> errors;
   if (update_child_policies) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
       gpr_log(GPR_INFO, "[rlslb %p] finishing child policy updates", this);
     }
     for (auto& p : child_policy_map_) {
-      p.second->MaybeFinishUpdate();
+      absl::Status status = p.second->MaybeFinishUpdate();
+      if (!status.ok()) {
+        errors.emplace_back(
+            absl::StrCat("target ", p.first, ": ", status.ToString()));
+      }
     }
   } else if (created_default_child) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
       gpr_log(GPR_INFO, "[rlslb %p] finishing default child policy update",
               this);
     }
-    default_child_policy_->MaybeFinishUpdate();
+    absl::Status status = default_child_policy_->MaybeFinishUpdate();
+    if (!status.ok()) {
+      errors.emplace_back(absl::StrCat("target ", config_->default_target(),
+                                       ": ", status.ToString()));
+    }
   }
   update_in_progress_ = false;
   // In principle, we need to update the picker here only if the config
@@ -2010,6 +2021,12 @@ void RlsLb::UpdateLocked(UpdateArgs args) {
   // remember to update the code here.  So for now, we just unconditionally
   // update the picker here, even though it's probably redundant.
   UpdatePickerLocked();
+  // Return status.
+  if (!errors.empty()) {
+    return absl::UnavailableError(absl::StrCat(
+        "errors from children: [", absl::StrJoin(errors, "; "), "]"));
+  }
+  return absl::OkStatus();
 }
 
 void RlsLb::ExitIdleLocked() {
