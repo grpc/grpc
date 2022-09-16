@@ -725,7 +725,8 @@ RetryFilter::CallData::CallAttempt::CallAttempt(CallData* calld,
   if (calld->retry_policy_ != nullptr &&
       calld->retry_policy_->per_attempt_recv_timeout().has_value()) {
     Timestamp per_attempt_recv_deadline =
-        Timestamp::Now() + *calld->retry_policy_->per_attempt_recv_timeout();
+        ExecCtx::Get()->Now() +
+        *calld->retry_policy_->per_attempt_recv_timeout();
     if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
       gpr_log(GPR_INFO,
               "chand=%p calld=%p attempt=%p: per-attempt timeout in %" PRId64
@@ -2603,7 +2604,7 @@ void RetryFilter::CallData::StartRetryTimer(
   Timestamp next_attempt_time;
   if (server_pushback.has_value()) {
     GPR_ASSERT(*server_pushback >= Duration::Zero());
-    next_attempt_time = Timestamp::Now() + *server_pushback;
+    next_attempt_time = ExecCtx::Get()->Now() + *server_pushback;
     retry_backoff_.Reset();
   } else {
     next_attempt_time = retry_backoff_.NextAttemptTime();
@@ -2611,7 +2612,7 @@ void RetryFilter::CallData::StartRetryTimer(
   if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
     gpr_log(GPR_INFO,
             "chand=%p calld=%p: retrying failed call in %" PRId64 " ms", chand_,
-            this, (next_attempt_time - Timestamp::Now()).millis());
+            this, (next_attempt_time - ExecCtx::Get()->Now()).millis());
   }
   // Schedule retry after computed delay.
   GRPC_CLOSURE_INIT(&retry_closure_, OnRetryTimer, this, nullptr);

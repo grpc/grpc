@@ -42,6 +42,7 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/sleep.h"
 #include "src/core/lib/promise/try_seq.h"
@@ -250,7 +251,7 @@ bool FaultInjectionFilter::InjectionDecision::HaveActiveFaultsQuota() const {
 Timestamp FaultInjectionFilter::InjectionDecision::DelayUntil() {
   if (delay_time_ != Duration::Zero() && HaveActiveFaultsQuota()) {
     active_fault_ = FaultHandle{true};
-    return Timestamp::Now() + delay_time_;
+    return ExecCtx::Get()->Now() + delay_time_;
   }
   return Timestamp::InfPast();
 }

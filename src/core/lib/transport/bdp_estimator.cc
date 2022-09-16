@@ -25,6 +25,8 @@
 
 #include <algorithm>
 
+#include "src/core/lib/iomgr/exec_ctx.h"
+
 grpc_core::TraceFlag grpc_bdp_estimator_trace(false, "bdp_estimator");
 
 namespace grpc_core {
@@ -80,7 +82,7 @@ Timestamp BdpEstimator::CompletePing() {
   }
   ping_state_ = PingState::UNSCHEDULED;
   accumulator_ = 0;
-  return Timestamp::Now() + inter_ping_delay_;
+  return ExecCtx::Get()->Now() + inter_ping_delay_;
 }
 
 }  // namespace grpc_core
