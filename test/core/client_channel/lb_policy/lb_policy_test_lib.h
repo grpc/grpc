@@ -120,8 +120,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 
       // Don't need these methods here, so they're no-ops.
       void ResetBackoff() override {}
-      void AddDataWatcher(
-          std::unique_ptr<DataWatcherInterface> watcher) override {}
+      void AddDataWatcher(std::unique_ptr<DataWatcherInterface>) override {}
 
       SubchannelState* state_;
       grpc_resolved_address address_;
@@ -217,8 +216,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 
     absl::string_view GetAuthority() override { return "server.example.com"; }
 
-    void AddTraceEvent(TraceSeverity severity,
-                       absl::string_view message) override {}
+    void AddTraceEvent(TraceSeverity, absl::string_view) override {}
 
     LoadBalancingPolicyTest* test_;
     std::shared_ptr<WorkSerializer> work_serializer_;
@@ -247,7 +245,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     }
 
     absl::optional<absl::string_view> Lookup(
-        absl::string_view key, std::string* buffer) const override {
+        absl::string_view key, std::string* /*buffer*/) const override {
       auto it = metadata_.find(std::string(key));
       if (it == metadata_.end()) return absl::nullopt;
       return it->second;
