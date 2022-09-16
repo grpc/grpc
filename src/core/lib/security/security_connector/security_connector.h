@@ -21,15 +21,26 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <stdbool.h>
+#include <memory>
 
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
+
+#include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
+#include <grpc/impl/codegen/grpc_types.h>
 
-#include "src/core/lib/channel/handshaker.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/unique_type_name.h"
+#include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
-#include "src/core/lib/iomgr/pollset.h"
-#include "src/core/lib/iomgr/tcp_server.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
+#include "src/core/lib/promise/arena_promise.h"
+#include "src/core/lib/transport/handshaker.h"
 #include "src/core/tsi/transport_security_interface.h"
 
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_security_connector_refcount;
@@ -51,18 +62,22 @@ typedef enum { GRPC_SECURITY_OK = 0, GRPC_SECURITY_ERROR } grpc_security_status;
 class grpc_security_connector
     : public grpc_core::RefCounted<grpc_security_connector> {
  public:
-  explicit grpc_security_connector(const char* url_scheme)
+  explicit grpc_security_connector(absl::string_view url_scheme)
       : grpc_core::RefCounted<grpc_security_connector>(
             GRPC_TRACE_FLAG_ENABLED(grpc_trace_security_connector_refcount)
                 ? "security_connector_refcount"
                 : nullptr),
         url_scheme_(url_scheme) {}
-  ~grpc_security_connector() override = default;
+
+  static absl::string_view ChannelArgName() {
+    return GRPC_ARG_SECURITY_CONNECTOR;
+  }
 
   // Checks the peer. Callee takes ownership of the peer object.
+  // The channel args represent the args after the handshaking is performed.
   // When done, sets *auth_context and invokes on_peer_checked.
   virtual void check_peer(
-      tsi_peer peer, grpc_endpoint* ep,
+      tsi_peer peer, grpc_endpoint* ep, const grpc_core::ChannelArgs& args,
       grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
       grpc_closure* on_peer_checked) = 0;
 
@@ -74,10 +89,17 @@ class grpc_security_connector
   /* Compares two security connectors. */
   virtual int cmp(const grpc_security_connector* other) const = 0;
 
-  const char* url_scheme() const { return url_scheme_; }
+  static int ChannelArgsCompare(const grpc_security_connector* a,
+                                const grpc_security_connector* b) {
+    return a->cmp(b);
+  }
+
+  absl::string_view url_scheme() const { return url_scheme_; }
+
+  virtual grpc_core::UniqueTypeName type() const = 0;
 
  private:
-  const char* url_scheme_;
+  absl::string_view url_scheme_;
 };
 
 /* Util to encapsulate the connector in a channel arg. */
@@ -98,28 +120,17 @@ grpc_security_connector* grpc_security_connector_find_in_args(
 class grpc_channel_security_connector : public grpc_security_connector {
  public:
   grpc_channel_security_connector(
-      const char* url_scheme,
+      absl::string_view url_scheme,
       grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
-      grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds
-      /*,
-      grpc_channel_args* channel_args = nullptr*/);
-  ~grpc_channel_security_connector() override;
+      grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds);
 
   /// Checks that the host that will be set for a call is acceptable.
-  /// Returns true if completed synchronously, in which case \a error will
-  /// be set to indicate the result.  Otherwise, \a on_call_host_checked
-  /// will be invoked when complete.
-  virtual bool check_call_host(absl::string_view host,
-                               grpc_auth_context* auth_context,
-                               grpc_closure* on_call_host_checked,
-                               grpc_error_handle* error) = 0;
-  /// Cancels a pending asynchronous call to
-  /// grpc_channel_security_connector_check_call_host() with
-  /// \a on_call_host_checked as its callback.
-  virtual void cancel_check_call_host(grpc_closure* on_call_host_checked,
-                                      grpc_error_handle error) = 0;
+  /// Returns ok if the host is acceptable, otherwise returns an error.
+  virtual grpc_core::ArenaPromise<absl::Status> CheckCallHost(
+      absl::string_view host, grpc_auth_context* auth_context) = 0;
+
   /// Registers handshakers with \a handshake_mgr.
-  virtual void add_handshakers(const grpc_channel_args* args,
+  virtual void add_handshakers(const grpc_core::ChannelArgs& args,
                                grpc_pollset_set* interested_parties,
                                grpc_core::HandshakeManager* handshake_mgr) = 0;
 
@@ -135,6 +146,8 @@ class grpc_channel_security_connector : public grpc_security_connector {
   grpc_call_credentials* mutable_request_metadata_creds() {
     return request_metadata_creds_.get();
   }
+
+  grpc_core::UniqueTypeName type() const override;
 
  protected:
   // Helper methods to be used in subclasses.
@@ -160,11 +173,10 @@ class grpc_channel_security_connector : public grpc_security_connector {
 class grpc_server_security_connector : public grpc_security_connector {
  public:
   grpc_server_security_connector(
-      const char* url_scheme,
+      absl::string_view url_scheme,
       grpc_core::RefCountedPtr<grpc_server_credentials> server_creds);
-  ~grpc_server_security_connector() override;
 
-  virtual void add_handshakers(const grpc_channel_args* args,
+  virtual void add_handshakers(const grpc_core::ChannelArgs& args,
                                grpc_pollset_set* interested_parties,
                                grpc_core::HandshakeManager* handshake_mgr) = 0;
 
@@ -174,6 +186,8 @@ class grpc_server_security_connector : public grpc_security_connector {
   grpc_server_credentials* mutable_server_creds() {
     return server_creds_.get();
   }
+
+  grpc_core::UniqueTypeName type() const override;
 
  protected:
   // Helper methods to be used in subclasses.

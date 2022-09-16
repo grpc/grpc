@@ -17,10 +17,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <atomic>
+#include <stddef.h>
 
-#include <grpc/slice.h>
-#include <grpc/support/log.h>
+#include <atomic>
 
 // grpc_slice_refcount : A reference count for grpc_slice.
 struct grpc_slice_refcount {

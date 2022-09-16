@@ -19,30 +19,31 @@
 #include "test/core/end2end/cq_verifier.h"
 
 #include <inttypes.h>
-#include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
-#include <list>
+#include <algorithm>
 #include <string>
+#include <utility>
 #include <vector>
 
+#include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 
 #include <grpc/byte_buffer.h>
-#include <grpc/byte_buffer_reader.h>
-#include <grpc/support/alloc.h>
+#include <grpc/compression.h>
+#include <grpc/grpc.h>
+#include <grpc/slice_buffer.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/compression/message_compress.h"
-#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/surface/event_string.h"
-
-#define ROOT_EXPECTATION 1000
+#include "test/core/util/test_config.h"
 
 // a set of metadata we expect to find on an event
 typedef struct metadata {
@@ -51,48 +52,6 @@ typedef struct metadata {
   char** keys;
   char** values;
 } metadata;
-
-// details what we expect to find on a single event
-struct Expectation {
-  Expectation(const char* f, int l, grpc_completion_type t, void* tag_arg,
-              bool check_success_arg, int success_arg, bool* seen_arg)
-      : file(f),
-        line(l),
-        type(t),
-        tag(tag_arg),
-        check_success(check_success_arg),
-        success(success_arg),
-        seen(seen_arg) {}
-  const char* file;
-  int line;
-  grpc_completion_type type;
-  void* tag;
-  bool check_success;
-  int success;
-  bool* seen;
-};
-
-// the verifier itself
-struct cq_verifier {
-  // bound completion queue
-  grpc_completion_queue* cq;
-  // expectation list
-  std::list<Expectation> expectations;
-  // maybe expectation list
-  std::list<Expectation> maybe_expectations;
-};
-
-// TODO(yashykt): Convert this to constructor/destructor pair
-cq_verifier* cq_verifier_create(grpc_completion_queue* cq) {
-  cq_verifier* v = new cq_verifier;
-  v->cq = cq;
-  return v;
-}
-
-void cq_verifier_destroy(cq_verifier* v) {
-  cq_verify(v);
-  delete v;
-}
 
 static int has_metadata(const grpc_metadata* md, size_t count, const char* key,
                         const char* value) {
@@ -187,139 +146,122 @@ int byte_buffer_eq_string(grpc_byte_buffer* bb, const char* str) {
   return byte_buffer_eq_slice(bb, grpc_slice_from_copied_string(str));
 }
 
-static bool is_probably_integer(void* p) {
+namespace {
+bool IsProbablyInteger(void* p) {
   return reinterpret_cast<uintptr_t>(p) < 1000000;
 }
 
-namespace {
-
-std::string ExpectationString(const Expectation& e) {
-  std::string out;
-  if (is_probably_integer(e.tag)) {
-    out = absl::StrFormat("tag(%" PRIdPTR ") ",
-                          reinterpret_cast<intptr_t>(e.tag));
+std::string TagStr(void* tag) {
+  if (IsProbablyInteger(tag)) {
+    return absl::StrFormat("tag(%" PRIdPTR ")",
+                           reinterpret_cast<intptr_t>(tag));
   } else {
-    out = absl::StrFormat("%p ", e.tag);
+    return absl::StrFormat("%p", tag);
   }
-  switch (e.type) {
-    case GRPC_OP_COMPLETE:
-      absl::StrAppendFormat(&out, "GRPC_OP_COMPLETE success=%d %s:%d",
-                            e.success, e.file, e.line);
-      break;
-    case GRPC_QUEUE_TIMEOUT:
-    case GRPC_QUEUE_SHUTDOWN:
-      gpr_log(GPR_ERROR, "not implemented");
-      abort();
-  }
-  return out;
+}
+}  // namespace
+
+namespace grpc_core {
+
+CqVerifier::CqVerifier(grpc_completion_queue* cq) : cq_(cq) {}
+
+CqVerifier::~CqVerifier() { Verify(); }
+
+std::string CqVerifier::Expectation::ToString() const {
+  return absl::StrCat(
+      location.file(), ":", location.line(), ": ", TagStr(tag), " ",
+      Match(
+          result,
+          [](bool success) {
+            return absl::StrCat("success=", success ? "true" : "false");
+          },
+          [](Maybe) { return std::string("maybe"); },
+          [](AnyStatus) { return std::string("any success value"); }));
 }
 
-std::string ExpectationsString(const cq_verifier& v) {
+std::string CqVerifier::ToString() const {
   std::vector<std::string> expectations;
-  for (const auto& e : v.expectations) {
-    expectations.push_back(ExpectationString(e));
+  for (const auto& e : expectations_) {
+    expectations.push_back(e.ToString());
   }
   return absl::StrJoin(expectations, "\n");
 }
 
-}  // namespace
-
-static void fail_no_event_received(cq_verifier* v) {
-  gpr_log(GPR_ERROR, "no event received, but expected:%s",
-          ExpectationsString(*v).c_str());
+void CqVerifier::FailNoEventReceived(const SourceLocation& location) const {
+  gpr_log(GPR_ERROR, "[%s:%d] no event received, but expected:%s",
+          location.file(), location.line(), ToString().c_str());
   abort();
 }
 
-static void verify_matches(const Expectation& e, const grpc_event& ev) {
-  GPR_ASSERT(e.type == ev.type);
-  switch (e.type) {
-    case GRPC_OP_COMPLETE:
-      if (e.check_success && e.success != ev.success) {
-        gpr_log(GPR_ERROR, "actual success does not match expected: %s",
-                ExpectationString(e).c_str());
-        abort();
-      }
-      break;
-    case GRPC_QUEUE_SHUTDOWN:
-      gpr_log(GPR_ERROR, "premature queue shutdown");
-      abort();
-    case GRPC_QUEUE_TIMEOUT:
-      gpr_log(GPR_ERROR, "not implemented");
-      abort();
-  }
+void CqVerifier::FailUnexpectedEvent(grpc_event* ev,
+                                     const SourceLocation& location) const {
+  gpr_log(GPR_ERROR, "[%s:%d] cq returned unexpected event: %s",
+          location.file(), location.line(), grpc_event_string(ev).c_str());
+  gpr_log(GPR_ERROR, "expected tags:\n%s", ToString().c_str());
+  abort();
 }
 
-// Try to find the event in the expectations list
-bool FindExpectations(std::list<Expectation>* expectations,
-                      const grpc_event& ev) {
-  for (auto e = expectations->begin(); e != expectations->end(); ++e) {
-    if (e->tag == ev.tag) {
-      verify_matches(*e, ev);
-      if (e->seen != nullptr) {
-        *(e->seen) = true;
-      }
-      expectations->erase(e);
-      return true;
+void CqVerifier::Verify(Duration timeout, SourceLocation location) {
+  const gpr_timespec deadline =
+      grpc_timeout_milliseconds_to_deadline(timeout.millis());
+  while (!expectations_.empty()) {
+    grpc_event ev = grpc_completion_queue_next(cq_, deadline, nullptr);
+    if (ev.type == GRPC_QUEUE_TIMEOUT) break;
+    if (ev.type != GRPC_OP_COMPLETE) {
+      FailUnexpectedEvent(&ev, location);
     }
-  }
-  return false;
-}
-
-void cq_verify(cq_verifier* v, int timeout_sec) {
-  const gpr_timespec deadline = grpc_timeout_seconds_to_deadline(timeout_sec);
-  while (!v->expectations.empty()) {
-    grpc_event ev = grpc_completion_queue_next(v->cq, deadline, nullptr);
-    if (ev.type == GRPC_QUEUE_TIMEOUT) {
-      fail_no_event_received(v);
+    bool found = false;
+    for (auto it = expectations_.begin(); it != expectations_.end(); ++it) {
+      if (it->tag != ev.tag) continue;
+      const bool expected = Match(
+          it->result, [ev](bool success) { return ev.success == success; },
+          [ev](Maybe m) {
+            if (m.seen != nullptr) *m.seen = true;
+            return ev.success != 0;
+          },
+          [ev](AnyStatus a) {
+            if (a.result != nullptr) *a.result = ev.success;
+            return true;
+          });
+      if (!expected) {
+        FailUnexpectedEvent(&ev, location);
+      }
+      expectations_.erase(it);
+      found = true;
       break;
     }
-    if (FindExpectations(&v->expectations, ev)) continue;
-    if (FindExpectations(&v->maybe_expectations, ev)) continue;
-    gpr_log(GPR_ERROR, "cq returned unexpected event: %s",
-            grpc_event_string(&ev).c_str());
-    gpr_log(GPR_ERROR, "expected tags:\n%s", ExpectationsString(*v).c_str());
-    abort();
+    if (!found) FailUnexpectedEvent(&ev, location);
+    if (AllMaybes()) break;
   }
-  v->maybe_expectations.clear();
+  expectations_.erase(
+      std::remove_if(expectations_.begin(), expectations_.end(),
+                     [](const Expectation& e) {
+                       return absl::holds_alternative<Maybe>(e.result);
+                     }),
+      expectations_.end());
+  if (!expectations_.empty()) FailNoEventReceived(location);
 }
 
-void cq_verify_empty_timeout(cq_verifier* v, int timeout_sec) {
-  gpr_timespec deadline =
-      gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                   gpr_time_from_seconds(timeout_sec, GPR_TIMESPAN));
-  grpc_event ev;
+bool CqVerifier::AllMaybes() const {
+  for (const auto& e : expectations_) {
+    if (!absl::holds_alternative<Maybe>(e.result)) return false;
+  }
+  return true;
+}
 
-  GPR_ASSERT(v->expectations.empty() && "expectation queue must be empty");
-
-  ev = grpc_completion_queue_next(v->cq, deadline, nullptr);
+void CqVerifier::VerifyEmpty(Duration timeout, SourceLocation location) {
+  const gpr_timespec deadline =
+      gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC), timeout.as_timespec());
+  GPR_ASSERT(expectations_.empty());
+  grpc_event ev = grpc_completion_queue_next(cq_, deadline, nullptr);
   if (ev.type != GRPC_QUEUE_TIMEOUT) {
-    gpr_log(GPR_ERROR, "unexpected event (expected nothing): %s",
-            grpc_event_string(&ev).c_str());
-    abort();
+    FailUnexpectedEvent(&ev, location);
   }
 }
 
-void cq_verify_empty(cq_verifier* v) { cq_verify_empty_timeout(v, 1); }
-
-void cq_maybe_expect_completion(cq_verifier* v, const char* file, int line,
-                                void* tag, bool success, bool* seen) {
-  v->maybe_expectations.emplace_back(file, line, GRPC_OP_COMPLETE, tag,
-                                     true /* check_success */, success, seen);
+void CqVerifier::Expect(void* tag, ExpectedResult result,
+                        SourceLocation location) {
+  expectations_.push_back(Expectation{location, tag, result});
 }
 
-static void add(cq_verifier* v, const char* file, int line,
-                grpc_completion_type type, void* tag, bool check_success,
-                bool success) {
-  v->expectations.emplace_back(file, line, type, tag, check_success, success,
-                               nullptr);
-}
-
-void cq_expect_completion(cq_verifier* v, const char* file, int line, void* tag,
-                          bool success) {
-  add(v, file, line, GRPC_OP_COMPLETE, tag, true, success);
-}
-
-void cq_expect_completion_any_status(cq_verifier* v, const char* file, int line,
-                                     void* tag) {
-  add(v, file, line, GRPC_OP_COMPLETE, tag, false, false);
-}
+}  // namespace grpc_core

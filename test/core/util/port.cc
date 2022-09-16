@@ -18,21 +18,20 @@
 
 #include "src/core/lib/iomgr/port.h"
 
+#include <stdlib.h>
+
+#include <grpc/support/sync.h>
+
+#include "src/core/lib/gprpp/sync.h"
 #include "test/core/util/test_config.h"
 #if defined(GRPC_TEST_PICK_PORT)
 
-#include <stdbool.h>
 #include <stdio.h>
-#include <string.h>
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
-#include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/http/httpcli.h"
-#include "src/core/lib/iomgr/resolve_address.h"
 #include "test/core/util/port.h"
 #include "test/core/util/port_server_client.h"
 

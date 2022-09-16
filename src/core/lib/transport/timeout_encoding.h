@@ -21,19 +21,23 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/exec_ctx.h"
+#include <stdint.h>
+
+#include "absl/types/optional.h"
+
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/slice/slice.h"
 
 namespace grpc_core {
 
 class Timeout {
  public:
-  static Timeout FromDuration(grpc_millis duration);
+  static Timeout FromDuration(Duration duration);
 
   // Computes: 100 * ((this - other) / other)
   double RatioVersus(Timeout other) const;
   Slice Encode() const;
-  grpc_millis AsDuration() const;
+  Duration AsDuration() const;
 
  private:
   enum class Unit : uint8_t {
@@ -61,7 +65,7 @@ class Timeout {
   Unit unit_;
 };
 
-absl::optional<grpc_millis> ParseTimeout(const Slice& text);
+absl::optional<Duration> ParseTimeout(const Slice& text);
 
 }  // namespace grpc_core
 

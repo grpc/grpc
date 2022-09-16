@@ -17,15 +17,22 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <cstdint>
-#include <type_traits>
+#include <string.h>
 
+#include <cstdint>
+#include <string>
+#include <utility>
+
+#include "absl/functional/function_ref.h"
 #include "absl/meta/type_traits.h"
 #include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
-#include "src/core/lib/iomgr/error.h"
+#include <grpc/slice.h>
+
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/slice/slice.h"
-#include "src/core/lib/surface/validate_metadata.h"
 
 namespace grpc_core {
 
@@ -39,13 +46,14 @@ namespace metadata_detail {
 template <typename Which>
 struct HasSimpleMemento {
   static constexpr bool value =
-      std::is_trivial<typename Which::MementoType>::value &&
-      sizeof(typename Which::MementoType) <= sizeof(grpc_slice);
+      (std::is_trivial<typename Which::MementoType>::value &&
+       sizeof(typename Which::MementoType) <= sizeof(grpc_slice)) ||
+      std::is_same<typename Which::MementoType, Duration>::value;
 };
 
 // Storage type for a single metadata entry.
 union Buffer {
-  char trivial[sizeof(grpc_slice)];
+  uint8_t trivial[sizeof(grpc_slice)];
   void* pointer;
   grpc_slice slice;
 };
@@ -72,9 +80,9 @@ GPR_ATTRIBUTE_NOINLINE std::string MakeDebugStringPipeline(
 // Extract a trivial field value from a Buffer - for MakeDebugStringPipeline.
 template <typename Field>
 Field FieldFromTrivial(const Buffer& value) {
-  Field x;
-  memcpy(&x, value.trivial, sizeof(x));
-  return x;
+  Field field;
+  memcpy(&field, value.trivial, sizeof(Field));
+  return field;
 }
 
 // Extract a pointer field value from a Buffer - for MakeDebugStringPipeline.
@@ -369,7 +377,7 @@ ParsedMetadata<MetadataContainer>::KeyValueVTable(absl::string_view key) {
   };
   static const auto set = [](const Buffer& value, MetadataContainer* map) {
     auto* p = static_cast<KV*>(value.pointer);
-    map->AppendUnknown(p->first.as_string_view(), p->second.Ref());
+    map->unknown_.Append(p->first.as_string_view(), p->second.Ref());
   };
   static const auto with_new_value = [](Slice* value, MetadataParseErrorFn,
                                         ParsedMetadata* result) {

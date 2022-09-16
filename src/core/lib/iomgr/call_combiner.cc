@@ -25,7 +25,6 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/debug/stats.h"
-#include "src/core/lib/profiling/timers.h"
 
 namespace grpc_core {
 
@@ -38,11 +37,7 @@ constexpr intptr_t kErrorBit = 1;
 
 grpc_error_handle DecodeCancelStateError(gpr_atm cancel_state) {
   if (cancel_state & kErrorBit) {
-#ifdef GRPC_ERROR_IS_ABSEIL_STATUS
     return internal::StatusGetFromHeapPtr(cancel_state & ~kErrorBit);
-#else
-    return reinterpret_cast<grpc_error_handle>(cancel_state & ~kErrorBit);
-#endif
   }
   return GRPC_ERROR_NONE;
 }
@@ -60,12 +55,7 @@ CallCombiner::CallCombiner() {
 
 CallCombiner::~CallCombiner() {
   if (cancel_state_ & kErrorBit) {
-#ifdef GRPC_ERROR_IS_ABSEIL_STATUS
     internal::StatusFreeHeapPtr(cancel_state_ & ~kErrorBit);
-#else
-    GRPC_ERROR_UNREF(reinterpret_cast<grpc_error_handle>(
-        cancel_state_ & ~static_cast<gpr_atm>(kErrorBit)));
-#endif
   }
 }
 
@@ -122,7 +112,6 @@ void CallCombiner::ScheduleClosure(grpc_closure* closure,
 
 void CallCombiner::Start(grpc_closure* closure, grpc_error_handle error,
                          DEBUG_ARGS const char* reason) {
-  GPR_TIMER_SCOPE("CallCombiner::Start", 0);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_call_combiner_trace)) {
     gpr_log(GPR_INFO,
             "==> CallCombiner::Start() [%p] closure=%p [" DEBUG_FMT_STR
@@ -136,10 +125,7 @@ void CallCombiner::Start(grpc_closure* closure, grpc_error_handle error,
     gpr_log(GPR_INFO, "  size: %" PRIdPTR " -> %" PRIdPTR, prev_size,
             prev_size + 1);
   }
-  GRPC_STATS_INC_CALL_COMBINER_LOCKS_SCHEDULED_ITEMS();
   if (prev_size == 0) {
-    GRPC_STATS_INC_CALL_COMBINER_LOCKS_INITIATED();
-    GPR_TIMER_MARK("call_combiner_initiate", 0);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_call_combiner_trace)) {
       gpr_log(GPR_INFO, "  EXECUTING IMMEDIATELY");
     }
@@ -150,18 +136,13 @@ void CallCombiner::Start(grpc_closure* closure, grpc_error_handle error,
       gpr_log(GPR_INFO, "  QUEUING");
     }
     // Queue was not empty, so add closure to queue.
-#ifdef GRPC_ERROR_IS_ABSEIL_STATUS
     closure->error_data.error = internal::StatusAllocHeapPtr(error);
-#else
-    closure->error_data.error = reinterpret_cast<intptr_t>(error);
-#endif
     queue_.Push(
         reinterpret_cast<MultiProducerSingleConsumerQueue::Node*>(closure));
   }
 }
 
 void CallCombiner::Stop(DEBUG_ARGS const char* reason) {
-  GPR_TIMER_SCOPE("CallCombiner::Stop", 0);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_call_combiner_trace)) {
     gpr_log(GPR_INFO, "==> CallCombiner::Stop() [%p] [" DEBUG_FMT_STR "%s]",
             this DEBUG_FMT_ARGS, reason);
@@ -189,13 +170,8 @@ void CallCombiner::Stop(DEBUG_ARGS const char* reason) {
         }
         continue;
       }
-#ifdef GRPC_ERROR_IS_ABSEIL_STATUS
       grpc_error_handle error =
           internal::StatusMoveFromHeapPtr(closure->error_data.error);
-#else
-      grpc_error_handle error =
-          reinterpret_cast<grpc_error_handle>(closure->error_data.error);
-#endif
       closure->error_data.error = 0;
       if (GRPC_TRACE_FLAG_ENABLED(grpc_call_combiner_trace)) {
         gpr_log(GPR_INFO, "  EXECUTING FROM QUEUE: closure=%p error=%s",
@@ -210,14 +186,13 @@ void CallCombiner::Stop(DEBUG_ARGS const char* reason) {
 }
 
 void CallCombiner::SetNotifyOnCancel(grpc_closure* closure) {
-  GRPC_STATS_INC_CALL_COMBINER_SET_NOTIFY_ON_CANCEL();
   while (true) {
     // Decode original state.
     gpr_atm original_state = gpr_atm_acq_load(&cancel_state_);
     grpc_error_handle original_error = DecodeCancelStateError(original_state);
     // If error is set, invoke the cancellation closure immediately.
     // Otherwise, store the new closure.
-    if (original_error != GRPC_ERROR_NONE) {
+    if (!GRPC_ERROR_IS_NONE(original_error)) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_call_combiner_trace)) {
         gpr_log(GPR_INFO,
                 "call_combiner=%p: scheduling notify_on_cancel callback=%p "
@@ -253,22 +228,13 @@ void CallCombiner::SetNotifyOnCancel(grpc_closure* closure) {
 }
 
 void CallCombiner::Cancel(grpc_error_handle error) {
-  GRPC_STATS_INC_CALL_COMBINER_CANCELLED();
-#ifdef GRPC_ERROR_IS_ABSEIL_STATUS
   intptr_t status_ptr = internal::StatusAllocHeapPtr(error);
   gpr_atm new_state = kErrorBit | status_ptr;
-#else
-  gpr_atm new_state = kErrorBit | reinterpret_cast<gpr_atm>(error);
-#endif
   while (true) {
     gpr_atm original_state = gpr_atm_acq_load(&cancel_state_);
     grpc_error_handle original_error = DecodeCancelStateError(original_state);
-    if (original_error != GRPC_ERROR_NONE) {
-#ifdef GRPC_ERROR_IS_ABSEIL_STATUS
+    if (!GRPC_ERROR_IS_NONE(original_error)) {
       internal::StatusFreeHeapPtr(status_ptr);
-#else
-      GRPC_ERROR_UNREF(error);
-#endif
       break;
     }
     if (gpr_atm_full_cas(&cancel_state_, original_state, new_state)) {

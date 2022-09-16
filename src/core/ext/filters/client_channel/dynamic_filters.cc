@@ -18,8 +18,21 @@
 
 #include "src/core/ext/filters/client_channel/dynamic_filters.h"
 
+#include <stddef.h>
+
+#include <new>
+#include <string>
+#include <utility>
+
+#include "absl/status/status.h"
+
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gpr/alloc.h"
 #include "src/core/lib/surface/lame_client.h"
 
 // Conversion between call and call stack.
@@ -52,7 +65,7 @@ DynamicFilters::Call::Call(Args args, grpc_error_handle* error)
   };
   *error = grpc_call_stack_init(channel_stack_->channel_stack_, 1, Destroy,
                                 this, &call_args);
-  if (GPR_UNLIKELY(*error != GRPC_ERROR_NONE)) {
+  if (GPR_UNLIKELY(!GRPC_ERROR_IS_NONE(*error))) {
     gpr_log(GPR_ERROR, "error: %s", grpc_error_std_string(*error).c_str());
     return;
   }
@@ -85,7 +98,7 @@ RefCountedPtr<DynamicFilters::Call> DynamicFilters::Call::Ref(
 }
 
 void DynamicFilters::Call::Unref() {
-  GRPC_CALL_STACK_UNREF(CALL_TO_CALL_STACK(this), "");
+  GRPC_CALL_STACK_UNREF(CALL_TO_CALL_STACK(this), "dynamic-filters-unref");
 }
 
 void DynamicFilters::Call::Unref(const DebugLocation& /*location*/,
@@ -141,7 +154,7 @@ std::pair<grpc_channel_stack*, grpc_error_handle> CreateChannelStack(
   grpc_error_handle error = grpc_channel_stack_init(
       /*initial_refs=*/1, DestroyChannelStack, channel_stack, filters.data(),
       filters.size(), args, "DynamicFilters", channel_stack);
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     gpr_log(GPR_ERROR, "error initializing client internal stack: %s",
             grpc_error_std_string(error).c_str());
     grpc_channel_stack_destroy(channel_stack);
@@ -158,7 +171,7 @@ RefCountedPtr<DynamicFilters> DynamicFilters::Create(
     std::vector<const grpc_channel_filter*> filters) {
   // Attempt to create channel stack from requested filters.
   auto p = CreateChannelStack(args, std::move(filters));
-  if (p.second != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(p.second)) {
     // Channel stack creation failed with requested filters.
     // Create with lame filter instead.
     grpc_error_handle error = p.second;
@@ -166,8 +179,8 @@ RefCountedPtr<DynamicFilters> DynamicFilters::Create(
     grpc_channel_args* new_args =
         grpc_channel_args_copy_and_add(args, &error_arg, 1);
     GRPC_ERROR_UNREF(error);
-    p = CreateChannelStack(new_args, {&grpc_lame_filter});
-    GPR_ASSERT(p.second == GRPC_ERROR_NONE);
+    p = CreateChannelStack(new_args, {&LameClientFilter::kFilter});
+    GPR_ASSERT(GRPC_ERROR_IS_NONE(p.second));
     grpc_channel_args_destroy(new_args);
   }
   return MakeRefCounted<DynamicFilters>(p.first);

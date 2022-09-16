@@ -57,7 +57,6 @@
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/tsi/alts/fake_handshaker/fake_handshaker_server.h"
 #include "test/core/util/fake_udp_and_tcp_server.h"
-#include "test/core/util/memory_counters.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
@@ -226,8 +225,6 @@ class ConnectLoopRunner {
           self->server_address_.get(), self->fake_handshake_server_addr_.get(),
           self->reconnect_backoff_ms_);
       // Connect, forcing an ALTS handshake
-      gpr_timespec connect_deadline =
-          grpc_timeout_seconds_to_deadline(self->per_connect_deadline_seconds_);
       grpc_connectivity_state state =
           grpc_channel_check_connectivity_state(channel, 1);
       ASSERT_EQ(state, GRPC_CHANNEL_IDLE);
@@ -241,7 +238,10 @@ class ConnectLoopRunner {
         grpc_channel_watch_connectivity_state(
             channel, state, gpr_inf_future(GPR_CLOCK_REALTIME), cq, nullptr);
         grpc_event ev =
-            grpc_completion_queue_next(cq, connect_deadline, nullptr);
+            grpc_completion_queue_next(cq,
+                                       grpc_timeout_seconds_to_deadline(
+                                           self->per_connect_deadline_seconds_),
+                                       nullptr);
         ASSERT_EQ(ev.type, GRPC_OP_COMPLETE)
             << "connect_loop runner:" << std::hex << self
             << " got ev.type:" << ev.type << " i:" << i;
@@ -290,7 +290,7 @@ TEST(AltsConcurrentConnectivityTest, TestBasicClientServerHandshakes) {
   {
     ConnectLoopRunner runner(
         test_server.address(), fake_handshake_server.address(),
-        5 /* per connect deadline seconds */, 10 /* loops */,
+        10 /* per connect deadline seconds */, 10 /* loops */,
         GRPC_CHANNEL_READY /* expected connectivity states */,
         0 /* reconnect_backoff_ms unset */);
   }
@@ -454,7 +454,7 @@ TEST(AltsConcurrentConnectivityTest,
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   auto result = RUN_ALL_TESTS();
   grpc_shutdown();

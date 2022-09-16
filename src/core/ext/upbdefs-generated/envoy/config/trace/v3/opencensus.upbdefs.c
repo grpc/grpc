@@ -10,12 +10,12 @@
 #include "envoy/config/trace/v3/opencensus.upbdefs.h"
 #include "envoy/config/trace/v3/opencensus.upb.h"
 
-extern upb_def_init envoy_config_core_v3_grpc_service_proto_upbdefinit;
-extern upb_def_init opencensus_proto_trace_v1_trace_config_proto_upbdefinit;
-extern upb_def_init envoy_annotations_deprecation_proto_upbdefinit;
-extern upb_def_init udpa_annotations_migrate_proto_upbdefinit;
-extern upb_def_init udpa_annotations_status_proto_upbdefinit;
-extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_core_v3_grpc_service_proto_upbdefinit;
+extern _upb_DefPool_Init opencensus_proto_trace_v1_trace_config_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_annotations_deprecation_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_migrate_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_versioning_proto_upbdefinit;
 static const char descriptor[1559] = {'\n', '&', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 't', 'r', 'a', 'c', 'e', '/', 'v', '3', '/', 'o', 
 'p', 'e', 'n', 'c', 'e', 'n', 's', 'u', 's', '.', 'p', 'r', 'o', 't', 'o', '\022', '\025', 'e', 'n', 'v', 'o', 'y', '.', 'c', 'o', 
 'n', 'f', 'i', 'g', '.', 't', 'r', 'a', 'c', 'e', '.', 'v', '3', '\032', '\'', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 
@@ -81,7 +81,7 @@ static const char descriptor[1559] = {'\n', '&', 'e', 'n', 'v', 'o', 'y', '/', '
 '\002', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
 };
 
-static upb_def_init *deps[7] = {
+static _upb_DefPool_Init *deps[7] = {
   &envoy_config_core_v3_grpc_service_proto_upbdefinit,
   &opencensus_proto_trace_v1_trace_config_proto_upbdefinit,
   &envoy_annotations_deprecation_proto_upbdefinit,
@@ -91,9 +91,9 @@ static upb_def_init *deps[7] = {
   NULL
 };
 
-upb_def_init envoy_config_trace_v3_opencensus_proto_upbdefinit = {
+_upb_DefPool_Init envoy_config_trace_v3_opencensus_proto_upbdefinit = {
   deps,
   &envoy_config_trace_v3_opencensus_proto_upb_file_layout,
   "envoy/config/trace/v3/opencensus.proto",
-  UPB_STRVIEW_INIT(descriptor, 1559)
+  UPB_STRINGVIEW_INIT(descriptor, 1559)
 };

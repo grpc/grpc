@@ -19,9 +19,9 @@
 #ifndef GRPC_TEST_CORE_UTIL_TEST_CONFIG_H
 #define GRPC_TEST_CORE_UTIL_TEST_CONFIG_H
 
-#include <grpc/support/time.h>
+#include <stdint.h>
 
-#include "test/core/util/build.h"
+#include <grpc/grpc.h>
 
 extern int64_t g_fixture_slowdown_factor;
 extern int64_t g_poller_slowdown_factor;
@@ -40,7 +40,7 @@ gpr_timespec grpc_timeout_milliseconds_to_deadline(int64_t time_ms);
 #endif
 
 // Prefer TestEnvironment below.
-void grpc_test_init(int argc, char** argv);
+void grpc_test_init(int* argc, char** argv);
 
 // Wait until gRPC is fully shut down.
 // Returns if grpc is shutdown
@@ -53,7 +53,7 @@ namespace testing {
 // provides test init and shutdown inside.
 class TestEnvironment {
  public:
-  TestEnvironment(int argc, char** argv);
+  TestEnvironment(int* argc, char** argv);
   ~TestEnvironment();
 };
 

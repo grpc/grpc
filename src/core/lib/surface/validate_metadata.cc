@@ -20,25 +20,14 @@
 
 #include "src/core/lib/surface/validate_metadata.h"
 
-#include <stdlib.h>
-#include <string.h>
+#include "absl/strings/string_view.h"
 
 #include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
 
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/bitset.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_string_helpers.h"
-
-#if __cplusplus > 201103l
-#define GRPC_VALIDATE_METADATA_CONSTEXPR_FN constexpr
-#define GRPC_VALIDATE_METADATA_CONSTEXPR_VALUE constexpr
-#else
-#define GRPC_VALIDATE_METADATA_CONSTEXPR_FN
-#define GRPC_VALIDATE_METADATA_CONSTEXPR_VALUE const
-#endif
 
 static grpc_error_handle conforms_to(const grpc_slice& slice,
                                      const grpc_core::BitSet<256>& legal_bits,
@@ -63,7 +52,7 @@ static grpc_error_handle conforms_to(const grpc_slice& slice,
 }
 
 static int error2int(grpc_error_handle error) {
-  int r = (error == GRPC_ERROR_NONE);
+  int r = (GRPC_ERROR_IS_NONE(error));
   GRPC_ERROR_UNREF(error);
   return r;
 }
@@ -71,7 +60,7 @@ static int error2int(grpc_error_handle error) {
 namespace {
 class LegalHeaderKeyBits : public grpc_core::BitSet<256> {
  public:
-  GRPC_VALIDATE_METADATA_CONSTEXPR_FN LegalHeaderKeyBits() {
+  constexpr LegalHeaderKeyBits() {
     for (int i = 'a'; i <= 'z'; i++) set(i);
     for (int i = '0'; i <= '9'; i++) set(i);
     set('-');
@@ -79,8 +68,7 @@ class LegalHeaderKeyBits : public grpc_core::BitSet<256> {
     set('.');
   }
 };
-GRPC_VALIDATE_METADATA_CONSTEXPR_VALUE LegalHeaderKeyBits
-    g_legal_header_key_bits;
+constexpr LegalHeaderKeyBits g_legal_header_key_bits;
 }  // namespace
 
 grpc_error_handle grpc_validate_header_key_is_legal(const grpc_slice& slice) {
@@ -106,14 +94,13 @@ int grpc_header_key_is_legal(grpc_slice slice) {
 namespace {
 class LegalHeaderNonBinValueBits : public grpc_core::BitSet<256> {
  public:
-  GRPC_VALIDATE_METADATA_CONSTEXPR_FN LegalHeaderNonBinValueBits() {
+  constexpr LegalHeaderNonBinValueBits() {
     for (int i = 32; i <= 126; i++) {
       set(i);
     }
   }
 };
-GRPC_VALIDATE_METADATA_CONSTEXPR_VALUE LegalHeaderNonBinValueBits
-    g_legal_header_non_bin_value_bits;
+constexpr LegalHeaderNonBinValueBits g_legal_header_non_bin_value_bits;
 }  // namespace
 
 grpc_error_handle grpc_validate_header_nonbin_value_is_legal(

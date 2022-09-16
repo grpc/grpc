@@ -13,11 +13,11 @@
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL Google LLC BE LIABLE FOR ANY
- * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL Google LLC BE LIABLE FOR ANY DIRECT,
+ * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
  * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
@@ -38,71 +38,34 @@
 
 #include <stddef.h>
 
+// TODO(b/232091617): Remove this and fix everything that breaks as a result.
+#include "upb/extension_registry.h"
 #include "upb/upb.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef void upb_msg;
+typedef void upb_Message;
 
-/* For users these are opaque. They can be obtained from upb_msgdef_layout()
- * but users cannot access any of the members. */
-struct upb_msglayout;
-typedef struct upb_msglayout upb_msglayout;
+/* For users these are opaque. They can be obtained from
+ * upb_MessageDef_MiniTable() but users cannot access any of the members. */
+struct upb_MiniTable;
+typedef struct upb_MiniTable upb_MiniTable;
 
 /* Adds unknown data (serialized protobuf data) to the given message.  The data
  * is copied into the message instance. */
-void upb_msg_addunknown(upb_msg *msg, const char *data, size_t len,
-                        upb_arena *arena);
+void upb_Message_AddUnknown(upb_Message* msg, const char* data, size_t len,
+                            upb_Arena* arena);
 
 /* Returns a reference to the message's unknown data. */
-const char *upb_msg_getunknown(const upb_msg *msg, size_t *len);
+const char* upb_Message_GetUnknown(const upb_Message* msg, size_t* len);
 
-/** upb_extreg *******************************************************************/
-
-/* Extension registry: a dynamic data structure that stores a map of:
- *   (upb_msglayout, number) -> extension info
- *
- * upb_decode() uses upb_extreg to look up extensions while parsing binary
- * format.
- *
- * upb_extreg is part of the mini-table (msglayout) family of objects. Like all
- * mini-table objects, it is suitable for reflection-less builds that do not
- * want to expose names into the binary.
- *
- * Unlike most mini-table types, upb_extreg requires dynamic memory allocation
- * and dynamic initialization:
- * * If reflection is being used, then upb_symtab will construct an appropriate
- *   upb_extreg automatically.
- * * For a mini-table only build, the user must manually construct the
- *   upb_extreg and populate it with all of the extensions the user cares about.
- * * A third alternative is to manually unpack relevant extensions after the
- *   main parse is complete, similar to how Any works. This is perhaps the
- *   nicest solution from the perspective of reducing dependencies, avoiding
- *   dynamic memory allocation, and avoiding the need to parse uninteresting
- *   extensions.  The downsides are:
- *     (1) parse errors are not caught during the main parse
- *     (2) the CPU hit of parsing comes during access, which could cause an
- *         undesirable stutter in application performance.
- *
- * Users cannot directly get or put into this map. Users can only add the
- * extensions from a generated module and pass the extension registry to the
- * binary decoder.
- *
- * A upb_symtab provides a upb_extreg, so any users who use reflection do not
- * need to populate a upb_extreg directly.
- */
-
-struct upb_extreg;
-typedef struct upb_extreg upb_extreg;
-
-/* Creates a upb_extreg in the given arena.  The arena must outlive any use of
- * the extreg. */
-upb_extreg *upb_extreg_new(upb_arena *arena);
+/* Returns the number of extensions present in this message. */
+size_t upb_Message_ExtensionCount(const upb_Message* msg);
 
 #ifdef __cplusplus
-}  /* extern "C" */
+} /* extern "C" */
 #endif
 
 #endif /* UPB_MSG_INT_H_ */

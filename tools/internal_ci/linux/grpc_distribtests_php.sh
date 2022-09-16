@@ -30,10 +30,8 @@ tools/run_tests/task_runner.py -f artifact linux php ${TASK_RUNNER_EXTRA_FILTERS
 rm -rf input_artifacts
 mkdir -p input_artifacts
 cp -r artifacts/* input_artifacts/ || true
-rm -rf artifacts_from_build_artifacts_step
-mv artifacts artifacts_from_build_artifacts_step || true
 
-# This step mostly just copies artifacts from input_artifacts (but it also does some wheel stripping)
+# This step simply collects php artifacts from subdirectories of input_artifacts/ and copies them to artifacts/
 tools/run_tests/task_runner.py -f package linux php -x build_packages/sponge_log.xml || FAILED="true"
 
 # the next step expects to find the artifacts from the previous step in the "input_artifacts" folder.

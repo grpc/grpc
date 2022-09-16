@@ -20,96 +20,100 @@
 
 #include "upb/port_def.inc"
 
-static const upb_msglayout_sub envoy_admin_v3_Clusters_submsgs[1] = {
+static const upb_MiniTable_Sub envoy_admin_v3_Clusters_submsgs[1] = {
   {.submsg = &envoy_admin_v3_ClusterStatus_msginit},
 };
 
-static const upb_msglayout_field envoy_admin_v3_Clusters__fields[1] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 11, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+static const upb_MiniTable_Field envoy_admin_v3_Clusters__fields[1] = {
+  {1, UPB_SIZE(0, 0), UPB_SIZE(0, 0), 0, 11, kUpb_FieldMode_Array | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
 };
 
-const upb_msglayout envoy_admin_v3_Clusters_msginit = {
+const upb_MiniTable envoy_admin_v3_Clusters_msginit = {
   &envoy_admin_v3_Clusters_submsgs[0],
   &envoy_admin_v3_Clusters__fields[0],
-  UPB_SIZE(8, 8), 1, _UPB_MSGEXT_NONE, 1, 255,
+  UPB_SIZE(8, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
-static const upb_msglayout_sub envoy_admin_v3_ClusterStatus_submsgs[3] = {
-  {.submsg = &envoy_admin_v3_HostStatus_msginit},
-  {.submsg = &envoy_config_cluster_v3_CircuitBreakers_msginit},
+static const upb_MiniTable_Sub envoy_admin_v3_ClusterStatus_submsgs[4] = {
   {.submsg = &envoy_type_v3_Percent_msginit},
+  {.submsg = &envoy_admin_v3_HostStatus_msginit},
+  {.submsg = &envoy_type_v3_Percent_msginit},
+  {.submsg = &envoy_config_cluster_v3_CircuitBreakers_msginit},
 };
 
-static const upb_msglayout_field envoy_admin_v3_ClusterStatus__fields[7] = {
-  {1, UPB_SIZE(4, 8), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {2, UPB_SIZE(1, 1), 0, 0, 8, _UPB_MODE_SCALAR | (_UPB_REP_1BYTE << _UPB_REP_SHIFT)},
-  {3, UPB_SIZE(20, 40), 1, 2, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {4, UPB_SIZE(32, 64), 0, 0, 11, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {5, UPB_SIZE(24, 48), 2, 2, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {6, UPB_SIZE(28, 56), 3, 1, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {7, UPB_SIZE(12, 24), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
+static const upb_MiniTable_Field envoy_admin_v3_ClusterStatus__fields[7] = {
+  {1, UPB_SIZE(4, 8), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(1, 1), UPB_SIZE(0, 0), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(12, 24), UPB_SIZE(1, 1), 0, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {4, UPB_SIZE(16, 32), UPB_SIZE(0, 0), 1, 11, kUpb_FieldMode_Array | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {5, UPB_SIZE(20, 40), UPB_SIZE(2, 2), 2, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {6, UPB_SIZE(24, 48), UPB_SIZE(3, 3), 3, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {7, UPB_SIZE(28, 56), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
 };
 
-const upb_msglayout envoy_admin_v3_ClusterStatus_msginit = {
+const upb_MiniTable envoy_admin_v3_ClusterStatus_msginit = {
   &envoy_admin_v3_ClusterStatus_submsgs[0],
   &envoy_admin_v3_ClusterStatus__fields[0],
-  UPB_SIZE(40, 80), 7, _UPB_MSGEXT_NONE, 7, 255,
+  UPB_SIZE(40, 72), 7, kUpb_ExtMode_NonExtendable, 7, 255, 0,
 };
 
-static const upb_msglayout_sub envoy_admin_v3_HostStatus_submsgs[5] = {
-  {.submsg = &envoy_admin_v3_HostHealthStatus_msginit},
-  {.submsg = &envoy_admin_v3_SimpleMetric_msginit},
+static const upb_MiniTable_Sub envoy_admin_v3_HostStatus_submsgs[6] = {
   {.submsg = &envoy_config_core_v3_Address_msginit},
-  {.submsg = &envoy_config_core_v3_Locality_msginit},
+  {.submsg = &envoy_admin_v3_SimpleMetric_msginit},
+  {.submsg = &envoy_admin_v3_HostHealthStatus_msginit},
   {.submsg = &envoy_type_v3_Percent_msginit},
+  {.submsg = &envoy_type_v3_Percent_msginit},
+  {.submsg = &envoy_config_core_v3_Locality_msginit},
 };
 
-static const upb_msglayout_field envoy_admin_v3_HostStatus__fields[9] = {
-  {1, UPB_SIZE(20, 32), 1, 2, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {2, UPB_SIZE(40, 72), 0, 1, 11, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {3, UPB_SIZE(24, 40), 2, 0, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {4, UPB_SIZE(28, 48), 3, 4, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {5, UPB_SIZE(4, 4), 0, 0, 13, _UPB_MODE_SCALAR | (_UPB_REP_4BYTE << _UPB_REP_SHIFT)},
-  {6, UPB_SIZE(12, 16), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {7, UPB_SIZE(8, 8), 0, 0, 13, _UPB_MODE_SCALAR | (_UPB_REP_4BYTE << _UPB_REP_SHIFT)},
-  {8, UPB_SIZE(32, 56), 4, 4, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {9, UPB_SIZE(36, 64), 5, 3, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+static const upb_MiniTable_Field envoy_admin_v3_HostStatus__fields[9] = {
+  {1, UPB_SIZE(12, 16), UPB_SIZE(1, 1), 0, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(16, 24), UPB_SIZE(0, 0), 1, 11, kUpb_FieldMode_Array | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(20, 32), UPB_SIZE(2, 2), 2, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {4, UPB_SIZE(24, 40), UPB_SIZE(3, 3), 3, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {5, UPB_SIZE(4, 4), UPB_SIZE(0, 0), kUpb_NoSub, 13, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
+  {6, UPB_SIZE(28, 48), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {7, UPB_SIZE(8, 8), UPB_SIZE(0, 0), kUpb_NoSub, 13, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
+  {8, UPB_SIZE(36, 64), UPB_SIZE(4, 4), 4, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {9, UPB_SIZE(40, 72), UPB_SIZE(5, 5), 5, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
 };
 
-const upb_msglayout envoy_admin_v3_HostStatus_msginit = {
+const upb_MiniTable envoy_admin_v3_HostStatus_msginit = {
   &envoy_admin_v3_HostStatus_submsgs[0],
   &envoy_admin_v3_HostStatus__fields[0],
-  UPB_SIZE(48, 80), 9, _UPB_MSGEXT_NONE, 9, 255,
+  UPB_SIZE(48, 80), 9, kUpb_ExtMode_NonExtendable, 9, 255, 0,
 };
 
-static const upb_msglayout_field envoy_admin_v3_HostHealthStatus__fields[8] = {
-  {1, UPB_SIZE(4, 4), 0, 0, 8, _UPB_MODE_SCALAR | (_UPB_REP_1BYTE << _UPB_REP_SHIFT)},
-  {2, UPB_SIZE(5, 5), 0, 0, 8, _UPB_MODE_SCALAR | (_UPB_REP_1BYTE << _UPB_REP_SHIFT)},
-  {3, UPB_SIZE(0, 0), 0, 0, 14, _UPB_MODE_SCALAR | (_UPB_REP_4BYTE << _UPB_REP_SHIFT)},
-  {4, UPB_SIZE(6, 6), 0, 0, 8, _UPB_MODE_SCALAR | (_UPB_REP_1BYTE << _UPB_REP_SHIFT)},
-  {5, UPB_SIZE(7, 7), 0, 0, 8, _UPB_MODE_SCALAR | (_UPB_REP_1BYTE << _UPB_REP_SHIFT)},
-  {6, UPB_SIZE(8, 8), 0, 0, 8, _UPB_MODE_SCALAR | (_UPB_REP_1BYTE << _UPB_REP_SHIFT)},
-  {7, UPB_SIZE(9, 9), 0, 0, 8, _UPB_MODE_SCALAR | (_UPB_REP_1BYTE << _UPB_REP_SHIFT)},
-  {8, UPB_SIZE(10, 10), 0, 0, 8, _UPB_MODE_SCALAR | (_UPB_REP_1BYTE << _UPB_REP_SHIFT)},
+static const upb_MiniTable_Field envoy_admin_v3_HostHealthStatus__fields[8] = {
+  {1, UPB_SIZE(0, 0), UPB_SIZE(0, 0), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(1, 1), UPB_SIZE(0, 0), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(4, 4), UPB_SIZE(0, 0), kUpb_NoSub, 5, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
+  {4, UPB_SIZE(8, 8), UPB_SIZE(0, 0), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
+  {5, UPB_SIZE(9, 9), UPB_SIZE(0, 0), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
+  {6, UPB_SIZE(10, 10), UPB_SIZE(0, 0), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
+  {7, UPB_SIZE(11, 11), UPB_SIZE(0, 0), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
+  {8, UPB_SIZE(12, 12), UPB_SIZE(0, 0), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
 };
 
-const upb_msglayout envoy_admin_v3_HostHealthStatus_msginit = {
+const upb_MiniTable envoy_admin_v3_HostHealthStatus_msginit = {
   NULL,
   &envoy_admin_v3_HostHealthStatus__fields[0],
-  UPB_SIZE(16, 16), 8, _UPB_MSGEXT_NONE, 8, 255,
+  UPB_SIZE(16, 16), 8, kUpb_ExtMode_NonExtendable, 8, 255, 0,
 };
 
-static const upb_msglayout *messages_layout[4] = {
+static const upb_MiniTable *messages_layout[4] = {
   &envoy_admin_v3_Clusters_msginit,
   &envoy_admin_v3_ClusterStatus_msginit,
   &envoy_admin_v3_HostStatus_msginit,
   &envoy_admin_v3_HostHealthStatus_msginit,
 };
 
-const upb_msglayout_file envoy_admin_v3_clusters_proto_upb_file_layout = {
+const upb_MiniTable_File envoy_admin_v3_clusters_proto_upb_file_layout = {
   messages_layout,
   NULL,
+  NULL,
   4,
+  0,
   0,
 };
 

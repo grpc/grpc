@@ -20,11 +20,12 @@
 #define SRC_CPP_SERVER_EXTERNAL_CONNECTION_ACCEPTOR_IMPL_H_
 
 #include <memory>
+#include <string>
 
-#include <grpc/impl/codegen/grpc_types.h>
 #include <grpcpp/security/server_credentials.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/support/channel_arguments.h>
+#include <grpcpp/support/config.h>
 
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/tcp_server.h"
@@ -53,7 +54,7 @@ class ExternalConnectionAcceptorImpl
 
   ServerCredentials* GetCredentials() { return creds_.get(); }
 
-  void SetToChannelArgs(::grpc::ChannelArguments* args);
+  void SetToChannelArgs(grpc::ChannelArguments* args);
 
  private:
   const std::string name_;

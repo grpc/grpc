@@ -17,6 +17,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <new>
 #include <utility>
 
 namespace grpc_core {

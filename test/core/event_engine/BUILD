@@ -16,7 +16,51 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_p
 
 licenses(["notice"])
 
-grpc_package(name = "test/core/event_engine")
+grpc_package(
+    name = "test/core/event_engine",
+    visibility = "tests",
+)
+
+grpc_cc_test(
+    name = "common_closures_test",
+    srcs = ["common_closures_test.cc"],
+    external_deps = ["gtest"],
+    deps = [
+        "//:common_event_engine_closures",
+        "//:gpr_platform",
+        "//:grpc",
+        "//test/core/util:grpc_test_util_unsecure",
+    ],
+)
+
+grpc_cc_test(
+    name = "forkable_test",
+    srcs = ["forkable_test.cc"],
+    external_deps = [
+        "absl/time",
+        "gtest",
+    ],
+    deps = [
+        "//:forkable",
+        "//:gpr",
+        "//:gpr_platform",
+        "//:grpc_unsecure",
+    ],
+)
+
+grpc_cc_test(
+    name = "thread_pool_test",
+    srcs = ["thread_pool_test.cc"],
+    external_deps = [
+        "absl/synchronization",
+        "gtest",
+    ],
+    deps = [
+        "//:event_engine_thread_pool",
+        "//:gpr",
+        "//:notification",
+    ],
+)
 
 grpc_cc_test(
     name = "endpoint_config_test",
@@ -25,29 +69,10 @@ grpc_cc_test(
     language = "C++",
     uses_polling = False,
     deps = [
+        "//:gpr_platform",
         "//:grpc",
-        "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_unsecure",
     ],
-)
-
-grpc_cc_library(
-    name = "event_engine_test_suite",
-    testonly = 1,
-    srcs = [
-        "test_suite/event_engine_test.cc",
-        "test_suite/timer_test.cc",
-    ],
-    hdrs = ["test_suite/event_engine_test.h"],
-    external_deps = [
-        "gtest",
-    ],
-    language = "C++",
-    deps = [
-        "//:grpc",
-        "//test/core/util:grpc_test_util",
-    ],
-    # Ensure the linker doesn't throw away test cases.
-    alwayslink = 1,
 )
 
 grpc_cc_test(
@@ -55,7 +80,33 @@ grpc_cc_test(
     srcs = ["smoke_test.cc"],
     external_deps = ["gtest"],
     deps = [
+        "//:event_engine_base_hdrs",
+        "//:gpr_platform",
         "//:grpc",
-        "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_unsecure",
+    ],
+)
+
+grpc_cc_test(
+    name = "slice_buffer_test",
+    srcs = ["slice_buffer_test.cc"],
+    external_deps = ["gtest"],
+    deps = [
+        "//:event_engine_base_hdrs",
+        "//:gpr_platform",
+        "//:grpc",
+        "//:slice",
+        "//test/core/util:grpc_test_util_unsecure",
+    ],
+)
+
+grpc_cc_library(
+    name = "test_init",
+    srcs = ["test_init.cc"],
+    hdrs = ["test_init.h"],
+    external_deps = ["absl/strings"],
+    deps = [
+        "//:event_engine_base_hdrs",
+        "//:gpr",
     ],
 )

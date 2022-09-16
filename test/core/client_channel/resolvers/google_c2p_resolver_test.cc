@@ -37,7 +37,7 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 
-#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "test/core/util/fake_udp_and_tcp_server.h"
 #include "test/core/util/port.h"
@@ -47,11 +47,11 @@ namespace {
 
 void TryConnectAndDestroy(const char* fake_metadata_server_address) {
   grpc::ChannelArguments args;
-  std::string target = "google-c2p-experimental:///servername_not_used";
+  std::string target = "google-c2p:///servername_not_used";
   args.SetInt("grpc.testing.google_c2p_resolver_pretend_running_on_gcp", 1);
   args.SetString("grpc.testing.google_c2p_resolver_metadata_server_override",
                  fake_metadata_server_address);
-  auto channel = ::grpc::CreateCustomChannel(
+  auto channel = grpc::CreateCustomChannel(
       target, grpc::InsecureChannelCredentials(), args);
   // Start connecting, and give some time for the google-c2p resolver to begin
   // resolution and start trying to contact the metadata server.
@@ -71,7 +71,7 @@ TEST(DestroyGoogleC2pChannelWithActiveConnectStressTest,
           kWaitForClientToSendFirstBytes,
       grpc_core::testing::FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
   std::vector<std::unique_ptr<std::thread>> threads;
-  const int kNumThreads = 100;
+  const int kNumThreads = 10;
   threads.reserve(kNumThreads);
   for (int i = 0; i < kNumThreads; i++) {
     threads.emplace_back(
@@ -90,7 +90,7 @@ TEST(DestroyGoogleC2pChannelWithActiveConnectStressTest,
   int port = grpc_pick_unused_port_or_die();
   std::string address = absl::StrFormat("[::1]:%d", port);
   std::vector<std::unique_ptr<std::thread>> threads;
-  const int kNumThreads = 100;
+  const int kNumThreads = 10;
   threads.reserve(kNumThreads);
   for (int i = 0; i < kNumThreads; i++) {
     threads.emplace_back(
@@ -104,8 +104,8 @@ TEST(DestroyGoogleC2pChannelWithActiveConnectStressTest,
 }  // namespace
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
-  gpr_setenv("GRPC_EXPERIMENTAL_GOOGLE_C2P_RESOLVER", "true");
+  grpc::testing::TestEnvironment env(&argc, argv);
+  grpc_core::SetEnv("GRPC_EXPERIMENTAL_GOOGLE_C2P_RESOLVER", "true");
   ::testing::InitGoogleTest(&argc, argv);
   grpc_init();
   auto result = RUN_ALL_TESTS();

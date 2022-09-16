@@ -20,7 +20,10 @@
 
 #include <grpc/census.h>
 #include <grpc/grpc.h>
+#include <grpc/impl/codegen/grpc_types.h>
 
+#include "src/core/lib/channel/context.h"
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call.h"
 

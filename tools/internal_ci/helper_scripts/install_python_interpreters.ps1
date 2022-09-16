@@ -63,51 +63,68 @@ function Install-Python {
 
 # Python 3.8
 $Python38x86Config = @{
-    PythonVersion = "3.8.0"
-    PythonInstaller = "python-3.8.0"
+    PythonVersion = "3.8.10"
+    PythonInstaller = "python-3.8.10"
     PythonInstallPath = "C:\Python38_32bit"
-    PythonInstallerHash = "412a649d36626d33b8ca5593cf18318c"
+    PythonInstallerHash = "b355cfc84b681ace8908ae50908e8761"
 }
 Install-Python @Python38x86Config
 
 $Python38x64Config = @{
-    PythonVersion = "3.8.0"
-    PythonInstaller = "python-3.8.0-amd64"
+    PythonVersion = "3.8.10"
+    PythonInstaller = "python-3.8.10-amd64"
     PythonInstallPath = "C:\Python38"
-    PythonInstallerHash = "29ea87f24c32f5e924b7d63f8a08ee8d"
+    PythonInstallerHash = "62cf1a12a5276b0259e8761d4cf4fe42"
 }
 Install-Python @Python38x64Config
 
 # Python 3.9
 $Python39x86Config = @{
-    PythonVersion = "3.9.0"
-    PythonInstaller = "python-3.9.0"
+    PythonVersion = "3.9.11"
+    PythonInstaller = "python-3.9.11"
     PythonInstallPath = "C:\Python39_32bit"
-    PythonInstallerHash = "4a2812db8ab9f2e522c96c7728cfcccb"
+    PythonInstallerHash = "4210652b14a030517046cdf111c09c1e"
 }
 Install-Python @Python39x86Config
 
 $Python39x64Config = @{
-    PythonVersion = "3.9.0"
-    PythonInstaller = "python-3.9.0-amd64"
+    PythonVersion = "3.9.11"
+    PythonInstaller = "python-3.9.11-amd64"
     PythonInstallPath = "C:\Python39"
-    PythonInstallerHash = "b61a33dc28f13b561452f3089c87eb63"
+    PythonInstallerHash = "fef52176a572efd48b7148f006b25801"
 }
 Install-Python @Python39x64Config
 
 # Python 3.10
 $Python310x86Config = @{
-    PythonVersion = "3.10.0"
-    PythonInstaller = "python-3.10.0rc1"
+    PythonVersion = "3.10.3"
+    PythonInstaller = "python-3.10.3"
     PythonInstallPath = "C:\Python310_32bit"
-    PythonInstallerHash = "6de353f2f7422aa030d4ccc788ffa75e"
+    PythonInstallerHash = "6a336cb2aca62dd05805316ab3aaf2b5"
 }
 Install-Python @Python310x86Config
 
 $Python310x64Config = @{
-    PythonVersion = "3.10.0"
-    PythonInstaller = "python-3.10.0rc1-amd64"
+    PythonVersion = "3.10.3"
+    PythonInstaller = "python-3.10.3-amd64"
     PythonInstallPath = "C:\Python310"
-    PythonInstallerHash = "39135519b044757f0a3b09d63612b0da"
+    PythonInstallerHash = "9ea305690dbfd424a632b6a659347c1e"
 }
 Install-Python @Python310x64Config
+
+# Python 3.11
+$Python311x86Config = @{
+    PythonVersion = "3.11.0"
+    PythonInstaller = "python-3.11.0rc1"
+    PythonInstallPath = "C:\Python311_32bit"
+    PythonInstallerHash = "d2e5420e53d9e71c82b4a19763dbaa12"
+}
+Install-Python @Python311x86Config
+
+$Python311x64Config = @{
+    PythonVersion = "3.11.0"
+    PythonInstaller = "python-3.11.0rc1-amd64"
+    PythonInstallPath = "C:\Python311"
+    PythonInstallerHash = "5943d8702e40a5ccd62e5a8d4c8852aa"
+}
+Install-Python @Python311x64Config

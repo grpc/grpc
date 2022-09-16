@@ -20,10 +20,20 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h"
 
+#include <string.h>
+
+#include <algorithm>
+
 #include "google/protobuf/duration.upb.h"
 #include "google/protobuf/timestamp.upb.h"
+#include "upb/upb.h"
 
-#include <grpc/support/alloc.h>
+#include <grpc/impl/codegen/gpr_types.h>
+#include <grpc/support/log.h>
+#include <grpc/support/time.h>
+
+#include "src/core/lib/gprpp/memory.h"
+#include "src/proto/grpc/lb/v1/load_balancer.upb.h"
 
 namespace grpc_core {
 
@@ -41,7 +51,7 @@ bool GrpcLbServer::operator==(const GrpcLbServer& other) const {
 namespace {
 
 grpc_slice grpc_grpclb_request_encode(
-    const grpc_lb_v1_LoadBalanceRequest* request, upb_arena* arena) {
+    const grpc_lb_v1_LoadBalanceRequest* request, upb_Arena* arena) {
   size_t buf_length;
   char* buf =
       grpc_lb_v1_LoadBalanceRequest_serialize(request, arena, &buf_length);
@@ -50,14 +60,15 @@ grpc_slice grpc_grpclb_request_encode(
 
 }  // namespace
 
-grpc_slice GrpcLbRequestCreate(const char* lb_service_name, upb_arena* arena) {
+grpc_slice GrpcLbRequestCreate(const char* lb_service_name, upb_Arena* arena) {
   grpc_lb_v1_LoadBalanceRequest* req = grpc_lb_v1_LoadBalanceRequest_new(arena);
   grpc_lb_v1_InitialLoadBalanceRequest* initial_request =
       grpc_lb_v1_LoadBalanceRequest_mutable_initial_request(req, arena);
   size_t name_len = std::min(strlen(lb_service_name),
                              size_t(GRPC_GRPCLB_SERVICE_NAME_MAX_LENGTH));
   grpc_lb_v1_InitialLoadBalanceRequest_set_name(
-      initial_request, upb_strview_make(lb_service_name, name_len));
+      initial_request,
+      upb_StringView_FromDataAndSize(lb_service_name, name_len));
   return grpc_grpclb_request_encode(req, arena);
 }
 
@@ -76,7 +87,7 @@ grpc_slice GrpcLbLoadReportRequestCreate(
     int64_t num_calls_finished_with_client_failed_to_send,
     int64_t num_calls_finished_known_received,
     const GrpcLbClientStats::DroppedCallCounts* drop_token_counts,
-    upb_arena* arena) {
+    upb_Arena* arena) {
   grpc_lb_v1_LoadBalanceRequest* req = grpc_lb_v1_LoadBalanceRequest_new(arena);
   grpc_lb_v1_ClientStats* req_stats =
       grpc_lb_v1_LoadBalanceRequest_mutable_client_stats(req, arena);
@@ -95,10 +106,10 @@ grpc_slice GrpcLbLoadReportRequestCreate(
       grpc_lb_v1_ClientStatsPerToken* cur_msg =
           grpc_lb_v1_ClientStats_add_calls_finished_with_drop(req_stats, arena);
       const size_t token_len = strlen(cur.token.get());
-      char* token = reinterpret_cast<char*>(upb_arena_malloc(arena, token_len));
+      char* token = reinterpret_cast<char*>(upb_Arena_Malloc(arena, token_len));
       memcpy(token, cur.token.get(), token_len);
       grpc_lb_v1_ClientStatsPerToken_set_load_balance_token(
-          cur_msg, upb_strview_make(token, token_len));
+          cur_msg, upb_StringView_FromDataAndSize(token, token_len));
       grpc_lb_v1_ClientStatsPerToken_set_num_calls(cur_msg, cur.count);
     }
   }
@@ -121,7 +132,7 @@ bool ParseServerList(const grpc_lb_v1_LoadBalanceResponse& response,
     server_list->reserve(server_count);
     for (size_t i = 0; i < server_count; ++i) {
       GrpcLbServer& cur = *server_list->emplace(server_list->end());
-      upb_strview address = grpc_lb_v1_Server_ip_address(servers[i]);
+      upb_StringView address = grpc_lb_v1_Server_ip_address(servers[i]);
       if (address.size == 0) {
         ;  // Nothing to do because cur->ip_address is an empty string.
       } else if (address.size <= GRPC_GRPCLB_SERVER_IP_ADDRESS_MAX_SIZE) {
@@ -129,7 +140,7 @@ bool ParseServerList(const grpc_lb_v1_LoadBalanceResponse& response,
         memcpy(cur.ip_addr, address.data, address.size);
       }
       cur.port = grpc_lb_v1_Server_port(servers[i]);
-      upb_strview token = grpc_lb_v1_Server_load_balance_token(servers[i]);
+      upb_StringView token = grpc_lb_v1_Server_load_balance_token(servers[i]);
       if (token.size == 0) {
         ;  // Nothing to do because cur->load_balance_token is an empty string.
       } else if (token.size <= GRPC_GRPCLB_SERVER_LOAD_BALANCE_TOKEN_MAX_SIZE) {
@@ -145,17 +156,16 @@ bool ParseServerList(const grpc_lb_v1_LoadBalanceResponse& response,
   return true;
 }
 
-grpc_millis grpc_grpclb_duration_to_millis(
-    const google_protobuf_Duration* duration_pb) {
-  return static_cast<grpc_millis>(
-      (google_protobuf_Duration_seconds(duration_pb) * GPR_MS_PER_SEC) +
-      (google_protobuf_Duration_nanos(duration_pb) / GPR_NS_PER_MS));
+Duration ParseDuration(const google_protobuf_Duration* duration_pb) {
+  return Duration::FromSecondsAndNanoseconds(
+      google_protobuf_Duration_seconds(duration_pb),
+      google_protobuf_Duration_nanos(duration_pb));
 }
 
 }  // namespace
 
 bool GrpcLbResponseParse(const grpc_slice& serialized_response,
-                         upb_arena* arena, GrpcLbResponse* result) {
+                         upb_Arena* arena, GrpcLbResponse* result) {
   grpc_lb_v1_LoadBalanceResponse* response =
       grpc_lb_v1_LoadBalanceResponse_parse(
           reinterpret_cast<const char*>(
@@ -176,7 +186,7 @@ bool GrpcLbResponseParse(const grpc_slice& serialized_response,
             initial_response);
     if (client_stats_report_interval != nullptr) {
       result->client_stats_report_interval =
-          grpc_grpclb_duration_to_millis(client_stats_report_interval);
+          ParseDuration(client_stats_report_interval);
     }
     return true;
   }

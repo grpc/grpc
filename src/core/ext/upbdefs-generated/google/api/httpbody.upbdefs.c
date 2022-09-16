@@ -10,7 +10,7 @@
 #include "google/api/httpbody.upbdefs.h"
 #include "google/api/httpbody.upb.h"
 
-extern upb_def_init google_protobuf_any_proto_upbdefinit;
+extern _upb_DefPool_Init google_protobuf_any_proto_upbdefinit;
 static const char descriptor[301] = {'\n', '\031', 'g', 'o', 'o', 'g', 'l', 'e', '/', 'a', 'p', 'i', '/', 'h', 't', 't', 'p', 'b', 'o', 'd', 'y', '.', 'p', 'r', 'o', 
 't', 'o', '\022', '\n', 'g', 'o', 'o', 'g', 'l', 'e', '.', 'a', 'p', 'i', '\032', '\031', 'g', 'o', 'o', 'g', 'l', 'e', '/', 'p', 'r', 
 'o', 't', 'o', 'b', 'u', 'f', '/', 'a', 'n', 'y', '.', 'p', 'r', 'o', 't', 'o', '\"', 'w', '\n', '\010', 'H', 't', 't', 'p', 'B', 
@@ -26,14 +26,14 @@ static const char descriptor[301] = {'\n', '\031', 'g', 'o', 'o', 'g', 'l', 'e',
 '3', 
 };
 
-static upb_def_init *deps[2] = {
+static _upb_DefPool_Init *deps[2] = {
   &google_protobuf_any_proto_upbdefinit,
   NULL
 };
 
-upb_def_init google_api_httpbody_proto_upbdefinit = {
+_upb_DefPool_Init google_api_httpbody_proto_upbdefinit = {
   deps,
   &google_api_httpbody_proto_upb_file_layout,
   "google/api/httpbody.proto",
-  UPB_STRVIEW_INIT(descriptor, 301)
+  UPB_STRINGVIEW_INIT(descriptor, 301)
 };

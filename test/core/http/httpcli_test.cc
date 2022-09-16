@@ -23,14 +23,20 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "absl/strings/str_format.h"
+
 #include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/gprpp/time_util.h"
 #include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/security/credentials/credentials.h"
 #include "test/core/http/httpcli_test_util.h"
 #include "test/core/util/fake_udp_and_tcp_server.h"
 #include "test/core/util/port.h"
@@ -39,8 +45,8 @@
 
 namespace {
 
-grpc_millis NSecondsTime(int seconds) {
-  return grpc_timespec_to_millis_round_up(
+grpc_core::Timestamp NSecondsTime(int seconds) {
+  return grpc_core::Timestamp::FromTimespecRoundUp(
       grpc_timeout_seconds_to_deadline(seconds));
 }
 
@@ -143,7 +149,7 @@ void OnFinish(void* arg, grpc_error_handle error) {
   const char* expect =
       "<html><head><title>Hello world!</title></head>"
       "<body><p>This is a test</p></body></html>";
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   grpc_http_response response = request_state->response;
   gpr_log(GPR_INFO, "response status=%d error=%s", response.status,
           grpc_error_std_string(error).c_str());
@@ -165,7 +171,7 @@ void OnFinishExpectFailure(void* arg, grpc_error_handle error) {
   grpc_http_response response = request_state->response;
   gpr_log(GPR_INFO, "response status=%d error=%s", response.status,
           grpc_error_std_string(error).c_str());
-  GPR_ASSERT(error != GRPC_ERROR_NONE);
+  GPR_ASSERT(!GRPC_ERROR_IS_NONE(error));
   request_state->test->RunAndKick(
       [request_state]() { request_state->done = true; });
 }
@@ -249,7 +255,7 @@ TEST_F(HttpRequestTest, CancelGetDuringDNSResolution) {
   grpc_ares_test_only_inject_config = InjectNonResponsiveDNSServer;
   // Run the same test on several threads in parallel to try to trigger races
   // etc.
-  int kNumThreads = 100;
+  int kNumThreads = 10;
   std::vector<std::thread> threads;
   threads.reserve(kNumThreads);
   for (int i = 0; i < kNumThreads; i++) {
@@ -303,7 +309,7 @@ TEST_F(HttpRequestTest, CancelGetWhileReadingResponse) {
       grpc_core::testing::FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
   // Run the same test on several threads in parallel to try to trigger races
   // etc.
-  int kNumThreads = 100;
+  int kNumThreads = 10;
   std::vector<std::thread> threads;
   threads.reserve(kNumThreads);
   for (int i = 0; i < kNumThreads; i++) {
@@ -366,7 +372,7 @@ TEST_F(HttpRequestTest, CancelGetRacesWithConnectionFailure) {
       absl::StrCat("[::1]:", std::to_string(fake_server_port));
   // Run the same test on several threads in parallel to try to trigger races
   // etc.
-  int kNumThreads = 100;
+  int kNumThreads = 10;
   std::vector<std::thread> threads;
   threads.reserve(kNumThreads);
   for (int i = 0; i < kNumThreads; i++) {
@@ -464,11 +470,54 @@ TEST_F(HttpRequestTest, CallerPollentsAreNotReferencedAfterCallbackIsRan) {
   exec_ctx.Flush();
 }
 
+void CancelRequest(grpc_core::HttpRequest* req) {
+  gpr_log(
+      GPR_INFO,
+      "test only HttpRequest::OnHandshakeDone intercept orphaning request: %p",
+      req);
+  req->Orphan();
+}
+
+// This exercises the code paths that happen when we cancel an HTTP request
+// before the security handshake callback runs, but after that callback has
+// already been scheduled with a success result. This case is interesting
+// because the current security handshake API transfers ownership of output
+// arguments to the caller only if the handshake is successful, rendering
+// this code path as something that only occurs with just the right timing.
+TEST_F(HttpRequestTest,
+       CancelDuringSecurityHandshakeButHandshakeStillSucceeds) {
+  RequestState request_state(this);
+  grpc_http_request req;
+  grpc_core::ExecCtx exec_ctx;
+  std::string host = absl::StrFormat("localhost:%d", g_server_port);
+  gpr_log(GPR_INFO, "requesting from %s", host.c_str());
+  memset(&req, 0, sizeof(req));
+  auto uri = grpc_core::URI::Create("http", host, "/get", {} /* query params */,
+                                    "" /* fragment */);
+  GPR_ASSERT(uri.ok());
+  grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
+      grpc_core::HttpRequest::Get(
+          std::move(*uri), nullptr /* channel args */, pops(), &req,
+          NSecondsTime(15),
+          GRPC_CLOSURE_CREATE(OnFinishExpectFailure, &request_state,
+                              grpc_schedule_on_exec_ctx),
+          &request_state.response,
+          grpc_core::RefCountedPtr<grpc_channel_credentials>(
+              grpc_insecure_credentials_create()));
+  grpc_core::HttpRequest::TestOnlySetOnHandshakeDoneIntercept(CancelRequest);
+  http_request->Start();
+  (void)http_request.release();  // request will be orphaned by CancelRequest
+  exec_ctx.Flush();
+  PollUntil([&request_state]() { return request_state.done; },
+            AbslDeadlineSeconds(60));
+  grpc_core::HttpRequest::TestOnlySetOnHandshakeDoneIntercept(nullptr);
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   // launch the test server later, so that --gtest_list_tests works
   g_argc = argc;
   g_argv = argv;

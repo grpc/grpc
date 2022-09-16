@@ -31,6 +31,7 @@
 
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
@@ -72,11 +73,12 @@ BENCHMARK(BM_HpackEncoderInitDestroy);
 static void BM_HpackEncoderEncodeDeadline(benchmark::State& state) {
   TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
-  grpc_millis saved_now = grpc_core::ExecCtx::Get()->Now();
+  grpc_core::Timestamp saved_now = grpc_core::ExecCtx::Get()->Now();
 
   auto arena = grpc_core::MakeScopedArena(1024, g_memory_allocator);
   grpc_metadata_batch b(arena.get());
-  b.Set(grpc_core::GrpcTimeoutMetadata(), saved_now + 30 * 1000);
+  b.Set(grpc_core::GrpcTimeoutMetadata(),
+        saved_now + grpc_core::Duration::Seconds(30));
 
   grpc_core::HPackCompressor c;
   grpc_transport_one_way_stats stats;
@@ -374,7 +376,7 @@ static void BM_HpackParserParseHeader(benchmark::State& state) {
   auto parse_vec = [&p](const std::vector<grpc_slice>& slices) {
     for (size_t i = 0; i < slices.size(); ++i) {
       auto error = p.Parse(slices[i], i == slices.size() - 1);
-      GPR_ASSERT(error == GRPC_ERROR_NONE);
+      GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
     }
   };
   parse_vec(init_slices);
@@ -680,10 +682,10 @@ void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 }  // namespace benchmark
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   LibraryInitializer libInit;
   ::benchmark::Initialize(&argc, argv);
-  ::grpc::testing::InitTest(&argc, &argv, false);
+  grpc::testing::InitTest(&argc, &argv, false);
   benchmark::RunTheBenchmarksNamespaced();
   return 0;
 }

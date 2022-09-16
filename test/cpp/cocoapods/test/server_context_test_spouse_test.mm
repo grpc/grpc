@@ -55,7 +55,7 @@ bool ClientMetadataContains(const grpc::ServerContext& context, const grpc::stri
 
 @implementation ServerContextTestSpouseTest
 
-TEST(ServerContextTestSpouseTest, ClientMetadata) {
+TEST(ServerContextTestSpouseTest, ClientMetadataHandle) {
   grpc::ServerContext context;
   grpc::testing::ServerContextTestSpouse spouse(&context);
 
@@ -81,7 +81,7 @@ TEST(ServerContextTestSpouseTest, InitialMetadata) {
   ASSERT_EQ(metadata, spouse.GetInitialMetadata());
 }
 
-TEST(ServerContextTestSpouseTest, TrailingMetadata) {
+TEST(ServerContextTestSpouseTest, ServerMetadataHandle) {
   grpc::ServerContext context;
   grpc::testing::ServerContextTestSpouse spouse(&context);
   std::multimap<std::string, std::string> metadata;

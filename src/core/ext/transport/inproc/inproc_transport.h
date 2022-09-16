@@ -21,7 +21,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/transport/transport_impl.h"
+#include <grpc/impl/codegen/grpc_types.h>
+
+#include "src/core/lib/debug/trace.h"
 
 grpc_channel* grpc_inproc_channel_create(grpc_server* server,
                                          const grpc_channel_args* args,

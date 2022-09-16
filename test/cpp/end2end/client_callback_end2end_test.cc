@@ -37,7 +37,7 @@
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/client_callback.h>
 
-#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
@@ -133,8 +133,8 @@ class ClientCallbackEnd2endTest
     switch (GetParam().protocol) {
       case Protocol::TCP:
         if (!GetParam().use_interceptors) {
-          channel_ = ::grpc::CreateCustomChannel(server_address_.str(),
-                                                 channel_creds, args);
+          channel_ = grpc::CreateCustomChannel(server_address_.str(),
+                                               channel_creds, args);
         } else {
           channel_ = CreateCustomChannelWithInterceptors(
               server_address_.str(), channel_creds, args,
@@ -1372,8 +1372,8 @@ TEST_P(ClientCallbackEnd2endTest, UnimplementedRpc) {
       GetParam().credentials_type, &args);
   std::shared_ptr<Channel> channel =
       (GetParam().protocol == Protocol::TCP)
-          ? ::grpc::CreateCustomChannel(server_address_.str(), channel_creds,
-                                        args)
+          ? grpc::CreateCustomChannel(server_address_.str(), channel_creds,
+                                      args)
           : server_->InProcessChannel(args);
   std::unique_ptr<grpc::testing::UnimplementedEchoService::Stub> stub;
   stub = grpc::testing::UnimplementedEchoService::NewStub(channel);
@@ -1524,7 +1524,7 @@ TEST_P(ClientCallbackEnd2endTest,
 std::vector<TestScenario> CreateTestScenarios(bool test_insecure) {
 #if TARGET_OS_IPHONE
   // Workaround Apple CFStream bug
-  gpr_setenv("grpc_cfstream", "0");
+  grpc_core::SetEnv("grpc_cfstream", "0");
 #endif
 
   std::vector<TestScenario> scenarios;
@@ -1569,7 +1569,7 @@ INSTANTIATE_TEST_SUITE_P(ClientCallbackEnd2endTest, ClientCallbackEnd2endTest,
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   int ret = RUN_ALL_TESTS();
   grpc_shutdown();

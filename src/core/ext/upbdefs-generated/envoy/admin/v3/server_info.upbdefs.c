@@ -10,10 +10,10 @@
 #include "envoy/admin/v3/server_info.upbdefs.h"
 #include "envoy/admin/v3/server_info.upb.h"
 
-extern upb_def_init envoy_config_core_v3_base_proto_upbdefinit;
-extern upb_def_init google_protobuf_duration_proto_upbdefinit;
-extern upb_def_init udpa_annotations_status_proto_upbdefinit;
-extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_core_v3_base_proto_upbdefinit;
+extern _upb_DefPool_Init google_protobuf_duration_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_versioning_proto_upbdefinit;
 static const char descriptor[2736] = {'\n', ' ', 'e', 'n', 'v', 'o', 'y', '/', 'a', 'd', 'm', 'i', 'n', '/', 'v', '3', '/', 's', 'e', 'r', 'v', 'e', 'r', '_', 'i', 
 'n', 'f', 'o', '.', 'p', 'r', 'o', 't', 'o', '\022', '\016', 'e', 'n', 'v', 'o', 'y', '.', 'a', 'd', 'm', 'i', 'n', '.', 'v', '3', 
 '\032', '\037', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'c', 'o', 'r', 'e', '/', 'v', '3', '/', 'b', 'a', 
@@ -126,7 +126,7 @@ static const char descriptor[2736] = {'\n', ' ', 'e', 'n', 'v', 'o', 'y', '/', '
 '\002', '\020', '\002', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
 };
 
-static upb_def_init *deps[5] = {
+static _upb_DefPool_Init *deps[5] = {
   &envoy_config_core_v3_base_proto_upbdefinit,
   &google_protobuf_duration_proto_upbdefinit,
   &udpa_annotations_status_proto_upbdefinit,
@@ -134,9 +134,9 @@ static upb_def_init *deps[5] = {
   NULL
 };
 
-upb_def_init envoy_admin_v3_server_info_proto_upbdefinit = {
+_upb_DefPool_Init envoy_admin_v3_server_info_proto_upbdefinit = {
   deps,
   &envoy_admin_v3_server_info_proto_upb_file_layout,
   "envoy/admin/v3/server_info.proto",
-  UPB_STRVIEW_INIT(descriptor, 2736)
+  UPB_STRINGVIEW_INIT(descriptor, 2736)
 };

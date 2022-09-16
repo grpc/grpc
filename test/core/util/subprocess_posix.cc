@@ -20,14 +20,9 @@
 
 #ifdef GPR_POSIX_SUBPROCESS
 
-#include <assert.h>
 #include <errno.h>
 #include <signal.h>
-#include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
-#include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
 
@@ -96,5 +91,7 @@ void gpr_subprocess_interrupt(gpr_subprocess* p) {
     kill(p->pid, SIGINT);
   }
 }
+
+int gpr_subprocess_get_process_id(gpr_subprocess* p) { return p->pid; }
 
 #endif /* GPR_POSIX_SUBPROCESS */

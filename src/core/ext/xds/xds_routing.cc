@@ -20,7 +20,23 @@
 
 #include "src/core/ext/xds/xds_routing.h"
 
+#include <stdint.h>
+#include <stdlib.h>
+
+#include <algorithm>
 #include <cctype>
+#include <utility>
+
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
+
+#include <grpc/support/log.h>
+
+#include "src/core/ext/xds/xds_http_filters.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/matchers/matchers.h"
 
 namespace grpc_core {
 
@@ -202,7 +218,7 @@ const XdsHttpFilterImpl::FilterConfig* FindFilterConfigOverride(
 
 }  // namespace
 
-XdsRouting::GeneratePerHttpFilterConfigsResult
+absl::StatusOr<XdsRouting::GeneratePerHttpFilterConfigsResult>
 XdsRouting::GeneratePerHTTPFilterConfigs(
     const std::vector<XdsListenerResource::HttpConnectionManager::HttpFilter>&
         http_filters,
@@ -210,7 +226,7 @@ XdsRouting::GeneratePerHTTPFilterConfigs(
     const XdsRouteConfigResource::Route& route,
     const XdsRouteConfigResource::Route::RouteAction::ClusterWeight*
         cluster_weight,
-    grpc_channel_args* args) {
+    const ChannelArgs& args) {
   GeneratePerHttpFilterConfigsResult result;
   result.args = args;
   for (const auto& http_filter : http_filters) {
@@ -234,12 +250,9 @@ XdsRouting::GeneratePerHTTPFilterConfigs(
     auto method_config_field =
         filter_impl->GenerateServiceConfig(http_filter.config, config_override);
     if (!method_config_field.ok()) {
-      grpc_channel_args_destroy(result.args);
-      result.args = nullptr;
-      result.error = GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+      return absl::FailedPreconditionError(absl::StrCat(
           "failed to generate method config for HTTP filter ", http_filter.name,
           ": ", method_config_field.status().ToString()));
-      break;
     }
     result.per_filter_configs[method_config_field->service_config_field_name]
         .push_back(method_config_field->element);

@@ -59,10 +59,12 @@ class TestService(test_pb2_grpc.TestServiceServicer):
 
     def EmptyCall(self, _: empty_pb2.Empty,
                   context: grpc.ServicerContext) -> empty_pb2.Empty:
+        context.send_initial_metadata((('hostname', self._hostname),))
         return empty_pb2.Empty()
 
     def UnaryCall(self, request: messages_pb2.SimpleRequest,
                   context: grpc.ServicerContext) -> messages_pb2.SimpleResponse:
+        context.send_initial_metadata((('hostname', self._hostname),))
         response = messages_pb2.SimpleResponse()
         response.server_id = self._server_id
         response.hostname = self._hostname

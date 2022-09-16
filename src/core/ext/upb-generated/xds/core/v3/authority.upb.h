@@ -22,42 +22,57 @@ extern "C" {
 
 struct xds_core_v3_Authority;
 typedef struct xds_core_v3_Authority xds_core_v3_Authority;
-extern const upb_msglayout xds_core_v3_Authority_msginit;
+extern const upb_MiniTable xds_core_v3_Authority_msginit;
+
 
 
 /* xds.core.v3.Authority */
 
-UPB_INLINE xds_core_v3_Authority *xds_core_v3_Authority_new(upb_arena *arena) {
-  return (xds_core_v3_Authority *)_upb_msg_new(&xds_core_v3_Authority_msginit, arena);
+UPB_INLINE xds_core_v3_Authority* xds_core_v3_Authority_new(upb_Arena* arena) {
+  return (xds_core_v3_Authority*)_upb_Message_New(&xds_core_v3_Authority_msginit, arena);
 }
-UPB_INLINE xds_core_v3_Authority *xds_core_v3_Authority_parse(const char *buf, size_t size,
-                        upb_arena *arena) {
-  xds_core_v3_Authority *ret = xds_core_v3_Authority_new(arena);
+UPB_INLINE xds_core_v3_Authority* xds_core_v3_Authority_parse(const char* buf, size_t size, upb_Arena* arena) {
+  xds_core_v3_Authority* ret = xds_core_v3_Authority_new(arena);
   if (!ret) return NULL;
-  if (!upb_decode(buf, size, ret, &xds_core_v3_Authority_msginit, arena)) return NULL;
-  return ret;
-}
-UPB_INLINE xds_core_v3_Authority *xds_core_v3_Authority_parse_ex(const char *buf, size_t size,
-                           const upb_extreg *extreg, int options,
-                           upb_arena *arena) {
-  xds_core_v3_Authority *ret = xds_core_v3_Authority_new(arena);
-  if (!ret) return NULL;
-  if (!_upb_decode(buf, size, ret, &xds_core_v3_Authority_msginit, extreg, options, arena)) {
+  if (upb_Decode(buf, size, ret, &xds_core_v3_Authority_msginit, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
 }
-UPB_INLINE char *xds_core_v3_Authority_serialize(const xds_core_v3_Authority *msg, upb_arena *arena, size_t *len) {
-  return upb_encode(msg, &xds_core_v3_Authority_msginit, arena, len);
+UPB_INLINE xds_core_v3_Authority* xds_core_v3_Authority_parse_ex(const char* buf, size_t size,
+                           const upb_ExtensionRegistry* extreg,
+                           int options, upb_Arena* arena) {
+  xds_core_v3_Authority* ret = xds_core_v3_Authority_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, ret, &xds_core_v3_Authority_msginit, extreg, options, arena) !=
+      kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE char* xds_core_v3_Authority_serialize(const xds_core_v3_Authority* msg, upb_Arena* arena, size_t* len) {
+  char* ptr;
+  (void)upb_Encode(msg, &xds_core_v3_Authority_msginit, 0, arena, &ptr, len);
+  return ptr;
+}
+UPB_INLINE char* xds_core_v3_Authority_serialize_ex(const xds_core_v3_Authority* msg, int options,
+                                 upb_Arena* arena, size_t* len) {
+  char* ptr;
+  (void)upb_Encode(msg, &xds_core_v3_Authority_msginit, options, arena, &ptr, len);
+  return ptr;
+}
+UPB_INLINE void xds_core_v3_Authority_clear_name(const xds_core_v3_Authority* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
+}
+UPB_INLINE upb_StringView xds_core_v3_Authority_name(const xds_core_v3_Authority* msg) {
+  return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_StringView);
 }
 
-UPB_INLINE upb_strview xds_core_v3_Authority_name(const xds_core_v3_Authority *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview); }
-
-UPB_INLINE void xds_core_v3_Authority_set_name(xds_core_v3_Authority *msg, upb_strview value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview) = value;
+UPB_INLINE void xds_core_v3_Authority_set_name(xds_core_v3_Authority *msg, upb_StringView value) {
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_StringView) = value;
 }
 
-extern const upb_msglayout_file xds_core_v3_authority_proto_upb_file_layout;
+extern const upb_MiniTable_File xds_core_v3_authority_proto_upb_file_layout;
 
 #ifdef __cplusplus
 }  /* extern "C" */

@@ -55,13 +55,13 @@ static const char descriptor[1065] = {'\n', ',', 'o', 'p', 'e', 'n', 'c', 'e', '
 'r', 'a', 'c', 'e', '.', 'V', '1', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
 };
 
-static upb_def_init *deps[1] = {
+static _upb_DefPool_Init *deps[1] = {
   NULL
 };
 
-upb_def_init opencensus_proto_trace_v1_trace_config_proto_upbdefinit = {
+_upb_DefPool_Init opencensus_proto_trace_v1_trace_config_proto_upbdefinit = {
   deps,
   &opencensus_proto_trace_v1_trace_config_proto_upb_file_layout,
   "opencensus/proto/trace/v1/trace_config.proto",
-  UPB_STRVIEW_INIT(descriptor, 1065)
+  UPB_STRINGVIEW_INIT(descriptor, 1065)
 };

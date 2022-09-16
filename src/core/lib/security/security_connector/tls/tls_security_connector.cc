@@ -20,10 +20,15 @@
 
 #include "src/core/lib/security/security_connector/tls/tls_security_connector.h"
 
-#include <stdbool.h>
 #include <string.h>
 
+#include <algorithm>
+#include <memory>
+#include <utility>
+#include <vector>
+
 #include "absl/functional/bind_front.h"
+#include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
@@ -33,14 +38,18 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/security/credentials/tls/tls_credentials.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/promise/promise.h"
+#include "src/core/lib/security/context/security_context.h"
+#include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.h"
+#include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
-#include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/transport/transport.h"
 #include "src/core/tsi/ssl_transport_security.h"
-#include "src/core/tsi/transport_security.h"
 
 namespace grpc_core {
 
@@ -321,7 +330,7 @@ TlsChannelSecurityConnector::~TlsChannelSecurityConnector() {
 }
 
 void TlsChannelSecurityConnector::add_handshakers(
-    const grpc_channel_args* args, grpc_pollset_set* /*interested_parties*/,
+    const ChannelArgs& args, grpc_pollset_set* /*interested_parties*/,
     HandshakeManager* handshake_mgr) {
   MutexLock lock(&mu_);
   tsi_handshaker* tsi_hs = nullptr;
@@ -331,7 +340,8 @@ void TlsChannelSecurityConnector::add_handshakers(
         client_handshaker_factory_,
         overridden_target_name_.empty() ? target_name_.c_str()
                                         : overridden_target_name_.c_str(),
-        &tsi_hs);
+        /*network_bio_buf_size=*/0,
+        /*ssl_bio_buf_size=*/0, &tsi_hs);
     if (result != TSI_OK) {
       gpr_log(GPR_ERROR, "Handshaker creation failed with error %s.",
               tsi_result_to_string(result));
@@ -342,14 +352,14 @@ void TlsChannelSecurityConnector::add_handshakers(
 }
 
 void TlsChannelSecurityConnector::check_peer(
-    tsi_peer peer, grpc_endpoint* /*ep*/,
+    tsi_peer peer, grpc_endpoint* /*ep*/, const ChannelArgs& /*args*/,
     RefCountedPtr<grpc_auth_context>* auth_context,
     grpc_closure* on_peer_checked) {
   const char* target_name = overridden_target_name_.empty()
                                 ? target_name_.c_str()
                                 : overridden_target_name_.c_str();
   grpc_error_handle error = grpc_ssl_check_alpn(&peer);
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
     tsi_peer_destruct(&peer);
     return;
@@ -368,7 +378,7 @@ void TlsChannelSecurityConnector::check_peer(
 
 void TlsChannelSecurityConnector::cancel_check_peer(
     grpc_closure* on_peer_checked, grpc_error_handle error) {
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     gpr_log(GPR_ERROR,
             "TlsChannelSecurityConnector::cancel_check_peer error: %s",
             grpc_error_std_string(error).c_str());
@@ -408,20 +418,14 @@ int TlsChannelSecurityConnector::cmp(
   return 0;
 }
 
-bool TlsChannelSecurityConnector::check_call_host(
-    absl::string_view host, grpc_auth_context* auth_context,
-    grpc_closure* /*on_call_host_checked*/, grpc_error_handle* error) {
+ArenaPromise<absl::Status> TlsChannelSecurityConnector::CheckCallHost(
+    absl::string_view host, grpc_auth_context* auth_context) {
   if (options_->check_call_host()) {
-    return grpc_ssl_check_call_host(host, target_name_.c_str(),
-                                    overridden_target_name_.c_str(),
-                                    auth_context, error);
+    return Immediate(SslCheckCallHost(host, target_name_.c_str(),
+                                      overridden_target_name_.c_str(),
+                                      auth_context));
   }
-  return true;
-}
-
-void TlsChannelSecurityConnector::cancel_check_call_host(
-    grpc_closure* /*on_call_host_checked*/, grpc_error_handle error) {
-  GRPC_ERROR_UNREF(error);
+  return ImmediateOkStatus();
 }
 
 void TlsChannelSecurityConnector::TlsChannelCertificateWatcher::
@@ -452,12 +456,12 @@ void TlsChannelSecurityConnector::TlsChannelCertificateWatcher::
 // BlockOnInitialCredentialHandshaker is implemented.
 void TlsChannelSecurityConnector::TlsChannelCertificateWatcher::OnError(
     grpc_error_handle root_cert_error, grpc_error_handle identity_cert_error) {
-  if (root_cert_error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(root_cert_error)) {
     gpr_log(GPR_ERROR,
             "TlsChannelCertificateWatcher getting root_cert_error: %s",
             grpc_error_std_string(root_cert_error).c_str());
   }
-  if (identity_cert_error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(identity_cert_error)) {
     gpr_log(GPR_ERROR,
             "TlsChannelCertificateWatcher getting identity_cert_error: %s",
             grpc_error_std_string(identity_cert_error).c_str());
@@ -616,14 +620,15 @@ TlsServerSecurityConnector::~TlsServerSecurityConnector() {
 }
 
 void TlsServerSecurityConnector::add_handshakers(
-    const grpc_channel_args* args, grpc_pollset_set* /*interested_parties*/,
+    const ChannelArgs& args, grpc_pollset_set* /*interested_parties*/,
     HandshakeManager* handshake_mgr) {
   MutexLock lock(&mu_);
   tsi_handshaker* tsi_hs = nullptr;
   if (server_handshaker_factory_ != nullptr) {
     // Instantiate TSI handshaker.
     tsi_result result = tsi_ssl_server_handshaker_factory_create_handshaker(
-        server_handshaker_factory_, &tsi_hs);
+        server_handshaker_factory_, /*network_bio_buf_size=*/0,
+        /*ssl_bio_buf_size=*/0, &tsi_hs);
     if (result != TSI_OK) {
       gpr_log(GPR_ERROR, "Handshaker creation failed with error %s.",
               tsi_result_to_string(result));
@@ -634,11 +639,11 @@ void TlsServerSecurityConnector::add_handshakers(
 }
 
 void TlsServerSecurityConnector::check_peer(
-    tsi_peer peer, grpc_endpoint* /*ep*/,
+    tsi_peer peer, grpc_endpoint* /*ep*/, const ChannelArgs& /*args*/,
     RefCountedPtr<grpc_auth_context>* auth_context,
     grpc_closure* on_peer_checked) {
   grpc_error_handle error = grpc_ssl_check_alpn(&peer);
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
     tsi_peer_destruct(&peer);
     return;
@@ -661,7 +666,7 @@ void TlsServerSecurityConnector::check_peer(
 
 void TlsServerSecurityConnector::cancel_check_peer(
     grpc_closure* on_peer_checked, grpc_error_handle error) {
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     gpr_log(GPR_ERROR,
             "TlsServerSecurityConnector::cancel_check_peer error: %s",
             grpc_error_std_string(error).c_str());
@@ -729,12 +734,12 @@ void TlsServerSecurityConnector::TlsServerCertificateWatcher::
 // BlockOnInitialCredentialHandshaker is implemented.
 void TlsServerSecurityConnector::TlsServerCertificateWatcher::OnError(
     grpc_error_handle root_cert_error, grpc_error_handle identity_cert_error) {
-  if (root_cert_error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(root_cert_error)) {
     gpr_log(GPR_ERROR,
             "TlsServerCertificateWatcher getting root_cert_error: %s",
             grpc_error_std_string(root_cert_error).c_str());
   }
-  if (identity_cert_error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(identity_cert_error)) {
     gpr_log(GPR_ERROR,
             "TlsServerCertificateWatcher getting identity_cert_error: %s",
             grpc_error_std_string(identity_cert_error).c_str());

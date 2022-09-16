@@ -54,7 +54,7 @@ def grpc_python_deps():
             name = "io_bazel_rules_python",
             url = "https://github.com/bazelbuild/rules_python/releases/download/0.4.0/rules_python-0.4.0.tar.gz",
             sha256 = "954aa89b491be4a083304a2cb838019c8b8c3720a7abb9c4cb81ac7a24230cea",
-            patches = ["//third_party:rules_python.patch"],
+            patches = ["@com_github_grpc_grpc//third_party:rules_python.patch"],
             patch_args = ["-p1"],
         )
 

@@ -43,12 +43,12 @@
 
 #include <string>
 
+#include <grpc/event_engine/endpoint_config.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 
@@ -298,10 +298,9 @@ void config_default_tcp_user_timeout(bool enable, int timeout, bool is_client) {
 
 /* Set TCP_USER_TIMEOUT */
 grpc_error_handle grpc_set_socket_tcp_user_timeout(
-    int fd, const grpc_channel_args* channel_args, bool is_client) {
+    int fd, const grpc_core::PosixTcpOptions& options, bool is_client) {
   // Use conditionally-important parameter to avoid warning
   (void)fd;
-  (void)channel_args;
   (void)is_client;
   extern grpc_core::TraceFlag grpc_tcp_trace;
   if (g_socket_supports_tcp_user_timeout.load() >= 0) {
@@ -314,29 +313,13 @@ grpc_error_handle grpc_set_socket_tcp_user_timeout(
       enable = g_default_server_tcp_user_timeout_enabled;
       timeout = g_default_server_tcp_user_timeout_ms;
     }
-    if (channel_args) {
-      for (unsigned int i = 0; i < channel_args->num_args; i++) {
-        if (0 ==
-            strcmp(channel_args->args[i].key, GRPC_ARG_KEEPALIVE_TIME_MS)) {
-          const int value = grpc_channel_arg_get_integer(
-              &channel_args->args[i], grpc_integer_options{0, 1, INT_MAX});
-          /* Continue using default if value is 0 */
-          if (value == 0) {
-            continue;
-          }
-          /* Disable if value is INT_MAX */
-          enable = value != INT_MAX;
-        } else if (0 == strcmp(channel_args->args[i].key,
-                               GRPC_ARG_KEEPALIVE_TIMEOUT_MS)) {
-          const int value = grpc_channel_arg_get_integer(
-              &channel_args->args[i], grpc_integer_options{0, 1, INT_MAX});
-          /* Continue using default if value is 0 */
-          if (value == 0) {
-            continue;
-          }
-          timeout = value;
-        }
-      }
+    int value = options.keep_alive_time_ms;
+    if (value > 0) {
+      enable = value != INT_MAX;
+    }
+    value = options.keep_alive_timeout_ms;
+    if (value > 0) {
+      timeout = value;
     }
     if (enable) {
       int newval;
@@ -398,16 +381,11 @@ grpc_error_handle grpc_set_socket_with_mutator(int fd, grpc_fd_usage usage,
 }
 
 grpc_error_handle grpc_apply_socket_mutator_in_args(
-    int fd, grpc_fd_usage usage, const grpc_channel_args* args) {
-  const grpc_arg* socket_mutator_arg =
-      grpc_channel_args_find(args, GRPC_ARG_SOCKET_MUTATOR);
-  if (socket_mutator_arg == nullptr) {
+    int fd, grpc_fd_usage usage, const grpc_core::PosixTcpOptions& options) {
+  if (options.socket_mutator == nullptr) {
     return GRPC_ERROR_NONE;
   }
-  GPR_DEBUG_ASSERT(socket_mutator_arg->type == GRPC_ARG_POINTER);
-  grpc_socket_mutator* mutator =
-      static_cast<grpc_socket_mutator*>(socket_mutator_arg->value.pointer.p);
-  return grpc_set_socket_with_mutator(fd, usage, mutator);
+  return grpc_set_socket_with_mutator(fd, usage, options.socket_mutator);
 }
 
 static gpr_once g_probe_ipv6_once = GPR_ONCE_INIT;
@@ -441,9 +419,10 @@ int grpc_ipv6_loopback_available(void) {
 static grpc_error_handle error_for_fd(int fd,
                                       const grpc_resolved_address* addr) {
   if (fd >= 0) return GRPC_ERROR_NONE;
-  std::string addr_str = grpc_sockaddr_to_string(addr, false);
+  auto addr_str = grpc_sockaddr_to_string(addr, false);
   grpc_error_handle err = grpc_error_set_str(
-      GRPC_OS_ERROR(errno, "socket"), GRPC_ERROR_STR_TARGET_ADDRESS, addr_str);
+      GRPC_OS_ERROR(errno, "socket"), GRPC_ERROR_STR_TARGET_ADDRESS,
+      addr_str.ok() ? addr_str.value() : addr_str.status().ToString());
   return err;
 }
 
@@ -493,23 +472,6 @@ grpc_error_handle grpc_create_dualstack_socket_using_factory(
   *dsmode = family == AF_INET ? GRPC_DSMODE_IPV4 : GRPC_DSMODE_NONE;
   *newfd = create_socket(factory, family, type, protocol);
   return error_for_fd(*newfd, resolved_addr);
-}
-
-uint16_t grpc_htons(uint16_t hostshort) { return htons(hostshort); }
-
-uint16_t grpc_ntohs(uint16_t netshort) { return ntohs(netshort); }
-
-uint32_t grpc_htonl(uint32_t hostlong) { return htonl(hostlong); }
-
-uint32_t grpc_ntohl(uint32_t netlong) { return ntohl(netlong); }
-
-int grpc_inet_pton(int af, const char* src, void* dst) {
-  return inet_pton(af, src, dst);
-}
-
-const char* grpc_inet_ntop(int af, const void* src, char* dst, size_t size) {
-  GPR_ASSERT(size <= (socklen_t)-1);
-  return inet_ntop(af, src, dst, static_cast<socklen_t>(size));
 }
 
 #endif

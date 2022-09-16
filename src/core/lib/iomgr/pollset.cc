@@ -44,7 +44,7 @@ void grpc_pollset_destroy(grpc_pollset* pollset) {
 
 grpc_error_handle grpc_pollset_work(grpc_pollset* pollset,
                                     grpc_pollset_worker** worker,
-                                    grpc_millis deadline) {
+                                    grpc_core::Timestamp deadline) {
   return grpc_pollset_impl->work(pollset, worker, deadline);
 }
 

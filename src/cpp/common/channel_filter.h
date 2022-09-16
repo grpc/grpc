@@ -19,16 +19,30 @@
 #ifndef GRPCXX_CHANNEL_FILTER_H
 #define GRPCXX_CHANNEL_FILTER_H
 
+#include <stddef.h>
+
 #include <functional>
-#include <vector>
+#include <new>
+#include <string>
+#include <utility>
+
+#include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpcpp/impl/codegen/config.h>
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/support/atm.h>
+#include <grpcpp/support/config.h>
 
+#include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/surface/channel_init.h"
+#include "src/core/lib/channel/context.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/polling_entity.h"
+#include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/lib/transport/transport.h"
 
 /// An interface to define filters.
 ///
@@ -72,7 +86,7 @@ class TransportOp {
   grpc_error_handle disconnect_with_error() const {
     return op_->disconnect_with_error;
   }
-  bool send_goaway() const { return op_->goaway_error != GRPC_ERROR_NONE; }
+  bool send_goaway() const { return !GRPC_ERROR_IS_NONE(op_->goaway_error); }
 
   // TODO(roth): Add methods for additional fields as needed.
 
@@ -123,12 +137,6 @@ class TransportStreamOpBatch {
     return op_->recv_trailing_metadata ? &recv_trailing_metadata_ : nullptr;
   }
 
-  uint32_t* send_initial_metadata_flags() const {
-    return op_->send_initial_metadata ? &op_->payload->send_initial_metadata
-                                             .send_initial_metadata_flags
-                                      : nullptr;
-  }
-
   grpc_closure* recv_initial_metadata_ready() const {
     return op_->recv_initial_metadata
                ? op_->payload->recv_initial_metadata.recv_initial_metadata_ready
@@ -138,22 +146,21 @@ class TransportStreamOpBatch {
     op_->payload->recv_initial_metadata.recv_initial_metadata_ready = closure;
   }
 
-  grpc_core::OrphanablePtr<grpc_core::ByteStream>* send_message() const {
-    return op_->send_message ? &op_->payload->send_message.send_message
+  grpc_core::SliceBuffer* send_message() const {
+    return op_->send_message ? op_->payload->send_message.send_message
                              : nullptr;
   }
-  void set_send_message(
-      grpc_core::OrphanablePtr<grpc_core::ByteStream> send_message) {
+
+  void set_send_message(grpc_core::SliceBuffer* send_message) {
     op_->send_message = true;
-    op_->payload->send_message.send_message = std::move(send_message);
+    op_->payload->send_message.send_message = send_message;
   }
 
-  grpc_core::OrphanablePtr<grpc_core::ByteStream>* recv_message() const {
+  absl::optional<grpc_core::SliceBuffer>* recv_message() const {
     return op_->recv_message ? op_->payload->recv_message.recv_message
                              : nullptr;
   }
-  void set_recv_message(
-      grpc_core::OrphanablePtr<grpc_core::ByteStream>* recv_message) {
+  void set_recv_message(absl::optional<grpc_core::SliceBuffer>* recv_message) {
     op_->recv_message = true;
     op_->payload->recv_message.recv_message = recv_message;
   }
@@ -336,6 +343,7 @@ void RegisterChannelFilter(
       FilterType::DestroyCallElement,
       FilterType::channel_data_size,
       FilterType::InitChannelElement,
+      grpc_channel_stack_no_post_init,
       FilterType::DestroyChannelElement,
       FilterType::GetChannelInfo,
       name};

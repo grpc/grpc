@@ -20,8 +20,10 @@
 
 #include "src/core/lib/surface/completion_queue_factory.h"
 
+#include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/completion_queue.h"
 
 /*
@@ -59,6 +61,7 @@ const grpc_completion_queue_factory* grpc_completion_queue_factory_lookup(
  */
 
 grpc_completion_queue* grpc_completion_queue_create_for_next(void* reserved) {
+  grpc_core::ExecCtx exec_ctx;
   GPR_ASSERT(!reserved);
   grpc_completion_queue_attributes attr = {1, GRPC_CQ_NEXT,
                                            GRPC_CQ_DEFAULT_POLLING, nullptr};
@@ -66,6 +69,7 @@ grpc_completion_queue* grpc_completion_queue_create_for_next(void* reserved) {
 }
 
 grpc_completion_queue* grpc_completion_queue_create_for_pluck(void* reserved) {
+  grpc_core::ExecCtx exec_ctx;
   GPR_ASSERT(!reserved);
   grpc_completion_queue_attributes attr = {1, GRPC_CQ_PLUCK,
                                            GRPC_CQ_DEFAULT_POLLING, nullptr};
@@ -74,6 +78,7 @@ grpc_completion_queue* grpc_completion_queue_create_for_pluck(void* reserved) {
 
 grpc_completion_queue* grpc_completion_queue_create_for_callback(
     grpc_completion_queue_functor* shutdown_callback, void* reserved) {
+  grpc_core::ExecCtx exec_ctx;
   GPR_ASSERT(!reserved);
   grpc_completion_queue_attributes attr = {
       2, GRPC_CQ_CALLBACK, GRPC_CQ_DEFAULT_POLLING, shutdown_callback};
@@ -83,6 +88,7 @@ grpc_completion_queue* grpc_completion_queue_create_for_callback(
 grpc_completion_queue* grpc_completion_queue_create(
     const grpc_completion_queue_factory* factory,
     const grpc_completion_queue_attributes* attr, void* reserved) {
+  grpc_core::ExecCtx exec_ctx;
   GPR_ASSERT(!reserved);
   return factory->vtable->create(factory, attr);
 }

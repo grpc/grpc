@@ -96,7 +96,8 @@ static const char* tsi_fake_handshake_message_to_string(int msg) {
 }
 
 static tsi_result tsi_fake_handshake_message_from_string(
-    const char* msg_string, tsi_fake_handshake_message* msg) {
+    const char* msg_string, tsi_fake_handshake_message* msg,
+    std::string* error) {
   for (int i = 0; i < TSI_FAKE_HANDSHAKE_MESSAGE_MAX; i++) {
     if (strncmp(msg_string, tsi_fake_handshake_message_strings[i],
                 strlen(tsi_fake_handshake_message_strings[i])) == 0) {
@@ -105,6 +106,7 @@ static tsi_result tsi_fake_handshake_message_from_string(
     }
   }
   gpr_log(GPR_ERROR, "Invalid handshake message.");
+  if (error != nullptr) *error = "invalid handshake message";
   return TSI_DATA_CORRUPTED;
 }
 
@@ -143,6 +145,11 @@ static uint32_t read_frame_size(const grpc_slice_buffer* sb) {
   return load32_little_endian(frame_size_buffer);
 }
 
+uint32_t tsi_fake_zero_copy_grpc_protector_next_frame_size(
+    const grpc_slice_buffer* protected_slices) {
+  return read_frame_size(protected_slices);
+}
+
 static void tsi_fake_frame_reset(tsi_fake_frame* frame, int needs_draining) {
   frame->offset = 0;
   frame->needs_draining = needs_draining;
@@ -169,12 +176,16 @@ static void tsi_fake_frame_ensure_size(tsi_fake_frame* frame) {
  * This method should not be called if frame->needs_framing is not 0.  */
 static tsi_result tsi_fake_frame_decode(const unsigned char* incoming_bytes,
                                         size_t* incoming_bytes_size,
-                                        tsi_fake_frame* frame) {
+                                        tsi_fake_frame* frame,
+                                        std::string* error) {
   size_t available_size = *incoming_bytes_size;
   size_t to_read_size = 0;
   const unsigned char* bytes_cursor = incoming_bytes;
 
-  if (frame->needs_draining) return TSI_INTERNAL_ERROR;
+  if (frame->needs_draining) {
+    if (error != nullptr) *error = "fake handshaker frame needs draining";
+    return TSI_INTERNAL_ERROR;
+  }
   if (frame->data == nullptr) {
     frame->allocated_size = TSI_FAKE_FRAME_INITIAL_ALLOCATED_SIZE;
     frame->data =
@@ -219,9 +230,13 @@ static tsi_result tsi_fake_frame_decode(const unsigned char* incoming_bytes,
  * This method should not be called if frame->needs_framing is 0.  */
 static tsi_result tsi_fake_frame_encode(unsigned char* outgoing_bytes,
                                         size_t* outgoing_bytes_size,
-                                        tsi_fake_frame* frame) {
+                                        tsi_fake_frame* frame,
+                                        std::string* error) {
   size_t to_write_size = frame->size - frame->offset;
-  if (!frame->needs_draining) return TSI_INTERNAL_ERROR;
+  if (!frame->needs_draining) {
+    if (error != nullptr) *error = "fake frame needs draining";
+    return TSI_INTERNAL_ERROR;
+  }
   if (*outgoing_bytes_size < to_write_size) {
     memcpy(outgoing_bytes, frame->data + frame->offset, *outgoing_bytes_size);
     frame->offset += *outgoing_bytes_size;
@@ -235,15 +250,14 @@ static tsi_result tsi_fake_frame_encode(unsigned char* outgoing_bytes,
 
 /* Sets the payload of a fake frame to contain the given data blob, where
  * data_size indicates the size of data. */
-static tsi_result tsi_fake_frame_set_data(unsigned char* data, size_t data_size,
-                                          tsi_fake_frame* frame) {
+static void tsi_fake_frame_set_data(unsigned char* data, size_t data_size,
+                                    tsi_fake_frame* frame) {
   frame->offset = 0;
   frame->size = data_size + TSI_FAKE_FRAME_HEADER_SIZE;
   tsi_fake_frame_ensure_size(frame);
   store32_little_endian(static_cast<uint32_t>(frame->size), frame->data);
   memcpy(frame->data + TSI_FAKE_FRAME_HEADER_SIZE, data, data_size);
   tsi_fake_frame_reset(frame, 1 /* needs draining */);
-  return TSI_OK;
 }
 
 /* Destroys the contents of a fake frame. */
@@ -271,8 +285,8 @@ static tsi_result fake_protector_protect(tsi_frame_protector* self,
   /* Try to drain first. */
   if (frame->needs_draining) {
     drained_size = saved_output_size - *num_bytes_written;
-    result =
-        tsi_fake_frame_encode(protected_output_frames, &drained_size, frame);
+    result = tsi_fake_frame_encode(protected_output_frames, &drained_size,
+                                   frame, /*error=*/nullptr);
     *num_bytes_written += drained_size;
     protected_output_frames += drained_size;
     if (result != TSI_OK) {
@@ -292,7 +306,8 @@ static tsi_result fake_protector_protect(tsi_frame_protector* self,
     store32_little_endian(static_cast<uint32_t>(impl->max_frame_size),
                           frame_header);
     written_in_frame_size = TSI_FAKE_FRAME_HEADER_SIZE;
-    result = tsi_fake_frame_decode(frame_header, &written_in_frame_size, frame);
+    result = tsi_fake_frame_decode(frame_header, &written_in_frame_size, frame,
+                                   /*error=*/nullptr);
     if (result != TSI_INCOMPLETE_DATA) {
       gpr_log(GPR_ERROR, "tsi_fake_frame_decode returned %s",
               tsi_result_to_string(result));
@@ -300,7 +315,8 @@ static tsi_result fake_protector_protect(tsi_frame_protector* self,
     }
   }
   result =
-      tsi_fake_frame_decode(unprotected_bytes, unprotected_bytes_size, frame);
+      tsi_fake_frame_decode(unprotected_bytes, unprotected_bytes_size, frame,
+                            /*error=*/nullptr);
   if (result != TSI_OK) {
     if (result == TSI_INCOMPLETE_DATA) result = TSI_OK;
     return result;
@@ -310,7 +326,8 @@ static tsi_result fake_protector_protect(tsi_frame_protector* self,
   if (!frame->needs_draining) return TSI_INTERNAL_ERROR;
   if (frame->offset != 0) return TSI_INTERNAL_ERROR;
   drained_size = saved_output_size - *num_bytes_written;
-  result = tsi_fake_frame_encode(protected_output_frames, &drained_size, frame);
+  result = tsi_fake_frame_encode(protected_output_frames, &drained_size, frame,
+                                 /*error=*/nullptr);
   *num_bytes_written += drained_size;
   if (result == TSI_INCOMPLETE_DATA) result = TSI_OK;
   return result;
@@ -332,7 +349,8 @@ static tsi_result fake_protector_protect_flush(
                           frame->data); /* Overwrite header. */
   }
   result = tsi_fake_frame_encode(protected_output_frames,
-                                 protected_output_frames_size, frame);
+                                 protected_output_frames_size, frame,
+                                 /*error=*/nullptr);
   if (result == TSI_INCOMPLETE_DATA) result = TSI_OK;
   *still_pending_size = frame->size - frame->offset;
   return result;
@@ -356,7 +374,8 @@ static tsi_result fake_protector_unprotect(
     /* Go past the header if needed. */
     if (frame->offset == 0) frame->offset = TSI_FAKE_FRAME_HEADER_SIZE;
     drained_size = saved_output_size - *num_bytes_written;
-    result = tsi_fake_frame_encode(unprotected_bytes, &drained_size, frame);
+    result = tsi_fake_frame_encode(unprotected_bytes, &drained_size, frame,
+                                   /*error=*/nullptr);
     unprotected_bytes += drained_size;
     *num_bytes_written += drained_size;
     if (result != TSI_OK) {
@@ -371,7 +390,8 @@ static tsi_result fake_protector_unprotect(
   /* Now process the protected_bytes. */
   if (frame->needs_draining) return TSI_INTERNAL_ERROR;
   result = tsi_fake_frame_decode(protected_frames_bytes,
-                                 protected_frames_bytes_size, frame);
+                                 protected_frames_bytes_size, frame,
+                                 /*error=*/nullptr);
   if (result != TSI_OK) {
     if (result == TSI_INCOMPLETE_DATA) result = TSI_OK;
     return result;
@@ -382,7 +402,8 @@ static tsi_result fake_protector_unprotect(
   if (frame->offset != 0) return TSI_INTERNAL_ERROR;
   frame->offset = TSI_FAKE_FRAME_HEADER_SIZE; /* Go past the header. */
   drained_size = saved_output_size - *num_bytes_written;
-  result = tsi_fake_frame_encode(unprotected_bytes, &drained_size, frame);
+  result = tsi_fake_frame_encode(unprotected_bytes, &drained_size, frame,
+                                 /*error=*/nullptr);
   *num_bytes_written += drained_size;
   if (result == TSI_INCOMPLETE_DATA) result = TSI_OK;
   return result;
@@ -432,7 +453,7 @@ static tsi_result fake_zero_copy_grpc_protector_protect(
 
 static tsi_result fake_zero_copy_grpc_protector_unprotect(
     tsi_zero_copy_grpc_protector* self, grpc_slice_buffer* protected_slices,
-    grpc_slice_buffer* unprotected_slices) {
+    grpc_slice_buffer* unprotected_slices, int* min_progress_size) {
   if (self == nullptr || unprotected_slices == nullptr ||
       protected_slices == nullptr) {
     return TSI_INVALID_ARGUMENT;
@@ -461,6 +482,13 @@ static tsi_result fake_zero_copy_grpc_protector_unprotect(
         unprotected_slices);
     impl->parsed_frame_size = 0;
     grpc_slice_buffer_reset_and_unref_internal(&impl->header_sb);
+  }
+  if (min_progress_size != nullptr) {
+    if (impl->parsed_frame_size > TSI_FAKE_FRAME_HEADER_SIZE) {
+      *min_progress_size = impl->parsed_frame_size - impl->protected_sb.length;
+    } else {
+      *min_progress_size = 1;
+    }
   }
   return TSI_OK;
 }
@@ -567,9 +595,10 @@ static const tsi_handshaker_result_vtable handshaker_result_vtable = {
 
 static tsi_result fake_handshaker_result_create(
     const unsigned char* unused_bytes, size_t unused_bytes_size,
-    tsi_handshaker_result** handshaker_result) {
+    tsi_handshaker_result** handshaker_result, std::string* error) {
   if ((unused_bytes_size > 0 && unused_bytes == nullptr) ||
       handshaker_result == nullptr) {
+    if (error != nullptr) *error = "invalid argument";
     return TSI_INVALID_ARGUMENT;
   }
   fake_handshaker_result* result = grpc_core::Zalloc<fake_handshaker_result>();
@@ -587,7 +616,8 @@ static tsi_result fake_handshaker_result_create(
 /* --- tsi_handshaker methods implementation. ---*/
 
 static tsi_result fake_handshaker_get_bytes_to_send_to_peer(
-    tsi_handshaker* self, unsigned char* bytes, size_t* bytes_size) {
+    tsi_handshaker* self, unsigned char* bytes, size_t* bytes_size,
+    std::string* error) {
   tsi_fake_handshaker* impl = reinterpret_cast<tsi_fake_handshaker*>(self);
   tsi_result result = TSI_OK;
   if (impl->needs_incoming_message || impl->result == TSI_OK) {
@@ -600,10 +630,9 @@ static tsi_result fake_handshaker_get_bytes_to_send_to_peer(
         static_cast<tsi_fake_handshake_message>(impl->next_message_to_send + 2);
     const char* msg_string =
         tsi_fake_handshake_message_to_string(impl->next_message_to_send);
-    result = tsi_fake_frame_set_data(
+    tsi_fake_frame_set_data(
         reinterpret_cast<unsigned char*>(const_cast<char*>(msg_string)),
         strlen(msg_string), &impl->outgoing_frame);
-    if (result != TSI_OK) return result;
     if (next_message_to_send > TSI_FAKE_HANDSHAKE_MESSAGE_MAX) {
       next_message_to_send = TSI_FAKE_HANDSHAKE_MESSAGE_MAX;
     }
@@ -614,7 +643,8 @@ static tsi_result fake_handshaker_get_bytes_to_send_to_peer(
     }
     impl->next_message_to_send = next_message_to_send;
   }
-  result = tsi_fake_frame_encode(bytes, bytes_size, &impl->outgoing_frame);
+  result =
+      tsi_fake_frame_encode(bytes, bytes_size, &impl->outgoing_frame, error);
   if (result != TSI_OK) return result;
   if (!impl->is_client &&
       impl->next_message_to_send == TSI_FAKE_HANDSHAKE_MESSAGE_MAX) {
@@ -630,7 +660,8 @@ static tsi_result fake_handshaker_get_bytes_to_send_to_peer(
 }
 
 static tsi_result fake_handshaker_process_bytes_from_peer(
-    tsi_handshaker* self, const unsigned char* bytes, size_t* bytes_size) {
+    tsi_handshaker* self, const unsigned char* bytes, size_t* bytes_size,
+    std::string* error) {
   tsi_result result = TSI_OK;
   tsi_fake_handshaker* impl = reinterpret_cast<tsi_fake_handshaker*>(self);
   tsi_fake_handshake_message expected_msg =
@@ -641,14 +672,15 @@ static tsi_result fake_handshaker_process_bytes_from_peer(
     *bytes_size = 0;
     return TSI_OK;
   }
-  result = tsi_fake_frame_decode(bytes, bytes_size, &impl->incoming_frame);
+  result =
+      tsi_fake_frame_decode(bytes, bytes_size, &impl->incoming_frame, error);
   if (result != TSI_OK) return result;
 
   /* We now have a complete frame. */
   result = tsi_fake_handshake_message_from_string(
       reinterpret_cast<const char*>(impl->incoming_frame.data) +
           TSI_FAKE_FRAME_HEADER_SIZE,
-      &received_msg);
+      &received_msg, error);
   if (result != TSI_OK) {
     impl->result = result;
     return result;
@@ -691,11 +723,13 @@ static tsi_result fake_handshaker_next(
     tsi_handshaker* self, const unsigned char* received_bytes,
     size_t received_bytes_size, const unsigned char** bytes_to_send,
     size_t* bytes_to_send_size, tsi_handshaker_result** handshaker_result,
-    tsi_handshaker_on_next_done_cb /*cb*/, void* /*user_data*/) {
+    tsi_handshaker_on_next_done_cb /*cb*/, void* /*user_data*/,
+    std::string* error) {
   /* Sanity check the arguments. */
   if ((received_bytes_size > 0 && received_bytes == nullptr) ||
       bytes_to_send == nullptr || bytes_to_send_size == nullptr ||
       handshaker_result == nullptr) {
+    if (error != nullptr) *error = "invalid argument";
     return TSI_INVALID_ARGUMENT;
   }
   tsi_fake_handshaker* handshaker =
@@ -705,8 +739,8 @@ static tsi_result fake_handshaker_next(
   /* Decode and process a handshake frame from the peer. */
   size_t consumed_bytes_size = received_bytes_size;
   if (received_bytes_size > 0) {
-    result = fake_handshaker_process_bytes_from_peer(self, received_bytes,
-                                                     &consumed_bytes_size);
+    result = fake_handshaker_process_bytes_from_peer(
+        self, received_bytes, &consumed_bytes_size, error);
     if (result != TSI_OK) return result;
   }
 
@@ -716,7 +750,8 @@ static tsi_result fake_handshaker_next(
   do {
     size_t sent_bytes_size = handshaker->outgoing_bytes_buffer_size - offset;
     result = fake_handshaker_get_bytes_to_send_to_peer(
-        self, handshaker->outgoing_bytes_buffer + offset, &sent_bytes_size);
+        self, handshaker->outgoing_bytes_buffer + offset, &sent_bytes_size,
+        error);
     offset += sent_bytes_size;
     if (result == TSI_INCOMPLETE_DATA) {
       handshaker->outgoing_bytes_buffer_size *= 2;
@@ -742,7 +777,7 @@ static tsi_result fake_handshaker_next(
 
     /* Create a handshaker_result containing the unused bytes. */
     result = fake_handshaker_result_create(unused_bytes, unused_bytes_size,
-                                           handshaker_result);
+                                           handshaker_result, error);
     if (result == TSI_OK) {
       /* Indicate that the handshake has completed and that a handshaker_result
        * has been created. */

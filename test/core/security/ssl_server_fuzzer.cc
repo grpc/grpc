@@ -50,7 +50,7 @@ static void on_handshake_done(void* arg, grpc_error_handle error) {
   GPR_ASSERT(state->done_callback_called == false);
   state->done_callback_called = true;
   // The fuzzer should not pass the handshake.
-  GPR_ASSERT(error != GRPC_ERROR_NONE);
+  GPR_ASSERT(!GRPC_ERROR_IS_NONE(error));
 }
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
@@ -87,16 +87,17 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
 
     // Create security connector
     grpc_core::RefCountedPtr<grpc_server_security_connector> sc =
-        creds->create_security_connector(nullptr);
+        creds->create_security_connector(grpc_core::ChannelArgs());
     GPR_ASSERT(sc != nullptr);
-    grpc_millis deadline = GPR_MS_PER_SEC + grpc_core::ExecCtx::Get()->Now();
+    grpc_core::Timestamp deadline =
+        grpc_core::Duration::Seconds(1) + grpc_core::ExecCtx::Get()->Now();
 
     struct handshake_state state;
     state.done_callback_called = false;
     auto handshake_mgr =
         grpc_core::MakeRefCounted<grpc_core::HandshakeManager>();
-    sc->add_handshakers(nullptr, nullptr, handshake_mgr.get());
-    handshake_mgr->DoHandshake(mock_endpoint, nullptr /* channel_args */,
+    sc->add_handshakers(grpc_core::ChannelArgs(), nullptr, handshake_mgr.get());
+    handshake_mgr->DoHandshake(mock_endpoint, grpc_core::ChannelArgs(),
                                deadline, nullptr /* acceptor */,
                                on_handshake_done, &state);
     grpc_core::ExecCtx::Get()->Flush();

@@ -33,7 +33,6 @@ class EtagConflict(gcp.api.Error):
 
     https://cloud.google.com/iam/docs/policies#etag
     """
-    pass
 
 
 def handle_etag_conflict(func):
@@ -54,7 +53,7 @@ def _replace_binding(policy: 'Policy', binding: 'Policy.Binding',
     new_bindings = set(policy.bindings)
     new_bindings.discard(binding)
     new_bindings.add(new_binding)
-    return dataclasses.replace(policy, bindings=frozenset(new_bindings))
+    return dataclasses.replace(policy, bindings=frozenset(new_bindings))  # pylint: disable=too-many-function-args
 
 
 @dataclasses.dataclass(frozen=True)
@@ -190,7 +189,7 @@ class IamV1(gcp.api.GcpProjectApiResource):
     # Otherwise conditions are omitted, and role names returned with a suffix,
     # f.e. roles/iam.workloadIdentityUser_withcond_f1ec33c9beb41857dbf0
     # https://cloud.google.com/iam/docs/reference/rest/v1/Policy#FIELDS.version
-    POLICY_VERSION: str = 3
+    POLICY_VERSION: int = 3
 
     def __init__(self, api_manager: gcp.api.GcpApiManager, project: str):
         super().__init__(api_manager.iam('v1'), project)
@@ -271,8 +270,9 @@ class IamV1(gcp.api.GcpProjectApiResource):
             updated_binding = Policy.Binding(role, frozenset([member]))
         else:
             updated_members: FrozenSet[str] = binding.members.union({member})
-            updated_binding: Policy.Binding = dataclasses.replace(
-                binding, members=updated_members)
+            updated_binding: Policy.Binding = dataclasses.replace(  # pylint: disable=too-many-function-args
+                binding,
+                members=updated_members)
 
         updated_policy: Policy = _replace_binding(policy, binding,
                                                   updated_binding)
@@ -303,8 +303,9 @@ class IamV1(gcp.api.GcpProjectApiResource):
             return
 
         updated_members: FrozenSet[str] = binding.members.difference({member})
-        updated_binding: Policy.Binding = dataclasses.replace(
-            binding, members=updated_members)
+        updated_binding: Policy.Binding = dataclasses.replace(  # pylint: disable=too-many-function-args
+            binding,
+            members=updated_members)
         updated_policy: Policy = _replace_binding(policy, binding,
                                                   updated_binding)
         self.set_service_account_iam_policy(account, updated_policy)

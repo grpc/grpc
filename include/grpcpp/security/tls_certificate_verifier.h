@@ -214,6 +214,19 @@ class ExternalCertificateVerifier {
       request_map_ ABSL_GUARDED_BY(mu_);
 };
 
+// A CertificateVerifier that doesn't perform any additional checks other than
+// certificate verification, if specified.
+// Note: using this solely without any other authentication mechanisms on the
+// peer identity will leave your applications to the MITM(Man-In-The-Middle)
+// attacks. Users should avoid doing so in production environments.
+class NoOpCertificateVerifier : public CertificateVerifier {
+ public:
+  NoOpCertificateVerifier();
+};
+
+// A CertificateVerifier that will perform hostname verification, to see if the
+// target name set from the client side matches the identity information
+// specified on the server's certificate.
 class HostNameCertificateVerifier : public CertificateVerifier {
  public:
   HostNameCertificateVerifier();

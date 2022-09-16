@@ -19,41 +19,41 @@ extern "C" {
 
 #include "upb/port_def.inc"
 
-extern upb_def_init envoy_config_listener_v3_listener_components_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_listener_v3_listener_components_proto_upbdefinit;
 
-UPB_INLINE const upb_msgdef *envoy_config_listener_v3_Filter_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_listener_v3_listener_components_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.listener.v3.Filter");
+UPB_INLINE const upb_MessageDef *envoy_config_listener_v3_Filter_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_listener_v3_listener_components_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.listener.v3.Filter");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_listener_v3_FilterChainMatch_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_listener_v3_listener_components_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.listener.v3.FilterChainMatch");
+UPB_INLINE const upb_MessageDef *envoy_config_listener_v3_FilterChainMatch_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_listener_v3_listener_components_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.listener.v3.FilterChainMatch");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_listener_v3_FilterChain_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_listener_v3_listener_components_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.listener.v3.FilterChain");
+UPB_INLINE const upb_MessageDef *envoy_config_listener_v3_FilterChain_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_listener_v3_listener_components_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.listener.v3.FilterChain");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_listener_v3_FilterChain_OnDemandConfiguration_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_listener_v3_listener_components_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.listener.v3.FilterChain.OnDemandConfiguration");
+UPB_INLINE const upb_MessageDef *envoy_config_listener_v3_FilterChain_OnDemandConfiguration_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_listener_v3_listener_components_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.listener.v3.FilterChain.OnDemandConfiguration");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_listener_v3_ListenerFilterChainMatchPredicate_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_listener_v3_listener_components_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.listener.v3.ListenerFilterChainMatchPredicate");
+UPB_INLINE const upb_MessageDef *envoy_config_listener_v3_ListenerFilterChainMatchPredicate_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_listener_v3_listener_components_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.listener.v3.ListenerFilterChainMatchPredicate");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_listener_v3_ListenerFilterChainMatchPredicate_MatchSet_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_listener_v3_listener_components_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.listener.v3.ListenerFilterChainMatchPredicate.MatchSet");
+UPB_INLINE const upb_MessageDef *envoy_config_listener_v3_ListenerFilterChainMatchPredicate_MatchSet_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_listener_v3_listener_components_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.listener.v3.ListenerFilterChainMatchPredicate.MatchSet");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_listener_v3_ListenerFilter_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_listener_v3_listener_components_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.listener.v3.ListenerFilter");
+UPB_INLINE const upb_MessageDef *envoy_config_listener_v3_ListenerFilter_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_listener_v3_listener_components_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.listener.v3.ListenerFilter");
 }
 
 #ifdef __cplusplus

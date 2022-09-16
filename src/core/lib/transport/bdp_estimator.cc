@@ -23,7 +23,9 @@
 #include <inttypes.h>
 #include <stdlib.h>
 
-#include "src/core/lib/gpr/useful.h"
+#include <algorithm>
+
+#include "src/core/lib/iomgr/exec_ctx.h"
 
 grpc_core::TraceFlag grpc_bdp_estimator_trace(false, "bdp_estimator");
 
@@ -34,18 +36,18 @@ BdpEstimator::BdpEstimator(const char* name)
       accumulator_(0),
       estimate_(65536),
       ping_start_time_(gpr_time_0(GPR_CLOCK_MONOTONIC)),
-      inter_ping_delay_(100),  // start at 100ms
+      inter_ping_delay_(Duration::Milliseconds(100)),  // start at 100ms
       stable_estimate_count_(0),
       bw_est_(0),
       name_(name) {}
 
-grpc_millis BdpEstimator::CompletePing() {
+Timestamp BdpEstimator::CompletePing() {
   gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
   gpr_timespec dt_ts = gpr_time_sub(now, ping_start_time_);
   double dt = static_cast<double>(dt_ts.tv_sec) +
               1e-9 * static_cast<double>(dt_ts.tv_nsec);
   double bw = dt > 0 ? (static_cast<double>(accumulator_) / dt) : 0;
-  int start_inter_ping_delay = inter_ping_delay_;
+  Duration start_inter_ping_delay = inter_ping_delay_;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace)) {
     gpr_log(GPR_INFO,
             "bdp[%s]:complete acc=%" PRId64 " est=%" PRId64
@@ -63,20 +65,19 @@ grpc_millis BdpEstimator::CompletePing() {
     }
     inter_ping_delay_ /= 2;  // if the ping estimate changes,
                              // exponentially get faster at probing
-  } else if (inter_ping_delay_ < 10000) {
+  } else if (inter_ping_delay_ < Duration::Seconds(10)) {
     stable_estimate_count_++;
     if (stable_estimate_count_ >= 2) {
-      inter_ping_delay_ +=
-          100 + static_cast<int>(rand() * 100.0 /
-                                 RAND_MAX);  // if the ping estimate is steady,
-                                             // slowly ramp down the probe time
+      // if the ping estimate is steady, slowly ramp down the probe time
+      inter_ping_delay_ += Duration::Milliseconds(
+          100 + static_cast<int>(rand() * 100.0 / RAND_MAX));
     }
   }
   if (start_inter_ping_delay != inter_ping_delay_) {
     stable_estimate_count_ = 0;
     if (GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace)) {
-      gpr_log(GPR_INFO, "bdp[%s]:update_inter_time to %dms", name_,
-              inter_ping_delay_);
+      gpr_log(GPR_INFO, "bdp[%s]:update_inter_time to %" PRId64 "ms", name_,
+              inter_ping_delay_.millis());
     }
   }
   ping_state_ = PingState::UNSCHEDULED;

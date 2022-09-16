@@ -10,7 +10,7 @@
 #include "xds/annotations/v3/versioning.upbdefs.h"
 #include "xds/annotations/v3/versioning.upb.h"
 
-extern upb_def_init google_protobuf_descriptor_proto_upbdefinit;
+extern _upb_DefPool_Init google_protobuf_descriptor_proto_upbdefinit;
 static const char descriptor[330] = {'\n', '#', 'x', 'd', 's', '/', 'a', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's', '/', 'v', '3', '/', 'v', 'e', 'r', 's', 
 'i', 'o', 'n', 'i', 'n', 'g', '.', 'p', 'r', 'o', 't', 'o', '\022', '\022', 'x', 'd', 's', '.', 'a', 'n', 'n', 'o', 't', 'a', 't', 
 'i', 'o', 'n', 's', '.', 'v', '3', '\032', ' ', 'g', 'o', 'o', 'g', 'l', 'e', '/', 'p', 'r', 'o', 't', 'o', 'b', 'u', 'f', '/', 
@@ -27,14 +27,14 @@ static const char descriptor[330] = {'\n', '#', 'x', 'd', 's', '/', 'a', 'n', 'n
 'r', 'o', 't', 'o', '3', 
 };
 
-static upb_def_init *deps[2] = {
+static _upb_DefPool_Init *deps[2] = {
   &google_protobuf_descriptor_proto_upbdefinit,
   NULL
 };
 
-upb_def_init xds_annotations_v3_versioning_proto_upbdefinit = {
+_upb_DefPool_Init xds_annotations_v3_versioning_proto_upbdefinit = {
   deps,
   &xds_annotations_v3_versioning_proto_upb_file_layout,
   "xds/annotations/v3/versioning.proto",
-  UPB_STRVIEW_INIT(descriptor, 330)
+  UPB_STRINGVIEW_INIT(descriptor, 330)
 };

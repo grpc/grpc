@@ -47,7 +47,7 @@ bool ClientMetadataContains(const ServerContext& context,
   return false;
 }
 
-TEST(ServerContextTestSpouseTest, ClientMetadata) {
+TEST(ServerContextTestSpouseTest, ClientMetadataHandle) {
   ServerContext context;
   ServerContextTestSpouse spouse(&context);
 
@@ -73,7 +73,7 @@ TEST(ServerContextTestSpouseTest, InitialMetadata) {
   ASSERT_EQ(metadata, spouse.GetInitialMetadata());
 }
 
-TEST(ServerContextTestSpouseTest, TrailingMetadata) {
+TEST(ServerContextTestSpouseTest, ServerMetadataHandle) {
   ServerContext context;
   ServerContextTestSpouse spouse(&context);
   std::multimap<std::string, std::string> metadata;

@@ -38,9 +38,9 @@ typedef struct grpc_endpoint_vtable grpc_endpoint_vtable;
 
 struct grpc_endpoint_vtable {
   void (*read)(grpc_endpoint* ep, grpc_slice_buffer* slices, grpc_closure* cb,
-               bool urgent);
+               bool urgent, int min_progress_size);
   void (*write)(grpc_endpoint* ep, grpc_slice_buffer* slices, grpc_closure* cb,
-                void* arg);
+                void* arg, int max_frame_size);
   void (*add_to_pollset)(grpc_endpoint* ep, grpc_pollset* pollset);
   void (*add_to_pollset_set)(grpc_endpoint* ep, grpc_pollset_set* pollset);
   void (*delete_from_pollset_set)(grpc_endpoint* ep, grpc_pollset_set* pollset);
@@ -56,9 +56,9 @@ struct grpc_endpoint_vtable {
    Callback success indicates that the endpoint can accept more reads, failure
    indicates the endpoint is closed.
    Valid slices may be placed into \a slices even when the callback is
-   invoked with error != GRPC_ERROR_NONE. */
+   invoked with !GRPC_ERROR_IS_NONE(error). */
 void grpc_endpoint_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                        grpc_closure* cb, bool urgent);
+                        grpc_closure* cb, bool urgent, int min_progress_size);
 
 absl::string_view grpc_endpoint_get_peer(grpc_endpoint* ep);
 
@@ -79,9 +79,11 @@ int grpc_endpoint_get_fd(grpc_endpoint* ep);
    it is a valid slice buffer.
    \a arg is platform specific. It is currently only used by TCP on linux
    platforms as an argument that would be forwarded to the timestamps callback.
+   \a max_frame_size. A hint to the endpoint implementation to construct
+   frames which do not exceed the specified size.
    */
 void grpc_endpoint_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                         grpc_closure* cb, void* arg);
+                         grpc_closure* cb, void* arg, int max_frame_size);
 
 /* Causes any pending and future read/write callbacks to run immediately with
    success==0 */

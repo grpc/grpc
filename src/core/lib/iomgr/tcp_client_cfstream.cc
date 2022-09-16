@@ -27,12 +27,12 @@
 #include <netinet/in.h>
 #include <string.h>
 
+#include <grpc/event_engine/endpoint_config.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/cfstream_handle.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -116,7 +116,7 @@ static void OnOpen(void* arg, grpc_error_handle error) {
     gpr_mu_unlock(&connect->mu);
     CFStreamConnectCleanup(connect);
   } else {
-    if (error == GRPC_ERROR_NONE) {
+    if (GRPC_ERROR_IS_NONE(error)) {
       CFErrorRef stream_error = CFReadStreamCopyError(connect->read_stream);
       if (stream_error == NULL) {
         stream_error = CFWriteStreamCopyError(connect->write_stream);
@@ -125,7 +125,7 @@ static void OnOpen(void* arg, grpc_error_handle error) {
         error = GRPC_ERROR_CREATE_FROM_CFERROR(stream_error, "connect() error");
         CFRelease(stream_error);
       }
-      if (error == GRPC_ERROR_NONE) {
+      if (GRPC_ERROR_IS_NONE(error)) {
         *endpoint = grpc_cfstream_endpoint_create(
             connect->read_stream, connect->write_stream,
             connect->addr_name.c_str(), connect->stream_handle);
@@ -140,7 +140,7 @@ static void OnOpen(void* arg, grpc_error_handle error) {
 
 static void ParseResolvedAddress(const grpc_resolved_address* addr,
                                  CFStringRef* host, int* port) {
-  std::string host_port = grpc_sockaddr_to_string(addr, true);
+  std::string host_port = grpc_sockaddr_to_string(addr, true).value();
   std::string host_string;
   std::string port_string;
   grpc_core::SplitHostPort(host_port, &host_string, &port_string);
@@ -149,15 +149,23 @@ static void ParseResolvedAddress(const grpc_resolved_address* addr,
   *port = grpc_sockaddr_get_port(addr);
 }
 
-static void CFStreamClientConnect(grpc_closure* closure, grpc_endpoint** ep,
-                                  grpc_pollset_set* interested_parties,
-                                  const grpc_channel_args* channel_args,
-                                  const grpc_resolved_address* resolved_addr,
-                                  grpc_millis deadline) {
+static int64_t CFStreamClientConnect(
+    grpc_closure* closure, grpc_endpoint** ep,
+    grpc_pollset_set* interested_parties,
+    const grpc_event_engine::experimental::EndpointConfig& /*config*/,
+    const grpc_resolved_address* resolved_addr, grpc_core::Timestamp deadline) {
+  auto addr_uri = grpc_sockaddr_to_uri(resolved_addr);
+  if (!addr_uri.ok()) {
+    grpc_error_handle error =
+        GRPC_ERROR_CREATE_FROM_CPP_STRING(addr_uri.status().ToString());
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, error);
+    return 0;
+  }
+
   CFStreamConnect* connect = new CFStreamConnect();
   connect->closure = closure;
   connect->endpoint = ep;
-  connect->addr_name = grpc_sockaddr_to_uri(resolved_addr);
+  connect->addr_name = addr_uri.value();
   connect->refs = 2;  // One for the connect operation, one for the timer.
   gpr_ref_init(&connect->refcount, 1);
   gpr_mu_init(&connect->mu);
@@ -190,8 +198,14 @@ static void CFStreamClientConnect(grpc_closure* closure, grpc_endpoint** ep,
   CFWriteStreamOpen(write_stream);
   grpc_timer_init(&connect->alarm, deadline, &connect->on_alarm);
   gpr_mu_unlock(&connect->mu);
+  return 0;
 }
 
-grpc_tcp_client_vtable grpc_cfstream_client_vtable = {CFStreamClientConnect};
+static bool CFStreamClientCancelConnect(int64_t /*connection_handle*/) {
+  return false;
+}
+
+grpc_tcp_client_vtable grpc_cfstream_client_vtable = {
+    CFStreamClientConnect, CFStreamClientCancelConnect};
 
 #endif /* GRPC_CFSTREAM_CLIENT */

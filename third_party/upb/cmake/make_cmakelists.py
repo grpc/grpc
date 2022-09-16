@@ -25,9 +25,10 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""TODO(haberman): DO NOT SUBMIT without one-line documentation for make_cmakelists.
+"""A tool to convert {WORKSPACE, BUILD} -> CMakeLists.txt.
 
-TODO(haberman): DO NOT SUBMIT without a detailed description of make_cmakelists.
+This tool is very upb-specific at the moment, and should not be seen as a
+generic Bazel -> CMake converter.
 """
 
 from __future__ import absolute_import
@@ -38,8 +39,8 @@ import sys
 import textwrap
 import os
 
-def StripColons(deps):
-  return map(lambda x: x[1:], deps)
+def StripFirstChar(deps):
+  return [dep[1:] for dep in deps]
 
 def IsSourceFile(name):
   return name.endswith(".c") or name.endswith(".cc")
@@ -54,7 +55,7 @@ class BuildFileFunctions(object):
     self.converter.toplevel += "target_link_libraries(%s%s\n  %s)\n" % (
         kwargs["name"],
         keyword,
-        "\n  ".join(StripColons(kwargs["deps"]))
+        "\n  ".join(StripFirstChar(kwargs["deps"]))
     )
 
   def load(self, *args):
@@ -69,13 +70,14 @@ class BuildFileFunctions(object):
       return
     files = kwargs.get("srcs", []) + kwargs.get("hdrs", [])
     found_files = []
+    pregenerated_files = [
+        "CMakeLists.txt", "descriptor.upb.h", "descriptor.upb.c"
+    ]
     for file in files:
-        if os.path.isfile(file):
-            found_files.append("../" + file)
-        elif os.path.isfile("cmake/" + file):
-            found_files.append("../cmake/" + file)
-        else:
-            print("Warning: no such file: " + file)
+      if os.path.basename(file) in pregenerated_files:
+        found_files.append("../cmake/" + file)
+      else:
+        found_files.append("../" + file)
 
     if list(filter(IsSourceFile, files)):
       # Has sources, make this a normal library.
@@ -119,6 +121,9 @@ class BuildFileFunctions(object):
     #     ))
 
     # self._add_deps(kwargs)
+    pass
+
+  def cc_fuzz_test(self, **kwargs):
     pass
 
   def py_library(self, **kwargs):
@@ -187,6 +192,9 @@ class BuildFileFunctions(object):
   def map_dep(self, arg):
     return arg
 
+  def package_group(self, **kwargs):
+    pass
+
 
 class WorkspaceFileFunctions(object):
   def __init__(self, converter):
@@ -214,6 +222,9 @@ class WorkspaceFileFunctions(object):
   def upb_deps(self):
     pass
 
+  def protobuf_deps(self):
+    pass
+
   def rules_fuzzing_dependencies(self):
     pass
 
@@ -221,6 +232,15 @@ class WorkspaceFileFunctions(object):
     pass
 
   def system_python(self, **kwargs):
+    pass
+
+  def register_toolchains(self, toolchain):
+    pass
+
+  def python_source_archive(self, **kwargs):
+    pass
+
+  def python_nuget_package(self, **kwargs):
     pass
 
 
@@ -308,6 +328,7 @@ converter = Converter()
 def GetDict(obj):
   ret = {}
   ret["UPB_DEFAULT_COPTS"] = []  # HACK
+  ret["UPB_DEFAULT_CPPOPTS"] = []  # HACK
   for k in dir(obj):
     if not k.startswith("_"):
       ret[k] = getattr(obj, k);

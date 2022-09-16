@@ -22,46 +22,66 @@ extern "C" {
 
 struct google_protobuf_Any;
 typedef struct google_protobuf_Any google_protobuf_Any;
-extern const upb_msglayout google_protobuf_Any_msginit;
+extern const upb_MiniTable google_protobuf_Any_msginit;
+
 
 
 /* google.protobuf.Any */
 
-UPB_INLINE google_protobuf_Any *google_protobuf_Any_new(upb_arena *arena) {
-  return (google_protobuf_Any *)_upb_msg_new(&google_protobuf_Any_msginit, arena);
+UPB_INLINE google_protobuf_Any* google_protobuf_Any_new(upb_Arena* arena) {
+  return (google_protobuf_Any*)_upb_Message_New(&google_protobuf_Any_msginit, arena);
 }
-UPB_INLINE google_protobuf_Any *google_protobuf_Any_parse(const char *buf, size_t size,
-                        upb_arena *arena) {
-  google_protobuf_Any *ret = google_protobuf_Any_new(arena);
+UPB_INLINE google_protobuf_Any* google_protobuf_Any_parse(const char* buf, size_t size, upb_Arena* arena) {
+  google_protobuf_Any* ret = google_protobuf_Any_new(arena);
   if (!ret) return NULL;
-  if (!upb_decode(buf, size, ret, &google_protobuf_Any_msginit, arena)) return NULL;
-  return ret;
-}
-UPB_INLINE google_protobuf_Any *google_protobuf_Any_parse_ex(const char *buf, size_t size,
-                           const upb_extreg *extreg, int options,
-                           upb_arena *arena) {
-  google_protobuf_Any *ret = google_protobuf_Any_new(arena);
-  if (!ret) return NULL;
-  if (!_upb_decode(buf, size, ret, &google_protobuf_Any_msginit, extreg, options, arena)) {
+  if (upb_Decode(buf, size, ret, &google_protobuf_Any_msginit, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
 }
-UPB_INLINE char *google_protobuf_Any_serialize(const google_protobuf_Any *msg, upb_arena *arena, size_t *len) {
-  return upb_encode(msg, &google_protobuf_Any_msginit, arena, len);
+UPB_INLINE google_protobuf_Any* google_protobuf_Any_parse_ex(const char* buf, size_t size,
+                           const upb_ExtensionRegistry* extreg,
+                           int options, upb_Arena* arena) {
+  google_protobuf_Any* ret = google_protobuf_Any_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, ret, &google_protobuf_Any_msginit, extreg, options, arena) !=
+      kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE char* google_protobuf_Any_serialize(const google_protobuf_Any* msg, upb_Arena* arena, size_t* len) {
+  char* ptr;
+  (void)upb_Encode(msg, &google_protobuf_Any_msginit, 0, arena, &ptr, len);
+  return ptr;
+}
+UPB_INLINE char* google_protobuf_Any_serialize_ex(const google_protobuf_Any* msg, int options,
+                                 upb_Arena* arena, size_t* len) {
+  char* ptr;
+  (void)upb_Encode(msg, &google_protobuf_Any_msginit, options, arena, &ptr, len);
+  return ptr;
+}
+UPB_INLINE void google_protobuf_Any_clear_type_url(const google_protobuf_Any* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
+}
+UPB_INLINE upb_StringView google_protobuf_Any_type_url(const google_protobuf_Any* msg) {
+  return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_StringView);
+}
+UPB_INLINE void google_protobuf_Any_clear_value(const google_protobuf_Any* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 16), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
+}
+UPB_INLINE upb_StringView google_protobuf_Any_value(const google_protobuf_Any* msg) {
+  return *UPB_PTR_AT(msg, UPB_SIZE(8, 16), upb_StringView);
 }
 
-UPB_INLINE upb_strview google_protobuf_Any_type_url(const google_protobuf_Any *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview); }
-UPB_INLINE upb_strview google_protobuf_Any_value(const google_protobuf_Any *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(8, 16), upb_strview); }
-
-UPB_INLINE void google_protobuf_Any_set_type_url(google_protobuf_Any *msg, upb_strview value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview) = value;
+UPB_INLINE void google_protobuf_Any_set_type_url(google_protobuf_Any *msg, upb_StringView value) {
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_StringView) = value;
 }
-UPB_INLINE void google_protobuf_Any_set_value(google_protobuf_Any *msg, upb_strview value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(8, 16), upb_strview) = value;
+UPB_INLINE void google_protobuf_Any_set_value(google_protobuf_Any *msg, upb_StringView value) {
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 16), upb_StringView) = value;
 }
 
-extern const upb_msglayout_file google_protobuf_any_proto_upb_file_layout;
+extern const upb_MiniTable_File google_protobuf_any_proto_upb_file_layout;
 
 #ifdef __cplusplus
 }  /* extern "C" */

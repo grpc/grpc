@@ -54,12 +54,9 @@ GRPC_LLVM_WARNING_FLAGS = [
     # Exceptions but will be removed
     "-Wno-deprecated-declarations",
     "-Wno-unused-function",
-    # googletest 1.11 or later is needed to have this warning
-    # https://github.com/google/googletest/commit/1b3eb6ef34620c1203263d76ec169ef0853789cc
-    "-Wno-deprecated-copy",
 ]
 
 GRPC_DEFAULT_COPTS = select({
-    "//:use_strict_warning": GRPC_LLVM_WARNING_FLAGS,
+    "//:use_strict_warning": GRPC_LLVM_WARNING_FLAGS + ["-DUSE_STRICT_WARNING=1"],
     "//conditions:default": [],
 })

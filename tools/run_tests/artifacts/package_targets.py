@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright 2016 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -74,15 +74,11 @@ def create_jobspec(name,
 class CSharpPackage:
     """Builds C# packages."""
 
-    def __init__(self, unity=False):
-        self.unity = unity
-        self.labels = ['package', 'csharp', 'linux']
-        if unity:
-            self.name = 'csharp_package_unity_linux'
-            self.labels += ['unity']
-        else:
-            self.name = 'csharp_package_nuget_linux'
-            self.labels += ['nuget']
+    def __init__(self, platform):
+        self.platform = platform
+        self.labels = ['package', 'csharp', self.platform]
+        self.name = 'csharp_package_nuget_%s' % self.platform
+        self.labels += ['nuget']
 
     def pre_build_jobspecs(self):
         return []
@@ -93,18 +89,21 @@ class CSharpPackage:
             'GRPC_CSHARP_BUILD_SINGLE_PLATFORM_NUGET':
                 os.getenv('GRPC_CSHARP_BUILD_SINGLE_PLATFORM_NUGET', '')
         }
-        if self.unity:
+
+        build_script = 'src/csharp/build_nuget.sh'
+
+        if self.platform == 'linux':
             return create_docker_jobspec(
                 self.name,
                 'tools/dockerfile/test/csharp_debian11_x64',
-                'src/csharp/build_unitypackage.sh',
+                build_script,
                 environ=environ)
         else:
-            return create_docker_jobspec(
-                self.name,
-                'tools/dockerfile/test/csharp_debian11_x64',
-                'src/csharp/build_nuget.sh',
-                environ=environ)
+            repo_root = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                     '..', '..', '..')
+            environ['EXTERNAL_GIT_ROOT'] = repo_root
+            return create_jobspec(self.name, ['bash', build_script],
+                                  environ=environ)
 
     def __str__(self):
         return self.name
@@ -169,8 +168,9 @@ class PHPPackage:
 def targets():
     """Gets list of supported targets"""
     return [
-        CSharpPackage(),
-        CSharpPackage(unity=True),
+        CSharpPackage('linux'),
+        CSharpPackage('macos'),
+        CSharpPackage('windows'),
         RubyPackage(),
         PythonPackage(),
         PHPPackage()

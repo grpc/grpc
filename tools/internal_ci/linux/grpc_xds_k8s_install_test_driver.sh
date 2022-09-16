@@ -16,7 +16,7 @@
 set -eo pipefail
 
 # Constants
-readonly PYTHON_VERSION="3.6"
+readonly PYTHON_VERSION="${PYTHON_VERSION:-3.6}"
 # Test driver
 readonly TEST_DRIVER_REPO_NAME="grpc"
 readonly TEST_DRIVER_REPO_URL="https://github.com/${TEST_DRIVER_REPO_OWNER:-grpc}/grpc.git"
@@ -52,7 +52,7 @@ activate_gke_cluster() {
     GKE_CLUSTER_PSM_BASIC)
       GKE_CLUSTER_NAME="interop-test-psm-basic"
       GKE_CLUSTER_ZONE="us-central1-c"
-      ;;      
+      ;;
     *)
       echo "Unknown GKE cluster: ${1}"
       exit 1
@@ -119,6 +119,29 @@ parse_src_repo_git_info() {
   readonly GIT_ORIGIN_URL=$(git -C "${src_dir}" remote get-url origin)
   readonly GIT_COMMIT=$(git -C "${src_dir}" rev-parse HEAD)
   readonly GIT_COMMIT_SHORT=$(git -C "${src_dir}" rev-parse --short HEAD)
+}
+
+
+#######################################
+# Checks if the given string is a version branch.
+# Version branches: "master", "v1.47.x"
+# NOT version branches: "v1.47.0", "1.47.x", "", "dev", "main"
+# Arguments:
+#   Version to test
+#######################################
+is_version_branch() {
+  if [ $# -eq 0 ]; then
+    echo "Usage is_version_branch VERSION"
+    false
+    return
+  fi
+  if [[ $1 == "master" ]]; then
+    true
+    return
+  fi
+  # Do not inline version_regex: keep it a string to avoid issues with escaping chars in ~= expr.
+  local version_regex='^v[0-9]+\.[0-9]+\.x$'
+  [[ "${1}" =~ $version_regex ]]
 }
 
 #######################################
@@ -357,7 +380,9 @@ kokoro_setup_python_virtual_environment() {
 # Installs and configures the test driver on Kokoro VM.
 # Globals:
 #   KOKORO_ARTIFACTS_DIR
+#   KOKORO_JOB_NAME
 #   TEST_DRIVER_REPO_NAME
+#   TESTING_VERSION: Populated with the version branch under test, f.e. v1.42.x, master
 #   SRC_DIR: Populated with absolute path to the source repo on Kokoro VM
 #   TEST_DRIVER_REPO_DIR: Populated with the path to the repo containing
 #                         the test driver
@@ -378,6 +403,14 @@ kokoro_setup_test_driver() {
   local src_repository_name="${1:?Usage kokoro_setup_test_driver GITHUB_REPOSITORY_NAME}"
   # Capture Kokoro VM version info in the log.
   kokoro_print_version
+
+  # All grpc kokoro jobs names structured to have the version identifier in the third position:
+  # - grpc/core/master/linux/...
+  # - grpc/core/v1.42.x/branch/linux/...
+  # - grpc/java/v1.47.x/branch/...
+  # - grpc/go/v1.47.x/branch/...
+  # - grpc/node/v1.6.x/...
+  readonly TESTING_VERSION=$(echo "${KOKORO_JOB_NAME}" | cut -d '/' -f3)
 
   # Kokoro clones repo to ${KOKORO_ARTIFACTS_DIR}/github/${GITHUB_REPOSITORY}
   local github_root="${KOKORO_ARTIFACTS_DIR}/github"
@@ -413,7 +446,7 @@ kokoro_setup_test_driver() {
 #   TEST_XML_OUTPUT_DIR: Populated with the path to test xUnit XML report
 #   GIT_ORIGIN_URL: Populated with the origin URL of git repo used for the build
 #   GIT_COMMIT: Populated with the SHA-1 of git commit being built
-#   GIT_COMMIT_SHORT: Populated with the short SHA-1 of git commit being built  
+#   GIT_COMMIT_SHORT: Populated with the short SHA-1 of git commit being built
 #   SECONDARY_KUBE_CONTEXT: Populated with name of kubectl context with secondary GKE cluster access, if any
 # Arguments:
 #   The path to the folder containing the build script

@@ -20,10 +20,10 @@
 
 #include "src/core/lib/channel/channel_stack.h"
 
-#include <stdlib.h>
-#include <string.h>
+#include <stdint.h>
 
-#include <grpc/support/alloc.h>
+#include <utility>
+
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/alloc.h"
@@ -113,6 +113,8 @@ grpc_error_handle grpc_channel_stack_init(
     }
   }
 
+  stack->on_destroy.Init([]() {});
+
   size_t call_size =
       GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_call_stack)) +
       GPR_ROUND_UP_TO_ALIGNMENT_SIZE(filter_count * sizeof(grpc_call_element));
@@ -140,8 +142,8 @@ grpc_error_handle grpc_channel_stack_init(
     elems[i].channel_data = user_data;
     grpc_error_handle error =
         elems[i].filter->init_channel_elem(&elems[i], &args);
-    if (error != GRPC_ERROR_NONE) {
-      if (first_error == GRPC_ERROR_NONE) {
+    if (!GRPC_ERROR_IS_NONE(error)) {
+      if (GRPC_ERROR_IS_NONE(first_error)) {
         first_error = error;
       } else {
         GRPC_ERROR_UNREF(error);
@@ -169,6 +171,9 @@ void grpc_channel_stack_destroy(grpc_channel_stack* stack) {
   for (i = 0; i < count; i++) {
     channel_elems[i].filter->destroy_channel_elem(&channel_elems[i]);
   }
+
+  (*stack->on_destroy)();
+  stack->on_destroy.Destroy();
 }
 
 grpc_error_handle grpc_call_stack_init(
@@ -199,8 +204,8 @@ grpc_error_handle grpc_call_stack_init(
   for (size_t i = 0; i < count; i++) {
     grpc_error_handle error =
         call_elems[i].filter->init_call_elem(&call_elems[i], elem_args);
-    if (error != GRPC_ERROR_NONE) {
-      if (first_error == GRPC_ERROR_NONE) {
+    if (!GRPC_ERROR_IS_NONE(error)) {
+      if (GRPC_ERROR_IS_NONE(first_error)) {
         first_error = error;
       } else {
         GRPC_ERROR_UNREF(error);
@@ -271,4 +276,36 @@ grpc_call_stack* grpc_call_stack_from_top_element(grpc_call_element* elem) {
   return reinterpret_cast<grpc_call_stack*>(
       reinterpret_cast<char*>(elem) -
       GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_call_stack)));
+}
+
+void grpc_channel_stack_no_post_init(grpc_channel_stack*,
+                                     grpc_channel_element*) {}
+
+namespace {
+
+grpc_core::NextPromiseFactory ClientNext(grpc_channel_element* elem) {
+  return [elem](grpc_core::CallArgs args) {
+    return elem->filter->make_call_promise(elem, std::move(args),
+                                           ClientNext(elem + 1));
+  };
+}
+
+grpc_core::NextPromiseFactory ServerNext(grpc_channel_element* elem) {
+  return [elem](grpc_core::CallArgs args) {
+    return elem->filter->make_call_promise(elem, std::move(args),
+                                           ServerNext(elem - 1));
+  };
+}
+
+}  // namespace
+
+grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle>
+grpc_channel_stack::MakeCallPromise(grpc_core::CallArgs call_args) {
+  if (is_client) {
+    return ClientNext(grpc_channel_stack_element(this, 0))(
+        std::move(call_args));
+  } else {
+    return ServerNext(grpc_channel_stack_element(this, this->count - 1))(
+        std::move(call_args));
+  }
 }

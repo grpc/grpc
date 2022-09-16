@@ -18,22 +18,16 @@
 
 #include "src/core/ext/transport/chttp2/transport/hpack_parser_table.h"
 
-#include <stdio.h>
-#include <string.h>
-
 #include <string>
-
-#include <gtest/gtest.h>
+#include <utility>
 
 #include "absl/strings/str_cat.h"
+#include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/slice/slice.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
@@ -143,7 +137,7 @@ TEST(HpackParserTableTest, ManyAdditions) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   int r = RUN_ALL_TESTS();
   grpc_shutdown();

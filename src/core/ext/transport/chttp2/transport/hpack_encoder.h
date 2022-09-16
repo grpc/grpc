@@ -21,14 +21,27 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
+
 #include <cstdint>
+#include <utility>
+#include <vector>
 
+#include "absl/strings/match.h"
+#include "absl/strings/string_view.h"
+
+#include <grpc/impl/codegen/compression_types.h>
 #include <grpc/slice.h>
-#include <grpc/slice_buffer.h>
+#include <grpc/status.h>
 
-#include "src/core/ext/transport/chttp2/transport/frame.h"
+#include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder_table.h"
+#include "src/core/lib/compression/compression_internal.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/lib/transport/timeout_encoding.h"
 #include "src/core/lib/transport/transport.h"
 
 extern grpc_core::TraceFlag grpc_http_trace;
@@ -80,7 +93,7 @@ class HPackCompressor {
     void Encode(HttpPathMetadata, const Slice& value);
     void Encode(HttpAuthorityMetadata, const Slice& value);
     void Encode(HttpStatusMetadata, uint32_t status);
-    void Encode(GrpcTimeoutMetadata, grpc_millis deadline);
+    void Encode(GrpcTimeoutMetadata, Timestamp deadline);
     void Encode(TeMetadata, TeMetadata::ValueType value);
     void Encode(ContentTypeMetadata, ContentTypeMetadata::ValueType value);
     void Encode(HttpSchemeMetadata, HttpSchemeMetadata::ValueType value);
@@ -140,6 +153,10 @@ class HPackCompressor {
                              Slice value, uint32_t transport_length);
     void EncodeIndexedKeyWithBinaryValue(uint32_t* index, absl::string_view key,
                                          Slice value);
+
+    void EncodeRepeatingSliceValue(const absl::string_view& key,
+                                   const Slice& slice, uint32_t* index,
+                                   size_t max_compression_size);
 
     size_t CurrentFrameSize() const;
     void Add(Slice slice);

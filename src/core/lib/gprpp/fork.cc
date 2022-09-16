@@ -20,15 +20,13 @@
 
 #include "src/core/lib/gprpp/fork.h"
 
-#include <string.h>
-
-#include <grpc/support/alloc.h>
+#include <grpc/impl/codegen/gpr_types.h>
+#include <grpc/support/atm.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/gprpp/global_config.h"
-#include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/gprpp/global_config_env.h"
+#include "src/core/lib/gprpp/no_destruct.h"
 
 /*
  * NOTE: FORKING IS NOT GENERALLY SUPPORTED, THIS IS ONLY INTENDED TO WORK
@@ -46,7 +44,7 @@ GPR_GLOBAL_CONFIG_DEFINE_BOOL(grpc_enable_fork_support,
                               "Enable fork support");
 
 namespace grpc_core {
-namespace internal {
+namespace {
 // The exec_ctx_count has 2 modes, blocked and unblocked.
 // When unblocked, the count is 2-indexed; exec_ctx_count=2 indicates
 // 0 active ExecCtxs, exex_ctx_count=3 indicates 1 active ExecCtxs...
@@ -164,23 +162,12 @@ class ThreadState {
   int count_;
 };
 
-}  // namespace internal
+}  // namespace
 
 void Fork::GlobalInit() {
   if (!override_enabled_) {
     support_enabled_.store(GPR_GLOBAL_CONFIG_GET(grpc_enable_fork_support),
                            std::memory_order_relaxed);
-  }
-  if (support_enabled_.load(std::memory_order_relaxed)) {
-    exec_ctx_state_ = new internal::ExecCtxState();
-    thread_state_ = new internal::ThreadState();
-  }
-}
-
-void Fork::GlobalShutdown() {
-  if (support_enabled_.load(std::memory_order_relaxed)) {
-    delete exec_ctx_state_;
-    delete thread_state_;
   }
 }
 
@@ -194,9 +181,13 @@ void Fork::Enable(bool enable) {
   support_enabled_.store(enable, std::memory_order_relaxed);
 }
 
-void Fork::DoIncExecCtxCount() { exec_ctx_state_->IncExecCtxCount(); }
+void Fork::DoIncExecCtxCount() {
+  NoDestructSingleton<ExecCtxState>::Get()->IncExecCtxCount();
+}
 
-void Fork::DoDecExecCtxCount() { exec_ctx_state_->DecExecCtxCount(); }
+void Fork::DoDecExecCtxCount() {
+  NoDestructSingleton<ExecCtxState>::Get()->DecExecCtxCount();
+}
 
 void Fork::SetResetChildPollingEngineFunc(
     Fork::child_postfork_func reset_child_polling_engine) {
@@ -208,36 +199,34 @@ Fork::child_postfork_func Fork::GetResetChildPollingEngineFunc() {
 
 bool Fork::BlockExecCtx() {
   if (support_enabled_.load(std::memory_order_relaxed)) {
-    return exec_ctx_state_->BlockExecCtx();
+    return NoDestructSingleton<ExecCtxState>::Get()->BlockExecCtx();
   }
   return false;
 }
 
 void Fork::AllowExecCtx() {
   if (support_enabled_.load(std::memory_order_relaxed)) {
-    exec_ctx_state_->AllowExecCtx();
+    NoDestructSingleton<ExecCtxState>::Get()->AllowExecCtx();
   }
 }
 
 void Fork::IncThreadCount() {
   if (support_enabled_.load(std::memory_order_relaxed)) {
-    thread_state_->IncThreadCount();
+    NoDestructSingleton<ThreadState>::Get()->IncThreadCount();
   }
 }
 
 void Fork::DecThreadCount() {
   if (support_enabled_.load(std::memory_order_relaxed)) {
-    thread_state_->DecThreadCount();
+    NoDestructSingleton<ThreadState>::Get()->DecThreadCount();
   }
 }
 void Fork::AwaitThreads() {
   if (support_enabled_.load(std::memory_order_relaxed)) {
-    thread_state_->AwaitThreads();
+    NoDestructSingleton<ThreadState>::Get()->AwaitThreads();
   }
 }
 
-internal::ExecCtxState* Fork::exec_ctx_state_ = nullptr;
-internal::ThreadState* Fork::thread_state_ = nullptr;
 std::atomic<bool> Fork::support_enabled_(false);
 bool Fork::override_enabled_ = false;
 Fork::child_postfork_func Fork::reset_child_polling_engine_ = nullptr;

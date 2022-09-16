@@ -28,10 +28,10 @@
 #include <vector>
 
 #include <grpc/impl/codegen/log.h>
-#include <grpcpp/impl/codegen/byte_buffer.h>
 #include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/rpc_method.h>
 #include <grpcpp/impl/codegen/status.h>
+#include <grpcpp/support/byte_buffer.h>
 
 namespace grpc {
 class ServerContextBase;
@@ -51,7 +51,7 @@ class MethodHandler {
     /// \param requester : used only by the callback API. It is a function
     ///        called by the RPC Controller to request another RPC (and also
     ///        to set up the state required to make that request possible)
-    HandlerParameter(Call* c, ::grpc::ServerContextBase* context, void* req,
+    HandlerParameter(Call* c, grpc::ServerContextBase* context, void* req,
                      Status req_status, void* handler_data,
                      std::function<void()> requester)
         : call(c),
@@ -62,7 +62,7 @@ class MethodHandler {
           call_requester(std::move(requester)) {}
     ~HandlerParameter() {}
     Call* const call;
-    ::grpc::ServerContextBase* const server_context;
+    grpc::ServerContextBase* const server_context;
     void* const request;
     const Status status;
     void* const internal_data;

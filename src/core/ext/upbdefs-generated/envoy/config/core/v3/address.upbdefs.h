@@ -19,41 +19,41 @@ extern "C" {
 
 #include "upb/port_def.inc"
 
-extern upb_def_init envoy_config_core_v3_address_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_core_v3_address_proto_upbdefinit;
 
-UPB_INLINE const upb_msgdef *envoy_config_core_v3_Pipe_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_core_v3_address_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.core.v3.Pipe");
+UPB_INLINE const upb_MessageDef *envoy_config_core_v3_Pipe_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_core_v3_address_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.core.v3.Pipe");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_core_v3_EnvoyInternalAddress_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_core_v3_address_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.core.v3.EnvoyInternalAddress");
+UPB_INLINE const upb_MessageDef *envoy_config_core_v3_EnvoyInternalAddress_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_core_v3_address_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.core.v3.EnvoyInternalAddress");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_core_v3_SocketAddress_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_core_v3_address_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.core.v3.SocketAddress");
+UPB_INLINE const upb_MessageDef *envoy_config_core_v3_SocketAddress_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_core_v3_address_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.core.v3.SocketAddress");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_core_v3_TcpKeepalive_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_core_v3_address_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.core.v3.TcpKeepalive");
+UPB_INLINE const upb_MessageDef *envoy_config_core_v3_TcpKeepalive_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_core_v3_address_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.core.v3.TcpKeepalive");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_core_v3_BindConfig_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_core_v3_address_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.core.v3.BindConfig");
+UPB_INLINE const upb_MessageDef *envoy_config_core_v3_BindConfig_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_core_v3_address_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.core.v3.BindConfig");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_core_v3_Address_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_core_v3_address_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.core.v3.Address");
+UPB_INLINE const upb_MessageDef *envoy_config_core_v3_Address_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_core_v3_address_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.core.v3.Address");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_core_v3_CidrRange_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_core_v3_address_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.core.v3.CidrRange");
+UPB_INLINE const upb_MessageDef *envoy_config_core_v3_CidrRange_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_core_v3_address_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.core.v3.CidrRange");
 }
 
 #ifdef __cplusplus

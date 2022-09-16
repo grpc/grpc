@@ -21,23 +21,29 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
+
 #include <atomic>
+#include <cstdint>
+#include <map>
 #include <set>
 #include <string>
+#include <utility>
+#include <vector>
 
-#include "absl/container/inlined_vector.h"
+#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
-#include <grpc/grpc.h>
+#include <grpc/impl/codegen/connectivity_state.h>
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/slice.h>
 
 #include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/gpr/time_precise.h"
-#include "src/core/lib/gprpp/manual_constructor.h"
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/json/json.h"
 
 // Channel arg key for channelz node.
@@ -165,8 +171,7 @@ class CallCountingHelper {
   // collects the sharded data into one CounterData struct.
   void CollectData(CounterData* out);
 
-  // Really zero-sized, but 0-sized arrays are illegal on MSVC.
-  absl::InlinedVector<AtomicCounterData, 1> per_cpu_counter_data_storage_;
+  std::vector<AtomicCounterData> per_cpu_counter_data_storage_;
   size_t num_cores_ = 0;
 };
 
@@ -175,6 +180,10 @@ class ChannelNode : public BaseNode {
  public:
   ChannelNode(std::string target, size_t channel_tracer_max_nodes,
               bool is_internal_channel);
+
+  static absl::string_view ChannelArgName() {
+    return GRPC_ARG_CHANNELZ_CHANNEL_NODE;
+  }
 
   // Returns the string description of the given connectivity state.
   static const char* GetChannelConnectivityStateChangeString(
@@ -294,6 +303,14 @@ class SocketNode : public BaseNode {
     absl::optional<Json> other;
 
     Json RenderJson();
+
+    static absl::string_view ChannelArgName() {
+      return GRPC_ARG_CHANNELZ_SECURITY;
+    }
+
+    static int ChannelArgsCompare(const Security* a, const Security* b) {
+      return QsortCompare(a, b);
+    }
 
     grpc_arg MakeChannelArg() const;
 

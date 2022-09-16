@@ -71,7 +71,6 @@ class InteropClient {
   bool DoCustomMetadata();
   bool DoUnimplementedMethod();
   bool DoUnimplementedService();
-  bool DoCacheableUnary();
   // all requests are sent to one server despite multiple servers are resolved
   bool DoPickFirstUnary();
 
@@ -81,9 +80,11 @@ class InteropClient {
   // languages
   bool DoChannelSoakTest(int32_t soak_iterations, int32_t max_failures,
                          int64_t max_acceptable_per_iteration_latency_ms,
+                         int32_t soak_min_time_ms_between_rpcs,
                          int32_t overall_timeout_seconds);
   bool DoRpcSoakTest(int32_t soak_iterations, int32_t max_failures,
                      int64_t max_acceptable_per_iteration_latency_ms,
+                     int32_t soak_min_time_ms_between_rpcs,
                      int32_t overall_timeout_seconds);
   bool DoLongLivedChannelTest(int32_t soak_iterations,
                               int32_t iteration_interval);
@@ -135,7 +136,8 @@ class InteropClient {
                         const std::string& optional_debug_string);
   bool TransientFailureOrAbort();
 
-  std::tuple<bool, int32_t, std::string> PerformOneSoakTestIteration(
+  std::tuple<bool, int32_t, std::string, std::string>
+  PerformOneSoakTestIteration(
       const bool reset_channel,
       const int32_t max_acceptable_per_iteration_latency_ms);
 
@@ -143,6 +145,7 @@ class InteropClient {
                        const int32_t soak_iterations,
                        const int32_t max_failures,
                        const int32_t max_acceptable_per_iteration_latency_ms,
+                       const int32_t min_time_ms_between_rpcs,
                        const int32_t overall_timeout_seconds);
 
   ServiceStub serviceStub_;

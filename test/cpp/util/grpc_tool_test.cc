@@ -36,7 +36,7 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
-#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.pb.h"
@@ -173,7 +173,7 @@ size_t ArraySize(T& a) {
           static_cast<size_t>(!(sizeof(a) % sizeof(*(a)))));
 }
 
-class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
+class TestServiceImpl : public grpc::testing::EchoTestService::Service {
  public:
   Status Echo(ServerContext* context, const EchoRequest* request,
               EchoResponse* response) override {
@@ -1264,10 +1264,10 @@ TEST_F(GrpcToolTest, CallCommandWithBadMetadata) {
                         "grpc.testing.EchoTestService.Echo",
                         "message: 'Hello'"};
   absl::SetFlag(&FLAGS_protofiles, "src/proto/grpc/testing/echo.proto");
-  char* test_srcdir = gpr_getenv("TEST_SRCDIR");
-  if (test_srcdir != nullptr) {
+  auto test_srcdir = grpc_core::GetEnv("TEST_SRCDIR");
+  if (test_srcdir.has_value()) {
     absl::SetFlag(&FLAGS_proto_path,
-                  test_srcdir + std::string("/com_github_grpc_grpc"));
+                  *test_srcdir + std::string("/com_github_grpc_grpc"));
   }
 
   {
@@ -1294,8 +1294,6 @@ TEST_F(GrpcToolTest, CallCommandWithBadMetadata) {
 
   absl::SetFlag(&FLAGS_metadata, "");
   absl::SetFlag(&FLAGS_protofiles, "");
-
-  gpr_free(test_srcdir);
 }
 
 TEST_F(GrpcToolTest, ListCommand_OverrideSslHostName) {
@@ -1347,8 +1345,8 @@ TEST_F(GrpcToolTest, ConfiguringDefaultServiceConfig) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
-  GRPC_GTEST_FLAG_SET_DEATH_TEST_STYLE("threadsafe");
+  GTEST_FLAG_SET(death_test_style, "threadsafe");
   return RUN_ALL_TESTS();
 }

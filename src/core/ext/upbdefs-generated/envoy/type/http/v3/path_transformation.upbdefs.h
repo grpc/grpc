@@ -19,26 +19,26 @@ extern "C" {
 
 #include "upb/port_def.inc"
 
-extern upb_def_init envoy_type_http_v3_path_transformation_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_type_http_v3_path_transformation_proto_upbdefinit;
 
-UPB_INLINE const upb_msgdef *envoy_type_http_v3_PathTransformation_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_type_http_v3_path_transformation_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.type.http.v3.PathTransformation");
+UPB_INLINE const upb_MessageDef *envoy_type_http_v3_PathTransformation_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_type_http_v3_path_transformation_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.type.http.v3.PathTransformation");
 }
 
-UPB_INLINE const upb_msgdef *envoy_type_http_v3_PathTransformation_Operation_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_type_http_v3_path_transformation_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.type.http.v3.PathTransformation.Operation");
+UPB_INLINE const upb_MessageDef *envoy_type_http_v3_PathTransformation_Operation_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_type_http_v3_path_transformation_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.type.http.v3.PathTransformation.Operation");
 }
 
-UPB_INLINE const upb_msgdef *envoy_type_http_v3_PathTransformation_Operation_NormalizePathRFC3986_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_type_http_v3_path_transformation_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.type.http.v3.PathTransformation.Operation.NormalizePathRFC3986");
+UPB_INLINE const upb_MessageDef *envoy_type_http_v3_PathTransformation_Operation_NormalizePathRFC3986_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_type_http_v3_path_transformation_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.type.http.v3.PathTransformation.Operation.NormalizePathRFC3986");
 }
 
-UPB_INLINE const upb_msgdef *envoy_type_http_v3_PathTransformation_Operation_MergeSlashes_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_type_http_v3_path_transformation_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.type.http.v3.PathTransformation.Operation.MergeSlashes");
+UPB_INLINE const upb_MessageDef *envoy_type_http_v3_PathTransformation_Operation_MergeSlashes_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_type_http_v3_path_transformation_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.type.http.v3.PathTransformation.Operation.MergeSlashes");
 }
 
 #ifdef __cplusplus

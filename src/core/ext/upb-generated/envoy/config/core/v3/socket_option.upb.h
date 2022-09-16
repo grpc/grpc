@@ -22,7 +22,7 @@ extern "C" {
 
 struct envoy_config_core_v3_SocketOption;
 typedef struct envoy_config_core_v3_SocketOption envoy_config_core_v3_SocketOption;
-extern const upb_msglayout envoy_config_core_v3_SocketOption_msginit;
+extern const upb_MiniTable envoy_config_core_v3_SocketOption_msginit;
 
 typedef enum {
   envoy_config_core_v3_SocketOption_STATE_PREBIND = 0,
@@ -31,68 +31,113 @@ typedef enum {
 } envoy_config_core_v3_SocketOption_SocketState;
 
 
+
 /* envoy.config.core.v3.SocketOption */
 
-UPB_INLINE envoy_config_core_v3_SocketOption *envoy_config_core_v3_SocketOption_new(upb_arena *arena) {
-  return (envoy_config_core_v3_SocketOption *)_upb_msg_new(&envoy_config_core_v3_SocketOption_msginit, arena);
+UPB_INLINE envoy_config_core_v3_SocketOption* envoy_config_core_v3_SocketOption_new(upb_Arena* arena) {
+  return (envoy_config_core_v3_SocketOption*)_upb_Message_New(&envoy_config_core_v3_SocketOption_msginit, arena);
 }
-UPB_INLINE envoy_config_core_v3_SocketOption *envoy_config_core_v3_SocketOption_parse(const char *buf, size_t size,
-                        upb_arena *arena) {
-  envoy_config_core_v3_SocketOption *ret = envoy_config_core_v3_SocketOption_new(arena);
+UPB_INLINE envoy_config_core_v3_SocketOption* envoy_config_core_v3_SocketOption_parse(const char* buf, size_t size, upb_Arena* arena) {
+  envoy_config_core_v3_SocketOption* ret = envoy_config_core_v3_SocketOption_new(arena);
   if (!ret) return NULL;
-  if (!upb_decode(buf, size, ret, &envoy_config_core_v3_SocketOption_msginit, arena)) return NULL;
-  return ret;
-}
-UPB_INLINE envoy_config_core_v3_SocketOption *envoy_config_core_v3_SocketOption_parse_ex(const char *buf, size_t size,
-                           const upb_extreg *extreg, int options,
-                           upb_arena *arena) {
-  envoy_config_core_v3_SocketOption *ret = envoy_config_core_v3_SocketOption_new(arena);
-  if (!ret) return NULL;
-  if (!_upb_decode(buf, size, ret, &envoy_config_core_v3_SocketOption_msginit, extreg, options, arena)) {
+  if (upb_Decode(buf, size, ret, &envoy_config_core_v3_SocketOption_msginit, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
 }
-UPB_INLINE char *envoy_config_core_v3_SocketOption_serialize(const envoy_config_core_v3_SocketOption *msg, upb_arena *arena, size_t *len) {
-  return upb_encode(msg, &envoy_config_core_v3_SocketOption_msginit, arena, len);
+UPB_INLINE envoy_config_core_v3_SocketOption* envoy_config_core_v3_SocketOption_parse_ex(const char* buf, size_t size,
+                           const upb_ExtensionRegistry* extreg,
+                           int options, upb_Arena* arena) {
+  envoy_config_core_v3_SocketOption* ret = envoy_config_core_v3_SocketOption_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, ret, &envoy_config_core_v3_SocketOption_msginit, extreg, options, arena) !=
+      kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
 }
-
+UPB_INLINE char* envoy_config_core_v3_SocketOption_serialize(const envoy_config_core_v3_SocketOption* msg, upb_Arena* arena, size_t* len) {
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_core_v3_SocketOption_msginit, 0, arena, &ptr, len);
+  return ptr;
+}
+UPB_INLINE char* envoy_config_core_v3_SocketOption_serialize_ex(const envoy_config_core_v3_SocketOption* msg, int options,
+                                 upb_Arena* arena, size_t* len) {
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_core_v3_SocketOption_msginit, options, arena, &ptr, len);
+  return ptr;
+}
 typedef enum {
   envoy_config_core_v3_SocketOption_value_int_value = 4,
   envoy_config_core_v3_SocketOption_value_buf_value = 5,
   envoy_config_core_v3_SocketOption_value_NOT_SET = 0
 } envoy_config_core_v3_SocketOption_value_oneofcases;
-UPB_INLINE envoy_config_core_v3_SocketOption_value_oneofcases envoy_config_core_v3_SocketOption_value_case(const envoy_config_core_v3_SocketOption* msg) { return (envoy_config_core_v3_SocketOption_value_oneofcases)*UPB_PTR_AT(msg, UPB_SIZE(40, 56), int32_t); }
+UPB_INLINE envoy_config_core_v3_SocketOption_value_oneofcases envoy_config_core_v3_SocketOption_value_case(const envoy_config_core_v3_SocketOption* msg) {
+  return (envoy_config_core_v3_SocketOption_value_oneofcases)*UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t);
+}
+UPB_INLINE void envoy_config_core_v3_SocketOption_clear_description(const envoy_config_core_v3_SocketOption* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 24), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
+}
+UPB_INLINE upb_StringView envoy_config_core_v3_SocketOption_description(const envoy_config_core_v3_SocketOption* msg) {
+  return *UPB_PTR_AT(msg, UPB_SIZE(8, 24), upb_StringView);
+}
+UPB_INLINE void envoy_config_core_v3_SocketOption_clear_level(const envoy_config_core_v3_SocketOption* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(24, 40), int64_t) = 0;
+}
+UPB_INLINE int64_t envoy_config_core_v3_SocketOption_level(const envoy_config_core_v3_SocketOption* msg) {
+  return *UPB_PTR_AT(msg, UPB_SIZE(24, 40), int64_t);
+}
+UPB_INLINE void envoy_config_core_v3_SocketOption_clear_name(const envoy_config_core_v3_SocketOption* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(32, 48), int64_t) = 0;
+}
+UPB_INLINE int64_t envoy_config_core_v3_SocketOption_name(const envoy_config_core_v3_SocketOption* msg) {
+  return *UPB_PTR_AT(msg, UPB_SIZE(32, 48), int64_t);
+}
+UPB_INLINE bool envoy_config_core_v3_SocketOption_has_int_value(const envoy_config_core_v3_SocketOption* msg) {
+  return _upb_getoneofcase(msg, UPB_SIZE(0, 0)) == 4;
+}
+UPB_INLINE void envoy_config_core_v3_SocketOption_clear_int_value(const envoy_config_core_v3_SocketOption* msg) {
+  UPB_WRITE_ONEOF(msg, int64_t, UPB_SIZE(16, 8), 0, UPB_SIZE(0, 0), envoy_config_core_v3_SocketOption_value_NOT_SET);
+}
+UPB_INLINE int64_t envoy_config_core_v3_SocketOption_int_value(const envoy_config_core_v3_SocketOption* msg) {
+  return UPB_READ_ONEOF(msg, int64_t, UPB_SIZE(16, 8), UPB_SIZE(0, 0), 4, _upb_Int64_FromLL(0ll));
+}
+UPB_INLINE bool envoy_config_core_v3_SocketOption_has_buf_value(const envoy_config_core_v3_SocketOption* msg) {
+  return _upb_getoneofcase(msg, UPB_SIZE(0, 0)) == 5;
+}
+UPB_INLINE void envoy_config_core_v3_SocketOption_clear_buf_value(const envoy_config_core_v3_SocketOption* msg) {
+  UPB_WRITE_ONEOF(msg, upb_StringView, UPB_SIZE(16, 8), upb_StringView_FromDataAndSize(NULL, 0), UPB_SIZE(0, 0), envoy_config_core_v3_SocketOption_value_NOT_SET);
+}
+UPB_INLINE upb_StringView envoy_config_core_v3_SocketOption_buf_value(const envoy_config_core_v3_SocketOption* msg) {
+  return UPB_READ_ONEOF(msg, upb_StringView, UPB_SIZE(16, 8), UPB_SIZE(0, 0), 5, upb_StringView_FromString(""));
+}
+UPB_INLINE void envoy_config_core_v3_SocketOption_clear_state(const envoy_config_core_v3_SocketOption* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t) = 0;
+}
+UPB_INLINE int32_t envoy_config_core_v3_SocketOption_state(const envoy_config_core_v3_SocketOption* msg) {
+  return *UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t);
+}
 
-UPB_INLINE upb_strview envoy_config_core_v3_SocketOption_description(const envoy_config_core_v3_SocketOption *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(20, 24), upb_strview); }
-UPB_INLINE int64_t envoy_config_core_v3_SocketOption_level(const envoy_config_core_v3_SocketOption *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int64_t); }
-UPB_INLINE int64_t envoy_config_core_v3_SocketOption_name(const envoy_config_core_v3_SocketOption *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(8, 8), int64_t); }
-UPB_INLINE bool envoy_config_core_v3_SocketOption_has_int_value(const envoy_config_core_v3_SocketOption *msg) { return _upb_getoneofcase(msg, UPB_SIZE(40, 56)) == 4; }
-UPB_INLINE int64_t envoy_config_core_v3_SocketOption_int_value(const envoy_config_core_v3_SocketOption *msg) { return UPB_READ_ONEOF(msg, int64_t, UPB_SIZE(32, 40), UPB_SIZE(40, 56), 4, 0); }
-UPB_INLINE bool envoy_config_core_v3_SocketOption_has_buf_value(const envoy_config_core_v3_SocketOption *msg) { return _upb_getoneofcase(msg, UPB_SIZE(40, 56)) == 5; }
-UPB_INLINE upb_strview envoy_config_core_v3_SocketOption_buf_value(const envoy_config_core_v3_SocketOption *msg) { return UPB_READ_ONEOF(msg, upb_strview, UPB_SIZE(32, 40), UPB_SIZE(40, 56), 5, upb_strview_make("", strlen(""))); }
-UPB_INLINE int32_t envoy_config_core_v3_SocketOption_state(const envoy_config_core_v3_SocketOption *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(16, 16), int32_t); }
-
-UPB_INLINE void envoy_config_core_v3_SocketOption_set_description(envoy_config_core_v3_SocketOption *msg, upb_strview value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(20, 24), upb_strview) = value;
+UPB_INLINE void envoy_config_core_v3_SocketOption_set_description(envoy_config_core_v3_SocketOption *msg, upb_StringView value) {
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 24), upb_StringView) = value;
 }
 UPB_INLINE void envoy_config_core_v3_SocketOption_set_level(envoy_config_core_v3_SocketOption *msg, int64_t value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int64_t) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(24, 40), int64_t) = value;
 }
 UPB_INLINE void envoy_config_core_v3_SocketOption_set_name(envoy_config_core_v3_SocketOption *msg, int64_t value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(8, 8), int64_t) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(32, 48), int64_t) = value;
 }
 UPB_INLINE void envoy_config_core_v3_SocketOption_set_int_value(envoy_config_core_v3_SocketOption *msg, int64_t value) {
-  UPB_WRITE_ONEOF(msg, int64_t, UPB_SIZE(32, 40), value, UPB_SIZE(40, 56), 4);
+  UPB_WRITE_ONEOF(msg, int64_t, UPB_SIZE(16, 8), value, UPB_SIZE(0, 0), 4);
 }
-UPB_INLINE void envoy_config_core_v3_SocketOption_set_buf_value(envoy_config_core_v3_SocketOption *msg, upb_strview value) {
-  UPB_WRITE_ONEOF(msg, upb_strview, UPB_SIZE(32, 40), value, UPB_SIZE(40, 56), 5);
+UPB_INLINE void envoy_config_core_v3_SocketOption_set_buf_value(envoy_config_core_v3_SocketOption *msg, upb_StringView value) {
+  UPB_WRITE_ONEOF(msg, upb_StringView, UPB_SIZE(16, 8), value, UPB_SIZE(0, 0), 5);
 }
 UPB_INLINE void envoy_config_core_v3_SocketOption_set_state(envoy_config_core_v3_SocketOption *msg, int32_t value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(16, 16), int32_t) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t) = value;
 }
 
-extern const upb_msglayout_file envoy_config_core_v3_socket_option_proto_upb_file_layout;
+extern const upb_MiniTable_File envoy_config_core_v3_socket_option_proto_upb_file_layout;
 
 #ifdef __cplusplus
 }  /* extern "C" */

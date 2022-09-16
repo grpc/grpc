@@ -10,9 +10,9 @@
 #include "validate/validate.upbdefs.h"
 #include "validate/validate.upb.h"
 
-extern upb_def_init google_protobuf_descriptor_proto_upbdefinit;
-extern upb_def_init google_protobuf_duration_proto_upbdefinit;
-extern upb_def_init google_protobuf_timestamp_proto_upbdefinit;
+extern _upb_DefPool_Init google_protobuf_descriptor_proto_upbdefinit;
+extern _upb_DefPool_Init google_protobuf_duration_proto_upbdefinit;
+extern _upb_DefPool_Init google_protobuf_timestamp_proto_upbdefinit;
 static const char descriptor[6319] = {'\n', '\027', 'v', 'a', 'l', 'i', 'd', 'a', 't', 'e', '/', 'v', 'a', 'l', 'i', 'd', 'a', 't', 'e', '.', 'p', 'r', 'o', 't', 'o', 
 '\022', '\010', 'v', 'a', 'l', 'i', 'd', 'a', 't', 'e', '\032', ' ', 'g', 'o', 'o', 'g', 'l', 'e', '/', 'p', 'r', 'o', 't', 'o', 'b', 
 'u', 'f', '/', 'd', 'e', 's', 'c', 'r', 'i', 'p', 't', 'o', 'r', '.', 'p', 'r', 'o', 't', 'o', '\032', '\036', 'g', 'o', 'o', 'g', 
@@ -268,16 +268,16 @@ static const char descriptor[6319] = {'\n', '\027', 'v', 'a', 'l', 'i', 'd', 'a'
 'n', '-', 'v', 'a', 'l', 'i', 'd', 'a', 't', 'e', '/', 'v', 'a', 'l', 'i', 'd', 'a', 't', 'e', 
 };
 
-static upb_def_init *deps[4] = {
+static _upb_DefPool_Init *deps[4] = {
   &google_protobuf_descriptor_proto_upbdefinit,
   &google_protobuf_duration_proto_upbdefinit,
   &google_protobuf_timestamp_proto_upbdefinit,
   NULL
 };
 
-upb_def_init validate_validate_proto_upbdefinit = {
+_upb_DefPool_Init validate_validate_proto_upbdefinit = {
   deps,
   &validate_validate_proto_upb_file_layout,
   "validate/validate.proto",
-  UPB_STRVIEW_INIT(descriptor, 6319)
+  UPB_STRINGVIEW_INIT(descriptor, 6319)
 };

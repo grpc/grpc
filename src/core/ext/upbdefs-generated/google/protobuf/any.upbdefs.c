@@ -22,13 +22,13 @@ static const char descriptor[228] = {'\n', '\031', 'g', 'o', 'o', 'g', 'l', 'e',
 't', 'o', '3', 
 };
 
-static upb_def_init *deps[1] = {
+static _upb_DefPool_Init *deps[1] = {
   NULL
 };
 
-upb_def_init google_protobuf_any_proto_upbdefinit = {
+_upb_DefPool_Init google_protobuf_any_proto_upbdefinit = {
   deps,
   &google_protobuf_any_proto_upb_file_layout,
   "google/protobuf/any.proto",
-  UPB_STRVIEW_INIT(descriptor, 228)
+  UPB_STRINGVIEW_INIT(descriptor, 228)
 };

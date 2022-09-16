@@ -23,12 +23,14 @@
 
 #include <grpc/slice.h>
 
-#include "src/core/lib/http/httpcli.h"
+#include "src/core/lib/http/parser.h"
 
 grpc_slice grpc_httpcli_format_get_request(const grpc_http_request* request,
                                            const char* host, const char* path);
 grpc_slice grpc_httpcli_format_post_request(const grpc_http_request* request,
                                             const char* host, const char* path);
+grpc_slice grpc_httpcli_format_put_request(const grpc_http_request* request,
+                                           const char* host, const char* path);
 grpc_slice grpc_httpcli_format_connect_request(const grpc_http_request* request,
                                                const char* host,
                                                const char* path);

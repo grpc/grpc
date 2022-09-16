@@ -21,21 +21,24 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <stdbool.h>
+#include <stddef.h>
 
-#include "absl/strings/str_split.h"
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/grpc_security.h>
-#include <grpc/slice_buffer.h>
+#include <grpc/grpc_security_constants.h>
+#include <grpc/slice.h>
 
-#include "src/core/lib/gprpp/global_config.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
-#include "src/core/lib/security/security_connector/ssl_utils_config.h"
+#include "src/core/tsi/ssl/key_logging/ssl_key_logging.h"
 #include "src/core/tsi/ssl_transport_security.h"
-#include "src/core/tsi/transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
 
 /* --- Util --- */
@@ -51,12 +54,15 @@ int grpc_ssl_cmp_target_name(absl::string_view target_name,
                              absl::string_view other_target_name,
                              absl::string_view overridden_target_name,
                              absl::string_view other_overridden_target_name);
+
+namespace grpc_core {
 /* Check the host that will be set for a call is acceptable.*/
-bool grpc_ssl_check_call_host(absl::string_view host,
+absl::Status SslCheckCallHost(absl::string_view host,
                               absl::string_view target_name,
                               absl::string_view overridden_target_name,
-                              grpc_auth_context* auth_context,
-                              grpc_error_handle* error);
+                              grpc_auth_context* auth_context);
+}  // namespace grpc_core
+
 /* Return HTTP2-compliant cipher suites that gRPC accepts by default. */
 const char* grpc_get_ssl_cipher_suites(void);
 
@@ -174,7 +180,7 @@ class PemKeyCertPair {
   std::string cert_chain_;
 };
 
-typedef absl::InlinedVector<PemKeyCertPair, 1> PemKeyCertPairList;
+using PemKeyCertPairList = std::vector<PemKeyCertPair>;
 
 }  // namespace grpc_core
 

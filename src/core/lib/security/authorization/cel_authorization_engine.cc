@@ -16,9 +16,18 @@
 
 #include "src/core/lib/security/authorization/cel_authorization_engine.h"
 
-#include "absl/memory/memory.h"
+#include <stddef.h>
 
-#include "src/core/lib/address_utils/sockaddr_utils.h"
+#include <algorithm>
+#include <utility>
+
+#include "absl/memory/memory.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
+#include "absl/types/span.h"
+#include "upb/upb.h"
+
+#include <grpc/support/log.h>
 
 namespace grpc_core {
 
@@ -64,11 +73,11 @@ CelAuthorizationEngine::CelAuthorizationEngine(
     // Extract array of policies and store their condition fields in either
     // allow_if_matched_ or deny_if_matched_, depending on the policy action.
     upb::Arena temp_arena;
-    size_t policy_num = UPB_MAP_BEGIN;
+    size_t policy_num = kUpb_Map_Begin;
     const envoy_config_rbac_v3_RBAC_PoliciesEntry* policy_entry;
     while ((policy_entry = envoy_config_rbac_v3_RBAC_policies_next(
                 rbac_policy, &policy_num)) != nullptr) {
-      const upb_strview policy_name_strview =
+      const upb_StringView policy_name_strview =
           envoy_config_rbac_v3_RBAC_PoliciesEntry_key(policy_entry);
       const std::string policy_name(policy_name_strview.data,
                                     policy_name_strview.size);

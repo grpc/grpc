@@ -18,7 +18,20 @@
 
 #include "src/core/ext/xds/xds_http_rbac_filter.h"
 
-#include "absl/strings/str_format.h"
+#include <stddef.h>
+
+#include <algorithm>
+#include <cstdint>
+#include <map>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "absl/status/status.h"
+#include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/string_view.h"
 #include "envoy/config/core/v3/address.upb.h"
 #include "envoy/config/rbac/v3/rbac.upb.h"
 #include "envoy/config/route/v3/route_components.upb.h"
@@ -35,6 +48,7 @@
 #include "src/core/ext/filters/rbac/rbac_service_config_parser.h"
 #include "src/core/ext/xds/upb_utils.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/json/json.h"
 
 namespace grpc_core {
 
@@ -61,15 +75,13 @@ Json ParseInt64RangeToJson(const envoy_type_v3_Int64Range* range) {
 absl::StatusOr<Json> ParseHeaderMatcherToJson(
     const envoy_config_route_v3_HeaderMatcher* header) {
   Json::Object header_json;
-  std::vector<absl::Status> error_list;
+  std::vector<std::string> errors;
   std::string name =
       UpbStringToStdString(envoy_config_route_v3_HeaderMatcher_name(header));
   if (name == ":scheme") {
-    error_list.push_back(
-        absl::InvalidArgumentError("':scheme' not allowed in header"));
+    errors.emplace_back("':scheme' not allowed in header");
   } else if (absl::StartsWith(name, "grpc-")) {
-    error_list.push_back(
-        absl::InvalidArgumentError("'grpc-' prefixes not allowed in header"));
+    errors.emplace_back("'grpc-' prefixes not allowed in header");
   }
   header_json.emplace("name", std::move(name));
   if (envoy_config_route_v3_HeaderMatcher_has_exact_match(header)) {
@@ -107,13 +119,11 @@ absl::StatusOr<Json> ParseHeaderMatcherToJson(
         UpbStringToStdString(
             envoy_config_route_v3_HeaderMatcher_contains_match(header)));
   } else {
-    error_list.push_back(
-        absl::InvalidArgumentError("Invalid route header matcher specified."));
+    errors.emplace_back("Invalid route header matcher specified.");
   }
-  if (!error_list.empty()) {
-    return StatusCreate(absl::StatusCode::kInvalidArgument,
-                        "Error parsing HeaderMatcher", DEBUG_LOCATION,
-                        std::move(error_list));
+  if (!errors.empty()) {
+    return absl::InvalidArgumentError(absl::StrCat(
+        "errors parsing HeaderMatcher: [", absl::StrJoin(errors, "; "), "]"));
   }
   header_json.emplace("invertMatch",
                       envoy_config_route_v3_HeaderMatcher_invert_match(header));
@@ -201,7 +211,7 @@ absl::StatusOr<Json> ParsePermissionToJson(
   auto parse_permission_set_to_json =
       [](const envoy_config_rbac_v3_Permission_Set* set)
       -> absl::StatusOr<Json> {
-    std::vector<absl::Status> error_list;
+    std::vector<std::string> errors;
     Json::Array rules_json;
     size_t size;
     const envoy_config_rbac_v3_Permission* const* rules =
@@ -209,15 +219,14 @@ absl::StatusOr<Json> ParsePermissionToJson(
     for (size_t i = 0; i < size; ++i) {
       auto permission_json = ParsePermissionToJson(rules[i]);
       if (!permission_json.ok()) {
-        error_list.push_back(permission_json.status());
+        errors.emplace_back(permission_json.status().message());
       } else {
         rules_json.emplace_back(std::move(*permission_json));
       }
     }
-    if (!error_list.empty()) {
-      return StatusCreate(absl::StatusCode::kInvalidArgument,
-                          "Error parsing Set", DEBUG_LOCATION,
-                          std::move(error_list));
+    if (!errors.empty()) {
+      return absl::InvalidArgumentError(absl::StrCat(
+          "errors parsing Set: [", absl::StrJoin(errors, "; "), "]"));
     }
     return Json::Object({{"rules", std::move(rules_json)}});
   };
@@ -297,7 +306,7 @@ absl::StatusOr<Json> ParsePrincipalToJson(
       [](const envoy_config_rbac_v3_Principal_Set* set)
       -> absl::StatusOr<Json> {
     Json::Object json;
-    std::vector<absl::Status> error_list;
+    std::vector<std::string> errors;
     Json::Array ids_json;
     size_t size;
     const envoy_config_rbac_v3_Principal* const* ids =
@@ -305,15 +314,14 @@ absl::StatusOr<Json> ParsePrincipalToJson(
     for (size_t i = 0; i < size; ++i) {
       auto principal_json = ParsePrincipalToJson(ids[i]);
       if (!principal_json.ok()) {
-        error_list.push_back(principal_json.status());
+        errors.emplace_back(principal_json.status().message());
       } else {
         ids_json.emplace_back(std::move(*principal_json));
       }
     }
-    if (!error_list.empty()) {
-      return StatusCreate(absl::StatusCode::kInvalidArgument,
-                          "Error parsing Set", DEBUG_LOCATION,
-                          std::move(error_list));
+    if (!errors.empty()) {
+      return absl::InvalidArgumentError(absl::StrCat(
+          "errors parsing Set: [", absl::StrJoin(errors, "; "), "]"));
     }
     return Json::Object({{"ids", std::move(ids_json)}});
   };
@@ -396,7 +404,7 @@ absl::StatusOr<Json> ParsePrincipalToJson(
 absl::StatusOr<Json> ParsePolicyToJson(
     const envoy_config_rbac_v3_Policy* policy) {
   Json::Object policy_json;
-  std::vector<absl::Status> error_list;
+  std::vector<std::string> errors;
   size_t size;
   Json::Array permissions_json;
   const envoy_config_rbac_v3_Permission* const* permissions =
@@ -404,7 +412,7 @@ absl::StatusOr<Json> ParsePolicyToJson(
   for (size_t i = 0; i < size; ++i) {
     auto permission_json = ParsePermissionToJson(permissions[i]);
     if (!permission_json.ok()) {
-      error_list.push_back(permission_json.status());
+      errors.emplace_back(permission_json.status().message());
     } else {
       permissions_json.emplace_back(std::move(*permission_json));
     }
@@ -416,24 +424,21 @@ absl::StatusOr<Json> ParsePolicyToJson(
   for (size_t i = 0; i < size; ++i) {
     auto principal_json = ParsePrincipalToJson(principals[i]);
     if (!principal_json.ok()) {
-      error_list.push_back(principal_json.status());
+      errors.emplace_back(principal_json.status().message());
     } else {
       principals_json.emplace_back(std::move(*principal_json));
     }
   }
   policy_json.emplace("principals", std::move(principals_json));
   if (envoy_config_rbac_v3_Policy_has_condition(policy)) {
-    error_list.push_back(
-        absl::InvalidArgumentError("Policy: condition not supported"));
+    errors.emplace_back("Policy: condition not supported");
   }
   if (envoy_config_rbac_v3_Policy_has_checked_condition(policy)) {
-    error_list.push_back(
-        absl::InvalidArgumentError("Policy: checked condition not supported"));
+    errors.emplace_back("Policy: checked condition not supported");
   }
-  if (!error_list.empty()) {
-    return StatusCreate(absl::StatusCode::kInvalidArgument,
-                        "Error parsing Policy", DEBUG_LOCATION,
-                        std::move(error_list));
+  if (!errors.empty()) {
+    return absl::InvalidArgumentError(absl::StrCat(
+        "errors parsing Policy: [", absl::StrJoin(errors, "; "), "]"));
   }
   return policy_json;
 }
@@ -441,7 +446,7 @@ absl::StatusOr<Json> ParsePolicyToJson(
 absl::StatusOr<Json> ParseHttpRbacToJson(
     const envoy_extensions_filters_http_rbac_v3_RBAC* rbac) {
   Json::Object rbac_json;
-  std::vector<absl::Status> error_list;
+  std::vector<std::string> errors;
   const auto* rules = envoy_extensions_filters_http_rbac_v3_RBAC_rules(rbac);
   if (rules != nullptr) {
     int action = envoy_config_rbac_v3_RBAC_action(rules);
@@ -453,7 +458,7 @@ absl::StatusOr<Json> ParseHttpRbacToJson(
     inner_rbac_json.emplace("action", envoy_config_rbac_v3_RBAC_action(rules));
     if (envoy_config_rbac_v3_RBAC_has_policies(rules)) {
       Json::Object policies_object;
-      size_t iter = UPB_MAP_BEGIN;
+      size_t iter = kUpb_Map_Begin;
       while (true) {
         auto* entry = envoy_config_rbac_v3_RBAC_policies_next(rules, &iter);
         if (entry == nullptr) {
@@ -462,13 +467,11 @@ absl::StatusOr<Json> ParseHttpRbacToJson(
         auto policy = ParsePolicyToJson(
             envoy_config_rbac_v3_RBAC_PoliciesEntry_value(entry));
         if (!policy.ok()) {
-          error_list.push_back(StatusCreate(
-              absl::StatusCode::kInvalidArgument,
-              absl::StrFormat(
-                  "RBAC PoliciesEntry key:%s",
-                  UpbStringToStdString(
-                      envoy_config_rbac_v3_RBAC_PoliciesEntry_key(entry))),
-              DEBUG_LOCATION, {policy.status()}));
+          errors.emplace_back(absl::StrCat(
+              "RBAC PoliciesEntry key:",
+              UpbStringToStdString(
+                  envoy_config_rbac_v3_RBAC_PoliciesEntry_key(entry)),
+              " error:", policy.status().message()));
         } else {
           policies_object.emplace(
               UpbStringToStdString(
@@ -480,23 +483,22 @@ absl::StatusOr<Json> ParseHttpRbacToJson(
     }
     rbac_json.emplace("rules", std::move(inner_rbac_json));
   }
-  if (!error_list.empty()) {
-    return StatusCreate(absl::StatusCode::kInvalidArgument,
-                        "Error parsing RBAC", DEBUG_LOCATION,
-                        std::move(error_list));
+  if (!errors.empty()) {
+    return absl::InvalidArgumentError(absl::StrCat(
+        "errors parsing RBAC: [", absl::StrJoin(errors, "; "), "]"));
   }
   return rbac_json;
 }
 
 }  // namespace
 
-void XdsHttpRbacFilter::PopulateSymtab(upb_symtab* symtab) const {
+void XdsHttpRbacFilter::PopulateSymtab(upb_DefPool* symtab) const {
   envoy_extensions_filters_http_rbac_v3_RBAC_getmsgdef(symtab);
 }
 
 absl::StatusOr<XdsHttpFilterImpl::FilterConfig>
-XdsHttpRbacFilter::GenerateFilterConfig(upb_strview serialized_filter_config,
-                                        upb_arena* arena) const {
+XdsHttpRbacFilter::GenerateFilterConfig(upb_StringView serialized_filter_config,
+                                        upb_Arena* arena) const {
   absl::StatusOr<Json> rbac_json;
   auto* rbac = envoy_extensions_filters_http_rbac_v3_RBAC_parse(
       serialized_filter_config.data, serialized_filter_config.size, arena);
@@ -513,7 +515,7 @@ XdsHttpRbacFilter::GenerateFilterConfig(upb_strview serialized_filter_config,
 
 absl::StatusOr<XdsHttpFilterImpl::FilterConfig>
 XdsHttpRbacFilter::GenerateFilterConfigOverride(
-    upb_strview serialized_filter_config, upb_arena* arena) const {
+    upb_StringView serialized_filter_config, upb_Arena* arena) const {
   auto* rbac_per_route =
       envoy_extensions_filters_http_rbac_v3_RBACPerRoute_parse(
           serialized_filter_config.data, serialized_filter_config.size, arena);
@@ -539,14 +541,9 @@ const grpc_channel_filter* XdsHttpRbacFilter::channel_filter() const {
   return &RbacFilter::kFilterVtable;
 }
 
-grpc_channel_args* XdsHttpRbacFilter::ModifyChannelArgs(
-    grpc_channel_args* args) const {
-  grpc_arg arg_to_add = grpc_channel_arg_integer_create(
-      const_cast<char*>(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG), 1);
-  grpc_channel_args* new_args =
-      grpc_channel_args_copy_and_add(args, &arg_to_add, 1);
-  grpc_channel_args_destroy(args);
-  return new_args;
+ChannelArgs XdsHttpRbacFilter::ModifyChannelArgs(
+    const ChannelArgs& args) const {
+  return args.Set(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG, 1);
 }
 
 absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>

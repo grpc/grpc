@@ -18,15 +18,17 @@
 
 #include "test/core/util/mock_endpoint.h"
 
-#include <inttypes.h>
+#include "absl/strings/string_view.h"
 
-#include <string>
-
-#include "absl/strings/str_format.h"
-
+#include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
+#include <grpc/support/sync.h>
 
+#include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 
 typedef struct mock_endpoint {
@@ -39,7 +41,8 @@ typedef struct mock_endpoint {
 } mock_endpoint;
 
 static void me_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                    grpc_closure* cb, bool /*urgent*/) {
+                    grpc_closure* cb, bool /*urgent*/,
+                    int /*min_progress_size*/) {
   mock_endpoint* m = reinterpret_cast<mock_endpoint*>(ep);
   gpr_mu_lock(&m->mu);
   if (m->read_buffer.count > 0) {
@@ -53,7 +56,7 @@ static void me_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
 }
 
 static void me_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                     grpc_closure* cb, void* /*arg*/) {
+                     grpc_closure* cb, void* /*arg*/, int /*max_frame_size*/) {
   mock_endpoint* m = reinterpret_cast<mock_endpoint*>(ep);
   for (size_t i = 0; i < slices->count; i++) {
     m->on_write(slices->slices[i]);

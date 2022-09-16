@@ -19,8 +19,11 @@
 #include "src/cpp/server/external_connection_acceptor_impl.h"
 
 #include <memory>
+#include <utility>
 
+#include <grpc/support/log.h>
 #include <grpcpp/server_builder.h>
+#include <grpcpp/support/byte_buffer.h>
 #include <grpcpp/support/channel_arguments.h>
 
 namespace grpc {

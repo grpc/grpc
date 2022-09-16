@@ -20,23 +20,38 @@
 
 #include <string.h>
 
+#include <string>
+
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/iomgr/pollset.h"
+#include "src/core/lib/gprpp/unique_type_name.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
+#include "src/core/lib/promise/arena_promise.h"
+#include "src/core/lib/promise/promise.h"
 #include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
-#include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/transport/handshaker.h"
 #include "src/core/tsi/ssl_transport_security.h"
+#include "src/core/tsi/transport_security_interface.h"
 
 namespace grpc_core {
 
@@ -47,7 +62,7 @@ class grpc_httpcli_ssl_channel_security_connector final
  public:
   explicit grpc_httpcli_ssl_channel_security_connector(char* secure_peer_name)
       : grpc_channel_security_connector(
-            /*url_scheme=*/nullptr,
+            /*url_scheme=*/{},
             /*channel_creds=*/nullptr,
             /*request_metadata_creds=*/nullptr),
         secure_peer_name_(secure_peer_name) {}
@@ -70,13 +85,14 @@ class grpc_httpcli_ssl_channel_security_connector final
         &options, &handshaker_factory_);
   }
 
-  void add_handshakers(const grpc_channel_args* args,
+  void add_handshakers(const ChannelArgs& args,
                        grpc_pollset_set* /*interested_parties*/,
                        HandshakeManager* handshake_mgr) override {
     tsi_handshaker* handshaker = nullptr;
     if (handshaker_factory_ != nullptr) {
       tsi_result result = tsi_ssl_client_handshaker_factory_create_handshaker(
-          handshaker_factory_, secure_peer_name_, &handshaker);
+          handshaker_factory_, secure_peer_name_, /*network_bio_buf_size=*/0,
+          /*ssl_bio_buf_size=*/0, &handshaker);
       if (result != TSI_OK) {
         gpr_log(GPR_ERROR, "Handshaker creation failed with error %s.",
                 tsi_result_to_string(result));
@@ -90,6 +106,7 @@ class grpc_httpcli_ssl_channel_security_connector final
   }
 
   void check_peer(tsi_peer peer, grpc_endpoint* /*ep*/,
+                  const ChannelArgs& /*args*/,
                   RefCountedPtr<grpc_auth_context>* /*auth_context*/,
                   grpc_closure* on_peer_checked) override {
     grpc_error_handle error = GRPC_ERROR_NONE;
@@ -116,17 +133,9 @@ class grpc_httpcli_ssl_channel_security_connector final
     return strcmp(secure_peer_name_, other->secure_peer_name_);
   }
 
-  bool check_call_host(absl::string_view /*host*/,
-                       grpc_auth_context* /*auth_context*/,
-                       grpc_closure* /*on_call_host_checked*/,
-                       grpc_error_handle* error) override {
-    *error = GRPC_ERROR_NONE;
-    return true;
-  }
-
-  void cancel_check_call_host(grpc_closure* /*on_call_host_checked*/,
-                              grpc_error_handle error) override {
-    GRPC_ERROR_UNREF(error);
+  ArenaPromise<absl::Status> CheckCallHost(absl::string_view,
+                                           grpc_auth_context*) override {
+    return ImmediateOkStatus();
   }
 
   const char* secure_peer_name() const { return secure_peer_name_; }
@@ -159,13 +168,9 @@ httpcli_ssl_channel_security_connector_create(
 
 class HttpRequestSSLCredentials : public grpc_channel_credentials {
  public:
-  HttpRequestSSLCredentials() : grpc_channel_credentials("HttpRequestSSL") {}
-  ~HttpRequestSSLCredentials() override {}
-
   RefCountedPtr<grpc_channel_security_connector> create_security_connector(
       RefCountedPtr<grpc_call_credentials> /*call_creds*/, const char* target,
-      const grpc_channel_args* args,
-      grpc_channel_args** /*new_args*/) override {
+      ChannelArgs* args) override {
     const char* pem_root_certs = DefaultSslRootStore::GetPemRootCerts();
     const tsi_ssl_root_certs_store* root_store =
         DefaultSslRootStore::GetRootStore();
@@ -173,13 +178,11 @@ class HttpRequestSSLCredentials : public grpc_channel_credentials {
       gpr_log(GPR_ERROR, "Could not get default pem root certs.");
       return nullptr;
     }
-    const char* ssl_host_override =
-        grpc_channel_args_find_string(args, GRPC_SSL_TARGET_NAME_OVERRIDE_ARG);
-    if (ssl_host_override != nullptr) {
-      target = ssl_host_override;
-    }
-    return httpcli_ssl_channel_security_connector_create(pem_root_certs,
-                                                         root_store, target);
+    absl::optional<std::string> target_string =
+        args->GetOwnedString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG)
+            .value_or(target);
+    return httpcli_ssl_channel_security_connector_create(
+        pem_root_certs, root_store, target_string->c_str());
   }
 
   RefCountedPtr<grpc_channel_credentials> duplicate_without_call_credentials()
@@ -187,15 +190,26 @@ class HttpRequestSSLCredentials : public grpc_channel_credentials {
     return Ref();
   }
 
-  grpc_channel_args* update_arguments(grpc_channel_args* args) override {
-    return args;
+  UniqueTypeName type() const override {
+    static UniqueTypeName::Factory kFactory("HttpRequestSSL");
+    return kFactory.Create();
+  }
+
+ private:
+  int cmp_impl(const grpc_channel_credentials* /* other */) const override {
+    // There's no differentiating factor between two HttpRequestSSLCredentials
+    // objects.
+    return 0;
   }
 };
 
 }  // namespace
 
 RefCountedPtr<grpc_channel_credentials> CreateHttpRequestSSLCredentials() {
-  return MakeRefCounted<HttpRequestSSLCredentials>();
+  // Create a singleton object for HttpRequestSSLCredentials so that channels to
+  // the same target with HttpRequestSSLCredentials can reuse the subchannels.
+  static auto* creds = new HttpRequestSSLCredentials();
+  return creds->Ref();
 }
 
 }  // namespace grpc_core

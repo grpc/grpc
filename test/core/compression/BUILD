@@ -36,7 +36,9 @@ grpc_cc_library(
 grpc_cc_test(
     name = "compression_test",
     srcs = ["compression_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         ":args_utils",
@@ -51,6 +53,8 @@ grpc_fuzzer(
     srcs = ["message_compress_fuzzer.cc"],
     corpus = "message_compress_corpus",
     tags = ["no_windows"],
+    uses_event_engine = False,
+    uses_polling = False,
     deps = [
         "//:grpc",
         "//test/core/util:grpc_test_util",
@@ -62,6 +66,8 @@ grpc_fuzzer(
     srcs = ["message_decompress_fuzzer.cc"],
     corpus = "message_decompress_corpus",
     tags = ["no_windows"],
+    uses_event_engine = False,
+    uses_polling = False,
     deps = [
         "//:grpc",
         "//test/core/util:grpc_test_util",
@@ -71,11 +77,14 @@ grpc_fuzzer(
 grpc_cc_test(
     name = "message_compress_test",
     srcs = ["message_compress_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )

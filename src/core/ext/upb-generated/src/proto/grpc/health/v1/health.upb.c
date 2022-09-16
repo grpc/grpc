@@ -12,35 +12,37 @@
 
 #include "upb/port_def.inc"
 
-static const upb_msglayout_field grpc_health_v1_HealthCheckRequest__fields[1] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
+static const upb_MiniTable_Field grpc_health_v1_HealthCheckRequest__fields[1] = {
+  {1, UPB_SIZE(0, 0), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
 };
 
-const upb_msglayout grpc_health_v1_HealthCheckRequest_msginit = {
+const upb_MiniTable grpc_health_v1_HealthCheckRequest_msginit = {
   NULL,
   &grpc_health_v1_HealthCheckRequest__fields[0],
-  UPB_SIZE(8, 16), 1, _UPB_MSGEXT_NONE, 1, 255,
+  UPB_SIZE(8, 16), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
-static const upb_msglayout_field grpc_health_v1_HealthCheckResponse__fields[1] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 14, _UPB_MODE_SCALAR | (_UPB_REP_4BYTE << _UPB_REP_SHIFT)},
+static const upb_MiniTable_Field grpc_health_v1_HealthCheckResponse__fields[1] = {
+  {1, UPB_SIZE(0, 0), UPB_SIZE(0, 0), kUpb_NoSub, 5, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
 };
 
-const upb_msglayout grpc_health_v1_HealthCheckResponse_msginit = {
+const upb_MiniTable grpc_health_v1_HealthCheckResponse_msginit = {
   NULL,
   &grpc_health_v1_HealthCheckResponse__fields[0],
-  UPB_SIZE(8, 8), 1, _UPB_MSGEXT_NONE, 1, 255,
+  UPB_SIZE(8, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
-static const upb_msglayout *messages_layout[2] = {
+static const upb_MiniTable *messages_layout[2] = {
   &grpc_health_v1_HealthCheckRequest_msginit,
   &grpc_health_v1_HealthCheckResponse_msginit,
 };
 
-const upb_msglayout_file src_proto_grpc_health_v1_health_proto_upb_file_layout = {
+const upb_MiniTable_File src_proto_grpc_health_v1_health_proto_upb_file_layout = {
   messages_layout,
   NULL,
+  NULL,
   2,
+  0,
   0,
 };
 

@@ -21,13 +21,25 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stdint.h>
+
+#include <atomic>
+#include <functional>
+#include <memory>
+#include <string>
+#include <utility>
+
 #include <grpc/support/log.h>
 #include <grpcpp/alarm.h>
 #include <grpcpp/grpcpp.h>
+#include <grpcpp/support/async_stream.h>
+#include <grpcpp/support/config.h>
 
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/cpp/server/load_reporter/load_reporter.h"
+#include "src/proto/grpc/lb/v1/load_reporter.grpc.pb.h"
+#include "src/proto/grpc/lb/v1/load_reporter.pb.h"
 
 namespace grpc {
 namespace load_reporter {
@@ -142,14 +154,14 @@ class LoadReporterAsyncServiceImpl
 
     // The data for RPC communication with the load reportee.
     ServerContext ctx_;
-    ::grpc::lb::v1::LoadReportRequest request_;
+    grpc::lb::v1::LoadReportRequest request_;
 
     // The members passed down from LoadReporterAsyncServiceImpl.
     ServerCompletionQueue* cq_;
     LoadReporterAsyncServiceImpl* service_;
     LoadReporter* load_reporter_;
-    ServerAsyncReaderWriter<::grpc::lb::v1::LoadReportResponse,
-                            ::grpc::lb::v1::LoadReportRequest>
+    ServerAsyncReaderWriter<grpc::lb::v1::LoadReportResponse,
+                            grpc::lb::v1::LoadReportRequest>
         stream_;
 
     // The status of the RPC progress.
@@ -184,7 +196,7 @@ class LoadReporterAsyncServiceImpl
   // don't enqueue new tags into cq_ after it is already shut down.
   grpc_core::Mutex cq_shutdown_mu_;
   std::atomic_bool shutdown_{false};
-  std::unique_ptr<::grpc_core::Thread> thread_;
+  std::unique_ptr<grpc_core::Thread> thread_;
   std::unique_ptr<LoadReporter> load_reporter_;
   std::unique_ptr<Alarm> next_fetch_and_sample_alarm_;
 };

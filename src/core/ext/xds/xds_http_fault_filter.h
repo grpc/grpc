@@ -20,11 +20,13 @@
 #include <grpc/support/port_platform.h>
 
 #include "absl/status/statusor.h"
+#include "upb/arena.h"
 #include "upb/def.h"
-
-#include <grpc/grpc.h>
+#include "upb/upb.h"
 
 #include "src/core/ext/xds/xds_http_filters.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_fwd.h"
 
 namespace grpc_core {
 
@@ -33,21 +35,21 @@ extern const char* kXdsHttpFaultFilterConfigName;
 class XdsHttpFaultFilter : public XdsHttpFilterImpl {
  public:
   // Overrides the PopulateSymtab method
-  void PopulateSymtab(upb_symtab* symtab) const override;
+  void PopulateSymtab(upb_DefPool* symtab) const override;
 
   // Overrides the GenerateFilterConfig method
   absl::StatusOr<FilterConfig> GenerateFilterConfig(
-      upb_strview serialized_filter_config, upb_arena* arena) const override;
+      upb_StringView serialized_filter_config, upb_Arena* arena) const override;
 
   // Overrides the GenerateFilterConfigOverride method
   absl::StatusOr<FilterConfig> GenerateFilterConfigOverride(
-      upb_strview serialized_filter_config, upb_arena* arena) const override;
+      upb_StringView serialized_filter_config, upb_Arena* arena) const override;
 
   // Overrides the channel_filter method
   const grpc_channel_filter* channel_filter() const override;
 
   // Overrides the ModifyChannelArgs method
-  grpc_channel_args* ModifyChannelArgs(grpc_channel_args* args) const override;
+  ChannelArgs ModifyChannelArgs(const ChannelArgs& args) const override;
 
   // Overrides the GenerateServiceConfig method
   absl::StatusOr<ServiceConfigJsonEntry> GenerateServiceConfig(

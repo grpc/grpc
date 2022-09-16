@@ -57,7 +57,7 @@ ServerUnaryReactor* CallbackStreamingTestService::Echo(
     response->set_message("");
   }
   auto* reactor = context->DefaultReactor();
-  reactor->Finish(::grpc::Status::OK);
+  reactor->Finish(grpc::Status::OK);
   return reactor;
 }
 
@@ -78,7 +78,7 @@ CallbackStreamingTestService::BidiStream(CallbackServerContext* context) {
     void OnReadDone(bool ok) override {
       if (!ok) {
         // Stream is over
-        Finish(::grpc::Status::OK);
+        Finish(grpc::Status::OK);
         finished_ = true;
         return;
       }

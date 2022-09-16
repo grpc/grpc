@@ -20,12 +20,42 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/channel/channel_stack.h"
+#include "absl/status/statusor.h"
 
-/* Processes metadata on the client side for HTTP2 transports */
-extern const grpc_channel_filter grpc_http_client_filter;
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_fwd.h"
+#include "src/core/lib/channel/promise_based_filter.h"
+#include "src/core/lib/promise/arena_promise.h"
+#include "src/core/lib/slice/slice.h"
+#include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/lib/transport/transport.h"
 
-/* Channel arg to determine maximum size of payload eligible for GET request */
-#define GRPC_ARG_MAX_PAYLOAD_SIZE_FOR_GET "grpc.max_payload_size_for_get"
+namespace grpc_core {
+
+class HttpClientFilter : public ChannelFilter {
+ public:
+  static const grpc_channel_filter kFilter;
+
+  static absl::StatusOr<HttpClientFilter> Create(
+      const ChannelArgs& args, ChannelFilter::Args filter_args);
+
+  // Construct a promise for one call.
+  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
+      CallArgs call_args, NextPromiseFactory next_promise_factory) override;
+
+ private:
+  HttpClientFilter(HttpSchemeMetadata::ValueType scheme, Slice user_agent,
+                   bool test_only_use_put_requests);
+
+  HttpSchemeMetadata::ValueType scheme_;
+  Slice user_agent_;
+  bool test_only_use_put_requests_;
+};
+
+// A test-only channel arg to allow testing gRPC Core server behavior on PUT
+// requests.
+#define GRPC_ARG_TEST_ONLY_USE_PUT_REQUESTS "grpc.testing.use_put_requests"
+
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_EXT_FILTERS_HTTP_CLIENT_HTTP_CLIENT_FILTER_H */

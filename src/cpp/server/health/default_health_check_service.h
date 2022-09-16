@@ -19,20 +19,25 @@
 #ifndef GRPC_INTERNAL_CPP_SERVER_DEFAULT_HEALTH_CHECK_SERVICE_H
 #define GRPC_INTERNAL_CPP_SERVER_DEFAULT_HEALTH_CHECK_SERVICE_H
 
-#include <atomic>
-#include <set>
+#include <stddef.h>
 
-#include <grpc/support/log.h>
+#include <map>
+#include <memory>
+#include <string>
+
+#include "absl/base/thread_annotations.h"
+
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/health_check_service_interface.h>
-#include <grpcpp/impl/codegen/async_generic_service.h>
-#include <grpcpp/impl/codegen/async_unary_call.h>
-#include <grpcpp/impl/codegen/completion_queue.h>
-#include <grpcpp/impl/codegen/service_type.h>
+#include <grpcpp/impl/codegen/sync.h>
+#include <grpcpp/impl/service_type.h>
 #include <grpcpp/support/byte_buffer.h>
+#include <grpcpp/support/config.h>
+#include <grpcpp/support/server_callback.h>
+#include <grpcpp/support/status.h>
 
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/thd.h"
+#include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 
 namespace grpc {
 
@@ -45,191 +50,55 @@ class DefaultHealthCheckService final : public HealthCheckServiceInterface {
   // The service impl to register with the server.
   class HealthCheckServiceImpl : public Service {
    public:
-    // Base class for call handlers.
-    class CallHandler {
+    // Reactor for handling Watch streams.
+    class WatchReactor : public ServerWriteReactor<ByteBuffer>,
+                         public grpc_core::RefCounted<WatchReactor> {
      public:
-      virtual ~CallHandler() = default;
-      virtual void SendHealth(std::shared_ptr<CallHandler> self,
-                              ServingStatus status) = 0;
+      WatchReactor(HealthCheckServiceImpl* service, const ByteBuffer* request);
+
+      void SendHealth(ServingStatus status);
+
+      void OnWriteDone(bool ok) override;
+      void OnCancel() override;
+      void OnDone() override;
+
+     private:
+      void SendHealthLocked(ServingStatus status)
+          ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
+
+      void MaybeFinishLocked(Status status) ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
+
+      HealthCheckServiceImpl* service_;
+      std::string service_name_;
+      ByteBuffer response_;
+
+      grpc::internal::Mutex mu_;
+      bool write_pending_ ABSL_GUARDED_BY(mu_) = false;
+      ServingStatus pending_status_ ABSL_GUARDED_BY(mu_) = NOT_FOUND;
+      bool finish_called_ ABSL_GUARDED_BY(mu_) = false;
     };
 
-    HealthCheckServiceImpl(DefaultHealthCheckService* database,
-                           std::unique_ptr<ServerCompletionQueue> cq);
+    explicit HealthCheckServiceImpl(DefaultHealthCheckService* database);
 
     ~HealthCheckServiceImpl() override;
 
-    void StartServingThread();
-
    private:
-    // A tag that can be called with a bool argument. It's tailored for
-    // CallHandler's use. Before being used, it should be constructed with a
-    // method of CallHandler and a shared pointer to the handler. The
-    // shared pointer will be moved to the invoked function and the function
-    // can only be invoked once. That makes ref counting of the handler easier,
-    // because the shared pointer is not bound to the function and can be gone
-    // once the invoked function returns (if not used any more).
-    class CallableTag {
-     public:
-      using HandlerFunction =
-          std::function<void(std::shared_ptr<CallHandler>, bool)>;
-
-      CallableTag() {}
-
-      CallableTag(HandlerFunction func, std::shared_ptr<CallHandler> handler)
-          : handler_function_(std::move(func)), handler_(std::move(handler)) {
-        GPR_ASSERT(handler_function_ != nullptr);
-        GPR_ASSERT(handler_ != nullptr);
-      }
-
-      // Runs the tag. This should be called only once. The handler is no
-      // longer owned by this tag after this method is invoked.
-      void Run(bool ok) {
-        GPR_ASSERT(handler_function_ != nullptr);
-        GPR_ASSERT(handler_ != nullptr);
-        handler_function_(std::move(handler_), ok);
-      }
-
-      // Releases and returns the shared pointer to the handler.
-      std::shared_ptr<CallHandler> ReleaseHandler() {
-        return std::move(handler_);
-      }
-
-     private:
-      HandlerFunction handler_function_ = nullptr;
-      std::shared_ptr<CallHandler> handler_;
-    };
-
-    // Call handler for Check method.
-    // Each handler takes care of one call. It contains per-call data and it
-    // will access the members of the parent class (i.e.,
-    // DefaultHealthCheckService) for per-service health data.
-    class CheckCallHandler : public CallHandler {
-     public:
-      // Instantiates a CheckCallHandler and requests the next health check
-      // call. The handler object will manage its own lifetime, so no action is
-      // needed from the caller any more regarding that object.
-      static void CreateAndStart(ServerCompletionQueue* cq,
-                                 DefaultHealthCheckService* database,
-                                 HealthCheckServiceImpl* service);
-
-      // This ctor is public because we want to use std::make_shared<> in
-      // CreateAndStart(). This ctor shouldn't be used elsewhere.
-      CheckCallHandler(ServerCompletionQueue* cq,
-                       DefaultHealthCheckService* database,
-                       HealthCheckServiceImpl* service);
-
-      // Not used for Check.
-      void SendHealth(std::shared_ptr<CallHandler> /*self*/,
-                      ServingStatus /*status*/) override {}
-
-     private:
-      // Called when we receive a call.
-      // Spawns a new handler so that we can keep servicing future calls.
-      void OnCallReceived(std::shared_ptr<CallHandler> self, bool ok);
-
-      // Called when Finish() is done.
-      void OnFinishDone(std::shared_ptr<CallHandler> self, bool ok);
-
-      // The members passed down from HealthCheckServiceImpl.
-      ServerCompletionQueue* cq_;
-      DefaultHealthCheckService* database_;
-      HealthCheckServiceImpl* service_;
-
-      ByteBuffer request_;
-      GenericServerAsyncResponseWriter writer_;
-      ServerContext ctx_;
-
-      CallableTag next_;
-    };
-
-    // Call handler for Watch method.
-    // Each handler takes care of one call. It contains per-call data and it
-    // will access the members of the parent class (i.e.,
-    // DefaultHealthCheckService) for per-service health data.
-    class WatchCallHandler : public CallHandler {
-     public:
-      // Instantiates a WatchCallHandler and requests the next health check
-      // call. The handler object will manage its own lifetime, so no action is
-      // needed from the caller any more regarding that object.
-      static void CreateAndStart(ServerCompletionQueue* cq,
-                                 DefaultHealthCheckService* database,
-                                 HealthCheckServiceImpl* service);
-
-      // This ctor is public because we want to use std::make_shared<> in
-      // CreateAndStart(). This ctor shouldn't be used elsewhere.
-      WatchCallHandler(ServerCompletionQueue* cq,
-                       DefaultHealthCheckService* database,
-                       HealthCheckServiceImpl* service);
-
-      void SendHealth(std::shared_ptr<CallHandler> self,
-                      ServingStatus status) override;
-
-     private:
-      // Called when we receive a call.
-      // Spawns a new handler so that we can keep servicing future calls.
-      void OnCallReceived(std::shared_ptr<CallHandler> self, bool ok);
-
-      // Requires holding send_mu_.
-      void SendHealthLocked(std::shared_ptr<CallHandler> self,
-                            ServingStatus status);
-
-      // When sending a health result finishes.
-      void OnSendHealthDone(std::shared_ptr<CallHandler> self, bool ok);
-
-      void SendFinish(std::shared_ptr<CallHandler> self, const Status& status);
-
-      // Requires holding service_->cq_shutdown_mu_.
-      void SendFinishLocked(std::shared_ptr<CallHandler> self,
-                            const Status& status);
-
-      // Called when Finish() is done.
-      void OnFinishDone(std::shared_ptr<CallHandler> self, bool ok);
-
-      // Called when AsyncNotifyWhenDone() notifies us.
-      void OnDoneNotified(std::shared_ptr<CallHandler> self, bool ok);
-
-      // The members passed down from HealthCheckServiceImpl.
-      ServerCompletionQueue* cq_;
-      DefaultHealthCheckService* database_;
-      HealthCheckServiceImpl* service_;
-
-      ByteBuffer request_;
-      std::string service_name_;
-      GenericServerAsyncWriter stream_;
-      ServerContext ctx_;
-
-      grpc_core::Mutex send_mu_;
-      bool send_in_flight_ = false;               // Guarded by mu_.
-      ServingStatus pending_status_ = NOT_FOUND;  // Guarded by mu_.
-
-      bool finish_called_ = false;
-      CallableTag next_;
-      CallableTag on_done_notified_;
-      CallableTag on_finish_done_;
-    };
-
-    // Handles the incoming requests and drives the completion queue in a loop.
-    static void Serve(void* arg);
+    // Request handler for Check method.
+    static ServerUnaryReactor* HandleCheckRequest(
+        DefaultHealthCheckService* database, CallbackServerContext* context,
+        const ByteBuffer* request, ByteBuffer* response);
 
     // Returns true on success.
     static bool DecodeRequest(const ByteBuffer& request,
                               std::string* service_name);
     static bool EncodeResponse(ServingStatus status, ByteBuffer* response);
 
-    // Needed to appease Windows compilers, which don't seem to allow
-    // nested classes to access protected members in the parent's
-    // superclass.
-    using Service::RequestAsyncServerStreaming;
-    using Service::RequestAsyncUnary;
-
     DefaultHealthCheckService* database_;
-    std::unique_ptr<ServerCompletionQueue> cq_;
 
-    // To synchronize the operations related to shutdown state of cq_, so that
-    // we don't enqueue new tags into cq_ after it is already shut down.
-    grpc_core::Mutex cq_shutdown_mu_;
-    std::atomic_bool shutdown_{false};
-    std::unique_ptr<::grpc_core::Thread> thread_;
+    grpc::internal::Mutex mu_;
+    grpc::internal::CondVar shutdown_condition_;
+    bool shutdown_ ABSL_GUARDED_BY(mu_) = false;
+    size_t num_watches_ ABSL_GUARDED_BY(mu_) = 0;
   };
 
   DefaultHealthCheckService();
@@ -241,8 +110,7 @@ class DefaultHealthCheckService final : public HealthCheckServiceInterface {
 
   ServingStatus GetServingStatus(const std::string& service_name) const;
 
-  HealthCheckServiceImpl* GetHealthCheckService(
-      std::unique_ptr<ServerCompletionQueue> cq);
+  HealthCheckServiceImpl* GetHealthCheckService();
 
  private:
   // Stores the current serving status of a service and any call
@@ -251,31 +119,28 @@ class DefaultHealthCheckService final : public HealthCheckServiceInterface {
    public:
     void SetServingStatus(ServingStatus status);
     ServingStatus GetServingStatus() const { return status_; }
-    void AddCallHandler(
-        std::shared_ptr<HealthCheckServiceImpl::CallHandler> handler);
-    void RemoveCallHandler(
-        const std::shared_ptr<HealthCheckServiceImpl::CallHandler>& handler);
-    bool Unused() const {
-      return call_handlers_.empty() && status_ == NOT_FOUND;
-    }
+    void AddWatch(
+        grpc_core::RefCountedPtr<HealthCheckServiceImpl::WatchReactor> watcher);
+    void RemoveWatch(HealthCheckServiceImpl::WatchReactor* watcher);
+    bool Unused() const { return watchers_.empty() && status_ == NOT_FOUND; }
 
    private:
     ServingStatus status_ = NOT_FOUND;
-    std::set<std::shared_ptr<HealthCheckServiceImpl::CallHandler>>
-        call_handlers_;
+    std::map<HealthCheckServiceImpl::WatchReactor*,
+             grpc_core::RefCountedPtr<HealthCheckServiceImpl::WatchReactor>>
+        watchers_;
   };
 
-  void RegisterCallHandler(
+  void RegisterWatch(
       const std::string& service_name,
-      std::shared_ptr<HealthCheckServiceImpl::CallHandler> handler);
+      grpc_core::RefCountedPtr<HealthCheckServiceImpl::WatchReactor> watcher);
 
-  void UnregisterCallHandler(
-      const std::string& service_name,
-      const std::shared_ptr<HealthCheckServiceImpl::CallHandler>& handler);
+  void UnregisterWatch(const std::string& service_name,
+                       HealthCheckServiceImpl::WatchReactor* watcher);
 
-  mutable grpc_core::Mutex mu_;
-  bool shutdown_ = false;                            // Guarded by mu_.
-  std::map<std::string, ServiceData> services_map_;  // Guarded by mu_.
+  mutable grpc::internal::Mutex mu_;
+  bool shutdown_ ABSL_GUARDED_BY(&mu_) = false;
+  std::map<std::string, ServiceData> services_map_ ABSL_GUARDED_BY(&mu_);
   std::unique_ptr<HealthCheckServiceImpl> impl_;
 };
 

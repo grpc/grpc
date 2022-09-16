@@ -18,6 +18,7 @@ from absl.testing import absltest
 
 from framework import xds_k8s_testcase
 from framework.helpers import rand
+from framework.helpers import skips
 
 logger = logging.getLogger(__name__)
 flags.adopt_module_key_flags(xds_k8s_testcase)
@@ -26,9 +27,21 @@ flags.adopt_module_key_flags(xds_k8s_testcase)
 _XdsTestServer = xds_k8s_testcase.XdsTestServer
 _XdsTestClient = xds_k8s_testcase.XdsTestClient
 _SecurityMode = xds_k8s_testcase.SecurityXdsKubernetesTestCase.SecurityMode
+_Lang = skips.Lang
 
 
 class SecurityTest(xds_k8s_testcase.SecurityXdsKubernetesTestCase):
+
+    @staticmethod
+    def is_supported(config: skips.TestConfig) -> bool:
+        if config.client_lang in (_Lang.CPP | _Lang.GO | _Lang.JAVA |
+                                  _Lang.PYTHON):
+            # Versions prior to v1.41.x don't support PSM Security.
+            # https://github.com/grpc/grpc/blob/master/doc/grpc_xds_features.md
+            return config.version_gte('v1.41.x')
+        elif config.client_lang == _Lang.NODE:
+            return False
+        return True
 
     def test_mtls(self):
         """mTLS test.

@@ -35,4 +35,4 @@ python3 -m virtualenv $VIRTUALENV -p $(which python3)
 PYTHON=${VIRTUALENV}/bin/python
 "$PYTHON" -m pip install yapf==0.30.0
 
-$PYTHON -m yapf $ACTION --parallel --recursive --style=setup.cfg "${DIRS[@]}"
+$PYTHON -m yapf $ACTION --parallel --recursive --style=setup.cfg "${DIRS[@]}" -e "**/site-packages/**/*"

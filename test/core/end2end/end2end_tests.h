@@ -19,7 +19,13 @@
 #ifndef GRPC_TEST_CORE_END2END_END2END_TESTS_H
 #define GRPC_TEST_CORE_END2END_END2END_TESTS_H
 
+#include <stdint.h>
+
 #include <grpc/grpc.h>
+#include <grpc/slice.h>
+
+struct grpc_end2end_test_config;
+struct grpc_end2end_test_fixture;
 
 typedef struct grpc_end2end_test_fixture grpc_end2end_test_fixture;
 typedef struct grpc_end2end_test_config grpc_end2end_test_config;
@@ -45,7 +51,6 @@ typedef struct grpc_end2end_test_config grpc_end2end_test_config;
 
 struct grpc_end2end_test_fixture {
   grpc_completion_queue* cq;
-  grpc_completion_queue* shutdown_cq;
   grpc_server* server;
   grpc_channel* client;
   void* fixture_data;

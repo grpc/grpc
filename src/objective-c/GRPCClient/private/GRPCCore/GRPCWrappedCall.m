@@ -68,7 +68,7 @@
     _op.data.send_initial_metadata.count = metadata.count;
     _op.data.send_initial_metadata.metadata = metadata.grpc_metadataArray;
     _op.data.send_initial_metadata.maybe_compression_level.is_set = false;
-    _op.data.send_initial_metadata.maybe_compression_level.level = 0;
+    _op.data.send_initial_metadata.maybe_compression_level.level = GRPC_COMPRESS_LEVEL_NONE;
     _op.flags = flags;
     _handler = handler;
   }
@@ -274,7 +274,7 @@
   @synchronized(self) {
     if (_call != NULL) {
       size_t nops = operations.count;
-      grpc_op *ops_array = gpr_malloc(nops * sizeof(grpc_op));
+      grpc_op *ops_array = (grpc_op *)gpr_malloc(nops * sizeof(grpc_op));
       size_t i = 0;
       for (GRPCOperation *operation in operations) {
         ops_array[i++] = operation.op;

@@ -21,13 +21,27 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stdint.h>
+#include <string.h>
+
+#include <string>
+
 #include "absl/strings/string_view.h"
-#include "absl/time/clock.h"
 #include "absl/time/time.h"
+#include "absl/types/optional.h"
 
 #include <grpc/grpc_security.h>
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpcpp/support/config.h>
 
-#include "src/cpp/ext/filters/census/channel_filter.h"
+#include "src/core/lib/channel/channel_fwd.h"
+#include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/slice/slice.h"
+#include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/lib/transport/metadata_batch.h"
+#include "src/cpp/common/channel_filter.h"
 #include "src/cpp/ext/filters/census/context.h"
 
 namespace grpc {
@@ -87,7 +101,7 @@ class CensusServerCallData : public CallData {
   grpc_closure on_done_recv_message_;
   absl::Time start_time_;
   absl::Duration elapsed_time_;
-  grpc_core::OrphanablePtr<grpc_core::ByteStream>* recv_message_;
+  absl::optional<grpc_core::SliceBuffer>* recv_message_;
   uint64_t recv_message_count_;
   uint64_t sent_message_count_;
   // Buffer needed for grpc_slice to reference it when adding metatdata to

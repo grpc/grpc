@@ -1,6 +1,0 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<xs:schema xmlns:engine="UnityEngine.Experimental.UIElements" xmlns:editor="UnityEditor.Experimental.UIElements" elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <xs:import schemaLocation="UnityEngine.Experimental.UIElements.xsd" namespace="UnityEngine.Experimental.UIElements" />
-  <xs:import schemaLocation="UnityEditor.PackageManager.UI.xsd" namespace="UnityEditor.PackageManager.UI" />
-  <xs:import schemaLocation="UnityEditor.Experimental.UIElements.xsd" namespace="UnityEditor.Experimental.UIElements" />
-</xs:schema>

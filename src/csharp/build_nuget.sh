@@ -19,10 +19,6 @@ cd "$(dirname "$0")"
 
 mkdir -p ../../artifacts
 
-# Collect the artifacts built by the previous build step
-mkdir -p nativelibs
-cp -r "${EXTERNAL_GIT_ROOT}"/input_artifacts/csharp_ext_* nativelibs || true
-
 # Collect protoc artifacts built by the previous build step
 mkdir -p protoc_plugins
 cp -r "${EXTERNAL_GIT_ROOT}"/input_artifacts/protoc_* protoc_plugins || true
@@ -51,27 +47,12 @@ then
   # add a suffix to the nuget's version
   # to avoid confusing the package with a full nuget package.
   # NOTE: adding the suffix must be done AFTER expand_dev_version.sh has run.
-  sed -ibak "s/<\/GrpcCsharpVersion>/.singleplatform<\/GrpcCsharpVersion>/" build/dependencies.props
+  sed -ibak "s/<\/GrpcCsharpVersion>/-singleplatform<\/GrpcCsharpVersion>/" build/dependencies.props
 fi
 
 dotnet restore Grpc.sln
 
-# To be able to build the Grpc.Core project, we also need to put grpc_csharp_ext to where Grpc.Core.csproj
-# expects it.
-mkdir -p ../../cmake/build
-cp nativelibs/csharp_ext_linux_x64/libgrpc_csharp_ext.so ../../cmake/build
-
-dotnet pack --configuration Release Grpc.Core.Api --output ../../artifacts
-dotnet pack --configuration Release Grpc.Core --output ../../artifacts
-dotnet pack --configuration Release Grpc.Core.Testing --output ../../artifacts
-dotnet pack --configuration Release Grpc.Auth --output ../../artifacts
-dotnet pack --configuration Release Grpc.HealthCheck --output ../../artifacts
-dotnet pack --configuration Release Grpc.Reflection --output ../../artifacts
 dotnet pack --configuration Release Grpc.Tools --output ../../artifacts
-# build auxiliary packages
-dotnet pack --configuration Release Grpc --output ../../artifacts
-dotnet pack --configuration Release Grpc.Core.NativeDebug --output ../../artifacts
-dotnet pack --configuration Release Grpc.Core.Xamarin --output ../../artifacts
 
 # Create a zipfile with all the nugets we just created
 cd ../../artifacts

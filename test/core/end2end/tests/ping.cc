@@ -16,8 +16,10 @@
  *
  */
 
+#include <stdint.h>
+
+#include <grpc/grpc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -25,6 +27,7 @@
 #include "src/core/lib/surface/channel.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
+#include "test/core/util/test_config.h"
 
 #define PING_NUM 5
 
@@ -33,7 +36,7 @@ static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 static void test_ping(grpc_end2end_test_config config,
                       int min_time_between_pings_ms) {
   grpc_end2end_test_fixture f = config.create_fixture(nullptr, nullptr);
-  cq_verifier* cqv = cq_verifier_create(f.cq);
+  grpc_core::CqVerifier cqv(f.cq);
   grpc_connectivity_state state = GRPC_CHANNEL_IDLE;
   int i;
 
@@ -56,7 +59,7 @@ static void test_ping(grpc_end2end_test_config config,
   config.init_server(&f, &server_args);
 
   grpc_channel_ping(f.client, f.cq, tag(0), nullptr);
-  CQ_EXPECT_COMPLETION(cqv, tag(0), 0);
+  cqv.Expect(tag(0), false);
 
   /* check that we're still in idle, and start connecting */
   GPR_ASSERT(grpc_channel_check_connectivity_state(f.client, 1) ==
@@ -70,8 +73,8 @@ static void test_ping(grpc_end2end_test_config config,
                      gpr_time_from_millis(min_time_between_pings_ms * PING_NUM,
                                           GPR_TIMESPAN)),
         f.cq, tag(99));
-    CQ_EXPECT_COMPLETION(cqv, tag(99), 1);
-    cq_verify(cqv);
+    cqv.Expect(tag(99), true);
+    cqv.Verify();
     state = grpc_channel_check_connectivity_state(f.client, 0);
     GPR_ASSERT(state == GRPC_CHANNEL_READY ||
                state == GRPC_CHANNEL_CONNECTING ||
@@ -80,13 +83,13 @@ static void test_ping(grpc_end2end_test_config config,
 
   for (i = 1; i <= PING_NUM; i++) {
     grpc_channel_ping(f.client, f.cq, tag(i), nullptr);
-    CQ_EXPECT_COMPLETION(cqv, tag(i), 1);
-    cq_verify(cqv);
+    cqv.Expect(tag(i), true);
+    cqv.Verify();
   }
 
   grpc_server_shutdown_and_notify(f.server, f.cq, tag(0xdead));
-  CQ_EXPECT_COMPLETION(cqv, tag(0xdead), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(0xdead), true);
+  cqv.Verify();
 
   /* cleanup server */
   grpc_server_destroy(f.server);
@@ -95,11 +98,7 @@ static void test_ping(grpc_end2end_test_config config,
   grpc_completion_queue_shutdown(f.cq);
   grpc_completion_queue_destroy(f.cq);
 
-  /* f.shutdown_cq is not used in this test */
-  grpc_completion_queue_destroy(f.shutdown_cq);
   config.tear_down_data(&f);
-
-  cq_verifier_destroy(cqv);
 }
 
 void ping(grpc_end2end_test_config config) {

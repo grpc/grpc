@@ -22,18 +22,12 @@
 
 #include <string.h>
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/atm.h>
-#include <grpc/support/log.h>
-#include <grpc/support/sync.h>
+#include <new>
 
 #include "src/core/lib/gpr/alloc.h"
-#include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
-#include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/transport/transport_impl.h"
 
 grpc_core::DebugOnlyTraceFlag grpc_trace_stream_refcount(false,
@@ -157,34 +151,38 @@ grpc_endpoint* grpc_transport_get_endpoint(grpc_transport* transport) {
 void grpc_transport_stream_op_batch_finish_with_failure(
     grpc_transport_stream_op_batch* batch, grpc_error_handle error,
     grpc_core::CallCombiner* call_combiner) {
-  if (batch->send_message) {
-    batch->payload->send_message.send_message.reset();
-  }
+  grpc_core::CallCombinerClosureList closures;
+  grpc_transport_stream_op_batch_queue_finish_with_failure(batch, error,
+                                                           &closures);
+  // Execute closures.
+  closures.RunClosures(call_combiner);
+}
+
+void grpc_transport_stream_op_batch_queue_finish_with_failure(
+    grpc_transport_stream_op_batch* batch, grpc_error_handle error,
+    grpc_core::CallCombinerClosureList* closures) {
   if (batch->cancel_stream) {
     GRPC_ERROR_UNREF(batch->payload->cancel_stream.cancel_error);
   }
   // Construct a list of closures to execute.
-  grpc_core::CallCombinerClosureList closures;
   if (batch->recv_initial_metadata) {
-    closures.Add(
+    closures->Add(
         batch->payload->recv_initial_metadata.recv_initial_metadata_ready,
         GRPC_ERROR_REF(error), "failing recv_initial_metadata_ready");
   }
   if (batch->recv_message) {
-    closures.Add(batch->payload->recv_message.recv_message_ready,
-                 GRPC_ERROR_REF(error), "failing recv_message_ready");
+    closures->Add(batch->payload->recv_message.recv_message_ready,
+                  GRPC_ERROR_REF(error), "failing recv_message_ready");
   }
   if (batch->recv_trailing_metadata) {
-    closures.Add(
+    closures->Add(
         batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready,
         GRPC_ERROR_REF(error), "failing recv_trailing_metadata_ready");
   }
   if (batch->on_complete != nullptr) {
-    closures.Add(batch->on_complete, GRPC_ERROR_REF(error),
-                 "failing on_complete");
+    closures->Add(batch->on_complete, GRPC_ERROR_REF(error),
+                  "failing on_complete");
   }
-  // Execute closures.
-  closures.RunClosures(call_combiner);
   GRPC_ERROR_UNREF(error);
 }
 
@@ -224,7 +222,9 @@ static void destroy_made_transport_stream_op(void* arg,
   made_transport_stream_op* op = static_cast<made_transport_stream_op*>(arg);
   grpc_closure* c = op->inner_on_complete;
   delete op;
-  grpc_core::Closure::Run(DEBUG_LOCATION, c, GRPC_ERROR_REF(error));
+  if (c != nullptr) {
+    grpc_core::Closure::Run(DEBUG_LOCATION, c, GRPC_ERROR_REF(error));
+  }
 }
 
 grpc_transport_stream_op_batch* grpc_make_transport_stream_op(

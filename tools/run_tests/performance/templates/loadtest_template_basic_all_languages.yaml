@@ -34,6 +34,25 @@ spec:
       - bash
       name: main
   - build:
+      command:
+      - bash
+      - /build_scripts/build_qps_worker.sh
+    clone:
+      gitRef: master
+      repo: https://github.com/grpc/grpc-dotnet.git
+    language: dotnet
+    pool: ${client_pool}
+    run:
+    - args:
+      - -c
+      # TODO(jtattermusch): why is the extra "--" in cmdline needed?
+      - |
+        timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
+            qps_worker/QpsWorker -- --driver_port="${DRIVER_PORT}"
+      command:
+      - bash
+      name: main
+  - build:
       args:
       - build
       - --config
@@ -239,6 +258,24 @@ spec:
         timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" dotnet exec \
             qps_worker/Grpc.IntegrationTesting.QpsWorker.dll \
             --driver_port="${DRIVER_PORT}"
+      command:
+      - bash
+      name: main
+  - build:
+      command:
+      - bash
+      - /build_scripts/build_qps_worker.sh
+    clone:
+      gitRef: master
+      repo: https://github.com/grpc/grpc-dotnet.git
+    language: dotnet
+    pool: ${server_pool}
+    run:
+    - args:
+      - -c
+      - |
+        timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
+            qps_worker/QpsWorker -- --driver_port="${DRIVER_PORT}"
       command:
       - bash
       name: main

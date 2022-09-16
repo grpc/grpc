@@ -15,38 +15,5 @@
 
 set -ex
 
-cd "$(dirname "$0")/../../.."
-
-mkdir -p cmake/build
-cd cmake/build
-
-cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-      -DgRPC_BACKWARDS_COMPATIBILITY_MODE=ON \
-      -DgRPC_BUILD_TESTS=OFF \
-      -DgRPC_XDS_USER_AGENT_IS_CSHARP=ON \
-      ../..
-
-# Use externally provided env to determine build parallelism, otherwise use default.
-GRPC_CSHARP_BUILD_EXT_COMPILER_JOBS=${GRPC_CSHARP_BUILD_EXT_COMPILER_JOBS:-2}
-
-make grpc_csharp_ext "-j${GRPC_CSHARP_BUILD_EXT_COMPILER_JOBS}"
-
-if [ -f "libgrpc_csharp_ext.so" ]
-then
-    # in case we are in a crosscompilation environment
-    STRIP=${STRIP:-strip}
-    OBJCOPY=${OBJCOPY:-objcopy}
-    
-    # The .so file with all debug symbols is too large to
-    # package in the default nuget package.
-    # But we still want to keep the version with symbols
-    # to include it in a special "debug" package.
-    cp libgrpc_csharp_ext.so libgrpc_csharp_ext.dbginfo.so
-    ${STRIP} --strip-unneeded libgrpc_csharp_ext.so
-    ${OBJCOPY} --add-gnu-debuglink=libgrpc_csharp_ext.dbginfo.so libgrpc_csharp_ext.so
-fi
-
-cd ../..
-
-mkdir -p "${ARTIFACTS_OUT}"
-cp cmake/build/libgrpc_csharp_ext.so cmake/build/libgrpc_csharp_ext.dbginfo.so "${ARTIFACTS_OUT}" || cp cmake/build/libgrpc_csharp_ext.dylib "${ARTIFACTS_OUT}"
+# Nothing to do here. C# has been removed from this repository. This script is a placeholder
+# to prevent C# tests from becoming red (until they get eventually disabled).

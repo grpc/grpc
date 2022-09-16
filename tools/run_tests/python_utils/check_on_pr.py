@@ -41,6 +41,12 @@ _CHANGE_LABELS = {
     3: 'high',
 }
 
+_INCREASE_DECREASE = {
+    -1: 'decrease',
+    0: 'neutral',
+    1: 'increase',
+}
+
 
 def _jwt_token():
     github_app_key = open(
@@ -155,7 +161,7 @@ def check_on_pr(name, summary, success=True):
           json.dumps(resp.json(), indent=2))
 
 
-def label_significance_on_pr(name, change):
+def label_significance_on_pr(name, change, labels=_CHANGE_LABELS):
     """Add a label to the PR indicating the significance of the check.
 
     Requires environment variable 'KOKORO_GITHUB_PULL_REQUEST_NUMBER' to indicate which pull request
@@ -165,11 +171,11 @@ def label_significance_on_pr(name, change):
       name: The name of the label.
       value: A str in Markdown to be used as the detail information of the label.
     """
-    if change < min(list(_CHANGE_LABELS.keys())):
-        change = min(list(_CHANGE_LABELS.keys()))
-    if change > max(list(_CHANGE_LABELS.keys())):
-        change = max(list(_CHANGE_LABELS.keys()))
-    value = _CHANGE_LABELS[change]
+    if change < min(list(labels.keys())):
+        change = min(list(labels.keys()))
+    if change > max(list(labels.keys())):
+        change = max(list(labels.keys()))
+    value = labels[change]
     if 'KOKORO_GIT_COMMIT' not in os.environ:
         print('Missing KOKORO_GIT_COMMIT env var: not checking')
         return
@@ -192,3 +198,12 @@ def label_significance_on_pr(name, change):
         method='PUT',
         json=new)
     print('Result of setting labels on PR:', resp.text)
+
+
+def label_increase_decrease_on_pr(name, change, significant):
+    if change <= -significant:
+        label_significance_on_pr(name, -1, _INCREASE_DECREASE)
+    elif change >= significant:
+        label_significance_on_pr(name, 1, _INCREASE_DECREASE)
+    else:
+        label_significance_on_pr(name, 0, _INCREASE_DECREASE)

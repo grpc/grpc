@@ -48,6 +48,7 @@ class GrpcTlsCertificateVerifierTest : public ::testing::Test {
   void TearDown() override {}
 
   grpc_tls_custom_verification_check_request request_;
+  NoOpCertificateVerifier no_op_certificate_verifier_;
   HostNameCertificateVerifier hostname_certificate_verifier_;
 };
 
@@ -118,6 +119,14 @@ TEST_F(GrpcTlsCertificateVerifierTest, AsyncExternalVerifierFails) {
                      gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                                   gpr_time_from_seconds(10, GPR_TIMESPAN)));
   EXPECT_NE(callback_completed, nullptr);
+}
+
+TEST_F(GrpcTlsCertificateVerifierTest, NoOpCertificateVerifierSucceeds) {
+  absl::Status sync_status;
+  EXPECT_TRUE(no_op_certificate_verifier_.Verify(
+      &request_, [](absl::Status) {}, &sync_status));
+  EXPECT_TRUE(sync_status.ok())
+      << sync_status.code() << " " << sync_status.message();
 }
 
 TEST_F(GrpcTlsCertificateVerifierTest, HostnameVerifierNullTargetName) {
@@ -251,12 +260,52 @@ TEST_F(GrpcTlsCertificateVerifierTest, HostnameVerifierCommonNameCheckFails) {
             "UNAUTHENTICATED: Hostname Verification Check failed.");
 }
 
+TEST_F(GrpcTlsCertificateVerifierTest, ComparingDifferentObjectTypesFails) {
+  grpc_tls_certificate_verifier_external verifier = {nullptr, nullptr, nullptr,
+                                                     nullptr};
+  ExternalCertificateVerifier external_verifier(&verifier);
+  HostNameCertificateVerifier hostname_certificate_verifier;
+  EXPECT_NE(external_verifier.Compare(&hostname_certificate_verifier), 0);
+  EXPECT_NE(hostname_certificate_verifier.Compare(&external_verifier), 0);
+}
+
+TEST_F(GrpcTlsCertificateVerifierTest, HostNameCertificateVerifier) {
+  HostNameCertificateVerifier hostname_certificate_verifier_1;
+  HostNameCertificateVerifier hostname_certificate_verifier_2;
+  EXPECT_EQ(
+      hostname_certificate_verifier_1.Compare(&hostname_certificate_verifier_2),
+      0);
+  EXPECT_EQ(
+      hostname_certificate_verifier_2.Compare(&hostname_certificate_verifier_1),
+      0);
+}
+
+TEST_F(GrpcTlsCertificateVerifierTest, ExternalCertificateVerifierSuccess) {
+  grpc_tls_certificate_verifier_external verifier = {nullptr, nullptr, nullptr,
+                                                     nullptr};
+  ExternalCertificateVerifier external_verifier_1(&verifier);
+  ExternalCertificateVerifier external_verifier_2(&verifier);
+  EXPECT_EQ(external_verifier_1.Compare(&external_verifier_2), 0);
+  EXPECT_EQ(external_verifier_2.Compare(&external_verifier_1), 0);
+}
+
+TEST_F(GrpcTlsCertificateVerifierTest, ExternalCertificateVerifierFailure) {
+  grpc_tls_certificate_verifier_external verifier_1 = {nullptr, nullptr,
+                                                       nullptr, nullptr};
+  ExternalCertificateVerifier external_verifier_1(&verifier_1);
+  grpc_tls_certificate_verifier_external verifier_2 = {nullptr, nullptr,
+                                                       nullptr, nullptr};
+  ExternalCertificateVerifier external_verifier_2(&verifier_2);
+  EXPECT_NE(external_verifier_1.Compare(&external_verifier_2), 0);
+  EXPECT_NE(external_verifier_2.Compare(&external_verifier_1), 0);
+}
+
 }  // namespace testing
 
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   grpc_init();
   int ret = RUN_ALL_TESTS();

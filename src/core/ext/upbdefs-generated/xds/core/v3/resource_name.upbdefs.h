@@ -19,11 +19,11 @@ extern "C" {
 
 #include "upb/port_def.inc"
 
-extern upb_def_init xds_core_v3_resource_name_proto_upbdefinit;
+extern _upb_DefPool_Init xds_core_v3_resource_name_proto_upbdefinit;
 
-UPB_INLINE const upb_msgdef *xds_core_v3_ResourceName_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &xds_core_v3_resource_name_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "xds.core.v3.ResourceName");
+UPB_INLINE const upb_MessageDef *xds_core_v3_ResourceName_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &xds_core_v3_resource_name_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "xds.core.v3.ResourceName");
 }
 
 #ifdef __cplusplus

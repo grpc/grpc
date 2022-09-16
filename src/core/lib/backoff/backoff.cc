@@ -22,26 +22,23 @@
 
 #include <algorithm>
 
-#include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 
 namespace grpc_core {
 
 BackOff::BackOff(const Options& options) : options_(options) { Reset(); }
 
-grpc_millis BackOff::NextAttemptTime() {
+Timestamp BackOff::NextAttemptTime() {
   if (initial_) {
     initial_ = false;
     return current_backoff_ + ExecCtx::Get()->Now();
   }
-  current_backoff_ = static_cast<grpc_millis>(
-      std::min(current_backoff_ * options_.multiplier(),
-               static_cast<double>(options_.max_backoff())));
-  const double jitter =
-      absl::Uniform(rand_gen_, -options_.jitter() * current_backoff_,
-                    options_.jitter() * current_backoff_);
-  const grpc_millis next_timeout =
-      static_cast<grpc_millis>(current_backoff_ + jitter);
-  return next_timeout + ExecCtx::Get()->Now();
+  current_backoff_ = std::min(current_backoff_ * options_.multiplier(),
+                              options_.max_backoff());
+  const Duration jitter = Duration::FromSecondsAsDouble(
+      absl::Uniform(rand_gen_, -options_.jitter() * current_backoff_.seconds(),
+                    options_.jitter() * current_backoff_.seconds()));
+  return ExecCtx::Get()->Now() + current_backoff_ + jitter;
 }
 
 void BackOff::Reset() {

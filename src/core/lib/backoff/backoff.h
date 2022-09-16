@@ -23,7 +23,7 @@
 
 #include "absl/random/random.h"
 
-#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/gprpp/time.h"
 
 namespace grpc_core {
 
@@ -37,7 +37,7 @@ class BackOff {
   explicit BackOff(const Options& options);
 
   /// Returns the time at which the next attempt should start.
-  grpc_millis NextAttemptTime();
+  Timestamp NextAttemptTime();
 
   /// Reset the backoff, so the next value returned by NextAttemptTime()
   /// will be the time of the second attempt (rather than the Nth).
@@ -45,7 +45,7 @@ class BackOff {
 
   class Options {
    public:
-    Options& set_initial_backoff(grpc_millis initial_backoff) {
+    Options& set_initial_backoff(Duration initial_backoff) {
       initial_backoff_ = initial_backoff;
       return *this;
     }
@@ -57,24 +57,24 @@ class BackOff {
       jitter_ = jitter;
       return *this;
     }
-    Options& set_max_backoff(grpc_millis max_backoff) {
+    Options& set_max_backoff(Duration max_backoff) {
       max_backoff_ = max_backoff;
       return *this;
     }
     /// how long to wait after the first failure before retrying
-    grpc_millis initial_backoff() const { return initial_backoff_; }
+    Duration initial_backoff() const { return initial_backoff_; }
     /// factor with which to multiply backoff after a failed retry
     double multiplier() const { return multiplier_; }
     /// amount to randomize backoffs
     double jitter() const { return jitter_; }
     /// maximum time between retries
-    grpc_millis max_backoff() const { return max_backoff_; }
+    Duration max_backoff() const { return max_backoff_; }
 
    private:
-    grpc_millis initial_backoff_;
+    Duration initial_backoff_;
     double multiplier_;
     double jitter_;
-    grpc_millis max_backoff_;
+    Duration max_backoff_;
   };  // class Options
 
  private:
@@ -82,7 +82,7 @@ class BackOff {
   absl::BitGen rand_gen_;
   bool initial_;
   /// current delay before retries
-  grpc_millis current_backoff_;
+  Duration current_backoff_;
 };
 
 }  // namespace grpc_core

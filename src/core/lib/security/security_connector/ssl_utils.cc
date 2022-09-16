@@ -20,24 +20,34 @@
 
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 
+#include <stdint.h>
+#include <string.h>
+
+#include <memory>
 #include <vector>
 
+#include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_split.h"
 
-#include <grpc/slice_buffer.h>
+#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/sync.h>
 
 #include "src/core/ext/transport/chttp2/alpn/alpn.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/global_config.h"
 #include "src/core/lib/gprpp/host_port.h"
+#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/security_connector/load_system_roots.h"
 #include "src/core/lib/security/security_connector/ssl_utils_config.h"
 #include "src/core/tsi/ssl_transport_security.h"
+#include "src/core/tsi/transport_security.h"
 
 /* -- Constants. -- */
 
@@ -165,11 +175,12 @@ void grpc_tsi_ssl_pem_key_cert_pairs_destroy(tsi_ssl_pem_key_cert_pair* kp,
   gpr_free(kp);
 }
 
-bool grpc_ssl_check_call_host(absl::string_view host,
+namespace grpc_core {
+
+absl::Status SslCheckCallHost(absl::string_view host,
                               absl::string_view target_name,
                               absl::string_view overridden_target_name,
-                              grpc_auth_context* auth_context,
-                              grpc_error_handle* error) {
+                              grpc_auth_context* auth_context) {
   grpc_security_status status = GRPC_SECURITY_ERROR;
   tsi_peer peer = grpc_shallow_peer_from_ssl_auth_context(auth_context);
   if (grpc_ssl_host_matches_name(&peer, host)) status = GRPC_SECURITY_OK;
@@ -180,13 +191,16 @@ bool grpc_ssl_check_call_host(absl::string_view host,
     status = GRPC_SECURITY_OK;
   }
   if (status != GRPC_SECURITY_OK) {
-    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "call host does not match SSL server name");
     gpr_log(GPR_ERROR, "call host does not match SSL server name");
+    grpc_shallow_peer_destruct(&peer);
+    return absl::UnauthenticatedError(
+        "call host does not match SSL server name");
   }
   grpc_shallow_peer_destruct(&peer);
-  return true;
+  return absl::OkStatus();
 }
+
+}  // namespace grpc_core
 
 const char** grpc_fill_alpn_protocol_strings(size_t* num_alpn_protocols) {
   GPR_ASSERT(num_alpn_protocols != nullptr);

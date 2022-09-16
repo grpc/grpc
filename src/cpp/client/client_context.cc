@@ -16,18 +16,32 @@
  *
  */
 
+#include <stdlib.h>
+
+#include <map>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
+
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
+#include <grpc/impl/codegen/compression_types.h>
+#include <grpc/impl/codegen/gpr_types.h>
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
+#include <grpc/support/time.h>
+#include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/impl/codegen/interceptor_common.h>
 #include <grpcpp/impl/codegen/sync.h>
 #include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/server_context.h>
-#include <grpcpp/support/time.h>
+#include <grpcpp/support/client_interceptor.h>
+#include <grpcpp/support/config.h>
 
 namespace grpc {
 
@@ -51,8 +65,6 @@ ClientContext::ClientContext()
     : initial_metadata_received_(false),
       wait_for_ready_(false),
       wait_for_ready_explicitly_set_(false),
-      idempotent_(false),
-      cacheable_(false),
       call_(nullptr),
       call_canceled_(false),
       deadline_(gpr_inf_future(GPR_CLOCK_REALTIME)),
@@ -67,6 +79,7 @@ ClientContext::ClientContext()
 ClientContext::~ClientContext() {
   if (call_) {
     grpc_call_unref(call_);
+    call_ = nullptr;
   }
   g_client_callbacks->Destructor(this);
 }

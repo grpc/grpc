@@ -17,14 +17,14 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <tuple>
 #include <utility>
 
+#include "absl/meta/type_traits.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "absl/types/variant.h"
 
 #include "src/core/lib/promise/detail/basic_seq.h"
+#include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/detail/status.h"
 #include "src/core/lib/promise/poll.h"
 
@@ -41,6 +41,11 @@ struct TrySeqTraitsWithSfinae {
       -> decltype(next->Once(std::forward<T>(value))) {
     return next->Once(std::forward<T>(value));
   }
+  template <typename F, typename Elem>
+  static auto CallSeqFactory(F& f, Elem&& elem, T&& value)
+      -> decltype(f(std::forward<Elem>(elem), std::forward<T>(value))) {
+    return f(std::forward<Elem>(elem), std::forward<T>(value));
+  }
   template <typename Result, typename RunNext>
   static Poll<Result> CheckResultAndRunNext(T prior, RunNext run_next) {
     return run_next(std::move(prior));
@@ -55,6 +60,11 @@ struct TrySeqTraitsWithSfinae<absl::StatusOr<T>> {
   static auto CallFactory(Next* next, absl::StatusOr<T>&& status)
       -> decltype(next->Once(std::move(*status))) {
     return next->Once(std::move(*status));
+  }
+  template <typename F, typename Elem>
+  static auto CallSeqFactory(F& f, Elem&& elem, absl::StatusOr<T> value)
+      -> decltype(f(std::forward<Elem>(elem), std::move(*value))) {
+    return f(std::forward<Elem>(elem), std::move(*value));
   }
   template <typename Result, typename RunNext>
   static Poll<Result> CheckResultAndRunNext(absl::StatusOr<T> prior,
@@ -83,12 +93,48 @@ struct TrySeqTraitsWithSfinae<
     return run_next(std::move(prior));
   }
 };
+template <>
+struct TrySeqTraitsWithSfinae<absl::Status> {
+  using UnwrappedType = void;
+  using WrappedType = absl::Status;
+  template <typename Next>
+  static auto CallFactory(Next* next, absl::Status&&)
+      -> decltype(next->Once()) {
+    return next->Once();
+  }
+  template <typename Result, typename RunNext>
+  static Poll<Result> CheckResultAndRunNext(absl::Status prior,
+                                            RunNext run_next) {
+    if (!prior.ok()) return Result(std::move(prior));
+    return run_next(std::move(prior));
+  }
+};
 
 template <typename T>
 using TrySeqTraits = TrySeqTraitsWithSfinae<T>;
 
 template <typename... Fs>
 using TrySeq = BasicSeq<TrySeqTraits, Fs...>;
+
+template <typename I, typename F, typename Arg>
+struct TrySeqIterTraits {
+  using Iter = I;
+  using Factory = F;
+  using Argument = Arg;
+  using IterValue = decltype(*std::declval<Iter>());
+  using StateCreated = decltype(std::declval<F>()(std::declval<IterValue>(),
+                                                  std::declval<Arg>()));
+  using State = PromiseLike<StateCreated>;
+  using Wrapped = typename State::Result;
+
+  using Traits = TrySeqTraits<Wrapped>;
+};
+
+template <typename Iter, typename Factory, typename Argument>
+struct TrySeqIterResultTraits {
+  using IterTraits = TrySeqIterTraits<Iter, Factory, Argument>;
+  using Result = BasicSeqIter<IterTraits>;
+};
 
 }  // namespace promise_detail
 
@@ -107,6 +153,23 @@ using TrySeq = BasicSeq<TrySeqTraits, Fs...>;
 template <typename... Functors>
 promise_detail::TrySeq<Functors...> TrySeq(Functors... functors) {
   return promise_detail::TrySeq<Functors...>(std::move(functors)...);
+}
+
+// Try a sequence of operations of unknown length.
+// Asynchronously:
+//   for (element in (begin, end)) {
+//     auto r = wait_for factory(element, argument);
+//     if (!r.ok()) return r;
+//     argument = *r;
+//   }
+//   return argument;
+template <typename Iter, typename Factory, typename Argument>
+typename promise_detail::TrySeqIterResultTraits<Iter, Factory, Argument>::Result
+TrySeqIter(Iter begin, Iter end, Argument argument, Factory factory) {
+  using Result =
+      typename promise_detail::TrySeqIterResultTraits<Iter, Factory,
+                                                      Argument>::Result;
+  return Result(begin, end, std::move(factory), std::move(argument));
 }
 
 }  // namespace grpc_core

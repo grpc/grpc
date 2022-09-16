@@ -15,17 +15,22 @@
  *
  */
 
-#include <memory>
+#include <vector>
+
+#include "absl/base/thread_annotations.h"
 
 #include <grpc/grpc.h>
+#include <grpc/impl/codegen/gpr_types.h>
+#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
+#include <grpc/support/sync.h>
+#include <grpc/support/time.h>
 #include <grpcpp/completion_queue.h>
+#include <grpcpp/impl/codegen/completion_queue_tag.h>
 #include <grpcpp/impl/grpc_library.h>
-#include <grpcpp/support/time.h>
 
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"
 
@@ -151,7 +156,7 @@ CompletionQueue::NextStatus CompletionQueue::AsyncNextInternal(
         return SHUTDOWN;
       case GRPC_OP_COMPLETE:
         auto core_cq_tag =
-            static_cast<::grpc::internal::CompletionQueueTag*>(ev.tag);
+            static_cast<grpc::internal::CompletionQueueTag*>(ev.tag);
         *ok = ev.success != 0;
         *tag = core_cq_tag;
         if (core_cq_tag->FinalizeResult(tag, ok)) {
@@ -179,7 +184,7 @@ bool CompletionQueue::CompletionQueueTLSCache::Flush(void** tag, bool* ok) {
   if (grpc_completion_queue_thread_local_cache_flush(cq_->cq_, &res_tag,
                                                      &res)) {
     auto core_cq_tag =
-        static_cast<::grpc::internal::CompletionQueueTag*>(res_tag);
+        static_cast<grpc::internal::CompletionQueueTag*>(res_tag);
     *ok = res == 1;
     if (core_cq_tag->FinalizeResult(tag, ok)) {
       return true;

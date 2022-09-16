@@ -21,7 +21,32 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
+
+#include <atomic>
+#include <string>
+#include <utility>
+
+#include "absl/container/inlined_vector.h"
+#include "absl/status/statusor.h"
+
+#include <grpc/grpc_security.h>
+#include <grpc/grpc_security_constants.h>
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/status.h>
+
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/unique_type_name.h"
+#include "src/core/lib/promise/activity.h"
+#include "src/core/lib/promise/arena_promise.h"
+#include "src/core/lib/promise/poll.h"
+#include "src/core/lib/security/credentials/call_creds_util.h"
 #include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/slice/slice_refcount.h"
+#include "src/core/lib/transport/transport.h"
 
 extern grpc_core::TraceFlag grpc_plugin_credentials_trace;
 
@@ -30,44 +55,71 @@ extern grpc_core::TraceFlag grpc_plugin_credentials_trace;
 // -Wmismatched-tags.
 struct grpc_plugin_credentials final : public grpc_call_credentials {
  public:
-  struct pending_request {
-    bool cancelled;
-    struct grpc_plugin_credentials* creds;
-    grpc_core::CredentialsMetadataArray* md_array;
-    grpc_closure* on_request_metadata;
-    struct pending_request* prev;
-    struct pending_request* next;
-  };
-
   explicit grpc_plugin_credentials(grpc_metadata_credentials_plugin plugin,
                                    grpc_security_level min_security_level);
   ~grpc_plugin_credentials() override;
 
-  bool get_request_metadata(grpc_polling_entity* pollent,
-                            grpc_auth_metadata_context context,
-                            grpc_core::CredentialsMetadataArray* md_array,
-                            grpc_closure* on_request_metadata,
-                            grpc_error_handle* error) override;
-
-  void cancel_get_request_metadata(
-      grpc_core::CredentialsMetadataArray* md_array,
-      grpc_error_handle error) override;
-
-  // Checks if the request has been cancelled.
-  // If not, removes it from the pending list, so that it cannot be
-  // cancelled out from under us.
-  // When this returns, r->cancelled indicates whether the request was
-  // cancelled before completion.
-  void pending_request_complete(pending_request* r);
+  grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientMetadataHandle>>
+  GetRequestMetadata(grpc_core::ClientMetadataHandle initial_metadata,
+                     const GetRequestMetadataArgs* args) override;
 
   std::string debug_string() override;
 
+  grpc_core::UniqueTypeName type() const override;
+
  private:
-  void pending_request_remove_locked(pending_request* pending_request);
+  class PendingRequest : public grpc_core::RefCounted<PendingRequest> {
+   public:
+    PendingRequest(grpc_core::RefCountedPtr<grpc_plugin_credentials> creds,
+                   grpc_core::ClientMetadataHandle initial_metadata,
+                   const grpc_call_credentials::GetRequestMetadataArgs* args)
+        : call_creds_(std::move(creds)),
+          context_(
+              grpc_core::MakePluginAuthMetadataContext(initial_metadata, args)),
+          md_(std::move(initial_metadata)) {}
+
+    ~PendingRequest() override {
+      grpc_auth_metadata_context_reset(&context_);
+      for (size_t i = 0; i < metadata_.size(); i++) {
+        grpc_slice_unref_internal(metadata_[i].key);
+        grpc_slice_unref_internal(metadata_[i].value);
+      }
+    }
+
+    absl::StatusOr<grpc_core::ClientMetadataHandle> ProcessPluginResult(
+        const grpc_metadata* md, size_t num_md, grpc_status_code status,
+        const char* error_details);
+
+    grpc_core::Poll<absl::StatusOr<grpc_core::ClientMetadataHandle>>
+    PollAsyncResult();
+
+    static void RequestMetadataReady(void* request, const grpc_metadata* md,
+                                     size_t num_md, grpc_status_code status,
+                                     const char* error_details);
+
+    grpc_auth_metadata_context context() const { return context_; }
+    grpc_plugin_credentials* creds() const { return call_creds_.get(); }
+
+   private:
+    std::atomic<bool> ready_{false};
+    grpc_core::Waker waker_{
+        grpc_core::Activity::current()->MakeNonOwningWaker()};
+    grpc_core::RefCountedPtr<grpc_plugin_credentials> call_creds_;
+    grpc_auth_metadata_context context_;
+    grpc_core::ClientMetadataHandle md_;
+    // final status
+    absl::InlinedVector<grpc_metadata, 2> metadata_;
+    std::string error_details_;
+    grpc_status_code status_;
+  };
+
+  int cmp_impl(const grpc_call_credentials* other) const override {
+    // TODO(yashykt): Check if we can do something better here
+    return grpc_core::QsortCompare(
+        static_cast<const grpc_call_credentials*>(this), other);
+  }
 
   grpc_metadata_credentials_plugin plugin_;
-  gpr_mu mu_;
-  pending_request* pending_requests_ = nullptr;
 };
 
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_PLUGIN_PLUGIN_CREDENTIALS_H */

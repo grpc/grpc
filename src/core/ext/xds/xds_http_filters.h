@@ -26,12 +26,12 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "google/protobuf/any.upb.h"
+#include "upb/arena.h"
 #include "upb/def.h"
+#include "upb/upb.h"
 
-#include <grpc/grpc.h>
-
-#include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/json/json.h"
 
 namespace grpc_core {
@@ -70,17 +70,17 @@ class XdsHttpFilterImpl {
   virtual ~XdsHttpFilterImpl() = default;
 
   // Loads the proto message into the upb symtab.
-  virtual void PopulateSymtab(upb_symtab* symtab) const = 0;
+  virtual void PopulateSymtab(upb_DefPool* symtab) const = 0;
 
   // Generates a Config from the xDS filter config proto.
   // Used for the top-level config in the HCM HTTP filter list.
   virtual absl::StatusOr<FilterConfig> GenerateFilterConfig(
-      upb_strview serialized_filter_config, upb_arena* arena) const = 0;
+      upb_StringView serialized_filter_config, upb_Arena* arena) const = 0;
 
   // Generates a Config from the xDS filter config proto.
   // Used for the typed_per_filter_config override in VirtualHost and Route.
   virtual absl::StatusOr<FilterConfig> GenerateFilterConfigOverride(
-      upb_strview serialized_filter_config, upb_arena* arena) const = 0;
+      upb_StringView serialized_filter_config, upb_Arena* arena) const = 0;
 
   // C-core channel filter implementation.
   virtual const grpc_channel_filter* channel_filter() const = 0;
@@ -88,7 +88,7 @@ class XdsHttpFilterImpl {
   // Modifies channel args that may affect service config parsing (not
   // visible to the channel as a whole).
   // Takes ownership of args.  Caller takes ownership of return value.
-  virtual grpc_channel_args* ModifyChannelArgs(grpc_channel_args* args) const {
+  virtual ChannelArgs ModifyChannelArgs(const ChannelArgs& args) const {
     return args;
   }
 
@@ -121,7 +121,7 @@ class XdsHttpFilterRegistry {
   static const XdsHttpFilterImpl* GetFilterForType(
       absl::string_view proto_type_name);
 
-  static void PopulateSymtab(upb_symtab* symtab);
+  static void PopulateSymtab(upb_DefPool* symtab);
 
   // Global init and shutdown.
   static void Init();

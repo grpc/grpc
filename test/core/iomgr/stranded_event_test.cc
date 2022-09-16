@@ -52,7 +52,6 @@
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/uri/uri_parser.h"
 #include "test/core/end2end/cq_verifier.h"
-#include "test/core/util/memory_counters.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
@@ -101,10 +100,9 @@ void StartCall(TestCall* test_call) {
   grpc_call_error error = grpc_call_start_batch(
       test_call->call, ops, static_cast<size_t>(op - ops), tag, nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cq_verifier* cqv = cq_verifier_create(test_call->cq);
-  CQ_EXPECT_COMPLETION(cqv, tag, 1);
-  cq_verify(cqv);
-  cq_verifier_destroy(cqv);
+  grpc_core::CqVerifier cqv(test_call->cq);
+  cqv.Expect(tag, true);
+  cqv.Verify();
 }
 
 void SendMessage(grpc_call* call, grpc_completion_queue* cq) {
@@ -123,10 +121,9 @@ void SendMessage(grpc_call* call, grpc_completion_queue* cq) {
   grpc_call_error error = grpc_call_start_batch(
       call, ops, static_cast<size_t>(op - ops), tag, nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cq_verifier* cqv = cq_verifier_create(cq);
-  CQ_EXPECT_COMPLETION(cqv, tag, 1);
-  cq_verify(cqv);
-  cq_verifier_destroy(cqv);
+  grpc_core::CqVerifier cqv(cq);
+  cqv.Expect(tag, true);
+  cqv.Verify();
   grpc_byte_buffer_destroy(request_payload);
 }
 
@@ -144,10 +141,9 @@ void ReceiveMessage(grpc_call* call, grpc_completion_queue* cq) {
   grpc_call_error error = grpc_call_start_batch(
       call, ops, static_cast<size_t>(op - ops), tag, nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cq_verifier* cqv = cq_verifier_create(cq);
-  CQ_EXPECT_COMPLETION(cqv, tag, 1);
-  cq_verify(cqv);
-  cq_verifier_destroy(cqv);
+  grpc_core::CqVerifier cqv(cq);
+  cqv.Expect(tag, true);
+  cqv.Verify();
   grpc_byte_buffer_destroy(request_payload);
 }
 
@@ -307,7 +303,8 @@ grpc_core::Resolver::Result BuildResolverResponse(
     }
     grpc_resolved_address address;
     GPR_ASSERT(grpc_parse_uri(*uri, &address));
-    result.addresses->emplace_back(address.addr, address.len, nullptr);
+    result.addresses->emplace_back(address.addr, address.len,
+                                   grpc_core::ChannelArgs());
   }
   return result;
 }
@@ -319,7 +316,7 @@ TEST(Pollers, TestReadabilityNotificationsDontGetStrandedOnOneCq) {
   /* 64 is a somewhat arbitary number, the important thing is that it
    * exceeds the value of MAX_EPOLL_EVENTS_HANDLED_EACH_POLL_CALL (16), which
    * is enough to repro a bug at time of writing. */
-  const int kNumCalls = 64;
+  const int kNumCalls = 32;
   size_t ping_pong_round = 0;
   size_t ping_pongs_done = 0;
   grpc_core::Mutex ping_pong_round_mu;
@@ -444,7 +441,7 @@ TEST(Pollers, TestReadabilityNotificationsDontGetStrandedOnOneCq) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   auto result = RUN_ALL_TESTS();
   grpc_shutdown();

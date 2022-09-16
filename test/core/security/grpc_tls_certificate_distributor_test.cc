@@ -132,15 +132,15 @@ class GrpcTlsCertificateDistributorTest : public ::testing::Test {
 
     void OnError(grpc_error_handle root_cert_error,
                  grpc_error_handle identity_cert_error) override {
-      GPR_ASSERT(root_cert_error != GRPC_ERROR_NONE ||
-                 identity_cert_error != GRPC_ERROR_NONE);
+      GPR_ASSERT(!GRPC_ERROR_IS_NONE(root_cert_error) ||
+                 !GRPC_ERROR_IS_NONE(identity_cert_error));
       std::string root_error_str;
       std::string identity_error_str;
-      if (root_cert_error != GRPC_ERROR_NONE) {
+      if (!GRPC_ERROR_IS_NONE(root_cert_error)) {
         GPR_ASSERT(grpc_error_get_str(
             root_cert_error, GRPC_ERROR_STR_DESCRIPTION, &root_error_str));
       }
-      if (identity_cert_error != GRPC_ERROR_NONE) {
+      if (!GRPC_ERROR_IS_NONE(identity_cert_error)) {
         GPR_ASSERT(grpc_error_get_str(identity_cert_error,
                                       GRPC_ERROR_STR_DESCRIPTION,
                                       &identity_error_str));
@@ -574,12 +574,12 @@ TEST_F(GrpcTlsCertificateDistributorTest, SetKeyMaterialsInCallback) {
                                                  kIdentityCert1Contents))));
     CancelWatch(watcher_state_1);
   };
-  // Start 1000 threads that will register a watcher to a new cert name, verify
+  // Start 10 threads that will register a watcher to a new cert name, verify
   // the key materials being set, and then cancel the watcher, to make sure the
   // lock mechanism in the distributor is safe.
   std::vector<std::thread> threads;
-  threads.reserve(1000);
-  for (int i = 0; i < 1000; ++i) {
+  threads.reserve(10);
+  for (int i = 0; i < 10; ++i) {
     threads.emplace_back(verify_function, std::to_string(i));
   }
   for (auto& th : threads) {
@@ -941,7 +941,7 @@ TEST_F(GrpcTlsCertificateDistributorTest, SetErrorForCertInCallback) {
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   grpc_init();
   int ret = RUN_ALL_TESTS();

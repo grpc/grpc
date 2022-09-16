@@ -35,9 +35,13 @@ tools/run_tests/task_runner.py -f artifact macos php ${TASK_RUNNER_EXTRA_FILTERS
 # to upload its contents as job output artifacts
 rm -rf input_artifacts
 mkdir -p input_artifacts
+# We could also copy the PHP artifact to artifacts/, but we intentionally don't do that
+# in order to avoid hiding the PHP .tgz artifact built on linux (which has the same filename).
+# The macos-built artifact will still show up in job's uploaded artifacts under the
+# corresponding subdirectory ("php_pecl_package_macos_*")
 cp -r artifacts/php_pecl_package_macos_*/* input_artifacts/ || true
 
-# Run all PHP linux distribtests
+# Run all PHP macos distribtests
 # We run the distribtests even if some of the artifacts have failed to build, since that gives
 # a better signal about which distribtest are affected by the currently broken artifact builds.
 tools/run_tests/task_runner.py -f distribtest macos php ${TASK_RUNNER_EXTRA_FILTERS} -j 4 -x distribtests/sponge_log.xml || FAILED="true"

@@ -13,30 +13,32 @@
 
 #include "upb/port_def.inc"
 
-static const upb_msglayout_sub google_rpc_Status_submsgs[1] = {
+static const upb_MiniTable_Sub google_rpc_Status_submsgs[1] = {
   {.submsg = &google_protobuf_Any_msginit},
 };
 
-static const upb_msglayout_field google_rpc_Status__fields[3] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 5, _UPB_MODE_SCALAR | (_UPB_REP_4BYTE << _UPB_REP_SHIFT)},
-  {2, UPB_SIZE(4, 8), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {3, UPB_SIZE(12, 24), 0, 0, 11, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+static const upb_MiniTable_Field google_rpc_Status__fields[3] = {
+  {1, UPB_SIZE(0, 0), UPB_SIZE(0, 0), kUpb_NoSub, 5, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(4, 8), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(12, 24), UPB_SIZE(0, 0), 0, 11, kUpb_FieldMode_Array | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
 };
 
-const upb_msglayout google_rpc_Status_msginit = {
+const upb_MiniTable google_rpc_Status_msginit = {
   &google_rpc_Status_submsgs[0],
   &google_rpc_Status__fields[0],
-  UPB_SIZE(16, 32), 3, _UPB_MSGEXT_NONE, 3, 255,
+  UPB_SIZE(16, 32), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
 };
 
-static const upb_msglayout *messages_layout[1] = {
+static const upb_MiniTable *messages_layout[1] = {
   &google_rpc_Status_msginit,
 };
 
-const upb_msglayout_file google_rpc_status_proto_upb_file_layout = {
+const upb_MiniTable_File google_rpc_status_proto_upb_file_layout = {
   messages_layout,
   NULL,
+  NULL,
   1,
+  0,
   0,
 };
 

@@ -19,7 +19,7 @@
 #include <grpcpp/ext/proto_server_reflection_plugin.h>
 #include <grpcpp/impl/server_builder_plugin.h>
 #include <grpcpp/impl/server_initializer.h>
-#include <grpcpp/server.h>
+#include <grpcpp/server_builder.h>
 
 #include "src/cpp/ext/proto_server_reflection.h"
 
@@ -58,15 +58,15 @@ bool ProtoServerReflectionPlugin::has_async_methods() const {
   return false;
 }
 
-static std::unique_ptr< ::grpc::ServerBuilderPlugin> CreateProtoReflection() {
-  return std::unique_ptr< ::grpc::ServerBuilderPlugin>(
+static std::unique_ptr<grpc::ServerBuilderPlugin> CreateProtoReflection() {
+  return std::unique_ptr<grpc::ServerBuilderPlugin>(
       new ProtoServerReflectionPlugin());
 }
 
 void InitProtoReflectionServerBuilderPlugin() {
   static struct Initialize {
     Initialize() {
-      ::grpc::ServerBuilder::InternalAddPluginFactory(&CreateProtoReflection);
+      grpc::ServerBuilder::InternalAddPluginFactory(&CreateProtoReflection);
     }
   } initializer;
 }

@@ -10,9 +10,9 @@
 #include "envoy/type/v3/percent.upbdefs.h"
 #include "envoy/type/v3/percent.upb.h"
 
-extern upb_def_init udpa_annotations_status_proto_upbdefinit;
-extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
-extern upb_def_init validate_validate_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_versioning_proto_upbdefinit;
+extern _upb_DefPool_Init validate_validate_proto_upbdefinit;
 static const char descriptor[590] = {'\n', '\033', 'e', 'n', 'v', 'o', 'y', '/', 't', 'y', 'p', 'e', '/', 'v', '3', '/', 'p', 'e', 'r', 'c', 'e', 'n', 't', '.', 'p', 
 'r', 'o', 't', 'o', '\022', '\r', 'e', 'n', 'v', 'o', 'y', '.', 't', 'y', 'p', 'e', '.', 'v', '3', '\032', '\035', 'u', 'd', 'p', 'a', 
 '/', 'a', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's', '/', 's', 't', 'a', 't', 'u', 's', '.', 'p', 'r', 'o', 't', 'o', 
@@ -39,16 +39,16 @@ static const char descriptor[590] = {'\n', '\033', 'e', 'n', 'v', 'o', 'y', '/',
 '\200', '\310', '\321', '\006', '\002', '\020', '\002', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
 };
 
-static upb_def_init *deps[4] = {
+static _upb_DefPool_Init *deps[4] = {
   &udpa_annotations_status_proto_upbdefinit,
   &udpa_annotations_versioning_proto_upbdefinit,
   &validate_validate_proto_upbdefinit,
   NULL
 };
 
-upb_def_init envoy_type_v3_percent_proto_upbdefinit = {
+_upb_DefPool_Init envoy_type_v3_percent_proto_upbdefinit = {
   deps,
   &envoy_type_v3_percent_proto_upb_file_layout,
   "envoy/type/v3/percent.proto",
-  UPB_STRVIEW_INIT(descriptor, 590)
+  UPB_STRINGVIEW_INIT(descriptor, 590)
 };

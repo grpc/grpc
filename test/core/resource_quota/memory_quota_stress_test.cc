@@ -12,11 +12,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <stddef.h>
+
+#include <algorithm>
+#include <atomic>
+#include <chrono>
+#include <initializer_list>
+#include <memory>
 #include <random>
 #include <thread>
+#include <utility>
+#include <vector>
 
+#include "absl/base/thread_annotations.h"
+#include "absl/strings/str_cat.h"
+#include "absl/types/optional.h"
+#include "gtest/gtest.h"
+
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/event_engine/memory_request.h>
+#include <grpc/support/log.h>
+
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
+#include "test/core/util/test_config.h"
 
 namespace grpc_core {
 
@@ -36,14 +56,18 @@ class StressTest {
     }
   }
 
+  ~StressTest() {
+    ExecCtx exec_ctx;
+    allocators_.clear();
+    quotas_.clear();
+  }
+
   // Run the thread for some period of time.
   void Run(int seconds) {
     std::vector<std::thread> threads;
 
-    // A few threads constantly rebinding allocators to different quotas.
-    threads.reserve(2 + 2 + 3 * allocators_.size());
-    for (int i = 0; i < 2; i++) threads.push_back(Run(Rebinder));
     // And another few threads constantly resizing quotas.
+    threads.reserve(2 + allocators_.size());
     for (int i = 0; i < 2; i++) threads.push_back(Run(Resizer));
 
     // For each (allocator, pass), start a thread continuously allocating from
@@ -166,13 +190,6 @@ class StressTest {
   // Type alias since we always pass around these shared pointers.
   using StatePtr = std::shared_ptr<State>;
 
-  // Choose one allocator, one quota, rebind the allocator to the quota.
-  static void Rebinder(StatePtr st) {
-    auto* allocator = st->RandomAllocator();
-    auto* quota = st->RandomQuota();
-    allocator->Rebind(quota);
-  }
-
   // Choose one allocator, resize it to a randomly chosen size.
   static void Resizer(StatePtr st) {
     auto* quota = st->RandomQuota();
@@ -211,14 +228,20 @@ class StressTest {
 
 }  // namespace grpc_core
 
-int main(int, char**) {
+TEST(MemoryQuotaStressTest, MainTest) {
   if (sizeof(void*) != 8) {
     gpr_log(
         GPR_ERROR,
         "This test assumes 64-bit processors in the values it uses for sizes. "
         "Since this test is mostly aimed at TSAN coverage, and that's mostly "
         "platform independent, we simply skip this test in 32-bit builds.");
-    return 0;
+    GTEST_SKIP();
   }
-  grpc_core::StressTest(16, 64).Run(8);
+  grpc_core::StressTest(16, 20).Run(8);
+}
+
+int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment give_me_a_name(&argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }

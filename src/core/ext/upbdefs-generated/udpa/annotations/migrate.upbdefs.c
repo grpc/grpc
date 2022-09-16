@@ -10,7 +10,7 @@
 #include "udpa/annotations/migrate.upbdefs.h"
 #include "udpa/annotations/migrate.upb.h"
 
-extern upb_def_init google_protobuf_descriptor_proto_upbdefinit;
+extern _upb_DefPool_Init google_protobuf_descriptor_proto_upbdefinit;
 static const char descriptor[893] = {'\n', '\036', 'u', 'd', 'p', 'a', '/', 'a', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's', '/', 'm', 'i', 'g', 'r', 'a', 't', 
 'e', '.', 'p', 'r', 'o', 't', 'o', '\022', '\020', 'u', 'd', 'p', 'a', '.', 'a', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's', 
 '\032', ' ', 'g', 'o', 'o', 'g', 'l', 'e', '/', 'p', 'r', 'o', 't', 'o', 'b', 'u', 'f', '/', 'd', 'e', 's', 'c', 'r', 'i', 'p', 
@@ -49,14 +49,14 @@ static const char descriptor[893] = {'\n', '\036', 'u', 'd', 'p', 'a', '/', 'a',
 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
 };
 
-static upb_def_init *deps[2] = {
+static _upb_DefPool_Init *deps[2] = {
   &google_protobuf_descriptor_proto_upbdefinit,
   NULL
 };
 
-upb_def_init udpa_annotations_migrate_proto_upbdefinit = {
+_upb_DefPool_Init udpa_annotations_migrate_proto_upbdefinit = {
   deps,
   &udpa_annotations_migrate_proto_upb_file_layout,
   "udpa/annotations/migrate.proto",
-  UPB_STRVIEW_INIT(descriptor, 893)
+  UPB_STRINGVIEW_INIT(descriptor, 893)
 };

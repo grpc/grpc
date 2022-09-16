@@ -19,41 +19,41 @@ extern "C" {
 
 #include "upb/port_def.inc"
 
-extern upb_def_init envoy_type_metadata_v3_metadata_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_type_metadata_v3_metadata_proto_upbdefinit;
 
-UPB_INLINE const upb_msgdef *envoy_type_metadata_v3_MetadataKey_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_type_metadata_v3_metadata_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.type.metadata.v3.MetadataKey");
+UPB_INLINE const upb_MessageDef *envoy_type_metadata_v3_MetadataKey_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_type_metadata_v3_metadata_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.type.metadata.v3.MetadataKey");
 }
 
-UPB_INLINE const upb_msgdef *envoy_type_metadata_v3_MetadataKey_PathSegment_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_type_metadata_v3_metadata_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.type.metadata.v3.MetadataKey.PathSegment");
+UPB_INLINE const upb_MessageDef *envoy_type_metadata_v3_MetadataKey_PathSegment_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_type_metadata_v3_metadata_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.type.metadata.v3.MetadataKey.PathSegment");
 }
 
-UPB_INLINE const upb_msgdef *envoy_type_metadata_v3_MetadataKind_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_type_metadata_v3_metadata_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.type.metadata.v3.MetadataKind");
+UPB_INLINE const upb_MessageDef *envoy_type_metadata_v3_MetadataKind_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_type_metadata_v3_metadata_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.type.metadata.v3.MetadataKind");
 }
 
-UPB_INLINE const upb_msgdef *envoy_type_metadata_v3_MetadataKind_Request_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_type_metadata_v3_metadata_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.type.metadata.v3.MetadataKind.Request");
+UPB_INLINE const upb_MessageDef *envoy_type_metadata_v3_MetadataKind_Request_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_type_metadata_v3_metadata_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.type.metadata.v3.MetadataKind.Request");
 }
 
-UPB_INLINE const upb_msgdef *envoy_type_metadata_v3_MetadataKind_Route_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_type_metadata_v3_metadata_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.type.metadata.v3.MetadataKind.Route");
+UPB_INLINE const upb_MessageDef *envoy_type_metadata_v3_MetadataKind_Route_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_type_metadata_v3_metadata_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.type.metadata.v3.MetadataKind.Route");
 }
 
-UPB_INLINE const upb_msgdef *envoy_type_metadata_v3_MetadataKind_Cluster_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_type_metadata_v3_metadata_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.type.metadata.v3.MetadataKind.Cluster");
+UPB_INLINE const upb_MessageDef *envoy_type_metadata_v3_MetadataKind_Cluster_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_type_metadata_v3_metadata_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.type.metadata.v3.MetadataKind.Cluster");
 }
 
-UPB_INLINE const upb_msgdef *envoy_type_metadata_v3_MetadataKind_Host_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_type_metadata_v3_metadata_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.type.metadata.v3.MetadataKind.Host");
+UPB_INLINE const upb_MessageDef *envoy_type_metadata_v3_MetadataKind_Host_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_type_metadata_v3_metadata_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.type.metadata.v3.MetadataKind.Host");
 }
 
 #ifdef __cplusplus

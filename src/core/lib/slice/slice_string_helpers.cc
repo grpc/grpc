@@ -21,24 +21,8 @@
 #include "src/core/lib/slice/slice_string_helpers.h"
 
 #include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gprpp/memory.h"
-#include "src/core/lib/slice/slice_internal.h"
 
 char* grpc_dump_slice(const grpc_slice& s, uint32_t flags) {
   return gpr_dump(reinterpret_cast<const char*> GRPC_SLICE_START_PTR(s),
                   GRPC_SLICE_LENGTH(s), flags);
-}
-
-grpc_slice grpc_dump_slice_to_slice(const grpc_slice& s, uint32_t flags) {
-  size_t len;
-  grpc_core::UniquePtr<char> ptr(
-      gpr_dump_return_len(reinterpret_cast<const char*> GRPC_SLICE_START_PTR(s),
-                          GRPC_SLICE_LENGTH(s), flags, &len));
-  return grpc_slice_from_moved_buffer(std::move(ptr), len);
-}
-
-bool grpc_parse_slice_to_uint32(grpc_slice str, uint32_t* result) {
-  return gpr_parse_bytes_to_uint32(
-             reinterpret_cast<const char*> GRPC_SLICE_START_PTR(str),
-             GRPC_SLICE_LENGTH(str), result) != 0;
 }

@@ -35,14 +35,15 @@
 
 #include "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/thd.h"
+#include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
-#include "src/core/lib/iomgr/work_serializer.h"
 #include "src/core/lib/resolver/resolver.h"
 #include "src/core/lib/resolver/resolver_registry.h"
 #include "test/core/end2end/cq_verifier.h"
@@ -126,11 +127,9 @@ void PollPollsetUntilRequestDone(ArgsStruct* args) {
     grpc_pollset_worker* worker = nullptr;
     grpc_core::ExecCtx exec_ctx;
     gpr_mu_lock(args->mu);
-    GRPC_LOG_IF_ERROR(
-        "pollset_work",
-        grpc_pollset_work(args->pollset, &worker,
-                          grpc_timespec_to_millis_round_up(
-                              gpr_inf_future(GPR_CLOCK_REALTIME))));
+    GRPC_LOG_IF_ERROR("pollset_work",
+                      grpc_pollset_work(args->pollset, &worker,
+                                        grpc_core::Timestamp::InfFuture()));
     gpr_mu_unlock(args->mu);
   }
 }
@@ -165,8 +164,9 @@ void TestCancelActiveDNSQuery(ArgsStruct* args) {
       fake_dns_server.port());
   // create resolver and resolve
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
-      grpc_core::ResolverRegistry::CreateResolver(
-          client_target.c_str(), nullptr, args->pollset_set, args->lock,
+      grpc_core::CoreConfiguration::Get().resolver_registry().CreateResolver(
+          client_target.c_str(), grpc_core::ChannelArgs(), args->pollset_set,
+          args->lock,
           std::unique_ptr<grpc_core::Resolver::ResultHandler>(
               new AssertFailureResultHandler(args)));
   resolver->StartLocked();
@@ -334,7 +334,7 @@ void TestCancelDuringActiveQuery(
       grpc_channel_create(client_target.c_str(), creds, client_args);
   grpc_channel_credentials_release(creds);
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
-  cq_verifier* cqv = cq_verifier_create(cq);
+  grpc_core::CqVerifier cqv(cq);
   grpc_call* call = grpc_channel_create_call(
       client, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
       grpc_slice_from_static_string("/foo"), nullptr, rpc_deadline, nullptr);
@@ -380,8 +380,8 @@ void TestCancelDuringActiveQuery(
   grpc_call_error error = grpc_call_start_batch(
       call, ops_base, static_cast<size_t>(op - ops_base), Tag(1), nullptr);
   EXPECT_EQ(GRPC_CALL_OK, error);
-  CQ_EXPECT_COMPLETION(cqv, Tag(1), 1);
-  cq_verify(cqv);
+  cqv.Expect(Tag(1), true);
+  cqv.Verify();
   EXPECT_EQ(status, expected_status_code);
   EXPECT_THAT(std::string(error_string),
               testing::HasSubstr(expected_error_message_substring));
@@ -394,7 +394,6 @@ void TestCancelDuringActiveQuery(
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
   grpc_call_unref(call);
-  cq_verifier_destroy(cqv);
   EndTest(client, cq);
 }
 
@@ -418,7 +417,7 @@ TEST_F(
 }  // namespace
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   auto result = RUN_ALL_TESTS();
   return result;

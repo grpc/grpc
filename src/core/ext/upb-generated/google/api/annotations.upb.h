@@ -20,13 +20,29 @@
 extern "C" {
 #endif
 
-extern const upb_msglayout_ext google_api_http_ext;
+extern const upb_MiniTable_Extension google_api_http_ext;
 struct google_protobuf_MethodOptions;
-extern const upb_msglayout google_protobuf_MethodOptions_msginit;
+extern const upb_MiniTable google_protobuf_MethodOptions_msginit;
 
-UPB_INLINE bool google_api_has_http(const struct google_protobuf_MethodOptions *msg) { return _upb_msg_getext(msg, &google_api_http_ext) != NULL; }
-UPB_INLINE const struct google_api_HttpRule* google_api_http(const struct google_protobuf_MethodOptions *msg) { const upb_msg_ext *ext = _upb_msg_getext(msg, &google_api_http_ext); UPB_ASSERT(ext); return *UPB_PTR_AT(&ext->data, 0, const struct google_api_HttpRule*); }
-extern const upb_msglayout_file google_api_annotations_proto_upb_file_layout;
+
+UPB_INLINE bool google_api_has_http(const struct google_protobuf_MethodOptions* msg) {
+  return _upb_Message_Getext(msg, &google_api_http_ext) != NULL;
+}
+UPB_INLINE void google_api_clear_http(struct google_protobuf_MethodOptions* msg) {
+  _upb_Message_Clearext(msg, &google_api_http_ext);
+}
+UPB_INLINE const struct google_api_HttpRule* google_api_http(const struct google_protobuf_MethodOptions* msg) {
+  const upb_Message_Extension* ext = _upb_Message_Getext(msg, &google_api_http_ext);
+  UPB_ASSERT(ext);
+  return *UPB_PTR_AT(&ext->data, 0, const struct google_api_HttpRule*);
+}
+UPB_INLINE void google_api_set_http(struct google_protobuf_MethodOptions* msg, const struct google_api_HttpRule* ext, upb_Arena* arena) {
+  const upb_Message_Extension* msg_ext =
+      _upb_Message_GetOrCreateExtension(msg, &google_api_http_ext, arena);
+  UPB_ASSERT(msg_ext);
+  *UPB_PTR_AT(&msg_ext->data, 0, const struct google_api_HttpRule*) = ext;
+}
+extern const upb_MiniTable_File google_api_annotations_proto_upb_file_layout;
 
 #ifdef __cplusplus
 }  /* extern "C" */

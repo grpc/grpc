@@ -19,9 +19,24 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
+#include <stdint.h>
+
+#include <limits>
+#include <memory>
+#include <string>
+#include <utility>
 #include <vector>
 
-#include "src/core/lib/iomgr/exec_ctx.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
+
+#include <grpc/status.h>
+
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/json/json.h"
 #include "src/core/lib/service_config/service_config_parser.h"
 
 namespace grpc_core {
@@ -37,7 +52,7 @@ class FaultInjectionMethodParsedConfig
     uint32_t abort_percentage_numerator = 0;
     uint32_t abort_percentage_denominator = 100;
 
-    grpc_millis delay = 0;
+    Duration delay;
     std::string delay_header;
     std::string delay_percentage_header;
     uint32_t delay_percentage_numerator = 0;
@@ -57,8 +72,8 @@ class FaultInjectionMethodParsedConfig
   // keep track of their relative positions. The FaultInjectionFilter uses this
   // method to access the parsed fault injection policy in service config,
   // whether it came from xDS resolver or directly from service config
-  const FaultInjectionPolicy* fault_injection_policy(int index) const {
-    if (static_cast<size_t>(index) >= fault_injection_policies_.size()) {
+  const FaultInjectionPolicy* fault_injection_policy(size_t index) const {
+    if (index >= fault_injection_policies_.size()) {
       return nullptr;
     }
     return &fault_injection_policies_[index];
@@ -68,16 +83,20 @@ class FaultInjectionMethodParsedConfig
   std::vector<FaultInjectionPolicy> fault_injection_policies_;
 };
 
-class FaultInjectionServiceConfigParser : public ServiceConfigParser::Parser {
+class FaultInjectionServiceConfigParser final
+    : public ServiceConfigParser::Parser {
  public:
+  absl::string_view name() const override { return parser_name(); }
   // Parses the per-method service config for fault injection filter.
-  std::unique_ptr<ServiceConfigParser::ParsedConfig> ParsePerMethodParams(
-      const grpc_channel_args* args, const Json& json,
-      grpc_error_handle* error) override;
+  absl::StatusOr<std::unique_ptr<ServiceConfigParser::ParsedConfig>>
+  ParsePerMethodParams(const ChannelArgs& args, const Json& json) override;
   // Returns the parser index for FaultInjectionServiceConfigParser.
   static size_t ParserIndex();
   // Registers FaultInjectionServiceConfigParser to ServiceConfigParser.
-  static void Register();
+  static void Register(CoreConfiguration::Builder* builder);
+
+ private:
+  static absl::string_view parser_name() { return "fault_injection"; }
 };
 
 }  // namespace grpc_core

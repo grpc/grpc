@@ -149,8 +149,9 @@ class GcpApiManager:
 
         raise NotImplementedError(f'Network Services {version} not supported')
 
+    @staticmethod
     @functools.lru_cache(None)
-    def secrets(self, version):
+    def secrets(version: str):
         if version == 'v1':
             return secretmanager_v1.SecretManagerServiceClient()
 
@@ -263,7 +264,7 @@ class OperationError(Error):
     """
     api_name: str
     name: str
-    metadata: str
+    metadata: Any
     code_name: code_pb2.Code
     error: status_pb2.Status
 
@@ -327,7 +328,7 @@ class OperationError(Error):
 
 class GcpProjectApiResource:
     # TODO(sergiitk): move someplace better
-    _WAIT_FOR_OPERATION_SEC = 60 * 5
+    _WAIT_FOR_OPERATION_SEC = 60 * 10
     _WAIT_FIXED_SEC = 2
     _GCP_API_RETRIES = 5
 
@@ -431,21 +432,22 @@ class GcpStandardCloudApiResource(GcpProjectApiResource, metaclass=abc.ABCMeta):
         return False
 
     # TODO(sergiitk): Use ResponseError and TransportError
-    def _execute(self,
-                 request: HttpRequest,
-                 timeout_sec=GcpProjectApiResource._WAIT_FOR_OPERATION_SEC):
+    def _execute(  # pylint: disable=arguments-differ
+            self,
+            request: HttpRequest,
+            timeout_sec: int = GcpProjectApiResource._WAIT_FOR_OPERATION_SEC):
         operation = request.execute(num_retries=self._GCP_API_RETRIES)
-        self._wait(operation, timeout_sec)
+        logger.debug('Operation %s', operation)
+        self._wait(operation['name'], timeout_sec)
 
     def _wait(self,
-              operation,
-              timeout_sec=GcpProjectApiResource._WAIT_FOR_OPERATION_SEC):
-        op_name = operation['name']
-        logger.debug('Waiting for %s operation, timeout %s sec: %s',
-                     self.api_name, timeout_sec, op_name)
+              operation_id: str,
+              timeout_sec: int = GcpProjectApiResource._WAIT_FOR_OPERATION_SEC):
+        logger.info('Waiting %s sec for %s operation id: %s', timeout_sec,
+                    self.api_name, operation_id)
 
         op_request = self.api.projects().locations().operations().get(
-            name=op_name)
+            name=operation_id)
         operation = self.wait_for_operation(
             operation_request=op_request,
             test_success_fn=lambda result: result['done'],

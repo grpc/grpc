@@ -19,72 +19,74 @@
 
 #include "upb/port_def.inc"
 
-static const upb_msglayout_sub envoy_extensions_filters_http_fault_v3_FaultAbort_submsgs[2] = {
-  {.submsg = &envoy_extensions_filters_http_fault_v3_FaultAbort_HeaderAbort_msginit},
+static const upb_MiniTable_Sub envoy_extensions_filters_http_fault_v3_FaultAbort_submsgs[2] = {
   {.submsg = &envoy_type_v3_FractionalPercent_msginit},
+  {.submsg = &envoy_extensions_filters_http_fault_v3_FaultAbort_HeaderAbort_msginit},
 };
 
-static const upb_msglayout_field envoy_extensions_filters_http_fault_v3_FaultAbort__fields[4] = {
-  {2, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 0, 13, _UPB_MODE_SCALAR | (_UPB_REP_4BYTE << _UPB_REP_SHIFT)},
-  {3, UPB_SIZE(4, 8), 1, 1, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {4, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 0, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {5, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 0, 13, _UPB_MODE_SCALAR | (_UPB_REP_4BYTE << _UPB_REP_SHIFT)},
+static const upb_MiniTable_Field envoy_extensions_filters_http_fault_v3_FaultAbort__fields[4] = {
+  {2, UPB_SIZE(8, 16), UPB_SIZE(-5, -5), kUpb_NoSub, 13, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(12, 8), UPB_SIZE(1, 1), 0, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {4, UPB_SIZE(8, 16), UPB_SIZE(-5, -5), 1, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {5, UPB_SIZE(8, 16), UPB_SIZE(-5, -5), kUpb_NoSub, 13, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
 };
 
-const upb_msglayout envoy_extensions_filters_http_fault_v3_FaultAbort_msginit = {
+const upb_MiniTable envoy_extensions_filters_http_fault_v3_FaultAbort_msginit = {
   &envoy_extensions_filters_http_fault_v3_FaultAbort_submsgs[0],
   &envoy_extensions_filters_http_fault_v3_FaultAbort__fields[0],
-  UPB_SIZE(16, 32), 4, _UPB_MSGEXT_NONE, 0, 255,
+  UPB_SIZE(16, 24), 4, kUpb_ExtMode_NonExtendable, 0, 255, 0,
 };
 
-const upb_msglayout envoy_extensions_filters_http_fault_v3_FaultAbort_HeaderAbort_msginit = {
+const upb_MiniTable envoy_extensions_filters_http_fault_v3_FaultAbort_HeaderAbort_msginit = {
   NULL,
   NULL,
-  UPB_SIZE(0, 0), 0, _UPB_MSGEXT_NONE, 0, 255,
+  UPB_SIZE(0, 0), 0, kUpb_ExtMode_NonExtendable, 0, 255, 0,
 };
 
-static const upb_msglayout_sub envoy_extensions_filters_http_fault_v3_HTTPFault_submsgs[5] = {
-  {.submsg = &envoy_config_route_v3_HeaderMatcher_msginit},
+static const upb_MiniTable_Sub envoy_extensions_filters_http_fault_v3_HTTPFault_submsgs[5] = {
   {.submsg = &envoy_extensions_filters_common_fault_v3_FaultDelay_msginit},
-  {.submsg = &envoy_extensions_filters_common_fault_v3_FaultRateLimit_msginit},
   {.submsg = &envoy_extensions_filters_http_fault_v3_FaultAbort_msginit},
+  {.submsg = &envoy_config_route_v3_HeaderMatcher_msginit},
   {.submsg = &google_protobuf_UInt32Value_msginit},
+  {.submsg = &envoy_extensions_filters_common_fault_v3_FaultRateLimit_msginit},
 };
 
-static const upb_msglayout_field envoy_extensions_filters_http_fault_v3_HTTPFault__fields[15] = {
-  {1, UPB_SIZE(68, 136), 1, 1, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {2, UPB_SIZE(72, 144), 2, 3, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {3, UPB_SIZE(4, 8), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {4, UPB_SIZE(84, 168), 0, 0, 11, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {5, UPB_SIZE(88, 176), 0, 0, 9, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {6, UPB_SIZE(76, 152), 3, 4, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {7, UPB_SIZE(80, 160), 4, 2, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {8, UPB_SIZE(12, 24), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {9, UPB_SIZE(20, 40), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {10, UPB_SIZE(28, 56), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {11, UPB_SIZE(36, 72), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {12, UPB_SIZE(44, 88), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {13, UPB_SIZE(52, 104), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {14, UPB_SIZE(60, 120), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {15, UPB_SIZE(1, 1), 0, 0, 8, _UPB_MODE_SCALAR | (_UPB_REP_1BYTE << _UPB_REP_SHIFT)},
+static const upb_MiniTable_Field envoy_extensions_filters_http_fault_v3_HTTPFault__fields[15] = {
+  {1, UPB_SIZE(4, 8), UPB_SIZE(1, 1), 0, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(8, 16), UPB_SIZE(2, 2), 1, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(12, 24), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {4, UPB_SIZE(20, 40), UPB_SIZE(0, 0), 2, 11, kUpb_FieldMode_Array | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {5, UPB_SIZE(24, 48), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Array | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {6, UPB_SIZE(28, 56), UPB_SIZE(3, 3), 3, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {7, UPB_SIZE(32, 64), UPB_SIZE(4, 4), 4, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {8, UPB_SIZE(36, 72), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {9, UPB_SIZE(44, 88), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {10, UPB_SIZE(52, 104), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {11, UPB_SIZE(60, 120), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {12, UPB_SIZE(68, 136), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {13, UPB_SIZE(76, 152), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {14, UPB_SIZE(84, 168), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {15, UPB_SIZE(1, 1), UPB_SIZE(0, 0), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
 };
 
-const upb_msglayout envoy_extensions_filters_http_fault_v3_HTTPFault_msginit = {
+const upb_MiniTable envoy_extensions_filters_http_fault_v3_HTTPFault_msginit = {
   &envoy_extensions_filters_http_fault_v3_HTTPFault_submsgs[0],
   &envoy_extensions_filters_http_fault_v3_HTTPFault__fields[0],
-  UPB_SIZE(96, 192), 15, _UPB_MSGEXT_NONE, 15, 255,
+  UPB_SIZE(96, 184), 15, kUpb_ExtMode_NonExtendable, 15, 255, 0,
 };
 
-static const upb_msglayout *messages_layout[3] = {
+static const upb_MiniTable *messages_layout[3] = {
   &envoy_extensions_filters_http_fault_v3_FaultAbort_msginit,
   &envoy_extensions_filters_http_fault_v3_FaultAbort_HeaderAbort_msginit,
   &envoy_extensions_filters_http_fault_v3_HTTPFault_msginit,
 };
 
-const upb_msglayout_file envoy_extensions_filters_http_fault_v3_fault_proto_upb_file_layout = {
+const upb_MiniTable_File envoy_extensions_filters_http_fault_v3_fault_proto_upb_file_layout = {
   messages_layout,
   NULL,
+  NULL,
   3,
+  0,
   0,
 };
 

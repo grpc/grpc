@@ -32,7 +32,7 @@
 
 namespace grpc {
 
-class Alarm : private ::grpc::GrpcLibraryCodegen {
+class Alarm : private grpc::GrpcLibraryCodegen {
  public:
   /// Create an unset completion queue alarm
   Alarm();
@@ -48,8 +48,8 @@ class Alarm : private ::grpc::GrpcLibraryCodegen {
   /// internal::GrpcLibraryInitializer instance would need to be introduced
   /// here. \endinternal.
   template <typename T>
-  Alarm(::grpc::CompletionQueue* cq, const T& deadline, void* tag) : Alarm() {
-    SetInternal(cq, ::grpc::TimePoint<T>(deadline).raw_time(), tag);
+  Alarm(grpc::CompletionQueue* cq, const T& deadline, void* tag) : Alarm() {
+    SetInternal(cq, grpc::TimePoint<T>(deadline).raw_time(), tag);
   }
 
   /// Trigger an alarm instance on completion queue \a cq at the specified time.
@@ -61,8 +61,8 @@ class Alarm : private ::grpc::GrpcLibraryCodegen {
   // setting an immediate deadline. Such usage allows synchronizing an external
   // event with an application's \a grpc::CompletionQueue::Next loop.
   template <typename T>
-  void Set(::grpc::CompletionQueue* cq, const T& deadline, void* tag) {
-    SetInternal(cq, ::grpc::TimePoint<T>(deadline).raw_time(), tag);
+  void Set(grpc::CompletionQueue* cq, const T& deadline, void* tag) {
+    SetInternal(cq, grpc::TimePoint<T>(deadline).raw_time(), tag);
   }
 
   /// Alarms aren't copyable.
@@ -86,15 +86,14 @@ class Alarm : private ::grpc::GrpcLibraryCodegen {
   /// (false)
   template <typename T>
   void Set(const T& deadline, std::function<void(bool)> f) {
-    SetInternal(::grpc::TimePoint<T>(deadline).raw_time(), std::move(f));
+    SetInternal(grpc::TimePoint<T>(deadline).raw_time(), std::move(f));
   }
 
  private:
-  void SetInternal(::grpc::CompletionQueue* cq, gpr_timespec deadline,
-                   void* tag);
+  void SetInternal(grpc::CompletionQueue* cq, gpr_timespec deadline, void* tag);
   void SetInternal(gpr_timespec deadline, std::function<void(bool)> f);
 
-  ::grpc::internal::CompletionQueueTag* alarm_;
+  grpc::internal::CompletionQueueTag* alarm_;
 };
 
 }  // namespace grpc

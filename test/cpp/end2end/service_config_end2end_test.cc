@@ -55,6 +55,7 @@
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
+#include "src/core/lib/service_config/service_config_impl.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "src/cpp/server/secure_server_credentials.h"
@@ -183,7 +184,7 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
       grpc_resolved_address address;
       GPR_ASSERT(grpc_parse_uri(*lb_uri, &address));
       result.addresses->emplace_back(address.addr, address.len,
-                                     nullptr /* args */);
+                                     grpc_core::ChannelArgs());
     }
     return result;
   }
@@ -197,10 +198,9 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
   void SetNextResolutionValidServiceConfig(const std::vector<int>& ports) {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Resolver::Result result = BuildFakeResults(ports);
-    grpc_error_handle error = GRPC_ERROR_NONE;
     result.service_config =
-        grpc_core::ServiceConfig::Create(nullptr, "{}", &error);
-    ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
+        grpc_core::ServiceConfigImpl::Create(grpc_core::ChannelArgs(), "{}");
+    ASSERT_TRUE(result.service_config.ok()) << result.service_config.status();
     response_generator_->SetResponse(result);
   }
 
@@ -216,13 +216,8 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
                                           const char* svc_cfg) {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Resolver::Result result = BuildFakeResults(ports);
-    grpc_error_handle error = GRPC_ERROR_NONE;
     result.service_config =
-        grpc_core::ServiceConfig::Create(nullptr, svc_cfg, &error);
-    if (error != GRPC_ERROR_NONE) {
-      result.service_config = grpc_error_to_absl_status(error);
-      GRPC_ERROR_UNREF(error);
-    }
+        grpc_core::ServiceConfigImpl::Create(grpc_core::ChannelArgs(), svc_cfg);
     response_generator_->SetResponse(result);
   }
 
@@ -243,7 +238,7 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
     ChannelArguments args;
     args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
                     response_generator_.get());
-    return ::grpc::CreateCustomChannel("fake:///", creds_, args);
+    return grpc::CreateCustomChannel("fake:///", creds_, args);
   }
 
   std::shared_ptr<Channel> BuildChannelWithDefaultServiceConfig() {
@@ -254,7 +249,7 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
     args.SetServiceConfigJSON(ValidDefaultServiceConfig());
     args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
                     response_generator_.get());
-    return ::grpc::CreateCustomChannel("fake:///", creds_, args);
+    return grpc::CreateCustomChannel("fake:///", creds_, args);
   }
 
   std::shared_ptr<Channel> BuildChannelWithInvalidDefaultServiceConfig() {
@@ -265,7 +260,7 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
     args.SetServiceConfigJSON(InvalidDefaultServiceConfig());
     args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
                     response_generator_.get());
-    return ::grpc::CreateCustomChannel("fake:///", creds_, args);
+    return grpc::CreateCustomChannel("fake:///", creds_, args);
   }
 
   bool SendRpc(
@@ -624,7 +619,7 @@ TEST_F(ServiceConfigEnd2endTest,
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   const auto result = RUN_ALL_TESTS();
   return result;
 }

@@ -19,31 +19,41 @@ extern "C" {
 
 #include "upb/port_def.inc"
 
-extern upb_def_init envoy_config_core_v3_config_source_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_core_v3_config_source_proto_upbdefinit;
 
-UPB_INLINE const upb_msgdef *envoy_config_core_v3_ApiConfigSource_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_core_v3_config_source_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.core.v3.ApiConfigSource");
+UPB_INLINE const upb_MessageDef *envoy_config_core_v3_ApiConfigSource_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_core_v3_config_source_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.core.v3.ApiConfigSource");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_core_v3_AggregatedConfigSource_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_core_v3_config_source_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.core.v3.AggregatedConfigSource");
+UPB_INLINE const upb_MessageDef *envoy_config_core_v3_AggregatedConfigSource_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_core_v3_config_source_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.core.v3.AggregatedConfigSource");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_core_v3_SelfConfigSource_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_core_v3_config_source_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.core.v3.SelfConfigSource");
+UPB_INLINE const upb_MessageDef *envoy_config_core_v3_SelfConfigSource_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_core_v3_config_source_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.core.v3.SelfConfigSource");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_core_v3_RateLimitSettings_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_core_v3_config_source_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.core.v3.RateLimitSettings");
+UPB_INLINE const upb_MessageDef *envoy_config_core_v3_RateLimitSettings_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_core_v3_config_source_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.core.v3.RateLimitSettings");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_core_v3_ConfigSource_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_core_v3_config_source_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.core.v3.ConfigSource");
+UPB_INLINE const upb_MessageDef *envoy_config_core_v3_PathConfigSource_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_core_v3_config_source_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.core.v3.PathConfigSource");
+}
+
+UPB_INLINE const upb_MessageDef *envoy_config_core_v3_ConfigSource_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_core_v3_config_source_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.core.v3.ConfigSource");
+}
+
+UPB_INLINE const upb_MessageDef *envoy_config_core_v3_ExtensionConfigSource_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_core_v3_config_source_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.core.v3.ExtensionConfigSource");
 }
 
 #ifdef __cplusplus

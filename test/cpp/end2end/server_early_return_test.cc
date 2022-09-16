@@ -44,7 +44,7 @@ const char kServerReturnStatusCode[] = "server_return_status_code";
 const char kServerDelayBeforeReturnUs[] = "server_delay_before_return_us";
 const char kServerReturnAfterNReads[] = "server_return_after_n_reads";
 
-class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
+class TestServiceImpl : public grpc::testing::EchoTestService::Service {
  public:
   // Unused methods are not implemented.
 
@@ -226,7 +226,7 @@ TEST_F(ServerEarlyReturnTest, RequestStreamEarlyCancel) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

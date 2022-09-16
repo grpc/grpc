@@ -10,8 +10,8 @@
 #include "xds/core/v3/extension.upbdefs.h"
 #include "xds/core/v3/extension.upb.h"
 
-extern upb_def_init validate_validate_proto_upbdefinit;
-extern upb_def_init google_protobuf_any_proto_upbdefinit;
+extern _upb_DefPool_Init validate_validate_proto_upbdefinit;
+extern _upb_DefPool_Init google_protobuf_any_proto_upbdefinit;
 static const char descriptor[302] = {'\n', '\033', 'x', 'd', 's', '/', 'c', 'o', 'r', 'e', '/', 'v', '3', '/', 'e', 'x', 't', 'e', 'n', 's', 'i', 'o', 'n', '.', 'p', 
 'r', 'o', 't', 'o', '\022', '\013', 'x', 'd', 's', '.', 'c', 'o', 'r', 'e', '.', 'v', '3', '\032', '\027', 'v', 'a', 'l', 'i', 'd', 'a', 
 't', 'e', '/', 'v', 'a', 'l', 'i', 'd', 'a', 't', 'e', '.', 'p', 'r', 'o', 't', 'o', '\032', '\031', 'g', 'o', 'o', 'g', 'l', 'e', 
@@ -27,15 +27,15 @@ static const char descriptor[302] = {'\n', '\033', 'x', 'd', 's', '/', 'c', 'o',
 'o', '3', 
 };
 
-static upb_def_init *deps[3] = {
+static _upb_DefPool_Init *deps[3] = {
   &validate_validate_proto_upbdefinit,
   &google_protobuf_any_proto_upbdefinit,
   NULL
 };
 
-upb_def_init xds_core_v3_extension_proto_upbdefinit = {
+_upb_DefPool_Init xds_core_v3_extension_proto_upbdefinit = {
   deps,
   &xds_core_v3_extension_proto_upb_file_layout,
   "xds/core/v3/extension.proto",
-  UPB_STRVIEW_INIT(descriptor, 302)
+  UPB_STRINGVIEW_INIT(descriptor, 302)
 };

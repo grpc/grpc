@@ -21,15 +21,15 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/grpc.h>
+#include <grpc/status.h>
 
-#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/transport/http2_errors.h"
 
 /* Conversion of grpc status codes to http2 error codes (for RST_STREAM) */
 grpc_http2_error_code grpc_status_to_http2_error(grpc_status_code status);
 grpc_status_code grpc_http2_error_to_grpc_status(grpc_http2_error_code error,
-                                                 grpc_millis deadline);
+                                                 grpc_core::Timestamp deadline);
 
 /* Conversion of HTTP status codes (:status) to grpc status codes */
 grpc_status_code grpc_http2_status_to_grpc_status(int status);

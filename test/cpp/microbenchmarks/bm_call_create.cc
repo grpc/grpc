@@ -38,11 +38,12 @@
 #include "src/core/ext/filters/http/message_compress/message_compress_filter.h"
 #include "src/core/ext/filters/http/server/http_server_filter.h"
 #include "src/core/ext/filters/message_size/message_size_filter.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/channel_stack_builder_impl.h"
 #include "src/core/lib/channel/connected_channel.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/call_combiner.h"
-#include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/transport_impl.h"
@@ -154,7 +155,6 @@ static void BM_LameChannelCallCreateCpp(benchmark::State& state) {
   grpc::testing::EchoResponse recv_response;
   grpc::Status recv_status;
   for (auto _ : state) {
-    GPR_TIMER_SCOPE("BenchmarkCycle", 0);
     grpc::ClientContext cli_ctx;
     auto reader = stub->AsyncEcho(&cli_ctx, send_request, &cq);
     reader->Finish(&recv_response, &recv_status, tag(0));
@@ -189,7 +189,6 @@ static void BM_LameChannelCallCreateCore(benchmark::State& state) {
   void* rc = grpc_channel_register_call(
       channel, "/grpc.testing.EchoTestService/Echo", nullptr, nullptr);
   for (auto _ : state) {
-    GPR_TIMER_SCOPE("BenchmarkCycle", 0);
     grpc_call* call = grpc_channel_create_registered_call(
         channel, nullptr, GRPC_PROPAGATE_DEFAULTS, cq, rc,
         gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
@@ -263,7 +262,6 @@ static void BM_LameChannelCallCreateCoreSeparateBatch(benchmark::State& state) {
   void* rc = grpc_channel_register_call(
       channel, "/grpc.testing.EchoTestService/Echo", nullptr, nullptr);
   for (auto _ : state) {
-    GPR_TIMER_SCOPE("BenchmarkCycle", 0);
     grpc_call* call = grpc_channel_create_registered_call(
         channel, nullptr, GRPC_PROPAGATE_DEFAULTS, cq, rc,
         gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
@@ -336,18 +334,10 @@ class FakeClientChannelFactory : public grpc_core::ClientChannelFactory {
  public:
   grpc_core::RefCountedPtr<grpc_core::Subchannel> CreateSubchannel(
       const grpc_resolved_address& /*address*/,
-      const grpc_channel_args* /*args*/) override {
+      const grpc_core::ChannelArgs& /*args*/) override {
     return nullptr;
   }
 };
-
-static grpc_arg StringArg(const char* key, const char* value) {
-  grpc_arg a;
-  a.type = GRPC_ARG_STRING;
-  a.key = const_cast<char*>(key);
-  a.value.string = const_cast<char*>(value);
-  return a;
-}
 
 enum FixtureFlags : uint32_t {
   CHECKS_NOT_LAST = 1,
@@ -395,8 +385,9 @@ static const grpc_channel_filter phony_filter = {
     StartTransportOp,       0,
     InitCallElem,           SetPollsetOrPollsetSet,
     DestroyCallElem,        0,
-    InitChannelElem,        DestroyChannelElem,
-    GetChannelInfo,         "phony_filter"};
+    InitChannelElem,        grpc_channel_stack_no_post_init,
+    DestroyChannelElem,     GetChannelInfo,
+    "phony_filter"};
 
 }  // namespace phony_filter
 
@@ -522,15 +513,13 @@ static void BM_IsolatedFilter(benchmark::State& state) {
   std::ostringstream label;
   FakeClientChannelFactory fake_client_channel_factory;
 
-  std::vector<grpc_arg> args = {
-      grpc_core::ClientChannelFactory::CreateChannelArg(
-          &fake_client_channel_factory),
-      StringArg(GRPC_ARG_SERVER_URI, "localhost"),
-  };
+  grpc_core::ChannelArgs channel_args =
+      grpc_core::ChannelArgs()
+          .SetObject(&fake_client_channel_factory)
+          .Set(GRPC_ARG_SERVER_URI, "localhost");
   if (fixture.flags & REQUIRES_TRANSPORT) {
-    args.push_back(phony_transport::Arg());
+    channel_args = channel_args.Set(phony_transport::Arg());
   }
-  grpc_channel_args channel_args = {args.size(), args.data()};
 
   std::vector<const grpc_channel_filter*> filters;
   if (fixture.filter != nullptr) {
@@ -550,17 +539,17 @@ static void BM_IsolatedFilter(benchmark::State& state) {
       "channel_stack_init",
       grpc_channel_stack_init(1, FilterDestroy, channel_stack,
                               filters.empty() ? nullptr : &filters[0],
-                              filters.size(), &channel_args, "CHANNEL",
-                              channel_stack)));
+                              filters.size(), channel_args.ToC().get(),
+                              "CHANNEL", channel_stack)));
   grpc_core::ExecCtx::Get()->Flush();
   grpc_call_stack* call_stack =
       static_cast<grpc_call_stack*>(gpr_zalloc(channel_stack->call_stack_size));
-  grpc_millis deadline = GRPC_MILLIS_INF_FUTURE;
+  grpc_core::Timestamp deadline = grpc_core::Timestamp::InfFuture();
   gpr_cycle_counter start_time = gpr_get_cycle_counter();
   grpc_slice method = grpc_slice_from_static_string("/foo/bar");
   grpc_call_final_info final_info;
   TestOp test_op_data;
-  const int kArenaSize = 4096;
+  const int kArenaSize = 32 * 1024 * 1024;
   grpc_call_context_element context[GRPC_CONTEXT_COUNT] = {};
   grpc_call_element_args call_args{
       call_stack,
@@ -572,7 +561,6 @@ static void BM_IsolatedFilter(benchmark::State& state) {
       grpc_core::Arena::Create(kArenaSize, g_memory_allocator),
       nullptr};
   while (state.KeepRunning()) {
-    GPR_TIMER_SCOPE("BenchmarkCycle", 0);
     GRPC_ERROR_UNREF(
         grpc_call_stack_init(channel_stack, 1, DoNothing, nullptr, &call_args));
     typename TestOp::Op op(&test_op_data, call_stack, call_args.arena);
@@ -616,11 +604,13 @@ typedef Fixture<&grpc_server_deadline_filter, CHECKS_NOT_LAST>
     ServerDeadlineFilter;
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, ServerDeadlineFilter, NoOp);
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, ServerDeadlineFilter, SendEmptyMetadata);
-typedef Fixture<&grpc_http_client_filter, CHECKS_NOT_LAST | REQUIRES_TRANSPORT>
+typedef Fixture<&grpc_core::HttpClientFilter::kFilter,
+                CHECKS_NOT_LAST | REQUIRES_TRANSPORT>
     HttpClientFilter;
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, HttpClientFilter, NoOp);
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, HttpClientFilter, SendEmptyMetadata);
-typedef Fixture<&grpc_http_server_filter, CHECKS_NOT_LAST> HttpServerFilter;
+typedef Fixture<&grpc_core::HttpServerFilter::kFilter, CHECKS_NOT_LAST>
+    HttpServerFilter;
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, HttpServerFilter, NoOp);
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, HttpServerFilter, SendEmptyMetadata);
 typedef Fixture<&grpc_message_size_filter, CHECKS_NOT_LAST> MessageSizeFilter;
@@ -670,7 +660,7 @@ static void StartTransportStreamOp(grpc_call_element* elem,
 
 static void StartTransportOp(grpc_channel_element* /*elem*/,
                              grpc_transport_op* op) {
-  if (op->disconnect_with_error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(op->disconnect_with_error)) {
     GRPC_ERROR_UNREF(op->disconnect_with_error);
   }
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, op->on_consumed, GRPC_ERROR_NONE);
@@ -707,8 +697,9 @@ static const grpc_channel_filter isolated_call_filter = {
     StartTransportOp,       sizeof(call_data),
     InitCallElem,           SetPollsetOrPollsetSet,
     DestroyCallElem,        0,
-    InitChannelElem,        DestroyChannelElem,
-    GetChannelInfo,         "isolated_call_filter"};
+    InitChannelElem,        grpc_channel_stack_no_post_init,
+    DestroyChannelElem,     GetChannelInfo,
+    "isolated_call_filter"};
 }  // namespace isolated_call_filter
 
 class IsolatedCallFixture : public TrackCounters {
@@ -720,20 +711,19 @@ class IsolatedCallFixture : public TrackCounters {
     // the grpc_shutdown() run by grpc_channel_destroy().  So we need to
     // call grpc_init() manually here to balance things out.
     grpc_init();
-    const grpc_channel_args* args = grpc_core::CoreConfiguration::Get()
-                                        .channel_args_preconditioning()
-                                        .PreconditionChannelArgs(nullptr);
-    grpc_core::ChannelStackBuilder builder("phony");
+    auto args = grpc_core::CoreConfiguration::Get()
+                    .channel_args_preconditioning()
+                    .PreconditionChannelArgs(nullptr);
+    grpc_core::ChannelStackBuilderImpl builder("phony", GRPC_CLIENT_CHANNEL);
     builder.SetTarget("phony_target");
     builder.SetChannelArgs(args);
-    builder.AppendFilter(&isolated_call_filter::isolated_call_filter, nullptr);
+    builder.AppendFilter(&isolated_call_filter::isolated_call_filter);
     {
       grpc_core::ExecCtx exec_ctx;
-      channel_ = grpc_channel_create_with_builder(&builder, GRPC_CLIENT_CHANNEL,
-                                                  nullptr);
+      channel_ =
+          grpc_core::Channel::CreateWithBuilder(&builder)->release()->c_ptr();
     }
     cq_ = grpc_completion_queue_create_for_next(nullptr);
-    grpc_channel_args_destroy(args);
   }
 
   void Finish(benchmark::State& state) override {
@@ -756,7 +746,6 @@ static void BM_IsolatedCall_NoOp(benchmark::State& state) {
   void* method_hdl = grpc_channel_register_call(fixture.channel(), "/foo/bar",
                                                 nullptr, nullptr);
   for (auto _ : state) {
-    GPR_TIMER_SCOPE("BenchmarkCycle", 0);
     grpc_call_unref(grpc_channel_create_registered_call(
         fixture.channel(), nullptr, GRPC_PROPAGATE_DEFAULTS, fixture.cq(),
         method_hdl, deadline, nullptr));
@@ -795,7 +784,6 @@ static void BM_IsolatedCall_Unary(benchmark::State& state) {
   ops[5].data.recv_status_on_client.status_details = &status_details;
   ops[5].data.recv_status_on_client.trailing_metadata = &recv_trailing_metadata;
   for (auto _ : state) {
-    GPR_TIMER_SCOPE("BenchmarkCycle", 0);
     grpc_call* call = grpc_channel_create_registered_call(
         fixture.channel(), nullptr, GRPC_PROPAGATE_DEFAULTS, fixture.cq(),
         method_hdl, deadline, nullptr);
@@ -838,7 +826,6 @@ static void BM_IsolatedCall_StreamingSend(benchmark::State& state) {
   ops[0].op = GRPC_OP_SEND_MESSAGE;
   ops[0].data.send_message.send_message = send_message;
   for (auto _ : state) {
-    GPR_TIMER_SCOPE("BenchmarkCycle", 0);
     grpc_call_start_batch(call, ops, 1, tag(2), nullptr);
     grpc_completion_queue_next(fixture.cq(),
                                gpr_inf_future(GPR_CLOCK_MONOTONIC), nullptr);
@@ -858,10 +845,10 @@ void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 }  // namespace benchmark
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   LibraryInitializer libInit;
   ::benchmark::Initialize(&argc, argv);
-  ::grpc::testing::InitTest(&argc, &argv, false);
+  grpc::testing::InitTest(&argc, &argv, false);
   benchmark::RunTheBenchmarksNamespaced();
   return 0;
 }

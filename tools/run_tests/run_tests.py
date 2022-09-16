@@ -63,7 +63,7 @@ _FORCE_ENVIRON_FOR_WRAPPERS = {
 }
 
 _POLLING_STRATEGIES = {
-    'linux': ['epollex', 'epoll1', 'poll'],
+    'linux': ['epoll1', 'poll'],
     'mac': ['poll'],
 }
 
@@ -252,25 +252,18 @@ class CLanguage(object):
             _check_compiler(self.args.compiler, [
                 'default',
                 'cmake',
-                'cmake_ninja_vs2015',
                 'cmake_ninja_vs2017',
-                'cmake_vs2015',
                 'cmake_vs2017',
                 'cmake_vs2019',
             ])
             _check_arch(self.args.arch, ['default', 'x64', 'x86'])
 
             activate_vs_tools = ''
-            if self.args.compiler == 'cmake_ninja_vs2015' or self.args.compiler == 'cmake' or self.args.compiler == 'default':
+            if self.args.compiler == 'cmake_ninja_vs2017' or self.args.compiler == 'cmake' or self.args.compiler == 'default':
                 # cmake + ninja build is the default because it is faster and supports boringssl assembly optimizations
-                # the compiler used is exactly the same as for cmake_vs2015
-                cmake_generator = 'Ninja'
-                activate_vs_tools = '2015'
-            elif self.args.compiler == 'cmake_ninja_vs2017':
+                # the compiler used is exactly the same as for cmake_vs2017
                 cmake_generator = 'Ninja'
                 activate_vs_tools = '2017'
-            elif self.args.compiler == 'cmake_vs2015':
-                cmake_generator = 'Visual Studio 14 2015'
             elif self.args.compiler == 'cmake_vs2017':
                 cmake_generator = 'Visual Studio 15 2017'
             elif self.args.compiler == 'cmake_vs2019':
@@ -291,7 +284,7 @@ class CLanguage(object):
             if self.platform == 'linux':
                 # Allow all the known architectures. _check_arch_option has already checked that we're not doing
                 # something illegal when not running under docker.
-                _check_arch(self.args.arch, ['default', 'x64', 'x86'])
+                _check_arch(self.args.arch, ['default', 'x64', 'x86', 'arm64'])
             else:
                 _check_arch(self.args.arch, ['default'])
 
@@ -484,20 +477,20 @@ class CLanguage(object):
 
         if compiler == 'default' or compiler == 'cmake':
             return ('debian11', [])
-        elif compiler == 'gcc5':
-            return ('gcc_5', [])
+        elif compiler == 'gcc7':
+            return ('gcc_7', [])
         elif compiler == 'gcc10.2':
             return ('debian11', [])
         elif compiler == 'gcc10.2_openssl102':
             return ('debian11_openssl102', [
                 "-DgRPC_SSL_PROVIDER=package",
             ])
-        elif compiler == 'gcc11':
-            return ('gcc_11', [])
+        elif compiler == 'gcc12':
+            return ('gcc_12', ["-DCMAKE_CXX_STANDARD=20"])
         elif compiler == 'gcc_musl':
             return ('alpine', [])
-        elif compiler == 'clang4':
-            return ('clang_4', self._clang_cmake_configure_extra_args())
+        elif compiler == 'clang6':
+            return ('clang_6', self._clang_cmake_configure_extra_args())
         elif compiler == 'clang13':
             return ('clang_13', self._clang_cmake_configure_extra_args())
         else:
@@ -651,10 +644,6 @@ class PythonLanguage(object):
             if io_platform != 'native':
                 environment['GRPC_ENABLE_FORK_SUPPORT'] = '0'
             for python_config in self.pythons:
-                # TODO(https://github.com/grpc/grpc/issues/23784) allow gevent
-                # to run on later version once issue solved.
-                if io_platform == 'gevent' and python_config.name != 'py36':
-                    continue
                 jobs.extend([
                     self.config.job_spec(
                         python_config.run + [self._TEST_COMMAND[io_platform]],
@@ -734,11 +723,6 @@ class PythonLanguage(object):
         config_vars = _PythonConfigVars(shell, builder,
                                         builder_prefix_arguments,
                                         venv_relative_python, toolchain, runner)
-        python36_config = _python_config_generator(name='py36',
-                                                   major='3',
-                                                   minor='6',
-                                                   bits=bits,
-                                                   config_vars=config_vars)
         python37_config = _python_config_generator(name='py37',
                                                    major='3',
                                                    minor='7',
@@ -774,13 +758,16 @@ class PythonLanguage(object):
                 # MacOS, so we restrict the number of interpreter versions
                 # tested.
                 return (python38_config,)
+            elif platform.machine() == 'aarch64':
+                # Currently the python_debian11_default_arm64 docker image
+                # only has python3.9 installed (and that seems sufficient
+                # for arm64 testing)
+                return (python39_config,)
             else:
                 return (
-                    python36_config,
+                    python37_config,
                     python38_config,
                 )
-        elif args.compiler == 'python3.6':
-            return (python36_config,)
         elif args.compiler == 'python3.7':
             return (python37_config,)
         elif args.compiler == 'python3.8':
@@ -797,7 +784,6 @@ class PythonLanguage(object):
             return (python38_config,)
         elif args.compiler == 'all_the_cpythons':
             return (
-                python36_config,
                 python37_config,
                 python38_config,
                 python39_config,
@@ -823,11 +809,15 @@ class RubyLanguage(object):
                                  timeout_seconds=10 * 60,
                                  environ=_FORCE_ENVIRON_FOR_WRAPPERS)
         ]
+        # TODO(apolcyn): re-enable the following tests after
+        # https://bugs.ruby-lang.org/issues/15499 is fixed:
+        # They previously worked on ruby 2.5 but needed to be disabled
+        # after dropping support for ruby 2.5:
+        #   - src/ruby/end2end/channel_state_test.rb
+        #   - src/ruby/end2end/sig_int_during_channel_watch_test.rb
         for test in [
                 'src/ruby/end2end/sig_handling_test.rb',
-                'src/ruby/end2end/channel_state_test.rb',
                 'src/ruby/end2end/channel_closing_test.rb',
-                'src/ruby/end2end/sig_int_during_channel_watch_test.rb',
                 'src/ruby/end2end/killed_client_thread_test.rb',
                 'src/ruby/end2end/forking_client_test.rb',
                 'src/ruby/end2end/grpc_class_init_test.rb',
@@ -902,11 +892,11 @@ class CSharpLanguage(object):
 
         specs = []
         for test_runtime in self.test_runtimes:
-            if self.args.compiler == 'coreclr':
+            if test_runtime == 'coreclr':
                 assembly_extension = '.dll'
                 assembly_subdir = 'bin/%s/netcoreapp3.1' % msbuild_config
                 runtime_cmd = ['dotnet', 'exec']
-            else:
+            elif test_runtime == 'mono':
                 assembly_extension = '.exe'
                 assembly_subdir = 'bin/%s/net45' % msbuild_config
                 if self.platform == 'windows':
@@ -916,6 +906,8 @@ class CSharpLanguage(object):
                     runtime_cmd = ['mono', '--arch=64']
                 else:
                     runtime_cmd = ['mono']
+            else:
+                raise Exception('Illegal runtime "%s" was specified.')
 
             for assembly in six.iterkeys(tests_by_assembly):
                 assembly_file = 'src/csharp/%s/%s/%s%s' % (
@@ -974,18 +966,8 @@ class ObjCLanguage(object):
 
     def test_specs(self):
         out = []
-        out.append(
-            self.config.job_spec(
-                ['src/objective-c/tests/build_one_example_bazel.sh'],
-                timeout_seconds=10 * 60,
-                shortname='ios-buildtest-example-sample',
-                cpu_cost=1e6,
-                environ={
-                    'SCHEME': 'Sample',
-                    'EXAMPLE_PATH': 'src/objective-c/examples/Sample',
-                    'FRAMEWORKS': 'NO'
-                }))
         # Currently not supporting compiling as frameworks in Bazel
+        # TODO(jtattermusch): verify the above claim is still accurate.
         out.append(
             self.config.job_spec(
                 ['src/objective-c/tests/build_one_example.sh'],
@@ -997,6 +979,7 @@ class ObjCLanguage(object):
                     'EXAMPLE_PATH': 'src/objective-c/examples/Sample',
                     'FRAMEWORKS': 'YES'
                 }))
+        # TODO(jtattermusch): Create bazel target for the sample and remove the test task from here.
         out.append(
             self.config.job_spec(
                 ['src/objective-c/tests/build_one_example.sh'],
@@ -1006,17 +989,6 @@ class ObjCLanguage(object):
                 environ={
                     'SCHEME': 'SwiftSample',
                     'EXAMPLE_PATH': 'src/objective-c/examples/SwiftSample'
-                }))
-        out.append(
-            self.config.job_spec(
-                ['src/objective-c/tests/build_one_example_bazel.sh'],
-                timeout_seconds=10 * 60,
-                shortname='ios-buildtest-example-tvOS-sample',
-                cpu_cost=1e6,
-                environ={
-                    'SCHEME': 'tvOS-sample',
-                    'EXAMPLE_PATH': 'src/objective-c/examples/tvOS-sample',
-                    'FRAMEWORKS': 'NO'
                 }))
         # Disabled due to #20258
         # TODO (mxyan): Reenable this test when #20258 is resolved.
@@ -1031,19 +1003,9 @@ class ObjCLanguage(object):
         #             'EXAMPLE_PATH': 'src/objective-c/examples/watchOS-sample',
         #             'FRAMEWORKS': 'NO'
         #         }))
-        out.append(
-            self.config.job_spec(['src/objective-c/tests/run_plugin_tests.sh'],
-                                 timeout_seconds=60 * 60,
-                                 shortname='ios-test-plugintest',
-                                 cpu_cost=1e6,
-                                 environ=_FORCE_ENVIRON_FOR_WRAPPERS))
-        out.append(
-            self.config.job_spec(
-                ['src/objective-c/tests/run_plugin_option_tests.sh'],
-                timeout_seconds=60 * 60,
-                shortname='ios-test-plugin-option-test',
-                cpu_cost=1e6,
-                environ=_FORCE_ENVIRON_FOR_WRAPPERS))
+
+        # TODO(jtattermusch): move the test out of the test/core/iomgr/CFStreamTests directory?
+        # How does one add the cfstream dependency in bazel?
         out.append(
             self.config.job_spec(
                 ['test/core/iomgr/ios/CFStreamTests/build_and_run_tests.sh'],
@@ -1051,59 +1013,38 @@ class ObjCLanguage(object):
                 shortname='ios-test-cfstream-tests',
                 cpu_cost=1e6,
                 environ=_FORCE_ENVIRON_FOR_WRAPPERS))
-        out.append(
-            self.config.job_spec(
-                ['src/objective-c/tests/CoreTests/build_and_run_tests.sh'],
-                timeout_seconds=60 * 60,
-                shortname='ios-test-core-tests',
-                cpu_cost=1e6,
-                environ=_FORCE_ENVIRON_FOR_WRAPPERS))
-        # TODO: replace with run_one_test_bazel.sh when Bazel-Xcode is stable
-        out.append(
-            self.config.job_spec(['src/objective-c/tests/run_one_test.sh'],
-                                 timeout_seconds=60 * 60,
-                                 shortname='ios-test-unittests',
-                                 cpu_cost=1e6,
-                                 environ={'SCHEME': 'UnitTests'}))
-        out.append(
-            self.config.job_spec(['src/objective-c/tests/run_one_test.sh'],
-                                 timeout_seconds=60 * 60,
-                                 shortname='ios-test-interoptests',
-                                 cpu_cost=1e6,
-                                 environ={'SCHEME': 'InteropTests'}))
+        # TODO(jtattermusch): Create bazel target for the test and remove the test from here
+        # (how does one add the cronet dependency in bazel?)
         out.append(
             self.config.job_spec(['src/objective-c/tests/run_one_test.sh'],
                                  timeout_seconds=60 * 60,
                                  shortname='ios-test-cronettests',
                                  cpu_cost=1e6,
                                  environ={'SCHEME': 'CronetTests'}))
+        # TODO(jtattermusch): Create bazel target for the test and remove the test from here.
         out.append(
             self.config.job_spec(['src/objective-c/tests/run_one_test.sh'],
                                  timeout_seconds=30 * 60,
                                  shortname='ios-perf-test',
                                  cpu_cost=1e6,
                                  environ={'SCHEME': 'PerfTests'}))
+        # TODO(jtattermusch): Clarify what's the difference between PerfTests and PerfTestsPosix
+        # TODO(jtattermusch): Create bazel target for the test and remove the test from here.
         out.append(
             self.config.job_spec(['src/objective-c/tests/run_one_test.sh'],
                                  timeout_seconds=30 * 60,
                                  shortname='ios-perf-test-posix',
                                  cpu_cost=1e6,
                                  environ={'SCHEME': 'PerfTestsPosix'}))
+        # TODO(jtattermusch): Create bazel target for the test (how does one add the cronet dependency in bazel?)
+        # TODO(jtattermusch): move the test out of the test/cpp/ios directory?
         out.append(
             self.config.job_spec(['test/cpp/ios/build_and_run_tests.sh'],
                                  timeout_seconds=60 * 60,
                                  shortname='ios-cpp-test-cronet',
                                  cpu_cost=1e6,
                                  environ=_FORCE_ENVIRON_FOR_WRAPPERS))
-        out.append(
-            self.config.job_spec(['src/objective-c/tests/run_one_test.sh'],
-                                 timeout_seconds=60 * 60,
-                                 shortname='mac-test-basictests',
-                                 cpu_cost=1e6,
-                                 environ={
-                                     'SCHEME': 'MacTests',
-                                     'PLATFORM': 'macos'
-                                 }))
+        # TODO(jtattermusch): Make sure the //src/objective-c/tests:TvTests bazel test passes and remove the test from here.
         out.append(
             self.config.job_spec(['src/objective-c/tests/run_one_test.sh'],
                                  timeout_seconds=30 * 60,
@@ -1150,6 +1091,7 @@ class Sanity(object):
             if _is_use_docker_child():
                 environ['CLANG_FORMAT_SKIP_DOCKER'] = 'true'
                 environ['CLANG_TIDY_SKIP_DOCKER'] = 'true'
+                environ['IWYU_SKIP_DOCKER'] = 'true'
                 # sanity tests run tools/bazel wrapper concurrently
                 # and that can result in a download/run race in the wrapper.
                 # under docker we already have the right version of bazel
@@ -1234,12 +1176,15 @@ def _check_arch_option(arch):
         _windows_arch_option(arch)
     elif platform_string() == 'linux':
         # On linux, we need to be running under docker with the right architecture.
+        runtime_machine = platform.machine()
         runtime_arch = platform.architecture()[0]
         if arch == 'default':
             return
-        elif runtime_arch == '64bit' and arch == 'x64':
+        elif runtime_machine == 'x86_64' and runtime_arch == '64bit' and arch == 'x64':
             return
-        elif runtime_arch == '32bit' and arch == 'x86':
+        elif runtime_machine == 'x86_64' and runtime_arch == '32bit' and arch == 'x86':
+            return
+        elif runtime_machine == 'aarch64' and runtime_arch == '64bit' and arch == 'arm64':
             return
         else:
             print(
@@ -1259,6 +1204,8 @@ def _docker_arch_suffix(arch):
         return 'x64'
     elif arch == 'x86':
         return 'x86'
+    elif arch == 'arm64':
+        return 'arm64'
     else:
         print('Architecture %s not supported with current settings.' % arch)
         sys.exit(1)
@@ -1331,20 +1278,6 @@ def _calculate_num_runs_failures(list_of_results):
     return num_runs, num_failures
 
 
-def _has_epollexclusive():
-    binary = 'cmake/build/check_epollexclusive'
-    if not os.path.exists(binary):
-        return False
-    try:
-        subprocess.check_call(binary)
-        return True
-    except subprocess.CalledProcessError as e:
-        return False
-    except OSError as e:
-        # For languages other than C and Windows the binary won't exist
-        return False
-
-
 class BuildAndRunError(object):
     """Represents error type in _build_and_run."""
 
@@ -1373,12 +1306,6 @@ def _build_and_run(check_cancelled,
             report_utils.render_junit_xml_report(
                 resultset, xml_report, suite_name=args.report_suite_name)
         return []
-
-    if not args.travis and not _has_epollexclusive() and platform_string(
-    ) in _POLLING_STRATEGIES and 'epollex' in _POLLING_STRATEGIES[
-            platform_string()]:
-        print('\n\nOmitting EPOLLEXCLUSIVE tests\n\n')
-        _POLLING_STRATEGIES[platform_string()].remove('epollex')
 
     # start antagonists
     antagonists = [
@@ -1549,7 +1476,7 @@ argp.add_argument(
 )
 argp.add_argument(
     '--arch',
-    choices=['default', 'x86', 'x64'],
+    choices=['default', 'x86', 'x64', 'arm64'],
     default='default',
     help=
     'Selects architecture to target. For some platforms "default" is the only supported choice.'
@@ -1558,16 +1485,15 @@ argp.add_argument(
     '--compiler',
     choices=[
         'default',
-        'gcc5',
+        'gcc7',
         'gcc10.2',
         'gcc10.2_openssl102',
-        'gcc11',
+        'gcc12',
         'gcc_musl',
-        'clang4',
+        'clang6',
         'clang13',
         'python2.7',
         'python3.5',
-        'python3.6',
         'python3.7',
         'python3.8',
         'python3.9',
@@ -1579,9 +1505,7 @@ argp.add_argument(
         'electron1.6',
         'coreclr',
         'cmake',
-        'cmake_ninja_vs2015',
         'cmake_ninja_vs2017',
-        'cmake_vs2015',
         'cmake_vs2017',
         'cmake_vs2019',
         'mono',

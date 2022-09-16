@@ -20,38 +20,42 @@
 
 #include "upb/port_def.inc"
 
-static const upb_msglayout_sub envoy_config_listener_v3_QuicProtocolOptions_submsgs[5] = {
+static const upb_MiniTable_Sub envoy_config_listener_v3_QuicProtocolOptions_submsgs[7] = {
   {.submsg = &envoy_config_core_v3_QuicProtocolOptions_msginit},
-  {.submsg = &envoy_config_core_v3_RuntimeFeatureFlag_msginit},
-  {.submsg = &envoy_config_core_v3_TypedExtensionConfig_msginit},
   {.submsg = &google_protobuf_Duration_msginit},
+  {.submsg = &google_protobuf_Duration_msginit},
+  {.submsg = &envoy_config_core_v3_RuntimeFeatureFlag_msginit},
   {.submsg = &google_protobuf_UInt32Value_msginit},
+  {.submsg = &envoy_config_core_v3_TypedExtensionConfig_msginit},
+  {.submsg = &envoy_config_core_v3_TypedExtensionConfig_msginit},
 };
 
-static const upb_msglayout_field envoy_config_listener_v3_QuicProtocolOptions__fields[7] = {
-  {1, UPB_SIZE(4, 8), 1, 0, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {2, UPB_SIZE(8, 16), 2, 3, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {3, UPB_SIZE(12, 24), 3, 3, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {4, UPB_SIZE(16, 32), 4, 1, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {5, UPB_SIZE(20, 40), 5, 4, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {6, UPB_SIZE(24, 48), 6, 2, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {7, UPB_SIZE(28, 56), 7, 2, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+static const upb_MiniTable_Field envoy_config_listener_v3_QuicProtocolOptions__fields[7] = {
+  {1, UPB_SIZE(4, 8), UPB_SIZE(1, 1), 0, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(8, 16), UPB_SIZE(2, 2), 1, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(12, 24), UPB_SIZE(3, 3), 2, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {4, UPB_SIZE(16, 32), UPB_SIZE(4, 4), 3, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {5, UPB_SIZE(20, 40), UPB_SIZE(5, 5), 4, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {6, UPB_SIZE(24, 48), UPB_SIZE(6, 6), 5, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {7, UPB_SIZE(28, 56), UPB_SIZE(7, 7), 6, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
 };
 
-const upb_msglayout envoy_config_listener_v3_QuicProtocolOptions_msginit = {
+const upb_MiniTable envoy_config_listener_v3_QuicProtocolOptions_msginit = {
   &envoy_config_listener_v3_QuicProtocolOptions_submsgs[0],
   &envoy_config_listener_v3_QuicProtocolOptions__fields[0],
-  UPB_SIZE(32, 64), 7, _UPB_MSGEXT_NONE, 7, 255,
+  UPB_SIZE(32, 64), 7, kUpb_ExtMode_NonExtendable, 7, 255, 0,
 };
 
-static const upb_msglayout *messages_layout[1] = {
+static const upb_MiniTable *messages_layout[1] = {
   &envoy_config_listener_v3_QuicProtocolOptions_msginit,
 };
 
-const upb_msglayout_file envoy_config_listener_v3_quic_config_proto_upb_file_layout = {
+const upb_MiniTable_File envoy_config_listener_v3_quic_config_proto_upb_file_layout = {
   messages_layout,
   NULL,
+  NULL,
   1,
+  0,
   0,
 };
 

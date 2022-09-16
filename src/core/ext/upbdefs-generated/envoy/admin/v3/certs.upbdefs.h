@@ -19,31 +19,31 @@ extern "C" {
 
 #include "upb/port_def.inc"
 
-extern upb_def_init envoy_admin_v3_certs_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_admin_v3_certs_proto_upbdefinit;
 
-UPB_INLINE const upb_msgdef *envoy_admin_v3_Certificates_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_admin_v3_certs_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.admin.v3.Certificates");
+UPB_INLINE const upb_MessageDef *envoy_admin_v3_Certificates_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_admin_v3_certs_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.admin.v3.Certificates");
 }
 
-UPB_INLINE const upb_msgdef *envoy_admin_v3_Certificate_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_admin_v3_certs_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.admin.v3.Certificate");
+UPB_INLINE const upb_MessageDef *envoy_admin_v3_Certificate_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_admin_v3_certs_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.admin.v3.Certificate");
 }
 
-UPB_INLINE const upb_msgdef *envoy_admin_v3_CertificateDetails_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_admin_v3_certs_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.admin.v3.CertificateDetails");
+UPB_INLINE const upb_MessageDef *envoy_admin_v3_CertificateDetails_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_admin_v3_certs_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.admin.v3.CertificateDetails");
 }
 
-UPB_INLINE const upb_msgdef *envoy_admin_v3_CertificateDetails_OcspDetails_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_admin_v3_certs_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.admin.v3.CertificateDetails.OcspDetails");
+UPB_INLINE const upb_MessageDef *envoy_admin_v3_CertificateDetails_OcspDetails_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_admin_v3_certs_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.admin.v3.CertificateDetails.OcspDetails");
 }
 
-UPB_INLINE const upb_msgdef *envoy_admin_v3_SubjectAlternateName_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_admin_v3_certs_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.admin.v3.SubjectAlternateName");
+UPB_INLINE const upb_MessageDef *envoy_admin_v3_SubjectAlternateName_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_admin_v3_certs_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.admin.v3.SubjectAlternateName");
 }
 
 #ifdef __cplusplus

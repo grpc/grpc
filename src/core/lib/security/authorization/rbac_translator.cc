@@ -16,12 +16,25 @@
 
 #include "src/core/lib/security/authorization/rbac_translator.h"
 
+#include <stddef.h>
+
+#include <algorithm>
+#include <map>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "absl/memory/memory.h"
+#include "absl/status/status.h"
+#include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/strip.h"
 
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/json/json.h"
 #include "src/core/lib/matchers/matchers.h"
 
 namespace grpc_core {
@@ -343,21 +356,18 @@ absl::StatusOr<Rbac> ParseAllowRulesArray(const Json& json,
 
 absl::StatusOr<absl::InlinedVector<Rbac, 2>> GenerateRbacPolicies(
     absl::string_view authz_policy) {
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  Json json = Json::Parse(authz_policy, &error);
-  if (error != GRPC_ERROR_NONE) {
-    absl::Status status = absl::InvalidArgumentError(
+  auto json = Json::Parse(authz_policy);
+  if (!json.ok()) {
+    return absl::InvalidArgumentError(
         absl::StrCat("Failed to parse gRPC authorization policy. Error: ",
-                     grpc_error_std_string(error)));
-    GRPC_ERROR_UNREF(error);
-    return status;
+                     json.status().ToString()));
   }
-  if (json.type() != Json::Type::OBJECT) {
+  if (json->type() != Json::Type::OBJECT) {
     return absl::InvalidArgumentError(
         "SDK authorization policy is not an object.");
   }
-  auto it = json.object_value().find("name");
-  if (it == json.object_value().end()) {
+  auto it = json->object_value().find("name");
+  if (it == json->object_value().end()) {
     return absl::InvalidArgumentError("\"name\" field is not present.");
   }
   if (it->second.type() != Json::Type::STRING) {
@@ -366,7 +376,7 @@ absl::StatusOr<absl::InlinedVector<Rbac, 2>> GenerateRbacPolicies(
   absl::string_view name = it->second.string_value();
   std::unique_ptr<Rbac> allow_rbac;
   std::unique_ptr<Rbac> deny_rbac;
-  for (const auto& object : json.object_value()) {
+  for (const auto& object : json->object_value()) {
     if (object.first == "name") {
       continue;
     } else if (object.first == "deny_rules") {

@@ -19,46 +19,46 @@ extern "C" {
 
 #include "upb/port_def.inc"
 
-extern upb_def_init envoy_config_metrics_v3_stats_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_metrics_v3_stats_proto_upbdefinit;
 
-UPB_INLINE const upb_msgdef *envoy_config_metrics_v3_StatsSink_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_metrics_v3_stats_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.metrics.v3.StatsSink");
+UPB_INLINE const upb_MessageDef *envoy_config_metrics_v3_StatsSink_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_metrics_v3_stats_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.metrics.v3.StatsSink");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_metrics_v3_StatsConfig_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_metrics_v3_stats_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.metrics.v3.StatsConfig");
+UPB_INLINE const upb_MessageDef *envoy_config_metrics_v3_StatsConfig_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_metrics_v3_stats_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.metrics.v3.StatsConfig");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_metrics_v3_StatsMatcher_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_metrics_v3_stats_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.metrics.v3.StatsMatcher");
+UPB_INLINE const upb_MessageDef *envoy_config_metrics_v3_StatsMatcher_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_metrics_v3_stats_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.metrics.v3.StatsMatcher");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_metrics_v3_TagSpecifier_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_metrics_v3_stats_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.metrics.v3.TagSpecifier");
+UPB_INLINE const upb_MessageDef *envoy_config_metrics_v3_TagSpecifier_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_metrics_v3_stats_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.metrics.v3.TagSpecifier");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_metrics_v3_HistogramBucketSettings_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_metrics_v3_stats_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.metrics.v3.HistogramBucketSettings");
+UPB_INLINE const upb_MessageDef *envoy_config_metrics_v3_HistogramBucketSettings_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_metrics_v3_stats_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.metrics.v3.HistogramBucketSettings");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_metrics_v3_StatsdSink_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_metrics_v3_stats_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.metrics.v3.StatsdSink");
+UPB_INLINE const upb_MessageDef *envoy_config_metrics_v3_StatsdSink_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_metrics_v3_stats_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.metrics.v3.StatsdSink");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_metrics_v3_DogStatsdSink_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_metrics_v3_stats_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.metrics.v3.DogStatsdSink");
+UPB_INLINE const upb_MessageDef *envoy_config_metrics_v3_DogStatsdSink_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_metrics_v3_stats_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.metrics.v3.DogStatsdSink");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_metrics_v3_HystrixSink_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_metrics_v3_stats_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.metrics.v3.HystrixSink");
+UPB_INLINE const upb_MessageDef *envoy_config_metrics_v3_HystrixSink_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_metrics_v3_stats_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.metrics.v3.HystrixSink");
 }
 
 #ifdef __cplusplus

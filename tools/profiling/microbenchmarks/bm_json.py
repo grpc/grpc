@@ -178,11 +178,9 @@ def parse_name(name):
     return out
 
 
-def expand_json(js, js2=None):
-    if not js and not js2:
-        raise StopIteration()
+def expand_json(js):
     if not js:
-        js = js2
+        raise StopIteration()
     for bm in js['benchmarks']:
         if bm['name'].endswith('_stddev') or bm['name'].endswith('_mean'):
             continue
@@ -198,20 +196,16 @@ def expand_json(js, js2=None):
             labels = dict(labels_list)
         else:
             labels = {}
+        # TODO(jtattermusch): grabbing kokoro env values shouldn't be buried
+        # deep in the JSON conversion logic.
+        # Link the data to a kokoro job run by adding
+        # well known kokoro env variables as metadata for each row
         row = {
-            'jenkins_build': os.environ.get('BUILD_NUMBER', ''),
-            'jenkins_job': os.environ.get('JOB_NAME', ''),
+            'jenkins_build': os.environ.get('KOKORO_BUILD_NUMBER', ''),
+            'jenkins_job': os.environ.get('KOKORO_JOB_NAME', ''),
         }
         row.update(context)
         row.update(bm)
         row.update(parse_name(row['name']))
         row.update(labels)
-        if js2:
-            for bm2 in js2['benchmarks']:
-                if bm['name'] == bm2['name'] and 'already_used' not in bm2:
-                    row['cpu_time'] = bm2['cpu_time']
-                    row['real_time'] = bm2['real_time']
-                    row['iterations'] = bm2['iterations']
-                    bm2['already_used'] = True
-                    break
         yield row

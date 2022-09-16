@@ -21,9 +21,43 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/channel/channel_stack.h"
+#include "absl/status/statusor.h"
 
-/* Processes metadata on the server side for HTTP2 transports */
-extern const grpc_channel_filter grpc_http_server_filter;
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_fwd.h"
+#include "src/core/lib/channel/promise_based_filter.h"
+#include "src/core/lib/promise/arena_promise.h"
+#include "src/core/lib/transport/transport.h"
+
+namespace grpc_core {
+
+// Processes metadata on the server side for HTTP2 transports
+class HttpServerFilter : public ChannelFilter {
+ public:
+  static const grpc_channel_filter kFilter;
+
+  static absl::StatusOr<HttpServerFilter> Create(
+      const ChannelArgs& args, ChannelFilter::Args filter_args);
+
+  // Construct a promise for one call.
+  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
+      CallArgs call_args, NextPromiseFactory next_promise_factory) override;
+
+ private:
+  HttpServerFilter(bool surface_user_agent, bool allow_put_requests)
+      : surface_user_agent_(surface_user_agent),
+        allow_put_requests_(allow_put_requests) {}
+
+  bool surface_user_agent_;
+  bool allow_put_requests_;
+};
+
+}  // namespace grpc_core
+
+// A Temporary channel arg that allows servers to accept PUT requests. DO NOT
+// USE WITHOUT PERMISSION.
+#define GRPC_ARG_DO_NOT_USE_UNLESS_YOU_HAVE_PERMISSION_FROM_GRPC_TEAM_ALLOW_BROKEN_PUT_REQUESTS \
+  "grpc.http.do_not_use_unless_you_have_permission_from_grpc_team_allow_"                       \
+  "broken_put_requests"
 
 #endif /* GRPC_CORE_EXT_FILTERS_HTTP_SERVER_HTTP_SERVER_FILTER_H */

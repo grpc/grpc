@@ -20,6 +20,8 @@
 #include <functional>
 #include <vector>
 
+#include <grpc/impl/codegen/grpc_types.h>
+
 #include "src/core/lib/channel/channel_args.h"
 
 namespace grpc_core {
@@ -33,8 +35,7 @@ class ChannelArgsPreconditioning {
   // Take channel args and mutate them.
   // Does not take ownership of the channel args passed in.
   // Returns a new channel args object that is owned by the caller.
-  using Stage =
-      std::function<const grpc_channel_args*(const grpc_channel_args*)>;
+  using Stage = std::function<ChannelArgs(ChannelArgs)>;
 
   class Builder {
    public:
@@ -50,8 +51,7 @@ class ChannelArgsPreconditioning {
   // Take channel args and precondition them.
   // Does not take ownership of the channel args passed in.
   // Returns a new channel args object that is owned by the caller.
-  const grpc_channel_args* PreconditionChannelArgs(
-      const grpc_channel_args* args) const;
+  ChannelArgs PreconditionChannelArgs(const grpc_channel_args* args) const;
 
  private:
   std::vector<Stage> stages_;

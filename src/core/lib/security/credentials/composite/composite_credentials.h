@@ -21,12 +21,25 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <algorithm>
 #include <string>
+#include <utility>
+#include <vector>
 
-#include "absl/container/inlined_vector.h"
+#include "absl/status/statusor.h"
 
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/grpc_security_constants.h>
+
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/unique_type_name.h"
+#include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/security/security_connector/security_connector.h"
+#include "src/core/lib/transport/transport.h"
 
 /* -- Composite channel credentials. -- */
 
@@ -35,8 +48,7 @@ class grpc_composite_channel_credentials : public grpc_channel_credentials {
   grpc_composite_channel_credentials(
       grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
       grpc_core::RefCountedPtr<grpc_call_credentials> call_creds)
-      : grpc_channel_credentials(channel_creds->type()),
-        inner_creds_(std::move(channel_creds)),
+      : inner_creds_(std::move(channel_creds)),
         call_creds_(std::move(call_creds)) {}
 
   ~grpc_composite_channel_credentials() override = default;
@@ -49,12 +61,14 @@ class grpc_composite_channel_credentials : public grpc_channel_credentials {
   grpc_core::RefCountedPtr<grpc_channel_security_connector>
   create_security_connector(
       grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
-      const char* target, const grpc_channel_args* args,
-      grpc_channel_args** new_args) override;
+      const char* target, grpc_core::ChannelArgs* args) override;
 
-  grpc_channel_args* update_arguments(grpc_channel_args* args) override {
-    return inner_creds_->update_arguments(args);
+  grpc_core::ChannelArgs update_arguments(
+      grpc_core::ChannelArgs args) override {
+    return inner_creds_->update_arguments(std::move(args));
   }
+
+  grpc_core::UniqueTypeName type() const override;
 
   const grpc_channel_credentials* inner_creds() const {
     return inner_creds_.get();
@@ -63,6 +77,13 @@ class grpc_composite_channel_credentials : public grpc_channel_credentials {
   grpc_call_credentials* mutable_call_creds() { return call_creds_.get(); }
 
  private:
+  int cmp_impl(const grpc_channel_credentials* other) const override {
+    auto* o = static_cast<const grpc_composite_channel_credentials*>(other);
+    int r = inner_creds_->cmp(o->inner_creds_.get());
+    if (r != 0) return r;
+    return call_creds_->cmp(o->call_creds_.get());
+  }
+
   grpc_core::RefCountedPtr<grpc_channel_credentials> inner_creds_;
   grpc_core::RefCountedPtr<grpc_call_credentials> call_creds_;
 };
@@ -72,22 +93,16 @@ class grpc_composite_channel_credentials : public grpc_channel_credentials {
 class grpc_composite_call_credentials : public grpc_call_credentials {
  public:
   using CallCredentialsList =
-      absl::InlinedVector<grpc_core::RefCountedPtr<grpc_call_credentials>, 2>;
+      std::vector<grpc_core::RefCountedPtr<grpc_call_credentials>>;
 
   grpc_composite_call_credentials(
       grpc_core::RefCountedPtr<grpc_call_credentials> creds1,
       grpc_core::RefCountedPtr<grpc_call_credentials> creds2);
   ~grpc_composite_call_credentials() override = default;
 
-  bool get_request_metadata(grpc_polling_entity* pollent,
-                            grpc_auth_metadata_context context,
-                            grpc_core::CredentialsMetadataArray* md_array,
-                            grpc_closure* on_request_metadata,
-                            grpc_error_handle* error) override;
-
-  void cancel_get_request_metadata(
-      grpc_core::CredentialsMetadataArray* md_array,
-      grpc_error_handle error) override;
+  grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientMetadataHandle>>
+  GetRequestMetadata(grpc_core::ClientMetadataHandle initial_metadata,
+                     const GetRequestMetadataArgs* args) override;
 
   grpc_security_level min_security_level() const override {
     return min_security_level_;
@@ -96,7 +111,17 @@ class grpc_composite_call_credentials : public grpc_call_credentials {
   const CallCredentialsList& inner() const { return inner_; }
   std::string debug_string() override;
 
+  static grpc_core::UniqueTypeName Type();
+
+  grpc_core::UniqueTypeName type() const override { return Type(); }
+
  private:
+  int cmp_impl(const grpc_call_credentials* other) const override {
+    // TODO(yashykt): Check if we can do something better here
+    return grpc_core::QsortCompare(
+        static_cast<const grpc_call_credentials*>(this), other);
+  }
+
   void push_to_inner(grpc_core::RefCountedPtr<grpc_call_credentials> creds,
                      bool is_composite);
   grpc_security_level min_security_level_;

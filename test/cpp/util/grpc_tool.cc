@@ -240,8 +240,7 @@ std::shared_ptr<grpc::Channel> CreateCliChannel(
   // See |GRPC_ARG_MAX_METADATA_SIZE| in |grpc_types.h|.
   // Set to large enough size (10M) that should work for most use cases.
   args.SetInt(GRPC_ARG_MAX_METADATA_SIZE, 10 * 1024 * 1024);
-  return ::grpc::CreateCustomChannel(server_address, cred.GetCredentials(),
-                                     args);
+  return grpc::CreateCustomChannel(server_address, cred.GetCredentials(), args);
 }
 
 struct Command {
@@ -579,6 +578,12 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
     } else {
       input_file.open(absl::GetFlag(FLAGS_infile),
                       std::ios::in | std::ios::binary);
+      if (!input_file) {
+        fprintf(stderr, "Failed to open infile %s.\n",
+                absl::GetFlag(FLAGS_infile).c_str());
+        return false;
+      }
+
       input_stream = &input_file;
     }
 
