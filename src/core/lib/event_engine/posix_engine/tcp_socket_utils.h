@@ -301,6 +301,21 @@ class PosixSocketWrapper {
       const experimental::EventEngine::ResolvedAddress& addr, int type,
       int protocol, DSMode& dsmode);
 
+  // Return a PosixSocketWrapper which manages a configured, unbound,
+  // unconnected TCP client fd.
+  //  options: may contain custom tcp settings for the fd.
+  //  target_addr: the destination address.
+  //  output_mapped_target_addr: A out parameter. It is target_addr mapped to an
+  //  address appropriate to the type of socket FD created. For example, if
+  //  target_addr is IPv4 and dual stack sockets are available,
+  //  output_mapped_target_addr will be an IPv4-mapped IPv6 address.
+  //
+  // Returns: Not-OK status on error. Out parameters are not set on error.
+  //
+  static absl::StatusOr<PosixSocketWrapper> CreateAndPrepareTcpClientSocket(
+      PosixTcpOptions& options, const EventEngine::ResolvedAddress& target_addr,
+      EventEngine::ResolvedAddress& output_mapped_target_addr);
+
  private:
   int fd_;
 };

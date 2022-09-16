@@ -2780,6 +2780,7 @@ grpc_cc_library(
         "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h",
     ],
     external_deps = [
+        "absl/cleanup",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
