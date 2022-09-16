@@ -103,7 +103,8 @@ static void actually_poll(void* argsp) {
       if (args->done) {
         break;
       }
-      grpc_core::Duration time_left = deadline - grpc_core::Timestamp::Now();
+      grpc_core::Duration time_left =
+          deadline - grpc_core::ExecCtx::Get()->Now();
       gpr_log(GPR_DEBUG, "done=%d, time_left=%" PRId64, args->done,
               time_left.millis());
       ASSERT_GE(time_left, grpc_core::Duration::Zero());
