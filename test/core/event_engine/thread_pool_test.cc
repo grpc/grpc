@@ -25,19 +25,21 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/notification.h"
+
 namespace grpc_event_engine {
 namespace experimental {
 
 TEST(ThreadPoolTest, CanRunClosure) {
   ThreadPool p(1);
-  absl::Notification n;
+  grpc_core::Notification n;
   p.Add([&n] { n.Notify(); });
   n.WaitForNotification();
 }
 
 TEST(ThreadPoolTest, CanDestroyInsideClosure) {
   auto p = std::make_shared<ThreadPool>(1);
-  absl::Notification n;
+  grpc_core::Notification n;
   p->Add([p, &n]() mutable {
     std::this_thread::sleep_for(std::chrono::seconds(1));
     // This should delete the thread pool and not deadlock
@@ -51,7 +53,7 @@ TEST(ThreadPoolTest, CanDestroyInsideClosure) {
 
 TEST(ThreadPoolTest, CanSurviveFork) {
   ThreadPool p(1);
-  absl::Notification n;
+  grpc_core::Notification n;
   gpr_log(GPR_INFO, "add callback 1");
   p.Add([&n, &p] {
     std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -68,7 +70,7 @@ TEST(ThreadPoolTest, CanSurviveFork) {
   n.WaitForNotification();
   gpr_log(GPR_INFO, "postfork child");
   p.PostforkChild();
-  absl::Notification n2;
+  grpc_core::Notification n2;
   gpr_log(GPR_INFO, "add callback 3");
   p.Add([&n2] {
     gpr_log(GPR_INFO, "notify");
