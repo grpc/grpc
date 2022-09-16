@@ -2025,7 +2025,6 @@ grpc_cc_library(
     ],
     external_deps = ["absl/functional:function_ref"],
     deps = [
-        "exec_ctx",
         "gpr_platform",
         "time",
         "useful",
@@ -2200,10 +2199,15 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/gprpp/time.h",
     ],
-    external_deps = ["absl/strings:str_format"],
+    external_deps = [
+        "absl/strings:str_format",
+        "absl/types:optional",
+    ],
     deps = [
         "event_engine_base_hdrs",
         "gpr",
+        "gpr_tls",
+        "no_destruct",
         "useful",
     ],
 )
@@ -3006,7 +3010,6 @@ grpc_cc_library(
     ],
     hdrs = ["src/core/lib/transport/bdp_estimator.h"],
     deps = [
-        "exec_ctx",
         "gpr",
         "grpc_trace",
         "time",
@@ -3056,7 +3059,6 @@ grpc_cc_library(
     language = "c++",
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
-        "exec_ctx",
         "gpr_platform",
         "time",
     ],
@@ -4987,7 +4989,6 @@ grpc_cc_library(
         "closure",
         "config",
         "debug_location",
-        "exec_ctx",
         "gpr",
         "grpc_base",
         "grpc_client_channel",
@@ -5197,7 +5198,6 @@ grpc_cc_library(
         "config",
         "debug_location",
         "env",
-        "exec_ctx",
         "gpr",
         "grpc_base",
         "grpc_client_channel",
@@ -5240,7 +5240,6 @@ grpc_cc_library(
         "closure",
         "config",
         "debug_location",
-        "exec_ctx",
         "gpr",
         "grpc_base",
         "grpc_client_channel",
@@ -6832,7 +6831,6 @@ grpc_cc_library(
     ],
     deps = [
         "bdp_estimator",
-        "exec_ctx",
         "experiments",
         "gpr",
         "grpc_trace",
