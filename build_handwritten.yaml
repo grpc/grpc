@@ -15,7 +15,7 @@ settings:
   core_version: 24.0.0
   csharp_major_version: 2
   g_stands_for: golazo
-  protobuf_version: 3.19.4
+  protobuf_version: 3.19.5
   version: 1.46.4
 targets:
 - name: gen_hpack_tables
