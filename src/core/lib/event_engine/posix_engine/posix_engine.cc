@@ -345,8 +345,6 @@ absl::StatusOr<PosixSocketWrapper> TcpClientPrepareSocket(
   // Use dualstack sockets where available. Set mapped to v6 or v4 mapped to v6.
   if (!SockaddrToV4Mapped(&addr, &mapped_addr)) {
     // addr is v4 mapped to v6 or just v6.
-    // memcpy(const_cast<sockaddr*>(mapped_addr.address()), addr.address(),
-    //        addr.size());
     mapped_addr = addr;
   }
   status = PosixSocketWrapper::CreateDualStackSocket(nullptr, mapped_addr,
@@ -358,8 +356,6 @@ absl::StatusOr<PosixSocketWrapper> TcpClientPrepareSocket(
   if (dsmode == PosixSocketWrapper::DSMode::DSMODE_IPV4) {
     // Original addr is either v4 or v4 mapped to v6. Set mapped_addr to v4.
     if (!SockaddrIsV4Mapped(&addr, &mapped_addr)) {
-      // memcpy(const_cast<sockaddr*>(mapped_addr.address()), addr.address(),
-      //        addr.size());
       mapped_addr = addr;
     }
   }
