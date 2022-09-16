@@ -16,21 +16,6 @@
  *
  */
 
-/// A ClientContext allows the person implementing a service client to:
-///
-/// - Add custom metadata key-value pairs that will propagated to the server
-/// side.
-/// - Control call settings such as compression and authentication.
-/// - Initial and trailing metadata coming from the server.
-/// - Get performance metrics (ie, census).
-///
-/// Context settings are only relevant to the call they are invoked with, that
-/// is to say, they aren't sticky. Some of these settings, such as the
-/// compression options, can be made persistent at channel construction time
-/// (see \a grpc::CreateCustomChannel).
-///
-/// \warning ClientContext instances should \em not be reused across rpcs.
-
 #ifndef GRPCPP_IMPL_CODEGEN_CLIENT_CONTEXT_H
 #define GRPCPP_IMPL_CODEGEN_CLIENT_CONTEXT_H
 
