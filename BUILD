@@ -3729,7 +3729,6 @@ grpc_cc_library(
     hdrs = ["src/core/lib/load_balancing/subchannel_interface.h"],
     external_deps = ["absl/status"],
     deps = [
-        "channel_args",
         "gpr_platform",
         "grpc_codegen",
         "iomgr_fwd",
