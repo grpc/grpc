@@ -28,6 +28,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
+#include "absl/strings/strip.h"
 #include "envoy/config/core/v3/address.upb.h"
 #include "envoy/config/core/v3/base.upb.h"
 #include "envoy/config/core/v3/config_source.upb.h"
@@ -505,29 +506,30 @@ absl::StatusOr<XdsListenerResource::DownstreamTlsContext>
 DownstreamTlsContextParse(
     const XdsResourceType::DecodeContext& context,
     const envoy_config_core_v3_TransportSocket* transport_socket) {
-  absl::string_view name = UpbStringToAbsl(
-      envoy_config_core_v3_TransportSocket_name(transport_socket));
-// FIXME: this should key on extension type, not name
-  if (name != "envoy.transport_sockets.tls") {
-    return absl::InvalidArgumentError(
-        absl::StrCat("Unrecognized transport socket: ", name));
-  }
-  std::vector<std::string> errors;
-  XdsListenerResource::DownstreamTlsContext downstream_tls_context;
-  auto* typed_config =
+  const auto* typed_config =
       envoy_config_core_v3_TransportSocket_typed_config(transport_socket);
   if (typed_config == nullptr) {
     return absl::InvalidArgumentError("transport socket typed config unset");
   }
+  absl::string_view type_url = absl::StripPrefix(
+      UpbStringToAbsl(google_protobuf_Any_type_url(typed_config)),
+      "type.googleapis.com/");
+  if (type_url !=
+      "envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext") {
+    return absl::InvalidArgumentError(
+        absl::StrCat("Unrecognized transport socket type: ", type_url));
+  }
   const upb_StringView encoded_downstream_tls_context =
       google_protobuf_Any_value(typed_config);
-  auto* downstream_tls_context_proto =
+  const auto* downstream_tls_context_proto =
       envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_parse(
           encoded_downstream_tls_context.data,
           encoded_downstream_tls_context.size, context.arena);
   if (downstream_tls_context_proto == nullptr) {
     return absl::InvalidArgumentError("Can't decode downstream tls context.");
   }
+  std::vector<std::string> errors;
+  XdsListenerResource::DownstreamTlsContext downstream_tls_context;
   auto* common_tls_context =
       envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_common_tls_context(
           downstream_tls_context_proto);
@@ -557,7 +559,6 @@ DownstreamTlsContextParse(
       envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_LENIENT_STAPLING) {
     errors.emplace_back("ocsp_staple_policy: Only LENIENT_STAPLING supported");
   }
-
   if (downstream_tls_context.common_tls_context
           .tls_certificate_provider_instance.instance_name.empty()) {
     errors.emplace_back(
@@ -713,10 +714,10 @@ absl::StatusOr<FilterChain> FilterChainParse(
     if (typed_config == nullptr) {
       errors.emplace_back("No typed_config found in filter.");
     } else {
-      absl::string_view type_url =
-          UpbStringToAbsl(google_protobuf_Any_type_url(typed_config));
+      absl::string_view type_url = absl::StripPrefix(
+          UpbStringToAbsl(google_protobuf_Any_type_url(typed_config)),
+          "type.googleapis.com/");
       if (type_url !=
-          "type.googleapis.com/"
           "envoy.extensions.filters.network.http_connection_manager.v3."
           "HttpConnectionManager") {
         errors.emplace_back(absl::StrCat("Unsupported filter type ", type_url));

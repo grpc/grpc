@@ -26,6 +26,7 @@
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
+#include "absl/strings/strip.h"
 #include "envoy/config/cluster/v3/circuit_breaker.upb.h"
 #include "envoy/config/cluster/v3/cluster.upb.h"
 #include "envoy/config/cluster/v3/cluster.upbdefs.h"
@@ -104,40 +105,41 @@ namespace {
 absl::StatusOr<CommonTlsContext> UpstreamTlsContextParse(
     const XdsResourceType::DecodeContext& context,
     const envoy_config_core_v3_TransportSocket* transport_socket) {
-  CommonTlsContext common_tls_context;
-  // Record Upstream tls context
-  absl::string_view name = UpbStringToAbsl(
-      envoy_config_core_v3_TransportSocket_name(transport_socket));
-// FIXME: this should key on extension type, not name
-  if (name != "envoy.transport_sockets.tls") {
-    return absl::InvalidArgumentError(
-        absl::StrCat("Unrecognized transport socket: ", name));
-  }
   auto* typed_config =
       envoy_config_core_v3_TransportSocket_typed_config(transport_socket);
-  if (typed_config != nullptr) {
-    const upb_StringView encoded_upstream_tls_context =
-        google_protobuf_Any_value(typed_config);
-    auto* upstream_tls_context =
-        envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_parse(
-            encoded_upstream_tls_context.data,
-            encoded_upstream_tls_context.size, context.arena);
-    if (upstream_tls_context == nullptr) {
-      return absl::InvalidArgumentError("Can't decode upstream tls context.");
+  if (typed_config == nullptr) {
+    return absl::InvalidArgumentError("transport_socket.typed_config not set");
+  }
+  absl::string_view type_url = absl::StripPrefix(
+      UpbStringToAbsl(google_protobuf_Any_type_url(typed_config)),
+      "type.googleapis.com/");
+  if (type_url !=
+      "envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext") {
+    return absl::InvalidArgumentError(
+        absl::StrCat("Unrecognized transport socket type: ", type_url));
+  }
+  const upb_StringView encoded_upstream_tls_context =
+      google_protobuf_Any_value(typed_config);
+  auto* upstream_tls_context =
+      envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_parse(
+          encoded_upstream_tls_context.data, encoded_upstream_tls_context.size,
+          context.arena);
+  if (upstream_tls_context == nullptr) {
+    return absl::InvalidArgumentError("Can't decode upstream tls context.");
+  }
+  auto* common_tls_context_proto =
+      envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_common_tls_context(
+          upstream_tls_context);
+  CommonTlsContext common_tls_context;
+  if (common_tls_context_proto != nullptr) {
+    auto common_context =
+        CommonTlsContext::Parse(context, common_tls_context_proto);
+    if (!common_context.ok()) {
+      return absl::InvalidArgumentError(
+          absl::StrCat("Error parsing UpstreamTlsContext: ",
+                       common_context.status().message()));
     }
-    auto* common_tls_context_proto =
-        envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_common_tls_context(
-            upstream_tls_context);
-    if (common_tls_context_proto != nullptr) {
-      auto common_context =
-          CommonTlsContext::Parse(context, common_tls_context_proto);
-      if (!common_context.ok()) {
-        return absl::InvalidArgumentError(
-            absl::StrCat("Error parsing UpstreamTlsContext: ",
-                         common_context.status().message()));
-      }
-      common_tls_context = std::move(*common_context);
-    }
+    common_tls_context = std::move(*common_context);
   }
   if (common_tls_context.certificate_validation_context
           .ca_certificate_provider_instance.instance_name.empty()) {
@@ -252,43 +254,45 @@ absl::StatusOr<XdsClusterResource> CdsResourceParse(
     absl::Status status = CdsLogicalDnsParse(cluster, &cds_update);
     if (!status.ok()) errors.emplace_back(status.message());
   } else {
-    if (!envoy_config_cluster_v3_Cluster_has_cluster_type(cluster)) {
+    const auto* custom_cluster_type =
+        envoy_config_cluster_v3_Cluster_cluster_type(cluster);
+    if (custom_cluster_type == nullptr) {
       errors.push_back("DiscoveryType is not valid.");
     } else {
-      const envoy_config_cluster_v3_Cluster_CustomClusterType*
-          custom_cluster_type =
-              envoy_config_cluster_v3_Cluster_cluster_type(cluster);
-      upb_StringView type_name =
-          envoy_config_cluster_v3_Cluster_CustomClusterType_name(
+      const auto* typed_config =
+          envoy_config_cluster_v3_Cluster_CustomClusterType_typed_config(
               custom_cluster_type);
-// FIXME: this should key on extension type, not name
-      if (UpbStringToAbsl(type_name) != "envoy.clusters.aggregate") {
-        errors.emplace_back("DiscoveryType is not valid.");
+      if (typed_config == nullptr) {
+        errors.push_back("cluster_type.typed_config not set");
       } else {
-        cds_update.cluster_type = XdsClusterResource::ClusterType::AGGREGATE;
-        // Retrieve aggregate clusters.
-        const google_protobuf_Any* typed_config =
-            envoy_config_cluster_v3_Cluster_CustomClusterType_typed_config(
-                custom_cluster_type);
-        const upb_StringView aggregate_cluster_config_upb_stringview =
-            google_protobuf_Any_value(typed_config);
-        const envoy_extensions_clusters_aggregate_v3_ClusterConfig*
-            aggregate_cluster_config =
-                envoy_extensions_clusters_aggregate_v3_ClusterConfig_parse(
-                    aggregate_cluster_config_upb_stringview.data,
-                    aggregate_cluster_config_upb_stringview.size,
-                    context.arena);
-        if (aggregate_cluster_config == nullptr) {
-          errors.emplace_back("Can't parse aggregate cluster.");
+        absl::string_view type_url = absl::StripPrefix(
+            UpbStringToAbsl(google_protobuf_Any_type_url(typed_config)),
+            "type.googleapis.com/");
+        if (type_url !=
+            "envoy.extensions.clusters.aggregate.v3.ClusterConfig") {
+          errors.push_back(
+              absl::StrCat("unknown cluster_type extension: ", type_url));
         } else {
-          size_t size;
-          const upb_StringView* clusters =
-              envoy_extensions_clusters_aggregate_v3_ClusterConfig_clusters(
-                  aggregate_cluster_config, &size);
-          for (size_t i = 0; i < size; ++i) {
-            const upb_StringView cluster = clusters[i];
-            cds_update.prioritized_cluster_names.emplace_back(
-                UpbStringToStdString(cluster));
+          cds_update.cluster_type = XdsClusterResource::ClusterType::AGGREGATE;
+          // Retrieve aggregate clusters.
+          const upb_StringView aggregate_cluster_config_upb_stringview =
+              google_protobuf_Any_value(typed_config);
+          const auto* aggregate_cluster_config =
+              envoy_extensions_clusters_aggregate_v3_ClusterConfig_parse(
+                  aggregate_cluster_config_upb_stringview.data,
+                  aggregate_cluster_config_upb_stringview.size, context.arena);
+          if (aggregate_cluster_config == nullptr) {
+            errors.emplace_back("Can't parse aggregate cluster.");
+          } else {
+            size_t size;
+            const upb_StringView* clusters =
+                envoy_extensions_clusters_aggregate_v3_ClusterConfig_clusters(
+                    aggregate_cluster_config, &size);
+            for (size_t i = 0; i < size; ++i) {
+              const upb_StringView cluster = clusters[i];
+              cds_update.prioritized_cluster_names.emplace_back(
+                  UpbStringToStdString(cluster));
+            }
           }
         }
       }
