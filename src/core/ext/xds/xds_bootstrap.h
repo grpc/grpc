@@ -49,7 +49,11 @@ class XdsBootstrap {
     virtual bool ShouldUseV3() const = 0;
     virtual bool IgnoreResourceDeletion() const = 0;
 
-    virtual bool operator==(const XdsServer& other) const = 0;
+    virtual bool Equals(const XdsServer& other) const = 0;
+
+    friend bool operator==(const XdsServer& a, const XdsServer& b) {
+      return a.Equals(b);
+    }
   };
 
   class Authority {

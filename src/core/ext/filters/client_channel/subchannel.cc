@@ -31,14 +31,12 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
-#include <grpc/grpc.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/health/health_check_client.h"
-#include "src/core/ext/filters/client_channel/proxy_mapper_registry.h"
 #include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
 #include "src/core/ext/filters/client_channel/subchannel_stream_client.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
@@ -58,10 +56,12 @@
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/handshaker/proxy_mapper_registry.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
+#include "src/core/lib/surface/init_internally.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
 
@@ -636,13 +636,15 @@ Subchannel::Subchannel(SubchannelKey key,
   // before the last subchannel destruction, then there maybe race conditions
   // triggering segmentation faults. To prevent this issue, we call a grpc_init
   // here and a grpc_shutdown in the subchannel destructor.
-  grpc_init();
+  InitInternally();
   GRPC_STATS_INC_CLIENT_SUBCHANNELS_CREATED();
   GRPC_CLOSURE_INIT(&on_connecting_finished_, OnConnectingFinished, this,
                     grpc_schedule_on_exec_ctx);
   // Check proxy mapper to determine address to connect to and channel
   // args to use.
-  address_for_connect_ = ProxyMapperRegistry::MapAddress(key_.address(), &args_)
+  address_for_connect_ = CoreConfiguration::Get()
+                             .proxy_mapper_registry()
+                             .MapAddress(key_.address(), &args_)
                              .value_or(key_.address());
   // Initialize channelz.
   const bool channelz_enabled = args_.GetBool(GRPC_ARG_ENABLE_CHANNELZ)
@@ -672,7 +674,7 @@ Subchannel::~Subchannel() {
   connector_.reset();
   grpc_pollset_set_destroy(pollset_set_);
   // grpc_shutdown is called here because grpc_init is called in the ctor.
-  grpc_shutdown();
+  ShutdownInternally();
 }
 
 RefCountedPtr<Subchannel> Subchannel::Create(
@@ -765,7 +767,7 @@ void Subchannel::ResetBackoff() {
       GetDefaultEventEngine()->Cancel(retry_timer_handle_)) {
     OnRetryTimerLocked();
   } else if (state_ == GRPC_CHANNEL_CONNECTING) {
-    next_attempt_time_ = ExecCtx::Get()->Now();
+    next_attempt_time_ = Timestamp::Now();
   }
 }
 
@@ -876,7 +878,7 @@ void Subchannel::OnRetryTimerLocked() {
 
 void Subchannel::StartConnectingLocked() {
   // Set next attempt time.
-  const Timestamp min_deadline = min_connect_timeout_ + ExecCtx::Get()->Now();
+  const Timestamp min_deadline = min_connect_timeout_ + Timestamp::Now();
   next_attempt_time_ = backoff_.NextAttemptTime();
   // Report CONNECTING.
   SetConnectivityStateLocked(GRPC_CHANNEL_CONNECTING, absl::OkStatus());
@@ -911,7 +913,7 @@ void Subchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
   // transition back to IDLE.
   if (connecting_result_.transport == nullptr || !PublishTransportLocked()) {
     const Duration time_until_next_attempt =
-        next_attempt_time_ - ExecCtx::Get()->Now();
+        next_attempt_time_ - Timestamp::Now();
     gpr_log(GPR_INFO,
             "subchannel %p %s: connect failed (%s), backing off for %" PRId64
             " ms",

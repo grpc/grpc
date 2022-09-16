@@ -30,7 +30,7 @@
 
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_resource_type_impl.h"
-#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_object_loader.h"
@@ -97,7 +97,7 @@ class XdsClientTest : public ::testing::Test {
       bool IgnoreResourceDeletion() const override {
         return ignore_resource_deletion_;
       }
-      bool operator==(const XdsServer& other) const override {
+      bool Equals(const XdsServer& other) const override {
         const auto& o = static_cast<const FakeXdsServer&>(other);
         return server_uri_ == o.server_uri_ && use_v3_ == o.use_v3_ &&
                ignore_resource_deletion_ == o.ignore_resource_deletion_;
@@ -478,10 +478,10 @@ class XdsClientTest : public ::testing::Test {
   class ScopedExperimentalEnvVar {
    public:
     explicit ScopedExperimentalEnvVar(const char* env_var) : env_var_(env_var) {
-      gpr_setenv(env_var_, "true");
+      SetEnv(env_var_, "true");
     }
 
-    ~ScopedExperimentalEnvVar() { gpr_unsetenv(env_var_); }
+    ~ScopedExperimentalEnvVar() { UnsetEnv(env_var_); }
 
    private:
     const char* env_var_;
@@ -621,7 +621,7 @@ class XdsClientTest : public ::testing::Test {
       std::string metadata_json_str;
       auto status =
           MessageToJsonString(request.node().metadata(), &metadata_json_str,
-                              google::protobuf::util::JsonPrintOptions());
+                              GRPC_CUSTOM_JSONUTIL::JsonPrintOptions());
       ASSERT_TRUE(status.ok())
           << status << " on " << location.file() << ":" << location.line();
       auto metadata_json = Json::Parse(metadata_json_str);
@@ -629,8 +629,7 @@ class XdsClientTest : public ::testing::Test {
           << metadata_json.status() << " on " << location.file() << ":"
           << location.line();
       EXPECT_EQ(*metadata_json, xds_client_->bootstrap().node()->metadata())
-          << location.file() << ":" << location.line()
-          << ":\nexpected: "
+          << location.file() << ":" << location.line() << ":\nexpected: "
           << Json{xds_client_->bootstrap().node()->metadata()}.Dump()
           << "\nactual: " << metadata_json->Dump();
     }
@@ -1978,12 +1977,14 @@ TEST_F(XdsClientTest, Federation) {
                /*resource_names=*/{kXdstpResourceName});
   // Cancel watch for "foo1".
   CancelFooWatch(watcher.get(), "foo1");
-  // XdsClient should send an unsubscription request.
+  // The XdsClient may or may not send the unsubscription message
+  // before it closes the transport, depending on callback timing.
   request = WaitForRequest(stream.get());
-  ASSERT_TRUE(request.has_value());
-  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
-               /*version_info=*/"1", /*response_nonce=*/"A",
-               /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
+  if (request.has_value()) {
+    CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+                 /*version_info=*/"1", /*response_nonce=*/"A",
+                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
+  }
   // Now cancel watch for xdstp resource name.
   CancelFooWatch(watcher2.get(), kXdstpResourceName);
   // The XdsClient may or may not send the unsubscription message
@@ -2274,12 +2275,14 @@ TEST_F(XdsClientTest, FederationChannelFailureReportedToWatchers) {
   EXPECT_FALSE(watcher->HasEvent());
   // Cancel watch for "foo1".
   CancelFooWatch(watcher.get(), "foo1");
-  // XdsClient should send an unsubscription request.
+  // The XdsClient may or may not send the unsubscription message
+  // before it closes the transport, depending on callback timing.
   request = WaitForRequest(stream.get());
-  ASSERT_TRUE(request.has_value());
-  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
-               /*version_info=*/"1", /*response_nonce=*/"A",
-               /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
+  if (request.has_value()) {
+    CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+                 /*version_info=*/"1", /*response_nonce=*/"A",
+                 /*error_detail=*/absl::OkStatus(), /*resource_names=*/{});
+  }
   // Now cancel watch for xdstp resource name.
   CancelFooWatch(watcher2.get(), kXdstpResourceName);
   // The XdsClient may or may not send the unsubscription message

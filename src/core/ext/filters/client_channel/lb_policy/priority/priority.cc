@@ -51,7 +51,6 @@
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/json/json.h"
@@ -110,7 +109,7 @@ class PriorityLb : public LoadBalancingPolicy {
 
   absl::string_view name() const override { return kPriority; }
 
-  void UpdateLocked(UpdateArgs args) override;
+  absl::Status UpdateLocked(UpdateArgs args) override;
   void ExitIdleLocked() override;
   void ResetBackoffLocked() override;
 
@@ -126,8 +125,8 @@ class PriorityLb : public LoadBalancingPolicy {
 
     const std::string& name() const { return name_; }
 
-    void UpdateLocked(RefCountedPtr<LoadBalancingPolicy::Config> config,
-                      bool ignore_reresolution_requests);
+    absl::Status UpdateLocked(RefCountedPtr<LoadBalancingPolicy::Config> config,
+                              bool ignore_reresolution_requests);
     void ExitIdleLocked();
     void ResetBackoffLocked();
     void MaybeDeactivateLocked();
@@ -344,7 +343,7 @@ void PriorityLb::ResetBackoffLocked() {
   for (const auto& p : children_) p.second->ResetBackoffLocked();
 }
 
-void PriorityLb::UpdateLocked(UpdateArgs args) {
+absl::Status PriorityLb::UpdateLocked(UpdateArgs args) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
     gpr_log(GPR_INFO, "[priority_lb %p] received update", this);
   }
@@ -357,6 +356,7 @@ void PriorityLb::UpdateLocked(UpdateArgs args) {
   resolution_note_ = std::move(args.resolution_note);
   // Check all existing children against the new config.
   update_in_progress_ = true;
+  std::vector<std::string> errors;
   for (const auto& p : children_) {
     const std::string& child_name = p.first;
     auto& child = p.second;
@@ -366,13 +366,24 @@ void PriorityLb::UpdateLocked(UpdateArgs args) {
       child->MaybeDeactivateLocked();
     } else {
       // Existing child found in new config.  Update it.
-      child->UpdateLocked(config_it->second.config,
-                          config_it->second.ignore_reresolution_requests);
+      absl::Status status =
+          child->UpdateLocked(config_it->second.config,
+                              config_it->second.ignore_reresolution_requests);
+      if (!status.ok()) {
+        errors.emplace_back(
+            absl::StrCat("child ", child_name, ": ", status.ToString()));
+      }
     }
   }
   update_in_progress_ = false;
   // Try to get connected.
   ChoosePriorityLocked();
+  // Return status.
+  if (!errors.empty()) {
+    return absl::UnavailableError(absl::StrCat(
+        "errors from children: [", absl::StrJoin(errors, "; "), "]"));
+  }
+  return absl::OkStatus();
 }
 
 uint32_t PriorityLb::GetChildPriorityLocked(
@@ -416,8 +427,11 @@ void PriorityLb::ChoosePriorityLocked() {
           Ref(DEBUG_LOCATION, "ChildPriority"), child_name);
       auto child_config = config_->children().find(child_name);
       GPR_DEBUG_ASSERT(child_config != config_->children().end());
-      child->UpdateLocked(child_config->second.config,
-                          child_config->second.ignore_reresolution_requests);
+      // TODO(roth): If the child reports a non-OK status with the
+      // update, we need to propagate that back to the resolver somehow.
+      (void)child->UpdateLocked(
+          child_config->second.config,
+          child_config->second.ignore_reresolution_requests);
     } else {
       // The child already exists.  Reactivate if needed.
       child->MaybeReactivateLocked();
@@ -517,7 +531,7 @@ PriorityLb::ChildPriority::DeactivationTimer::DeactivationTimer(
   }
   GRPC_CLOSURE_INIT(&on_timer_, OnTimer, this, nullptr);
   Ref(DEBUG_LOCATION, "Timer").release();
-  grpc_timer_init(&timer_, ExecCtx::Get()->Now() + kChildRetentionInterval,
+  grpc_timer_init(&timer_, Timestamp::Now() + kChildRetentionInterval,
                   &on_timer_);
 }
 
@@ -579,7 +593,7 @@ PriorityLb::ChildPriority::FailoverTimer::FailoverTimer(
   Ref(DEBUG_LOCATION, "Timer").release();
   grpc_timer_init(
       &timer_,
-      ExecCtx::Get()->Now() +
+      Timestamp::Now() +
           child_priority_->priority_policy_->child_failover_timeout_,
       &on_timer_);
 }
@@ -668,10 +682,10 @@ PriorityLb::ChildPriority::GetPicker() {
   return absl::make_unique<RefCountedPickerWrapper>(picker_wrapper_);
 }
 
-void PriorityLb::ChildPriority::UpdateLocked(
+absl::Status PriorityLb::ChildPriority::UpdateLocked(
     RefCountedPtr<LoadBalancingPolicy::Config> config,
     bool ignore_reresolution_requests) {
-  if (priority_policy_->shutting_down_) return;
+  if (priority_policy_->shutting_down_) return absl::OkStatus();
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
     gpr_log(GPR_INFO, "[priority_lb %p] child %s (%p): start update",
             priority_policy_.get(), name_.c_str(), this);
@@ -697,7 +711,7 @@ void PriorityLb::ChildPriority::UpdateLocked(
             "[priority_lb %p] child %s (%p): updating child policy handler %p",
             priority_policy_.get(), name_.c_str(), this, child_policy_.get());
   }
-  child_policy_->UpdateLocked(std::move(update_args));
+  return child_policy_->UpdateLocked(std::move(update_args));
 }
 
 OrphanablePtr<LoadBalancingPolicy>

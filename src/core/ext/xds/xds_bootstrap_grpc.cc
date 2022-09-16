@@ -111,7 +111,7 @@ bool GrpcXdsBootstrap::GrpcXdsServer::IgnoreResourceDeletion() const {
              kServerFeatureIgnoreResourceDeletion)) != server_features_.end();
 }
 
-bool GrpcXdsBootstrap::GrpcXdsServer::operator==(const XdsServer& other) const {
+bool GrpcXdsBootstrap::GrpcXdsServer::Equals(const XdsServer& other) const {
   const auto& o = static_cast<const GrpcXdsServer&>(other);
   return (server_uri_ == o.server_uri_ &&
           channel_creds_.type == o.channel_creds_.type &&
