@@ -156,6 +156,7 @@ class Center {
     GPR_DEBUG_ASSERT(send_refs_ != 0);
     if (recv_refs_ == 0) return value_state_ == ValueState::kAcked;
     if (value_state_ != ValueState::kAcked) return on_empty_.pending();
+    value_state_ = ValueState::kEmpty;
     return true;
   }
 
@@ -194,6 +195,17 @@ class Center {
     kReady,
     kAcked,
   };
+  static const char* ValueStateName(ValueState state) {
+    switch (state) {
+      case ValueState::kEmpty:
+        return "kEmpty";
+      case ValueState::kReady:
+        return "kReady";
+      case ValueState::kAcked:
+        return "kAcked";
+    }
+    GPR_UNREACHABLE_CODE(return "unknown");
+  }
   T value_;
   // Number of sending objects.
   // 0 => send is closed.
