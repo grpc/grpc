@@ -362,8 +362,7 @@ class StreamsNotSeenTest : public ::testing::Test {
 
   static void OnWriteDone(void* arg, grpc_error_handle error) {
     GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
-    Notification* on_write_done_notification_ =
-        static_cast<Notification*>(arg);
+    Notification* on_write_done_notification_ = static_cast<Notification*>(arg);
     on_write_done_notification_->Notify();
   }
 
