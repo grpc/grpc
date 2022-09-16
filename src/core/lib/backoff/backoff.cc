@@ -22,6 +22,8 @@
 
 #include <algorithm>
 
+#include "src/core/lib/iomgr/exec_ctx.h"
+
 namespace grpc_core {
 
 BackOff::BackOff(const Options& options) : options_(options) { Reset(); }
@@ -29,14 +31,14 @@ BackOff::BackOff(const Options& options) : options_(options) { Reset(); }
 Timestamp BackOff::NextAttemptTime() {
   if (initial_) {
     initial_ = false;
-    return current_backoff_ + Timestamp::Now();
+    return current_backoff_ + ExecCtx::Get()->Now();
   }
   current_backoff_ = std::min(current_backoff_ * options_.multiplier(),
                               options_.max_backoff());
   const Duration jitter = Duration::FromSecondsAsDouble(
       absl::Uniform(rand_gen_, -options_.jitter() * current_backoff_.seconds(),
                     options_.jitter() * current_backoff_.seconds()));
-  return Timestamp::Now() + current_backoff_ + jitter;
+  return ExecCtx::Get()->Now() + current_backoff_ + jitter;
 }
 
 void BackOff::Reset() {

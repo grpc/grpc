@@ -51,6 +51,7 @@
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/json/json.h"
@@ -531,7 +532,7 @@ PriorityLb::ChildPriority::DeactivationTimer::DeactivationTimer(
   }
   GRPC_CLOSURE_INIT(&on_timer_, OnTimer, this, nullptr);
   Ref(DEBUG_LOCATION, "Timer").release();
-  grpc_timer_init(&timer_, Timestamp::Now() + kChildRetentionInterval,
+  grpc_timer_init(&timer_, ExecCtx::Get()->Now() + kChildRetentionInterval,
                   &on_timer_);
 }
 
@@ -593,7 +594,7 @@ PriorityLb::ChildPriority::FailoverTimer::FailoverTimer(
   Ref(DEBUG_LOCATION, "Timer").release();
   grpc_timer_init(
       &timer_,
-      Timestamp::Now() +
+      ExecCtx::Get()->Now() +
           child_priority_->priority_policy_->child_failover_timeout_,
       &on_timer_);
 }

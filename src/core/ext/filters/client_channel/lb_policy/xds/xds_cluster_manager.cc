@@ -50,6 +50,7 @@
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/json/json.h"
@@ -529,7 +530,7 @@ void XdsClusterManagerLb::ClusterChild::DeactivateLocked() {
   // Start a timer to delete the child.
   Ref(DEBUG_LOCATION, "ClusterChild+timer").release();
   grpc_timer_init(&delayed_removal_timer_,
-                  Timestamp::Now() +
+                  ExecCtx::Get()->Now() +
                       Duration::Milliseconds(
                           GRPC_XDS_CLUSTER_MANAGER_CHILD_RETENTION_INTERVAL_MS),
                   &on_delayed_removal_timer_);

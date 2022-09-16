@@ -32,6 +32,7 @@
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/stream_map.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 
 static bool g_disable_ping_ack = false;
 
@@ -94,7 +95,7 @@ grpc_error_handle grpc_chttp2_ping_parser_parse(void* parser,
       grpc_chttp2_ack_ping(t, p->opaque_8bytes);
     } else {
       if (!t->is_client) {
-        grpc_core::Timestamp now = grpc_core::Timestamp::Now();
+        grpc_core::Timestamp now = grpc_core::ExecCtx::Get()->Now();
         grpc_core::Timestamp next_allowed_ping =
             t->ping_recv_state.last_ping_recv_time +
             t->ping_policy.min_recv_ping_interval_without_data;

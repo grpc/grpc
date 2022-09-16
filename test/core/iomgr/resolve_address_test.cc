@@ -99,7 +99,8 @@ class ResolveAddressTest : public ::testing::Test {
         if (done_) {
           break;
         }
-        grpc_core::Duration time_left = deadline - grpc_core::Timestamp::Now();
+        grpc_core::Duration time_left =
+            deadline - grpc_core::ExecCtx::Get()->Now();
         gpr_log(GPR_DEBUG, "done=%d, time_left=%" PRId64, done_,
                 time_left.millis());
         ASSERT_GE(time_left, grpc_core::Duration::Zero());
