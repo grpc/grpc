@@ -69,8 +69,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 
      private:
       // Converts between
-      // grpc_core::SubchannelInterface::ConnectivityStateWatcherInterface and
-      // grpc_core::ConnectivityStateWatcherInterface.
+      // SubchannelInterface::ConnectivityStateWatcherInterface and
+      // ConnectivityStateWatcherInterface.
       class WatcherWrapper : public AsyncConnectivityStateWatcherInterface {
        public:
         WatcherWrapper(
@@ -293,7 +293,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 
   // Converts an address URI into a grpc_resolved_address.
   static grpc_resolved_address MakeAddress(absl::string_view address_uri) {
-    auto uri = grpc_core::URI::Parse(address_uri);
+    auto uri = URI::Parse(address_uri);
     GPR_ASSERT(uri.ok());
     grpc_resolved_address address;
     GPR_ASSERT(grpc_parse_uri(*uri, &address));
