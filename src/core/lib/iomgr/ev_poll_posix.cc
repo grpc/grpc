@@ -947,7 +947,7 @@ static grpc_error_handle pollset_work(grpc_pollset* pollset,
   while (keep_polling) {
     keep_polling = 0;
     if (!pollset->kicked_without_pollers ||
-        deadline <= grpc_core::ExecCtx::Get()->Now()) {
+        deadline <= grpc_core::Timestamp::Now()) {
       if (!added_worker) {
         push_front_worker(pollset, &worker);
         added_worker = 1;
@@ -1145,7 +1145,7 @@ static void pollset_shutdown(grpc_pollset* pollset, grpc_closure* closure) {
 static int poll_deadline_to_millis_timeout(grpc_core::Timestamp deadline) {
   if (deadline == grpc_core::Timestamp::InfFuture()) return -1;
   if (deadline.is_process_epoch()) return 0;
-  int64_t n = (deadline - grpc_core::ExecCtx::Get()->Now()).millis();
+  int64_t n = (deadline - grpc_core::Timestamp::Now()).millis();
   if (n < 0) return 0;
   if (n > INT_MAX) return -1;
   return static_cast<int>(n);
