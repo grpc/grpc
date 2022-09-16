@@ -22,7 +22,6 @@
 #include <limits>
 #include <ostream>
 #include <string>
-#include <utility>
 
 #include "absl/types/optional.h"
 
