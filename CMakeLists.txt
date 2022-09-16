@@ -3470,6 +3470,7 @@ foreach(_hdr
   include/grpcpp/support/sync_stream.h
   include/grpcpp/support/time.h
   include/grpcpp/support/validate_service_config.h
+  include/grpcpp/version_info.h
   include/grpcpp/xds_server_builder.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
@@ -4139,6 +4140,7 @@ foreach(_hdr
   include/grpcpp/support/sync_stream.h
   include/grpcpp/support/time.h
   include/grpcpp/support/validate_service_config.h
+  include/grpcpp/version_info.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
   get_filename_component(_path ${_path} PATH)
