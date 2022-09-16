@@ -102,8 +102,9 @@ class PthreadTlsImpl : TlsTypeConstrainer<T> {
       : default_value_(t), key_([]() {
           pthread_key_t key;
           if (0 != pthread_key_create(
-                       &key, [](void* p) { delete static_cast<T*>(p); }))
+                       &key, [](void* p) { delete static_cast<T*>(p); })) {
             abort();
+          }
           return key;
         }()) {}
   PthreadTlsImpl() : PthreadTlsImpl({}) {}
