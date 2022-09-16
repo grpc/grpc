@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <cstring>
 #include <ostream>
 
 #include "absl/functional/any_invocable.h"
@@ -245,6 +246,9 @@ void ListenCb(server* sv, absl::Status status) {
         [sv](absl::Status status) { ListenCb(sv, status); });
     listen_em_fd->NotifyOnRead(sv->listen_closure);
     return;
+  } else if (fd < 0) {
+    gpr_log(GPR_ERROR, "Failed to acceot a connection, returned error: %s",
+            std::strerror(errno));
   }
   EXPECT_GE(fd, 0);
   EXPECT_LT(fd, FD_SETSIZE);
@@ -376,14 +380,8 @@ void WaitAndShutdown(server* sv, client* cl) {
   gpr_mu_lock(&g_mu);
   while (!sv->done || !cl->done) {
     gpr_mu_unlock(&g_mu);
-    result = g_event_poller->Work(24h);
-    if (absl::holds_alternative<Poller::Events>(result)) {
-      auto pending_events = absl::get<Poller::Events>(result);
-      for (auto it = pending_events.begin(); it != pending_events.end(); ++it) {
-        (*it)->Run();
-      }
-      pending_events.clear();
-    }
+    result = g_event_poller->Work(24h, []() {});
+    ASSERT_FALSE(result == Poller::WorkResult::kDeadlineExceeded);
     gpr_mu_lock(&g_mu);
   }
   gpr_mu_unlock(&g_mu);
@@ -507,15 +505,8 @@ TEST_P(EventPollerTest, TestEventPollerHandleChange) {
     gpr_mu_lock(&g_mu);
     while (fdc->cb_that_ran == nullptr) {
       gpr_mu_unlock(&g_mu);
-      result = g_event_poller->Work(24h);
-      if (absl::holds_alternative<Poller::Events>(result)) {
-        auto pending_events = absl::get<Poller::Events>(result);
-        for (auto it = pending_events.begin(); it != pending_events.end();
-             ++it) {
-          (*it)->Run();
-        }
-        pending_events.clear();
-      }
+      result = g_event_poller->Work(24h, []() {});
+      ASSERT_FALSE(result == Poller::WorkResult::kDeadlineExceeded);
       gpr_mu_lock(&g_mu);
     }
   };
@@ -686,26 +677,19 @@ class Worker : public grpc_core::DualRefCounted<Worker> {
 
  private:
   void Work() {
-    auto result = g_event_poller->Work(24h);
-    if (absl::holds_alternative<Poller::Events>(result)) {
+    auto result = g_event_poller->Work(24h, [this]() {
       // Schedule next work instantiation immediately and take a Ref for
       // the next instantiation.
       Ref().release();
       scheduler_->Run([this]() { Work(); });
-      // Process pending events of current Work(..) instantiation.
-      auto pending_events = absl::get<Poller::Events>(result);
-      for (auto it = pending_events.begin(); it != pending_events.end(); ++it) {
-        (*it)->Run();
-      }
-      pending_events.clear();
-      // Corresponds to the Ref taken for the current instantiation.
-      Unref();
-    } else {
-      // The poller got kicked. This can only happen when all the Fds have
-      // orphaned themselves.
-      EXPECT_TRUE(absl::holds_alternative<Poller::Kicked>(result));
-      Unref();
-    }
+    });
+    ASSERT_TRUE(result == Poller::WorkResult::kOk ||
+                result == Poller::WorkResult::kKicked);
+    // Corresponds to the Ref taken for the current instantiation. If the
+    // result was Poller::WorkResult::kKicked, then the next work instantiation
+    // would not have been scheduled and the poll_again callback should have
+    // been deleted.
+    Unref();
   }
   Scheduler* scheduler_;
   PosixEventPoller* poller_;
