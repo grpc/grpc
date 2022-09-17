@@ -55,9 +55,7 @@ using grpc_event_engine::posix_engine::PosixEngineClosure;
 using grpc_event_engine::posix_engine::PosixEventPoller;
 using grpc_event_engine::posix_engine::PosixSocketWrapper;
 using grpc_event_engine::posix_engine::PosixTcpOptions;
-using grpc_event_engine::posix_engine::SockaddrIsV4Mapped;
 using grpc_event_engine::posix_engine::SockaddrToString;
-using grpc_event_engine::posix_engine::SockaddrToV4Mapped;
 using grpc_event_engine::posix_engine::TcpOptionsFromEndpointConfig;
 
 class AsyncConnect;
@@ -293,80 +291,6 @@ class AsyncConnect {
   bool connect_cancelled_ = false;
 };
 
-absl::Status PrepareSocket(const EventEngine::ResolvedAddress& addr,
-                           PosixSocketWrapper sock,
-                           const PosixTcpOptions& options) {
-  absl::Status status;
-  auto sock_cleanup = absl::MakeCleanup([&status, &sock]() -> void {
-    if (!status.ok()) {
-      close(sock.Fd());
-    }
-  });
-  status = sock.SetSocketNonBlocking(1);
-  if (!status.ok()) {
-    return status;
-  }
-  status = sock.SetSocketCloexec(1);
-  if (!status.ok()) {
-    return status;
-  }
-
-  auto is_unix_socket = [](const EventEngine::ResolvedAddress& addr) -> bool {
-    const sockaddr* sock_addr =
-        reinterpret_cast<const sockaddr*>(addr.address());
-    return sock_addr->sa_family == AF_UNIX;
-  };
-
-  if (!is_unix_socket(addr)) {
-    status = sock.SetSocketLowLatency(1);
-    if (!status.ok()) {
-      return status;
-    }
-    status = sock.SetSocketReuseAddr(1);
-    if (!status.ok()) {
-      return status;
-    }
-    sock.TrySetSocketTcpUserTimeout(options, true);
-  }
-  status = sock.SetSocketNoSigpipeIfPossible();
-  if (!status.ok()) {
-    return status;
-  }
-  return sock.ApplySocketMutatorInOptions(GRPC_FD_CLIENT_CONNECTION_USAGE,
-                                          options);
-}
-
-absl::StatusOr<PosixSocketWrapper> TcpClientPrepareSocket(
-    const PosixTcpOptions& options, const EventEngine::ResolvedAddress& addr,
-    EventEngine::ResolvedAddress& mapped_addr) {
-  PosixSocketWrapper::DSMode dsmode;
-  absl::StatusOr<PosixSocketWrapper> status;
-
-  // Use dualstack sockets where available. Set mapped to v6 or v4 mapped to v6.
-  if (!SockaddrToV4Mapped(&addr, &mapped_addr)) {
-    // addr is v4 mapped to v6 or just v6.
-    mapped_addr = addr;
-  }
-  status = PosixSocketWrapper::CreateDualStackSocket(nullptr, mapped_addr,
-                                                     SOCK_STREAM, 0, dsmode);
-  if (!status.ok()) {
-    return status;
-  }
-
-  if (dsmode == PosixSocketWrapper::DSMode::DSMODE_IPV4) {
-    // Original addr is either v4 or v4 mapped to v6. Set mapped_addr to v4.
-    if (!SockaddrIsV4Mapped(&addr, &mapped_addr)) {
-      mapped_addr = addr;
-    }
-  }
-
-  auto error = PrepareSocket(mapped_addr, *status, options);
-  if (!error.ok()) {
-    return error;
-  }
-  return *status;
-}
-
 }  // namespace
 
 EventEngine::ConnectionHandle PosixEventEngine::ConnectInternal(
@@ -466,9 +390,10 @@ PosixEventEngine::PosixEventEngine() {
 void PosixEventEngine::PollerWorkInternal() {
   // TODO(vigneshbabu): The timeout specified here is arbitrary. For instance,
   // this can be improved by setting the timeout to the next expiring timer.
-  auto result = poller_->Work(24h, [this]() { PollerWorkInternal(); });
-  if (result == Poller::WorkResult::kKicked &&
-      is_shutting_down_.load(std::memory_order_acquire)) {
+  ++shutdown_cnt_;
+  auto result = poller_->Work(
+      24h, [this]() { executor_.Run([this]() { PollerWorkInternal(); }); });
+  if (shutdown_cnt_.fetch_sub(1, std::memory_order_acq_rel) == 1) {
     // The asynchronous PollerWorkInternal did not get scheduled and we need to
     // break out since event engine is shutting down.
     grpc_core::MutexLock lock(&mu_);
@@ -496,7 +421,7 @@ PosixEventEngine::~PosixEventEngine() {
   if (!is_poller_owned_) {
     return;
   }
-  is_shutting_down_.store(true, std::memory_order_release);
+  shutdown_cnt_.fetch_sub(1, std::memory_order_acq_rel);
   {
     // The event engine destructor should only get called after all the
     // endpoints and listeners have been destroyed and the corresponding poller
@@ -579,7 +504,8 @@ EventEngine::ConnectionHandle PosixEventEngine::Connect(
   EventEngine::ResolvedAddress mapped_addr;
   PosixTcpOptions options = TcpOptionsFromEndpointConfig(args);
   absl::StatusOr<PosixSocketWrapper> socket =
-      TcpClientPrepareSocket(options, addr, mapped_addr);
+      PosixSocketWrapper::CreateAndPrepareTcpClientSocket(options, addr,
+                                                          mapped_addr);
   if (!socket.ok()) {
     Run([on_connect = std::move(on_connect),
          status = socket.status()]() mutable { on_connect(status); });

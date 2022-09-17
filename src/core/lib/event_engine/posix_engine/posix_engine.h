@@ -137,7 +137,7 @@ class PosixEventEngine final
       Duration timeout);
 
   grpc_event_engine::posix_engine::PosixEventPoller* poller_ = nullptr;
-  std::atomic<bool> is_shutting_down_{false};
+  std::atomic<int> shutdown_cnt_{1};
   bool is_poller_owned_ = true;
   grpc_core::CondVar poller_wait_;
   posix_engine::TimerManager timer_manager_;
