@@ -52,6 +52,7 @@ void PrepareFork() {
     forkable->PrepareFork();
   }
 }
+
 void PostforkParent() {
   grpc_core::MutexLock lock(g_mu.get());
   for (auto* forkable : *g_forkables) {

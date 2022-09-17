@@ -191,6 +191,9 @@ grpc_cc_binary(
     ],
 )
 
+# TODO(hork): filter out known-failing combinations including epoll1, or 
+# otherwise assert failure of those tests so that this test fails when they
+# begin to work.
 grpc_cc_test(
     name = "client_fork_test",
     size = "small",
@@ -200,6 +203,7 @@ grpc_cc_test(
         "gtest",
     ],
     tags = [
+        "fork_test",
         "no_test_ios",
         "no_windows",
     ],

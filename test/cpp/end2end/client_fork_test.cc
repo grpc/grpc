@@ -34,11 +34,9 @@
 #include <grpcpp/server_context.h>
 
 #include "src/core/lib/gprpp/fork.h"
-#include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
-#include "test/cpp/util/subprocess.h"
 
 namespace grpc {
 namespace testing {
@@ -102,14 +100,6 @@ TEST(ClientForkTest, ClientCallsBeforeAndAfterForkSucceed) {
       break;
   }
 
-  // Equivalent to grpc_fork_handlers_auto_register, without the need for
-  // GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK.
-  pthread_atfork(grpc_prefork, grpc_postfork_parent, grpc_postfork_child);
-
-  // Register another atfork handler so that clients are reset in post-fork
-  // parent and child.
-  pthread_atfork(nullptr, ResetStub, ResetStub);
-
   stub = MakeStub();
 
   // Do a round trip before we fork.
@@ -139,6 +129,7 @@ TEST(ClientForkTest, ClientCallsBeforeAndAfterForkSucceed) {
       ClientContext context;
       context.set_wait_for_ready(true);
 
+      stub = MakeStub();
       auto stream = stub->BidiStream(&context);
 
       request.set_message("Hello");
