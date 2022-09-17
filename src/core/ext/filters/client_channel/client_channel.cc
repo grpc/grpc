@@ -554,6 +554,7 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
       parent->chand_->work_serializer_->Run(
           [parent]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(
               *parent_->chand_->work_serializer_) {
+            ExecCtx exec_ctx;
             parent->Unref(DEBUG_LOCATION, "WatcherWrapper");
           },
           DEBUG_LOCATION);
