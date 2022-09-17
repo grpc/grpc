@@ -110,7 +110,7 @@ Pod::Spec.new do |s|
   # Restrict the protobuf runtime version to the one supported by this version of protoc.
   s.dependency 'Protobuf', '~> 3.0'
   # For the Protobuf dependency not to complain:
-  s.ios.deployment_target = '9.0'
+  s.ios.deployment_target = '10.0'
   s.osx.deployment_target = '10.10'
   s.tvos.deployment_target = '10.0'
   s.watchos.deployment_target = '4.0'
