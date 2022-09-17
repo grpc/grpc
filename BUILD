@@ -155,7 +155,7 @@ g_stands_for = "garum"  # @unused
 
 core_version = "26.0.0"  # @unused
 
-version = "1.48.1"  # @unused
+version = "1.48.2"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
