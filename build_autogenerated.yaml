@@ -777,6 +777,7 @@ libs:
   - src/core/lib/gprpp/dual_ref_counted.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/match.h
+  - src/core/lib/gprpp/notification.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/overload.h
   - src/core/lib/gprpp/packed_table.h
@@ -2001,6 +2002,7 @@ libs:
   - src/core/lib/gprpp/dual_ref_counted.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/match.h
+  - src/core/lib/gprpp/notification.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/overload.h
   - src/core/lib/gprpp/packed_table.h
@@ -2686,6 +2688,7 @@ libs:
   - include/grpcpp/health_check_service_interface.h
   - include/grpcpp/impl/call.h
   - include/grpcpp/impl/call_hook.h
+  - include/grpcpp/impl/call_op_set_interface.h
   - include/grpcpp/impl/channel_argument_option.h
   - include/grpcpp/impl/client_unary_call.h
   - include/grpcpp/impl/codegen/async_generic_service.h
@@ -3100,6 +3103,7 @@ libs:
   - include/grpcpp/health_check_service_interface.h
   - include/grpcpp/impl/call.h
   - include/grpcpp/impl/call_hook.h
+  - include/grpcpp/impl/call_op_set_interface.h
   - include/grpcpp/impl/channel_argument_option.h
   - include/grpcpp/impl/client_unary_call.h
   - include/grpcpp/impl/codegen/async_generic_service.h
@@ -7879,6 +7883,17 @@ targets:
   - test/cpp/end2end/nonblocking_test.cc
   deps:
   - grpc++_test_util
+- name: notification_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/gprpp/notification.h
+  src:
+  - test/core/gprpp/notification_test.cc
+  deps:
+  - gpr
+  uses_polling: false
 - name: num_external_connectivity_watchers_test
   gtest: true
   build: test
@@ -10059,6 +10074,22 @@ targets:
   deps:
   - grpc++_test_config
   - grpc++_test_util
+- name: thread_pool_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/event_engine/forkable.h
+  - src/core/lib/event_engine/thread_pool.h
+  - src/core/lib/gprpp/notification.h
+  src:
+  - src/core/lib/event_engine/forkable.cc
+  - src/core/lib/event_engine/thread_pool.cc
+  - test/core/event_engine/thread_pool_test.cc
+  deps:
+  - absl/container:flat_hash_set
+  - absl/functional:any_invocable
+  - gpr
 - name: thread_quota_test
   gtest: true
   build: test

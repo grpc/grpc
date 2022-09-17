@@ -329,6 +329,7 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/grpcpp.h",
     "include/grpcpp/health_check_service_interface.h",
     "include/grpcpp/impl/call_hook.h",
+    "include/grpcpp/impl/call_op_set_interface.h",
     "include/grpcpp/impl/call.h",
     "include/grpcpp/impl/channel_argument_option.h",
     "include/grpcpp/impl/client_unary_call.h",
@@ -2478,10 +2479,12 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/functional:any_invocable",
+        "absl/time",
     ],
     deps = [
         "forkable",
         "gpr",
+        "gpr_tls",
     ],
 )
 
@@ -3387,6 +3390,7 @@ grpc_cc_library(
         "json",
         "latch",
         "memory_quota",
+        "notification",
         "orphanable",
         "packed_table",
         "poll",
@@ -3646,6 +3650,15 @@ grpc_cc_library(
         "server_address",
         "uri_parser",
     ],
+)
+
+grpc_cc_library(
+    name = "notification",
+    hdrs = [
+        "src/core/lib/gprpp/notification.h",
+    ],
+    external_deps = ["absl/time"],
+    deps = ["gpr"],
 )
 
 grpc_cc_library(
@@ -7671,7 +7684,6 @@ grpc_cc_library(
     visibility = ["@grpc:grpc++_test"],
     deps = [
         "grpc++",
-        "grpc++_codegen_base",
         "grpc_base",
     ],
 )

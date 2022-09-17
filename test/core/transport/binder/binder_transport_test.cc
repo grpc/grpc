@@ -27,12 +27,12 @@
 #include "absl/memory/memory.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_join.h"
-#include "absl/synchronization/notification.h"
 
 #include <grpc/grpc.h>
 #include <grpcpp/security/binder_security_policy.h>
 
 #include "src/core/ext/transport/binder/transport/binder_stream.h"
+#include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "test/core/transport/binder/mock_objects.h"
 #include "test/core/util/test_config.h"
@@ -111,7 +111,7 @@ void MockCallback(void* arg, grpc_error_handle error);
 
 class MockGrpcClosure {
  public:
-  explicit MockGrpcClosure(absl::Notification* notification = nullptr)
+  explicit MockGrpcClosure(grpc_core::Notification* notification = nullptr)
       : notification_(notification) {
     GRPC_CLOSURE_INIT(&closure_, MockCallback, this, nullptr);
   }
@@ -119,7 +119,7 @@ class MockGrpcClosure {
   grpc_closure* GetGrpcClosure() { return &closure_; }
   MOCK_METHOD(void, Callback, (grpc_error_handle), ());
 
-  absl::Notification* notification_;
+  grpc_core::Notification* notification_;
 
  private:
   grpc_closure closure_;
@@ -288,7 +288,7 @@ struct MakeRecvInitialMetadata {
   grpc_core::ScopedArenaPtr arena =
       grpc_core::MakeScopedArena(1024, g_memory_allocator);
   grpc_metadata_batch grpc_initial_metadata{arena.get()};
-  absl::Notification notification;
+  grpc_core::Notification notification;
 };
 
 struct MakeRecvMessage {
@@ -306,7 +306,7 @@ struct MakeRecvMessage {
   }
 
   MockGrpcClosure ready;
-  absl::Notification notification;
+  grpc_core::Notification notification;
   absl::optional<grpc_core::SliceBuffer> grpc_message;
 };
 
@@ -332,7 +332,7 @@ struct MakeRecvTrailingMetadata {
   grpc_core::ScopedArenaPtr arena =
       grpc_core::MakeScopedArena(1024, g_memory_allocator);
   grpc_metadata_batch grpc_trailing_metadata{arena.get()};
-  absl::Notification notification;
+  grpc_core::Notification notification;
 };
 
 const Metadata kDefaultMetadata = {

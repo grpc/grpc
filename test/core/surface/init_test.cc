@@ -20,13 +20,12 @@
 
 #include <gtest/gtest.h>
 
-#include "absl/synchronization/notification.h"
-
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/util/test_config.h"
 
@@ -142,7 +141,7 @@ TEST(Init, repeatedly_blocking) {
 
 TEST(Init, TimerManagerHoldsLastInit) {
   grpc_init();
-  absl::Notification n;
+  grpc_core::Notification n;
   grpc_event_engine::experimental::GetDefaultEventEngine()->RunAfter(
       std::chrono::seconds(1), [&n] {
         grpc_shutdown();
