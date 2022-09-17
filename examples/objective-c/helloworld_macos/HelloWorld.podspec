@@ -7,7 +7,7 @@ Pod::Spec.new do |s|
   s.summary = "HelloWorld example"
   s.source = { :git => 'https://github.com/grpc/grpc.git' }
 
-  s.ios.deployment_target = "9.0"
+  s.ios.deployment_target = "10.0"
   s.osx.deployment_target = "10.10"
 
   # Base directory where the .proto files are.
