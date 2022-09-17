@@ -219,7 +219,8 @@ with open('src/core/lib/experiments/experiments.cc', 'w') as C:
     print("}  // namespace grpc_core", file=C)
 
 bzl_to_tags_to_experiments = dict((key, collections.defaultdict(list))
-                                  for key in BZL_LIST_FOR_DEFAULTS.keys() if key is not None)
+                                  for key in BZL_LIST_FOR_DEFAULTS.keys()
+                                  if key is not None)
 
 for attr in attrs:
     for tag in attr['test_tags']:
