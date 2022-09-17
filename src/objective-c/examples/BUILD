@@ -77,7 +77,7 @@ ios_application(
         "ipad",
     ],
     infoplists = ["Sample/Sample/Info.plist"],
-    minimum_os_version = "9.0",
+    minimum_os_version = "10.0",
     visibility = ["//visibility:public"],
     deps = ["Sample-lib"],
 )
@@ -100,7 +100,7 @@ ios_application(
         "ipad",
     ],
     infoplists = ["InterceptorSample/InterceptorSample/Info.plist"],
-    minimum_os_version = "9.0",  # Safe Area Layout Guide used
+    minimum_os_version = "10.0",  # Safe Area Layout Guide used
     deps = ["InterceptorSample-lib"],
 )
 
@@ -148,7 +148,7 @@ ios_application(
     bundle_id = "io.grpc.watchOS-sample",
     families = ["iphone"],
     infoplists = ["watchOS-sample/watchOS-sample/Info.plist"],
-    minimum_os_version = "9.0",  # Safe Area Layout Guide used
+    minimum_os_version = "10.0",  # Safe Area Layout Guide used
     watch_application = "watchOS-sample-watchApp",
     deps = [":watchOS-sample-iOS-lib"],
 )
