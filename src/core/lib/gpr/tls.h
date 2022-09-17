@@ -62,35 +62,6 @@ class PthreadTlsImpl : TlsTypeConstrainer<T> {
   PthreadTlsImpl(const PthreadTlsImpl&) = delete;
   PthreadTlsImpl& operator=(const PthreadTlsImpl&) = delete;
 
-  // Achtung! This class emulates C++ `thread_local` using pthread keys. Each
-  // instance of this class is a stand in for a C++ `thread_local`. Think of
-  // each `thread_local` as a *global* pthread_key_t and a type tag. An
-  // important consequence of this is that the lifetime of a `pthread_key_t`
-  // is precisely the lifetime of an instance of this class. To understand why
-  // this is, consider the following scenario given a fictional implementation
-  // of this class which creates and destroys its `pthread_key_t` each time
-  // a given block of code runs (all actions take place on a single thread):
-  //
-  // - instance 1 (type tag = T*) is initialized, is assigned `pthread_key_t` 1
-  // - instance 2 (type tag = int) is initialized, is assigned `pthread_key_t` 2
-  // - instances 1 and 2 store and retrieve values; all is well
-  // - instances 1 and 2 are de-initialized; their keys are released to the pool
-  //
-  // - another run commences
-  // - instance 1 receives key 2
-  // - a value is read from instance 1, it observes a value of type int, but
-  //   interprets it as T*; undefined behavior, kaboom
-  //
-  // To properly ensure these invariants are upheld the `pthread_key_t` must be
-  // `const`, which means it can only be released in the destructor. This is a
-  // a violation of the style guide, since these objects are always static (see
-  // footnote) but this code is used in sufficiently narrow circumstances to
-  // justify the deviation.
-  //
-  // https://google.github.io/styleguide/cppguide.html#Static_and_Global_Variables
-  PthreadTlsImpl(const PthreadTlsImpl&) = delete;
-  PthreadTlsImpl& operator=(const PthreadTlsImpl&) = delete;
-
   // To properly ensure these invariants are upheld the `pthread_key_t` must
   // be `const`, which means it can only be released in the destructor. This
   // is a a violation of the style guide, since these objects are always
