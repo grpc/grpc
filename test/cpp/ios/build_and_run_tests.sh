@@ -28,6 +28,6 @@ XCODEBUILD_FILTER_OUTPUT_SCRIPT="../../../src/objective-c/tests/xcodebuild_filte
 time xcodebuild \
     -workspace Tests.xcworkspace \
     -scheme CronetTests \
-    -destination name="iPhone 8" \
+    -destination name="iPhone 9" \
     test \
     | "${XCODEBUILD_FILTER_OUTPUT_SCRIPT}"
