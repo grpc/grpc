@@ -28,7 +28,6 @@
 
 #include <grpc/support/log.h>
 
-#include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gprpp/thd.h"
 
 namespace grpc_event_engine {
@@ -37,7 +36,7 @@ namespace experimental {
 namespace {
 // TODO(drfloob): Remove this, and replace it with the WorkQueue* for the
 // current thread (with nullptr indicating not a threadpool thread).
-GPR_THREAD_LOCAL(bool) g_threadpool_thread;
+thread_local bool g_threadpool_thread;
 }  // namespace
 
 void ThreadPool::StartThread(StatePtr state) {

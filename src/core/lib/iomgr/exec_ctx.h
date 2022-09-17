@@ -30,7 +30,6 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/time_precise.h"
-#include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/fork.h"
 #include "src/core/lib/gprpp/time.h"
@@ -229,7 +228,7 @@ class ExecCtx {
   bool now_is_valid_ = false;
   Timestamp now_;
 
-  static GPR_THREAD_LOCAL(ExecCtx*) exec_ctx_;
+  static thread_local ExecCtx* exec_ctx_;
   ExecCtx* last_exec_ctx_ = Get();
 };
 
@@ -344,7 +343,7 @@ class ApplicationCallbackExecCtx {
   uintptr_t flags_{0u};
   grpc_completion_queue_functor* head_{nullptr};
   grpc_completion_queue_functor* tail_{nullptr};
-  static GPR_THREAD_LOCAL(ApplicationCallbackExecCtx*) callback_exec_ctx_;
+  static thread_local ApplicationCallbackExecCtx* callback_exec_ctx_;
 };
 
 }  // namespace grpc_core
