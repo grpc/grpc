@@ -57,6 +57,39 @@ class TlsTypeConstrainer {
 namespace grpc_core {
 
 template <typename T>
+struct Payload {
+  explicit Payload(T value) : value_(value), set_(true) {}
+  explicit Payload() : set_(false) {}
+
+  T* get() {
+    if (set_) {
+      return &value_;
+    }
+    return nullptr;
+  }
+
+ private:
+  T value_;
+  bool set_;
+};
+
+template <typename T>
+struct Payload<T*> {
+  explicit Payload(T* value) : value_(value) {}
+  explicit Payload() : Payload(nullptr) {}
+
+  T** get() {
+    if (value_ != nullptr) {
+      return &value_;
+    }
+    return nullptr;
+  }
+
+ private:
+  T* value_;
+};
+
+template <typename T>
 class PthreadTlsImpl : TlsTypeConstrainer<T> {
  public:
   PthreadTlsImpl(const PthreadTlsImpl&) = delete;
@@ -88,16 +121,18 @@ class PthreadTlsImpl : TlsTypeConstrainer<T> {
   // justify the deviation.
   //
   // https://google.github.io/styleguide/cppguide.html#Static_and_Global_Variables
-  PthreadTlsImpl()
-      : keys_([]() {
+  PthreadTlsImpl(T t)
+      : default_value_(t), keys_([]() {
           typename std::remove_const<decltype(PthreadTlsImpl::keys_)>::type
               keys;
           for (pthread_key_t& key : keys) {
             if (0 != pthread_key_create(&key, nullptr)) abort();
           }
           return keys;
-        }()) {}
-  PthreadTlsImpl(T t) : PthreadTlsImpl() { *this = t; }
+        }()) {
+    store(Payload{});
+  }
+  PthreadTlsImpl() : PthreadTlsImpl({}){};
   ~PthreadTlsImpl() {
     for (pthread_key_t key : keys_) {
       if (0 != pthread_key_delete(key)) abort();
@@ -105,7 +140,7 @@ class PthreadTlsImpl : TlsTypeConstrainer<T> {
   }
 
   operator T() const {
-    T t;
+    Payload t;
     char* dst = reinterpret_cast<char*>(&t);
     for (pthread_key_t key : keys_) {
       uintptr_t src = uintptr_t(pthread_getspecific(key));
@@ -114,7 +149,11 @@ class PthreadTlsImpl : TlsTypeConstrainer<T> {
       memcpy(dst, &src, step);
       dst += step;
     }
-    return t;
+    T* value = t.get();
+    if (value != nullptr) {
+      return *value;
+    }
+    return default_value_;
   }
 
   T operator->() const {
@@ -123,7 +162,20 @@ class PthreadTlsImpl : TlsTypeConstrainer<T> {
     return this->operator T();
   }
 
-  T operator=(T t) {
+  T operator=(T value) {
+    store(Payload{value});
+    return value;
+  }
+
+  static constexpr size_t complexity() { return N; }
+
+ private:
+  using Payload = Payload<T>;
+
+  static constexpr size_t N =
+      (sizeof(Payload) + sizeof(void*) - 1) / sizeof(void*);
+
+  void store(Payload t) {
     char* src = reinterpret_cast<char*>(&t);
     for (pthread_key_t key : keys_) {
       uintptr_t dst;
@@ -133,14 +185,18 @@ class PthreadTlsImpl : TlsTypeConstrainer<T> {
       if (0 != pthread_setspecific(key, reinterpret_cast<void*>(dst))) abort();
       src += step;
     }
-    return t;
   }
 
- private:
-  const std::array<pthread_key_t,
-                   (sizeof(T) + sizeof(void*) - 1) / sizeof(void*)>
-      keys_;
+  const T default_value_;
+  const std::array<pthread_key_t, N> keys_;
 };
+
+static_assert(PthreadTlsImpl<uint8_t>::complexity() == 1,
+              "TLS scalars should be cheap");
+static_assert(PthreadTlsImpl<size_t>::complexity() == 2,
+              "TLS scalars should be cheap");
+static_assert(PthreadTlsImpl<void*>::complexity() == 1,
+              "TLS pointers should be cheap");
 
 }  // namespace grpc_core
 
