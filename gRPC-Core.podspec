@@ -177,6 +177,8 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/container/flat_hash_map', abseil_version
     ss.dependency 'abseil/container/flat_hash_set', abseil_version
     ss.dependency 'abseil/container/inlined_vector', abseil_version
+    ss.dependency 'abseil/flags/flag', abseil_version
+    ss.dependency 'abseil/flags/marshalling', abseil_version
     ss.dependency 'abseil/functional/any_invocable', abseil_version
     ss.dependency 'abseil/functional/bind_front', abseil_version
     ss.dependency 'abseil/functional/function_ref', abseil_version
@@ -269,8 +271,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc',
-                      'src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.cc',
-                      'src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h',
                       'src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc',
                       'src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc',
                       'src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h',
@@ -1035,6 +1035,12 @@ Pod::Spec.new do |s|
                       'src/core/lib/compression/compression_internal.h',
                       'src/core/lib/compression/message_compress.cc',
                       'src/core/lib/compression/message_compress.h',
+                      'src/core/lib/config/config_from_environment.cc',
+                      'src/core/lib/config/config_from_environment.h',
+                      'src/core/lib/config/config_var_metadata.h',
+                      'src/core/lib/config/config_vars.cc',
+                      'src/core/lib/config/config_vars.h',
+                      'src/core/lib/config/config_vars_non_generated.cc',
                       'src/core/lib/config/core_configuration.cc',
                       'src/core/lib/config/core_configuration.h',
                       'src/core/lib/debug/stats.cc',
@@ -1139,11 +1145,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/gprpp/examine_stack.h',
                       'src/core/lib/gprpp/fork.cc',
                       'src/core/lib/gprpp/fork.h',
-                      'src/core/lib/gprpp/global_config.h',
-                      'src/core/lib/gprpp/global_config_custom.h',
-                      'src/core/lib/gprpp/global_config_env.cc',
-                      'src/core/lib/gprpp/global_config_env.h',
-                      'src/core/lib/gprpp/global_config_generic.h',
                       'src/core/lib/gprpp/host_port.cc',
                       'src/core/lib/gprpp/host_port.h',
                       'src/core/lib/gprpp/manual_constructor.h',
@@ -1780,7 +1781,6 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/client_channel/local_subchannel_pool.h',
                               'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h',
                               'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h',
-                              'src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h',
                               'src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h',
                               'src/core/ext/filters/client_channel/resolver/polling_resolver.h',
                               'src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h',
@@ -2164,6 +2164,9 @@ Pod::Spec.new do |s|
                               'src/core/lib/channel/status_util.h',
                               'src/core/lib/compression/compression_internal.h',
                               'src/core/lib/compression/message_compress.h',
+                              'src/core/lib/config/config_from_environment.h',
+                              'src/core/lib/config/config_var_metadata.h',
+                              'src/core/lib/config/config_vars.h',
                               'src/core/lib/config/core_configuration.h',
                               'src/core/lib/debug/stats.h',
                               'src/core/lib/debug/stats_data.h',
@@ -2209,10 +2212,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/gprpp/env.h',
                               'src/core/lib/gprpp/examine_stack.h',
                               'src/core/lib/gprpp/fork.h',
-                              'src/core/lib/gprpp/global_config.h',
-                              'src/core/lib/gprpp/global_config_custom.h',
-                              'src/core/lib/gprpp/global_config_env.h',
-                              'src/core/lib/gprpp/global_config_generic.h',
                               'src/core/lib/gprpp/host_port.h',
                               'src/core/lib/gprpp/manual_constructor.h',
                               'src/core/lib/gprpp/match.h',

@@ -53,7 +53,8 @@ if error:
 
 
 def c_str(s, encoding='ascii'):
-    if s is None: return '""'
+    if s is None:
+        return '""'
     if isinstance(s, str):
         s = s.encode(encoding)
     result = ''
@@ -110,11 +111,7 @@ MEMBER_TYPE = {
     "bool": "bool",
 }
 
-SORT_ORDER_FOR_PACKING = {
-    "int": 0,
-    "bool": 1,
-    "string": 2
-}
+SORT_ORDER_FOR_PACKING = {"int": 0, "bool": 1, "string": 2}
 
 DEFAULT_VALUE = {
     "int": lambda x, name: x,
@@ -122,7 +119,8 @@ DEFAULT_VALUE = {
     "string": lambda x, name: "default_" + name,
 }
 
-attrs_in_packing_order = sorted(attrs, key=lambda a: SORT_ORDER_FOR_PACKING[a['type']])
+attrs_in_packing_order = sorted(attrs,
+                                key=lambda a: SORT_ORDER_FOR_PACKING[a['type']])
 
 with open('src/core/lib/config/config_vars.h', 'w') as H:
     put_copyright(H)
@@ -146,33 +144,36 @@ with open('src/core/lib/config/config_vars.h', 'w') as H:
     print(file=H)
     print("namespace grpc_core {", file=H)
     print(file=H)
-    print("class ConfigVars {",file=H)
-    print(" public:",file=H)
-    print("  ConfigVars(const ConfigVars&) = delete;",file=H)
-    print("  ConfigVars& operator=(const ConfigVars&) = delete;",file=H)
-    print("  // Get the core configuration; if it does not exist, create it.", file=H)
+    print("class ConfigVars {", file=H)
+    print(" public:", file=H)
+    print("  ConfigVars(const ConfigVars&) = delete;", file=H)
+    print("  ConfigVars& operator=(const ConfigVars&) = delete;", file=H)
+    print("  // Get the core configuration; if it does not exist, create it.",
+          file=H)
     print("  static const ConfigVars& Get() {", file=H)
     print("    auto* p = config_vars_.load(std::memory_order_acquire);", file=H)
     print("    if (p != nullptr) return *p;", file=H)
     print("    return Load();", file=H)
-    print("  }",file=H)
-    print("  // Drop the config vars. Users must ensure no other threads are", file=H)
+    print("  }", file=H)
+    print("  // Drop the config vars. Users must ensure no other threads are",
+          file=H)
     print("  // accessing the configuration.", file=H)
     print("  static void Reset();", file=H)
     for attr in attrs:
         for line in attr['description'].splitlines():
             print("  // %s" % line, file=H)
-        print("  %s %s() const { return %s_; }" % (
-            RETURN_TYPE[attr['type']], snake_to_pascal(attr['name']), attr['name']),file=H)
-    print("  static absl::Span<const ConfigVarMetadata> metadata();",file=H)
-    print(" private:",file=H)
-    print("  ConfigVars();",file=H)
-    print("  static const ConfigVars& Load();",file=H)
-    print("  static std::atomic<ConfigVars*> config_vars_;",file=H)
+        print("  %s %s() const { return %s_; }" %
+              (RETURN_TYPE[attr['type']], snake_to_pascal(
+                  attr['name']), attr['name']),
+              file=H)
+    print("  static absl::Span<const ConfigVarMetadata> metadata();", file=H)
+    print(" private:", file=H)
+    print("  ConfigVars();", file=H)
+    print("  static const ConfigVars& Load();", file=H)
+    print("  static std::atomic<ConfigVars*> config_vars_;", file=H)
     for attr in attrs_in_packing_order:
-        print("  %s %s_;" % (
-            MEMBER_TYPE[attr['type']], attr['name']),file=H)
-    print("};",file=H)
+        print("  %s %s_;" % (MEMBER_TYPE[attr['type']], attr['name']), file=H)
+    print("};", file=H)
     print(file=H)
     print("}  // namespace grpc_core", file=H)
     print(file=H)
@@ -199,17 +200,17 @@ with open('src/core/lib/config/config_vars.cc', 'w') as C:
     for attr in attrs:
         if attr['type'] == "string":
             print("const char* const default_%s = %s;" %
-                (attr['name'], c_str(attr['default'])),
-                file=C)
+                  (attr['name'], c_str(attr['default'])),
+                  file=C)
     print("}", file=C)
     for attr in attrs:
-        print("ABSL_FLAG(%s, %s, grpc_core::Load%sFromEnv(\"%s\", %s), description_%s);" % (
-            MEMBER_TYPE[attr["type"]],
-            'grpc_' + attr['name'],
-            attr["type"].capitalize(),
-            attr['name'],
-            DEFAULT_VALUE[attr['type']](attr['default'], attr['name']),
-            attr['name']), file=C)
+        print(
+            "ABSL_FLAG(%s, %s, grpc_core::Load%sFromEnv(\"%s\", %s), description_%s);"
+            % (MEMBER_TYPE[attr["type"]], 'grpc_' + attr['name'],
+               attr["type"].capitalize(), attr['name'],
+               DEFAULT_VALUE[attr['type']](attr['default'],
+                                           attr['name']), attr['name']),
+            file=C)
     print(file=C)
     print("namespace grpc_core {", file=C)
     print(file=C)
@@ -217,22 +218,26 @@ with open('src/core/lib/config/config_vars.cc', 'w') as C:
     print(",".join("%s_(absl::GetFlag(FLAGS_grpc_%s))" % (
         attr['name'],
         attr['name'],
-        ) for attr in attrs_in_packing_order), file=C)
+    ) for attr in attrs_in_packing_order),
+          file=C)
     print("{}", file=C)
     print(file=C)
-    print("absl::Span<const ConfigVarMetadata> ConfigVars::metadata() {",file=C)
-    print("  static const auto* metadata = new std::vector<ConfigVarMetadata>{",file=C)
+    print("absl::Span<const ConfigVarMetadata> ConfigVars::metadata() {",
+          file=C)
+    print("  static const auto* metadata = new std::vector<ConfigVarMetadata>{",
+          file=C)
     for attr in attrs:
         print("    {", file=C)
         print("      %s," % c_str(attr['name']), file=C)
         print("      description_%s," % attr['name'], file=C)
-        print("      ConfigVarMetadata::%s{%s, &ConfigVars::%s}," % (
-            snake_to_pascal(attr['type']),
-            DEFAULT_VALUE[attr['type']](attr['default'], attr['name']),
-            snake_to_pascal(attr['name'])), file=C)
+        print(
+            "      ConfigVarMetadata::%s{%s, &ConfigVars::%s}," %
+            (snake_to_pascal(attr['type']), DEFAULT_VALUE[attr['type']](
+                attr['default'], attr['name']), snake_to_pascal(attr['name'])),
+            file=C)
         print("    },", file=C)
-    print("  };",file=C)
-    print("  return *metadata;",file=C)
-    print("}",file=C)
+    print("  };", file=C)
+    print("  return *metadata;", file=C)
+    print("}", file=C)
     print(file=C)
     print("}", file=C)

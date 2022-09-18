@@ -15,6 +15,8 @@
 #ifndef GRPC_CORE_LIB_CONFIG_CONFIG_SOURCE_H
 #define GRPC_CORE_LIB_CONFIG_CONFIG_SOURCE_H
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/config/config_from_environment.h"
 
-#endif
+#endif  // GRPC_CORE_LIB_CONFIG_CONFIG_SOURCE_H

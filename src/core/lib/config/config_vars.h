@@ -26,6 +26,7 @@
 #include <stdint.h>
 
 #include <atomic>
+#include <functional>
 #include <string>
 
 #include "absl/strings/string_view.h"

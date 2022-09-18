@@ -15,6 +15,8 @@
 #ifndef GRPC_CORE_LIB_CONFIG_CONFIG_FROM_ENVIRONMENT_H
 #define GRPC_CORE_LIB_CONFIG_CONFIG_FROM_ENVIRONMENT_H
 
+#include <grpc/support/port_platform.h>
+
 #include <stdint.h>
 
 #include <string>
@@ -27,4 +29,4 @@ bool LoadBoolFromEnv(const char* var_name, bool default_value);
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_CORE_LIB_CONFIG_CONFIG_FROM_ENVIRONMENT_H

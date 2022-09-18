@@ -17,6 +17,8 @@
 #ifndef GRPC_CORE_LIB_CONFIG_CONFIG_VAR_METADATA_H
 #define GRPC_CORE_LIB_CONFIG_CONFIG_VAR_METADATA_H
 
+#include <grpc/support/port_platform.h>
+
 #include <stdint.h>
 
 #include "absl/strings/string_view.h"
@@ -45,4 +47,4 @@ struct ConfigVarMetadata {
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_CORE_LIB_CONFIG_CONFIG_VAR_METADATA_H
