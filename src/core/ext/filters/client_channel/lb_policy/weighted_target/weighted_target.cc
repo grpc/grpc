@@ -471,6 +471,7 @@ WeightedTargetLb::WeightedChild::DelayedRemovalTimer::DelayedRemovalTimer(
       kChildRetentionInterval, [self = Ref()]() mutable {
         self->weighted_child_->weighted_target_policy_->work_serializer()->Run(
             [self = std::move(self)] {
+              ApplicationExecCtx app_exec_ctx;
               ExecCtx exec_ctx;
               self->OnTimerLocked();
             },
