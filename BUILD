@@ -1254,14 +1254,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "config_source",
-    hdrs = [
-        "src/core/lib/config/config_source.h",
-    ],
-    deps = ["config_from_environment"],
-)
-
-grpc_cc_library(
     name = "config_vars",
     srcs = [
         "src/core/lib/config/config_vars.cc",
@@ -1272,13 +1264,14 @@ grpc_cc_library(
         "src/core/lib/config/config_vars.h",
     ],
     external_deps = [
+        "absl/flags:flag",
         "absl/strings",
         "absl/types:optional",
         "absl/types:span",
         "absl/types:variant",
     ],
     deps = [
-        "config_source",
+        "config_from_environment",
         "gpr_platform",
     ],
 )

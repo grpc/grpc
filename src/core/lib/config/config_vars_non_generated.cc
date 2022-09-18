@@ -12,17 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_CONFIG_CONFIG_FROM_ENVIRONMENT_H
-#define GRPC_CORE_LIB_CONFIG_CONFIG_FROM_ENVIRONMENT_H
-
-#include <string>
+#include "src/core/lib/config/config_vars.h"
 
 namespace grpc_core {
 
-std::string LoadStringFromEnv(const char* var_name, const char* default_value);
-int32_t LoadIntFromEnv(const char* var_name, int32_t default_value);
-bool LoadBoolFromEnv(const char* var_name, bool default_value);
+std::atomic<ConfigVars*> ConfigVars::config_vars_{nullptr};
+
+const ConfigVars& ConfigVars::Load() {
+  // Called from get, so we know there's no existing config vars.
+  // We might race for them though.
+  auto vars = new ConfigVars();
+  ConfigVars* expected = nullptr;
+  if (!config_vars_.compare_exchange_strong(expected, vars,
+                                            std::memory_order_acq_rel,
+                                            std::memory_order_acquire)) {
+    delete vars;
+    return *expected;
+  }
+  return *vars;
+}
 
 }  // namespace grpc_core
-
-#endif

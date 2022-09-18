@@ -188,7 +188,8 @@ with open('src/core/lib/config/config_vars.cc', 'w') as C:
     print("#include <grpc/support/port_platform.h>", file=C)
     print("#include <vector>", file=C)
     print("#include \"src/core/lib/config/config_vars.h\"", file=C)
-    print("#include \"src/core/lib/config/config_source.h\"", file=C)
+    print("#include \"src/core/lib/config/config_from_environment.h\"", file=C)
+    print("#include \"absl/flags/flag.h\"", file=C)
     print(file=C)
     print("namespace {", file=C)
     for attr in attrs:
@@ -200,24 +201,22 @@ with open('src/core/lib/config/config_vars.cc', 'w') as C:
             print("const char* const default_%s = %s;" %
                 (attr['name'], c_str(attr['default'])),
                 file=C)
-    for attr in attrs:
-        print("GRPC_CONFIG_DEFINE_%s(%s, description_%s, %s);" % (
-            attr["type"].upper(),
-            'grpc_' + attr['name'],
-            attr['name'],
-            DEFAULT_VALUE[attr['type']](attr['default'], attr['name'])
-                    )            ,file=C)
     print("}", file=C)
+    for attr in attrs:
+        print("ABSL_FLAG(%s, %s, grpc_core::Load%sFromEnv(\"%s\", %s), description_%s);" % (
+            MEMBER_TYPE[attr["type"]],
+            'grpc_' + attr['name'],
+            attr["type"].capitalize(),
+            attr['name'],
+            DEFAULT_VALUE[attr['type']](attr['default'], attr['name']),
+            attr['name']), file=C)
     print(file=C)
     print("namespace grpc_core {", file=C)
     print(file=C)
     print("ConfigVars::ConfigVars() :", file=C)
-    print(",".join("%s_(GRPC_CONFIG_LOAD_%s(%s, description_%s, %s))" % (
+    print(",".join("%s_(absl::GetFlag(FLAGS_grpc_%s))" % (
         attr['name'],
-        attr['type'].upper(), 
-        'grpc_' + attr['name'],
         attr['name'],
-        DEFAULT_VALUE[attr['type']](attr['default'], attr['name'])
         ) for attr in attrs_in_packing_order), file=C)
     print("{}", file=C)
     print(file=C)
