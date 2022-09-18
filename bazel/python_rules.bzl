@@ -134,7 +134,7 @@ def _generate_py_impl(context):
         for py_src in context.attr.deps[0][PyProtoInfo].generated_py_srcs:
             reimport_py_file = context.actions.declare_file(py_src.basename)
             py_sources.append(reimport_py_file)
-            import_line = "from %s import *" % py_src.short_path.replace("/", ".")[:-len(".py")]
+            import_line = "from %s import *" % py_src.short_path.replace("..", "external").replace("/", ".")[:-len(".py")]
             context.actions.write(reimport_py_file, import_line)
 
     # Collect output PyInfo provider.
