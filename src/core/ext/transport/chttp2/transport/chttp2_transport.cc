@@ -59,7 +59,8 @@
 #include "src/core/ext/transport/chttp2/transport/stream_map.h"
 #include "src/core/ext/transport/chttp2/transport/varint.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/debug/stats_data.h"
+#include "src/core/lib/debug/stats.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/bitset.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -874,13 +875,13 @@ static void write_action(void* gt, grpc_error_handle /*error*/) {
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(gt);
   void* cl = t->cl;
   t->cl = nullptr;
-  // If grpc_experimental_enable_peer_state_based_framing is set to true,
+  // If the peer_state_based_framing experiment is set to true,
   // choose max_frame_size as 2 * max http2 frame size of peer. If peer is under
   // high memory pressure, then it would advertise a smaller max http2 frame
   // size. With this logic, the sender would automatically reduce the sending
   // frame size as well.
   int max_frame_size =
-      grpc_core::ConfigVars::Get().EnablePeerStateBasedFraming()
+      grpc_core::IsPeerStateBasedFramingEnabled()
           ? 2 * t->settings[GRPC_PEER_SETTINGS]
                            [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE]
           : INT_MAX;
@@ -2313,7 +2314,7 @@ void grpc_chttp2_act_on_flowctl_action(
     grpc_chttp2_transport* t, grpc_chttp2_stream* s) {
   WithUrgency(t, action.send_stream_update(),
               GRPC_CHTTP2_INITIATE_WRITE_STREAM_FLOW_CONTROL, [t, s]() {
-                if (s->id != 0) {
+                if (s->id != 0 && !s->read_closed) {
                   grpc_chttp2_mark_stream_writable(t, s);
                 }
               });

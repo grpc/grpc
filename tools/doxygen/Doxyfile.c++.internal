@@ -955,6 +955,8 @@ include/grpcpp/generic/generic_stub.h \
 include/grpcpp/grpcpp.h \
 include/grpcpp/health_check_service_interface.h \
 include/grpcpp/impl/call.h \
+include/grpcpp/impl/call_hook.h \
+include/grpcpp/impl/call_op_set_interface.h \
 include/grpcpp/impl/channel_argument_option.h \
 include/grpcpp/impl/client_unary_call.h \
 include/grpcpp/impl/codegen/async_generic_service.h \
@@ -1118,9 +1120,6 @@ src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc \
 src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_resolver.cc \
 src/core/ext/filters/client_channel/local_subchannel_pool.cc \
 src/core/ext/filters/client_channel/local_subchannel_pool.h \
-src/core/ext/filters/client_channel/proxy_mapper.h \
-src/core/ext/filters/client_channel/proxy_mapper_registry.cc \
-src/core/ext/filters/client_channel/proxy_mapper_registry.h \
 src/core/ext/filters/client_channel/resolver/binder/binder_resolver.cc \
 src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc \
 src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h \
@@ -1236,6 +1235,8 @@ src/core/ext/transport/chttp2/transport/chttp2_transport.cc \
 src/core/ext/transport/chttp2/transport/chttp2_transport.h \
 src/core/ext/transport/chttp2/transport/context_list.cc \
 src/core/ext/transport/chttp2/transport/context_list.h \
+src/core/ext/transport/chttp2/transport/decode_huff.cc \
+src/core/ext/transport/chttp2/transport/decode_huff.h \
 src/core/ext/transport/chttp2/transport/flow_control.cc \
 src/core/ext/transport/chttp2/transport/flow_control.h \
 src/core/ext/transport/chttp2/transport/frame.h \
@@ -1843,9 +1844,6 @@ src/core/ext/upbdefs-generated/xds/type/matcher/v3/string.upbdefs.c \
 src/core/ext/upbdefs-generated/xds/type/matcher/v3/string.upbdefs.h \
 src/core/ext/upbdefs-generated/xds/type/v3/typed_struct.upbdefs.c \
 src/core/ext/upbdefs-generated/xds/type/v3/typed_struct.upbdefs.h \
-src/core/ext/xds/certificate_provider_factory.h \
-src/core/ext/xds/certificate_provider_registry.cc \
-src/core/ext/xds/certificate_provider_registry.h \
 src/core/ext/xds/certificate_provider_store.cc \
 src/core/ext/xds/certificate_provider_store.h \
 src/core/ext/xds/file_watcher_certificate_provider_factory.cc \
@@ -1995,10 +1993,6 @@ src/core/lib/gpr/cpu_iphone.cc \
 src/core/lib/gpr/cpu_linux.cc \
 src/core/lib/gpr/cpu_posix.cc \
 src/core/lib/gpr/cpu_windows.cc \
-src/core/lib/gpr/env.h \
-src/core/lib/gpr/env_linux.cc \
-src/core/lib/gpr/env_posix.cc \
-src/core/lib/gpr/env_windows.cc \
 src/core/lib/gpr/log.cc \
 src/core/lib/gpr/log_android.cc \
 src/core/lib/gpr/log_linux.cc \
@@ -2012,7 +2006,6 @@ src/core/lib/gpr/string.h \
 src/core/lib/gpr/string_posix.cc \
 src/core/lib/gpr/string_util_windows.cc \
 src/core/lib/gpr/string_windows.cc \
-src/core/lib/gpr/string_windows.h \
 src/core/lib/gpr/sync.cc \
 src/core/lib/gpr/sync_abseil.cc \
 src/core/lib/gpr/sync_posix.cc \
@@ -2036,6 +2029,10 @@ src/core/lib/gprpp/construct_destruct.h \
 src/core/lib/gprpp/cpp_impl_of.h \
 src/core/lib/gprpp/debug_location.h \
 src/core/lib/gprpp/dual_ref_counted.h \
+src/core/lib/gprpp/env.h \
+src/core/lib/gprpp/env_linux.cc \
+src/core/lib/gprpp/env_posix.cc \
+src/core/lib/gprpp/env_windows.cc \
 src/core/lib/gprpp/examine_stack.cc \
 src/core/lib/gprpp/examine_stack.h \
 src/core/lib/gprpp/fork.cc \
@@ -2053,6 +2050,7 @@ src/core/lib/gprpp/memory.h \
 src/core/lib/gprpp/mpscq.cc \
 src/core/lib/gprpp/mpscq.h \
 src/core/lib/gprpp/no_destruct.h \
+src/core/lib/gprpp/notification.h \
 src/core/lib/gprpp/orphanable.h \
 src/core/lib/gprpp/overload.h \
 src/core/lib/gprpp/packed_table.h \
@@ -2067,6 +2065,8 @@ src/core/lib/gprpp/status_helper.cc \
 src/core/lib/gprpp/status_helper.h \
 src/core/lib/gprpp/sync.h \
 src/core/lib/gprpp/table.h \
+src/core/lib/gprpp/tchar.cc \
+src/core/lib/gprpp/tchar.h \
 src/core/lib/gprpp/thd.h \
 src/core/lib/gprpp/thd_posix.cc \
 src/core/lib/gprpp/thd_windows.cc \
@@ -2079,6 +2079,9 @@ src/core/lib/gprpp/time_util.h \
 src/core/lib/gprpp/unique_type_name.h \
 src/core/lib/gprpp/work_serializer.cc \
 src/core/lib/gprpp/work_serializer.h \
+src/core/lib/handshaker/proxy_mapper.h \
+src/core/lib/handshaker/proxy_mapper_registry.cc \
+src/core/lib/handshaker/proxy_mapper_registry.h \
 src/core/lib/http/format_request.cc \
 src/core/lib/http/format_request.h \
 src/core/lib/http/httpcli.cc \
@@ -2291,6 +2294,9 @@ src/core/lib/security/authorization/matchers.cc \
 src/core/lib/security/authorization/matchers.h \
 src/core/lib/security/authorization/rbac_policy.cc \
 src/core/lib/security/authorization/rbac_policy.h \
+src/core/lib/security/certificate_provider/certificate_provider_factory.h \
+src/core/lib/security/certificate_provider/certificate_provider_registry.cc \
+src/core/lib/security/certificate_provider/certificate_provider_registry.h \
 src/core/lib/security/context/security_context.cc \
 src/core/lib/security/context/security_context.h \
 src/core/lib/security/credentials/alts/alts_credentials.cc \
@@ -2440,6 +2446,8 @@ src/core/lib/surface/event_string.cc \
 src/core/lib/surface/event_string.h \
 src/core/lib/surface/init.cc \
 src/core/lib/surface/init.h \
+src/core/lib/surface/init_internally.cc \
+src/core/lib/surface/init_internally.h \
 src/core/lib/surface/lame_client.cc \
 src/core/lib/surface/lame_client.h \
 src/core/lib/surface/metadata_array.cc \

@@ -155,7 +155,7 @@ static size_t fill_socket_partial(int fd, size_t bytes) {
 
 struct read_socket_state {
   grpc_endpoint* ep;
-  int min_progress_size;
+  size_t min_progress_size;
   size_t read_bytes;
   size_t target_read_bytes;
   grpc_slice_buffer incoming;

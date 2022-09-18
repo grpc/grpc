@@ -249,11 +249,11 @@ void GrpcMemoryAllocatorImpl::MaybeDonateBack() {
   size_t free = free_bytes_.load(std::memory_order_relaxed);
   while (free > 0) {
     size_t ret = 0;
-    if (config.MaxQuotaBufferSize() > 0 &&
+    if (!IsUnconstrainedMaxQuotaBufferSizeEnabled() &&
         free > config.MaxQuotaBufferSize() / 2) {
       ret = std::max(ret, free - config.MaxQuotaBufferSize() / 2);
     }
-    if (config.EnablePeriodicResourceQuotaReclamation()) {
+    if (IsPeriodicResourceQuotaReclamationEnabled()) {
       ret = std::max(ret, free > 8192 ? free / 2 : free);
     }
     const size_t new_free = free - ret;
@@ -458,7 +458,7 @@ BasicMemoryQuota::PressureInfo BasicMemoryQuota::GetPressureInfo() {
   if (size < 1) return PressureInfo{1, 1, 1};
   PressureInfo pressure_info;
   pressure_info.instantaneous_pressure = std::max(0.0, (size - free) / size);
-  if (ConfigVars::Get().SmoothMemoryPressure()) {
+  if (IsMemoryPressureControllerEnabled()) {
     pressure_info.pressure_control_value =
         pressure_tracker_.AddSampleAndGetControlValue(
             pressure_info.instantaneous_pressure);

@@ -61,7 +61,6 @@
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/ext/filters/http/client/http_client_filter.h"
-#include "src/core/ext/xds/certificate_provider_registry.h"
 #include "src/core/ext/xds/xds_api.h"
 #include "src/core/ext/xds/xds_channel_args.h"
 #include "src/core/ext/xds/xds_client.h"
@@ -69,10 +68,11 @@
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gpr/tmpfile.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
@@ -80,6 +80,7 @@
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/security/certificate_provider/certificate_provider_registry.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 #include "src/cpp/client/secure_credentials.h"
@@ -4046,18 +4047,25 @@ int main(int argc, char** argv) {
   GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
 #if TARGET_OS_IPHONE
   // Workaround Apple CFStream bug
-  gpr_setenv("grpc_cfstream", "0");
+  grpc_core::SetEnv("grpc_cfstream", "0");
 #endif
   grpc::testing::FakeCertificateProvider::CertDataMapWrapper cert_data_map_1;
   grpc::testing::g_fake1_cert_data_map = &cert_data_map_1;
-  grpc_core::CertificateProviderRegistry::RegisterCertificateProviderFactory(
-      absl::make_unique<grpc::testing::FakeCertificateProviderFactory>(
-          "fake1", grpc::testing::g_fake1_cert_data_map));
   grpc::testing::FakeCertificateProvider::CertDataMapWrapper cert_data_map_2;
   grpc::testing::g_fake2_cert_data_map = &cert_data_map_2;
-  grpc_core::CertificateProviderRegistry::RegisterCertificateProviderFactory(
-      absl::make_unique<grpc::testing::FakeCertificateProviderFactory>(
-          "fake2", grpc::testing::g_fake2_cert_data_map));
+  grpc_core::CoreConfiguration::RegisterBuilder(
+      [](grpc_core::CoreConfiguration::Builder* builder) {
+        builder->certificate_provider_registry()
+            ->RegisterCertificateProviderFactory(
+                absl::make_unique<
+                    grpc::testing::FakeCertificateProviderFactory>(
+                    "fake1", grpc::testing::g_fake1_cert_data_map));
+        builder->certificate_provider_registry()
+            ->RegisterCertificateProviderFactory(
+                absl::make_unique<
+                    grpc::testing::FakeCertificateProviderFactory>(
+                    "fake2", grpc::testing::g_fake2_cert_data_map));
+      });
   grpc_init();
   grpc_core::XdsHttpFilterRegistry::RegisterFilter(
       absl::make_unique<grpc::testing::NoOpHttpFilter>(

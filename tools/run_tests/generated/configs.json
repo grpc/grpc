@@ -23,12 +23,6 @@
     "config": "c++-compat"
   },
   {
-    "config": "counters"
-  },
-  {
-    "config": "counters_with_memory_counter"
-  },
-  {
     "config": "dbg"
   },
   {
@@ -57,9 +51,6 @@
     "environ": {
       "MSAN_OPTIONS": "poison_in_dtor=1"
     }
-  },
-  {
-    "config": "mutrace"
   },
   {
     "config": "noexcept"

@@ -54,7 +54,6 @@ struct backup_poller {
 };
 }  // namespace
 
-static gpr_once g_once = GPR_ONCE_INIT;
 static gpr_mu g_poller_mu;
 static backup_poller* g_poller = nullptr;  // guarded by g_poller_mu
 // g_poll_interval_ms is set only once at the first time
@@ -64,7 +63,7 @@ static grpc_core::Duration g_poll_interval =
     grpc_core::Duration::Milliseconds(DEFAULT_POLL_INTERVAL_MS);
 
 void grpc_client_channel_global_init_backup_polling() {
-  gpr_once_init(&g_once, [] { gpr_mu_init(&g_poller_mu); });
+  gpr_mu_init(&g_poller_mu);
   int32_t poll_interval_ms =
       grpc_core::ConfigVars::Get().ClientChannelBackupPollIntervalMs();
   if (poll_interval_ms < 0) {

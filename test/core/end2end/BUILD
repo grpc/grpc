@@ -114,6 +114,7 @@ grpc_cc_test(
     deps = [
         "cq_verifier",
         "//:gpr",
+        "//:gpr_atm",
         "//:grpc",
         "//:grpc_codegen",
         "//:grpc_public_hdrs",
@@ -168,7 +169,6 @@ grpc_cc_test(
         "absl/status:statusor",
         "absl/strings",
     ],
-    flaky = True,
     language = "C++",
     deps = [
         "cq_verifier",

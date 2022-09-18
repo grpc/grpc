@@ -35,6 +35,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/config/config_vars.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -366,9 +367,9 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
     // done.
     size_t prev_free = free_bytes_.fetch_add(n, std::memory_order_release);
     const auto& config = ConfigVars::Get();
-    if ((config.MaxQuotaBufferSize() > 0 &&
+    if ((!IsUnconstrainedMaxQuotaBufferSizeEnabled() &&
          prev_free + n > config.MaxQuotaBufferSize()) ||
-        (config.EnablePeriodicResourceQuotaReclamation() &&
+        (IsPeriodicResourceQuotaReclamationEnabled() &&
          donate_back_.Tick([](Duration) {}))) {
       // Try to immediately return some free'ed memory back to the total quota.
       MaybeDonateBack();
