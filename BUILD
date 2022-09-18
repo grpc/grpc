@@ -492,6 +492,7 @@ grpc_cc_library(
     external_deps = ["absl/strings"],
     language = "c++",
     deps = [
+        "config_vars",
         "gpr",
         "gpr_platform",
         "no_destruct",
@@ -1248,7 +1249,10 @@ grpc_cc_library(
         "absl/strings",
         "absl/types:optional",
     ],
-    deps = ["gpr"],
+    deps = [
+        "env",
+        "gpr",
+    ],
 )
 
 grpc_cc_library(

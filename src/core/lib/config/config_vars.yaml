@@ -12,6 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+- name: experiments
+  type: string
+  description:
+    A comma separated list of currently active experiments. Experiments may be
+    prefixed with a '-' to disable them.
+  default:
 - name: client_channel_backup_poll_interval_ms
   type: int
   default: 5000

@@ -30,13 +30,9 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gprpp/global_config.h"
 #include "src/core/lib/gprpp/no_destruct.h"
-
-GPR_GLOBAL_CONFIG_DEFINE_STRING(
-    grpc_experiments, "",
-    "List of grpc experiments to enable (or with a '-' prefix to disable).");
 
 namespace grpc_core {
 
@@ -61,7 +57,7 @@ GPR_ATTRIBUTE_NOINLINE Experiments LoadExperimentsFromConfigVariable() {
     experiments.enabled[i] = g_experiment_metadata[i].default_value;
   }
   // Get the global config.
-  auto experiments_str = GPR_GLOBAL_CONFIG_GET(grpc_experiments);
+  auto experiments_str = ConfigVars::Get().Experiments();
   // For each comma-separated experiment in the global config:
   for (auto experiment :
        absl::StrSplit(absl::string_view(experiments_str.get()), ',')) {
