@@ -164,8 +164,6 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h" role="src" />
@@ -930,6 +928,12 @@
     <file baseinstalldir="/" name="src/core/lib/compression/compression_internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/message_compress.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/message_compress.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/config/config_from_environment.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/config/config_from_environment.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/config/config_var_metadata.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/config/config_vars.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/config/config_vars.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/config/config_vars_non_generated.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/config/core_configuration.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/config/core_configuration.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/debug/stats.cc" role="src" />
@@ -1034,11 +1038,6 @@
     <file baseinstalldir="/" name="src/core/lib/gprpp/examine_stack.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/fork.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/fork.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gprpp/global_config.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gprpp/global_config_custom.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gprpp/global_config_env.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gprpp/global_config_env.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gprpp/global_config_generic.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/host_port.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/host_port.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/manual_constructor.h" role="src" />
@@ -1669,6 +1668,30 @@
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/debugging/symbolize_emscripten.inc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/debugging/symbolize_unimplemented.inc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/debugging/symbolize_win32.inc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/flags/commandlineflag.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/flags/commandlineflag.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/flags/config.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/flags/declare.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/flags/flag.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/flags/flag.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/flags/internal/commandlineflag.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/flags/internal/commandlineflag.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/flags/internal/flag.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/flags/internal/flag.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/flags/internal/flag_msvc.inc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/flags/internal/path_util.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/flags/internal/private_handle_accessor.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/flags/internal/private_handle_accessor.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/flags/internal/program_name.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/flags/internal/program_name.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/flags/internal/registry.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/flags/internal/sequence_lock.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/flags/marshalling.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/flags/marshalling.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/flags/reflection.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/flags/reflection.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/flags/usage_config.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/flags/usage_config.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/functional/any_invocable.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/functional/bind_front.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/functional/function_ref.h" role="src" />
