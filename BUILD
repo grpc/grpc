@@ -1265,6 +1265,7 @@ grpc_cc_library(
     name = "config_vars",
     srcs = [
         "src/core/lib/config/config_vars.cc",
+        "src/core/lib/config/config_vars_non_generated.cc",
     ],
     hdrs = [
         "src/core/lib/config/config_var_metadata.h",
