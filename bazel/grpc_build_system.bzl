@@ -385,7 +385,6 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
                     env = dict(config["env"])
                     env["GRPC_EXPERIMENTS"] = experiment
                     config["env"] = env
-                    config["args"] = config["args"] + ["--experiment=" + experiment]
                     tags = config["tags"]
                     for tag in must_have_tags + enabled_tags:
                         if tag not in tags:
