@@ -1250,7 +1250,10 @@ grpc_cc_library(
         "absl/strings",
         "absl/types:optional",
     ],
-    deps = ["env"],
+    deps = [
+        "env",
+        "gpr_platform",
+    ],
 )
 
 grpc_cc_library(
