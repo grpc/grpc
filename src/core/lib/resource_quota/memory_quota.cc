@@ -245,13 +245,12 @@ absl::optional<size_t> GrpcMemoryAllocatorImpl::TryReserve(
 }
 
 void GrpcMemoryAllocatorImpl::MaybeDonateBack() {
-  const auto& config = ConfigVars::Get();
   size_t free = free_bytes_.load(std::memory_order_relaxed);
   while (free > 0) {
     size_t ret = 0;
     if (!IsUnconstrainedMaxQuotaBufferSizeEnabled() &&
-        free > config.MaxQuotaBufferSize() / 2) {
-      ret = std::max(ret, free - config.MaxQuotaBufferSize() / 2);
+        free > kMaxQuotaBufferSize / 2) {
+      ret = std::max(ret, free - kMaxQuotaBufferSize / 2);
     }
     if (IsPeriodicResourceQuotaReclamationEnabled()) {
       ret = std::max(ret, free > 8192 ? free / 2 : free);
@@ -569,8 +568,7 @@ double PressureTracker::AddSampleAndGetControlValue(double sample) {
       // Under very high memory pressure we... just max things out.
       report = controller_.Update(1e99);
     } else {
-      report = controller_.Update(
-          current_estimate - ConfigVars::Get().ResourceQuotaSetPoint() / 100.0);
+      report = controller_.Update(current_estimate - 0.95);
     }
     if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
       gpr_log(GPR_INFO, "RQ: pressure:%lf report:%lf controller:%s",

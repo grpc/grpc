@@ -69,6 +69,8 @@ EXTERNAL_DEPS = {
         'absl/debugging:symbolize',
     'absl/flags/flag.h':
         'absl/flags:flag',
+    'absl/flags/marshalling.h':
+        'absl/flags:marshalling',
     'absl/flags/parse.h':
         'absl/flags:parse',
     'absl/functional/any_invocable.h':

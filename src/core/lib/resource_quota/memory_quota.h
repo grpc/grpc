@@ -366,9 +366,8 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
     // from  0 to non-zero, then we have more to do, otherwise, we're actually
     // done.
     size_t prev_free = free_bytes_.fetch_add(n, std::memory_order_release);
-    const auto& config = ConfigVars::Get();
     if ((!IsUnconstrainedMaxQuotaBufferSizeEnabled() &&
-         prev_free + n > config.MaxQuotaBufferSize()) ||
+         prev_free + n > kMaxQuotaBufferSize) ||
         (IsPeriodicResourceQuotaReclamationEnabled() &&
          donate_back_.Tick([](Duration) {}))) {
       // Try to immediately return some free'ed memory back to the total quota.
@@ -398,6 +397,7 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
   absl::string_view name() const { return name_; }
 
  private:
+  static constexpr size_t kMaxQuotaBufferSize = 1024 * 1024;
   // Primitive reservation function.
   absl::optional<size_t> TryReserve(MemoryRequest request) GRPC_MUST_USE_RESULT;
   // This function may be invoked during a memory release operation.

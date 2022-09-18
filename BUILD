@@ -1246,13 +1246,11 @@ grpc_cc_library(
         "src/core/lib/config/config_from_environment.h",
     ],
     external_deps = [
+        "absl/flags:marshalling",
         "absl/strings",
         "absl/types:optional",
     ],
-    deps = [
-        "env",
-        "gpr",
-    ],
+    deps = ["env"],
 )
 
 grpc_cc_library(

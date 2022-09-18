@@ -56,11 +56,9 @@ GPR_ATTRIBUTE_NOINLINE Experiments LoadExperimentsFromConfigVariable() {
   for (size_t i = 0; i < kNumExperiments; i++) {
     experiments.enabled[i] = g_experiment_metadata[i].default_value;
   }
-  // Get the global config.
-  auto experiments_str = ConfigVars::Get().Experiments();
   // For each comma-separated experiment in the global config:
-  for (auto experiment :
-       absl::StrSplit(absl::string_view(experiments_str.get()), ',')) {
+  for (auto experiment : absl::StrSplit(
+           absl::string_view(ConfigVars::Get().Experiments()), ',')) {
     // Strip whitespace.
     experiment = absl::StripAsciiWhitespace(experiment);
     // Handle ",," without crashing.
