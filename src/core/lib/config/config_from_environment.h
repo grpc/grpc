@@ -15,6 +15,8 @@
 #ifndef GRPC_CORE_LIB_CONFIG_CONFIG_FROM_ENVIRONMENT_H
 #define GRPC_CORE_LIB_CONFIG_CONFIG_FROM_ENVIRONMENT_H
 
+#include <stdint.h>
+
 #include <string>
 
 namespace grpc_core {

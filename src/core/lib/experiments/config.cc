@@ -20,7 +20,6 @@
 
 #include <algorithm>
 #include <atomic>
-#include <memory>
 #include <string>
 
 #include "absl/strings/ascii.h"

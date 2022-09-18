@@ -22,6 +22,7 @@
 
 #include "src/core/lib/config/config_vars.h"
 
+#include <cstdint>
 #include <vector>
 
 #include "absl/flags/flag.h"

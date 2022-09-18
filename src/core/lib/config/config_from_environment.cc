@@ -14,6 +14,8 @@
 
 #include "src/core/lib/config/config_from_environment.h"
 
+#include <stdio.h>
+
 #include "absl/flags/marshalling.h"
 #include "absl/strings/ascii.h"
 #include "absl/strings/numbers.h"

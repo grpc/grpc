@@ -31,8 +31,6 @@
 #include <atomic>
 #endif
 
-#include "src/core/lib/gprpp/memory.h"
-
 // TODO(veblush): Remove this deprecated function once codes depending on this
 // function are updated in the internal repo.
 void grpc_tracer_init(const char* env_var_name);

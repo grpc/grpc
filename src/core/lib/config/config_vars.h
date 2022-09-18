@@ -1,12 +1,12 @@
 /*
  * Copyright 2022 gRPC authors.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -23,12 +23,14 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <string>
-#include <functional>
+#include <stdint.h>
+
 #include <atomic>
+#include <string>
+
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "absl/types/span.h"
+
 #include "src/core/lib/config/config_var_metadata.h"
 
 namespace grpc_core {
@@ -46,33 +48,51 @@ class ConfigVars {
   // Drop the config vars. Users must ensure no other threads are
   // accessing the configuration.
   static void Reset();
-  // A comma separated list of currently active experiments. Experiments may be prefixed with a '-' to disable them.
+  // A comma separated list of currently active experiments. Experiments may be
+  // prefixed with a '-' to disable them.
   absl::string_view Experiments() const { return experiments_; }
-  // Declares the interval in ms between two backup polls on client channels. These polls are run in the timer thread so that gRPC can process connection failures while there is no active polling thread. They help reconnect disconnected client channels (mostly due to idleness), so that the next RPC on this channel won't fail. Set to 0 to turn off the backup polls.
-  int32_t ClientChannelBackupPollIntervalMs() const { return client_channel_backup_poll_interval_ms_; }
-  // Declares which DNS resolver to use. The default is ares if gRPC is built with c-ares support. Otherwise, the value of this environment variable is ignored.
+  // Declares the interval in ms between two backup polls on client channels.
+  // These polls are run in the timer thread so that gRPC can process connection
+  // failures while there is no active polling thread. They help reconnect
+  // disconnected client channels (mostly due to idleness), so that the next RPC
+  // on this channel won't fail. Set to 0 to turn off the backup polls.
+  int32_t ClientChannelBackupPollIntervalMs() const {
+    return client_channel_backup_poll_interval_ms_;
+  }
+  // Declares which DNS resolver to use. The default is ares if gRPC is built
+  // with c-ares support. Otherwise, the value of this environment variable is
+  // ignored.
   absl::string_view DnsResolver() const { return dns_resolver_; }
-  // A comma separated list of tracers that provide additional insight into how gRPC C core is processing requests via debug logs.
+  // A comma separated list of tracers that provide additional insight into how
+  // gRPC C core is processing requests via debug logs.
   absl::string_view Trace() const { return trace_; }
   // Default gRPC logging verbosity
   absl::string_view Verbosity() const { return verbosity_; }
   // Messages logged at the same or higher level than this will print stacktrace
-  absl::string_view StacktraceMinloglevel() const { return stacktrace_minloglevel_; }
+  absl::string_view StacktraceMinloglevel() const {
+    return stacktrace_minloglevel_;
+  }
   // Enable fork support
   bool EnableForkSupport() const { return enable_fork_support_; }
-  // Declares which polling engines to try when starting gRPC. This is a comma-separated list of engines, which are tried in priority order first -> last.
+  // Declares which polling engines to try when starting gRPC. This is a
+  // comma-separated list of engines, which are tried in priority order first ->
+  // last.
   absl::string_view PollStrategy() const { return poll_strategy_; }
-  // A debugging aid to cause a call to abort() when gRPC objects are leaked past grpc_shutdown()
+  // A debugging aid to cause a call to abort() when gRPC objects are leaked
+  // past grpc_shutdown()
   bool AbortOnLeaks() const { return abort_on_leaks_; }
   // Custom directory to SSL Roots
   absl::string_view SystemSslRootsDir() const { return system_ssl_roots_dir_; }
   // Path to the default SSL roots file.
-  absl::string_view DefaultSslRootsFilePath() const { return default_ssl_roots_file_path_; }
+  absl::string_view DefaultSslRootsFilePath() const {
+    return default_ssl_roots_file_path_;
+  }
   // Disable loading system root certificates.
   bool NotUseSystemSslRoots() const { return not_use_system_ssl_roots_; }
   // A colon separated list of cipher suites to use with OpenSSL
   absl::string_view SslCipherSuites() const { return ssl_cipher_suites_; }
   static absl::Span<const ConfigVarMetadata> metadata();
+
  private:
   ConfigVars();
   static const ConfigVars& Load();

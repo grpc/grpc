@@ -22,7 +22,10 @@
 
 #include <string.h>
 
+#include <string>
 #include <type_traits>
+
+#include "absl/strings/string_view.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>

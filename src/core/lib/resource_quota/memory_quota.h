@@ -34,7 +34,6 @@
 #include <grpc/event_engine/memory_request.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"

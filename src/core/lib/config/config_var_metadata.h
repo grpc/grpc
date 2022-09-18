@@ -17,6 +17,8 @@
 #ifndef GRPC_CORE_LIB_CONFIG_CONFIG_VAR_METADATA_H
 #define GRPC_CORE_LIB_CONFIG_CONFIG_VAR_METADATA_H
 
+#include <stdint.h>
+
 #include "absl/strings/string_view.h"
 #include "absl/types/variant.h"
 
