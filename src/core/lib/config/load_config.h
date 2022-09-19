@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_CONFIG_CONFIG_FROM_ENVIRONMENT_H
-#define GRPC_CORE_LIB_CONFIG_CONFIG_FROM_ENVIRONMENT_H
+#ifndef GRPC_CORE_LIB_CONFIG_LOAD_CONFIG_H
+#define GRPC_CORE_LIB_CONFIG_LOAD_CONFIG_H
 
 #include <grpc/support/port_platform.h>
 
@@ -41,4 +41,4 @@ T LoadConfig(const absl::Flag<absl::optional<T>>& flag,
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_CONFIG_CONFIG_FROM_ENVIRONMENT_H
+#endif  // GRPC_CORE_LIB_CONFIG_LOAD_CONFIG_H
