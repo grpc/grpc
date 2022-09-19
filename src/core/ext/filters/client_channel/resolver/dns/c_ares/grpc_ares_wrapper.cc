@@ -284,7 +284,7 @@ static grpc_core::Timestamp calculate_next_ares_backup_poll_alarm(
       "request:%p ev_driver=%p. next ares process poll time in "
       "%" PRId64 " ms",
       driver->request, driver, until_next_ares_backup_poll_alarm.millis());
-  return grpc_core::Timestamp::Now() + until_next_ares_backup_poll_alarm;
+  return grpc_core::ExecCtx::Get()->Now() + until_next_ares_backup_poll_alarm;
 }
 
 static void on_timeout(void* arg, grpc_error_handle error) {
@@ -496,7 +496,7 @@ void grpc_ares_ev_driver_start_locked(grpc_ares_ev_driver* ev_driver)
   GRPC_CLOSURE_INIT(&ev_driver->on_timeout_locked, on_timeout, ev_driver,
                     grpc_schedule_on_exec_ctx);
   grpc_timer_init(&ev_driver->query_timeout,
-                  grpc_core::Timestamp::Now() + timeout,
+                  grpc_core::ExecCtx::Get()->Now() + timeout,
                   &ev_driver->on_timeout_locked);
   // Initialize the backup poll alarm
   grpc_core::Timestamp next_ares_backup_poll_alarm =

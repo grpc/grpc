@@ -28,7 +28,7 @@
 // low as a usec. Use other clock sources or gpr_precise_clock_now(),
 // where you need high resolution clocks.
 //
-// Using gpr_get_cycle_counter() is preferred to using Timestamp::Now()
+// Using gpr_get_cycle_counter() is preferred to using ExecCtx::Get()->Now()
 // whenever possible.
 
 #if GPR_CYCLE_COUNTER_CUSTOM

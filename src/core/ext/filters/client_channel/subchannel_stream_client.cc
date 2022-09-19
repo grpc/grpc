@@ -32,6 +32,7 @@
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/transport/error_utils.h"
 
@@ -127,7 +128,7 @@ void SubchannelStreamClient::StartRetryTimerLocked() {
   if (GPR_UNLIKELY(tracer_ != nullptr)) {
     gpr_log(GPR_INFO, "%s %p: SubchannelStreamClient health check call lost...",
             tracer_, this);
-    Duration timeout = next_try - Timestamp::Now();
+    Duration timeout = next_try - ExecCtx::Get()->Now();
     if (timeout > Duration::Zero()) {
       gpr_log(GPR_INFO, "%s %p: ... will retry in %" PRId64 "ms.", tracer_,
               this, timeout.millis());

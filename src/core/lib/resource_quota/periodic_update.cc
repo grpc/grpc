@@ -19,12 +19,13 @@
 #include <atomic>
 
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 
 namespace grpc_core {
 
 bool PeriodicUpdate::MaybeEndPeriod(absl::FunctionRef<void(Duration)> f) {
   if (period_start_ == Timestamp::ProcessEpoch()) {
-    period_start_ = Timestamp::Now();
+    period_start_ = ExecCtx::Get()->Now();
     updates_remaining_.store(1, std::memory_order_release);
     return false;
   }
@@ -33,7 +34,7 @@ bool PeriodicUpdate::MaybeEndPeriod(absl::FunctionRef<void(Duration)> f) {
   // We can now safely mutate any non-atomic mutable variables (we've got a
   // guarantee that no other thread will), and by the time this function returns
   // we must store a postive number into updates_remaining_.
-  auto now = Timestamp::Now();
+  auto now = ExecCtx::Get()->Now();
   Duration time_so_far = now - period_start_;
   if (time_so_far < period_) {
     // At most double the number of updates remaining until the next period.

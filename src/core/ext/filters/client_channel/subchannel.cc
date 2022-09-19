@@ -767,7 +767,7 @@ void Subchannel::ResetBackoff() {
       GetDefaultEventEngine()->Cancel(retry_timer_handle_)) {
     OnRetryTimerLocked();
   } else if (state_ == GRPC_CHANNEL_CONNECTING) {
-    next_attempt_time_ = Timestamp::Now();
+    next_attempt_time_ = ExecCtx::Get()->Now();
   }
 }
 
@@ -786,27 +786,20 @@ void Subchannel::Orphan() {
   health_watcher_map_.ShutdownLocked();
 }
 
-void Subchannel::AddDataProducer(DataProducerInterface* data_producer) {
+void Subchannel::GetOrAddDataProducer(
+    UniqueTypeName type,
+    std::function<void(DataProducerInterface**)> get_or_add) {
   MutexLock lock(&mu_);
-  auto& entry = data_producer_map_[data_producer->type()];
-  GPR_ASSERT(entry == nullptr);
-  entry = data_producer;
+  auto it = data_producer_map_.emplace(type, nullptr).first;
+  get_or_add(&it->second);
 }
 
 void Subchannel::RemoveDataProducer(DataProducerInterface* data_producer) {
   MutexLock lock(&mu_);
   auto it = data_producer_map_.find(data_producer->type());
-  GPR_ASSERT(it != data_producer_map_.end());
-  GPR_ASSERT(it->second == data_producer);
-  data_producer_map_.erase(it);
-}
-
-Subchannel::DataProducerInterface* Subchannel::GetDataProducer(
-    UniqueTypeName type) {
-  MutexLock lock(&mu_);
-  auto it = data_producer_map_.find(type);
-  if (it == data_producer_map_.end()) return nullptr;
-  return it->second;
+  if (it != data_producer_map_.end() && it->second == data_producer) {
+    data_producer_map_.erase(it);
+  }
 }
 
 namespace {
@@ -878,7 +871,7 @@ void Subchannel::OnRetryTimerLocked() {
 
 void Subchannel::StartConnectingLocked() {
   // Set next attempt time.
-  const Timestamp min_deadline = min_connect_timeout_ + Timestamp::Now();
+  const Timestamp min_deadline = min_connect_timeout_ + ExecCtx::Get()->Now();
   next_attempt_time_ = backoff_.NextAttemptTime();
   // Report CONNECTING.
   SetConnectivityStateLocked(GRPC_CHANNEL_CONNECTING, absl::OkStatus());
@@ -913,7 +906,7 @@ void Subchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
   // transition back to IDLE.
   if (connecting_result_.transport == nullptr || !PublishTransportLocked()) {
     const Duration time_until_next_attempt =
-        next_attempt_time_ - Timestamp::Now();
+        next_attempt_time_ - ExecCtx::Get()->Now();
     gpr_log(GPR_INFO,
             "subchannel %p %s: connect failed (%s), backing off for %" PRId64
             " ms",
