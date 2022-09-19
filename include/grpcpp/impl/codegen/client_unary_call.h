@@ -19,7 +19,7 @@
 #ifndef GRPCPP_IMPL_CODEGEN_CLIENT_UNARY_CALL_H
 #define GRPCPP_IMPL_CODEGEN_CLIENT_UNARY_CALL_H
 
-// IWYU pragma: private, include <grpcpp/impl/client_unary_call.h>
+// IWYU pragma: private
 
 /// TODO(chengyuc): Remove this file after solving compatibility.
 #include <grpcpp/impl/client_unary_call.h>
