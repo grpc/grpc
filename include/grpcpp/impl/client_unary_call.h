@@ -19,9 +19,10 @@
 #ifndef GRPCPP_IMPL_CLIENT_UNARY_CALL_H
 #define GRPCPP_IMPL_CLIENT_UNARY_CALL_H
 
-#include <grpcpp/channel_interface.h>
 #include <grpcpp/impl/call.h>
-#include <grpcpp/impl/call_op_set.h>
+#include <grpcpp/impl/codegen/call_op_set.h>
+#include <grpcpp/impl/codegen/channel_interface.h>
+#include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/support/config.h>
 #include <grpcpp/support/status.h>
 
