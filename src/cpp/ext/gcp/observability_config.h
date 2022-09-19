@@ -20,6 +20,7 @@
 #include <string>
 
 #include "absl/status/statusor.h"
+#include "absl/types/optional.h"
 
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
