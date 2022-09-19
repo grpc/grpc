@@ -17,6 +17,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
+
 #include <map>
 #include <string>
 #include <vector>
