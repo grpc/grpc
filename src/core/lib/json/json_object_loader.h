@@ -33,6 +33,7 @@
 
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_args.h"
 
@@ -61,7 +62,7 @@
 //     }
 //     // Optional; omit if no post-processing needed.
 //     void JsonPostLoad(const Json& source, const JsonArgs& args,
-//                       ErrorList* errors) {
+//                       ValidationErrors* errors) {
 //       ++a;
 //     }
 //   };
@@ -69,57 +70,15 @@
 //   absl::StatusOr<Foo> foo = LoadFromJson<Foo>(json);
 namespace grpc_core {
 
-// A list of errors that occurred during JSON parsing.
-// If a non-empty list occurs during parsing, the parsing failed.
-class ErrorList {
- public:
-  // Record that we're reading some field.
-  void PushField(absl::string_view ext) GPR_ATTRIBUTE_NOINLINE;
-  // Record that we've finished reading that field.
-  void PopField() GPR_ATTRIBUTE_NOINLINE;
-
-  // Record that we've encountered an error.
-  void AddError(absl::string_view error) GPR_ATTRIBUTE_NOINLINE;
-  // Returns true if the current field has errors.
-  bool FieldHasErrors() const GPR_ATTRIBUTE_NOINLINE;
-
-  // Returns the resulting status of parsing.
-  absl::Status status() const;
-
-  // Return true if there are no errors.
-  bool ok() const { return field_errors_.empty(); }
-
-  size_t size() const { return field_errors_.size(); }
-
- private:
-  // TODO(roth): If we don't actually have any fields for which we
-  // report more than one error, simplify this data structure.
-  std::map<std::string /*field_name*/, std::vector<std::string>> field_errors_;
-  std::vector<std::string> fields_;
-};
-
-// Note that we're reading a field, and remove it at the end of the scope.
-class ScopedField {
- public:
-  ScopedField(ErrorList* error_list, absl::string_view field_name)
-      : error_list_(error_list) {
-    error_list_->PushField(field_name);
-  }
-  ~ScopedField() { error_list_->PopField(); }
-
- private:
-  ErrorList* error_list_;
-};
-
 namespace json_detail {
 
 // An un-typed JSON loader.
 class LoaderInterface {
  public:
   // Convert json value to whatever type we're loading at dst.
-  // If errors occur, add them to error_list.
+  // If errors occur, add them to errors.
   virtual void LoadInto(const Json& json, const JsonArgs& args, void* dst,
-                        ErrorList* errors) const = 0;
+                        ValidationErrors* errors) const = 0;
 
  protected:
   ~LoaderInterface() = default;
@@ -129,7 +88,7 @@ class LoaderInterface {
 class LoadScalar : public LoaderInterface {
  public:
   void LoadInto(const Json& json, const JsonArgs& args, void* dst,
-                ErrorList* errors) const override;
+                ValidationErrors* errors) const override;
 
  protected:
   ~LoadScalar() = default;
@@ -141,7 +100,7 @@ class LoadScalar : public LoaderInterface {
   virtual bool IsNumber() const = 0;
 
   virtual void LoadInto(const std::string& json, void* dst,
-                        ErrorList* errors) const = 0;
+                        ValidationErrors* errors) const = 0;
 };
 
 // Load a string.
@@ -152,7 +111,7 @@ class LoadString : public LoadScalar {
  private:
   bool IsNumber() const override;
   void LoadInto(const std::string& value, void* dst,
-                ErrorList* errors) const override;
+                ValidationErrors* errors) const override;
 };
 
 // Load a Duration.
@@ -163,7 +122,7 @@ class LoadDuration : public LoadScalar {
  private:
   bool IsNumber() const override;
   void LoadInto(const std::string& value, void* dst,
-                ErrorList* errors) const override;
+                ValidationErrors* errors) const override;
 };
 
 // Load a number.
@@ -183,7 +142,7 @@ class TypedLoadSignedNumber : public LoadNumber {
 
  private:
   void LoadInto(const std::string& value, void* dst,
-                ErrorList* errors) const override {
+                ValidationErrors* errors) const override {
     if (!absl::SimpleAtoi(value, static_cast<T*>(dst))) {
       errors->AddError("failed to parse number");
     }
@@ -198,7 +157,7 @@ class TypedLoadUnsignedNumber : public LoadNumber {
 
  private:
   void LoadInto(const std::string& value, void* dst,
-                ErrorList* errors) const override {
+                ValidationErrors* errors) const override {
     if (!absl::SimpleAtoi(value, static_cast<T*>(dst))) {
       errors->AddError("failed to parse non-negative number");
     }
@@ -212,7 +171,7 @@ class LoadFloat : public LoadNumber {
 
  private:
   void LoadInto(const std::string& value, void* dst,
-                ErrorList* errors) const override {
+                ValidationErrors* errors) const override {
     if (!absl::SimpleAtof(value, static_cast<float*>(dst))) {
       errors->AddError("failed to parse floating-point number");
     }
@@ -226,7 +185,7 @@ class LoadDouble : public LoadNumber {
 
  private:
   void LoadInto(const std::string& value, void* dst,
-                ErrorList* errors) const override {
+                ValidationErrors* errors) const override {
     if (!absl::SimpleAtod(value, static_cast<double*>(dst))) {
       errors->AddError("failed to parse floating-point number");
     }
@@ -237,7 +196,7 @@ class LoadDouble : public LoadNumber {
 class LoadBool : public LoaderInterface {
  public:
   void LoadInto(const Json& json, const JsonArgs& /*args*/, void* dst,
-                ErrorList* errors) const override;
+                ValidationErrors* errors) const override;
 
  protected:
   ~LoadBool() = default;
@@ -247,7 +206,7 @@ class LoadBool : public LoaderInterface {
 class LoadUnprocessedJsonObject : public LoaderInterface {
  public:
   void LoadInto(const Json& json, const JsonArgs& /*args*/, void* dst,
-                ErrorList* errors) const override;
+                ValidationErrors* errors) const override;
 
  protected:
   ~LoadUnprocessedJsonObject() = default;
@@ -257,7 +216,7 @@ class LoadUnprocessedJsonObject : public LoaderInterface {
 class LoadVector : public LoaderInterface {
  public:
   void LoadInto(const Json& json, const JsonArgs& args, void* dst,
-                ErrorList* errors) const override;
+                ValidationErrors* errors) const override;
 
  protected:
   ~LoadVector() = default;
@@ -271,7 +230,7 @@ class LoadVector : public LoaderInterface {
 class LoadMap : public LoaderInterface {
  public:
   void LoadInto(const Json& json, const JsonArgs& args, void* dst,
-                ErrorList* errors) const override;
+                ValidationErrors* errors) const override;
 
  protected:
   ~LoadMap() = default;
@@ -285,7 +244,7 @@ class LoadMap : public LoaderInterface {
 class LoadOptional : public LoaderInterface {
  public:
   void LoadInto(const Json& json, const JsonArgs& args, void* dst,
-                ErrorList* errors) const override;
+                ValidationErrors* errors) const override;
 
  protected:
   ~LoadOptional() = default;
@@ -307,7 +266,7 @@ template <typename T>
 class AutoLoader final : public LoaderInterface {
  public:
   void LoadInto(const Json& json, const JsonArgs& args, void* dst,
-                ErrorList* errors) const override {
+                ValidationErrors* errors) const override {
     T::JsonLoader(args)->LoadInto(json, args, dst, errors);
   }
 
@@ -390,7 +349,7 @@ template <>
 class AutoLoader<std::vector<bool>> final : public LoaderInterface {
  public:
   void LoadInto(const Json& json, const JsonArgs& args, void* dst,
-                ErrorList* errors) const override;
+                ValidationErrors* errors) const override;
 
  private:
   ~AutoLoader() = default;
@@ -488,7 +447,7 @@ class Vec<T, 0> {
 // the object from some parsed JSON.
 // Returns false if the JSON object was not of type Json::Type::OBJECT.
 bool LoadObject(const Json& json, const JsonArgs& args, const Element* elements,
-                size_t num_elements, void* dst, ErrorList* errors);
+                size_t num_elements, void* dst, ValidationErrors* errors);
 
 // Adaptor type - takes a compile time computed list of elements and
 // implements LoaderInterface by calling LoadObject.
@@ -499,7 +458,7 @@ class FinishedJsonObjectLoader final : public LoaderInterface {
       : elements_(elements) {}
 
   void LoadInto(const Json& json, const JsonArgs& args, void* dst,
-                ErrorList* errors) const override {
+                ValidationErrors* errors) const override {
     LoadObject(json, args, elements_.data(), elements_.size(), dst, errors);
   }
 
@@ -517,7 +476,7 @@ class FinishedJsonObjectLoader<T, kElemCount,
       : elements_(elements) {}
 
   void LoadInto(const Json& json, const JsonArgs& args, void* dst,
-                ErrorList* errors) const override {
+                ValidationErrors* errors) const override {
     // Call JsonPostLoad() only if json is a JSON object.
     if (LoadObject(json, args, elements_.data(), elements_.size(), dst,
                    errors)) {
@@ -573,8 +532,8 @@ class JsonObjectLoader final {
 };
 
 const Json* GetJsonObjectField(const Json::Object& json,
-                               absl::string_view field, ErrorList* errors,
-                               bool required);
+                               absl::string_view field,
+                               ValidationErrors* errors, bool required);
 
 }  // namespace json_detail
 
@@ -586,17 +545,18 @@ using JsonLoaderInterface = json_detail::LoaderInterface;
 template <typename T>
 absl::StatusOr<T> LoadFromJson(const Json& json,
                                const JsonArgs& args = JsonArgs()) {
-  ErrorList error_list;
+  ValidationErrors errors;
   T result{};
-  json_detail::LoaderForType<T>()->LoadInto(json, args, &result, &error_list);
-  if (!error_list.ok()) return error_list.status();
+  json_detail::LoaderForType<T>()->LoadInto(json, args, &result, &errors);
+  if (!errors.ok()) return errors.status("errors validating JSON");
   return std::move(result);
 }
 
 template <typename T>
-T LoadFromJson(const Json& json, const JsonArgs& args, ErrorList* error_list) {
+T LoadFromJson(const Json& json, const JsonArgs& args,
+               ValidationErrors* errors) {
   T result{};
-  json_detail::LoaderForType<T>()->LoadInto(json, args, &result, error_list);
+  json_detail::LoaderForType<T>()->LoadInto(json, args, &result, errors);
   return result;
 }
 
@@ -604,8 +564,9 @@ template <typename T>
 absl::optional<T> LoadJsonObjectField(const Json::Object& json,
                                       const JsonArgs& args,
                                       absl::string_view field,
-                                      ErrorList* errors, bool required = true) {
-  ScopedField error_field(errors, absl::StrCat(".", field));
+                                      ValidationErrors* errors,
+                                      bool required = true) {
+  ValidationErrors::ScopedField error_field(errors, absl::StrCat(".", field));
   const Json* field_json =
       json_detail::GetJsonObjectField(json, field, errors, required);
   if (field_json == nullptr) return absl::nullopt;

@@ -1214,6 +1214,24 @@ grpc_cc_library(
     ],
 )
 
+grpc_cc_library(
+    name = "validation_errors",
+    srcs = [
+        "src/core/lib/gprpp/validation_errors.cc",
+    ],
+    hdrs = [
+        "src/core/lib/gprpp/validation_errors.h",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/strings",
+    ],
+    language = "c++",
+    deps = [
+        "gpr_platform",
+    ],
+)
+
 # A library that vends only port_platform, so that libraries that don't need
 # anything else from gpr can still be portable!
 grpc_cc_library(
@@ -7760,6 +7778,7 @@ grpc_cc_library(
         "json_object_loader",
         "no_destruct",
         "time",
+        "validation_errors",
     ],
 )
 
@@ -7787,6 +7806,7 @@ grpc_cc_library(
         "json_args",
         "no_destruct",
         "time",
+        "validation_errors",
     ],
 )
 
