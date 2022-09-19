@@ -1227,9 +1227,7 @@ grpc_cc_library(
         "absl/strings",
     ],
     language = "c++",
-    deps = [
-        "gpr_platform",
-    ],
+    deps = ["gpr_platform"],
 )
 
 # A library that vends only port_platform, so that libraries that don't need
