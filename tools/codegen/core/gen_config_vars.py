@@ -113,10 +113,14 @@ MEMBER_TYPE = {
 
 SORT_ORDER_FOR_PACKING = {"int": 0, "bool": 1, "string": 2}
 
+
 def bool_default_value(x, name):
-    if x == True: return "true"
-    if x == False: return "false"
+    if x == True:
+        return "true"
+    if x == False:
+        return "false"
     return x
+
 
 DEFAULT_VALUE = {
     "int": lambda x, name: x,
