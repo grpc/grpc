@@ -126,7 +126,7 @@ TEST_F(IOCPTest, ClientReceivesNotificationOfServerSend) {
   ASSERT_TRUE(cb_invoked);
   // wait for the callbacks to run
   read_called.WaitForNotification();
-  write_called.WaitForNotification());
+  write_called.WaitForNotification();
 
   delete on_read;
   delete on_write;
@@ -203,7 +203,7 @@ TEST_F(IOCPTest, IocpWorkTimeoutDueToNoNotificationRegistered) {
 TEST_F(IOCPTest, KickWorks) {
   ThreadedExecutor executor{2};
   IOCP iocp(&executor);
-  grpc_core::Notification kicked{false};
+  grpc_core::Notification kicked;
   executor.Run([&iocp, &kicked] {
     bool cb_invoked = false;
     Poller::WorkResult result = iocp.Work(
@@ -218,7 +218,7 @@ TEST_F(IOCPTest, KickWorks) {
     iocp.Kick();
   });
   // wait for the callbacks to run
-  ASSERT_TRUE(kicked.WaitForNotification());
+  kicked.WaitForNotification();
 }
 
 TEST_F(IOCPTest, KickThenShutdownCasusesNextWorkerToBeKicked) {
