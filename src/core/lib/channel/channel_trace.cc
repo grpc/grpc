@@ -30,6 +30,7 @@
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_refcount.h"
 
@@ -40,7 +41,7 @@ ChannelTrace::TraceEvent::TraceEvent(Severity severity, const grpc_slice& data,
                                      RefCountedPtr<BaseNode> referenced_entity)
     : severity_(severity),
       data_(data),
-      timestamp_(Timestamp::Now().as_timespec(GPR_CLOCK_REALTIME)),
+      timestamp_(ExecCtx::Get()->Now().as_timespec(GPR_CLOCK_REALTIME)),
       next_(nullptr),
       referenced_entity_(std::move(referenced_entity)),
       memory_usage_(sizeof(TraceEvent) + grpc_slice_memory_usage(data)) {}
@@ -48,7 +49,7 @@ ChannelTrace::TraceEvent::TraceEvent(Severity severity, const grpc_slice& data,
 ChannelTrace::TraceEvent::TraceEvent(Severity severity, const grpc_slice& data)
     : severity_(severity),
       data_(data),
-      timestamp_(Timestamp::Now().as_timespec(GPR_CLOCK_REALTIME)),
+      timestamp_(ExecCtx::Get()->Now().as_timespec(GPR_CLOCK_REALTIME)),
       next_(nullptr),
       memory_usage_(sizeof(TraceEvent) + grpc_slice_memory_usage(data)) {}
 
@@ -64,7 +65,7 @@ ChannelTrace::ChannelTrace(size_t max_event_memory)
     return;  // tracing is disabled if max_event_memory_ == 0
   }
   gpr_mu_init(&tracer_mu_);
-  time_created_ = Timestamp::Now().as_timespec(GPR_CLOCK_REALTIME);
+  time_created_ = ExecCtx::Get()->Now().as_timespec(GPR_CLOCK_REALTIME);
 }
 
 ChannelTrace::~ChannelTrace() {

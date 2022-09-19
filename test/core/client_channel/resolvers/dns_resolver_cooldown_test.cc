@@ -94,11 +94,11 @@ class TestDNSResolver : public grpc_core::DNSResolver {
       last_resolution_time = now;
     }
     // For correct time diff comparisons, make sure that any subsequent calls
-    // to grpc_core::Timestamp::Now() on this thread don't return a time
+    // to grpc_core::ExecCtx::Get()->Now() on this thread don't return a time
     // which is earlier than that returned by the call(s) to
     // gpr_now(GPR_CLOCK_MONOTONIC) within this function. This is important
     // because the resolver's last_resolution_timestamp_ will be taken from
-    // grpc_core::Timestamp::Now() right after this returns.
+    // grpc_core::ExecCtx::Get()->Now() right after this returns.
     grpc_core::ExecCtx::Get()->InvalidateNow();
     return result;
   }
@@ -164,11 +164,11 @@ static grpc_ares_request* test_dns_lookup_ares(
   }
   last_resolution_time = now;
   // For correct time diff comparisons, make sure that any subsequent calls
-  // to grpc_core::Timestamp::Now() on this thread don't return a time
+  // to grpc_core::ExecCtx::Get()->Now() on this thread don't return a time
   // which is earlier than that returned by the call(s) to
   // gpr_now(GPR_CLOCK_MONOTONIC) within this function. This is important
   // because the resolver's last_resolution_timestamp_ will be taken from
-  // grpc_core::Timestamp::Now() right after this returns.
+  // grpc_core::ExecCtx::Get()->Now() right after this returns.
   grpc_core::ExecCtx::Get()->InvalidateNow();
   return result;
 }
@@ -217,7 +217,7 @@ static void poll_pollset_until_request_done(iomgr_args* args) {
     if (done) {
       break;
     }
-    grpc_core::Duration time_left = deadline - grpc_core::Timestamp::Now();
+    grpc_core::Duration time_left = deadline - grpc_core::ExecCtx::Get()->Now();
     gpr_log(GPR_DEBUG, "done=%d, time_left=%" PRId64, done, time_left.millis());
     ASSERT_GE(time_left, grpc_core::Duration::Zero());
     grpc_pollset_worker* worker = nullptr;

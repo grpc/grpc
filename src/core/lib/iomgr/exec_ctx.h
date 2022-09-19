@@ -176,14 +176,30 @@ class ExecCtx {
     }
   }
 
-  Timestamp Now() { return Timestamp::Now(); }
-  void InvalidateNow() { time_cache_.InvalidateCache(); }
+  /** Returns the stored current time relative to start if valid,
+   *  otherwise refreshes the stored time, sets it valid and returns the new
+   *  value.
+   */
+  Timestamp Now();
+
+  /** Invalidates the stored time value. A new time value will be set on calling
+   *  Now().
+   */
+  void InvalidateNow() { now_is_valid_ = false; }
+
+  /** To be used only by shutdown code in iomgr */
   void SetNowIomgrShutdown() {
-    // We get to do a test only set now on this path just because iomgr
-    // is getting removed and no point adding more interfaces for it.
-    time_cache_.TestOnlySetNow(Timestamp::InfFuture());
+    now_ = Timestamp::InfFuture();
+    now_is_valid_ = true;
   }
-  void TestOnlySetNow(Timestamp now) { time_cache_.TestOnlySetNow(now); }
+
+  /** To be used only for testing.
+   *  Sets the now value.
+   */
+  void TestOnlySetNow(Timestamp new_val) {
+    now_ = new_val;
+    now_is_valid_ = true;
+  }
 
   /** Gets pointer to current exec_ctx. */
   static ExecCtx* Get() { return exec_ctx_; }
@@ -210,7 +226,9 @@ class ExecCtx {
 
   unsigned starting_cpu_ = std::numeric_limits<unsigned>::max();
 
-  ScopedTimeCache time_cache_;
+  bool now_is_valid_ = false;
+  Timestamp now_;
+
   static GPR_THREAD_LOCAL(ExecCtx*) exec_ctx_;
   ExecCtx* last_exec_ctx_ = Get();
 };

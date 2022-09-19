@@ -20,6 +20,8 @@
 
 #include "src/core/lib/transport/status_conversion.h"
 
+#include "src/core/lib/iomgr/exec_ctx.h"
+
 grpc_http2_error_code grpc_status_to_http2_error(grpc_status_code status) {
   switch (status) {
     case GRPC_STATUS_OK:
@@ -48,7 +50,7 @@ grpc_status_code grpc_http2_error_to_grpc_status(
     case GRPC_HTTP2_CANCEL:
       /* http2 cancel translates to STATUS_CANCELLED iff deadline hasn't been
        * exceeded */
-      return grpc_core::Timestamp::Now() > deadline
+      return grpc_core::ExecCtx::Get()->Now() > deadline
                  ? GRPC_STATUS_DEADLINE_EXCEEDED
                  : GRPC_STATUS_CANCELLED;
     case GRPC_HTTP2_ENHANCE_YOUR_CALM:

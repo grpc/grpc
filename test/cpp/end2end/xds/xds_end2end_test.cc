@@ -433,7 +433,7 @@ class XdsSecurityTest : public XdsEnd2endTest {
 
 TEST_P(XdsSecurityTest, TransportSocketMissingTypedConfig) {
   auto cluster = default_cluster_;
-  auto* transport_socket = cluster.mutable_transport_socket();
+  cluster.mutable_transport_socket();
   balancer_->ads_service()->SetCdsResource(cluster);
   const auto response_state =
       WaitForCdsNack(DEBUG_LOCATION, RpcOptions().set_timeout_ms(5000));
@@ -1591,7 +1591,7 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
 TEST_P(XdsServerSecurityTest, TransportSocketTypedConfigUnset) {
   Listener listener = default_server_listener_;
   auto* filter_chain = listener.mutable_default_filter_chain();
-  auto* transport_socket = filter_chain->mutable_transport_socket();
+  filter_chain->mutable_transport_socket();
   SetServerListenerNameAndRouteConfiguration(balancer_.get(), listener,
                                              backends_[0]->port(),
                                              default_server_route_config_);
