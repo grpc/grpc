@@ -113,9 +113,14 @@ MEMBER_TYPE = {
 
 SORT_ORDER_FOR_PACKING = {"int": 0, "bool": 1, "string": 2}
 
+def bool_default_value(x, name):
+    if x == True: return "true"
+    if x == False: return "false"
+    return x
+
 DEFAULT_VALUE = {
     "int": lambda x, name: x,
-    "bool": lambda x, name: "true" if x else "false",
+    "bool": bool_default_value,
     "string": lambda x, name: "default_" + name,
 }
 
@@ -196,6 +201,11 @@ with open('src/core/lib/config/config_vars.cc', 'w') as C:
     print("#include \"src/core/lib/config/load_config.h\"", file=C)
     print("#include \"absl/flags/flag.h\"", file=C)
     print(file=C)
+
+    for attr in attrs:
+        if 'prelude' in attr:
+            print(attr['prelude'], file=C)
+
     print("namespace {", file=C)
     for attr in attrs:
         print("const char* const description_%s = %s;" %

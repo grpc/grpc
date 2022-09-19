@@ -28,6 +28,16 @@
 
 #include "src/core/lib/config/load_config.h"
 
+#ifndef GPR_DEFAULT_LOG_VERBOSITY_STRING
+#define GPR_DEFAULT_LOG_VERBOSITY_STRING "ERROR"
+#endif  // !GPR_DEFAULT_LOG_VERBOSITY_STRING
+
+#ifdef GRPC_ENABLE_FORK_SUPPORT
+#define GRPC_ENABLE_FORK_SUPPORT_DEFAULT true
+#else
+#define GRPC_ENABLE_FORK_SUPPORT_DEFAULT false
+#endif  // GRPC_ENABLE_FORK_SUPPORT
+
 namespace {
 const char* const description_experiments =
     "A comma separated list of currently active experiments. Experiments may "
@@ -113,7 +123,8 @@ ConfigVars::ConfigVars(const Overrides& overrides)
           LoadConfig(FLAGS_grpc_client_channel_backup_poll_interval_ms,
                      overrides.client_channel_backup_poll_interval_ms, 5000)),
       enable_fork_support_(LoadConfig(FLAGS_grpc_enable_fork_support,
-                                      overrides.enable_fork_support, true)),
+                                      overrides.enable_fork_support,
+                                      GRPC_ENABLE_FORK_SUPPORT_DEFAULT)),
       abort_on_leaks_(LoadConfig(FLAGS_grpc_abort_on_leaks,
                                  overrides.abort_on_leaks, false)),
       not_use_system_ssl_roots_(LoadConfig(FLAGS_grpc_not_use_system_ssl_roots,
