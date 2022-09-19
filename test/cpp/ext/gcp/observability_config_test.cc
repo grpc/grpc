@@ -21,6 +21,7 @@
 
 #include <grpc/support/alloc.h>
 
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/gprpp/env.h"
 #include "test/core/util/test_config.h"
@@ -91,6 +92,56 @@ TEST(GcpEnvParsingTest, ConfigFileDoesNotExist) {
             absl::FailedPreconditionError("Failed to load file"));
 
   grpc_core::UnsetEnv("GRPC_OBSERVABILITY_CONFIG_FILE");
+}
+
+TEST(GcpEnvParsingTest, ProjectIdNotSet) {
+  grpc_core::SetEnv("GRPC_OBSERVABILITY_CONFIG", "{}");
+
+  auto config = GcpObservabilityConfig::ReadFromEnv();
+  EXPECT_EQ(config.status(),
+            absl::FailedPreconditionError("GCP Project ID not found."));
+
+  grpc_core::UnsetEnv("GRPC_OBSERVABILITY_CONFIG");
+  grpc_core::CoreConfiguration::Reset();
+}
+
+TEST(GcpEnvParsingTest, ProjectIdFromGcpProjectEnvVar) {
+  grpc_core::SetEnv("GRPC_OBSERVABILITY_CONFIG", "{}");
+  grpc_core::SetEnv("GCP_PROJECT", "gcp_project");
+
+  auto config = GcpObservabilityConfig::ReadFromEnv();
+  EXPECT_TRUE(config.ok());
+  EXPECT_EQ(config->project_id, "gcp_project");
+
+  grpc_core::UnsetEnv("GCP_PROJECT");
+  grpc_core::UnsetEnv("GRPC_OBSERVABILITY_CONFIG");
+  grpc_core::CoreConfiguration::Reset();
+}
+
+TEST(GcpEnvParsingTest, ProjectIdFromGcloudProjectEnvVar) {
+  grpc_core::SetEnv("GRPC_OBSERVABILITY_CONFIG", "{}");
+  grpc_core::SetEnv("GCLOUD_PROJECT", "gcloud_project");
+
+  auto config = GcpObservabilityConfig::ReadFromEnv();
+  EXPECT_TRUE(config.ok());
+  EXPECT_EQ(config->project_id, "gcloud_project");
+
+  grpc_core::UnsetEnv("GCLOUD_PROJECT");
+  grpc_core::UnsetEnv("GRPC_OBSERVABILITY_CONFIG");
+  grpc_core::CoreConfiguration::Reset();
+}
+
+TEST(GcpEnvParsingTest, ProjectIdFromGoogleCloudProjectEnvVar) {
+  grpc_core::SetEnv("GRPC_OBSERVABILITY_CONFIG", "{}");
+  grpc_core::SetEnv("GOOGLE_CLOUD_PROJECT", "google_cloud_project");
+
+  auto config = GcpObservabilityConfig::ReadFromEnv();
+  EXPECT_TRUE(config.ok());
+  EXPECT_EQ(config->project_id, "google_cloud_project");
+
+  grpc_core::UnsetEnv("GOOGLE_CLOUD_PROJECT");
+  grpc_core::UnsetEnv("GRPC_OBSERVABILITY_CONFIG");
+  grpc_core::CoreConfiguration::Reset();
 }
 
 class EnvParsingTestType {
