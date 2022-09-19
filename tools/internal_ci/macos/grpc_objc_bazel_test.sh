@@ -51,13 +51,13 @@ EXAMPLE_TARGETS=(
 
 TEST_TARGETS=(
   # TODO(jtattermusch): ideally we'd say "//src/objective-c/tests/..." but not all the targets currently build
-  # TODO(jtattermusch): make //src/objective-c/tests:TvTests test pass with bazel
   //src/objective-c/tests:InteropTestsLocalCleartext
   //src/objective-c/tests:InteropTestsLocalSSL
   //src/objective-c/tests:InteropTestsRemote
   //src/objective-c/tests:MacTests
   //src/objective-c/tests:UnitTests
   //src/objective-c/tests:CronetTests
+  //src/objective-c/tests:TvTests
   # codegen plugin tests
   //src/objective-c/tests:objc_codegen_plugin_test
   //src/objective-c/tests:objc_codegen_plugin_option_test
