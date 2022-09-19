@@ -144,6 +144,8 @@ TEST(Init, TimerManagerHoldsLastInit) {
   grpc_core::Notification n;
   grpc_event_engine::experimental::GetDefaultEventEngine()->RunAfter(
       std::chrono::seconds(1), [&n] {
+        grpc_core::ApplicationCallbackExecCtx app_exec_ctx;
+        grpc_core::ExecCtx exec_ctx;
         grpc_shutdown();
         n.Notify();
       });
