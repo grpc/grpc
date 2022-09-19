@@ -140,12 +140,16 @@ with open('src/core/lib/config/config_vars.h', 'w') as H:
     print("#include \"absl/strings/string_view.h\"", file=H)
     print("#include \"absl/types/optional.h\"", file=H)
     print("#include \"absl/types/span.h\"", file=H)
-    print("#include \"src/core/lib/config/config_var_metadata.h\"", file=H)
     print(file=H)
     print("namespace grpc_core {", file=H)
     print(file=H)
     print("class ConfigVars {", file=H)
     print(" public:", file=H)
+    print("  struct Overrides {", file=H)
+    for attr in attrs_in_packing_order:
+        print("    absl::optional<%s> %s;" % (MEMBER_TYPE[attr['type']],
+                                            attr['name']), file=H)
+    print("  };", file=H)
     print("  ConfigVars(const ConfigVars&) = delete;", file=H)
     print("  ConfigVars& operator=(const ConfigVars&) = delete;", file=H)
     print("  // Get the core configuration; if it does not exist, create it.",
@@ -155,6 +159,7 @@ with open('src/core/lib/config/config_vars.h', 'w') as H:
     print("    if (p != nullptr) return *p;", file=H)
     print("    return Load();", file=H)
     print("  }", file=H)
+    print("  static void SetOverrides(const Overrides& overrides);", file=H)
     print("  // Drop the config vars. Users must ensure no other threads are",
           file=H)
     print("  // accessing the configuration.", file=H)
@@ -166,9 +171,8 @@ with open('src/core/lib/config/config_vars.h', 'w') as H:
               (RETURN_TYPE[attr['type']], snake_to_pascal(
                   attr['name']), attr['name']),
               file=H)
-    print("  static absl::Span<const ConfigVarMetadata> metadata();", file=H)
     print(" private:", file=H)
-    print("  ConfigVars();", file=H)
+    print("  explicit ConfigVars(const Overrides& overrides);", file=H)
     print("  static const ConfigVars& Load();", file=H)
     print("  static std::atomic<ConfigVars*> config_vars_;", file=H)
     for attr in attrs_in_packing_order:
@@ -189,7 +193,7 @@ with open('src/core/lib/config/config_vars.cc', 'w') as C:
     print("#include <grpc/support/port_platform.h>", file=C)
     print("#include <vector>", file=C)
     print("#include \"src/core/lib/config/config_vars.h\"", file=C)
-    print("#include \"src/core/lib/config/config_from_environment.h\"", file=C)
+    print("#include \"src/core/lib/config/load_config.h\"", file=C)
     print("#include \"absl/flags/flag.h\"", file=C)
     print(file=C)
     print("namespace {", file=C)
@@ -205,39 +209,21 @@ with open('src/core/lib/config/config_vars.cc', 'w') as C:
     print("}", file=C)
     for attr in attrs:
         print(
-            "ABSL_FLAG(%s, %s, grpc_core::Load%sFromEnv(\"%s\", %s), description_%s);"
-            % (MEMBER_TYPE[attr["type"]], 'grpc_' + attr['name'],
-               attr["type"].capitalize(), attr['name'],
-               DEFAULT_VALUE[attr['type']](attr['default'],
-                                           attr['name']), attr['name']),
+            "ABSL_FLAG(absl::optional<%s>, %s, absl::nullopt, description_%s);"
+            % (MEMBER_TYPE[attr["type"]], 'grpc_' + attr['name'], attr['name']),
             file=C)
     print(file=C)
     print("namespace grpc_core {", file=C)
     print(file=C)
-    print("ConfigVars::ConfigVars() :", file=C)
-    print(",".join("%s_(absl::GetFlag(FLAGS_grpc_%s))" % (
+    print("ConfigVars::ConfigVars(const Overrides& overrides) :", file=C)
+    print(",".join("%s_(LoadConfig(FLAGS_grpc_%s, overrides.%s, %s))" % (
         attr['name'],
         attr['name'],
+        attr['name'],
+        DEFAULT_VALUE[attr['type']](attr['default'],
+                                           attr['name'])
     ) for attr in attrs_in_packing_order),
           file=C)
     print("{}", file=C)
-    print(file=C)
-    print("absl::Span<const ConfigVarMetadata> ConfigVars::metadata() {",
-          file=C)
-    print("  static const auto* metadata = new std::vector<ConfigVarMetadata>{",
-          file=C)
-    for attr in attrs:
-        print("    {", file=C)
-        print("      %s," % c_str(attr['name']), file=C)
-        print("      description_%s," % attr['name'], file=C)
-        print(
-            "      ConfigVarMetadata::%s{%s, &ConfigVars::%s}," %
-            (snake_to_pascal(attr['type']), DEFAULT_VALUE[attr['type']](
-                attr['default'], attr['name']), snake_to_pascal(attr['name'])),
-            file=C)
-        print("    },", file=C)
-    print("  };", file=C)
-    print("  return *metadata;", file=C)
-    print("}", file=C)
     print(file=C)
     print("}", file=C)

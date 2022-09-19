@@ -30,6 +30,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/channel/channelz.h"
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -162,7 +163,9 @@ int main(int argc, char** argv) {
 
   /* force tracing on, with a value to force many
      code paths in trace.c to be taken */
-  GPR_GLOBAL_CONFIG_SET(grpc_trace, "doesnt-exist,http,all");
+  grpc_core::ConfigVars::Overrides overrides;
+  overrides.trace = "doesnt-exist,http,all";
+  grpc_core::ConfigVars::SetOverrides(overrides);
 
 #ifdef GRPC_POSIX_SOCKET
   g_fixture_slowdown_factor = isatty(STDOUT_FILENO) ? 10 : 1;

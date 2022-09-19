@@ -17,6 +17,7 @@
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/event_engine/posix_engine/ev_epoll1_linux.h"
 #include "src/core/lib/event_engine/posix_engine/ev_poll_posix.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
@@ -34,10 +35,9 @@ bool PollStrategyMatches(absl::string_view strategy, absl::string_view want) {
 }  // namespace
 
 PosixEventPoller* GetDefaultPoller(Scheduler* scheduler) {
-  grpc_core::UniquePtr<char> poll_strategy =
-      GPR_GLOBAL_CONFIG_GET(grpc_poll_strategy);
   PosixEventPoller* poller = nullptr;
-  auto strings = absl::StrSplit(poll_strategy.get(), ',');
+  auto strings =
+      absl::StrSplit(grpc_core::ConfigVars::Get().PollStrategy(), ',');
   for (auto it = strings.begin(); it != strings.end() && poller == nullptr;
        it++) {
     if (PollStrategyMatches(*it, "epoll1")) {

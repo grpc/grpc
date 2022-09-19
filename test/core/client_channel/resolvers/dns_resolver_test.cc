@@ -24,7 +24,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
-#include "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h"
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/memory.h"
@@ -89,9 +89,7 @@ TEST(DnsResolverTest, MainTest) {
   test_succeeds(dns, "dns:10.2.1.1:1234");
   test_succeeds(dns, "dns:www.google.com");
   test_succeeds(dns, "dns:///www.google.com");
-  grpc_core::UniquePtr<char> resolver =
-      GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
-  if (gpr_stricmp(resolver.get(), "native") == 0) {
+  if (grpc_core::ConfigVars::Get().DnsResolver() == "native") {
     test_fails(dns, "dns://8.8.8.8/8.8.8.8:8888");
   } else {
     test_succeeds(dns, "dns://8.8.8.8/8.8.8.8:8888");

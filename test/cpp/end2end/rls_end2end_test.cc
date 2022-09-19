@@ -43,6 +43,7 @@
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/time.h"
@@ -159,7 +160,9 @@ class RlsEnd2endTest : public ::testing::Test {
  protected:
   static void SetUpTestSuite() {
     grpc_core::SetEnv("GRPC_EXPERIMENTAL_ENABLE_RLS_LB_POLICY", "true");
-    GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
+    grpc_core::ConfigVars::Overrides overrides;
+    overrides.client_channel_backup_poll_interval_ms = 1;
+    grpc_core::ConfigVars::SetOverrides(overrides);
     grpc_core::CoreConfiguration::RegisterBuilder(
         grpc_core::RegisterFixedAddressLoadBalancingPolicy);
     grpc_init();

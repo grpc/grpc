@@ -33,6 +33,7 @@
 #include <grpc/grpc_security.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/port.h"
@@ -108,7 +109,9 @@ int main(int argc, char** argv) {
 
   /* force tracing on, with a value to force many
      code paths in trace.c to be taken */
-  GPR_GLOBAL_CONFIG_SET(grpc_trace, "doesnt-exist,http,all");
+  grpc_core::ConfigVars::Overrides overrides;
+  overrides.trace = "doesnt-exist,http,all";
+  grpc_core::ConfigVars::SetOverrides(overrides);
 
 #ifdef GRPC_POSIX_SOCKET
   g_fixture_slowdown_factor = isatty(STDOUT_FILENO) ? 10 : 1;

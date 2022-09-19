@@ -22,12 +22,11 @@
 
 #include "src/core/lib/config/config_vars.h"
 
-#include <cstdint>
 #include <vector>
 
 #include "absl/flags/flag.h"
 
-#include "src/core/lib/config/config_from_environment.h"
+#include "src/core/lib/config/load_config.h"
 
 namespace {
 const char* const description_experiments =
@@ -80,148 +79,68 @@ const char* const default_ssl_cipher_suites =
     "SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-"
     "RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384";
 }  // namespace
-ABSL_FLAG(std::string, grpc_experiments,
-          grpc_core::LoadStringFromEnv("experiments", default_experiments),
+ABSL_FLAG(absl::optional<std::string>, grpc_experiments, absl::nullopt,
           description_experiments);
-ABSL_FLAG(int32_t, grpc_client_channel_backup_poll_interval_ms,
-          grpc_core::LoadIntFromEnv("client_channel_backup_poll_interval_ms",
-                                    5000),
-          description_client_channel_backup_poll_interval_ms);
-ABSL_FLAG(std::string, grpc_dns_resolver,
-          grpc_core::LoadStringFromEnv("dns_resolver", default_dns_resolver),
+ABSL_FLAG(absl::optional<int32_t>, grpc_client_channel_backup_poll_interval_ms,
+          absl::nullopt, description_client_channel_backup_poll_interval_ms);
+ABSL_FLAG(absl::optional<std::string>, grpc_dns_resolver, absl::nullopt,
           description_dns_resolver);
-ABSL_FLAG(std::string, grpc_trace,
-          grpc_core::LoadStringFromEnv("trace", default_trace),
+ABSL_FLAG(absl::optional<std::string>, grpc_trace, absl::nullopt,
           description_trace);
-ABSL_FLAG(std::string, grpc_verbosity,
-          grpc_core::LoadStringFromEnv("verbosity", default_verbosity),
+ABSL_FLAG(absl::optional<std::string>, grpc_verbosity, absl::nullopt,
           description_verbosity);
-ABSL_FLAG(std::string, grpc_stacktrace_minloglevel,
-          grpc_core::LoadStringFromEnv("stacktrace_minloglevel",
-                                       default_stacktrace_minloglevel),
-          description_stacktrace_minloglevel);
-ABSL_FLAG(bool, grpc_enable_fork_support,
-          grpc_core::LoadBoolFromEnv("enable_fork_support", true),
+ABSL_FLAG(absl::optional<std::string>, grpc_stacktrace_minloglevel,
+          absl::nullopt, description_stacktrace_minloglevel);
+ABSL_FLAG(absl::optional<bool>, grpc_enable_fork_support, absl::nullopt,
           description_enable_fork_support);
-ABSL_FLAG(std::string, grpc_poll_strategy,
-          grpc_core::LoadStringFromEnv("poll_strategy", default_poll_strategy),
+ABSL_FLAG(absl::optional<std::string>, grpc_poll_strategy, absl::nullopt,
           description_poll_strategy);
-ABSL_FLAG(bool, grpc_abort_on_leaks,
-          grpc_core::LoadBoolFromEnv("abort_on_leaks", false),
+ABSL_FLAG(absl::optional<bool>, grpc_abort_on_leaks, absl::nullopt,
           description_abort_on_leaks);
-ABSL_FLAG(std::string, grpc_system_ssl_roots_dir,
-          grpc_core::LoadStringFromEnv("system_ssl_roots_dir",
-                                       default_system_ssl_roots_dir),
+ABSL_FLAG(absl::optional<std::string>, grpc_system_ssl_roots_dir, absl::nullopt,
           description_system_ssl_roots_dir);
-ABSL_FLAG(std::string, grpc_default_ssl_roots_file_path,
-          grpc_core::LoadStringFromEnv("default_ssl_roots_file_path",
-                                       default_default_ssl_roots_file_path),
-          description_default_ssl_roots_file_path);
-ABSL_FLAG(bool, grpc_not_use_system_ssl_roots,
-          grpc_core::LoadBoolFromEnv("not_use_system_ssl_roots", false),
+ABSL_FLAG(absl::optional<std::string>, grpc_default_ssl_roots_file_path,
+          absl::nullopt, description_default_ssl_roots_file_path);
+ABSL_FLAG(absl::optional<bool>, grpc_not_use_system_ssl_roots, absl::nullopt,
           description_not_use_system_ssl_roots);
-ABSL_FLAG(std::string, grpc_ssl_cipher_suites,
-          grpc_core::LoadStringFromEnv("ssl_cipher_suites",
-                                       default_ssl_cipher_suites),
+ABSL_FLAG(absl::optional<std::string>, grpc_ssl_cipher_suites, absl::nullopt,
           description_ssl_cipher_suites);
 
 namespace grpc_core {
 
-ConfigVars::ConfigVars()
+ConfigVars::ConfigVars(const Overrides& overrides)
     : client_channel_backup_poll_interval_ms_(
-          absl::GetFlag(FLAGS_grpc_client_channel_backup_poll_interval_ms)),
-      enable_fork_support_(absl::GetFlag(FLAGS_grpc_enable_fork_support)),
-      abort_on_leaks_(absl::GetFlag(FLAGS_grpc_abort_on_leaks)),
-      not_use_system_ssl_roots_(
-          absl::GetFlag(FLAGS_grpc_not_use_system_ssl_roots)),
-      experiments_(absl::GetFlag(FLAGS_grpc_experiments)),
-      dns_resolver_(absl::GetFlag(FLAGS_grpc_dns_resolver)),
-      trace_(absl::GetFlag(FLAGS_grpc_trace)),
-      verbosity_(absl::GetFlag(FLAGS_grpc_verbosity)),
-      stacktrace_minloglevel_(absl::GetFlag(FLAGS_grpc_stacktrace_minloglevel)),
-      poll_strategy_(absl::GetFlag(FLAGS_grpc_poll_strategy)),
-      system_ssl_roots_dir_(absl::GetFlag(FLAGS_grpc_system_ssl_roots_dir)),
+          LoadConfig(FLAGS_grpc_client_channel_backup_poll_interval_ms,
+                     overrides.client_channel_backup_poll_interval_ms, 5000)),
+      enable_fork_support_(LoadConfig(FLAGS_grpc_enable_fork_support,
+                                      overrides.enable_fork_support, true)),
+      abort_on_leaks_(LoadConfig(FLAGS_grpc_abort_on_leaks,
+                                 overrides.abort_on_leaks, false)),
+      not_use_system_ssl_roots_(LoadConfig(FLAGS_grpc_not_use_system_ssl_roots,
+                                           overrides.not_use_system_ssl_roots,
+                                           false)),
+      experiments_(LoadConfig(FLAGS_grpc_experiments, overrides.experiments,
+                              default_experiments)),
+      dns_resolver_(LoadConfig(FLAGS_grpc_dns_resolver, overrides.dns_resolver,
+                               default_dns_resolver)),
+      trace_(LoadConfig(FLAGS_grpc_trace, overrides.trace, default_trace)),
+      verbosity_(LoadConfig(FLAGS_grpc_verbosity, overrides.verbosity,
+                            default_verbosity)),
+      stacktrace_minloglevel_(LoadConfig(FLAGS_grpc_stacktrace_minloglevel,
+                                         overrides.stacktrace_minloglevel,
+                                         default_stacktrace_minloglevel)),
+      poll_strategy_(LoadConfig(FLAGS_grpc_poll_strategy,
+                                overrides.poll_strategy,
+                                default_poll_strategy)),
+      system_ssl_roots_dir_(LoadConfig(FLAGS_grpc_system_ssl_roots_dir,
+                                       overrides.system_ssl_roots_dir,
+                                       default_system_ssl_roots_dir)),
       default_ssl_roots_file_path_(
-          absl::GetFlag(FLAGS_grpc_default_ssl_roots_file_path)),
-      ssl_cipher_suites_(absl::GetFlag(FLAGS_grpc_ssl_cipher_suites)) {}
-
-absl::Span<const ConfigVarMetadata> ConfigVars::metadata() {
-  static const auto* metadata = new std::vector<ConfigVarMetadata>{
-      {
-          "experiments",
-          description_experiments,
-          ConfigVarMetadata::String{default_experiments,
-                                    &ConfigVars::Experiments},
-      },
-      {
-          "client_channel_backup_poll_interval_ms",
-          description_client_channel_backup_poll_interval_ms,
-          ConfigVarMetadata::Int{
-              5000, &ConfigVars::ClientChannelBackupPollIntervalMs},
-      },
-      {
-          "dns_resolver",
-          description_dns_resolver,
-          ConfigVarMetadata::String{default_dns_resolver,
-                                    &ConfigVars::DnsResolver},
-      },
-      {
-          "trace",
-          description_trace,
-          ConfigVarMetadata::String{default_trace, &ConfigVars::Trace},
-      },
-      {
-          "verbosity",
-          description_verbosity,
-          ConfigVarMetadata::String{default_verbosity, &ConfigVars::Verbosity},
-      },
-      {
-          "stacktrace_minloglevel",
-          description_stacktrace_minloglevel,
-          ConfigVarMetadata::String{default_stacktrace_minloglevel,
-                                    &ConfigVars::StacktraceMinloglevel},
-      },
-      {
-          "enable_fork_support",
-          description_enable_fork_support,
-          ConfigVarMetadata::Bool{true, &ConfigVars::EnableForkSupport},
-      },
-      {
-          "poll_strategy",
-          description_poll_strategy,
-          ConfigVarMetadata::String{default_poll_strategy,
-                                    &ConfigVars::PollStrategy},
-      },
-      {
-          "abort_on_leaks",
-          description_abort_on_leaks,
-          ConfigVarMetadata::Bool{false, &ConfigVars::AbortOnLeaks},
-      },
-      {
-          "system_ssl_roots_dir",
-          description_system_ssl_roots_dir,
-          ConfigVarMetadata::String{default_system_ssl_roots_dir,
-                                    &ConfigVars::SystemSslRootsDir},
-      },
-      {
-          "default_ssl_roots_file_path",
-          description_default_ssl_roots_file_path,
-          ConfigVarMetadata::String{default_default_ssl_roots_file_path,
-                                    &ConfigVars::DefaultSslRootsFilePath},
-      },
-      {
-          "not_use_system_ssl_roots",
-          description_not_use_system_ssl_roots,
-          ConfigVarMetadata::Bool{false, &ConfigVars::NotUseSystemSslRoots},
-      },
-      {
-          "ssl_cipher_suites",
-          description_ssl_cipher_suites,
-          ConfigVarMetadata::String{default_ssl_cipher_suites,
-                                    &ConfigVars::SslCipherSuites},
-      },
-  };
-  return *metadata;
-}
+          LoadConfig(FLAGS_grpc_default_ssl_roots_file_path,
+                     overrides.default_ssl_roots_file_path,
+                     default_default_ssl_roots_file_path)),
+      ssl_cipher_suites_(LoadConfig(FLAGS_grpc_ssl_cipher_suites,
+                                    overrides.ssl_cipher_suites,
+                                    default_ssl_cipher_suites)) {}
 
 }  // namespace grpc_core

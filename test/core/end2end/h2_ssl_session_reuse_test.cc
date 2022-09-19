@@ -32,6 +32,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/error.h"
@@ -290,7 +291,9 @@ TEST(H2SessionReuseTest, SingleReuse) {
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
-  GPR_GLOBAL_CONFIG_SET(grpc_default_ssl_roots_file_path, CA_CERT_PATH);
+  grpc_core::ConfigVars::Overrides overrides;
+  overrides.default_ssl_roots_file_path = CA_CERT_PATH;
+  grpc_core::ConfigVars::SetOverrides(overrides);
 
   grpc_init();
   ::testing::InitGoogleTest(&argc, argv);

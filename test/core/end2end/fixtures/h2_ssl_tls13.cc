@@ -28,6 +28,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/load_file.h"
@@ -198,7 +199,9 @@ int main(int argc, char** argv) {
   size_t i;
   grpc::testing::TestEnvironment env(&argc, argv);
   grpc_end2end_tests_pre_init();
-  GPR_GLOBAL_CONFIG_SET(grpc_default_ssl_roots_file_path, CA_CERT_PATH);
+  grpc_core::ConfigVars::Overrides overrides;
+  overrides.default_ssl_roots_file_path = CA_CERT_PATH;
+  grpc_core::ConfigVars::SetOverrides(overrides);
 
   grpc_init();
 

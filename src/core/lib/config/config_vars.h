@@ -23,21 +23,33 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <stdint.h>
-
 #include <atomic>
 #include <functional>
 #include <string>
 
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 #include "absl/types/span.h"
-
-#include "src/core/lib/config/config_var_metadata.h"
 
 namespace grpc_core {
 
 class ConfigVars {
  public:
+  struct Overrides {
+    absl::optional<int32_t> client_channel_backup_poll_interval_ms;
+    absl::optional<bool> enable_fork_support;
+    absl::optional<bool> abort_on_leaks;
+    absl::optional<bool> not_use_system_ssl_roots;
+    absl::optional<std::string> experiments;
+    absl::optional<std::string> dns_resolver;
+    absl::optional<std::string> trace;
+    absl::optional<std::string> verbosity;
+    absl::optional<std::string> stacktrace_minloglevel;
+    absl::optional<std::string> poll_strategy;
+    absl::optional<std::string> system_ssl_roots_dir;
+    absl::optional<std::string> default_ssl_roots_file_path;
+    absl::optional<std::string> ssl_cipher_suites;
+  };
   ConfigVars(const ConfigVars&) = delete;
   ConfigVars& operator=(const ConfigVars&) = delete;
   // Get the core configuration; if it does not exist, create it.
@@ -46,6 +58,7 @@ class ConfigVars {
     if (p != nullptr) return *p;
     return Load();
   }
+  static void SetOverrides(const Overrides& overrides);
   // Drop the config vars. Users must ensure no other threads are
   // accessing the configuration.
   static void Reset();
@@ -92,10 +105,9 @@ class ConfigVars {
   bool NotUseSystemSslRoots() const { return not_use_system_ssl_roots_; }
   // A colon separated list of cipher suites to use with OpenSSL
   absl::string_view SslCipherSuites() const { return ssl_cipher_suites_; }
-  static absl::Span<const ConfigVarMetadata> metadata();
 
  private:
-  ConfigVars();
+  explicit ConfigVars(const Overrides& overrides);
   static const ConfigVars& Load();
   static std::atomic<ConfigVars*> config_vars_;
   int32_t client_channel_backup_poll_interval_ms_;

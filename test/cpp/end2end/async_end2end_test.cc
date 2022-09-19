@@ -35,6 +35,7 @@
 #include <grpcpp/server_context.h>
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/proto/grpc/health/v1/health.grpc.pb.h"
@@ -424,8 +425,7 @@ TEST_P(AsyncEnd2endTest, ReconnectChannel) {
 #ifdef GRPC_POSIX_SOCKET_EV
   // It needs 2 pollset_works to reconnect the channel with polling engine
   // "poll"
-  grpc_core::UniquePtr<char> poller = GPR_GLOBAL_CONFIG_GET(grpc_poll_strategy);
-  if (0 == strcmp(poller.get(), "poll")) {
+  if (grpc_core::ConfigVars::Get().PollStrategy() == "poll") {
     poller_slowdown_factor = 2;
   }
 #endif  // GRPC_POSIX_SOCKET_EV
@@ -1948,7 +1948,9 @@ INSTANTIATE_TEST_SUITE_P(AsyncEnd2endServerTryCancel,
 int main(int argc, char** argv) {
   // Change the backup poll interval from 5s to 100ms to speed up the
   // ReconnectChannel test
-  GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 100);
+  grpc_core::ConfigVars::Overrides overrides;
+  overrides.client_channel_backup_poll_interval_ms = 100;
+  grpc_core::ConfigVars::SetOverrides(overrides);
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   int ret = RUN_ALL_TESTS();

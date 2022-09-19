@@ -25,7 +25,7 @@ std::atomic<ConfigVars*> ConfigVars::config_vars_{nullptr};
 const ConfigVars& ConfigVars::Load() {
   // Called from get, so we know there's no existing config vars.
   // We might race for them though.
-  auto vars = new ConfigVars();
+  auto vars = new ConfigVars({});
   ConfigVars* expected = nullptr;
   if (!config_vars_.compare_exchange_strong(expected, vars,
                                             std::memory_order_acq_rel,
@@ -34,6 +34,10 @@ const ConfigVars& ConfigVars::Load() {
     return *expected;
   }
   return *vars;
+}
+
+void ConfigVars::SetOverrides(const Overrides& overrides) {
+  delete config_vars_.exchange(new ConfigVars(overrides));
 }
 
 }  // namespace grpc_core

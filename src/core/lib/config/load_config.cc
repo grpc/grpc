@@ -14,7 +14,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/config/config_from_environment.h"
+#include "src/core/lib/config/load_config.h"
 
 #include <stdio.h>
 
@@ -29,20 +29,21 @@
 namespace grpc_core {
 
 namespace {
-std::string EnvironmentVarFromVarName(const char* var_name) {
-  return absl::StrCat("GRPC_", absl::AsciiStrToUpper(var_name));
+std::string EnvironmentVarFromVarName(absl::string_view var_name) {
+  return absl::StrCat(absl::AsciiStrToUpper(var_name));
 }
 
-absl::optional<std::string> LoadEnv(const char* var_name) {
+absl::optional<std::string> LoadEnv(absl::string_view var_name) {
   return GetEnv(EnvironmentVarFromVarName(var_name).c_str());
 }
 }  // namespace
 
-std::string LoadStringFromEnv(const char* var_name, const char* default_value) {
+std::string LoadConfigFromEnv(absl::string_view var_name,
+                              const char* default_value) {
   return LoadEnv(var_name).value_or(default_value);
 }
 
-int32_t LoadIntFromEnv(const char* var_name, int32_t default_value) {
+int32_t LoadConfigFromEnv(absl::string_view var_name, int32_t default_value) {
   auto env = LoadEnv(var_name);
   if (env.has_value()) {
     int32_t out;
@@ -53,7 +54,7 @@ int32_t LoadIntFromEnv(const char* var_name, int32_t default_value) {
   return default_value;
 }
 
-bool LoadBoolFromEnv(const char* var_name, bool default_value) {
+bool LoadConfigFromEnv(absl::string_view var_name, bool default_value) {
   auto env = LoadEnv(var_name);
   if (env.has_value()) {
     bool out;

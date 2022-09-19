@@ -21,11 +21,23 @@
 
 #include <string>
 
+#include "absl/flags/flag.h"
+
 namespace grpc_core {
 
-std::string LoadStringFromEnv(const char* var_name, const char* default_value);
-int32_t LoadIntFromEnv(const char* var_name, int32_t default_value);
-bool LoadBoolFromEnv(const char* var_name, bool default_value);
+std::string LoadConfigFromEnv(absl::string_view var_name,
+                              const char* default_value);
+int32_t LoadConfigFromEnv(absl::string_view var_name, int32_t default_value);
+bool LoadConfigFromEnv(absl::string_view var_name, bool default_value);
+
+template <typename T, typename D>
+T LoadConfig(const absl::Flag<absl::optional<T>>& flag,
+             const absl::optional<T>& override, D default_value) {
+  if (override.has_value()) return *override;
+  auto from_flag = absl::GetFlag(flag);
+  if (from_flag.has_value()) return std::move(*from_flag);
+  return LoadConfigFromEnv(flag.Name(), default_value);
+}
 
 }  // namespace grpc_core
 

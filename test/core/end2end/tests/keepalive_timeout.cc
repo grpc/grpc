@@ -28,6 +28,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/ext/transport/chttp2/transport/frame_ping.h"
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/port.h"
@@ -177,11 +178,8 @@ static void test_keepalive_timeout(grpc_end2end_test_config config) {
  * that the keepalive ping is never sent. */
 static void test_read_delays_keepalive(grpc_end2end_test_config config) {
 #ifdef GRPC_POSIX_SOCKET
-  grpc_core::UniquePtr<char> poller = GPR_GLOBAL_CONFIG_GET(grpc_poll_strategy);
   /* It is hard to get the timing right for the polling engine poll. */
-  if ((0 == strcmp(poller.get(), "poll"))) {
-    return;
-  }
+  if (grpc_core::ConfigVars::Get().PollStrategy() == "poll") return;
 #endif  // GRPC_POSIX_SOCKET
   const int kPingIntervalMS = 100;
   grpc_arg keepalive_arg_elems[3];

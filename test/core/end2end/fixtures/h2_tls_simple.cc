@@ -22,6 +22,7 @@
 
 #include <grpc/grpc.h>
 
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/security/security_connector/ssl_utils_config.h"
 #include "test/core/end2end/end2end_tests.h"
@@ -62,7 +63,9 @@ static grpc_end2end_test_config config = {
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   grpc_end2end_tests_pre_init();
-  GPR_GLOBAL_CONFIG_SET(grpc_default_ssl_roots_file_path, CA_CERT_PATH);
+  grpc_core::ConfigVars::Overrides overrides;
+  overrides.default_ssl_roots_file_path = CA_CERT_PATH;
+  grpc_core::ConfigVars::SetOverrides(overrides);
   grpc_init();
   grpc_end2end_tests(argc, argv, config);
   grpc_shutdown();

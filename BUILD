@@ -1239,14 +1239,15 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "config_from_environment",
+    name = "load_config",
     srcs = [
-        "src/core/lib/config/config_from_environment.cc",
+        "src/core/lib/config/load_config.cc",
     ],
     hdrs = [
-        "src/core/lib/config/config_from_environment.h",
+        "src/core/lib/config/load_config.h",
     ],
     external_deps = [
+        "absl/flags:flag",
         "absl/flags:marshalling",
         "absl/strings",
         "absl/types:optional",
@@ -1264,18 +1265,17 @@ grpc_cc_library(
         "src/core/lib/config/config_vars_non_generated.cc",
     ],
     hdrs = [
-        "src/core/lib/config/config_var_metadata.h",
         "src/core/lib/config/config_vars.h",
     ],
     external_deps = [
         "absl/flags:flag",
         "absl/strings",
+        "absl/types:optional",
         "absl/types:span",
-        "absl/types:variant",
     ],
     deps = [
-        "config_from_environment",
         "gpr_platform",
+        "load_config",
     ],
 )
 
@@ -2751,6 +2751,7 @@ grpc_cc_library(
     ],
     external_deps = ["absl/strings"],
     deps = [
+        "config_vars",
         "gpr",
         "posix_event_engine_event_poller",
         "posix_event_engine_poller_posix_epoll1",

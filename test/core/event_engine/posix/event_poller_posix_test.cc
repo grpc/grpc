@@ -19,6 +19,7 @@
 #include "absl/time/time.h"
 #include "absl/types/variant.h"
 
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.h"
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h"
@@ -398,7 +399,9 @@ class EventPollerTest : public ::testing::TestWithParam<std::string> {
         absl::make_unique<grpc_event_engine::posix_engine::TestScheduler>(
             engine_.get());
     EXPECT_NE(scheduler_, nullptr);
-    GPR_GLOBAL_CONFIG_SET(grpc_poll_strategy, GetParam().c_str());
+    grpc_core::ConfigVars::Overrides overrides;
+    overrides.poll_strategy = GetParam();
+    grpc_core::ConfigVars::SetOverrides(overrides);
     g_event_poller = GetDefaultPoller(scheduler_.get());
     if (g_event_poller != nullptr) {
       EXPECT_EQ(g_event_poller->Name(), GetParam());
