@@ -21,6 +21,7 @@
 
 // IWYU pragma: private
 
+/// TODO(chengyuc): Remove this file after solving compatibility.
 #include <grpcpp/support/client_interceptor.h>
 
 #endif  // GRPCPP_IMPL_CODEGEN_CLIENT_INTERCEPTOR_H
