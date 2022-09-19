@@ -11,6 +11,6 @@ import "google/protobuf/source_context.proto";
 import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/type.proto";
-import "google/protobuf/wrappers.proto";
+import "google/protobuf/doesntexist.proto";
 
 package test_compiler;
