@@ -1226,6 +1226,7 @@ grpc_cc_library(
     name = "grpc_trace",
     srcs = ["src/core/lib/debug/trace.cc"],
     hdrs = ["src/core/lib/debug/trace.h"],
+    external_deps = ["absl/strings"],
     language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS,
     visibility = ["@grpc:trace"],
@@ -1269,7 +1270,6 @@ grpc_cc_library(
     external_deps = [
         "absl/flags:flag",
         "absl/strings",
-        "absl/types:optional",
         "absl/types:span",
         "absl/types:variant",
     ],
@@ -2036,7 +2036,6 @@ grpc_cc_library(
     ],
     deps = [
         "activity",
-        "config_vars",
         "event_engine_memory_allocator",
         "exec_ctx_wakeup_scheduler",
         "experiments",
@@ -6646,6 +6645,7 @@ grpc_cc_library(
     language = "c++",
     visibility = ["@grpc:public"],
     deps = [
+        "config_vars",
         "gpr",
         "grpc_base",
         "grpc_codegen",
