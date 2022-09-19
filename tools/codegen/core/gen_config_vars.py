@@ -147,8 +147,9 @@ with open('src/core/lib/config/config_vars.h', 'w') as H:
     print(" public:", file=H)
     print("  struct Overrides {", file=H)
     for attr in attrs_in_packing_order:
-        print("    absl::optional<%s> %s;" % (MEMBER_TYPE[attr['type']],
-                                            attr['name']), file=H)
+        print("    absl::optional<%s> %s;" %
+              (MEMBER_TYPE[attr['type']], attr['name']),
+              file=H)
     print("  };", file=H)
     print("  ConfigVars(const ConfigVars&) = delete;", file=H)
     print("  ConfigVars& operator=(const ConfigVars&) = delete;", file=H)
@@ -216,13 +217,10 @@ with open('src/core/lib/config/config_vars.cc', 'w') as C:
     print("namespace grpc_core {", file=C)
     print(file=C)
     print("ConfigVars::ConfigVars(const Overrides& overrides) :", file=C)
-    print(",".join("%s_(LoadConfig(FLAGS_grpc_%s, overrides.%s, %s))" % (
-        attr['name'],
-        attr['name'],
-        attr['name'],
-        DEFAULT_VALUE[attr['type']](attr['default'],
-                                           attr['name'])
-    ) for attr in attrs_in_packing_order),
+    print(",".join("%s_(LoadConfig(FLAGS_grpc_%s, overrides.%s, %s))" %
+                   (attr['name'], attr['name'], attr['name'],
+                    DEFAULT_VALUE[attr['type']](attr['default'], attr['name']))
+                   for attr in attrs_in_packing_order),
           file=C)
     print("{}", file=C)
     print(file=C)

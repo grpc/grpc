@@ -82,10 +82,10 @@ HttpRequestTestServer StartHttpRequestTestServer(int argc, char** argv,
   if (use_ssl) {
     args.push_back(gpr_strdup("--ssl"));
     // Set the environment variable for the SSL certificate file
-    grpc_core::ConfigVars::Overrides overrides;
+    ConfigVars::Overrides overrides;
     overrides.default_ssl_roots_file_path =
         absl::StrCat(root, "/src/core/tsi/test_creds/ca.pem");
-    grpc_core::ConfigVars::SetOverrides(overrides);
+    ConfigVars::SetOverrides(overrides);
   }
   gpr_log(GPR_INFO, "starting HttpRequest test server subprocess:");
   for (size_t i = 0; i < args.size(); i++) {

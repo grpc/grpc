@@ -1359,8 +1359,8 @@ int main(int argc, char** argv) {
   overrides.client_channel_backup_poll_interval_ms = 1;
   grpc_core::ConfigVars::SetOverrides(overrides);
 #if TARGET_OS_IPHONE
-      // Workaround Apple CFStream bug
-      grpc_core::SetEnv("grpc_cfstream", "0");
+  // Workaround Apple CFStream bug
+  grpc_core::SetEnv("grpc_cfstream", "0");
 #endif
   grpc_init();
   const auto result = RUN_ALL_TESTS();
