@@ -13,8 +13,6 @@
 // limitations under the License.
 
 #include <chrono>
-#include <cstddef>
-#include <memory>
 #include <random>
 #include <string>
 #include <thread>
@@ -22,6 +20,7 @@
 
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
+#include "gtest/gtest.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
@@ -141,7 +140,7 @@ TEST_F(EventEngineClientTest, ConnectExchangeBidiDataTransferTest) {
         if (!status.ok()) {
           gpr_log(GPR_ERROR, "Connect failed: %s",
                   status.status().ToString().c_str());
-          client_endpoint.reset(nullptr);
+          client_endpoint = nullptr;
         } else {
           client_endpoint = std::move(*status);
         }
@@ -178,21 +177,19 @@ TEST_F(EventEngineClientTest, MultipleIPv6ConnectionsToOneOracleListenerTest) {
   auto oracle_ee = this->NewOracleEventEngine();
   auto test_ee = this->NewEventEngine();
   auto memory_quota = absl::make_unique<grpc_core::MemoryQuota>("bar");
-  struct AcceptCBState {
-    std::unique_ptr<EventEngine::Endpoint> server_endpoint;
-    std::unique_ptr<grpc_core::Notification> server_signal{
-        new grpc_core::Notification()};
-  };
-  AcceptCBState server_state;
+  std::unique_ptr<EventEngine::Endpoint> server_endpoint;
+  // Notifications can only be fired once, so they are newed every loop
+  grpc_core::Notification* server_signal = new grpc_core::Notification();
   std::vector<std::string> target_addrs;
   std::vector<std::tuple<std::unique_ptr<Endpoint>, std::unique_ptr<Endpoint>>>
       connections;
 
   Listener::AcceptCallback accept_cb =
-      [&server_state](std::unique_ptr<Endpoint> ep,
-                      grpc_core::MemoryAllocator /*memory_allocator*/) {
-        server_state.server_endpoint = std::move(ep);
-        server_state.server_signal->Notify();
+      [&server_endpoint, &server_signal](
+          std::unique_ptr<Endpoint> ep,
+          grpc_core::MemoryAllocator /*memory_allocator*/) {
+        server_endpoint = std::move(ep);
+        server_signal->Notify();
       };
   ChannelArgsEndpointConfig config;
   auto status = oracle_ee->CreateListener(
@@ -236,14 +233,15 @@ TEST_F(EventEngineClientTest, MultipleIPv6ConnectionsToOneOracleListenerTest) {
         24h);
 
     client_signal.WaitForNotification();
-    server_state.server_signal->WaitForNotification();
-    EXPECT_NE(client_endpoint, nullptr);
-    EXPECT_NE(server_state.server_endpoint.get(), nullptr);
-    connections.push_back(std::make_tuple(
-        std::move(client_endpoint), std::move(server_state.server_endpoint)));
-    // DO NOT SUBMIT: this does not change the pointer in the accept callback.
-    server_state.server_signal.reset(new grpc_core::Notification());
+    server_signal->WaitForNotification();
+    EXPECT_TRUE(client_endpoint != nullptr);
+    EXPECT_TRUE(server_endpoint != nullptr);
+    connections.push_back(std::make_tuple(std::move(client_endpoint),
+                                          std::move(server_endpoint)));
+    delete server_signal;
+    server_signal = new grpc_core::Notification();
   }
+  delete server_signal;
 
   std::vector<std::thread> threads;
   // Create one thread for each connection. For each connection, create
