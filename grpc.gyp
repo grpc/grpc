@@ -311,9 +311,9 @@
         'absl/types:variant',
       ],
       'sources': [
-        'src/core/lib/config/config_from_environment.cc',
         'src/core/lib/config/config_vars.cc',
         'src/core/lib/config/config_vars_non_generated.cc',
+        'src/core/lib/config/load_config.cc',
         'src/core/lib/gpr/alloc.cc',
         'src/core/lib/gpr/atm.cc',
         'src/core/lib/gpr/cpu_iphone.cc',

@@ -265,6 +265,7 @@ grpc_cc_test(
     language = "C++",
     deps = [
         "cq_verifier",
+        "//:config_vars",
         "//:gpr",
         "//:grpc",
         "//:grpc_codegen",

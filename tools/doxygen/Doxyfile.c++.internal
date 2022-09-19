@@ -1931,14 +1931,13 @@ src/core/lib/compression/compression_internal.cc \
 src/core/lib/compression/compression_internal.h \
 src/core/lib/compression/message_compress.cc \
 src/core/lib/compression/message_compress.h \
-src/core/lib/config/config_from_environment.cc \
-src/core/lib/config/config_from_environment.h \
-src/core/lib/config/config_var_metadata.h \
 src/core/lib/config/config_vars.cc \
 src/core/lib/config/config_vars.h \
 src/core/lib/config/config_vars_non_generated.cc \
 src/core/lib/config/core_configuration.cc \
 src/core/lib/config/core_configuration.h \
+src/core/lib/config/load_config.cc \
+src/core/lib/config/load_config.h \
 src/core/lib/debug/stats.cc \
 src/core/lib/debug/stats.h \
 src/core/lib/debug/stats_data.cc \

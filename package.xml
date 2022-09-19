@@ -928,14 +928,13 @@
     <file baseinstalldir="/" name="src/core/lib/compression/compression_internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/message_compress.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/message_compress.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/config/config_from_environment.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/config/config_from_environment.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/config/config_var_metadata.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/config/config_vars.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/config/config_vars.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/config/config_vars_non_generated.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/config/core_configuration.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/config/core_configuration.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/config/load_config.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/config/load_config.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/debug/stats.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/debug/stats.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/debug/stats_data.cc" role="src" />

@@ -198,9 +198,8 @@ libs:
   - include/grpc/support/thd_id.h
   - include/grpc/support/time.h
   headers:
-  - src/core/lib/config/config_from_environment.h
-  - src/core/lib/config/config_var_metadata.h
   - src/core/lib/config/config_vars.h
+  - src/core/lib/config/load_config.h
   - src/core/lib/gpr/alloc.h
   - src/core/lib/gpr/string.h
   - src/core/lib/gpr/time_precise.h
@@ -221,9 +220,9 @@ libs:
   - src/core/lib/gprpp/thd.h
   - src/core/lib/gprpp/time_util.h
   src:
-  - src/core/lib/config/config_from_environment.cc
   - src/core/lib/config/config_vars.cc
   - src/core/lib/config/config_vars_non_generated.cc
+  - src/core/lib/config/load_config.cc
   - src/core/lib/gpr/alloc.cc
   - src/core/lib/gpr/atm.cc
   - src/core/lib/gpr/cpu_iphone.cc
@@ -6344,30 +6343,6 @@ targets:
   - test/cpp/end2end/generic_end2end_test.cc
   deps:
   - grpc++_test_util
-- name: global_config_env_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/gprpp/global_config_env_test.cc
-  deps:
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
-  uses_polling: false
-- name: global_config_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/gprpp/global_config_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: google_c2p_resolver_test
   gtest: true
   build: test
