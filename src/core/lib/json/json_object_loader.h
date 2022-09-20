@@ -32,6 +32,7 @@
 #include "absl/types/optional.h"
 
 #include "src/core/lib/gprpp/no_destruct.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_args.h"
@@ -85,6 +86,7 @@ class ErrorList {
 
   // Returns the resulting status of parsing.
   absl::Status status() const;
+  absl::Status status(absl::string_view prefix) const;
 
   // Return true if there are no errors.
   bool ok() const { return field_errors_.empty(); }
@@ -292,6 +294,7 @@ class LoadOptional : public LoaderInterface {
 
  private:
   virtual void* Emplace(void* dst) const = 0;
+  virtual void Reset(void* dst) const = 0;
   virtual const LoaderInterface* ElementLoader() const = 0;
 };
 
@@ -419,6 +422,9 @@ class AutoLoader<absl::optional<T>> final : public LoadOptional {
  public:
   void* Emplace(void* dst) const final {
     return &static_cast<absl::optional<T>*>(dst)->emplace();
+  }
+  void Reset(void* dst) const final {
+    static_cast<absl::optional<T>*>(dst)->reset();
   }
   const LoaderInterface* ElementLoader() const final {
     return LoaderForType<T>();
@@ -584,12 +590,25 @@ using JsonObjectLoader = json_detail::JsonObjectLoader<T>;
 using JsonLoaderInterface = json_detail::LoaderInterface;
 
 template <typename T>
-absl::StatusOr<T> LoadFromJson(const Json& json,
-                               const JsonArgs& args = JsonArgs()) {
+absl::StatusOr<T> LoadFromJson(
+    const Json& json, const JsonArgs& args = JsonArgs(),
+    absl::string_view error_prefix = "errors validating JSON") {
   ErrorList error_list;
   T result{};
   json_detail::LoaderForType<T>()->LoadInto(json, args, &result, &error_list);
-  if (!error_list.ok()) return error_list.status();
+  if (!error_list.ok()) return error_list.status(error_prefix);
+  return std::move(result);
+}
+
+template <typename T>
+absl::StatusOr<RefCountedPtr<T>> LoadRefCountedFromJson(
+    const Json& json, const JsonArgs& args = JsonArgs(),
+    absl::string_view error_prefix = "errors validating JSON") {
+  ErrorList error_list;
+  auto result = MakeRefCounted<T>();
+  json_detail::LoaderForType<T>()->LoadInto(json, args, result.get(),
+                                            &error_list);
+  if (!error_list.ok()) return error_list.status(error_prefix);
   return std::move(result);
 }
 

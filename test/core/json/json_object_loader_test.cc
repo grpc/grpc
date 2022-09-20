@@ -21,6 +21,9 @@
 
 #include "absl/strings/str_join.h"
 
+#include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+
 namespace grpc_core {
 namespace {
 
@@ -888,6 +891,40 @@ TEST(JsonObjectLoader, CustomValidationInPostLoadHook) {
   EXPECT_EQ(test_struct.status().message(),
             "errors validating JSON: [field:a error:is not a number]")
       << test_struct.status();
+}
+
+TEST(JsonObjectLoader, LoadRefCountedFromJson) {
+  struct TestStruct : public RefCounted<TestStruct> {
+    int32_t a = 0;
+
+    static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
+      static const auto* loader =
+          JsonObjectLoader<TestStruct>().Field("a", &TestStruct::a).Finish();
+      return loader;
+    }
+  };
+  // Valid.
+  {
+    absl::string_view json_str = "{\"a\":1}";
+    auto json = Json::Parse(json_str);
+    ASSERT_TRUE(json.ok()) << json.status();
+    absl::StatusOr<RefCountedPtr<TestStruct>> test_struct =
+        LoadRefCountedFromJson<TestStruct>(*json, JsonArgs());
+    ASSERT_TRUE(test_struct.ok()) << test_struct.status();
+    EXPECT_EQ((*test_struct)->a, 1);
+  }
+  // Invalid.
+  {
+    absl::string_view json_str = "{\"a\":\"foo\"}";
+    auto json = Json::Parse(json_str);
+    ASSERT_TRUE(json.ok()) << json.status();
+    absl::StatusOr<RefCountedPtr<TestStruct>> test_struct =
+        LoadRefCountedFromJson<TestStruct>(*json, JsonArgs());
+    EXPECT_EQ(test_struct.status().code(), absl::StatusCode::kInvalidArgument);
+    EXPECT_EQ(test_struct.status().message(),
+              "errors validating JSON: [field:a error:failed to parse number]")
+        << test_struct.status();
+  }
 }
 
 TEST(JsonObjectLoader, LoadFromJsonWithErrorList) {

@@ -19,12 +19,12 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <stdlib.h>
-
-#include "absl/status/statusor.h"
+#include <stdint.h>
 
 #include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_args.h"
+#include "src/core/lib/json/json_object_loader.h"
 
 namespace grpc_core {
 
@@ -33,10 +33,12 @@ UniqueTypeName RequestHashAttributeName();
 // Helper Parsing method to parse ring hash policy configs; for example, ring
 // hash size validity.
 struct RingHashConfig {
-  size_t min_ring_size = 1024;
-  size_t max_ring_size = 8388608;
+  uint64_t min_ring_size = 1024;
+  uint64_t max_ring_size = 8388608;
+
+  static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+  void JsonPostLoad(const Json& json, const JsonArgs&, ErrorList* errors);
 };
-absl::StatusOr<RingHashConfig> ParseRingHashLbConfig(const Json& json);
 
 }  // namespace grpc_core
 

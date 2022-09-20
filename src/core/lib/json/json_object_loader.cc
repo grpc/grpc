@@ -44,6 +44,10 @@ bool ErrorList::FieldHasErrors() const {
 }
 
 absl::Status ErrorList::status() const {
+  return status("errors validating JSON");
+}
+
+absl::Status ErrorList::status(absl::string_view prefix) const {
   if (field_errors_.empty()) return absl::OkStatus();
   std::vector<std::string> errors;
   for (const auto& p : field_errors_) {
@@ -55,8 +59,8 @@ absl::Status ErrorList::status() const {
           absl::StrCat("field:", p.first, " error:", p.second[0]));
     }
   }
-  return absl::InvalidArgumentError(absl::StrCat(
-      "errors validating JSON: [", absl::StrJoin(errors, "; "), "]"));
+  return absl::InvalidArgumentError(
+      absl::StrCat(prefix, ": [", absl::StrJoin(errors, "; "), "]"));
 }
 
 namespace json_detail {
@@ -191,7 +195,9 @@ void LoadOptional::LoadInto(const Json& json, const JsonArgs& args, void* dst,
                             ErrorList* errors) const {
   if (json.type() == Json::Type::JSON_NULL) return;
   void* element = Emplace(dst);
+  size_t starting_error_size = errors->size();
   ElementLoader()->LoadInto(json, args, element, errors);
+  if (errors->size() > starting_error_size) Reset(dst);
 }
 
 bool LoadObject(const Json& json, const JsonArgs& args, const Element* elements,
