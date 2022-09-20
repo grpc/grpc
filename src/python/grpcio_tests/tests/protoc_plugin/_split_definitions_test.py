@@ -23,10 +23,10 @@ import shutil
 import sys
 import tempfile
 import unittest
-import pkg_resources
 
 import grpc
 from grpc_tools import protoc
+import pkg_resources
 import six
 
 from tests.unit import test_common
