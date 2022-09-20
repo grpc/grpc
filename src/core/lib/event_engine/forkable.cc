@@ -50,7 +50,6 @@ void RegisterForkHandlers() {
         "Forking is disabled, no fork handlers will be registered");
     return;
   }
-)
   if (!std::exchange(g_registered, true)) {
   GRPC_FORK_TRACE_LOG_STRING("RegisterForkHandlers");
   pthread_atfork(PrepareFork, PostforkParent, PostforkChild);
