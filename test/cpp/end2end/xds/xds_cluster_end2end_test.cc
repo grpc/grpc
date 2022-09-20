@@ -623,12 +623,16 @@ TEST_P(EdsTest, IgnoresDuplicateUpdates) {
 TEST_P(EdsTest, NacksSparsePriorityList) {
   EdsResourceArgs args({
       {"locality0", {MakeNonExistantEndpoint()}, kDefaultLocalityWeight, 1},
+      {"locality0", {MakeNonExistantEndpoint()}, kDefaultLocalityWeight, 3},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   const auto response_state = WaitForEdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("sparse priority list"));
+  EXPECT_EQ(response_state->error_message,
+            "xDS response validation errors: ["
+            "resource index 0: eds_service_name: "
+            "INVALID_ARGUMENT: errors parsing EDS resource: ["
+            "field:endpoints errors:[priority 0 empty; priority 2 empty]]]");
 }
 
 // Tests that EDS client should send a NACK if the EDS update contains
@@ -641,11 +645,14 @@ TEST_P(EdsTest, NacksDuplicateLocalityInSamePriority) {
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   const auto response_state = WaitForEdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr(
-                  "duplicate locality {region=\"xds_default_locality_region\", "
-                  "zone=\"xds_default_locality_zone\", sub_zone=\"locality0\"} "
-                  "found in priority 0"));
+  EXPECT_EQ(response_state->error_message,
+            "xDS response validation errors: ["
+            "resource index 0: eds_service_name: "
+            "INVALID_ARGUMENT: errors parsing EDS resource: ["
+            "field:endpoints[1] error:duplicate locality "
+            "{region=\"xds_default_locality_region\", "
+            "zone=\"xds_default_locality_zone\", "
+            "sub_zone=\"locality0\"} found in priority 0]]");
 }
 
 TEST_P(EdsTest, NacksEndpointWeightZero) {
@@ -658,8 +665,12 @@ TEST_P(EdsTest, NacksEndpointWeightZero) {
   balancer_->ads_service()->SetEdsResource(eds_resource);
   const auto response_state = WaitForEdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("Invalid endpoint weight of 0."));
+  EXPECT_EQ(response_state->error_message,
+            "xDS response validation errors: ["
+            "resource index 0: eds_service_name: "
+            "INVALID_ARGUMENT: errors parsing EDS resource: ["
+            "field:endpoints[0].lb_endpoints[0].load_balancing_weight "
+            "error:must be greater than 0]]");
 }
 
 // Tests that if the balancer is down, the RPCs will still be sent to the
