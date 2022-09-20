@@ -45,7 +45,7 @@ Pod::Spec.new do |s|
     'CLANG_CXX_LANGUAGE_STANDARD' => 'c++14',
   }
 
-  s.ios.deployment_target = '10.0'
+  s.ios.deployment_target = '9.0'
   s.osx.deployment_target = '10.10'
   s.tvos.deployment_target = '10.0'
   s.watchos.deployment_target = '4.0'
@@ -71,7 +71,7 @@ Pod::Spec.new do |s|
                       "src/objective-c/GRPCClient/GRPCTypes.m"
     ss.dependency "gRPC-RxLibrary/Interface", version
 
-    ss.ios.deployment_target = '10.0'
+    ss.ios.deployment_target = '9.0'
     ss.osx.deployment_target = '10.10'
     ss.tvos.deployment_target = '10.0'
     ss.watchos.deployment_target = '4.0'
@@ -106,7 +106,7 @@ Pod::Spec.new do |s|
 
     ss.dependency "#{s.name}/Interface-Legacy", version
 
-    ss.ios.deployment_target = '10.0'
+    ss.ios.deployment_target = '9.0'
     ss.osx.deployment_target = '10.10'
     ss.tvos.deployment_target = '10.0'
     ss.watchos.deployment_target = '4.0'
@@ -142,7 +142,7 @@ Pod::Spec.new do |s|
     ss.dependency 'gRPC-Core', version
     ss.dependency 'gRPC-RxLibrary', version
 
-    ss.ios.deployment_target = '10.0'
+    ss.ios.deployment_target = '9.0'
     ss.osx.deployment_target = '10.10'
     ss.tvos.deployment_target = '10.0'
     ss.watchos.deployment_target = '4.0'
@@ -158,14 +158,14 @@ Pod::Spec.new do |s|
     ss.dependency 'gRPC-Core/Cronet-Implementation', version
     ss.dependency 'CronetFramework'
 
-    ss.ios.deployment_target = '10.0'
+    ss.ios.deployment_target = '9.0'
   end
 
   # CFStream is now default. Leaving this subspec only for compatibility purpose.
   s.subspec 'CFStream' do |ss|
     ss.dependency "#{s.name}/GRPCCore", version
 
-    ss.ios.deployment_target = '10.0'
+    ss.ios.deployment_target = '9.0'
     ss.osx.deployment_target = '10.10'
     ss.tvos.deployment_target = '10.0'
     ss.watchos.deployment_target = '4.0'
@@ -177,7 +177,7 @@ Pod::Spec.new do |s|
     ss.source_files = 'src/objective-c/GRPCClient/internal_testing/*.{h,m}'
     ss.header_mappings_dir = 'src/objective-c/GRPCClient'
 
-    ss.ios.deployment_target = '10.0'
+    ss.ios.deployment_target = '9.0'
     ss.osx.deployment_target = '10.10'
     ss.tvos.deployment_target = '10.0'
     ss.watchos.deployment_target = '4.0'

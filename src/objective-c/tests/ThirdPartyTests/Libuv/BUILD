@@ -43,7 +43,7 @@ objc_library(
 
 ios_unit_test(
     name = "LibuvTest",
-    minimum_os_version = "10.0",
+    minimum_os_version = "9.0",
     runner = ":ios_x86_64_sim_runner",
     deps = [":LibuvTestsLib"],
 )

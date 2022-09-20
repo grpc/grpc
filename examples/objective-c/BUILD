@@ -56,7 +56,7 @@ ios_application(
         "ipad",
     ],
     infoplists = ["helloworld/HelloWorld/Info.plist"],
-    minimum_os_version = "10.0",
+    minimum_os_version = "9.0",
     tags = ["manual"],
     deps = [":HelloWorld-lib"],
 )
@@ -112,7 +112,7 @@ ios_application(
         "ipad",
     ],
     infoplists = ["route_guide/Misc/Info.plist"],
-    minimum_os_version = "10.0",
+    minimum_os_version = "9.0",
     tags = ["manual"],
     deps = [":RouteGuideClient-lib"],
 )

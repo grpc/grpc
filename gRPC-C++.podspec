@@ -34,7 +34,7 @@ Pod::Spec.new do |s|
     :tag => "v#{version}",
   }
 
-  s.ios.deployment_target = '10.0'
+  s.ios.deployment_target = '9.0'
   s.osx.deployment_target = '10.10'
   s.tvos.deployment_target = '10.0'
 
@@ -707,6 +707,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/gpr/spinlock.h',
                       'src/core/lib/gpr/string.h',
                       'src/core/lib/gpr/time_precise.h',
+                      'src/core/lib/gpr/tls.h',
                       'src/core/lib/gpr/tmpfile.h',
                       'src/core/lib/gpr/useful.h',
                       'src/core/lib/gprpp/atomic_utils.h',
@@ -1569,6 +1570,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/gpr/spinlock.h',
                               'src/core/lib/gpr/string.h',
                               'src/core/lib/gpr/time_precise.h',
+                              'src/core/lib/gpr/tls.h',
                               'src/core/lib/gpr/tmpfile.h',
                               'src/core/lib/gpr/useful.h',
                               'src/core/lib/gprpp/atomic_utils.h',
