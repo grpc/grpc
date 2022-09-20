@@ -32,12 +32,11 @@
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/event_engine/forkable.h"
 #include "src/core/lib/gprpp/fork.h"
-#include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/timer_manager.h"
-#include "src/core/lib/iomgr/wakeup_fd_posix.h"
 
 /*
  * NOTE: FORKING IS NOT GENERALLY SUPPORTED, THIS IS ONLY INTENDED TO WORK
@@ -50,6 +49,7 @@ bool registered_handlers = false;
 }  // namespace
 
 void grpc_prefork() {
+  GRPC_FORK_TRACE_LOG_STRING("grpc_prefork");
   skipped_handler = true;
   // This  may be called after core shuts down, so verify initialized before
   // instantiating an ExecCtx.
@@ -78,24 +78,35 @@ void grpc_prefork() {
             "handlers");
     return;
   }
+  GRPC_FORK_TRACE_LOG_STRING(
+      "grpc_prefork: shutting down timer_manager threads");
   grpc_timer_manager_set_threading(false);
+  GRPC_FORK_TRACE_LOG_STRING("grpc_prefork: shutting down Executor threads");
   grpc_core::Executor::SetThreadingAll(false);
+  GRPC_FORK_TRACE_LOG_STRING("grpc_prefork: flushing exec_ctx");
   grpc_core::ExecCtx::Get()->Flush();
+  GRPC_FORK_TRACE_LOG_STRING("grpc_prefork: awaiting threads");
   grpc_core::Fork::AwaitThreads();
   skipped_handler = false;
+  GRPC_FORK_TRACE_LOG_STRING("grpc_prefork: finished");
 }
 
 void grpc_postfork_parent() {
   if (!skipped_handler) {
+    GRPC_FORK_TRACE_LOG_STRING("grpc_postfork_parent running");
     grpc_core::Fork::AllowExecCtx();
     grpc_core::ExecCtx exec_ctx;
     grpc_timer_manager_set_threading(true);
     grpc_core::Executor::SetThreadingAll(true);
+    GRPC_FORK_TRACE_LOG_STRING("grpc_postfork_parent");
+  } else {
+    GRPC_FORK_TRACE_LOG_STRING("grpc_postfork_parent has been skipped");
   }
 }
 
 void grpc_postfork_child() {
   if (!skipped_handler) {
+    GRPC_FORK_TRACE_LOG_STRING("grpc_postfork_child running");
     grpc_core::Fork::AllowExecCtx();
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Fork::child_postfork_func reset_polling_engine =
@@ -105,6 +116,9 @@ void grpc_postfork_child() {
     }
     grpc_timer_manager_set_threading(true);
     grpc_core::Executor::SetThreadingAll(true);
+    GRPC_FORK_TRACE_LOG_STRING("grpc_postfork_child finished");
+  } else {
+    GRPC_FORK_TRACE_LOG_STRING("grpc_postfork_child has been skipped");
   }
 }
 

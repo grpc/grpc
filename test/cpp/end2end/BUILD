@@ -191,13 +191,14 @@ grpc_cc_binary(
     ],
 )
 
-# TODO(hork): filter out known-failing combinations including epoll1, or 
-# otherwise assert failure of those tests so that this test fails when they
-# begin to work.
 grpc_cc_test(
     name = "client_fork_test",
     size = "small",
     srcs = ["client_fork_test.cc"],
+    # TODO(hork): enable epoll1 when its fork implementation is fixed
+    exclude_pollers = ["epoll1"],
+    # TODO(hork): locate and fix the 1.5% flake in the poll implementation
+    flaky = True,
     external_deps = [
         "absl/strings",
         "gtest",

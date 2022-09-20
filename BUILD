@@ -2385,6 +2385,7 @@ grpc_cc_library(
     deps = [
         "gpr",
         "gpr_platform",
+        "grpc_trace",
         "no_destruct",
     ],
 )
@@ -3339,6 +3340,7 @@ grpc_cc_library(
         "event_engine_common",
         "exec_ctx",
         "experiments",
+        "forkable",
         "gpr",
         "gpr_atm",
         "gpr_manual_constructor",

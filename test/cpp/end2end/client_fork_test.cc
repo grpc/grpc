@@ -42,9 +42,9 @@ namespace grpc {
 namespace testing {
 namespace {
 
-using grpc::testing::EchoRequest;
-using grpc::testing::EchoResponse;
-using grpc::testing::EchoTestService;
+using ::grpc::testing::EchoRequest;
+using ::grpc::testing::EchoResponse;
+using ::grpc::testing::EchoTestService;
 
 class ServiceImpl final : public EchoTestService::Service {
   Status BidiStream(
@@ -69,11 +69,6 @@ std::unique_ptr<EchoTestService::Stub> stub;
 std::unique_ptr<EchoTestService::Stub> MakeStub() {
   return EchoTestService::NewStub(
       grpc::CreateChannel(addr, InsecureChannelCredentials()));
-}
-
-void ResetStub() {
-  stub.reset();
-  stub = MakeStub();
 }
 
 TEST(ClientForkTest, ClientCallsBeforeAndAfterForkSucceed) {
@@ -116,7 +111,6 @@ TEST(ClientForkTest, ClientCallsBeforeAndAfterForkSucceed) {
     EXPECT_TRUE(stream->Read(&response));
     EXPECT_EQ(response.message(), request.message());
   }
-
   // Fork and do round trips in the post-fork parent and child.
   pid_t child_client_pid = fork();
   switch (child_client_pid) {
@@ -124,6 +118,7 @@ TEST(ClientForkTest, ClientCallsBeforeAndAfterForkSucceed) {
       GTEST_FAIL() << "fork failed";
     case 0:  // post-fork child
     {
+      gpr_log(GPR_DEBUG, "In post-fork child");
       EchoRequest request;
       EchoResponse response;
       ClientContext context;
@@ -140,6 +135,7 @@ TEST(ClientForkTest, ClientCallsBeforeAndAfterForkSucceed) {
     }
     default:  // post-fork parent
     {
+      gpr_log(GPR_DEBUG, "In post-fork parent");
       EchoRequest request;
       EchoResponse response;
       ClientContext context;
