@@ -37,10 +37,9 @@ class XdsEndpointTest : public ::testing::Test {
  protected:
   XdsEndpointTest()
       : xds_client_(MakeXdsClient()),
-        decode_context_{
-            xds_client_.get(), xds_client_->bootstrap().server(),
-            &xds_endpoint_resource_type_test_trace, upb_def_pool_.ptr(),
-            upb_arena_.ptr()} {}
+        decode_context_{xds_client_.get(), xds_client_->bootstrap().server(),
+                        &xds_endpoint_resource_type_test_trace,
+                        upb_def_pool_.ptr(), upb_arena_.ptr()} {}
 
   static RefCountedPtr<XdsClient> MakeXdsClient() {
     grpc_error_handle error = GRPC_ERROR_NONE;
@@ -132,8 +131,8 @@ TEST_F(XdsEndpointTest, MinimumValidConfig) {
   ASSERT_TRUE(addr.ok()) << addr.status();
   EXPECT_EQ(*addr, "127.0.0.1:443");
   EXPECT_EQ(address.args(), ChannelArgs());
-  const auto* attribute = static_cast<const ServerAddressWeightAttribute*>(
-      address.GetAttribute(
+  const auto* attribute =
+      static_cast<const ServerAddressWeightAttribute*>(address.GetAttribute(
           ServerAddressWeightAttribute::kServerAddressWeightAttributeKey));
   ASSERT_NE(attribute, nullptr);
   EXPECT_EQ(attribute->weight(), 1);
@@ -152,9 +151,8 @@ TEST_F(XdsEndpointTest, EndpointWeight) {
   locality_name->set_sub_zone("mysubzone");
   auto* endpoint = locality->add_lb_endpoints();
   endpoint->mutable_load_balancing_weight()->set_value(3);
-  auto* socket_address = endpoint->mutable_endpoint()
-                             ->mutable_address()
-                             ->mutable_socket_address();
+  auto* socket_address =
+      endpoint->mutable_endpoint()->mutable_address()->mutable_socket_address();
   socket_address->set_address("127.0.0.1");
   socket_address->set_port_value(443);
   std::string serialized_resource;
@@ -183,8 +181,8 @@ TEST_F(XdsEndpointTest, EndpointWeight) {
   ASSERT_TRUE(addr.ok()) << addr.status();
   EXPECT_EQ(*addr, "127.0.0.1:443");
   EXPECT_EQ(address.args(), ChannelArgs());
-  const auto* attribute = static_cast<const ServerAddressWeightAttribute*>(
-      address.GetAttribute(
+  const auto* attribute =
+      static_cast<const ServerAddressWeightAttribute*>(address.GetAttribute(
           ServerAddressWeightAttribute::kServerAddressWeightAttributeKey));
   ASSERT_NE(attribute, nullptr);
   EXPECT_EQ(attribute->weight(), 3);
@@ -235,8 +233,8 @@ TEST_F(XdsEndpointTest, IgnoresLocalityWithNoWeight) {
   ASSERT_TRUE(addr.ok()) << addr.status();
   EXPECT_EQ(*addr, "127.0.0.1:443");
   EXPECT_EQ(address.args(), ChannelArgs());
-  const auto* attribute = static_cast<const ServerAddressWeightAttribute*>(
-      address.GetAttribute(
+  const auto* attribute =
+      static_cast<const ServerAddressWeightAttribute*>(address.GetAttribute(
           ServerAddressWeightAttribute::kServerAddressWeightAttributeKey));
   ASSERT_NE(attribute, nullptr);
   EXPECT_EQ(attribute->weight(), 1);
@@ -288,8 +286,8 @@ TEST_F(XdsEndpointTest, IgnoresLocalityWithZeroWeight) {
   ASSERT_TRUE(addr.ok()) << addr.status();
   EXPECT_EQ(*addr, "127.0.0.1:443");
   EXPECT_EQ(address.args(), ChannelArgs());
-  const auto* attribute = static_cast<const ServerAddressWeightAttribute*>(
-      address.GetAttribute(
+  const auto* attribute =
+      static_cast<const ServerAddressWeightAttribute*>(address.GetAttribute(
           ServerAddressWeightAttribute::kServerAddressWeightAttributeKey));
   ASSERT_NE(attribute, nullptr);
   EXPECT_EQ(attribute->weight(), 1);
@@ -509,9 +507,8 @@ TEST_F(XdsEndpointTest, EndpointWeightZero) {
   locality_name->set_sub_zone("mysubzone");
   auto* endpoint = locality->add_lb_endpoints();
   endpoint->mutable_load_balancing_weight()->set_value(0);
-  auto* socket_address = endpoint->mutable_endpoint()
-                             ->mutable_address()
-                             ->mutable_socket_address();
+  auto* socket_address =
+      endpoint->mutable_endpoint()->mutable_address()->mutable_socket_address();
   socket_address->set_address("127.0.0.1");
   socket_address->set_port_value(443);
   std::string serialized_resource;

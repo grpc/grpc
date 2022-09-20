@@ -259,8 +259,8 @@ absl::optional<ParsedLocality> LocalityParse(
       envoy_config_endpoint_v3_LocalityLbEndpoints_lb_endpoints(
           locality_lb_endpoints, &size);
   for (size_t i = 0; i < size; ++i) {
-    ValidationErrors::ScopedField field(
-        errors, absl::StrCat(".lb_endpoints[", i, "]"));
+    ValidationErrors::ScopedField field(errors,
+                                        absl::StrCat(".lb_endpoints[", i, "]"));
     auto address = ServerAddressParse(lb_endpoints[i], errors);
     if (address.has_value()) {
       parsed_locality.locality.endpoints.push_back(std::move(*address));
@@ -352,11 +352,10 @@ absl::StatusOr<XdsEndpointResource> EdsResourceParse(
             eds_resource.priorities[parsed_locality->priority].localities;
         auto it = locality_map.find(parsed_locality->locality.name.get());
         if (it != locality_map.end()) {
-          errors.AddError(
-              absl::StrCat(
-                  "duplicate locality ",
-                  parsed_locality->locality.name->AsHumanReadableString(),
-                  " found in priority ", parsed_locality->priority));
+          errors.AddError(absl::StrCat(
+              "duplicate locality ",
+              parsed_locality->locality.name->AsHumanReadableString(),
+              " found in priority ", parsed_locality->priority));
         } else {
           locality_map.emplace(parsed_locality->locality.name.get(),
                                std::move(parsed_locality->locality));
@@ -371,8 +370,7 @@ absl::StatusOr<XdsEndpointResource> EdsResourceParse(
     }
   }
   // policy
-  eds_resource.drop_config =
-      MakeRefCounted<XdsEndpointResource::DropConfig>();
+  eds_resource.drop_config = MakeRefCounted<XdsEndpointResource::DropConfig>();
   const auto* policy = envoy_config_endpoint_v3_ClusterLoadAssignment_policy(
       cluster_load_assignment);
   if (policy != nullptr) {
