@@ -64,6 +64,7 @@ Pod::Spec.new do |s|
     # build.
     'USE_HEADERMAP' => 'NO',
     'ALWAYS_SEARCH_USER_PATHS' => 'NO',
+    'CLANG_CXX_LANGUAGE_STANDARD' => 'c++14',
   }
 
   s.libraries = 'c++'
