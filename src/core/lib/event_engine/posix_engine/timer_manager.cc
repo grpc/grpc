@@ -278,6 +278,7 @@ void TimerManager::Kick() {
 }
 
 void TimerManager::PrepareFork() {
+  GRPC_FORK_TRACE_LOG("TimerManager::%p PrepareFork", this);
   ThreadCollector collector;
   grpc_core::MutexLock lock(&mu_);
   forking_ = true;
@@ -290,6 +291,7 @@ void TimerManager::PrepareFork() {
 }
 
 void TimerManager::PostforkParent() {
+  GRPC_FORK_TRACE_LOG("TimerManager::%p PostforkParent", this);
   grpc_core::MutexLock lock(&mu_);
   for (int i = 0; i < prefork_thread_count_; i++) {
     StartThread();
@@ -299,6 +301,7 @@ void TimerManager::PostforkParent() {
 }
 
 void TimerManager::PostforkChild() {
+  GRPC_FORK_TRACE_LOG("TimerManager::%p PostforkChild", this);
   grpc_core::MutexLock lock(&mu_);
   for (int i = 0; i < prefork_thread_count_; i++) {
     StartThread();

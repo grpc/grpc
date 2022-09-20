@@ -164,13 +164,20 @@ void ThreadPool::ThreadCount::BlockUntilThreadCount(int threads,
 }
 
 void ThreadPool::PrepareFork() {
+  GRPC_FORK_TRACE_LOG("ThreadPool::%p PrepareFork", this);
   state_->queue.SetForking();
   state_->thread_count.BlockUntilThreadCount(0, "forking");
 }
 
-void ThreadPool::PostforkParent() { Postfork(); }
+void ThreadPool::PostforkParent() {
+  GRPC_FORK_TRACE_LOG("ThreadPool::%p Postfork", this);
+  Postfork();
+}
 
-void ThreadPool::PostforkChild() { Postfork(); }
+void ThreadPool::PostforkChild() {
+  GRPC_FORK_TRACE_LOG("ThreadPool::%p Postfork", this);
+  Postfork();
+}
 
 void ThreadPool::Postfork() {
   state_->queue.Reset();

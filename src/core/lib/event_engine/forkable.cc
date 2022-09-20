@@ -25,6 +25,7 @@ grpc_core::TraceFlag grpc_trace_fork(false, "fork");
 #include "absl/container/flat_hash_set.h"
 
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/fork.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/sync.h"
 
@@ -44,10 +45,16 @@ Forkable::~Forkable() { StopManagingForkable(this); }
 
 void RegisterForkHandlers() {
   grpc_core::MutexLock lock(g_mu.get());
-  if (!std::exchange(g_registered, true)) {
-    GRPC_FORK_TRACE_LOG_STRING("RegisterForkHandlers");
-    pthread_atfork(PrepareFork, PostforkParent, PostforkChild);
+  if (grpc_core::Fork::Enabled()) {
+    GRPC_FORK_TRACE_LOG_STRING(
+        "Forking is disabled, no fork handlers will be registered");
+    return;
   }
+)
+  if (!std::exchange(g_registered, true)) {
+  GRPC_FORK_TRACE_LOG_STRING("RegisterForkHandlers");
+  pthread_atfork(PrepareFork, PostforkParent, PostforkChild);
+}
 };
 
 void PrepareFork() {
