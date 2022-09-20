@@ -442,7 +442,7 @@ static void init_keepalive_pings_if_enabled(grpc_chttp2_transport* t) {
     GRPC_CLOSURE_INIT(&t->init_keepalive_ping_locked, init_keepalive_ping, t,
                       grpc_schedule_on_exec_ctx);
     grpc_timer_init(&t->keepalive_ping_timer,
-                    grpc_core::Timestamp::Now() + t->keepalive_time,
+                    grpc_core::ExecCtx::Get()->Now() + t->keepalive_time,
                     &t->init_keepalive_ping_locked);
   } else {
     // Use GRPC_CHTTP2_KEEPALIVE_STATE_DISABLED to indicate there are no
@@ -1602,7 +1602,8 @@ class GracefulGoaway : public grpc_core::RefCounted<GracefulGoaway> {
     grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_GOAWAY_SENT);
     Ref().release();  // Ref for the timer
     grpc_timer_init(
-        &timer_, grpc_core::Timestamp::Now() + grpc_core::Duration::Seconds(20),
+        &timer_,
+        grpc_core::ExecCtx::Get()->Now() + grpc_core::Duration::Seconds(20),
         GRPC_CLOSURE_INIT(&on_timer_, OnTimer, this, nullptr));
   }
 
@@ -2646,7 +2647,7 @@ static void init_keepalive_ping_locked(void* arg, grpc_error_handle error) {
       GRPC_CLOSURE_INIT(&t->init_keepalive_ping_locked, init_keepalive_ping, t,
                         grpc_schedule_on_exec_ctx);
       grpc_timer_init(&t->keepalive_ping_timer,
-                      grpc_core::Timestamp::Now() + t->keepalive_time,
+                      grpc_core::ExecCtx::Get()->Now() + t->keepalive_time,
                       &t->init_keepalive_ping_locked);
     }
   } else if (error == GRPC_ERROR_CANCELLED) {
@@ -2660,7 +2661,7 @@ static void init_keepalive_ping_locked(void* arg, grpc_error_handle error) {
     GRPC_CLOSURE_INIT(&t->init_keepalive_ping_locked, init_keepalive_ping, t,
                       grpc_schedule_on_exec_ctx);
     grpc_timer_init(&t->keepalive_ping_timer,
-                    grpc_core::Timestamp::Now() + t->keepalive_time,
+                    grpc_core::ExecCtx::Get()->Now() + t->keepalive_time,
                     &t->init_keepalive_ping_locked);
   }
   GRPC_CHTTP2_UNREF_TRANSPORT(t, "init keepalive ping");
@@ -2689,7 +2690,7 @@ static void start_keepalive_ping_locked(void* arg, grpc_error_handle error) {
   GRPC_CLOSURE_INIT(&t->keepalive_watchdog_fired_locked,
                     keepalive_watchdog_fired, t, grpc_schedule_on_exec_ctx);
   grpc_timer_init(&t->keepalive_watchdog_timer,
-                  grpc_core::Timestamp::Now() + t->keepalive_timeout,
+                  grpc_core::ExecCtx::Get()->Now() + t->keepalive_timeout,
                   &t->keepalive_watchdog_fired_locked);
   t->keepalive_ping_started = true;
 }
@@ -2725,7 +2726,7 @@ static void finish_keepalive_ping_locked(void* arg, grpc_error_handle error) {
       GRPC_CLOSURE_INIT(&t->init_keepalive_ping_locked, init_keepalive_ping, t,
                         grpc_schedule_on_exec_ctx);
       grpc_timer_init(&t->keepalive_ping_timer,
-                      grpc_core::Timestamp::Now() + t->keepalive_time,
+                      grpc_core::ExecCtx::Get()->Now() + t->keepalive_time,
                       &t->init_keepalive_ping_locked);
     }
   }

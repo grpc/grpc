@@ -499,7 +499,7 @@ static void sched_next_channel_action_locked(half* m) {
   grpc_timer_init(&m->parent->channel_effects->timer,
                   grpc_core::Duration::Milliseconds(
                       m->parent->channel_effects->actions[0].wait_ms) +
-                      grpc_core::Timestamp::Now(),
+                      grpc_core::ExecCtx::Get()->Now(),
                   GRPC_CLOSURE_CREATE(do_next_sched_channel_action, m,
                                       grpc_schedule_on_exec_ctx));
 }

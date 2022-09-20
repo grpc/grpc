@@ -218,7 +218,7 @@ static int is_metadata_server_reachable() {
   GPR_ASSERT(uri.ok());  // params are hardcoded
   auto http_request = grpc_core::HttpRequest::Get(
       std::move(*uri), nullptr /* channel args */, &detector.pollent, &request,
-      grpc_core::Timestamp::Now() + max_detection_delay,
+      grpc_core::ExecCtx::Get()->Now() + max_detection_delay,
       GRPC_CLOSURE_CREATE(on_metadata_server_detection_http_response, &detector,
                           grpc_schedule_on_exec_ctx),
       &detector.response,

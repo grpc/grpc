@@ -151,7 +151,7 @@ class FuzzerDNSResolver : public grpc_core::DNSResolver {
         : name_(std::string(name)), on_done_(std::move(on_done)) {
       grpc_timer_init(
           &timer_,
-          grpc_core::Duration::Seconds(1) + grpc_core::Timestamp::Now(),
+          grpc_core::Duration::Seconds(1) + grpc_core::ExecCtx::Get()->Now(),
           GRPC_CLOSURE_CREATE(FinishResolve, this, grpc_schedule_on_exec_ctx));
     }
 
@@ -207,6 +207,8 @@ class FuzzerDNSResolver : public grpc_core::DNSResolver {
       grpc_pollset_set* /* interested_parties */,
       absl::string_view /* name_server */) override {
     GetDefaultEventEngine()->Run([on_resolved] {
+      grpc_core::ApplicationCallbackExecCtx app_exec_ctx;
+      grpc_core::ExecCtx exec_ctx;
       on_resolved(absl::UnimplementedError(
           "The Fuzzing DNS resolver does not support looking up SRV records"));
     });
@@ -220,6 +222,8 @@ class FuzzerDNSResolver : public grpc_core::DNSResolver {
       absl::string_view /* name_server */) override {
     // Not supported
     GetDefaultEventEngine()->Run([on_resolved] {
+      grpc_core::ApplicationCallbackExecCtx app_exec_ctx;
+      grpc_core::ExecCtx exec_ctx;
       on_resolved(absl::UnimplementedError(
           "The Fuzing DNS resolver does not support looking up TXT records"));
     });
@@ -242,7 +246,8 @@ grpc_ares_request* my_dns_lookup_ares(
   r->on_done = on_done;
   r->addresses = addresses;
   grpc_timer_init(
-      &r->timer, grpc_core::Duration::Seconds(1) + grpc_core::Timestamp::Now(),
+      &r->timer,
+      grpc_core::Duration::Seconds(1) + grpc_core::ExecCtx::Get()->Now(),
       GRPC_CLOSURE_CREATE(finish_resolve, r, grpc_schedule_on_exec_ctx));
   return nullptr;
 }
@@ -307,7 +312,8 @@ static void sched_connect(grpc_closure* closure, grpc_endpoint** ep,
   fc->ep = ep;
   fc->deadline = deadline;
   grpc_timer_init(
-      &fc->timer, grpc_core::Duration::Seconds(1) + grpc_core::Timestamp::Now(),
+      &fc->timer,
+      grpc_core::Duration::Seconds(1) + grpc_core::ExecCtx::Get()->Now(),
       GRPC_CLOSURE_CREATE(do_connect, fc, grpc_schedule_on_exec_ctx));
 }
 
