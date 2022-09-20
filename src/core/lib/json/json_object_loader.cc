@@ -157,7 +157,9 @@ void LoadOptional::LoadInto(const Json& json, const JsonArgs& args, void* dst,
                             ValidationErrors* errors) const {
   if (json.type() == Json::Type::JSON_NULL) return;
   void* element = Emplace(dst);
+  size_t starting_error_size = errors->size();
   ElementLoader()->LoadInto(json, args, element, errors);
+  if (errors->size() > starting_error_size) Reset(dst);
 }
 
 bool LoadObject(const Json& json, const JsonArgs& args, const Element* elements,
