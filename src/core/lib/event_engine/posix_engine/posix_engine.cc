@@ -18,6 +18,7 @@
 #include <atomic>
 #include <chrono>
 #include <string>
+#include <thread>
 #include <utility>
 
 #include "absl/cleanup/cleanup.h"
@@ -377,31 +378,49 @@ struct PosixEventEngine::ClosureData final : public EventEngine::Closure {
 };
 
 PosixEventEngine::PosixEventEngine(PosixEventPoller* poller)
-    : poller_(poller), is_poller_owned_(false) {
+    : poller_(poller), poller_state_(PollerState::kExternal) {
   GPR_DEBUG_ASSERT(poller_ != nullptr);
 }
 
-PosixEventEngine::PosixEventEngine() {
-  poller_ = grpc_event_engine::posix_engine::GetDefaultPoller(this);
-  is_poller_owned_ = true;
+PosixEventEngine::PosixEventEngine()
+    : poller_(grpc_event_engine::posix_engine::GetDefaultPoller(this)) {
+  ++shutdown_ref_;
   executor_.Run([this]() { PollerWorkInternal(); });
 }
 
 void PosixEventEngine::PollerWorkInternal() {
   // TODO(vigneshbabu): The timeout specified here is arbitrary. For instance,
   // this can be improved by setting the timeout to the next expiring timer.
-  ++shutdown_cnt_;
-  auto result = poller_->Work(
-      24h, [this]() { executor_.Run([this]() { PollerWorkInternal(); }); });
-  if (shutdown_cnt_.fetch_sub(1, std::memory_order_acq_rel) == 1) {
-    // The asynchronous PollerWorkInternal did not get scheduled and we need to
-    // break out since event engine is shutting down.
-    grpc_core::MutexLock lock(&mu_);
-    poller_wait_.Signal();
-  } else if (result != Poller::WorkResult::kOk) {
+  auto result = poller_->Work(24h, [this]() {
+    ++shutdown_ref_;
+    executor_.Run([this]() { PollerWorkInternal(); });
+  });
+  if (result == Poller::WorkResult::kDeadlineExceeded) {
     // The event engine is not shutting down but the next asynchronous
     // PollerWorkInternal did not get scheduled. Schedule it now.
+    ++shutdown_ref_;
     executor_.Run([this]() { PollerWorkInternal(); });
+  } else if (result == Poller::WorkResult::kKicked &&
+             poller_state_.load(std::memory_order_acquire) ==
+                 PollerState::kShuttingDown) {
+    // The Poller Got Kicked and poller_state_ is set to
+    // PollerState::kShuttingDown. This can currently happen only from the
+    // EventEngine destructor. Sample the value of shutdown_ref_. If the sampled
+    // shutdown_ref_ is > 1, there is one more instance of Work(...) which
+    // hasn't returned yet. Send another Kick to be safe to ensure the pending
+    // instance of Work(..) also breaks out. Its possible that the other
+    // instance of Work(..) had already broken out before this Kick is sent. In
+    // that case, the Kick is spurious but it shouldn't cause any side effects.
+    if (shutdown_ref_.load(std::memory_order_acquire) > 1) {
+      poller_->Kick();
+    }
+  }
+
+  if (shutdown_ref_.fetch_sub(1, std::memory_order_acq_rel) == 1) {
+    // The asynchronous PollerWorkInternal did not get scheduled and
+    // we need to break out since event engine is shutting down.
+    grpc_core::MutexLock lock(&mu_);
+    poller_wait_.Signal();
   }
 }
 
@@ -411,23 +430,28 @@ PosixEventEngine::~PosixEventEngine() {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {
       for (auto handle : known_handles_) {
         gpr_log(GPR_ERROR,
-                "(event_engine) PosixEventEngine:%p uncleared TaskHandle at "
+                "(event_engine) PosixEventEngine:%p uncleared "
+                "TaskHandle at "
                 "shutdown:%s",
                 this, HandleToString(handle).c_str());
       }
     }
     GPR_ASSERT(GPR_LIKELY(known_handles_.empty()));
   }
-  if (!is_poller_owned_) {
+  // If the poller is external, dont try to shut it down. Otherwise
+  // set poller state to PollerState::kShuttingDown.
+  if (poller_state_.exchange(PollerState::kShuttingDown) ==
+      PollerState::kExternal) {
     return;
   }
-  shutdown_cnt_.fetch_sub(1, std::memory_order_acq_rel);
+  shutdown_ref_.fetch_sub(1, std::memory_order_acq_rel);
   {
-    // The event engine destructor should only get called after all the
-    // endpoints and listeners have been destroyed and the corresponding poller
-    // event handles have been orphaned from the poller. So the poller at this
-    // point should not have any active event handles. So when it is Kicked, the
-    // thread executing Poller::Work must see a return value of
+    // The event engine destructor should only get called after all
+    // the endpoints, listeners and asynchronous connection handles have been
+    // destroyed and the corresponding poller event handles have been orphaned
+    // from the poller. So the poller at this point should not have any active
+    // event handles. So when it is Kicked, the thread executing
+    // Poller::Work must see a return value of
     // Poller::WorkResult::kKicked.
     grpc_core::MutexLock lock(&mu_);
     // Send a Kick to the thread executing Poller::Work

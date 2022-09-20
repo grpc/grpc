@@ -47,8 +47,7 @@ namespace experimental {
 // All methods require an ExecCtx to already exist on the thread's stack.
 class PosixEventEngine final
     : public EventEngine,
-      public grpc_event_engine::posix_engine::Scheduler,
-      public std::enable_shared_from_this<PosixEventEngine> {
+      public grpc_event_engine::posix_engine::Scheduler {
  public:
   class PosixEndpoint : public EventEngine::Endpoint {
    public:
@@ -136,9 +135,11 @@ class PosixEventEngine final
       const grpc_event_engine::posix_engine::PosixTcpOptions& options,
       Duration timeout);
 
+  enum class PollerState { kExternal, kOk, kShuttingDown };
+
   grpc_event_engine::posix_engine::PosixEventPoller* poller_ = nullptr;
-  std::atomic<int> shutdown_cnt_{1};
-  bool is_poller_owned_ = true;
+  std::atomic<int> shutdown_ref_{1};
+  std::atomic<PollerState> poller_state_{PollerState::kOk};
   grpc_core::CondVar poller_wait_;
   posix_engine::TimerManager timer_manager_;
   ThreadedExecutor executor_{2};

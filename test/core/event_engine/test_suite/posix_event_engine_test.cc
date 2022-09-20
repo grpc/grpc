@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#include "grpc/event_engine/event_engine.h"
 #include <grpc/grpc.h>
 
 #include "src/core/lib/event_engine/posix_engine/posix_engine.h"
@@ -23,11 +24,11 @@ int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   SetEventEngineFactories(
       []() {
-        return std::make_shared<
+        return std::make_unique<
             grpc_event_engine::experimental::PosixEventEngine>();
       },
       []() {
-        return std::make_shared<
+        return std::make_unique<
             grpc_event_engine::experimental::PosixOracleEventEngine>();
       });
   return RUN_ALL_TESTS();
