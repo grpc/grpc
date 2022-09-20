@@ -40,15 +40,24 @@ namespace {
 GPR_THREAD_LOCAL(bool) g_threadpool_thread;
 }  // namespace
 
-void ThreadPool::StartThread(StatePtr state) {
+void ThreadPool::StartThread(StatePtr state, bool throttled) {
   state->thread_count.Add();
+  struct ThreadArg {
+    StatePtr state;
+    bool throttled;
+  };
   grpc_core::Thread(
       "event_engine",
       [](void* arg) {
+        std::unique_ptr<ThreadArg> a(static_cast<ThreadArg*>(arg));
         g_threadpool_thread = true;
-        ThreadFunc(*std::unique_ptr<StatePtr>(static_cast<StatePtr*>(arg)));
+        if (a->throttled) {
+          GPR_ASSERT(a->state->starting_thread.exchange(
+              false, std::memory_order_relaxed));
+        }
+        ThreadFunc(a->state);
       },
-      new StatePtr(state), nullptr,
+      new ThreadArg{state, throttled}, nullptr,
       grpc_core::Thread::Options().set_tracked(false).set_joinable(false))
       .Start();
 }
@@ -89,7 +98,7 @@ bool ThreadPool::Queue::Step() {
 ThreadPool::ThreadPool(int reserve_threads)
     : reserve_threads_(reserve_threads) {
   for (int i = 0; i < reserve_threads; i++) {
-    StartThread(state_);
+    StartThread(state_, false);
   }
 }
 
@@ -105,7 +114,9 @@ ThreadPool::~ThreadPool() {
 
 void ThreadPool::Add(absl::AnyInvocable<void()> callback) {
   if (state_->queue.Add(std::move(callback))) {
-    StartThread(state_);
+    if (!state_->starting_thread.exchange(true, std::memory_order_relaxed)) {
+      StartThread(state_, true);
+    }
   }
 }
 
@@ -175,7 +186,7 @@ void ThreadPool::PostforkChild() { Postfork(); }
 void ThreadPool::Postfork() {
   state_->queue.Reset();
   for (int i = 0; i < reserve_threads_; i++) {
-    StartThread(state_);
+    StartThread(state_, false);
   }
 }
 
