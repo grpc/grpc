@@ -25,9 +25,14 @@ time ./build_tests.sh
 
 XCODEBUILD_FILTER_OUTPUT_SCRIPT="../../../src/objective-c/tests/xcodebuild_filter_output.sh"
 
+XCODEBUILD_FLAGS="
+  IPHONEOS_DEPLOYMENT_TARGET=9.0
+"
+
 time xcodebuild \
     -workspace Tests.xcworkspace \
     -scheme CronetTests \
     -destination name="iPhone 8" \
     test \
+    $XCODEBUILD_FLAGS
     | "${XCODEBUILD_FILTER_OUTPUT_SCRIPT}"
