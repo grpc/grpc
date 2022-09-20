@@ -284,6 +284,7 @@ void DropParseAndAppend(
       envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload_category(
           drop_overload));
   if (category.empty()) {
+    ValidationErrors::ScopedField field(errors, ".category");
     errors->AddError("empty drop category name");
   }
   // drop_percentage
@@ -337,9 +338,9 @@ absl::StatusOr<XdsEndpointResource> EdsResourceParse(
     const envoy_config_endpoint_v3_LocalityLbEndpoints* const* endpoints =
         envoy_config_endpoint_v3_ClusterLoadAssignment_endpoints(
             cluster_load_assignment, &locality_size);
-    for (size_t j = 0; j < locality_size; ++j) {
-      ValidationErrors::ScopedField field(&errors, absl::StrCat("[", j, "]"));
-      auto parsed_locality = LocalityParse(endpoints[j], &errors);
+    for (size_t i = 0; i < locality_size; ++i) {
+      ValidationErrors::ScopedField field(&errors, absl::StrCat("[", i, "]"));
+      auto parsed_locality = LocalityParse(endpoints[i], &errors);
       if (parsed_locality.has_value()) {
         GPR_ASSERT(parsed_locality->locality.lb_weight != 0);
         // Make sure prorities is big enough. Note that they might not
@@ -380,10 +381,10 @@ absl::StatusOr<XdsEndpointResource> EdsResourceParse(
     const auto* const* drop_overload =
         envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_drop_overloads(
             policy, &drop_size);
-    for (size_t j = 0; j < drop_size; ++j) {
+    for (size_t i = 0; i < drop_size; ++i) {
       ValidationErrors::ScopedField field(
-          &errors, absl::StrCat(".drop_overloads[", j, "]"));
-      DropParseAndAppend(drop_overload[j], eds_resource.drop_config.get(),
+          &errors, absl::StrCat(".drop_overloads[", i, "]"));
+      DropParseAndAppend(drop_overload[i], eds_resource.drop_config.get(),
                          &errors);
     }
   }
