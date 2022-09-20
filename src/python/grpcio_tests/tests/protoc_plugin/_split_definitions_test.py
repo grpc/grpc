@@ -278,6 +278,7 @@ class _Test(six.with_metaclass(abc.ABCMeta, unittest.TestCase)):
             self.assertEqual(self._messages_pb2.Response(), response)
             server.stop(None)
 
+
 def _create_test_case_class(split_proto, protoc_style):
     attributes = {}
 
@@ -324,17 +325,19 @@ def _create_test_case_classes():
 
 
 class WellKnownTypesTest(unittest.TestCase):
+
     def testWellKnownTypes(self):
         os.chdir(_TEST_DIR)
         out_dir = tempfile.mkdtemp(suffix="wkt_test", dir='.')
-        well_known_protos_include = pkg_resources.resource_filename('grpc_tools', '_proto')
+        well_known_protos_include = pkg_resources.resource_filename(
+            'grpc_tools', '_proto')
         args = [
-                'grpc_tools.protoc',
-                '--proto_path=protos',
-                '--proto_path={}'.format(well_known_protos_include),
-                '--python_out={}'.format(out_dir),
-                '--grpc_python_out={}'.format(out_dir),
-                'protos/invocation_testing/compiler.proto',
+            'grpc_tools.protoc',
+            '--proto_path=protos',
+            '--proto_path={}'.format(well_known_protos_include),
+            '--python_out={}'.format(out_dir),
+            '--grpc_python_out={}'.format(out_dir),
+            'protos/invocation_testing/compiler.proto',
         ]
         rc = protoc.main(args)
         self.assertEqual(0, rc)
