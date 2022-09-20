@@ -30,12 +30,13 @@ class ExecCtxWakeupScheduler {
  public:
   template <typename ActivityType>
   void ScheduleWakeup(ActivityType* activity) {
-    GRPC_CLOSURE_INIT(
-        &closure_,
-        [](void* arg, grpc_error_handle) {
-          static_cast<ActivityType*>(arg)->RunScheduledWakeup();
-        },
-        activity, grpc_schedule_on_exec_ctx);
+    struct Closure {
+      static void Cb(void* arg, grpc_error_handle) {
+        static_cast<ActivityType*>(arg)->RunScheduledWakeup();
+      }
+    };
+    GRPC_CLOSURE_INIT(&closure_, Closure::Cb, activity,
+                      grpc_schedule_on_exec_ctx);
     ExecCtx::Run(DEBUG_LOCATION, &closure_, GRPC_ERROR_NONE);
   }
 

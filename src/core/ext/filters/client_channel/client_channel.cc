@@ -2309,22 +2309,21 @@ bool ClientChannel::CallData::CheckResolutionLocked(grpc_call_element* elem,
     // resolution mutex here, we offload it on the ExecCtx so that we don't
     // deadlock with ourselves.
     GRPC_CHANNEL_STACK_REF(chand->owning_stack_, "CheckResolutionLocked");
-    ExecCtx::Run(
-        DEBUG_LOCATION,
-        GRPC_CLOSURE_CREATE(
-            [](void* arg, grpc_error_handle /*error*/) {
-              auto* chand = static_cast<ClientChannel*>(arg);
-              chand->work_serializer_->Run(
-                  [chand]()
-                      ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand->work_serializer_) {
-                        chand->CheckConnectivityState(/*try_to_connect=*/true);
-                        GRPC_CHANNEL_STACK_UNREF(chand->owning_stack_,
-                                                 "CheckResolutionLocked");
-                      },
-                  DEBUG_LOCATION);
+    struct Closure {
+      static void Cb(void* arg, grpc_error_handle /*error*/) {
+        auto* chand = static_cast<ClientChannel*>(arg);
+        chand->work_serializer_->Run(
+            [chand]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand->work_serializer_) {
+              chand->CheckConnectivityState(/*try_to_connect=*/true);
+              GRPC_CHANNEL_STACK_UNREF(chand->owning_stack_,
+                                       "CheckResolutionLocked");
             },
-            chand, nullptr),
-        GRPC_ERROR_NONE);
+            DEBUG_LOCATION);
+      }
+    };
+    ExecCtx::Run(DEBUG_LOCATION,
+                 GRPC_CLOSURE_CREATE(Closure::Cb, chand, nullptr),
+                 GRPC_ERROR_NONE);
   }
   // Get send_initial_metadata batch and flags.
   auto& send_initial_metadata =

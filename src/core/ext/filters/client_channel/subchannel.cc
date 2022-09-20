@@ -355,16 +355,15 @@ class Subchannel::AsyncWatcherNotifierLocked {
       grpc_connectivity_state state, const absl::Status& status)
       : watcher_(std::move(watcher)) {
     watcher_->PushConnectivityStateChange({state, status});
+    struct Closure {
+      static void Cb(void* arg, grpc_error_handle /*error*/) {
+        auto* self = static_cast<AsyncWatcherNotifierLocked*>(arg);
+        self->watcher_->OnConnectivityStateChange();
+        delete self;
+      }
+    };
     ExecCtx::Run(DEBUG_LOCATION,
-                 GRPC_CLOSURE_INIT(
-                     &closure_,
-                     [](void* arg, grpc_error_handle /*error*/) {
-                       auto* self =
-                           static_cast<AsyncWatcherNotifierLocked*>(arg);
-                       self->watcher_->OnConnectivityStateChange();
-                       delete self;
-                     },
-                     this, nullptr),
+                 GRPC_CLOSURE_INIT(&closure_, Closure::Cb, this, nullptr),
                  GRPC_ERROR_NONE);
   }
 

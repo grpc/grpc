@@ -722,17 +722,19 @@ void FilterStackCall::ExecuteBatch(grpc_transport_stream_op_batch* batch,
                                    grpc_closure* start_batch_closure) {
   // This is called via the call combiner to start sending a batch down
   // the filter stack.
-  auto execute_batch_in_call_combiner = [](void* arg, grpc_error_handle) {
-    grpc_transport_stream_op_batch* batch =
-        static_cast<grpc_transport_stream_op_batch*>(arg);
-    auto* call =
-        static_cast<FilterStackCall*>(batch->handler_private.extra_arg);
-    grpc_call_element* elem = call->call_elem(0);
-    GRPC_CALL_LOG_OP(GPR_INFO, elem, batch);
-    elem->filter->start_transport_stream_op_batch(elem, batch);
+  struct Closure {
+    static void Cb(void* arg, grpc_error_handle) {
+      grpc_transport_stream_op_batch* batch =
+          static_cast<grpc_transport_stream_op_batch*>(arg);
+      auto* call =
+          static_cast<FilterStackCall*>(batch->handler_private.extra_arg);
+      grpc_call_element* elem = call->call_elem(0);
+      GRPC_CALL_LOG_OP(GPR_INFO, elem, batch);
+      elem->filter->start_transport_stream_op_batch(elem, batch);
+    }
   };
   batch->handler_private.extra_arg = this;
-  GRPC_CLOSURE_INIT(start_batch_closure, execute_batch_in_call_combiner, batch,
+  GRPC_CLOSURE_INIT(start_batch_closure, Closure::Cb, batch,
                     grpc_schedule_on_exec_ctx);
   GRPC_CALL_COMBINER_START(call_combiner(), start_batch_closure,
                            GRPC_ERROR_NONE, "executing batch");
@@ -1252,11 +1254,13 @@ void FilterStackCall::BatchControl::ReceivingInitialMetadataReady(
       }
     } else {
       /* Already received messages */
+      struct Closure {
+        static void Cb(void* bctl, grpc_error_handle error) {
+          static_cast<BatchControl*>(bctl)->ReceivingStreamReady(error);
+        }
+      };
       saved_rsr_closure = GRPC_CLOSURE_CREATE(
-          [](void* bctl, grpc_error_handle error) {
-            static_cast<BatchControl*>(bctl)->ReceivingStreamReady(error);
-          },
-          reinterpret_cast<BatchControl*>(rsr_bctlp),
+          Closure::Cb, reinterpret_cast<BatchControl*>(rsr_bctlp),
           grpc_schedule_on_exec_ctx);
       /* No need to modify recv_state */
       break;
@@ -1553,13 +1557,14 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
         received_initial_metadata_ = true;
         buffered_metadata_[0] =
             op->data.recv_initial_metadata.recv_initial_metadata;
-        GRPC_CLOSURE_INIT(
-            &receiving_initial_metadata_ready_,
-            [](void* bctl, grpc_error_handle error) {
-              static_cast<BatchControl*>(bctl)->ReceivingInitialMetadataReady(
-                  error);
-            },
-            bctl, grpc_schedule_on_exec_ctx);
+        struct Closure {
+          static void Cb(void* bctl, grpc_error_handle error) {
+            static_cast<BatchControl*>(bctl)->ReceivingInitialMetadataReady(
+                error);
+          }
+        };
+        GRPC_CLOSURE_INIT(&receiving_initial_metadata_ready_, Closure::Cb, bctl,
+                          grpc_schedule_on_exec_ctx);
         stream_op->recv_initial_metadata = true;
         stream_op_payload->recv_initial_metadata.recv_initial_metadata =
             &recv_initial_metadata_;
@@ -1593,18 +1598,19 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
         stream_op_payload->recv_message.flags = &receiving_stream_flags_;
         stream_op_payload->recv_message.call_failed_before_recv_message =
             &call_failed_before_recv_message_;
-        GRPC_CLOSURE_INIT(
-            &receiving_stream_ready_,
-            [](void* bctlp, grpc_error_handle error) {
-              auto* bctl = static_cast<BatchControl*>(bctlp);
-              auto* call = bctl->call_;
-              //  Yields the call combiner before processing the received
-              //  message.
-              GRPC_CALL_COMBINER_STOP(call->call_combiner(),
-                                      "recv_message_ready");
-              bctl->ReceivingStreamReady(error);
-            },
-            bctl, grpc_schedule_on_exec_ctx);
+        struct Closure {
+          static void Cb(void* bctlp, grpc_error_handle error) {
+            auto* bctl = static_cast<BatchControl*>(bctlp);
+            auto* call = bctl->call_;
+            //  Yields the call combiner before processing the received
+            //  message.
+            GRPC_CALL_COMBINER_STOP(call->call_combiner(),
+                                    "recv_message_ready");
+            bctl->ReceivingStreamReady(error);
+          }
+        };
+        GRPC_CLOSURE_INIT(&receiving_stream_ready_, Closure::Cb, bctl,
+                          grpc_schedule_on_exec_ctx);
         stream_op_payload->recv_message.recv_message_ready =
             &receiving_stream_ready_;
         ++num_recv_ops;
@@ -1637,13 +1643,14 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
             &recv_trailing_metadata_;
         stream_op_payload->recv_trailing_metadata.collect_stats =
             &final_info_.stats.transport_stream_stats;
-        GRPC_CLOSURE_INIT(
-            &receiving_trailing_metadata_ready_,
-            [](void* bctl, grpc_error_handle error) {
-              static_cast<BatchControl*>(bctl)->ReceivingTrailingMetadataReady(
-                  error);
-            },
-            bctl, grpc_schedule_on_exec_ctx);
+        struct Closure {
+          static void Cb(void* bctl, grpc_error_handle error) {
+            static_cast<BatchControl*>(bctl)->ReceivingTrailingMetadataReady(
+                error);
+          }
+        };
+        GRPC_CLOSURE_INIT(&receiving_trailing_metadata_ready_, Closure::Cb,
+                          bctl, grpc_schedule_on_exec_ctx);
         stream_op_payload->recv_trailing_metadata.recv_trailing_metadata_ready =
             &receiving_trailing_metadata_ready_;
         ++num_recv_ops;
@@ -1670,13 +1677,14 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
             &recv_trailing_metadata_;
         stream_op_payload->recv_trailing_metadata.collect_stats =
             &final_info_.stats.transport_stream_stats;
-        GRPC_CLOSURE_INIT(
-            &receiving_trailing_metadata_ready_,
-            [](void* bctl, grpc_error_handle error) {
-              static_cast<BatchControl*>(bctl)->ReceivingTrailingMetadataReady(
-                  error);
-            },
-            bctl, grpc_schedule_on_exec_ctx);
+        struct Closure {
+          static void Cb(void* bctl, grpc_error_handle error) {
+            static_cast<BatchControl*>(bctl)->ReceivingTrailingMetadataReady(
+                error);
+          }
+        };
+        GRPC_CLOSURE_INIT(&receiving_trailing_metadata_ready_, Closure::Cb,
+                          bctl, grpc_schedule_on_exec_ctx);
         stream_op_payload->recv_trailing_metadata.recv_trailing_metadata_ready =
             &receiving_trailing_metadata_ready_;
         ++num_recv_ops;
@@ -1692,12 +1700,13 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
   bctl->set_num_steps_to_complete((has_send_ops ? 1 : 0) + num_recv_ops);
 
   if (has_send_ops) {
-    GRPC_CLOSURE_INIT(
-        &bctl->finish_batch_,
-        [](void* bctl, grpc_error_handle error) {
-          static_cast<BatchControl*>(bctl)->FinishBatch(error);
-        },
-        bctl, grpc_schedule_on_exec_ctx);
+    struct Closure {
+      static void Cb(void* bctl, grpc_error_handle error) {
+        static_cast<BatchControl*>(bctl)->FinishBatch(error);
+      }
+    };
+    GRPC_CLOSURE_INIT(&bctl->finish_batch_, Closure::Cb, bctl,
+                      grpc_schedule_on_exec_ctx);
     stream_op->on_complete = &bctl->finish_batch_;
   }
 

@@ -65,15 +65,16 @@ ChannelStackBuilderImpl::Build() {
   }
 
   // and initialize it
+  struct Closure {
+    static void Cb(void* p, grpc_error_handle) {
+      auto* stk = static_cast<grpc_channel_stack*>(p);
+      grpc_channel_stack_destroy(stk);
+      gpr_free(stk);
+    }
+  };
   grpc_error_handle error = grpc_channel_stack_init(
-      1,
-      [](void* p, grpc_error_handle) {
-        auto* stk = static_cast<grpc_channel_stack*>(p);
-        grpc_channel_stack_destroy(stk);
-        gpr_free(stk);
-      },
-      channel_stack, stack->data(), stack->size(), final_args.ToC().get(),
-      name(), channel_stack);
+      1, Closure::Cb, channel_stack, stack->data(), stack->size(),
+      final_args.ToC().get(), name(), channel_stack);
 
   if (!GRPC_ERROR_IS_NONE(error)) {
     grpc_channel_stack_destroy(channel_stack);

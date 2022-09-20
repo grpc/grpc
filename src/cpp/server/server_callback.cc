@@ -36,15 +36,13 @@ void ServerCallbackCall::ScheduleOnDone(bool inline_ondone) {
     struct ClosureWithArg {
       grpc_closure closure;
       ServerCallbackCall* call;
+      static void Cb(void* void_arg, grpc_error_handle) {
+        ClosureWithArg* arg = static_cast<ClosureWithArg*>(void_arg);
+        arg->call->CallOnDone();
+        delete arg;
+      }
       explicit ClosureWithArg(ServerCallbackCall* call_arg) : call(call_arg) {
-        GRPC_CLOSURE_INIT(
-            &closure,
-            [](void* void_arg, grpc_error_handle) {
-              ClosureWithArg* arg = static_cast<ClosureWithArg*>(void_arg);
-              arg->call->CallOnDone();
-              delete arg;
-            },
-            this, grpc_schedule_on_exec_ctx);
+        GRPC_CLOSURE_INIT(&closure, Cb, this, grpc_schedule_on_exec_ctx);
       }
     };
     ClosureWithArg* arg = new ClosureWithArg(this);
@@ -64,17 +62,15 @@ void ServerCallbackCall::CallOnCancel(ServerReactor* reactor) {
       grpc_closure closure;
       ServerCallbackCall* call;
       ServerReactor* reactor;
+      static void Cb(void* void_arg, grpc_error_handle) {
+        ClosureWithArg* arg = static_cast<ClosureWithArg*>(void_arg);
+        arg->reactor->OnCancel();
+        arg->call->MaybeDone();
+        delete arg;
+      }
       ClosureWithArg(ServerCallbackCall* call_arg, ServerReactor* reactor_arg)
           : call(call_arg), reactor(reactor_arg) {
-        GRPC_CLOSURE_INIT(
-            &closure,
-            [](void* void_arg, grpc_error_handle) {
-              ClosureWithArg* arg = static_cast<ClosureWithArg*>(void_arg);
-              arg->reactor->OnCancel();
-              arg->call->MaybeDone();
-              delete arg;
-            },
-            this, grpc_schedule_on_exec_ctx);
+        GRPC_CLOSURE_INIT(&closure, Cb, this, grpc_schedule_on_exec_ctx);
       }
     };
     ClosureWithArg* arg = new ClosureWithArg(this, reactor);

@@ -486,18 +486,23 @@ absl::enable_if_t<std::is_base_of<ChannelFilter, F>::value, grpc_channel_filter>
 MakePromiseBasedFilter(const char* name) {
   using CallData = promise_filter_detail::CallData<F, kEndpoint>;
 
+  struct Closure {
+    static ArenaPromise<ServerMetadataHandle> Cb(
+        grpc_channel_element* elem, CallArgs call_args,
+        NextPromiseFactory next_promise_factory) {
+      return static_cast<ChannelFilter*>(elem->channel_data)
+          ->MakeCallPromise(std::move(call_args),
+                            std::move(next_promise_factory));
+    }
+  };
+
   return grpc_channel_filter{
       // start_transport_stream_op_batch
       [](grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
         static_cast<CallData*>(elem->call_data)->StartBatch(batch);
       },
       // make_call_promise
-      [](grpc_channel_element* elem, CallArgs call_args,
-         NextPromiseFactory next_promise_factory) {
-        return static_cast<ChannelFilter*>(elem->channel_data)
-            ->MakeCallPromise(std::move(call_args),
-                              std::move(next_promise_factory));
-      },
+      Closure::Cb,
       // start_transport_op
       [](grpc_channel_element* elem, grpc_transport_op* op) {
         if (!static_cast<ChannelFilter*>(elem->channel_data)

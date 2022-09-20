@@ -141,23 +141,24 @@ void MaxAgeFilter::PostInit() {
     RefCountedPtr<grpc_channel_stack> channel_stack;
     MaxAgeFilter* filter;
     grpc_closure closure;
-  };
-  auto run_startup = [](void* p, grpc_error_handle) {
-    auto* startup = static_cast<StartupClosure*>(p);
-    // Trigger idle timer
-    startup->filter->IncreaseCallCount();
-    startup->filter->DecreaseCallCount();
-    grpc_transport_op* op = grpc_make_transport_op(nullptr);
-    op->start_connectivity_watch.reset(
-        new ConnectivityWatcher(startup->filter));
-    op->start_connectivity_watch_state = GRPC_CHANNEL_IDLE;
-    grpc_channel_next_op(
-        grpc_channel_stack_element(startup->channel_stack.get(), 0), op);
-    delete startup;
+    static void RunStartup(void* p, grpc_error_handle) {
+      auto* startup = static_cast<StartupClosure*>(p);
+      // Trigger idle timer
+      startup->filter->IncreaseCallCount();
+      startup->filter->DecreaseCallCount();
+      grpc_transport_op* op = grpc_make_transport_op(nullptr);
+      op->start_connectivity_watch.reset(
+          new ConnectivityWatcher(startup->filter));
+      op->start_connectivity_watch_state = GRPC_CHANNEL_IDLE;
+      grpc_channel_next_op(
+          grpc_channel_stack_element(startup->channel_stack.get(), 0), op);
+      delete startup;
+    }
   };
   auto* startup =
       new StartupClosure{this->channel_stack()->Ref(), this, grpc_closure{}};
-  GRPC_CLOSURE_INIT(&startup->closure, run_startup, startup, nullptr);
+  GRPC_CLOSURE_INIT(&startup->closure, StartupClosure::RunStartup, startup,
+                    nullptr);
   ExecCtx::Run(DEBUG_LOCATION, &startup->closure, GRPC_ERROR_NONE);
 
   auto channel_stack = this->channel_stack()->Ref();
@@ -173,21 +174,24 @@ void MaxAgeFilter::PostInit() {
               GRPC_CHANNEL_STACK_REF(this->channel_stack(),
                                      "max_age send_goaway");
               // Jump out of the activity to send the goaway.
-              auto fn = [](void* arg, grpc_error_handle) {
-                auto* channel_stack = static_cast<grpc_channel_stack*>(arg);
-                grpc_transport_op* op = grpc_make_transport_op(nullptr);
-                op->goaway_error = grpc_error_set_int(
-                    GRPC_ERROR_CREATE_FROM_STATIC_STRING("max_age"),
-                    GRPC_ERROR_INT_HTTP2_ERROR, GRPC_HTTP2_NO_ERROR);
-                grpc_channel_element* elem =
-                    grpc_channel_stack_element(channel_stack, 0);
-                elem->filter->start_transport_op(elem, op);
-                GRPC_CHANNEL_STACK_UNREF(channel_stack, "max_age send_goaway");
+              struct Closure {
+                static void Cb(void* arg, grpc_error_handle) {
+                  auto* channel_stack = static_cast<grpc_channel_stack*>(arg);
+                  grpc_transport_op* op = grpc_make_transport_op(nullptr);
+                  op->goaway_error = grpc_error_set_int(
+                      GRPC_ERROR_CREATE_FROM_STATIC_STRING("max_age"),
+                      GRPC_ERROR_INT_HTTP2_ERROR, GRPC_HTTP2_NO_ERROR);
+                  grpc_channel_element* elem =
+                      grpc_channel_stack_element(channel_stack, 0);
+                  elem->filter->start_transport_op(elem, op);
+                  GRPC_CHANNEL_STACK_UNREF(channel_stack,
+                                           "max_age send_goaway");
+                }
               };
-              ExecCtx::Run(
-                  DEBUG_LOCATION,
-                  GRPC_CLOSURE_CREATE(fn, this->channel_stack(), nullptr),
-                  GRPC_ERROR_NONE);
+              ExecCtx::Run(DEBUG_LOCATION,
+                           GRPC_CLOSURE_CREATE(Closure::Cb,
+                                               this->channel_stack(), nullptr),
+                           GRPC_ERROR_NONE);
               return Immediate(absl::OkStatus());
             },
             // Sleep for the grace period
