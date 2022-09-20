@@ -51,6 +51,7 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/work_serializer.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
@@ -468,6 +469,8 @@ WeightedTargetLb::WeightedChild::DelayedRemovalTimer::DelayedRemovalTimer(
     : weighted_child_(std::move(weighted_child)) {
   timer_handle_ = GetDefaultEventEngine()->RunAfter(
       kChildRetentionInterval, [self = Ref()]() mutable {
+        ApplicationCallbackExecCtx app_exec_ctx;
+        ExecCtx exec_ctx;
         self->weighted_child_->weighted_target_policy_->work_serializer()->Run(
             [self = std::move(self)] { self->OnTimerLocked(); },
             DEBUG_LOCATION);
