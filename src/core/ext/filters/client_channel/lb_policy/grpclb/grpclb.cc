@@ -219,7 +219,6 @@ class GrpcLb : public LoadBalancingPolicy {
     void SendClientLoadReportLocked();
 
     // EventEngine callbacks
-    void MaybeSendClientLoadReport();
     void MaybeSendClientLoadReportLocked();
 
     static void ClientLoadReportDone(void* arg, grpc_error_handle error);
@@ -996,13 +995,9 @@ void GrpcLb::BalancerCallState::ScheduleNextClientLoadReportLocked() {
       GetDefaultEventEngine()->RunAfter(client_stats_report_interval_, [this] {
         ApplicationCallbackExecCtx callback_exec_ctx;
         ExecCtx exec_ctx;
-        MaybeSendClientLoadReport();
+        grpclb_policy()->work_serializer()->Run(
+            [this] { MaybeSendClientLoadReportLocked(); }, DEBUG_LOCATION);
       });
-}
-
-void GrpcLb::BalancerCallState::MaybeSendClientLoadReport() {
-  grpclb_policy()->work_serializer()->Run(
-      [this] { MaybeSendClientLoadReportLocked(); }, DEBUG_LOCATION);
 }
 
 void GrpcLb::BalancerCallState::MaybeSendClientLoadReportLocked() {
