@@ -49,6 +49,7 @@
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset_set.h"
@@ -87,7 +88,8 @@ class WeightedTargetLbConfig : public LoadBalancingPolicy::Config {
     RefCountedPtr<LoadBalancingPolicy::Config> config;
 
     static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
-    void JsonPostLoad(const Json& json, const JsonArgs&, ErrorList* errors);
+    void JsonPostLoad(const Json& json, const JsonArgs&,
+                      ValidationErrors* errors);
   };
 
   using TargetMap = std::map<std::string, ChildConfig>;
@@ -713,10 +715,9 @@ const JsonLoaderInterface* WeightedTargetLbConfig::ChildConfig::JsonLoader(
   return loader;
 }
 
-void WeightedTargetLbConfig::ChildConfig::JsonPostLoad(const Json& json,
-                                                       const JsonArgs&,
-                                                       ErrorList* errors) {
-  ScopedField field(errors, ".childPolicy");
+void WeightedTargetLbConfig::ChildConfig::JsonPostLoad(
+    const Json& json, const JsonArgs&, ValidationErrors* errors) {
+  ValidationErrors::ScopedField field(errors, ".childPolicy");
   auto it = json.object_value().find("childPolicy");
   if (it == json.object_value().end()) {
     errors->AddError("field not present");

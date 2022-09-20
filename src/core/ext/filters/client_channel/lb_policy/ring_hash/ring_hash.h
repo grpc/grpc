@@ -22,6 +22,7 @@
 #include <stdint.h>
 
 #include "src/core/lib/gprpp/unique_type_name.h"
+#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
@@ -37,7 +38,8 @@ struct RingHashConfig {
   uint64_t max_ring_size = 8388608;
 
   static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
-  void JsonPostLoad(const Json& json, const JsonArgs&, ErrorList* errors);
+  void JsonPostLoad(const Json& json, const JsonArgs&,
+                    ValidationErrors* errors);
 };
 
 }  // namespace grpc_core

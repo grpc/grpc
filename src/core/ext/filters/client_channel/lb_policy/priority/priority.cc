@@ -48,6 +48,7 @@
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
@@ -89,7 +90,8 @@ class PriorityLbConfig : public LoadBalancingPolicy::Config {
     bool ignore_reresolution_requests = false;
 
     static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
-    void JsonPostLoad(const Json& json, const JsonArgs&, ErrorList* errors);
+    void JsonPostLoad(const Json& json, const JsonArgs&,
+                      ValidationErrors* errors);
   };
 
   PriorityLbConfig() = default;
@@ -108,7 +110,8 @@ class PriorityLbConfig : public LoadBalancingPolicy::Config {
   const std::vector<std::string>& priorities() const { return priorities_; }
 
   static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
-  void JsonPostLoad(const Json& json, const JsonArgs&, ErrorList* errors);
+  void JsonPostLoad(const Json& json, const JsonArgs&,
+                    ValidationErrors* errors);
 
  private:
   std::map<std::string, PriorityLbChild> children_;
@@ -877,8 +880,8 @@ const JsonLoaderInterface* PriorityLbConfig::PriorityLbChild::JsonLoader(
 
 void PriorityLbConfig::PriorityLbChild::JsonPostLoad(const Json& json,
                                                      const JsonArgs&,
-                                                     ErrorList* errors) {
-  ScopedField field(errors, ".config");
+                                                     ValidationErrors* errors) {
+  ValidationErrors::ScopedField field(errors, ".config");
   auto it = json.object_value().find("config");
   if (it == json.object_value().end()) {
     errors->AddError("field not present");
@@ -904,7 +907,7 @@ const JsonLoaderInterface* PriorityLbConfig::JsonLoader(const JsonArgs&) {
 }
 
 void PriorityLbConfig::JsonPostLoad(const Json& /*json*/, const JsonArgs&,
-                                    ErrorList* errors) {
+                                    ValidationErrors* errors) {
   std::set<std::string> unknown_priorities;
   for (const std::string& priority : priorities_) {
     if (children_.find(priority) == children_.end()) {

@@ -59,6 +59,7 @@
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/json/json.h"
@@ -121,7 +122,7 @@ class XdsClusterResolverLbConfig : public LoadBalancingPolicy::Config {
 
     static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
     void JsonPostLoad(const Json& json, const JsonArgs& args,
-                      ErrorList* errors);
+                      ValidationErrors* errors);
   };
 
   XdsClusterResolverLbConfig() = default;
@@ -143,7 +144,8 @@ class XdsClusterResolverLbConfig : public LoadBalancingPolicy::Config {
   const Json& xds_lb_policy() const { return xds_lb_policy_; }
 
   static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
-  void JsonPostLoad(const Json& json, const JsonArgs& args, ErrorList* errors);
+  void JsonPostLoad(const Json& json, const JsonArgs& args,
+                    ValidationErrors* errors);
 
  private:
   std::vector<DiscoveryMechanism> discovery_mechanisms_;
@@ -1096,11 +1098,11 @@ XdsClusterResolverLbConfig::DiscoveryMechanism::JsonLoader(const JsonArgs&) {
 }
 
 void XdsClusterResolverLbConfig::DiscoveryMechanism::JsonPostLoad(
-    const Json& json, const JsonArgs& args, ErrorList* errors) {
+    const Json& json, const JsonArgs& args, ValidationErrors* errors) {
   // LRS load reporting server name.
   auto it = json.object_value().find("lrsLoadReportingServer");
   if (it != json.object_value().end()) {
-    ScopedField field(errors, ".lrsLoadReportingServer");
+    ValidationErrors::ScopedField field(errors, ".lrsLoadReportingServer");
     if (it->second.type() != Json::Type::OBJECT) {
       errors->AddError("is not an object");
     } else {
@@ -1123,7 +1125,7 @@ void XdsClusterResolverLbConfig::DiscoveryMechanism::JsonPostLoad(
       } else if (*type_field == "LOGICAL_DNS") {
         type = DiscoveryMechanismType::LOGICAL_DNS;
       } else {
-        ScopedField field(errors, ".type");
+        ValidationErrors::ScopedField field(errors, ".type");
         errors->AddError(absl::StrCat("unknown type \"", *type_field, "\""));
       }
     }
@@ -1157,17 +1159,17 @@ const JsonLoaderInterface* XdsClusterResolverLbConfig::JsonLoader(
 
 void XdsClusterResolverLbConfig::JsonPostLoad(const Json& json,
                                               const JsonArgs& args,
-                                              ErrorList* errors) {
+                                              ValidationErrors* errors) {
   // Validate discoveryMechanisms.
   {
-    ScopedField field(errors, ".discoveryMechanisms");
+    ValidationErrors::ScopedField field(errors, ".discoveryMechanisms");
     if (!errors->FieldHasErrors() && discovery_mechanisms_.empty()) {
       errors->AddError("must be non-empty");
     }
   }
   // Parse "xdsLbPolicy".
   {
-    ScopedField field(errors, ".xdsLbPolicy");
+    ValidationErrors::ScopedField field(errors, ".xdsLbPolicy");
     auto it = json.object_value().find("xdsLbPolicy");
     if (it != json.object_value().end()) {
       if (it->second.type() != Json::Type::ARRAY) {
@@ -1175,7 +1177,8 @@ void XdsClusterResolverLbConfig::JsonPostLoad(const Json& json,
       } else {
         const Json::Array& array = it->second.array_value();
         for (size_t i = 0; i < array.size(); ++i) {
-          ScopedField field(errors, absl::StrCat("[", i, "]"));
+          ValidationErrors::ScopedField field(errors,
+                                              absl::StrCat("[", i, "]"));
           if (array[i].type() != Json::Type::OBJECT) {
             errors->AddError("is not an object");
             continue;
@@ -1183,14 +1186,14 @@ void XdsClusterResolverLbConfig::JsonPostLoad(const Json& json,
           const Json::Object& policy = array[i].object_value();
           auto policy_it = policy.find("ROUND_ROBIN");
           if (policy_it != policy.end()) {
-            ScopedField field(errors, "[\"ROUND_ROBIN\"]");
+            ValidationErrors::ScopedField field(errors, "[\"ROUND_ROBIN\"]");
             if (policy_it->second.type() != Json::Type::OBJECT) {
               errors->AddError("is not an object");
             }
             break;
           }
           {
-            ScopedField field(errors, "[\"RING_HASH\"]");
+            ValidationErrors::ScopedField field(errors, "[\"RING_HASH\"]");
             policy_it = policy.find("RING_HASH");
             if (policy_it != policy.end()) {
               LoadFromJson<RingHashConfig>(policy_it->second, args, errors);

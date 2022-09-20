@@ -53,6 +53,7 @@
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
@@ -1032,16 +1033,17 @@ class OutlierDetectionLbFactory : public LoadBalancingPolicyFactory {
           "configuration. Please use loadBalancingConfig field of service "
           "config instead.");
     }
-    ErrorList errors;
+    ValidationErrors errors;
     OutlierDetectionConfig outlier_detection_config;
     RefCountedPtr<LoadBalancingPolicy::Config> child_policy;
     {
-      ScopedField field(&errors, "[\"outlier_detection_experimental\"]");
+      ValidationErrors::ScopedField field(
+          &errors, "[\"outlier_detection_experimental\"]");
       outlier_detection_config =
           LoadFromJson<OutlierDetectionConfig>(json, JsonArgs(), &errors);
       // Parse childPolicy manually.
       {
-        ScopedField field(&errors, ".childPolicy");
+        ValidationErrors::ScopedField field(&errors, ".childPolicy");
         auto it = json.object_value().find("childPolicy");
         if (it == json.object_value().end()) {
           errors.AddError("field not present");
@@ -1119,7 +1121,7 @@ const JsonLoaderInterface* OutlierDetectionConfig::JsonLoader(const JsonArgs&) {
 }
 
 void OutlierDetectionConfig::JsonPostLoad(const Json& json, const JsonArgs&,
-                                          ErrorList* /*errors*/) {
+                                          ValidationErrors* /*errors*/) {
   if (json.object_value().find("maxEjectionTime") ==
       json.object_value().end()) {
     max_ejection_time = std::max(base_ejection_time, Duration::Seconds(300));

@@ -1074,6 +1074,8 @@
     <file baseinstalldir="/" name="src/core/lib/gprpp/time_util.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/time_util.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/unique_type_name.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/validation_errors.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/validation_errors.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/work_serializer.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/work_serializer.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/handshaker/proxy_mapper.h" role="src" />

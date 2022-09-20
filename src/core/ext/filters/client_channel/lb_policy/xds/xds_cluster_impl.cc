@@ -55,6 +55,7 @@
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_args.h"
@@ -169,7 +170,8 @@ class XdsClusterImplLbConfig : public LoadBalancingPolicy::Config {
   }
 
   static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
-  void JsonPostLoad(const Json& json, const JsonArgs& args, ErrorList* errors);
+  void JsonPostLoad(const Json& json, const JsonArgs& args,
+                    ValidationErrors* errors);
 
  private:
   RefCountedPtr<LoadBalancingPolicy::Config> child_policy_;
@@ -722,11 +724,11 @@ const JsonLoaderInterface* XdsClusterImplLbConfig::JsonLoader(const JsonArgs&) {
 
 void XdsClusterImplLbConfig::JsonPostLoad(const Json& json,
                                           const JsonArgs& args,
-                                          ErrorList* errors) {
+                                          ValidationErrors* errors) {
   // LRS load reporting server name.
   auto it = json.object_value().find("lrsLoadReportingServer");
   if (it != json.object_value().end()) {
-    ScopedField field(errors, ".lrsLoadReportingServer");
+    ValidationErrors::ScopedField field(errors, ".lrsLoadReportingServer");
     if (it->second.type() != Json::Type::OBJECT) {
       errors->AddError("is not an object");
     } else {
@@ -741,7 +743,7 @@ void XdsClusterImplLbConfig::JsonPostLoad(const Json& json,
   }
   // Parse "childPolicy" field.
   {
-    ScopedField field(errors, ".childPolicy");
+    ValidationErrors::ScopedField field(errors, ".childPolicy");
     auto it = json.object_value().find("childPolicy");
     if (it == json.object_value().end()) {
       errors->AddError("field not present");

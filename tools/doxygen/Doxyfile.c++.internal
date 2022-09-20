@@ -2077,6 +2077,8 @@ src/core/lib/gprpp/time_averaged_stats.h \
 src/core/lib/gprpp/time_util.cc \
 src/core/lib/gprpp/time_util.h \
 src/core/lib/gprpp/unique_type_name.h \
+src/core/lib/gprpp/validation_errors.cc \
+src/core/lib/gprpp/validation_errors.h \
 src/core/lib/gprpp/work_serializer.cc \
 src/core/lib/gprpp/work_serializer.h \
 src/core/lib/handshaker/proxy_mapper.h \

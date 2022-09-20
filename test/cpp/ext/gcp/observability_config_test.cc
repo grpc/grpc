@@ -41,10 +41,10 @@ TEST(GcpObservabilityConfigJsonParsingTest, Basic) {
     })json";
   auto json = grpc_core::Json::Parse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
-  grpc_core::ErrorList errors;
+  grpc_core::ValidationErrors errors;
   auto config = grpc_core::LoadFromJson<GcpObservabilityConfig>(
       *json, grpc_core::JsonArgs(), &errors);
-  ASSERT_TRUE(errors.ok()) << errors.status();
+  ASSERT_TRUE(errors.ok()) << errors.status("unexpected errors");
   EXPECT_TRUE(config.cloud_logging.has_value());
   EXPECT_TRUE(config.cloud_monitoring.has_value());
   EXPECT_TRUE(config.cloud_trace.has_value());
@@ -57,10 +57,10 @@ TEST(GcpObservabilityConfigJsonParsingTest, Defaults) {
     })json";
   auto json = grpc_core::Json::Parse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
-  grpc_core::ErrorList errors;
+  grpc_core::ValidationErrors errors;
   auto config = grpc_core::LoadFromJson<GcpObservabilityConfig>(
       *json, grpc_core::JsonArgs(), &errors);
-  ASSERT_TRUE(errors.ok()) << errors.status();
+  ASSERT_TRUE(errors.ok()) << errors.status("unexpected errors");
   EXPECT_FALSE(config.cloud_logging.has_value());
   EXPECT_FALSE(config.cloud_monitoring.has_value());
   EXPECT_FALSE(config.cloud_trace.has_value());
@@ -75,10 +75,10 @@ TEST(GcpObservabilityConfigJsonParsingTest, SamplingRateDefaults) {
     })json";
   auto json = grpc_core::Json::Parse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
-  grpc_core::ErrorList errors;
+  grpc_core::ValidationErrors errors;
   auto config = grpc_core::LoadFromJson<GcpObservabilityConfig>(
       *json, grpc_core::JsonArgs(), &errors);
-  ASSERT_TRUE(errors.ok()) << errors.status();
+  ASSERT_TRUE(errors.ok()) << errors.status("unexpected errors");
   ASSERT_TRUE(config.cloud_trace.has_value());
   EXPECT_FLOAT_EQ(config.cloud_trace->sampling_rate, 0.05);
 }

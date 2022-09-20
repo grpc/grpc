@@ -75,6 +75,7 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
@@ -151,7 +152,7 @@ class RlsLbConfig : public LoadBalancingPolicy::Config {
 
     static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
     void JsonPostLoad(const Json& json, const JsonArgs& args,
-                      ErrorList* errors);
+                      ValidationErrors* errors);
   };
 
   RlsLbConfig() = default;
@@ -194,7 +195,8 @@ class RlsLbConfig : public LoadBalancingPolicy::Config {
   }
 
   static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
-  void JsonPostLoad(const Json& json, const JsonArgs&, ErrorList* errors);
+  void JsonPostLoad(const Json& json, const JsonArgs&,
+                    ValidationErrors* errors);
 
  private:
   RouteLookupConfig route_lookup_config_;
@@ -747,7 +749,7 @@ void RlsLb::ChildPolicyWrapper::Orphan() {
 
 bool InsertOrUpdateChildPolicyField(const std::string& field,
                                     const std::string& value, Json* config,
-                                    ErrorList* errors) {
+                                    ValidationErrors* errors) {
   if (config->type() != Json::Type::ARRAY) {
     errors->AddError("is not an array");
     return false;
@@ -755,7 +757,7 @@ bool InsertOrUpdateChildPolicyField(const std::string& field,
   bool success = true;
   for (size_t i = 0; i < config->array_value().size(); ++i) {
     Json& child_json = (*config->mutable_array())[i];
-    ScopedField json_field(errors, absl::StrCat("[", i, "]"));
+    ValidationErrors::ScopedField json_field(errors, absl::StrCat("[", i, "]"));
     if (child_json.type() != Json::Type::OBJECT) {
       errors->AddError("is not an object");
       success = false;
@@ -765,7 +767,7 @@ bool InsertOrUpdateChildPolicyField(const std::string& field,
         errors->AddError("child policy object contains more than one field");
         success = false;
       } else {
-        ScopedField json_field(
+        ValidationErrors::ScopedField json_field(
             errors, absl::StrCat("[\"", child.begin()->first, "\"]"));
         Json& child_config_json = child.begin()->second;
         if (child_config_json.type() != Json::Type::OBJECT) {
@@ -783,7 +785,7 @@ bool InsertOrUpdateChildPolicyField(const std::string& field,
 
 void RlsLb::ChildPolicyWrapper::StartUpdate() {
   Json child_policy_config = lb_policy_->config_->child_policy_config();
-  ErrorList errors;
+  ValidationErrors errors;
   GPR_ASSERT(InsertOrUpdateChildPolicyField(
       lb_policy_->config_->child_policy_config_target_field_name(), target_,
       &child_policy_config, &errors));
@@ -2176,23 +2178,24 @@ struct GrpcKeyBuilder {
       return loader;
     }
 
-    void JsonPostLoad(const Json&, const JsonArgs&, ErrorList* errors) {
+    void JsonPostLoad(const Json&, const JsonArgs&, ValidationErrors* errors) {
       // key must be non-empty.
       {
-        ScopedField field(errors, ".key");
+        ValidationErrors::ScopedField field(errors, ".key");
         if (!errors->FieldHasErrors() && key.empty()) {
           errors->AddError("must be non-empty");
         }
       }
       // List of header names must be non-empty.
       {
-        ScopedField field(errors, ".names");
+        ValidationErrors::ScopedField field(errors, ".names");
         if (!errors->FieldHasErrors() && names.empty()) {
           errors->AddError("must be non-empty");
         }
         // Individual header names must be non-empty.
         for (size_t i = 0; i < names.size(); ++i) {
-          ScopedField field(errors, absl::StrCat("[", i, "]"));
+          ValidationErrors::ScopedField field(errors,
+                                              absl::StrCat("[", i, "]"));
           if (!errors->FieldHasErrors() && names[i].empty()) {
             errors->AddError("must be non-empty");
           }
@@ -2200,7 +2203,7 @@ struct GrpcKeyBuilder {
       }
       // requiredMatch must not be present.
       {
-        ScopedField field(errors, ".requiredMatch");
+        ValidationErrors::ScopedField field(errors, ".requiredMatch");
         if (required_match.has_value()) {
           errors->AddError("must not be present");
         }
@@ -2223,10 +2226,11 @@ struct GrpcKeyBuilder {
       return loader;
     }
 
-    void JsonPostLoad(const Json&, const JsonArgs&, ErrorList* errors) {
+    void JsonPostLoad(const Json&, const JsonArgs&, ValidationErrors* errors) {
       auto check_field = [&](const std::string& field_name,
                              absl::optional<std::string>* struct_field) {
-        ScopedField field(errors, absl::StrCat(".", field_name));
+        ValidationErrors::ScopedField field(errors,
+                                            absl::StrCat(".", field_name));
         if (struct_field->has_value() && (*struct_field)->empty()) {
           errors->AddError("must be non-empty if set");
         }
@@ -2253,17 +2257,17 @@ struct GrpcKeyBuilder {
     return loader;
   }
 
-  void JsonPostLoad(const Json&, const JsonArgs&, ErrorList* errors) {
+  void JsonPostLoad(const Json&, const JsonArgs&, ValidationErrors* errors) {
     // The names field must be non-empty.
     {
-      ScopedField field(errors, ".names");
+      ValidationErrors::ScopedField field(errors, ".names");
       if (!errors->FieldHasErrors() && names.empty()) {
         errors->AddError("must be non-empty");
       }
     }
     // Make sure no key in constantKeys is empty.
     if (constant_keys.find("") != constant_keys.end()) {
-      ScopedField field(errors, ".constantKeys[\"\"]");
+      ValidationErrors::ScopedField field(errors, ".constantKeys[\"\"]");
       errors->AddError("key must be non-empty");
     }
     // Check for duplicate keys.
@@ -2272,7 +2276,7 @@ struct GrpcKeyBuilder {
                                         const std::string& key,
                                         const std::string& field_name) {
       if (key.empty()) return;  // Already generated an error about this.
-      ScopedField field(errors, field_name);
+      ValidationErrors::ScopedField field(errors, field_name);
       auto it = keys_seen.find(key);
       if (it != keys_seen.end()) {
         errors->AddError(absl::StrCat("duplicate key \"", key, "\""));
@@ -2320,14 +2324,14 @@ const JsonLoaderInterface* RlsLbConfig::RouteLookupConfig::JsonLoader(
 
 void RlsLbConfig::RouteLookupConfig::JsonPostLoad(const Json& json,
                                                   const JsonArgs& args,
-                                                  ErrorList* errors) {
+                                                  ValidationErrors* errors) {
   // Parse grpcKeybuilders.
   auto grpc_keybuilders = LoadJsonObjectField<std::vector<GrpcKeyBuilder>>(
       json.object_value(), args, "grpcKeybuilders", errors);
   if (grpc_keybuilders.has_value()) {
-    ScopedField field(errors, ".grpcKeybuilders");
+    ValidationErrors::ScopedField field(errors, ".grpcKeybuilders");
     for (size_t i = 0; i < grpc_keybuilders->size(); ++i) {
-      ScopedField field(errors, absl::StrCat("[", i, "]"));
+      ValidationErrors::ScopedField field(errors, absl::StrCat("[", i, "]"));
       auto& grpc_keybuilder = (*grpc_keybuilders)[i];
       // Construct KeyBuilder.
       RlsLbConfig::KeyBuilder key_builder;
@@ -2358,7 +2362,7 @@ void RlsLbConfig::RouteLookupConfig::JsonPostLoad(const Json& json,
   }
   // Validate lookupService.
   {
-    ScopedField field(errors, ".lookupService");
+    ValidationErrors::ScopedField field(errors, ".lookupService");
     if (!errors->FieldHasErrors() &&
         !CoreConfiguration::Get().resolver_registry().IsValidTarget(
             lookup_service)) {
@@ -2370,14 +2374,14 @@ void RlsLbConfig::RouteLookupConfig::JsonPostLoad(const Json& json,
   // If staleAge is set, then maxAge must also be set.
   if (json.object_value().find("staleAge") != json.object_value().end() &&
       json.object_value().find("maxAge") == json.object_value().end()) {
-    ScopedField field(errors, ".maxAge");
+    ValidationErrors::ScopedField field(errors, ".maxAge");
     errors->AddError("must be set if staleAge is set");
   }
   // Ignore staleAge if greater than or equal to maxAge.
   if (stale_age >= max_age) stale_age = max_age;
   // Validate cacheSizeBytes.
   {
-    ScopedField field(errors, ".cacheSizeBytes");
+    ValidationErrors::ScopedField field(errors, ".cacheSizeBytes");
     if (!errors->FieldHasErrors() && cache_size_bytes <= 0) {
       errors->AddError("must be greater than 0");
     }
@@ -2388,7 +2392,7 @@ void RlsLbConfig::RouteLookupConfig::JsonPostLoad(const Json& json,
   }
   // Validate defaultTarget.
   {
-    ScopedField field(errors, ".defaultTarget");
+    ValidationErrors::ScopedField field(errors, ".defaultTarget");
     if (!errors->FieldHasErrors() &&
         json.object_value().find("defaultTarget") !=
             json.object_value().end() &&
@@ -2411,11 +2415,12 @@ const JsonLoaderInterface* RlsLbConfig::JsonLoader(const JsonArgs&) {
 }
 
 void RlsLbConfig::JsonPostLoad(const Json& json, const JsonArgs&,
-                               ErrorList* errors) {
+                               ValidationErrors* errors) {
   // Parse routeLookupChannelServiceConfig.
   auto it = json.object_value().find("routeLookupChannelServiceConfig");
   if (it != json.object_value().end()) {
-    ScopedField field(errors, ".routeLookupChannelServiceConfig");
+    ValidationErrors::ScopedField field(errors,
+                                        ".routeLookupChannelServiceConfig");
     grpc_error_handle child_error = GRPC_ERROR_NONE;
     rls_channel_service_config_ = it->second.Dump();
     auto service_config = MakeRefCounted<ServiceConfigImpl>(
@@ -2427,7 +2432,8 @@ void RlsLbConfig::JsonPostLoad(const Json& json, const JsonArgs&,
   }
   // Validate childPolicyConfigTargetFieldName.
   {
-    ScopedField field(errors, ".childPolicyConfigTargetFieldName");
+    ValidationErrors::ScopedField field(errors,
+                                        ".childPolicyConfigTargetFieldName");
     if (!errors->FieldHasErrors() &&
         child_policy_config_target_field_name_.empty()) {
       errors->AddError("must be non-empty");
@@ -2435,7 +2441,7 @@ void RlsLbConfig::JsonPostLoad(const Json& json, const JsonArgs&,
   }
   // Parse childPolicy.
   {
-    ScopedField field(errors, ".childPolicy");
+    ValidationErrors::ScopedField field(errors, ".childPolicy");
     auto it = json.object_value().find("childPolicy");
     if (it == json.object_value().end()) {
       errors->AddError("field not present");

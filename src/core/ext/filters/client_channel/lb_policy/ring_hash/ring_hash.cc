@@ -90,16 +90,16 @@ const JsonLoaderInterface* RingHashConfig::JsonLoader(const JsonArgs&) {
 }
 
 void RingHashConfig::JsonPostLoad(const Json&, const JsonArgs&,
-                                  ErrorList* errors) {
+                                  ValidationErrors* errors) {
   {
-    ScopedField field(errors, ".min_ring_size");
+    ValidationErrors::ScopedField field(errors, ".min_ring_size");
     if (!errors->FieldHasErrors() &&
         (min_ring_size == 0 || min_ring_size > 8388608)) {
       errors->AddError("must be in the range [1, 8388608]");
     }
   }
   {
-    ScopedField field(errors, ".max_ring_size");
+    ValidationErrors::ScopedField field(errors, ".max_ring_size");
     if (!errors->FieldHasErrors() &&
         (max_ring_size == 0 || max_ring_size > 8388608)) {
       errors->AddError("must be in the range [1, 8388608]");

@@ -1092,6 +1092,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/gprpp/time_util.cc )
   s.files += %w( src/core/lib/gprpp/time_util.h )
   s.files += %w( src/core/lib/gprpp/unique_type_name.h )
+  s.files += %w( src/core/lib/gprpp/validation_errors.cc )
+  s.files += %w( src/core/lib/gprpp/validation_errors.h )
   s.files += %w( src/core/lib/gprpp/work_serializer.cc )
   s.files += %w( src/core/lib/gprpp/work_serializer.h )
   s.files += %w( src/core/lib/handshaker/proxy_mapper.h )
