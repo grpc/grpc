@@ -14,7 +14,10 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GRPC_ENABLE_FORK_SUPPORT
+#ifndef GRPC_ENABLE_FORK_SUPPORT
+// No-op for builds without fork support.
+int main(int /* argc */, char** /* argv */) { return 0; }
+#else  // GRPC_ENABLE_FORK_SUPPORT
 
 #include <pthread.h>
 #include <signal.h>
