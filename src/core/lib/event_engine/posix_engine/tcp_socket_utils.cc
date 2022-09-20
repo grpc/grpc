@@ -59,6 +59,17 @@
 #include <sys/un.h>
 #endif
 
+// If expr evaluates to absl Not-OK status, then execute expr2 and return the
+// evaluated status.
+#define RETURN_IF_ERROR(expr, expr2)    \
+  do {                                  \
+    const absl::Status status = (expr); \
+    if (!status.ok()) {                 \
+      (expr2);                          \
+      return status;                    \
+    }                                   \
+  } while (0)
+
 namespace grpc_event_engine {
 namespace posix_engine {
 
@@ -106,42 +117,16 @@ const uint8_t kV4MappedPrefix[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0xff};
 absl::Status PrepareTcpClientSocket(PosixSocketWrapper sock,
                                     const EventEngine::ResolvedAddress& addr,
                                     const PosixTcpOptions& options) {
-  absl::Status status;
-  auto sock_cleanup = absl::MakeCleanup([&status, &sock]() -> void {
-    if (!status.ok()) {
-      close(sock.Fd());
-    }
-  });
-  status = sock.SetSocketNonBlocking(1);
-  if (!status.ok()) {
-    return status;
-  }
-  status = sock.SetSocketCloexec(1);
-  if (!status.ok()) {
-    return status;
-  }
+  RETURN_IF_ERROR(sock.SetSocketNonBlocking(1), close(sock.Fd()));
+  RETURN_IF_ERROR(sock.SetSocketCloexec(1), close(sock.Fd()));
 
-  auto is_unix_socket = [](const EventEngine::ResolvedAddress& addr) -> bool {
-    const sockaddr* sock_addr =
-        reinterpret_cast<const sockaddr*>(addr.address());
-    return sock_addr->sa_family == AF_UNIX;
-  };
-
-  if (!is_unix_socket(addr)) {
-    status = sock.SetSocketLowLatency(1);
-    if (!status.ok()) {
-      return status;
-    }
-    status = sock.SetSocketReuseAddr(1);
-    if (!status.ok()) {
-      return status;
-    }
+  if (reinterpret_cast<const sockaddr*>(addr.address())->sa_family != AF_UNIX) {
+    // If its not a unix socket address.
+    RETURN_IF_ERROR(sock.SetSocketLowLatency(1), close(sock.Fd()));
+    RETURN_IF_ERROR(sock.SetSocketReuseAddr(1), close(sock.Fd()));
     sock.TrySetSocketTcpUserTimeout(options, true);
   }
-  status = sock.SetSocketNoSigpipeIfPossible();
-  if (!status.ok()) {
-    return status;
-  }
+  RETURN_IF_ERROR(sock.SetSocketNoSigpipeIfPossible(), close(sock.Fd()));
   return sock.ApplySocketMutatorInOptions(GRPC_FD_CLIENT_CONNECTION_USAGE,
                                           options);
 }
@@ -819,20 +804,21 @@ absl::StatusOr<PosixSocketWrapper> PosixSocketWrapper::CreateDualStackSocket(
 
 absl::StatusOr<PosixSocketWrapper>
 PosixSocketWrapper::CreateAndPrepareTcpClientSocket(
-    PosixTcpOptions& options, const EventEngine::ResolvedAddress& target_addr,
+    const PosixTcpOptions& options,
+    const EventEngine::ResolvedAddress& target_addr,
     EventEngine::ResolvedAddress& output_mapped_target_addr) {
   PosixSocketWrapper::DSMode dsmode;
-  absl::StatusOr<PosixSocketWrapper> status;
+  absl::StatusOr<PosixSocketWrapper> posix_socket_wrapper;
 
   // Use dualstack sockets where available. Set mapped to v6 or v4 mapped to v6.
   if (!SockaddrToV4Mapped(&target_addr, &output_mapped_target_addr)) {
     // addr is v4 mapped to v6 or just v6.
     output_mapped_target_addr = target_addr;
   }
-  status = PosixSocketWrapper::CreateDualStackSocket(
+  posix_socket_wrapper = PosixSocketWrapper::CreateDualStackSocket(
       nullptr, output_mapped_target_addr, SOCK_STREAM, 0, dsmode);
-  if (!status.ok()) {
-    return status;
+  if (!posix_socket_wrapper.ok()) {
+    return posix_socket_wrapper;
   }
 
   if (dsmode == PosixSocketWrapper::DSMode::DSMODE_IPV4) {
@@ -842,12 +828,12 @@ PosixSocketWrapper::CreateAndPrepareTcpClientSocket(
     }
   }
 
-  auto error =
-      PrepareTcpClientSocket(*status, output_mapped_target_addr, options);
+  auto error = PrepareTcpClientSocket(*posix_socket_wrapper,
+                                      output_mapped_target_addr, options);
   if (!error.ok()) {
     return error;
   }
-  return *status;
+  return *posix_socket_wrapper;
 }
 
 #else /* GRPC_POSIX_SOCKET_UTILS_COMMON */
@@ -957,7 +943,7 @@ PosixSocketWrapper::CreateDualStackSocket(
 
 absl::StatusOr<PosixSocketWrapper>
 PosixSocketWrapper::CreateAndPrepareTcpClientSocket(
-    PosixTcpOptions& /*options*/,
+    const PosixTcpOptions& /*options*/,
     const EventEngine::ResolvedAddress& /*target_addr*/,
     EventEngine::ResolvedAddress& /*output_mapped_target_addr*/) {
   GPR_ASSERT(false && "unimplemented");

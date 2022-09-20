@@ -313,7 +313,8 @@ class PosixSocketWrapper {
   // Returns: Not-OK status on error. Out parameters are not set on error.
   //
   static absl::StatusOr<PosixSocketWrapper> CreateAndPrepareTcpClientSocket(
-      PosixTcpOptions& options, const EventEngine::ResolvedAddress& target_addr,
+      const PosixTcpOptions& options,
+      const EventEngine::ResolvedAddress& target_addr,
       EventEngine::ResolvedAddress& output_mapped_target_addr);
 
  private:
