@@ -99,6 +99,19 @@ TEST(ThreadPoolDeathTest, CanDetectStucknessAtFork) {
       "Waiting for thread pool to idle before forking");
 }
 
+void ScheduleTwiceUntilZero(ThreadPool* p, int n) {
+  if (n == 0) return;
+  p->Add([p, n] {
+    ScheduleTwiceUntilZero(p, n - 1);
+    ScheduleTwiceUntilZero(p, n - 1);
+  });
+}
+
+TEST(ThreadPoolTest, CanStartLotsOfClosures) {
+  ThreadPool p(1);
+  ScheduleTwiceUntilZero(&p, 20);
+}
+
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
