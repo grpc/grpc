@@ -35,6 +35,7 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/service_config/service_config.h"
 #include "src/core/lib/service_config/service_config_parser.h"
@@ -95,7 +96,8 @@ class ServiceConfigImpl final : public ServiceConfig {
 
  private:
   // Helper functions for parsing the method configs.
-  absl::Status ParsePerMethodParams(const ChannelArgs& args);
+  absl::Status ParsePerMethodParams(const ChannelArgs& args,
+                                    ValidationErrors* errors);
   absl::Status ParseJsonMethodConfig(const ChannelArgs& args, const Json& json,
                                      size_t index);
 
@@ -125,4 +127,4 @@ class ServiceConfigImpl final : public ServiceConfig {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_SERVICE_CONFIG_SERVICE_CONFIG_IMPL_H */
+#endif  // GRPC_CORE_LIB_SERVICE_CONFIG_SERVICE_CONFIG_IMPL_H

@@ -61,16 +61,16 @@ ServiceConfigImpl::ServiceConfigImpl(const ChannelArgs& args,
     *status = absl::InvalidArgumentError("JSON value is not an object");
     return;
   }
-  std::vector<std::string> errors;
+  ValidationErrors errors;
   auto parsed_global_configs =
       CoreConfiguration::Get().service_config_parser().ParseGlobalParameters(
-          args, json_);
-  if (!parsed_global_configs.ok()) {
-    errors.emplace_back(parsed_global_configs.status().message());
-  } else {
+          args, json_, &errors);
+  if (errors.ok()) {
     parsed_global_configs_ = std::move(*parsed_global_configs);
   }
-  absl::Status local_status = ParsePerMethodParams(args);
+// FIXME
+
+  absl::Status local_status = ParsePerMethodParams(args, &errors);
   if (!local_status.ok()) errors.emplace_back(local_status.message());
   if (!errors.empty()) {
     *status = absl::InvalidArgumentError(absl::StrCat(
