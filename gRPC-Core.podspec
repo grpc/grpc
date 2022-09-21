@@ -84,6 +84,7 @@ Pod::Spec.new do |s|
     'ALWAYS_SEARCH_USER_PATHS' => 'NO',
     'GCC_PREPROCESSOR_DEFINITIONS' => '"$(inherited)" "COCOAPODS=1"',
     'CLANG_WARN_STRICT_PROTOTYPES' => 'NO',
+    'CLANG_CXX_LANGUAGE_STANDARD' => 'c++14',
   }
 
   s.default_subspecs = 'Interface', 'Implementation'
@@ -1152,6 +1153,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/gprpp/mpscq.cc',
                       'src/core/lib/gprpp/mpscq.h',
                       'src/core/lib/gprpp/no_destruct.h',
+                      'src/core/lib/gprpp/notification.h',
                       'src/core/lib/gprpp/orphanable.h',
                       'src/core/lib/gprpp/overload.h',
                       'src/core/lib/gprpp/packed_table.h',
@@ -1178,6 +1180,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/gprpp/time_util.cc',
                       'src/core/lib/gprpp/time_util.h',
                       'src/core/lib/gprpp/unique_type_name.h',
+                      'src/core/lib/gprpp/validation_errors.cc',
+                      'src/core/lib/gprpp/validation_errors.h',
                       'src/core/lib/gprpp/work_serializer.cc',
                       'src/core/lib/gprpp/work_serializer.h',
                       'src/core/lib/handshaker/proxy_mapper.h',
@@ -2218,6 +2222,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/gprpp/memory.h',
                               'src/core/lib/gprpp/mpscq.h',
                               'src/core/lib/gprpp/no_destruct.h',
+                              'src/core/lib/gprpp/notification.h',
                               'src/core/lib/gprpp/orphanable.h',
                               'src/core/lib/gprpp/overload.h',
                               'src/core/lib/gprpp/packed_table.h',
@@ -2235,6 +2240,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/gprpp/time_averaged_stats.h',
                               'src/core/lib/gprpp/time_util.h',
                               'src/core/lib/gprpp/unique_type_name.h',
+                              'src/core/lib/gprpp/validation_errors.h',
                               'src/core/lib/gprpp/work_serializer.h',
                               'src/core/lib/handshaker/proxy_mapper.h',
                               'src/core/lib/handshaker/proxy_mapper_registry.h',
