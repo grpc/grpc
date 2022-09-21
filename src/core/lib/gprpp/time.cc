@@ -142,8 +142,7 @@ int64_t TimespanToMillisRoundDown(gpr_timespec ts) {
 
 }  // namespace
 
-GPR_THREAD_LOCAL(Timestamp::Source*)
-Timestamp::thread_local_time_source_{
+thread_local Timestamp::Source* Timestamp::thread_local_time_source_{
     NoDestructSingleton<GprNowTimeSource>::Get()};
 
 Timestamp ScopedTimeCache::Now() {

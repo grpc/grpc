@@ -150,7 +150,7 @@ class Timestamp {
   explicit constexpr Timestamp(int64_t millis) : millis_(millis) {}
 
   int64_t millis_ = 0;
-  static GPR_THREAD_LOCAL(Timestamp::Source*) thread_local_time_source_;
+  static thread_local Timestamp::Source* thread_local_time_source_;
 };
 
 class ScopedTimeCache final : public Timestamp::ScopedSource {
