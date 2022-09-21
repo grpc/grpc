@@ -319,8 +319,7 @@ class PosixSocketWrapper {
   static absl::StatusOr<PosixSocketCreateResult>
   CreateAndPrepareTcpClientSocket(
       const PosixTcpOptions& options,
-      const EventEngine::ResolvedAddress& target_addr,
-      EventEngine::ResolvedAddress& output_mapped_target_addr);
+      const EventEngine::ResolvedAddress& target_addr);
 
  private:
   int fd_;

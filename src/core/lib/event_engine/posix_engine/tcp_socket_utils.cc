@@ -806,9 +806,9 @@ absl::StatusOr<PosixSocketWrapper> PosixSocketWrapper::CreateDualStackSocket(
 absl::StatusOr<PosixSocketWrapper::PosixSocketCreateResult>
 PosixSocketWrapper::CreateAndPrepareTcpClientSocket(
     const PosixTcpOptions& options,
-    const EventEngine::ResolvedAddress& target_addr,
-    EventEngine::ResolvedAddress& output_mapped_target_addr) {
+    const EventEngine::ResolvedAddress& target_addr) {
   PosixSocketWrapper::DSMode dsmode;
+  EventEngine::ResolvedAddress output_mapped_target_addr;
 
   // Use dualstack sockets where available. Set mapped to v6 or v4 mapped to
   // v6.
@@ -947,8 +947,7 @@ PosixSocketWrapper::CreateDualStackSocket(
 absl::StatusOr<PosixSocketWrapper::PosixSocketCreateResult>
 PosixSocketWrapper::CreateAndPrepareTcpClientSocket(
     const PosixTcpOptions& /*options*/,
-    const EventEngine::ResolvedAddress& /*target_addr*/,
-    EventEngine::ResolvedAddress& /*output_mapped_target_addr*/) {
+    const EventEngine::ResolvedAddress& /*target_addr*/) {
   GPR_ASSERT(false && "unimplemented");
 }
 }
