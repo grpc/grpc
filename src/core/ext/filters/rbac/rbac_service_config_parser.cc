@@ -33,8 +33,8 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/json/json_object_loader.h"
 #include "src/core/lib/json/json_args.h"
+#include "src/core/lib/json/json_object_loader.h"
 #include "src/core/lib/matchers/matchers.h"
 #include "src/core/lib/transport/error_utils.h"
 
@@ -54,10 +54,10 @@ struct RbacConfig {
 
           static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
             static const auto* loader =
-                  JsonObjectLoader<CidrRange>()
-                      .Field("addressPrefix", &CidrRange::address_prefix)
-                      .OptionalField("prefixLen", &CidrRange::prefix_len)
-                      .Finish();
+                JsonObjectLoader<CidrRange>()
+                    .Field("addressPrefix", &CidrRange::address_prefix)
+                    .OptionalField("prefixLen", &CidrRange::prefix_len)
+                    .Finish();
             return loader;
           }
 
@@ -71,9 +71,9 @@ struct RbacConfig {
 
           static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
             static const auto* loader =
-                  JsonObjectLoader<SafeRegexMatch>()
-                      .Field("regex", &SafeRegexMatch::regex)
-                      .Finish();
+                JsonObjectLoader<SafeRegexMatch>()
+                    .Field("regex", &SafeRegexMatch::regex)
+                    .Finish();
             return loader;
           }
         };
@@ -85,10 +85,10 @@ struct RbacConfig {
 
             static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
               static const auto* loader =
-                    JsonObjectLoader<RangeMatch>()
-                        .Field("start", &RangeMatch::start)
-                        .Field("end", &RangeMatch::end)
-                        .Finish();
+                  JsonObjectLoader<RangeMatch>()
+                      .Field("start", &RangeMatch::start)
+                      .Field("end", &RangeMatch::end)
+                      .Finish();
               return loader;
             }
           };
@@ -105,37 +105,33 @@ struct RbacConfig {
 
           static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
             static const auto* loader =
-                  JsonObjectLoader<HeaderMatch>()
-                      .Field("name", &HeaderMatch::name)
-                      .OptionalField("invertMatch", &HeaderMatch::invert_match)
-                      .OptionalField("exactMatch", &HeaderMatch::exact_match)
-                      .OptionalField("prefixMatch", &HeaderMatch::prefix_match)
-                      .OptionalField("suffixMatch", &HeaderMatch::suffix_match)
-                      .OptionalField("containsMatch",
-                                     &HeaderMatch::contains_match)
-                      .OptionalField("safeRegexMatch",
-                                     &HeaderMatch::safe_regex_match)
-                      .OptionalField("rangeMatch", &HeaderMatch::range_match)
-                      .OptionalField("presentMatch",
-                                     &HeaderMatch::present_match)
-                      .Finish();
+                JsonObjectLoader<HeaderMatch>()
+                    .Field("name", &HeaderMatch::name)
+                    .OptionalField("invertMatch", &HeaderMatch::invert_match)
+                    .OptionalField("exactMatch", &HeaderMatch::exact_match)
+                    .OptionalField("prefixMatch", &HeaderMatch::prefix_match)
+                    .OptionalField("suffixMatch", &HeaderMatch::suffix_match)
+                    .OptionalField("containsMatch",
+                                   &HeaderMatch::contains_match)
+                    .OptionalField("safeRegexMatch",
+                                   &HeaderMatch::safe_regex_match)
+                    .OptionalField("rangeMatch", &HeaderMatch::range_match)
+                    .OptionalField("presentMatch", &HeaderMatch::present_match)
+                    .Finish();
             return loader;
           }
 
           void JsonPostLoad(const Json&, const JsonArgs&,
                             ValidationErrors* errors) {
             size_t num_matchers =
-                exact_match.has_value() +
-                prefix_match.has_value() +
-                suffix_match.has_value() +
-                contains_match.has_value() +
-                safe_regex_match.has_value() +
-                range_match.has_value() +
+                exact_match.has_value() + prefix_match.has_value() +
+                suffix_match.has_value() + contains_match.has_value() +
+                safe_regex_match.has_value() + range_match.has_value() +
                 present_match.has_value();
             if (num_matchers != 1) {
-              errors->AddError(absl::StrCat(
-                  "expected exactly one header match type, found ",
-                  num_matchers));
+              errors->AddError(
+                  absl::StrCat("expected exactly one header match type, found ",
+                               num_matchers));
             }
           }
 
@@ -185,29 +181,26 @@ struct RbacConfig {
 
           static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
             static const auto* loader =
-                  JsonObjectLoader<StringMatch>()
-                      .OptionalField("ignoreCase", &StringMatch::ignore_case)
-                      .OptionalField("exact", &StringMatch::exact)
-                      .OptionalField("prefix", &StringMatch::prefix)
-                      .OptionalField("suffix", &StringMatch::suffix)
-                      .OptionalField("contains", &StringMatch::contains)
-                      .OptionalField("safeRegex", &StringMatch::safe_regex)
-                      .Finish();
+                JsonObjectLoader<StringMatch>()
+                    .OptionalField("ignoreCase", &StringMatch::ignore_case)
+                    .OptionalField("exact", &StringMatch::exact)
+                    .OptionalField("prefix", &StringMatch::prefix)
+                    .OptionalField("suffix", &StringMatch::suffix)
+                    .OptionalField("contains", &StringMatch::contains)
+                    .OptionalField("safeRegex", &StringMatch::safe_regex)
+                    .Finish();
             return loader;
           }
 
           void JsonPostLoad(const Json&, const JsonArgs&,
                             ValidationErrors* errors) {
-            size_t num_matchers =
-                exact.has_value() +
-                prefix.has_value() +
-                suffix.has_value() +
-                contains.has_value() +
-                safe_regex.has_value();
+            size_t num_matchers = exact.has_value() + prefix.has_value() +
+                                  suffix.has_value() + contains.has_value() +
+                                  safe_regex.has_value();
             if (num_matchers != 1) {
-              errors->AddError(absl::StrCat(
-                  "expected exactly one string match type, found ",
-                  num_matchers));
+              errors->AddError(
+                  absl::StrCat("expected exactly one string match type, found ",
+                               num_matchers));
             }
           }
 
@@ -239,10 +232,9 @@ struct RbacConfig {
           StringMatch path;
 
           static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
-            static const auto* loader =
-                  JsonObjectLoader<PathMatch>()
-                      .Field("path", &PathMatch::path)
-                      .Finish();
+            static const auto* loader = JsonObjectLoader<PathMatch>()
+                                            .Field("path", &PathMatch::path)
+                                            .Finish();
             return loader;
           }
         };
@@ -252,9 +244,9 @@ struct RbacConfig {
 
           static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
             static const auto* loader =
-                  JsonObjectLoader<Metadata>()
-                      .OptionalField("invert", &Metadata::invert)
-                      .Finish();
+                JsonObjectLoader<Metadata>()
+                    .OptionalField("invert", &Metadata::invert)
+                    .Finish();
             return loader;
           }
         };
@@ -265,18 +257,18 @@ struct RbacConfig {
 
             static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
               static const auto* loader =
-                    JsonObjectLoader<PermissionList>()
-                        .Field("rules", &PermissionList::rules)
-                        .Finish();
+                  JsonObjectLoader<PermissionList>()
+                      .Field("rules", &PermissionList::rules)
+                      .Finish();
               return loader;
             }
 
-            std::vector<std::unique_ptr<Rbac::Permission>>
-            MakePermissionList() const {
+            std::vector<std::unique_ptr<Rbac::Permission>> MakePermissionList()
+                const {
               std::vector<std::unique_ptr<Rbac::Permission>> permissions;
               for (const auto& rule : rules) {
-                permissions.push_back(absl::make_unique<Rbac::Permission>(
-                    rule.MakePermission()));
+                permissions.push_back(
+                    absl::make_unique<Rbac::Permission>(rule.MakePermission()));
               }
               return permissions;
             }
@@ -295,41 +287,35 @@ struct RbacConfig {
 
           static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
             static const auto* loader =
-                  JsonObjectLoader<Permission>()
-                      .OptionalField("any", &Permission::any)
-                      .OptionalField("header", &Permission::header)
-                      .OptionalField("urlPath", &Permission::url_path)
-                      .OptionalField("destinationIp",
-                                     &Permission::destination_ip)
-                      .OptionalField("destinationPort",
-                                     &Permission::destination_port)
-                      .OptionalField("metadata", &Permission::metadata)
-                      .OptionalField("requestedServerName",
-                                     &Permission::requested_server_name)
-                      .OptionalField("andRules", &Permission::and_rules)
-                      .OptionalField("orRules", &Permission::or_rules)
-                      .OptionalField("notRule", &Permission::not_rule)
-                      .Finish();
+                JsonObjectLoader<Permission>()
+                    .OptionalField("any", &Permission::any)
+                    .OptionalField("header", &Permission::header)
+                    .OptionalField("urlPath", &Permission::url_path)
+                    .OptionalField("destinationIp", &Permission::destination_ip)
+                    .OptionalField("destinationPort",
+                                   &Permission::destination_port)
+                    .OptionalField("metadata", &Permission::metadata)
+                    .OptionalField("requestedServerName",
+                                   &Permission::requested_server_name)
+                    .OptionalField("andRules", &Permission::and_rules)
+                    .OptionalField("orRules", &Permission::or_rules)
+                    .OptionalField("notRule", &Permission::not_rule)
+                    .Finish();
             return loader;
           }
 
           void JsonPostLoad(const Json&, const JsonArgs&,
                             ValidationErrors* errors) {
             size_t num_matchers =
-                any.has_value() +
-                header.has_value() +
-                url_path.has_value() +
-                destination_ip.has_value() +
-                destination_port.has_value() +
-                metadata.has_value() +
-                requested_server_name.has_value() +
-                and_rules.has_value() +
-                or_rules.has_value() +
+                any.has_value() + header.has_value() + url_path.has_value() +
+                destination_ip.has_value() + destination_port.has_value() +
+                metadata.has_value() + requested_server_name.has_value() +
+                and_rules.has_value() + or_rules.has_value() +
                 (not_rule != nullptr);
             if (num_matchers != 1) {
-              errors->AddError(absl::StrCat(
-                  "expected exactly one permission type, found ",
-                  num_matchers));
+              errors->AddError(
+                  absl::StrCat("expected exactly one permission type, found ",
+                               num_matchers));
             }
           }
 
@@ -379,19 +365,18 @@ struct RbacConfig {
             std::vector<Principal> ids;
 
             static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
-              static const auto* loader =
-                    JsonObjectLoader<PrincipalList>()
-                        .Field("ids", &PrincipalList::ids)
-                        .Finish();
+              static const auto* loader = JsonObjectLoader<PrincipalList>()
+                                              .Field("ids", &PrincipalList::ids)
+                                              .Finish();
               return loader;
             }
 
-            std::vector<std::unique_ptr<Rbac::Principal>>
-            MakePrincipalList() const {
+            std::vector<std::unique_ptr<Rbac::Principal>> MakePrincipalList()
+                const {
               std::vector<std::unique_ptr<Rbac::Principal>> principals;
               for (const auto& id : ids) {
-                principals.push_back(absl::make_unique<Rbac::Principal>(
-                    id.MakePrincipal()));
+                principals.push_back(
+                    absl::make_unique<Rbac::Principal>(id.MakePrincipal()));
               }
               return principals;
             }
@@ -402,10 +387,10 @@ struct RbacConfig {
 
             static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
               static const auto* loader =
-                    JsonObjectLoader<Authenticated>()
-                        .OptionalField("principalName",
-                                       &Authenticated::principal_name)
-                        .Finish();
+                  JsonObjectLoader<Authenticated>()
+                      .OptionalField("principalName",
+                                     &Authenticated::principal_name)
+                      .Finish();
               return loader;
             }
 
@@ -433,37 +418,31 @@ struct RbacConfig {
 
           static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
             static const auto* loader =
-                  JsonObjectLoader<Principal>()
-                      .OptionalField("any", &Principal::any)
-                      .OptionalField("authenticated", &Principal::authenticated)
-                      .OptionalField("sourceIp", &Principal::source_ip)
-                      .OptionalField("directRemoteIp",
-                                     &Principal::direct_remote_ip)
-                      .OptionalField("remoteIp", &Principal::remote_ip)
-                      .OptionalField("header", &Principal::header)
-                      .OptionalField("urlPath", &Principal::url_path)
-                      .OptionalField("metadata", &Principal::metadata)
-                      .OptionalField("andIds", &Principal::and_ids)
-                      .OptionalField("orIds", &Principal::or_ids)
-                      .OptionalField("notId", &Principal::not_id)
-                      .Finish();
+                JsonObjectLoader<Principal>()
+                    .OptionalField("any", &Principal::any)
+                    .OptionalField("authenticated", &Principal::authenticated)
+                    .OptionalField("sourceIp", &Principal::source_ip)
+                    .OptionalField("directRemoteIp",
+                                   &Principal::direct_remote_ip)
+                    .OptionalField("remoteIp", &Principal::remote_ip)
+                    .OptionalField("header", &Principal::header)
+                    .OptionalField("urlPath", &Principal::url_path)
+                    .OptionalField("metadata", &Principal::metadata)
+                    .OptionalField("andIds", &Principal::and_ids)
+                    .OptionalField("orIds", &Principal::or_ids)
+                    .OptionalField("notId", &Principal::not_id)
+                    .Finish();
             return loader;
           }
 
           void JsonPostLoad(const Json&, const JsonArgs&,
                             ValidationErrors* errors) {
             size_t num_matchers =
-                any.has_value() +
-                authenticated.has_value() +
-                source_ip.has_value() +
-                direct_remote_ip.has_value() +
-                remote_ip.has_value() +
-                header.has_value() +
-                url_path.has_value() +
-                metadata.has_value() +
-                and_ids.has_value() +
-                or_ids.has_value() +
-                (not_id != nullptr);
+                any.has_value() + authenticated.has_value() +
+                source_ip.has_value() + direct_remote_ip.has_value() +
+                remote_ip.has_value() + header.has_value() +
+                url_path.has_value() + metadata.has_value() +
+                and_ids.has_value() + or_ids.has_value() + (not_id != nullptr);
             if (num_matchers != 1) {
               errors->AddError(absl::StrCat(
                   "expected exactly one principal type, found ", num_matchers));
@@ -518,10 +497,10 @@ struct RbacConfig {
 
         static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
           static const auto* loader =
-                JsonObjectLoader<Policy>()
-                    .Field("permissions", &Policy::permissions)
-                    .Field("principals", &Policy::principals)
-                    .Finish();
+              JsonObjectLoader<Policy>()
+                  .Field("permissions", &Policy::permissions)
+                  .Field("principals", &Policy::principals)
+                  .Finish();
           return loader;
         }
 
@@ -533,8 +512,8 @@ struct RbacConfig {
           }
           std::vector<std::unique_ptr<Rbac::Principal>> rbac_principals;
           for (const auto& principal : principals) {
-            rbac_principals.emplace_back(absl::make_unique<Rbac::Principal>(
-                principal.MakePrincipal()));
+            rbac_principals.emplace_back(
+                absl::make_unique<Rbac::Principal>(principal.MakePrincipal()));
           }
           Rbac::Policy policy;
           policy.permissions =
@@ -550,10 +529,10 @@ struct RbacConfig {
 
       static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
         static const auto* loader =
-              JsonObjectLoader<Rules>()
-                  .Field("action", &Rules::action)
-                  .OptionalField("policies", &Rules::policies)
-                  .Finish();
+            JsonObjectLoader<Rules>()
+                .Field("action", &Rules::action)
+                .OptionalField("policies", &Rules::policies)
+                .Finish();
         return loader;
       }
 
@@ -564,7 +543,7 @@ struct RbacConfig {
         if (rbac_action != Rbac::Action::kAllow &&
             rbac_action != Rbac::Action::kDeny) {
           ValidationErrors::ScopedField field(errors, ".action");
-          errors->AddError("unknown action"); 
+          errors->AddError("unknown action");
         }
       }
 
@@ -582,9 +561,9 @@ struct RbacConfig {
 
     static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
       static const auto* loader =
-            JsonObjectLoader<RbacPolicy>()
-                .OptionalField("rules", &RbacPolicy::rules)
-                .Finish();
+          JsonObjectLoader<RbacPolicy>()
+              .OptionalField("rules", &RbacPolicy::rules)
+              .Finish();
       return loader;
     }
 
@@ -602,9 +581,9 @@ struct RbacConfig {
 
   static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
     static const auto* loader =
-          JsonObjectLoader<RbacConfig>()
-              .Field("rbacPolicy", &RbacConfig::rbac_policies)
-              .Finish();
+        JsonObjectLoader<RbacConfig>()
+            .Field("rbacPolicy", &RbacConfig::rbac_policies)
+            .Finish();
     return loader;
   }
 

@@ -491,15 +491,14 @@ TEST_F(RetryParserTest, InvalidRetryPolicyUnparseableRetryableStatusCodes) {
       "}";
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(
-      service_config.status().message(),
-      "Service config parsing errors: [errors parsing methodConfig: ["
-      "index 0: [errors validating JSON: ["
-      "field:retryPolicy.retryableStatusCodes error:must be non-empty; "
-      "field:retryPolicy.retryableStatusCodes[0] error:"
-      "failed to parse status code; "
-      "field:retryPolicy.retryableStatusCodes[1] error:"
-      "failed to parse status code]]]]")
+  EXPECT_EQ(service_config.status().message(),
+            "Service config parsing errors: [errors parsing methodConfig: ["
+            "index 0: [errors validating JSON: ["
+            "field:retryPolicy.retryableStatusCodes error:must be non-empty; "
+            "field:retryPolicy.retryableStatusCodes[0] error:"
+            "failed to parse status code; "
+            "field:retryPolicy.retryableStatusCodes[1] error:"
+            "failed to parse status code]]]]")
       << service_config.status();
 }
 
