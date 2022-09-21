@@ -1775,6 +1775,7 @@ grpc_cc_library(
     deps = [
         "arena",
         "context",
+        "debug_location",
         "gpr",
         "intra_activity_waiter",
         "poll",

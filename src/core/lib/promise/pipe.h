@@ -19,7 +19,10 @@
 
 #include <stdint.h>
 
+#include <utility>
+
 #include "absl/types/optional.h"
+#include "absl/types/variant.h"
 #include "absl/utility/utility.h"
 
 #include <grpc/support/log.h>
@@ -31,8 +34,46 @@
 
 namespace grpc_core {
 
+namespace pipe_detail {
+template <typename T>
+class Center;
+}
+
 template <typename T>
 struct Pipe;
+
+template <typename T>
+class NextResult final {
+ public:
+  explicit NextResult(pipe_detail::Center<T>* center) : center_(center) {}
+  ~NextResult();
+  NextResult(const NextResult&) = delete;
+  NextResult& operator=(const NextResult&) = delete;
+  NextResult(NextResult&& other) noexcept
+      : center_(std::exchange(other.center_, nullptr)) {}
+  NextResult& operator=(NextResult&& other) noexcept {
+    center_ = std::exchange(other.center_, nullptr);
+    return *this;
+  }
+
+  using value_type = T;
+
+  void reset();
+  bool has_value() const;
+  const T& value() const {
+    GPR_ASSERT(has_value());
+    return **this;
+  }
+  T& value() {
+    GPR_ASSERT(has_value());
+    return **this;
+  }
+  const T& operator*() const;
+  T& operator*();
+
+ private:
+  pipe_detail::Center<T>* center_;
+};
 
 namespace pipe_detail {
 
@@ -51,18 +92,20 @@ class Center {
   Center() {
     send_refs_ = 1;
     recv_refs_ = 1;
-    has_value_ = false;
+    value_state_ = ValueState::kEmpty;
   }
 
   // Add one ref to the send side of this object, and return this.
   Center* RefSend() {
     send_refs_++;
+    GPR_ASSERT(send_refs_ != 0);
     return this;
   }
 
   // Add one ref to the recv side of this object, and return this.
   Center* RefRecv() {
     recv_refs_++;
+    GPR_ASSERT(recv_refs_ != 0);
     return this;
   }
 
@@ -92,7 +135,7 @@ class Center {
       on_empty_.Wake();
       if (0 == send_refs_) {
         this->~Center();
-      } else if (has_value_) {
+      } else if (value_state_ == ValueState::kReady) {
         ResetValue();
       }
     }
@@ -105,10 +148,18 @@ class Center {
   Poll<bool> Push(T* value) {
     GPR_DEBUG_ASSERT(send_refs_ != 0);
     if (recv_refs_ == 0) return false;
-    if (has_value_) return on_empty_.pending();
-    has_value_ = true;
+    if (value_state_ != ValueState::kEmpty) return on_empty_.pending();
+    value_state_ = ValueState::kReady;
     value_ = std::move(*value);
     on_full_.Wake();
+    return true;
+  }
+
+  Poll<bool> PollAck() {
+    GPR_DEBUG_ASSERT(send_refs_ != 0);
+    if (recv_refs_ == 0) return value_state_ == ValueState::kAcked;
+    if (value_state_ != ValueState::kAcked) return on_empty_.pending();
+    value_state_ = ValueState::kEmpty;
     return true;
   }
 
@@ -116,23 +167,47 @@ class Center {
   // Return Pending if there is no value.
   // Return the value if one was retrieved.
   // Return nullopt if the send end is closed and no value had been pushed.
-  Poll<absl::optional<T>> Next() {
+  Poll<NextResult<T>> Next() {
     GPR_DEBUG_ASSERT(recv_refs_ != 0);
-    if (!has_value_) {
-      if (send_refs_ == 0) return absl::nullopt;
+    if (value_state_ != ValueState::kReady) {
+      if (send_refs_ == 0) return NextResult<T>(nullptr);
       return on_full_.pending();
     }
-    has_value_ = false;
-    on_empty_.Wake();
-    return std::move(value_);
+    return NextResult<T>(RefRecv());
   }
+
+  void AckNext() {
+    GPR_DEBUG_ASSERT(value_state_ == ValueState::kReady);
+    value_state_ = ValueState::kAcked;
+    on_empty_.Wake();
+    UnrefRecv();
+  }
+
+  T& value() { return value_; }
+  const T& value() const { return value_; }
 
  private:
   void ResetValue() {
     // Fancy dance to move out of value in the off chance that we reclaim some
     // memory earlier.
     [](T) {}(std::move(value_));
-    has_value_ = false;
+    value_state_ = ValueState::kEmpty;
+  }
+  enum class ValueState : uint8_t {
+    kEmpty,
+    kReady,
+    kAcked,
+  };
+  static const char* ValueStateName(ValueState state) {
+    switch (state) {
+      case ValueState::kEmpty:
+        return "kEmpty";
+      case ValueState::kReady:
+        return "kReady";
+      case ValueState::kAcked:
+        return "kAcked";
+    }
+    GPR_UNREACHABLE_CODE(return "unknown");
   }
   T value_;
   // Number of sending objects.
@@ -141,10 +216,10 @@ class Center {
   uint8_t send_refs_ : 2;
   // Number of receiving objects.
   // 0 => recv is closed.
-  // 1 ref each for PipeReceiver and Next.
+  // 1 ref each for PipeReceiver, Next, and NextResult.
   uint8_t recv_refs_ : 2;
   // True iff there is a value in the pipe.
-  bool has_value_ : 1;
+  ValueState value_state_ : 2;
   IntraActivityWaiter on_empty_;
   IntraActivityWaiter on_full_;
 };
@@ -249,14 +324,26 @@ class Push {
     if (center_ != nullptr) center_->UnrefSend();
   }
 
-  Poll<bool> operator()() { return center_->Push(&push_); }
+  Poll<bool> operator()() {
+    if (push_.has_value()) {
+      auto r = center_->Push(&*push_);
+      if (auto* ok = absl::get_if<bool>(&r)) {
+        push_.reset();
+        if (!*ok) return false;
+      } else {
+        return Pending{};
+      }
+    }
+    GPR_DEBUG_ASSERT(!push_.has_value());
+    return center_->PollAck();
+  }
 
  private:
   friend class PipeSender<T>;
   explicit Push(pipe_detail::Center<T>* center, T push)
       : center_(center), push_(std::move(push)) {}
   Center<T>* center_;
-  T push_;
+  absl::optional<T> push_;
 };
 
 // Implementation of PipeReceiver::Next promise.
@@ -279,7 +366,13 @@ class Next {
     if (center_ != nullptr) center_->UnrefRecv();
   }
 
-  Poll<absl::optional<T>> operator()() { return center_->Next(); }
+  Poll<NextResult<T>> operator()() {
+    auto r = center_->Next();
+    if (!absl::holds_alternative<Pending>(r)) {
+      std::exchange(center_, nullptr)->UnrefRecv();
+    }
+    return r;
+  }
 
  private:
   friend class PipeReceiver<T>;
@@ -297,6 +390,31 @@ pipe_detail::Push<T> PipeSender<T>::Push(T value) {
 template <typename T>
 pipe_detail::Next<T> PipeReceiver<T>::Next() {
   return pipe_detail::Next<T>(center_->RefRecv());
+}
+
+template <typename T>
+bool NextResult<T>::has_value() const {
+  return center_ != nullptr;
+}
+
+template <typename T>
+T& NextResult<T>::operator*() {
+  return center_->value();
+}
+
+template <typename T>
+const T& NextResult<T>::operator*() const {
+  return center_->value();
+}
+
+template <typename T>
+NextResult<T>::~NextResult() {
+  if (center_ != nullptr) center_->AckNext();
+}
+
+template <typename T>
+void NextResult<T>::reset() {
+  if (auto* p = std::exchange(center_, nullptr)) p->AckNext();
 }
 
 // A Pipe is an intra-Activity communications channel that transmits T's from
