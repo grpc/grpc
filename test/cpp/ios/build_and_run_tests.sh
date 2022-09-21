@@ -34,5 +34,5 @@ time xcodebuild \
     -scheme CronetTests \
     -destination name="iPhone 8" \
     test \
-    $XCODEBUILD_FLAGS
+    $XCODEBUILD_FLAGS \
     | "${XCODEBUILD_FILTER_OUTPUT_SCRIPT}"
