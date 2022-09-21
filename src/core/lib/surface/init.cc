@@ -61,13 +61,6 @@
 void grpc_resolver_dns_ares_init(void);
 void grpc_resolver_dns_ares_shutdown(void);
 
-#ifndef GRPC_NO_XDS
-namespace grpc_core {
-void XdsClientGlobalInit();
-void XdsClientGlobalShutdown();
-}  // namespace grpc_core
-#endif
-
 #define MAX_PLUGINS 128
 
 static gpr_once g_basic_init = GPR_ONCE_INIT;
@@ -151,9 +144,6 @@ void grpc_init(void) {
     }
     grpc_iomgr_init();
     grpc_resolver_dns_ares_init();
-#ifndef GRPC_NO_XDS
-    grpc_core::XdsClientGlobalInit();
-#endif
     grpc_iomgr_start();
   }
 
@@ -165,13 +155,8 @@ void grpc_shutdown_internal_locked(void)
   {
     grpc_core::ExecCtx exec_ctx(0);
     grpc_iomgr_shutdown_background_closure();
-    {
-      grpc_timer_manager_set_threading(false);  // shutdown timer_manager thread
-#ifndef GRPC_NO_XDS
-      grpc_core::XdsClientGlobalShutdown();
-#endif
-      grpc_resolver_dns_ares_shutdown();
-    }
+    grpc_timer_manager_set_threading(false);  // shutdown timer_manager thread
+    grpc_resolver_dns_ares_shutdown();
     grpc_event_engine::experimental::ResetDefaultEventEngine();
     grpc_iomgr_shutdown();
   }

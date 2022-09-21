@@ -64,29 +64,16 @@ namespace grpc_core {
 
 namespace {
 
-Mutex* g_mu = nullptr;
+Mutex* g_mu = [] {
+  XdsHttpFilterRegistry::Init();
+  XdsClusterSpecifierPluginRegistry::Init();
+  return new Mutex;
+}();
 const grpc_channel_args* g_channel_args ABSL_GUARDED_BY(*g_mu) = nullptr;
 GrpcXdsClient* g_xds_client ABSL_GUARDED_BY(*g_mu) = nullptr;
 char* g_fallback_bootstrap_config ABSL_GUARDED_BY(*g_mu) = nullptr;
 
 }  // namespace
-
-void XdsClientGlobalInit() {
-  g_mu = new Mutex;
-  XdsHttpFilterRegistry::Init();
-  XdsClusterSpecifierPluginRegistry::Init();
-}
-
-// TODO(roth): Find a better way to clear the fallback config that does
-// not require using ABSL_NO_THREAD_SAFETY_ANALYSIS.
-void XdsClientGlobalShutdown() ABSL_NO_THREAD_SAFETY_ANALYSIS {
-  gpr_free(g_fallback_bootstrap_config);
-  g_fallback_bootstrap_config = nullptr;
-  delete g_mu;
-  g_mu = nullptr;
-  XdsHttpFilterRegistry::Shutdown();
-  XdsClusterSpecifierPluginRegistry::Shutdown();
-}
 
 namespace {
 
