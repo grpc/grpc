@@ -16,7 +16,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/filters/fault_injection/service_config_parser.h"
+#include "src/core/ext/filters/fault_injection/fault_injection_service_config_parser.h"
 
 #include <algorithm>
 #include <vector>

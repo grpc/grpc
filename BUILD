@@ -4142,8 +4142,8 @@ grpc_cc_library(
         "grpc_public_hdrs",
         "grpc_service_config",
         "json",
-        "json_object_loader",
         "json_args",
+        "json_object_loader",
         "service_config_parser",
         "slice_buffer",
         "validation_errors",
@@ -4154,11 +4154,11 @@ grpc_cc_library(
     name = "grpc_fault_injection_filter",
     srcs = [
         "src/core/ext/filters/fault_injection/fault_injection_filter.cc",
-        "src/core/ext/filters/fault_injection/service_config_parser.cc",
+        "src/core/ext/filters/fault_injection/fault_injection_service_config_parser.cc",
     ],
     hdrs = [
         "src/core/ext/filters/fault_injection/fault_injection_filter.h",
-        "src/core/ext/filters/fault_injection/service_config_parser.h",
+        "src/core/ext/filters/fault_injection/fault_injection_service_config_parser.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -4181,6 +4181,8 @@ grpc_cc_library(
         "grpc_service_config",
         "grpc_trace",
         "json",
+        "json_args",
+        "json_object_loader",
         "json_util",
         "service_config_parser",
         "sleep",

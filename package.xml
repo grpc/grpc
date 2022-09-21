@@ -195,8 +195,8 @@
     <file baseinstalldir="/" name="src/core/ext/filters/deadline/deadline_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/fault_injection/fault_injection_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/fault_injection/fault_injection_filter.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/fault_injection/service_config_parser.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/fault_injection/service_config_parser.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/fault_injection/fault_injection_service_config_parser.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/fault_injection/fault_injection_service_config_parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/http/client/http_client_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/http/client/http_client_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/http/client_authority_filter.cc" role="src" />
