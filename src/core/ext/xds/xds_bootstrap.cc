@@ -18,20 +18,20 @@
 
 #include "src/core/ext/xds/xds_bootstrap.h"
 
-#include <grpc/support/alloc.h>
+#include "absl/types/optional.h"
 
-#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/env.h"
 
 namespace grpc_core {
 
 // TODO(donnadionne): check to see if federation is enabled, this will be
 // removed once federation is fully integrated and enabled by default.
 bool XdsFederationEnabled() {
-  char* value = gpr_getenv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
+  auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
+  if (!value.has_value()) return false;
   bool parsed_value;
-  bool parse_succeeded = gpr_parse_bool_value(value, &parsed_value);
-  gpr_free(value);
+  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
   return parse_succeeded && parsed_value;
 }
 

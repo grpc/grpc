@@ -32,6 +32,7 @@
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
@@ -46,7 +47,8 @@ class RetryGlobalConfig : public ServiceConfigParser::ParsedConfig {
   uintptr_t milli_token_ratio() const { return milli_token_ratio_; }
 
   static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
-  void JsonPostLoad(const Json& json, const JsonArgs& args, ErrorList* errors);
+  void JsonPostLoad(const Json& json, const JsonArgs& args,
+                    ValidationErrors* errors);
 
  private:
   uintptr_t max_milli_tokens_ = 0;
@@ -67,7 +69,8 @@ class RetryMethodConfig : public ServiceConfigParser::ParsedConfig {
   }
 
   static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
-  void JsonPostLoad(const Json& json, const JsonArgs& args, ErrorList* errors);
+  void JsonPostLoad(const Json& json, const JsonArgs& args,
+                    ValidationErrors* errors);
 
  private:
   int max_attempts_ = 0;

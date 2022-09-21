@@ -125,8 +125,8 @@ TEST_F(ClientChannelParserTest, InvalidGrpclbLoadBalancingConfig) {
   EXPECT_EQ(service_config.status().message(),
             "Service config parsing errors: [errors validating JSON: ["
             "field:loadBalancingConfig error:"
-            "errors parsing grpclb LB policy config: ["
-            "error parsing childPolicy field: type should be array]]]");
+            "errors validating grpclb LB policy config: ["
+            "field:childPolicy error:type should be array]]]");
 }
 
 TEST_F(ClientChannelParserTest, ValidLoadBalancingPolicy) {

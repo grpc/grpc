@@ -97,12 +97,12 @@ const JsonLoaderInterface* ClientChannelGlobalParsedConfig::JsonLoader(
 
 void ClientChannelGlobalParsedConfig::JsonPostLoad(const Json& json,
                                                    const JsonArgs&,
-                                                   ErrorList* errors) {
+                                                   ValidationErrors* errors) {
   const auto& lb_policy_registry =
       CoreConfiguration::Get().lb_policy_registry();
   // Parse LB config.
   {
-    ScopedField field(errors, ".loadBalancingConfig");
+    ValidationErrors::ScopedField field(errors, ".loadBalancingConfig");
     auto it = json.object_value().find("loadBalancingConfig");
     if (it != json.object_value().end()) {
       auto config = lb_policy_registry.ParseLoadBalancingConfig(it->second);
@@ -115,7 +115,7 @@ void ClientChannelGlobalParsedConfig::JsonPostLoad(const Json& json,
   }
   // Sanity-check deprecated "loadBalancingPolicy" field.
   if (!parsed_deprecated_lb_policy_.empty()) {
-    ScopedField field(errors, ".loadBalancingPolicy");
+    ValidationErrors::ScopedField field(errors, ".loadBalancingPolicy");
     // Convert to lower-case.
     absl::AsciiStrToLower(&parsed_deprecated_lb_policy_);
     bool requires_config = false;

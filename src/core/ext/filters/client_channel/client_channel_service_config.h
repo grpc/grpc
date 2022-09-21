@@ -32,6 +32,7 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
@@ -71,7 +72,8 @@ class ClientChannelGlobalParsedConfig
   }
 
   static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
-  void JsonPostLoad(const Json& json, const JsonArgs&, ErrorList* errors);
+  void JsonPostLoad(const Json& json, const JsonArgs&,
+                    ValidationErrors* errors);
 
  private:
   struct HealthCheckConfig {

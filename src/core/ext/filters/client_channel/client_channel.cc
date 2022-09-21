@@ -1171,6 +1171,9 @@ void ClientChannel::OnResolverResultChangedLocked(Resolver::Result result) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_trace)) {
     gpr_log(GPR_INFO, "chand=%p: got resolver result", this);
   }
+  // Grab resolver result health callback.
+  auto resolver_callback = std::move(result.result_health_callback);
+  absl::Status resolver_result_status;
   // We only want to trace the address resolution in the follow cases:
   // (a) Address resolution resulted in service config change.
   // (b) Address resolution that causes number of backends to go from
@@ -1222,6 +1225,8 @@ void ClientChannel::OnResolverResultChangedLocked(Resolver::Result result) {
       // TRANSIENT_FAILURE.
       OnResolverErrorLocked(result.service_config.status());
       trace_strings.push_back("no valid service config");
+      resolver_result_status =
+          absl::UnavailableError("no valid service config");
     }
   } else if (*result.service_config == nullptr) {
     // Resolver did not return any service config.
@@ -1266,7 +1271,7 @@ void ClientChannel::OnResolverResultChangedLocked(Resolver::Result result) {
       gpr_log(GPR_INFO, "chand=%p: service config not changed", this);
     }
     // Create or update LB policy, as needed.
-    CreateOrUpdateLbPolicyLocked(
+    resolver_result_status = CreateOrUpdateLbPolicyLocked(
         std::move(lb_policy_config),
         parsed_service_config->health_check_service_name(), std::move(result));
     if (service_config_changed || config_selector_changed) {
@@ -1279,6 +1284,10 @@ void ClientChannel::OnResolverResultChangedLocked(Resolver::Result result) {
       // config in the trace, at the risk of bloating the trace logs.
       trace_strings.push_back("Service config changed");
     }
+  }
+  // Invoke resolver callback if needed.
+  if (resolver_callback != nullptr) {
+    resolver_callback(std::move(resolver_result_status));
   }
   // Add channel trace event.
   if (!trace_strings.empty()) {
@@ -1326,7 +1335,7 @@ void ClientChannel::OnResolverErrorLocked(absl::Status status) {
   }
 }
 
-void ClientChannel::CreateOrUpdateLbPolicyLocked(
+absl::Status ClientChannel::CreateOrUpdateLbPolicyLocked(
     RefCountedPtr<LoadBalancingPolicy::Config> lb_policy_config,
     const absl::optional<std::string>& health_check_service_name,
     Resolver::Result result) {
@@ -1353,7 +1362,7 @@ void ClientChannel::CreateOrUpdateLbPolicyLocked(
     gpr_log(GPR_INFO, "chand=%p: Updating child policy %p", this,
             lb_policy_.get());
   }
-  lb_policy_->UpdateLocked(std::move(update_args));
+  return lb_policy_->UpdateLocked(std::move(update_args));
 }
 
 // Creates a new LB policy.

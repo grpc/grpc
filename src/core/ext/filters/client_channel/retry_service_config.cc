@@ -56,12 +56,12 @@ const JsonLoaderInterface* RetryGlobalConfig::JsonLoader(const JsonArgs&) {
 }
 
 void RetryGlobalConfig::JsonPostLoad(const Json& json, const JsonArgs& args,
-                                     ErrorList* errors) {
+                                     ValidationErrors* errors) {
   // Parse maxTokens.
   auto max_tokens = LoadJsonObjectField<uint32_t>(json.object_value(), args,
                                                   "maxTokens", errors);
   if (max_tokens.has_value()) {
-    ScopedField field(errors, ".maxTokens");
+    ValidationErrors::ScopedField field(errors, ".maxTokens");
     if (*max_tokens == 0) {
       errors->AddError("must be greater than 0");
     } else {
@@ -70,7 +70,7 @@ void RetryGlobalConfig::JsonPostLoad(const Json& json, const JsonArgs& args,
     }
   }
   // Parse tokenRatio.
-  ScopedField field(errors, ".tokenRatio");
+  ValidationErrors::ScopedField field(errors, ".tokenRatio");
   auto it = json.object_value().find("tokenRatio");
   if (it == json.object_value().end()) {
     errors->AddError("field not present");
@@ -135,10 +135,10 @@ const JsonLoaderInterface* RetryMethodConfig::JsonLoader(const JsonArgs&) {
 }
 
 void RetryMethodConfig::JsonPostLoad(const Json& json, const JsonArgs& args,
-                                     ErrorList* errors) {
+                                     ValidationErrors* errors) {
   // Validate maxAttempts.
   {
-    ScopedField field(errors, ".maxAttempts");
+    ValidationErrors::ScopedField field(errors, ".maxAttempts");
     if (!errors->FieldHasErrors()) {
       if (max_attempts_ <= 1) {
         errors->AddError("must be at least 2");
@@ -152,28 +152,28 @@ void RetryMethodConfig::JsonPostLoad(const Json& json, const JsonArgs& args,
   }
   // Validate initialBackoff.
   {
-    ScopedField field(errors, ".initialBackoff");
+    ValidationErrors::ScopedField field(errors, ".initialBackoff");
     if (!errors->FieldHasErrors() && initial_backoff_ == Duration::Zero()) {
       errors->AddError("must be greater than 0");
     }
   }
   // Validate maxBackoff.
   {
-    ScopedField field(errors, ".maxBackoff");
+    ValidationErrors::ScopedField field(errors, ".maxBackoff");
     if (!errors->FieldHasErrors() && max_backoff_ == Duration::Zero()) {
       errors->AddError("must be greater than 0");
     }
   }
   // Validate backoffMultiplier.
   {
-    ScopedField field(errors, ".backoffMultiplier");
+    ValidationErrors::ScopedField field(errors, ".backoffMultiplier");
     if (!errors->FieldHasErrors() && backoff_multiplier_ <= 0) {
       errors->AddError("must be greater than 0");
     }
   }
   // Parse retryableStatusCodes.
   {
-    ScopedField field(errors, ".retryableStatusCodes");
+    ValidationErrors::ScopedField field(errors, ".retryableStatusCodes");
     auto it = json.object_value().find("retryableStatusCodes");
     if (it != json.object_value().end()) {
       if (it->second.type() != Json::Type::ARRAY) {
@@ -182,7 +182,7 @@ void RetryMethodConfig::JsonPostLoad(const Json& json, const JsonArgs& args,
         auto& array = it->second.array_value();
         for (size_t i = 0; i < array.size(); ++i) {
           const Json& element = array[i];
-          ScopedField field(errors, absl::StrCat("[", i, "]"));
+          ValidationErrors::ScopedField field(errors, absl::StrCat("[", i, "]"));
           if (element.type() != Json::Type::STRING) {
             errors->AddError("is not a string");
             continue;
@@ -201,7 +201,7 @@ void RetryMethodConfig::JsonPostLoad(const Json& json, const JsonArgs& args,
   // Validate perAttemptRecvTimeout.
   if (args.IsEnabled(GRPC_ARG_EXPERIMENTAL_ENABLE_HEDGING)) {
     if (per_attempt_recv_timeout_.has_value()) {
-      ScopedField field(errors, ".perAttemptRecvTimeout");
+      ValidationErrors::ScopedField field(errors, ".perAttemptRecvTimeout");
       // TODO(roth): As part of implementing hedging, relax this check such
       // that we allow a value of 0 if a hedging policy is specified.
       if (!errors->FieldHasErrors() &&
@@ -211,7 +211,7 @@ void RetryMethodConfig::JsonPostLoad(const Json& json, const JsonArgs& args,
     } else if (retryable_status_codes_.Empty()) {
       // If perAttemptRecvTimeout not present, retryableStatusCodes must be
       // non-empty.
-      ScopedField field(errors, ".retryableStatusCodes");
+      ValidationErrors::ScopedField field(errors, ".retryableStatusCodes");
       if (!errors->FieldHasErrors()) {
         errors->AddError(
             "must be non-empty if perAttemptRecvTimeout not present");
@@ -220,7 +220,7 @@ void RetryMethodConfig::JsonPostLoad(const Json& json, const JsonArgs& args,
   } else if (retryable_status_codes_.Empty()) {
     // Hedging not enabled, so the error message for
     // retryableStatusCodes unset should be different.
-    ScopedField field(errors, ".retryableStatusCodes");
+    ValidationErrors::ScopedField field(errors, ".retryableStatusCodes");
     if (!errors->FieldHasErrors()) {
       errors->AddError("must be non-empty");
     }

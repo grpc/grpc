@@ -115,6 +115,8 @@ class TestDNSResolver : public grpc_core::DNSResolver {
       grpc_pollset_set* /* interested_parties */,
       absl::string_view /* name_server */) override {
     GetDefaultEventEngine()->Run([on_resolved] {
+      grpc_core::ApplicationCallbackExecCtx app_exec_ctx;
+      grpc_core::ExecCtx exec_ctx;
       on_resolved(absl::UnimplementedError(
           "The Testing DNS resolver does not support looking up SRV records"));
     });
@@ -128,6 +130,8 @@ class TestDNSResolver : public grpc_core::DNSResolver {
       absl::string_view /* name_server */) override {
     // Not supported
     GetDefaultEventEngine()->Run([on_resolved] {
+      grpc_core::ApplicationCallbackExecCtx app_exec_ctx;
+      grpc_core::ExecCtx exec_ctx;
       on_resolved(absl::UnimplementedError(
           "The Testing DNS resolver does not support looking up TXT records"));
     });

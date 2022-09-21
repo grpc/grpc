@@ -168,19 +168,11 @@ libs:
   - include/grpc/impl/codegen/atm_gcc_atomic.h
   - include/grpc/impl/codegen/atm_gcc_sync.h
   - include/grpc/impl/codegen/atm_windows.h
-  - include/grpc/impl/codegen/byte_buffer.h
-  - include/grpc/impl/codegen/byte_buffer_reader.h
-  - include/grpc/impl/codegen/compression_types.h
-  - include/grpc/impl/codegen/connectivity_state.h
   - include/grpc/impl/codegen/fork.h
   - include/grpc/impl/codegen/gpr_slice.h
   - include/grpc/impl/codegen/gpr_types.h
-  - include/grpc/impl/codegen/grpc_types.h
   - include/grpc/impl/codegen/log.h
   - include/grpc/impl/codegen/port_platform.h
-  - include/grpc/impl/codegen/propagation_bits.h
-  - include/grpc/impl/codegen/slice.h
-  - include/grpc/impl/codegen/status.h
   - include/grpc/impl/codegen/sync.h
   - include/grpc/impl/codegen/sync_abseil.h
   - include/grpc/impl/codegen/sync_custom.h
@@ -207,13 +199,13 @@ libs:
   - include/grpc/support/time.h
   headers:
   - src/core/lib/gpr/alloc.h
-  - src/core/lib/gpr/env.h
   - src/core/lib/gpr/string.h
   - src/core/lib/gpr/time_precise.h
   - src/core/lib/gpr/tls.h
   - src/core/lib/gpr/tmpfile.h
   - src/core/lib/gpr/useful.h
   - src/core/lib/gprpp/construct_destruct.h
+  - src/core/lib/gprpp/env.h
   - src/core/lib/gprpp/examine_stack.h
   - src/core/lib/gprpp/fork.h
   - src/core/lib/gprpp/global_config.h
@@ -236,9 +228,6 @@ libs:
   - src/core/lib/gpr/cpu_linux.cc
   - src/core/lib/gpr/cpu_posix.cc
   - src/core/lib/gpr/cpu_windows.cc
-  - src/core/lib/gpr/env_linux.cc
-  - src/core/lib/gpr/env_posix.cc
-  - src/core/lib/gpr/env_windows.cc
   - src/core/lib/gpr/log.cc
   - src/core/lib/gpr/log_android.cc
   - src/core/lib/gpr/log_linux.cc
@@ -260,6 +249,9 @@ libs:
   - src/core/lib/gpr/tmpfile_posix.cc
   - src/core/lib/gpr/tmpfile_windows.cc
   - src/core/lib/gpr/wrap_memcpy.cc
+  - src/core/lib/gprpp/env_linux.cc
+  - src/core/lib/gprpp/env_posix.cc
+  - src/core/lib/gprpp/env_windows.cc
   - src/core/lib/gprpp/examine_stack.cc
   - src/core/lib/gprpp/fork.cc
   - src/core/lib/gprpp/global_config_env.cc
@@ -305,50 +297,18 @@ libs:
   - include/grpc/grpc_posix.h
   - include/grpc/grpc_security.h
   - include/grpc/grpc_security_constants.h
-  - include/grpc/impl/codegen/atm.h
-  - include/grpc/impl/codegen/atm_gcc_atomic.h
-  - include/grpc/impl/codegen/atm_gcc_sync.h
-  - include/grpc/impl/codegen/atm_windows.h
   - include/grpc/impl/codegen/byte_buffer.h
   - include/grpc/impl/codegen/byte_buffer_reader.h
   - include/grpc/impl/codegen/compression_types.h
   - include/grpc/impl/codegen/connectivity_state.h
-  - include/grpc/impl/codegen/fork.h
-  - include/grpc/impl/codegen/gpr_slice.h
-  - include/grpc/impl/codegen/gpr_types.h
   - include/grpc/impl/codegen/grpc_types.h
-  - include/grpc/impl/codegen/log.h
-  - include/grpc/impl/codegen/port_platform.h
   - include/grpc/impl/codegen/propagation_bits.h
   - include/grpc/impl/codegen/slice.h
   - include/grpc/impl/codegen/status.h
-  - include/grpc/impl/codegen/sync.h
-  - include/grpc/impl/codegen/sync_abseil.h
-  - include/grpc/impl/codegen/sync_custom.h
-  - include/grpc/impl/codegen/sync_generic.h
-  - include/grpc/impl/codegen/sync_posix.h
-  - include/grpc/impl/codegen/sync_windows.h
   - include/grpc/load_reporting.h
   - include/grpc/slice.h
   - include/grpc/slice_buffer.h
   - include/grpc/status.h
-  - include/grpc/support/alloc.h
-  - include/grpc/support/atm_gcc_atomic.h
-  - include/grpc/support/atm_gcc_sync.h
-  - include/grpc/support/atm_windows.h
-  - include/grpc/support/cpu.h
-  - include/grpc/support/log.h
-  - include/grpc/support/log_windows.h
-  - include/grpc/support/port_platform.h
-  - include/grpc/support/string_util.h
-  - include/grpc/support/sync.h
-  - include/grpc/support/sync_abseil.h
-  - include/grpc/support/sync_custom.h
-  - include/grpc/support/sync_generic.h
-  - include/grpc/support/sync_posix.h
-  - include/grpc/support/sync_windows.h
-  - include/grpc/support/thd_id.h
-  - include/grpc/support/time.h
   - include/grpc/support/workaround_list.h
   headers:
   - src/core/ext/filters/channel_idle/channel_idle_filter.h
@@ -413,6 +373,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/bin_encoder.h
   - src/core/ext/transport/chttp2/transport/chttp2_transport.h
   - src/core/ext/transport/chttp2/transport/context_list.h
+  - src/core/ext/transport/chttp2/transport/decode_huff.h
   - src/core/ext/transport/chttp2/transport/flow_control.h
   - src/core/ext/transport/chttp2/transport/frame.h
   - src/core/ext/transport/chttp2/transport/frame_data.h
@@ -801,6 +762,7 @@ libs:
   - src/core/lib/gprpp/dual_ref_counted.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/match.h
+  - src/core/lib/gprpp/notification.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/overload.h
   - src/core/lib/gprpp/packed_table.h
@@ -813,6 +775,7 @@ libs:
   - src/core/lib/gprpp/time.h
   - src/core/lib/gprpp/time_averaged_stats.h
   - src/core/lib/gprpp/unique_type_name.h
+  - src/core/lib/gprpp/validation_errors.h
   - src/core/lib/gprpp/work_serializer.h
   - src/core/lib/handshaker/proxy_mapper.h
   - src/core/lib/handshaker/proxy_mapper_registry.h
@@ -1130,6 +1093,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/bin_encoder.cc
   - src/core/ext/transport/chttp2/transport/chttp2_transport.cc
   - src/core/ext/transport/chttp2/transport/context_list.cc
+  - src/core/ext/transport/chttp2/transport/decode_huff.cc
   - src/core/ext/transport/chttp2/transport/flow_control.cc
   - src/core/ext/transport/chttp2/transport/frame_data.cc
   - src/core/ext/transport/chttp2/transport/frame_goaway.cc
@@ -1505,6 +1469,7 @@ libs:
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/gprpp/time_averaged_stats.cc
+  - src/core/lib/gprpp/validation_errors.cc
   - src/core/lib/gprpp/work_serializer.cc
   - src/core/lib/handshaker/proxy_mapper_registry.cc
   - src/core/lib/http/format_request.cc
@@ -1836,50 +1801,18 @@ libs:
   - include/grpc/grpc_posix.h
   - include/grpc/grpc_security.h
   - include/grpc/grpc_security_constants.h
-  - include/grpc/impl/codegen/atm.h
-  - include/grpc/impl/codegen/atm_gcc_atomic.h
-  - include/grpc/impl/codegen/atm_gcc_sync.h
-  - include/grpc/impl/codegen/atm_windows.h
   - include/grpc/impl/codegen/byte_buffer.h
   - include/grpc/impl/codegen/byte_buffer_reader.h
   - include/grpc/impl/codegen/compression_types.h
   - include/grpc/impl/codegen/connectivity_state.h
-  - include/grpc/impl/codegen/fork.h
-  - include/grpc/impl/codegen/gpr_slice.h
-  - include/grpc/impl/codegen/gpr_types.h
   - include/grpc/impl/codegen/grpc_types.h
-  - include/grpc/impl/codegen/log.h
-  - include/grpc/impl/codegen/port_platform.h
   - include/grpc/impl/codegen/propagation_bits.h
   - include/grpc/impl/codegen/slice.h
   - include/grpc/impl/codegen/status.h
-  - include/grpc/impl/codegen/sync.h
-  - include/grpc/impl/codegen/sync_abseil.h
-  - include/grpc/impl/codegen/sync_custom.h
-  - include/grpc/impl/codegen/sync_generic.h
-  - include/grpc/impl/codegen/sync_posix.h
-  - include/grpc/impl/codegen/sync_windows.h
   - include/grpc/load_reporting.h
   - include/grpc/slice.h
   - include/grpc/slice_buffer.h
   - include/grpc/status.h
-  - include/grpc/support/alloc.h
-  - include/grpc/support/atm_gcc_atomic.h
-  - include/grpc/support/atm_gcc_sync.h
-  - include/grpc/support/atm_windows.h
-  - include/grpc/support/cpu.h
-  - include/grpc/support/log.h
-  - include/grpc/support/log_windows.h
-  - include/grpc/support/port_platform.h
-  - include/grpc/support/string_util.h
-  - include/grpc/support/sync.h
-  - include/grpc/support/sync_abseil.h
-  - include/grpc/support/sync_custom.h
-  - include/grpc/support/sync_generic.h
-  - include/grpc/support/sync_posix.h
-  - include/grpc/support/sync_windows.h
-  - include/grpc/support/thd_id.h
-  - include/grpc/support/time.h
   - include/grpc/support/workaround_list.h
   headers:
   - src/core/ext/filters/channel_idle/channel_idle_filter.h
@@ -1936,6 +1869,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/bin_encoder.h
   - src/core/ext/transport/chttp2/transport/chttp2_transport.h
   - src/core/ext/transport/chttp2/transport/context_list.h
+  - src/core/ext/transport/chttp2/transport/decode_huff.h
   - src/core/ext/transport/chttp2/transport/flow_control.h
   - src/core/ext/transport/chttp2/transport/frame.h
   - src/core/ext/transport/chttp2/transport/frame_data.h
@@ -2029,6 +1963,7 @@ libs:
   - src/core/lib/gprpp/dual_ref_counted.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/match.h
+  - src/core/lib/gprpp/notification.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/overload.h
   - src/core/lib/gprpp/packed_table.h
@@ -2041,6 +1976,7 @@ libs:
   - src/core/lib/gprpp/time.h
   - src/core/lib/gprpp/time_averaged_stats.h
   - src/core/lib/gprpp/unique_type_name.h
+  - src/core/lib/gprpp/validation_errors.h
   - src/core/lib/gprpp/work_serializer.h
   - src/core/lib/handshaker/proxy_mapper.h
   - src/core/lib/handshaker/proxy_mapper_registry.h
@@ -2291,6 +2227,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/bin_encoder.cc
   - src/core/ext/transport/chttp2/transport/chttp2_transport.cc
   - src/core/ext/transport/chttp2/transport/context_list.cc
+  - src/core/ext/transport/chttp2/transport/decode_huff.cc
   - src/core/ext/transport/chttp2/transport/flow_control.cc
   - src/core/ext/transport/chttp2/transport/frame_data.cc
   - src/core/ext/transport/chttp2/transport/frame_goaway.cc
@@ -2374,6 +2311,7 @@ libs:
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/gprpp/time_averaged_stats.cc
+  - src/core/lib/gprpp/validation_errors.cc
   - src/core/lib/gprpp/work_serializer.cc
   - src/core/lib/handshaker/proxy_mapper_registry.cc
   - src/core/lib/http/format_request.cc
@@ -2701,6 +2639,8 @@ libs:
   - include/grpcpp/grpcpp.h
   - include/grpcpp/health_check_service_interface.h
   - include/grpcpp/impl/call.h
+  - include/grpcpp/impl/call_hook.h
+  - include/grpcpp/impl/call_op_set_interface.h
   - include/grpcpp/impl/channel_argument_option.h
   - include/grpcpp/impl/client_unary_call.h
   - include/grpcpp/impl/codegen/async_generic_service.h
@@ -3115,6 +3055,8 @@ libs:
   - include/grpcpp/grpcpp.h
   - include/grpcpp/health_check_service_interface.h
   - include/grpcpp/impl/call.h
+  - include/grpcpp/impl/call_hook.h
+  - include/grpcpp/impl/call_op_set_interface.h
   - include/grpcpp/impl/channel_argument_option.h
   - include/grpcpp/impl/client_unary_call.h
   - include/grpcpp/impl/codegen/async_generic_service.h
@@ -7939,6 +7881,17 @@ targets:
   - test/cpp/end2end/nonblocking_test.cc
   deps:
   - grpc++_test_util
+- name: notification_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/gprpp/notification.h
+  src:
+  - test/core/gprpp/notification_test.cc
+  deps:
+  - gpr
+  uses_polling: false
 - name: num_external_connectivity_watchers_test
   gtest: true
   build: test
@@ -9588,6 +9541,15 @@ targets:
   - linux
   - posix
   - mac
+- name: stream_leak_with_queued_flow_control_update_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/transport/chttp2/stream_leak_with_queued_flow_control_update_test.cc
+  deps:
+  - grpc_test_util
 - name: stream_map_test
   gtest: true
   build: test
@@ -10082,6 +10044,22 @@ targets:
   deps:
   - grpc++_test_config
   - grpc++_test_util
+- name: thread_pool_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/event_engine/forkable.h
+  - src/core/lib/event_engine/thread_pool.h
+  - src/core/lib/gprpp/notification.h
+  src:
+  - src/core/lib/event_engine/forkable.cc
+  - src/core/lib/event_engine/thread_pool.cc
+  - test/core/event_engine/thread_pool_test.cc
+  deps:
+  - absl/container:flat_hash_set
+  - absl/functional:any_invocable
+  - gpr
 - name: thread_quota_test
   gtest: true
   build: test
@@ -10527,6 +10505,15 @@ targets:
   - absl/strings:strings
   - absl/types:variant
   uses_polling: false
+- name: validation_errors_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gprpp/validation_errors_test.cc
+  deps:
+  - grpc_test_util
 - name: varint_test
   gtest: true
   build: test
@@ -10880,6 +10867,21 @@ targets:
   - test/core/xds/xds_certificate_provider_test.cc
   deps:
   - grpc_test_util
+- name: xds_client_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/xds/xds_transport_fake.h
+  src:
+  - src/proto/grpc/testing/xds/v3/base.proto
+  - src/proto/grpc/testing/xds/v3/discovery.proto
+  - src/proto/grpc/testing/xds/v3/percent.proto
+  - test/core/xds/xds_client_test.cc
+  - test/core/xds/xds_transport_fake.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: xds_cluster_end2end_test
   gtest: true
   build: test
