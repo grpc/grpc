@@ -928,7 +928,7 @@ class ExecCtxNext : public grpc_core::ExecCtx {
         return true;
       }
     }
-    return !a->first_loop && a->deadline < grpc_core::ExecCtx::Get()->Now();
+    return !a->first_loop && a->deadline < grpc_core::Timestamp::Now();
   }
 
  private:
@@ -1032,7 +1032,7 @@ static grpc_event cq_next(grpc_completion_queue* cq, gpr_timespec deadline,
     }
 
     if (!is_finished_arg.first_loop &&
-        grpc_core::ExecCtx::Get()->Now() >= deadline_millis) {
+        grpc_core::Timestamp::Now() >= deadline_millis) {
       ret.type = GRPC_QUEUE_TIMEOUT;
       ret.success = 0;
       dump_pending_tags(cq);
@@ -1187,7 +1187,7 @@ class ExecCtxPluck : public grpc_core::ExecCtx {
       }
       gpr_mu_unlock(cq->mu);
     }
-    return !a->first_loop && a->deadline < grpc_core::ExecCtx::Get()->Now();
+    return !a->first_loop && a->deadline < grpc_core::Timestamp::Now();
   }
 
  private:
@@ -1278,7 +1278,7 @@ static grpc_event cq_pluck(grpc_completion_queue* cq, void* tag,
       break;
     }
     if (!is_finished_arg.first_loop &&
-        grpc_core::ExecCtx::Get()->Now() >= deadline_millis) {
+        grpc_core::Timestamp::Now() >= deadline_millis) {
       del_plucker(cq, tag, &worker);
       gpr_mu_unlock(cq->mu);
       ret.type = GRPC_QUEUE_TIMEOUT;

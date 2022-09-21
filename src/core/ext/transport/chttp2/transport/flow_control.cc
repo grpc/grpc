@@ -38,7 +38,6 @@
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 
 grpc_core::TraceFlag grpc_flowctl_trace(false, "flowctl");
@@ -114,7 +113,7 @@ TransportFlowControl::TransportFlowControl(const char* name,
                           .set_min_control_value(-1)
                           .set_max_control_value(25)
                           .set_integral_range(10)),
-      last_pid_update_(ExecCtx::Get()->Now()) {}
+      last_pid_update_(Timestamp::Now()) {}
 
 uint32_t TransportFlowControl::MaybeSendUpdate(bool writing_anyway) {
   const uint32_t target_announced_window =
@@ -207,7 +206,7 @@ double TransportFlowControl::TargetLogBdp() {
 }
 
 double TransportFlowControl::SmoothLogBdp(double value) {
-  Timestamp now = ExecCtx::Get()->Now();
+  Timestamp now = Timestamp::Now();
   double bdp_error = value - pid_controller_.last_control_value();
   const double dt = (now - last_pid_update_).seconds();
   last_pid_update_ = now;

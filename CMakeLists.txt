@@ -8192,8 +8192,9 @@ target_include_directories(common_closures_test
 target_link_libraries(common_closures_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc
-  grpc_test_util_unsecure
+  absl::any_invocable
+  absl::statusor
+  gpr
 )
 
 
