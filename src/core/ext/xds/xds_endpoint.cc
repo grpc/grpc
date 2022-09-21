@@ -47,6 +47,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/validation_errors.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 
 namespace grpc_core {
 
