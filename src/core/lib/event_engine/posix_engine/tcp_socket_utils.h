@@ -304,7 +304,7 @@ class PosixSocketWrapper {
       int protocol, DSMode& dsmode);
 
   struct PosixSocketCreateResult;
-  // Return a PosixSocketWrapper which manages a configured, unbound,
+  // Return a PosixSocketCreateResult which manages a configured, unbound,
   // unconnected TCP client fd.
   //  options: may contain custom tcp settings for the fd.
   //  target_addr: the destination address.
