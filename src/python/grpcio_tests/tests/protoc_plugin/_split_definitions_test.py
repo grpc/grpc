@@ -26,6 +26,7 @@ import unittest
 
 import grpc
 from grpc_tools import protoc
+import pkg_resources
 import six
 
 from tests.unit import test_common
@@ -36,6 +37,8 @@ _COMMON_NAMESPACE = b'package grpc_protoc_plugin.invocation_testing;'
 
 _RELATIVE_PROTO_PATH = 'relative_proto_path'
 _RELATIVE_PYTHON_OUT = 'relative_python_out'
+
+_TEST_DIR = os.path.dirname(os.path.realpath(__file__))
 
 
 @contextlib.contextmanager
@@ -321,10 +324,30 @@ def _create_test_case_classes():
             yield _create_test_case_class(split_proto, protoc_style)
 
 
+class WellKnownTypesTest(unittest.TestCase):
+
+    def testWellKnownTypes(self):
+        os.chdir(_TEST_DIR)
+        out_dir = tempfile.mkdtemp(suffix="wkt_test", dir='.')
+        well_known_protos_include = pkg_resources.resource_filename(
+            'grpc_tools', '_proto')
+        args = [
+            'grpc_tools.protoc',
+            '--proto_path=protos',
+            '--proto_path={}'.format(well_known_protos_include),
+            '--python_out={}'.format(out_dir),
+            '--grpc_python_out={}'.format(out_dir),
+            'protos/invocation_testing/compiler.proto',
+        ]
+        rc = protoc.main(args)
+        self.assertEqual(0, rc)
+
+
 def load_tests(loader, tests, pattern):
-    tests = tuple(
+    tests = (tuple(
         loader.loadTestsFromTestCase(test_case_class)
-        for test_case_class in _create_test_case_classes())
+        for test_case_class in _create_test_case_classes()) +
+             tuple(loader.loadTestsFromTestCase(WellKnownTypesTest)))
     return unittest.TestSuite(tests=tests)
 
 

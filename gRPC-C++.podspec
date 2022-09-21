@@ -64,6 +64,7 @@ Pod::Spec.new do |s|
     # build.
     'USE_HEADERMAP' => 'NO',
     'ALWAYS_SEARCH_USER_PATHS' => 'NO',
+    'CLANG_CXX_LANGUAGE_STANDARD' => 'c++14',
   }
 
   s.libraries = 'c++'
@@ -94,6 +95,7 @@ Pod::Spec.new do |s|
                       'include/grpcpp/health_check_service_interface.h',
                       'include/grpcpp/impl/call.h',
                       'include/grpcpp/impl/call_hook.h',
+                      'include/grpcpp/impl/call_op_set_interface.h',
                       'include/grpcpp/impl/channel_argument_option.h',
                       'include/grpcpp/impl/client_unary_call.h',
                       'include/grpcpp/impl/codegen/async_generic_service.h',
@@ -746,6 +748,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/gprpp/time_averaged_stats.h',
                       'src/core/lib/gprpp/time_util.h',
                       'src/core/lib/gprpp/unique_type_name.h',
+                      'src/core/lib/gprpp/validation_errors.h',
                       'src/core/lib/gprpp/work_serializer.h',
                       'src/core/lib/handshaker/proxy_mapper.h',
                       'src/core/lib/handshaker/proxy_mapper_registry.h',
@@ -1609,6 +1612,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/gprpp/time_averaged_stats.h',
                               'src/core/lib/gprpp/time_util.h',
                               'src/core/lib/gprpp/unique_type_name.h',
+                              'src/core/lib/gprpp/validation_errors.h',
                               'src/core/lib/gprpp/work_serializer.h',
                               'src/core/lib/handshaker/proxy_mapper.h',
                               'src/core/lib/handshaker/proxy_mapper_registry.h',
