@@ -114,6 +114,10 @@ OpenCensusCallTracer::OpenCensusCallAttemptTracer::OpenCensusCallAttemptTracer(
       start_time_(absl::Now()) {
   context_.AddSpanAttribute("previous-rpc-attempts", attempt_num);
   context_.AddSpanAttribute("transparent-retry", is_transparent_retry);
+  std::vector<std::pair<opencensus::tags::TagKey, std::string>> tags =
+      context_.tags().tags();
+  tags.emplace_back(ClientMethodTagKey(), std::string(parent_->method_));
+  ::opencensus::stats::Record({{RpcClientStartedRpcs(), 1}}, tags);
 }
 
 void OpenCensusCallTracer::OpenCensusCallAttemptTracer::

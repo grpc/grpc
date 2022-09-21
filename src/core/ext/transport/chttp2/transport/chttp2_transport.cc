@@ -2315,7 +2315,7 @@ void grpc_chttp2_act_on_flowctl_action(
     grpc_chttp2_transport* t, grpc_chttp2_stream* s) {
   WithUrgency(t, action.send_stream_update(),
               GRPC_CHTTP2_INITIATE_WRITE_STREAM_FLOW_CONTROL, [t, s]() {
-                if (s->id != 0) {
+                if (s->id != 0 && !s->read_closed) {
                   grpc_chttp2_mark_stream_writable(t, s);
                 }
               });
