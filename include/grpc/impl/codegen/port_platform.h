@@ -234,9 +234,6 @@
 #define GPR_CPU_POSIX 1
 #define GPR_POSIX_CRASH_HANDLER 1
 #endif
-#if !(defined(__has_feature) && __has_feature(cxx_thread_local))
-#define GPR_PTHREAD_TLS 1
-#endif
 #define GPR_APPLE 1
 #define GPR_GCC_ATOMIC 1
 #define GPR_POSIX_LOG 1

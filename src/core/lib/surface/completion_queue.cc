@@ -42,7 +42,6 @@
 
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/spinlock.h"
-#include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gprpp/atomic_utils.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -66,8 +65,8 @@ namespace {
 // with a cq cache will go into that cache, and
 // will only be returned on the thread that initialized the cache.
 // NOTE: Only one event will ever be cached.
-GPR_THREAD_LOCAL(grpc_cq_completion*) g_cached_event;
-GPR_THREAD_LOCAL(grpc_completion_queue*) g_cached_cq;
+thread_local grpc_cq_completion* g_cached_event;
+thread_local grpc_completion_queue* g_cached_cq;
 
 struct plucker {
   grpc_pollset_worker** worker;
