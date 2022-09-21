@@ -444,6 +444,35 @@ TEST_F(RetryParserTest, InvalidRetryPolicyRetryableStatusCodesWrongType) {
       << service_config.status();
 }
 
+TEST_F(RetryParserTest,
+       InvalidRetryPolicyRetryableStatusCodesElementsWrongType) {
+  const char* test_json =
+      "{\n"
+      "  \"methodConfig\": [ {\n"
+      "    \"name\": [\n"
+      "      { \"service\": \"TestServ\", \"method\": \"TestMethod\" }\n"
+      "    ],\n"
+      "    \"retryPolicy\": {\n"
+      "      \"maxAttempts\": 2,\n"
+      "      \"initialBackoff\": \"1s\",\n"
+      "      \"maxBackoff\": \"120s\",\n"
+      "      \"backoffMultiplier\": \"1.6\",\n"
+      "      \"retryableStatusCodes\": [true, 2]\n"
+      "    }\n"
+      "  } ]\n"
+      "}";
+  auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
+  EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(
+      service_config.status().message(),
+      "Service config parsing errors: [errors parsing methodConfig: ["
+      "index 0: [errors validating JSON: ["
+      "field:retryPolicy.retryableStatusCodes error:must be non-empty; "
+      "field:retryPolicy.retryableStatusCodes[0] error:is not a string; "
+      "field:retryPolicy.retryableStatusCodes[1] error:is not a string]]]]")
+      << service_config.status();
+}
+
 TEST_F(RetryParserTest, InvalidRetryPolicyUnparseableRetryableStatusCodes) {
   const char* test_json =
       "{\n"
@@ -456,7 +485,7 @@ TEST_F(RetryParserTest, InvalidRetryPolicyUnparseableRetryableStatusCodes) {
       "      \"initialBackoff\": \"1s\",\n"
       "      \"maxBackoff\": \"120s\",\n"
       "      \"backoffMultiplier\": \"1.6\",\n"
-      "      \"retryableStatusCodes\": [\"FOO\", 2]\n"
+      "      \"retryableStatusCodes\": [\"FOO\", \"BAR\"]\n"
       "    }\n"
       "  } ]\n"
       "}";
@@ -469,7 +498,8 @@ TEST_F(RetryParserTest, InvalidRetryPolicyUnparseableRetryableStatusCodes) {
       "field:retryPolicy.retryableStatusCodes error:must be non-empty; "
       "field:retryPolicy.retryableStatusCodes[0] error:"
       "failed to parse status code; "
-      "field:retryPolicy.retryableStatusCodes[1] error:is not a string]]]]")
+      "field:retryPolicy.retryableStatusCodes[1] error:"
+      "failed to parse status code]]]]")
       << service_config.status();
 }
 

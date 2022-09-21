@@ -172,30 +172,19 @@ void RetryMethodConfig::JsonPostLoad(const Json& json, const JsonArgs& args,
     }
   }
   // Parse retryableStatusCodes.
-  {
-    ValidationErrors::ScopedField field(errors, ".retryableStatusCodes");
-    auto it = json.object_value().find("retryableStatusCodes");
-    if (it != json.object_value().end()) {
-      if (it->second.type() != Json::Type::ARRAY) {
-        errors->AddError("is not an array");
+  auto status_code_list = LoadJsonObjectField<std::vector<std::string>>(
+      json.object_value(), args, "retryableStatusCodes", errors,
+      /*required=*/false);
+  if (status_code_list.has_value()) {
+    for (size_t i = 0; i < status_code_list->size(); ++i) {
+      ValidationErrors::ScopedField field(
+          errors, absl::StrCat(".retryableStatusCodes[", i, "]"));
+      grpc_status_code status;
+      if (!grpc_status_code_from_string((*status_code_list)[i].c_str(),
+                                        &status)) {
+        errors->AddError("failed to parse status code");
       } else {
-        auto& array = it->second.array_value();
-        for (size_t i = 0; i < array.size(); ++i) {
-          const Json& element = array[i];
-          ValidationErrors::ScopedField field(errors,
-                                              absl::StrCat("[", i, "]"));
-          if (element.type() != Json::Type::STRING) {
-            errors->AddError("is not a string");
-            continue;
-          }
-          grpc_status_code status;
-          if (!grpc_status_code_from_string(element.string_value().c_str(),
-                                            &status)) {
-            errors->AddError("failed to parse status code");
-            continue;
-          }
-          retryable_status_codes_.Add(status);
-        }
+        retryable_status_codes_.Add(status);
       }
     }
   }
@@ -245,7 +234,7 @@ void RetryServiceConfigParser::Register(CoreConfiguration::Builder* builder) {
 namespace {
 
 struct GlobalConfig {
-  absl::optional<RetryGlobalConfig> retry_throttling;
+  std::unique_ptr<RetryGlobalConfig> retry_throttling;
 
   static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
     static const auto* loader =
@@ -263,17 +252,13 @@ RetryServiceConfigParser::ParseGlobalParams(const ChannelArgs& /*args*/,
                                             const Json& json) {
   auto global_params = LoadFromJson<GlobalConfig>(json);
   if (!global_params.ok()) return global_params.status();
-  // If the retryThrottling field was not present, no need to return any
-  // parsed config.
-  if (!global_params->retry_throttling.has_value()) return nullptr;
-  return absl::make_unique<RetryGlobalConfig>(
-      std::move(*global_params->retry_throttling));
+  return std::move(global_params->retry_throttling);
 }
 
 namespace {
 
 struct MethodConfig {
-  absl::optional<RetryMethodConfig> retry_policy;
+  std::unique_ptr<RetryMethodConfig> retry_policy;
 
   static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
     static const auto* loader =
@@ -291,11 +276,7 @@ RetryServiceConfigParser::ParsePerMethodParams(const ChannelArgs& args,
                                                const Json& json) {
   auto method_params = LoadFromJson<MethodConfig>(json, JsonChannelArgs(args));
   if (!method_params.ok()) return method_params.status();
-  // If the retryPolicy field was not present, no need to return any
-  // parsed config.
-  if (!method_params->retry_policy.has_value()) return nullptr;
-  return absl::make_unique<RetryMethodConfig>(
-      std::move(*method_params->retry_policy));
+  return std::move(method_params->retry_policy);
 }
 
 }  // namespace internal
