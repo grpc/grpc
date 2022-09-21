@@ -1020,7 +1020,7 @@ LoadBalancingPolicy::PickResult RlsLb::Picker::Pick(PickArgs args) {
     gpr_log(GPR_INFO, "[rlslb %p] picker=%p: request keys: %s",
             lb_policy_.get(), this, key.ToString().c_str());
   }
-  Timestamp now = ExecCtx::Get()->Now();
+  Timestamp now = Timestamp::Now();
   MutexLock lock(&lb_policy_->mu_);
   if (lb_policy_->is_shutdown_) {
     return PickResult::Fail(
@@ -1170,7 +1170,7 @@ RlsLb::Cache::Entry::Entry(RefCountedPtr<RlsLb> lb_policy,
           GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace) ? "CacheEntry" : nullptr),
       lb_policy_(std::move(lb_policy)),
       backoff_state_(MakeCacheEntryBackoff()),
-      min_expiration_time_(ExecCtx::Get()->Now() + kMinExpirationTime),
+      min_expiration_time_(Timestamp::Now() + kMinExpirationTime),
       lru_iterator_(lb_policy_->cache_.lru_list_.insert(
           lb_policy_->cache_.lru_list_.end(), key)) {}
 
@@ -1248,12 +1248,12 @@ void RlsLb::Cache::Entry::ResetBackoff() {
 }
 
 bool RlsLb::Cache::Entry::ShouldRemove() const {
-  Timestamp now = ExecCtx::Get()->Now();
+  Timestamp now = Timestamp::Now();
   return data_expiration_time_ < now && backoff_expiration_time_ < now;
 }
 
 bool RlsLb::Cache::Entry::CanEvict() const {
-  Timestamp now = ExecCtx::Get()->Now();
+  Timestamp now = Timestamp::Now();
   return min_expiration_time_ < now;
 }
 
@@ -1279,7 +1279,7 @@ RlsLb::Cache::Entry::OnRlsResponseLocked(
       backoff_state_ = MakeCacheEntryBackoff();
     }
     backoff_time_ = backoff_state_->NextAttemptTime();
-    Timestamp now = ExecCtx::Get()->Now();
+    Timestamp now = Timestamp::Now();
     backoff_expiration_time_ = now + (backoff_time_ - now) * 2;
     backoff_timer_ = MakeOrphanable<BackoffTimer>(
         Ref(DEBUG_LOCATION, "BackoffTimer"), backoff_time_);
@@ -1288,7 +1288,7 @@ RlsLb::Cache::Entry::OnRlsResponseLocked(
   }
   // Request succeeded, so store the result.
   header_data_ = std::move(response.header_data);
-  Timestamp now = ExecCtx::Get()->Now();
+  Timestamp now = Timestamp::Now();
   data_expiration_time_ = now + lb_policy_->config_->max_age();
   stale_time_ = now + lb_policy_->config_->stale_age();
   status_ = absl::OkStatus();
@@ -1354,7 +1354,7 @@ RlsLb::Cache::Entry::OnRlsResponseLocked(
 //
 
 RlsLb::Cache::Cache(RlsLb* lb_policy) : lb_policy_(lb_policy) {
-  Timestamp now = ExecCtx::Get()->Now();
+  Timestamp now = Timestamp::Now();
   lb_policy_->Ref(DEBUG_LOCATION, "CacheCleanupTimer").release();
   GRPC_CLOSURE_INIT(&timer_callback_, OnCleanupTimer, this, nullptr);
   grpc_timer_init(&cleanup_timer_, now + kCacheCleanupTimerInterval,
@@ -1437,7 +1437,7 @@ void RlsLb::Cache::OnCleanupTimer(void* arg, grpc_error_handle error) {
             ++it;
           }
         }
-        Timestamp now = ExecCtx::Get()->Now();
+        Timestamp now = Timestamp::Now();
         lb_policy.release();
         grpc_timer_init(&cache->cleanup_timer_,
                         now + kCacheCleanupTimerInterval,
@@ -1506,7 +1506,7 @@ void RlsLb::RlsChannel::StateWatcher::OnConnectivityStateChange(
 //
 
 bool RlsLb::RlsChannel::Throttle::ShouldThrottle() {
-  Timestamp now = ExecCtx::Get()->Now();
+  Timestamp now = Timestamp::Now();
   while (!requests_.empty() && now - requests_.front() > window_size_) {
     requests_.pop_front();
   }
@@ -1534,7 +1534,7 @@ bool RlsLb::RlsChannel::Throttle::ShouldThrottle() {
 }
 
 void RlsLb::RlsChannel::Throttle::RegisterResponse(bool success) {
-  Timestamp now = ExecCtx::Get()->Now();
+  Timestamp now = Timestamp::Now();
   requests_.push_back(now);
   if (!success) failures_.push_back(now);
 }
@@ -1714,7 +1714,7 @@ void RlsLb::RlsRequest::StartCallLocked() {
     MutexLock lock(&lb_policy_->mu_);
     if (lb_policy_->is_shutdown_) return;
   }
-  Timestamp now = ExecCtx::Get()->Now();
+  Timestamp now = Timestamp::Now();
   deadline_ = now + lb_policy_->config_->lookup_service_timeout();
   grpc_metadata_array_init(&recv_initial_metadata_);
   grpc_metadata_array_init(&recv_trailing_metadata_);
