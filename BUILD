@@ -2158,12 +2158,14 @@ grpc_cc_library(
     name = "slice_buffer",
     srcs = [
         "src/core/lib/slice/slice_buffer.cc",
+        "src/core/lib/slice/slice_buffer_api.cc",
     ],
     hdrs = [
         "include/grpc/slice_buffer.h",
         "src/core/lib/slice/slice_buffer.h",
     ],
     deps = [
+        "exec_ctx",
         "gpr",
         "slice",
         "slice_refcount",
