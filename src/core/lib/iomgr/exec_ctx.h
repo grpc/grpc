@@ -210,7 +210,7 @@ class ExecCtx {
   unsigned starting_cpu_ = std::numeric_limits<unsigned>::max();
 
   ScopedTimeCache time_cache_;
-  static thread_local exec_ctx_;
+  static thread_local ExecCtx* exec_ctx_;
   ExecCtx* last_exec_ctx_ = Get();
 };
 
