@@ -31,6 +31,7 @@
 
 #include "src/core/ext/xds/certificate_provider_store.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
+#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
@@ -76,7 +77,7 @@ class GrpcXdsBootstrap : public XdsBootstrap {
     bool ShouldUseV3() const override;
     bool IgnoreResourceDeletion() const override;
 
-    bool operator==(const XdsServer& other) const override;
+    bool Equals(const XdsServer& other) const override;
 
     const std::string& channel_creds_type() const {
       return channel_creds_.type;
@@ -87,7 +88,7 @@ class GrpcXdsBootstrap : public XdsBootstrap {
 
     static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
     void JsonPostLoad(const Json& json, const JsonArgs& args,
-                      ErrorList* errors);
+                      ValidationErrors* errors);
 
     Json ToJson() const;
 
@@ -126,7 +127,8 @@ class GrpcXdsBootstrap : public XdsBootstrap {
       absl::string_view json_string);
 
   static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
-  void JsonPostLoad(const Json& json, const JsonArgs& args, ErrorList* errors);
+  void JsonPostLoad(const Json& json, const JsonArgs& args,
+                    ValidationErrors* errors);
 
   std::string ToString() const override;
 

@@ -24,6 +24,7 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/security/certificate_provider/certificate_provider_registry.h"
 
@@ -43,13 +44,14 @@ CertificateProviderStore::PluginDefinition::JsonLoader(const JsonArgs&) {
 }
 
 void CertificateProviderStore::PluginDefinition::JsonPostLoad(
-    const Json& json, const JsonArgs&, ErrorList* errors) {
+    const Json& json, const JsonArgs&, ValidationErrors* errors) {
   // Check that plugin is supported.
   CertificateProviderFactory* factory = nullptr;
   if (!plugin_name.empty()) {
-    ScopedField field(errors, ".plugin_name");
-    factory = CertificateProviderRegistry::LookupCertificateProviderFactory(
-        plugin_name);
+    ValidationErrors::ScopedField field(errors, ".plugin_name");
+    factory = CoreConfiguration::Get()
+                  .certificate_provider_registry()
+                  .LookupCertificateProviderFactory(plugin_name);
     if (factory == nullptr) {
       errors->AddError(absl::StrCat("Unrecognized plugin name: ", plugin_name));
       return;  // No point checking config.
@@ -57,7 +59,7 @@ void CertificateProviderStore::PluginDefinition::JsonPostLoad(
   }
   // Parse the config field.
   {
-    ScopedField field(errors, ".config");
+    ValidationErrors::ScopedField field(errors, ".config");
     auto it = json.object_value().find("config");
     // The config field is optional; if not present, we use an empty JSON
     // object.
@@ -126,8 +128,10 @@ CertificateProviderStore::CreateCertificateProviderLocked(
     return nullptr;
   }
   CertificateProviderFactory* factory =
-      CertificateProviderRegistry::LookupCertificateProviderFactory(
-          plugin_config_it->second.plugin_name);
+      CoreConfiguration::Get()
+          .certificate_provider_registry()
+          .LookupCertificateProviderFactory(
+              plugin_config_it->second.plugin_name);
   if (factory == nullptr) {
     // This should never happen since an entry is only inserted in the
     // plugin_config_map_ if the corresponding factory was found when parsing

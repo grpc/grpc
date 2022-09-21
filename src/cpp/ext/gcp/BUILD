@@ -38,6 +38,9 @@ grpc_cc_library(
         "observability.h",
     ],
     external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/types:optional",
         "opencensus-trace",
         "opencensus-trace-stackdriver_exporter",
         "opencensus-stats-stackdriver_exporter",
@@ -46,21 +49,37 @@ grpc_cc_library(
     tags = ["nofixdeps"],
     visibility = ["//test:__subpackages__"],
     deps = [
+        ":observability_config",
         "//:gpr",
+        "//:grpc++_public_hdrs",
         "//:grpc_opencensus_plugin",
     ],
 )
 
 grpc_cc_library(
     name = "observability_config",
+    srcs = [
+        "observability_config.cc",
+    ],
     hdrs = [
         "observability_config.h",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/types:optional",
     ],
     language = "c++",
     visibility = ["//test:__subpackages__"],
     deps = [
+        "//:env",
         "//:gpr",
+        "//:grpc_base",
+        "//:grpc_public_hdrs",
+        "//:json",
         "//:json_args",
         "//:json_object_loader",
+        "//:slice_refcount",
     ],
 )

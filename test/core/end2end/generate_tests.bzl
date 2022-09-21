@@ -136,7 +136,7 @@ END2END_FIXTURES = {
         secure = True,
         dns_resolver = False,
         _platforms = ["linux", "mac", "posix"],
-        tags = ["requires-net:ipv4", "requires-net:loopback"],
+        tags = ["requires-net:ipv4", "requires-net:loopback", "event_engine_client"],
     ),
     "h2_local_ipv6": _fixture_options(
         secure = True,

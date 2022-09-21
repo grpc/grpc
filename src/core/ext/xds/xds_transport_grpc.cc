@@ -24,6 +24,8 @@
 #include <memory>
 #include <utility>
 
+#include "absl/strings/str_cat.h"
+
 #include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/grpc.h>
@@ -52,6 +54,7 @@
 #include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
+#include "src/core/lib/surface/init_internally.h"
 #include "src/core/lib/surface/lame_client.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
@@ -234,7 +237,9 @@ class GrpcXdsTransportFactory::GrpcXdsTransport::StateWatcher
   void OnConnectivityStateChange(grpc_connectivity_state new_state,
                                  const absl::Status& status) override {
     if (new_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-      on_connectivity_failure_(status);
+      on_connectivity_failure_(absl::Status(
+          status.code(),
+          absl::StrCat("channel in TRANSIENT_FAILURE: ", status.message())));
     }
   }
 
@@ -330,14 +335,14 @@ GrpcXdsTransportFactory::GrpcXdsTransportFactory(const ChannelArgs& args)
       interested_parties_(grpc_pollset_set_create()) {
   // Calling grpc_init to ensure gRPC does not shut down until the XdsClient is
   // destroyed.
-  grpc_init();
+  InitInternally();
 }
 
 GrpcXdsTransportFactory::~GrpcXdsTransportFactory() {
   grpc_pollset_set_destroy(interested_parties_);
   // Calling grpc_shutdown to ensure gRPC does not shut down until the XdsClient
   // is destroyed.
-  grpc_shutdown();
+  ShutdownInternally();
 }
 
 OrphanablePtr<XdsTransportFactory::XdsTransport>

@@ -90,127 +90,101 @@ const char* grpc_stats_histogram_doc[GRPC_STATS_HISTOGRAM_COUNT] = {
     "Number of byte segments offered to each syscall_read",
     "Size of messages received by HTTP2 transport",
 };
-const int grpc_stats_table_0[65] = {
-    0,       1,       2,       3,       4,       6,       8,        11,
-    15,      20,      26,      34,      44,      57,      73,       94,
-    121,     155,     199,     255,     327,     419,     537,      688,
-    881,     1128,    1444,    1848,    2365,    3026,    3872,     4954,
-    6338,    8108,    10373,   13270,   16976,   21717,   27782,    35541,
-    45467,   58165,   74409,   95189,   121772,  155778,  199281,   254933,
-    326126,  417200,  533707,  682750,  873414,  1117323, 1429345,  1828502,
-    2339127, 2992348, 3827987, 4896985, 6264509, 8013925, 10251880, 13114801,
-    16777216};
-const uint8_t grpc_stats_table_1[87] = {
-    5,  5,  6,  6,  7,  8,  8,  9,  9,  10, 11, 11, 12, 13, 13, 14, 15, 16,
-    16, 17, 18, 18, 19, 20, 20, 21, 22, 22, 23, 24, 25, 25, 26, 27, 27, 28,
-    29, 30, 30, 31, 32, 32, 33, 34, 34, 35, 36, 36, 37, 38, 39, 39, 40, 41,
-    41, 42, 43, 44, 44, 45, 46, 46, 47, 48, 49, 49, 50, 50, 51, 52, 53, 53,
-    54, 55, 56, 56, 57, 58, 58, 59, 60, 61, 61, 62, 63, 63, 64};
-const int grpc_stats_table_2[65] = {
-    0,   1,   2,   3,   4,   5,   6,   7,   8,   9,   10,  11,  12,
-    14,  16,  18,  20,  22,  24,  27,  30,  33,  36,  39,  43,  47,
-    51,  56,  61,  66,  72,  78,  85,  92,  100, 109, 118, 128, 139,
-    151, 164, 178, 193, 209, 226, 244, 264, 285, 308, 333, 359, 387,
-    418, 451, 486, 524, 565, 609, 656, 707, 762, 821, 884, 952, 1024};
-const uint8_t grpc_stats_table_3[102] = {
-    13, 13, 13, 14, 14, 14, 14, 15, 15, 16, 16, 17, 17, 18, 18, 19, 19,
-    19, 20, 20, 20, 21, 21, 22, 22, 23, 24, 24, 25, 25, 26, 26, 27, 27,
-    27, 28, 28, 29, 29, 30, 30, 31, 32, 32, 33, 33, 34, 34, 35, 35, 36,
-    36, 37, 37, 37, 38, 39, 40, 40, 41, 41, 42, 42, 43, 43, 44, 44, 45,
-    45, 46, 46, 47, 48, 48, 49, 50, 50, 51, 51, 52, 52, 53, 53, 54, 54,
-    55, 55, 56, 57, 57, 58, 59, 59, 60, 61, 61, 62, 62, 63, 63, 64, 64};
-const int grpc_stats_table_4[65] = {
-    0,      1,      2,      3,      4,     5,     7,     9,     11,    14,
-    17,     21,     26,     32,     39,    47,    57,    68,    82,    98,
-    117,    140,    167,    199,    238,   284,   339,   404,   482,   575,
-    685,    816,    972,    1158,   1380,  1644,  1959,  2334,  2780,  3312,
-    3945,   4699,   5597,   6667,   7941,  9459,  11267, 13420, 15984, 19038,
-    22676,  27009,  32169,  38315,  45635, 54353, 64737, 77104, 91834, 109378,
-    130273, 155159, 184799, 220100, 262144};
-const uint8_t grpc_stats_table_5[124] = {
-    6,  6,  6,  7,  7,  7,  8,  8,  9,  9,  9,  10, 10, 11, 11, 12, 12, 12,
-    13, 13, 13, 14, 15, 15, 16, 16, 16, 17, 17, 18, 18, 19, 19, 20, 20, 21,
-    21, 22, 22, 23, 23, 24, 24, 25, 25, 26, 26, 27, 27, 28, 28, 28, 29, 30,
-    30, 31, 31, 32, 32, 32, 33, 33, 34, 35, 35, 36, 36, 36, 37, 37, 38, 39,
-    39, 40, 40, 40, 41, 41, 42, 43, 43, 43, 44, 44, 45, 45, 46, 46, 47, 47,
-    48, 48, 49, 49, 50, 50, 51, 51, 52, 52, 53, 53, 54, 54, 55, 55, 56, 56,
-    57, 57, 58, 58, 59, 59, 60, 60, 61, 61, 62, 62, 63, 63, 64, 64};
+const int grpc_stats_table_0[25] = {
+    0,   1,   2,   4,    7,    11,   17,   26,   40,   61,    93,    142,  216,
+    329, 500, 760, 1155, 1755, 2667, 4052, 6155, 9350, 14203, 21574, 32768};
+const uint8_t grpc_stats_table_1[27] = {3,  3,  4,  5,  6,  6,  7,  8,  9,
+                                        10, 11, 11, 12, 13, 14, 15, 16, 16,
+                                        17, 18, 19, 20, 20, 21, 22, 23, 24};
+const int grpc_stats_table_2[21] = {
+    0,     1,      3,      8,       19,      45,      106,
+    250,   588,    1383,   3252,    7646,    17976,   42262,
+    99359, 233593, 549177, 1291113, 3035402, 7136218, 16777216};
+const uint8_t grpc_stats_table_3[23] = {2,  3,  3,  4,  5,  6,  7,  8,
+                                        8,  9,  10, 11, 12, 12, 13, 14,
+                                        15, 16, 16, 17, 18, 19, 20};
+const int grpc_stats_table_4[11] = {0, 1, 2, 4, 7, 11, 17, 26, 38, 56, 80};
+const uint8_t grpc_stats_table_5[9] = {3, 3, 4, 5, 6, 6, 7, 8, 9};
 namespace grpc_core {
-int BucketForHistogramValue_16777216_64(int value) {
-  if (value < 5) {
+int BucketForHistogramValue_32768_24(int value) {
+  if (value < 3) {
     if (value < 0) {
       return 0;
     } else {
       return value;
     }
   } else {
-    if (value < 14680065) {
-      // first_nontrivial_code=4617315517961601024
-      // last_code=4714142909950066688 [14680064.000000]
+    if (value < 24577) {
+      // first_nontrivial_code=4613937818241073152
+      // last_code=4672484613396889600 [24576.000000]
       DblUint val;
       val.dbl = value;
       const int bucket =
-          grpc_stats_table_1[((val.uint - 4617315517961601024ull) >> 50)];
+          grpc_stats_table_1[((val.uint - 4613937818241073152ull) >> 51)];
       return bucket - (value < grpc_stats_table_0[bucket]);
     } else {
-      return 63;
+      return 23;
     }
   }
 }
-int BucketForHistogramValue_1024_64(int value) {
-  if (value < 13) {
+int BucketForHistogramValue_16777216_20(int value) {
+  if (value < 2) {
     if (value < 0) {
       return 0;
     } else {
       return value;
     }
   } else {
-    if (value < 993) {
-      // first_nontrivial_code=4623507967449235456
-      // last_code=4651936940097011712 [992.000000]
+    if (value < 8388609) {
+      // first_nontrivial_code=4611686018427387904
+      // last_code=4710765210229538816 [8388608.000000]
       DblUint val;
       val.dbl = value;
       const int bucket =
-          grpc_stats_table_3[((val.uint - 4623507967449235456ull) >> 48)];
+          grpc_stats_table_3[((val.uint - 4611686018427387904ull) >> 52)];
       return bucket - (value < grpc_stats_table_2[bucket]);
     } else {
-      return 63;
+      return 19;
     }
   }
 }
-int BucketForHistogramValue_262144_64(int value) {
-  if (value < 6) {
+int BucketForHistogramValue_80_10(int value) {
+  if (value < 3) {
     if (value < 0) {
       return 0;
     } else {
       return value;
     }
   } else {
-    if (value < 245761) {
-      // first_nontrivial_code=4618441417868443648
-      // last_code=4687684262139265024 [245760.000000]
+    if (value < 49) {
+      // first_nontrivial_code=4613937818241073152
+      // last_code=4631952216750555136 [48.000000]
       DblUint val;
       val.dbl = value;
       const int bucket =
-          grpc_stats_table_5[((val.uint - 4618441417868443648ull) >> 49)];
+          grpc_stats_table_5[((val.uint - 4613937818241073152ull) >> 51)];
       return bucket - (value < grpc_stats_table_4[bucket]);
     } else {
-      return 63;
+      if (value < 56) {
+        return 8;
+      } else {
+        return 9;
+      }
     }
   }
 }
 }  // namespace grpc_core
-const int grpc_stats_histo_buckets[7] = {64, 64, 64, 64, 64, 64, 64};
-const int grpc_stats_histo_start[7] = {0, 64, 128, 192, 256, 320, 384};
+const int grpc_stats_histo_buckets[7] = {24, 20, 10, 20, 20, 10, 20};
+const int grpc_stats_histo_start[7] = {0, 24, 44, 54, 74, 94, 104};
 const int* const grpc_stats_histo_bucket_boundaries[7] = {
-    grpc_stats_table_4, grpc_stats_table_0, grpc_stats_table_2,
-    grpc_stats_table_0, grpc_stats_table_0, grpc_stats_table_2,
-    grpc_stats_table_0};
+    grpc_stats_table_0, grpc_stats_table_2, grpc_stats_table_4,
+    grpc_stats_table_2, grpc_stats_table_2, grpc_stats_table_4,
+    grpc_stats_table_2};
 int (*const grpc_stats_get_bucket[7])(int value) = {
-    grpc_core::BucketForHistogramValue_262144_64,
-    grpc_core::BucketForHistogramValue_16777216_64,
-    grpc_core::BucketForHistogramValue_1024_64,
-    grpc_core::BucketForHistogramValue_16777216_64,
-    grpc_core::BucketForHistogramValue_16777216_64,
-    grpc_core::BucketForHistogramValue_1024_64,
-    grpc_core::BucketForHistogramValue_16777216_64};
+    grpc_core::BucketForHistogramValue_32768_24,
+    grpc_core::BucketForHistogramValue_16777216_20,
+    grpc_core::BucketForHistogramValue_80_10,
+    grpc_core::BucketForHistogramValue_16777216_20,
+    grpc_core::BucketForHistogramValue_16777216_20,
+    grpc_core::BucketForHistogramValue_80_10,
+    grpc_core::BucketForHistogramValue_16777216_20};

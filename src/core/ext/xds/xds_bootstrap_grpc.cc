@@ -111,7 +111,7 @@ bool GrpcXdsBootstrap::GrpcXdsServer::IgnoreResourceDeletion() const {
              kServerFeatureIgnoreResourceDeletion)) != server_features_.end();
 }
 
-bool GrpcXdsBootstrap::GrpcXdsServer::operator==(const XdsServer& other) const {
+bool GrpcXdsBootstrap::GrpcXdsServer::Equals(const XdsServer& other) const {
   const auto& o = static_cast<const GrpcXdsServer&>(other);
   return (server_uri_ == o.server_uri_ &&
           channel_creds_.type == o.channel_creds_.type &&
@@ -130,14 +130,14 @@ const JsonLoaderInterface* GrpcXdsBootstrap::GrpcXdsServer::JsonLoader(
 
 void GrpcXdsBootstrap::GrpcXdsServer::JsonPostLoad(const Json& json,
                                                    const JsonArgs& args,
-                                                   ErrorList* errors) {
+                                                   ValidationErrors* errors) {
   // Parse "channel_creds".
   auto channel_creds_list = LoadJsonObjectField<std::vector<ChannelCreds>>(
       json.object_value(), args, "channel_creds", errors);
   if (channel_creds_list.has_value()) {
-    ScopedField field(errors, ".channel_creds");
+    ValidationErrors::ScopedField field(errors, ".channel_creds");
     for (size_t i = 0; i < channel_creds_list->size(); ++i) {
-      ScopedField field(errors, absl::StrCat("[", i, "]"));
+      ValidationErrors::ScopedField field(errors, absl::StrCat("[", i, "]"));
       auto& creds = (*channel_creds_list)[i];
       // Select the first channel creds type that we support.
       if (channel_creds_.type.empty() &&
@@ -159,7 +159,7 @@ void GrpcXdsBootstrap::GrpcXdsServer::JsonPostLoad(const Json& json,
   }
   // Parse "server_features".
   {
-    ScopedField field(errors, ".server_features");
+    ValidationErrors::ScopedField field(errors, ".server_features");
     auto it = json.object_value().find("server_features");
     if (it != json.object_value().end()) {
       if (it->second.type() != Json::Type::ARRAY) {
@@ -260,16 +260,16 @@ const JsonLoaderInterface* GrpcXdsBootstrap::JsonLoader(const JsonArgs&) {
 
 void GrpcXdsBootstrap::JsonPostLoad(const Json& /*json*/,
                                     const JsonArgs& /*args*/,
-                                    ErrorList* errors) {
+                                    ValidationErrors* errors) {
   // Verify that each authority has the right prefix in the
   // client_listener_resource_name_template field.
   {
-    ScopedField field(errors, ".authorities");
+    ValidationErrors::ScopedField field(errors, ".authorities");
     for (const auto& p : authorities_) {
       const std::string& name = p.first;
       const GrpcAuthority& authority =
           static_cast<const GrpcAuthority&>(p.second);
-      ScopedField field(
+      ValidationErrors::ScopedField field(
           errors, absl::StrCat("[\"", name,
                                "\"].client_listener_resource_name_template"));
       std::string expected_prefix = absl::StrCat("xdstp://", name, "/");
