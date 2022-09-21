@@ -22,6 +22,7 @@
 #include <limits.h>
 
 #include "absl/cleanup/cleanup.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
@@ -802,23 +803,24 @@ absl::StatusOr<PosixSocketWrapper> PosixSocketWrapper::CreateDualStackSocket(
   return PosixSocketWrapper(newfd);
 }
 
-absl::StatusOr<PosixSocketWrapper>
+absl::StatusOr<PosixSocketWrapper::PosixSocketCreateResult>
 PosixSocketWrapper::CreateAndPrepareTcpClientSocket(
     const PosixTcpOptions& options,
     const EventEngine::ResolvedAddress& target_addr,
     EventEngine::ResolvedAddress& output_mapped_target_addr) {
   PosixSocketWrapper::DSMode dsmode;
-  absl::StatusOr<PosixSocketWrapper> posix_socket_wrapper;
 
-  // Use dualstack sockets where available. Set mapped to v6 or v4 mapped to v6.
+  // Use dualstack sockets where available. Set mapped to v6 or v4 mapped to
+  // v6.
   if (!SockaddrToV4Mapped(&target_addr, &output_mapped_target_addr)) {
     // addr is v4 mapped to v6 or just v6.
     output_mapped_target_addr = target_addr;
   }
-  posix_socket_wrapper = PosixSocketWrapper::CreateDualStackSocket(
-      nullptr, output_mapped_target_addr, SOCK_STREAM, 0, dsmode);
+  absl::StatusOr<PosixSocketWrapper> posix_socket_wrapper =
+      PosixSocketWrapper::CreateDualStackSocket(
+          nullptr, output_mapped_target_addr, SOCK_STREAM, 0, dsmode);
   if (!posix_socket_wrapper.ok()) {
-    return posix_socket_wrapper;
+    return posix_socket_wrapper.status();
   }
 
   if (dsmode == PosixSocketWrapper::DSMode::DSMODE_IPV4) {
@@ -833,7 +835,8 @@ PosixSocketWrapper::CreateAndPrepareTcpClientSocket(
   if (!error.ok()) {
     return error;
   }
-  return *posix_socket_wrapper;
+  return PosixSocketWrapper::PosixSocketCreateResult{*posix_socket_wrapper,
+                                                     output_mapped_target_addr};
 }
 
 #else /* GRPC_POSIX_SOCKET_UTILS_COMMON */
@@ -941,7 +944,7 @@ PosixSocketWrapper::CreateDualStackSocket(
   GPR_ASSERT(false && "unimplemented");
 }
 
-absl::StatusOr<PosixSocketWrapper>
+absl::StatusOr<PosixSocketWrapper::PosixSocketCreateResult>
 PosixSocketWrapper::CreateAndPrepareTcpClientSocket(
     const PosixTcpOptions& /*options*/,
     const EventEngine::ResolvedAddress& /*target_addr*/,
