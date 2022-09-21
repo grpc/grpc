@@ -40,17 +40,6 @@ namespace internal {
 // ClientChannelGlobalParsedConfig::HealthCheckConfig
 //
 
-ClientChannelGlobalParsedConfig::HealthCheckConfig::HealthCheckConfig(
-    HealthCheckConfig&& other) noexcept
-    : service_name(std::move(other.service_name)) {}
-
-ClientChannelGlobalParsedConfig::HealthCheckConfig&
-ClientChannelGlobalParsedConfig::HealthCheckConfig::operator=(
-    HealthCheckConfig&& other) noexcept {
-  service_name = std::move(other.service_name);
-  return *this;
-}
-
 const JsonLoaderInterface*
 ClientChannelGlobalParsedConfig::HealthCheckConfig::JsonLoader(
     const JsonArgs&) {
@@ -64,21 +53,6 @@ ClientChannelGlobalParsedConfig::HealthCheckConfig::JsonLoader(
 //
 // ClientChannelGlobalParsedConfig
 //
-
-ClientChannelGlobalParsedConfig::ClientChannelGlobalParsedConfig(
-    ClientChannelGlobalParsedConfig&& other) noexcept
-    : parsed_lb_config_(std::move(other.parsed_lb_config_)),
-      parsed_deprecated_lb_policy_(
-          std::move(other.parsed_deprecated_lb_policy_)),
-      health_check_config_(std::move(other.health_check_config_)) {}
-
-ClientChannelGlobalParsedConfig& ClientChannelGlobalParsedConfig::operator=(
-    ClientChannelGlobalParsedConfig&& other) noexcept {
-  parsed_lb_config_ = std::move(other.parsed_lb_config_);
-  parsed_deprecated_lb_policy_ = std::move(other.parsed_deprecated_lb_policy_);
-  health_check_config_ = std::move(other.health_check_config_);
-  return *this;
-}
 
 const JsonLoaderInterface* ClientChannelGlobalParsedConfig::JsonLoader(
     const JsonArgs&) {
@@ -135,17 +109,6 @@ void ClientChannelGlobalParsedConfig::JsonPostLoad(const Json& json,
 // ClientChannelMethodParsedConfig
 //
 
-ClientChannelMethodParsedConfig::ClientChannelMethodParsedConfig(
-    ClientChannelMethodParsedConfig&& other) noexcept
-    : timeout_(other.timeout_), wait_for_ready_(other.wait_for_ready_) {}
-
-ClientChannelMethodParsedConfig& ClientChannelMethodParsedConfig::operator=(
-    ClientChannelMethodParsedConfig&& other) noexcept {
-  timeout_ = other.timeout_;
-  wait_for_ready_ = other.wait_for_ready_;
-  return *this;
-}
-
 const JsonLoaderInterface* ClientChannelMethodParsedConfig::JsonLoader(
     const JsonArgs&) {
   static const auto* loader =
@@ -175,19 +138,13 @@ void ClientChannelServiceConfigParser::Register(
 absl::StatusOr<std::unique_ptr<ServiceConfigParser::ParsedConfig>>
 ClientChannelServiceConfigParser::ParseGlobalParams(const ChannelArgs& /*args*/,
                                                     const Json& json) {
-  auto global_params = LoadFromJson<ClientChannelGlobalParsedConfig>(json);
-  if (!global_params.ok()) return global_params.status();
-  return absl::make_unique<ClientChannelGlobalParsedConfig>(
-      std::move(*global_params));
+  return LoadFromJson<std::unique_ptr<ClientChannelGlobalParsedConfig>>(json);
 }
 
 absl::StatusOr<std::unique_ptr<ServiceConfigParser::ParsedConfig>>
 ClientChannelServiceConfigParser::ParsePerMethodParams(
     const ChannelArgs& /*args*/, const Json& json) {
-  auto method_params = LoadFromJson<ClientChannelMethodParsedConfig>(json);
-  if (!method_params.ok()) return method_params.status();
-  return absl::make_unique<ClientChannelMethodParsedConfig>(
-      std::move(*method_params));
+  return LoadFromJson<std::unique_ptr<ClientChannelMethodParsedConfig>>(json);
 }
 
 }  // namespace internal

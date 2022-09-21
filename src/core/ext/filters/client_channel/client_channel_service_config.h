@@ -45,20 +45,6 @@ namespace internal {
 class ClientChannelGlobalParsedConfig
     : public ServiceConfigParser::ParsedConfig {
  public:
-  ClientChannelGlobalParsedConfig() = default;
-
-  // Not copyable.
-  ClientChannelGlobalParsedConfig(const ClientChannelGlobalParsedConfig&) =
-      delete;
-  ClientChannelGlobalParsedConfig& operator=(
-      const ClientChannelGlobalParsedConfig&) = delete;
-
-  // Movable.
-  ClientChannelGlobalParsedConfig(
-      ClientChannelGlobalParsedConfig&& other) noexcept;
-  ClientChannelGlobalParsedConfig& operator=(
-      ClientChannelGlobalParsedConfig&& other) noexcept;
-
   RefCountedPtr<LoadBalancingPolicy::Config> parsed_lb_config() const {
     return parsed_lb_config_;
   }
@@ -79,10 +65,6 @@ class ClientChannelGlobalParsedConfig
   struct HealthCheckConfig {
     absl::optional<std::string> service_name;
 
-    HealthCheckConfig() = default;
-    HealthCheckConfig(HealthCheckConfig&& other) noexcept;
-    HealthCheckConfig& operator=(HealthCheckConfig&& other) noexcept;
-
     static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
   };
 
@@ -94,20 +76,6 @@ class ClientChannelGlobalParsedConfig
 class ClientChannelMethodParsedConfig
     : public ServiceConfigParser::ParsedConfig {
  public:
-  ClientChannelMethodParsedConfig() = default;
-
-  // Not copyable.
-  ClientChannelMethodParsedConfig(const ClientChannelMethodParsedConfig&) =
-      delete;
-  ClientChannelMethodParsedConfig& operator=(
-      const ClientChannelMethodParsedConfig&) = delete;
-
-  // Movable.
-  ClientChannelMethodParsedConfig(
-      ClientChannelMethodParsedConfig&& other) noexcept;
-  ClientChannelMethodParsedConfig& operator=(
-      ClientChannelMethodParsedConfig&& other) noexcept;
-
   Duration timeout() const { return timeout_; }
 
   absl::optional<bool> wait_for_ready() const { return wait_for_ready_; }
