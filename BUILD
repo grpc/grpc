@@ -2211,7 +2211,6 @@ grpc_cc_library(
     deps = [
         "event_engine_base_hdrs",
         "gpr",
-        "gpr_tls",
         "no_destruct",
         "useful",
     ],

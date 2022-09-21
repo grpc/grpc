@@ -30,7 +30,6 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gpr/time_precise.h"
-#include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gpr/useful.h"
 
 namespace grpc_core {
