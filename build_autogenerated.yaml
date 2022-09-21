@@ -9722,7 +9722,6 @@ targets:
   - src/core/lib/iomgr/socket_mutator.cc
   - test/core/event_engine/posix/tcp_posix_socket_utils_test.cc
   deps:
-  - absl/cleanup:cleanup
   - grpc_test_util
   platforms:
   - linux
