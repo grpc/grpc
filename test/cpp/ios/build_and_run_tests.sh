@@ -32,7 +32,7 @@ XCODEBUILD_FLAGS="
 time xcodebuild \
     -workspace Tests.xcworkspace \
     -scheme CronetTests \
-    -destination name="iPhone 8" \
+    -destination name="iPhone X" \
     test \
-    $XCODEBUILD_FLAGS \
+    "${XCODEBUILD_FLAGS}" \
     | "${XCODEBUILD_FILTER_OUTPUT_SCRIPT}"
