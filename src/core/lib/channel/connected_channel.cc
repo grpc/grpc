@@ -597,7 +597,7 @@ class ClientStream : public Orphanable {
   }
 
   void StreamDestroyed() {
-    call_context_->InContext([this] {
+    call_context_->RunInContext([this] {
       auto* cc = call_context_;
       this->~ClientStream();
       cc->Unref("child_stream");

@@ -84,7 +84,7 @@ class CallContext {
   // Run some action in the call activity context. This is needed to adapt some
   // legacy systems to promises, and will likely disappear once that conversion
   // is complete.
-  void InContext(absl::AnyInvocable<void()> fn);
+  void RunInContext(absl::AnyInvocable<void()> fn);
 
   // TODO(ctiller): remove this once transport APIs are promise based
   void IncrementRefCount(const char* reason = "call_context");
