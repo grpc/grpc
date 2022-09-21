@@ -767,7 +767,7 @@ void Subchannel::ResetBackoff() {
       GetDefaultEventEngine()->Cancel(retry_timer_handle_)) {
     OnRetryTimerLocked();
   } else if (state_ == GRPC_CHANNEL_CONNECTING) {
-    next_attempt_time_ = ExecCtx::Get()->Now();
+    next_attempt_time_ = Timestamp::Now();
   }
 }
 
@@ -871,7 +871,7 @@ void Subchannel::OnRetryTimerLocked() {
 
 void Subchannel::StartConnectingLocked() {
   // Set next attempt time.
-  const Timestamp min_deadline = min_connect_timeout_ + ExecCtx::Get()->Now();
+  const Timestamp min_deadline = min_connect_timeout_ + Timestamp::Now();
   next_attempt_time_ = backoff_.NextAttemptTime();
   // Report CONNECTING.
   SetConnectivityStateLocked(GRPC_CHANNEL_CONNECTING, absl::OkStatus());
@@ -906,7 +906,7 @@ void Subchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
   // transition back to IDLE.
   if (connecting_result_.transport == nullptr || !PublishTransportLocked()) {
     const Duration time_until_next_attempt =
-        next_attempt_time_ - ExecCtx::Get()->Now();
+        next_attempt_time_ - Timestamp::Now();
     gpr_log(GPR_INFO,
             "subchannel %p %s: connect failed (%s), backing off for %" PRId64
             " ms",

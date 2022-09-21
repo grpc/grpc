@@ -84,6 +84,7 @@ Pod::Spec.new do |s|
     'ALWAYS_SEARCH_USER_PATHS' => 'NO',
     'GCC_PREPROCESSOR_DEFINITIONS' => '"$(inherited)" "COCOAPODS=1"',
     'CLANG_WARN_STRICT_PROTOTYPES' => 'NO',
+    'CLANG_CXX_LANGUAGE_STANDARD' => 'c++14',
   }
 
   s.default_subspecs = 'Interface', 'Implementation'
@@ -1065,7 +1066,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/event_engine/posix_engine/timer_heap.h',
                       'src/core/lib/event_engine/posix_engine/timer_manager.cc',
                       'src/core/lib/event_engine/posix_engine/timer_manager.h',
-                      'src/core/lib/event_engine/promise.h',
                       'src/core/lib/event_engine/resolved_address.cc',
                       'src/core/lib/event_engine/slice.cc',
                       'src/core/lib/event_engine/slice_buffer.cc',
@@ -2182,7 +2182,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/event_engine/posix_engine/timer.h',
                               'src/core/lib/event_engine/posix_engine/timer_heap.h',
                               'src/core/lib/event_engine/posix_engine/timer_manager.h',
-                              'src/core/lib/event_engine/promise.h',
                               'src/core/lib/event_engine/socket_notifier.h',
                               'src/core/lib/event_engine/thread_pool.h',
                               'src/core/lib/event_engine/time_util.h',
