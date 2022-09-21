@@ -107,10 +107,7 @@ FaultInjectionServiceConfigParser::ParsePerMethodParams(const ChannelArgs& args,
     return nullptr;
   }
   // Parse fault injection policy from given Json
-  auto config = LoadFromJson<FaultInjectionMethodParsedConfig>(json);
-  if (!config.ok()) return config.status();
-  return absl::make_unique<FaultInjectionMethodParsedConfig>(
-      std::move(*config));
+  return LoadFromJson<std::unique_ptr<FaultInjectionMethodParsedConfig>>(json);
 }
 
 void FaultInjectionServiceConfigParser::Register(
