@@ -25,6 +25,7 @@
 #include <memory>
 #include <string>
 
+#include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 
@@ -86,7 +87,7 @@ struct passthru_endpoint {
   half server;
 };
 
-static void do_pending_read_op_locked(half* m, grpc_error_handle error) {
+static void do_pending_read_op_locked(half* m, absl::Status error) {
   GPR_ASSERT(m->pending_read_op.is_armed);
   GPR_ASSERT(m->bytes_read_so_far <=
              m->parent->channel_effects->allowed_read_bytes);
@@ -167,7 +168,7 @@ static half* other_half(half* h) {
   return &h->parent->client;
 }
 
-static void do_pending_write_op_locked(half* m, grpc_error_handle error) {
+static void do_pending_write_op_locked(half* m, absl::Status error) {
   GPR_ASSERT(m->pending_write_op.is_armed);
   GPR_ASSERT(m->bytes_written_so_far <=
              m->parent->channel_effects->allowed_write_bytes);
@@ -303,7 +304,7 @@ static void me_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
   gpr_mu_unlock(&m->parent->mu);
 }
 
-void flush_pending_ops_locked(half* m, grpc_error_handle error) {
+void flush_pending_ops_locked(half* m, absl::Status error) {
   if (m->pending_read_op.is_armed) {
     do_pending_read_op_locked(m, error);
   }
@@ -321,7 +322,7 @@ static void me_add_to_pollset_set(grpc_endpoint* /*ep*/,
 static void me_delete_from_pollset_set(grpc_endpoint* /*ep*/,
                                        grpc_pollset_set* /*pollset*/) {}
 
-static void shutdown_locked(half* m, grpc_error_handle why) {
+static void shutdown_locked(half* m, absl::Status why) {
   m->parent->shutdown = true;
   flush_pending_ops_locked(m, GRPC_ERROR_NONE);
   if (m->on_read) {
@@ -340,7 +341,7 @@ static void shutdown_locked(half* m, grpc_error_handle why) {
   }
 }
 
-static void me_shutdown(grpc_endpoint* ep, grpc_error_handle why) {
+static void me_shutdown(grpc_endpoint* ep, absl::Status why) {
   half* m = reinterpret_cast<half*>(ep);
   gpr_mu_lock(&m->parent->mu);
   shutdown_locked(m, why);
@@ -466,7 +467,7 @@ void grpc_passthru_endpoint_stats_destroy(grpc_passthru_endpoint_stats* stats) {
 
 static void sched_next_channel_action_locked(half* m);
 
-static void do_next_sched_channel_action(void* arg, grpc_error_handle error) {
+static void do_next_sched_channel_action(void* arg, absl::Status error) {
   half* m = reinterpret_cast<half*>(arg);
   gpr_mu_lock(&m->parent->mu);
   GPR_ASSERT(!m->parent->channel_effects->actions.empty());
@@ -490,7 +491,7 @@ static void do_next_sched_channel_action(void* arg, grpc_error_handle error) {
 
 static void sched_next_channel_action_locked(half* m) {
   if (m->parent->channel_effects->actions.empty()) {
-    grpc_error_handle err =
+    absl::Status err =
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Channel actions complete");
     shutdown_locked(m, err);
     GRPC_ERROR_UNREF(err);

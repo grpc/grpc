@@ -230,12 +230,12 @@ class ClientChannel {
     LbQueuedCall* next = nullptr;
   };
 
-  ClientChannel(grpc_channel_element_args* args, grpc_error_handle* error);
+  ClientChannel(grpc_channel_element_args* args, absl::Status* error);
   ~ClientChannel();
 
   // Filter vtable functions.
-  static grpc_error_handle Init(grpc_channel_element* elem,
-                                grpc_channel_element_args* args);
+  static absl::Status Init(grpc_channel_element* elem,
+                           grpc_channel_element_args* args);
   static void Destroy(grpc_channel_element* elem);
   static void StartTransportOp(grpc_channel_element* elem,
                                grpc_transport_op* op);
@@ -275,7 +275,7 @@ class ClientChannel {
   void DestroyResolverAndLbPolicyLocked()
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);
 
-  grpc_error_handle DoPingLocked(grpc_transport_op* op)
+  absl::Status DoPingLocked(grpc_transport_op* op)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);
 
   void StartTransportOpLocked(grpc_transport_op* op)
@@ -362,7 +362,7 @@ class ClientChannel {
   std::set<SubchannelWrapper*> subchannel_wrappers_
       ABSL_GUARDED_BY(*work_serializer_);
   int keepalive_time_ ABSL_GUARDED_BY(*work_serializer_) = -1;
-  grpc_error_handle disconnect_error_ ABSL_GUARDED_BY(*work_serializer_) =
+  absl::Status disconnect_error_ ABSL_GUARDED_BY(*work_serializer_) =
       GRPC_ERROR_NONE;
 
   //
@@ -423,15 +423,15 @@ class ClientChannel::LoadBalancedCall
   void StartTransportStreamOpBatch(grpc_transport_stream_op_batch* batch);
 
   // Invoked by channel for queued LB picks when the picker is updated.
-  static void PickSubchannel(void* arg, grpc_error_handle error);
+  static void PickSubchannel(void* arg, absl::Status error);
   // Helper function for performing an LB pick while holding the data plane
   // mutex.  Returns true if the pick is complete, in which case the caller
   // must invoke PickDone() or AsyncPickDone() with the returned error.
-  bool PickSubchannelLocked(grpc_error_handle* error)
+  bool PickSubchannelLocked(absl::Status* error)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::data_plane_mu_);
   // Schedules a callback to process the completed pick.  The callback
   // will not run until after this method returns.
-  void AsyncPickDone(grpc_error_handle error);
+  void AsyncPickDone(absl::Status error);
 
   RefCountedPtr<SubchannelCall> subchannel_call() const {
     return subchannel_call_;
@@ -445,8 +445,7 @@ class ClientChannel::LoadBalancedCall
   // Returns the index into pending_batches_ to be used for batch.
   static size_t GetBatchIndex(grpc_transport_stream_op_batch* batch);
   void PendingBatchesAdd(grpc_transport_stream_op_batch* batch);
-  static void FailPendingBatchInCallCombiner(void* arg,
-                                             grpc_error_handle error);
+  static void FailPendingBatchInCallCombiner(void* arg, absl::Status error);
   // A predicate type and some useful implementations for PendingBatchesFail().
   typedef bool (*YieldCallCombinerPredicate)(
       const CallCombinerClosureList& closures);
@@ -464,23 +463,22 @@ class ClientChannel::LoadBalancedCall
   // If yield_call_combiner_predicate returns true, assumes responsibility for
   // yielding the call combiner.
   void PendingBatchesFail(
-      grpc_error_handle error,
+      absl::Status error,
       YieldCallCombinerPredicate yield_call_combiner_predicate);
-  static void ResumePendingBatchInCallCombiner(void* arg,
-                                               grpc_error_handle ignored);
+  static void ResumePendingBatchInCallCombiner(void* arg, absl::Status ignored);
   // Resumes all pending batches on subchannel_call_.
   void PendingBatchesResume();
 
-  static void SendInitialMetadataOnComplete(void* arg, grpc_error_handle error);
-  static void RecvInitialMetadataReady(void* arg, grpc_error_handle error);
-  static void RecvMessageReady(void* arg, grpc_error_handle error);
-  static void RecvTrailingMetadataReady(void* arg, grpc_error_handle error);
+  static void SendInitialMetadataOnComplete(void* arg, absl::Status error);
+  static void RecvInitialMetadataReady(void* arg, absl::Status error);
+  static void RecvMessageReady(void* arg, absl::Status error);
+  static void RecvTrailingMetadataReady(void* arg, absl::Status error);
 
   void RecordCallCompletion(absl::Status status);
 
   void CreateSubchannelCall();
   // Invoked when a pick is completed, on both success or failure.
-  static void PickDone(void* arg, grpc_error_handle error);
+  static void PickDone(void* arg, absl::Status error);
   // Removes the call from the channel's list of queued picks if present.
   void MaybeRemoveCallFromLbQueuedCallsLocked()
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::data_plane_mu_);
@@ -508,10 +506,10 @@ class ClientChannel::LoadBalancedCall
   gpr_cycle_counter lb_call_start_time_ = gpr_get_cycle_counter();
 
   // Set when we get a cancel_stream op.
-  grpc_error_handle cancel_error_ = GRPC_ERROR_NONE;
+  absl::Status cancel_error_ = GRPC_ERROR_NONE;
 
   // Set when we fail inside the LB call.
-  grpc_error_handle failure_error_ = GRPC_ERROR_NONE;
+  absl::Status failure_error_ = GRPC_ERROR_NONE;
 
   grpc_closure pick_closure_;
 

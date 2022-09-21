@@ -21,11 +21,12 @@
 
 #include <stddef.h>
 
+#include "absl/status/status.h"
+
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/iomgr/closure.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/security/authorization/evaluate_args.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
@@ -45,8 +46,8 @@ class RbacFilter {
  private:
   class CallData {
    public:
-    static grpc_error_handle Init(grpc_call_element* elem,
-                                  const grpc_call_element_args* args);
+    static absl::Status Init(grpc_call_element* elem,
+                             const grpc_call_element_args* args);
     static void Destroy(grpc_call_element* elem,
                         const grpc_call_final_info* /* final_info */,
                         grpc_closure* /* then_schedule_closure */);
@@ -55,8 +56,7 @@ class RbacFilter {
 
    private:
     CallData(grpc_call_element* elem, const grpc_call_element_args& args);
-    static void RecvInitialMetadataReady(void* user_data,
-                                         grpc_error_handle error);
+    static void RecvInitialMetadataReady(void* user_data, absl::Status error);
 
     grpc_call_context_element* call_context_;
     // State for keeping track of recv_initial_metadata
@@ -67,8 +67,8 @@ class RbacFilter {
 
   RbacFilter(size_t index,
              EvaluateArgs::PerChannelArgs per_channel_evaluate_args);
-  static grpc_error_handle Init(grpc_channel_element* elem,
-                                grpc_channel_element_args* args);
+  static absl::Status Init(grpc_channel_element* elem,
+                           grpc_channel_element_args* args);
   static void Destroy(grpc_channel_element* elem);
 
   // The index of this filter instance among instances of the same filter.

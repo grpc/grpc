@@ -69,7 +69,7 @@ Waker BaseCallData::MakeOwningWaker() {
 }
 
 void BaseCallData::Wakeup() {
-  auto wakeup = [](void* p, grpc_error_handle) {
+  auto wakeup = [](void* p, absl::Status) {
     auto* self = static_cast<BaseCallData*>(p);
     self->OnWakeup();
     self->Drop();
@@ -152,7 +152,7 @@ void BaseCallData::CapturedBatch::CompleteWith(Flusher* releaser) {
   }
 }
 
-void BaseCallData::CapturedBatch::CancelWith(grpc_error_handle error,
+void BaseCallData::CapturedBatch::CancelWith(absl::Status error,
                                              Flusher* releaser) {
   auto* batch = std::exchange(batch_, nullptr);
   GPR_ASSERT(batch != nullptr);
@@ -184,7 +184,7 @@ BaseCallData::Flusher::~Flusher() {
     GRPC_CALL_STACK_UNREF(call_->call_stack(), "flusher");
     return;
   }
-  auto call_next_op = [](void* p, grpc_error_handle) {
+  auto call_next_op = [](void* p, absl::Status) {
     auto* batch = static_cast<grpc_transport_stream_op_batch*>(p);
     BaseCallData* call =
         static_cast<BaseCallData*>(batch->handler_private.extra_arg);
@@ -343,7 +343,7 @@ class ClientCallData::PollContext {
           } else {
             GPR_ASSERT(*md->get_pointer(GrpcStatusMetadata()) !=
                        GRPC_STATUS_OK);
-            grpc_error_handle error = grpc_error_set_int(
+            absl::Status error = grpc_error_set_int(
                 GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                     "early return from promise based filter"),
                 GRPC_ERROR_INT_GRPC_STATUS,
@@ -391,7 +391,7 @@ class ClientCallData::PollContext {
                   self_->recv_trailing_state_ == RecvTrailingState::kForwarded);
               self_->call_combiner()->Cancel(GRPC_ERROR_REF(error));
               CapturedBatch b(grpc_make_transport_stream_op(GRPC_CLOSURE_CREATE(
-                  [](void* p, grpc_error_handle) {
+                  [](void* p, absl::Status) {
                     GRPC_CALL_COMBINER_STOP(static_cast<CallCombiner*>(p),
                                             "finish_cancel");
                   },
@@ -434,7 +434,7 @@ class ClientCallData::PollContext {
         grpc_call_stack* call_stack;
         ClientCallData* call_data;
       };
-      auto run = [](void* p, grpc_error_handle) {
+      auto run = [](void* p, absl::Status) {
         auto* next_poll = static_cast<NextPoll*>(p);
         {
           Flusher flusher(next_poll->call_data);
@@ -540,7 +540,7 @@ void ClientCallData::StartBatch(grpc_transport_stream_op_batch* b) {
         abort();  // unreachable
     }
     if (hook) {
-      auto cb = [](void* ptr, grpc_error_handle error) {
+      auto cb = [](void* ptr, absl::Status error) {
         ClientCallData* self = static_cast<ClientCallData*>(ptr);
         self->RecvInitialMetadataReady(error);
       };
@@ -600,7 +600,7 @@ void ClientCallData::StartBatch(grpc_transport_stream_op_batch* b) {
 }
 
 // Handle cancellation.
-void ClientCallData::Cancel(grpc_error_handle error) {
+void ClientCallData::Cancel(absl::Status error) {
   // Track the latest reason for cancellation.
   GRPC_ERROR_UNREF(cancelled_error_);
   cancelled_error_ = GRPC_ERROR_REF(error);
@@ -617,7 +617,7 @@ void ClientCallData::Cancel(grpc_error_handle error) {
       CapturedBatch batch;
       ClientCallData* call;
     };
-    auto fail = [](void* p, grpc_error_handle error) {
+    auto fail = [](void* p, absl::Status error) {
       auto* f = static_cast<FailBatch*>(p);
       {
         Flusher flusher(f->call);
@@ -677,7 +677,7 @@ void ClientCallData::StartPromise(Flusher* flusher) {
   ctx.Run();
 }
 
-void ClientCallData::RecvInitialMetadataReady(grpc_error_handle error) {
+void ClientCallData::RecvInitialMetadataReady(absl::Status error) {
   ScopedContext context(this);
   switch (recv_initial_metadata_->state) {
     case RecvInitialMetadata::kHookedWaitingForLatch:
@@ -815,12 +815,12 @@ Poll<ServerMetadataHandle> ClientCallData::PollTrailingMetadata() {
   GPR_UNREACHABLE_CODE(return Pending{});
 }
 
-void ClientCallData::RecvTrailingMetadataReadyCallback(
-    void* arg, grpc_error_handle error) {
+void ClientCallData::RecvTrailingMetadataReadyCallback(void* arg,
+                                                       absl::Status error) {
   static_cast<ClientCallData*>(arg)->RecvTrailingMetadataReady(error);
 }
 
-void ClientCallData::RecvTrailingMetadataReady(grpc_error_handle error) {
+void ClientCallData::RecvTrailingMetadataReady(absl::Status error) {
   Flusher flusher(this);
   // If we were cancelled prior to receiving this callback, we should simply
   // forward the callback up with the same error.
@@ -847,7 +847,7 @@ void ClientCallData::RecvTrailingMetadataReady(grpc_error_handle error) {
 
 // Given an error, fill in ServerMetadataHandle to represent that error.
 void ClientCallData::SetStatusFromError(grpc_metadata_batch* metadata,
-                                        grpc_error_handle error) {
+                                        absl::Status error) {
   grpc_status_code status_code = GRPC_STATUS_UNKNOWN;
   std::string status_details;
   grpc_error_get_status(error, deadline(), &status_code, &status_details,
@@ -908,7 +908,7 @@ class ServerCallData::PollContext {
         grpc_call_stack* call_stack;
         ServerCallData* call_data;
       };
-      auto run = [](void* p, grpc_error_handle) {
+      auto run = [](void* p, absl::Status) {
         auto* next_poll = static_cast<NextPoll*>(p);
         {
           Flusher flusher(next_poll->call_data);
@@ -1050,7 +1050,7 @@ void ServerCallData::StartBatch(grpc_transport_stream_op_batch* b) {
 }
 
 // Handle cancellation.
-void ServerCallData::Cancel(grpc_error_handle error, Flusher* flusher) {
+void ServerCallData::Cancel(absl::Status error, Flusher* flusher) {
   // Track the latest reason for cancellation.
   GRPC_ERROR_UNREF(cancelled_error_);
   cancelled_error_ = error;
@@ -1146,11 +1146,11 @@ Poll<ServerMetadataHandle> ServerCallData::PollTrailingMetadata() {
 }
 
 void ServerCallData::RecvInitialMetadataReadyCallback(void* arg,
-                                                      grpc_error_handle error) {
+                                                      absl::Status error) {
   static_cast<ServerCallData*>(arg)->RecvInitialMetadataReady(error);
 }
 
-void ServerCallData::RecvInitialMetadataReady(grpc_error_handle error) {
+void ServerCallData::RecvInitialMetadataReady(absl::Status error) {
   Flusher flusher(this);
   GPR_ASSERT(recv_initial_state_ == RecvInitialState::kForwarded);
   // If there was an error we just propagate that through
@@ -1234,7 +1234,7 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
           break;
         case SendTrailingState::kInitial: {
           GPR_ASSERT(*md->get_pointer(GrpcStatusMetadata()) != GRPC_STATUS_OK);
-          grpc_error_handle error =
+          absl::Status error =
               grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                                      "early return from promise based filter"),
                                  GRPC_ERROR_INT_GRPC_STATUS,

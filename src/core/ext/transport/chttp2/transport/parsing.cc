@@ -58,22 +58,19 @@
 
 using grpc_core::HPackParser;
 
-static grpc_error_handle init_frame_parser(grpc_chttp2_transport* t);
-static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
-                                                  int is_continuation);
-static grpc_error_handle init_data_frame_parser(grpc_chttp2_transport* t);
-static grpc_error_handle init_rst_stream_parser(grpc_chttp2_transport* t);
-static grpc_error_handle init_settings_frame_parser(grpc_chttp2_transport* t);
-static grpc_error_handle init_window_update_frame_parser(
-    grpc_chttp2_transport* t);
-static grpc_error_handle init_ping_parser(grpc_chttp2_transport* t);
-static grpc_error_handle init_goaway_parser(grpc_chttp2_transport* t);
-static grpc_error_handle init_non_header_skip_frame_parser(
-    grpc_chttp2_transport* t);
+static absl::Status init_frame_parser(grpc_chttp2_transport* t);
+static absl::Status init_header_frame_parser(grpc_chttp2_transport* t,
+                                             int is_continuation);
+static absl::Status init_data_frame_parser(grpc_chttp2_transport* t);
+static absl::Status init_rst_stream_parser(grpc_chttp2_transport* t);
+static absl::Status init_settings_frame_parser(grpc_chttp2_transport* t);
+static absl::Status init_window_update_frame_parser(grpc_chttp2_transport* t);
+static absl::Status init_ping_parser(grpc_chttp2_transport* t);
+static absl::Status init_goaway_parser(grpc_chttp2_transport* t);
+static absl::Status init_non_header_skip_frame_parser(grpc_chttp2_transport* t);
 
-static grpc_error_handle parse_frame_slice(grpc_chttp2_transport* t,
-                                           const grpc_slice& slice,
-                                           int is_last);
+static absl::Status parse_frame_slice(grpc_chttp2_transport* t,
+                                      const grpc_slice& slice, int is_last);
 
 static char get_utf8_safe_char(char c) {
   return static_cast<unsigned char>(c) < 128 ? c : 32;
@@ -123,12 +120,12 @@ uint32_t grpc_chttp2_min_read_progress_size(grpc_chttp2_transport* t) {
   GPR_UNREACHABLE_CODE(return 1);
 }
 
-grpc_error_handle grpc_chttp2_perform_read(grpc_chttp2_transport* t,
-                                           const grpc_slice& slice) {
+absl::Status grpc_chttp2_perform_read(grpc_chttp2_transport* t,
+                                      const grpc_slice& slice) {
   const uint8_t* beg = GRPC_SLICE_START_PTR(slice);
   const uint8_t* end = GRPC_SLICE_END_PTR(slice);
   const uint8_t* cur = beg;
-  grpc_error_handle err;
+  absl::Status err;
 
   if (cur == end) return GRPC_ERROR_NONE;
 
@@ -320,7 +317,7 @@ grpc_error_handle grpc_chttp2_perform_read(grpc_chttp2_transport* t,
   GPR_UNREACHABLE_CODE(return GRPC_ERROR_NONE);
 }
 
-static grpc_error_handle init_frame_parser(grpc_chttp2_transport* t) {
+static absl::Status init_frame_parser(grpc_chttp2_transport* t) {
   if (t->is_first_frame &&
       t->incoming_frame_type != GRPC_CHTTP2_FRAME_SETTINGS) {
     return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
@@ -368,11 +365,9 @@ static grpc_error_handle init_frame_parser(grpc_chttp2_transport* t) {
   }
 }
 
-static grpc_error_handle skip_parser(void* /*parser*/,
-                                     grpc_chttp2_transport* /*t*/,
-                                     grpc_chttp2_stream* /*s*/,
-                                     const grpc_slice& /*slice*/,
-                                     int /*is_last*/) {
+static absl::Status skip_parser(void* /*parser*/, grpc_chttp2_transport* /*t*/,
+                                grpc_chttp2_stream* /*s*/,
+                                const grpc_slice& /*slice*/, int /*is_last*/) {
   return GRPC_ERROR_NONE;
 }
 
@@ -398,7 +393,7 @@ static HPackParser::LogInfo hpack_parser_log_info(
   };
 }
 
-static grpc_error_handle init_header_skip_frame_parser(
+static absl::Status init_header_skip_frame_parser(
     grpc_chttp2_transport* t, HPackParser::Priority priority_type) {
   bool is_eoh = t->expect_continuation_stream_id != 0;
   t->parser = grpc_chttp2_header_parser_parse;
@@ -412,7 +407,7 @@ static grpc_error_handle init_header_skip_frame_parser(
   return GRPC_ERROR_NONE;
 }
 
-static grpc_error_handle init_non_header_skip_frame_parser(
+static absl::Status init_non_header_skip_frame_parser(
     grpc_chttp2_transport* t) {
   t->parser = skip_parser;
   return GRPC_ERROR_NONE;
@@ -426,7 +421,7 @@ void grpc_chttp2_parsing_become_skip_parser(grpc_chttp2_transport* t) {
   }
 }
 
-static grpc_error_handle init_data_frame_parser(grpc_chttp2_transport* t) {
+static absl::Status init_data_frame_parser(grpc_chttp2_transport* t) {
   // Update BDP accounting since we have received a data frame.
   grpc_core::BdpEstimator* bdp_est = t->flow_control.bdp_estimator();
   if (bdp_est) {
@@ -487,8 +482,8 @@ error_handler:
   }
 }
 
-static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
-                                                  int is_continuation) {
+static absl::Status init_header_frame_parser(grpc_chttp2_transport* t,
+                                             int is_continuation) {
   const bool is_eoh =
       (t->incoming_frame_flags & GRPC_CHTTP2_DATA_FLAG_END_HEADERS) != 0;
   grpc_chttp2_stream* s;
@@ -625,9 +620,8 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
   return GRPC_ERROR_NONE;
 }
 
-static grpc_error_handle init_window_update_frame_parser(
-    grpc_chttp2_transport* t) {
-  grpc_error_handle err = grpc_chttp2_window_update_parser_begin_frame(
+static absl::Status init_window_update_frame_parser(grpc_chttp2_transport* t) {
+  absl::Status err = grpc_chttp2_window_update_parser_begin_frame(
       &t->simple.window_update, t->incoming_frame_size,
       t->incoming_frame_flags);
   if (!GRPC_ERROR_IS_NONE(err)) return err;
@@ -644,8 +638,8 @@ static grpc_error_handle init_window_update_frame_parser(
   return GRPC_ERROR_NONE;
 }
 
-static grpc_error_handle init_ping_parser(grpc_chttp2_transport* t) {
-  grpc_error_handle err = grpc_chttp2_ping_parser_begin_frame(
+static absl::Status init_ping_parser(grpc_chttp2_transport* t) {
+  absl::Status err = grpc_chttp2_ping_parser_begin_frame(
       &t->simple.ping, t->incoming_frame_size, t->incoming_frame_flags);
   if (!GRPC_ERROR_IS_NONE(err)) return err;
   t->parser = grpc_chttp2_ping_parser_parse;
@@ -653,8 +647,8 @@ static grpc_error_handle init_ping_parser(grpc_chttp2_transport* t) {
   return GRPC_ERROR_NONE;
 }
 
-static grpc_error_handle init_rst_stream_parser(grpc_chttp2_transport* t) {
-  grpc_error_handle err = grpc_chttp2_rst_stream_parser_begin_frame(
+static absl::Status init_rst_stream_parser(grpc_chttp2_transport* t) {
+  absl::Status err = grpc_chttp2_rst_stream_parser_begin_frame(
       &t->simple.rst_stream, t->incoming_frame_size, t->incoming_frame_flags);
   if (!GRPC_ERROR_IS_NONE(err)) return err;
   grpc_chttp2_stream* s = t->incoming_stream =
@@ -668,8 +662,8 @@ static grpc_error_handle init_rst_stream_parser(grpc_chttp2_transport* t) {
   return GRPC_ERROR_NONE;
 }
 
-static grpc_error_handle init_goaway_parser(grpc_chttp2_transport* t) {
-  grpc_error_handle err = grpc_chttp2_goaway_parser_begin_frame(
+static absl::Status init_goaway_parser(grpc_chttp2_transport* t) {
+  absl::Status err = grpc_chttp2_goaway_parser_begin_frame(
       &t->goaway_parser, t->incoming_frame_size, t->incoming_frame_flags);
   if (!GRPC_ERROR_IS_NONE(err)) return err;
   t->parser = grpc_chttp2_goaway_parser_parse;
@@ -677,13 +671,13 @@ static grpc_error_handle init_goaway_parser(grpc_chttp2_transport* t) {
   return GRPC_ERROR_NONE;
 }
 
-static grpc_error_handle init_settings_frame_parser(grpc_chttp2_transport* t) {
+static absl::Status init_settings_frame_parser(grpc_chttp2_transport* t) {
   if (t->incoming_stream_id != 0) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Settings frame received for grpc_chttp2_stream");
   }
 
-  grpc_error_handle err = grpc_chttp2_settings_parser_begin_frame(
+  absl::Status err = grpc_chttp2_settings_parser_begin_frame(
       &t->simple.settings, t->incoming_frame_size, t->incoming_frame_flags,
       t->settings[GRPC_PEER_SETTINGS]);
   if (!GRPC_ERROR_IS_NONE(err)) {
@@ -705,11 +699,10 @@ static grpc_error_handle init_settings_frame_parser(grpc_chttp2_transport* t) {
   return GRPC_ERROR_NONE;
 }
 
-static grpc_error_handle parse_frame_slice(grpc_chttp2_transport* t,
-                                           const grpc_slice& slice,
-                                           int is_last) {
+static absl::Status parse_frame_slice(grpc_chttp2_transport* t,
+                                      const grpc_slice& slice, int is_last) {
   grpc_chttp2_stream* s = t->incoming_stream;
-  grpc_error_handle err = t->parser(t->parser_data, t, s, slice, is_last);
+  absl::Status err = t->parser(t->parser_data, t, s, slice, is_last);
   intptr_t unused;
   if (GPR_LIKELY(GRPC_ERROR_IS_NONE(err))) {
     return err;

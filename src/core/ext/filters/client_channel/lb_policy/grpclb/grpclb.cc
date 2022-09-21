@@ -261,15 +261,15 @@ class GrpcLb : public LoadBalancingPolicy {
     // EventEngine callbacks
     void MaybeSendClientLoadReportLocked();
 
-    static void ClientLoadReportDone(void* arg, grpc_error_handle error);
-    static void OnInitialRequestSent(void* arg, grpc_error_handle error);
-    static void OnBalancerMessageReceived(void* arg, grpc_error_handle error);
-    static void OnBalancerStatusReceived(void* arg, grpc_error_handle error);
+    static void ClientLoadReportDone(void* arg, absl::Status error);
+    static void OnInitialRequestSent(void* arg, absl::Status error);
+    static void OnBalancerMessageReceived(void* arg, absl::Status error);
+    static void OnBalancerStatusReceived(void* arg, absl::Status error);
 
-    void ClientLoadReportDoneLocked(grpc_error_handle error);
+    void ClientLoadReportDoneLocked(absl::Status error);
     void OnInitialRequestSentLocked();
     void OnBalancerMessageReceivedLocked();
-    void OnBalancerStatusReceivedLocked(grpc_error_handle error);
+    void OnBalancerStatusReceivedLocked(absl::Status error);
 
     // The owning LB policy.
     RefCountedPtr<LoadBalancingPolicy> grpclb_policy_;
@@ -518,14 +518,14 @@ class GrpcLb : public LoadBalancingPolicy {
 
   // Methods for dealing with fallback state.
   void MaybeEnterFallbackModeAfterStartup();
-  static void OnFallbackTimer(void* arg, grpc_error_handle error);
-  void OnFallbackTimerLocked(grpc_error_handle error);
+  static void OnFallbackTimer(void* arg, absl::Status error);
+  void OnFallbackTimerLocked(absl::Status error);
 
   // Methods for dealing with the balancer call.
   void StartBalancerCallLocked();
   void StartBalancerCallRetryTimerLocked();
-  static void OnBalancerCallRetryTimer(void* arg, grpc_error_handle error);
-  void OnBalancerCallRetryTimerLocked(grpc_error_handle error);
+  static void OnBalancerCallRetryTimer(void* arg, absl::Status error);
+  void OnBalancerCallRetryTimerLocked(absl::Status error);
 
   // Methods for dealing with the child policy.
   ChannelArgs CreateChildPolicyArgsLocked(
@@ -538,8 +538,8 @@ class GrpcLb : public LoadBalancingPolicy {
   void CacheDeletedSubchannelLocked(
       RefCountedPtr<SubchannelInterface> subchannel);
   void StartSubchannelCacheTimerLocked();
-  static void OnSubchannelCacheTimer(void* arg, grpc_error_handle error);
-  void OnSubchannelCacheTimerLocked(grpc_error_handle error);
+  static void OnSubchannelCacheTimer(void* arg, absl::Status error);
+  void OnSubchannelCacheTimerLocked(absl::Status error);
 
   // Who the client is trying to communicate with.
   std::string server_name_;
@@ -1107,7 +1107,7 @@ void GrpcLb::BalancerCallState::SendClientLoadReportLocked() {
 }
 
 void GrpcLb::BalancerCallState::ClientLoadReportDone(void* arg,
-                                                     grpc_error_handle error) {
+                                                     absl::Status error) {
   BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
   (void)GRPC_ERROR_REF(error);  // ref owned by lambda
   lb_calld->grpclb_policy()->work_serializer()->Run(
@@ -1115,8 +1115,7 @@ void GrpcLb::BalancerCallState::ClientLoadReportDone(void* arg,
       DEBUG_LOCATION);
 }
 
-void GrpcLb::BalancerCallState::ClientLoadReportDoneLocked(
-    grpc_error_handle error) {
+void GrpcLb::BalancerCallState::ClientLoadReportDoneLocked(absl::Status error) {
   grpc_byte_buffer_destroy(send_message_payload_);
   send_message_payload_ = nullptr;
   if (!GRPC_ERROR_IS_NONE(error) || this != grpclb_policy()->lb_calld_.get()) {
@@ -1127,8 +1126,8 @@ void GrpcLb::BalancerCallState::ClientLoadReportDoneLocked(
   ScheduleNextClientLoadReportLocked();
 }
 
-void GrpcLb::BalancerCallState::OnInitialRequestSent(
-    void* arg, grpc_error_handle /*error*/) {
+void GrpcLb::BalancerCallState::OnInitialRequestSent(void* arg,
+                                                     absl::Status /*error*/) {
   BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
   lb_calld->grpclb_policy()->work_serializer()->Run(
       [lb_calld]() { lb_calld->OnInitialRequestSentLocked(); }, DEBUG_LOCATION);
@@ -1147,7 +1146,7 @@ void GrpcLb::BalancerCallState::OnInitialRequestSentLocked() {
 }
 
 void GrpcLb::BalancerCallState::OnBalancerMessageReceived(
-    void* arg, grpc_error_handle /*error*/) {
+    void* arg, absl::Status /*error*/) {
   BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
   lb_calld->grpclb_policy()->work_serializer()->Run(
       [lb_calld]() { lb_calld->OnBalancerMessageReceivedLocked(); },
@@ -1311,8 +1310,8 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked() {
   }
 }
 
-void GrpcLb::BalancerCallState::OnBalancerStatusReceived(
-    void* arg, grpc_error_handle error) {
+void GrpcLb::BalancerCallState::OnBalancerStatusReceived(void* arg,
+                                                         absl::Status error) {
   BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
   (void)GRPC_ERROR_REF(error);  // owned by lambda
   lb_calld->grpclb_policy()->work_serializer()->Run(
@@ -1321,7 +1320,7 @@ void GrpcLb::BalancerCallState::OnBalancerStatusReceived(
 }
 
 void GrpcLb::BalancerCallState::OnBalancerStatusReceivedLocked(
-    grpc_error_handle error) {
+    absl::Status error) {
   GPR_ASSERT(lb_call_ != nullptr);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
     char* status_details = grpc_slice_to_c_string(lb_call_status_details_);
@@ -1696,7 +1695,7 @@ void GrpcLb::StartBalancerCallRetryTimerLocked() {
   grpc_timer_init(&lb_call_retry_timer_, next_try, &lb_on_call_retry_);
 }
 
-void GrpcLb::OnBalancerCallRetryTimer(void* arg, grpc_error_handle error) {
+void GrpcLb::OnBalancerCallRetryTimer(void* arg, absl::Status error) {
   GrpcLb* grpclb_policy = static_cast<GrpcLb*>(arg);
   (void)GRPC_ERROR_REF(error);  // ref owned by lambda
   grpclb_policy->work_serializer()->Run(
@@ -1706,7 +1705,7 @@ void GrpcLb::OnBalancerCallRetryTimer(void* arg, grpc_error_handle error) {
       DEBUG_LOCATION);
 }
 
-void GrpcLb::OnBalancerCallRetryTimerLocked(grpc_error_handle error) {
+void GrpcLb::OnBalancerCallRetryTimerLocked(absl::Status error) {
   retry_timer_callback_pending_ = false;
   if (!shutting_down_ && GRPC_ERROR_IS_NONE(error) && lb_calld_ == nullptr) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
@@ -1740,7 +1739,7 @@ void GrpcLb::MaybeEnterFallbackModeAfterStartup() {
   }
 }
 
-void GrpcLb::OnFallbackTimer(void* arg, grpc_error_handle error) {
+void GrpcLb::OnFallbackTimer(void* arg, absl::Status error) {
   GrpcLb* grpclb_policy = static_cast<GrpcLb*>(arg);
   (void)GRPC_ERROR_REF(error);  // ref owned by lambda
   grpclb_policy->work_serializer()->Run(
@@ -1748,7 +1747,7 @@ void GrpcLb::OnFallbackTimer(void* arg, grpc_error_handle error) {
       DEBUG_LOCATION);
 }
 
-void GrpcLb::OnFallbackTimerLocked(grpc_error_handle error) {
+void GrpcLb::OnFallbackTimerLocked(absl::Status error) {
   // If we receive a serverlist after the timer fires but before this callback
   // actually runs, don't fall back.
   if (fallback_at_startup_checks_pending_ && !shutting_down_ &&
@@ -1863,7 +1862,7 @@ void GrpcLb::StartSubchannelCacheTimerLocked() {
                   &on_subchannel_cache_timer_);
 }
 
-void GrpcLb::OnSubchannelCacheTimer(void* arg, grpc_error_handle error) {
+void GrpcLb::OnSubchannelCacheTimer(void* arg, absl::Status error) {
   auto* self = static_cast<GrpcLb*>(arg);
   (void)GRPC_ERROR_REF(error);
   self->work_serializer()->Run(
@@ -1871,7 +1870,7 @@ void GrpcLb::OnSubchannelCacheTimer(void* arg, grpc_error_handle error) {
       DEBUG_LOCATION);
 }
 
-void GrpcLb::OnSubchannelCacheTimerLocked(grpc_error_handle error) {
+void GrpcLb::OnSubchannelCacheTimerLocked(absl::Status error) {
   if (subchannel_cache_timer_pending_ && GRPC_ERROR_IS_NONE(error)) {
     auto it = cached_subchannels_.begin();
     if (it != cached_subchannels_.end()) {

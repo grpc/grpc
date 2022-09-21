@@ -17,6 +17,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/status/status.h"
+
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
@@ -32,7 +34,7 @@ class ExecCtxWakeupScheduler {
   void ScheduleWakeup(ActivityType* activity) {
     GRPC_CLOSURE_INIT(
         &closure_,
-        [](void* arg, grpc_error_handle) {
+        [](void* arg, absl::Status) {
           static_cast<ActivityType*>(arg)->RunScheduledWakeup();
         },
         activity, grpc_schedule_on_exec_ctx);

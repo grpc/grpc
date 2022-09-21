@@ -40,7 +40,7 @@ bool CanBeSentInOneTransaction(const Transaction& tx) {
 }
 
 // Simply forward the call to `WireWriterImpl::RunScheduledTx`.
-void RunScheduledTx(void* arg, grpc_error_handle /*error*/) {
+void RunScheduledTx(void* arg, absl::Status /*error*/) {
   auto* run_scheduled_tx_args =
       static_cast<WireWriterImpl::RunScheduledTxArgs*>(arg);
   run_scheduled_tx_args->writer->RunScheduledTxInternal(run_scheduled_tx_args);

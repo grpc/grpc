@@ -171,10 +171,10 @@ class AresClientChannelDNSResolver : public PollingResolver {
     }
 
    private:
-    static void OnHostnameResolved(void* arg, grpc_error_handle error);
-    static void OnSRVResolved(void* arg, grpc_error_handle error);
-    static void OnTXTResolved(void* arg, grpc_error_handle error);
-    absl::optional<Result> OnResolvedLocked(grpc_error_handle error)
+    static void OnHostnameResolved(void* arg, absl::Status error);
+    static void OnSRVResolved(void* arg, absl::Status error);
+    static void OnTXTResolved(void* arg, absl::Status error);
+    absl::optional<Result> OnResolvedLocked(absl::Status error)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(on_resolved_mu_);
 
     Mutex on_resolved_mu_;
@@ -252,7 +252,7 @@ bool ValueInJsonArray(const Json::Array& array, const char* value) {
 }
 
 std::string ChooseServiceConfig(char* service_config_choice_json,
-                                grpc_error_handle* error) {
+                                absl::Status* error) {
   auto json = Json::Parse(service_config_choice_json);
   if (!json.ok()) {
     *error = absl_status_to_grpc_error(json.status());
@@ -264,7 +264,7 @@ std::string ChooseServiceConfig(char* service_config_choice_json,
     return "";
   }
   const Json* service_config = nullptr;
-  std::vector<grpc_error_handle> error_list;
+  std::vector<absl::Status> error_list;
   for (const Json& choice : json->array_value()) {
     if (choice.type() != Json::Type::OBJECT) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -334,7 +334,7 @@ std::string ChooseServiceConfig(char* service_config_choice_json,
 }
 
 void AresClientChannelDNSResolver::AresRequestWrapper::OnHostnameResolved(
-    void* arg, grpc_error_handle error) {
+    void* arg, absl::Status error) {
   auto* self = static_cast<AresRequestWrapper*>(arg);
   absl::optional<Result> result;
   {
@@ -349,7 +349,7 @@ void AresClientChannelDNSResolver::AresRequestWrapper::OnHostnameResolved(
 }
 
 void AresClientChannelDNSResolver::AresRequestWrapper::OnSRVResolved(
-    void* arg, grpc_error_handle error) {
+    void* arg, absl::Status error) {
   auto* self = static_cast<AresRequestWrapper*>(arg);
   absl::optional<Result> result;
   {
@@ -364,7 +364,7 @@ void AresClientChannelDNSResolver::AresRequestWrapper::OnSRVResolved(
 }
 
 void AresClientChannelDNSResolver::AresRequestWrapper::OnTXTResolved(
-    void* arg, grpc_error_handle error) {
+    void* arg, absl::Status error) {
   auto* self = static_cast<AresRequestWrapper*>(arg);
   absl::optional<Result> result;
   {
@@ -384,7 +384,7 @@ void AresClientChannelDNSResolver::AresRequestWrapper::OnTXTResolved(
 // requires taking the lock.
 absl::optional<AresClientChannelDNSResolver::Result>
 AresClientChannelDNSResolver::AresRequestWrapper::OnResolvedLocked(
-    grpc_error_handle error) ABSL_EXCLUSIVE_LOCKS_REQUIRED(on_resolved_mu_) {
+    absl::Status error) ABSL_EXCLUSIVE_LOCKS_REQUIRED(on_resolved_mu_) {
   if (hostname_request_ != nullptr || srv_request_ != nullptr ||
       txt_request_ != nullptr) {
     GRPC_CARES_TRACE_LOG(
@@ -407,7 +407,7 @@ AresClientChannelDNSResolver::AresRequestWrapper::OnResolvedLocked(
       result.addresses = ServerAddressList();
     }
     if (service_config_json_ != nullptr) {
-      grpc_error_handle service_config_error = GRPC_ERROR_NONE;
+      absl::Status service_config_error = GRPC_ERROR_NONE;
       std::string service_config_string =
           ChooseServiceConfig(service_config_json_, &service_config_error);
       if (!GRPC_ERROR_IS_NONE(service_config_error)) {
@@ -489,7 +489,7 @@ class AresDNSResolver : public DNSResolver {
     // Called on ares resolution, but not upon cancellation.
     // After execution, the AresRequest will perform any final cleanup and
     // delete itself.
-    virtual void OnComplete(grpc_error_handle error) = 0;
+    virtual void OnComplete(absl::Status error) = 0;
 
     // Called to initiate the request.
     void Run() {
@@ -544,7 +544,7 @@ class AresDNSResolver : public DNSResolver {
    private:
     // Called by ares when lookup has completed or when cancelled. It is always
     // called exactly once, and it triggers self-deletion.
-    static void OnDnsLookupDone(void* arg, grpc_error_handle error) {
+    static void OnDnsLookupDone(void* arg, absl::Status error) {
       AresRequest* r = static_cast<AresRequest*>(arg);
       auto deleter = std::unique_ptr<AresRequest>(r);
       {
@@ -616,7 +616,7 @@ class AresDNSResolver : public DNSResolver {
       return ares_request;
     }
 
-    void OnComplete(grpc_error_handle error) override {
+    void OnComplete(absl::Status error) override {
       GRPC_CARES_TRACE_LOG("AresHostnameRequest:%p OnComplete", this);
       if (!GRPC_ERROR_IS_NONE(error)) {
         on_resolve_address_done_(grpc_error_to_absl_status(error));
@@ -666,7 +666,7 @@ class AresDNSResolver : public DNSResolver {
       return ares_request;
     }
 
-    void OnComplete(grpc_error_handle error) override {
+    void OnComplete(absl::Status error) override {
       GRPC_CARES_TRACE_LOG("AresSRVRequest:%p OnComplete", this);
       if (!GRPC_ERROR_IS_NONE(error)) {
         on_resolve_address_done_(grpc_error_to_absl_status(error));
@@ -714,7 +714,7 @@ class AresDNSResolver : public DNSResolver {
       return ares_request;
     }
 
-    void OnComplete(grpc_error_handle error) override {
+    void OnComplete(absl::Status error) override {
       GRPC_CARES_TRACE_LOG("AresSRVRequest:%p OnComplete", this);
       if (!GRPC_ERROR_IS_NONE(error)) {
         on_resolved_(grpc_error_to_absl_status(error));
@@ -848,7 +848,7 @@ void RegisterAresDnsResolver(CoreConfiguration::Builder* builder) {
 void grpc_resolver_dns_ares_init() {
   if (grpc_core::UseAresDnsResolver()) {
     address_sorting_init();
-    grpc_error_handle error = grpc_ares_init();
+    absl::Status error = grpc_ares_init();
     if (!GRPC_ERROR_IS_NONE(error)) {
       GRPC_LOG_IF_ERROR("grpc_ares_init() failed", error);
       return;

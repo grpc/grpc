@@ -175,7 +175,7 @@ bool grpc_iomgr_is_any_background_poller_thread() {
 }
 
 bool grpc_iomgr_add_closure_to_background_poller(grpc_closure* closure,
-                                                 grpc_error_handle error) {
+                                                 absl::Status error) {
   return grpc_iomgr_platform_add_closure_to_background_poller(closure, error);
 }
 

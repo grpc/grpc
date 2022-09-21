@@ -33,6 +33,7 @@
 
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 #include "src/core/lib/transport/error_utils.h"
@@ -44,7 +45,7 @@ void grpc_create_socketpair_if_unix(int sv[2]) {
 absl::StatusOr<std::vector<grpc_resolved_address>>
 grpc_resolve_unix_domain_address(absl::string_view name) {
   grpc_resolved_address addr;
-  grpc_error_handle error = grpc_core::UnixSockaddrPopulate(name, &addr);
+  absl::Status error = grpc_core::UnixSockaddrPopulate(name, &addr);
   if (GRPC_ERROR_IS_NONE(error)) {
     return std::vector<grpc_resolved_address>({addr});
   }
@@ -56,8 +57,7 @@ grpc_resolve_unix_domain_address(absl::string_view name) {
 absl::StatusOr<std::vector<grpc_resolved_address>>
 grpc_resolve_unix_abstract_domain_address(const absl::string_view name) {
   grpc_resolved_address addr;
-  grpc_error_handle error =
-      grpc_core::UnixAbstractSockaddrPopulate(name, &addr);
+  absl::Status error = grpc_core::UnixAbstractSockaddrPopulate(name, &addr);
   if (GRPC_ERROR_IS_NONE(error)) {
     return std::vector<grpc_resolved_address>({addr});
   }

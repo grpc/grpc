@@ -21,6 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/status/status.h"
 #include "absl/types/optional.h"
 
 #include "src/core/ext/filters/client_channel/connector.h"
@@ -28,7 +29,6 @@
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/transport/handshaker.h"
 
@@ -39,12 +39,12 @@ class Chttp2Connector : public SubchannelConnector {
   ~Chttp2Connector() override;
 
   void Connect(const Args& args, Result* result, grpc_closure* notify) override;
-  void Shutdown(grpc_error_handle error) override;
+  void Shutdown(absl::Status error) override;
 
  private:
-  static void OnHandshakeDone(void* arg, grpc_error_handle error);
-  static void OnReceiveSettings(void* arg, grpc_error_handle error);
-  static void OnTimeout(void* arg, grpc_error_handle error);
+  static void OnHandshakeDone(void* arg, absl::Status error);
+  static void OnReceiveSettings(void* arg, absl::Status error);
+  static void OnTimeout(void* arg, absl::Status error);
 
   // We cannot invoke notify_ until both OnTimeout() and OnReceiveSettings()
   // have been called since that is an indicator to the upper layer that we are
@@ -55,7 +55,7 @@ class Chttp2Connector : public SubchannelConnector {
   // invoked, we call MaybeNotify() again to actually invoke the notify_
   // callback. Note that this only happens if the handshake is done and the
   // connector is waiting on the SETTINGS frame.
-  void MaybeNotify(grpc_error_handle error);
+  void MaybeNotify(absl::Status error);
 
   Mutex mu_;
   Args args_;
@@ -68,7 +68,7 @@ class Chttp2Connector : public SubchannelConnector {
   grpc_closure on_receive_settings_;
   grpc_timer timer_;
   grpc_closure on_timeout_;
-  absl::optional<grpc_error_handle> notify_error_;
+  absl::optional<absl::Status> notify_error_;
   RefCountedPtr<HandshakeManager> handshake_mgr_;
 };
 

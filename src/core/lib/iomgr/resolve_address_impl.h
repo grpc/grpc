@@ -41,7 +41,7 @@ class DNSCallbackExecCtxScheduler {
   }
 
  private:
-  static void RunCallback(void* arg, grpc_error_handle /* error */) {
+  static void RunCallback(void* arg, absl::Status /* error */) {
     DNSCallbackExecCtxScheduler* self =
         static_cast<DNSCallbackExecCtxScheduler*>(arg);
     self->on_done_(std::move(self->param_));

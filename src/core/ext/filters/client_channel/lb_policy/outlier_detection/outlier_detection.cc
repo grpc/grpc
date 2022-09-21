@@ -374,8 +374,8 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
     Timestamp StartTime() const { return start_time_; }
 
    private:
-    static void OnTimer(void* arg, grpc_error_handle error);
-    void OnTimerLocked(grpc_error_handle);
+    static void OnTimer(void* arg, absl::Status error);
+    void OnTimerLocked(absl::Status);
 
     RefCountedPtr<OutlierDetectionLb> parent_;
     grpc_timer timer_;
@@ -813,15 +813,14 @@ void OutlierDetectionLb::EjectionTimer::Orphan() {
   Unref();
 }
 
-void OutlierDetectionLb::EjectionTimer::OnTimer(void* arg,
-                                                grpc_error_handle error) {
+void OutlierDetectionLb::EjectionTimer::OnTimer(void* arg, absl::Status error) {
   auto* self = static_cast<EjectionTimer*>(arg);
   (void)GRPC_ERROR_REF(error);  // ref owned by lambda
   self->parent_->work_serializer()->Run(
       [self, error]() { self->OnTimerLocked(error); }, DEBUG_LOCATION);
 }
 
-void OutlierDetectionLb::EjectionTimer::OnTimerLocked(grpc_error_handle error) {
+void OutlierDetectionLb::EjectionTimer::OnTimerLocked(absl::Status error) {
   if (GRPC_ERROR_IS_NONE(error) && timer_pending_) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
       gpr_log(GPR_INFO, "[outlier_detection_lb %p] ejection timer running",

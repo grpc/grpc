@@ -25,12 +25,13 @@
 
 #include <stdint.h>
 
+#include "absl/status/status.h"
+
 #include <grpc/impl/codegen/grpc_types.h>
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/mpscq.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 
 /* These trace flags default to 1. The corresponding lines are only traced
@@ -79,8 +80,7 @@ bool grpc_cq_begin_op(grpc_completion_queue* cq, void* tag);
 
 /* Queue a GRPC_OP_COMPLETED operation; tag must correspond to the tag passed to
    grpc_cq_begin_op */
-void grpc_cq_end_op(grpc_completion_queue* cq, void* tag,
-                    grpc_error_handle error,
+void grpc_cq_end_op(grpc_completion_queue* cq, void* tag, absl::Status error,
                     void (*done)(void* done_arg, grpc_cq_completion* storage),
                     void* done_arg, grpc_cq_completion* storage,
                     bool internal = false);

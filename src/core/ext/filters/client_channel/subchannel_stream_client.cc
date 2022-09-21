@@ -32,6 +32,7 @@
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/transport/error_utils.h"
 
@@ -141,7 +142,7 @@ void SubchannelStreamClient::StartRetryTimerLocked() {
   grpc_timer_init(&retry_timer_, next_try, &retry_timer_callback_);
 }
 
-void SubchannelStreamClient::OnRetryTimer(void* arg, grpc_error_handle error) {
+void SubchannelStreamClient::OnRetryTimer(void* arg, absl::Status error) {
   auto* self = static_cast<SubchannelStreamClient*>(arg);
   {
     MutexLock lock(&self->mu_);
@@ -211,7 +212,7 @@ void SubchannelStreamClient::CallState::StartCallLocked() {
       context_,
       &call_combiner_,
   };
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = GRPC_ERROR_NONE;
   call_ = SubchannelCall::Create(std::move(args), &error).release();
   // Register after-destruction callback.
   GRPC_CLOSURE_INIT(&after_call_stack_destruction_, AfterCallStackDestruction,
@@ -294,7 +295,7 @@ void SubchannelStreamClient::CallState::StartCallLocked() {
 }
 
 void SubchannelStreamClient::CallState::StartBatchInCallCombiner(
-    void* arg, grpc_error_handle /*error*/) {
+    void* arg, absl::Status /*error*/) {
   auto* batch = static_cast<grpc_transport_stream_op_batch*>(arg);
   auto* call = static_cast<SubchannelCall*>(batch->handler_private.extra_arg);
   call->StartTransportStreamOpBatch(batch);
@@ -310,20 +311,20 @@ void SubchannelStreamClient::CallState::StartBatch(
 }
 
 void SubchannelStreamClient::CallState::AfterCallStackDestruction(
-    void* arg, grpc_error_handle /*error*/) {
+    void* arg, absl::Status /*error*/) {
   auto* self = static_cast<SubchannelStreamClient::CallState*>(arg);
   delete self;
 }
 
 void SubchannelStreamClient::CallState::OnCancelComplete(
-    void* arg, grpc_error_handle /*error*/) {
+    void* arg, absl::Status /*error*/) {
   auto* self = static_cast<SubchannelStreamClient::CallState*>(arg);
   GRPC_CALL_COMBINER_STOP(&self->call_combiner_, "health_cancel");
   self->call_->Unref(DEBUG_LOCATION, "cancel");
 }
 
-void SubchannelStreamClient::CallState::StartCancel(
-    void* arg, grpc_error_handle /*error*/) {
+void SubchannelStreamClient::CallState::StartCancel(void* arg,
+                                                    absl::Status /*error*/) {
   auto* self = static_cast<SubchannelStreamClient::CallState*>(arg);
   auto* batch = grpc_make_transport_stream_op(
       GRPC_CLOSURE_CREATE(OnCancelComplete, self, grpc_schedule_on_exec_ctx));
@@ -345,8 +346,8 @@ void SubchannelStreamClient::CallState::Cancel() {
   }
 }
 
-void SubchannelStreamClient::CallState::OnComplete(
-    void* arg, grpc_error_handle /*error*/) {
+void SubchannelStreamClient::CallState::OnComplete(void* arg,
+                                                   absl::Status /*error*/) {
   auto* self = static_cast<SubchannelStreamClient::CallState*>(arg);
   GRPC_CALL_COMBINER_STOP(&self->call_combiner_, "on_complete");
   self->send_initial_metadata_.Clear();
@@ -355,7 +356,7 @@ void SubchannelStreamClient::CallState::OnComplete(
 }
 
 void SubchannelStreamClient::CallState::RecvInitialMetadataReady(
-    void* arg, grpc_error_handle /*error*/) {
+    void* arg, absl::Status /*error*/) {
   auto* self = static_cast<SubchannelStreamClient::CallState*>(arg);
   GRPC_CALL_COMBINER_STOP(&self->call_combiner_, "recv_initial_metadata_ready");
   self->recv_initial_metadata_.Clear();
@@ -403,14 +404,14 @@ void SubchannelStreamClient::CallState::RecvMessageReady() {
 }
 
 void SubchannelStreamClient::CallState::RecvMessageReady(
-    void* arg, grpc_error_handle /*error*/) {
+    void* arg, absl::Status /*error*/) {
   auto* self = static_cast<SubchannelStreamClient::CallState*>(arg);
   GRPC_CALL_COMBINER_STOP(&self->call_combiner_, "recv_message_ready");
   self->RecvMessageReady();
 }
 
 void SubchannelStreamClient::CallState::RecvTrailingMetadataReady(
-    void* arg, grpc_error_handle error) {
+    void* arg, absl::Status error) {
   auto* self = static_cast<SubchannelStreamClient::CallState*>(arg);
   GRPC_CALL_COMBINER_STOP(&self->call_combiner_,
                           "recv_trailing_metadata_ready");

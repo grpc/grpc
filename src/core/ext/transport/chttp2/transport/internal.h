@@ -26,6 +26,7 @@
 
 #include <string>
 
+#include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
@@ -261,7 +262,7 @@ struct grpc_chttp2_transport {
   /** is the transport destroying itself? */
   uint8_t destroying = false;
   /** has the upper layer closed the transport? */
-  grpc_error_handle closed_with_error = GRPC_ERROR_NONE;
+  absl::Status closed_with_error = GRPC_ERROR_NONE;
 
   /** is there a read request to the endpoint outstanding? */
   uint8_t endpoint_reading = 1;
@@ -310,7 +311,7 @@ struct grpc_chttp2_transport {
 
   /** Set to a grpc_error object if a goaway frame is received. By default, set
    * to GRPC_ERROR_NONE */
-  grpc_error_handle goaway_error = GRPC_ERROR_NONE;
+  absl::Status goaway_error = GRPC_ERROR_NONE;
 
   grpc_chttp2_sent_goaway_state sent_goaway_state = GRPC_CHTTP2_NO_GOAWAY_SEND;
 
@@ -376,9 +377,9 @@ struct grpc_chttp2_transport {
   /* active parser */
   void* parser_data = nullptr;
   grpc_chttp2_stream* incoming_stream = nullptr;
-  grpc_error_handle (*parser)(void* parser_user_data, grpc_chttp2_transport* t,
-                              grpc_chttp2_stream* s, const grpc_slice& slice,
-                              int is_last);
+  absl::Status (*parser)(void* parser_user_data, grpc_chttp2_transport* t,
+                         grpc_chttp2_stream* s, const grpc_slice& slice,
+                         int is_last);
 
   grpc_chttp2_write_cb* write_cb_pool = nullptr;
 
@@ -391,7 +392,7 @@ struct grpc_chttp2_transport {
 
   /* if non-NULL, close the transport with this error when writes are finished
    */
-  grpc_error_handle close_transport_on_writes_finished = GRPC_ERROR_NONE;
+  absl::Status close_transport_on_writes_finished = GRPC_ERROR_NONE;
 
   /* a list of closures to run after writes are finished */
   grpc_closure_list run_after_write = GRPC_CLOSURE_LIST_INIT;
@@ -527,9 +528,9 @@ struct grpc_chttp2_stream {
   bool eos_sent = false;
 
   /** the error that resulted in this stream being read-closed */
-  grpc_error_handle read_closed_error = GRPC_ERROR_NONE;
+  absl::Status read_closed_error = GRPC_ERROR_NONE;
   /** the error that resulted in this stream being write-closed */
-  grpc_error_handle write_closed_error = GRPC_ERROR_NONE;
+  absl::Status write_closed_error = GRPC_ERROR_NONE;
 
   grpc_published_metadata_method published_metadata[2] = {};
   bool final_metadata_requested = false;
@@ -543,7 +544,7 @@ struct grpc_chttp2_stream {
   grpc_core::Timestamp deadline = grpc_core::Timestamp::InfFuture();
 
   /** saw some stream level error */
-  grpc_error_handle forced_close_error = GRPC_ERROR_NONE;
+  absl::Status forced_close_error = GRPC_ERROR_NONE;
   /** how many header frames have we received? */
   uint8_t header_frames_received = 0;
   /** number of bytes received - reset at end of parse thread execution */
@@ -592,12 +593,12 @@ struct grpc_chttp2_begin_write_result {
 };
 grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
     grpc_chttp2_transport* t);
-void grpc_chttp2_end_write(grpc_chttp2_transport* t, grpc_error_handle error);
+void grpc_chttp2_end_write(grpc_chttp2_transport* t, absl::Status error);
 
 /** Process one slice of incoming data; return 1 if the connection is still
     viable after reading, or 0 if the connection should be torn down */
-grpc_error_handle grpc_chttp2_perform_read(grpc_chttp2_transport* t,
-                                           const grpc_slice& slice);
+absl::Status grpc_chttp2_perform_read(grpc_chttp2_transport* t,
+                                      const grpc_slice& slice);
 
 bool grpc_chttp2_list_add_writable_stream(grpc_chttp2_transport* t,
                                           grpc_chttp2_stream* s);
@@ -667,8 +668,7 @@ void grpc_chttp2_parsing_become_skip_parser(grpc_chttp2_transport* t);
 void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
                                        grpc_chttp2_stream* s,
                                        grpc_closure** pclosure,
-                                       grpc_error_handle error,
-                                       const char* desc);
+                                       absl::Status error, const char* desc);
 
 #define GRPC_HEADER_SIZE_IN_BYTES 5
 #define MAX_SIZE_T (~(size_t)0)
@@ -688,11 +688,10 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
   } while (0)
 
 void grpc_chttp2_fake_status(grpc_chttp2_transport* t,
-                             grpc_chttp2_stream* stream,
-                             grpc_error_handle error);
+                             grpc_chttp2_stream* stream, absl::Status error);
 void grpc_chttp2_mark_stream_closed(grpc_chttp2_transport* t,
                                     grpc_chttp2_stream* s, int close_reads,
-                                    int close_writes, grpc_error_handle error);
+                                    int close_writes, absl::Status error);
 void grpc_chttp2_start_writing(grpc_chttp2_transport* t);
 
 #ifndef NDEBUG
@@ -760,7 +759,7 @@ void grpc_chttp2_mark_stream_writable(grpc_chttp2_transport* t,
                                       grpc_chttp2_stream* s);
 
 void grpc_chttp2_cancel_stream(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
-                               grpc_error_handle due_to_error);
+                               absl::Status due_to_error);
 
 void grpc_chttp2_maybe_complete_recv_initial_metadata(grpc_chttp2_transport* t,
                                                       grpc_chttp2_stream* s);
@@ -770,15 +769,14 @@ void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_chttp2_transport* t,
                                                        grpc_chttp2_stream* s);
 
 void grpc_chttp2_fail_pending_writes(grpc_chttp2_transport* t,
-                                     grpc_chttp2_stream* s,
-                                     grpc_error_handle error);
+                                     grpc_chttp2_stream* s, absl::Status error);
 
 /** Set the default keepalive configurations, must only be called at
     initialization */
 void grpc_chttp2_config_default_keepalive_args(grpc_channel_args* args,
                                                bool is_client);
 
-void grpc_chttp2_retry_initiate_ping(void* tp, grpc_error_handle error);
+void grpc_chttp2_retry_initiate_ping(void* tp, absl::Status error);
 
 void schedule_bdp_ping_locked(grpc_chttp2_transport* t);
 

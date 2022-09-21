@@ -35,7 +35,6 @@
 #include <grpc/slice.h>
 
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/tsi/ssl/key_logging/ssl_key_logging.h"
 #include "src/core/tsi/ssl_transport_security.h"
@@ -44,11 +43,11 @@
 /* --- Util --- */
 
 /* Check ALPN information returned from SSL handshakes. */
-grpc_error_handle grpc_ssl_check_alpn(const tsi_peer* peer);
+absl::Status grpc_ssl_check_alpn(const tsi_peer* peer);
 
 /* Check peer name information returned from SSL handshakes. */
-grpc_error_handle grpc_ssl_check_peer_name(absl::string_view peer_name,
-                                           const tsi_peer* peer);
+absl::Status grpc_ssl_check_peer_name(absl::string_view peer_name,
+                                      const tsi_peer* peer);
 /* Compare targer_name information extracted from SSL security connectors. */
 int grpc_ssl_cmp_target_name(absl::string_view target_name,
                              absl::string_view other_target_name,

@@ -89,7 +89,7 @@ class FakeChannelSecurityConnector final
     abort();
   }
 
-  void cancel_check_peer(grpc_closure*, grpc_error_handle) override { abort(); }
+  void cancel_check_peer(grpc_closure*, absl::Status) override { abort(); }
 
   int cmp(const grpc_security_connector*) const override { abort(); }
 

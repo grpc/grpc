@@ -25,6 +25,7 @@
 
 #include <grpc/grpc.h>
 
+#include "src/core/lib/iomgr/error.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
@@ -47,7 +48,7 @@ TEST(FileWatcherConfigTest, Basic) {
       kIdentityCertFile, kPrivateKeyFile, kRootCertFile, kRefreshInterval);
   auto json = Json::Parse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = GRPC_ERROR_NONE;
   auto config =
       FileWatcherCertificateProviderFactory::Config::Parse(*json, &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
@@ -67,7 +68,7 @@ TEST(FileWatcherConfigTest, DefaultRefreshInterval) {
       kIdentityCertFile, kPrivateKeyFile, kRootCertFile);
   auto json = Json::Parse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = GRPC_ERROR_NONE;
   auto config =
       FileWatcherCertificateProviderFactory::Config::Parse(*json, &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
@@ -85,7 +86,7 @@ TEST(FileWatcherConfigTest, OnlyRootCertificatesFileProvided) {
       kRootCertFile);
   auto json = Json::Parse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = GRPC_ERROR_NONE;
   auto config =
       FileWatcherCertificateProviderFactory::Config::Parse(*json, &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
@@ -104,7 +105,7 @@ TEST(FileWatcherConfigTest, OnlyIdenityCertificatesAndPrivateKeyProvided) {
       kIdentityCertFile, kPrivateKeyFile);
   auto json = Json::Parse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = GRPC_ERROR_NONE;
   auto config =
       FileWatcherCertificateProviderFactory::Config::Parse(*json, &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
@@ -124,7 +125,7 @@ TEST(FileWatcherConfigTest, WrongTypes) {
       "}";
   auto json = Json::Parse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = GRPC_ERROR_NONE;
   auto config =
       FileWatcherCertificateProviderFactory::Config::Parse(*json, &error);
   EXPECT_THAT(grpc_error_std_string(error),
@@ -146,7 +147,7 @@ TEST(FileWatcherConfigTest, IdentityCertProvidedButPrivateKeyMissing) {
       kIdentityCertFile);
   auto json = Json::Parse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = GRPC_ERROR_NONE;
   auto config =
       FileWatcherCertificateProviderFactory::Config::Parse(*json, &error);
   EXPECT_THAT(grpc_error_std_string(error),
@@ -164,7 +165,7 @@ TEST(FileWatcherConfigTest, PrivateKeyProvidedButIdentityCertMissing) {
       kPrivateKeyFile);
   auto json = Json::Parse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = GRPC_ERROR_NONE;
   auto config =
       FileWatcherCertificateProviderFactory::Config::Parse(*json, &error);
   EXPECT_THAT(grpc_error_std_string(error),
@@ -178,7 +179,7 @@ TEST(FileWatcherConfigTest, EmptyJsonObject) {
   std::string json_str = absl::StrFormat("{}");
   auto json = Json::Parse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = GRPC_ERROR_NONE;
   auto config =
       FileWatcherCertificateProviderFactory::Config::Parse(*json, &error);
   EXPECT_THAT(

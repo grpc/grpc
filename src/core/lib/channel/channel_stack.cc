@@ -27,6 +27,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/alloc.h"
+#include "src/core/lib/iomgr/error.h"
 
 grpc_core::TraceFlag grpc_trace_channel(false, "channel");
 grpc_core::TraceFlag grpc_trace_channel_stack(false, "channel_stack");
@@ -101,7 +102,7 @@ grpc_call_element* grpc_call_stack_element(grpc_call_stack* call_stack,
   return CALL_ELEMS_FROM_STACK(call_stack) + index;
 }
 
-grpc_error_handle grpc_channel_stack_init(
+absl::Status grpc_channel_stack_init(
     int initial_refs, grpc_iomgr_cb_func destroy, void* destroy_arg,
     const grpc_channel_filter** filters, size_t filter_count,
     const grpc_channel_args* channel_args, const char* name,
@@ -132,7 +133,7 @@ grpc_error_handle grpc_channel_stack_init(
                                              sizeof(grpc_channel_element));
 
   /* init per-filter data */
-  grpc_error_handle first_error = GRPC_ERROR_NONE;
+  absl::Status first_error = GRPC_ERROR_NONE;
   for (i = 0; i < filter_count; i++) {
     args.channel_stack = stack;
     args.channel_args = channel_args;
@@ -140,8 +141,7 @@ grpc_error_handle grpc_channel_stack_init(
     args.is_last = i == (filter_count - 1);
     elems[i].filter = filters[i];
     elems[i].channel_data = user_data;
-    grpc_error_handle error =
-        elems[i].filter->init_channel_elem(&elems[i], &args);
+    absl::Status error = elems[i].filter->init_channel_elem(&elems[i], &args);
     if (!GRPC_ERROR_IS_NONE(error)) {
       if (GRPC_ERROR_IS_NONE(first_error)) {
         first_error = error;
@@ -176,10 +176,10 @@ void grpc_channel_stack_destroy(grpc_channel_stack* stack) {
   stack->on_destroy.Destroy();
 }
 
-grpc_error_handle grpc_call_stack_init(
-    grpc_channel_stack* channel_stack, int initial_refs,
-    grpc_iomgr_cb_func destroy, void* destroy_arg,
-    const grpc_call_element_args* elem_args) {
+absl::Status grpc_call_stack_init(grpc_channel_stack* channel_stack,
+                                  int initial_refs, grpc_iomgr_cb_func destroy,
+                                  void* destroy_arg,
+                                  const grpc_call_element_args* elem_args) {
   grpc_channel_element* channel_elems = CHANNEL_ELEMS_FROM_STACK(channel_stack);
   size_t count = channel_stack->count;
   grpc_call_element* call_elems;
@@ -193,7 +193,7 @@ grpc_error_handle grpc_call_stack_init(
               GPR_ROUND_UP_TO_ALIGNMENT_SIZE(count * sizeof(grpc_call_element));
 
   /* init per-filter data */
-  grpc_error_handle first_error = GRPC_ERROR_NONE;
+  absl::Status first_error = GRPC_ERROR_NONE;
   for (size_t i = 0; i < count; i++) {
     call_elems[i].filter = channel_elems[i].filter;
     call_elems[i].channel_data = channel_elems[i].channel_data;
@@ -202,7 +202,7 @@ grpc_error_handle grpc_call_stack_init(
         GPR_ROUND_UP_TO_ALIGNMENT_SIZE(call_elems[i].filter->sizeof_call_data);
   }
   for (size_t i = 0; i < count; i++) {
-    grpc_error_handle error =
+    absl::Status error =
         call_elems[i].filter->init_call_elem(&call_elems[i], elem_args);
     if (!GRPC_ERROR_IS_NONE(error)) {
       if (GRPC_ERROR_IS_NONE(first_error)) {

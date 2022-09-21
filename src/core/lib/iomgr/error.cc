@@ -92,8 +92,8 @@ absl::Status grpc_wsa_error(const grpc_core::DebugLocation& location, int err,
 }
 #endif
 
-grpc_error_handle grpc_error_set_int(grpc_error_handle src,
-                                     grpc_error_ints which, intptr_t value) {
+absl::Status grpc_error_set_int(absl::Status src, grpc_error_ints which,
+                                intptr_t value) {
   if (GRPC_ERROR_IS_NONE(src)) {
     src = absl::UnknownError("");
     StatusSetInt(&src, grpc_core::StatusIntProperty::kRpcStatus,
@@ -104,7 +104,7 @@ grpc_error_handle grpc_error_set_int(grpc_error_handle src,
   return src;
 }
 
-bool grpc_error_get_int(grpc_error_handle error, grpc_error_ints which,
+bool grpc_error_get_int(absl::Status error, grpc_error_ints which,
                         intptr_t* p) {
   absl::optional<intptr_t> value = grpc_core::StatusGetInt(
       error, static_cast<grpc_core::StatusIntProperty>(which));
@@ -132,9 +132,8 @@ bool grpc_error_get_int(grpc_error_handle error, grpc_error_ints which,
   }
 }
 
-grpc_error_handle grpc_error_set_str(grpc_error_handle src,
-                                     grpc_error_strs which,
-                                     absl::string_view str) {
+absl::Status grpc_error_set_str(absl::Status src, grpc_error_strs which,
+                                absl::string_view str) {
   if (GRPC_ERROR_IS_NONE(src)) {
     src = absl::UnknownError("");
     StatusSetInt(&src, grpc_core::StatusIntProperty::kRpcStatus,
@@ -156,7 +155,7 @@ grpc_error_handle grpc_error_set_str(grpc_error_handle src,
   return src;
 }
 
-bool grpc_error_get_str(grpc_error_handle error, grpc_error_strs which,
+bool grpc_error_get_str(absl::Status error, grpc_error_strs which,
                         std::string* s) {
   if (which == GRPC_ERROR_STR_DESCRIPTION) {
     // absl::Status uses the message field for GRPC_ERROR_STR_DESCRIPTION
@@ -196,8 +195,7 @@ bool grpc_error_get_str(grpc_error_handle error, grpc_error_strs which,
   }
 }
 
-grpc_error_handle grpc_error_add_child(grpc_error_handle src,
-                                       grpc_error_handle child) {
+absl::Status grpc_error_add_child(absl::Status src, absl::Status child) {
   if (src.ok()) {
     return child;
   } else {
@@ -208,7 +206,7 @@ grpc_error_handle grpc_error_add_child(grpc_error_handle src,
   }
 }
 
-bool grpc_log_error(const char* what, grpc_error_handle error, const char* file,
+bool grpc_log_error(const char* what, absl::Status error, const char* file,
                     int line) {
   GPR_DEBUG_ASSERT(!GRPC_ERROR_IS_NONE(error));
   gpr_log(file, line, GPR_LOG_SEVERITY_ERROR, "%s: %s", what,

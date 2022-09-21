@@ -18,6 +18,7 @@
 
 #include "test/core/util/mock_endpoint.h"
 
+#include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/slice_buffer.h>
@@ -73,7 +74,7 @@ static void me_add_to_pollset_set(grpc_endpoint* /*ep*/,
 static void me_delete_from_pollset_set(grpc_endpoint* /*ep*/,
                                        grpc_pollset_set* /*pollset*/) {}
 
-static void me_shutdown(grpc_endpoint* ep, grpc_error_handle why) {
+static void me_shutdown(grpc_endpoint* ep, absl::Status why) {
   mock_endpoint* m = reinterpret_cast<mock_endpoint*>(ep);
   gpr_mu_lock(&m->mu);
   if (m->on_read) {

@@ -18,6 +18,8 @@
 
 #include <inttypes.h>
 
+#include "absl/status/status.h"
+
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/connectivity_state.h>
 #include <grpc/impl/codegen/gpr_types.h>
@@ -153,7 +155,7 @@ class StateWatcher : public DualRefCounted<StateWatcher> {
     grpc_closure* closure() { return &closure_; }
 
    private:
-    static void WatcherTimerInit(void* arg, grpc_error_handle /*error*/) {
+    static void WatcherTimerInit(void* arg, absl::Status /*error*/) {
       auto* self = static_cast<WatcherTimerInitState*>(arg);
       self->state_watcher_->StartTimer(self->deadline_);
       delete self;
@@ -168,7 +170,7 @@ class StateWatcher : public DualRefCounted<StateWatcher> {
     grpc_timer_init(&timer_, deadline, &on_timeout_);
   }
 
-  static void WatchComplete(void* arg, grpc_error_handle error) {
+  static void WatchComplete(void* arg, absl::Status error) {
     auto* self = static_cast<StateWatcher*>(arg);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_operation_failures)) {
       GRPC_LOG_IF_ERROR("watch_completion_error", GRPC_ERROR_REF(error));
@@ -177,7 +179,7 @@ class StateWatcher : public DualRefCounted<StateWatcher> {
     self->Unref();
   }
 
-  static void TimeoutComplete(void* arg, grpc_error_handle error) {
+  static void TimeoutComplete(void* arg, absl::Status error) {
     auto* self = static_cast<StateWatcher*>(arg);
     self->timer_fired_ = GRPC_ERROR_IS_NONE(error);
     // If this is a client channel (not a lame channel), cancel the watch.
@@ -192,7 +194,7 @@ class StateWatcher : public DualRefCounted<StateWatcher> {
   // Invoked when both strong refs are released.
   void Orphan() override {
     WeakRef().release();  // Take a weak ref until completion is finished.
-    grpc_error_handle error =
+    absl::Status error =
         timer_fired_ ? GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                            "Timed out waiting for connection state change")
                      : GRPC_ERROR_NONE;

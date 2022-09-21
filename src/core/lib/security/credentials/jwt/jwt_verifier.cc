@@ -57,7 +57,6 @@
 #include "src/core/lib/http/httpcli_ssl_credentials.h"
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/closure.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/polling_entity.h"
@@ -649,7 +648,7 @@ end:
   return result;
 }
 
-static void on_keys_retrieved(void* user_data, grpc_error_handle /*error*/) {
+static void on_keys_retrieved(void* user_data, absl::Status /*error*/) {
   verifier_cb_ctx* ctx = static_cast<verifier_cb_ctx*>(user_data);
   Json json = json_from_http(&ctx->responses[HTTP_RESPONSE_KEYS]);
   EVP_PKEY* verification_key = nullptr;
@@ -689,7 +688,7 @@ end:
 }
 
 static void on_openid_config_retrieved(void* user_data,
-                                       grpc_error_handle /*error*/) {
+                                       absl::Status /*error*/) {
   verifier_cb_ctx* ctx = static_cast<verifier_cb_ctx*>(user_data);
   const grpc_http_response* response = &ctx->responses[HTTP_RESPONSE_OPENID];
   Json json = json_from_http(response);

@@ -53,7 +53,7 @@
 #include "src/core/lib/iomgr/sockaddr.h"
 
 /* set a socket to use zerocopy */
-grpc_error_handle grpc_set_socket_zerocopy(int fd) {
+absl::Status grpc_set_socket_zerocopy(int fd) {
 #ifdef GRPC_LINUX_ERRQUEUE
   const int enable = 1;
   auto err = setsockopt(fd, SOL_SOCKET, SO_ZEROCOPY, &enable, sizeof(enable));
@@ -68,7 +68,7 @@ grpc_error_handle grpc_set_socket_zerocopy(int fd) {
 }
 
 /* set a socket to non blocking mode */
-grpc_error_handle grpc_set_socket_nonblocking(int fd, int non_blocking) {
+absl::Status grpc_set_socket_nonblocking(int fd, int non_blocking) {
   int oldflags = fcntl(fd, F_GETFL, 0);
   if (oldflags < 0) {
     return GRPC_OS_ERROR(errno, "fcntl");
@@ -87,7 +87,7 @@ grpc_error_handle grpc_set_socket_nonblocking(int fd, int non_blocking) {
   return GRPC_ERROR_NONE;
 }
 
-grpc_error_handle grpc_set_socket_no_sigpipe_if_possible(int fd) {
+absl::Status grpc_set_socket_no_sigpipe_if_possible(int fd) {
 #ifdef GRPC_HAVE_SO_NOSIGPIPE
   int val = 1;
   int newval;
@@ -108,7 +108,7 @@ grpc_error_handle grpc_set_socket_no_sigpipe_if_possible(int fd) {
   return GRPC_ERROR_NONE;
 }
 
-grpc_error_handle grpc_set_socket_ip_pktinfo_if_possible(int fd) {
+absl::Status grpc_set_socket_ip_pktinfo_if_possible(int fd) {
   // Use conditionally-important parameter to avoid warning
   (void)fd;
 #ifdef GRPC_HAVE_IP_PKTINFO
@@ -121,7 +121,7 @@ grpc_error_handle grpc_set_socket_ip_pktinfo_if_possible(int fd) {
   return GRPC_ERROR_NONE;
 }
 
-grpc_error_handle grpc_set_socket_ipv6_recvpktinfo_if_possible(int fd) {
+absl::Status grpc_set_socket_ipv6_recvpktinfo_if_possible(int fd) {
   // Use conditionally-important parameter to avoid warning
   (void)fd;
 #ifdef GRPC_HAVE_IPV6_RECVPKTINFO
@@ -134,14 +134,14 @@ grpc_error_handle grpc_set_socket_ipv6_recvpktinfo_if_possible(int fd) {
   return GRPC_ERROR_NONE;
 }
 
-grpc_error_handle grpc_set_socket_sndbuf(int fd, int buffer_size_bytes) {
+absl::Status grpc_set_socket_sndbuf(int fd, int buffer_size_bytes) {
   return 0 == setsockopt(fd, SOL_SOCKET, SO_SNDBUF, &buffer_size_bytes,
                          sizeof(buffer_size_bytes))
              ? GRPC_ERROR_NONE
              : GRPC_OS_ERROR(errno, "setsockopt(SO_SNDBUF)");
 }
 
-grpc_error_handle grpc_set_socket_rcvbuf(int fd, int buffer_size_bytes) {
+absl::Status grpc_set_socket_rcvbuf(int fd, int buffer_size_bytes) {
   return 0 == setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &buffer_size_bytes,
                          sizeof(buffer_size_bytes))
              ? GRPC_ERROR_NONE
@@ -149,7 +149,7 @@ grpc_error_handle grpc_set_socket_rcvbuf(int fd, int buffer_size_bytes) {
 }
 
 /* set a socket to close on exec */
-grpc_error_handle grpc_set_socket_cloexec(int fd, int close_on_exec) {
+absl::Status grpc_set_socket_cloexec(int fd, int close_on_exec) {
   int oldflags = fcntl(fd, F_GETFD, 0);
   if (oldflags < 0) {
     return GRPC_OS_ERROR(errno, "fcntl");
@@ -169,7 +169,7 @@ grpc_error_handle grpc_set_socket_cloexec(int fd, int close_on_exec) {
 }
 
 /* set a socket to reuse old addresses */
-grpc_error_handle grpc_set_socket_reuse_addr(int fd, int reuse) {
+absl::Status grpc_set_socket_reuse_addr(int fd, int reuse) {
   int val = (reuse != 0);
   int newval;
   socklen_t intlen = sizeof(newval);
@@ -187,7 +187,7 @@ grpc_error_handle grpc_set_socket_reuse_addr(int fd, int reuse) {
 }
 
 /* set a socket to reuse old addresses */
-grpc_error_handle grpc_set_socket_reuse_port(int fd, int reuse) {
+absl::Status grpc_set_socket_reuse_port(int fd, int reuse) {
 #ifndef SO_REUSEPORT
   return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
       "SO_REUSEPORT unavailable on compiling system");
@@ -232,7 +232,7 @@ bool grpc_is_socket_reuse_port_supported() {
 }
 
 /* disable nagle */
-grpc_error_handle grpc_set_socket_low_latency(int fd, int low_latency) {
+absl::Status grpc_set_socket_low_latency(int fd, int low_latency) {
   int val = (low_latency != 0);
   int newval;
   socklen_t intlen = sizeof(newval);
@@ -297,7 +297,7 @@ void config_default_tcp_user_timeout(bool enable, int timeout, bool is_client) {
 }
 
 /* Set TCP_USER_TIMEOUT */
-grpc_error_handle grpc_set_socket_tcp_user_timeout(
+absl::Status grpc_set_socket_tcp_user_timeout(
     int fd, const grpc_core::PosixTcpOptions& options, bool is_client) {
   // Use conditionally-important parameter to avoid warning
   (void)fd;
@@ -371,8 +371,8 @@ grpc_error_handle grpc_set_socket_tcp_user_timeout(
 }
 
 /* set a socket using a grpc_socket_mutator */
-grpc_error_handle grpc_set_socket_with_mutator(int fd, grpc_fd_usage usage,
-                                               grpc_socket_mutator* mutator) {
+absl::Status grpc_set_socket_with_mutator(int fd, grpc_fd_usage usage,
+                                          grpc_socket_mutator* mutator) {
   GPR_ASSERT(mutator);
   if (!grpc_socket_mutator_mutate_fd(mutator, fd, usage)) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("grpc_socket_mutator failed.");
@@ -380,7 +380,7 @@ grpc_error_handle grpc_set_socket_with_mutator(int fd, grpc_fd_usage usage,
   return GRPC_ERROR_NONE;
 }
 
-grpc_error_handle grpc_apply_socket_mutator_in_args(
+absl::Status grpc_apply_socket_mutator_in_args(
     int fd, grpc_fd_usage usage, const grpc_core::PosixTcpOptions& options) {
   if (options.socket_mutator == nullptr) {
     return GRPC_ERROR_NONE;
@@ -416,17 +416,16 @@ int grpc_ipv6_loopback_available(void) {
   return g_ipv6_loopback_available;
 }
 
-static grpc_error_handle error_for_fd(int fd,
-                                      const grpc_resolved_address* addr) {
+static absl::Status error_for_fd(int fd, const grpc_resolved_address* addr) {
   if (fd >= 0) return GRPC_ERROR_NONE;
   auto addr_str = grpc_sockaddr_to_string(addr, false);
-  grpc_error_handle err = grpc_error_set_str(
+  absl::Status err = grpc_error_set_str(
       GRPC_OS_ERROR(errno, "socket"), GRPC_ERROR_STR_TARGET_ADDRESS,
       addr_str.ok() ? addr_str.value() : addr_str.status().ToString());
   return err;
 }
 
-grpc_error_handle grpc_create_dualstack_socket(
+absl::Status grpc_create_dualstack_socket(
     const grpc_resolved_address* resolved_addr, int type, int protocol,
     grpc_dualstack_mode* dsmode, int* newfd) {
   return grpc_create_dualstack_socket_using_factory(
@@ -440,7 +439,7 @@ static int create_socket(grpc_socket_factory* factory, int domain, int type,
              : socket(domain, type, protocol);
 }
 
-grpc_error_handle grpc_create_dualstack_socket_using_factory(
+absl::Status grpc_create_dualstack_socket_using_factory(
     grpc_socket_factory* factory, const grpc_resolved_address* resolved_addr,
     int type, int protocol, grpc_dualstack_mode* dsmode, int* newfd) {
   const grpc_sockaddr* addr =

@@ -58,12 +58,12 @@ static grpc_tcp_listener* find_listener_with_addr(grpc_tcp_server* s,
 }
 
 /* Bind to "::" to get a port number not used by any address. */
-static grpc_error_handle get_unused_port(int* port) {
+static absl::Status get_unused_port(int* port) {
   grpc_resolved_address wild;
   grpc_sockaddr_make_wildcard6(0, &wild);
   grpc_dualstack_mode dsmode;
   int fd;
-  grpc_error_handle err =
+  absl::Status err =
       grpc_create_dualstack_socket(&wild, SOCK_STREAM, 0, &dsmode, &fd);
   if (!GRPC_ERROR_IS_NONE(err)) {
     return err;
@@ -89,15 +89,15 @@ static grpc_error_handle get_unused_port(int* port) {
                     : GRPC_ERROR_NONE;
 }
 
-grpc_error_handle grpc_tcp_server_add_all_local_addrs(grpc_tcp_server* s,
-                                                      unsigned port_index,
-                                                      int requested_port,
-                                                      int* out_port) {
+absl::Status grpc_tcp_server_add_all_local_addrs(grpc_tcp_server* s,
+                                                 unsigned port_index,
+                                                 int requested_port,
+                                                 int* out_port) {
   struct ifaddrs* ifa = nullptr;
   struct ifaddrs* ifa_it;
   unsigned fd_index = 0;
   grpc_tcp_listener* sp = nullptr;
-  grpc_error_handle err = GRPC_ERROR_NONE;
+  absl::Status err = GRPC_ERROR_NONE;
   if (requested_port == 0) {
     /* Note: There could be a race where some local addrs can listen on the
        selected port and some can't. The sane way to handle this would be to
@@ -149,7 +149,7 @@ grpc_error_handle grpc_tcp_server_add_all_local_addrs(grpc_tcp_server* s,
     }
     if ((err = grpc_tcp_server_add_addr(s, &addr, port_index, fd_index, &dsmode,
                                         &new_sp)) != GRPC_ERROR_NONE) {
-      grpc_error_handle root_err = GRPC_ERROR_CREATE_FROM_CPP_STRING(
+      absl::Status root_err = GRPC_ERROR_CREATE_FROM_CPP_STRING(
           absl::StrCat("Failed to add listener: ", addr_str.value()));
       err = grpc_error_add_child(root_err, err);
       break;

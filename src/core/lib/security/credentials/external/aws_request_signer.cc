@@ -37,6 +37,8 @@
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 
+#include "src/core/lib/iomgr/error.h"
+
 namespace grpc_core {
 
 namespace {
@@ -75,8 +77,7 @@ AwsRequestSigner::AwsRequestSigner(
     std::string access_key_id, std::string secret_access_key, std::string token,
     std::string method, std::string url, std::string region,
     std::string request_payload,
-    std::map<std::string, std::string> additional_headers,
-    grpc_error_handle* error)
+    std::map<std::string, std::string> additional_headers, absl::Status* error)
     : access_key_id_(std::move(access_key_id)),
       secret_access_key_(std::move(secret_access_key)),
       token_(std::move(token)),

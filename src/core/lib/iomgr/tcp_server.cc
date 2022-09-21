@@ -22,7 +22,7 @@
 
 grpc_tcp_server_vtable* grpc_tcp_server_impl;
 
-grpc_error_handle grpc_tcp_server_create(
+absl::Status grpc_tcp_server_create(
     grpc_closure* shutdown_complete,
     const grpc_event_engine::experimental::EndpointConfig& config,
     grpc_tcp_server** server) {
@@ -35,9 +35,9 @@ void grpc_tcp_server_start(grpc_tcp_server* server,
   grpc_tcp_server_impl->start(server, pollsets, on_accept_cb, cb_arg);
 }
 
-grpc_error_handle grpc_tcp_server_add_port(grpc_tcp_server* s,
-                                           const grpc_resolved_address* addr,
-                                           int* out_port) {
+absl::Status grpc_tcp_server_add_port(grpc_tcp_server* s,
+                                      const grpc_resolved_address* addr,
+                                      int* out_port) {
   return grpc_tcp_server_impl->add_port(s, addr, out_port);
 }
 

@@ -20,6 +20,8 @@
 #include <functional>
 #include <utility>
 
+#include "absl/status/status.h"
+
 #include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
@@ -61,7 +63,7 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
     GPR_ASSERT(grpc_cq_begin_op(cq_, this));
     GRPC_CLOSURE_INIT(
         &on_alarm_,
-        [](void* arg, grpc_error_handle error) {
+        [](void* arg, absl::Status error) {
           // queue the op on the completion queue
           AlarmImpl* alarm = static_cast<AlarmImpl*>(arg);
           alarm->Ref();
@@ -88,10 +90,10 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
     Ref();
     GRPC_CLOSURE_INIT(
         &on_alarm_,
-        [](void* arg, grpc_error_handle error) {
+        [](void* arg, absl::Status error) {
           grpc_core::Executor::Run(
               GRPC_CLOSURE_CREATE(
-                  [](void* arg, grpc_error_handle error) {
+                  [](void* arg, absl::Status error) {
                     AlarmImpl* alarm = static_cast<AlarmImpl*>(arg);
                     alarm->callback_(GRPC_ERROR_IS_NONE(error));
                     alarm->Unref();

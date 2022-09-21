@@ -75,7 +75,7 @@ void alts_check_peer(tsi_peer peer,
   *auth_context =
       grpc_core::internal::grpc_alts_auth_context_from_tsi_peer(&peer);
   tsi_peer_destruct(&peer);
-  grpc_error_handle error =
+  absl::Status error =
       *auth_context != nullptr
           ? GRPC_ERROR_NONE
           : GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -121,7 +121,7 @@ class grpc_alts_channel_security_connector final
   }
 
   void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
-                         grpc_error_handle error) override {
+                         absl::Status error) override {
     GRPC_ERROR_UNREF(error);
   }
 
@@ -180,7 +180,7 @@ class grpc_alts_server_security_connector final
   }
 
   void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
-                         grpc_error_handle error) override {
+                         absl::Status error) override {
     GRPC_ERROR_UNREF(error);
   }
 

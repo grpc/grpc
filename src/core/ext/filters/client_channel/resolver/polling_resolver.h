@@ -32,7 +32,6 @@
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/closure.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/resolver/resolver.h"
@@ -80,8 +79,8 @@ class PollingResolver : public Resolver {
 
   void GetResultStatus(absl::Status status);
 
-  static void OnNextResolution(void* arg, grpc_error_handle error);
-  void OnNextResolutionLocked(grpc_error_handle error);
+  static void OnNextResolution(void* arg, absl::Status error);
+  void OnNextResolutionLocked(absl::Status error);
 
   /// authority
   std::string authority_;

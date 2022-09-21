@@ -37,6 +37,7 @@
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/work_serializer.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/service_config/service_config.h"
@@ -104,14 +105,14 @@ void PollingResolver::ShutdownLocked() {
   request_.reset();
 }
 
-void PollingResolver::OnNextResolution(void* arg, grpc_error_handle error) {
+void PollingResolver::OnNextResolution(void* arg, absl::Status error) {
   auto* self = static_cast<PollingResolver*>(arg);
   (void)GRPC_ERROR_REF(error);  // ref owned by lambda
   self->work_serializer_->Run(
       [self, error]() { self->OnNextResolutionLocked(error); }, DEBUG_LOCATION);
 }
 
-void PollingResolver::OnNextResolutionLocked(grpc_error_handle error) {
+void PollingResolver::OnNextResolutionLocked(absl::Status error) {
   if (GPR_UNLIKELY(tracer_ != nullptr && tracer_->enabled())) {
     gpr_log(GPR_INFO,
             "[polling resolver %p] re-resolution timer fired: error=\"%s\", "

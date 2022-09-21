@@ -57,6 +57,7 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/handshaker/proxy_mapper_registry.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/surface/channel_init.h"
@@ -136,7 +137,7 @@ size_t ConnectedSubchannel::GetInitialCallSizeEstimate() const {
 //
 
 RefCountedPtr<SubchannelCall> SubchannelCall::Create(Args args,
-                                                     grpc_error_handle* error) {
+                                                     absl::Status* error) {
   const size_t allocation_size =
       args.connected_subchannel->GetInitialCallSizeEstimate();
   Arena* arena = args.arena;
@@ -144,7 +145,7 @@ RefCountedPtr<SubchannelCall> SubchannelCall::Create(Args args,
       arena->Alloc(allocation_size)) SubchannelCall(std::move(args), error));
 }
 
-SubchannelCall::SubchannelCall(Args args, grpc_error_handle* error)
+SubchannelCall::SubchannelCall(Args args, absl::Status* error)
     : connected_subchannel_(std::move(args.connected_subchannel)),
       deadline_(args.deadline) {
   grpc_call_stack* callstk = SUBCHANNEL_CALL_TO_CALL_STACK(this);
@@ -210,7 +211,7 @@ void SubchannelCall::Unref(const DebugLocation& /*location*/,
   GRPC_CALL_STACK_UNREF(SUBCHANNEL_CALL_TO_CALL_STACK(this), reason);
 }
 
-void SubchannelCall::Destroy(void* arg, grpc_error_handle /*error*/) {
+void SubchannelCall::Destroy(void* arg, absl::Status /*error*/) {
   SubchannelCall* self = static_cast<SubchannelCall*>(arg);
   // Keep some members before destroying the subchannel call.
   grpc_closure* after_call_stack_destroy = self->after_call_stack_destroy_;
@@ -254,7 +255,7 @@ namespace {
 
 // Sets *status based on the rest of the parameters.
 void GetCallStatus(grpc_status_code* status, Timestamp deadline,
-                   grpc_metadata_batch* md_batch, grpc_error_handle error) {
+                   grpc_metadata_batch* md_batch, absl::Status error) {
   if (!GRPC_ERROR_IS_NONE(error)) {
     grpc_error_get_status(error, deadline, status, nullptr, nullptr, nullptr);
   } else {
@@ -265,8 +266,7 @@ void GetCallStatus(grpc_status_code* status, Timestamp deadline,
 
 }  // namespace
 
-void SubchannelCall::RecvTrailingMetadataReady(void* arg,
-                                               grpc_error_handle error) {
+void SubchannelCall::RecvTrailingMetadataReady(void* arg, absl::Status error) {
   SubchannelCall* call = static_cast<SubchannelCall*>(arg);
   GPR_ASSERT(call->recv_trailing_metadata_ != nullptr);
   grpc_status_code status = GRPC_STATUS_OK;
@@ -358,7 +358,7 @@ class Subchannel::AsyncWatcherNotifierLocked {
     ExecCtx::Run(DEBUG_LOCATION,
                  GRPC_CLOSURE_INIT(
                      &closure_,
-                     [](void* arg, grpc_error_handle /*error*/) {
+                     [](void* arg, absl::Status /*error*/) {
                        auto* self =
                            static_cast<AsyncWatcherNotifierLocked*>(arg);
                        self->watcher_->OnConnectivityStateChange();
@@ -885,7 +885,7 @@ void Subchannel::StartConnectingLocked() {
   connector_->Connect(args, &connecting_result_, &on_connecting_finished_);
 }
 
-void Subchannel::OnConnectingFinished(void* arg, grpc_error_handle error) {
+void Subchannel::OnConnectingFinished(void* arg, absl::Status error) {
   WeakRefCountedPtr<Subchannel> c(static_cast<Subchannel*>(arg));
   {
     MutexLock lock(&c->mu_);
@@ -894,7 +894,7 @@ void Subchannel::OnConnectingFinished(void* arg, grpc_error_handle error) {
   c.reset(DEBUG_LOCATION, "Connect");
 }
 
-void Subchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
+void Subchannel::OnConnectingFinishedLocked(absl::Status error) {
   if (shutdown_) {
     (void)GRPC_ERROR_UNREF(error);
     return;

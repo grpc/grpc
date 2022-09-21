@@ -32,6 +32,7 @@
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/stream_map.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/error.h"
 
 static bool g_disable_ping_ack = false;
 
@@ -60,7 +61,7 @@ grpc_slice grpc_chttp2_ping_create(uint8_t ack, uint64_t opaque_8bytes) {
   return slice;
 }
 
-grpc_error_handle grpc_chttp2_ping_parser_begin_frame(
+absl::Status grpc_chttp2_ping_parser_begin_frame(
     grpc_chttp2_ping_parser* parser, uint32_t length, uint8_t flags) {
   if (flags & 0xfe || length != 8) {
     return GRPC_ERROR_CREATE_FROM_CPP_STRING(
@@ -72,11 +73,11 @@ grpc_error_handle grpc_chttp2_ping_parser_begin_frame(
   return GRPC_ERROR_NONE;
 }
 
-grpc_error_handle grpc_chttp2_ping_parser_parse(void* parser,
-                                                grpc_chttp2_transport* t,
-                                                grpc_chttp2_stream* /*s*/,
-                                                const grpc_slice& slice,
-                                                int is_last) {
+absl::Status grpc_chttp2_ping_parser_parse(void* parser,
+                                           grpc_chttp2_transport* t,
+                                           grpc_chttp2_stream* /*s*/,
+                                           const grpc_slice& slice,
+                                           int is_last) {
   const uint8_t* const beg = GRPC_SLICE_START_PTR(slice);
   const uint8_t* const end = GRPC_SLICE_END_PTR(slice);
   const uint8_t* cur = beg;

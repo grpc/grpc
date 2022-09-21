@@ -26,6 +26,7 @@
 #include <string>
 #include <utility>
 
+#include "absl/status/status.h"
 #include "absl/status/statusor.h"
 
 #include "src/core/lib/gprpp/orphanable.h"
@@ -63,14 +64,14 @@ typedef struct freereq {
   int done = 0;
 } freereq;
 
-static void destroy_pops_and_shutdown(void* p, grpc_error_handle /*error*/) {
+static void destroy_pops_and_shutdown(void* p, absl::Status /*error*/) {
   grpc_pollset* pollset =
       grpc_polling_entity_pollset(static_cast<grpc_polling_entity*>(p));
   grpc_pollset_destroy(pollset);
   gpr_free(pollset);
 }
 
-static void freed_port_from_server(void* arg, grpc_error_handle /*error*/) {
+static void freed_port_from_server(void* arg, absl::Status /*error*/) {
   freereq* pr = static_cast<freereq*>(arg);
   gpr_mu_lock(pr->mu);
   pr->done = 1;
@@ -146,7 +147,7 @@ typedef struct portreq {
   grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request;
 } portreq;
 
-static void got_port_from_server(void* arg, grpc_error_handle error) {
+static void got_port_from_server(void* arg, absl::Status error) {
   size_t i;
   int port = 0;
   portreq* pr = static_cast<portreq*>(arg);

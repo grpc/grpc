@@ -48,6 +48,7 @@
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
@@ -78,10 +79,10 @@ struct cq_poller_vtable {
   bool can_listen;
   size_t (*size)(void);
   void (*init)(grpc_pollset* pollset, gpr_mu** mu);
-  grpc_error_handle (*kick)(grpc_pollset* pollset,
-                            grpc_pollset_worker* specific_worker);
-  grpc_error_handle (*work)(grpc_pollset* pollset, grpc_pollset_worker** worker,
-                            grpc_core::Timestamp deadline);
+  absl::Status (*kick)(grpc_pollset* pollset,
+                       grpc_pollset_worker* specific_worker);
+  absl::Status (*work)(grpc_pollset* pollset, grpc_pollset_worker** worker,
+                       grpc_core::Timestamp deadline);
   void (*shutdown)(grpc_pollset* pollset, grpc_closure* closure);
   void (*destroy)(grpc_pollset* pollset);
 };
@@ -111,9 +112,9 @@ void non_polling_poller_destroy(grpc_pollset* pollset) {
   gpr_mu_destroy(&npp->mu);
 }
 
-grpc_error_handle non_polling_poller_work(grpc_pollset* pollset,
-                                          grpc_pollset_worker** worker,
-                                          grpc_core::Timestamp deadline) {
+absl::Status non_polling_poller_work(grpc_pollset* pollset,
+                                     grpc_pollset_worker** worker,
+                                     grpc_core::Timestamp deadline) {
   non_polling_poller* npp = reinterpret_cast<non_polling_poller*>(pollset);
   if (npp->shutdown) return GRPC_ERROR_NONE;
   if (npp->kicked_without_poller) {
@@ -152,8 +153,8 @@ grpc_error_handle non_polling_poller_work(grpc_pollset* pollset,
   return GRPC_ERROR_NONE;
 }
 
-grpc_error_handle non_polling_poller_kick(
-    grpc_pollset* pollset, grpc_pollset_worker* specific_worker) {
+absl::Status non_polling_poller_kick(grpc_pollset* pollset,
+                                     grpc_pollset_worker* specific_worker) {
   non_polling_poller* p = reinterpret_cast<non_polling_poller*>(pollset);
   if (specific_worker == nullptr) {
     specific_worker = reinterpret_cast<grpc_pollset_worker*>(p->root);
@@ -208,7 +209,7 @@ struct cq_vtable {
   void (*shutdown)(grpc_completion_queue* cq);
   void (*destroy)(void* data);
   bool (*begin_op)(grpc_completion_queue* cq, void* tag);
-  void (*end_op)(grpc_completion_queue* cq, void* tag, grpc_error_handle error,
+  void (*end_op)(grpc_completion_queue* cq, void* tag, absl::Status error,
                  void (*done)(void* done_arg, grpc_cq_completion* storage),
                  void* done_arg, grpc_cq_completion* storage, bool internal);
   grpc_event (*next)(grpc_completion_queue* cq, gpr_timespec deadline,
@@ -381,17 +382,17 @@ static bool cq_begin_op_for_callback(grpc_completion_queue* cq, void* tag);
 // safe to free up that storage. The storage MUST NOT be freed until the
 // done callback is invoked.
 static void cq_end_op_for_next(
-    grpc_completion_queue* cq, void* tag, grpc_error_handle error,
+    grpc_completion_queue* cq, void* tag, absl::Status error,
     void (*done)(void* done_arg, grpc_cq_completion* storage), void* done_arg,
     grpc_cq_completion* storage, bool internal);
 
 static void cq_end_op_for_pluck(
-    grpc_completion_queue* cq, void* tag, grpc_error_handle error,
+    grpc_completion_queue* cq, void* tag, absl::Status error,
     void (*done)(void* done_arg, grpc_cq_completion* storage), void* done_arg,
     grpc_cq_completion* storage, bool internal);
 
 static void cq_end_op_for_callback(
-    grpc_completion_queue* cq, void* tag, grpc_error_handle error,
+    grpc_completion_queue* cq, void* tag, absl::Status error,
     void (*done)(void* done_arg, grpc_cq_completion* storage), void* done_arg,
     grpc_cq_completion* storage, bool internal);
 
@@ -444,7 +445,7 @@ grpc_core::TraceFlag grpc_cq_pluck_trace(false, "queue_pluck");
     }                                                    \
   } while (0)
 
-static void on_pollset_shutdown_done(void* arg, grpc_error_handle error);
+static void on_pollset_shutdown_done(void* arg, absl::Status error);
 
 void grpc_completion_queue_thread_local_cache_init(grpc_completion_queue* cq) {
   if (g_cached_cq == nullptr) {
@@ -600,7 +601,7 @@ void grpc_cq_internal_ref(grpc_completion_queue* cq) {
   cq->owning_refs.Ref(debug_location, reason);
 }
 
-static void on_pollset_shutdown_done(void* arg, grpc_error_handle /*error*/) {
+static void on_pollset_shutdown_done(void* arg, absl::Status /*error*/) {
   grpc_completion_queue* cq = static_cast<grpc_completion_queue*>(arg);
   GRPC_CQ_INTERNAL_UNREF(cq, "pollset_destroy");
 }
@@ -687,7 +688,7 @@ bool grpc_cq_begin_op(grpc_completion_queue* cq, void* tag) {
  * completion
  * type of GRPC_CQ_NEXT) */
 static void cq_end_op_for_next(
-    grpc_completion_queue* cq, void* tag, grpc_error_handle error,
+    grpc_completion_queue* cq, void* tag, absl::Status error,
     void (*done)(void* done_arg, grpc_cq_completion* storage), void* done_arg,
     grpc_cq_completion* storage, bool /*internal*/) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_api_trace) ||
@@ -729,7 +730,7 @@ static void cq_end_op_for_next(
       /* Only kick if this is the first item queued */
       if (is_first) {
         gpr_mu_lock(cq->mu);
-        grpc_error_handle kick_error =
+        absl::Status kick_error =
             cq->poller_vtable->kick(POLLSET_FROM_CQ(cq), nullptr);
         gpr_mu_unlock(cq->mu);
 
@@ -763,7 +764,7 @@ static void cq_end_op_for_next(
  * completion
  * type of GRPC_CQ_PLUCK) */
 static void cq_end_op_for_pluck(
-    grpc_completion_queue* cq, void* tag, grpc_error_handle error,
+    grpc_completion_queue* cq, void* tag, absl::Status error,
     void (*done)(void* done_arg, grpc_cq_completion* storage), void* done_arg,
     grpc_cq_completion* storage, bool /*internal*/) {
   cq_pluck_data* cqd = static_cast<cq_pluck_data*> DATA_FROM_CQ(cq);
@@ -811,7 +812,7 @@ static void cq_end_op_for_pluck(
       }
     }
 
-    grpc_error_handle kick_error =
+    absl::Status kick_error =
         cq->poller_vtable->kick(POLLSET_FROM_CQ(cq), pluck_worker);
     gpr_mu_unlock(cq->mu);
     if (!GRPC_ERROR_IS_NONE(kick_error)) {
@@ -824,14 +825,14 @@ static void cq_end_op_for_pluck(
   GRPC_ERROR_UNREF(error);
 }
 
-static void functor_callback(void* arg, grpc_error_handle error) {
+static void functor_callback(void* arg, absl::Status error) {
   auto* functor = static_cast<grpc_completion_queue_functor*>(arg);
   functor->functor_run(functor, GRPC_ERROR_IS_NONE(error));
 }
 
 /* Complete an event on a completion queue of type GRPC_CQ_CALLBACK */
 static void cq_end_op_for_callback(
-    grpc_completion_queue* cq, void* tag, grpc_error_handle error,
+    grpc_completion_queue* cq, void* tag, absl::Status error,
     void (*done)(void* done_arg, grpc_cq_completion* storage), void* done_arg,
     grpc_cq_completion* storage, bool internal) {
   cq_callback_data* cqd = static_cast<cq_callback_data*> DATA_FROM_CQ(cq);
@@ -883,8 +884,7 @@ static void cq_end_op_for_callback(
       GRPC_CLOSURE_CREATE(functor_callback, functor, nullptr), error);
 }
 
-void grpc_cq_end_op(grpc_completion_queue* cq, void* tag,
-                    grpc_error_handle error,
+void grpc_cq_end_op(grpc_completion_queue* cq, void* tag, absl::Status error,
                     void (*done)(void* done_arg, grpc_cq_completion* storage),
                     void* done_arg, grpc_cq_completion* storage,
                     bool internal) {
@@ -1043,8 +1043,8 @@ static grpc_event cq_next(grpc_completion_queue* cq, gpr_timespec deadline,
     /* The main polling work happens in grpc_pollset_work */
     gpr_mu_lock(cq->mu);
     cq->num_polls++;
-    grpc_error_handle err = cq->poller_vtable->work(
-        POLLSET_FROM_CQ(cq), nullptr, iteration_deadline);
+    absl::Status err = cq->poller_vtable->work(POLLSET_FROM_CQ(cq), nullptr,
+                                               iteration_deadline);
     gpr_mu_unlock(cq->mu);
 
     if (!GRPC_ERROR_IS_NONE(err)) {
@@ -1288,7 +1288,7 @@ static grpc_event cq_pluck(grpc_completion_queue* cq, void* tag,
       break;
     }
     cq->num_polls++;
-    grpc_error_handle err =
+    absl::Status err =
         cq->poller_vtable->work(POLLSET_FROM_CQ(cq), &worker, deadline_millis);
     if (!GRPC_ERROR_IS_NONE(err)) {
       del_plucker(cq, tag, &worker);

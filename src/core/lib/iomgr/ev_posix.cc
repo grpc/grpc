@@ -227,7 +227,7 @@ void grpc_fd_orphan(grpc_fd* fd, grpc_closure* on_done, int* release_fd,
   g_event_engine->fd_orphan(fd, on_done, release_fd, reason);
 }
 
-void grpc_fd_shutdown(grpc_fd* fd, grpc_error_handle why) {
+void grpc_fd_shutdown(grpc_fd* fd, absl::Status why) {
   GRPC_POLLING_API_TRACE("fd_shutdown(%d)", grpc_fd_wrapped_fd(fd));
   GRPC_FD_TRACE("fd_shutdown(%d)", grpc_fd_wrapped_fd(fd));
   g_event_engine->fd_shutdown(fd, why);
@@ -272,20 +272,19 @@ static void pollset_destroy(grpc_pollset* pollset) {
   g_event_engine->pollset_destroy(pollset);
 }
 
-static grpc_error_handle pollset_work(grpc_pollset* pollset,
-                                      grpc_pollset_worker** worker,
-                                      grpc_core::Timestamp deadline) {
+static absl::Status pollset_work(grpc_pollset* pollset,
+                                 grpc_pollset_worker** worker,
+                                 grpc_core::Timestamp deadline) {
   GRPC_POLLING_API_TRACE("pollset_work(%p, %" PRId64 ") begin", pollset,
                          deadline.milliseconds_after_process_epoch());
-  grpc_error_handle err =
-      g_event_engine->pollset_work(pollset, worker, deadline);
+  absl::Status err = g_event_engine->pollset_work(pollset, worker, deadline);
   GRPC_POLLING_API_TRACE("pollset_work(%p, %" PRId64 ") end", pollset,
                          deadline.milliseconds_after_process_epoch());
   return err;
 }
 
-static grpc_error_handle pollset_kick(grpc_pollset* pollset,
-                                      grpc_pollset_worker* specific_worker) {
+static absl::Status pollset_kick(grpc_pollset* pollset,
+                                 grpc_pollset_worker* specific_worker) {
   GRPC_POLLING_API_TRACE("pollset_kick(%p, %p)", pollset, specific_worker);
   return g_event_engine->pollset_kick(pollset, specific_worker);
 }
@@ -364,7 +363,7 @@ bool grpc_is_any_background_poller_thread(void) {
 }
 
 bool grpc_add_closure_to_background_poller(grpc_closure* closure,
-                                           grpc_error_handle error) {
+                                           absl::Status error) {
   return g_event_engine->add_closure_to_background_poller(closure, error);
 }
 

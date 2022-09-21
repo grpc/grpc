@@ -92,7 +92,7 @@ class TlsSecurityConnectorTest : public ::testing::Test {
     grpc_slice_unref(key_slice_0);
   }
 
-  static void VerifyExpectedErrorCallback(void* arg, grpc_error_handle error) {
+  static void VerifyExpectedErrorCallback(void* arg, absl::Status error) {
     const char* expected_error_msg = static_cast<const char*>(arg);
     if (expected_error_msg == nullptr) {
       EXPECT_EQ(error, GRPC_ERROR_NONE);
@@ -101,7 +101,7 @@ class TlsSecurityConnectorTest : public ::testing::Test {
     }
   }
 
-  static std::string GetErrorMsg(grpc_error_handle error) {
+  static std::string GetErrorMsg(absl::Status error) {
     std::string error_str;
     GPR_ASSERT(
         grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION, &error_str));

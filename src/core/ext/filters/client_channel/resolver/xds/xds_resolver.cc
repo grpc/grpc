@@ -793,7 +793,7 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
 //
 
 void XdsResolver::StartLocked() {
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = GRPC_ERROR_NONE;
   auto xds_client = GrpcXdsClient::GetOrCreate(args_, "xds resolver");
   if (!xds_client.ok()) {
     gpr_log(GPR_ERROR,

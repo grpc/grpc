@@ -56,7 +56,7 @@ static grpc_endpoint_test_config configs[] = {
     {"tcp/tcp_socketpair", create_fixture_endpoint_pair, clean_up},
 };
 
-static void destroy_pollset(void* p, grpc_error_handle /*error*/) {
+static void destroy_pollset(void* p, absl::Status /*error*/) {
   grpc_pollset_destroy(static_cast<grpc_pollset*>(p));
 }
 

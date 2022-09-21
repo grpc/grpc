@@ -25,11 +25,12 @@
 
 #include <vector>
 
+#include "absl/status/status.h"
+
 #include <grpc/slice.h>
 
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser_table.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
 // IWYU pragma: no_include <type_traits>
@@ -85,7 +86,7 @@ class HPackParser {
   // Start throwing away any received headers after parsing them.
   void StopBufferingFrame() { metadata_buffer_ = nullptr; }
   // Parse one slice worth of data
-  grpc_error_handle Parse(const grpc_slice& slice, bool is_last);
+  absl::Status Parse(const grpc_slice& slice, bool is_last);
   // Reset state ready for the next BeginFrame
   void FinishFrame();
 
@@ -102,7 +103,7 @@ class HPackParser {
   class Input;
   class String;
 
-  grpc_error_handle ParseInput(Input input, bool is_last);
+  absl::Status ParseInput(Input input, bool is_last);
   bool ParseInputInner(Input* input);
 
   // Target metadata buffer
@@ -133,10 +134,10 @@ class HPackParser {
 
 /* wraps grpc_chttp2_hpack_parser_parse to provide a frame level parser for
    the transport */
-grpc_error_handle grpc_chttp2_header_parser_parse(void* hpack_parser,
-                                                  grpc_chttp2_transport* t,
-                                                  grpc_chttp2_stream* s,
-                                                  const grpc_slice& slice,
-                                                  int is_last);
+absl::Status grpc_chttp2_header_parser_parse(void* hpack_parser,
+                                             grpc_chttp2_transport* t,
+                                             grpc_chttp2_stream* s,
+                                             const grpc_slice& slice,
+                                             int is_last);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_PARSER_H */

@@ -24,10 +24,11 @@
 #include <string>
 #include <vector>
 
+#include "absl/status/status.h"
+
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/http/httpcli.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/security/credentials/external/external_account_credentials.h"
 #include "src/core/lib/uri/uri_parser.h"
 
@@ -36,23 +37,22 @@ namespace grpc_core {
 class UrlExternalAccountCredentials final : public ExternalAccountCredentials {
  public:
   static RefCountedPtr<UrlExternalAccountCredentials> Create(
-      Options options, std::vector<std::string> scopes,
-      grpc_error_handle* error);
+      Options options, std::vector<std::string> scopes, absl::Status* error);
 
   UrlExternalAccountCredentials(Options options,
                                 std::vector<std::string> scopes,
-                                grpc_error_handle* error);
+                                absl::Status* error);
 
  private:
   void RetrieveSubjectToken(
       HTTPRequestContext* ctx, const Options& options,
-      std::function<void(std::string, grpc_error_handle)> cb) override;
+      std::function<void(std::string, absl::Status)> cb) override;
 
-  static void OnRetrieveSubjectToken(void* arg, grpc_error_handle error);
-  void OnRetrieveSubjectTokenInternal(grpc_error_handle error);
+  static void OnRetrieveSubjectToken(void* arg, absl::Status error);
+  void OnRetrieveSubjectTokenInternal(absl::Status error);
 
   void FinishRetrieveSubjectToken(std::string subject_token,
-                                  grpc_error_handle error);
+                                  absl::Status error);
 
   // Fields of credential source
   URI url_;
@@ -63,7 +63,7 @@ class UrlExternalAccountCredentials final : public ExternalAccountCredentials {
 
   OrphanablePtr<HttpRequest> http_request_;
   HTTPRequestContext* ctx_ = nullptr;
-  std::function<void(std::string, grpc_error_handle)> cb_ = nullptr;
+  std::function<void(std::string, absl::Status)> cb_ = nullptr;
 };
 
 }  // namespace grpc_core

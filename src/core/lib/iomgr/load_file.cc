@@ -30,14 +30,14 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/block_annotate.h"
 
-grpc_error_handle grpc_load_file(const char* filename, int add_null_terminator,
-                                 grpc_slice* output) {
+absl::Status grpc_load_file(const char* filename, int add_null_terminator,
+                            grpc_slice* output) {
   unsigned char* contents = nullptr;
   size_t contents_size = 0;
   grpc_slice result = grpc_empty_slice();
   FILE* file;
   size_t bytes_read = 0;
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = GRPC_ERROR_NONE;
 
   GRPC_SCHEDULING_START_BLOCKING_REGION;
   file = fopen(filename, "rb");
@@ -67,7 +67,7 @@ end:
   *output = result;
   if (file != nullptr) fclose(file);
   if (!GRPC_ERROR_IS_NONE(error)) {
-    grpc_error_handle error_out =
+    absl::Status error_out =
         grpc_error_set_str(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                                "Failed to load file", &error, 1),
                            GRPC_ERROR_STR_FILENAME,

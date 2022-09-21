@@ -39,13 +39,13 @@ namespace grpc_core {
 namespace testing {
 namespace {
 
-grpc_error_handle ChannelInitFunc(grpc_channel_element* /*elem*/,
-                                  grpc_channel_element_args* /*args*/) {
+absl::Status ChannelInitFunc(grpc_channel_element* /*elem*/,
+                             grpc_channel_element_args* /*args*/) {
   return GRPC_ERROR_NONE;
 }
 
-grpc_error_handle CallInitFunc(grpc_call_element* /*elem*/,
-                               const grpc_call_element_args* /*args*/) {
+absl::Status CallInitFunc(grpc_call_element* /*elem*/,
+                          const grpc_call_element_args* /*args*/) {
   return GRPC_ERROR_NONE;
 }
 

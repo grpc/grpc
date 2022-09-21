@@ -72,7 +72,7 @@ class InsecureChannelSecurityConnector
                   grpc_closure* on_peer_checked) override;
 
   void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
-                         grpc_error_handle error) override {
+                         absl::Status error) override {
     GRPC_ERROR_UNREF(error);
   }
 
@@ -95,7 +95,7 @@ class InsecureServerSecurityConnector : public grpc_server_security_connector {
                   grpc_closure* on_peer_checked) override;
 
   void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
-                         grpc_error_handle error) override {
+                         absl::Status error) override {
     GRPC_ERROR_UNREF(error);
   }
 

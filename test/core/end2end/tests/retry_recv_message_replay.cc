@@ -21,6 +21,7 @@
 
 #include <new>
 
+#include "absl/status/status.h"
 #include "absl/types/optional.h"
 
 #include <grpc/byte_buffer.h>
@@ -278,8 +279,8 @@ class FailFirstSendOpFilter {
  public:
   class CallData {
    public:
-    static grpc_error_handle Init(grpc_call_element* elem,
-                                  const grpc_call_element_args* args) {
+    static absl::Status Init(grpc_call_element* elem,
+                             const grpc_call_element_args* args) {
       new (elem->call_data) CallData(args);
       return GRPC_ERROR_NONE;
     }
@@ -319,8 +320,8 @@ class FailFirstSendOpFilter {
     bool fail_ = false;
   };
 
-  static grpc_error_handle Init(grpc_channel_element* elem,
-                                grpc_channel_element_args* /*args*/) {
+  static absl::Status Init(grpc_channel_element* elem,
+                           grpc_channel_element_args* /*args*/) {
     new (elem->channel_data) FailFirstSendOpFilter();
     return GRPC_ERROR_NONE;
   }

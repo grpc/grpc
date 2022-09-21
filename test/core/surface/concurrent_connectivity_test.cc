@@ -142,7 +142,7 @@ void bad_server_thread(void* vargs) {
   auto channel_args = grpc_core::CoreConfiguration::Get()
                           .channel_args_preconditioning()
                           .PreconditionChannelArgs(nullptr);
-  grpc_error_handle error = grpc_tcp_server_create(
+  absl::Status error = grpc_tcp_server_create(
       nullptr,
       grpc_event_engine::experimental::ChannelArgsEndpointConfig(channel_args),
       &s);
@@ -177,7 +177,7 @@ void bad_server_thread(void* vargs) {
   grpc_tcp_server_unref(s);
 }
 
-static void done_pollset_shutdown(void* pollset, grpc_error_handle /*error*/) {
+static void done_pollset_shutdown(void* pollset, absl::Status /*error*/) {
   grpc_pollset_destroy(static_cast<grpc_pollset*>(pollset));
   gpr_free(pollset);
 }

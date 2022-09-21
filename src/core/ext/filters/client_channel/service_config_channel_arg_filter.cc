@@ -102,7 +102,7 @@ class ServiceConfigChannelArgCallData {
   ServiceConfigCallData service_config_call_data_;
 };
 
-grpc_error_handle ServiceConfigChannelArgInitCallElem(
+absl::Status ServiceConfigChannelArgInitCallElem(
     grpc_call_element* elem, const grpc_call_element_args* args) {
   auto* chand =
       static_cast<ServiceConfigChannelArgChannelData*>(elem->channel_data);
@@ -125,7 +125,7 @@ void ServiceConfigChannelArgDestroyCallElem(
   calld->~ServiceConfigChannelArgCallData();
 }
 
-grpc_error_handle ServiceConfigChannelArgInitChannelElem(
+absl::Status ServiceConfigChannelArgInitChannelElem(
     grpc_channel_element* elem, grpc_channel_element_args* args) {
   ServiceConfigChannelArgChannelData* chand =
       static_cast<ServiceConfigChannelArgChannelData*>(elem->channel_data);

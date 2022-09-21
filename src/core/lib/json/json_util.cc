@@ -36,7 +36,7 @@ bool ParseDurationFromJson(const Json& field, Duration* duration) {
 }
 
 bool ExtractJsonBool(const Json& json, absl::string_view field_name,
-                     bool* output, std::vector<grpc_error_handle>* error_list) {
+                     bool* output, std::vector<absl::Status>* error_list) {
   switch (json.type()) {
     case Json::Type::JSON_TRUE:
       *output = true;
@@ -53,7 +53,7 @@ bool ExtractJsonBool(const Json& json, absl::string_view field_name,
 
 bool ExtractJsonArray(const Json& json, absl::string_view field_name,
                       const Json::Array** output,
-                      std::vector<grpc_error_handle>* error_list) {
+                      std::vector<absl::Status>* error_list) {
   if (json.type() != Json::Type::ARRAY) {
     *output = nullptr;
     error_list->push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
@@ -66,7 +66,7 @@ bool ExtractJsonArray(const Json& json, absl::string_view field_name,
 
 bool ExtractJsonObject(const Json& json, absl::string_view field_name,
                        const Json::Object** output,
-                       std::vector<grpc_error_handle>* error_list) {
+                       std::vector<absl::Status>* error_list) {
   if (json.type() != Json::Type::OBJECT) {
     *output = nullptr;
     error_list->push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
@@ -80,7 +80,7 @@ bool ExtractJsonObject(const Json& json, absl::string_view field_name,
 bool ParseJsonObjectFieldAsDuration(const Json::Object& object,
                                     absl::string_view field_name,
                                     Duration* output,
-                                    std::vector<grpc_error_handle>* error_list,
+                                    std::vector<absl::Status>* error_list,
                                     bool required) {
   // TODO(roth): Once we can use C++14 heterogenous lookups, stop
   // creating a std::string here.

@@ -20,6 +20,7 @@
 
 #include "src/core/ext/xds/certificate_provider_store.h"
 
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 
 #include <grpc/support/log.h>
@@ -74,7 +75,7 @@ void CertificateProviderStore::PluginDefinition::JsonPostLoad(
     }
     if (factory == nullptr) return;
     // Use plugin to validate and parse config.
-    grpc_error_handle parse_error = GRPC_ERROR_NONE;
+    absl::Status parse_error = GRPC_ERROR_NONE;
     config =
         factory->CreateCertificateProviderConfig(config_json, &parse_error);
     if (!GRPC_ERROR_IS_NONE(parse_error)) {

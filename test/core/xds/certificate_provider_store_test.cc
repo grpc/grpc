@@ -72,7 +72,7 @@ class FakeCertificateProviderFactory1 : public CertificateProviderFactory {
 
   RefCountedPtr<CertificateProviderFactory::Config>
   CreateCertificateProviderConfig(const Json& /*config_json*/,
-                                  grpc_error_handle* /*error*/) override {
+                                  absl::Status* /*error*/) override {
     return MakeRefCounted<Config>();
   }
 
@@ -95,7 +95,7 @@ class FakeCertificateProviderFactory2 : public CertificateProviderFactory {
 
   RefCountedPtr<CertificateProviderFactory::Config>
   CreateCertificateProviderConfig(const Json& /*config_json*/,
-                                  grpc_error_handle* /*error*/) override {
+                                  absl::Status* /*error*/) override {
     return MakeRefCounted<Config>();
   }
 

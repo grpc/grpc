@@ -23,6 +23,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 
 #include "src/core/lib/gprpp/orphanable.h"
@@ -31,7 +32,6 @@
 #include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/closure.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/security/credentials/oauth2/oauth2_credentials.h"
@@ -61,8 +61,7 @@ class ExternalAccountCredentials
   };
 
   static RefCountedPtr<ExternalAccountCredentials> Create(
-      const Json& json, std::vector<std::string> scopes,
-      grpc_error_handle* error);
+      const Json& json, std::vector<std::string> scopes, absl::Status* error);
 
   ExternalAccountCredentials(Options options, std::vector<std::string> scopes);
   ~ExternalAccountCredentials() override;
@@ -93,7 +92,7 @@ class ExternalAccountCredentials
   // back.
   virtual void RetrieveSubjectToken(
       HTTPRequestContext* ctx, const Options& options,
-      std::function<void(std::string, grpc_error_handle)> cb) = 0;
+      std::function<void(std::string, absl::Status)> cb) = 0;
 
  private:
   // This method implements the common token fetch logic and it will be called
@@ -103,17 +102,17 @@ class ExternalAccountCredentials
                     Timestamp deadline) override;
 
   void OnRetrieveSubjectTokenInternal(absl::string_view subject_token,
-                                      grpc_error_handle error);
+                                      absl::Status error);
 
   void ExchangeToken(absl::string_view subject_token);
-  static void OnExchangeToken(void* arg, grpc_error_handle error);
-  void OnExchangeTokenInternal(grpc_error_handle error);
+  static void OnExchangeToken(void* arg, absl::Status error);
+  void OnExchangeTokenInternal(absl::Status error);
 
   void ImpersenateServiceAccount();
-  static void OnImpersenateServiceAccount(void* arg, grpc_error_handle error);
-  void OnImpersenateServiceAccountInternal(grpc_error_handle error);
+  static void OnImpersenateServiceAccount(void* arg, absl::Status error);
+  void OnImpersenateServiceAccountInternal(absl::Status error);
 
-  void FinishTokenFetch(grpc_error_handle error);
+  void FinishTokenFetch(absl::Status error);
 
   Options options_;
   std::vector<std::string> scopes_;

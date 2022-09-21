@@ -91,7 +91,7 @@ int main(int argc, char** argv) {
 
           // Queue for work and once we're done, make sure to kick the remaining
           // threads.
-          grpc_error_handle error;
+          absl::Status error;
           error = grpc_pollset_work(&pollset, NULL,
                                     grpc_core::Timestamp::InfFuture());
           error = grpc_pollset_kick(&pollset, NULL);

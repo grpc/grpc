@@ -40,7 +40,7 @@ TEST(LoadFileTest, TestLoadEmptyFile) {
   FILE* tmp = nullptr;
   grpc_slice slice;
   grpc_slice slice_with_null_term;
-  grpc_error_handle error;
+  absl::Status error;
   char* tmp_name;
 
   LOG_TEST_NAME("test_load_empty_file");
@@ -68,7 +68,7 @@ TEST(LoadFileTest, TestLoadEmptyFile) {
 TEST(LoadFileTest, TestLoadFailure) {
   FILE* tmp = nullptr;
   grpc_slice slice;
-  grpc_error_handle error;
+  absl::Status error;
   char* tmp_name;
 
   LOG_TEST_NAME("test_load_failure");
@@ -91,7 +91,7 @@ TEST(LoadFileTest, TestLoadSmallFile) {
   FILE* tmp = nullptr;
   grpc_slice slice;
   grpc_slice slice_with_null_term;
-  grpc_error_handle error;
+  absl::Status error;
   char* tmp_name;
   const char* blah = "blah";
 
@@ -122,7 +122,7 @@ TEST(LoadFileTest, TestLoadSmallFile) {
 TEST(LoadFileTest, TestLoadBigFile) {
   FILE* tmp = nullptr;
   grpc_slice slice;
-  grpc_error_handle error;
+  absl::Status error;
   char* tmp_name;
   static const size_t buffer_size = 124631;
   unsigned char* buffer = static_cast<unsigned char*>(gpr_malloc(buffer_size));

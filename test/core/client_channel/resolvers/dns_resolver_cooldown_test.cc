@@ -181,7 +181,7 @@ static gpr_timespec test_deadline(void) {
   return grpc_timeout_seconds_to_deadline(100);
 }
 
-static void do_nothing(void* /*arg*/, grpc_error_handle /*error*/) {}
+static void do_nothing(void* /*arg*/, absl::Status /*error*/) {}
 
 static void iomgr_args_init(iomgr_args* args) {
   gpr_event_init(&args->ev);

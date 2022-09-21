@@ -21,9 +21,10 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/status/status.h"
+
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/cpp/common/channel_filter.h"
 #include "src/cpp/ext/filters/census/open_census_call_tracer.h"
 
@@ -35,8 +36,8 @@ namespace grpc {
 // a call at a time.
 class CensusClientCallData : public CallData {
  public:
-  grpc_error_handle Init(grpc_call_element* /* elem */,
-                         const grpc_call_element_args* args) override;
+  absl::Status Init(grpc_call_element* /* elem */,
+                    const grpc_call_element_args* args) override;
   void StartTransportStreamOpBatch(grpc_call_element* elem,
                                    TransportStreamOpBatch* op) override;
 

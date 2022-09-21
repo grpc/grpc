@@ -219,9 +219,9 @@ static void pollset_global_shutdown(void) {
 /// The Apple pollset simply waits on a condition variable until it is kicked.
 /// The network events are handled in the global run loop thread. Processing of
 /// these events will eventually trigger the kick.
-static grpc_error_handle pollset_work(grpc_pollset* pollset,
-                                      grpc_pollset_worker** worker,
-                                      grpc_core::Timestamp deadline) {
+static absl::Status pollset_work(grpc_pollset* pollset,
+                                 grpc_pollset_worker** worker,
+                                 grpc_core::Timestamp deadline) {
   GRPC_POLLING_TRACE("pollset work: %p, worker: %p, deadline: %" PRIu64,
                      pollset, worker,
                      deadline.milliseconds_after_process_epoch());
@@ -273,8 +273,8 @@ static void kick_worker(GrpcAppleWorker* worker) {
 /// The caller must acquire the lock GrpcApplePollset.mu before calling this
 /// function. The kick action simply signals the condition variable of the
 /// worker.
-static grpc_error_handle pollset_kick(grpc_pollset* pollset,
-                                      grpc_pollset_worker* specific_worker) {
+static absl::Status pollset_kick(grpc_pollset* pollset,
+                                 grpc_pollset_worker* specific_worker) {
   GrpcApplePollset* apple_pollset =
       reinterpret_cast<GrpcApplePollset*>(pollset);
 

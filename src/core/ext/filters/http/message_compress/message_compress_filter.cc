@@ -27,6 +27,7 @@
 #include <utility>
 
 #include "absl/meta/type_traits.h"
+#include "absl/status/status.h"
 #include "absl/types/optional.h"
 
 #include <grpc/compression.h>
@@ -117,12 +118,12 @@ class CallData {
 
   // Methods for processing a send_message batch
   static void FailSendMessageBatchInCallCombiner(void* calld_arg,
-                                                 grpc_error_handle error);
-  static void ForwardSendMessageBatch(void* elem_arg, grpc_error_handle unused);
+                                                 absl::Status error);
+  static void ForwardSendMessageBatch(void* elem_arg, absl::Status unused);
 
   grpc_core::CallCombiner* call_combiner_;
   grpc_compression_algorithm compression_algorithm_ = GRPC_COMPRESS_NONE;
-  grpc_error_handle cancel_error_ = GRPC_ERROR_NONE;
+  absl::Status cancel_error_ = GRPC_ERROR_NONE;
   grpc_transport_stream_op_batch* send_message_batch_ = nullptr;
   bool seen_initial_metadata_ = false;
   grpc_closure forward_send_message_batch_in_call_combiner_;
@@ -207,7 +208,7 @@ void CallData::FinishSendMessage(grpc_call_element* elem) {
 }
 
 void CallData::FailSendMessageBatchInCallCombiner(void* calld_arg,
-                                                  grpc_error_handle error) {
+                                                  absl::Status error) {
   CallData* calld = static_cast<CallData*>(calld_arg);
   if (calld->send_message_batch_ != nullptr) {
     grpc_transport_stream_op_batch_finish_with_failure(
@@ -218,7 +219,7 @@ void CallData::FailSendMessageBatchInCallCombiner(void* calld_arg,
 }
 
 void CallData::ForwardSendMessageBatch(void* elem_arg,
-                                       grpc_error_handle /*unused*/) {
+                                       absl::Status /*unused*/) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(elem_arg);
   CallData* calld = static_cast<CallData*>(elem->call_data);
   calld->FinishSendMessage(elem);
@@ -287,8 +288,8 @@ void CompressStartTransportStreamOpBatch(
 }
 
 /* Constructor for call_data */
-grpc_error_handle CompressInitCallElem(grpc_call_element* elem,
-                                       const grpc_call_element_args* args) {
+absl::Status CompressInitCallElem(grpc_call_element* elem,
+                                  const grpc_call_element_args* args) {
   new (elem->call_data) CallData(elem, *args);
   return GRPC_ERROR_NONE;
 }
@@ -302,8 +303,8 @@ void CompressDestroyCallElem(grpc_call_element* elem,
 }
 
 /* Constructor for ChannelData */
-grpc_error_handle CompressInitChannelElem(grpc_channel_element* elem,
-                                          grpc_channel_element_args* args) {
+absl::Status CompressInitChannelElem(grpc_channel_element* elem,
+                                     grpc_channel_element_args* args) {
   new (elem->channel_data) ChannelData(args);
   return GRPC_ERROR_NONE;
 }

@@ -58,6 +58,7 @@ grpc_cc_library(
     srcs = ["fixtures/http_proxy_fixture.cc"],
     hdrs = ["fixtures/http_proxy_fixture.h"],
     external_deps = [
+        "absl/status",
         "absl/status:statusor",
         "absl/strings",
     ],
@@ -110,6 +111,7 @@ grpc_cc_library(
 grpc_cc_test(
     name = "bad_server_response_test",
     srcs = ["bad_server_response_test.cc"],
+    external_deps = ["absl/status"],
     language = "C++",
     deps = [
         "cq_verifier",

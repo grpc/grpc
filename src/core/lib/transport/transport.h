@@ -433,7 +433,7 @@ struct grpc_transport_stream_op_batch_payload {
   struct {
     // Error contract: the transport that gets this op must cause cancel_error
     //                 to be unref'ed after processing it
-    grpc_error_handle cancel_error = GRPC_ERROR_NONE;
+    absl::Status cancel_error = GRPC_ERROR_NONE;
   } cancel_stream;
 
   /* Indexes correspond to grpc_context_index enum values */
@@ -453,11 +453,11 @@ typedef struct grpc_transport_op {
   /** should the transport be disconnected
    * Error contract: the transport that gets this op must cause
    *                 disconnect_with_error to be unref'ed after processing it */
-  grpc_error_handle disconnect_with_error = GRPC_ERROR_NONE;
+  absl::Status disconnect_with_error = GRPC_ERROR_NONE;
   /** what should the goaway contain?
    * Error contract: the transport that gets this op must cause
    *                 goaway_error to be unref'ed after processing it */
-  grpc_error_handle goaway_error = GRPC_ERROR_NONE;
+  absl::Status goaway_error = GRPC_ERROR_NONE;
   /** set the callback for accepting new streams;
       this is a permanent callback, unlike the other one-shot closures.
       If true, the callback is set to set_accept_stream_fn, with its
@@ -533,10 +533,10 @@ void grpc_transport_destroy_stream(grpc_transport* transport,
                                    grpc_closure* then_schedule_closure);
 
 void grpc_transport_stream_op_batch_finish_with_failure(
-    grpc_transport_stream_op_batch* batch, grpc_error_handle error,
+    grpc_transport_stream_op_batch* batch, absl::Status error,
     grpc_core::CallCombiner* call_combiner);
 void grpc_transport_stream_op_batch_queue_finish_with_failure(
-    grpc_transport_stream_op_batch* batch, grpc_error_handle error,
+    grpc_transport_stream_op_batch* batch, absl::Status error,
     grpc_core::CallCombinerClosureList* closures);
 
 std::string grpc_transport_stream_op_batch_string(

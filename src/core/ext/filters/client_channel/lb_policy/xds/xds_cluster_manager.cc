@@ -206,8 +206,8 @@ class XdsClusterManagerLb : public LoadBalancingPolicy {
     OrphanablePtr<LoadBalancingPolicy> CreateChildPolicyLocked(
         const ChannelArgs& args);
 
-    static void OnDelayedRemovalTimer(void* arg, grpc_error_handle error);
-    void OnDelayedRemovalTimerLocked(grpc_error_handle error);
+    static void OnDelayedRemovalTimer(void* arg, absl::Status error);
+    void OnDelayedRemovalTimerLocked(absl::Status error);
 
     // The owning LB policy.
     RefCountedPtr<XdsClusterManagerLb> xds_cluster_manager_policy_;
@@ -557,7 +557,7 @@ void XdsClusterManagerLb::ClusterChild::DeactivateLocked() {
 }
 
 void XdsClusterManagerLb::ClusterChild::OnDelayedRemovalTimer(
-    void* arg, grpc_error_handle error) {
+    void* arg, absl::Status error) {
   ClusterChild* self = static_cast<ClusterChild*>(arg);
   (void)GRPC_ERROR_REF(error);  // Ref owned by the lambda
   self->xds_cluster_manager_policy_->work_serializer()->Run(
@@ -566,7 +566,7 @@ void XdsClusterManagerLb::ClusterChild::OnDelayedRemovalTimer(
 }
 
 void XdsClusterManagerLb::ClusterChild::OnDelayedRemovalTimerLocked(
-    grpc_error_handle error) {
+    absl::Status error) {
   delayed_removal_timer_callback_pending_ = false;
   if (GRPC_ERROR_IS_NONE(error) && !shutdown_) {
     xds_cluster_manager_policy_->children_.erase(name_);

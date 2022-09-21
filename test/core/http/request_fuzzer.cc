@@ -24,6 +24,7 @@
 #include <grpc/support/alloc.h>
 
 #include "src/core/lib/http/parser.h"
+#include "src/core/lib/iomgr/error.h"
 
 bool squelch = true;
 bool leak_check = true;

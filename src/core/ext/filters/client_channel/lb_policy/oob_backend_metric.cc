@@ -267,8 +267,7 @@ class OrcaProducer::OrcaStreamEventHandler
     }
 
    private:
-    static void NotifyWatchersInExecCtx(void* arg,
-                                        grpc_error_handle /*error*/) {
+    static void NotifyWatchersInExecCtx(void* arg, absl::Status /*error*/) {
       auto* self = static_cast<BackendMetricAllocator*>(arg);
       self->producer_->NotifyWatchers(self->backend_metric_data_);
       delete self;

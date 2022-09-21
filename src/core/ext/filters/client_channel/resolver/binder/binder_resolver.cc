@@ -16,6 +16,8 @@
 
 #include <algorithm>
 
+#include "absl/status/status.h"
+
 #include "src/core/lib/iomgr/port.h"  // IWYU pragma: keep
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
@@ -90,8 +92,8 @@ class BinderResolverFactory : public ResolverFactory {
   }
 
  private:
-  static grpc_error_handle BinderAddrPopulate(
-      absl::string_view path, grpc_resolved_address* resolved_addr) {
+  static absl::Status BinderAddrPopulate(absl::string_view path,
+                                         grpc_resolved_address* resolved_addr) {
     path = absl::StripPrefix(path, "/");
     if (path.empty()) {
       return GRPC_ERROR_CREATE_FROM_CPP_STRING("path is empty");
@@ -123,7 +125,7 @@ class BinderResolverFactory : public ResolverFactory {
         gpr_log(GPR_ERROR, "authority is not supported in binder scheme");
         return false;
       }
-      grpc_error_handle error = BinderAddrPopulate(uri.path(), &addr);
+      absl::Status error = BinderAddrPopulate(uri.path(), &addr);
       if (!GRPC_ERROR_IS_NONE(error)) {
         gpr_log(GPR_ERROR, "%s", grpc_error_std_string(error).c_str());
         GRPC_ERROR_UNREF(error);

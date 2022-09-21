@@ -189,7 +189,7 @@ class ExecCtx {
   static ExecCtx* Get() { return exec_ctx_; }
 
   static void Run(const DebugLocation& location, grpc_closure* closure,
-                  grpc_error_handle error);
+                  absl::Status error);
 
   static void RunList(const DebugLocation& location, grpc_closure_list* list);
 

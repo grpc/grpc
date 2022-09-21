@@ -48,6 +48,7 @@
 
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
@@ -65,8 +66,8 @@ constexpr uint32_t
 constexpr uint32_t
     OpenCensusCallTracer::OpenCensusCallAttemptTracer::kMaxTagsLen;
 
-grpc_error_handle CensusClientCallData::Init(
-    grpc_call_element* /* elem */, const grpc_call_element_args* args) {
+absl::Status CensusClientCallData::Init(grpc_call_element* /* elem */,
+                                        const grpc_call_element_args* args) {
   tracer_ = args->arena->New<OpenCensusCallTracer>(args);
   GPR_DEBUG_ASSERT(args->context[GRPC_CONTEXT_CALL_TRACER].value == nullptr);
   args->context[GRPC_CONTEXT_CALL_TRACER].value = tracer_;
@@ -189,7 +190,7 @@ void OpenCensusCallTracer::OpenCensusCallAttemptTracer::
 }
 
 void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordCancel(
-    grpc_error_handle cancel_error) {
+    absl::Status cancel_error) {
   status_code_ = absl::StatusCode::kCancelled;
   GRPC_ERROR_UNREF(cancel_error);
 }

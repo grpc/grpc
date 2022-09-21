@@ -205,10 +205,10 @@ class Client {
     bool done() const { return gpr_atm_acq_load(&done_atm_) != 0; }
 
     // Caller does NOT take ownership of the error.
-    grpc_error_handle error() const { return error_; }
+    absl::Status error() const { return error_; }
 
    private:
-    static void OnEventDone(void* arg, grpc_error_handle error) {
+    static void OnEventDone(void* arg, absl::Status error) {
       gpr_log(GPR_INFO, "OnEventDone(): %s",
               grpc_error_std_string(error).c_str());
       EventState* state = static_cast<EventState*>(arg);
@@ -218,7 +218,7 @@ class Client {
 
     grpc_closure closure_;
     gpr_atm done_atm_ = 0;
-    grpc_error_handle error_ = GRPC_ERROR_NONE;
+    absl::Status error_ = GRPC_ERROR_NONE;
   };
 
   // Returns true if done, or false if deadline exceeded.
@@ -238,7 +238,7 @@ class Client {
     }
   }
 
-  static void PollsetDestroy(void* arg, grpc_error_handle /*error*/) {
+  static void PollsetDestroy(void* arg, absl::Status /*error*/) {
     grpc_pollset* pollset = static_cast<grpc_pollset*>(arg);
     grpc_pollset_destroy(pollset);
     gpr_free(pollset);

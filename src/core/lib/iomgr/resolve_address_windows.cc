@@ -66,7 +66,7 @@ class NativeDNSRequest {
  private:
   // Callback to be passed to grpc Executor to asynch-ify
   // LookupHostnameBlocking
-  static void DoRequestThread(void* rp, grpc_error_handle /*error*/) {
+  static void DoRequestThread(void* rp, absl::Status /*error*/) {
     NativeDNSRequest* r = static_cast<NativeDNSRequest*>(rp);
     auto result =
         GetDNSResolver()->LookupHostnameBlocking(r->name_, r->default_port_);
@@ -107,7 +107,7 @@ NativeDNSResolver::LookupHostnameBlocking(absl::string_view name,
   struct addrinfo *result = NULL, *resp;
   int s;
   size_t i;
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = GRPC_ERROR_NONE;
   std::vector<grpc_resolved_address> addresses;
 
   // parse name, splitting it into host and port parts

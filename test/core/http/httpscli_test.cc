@@ -114,7 +114,7 @@ class HttpsCliTest : public ::testing::Test {
   static void TearDownTestSuite() { gpr_subprocess_destroy(g_server); }
 
  private:
-  static void DestroyPops(void* p, grpc_error_handle /*error*/) {
+  static void DestroyPops(void* p, absl::Status /*error*/) {
     grpc_polling_entity* pops = static_cast<grpc_polling_entity*>(p);
     grpc_pollset_destroy(grpc_polling_entity_pollset(pops));
     gpr_free(grpc_polling_entity_pollset(pops));
@@ -137,7 +137,7 @@ struct RequestState {
   grpc_http_response response = {};
 };
 
-void OnFinish(void* arg, grpc_error_handle error) {
+void OnFinish(void* arg, absl::Status error) {
   RequestState* request_state = static_cast<RequestState*>(arg);
   const char* expect =
       "<html><head><title>Hello world!</title></head>"
@@ -153,7 +153,7 @@ void OnFinish(void* arg, grpc_error_handle error) {
       [request_state]() { request_state->done = true; });
 }
 
-void OnFinishExpectFailure(void* arg, grpc_error_handle error) {
+void OnFinishExpectFailure(void* arg, absl::Status error) {
   RequestState* request_state = static_cast<RequestState*>(arg);
   grpc_http_response response = request_state->response;
   gpr_log(GPR_INFO, "response status=%d error=%s", response.status,

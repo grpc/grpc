@@ -101,9 +101,9 @@ struct grpc_tcp_server {
 
 /* Public function. Allocates the proper data structures to hold a
    grpc_tcp_server. */
-static grpc_error_handle tcp_server_create(grpc_closure* shutdown_complete,
-                                           const EndpointConfig& config,
-                                           grpc_tcp_server** server) {
+static absl::Status tcp_server_create(grpc_closure* shutdown_complete,
+                                      const EndpointConfig& config,
+                                      grpc_tcp_server** server) {
   grpc_tcp_server* s = (grpc_tcp_server*)gpr_malloc(sizeof(grpc_tcp_server));
   gpr_ref_init(&s->refs, 1);
   gpr_mu_init(&s->mu);
@@ -119,7 +119,7 @@ static grpc_error_handle tcp_server_create(grpc_closure* shutdown_complete,
   return GRPC_ERROR_NONE;
 }
 
-static void destroy_server(void* arg, grpc_error_handle error) {
+static void destroy_server(void* arg, absl::Status error) {
   grpc_tcp_server* s = (grpc_tcp_server*)arg;
 
   /* Now that the accepts have been aborted, we can destroy the sockets.
@@ -188,11 +188,11 @@ static void tcp_server_unref(grpc_tcp_server* s) {
 }
 
 /* Prepare (bind) a recently-created socket for listening. */
-static grpc_error_handle prepare_socket(SOCKET sock,
-                                        const grpc_resolved_address* addr,
-                                        int* port) {
+static absl::Status prepare_socket(SOCKET sock,
+                                   const grpc_resolved_address* addr,
+                                   int* port) {
   grpc_resolved_address sockname_temp;
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = GRPC_ERROR_NONE;
   int sockname_temp_len;
 
   error = grpc_tcp_prepare_socket(sock);
@@ -247,12 +247,12 @@ static void decrement_active_ports_and_notify_locked(grpc_tcp_listener* sp) {
 
 /* In order to do an async accept, we need to create a socket first which
    will be the one assigned to the new incoming connection. */
-static grpc_error_handle start_accept_locked(grpc_tcp_listener* port) {
+static absl::Status start_accept_locked(grpc_tcp_listener* port) {
   SOCKET sock = INVALID_SOCKET;
   BOOL success;
   DWORD addrlen = sizeof(grpc_sockaddr_in6) + 16;
   DWORD bytes_received = 0;
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = GRPC_ERROR_NONE;
 
   if (port->shutting_down) {
     return GRPC_ERROR_NONE;
@@ -297,7 +297,7 @@ failure:
 }
 
 /* Event manager callback when reads are ready. */
-static void on_accept(void* arg, grpc_error_handle error) {
+static void on_accept(void* arg, absl::Status error) {
   grpc_tcp_listener* sp = (grpc_tcp_listener*)arg;
   SOCKET sock = sp->new_socket;
   grpc_winsocket_callback_info* info = &sp->socket->read_info;
@@ -391,17 +391,17 @@ static void on_accept(void* arg, grpc_error_handle error) {
   gpr_mu_unlock(&sp->server->mu);
 }
 
-static grpc_error_handle add_socket_to_server(grpc_tcp_server* s, SOCKET sock,
-                                              const grpc_resolved_address* addr,
-                                              unsigned port_index,
-                                              grpc_tcp_listener** listener) {
+static absl::Status add_socket_to_server(grpc_tcp_server* s, SOCKET sock,
+                                         const grpc_resolved_address* addr,
+                                         unsigned port_index,
+                                         grpc_tcp_listener** listener) {
   grpc_tcp_listener* sp = NULL;
   int port = -1;
   int status;
   GUID guid = WSAID_ACCEPTEX;
   DWORD ioctl_num_bytes;
   LPFN_ACCEPTEX AcceptEx;
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = GRPC_ERROR_NONE;
 
   /* We need to grab the AcceptEx pointer for that port, as it may be
      interface-dependent. We'll cache it to avoid doing that again. */
@@ -449,9 +449,9 @@ static grpc_error_handle add_socket_to_server(grpc_tcp_server* s, SOCKET sock,
   return GRPC_ERROR_NONE;
 }
 
-static grpc_error_handle tcp_server_add_port(grpc_tcp_server* s,
-                                             const grpc_resolved_address* addr,
-                                             int* port) {
+static absl::Status tcp_server_add_port(grpc_tcp_server* s,
+                                        const grpc_resolved_address* addr,
+                                        int* port) {
   grpc_tcp_listener* sp = NULL;
   SOCKET sock;
   grpc_resolved_address addr6_v4mapped;
@@ -459,7 +459,7 @@ static grpc_error_handle tcp_server_add_port(grpc_tcp_server* s,
   grpc_resolved_address* allocated_addr = NULL;
   grpc_resolved_address sockname_temp;
   unsigned port_index = 0;
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = GRPC_ERROR_NONE;
 
   if (s->tail != NULL) {
     port_index = s->tail->port_index + 1;
@@ -511,9 +511,8 @@ done:
   gpr_free(allocated_addr);
 
   if (!GRPC_ERROR_IS_NONE(error)) {
-    grpc_error_handle error_out =
-        GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-            "Failed to add port to server", &error, 1);
+    absl::Status error_out = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+        "Failed to add port to server", &error, 1);
     GRPC_ERROR_UNREF(error);
     error = error_out;
     *port = -1;

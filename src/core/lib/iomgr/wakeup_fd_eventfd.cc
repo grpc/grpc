@@ -30,7 +30,7 @@
 
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
 
-static grpc_error_handle eventfd_create(grpc_wakeup_fd* fd_info) {
+static absl::Status eventfd_create(grpc_wakeup_fd* fd_info) {
   fd_info->read_fd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
   fd_info->write_fd = -1;
   if (fd_info->read_fd < 0) {
@@ -39,7 +39,7 @@ static grpc_error_handle eventfd_create(grpc_wakeup_fd* fd_info) {
   return GRPC_ERROR_NONE;
 }
 
-static grpc_error_handle eventfd_consume(grpc_wakeup_fd* fd_info) {
+static absl::Status eventfd_consume(grpc_wakeup_fd* fd_info) {
   eventfd_t value;
   int err;
   do {
@@ -51,7 +51,7 @@ static grpc_error_handle eventfd_consume(grpc_wakeup_fd* fd_info) {
   return GRPC_ERROR_NONE;
 }
 
-static grpc_error_handle eventfd_wakeup(grpc_wakeup_fd* fd_info) {
+static absl::Status eventfd_wakeup(grpc_wakeup_fd* fd_info) {
   int err;
   do {
     err = eventfd_write(fd_info->read_fd, 1);

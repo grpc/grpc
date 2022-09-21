@@ -29,9 +29,9 @@
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/error.h"
 
-static grpc_error_handle conforms_to(const grpc_slice& slice,
-                                     const grpc_core::BitSet<256>& legal_bits,
-                                     const char* err_desc) {
+static absl::Status conforms_to(const grpc_slice& slice,
+                                const grpc_core::BitSet<256>& legal_bits,
+                                const char* err_desc) {
   const uint8_t* p = GRPC_SLICE_START_PTR(slice);
   const uint8_t* e = GRPC_SLICE_END_PTR(slice);
   for (; p != e; p++) {
@@ -40,7 +40,7 @@ static grpc_error_handle conforms_to(const grpc_slice& slice,
       grpc_core::UniquePtr<char> ptr(gpr_dump_return_len(
           reinterpret_cast<const char*> GRPC_SLICE_START_PTR(slice),
           GRPC_SLICE_LENGTH(slice), GPR_DUMP_HEX | GPR_DUMP_ASCII, &len));
-      grpc_error_handle error = grpc_error_set_str(
+      absl::Status error = grpc_error_set_str(
           grpc_error_set_int(GRPC_ERROR_CREATE_FROM_COPIED_STRING(err_desc),
                              GRPC_ERROR_INT_OFFSET,
                              p - GRPC_SLICE_START_PTR(slice)),
@@ -51,7 +51,7 @@ static grpc_error_handle conforms_to(const grpc_slice& slice,
   return GRPC_ERROR_NONE;
 }
 
-static int error2int(grpc_error_handle error) {
+static int error2int(absl::Status error) {
   int r = (GRPC_ERROR_IS_NONE(error));
   GRPC_ERROR_UNREF(error);
   return r;
@@ -71,7 +71,7 @@ class LegalHeaderKeyBits : public grpc_core::BitSet<256> {
 constexpr LegalHeaderKeyBits g_legal_header_key_bits;
 }  // namespace
 
-grpc_error_handle grpc_validate_header_key_is_legal(const grpc_slice& slice) {
+absl::Status grpc_validate_header_key_is_legal(const grpc_slice& slice) {
   if (GRPC_SLICE_LENGTH(slice) == 0) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Metadata keys cannot be zero length");
@@ -103,7 +103,7 @@ class LegalHeaderNonBinValueBits : public grpc_core::BitSet<256> {
 constexpr LegalHeaderNonBinValueBits g_legal_header_non_bin_value_bits;
 }  // namespace
 
-grpc_error_handle grpc_validate_header_nonbin_value_is_legal(
+absl::Status grpc_validate_header_nonbin_value_is_legal(
     const grpc_slice& slice) {
   return conforms_to(slice, g_legal_header_non_bin_value_bits,
                      "Illegal header value");

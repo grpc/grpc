@@ -38,6 +38,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
 static uint8_t* fill_header(uint8_t* out, uint32_t length, uint8_t flags) {
@@ -91,7 +92,7 @@ grpc_slice grpc_chttp2_settings_ack_create(void) {
   return output;
 }
 
-grpc_error_handle grpc_chttp2_settings_parser_begin_frame(
+absl::Status grpc_chttp2_settings_parser_begin_frame(
     grpc_chttp2_settings_parser* parser, uint32_t length, uint8_t flags,
     uint32_t* settings) {
   parser->target_settings = settings;
@@ -117,11 +118,11 @@ grpc_error_handle grpc_chttp2_settings_parser_begin_frame(
   }
 }
 
-grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
-                                                    grpc_chttp2_transport* t,
-                                                    grpc_chttp2_stream* /*s*/,
-                                                    const grpc_slice& slice,
-                                                    int is_last) {
+absl::Status grpc_chttp2_settings_parser_parse(void* p,
+                                               grpc_chttp2_transport* t,
+                                               grpc_chttp2_stream* /*s*/,
+                                               const grpc_slice& slice,
+                                               int is_last) {
   grpc_chttp2_settings_parser* parser =
       static_cast<grpc_chttp2_settings_parser*>(p);
   const uint8_t* cur = GRPC_SLICE_START_PTR(slice);

@@ -155,7 +155,7 @@ class GracefulShutdownTest : public ::testing::Test {
     grpc_completion_queue_destroy(cq_);
   }
 
-  static void OnReadDone(void* arg, grpc_error_handle error) {
+  static void OnReadDone(void* arg, absl::Status error) {
     GracefulShutdownTest* self = static_cast<GracefulShutdownTest*>(arg);
     if (GRPC_ERROR_IS_NONE(error)) {
       {
@@ -235,7 +235,7 @@ class GracefulShutdownTest : public ::testing::Test {
         absl::Seconds(5)));
   }
 
-  static void OnWriteDone(void* arg, grpc_error_handle error) {
+  static void OnWriteDone(void* arg, absl::Status error) {
     GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
     Notification* on_write_done_notification_ = static_cast<Notification*>(arg);
     on_write_done_notification_->Notify();

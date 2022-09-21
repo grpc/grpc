@@ -26,6 +26,7 @@
 #include <string>
 #include <utility>
 
+#include "absl/status/status.h"
 #include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
@@ -83,7 +84,7 @@ class TransportOp {
   grpc_transport_op* op() const { return op_; }
 
   // TODO(roth): Add a C++ wrapper for grpc_error?
-  grpc_error_handle disconnect_with_error() const {
+  absl::Status disconnect_with_error() const {
     return op_->disconnect_with_error;
   }
   bool send_goaway() const { return !GRPC_ERROR_IS_NONE(op_->goaway_error); }
@@ -199,8 +200,8 @@ class ChannelData {
   // TODO(roth): Come up with a more C++-like API for the channel element.
 
   /// Initializes the channel data.
-  virtual grpc_error_handle Init(grpc_channel_element* /*elem*/,
-                                 grpc_channel_element_args* /*args*/) {
+  virtual absl::Status Init(grpc_channel_element* /*elem*/,
+                            grpc_channel_element_args* /*args*/) {
     return GRPC_ERROR_NONE;
   }
 
@@ -222,8 +223,8 @@ class CallData {
   // TODO(roth): Come up with a more C++-like API for the call element.
 
   /// Initializes the call data.
-  virtual grpc_error_handle Init(grpc_call_element* /*elem*/,
-                                 const grpc_call_element_args* /*args*/) {
+  virtual absl::Status Init(grpc_call_element* /*elem*/,
+                            const grpc_call_element_args* /*args*/) {
     return GRPC_ERROR_NONE;
   }
 
@@ -251,8 +252,8 @@ class ChannelFilter final {
  public:
   static const size_t channel_data_size = sizeof(ChannelDataType);
 
-  static grpc_error_handle InitChannelElement(grpc_channel_element* elem,
-                                              grpc_channel_element_args* args) {
+  static absl::Status InitChannelElement(grpc_channel_element* elem,
+                                         grpc_channel_element_args* args) {
     // Construct the object in the already-allocated memory.
     ChannelDataType* channel_data = new (elem->channel_data) ChannelDataType();
     return channel_data->Init(elem, args);
@@ -282,8 +283,8 @@ class ChannelFilter final {
 
   static const size_t call_data_size = sizeof(CallDataType);
 
-  static grpc_error_handle InitCallElement(grpc_call_element* elem,
-                                           const grpc_call_element_args* args) {
+  static absl::Status InitCallElement(grpc_call_element* elem,
+                                      const grpc_call_element_args* args) {
     // Construct the object in the already-allocated memory.
     CallDataType* call_data = new (elem->call_data) CallDataType();
     return call_data->Init(elem, args);

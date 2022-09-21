@@ -28,6 +28,7 @@
 #include <string>
 #include <utility>
 
+#include "absl/status/status.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -174,7 +175,7 @@ struct op_state {
   /* User requested RECV_TRAILING_METADATA */
   bool pending_recv_trailing_metadata = false;
   cronet_net_error_code net_error = OK;
-  grpc_error_handle cancel_error = GRPC_ERROR_NONE;
+  absl::Status cancel_error = GRPC_ERROR_NONE;
   /* data structure for storing data coming from server */
   struct read_state rs;
   /* data structure for storing data going to the server */
@@ -315,9 +316,9 @@ static void read_grpc_header(stream_obj* s) {
                             s->state.rs.remaining_bytes);
 }
 
-static grpc_error_handle make_error_with_desc(int error_code,
-                                              int cronet_internal_error_code,
-                                              const char* desc) {
+static absl::Status make_error_with_desc(int error_code,
+                                         int cronet_internal_error_code,
+                                         const char* desc) {
   return grpc_error_set_int(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
                                 "Cronet error code:%d, Cronet error detail:%s",
                                 cronet_internal_error_code, desc)),
@@ -1294,7 +1295,7 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
              op_can_be_run(stream_op, s, &oas->state,
                            OP_RECV_TRAILING_METADATA)) {
     CRONET_LOG(GPR_DEBUG, "running: %p  OP_RECV_TRAILING_METADATA", oas);
-    grpc_error_handle error = GRPC_ERROR_NONE;
+    absl::Status error = GRPC_ERROR_NONE;
     if (stream_state->state_op_done[OP_CANCEL_ERROR]) {
       error = GRPC_ERROR_REF(stream_state->cancel_error);
     } else if (stream_state->state_callback_received[OP_FAILED]) {

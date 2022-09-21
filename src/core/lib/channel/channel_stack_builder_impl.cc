@@ -65,9 +65,9 @@ ChannelStackBuilderImpl::Build() {
   }
 
   // and initialize it
-  grpc_error_handle error = grpc_channel_stack_init(
+  absl::Status error = grpc_channel_stack_init(
       1,
-      [](void* p, grpc_error_handle) {
+      [](void* p, absl::Status) {
         auto* stk = static_cast<grpc_channel_stack*>(p);
         grpc_channel_stack_destroy(stk);
         gpr_free(stk);

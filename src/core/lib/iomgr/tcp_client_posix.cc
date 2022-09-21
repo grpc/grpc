@@ -91,10 +91,9 @@ void grpc_tcp_client_global_init() {
   gpr_once_init(&g_tcp_client_posix_init, do_tcp_client_global_init);
 }
 
-static grpc_error_handle prepare_socket(
-    const grpc_resolved_address* addr, int fd,
-    const grpc_core::PosixTcpOptions& options) {
-  grpc_error_handle err = GRPC_ERROR_NONE;
+static absl::Status prepare_socket(const grpc_resolved_address* addr, int fd,
+                                   const grpc_core::PosixTcpOptions& options) {
+  absl::Status err = GRPC_ERROR_NONE;
 
   GPR_ASSERT(fd >= 0);
 
@@ -127,7 +126,7 @@ done:
   return err;
 }
 
-static void tc_on_alarm(void* acp, grpc_error_handle error) {
+static void tc_on_alarm(void* acp, absl::Status error) {
   int done;
   async_connect* ac = static_cast<async_connect*>(acp);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
@@ -159,7 +158,7 @@ grpc_endpoint* grpc_tcp_create_from_fd(
   return grpc_tcp_create(fd, TcpOptionsFromEndpointConfig(config), addr_str);
 }
 
-static void on_writable(void* acp, grpc_error_handle error) {
+static void on_writable(void* acp, absl::Status error) {
   async_connect* ac = static_cast<async_connect*>(acp);
   int so_error = 0;
   socklen_t so_error_size;
@@ -287,12 +286,12 @@ finish:
   }
 }
 
-grpc_error_handle grpc_tcp_client_prepare_fd(
+absl::Status grpc_tcp_client_prepare_fd(
     const grpc_core::PosixTcpOptions& options,
     const grpc_resolved_address* addr, grpc_resolved_address* mapped_addr,
     int* fd) {
   grpc_dualstack_mode dsmode;
-  grpc_error_handle error;
+  absl::Status error;
   *fd = -1;
   /* Use dualstack sockets where available. Set mapped to v6 or v4 mapped to
      v6. */
@@ -330,7 +329,7 @@ int64_t grpc_tcp_client_create_from_prepared_fd(
 
   auto addr_uri = grpc_sockaddr_to_uri(addr);
   if (!addr_uri.ok()) {
-    grpc_error_handle error =
+    absl::Status error =
         GRPC_ERROR_CREATE_FROM_CPP_STRING(addr_uri.status().ToString());
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, error);
     return 0;
@@ -354,7 +353,7 @@ int64_t grpc_tcp_client_create_from_prepared_fd(
   if (errno != EWOULDBLOCK && errno != EINPROGRESS) {
     // Connection already failed. Return 0 to discourage any cancellation
     // attempts.
-    grpc_error_handle error = GRPC_OS_ERROR(errno, "connect");
+    absl::Status error = GRPC_OS_ERROR(errno, "connect");
     error = grpc_error_set_str(error, GRPC_ERROR_STR_TARGET_ADDRESS,
                                addr_uri.value());
     grpc_fd_orphan(fdobj, nullptr, nullptr, "tcp_client_connect_error");
@@ -406,7 +405,7 @@ static int64_t tcp_connect(grpc_closure* closure, grpc_endpoint** ep,
   grpc_resolved_address mapped_addr;
   grpc_core::PosixTcpOptions options(TcpOptionsFromEndpointConfig(config));
   int fd = -1;
-  grpc_error_handle error;
+  absl::Status error;
   *ep = nullptr;
   if ((error = grpc_tcp_client_prepare_fd(options, addr, &mapped_addr, &fd)) !=
       GRPC_ERROR_NONE) {

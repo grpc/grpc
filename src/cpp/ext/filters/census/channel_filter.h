@@ -21,17 +21,18 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/status/status.h"
+
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/cpp/common/channel_filter.h"
 
 namespace grpc {
 
 class CensusChannelData : public ChannelData {
  public:
-  grpc_error_handle Init(grpc_channel_element* elem,
-                         grpc_channel_element_args* args) override;
+  absl::Status Init(grpc_channel_element* elem,
+                    grpc_channel_element_args* args) override;
 };
 
 }  // namespace grpc

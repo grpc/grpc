@@ -128,7 +128,7 @@ void local_check_peer(tsi_peer peer, grpc_endpoint* ep,
       }
     }
   }
-  grpc_error_handle error;
+  absl::Status error;
   if (!is_endpoint_local) {
     error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Endpoint is neither UDS or TCP loopback address.");
@@ -208,7 +208,7 @@ class grpc_local_channel_security_connector final
   }
 
   void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
-                         grpc_error_handle error) override {
+                         absl::Status error) override {
     GRPC_ERROR_UNREF(error);
   }
 
@@ -256,7 +256,7 @@ class grpc_local_server_security_connector final
   }
 
   void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
-                         grpc_error_handle error) override {
+                         absl::Status error) override {
     GRPC_ERROR_UNREF(error);
   }
 

@@ -54,6 +54,7 @@
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/resolver/resolver_registry.h"
@@ -84,7 +85,7 @@ namespace grpc_core {
 
 namespace {
 void NullThenSchedClosure(const DebugLocation& location, grpc_closure** closure,
-                          grpc_error_handle error) {
+                          absl::Status error) {
   grpc_closure* c = *closure;
   *closure = nullptr;
   ExecCtx::Run(location, c, error);
@@ -109,7 +110,7 @@ void Chttp2Connector::Connect(const Args& args, Result* result,
   }
   absl::StatusOr<std::string> address = grpc_sockaddr_to_uri(args.address);
   if (!address.ok()) {
-    grpc_error_handle error =
+    absl::Status error =
         GRPC_ERROR_CREATE_FROM_CPP_STRING(address.status().ToString());
     NullThenSchedClosure(DEBUG_LOCATION, &notify_, error);
     return;
@@ -128,7 +129,7 @@ void Chttp2Connector::Connect(const Args& args, Result* result,
                               OnHandshakeDone, this);
 }
 
-void Chttp2Connector::Shutdown(grpc_error_handle error) {
+void Chttp2Connector::Shutdown(absl::Status error) {
   MutexLock lock(&mu_);
   shutdown_ = true;
   if (handshake_mgr_ != nullptr) {
@@ -138,7 +139,7 @@ void Chttp2Connector::Shutdown(grpc_error_handle error) {
   GRPC_ERROR_UNREF(error);
 }
 
-void Chttp2Connector::OnHandshakeDone(void* arg, grpc_error_handle error) {
+void Chttp2Connector::OnHandshakeDone(void* arg, absl::Status error) {
   auto* args = static_cast<HandshakerArgs*>(arg);
   Chttp2Connector* self = static_cast<Chttp2Connector*>(args->user_data);
   {
@@ -193,7 +194,7 @@ void Chttp2Connector::OnHandshakeDone(void* arg, grpc_error_handle error) {
   self->Unref();
 }
 
-void Chttp2Connector::OnReceiveSettings(void* arg, grpc_error_handle error) {
+void Chttp2Connector::OnReceiveSettings(void* arg, absl::Status error) {
   Chttp2Connector* self = static_cast<Chttp2Connector*>(arg);
   {
     MutexLock lock(&self->mu_);
@@ -218,7 +219,7 @@ void Chttp2Connector::OnReceiveSettings(void* arg, grpc_error_handle error) {
   self->Unref();
 }
 
-void Chttp2Connector::OnTimeout(void* arg, grpc_error_handle /*error*/) {
+void Chttp2Connector::OnTimeout(void* arg, absl::Status /*error*/) {
   Chttp2Connector* self = static_cast<Chttp2Connector*>(arg);
   {
     MutexLock lock(&self->mu_);
@@ -242,7 +243,7 @@ void Chttp2Connector::OnTimeout(void* arg, grpc_error_handle /*error*/) {
   self->Unref();
 }
 
-void Chttp2Connector::MaybeNotify(grpc_error_handle error) {
+void Chttp2Connector::MaybeNotify(absl::Status error) {
   if (notify_error_.has_value()) {
     GRPC_ERROR_UNREF(error);
     NullThenSchedClosure(DEBUG_LOCATION, &notify_, notify_error_.value());
@@ -348,7 +349,7 @@ grpc_channel* grpc_channel_create(const char* target,
   GRPC_API_TRACE("grpc_secure_channel_create(target=%s, creds=%p, args=%p)", 3,
                  (target, (void*)creds, (void*)c_args));
   grpc_channel* channel = nullptr;
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = GRPC_ERROR_NONE;
   if (creds != nullptr) {
     // Add channel args containing the client channel factory and channel
     // credentials.

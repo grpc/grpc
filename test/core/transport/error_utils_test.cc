@@ -29,7 +29,7 @@
 namespace {
 
 TEST(ErrorUtilsTest, GetErrorGetStatusNone) {
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = GRPC_ERROR_NONE;
   grpc_status_code code;
   std::string message;
   grpc_error_get_status(error, grpc_core::Timestamp(), &code, &message, nullptr,
@@ -39,7 +39,7 @@ TEST(ErrorUtilsTest, GetErrorGetStatusNone) {
 }
 
 TEST(ErrorUtilsTest, GetErrorGetStatusFlat) {
-  grpc_error_handle error =
+  absl::Status error =
       grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING("Msg"),
                          GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_CANCELLED);
   grpc_status_code code;
@@ -52,13 +52,13 @@ TEST(ErrorUtilsTest, GetErrorGetStatusFlat) {
 }
 
 TEST(ErrorUtilsTest, GetErrorGetStatusChild) {
-  std::vector<grpc_error_handle> children = {
+  std::vector<absl::Status> children = {
       GRPC_ERROR_CREATE_FROM_STATIC_STRING("Child1"),
       grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING("Child2"),
                          GRPC_ERROR_INT_GRPC_STATUS,
                          GRPC_STATUS_RESOURCE_EXHAUSTED),
   };
-  grpc_error_handle error = GRPC_ERROR_CREATE_FROM_VECTOR("Parent", &children);
+  absl::Status error = GRPC_ERROR_CREATE_FROM_VECTOR("Parent", &children);
   grpc_status_code code;
   std::string message;
   grpc_error_get_status(error, grpc_core::Timestamp(), &code, &message, nullptr,
@@ -70,7 +70,7 @@ TEST(ErrorUtilsTest, GetErrorGetStatusChild) {
 
 // ---- Ok Status ----
 TEST(ErrorUtilsTest, AbslOkToGrpcError) {
-  grpc_error_handle error = absl_status_to_grpc_error(absl::OkStatus());
+  absl::Status error = absl_status_to_grpc_error(absl::OkStatus());
   ASSERT_EQ(GRPC_ERROR_NONE, error);
   GRPC_ERROR_UNREF(error);
 }
@@ -83,7 +83,7 @@ TEST(ErrorUtilsTest, GrpcSpecialErrorNoneToAbslStatus) {
 
 // ---- Asymmetry of conversions of "Special" errors ----
 TEST(ErrorUtilsTest, AbslStatusToGrpcErrorDoesNotReturnSpecialVariables) {
-  grpc_error_handle error =
+  absl::Status error =
       absl_status_to_grpc_error(absl::CancelledError("CANCELLED"));
   ASSERT_NE(error, GRPC_ERROR_CANCELLED);
   GRPC_ERROR_UNREF(error);
@@ -103,7 +103,7 @@ TEST(ErrorUtilsTest, GrpcSpecialErrorOOMToAbslStatus) {
 
 // ---- Ordinary statuses ----
 TEST(ErrorUtilsTest, AbslUnavailableToGrpcError) {
-  grpc_error_handle error =
+  absl::Status error =
       absl_status_to_grpc_error(absl::UnavailableError("Making tea"));
   // Status code checks
   intptr_t code;
@@ -117,7 +117,7 @@ TEST(ErrorUtilsTest, AbslUnavailableToGrpcError) {
 }
 
 TEST(ErrorUtilsTest, GrpcErrorUnavailableToAbslStatus) {
-  grpc_error_handle error = grpc_error_set_int(
+  absl::Status error = grpc_error_set_int(
       GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "weighted_target: all children report state TRANSIENT_FAILURE"),
       GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);

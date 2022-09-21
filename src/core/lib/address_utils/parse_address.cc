@@ -36,6 +36,7 @@
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/host_port.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/grpc_if_nametoindex.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/sockaddr.h"
@@ -50,7 +51,7 @@ bool grpc_parse_unix(const grpc_core::URI& uri,
             uri.scheme().c_str());
     return false;
   }
-  grpc_error_handle error =
+  absl::Status error =
       grpc_core::UnixSockaddrPopulate(uri.path(), resolved_addr);
   if (!GRPC_ERROR_IS_NONE(error)) {
     gpr_log(GPR_ERROR, "%s", grpc_error_std_string(error).c_str());
@@ -67,7 +68,7 @@ bool grpc_parse_unix_abstract(const grpc_core::URI& uri,
             uri.scheme().c_str());
     return false;
   }
-  grpc_error_handle error =
+  absl::Status error =
       grpc_core::UnixAbstractSockaddrPopulate(uri.path(), resolved_addr);
   if (!GRPC_ERROR_IS_NONE(error)) {
     gpr_log(GPR_ERROR, "%s", grpc_error_std_string(error).c_str());
@@ -79,8 +80,8 @@ bool grpc_parse_unix_abstract(const grpc_core::URI& uri,
 
 namespace grpc_core {
 
-grpc_error_handle UnixSockaddrPopulate(absl::string_view path,
-                                       grpc_resolved_address* resolved_addr) {
+absl::Status UnixSockaddrPopulate(absl::string_view path,
+                                  grpc_resolved_address* resolved_addr) {
   memset(resolved_addr, 0, sizeof(*resolved_addr));
   struct sockaddr_un* un =
       reinterpret_cast<struct sockaddr_un*>(resolved_addr->addr);
@@ -96,7 +97,7 @@ grpc_error_handle UnixSockaddrPopulate(absl::string_view path,
   return GRPC_ERROR_NONE;
 }
 
-grpc_error_handle UnixAbstractSockaddrPopulate(
+absl::Status UnixAbstractSockaddrPopulate(
     absl::string_view path, grpc_resolved_address* resolved_addr) {
   memset(resolved_addr, 0, sizeof(*resolved_addr));
   struct sockaddr_un* un =
@@ -130,12 +131,12 @@ bool grpc_parse_unix_abstract(const grpc_core::URI& /* uri */,
 
 namespace grpc_core {
 
-grpc_error_handle UnixSockaddrPopulate(
-    absl::string_view /* path */, grpc_resolved_address* /* resolved_addr */) {
+absl::Status UnixSockaddrPopulate(absl::string_view /* path */,
+                                  grpc_resolved_address* /* resolved_addr */) {
   abort();
 }
 
-grpc_error_handle UnixAbstractSockaddrPopulate(
+absl::Status UnixAbstractSockaddrPopulate(
     absl::string_view /* path */, grpc_resolved_address* /* resolved_addr */) {
   abort();
 }

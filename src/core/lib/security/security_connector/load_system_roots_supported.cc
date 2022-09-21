@@ -22,6 +22,8 @@
 #include <memory>
 #include <vector>
 
+#include "absl/status/status.h"
+
 #if defined(GPR_LINUX) || defined(GPR_ANDROID) || defined(GPR_FREEBSD) || \
     defined(GPR_APPLE)
 
@@ -71,8 +73,7 @@ grpc_slice GetSystemRootCerts() {
   grpc_slice valid_bundle_slice = grpc_empty_slice();
   size_t num_cert_files_ = GPR_ARRAY_SIZE(kCertFiles);
   for (size_t i = 0; i < num_cert_files_; i++) {
-    grpc_error_handle error =
-        grpc_load_file(kCertFiles[i], 1, &valid_bundle_slice);
+    absl::Status error = grpc_load_file(kCertFiles[i], 1, &valid_bundle_slice);
     if (GRPC_ERROR_IS_NONE(error)) {
       return valid_bundle_slice;
     } else {

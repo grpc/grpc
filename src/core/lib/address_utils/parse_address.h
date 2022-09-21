@@ -23,10 +23,10 @@
 
 #include <stdint.h>
 
+#include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/uri/uri_parser.h"
 
@@ -73,13 +73,13 @@ absl::StatusOr<grpc_resolved_address> StringToSockaddr(
     absl::string_view address, int port);
 
 /** Populate \a resolved_addr to be a unix socket at |path| */
-grpc_error_handle UnixSockaddrPopulate(absl::string_view path,
-                                       grpc_resolved_address* resolved_addr);
+absl::Status UnixSockaddrPopulate(absl::string_view path,
+                                  grpc_resolved_address* resolved_addr);
 
 /** Populate \a resolved_addr to be a unix socket in the abstract namespace
  * at |path| */
-grpc_error_handle UnixAbstractSockaddrPopulate(
-    absl::string_view path, grpc_resolved_address* resolved_addr);
+absl::Status UnixAbstractSockaddrPopulate(absl::string_view path,
+                                          grpc_resolved_address* resolved_addr);
 
 }  // namespace grpc_core
 

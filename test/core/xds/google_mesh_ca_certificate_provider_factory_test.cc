@@ -71,7 +71,7 @@ TEST(GoogleMeshCaConfigTest, Basic) {
       "}";
   auto json = Json::Parse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = GRPC_ERROR_NONE;
   auto config =
       GoogleMeshCaCertificateProviderFactory::Config::Parse(*json, &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
@@ -124,7 +124,7 @@ TEST(GoogleMeshCaConfigTest, Defaults) {
       "}";
   auto json = Json::Parse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = GRPC_ERROR_NONE;
   auto config =
       GoogleMeshCaCertificateProviderFactory::Config::Parse(*json, &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
@@ -176,7 +176,7 @@ TEST(GoogleMeshCaConfigTest, WrongExpectedValues) {
       "}";
   auto json = Json::Parse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = GRPC_ERROR_NONE;
   auto config =
       GoogleMeshCaCertificateProviderFactory::Config::Parse(*json, &error);
   EXPECT_THAT(
@@ -219,7 +219,7 @@ TEST(GoogleMeshCaConfigTest, WrongTypes) {
       "}";
   auto json = Json::Parse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = GRPC_ERROR_NONE;
   auto config =
       GoogleMeshCaCertificateProviderFactory::Config::Parse(*json, &error);
   EXPECT_THAT(
@@ -263,7 +263,7 @@ TEST(GoogleMeshCaConfigTest, GrpcServicesNotAnArray) {
       "}";
   auto json = Json::Parse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = GRPC_ERROR_NONE;
   auto config =
       GoogleMeshCaCertificateProviderFactory::Config::Parse(*json, &error);
   EXPECT_THAT(
@@ -288,7 +288,7 @@ TEST(GoogleMeshCaConfigTest, GoogleGrpcNotAnObject) {
       "}";
   auto json = Json::Parse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = GRPC_ERROR_NONE;
   auto config =
       GoogleMeshCaCertificateProviderFactory::Config::Parse(*json, &error);
   EXPECT_THAT(
@@ -315,7 +315,7 @@ TEST(GoogleMeshCaConfigTest, CallCredentialsNotAnArray) {
       "}";
   auto json = Json::Parse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = GRPC_ERROR_NONE;
   auto config =
       GoogleMeshCaCertificateProviderFactory::Config::Parse(*json, &error);
   EXPECT_THAT(grpc_error_std_string(error),
@@ -344,7 +344,7 @@ TEST(GoogleMeshCaConfigTest, StsServiceNotAnObject) {
       "}";
   auto json = Json::Parse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = GRPC_ERROR_NONE;
   auto config =
       GoogleMeshCaCertificateProviderFactory::Config::Parse(*json, &error);
   EXPECT_THAT(

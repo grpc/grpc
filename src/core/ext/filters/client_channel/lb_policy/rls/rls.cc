@@ -458,7 +458,7 @@ class RlsLb : public LoadBalancingPolicy {
         void Orphan() override ABSL_NO_THREAD_SAFETY_ANALYSIS;
 
        private:
-        static void OnBackoffTimer(void* args, grpc_error_handle error);
+        static void OnBackoffTimer(void* args, absl::Status error);
 
         RefCountedPtr<Entry> entry_;
         bool armed_ ABSL_GUARDED_BY(&RlsLb::mu_) = true;
@@ -519,7 +519,7 @@ class RlsLb : public LoadBalancingPolicy {
     void Shutdown() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
 
    private:
-    static void OnCleanupTimer(void* arg, grpc_error_handle error);
+    static void OnCleanupTimer(void* arg, absl::Status error);
 
     // Returns the entry size for a given key.
     static size_t EntrySizeForKey(const RequestKey& key);
@@ -645,16 +645,16 @@ class RlsLb : public LoadBalancingPolicy {
 
    private:
     // Callback to be invoked to start the call.
-    static void StartCall(void* arg, grpc_error_handle error);
+    static void StartCall(void* arg, absl::Status error);
 
     // Helper for StartCall() that runs within the WorkSerializer.
     void StartCallLocked();
 
     // Callback to be invoked when the call is completed.
-    static void OnRlsCallComplete(void* arg, grpc_error_handle error);
+    static void OnRlsCallComplete(void* arg, absl::Status error);
 
     // Call completion callback running on LB policy WorkSerializer.
-    void OnRlsCallCompleteLocked(grpc_error_handle error);
+    void OnRlsCallCompleteLocked(absl::Status error);
 
     grpc_byte_buffer* MakeRequestProto();
     ResponseInfo ParseResponseProto();
@@ -686,7 +686,7 @@ class RlsLb : public LoadBalancingPolicy {
   // to be run later, so it's safe to invoke this while holding the lock.
   void UpdatePickerAsync();
   // Hops into work serializer and calls UpdatePickerLocked().
-  static void UpdatePickerCallback(void* arg, grpc_error_handle error);
+  static void UpdatePickerCallback(void* arg, absl::Status error);
   // Updates the picker in the work serializer.
   void UpdatePickerLocked() ABSL_LOCKS_EXCLUDED(&mu_);
 
@@ -1122,8 +1122,8 @@ void RlsLb::Cache::Entry::BackoffTimer::Orphan() {
   Unref(DEBUG_LOCATION, "Orphan");
 }
 
-void RlsLb::Cache::Entry::BackoffTimer::OnBackoffTimer(
-    void* arg, grpc_error_handle /*error*/) {
+void RlsLb::Cache::Entry::BackoffTimer::OnBackoffTimer(void* arg,
+                                                       absl::Status /*error*/) {
   auto* self = static_cast<BackoffTimer*>(arg);
   self->entry_->lb_policy_->work_serializer()->Run(
       [self]() {
@@ -1415,7 +1415,7 @@ void RlsLb::Cache::Shutdown() {
   grpc_timer_cancel(&cleanup_timer_);
 }
 
-void RlsLb::Cache::OnCleanupTimer(void* arg, grpc_error_handle error) {
+void RlsLb::Cache::OnCleanupTimer(void* arg, absl::Status error) {
   Cache* cache = static_cast<Cache*>(arg);
   (void)GRPC_ERROR_REF(error);
   cache->lb_policy_->work_serializer()->Run(
@@ -1699,7 +1699,7 @@ void RlsLb::RlsRequest::Orphan() {
   Unref(DEBUG_LOCATION, "Orphan");
 }
 
-void RlsLb::RlsRequest::StartCall(void* arg, grpc_error_handle /*error*/) {
+void RlsLb::RlsRequest::StartCall(void* arg, absl::Status /*error*/) {
   auto* request = static_cast<RlsRequest*>(arg);
   request->lb_policy_->work_serializer()->Run(
       [request]() {
@@ -1752,7 +1752,7 @@ void RlsLb::RlsRequest::StartCallLocked() {
   GPR_ASSERT(call_error == GRPC_CALL_OK);
 }
 
-void RlsLb::RlsRequest::OnRlsCallComplete(void* arg, grpc_error_handle error) {
+void RlsLb::RlsRequest::OnRlsCallComplete(void* arg, absl::Status error) {
   auto* request = static_cast<RlsRequest*>(arg);
   (void)GRPC_ERROR_REF(error);
   request->lb_policy_->work_serializer()->Run(
@@ -1763,7 +1763,7 @@ void RlsLb::RlsRequest::OnRlsCallComplete(void* arg, grpc_error_handle error) {
       DEBUG_LOCATION);
 }
 
-void RlsLb::RlsRequest::OnRlsCallCompleteLocked(grpc_error_handle error) {
+void RlsLb::RlsRequest::OnRlsCallCompleteLocked(absl::Status error) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     std::string status_message(StringViewFromSlice(status_details_recv_));
     gpr_log(GPR_INFO,
@@ -2079,7 +2079,7 @@ void RlsLb::UpdatePickerAsync() {
       GRPC_ERROR_NONE);
 }
 
-void RlsLb::UpdatePickerCallback(void* arg, grpc_error_handle /*error*/) {
+void RlsLb::UpdatePickerCallback(void* arg, absl::Status /*error*/) {
   auto* rls_lb = static_cast<RlsLb*>(arg);
   rls_lb->work_serializer()->Run(
       [rls_lb]() {
@@ -2421,7 +2421,7 @@ void RlsLbConfig::JsonPostLoad(const Json& json, const JsonArgs&,
   if (it != json.object_value().end()) {
     ValidationErrors::ScopedField field(errors,
                                         ".routeLookupChannelServiceConfig");
-    grpc_error_handle child_error = GRPC_ERROR_NONE;
+    absl::Status child_error = GRPC_ERROR_NONE;
     rls_channel_service_config_ = it->second.Dump();
     auto service_config = MakeRefCounted<ServiceConfigImpl>(
         ChannelArgs(), rls_channel_service_config_, it->second, &child_error);

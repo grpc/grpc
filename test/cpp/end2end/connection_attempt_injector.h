@@ -70,7 +70,7 @@ class ConnectionAttemptInjector final {
     void Resume();
 
     // Fails a connection attempt.  Must be called after Wait().
-    void Fail(grpc_error_handle error);
+    void Fail(absl::Status error);
 
     // If the hold was created with intercept_completion=true, then this
     // can be called after Resume() to wait for the connection attempt
@@ -83,7 +83,7 @@ class ConnectionAttemptInjector final {
    private:
     friend class ConnectionAttemptInjector;
 
-    static void OnComplete(void* arg, grpc_error_handle error);
+    static void OnComplete(void* arg, absl::Status error);
 
     ConnectionAttemptInjector* injector_;
     const int port_;
@@ -132,7 +132,7 @@ class ConnectionAttemptInjector final {
     void Resume();
 
     // Caller must invoke this from a thread with an ExecCtx.
-    void Fail(grpc_error_handle error);
+    void Fail(absl::Status error);
 
    private:
     grpc_closure* closure_;
@@ -155,7 +155,7 @@ class ConnectionAttemptInjector final {
                   grpc_core::Timestamp deadline);
 
    private:
-    static void TimerCallback(void* arg, grpc_error_handle /*error*/);
+    static void TimerCallback(void* arg, absl::Status /*error*/);
 
     QueuedAttempt attempt_;
     grpc_timer timer_;

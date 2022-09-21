@@ -74,7 +74,7 @@ static void CFStreamConnectCleanup(CFStreamConnect* connect) {
   delete connect;
 }
 
-static void OnAlarm(void* arg, grpc_error_handle error) {
+static void OnAlarm(void* arg, absl::Status error) {
   CFStreamConnect* connect = static_cast<CFStreamConnect*>(arg);
   if (grpc_tcp_trace.enabled()) {
     gpr_log(GPR_DEBUG, "CLIENT_CONNECT :%p OnAlarm, error:%s", connect,
@@ -90,13 +90,13 @@ static void OnAlarm(void* arg, grpc_error_handle error) {
   if (done) {
     CFStreamConnectCleanup(connect);
   } else {
-    grpc_error_handle error =
+    absl::Status error =
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("connect() timed out");
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, error);
   }
 }
 
-static void OnOpen(void* arg, grpc_error_handle error) {
+static void OnOpen(void* arg, absl::Status error) {
   CFStreamConnect* connect = static_cast<CFStreamConnect*>(arg);
   if (grpc_tcp_trace.enabled()) {
     gpr_log(GPR_DEBUG, "CLIENT_CONNECT :%p OnOpen, error:%s", connect,
@@ -156,7 +156,7 @@ static int64_t CFStreamClientConnect(
     const grpc_resolved_address* resolved_addr, grpc_core::Timestamp deadline) {
   auto addr_uri = grpc_sockaddr_to_uri(resolved_addr);
   if (!addr_uri.ok()) {
-    grpc_error_handle error =
+    absl::Status error =
         GRPC_ERROR_CREATE_FROM_CPP_STRING(addr_uri.status().ToString());
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, error);
     return 0;

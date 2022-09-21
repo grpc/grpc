@@ -117,7 +117,7 @@ static void on_connect_result_set(on_connect_result* result,
       result->server, acceptor->port_index, acceptor->fd_index);
 }
 
-static void server_weak_ref_shutdown(void* arg, grpc_error_handle /*error*/) {
+static void server_weak_ref_shutdown(void* arg, absl::Status /*error*/) {
   server_weak_ref* weak_ref = static_cast<server_weak_ref*>(arg);
   weak_ref->server = nullptr;
 }
@@ -257,8 +257,8 @@ static void test_no_op_with_port_and_start(void) {
   grpc_tcp_server_unref(s);
 }
 
-static grpc_error_handle tcp_connect(const test_addr* remote,
-                                     on_connect_result* result) {
+static absl::Status tcp_connect(const test_addr* remote,
+                                on_connect_result* result) {
   grpc_core::Timestamp deadline = grpc_core::Timestamp::FromTimespecRoundUp(
       grpc_timeout_seconds_to_deadline(10));
   int clifd;
@@ -286,7 +286,7 @@ static grpc_error_handle tcp_connect(const test_addr* remote,
   while (g_nconnects == nconnects_before &&
          deadline > grpc_core::Timestamp::Now()) {
     grpc_pollset_worker* worker = nullptr;
-    grpc_error_handle err;
+    absl::Status err;
     if ((err = grpc_pollset_work(g_pollset, &worker, deadline)) !=
         GRPC_ERROR_NONE) {
       gpr_mu_unlock(g_mu);
@@ -402,7 +402,7 @@ static void test_connect(size_t num_connects,
       for (dst_idx = 0; dst_idx < dst_addrs->naddrs; ++dst_idx) {
         test_addr dst = dst_addrs->addrs[dst_idx];
         on_connect_result result;
-        grpc_error_handle err;
+        absl::Status err;
         if (dst.addr.len == 0) {
           gpr_log(GPR_DEBUG, "Skipping test of non-functional local IP %s",
                   dst.str);
@@ -468,7 +468,7 @@ static void test_connect(size_t num_connects,
   ASSERT_EQ(weak_ref.server, nullptr);
 }
 
-static void destroy_pollset(void* p, grpc_error_handle /*error*/) {
+static void destroy_pollset(void* p, absl::Status /*error*/) {
   grpc_pollset_destroy(static_cast<grpc_pollset*>(p));
 }
 

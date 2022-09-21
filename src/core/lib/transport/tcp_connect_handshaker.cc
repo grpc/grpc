@@ -24,6 +24,7 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
@@ -62,7 +63,7 @@ namespace {
 class TCPConnectHandshaker : public Handshaker {
  public:
   explicit TCPConnectHandshaker(grpc_pollset_set* pollset_set);
-  void Shutdown(grpc_error_handle why) override;
+  void Shutdown(absl::Status why) override;
   void DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
                    grpc_closure* on_handshake_done,
                    HandshakerArgs* args) override;
@@ -71,8 +72,8 @@ class TCPConnectHandshaker : public Handshaker {
  private:
   ~TCPConnectHandshaker() override;
   void CleanupArgsForFailureLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
-  void FinishLocked(grpc_error_handle error) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
-  static void Connected(void* arg, grpc_error_handle error);
+  void FinishLocked(absl::Status error) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  static void Connected(void* arg, absl::Status error);
 
   Mutex mu_;
   bool shutdown_ ABSL_GUARDED_BY(mu_) = false;
@@ -100,7 +101,7 @@ TCPConnectHandshaker::TCPConnectHandshaker(grpc_pollset_set* pollset_set)
   GRPC_CLOSURE_INIT(&connected_, Connected, this, grpc_schedule_on_exec_ctx);
 }
 
-void TCPConnectHandshaker::Shutdown(grpc_error_handle why) {
+void TCPConnectHandshaker::Shutdown(absl::Status why) {
   // TODO(anramach): After migration to EventEngine, cancel the in-progress
   // TCP connection attempt.
   {
@@ -162,7 +163,7 @@ void TCPConnectHandshaker::DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
       &addr_, args->deadline);
 }
 
-void TCPConnectHandshaker::Connected(void* arg, grpc_error_handle error) {
+void TCPConnectHandshaker::Connected(void* arg, absl::Status error) {
   RefCountedPtr<TCPConnectHandshaker> self(
       static_cast<TCPConnectHandshaker*>(arg));
   {
@@ -217,7 +218,7 @@ void TCPConnectHandshaker::CleanupArgsForFailureLocked() {
   args_->args = ChannelArgs();
 }
 
-void TCPConnectHandshaker::FinishLocked(grpc_error_handle error) {
+void TCPConnectHandshaker::FinishLocked(absl::Status error) {
   if (interested_parties_ != nullptr) {
     grpc_polling_entity_del_from_pollset_set(&pollent_, interested_parties_);
   }

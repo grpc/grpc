@@ -42,14 +42,14 @@ void grpc_pollset_destroy(grpc_pollset* pollset) {
   grpc_pollset_impl->destroy(pollset);
 }
 
-grpc_error_handle grpc_pollset_work(grpc_pollset* pollset,
-                                    grpc_pollset_worker** worker,
-                                    grpc_core::Timestamp deadline) {
+absl::Status grpc_pollset_work(grpc_pollset* pollset,
+                               grpc_pollset_worker** worker,
+                               grpc_core::Timestamp deadline) {
   return grpc_pollset_impl->work(pollset, worker, deadline);
 }
 
-grpc_error_handle grpc_pollset_kick(grpc_pollset* pollset,
-                                    grpc_pollset_worker* specific_worker) {
+absl::Status grpc_pollset_kick(grpc_pollset* pollset,
+                               grpc_pollset_worker* specific_worker) {
   return grpc_pollset_impl->kick(pollset, specific_worker);
 }
 

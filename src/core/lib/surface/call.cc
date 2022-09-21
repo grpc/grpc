@@ -61,6 +61,7 @@
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/call_combiner.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/resource_quota/arena.h"
@@ -92,7 +93,7 @@ class Call : public CppImplOf<Call, grpc_call> {
   virtual void* ContextGet(grpc_context_index elem) const = 0;
   virtual bool Completed() = 0;
   void CancelWithStatus(grpc_status_code status, const char* description);
-  virtual void CancelWithError(grpc_error_handle error) = 0;
+  virtual void CancelWithError(absl::Status error) = 0;
   virtual void SetCompletionQueue(grpc_completion_queue* cq) = 0;
   virtual char* GetPeer() = 0;
   virtual grpc_call_error StartBatch(const grpc_op* ops, size_t nops,
@@ -177,8 +178,7 @@ class FilterStackCall final : public Call {
   }
 
   // TODO(ctiller): return absl::StatusOr<SomeSmartPointer<Call>>?
-  static grpc_error_handle Create(grpc_call_create_args* args,
-                                  grpc_call** out_call);
+  static absl::Status Create(grpc_call_create_args* args, grpc_call** out_call);
 
   static Call* FromTopElem(grpc_call_element* elem) {
     return FromCallStack(grpc_call_stack_from_top_element(elem));
@@ -196,7 +196,7 @@ class FilterStackCall final : public Call {
 
   CallCombiner* call_combiner() { return &call_combiner_; }
 
-  void CancelWithError(grpc_error_handle error) override;
+  void CancelWithError(absl::Status error) override;
   void SetCompletionQueue(grpc_completion_queue* cq) override;
   char* GetPeer() override;
   grpc_call_error StartBatch(const grpc_op* ops, size_t nops, void* notify_tag,
@@ -306,11 +306,11 @@ class FilterStackCall final : public Call {
     void PostCompletion();
     void FinishStep();
     void ProcessDataAfterMetadata();
-    void ReceivingStreamReady(grpc_error_handle error);
+    void ReceivingStreamReady(absl::Status error);
     void ValidateFilteredMetadata();
-    void ReceivingInitialMetadataReady(grpc_error_handle error);
-    void ReceivingTrailingMetadataReady(grpc_error_handle error);
-    void FinishBatch(grpc_error_handle error);
+    void ReceivingInitialMetadataReady(absl::Status error);
+    void ReceivingTrailingMetadataReady(absl::Status error);
+    void FinishBatch(absl::Status error);
   };
 
   FilterStackCall(Arena* arena, const grpc_call_create_args& args)
@@ -319,8 +319,8 @@ class FilterStackCall final : public Call {
         channel_(args.channel->Ref()),
         stream_op_payload_(context_) {}
 
-  static void ReleaseCall(void* call, grpc_error_handle);
-  static void DestroyCall(void* call, grpc_error_handle);
+  static void ReleaseCall(void* call, absl::Status);
+  static void DestroyCall(void* call, absl::Status);
 
   static FilterStackCall* FromCallStack(grpc_call_stack* call_stack) {
     return reinterpret_cast<FilterStackCall*>(
@@ -330,7 +330,7 @@ class FilterStackCall final : public Call {
 
   void ExecuteBatch(grpc_transport_stream_op_batch* batch,
                     grpc_closure* start_batch_closure);
-  void SetFinalStatus(grpc_error_handle error);
+  void SetFinalStatus(absl::Status error);
   BatchControl* ReuseOrAllocateBatchControl(const grpc_op* ops);
   void HandleCompressionAlgorithmDisabled(
       grpc_compression_algorithm compression_algorithm) GPR_ATTRIBUTE_NOINLINE;
@@ -340,8 +340,7 @@ class FilterStackCall final : public Call {
                                   bool is_trailing);
   void PublishAppMetadata(grpc_metadata_batch* b, bool is_trailing);
   void RecvInitialFilter(grpc_metadata_batch* b);
-  void RecvTrailingFilter(grpc_metadata_batch* b,
-                          grpc_error_handle batch_error);
+  void RecvTrailingFilter(grpc_metadata_batch* b, absl::Status batch_error);
 
   RefCount ext_ref_;
   CallCombiner call_combiner_;
@@ -513,12 +512,11 @@ void Call::PublishToParent(Call* parent) {
   }
 }
 
-grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
-                                          grpc_call** out_call) {
+absl::Status FilterStackCall::Create(grpc_call_create_args* args,
+                                     grpc_call** out_call) {
   Channel* channel = args->channel.get();
 
-  auto add_init_error = [](grpc_error_handle* composite,
-                           grpc_error_handle new_err) {
+  auto add_init_error = [](absl::Status* composite, absl::Status new_err) {
     if (GRPC_ERROR_IS_NONE(new_err)) return;
     if (GRPC_ERROR_IS_NONE(*composite)) {
       *composite = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Call creation failed");
@@ -528,7 +526,7 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
 
   Arena* arena;
   FilterStackCall* call;
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = GRPC_ERROR_NONE;
   grpc_channel_stack* channel_stack = channel->channel_stack();
   size_t initial_size = channel->CallSizeEstimate();
   GRPC_STATS_INC_CALL_INITIAL_SIZE(initial_size);
@@ -631,7 +629,7 @@ void FilterStackCall::SetCompletionQueue(grpc_completion_queue* cq) {
   grpc_call_stack_set_pollset_or_pollset_set(call_stack(), &pollent_);
 }
 
-void FilterStackCall::ReleaseCall(void* call, grpc_error_handle /*error*/) {
+void FilterStackCall::ReleaseCall(void* call, absl::Status /*error*/) {
   auto* c = static_cast<FilterStackCall*>(call);
   RefCountedPtr<Channel> channel = std::move(c->channel_);
   Arena* arena = c->arena();
@@ -639,7 +637,7 @@ void FilterStackCall::ReleaseCall(void* call, grpc_error_handle /*error*/) {
   channel->UpdateCallSizeEstimate(arena->Destroy());
 }
 
-void FilterStackCall::DestroyCall(void* call, grpc_error_handle /*error*/) {
+void FilterStackCall::DestroyCall(void* call, absl::Status /*error*/) {
   auto* c = static_cast<FilterStackCall*>(call);
   c->recv_initial_metadata_.Clear();
   c->recv_trailing_metadata_.Clear();
@@ -652,7 +650,7 @@ void FilterStackCall::DestroyCall(void* call, grpc_error_handle /*error*/) {
     GRPC_CQ_INTERNAL_UNREF(c->cq_, "bind");
   }
 
-  grpc_error_handle status_error = c->status_error_.get();
+  absl::Status status_error = c->status_error_.get();
   grpc_error_get_status(status_error, c->send_deadline(),
                         &c->final_info_.final_status, nullptr, nullptr,
                         &(c->final_info_.error_string));
@@ -722,7 +720,7 @@ void FilterStackCall::ExecuteBatch(grpc_transport_stream_op_batch* batch,
                                    grpc_closure* start_batch_closure) {
   // This is called via the call combiner to start sending a batch down
   // the filter stack.
-  auto execute_batch_in_call_combiner = [](void* arg, grpc_error_handle) {
+  auto execute_batch_in_call_combiner = [](void* arg, absl::Status) {
     grpc_transport_stream_op_batch* batch =
         static_cast<grpc_transport_stream_op_batch*>(arg);
     auto* call =
@@ -748,7 +746,7 @@ struct CancelState {
 
 // The on_complete callback used when sending a cancel_stream batch down
 // the filter stack.  Yields the call combiner when the batch is done.
-static void done_termination(void* arg, grpc_error_handle /*error*/) {
+static void done_termination(void* arg, absl::Status /*error*/) {
   CancelState* state = static_cast<CancelState*>(arg);
   GRPC_CALL_COMBINER_STOP(state->call->call_combiner(),
                           "on_complete for cancel_stream op");
@@ -756,7 +754,7 @@ static void done_termination(void* arg, grpc_error_handle /*error*/) {
   delete state;
 }
 
-void FilterStackCall::CancelWithError(grpc_error_handle error) {
+void FilterStackCall::CancelWithError(absl::Status error) {
   if (!gpr_atm_rel_cas(&cancelled_with_error_, 0, 1)) {
     GRPC_ERROR_UNREF(error);
     return;
@@ -788,7 +786,7 @@ void Call::CancelWithStatus(grpc_status_code status, const char* description) {
       GRPC_ERROR_INT_GRPC_STATUS, status));
 }
 
-void FilterStackCall::SetFinalStatus(grpc_error_handle error) {
+void FilterStackCall::SetFinalStatus(absl::Status error) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_call_error_trace)) {
     gpr_log(GPR_DEBUG, "set_final_status %s", is_client() ? "CLI" : "SVR");
     gpr_log(GPR_DEBUG, "%s", grpc_error_std_string(error).c_str());
@@ -944,7 +942,7 @@ void FilterStackCall::RecvInitialFilter(grpc_metadata_batch* b) {
 }
 
 void FilterStackCall::RecvTrailingFilter(grpc_metadata_batch* b,
-                                         grpc_error_handle batch_error) {
+                                         absl::Status batch_error) {
   if (!GRPC_ERROR_IS_NONE(batch_error)) {
     SetFinalStatus(batch_error);
   } else {
@@ -952,7 +950,7 @@ void FilterStackCall::RecvTrailingFilter(grpc_metadata_batch* b,
         b->Take(GrpcStatusMetadata());
     if (grpc_status.has_value()) {
       grpc_status_code status_code = *grpc_status;
-      grpc_error_handle error = GRPC_ERROR_NONE;
+      absl::Status error = GRPC_ERROR_NONE;
       if (status_code != GRPC_STATUS_OK) {
         char* peer = GetPeer();
         error = grpc_error_set_int(
@@ -1063,7 +1061,7 @@ void Call::PropagateCancellationToChildren() {
 
 void FilterStackCall::BatchControl::PostCompletion() {
   FilterStackCall* call = call_;
-  grpc_error_handle error = GRPC_ERROR_REF(batch_error_.get());
+  absl::Status error = GRPC_ERROR_REF(batch_error_.get());
 
   if (op_.send_initial_metadata) {
     call->send_initial_metadata_.Clear();
@@ -1146,8 +1144,7 @@ void FilterStackCall::BatchControl::ProcessDataAfterMetadata() {
   }
 }
 
-void FilterStackCall::BatchControl::ReceivingStreamReady(
-    grpc_error_handle error) {
+void FilterStackCall::BatchControl::ReceivingStreamReady(absl::Status error) {
   FilterStackCall* call = call_;
   if (!GRPC_ERROR_IS_NONE(error)) {
     call->receiving_slice_buffer_.reset();
@@ -1212,7 +1209,7 @@ void FilterStackCall::BatchControl::ValidateFilteredMetadata() {
 }
 
 void FilterStackCall::BatchControl::ReceivingInitialMetadataReady(
-    grpc_error_handle error) {
+    absl::Status error) {
   FilterStackCall* call = call_;
 
   GRPC_CALL_COMBINER_STOP(call->call_combiner(), "recv_initial_metadata_ready");
@@ -1253,7 +1250,7 @@ void FilterStackCall::BatchControl::ReceivingInitialMetadataReady(
     } else {
       /* Already received messages */
       saved_rsr_closure = GRPC_CLOSURE_CREATE(
-          [](void* bctl, grpc_error_handle error) {
+          [](void* bctl, absl::Status error) {
             static_cast<BatchControl*>(bctl)->ReceivingStreamReady(error);
           },
           reinterpret_cast<BatchControl*>(rsr_bctlp),
@@ -1270,7 +1267,7 @@ void FilterStackCall::BatchControl::ReceivingInitialMetadataReady(
 }
 
 void FilterStackCall::BatchControl::ReceivingTrailingMetadataReady(
-    grpc_error_handle error) {
+    absl::Status error) {
   GRPC_CALL_COMBINER_STOP(call_->call_combiner(),
                           "recv_trailing_metadata_ready");
   grpc_metadata_batch* md = &call_->recv_trailing_metadata_;
@@ -1278,7 +1275,7 @@ void FilterStackCall::BatchControl::ReceivingTrailingMetadataReady(
   FinishStep();
 }
 
-void FilterStackCall::BatchControl::FinishBatch(grpc_error_handle error) {
+void FilterStackCall::BatchControl::FinishBatch(absl::Status error) {
   GRPC_CALL_COMBINER_STOP(call_->call_combiner(), "on_complete");
   if (batch_error_.ok()) {
     batch_error_.set(error);
@@ -1503,7 +1500,7 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
           goto done_with_error;
         }
 
-        grpc_error_handle status_error =
+        absl::Status status_error =
             op->data.send_status_from_server.status == GRPC_STATUS_OK
                 ? GRPC_ERROR_NONE
                 : grpc_error_set_int(
@@ -1555,7 +1552,7 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
             op->data.recv_initial_metadata.recv_initial_metadata;
         GRPC_CLOSURE_INIT(
             &receiving_initial_metadata_ready_,
-            [](void* bctl, grpc_error_handle error) {
+            [](void* bctl, absl::Status error) {
               static_cast<BatchControl*>(bctl)->ReceivingInitialMetadataReady(
                   error);
             },
@@ -1595,7 +1592,7 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
             &call_failed_before_recv_message_;
         GRPC_CLOSURE_INIT(
             &receiving_stream_ready_,
-            [](void* bctlp, grpc_error_handle error) {
+            [](void* bctlp, absl::Status error) {
               auto* bctl = static_cast<BatchControl*>(bctlp);
               auto* call = bctl->call_;
               //  Yields the call combiner before processing the received
@@ -1639,7 +1636,7 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
             &final_info_.stats.transport_stream_stats;
         GRPC_CLOSURE_INIT(
             &receiving_trailing_metadata_ready_,
-            [](void* bctl, grpc_error_handle error) {
+            [](void* bctl, absl::Status error) {
               static_cast<BatchControl*>(bctl)->ReceivingTrailingMetadataReady(
                   error);
             },
@@ -1672,7 +1669,7 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
             &final_info_.stats.transport_stream_stats;
         GRPC_CLOSURE_INIT(
             &receiving_trailing_metadata_ready_,
-            [](void* bctl, grpc_error_handle error) {
+            [](void* bctl, absl::Status error) {
               static_cast<BatchControl*>(bctl)->ReceivingTrailingMetadataReady(
                   error);
             },
@@ -1694,7 +1691,7 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
   if (has_send_ops) {
     GRPC_CLOSURE_INIT(
         &bctl->finish_batch_,
-        [](void* bctl, grpc_error_handle error) {
+        [](void* bctl, absl::Status error) {
           static_cast<BatchControl*>(bctl)->FinishBatch(error);
         },
         bctl, grpc_schedule_on_exec_ctx);
@@ -1751,8 +1748,8 @@ size_t grpc_call_get_initial_size_estimate() {
   return grpc_core::FilterStackCall::InitialSizeEstimate();
 }
 
-grpc_error_handle grpc_call_create(grpc_call_create_args* args,
-                                   grpc_call** out_call) {
+absl::Status grpc_call_create(grpc_call_create_args* args,
+                              grpc_call** out_call) {
   return grpc_core::FilterStackCall::Create(args, out_call);
 }
 

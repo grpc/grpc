@@ -41,6 +41,7 @@
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/surface/api_trace.h"
@@ -107,7 +108,7 @@ bool LameClientFilter::StartTransportOp(grpc_transport_op* op) {
 
 namespace {
 
-// Channel arg vtable for a grpc_error_handle.
+// Channel arg vtable for a absl::Status.
 void* ErrorCopy(void* p) {
   return new absl::Status(*static_cast<absl::Status*>(p));
 }
@@ -119,7 +120,7 @@ const grpc_arg_pointer_vtable kLameFilterErrorArgVtable = {
 
 }  // namespace
 
-grpc_arg MakeLameClientErrorArg(grpc_error_handle* error) {
+grpc_arg MakeLameClientErrorArg(absl::Status* error) {
   return grpc_channel_arg_pointer_create(
       const_cast<char*>(GRPC_ARG_LAME_FILTER_ERROR), error,
       &kLameFilterErrorArgVtable);

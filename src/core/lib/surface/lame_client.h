@@ -33,14 +33,13 @@
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
 // Does NOT take ownership of error.
-grpc_arg MakeLameClientErrorArg(grpc_error_handle* error);
+grpc_arg MakeLameClientErrorArg(absl::Status* error);
 
 // This filter becomes the entire channel stack for a channel that fails to be
 // created. Every call returns failure.

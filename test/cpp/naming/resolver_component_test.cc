@@ -215,7 +215,7 @@ void ArgsInit(ArgsStruct* args) {
   args->channel_args = nullptr;
 }
 
-void DoNothing(void* /*arg*/, grpc_error_handle /*error*/) {}
+void DoNothing(void* /*arg*/, absl::Status /*error*/) {}
 
 void ArgsFinish(ArgsStruct* args) {
   GPR_ASSERT(gpr_event_wait(&args->ev, TestDeadline()));

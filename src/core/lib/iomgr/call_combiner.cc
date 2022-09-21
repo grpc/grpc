@@ -35,7 +35,7 @@ namespace {
 // grpc_error LSB can be used
 constexpr intptr_t kErrorBit = 1;
 
-grpc_error_handle DecodeCancelStateError(gpr_atm cancel_state) {
+absl::Status DecodeCancelStateError(gpr_atm cancel_state) {
   if (cancel_state & kErrorBit) {
     return internal::StatusGetFromHeapPtr(cancel_state & ~kErrorBit);
   }
@@ -60,7 +60,7 @@ CallCombiner::~CallCombiner() {
 }
 
 #ifdef GRPC_TSAN_ENABLED
-void CallCombiner::TsanClosure(void* arg, grpc_error_handle error) {
+void CallCombiner::TsanClosure(void* arg, absl::Status error) {
   CallCombiner* self = static_cast<CallCombiner*>(arg);
   // We ref-count the lock, and check if it's already taken.
   // If it was taken, we should do nothing. Otherwise, we will mark it as
@@ -90,8 +90,7 @@ void CallCombiner::TsanClosure(void* arg, grpc_error_handle error) {
 }
 #endif
 
-void CallCombiner::ScheduleClosure(grpc_closure* closure,
-                                   grpc_error_handle error) {
+void CallCombiner::ScheduleClosure(grpc_closure* closure, absl::Status error) {
 #ifdef GRPC_TSAN_ENABLED
   original_closure_ = closure;
   ExecCtx::Run(DEBUG_LOCATION, &tsan_closure_, error);
@@ -110,7 +109,7 @@ void CallCombiner::ScheduleClosure(grpc_closure* closure,
 #define DEBUG_FMT_ARGS
 #endif
 
-void CallCombiner::Start(grpc_closure* closure, grpc_error_handle error,
+void CallCombiner::Start(grpc_closure* closure, absl::Status error,
                          DEBUG_ARGS const char* reason) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_call_combiner_trace)) {
     gpr_log(GPR_INFO,
@@ -170,7 +169,7 @@ void CallCombiner::Stop(DEBUG_ARGS const char* reason) {
         }
         continue;
       }
-      grpc_error_handle error =
+      absl::Status error =
           internal::StatusMoveFromHeapPtr(closure->error_data.error);
       closure->error_data.error = 0;
       if (GRPC_TRACE_FLAG_ENABLED(grpc_call_combiner_trace)) {
@@ -189,7 +188,7 @@ void CallCombiner::SetNotifyOnCancel(grpc_closure* closure) {
   while (true) {
     // Decode original state.
     gpr_atm original_state = gpr_atm_acq_load(&cancel_state_);
-    grpc_error_handle original_error = DecodeCancelStateError(original_state);
+    absl::Status original_error = DecodeCancelStateError(original_state);
     // If error is set, invoke the cancellation closure immediately.
     // Otherwise, store the new closure.
     if (!GRPC_ERROR_IS_NONE(original_error)) {
@@ -227,12 +226,12 @@ void CallCombiner::SetNotifyOnCancel(grpc_closure* closure) {
   }
 }
 
-void CallCombiner::Cancel(grpc_error_handle error) {
+void CallCombiner::Cancel(absl::Status error) {
   intptr_t status_ptr = internal::StatusAllocHeapPtr(error);
   gpr_atm new_state = kErrorBit | status_ptr;
   while (true) {
     gpr_atm original_state = gpr_atm_acq_load(&cancel_state_);
-    grpc_error_handle original_error = DecodeCancelStateError(original_state);
+    absl::Status original_error = DecodeCancelStateError(original_state);
     if (!GRPC_ERROR_IS_NONE(original_error)) {
       internal::StatusFreeHeapPtr(status_ptr);
       break;

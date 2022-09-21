@@ -27,6 +27,8 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/iomgr/error.h"
+
 grpc_core::TraceFlag grpc_http1_trace(false, "http1");
 
 static char* buf2str(void* buffer, size_t length) {
@@ -36,7 +38,7 @@ static char* buf2str(void* buffer, size_t length) {
   return out;
 }
 
-static grpc_error_handle handle_response_line(grpc_http_parser* parser) {
+static absl::Status handle_response_line(grpc_http_parser* parser) {
   uint8_t* beg = parser->cur_line;
   uint8_t* cur = beg;
   uint8_t* end = beg + parser->cur_line_length;
@@ -89,7 +91,7 @@ static grpc_error_handle handle_response_line(grpc_http_parser* parser) {
   return GRPC_ERROR_NONE;
 }
 
-static grpc_error_handle handle_request_line(grpc_http_parser* parser) {
+static absl::Status handle_request_line(grpc_http_parser* parser) {
   uint8_t* beg = parser->cur_line;
   uint8_t* cur = beg;
   uint8_t* end = beg + parser->cur_line_length;
@@ -160,7 +162,7 @@ static grpc_error_handle handle_request_line(grpc_http_parser* parser) {
   return GRPC_ERROR_NONE;
 }
 
-static grpc_error_handle handle_first_line(grpc_http_parser* parser) {
+static absl::Status handle_first_line(grpc_http_parser* parser) {
   switch (parser->type) {
     case GRPC_HTTP_REQUEST:
       return handle_request_line(parser);
@@ -171,7 +173,7 @@ static grpc_error_handle handle_first_line(grpc_http_parser* parser) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Should never reach here"));
 }
 
-static grpc_error_handle add_header(grpc_http_parser* parser) {
+static absl::Status add_header(grpc_http_parser* parser) {
   uint8_t* beg = parser->cur_line;
   uint8_t* cur = beg;
   uint8_t* end = beg + parser->cur_line_length;
@@ -179,7 +181,7 @@ static grpc_error_handle add_header(grpc_http_parser* parser) {
   size_t size = 0;
   grpc_http_header** hdrs = nullptr;
   grpc_http_header hdr = {nullptr, nullptr};
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = GRPC_ERROR_NONE;
 
   GPR_ASSERT(cur != end);
 
@@ -242,9 +244,9 @@ done:
   return error;
 }
 
-static grpc_error_handle finish_line(grpc_http_parser* parser,
-                                     bool* found_body_start) {
-  grpc_error_handle err;
+static absl::Status finish_line(grpc_http_parser* parser,
+                                bool* found_body_start) {
+  absl::Status err;
   switch (parser->state) {
     case GRPC_HTTP_FIRST_LINE:
       err = handle_first_line(parser);
@@ -278,7 +280,7 @@ static grpc_error_handle finish_line(grpc_http_parser* parser,
   return GRPC_ERROR_NONE;
 }
 
-static grpc_error_handle addbyte_body(grpc_http_parser* parser, uint8_t byte) {
+static absl::Status addbyte_body(grpc_http_parser* parser, uint8_t byte) {
   size_t* body_length = nullptr;
   char** body = nullptr;
 
@@ -380,8 +382,8 @@ static bool check_line(grpc_http_parser* parser) {
   return false;
 }
 
-static grpc_error_handle addbyte(grpc_http_parser* parser, uint8_t byte,
-                                 bool* found_body_start) {
+static absl::Status addbyte(grpc_http_parser* parser, uint8_t byte,
+                            bool* found_body_start) {
   switch (parser->state) {
     case GRPC_HTTP_FIRST_LINE:
     case GRPC_HTTP_HEADERS:
@@ -441,12 +443,12 @@ void grpc_http_response_destroy(grpc_http_response* response) {
   gpr_free(response->hdrs);
 }
 
-grpc_error_handle grpc_http_parser_parse(grpc_http_parser* parser,
-                                         const grpc_slice& slice,
-                                         size_t* start_of_body) {
+absl::Status grpc_http_parser_parse(grpc_http_parser* parser,
+                                    const grpc_slice& slice,
+                                    size_t* start_of_body) {
   for (size_t i = 0; i < GRPC_SLICE_LENGTH(slice); i++) {
     bool found_body_start = false;
-    grpc_error_handle err =
+    absl::Status err =
         addbyte(parser, GRPC_SLICE_START_PTR(slice)[i], &found_body_start);
     if (!GRPC_ERROR_IS_NONE(err)) return err;
     if (found_body_start && start_of_body != nullptr) *start_of_body = i + 1;
@@ -454,7 +456,7 @@ grpc_error_handle grpc_http_parser_parse(grpc_http_parser* parser,
   return GRPC_ERROR_NONE;
 }
 
-grpc_error_handle grpc_http_parser_eof(grpc_http_parser* parser) {
+absl::Status grpc_http_parser_eof(grpc_http_parser* parser) {
   if ((parser->state != GRPC_HTTP_BODY) && (parser->state != GRPC_HTTP_END)) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Did not finish headers");
   }

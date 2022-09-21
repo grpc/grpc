@@ -23,11 +23,12 @@
 
 #include <string>
 
+#include "absl/status/status.h"
+
 #include <grpc/grpc_security.h>
 
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json.h"
 
 namespace grpc_core {
@@ -54,7 +55,7 @@ class CertificateProviderFactory {
   virtual const char* name() const = 0;
 
   virtual RefCountedPtr<Config> CreateCertificateProviderConfig(
-      const Json& config_json, grpc_error_handle* error) = 0;
+      const Json& config_json, absl::Status* error) = 0;
 
   // Create a CertificateProvider instance from config.
   virtual RefCountedPtr<grpc_tls_certificate_provider>

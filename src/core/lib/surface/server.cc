@@ -163,7 +163,7 @@ class Server::RequestMatcherInterface {
   // Mark all application-requested RPCs failed if they have not been matched to
   // an incoming RPC. The error parameter indicates why the RPCs are being
   // failed (always server shutdown in all current implementations).
-  virtual void KillRequests(grpc_error_handle error) = 0;
+  virtual void KillRequests(absl::Status error) = 0;
 
   // How many request queues are supported by this matcher. This is an abstract
   // concept that essentially maps to gRPC completion queues.
@@ -215,7 +215,7 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
     }
   }
 
-  void KillRequests(grpc_error_handle error) override {
+  void KillRequests(absl::Status error) override {
     for (size_t i = 0; i < requests_per_cq_.size(); i++) {
       RequestedCall* rc;
       while ((rc = reinterpret_cast<RequestedCall*>(
@@ -337,9 +337,7 @@ class Server::AllocatingRequestMatcherBase : public RequestMatcherInterface {
 
   void ZombifyPending() override {}
 
-  void KillRequests(grpc_error_handle error) override {
-    GRPC_ERROR_UNREF(error);
-  }
+  void KillRequests(absl::Status error) override { GRPC_ERROR_UNREF(error); }
 
   size_t request_queue_count() const override { return 0; }
 
@@ -447,7 +445,7 @@ class ChannelBroadcaster {
   }
 
   // Broadcasts a shutdown on each channel.
-  void BroadcastShutdown(bool send_goaway, grpc_error_handle force_disconnect) {
+  void BroadcastShutdown(bool send_goaway, absl::Status force_disconnect) {
     for (const RefCountedPtr<Channel>& channel : channels_) {
       SendShutdown(channel->c_ptr(), send_goaway,
                    GRPC_ERROR_REF(force_disconnect));
@@ -462,14 +460,14 @@ class ChannelBroadcaster {
     grpc_slice slice;
   };
 
-  static void ShutdownCleanup(void* arg, grpc_error_handle /*error*/) {
+  static void ShutdownCleanup(void* arg, absl::Status /*error*/) {
     ShutdownCleanupArgs* a = static_cast<ShutdownCleanupArgs*>(arg);
     grpc_slice_unref_internal(a->slice);
     delete a;
   }
 
   static void SendShutdown(grpc_channel* channel, bool send_goaway,
-                           grpc_error_handle send_disconnect) {
+                           absl::Status send_disconnect) {
     ShutdownCleanupArgs* sc = new ShutdownCleanupArgs;
     GRPC_CLOSURE_INIT(&sc->closure, ShutdownCleanup, sc,
                       grpc_schedule_on_exec_ctx);
@@ -597,7 +595,7 @@ void Server::Start() {
   starting_cv_.Signal();
 }
 
-grpc_error_handle Server::SetupTransport(
+absl::Status Server::SetupTransport(
     grpc_transport* transport, grpc_pollset* accepting_pollset,
     const ChannelArgs& args,
     const RefCountedPtr<channelz::SocketNode>& socket_node) {
@@ -698,8 +696,7 @@ void Server::DoneRequestEvent(void* req, grpc_cq_completion* /*c*/) {
   delete static_cast<RequestedCall*>(req);
 }
 
-void Server::FailCall(size_t cq_idx, RequestedCall* rc,
-                      grpc_error_handle error) {
+void Server::FailCall(size_t cq_idx, RequestedCall* rc, absl::Status error) {
   *rc->call = nullptr;
   rc->initial_metadata->count = 0;
   GPR_ASSERT(!GRPC_ERROR_IS_NONE(error));
@@ -739,7 +736,7 @@ void Server::MaybeFinishShutdown() {
   }
 }
 
-void Server::KillPendingWorkLocked(grpc_error_handle error) {
+void Server::KillPendingWorkLocked(absl::Status error) {
   if (started_) {
     unregistered_request_matcher_->KillRequests(GRPC_ERROR_REF(error));
     unregistered_request_matcher_->ZombifyPending();
@@ -760,7 +757,7 @@ std::vector<RefCountedPtr<Channel>> Server::GetChannelsLocked() const {
   return channels;
 }
 
-void Server::ListenerDestroyDone(void* arg, grpc_error_handle /*error*/) {
+void Server::ListenerDestroyDone(void* arg, absl::Status /*error*/) {
   Server* server = static_cast<Server*>(arg);
   MutexLock lock(&server->mu_global_);
   server->listeners_destroyed_++;
@@ -1112,7 +1109,7 @@ void Server::ChannelData::AcceptStream(void* arg, grpc_transport* /*transport*/,
   args.server_transport_data = transport_server_data;
   args.send_deadline = Timestamp::InfFuture();
   grpc_call* call;
-  grpc_error_handle error = grpc_call_create(&args, &call);
+  absl::Status error = grpc_call_create(&args, &call);
   grpc_call_element* elem =
       grpc_call_stack_element(grpc_call_get_call_stack(call), 0);
   auto* calld = static_cast<Server::CallData*>(elem->call_data);
@@ -1124,8 +1121,7 @@ void Server::ChannelData::AcceptStream(void* arg, grpc_transport* /*transport*/,
   calld->Start(elem);
 }
 
-void Server::ChannelData::FinishDestroy(void* arg,
-                                        grpc_error_handle /*error*/) {
+void Server::ChannelData::FinishDestroy(void* arg, absl::Status /*error*/) {
   auto* chand = static_cast<Server::ChannelData*>(arg);
   Server* server = chand->server_.get();
   auto* channel_stack = chand->channel_->channel_stack();
@@ -1156,7 +1152,7 @@ void Server::ChannelData::Destroy() {
                        op);
 }
 
-grpc_error_handle Server::ChannelData::InitChannelElement(
+absl::Status Server::ChannelData::InitChannelElement(
     grpc_channel_element* elem, grpc_channel_element_args* args) {
   GPR_ASSERT(args->is_first);
   GPR_ASSERT(!args->is_last);
@@ -1261,7 +1257,7 @@ void Server::CallData::Publish(size_t cq_idx, RequestedCall* rc) {
                  rc, &rc->completion, true);
 }
 
-void Server::CallData::PublishNewRpc(void* arg, grpc_error_handle error) {
+void Server::CallData::PublishNewRpc(void* arg, absl::Status error) {
   grpc_call_element* call_elem = static_cast<grpc_call_element*>(arg);
   auto* calld = static_cast<Server::CallData*>(call_elem->call_data);
   auto* chand = static_cast<Server::ChannelData*>(call_elem->channel_data);
@@ -1277,7 +1273,7 @@ void Server::CallData::PublishNewRpc(void* arg, grpc_error_handle error) {
 
 namespace {
 
-void KillZombieClosure(void* call, grpc_error_handle /*error*/) {
+void KillZombieClosure(void* call, absl::Status /*error*/) {
   grpc_call_unref(static_cast<grpc_call*>(call));
 }
 
@@ -1327,8 +1323,8 @@ void Server::CallData::StartNewRpc(grpc_call_element* elem) {
   }
 }
 
-void Server::CallData::RecvInitialMetadataBatchComplete(
-    void* arg, grpc_error_handle error) {
+void Server::CallData::RecvInitialMetadataBatchComplete(void* arg,
+                                                        absl::Status error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
   auto* calld = static_cast<Server::CallData*>(elem->call_data);
   if (!GRPC_ERROR_IS_NONE(error)) {
@@ -1359,8 +1355,7 @@ void Server::CallData::StartTransportStreamOpBatchImpl(
   grpc_call_next_op(elem, batch);
 }
 
-void Server::CallData::RecvInitialMetadataReady(void* arg,
-                                                grpc_error_handle error) {
+void Server::CallData::RecvInitialMetadataReady(void* arg, absl::Status error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
   CallData* calld = static_cast<CallData*>(elem->call_data);
   if (GRPC_ERROR_IS_NONE(error)) {
@@ -1379,7 +1374,7 @@ void Server::CallData::RecvInitialMetadataReady(void* arg,
     /* do nothing */
   } else {
     /* Pass the error reference to calld->recv_initial_metadata_error */
-    grpc_error_handle src_error = error;
+    absl::Status src_error = error;
     error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
         "Missing :authority or :path", &src_error, 1);
     GRPC_ERROR_UNREF(src_error);
@@ -1397,7 +1392,7 @@ void Server::CallData::RecvInitialMetadataReady(void* arg,
 }
 
 void Server::CallData::RecvTrailingMetadataReady(void* arg,
-                                                 grpc_error_handle error) {
+                                                 absl::Status error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
   CallData* calld = static_cast<CallData*>(elem->call_data);
   if (calld->original_recv_initial_metadata_ready_ != nullptr) {
@@ -1418,7 +1413,7 @@ void Server::CallData::RecvTrailingMetadataReady(void* arg,
                error);
 }
 
-grpc_error_handle Server::CallData::InitCallElement(
+absl::Status Server::CallData::InitCallElement(
     grpc_call_element* elem, const grpc_call_element_args* args) {
   auto* chand = static_cast<ChannelData*>(elem->channel_data);
   new (elem->call_data) Server::CallData(elem, *args, chand->server());

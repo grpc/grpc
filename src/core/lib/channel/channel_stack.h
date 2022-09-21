@@ -50,6 +50,8 @@
 
 #include <functional>
 
+#include "absl/status/status.h"
+
 #include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/slice.h>
@@ -65,7 +67,6 @@
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/resource_quota/arena.h"
@@ -141,8 +142,8 @@ struct grpc_channel_filter {
      transport and is on the server. Most filters want to ignore this
      argument.
      Implementations may assume that elem->call_data is all zeros. */
-  grpc_error_handle (*init_call_elem)(grpc_call_element* elem,
-                                      const grpc_call_element_args* args);
+  absl::Status (*init_call_elem)(grpc_call_element* elem,
+                                 const grpc_call_element_args* args);
   void (*set_pollset_or_pollset_set)(grpc_call_element* elem,
                                      grpc_polling_entity* pollent);
   /* Destroy per call data.
@@ -164,8 +165,8 @@ struct grpc_channel_filter {
      useful for asserting correct configuration by upper layer code.
      The filter does not need to do any chaining.
      Implementations may assume that elem->channel_data is all zeros. */
-  grpc_error_handle (*init_channel_elem)(grpc_channel_element* elem,
-                                         grpc_channel_element_args* args);
+  absl::Status (*init_channel_elem)(grpc_channel_element* elem,
+                                    grpc_channel_element_args* args);
   /* Post init per-channel data.
      Called after all channel elements have been successfully created. */
   void (*post_init_channel_elem)(grpc_channel_stack* stk,
@@ -269,7 +270,7 @@ grpc_call_element* grpc_call_stack_element(grpc_call_stack* stack, size_t i);
 size_t grpc_channel_stack_size(const grpc_channel_filter** filters,
                                size_t filter_count);
 /* Initialize a channel stack given some filters */
-grpc_error_handle grpc_channel_stack_init(
+absl::Status grpc_channel_stack_init(
     int initial_refs, grpc_iomgr_cb_func destroy, void* destroy_arg,
     const grpc_channel_filter** filters, size_t filter_count,
     const grpc_channel_args* args, const char* name, grpc_channel_stack* stack);
@@ -279,11 +280,10 @@ void grpc_channel_stack_destroy(grpc_channel_stack* stack);
 /* Initialize a call stack given a channel stack. transport_server_data is
    expected to be NULL on a client, or an opaque transport owned pointer on the
    server. */
-grpc_error_handle grpc_call_stack_init(grpc_channel_stack* channel_stack,
-                                       int initial_refs,
-                                       grpc_iomgr_cb_func destroy,
-                                       void* destroy_arg,
-                                       const grpc_call_element_args* elem_args);
+absl::Status grpc_call_stack_init(grpc_channel_stack* channel_stack,
+                                  int initial_refs, grpc_iomgr_cb_func destroy,
+                                  void* destroy_arg,
+                                  const grpc_call_element_args* elem_args);
 /* Set a pollset or a pollset_set for a call stack: must occur before the first
  * op is started */
 void grpc_call_stack_set_pollset_or_pollset_set(grpc_call_stack* call_stack,

@@ -231,8 +231,7 @@ struct shared_mutables {
 static struct shared_mutables g_shared_mutables;
 
 static grpc_timer_check_result run_some_expired_timers(
-    grpc_core::Timestamp now, grpc_core::Timestamp* next,
-    grpc_error_handle error);
+    grpc_core::Timestamp now, grpc_core::Timestamp* next, absl::Status error);
 
 static grpc_core::Timestamp compute_min_deadline(timer_shard* shard) {
   return grpc_timer_heap_is_empty(&shard->heap)
@@ -545,7 +544,7 @@ static grpc_timer* pop_one(timer_shard* shard, grpc_core::Timestamp now) {
 /* REQUIRES: shard->mu unlocked */
 static size_t pop_timers(timer_shard* shard, grpc_core::Timestamp now,
                          grpc_core::Timestamp* new_min_deadline,
-                         grpc_error_handle error) {
+                         absl::Status error) {
   size_t n = 0;
   grpc_timer* timer;
   gpr_mu_lock(&shard->mu);
@@ -565,8 +564,7 @@ static size_t pop_timers(timer_shard* shard, grpc_core::Timestamp now,
 }
 
 static grpc_timer_check_result run_some_expired_timers(
-    grpc_core::Timestamp now, grpc_core::Timestamp* next,
-    grpc_error_handle error) {
+    grpc_core::Timestamp now, grpc_core::Timestamp* next, absl::Status error) {
   grpc_timer_check_result result = GRPC_TIMERS_NOT_CHECKED;
 
 #if GPR_ARCH_64
@@ -685,7 +683,7 @@ static grpc_timer_check_result timer_check(grpc_core::Timestamp* next) {
     return GRPC_TIMERS_CHECKED_AND_EMPTY;
   }
 
-  grpc_error_handle shutdown_error =
+  absl::Status shutdown_error =
       now != grpc_core::Timestamp::InfFuture()
           ? GRPC_ERROR_NONE
           : GRPC_ERROR_CREATE_FROM_STATIC_STRING("Shutting down timer system");

@@ -144,7 +144,7 @@ WinSocket::OpState* WinSocket::GetOpInfoForOverlapped(OVERLAPPED* overlapped) {
 
 namespace {
 
-grpc_error_handle grpc_tcp_set_non_block(SOCKET sock) {
+absl::Status grpc_tcp_set_non_block(SOCKET sock) {
   int status;
   uint32_t param = 1;
   DWORD ret;
@@ -155,7 +155,7 @@ grpc_error_handle grpc_tcp_set_non_block(SOCKET sock) {
              : GRPC_WSA_ERROR(WSAGetLastError(), "WSAIoctl(GRPC_FIONBIO)");
 }
 
-static grpc_error_handle set_dualstack(SOCKET sock) {
+static absl::Status set_dualstack(SOCKET sock) {
   int status;
   DWORD param = 0;
   status = setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY, (const char*)&param,
@@ -165,7 +165,7 @@ static grpc_error_handle set_dualstack(SOCKET sock) {
              : GRPC_WSA_ERROR(WSAGetLastError(), "setsockopt(IPV6_V6ONLY)");
 }
 
-static grpc_error_handle enable_socket_low_latency(SOCKET sock) {
+static absl::Status enable_socket_low_latency(SOCKET sock) {
   int status;
   BOOL param = TRUE;
   status = ::setsockopt(sock, IPPROTO_TCP, TCP_NODELAY,

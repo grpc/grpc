@@ -142,7 +142,7 @@ void MaxAgeFilter::PostInit() {
     MaxAgeFilter* filter;
     grpc_closure closure;
   };
-  auto run_startup = [](void* p, grpc_error_handle) {
+  auto run_startup = [](void* p, absl::Status) {
     auto* startup = static_cast<StartupClosure*>(p);
     // Trigger idle timer
     startup->filter->IncreaseCallCount();
@@ -173,7 +173,7 @@ void MaxAgeFilter::PostInit() {
               GRPC_CHANNEL_STACK_REF(this->channel_stack(),
                                      "max_age send_goaway");
               // Jump out of the activity to send the goaway.
-              auto fn = [](void* arg, grpc_error_handle) {
+              auto fn = [](void* arg, absl::Status) {
                 auto* channel_stack = static_cast<grpc_channel_stack*>(arg);
                 grpc_transport_op* op = grpc_make_transport_op(nullptr);
                 op->goaway_error = grpc_error_set_int(

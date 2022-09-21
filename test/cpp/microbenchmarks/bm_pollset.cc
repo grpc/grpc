@@ -42,7 +42,7 @@
 #include <unistd.h>
 #endif
 
-static void shutdown_ps(void* ps, grpc_error_handle /*error*/) {
+static void shutdown_ps(void* ps, absl::Status /*error*/) {
   grpc_pollset_destroy(static_cast<grpc_pollset*>(ps));
 }
 
@@ -169,7 +169,7 @@ template <class F>
 TestClosure* MakeTestClosure(F f) {
   struct C : public TestClosure {
     explicit C(F f) : f_(f) { GRPC_CLOSURE_INIT(this, C::cbfn, this, nullptr); }
-    static void cbfn(void* arg, grpc_error_handle /*error*/) {
+    static void cbfn(void* arg, absl::Status /*error*/) {
       C* p = static_cast<C*>(arg);
       p->f_();
     }

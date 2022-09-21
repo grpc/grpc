@@ -212,8 +212,8 @@ class PriorityLb : public LoadBalancingPolicy {
       void Orphan() override;
 
      private:
-      static void OnTimer(void* arg, grpc_error_handle error);
-      void OnTimerLocked(grpc_error_handle);
+      static void OnTimer(void* arg, absl::Status error);
+      void OnTimerLocked(absl::Status);
 
       RefCountedPtr<ChildPriority> child_priority_;
       grpc_timer timer_;
@@ -228,8 +228,8 @@ class PriorityLb : public LoadBalancingPolicy {
       void Orphan() override;
 
      private:
-      static void OnTimer(void* arg, grpc_error_handle error);
-      void OnTimerLocked(grpc_error_handle);
+      static void OnTimer(void* arg, absl::Status error);
+      void OnTimerLocked(absl::Status);
 
       RefCountedPtr<ChildPriority> child_priority_;
       grpc_timer timer_;
@@ -563,8 +563,8 @@ void PriorityLb::ChildPriority::DeactivationTimer::Orphan() {
   Unref();
 }
 
-void PriorityLb::ChildPriority::DeactivationTimer::OnTimer(
-    void* arg, grpc_error_handle error) {
+void PriorityLb::ChildPriority::DeactivationTimer::OnTimer(void* arg,
+                                                           absl::Status error) {
   auto* self = static_cast<DeactivationTimer*>(arg);
   (void)GRPC_ERROR_REF(error);  // ref owned by lambda
   self->child_priority_->priority_policy_->work_serializer()->Run(
@@ -572,7 +572,7 @@ void PriorityLb::ChildPriority::DeactivationTimer::OnTimer(
 }
 
 void PriorityLb::ChildPriority::DeactivationTimer::OnTimerLocked(
-    grpc_error_handle error) {
+    absl::Status error) {
   if (GRPC_ERROR_IS_NONE(error) && timer_pending_) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
       gpr_log(GPR_INFO,
@@ -627,8 +627,8 @@ void PriorityLb::ChildPriority::FailoverTimer::Orphan() {
   Unref();
 }
 
-void PriorityLb::ChildPriority::FailoverTimer::OnTimer(
-    void* arg, grpc_error_handle error) {
+void PriorityLb::ChildPriority::FailoverTimer::OnTimer(void* arg,
+                                                       absl::Status error) {
   auto* self = static_cast<FailoverTimer*>(arg);
   (void)GRPC_ERROR_REF(error);  // ref owned by lambda
   self->child_priority_->priority_policy_->work_serializer()->Run(
@@ -636,7 +636,7 @@ void PriorityLb::ChildPriority::FailoverTimer::OnTimer(
 }
 
 void PriorityLb::ChildPriority::FailoverTimer::OnTimerLocked(
-    grpc_error_handle error) {
+    absl::Status error) {
   if (GRPC_ERROR_IS_NONE(error) && timer_pending_) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
       gpr_log(GPR_INFO,

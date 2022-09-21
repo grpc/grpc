@@ -34,6 +34,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/cpp/ext/filters/census/channel_filter.h"
@@ -72,7 +73,7 @@ void FilterInitialMetadata(grpc_metadata_batch* b,
 }  // namespace
 
 void CensusServerCallData::OnDoneRecvMessageCb(void* user_data,
-                                               grpc_error_handle error) {
+                                               absl::Status error) {
   grpc_call_element* elem = reinterpret_cast<grpc_call_element*>(user_data);
   CensusServerCallData* calld =
       reinterpret_cast<CensusServerCallData*>(elem->call_data);
@@ -88,8 +89,8 @@ void CensusServerCallData::OnDoneRecvMessageCb(void* user_data,
                           GRPC_ERROR_REF(error));
 }
 
-void CensusServerCallData::OnDoneRecvInitialMetadataCb(
-    void* user_data, grpc_error_handle error) {
+void CensusServerCallData::OnDoneRecvInitialMetadataCb(void* user_data,
+                                                       absl::Status error) {
   grpc_call_element* elem = reinterpret_cast<grpc_call_element*>(user_data);
   CensusServerCallData* calld =
       reinterpret_cast<CensusServerCallData*>(elem->call_data);
@@ -147,8 +148,8 @@ void CensusServerCallData::StartTransportStreamOpBatch(
   grpc_call_next_op(elem, op->op());
 }
 
-grpc_error_handle CensusServerCallData::Init(
-    grpc_call_element* elem, const grpc_call_element_args* args) {
+absl::Status CensusServerCallData::Init(grpc_call_element* elem,
+                                        const grpc_call_element_args* args) {
   start_time_ = absl::Now();
   gc_ =
       grpc_call_from_top_element(grpc_call_stack_element(args->call_stack, 0));

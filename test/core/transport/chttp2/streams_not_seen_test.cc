@@ -33,6 +33,7 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
@@ -114,8 +115,8 @@ class TrailingMetadataRecordingFilter {
  private:
   class CallData {
    public:
-    static grpc_error_handle Init(grpc_call_element* elem,
-                                  const grpc_call_element_args* args) {
+    static absl::Status Init(grpc_call_element* elem,
+                             const grpc_call_element_args* args) {
       new (elem->call_data) CallData(args);
       return GRPC_ERROR_NONE;
     }
@@ -157,7 +158,7 @@ class TrailingMetadataRecordingFilter {
                         RecvTrailingMetadataReady, this, nullptr);
     }
 
-    static void RecvInitialMetadataReady(void* arg, grpc_error_handle error) {
+    static void RecvInitialMetadataReady(void* arg, absl::Status error) {
       auto* calld = static_cast<CallData*>(arg);
       TrailingMetadataRecordingFilter::trailing_metadata_available_ =
           *calld->trailing_metadata_available_;
@@ -165,7 +166,7 @@ class TrailingMetadataRecordingFilter {
                    GRPC_ERROR_REF(error));
     }
 
-    static void RecvTrailingMetadataReady(void* arg, grpc_error_handle error) {
+    static void RecvTrailingMetadataReady(void* arg, absl::Status error) {
       auto* calld = static_cast<CallData*>(arg);
       stream_network_state_ =
           calld->recv_trailing_metadata_->get(GrpcStreamNetworkState());
@@ -182,8 +183,8 @@ class TrailingMetadataRecordingFilter {
     grpc_closure* original_recv_trailing_metadata_ready_ = nullptr;
   };
 
-  static grpc_error_handle Init(grpc_channel_element* elem,
-                                grpc_channel_element_args* /*args*/) {
+  static absl::Status Init(grpc_channel_element* elem,
+                           grpc_channel_element_args* /*args*/) {
     new (elem->channel_data) TrailingMetadataRecordingFilter();
     return GRPC_ERROR_NONE;
   }
@@ -360,13 +361,13 @@ class StreamsNotSeenTest : public ::testing::Test {
         absl::Seconds(5)));
   }
 
-  static void OnWriteDone(void* arg, grpc_error_handle error) {
+  static void OnWriteDone(void* arg, absl::Status error) {
     GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
     Notification* on_write_done_notification_ = static_cast<Notification*>(arg);
     on_write_done_notification_->Notify();
   }
 
-  static void OnReadDone(void* arg, grpc_error_handle error) {
+  static void OnReadDone(void* arg, absl::Status error) {
     StreamsNotSeenTest* self = static_cast<StreamsNotSeenTest*>(arg);
     if (GRPC_ERROR_IS_NONE(error)) {
       {

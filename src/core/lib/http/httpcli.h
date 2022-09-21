@@ -27,6 +27,7 @@
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
 
@@ -179,12 +180,12 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
       void (*intercept)(HttpRequest* req));
 
  private:
-  void Finish(grpc_error_handle error) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+  void Finish(absl::Status error) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     grpc_polling_entity_del_from_pollset_set(pollent_, pollset_set_);
     ExecCtx::Run(DEBUG_LOCATION, on_done_, error);
   }
 
-  void AppendError(grpc_error_handle error) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  void AppendError(absl::Status error) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   void DoRead() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     Ref().release();  // ref held by pending read
@@ -192,7 +193,7 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
                        /*min_progress_size=*/1);
   }
 
-  static void OnRead(void* user_data, grpc_error_handle error) {
+  static void OnRead(void* user_data, absl::Status error) {
     HttpRequest* req = static_cast<HttpRequest*>(user_data);
     ExecCtx::Run(DEBUG_LOCATION,
                  &req->continue_on_read_after_schedule_on_exec_ctx_,
@@ -201,18 +202,17 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
 
   // Needed since OnRead may be called inline from grpc_endpoint_read
   static void ContinueOnReadAfterScheduleOnExecCtx(void* user_data,
-                                                   grpc_error_handle error) {
+                                                   absl::Status error) {
     RefCountedPtr<HttpRequest> req(static_cast<HttpRequest*>(user_data));
     MutexLock lock(&req->mu_);
     req->OnReadInternal(error);
   }
 
-  void OnReadInternal(grpc_error_handle error)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  void OnReadInternal(absl::Status error) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   void OnWritten() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) { DoRead(); }
 
-  static void DoneWrite(void* arg, grpc_error_handle error) {
+  static void DoneWrite(void* arg, absl::Status error) {
     HttpRequest* req = static_cast<HttpRequest*>(arg);
     ExecCtx::Run(DEBUG_LOCATION,
                  &req->continue_done_write_after_schedule_on_exec_ctx_,
@@ -221,16 +221,16 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
 
   // Needed since DoneWrite may be called inline from grpc_endpoint_write
   static void ContinueDoneWriteAfterScheduleOnExecCtx(void* arg,
-                                                      grpc_error_handle error);
+                                                      absl::Status error);
 
   void StartWrite() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
-  static void OnHandshakeDone(void* arg, grpc_error_handle error);
+  static void OnHandshakeDone(void* arg, absl::Status error);
 
   void DoHandshake(const grpc_resolved_address* addr)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
-  void NextAddress(grpc_error_handle error) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  void NextAddress(absl::Status error) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   void OnResolved(
       absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or);
@@ -261,7 +261,7 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
   grpc_iomgr_object iomgr_obj_ ABSL_GUARDED_BY(mu_);
   grpc_slice_buffer incoming_ ABSL_GUARDED_BY(mu_);
   grpc_slice_buffer outgoing_ ABSL_GUARDED_BY(mu_);
-  grpc_error_handle overall_error_ ABSL_GUARDED_BY(mu_) = GRPC_ERROR_NONE;
+  absl::Status overall_error_ ABSL_GUARDED_BY(mu_) = GRPC_ERROR_NONE;
   absl::optional<DNSResolver::TaskHandle> dns_request_handle_
       ABSL_GUARDED_BY(mu_) = DNSResolver::kNullHandle;
 };

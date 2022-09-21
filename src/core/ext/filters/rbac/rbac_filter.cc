@@ -28,6 +28,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/security/authorization/authorization_engine.h"
 #include "src/core/lib/security/authorization/grpc_authorization_engine.h"
 #include "src/core/lib/security/context/security_context.h"
@@ -42,8 +43,8 @@ namespace grpc_core {
 
 // CallData
 
-grpc_error_handle RbacFilter::CallData::Init(
-    grpc_call_element* elem, const grpc_call_element_args* args) {
+absl::Status RbacFilter::CallData::Init(grpc_call_element* elem,
+                                        const grpc_call_element_args* args) {
   new (elem->call_data) CallData(elem, *args);
   return GRPC_ERROR_NONE;
 }
@@ -78,7 +79,7 @@ RbacFilter::CallData::CallData(grpc_call_element* elem,
 }
 
 void RbacFilter::CallData::RecvInitialMetadataReady(void* user_data,
-                                                    grpc_error_handle error) {
+                                                    absl::Status error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(user_data);
   CallData* calld = static_cast<CallData*>(elem->call_data);
   RbacFilter* filter = static_cast<RbacFilter*>(elem->channel_data);
@@ -141,8 +142,8 @@ RbacFilter::RbacFilter(size_t index,
       service_config_parser_index_(RbacServiceConfigParser::ParserIndex()),
       per_channel_evaluate_args_(std::move(per_channel_evaluate_args)) {}
 
-grpc_error_handle RbacFilter::Init(grpc_channel_element* elem,
-                                   grpc_channel_element_args* args) {
+absl::Status RbacFilter::Init(grpc_channel_element* elem,
+                              grpc_channel_element_args* args) {
   GPR_ASSERT(elem->filter == &kFilterVtable);
   auto* auth_context = grpc_find_auth_context_in_args(args->channel_args);
   if (auth_context == nullptr) {

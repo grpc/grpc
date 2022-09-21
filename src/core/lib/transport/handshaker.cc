@@ -35,6 +35,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -72,7 +73,7 @@ void HandshakeManager::Add(RefCountedPtr<Handshaker> handshaker) {
 
 HandshakeManager::~HandshakeManager() { handshakers_.clear(); }
 
-void HandshakeManager::Shutdown(grpc_error_handle why) {
+void HandshakeManager::Shutdown(absl::Status why) {
   {
     MutexLock lock(&mu_);
     // Shutdown the handshaker that's currently in progress, if any.
@@ -87,7 +88,7 @@ void HandshakeManager::Shutdown(grpc_error_handle why) {
 // Helper function to call either the next handshaker or the
 // on_handshake_done callback.
 // Returns true if we've scheduled the on_handshake_done callback.
-bool HandshakeManager::CallNextHandshakerLocked(grpc_error_handle error) {
+bool HandshakeManager::CallNextHandshakerLocked(absl::Status error) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_handshaker_trace)) {
     gpr_log(GPR_INFO,
             "handshake_manager %p: error=%s shutdown=%d index=%" PRIuPTR
@@ -145,8 +146,7 @@ bool HandshakeManager::CallNextHandshakerLocked(grpc_error_handle error) {
   return is_shutdown_;
 }
 
-void HandshakeManager::CallNextHandshakerFn(void* arg,
-                                            grpc_error_handle error) {
+void HandshakeManager::CallNextHandshakerFn(void* arg, absl::Status error) {
   auto* mgr = static_cast<HandshakeManager*>(arg);
   bool done;
   {
@@ -161,7 +161,7 @@ void HandshakeManager::CallNextHandshakerFn(void* arg,
   }
 }
 
-void HandshakeManager::OnTimeoutFn(void* arg, grpc_error_handle error) {
+void HandshakeManager::OnTimeoutFn(void* arg, absl::Status error) {
   auto* mgr = static_cast<HandshakeManager*>(arg);
   if (GRPC_ERROR_IS_NONE(error)) {  // Timer fired, rather than being cancelled
     mgr->Shutdown(GRPC_ERROR_CREATE_FROM_STATIC_STRING("Handshake timed out"));

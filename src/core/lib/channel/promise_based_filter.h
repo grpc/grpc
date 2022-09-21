@@ -30,6 +30,7 @@
 
 #include "absl/container/inlined_vector.h"
 #include "absl/meta/type_traits.h"
+#include "absl/status/status.h"
 
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
@@ -174,8 +175,7 @@ class BaseCallData : public Activity, private Wakeable {
       release_.push_back(batch);
     }
 
-    void Cancel(grpc_transport_stream_op_batch* batch,
-                grpc_error_handle error) {
+    void Cancel(grpc_transport_stream_op_batch* batch, absl::Status error) {
       grpc_transport_stream_op_batch_queue_finish_with_failure(batch, error,
                                                                &call_closures_);
     }
@@ -185,7 +185,7 @@ class BaseCallData : public Activity, private Wakeable {
                          "Flusher::Complete");
     }
 
-    void AddClosure(grpc_closure* closure, grpc_error_handle error,
+    void AddClosure(grpc_closure* closure, absl::Status error,
                     const char* reason) {
       call_closures_.Add(closure, error, reason);
     }
@@ -217,7 +217,7 @@ class BaseCallData : public Activity, private Wakeable {
     // stack)
     void ResumeWith(Flusher* releaser);
     // Cancel this batch immediately (releases all refs)
-    void CancelWith(grpc_error_handle error, Flusher* releaser);
+    void CancelWith(absl::Status error, Flusher* releaser);
     // Complete this batch (pass it up) assuming refs drop to zero
     void CompleteWith(Flusher* releaser);
 
@@ -318,7 +318,7 @@ class ClientCallData : public BaseCallData {
   class PollContext;
 
   // Handle cancellation.
-  void Cancel(grpc_error_handle error);
+  void Cancel(absl::Status error);
   // Begin running the promise - which will ultimately take some initial
   // metadata and return some trailing metadata.
   void StartPromise(Flusher* flusher);
@@ -336,13 +336,11 @@ class ClientCallData : public BaseCallData {
   // All polls: await receiving the trailing metadata, then return it to the
   // application.
   Poll<ServerMetadataHandle> PollTrailingMetadata();
-  static void RecvTrailingMetadataReadyCallback(void* arg,
-                                                grpc_error_handle error);
-  void RecvTrailingMetadataReady(grpc_error_handle error);
-  void RecvInitialMetadataReady(grpc_error_handle error);
+  static void RecvTrailingMetadataReadyCallback(void* arg, absl::Status error);
+  void RecvTrailingMetadataReady(absl::Status error);
+  void RecvInitialMetadataReady(absl::Status error);
   // Given an error, fill in ServerMetadataHandle to represent that error.
-  void SetStatusFromError(grpc_metadata_batch* metadata,
-                          grpc_error_handle error);
+  void SetStatusFromError(grpc_metadata_batch* metadata, absl::Status error);
   // Wakeup and poll the promise if appropriate.
   void WakeInsideCombiner(Flusher* flusher);
   void OnWakeup() override;
@@ -360,7 +358,7 @@ class ClientCallData : public BaseCallData {
   // Our closure pointing to RecvTrailingMetadataReadyCallback.
   grpc_closure recv_trailing_metadata_ready_;
   // Error received during cancellation.
-  grpc_error_handle cancelled_error_ = GRPC_ERROR_NONE;
+  absl::Status cancelled_error_ = GRPC_ERROR_NONE;
   // State of the send_initial_metadata op.
   SendInitialState send_initial_state_ = SendInitialState::kInitial;
   // State of the recv_trailing_metadata op.
@@ -411,7 +409,7 @@ class ServerCallData : public BaseCallData {
   struct SendInitialMetadata;
 
   // Handle cancellation.
-  void Cancel(grpc_error_handle error, Flusher* flusher);
+  void Cancel(absl::Status error, Flusher* flusher);
   // Construct a promise that will "call" the next filter.
   // Effectively:
   //   - put the modified initial metadata into the batch being sent up.
@@ -421,9 +419,8 @@ class ServerCallData : public BaseCallData {
   // All polls: await sending the trailing metadata, then foward it down the
   // stack.
   Poll<ServerMetadataHandle> PollTrailingMetadata();
-  static void RecvInitialMetadataReadyCallback(void* arg,
-                                               grpc_error_handle error);
-  void RecvInitialMetadataReady(grpc_error_handle error);
+  static void RecvInitialMetadataReadyCallback(void* arg, absl::Status error);
+  void RecvInitialMetadataReady(absl::Status error);
   // Wakeup and poll the promise if appropriate.
   void WakeInsideCombiner(Flusher* flusher);
   void OnWakeup() override;
@@ -439,7 +436,7 @@ class ServerCallData : public BaseCallData {
   // Our closure pointing to RecvInitialMetadataReadyCallback.
   grpc_closure recv_initial_metadata_ready_;
   // Error received during cancellation.
-  grpc_error_handle cancelled_error_ = GRPC_ERROR_NONE;
+  absl::Status cancelled_error_ = GRPC_ERROR_NONE;
   // Trailing metadata batch
   CapturedBatch send_trailing_metadata_batch_;
   // State of the send_initial_metadata op.

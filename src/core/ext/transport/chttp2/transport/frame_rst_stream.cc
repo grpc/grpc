@@ -32,6 +32,7 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/transport/http2_errors.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
@@ -72,7 +73,7 @@ void grpc_chttp2_add_rst_stream_to_next_write(
                         grpc_chttp2_rst_stream_create(id, code, stats));
 }
 
-grpc_error_handle grpc_chttp2_rst_stream_parser_begin_frame(
+absl::Status grpc_chttp2_rst_stream_parser_begin_frame(
     grpc_chttp2_rst_stream_parser* parser, uint32_t length, uint8_t flags) {
   if (length != 4) {
     return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
@@ -82,11 +83,11 @@ grpc_error_handle grpc_chttp2_rst_stream_parser_begin_frame(
   return GRPC_ERROR_NONE;
 }
 
-grpc_error_handle grpc_chttp2_rst_stream_parser_parse(void* parser,
-                                                      grpc_chttp2_transport* t,
-                                                      grpc_chttp2_stream* s,
-                                                      const grpc_slice& slice,
-                                                      int is_last) {
+absl::Status grpc_chttp2_rst_stream_parser_parse(void* parser,
+                                                 grpc_chttp2_transport* t,
+                                                 grpc_chttp2_stream* s,
+                                                 const grpc_slice& slice,
+                                                 int is_last) {
   const uint8_t* const beg = GRPC_SLICE_START_PTR(slice);
   const uint8_t* const end = GRPC_SLICE_END_PTR(slice);
   const uint8_t* cur = beg;
@@ -111,7 +112,7 @@ grpc_error_handle grpc_chttp2_rst_stream_parser_parse(void* parser,
               "[chttp2 transport=%p stream=%p] received RST_STREAM(reason=%d)",
               t, s, reason);
     }
-    grpc_error_handle error = GRPC_ERROR_NONE;
+    absl::Status error = GRPC_ERROR_NONE;
     if (reason != GRPC_HTTP2_NO_ERROR || s->trailing_metadata_buffer.empty()) {
       error = grpc_error_set_int(
           grpc_error_set_str(

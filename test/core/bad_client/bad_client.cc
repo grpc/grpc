@@ -59,7 +59,7 @@ static void thd_func(void* arg) {
 }
 
 /* Sets the done_write event */
-static void set_done_write(void* arg, grpc_error_handle /*error*/) {
+static void set_done_write(void* arg, absl::Status /*error*/) {
   gpr_event* done_write = static_cast<gpr_event*>(arg);
   gpr_event_set(done_write, reinterpret_cast<void*>(1));
 }
@@ -76,7 +76,7 @@ static void server_setup_transport(void* ts, grpc_transport* transport) {
 }
 
 /* Sets the read_done event */
-static void set_read_done(void* arg, grpc_error_handle /*error*/) {
+static void set_read_done(void* arg, absl::Status /*error*/) {
   gpr_event* read_done = static_cast<gpr_event*>(arg);
   gpr_event_set(read_done, reinterpret_cast<void*>(1));
 }
