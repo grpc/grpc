@@ -582,7 +582,7 @@ static void run_poller(void* bp, grpc_error_handle /*error_ignored*/) {
   }
   gpr_mu_lock(p->pollset_mu);
   grpc_core::Timestamp deadline =
-      grpc_core::ExecCtx::Get()->Now() + grpc_core::Duration::Seconds(10);
+      grpc_core::Timestamp::Now() + grpc_core::Duration::Seconds(10);
   GRPC_LOG_IF_ERROR(
       "backup_poller:pollset_work",
       grpc_pollset_work(BACKUP_POLLER_POLLSET(p), nullptr, deadline));

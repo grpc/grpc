@@ -1266,7 +1266,7 @@ TEST_F(PickFirstTest, FailsEmptyResolverUpdate) {
   gpr_log(GPR_INFO, "****** SENDING INITIAL RESOLVER RESULT *******");
   // Send a resolver result with an empty address list and a callback
   // that triggers a notification.
-  absl::Notification notification;
+  grpc_core::Notification notification;
   grpc_core::Resolver::Result result;
   result.addresses.emplace();
   result.result_health_callback = [&](absl::Status status) {
@@ -1677,7 +1677,7 @@ TEST_F(RoundRobinTest, FailsEmptyResolverUpdate) {
   gpr_log(GPR_INFO, "****** SENDING INITIAL RESOLVER RESULT *******");
   // Send a resolver result with an empty address list and a callback
   // that triggers a notification.
-  absl::Notification notification;
+  grpc_core::Notification notification;
   grpc_core::Resolver::Result result;
   result.addresses.emplace();
   result.resolution_note = "injected error";
