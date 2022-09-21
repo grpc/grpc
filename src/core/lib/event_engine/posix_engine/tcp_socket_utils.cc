@@ -21,6 +21,7 @@
 #include <inttypes.h>
 #include <limits.h>
 
+#include "absl/cleanup/cleanup.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
@@ -52,21 +53,11 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/host_port.h"
+#include "src/core/lib/gprpp/status_helper.h"
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
 #include <sys/un.h>
 #endif
-
-// If expr evaluates to absl Not-OK status, then execute expr2 and return the
-// evaluated status.
-#define RETURN_IF_ERROR(expr, expr2)    \
-  do {                                  \
-    const absl::Status status = (expr); \
-    if (!status.ok()) {                 \
-      (expr2);                          \
-      return status;                    \
-    }                                   \
-  } while (0)
 
 namespace grpc_event_engine {
 namespace posix_engine {
@@ -115,18 +106,29 @@ const uint8_t kV4MappedPrefix[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0xff};
 absl::Status PrepareTcpClientSocket(PosixSocketWrapper sock,
                                     const EventEngine::ResolvedAddress& addr,
                                     const PosixTcpOptions& options) {
-  RETURN_IF_ERROR(sock.SetSocketNonBlocking(1), close(sock.Fd()));
-  RETURN_IF_ERROR(sock.SetSocketCloexec(1), close(sock.Fd()));
+  bool close_fd = true;
+  auto sock_cleanup = absl::MakeCleanup([&close_fd, &sock]() -> void {
+    if (close_fd and sock.Fd() >= 0) {
+      close(sock.Fd());
+    }
+  });
+  RETURN_IF_ERROR(sock.SetSocketNonBlocking(1));
+  RETURN_IF_ERROR(sock.SetSocketCloexec(1));
 
   if (reinterpret_cast<const sockaddr*>(addr.address())->sa_family != AF_UNIX) {
     // If its not a unix socket address.
-    RETURN_IF_ERROR(sock.SetSocketLowLatency(1), close(sock.Fd()));
-    RETURN_IF_ERROR(sock.SetSocketReuseAddr(1), close(sock.Fd()));
+    RETURN_IF_ERROR(sock.SetSocketLowLatency(1));
+    RETURN_IF_ERROR(sock.SetSocketReuseAddr(1));
     sock.TrySetSocketTcpUserTimeout(options, true);
   }
-  RETURN_IF_ERROR(sock.SetSocketNoSigpipeIfPossible(), close(sock.Fd()));
-  return sock.ApplySocketMutatorInOptions(GRPC_FD_CLIENT_CONNECTION_USAGE,
-                                          options);
+  RETURN_IF_ERROR(sock.SetSocketNoSigpipeIfPossible());
+  auto status = sock.ApplySocketMutatorInOptions(
+      GRPC_FD_CLIENT_CONNECTION_USAGE, options);
+  if (status.ok()) {
+    // No errors. Set close_fd to false to ensure the socket is not closed.
+    close_fd = false;
+  }
+  return status;
 }
 
 #endif /* GRPC_POSIX_SOCKET_UTILS_COMMON */
