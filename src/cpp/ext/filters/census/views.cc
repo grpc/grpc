@@ -129,6 +129,16 @@ const ViewDescriptor& ClientServerLatencyCumulative() {
   return descriptor;
 }
 
+const ViewDescriptor& ClientStartedRpcsCumulative() {
+  const static ViewDescriptor descriptor =
+      ViewDescriptor()
+          .set_name("grpc.io/client/started_rpcs/cumulative")
+          .set_measure(kRpcClientStartedRpcsMeasureName)
+          .set_aggregation(Aggregation::Count())
+          .add_column(ClientMethodTagKey());
+  return descriptor;
+}
+
 const ViewDescriptor& ClientCompletedRpcsCumulative() {
   const static ViewDescriptor descriptor =
       ViewDescriptor()
@@ -241,6 +251,16 @@ const ViewDescriptor& ServerServerLatencyCumulative() {
   return descriptor;
 }
 
+const ViewDescriptor& ServerStartedRpcsCumulative() {
+  const static ViewDescriptor descriptor =
+      ViewDescriptor()
+          .set_name("grpc.io/server/started_rpcs/cumulative")
+          .set_measure(kRpcServerStartedRpcsMeasureName)
+          .set_aggregation(Aggregation::Count())
+          .add_column(ServerMethodTagKey());
+  return descriptor;
+}
+
 const ViewDescriptor& ServerCompletedRpcsCumulative() {
   const static ViewDescriptor descriptor =
       ViewDescriptor()
@@ -309,6 +329,16 @@ const ViewDescriptor& ClientServerLatencyMinute() {
           .set_name("grpc.io/client/server_latency/minute")
           .set_measure(kRpcClientServerLatencyMeasureName)
           .set_aggregation(MillisDistributionAggregation())
+          .add_column(ClientMethodTagKey());
+  return descriptor;
+}
+
+const ViewDescriptor& ClientStartedRpcsMinute() {
+  const static ViewDescriptor descriptor =
+      MinuteDescriptor()
+          .set_name("grpc.io/client/started_rpcs/minute")
+          .set_measure(kRpcClientStartedRpcsMeasureName)
+          .set_aggregation(Aggregation::Count())
           .add_column(ClientMethodTagKey());
   return descriptor;
 }
@@ -425,6 +455,16 @@ const ViewDescriptor& ServerServerLatencyMinute() {
   return descriptor;
 }
 
+const ViewDescriptor& ServerStartedRpcsMinute() {
+  const static ViewDescriptor descriptor =
+      MinuteDescriptor()
+          .set_name("grpc.io/server/started_rpcs/minute")
+          .set_measure(kRpcServerStartedRpcsMeasureName)
+          .set_aggregation(Aggregation::Count())
+          .add_column(ServerMethodTagKey());
+  return descriptor;
+}
+
 const ViewDescriptor& ServerCompletedRpcsMinute() {
   const static ViewDescriptor descriptor =
       MinuteDescriptor()
@@ -493,6 +533,16 @@ const ViewDescriptor& ClientServerLatencyHour() {
           .set_name("grpc.io/client/server_latency/hour")
           .set_measure(kRpcClientServerLatencyMeasureName)
           .set_aggregation(MillisDistributionAggregation())
+          .add_column(ClientMethodTagKey());
+  return descriptor;
+}
+
+const ViewDescriptor& ClientStartedRpcsHour() {
+  const static ViewDescriptor descriptor =
+      HourDescriptor()
+          .set_name("grpc.io/client/started_rpcs/hour")
+          .set_measure(kRpcClientStartedRpcsMeasureName)
+          .set_aggregation(Aggregation::Count())
           .add_column(ClientMethodTagKey());
   return descriptor;
 }
@@ -606,6 +656,16 @@ const ViewDescriptor& ServerServerLatencyHour() {
           .set_measure(kRpcServerServerLatencyMeasureName)
           .set_aggregation(MillisDistributionAggregation())
           .add_column(ServerMethodTagKey());
+  return descriptor;
+}
+
+const ViewDescriptor& ServerStartedRpcsHour() {
+  const static ViewDescriptor descriptor =
+      HourDescriptor()
+          .set_name("grpc.io/server/started_rpcs/hour")
+          .set_measure(kRpcServerStartedRpcsMeasureName)
+          .set_aggregation(Aggregation::Count())
+          .add_column(ClientMethodTagKey());
   return descriptor;
 }
 

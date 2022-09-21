@@ -786,27 +786,20 @@ void Subchannel::Orphan() {
   health_watcher_map_.ShutdownLocked();
 }
 
-void Subchannel::AddDataProducer(DataProducerInterface* data_producer) {
+void Subchannel::GetOrAddDataProducer(
+    UniqueTypeName type,
+    std::function<void(DataProducerInterface**)> get_or_add) {
   MutexLock lock(&mu_);
-  auto& entry = data_producer_map_[data_producer->type()];
-  GPR_ASSERT(entry == nullptr);
-  entry = data_producer;
+  auto it = data_producer_map_.emplace(type, nullptr).first;
+  get_or_add(&it->second);
 }
 
 void Subchannel::RemoveDataProducer(DataProducerInterface* data_producer) {
   MutexLock lock(&mu_);
   auto it = data_producer_map_.find(data_producer->type());
-  GPR_ASSERT(it != data_producer_map_.end());
-  GPR_ASSERT(it->second == data_producer);
-  data_producer_map_.erase(it);
-}
-
-Subchannel::DataProducerInterface* Subchannel::GetDataProducer(
-    UniqueTypeName type) {
-  MutexLock lock(&mu_);
-  auto it = data_producer_map_.find(type);
-  if (it == data_producer_map_.end()) return nullptr;
-  return it->second;
+  if (it != data_producer_map_.end() && it->second == data_producer) {
+    data_producer_map_.erase(it);
+  }
 }
 
 namespace {
