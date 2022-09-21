@@ -1766,6 +1766,7 @@ grpc_cc_library(
     name = "pipe",
     external_deps = [
         "absl/types:optional",
+        "absl/types:variant",
         "absl/utility",
     ],
     language = "c++",
@@ -1775,7 +1776,6 @@ grpc_cc_library(
     deps = [
         "arena",
         "context",
-        "debug_location",
         "gpr",
         "intra_activity_waiter",
         "poll",
