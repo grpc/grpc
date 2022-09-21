@@ -18,10 +18,6 @@
 
 namespace grpc_core {
 
-Message::~Message() {
-  if (on_consumed_ != nullptr) on_consumed_();
-}
-
 FragmentAllocator::Node* FragmentAllocator::AllocateNode() {
   if (free_list_ != nullptr) {
     Node* node = free_list_;

@@ -113,12 +113,9 @@ using ClientMetadataHandle = FragmentHandle<ClientMetadata>;
 class Message {
  public:
   Message() = default;
-  ~Message();
-  Message(SliceBuffer payload, uint32_t flags,
-          absl::AnyInvocable<void()> on_consumed)
-      : payload_(std::move(payload)),
-        flags_(flags),
-        on_consumed_(std::move(on_consumed)) {}
+  ~Message() = default;
+  Message(SliceBuffer payload, uint32_t flags)
+      : payload_(std::move(payload)), flags_(flags) {}
   Message(const Message&) = delete;
   Message& operator=(const Message&) = delete;
 
@@ -129,7 +126,6 @@ class Message {
  private:
   SliceBuffer payload_;
   uint32_t flags_ = 0;
-  absl::AnyInvocable<void()> on_consumed_;
 };
 
 using MessageHandle = FragmentHandle<Message>;

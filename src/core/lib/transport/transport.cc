@@ -186,7 +186,7 @@ void grpc_transport_stream_op_batch_queue_finish_with_failure(
   GRPC_ERROR_UNREF(error);
 }
 
-void grpc_transport_stream_op_batch_finish_with_failure_without_call_combiner(
+void grpc_transport_stream_op_batch_finish_with_failure_from_transport(
     grpc_transport_stream_op_batch* batch, grpc_error_handle error) {
   if (batch->cancel_stream) {
     GRPC_ERROR_UNREF(batch->payload->cancel_stream.cancel_error);
