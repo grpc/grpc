@@ -182,7 +182,8 @@ void RetryMethodConfig::JsonPostLoad(const Json& json, const JsonArgs& args,
         auto& array = it->second.array_value();
         for (size_t i = 0; i < array.size(); ++i) {
           const Json& element = array[i];
-          ValidationErrors::ScopedField field(errors, absl::StrCat("[", i, "]"));
+          ValidationErrors::ScopedField field(errors,
+                                              absl::StrCat("[", i, "]"));
           if (element.type() != Json::Type::STRING) {
             errors->AddError("is not a string");
             continue;

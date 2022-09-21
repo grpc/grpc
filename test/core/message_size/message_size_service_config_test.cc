@@ -41,18 +41,12 @@ namespace testing {
 class MessageSizeParserTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    builder_ = std::make_unique<CoreConfiguration::WithSubstituteBuilder>(
-        [](CoreConfiguration::Builder* builder) {
-          builder->service_config_parser()->RegisterParser(
-              absl::make_unique<MessageSizeParser>());
-        });
-    EXPECT_EQ(CoreConfiguration::Get().service_config_parser().GetParserIndex(
-                  "message_size"),
-              0);
+    parser_index_ =
+        CoreConfiguration::Get().service_config_parser().GetParserIndex(
+            "message_size");
   }
 
- private:
-  std::unique_ptr<CoreConfiguration::WithSubstituteBuilder> builder_;
+  size_t parser_index_;
 };
 
 TEST_F(MessageSizeParserTest, Valid) {
@@ -73,11 +67,11 @@ TEST_F(MessageSizeParserTest, Valid) {
           ->GetMethodParsedConfigVector(
               grpc_slice_from_static_string("/TestServ/TestMethod"));
   ASSERT_NE(vector_ptr, nullptr);
-  auto parsed_config =
-      static_cast<MessageSizeParsedConfig*>(((*vector_ptr)[0]).get());
+  auto parsed_config = static_cast<MessageSizeParsedConfig*>(
+      ((*vector_ptr)[parser_index_]).get());
   ASSERT_NE(parsed_config, nullptr);
-  EXPECT_EQ(parsed_config->limits().max_send_size, 1024);
-  EXPECT_EQ(parsed_config->limits().max_recv_size, 1024);
+  EXPECT_EQ(parsed_config->max_send_size(), 1024);
+  EXPECT_EQ(parsed_config->max_recv_size(), 1024);
 }
 
 TEST_F(MessageSizeParserTest, InvalidMaxRequestMessageBytes) {
@@ -92,14 +86,12 @@ TEST_F(MessageSizeParserTest, InvalidMaxRequestMessageBytes) {
       "}";
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(std::string(service_config.status().message()),
-              ::testing::ContainsRegex(
-                  "Service config parsing errors: \\["
-                  "errors parsing methodConfig: \\["
-                  "index 0: \\["
-                  "error parsing message size method parameters:.*"
-                  "Message size parser" CHILD_ERROR_TAG
-                  "field:maxRequestMessageBytes error:should be non-negative"));
+  EXPECT_EQ(service_config.status().message(),
+            "Service config parsing errors: ["
+            "errors parsing methodConfig: ["
+            "index 0: [errors validating JSON: ["
+            "field:maxRequestMessageBytes "
+            "error:failed to parse non-negative number]]]]");
 }
 
 TEST_F(MessageSizeParserTest, InvalidMaxResponseMessageBytes) {
@@ -114,15 +106,11 @@ TEST_F(MessageSizeParserTest, InvalidMaxResponseMessageBytes) {
       "}";
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(std::string(service_config.status().message()),
-              ::testing::ContainsRegex(
-                  "Service config parsing errors: \\["
-                  "errors parsing methodConfig: \\["
-                  "index 0: \\["
-                  "error parsing message size method parameters:.*"
-                  "Message size parser" CHILD_ERROR_TAG
-                  "field:maxResponseMessageBytes error:should be of type "
-                  "number"));
+  EXPECT_EQ(service_config.status().message(),
+            "Service config parsing errors: ["
+            "errors parsing methodConfig: ["
+            "index 0: [errors validating JSON: ["
+            "field:maxResponseMessageBytes error:is not a number]]]]");
 }
 
 }  // namespace testing

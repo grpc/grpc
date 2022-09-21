@@ -4142,8 +4142,11 @@ grpc_cc_library(
         "grpc_public_hdrs",
         "grpc_service_config",
         "json",
+        "json_object_loader",
+        "json_args",
         "service_config_parser",
         "slice_buffer",
+        "validation_errors",
     ],
 )
 

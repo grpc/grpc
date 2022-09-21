@@ -84,10 +84,10 @@ class CallData {
     const MessageSizeParsedConfig* limits =
         MessageSizeParsedConfig::GetFromCallContext(
             args.context, chand->message_size_service_config_parser_index());
-    if (limits != nullptr && limits->limits().max_recv_size >= 0 &&
-        (limits->limits().max_recv_size < max_recv_message_length_ ||
+    if (limits != nullptr && limits->max_recv_size() >= 0 &&
+        (limits->max_recv_size() < max_recv_message_length_ ||
          max_recv_message_length_ < 0)) {
-      max_recv_message_length_ = limits->limits().max_recv_size;
+      max_recv_message_length_ = limits->max_recv_size();
     }
   }
 
