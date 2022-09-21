@@ -512,6 +512,7 @@ grpc_cc_library(
         "src/core/plugin_registry/grpc_plugin_registry.cc",
         "src/core/plugin_registry/grpc_plugin_registry_noextra.cc",
     ],
+    defines = ["GRPC_NO_XDS"],
     external_deps = [
         "absl/base:core_headers",
     ],
@@ -522,7 +523,6 @@ grpc_cc_library(
         "nofixdeps",
     ],
     visibility = ["@grpc:public"],
-    defines = ["GRPC_NO_XDS"],
     deps = [
         "channel_init",
         "channel_stack_type",
