@@ -399,7 +399,7 @@ class ClientStream : public Orphanable {
     if (auto* next = absl::get_if<PipeReceiver<MessageHandle>::NextType>(
             &send_message_state_)) {
       auto r = (*next)();
-      if (auto* p = absl::get_if<absl::optional<MessageHandle>>(&r)) {
+      if (auto* p = absl::get_if<NextResult<MessageHandle>>(&r)) {
         memset(&send_message_, 0, sizeof(send_message_));
         send_message_.payload = &batch_payload_;
         send_message_.on_complete = &send_message_batch_done_;

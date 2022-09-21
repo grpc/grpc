@@ -2648,8 +2648,8 @@ void ClientPromiseBasedCall::UpdateOnce() {
   }
   if (incoming_compression_algorithm_.has_value() &&
       outstanding_recv_.has_value()) {
-    Poll<absl::optional<MessageHandle>> r = (*outstanding_recv_)();
-    if (auto* result = absl::get_if<absl::optional<MessageHandle>>(&r)) {
+    Poll<NextResult<MessageHandle>> r = (*outstanding_recv_)();
+    if (auto* result = absl::get_if<NextResult<MessageHandle>>(&r)) {
       outstanding_recv_.reset();
       if (result->has_value()) {
         MessageHandle& message = **result;
