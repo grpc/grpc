@@ -311,8 +311,7 @@ class ClientCallData : public BaseCallData {
     // We've forwarded the op to the next filter.
     kForwarded,
     // The op has completed from below, but we haven't yet forwarded it up
-    // (the
-    // promise gets to interject and mutate it).
+    // (the promise gets to interject and mutate it).
     kComplete,
     // We've called the recv_metadata_ready callback from the original
     // recv_trailing_metadata op that was presented to us.

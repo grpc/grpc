@@ -1983,8 +1983,11 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
     if (cq_) GRPC_CQ_INTERNAL_UNREF(cq_, "bind");
   }
 
+  // Enumerates why a Completion is still pending
   enum class PendingOp {
+    // We're in the midst of starting a batch of operations
     kStartingBatch = 0,
+    // The following correspond with the batch operations from above
     kReceiveInitialMetadata,
     kReceiveStatusOnClient,
     kSendMessage,
@@ -2362,6 +2365,9 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
     send_initial_metadata_.reset();
     recv_status_on_client_ = absl::monostate();
     promise_ = ArenaPromise<ServerMetadataHandle>();
+    // Need to destroy the pipes under the ScopedContext above, so we move them
+    // out here and then allow the destructors to run at end of scope, but
+    // before context.
     auto c2s = std::move(client_to_server_messages_);
     auto s2c = std::move(server_to_client_messages_);
   }
@@ -2388,23 +2394,30 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
   }
 
  private:
+  // Poll the underlying promise (and sundry objects) once.
   void UpdateOnce() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu()) override;
+  // Finish the call with the given status/trailing metadata.
   void Finish(ServerMetadataHandle trailing_metadata)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu());
-  grpc_call_error ValidateBatch(const grpc_op* ops, size_t nops)
+  // Validate that a set of ops is valid for a client call.
+  grpc_call_error ValidateBatch(const grpc_op* ops, size_t nops) const
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu());
+  // Commit a valid batch of operations to be executed.
   void CommitBatch(const grpc_op* ops, size_t nops,
                    const Completion& completion)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu());
+  // Start the underlying promise.
   void StartPromise(ClientMetadataHandle client_initial_metadata)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu());
-  void MaybePublishResult() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu());
+  // Publish some metadata out to the application.
   static void PublishMetadataArray(grpc_metadata_array* array,
                                    ServerMetadata* md);
+  // Publish status out to the application.
   void PublishStatus(
       grpc_op::grpc_op_data::grpc_op_recv_status_on_client op_args,
       ServerMetadataHandle trailing_metadata)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu());
+  // Publish server initial metadata out to the application.
   void PublishInitialMetadata(ServerMetadata* metadata)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu());
 
@@ -2455,7 +2468,7 @@ void ClientPromiseBasedCall::CancelWithError(grpc_error_handle error) {
 }
 
 grpc_call_error ClientPromiseBasedCall::ValidateBatch(const grpc_op* ops,
-                                                      size_t nops) {
+                                                      size_t nops) const {
   BitSet<8> got_ops;
   for (size_t op_idx = 0; op_idx < nops; op_idx++) {
     const grpc_op& op = ops[op_idx];

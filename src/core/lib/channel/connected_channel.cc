@@ -403,6 +403,7 @@ class ClientStream : public Orphanable {
         memset(&send_message_, 0, sizeof(send_message_));
         send_message_.payload = &batch_payload_;
         send_message_.on_complete = &send_message_batch_done_;
+        // No value => half close from above.
         if (p->has_value()) {
           message_to_send_ = std::move(**p);
           send_message_state_ = SendMessageToTransport{};
@@ -454,6 +455,13 @@ class ClientStream : public Orphanable {
     if (absl::exchange(queued_initial_metadata_, false)) {
       server_initial_metadata_latch_->Set(server_initial_metadata_.get());
     }
+    if (absl::holds_alternative<Idle>(recv_message_state_)) {
+      if (grpc_call_trace.enabled()) {
+        gpr_log(GPR_INFO, "%sPollConnectedChannel: requesting message",
+                Activity::current()->DebugTag().c_str());
+      }
+      push_recv_message();
+    }
     if (!absl::holds_alternative<PipeSender<MessageHandle>::PushType>(
             recv_message_state_) &&
         absl::exchange(queued_trailing_metadata_, false)) {
@@ -467,13 +475,6 @@ class ClientStream : public Orphanable {
       }
       finished_ = true;
       return ServerMetadataHandle(std::move(server_trailing_metadata_));
-    }
-    if (absl::holds_alternative<Idle>(recv_message_state_)) {
-      if (grpc_call_trace.enabled()) {
-        gpr_log(GPR_INFO, "%sPollConnectedChannel: requesting message",
-                Activity::current()->DebugTag().c_str());
-      }
-      push_recv_message();
     }
     if (auto* push = absl::get_if<PipeSender<MessageHandle>::PushType>(
             &recv_message_state_)) {
@@ -566,6 +567,7 @@ class ClientStream : public Orphanable {
       } else {
         auto pending =
             absl::get_if<PendingReceiveMessage>(&recv_message_state_);
+        GPR_ASSERT(pending != nullptr);
         GPR_ASSERT(pending->received == false);
         pending->received = true;
       }
@@ -574,25 +576,29 @@ class ClientStream : public Orphanable {
     Unref("recv_message");
   }
 
+  // Called from outside the activity to push work down to the transport.
   void Push() {
     auto do_push = [this](grpc_transport_stream_op_batch* batch) {
       if (stream_ != nullptr) {
         grpc_transport_perform_stream_op(transport_, stream_.get(), batch);
       } else {
-        grpc_transport_stream_op_batch_finish_with_failure_without_call_combiner(
+        grpc_transport_stream_op_batch_finish_with_failure_from_transport(
             batch, GRPC_ERROR_CANCELLED);
       }
     };
-    if (absl::exchange(push_metadata_, false)) {
-      do_push(&metadata_);
+    bool push_metadata;
+    bool push_send_message;
+    bool push_recv_message;
+    {
+      MutexLock lock(&mu_);
+      push_metadata = std::exchange(push_metadata_, false);
+      push_send_message = std::exchange(push_send_message_, false);
+      push_recv_message = std::exchange(push_recv_message_, false);
+      scheduled_push_ = false;
     }
-    if (absl::exchange(push_send_message_, false)) {
-      do_push(&send_message_);
-    }
-    if (absl::exchange(push_recv_message_, false)) {
-      do_push(&recv_message_);
-    }
-    scheduled_push_ = false;
+    if (push_metadata) do_push(&metadata_);
+    if (push_send_message) do_push(&send_message_);
+    if (push_recv_message) do_push(&recv_message_);
     Unref("push");
   }
 
@@ -623,7 +629,7 @@ class ClientStream : public Orphanable {
   };
   using StreamPtr = std::unique_ptr<grpc_stream, StreamDeleter>;
 
-  void SchedulePush() {
+  void SchedulePush() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     if (absl::exchange(scheduled_push_, true)) return;
     IncrementRefCount("push");
     ExecCtx::Run(DEBUG_LOCATION, &push_, GRPC_ERROR_NONE);
@@ -692,10 +698,10 @@ class ClientStream : public Orphanable {
 
   Mutex mu_;
   bool requested_metadata_ = false;
-  bool push_metadata_ = false;
-  bool push_send_message_ = false;
-  bool push_recv_message_ = false;
-  bool scheduled_push_ = false;
+  bool push_metadata_ ABSL_GUARDED_BY(mu_) = false;
+  bool push_send_message_ ABSL_GUARDED_BY(mu_) = false;
+  bool push_recv_message_ ABSL_GUARDED_BY(mu_) = false;
+  bool scheduled_push_ ABSL_GUARDED_BY(mu_) = false;
   bool queued_initial_metadata_ ABSL_GUARDED_BY(mu_) = false;
   bool queued_trailing_metadata_ ABSL_GUARDED_BY(mu_) = false;
   bool finished_ = false;
@@ -784,6 +790,12 @@ class ClientConnectedCallPromise {
 template <ArenaPromise<ServerMetadataHandle> (*make_call_promise)(
     grpc_transport*, CallArgs)>
 grpc_channel_filter MakeConnectedFilter() {
+  // Create a vtable that contains both the legacy call methods (for filter
+  // stack based calls) and the new promise based method for creating promise
+  // based calls (the latter iff make_call_promise != nullptr).
+  // In this way the filter can be inserted into either kind of channel stack,
+  // and only if all the filters in the stack are promise based will the call
+  // be promise based.
   return {
     connected_channel_start_transport_stream_op_batch,
         make_call_promise == nullptr
@@ -836,11 +848,24 @@ const grpc_channel_filter kNoPromiseFilter = MakeConnectedFilter<nullptr>();
 bool grpc_add_connected_filter(grpc_core::ChannelStackBuilder* builder) {
   grpc_transport* t = builder->transport();
   GPR_ASSERT(t != nullptr);
+  // Choose the right vtable for the connected filter.
+  // We can't know promise based call or not here (that decision needs the
+  // collaboration of all of the filters on the channel, and we don't want
+  // ordering constraints on when we add filters).
+  // We can know if this results in a promise based call how we'll create our
+  // promise (if indeed we can), and so that is the choice made here.
   if (t->vtable->make_call_promise != nullptr) {
+    // Option 1, and our ideal: the transport supports promise based calls, and
+    // so we simply use the transport directly.
     builder->AppendFilter(&grpc_core::kPromiseBasedTransportFilter);
   } else if (grpc_channel_stack_type_is_client(builder->channel_stack_type())) {
+    // Option 2: the transport does not support promise based calls, but we're
+    // on the client and so we have an implementation that we can use to convert
+    // to batches.
     builder->AppendFilter(&grpc_core::kClientEmulatedFilter);
   } else {
+    // Option 3: the transport does not support promise based calls, and we're
+    // on the server so we can't construct promise based calls just yet.
     builder->AppendFilter(&grpc_core::kNoPromiseFilter);
   }
   return true;

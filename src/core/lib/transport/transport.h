@@ -475,7 +475,9 @@ void grpc_transport_stream_op_batch_finish_with_failure(
 void grpc_transport_stream_op_batch_queue_finish_with_failure(
     grpc_transport_stream_op_batch* batch, grpc_error_handle error,
     grpc_core::CallCombinerClosureList* closures);
-void grpc_transport_stream_op_batch_finish_with_failure_without_call_combiner(
+// Fail a batch from within the transport (i.e. without the activity lock/call
+// combiner taken).
+void grpc_transport_stream_op_batch_finish_with_failure_from_transport(
     grpc_transport_stream_op_batch* batch, grpc_error_handle error);
 
 std::string grpc_transport_stream_op_batch_string(
