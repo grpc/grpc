@@ -24,7 +24,7 @@ cd "$(dirname "$0")"
 XCODEBUILD_FILTER_OUTPUT_SCRIPT="../../../../../src/objective-c/tests/xcodebuild_filter_output.sh"
 
 XCODEBUILD_FLAGS="
-  IPHONEOS_DEPLOYMENT_TARGET=11
+  IPHONEOS_DEPLOYMENT_TARGET=10
 "
 
 XCODEBUILD_DESTINATION="platform=iOS Simulator,name=iPhone 11"
