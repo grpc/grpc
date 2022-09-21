@@ -522,6 +522,7 @@ grpc_cc_library(
         "nofixdeps",
     ],
     visibility = ["@grpc:public"],
+    defines = ["GRPC_NO_XDS"],
     deps = [
         "channel_init",
         "channel_stack_type",
