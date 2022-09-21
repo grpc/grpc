@@ -89,6 +89,15 @@ MeasureInt64 RpcClientReceivedMessagesPerRpc() {
   return measure;
 }
 
+MeasureInt64 RpcClientStartedRpcs() {
+  static const auto measure =
+      MeasureInt64::Register(kRpcClientStartedRpcsMeasureName,
+                             "The total number of client RPCs ever opened, "
+                             "including those that have not been completed.",
+                             kCount);
+  return measure;
+}
+
 // Client per-overall-client-call measures
 MeasureInt64 RpcClientRetriesPerCall() {
   static const auto measure =
@@ -136,6 +145,15 @@ MeasureDouble RpcServerServerLatency() {
       "Time between first byte of request received to last byte of response "
       "sent, or terminal error",
       kUnitMilliseconds);
+  return measure;
+}
+
+MeasureInt64 RpcServerStartedRpcs() {
+  static const auto measure =
+      MeasureInt64::Register(kRpcServerStartedRpcsMeasureName,
+                             "The total number of server RPCs ever opened, "
+                             "including those that have not been completed.",
+                             kCount);
   return measure;
 }
 
