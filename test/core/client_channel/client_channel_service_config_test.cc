@@ -41,10 +41,12 @@ namespace testing {
 class ClientChannelParserTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    EXPECT_EQ(CoreConfiguration::Get().service_config_parser().GetParserIndex(
-                  "client_channel"),
-              0);
+    parser_index_ =
+        CoreConfiguration::Get().service_config_parser().GetParserIndex(
+            "client_channel");
   }
+
+  size_t parser_index_;
 };
 
 TEST_F(ClientChannelParserTest, ValidLoadBalancingConfigPickFirst) {
@@ -53,7 +55,7 @@ TEST_F(ClientChannelParserTest, ValidLoadBalancingConfigPickFirst) {
   ASSERT_TRUE(service_config.ok()) << service_config.status();
   const auto* parsed_config =
       static_cast<internal::ClientChannelGlobalParsedConfig*>(
-          (*service_config)->GetGlobalParsedConfig(0));
+          (*service_config)->GetGlobalParsedConfig(parser_index_));
   auto lb_config = parsed_config->parsed_lb_config();
   EXPECT_EQ(lb_config->name(), "pick_first");
 }
@@ -64,7 +66,7 @@ TEST_F(ClientChannelParserTest, ValidLoadBalancingConfigRoundRobin) {
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   ASSERT_TRUE(service_config.ok()) << service_config.status();
   auto parsed_config = static_cast<internal::ClientChannelGlobalParsedConfig*>(
-      (*service_config)->GetGlobalParsedConfig(0));
+      (*service_config)->GetGlobalParsedConfig(parser_index_));
   auto lb_config = parsed_config->parsed_lb_config();
   EXPECT_EQ(lb_config->name(), "round_robin");
 }
@@ -77,7 +79,7 @@ TEST_F(ClientChannelParserTest, ValidLoadBalancingConfigGrpclb) {
   ASSERT_TRUE(service_config.ok()) << service_config.status();
   const auto* parsed_config =
       static_cast<internal::ClientChannelGlobalParsedConfig*>(
-          (*service_config)->GetGlobalParsedConfig(0));
+          (*service_config)->GetGlobalParsedConfig(parser_index_));
   auto lb_config = parsed_config->parsed_lb_config();
   EXPECT_EQ(lb_config->name(), "grpclb");
 }
@@ -99,7 +101,7 @@ TEST_F(ClientChannelParserTest, ValidLoadBalancingConfigXds) {
   ASSERT_TRUE(service_config.ok()) << service_config.status();
   const auto* parsed_config =
       static_cast<internal::ClientChannelGlobalParsedConfig*>(
-          (*service_config)->GetGlobalParsedConfig(0));
+          (*service_config)->GetGlobalParsedConfig(parser_index_));
   auto lb_config = parsed_config->parsed_lb_config();
   EXPECT_EQ(lb_config->name(), "xds_cluster_resolver_experimental");
 }
@@ -135,7 +137,7 @@ TEST_F(ClientChannelParserTest, ValidLoadBalancingPolicy) {
   ASSERT_TRUE(service_config.ok()) << service_config.status();
   const auto* parsed_config =
       static_cast<internal::ClientChannelGlobalParsedConfig*>(
-          (*service_config)->GetGlobalParsedConfig(0));
+          (*service_config)->GetGlobalParsedConfig(parser_index_));
   EXPECT_EQ(parsed_config->parsed_deprecated_lb_policy(), "pick_first");
 }
 
@@ -145,7 +147,7 @@ TEST_F(ClientChannelParserTest, ValidLoadBalancingPolicyAllCaps) {
   ASSERT_TRUE(service_config.ok()) << service_config.status();
   const auto* parsed_config =
       static_cast<internal::ClientChannelGlobalParsedConfig*>(
-          (*service_config)->GetGlobalParsedConfig(0));
+          (*service_config)->GetGlobalParsedConfig(parser_index_));
   EXPECT_EQ(parsed_config->parsed_deprecated_lb_policy(), "pick_first");
 }
 
@@ -187,7 +189,7 @@ TEST_F(ClientChannelParserTest, ValidTimeout) {
           ->GetMethodParsedConfigVector(
               grpc_slice_from_static_string("/TestServ/TestMethod"));
   ASSERT_NE(vector_ptr, nullptr);
-  auto parsed_config = ((*vector_ptr)[0]).get();
+  auto parsed_config = ((*vector_ptr)[parser_index_]).get();
   EXPECT_EQ(
       (static_cast<internal::ClientChannelMethodParsedConfig*>(parsed_config))
           ->timeout(),
@@ -229,7 +231,7 @@ TEST_F(ClientChannelParserTest, ValidWaitForReady) {
           ->GetMethodParsedConfigVector(
               grpc_slice_from_static_string("/TestServ/TestMethod"));
   ASSERT_NE(vector_ptr, nullptr);
-  auto parsed_config = ((*vector_ptr)[0]).get();
+  auto parsed_config = ((*vector_ptr)[parser_index_]).get();
   ASSERT_TRUE(
       (static_cast<internal::ClientChannelMethodParsedConfig*>(parsed_config))
           ->wait_for_ready()
@@ -269,7 +271,7 @@ TEST_F(ClientChannelParserTest, ValidHealthCheck) {
   ASSERT_TRUE(service_config.ok()) << service_config.status();
   const auto* parsed_config =
       static_cast<internal::ClientChannelGlobalParsedConfig*>(
-          (*service_config)->GetGlobalParsedConfig(0));
+          (*service_config)->GetGlobalParsedConfig(parser_index_));
   ASSERT_NE(parsed_config, nullptr);
   EXPECT_EQ(parsed_config->health_check_service_name(),
             "health_check_service_name");
