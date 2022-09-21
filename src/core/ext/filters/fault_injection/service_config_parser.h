@@ -37,6 +37,8 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_object_loader.h"
+#include "src/core/lib/json/json_args.h"
 #include "src/core/lib/service_config/service_config_parser.h"
 
 namespace grpc_core {
@@ -46,7 +48,7 @@ class FaultInjectionMethodParsedConfig
  public:
   struct FaultInjectionPolicy {
     grpc_status_code abort_code = GRPC_STATUS_OK;
-    std::string abort_message;
+    std::string abort_message = "Fault injected";
     std::string abort_code_header;
     std::string abort_percentage_header;
     uint32_t abort_percentage_numerator = 0;
@@ -60,11 +62,11 @@ class FaultInjectionMethodParsedConfig
 
     // By default, the max allowed active faults are unlimited.
     uint32_t max_faults = std::numeric_limits<uint32_t>::max();
-  };
 
-  explicit FaultInjectionMethodParsedConfig(
-      std::vector<FaultInjectionPolicy> fault_injection_policies)
-      : fault_injection_policies_(std::move(fault_injection_policies)) {}
+    static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+    void JsonPostLoad(const Json& json, const JsonArgs&,
+                      ValidationErrors* errors);
+  };
 
   // Returns the fault injection policy at certain index.
   // There might be multiple fault injection policies functioning at the same
@@ -78,6 +80,8 @@ class FaultInjectionMethodParsedConfig
     }
     return &fault_injection_policies_[index];
   }
+
+  static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
 
  private:
   std::vector<FaultInjectionPolicy> fault_injection_policies_;
