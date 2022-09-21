@@ -4225,9 +4225,11 @@ grpc_cc_library(
         "grpc_security_base",
         "grpc_service_config",
         "json",
-        "json_util",
+        "json_args",
+        "json_object_loader",
         "service_config_parser",
         "transport_fwd",
+        "validation_errors",
     ],
 )
 
