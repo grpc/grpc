@@ -21,7 +21,6 @@
 #include <utility>
 
 #include "absl/container/flat_hash_map.h"
-#include "absl/synchronization/notification.h"
 
 #include <grpcpp/security/binder_security_policy.h>
 
@@ -29,6 +28,7 @@
 #include "src/core/ext/transport/binder/wire_format/binder.h"
 #include "src/core/ext/transport/binder/wire_format/wire_reader.h"
 #include "src/core/ext/transport/binder/wire_format/wire_writer.h"
+#include "src/core/lib/gprpp/notification.h"
 
 namespace grpc_binder {
 
@@ -105,7 +105,7 @@ class WireReaderImpl : public WireReader {
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   std::shared_ptr<TransportStreamReceiver> transport_stream_receiver_;
-  absl::Notification connection_noti_;
+  grpc_core::Notification connection_noti_;
   grpc_core::Mutex mu_;
   bool connected_ ABSL_GUARDED_BY(mu_) = false;
   bool recvd_setup_transport_ ABSL_GUARDED_BY(mu_) = false;

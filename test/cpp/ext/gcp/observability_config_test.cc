@@ -21,6 +21,7 @@
 
 #include <grpc/support/alloc.h>
 
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/gprpp/env.h"
 #include "test/core/util/test_config.h"
@@ -31,28 +32,23 @@ namespace {
 
 TEST(GcpObservabilityConfigJsonParsingTest, Basic) {
   const char* json_str = R"json({
-      "cloud_logging": {
-        "disabled": true
-      },
-      "cloud_monitoring": {
-        "disabled": true
-      },
+      "cloud_logging": {},
+      "cloud_monitoring": {},
       "cloud_trace": {
-        "disabled": true,
         "sampling_rate": 0.05
       },
       "project_id": "project"
     })json";
   auto json = grpc_core::Json::Parse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
-  grpc_core::ErrorList errors;
+  grpc_core::ValidationErrors errors;
   auto config = grpc_core::LoadFromJson<GcpObservabilityConfig>(
       *json, grpc_core::JsonArgs(), &errors);
-  ASSERT_TRUE(errors.ok()) << errors.status();
-  EXPECT_TRUE(config.cloud_logging.disabled);
-  EXPECT_TRUE(config.cloud_monitoring.disabled);
-  EXPECT_TRUE(config.cloud_trace.disabled);
-  EXPECT_FLOAT_EQ(config.cloud_trace.sampling_rate, 0.05);
+  ASSERT_TRUE(errors.ok()) << errors.status("unexpected errors");
+  EXPECT_TRUE(config.cloud_logging.has_value());
+  EXPECT_TRUE(config.cloud_monitoring.has_value());
+  EXPECT_TRUE(config.cloud_trace.has_value());
+  EXPECT_FLOAT_EQ(config.cloud_trace->sampling_rate, 0.05);
   EXPECT_EQ(config.project_id, "project");
 }
 
@@ -61,15 +57,30 @@ TEST(GcpObservabilityConfigJsonParsingTest, Defaults) {
     })json";
   auto json = grpc_core::Json::Parse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
-  grpc_core::ErrorList errors;
+  grpc_core::ValidationErrors errors;
   auto config = grpc_core::LoadFromJson<GcpObservabilityConfig>(
       *json, grpc_core::JsonArgs(), &errors);
-  ASSERT_TRUE(errors.ok()) << errors.status();
-  EXPECT_FALSE(config.cloud_logging.disabled);
-  EXPECT_FALSE(config.cloud_monitoring.disabled);
-  EXPECT_FALSE(config.cloud_trace.disabled);
-  EXPECT_FLOAT_EQ(config.cloud_trace.sampling_rate, 0);
+  ASSERT_TRUE(errors.ok()) << errors.status("unexpected errors");
+  EXPECT_FALSE(config.cloud_logging.has_value());
+  EXPECT_FALSE(config.cloud_monitoring.has_value());
+  EXPECT_FALSE(config.cloud_trace.has_value());
   EXPECT_TRUE(config.project_id.empty());
+}
+
+TEST(GcpObservabilityConfigJsonParsingTest, SamplingRateDefaults) {
+  const char* json_str = R"json({
+      "cloud_trace": {
+        "sampling_rate": 0.05
+      }
+    })json";
+  auto json = grpc_core::Json::Parse(json_str);
+  ASSERT_TRUE(json.ok()) << json.status();
+  grpc_core::ValidationErrors errors;
+  auto config = grpc_core::LoadFromJson<GcpObservabilityConfig>(
+      *json, grpc_core::JsonArgs(), &errors);
+  ASSERT_TRUE(errors.ok()) << errors.status("unexpected errors");
+  ASSERT_TRUE(config.cloud_trace.has_value());
+  EXPECT_FLOAT_EQ(config.cloud_trace->sampling_rate, 0.05);
 }
 
 TEST(GcpEnvParsingTest, NoEnvironmentVariableSet) {
@@ -91,6 +102,56 @@ TEST(GcpEnvParsingTest, ConfigFileDoesNotExist) {
             absl::FailedPreconditionError("Failed to load file"));
 
   grpc_core::UnsetEnv("GRPC_OBSERVABILITY_CONFIG_FILE");
+}
+
+TEST(GcpEnvParsingTest, ProjectIdNotSet) {
+  grpc_core::SetEnv("GRPC_OBSERVABILITY_CONFIG", "{}");
+
+  auto config = GcpObservabilityConfig::ReadFromEnv();
+  EXPECT_EQ(config.status(),
+            absl::FailedPreconditionError("GCP Project ID not found."));
+
+  grpc_core::UnsetEnv("GRPC_OBSERVABILITY_CONFIG");
+  grpc_core::CoreConfiguration::Reset();
+}
+
+TEST(GcpEnvParsingTest, ProjectIdFromGcpProjectEnvVar) {
+  grpc_core::SetEnv("GRPC_OBSERVABILITY_CONFIG", "{}");
+  grpc_core::SetEnv("GCP_PROJECT", "gcp_project");
+
+  auto config = GcpObservabilityConfig::ReadFromEnv();
+  EXPECT_TRUE(config.ok());
+  EXPECT_EQ(config->project_id, "gcp_project");
+
+  grpc_core::UnsetEnv("GCP_PROJECT");
+  grpc_core::UnsetEnv("GRPC_OBSERVABILITY_CONFIG");
+  grpc_core::CoreConfiguration::Reset();
+}
+
+TEST(GcpEnvParsingTest, ProjectIdFromGcloudProjectEnvVar) {
+  grpc_core::SetEnv("GRPC_OBSERVABILITY_CONFIG", "{}");
+  grpc_core::SetEnv("GCLOUD_PROJECT", "gcloud_project");
+
+  auto config = GcpObservabilityConfig::ReadFromEnv();
+  EXPECT_TRUE(config.ok());
+  EXPECT_EQ(config->project_id, "gcloud_project");
+
+  grpc_core::UnsetEnv("GCLOUD_PROJECT");
+  grpc_core::UnsetEnv("GRPC_OBSERVABILITY_CONFIG");
+  grpc_core::CoreConfiguration::Reset();
+}
+
+TEST(GcpEnvParsingTest, ProjectIdFromGoogleCloudProjectEnvVar) {
+  grpc_core::SetEnv("GRPC_OBSERVABILITY_CONFIG", "{}");
+  grpc_core::SetEnv("GOOGLE_CLOUD_PROJECT", "google_cloud_project");
+
+  auto config = GcpObservabilityConfig::ReadFromEnv();
+  EXPECT_TRUE(config.ok());
+  EXPECT_EQ(config->project_id, "google_cloud_project");
+
+  grpc_core::UnsetEnv("GOOGLE_CLOUD_PROJECT");
+  grpc_core::UnsetEnv("GRPC_OBSERVABILITY_CONFIG");
+  grpc_core::CoreConfiguration::Reset();
 }
 
 class EnvParsingTestType {

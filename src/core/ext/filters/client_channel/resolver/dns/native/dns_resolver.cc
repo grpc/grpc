@@ -82,7 +82,7 @@ class NativeClientChannelDNSResolver : public PollingResolver {
    public:
     Request() = default;
 
-    void Orphan() override {}
+    void Orphan() override { delete this; }
   };
 
   void OnResolved(

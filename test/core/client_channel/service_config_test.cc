@@ -563,8 +563,8 @@ TEST_F(ClientChannelParserTest, InvalidGrpclbLoadBalancingConfig) {
           "Service config parsing errors: \\["
           "error parsing client channel global parameters:" CHILD_ERROR_TAG
           "field:loadBalancingConfig error:"
-          "errors parsing grpclb LB policy config: \\["
-          "error parsing childPolicy field: type should be array\\].*"));
+          "errors validating grpclb LB policy config: \\["
+          "field:childPolicy error:type should be array\\].*"));
 }
 
 TEST_F(ClientChannelParserTest, ValidLoadBalancingPolicy) {
