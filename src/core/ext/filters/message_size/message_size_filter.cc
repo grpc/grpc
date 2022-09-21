@@ -110,9 +110,7 @@ const JsonLoaderInterface* MessageSizeParsedConfig::JsonLoader(
 absl::StatusOr<std::unique_ptr<ServiceConfigParser::ParsedConfig>>
 MessageSizeParser::ParsePerMethodParams(const ChannelArgs& /*args*/,
                                         const Json& json) {
-  auto config = LoadFromJson<MessageSizeParsedConfig>(json);
-  if (!config.ok()) return config.status();
-  return absl::make_unique<MessageSizeParsedConfig>(std::move(*config));
+  return LoadFromJson<std::unique_ptr<MessageSizeParsedConfig>>(json);
 }
 
 void MessageSizeParser::Register(CoreConfiguration::Builder* builder) {
