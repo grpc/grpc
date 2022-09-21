@@ -90,7 +90,7 @@ class ThreadPool final : public grpc_event_engine::experimental::Forkable {
     ThreadCount thread_count;
     // After pool creation we use this to rate limit creation of threads to one
     // at a time.
-    std::atomic<bool> starting_thread{false};
+    std::atomic<bool> currently_starting_one_thread{false};
   };
 
   using StatePtr = std::shared_ptr<State>;
