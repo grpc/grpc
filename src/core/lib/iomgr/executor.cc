@@ -22,6 +22,8 @@
 
 #include <string.h>
 
+#include "absl/strings/str_format.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
@@ -115,8 +117,9 @@ size_t Executor::RunClosures(const char* executor_name,
   while (c != nullptr) {
     grpc_closure* next = c->next_data.next;
 #ifndef NDEBUG
-    EXECUTOR_TRACE("(%s) run %p [created by %s:%d]", executor_name, c,
-                   c->file_created, c->line_created);
+    auto closure_name = absl::StrFormat("%p [created by %s:%d]", c,
+                                        c->file_created, c->line_created);
+    EXECUTOR_TRACE("(%s) run %s", executor_name, closure_name.c_str());
     c->scheduled = false;
 #else
     EXECUTOR_TRACE("(%s) run %p", executor_name, c);
@@ -125,9 +128,14 @@ size_t Executor::RunClosures(const char* executor_name,
         internal::StatusMoveFromHeapPtr(c->error_data.error);
     c->error_data.error = 0;
     c->cb(c->cb_arg, std::move(error));
+    ExecCtx::Get()->Flush();
+#ifndef NDEBUG
+    EXECUTOR_TRACE("(%s) finished %s", executor_name, closure_name.c_str());
+#else
+    EXECUTOR_TRACE("(%s) finished %p", executor_name, c);
+#endif
     c = next;
     n++;
-    ExecCtx::Get()->Flush();
   }
 
   return n;
@@ -182,7 +190,11 @@ void Executor::SetThreading(bool threading) {
     gpr_spinlock_unlock(&adding_thread_lock_);
 
     curr_num_threads = gpr_atm_no_barrier_load(&num_threads_);
+    EXECUTOR_TRACE("(%s) Total thread count = %" PRIdPTR, name_,
+                   curr_num_threads);
     for (gpr_atm i = 0; i < curr_num_threads; i++) {
+      EXECUTOR_TRACE("(%s) Attempting to join Thread %s (%zu)", name_,
+                     thd_state_[i].name, thd_state_[i].id);
       thd_state_[i].thd.Join();
       EXECUTOR_TRACE("(%s) Thread %" PRIdPTR " of %" PRIdPTR " joined", name_,
                      i + 1, curr_num_threads);
