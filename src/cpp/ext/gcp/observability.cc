@@ -20,6 +20,7 @@
 
 #include <stdint.h>
 
+#include <memory>
 #include <string>
 #include <utility>
 
@@ -37,6 +38,7 @@
 #include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/config.h>
 
+#include "src/cpp/ext/filters/census/open_census_call_tracer.h"
 #include "src/cpp/ext/gcp/observability_config.h"
 
 namespace grpc {
@@ -63,7 +65,7 @@ absl::Status GcpObservabilityInit() {
   grpc::RegisterOpenCensusPlugin();
   grpc::RegisterOpenCensusViewsForExport();
   ChannelArguments args;
-  args.SetInt(GRPC_ARG_DISABLE_OBSERVABILITY, 1);
+  args.SetInt(GRPC_ARG_ENABLE_OBSERVABILITY, 0);
   if (config->cloud_trace.has_value()) {
     opencensus::trace::TraceConfig::SetCurrentTraceParams(
         {kMaxAttributes, kMaxAnnotations, kMaxMessageEvents, kMaxLinks,
