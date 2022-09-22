@@ -24,7 +24,6 @@
 #include <algorithm>
 #include <atomic>
 #include <cmath>
-#include <map>
 #include <memory>
 #include <string>
 #include <utility>
@@ -38,7 +37,6 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
-#include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
@@ -54,7 +52,6 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -82,49 +79,35 @@ UniqueTypeName RequestHashAttributeName() {
 }
 
 // Helper Parser method
-absl::StatusOr<RingHashConfig> ParseRingHashLbConfig(const Json& json) {
-  if (json.type() != Json::Type::OBJECT) {
-    return absl::InvalidArgumentError(
-        "ring_hash_experimental should be of type object");
-  }
-  RingHashConfig config;
-  std::vector<std::string> errors;
-  const Json::Object& ring_hash = json.object_value();
-  auto ring_hash_it = ring_hash.find("min_ring_size");
-  if (ring_hash_it != ring_hash.end()) {
-    if (ring_hash_it->second.type() != Json::Type::NUMBER) {
-      errors.emplace_back(
-          "field:min_ring_size error: should be of type number");
-    } else {
-      config.min_ring_size = gpr_parse_nonnegative_int(
-          ring_hash_it->second.string_value().c_str());
+
+const JsonLoaderInterface* RingHashConfig::JsonLoader(const JsonArgs&) {
+  static const auto* loader =
+      JsonObjectLoader<RingHashConfig>()
+          .OptionalField("min_ring_size", &RingHashConfig::min_ring_size)
+          .OptionalField("max_ring_size", &RingHashConfig::max_ring_size)
+          .Finish();
+  return loader;
+}
+
+void RingHashConfig::JsonPostLoad(const Json&, const JsonArgs&,
+                                  ValidationErrors* errors) {
+  {
+    ValidationErrors::ScopedField field(errors, ".min_ring_size");
+    if (!errors->FieldHasErrors() &&
+        (min_ring_size == 0 || min_ring_size > 8388608)) {
+      errors->AddError("must be in the range [1, 8388608]");
     }
   }
-  ring_hash_it = ring_hash.find("max_ring_size");
-  if (ring_hash_it != ring_hash.end()) {
-    if (ring_hash_it->second.type() != Json::Type::NUMBER) {
-      errors.emplace_back(
-          "field:max_ring_size error: should be of type number");
-    } else {
-      config.max_ring_size = gpr_parse_nonnegative_int(
-          ring_hash_it->second.string_value().c_str());
+  {
+    ValidationErrors::ScopedField field(errors, ".max_ring_size");
+    if (!errors->FieldHasErrors() &&
+        (max_ring_size == 0 || max_ring_size > 8388608)) {
+      errors->AddError("must be in the range [1, 8388608]");
     }
   }
-  if (config.min_ring_size == 0 || config.min_ring_size > 8388608 ||
-      config.max_ring_size == 0 || config.max_ring_size > 8388608 ||
-      config.min_ring_size > config.max_ring_size) {
-    errors.emplace_back(
-        "field:max_ring_size and or min_ring_size error: "
-        "values need to be in the range of 1 to 8388608 "
-        "and max_ring_size cannot be smaller than "
-        "min_ring_size");
+  if (min_ring_size > max_ring_size) {
+    errors->AddError("max_ring_size cannot be smaller than min_ring_size");
   }
-  if (!errors.empty()) {
-    return absl::InvalidArgumentError(
-        absl::StrCat("errors parsing ring hash LB config: [",
-                     absl::StrJoin(errors, "; "), "]"));
-  }
-  return config;
 }
 
 namespace {
@@ -154,7 +137,7 @@ class RingHash : public LoadBalancingPolicy {
 
   absl::string_view name() const override { return kRingHash; }
 
-  void UpdateLocked(UpdateArgs args) override;
+  absl::Status UpdateLocked(UpdateArgs args) override;
   void ResetBackoffLocked() override;
 
  private:
@@ -817,7 +800,7 @@ void RingHash::ResetBackoffLocked() {
   }
 }
 
-void RingHash::UpdateLocked(UpdateArgs args) {
+absl::Status RingHash::UpdateLocked(UpdateArgs args) {
   config_ = std::move(args.config);
   ServerAddressList addresses;
   if (args.addresses.ok()) {
@@ -831,9 +814,9 @@ void RingHash::UpdateLocked(UpdateArgs args) {
       gpr_log(GPR_INFO, "[RH %p] received update with addresses error: %s",
               this, args.addresses.status().ToString().c_str());
     }
-    // If we already have a subchannel list, then ignore the resolver
-    // failure and keep using the existing list.
-    if (subchannel_list_ != nullptr) return;
+    // If we already have a subchannel list, then keep using the existing
+    // list, but still report back that the update was not accepted.
+    if (subchannel_list_ != nullptr) return args.addresses.status();
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace) &&
       latest_pending_subchannel_list_ != nullptr) {
@@ -866,12 +849,13 @@ void RingHash::UpdateLocked(UpdateArgs args) {
       channel_control_helper()->UpdateState(
           GRPC_CHANNEL_TRANSIENT_FAILURE, status,
           absl::make_unique<TransientFailurePicker>(status));
-    } else {
-      // Otherwise, report IDLE.
-      subchannel_list_->UpdateRingHashConnectivityStateLocked(
-          /*index=*/0, /*connection_attempt_complete=*/false, absl::OkStatus());
+      return status;
     }
+    // Otherwise, report IDLE.
+    subchannel_list_->UpdateRingHashConnectivityStateLocked(
+        /*index=*/0, /*connection_attempt_complete=*/false, absl::OkStatus());
   }
+  return absl::OkStatus();
 }
 
 //
@@ -889,7 +873,8 @@ class RingHashFactory : public LoadBalancingPolicyFactory {
 
   absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
   ParseLoadBalancingConfig(const Json& json) const override {
-    auto config = ParseRingHashLbConfig(json);
+    auto config = LoadFromJson<RingHashConfig>(
+        json, JsonArgs(), "errors validating ring_hash LB policy config");
     if (!config.ok()) return config.status();
     return MakeRefCounted<RingHashLbConfig>(config->min_ring_size,
                                             config->max_ring_size);

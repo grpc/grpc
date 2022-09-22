@@ -24,7 +24,6 @@
 #include <grpc/impl/codegen/port_platform.h>
 
 #include <grpc/impl/codegen/grpc_types.h>
-#include <grpcpp/impl/codegen/byte_buffer.h>
 #include <grpcpp/impl/codegen/call.h>
 #include <grpcpp/impl/codegen/call_hook.h>
 #include <grpcpp/impl/codegen/completion_queue_tag.h>
@@ -32,6 +31,7 @@
 #include <grpcpp/impl/codegen/interceptor_common.h>
 #include <grpcpp/impl/codegen/rpc_service_method.h>
 #include <grpcpp/impl/codegen/server_context.h>
+#include <grpcpp/support/byte_buffer.h>
 
 namespace grpc {
 

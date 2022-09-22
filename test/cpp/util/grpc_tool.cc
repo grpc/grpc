@@ -578,6 +578,12 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
     } else {
       input_file.open(absl::GetFlag(FLAGS_infile),
                       std::ios::in | std::ios::binary);
+      if (!input_file) {
+        fprintf(stderr, "Failed to open infile %s.\n",
+                absl::GetFlag(FLAGS_infile).c_str());
+        return false;
+      }
+
       input_stream = &input_file;
     }
 

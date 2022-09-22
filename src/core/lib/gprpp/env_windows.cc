@@ -24,37 +24,33 @@
 
 #include <memory>
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
-
-#include "src/core/lib/gpr/env.h"
-#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/tchar.h"
 
-char* gpr_getenv(const char* name) {
-  char* result = NULL;
-  auto tname = grpc_core::CharToTchar(name);
-  DWORD ret;
+namespace grpc_core {
 
-  ret = GetEnvironmentVariable(tname.c_str(), NULL, 0);
-  if (ret == 0) return NULL;
+absl::optional<std::string> GetEnv(const char* name) {
+  auto tname = CharToTchar(name);
+  DWORD ret = GetEnvironmentVariable(tname.c_str(), NULL, 0);
+  if (ret == 0) return absl::nullopt;
   std::unique_ptr<TCHAR[]> tresult(new TCHAR[ret]);
   ret =
       GetEnvironmentVariable(tname.c_str(), tresult.get(), ret * sizeof(TCHAR));
-  if (ret == 0) return NULL;
-  return gpr_strdup(grpc_core::TcharToChar(tresult.get()).c_str());
+  if (ret == 0) return absl::nullopt;
+  return TcharToChar(tresult.get());
 }
 
-void gpr_setenv(const char* name, const char* value) {
-  BOOL res = SetEnvironmentVariable(grpc_core::CharToTchar(name).c_str(),
-                                    grpc_core::CharToTchar(value).c_str());
-  GPR_ASSERT(res);
+void SetEnv(const char* name, const char* value) {
+  BOOL res = SetEnvironmentVariable(CharToTchar(name).c_str(),
+                                    CharToTchar(value).c_str());
+  if (!res) abort();
 }
 
-void gpr_unsetenv(const char* name) {
-  BOOL res = SetEnvironmentVariable(grpc_core::CharToTchar(name).c_str(), NULL);
-  GPR_ASSERT(res);
+void UnsetEnv(const char* name) {
+  BOOL res = SetEnvironmentVariable(CharToTchar(name).c_str(), NULL);
+  if (!res) abort();
 }
+
+}  // namespace grpc_core
 
 #endif /* GPR_WINDOWS_ENV */

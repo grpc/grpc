@@ -24,11 +24,11 @@
 #include <grpc/grpc.h>
 #include <grpcpp/impl/call.h>
 #include <grpcpp/impl/codegen/channel_interface.h>
-#include <grpcpp/impl/codegen/client_interceptor.h>
 #include <grpcpp/impl/codegen/completion_queue.h>
 #include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/grpc_library.h>
 #include <grpcpp/impl/codegen/sync.h>
+#include <grpcpp/support/client_interceptor.h>
 
 struct grpc_channel;
 

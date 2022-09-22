@@ -25,11 +25,11 @@
 
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/impl/codegen/slice.h>
-#include <grpcpp/impl/codegen/byte_buffer.h>
 #include <grpcpp/impl/codegen/config_protobuf.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/codegen/serialization_traits.h>
 #include <grpcpp/impl/codegen/status.h>
+#include <grpcpp/support/byte_buffer.h>
 
 /// This header provides an object that writes bytes directly into a
 /// grpc::ByteBuffer, via the ZeroCopyOutputStream interface

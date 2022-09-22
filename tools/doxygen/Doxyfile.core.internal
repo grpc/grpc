@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC Core"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 27.0.0
+PROJECT_NUMBER         = 28.0.0
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -1021,6 +1021,8 @@ src/core/ext/transport/chttp2/transport/chttp2_transport.cc \
 src/core/ext/transport/chttp2/transport/chttp2_transport.h \
 src/core/ext/transport/chttp2/transport/context_list.cc \
 src/core/ext/transport/chttp2/transport/context_list.h \
+src/core/ext/transport/chttp2/transport/decode_huff.cc \
+src/core/ext/transport/chttp2/transport/decode_huff.h \
 src/core/ext/transport/chttp2/transport/flow_control.cc \
 src/core/ext/transport/chttp2/transport/flow_control.h \
 src/core/ext/transport/chttp2/transport/frame.h \
@@ -1749,7 +1751,6 @@ src/core/lib/event_engine/posix_engine/timer_heap.cc \
 src/core/lib/event_engine/posix_engine/timer_heap.h \
 src/core/lib/event_engine/posix_engine/timer_manager.cc \
 src/core/lib/event_engine/posix_engine/timer_manager.h \
-src/core/lib/event_engine/promise.h \
 src/core/lib/event_engine/resolved_address.cc \
 src/core/lib/event_engine/slice.cc \
 src/core/lib/event_engine/slice_buffer.cc \
@@ -1780,10 +1781,6 @@ src/core/lib/gpr/cpu_iphone.cc \
 src/core/lib/gpr/cpu_linux.cc \
 src/core/lib/gpr/cpu_posix.cc \
 src/core/lib/gpr/cpu_windows.cc \
-src/core/lib/gpr/env.h \
-src/core/lib/gpr/env_linux.cc \
-src/core/lib/gpr/env_posix.cc \
-src/core/lib/gpr/env_windows.cc \
 src/core/lib/gpr/log.cc \
 src/core/lib/gpr/log_android.cc \
 src/core/lib/gpr/log_linux.cc \
@@ -1821,6 +1818,10 @@ src/core/lib/gprpp/construct_destruct.h \
 src/core/lib/gprpp/cpp_impl_of.h \
 src/core/lib/gprpp/debug_location.h \
 src/core/lib/gprpp/dual_ref_counted.h \
+src/core/lib/gprpp/env.h \
+src/core/lib/gprpp/env_linux.cc \
+src/core/lib/gprpp/env_posix.cc \
+src/core/lib/gprpp/env_windows.cc \
 src/core/lib/gprpp/examine_stack.cc \
 src/core/lib/gprpp/examine_stack.h \
 src/core/lib/gprpp/fork.cc \
@@ -1838,6 +1839,7 @@ src/core/lib/gprpp/memory.h \
 src/core/lib/gprpp/mpscq.cc \
 src/core/lib/gprpp/mpscq.h \
 src/core/lib/gprpp/no_destruct.h \
+src/core/lib/gprpp/notification.h \
 src/core/lib/gprpp/orphanable.h \
 src/core/lib/gprpp/overload.h \
 src/core/lib/gprpp/packed_table.h \
@@ -1864,6 +1866,8 @@ src/core/lib/gprpp/time_averaged_stats.h \
 src/core/lib/gprpp/time_util.cc \
 src/core/lib/gprpp/time_util.h \
 src/core/lib/gprpp/unique_type_name.h \
+src/core/lib/gprpp/validation_errors.cc \
+src/core/lib/gprpp/validation_errors.h \
 src/core/lib/gprpp/work_serializer.cc \
 src/core/lib/gprpp/work_serializer.h \
 src/core/lib/handshaker/proxy_mapper.h \

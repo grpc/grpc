@@ -43,7 +43,7 @@ Poll<absl::Status> Sleep::operator()() {
   // TODO(ctiller): the following can be safely removed when we remove ExecCtx.
   ExecCtx::Get()->InvalidateNow();
   // If the deadline is earlier than now we can just return.
-  if (deadline_ <= ExecCtx::Get()->Now()) return absl::OkStatus();
+  if (deadline_ <= Timestamp::Now()) return absl::OkStatus();
   if (closure_ == nullptr) {
     // TODO(ctiller): it's likely we'll want a pool of closures - probably per
     // cpu? - to avoid allocating/deallocating on fast paths.
@@ -58,7 +58,7 @@ Sleep::ActiveClosure::ActiveClosure(Timestamp deadline)
   auto engine = GetContext<EventEngine>();
   GPR_ASSERT(engine != nullptr &&
              "An EventEngine context is required for Promise Sleep");
-  timer_handle_ = engine->RunAfter(deadline - ExecCtx::Get()->Now(), this);
+  timer_handle_ = engine->RunAfter(deadline - Timestamp::Now(), this);
 }
 
 void Sleep::ActiveClosure::Run() {
