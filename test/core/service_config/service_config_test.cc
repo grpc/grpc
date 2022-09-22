@@ -129,7 +129,7 @@ class ServiceConfigTest : public ::testing::Test {
 TEST_F(ServiceConfigTest, JsonParseError) {
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), "");
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(service_config.status().message(),
+  EXPECT_THAT(std::string(service_config.status().message()),
               ::testing::StartsWith("JSON parsing failed"))
       << service_config.status();
 }
