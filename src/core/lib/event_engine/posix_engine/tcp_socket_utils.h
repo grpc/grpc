@@ -323,7 +323,7 @@ struct PosixSocketCreateResult {
 // created. For example, if target_addr is IPv4 and dual stack sockets are
 // available, mapped_target_addr will be an IPv4-mapped IPv6 address.
 //
-static absl::StatusOr<PosixSocketCreateResult> CreateAndPrepareTcpClientSocket(
+absl::StatusOr<PosixSocketCreateResult> CreateAndPrepareTcpClientSocket(
     const PosixTcpOptions& options,
     const EventEngine::ResolvedAddress& target_addr);
 
