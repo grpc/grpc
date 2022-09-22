@@ -25,10 +25,6 @@
 #include <algorithm>
 #include <utility>
 
-#include "absl/types/variant.h"
-
-#include <grpc/support/log.h>
-
 namespace grpc_core {
 
 void HandshakerRegistry::Builder::RegisterHandshakerFactory(

@@ -21,8 +21,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "absl/types/variant.h"
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 
