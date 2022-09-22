@@ -20,6 +20,14 @@ set -e
 BASEDIR=$(dirname "$0")
 BASEDIR=$(realpath "$BASEDIR")/../..
 
+PACKAGES="grpcio_reflection grpcio_status grpcio_health_checking grpcio_channelz grpcio_csds grpcio_admin grpcio_testing grpcio_tests "
+
+function run_command_if_available() {
+  if python setup.py --help-commands | grep "$1"; then
+    python setup.py "$1";
+  fi
+}
+
 (cd "$BASEDIR";
   pip install --upgrade cython;
   python setup.py install;
@@ -28,9 +36,10 @@ BASEDIR=$(realpath "$BASEDIR")/../..
     GRPC_PYTHON_BUILD_WITH_CYTHON=1 pip install .
   popd;
   pushd src/python;
-    for PACKAGE in ./grpcio_*; do
+    for PACKAGE in ${PACKAGES}; do
       pushd "${PACKAGE}";
-        python setup.py preprocess;
+        run_command_if_available build_package_protos
+        run_command_if_available preprocess
         python setup.py install;
       popd;
     done
