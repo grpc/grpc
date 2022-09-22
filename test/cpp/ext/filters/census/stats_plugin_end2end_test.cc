@@ -420,6 +420,54 @@ TEST_F(StatsPluginEnd2EndTest, Latency) {
                                   ::testing::DoubleEq(client_elapsed_time))))));
 }
 
+TEST_F(StatsPluginEnd2EndTest, StartedRpcs) {
+  View client_started_rpcs_view(ClientStartedRpcsCumulative());
+  View server_started_rpcs_view(ServerStartedRpcsCumulative());
+
+  EchoRequest request;
+  request.set_message("foo");
+  EchoResponse response;
+  const int count = 5;
+  for (int i = 0; i < count; ++i) {
+    {
+      grpc::ClientContext context;
+      grpc::Status status = stub_->Echo(&context, request, &response);
+      ASSERT_TRUE(status.ok());
+      EXPECT_EQ("foo", response.message());
+    }
+    absl::SleepFor(absl::Milliseconds(500 * grpc_test_slowdown_factor()));
+    TestUtils::Flush();
+
+    EXPECT_THAT(client_started_rpcs_view.GetData().int_data(),
+                ::testing::UnorderedElementsAre(::testing::Pair(
+                    ::testing::ElementsAre(client_method_name_), i + 1)));
+    EXPECT_THAT(server_started_rpcs_view.GetData().int_data(),
+                ::testing::UnorderedElementsAre(::testing::Pair(
+                    ::testing::ElementsAre(server_method_name_), i + 1)));
+  }
+
+  // Client should see started calls that are not yet completed.
+  {
+    ClientContext ctx;
+    auto stream = stub_->BidiStream(&ctx);
+    absl::SleepFor(absl::Milliseconds(500 * grpc_test_slowdown_factor()));
+    TestUtils::Flush();
+    EXPECT_THAT(
+        client_started_rpcs_view.GetData().int_data(),
+        ::testing::Contains(::testing::Pair(
+            ::testing::ElementsAre("grpc.testing.EchoTestService/BidiStream"),
+            1)));
+    EXPECT_THAT(
+        server_started_rpcs_view.GetData().int_data(),
+        ::testing::Contains(::testing::Pair(
+            ::testing::ElementsAre("grpc.testing.EchoTestService/BidiStream"),
+            1)));
+    ctx.TryCancel();
+  }
+  absl::SleepFor(absl::Milliseconds(500 * grpc_test_slowdown_factor()));
+  TestUtils::Flush();
+}
+
 TEST_F(StatsPluginEnd2EndTest, CompletedRpcs) {
   View client_completed_rpcs_view(ClientCompletedRpcsCumulative());
   View server_completed_rpcs_view(ServerCompletedRpcsCumulative());

@@ -64,6 +64,7 @@ Pod::Spec.new do |s|
     # build.
     'USE_HEADERMAP' => 'NO',
     'ALWAYS_SEARCH_USER_PATHS' => 'NO',
+    'CLANG_CXX_LANGUAGE_STANDARD' => 'c++14',
   }
 
   s.libraries = 'c++'
@@ -691,7 +692,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/event_engine/posix_engine/timer.h',
                       'src/core/lib/event_engine/posix_engine/timer_heap.h',
                       'src/core/lib/event_engine/posix_engine/timer_manager.h',
-                      'src/core/lib/event_engine/promise.h',
                       'src/core/lib/event_engine/socket_notifier.h',
                       'src/core/lib/event_engine/thread_pool.h',
                       'src/core/lib/event_engine/time_util.h',
@@ -1555,7 +1555,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/event_engine/posix_engine/timer.h',
                               'src/core/lib/event_engine/posix_engine/timer_heap.h',
                               'src/core/lib/event_engine/posix_engine/timer_manager.h',
-                              'src/core/lib/event_engine/promise.h',
                               'src/core/lib/event_engine/socket_notifier.h',
                               'src/core/lib/event_engine/thread_pool.h',
                               'src/core/lib/event_engine/time_util.h',

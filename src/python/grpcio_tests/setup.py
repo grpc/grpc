@@ -67,7 +67,9 @@ PACKAGE_DATA = {
         'credentials/server1.key',
         'credentials/server1.pem',
     ],
-    'tests.protoc_plugin.protos.invocation_testing': ['same.proto',],
+    'tests.protoc_plugin.protos.invocation_testing': [
+        'same.proto', 'compiler.proto'
+    ],
     'tests.protoc_plugin.protos.invocation_testing.split_messages': [
         'messages.proto',
     ],

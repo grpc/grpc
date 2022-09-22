@@ -8194,8 +8194,9 @@ target_include_directories(common_closures_test
 target_link_libraries(common_closures_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc
-  grpc_test_util_unsecure
+  absl::any_invocable
+  absl::statusor
+  gpr
 )
 
 
@@ -17754,6 +17755,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(tcp_posix_socket_utils_test
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
+    absl::cleanup
     grpc_test_util
   )
 
