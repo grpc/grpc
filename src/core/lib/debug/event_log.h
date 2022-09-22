@@ -15,11 +15,19 @@
 #ifndef GRPC_CORE_LIB_DEBUG_EVENT_LOG_H
 #define GRPC_CORE_LIB_DEBUG_EVENT_LOG_H
 
-#include <initializer_list>
+#include <stdint.h>
 
+#include <atomic>
+#include <string>
+#include <vector>
+
+#include "absl/base/thread_annotations.h"
+#include "absl/strings/string_view.h"
 #include "absl/types/span.h"
 
+#include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gprpp/per_cpu.h"
+#include "src/core/lib/gprpp/sync.h"
 
 namespace grpc_core {
 

@@ -19,7 +19,8 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "absl/strings/str_join.h"
+#include <string>
+#include <vector>
 
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
@@ -31,6 +32,7 @@
 #include "src/core/lib/debug/event_log.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/test_config.h"
