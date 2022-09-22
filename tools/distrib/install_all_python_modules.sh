@@ -18,7 +18,9 @@
 echo "It's recommended that you run this script from a virtual environment."
 
 function maybe_run_command () {
-  { python setup.py --help-commands | grep "$1" &>/dev/null  && python setup.py "$1"; } || true
+  if python setup.py --help-commands | grep "$1" &>/dev/null; then
+    python setup.py "$1";
+  fi
 }
 
 set -e
