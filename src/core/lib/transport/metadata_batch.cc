@@ -24,7 +24,6 @@
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/transport/timeout_encoding.h"
 
 namespace grpc_core {
@@ -120,11 +119,11 @@ GrpcTimeoutMetadata::ValueType GrpcTimeoutMetadata::MementoToValue(
   if (timeout == Duration::Infinity()) {
     return Timestamp::InfFuture();
   }
-  return ExecCtx::Get()->Now() + timeout;
+  return Timestamp::Now() + timeout;
 }
 
 Slice GrpcTimeoutMetadata::Encode(ValueType x) {
-  return Timeout::FromDuration(x - ExecCtx::Get()->Now()).Encode();
+  return Timeout::FromDuration(x - Timestamp::Now()).Encode();
 }
 
 TeMetadata::MementoType TeMetadata::ParseMemento(

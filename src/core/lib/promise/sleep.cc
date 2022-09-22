@@ -41,7 +41,7 @@ Poll<absl::Status> Sleep::operator()() {
   // TODO(ctiller): the following can be safely removed when we remove ExecCtx.
   ExecCtx::Get()->InvalidateNow();
   // If the deadline is earlier than now we can just return.
-  if (deadline_ <= ExecCtx::Get()->Now()) return absl::OkStatus();
+  if (deadline_ <= Timestamp::Now()) return absl::OkStatus();
   if (closure_ == nullptr) {
     // TODO(ctiller): it's likely we'll want a pool of closures - probably per
     // cpu? - to avoid allocating/deallocating on fast paths.
@@ -54,7 +54,7 @@ Poll<absl::Status> Sleep::operator()() {
 Sleep::ActiveClosure::ActiveClosure(Timestamp deadline)
     : waker_(Activity::current()->MakeOwningWaker()),
       timer_handle_(GetDefaultEventEngine()->RunAfter(
-          deadline - ExecCtx::Get()->Now(), this)) {}
+          deadline - Timestamp::Now(), this)) {}
 
 void Sleep::ActiveClosure::Run() {
   ApplicationCallbackExecCtx callback_exec_ctx;

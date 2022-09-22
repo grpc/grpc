@@ -192,7 +192,7 @@ ConnectionAttemptInjector::InjectedDelay::InjectedDelay(
     const grpc_resolved_address* addr, grpc_core::Timestamp deadline)
     : attempt_(closure, ep, interested_parties, config, addr, deadline) {
   GRPC_CLOSURE_INIT(&timer_callback_, TimerCallback, this, nullptr);
-  grpc_core::Timestamp now = grpc_core::ExecCtx::Get()->Now();
+  grpc_core::Timestamp now = grpc_core::Timestamp::Now();
   duration = std::min(duration, deadline - now);
   grpc_timer_init(&timer_, now + duration, &timer_callback_);
 }
