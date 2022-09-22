@@ -25,12 +25,16 @@
 
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
+#include "google/devtools/cloudtrace/v2/tracing.grpc.pb.h"
+#include "google/monitoring/v3/metric_service.grpc.pb.h"
 #include "opencensus/exporters/stats/stackdriver/stackdriver_exporter.h"
 #include "opencensus/exporters/trace/stackdriver/stackdriver_exporter.h"
 #include "opencensus/trace/sampler.h"
 #include "opencensus/trace/trace_config.h"
 
 #include <grpcpp/opencensus.h>
+#include <grpcpp/security/credentials.h>
+#include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/config.h>
 
 #include "src/cpp/ext/gcp/observability_config.h"
@@ -46,6 +50,9 @@ constexpr uint32_t kMaxAttributes = 128;
 constexpr uint32_t kMaxAnnotations = 128;
 constexpr uint32_t kMaxMessageEvents = 128;
 constexpr uint32_t kMaxLinks = 128;
+
+constexpr char kGoogleStackdriverTraceAddress[] = "cloudtrace.googleapis.com";
+constexpr char kGoogleStackdriverStatsAddress[] = "monitoring.googleapis.com";
 }  // namespace
 
 absl::Status GcpObservabilityInit() {
@@ -55,6 +62,8 @@ absl::Status GcpObservabilityInit() {
   }
   grpc::RegisterOpenCensusPlugin();
   grpc::RegisterOpenCensusViewsForExport();
+  ChannelArguments args;
+  args.SetInt(GRPC_ARG_DISABLE_OBSERVABILITY, 1);
   if (config->cloud_trace.has_value()) {
     opencensus::trace::TraceConfig::SetCurrentTraceParams(
         {kMaxAttributes, kMaxAnnotations, kMaxMessageEvents, kMaxLinks,
@@ -62,12 +71,19 @@ absl::Status GcpObservabilityInit() {
              config->cloud_trace->sampling_rate)});
     opencensus::exporters::trace::StackdriverOptions trace_opts;
     trace_opts.project_id = config->project_id;
+    trace_opts.trace_service_stub =
+        ::google::devtools::cloudtrace::v2::TraceService::NewStub(
+            CreateCustomChannel(kGoogleStackdriverTraceAddress,
+                                GoogleDefaultCredentials(), args));
     opencensus::exporters::trace::StackdriverExporter::Register(
         std::move(trace_opts));
   }
   if (config->cloud_monitoring.has_value()) {
     opencensus::exporters::stats::StackdriverOptions stats_opts;
     stats_opts.project_id = config->project_id;
+    stats_opts.metric_service_stub =
+        google::monitoring::v3::MetricService::NewStub(CreateCustomChannel(
+            kGoogleStackdriverStatsAddress, GoogleDefaultCredentials(), args));
     opencensus::exporters::stats::StackdriverExporter::Register(
         std::move(stats_opts));
   }

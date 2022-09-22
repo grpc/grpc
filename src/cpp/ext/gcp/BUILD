@@ -53,6 +53,8 @@ grpc_cc_library(
         "//:gpr",
         "//:grpc++_public_hdrs",
         "//:grpc_opencensus_plugin",
+        "@com_google_googleapis//google/devtools/cloudtrace/v2:cloudtrace_cc_grpc",
+        "@com_google_googleapis//google/monitoring/v3:monitoring_cc_grpc",
     ],
 )
 
