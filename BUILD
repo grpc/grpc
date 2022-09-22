@@ -3114,11 +3114,12 @@ grpc_cc_library(
         "src/core/lib/debug/event_log.h",
     ],
     external_deps = [
-        "absl/container:flat_hash_map",
+        "absl/base:core_headers",
         "absl/strings",
         "absl/types:span",
     ],
     deps = [
+        "gpr",
         "gpr_public_hdrs",
         "per_cpu",
     ],
