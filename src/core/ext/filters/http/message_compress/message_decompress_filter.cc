@@ -55,13 +55,13 @@ class ChannelData {
         message_size_service_config_parser_index_(
             MessageSizeParser::ParserIndex()) {}
 
-  absl::optional<int> max_recv_size() const { return max_recv_size_; }
+  absl::optional<uint32_t> max_recv_size() const { return max_recv_size_; }
   size_t message_size_service_config_parser_index() const {
     return message_size_service_config_parser_index_;
   }
 
  private:
-  absl::optional<int> max_recv_size_;
+  absl::optional<uint32_t> max_recv_size_;
   const size_t message_size_service_config_parser_index_;
 };
 
@@ -85,7 +85,7 @@ class CallData {
         MessageSizeParsedConfig::GetFromCallContext(
             args.context, chand->message_size_service_config_parser_index());
     if (limits != nullptr && limits->max_recv_size().has_value() &&
-        (max_recv_message_length_.has_value() ||
+        (!max_recv_message_length_.has_value() ||
          *limits->max_recv_size() < *max_recv_message_length_)) {
       max_recv_message_length_ = *limits->max_recv_size();
     }
@@ -115,7 +115,7 @@ class CallData {
   grpc_metadata_batch* recv_initial_metadata_ = nullptr;
   // Fields for handling recv_message_ready callback
   bool seen_recv_message_ready_ = false;
-  absl::optional<int> max_recv_message_length_;
+  absl::optional<uint32_t> max_recv_message_length_;
   grpc_compression_algorithm algorithm_ = GRPC_COMPRESS_NONE;
   absl::optional<SliceBuffer>* recv_message_ = nullptr;
   uint32_t* recv_message_flags_ = nullptr;

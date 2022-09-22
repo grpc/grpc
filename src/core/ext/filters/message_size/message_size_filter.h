@@ -82,8 +82,8 @@ class MessageSizeParser : public ServiceConfigParser::Parser {
   static absl::string_view parser_name() { return "message_size"; }
 };
 
-absl::optional<int> GetMaxRecvSizeFromChannelArgs(const ChannelArgs& args);
-absl::optional<int> GetMaxSendSizeFromChannelArgs(const ChannelArgs& args);
+absl::optional<uint32_t> GetMaxRecvSizeFromChannelArgs(const ChannelArgs& args);
+absl::optional<uint32_t> GetMaxSendSizeFromChannelArgs(const ChannelArgs& args);
 
 }  // namespace grpc_core
 
