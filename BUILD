@@ -3098,6 +3098,37 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "per_cpu",
+    hdrs = [
+        "src/core/lib/gprpp/per_cpu.h",
+    ],
+    deps = [
+        "exec_ctx",
+        "gpr",
+    ],
+)
+
+grpc_cc_library(
+    name = "event_log",
+    srcs = [
+        "src/core/lib/debug/event_log.cc",
+    ],
+    hdrs = [
+        "src/core/lib/debug/event_log.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/strings",
+        "absl/types:span",
+    ],
+    deps = [
+        "gpr",
+        "gpr_public_hdrs",
+        "per_cpu",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_base",
     srcs = [
         "src/core/lib/address_utils/parse_address.cc",
@@ -3356,6 +3387,7 @@ grpc_cc_library(
         "dual_ref_counted",
         "error",
         "event_engine_common",
+        "event_log",
         "exec_ctx",
         "experiments",
         "gpr",
