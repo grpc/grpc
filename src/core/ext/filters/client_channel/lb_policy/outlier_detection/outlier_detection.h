@@ -44,6 +44,8 @@ struct OutlierDetectionConfig {
     uint32_t minimum_hosts = 5;
     uint32_t request_volume = 100;
 
+    SuccessRateEjection() {}
+
     bool operator==(const SuccessRateEjection& other) const {
       return stdev_factor == other.stdev_factor &&
              enforcement_percentage == other.enforcement_percentage &&
@@ -58,6 +60,8 @@ struct OutlierDetectionConfig {
     uint32_t enforcement_percentage = 0;
     uint32_t minimum_hosts = 5;
     uint32_t request_volume = 50;
+
+    FailurePercentageEjection() {}
 
     bool operator==(const FailurePercentageEjection& other) const {
       return threshold == other.threshold &&

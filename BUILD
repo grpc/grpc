@@ -804,6 +804,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "slice",
         "slice_refcount",
+        "status_helper",
         "transport_fwd",
     ],
 )
@@ -2808,6 +2809,7 @@ grpc_cc_library(
         "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h",
     ],
     external_deps = [
+        "absl/cleanup",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -2823,6 +2825,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "resource_quota",
         "socket_mutator",
+        "status_helper",
         "useful",
     ],
 )
