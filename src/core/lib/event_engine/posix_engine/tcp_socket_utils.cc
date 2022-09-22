@@ -123,13 +123,11 @@ absl::Status PrepareTcpClientSocket(PosixSocketWrapper sock,
     sock.TrySetSocketTcpUserTimeout(options, true);
   }
   RETURN_IF_ERROR(sock.SetSocketNoSigpipeIfPossible());
-  auto status = sock.ApplySocketMutatorInOptions(
-      GRPC_FD_CLIENT_CONNECTION_USAGE, options);
-  if (status.ok()) {
-    // No errors. Set close_fd to false to ensure the socket is not closed.
-    close_fd = false;
-  }
-  return status;
+  RETURN_IF_ERROR(sock.ApplySocketMutatorInOptions(
+      GRPC_FD_CLIENT_CONNECTION_USAGE, options));
+  // No errors. Set close_fd to false to ensure the socket is not closed.
+  close_fd = false;
+  return absl::OkStatus();
 }
 
 #endif /* GRPC_POSIX_SOCKET_UTILS_COMMON */
@@ -803,40 +801,38 @@ absl::StatusOr<PosixSocketWrapper> PosixSocketWrapper::CreateDualStackSocket(
   return PosixSocketWrapper(newfd);
 }
 
-absl::StatusOr<PosixSocketWrapper::PosixSocketCreateResult>
-PosixSocketWrapper::CreateAndPrepareTcpClientSocket(
+absl::StatusOr<PosixSocketCreateResult> CreateAndPrepareTcpClientSocket(
     const PosixTcpOptions& options,
     const EventEngine::ResolvedAddress& target_addr) {
   PosixSocketWrapper::DSMode dsmode;
-  EventEngine::ResolvedAddress output_mapped_target_addr;
+  EventEngine::ResolvedAddress mapped_target_addr;
 
   // Use dualstack sockets where available. Set mapped to v6 or v4 mapped to
   // v6.
-  if (!SockaddrToV4Mapped(&target_addr, &output_mapped_target_addr)) {
+  if (!SockaddrToV4Mapped(&target_addr, &mapped_target_addr)) {
     // addr is v4 mapped to v6 or just v6.
-    output_mapped_target_addr = target_addr;
+    mapped_target_addr = target_addr;
   }
   absl::StatusOr<PosixSocketWrapper> posix_socket_wrapper =
-      PosixSocketWrapper::CreateDualStackSocket(
-          nullptr, output_mapped_target_addr, SOCK_STREAM, 0, dsmode);
+      PosixSocketWrapper::CreateDualStackSocket(nullptr, mapped_target_addr,
+                                                SOCK_STREAM, 0, dsmode);
   if (!posix_socket_wrapper.ok()) {
     return posix_socket_wrapper.status();
   }
 
   if (dsmode == PosixSocketWrapper::DSMode::DSMODE_IPV4) {
     // Original addr is either v4 or v4 mapped to v6. Set mapped_addr to v4.
-    if (!SockaddrIsV4Mapped(&target_addr, &output_mapped_target_addr)) {
-      output_mapped_target_addr = target_addr;
+    if (!SockaddrIsV4Mapped(&target_addr, &mapped_target_addr)) {
+      mapped_target_addr = target_addr;
     }
   }
 
-  auto error = PrepareTcpClientSocket(*posix_socket_wrapper,
-                                      output_mapped_target_addr, options);
+  auto error = PrepareTcpClientSocket(*posix_socket_wrapper, mapped_target_addr,
+                                      options);
   if (!error.ok()) {
     return error;
   }
-  return PosixSocketWrapper::PosixSocketCreateResult{*posix_socket_wrapper,
-                                                     output_mapped_target_addr};
+  return PosixSocketCreateResult{*posix_socket_wrapper, mapped_target_addr};
 }
 
 #else /* GRPC_POSIX_SOCKET_UTILS_COMMON */
@@ -944,8 +940,8 @@ PosixSocketWrapper::CreateDualStackSocket(
   GPR_ASSERT(false && "unimplemented");
 }
 
-absl::StatusOr<PosixSocketWrapper::PosixSocketCreateResult>
-PosixSocketWrapper::CreateAndPrepareTcpClientSocket(
+absl::StatusOr<PosixSocketCreateResult>
+CreateAndPrepareTcpClientSocket(
     const PosixTcpOptions& /*options*/,
     const EventEngine::ResolvedAddress& /*target_addr*/) {
   GPR_ASSERT(false && "unimplemented");
