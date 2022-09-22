@@ -29,7 +29,6 @@
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
-#include "absl/types/optional.h"
 
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/status.h>
@@ -79,16 +78,14 @@ MessageSizeParsedConfig MessageSizeParsedConfig::GetFromChannelArgs(
   return limits;
 }
 
-int GetMaxRecvSizeFromChannelArgs(const ChannelArgs& args) {
-  if (args.WantMinimalStack()) return -1;
-  return std::max(-1, args.GetInt(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH)
-                          .value_or(GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH));
+absl::optional<int> GetMaxRecvSizeFromChannelArgs(const ChannelArgs& args) {
+  if (args.WantMinimalStack()) return absl::nullopt;
+  return args.GetInt(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH);
 }
 
-int GetMaxSendSizeFromChannelArgs(const ChannelArgs& args) {
-  if (args.WantMinimalStack()) return -1;
-  return std::max(-1, args.GetInt(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH)
-                          .value_or(GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH));
+absl::optional<int> GetMaxSendSizeFromChannelArgs(const ChannelArgs& args) {
+  if (args.WantMinimalStack()) return absl::nullopt;
+  return args.GetInt(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH);
 }
 
 const JsonLoaderInterface* MessageSizeParsedConfig::JsonLoader(
@@ -151,17 +148,17 @@ struct call_data {
         grpc_core::MessageSizeParsedConfig::GetFromCallContext(
             args.context, chand.service_config_parser_index);
     if (config_from_call_context != nullptr) {
-      uint32_t max_send_size = limits.max_send_size();
-      uint32_t max_recv_size = limits.max_recv_size();
-      if (config_from_call_context->max_send_size() >= 0 &&
-          (config_from_call_context->max_send_size() < max_send_size ||
-           max_send_size < 0)) {
-        max_send_size = config_from_call_context->max_send_size();
+      absl::optional<uint32_t> max_send_size = limits.max_send_size();
+      absl::optional<uint32_t> max_recv_size = limits.max_recv_size();
+      if (config_from_call_context->max_send_size().has_value() &&
+          (!max_send_size.has_value() ||
+           *config_from_call_context->max_send_size() < *max_send_size)) {
+        max_send_size = *config_from_call_context->max_send_size();
       }
-      if (config_from_call_context->max_recv_size() >= 0 &&
-          (config_from_call_context->max_recv_size() < max_recv_size ||
-           max_recv_size < 0)) {
-        max_recv_size = config_from_call_context->max_recv_size();
+      if (config_from_call_context->max_recv_size().has_value() &&
+          (!max_recv_size.has_value() ||
+           *config_from_call_context->max_recv_size() < *max_recv_size)) {
+        max_recv_size = *config_from_call_context->max_recv_size();
       }
       limits = grpc_core::MessageSizeParsedConfig(max_send_size, max_recv_size);
     }
@@ -195,13 +192,14 @@ struct call_data {
 static void recv_message_ready(void* user_data, grpc_error_handle error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(user_data);
   call_data* calld = static_cast<call_data*>(elem->call_data);
-  if (calld->recv_message->has_value() && calld->limits.max_recv_size() >= 0 &&
+  if (calld->recv_message->has_value() &&
+      calld->limits.max_recv_size().has_value() &&
       (*calld->recv_message)->Length() >
-          static_cast<size_t>(calld->limits.max_recv_size())) {
+          static_cast<size_t>(*calld->limits.max_recv_size())) {
     grpc_error_handle new_error = grpc_error_set_int(
         GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
             "Received message larger than max (%u vs. %d)",
-            (*calld->recv_message)->Length(), calld->limits.max_recv_size())),
+            (*calld->recv_message)->Length(), *calld->limits.max_recv_size())),
         GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_RESOURCE_EXHAUSTED);
     error = grpc_error_add_child(GRPC_ERROR_REF(error), new_error);
     GRPC_ERROR_UNREF(calld->error);
@@ -253,15 +251,15 @@ static void message_size_start_transport_stream_op_batch(
     grpc_call_element* elem, grpc_transport_stream_op_batch* op) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   // Check max send message size.
-  if (op->send_message && calld->limits.max_send_size() >= 0 &&
+  if (op->send_message && calld->limits.max_send_size().has_value() &&
       op->payload->send_message.send_message->Length() >
-          static_cast<size_t>(calld->limits.max_send_size())) {
+          static_cast<size_t>(*calld->limits.max_send_size())) {
     grpc_transport_stream_op_batch_finish_with_failure(
         op,
         grpc_error_set_int(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
                                "Sent message larger than max (%u vs. %d)",
                                op->payload->send_message.send_message->Length(),
-                               calld->limits.max_send_size())),
+                               *calld->limits.max_send_size())),
                            GRPC_ERROR_INT_GRPC_STATUS,
                            GRPC_STATUS_RESOURCE_EXHAUSTED),
         calld->call_combiner);
@@ -354,7 +352,8 @@ static bool maybe_add_message_size_filter(
   grpc_core::MessageSizeParsedConfig limits =
       grpc_core::MessageSizeParsedConfig::GetFromChannelArgs(channel_args);
   const bool enable =
-      limits.max_send_size() != -1 || limits.max_recv_size() != -1 ||
+      limits.max_send_size().has_value() ||
+      limits.max_recv_size().has_value() ||
       channel_args.GetString(GRPC_ARG_SERVICE_CONFIG).has_value();
   if (enable) builder->PrependFilter(&grpc_message_size_filter);
   return true;

@@ -25,6 +25,7 @@
 
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
@@ -43,12 +44,13 @@ namespace grpc_core {
 
 class MessageSizeParsedConfig : public ServiceConfigParser::ParsedConfig {
  public:
-  uint32_t max_send_size() const { return max_send_size_; }
-  uint32_t max_recv_size() const { return max_recv_size_; }
+  absl::optional<uint32_t> max_send_size() const { return max_send_size_; }
+  absl::optional<uint32_t> max_recv_size() const { return max_recv_size_; }
 
   MessageSizeParsedConfig() = default;
 
-  MessageSizeParsedConfig(uint32_t max_send_size, uint32_t max_recv_size)
+  MessageSizeParsedConfig(absl::optional<uint32_t> max_send_size,
+                          absl::optional<uint32_t> max_recv_size)
       : max_send_size_(max_send_size), max_recv_size_(max_recv_size) {}
 
   static const MessageSizeParsedConfig* GetFromCallContext(
@@ -60,8 +62,8 @@ class MessageSizeParsedConfig : public ServiceConfigParser::ParsedConfig {
   static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
 
  private:
-  uint32_t max_send_size_ = -1;
-  uint32_t max_recv_size_ = -1;
+  absl::optional<uint32_t> max_send_size_;
+  absl::optional<uint32_t> max_recv_size_;
 };
 
 class MessageSizeParser : public ServiceConfigParser::Parser {
@@ -80,8 +82,8 @@ class MessageSizeParser : public ServiceConfigParser::Parser {
   static absl::string_view parser_name() { return "message_size"; }
 };
 
-int GetMaxRecvSizeFromChannelArgs(const ChannelArgs& args);
-int GetMaxSendSizeFromChannelArgs(const ChannelArgs& args);
+absl::optional<int> GetMaxRecvSizeFromChannelArgs(const ChannelArgs& args);
+absl::optional<int> GetMaxSendSizeFromChannelArgs(const ChannelArgs& args);
 
 }  // namespace grpc_core
 
