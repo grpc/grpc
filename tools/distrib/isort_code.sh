@@ -31,6 +31,7 @@ DIRS=(
     'test'
     'tools'
     'setup.py'
+    'tools/run_tests/xds_k8s_test_driver'
 )
 
 VIRTUALENV=isort_virtual_environment
@@ -53,5 +54,7 @@ $PYTHON -m isort $ACTION \
   --skip-glob "third_party/*" \
   --skip-glob "*/env/*" \
   --skip-glob "*pb2*.py" \
+  --skip-glob "*pb2*.pyi" \
+  --skip-glob "**/site-packages/**/*" \
   --dont-follow-links \
   "${DIRS[@]}"

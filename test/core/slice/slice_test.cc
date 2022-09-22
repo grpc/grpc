@@ -27,6 +27,8 @@
 
 #include <gtest/gtest.h>
 
+#include "absl/memory/memory.h"
+
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
@@ -366,7 +368,7 @@ TEST(SliceTest, ExternalAsOwned) {
   // In ASAN (where we can be sure that it'll crash), go ahead and read the
   // bytes we just deleted.
   if (BuiltUnderAsan()) {
-    ASSERT_DEATH({ SumSlice(slice); }, "");
+    ASSERT_DEATH({ gpr_log(GPR_DEBUG, "%" PRIdPTR, SumSlice(slice)); }, "");
   }
   EXPECT_EQ(initial_sum, SumSlice(owned));
 }

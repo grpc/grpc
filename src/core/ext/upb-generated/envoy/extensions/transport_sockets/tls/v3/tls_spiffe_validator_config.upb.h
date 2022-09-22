@@ -56,25 +56,35 @@ UPB_INLINE envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig* 
   return ret;
 }
 UPB_INLINE char* envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_serialize(const envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_serialize_ex(const envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_msginit, options, arena, &ptr, len);
+  return ptr;
 }
-UPB_INLINE bool envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_has_trust_domains(const envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(0, 0)); }
-UPB_INLINE const envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain* const* envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_trust_domains(const envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig *msg, size_t *len) { return (const envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain* const*)_upb_array_accessor(msg, UPB_SIZE(0, 0), len); }
+UPB_INLINE bool envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_has_trust_domains(const envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig* msg) {
+  return _upb_has_submsg_nohasbit(msg, UPB_SIZE(0, 0));
+}
+UPB_INLINE void envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_clear_trust_domains(const envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig* msg) {
+  _upb_array_detach(msg, UPB_SIZE(0, 0));
+}
+UPB_INLINE const envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain* const* envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_trust_domains(const envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig* msg, size_t* len) {
+  return (const envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain* const*)_upb_array_accessor(msg, UPB_SIZE(0, 0), len);
+}
 
-UPB_INLINE envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain** envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_mutable_trust_domains(envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig *msg, size_t *len) {
+UPB_INLINE envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain** envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_mutable_trust_domains(envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig* msg, size_t* len) {
   return (envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain**)_upb_array_mutable_accessor(msg, UPB_SIZE(0, 0), len);
 }
-UPB_INLINE envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain** envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_resize_trust_domains(envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig *msg, size_t len, upb_Arena *arena) {
+UPB_INLINE envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain** envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_resize_trust_domains(envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig* msg, size_t len, upb_Arena* arena) {
   return (envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain**)_upb_Array_Resize_accessor2(msg, UPB_SIZE(0, 0), len, UPB_SIZE(2, 3), arena);
 }
-UPB_INLINE struct envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain* envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_add_trust_domains(envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig *msg, upb_Arena *arena) {
+UPB_INLINE struct envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain* envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_add_trust_domains(envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig* msg, upb_Arena* arena) {
   struct envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain* sub = (struct envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain*)_upb_Message_New(&envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain_msginit, arena);
-  bool ok = _upb_Array_Append_accessor2(
-      msg, UPB_SIZE(0, 0), UPB_SIZE(2, 3), &sub, arena);
+  bool ok = _upb_Array_Append_accessor2(msg, UPB_SIZE(0, 0), UPB_SIZE(2, 3), &sub, arena);
   if (!ok) return NULL;
   return sub;
 }
@@ -104,16 +114,28 @@ UPB_INLINE envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_T
   return ret;
 }
 UPB_INLINE char* envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain_serialize(const envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain_serialize_ex(const envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain_msginit, options, arena, &ptr, len);
+  return ptr;
+}
+UPB_INLINE void envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain_clear_name(const envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
 }
 UPB_INLINE upb_StringView envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain_name(const envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView);
 }
-UPB_INLINE bool envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain_has_trust_bundle(const envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain *msg) { return _upb_hasbit(msg, 1); }
+UPB_INLINE bool envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain_has_trust_bundle(const envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain* msg) {
+  return _upb_hasbit(msg, 1);
+}
+UPB_INLINE void envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain_clear_trust_bundle(const envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(12, 24), const upb_Message*) = NULL;
+}
 UPB_INLINE const struct envoy_config_core_v3_DataSource* envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain_trust_bundle(const envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(12, 24), const struct envoy_config_core_v3_DataSource*);
 }
@@ -125,7 +147,7 @@ UPB_INLINE void envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorCon
   _upb_sethas(msg, 1);
   *UPB_PTR_AT(msg, UPB_SIZE(12, 24), struct envoy_config_core_v3_DataSource*) = value;
 }
-UPB_INLINE struct envoy_config_core_v3_DataSource* envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain_mutable_trust_bundle(envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain *msg, upb_Arena *arena) {
+UPB_INLINE struct envoy_config_core_v3_DataSource* envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain_mutable_trust_bundle(envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain* msg, upb_Arena* arena) {
   struct envoy_config_core_v3_DataSource* sub = (struct envoy_config_core_v3_DataSource*)envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain_trust_bundle(msg);
   if (sub == NULL) {
     sub = (struct envoy_config_core_v3_DataSource*)_upb_Message_New(&envoy_config_core_v3_DataSource_msginit, arena);

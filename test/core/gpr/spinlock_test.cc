@@ -23,6 +23,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <gtest/gtest.h>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
@@ -87,8 +89,7 @@ static void test_wait(struct test* m) {
    incr_step controls by how much m->refcount should be incremented/decremented
    (if at all) each time in the tests.
    */
-static void test(const char* name, void (*body)(void* m), int timeout_s,
-                 int incr_step) {
+static void test(void (*body)(void* m), int timeout_s, int incr_step) {
   int64_t iterations = 1024;
   struct test* m;
   gpr_timespec start = gpr_now(GPR_CLOCK_REALTIME);
@@ -96,8 +97,6 @@ static void test(const char* name, void (*body)(void* m), int timeout_s,
   gpr_timespec deadline = gpr_time_add(
       start, gpr_time_from_micros(static_cast<int64_t>(timeout_s) * 1000000,
                                   GPR_TIMESPAN));
-  fprintf(stderr, "%s:", name);
-  fflush(stderr);
   while (gpr_time_cmp(gpr_now(GPR_CLOCK_REALTIME), deadline) < 0) {
     if (iterations < INT64_MAX / 2) iterations <<= 1;
     fprintf(stderr, " %ld", static_cast<long>(iterations));
@@ -110,7 +109,7 @@ static void test(const char* name, void (*body)(void* m), int timeout_s,
               static_cast<long>(m->counter), m->thread_count,
               static_cast<long>(m->iterations));
       fflush(stderr);
-      GPR_ASSERT(0);
+      FAIL();
     }
     test_destroy(m);
   }
@@ -148,9 +147,12 @@ static void inctry(void* v /*=m*/) {
 
 /* ------------------------------------------------- */
 
-int main(int argc, char* argv[]) {
-  grpc::testing::TestEnvironment env(argc, argv);
-  test("spinlock", &inc, 1, 1);
-  test("spinlock try", &inctry, 1, 1);
-  return 0;
+TEST(SpinlockTest, Spinlock) { test(&inc, 1, 1); }
+
+TEST(SpinlockTest, SpinlockTry) { test(&inctry, 1, 1); }
+
+int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(&argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }

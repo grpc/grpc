@@ -53,16 +53,28 @@ UPB_INLINE xds_type_v3_TypedStruct* xds_type_v3_TypedStruct_parse_ex(const char*
   return ret;
 }
 UPB_INLINE char* xds_type_v3_TypedStruct_serialize(const xds_type_v3_TypedStruct* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &xds_type_v3_TypedStruct_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &xds_type_v3_TypedStruct_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* xds_type_v3_TypedStruct_serialize_ex(const xds_type_v3_TypedStruct* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &xds_type_v3_TypedStruct_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &xds_type_v3_TypedStruct_msginit, options, arena, &ptr, len);
+  return ptr;
+}
+UPB_INLINE void xds_type_v3_TypedStruct_clear_type_url(const xds_type_v3_TypedStruct* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
 }
 UPB_INLINE upb_StringView xds_type_v3_TypedStruct_type_url(const xds_type_v3_TypedStruct* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView);
 }
-UPB_INLINE bool xds_type_v3_TypedStruct_has_value(const xds_type_v3_TypedStruct *msg) { return _upb_hasbit(msg, 1); }
+UPB_INLINE bool xds_type_v3_TypedStruct_has_value(const xds_type_v3_TypedStruct* msg) {
+  return _upb_hasbit(msg, 1);
+}
+UPB_INLINE void xds_type_v3_TypedStruct_clear_value(const xds_type_v3_TypedStruct* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(12, 24), const upb_Message*) = NULL;
+}
 UPB_INLINE const struct google_protobuf_Struct* xds_type_v3_TypedStruct_value(const xds_type_v3_TypedStruct* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(12, 24), const struct google_protobuf_Struct*);
 }
@@ -74,7 +86,7 @@ UPB_INLINE void xds_type_v3_TypedStruct_set_value(xds_type_v3_TypedStruct *msg, 
   _upb_sethas(msg, 1);
   *UPB_PTR_AT(msg, UPB_SIZE(12, 24), struct google_protobuf_Struct*) = value;
 }
-UPB_INLINE struct google_protobuf_Struct* xds_type_v3_TypedStruct_mutable_value(xds_type_v3_TypedStruct *msg, upb_Arena *arena) {
+UPB_INLINE struct google_protobuf_Struct* xds_type_v3_TypedStruct_mutable_value(xds_type_v3_TypedStruct* msg, upb_Arena* arena) {
   struct google_protobuf_Struct* sub = (struct google_protobuf_Struct*)xds_type_v3_TypedStruct_value(msg);
   if (sub == NULL) {
     sub = (struct google_protobuf_Struct*)_upb_Message_New(&google_protobuf_Struct_msginit, arena);

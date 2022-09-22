@@ -17,7 +17,7 @@
  */
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/port.h"
+#include "src/core/lib/iomgr/port.h"  // IWYU pragma: keep
 #if GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
 
 #include <string.h>
@@ -435,7 +435,7 @@ class GrpcPolledFdWindows {
     GPR_ASSERT(!connect_done_);
     connect_done_ = true;
     GPR_ASSERT(wsa_connect_error_ == 0);
-    if (error == GRPC_ERROR_NONE) {
+    if (GRPC_ERROR_IS_NONE(error)) {
       DWORD transferred_bytes = 0;
       DWORD flags;
       BOOL wsa_success =
@@ -579,7 +579,7 @@ class GrpcPolledFdWindows {
   // the entire resolution attempt. Doing so will allow the "inject broken
   // nameserver list" test to pass on Windows.
   void OnIocpReadableLocked(grpc_error_handle error) {
-    if (error == GRPC_ERROR_NONE) {
+    if (GRPC_ERROR_IS_NONE(error)) {
       if (winsocket_->read_info.wsa_error != 0) {
         /* WSAEMSGSIZE would be due to receiving more data
          * than our read buffer's fixed capacity. Assume that
@@ -596,7 +596,7 @@ class GrpcPolledFdWindows {
         }
       }
     }
-    if (error == GRPC_ERROR_NONE) {
+    if (GRPC_ERROR_IS_NONE(error)) {
       read_buf_ = grpc_slice_sub_no_ref(
           read_buf_, 0, winsocket_->read_info.bytes_transferred);
       read_buf_has_data_ = true;
@@ -620,7 +620,7 @@ class GrpcPolledFdWindows {
   void OnIocpWriteableLocked(grpc_error_handle error) {
     GRPC_CARES_TRACE_LOG("OnIocpWriteableInner. fd:|%s|", GetName());
     GPR_ASSERT(socket_type_ == SOCK_STREAM);
-    if (error == GRPC_ERROR_NONE) {
+    if (GRPC_ERROR_IS_NONE(error)) {
       if (winsocket_->write_info.wsa_error != 0) {
         error = GRPC_WSA_ERROR(winsocket_->write_info.wsa_error,
                                "OnIocpWriteableInner");
@@ -632,7 +632,7 @@ class GrpcPolledFdWindows {
       }
     }
     GPR_ASSERT(tcp_write_state_ == WRITE_PENDING);
-    if (error == GRPC_ERROR_NONE) {
+    if (GRPC_ERROR_IS_NONE(error)) {
       tcp_write_state_ = WRITE_WAITING_FOR_VERIFICATION_UPON_RETRY;
       write_buf_ = grpc_slice_sub_no_ref(
           write_buf_, 0, winsocket_->write_info.bytes_transferred);

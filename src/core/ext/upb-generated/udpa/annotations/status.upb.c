@@ -14,14 +14,14 @@
 #include "upb/port_def.inc"
 
 static const upb_MiniTable_Field udpa_annotations_StatusAnnotation__fields[2] = {
-  {1, UPB_SIZE(4, 4), 0, 0, 8, kUpb_FieldMode_Scalar | (upb_FieldRep_1Byte << upb_FieldRep_Shift)},
-  {2, UPB_SIZE(0, 0), 0, 0, 5, kUpb_FieldMode_Scalar | (upb_FieldRep_4Byte << upb_FieldRep_Shift)},
+  {1, UPB_SIZE(0, 0), UPB_SIZE(0, 0), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(4, 4), UPB_SIZE(0, 0), kUpb_NoSub, 5, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable udpa_annotations_StatusAnnotation_msginit = {
   NULL,
   &udpa_annotations_StatusAnnotation__fields[0],
-  UPB_SIZE(8, 8), 2, upb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(8, 8), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[1] = {
@@ -31,9 +31,9 @@ static const upb_MiniTable *messages_layout[1] = {
 extern const upb_MiniTable google_protobuf_FileOptions_msginit;
 extern const upb_MiniTable udpa_annotations_StatusAnnotation_msginit;
 const upb_MiniTable_Extension udpa_annotations_file_status_ext = {
-  {222707719, 0, 0, 0, 11, kUpb_FieldMode_Scalar | upb_LabelFlags_IsExtension | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
-    &google_protobuf_FileOptions_msginit,
-    {.submsg = &udpa_annotations_StatusAnnotation_msginit},
+  {222707719, UPB_SIZE(0, 0), UPB_SIZE(0, 0), 0, 11, kUpb_FieldMode_Scalar | kUpb_LabelFlags_IsExtension | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  &google_protobuf_FileOptions_msginit,
+  {.submsg = &udpa_annotations_StatusAnnotation_msginit},
 
 };
 

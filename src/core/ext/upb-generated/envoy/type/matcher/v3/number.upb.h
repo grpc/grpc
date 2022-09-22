@@ -53,28 +53,47 @@ UPB_INLINE envoy_type_matcher_v3_DoubleMatcher* envoy_type_matcher_v3_DoubleMatc
   return ret;
 }
 UPB_INLINE char* envoy_type_matcher_v3_DoubleMatcher_serialize(const envoy_type_matcher_v3_DoubleMatcher* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_type_matcher_v3_DoubleMatcher_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_type_matcher_v3_DoubleMatcher_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_type_matcher_v3_DoubleMatcher_serialize_ex(const envoy_type_matcher_v3_DoubleMatcher* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_type_matcher_v3_DoubleMatcher_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_type_matcher_v3_DoubleMatcher_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 typedef enum {
   envoy_type_matcher_v3_DoubleMatcher_match_pattern_range = 1,
   envoy_type_matcher_v3_DoubleMatcher_match_pattern_exact = 2,
   envoy_type_matcher_v3_DoubleMatcher_match_pattern_NOT_SET = 0
 } envoy_type_matcher_v3_DoubleMatcher_match_pattern_oneofcases;
-UPB_INLINE envoy_type_matcher_v3_DoubleMatcher_match_pattern_oneofcases envoy_type_matcher_v3_DoubleMatcher_match_pattern_case(const envoy_type_matcher_v3_DoubleMatcher* msg) { return (envoy_type_matcher_v3_DoubleMatcher_match_pattern_oneofcases)*UPB_PTR_AT(msg, UPB_SIZE(8, 8), int32_t); }
-
-UPB_INLINE bool envoy_type_matcher_v3_DoubleMatcher_has_range(const envoy_type_matcher_v3_DoubleMatcher *msg) { return _upb_getoneofcase(msg, UPB_SIZE(8, 8)) == 1; }
-UPB_INLINE const struct envoy_type_v3_DoubleRange* envoy_type_matcher_v3_DoubleMatcher_range(const envoy_type_matcher_v3_DoubleMatcher *msg) { return UPB_READ_ONEOF(msg, const struct envoy_type_v3_DoubleRange*, UPB_SIZE(0, 0), UPB_SIZE(8, 8), 1, NULL); }
-UPB_INLINE bool envoy_type_matcher_v3_DoubleMatcher_has_exact(const envoy_type_matcher_v3_DoubleMatcher *msg) { return _upb_getoneofcase(msg, UPB_SIZE(8, 8)) == 2; }
-UPB_INLINE double envoy_type_matcher_v3_DoubleMatcher_exact(const envoy_type_matcher_v3_DoubleMatcher *msg) { return UPB_READ_ONEOF(msg, double, UPB_SIZE(0, 0), UPB_SIZE(8, 8), 2, 0); }
+UPB_INLINE envoy_type_matcher_v3_DoubleMatcher_match_pattern_oneofcases envoy_type_matcher_v3_DoubleMatcher_match_pattern_case(const envoy_type_matcher_v3_DoubleMatcher* msg) {
+  return (envoy_type_matcher_v3_DoubleMatcher_match_pattern_oneofcases)*UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t);
+}
+UPB_INLINE bool envoy_type_matcher_v3_DoubleMatcher_has_range(const envoy_type_matcher_v3_DoubleMatcher* msg) {
+  return _upb_getoneofcase(msg, UPB_SIZE(0, 0)) == 1;
+}
+UPB_INLINE void envoy_type_matcher_v3_DoubleMatcher_clear_range(const envoy_type_matcher_v3_DoubleMatcher* msg) {
+  UPB_WRITE_ONEOF(msg, struct envoy_type_v3_DoubleRange*, UPB_SIZE(8, 8), 0, UPB_SIZE(0, 0), envoy_type_matcher_v3_DoubleMatcher_match_pattern_NOT_SET);
+}
+UPB_INLINE const struct envoy_type_v3_DoubleRange* envoy_type_matcher_v3_DoubleMatcher_range(const envoy_type_matcher_v3_DoubleMatcher* msg) {
+  return UPB_READ_ONEOF(msg, const struct envoy_type_v3_DoubleRange*, UPB_SIZE(8, 8), UPB_SIZE(0, 0), 1, NULL);
+}
+UPB_INLINE bool envoy_type_matcher_v3_DoubleMatcher_has_exact(const envoy_type_matcher_v3_DoubleMatcher* msg) {
+  return _upb_getoneofcase(msg, UPB_SIZE(0, 0)) == 2;
+}
+UPB_INLINE void envoy_type_matcher_v3_DoubleMatcher_clear_exact(const envoy_type_matcher_v3_DoubleMatcher* msg) {
+  UPB_WRITE_ONEOF(msg, double, UPB_SIZE(8, 8), 0, UPB_SIZE(0, 0), envoy_type_matcher_v3_DoubleMatcher_match_pattern_NOT_SET);
+}
+UPB_INLINE double envoy_type_matcher_v3_DoubleMatcher_exact(const envoy_type_matcher_v3_DoubleMatcher* msg) {
+  return UPB_READ_ONEOF(msg, double, UPB_SIZE(8, 8), UPB_SIZE(0, 0), 2, 0);
+}
 
 UPB_INLINE void envoy_type_matcher_v3_DoubleMatcher_set_range(envoy_type_matcher_v3_DoubleMatcher *msg, struct envoy_type_v3_DoubleRange* value) {
-  UPB_WRITE_ONEOF(msg, struct envoy_type_v3_DoubleRange*, UPB_SIZE(0, 0), value, UPB_SIZE(8, 8), 1);
+  UPB_WRITE_ONEOF(msg, struct envoy_type_v3_DoubleRange*, UPB_SIZE(8, 8), value, UPB_SIZE(0, 0), 1);
 }
-UPB_INLINE struct envoy_type_v3_DoubleRange* envoy_type_matcher_v3_DoubleMatcher_mutable_range(envoy_type_matcher_v3_DoubleMatcher *msg, upb_Arena *arena) {
+UPB_INLINE struct envoy_type_v3_DoubleRange* envoy_type_matcher_v3_DoubleMatcher_mutable_range(envoy_type_matcher_v3_DoubleMatcher* msg, upb_Arena* arena) {
   struct envoy_type_v3_DoubleRange* sub = (struct envoy_type_v3_DoubleRange*)envoy_type_matcher_v3_DoubleMatcher_range(msg);
   if (sub == NULL) {
     sub = (struct envoy_type_v3_DoubleRange*)_upb_Message_New(&envoy_type_v3_DoubleRange_msginit, arena);
@@ -84,7 +103,7 @@ UPB_INLINE struct envoy_type_v3_DoubleRange* envoy_type_matcher_v3_DoubleMatcher
   return sub;
 }
 UPB_INLINE void envoy_type_matcher_v3_DoubleMatcher_set_exact(envoy_type_matcher_v3_DoubleMatcher *msg, double value) {
-  UPB_WRITE_ONEOF(msg, double, UPB_SIZE(0, 0), value, UPB_SIZE(8, 8), 2);
+  UPB_WRITE_ONEOF(msg, double, UPB_SIZE(8, 8), value, UPB_SIZE(0, 0), 2);
 }
 
 extern const upb_MiniTable_File envoy_type_matcher_v3_number_proto_upb_file_layout;

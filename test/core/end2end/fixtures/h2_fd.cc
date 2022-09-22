@@ -16,6 +16,9 @@
  *
  */
 
+#include "absl/status/status.h"
+
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/port.h"
 
 // This test won't work except with posix sockets enabled
@@ -108,7 +111,7 @@ static grpc_end2end_test_config configs[] = {
 int main(int argc, char** argv) {
   size_t i;
 
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_end2end_tests_pre_init();
   grpc_init();
 

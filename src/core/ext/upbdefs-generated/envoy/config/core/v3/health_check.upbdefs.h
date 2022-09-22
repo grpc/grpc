@@ -21,6 +21,11 @@ extern "C" {
 
 extern _upb_DefPool_Init envoy_config_core_v3_health_check_proto_upbdefinit;
 
+UPB_INLINE const upb_MessageDef *envoy_config_core_v3_HealthStatusSet_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_core_v3_health_check_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.core.v3.HealthStatusSet");
+}
+
 UPB_INLINE const upb_MessageDef *envoy_config_core_v3_HealthCheck_getmsgdef(upb_DefPool *s) {
   _upb_DefPool_LoadDefInit(s, &envoy_config_core_v3_health_check_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "envoy.config.core.v3.HealthCheck");

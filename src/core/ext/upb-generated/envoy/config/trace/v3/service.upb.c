@@ -21,13 +21,13 @@ static const upb_MiniTable_Sub envoy_config_trace_v3_TraceServiceConfig_submsgs[
 };
 
 static const upb_MiniTable_Field envoy_config_trace_v3_TraceServiceConfig__fields[1] = {
-  {1, UPB_SIZE(4, 8), 1, 0, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {1, UPB_SIZE(4, 8), UPB_SIZE(1, 1), 0, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy_config_trace_v3_TraceServiceConfig_msginit = {
   &envoy_config_trace_v3_TraceServiceConfig_submsgs[0],
   &envoy_config_trace_v3_TraceServiceConfig__fields[0],
-  UPB_SIZE(8, 16), 1, upb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 16), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[1] = {

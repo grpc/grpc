@@ -19,6 +19,8 @@ package grpc.testing;
 
 option cc_enable_arenas = true;
 
+import "src/proto/grpc/testing/xds/v3/orca_load_report.proto";
+
 // Message to be echoed back serialized in trailer.
 message DebugInfo {
   repeated string stack_entries = 1;
@@ -51,6 +53,8 @@ message RequestParams {
   int32 backend_channel_idx = 16; // which backend to send request to
   bool echo_metadata_initially = 17;
   bool server_notify_client_when_started = 18;
+  xds.data.orca.v3.OrcaLoadReport backend_metrics = 19;
+  bool echo_host_from_authority_header = 20;
 }
 
 message EchoRequest {

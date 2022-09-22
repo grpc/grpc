@@ -20,19 +20,13 @@
 #include <grpc/support/port_platform.h>
 
 #include <memory>
-#include <set>
 #include <string>
 
 #include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "google/protobuf/any.upb.h"
+#include "upb/arena.h"
 #include "upb/def.h"
-
-#include <grpc/grpc.h>
-
-#include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/json/json.h"
+#include "upb/upb.h"
 
 namespace grpc_core {
 
@@ -44,7 +38,7 @@ class XdsClusterSpecifierPluginImpl {
   virtual void PopulateSymtab(upb_DefPool* symtab) const = 0;
 
   // Returns the LB policy config in JSON form.
-  virtual absl::StatusOr<Json> GenerateLoadBalancingPolicyConfig(
+  virtual absl::StatusOr<std::string> GenerateLoadBalancingPolicyConfig(
       upb_StringView serialized_plugin_config, upb_Arena* arena,
       upb_DefPool* symtab) const = 0;
 };
@@ -53,7 +47,7 @@ class XdsRouteLookupClusterSpecifierPlugin
     : public XdsClusterSpecifierPluginImpl {
   void PopulateSymtab(upb_DefPool* symtab) const override;
 
-  absl::StatusOr<Json> GenerateLoadBalancingPolicyConfig(
+  absl::StatusOr<std::string> GenerateLoadBalancingPolicyConfig(
       upb_StringView serialized_plugin_config, upb_Arena* arena,
       upb_DefPool* symtab) const override;
 };
@@ -66,10 +60,8 @@ class XdsClusterSpecifierPluginRegistry {
 
   static void PopulateSymtab(upb_DefPool* symtab);
 
-  static absl::StatusOr<std::string> GenerateLoadBalancingPolicyConfig(
-      absl::string_view proto_type_name,
-      upb_StringView serialized_plugin_config, upb_Arena* arena,
-      upb_DefPool* symtab);
+  static const XdsClusterSpecifierPluginImpl* GetPluginForType(
+      absl::string_view config_proto_type_name);
 
   // Global init and shutdown.
   static void Init();

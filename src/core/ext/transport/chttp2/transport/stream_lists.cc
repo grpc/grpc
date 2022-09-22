@@ -20,8 +20,10 @@
 
 #include <grpc/support/log.h>
 
-#include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
+#include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/bitset.h"
 
 static const char* stream_list_id_string(grpc_chttp2_stream_list_id id) {
   switch (id) {
@@ -56,7 +58,7 @@ static bool stream_list_pop(grpc_chttp2_transport* t,
   grpc_chttp2_stream* s = t->lists[id].head;
   if (s) {
     grpc_chttp2_stream* new_head = s->links[id].next;
-    GPR_ASSERT(s->included[id]);
+    GPR_ASSERT(s->included.is_set(id));
     if (new_head) {
       t->lists[id].head = new_head;
       new_head->links[id].prev = nullptr;
@@ -64,7 +66,7 @@ static bool stream_list_pop(grpc_chttp2_transport* t,
       t->lists[id].head = nullptr;
       t->lists[id].tail = nullptr;
     }
-    s->included[id] = 0;
+    s->included.clear(id);
   }
   *stream = s;
   if (s && GRPC_TRACE_FLAG_ENABLED(grpc_trace_http2_stream_state)) {
@@ -76,8 +78,8 @@ static bool stream_list_pop(grpc_chttp2_transport* t,
 
 static void stream_list_remove(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
                                grpc_chttp2_stream_list_id id) {
-  GPR_ASSERT(s->included[id]);
-  s->included[id] = 0;
+  GPR_ASSERT(s->included.is_set(id));
+  s->included.clear(id);
   if (s->links[id].prev) {
     s->links[id].prev->links[id].next = s->links[id].next;
   } else {
@@ -98,7 +100,7 @@ static void stream_list_remove(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
 static bool stream_list_maybe_remove(grpc_chttp2_transport* t,
                                      grpc_chttp2_stream* s,
                                      grpc_chttp2_stream_list_id id) {
-  if (s->included[id]) {
+  if (s->included.is_set(id)) {
     stream_list_remove(t, s, id);
     return true;
   } else {
@@ -110,7 +112,7 @@ static void stream_list_add_tail(grpc_chttp2_transport* t,
                                  grpc_chttp2_stream* s,
                                  grpc_chttp2_stream_list_id id) {
   grpc_chttp2_stream* old_tail;
-  GPR_ASSERT(!s->included[id]);
+  GPR_ASSERT(!s->included.is_set(id));
   old_tail = t->lists[id].tail;
   s->links[id].next = nullptr;
   s->links[id].prev = old_tail;
@@ -120,7 +122,7 @@ static void stream_list_add_tail(grpc_chttp2_transport* t,
     t->lists[id].head = s;
   }
   t->lists[id].tail = s;
-  s->included[id] = 1;
+  s->included.set(id);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_http2_stream_state)) {
     gpr_log(GPR_INFO, "%p[%d][%s]: add to %s", t, s->id,
             t->is_client ? "cli" : "svr", stream_list_id_string(id));
@@ -129,7 +131,7 @@ static void stream_list_add_tail(grpc_chttp2_transport* t,
 
 static bool stream_list_add(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
                             grpc_chttp2_stream_list_id id) {
-  if (s->included[id]) {
+  if (s->included.is_set(id)) {
     return false;
   }
   stream_list_add_tail(t, s, id);
@@ -185,7 +187,6 @@ void grpc_chttp2_list_remove_waiting_for_concurrency(grpc_chttp2_transport* t,
 
 void grpc_chttp2_list_add_stalled_by_transport(grpc_chttp2_transport* t,
                                                grpc_chttp2_stream* s) {
-  GPR_ASSERT(t->flow_control->flow_control_enabled());
   stream_list_add(t, s, GRPC_CHTTP2_LIST_STALLED_BY_TRANSPORT);
 }
 
@@ -201,7 +202,6 @@ void grpc_chttp2_list_remove_stalled_by_transport(grpc_chttp2_transport* t,
 
 void grpc_chttp2_list_add_stalled_by_stream(grpc_chttp2_transport* t,
                                             grpc_chttp2_stream* s) {
-  GPR_ASSERT(t->flow_control->flow_control_enabled());
   stream_list_add(t, s, GRPC_CHTTP2_LIST_STALLED_BY_STREAM);
 }
 

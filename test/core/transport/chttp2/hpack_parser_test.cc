@@ -18,15 +18,28 @@
 
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 
-#include <gtest/gtest.h>
+#include <stdlib.h>
 
+#include <memory>
+#include <string>
+
+#include "absl/memory/memory.h"
+#include "absl/strings/str_cat.h"
+#include "absl/types/optional.h"
+#include "gtest/gtest.h"
+
+#include <grpc/event_engine/memory_allocator.h>
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
+#include "src/core/lib/slice/slice.h"
 #include "test/core/util/parse_hexstring.h"
 #include "test/core/util/slice_splitter.h"
 #include "test/core/util/test_config.h"
@@ -93,7 +106,7 @@ class ParseTest : public ::testing::TestWithParam<Test> {
     for (i = 0; i < nslices; i++) {
       grpc_core::ExecCtx exec_ctx;
       auto err = parser_->Parse(slices[i], i == nslices - 1);
-      if (err != GRPC_ERROR_NONE) {
+      if (!GRPC_ERROR_IS_NONE(err)) {
         gpr_log(GPR_ERROR, "Unexpected parse error: %s",
                 grpc_error_std_string(err).c_str());
         abort();
@@ -291,7 +304,7 @@ INSTANTIATE_TEST_SUITE_P(
              }}));
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

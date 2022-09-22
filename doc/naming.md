@@ -46,11 +46,8 @@ Most gRPC implementations support the following URI schemes:
   - The name has no connection with filesystem pathnames.
   - No permissions will apply to the socket - any process/user may access the socket.
   - The underlying implementation of Abstract sockets uses a null byte ('\0')
-    as the first character; the implementation will prepend this null. Do not include 
+    as the first character; the implementation will prepend this null. Do not include
     the null in `abstract_path`.
-  - `abstract_path` cannot contain null bytes.
-    - TODO(https://github.com/grpc/grpc/issues/24638): Unix allows abstract socket names to contain null bytes, 
-      but this is not supported by the gRPC C-core implementation.
 
 The following schemes are supported by the gRPC C-core implementation,
 but may not be supported in other languages:

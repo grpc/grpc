@@ -16,13 +16,15 @@
  *
  */
 
-#include <stdio.h>
 #include <string.h>
 
-#include <grpc/support/alloc.h>
+#include <string>
+
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/status.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "test/core/end2end/end2end_tests.h"
@@ -137,7 +139,7 @@ static grpc_end2end_test_config configs[] = {
 
 int main(int argc, char** argv) {
   size_t i;
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_end2end_tests_pre_init();
   grpc_init();
 

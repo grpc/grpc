@@ -16,18 +16,17 @@
  *
  */
 
-#include <stdio.h>
-#include <string.h>
+#include <stdint.h>
 
-#include <grpc/byte_buffer.h>
-#include <grpc/support/alloc.h>
+#include <grpc/grpc.h>
+#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/slice.h>
 #include <grpc/support/log.h>
-#include <grpc/support/time.h>
 
 #include "src/core/lib/gpr/useful.h"
-#include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/tests/cancel_test_helpers.h"
+#include "test/core/util/test_config.h"
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
@@ -93,7 +92,6 @@ static void test_cancel_in_a_vacuum(grpc_end2end_test_config config,
   grpc_call* c;
   grpc_end2end_test_fixture f =
       begin_test(config, "test_cancel_in_a_vacuum", mode, nullptr, nullptr);
-  cq_verifier* v_client = cq_verifier_create(f.cq);
 
   gpr_timespec deadline = five_seconds_from_now();
   c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
@@ -105,7 +103,6 @@ static void test_cancel_in_a_vacuum(grpc_end2end_test_config config,
 
   grpc_call_unref(c);
 
-  cq_verifier_destroy(v_client);
   end_test(&f);
   config.tear_down_data(&f);
 }

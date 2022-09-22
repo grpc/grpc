@@ -21,9 +21,13 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stdint.h>
+
+#include <string>
 #include <vector>
 
 #include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
 
@@ -33,6 +37,12 @@ extern "C" {
 struct google_rpc_Status;
 struct upb_Arena;
 }
+
+#define RETURN_IF_NOT_OK(expr)          \
+  do {                                  \
+    const absl::Status status = (expr); \
+    if (!status.ok()) return status;    \
+  } while (0)
 
 namespace grpc_core {
 

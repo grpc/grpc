@@ -74,16 +74,11 @@ def create_jobspec(name,
 class CSharpPackage:
     """Builds C# packages."""
 
-    def __init__(self, platform, unity=False):
+    def __init__(self, platform):
         self.platform = platform
-        self.unity = unity
         self.labels = ['package', 'csharp', self.platform]
-        if unity:
-            self.name = 'csharp_package_unity_%s' % self.platform
-            self.labels += ['unity']
-        else:
-            self.name = 'csharp_package_nuget_%s' % self.platform
-            self.labels += ['nuget']
+        self.name = 'csharp_package_nuget_%s' % self.platform
+        self.labels += ['nuget']
 
     def pre_build_jobspecs(self):
         return []
@@ -95,7 +90,7 @@ class CSharpPackage:
                 os.getenv('GRPC_CSHARP_BUILD_SINGLE_PLATFORM_NUGET', '')
         }
 
-        build_script = 'src/csharp/build_unitypackage.sh' if self.unity else 'src/csharp/build_nuget.sh'
+        build_script = 'src/csharp/build_nuget.sh'
 
         if self.platform == 'linux':
             return create_docker_jobspec(
@@ -174,7 +169,6 @@ def targets():
     """Gets list of supported targets"""
     return [
         CSharpPackage('linux'),
-        CSharpPackage('linux', unity=True),
         CSharpPackage('macos'),
         CSharpPackage('windows'),
         RubyPackage(),

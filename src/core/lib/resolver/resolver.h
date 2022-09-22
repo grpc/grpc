@@ -19,10 +19,14 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <functional>
+#include <string>
+
+#include "absl/status/status.h"
 #include "absl/status/statusor.h"
 
-#include <grpc/impl/codegen/grpc_types.h>
-
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/resolver/server_address.h"
@@ -64,16 +68,18 @@ class Resolver : public InternallyRefCounted<Resolver> {
     std::string resolution_note;
     // TODO(roth): Before making this a public API, figure out a way to
     // avoid exposing channel args this way.
-    const grpc_channel_args* args = nullptr;
-
-    // TODO(roth): Remove everything below once grpc_channel_args is
-    // converted to a copyable and movable C++ object.
-    Result() = default;
-    ~Result();
-    Result(const Result& other);
-    Result(Result&& other) noexcept;
-    Result& operator=(const Result& other);
-    Result& operator=(Result&& other) noexcept;
+    ChannelArgs args;
+    // If non-null, this callback will be invoked when the LB policy has
+    // processed the result.  The status value passed to the callback
+    // indicates whether the LB policy accepted the update.  For polling
+    // resolvers, if the reported status is non-OK, then the resolver
+    // should put itself into backoff to retry the resolution later.
+    // The resolver impl must not call ResultHandler::ReportResult()
+    // again until after this callback has been invoked.
+    // The callback will be invoked within the channel's WorkSerializer.
+    // It may or may not be invoked before ResultHandler::ReportResult()
+    // returns, which is why it's a separate callback.
+    std::function<void(absl::Status)> result_health_callback;
   };
 
   /// A proxy object used by the resolver to return results to the
@@ -83,9 +89,6 @@ class Resolver : public InternallyRefCounted<Resolver> {
     virtual ~ResultHandler() {}
 
     /// Reports a result to the channel.
-    // TODO(roth): Add a mechanism for the resolver to get back a signal
-    // indicating if the result was accepted by the LB policy, so that it
-    // knows whether to go into backoff to retry to resolution.
     virtual void ReportResult(Result result) = 0;  // NOLINT
   };
 

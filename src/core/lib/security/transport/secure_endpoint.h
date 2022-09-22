@@ -21,12 +21,13 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
+
+#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/slice.h>
 
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/endpoint.h"
-
-struct tsi_frame_protector;
-struct tsi_zero_copy_grpc_protector;
 
 extern grpc_core::TraceFlag grpc_trace_secure_endpoint;
 

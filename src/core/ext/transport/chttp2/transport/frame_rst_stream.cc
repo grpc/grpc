@@ -20,16 +20,20 @@
 
 #include "src/core/ext/transport/chttp2/transport/frame_rst_stream.h"
 
+#include <stddef.h>
+
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
-#include <grpc/support/alloc.h>
+#include <grpc/slice_buffer.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/transport/chttp2/transport/frame.h"
+#include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
-#include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/transport/http2_errors.h"
+#include "src/core/lib/transport/metadata_batch.h"
 
 grpc_slice grpc_chttp2_rst_stream_create(uint32_t id, uint32_t code,
                                          grpc_transport_one_way_stats* stats) {

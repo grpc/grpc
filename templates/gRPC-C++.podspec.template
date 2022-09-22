@@ -146,6 +146,7 @@
       # build.
       'USE_HEADERMAP' => 'NO',
       'ALWAYS_SEARCH_USER_PATHS' => 'NO',
+      'CLANG_CXX_LANGUAGE_STANDARD' => 'c++14',
     }
 
     s.libraries = 'c++'
@@ -168,7 +169,7 @@
       ss.header_mappings_dir = '.'
       ss.dependency "#{s.name}/Interface", version
       ss.dependency 'gRPC-Core', version
-      abseil_version = '1.20211102.0'
+      abseil_version = '1.20220623.0'
       % for abseil_spec in grpcpp_abseil_specs:
       ss.dependency '${abseil_spec}', abseil_version
       % endfor
@@ -204,11 +205,9 @@
     end
 
     # patch include of openssl to openssl_grpc
-    # patch xxhash.h to silent the -Wdocumentation error
     s.prepare_command = <<-END_OF_COMMAND
       set -e
       find src/core -type f \\( -path '*.h' -or -path '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include <openssl/(.*)>;#if COCOAPODS==1\\\n  #include <openssl_grpc/\\1>\\\n#else\\\n  #include <openssl/\\1>\\\n#endif;g'
-      find third_party/xxhash  -type f -name xxhash.h -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;@param([^,]*),;@param\\1 ,;g'
-      find src/core/ third_party/xxhash/ -type f -name '*.grpc_back' -print0 | xargs -0 rm
+      find src/core/ -type f -name '*.grpc_back' -print0 | xargs -0 rm
     END_OF_COMMAND
   end

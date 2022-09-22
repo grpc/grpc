@@ -23,18 +23,34 @@
 
 #include <stddef.h>
 
-#include <grpc/support/time.h>
+#include <functional>
+#include <vector>
 
-#include "src/core/lib/channel/handshaker.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/status/statusor.h"
+#include "absl/types/optional.h"
+
+#include <grpc/grpc.h>
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/slice.h>
+
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/http/parser.h"
+#include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/polling_entity.h"
-#include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
-#include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/transport/handshaker.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 /* User agent this library reports */
@@ -47,6 +63,10 @@ typedef int (*grpc_httpcli_get_override)(const grpc_http_request* request,
                                          grpc_closure* on_complete,
                                          grpc_http_response* response);
 typedef int (*grpc_httpcli_post_override)(
+    const grpc_http_request* request, const char* host, const char* path,
+    const char* body_bytes, size_t body_size, grpc_core::Timestamp deadline,
+    grpc_closure* on_complete, grpc_http_response* response);
+typedef int (*grpc_httpcli_put_override)(
     const grpc_http_request* request, const char* host, const char* path,
     const char* body_bytes, size_t body_size, grpc_core::Timestamp deadline,
     grpc_closure* on_complete, grpc_http_response* response);
@@ -112,6 +132,32 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
       RefCountedPtr<grpc_channel_credentials> channel_creds)
       GRPC_MUST_USE_RESULT;
 
+  // Asynchronously perform a HTTP PUT.
+  // 'uri' is the target to make the request to. The scheme field is used to
+  //  determine the port number. The authority field is the target host. The
+  //  path field determines the path of the request. No other fields are used.
+  // 'args' are optional channel args for the request.
+  // 'pollent' indicates a grpc_polling_entity that is interested in the result
+  //   of the post - work on this entity may be used to progress the post
+  //   operation
+  // 'request' contains request parameters - these are caller owned and can be
+  //   destroyed once the call returns
+  // 'deadline' contains a deadline for the request (or gpr_inf_future)
+  // 'on_done' is a callback to report results to
+  // 'channel_creds' are used to configurably secure the connection.
+  //   For insecure requests, use grpc_insecure_credentials_create.
+  //   For secure requests, use CreateHttpRequestSSLCredentials().
+  //   nullptr is treated as insecure credentials.
+  //   TODO(apolcyn): disallow nullptr as a value after unsecure builds
+  //   are removed.
+  // Does not support ?var1=val1&var2=val2 in the path.
+  static OrphanablePtr<HttpRequest> Put(
+      URI uri, const grpc_channel_args* args, grpc_polling_entity* pollent,
+      const grpc_http_request* request, Timestamp deadline,
+      grpc_closure* on_done, grpc_http_response* response,
+      RefCountedPtr<grpc_channel_credentials> channel_creds)
+      GRPC_MUST_USE_RESULT;
+
   HttpRequest(URI uri, const grpc_slice& request_text,
               grpc_http_response* response, Timestamp deadline,
               const grpc_channel_args* channel_args, grpc_closure* on_done,
@@ -126,7 +172,8 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
   void Orphan() override;
 
   static void SetOverride(grpc_httpcli_get_override get,
-                          grpc_httpcli_post_override post);
+                          grpc_httpcli_post_override post,
+                          grpc_httpcli_put_override put);
 
   static void TestOnlySetOnHandshakeDoneIntercept(
       void (*intercept)(HttpRequest* req));
@@ -141,7 +188,8 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
 
   void DoRead() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     Ref().release();  // ref held by pending read
-    grpc_endpoint_read(ep_, &incoming_, &on_read_, /*urgent=*/true);
+    grpc_endpoint_read(ep_, &incoming_, &on_read_, /*urgent=*/true,
+                       /*min_progress_size=*/1);
   }
 
   static void OnRead(void* user_data, grpc_error_handle error) {
@@ -179,7 +227,8 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
 
   static void OnHandshakeDone(void* arg, grpc_error_handle error);
 
-  static void OnConnected(void* arg, grpc_error_handle error);
+  void DoHandshake(const grpc_resolved_address* addr)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   void NextAddress(grpc_error_handle error) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
@@ -195,7 +244,6 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
   grpc_closure continue_on_read_after_schedule_on_exec_ctx_;
   grpc_closure done_write_;
   grpc_closure continue_done_write_after_schedule_on_exec_ctx_;
-  grpc_closure connected_;
   grpc_endpoint* ep_ = nullptr;
   grpc_closure* on_done_;
   ResourceQuotaRefPtr resource_quota_;
@@ -206,7 +254,6 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
   RefCountedPtr<HandshakeManager> handshake_mgr_ ABSL_GUARDED_BY(mu_);
   bool own_endpoint_ ABSL_GUARDED_BY(mu_) = true;
   bool cancelled_ ABSL_GUARDED_BY(mu_) = false;
-  bool connecting_ ABSL_GUARDED_BY(mu_) = false;
   grpc_http_parser parser_ ABSL_GUARDED_BY(mu_);
   std::vector<grpc_resolved_address> addresses_ ABSL_GUARDED_BY(mu_);
   size_t next_address_ ABSL_GUARDED_BY(mu_) = 0;
@@ -215,7 +262,8 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
   grpc_slice_buffer incoming_ ABSL_GUARDED_BY(mu_);
   grpc_slice_buffer outgoing_ ABSL_GUARDED_BY(mu_);
   grpc_error_handle overall_error_ ABSL_GUARDED_BY(mu_) = GRPC_ERROR_NONE;
-  OrphanablePtr<DNSResolver::Request> dns_request_ ABSL_GUARDED_BY(mu_);
+  absl::optional<DNSResolver::TaskHandle> dns_request_handle_
+      ABSL_GUARDED_BY(mu_) = DNSResolver::kNullHandle;
 };
 
 }  // namespace grpc_core

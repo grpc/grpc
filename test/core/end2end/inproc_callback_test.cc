@@ -16,18 +16,20 @@
  *
  */
 
+#include <inttypes.h>
 #include <string.h>
 
+#include <grpc/grpc.h>
+#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
+#include <grpc/support/time.h>
 
 #include "src/core/ext/transport/inproc/inproc_transport.h"
-#include "src/core/lib/surface/channel.h"
-#include "src/core/lib/surface/completion_queue.h"
-#include "src/core/lib/surface/server.h"
 #include "test/core/end2end/end2end_tests.h"
-#include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
 typedef struct inproc_fixture_data {
@@ -413,7 +415,6 @@ static void simple_request_body(grpc_end2end_test_config /* config */,
   GPR_ASSERT(nullptr != strstr(error_string, "grpc_message"));
   GPR_ASSERT(nullptr != strstr(error_string, "grpc_status"));
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
-  GPR_ASSERT(0 == call_details.flags);
   GPR_ASSERT(was_cancelled == 0);
 
   grpc_slice_unref(details);
@@ -487,7 +488,7 @@ static grpc_end2end_test_config configs[] = {
 };
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
 
   simple_request_pre_init();

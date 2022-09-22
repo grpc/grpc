@@ -15,14 +15,14 @@
 #include "upb/port_def.inc"
 
 static const upb_MiniTable_Field xds_annotations_v3_FieldSecurityAnnotation__fields[2] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 8, kUpb_FieldMode_Scalar | (upb_FieldRep_1Byte << upb_FieldRep_Shift)},
-  {2, UPB_SIZE(1, 1), 0, 0, 8, kUpb_FieldMode_Scalar | (upb_FieldRep_1Byte << upb_FieldRep_Shift)},
+  {1, UPB_SIZE(0, 0), UPB_SIZE(0, 0), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(1, 1), UPB_SIZE(0, 0), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable xds_annotations_v3_FieldSecurityAnnotation_msginit = {
   NULL,
   &xds_annotations_v3_FieldSecurityAnnotation__fields[0],
-  UPB_SIZE(8, 8), 2, upb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(8, 8), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[1] = {
@@ -32,9 +32,9 @@ static const upb_MiniTable *messages_layout[1] = {
 extern const upb_MiniTable google_protobuf_FieldOptions_msginit;
 extern const upb_MiniTable xds_annotations_v3_FieldSecurityAnnotation_msginit;
 const upb_MiniTable_Extension xds_annotations_v3_security_ext = {
-  {99044135, 0, 0, 0, 11, kUpb_FieldMode_Scalar | upb_LabelFlags_IsExtension | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
-    &google_protobuf_FieldOptions_msginit,
-    {.submsg = &xds_annotations_v3_FieldSecurityAnnotation_msginit},
+  {99044135, UPB_SIZE(0, 0), UPB_SIZE(0, 0), 0, 11, kUpb_FieldMode_Scalar | kUpb_LabelFlags_IsExtension | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  &google_protobuf_FieldOptions_msginit,
+  {.submsg = &xds_annotations_v3_FieldSecurityAnnotation_msginit},
 
 };
 

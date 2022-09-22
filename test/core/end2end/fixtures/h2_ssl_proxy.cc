@@ -16,21 +16,23 @@
  *
  */
 
-#include <stdio.h>
 #include <string.h>
 
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gpr/tmpfile.h"
+#include "src/core/lib/gprpp/global_config_generic.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/load_file.h"
-#include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/ssl_utils_config.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/fixtures/proxy.h"
-#include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
 #define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
@@ -217,7 +219,7 @@ static grpc_end2end_test_config configs[] = {
 int main(int argc, char** argv) {
   size_t i;
 
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_end2end_tests_pre_init();
   GPR_GLOBAL_CONFIG_SET(grpc_default_ssl_roots_file_path, CA_CERT_PATH);
 

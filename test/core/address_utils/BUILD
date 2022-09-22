@@ -13,6 +13,7 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
+load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 
 licenses(["notice"])
 
@@ -38,6 +39,10 @@ grpc_cc_test(
 grpc_cc_test(
     name = "parse_address_test",
     srcs = ["parse_address_test.cc"],
+    external_deps = [
+        "absl/strings",
+        "gtest",
+    ],
     language = "C++",
     deps = [
         "//:gpr",
@@ -46,11 +51,26 @@ grpc_cc_test(
     ],
 )
 
+grpc_fuzzer(
+    name = "sockaddr_utils_fuzzer_test",
+    srcs = ["sockaddr_utils_fuzzer_test.cc"],
+    corpus = "sockaddr_uri_corpus",
+    tags = ["no_windows"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
 grpc_cc_test(
     name = "parse_address_with_named_scope_id_test",
     srcs = ["parse_address_with_named_scope_id_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     tags = ["no_windows"],
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",

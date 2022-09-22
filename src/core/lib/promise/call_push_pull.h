@@ -19,6 +19,10 @@
 
 #include <assert.h>
 
+#include <type_traits>
+
+#include "absl/types/variant.h"
+
 #include "src/core/lib/gprpp/bitset.h"
 #include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/promise/detail/promise_like.h"
@@ -75,7 +79,7 @@ class CallPushPull {
         if (IsStatusOk(*status)) {
           done_.set(kDonePush);
         } else {
-          return std::move(*status);
+          return Result(std::move(*status));
         }
       }
     }
@@ -97,7 +101,7 @@ class CallPushPull {
         if (IsStatusOk(*status)) {
           done_.set(kDonePull);
         } else {
-          return std::move(*status);
+          return Result(std::move(*status));
         }
       }
     }

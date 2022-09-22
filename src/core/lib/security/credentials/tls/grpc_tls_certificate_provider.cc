@@ -18,14 +18,33 @@
 
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 
-#include <openssl/ssl.h>
+#include <stdint.h>
+#include <time.h>
 
-#include <grpc/support/alloc.h>
+#include <algorithm>
+#include <utility>
+#include <vector>
+
+#include <openssl/bio.h>
+#include <openssl/crypto.h>
+#include <openssl/evp.h>
+#include <openssl/pem.h>
+#include <openssl/x509.h>
+
+#include "absl/status/status.h"
+
+#include <grpc/impl/codegen/gpr_types.h>
+#include <grpc/slice.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
+#include <grpc/support/time.h>
 
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/stat.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/surface/api_trace.h"
 
 namespace grpc_core {
@@ -71,8 +90,8 @@ StaticDataCertificateProvider::StaticDataCertificateProvider(
       identity_cert_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "Unable to get latest identity certificates.");
     }
-    if (root_cert_error != GRPC_ERROR_NONE ||
-        identity_cert_error != GRPC_ERROR_NONE) {
+    if (!GRPC_ERROR_IS_NONE(root_cert_error) ||
+        !GRPC_ERROR_IS_NONE(identity_cert_error)) {
       distributor_->SetErrorForCert(cert_name, root_cert_error,
                                     identity_cert_error);
     }
@@ -83,6 +102,11 @@ StaticDataCertificateProvider::~StaticDataCertificateProvider() {
   // Reset distributor's callback to make sure the callback won't be invoked
   // again after this object(provider) is destroyed.
   distributor_->SetWatchStatusCallback(nullptr);
+}
+
+UniqueTypeName StaticDataCertificateProvider::type() const {
+  static UniqueTypeName::Factory kFactory("StaticData");
+  return kFactory.Create();
 }
 
 namespace {
@@ -96,7 +120,7 @@ gpr_timespec TimeoutSecondsToDeadline(int64_t seconds) {
 
 FileWatcherCertificateProvider::FileWatcherCertificateProvider(
     std::string private_key_path, std::string identity_certificate_path,
-    std::string root_cert_path, unsigned int refresh_interval_sec)
+    std::string root_cert_path, int64_t refresh_interval_sec)
     : private_key_path_(std::move(private_key_path)),
       identity_certificate_path_(std::move(identity_certificate_path)),
       root_cert_path_(std::move(root_cert_path)),
@@ -161,8 +185,8 @@ FileWatcherCertificateProvider::FileWatcherCertificateProvider(
       identity_cert_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "Unable to get latest identity certificates.");
     }
-    if (root_cert_error != GRPC_ERROR_NONE ||
-        identity_cert_error != GRPC_ERROR_NONE) {
+    if (!GRPC_ERROR_IS_NONE(root_cert_error) ||
+        !GRPC_ERROR_IS_NONE(identity_cert_error)) {
       distributor_->SetErrorForCert(cert_name, root_cert_error,
                                     identity_cert_error);
     }
@@ -175,6 +199,11 @@ FileWatcherCertificateProvider::~FileWatcherCertificateProvider() {
   distributor_->SetWatchStatusCallback(nullptr);
   gpr_event_set(&shutdown_event_, reinterpret_cast<void*>(1));
   refresh_thread_.Join();
+}
+
+UniqueTypeName FileWatcherCertificateProvider::type() const {
+  static UniqueTypeName::Factory kFactory("FileWatcher");
+  return kFactory.Create();
 }
 
 void FileWatcherCertificateProvider::ForceUpdate() {
@@ -260,7 +289,7 @@ FileWatcherCertificateProvider::ReadRootCertificatesFromFile(
   grpc_slice root_slice = grpc_empty_slice();
   grpc_error_handle root_error =
       grpc_load_file(root_cert_full_path.c_str(), 0, &root_slice);
-  if (root_error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(root_error)) {
     gpr_log(GPR_ERROR, "Reading file %s failed: %s",
             root_cert_full_path.c_str(),
             grpc_error_std_string(root_error).c_str());
@@ -319,7 +348,7 @@ FileWatcherCertificateProvider::ReadIdentityKeyCertPairFromFiles(
     SliceWrapper key_slice, cert_slice;
     grpc_error_handle key_error =
         grpc_load_file(private_key_path.c_str(), 0, &key_slice.slice);
-    if (key_error != GRPC_ERROR_NONE) {
+    if (!GRPC_ERROR_IS_NONE(key_error)) {
       gpr_log(GPR_ERROR, "Reading file %s failed: %s. Start retrying...",
               private_key_path.c_str(),
               grpc_error_std_string(key_error).c_str());
@@ -328,7 +357,7 @@ FileWatcherCertificateProvider::ReadIdentityKeyCertPairFromFiles(
     }
     grpc_error_handle cert_error =
         grpc_load_file(identity_certificate_path.c_str(), 0, &cert_slice.slice);
-    if (cert_error != GRPC_ERROR_NONE) {
+    if (!GRPC_ERROR_IS_NONE(cert_error)) {
       gpr_log(GPR_ERROR, "Reading file %s failed: %s. Start retrying...",
               identity_certificate_path.c_str(),
               grpc_error_std_string(cert_error).c_str());
@@ -373,7 +402,8 @@ absl::StatusOr<bool> PrivateKeyAndCertificateMatch(
   if (cert_chain.empty()) {
     return absl::InvalidArgumentError("Certificate string is empty.");
   }
-  BIO* cert_bio = BIO_new_mem_buf(cert_chain.data(), cert_chain.size());
+  BIO* cert_bio =
+      BIO_new_mem_buf(cert_chain.data(), static_cast<int>(cert_chain.size()));
   if (cert_bio == nullptr) {
     return absl::InvalidArgumentError(
         "Conversion from certificate string to BIO failed.");
@@ -393,7 +423,7 @@ absl::StatusOr<bool> PrivateKeyAndCertificateMatch(
         "Extraction of public key from x.509 certificate failed.");
   }
   BIO* private_key_bio =
-      BIO_new_mem_buf(private_key.data(), private_key.size());
+      BIO_new_mem_buf(private_key.data(), static_cast<int>(private_key.size()));
   if (private_key_bio == nullptr) {
     EVP_PKEY_free(public_evp_pkey);
     return absl::InvalidArgumentError(

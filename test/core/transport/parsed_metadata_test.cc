@@ -16,10 +16,15 @@
 
 #include "src/core/lib/transport/parsed_metadata.h"
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
+#include <memory>
 
-#include "src/core/lib/slice/slice_internal.h"
+#include "absl/memory/memory.h"
+#include "absl/strings/numbers.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+
+#include <grpc/support/log.h>
+
 #include "src/core/lib/transport/metadata_batch.h"
 #include "test/core/util/test_config.h"
 
@@ -264,6 +269,6 @@ TEST(KeyValueTest, LongKey) {
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   return RUN_ALL_TESTS();
 };

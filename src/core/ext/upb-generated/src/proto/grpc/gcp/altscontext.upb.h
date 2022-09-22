@@ -56,35 +56,70 @@ UPB_INLINE grpc_gcp_AltsContext* grpc_gcp_AltsContext_parse_ex(const char* buf, 
   return ret;
 }
 UPB_INLINE char* grpc_gcp_AltsContext_serialize(const grpc_gcp_AltsContext* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &grpc_gcp_AltsContext_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &grpc_gcp_AltsContext_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* grpc_gcp_AltsContext_serialize_ex(const grpc_gcp_AltsContext* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &grpc_gcp_AltsContext_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &grpc_gcp_AltsContext_msginit, options, arena, &ptr, len);
+  return ptr;
+}
+UPB_INLINE void grpc_gcp_AltsContext_clear_application_protocol(const grpc_gcp_AltsContext* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 8), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
 }
 UPB_INLINE upb_StringView grpc_gcp_AltsContext_application_protocol(const grpc_gcp_AltsContext* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(8, 8), upb_StringView);
 }
+UPB_INLINE void grpc_gcp_AltsContext_clear_record_protocol(const grpc_gcp_AltsContext* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(16, 24), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
+}
 UPB_INLINE upb_StringView grpc_gcp_AltsContext_record_protocol(const grpc_gcp_AltsContext* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(16, 24), upb_StringView);
+}
+UPB_INLINE void grpc_gcp_AltsContext_clear_security_level(const grpc_gcp_AltsContext* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t) = 0;
 }
 UPB_INLINE int32_t grpc_gcp_AltsContext_security_level(const grpc_gcp_AltsContext* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t);
 }
+UPB_INLINE void grpc_gcp_AltsContext_clear_peer_service_account(const grpc_gcp_AltsContext* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(24, 40), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
+}
 UPB_INLINE upb_StringView grpc_gcp_AltsContext_peer_service_account(const grpc_gcp_AltsContext* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(24, 40), upb_StringView);
+}
+UPB_INLINE void grpc_gcp_AltsContext_clear_local_service_account(const grpc_gcp_AltsContext* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(32, 56), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
 }
 UPB_INLINE upb_StringView grpc_gcp_AltsContext_local_service_account(const grpc_gcp_AltsContext* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(32, 56), upb_StringView);
 }
-UPB_INLINE bool grpc_gcp_AltsContext_has_peer_rpc_versions(const grpc_gcp_AltsContext *msg) { return _upb_hasbit(msg, 1); }
+UPB_INLINE bool grpc_gcp_AltsContext_has_peer_rpc_versions(const grpc_gcp_AltsContext* msg) {
+  return _upb_hasbit(msg, 1);
+}
+UPB_INLINE void grpc_gcp_AltsContext_clear_peer_rpc_versions(const grpc_gcp_AltsContext* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(40, 72), const upb_Message*) = NULL;
+}
 UPB_INLINE const struct grpc_gcp_RpcProtocolVersions* grpc_gcp_AltsContext_peer_rpc_versions(const grpc_gcp_AltsContext* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(40, 72), const struct grpc_gcp_RpcProtocolVersions*);
 }
-UPB_INLINE bool grpc_gcp_AltsContext_has_peer_attributes(const grpc_gcp_AltsContext *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(44, 80)); }
-UPB_INLINE size_t grpc_gcp_AltsContext_peer_attributes_size(const grpc_gcp_AltsContext *msg) {return _upb_msg_map_size(msg, UPB_SIZE(44, 80)); }
-UPB_INLINE bool grpc_gcp_AltsContext_peer_attributes_get(const grpc_gcp_AltsContext *msg, upb_StringView key, upb_StringView *val) { return _upb_msg_map_get(msg, UPB_SIZE(44, 80), &key, 0, val, 0); }
-UPB_INLINE const grpc_gcp_AltsContext_PeerAttributesEntry* grpc_gcp_AltsContext_peer_attributes_next(const grpc_gcp_AltsContext *msg, size_t* iter) { return (const grpc_gcp_AltsContext_PeerAttributesEntry*)_upb_msg_map_next(msg, UPB_SIZE(44, 80), iter); }
+UPB_INLINE bool grpc_gcp_AltsContext_has_peer_attributes(const grpc_gcp_AltsContext* msg) {
+  return _upb_has_submsg_nohasbit(msg, UPB_SIZE(44, 80));
+}
+UPB_INLINE void grpc_gcp_AltsContext_clear_peer_attributes(const grpc_gcp_AltsContext* msg) {
+  _upb_array_detach(msg, UPB_SIZE(44, 80));
+}
+UPB_INLINE size_t grpc_gcp_AltsContext_peer_attributes_size(const grpc_gcp_AltsContext* msg) {
+  return _upb_msg_map_size(msg, UPB_SIZE(44, 80));
+}
+UPB_INLINE bool grpc_gcp_AltsContext_peer_attributes_get(const grpc_gcp_AltsContext* msg, upb_StringView key, upb_StringView* val) {
+  return _upb_msg_map_get(msg, UPB_SIZE(44, 80), &key, 0, val, 0);
+}
+UPB_INLINE const grpc_gcp_AltsContext_PeerAttributesEntry* grpc_gcp_AltsContext_peer_attributes_next(const grpc_gcp_AltsContext* msg, size_t* iter) {
+  return (const grpc_gcp_AltsContext_PeerAttributesEntry*)_upb_msg_map_next(msg, UPB_SIZE(44, 80), iter);
+}
 
 UPB_INLINE void grpc_gcp_AltsContext_set_application_protocol(grpc_gcp_AltsContext *msg, upb_StringView value) {
   *UPB_PTR_AT(msg, UPB_SIZE(8, 8), upb_StringView) = value;
@@ -105,7 +140,7 @@ UPB_INLINE void grpc_gcp_AltsContext_set_peer_rpc_versions(grpc_gcp_AltsContext 
   _upb_sethas(msg, 1);
   *UPB_PTR_AT(msg, UPB_SIZE(40, 72), struct grpc_gcp_RpcProtocolVersions*) = value;
 }
-UPB_INLINE struct grpc_gcp_RpcProtocolVersions* grpc_gcp_AltsContext_mutable_peer_rpc_versions(grpc_gcp_AltsContext *msg, upb_Arena *arena) {
+UPB_INLINE struct grpc_gcp_RpcProtocolVersions* grpc_gcp_AltsContext_mutable_peer_rpc_versions(grpc_gcp_AltsContext* msg, upb_Arena* arena) {
   struct grpc_gcp_RpcProtocolVersions* sub = (struct grpc_gcp_RpcProtocolVersions*)grpc_gcp_AltsContext_peer_rpc_versions(msg);
   if (sub == NULL) {
     sub = (struct grpc_gcp_RpcProtocolVersions*)_upb_Message_New(&grpc_gcp_RpcProtocolVersions_msginit, arena);
@@ -114,19 +149,25 @@ UPB_INLINE struct grpc_gcp_RpcProtocolVersions* grpc_gcp_AltsContext_mutable_pee
   }
   return sub;
 }
-UPB_INLINE void grpc_gcp_AltsContext_peer_attributes_clear(grpc_gcp_AltsContext *msg) { _upb_msg_map_clear(msg, UPB_SIZE(44, 80)); }
-UPB_INLINE bool grpc_gcp_AltsContext_peer_attributes_set(grpc_gcp_AltsContext *msg, upb_StringView key, upb_StringView val, upb_Arena *a) { return _upb_msg_map_set(msg, UPB_SIZE(44, 80), &key, 0, &val, 0, a); }
-UPB_INLINE bool grpc_gcp_AltsContext_peer_attributes_delete(grpc_gcp_AltsContext *msg, upb_StringView key) { return _upb_msg_map_delete(msg, UPB_SIZE(44, 80), &key, 0); }
-UPB_INLINE grpc_gcp_AltsContext_PeerAttributesEntry* grpc_gcp_AltsContext_peer_attributes_nextmutable(grpc_gcp_AltsContext *msg, size_t* iter) { return (grpc_gcp_AltsContext_PeerAttributesEntry*)_upb_msg_map_next(msg, UPB_SIZE(44, 80), iter); }
+UPB_INLINE void grpc_gcp_AltsContext_peer_attributes_clear(grpc_gcp_AltsContext* msg) { _upb_msg_map_clear(msg, UPB_SIZE(44, 80)); }
+UPB_INLINE bool grpc_gcp_AltsContext_peer_attributes_set(grpc_gcp_AltsContext* msg, upb_StringView key, upb_StringView val, upb_Arena* a) {
+  return _upb_msg_map_set(msg, UPB_SIZE(44, 80), &key, 0, &val, 0, a);
+}
+UPB_INLINE bool grpc_gcp_AltsContext_peer_attributes_delete(grpc_gcp_AltsContext* msg, upb_StringView key) {
+  return _upb_msg_map_delete(msg, UPB_SIZE(44, 80), &key, 0);
+}
+UPB_INLINE grpc_gcp_AltsContext_PeerAttributesEntry* grpc_gcp_AltsContext_peer_attributes_nextmutable(grpc_gcp_AltsContext* msg, size_t* iter) {
+  return (grpc_gcp_AltsContext_PeerAttributesEntry*)_upb_msg_map_next(msg, UPB_SIZE(44, 80), iter);
+}
 
 /* grpc.gcp.AltsContext.PeerAttributesEntry */
 
-UPB_INLINE upb_StringView grpc_gcp_AltsContext_PeerAttributesEntry_key(const grpc_gcp_AltsContext_PeerAttributesEntry *msg) {
+UPB_INLINE upb_StringView grpc_gcp_AltsContext_PeerAttributesEntry_key(const grpc_gcp_AltsContext_PeerAttributesEntry* msg) {
   upb_StringView ret;
   _upb_msg_map_key(msg, &ret, 0);
   return ret;
 }
-UPB_INLINE upb_StringView grpc_gcp_AltsContext_PeerAttributesEntry_value(const grpc_gcp_AltsContext_PeerAttributesEntry *msg) {
+UPB_INLINE upb_StringView grpc_gcp_AltsContext_PeerAttributesEntry_value(const grpc_gcp_AltsContext_PeerAttributesEntry* msg) {
   upb_StringView ret;
   _upb_msg_map_value(msg, &ret, 0);
   return ret;

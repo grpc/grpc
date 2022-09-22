@@ -16,35 +16,35 @@
 #include "upb/port_def.inc"
 
 static const upb_MiniTable_Sub envoy_type_v3_HashPolicy_submsgs[2] = {
-  {.submsg = &envoy_type_v3_HashPolicy_FilterState_msginit},
   {.submsg = &envoy_type_v3_HashPolicy_SourceIp_msginit},
+  {.submsg = &envoy_type_v3_HashPolicy_FilterState_msginit},
 };
 
 static const upb_MiniTable_Field envoy_type_v3_HashPolicy__fields[2] = {
-  {1, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 1, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
-  {2, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 0, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {1, UPB_SIZE(4, 8), UPB_SIZE(-1, -1), 0, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(4, 8), UPB_SIZE(-1, -1), 1, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy_type_v3_HashPolicy_msginit = {
   &envoy_type_v3_HashPolicy_submsgs[0],
   &envoy_type_v3_HashPolicy__fields[0],
-  UPB_SIZE(8, 16), 2, upb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(8, 16), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 const upb_MiniTable envoy_type_v3_HashPolicy_SourceIp_msginit = {
   NULL,
   NULL,
-  UPB_SIZE(0, 0), 0, upb_ExtMode_NonExtendable, 0, 255, 0,
+  UPB_SIZE(0, 0), 0, kUpb_ExtMode_NonExtendable, 0, 255, 0,
 };
 
 static const upb_MiniTable_Field envoy_type_v3_HashPolicy_FilterState__fields[1] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 9, kUpb_FieldMode_Scalar | (upb_FieldRep_StringView << upb_FieldRep_Shift)},
+  {1, UPB_SIZE(0, 0), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy_type_v3_HashPolicy_FilterState_msginit = {
   NULL,
   &envoy_type_v3_HashPolicy_FilterState__fields[0],
-  UPB_SIZE(8, 16), 1, upb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 16), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[3] = {

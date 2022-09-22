@@ -53,20 +53,37 @@ UPB_INLINE google_rpc_Status* google_rpc_Status_parse_ex(const char* buf, size_t
   return ret;
 }
 UPB_INLINE char* google_rpc_Status_serialize(const google_rpc_Status* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &google_rpc_Status_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &google_rpc_Status_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* google_rpc_Status_serialize_ex(const google_rpc_Status* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &google_rpc_Status_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &google_rpc_Status_msginit, options, arena, &ptr, len);
+  return ptr;
+}
+UPB_INLINE void google_rpc_Status_clear_code(const google_rpc_Status* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t) = 0;
 }
 UPB_INLINE int32_t google_rpc_Status_code(const google_rpc_Status* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t);
 }
+UPB_INLINE void google_rpc_Status_clear_message(const google_rpc_Status* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
+}
 UPB_INLINE upb_StringView google_rpc_Status_message(const google_rpc_Status* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView);
 }
-UPB_INLINE bool google_rpc_Status_has_details(const google_rpc_Status *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(12, 24)); }
-UPB_INLINE const struct google_protobuf_Any* const* google_rpc_Status_details(const google_rpc_Status *msg, size_t *len) { return (const struct google_protobuf_Any* const*)_upb_array_accessor(msg, UPB_SIZE(12, 24), len); }
+UPB_INLINE bool google_rpc_Status_has_details(const google_rpc_Status* msg) {
+  return _upb_has_submsg_nohasbit(msg, UPB_SIZE(12, 24));
+}
+UPB_INLINE void google_rpc_Status_clear_details(const google_rpc_Status* msg) {
+  _upb_array_detach(msg, UPB_SIZE(12, 24));
+}
+UPB_INLINE const struct google_protobuf_Any* const* google_rpc_Status_details(const google_rpc_Status* msg, size_t* len) {
+  return (const struct google_protobuf_Any* const*)_upb_array_accessor(msg, UPB_SIZE(12, 24), len);
+}
 
 UPB_INLINE void google_rpc_Status_set_code(google_rpc_Status *msg, int32_t value) {
   *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t) = value;
@@ -74,16 +91,15 @@ UPB_INLINE void google_rpc_Status_set_code(google_rpc_Status *msg, int32_t value
 UPB_INLINE void google_rpc_Status_set_message(google_rpc_Status *msg, upb_StringView value) {
   *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView) = value;
 }
-UPB_INLINE struct google_protobuf_Any** google_rpc_Status_mutable_details(google_rpc_Status *msg, size_t *len) {
+UPB_INLINE struct google_protobuf_Any** google_rpc_Status_mutable_details(google_rpc_Status* msg, size_t* len) {
   return (struct google_protobuf_Any**)_upb_array_mutable_accessor(msg, UPB_SIZE(12, 24), len);
 }
-UPB_INLINE struct google_protobuf_Any** google_rpc_Status_resize_details(google_rpc_Status *msg, size_t len, upb_Arena *arena) {
+UPB_INLINE struct google_protobuf_Any** google_rpc_Status_resize_details(google_rpc_Status* msg, size_t len, upb_Arena* arena) {
   return (struct google_protobuf_Any**)_upb_Array_Resize_accessor2(msg, UPB_SIZE(12, 24), len, UPB_SIZE(2, 3), arena);
 }
-UPB_INLINE struct google_protobuf_Any* google_rpc_Status_add_details(google_rpc_Status *msg, upb_Arena *arena) {
+UPB_INLINE struct google_protobuf_Any* google_rpc_Status_add_details(google_rpc_Status* msg, upb_Arena* arena) {
   struct google_protobuf_Any* sub = (struct google_protobuf_Any*)_upb_Message_New(&google_protobuf_Any_msginit, arena);
-  bool ok = _upb_Array_Append_accessor2(
-      msg, UPB_SIZE(12, 24), UPB_SIZE(2, 3), &sub, arena);
+  bool ok = _upb_Array_Append_accessor2(msg, UPB_SIZE(12, 24), UPB_SIZE(2, 3), &sub, arena);
   if (!ok) return NULL;
   return sub;
 }

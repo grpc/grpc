@@ -16,6 +16,8 @@
 
 #include "src/core/lib/resource_quota/thread_quota.h"
 
+#include <grpc/support/log.h>
+
 namespace grpc_core {
 
 ThreadQuota::ThreadQuota() = default;

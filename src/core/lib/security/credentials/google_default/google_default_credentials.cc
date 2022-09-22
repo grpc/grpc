@@ -22,9 +22,20 @@
 
 #include <string.h>
 
-#include "absl/strings/match.h"
-#include "absl/strings/strip.h"
+#include <map>
+#include <memory>
+#include <string>
 
+#include "absl/status/statusor.h"
+#include "absl/strings/match.h"
+#include "absl/strings/string_view.h"
+#include "absl/strings/strip.h"
+#include "absl/types/optional.h"
+
+#include <grpc/grpc_security.h>  // IWYU pragma: keep
+#include <grpc/grpc_security_constants.h>
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
@@ -32,23 +43,33 @@
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/env.h"
-#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/http/parser.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/iomgr/polling_entity.h"
-#include "src/core/lib/security/credentials/alts/alts_credentials.h"
+#include "src/core/lib/iomgr/pollset.h"
+#include "src/core/lib/json/json.h"
 #include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/external/external_account_credentials.h"
+#include "src/core/lib/security/credentials/jwt/json_token.h"
 #include "src/core/lib/security/credentials/jwt/jwt_credentials.h"
 #include "src/core/lib/security/credentials/oauth2/oauth2_credentials.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_string_helpers.h"
+#include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/surface/api_trace.h"
+#include "src/core/lib/transport/error_utils.h"
+#include "src/core/lib/uri/uri_parser.h"
 
 using grpc_core::Json;
 
@@ -83,19 +104,33 @@ struct metadata_server_detector {
   int success;
   grpc_http_response response;
 };
+
+namespace {
+
+bool IsXdsNonCfeCluster(absl::optional<absl::string_view> xds_cluster) {
+  if (!xds_cluster.has_value()) return false;
+  if (absl::StartsWith(*xds_cluster, "google_cfe_")) return false;
+  if (!absl::StartsWith(*xds_cluster, "xdstp:")) return true;
+  auto uri = grpc_core::URI::Parse(*xds_cluster);
+  if (!uri.ok()) return true;  // Shouldn't happen, but assume ALTS.
+  return uri->authority() != "traffic-director-c2p.xds.googleapis.com" ||
+         !absl::StartsWith(uri->path(),
+                           "/envoy.config.cluster.v3.Cluster/google_cfe_");
+}
+
+}  // namespace
+
 grpc_core::RefCountedPtr<grpc_channel_security_connector>
 grpc_google_default_channel_credentials::create_security_connector(
     grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
-    const char* target, const grpc_channel_args* args,
-    grpc_channel_args** new_args) {
-  const bool is_grpclb_load_balancer = grpc_channel_args_find_bool(
-      args, GRPC_ARG_ADDRESS_IS_GRPCLB_LOAD_BALANCER, false);
-  const bool is_backend_from_grpclb_load_balancer = grpc_channel_args_find_bool(
-      args, GRPC_ARG_ADDRESS_IS_BACKEND_FROM_GRPCLB_LOAD_BALANCER, false);
-  const char* xds_cluster =
-      grpc_channel_args_find_string(args, GRPC_ARG_XDS_CLUSTER_NAME);
+    const char* target, grpc_core::ChannelArgs* args) {
+  const bool is_grpclb_load_balancer =
+      args->GetBool(GRPC_ARG_ADDRESS_IS_GRPCLB_LOAD_BALANCER).value_or(false);
+  const bool is_backend_from_grpclb_load_balancer =
+      args->GetBool(GRPC_ARG_ADDRESS_IS_BACKEND_FROM_GRPCLB_LOAD_BALANCER)
+          .value_or(false);
   const bool is_xds_non_cfe_cluster =
-      xds_cluster != nullptr && !absl::StartsWith(xds_cluster, "google_cfe_");
+      IsXdsNonCfeCluster(args->GetString(GRPC_ARG_XDS_CLUSTER_NAME));
   const bool use_alts = is_grpclb_load_balancer ||
                         is_backend_from_grpclb_load_balancer ||
                         is_xds_non_cfe_cluster;
@@ -105,48 +140,38 @@ grpc_google_default_channel_credentials::create_security_connector(
     return nullptr;
   }
   grpc_core::RefCountedPtr<grpc_channel_security_connector> sc =
-      use_alts ? alts_creds_->create_security_connector(call_creds, target,
-                                                        args, new_args)
-               : ssl_creds_->create_security_connector(call_creds, target, args,
-                                                       new_args);
+      use_alts
+          ? alts_creds_->create_security_connector(call_creds, target, args)
+          : ssl_creds_->create_security_connector(call_creds, target, args);
   /* grpclb-specific channel args are removed from the channel args set
    * to ensure backends and fallback adresses will have the same set of channel
    * args. By doing that, it guarantees the connections to backends will not be
    * torn down and re-connected when switching in and out of fallback mode.
    */
   if (use_alts) {
-    static const char* args_to_remove[] = {
-        GRPC_ARG_ADDRESS_IS_GRPCLB_LOAD_BALANCER,
-        GRPC_ARG_ADDRESS_IS_BACKEND_FROM_GRPCLB_LOAD_BALANCER,
-    };
-    *new_args = grpc_channel_args_copy_and_add_and_remove(
-        args, args_to_remove, GPR_ARRAY_SIZE(args_to_remove), nullptr, 0);
+    *args = args->Remove(GRPC_ARG_ADDRESS_IS_GRPCLB_LOAD_BALANCER)
+                .Remove(GRPC_ARG_ADDRESS_IS_BACKEND_FROM_GRPCLB_LOAD_BALANCER);
   }
   return sc;
 }
 
-grpc_channel_args* grpc_google_default_channel_credentials::update_arguments(
-    grpc_channel_args* args) {
-  grpc_channel_args* updated = args;
-  if (grpc_channel_args_find(args, GRPC_ARG_DNS_ENABLE_SRV_QUERIES) ==
-      nullptr) {
-    grpc_arg new_srv_arg = grpc_channel_arg_integer_create(
-        const_cast<char*>(GRPC_ARG_DNS_ENABLE_SRV_QUERIES), true);
-    updated = grpc_channel_args_copy_and_add(args, &new_srv_arg, 1);
-    grpc_channel_args_destroy(args);
-  }
-  return updated;
+grpc_core::ChannelArgs
+grpc_google_default_channel_credentials::update_arguments(
+    grpc_core::ChannelArgs args) {
+  return args.SetIfUnset(GRPC_ARG_DNS_ENABLE_SRV_QUERIES, true);
 }
 
-const char* grpc_google_default_channel_credentials::type() const {
-  return "GoogleDefault";
+grpc_core::UniqueTypeName grpc_google_default_channel_credentials::type()
+    const {
+  static grpc_core::UniqueTypeName::Factory kFactory("GoogleDefault");
+  return kFactory.Create();
 }
 
 static void on_metadata_server_detection_http_response(
     void* user_data, grpc_error_handle error) {
   metadata_server_detector* detector =
       static_cast<metadata_server_detector*>(user_data);
-  if (error == GRPC_ERROR_NONE && detector->response.status == 200 &&
+  if (GRPC_ERROR_IS_NONE(error) && detector->response.status == 200 &&
       detector->response.hdr_count > 0) {
     /* Internet providers can return a generic response to all requests, so
        it is necessary to check that metadata header is present also. */
@@ -193,7 +218,7 @@ static int is_metadata_server_reachable() {
   GPR_ASSERT(uri.ok());  // params are hardcoded
   auto http_request = grpc_core::HttpRequest::Get(
       std::move(*uri), nullptr /* channel args */, &detector.pollent, &request,
-      grpc_core::ExecCtx::Get()->Now() + max_detection_delay,
+      grpc_core::Timestamp::Now() + max_detection_delay,
       GRPC_CLOSURE_CREATE(on_metadata_server_detection_http_response, &detector,
                           grpc_schedule_on_exec_ctx),
       &detector.response,
@@ -289,9 +314,15 @@ static grpc_error_handle create_default_creds_from_path(
     goto end;
   }
   error = grpc_load_file(creds_path.c_str(), 0, &creds_data);
-  if (error != GRPC_ERROR_NONE) goto end;
-  json = Json::Parse(grpc_core::StringViewFromSlice(creds_data), &error);
-  if (error != GRPC_ERROR_NONE) goto end;
+  if (!GRPC_ERROR_IS_NONE(error)) goto end;
+  {
+    auto json_or = Json::Parse(grpc_core::StringViewFromSlice(creds_data));
+    if (!json_or.ok()) {
+      error = absl_status_to_grpc_error(json_or.status());
+      goto end;
+    }
+    json = std::move(*json_or);
+  }
   if (json.type() != Json::Type::OBJECT) {
     error = grpc_error_set_str(
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Failed to parse JSON"),
@@ -335,7 +366,7 @@ static grpc_error_handle create_default_creds_from_path(
   result = grpc_core::ExternalAccountCredentials::Create(json, {}, &error);
 
 end:
-  GPR_ASSERT((result == nullptr) + (error == GRPC_ERROR_NONE) == 1);
+  GPR_ASSERT((result == nullptr) + (GRPC_ERROR_IS_NONE(error)) == 1);
   grpc_slice_unref_internal(creds_data);
   *creds = result;
   return error;
@@ -368,18 +399,17 @@ static grpc_core::RefCountedPtr<grpc_call_credentials> make_default_call_creds(
   grpc_error_handle err;
 
   /* First, try the environment variable. */
-  char* path_from_env = gpr_getenv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR);
-  if (path_from_env != nullptr) {
-    err = create_default_creds_from_path(path_from_env, &call_creds);
-    gpr_free(path_from_env);
-    if (err == GRPC_ERROR_NONE) return call_creds;
+  auto path_from_env = grpc_core::GetEnv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR);
+  if (path_from_env.has_value()) {
+    err = create_default_creds_from_path(*path_from_env, &call_creds);
+    if (GRPC_ERROR_IS_NONE(err)) return call_creds;
     *error = grpc_error_add_child(*error, err);
   }
 
   /* Then the well-known file. */
   err = create_default_creds_from_path(
       grpc_get_well_known_google_credentials_file_path(), &call_creds);
-  if (err == GRPC_ERROR_NONE) return call_creds;
+  if (GRPC_ERROR_IS_NONE(err)) return call_creds;
   *error = grpc_error_add_child(*error, err);
 
   update_tenancy();

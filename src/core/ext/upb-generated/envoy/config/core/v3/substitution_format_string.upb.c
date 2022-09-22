@@ -19,24 +19,24 @@
 #include "upb/port_def.inc"
 
 static const upb_MiniTable_Sub envoy_config_core_v3_SubstitutionFormatString_submsgs[3] = {
+  {.submsg = &google_protobuf_Struct_msginit},
   {.submsg = &envoy_config_core_v3_DataSource_msginit},
   {.submsg = &envoy_config_core_v3_TypedExtensionConfig_msginit},
-  {.submsg = &google_protobuf_Struct_msginit},
 };
 
 static const upb_MiniTable_Field envoy_config_core_v3_SubstitutionFormatString__fields[6] = {
-  {1, UPB_SIZE(16, 32), UPB_SIZE(-25, -49), 0, 9, kUpb_FieldMode_Scalar | (upb_FieldRep_StringView << upb_FieldRep_Shift)},
-  {2, UPB_SIZE(16, 32), UPB_SIZE(-25, -49), 2, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
-  {3, UPB_SIZE(0, 0), 0, 0, 8, kUpb_FieldMode_Scalar | (upb_FieldRep_1Byte << upb_FieldRep_Shift)},
-  {4, UPB_SIZE(4, 8), 0, 0, 9, kUpb_FieldMode_Scalar | (upb_FieldRep_StringView << upb_FieldRep_Shift)},
-  {5, UPB_SIZE(16, 32), UPB_SIZE(-25, -49), 0, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
-  {6, UPB_SIZE(12, 24), 0, 1, 11, kUpb_FieldMode_Array | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {1, UPB_SIZE(8, 8), UPB_SIZE(-5, -5), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(8, 8), UPB_SIZE(-5, -5), 0, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(0, 0), UPB_SIZE(0, 0), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
+  {4, UPB_SIZE(16, 24), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {5, UPB_SIZE(8, 8), UPB_SIZE(-5, -5), 1, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {6, UPB_SIZE(24, 40), UPB_SIZE(0, 0), 2, 11, kUpb_FieldMode_Array | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy_config_core_v3_SubstitutionFormatString_msginit = {
   &envoy_config_core_v3_SubstitutionFormatString_submsgs[0],
   &envoy_config_core_v3_SubstitutionFormatString__fields[0],
-  UPB_SIZE(32, 64), 6, upb_ExtMode_NonExtendable, 6, 255, 0,
+  UPB_SIZE(32, 48), 6, kUpb_ExtMode_NonExtendable, 6, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[1] = {

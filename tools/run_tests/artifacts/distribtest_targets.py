@@ -115,15 +115,14 @@ class CSharpDistribTest(object):
                 self.name,
                 'tools/dockerfile/distribtest/csharp_%s_%s' %
                 (self.docker_suffix, self.arch),
-                'test/distrib/csharp/run_distrib_test%s.sh' %
-                self.script_suffix,
-                copy_rel_path='test/distrib')
+                'tools/run_tests/artifacts/run_distribtest_csharp.sh',
+                copy_rel_path='tools/run_tests/artifacts')
         elif self.platform == 'macos':
-            return create_jobspec(self.name, [
-                'test/distrib/csharp/run_distrib_test%s.sh' % self.script_suffix
-            ],
-                                  environ={'EXTERNAL_GIT_ROOT': '../../../..'},
-                                  use_workspace=True)
+            return create_jobspec(
+                self.name,
+                ['tools/run_tests/artifacts/run_distribtest_csharp.sh'],
+                environ={'EXTERNAL_GIT_ROOT': '../../../..'},
+                use_workspace=True)
         elif self.platform == 'windows':
             if self.arch == 'x64':
                 # Use double leading / as the first occurrence gets removed by msys bash
@@ -134,12 +133,11 @@ class CSharpDistribTest(object):
                 }
             else:
                 environ = {'DISTRIBTEST_OUTPATH': 'DistribTest\\bin\\Debug'}
-            return create_jobspec(self.name, [
-                'test\\distrib\\csharp\\run_distrib_test%s.bat' %
-                self.script_suffix
-            ],
-                                  environ=environ,
-                                  use_workspace=True)
+            return create_jobspec(
+                self.name,
+                ['bash', 'tools/run_tests/artifacts/run_distribtest_csharp.sh'],
+                environ=environ,
+                use_workspace=True)
         else:
             raise Exception("Not supported yet.")
 
@@ -279,7 +277,7 @@ class PHP7DistribTest(object):
             return create_jobspec(
                 self.name, ['test/distrib/php/run_distrib_test_macos.sh'],
                 environ={'EXTERNAL_GIT_ROOT': '../../../..'},
-                timeout_seconds=15 * 60,
+                timeout_seconds=20 * 60,
                 use_workspace=True)
         else:
             raise Exception("Not supported yet.")
@@ -425,12 +423,10 @@ def targets():
         # Python
         PythonDistribTest('linux', 'x64', 'buster', presubmit=True),
         PythonDistribTest('linux', 'x86', 'buster', presubmit=True),
-        PythonDistribTest('linux', 'x64', 'centos7'),
         PythonDistribTest('linux', 'x64', 'fedora34'),
-        PythonDistribTest('linux', 'x64', 'opensuse'),
         PythonDistribTest('linux', 'x64', 'arch'),
         PythonDistribTest('linux', 'x64', 'alpine'),
-        PythonDistribTest('linux', 'x64', 'ubuntu1804'),
+        PythonDistribTest('linux', 'x64', 'ubuntu2004'),
         PythonDistribTest('linux', 'aarch64', 'python38_buster',
                           presubmit=True),
         PythonDistribTest('linux',
@@ -442,24 +438,20 @@ def targets():
                           presubmit=True),
         PythonDistribTest('linux', 'x86', 'buster', source=True,
                           presubmit=True),
-        PythonDistribTest('linux', 'x64', 'centos7', source=True),
         PythonDistribTest('linux', 'x64', 'fedora34', source=True),
         PythonDistribTest('linux', 'x64', 'arch', source=True),
-        PythonDistribTest('linux', 'x64', 'ubuntu1804', source=True),
+        PythonDistribTest('linux', 'x64', 'ubuntu2004', source=True),
         # Ruby
-        RubyDistribTest('linux', 'x64', 'stretch', ruby_version='ruby_2_5'),
-        RubyDistribTest('linux', 'x64', 'stretch', ruby_version='ruby_2_6'),
+        RubyDistribTest('linux',
+                        'x64',
+                        'stretch',
+                        ruby_version='ruby_2_6',
+                        source=True,
+                        presubmit=True),
         RubyDistribTest('linux',
                         'x64',
                         'stretch',
                         ruby_version='ruby_2_7',
-                        presubmit=True),
-        # TODO(apolcyn): add a ruby 3.0 test once protobuf adds support
-        RubyDistribTest('linux',
-                        'x64',
-                        'stretch',
-                        ruby_version='ruby_2_5',
-                        source=True,
                         presubmit=True),
         RubyDistribTest('linux', 'x64', 'centos7'),
         RubyDistribTest('linux', 'x64', 'ubuntu1604'),

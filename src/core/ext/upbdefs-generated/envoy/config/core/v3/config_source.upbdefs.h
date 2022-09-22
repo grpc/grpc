@@ -41,9 +41,19 @@ UPB_INLINE const upb_MessageDef *envoy_config_core_v3_RateLimitSettings_getmsgde
   return upb_DefPool_FindMessageByName(s, "envoy.config.core.v3.RateLimitSettings");
 }
 
+UPB_INLINE const upb_MessageDef *envoy_config_core_v3_PathConfigSource_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_core_v3_config_source_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.core.v3.PathConfigSource");
+}
+
 UPB_INLINE const upb_MessageDef *envoy_config_core_v3_ConfigSource_getmsgdef(upb_DefPool *s) {
   _upb_DefPool_LoadDefInit(s, &envoy_config_core_v3_config_source_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "envoy.config.core.v3.ConfigSource");
+}
+
+UPB_INLINE const upb_MessageDef *envoy_config_core_v3_ExtensionConfigSource_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_core_v3_config_source_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.core.v3.ExtensionConfigSource");
 }
 
 #ifdef __cplusplus

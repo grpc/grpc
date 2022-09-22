@@ -18,6 +18,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
+#include <grpc/support/time.h>
 
 #include "test/core/util/test_config.h"
 
@@ -29,7 +30,7 @@ int main(int argc, char** argv) {
 
   grpc_server* server;
 
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
 
   attr.version = 1;

@@ -34,29 +34,16 @@ fi
 
 cd /var/local/git/grpc
 
-# ensure the "reports" directory exists
-mkdir -p reports
+# whatever is written to the reports/ dir will be made available outside of the docker container.
+ln -s "${EXTERNAL_GIT_ROOT}/reports" reports
+# if OUTPUT_DIR is specified, whatever is written to ./${OUTPUT_DIR}/ will be made available outside of the docker container.
+if [ "${OUTPUT_DIR}" != "" ]
+then
+  ln -s "${EXTERNAL_GIT_ROOT}/${OUTPUT_DIR}" "${OUTPUT_DIR}"
+fi
 
 exit_code=0
 ${DOCKER_RUN_SCRIPT_COMMAND} || exit_code=$?
-
-# copy reports/ dir and files matching one of the patterns to the well-known
-# location of report dir mounted to the docker container.
-# --parents preserves the directory structure for files matched by find.
-cp -r reports/ /var/local/report_dir
-find . -name report.xml -exec cp --parents {} /var/local/report_dir \;
-find . -name sponge_log.xml -exec cp --parents {} /var/local/report_dir \;
-find . -name 'report_*.xml' -exec cp --parents {} /var/local/report_dir \;
-chmod -R ugo+r /var/local/report_dir || true
-
-# Move contents of OUTPUT_DIR from under the workspace to a directory that will be visible to the docker host.
-if [ "${OUTPUT_DIR}" != "" ]
-then
-  # create the directory if it doesn't exist yet.
-  mkdir -p "${OUTPUT_DIR}"
-  mv "${OUTPUT_DIR}" /var/local/output_dir || exit_code=$?
-  chmod -R ugo+r /var/local/output_dir || true
-fi
 
 if [ -x "$(command -v ccache)" ]
 then

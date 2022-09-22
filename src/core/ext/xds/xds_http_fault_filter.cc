@@ -18,28 +18,31 @@
 
 #include "src/core/ext/xds/xds_http_fault_filter.h"
 
-#include <string>
+#include <stdint.h>
 
+#include <map>
+#include <string>
+#include <utility>
+
+#include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 #include "envoy/extensions/filters/common/fault/v3/fault.upb.h"
 #include "envoy/extensions/filters/http/fault/v3/fault.upb.h"
 #include "envoy/extensions/filters/http/fault/v3/fault.upbdefs.h"
 #include "envoy/type/v3/percent.upb.h"
-#include "google/protobuf/any.upb.h"
-#include "google/protobuf/duration.upb.h"
 #include "google/protobuf/wrappers.upb.h"
 #include "upb/def.h"
 
-#include <grpc/grpc.h>
+#include <grpc/status.h>
 
 #include "src/core/ext/filters/fault_injection/fault_injection_filter.h"
+#include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/ext/xds/xds_http_filters.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/status_util.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/transport/status_conversion.h"
 
@@ -106,7 +109,7 @@ absl::StatusOr<Json> ParseHttpFaultIntoJson(
       int abort_http_status_code =
           envoy_extensions_filters_http_fault_v3_FaultAbort_http_status(
               fault_abort);
-      if (abort_http_status_code != 0 and abort_http_status_code != 200) {
+      if (abort_http_status_code != 0 && abort_http_status_code != 200) {
         abort_grpc_status_code =
             grpc_http2_status_to_grpc_status(abort_http_status_code);
       }
@@ -140,9 +143,8 @@ absl::StatusOr<Json> ParseHttpFaultIntoJson(
         envoy_extensions_filters_common_fault_v3_FaultDelay_fixed_delay(
             fault_delay);
     if (delay_duration != nullptr) {
-      fault_injection_policy_json["delay"] = absl::StrFormat(
-          "%d.%09ds", google_protobuf_Duration_seconds(delay_duration),
-          google_protobuf_Duration_nanos(delay_duration));
+      fault_injection_policy_json["delay"] =
+          ParseDuration(delay_duration).ToJsonString();
     }
     // Set the headers if we enabled header delay injection control
     if (envoy_extensions_filters_common_fault_v3_FaultDelay_has_header_delay(
@@ -198,19 +200,12 @@ XdsHttpFaultFilter::GenerateFilterConfigOverride(
 }
 
 const grpc_channel_filter* XdsHttpFaultFilter::channel_filter() const {
-  return &FaultInjectionFilterVtable;
+  return &FaultInjectionFilter::kFilter;
 }
 
-grpc_channel_args* XdsHttpFaultFilter::ModifyChannelArgs(
-    grpc_channel_args* args) const {
-  grpc_arg args_to_add = grpc_channel_arg_integer_create(
-      const_cast<char*>(GRPC_ARG_PARSE_FAULT_INJECTION_METHOD_CONFIG), 1);
-  grpc_channel_args* new_args =
-      grpc_channel_args_copy_and_add(args, &args_to_add, 1);
-  // Since this function takes the ownership of the channel args, it needs to
-  // deallocate the old ones to prevent leak.
-  grpc_channel_args_destroy(args);
-  return new_args;
+ChannelArgs XdsHttpFaultFilter::ModifyChannelArgs(
+    const ChannelArgs& args) const {
+  return args.Set(GRPC_ARG_PARSE_FAULT_INJECTION_METHOD_CONFIG, 1);
 }
 
 absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>

@@ -34,7 +34,10 @@ business of vending py_proto_library(), so we keep it private to upb.
 """
 
 load("@bazel_skylib//lib:paths.bzl", "paths")
-load("@rules_proto//proto:defs.bzl", "ProtoInfo")  # copybara:strip_for_google3
+
+# begin:github_only
+load("@rules_proto//proto:defs.bzl", "ProtoInfo")
+# end:github_only
 
 # Generic support code #########################################################
 
@@ -103,7 +106,7 @@ def _py_proto_library_aspect_impl(target, ctx):
     )
     outs_depset = depset(srcs)
     return [
-        PyInfo(transitive_sources = outs_depset)
+        PyInfo(transitive_sources = outs_depset),
     ]
 
 _py_proto_library_aspect = aspect(

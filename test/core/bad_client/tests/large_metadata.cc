@@ -81,7 +81,7 @@ static void verifier_fails(grpc_server* server, grpc_completion_queue* cq,
 int main(int argc, char** argv) {
   int i;
   grpc_init();
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
 
   // Test sending more metadata than the server will accept.
   std::vector<std::string> headers;

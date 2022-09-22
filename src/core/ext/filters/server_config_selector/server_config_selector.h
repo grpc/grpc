@@ -19,10 +19,20 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "absl/status/statusor.h"
+#include <memory>
 
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
+
+#include <grpc/impl/codegen/grpc_types.h>
+
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"
+#include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/service_config/service_config.h"
+#include "src/core/lib/service_config/service_config_parser.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
 namespace grpc_core {
@@ -61,9 +71,13 @@ class ServerConfigSelectorProvider
       std::unique_ptr<ServerConfigSelectorWatcher> watcher) = 0;
   virtual void CancelWatch() = 0;
 
+  static absl::string_view ChannelArgName();
+  static int ChannelArgsCompare(const ServerConfigSelectorProvider* a,
+                                const ServerConfigSelectorProvider* b) {
+    return QsortCompare(a, b);
+  }
+
   grpc_arg MakeChannelArg() const;
-  static RefCountedPtr<ServerConfigSelectorProvider> GetFromChannelArgs(
-      const grpc_channel_args& args);
 };
 
 }  // namespace grpc_core

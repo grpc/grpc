@@ -27,12 +27,11 @@
 
 #include "upb/msg.h"
 
+#include "upb/internal/table.h"
 #include "upb/msg_internal.h"
 #include "upb/port_def.inc"
-#include "upb/table_internal.h"
 
-/** upb_Message
- * *******************************************************************/
+/** upb_Message ***************************************************************/
 
 static const size_t overhead = sizeof(upb_Message_InternalData);
 
@@ -55,7 +54,7 @@ static bool realloc_internal(upb_Message* msg, size_t need, upb_Arena* arena) {
   upb_Message_Internal* in = upb_Message_Getinternal(msg);
   if (!in->internal) {
     /* No internal data, allocate from scratch. */
-    size_t size = UPB_MAX(128, _upb_Log2Ceilingsize(need + overhead));
+    size_t size = UPB_MAX(128, _upb_Log2CeilingSize(need + overhead));
     upb_Message_InternalData* internal = upb_Arena_Malloc(arena, size);
     if (!internal) return false;
     internal->size = size;
@@ -64,7 +63,7 @@ static bool realloc_internal(upb_Message* msg, size_t need, upb_Arena* arena) {
     in->internal = internal;
   } else if (in->internal->ext_begin - in->internal->unknown_end < need) {
     /* Internal data is too small, reallocate. */
-    size_t new_size = _upb_Log2Ceilingsize(in->internal->size + need);
+    size_t new_size = _upb_Log2CeilingSize(in->internal->size + need);
     size_t ext_bytes = in->internal->size - in->internal->ext_begin;
     size_t new_ext_begin = new_size - ext_bytes;
     upb_Message_InternalData* internal =
@@ -154,7 +153,7 @@ void _upb_Message_Clearext(upb_Message* msg,
   }
 }
 
-upb_Message_Extension* _upb_Message_Getorcreateext(
+upb_Message_Extension* _upb_Message_GetOrCreateExtension(
     upb_Message* msg, const upb_MiniTable_Extension* e, upb_Arena* arena) {
   upb_Message_Extension* ext =
       (upb_Message_Extension*)_upb_Message_Getext(msg, e);
@@ -310,7 +309,7 @@ bool _upb_mapsorter_pushmap(_upb_mapsorter* s, upb_FieldType key_type,
 
   /* Grow s->entries if necessary. */
   if (sorted->end > s->cap) {
-    s->cap = _upb_Log2Ceilingsize(sorted->end);
+    s->cap = _upb_Log2CeilingSize(sorted->end);
     s->entries = realloc(s->entries, s->cap * sizeof(*s->entries));
     if (!s->entries) return false;
   }
@@ -366,65 +365,4 @@ bool _upb_mapsorter_pushmap(_upb_mapsorter* s, upb_FieldType key_type,
 
   qsort(&s->entries[sorted->start], map_size, sizeof(*s->entries), compar);
   return true;
-}
-
-/** upb_ExtensionRegistry
- * ****************************************************************/
-
-struct upb_ExtensionRegistry {
-  upb_Arena* arena;
-  upb_strtable exts; /* Key is upb_MiniTable* concatenated with fieldnum. */
-};
-
-#define EXTREG_KEY_SIZE (sizeof(upb_MiniTable*) + sizeof(uint32_t))
-
-static void extreg_key(char* buf, const upb_MiniTable* l, uint32_t fieldnum) {
-  memcpy(buf, &l, sizeof(l));
-  memcpy(buf + sizeof(l), &fieldnum, sizeof(fieldnum));
-}
-
-upb_ExtensionRegistry* upb_ExtensionRegistry_New(upb_Arena* arena) {
-  upb_ExtensionRegistry* r = upb_Arena_Malloc(arena, sizeof(*r));
-  if (!r) return NULL;
-  r->arena = arena;
-  if (!upb_strtable_init(&r->exts, 8, arena)) return NULL;
-  return r;
-}
-
-bool _upb_extreg_add(upb_ExtensionRegistry* r,
-                     const upb_MiniTable_Extension** e, size_t count) {
-  char buf[EXTREG_KEY_SIZE];
-  const upb_MiniTable_Extension** start = e;
-  const upb_MiniTable_Extension** end = UPB_PTRADD(e, count);
-  for (; e < end; e++) {
-    const upb_MiniTable_Extension* ext = *e;
-    extreg_key(buf, ext->extendee, ext->field.number);
-    if (!upb_strtable_insert(&r->exts, buf, EXTREG_KEY_SIZE,
-                             upb_value_constptr(ext), r->arena)) {
-      goto failure;
-    }
-  }
-  return true;
-
-failure:
-  /* Back out the entries previously added. */
-  for (end = e, e = start; e < end; e++) {
-    const upb_MiniTable_Extension* ext = *e;
-    extreg_key(buf, ext->extendee, ext->field.number);
-    upb_strtable_remove2(&r->exts, buf, EXTREG_KEY_SIZE, NULL);
-  }
-  return false;
-}
-
-const upb_MiniTable_Extension* _upb_extreg_get(const upb_ExtensionRegistry* r,
-                                               const upb_MiniTable* l,
-                                               uint32_t num) {
-  char buf[EXTREG_KEY_SIZE];
-  upb_value v;
-  extreg_key(buf, l, num);
-  if (upb_strtable_lookup2(&r->exts, buf, EXTREG_KEY_SIZE, &v)) {
-    return upb_value_getconstptr(v);
-  } else {
-    return NULL;
-  }
 }

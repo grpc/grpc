@@ -60,25 +60,35 @@ UPB_INLINE envoy_type_http_v3_PathTransformation* envoy_type_http_v3_PathTransfo
   return ret;
 }
 UPB_INLINE char* envoy_type_http_v3_PathTransformation_serialize(const envoy_type_http_v3_PathTransformation* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_type_http_v3_PathTransformation_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_type_http_v3_PathTransformation_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_type_http_v3_PathTransformation_serialize_ex(const envoy_type_http_v3_PathTransformation* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_type_http_v3_PathTransformation_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_type_http_v3_PathTransformation_msginit, options, arena, &ptr, len);
+  return ptr;
 }
-UPB_INLINE bool envoy_type_http_v3_PathTransformation_has_operations(const envoy_type_http_v3_PathTransformation *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(0, 0)); }
-UPB_INLINE const envoy_type_http_v3_PathTransformation_Operation* const* envoy_type_http_v3_PathTransformation_operations(const envoy_type_http_v3_PathTransformation *msg, size_t *len) { return (const envoy_type_http_v3_PathTransformation_Operation* const*)_upb_array_accessor(msg, UPB_SIZE(0, 0), len); }
+UPB_INLINE bool envoy_type_http_v3_PathTransformation_has_operations(const envoy_type_http_v3_PathTransformation* msg) {
+  return _upb_has_submsg_nohasbit(msg, UPB_SIZE(0, 0));
+}
+UPB_INLINE void envoy_type_http_v3_PathTransformation_clear_operations(const envoy_type_http_v3_PathTransformation* msg) {
+  _upb_array_detach(msg, UPB_SIZE(0, 0));
+}
+UPB_INLINE const envoy_type_http_v3_PathTransformation_Operation* const* envoy_type_http_v3_PathTransformation_operations(const envoy_type_http_v3_PathTransformation* msg, size_t* len) {
+  return (const envoy_type_http_v3_PathTransformation_Operation* const*)_upb_array_accessor(msg, UPB_SIZE(0, 0), len);
+}
 
-UPB_INLINE envoy_type_http_v3_PathTransformation_Operation** envoy_type_http_v3_PathTransformation_mutable_operations(envoy_type_http_v3_PathTransformation *msg, size_t *len) {
+UPB_INLINE envoy_type_http_v3_PathTransformation_Operation** envoy_type_http_v3_PathTransformation_mutable_operations(envoy_type_http_v3_PathTransformation* msg, size_t* len) {
   return (envoy_type_http_v3_PathTransformation_Operation**)_upb_array_mutable_accessor(msg, UPB_SIZE(0, 0), len);
 }
-UPB_INLINE envoy_type_http_v3_PathTransformation_Operation** envoy_type_http_v3_PathTransformation_resize_operations(envoy_type_http_v3_PathTransformation *msg, size_t len, upb_Arena *arena) {
+UPB_INLINE envoy_type_http_v3_PathTransformation_Operation** envoy_type_http_v3_PathTransformation_resize_operations(envoy_type_http_v3_PathTransformation* msg, size_t len, upb_Arena* arena) {
   return (envoy_type_http_v3_PathTransformation_Operation**)_upb_Array_Resize_accessor2(msg, UPB_SIZE(0, 0), len, UPB_SIZE(2, 3), arena);
 }
-UPB_INLINE struct envoy_type_http_v3_PathTransformation_Operation* envoy_type_http_v3_PathTransformation_add_operations(envoy_type_http_v3_PathTransformation *msg, upb_Arena *arena) {
+UPB_INLINE struct envoy_type_http_v3_PathTransformation_Operation* envoy_type_http_v3_PathTransformation_add_operations(envoy_type_http_v3_PathTransformation* msg, upb_Arena* arena) {
   struct envoy_type_http_v3_PathTransformation_Operation* sub = (struct envoy_type_http_v3_PathTransformation_Operation*)_upb_Message_New(&envoy_type_http_v3_PathTransformation_Operation_msginit, arena);
-  bool ok = _upb_Array_Append_accessor2(
-      msg, UPB_SIZE(0, 0), UPB_SIZE(2, 3), &sub, arena);
+  bool ok = _upb_Array_Append_accessor2(msg, UPB_SIZE(0, 0), UPB_SIZE(2, 3), &sub, arena);
   if (!ok) return NULL;
   return sub;
 }
@@ -108,28 +118,47 @@ UPB_INLINE envoy_type_http_v3_PathTransformation_Operation* envoy_type_http_v3_P
   return ret;
 }
 UPB_INLINE char* envoy_type_http_v3_PathTransformation_Operation_serialize(const envoy_type_http_v3_PathTransformation_Operation* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_type_http_v3_PathTransformation_Operation_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_type_http_v3_PathTransformation_Operation_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_type_http_v3_PathTransformation_Operation_serialize_ex(const envoy_type_http_v3_PathTransformation_Operation* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_type_http_v3_PathTransformation_Operation_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_type_http_v3_PathTransformation_Operation_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 typedef enum {
   envoy_type_http_v3_PathTransformation_Operation_operation_specifier_normalize_path_rfc_3986 = 2,
   envoy_type_http_v3_PathTransformation_Operation_operation_specifier_merge_slashes = 3,
   envoy_type_http_v3_PathTransformation_Operation_operation_specifier_NOT_SET = 0
 } envoy_type_http_v3_PathTransformation_Operation_operation_specifier_oneofcases;
-UPB_INLINE envoy_type_http_v3_PathTransformation_Operation_operation_specifier_oneofcases envoy_type_http_v3_PathTransformation_Operation_operation_specifier_case(const envoy_type_http_v3_PathTransformation_Operation* msg) { return (envoy_type_http_v3_PathTransformation_Operation_operation_specifier_oneofcases)*UPB_PTR_AT(msg, UPB_SIZE(4, 8), int32_t); }
-
-UPB_INLINE bool envoy_type_http_v3_PathTransformation_Operation_has_normalize_path_rfc_3986(const envoy_type_http_v3_PathTransformation_Operation *msg) { return _upb_getoneofcase(msg, UPB_SIZE(4, 8)) == 2; }
-UPB_INLINE const envoy_type_http_v3_PathTransformation_Operation_NormalizePathRFC3986* envoy_type_http_v3_PathTransformation_Operation_normalize_path_rfc_3986(const envoy_type_http_v3_PathTransformation_Operation *msg) { return UPB_READ_ONEOF(msg, const envoy_type_http_v3_PathTransformation_Operation_NormalizePathRFC3986*, UPB_SIZE(0, 0), UPB_SIZE(4, 8), 2, NULL); }
-UPB_INLINE bool envoy_type_http_v3_PathTransformation_Operation_has_merge_slashes(const envoy_type_http_v3_PathTransformation_Operation *msg) { return _upb_getoneofcase(msg, UPB_SIZE(4, 8)) == 3; }
-UPB_INLINE const envoy_type_http_v3_PathTransformation_Operation_MergeSlashes* envoy_type_http_v3_PathTransformation_Operation_merge_slashes(const envoy_type_http_v3_PathTransformation_Operation *msg) { return UPB_READ_ONEOF(msg, const envoy_type_http_v3_PathTransformation_Operation_MergeSlashes*, UPB_SIZE(0, 0), UPB_SIZE(4, 8), 3, NULL); }
+UPB_INLINE envoy_type_http_v3_PathTransformation_Operation_operation_specifier_oneofcases envoy_type_http_v3_PathTransformation_Operation_operation_specifier_case(const envoy_type_http_v3_PathTransformation_Operation* msg) {
+  return (envoy_type_http_v3_PathTransformation_Operation_operation_specifier_oneofcases)*UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t);
+}
+UPB_INLINE bool envoy_type_http_v3_PathTransformation_Operation_has_normalize_path_rfc_3986(const envoy_type_http_v3_PathTransformation_Operation* msg) {
+  return _upb_getoneofcase(msg, UPB_SIZE(0, 0)) == 2;
+}
+UPB_INLINE void envoy_type_http_v3_PathTransformation_Operation_clear_normalize_path_rfc_3986(const envoy_type_http_v3_PathTransformation_Operation* msg) {
+  UPB_WRITE_ONEOF(msg, envoy_type_http_v3_PathTransformation_Operation_NormalizePathRFC3986*, UPB_SIZE(4, 8), 0, UPB_SIZE(0, 0), envoy_type_http_v3_PathTransformation_Operation_operation_specifier_NOT_SET);
+}
+UPB_INLINE const envoy_type_http_v3_PathTransformation_Operation_NormalizePathRFC3986* envoy_type_http_v3_PathTransformation_Operation_normalize_path_rfc_3986(const envoy_type_http_v3_PathTransformation_Operation* msg) {
+  return UPB_READ_ONEOF(msg, const envoy_type_http_v3_PathTransformation_Operation_NormalizePathRFC3986*, UPB_SIZE(4, 8), UPB_SIZE(0, 0), 2, NULL);
+}
+UPB_INLINE bool envoy_type_http_v3_PathTransformation_Operation_has_merge_slashes(const envoy_type_http_v3_PathTransformation_Operation* msg) {
+  return _upb_getoneofcase(msg, UPB_SIZE(0, 0)) == 3;
+}
+UPB_INLINE void envoy_type_http_v3_PathTransformation_Operation_clear_merge_slashes(const envoy_type_http_v3_PathTransformation_Operation* msg) {
+  UPB_WRITE_ONEOF(msg, envoy_type_http_v3_PathTransformation_Operation_MergeSlashes*, UPB_SIZE(4, 8), 0, UPB_SIZE(0, 0), envoy_type_http_v3_PathTransformation_Operation_operation_specifier_NOT_SET);
+}
+UPB_INLINE const envoy_type_http_v3_PathTransformation_Operation_MergeSlashes* envoy_type_http_v3_PathTransformation_Operation_merge_slashes(const envoy_type_http_v3_PathTransformation_Operation* msg) {
+  return UPB_READ_ONEOF(msg, const envoy_type_http_v3_PathTransformation_Operation_MergeSlashes*, UPB_SIZE(4, 8), UPB_SIZE(0, 0), 3, NULL);
+}
 
 UPB_INLINE void envoy_type_http_v3_PathTransformation_Operation_set_normalize_path_rfc_3986(envoy_type_http_v3_PathTransformation_Operation *msg, envoy_type_http_v3_PathTransformation_Operation_NormalizePathRFC3986* value) {
-  UPB_WRITE_ONEOF(msg, envoy_type_http_v3_PathTransformation_Operation_NormalizePathRFC3986*, UPB_SIZE(0, 0), value, UPB_SIZE(4, 8), 2);
+  UPB_WRITE_ONEOF(msg, envoy_type_http_v3_PathTransformation_Operation_NormalizePathRFC3986*, UPB_SIZE(4, 8), value, UPB_SIZE(0, 0), 2);
 }
-UPB_INLINE struct envoy_type_http_v3_PathTransformation_Operation_NormalizePathRFC3986* envoy_type_http_v3_PathTransformation_Operation_mutable_normalize_path_rfc_3986(envoy_type_http_v3_PathTransformation_Operation *msg, upb_Arena *arena) {
+UPB_INLINE struct envoy_type_http_v3_PathTransformation_Operation_NormalizePathRFC3986* envoy_type_http_v3_PathTransformation_Operation_mutable_normalize_path_rfc_3986(envoy_type_http_v3_PathTransformation_Operation* msg, upb_Arena* arena) {
   struct envoy_type_http_v3_PathTransformation_Operation_NormalizePathRFC3986* sub = (struct envoy_type_http_v3_PathTransformation_Operation_NormalizePathRFC3986*)envoy_type_http_v3_PathTransformation_Operation_normalize_path_rfc_3986(msg);
   if (sub == NULL) {
     sub = (struct envoy_type_http_v3_PathTransformation_Operation_NormalizePathRFC3986*)_upb_Message_New(&envoy_type_http_v3_PathTransformation_Operation_NormalizePathRFC3986_msginit, arena);
@@ -139,9 +168,9 @@ UPB_INLINE struct envoy_type_http_v3_PathTransformation_Operation_NormalizePathR
   return sub;
 }
 UPB_INLINE void envoy_type_http_v3_PathTransformation_Operation_set_merge_slashes(envoy_type_http_v3_PathTransformation_Operation *msg, envoy_type_http_v3_PathTransformation_Operation_MergeSlashes* value) {
-  UPB_WRITE_ONEOF(msg, envoy_type_http_v3_PathTransformation_Operation_MergeSlashes*, UPB_SIZE(0, 0), value, UPB_SIZE(4, 8), 3);
+  UPB_WRITE_ONEOF(msg, envoy_type_http_v3_PathTransformation_Operation_MergeSlashes*, UPB_SIZE(4, 8), value, UPB_SIZE(0, 0), 3);
 }
-UPB_INLINE struct envoy_type_http_v3_PathTransformation_Operation_MergeSlashes* envoy_type_http_v3_PathTransformation_Operation_mutable_merge_slashes(envoy_type_http_v3_PathTransformation_Operation *msg, upb_Arena *arena) {
+UPB_INLINE struct envoy_type_http_v3_PathTransformation_Operation_MergeSlashes* envoy_type_http_v3_PathTransformation_Operation_mutable_merge_slashes(envoy_type_http_v3_PathTransformation_Operation* msg, upb_Arena* arena) {
   struct envoy_type_http_v3_PathTransformation_Operation_MergeSlashes* sub = (struct envoy_type_http_v3_PathTransformation_Operation_MergeSlashes*)envoy_type_http_v3_PathTransformation_Operation_merge_slashes(msg);
   if (sub == NULL) {
     sub = (struct envoy_type_http_v3_PathTransformation_Operation_MergeSlashes*)_upb_Message_New(&envoy_type_http_v3_PathTransformation_Operation_MergeSlashes_msginit, arena);
@@ -176,11 +205,15 @@ UPB_INLINE envoy_type_http_v3_PathTransformation_Operation_NormalizePathRFC3986*
   return ret;
 }
 UPB_INLINE char* envoy_type_http_v3_PathTransformation_Operation_NormalizePathRFC3986_serialize(const envoy_type_http_v3_PathTransformation_Operation_NormalizePathRFC3986* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_type_http_v3_PathTransformation_Operation_NormalizePathRFC3986_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_type_http_v3_PathTransformation_Operation_NormalizePathRFC3986_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_type_http_v3_PathTransformation_Operation_NormalizePathRFC3986_serialize_ex(const envoy_type_http_v3_PathTransformation_Operation_NormalizePathRFC3986* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_type_http_v3_PathTransformation_Operation_NormalizePathRFC3986_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_type_http_v3_PathTransformation_Operation_NormalizePathRFC3986_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 
 
@@ -209,11 +242,15 @@ UPB_INLINE envoy_type_http_v3_PathTransformation_Operation_MergeSlashes* envoy_t
   return ret;
 }
 UPB_INLINE char* envoy_type_http_v3_PathTransformation_Operation_MergeSlashes_serialize(const envoy_type_http_v3_PathTransformation_Operation_MergeSlashes* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_type_http_v3_PathTransformation_Operation_MergeSlashes_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_type_http_v3_PathTransformation_Operation_MergeSlashes_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_type_http_v3_PathTransformation_Operation_MergeSlashes_serialize_ex(const envoy_type_http_v3_PathTransformation_Operation_MergeSlashes* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_type_http_v3_PathTransformation_Operation_MergeSlashes_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_type_http_v3_PathTransformation_Operation_MergeSlashes_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 
 

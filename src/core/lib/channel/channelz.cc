@@ -20,37 +20,27 @@
 
 #include "src/core/lib/channel/channelz.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
+#include <algorithm>
 #include <atomic>
+#include <memory>
 
+#include "absl/status/statusor.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/strip.h"
 
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
+#include <grpc/impl/codegen/gpr_types.h>
+#include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channelz_registry.h"
-#include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/gprpp/memory.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/iomgr/resolve_address.h"
-#include "src/core/lib/slice/b64.h"
-#include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/surface/channel.h"
-#include "src/core/lib/surface/server.h"
 #include "src/core/lib/transport/connectivity_state.h"
-#include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 namespace grpc_core {
@@ -428,42 +418,38 @@ namespace {
 void PopulateSocketAddressJson(Json::Object* json, const char* name,
                                const char* addr_str) {
   if (addr_str == nullptr) return;
-  Json::Object data;
   absl::StatusOr<URI> uri = URI::Parse(addr_str);
-  if (uri.ok() && (uri->scheme() == "ipv4" || uri->scheme() == "ipv6")) {
-    std::string host;
-    std::string port;
-    GPR_ASSERT(
-        SplitHostPort(absl::StripPrefix(uri->path(), "/"), &host, &port));
-    int port_num = -1;
-    if (!port.empty()) {
-      port_num = atoi(port.data());
-    }
-    grpc_resolved_address resolved_host;
-    grpc_error_handle error =
-        grpc_string_to_sockaddr(&resolved_host, host.c_str(), port_num);
-    if (error == GRPC_ERROR_NONE) {
-      std::string packed_host = grpc_sockaddr_get_packed_host(&resolved_host);
-      std::string b64_host = absl::Base64Escape(packed_host);
-      data["tcpip_address"] = Json::Object{
-          {"port", port_num},
-          {"ip_address", b64_host},
+  if (uri.ok()) {
+    if (uri->scheme() == "ipv4" || uri->scheme() == "ipv6") {
+      auto address = StringToSockaddr(absl::StripPrefix(uri->path(), "/"));
+      if (address.ok()) {
+        std::string packed_host = grpc_sockaddr_get_packed_host(&*address);
+        (*json)[name] = Json::Object{
+            {"tcpip_address",
+             Json::Object{
+                 {"port", grpc_sockaddr_get_port(&*address)},
+                 {"ip_address", absl::Base64Escape(packed_host)},
+             }},
+        };
+        return;
+      }
+    } else if (uri->scheme() == "unix") {
+      (*json)[name] = Json::Object{
+          {"uds_address",
+           Json::Object{
+               {"filename", uri->path()},
+           }},
       };
-      (*json)[name] = std::move(data);
       return;
     }
-    GRPC_ERROR_UNREF(error);
   }
-  if (uri.ok() && uri->scheme() == "unix") {
-    data["uds_address"] = Json::Object{
-        {"filename", uri->path()},
-    };
-  } else {
-    data["other_address"] = Json::Object{
-        {"name", addr_str},
-    };
-  }
-  (*json)[name] = std::move(data);
+  // Unknown address type.
+  (*json)[name] = Json::Object{
+      {"other_address",
+       Json::Object{
+           {"name", addr_str},
+       }},
+  };
 }
 
 }  // namespace

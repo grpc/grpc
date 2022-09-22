@@ -18,7 +18,10 @@
 
 #include <unistd.h>
 
-#include <grpc/support/string_util.h>
+#include <string>
+
+#include <grpc/grpc.h>
+#include <grpc/grpc_security_constants.h>
 
 #include "src/core/lib/gprpp/host_port.h"
 #include "test/core/end2end/end2end_tests.h"
@@ -60,7 +63,7 @@ static grpc_end2end_test_config configs[] = {
 
 int main(int argc, char** argv) {
   size_t i;
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_end2end_tests_pre_init();
   grpc_init();
   for (i = 0; i < sizeof(configs) / sizeof(*configs); i++) {

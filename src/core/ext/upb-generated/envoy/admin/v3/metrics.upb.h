@@ -56,30 +56,43 @@ UPB_INLINE envoy_admin_v3_SimpleMetric* envoy_admin_v3_SimpleMetric_parse_ex(con
   return ret;
 }
 UPB_INLINE char* envoy_admin_v3_SimpleMetric_serialize(const envoy_admin_v3_SimpleMetric* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_admin_v3_SimpleMetric_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_admin_v3_SimpleMetric_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_admin_v3_SimpleMetric_serialize_ex(const envoy_admin_v3_SimpleMetric* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_admin_v3_SimpleMetric_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_admin_v3_SimpleMetric_msginit, options, arena, &ptr, len);
+  return ptr;
+}
+UPB_INLINE void envoy_admin_v3_SimpleMetric_clear_type(const envoy_admin_v3_SimpleMetric* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t) = 0;
 }
 UPB_INLINE int32_t envoy_admin_v3_SimpleMetric_type(const envoy_admin_v3_SimpleMetric* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t);
 }
+UPB_INLINE void envoy_admin_v3_SimpleMetric_clear_value(const envoy_admin_v3_SimpleMetric* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(16, 24), uint64_t) = 0;
+}
 UPB_INLINE uint64_t envoy_admin_v3_SimpleMetric_value(const envoy_admin_v3_SimpleMetric* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(8, 8), uint64_t);
+  return *UPB_PTR_AT(msg, UPB_SIZE(16, 24), uint64_t);
+}
+UPB_INLINE void envoy_admin_v3_SimpleMetric_clear_name(const envoy_admin_v3_SimpleMetric* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
 }
 UPB_INLINE upb_StringView envoy_admin_v3_SimpleMetric_name(const envoy_admin_v3_SimpleMetric* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(16, 16), upb_StringView);
+  return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView);
 }
 
 UPB_INLINE void envoy_admin_v3_SimpleMetric_set_type(envoy_admin_v3_SimpleMetric *msg, int32_t value) {
   *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t) = value;
 }
 UPB_INLINE void envoy_admin_v3_SimpleMetric_set_value(envoy_admin_v3_SimpleMetric *msg, uint64_t value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(8, 8), uint64_t) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(16, 24), uint64_t) = value;
 }
 UPB_INLINE void envoy_admin_v3_SimpleMetric_set_name(envoy_admin_v3_SimpleMetric *msg, upb_StringView value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(16, 16), upb_StringView) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView) = value;
 }
 
 extern const upb_MiniTable_File envoy_admin_v3_metrics_proto_upb_file_layout;

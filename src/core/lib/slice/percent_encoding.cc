@@ -20,27 +20,21 @@
 
 #include "src/core/lib/slice/percent_encoding.h"
 
+#include <stdlib.h>
+
 #include <cstdint>
+#include <utility>
 
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/bitset.h"
-#include "src/core/lib/slice/slice_internal.h"
-
-#if __cplusplus > 201103l
-#define GRPC_PCTENCODE_CONSTEXPR_FN constexpr
-#define GRPC_PCTENCODE_CONSTEXPR_VALUE constexpr
-#else
-#define GRPC_PCTENCODE_CONSTEXPR_FN
-#define GRPC_PCTENCODE_CONSTEXPR_VALUE const
-#endif
 
 namespace grpc_core {
 
 namespace {
 class UrlTable : public BitSet<256> {
  public:
-  GRPC_PCTENCODE_CONSTEXPR_FN UrlTable() {
+  constexpr UrlTable() {
     for (int i = 'a'; i <= 'z'; i++) set(i);
     for (int i = 'A'; i <= 'Z'; i++) set(i);
     for (int i = '0'; i <= '9'; i++) set(i);
@@ -51,11 +45,11 @@ class UrlTable : public BitSet<256> {
   }
 };
 
-GRPC_PCTENCODE_CONSTEXPR_VALUE UrlTable g_url_table;
+constexpr UrlTable g_url_table;
 
 class CompatibleTable : public BitSet<256> {
  public:
-  GRPC_PCTENCODE_CONSTEXPR_FN CompatibleTable() {
+  constexpr CompatibleTable() {
     for (int i = 32; i <= 126; i++) {
       if (i == '%') continue;
       set(i);
@@ -63,7 +57,7 @@ class CompatibleTable : public BitSet<256> {
   }
 };
 
-GRPC_PCTENCODE_CONSTEXPR_VALUE CompatibleTable g_compatible_table;
+constexpr CompatibleTable g_compatible_table;
 
 // Map PercentEncodingType to a lookup table of legal symbols for that encoding.
 const BitSet<256>& LookupTableForPercentEncodingType(PercentEncodingType type) {

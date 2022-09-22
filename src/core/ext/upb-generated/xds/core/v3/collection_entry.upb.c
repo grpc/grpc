@@ -17,19 +17,19 @@
 #include "upb/port_def.inc"
 
 static const upb_MiniTable_Sub xds_core_v3_CollectionEntry_submsgs[2] = {
-  {.submsg = &xds_core_v3_CollectionEntry_InlineEntry_msginit},
   {.submsg = &xds_core_v3_ResourceLocator_msginit},
+  {.submsg = &xds_core_v3_CollectionEntry_InlineEntry_msginit},
 };
 
 static const upb_MiniTable_Field xds_core_v3_CollectionEntry__fields[2] = {
-  {1, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 1, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
-  {2, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 0, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {1, UPB_SIZE(4, 8), UPB_SIZE(-1, -1), 0, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(4, 8), UPB_SIZE(-1, -1), 1, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable xds_core_v3_CollectionEntry_msginit = {
   &xds_core_v3_CollectionEntry_submsgs[0],
   &xds_core_v3_CollectionEntry__fields[0],
-  UPB_SIZE(8, 16), 2, upb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(8, 16), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Sub xds_core_v3_CollectionEntry_InlineEntry_submsgs[1] = {
@@ -37,15 +37,15 @@ static const upb_MiniTable_Sub xds_core_v3_CollectionEntry_InlineEntry_submsgs[1
 };
 
 static const upb_MiniTable_Field xds_core_v3_CollectionEntry_InlineEntry__fields[3] = {
-  {1, UPB_SIZE(4, 8), 0, 0, 9, kUpb_FieldMode_Scalar | (upb_FieldRep_StringView << upb_FieldRep_Shift)},
-  {2, UPB_SIZE(12, 24), 0, 0, 9, kUpb_FieldMode_Scalar | (upb_FieldRep_StringView << upb_FieldRep_Shift)},
-  {3, UPB_SIZE(20, 40), 1, 0, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {1, UPB_SIZE(4, 8), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(12, 24), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(20, 40), UPB_SIZE(1, 1), 0, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable xds_core_v3_CollectionEntry_InlineEntry_msginit = {
   &xds_core_v3_CollectionEntry_InlineEntry_submsgs[0],
   &xds_core_v3_CollectionEntry_InlineEntry__fields[0],
-  UPB_SIZE(24, 48), 3, upb_ExtMode_NonExtendable, 3, 255, 0,
+  UPB_SIZE(24, 48), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[2] = {

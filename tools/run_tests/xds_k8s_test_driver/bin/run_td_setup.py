@@ -41,7 +41,7 @@ from framework.helpers import rand
 from framework.infrastructure import gcp
 from framework.infrastructure import k8s
 from framework.infrastructure import traffic_director
-from framework.test_app import server_app
+from framework.test_app.runners.k8s import k8s_xds_server_runner
 
 logger = logging.getLogger(__name__)
 # Flags
@@ -64,12 +64,16 @@ flags.adopt_module_key_flags(xds_k8s_flags)
 # Running outside of a test suite, so require explicit resource_suffix.
 flags.mark_flag_as_required("resource_suffix")
 
-KubernetesServerRunner = server_app.KubernetesServerRunner
+# Type aliases
+_KubernetesServerRunner = k8s_xds_server_runner.KubernetesServerRunner
 
 
-def main(argv):
+def main(argv):  # pylint: disable=too-many-locals,too-many-branches,too-many-statements
     if len(argv) > 1:
         raise app.UsageError('Too many command-line arguments.')
+
+    # Must be called before KubernetesApiManager or GcpApiManager init.
+    xds_flags.set_socket_default_timeout_from_flag()
 
     command = _CMD.value
     security_mode = _SECURITY.value
@@ -87,7 +91,7 @@ def main(argv):
     server_maintenance_port = xds_flags.SERVER_MAINTENANCE_PORT.value
     server_xds_host = xds_flags.SERVER_XDS_HOST.value
     server_xds_port = xds_flags.SERVER_XDS_PORT.value
-    server_namespace = KubernetesServerRunner.make_namespace_name(
+    server_namespace = _KubernetesServerRunner.make_namespace_name(
         resource_prefix, resource_suffix)
 
     gcp_api_manager = gcp.api.GcpApiManager()
@@ -107,7 +111,8 @@ def main(argv):
             resource_prefix=resource_prefix,
             resource_suffix=resource_suffix)
         if server_maintenance_port is None:
-            server_maintenance_port = KubernetesServerRunner.DEFAULT_SECURE_MODE_MAINTENANCE_PORT
+            server_maintenance_port = \
+                _KubernetesServerRunner.DEFAULT_SECURE_MODE_MAINTENANCE_PORT
 
     try:
         if command in ('create', 'cycle'):

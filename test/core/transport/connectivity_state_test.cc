@@ -18,13 +18,11 @@
 
 #include "src/core/lib/transport/connectivity_state.h"
 
-#include <string.h>
+#include "absl/strings/string_view.h"
+#include "gtest/gtest.h"
 
-#include <gtest/gtest.h>
+#include <grpc/grpc.h>
 
-#include <grpc/support/log.h>
-
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/util/test_config.h"
 #include "test/core/util/tracer_util.h"
 
@@ -233,7 +231,7 @@ TEST(StateTracker, DoNotNotifyShutdownAtDestructionIfAlreadyInShutdown) {
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   grpc_init();
   grpc_core::testing::grpc_tracer_enable_flag(

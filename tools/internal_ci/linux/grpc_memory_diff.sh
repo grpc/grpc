@@ -22,7 +22,4 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
 export DOCKERFILE_DIR=tools/dockerfile/test/cxx_debian11_x64
 export DOCKER_RUN_SCRIPT=tools/internal_ci/linux/grpc_memory_diff_in_docker.sh
-# The check_on_pr.py needs access to the key to post status on github PRs,
-# so we mount the keystore dir to the docker container.
-export EXTRA_DOCKER_ARGS="-v ${KOKORO_KEYSTORE_DIR}:/kokoro_keystore -e KOKORO_KEYSTORE_DIR=/kokoro_keystore"
 exec tools/run_tests/dockerize/build_and_run_docker.sh

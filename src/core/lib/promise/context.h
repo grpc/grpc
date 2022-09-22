@@ -17,7 +17,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <type_traits>
 #include <utility>
 
 #include "src/core/lib/gpr/tls.h"
@@ -29,7 +28,7 @@ namespace grpc_core {
 // not contain any members, only exist.
 // The reason for avoiding this is that context types each use a thread local.
 template <typename T>
-struct ContextType;
+struct ContextType;  // IWYU pragma: keep
 
 namespace promise_detail {
 
@@ -78,7 +77,7 @@ T* GetContext() {
 // Given a promise and a context, return a promise that has that context set.
 template <typename T, typename F>
 promise_detail::WithContext<T, F> WithContext(F f, T* context) {
-  return promise_detail::WithContext<T, F>(f, context);
+  return promise_detail::WithContext<T, F>(std::move(f), context);
 }
 
 }  // namespace grpc_core

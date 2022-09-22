@@ -29,6 +29,7 @@
 
 #include "absl/strings/str_cat.h"
 
+#include <grpc/event_engine/endpoint_config.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/log_windows.h>
@@ -37,7 +38,6 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/iocp_windows.h"
 #include "src/core/lib/iomgr/pollset_windows.h"
 #include "src/core/lib/iomgr/resolve_address.h"
@@ -45,9 +45,12 @@
 #include "src/core/lib/iomgr/socket_windows.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/iomgr/tcp_windows.h"
+#include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/slice/slice_internal.h"
 
 #define MIN_SAFE_ACCEPT_QUEUE_SIZE 100
+
+using ::grpc_event_engine::experimental::EndpointConfig;
 
 /* one listening port */
 typedef struct grpc_tcp_listener grpc_tcp_listener;
@@ -94,17 +97,14 @@ struct grpc_tcp_server {
 
   /* shutdown callback */
   grpc_closure* shutdown_complete;
-
-  grpc_channel_args* channel_args;
 };
 
 /* Public function. Allocates the proper data structures to hold a
    grpc_tcp_server. */
 static grpc_error_handle tcp_server_create(grpc_closure* shutdown_complete,
-                                           const grpc_channel_args* args,
+                                           const EndpointConfig& config,
                                            grpc_tcp_server** server) {
   grpc_tcp_server* s = (grpc_tcp_server*)gpr_malloc(sizeof(grpc_tcp_server));
-  s->channel_args = grpc_channel_args_copy(args);
   gpr_ref_init(&s->refs, 1);
   gpr_mu_init(&s->mu);
   s->active_ports = 0;
@@ -132,7 +132,6 @@ static void destroy_server(void* arg, grpc_error_handle error) {
     grpc_winsocket_destroy(sp->socket);
     gpr_free(sp);
   }
-  grpc_channel_args_destroy(s->channel_args);
   gpr_mu_destroy(&s->mu);
   gpr_free(s);
 }
@@ -197,7 +196,7 @@ static grpc_error_handle prepare_socket(SOCKET sock,
   int sockname_temp_len;
 
   error = grpc_tcp_prepare_socket(sock);
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     goto failure;
   }
 
@@ -224,12 +223,14 @@ static grpc_error_handle prepare_socket(SOCKET sock,
   return GRPC_ERROR_NONE;
 
 failure:
-  GPR_ASSERT(error != GRPC_ERROR_NONE);
+  GPR_ASSERT(!GRPC_ERROR_IS_NONE(error));
+  auto addr_uri = grpc_sockaddr_to_uri(addr);
   grpc_error_set_int(
-      grpc_error_set_str(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                             "Failed to prepare server socket", &error, 1),
-                         GRPC_ERROR_STR_TARGET_ADDRESS,
-                         grpc_sockaddr_to_uri(addr)),
+      grpc_error_set_str(
+          GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+              "Failed to prepare server socket", &error, 1),
+          GRPC_ERROR_STR_TARGET_ADDRESS,
+          addr_uri.ok() ? *addr_uri : addr_uri.status().ToString()),
       GRPC_ERROR_INT_FD, (intptr_t)sock);
   GRPC_ERROR_UNREF(error);
   if (sock != INVALID_SOCKET) closesocket(sock);
@@ -265,7 +266,7 @@ static grpc_error_handle start_accept_locked(grpc_tcp_listener* port) {
   }
 
   error = grpc_tcp_prepare_socket(sock);
-  if (error != GRPC_ERROR_NONE) goto failure;
+  if (!GRPC_ERROR_IS_NONE(error)) goto failure;
 
   /* Start the "accept" asynchronously. */
   success = port->AcceptEx(port->socket->socket, sock, port->addresses, 0,
@@ -290,7 +291,7 @@ static grpc_error_handle start_accept_locked(grpc_tcp_listener* port) {
   return error;
 
 failure:
-  GPR_ASSERT(error != GRPC_ERROR_NONE);
+  GPR_ASSERT(!GRPC_ERROR_IS_NONE(error));
   if (sock != INVALID_SOCKET) closesocket(sock);
   return error;
 }
@@ -314,7 +315,7 @@ static void on_accept(void* arg, grpc_error_handle error) {
   /* The general mechanism for shutting down is to queue abortion calls. While
      this is necessary in the read/write case, it's useless for the accept
      case. We only need to adjust the pending callback count */
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     gpr_log(GPR_INFO, "Skipping on_accept due to error: %s",
             grpc_error_std_string(error).c_str());
 
@@ -347,7 +348,13 @@ static void on_accept(void* arg, grpc_error_handle error) {
       peer_name.len = (size_t)peer_name_len;
       std::string peer_name_string;
       if (!err) {
-        peer_name_string = grpc_sockaddr_to_uri(&peer_name);
+        auto addr_uri = grpc_sockaddr_to_uri(&peer_name);
+        if (addr_uri.ok()) {
+          peer_name_string = addr_uri.value();
+        } else {
+          gpr_log(GPR_ERROR, "invalid peer name: %s",
+                  addr_uri.status().ToString().c_str());
+        }
       } else {
         char* utf8_message = gpr_format_message(WSAGetLastError());
         gpr_log(GPR_ERROR, "getpeername error: %s", utf8_message);
@@ -355,7 +362,7 @@ static void on_accept(void* arg, grpc_error_handle error) {
       }
       std::string fd_name = absl::StrCat("tcp_server:", peer_name_string);
       ep = grpc_tcp_create(grpc_winsocket_create(sock, fd_name.c_str()),
-                           sp->server->channel_args, peer_name_string);
+                           peer_name_string);
     } else {
       closesocket(sock);
     }
@@ -411,7 +418,7 @@ static grpc_error_handle add_socket_to_server(grpc_tcp_server* s, SOCKET sock,
   }
 
   error = prepare_socket(sock, addr, &port);
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     return error;
   }
 
@@ -503,7 +510,7 @@ static grpc_error_handle tcp_server_add_port(grpc_tcp_server* s,
 done:
   gpr_free(allocated_addr);
 
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     grpc_error_handle error_out =
         GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
             "Failed to add port to server", &error, 1);

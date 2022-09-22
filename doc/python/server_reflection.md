@@ -49,6 +49,61 @@ is working properly by using the [`grpc_cli` command line tool]:
   please refer to the [`grpc_cli` documentation] and the
   [C++ Server Reflection Tutorial].
 
+
+## Use Server Reflection in a Python client
+
+Server Reflection can be used by clients to get information about gRPC services
+at runtime. We've provided a descriptor database called
+[ProtoReflectionDescriptorDatabase](../../src/python/grpcio_reflection/v1alpha/proto_reflection_descriptor_database.h)
+which implements the
+[DescriptorDatabase](https://googleapis.dev/python/protobuf/latest/google/protobuf/descriptor_database.html#google.protobuf.descriptor_database.DescriptorDatabase)
+interface. It manages the communication between clients and reflection services
+and the storage of received information. Clients can use it as using a local
+descriptor database.
+
+- To use Server Reflection with ProtoReflectionDescriptorDatabase, first
+  initialize an instance with a channel.
+
+  ```Python
+  import grpc
+  from grpc_reflection.v1alpha.proto_reflection_descriptor_database import ProtoReflectionDescriptorDatabase
+
+  channel = grpc.secure_channel(server_address, creds)
+  reflection_db = ProtoReflectionDescriptorDatabase(channel)
+  ```
+
+- Then use this instance to feed a
+  [DescriptorPool](https://googleapis.dev/python/protobuf/latest/google/protobuf/descriptor_pool.html#google.protobuf.descriptor_pool.DescriptorPool).
+
+  ```Python
+  from google.protobuf.descriptor_pool import DescriptorPool
+
+  desc_pool = DescriptorPool(reflection_db)
+  ```
+
+- Example usage of this descriptor pool:
+
+  * Get Service/method descriptors.
+
+    ```Python
+    service_desc = desc_pool.FindServiceByName("helloworld.Greeter")
+    method_desc = service_desc.FindMethodByName("helloworld.Greeter.SayHello")
+    ```
+
+  * Get message type descriptors and create messages dynamically.
+
+    ```Python
+    request_desc = desc_pool.FindMessageTypeByName("helloworld.HelloRequest")
+    request = MessageFactory(desc_pool).GetPrototype(request_desc)()
+    ```
+
+- You can also use the Reflection Database to list all the services:
+
+    ```Python
+    services = reflection_db.get_services()
+    ```
+
+
 ## Additional Resources
 
 The [Server Reflection Protocol] provides detailed

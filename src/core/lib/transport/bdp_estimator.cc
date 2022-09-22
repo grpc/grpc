@@ -23,7 +23,7 @@
 #include <inttypes.h>
 #include <stdlib.h>
 
-#include "src/core/lib/gpr/useful.h"
+#include <algorithm>
 
 grpc_core::TraceFlag grpc_bdp_estimator_trace(false, "bdp_estimator");
 
@@ -80,7 +80,7 @@ Timestamp BdpEstimator::CompletePing() {
   }
   ping_state_ = PingState::UNSCHEDULED;
   accumulator_ = 0;
-  return ExecCtx::Get()->Now() + inter_ping_delay_;
+  return Timestamp::Now() + inter_ping_delay_;
 }
 
 }  // namespace grpc_core

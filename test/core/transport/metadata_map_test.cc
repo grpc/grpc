@@ -14,10 +14,23 @@
 // limitations under the License.
 //
 
-#include <gtest/gtest.h>
+#include <stdlib.h>
 
+#include <memory>
+#include <string>
+
+#include "absl/strings/str_cat.h"
+#include "absl/types/optional.h"
+#include "gtest/gtest.h"
+
+#include <grpc/event_engine/memory_allocator.h>
+
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
-#include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "test/core/util/test_config.h"
 
@@ -125,11 +138,24 @@ TEST(MetadataMapTest, NonEncodableTrait) {
   EXPECT_EQ(map.DebugString(), "GrpcStreamNetworkState: not sent on wire");
 }
 
+TEST(DebugStringBuilderTest, AddOne) {
+  metadata_detail::DebugStringBuilder b;
+  b.Add("a", "b");
+  EXPECT_EQ(b.TakeOutput(), "a: b");
+}
+
+TEST(DebugStringBuilderTest, AddTwo) {
+  metadata_detail::DebugStringBuilder b;
+  b.Add("a", "b");
+  b.Add("c", "d");
+  EXPECT_EQ(b.TakeOutput(), "a: b, c: d");
+}
+
 }  // namespace testing
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   return RUN_ALL_TESTS();
 };

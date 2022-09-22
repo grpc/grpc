@@ -16,7 +16,8 @@
 
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 
-#include <grpc/support/alloc.h>
+#include <algorithm>
+#include <utility>
 
 namespace grpc_core {
 
@@ -30,13 +31,13 @@ ChannelArgsPreconditioning ChannelArgsPreconditioning::Builder::Build() {
   return preconditioning;
 }
 
-const grpc_channel_args* ChannelArgsPreconditioning::PreconditionChannelArgs(
+ChannelArgs ChannelArgsPreconditioning::PreconditionChannelArgs(
     const grpc_channel_args* args) const {
   ChannelArgs channel_args = ChannelArgsBuiltinPrecondition(args);
   for (auto& stage : stages_) {
     channel_args = stage(std::move(channel_args));
   }
-  return channel_args.ToC();
+  return channel_args;
 }
 
 }  // namespace grpc_core

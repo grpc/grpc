@@ -18,22 +18,22 @@
 #include "upb/port_def.inc"
 
 static const upb_MiniTable_Sub envoy_config_route_v3_ScopedRouteConfiguration_submsgs[2] = {
-  {.submsg = &envoy_config_route_v3_RouteConfiguration_msginit},
   {.submsg = &envoy_config_route_v3_ScopedRouteConfiguration_Key_msginit},
+  {.submsg = &envoy_config_route_v3_RouteConfiguration_msginit},
 };
 
 static const upb_MiniTable_Field envoy_config_route_v3_ScopedRouteConfiguration__fields[5] = {
-  {1, UPB_SIZE(4, 8), 0, 0, 9, kUpb_FieldMode_Scalar | (upb_FieldRep_StringView << upb_FieldRep_Shift)},
-  {2, UPB_SIZE(12, 24), 0, 0, 9, kUpb_FieldMode_Scalar | (upb_FieldRep_StringView << upb_FieldRep_Shift)},
-  {3, UPB_SIZE(20, 40), 1, 1, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
-  {4, UPB_SIZE(1, 1), 0, 0, 8, kUpb_FieldMode_Scalar | (upb_FieldRep_1Byte << upb_FieldRep_Shift)},
-  {5, UPB_SIZE(24, 48), 2, 0, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {1, UPB_SIZE(4, 8), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(12, 24), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(20, 40), UPB_SIZE(1, 1), 0, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {4, UPB_SIZE(1, 1), UPB_SIZE(0, 0), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
+  {5, UPB_SIZE(24, 48), UPB_SIZE(2, 2), 1, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy_config_route_v3_ScopedRouteConfiguration_msginit = {
   &envoy_config_route_v3_ScopedRouteConfiguration_submsgs[0],
   &envoy_config_route_v3_ScopedRouteConfiguration__fields[0],
-  UPB_SIZE(32, 64), 5, upb_ExtMode_NonExtendable, 5, 255, 0,
+  UPB_SIZE(32, 56), 5, kUpb_ExtMode_NonExtendable, 5, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_route_v3_ScopedRouteConfiguration_Key_submsgs[1] = {
@@ -41,23 +41,23 @@ static const upb_MiniTable_Sub envoy_config_route_v3_ScopedRouteConfiguration_Ke
 };
 
 static const upb_MiniTable_Field envoy_config_route_v3_ScopedRouteConfiguration_Key__fields[1] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 11, kUpb_FieldMode_Array | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {1, UPB_SIZE(0, 0), UPB_SIZE(0, 0), 0, 11, kUpb_FieldMode_Array | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy_config_route_v3_ScopedRouteConfiguration_Key_msginit = {
   &envoy_config_route_v3_ScopedRouteConfiguration_Key_submsgs[0],
   &envoy_config_route_v3_ScopedRouteConfiguration_Key__fields[0],
-  UPB_SIZE(8, 8), 1, upb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable_Field envoy_config_route_v3_ScopedRouteConfiguration_Key_Fragment__fields[1] = {
-  {1, UPB_SIZE(0, 0), UPB_SIZE(-9, -17), 0, 9, kUpb_FieldMode_Scalar | (upb_FieldRep_StringView << upb_FieldRep_Shift)},
+  {1, UPB_SIZE(4, 8), UPB_SIZE(-1, -1), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy_config_route_v3_ScopedRouteConfiguration_Key_Fragment_msginit = {
   NULL,
   &envoy_config_route_v3_ScopedRouteConfiguration_Key_Fragment__fields[0],
-  UPB_SIZE(16, 32), 1, upb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[3] = {

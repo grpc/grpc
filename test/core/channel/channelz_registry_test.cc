@@ -44,9 +44,7 @@ namespace testing {
 class ChannelzRegistryTest : public ::testing::Test {
  protected:
   // ensure we always have a fresh registry for tests.
-  void SetUp() override { ChannelzRegistry::Init(); }
-
-  void TearDown() override { ChannelzRegistry::Shutdown(); }
+  void SetUp() override { ChannelzRegistry::TestOnlyReset(); }
 };
 
 static RefCountedPtr<BaseNode> CreateTestNode() {
@@ -144,7 +142,7 @@ TEST_F(ChannelzRegistryTest, TestUnregistration) {
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   int ret = RUN_ALL_TESTS();
   return ret;

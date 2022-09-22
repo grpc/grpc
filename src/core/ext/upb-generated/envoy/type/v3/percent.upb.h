@@ -60,11 +60,18 @@ UPB_INLINE envoy_type_v3_Percent* envoy_type_v3_Percent_parse_ex(const char* buf
   return ret;
 }
 UPB_INLINE char* envoy_type_v3_Percent_serialize(const envoy_type_v3_Percent* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_type_v3_Percent_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_type_v3_Percent_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_type_v3_Percent_serialize_ex(const envoy_type_v3_Percent* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_type_v3_Percent_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_type_v3_Percent_msginit, options, arena, &ptr, len);
+  return ptr;
+}
+UPB_INLINE void envoy_type_v3_Percent_clear_value(const envoy_type_v3_Percent* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), double) = 0;
 }
 UPB_INLINE double envoy_type_v3_Percent_value(const envoy_type_v3_Percent* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), double);
@@ -99,24 +106,34 @@ UPB_INLINE envoy_type_v3_FractionalPercent* envoy_type_v3_FractionalPercent_pars
   return ret;
 }
 UPB_INLINE char* envoy_type_v3_FractionalPercent_serialize(const envoy_type_v3_FractionalPercent* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_type_v3_FractionalPercent_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_type_v3_FractionalPercent_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_type_v3_FractionalPercent_serialize_ex(const envoy_type_v3_FractionalPercent* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_type_v3_FractionalPercent_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_type_v3_FractionalPercent_msginit, options, arena, &ptr, len);
+  return ptr;
+}
+UPB_INLINE void envoy_type_v3_FractionalPercent_clear_numerator(const envoy_type_v3_FractionalPercent* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), uint32_t) = 0;
 }
 UPB_INLINE uint32_t envoy_type_v3_FractionalPercent_numerator(const envoy_type_v3_FractionalPercent* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(4, 4), uint32_t);
+  return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), uint32_t);
+}
+UPB_INLINE void envoy_type_v3_FractionalPercent_clear_denominator(const envoy_type_v3_FractionalPercent* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t) = 0;
 }
 UPB_INLINE int32_t envoy_type_v3_FractionalPercent_denominator(const envoy_type_v3_FractionalPercent* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t);
+  return *UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t);
 }
 
 UPB_INLINE void envoy_type_v3_FractionalPercent_set_numerator(envoy_type_v3_FractionalPercent *msg, uint32_t value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(4, 4), uint32_t) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), uint32_t) = value;
 }
 UPB_INLINE void envoy_type_v3_FractionalPercent_set_denominator(envoy_type_v3_FractionalPercent *msg, int32_t value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t) = value;
 }
 
 extern const upb_MiniTable_File envoy_type_v3_percent_proto_upb_file_layout;

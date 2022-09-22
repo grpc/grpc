@@ -21,6 +21,11 @@
 #import "test/runner.h"
 #import "test/task.h"
 
+// Tests in:
+// libuv/test/test-timer.c
+// libuv/test/test-timer-again.c
+// libuv/test/test-timer-from-check.c
+
 TEST_DECLARE(timer)
 TEST_DECLARE(timer_init)
 TEST_DECLARE(timer_again)
@@ -34,7 +39,8 @@ TEST_DECLARE(timer_is_closing)
 TEST_DECLARE(timer_null_callback)
 TEST_DECLARE(timer_early_check)
 
-TASK_LIST_START
+#define TASK_LIST_START_LOCAL static task_entry_t TEST_TASKS[] = {
+TASK_LIST_START_LOCAL
 TEST_ENTRY(timer)
 TEST_ENTRY(timer_init)
 TEST_ENTRY(timer_again)
@@ -56,7 +62,7 @@ TASK_LIST_END
 @implementation LibuvTimerTests
 
 - (void)testTimerAll {
-  for (task_entry_t* task = TASKS; task->main; task++) {
+  for (task_entry_t* task = TEST_TASKS; task->main; task++) {
     task->main();
   }
 }

@@ -14,13 +14,13 @@
 #include "upb/port_def.inc"
 
 static const upb_MiniTable_Field xds_annotations_v3_VersioningAnnotation__fields[1] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 9, kUpb_FieldMode_Scalar | (upb_FieldRep_StringView << upb_FieldRep_Shift)},
+  {1, UPB_SIZE(0, 0), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable xds_annotations_v3_VersioningAnnotation_msginit = {
   NULL,
   &xds_annotations_v3_VersioningAnnotation__fields[0],
-  UPB_SIZE(8, 16), 1, upb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 16), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[1] = {
@@ -30,9 +30,9 @@ static const upb_MiniTable *messages_layout[1] = {
 extern const upb_MiniTable google_protobuf_MessageOptions_msginit;
 extern const upb_MiniTable xds_annotations_v3_VersioningAnnotation_msginit;
 const upb_MiniTable_Extension xds_annotations_v3_versioning_ext = {
-  {92389011, 0, 0, 0, 11, kUpb_FieldMode_Scalar | upb_LabelFlags_IsExtension | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
-    &google_protobuf_MessageOptions_msginit,
-    {.submsg = &xds_annotations_v3_VersioningAnnotation_msginit},
+  {92389011, UPB_SIZE(0, 0), UPB_SIZE(0, 0), 0, 11, kUpb_FieldMode_Scalar | kUpb_LabelFlags_IsExtension | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  &google_protobuf_MessageOptions_msginit,
+  {.submsg = &xds_annotations_v3_VersioningAnnotation_msginit},
 
 };
 

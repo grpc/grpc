@@ -21,11 +21,13 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <stddef.h>
+#include <stdint.h>
 
+#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
-#include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 /** Populate \a resolved_addr from \a uri, whose path is expected to contain a
@@ -61,12 +63,14 @@ bool grpc_parse_ipv6_hostport(absl::string_view hostport,
 /* Converts named or numeric port to a uint16 suitable for use in a sockaddr. */
 uint16_t grpc_strhtons(const char* port);
 
-// Newer form of grpc_string_to_sockaddr which returns an error instead of
-// crashing if \a addr is not IPv6/IPv6
-grpc_error_handle grpc_string_to_sockaddr(grpc_resolved_address* out,
-                                          const char* addr, int port);
-
 namespace grpc_core {
+
+// Parses an IPv4 or IPv6 address string and returns a sockaddr with the
+// specified address and port.
+absl::StatusOr<grpc_resolved_address> StringToSockaddr(
+    absl::string_view address_and_port);
+absl::StatusOr<grpc_resolved_address> StringToSockaddr(
+    absl::string_view address, int port);
 
 /** Populate \a resolved_addr to be a unix socket at |path| */
 grpc_error_handle UnixSockaddrPopulate(absl::string_view path,

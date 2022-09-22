@@ -18,6 +18,7 @@ from absl import flags
 from absl.testing import absltest
 
 from framework import xds_url_map_testcase
+from framework.helpers import skips
 from framework.test_app import client_app
 
 # Type aliases
@@ -28,6 +29,7 @@ DumpedXdsConfig = xds_url_map_testcase.DumpedXdsConfig
 RpcTypeUnaryCall = xds_url_map_testcase.RpcTypeUnaryCall
 RpcTypeEmptyCall = xds_url_map_testcase.RpcTypeEmptyCall
 XdsTestClient = client_app.XdsTestClient
+_Lang = skips.Lang
 
 logger = logging.getLogger(__name__)
 flags.adopt_module_key_flags(xds_url_map_testcase)
@@ -35,7 +37,17 @@ flags.adopt_module_key_flags(xds_url_map_testcase)
 _NUM_RPCS = 150
 
 
+def _is_supported(config: skips.TestConfig) -> bool:
+    if config.client_lang == _Lang.NODE:
+        return config.version_gte('v1.3.x')
+    return True
+
+
 class TestFullPathMatchEmptyCall(xds_url_map_testcase.XdsUrlMapTestCase):
+
+    @staticmethod
+    def is_supported(config: skips.TestConfig) -> bool:
+        return _is_supported(config)
 
     @staticmethod
     def url_map_change(
@@ -69,6 +81,10 @@ class TestFullPathMatchEmptyCall(xds_url_map_testcase.XdsUrlMapTestCase):
 class TestFullPathMatchUnaryCall(xds_url_map_testcase.XdsUrlMapTestCase):
 
     @staticmethod
+    def is_supported(config: skips.TestConfig) -> bool:
+        return _is_supported(config)
+
+    @staticmethod
     def url_map_change(
             host_rule: HostRule,
             path_matcher: PathMatcher) -> Tuple[HostRule, PathMatcher]:
@@ -89,9 +105,8 @@ class TestFullPathMatchUnaryCall(xds_url_map_testcase.XdsUrlMapTestCase):
             "/grpc.testing.TestService/UnaryCall")
 
     def rpc_distribution_validate(self, test_client: XdsTestClient):
-        rpc_distribution = self.configure_and_send(test_client,
-                                                   rpc_types=[RpcTypeUnaryCall],
-                                                   num_rpcs=_NUM_RPCS)
+        rpc_distribution = self.configure_and_send(
+            test_client, rpc_types=(RpcTypeUnaryCall,), num_rpcs=_NUM_RPCS)
         self.assertEqual(
             _NUM_RPCS,
             rpc_distribution.unary_call_alternative_service_rpc_count)
@@ -102,6 +117,10 @@ class TestTwoRoutesAndPrefixMatch(xds_url_map_testcase.XdsUrlMapTestCase):
     swapped). This test has two routes (full_path and the default) to match
     EmptyCall, and both routes set alternative_backend_service as the action.
     This forces the client to handle duplicate Clusters in the RDS response."""
+
+    @staticmethod
+    def is_supported(config: skips.TestConfig) -> bool:
+        return _is_supported(config)
 
     @staticmethod
     def url_map_change(
@@ -151,6 +170,10 @@ class TestTwoRoutesAndPrefixMatch(xds_url_map_testcase.XdsUrlMapTestCase):
 class TestRegexMatch(xds_url_map_testcase.XdsUrlMapTestCase):
 
     @staticmethod
+    def is_supported(config: skips.TestConfig) -> bool:
+        return _is_supported(config)
+
+    @staticmethod
     def url_map_change(
             host_rule: HostRule,
             path_matcher: PathMatcher) -> Tuple[HostRule, PathMatcher]:
@@ -159,7 +182,7 @@ class TestRegexMatch(xds_url_map_testcase.XdsUrlMapTestCase):
             # Regex UnaryCall -> alternate_backend_service.
             'matchRules': [{
                 'regexMatch':
-                    '^\/.*\/UnaryCall$'  # Unary methods with any services.
+                    r'^\/.*\/UnaryCall$'  # Unary methods with any services.
             }],
             'service': GcpResourceManager().alternative_backend_service()
         }]
@@ -169,18 +192,21 @@ class TestRegexMatch(xds_url_map_testcase.XdsUrlMapTestCase):
         self.assertNumEndpoints(xds_config, 2)
         self.assertEqual(
             xds_config.rds['virtualHosts'][0]['routes'][0]['match']['safeRegex']
-            ['regex'], '^\/.*\/UnaryCall$')
+            ['regex'], r'^\/.*\/UnaryCall$')
 
     def rpc_distribution_validate(self, test_client: XdsTestClient):
-        rpc_distribution = self.configure_and_send(test_client,
-                                                   rpc_types=[RpcTypeUnaryCall],
-                                                   num_rpcs=_NUM_RPCS)
+        rpc_distribution = self.configure_and_send(
+            test_client, rpc_types=(RpcTypeUnaryCall,), num_rpcs=_NUM_RPCS)
         self.assertEqual(
             _NUM_RPCS,
             rpc_distribution.unary_call_alternative_service_rpc_count)
 
 
 class TestCaseInsensitiveMatch(xds_url_map_testcase.XdsUrlMapTestCase):
+
+    @staticmethod
+    def is_supported(config: skips.TestConfig) -> bool:
+        return _is_supported(config)
 
     @staticmethod
     def url_map_change(

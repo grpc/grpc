@@ -21,15 +21,21 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/grpc_security.h>
+#include "absl/status/statusor.h"
 
+#include <grpc/grpc_security.h>
+#include <grpc/grpc_security_constants.h>
+
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/promise_based_filter.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/transport/transport.h"
 
-extern const grpc_channel_filter grpc_client_auth_filter;
 extern const grpc_channel_filter grpc_server_auth_filter;
 
 namespace grpc_core {
@@ -37,7 +43,9 @@ namespace grpc_core {
 // Handles calling out to credentials to fill in metadata per call.
 class ClientAuthFilter final : public ChannelFilter {
  public:
-  static absl::StatusOr<ClientAuthFilter> Create(const grpc_channel_args* args,
+  static const grpc_channel_filter kFilter;
+
+  static absl::StatusOr<ClientAuthFilter> Create(const ChannelArgs& args,
                                                  ChannelFilter::Args);
 
   // Construct a promise for one call.

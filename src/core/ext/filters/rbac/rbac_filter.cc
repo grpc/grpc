@@ -18,10 +18,21 @@
 
 #include "src/core/ext/filters/rbac/rbac_filter.h"
 
+#include <new>
+#include <utility>
+
+#include <grpc/status.h>
+#include <grpc/support/log.h>
+
 #include "src/core/ext/filters/rbac/rbac_service_config_parser.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/security/authorization/authorization_engine.h"
 #include "src/core/lib/security/authorization/grpc_authorization_engine.h"
+#include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/service_config/service_config_call_data.h"
-#include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/lib/transport/transport_fwd.h"
 
 namespace grpc_core {
 
@@ -71,7 +82,7 @@ void RbacFilter::CallData::RecvInitialMetadataReady(void* user_data,
   grpc_call_element* elem = static_cast<grpc_call_element*>(user_data);
   CallData* calld = static_cast<CallData*>(elem->call_data);
   RbacFilter* filter = static_cast<RbacFilter*>(elem->channel_data);
-  if (error == GRPC_ERROR_NONE) {
+  if (GRPC_ERROR_IS_NONE(error)) {
     // Fetch and apply the rbac policy from the service config.
     auto* service_config_call_data = static_cast<ServiceConfigCallData*>(
         calld->call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
@@ -92,7 +103,7 @@ void RbacFilter::CallData::RecvInitialMetadataReady(void* user_data,
             GRPC_ERROR_CREATE_FROM_STATIC_STRING("Unauthorized RPC rejected");
       }
     }
-    if (error != GRPC_ERROR_NONE) {
+    if (!GRPC_ERROR_IS_NONE(error)) {
       error = grpc_error_set_int(error, GRPC_ERROR_INT_GRPC_STATUS,
                                  GRPC_STATUS_PERMISSION_DENIED);
     }
@@ -118,6 +129,7 @@ const grpc_channel_filter RbacFilter::kFilterVtable = {
     RbacFilter::CallData::Destroy,
     sizeof(RbacFilter),
     RbacFilter::Init,
+    grpc_channel_stack_no_post_init,
     RbacFilter::Destroy,
     grpc_channel_next_get_info,
     "rbac_filter",

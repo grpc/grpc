@@ -20,18 +20,41 @@
 
 #include "src/cpp/ext/filters/census/client_filter.h"
 
+#include <stddef.h>
+#include <stdint.h>
+
+#include <algorithm>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
+#include "absl/types/optional.h"
 #include "opencensus/stats/stats.h"
-#include "opencensus/tags/context_util.h"
 #include "opencensus/tags/tag_key.h"
 #include "opencensus/tags/tag_map.h"
+#include "opencensus/trace/span.h"
+#include "opencensus/trace/span_context.h"
+#include "opencensus/trace/status_code.h"
 
-#include "src/core/lib/surface/call.h"
+#include <grpc/impl/codegen/gpr_types.h>
+#include <grpc/slice.h>
+#include <grpc/support/log.h>
+#include <grpcpp/support/config.h>
+
+#include "src/core/lib/channel/context.h"
+#include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/slice/slice.h"
+#include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/lib/slice/slice_refcount.h"
+#include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/lib/transport/transport.h"
+#include "src/cpp/ext/filters/census/context.h"
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
 #include "src/cpp/ext/filters/census/measures.h"
 
@@ -91,11 +114,14 @@ OpenCensusCallTracer::OpenCensusCallAttemptTracer::OpenCensusCallAttemptTracer(
       start_time_(absl::Now()) {
   context_.AddSpanAttribute("previous-rpc-attempts", attempt_num);
   context_.AddSpanAttribute("transparent-retry", is_transparent_retry);
+  std::vector<std::pair<opencensus::tags::TagKey, std::string>> tags =
+      context_.tags().tags();
+  tags.emplace_back(ClientMethodTagKey(), std::string(parent_->method_));
+  ::opencensus::stats::Record({{RpcClientStartedRpcs(), 1}}, tags);
 }
 
 void OpenCensusCallTracer::OpenCensusCallAttemptTracer::
-    RecordSendInitialMetadata(grpc_metadata_batch* send_initial_metadata,
-                              uint32_t /*flags*/) {
+    RecordSendInitialMetadata(grpc_metadata_batch* send_initial_metadata) {
   char tracing_buf[kMaxTraceContextLen];
   size_t tracing_len = TraceContextSerialize(context_.Context(), tracing_buf,
                                              kMaxTraceContextLen);
@@ -114,12 +140,12 @@ void OpenCensusCallTracer::OpenCensusCallAttemptTracer::
 }
 
 void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordSendMessage(
-    const grpc_core::ByteStream& /*send_message*/) {
+    const grpc_core::SliceBuffer& /*send_message*/) {
   ++sent_message_count_;
 }
 
 void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordReceivedMessage(
-    const grpc_core::ByteStream& /*recv_message*/) {
+    const grpc_core::SliceBuffer& /*recv_message*/) {
   ++recv_message_count_;
 }
 
@@ -215,6 +241,7 @@ OpenCensusCallTracer::~OpenCensusCallTracer() {
        {RpcClientTransparentRetriesPerCall(), transparent_retries_},
        {RpcClientRetryDelayPerCall(), ToDoubleMilliseconds(retry_delay_)}},
       tags);
+  context_.EndSpan();
 }
 
 void OpenCensusCallTracer::GenerateContext() {

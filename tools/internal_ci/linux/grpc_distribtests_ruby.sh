@@ -43,6 +43,9 @@ tools/run_tests/task_runner.py -f artifact linux ruby ${TASK_RUNNER_EXTRA_FILTER
 rm -rf input_artifacts
 mkdir -p input_artifacts
 cp -r artifacts/ruby_native_gem_*/* input_artifacts/ || true
+# Also copy the gems directly to the "artifacts" directory, but do that without invoking ruby's "build_package"
+# phase.
+cp -r artifacts/ruby_native_gem_*/* artifacts/ || true
 
 # Run all ruby linux distribtests
 # We run the distribtests even if some of the artifacts have failed to build, since that gives

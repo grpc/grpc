@@ -18,7 +18,14 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <algorithm>
+#include <memory>
+#include <vector>
+
+#include <grpc/impl/codegen/grpc_types.h>
 #include <grpcpp/ext/server_load_reporting.h>
+#include <grpcpp/impl/server_builder_plugin.h>
+#include <grpcpp/support/channel_arguments.h>
 
 #include "src/cpp/server/load_reporter/load_reporting_service_server_builder_plugin.h"
 

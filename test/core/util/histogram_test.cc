@@ -18,11 +18,13 @@
 
 #include "test/core/util/histogram.h"
 
+#include "gtest/gtest.h"
+
 #include <grpc/support/log.h>
 
 #define LOG_TEST(x) gpr_log(GPR_INFO, "%s", x);
 
-static void test_no_op(void) {
+TEST(HistogramTest, NoOp) {
   grpc_histogram_destroy(grpc_histogram_create(0.01, 60e9));
 }
 
@@ -31,11 +33,11 @@ static void expect_percentile(grpc_histogram* h, double percentile,
   double got = grpc_histogram_percentile(h, percentile);
   gpr_log(GPR_INFO, "@%f%%, expect %f <= %f <= %f", percentile, min_expect, got,
           max_expect);
-  GPR_ASSERT(min_expect <= got);
-  GPR_ASSERT(got <= max_expect);
+  ASSERT_LE(min_expect, got);
+  ASSERT_LE(got, max_expect);
 }
 
-static void test_simple(void) {
+TEST(HistogramTest, Simple) {
   grpc_histogram* h;
 
   LOG_TEST("test_simple");
@@ -47,12 +49,12 @@ static void test_simple(void) {
   grpc_histogram_add(h, 11000);
 
   expect_percentile(h, 50, 10001, 10999);
-  GPR_ASSERT(grpc_histogram_mean(h) == 10500);
+  ASSERT_EQ(grpc_histogram_mean(h), 10500);
 
   grpc_histogram_destroy(h);
 }
 
-static void test_percentile(void) {
+TEST(HistogramTest, Percentile) {
   grpc_histogram* h;
   double last;
   double i;
@@ -66,14 +68,14 @@ static void test_percentile(void) {
   grpc_histogram_add(h, 8);
   grpc_histogram_add(h, 4);
 
-  GPR_ASSERT(grpc_histogram_count(h) == 4);
-  GPR_ASSERT(grpc_histogram_minimum(h) == 2.5);
-  GPR_ASSERT(grpc_histogram_maximum(h) == 8);
-  GPR_ASSERT(grpc_histogram_sum(h) == 17);
-  GPR_ASSERT(grpc_histogram_sum_of_squares(h) == 92.5);
-  GPR_ASSERT(grpc_histogram_mean(h) == 4.25);
-  GPR_ASSERT(grpc_histogram_variance(h) == 5.0625);
-  GPR_ASSERT(grpc_histogram_stddev(h) == 2.25);
+  ASSERT_EQ(grpc_histogram_count(h), 4);
+  ASSERT_EQ(grpc_histogram_minimum(h), 2.5);
+  ASSERT_EQ(grpc_histogram_maximum(h), 8);
+  ASSERT_EQ(grpc_histogram_sum(h), 17);
+  ASSERT_EQ(grpc_histogram_sum_of_squares(h), 92.5);
+  ASSERT_EQ(grpc_histogram_mean(h), 4.25);
+  ASSERT_EQ(grpc_histogram_variance(h), 5.0625);
+  ASSERT_EQ(grpc_histogram_stddev(h), 2.25);
 
   expect_percentile(h, -10, 2.5, 2.5);
   expect_percentile(h, 0, 2.5, 2.5);
@@ -90,14 +92,14 @@ static void test_percentile(void) {
   last = 0.0;
   for (i = 0; i < 100.0; i += 0.01) {
     cur = grpc_histogram_percentile(h, i);
-    GPR_ASSERT(cur >= last);
+    ASSERT_GE(cur, last);
     last = cur;
   }
 
   grpc_histogram_destroy(h);
 }
 
-static void test_merge(void) {
+TEST(HistogramTest, Merge) {
   grpc_histogram *h1, *h2;
   double last;
   double i;
@@ -112,42 +114,42 @@ static void test_merge(void) {
   grpc_histogram_add(h1, 4);
 
   h2 = grpc_histogram_create(0.01, 1e9);
-  GPR_ASSERT(grpc_histogram_merge(h1, h2) == 0);
+  ASSERT_EQ(grpc_histogram_merge(h1, h2), 0);
   grpc_histogram_destroy(h2);
 
   h2 = grpc_histogram_create(0.05, 1e10);
-  GPR_ASSERT(grpc_histogram_merge(h1, h2) == 0);
+  ASSERT_EQ(grpc_histogram_merge(h1, h2), 0);
   grpc_histogram_destroy(h2);
 
   h2 = grpc_histogram_create(0.05, 1e9);
-  GPR_ASSERT(grpc_histogram_merge(h1, h2) == 1);
-  GPR_ASSERT(grpc_histogram_count(h1) == 4);
-  GPR_ASSERT(grpc_histogram_minimum(h1) == 2.5);
-  GPR_ASSERT(grpc_histogram_maximum(h1) == 8);
-  GPR_ASSERT(grpc_histogram_sum(h1) == 17);
-  GPR_ASSERT(grpc_histogram_sum_of_squares(h1) == 92.5);
-  GPR_ASSERT(grpc_histogram_mean(h1) == 4.25);
-  GPR_ASSERT(grpc_histogram_variance(h1) == 5.0625);
-  GPR_ASSERT(grpc_histogram_stddev(h1) == 2.25);
+  ASSERT_EQ(grpc_histogram_merge(h1, h2), 1);
+  ASSERT_EQ(grpc_histogram_count(h1), 4);
+  ASSERT_EQ(grpc_histogram_minimum(h1), 2.5);
+  ASSERT_EQ(grpc_histogram_maximum(h1), 8);
+  ASSERT_EQ(grpc_histogram_sum(h1), 17);
+  ASSERT_EQ(grpc_histogram_sum_of_squares(h1), 92.5);
+  ASSERT_EQ(grpc_histogram_mean(h1), 4.25);
+  ASSERT_EQ(grpc_histogram_variance(h1), 5.0625);
+  ASSERT_EQ(grpc_histogram_stddev(h1), 2.25);
   grpc_histogram_destroy(h2);
 
   h2 = grpc_histogram_create(0.05, 1e9);
   grpc_histogram_add(h2, 7.0);
   grpc_histogram_add(h2, 17.0);
   grpc_histogram_add(h2, 1.0);
-  GPR_ASSERT(grpc_histogram_merge(h1, h2) == 1);
-  GPR_ASSERT(grpc_histogram_count(h1) == 7);
-  GPR_ASSERT(grpc_histogram_minimum(h1) == 1.0);
-  GPR_ASSERT(grpc_histogram_maximum(h1) == 17.0);
-  GPR_ASSERT(grpc_histogram_sum(h1) == 42.0);
-  GPR_ASSERT(grpc_histogram_sum_of_squares(h1) == 431.5);
-  GPR_ASSERT(grpc_histogram_mean(h1) == 6.0);
+  ASSERT_EQ(grpc_histogram_merge(h1, h2), 1);
+  ASSERT_EQ(grpc_histogram_count(h1), 7);
+  ASSERT_EQ(grpc_histogram_minimum(h1), 1.0);
+  ASSERT_EQ(grpc_histogram_maximum(h1), 17.0);
+  ASSERT_EQ(grpc_histogram_sum(h1), 42.0);
+  ASSERT_EQ(grpc_histogram_sum_of_squares(h1), 431.5);
+  ASSERT_EQ(grpc_histogram_mean(h1), 6.0);
 
   /* test monotonicity */
   last = 0.0;
   for (i = 0; i < 100.0; i += 0.01) {
     cur = grpc_histogram_percentile(h1, i);
-    GPR_ASSERT(cur >= last);
+    ASSERT_GE(cur, last);
     last = cur;
   }
 
@@ -155,10 +157,7 @@ static void test_merge(void) {
   grpc_histogram_destroy(h2);
 }
 
-int main(void) {
-  test_no_op();
-  test_simple();
-  test_percentile();
-  test_merge();
-  return 0;
+int main(int argc, char** argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }

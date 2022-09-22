@@ -54,28 +54,43 @@ UPB_INLINE xds_type_matcher_v3_RegexMatcher* xds_type_matcher_v3_RegexMatcher_pa
   return ret;
 }
 UPB_INLINE char* xds_type_matcher_v3_RegexMatcher_serialize(const xds_type_matcher_v3_RegexMatcher* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &xds_type_matcher_v3_RegexMatcher_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &xds_type_matcher_v3_RegexMatcher_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* xds_type_matcher_v3_RegexMatcher_serialize_ex(const xds_type_matcher_v3_RegexMatcher* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &xds_type_matcher_v3_RegexMatcher_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &xds_type_matcher_v3_RegexMatcher_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 typedef enum {
   xds_type_matcher_v3_RegexMatcher_engine_type_google_re2 = 1,
   xds_type_matcher_v3_RegexMatcher_engine_type_NOT_SET = 0
 } xds_type_matcher_v3_RegexMatcher_engine_type_oneofcases;
-UPB_INLINE xds_type_matcher_v3_RegexMatcher_engine_type_oneofcases xds_type_matcher_v3_RegexMatcher_engine_type_case(const xds_type_matcher_v3_RegexMatcher* msg) { return (xds_type_matcher_v3_RegexMatcher_engine_type_oneofcases)*UPB_PTR_AT(msg, UPB_SIZE(12, 24), int32_t); }
-
-UPB_INLINE bool xds_type_matcher_v3_RegexMatcher_has_google_re2(const xds_type_matcher_v3_RegexMatcher *msg) { return _upb_getoneofcase(msg, UPB_SIZE(12, 24)) == 1; }
-UPB_INLINE const xds_type_matcher_v3_RegexMatcher_GoogleRE2* xds_type_matcher_v3_RegexMatcher_google_re2(const xds_type_matcher_v3_RegexMatcher *msg) { return UPB_READ_ONEOF(msg, const xds_type_matcher_v3_RegexMatcher_GoogleRE2*, UPB_SIZE(8, 16), UPB_SIZE(12, 24), 1, NULL); }
+UPB_INLINE xds_type_matcher_v3_RegexMatcher_engine_type_oneofcases xds_type_matcher_v3_RegexMatcher_engine_type_case(const xds_type_matcher_v3_RegexMatcher* msg) {
+  return (xds_type_matcher_v3_RegexMatcher_engine_type_oneofcases)*UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t);
+}
+UPB_INLINE bool xds_type_matcher_v3_RegexMatcher_has_google_re2(const xds_type_matcher_v3_RegexMatcher* msg) {
+  return _upb_getoneofcase(msg, UPB_SIZE(0, 0)) == 1;
+}
+UPB_INLINE void xds_type_matcher_v3_RegexMatcher_clear_google_re2(const xds_type_matcher_v3_RegexMatcher* msg) {
+  UPB_WRITE_ONEOF(msg, xds_type_matcher_v3_RegexMatcher_GoogleRE2*, UPB_SIZE(12, 24), 0, UPB_SIZE(0, 0), xds_type_matcher_v3_RegexMatcher_engine_type_NOT_SET);
+}
+UPB_INLINE const xds_type_matcher_v3_RegexMatcher_GoogleRE2* xds_type_matcher_v3_RegexMatcher_google_re2(const xds_type_matcher_v3_RegexMatcher* msg) {
+  return UPB_READ_ONEOF(msg, const xds_type_matcher_v3_RegexMatcher_GoogleRE2*, UPB_SIZE(12, 24), UPB_SIZE(0, 0), 1, NULL);
+}
+UPB_INLINE void xds_type_matcher_v3_RegexMatcher_clear_regex(const xds_type_matcher_v3_RegexMatcher* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
+}
 UPB_INLINE upb_StringView xds_type_matcher_v3_RegexMatcher_regex(const xds_type_matcher_v3_RegexMatcher* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_StringView);
+  return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView);
 }
 
 UPB_INLINE void xds_type_matcher_v3_RegexMatcher_set_google_re2(xds_type_matcher_v3_RegexMatcher *msg, xds_type_matcher_v3_RegexMatcher_GoogleRE2* value) {
-  UPB_WRITE_ONEOF(msg, xds_type_matcher_v3_RegexMatcher_GoogleRE2*, UPB_SIZE(8, 16), value, UPB_SIZE(12, 24), 1);
+  UPB_WRITE_ONEOF(msg, xds_type_matcher_v3_RegexMatcher_GoogleRE2*, UPB_SIZE(12, 24), value, UPB_SIZE(0, 0), 1);
 }
-UPB_INLINE struct xds_type_matcher_v3_RegexMatcher_GoogleRE2* xds_type_matcher_v3_RegexMatcher_mutable_google_re2(xds_type_matcher_v3_RegexMatcher *msg, upb_Arena *arena) {
+UPB_INLINE struct xds_type_matcher_v3_RegexMatcher_GoogleRE2* xds_type_matcher_v3_RegexMatcher_mutable_google_re2(xds_type_matcher_v3_RegexMatcher* msg, upb_Arena* arena) {
   struct xds_type_matcher_v3_RegexMatcher_GoogleRE2* sub = (struct xds_type_matcher_v3_RegexMatcher_GoogleRE2*)xds_type_matcher_v3_RegexMatcher_google_re2(msg);
   if (sub == NULL) {
     sub = (struct xds_type_matcher_v3_RegexMatcher_GoogleRE2*)_upb_Message_New(&xds_type_matcher_v3_RegexMatcher_GoogleRE2_msginit, arena);
@@ -85,7 +100,7 @@ UPB_INLINE struct xds_type_matcher_v3_RegexMatcher_GoogleRE2* xds_type_matcher_v
   return sub;
 }
 UPB_INLINE void xds_type_matcher_v3_RegexMatcher_set_regex(xds_type_matcher_v3_RegexMatcher *msg, upb_StringView value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_StringView) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView) = value;
 }
 
 /* xds.type.matcher.v3.RegexMatcher.GoogleRE2 */
@@ -113,11 +128,15 @@ UPB_INLINE xds_type_matcher_v3_RegexMatcher_GoogleRE2* xds_type_matcher_v3_Regex
   return ret;
 }
 UPB_INLINE char* xds_type_matcher_v3_RegexMatcher_GoogleRE2_serialize(const xds_type_matcher_v3_RegexMatcher_GoogleRE2* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &xds_type_matcher_v3_RegexMatcher_GoogleRE2_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &xds_type_matcher_v3_RegexMatcher_GoogleRE2_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* xds_type_matcher_v3_RegexMatcher_GoogleRE2_serialize_ex(const xds_type_matcher_v3_RegexMatcher_GoogleRE2* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &xds_type_matcher_v3_RegexMatcher_GoogleRE2_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &xds_type_matcher_v3_RegexMatcher_GoogleRE2_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 
 

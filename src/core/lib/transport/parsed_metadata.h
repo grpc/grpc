@@ -17,16 +17,22 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <cstdint>
-#include <type_traits>
+#include <string.h>
 
+#include <cstdint>
+#include <string>
+#include <utility>
+
+#include "absl/functional/function_ref.h"
 #include "absl/meta/type_traits.h"
 #include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+
+#include <grpc/slice.h>
 
 #include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice.h"
-#include "src/core/lib/surface/validate_metadata.h"
 
 namespace grpc_core {
 
@@ -146,7 +152,7 @@ class ParsedMetadata {
   // Construct metadata from a string key, slice value pair.
   ParsedMetadata(Slice key, Slice value)
       : vtable_(ParsedMetadata::KeyValueVTable(key.as_string_view())),
-        transport_size_(key.size() + value.size() + 32) {
+        transport_size_(static_cast<uint32_t>(key.size() + value.size() + 32)) {
     value_.pointer =
         new std::pair<Slice, Slice>(std::move(key), std::move(value));
   }
@@ -185,7 +191,9 @@ class ParsedMetadata {
     ParsedMetadata result;
     result.vtable_ = vtable_;
     result.value_ = value_;
-    result.transport_size_ = TransportSize(key().length(), value.length());
+    result.transport_size_ =
+        TransportSize(static_cast<uint32_t>(key().length()),
+                      static_cast<uint32_t>(value.length()));
     vtable_->with_new_value(&value, on_error, &result);
     return result;
   }
@@ -371,7 +379,7 @@ ParsedMetadata<MetadataContainer>::KeyValueVTable(absl::string_view key) {
   };
   static const auto set = [](const Buffer& value, MetadataContainer* map) {
     auto* p = static_cast<KV*>(value.pointer);
-    map->AppendUnknown(p->first.as_string_view(), p->second.Ref());
+    map->unknown_.Append(p->first.as_string_view(), p->second.Ref());
   };
   static const auto with_new_value = [](Slice* value, MetadataParseErrorFn,
                                         ParsedMetadata* result) {

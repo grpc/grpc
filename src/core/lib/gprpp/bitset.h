@@ -17,15 +17,12 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <utility>
+#include <stddef.h>
+#include <stdint.h>
+
+#include <type_traits>
 
 #include "src/core/lib/gpr/useful.h"
-
-#if __cplusplus > 201103l
-#define GRPC_BITSET_CONSTEXPR_MUTATOR constexpr
-#else
-#define GRPC_BITSET_CONSTEXPR_MUTATOR
-#endif
 
 namespace grpc_core {
 
@@ -33,6 +30,7 @@ namespace grpc_core {
 // exactly that number of bits. Undefined if that bit count is not available.
 template <size_t kBits>
 struct UintSelector;
+
 template <>
 struct UintSelector<8> {
   typedef uint8_t Type;
@@ -86,12 +84,10 @@ class BitSet {
   constexpr BitSet() : units_{} {}
 
   // Set bit i to true
-  GRPC_BITSET_CONSTEXPR_MUTATOR void set(int i) {
-    units_[unit_for(i)] |= mask_for(i);
-  }
+  constexpr void set(int i) { units_[unit_for(i)] |= mask_for(i); }
 
   // Set bit i to is_set
-  GRPC_BITSET_CONSTEXPR_MUTATOR void set(int i, bool is_set) {
+  constexpr void set(int i, bool is_set) {
     if (is_set) {
       set(i);
     } else {
@@ -100,9 +96,7 @@ class BitSet {
   }
 
   // Set bit i to false
-  GRPC_BITSET_CONSTEXPR_MUTATOR void clear(int i) {
-    units_[unit_for(i)] &= ~mask_for(i);
-  }
+  constexpr void clear(int i) { units_[unit_for(i)] &= ~mask_for(i); }
 
   // Return true if bit i is set
   constexpr bool is_set(int i) const {
@@ -151,6 +145,18 @@ class BitSet {
       if (units_[i] != other.units_[i]) return false;
     }
     return true;
+  }
+
+  template <typename Int>
+  typename std::enable_if<std::is_unsigned<Int>::value &&
+                              (sizeof(Int) * 8 >= kTotalBits),
+                          Int>::type
+  ToInt() const {
+    Int result = 0;
+    for (size_t i = 0; i < kTotalBits; i++) {
+      if (is_set(i)) result |= (Int(1) << i);
+    }
+    return result;
   }
 
  private:

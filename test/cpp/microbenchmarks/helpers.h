@@ -41,13 +41,6 @@ class LibraryInitializer {
   grpc::internal::GrpcLibrary init_lib_;
 };
 
-#ifdef GPR_LOW_LEVEL_COUNTERS
-extern gpr_atm gpr_mu_locks;
-extern gpr_atm gpr_counter_atm_cas;
-extern gpr_atm gpr_counter_atm_add;
-extern gpr_atm gpr_now_call_count;
-#endif
-
 class TrackCounters {
  public:
   TrackCounters() { grpc_stats_collect(&stats_begin_); }
@@ -59,15 +52,6 @@ class TrackCounters {
  private:
   grpc_stats_data stats_begin_;
   std::vector<std::string> labels_;
-#ifdef GPR_LOW_LEVEL_COUNTERS
-  const size_t mu_locks_at_start_ = gpr_atm_no_barrier_load(&gpr_mu_locks);
-  const size_t atm_cas_at_start_ =
-      gpr_atm_no_barrier_load(&gpr_counter_atm_cas);
-  const size_t atm_add_at_start_ =
-      gpr_atm_no_barrier_load(&gpr_counter_atm_add);
-  const size_t now_calls_at_start_ =
-      gpr_atm_no_barrier_load(&gpr_now_call_count);
-#endif
 };
 
 #endif

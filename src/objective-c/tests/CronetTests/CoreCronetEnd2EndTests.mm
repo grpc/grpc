@@ -163,7 +163,8 @@ static char *roots_filename;
   size_t roots_size = strlen(test_root_cert);
 
   char *argv[] = {(char *)"CoreCronetEnd2EndTests"};
-  grpc_test_init(1, argv);
+  int argc = 1;
+  grpc_test_init(&argc, argv);
   grpc_end2end_tests_pre_init();
 
   /* Set the SSL roots env var. */
@@ -192,9 +193,8 @@ static char *roots_filename;
 
 - (void)testIndividualCase:(char *)test_case {
   char *argv[] = {(char *)"h2_ssl", test_case};
-
   for (int i = 0; i < sizeof(configs) / sizeof(*configs); i++) {
-    grpc_end2end_tests(sizeof(argv) / sizeof(argv[0]), argv, configs[i]);
+    grpc_end2end_tests(2, argv, configs[i]);
   }
 }
 

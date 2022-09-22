@@ -176,35 +176,17 @@ class ExecCtx {
     }
   }
 
-  /** Returns the stored current time relative to start if valid,
-   *  otherwise refreshes the stored time, sets it valid and returns the new
-   *  value.
-   */
-  Timestamp Now();
-
-  /** Invalidates the stored time value. A new time value will be set on calling
-   *  Now().
-   */
-  void InvalidateNow() { now_is_valid_ = false; }
-
-  /** To be used only by shutdown code in iomgr */
+  Timestamp Now() { return Timestamp::Now(); }
+  void InvalidateNow() { time_cache_.InvalidateCache(); }
   void SetNowIomgrShutdown() {
-    now_ = Timestamp::InfFuture();
-    now_is_valid_ = true;
+    // We get to do a test only set now on this path just because iomgr
+    // is getting removed and no point adding more interfaces for it.
+    time_cache_.TestOnlySetNow(Timestamp::InfFuture());
   }
-
-  /** To be used only for testing.
-   *  Sets the now value.
-   */
-  void TestOnlySetNow(Timestamp new_val) {
-    now_ = new_val;
-    now_is_valid_ = true;
-  }
+  void TestOnlySetNow(Timestamp now) { time_cache_.TestOnlySetNow(now); }
 
   /** Gets pointer to current exec_ctx. */
   static ExecCtx* Get() { return exec_ctx_; }
-
-  static void Set(ExecCtx* exec_ctx) { exec_ctx_ = exec_ctx; }
 
   static void Run(const DebugLocation& location, grpc_closure* closure,
                   grpc_error_handle error);
@@ -220,6 +202,7 @@ class ExecCtx {
 
  private:
   /** Set exec_ctx_ to exec_ctx. */
+  static void Set(ExecCtx* exec_ctx) { exec_ctx_ = exec_ctx; }
 
   grpc_closure_list closure_list_ = GRPC_CLOSURE_LIST_INIT;
   CombinerData combiner_data_ = {nullptr, nullptr};
@@ -227,9 +210,7 @@ class ExecCtx {
 
   unsigned starting_cpu_ = std::numeric_limits<unsigned>::max();
 
-  bool now_is_valid_ = false;
-  Timestamp now_;
-
+  ScopedTimeCache time_cache_;
   static GPR_THREAD_LOCAL(ExecCtx*) exec_ctx_;
   ExecCtx* last_exec_ctx_ = Get();
 };
@@ -338,12 +319,6 @@ class ApplicationCallbackExecCtx {
     }
     ctx->tail_ = functor;
   }
-
-  /** Global initialization for ApplicationCallbackExecCtx. Called by init. */
-  static void GlobalInit(void) {}
-
-  /** Global shutdown for ApplicationCallbackExecCtx. Called by init. */
-  static void GlobalShutdown(void) {}
 
   static bool Available() { return Get() != nullptr; }
 

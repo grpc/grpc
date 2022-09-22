@@ -16,8 +16,10 @@
  */
 
 #include <grpcpp/impl/codegen/server_callback.h>
+#include <grpcpp/support/server_callback.h>
 
 #include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/executor.h"
 

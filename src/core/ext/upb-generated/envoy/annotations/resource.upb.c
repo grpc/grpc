@@ -14,13 +14,13 @@
 #include "upb/port_def.inc"
 
 static const upb_MiniTable_Field envoy_annotations_ResourceAnnotation__fields[1] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 9, kUpb_FieldMode_Scalar | (upb_FieldRep_StringView << upb_FieldRep_Shift)},
+  {1, UPB_SIZE(0, 0), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy_annotations_ResourceAnnotation_msginit = {
   NULL,
   &envoy_annotations_ResourceAnnotation__fields[0],
-  UPB_SIZE(8, 16), 1, upb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 16), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[1] = {
@@ -30,9 +30,9 @@ static const upb_MiniTable *messages_layout[1] = {
 extern const upb_MiniTable envoy_annotations_ResourceAnnotation_msginit;
 extern const upb_MiniTable google_protobuf_ServiceOptions_msginit;
 const upb_MiniTable_Extension envoy_annotations_resource_ext = {
-  {265073217, 0, 0, 0, 11, kUpb_FieldMode_Scalar | upb_LabelFlags_IsExtension | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
-    &google_protobuf_ServiceOptions_msginit,
-    {.submsg = &envoy_annotations_ResourceAnnotation_msginit},
+  {265073217, UPB_SIZE(0, 0), UPB_SIZE(0, 0), 0, 11, kUpb_FieldMode_Scalar | kUpb_LabelFlags_IsExtension | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  &google_protobuf_ServiceOptions_msginit,
+  {.submsg = &envoy_annotations_ResourceAnnotation_msginit},
 
 };
 

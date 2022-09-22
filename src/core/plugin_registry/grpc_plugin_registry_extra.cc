@@ -26,37 +26,12 @@ namespace grpc_core {
 void XdsClientGlobalInit();
 void XdsClientGlobalShutdown();
 }  // namespace grpc_core
-void grpc_certificate_provider_registry_init(void);
-void grpc_certificate_provider_registry_shutdown(void);
-namespace grpc_core {
-void FileWatcherCertificateProviderInit();
-void FileWatcherCertificateProviderShutdown();
-}  // namespace grpc_core
-void grpc_lb_policy_cds_init(void);
-void grpc_lb_policy_cds_shutdown(void);
-void grpc_lb_policy_xds_cluster_impl_init(void);
-void grpc_lb_policy_xds_cluster_impl_shutdown(void);
-void grpc_lb_policy_xds_cluster_resolver_init(void);
-void grpc_lb_policy_xds_cluster_resolver_shutdown(void);
-void grpc_lb_policy_xds_cluster_manager_init(void);
-void grpc_lb_policy_xds_cluster_manager_shutdown(void);
 #endif
 
 void grpc_register_extra_plugins() {
 #ifndef GRPC_NO_XDS
   grpc_register_plugin(grpc_core::XdsClientGlobalInit,
                        grpc_core::XdsClientGlobalShutdown);
-  grpc_register_plugin(grpc_certificate_provider_registry_init,
-                       grpc_certificate_provider_registry_shutdown);
-  grpc_register_plugin(grpc_core::FileWatcherCertificateProviderInit,
-                       grpc_core::FileWatcherCertificateProviderShutdown);
-  grpc_register_plugin(grpc_lb_policy_cds_init, grpc_lb_policy_cds_shutdown);
-  grpc_register_plugin(grpc_lb_policy_xds_cluster_impl_init,
-                       grpc_lb_policy_xds_cluster_impl_shutdown);
-  grpc_register_plugin(grpc_lb_policy_xds_cluster_resolver_init,
-                       grpc_lb_policy_xds_cluster_resolver_shutdown);
-  grpc_register_plugin(grpc_lb_policy_xds_cluster_manager_init,
-                       grpc_lb_policy_xds_cluster_manager_shutdown);
 #endif
 }
 
@@ -68,6 +43,14 @@ extern void RegisterXdsChannelStackModifier(
 extern void RegisterChannelDefaultCreds(CoreConfiguration::Builder* builder);
 extern void RegisterXdsResolver(CoreConfiguration::Builder* builder);
 extern void RegisterCloud2ProdResolver(CoreConfiguration::Builder* builder);
+extern void RegisterXdsClusterManagerLbPolicy(
+    CoreConfiguration::Builder* builder);
+extern void RegisterXdsClusterImplLbPolicy(CoreConfiguration::Builder* builder);
+extern void RegisterCdsLbPolicy(CoreConfiguration::Builder* builder);
+extern void RegisterXdsClusterResolverLbPolicy(
+    CoreConfiguration::Builder* builder);
+extern void RegisterFileWatcherCertificateProvider(
+    CoreConfiguration::Builder* builder);
 #endif
 void RegisterExtraFilters(CoreConfiguration::Builder* builder) {
   // Use builder to avoid unused-parameter warning.
@@ -80,6 +63,11 @@ void RegisterExtraFilters(CoreConfiguration::Builder* builder) {
   RegisterChannelDefaultCreds(builder);
   RegisterXdsResolver(builder);
   RegisterCloud2ProdResolver(builder);
+  RegisterXdsClusterManagerLbPolicy(builder);
+  RegisterXdsClusterImplLbPolicy(builder);
+  RegisterCdsLbPolicy(builder);
+  RegisterXdsClusterResolverLbPolicy(builder);
+  RegisterFileWatcherCertificateProvider(builder);
 #endif
 }
 }  // namespace grpc_core

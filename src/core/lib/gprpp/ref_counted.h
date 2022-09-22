@@ -25,13 +25,10 @@
 #include <cassert>
 #include <cinttypes>
 
-#include <grpc/support/atm.h>
 #include <grpc/support/log.h>
-#include <grpc/support/sync.h>
 
 #include "src/core/lib/gprpp/atomic_utils.h"
 #include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 
 namespace grpc_core {
@@ -234,6 +231,7 @@ enum UnrefBehavior {
 namespace internal {
 template <typename T, UnrefBehavior UnrefBehaviorArg>
 class Delete;
+
 template <typename T>
 class Delete<T, kUnrefDelete> {
  public:
@@ -281,6 +279,8 @@ template <typename Child, typename Impl = PolymorphicRefCount,
           UnrefBehavior UnrefBehaviorArg = kUnrefDelete>
 class RefCounted : public Impl {
  public:
+  using RefCountedChildType = Child;
+
   // Note: Depending on the Impl used, this dtor can be implicitly virtual.
   ~RefCounted() = default;
 

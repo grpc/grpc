@@ -1050,6 +1050,17 @@ grpc_tls_certificate_verifier* grpc_tls_certificate_verifier_external_create(
 /**
  * EXPERIMENTAL API - Subject to change
  *
+ * Factory function for an internal verifier that won't perform any
+ * post-handshake verification. Note: using this solely without any other
+ * authentication mechanisms on the peer identity will leave your applications
+ * to the MITM(Man-In-The-Middle) attacks. Users should avoid doing so in
+ * production environments.
+ */
+grpc_tls_certificate_verifier* grpc_tls_certificate_verifier_no_op_create();
+
+/**
+ * EXPERIMENTAL API - Subject to change
+ *
  * Factory function for an internal verifier that will do the default hostname
  * check.
  */

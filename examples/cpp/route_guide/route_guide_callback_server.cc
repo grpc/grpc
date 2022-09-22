@@ -196,30 +196,32 @@ class RouteGuideImpl final : public RouteGuide::CallbackService {
       CallbackServerContext* context) override {
     class Chatter : public grpc::ServerBidiReactor<RouteNote, RouteNote> {
      public:
-      Chatter(std::mutex* mu, std::vector<RouteNote>* received_notes)
+      Chatter(absl::Mutex* mu, std::vector<RouteNote>* received_notes)
           : mu_(mu), received_notes_(received_notes) {
         StartRead(&note_);
       }
-      void OnDone() override {
-        // Collect the read_starter thread if needed
-        if (read_starter_.joinable()) {
-          read_starter_.join();
-        }
-        delete this;
-      }
+      void OnDone() override { delete this; }
       void OnReadDone(bool ok) override {
         if (ok) {
-          // We may need to wait an arbitary amount of time on this mutex
-          // and we cannot delay the reaction, so start it in a thread
-          // Collect the previous read_starter thread if needed
-          if (read_starter_.joinable()) {
-            read_starter_.join();
-          }
-          read_starter_ = std::thread([this] {
-            mu_->lock();
-            notes_iterator_ = received_notes_->begin();
-            NextWrite();
-          });
+          // Unlike the other example in this directory that's not using
+          // the reactor pattern, we can't grab a local lock to secure the
+          // access to the notes vector, because the reactor will most likely
+          // make us jump threads, so we'll have to use a different locking
+          // strategy. We'll grab the lock locally to build a copy of the
+          // list of nodes we're going to send, then we'll grab the lock
+          // again to append the received note to the existing vector.
+          mu_->Lock();
+          std::copy_if(received_notes_->begin(), received_notes_->end(),
+                       std::back_inserter(to_send_notes_),
+                       [this](const RouteNote& note) {
+                         return note.location().latitude() ==
+                                    note_.location().latitude() &&
+                                note.location().longitude() ==
+                                    note_.location().longitude();
+                       });
+          mu_->Unlock();
+          notes_iterator_ = to_send_notes_.begin();
+          NextWrite();
         } else {
           Finish(Status::OK);
         }
@@ -228,33 +230,29 @@ class RouteGuideImpl final : public RouteGuide::CallbackService {
 
      private:
       void NextWrite() {
-        while (notes_iterator_ != received_notes_->end()) {
-          const RouteNote& n = *notes_iterator_;
+        if (notes_iterator_ != to_send_notes_.end()) {
+          StartWrite(&*notes_iterator_);
           notes_iterator_++;
-          if (n.location().latitude() == note_.location().latitude() &&
-              n.location().longitude() == note_.location().longitude()) {
-            StartWrite(&n);
-            return;
-          }
+        } else {
+          mu_->Lock();
+          received_notes_->push_back(note_);
+          mu_->Unlock();
+          StartRead(&note_);
         }
-        // Didn't write anything, so all done with this note
-        received_notes_->push_back(note_);
-        mu_->unlock();
-        StartRead(&note_);
       }
       RouteNote note_;
-      std::mutex* mu_;
+      absl::Mutex* mu_;
       std::vector<RouteNote>* received_notes_;
+      std::vector<RouteNote> to_send_notes_;
       std::vector<RouteNote>::iterator notes_iterator_;
-      std::thread read_starter_;
     };
     return new Chatter(&mu_, &received_notes_);
   }
 
  private:
   std::vector<Feature> feature_list_;
-  std::mutex mu_;
-  std::vector<RouteNote> received_notes_;
+  absl::Mutex mu_;
+  std::vector<RouteNote> received_notes_ ABSL_GUARDED_BY(mu_);
 };
 
 void RunServer(const std::string& db_path) {

@@ -14,14 +14,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("//bazel:grpc_build_system.bzl", "grpc_sh_test")
 load(
     "//src/objective-c:grpc_objc_internal_library.bzl",
+    "grpc_objc_ios_unit_test",
     "grpc_objc_testing_library",
     "local_objc_grpc_library",
     "proto_library_objc_wrapper",
 )
 load("@build_bazel_rules_apple//apple:resources.bzl", "apple_resource_bundle")
-load("@build_bazel_rules_apple//apple:ios.bzl", "ios_application", "ios_unit_test")
 load("@build_bazel_rules_apple//apple:macos.bzl", "macos_unit_test")
 load("@build_bazel_rules_apple//apple:tvos.bzl", "tvos_application", "tvos_unit_test")
 
@@ -59,7 +60,12 @@ apple_resource_bundle(
 # TestConfigs is added to each grpc_objc_testing_library's deps
 grpc_objc_testing_library(
     name = "TestConfigs",
-    hdrs = ["version.h"],
+    srcs = glob([
+        "Common/**/*.m",
+    ]),
+    hdrs = glob([
+        "Common/**/*.h",
+    ]) + ["version.h"],
     data = [":TestCertificates"],
     defines = [
         "DEBUG=1",
@@ -73,18 +79,6 @@ objc_library(
     name = "host-lib",
     srcs = glob(["Hosts/ios-host/*.m"]),
     hdrs = glob(["Hosts/ios-host/*.h"]),
-)
-
-ios_application(
-    name = "ios-host",
-    bundle_id = "grpc.objc.tests.ios-host",
-    families = [
-        "iphone",
-        "ipad",
-    ],
-    infoplists = ["Hosts/ios-host/Info.plist"],
-    minimum_os_version = "9.0",
-    deps = ["host-lib"],
 )
 
 tvos_application(
@@ -177,10 +171,8 @@ grpc_objc_testing_library(
     hdrs = ["MacTests/StressTests.h"],
 )
 
-ios_unit_test(
+grpc_objc_ios_unit_test(
     name = "UnitTests",
-    minimum_os_version = "9.0",
-    test_host = ":ios-host",
     deps = [
         ":APIv2Tests-lib",
         ":ChannelPoolTest-lib",
@@ -192,13 +184,23 @@ ios_unit_test(
     ],
 )
 
-ios_unit_test(
-    name = "InteropTests",
-    minimum_os_version = "9.0",
-    test_host = ":ios-host",
+grpc_objc_ios_unit_test(
+    name = "InteropTestsLocalCleartext",
     deps = [
         ":InteropTestsLocalCleartext-lib",
+    ],
+)
+
+grpc_objc_ios_unit_test(
+    name = "InteropTestsLocalSSL",
+    deps = [
         ":InteropTestsLocalSSL-lib",
+    ],
+)
+
+grpc_objc_ios_unit_test(
+    name = "InteropTestsRemote",
+    deps = [
         ":InteropTestsRemote-lib",
     ],
 )
@@ -230,4 +232,25 @@ tvos_unit_test(
         ":NSErrorUnitTests-lib",
         ":RxLibraryUnitTests-lib",
     ],
+)
+
+grpc_sh_test(
+    name = "objc_codegen_plugin_test",
+    srcs = ["PluginTest/plugin_test.sh"],
+    data = [
+        "@com_google_protobuf//:protoc",
+        "//src/compiler:grpc_objective_c_plugin",
+    ] + glob(["PluginTest/*.proto"]),
+    uses_polling = False,
+)
+
+grpc_sh_test(
+    name = "objc_codegen_plugin_option_test",
+    srcs = ["PluginTest/plugin_option_test.sh"],
+    data = [
+        "@com_google_protobuf//:protoc",
+        "//src/compiler:grpc_objective_c_plugin",
+        "@com_google_protobuf//:well_known_type_protos",
+    ] + glob(["RemoteTestClient/*.proto"]),
+    uses_polling = False,
 )

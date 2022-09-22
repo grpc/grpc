@@ -54,14 +54,24 @@ UPB_INLINE xds_annotations_v3_FieldSecurityAnnotation* xds_annotations_v3_FieldS
   return ret;
 }
 UPB_INLINE char* xds_annotations_v3_FieldSecurityAnnotation_serialize(const xds_annotations_v3_FieldSecurityAnnotation* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &xds_annotations_v3_FieldSecurityAnnotation_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &xds_annotations_v3_FieldSecurityAnnotation_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* xds_annotations_v3_FieldSecurityAnnotation_serialize_ex(const xds_annotations_v3_FieldSecurityAnnotation* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &xds_annotations_v3_FieldSecurityAnnotation_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &xds_annotations_v3_FieldSecurityAnnotation_msginit, options, arena, &ptr, len);
+  return ptr;
+}
+UPB_INLINE void xds_annotations_v3_FieldSecurityAnnotation_clear_configure_for_untrusted_downstream(const xds_annotations_v3_FieldSecurityAnnotation* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), bool) = 0;
 }
 UPB_INLINE bool xds_annotations_v3_FieldSecurityAnnotation_configure_for_untrusted_downstream(const xds_annotations_v3_FieldSecurityAnnotation* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), bool);
+}
+UPB_INLINE void xds_annotations_v3_FieldSecurityAnnotation_clear_configure_for_untrusted_upstream(const xds_annotations_v3_FieldSecurityAnnotation* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool) = 0;
 }
 UPB_INLINE bool xds_annotations_v3_FieldSecurityAnnotation_configure_for_untrusted_upstream(const xds_annotations_v3_FieldSecurityAnnotation* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool);
@@ -74,8 +84,23 @@ UPB_INLINE void xds_annotations_v3_FieldSecurityAnnotation_set_configure_for_unt
   *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool) = value;
 }
 
-UPB_INLINE bool xds_annotations_v3_has_security(const struct google_protobuf_FieldOptions *msg) { return _upb_Message_Getext(msg, &xds_annotations_v3_security_ext) != NULL; }
-UPB_INLINE const xds_annotations_v3_FieldSecurityAnnotation* xds_annotations_v3_security(const struct google_protobuf_FieldOptions *msg) { const upb_Message_Extension *ext = _upb_Message_Getext(msg, &xds_annotations_v3_security_ext); UPB_ASSERT(ext); return *UPB_PTR_AT(&ext->data, 0, const xds_annotations_v3_FieldSecurityAnnotation*); }
+UPB_INLINE bool xds_annotations_v3_has_security(const struct google_protobuf_FieldOptions* msg) {
+  return _upb_Message_Getext(msg, &xds_annotations_v3_security_ext) != NULL;
+}
+UPB_INLINE void xds_annotations_v3_clear_security(struct google_protobuf_FieldOptions* msg) {
+  _upb_Message_Clearext(msg, &xds_annotations_v3_security_ext);
+}
+UPB_INLINE const xds_annotations_v3_FieldSecurityAnnotation* xds_annotations_v3_security(const struct google_protobuf_FieldOptions* msg) {
+  const upb_Message_Extension* ext = _upb_Message_Getext(msg, &xds_annotations_v3_security_ext);
+  UPB_ASSERT(ext);
+  return *UPB_PTR_AT(&ext->data, 0, const xds_annotations_v3_FieldSecurityAnnotation*);
+}
+UPB_INLINE void xds_annotations_v3_set_security(struct google_protobuf_FieldOptions* msg, const xds_annotations_v3_FieldSecurityAnnotation* ext, upb_Arena* arena) {
+  const upb_Message_Extension* msg_ext =
+      _upb_Message_GetOrCreateExtension(msg, &xds_annotations_v3_security_ext, arena);
+  UPB_ASSERT(msg_ext);
+  *UPB_PTR_AT(&msg_ext->data, 0, const xds_annotations_v3_FieldSecurityAnnotation*) = ext;
+}
 extern const upb_MiniTable_File xds_annotations_v3_security_proto_upb_file_layout;
 
 #ifdef __cplusplus

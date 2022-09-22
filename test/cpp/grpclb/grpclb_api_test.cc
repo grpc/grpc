@@ -26,7 +26,6 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/event_engine/sockaddr.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/proto/grpc/lb/v1/load_balancer.pb.h"  // C++ version
 #include "test/core/util/test_config.h"
@@ -139,7 +138,7 @@ TEST_F(GrpclbTest, ParseResponseServerList) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   int ret = RUN_ALL_TESTS();
   return ret;

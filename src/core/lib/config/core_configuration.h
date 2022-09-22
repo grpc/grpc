@@ -18,13 +18,19 @@
 #include <grpc/support/port_platform.h>
 
 #include <atomic>
+#include <functional>
+
+#include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args_preconditioning.h"
-#include "src/core/lib/channel/handshaker_registry.h"
+#include "src/core/lib/handshaker/proxy_mapper_registry.h"
+#include "src/core/lib/load_balancing/lb_policy_registry.h"
 #include "src/core/lib/resolver/resolver_registry.h"
+#include "src/core/lib/security/certificate_provider/certificate_provider_registry.h"
 #include "src/core/lib/security/credentials/channel_creds_registry.h"
 #include "src/core/lib/service_config/service_config_parser.h"
 #include "src/core/lib/surface/channel_init.h"
+#include "src/core/lib/transport/handshaker_registry.h"
 
 namespace grpc_core {
 
@@ -61,6 +67,18 @@ class CoreConfiguration {
       return &resolver_registry_;
     }
 
+    LoadBalancingPolicyRegistry::Builder* lb_policy_registry() {
+      return &lb_policy_registry_;
+    }
+
+    ProxyMapperRegistry::Builder* proxy_mapper_registry() {
+      return &proxy_mapper_registry_;
+    }
+
+    CertificateProviderRegistry::Builder* certificate_provider_registry() {
+      return &certificate_provider_registry_;
+    }
+
    private:
     friend class CoreConfiguration;
 
@@ -70,9 +88,56 @@ class CoreConfiguration {
     ChannelCredsRegistry<>::Builder channel_creds_registry_;
     ServiceConfigParser::Builder service_config_parser_;
     ResolverRegistry::Builder resolver_registry_;
+    LoadBalancingPolicyRegistry::Builder lb_policy_registry_;
+    ProxyMapperRegistry::Builder proxy_mapper_registry_;
+    CertificateProviderRegistry::Builder certificate_provider_registry_;
 
     Builder();
     CoreConfiguration* Build();
+  };
+
+  // Stores a builder for RegisterBuilder
+  struct RegisteredBuilder {
+    std::function<void(Builder*)> builder;
+    RegisteredBuilder* next;
+  };
+
+  // Temporarily replaces core configuration with what is built from the
+  // provided BuildFunc that takes (Builder*) and returns void.
+  // Requires no concurrent Get() be called. Restores current core
+  // configuration when this object is destroyed. The default builder
+  // is not backed up or restored.
+  //
+  // Useful for running multiple tests back to back in the same process
+  // without side effects from previous tests.
+  class WithSubstituteBuilder {
+   public:
+    template <typename BuildFunc>
+    explicit WithSubstituteBuilder(BuildFunc build) {
+      // Build core configuration to replace.
+      Builder builder;
+      build(&builder);
+      CoreConfiguration* p = builder.Build();
+
+      // Backup current core configuration and replace/reset.
+      config_restore_ =
+          CoreConfiguration::config_.exchange(p, std::memory_order_acquire);
+      builders_restore_ = CoreConfiguration::builders_.exchange(
+          nullptr, std::memory_order_acquire);
+    }
+
+    ~WithSubstituteBuilder() {
+      // Reset and restore.
+      Reset();
+      GPR_ASSERT(CoreConfiguration::config_.exchange(
+                     config_restore_, std::memory_order_acquire) == nullptr);
+      GPR_ASSERT(CoreConfiguration::builders_.exchange(
+                     builders_restore_, std::memory_order_acquire) == nullptr);
+    }
+
+   private:
+    CoreConfiguration* config_restore_;
+    RegisteredBuilder* builders_restore_;
   };
 
   // Lifetime methods
@@ -86,35 +151,10 @@ class CoreConfiguration {
     return BuildNewAndMaybeSet();
   }
 
-  // Build a special core configuration.
-  // Requires no concurrent Get() be called.
-  // Doesn't call the regular BuildCoreConfiguration function, instead calls
-  // `build`.
-  // BuildFunc is a callable that takes a Builder* and returns void.
-  // We use a template instead of std::function<void(Builder*)> to avoid
-  // including std::function in this widely used header, and to ensure no code
-  // is generated in programs that do not use this function.
-  // This is sometimes useful for testing.
-  template <typename BuildFunc>
-  static void BuildSpecialConfiguration(BuildFunc build) {
-    // Build bespoke configuration
-    Builder builder;
-    build(&builder);
-    CoreConfiguration* p = builder.Build();
-    // Swap in final configuration, deleting anything that was already present.
-    delete config_.exchange(p, std::memory_order_release);
-  }
-
   // Attach a registration function globally.
   // Each registration function is called *in addition to*
-  // BuildCoreConfiguration for the default core configuration. When using
-  // BuildSpecialConfiguration, one can use CallRegisteredBuilders to call them.
-  // Must be called before a configuration is built.
+  // BuildCoreConfiguration for the default core configuration.
   static void RegisterBuilder(std::function<void(Builder*)> builder);
-
-  // Call all registered builders.
-  // See RegisterBuilder for why you might want to call this.
-  static void CallRegisteredBuilders(Builder* builder);
 
   // Drop the core configuration. Users must ensure no other threads are
   // accessing the configuration.
@@ -127,10 +167,8 @@ class CoreConfiguration {
   template <typename BuildFunc, typename RunFunc>
   static void RunWithSpecialConfiguration(BuildFunc build_configuration,
                                           RunFunc code_to_run) {
-    Reset();
-    BuildSpecialConfiguration(build_configuration);
+    WithSubstituteBuilder builder(build_configuration);
     code_to_run();
-    Reset();
   }
 
   // Accessors
@@ -157,18 +195,24 @@ class CoreConfiguration {
     return resolver_registry_;
   }
 
+  const LoadBalancingPolicyRegistry& lb_policy_registry() const {
+    return lb_policy_registry_;
+  }
+
+  const ProxyMapperRegistry& proxy_mapper_registry() const {
+    return proxy_mapper_registry_;
+  }
+
+  const CertificateProviderRegistry& certificate_provider_registry() const {
+    return certificate_provider_registry_;
+  }
+
   static void SetDefaultBuilder(void (*builder)(CoreConfiguration::Builder*)) {
     default_builder_ = builder;
   }
 
  private:
   explicit CoreConfiguration(Builder* builder);
-
-  // Stores a builder for RegisterBuilder
-  struct RegisteredBuilder {
-    std::function<void(Builder*)> builder;
-    RegisteredBuilder* next;
-  };
 
   // Create a new CoreConfiguration, and either set it or throw it away.
   // We allow multiple CoreConfiguration's to be created in parallel.
@@ -187,6 +231,9 @@ class CoreConfiguration {
   ChannelCredsRegistry<> channel_creds_registry_;
   ServiceConfigParser service_config_parser_;
   ResolverRegistry resolver_registry_;
+  LoadBalancingPolicyRegistry lb_policy_registry_;
+  ProxyMapperRegistry proxy_mapper_registry_;
+  CertificateProviderRegistry certificate_provider_registry_;
 };
 
 extern void BuildCoreConfiguration(CoreConfiguration::Builder* builder);

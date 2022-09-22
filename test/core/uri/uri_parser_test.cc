@@ -16,14 +16,13 @@
 
 #include "src/core/lib/uri/uri_parser.h"
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
+#include <utility>
 
-#include "absl/strings/str_join.h"
-#include "absl/strings/str_split.h"
+#include "absl/status/status.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
 
 #include "test/core/util/test_config.h"
 
@@ -467,7 +466,7 @@ TEST(URITest, ToStringPercentEncoding) {
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   auto result = RUN_ALL_TESTS();
   grpc_shutdown();

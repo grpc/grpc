@@ -56,11 +56,18 @@ UPB_INLINE envoy_config_core_v3_ProxyProtocolConfig* envoy_config_core_v3_ProxyP
   return ret;
 }
 UPB_INLINE char* envoy_config_core_v3_ProxyProtocolConfig_serialize(const envoy_config_core_v3_ProxyProtocolConfig* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_core_v3_ProxyProtocolConfig_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_core_v3_ProxyProtocolConfig_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_config_core_v3_ProxyProtocolConfig_serialize_ex(const envoy_config_core_v3_ProxyProtocolConfig* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_core_v3_ProxyProtocolConfig_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_core_v3_ProxyProtocolConfig_msginit, options, arena, &ptr, len);
+  return ptr;
+}
+UPB_INLINE void envoy_config_core_v3_ProxyProtocolConfig_clear_version(const envoy_config_core_v3_ProxyProtocolConfig* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t) = 0;
 }
 UPB_INLINE int32_t envoy_config_core_v3_ProxyProtocolConfig_version(const envoy_config_core_v3_ProxyProtocolConfig* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t);

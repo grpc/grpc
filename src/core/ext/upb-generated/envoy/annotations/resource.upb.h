@@ -54,11 +54,18 @@ UPB_INLINE envoy_annotations_ResourceAnnotation* envoy_annotations_ResourceAnnot
   return ret;
 }
 UPB_INLINE char* envoy_annotations_ResourceAnnotation_serialize(const envoy_annotations_ResourceAnnotation* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_annotations_ResourceAnnotation_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_annotations_ResourceAnnotation_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_annotations_ResourceAnnotation_serialize_ex(const envoy_annotations_ResourceAnnotation* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_annotations_ResourceAnnotation_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_annotations_ResourceAnnotation_msginit, options, arena, &ptr, len);
+  return ptr;
+}
+UPB_INLINE void envoy_annotations_ResourceAnnotation_clear_type(const envoy_annotations_ResourceAnnotation* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
 }
 UPB_INLINE upb_StringView envoy_annotations_ResourceAnnotation_type(const envoy_annotations_ResourceAnnotation* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_StringView);
@@ -68,8 +75,23 @@ UPB_INLINE void envoy_annotations_ResourceAnnotation_set_type(envoy_annotations_
   *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_StringView) = value;
 }
 
-UPB_INLINE bool envoy_annotations_has_resource(const struct google_protobuf_ServiceOptions *msg) { return _upb_Message_Getext(msg, &envoy_annotations_resource_ext) != NULL; }
-UPB_INLINE const envoy_annotations_ResourceAnnotation* envoy_annotations_resource(const struct google_protobuf_ServiceOptions *msg) { const upb_Message_Extension *ext = _upb_Message_Getext(msg, &envoy_annotations_resource_ext); UPB_ASSERT(ext); return *UPB_PTR_AT(&ext->data, 0, const envoy_annotations_ResourceAnnotation*); }
+UPB_INLINE bool envoy_annotations_has_resource(const struct google_protobuf_ServiceOptions* msg) {
+  return _upb_Message_Getext(msg, &envoy_annotations_resource_ext) != NULL;
+}
+UPB_INLINE void envoy_annotations_clear_resource(struct google_protobuf_ServiceOptions* msg) {
+  _upb_Message_Clearext(msg, &envoy_annotations_resource_ext);
+}
+UPB_INLINE const envoy_annotations_ResourceAnnotation* envoy_annotations_resource(const struct google_protobuf_ServiceOptions* msg) {
+  const upb_Message_Extension* ext = _upb_Message_Getext(msg, &envoy_annotations_resource_ext);
+  UPB_ASSERT(ext);
+  return *UPB_PTR_AT(&ext->data, 0, const envoy_annotations_ResourceAnnotation*);
+}
+UPB_INLINE void envoy_annotations_set_resource(struct google_protobuf_ServiceOptions* msg, const envoy_annotations_ResourceAnnotation* ext, upb_Arena* arena) {
+  const upb_Message_Extension* msg_ext =
+      _upb_Message_GetOrCreateExtension(msg, &envoy_annotations_resource_ext, arena);
+  UPB_ASSERT(msg_ext);
+  *UPB_PTR_AT(&msg_ext->data, 0, const envoy_annotations_ResourceAnnotation*) = ext;
+}
 extern const upb_MiniTable_File envoy_annotations_resource_proto_upb_file_layout;
 
 #ifdef __cplusplus

@@ -21,14 +21,12 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/pollset.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
 
 /* A grpc_pollset_set is a set of pollsets that are interested in an
    action. Adding a pollset to a pollset_set automatically adds any
    fd's (etc) that have been registered with the set_set to that pollset.
    Registering fd's automatically adds them to all current pollsets. */
-
-typedef struct grpc_pollset_set grpc_pollset_set;
 
 typedef struct grpc_pollset_set_vtable {
   grpc_pollset_set* (*create)(void);

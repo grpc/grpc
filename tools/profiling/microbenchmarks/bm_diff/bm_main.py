@@ -85,9 +85,6 @@ def _args():
                       type=str,
                       default="microbenchmarks",
                       help='Name that Jenkins will use to comment on the PR')
-    argp.add_argument('--counters', dest='counters', action='store_true')
-    argp.add_argument('--no-counters', dest='counters', action='store_false')
-    argp.set_defaults(counters=True)
     args = argp.parse_args()
     assert args.diff_base or args.old, "One of diff_base or old must be set!"
     if args.loops < 3:
@@ -111,7 +108,7 @@ def eintr_be_gone(fn):
 
 def main(args):
 
-    bm_build.build('new', args.benchmarks, args.jobs, args.counters)
+    bm_build.build('new', args.benchmarks, args.jobs)
 
     old = args.old
     if args.diff_base:
@@ -120,24 +117,23 @@ def main(args):
             ['git', 'rev-parse', '--abbrev-ref', 'HEAD']).strip()
         subprocess.check_call(['git', 'checkout', args.diff_base])
         try:
-            bm_build.build(old, args.benchmarks, args.jobs, args.counters)
+            bm_build.build(old, args.benchmarks, args.jobs)
         finally:
             subprocess.check_call(['git', 'checkout', where_am_i])
             subprocess.check_call(['git', 'submodule', 'update'])
 
     jobs_list = []
     jobs_list += bm_run.create_jobs('new', args.benchmarks, args.loops,
-                                    args.regex, args.counters)
+                                    args.regex)
     jobs_list += bm_run.create_jobs(old, args.benchmarks, args.loops,
-                                    args.regex, args.counters)
+                                    args.regex)
 
     # shuffle all jobs to eliminate noise from GCE CPU drift
     random.shuffle(jobs_list, random.SystemRandom().random)
     jobset.run(jobs_list, maxjobs=args.jobs)
 
     diff, note, significance = bm_diff.diff(args.benchmarks, args.loops,
-                                            args.regex, args.track, old, 'new',
-                                            args.counters)
+                                            args.regex, args.track, old, 'new')
     if diff:
         text = '[%s] Performance differences noted:\n%s' % (
             args.pr_comment_name, diff)
@@ -147,7 +143,6 @@ def main(args):
         text = note + '\n\n' + text
     print('%s' % text)
     check_on_pr.check_on_pr('Benchmark', '```\n%s\n```' % text)
-    check_on_pr.label_significance_on_pr('perf-change', significance)
 
 
 if __name__ == '__main__':

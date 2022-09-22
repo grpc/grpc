@@ -331,6 +331,10 @@ cc_library(
        "test/test-timer.c",
        "test/test-timer-again.c",
        "test/test-timer-from-check.c",
+       "test/test-getaddrinfo.c",
+       "test/test-gethostname.c",
+       "test/test-getnameinfo.c",
+       "test/test-getsockname.c",
     ],
     hdrs = [
         "test/runner.h",

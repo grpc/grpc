@@ -20,10 +20,8 @@
 
 #include <string>
 
-#include <gtest/gtest.h>
-
-#include "absl/debugging/symbolize.h"
 #include "absl/strings/match.h"
+#include "gtest/gtest.h"
 
 #include <grpc/support/log.h>
 
@@ -38,7 +36,7 @@ TEST(StackTracerTest, Basic) {
 }
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   testing::InitGoogleTest(&argc, argv);
   int ret = RUN_ALL_TESTS();
   return ret;

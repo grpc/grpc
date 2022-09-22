@@ -14,21 +14,39 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/port.h"
+#include <algorithm>
+
+#include "src/core/lib/iomgr/port.h"  // IWYU pragma: keep
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
 
+#include <string.h>
+#include <sys/socket.h>
 #include <sys/un.h>
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
+#include <memory>
+#include <string>
+#include <utility>
 
-#include "src/core/lib/address_utils/parse_address.h"
+#include "absl/memory/memory.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+#include "absl/strings/strip.h"
+
+#include <grpc/support/log.h>
+
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/port.h"
+#include "src/core/lib/iomgr/resolved_address.h"
+#include "src/core/lib/resolver/resolver.h"
+#include "src/core/lib/resolver/resolver_factory.h"
 #include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/uri/uri_parser.h"
 
 namespace grpc_core {
 namespace {
@@ -38,15 +56,13 @@ class BinderResolver : public Resolver {
   BinderResolver(ServerAddressList addresses, ResolverArgs args)
       : result_handler_(std::move(args.result_handler)),
         addresses_(std::move(addresses)),
-        channel_args_(grpc_channel_args_copy(args.args)) {}
-
-  ~BinderResolver() override { grpc_channel_args_destroy(channel_args_); };
+        channel_args_(std::move(args.args)) {}
 
   void StartLocked() override {
     Result result;
     result.addresses = std::move(addresses_);
     result.args = channel_args_;
-    channel_args_ = nullptr;
+    channel_args_ = ChannelArgs();
     result_handler_->ReportResult(std::move(result));
   }
 
@@ -55,7 +71,7 @@ class BinderResolver : public Resolver {
  private:
   std::unique_ptr<ResultHandler> result_handler_;
   ServerAddressList addresses_;
-  const grpc_channel_args* channel_args_ = nullptr;
+  ChannelArgs channel_args_;
 };
 
 class BinderResolverFactory : public ResolverFactory {
@@ -108,14 +124,14 @@ class BinderResolverFactory : public ResolverFactory {
         return false;
       }
       grpc_error_handle error = BinderAddrPopulate(uri.path(), &addr);
-      if (error != GRPC_ERROR_NONE) {
+      if (!GRPC_ERROR_IS_NONE(error)) {
         gpr_log(GPR_ERROR, "%s", grpc_error_std_string(error).c_str());
         GRPC_ERROR_UNREF(error);
         return false;
       }
     }
     if (addresses != nullptr) {
-      addresses->emplace_back(addr, nullptr /* args */);
+      addresses->emplace_back(addr, ChannelArgs());
     }
     return true;
   }

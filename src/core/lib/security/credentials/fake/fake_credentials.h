@@ -21,9 +21,21 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <string.h>
+#include <string>
 
+#include "absl/status/statusor.h"
+
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/grpc_security_constants.h>
+#include <grpc/impl/codegen/grpc_types.h>
+
+#include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/unique_type_name.h"
+#include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/slice/slice.h"
+#include "src/core/lib/transport/transport.h"
 
 #define GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS \
   "grpc.fake_security.expected_targets"
@@ -51,10 +63,6 @@ grpc_server_credentials* grpc_fake_transport_security_server_credentials_create(
  * latter is present. */
 grpc_arg grpc_fake_transport_expected_targets_arg(char* expected_targets);
 
-/* Return the value associated with the expected targets channel arg or NULL */
-const char* grpc_fake_transport_get_expected_targets(
-    const grpc_channel_args* args);
-
 /* --  Metadata-only Test credentials. -- */
 
 class grpc_md_only_test_credentials : public grpc_call_credentials {
@@ -70,9 +78,9 @@ class grpc_md_only_test_credentials : public grpc_call_credentials {
 
   std::string debug_string() override { return "MD only Test Credentials"; }
 
-  static const char* Type();
+  static grpc_core::UniqueTypeName Type();
 
-  const char* type() const override { return Type(); }
+  grpc_core::UniqueTypeName type() const override { return Type(); }
 
  private:
   int cmp_impl(const grpc_call_credentials* other) const override {

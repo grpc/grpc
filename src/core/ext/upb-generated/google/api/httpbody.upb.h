@@ -53,20 +53,37 @@ UPB_INLINE google_api_HttpBody* google_api_HttpBody_parse_ex(const char* buf, si
   return ret;
 }
 UPB_INLINE char* google_api_HttpBody_serialize(const google_api_HttpBody* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &google_api_HttpBody_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &google_api_HttpBody_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* google_api_HttpBody_serialize_ex(const google_api_HttpBody* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &google_api_HttpBody_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &google_api_HttpBody_msginit, options, arena, &ptr, len);
+  return ptr;
+}
+UPB_INLINE void google_api_HttpBody_clear_content_type(const google_api_HttpBody* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
 }
 UPB_INLINE upb_StringView google_api_HttpBody_content_type(const google_api_HttpBody* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_StringView);
 }
+UPB_INLINE void google_api_HttpBody_clear_data(const google_api_HttpBody* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 16), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
+}
 UPB_INLINE upb_StringView google_api_HttpBody_data(const google_api_HttpBody* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(8, 16), upb_StringView);
 }
-UPB_INLINE bool google_api_HttpBody_has_extensions(const google_api_HttpBody *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(16, 32)); }
-UPB_INLINE const struct google_protobuf_Any* const* google_api_HttpBody_extensions(const google_api_HttpBody *msg, size_t *len) { return (const struct google_protobuf_Any* const*)_upb_array_accessor(msg, UPB_SIZE(16, 32), len); }
+UPB_INLINE bool google_api_HttpBody_has_extensions(const google_api_HttpBody* msg) {
+  return _upb_has_submsg_nohasbit(msg, UPB_SIZE(16, 32));
+}
+UPB_INLINE void google_api_HttpBody_clear_extensions(const google_api_HttpBody* msg) {
+  _upb_array_detach(msg, UPB_SIZE(16, 32));
+}
+UPB_INLINE const struct google_protobuf_Any* const* google_api_HttpBody_extensions(const google_api_HttpBody* msg, size_t* len) {
+  return (const struct google_protobuf_Any* const*)_upb_array_accessor(msg, UPB_SIZE(16, 32), len);
+}
 
 UPB_INLINE void google_api_HttpBody_set_content_type(google_api_HttpBody *msg, upb_StringView value) {
   *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_StringView) = value;
@@ -74,16 +91,15 @@ UPB_INLINE void google_api_HttpBody_set_content_type(google_api_HttpBody *msg, u
 UPB_INLINE void google_api_HttpBody_set_data(google_api_HttpBody *msg, upb_StringView value) {
   *UPB_PTR_AT(msg, UPB_SIZE(8, 16), upb_StringView) = value;
 }
-UPB_INLINE struct google_protobuf_Any** google_api_HttpBody_mutable_extensions(google_api_HttpBody *msg, size_t *len) {
+UPB_INLINE struct google_protobuf_Any** google_api_HttpBody_mutable_extensions(google_api_HttpBody* msg, size_t* len) {
   return (struct google_protobuf_Any**)_upb_array_mutable_accessor(msg, UPB_SIZE(16, 32), len);
 }
-UPB_INLINE struct google_protobuf_Any** google_api_HttpBody_resize_extensions(google_api_HttpBody *msg, size_t len, upb_Arena *arena) {
+UPB_INLINE struct google_protobuf_Any** google_api_HttpBody_resize_extensions(google_api_HttpBody* msg, size_t len, upb_Arena* arena) {
   return (struct google_protobuf_Any**)_upb_Array_Resize_accessor2(msg, UPB_SIZE(16, 32), len, UPB_SIZE(2, 3), arena);
 }
-UPB_INLINE struct google_protobuf_Any* google_api_HttpBody_add_extensions(google_api_HttpBody *msg, upb_Arena *arena) {
+UPB_INLINE struct google_protobuf_Any* google_api_HttpBody_add_extensions(google_api_HttpBody* msg, upb_Arena* arena) {
   struct google_protobuf_Any* sub = (struct google_protobuf_Any*)_upb_Message_New(&google_protobuf_Any_msginit, arena);
-  bool ok = _upb_Array_Append_accessor2(
-      msg, UPB_SIZE(16, 32), UPB_SIZE(2, 3), &sub, arena);
+  bool ok = _upb_Array_Append_accessor2(msg, UPB_SIZE(16, 32), UPB_SIZE(2, 3), &sub, arena);
   if (!ok) return NULL;
   return sub;
 }

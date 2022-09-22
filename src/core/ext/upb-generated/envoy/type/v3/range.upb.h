@@ -57,14 +57,24 @@ UPB_INLINE envoy_type_v3_Int64Range* envoy_type_v3_Int64Range_parse_ex(const cha
   return ret;
 }
 UPB_INLINE char* envoy_type_v3_Int64Range_serialize(const envoy_type_v3_Int64Range* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_type_v3_Int64Range_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_type_v3_Int64Range_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_type_v3_Int64Range_serialize_ex(const envoy_type_v3_Int64Range* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_type_v3_Int64Range_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_type_v3_Int64Range_msginit, options, arena, &ptr, len);
+  return ptr;
+}
+UPB_INLINE void envoy_type_v3_Int64Range_clear_start(const envoy_type_v3_Int64Range* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int64_t) = 0;
 }
 UPB_INLINE int64_t envoy_type_v3_Int64Range_start(const envoy_type_v3_Int64Range* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int64_t);
+}
+UPB_INLINE void envoy_type_v3_Int64Range_clear_end(const envoy_type_v3_Int64Range* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 8), int64_t) = 0;
 }
 UPB_INLINE int64_t envoy_type_v3_Int64Range_end(const envoy_type_v3_Int64Range* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(8, 8), int64_t);
@@ -102,14 +112,24 @@ UPB_INLINE envoy_type_v3_Int32Range* envoy_type_v3_Int32Range_parse_ex(const cha
   return ret;
 }
 UPB_INLINE char* envoy_type_v3_Int32Range_serialize(const envoy_type_v3_Int32Range* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_type_v3_Int32Range_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_type_v3_Int32Range_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_type_v3_Int32Range_serialize_ex(const envoy_type_v3_Int32Range* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_type_v3_Int32Range_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_type_v3_Int32Range_msginit, options, arena, &ptr, len);
+  return ptr;
+}
+UPB_INLINE void envoy_type_v3_Int32Range_clear_start(const envoy_type_v3_Int32Range* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t) = 0;
 }
 UPB_INLINE int32_t envoy_type_v3_Int32Range_start(const envoy_type_v3_Int32Range* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t);
+}
+UPB_INLINE void envoy_type_v3_Int32Range_clear_end(const envoy_type_v3_Int32Range* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t) = 0;
 }
 UPB_INLINE int32_t envoy_type_v3_Int32Range_end(const envoy_type_v3_Int32Range* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t);
@@ -147,14 +167,24 @@ UPB_INLINE envoy_type_v3_DoubleRange* envoy_type_v3_DoubleRange_parse_ex(const c
   return ret;
 }
 UPB_INLINE char* envoy_type_v3_DoubleRange_serialize(const envoy_type_v3_DoubleRange* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_type_v3_DoubleRange_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_type_v3_DoubleRange_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_type_v3_DoubleRange_serialize_ex(const envoy_type_v3_DoubleRange* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_type_v3_DoubleRange_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_type_v3_DoubleRange_msginit, options, arena, &ptr, len);
+  return ptr;
+}
+UPB_INLINE void envoy_type_v3_DoubleRange_clear_start(const envoy_type_v3_DoubleRange* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), double) = 0;
 }
 UPB_INLINE double envoy_type_v3_DoubleRange_start(const envoy_type_v3_DoubleRange* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), double);
+}
+UPB_INLINE void envoy_type_v3_DoubleRange_clear_end(const envoy_type_v3_DoubleRange* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 8), double) = 0;
 }
 UPB_INLINE double envoy_type_v3_DoubleRange_end(const envoy_type_v3_DoubleRange* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(8, 8), double);

@@ -20,11 +20,16 @@ licenses(["notice"])
 
 grpc_cc_test(
     name = "stats_test",
+    timeout = "long",
     srcs = ["stats_test.cc"],
     external_deps = [
         "gtest",
     ],
     language = "C++",
+    tags = [
+        "cpu:10",
+    ],
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",

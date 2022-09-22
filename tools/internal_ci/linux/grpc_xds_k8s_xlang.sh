@@ -22,7 +22,7 @@ readonly TEST_DRIVER_INSTALL_SCRIPT_URL="https://raw.githubusercontent.com/${TES
 readonly IMAGE_REPO="gcr.io/grpc-testing/xds-interop"
 readonly SERVER_LANG="cpp go java"
 readonly CLIENT_LANG="cpp go java"
-readonly VERSION_TAG="v1.41.x"
+readonly VERSION_TAG="master v1.49.x"
 
 #######################################
 # Executes the test case
@@ -33,6 +33,8 @@ readonly VERSION_TAG="v1.41.x"
 #   SERVER_IMAGE_NAME: Test server Docker image name
 #   CLIENT_IMAGE_NAME: Test client Docker image name
 #   GIT_COMMIT: SHA-1 of git commit being built
+#   TESTING_VERSION: version branch under test: used by the framework to determine the supported PSM
+#                    features.
 # Arguments:
 #   Test case name
 # Outputs:
@@ -48,22 +50,21 @@ run_test() {
   local server_image_name="${IMAGE_REPO}/${slang}-server:${tag}"
   local client_image_name="${IMAGE_REPO}/${clang}-client:${tag}"
   # TODO(sanjaypujare): skip test if image not found (by using gcloud_gcr_list_image_tags)
-
-  # testing_version is used by the framework to determine the supported PSM
-  # features. It's captured from Kokoro job name of the Core repo, which takes
-  # 2 forms:
-  #   grpc/core/master/linux/...
-  #   grpc/core/v1.42.x/branch/linux/...
+  local out_dir="${TEST_XML_OUTPUT_DIR}/${tag}/${clang}-${slang}"
+  mkdir -pv "${out_dir}"
   set -x
   python -m "tests.security_test" \
     --flagfile="${TEST_DRIVER_FLAGFILE}" \
     --kube_context="${KUBE_CONTEXT}" \
     --server_image="${server_image_name}" \
     --client_image="${client_image_name}" \
-    --testing_version=$(echo "$KOKORO_JOB_NAME" | sed -E 's|^grpc/core/([^/]+)/.*|\1|') \
-    --xml_output_file="${TEST_XML_OUTPUT_DIR}/${tag}/${clang}-${slang}/sponge_log.xml" \
+    --testing_version="${TESTING_VERSION}" \
+    --nocheck_local_certs \
     --force_cleanup \
-    --nocheck_local_certs
+    --collect_app_logs \
+    --log_dir="${out_dir}" \
+    --xml_output_file="${out_dir}/sponge_log.xml" \
+    |& tee "${out_dir}/sponge_log.log"
 }
 
 #######################################
