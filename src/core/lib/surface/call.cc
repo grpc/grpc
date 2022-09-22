@@ -2254,7 +2254,7 @@ PromiseBasedCall::Completion PromiseBasedCall::StartCompletion(
 PromiseBasedCall::Completion PromiseBasedCall::AddOpToCompletion(
     const Completion& completion, PendingOp reason) {
   if (grpc_call_trace.enabled()) {
-    gpr_log(GPR_INFO, "%sPauseCompletion %s %s", DebugTag().c_str(),
+    gpr_log(GPR_INFO, "%sAddOpToCompletion %s %s", DebugTag().c_str(),
             completion.ToString().c_str(), PendingOpString(reason));
   }
   auto& pending_op_bits =
@@ -2286,7 +2286,7 @@ void PromiseBasedCall::FinishOpOnCompletion(Completion* completion,
       }
     }
     gpr_log(
-        GPR_INFO, "%sFinishCompletion %s %s %s", DebugTag().c_str(),
+        GPR_INFO, "%sFinishOpOnCompletion %s %s %s", DebugTag().c_str(),
         completion->ToString().c_str(), PendingOpString(reason),
         (pending.empty()
              ? (success ? std::string("done") : std::string("failed"))
