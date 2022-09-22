@@ -16,6 +16,7 @@
 
 #include <cstring>
 #include <memory>
+#include <random>
 #include <string>
 #include <utility>
 
@@ -43,6 +44,45 @@ using Listener = ::grpc_event_engine::experimental::EventEngine::Listener;
 
 namespace grpc_event_engine {
 namespace experimental {
+
+namespace {
+
+constexpr int kMinMessageSize = 1024;
+constexpr int kMaxMessageSize = 4096;
+
+}  // namespace
+
+// Returns a random message with bounded length.
+std::string GetNextSendMessage() {
+  static const char alphanum[] =
+      "0123456789"
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+      "abcdefghijklmnopqrstuvwxyz";
+  static std::random_device rd;
+  static std::seed_seq seed{rd()};
+  static std::mt19937 gen(seed);
+  static std::uniform_real_distribution<> dis(kMinMessageSize, kMaxMessageSize);
+  static grpc_core::Mutex g_mu;
+  std::string tmp_s;
+  int len;
+  {
+    grpc_core::MutexLock lock(&g_mu);
+    len = dis(gen);
+  }
+  tmp_s.reserve(len);
+  for (int i = 0; i < len; ++i) {
+    tmp_s += alphanum[rand() % (sizeof(alphanum) - 1)];
+  }
+  return tmp_s;
+}
+
+// Waits until the use_count of the event engine shared_ptr has reached 1
+// and returns.
+void WaitForPendingTasks(std::shared_ptr<EventEngine>&& engine) {
+  while (engine.use_count() > 1) {
+    absl::SleepFor(absl::Milliseconds(100));
+  }
+}
 
 EventEngine::ResolvedAddress URIToResolvedAddress(std::string address_str) {
   grpc_resolved_address addr;
@@ -119,8 +159,8 @@ absl::Status SendValidatePayload(std::string data, Endpoint* send_endpoint,
   // Check if data written == data read
   std::string data_read = ExtractSliceBufferIntoString(&read_store_buf);
   if (data != data_read) {
-    std::cout << "Data written = " << data << std::endl;
-    std::cout << "Data read = " << data_read << std::endl;
+    gpr_log(GPR_INFO, "Data written = %s", data.c_str());
+    gpr_log(GPR_INFO, "Data read = %s", data_read.c_str());
     return absl::CancelledError("Data read != Data written");
   }
   return absl::OkStatus();

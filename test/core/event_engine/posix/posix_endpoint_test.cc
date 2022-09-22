@@ -1,4 +1,4 @@
-// Copyright 2022 The gRPC Authors
+// Copyright 2022 gRPC Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -38,7 +38,9 @@
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/gprpp/global_config.h"
+#include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/iomgr/port.h"
+#include "test/core/event_engine/posix/posix_engine_test_utils.h"
 #include "test/core/event_engine/test_suite/event_engine_test_utils.h"
 #include "test/core/event_engine/test_suite/oracle_event_engine_posix.h"
 #include "test/core/util/port.h"
@@ -48,79 +50,36 @@ GPR_GLOBAL_CONFIG_DECLARE_STRING(grpc_poll_strategy);
 namespace grpc_event_engine {
 namespace posix_engine {
 
+namespace {
+
 using ::grpc_event_engine::experimental::ChannelArgsEndpointConfig;
 using ::grpc_event_engine::experimental::EventEngine;
+using ::grpc_event_engine::experimental::GetNextSendMessage;
 using ::grpc_event_engine::experimental::Poller;
 using ::grpc_event_engine::experimental::PosixEventEngine;
 using ::grpc_event_engine::experimental::PosixOracleEventEngine;
-using ::grpc_event_engine::experimental::Promise;
 using ::grpc_event_engine::experimental::URIToResolvedAddress;
+using ::grpc_event_engine::experimental::WaitForPendingTasks;
 using Endpoint = ::grpc_event_engine::experimental::EventEngine::Endpoint;
 using Listener = ::grpc_event_engine::experimental::EventEngine::Listener;
 using namespace std::chrono_literals;
 
-namespace {
-
 constexpr int kMinMessageSize = 1024;
-constexpr int kMaxMessageSize = 8192;
 constexpr int kNumConnections = 10;
 constexpr int kNumExchangedMessages = 100;
 std::atomic<int> g_num_active_connections{0};
-
-// Returns a random message with bounded length.
-std::string GetNextSendMessage() {
-  static const char alphanum[] =
-      "0123456789"
-      "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-      "abcdefghijklmnopqrstuvwxyz";
-  static std::random_device rd;
-  static std::seed_seq seed{rd()};
-  static std::mt19937 gen(seed);
-  static std::uniform_real_distribution<> dis(kMinMessageSize, kMaxMessageSize);
-  static grpc_core::Mutex g_mu;
-  std::string tmp_s;
-  int len;
-  {
-    grpc_core::MutexLock lock(&g_mu);
-    len = dis(gen);
-  }
-  tmp_s.reserve(len);
-  for (int i = 0; i < len; ++i) {
-    tmp_s += alphanum[rand() % (sizeof(alphanum) - 1)];
-  }
-  return tmp_s;
-}
-
-std::shared_ptr<EventEngine> GetPosixEE() {
-  static std::shared_ptr<EventEngine> posix_ee =
-      std::make_shared<PosixEventEngine>();
-  return posix_ee;
-}
 
 EventEngine* GetOracleEE() {
   static EventEngine* oracle_ee = new PosixOracleEventEngine();
   return oracle_ee;
 }
 
-class TestScheduler : public Scheduler {
- public:
-  explicit TestScheduler(EventEngine* engine) : engine_(engine) {}
-  void Run(EventEngine::Closure* closure) override { engine_->Run(closure); }
-
-  void Run(absl::AnyInvocable<void()> cb) override {
-    engine_->Run(std::move(cb));
-  }
-
- private:
-  EventEngine* engine_;
-};
-
 std::list<std::tuple<std::unique_ptr<EventEngine::Endpoint>,
                      std::unique_ptr<EventEngine::Endpoint>>>
 CreateConnectedEndpoints(PosixEventPoller* poller, bool is_zero_copy_enabled,
-                         int num_connections) {
+                         int num_connections,
+                         std::shared_ptr<EventEngine> posix_ee) {
   EXPECT_NE(GetOracleEE(), nullptr);
-  EXPECT_NE(GetPosixEE(), nullptr);
   EXPECT_NE(poller, nullptr);
   std::list<std::tuple<std::unique_ptr<EventEngine::Endpoint>,
                        std::unique_ptr<EventEngine::Endpoint>>>
@@ -130,13 +89,15 @@ CreateConnectedEndpoints(PosixEventPoller* poller, bool is_zero_copy_enabled,
       "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die()));
   EventEngine::ResolvedAddress resolved_addr =
       URIToResolvedAddress(target_addr);
-  Promise<std::unique_ptr<EventEngine::Endpoint>> server_endpoint_promise;
+  std::unique_ptr<EventEngine::Endpoint> server_endpoint;
+  grpc_core::Notification* server_signal = new grpc_core::Notification();
 
   Listener::AcceptCallback accept_cb =
-      [&server_endpoint_promise](
+      [&server_endpoint, &server_signal](
           std::unique_ptr<Endpoint> ep,
           grpc_core::MemoryAllocator /*memory_allocator*/) {
-        server_endpoint_promise.Set(std::move(ep));
+        server_endpoint = std::move(ep);
+        server_signal->Notify();
       };
   grpc_core::ChannelArgs args;
   auto quota = grpc_core::ResourceQuota::Default();
@@ -147,49 +108,22 @@ CreateConnectedEndpoints(PosixEventPoller* poller, bool is_zero_copy_enabled,
                     kMinMessageSize);
   }
   ChannelArgsEndpointConfig config(args);
-  auto status = GetOracleEE()->CreateListener(
+  auto listener = GetOracleEE()->CreateListener(
       std::move(accept_cb),
       [](absl::Status status) { ASSERT_TRUE(status.ok()); }, config,
       absl::make_unique<grpc_core::MemoryQuota>("foo"));
-  EXPECT_TRUE(status.ok());
+  GPR_ASSERT(listener.ok());
 
-  std::unique_ptr<Listener> listener = std::move(*status);
-  EXPECT_TRUE(listener->Bind(resolved_addr).ok());
-  EXPECT_TRUE(listener->Start().ok());
+  EXPECT_TRUE((*listener)->Bind(resolved_addr).ok());
+  EXPECT_TRUE((*listener)->Start().ok());
 
   // Create client socket and connect to the target address.
   for (int i = 0; i < num_connections; ++i) {
-    int client_fd;
-    int one = 1;
-    int flags;
-
-    client_fd = socket(AF_INET6, SOCK_STREAM, 0);
-    setsockopt(client_fd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
-    // Make fd non-blocking.
-    flags = fcntl(client_fd, F_GETFL, 0);
-    EXPECT_EQ(fcntl(client_fd, F_SETFL, flags | O_NONBLOCK), 0);
-
-    if (connect(client_fd,
-                const_cast<struct sockaddr*>(resolved_addr.address()),
-                resolved_addr.size()) == -1) {
-      if (errno == EINPROGRESS) {
-        struct pollfd pfd;
-        pfd.fd = client_fd;
-        pfd.events = POLLOUT;
-        pfd.revents = 0;
-        if (poll(&pfd, 1, -1) == -1) {
-          gpr_log(GPR_ERROR, "poll() failed during connect; errno=%d", errno);
-          abort();
-        }
-      } else {
-        gpr_log(GPR_ERROR, "Failed to connect to the server (errno=%d)", errno);
-        abort();
-      }
-    }
+    int client_fd = ConnectToServerOrDie(resolved_addr);
     EventHandle* handle =
         poller->CreateHandle(client_fd, "test", poller->CanTrackErrors());
     EXPECT_NE(handle, nullptr);
-    auto server_endpoint = std::move(server_endpoint_promise.Get());
+    server_signal->WaitForNotification();
     EXPECT_NE(server_endpoint, nullptr);
     ++g_num_active_connections;
     connections.push_back(
@@ -201,10 +135,12 @@ CreateConnectedEndpoints(PosixEventPoller* poller, bool is_zero_copy_enabled,
                                         poller->Kick();
                                       }
                                     }),
-                                GetPosixEE(), config),
+                                posix_ee, config),
             std::move(server_endpoint)));
-    server_endpoint_promise.Reset();
+    delete server_signal;
+    server_signal = new grpc_core::Notification();
   }
+  delete server_signal;
   return connections;
 }
 
@@ -239,14 +175,14 @@ class Worker : public grpc_core::DualRefCounted<Worker> {
       : engine_(std::move(engine)), poller_(poller) {
     WeakRef().release();
   }
-  void Orphan() override { promise.Set(true); }
+  void Orphan() override { signal.Notify(); }
   void Start() {
     // Start executing Work(..).
     engine_->Run([this]() { Work(); });
   }
 
   void Wait() {
-    EXPECT_TRUE(promise.Get());
+    signal.WaitForNotification();
     WeakUnref();
   }
 
@@ -268,14 +204,15 @@ class Worker : public grpc_core::DualRefCounted<Worker> {
   }
   std::shared_ptr<EventEngine> engine_;
   PosixEventPoller* poller_;
-  Promise<bool> promise;
+  grpc_core::Notification signal;
 };
 
 class PosixEndpointTest : public ::testing::TestWithParam<TestParam> {
   void SetUp() override {
+    posix_ee_ = std::make_shared<PosixEventEngine>();
     scheduler_ =
         absl::make_unique<grpc_event_engine::posix_engine::TestScheduler>(
-            GetPosixEE().get());
+            posix_ee_.get());
     EXPECT_NE(scheduler_, nullptr);
     GPR_GLOBAL_CONFIG_SET(grpc_poll_strategy, GetParam().Poller().c_str());
     poller_ = GetDefaultPoller(scheduler_.get());
@@ -288,16 +225,20 @@ class PosixEndpointTest : public ::testing::TestWithParam<TestParam> {
     if (poller_ != nullptr) {
       poller_->Shutdown();
     }
+    WaitForPendingTasks(std::move(posix_ee_));
   }
 
  public:
   TestScheduler* Scheduler() { return scheduler_.get(); }
+
+  std::shared_ptr<EventEngine> GetPosixEE() { return posix_ee_; }
 
   PosixEventPoller* PosixPoller() { return poller_; }
 
  private:
   PosixEventPoller* poller_;
   std::unique_ptr<TestScheduler> scheduler_;
+  std::shared_ptr<EventEngine> posix_ee_;
 };
 
 TEST_P(PosixEndpointTest, ConnectExchangeBidiDataTransferTest) {
@@ -308,7 +249,7 @@ TEST_P(PosixEndpointTest, ConnectExchangeBidiDataTransferTest) {
   worker->Start();
   {
     auto connections = CreateConnectedEndpoints(
-        PosixPoller(), GetParam().IsZeroCopyEnabled(), 1);
+        PosixPoller(), GetParam().IsZeroCopyEnabled(), 1, GetPosixEE());
     auto it = connections.begin();
     auto client_endpoint = std::move(std::get<0>(*it));
     auto server_endpoint = std::move(std::get<1>(*it));
@@ -342,8 +283,9 @@ TEST_P(PosixEndpointTest, MultipleIPv6ConnectionsToOneOracleListenerTest) {
   }
   Worker* worker = new Worker(GetPosixEE(), PosixPoller());
   worker->Start();
-  auto connections = CreateConnectedEndpoints(
-      PosixPoller(), GetParam().IsZeroCopyEnabled(), kNumConnections);
+  auto connections =
+      CreateConnectedEndpoints(PosixPoller(), GetParam().IsZeroCopyEnabled(),
+                               kNumConnections, GetPosixEE());
   std::vector<std::thread> threads;
   // Create one thread for each connection. For each connection, create
   // 2 more worker threads: to exchange and verify bi-directional data transfer.
