@@ -73,6 +73,9 @@ class OpenCensusCallTracer : public grpc_core::CallTracer {
     CensusContext* context() { return &context_; }
 
    private:
+    static CensusContext CreateCensusContextForCallAttempt(
+        OpenCensusCallTracer* call_tracer);
+
     // Maximum size of trace context is sent on the wire.
     static constexpr uint32_t kMaxTraceContextLen = 64;
     // Maximum size of tags that are sent on the wire.
@@ -89,7 +92,8 @@ class OpenCensusCallTracer : public grpc_core::CallTracer {
     absl::StatusCode status_code_;
   };
 
-  explicit OpenCensusCallTracer(const grpc_call_element_args* args);
+  explicit OpenCensusCallTracer(const grpc_call_element_args* args,
+                                bool is_tracing_disabled);
   ~OpenCensusCallTracer() override;
 
   void GenerateContext();
@@ -103,6 +107,7 @@ class OpenCensusCallTracer : public grpc_core::CallTracer {
   absl::string_view method_;
   CensusContext context_;
   grpc_core::Arena* arena_;
+  bool is_tracing_disabled_;
   grpc_core::Mutex mu_;
   // Non-transparent attempts per call
   uint64_t retries_ ABSL_GUARDED_BY(&mu_) = 0;

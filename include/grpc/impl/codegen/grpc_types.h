@@ -461,6 +461,13 @@ typedef struct {
  * channel arg. Int valued, milliseconds. Defaults to 10 minutes.*/
 #define GRPC_ARG_SERVER_CONFIG_CHANGE_DRAIN_GRACE_TIME_MS \
   "grpc.experimental.server_config_change_drain_grace_time_ms"
+/** EXPERIMENTAL. If non-zero, disables observability tracing and observability
+ * logging (not yet implemented) on the client channel. Note that this does not
+ * impact metrics/stats collection. This channel arg is intended as a way to
+ * avoid cyclic execution of observability logging and trace especially when the
+ * sampling rate of RPCs is very high which would generate a lot of data.
+ */
+#define GRPC_ARG_DISABLE_OBSERVABILITY "grpc.experimental.disable_observability"
 /** \} */
 
 /** Result of a grpc call. If the caller satisfies the prerequisites of a
