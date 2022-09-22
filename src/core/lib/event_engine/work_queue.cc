@@ -22,7 +22,6 @@
 #include "absl/functional/any_invocable.h"
 
 #include "src/core/lib/event_engine/common_closures.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -32,14 +31,12 @@ namespace experimental {
 WorkQueue::Storage::Storage(EventEngine::Closure* closure) noexcept
     : closure_(closure),
       enqueued_(
-          grpc_core::ExecCtx::Get()->Now().milliseconds_after_process_epoch()) {
-}
+          grpc_core::Timestamp::Now().milliseconds_after_process_epoch()) {}
 
 WorkQueue::Storage::Storage(absl::AnyInvocable<void()> callback) noexcept
     : closure_(SelfDeletingClosure::Create(std::move(callback))),
       enqueued_(
-          grpc_core::ExecCtx::Get()->Now().milliseconds_after_process_epoch()) {
-}
+          grpc_core::Timestamp::Now().milliseconds_after_process_epoch()) {}
 
 WorkQueue::Storage::Storage(Storage&& other) noexcept
     : closure_(other.closure_), enqueued_(other.enqueued_) {}
@@ -105,12 +102,10 @@ EventEngine::Closure* WorkQueue::PopBack() {
 }
 
 void WorkQueue::Add(EventEngine::Closure* closure) {
-  grpc_core::ExecCtx exec_ctx;
   AddInternal(Storage(closure));
 }
 
 void WorkQueue::Add(absl::AnyInvocable<void()> invocable) {
-  grpc_core::ExecCtx exec_ctx;
   AddInternal(Storage(std::move(invocable)));
 }
 

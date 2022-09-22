@@ -20,7 +20,6 @@
 #include <gtest/gtest.h>
 
 #include "src/core/lib/event_engine/common_closures.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/util/test_config.h"
 
 namespace {
@@ -99,11 +98,10 @@ TEST(WorkQueueTest, PopBackIsLIFO) {
 }
 
 TEST(WorkQueueTest, OldestEnqueuedTimestampIsSane) {
-  grpc_core::ExecCtx exec_ctx;
   WorkQueue queue;
   ASSERT_EQ(queue.OldestEnqueuedTimestamp(), grpc_core::Timestamp::InfPast());
   queue.Add([] {});
-  ASSERT_LE(queue.OldestEnqueuedTimestamp(), exec_ctx.Now());
+  ASSERT_LE(queue.OldestEnqueuedTimestamp(), grpc_core::Timestamp::Now());
   auto* popped = queue.PopFront();
   ASSERT_EQ(queue.OldestEnqueuedTimestamp(), grpc_core::Timestamp::InfPast());
   // prevent leaks by executing or deleting the closure
@@ -112,7 +110,6 @@ TEST(WorkQueueTest, OldestEnqueuedTimestampIsSane) {
 
 TEST(WorkQueueTest, OldestEnqueuedTimestampOrderingIsCorrect) {
   WorkQueue queue;
-  grpc_core::ExecCtx exec_ctx;
   AnyInvocableClosure closure([] {});
   queue.Add(&closure);
   absl::SleepFor(absl::Milliseconds(2));
@@ -121,7 +118,7 @@ TEST(WorkQueueTest, OldestEnqueuedTimestampOrderingIsCorrect) {
   queue.Add(&closure);
   absl::SleepFor(absl::Milliseconds(2));
   auto oldest_ts = queue.OldestEnqueuedTimestamp();
-  ASSERT_LE(oldest_ts, exec_ctx.Now());
+  ASSERT_LE(oldest_ts, grpc_core::Timestamp::Now());
   // pop the oldest, and ensure the next oldest is younger
   EventEngine::Closure* popped = queue.PopFront();
   ASSERT_NE(popped, nullptr);

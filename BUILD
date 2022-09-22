@@ -2457,7 +2457,6 @@ grpc_cc_library(
     deps = [
         "common_event_engine_closures",
         "event_engine_base_hdrs",
-        "exec_ctx",
         "gpr",
         "time",
     ],
