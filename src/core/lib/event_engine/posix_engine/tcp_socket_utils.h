@@ -303,29 +303,32 @@ class PosixSocketWrapper {
       const experimental::EventEngine::ResolvedAddress& addr, int type,
       int protocol, DSMode& dsmode);
 
+  struct PosixSocketCreateResult;
+  // Return a PosixSocketCreateResult which manages a configured, unbound,
+  // unconnected TCP client fd.
+  //  options: may contain custom tcp settings for the fd.
+  //  target_addr: the destination address.
+  //
+  // Returns: Not-OK status on error. Otherwise it returns a
+  // PosixSocketWrapper::PosixSocketCreateResult type which includes a sock
+  // of type PosixSocketWrapper and a mapped_target_addr which is
+  // target_addr mapped to an address appropriate to the type of socket FD
+  // created. For example, if target_addr is IPv4 and dual stack sockets are
+  // available, mapped_target_addr will be an IPv4-mapped IPv6 address.
+  //
+  static absl::StatusOr<PosixSocketCreateResult>
+  CreateAndPrepareTcpClientSocket(
+      const PosixTcpOptions& options,
+      const EventEngine::ResolvedAddress& target_addr);
+
  private:
   int fd_;
 };
 
-struct PosixSocketCreateResult {
+struct PosixSocketWrapper::PosixSocketCreateResult {
   PosixSocketWrapper sock;
   EventEngine::ResolvedAddress mapped_target_addr;
 };
-// Return a PosixSocketCreateResult which manages a configured, unbound,
-// unconnected TCP client fd.
-//  options: may contain custom tcp settings for the fd.
-//  target_addr: the destination address.
-//
-// Returns: Not-OK status on error. Otherwise it returns a
-// PosixSocketWrapper::PosixSocketCreateResult type which includes a sock
-// of type PosixSocketWrapper and a mapped_target_addr which is
-// target_addr mapped to an address appropriate to the type of socket FD
-// created. For example, if target_addr is IPv4 and dual stack sockets are
-// available, mapped_target_addr will be an IPv4-mapped IPv6 address.
-//
-absl::StatusOr<PosixSocketCreateResult> CreateAndPrepareTcpClientSocket(
-    const PosixTcpOptions& options,
-    const EventEngine::ResolvedAddress& target_addr);
 
 }  // namespace posix_engine
 }  // namespace grpc_event_engine

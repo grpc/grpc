@@ -801,7 +801,8 @@ absl::StatusOr<PosixSocketWrapper> PosixSocketWrapper::CreateDualStackSocket(
   return PosixSocketWrapper(newfd);
 }
 
-absl::StatusOr<PosixSocketCreateResult> CreateAndPrepareTcpClientSocket(
+absl::StatusOr<PosixSocketWrapper::PosixSocketCreateResult>
+PosixSocketWrapper::CreateAndPrepareTcpClientSocket(
     const PosixTcpOptions& options,
     const EventEngine::ResolvedAddress& target_addr) {
   PosixSocketWrapper::DSMode dsmode;
@@ -832,7 +833,8 @@ absl::StatusOr<PosixSocketCreateResult> CreateAndPrepareTcpClientSocket(
   if (!error.ok()) {
     return error;
   }
-  return PosixSocketCreateResult{*posix_socket_wrapper, mapped_target_addr};
+  return PosixSocketWrapper::PosixSocketCreateResult{*posix_socket_wrapper,
+                                                     mapped_target_addr};
 }
 
 #else /* GRPC_POSIX_SOCKET_UTILS_COMMON */
@@ -940,8 +942,8 @@ PosixSocketWrapper::CreateDualStackSocket(
   GPR_ASSERT(false && "unimplemented");
 }
 
-absl::StatusOr<PosixSocketCreateResult>
-CreateAndPrepareTcpClientSocket(
+absl::StatusOr<PosixSocketWrapper::PosixSocketCreateResult>
+PosixSocketWrapper::CreateAndPrepareTcpClientSocket(
     const PosixTcpOptions& /*options*/,
     const EventEngine::ResolvedAddress& /*target_addr*/) {
   GPR_ASSERT(false && "unimplemented");
