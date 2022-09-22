@@ -143,13 +143,12 @@ TEST(Init, TimerManagerHoldsLastInit) {
   grpc_init();
   grpc_core::Notification n;
   auto engine = grpc_event_engine::experimental::GetDefaultEventEngine();
-  engine->RunAfter(
-      std::chrono::seconds(1), [&n, engine = std::move(engine)] {
-        grpc_core::ApplicationCallbackExecCtx app_exec_ctx;
-        grpc_core::ExecCtx exec_ctx;
-        grpc_shutdown();
-        n.Notify();
-      });
+  engine->RunAfter(std::chrono::seconds(1), [&n, engine = std::move(engine)] {
+    grpc_core::ApplicationCallbackExecCtx app_exec_ctx;
+    grpc_core::ExecCtx exec_ctx;
+    grpc_shutdown();
+    n.Notify();
+  });
   n.WaitForNotification();
 }
 
