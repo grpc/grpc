@@ -303,9 +303,8 @@ void DropParseAndAppend(
     numerator = envoy_type_v3_FractionalPercent_numerator(drop_percentage);
     {
       ValidationErrors::ScopedField field(errors, ".denominator");
-      const auto denominator =
-          static_cast<envoy_type_v3_FractionalPercent_DenominatorType>(
-              envoy_type_v3_FractionalPercent_denominator(drop_percentage));
+      const int denominator =
+          envoy_type_v3_FractionalPercent_denominator(drop_percentage);
       // Normalize to million.
       switch (denominator) {
         case envoy_type_v3_FractionalPercent_HUNDRED:
