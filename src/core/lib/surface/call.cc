@@ -2054,7 +2054,7 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
   union CompletionInfo {
     struct Pending {
       // Bitmask of PendingOps
-      uint8_t pause_bits;
+      uint8_t pending_op_bits;
       bool is_closure;
       bool success;
       void* tag;
@@ -2257,9 +2257,10 @@ PromiseBasedCall::Completion PromiseBasedCall::AddOpToCompletion(
     gpr_log(GPR_INFO, "%sPauseCompletion %s %s", DebugTag().c_str(),
             completion.ToString().c_str(), PendingOpString(reason));
   }
-  auto& pause_bits = completion_info_[completion.index()].pending.pause_bits;
-  GPR_ASSERT((pause_bits & PendingOpBit(reason)) == 0);
-  pause_bits |= PendingOpBit(reason);
+  auto& pending_op_bits =
+      completion_info_[completion.index()].pending.pending_op_bits;
+  GPR_ASSERT((pending_op_bits & PendingOpBit(reason)) == 0);
+  pending_op_bits |= PendingOpBit(reason);
   return Completion(completion.index());
 }
 
@@ -2274,30 +2275,31 @@ void PromiseBasedCall::FailCompletion(const Completion& completion) {
 void PromiseBasedCall::FinishOpOnCompletion(Completion* completion,
                                             PendingOp reason) {
   if (grpc_call_trace.enabled()) {
-    auto pause_bits = completion_info_[completion->index()].pending.pause_bits;
+    auto pending_op_bits =
+        completion_info_[completion->index()].pending.pending_op_bits;
     bool success = completion_info_[completion->index()].pending.success;
     std::vector<const char*> pending;
-    for (size_t i = 0; i < 8 * sizeof(pause_bits); i++) {
+    for (size_t i = 0; i < 8 * sizeof(pending_op_bits); i++) {
       if (static_cast<PendingOp>(i) == reason) continue;
-      if (pause_bits & (1 << i)) {
+      if (pending_op_bits & (1 << i)) {
         pending.push_back(PendingOpString(static_cast<PendingOp>(i)));
       }
     }
-    gpr_log(GPR_INFO, "%sFinishCompletion %s %s %s", DebugTag().c_str(),
-            completion->ToString().c_str(), PendingOpString(reason),
-            (pending.empty()
-                 ? (success ? std::string("done") : std::string("failed"))
-                 : absl::StrFormat("paused:remaining={%s}",
-                                   absl::StrJoin(pending, ",")))
-                .c_str());
+    gpr_log(
+        GPR_INFO, "%sFinishCompletion %s %s %s", DebugTag().c_str(),
+        completion->ToString().c_str(), PendingOpString(reason),
+        (pending.empty()
+             ? (success ? std::string("done") : std::string("failed"))
+             : absl::StrFormat("pending_ops={%s}", absl::StrJoin(pending, ",")))
+            .c_str());
   }
   const uint8_t i = completion->TakeIndex();
   GPR_ASSERT(i < GPR_ARRAY_SIZE(completion_info_));
   CompletionInfo::Pending& pending = completion_info_[i].pending;
-  GPR_ASSERT(pending.pause_bits & PendingOpBit(reason));
-  pending.pause_bits &= ~PendingOpBit(reason);
+  GPR_ASSERT(pending.pending_op_bits & PendingOpBit(reason));
+  pending.pending_op_bits &= ~PendingOpBit(reason);
   auto error = pending.success ? GRPC_ERROR_NONE : GRPC_ERROR_CANCELLED;
-  if (pending.pause_bits == 0) {
+  if (pending.pending_op_bits == 0) {
     if (pending.is_closure) {
       ExecCtx::Run(DEBUG_LOCATION, static_cast<grpc_closure*>(pending.tag),
                    error);
