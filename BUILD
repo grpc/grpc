@@ -3095,6 +3095,17 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "per_cpu",
+    hdrs = [
+        "src/core/lib/gprpp/per_cpu.h",
+    ],
+    deps = [
+        "exec_ctx",
+        "gpr",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_base",
     srcs = [
         "src/core/lib/address_utils/parse_address.cc",
