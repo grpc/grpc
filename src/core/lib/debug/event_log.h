@@ -15,6 +15,8 @@
 #ifndef GRPC_CORE_LIB_DEBUG_EVENT_LOG_H
 #define GRPC_CORE_LIB_DEBUG_EVENT_LOG_H
 
+#include <grpc/support/port_platform.h>
+
 #include <stdint.h>
 
 #include <atomic>
@@ -76,4 +78,4 @@ class EventLog {
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_CORE_LIB_DEBUG_EVENT_LOG_H
