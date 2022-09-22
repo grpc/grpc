@@ -23,6 +23,10 @@
 
 namespace grpc_core {
 
+// Debug utility to collect a burst of events and then later log them as a
+// detailed sequence.
+// Collects (timestamp, counter-name, delta) and gives back a csv with
+// timestamps and accumulated values for each counter in separate columns.
 class EventLog {
  public:
   EventLog() = default;
