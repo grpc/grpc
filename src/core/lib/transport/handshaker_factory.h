@@ -37,28 +37,29 @@ namespace grpc_core {
 
 class HandshakeManager;
 
-// Enum representing the priority of the client handshakers.
-// The order of the client handshakers is decided by the priority.
+// Enum representing the priority of the handshakers.
+// The order of the handshakers is decided by the priority.
 // For example kPreTCPConnect handshakers are called before kTCPConnect and so
 // on.
-enum class HandshakerClientPriority : int {
-  kPreTCPConnect,
-  kTCPConnect,
-  kHTTPConnect,
-  kSecurity,
+enum class HandshakerPriority : int {
+  // Handshakers that should be called before a TCP connect. Applicable mainly
+  // for Client handshakers.
+  kPreTCPConnectHandshakers,
+  // Handshakers responsible for the actual TCP connect establishment.
+  // Applicable mainly for Client
+  // handshakers.
+  kTCPConnectHandshakers,
+  // Handshakers responsible for the actual HTTP connect established. Applicable
+  // mainly for Client
+  // handshakers.
+  kHTTPConnectHandshakers,
+  // Handshakers that should be called before security handshakes but after
+  // connect establishment. Applicable mainly for Server handshakers currently.
+  kReadHeadSecurityHandshakers,
+  // Handshakers that are responsible for post connect security handshakes.
+  // Applicable for both Client and Server handshakers.
+  kSecurityHandshakers,
 };
-
-// Enum representing the priority of the server handshakers.
-// The order of the server handshakers is decided by the priority.
-// For example kReadHeadSecurity handshakers are called before kSecurity and so
-// on.
-enum class HandshakerServerPriority : int {
-  kReadHeadSecurity,
-  kSecurity,
-};
-
-using HandshakerPriority =
-    absl::variant<HandshakerClientPriority, HandshakerServerPriority>;
 
 class HandshakerFactory {
  public:

@@ -619,7 +619,7 @@ class ClientSecurityHandshakerFactory : public HandshakerFactory {
     }
   }
   HandshakerPriority Priority() override {
-    return HandshakerClientPriority::kSecurity;
+    return HandshakerPriority::kSecurityHandshakers;
   }
   ~ClientSecurityHandshakerFactory() override = default;
 };
@@ -636,7 +636,7 @@ class ServerSecurityHandshakerFactory : public HandshakerFactory {
     }
   }
   HandshakerPriority Priority() override {
-    return HandshakerServerPriority::kSecurity;
+    return HandshakerPriority::kSecurityHandshakers;
   }
   ~ServerSecurityHandshakerFactory() override = default;
 };
