@@ -3118,7 +3118,10 @@ grpc_cc_library(
         "absl/strings",
         "absl/types:span",
     ],
-    deps = ["per_cpu"],
+    deps = [
+        "gpr_public_hdrs",
+        "per_cpu",
+    ],
 )
 
 grpc_cc_library(
