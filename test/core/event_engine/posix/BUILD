@@ -94,6 +94,7 @@ grpc_cc_test(
         "//:posix_event_engine_closure",
         "//:posix_event_engine_event_poller",
         "//:posix_event_engine_poller_posix_default",
+        "//test/core/event_engine/posix:posix_engine_test_utils",
         "//test/core/util:grpc_test_util",
     ],
 )
