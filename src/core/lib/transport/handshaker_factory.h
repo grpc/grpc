@@ -44,12 +44,10 @@ enum class HandshakerPriority : int {
   // for Client handshakers.
   kPreTCPConnectHandshakers,
   // Handshakers responsible for the actual TCP connect establishment.
-  // Applicable mainly for Client
-  // handshakers.
+  // Applicable mainly for Client handshakers.
   kTCPConnectHandshakers,
   // Handshakers responsible for the actual HTTP connect established. Applicable
-  // mainly for Client
-  // handshakers.
+  // mainly for Client handshakers.
   kHTTPConnectHandshakers,
   // Handshakers that should be called before security handshakes but after
   // connect establishment. Applicable mainly for Server handshakers currently.
