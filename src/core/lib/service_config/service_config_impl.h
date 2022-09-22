@@ -74,11 +74,13 @@ class ServiceConfigImpl final : public ServiceConfig {
       const ChannelArgs& args, absl::string_view json_string);
 
   // Alternate forms that are useful in edge cases.
-  static RefCountedPtr<ServiceConfig> Create(
-      const ChannelArgs& args, const Json& json, absl::string_view json_string,
-      ValidationErrors* errors);
-  static RefCountedPtr<ServiceConfig> Create(
-      const ChannelArgs& args, const Json& json, ValidationErrors* errors);
+  static RefCountedPtr<ServiceConfig> Create(const ChannelArgs& args,
+                                             const Json& json,
+                                             absl::string_view json_string,
+                                             ValidationErrors* errors);
+  static RefCountedPtr<ServiceConfig> Create(const ChannelArgs& args,
+                                             const Json& json,
+                                             ValidationErrors* errors);
 
   ~ServiceConfigImpl() override;
 

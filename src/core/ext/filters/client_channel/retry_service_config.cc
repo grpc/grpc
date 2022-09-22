@@ -248,10 +248,10 @@ struct GlobalConfig {
 }  // namespace
 
 std::unique_ptr<ServiceConfigParser::ParsedConfig>
-RetryServiceConfigParser::ParseGlobalParams(
-    const ChannelArgs& /*args*/, const Json& json, ValidationErrors* errors) {
-  auto global_params =
-      LoadFromJson<GlobalConfig>(json, JsonArgs(), errors);
+RetryServiceConfigParser::ParseGlobalParams(const ChannelArgs& /*args*/,
+                                            const Json& json,
+                                            ValidationErrors* errors) {
+  auto global_params = LoadFromJson<GlobalConfig>(json, JsonArgs(), errors);
   return std::move(global_params.retry_throttling);
 }
 
@@ -272,8 +272,9 @@ struct MethodConfig {
 }  // namespace
 
 std::unique_ptr<ServiceConfigParser::ParsedConfig>
-RetryServiceConfigParser::ParsePerMethodParams(
-    const ChannelArgs& args, const Json& json, ValidationErrors* errors) {
+RetryServiceConfigParser::ParsePerMethodParams(const ChannelArgs& args,
+                                               const Json& json,
+                                               ValidationErrors* errors) {
   auto method_params =
       LoadFromJson<MethodConfig>(json, JsonChannelArgs(args), errors);
   return std::move(method_params.retry_policy);

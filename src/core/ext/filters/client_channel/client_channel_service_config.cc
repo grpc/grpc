@@ -136,8 +136,9 @@ void ClientChannelServiceConfigParser::Register(
 }
 
 std::unique_ptr<ServiceConfigParser::ParsedConfig>
-ClientChannelServiceConfigParser::ParseGlobalParams(
-    const ChannelArgs& /*args*/, const Json& json, ValidationErrors* errors) {
+ClientChannelServiceConfigParser::ParseGlobalParams(const ChannelArgs& /*args*/,
+                                                    const Json& json,
+                                                    ValidationErrors* errors) {
   return LoadFromJson<std::unique_ptr<ClientChannelGlobalParsedConfig>>(
       json, JsonArgs(), errors);
 }

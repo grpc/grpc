@@ -62,14 +62,14 @@ class TestParser1 : public ServiceConfigParser::Parser {
  public:
   absl::string_view name() const override { return "test_parser_1"; }
 
-  std::unique_ptr<ServiceConfigParser::ParsedConfig>
-  ParseGlobalParams(const ChannelArgs& args, const Json& json,
-                    ValidationErrors* errors) override {
+  std::unique_ptr<ServiceConfigParser::ParsedConfig> ParseGlobalParams(
+      const ChannelArgs& args, const Json& json,
+      ValidationErrors* errors) override {
     if (args.GetBool(GRPC_ARG_DISABLE_PARSING).value_or(false)) {
       return nullptr;
     }
-    return LoadFromJson<std::unique_ptr<TestParsedConfig1>>(
-        json, JsonArgs(), errors);
+    return LoadFromJson<std::unique_ptr<TestParsedConfig1>>(json, JsonArgs(),
+                                                            errors);
   }
 };
 
@@ -93,14 +93,14 @@ class TestParser2 : public ServiceConfigParser::Parser {
  public:
   absl::string_view name() const override { return "test_parser_2"; }
 
-  std::unique_ptr<ServiceConfigParser::ParsedConfig>
-  ParsePerMethodParams(const ChannelArgs& args, const Json& json,
-                       ValidationErrors* errors) override {
+  std::unique_ptr<ServiceConfigParser::ParsedConfig> ParsePerMethodParams(
+      const ChannelArgs& args, const Json& json,
+      ValidationErrors* errors) override {
     if (args.GetBool(GRPC_ARG_DISABLE_PARSING).value_or(false)) {
       return nullptr;
     }
-    return LoadFromJson<std::unique_ptr<TestParsedConfig2>>(
-        json, JsonArgs(), errors);
+    return LoadFromJson<std::unique_ptr<TestParsedConfig2>>(json, JsonArgs(),
+                                                            errors);
   }
 };
 
@@ -381,17 +381,17 @@ class ErrorParser : public ServiceConfigParser::Parser {
 
   absl::string_view name() const override { return name_; }
 
-  std::unique_ptr<ServiceConfigParser::ParsedConfig>
-  ParsePerMethodParams(const ChannelArgs& /*arg*/, const Json& /*json*/,
-                       ValidationErrors* errors) override {
+  std::unique_ptr<ServiceConfigParser::ParsedConfig> ParsePerMethodParams(
+      const ChannelArgs& /*arg*/, const Json& /*json*/,
+      ValidationErrors* errors) override {
     ValidationErrors::ScopedField field(errors, absl::StrCat(".", name_));
     errors->AddError("method error");
     return nullptr;
   }
 
-  std::unique_ptr<ServiceConfigParser::ParsedConfig>
-  ParseGlobalParams(const ChannelArgs& /*arg*/, const Json& /*json*/,
-                    ValidationErrors* errors) override {
+  std::unique_ptr<ServiceConfigParser::ParsedConfig> ParseGlobalParams(
+      const ChannelArgs& /*arg*/, const Json& /*json*/,
+      ValidationErrors* errors) override {
     ValidationErrors::ScopedField field(errors, absl::StrCat(".", name_));
     errors->AddError("global error");
     return nullptr;
@@ -438,13 +438,12 @@ TEST_F(ErroredParsersScopingTest, MethodParams) {
   const char* test_json = "{\"methodConfig\": [{}]}";
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(
-      service_config.status().message(),
-      "errors validating service config: ["
-      "field:ep1 error:global error; "
-      "field:ep2 error:global error; "
-      "field:methodConfig[0].ep1 error:method error; "
-      "field:methodConfig[0].ep2 error:method error]")
+  EXPECT_EQ(service_config.status().message(),
+            "errors validating service config: ["
+            "field:ep1 error:global error; "
+            "field:ep2 error:global error; "
+            "field:methodConfig[0].ep1 error:method error; "
+            "field:methodConfig[0].ep2 error:method error]")
       << service_config.status();
 }
 

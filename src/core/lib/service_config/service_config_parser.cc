@@ -50,8 +50,9 @@ void ServiceConfigParser::Builder::RegisterParser(
 }
 
 ServiceConfigParser::ParsedConfigVector
-ServiceConfigParser::ParseGlobalParameters(
-    const ChannelArgs& args, const Json& json, ValidationErrors* errors) const {
+ServiceConfigParser::ParseGlobalParameters(const ChannelArgs& args,
+                                           const Json& json,
+                                           ValidationErrors* errors) const {
   ParsedConfigVector parsed_global_configs;
   for (auto& parser : registered_parsers_) {
     parsed_global_configs.push_back(
@@ -61,8 +62,9 @@ ServiceConfigParser::ParseGlobalParameters(
 }
 
 ServiceConfigParser::ParsedConfigVector
-ServiceConfigParser::ParsePerMethodParameters(
-    const ChannelArgs& args, const Json& json, ValidationErrors* errors) const {
+ServiceConfigParser::ParsePerMethodParameters(const ChannelArgs& args,
+                                              const Json& json,
+                                              ValidationErrors* errors) const {
   ParsedConfigVector parsed_method_configs;
   for (auto& parser : registered_parsers_) {
     parsed_method_configs.push_back(

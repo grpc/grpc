@@ -52,16 +52,14 @@ struct MethodConfig {
     absl::optional<std::string> method;
 
     static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
-      static const auto* loader =
-          JsonObjectLoader<Name>()
-              .OptionalField("service", &Name::service)
-              .OptionalField("method", &Name::method)
-              .Finish();
+      static const auto* loader = JsonObjectLoader<Name>()
+                                      .OptionalField("service", &Name::service)
+                                      .OptionalField("method", &Name::method)
+                                      .Finish();
       return loader;
     }
 
-    void JsonPostLoad(const Json&, const JsonArgs&,
-                      ValidationErrors* errors) {
+    void JsonPostLoad(const Json&, const JsonArgs&, ValidationErrors* errors) {
       if (!service.has_value() && method.has_value()) {
         errors->AddError("method name populated without service name");
       }
@@ -77,10 +75,9 @@ struct MethodConfig {
   std::vector<Name> names;
 
   static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
-    static const auto* loader =
-        JsonObjectLoader<MethodConfig>()
-            .OptionalField("name", &MethodConfig::names)
-            .Finish();
+    static const auto* loader = JsonObjectLoader<MethodConfig>()
+                                    .OptionalField("name", &MethodConfig::names)
+                                    .Finish();
     return loader;
   }
 };
@@ -127,20 +124,20 @@ RefCountedPtr<ServiceConfig> ServiceConfigImpl::Create(
           errors, absl::StrCat(".methodConfig[", i, "]"));
       // Have each parser read this method config.
       auto parsed_configs =
-          CoreConfiguration::Get().service_config_parser()
-              .ParsePerMethodParameters(
-                  args, method_config_json, errors);
+          CoreConfiguration::Get()
+              .service_config_parser()
+              .ParsePerMethodParameters(args, method_config_json, errors);
       // Store the parsed configs.
       service_config->parsed_method_config_vectors_storage_.push_back(
           std::move(parsed_configs));
       const ServiceConfigParser::ParsedConfigVector* vector_ptr =
           &service_config->parsed_method_config_vectors_storage_.back();
       // Parse the names.
-      auto method_config = LoadFromJson<MethodConfig>(
-          method_config_json, JsonArgs(), errors);
+      auto method_config =
+          LoadFromJson<MethodConfig>(method_config_json, JsonArgs(), errors);
       for (size_t j = 0; j < method_config.names.size(); ++j) {
-        ValidationErrors::ScopedField field(
-            errors, absl::StrCat(".name[", j, "]"));
+        ValidationErrors::ScopedField field(errors,
+                                            absl::StrCat(".name[", j, "]"));
         std::string path = method_config.names[j].Path();
         if (path.empty()) {
           if (service_config->default_method_config_vector_ != nullptr) {
@@ -153,8 +150,8 @@ RefCountedPtr<ServiceConfig> ServiceConfigImpl::Create(
           // store a ref to the key in the map.
           auto& value = service_config->parsed_method_configs_map_[key];
           if (value != nullptr) {
-            errors->AddError(absl::StrCat(
-                "multiple method configs for path ", StringViewFromSlice(key)));
+            errors->AddError(absl::StrCat("multiple method configs for path ",
+                                          StringViewFromSlice(key)));
             // The map entry already existed, so we need to unref the
             // key we just created.
             grpc_slice_unref_internal(key);

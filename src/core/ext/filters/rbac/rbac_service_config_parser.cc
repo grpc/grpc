@@ -598,8 +598,9 @@ struct RbacConfig {
 }  // namespace
 
 std::unique_ptr<ServiceConfigParser::ParsedConfig>
-RbacServiceConfigParser::ParsePerMethodParams(
-    const ChannelArgs& args, const Json& json, ValidationErrors* errors) {
+RbacServiceConfigParser::ParsePerMethodParams(const ChannelArgs& args,
+                                              const Json& json,
+                                              ValidationErrors* errors) {
   // Only parse rbac policy if the channel arg is present
   if (!args.GetBool(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG).value_or(false)) {
     return nullptr;

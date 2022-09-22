@@ -83,13 +83,13 @@ class ServiceConfigParser {
     ServiceConfigParserList registered_parsers_;
   };
 
-  ParsedConfigVector ParseGlobalParameters(
-      const ChannelArgs& args, const Json& json,
-      ValidationErrors* errors) const;
+  ParsedConfigVector ParseGlobalParameters(const ChannelArgs& args,
+                                           const Json& json,
+                                           ValidationErrors* errors) const;
 
-  ParsedConfigVector ParsePerMethodParameters(
-      const ChannelArgs& args, const Json& json,
-      ValidationErrors* errors) const;
+  ParsedConfigVector ParsePerMethodParameters(const ChannelArgs& args,
+                                              const Json& json,
+                                              ValidationErrors* errors) const;
 
   // Return the index for a given registered parser.
   // If there is an error, return -1.

@@ -461,15 +461,14 @@ TEST_F(RetryParserTest,
       "}";
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(
-      service_config.status().message(),
-      "errors validating service config: ["
-      "field:methodConfig[0].retryPolicy.retryableStatusCodes "
-      "error:must be non-empty; "
-      "field:methodConfig[0].retryPolicy.retryableStatusCodes[0] "
-      "error:is not a string; "
-      "field:methodConfig[0].retryPolicy.retryableStatusCodes[1] "
-      "error:is not a string]")
+  EXPECT_EQ(service_config.status().message(),
+            "errors validating service config: ["
+            "field:methodConfig[0].retryPolicy.retryableStatusCodes "
+            "error:must be non-empty; "
+            "field:methodConfig[0].retryPolicy.retryableStatusCodes[0] "
+            "error:is not a string; "
+            "field:methodConfig[0].retryPolicy.retryableStatusCodes[1] "
+            "error:is not a string]")
       << service_config.status();
 }
 

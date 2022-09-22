@@ -108,8 +108,9 @@ const JsonLoaderInterface* MessageSizeParsedConfig::JsonLoader(
 //
 
 std::unique_ptr<ServiceConfigParser::ParsedConfig>
-MessageSizeParser::ParsePerMethodParams(
-    const ChannelArgs& /*args*/, const Json& json, ValidationErrors* errors) {
+MessageSizeParser::ParsePerMethodParams(const ChannelArgs& /*args*/,
+                                        const Json& json,
+                                        ValidationErrors* errors) {
   return LoadFromJson<std::unique_ptr<MessageSizeParsedConfig>>(
       json, JsonArgs(), errors);
 }
