@@ -535,7 +535,7 @@ struct RbacConfig {
         return loader;
       }
 
-      void JsonPostLoad(const Json& json, const JsonArgs&,
+      void JsonPostLoad(const Json&, const JsonArgs&,
                         ValidationErrors* errors) {
         // Validate action field.
         auto rbac_action = static_cast<Rbac::Action>(action);
