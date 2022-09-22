@@ -73,9 +73,9 @@ TEST_F(RetryParserTest, RetryThrottlingMissingFields) {
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(service_config.status().message(),
-            "Service config parsing errors: [errors validating JSON: ["
+            "errors validating service config: ["
             "field:retryThrottling.maxTokens error:field not present; "
-            "field:retryThrottling.tokenRatio error:field not present]]")
+            "field:retryThrottling.tokenRatio error:field not present]")
       << service_config.status();
 }
 
@@ -90,9 +90,9 @@ TEST_F(RetryParserTest, InvalidRetryThrottlingNegativeMaxTokens) {
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(service_config.status().message(),
-            "Service config parsing errors: [errors validating JSON: ["
+            "errors validating service config: ["
             "field:retryThrottling.maxTokens error:"
-            "failed to parse non-negative number]]")
+            "failed to parse non-negative number]")
       << service_config.status();
 }
 
@@ -107,9 +107,9 @@ TEST_F(RetryParserTest, InvalidRetryThrottlingInvalidTokenRatio) {
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(service_config.status().message(),
-            "Service config parsing errors: [errors validating JSON: ["
+            "errors validating service config: ["
             "field:retryThrottling.tokenRatio error:"
-            "could not parse as a number]]");
+            "could not parse as a number]");
 }
 
 TEST_F(RetryParserTest, ValidRetryPolicy) {
@@ -160,9 +160,8 @@ TEST_F(RetryParserTest, InvalidRetryPolicyWrongType) {
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(service_config.status().message(),
-            "Service config parsing errors: [errors parsing methodConfig: ["
-            "index 0: [errors validating JSON: ["
-            "field:retryPolicy error:is not an object]]]]")
+            "errors validating service config: ["
+            "field:methodConfig[0].retryPolicy error:is not an object]")
       << service_config.status();
 }
 
@@ -181,12 +180,15 @@ TEST_F(RetryParserTest, InvalidRetryPolicyRequiredFieldsMissing) {
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(service_config.status().message(),
-            "Service config parsing errors: [errors parsing methodConfig: ["
-            "index 0: [errors validating JSON: ["
-            "field:retryPolicy.backoffMultiplier error:field not present; "
-            "field:retryPolicy.initialBackoff error:field not present; "
-            "field:retryPolicy.maxAttempts error:field not present; "
-            "field:retryPolicy.maxBackoff error:field not present]]]]")
+            "errors validating service config: ["
+            "field:methodConfig[0].retryPolicy.backoffMultiplier "
+            "error:field not present; "
+            "field:methodConfig[0].retryPolicy.initialBackoff "
+            "error:field not present; "
+            "field:methodConfig[0].retryPolicy.maxAttempts "
+            "error:field not present; "
+            "field:methodConfig[0].retryPolicy.maxBackoff "
+            "error:field not present]")
       << service_config.status();
 }
 
@@ -209,9 +211,9 @@ TEST_F(RetryParserTest, InvalidRetryPolicyMaxAttemptsWrongType) {
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(service_config.status().message(),
-            "Service config parsing errors: [errors parsing methodConfig: ["
-            "index 0: [errors validating JSON: ["
-            "field:retryPolicy.maxAttempts error:failed to parse number]]]]")
+            "errors validating service config: ["
+            "field:methodConfig[0].retryPolicy.maxAttempts "
+            "error:failed to parse number]")
       << service_config.status();
 }
 
@@ -234,9 +236,9 @@ TEST_F(RetryParserTest, InvalidRetryPolicyMaxAttemptsBadValue) {
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(service_config.status().message(),
-            "Service config parsing errors: [errors parsing methodConfig: ["
-            "index 0: [errors validating JSON: ["
-            "field:retryPolicy.maxAttempts error:must be at least 2]]]]")
+            "errors validating service config: ["
+            "field:methodConfig[0].retryPolicy.maxAttempts "
+            "error:must be at least 2]")
       << service_config.status();
 }
 
@@ -258,11 +260,10 @@ TEST_F(RetryParserTest, InvalidRetryPolicyInitialBackoffWrongType) {
       "}";
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(
-      service_config.status().message(),
-      "Service config parsing errors: [errors parsing methodConfig: ["
-      "index 0: [errors validating JSON: ["
-      "field:retryPolicy.initialBackoff error:Not a duration (no s suffix)]]]]")
+  EXPECT_EQ(service_config.status().message(),
+            "errors validating service config: ["
+            "field:methodConfig[0].retryPolicy.initialBackoff "
+            "error:Not a duration (no s suffix)]")
       << service_config.status();
 }
 
@@ -285,9 +286,9 @@ TEST_F(RetryParserTest, InvalidRetryPolicyInitialBackoffBadValue) {
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(service_config.status().message(),
-            "Service config parsing errors: [errors parsing methodConfig: ["
-            "index 0: [errors validating JSON: ["
-            "field:retryPolicy.initialBackoff error:must be greater than 0]]]]")
+            "errors validating service config: ["
+            "field:methodConfig[0].retryPolicy.initialBackoff "
+            "error:must be greater than 0]")
       << service_config.status();
 }
 
@@ -309,11 +310,10 @@ TEST_F(RetryParserTest, InvalidRetryPolicyMaxBackoffWrongType) {
       "}";
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(
-      service_config.status().message(),
-      "Service config parsing errors: [errors parsing methodConfig: ["
-      "index 0: [errors validating JSON: ["
-      "field:retryPolicy.maxBackoff error:Not a duration (no s suffix)]]]]")
+  EXPECT_EQ(service_config.status().message(),
+            "errors validating service config: ["
+            "field:methodConfig[0].retryPolicy.maxBackoff "
+            "error:Not a duration (no s suffix)]")
       << service_config.status();
 }
 
@@ -336,9 +336,9 @@ TEST_F(RetryParserTest, InvalidRetryPolicyMaxBackoffBadValue) {
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(service_config.status().message(),
-            "Service config parsing errors: [errors parsing methodConfig: ["
-            "index 0: [errors validating JSON: ["
-            "field:retryPolicy.maxBackoff error:must be greater than 0]]]]")
+            "errors validating service config: ["
+            "field:methodConfig[0].retryPolicy.maxBackoff "
+            "error:must be greater than 0]")
       << service_config.status();
 }
 
@@ -361,9 +361,9 @@ TEST_F(RetryParserTest, InvalidRetryPolicyBackoffMultiplierWrongType) {
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(service_config.status().message(),
-            "Service config parsing errors: [errors parsing methodConfig: ["
-            "index 0: [errors validating JSON: ["
-            "field:retryPolicy.backoffMultiplier error:is not a number]]]]")
+            "errors validating service config: ["
+            "field:methodConfig[0].retryPolicy.backoffMultiplier "
+            "error:is not a number]")
       << service_config.status();
 }
 
@@ -385,11 +385,10 @@ TEST_F(RetryParserTest, InvalidRetryPolicyBackoffMultiplierBadValue) {
       "}";
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(
-      service_config.status().message(),
-      "Service config parsing errors: [errors parsing methodConfig: ["
-      "index 0: [errors validating JSON: ["
-      "field:retryPolicy.backoffMultiplier error:must be greater than 0]]]]")
+  EXPECT_EQ(service_config.status().message(),
+            "errors validating service config: ["
+            "field:methodConfig[0].retryPolicy.backoffMultiplier "
+            "error:must be greater than 0]")
       << service_config.status();
 }
 
@@ -411,11 +410,10 @@ TEST_F(RetryParserTest, InvalidRetryPolicyEmptyRetryableStatusCodes) {
       "}";
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(
-      service_config.status().message(),
-      "Service config parsing errors: [errors parsing methodConfig: ["
-      "index 0: [errors validating JSON: ["
-      "field:retryPolicy.retryableStatusCodes error:must be non-empty]]]]")
+  EXPECT_EQ(service_config.status().message(),
+            "errors validating service config: ["
+            "field:methodConfig[0].retryPolicy.retryableStatusCodes "
+            "error:must be non-empty]")
       << service_config.status();
 }
 
@@ -438,9 +436,9 @@ TEST_F(RetryParserTest, InvalidRetryPolicyRetryableStatusCodesWrongType) {
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(service_config.status().message(),
-            "Service config parsing errors: [errors parsing methodConfig: ["
-            "index 0: [errors validating JSON: ["
-            "field:retryPolicy.retryableStatusCodes error:is not an array]]]]")
+            "errors validating service config: ["
+            "field:methodConfig[0].retryPolicy.retryableStatusCodes "
+            "error:is not an array]")
       << service_config.status();
 }
 
@@ -465,11 +463,13 @@ TEST_F(RetryParserTest,
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(
       service_config.status().message(),
-      "Service config parsing errors: [errors parsing methodConfig: ["
-      "index 0: [errors validating JSON: ["
-      "field:retryPolicy.retryableStatusCodes error:must be non-empty; "
-      "field:retryPolicy.retryableStatusCodes[0] error:is not a string; "
-      "field:retryPolicy.retryableStatusCodes[1] error:is not a string]]]]")
+      "errors validating service config: ["
+      "field:methodConfig[0].retryPolicy.retryableStatusCodes "
+      "error:must be non-empty; "
+      "field:methodConfig[0].retryPolicy.retryableStatusCodes[0] "
+      "error:is not a string; "
+      "field:methodConfig[0].retryPolicy.retryableStatusCodes[1] "
+      "error:is not a string]")
       << service_config.status();
 }
 
@@ -492,13 +492,13 @@ TEST_F(RetryParserTest, InvalidRetryPolicyUnparseableRetryableStatusCodes) {
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(service_config.status().message(),
-            "Service config parsing errors: [errors parsing methodConfig: ["
-            "index 0: [errors validating JSON: ["
-            "field:retryPolicy.retryableStatusCodes error:must be non-empty; "
-            "field:retryPolicy.retryableStatusCodes[0] error:"
-            "failed to parse status code; "
-            "field:retryPolicy.retryableStatusCodes[1] error:"
-            "failed to parse status code]]]]")
+            "errors validating service config: ["
+            "field:methodConfig[0].retryPolicy.retryableStatusCodes "
+            "error:must be non-empty; "
+            "field:methodConfig[0].retryPolicy.retryableStatusCodes[0] "
+            "error:failed to parse status code; "
+            "field:methodConfig[0].retryPolicy.retryableStatusCodes[1] "
+            "error:failed to parse status code]")
       << service_config.status();
 }
 
@@ -636,10 +636,9 @@ TEST_F(RetryParserTest, InvalidRetryPolicyPerAttemptRecvTimeoutUnparseable) {
   auto service_config = ServiceConfigImpl::Create(args, test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(service_config.status().message(),
-            "Service config parsing errors: [errors parsing methodConfig: ["
-            "index 0: [errors validating JSON: ["
-            "field:retryPolicy.perAttemptRecvTimeout error:"
-            "Not a duration (no s suffix)]]]]")
+            "errors validating service config: ["
+            "field:methodConfig[0].retryPolicy.perAttemptRecvTimeout "
+            "error:Not a duration (no s suffix)]")
       << service_config.status();
 }
 
@@ -665,9 +664,9 @@ TEST_F(RetryParserTest, InvalidRetryPolicyPerAttemptRecvTimeoutWrongType) {
   auto service_config = ServiceConfigImpl::Create(args, test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(service_config.status().message(),
-            "Service config parsing errors: [errors parsing methodConfig: ["
-            "index 0: [errors validating JSON: ["
-            "field:retryPolicy.perAttemptRecvTimeout error:is not a string]]]]")
+            "errors validating service config: ["
+            "field:methodConfig[0].retryPolicy.perAttemptRecvTimeout "
+            "error:is not a string]")
       << service_config.status();
 }
 
@@ -692,11 +691,10 @@ TEST_F(RetryParserTest, InvalidRetryPolicyPerAttemptRecvTimeoutBadValue) {
       ChannelArgs().Set(GRPC_ARG_EXPERIMENTAL_ENABLE_HEDGING, 1);
   auto service_config = ServiceConfigImpl::Create(args, test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(service_config.status().message(),
-              "Service config parsing errors: [errors parsing methodConfig: ["
-              "index 0: [errors validating JSON: ["
-              "field:retryPolicy.perAttemptRecvTimeout "
-              "error:must be greater than 0]]]]")
+  EXPECT_EQ(service_config.status().message(),
+            "errors validating service config: ["
+            "field:methodConfig[0].retryPolicy.perAttemptRecvTimeout "
+            "error:must be greater than 0]")
       << service_config.status();
 }
 

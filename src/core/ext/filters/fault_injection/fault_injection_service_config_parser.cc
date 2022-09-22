@@ -98,16 +98,17 @@ const JsonLoaderInterface* FaultInjectionMethodParsedConfig::JsonLoader(
   return loader;
 }
 
-absl::StatusOr<std::unique_ptr<ServiceConfigParser::ParsedConfig>>
-FaultInjectionServiceConfigParser::ParsePerMethodParams(const ChannelArgs& args,
-                                                        const Json& json) {
+std::unique_ptr<ServiceConfigParser::ParsedConfig>
+FaultInjectionServiceConfigParser::ParsePerMethodParams(
+    const ChannelArgs& args, const Json& json, ValidationErrors* errors) {
   // Only parse fault injection policy if the following channel arg is present.
   if (!args.GetBool(GRPC_ARG_PARSE_FAULT_INJECTION_METHOD_CONFIG)
            .value_or(false)) {
     return nullptr;
   }
   // Parse fault injection policy from given Json
-  return LoadFromJson<std::unique_ptr<FaultInjectionMethodParsedConfig>>(json);
+  return LoadFromJson<std::unique_ptr<FaultInjectionMethodParsedConfig>>(
+      json, JsonArgs(), errors);
 }
 
 void FaultInjectionServiceConfigParser::Register(

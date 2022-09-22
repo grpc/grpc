@@ -31,7 +31,6 @@
 #include "absl/types/optional.h"
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
@@ -598,16 +597,15 @@ struct RbacConfig {
 
 }  // namespace
 
-absl::StatusOr<std::unique_ptr<ServiceConfigParser::ParsedConfig>>
-RbacServiceConfigParser::ParsePerMethodParams(const ChannelArgs& args,
-                                              const Json& json) {
+std::unique_ptr<ServiceConfigParser::ParsedConfig>
+RbacServiceConfigParser::ParsePerMethodParams(
+    const ChannelArgs& args, const Json& json, ValidationErrors* errors) {
   // Only parse rbac policy if the channel arg is present
   if (!args.GetBool(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG).value_or(false)) {
     return nullptr;
   }
-  auto rbac_config = LoadFromJson<RbacConfig>(json);
-  if (!rbac_config.ok()) return rbac_config.status();
-  std::vector<Rbac> rbac_policies = rbac_config->MakeRbacList();
+  auto rbac_config = LoadFromJson<RbacConfig>(json, JsonArgs(), errors);
+  std::vector<Rbac> rbac_policies = rbac_config.MakeRbacList();
   if (rbac_policies.empty()) return nullptr;
   return absl::make_unique<RbacMethodParsedConfig>(std::move(rbac_policies));
 }

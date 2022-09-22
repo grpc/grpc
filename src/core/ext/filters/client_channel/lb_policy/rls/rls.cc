@@ -2421,14 +2421,8 @@ void RlsLbConfig::JsonPostLoad(const Json& json, const JsonArgs&,
   if (it != json.object_value().end()) {
     ValidationErrors::ScopedField field(errors,
                                         ".routeLookupChannelServiceConfig");
-    grpc_error_handle child_error = GRPC_ERROR_NONE;
-    rls_channel_service_config_ = it->second.Dump();
-    auto service_config = MakeRefCounted<ServiceConfigImpl>(
-        ChannelArgs(), rls_channel_service_config_, it->second, &child_error);
-    if (!GRPC_ERROR_IS_NONE(child_error)) {
-      errors->AddError(grpc_error_std_string(child_error));
-      GRPC_ERROR_UNREF(child_error);
-    }
+    // Don't need to save the result here, just need the errors (if any).
+    ServiceConfigImpl::Create(ChannelArgs(), it->second, errors);
   }
   // Validate childPolicyConfigTargetFieldName.
   {

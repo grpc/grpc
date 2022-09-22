@@ -3548,10 +3548,13 @@ grpc_cc_library(
         "gpr",
         "grpc_service_config",
         "json",
+        "json_args",
+        "json_object_loader",
         "ref_counted_ptr",
         "service_config_parser",
         "slice",
         "slice_refcount",
+        "validation_errors",
     ],
 )
 
@@ -3573,6 +3576,7 @@ grpc_cc_library(
         "channel_args",
         "gpr",
         "json",
+        "validation_errors",
     ],
 )
 

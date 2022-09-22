@@ -35,9 +35,6 @@
 namespace grpc_core {
 namespace testing {
 
-// A regular expression to enter referenced or child errors.
-#define CHILD_ERROR_TAG ".*children.*"
-
 class MessageSizeParserTest : public ::testing::Test {
  protected:
   void SetUp() override {
@@ -87,11 +84,10 @@ TEST_F(MessageSizeParserTest, InvalidMaxRequestMessageBytes) {
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(service_config.status().message(),
-            "Service config parsing errors: ["
-            "errors parsing methodConfig: ["
-            "index 0: [errors validating JSON: ["
-            "field:maxRequestMessageBytes "
-            "error:failed to parse non-negative number]]]]");
+            "errors validating service config: ["
+            "field:methodConfig[0].maxRequestMessageBytes "
+            "error:failed to parse non-negative number]")
+      << service_config.status();
 }
 
 TEST_F(MessageSizeParserTest, InvalidMaxResponseMessageBytes) {
@@ -107,10 +103,10 @@ TEST_F(MessageSizeParserTest, InvalidMaxResponseMessageBytes) {
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(service_config.status().message(),
-            "Service config parsing errors: ["
-            "errors parsing methodConfig: ["
-            "index 0: [errors validating JSON: ["
-            "field:maxResponseMessageBytes error:is not a number]]]]");
+            "errors validating service config: ["
+            "field:methodConfig[0].maxResponseMessageBytes "
+            "error:is not a number]")
+      << service_config.status();
 }
 
 }  // namespace testing

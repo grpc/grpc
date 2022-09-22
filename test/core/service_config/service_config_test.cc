@@ -27,6 +27,10 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/gprpp/validation_errors.h"
+#include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_args.h"
+#include "src/core/lib/json/json_object_loader.h"
 #include "src/core/lib/service_config/service_config_impl.h"
 #include "src/core/lib/service_config/service_config_parser.h"
 #include "test/core/util/port.h"
@@ -40,102 +44,64 @@ namespace testing {
 
 class TestParsedConfig1 : public ServiceConfigParser::ParsedConfig {
  public:
-  explicit TestParsedConfig1(int value) : value_(value) {}
+  uint32_t value() const { return value_; }
 
-  int value() const { return value_; }
+  static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
+    static const auto* loader =
+        JsonObjectLoader<TestParsedConfig1>()
+            .OptionalField("global_param", &TestParsedConfig1::value_)
+            .Finish();
+    return loader;
+  }
 
  private:
-  int value_;
+  uint32_t value_;
 };
 
 class TestParser1 : public ServiceConfigParser::Parser {
  public:
   absl::string_view name() const override { return "test_parser_1"; }
 
-  absl::StatusOr<std::unique_ptr<ServiceConfigParser::ParsedConfig>>
-  ParseGlobalParams(const ChannelArgs& args, const Json& json) override {
+  std::unique_ptr<ServiceConfigParser::ParsedConfig>
+  ParseGlobalParams(const ChannelArgs& args, const Json& json,
+                    ValidationErrors* errors) override {
     if (args.GetBool(GRPC_ARG_DISABLE_PARSING).value_or(false)) {
       return nullptr;
     }
-    auto it = json.object_value().find("global_param");
-    if (it != json.object_value().end()) {
-      if (it->second.type() != Json::Type::NUMBER) {
-        return absl::InvalidArgumentError(InvalidTypeErrorMessage());
-      }
-      int value = gpr_parse_nonnegative_int(it->second.string_value().c_str());
-      if (value == -1) {
-        return absl::InvalidArgumentError(InvalidValueErrorMessage());
-      }
-      return absl::make_unique<TestParsedConfig1>(value);
-    }
-    return nullptr;
+    return LoadFromJson<std::unique_ptr<TestParsedConfig1>>(
+        json, JsonArgs(), errors);
+  }
+};
+
+class TestParsedConfig2 : public ServiceConfigParser::ParsedConfig {
+ public:
+  uint32_t value() const { return value_; }
+
+  static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
+    static const auto* loader =
+        JsonObjectLoader<TestParsedConfig2>()
+            .OptionalField("method_param", &TestParsedConfig2::value_)
+            .Finish();
+    return loader;
   }
 
-  static const char* InvalidTypeErrorMessage() {
-    return "global_param value type should be a number";
-  }
-
-  static const char* InvalidValueErrorMessage() {
-    return "global_param value type should be non-negative";
-  }
+ private:
+  uint32_t value_;
 };
 
 class TestParser2 : public ServiceConfigParser::Parser {
  public:
   absl::string_view name() const override { return "test_parser_2"; }
 
-  absl::StatusOr<std::unique_ptr<ServiceConfigParser::ParsedConfig>>
-  ParsePerMethodParams(const ChannelArgs& args, const Json& json) override {
+  std::unique_ptr<ServiceConfigParser::ParsedConfig>
+  ParsePerMethodParams(const ChannelArgs& args, const Json& json,
+                       ValidationErrors* errors) override {
     if (args.GetBool(GRPC_ARG_DISABLE_PARSING).value_or(false)) {
       return nullptr;
     }
-    auto it = json.object_value().find("method_param");
-    if (it != json.object_value().end()) {
-      if (it->second.type() != Json::Type::NUMBER) {
-        return absl::InvalidArgumentError(InvalidTypeErrorMessage());
-      }
-      int value = gpr_parse_nonnegative_int(it->second.string_value().c_str());
-      if (value == -1) {
-        return absl::InvalidArgumentError(InvalidValueErrorMessage());
-      }
-      return absl::make_unique<TestParsedConfig1>(value);
-    }
-    return nullptr;
+    return LoadFromJson<std::unique_ptr<TestParsedConfig2>>(
+        json, JsonArgs(), errors);
   }
-
-  static const char* InvalidTypeErrorMessage() {
-    return "method_param value type should be a number";
-  }
-
-  static const char* InvalidValueErrorMessage() {
-    return "method_param value type should be non-negative";
-  }
-};
-
-// This parser always adds errors
-class ErrorParser : public ServiceConfigParser::Parser {
- public:
-  explicit ErrorParser(absl::string_view name) : name_(name) {}
-
-  absl::string_view name() const override { return name_; }
-
-  absl::StatusOr<std::unique_ptr<ServiceConfigParser::ParsedConfig>>
-  ParsePerMethodParams(const ChannelArgs& /*arg*/,
-                       const Json& /*json*/) override {
-    return absl::InvalidArgumentError(MethodError());
-  }
-
-  absl::StatusOr<std::unique_ptr<ServiceConfigParser::ParsedConfig>>
-  ParseGlobalParams(const ChannelArgs& /*arg*/, const Json& /*json*/) override {
-    return absl::InvalidArgumentError(GlobalError());
-  }
-
-  static const char* MethodError() { return "ErrorParser : methodError"; }
-
-  static const char* GlobalError() { return "ErrorParser : globalError"; }
-
- private:
-  absl::string_view name_;
 };
 
 class ServiceConfigTest : public ::testing::Test {
@@ -160,14 +126,14 @@ class ServiceConfigTest : public ::testing::Test {
   std::unique_ptr<CoreConfiguration::WithSubstituteBuilder> builder_;
 };
 
-TEST_F(ServiceConfigTest, ErrorCheck1) {
+TEST_F(ServiceConfigTest, JsonParseError) {
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), "");
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_THAT(std::string(service_config.status().message()),
               ::testing::ContainsRegex("JSON parse error"));
 }
 
-TEST_F(ServiceConfigTest, BasicTest1) {
+TEST_F(ServiceConfigTest, EmptyConfig) {
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), "{}");
   ASSERT_TRUE(service_config.ok()) << service_config.status();
 }
@@ -199,10 +165,10 @@ TEST_F(ServiceConfigTest, ErrorDuplicateMethodConfigNames) {
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(service_config.status().message(),
-            "Service config parsing errors: ["
-            "errors parsing methodConfig: ["
-            "index 1: ["
-            "field:name error:multiple method configs with same name]]]");
+            "errors validating service config: ["
+            "field:methodConfig[1].name[0] "
+            "error:multiple method configs for path /TestServ/]")
+      << service_config.status();
 }
 
 TEST_F(ServiceConfigTest, ErrorDuplicateMethodConfigNamesWithNullMethod) {
@@ -214,10 +180,10 @@ TEST_F(ServiceConfigTest, ErrorDuplicateMethodConfigNamesWithNullMethod) {
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(service_config.status().message(),
-            "Service config parsing errors: ["
-            "errors parsing methodConfig: ["
-            "index 1: ["
-            "field:name error:multiple method configs with same name]]]");
+            "errors validating service config: ["
+            "field:methodConfig[1].name[0] "
+            "error:multiple method configs for path /TestServ/]")
+      << service_config.status();
 }
 
 TEST_F(ServiceConfigTest, ErrorDuplicateMethodConfigNamesWithEmptyMethod) {
@@ -229,10 +195,10 @@ TEST_F(ServiceConfigTest, ErrorDuplicateMethodConfigNamesWithEmptyMethod) {
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(service_config.status().message(),
-            "Service config parsing errors: ["
-            "errors parsing methodConfig: ["
-            "index 1: ["
-            "field:name error:multiple method configs with same name]]]");
+            "errors validating service config: ["
+            "field:methodConfig[1].name[0] "
+            "error:multiple method configs for path /TestServ/]")
+      << service_config.status();
 }
 
 TEST_F(ServiceConfigTest, ErrorDuplicateDefaultMethodConfigs) {
@@ -244,10 +210,10 @@ TEST_F(ServiceConfigTest, ErrorDuplicateDefaultMethodConfigs) {
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(service_config.status().message(),
-            "Service config parsing errors: ["
-            "errors parsing methodConfig: ["
-            "index 1: ["
-            "field:name error:multiple default method configs]]]");
+            "errors validating service config: ["
+            "field:methodConfig[1].name[0] "
+            "error:duplicate default method config]")
+      << service_config.status();
 }
 
 TEST_F(ServiceConfigTest, ErrorDuplicateDefaultMethodConfigsWithNullService) {
@@ -259,10 +225,10 @@ TEST_F(ServiceConfigTest, ErrorDuplicateDefaultMethodConfigsWithNullService) {
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(service_config.status().message(),
-            "Service config parsing errors: ["
-            "errors parsing methodConfig: ["
-            "index 1: ["
-            "field:name error:multiple default method configs]]]");
+            "errors validating service config: ["
+            "field:methodConfig[1].name[0] "
+            "error:duplicate default method config]")
+      << service_config.status();
 }
 
 TEST_F(ServiceConfigTest, ErrorDuplicateDefaultMethodConfigsWithEmptyService) {
@@ -274,10 +240,10 @@ TEST_F(ServiceConfigTest, ErrorDuplicateDefaultMethodConfigsWithEmptyService) {
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(service_config.status().message(),
-            "Service config parsing errors: ["
-            "errors parsing methodConfig: ["
-            "index 1: ["
-            "field:name error:multiple default method configs]]]");
+            "errors validating service config: ["
+            "field:methodConfig[1].name[0] "
+            "error:duplicate default method config]")
+      << service_config.status();
 }
 
 TEST_F(ServiceConfigTest, ValidMethodConfig) {
@@ -320,12 +286,13 @@ TEST_F(ServiceConfigTest, Parser1DisabledViaChannelArg) {
 }
 
 TEST_F(ServiceConfigTest, Parser1ErrorInvalidType) {
-  const char* test_json = "{\"global_param\":\"5\"}";
+  const char* test_json = "{\"global_param\":[]}";
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(service_config.status().message(),
-            absl::StrCat("Service config parsing errors: [",
-                         TestParser1::InvalidTypeErrorMessage(), "]"));
+            "errors validating service config: ["
+            "field:global_param error:is not a number]")
+      << service_config.status();
 }
 
 TEST_F(ServiceConfigTest, Parser1ErrorInvalidValue) {
@@ -333,8 +300,9 @@ TEST_F(ServiceConfigTest, Parser1ErrorInvalidValue) {
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(service_config.status().message(),
-            absl::StrCat("Service config parsing errors: [",
-                         TestParser1::InvalidValueErrorMessage(), "]"));
+            "errors validating service config: ["
+            "field:global_param error:failed to parse non-negative number]")
+      << service_config.status();
 }
 
 TEST_F(ServiceConfigTest, Parser2BasicTest) {
@@ -371,14 +339,13 @@ TEST_F(ServiceConfigTest, Parser2DisabledViaChannelArg) {
 TEST_F(ServiceConfigTest, Parser2ErrorInvalidType) {
   const char* test_json =
       "{\"methodConfig\": [{\"name\":[{\"service\":\"TestServ\"}], "
-      "\"method_param\":\"5\"}]}";
+      "\"method_param\":[]}]}";
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(service_config.status().message(),
-            absl::StrCat("Service config parsing errors: ["
-                         "errors parsing methodConfig: ["
-                         "index 0: [",
-                         TestParser2::InvalidTypeErrorMessage(), "]]]"));
+            "errors validating service config: ["
+            "field:methodConfig[0].method_param error:is not a number]")
+      << service_config.status();
 }
 
 TEST_F(ServiceConfigTest, Parser2ErrorInvalidValue) {
@@ -388,10 +355,10 @@ TEST_F(ServiceConfigTest, Parser2ErrorInvalidValue) {
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(service_config.status().message(),
-            absl::StrCat("Service config parsing errors: ["
-                         "errors parsing methodConfig: ["
-                         "index 0: [",
-                         TestParser2::InvalidValueErrorMessage(), "]]]"));
+            "errors validating service config: ["
+            "field:methodConfig[0].method_param "
+            "error:failed to parse non-negative number]")
+      << service_config.status();
 }
 
 TEST(ServiceConfigParserTest, DoubleRegistration) {
@@ -400,12 +367,39 @@ TEST(ServiceConfigParserTest, DoubleRegistration) {
       CoreConfiguration::WithSubstituteBuilder builder(
           [](CoreConfiguration::Builder* builder) {
             builder->service_config_parser()->RegisterParser(
-                absl::make_unique<ErrorParser>("xyzabc"));
+                absl::make_unique<TestParser1>());
             builder->service_config_parser()->RegisterParser(
-                absl::make_unique<ErrorParser>("xyzabc"));
+                absl::make_unique<TestParser1>());
           }),
-      "xyzabc.*already registered");
+      "test_parser_1.*already registered");
 }
+
+// This parser always adds errors
+class ErrorParser : public ServiceConfigParser::Parser {
+ public:
+  explicit ErrorParser(absl::string_view name) : name_(name) {}
+
+  absl::string_view name() const override { return name_; }
+
+  std::unique_ptr<ServiceConfigParser::ParsedConfig>
+  ParsePerMethodParams(const ChannelArgs& /*arg*/, const Json& /*json*/,
+                       ValidationErrors* errors) override {
+    ValidationErrors::ScopedField field(errors, absl::StrCat(".", name_));
+    errors->AddError("method error");
+    return nullptr;
+  }
+
+  std::unique_ptr<ServiceConfigParser::ParsedConfig>
+  ParseGlobalParams(const ChannelArgs& /*arg*/, const Json& /*json*/,
+                    ValidationErrors* errors) override {
+    ValidationErrors::ScopedField field(errors, absl::StrCat(".", name_));
+    errors->AddError("global error");
+    return nullptr;
+  }
+
+ private:
+  absl::string_view name_;
+};
 
 // Test parsing with ErrorParsers which always add errors
 class ErroredParsersScopingTest : public ::testing::Test {
@@ -435,9 +429,9 @@ TEST_F(ErroredParsersScopingTest, GlobalParams) {
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(service_config.status().message(),
-            absl::StrCat("Service config parsing errors: [",
-                         ErrorParser::GlobalError(), "; ",
-                         ErrorParser::GlobalError(), "]"));
+            "errors validating service config: ["
+            "field:ep1 error:global error; field:ep2 error:global error]")
+      << service_config.status();
 }
 
 TEST_F(ErroredParsersScopingTest, MethodParams) {
@@ -446,13 +440,12 @@ TEST_F(ErroredParsersScopingTest, MethodParams) {
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(
       service_config.status().message(),
-      absl::StrCat("Service config parsing errors: [",
-                   ErrorParser::GlobalError(), "; ", ErrorParser::GlobalError(),
-                   "; "
-                   "errors parsing methodConfig: ["
-                   "index 0: [",
-                   ErrorParser::MethodError(), "; ", ErrorParser::MethodError(),
-                   "]]]"));
+      "errors validating service config: ["
+      "field:ep1 error:global error; "
+      "field:ep2 error:global error; "
+      "field:methodConfig[0].ep1 error:method error; "
+      "field:methodConfig[0].ep2 error:method error]")
+      << service_config.status();
 }
 
 }  // namespace testing

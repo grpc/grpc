@@ -111,9 +111,10 @@ TEST_F(ClientChannelParserTest, UnknownLoadBalancingConfig) {
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(service_config.status().message(),
-            "Service config parsing errors: [errors validating JSON: ["
+            "errors validating service config: ["
             "field:loadBalancingConfig error:"
-            "No known policies in list: unknown]]");
+            "No known policies in list: unknown]")
+      << service_config.status();
 }
 
 TEST_F(ClientChannelParserTest, InvalidGrpclbLoadBalancingConfig) {
@@ -125,10 +126,11 @@ TEST_F(ClientChannelParserTest, InvalidGrpclbLoadBalancingConfig) {
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(service_config.status().message(),
-            "Service config parsing errors: [errors validating JSON: ["
+            "errors validating service config: ["
             "field:loadBalancingConfig error:"
             "errors validating grpclb LB policy config: ["
-            "field:childPolicy error:type should be array]]]");
+            "field:childPolicy error:type should be array]]")
+      << service_config.status();
 }
 
 TEST_F(ClientChannelParserTest, ValidLoadBalancingPolicy) {
@@ -156,8 +158,9 @@ TEST_F(ClientChannelParserTest, UnknownLoadBalancingPolicy) {
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(service_config.status().message(),
-            "Service config parsing errors: [errors validating JSON: ["
-            "field:loadBalancingPolicy error:unknown LB policy \"unknown\"]]");
+            "errors validating service config: ["
+            "field:loadBalancingPolicy error:unknown LB policy \"unknown\"]")
+      << service_config.status();
 }
 
 TEST_F(ClientChannelParserTest, LoadBalancingPolicyXdsNotAllowed) {
@@ -166,10 +169,11 @@ TEST_F(ClientChannelParserTest, LoadBalancingPolicyXdsNotAllowed) {
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(service_config.status().message(),
-            "Service config parsing errors: [errors validating JSON: ["
+            "errors validating service config: ["
             "field:loadBalancingPolicy error:LB policy "
             "\"xds_cluster_resolver_experimental\" requires a config. Please "
-            "use loadBalancingConfig instead.]]");
+            "use loadBalancingConfig instead.]")
+      << service_config.status();
 }
 
 TEST_F(ClientChannelParserTest, ValidTimeout) {
@@ -209,9 +213,10 @@ TEST_F(ClientChannelParserTest, InvalidTimeout) {
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(service_config.status().message(),
-            "Service config parsing errors: [errors parsing methodConfig: ["
-            "index 0: [errors validating JSON: ["
-            "field:timeout error:Not a duration (no s suffix)]]]]");
+            "errors validating service config: ["
+            "field:methodConfig[0].timeout "
+            "error:Not a duration (no s suffix)]")
+      << service_config.status();
 }
 
 TEST_F(ClientChannelParserTest, ValidWaitForReady) {
@@ -255,9 +260,9 @@ TEST_F(ClientChannelParserTest, InvalidWaitForReady) {
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(service_config.status().message(),
-            "Service config parsing errors: [errors parsing methodConfig: ["
-            "index 0: [errors validating JSON: ["
-            "field:waitForReady error:is not a boolean]]]]");
+            "errors validating service config: ["
+            "field:methodConfig[0].waitForReady error:is not a boolean]")
+      << service_config.status();
 }
 
 TEST_F(ClientChannelParserTest, ValidHealthCheck) {
@@ -291,7 +296,8 @@ TEST_F(ClientChannelParserTest, InvalidHealthCheckMultipleEntries) {
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(service_config.status().message(),
             "JSON parsing failed: ["
-            "duplicate key \"healthCheckConfig\" at index 104]");
+            "duplicate key \"healthCheckConfig\" at index 104]")
+      << service_config.status();
 }
 
 }  // namespace testing

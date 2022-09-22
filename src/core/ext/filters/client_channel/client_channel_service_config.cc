@@ -135,16 +135,18 @@ void ClientChannelServiceConfigParser::Register(
       absl::make_unique<ClientChannelServiceConfigParser>());
 }
 
-absl::StatusOr<std::unique_ptr<ServiceConfigParser::ParsedConfig>>
-ClientChannelServiceConfigParser::ParseGlobalParams(const ChannelArgs& /*args*/,
-                                                    const Json& json) {
-  return LoadFromJson<std::unique_ptr<ClientChannelGlobalParsedConfig>>(json);
+std::unique_ptr<ServiceConfigParser::ParsedConfig>
+ClientChannelServiceConfigParser::ParseGlobalParams(
+    const ChannelArgs& /*args*/, const Json& json, ValidationErrors* errors) {
+  return LoadFromJson<std::unique_ptr<ClientChannelGlobalParsedConfig>>(
+      json, JsonArgs(), errors);
 }
 
-absl::StatusOr<std::unique_ptr<ServiceConfigParser::ParsedConfig>>
+std::unique_ptr<ServiceConfigParser::ParsedConfig>
 ClientChannelServiceConfigParser::ParsePerMethodParams(
-    const ChannelArgs& /*args*/, const Json& json) {
-  return LoadFromJson<std::unique_ptr<ClientChannelMethodParsedConfig>>(json);
+    const ChannelArgs& /*args*/, const Json& json, ValidationErrors* errors) {
+  return LoadFromJson<std::unique_ptr<ClientChannelMethodParsedConfig>>(
+      json, JsonArgs(), errors);
 }
 
 }  // namespace internal

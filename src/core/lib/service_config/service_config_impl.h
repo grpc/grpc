@@ -73,8 +73,13 @@ class ServiceConfigImpl final : public ServiceConfig {
   static absl::StatusOr<RefCountedPtr<ServiceConfig>> Create(
       const ChannelArgs& args, absl::string_view json_string);
 
-  ServiceConfigImpl(const ChannelArgs& args, std::string json_string, Json json,
-                    absl::Status* status);
+  // Alternate forms that are useful in edge cases.
+  static RefCountedPtr<ServiceConfig> Create(
+      const ChannelArgs& args, const Json& json, absl::string_view json_string,
+      ValidationErrors* errors);
+  static RefCountedPtr<ServiceConfig> Create(
+      const ChannelArgs& args, const Json& json, ValidationErrors* errors);
+
   ~ServiceConfigImpl() override;
 
   absl::string_view json_string() const override { return json_string_; }
@@ -95,21 +100,10 @@ class ServiceConfigImpl final : public ServiceConfig {
       const grpc_slice& path) const override;
 
  private:
-  // Helper functions for parsing the method configs.
-  absl::Status ParsePerMethodParams(const ChannelArgs& args,
-                                    ValidationErrors* errors);
-  absl::Status ParseJsonMethodConfig(const ChannelArgs& args, const Json& json,
-                                     size_t index);
-
-  // Returns a path string for the JSON name object specified by json.
-  // Sets *error on error.
-  static absl::StatusOr<std::string> ParseJsonMethodName(const Json& json);
-
   std::string json_string_;
   Json json_;
 
-  std::vector<std::unique_ptr<ServiceConfigParser::ParsedConfig>>
-      parsed_global_configs_;
+  ServiceConfigParser::ParsedConfigVector parsed_global_configs_;
   // A map from the method name to the parsed config vector. Note that we are
   // using a raw pointer and not a unique pointer so that we can use the same
   // vector for multiple names.
@@ -120,8 +114,8 @@ class ServiceConfigImpl final : public ServiceConfig {
   const ServiceConfigParser::ParsedConfigVector* default_method_config_vector_ =
       nullptr;
   // Storage for all the vectors that are being used in
-  // parsed_method_configs_table_.
-  std::vector<std::unique_ptr<ServiceConfigParser::ParsedConfigVector>>
+  // parsed_method_configs_map_ and default_method_config_vector_.
+  std::vector<ServiceConfigParser::ParsedConfigVector>
       parsed_method_config_vectors_storage_;
 };
 

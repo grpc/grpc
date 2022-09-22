@@ -247,12 +247,12 @@ struct GlobalConfig {
 
 }  // namespace
 
-absl::StatusOr<std::unique_ptr<ServiceConfigParser::ParsedConfig>>
-RetryServiceConfigParser::ParseGlobalParams(const ChannelArgs& /*args*/,
-                                            const Json& json) {
-  auto global_params = LoadFromJson<GlobalConfig>(json);
-  if (!global_params.ok()) return global_params.status();
-  return std::move(global_params->retry_throttling);
+std::unique_ptr<ServiceConfigParser::ParsedConfig>
+RetryServiceConfigParser::ParseGlobalParams(
+    const ChannelArgs& /*args*/, const Json& json, ValidationErrors* errors) {
+  auto global_params =
+      LoadFromJson<GlobalConfig>(json, JsonArgs(), errors);
+  return std::move(global_params.retry_throttling);
 }
 
 namespace {
@@ -271,12 +271,12 @@ struct MethodConfig {
 
 }  // namespace
 
-absl::StatusOr<std::unique_ptr<ServiceConfigParser::ParsedConfig>>
-RetryServiceConfigParser::ParsePerMethodParams(const ChannelArgs& args,
-                                               const Json& json) {
-  auto method_params = LoadFromJson<MethodConfig>(json, JsonChannelArgs(args));
-  if (!method_params.ok()) return method_params.status();
-  return std::move(method_params->retry_policy);
+std::unique_ptr<ServiceConfigParser::ParsedConfig>
+RetryServiceConfigParser::ParsePerMethodParams(
+    const ChannelArgs& args, const Json& json, ValidationErrors* errors) {
+  auto method_params =
+      LoadFromJson<MethodConfig>(json, JsonChannelArgs(args), errors);
+  return std::move(method_params.retry_policy);
 }
 
 }  // namespace internal

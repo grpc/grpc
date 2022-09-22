@@ -54,12 +54,10 @@ ServiceConfigParser::ParseGlobalParameters(
     const ChannelArgs& args, const Json& json, ValidationErrors* errors) const {
   ParsedConfigVector parsed_global_configs;
   for (auto& parser : registered_parsers_) {
-    auto parsed_config = parser->ParseGlobalParams(args, json, errors);
-    if (parsed_config != nullptr) {
-      parsed_global_configs.push_back(std::move(parsed_config));
-    }
+    parsed_global_configs.push_back(
+        parser->ParseGlobalParams(args, json, errors));
   }
-  return std::move(parsed_global_configs);
+  return parsed_global_configs;
 }
 
 ServiceConfigParser::ParsedConfigVector
@@ -67,12 +65,10 @@ ServiceConfigParser::ParsePerMethodParameters(
     const ChannelArgs& args, const Json& json, ValidationErrors* errors) const {
   ParsedConfigVector parsed_method_configs;
   for (auto& parser : registered_parsers_) {
-    auto parsed_config = parser->ParsePerMethodParams(args, json, errors);
-    if (parsed_config != nullptr) {
-      parsed_method_configs.push_back(std::move(parsed_config));
-    }
+    parsed_method_configs.push_back(
+        parser->ParsePerMethodParams(args, json, errors));
   }
-  return std::move(parsed_method_configs);
+  return parsed_method_configs;
 }
 
 size_t ServiceConfigParser::GetParserIndex(absl::string_view name) const {
