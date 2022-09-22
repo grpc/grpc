@@ -67,8 +67,8 @@ TEST_F(MessageSizeParserTest, Valid) {
   auto parsed_config = static_cast<MessageSizeParsedConfig*>(
       ((*vector_ptr)[parser_index_]).get());
   ASSERT_NE(parsed_config, nullptr);
-  EXPECT_EQ(parsed_config->max_send_size(), 1024);
-  EXPECT_EQ(parsed_config->max_recv_size(), 1024);
+  EXPECT_EQ(parsed_config->max_send_size(), 1024U);
+  EXPECT_EQ(parsed_config->max_recv_size(), 1024U);
 }
 
 TEST_F(MessageSizeParserTest, InvalidMaxRequestMessageBytes) {
