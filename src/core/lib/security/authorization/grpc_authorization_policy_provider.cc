@@ -34,6 +34,7 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/authorization/grpc_authorization_engine.h"
+#include "src/core/lib/security/authorization/rbac_translator.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_refcount.h"
 
@@ -52,24 +53,15 @@ StaticDataAuthorizationPolicyProvider::Create(absl::string_view authz_policy) {
 }
 
 StaticDataAuthorizationPolicyProvider::StaticDataAuthorizationPolicyProvider(
-    absl::InlinedVector<Rbac, 2> policies) {
-  GPR_ASSERT(policies.size() <= 2);
-  if (policies.size() == 1) {
-    GPR_ASSERT(policies[0].action == Rbac::Action::kAllow);
-    allow_engine_ =
-        MakeRefCounted<GrpcAuthorizationEngine>(std::move(policies[0]));
-  } else {
-    GPR_ASSERT(policies[0].action == Rbac::Action::kDeny);
-    GPR_ASSERT(policies[1].action == Rbac::Action::kAllow);
-    deny_engine_ =
-        MakeRefCounted<GrpcAuthorizationEngine>(std::move(policies[0]));
-    allow_engine_ =
-        MakeRefCounted<GrpcAuthorizationEngine>(std::move(policies[1]));
-  }
-}
+    RbacPolicies policies)
+    : allow_engine_(MakeRefCounted<GrpcAuthorizationEngine>(
+          std::move(policies.allow_policy))),
+      deny_engine_(policies.deny_policy.has_value()
+                       ? MakeRefCounted<GrpcAuthorizationEngine>(
+                             std::move(policies.deny_policy.value()))
+                       : nullptr) {}
 
 namespace {
-
 absl::StatusOr<std::string> ReadPolicyFromFile(absl::string_view policy_path) {
   grpc_slice policy_slice = grpc_empty_slice();
   grpc_error_handle error =
@@ -170,19 +162,13 @@ absl::Status FileWatcherAuthorizationPolicyProvider::ForceUpdate() {
     return done_early(rbac_policies_or.status());
   }
   MutexLock lock(&mu_);
-  GPR_ASSERT(rbac_policies_or->size() <= 2);
-  if (rbac_policies_or->size() == 1) {
-    GPR_ASSERT(rbac_policies_or->at(0).action == Rbac::Action::kAllow);
-    allow_engine_ = MakeRefCounted<GrpcAuthorizationEngine>(
-        std::move(rbac_policies_or->at(0)));
-    deny_engine_ = nullptr;
-  } else {
-    GPR_ASSERT(rbac_policies_or->at(0).action == Rbac::Action::kDeny);
-    GPR_ASSERT(rbac_policies_or->at(1).action == Rbac::Action::kAllow);
+  allow_engine_ = MakeRefCounted<GrpcAuthorizationEngine>(
+      std::move(rbac_policies_or->allow_policy));
+  if (rbac_policies_or->deny_policy.has_value()) {
     deny_engine_ = MakeRefCounted<GrpcAuthorizationEngine>(
-        std::move(rbac_policies_or->at(0)));
-    allow_engine_ = MakeRefCounted<GrpcAuthorizationEngine>(
-        std::move(rbac_policies_or->at(1)));
+        std::move(rbac_policies_or->deny_policy.value()));
+  } else {
+    deny_engine_.reset();
   }
   if (cb_ != nullptr) {
     cb_(contents_changed, absl::OkStatus());

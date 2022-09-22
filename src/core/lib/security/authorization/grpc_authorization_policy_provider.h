@@ -22,6 +22,7 @@
 #include <string>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/container/inlined_vector.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
@@ -34,6 +35,7 @@
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/security/authorization/authorization_engine.h"
 #include "src/core/lib/security/authorization/authorization_policy_provider.h"
+#include "src/core/lib/security/authorization/rbac_policy.h"
 #include "src/core/lib/security/authorization/rbac_translator.h"
 
 namespace grpc_core {
@@ -50,8 +52,7 @@ class StaticDataAuthorizationPolicyProvider
 
   // Use factory method "Create" to create an instance of
   // StaticDataAuthorizationPolicyProvider.
-  explicit StaticDataAuthorizationPolicyProvider(
-      absl::InlinedVector<Rbac, 2> policies);
+  explicit StaticDataAuthorizationPolicyProvider(RbacPolicies policies);
 
   AuthorizationEngines engines() override {
     return {allow_engine_, deny_engine_};

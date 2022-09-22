@@ -30,7 +30,6 @@
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
 #include "absl/strings/strip.h"
 
 #include "src/core/lib/gpr/useful.h"
@@ -354,7 +353,7 @@ absl::StatusOr<Rbac> ParseAllowRulesArray(const Json& json,
 
 }  // namespace
 
-absl::StatusOr<absl::InlinedVector<Rbac, 2>> GenerateRbacPolicies(
+absl::StatusOr<RbacPolicies> GenerateRbacPolicies(
     absl::string_view authz_policy) {
   auto json = Json::Parse(authz_policy);
   if (!json.ok()) {
@@ -374,8 +373,8 @@ absl::StatusOr<absl::InlinedVector<Rbac, 2>> GenerateRbacPolicies(
     return absl::InvalidArgumentError("\"name\" is not a string.");
   }
   absl::string_view name = it->second.string_value();
+  RbacPolicies rbacs;
   std::unique_ptr<Rbac> allow_rbac;
-  std::unique_ptr<Rbac> deny_rbac;
   for (const auto& object : json->object_value()) {
     if (object.first == "name") {
       continue;
@@ -389,7 +388,7 @@ absl::StatusOr<absl::InlinedVector<Rbac, 2>> GenerateRbacPolicies(
             deny_policy_or.status().code(),
             absl::StrCat("deny_", deny_policy_or.status().message()));
       }
-      deny_rbac = absl::make_unique<Rbac>(std::move(deny_policy_or.value()));
+      rbacs.deny_policy = std::move(deny_policy_or.value());
     } else if (object.first == "allow_rules") {
       if (object.second.type() != Json::Type::ARRAY) {
         return absl::InvalidArgumentError("\"allow_rules\" is not an array.");
@@ -409,11 +408,7 @@ absl::StatusOr<absl::InlinedVector<Rbac, 2>> GenerateRbacPolicies(
   if (allow_rbac == nullptr) {
     return absl::InvalidArgumentError("\"allow_rules\" is not present.");
   }
-  absl::InlinedVector<Rbac, 2> rbacs;
-  if (deny_rbac != nullptr) {
-    rbacs.push_back(std::move(*deny_rbac));
-  }
-  rbacs.push_back(std::move(*allow_rbac));
+  rbacs.allow_policy = std::move(*allow_rbac);
   return std::move(rbacs);
 }
 
