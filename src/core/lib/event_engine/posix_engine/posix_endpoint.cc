@@ -21,7 +21,7 @@
 #include "absl/status/status.h"
 #include "absl/synchronization/mutex.h"
 
-#include "grpc/event_engine/endpoint_config.h"
+#include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/slice.h>
 #include <grpc/event_engine/slice_buffer.h>
 #include <grpc/support/alloc.h>
