@@ -96,7 +96,7 @@ TEST(CombinerTest, TestExecuteMany) {
   gpr_log(GPR_DEBUG, "test_execute_many");
 
   grpc_core::Combiner* lock = grpc_combiner_create();
-  grpc_core::Thread thds[100];
+  grpc_core::Thread thds[10];
   thd_args ta[GPR_ARRAY_SIZE(thds)];
   for (size_t i = 0; i < GPR_ARRAY_SIZE(thds); i++) {
     ta[i].ctr = 0;

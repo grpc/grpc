@@ -72,7 +72,7 @@ namespace experimental {
 ///    server->Wait();
 ///
 ////////////////////////////////////////////////////////////////////////////////
-class EventEngine {
+class EventEngine : public std::enable_shared_from_this<EventEngine> {
  public:
   /// A duration between two events.
   ///

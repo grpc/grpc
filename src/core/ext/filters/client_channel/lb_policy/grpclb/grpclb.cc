@@ -114,6 +114,7 @@
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
@@ -124,6 +125,8 @@
 #include "src/core/lib/iomgr/socket_utils.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_args.h"
+#include "src/core/lib/json/json_object_loader.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
@@ -163,10 +166,47 @@ constexpr absl::string_view kGrpclb = "grpclb";
 
 class GrpcLbConfig : public LoadBalancingPolicy::Config {
  public:
-  GrpcLbConfig(RefCountedPtr<LoadBalancingPolicy::Config> child_policy,
-               std::string service_name)
-      : child_policy_(std::move(child_policy)),
-        service_name_(std::move(service_name)) {}
+  GrpcLbConfig() = default;
+
+  GrpcLbConfig(const GrpcLbConfig&) = delete;
+  GrpcLbConfig& operator=(const GrpcLbConfig&) = delete;
+
+  GrpcLbConfig(GrpcLbConfig&& other) = delete;
+  GrpcLbConfig& operator=(GrpcLbConfig&& other) = delete;
+
+  static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
+    static const auto* loader =
+        JsonObjectLoader<GrpcLbConfig>()
+            // Note: "childPolicy" field requires custom parsing, so
+            // it's handled in JsonPostLoad() instead.
+            .OptionalField("serviceName", &GrpcLbConfig::service_name_)
+            .Finish();
+    return loader;
+  }
+
+  void JsonPostLoad(const Json& json, const JsonArgs&,
+                    ValidationErrors* errors) {
+    ValidationErrors::ScopedField field(errors, ".childPolicy");
+    Json child_policy_config_json_tmp;
+    const Json* child_policy_config_json;
+    auto it = json.object_value().find("childPolicy");
+    if (it == json.object_value().end()) {
+      child_policy_config_json_tmp = Json::Array{Json::Object{
+          {"round_robin", Json::Object()},
+      }};
+      child_policy_config_json = &child_policy_config_json_tmp;
+    } else {
+      child_policy_config_json = &it->second;
+    }
+    auto child_policy_config =
+        CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
+            *child_policy_config_json);
+    if (!child_policy_config.ok()) {
+      errors->AddError(child_policy_config.status().message());
+      return;
+    }
+    child_policy_ = std::move(*child_policy_config);
+  }
 
   absl::string_view name() const override { return kGrpclb; }
 
@@ -218,7 +258,6 @@ class GrpcLb : public LoadBalancingPolicy {
     void SendClientLoadReportLocked();
 
     // EventEngine callbacks
-    void MaybeSendClientLoadReport();
     void MaybeSendClientLoadReportLocked();
 
     static void ClientLoadReportDone(void* arg, grpc_error_handle error);
@@ -867,7 +906,7 @@ GrpcLb::BalancerCallState::BalancerCallState(
   const Timestamp deadline =
       grpclb_policy()->lb_call_timeout_ == Duration::Zero()
           ? Timestamp::InfFuture()
-          : ExecCtx::Get()->Now() + grpclb_policy()->lb_call_timeout_;
+          : Timestamp::Now() + grpclb_policy()->lb_call_timeout_;
   lb_call_ = grpc_channel_create_pollset_set_call(
       grpclb_policy()->lb_channel_, nullptr, GRPC_PROPAGATE_DEFAULTS,
       grpclb_policy_->interested_parties(),
@@ -995,13 +1034,9 @@ void GrpcLb::BalancerCallState::ScheduleNextClientLoadReportLocked() {
       GetDefaultEventEngine()->RunAfter(client_stats_report_interval_, [this] {
         ApplicationCallbackExecCtx callback_exec_ctx;
         ExecCtx exec_ctx;
-        MaybeSendClientLoadReport();
+        grpclb_policy()->work_serializer()->Run(
+            [this] { MaybeSendClientLoadReportLocked(); }, DEBUG_LOCATION);
       });
-}
-
-void GrpcLb::BalancerCallState::MaybeSendClientLoadReport() {
-  grpclb_policy()->work_serializer()->Run(
-      [this] { MaybeSendClientLoadReportLocked(); }, DEBUG_LOCATION);
 }
 
 void GrpcLb::BalancerCallState::MaybeSendClientLoadReportLocked() {
@@ -1547,7 +1582,7 @@ absl::Status GrpcLb::UpdateLocked(UpdateArgs args) {
   if (is_initial_update) {
     fallback_at_startup_checks_pending_ = true;
     // Start timer.
-    Timestamp deadline = ExecCtx::Get()->Now() + fallback_at_startup_timeout_;
+    Timestamp deadline = Timestamp::Now() + fallback_at_startup_timeout_;
     Ref(DEBUG_LOCATION, "on_fallback_timer").release();  // Ref for callback
     grpc_timer_init(&lb_fallback_timer_, deadline, &lb_on_fallback_);
     // Start watching the channel's connectivity state.  If the channel
@@ -1642,7 +1677,7 @@ void GrpcLb::StartBalancerCallRetryTimerLocked() {
   Timestamp next_try = lb_call_backoff_.NextAttemptTime();
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
     gpr_log(GPR_INFO, "[grpclb %p] Connection to LB server lost...", this);
-    Duration timeout = next_try - ExecCtx::Get()->Now();
+    Duration timeout = next_try - Timestamp::Now();
     if (timeout > Duration::Zero()) {
       gpr_log(GPR_INFO, "[grpclb %p] ... retry_timer_active in %" PRId64 "ms.",
               this, timeout.millis());
@@ -1812,7 +1847,7 @@ void GrpcLb::CreateOrUpdateChildPolicyLocked() {
 
 void GrpcLb::CacheDeletedSubchannelLocked(
     RefCountedPtr<SubchannelInterface> subchannel) {
-  Timestamp deletion_time = ExecCtx::Get()->Now() + subchannel_cache_interval_;
+  Timestamp deletion_time = Timestamp::Now() + subchannel_cache_interval_;
   cached_subchannels_[deletion_time].push_back(std::move(subchannel));
   if (!subchannel_cache_timer_pending_) {
     Ref(DEBUG_LOCATION, "OnSubchannelCacheTimer").release();
@@ -1871,48 +1906,8 @@ class GrpcLbFactory : public LoadBalancingPolicyFactory {
 
   absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
   ParseLoadBalancingConfig(const Json& json) const override {
-    if (json.type() == Json::Type::JSON_NULL) {
-      return MakeRefCounted<GrpcLbConfig>(nullptr, "");
-    }
-    std::vector<std::string> error_list;
-    std::string service_name;
-    auto it = json.object_value().find("serviceName");
-    if (it != json.object_value().end()) {
-      const Json& service_name_json = it->second;
-      if (service_name_json.type() != Json::Type::STRING) {
-        error_list.emplace_back(
-            "field:serviceName error:type should be string");
-      } else {
-        service_name = service_name_json.string_value();
-      }
-    }
-    Json child_policy_config_json_tmp;
-    const Json* child_policy_config_json;
-    it = json.object_value().find("childPolicy");
-    if (it == json.object_value().end()) {
-      child_policy_config_json_tmp = Json::Array{Json::Object{
-          {"round_robin", Json::Object()},
-      }};
-      child_policy_config_json = &child_policy_config_json_tmp;
-    } else {
-      child_policy_config_json = &it->second;
-    }
-    auto child_policy_config =
-        CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
-            *child_policy_config_json);
-    if (!child_policy_config.ok()) {
-      error_list.emplace_back(
-          absl::StrCat("error parsing childPolicy field: ",
-                       child_policy_config.status().message()));
-    }
-    if (error_list.empty()) {
-      return MakeRefCounted<GrpcLbConfig>(std::move(*child_policy_config),
-                                          std::move(service_name));
-    } else {
-      return absl::InvalidArgumentError(
-          absl::StrCat("errors parsing grpclb LB policy config: [",
-                       absl::StrJoin(error_list, "; "), "]"));
-    }
+    return LoadRefCountedFromJson<GrpcLbConfig>(
+        json, JsonArgs(), "errors validating grpclb LB policy config");
   }
 };
 

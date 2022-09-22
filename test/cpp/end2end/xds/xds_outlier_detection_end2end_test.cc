@@ -1245,16 +1245,16 @@ int main(int argc, char** argv) {
   GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
 #if TARGET_OS_IPHONE
   // Workaround Apple CFStream bug
-  gpr_setenv("grpc_cfstream", "0");
+  grpc_core::SetEnv("grpc_cfstream", "0");
 #endif
   // TODO(roth): This is a hack to ensure that the outlier_detection LB policy
   // is always registered at gRPC init time. When the LB policy registry is
   // moved to the new CoreConfiguration system, change this to use
   // CoreConfiguration::BuildSpecialConfiguration() instead.
-  gpr_setenv("GRPC_EXPERIMENTAL_ENABLE_OUTLIER_DETECTION", "true");
+  grpc_core::SetEnv("GRPC_EXPERIMENTAL_ENABLE_OUTLIER_DETECTION", "true");
   grpc_init();
   const auto result = RUN_ALL_TESTS();
   grpc_shutdown();
-  gpr_unsetenv("GRPC_EXPERIMENTAL_ENABLE_OUTLIER_DETECTION");
+  grpc_core::UnsetEnv("GRPC_EXPERIMENTAL_ENABLE_OUTLIER_DETECTION");
   return result;
 }

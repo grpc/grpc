@@ -38,6 +38,12 @@ struct google_rpc_Status;
 struct upb_Arena;
 }
 
+#define RETURN_IF_NOT_OK(expr)          \
+  do {                                  \
+    const absl::Status status = (expr); \
+    if (!status.ok()) return status;    \
+  } while (0)
+
 namespace grpc_core {
 
 /// This enum should have the same value of grpc_error_ints

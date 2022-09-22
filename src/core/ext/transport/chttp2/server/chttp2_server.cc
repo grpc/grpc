@@ -358,7 +358,7 @@ void Chttp2ServerListener::ConfigFetcherWatcher::StopServing() {
 //
 
 Timestamp GetConnectionDeadline(const ChannelArgs& args) {
-  return ExecCtx::Get()->Now() +
+  return Timestamp::Now() +
          std::max(
              Duration::Milliseconds(1),
              args.GetDurationFromIntMillis(GRPC_ARG_SERVER_HANDSHAKE_TIMEOUT_MS)
@@ -587,7 +587,7 @@ void Chttp2ServerListener::ActiveConnection::SendGoAway() {
                         this, nullptr);
       grpc_timer_init(
           &drain_grace_timer_,
-          ExecCtx::Get()->Now() +
+          Timestamp::Now() +
               std::max(
                   Duration::Zero(),
                   listener_->args_
