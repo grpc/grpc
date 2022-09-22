@@ -41,6 +41,7 @@ grpc_proto_fuzzer(
     corpus = "corpora",
     language = "C++",
     proto = "work_queue_fuzzer.proto",
+    tags = ["no_windows"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
