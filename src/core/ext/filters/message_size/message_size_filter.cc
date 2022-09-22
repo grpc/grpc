@@ -81,7 +81,8 @@ MessageSizeParsedConfig MessageSizeParsedConfig::GetFromChannelArgs(
 absl::optional<uint32_t> GetMaxRecvSizeFromChannelArgs(
     const ChannelArgs& args) {
   if (args.WantMinimalStack()) return absl::nullopt;
-  int size = args.GetInt(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH).value_or(-1);
+  int size = args.GetInt(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH)
+                 .value_or(GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH);
   if (size < 0) return absl::nullopt;
   return static_cast<uint32_t>(size);
 }
@@ -89,7 +90,8 @@ absl::optional<uint32_t> GetMaxRecvSizeFromChannelArgs(
 absl::optional<uint32_t> GetMaxSendSizeFromChannelArgs(
     const ChannelArgs& args) {
   if (args.WantMinimalStack()) return absl::nullopt;
-  int size = args.GetInt(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH).value_or(-1);
+  int size = args.GetInt(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH)
+                 .value_or(GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH);
   if (size < 0) return absl::nullopt;
   return static_cast<uint32_t>(size);
 }
