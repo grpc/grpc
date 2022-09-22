@@ -284,6 +284,22 @@ struct RbacConfig {
           absl::optional<PermissionList> or_rules;
           std::unique_ptr<Permission> not_rule;
 
+          Permission() = default;
+          Permission(const Permission& other)
+              : any(other.any),
+                header(other.header),
+                url_path(other.url_path),
+                destination_ip(other.destination_ip),
+                destination_port(other.destination_port),
+                metadata(other.metadata),
+                requested_server_name(other.requested_server_name),
+                and_rules(other.and_rules),
+                or_rules(other.or_rules),
+                not_rule(other.not_rule == nullptr
+                             ? nullptr
+                             : absl::make_unique<Permission>(*other.not_rule)) {
+          }
+
           static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
             static const auto* loader =
                 JsonObjectLoader<Permission>()
@@ -414,6 +430,22 @@ struct RbacConfig {
           absl::optional<PrincipalList> and_ids;
           absl::optional<PrincipalList> or_ids;
           std::unique_ptr<Principal> not_id;
+
+          Principal() = default;
+          Principal(const Principal& other)
+              : any(other.any),
+                authenticated(other.authenticated),
+                source_ip(other.source_ip),
+                direct_remote_ip(other.direct_remote_ip),
+                remote_ip(other.remote_ip),
+                header(other.header),
+                url_path(other.url_path),
+                metadata(other.metadata),
+                and_ids(other.and_ids),
+                or_ids(other.or_ids),
+                not_id(other.not_id == nullptr
+                           ? nullptr
+                           : absl::make_unique<Principal>(*other.not_id)) {}
 
           static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
             static const auto* loader =
