@@ -138,6 +138,12 @@ BUILD_WITH_CYTHON = _env_bool_value('GRPC_PYTHON_BUILD_WITH_CYTHON', 'False')
 # runtime, the shared library must be installed
 BUILD_WITH_SYSTEM_OPENSSL = _env_bool_value('GRPC_PYTHON_BUILD_SYSTEM_OPENSSL',
                                             'False')
+# Currently, boringssl does not support macOS arm64, so we MUST try to use the system
+# installation of openssl to build gRPC locally.
+if "darwin" in sys.platform and "arm64" == platform.machine().lower():
+    sys.stderr.write("Boringssl currently does not support macOS arm64, so we'll try to use the system "
+                     "installation of 'openssl' to build, make sure you have 'openssl' installed\n")
+    BUILD_WITH_SYSTEM_OPENSSL = True
 
 # Export this variable to use the system installation of zlib. You need to
 # have the header files installed (in /usr/include/) and during
