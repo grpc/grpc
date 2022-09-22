@@ -140,7 +140,7 @@ TEST(WorkQueueTest, ThreadedStress) {
   threads.reserve(thd_count);
   class TestClosure : public EventEngine::Closure {
    public:
-    void Run() { delete this; }
+    void Run() override { delete this; }
   };
   for (int i = 0; i < thd_count; i++) {
     threads.emplace_back([&] {
