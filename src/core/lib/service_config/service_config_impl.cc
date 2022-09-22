@@ -107,6 +107,7 @@ RefCountedPtr<ServiceConfig> ServiceConfigImpl::Create(
     return nullptr;
   }
   auto service_config = MakeRefCounted<ServiceConfigImpl>();
+  service_config->json_string_ = std::string(json_string);
   // Parse global parameters.
   service_config->parsed_global_configs_ =
       CoreConfiguration::Get().service_config_parser().ParseGlobalParameters(
