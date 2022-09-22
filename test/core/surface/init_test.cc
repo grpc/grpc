@@ -142,8 +142,9 @@ TEST(Init, repeatedly_blocking) {
 TEST(Init, TimerManagerHoldsLastInit) {
   grpc_init();
   grpc_core::Notification n;
-  grpc_event_engine::experimental::GetDefaultEventEngine()->RunAfter(
-      std::chrono::seconds(1), [&n] {
+  auto engine = grpc_event_engine::experimental::GetDefaultEventEngine();
+  engine->RunAfter(
+      std::chrono::seconds(1), [&n, engine = std::move(engine)] {
         grpc_core::ApplicationCallbackExecCtx app_exec_ctx;
         grpc_core::ExecCtx exec_ctx;
         grpc_shutdown();
