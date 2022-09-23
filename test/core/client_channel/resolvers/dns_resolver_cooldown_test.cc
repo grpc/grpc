@@ -66,7 +66,8 @@ namespace {
 
 class TestDNSResolver : public grpc_core::DNSResolver {
  public:
-  TestDNSResolver(std::shared_ptr<grpc_core::DNSResolver> default_resolver)
+  explicit TestDNSResolver(
+      std::shared_ptr<grpc_core::DNSResolver> default_resolver)
       : default_resolver_(std::move(default_resolver)),
         engine_(grpc_event_engine::experimental::GetDefaultEventEngine()) {}
   // Wrapper around default resolve_address in order to count the number of
