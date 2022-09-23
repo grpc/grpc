@@ -32,12 +32,7 @@
 #include "src/core/ext/transport/binder/utils/transport_stream_receiver.h"
 #include "src/core/ext/transport/binder/wire_format/binder.h"
 #include "src/core/ext/transport/binder/wire_format/wire_writer.h"
-
-#define RETURN_IF_ERROR(expr)           \
-  do {                                  \
-    const absl::Status status = (expr); \
-    if (!status.ok()) return status;    \
-  } while (0)
+#include "src/core/lib/gprpp/status_helper.h"
 
 namespace grpc_binder {
 namespace {

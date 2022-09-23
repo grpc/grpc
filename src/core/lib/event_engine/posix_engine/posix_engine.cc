@@ -525,17 +525,16 @@ EventEngine::ConnectionHandle PosixEventEngine::Connect(
     OnConnectCallback on_connect, const ResolvedAddress& addr,
     const EndpointConfig& args, MemoryAllocator memory_allocator,
     Duration timeout) {
-  EventEngine::ResolvedAddress mapped_addr;
   PosixTcpOptions options = TcpOptionsFromEndpointConfig(args);
-  absl::StatusOr<PosixSocketWrapper> socket =
-      PosixSocketWrapper::CreateAndPrepareTcpClientSocket(options, addr,
-                                                          mapped_addr);
+  absl::StatusOr<PosixSocketWrapper::PosixSocketCreateResult> socket =
+      PosixSocketWrapper::CreateAndPrepareTcpClientSocket(options, addr);
   if (!socket.ok()) {
     Run([on_connect = std::move(on_connect),
          status = socket.status()]() mutable { on_connect(status); });
     return {0, 0};
   }
-  return ConnectInternal(*socket, std::move(on_connect), mapped_addr,
+  return ConnectInternal((*socket).sock, std::move(on_connect),
+                         (*socket).mapped_target_addr,
                          std::move(memory_allocator), options, timeout);
 }
 

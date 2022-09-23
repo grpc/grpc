@@ -171,6 +171,8 @@ class PosixSocketWrapper {
  public:
   explicit PosixSocketWrapper(int fd) : fd_(fd) { GPR_ASSERT(fd_ > 0); }
 
+  PosixSocketWrapper() : fd_(-1){};
+
   ~PosixSocketWrapper() = default;
 
   // Instruct the kernel to wait for specified number of bytes to be received on
@@ -301,24 +303,31 @@ class PosixSocketWrapper {
       const experimental::EventEngine::ResolvedAddress& addr, int type,
       int protocol, DSMode& dsmode);
 
-  // Return a PosixSocketWrapper which manages a configured, unbound,
+  struct PosixSocketCreateResult;
+  // Return a PosixSocketCreateResult which manages a configured, unbound,
   // unconnected TCP client fd.
   //  options: may contain custom tcp settings for the fd.
   //  target_addr: the destination address.
-  //  output_mapped_target_addr: A out parameter. It is target_addr mapped to an
-  //  address appropriate to the type of socket FD created. For example, if
-  //  target_addr is IPv4 and dual stack sockets are available,
-  //  output_mapped_target_addr will be an IPv4-mapped IPv6 address.
   //
-  // Returns: Not-OK status on error. Out parameters are not set on error.
+  // Returns: Not-OK status on error. Otherwise it returns a
+  // PosixSocketWrapper::PosixSocketCreateResult type which includes a sock
+  // of type PosixSocketWrapper and a mapped_target_addr which is
+  // target_addr mapped to an address appropriate to the type of socket FD
+  // created. For example, if target_addr is IPv4 and dual stack sockets are
+  // available, mapped_target_addr will be an IPv4-mapped IPv6 address.
   //
-  static absl::StatusOr<PosixSocketWrapper> CreateAndPrepareTcpClientSocket(
+  static absl::StatusOr<PosixSocketCreateResult>
+  CreateAndPrepareTcpClientSocket(
       const PosixTcpOptions& options,
-      const EventEngine::ResolvedAddress& target_addr,
-      EventEngine::ResolvedAddress& output_mapped_target_addr);
+      const EventEngine::ResolvedAddress& target_addr);
 
  private:
   int fd_;
+};
+
+struct PosixSocketWrapper::PosixSocketCreateResult {
+  PosixSocketWrapper sock;
+  EventEngine::ResolvedAddress mapped_target_addr;
 };
 
 }  // namespace posix_engine

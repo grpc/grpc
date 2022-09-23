@@ -804,6 +804,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "slice",
         "slice_refcount",
+        "status_helper",
         "transport_fwd",
     ],
 )
@@ -2846,6 +2847,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "resource_quota",
         "socket_mutator",
+        "status_helper",
         "useful",
     ],
 )

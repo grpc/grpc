@@ -25,6 +25,7 @@
 
 #include "absl/memory/memory.h"
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "absl/types/optional.h"
@@ -342,40 +343,41 @@ absl::StatusOr<XdsEndpointResource> EdsResourceParse(
 
 }  // namespace
 
-absl::StatusOr<XdsResourceType::DecodeResult> XdsEndpointResourceType::Decode(
+XdsResourceType::DecodeResult XdsEndpointResourceType::Decode(
     const XdsResourceType::DecodeContext& context,
     absl::string_view serialized_resource, bool is_v2) const {
+  DecodeResult result;
   // Parse serialized proto.
   auto* resource = envoy_config_endpoint_v3_ClusterLoadAssignment_parse(
       serialized_resource.data(), serialized_resource.size(), context.arena);
   if (resource == nullptr) {
-    return absl::InvalidArgumentError(
+    result.resource = absl::InvalidArgumentError(
         "Can't parse ClusterLoadAssignment resource.");
+    return result;
   }
   MaybeLogClusterLoadAssignment(context, resource);
   // Validate resource.
-  DecodeResult result;
   result.name = UpbStringToStdString(
       envoy_config_endpoint_v3_ClusterLoadAssignment_cluster_name(resource));
   auto eds_resource = EdsResourceParse(context, resource, is_v2);
   if (!eds_resource.ok()) {
     if (GRPC_TRACE_FLAG_ENABLED(*context.tracer)) {
       gpr_log(GPR_ERROR, "[xds_client %p] invalid ClusterLoadAssignment %s: %s",
-              context.client, result.name.c_str(),
+              context.client, result.name->c_str(),
               eds_resource.status().ToString().c_str());
     }
     result.resource = eds_resource.status();
   } else {
     if (GRPC_TRACE_FLAG_ENABLED(*context.tracer)) {
       gpr_log(GPR_INFO, "[xds_client %p] parsed ClusterLoadAssignment %s: %s",
-              context.client, result.name.c_str(),
+              context.client, result.name->c_str(),
               eds_resource->ToString().c_str());
     }
     auto resource = absl::make_unique<ResourceDataSubclass>();
     resource->resource = std::move(*eds_resource);
     result.resource = std::move(resource);
   }
-  return std::move(result);
+  return result;
 }
 
 }  // namespace grpc_core
