@@ -47,6 +47,7 @@ grpc_cc_library(
         "transport_security_common_proto",
         "//:grpc++",
     ],
+    visibility = ["//visibility:public"],
 )
 
 grpc_cc_binary(
