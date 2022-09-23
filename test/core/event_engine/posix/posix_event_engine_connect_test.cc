@@ -32,7 +32,7 @@
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/posix_engine/posix_endpoint.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine.h"
-#include "src/core/lib/event_engine/promise.h"
+#include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/iomgr/port.h"
 #include "test/core/event_engine/test_suite/event_engine_test_utils.h"
 #include "test/core/event_engine/test_suite/oracle_event_engine_posix.h"
@@ -45,7 +45,6 @@ using ::grpc_event_engine::experimental::ChannelArgsEndpointConfig;
 using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::PosixEventEngine;
 using ::grpc_event_engine::experimental::PosixOracleEventEngine;
-using ::grpc_event_engine::experimental::Promise;
 using ::grpc_event_engine::experimental::URIToResolvedAddress;
 using namespace std::chrono_literals;
 
@@ -155,7 +154,7 @@ TEST(PosixEventEngineTest, IndefiniteConnectTimeoutOrRstTest) {
   std::string resolved_addr_str =
       SockaddrToString(&resolved_addr, true).value();
   auto sockets = CreateConnectedSockets(resolved_addr);
-  Promise<bool> connect_promise;
+  grpc_core::Notification signal;
   ASSERT_TRUE(sockets.ok());
   grpc_core::ChannelArgs args;
   auto quota = grpc_core::ResourceQuota::Default();
@@ -163,7 +162,7 @@ TEST(PosixEventEngineTest, IndefiniteConnectTimeoutOrRstTest) {
   ChannelArgsEndpointConfig config(args);
   auto memory_quota = absl::make_unique<grpc_core::MemoryQuota>("bar");
   (*g_engine)->Connect(
-      [&connect_promise, &resolved_addr_str](
+      [&signal, &resolved_addr_str](
           absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> status) {
         ASSERT_FALSE(status.ok());
         absl::Status deadline_exceeded_expected_status =
@@ -186,11 +185,11 @@ TEST(PosixEventEngineTest, IndefiniteConnectTimeoutOrRstTest) {
         // want to fail the test in both cases.
         EXPECT_TRUE(status.status() == deadline_exceeded_expected_status ||
                     status.status() == conn_reset_expected_status);
-        connect_promise.Set(true);
+        signal.Notify();
       },
       URIToResolvedAddress(target_addr), config,
       memory_quota->CreateMemoryAllocator("conn-1"), 3s);
-  ASSERT_TRUE(connect_promise.Get());
+  signal.WaitForNotification();
   for (auto sock : *sockets) {
     close(sock);
   }
