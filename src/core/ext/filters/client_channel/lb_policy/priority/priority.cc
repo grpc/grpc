@@ -17,11 +17,11 @@
 #include <grpc/support/port_platform.h>
 
 #include <inttypes.h>
-#include <stddef.h>
 
 #include <algorithm>
 #include <map>
 #include <memory>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -48,13 +48,15 @@
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_args.h"
+#include "src/core/lib/json/json_object_loader.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
@@ -85,11 +87,19 @@ class PriorityLbConfig : public LoadBalancingPolicy::Config {
   struct PriorityLbChild {
     RefCountedPtr<LoadBalancingPolicy::Config> config;
     bool ignore_reresolution_requests = false;
+
+    static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+    void JsonPostLoad(const Json& json, const JsonArgs&,
+                      ValidationErrors* errors);
   };
 
-  PriorityLbConfig(std::map<std::string, PriorityLbChild> children,
-                   std::vector<std::string> priorities)
-      : children_(std::move(children)), priorities_(std::move(priorities)) {}
+  PriorityLbConfig() = default;
+
+  PriorityLbConfig(const PriorityLbConfig&) = delete;
+  PriorityLbConfig& operator=(const PriorityLbConfig&) = delete;
+
+  PriorityLbConfig(PriorityLbConfig&& other) = delete;
+  PriorityLbConfig& operator=(PriorityLbConfig&& other) = delete;
 
   absl::string_view name() const override { return kPriority; }
 
@@ -98,9 +108,13 @@ class PriorityLbConfig : public LoadBalancingPolicy::Config {
   }
   const std::vector<std::string>& priorities() const { return priorities_; }
 
+  static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+  void JsonPostLoad(const Json& json, const JsonArgs&,
+                    ValidationErrors* errors);
+
  private:
-  const std::map<std::string, PriorityLbChild> children_;
-  const std::vector<std::string> priorities_;
+  std::map<std::string, PriorityLbChild> children_;
+  std::vector<std::string> priorities_;
 };
 
 // priority LB policy.
@@ -532,7 +546,7 @@ PriorityLb::ChildPriority::DeactivationTimer::DeactivationTimer(
   }
   GRPC_CLOSURE_INIT(&on_timer_, OnTimer, this, nullptr);
   Ref(DEBUG_LOCATION, "Timer").release();
-  grpc_timer_init(&timer_, ExecCtx::Get()->Now() + kChildRetentionInterval,
+  grpc_timer_init(&timer_, Timestamp::Now() + kChildRetentionInterval,
                   &on_timer_);
 }
 
@@ -594,7 +608,7 @@ PriorityLb::ChildPriority::FailoverTimer::FailoverTimer(
   Ref(DEBUG_LOCATION, "Timer").release();
   grpc_timer_init(
       &timer_,
-      ExecCtx::Get()->Now() +
+      Timestamp::Now() +
           child_priority_->priority_policy_->child_failover_timeout_,
       &on_timer_);
 }
@@ -851,6 +865,61 @@ void PriorityLb::ChildPriority::Helper::AddTraceEvent(
 // factory
 //
 
+const JsonLoaderInterface* PriorityLbConfig::PriorityLbChild::JsonLoader(
+    const JsonArgs&) {
+  static const auto* loader =
+      JsonObjectLoader<PriorityLbChild>()
+          // Note: The "config" field requires custom parsing, so it's
+          // handled in JsonPostLoad() instead of here.
+          .OptionalField("ignore_reresolution_requests",
+                         &PriorityLbChild::ignore_reresolution_requests)
+          .Finish();
+  return loader;
+}
+
+void PriorityLbConfig::PriorityLbChild::JsonPostLoad(const Json& json,
+                                                     const JsonArgs&,
+                                                     ValidationErrors* errors) {
+  ValidationErrors::ScopedField field(errors, ".config");
+  auto it = json.object_value().find("config");
+  if (it == json.object_value().end()) {
+    errors->AddError("field not present");
+    return;
+  }
+  auto lb_config =
+      CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
+          it->second);
+  if (!lb_config.ok()) {
+    errors->AddError(lb_config.status().message());
+    return;
+  }
+  config = std::move(*lb_config);
+}
+
+const JsonLoaderInterface* PriorityLbConfig::JsonLoader(const JsonArgs&) {
+  static const auto* loader =
+      JsonObjectLoader<PriorityLbConfig>()
+          .Field("children", &PriorityLbConfig::children_)
+          .Field("priorities", &PriorityLbConfig::priorities_)
+          .Finish();
+  return loader;
+}
+
+void PriorityLbConfig::JsonPostLoad(const Json& /*json*/, const JsonArgs&,
+                                    ValidationErrors* errors) {
+  std::set<std::string> unknown_priorities;
+  for (const std::string& priority : priorities_) {
+    if (children_.find(priority) == children_.end()) {
+      unknown_priorities.insert(priority);
+    }
+  }
+  if (!unknown_priorities.empty()) {
+    errors->AddError(absl::StrCat("unknown priorit(ies): [",
+                                  absl::StrJoin(unknown_priorities, ", "),
+                                  "]"));
+  }
+}
+
 class PriorityLbFactory : public LoadBalancingPolicyFactory {
  public:
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
@@ -870,94 +939,8 @@ class PriorityLbFactory : public LoadBalancingPolicyFactory {
           "configuration. Please use loadBalancingConfig field of service "
           "config instead.");
     }
-    std::vector<std::string> errors;
-    // Children.
-    std::map<std::string, PriorityLbConfig::PriorityLbChild> children;
-    auto it = json.object_value().find("children");
-    if (it == json.object_value().end()) {
-      errors.emplace_back("field:children error:required field missing");
-    } else if (it->second.type() != Json::Type::OBJECT) {
-      errors.emplace_back("field:children error:type should be object");
-    } else {
-      const Json::Object& object = it->second.object_value();
-      for (const auto& p : object) {
-        const std::string& child_name = p.first;
-        const Json& element = p.second;
-        if (element.type() != Json::Type::OBJECT) {
-          errors.emplace_back(absl::StrCat("field:children key:", child_name,
-                                           " error:should be type object"));
-        } else {
-          auto it2 = element.object_value().find("config");
-          if (it2 == element.object_value().end()) {
-            errors.emplace_back(absl::StrCat("field:children key:", child_name,
-                                             " error:missing 'config' field"));
-          } else {
-            bool ignore_resolution_requests = false;
-            // If present, ignore_reresolution_requests must be of type
-            // boolean.
-            auto it3 =
-                element.object_value().find("ignore_reresolution_requests");
-            if (it3 != element.object_value().end()) {
-              if (it3->second.type() == Json::Type::JSON_TRUE) {
-                ignore_resolution_requests = true;
-              } else if (it3->second.type() != Json::Type::JSON_FALSE) {
-                errors.emplace_back(
-                    absl::StrCat("field:children key:", child_name,
-                                 " field:ignore_reresolution_requests:should "
-                                 "be type boolean"));
-              }
-            }
-            auto config = CoreConfiguration::Get()
-                              .lb_policy_registry()
-                              .ParseLoadBalancingConfig(it2->second);
-            if (!config.ok()) {
-              errors.emplace_back(
-                  absl::StrCat("field:children key:", child_name, ": ",
-                               config.status().message()));
-            } else {
-              children[child_name].config = std::move(*config);
-              children[child_name].ignore_reresolution_requests =
-                  ignore_resolution_requests;
-            }
-          }
-        }
-      }
-    }
-    // Priorities.
-    std::vector<std::string> priorities;
-    it = json.object_value().find("priorities");
-    if (it == json.object_value().end()) {
-      errors.emplace_back("field:priorities error:required field missing");
-    } else if (it->second.type() != Json::Type::ARRAY) {
-      errors.emplace_back("field:priorities error:type should be array");
-    } else {
-      const Json::Array& array = it->second.array_value();
-      for (size_t i = 0; i < array.size(); ++i) {
-        const Json& element = array[i];
-        if (element.type() != Json::Type::STRING) {
-          errors.emplace_back(absl::StrCat("field:priorities element:", i,
-                                           " error:should be type string"));
-        } else if (children.find(element.string_value()) == children.end()) {
-          errors.emplace_back(absl::StrCat("field:priorities element:", i,
-                                           " error:unknown child '",
-                                           element.string_value(), "'"));
-        } else {
-          priorities.emplace_back(element.string_value());
-        }
-      }
-      if (priorities.size() != children.size()) {
-        errors.emplace_back(absl::StrCat(
-            "field:priorities error:priorities size (", priorities.size(),
-            ") != children size (", children.size(), ")"));
-      }
-    }
-    if (!errors.empty()) {
-      return absl::InvalidArgumentError(
-          absl::StrCat("priority_experimental LB policy config: [",
-                       absl::StrJoin(errors, "; "), "]"));
-    }
-    return MakeRefCounted<PriorityLbConfig>(std::move(children),
-                                            std::move(priorities));
+    return LoadRefCountedFromJson<PriorityLbConfig>(
+        json, JsonArgs(), "errors validating priority LB policy config");
   }
 };
 

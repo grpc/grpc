@@ -41,6 +41,7 @@ extern const absl::string_view kRpcClientReceivedMessagesPerRpcMeasureName;
 extern const absl::string_view kRpcClientReceivedBytesPerRpcMeasureName;
 extern const absl::string_view kRpcClientRoundtripLatencyMeasureName;
 extern const absl::string_view kRpcClientServerLatencyMeasureName;
+extern const absl::string_view kRpcClientStartedRpcsMeasureName;
 extern const absl::string_view kRpcClientRetriesPerCallMeasureName;
 extern const absl::string_view kRpcClientTransparentRetriesPerCallMeasureName;
 extern const absl::string_view kRpcClientRetryDelayPerCallMeasureName;
@@ -50,6 +51,7 @@ extern const absl::string_view kRpcServerSentBytesPerRpcMeasureName;
 extern const absl::string_view kRpcServerReceivedMessagesPerRpcMeasureName;
 extern const absl::string_view kRpcServerReceivedBytesPerRpcMeasureName;
 extern const absl::string_view kRpcServerServerLatencyMeasureName;
+extern const absl::string_view kRpcServerStartedRpcsMeasureName;
 
 // Canonical gRPC view definitions.
 const ::opencensus::stats::ViewDescriptor& ClientSentMessagesPerRpcCumulative();
@@ -60,6 +62,7 @@ const ::opencensus::stats::ViewDescriptor&
 ClientReceivedBytesPerRpcCumulative();
 const ::opencensus::stats::ViewDescriptor& ClientRoundtripLatencyCumulative();
 const ::opencensus::stats::ViewDescriptor& ClientServerLatencyCumulative();
+const ::opencensus::stats::ViewDescriptor& ClientStartedRpcsCumulative();
 const ::opencensus::stats::ViewDescriptor& ClientCompletedRpcsCumulative();
 const ::opencensus::stats::ViewDescriptor& ClientRetriesPerCallCumulative();
 const ::opencensus::stats::ViewDescriptor& ClientRetriesCumulative();
@@ -73,6 +76,7 @@ const ::opencensus::stats::ViewDescriptor&
 ServerReceivedBytesPerRpcCumulative();
 const ::opencensus::stats::ViewDescriptor& ServerServerLatencyCumulative();
 const ::opencensus::stats::ViewDescriptor& ServerStartedCountCumulative();
+const ::opencensus::stats::ViewDescriptor& ServerStartedRpcsCumulative();
 const ::opencensus::stats::ViewDescriptor& ServerCompletedRpcsCumulative();
 const ::opencensus::stats::ViewDescriptor& ServerSentMessagesPerRpcCumulative();
 const ::opencensus::stats::ViewDescriptor&
@@ -84,6 +88,7 @@ const ::opencensus::stats::ViewDescriptor& ClientReceivedMessagesPerRpcMinute();
 const ::opencensus::stats::ViewDescriptor& ClientReceivedBytesPerRpcMinute();
 const ::opencensus::stats::ViewDescriptor& ClientRoundtripLatencyMinute();
 const ::opencensus::stats::ViewDescriptor& ClientServerLatencyMinute();
+const ::opencensus::stats::ViewDescriptor& ClientStartedRpcsMinute();
 const ::opencensus::stats::ViewDescriptor& ClientCompletedRpcsMinute();
 const ::opencensus::stats::ViewDescriptor& ClientRetriesPerCallMinute();
 const ::opencensus::stats::ViewDescriptor& ClientRetriesMinute();
@@ -97,6 +102,7 @@ const ::opencensus::stats::ViewDescriptor& ServerSentBytesPerRpcMinute();
 const ::opencensus::stats::ViewDescriptor& ServerReceivedMessagesPerRpcMinute();
 const ::opencensus::stats::ViewDescriptor& ServerReceivedBytesPerRpcMinute();
 const ::opencensus::stats::ViewDescriptor& ServerServerLatencyMinute();
+const ::opencensus::stats::ViewDescriptor& ServerStartedRpcsMinute();
 const ::opencensus::stats::ViewDescriptor& ServerCompletedRpcsMinute();
 
 const ::opencensus::stats::ViewDescriptor& ClientSentMessagesPerRpcHour();
@@ -105,6 +111,7 @@ const ::opencensus::stats::ViewDescriptor& ClientReceivedMessagesPerRpcHour();
 const ::opencensus::stats::ViewDescriptor& ClientReceivedBytesPerRpcHour();
 const ::opencensus::stats::ViewDescriptor& ClientRoundtripLatencyHour();
 const ::opencensus::stats::ViewDescriptor& ClientServerLatencyHour();
+const ::opencensus::stats::ViewDescriptor& ClientStartedRpcsHour();
 const ::opencensus::stats::ViewDescriptor& ClientCompletedRpcsHour();
 const ::opencensus::stats::ViewDescriptor& ClientRetriesPerCallHour();
 const ::opencensus::stats::ViewDescriptor& ClientRetriesHour();
@@ -119,6 +126,7 @@ const ::opencensus::stats::ViewDescriptor& ServerReceivedMessagesPerRpcHour();
 const ::opencensus::stats::ViewDescriptor& ServerReceivedBytesPerRpcHour();
 const ::opencensus::stats::ViewDescriptor& ServerServerLatencyHour();
 const ::opencensus::stats::ViewDescriptor& ServerStartedCountHour();
+const ::opencensus::stats::ViewDescriptor& ServerStartedRpcsHour();
 const ::opencensus::stats::ViewDescriptor& ServerCompletedRpcsHour();
 
 }  // namespace grpc

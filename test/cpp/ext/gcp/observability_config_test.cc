@@ -32,28 +32,23 @@ namespace {
 
 TEST(GcpObservabilityConfigJsonParsingTest, Basic) {
   const char* json_str = R"json({
-      "cloud_logging": {
-        "disabled": true
-      },
-      "cloud_monitoring": {
-        "disabled": true
-      },
+      "cloud_logging": {},
+      "cloud_monitoring": {},
       "cloud_trace": {
-        "disabled": true,
         "sampling_rate": 0.05
       },
       "project_id": "project"
     })json";
   auto json = grpc_core::Json::Parse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
-  grpc_core::ErrorList errors;
+  grpc_core::ValidationErrors errors;
   auto config = grpc_core::LoadFromJson<GcpObservabilityConfig>(
       *json, grpc_core::JsonArgs(), &errors);
-  ASSERT_TRUE(errors.ok()) << errors.status();
-  EXPECT_TRUE(config.cloud_logging.disabled);
-  EXPECT_TRUE(config.cloud_monitoring.disabled);
-  EXPECT_TRUE(config.cloud_trace.disabled);
-  EXPECT_FLOAT_EQ(config.cloud_trace.sampling_rate, 0.05);
+  ASSERT_TRUE(errors.ok()) << errors.status("unexpected errors");
+  EXPECT_TRUE(config.cloud_logging.has_value());
+  EXPECT_TRUE(config.cloud_monitoring.has_value());
+  EXPECT_TRUE(config.cloud_trace.has_value());
+  EXPECT_FLOAT_EQ(config.cloud_trace->sampling_rate, 0.05);
   EXPECT_EQ(config.project_id, "project");
 }
 
@@ -62,15 +57,30 @@ TEST(GcpObservabilityConfigJsonParsingTest, Defaults) {
     })json";
   auto json = grpc_core::Json::Parse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
-  grpc_core::ErrorList errors;
+  grpc_core::ValidationErrors errors;
   auto config = grpc_core::LoadFromJson<GcpObservabilityConfig>(
       *json, grpc_core::JsonArgs(), &errors);
-  ASSERT_TRUE(errors.ok()) << errors.status();
-  EXPECT_FALSE(config.cloud_logging.disabled);
-  EXPECT_FALSE(config.cloud_monitoring.disabled);
-  EXPECT_FALSE(config.cloud_trace.disabled);
-  EXPECT_FLOAT_EQ(config.cloud_trace.sampling_rate, 0);
+  ASSERT_TRUE(errors.ok()) << errors.status("unexpected errors");
+  EXPECT_FALSE(config.cloud_logging.has_value());
+  EXPECT_FALSE(config.cloud_monitoring.has_value());
+  EXPECT_FALSE(config.cloud_trace.has_value());
   EXPECT_TRUE(config.project_id.empty());
+}
+
+TEST(GcpObservabilityConfigJsonParsingTest, SamplingRateDefaults) {
+  const char* json_str = R"json({
+      "cloud_trace": {
+        "sampling_rate": 0.05
+      }
+    })json";
+  auto json = grpc_core::Json::Parse(json_str);
+  ASSERT_TRUE(json.ok()) << json.status();
+  grpc_core::ValidationErrors errors;
+  auto config = grpc_core::LoadFromJson<GcpObservabilityConfig>(
+      *json, grpc_core::JsonArgs(), &errors);
+  ASSERT_TRUE(errors.ok()) << errors.status("unexpected errors");
+  ASSERT_TRUE(config.cloud_trace.has_value());
+  EXPECT_FLOAT_EQ(config.cloud_trace->sampling_rate, 0.05);
 }
 
 TEST(GcpEnvParsingTest, NoEnvironmentVariableSet) {

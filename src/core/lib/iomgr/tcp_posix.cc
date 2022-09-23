@@ -48,6 +48,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/debug/event_log.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
@@ -582,7 +583,7 @@ static void run_poller(void* bp, grpc_error_handle /*error_ignored*/) {
   }
   gpr_mu_lock(p->pollset_mu);
   grpc_core::Timestamp deadline =
-      grpc_core::ExecCtx::Get()->Now() + grpc_core::Duration::Seconds(10);
+      grpc_core::Timestamp::Now() + grpc_core::Duration::Seconds(10);
   GRPC_LOG_IF_ERROR(
       "backup_poller:pollset_work",
       grpc_pollset_work(BACKUP_POLLER_POLLSET(p), nullptr, deadline));
@@ -1641,6 +1642,7 @@ static bool do_tcp_flush_zerocopy(grpc_tcp* tcp, TcpZerocopySendRecord* record,
         return true;
       }
     }
+    grpc_core::EventLog::Append("tcp-write-outstanding", -sent_length);
     tcp->bytes_counter += sent_length;
     record->UpdateOffsetForBytesSent(sending_length,
                                      static_cast<size_t>(sent_length));
@@ -1758,6 +1760,7 @@ static bool tcp_flush(grpc_tcp* tcp, grpc_error_handle* error) {
     }
 
     GPR_ASSERT(tcp->outgoing_byte_idx == 0);
+    grpc_core::EventLog::Append("tcp-write-outstanding", -sent_length);
     tcp->bytes_counter += sent_length;
     trailing = sending_length - static_cast<size_t>(sent_length);
     while (trailing > 0) {
@@ -1827,6 +1830,8 @@ static void tcp_write(grpc_endpoint* ep, grpc_slice_buffer* buf,
   grpc_tcp* tcp = reinterpret_cast<grpc_tcp*>(ep);
   grpc_error_handle error = GRPC_ERROR_NONE;
   TcpZerocopySendRecord* zerocopy_send_record = nullptr;
+
+  grpc_core::EventLog::Append("tcp-write-outstanding", buf->length);
 
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     size_t i;

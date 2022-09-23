@@ -44,11 +44,11 @@ CertificateProviderStore::PluginDefinition::JsonLoader(const JsonArgs&) {
 }
 
 void CertificateProviderStore::PluginDefinition::JsonPostLoad(
-    const Json& json, const JsonArgs&, ErrorList* errors) {
+    const Json& json, const JsonArgs&, ValidationErrors* errors) {
   // Check that plugin is supported.
   CertificateProviderFactory* factory = nullptr;
   if (!plugin_name.empty()) {
-    ScopedField field(errors, ".plugin_name");
+    ValidationErrors::ScopedField field(errors, ".plugin_name");
     factory = CoreConfiguration::Get()
                   .certificate_provider_registry()
                   .LookupCertificateProviderFactory(plugin_name);
@@ -59,7 +59,7 @@ void CertificateProviderStore::PluginDefinition::JsonPostLoad(
   }
   // Parse the config field.
   {
-    ScopedField field(errors, ".config");
+    ValidationErrors::ScopedField field(errors, ".config");
     auto it = json.object_value().find("config");
     // The config field is optional; if not present, we use an empty JSON
     // object.
