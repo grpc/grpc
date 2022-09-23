@@ -568,7 +568,6 @@ class GrpcPolledFdWindows {
 
   static void OnIocpReadable(void* arg, grpc_error_handle error) {
     GrpcPolledFdWindows* polled_fd = static_cast<GrpcPolledFdWindows*>(arg);
-    (void)error;
     MutexLock lock(polled_fd->mu_);
     polled_fd->OnIocpReadableLocked(error);
   }
@@ -612,7 +611,6 @@ class GrpcPolledFdWindows {
 
   static void OnIocpWriteable(void* arg, grpc_error_handle error) {
     GrpcPolledFdWindows* polled_fd = static_cast<GrpcPolledFdWindows*>(arg);
-    (void)error;
     MutexLock lock(polled_fd->mu_);
     polled_fd->OnIocpWriteableLocked(error);
   }

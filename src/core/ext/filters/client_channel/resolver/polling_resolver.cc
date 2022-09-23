@@ -106,7 +106,6 @@ void PollingResolver::ShutdownLocked() {
 
 void PollingResolver::OnNextResolution(void* arg, grpc_error_handle error) {
   auto* self = static_cast<PollingResolver*>(arg);
-  (void)error;  // ref owned by lambda
   self->work_serializer_->Run(
       [self, error]() { self->OnNextResolutionLocked(error); }, DEBUG_LOCATION);
 }

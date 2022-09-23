@@ -816,7 +816,6 @@ void OutlierDetectionLb::EjectionTimer::Orphan() {
 void OutlierDetectionLb::EjectionTimer::OnTimer(void* arg,
                                                 grpc_error_handle error) {
   auto* self = static_cast<EjectionTimer*>(arg);
-  (void)error;  // ref owned by lambda
   self->parent_->work_serializer()->Run(
       [self, error]() { self->OnTimerLocked(error); }, DEBUG_LOCATION);
 }
