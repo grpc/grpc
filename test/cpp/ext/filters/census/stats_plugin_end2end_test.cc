@@ -34,6 +34,7 @@
 #include <grpc++/grpc++.h>
 #include <grpcpp/opencensus.h>
 
+#include "src/core/lib/channel/call_tracer.h"
 #include "src/cpp/ext/filters/census/context.h"
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -735,7 +736,7 @@ TEST_F(StatsPluginEnd2EndTest, TestObservabilityDisabledChannelArg) {
   {
     // Client spans are ended when the ClientContext's destructor is invoked.
     ChannelArguments args;
-    args.SetInt(GRPC_ARG_DISABLE_OBSERVABILITY, 1);
+    args.SetInt(GRPC_ARG_ENABLE_OBSERVABILITY, 0);
     auto channel = CreateCustomChannel(server_address_,
                                        InsecureChannelCredentials(), args);
     ResetStub(channel);

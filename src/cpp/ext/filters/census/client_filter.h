@@ -50,7 +50,7 @@ class CensusClientChannelData : public ChannelData {
                          grpc_channel_element_args* args) override;
 
  private:
-  bool is_tracing_disabled_ = false;
+  bool tracing_enabled_ = true;
 };
 
 }  // namespace grpc

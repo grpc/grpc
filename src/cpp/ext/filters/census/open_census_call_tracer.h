@@ -93,7 +93,7 @@ class OpenCensusCallTracer : public grpc_core::CallTracer {
   };
 
   explicit OpenCensusCallTracer(const grpc_call_element_args* args,
-                                bool is_tracing_disabled);
+                                bool tracing_enabled);
   ~OpenCensusCallTracer() override;
 
   void GenerateContext();
@@ -107,7 +107,7 @@ class OpenCensusCallTracer : public grpc_core::CallTracer {
   absl::string_view method_;
   CensusContext context_;
   grpc_core::Arena* arena_;
-  bool is_tracing_disabled_;
+  bool tracing_enabled_;
   grpc_core::Mutex mu_;
   // Non-transparent attempts per call
   uint64_t retries_ ABSL_GUARDED_BY(&mu_) = 0;
