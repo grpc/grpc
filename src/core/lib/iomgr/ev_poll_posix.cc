@@ -358,7 +358,6 @@ static void unref_by(grpc_fd* fd, int n) {
     grpc_iomgr_unregister_object(&fd->iomgr_object);
     fork_fd_list_remove_node(fd->fork_fd_list);
     if (fd->shutdown) {
-      GRPC_ERROR_UNREF(fd->shutdown_error);
     }
     fd->shutdown_error.~Status();
     gpr_free(fd);
@@ -552,7 +551,6 @@ static void fd_shutdown(grpc_fd* fd, grpc_error_handle why) {
     set_ready_locked(fd, &fd->read_closure);
     set_ready_locked(fd, &fd->write_closure);
   } else {
-    GRPC_ERROR_UNREF(why);
   }
   gpr_mu_unlock(&fd->mu);
 }
@@ -757,8 +755,8 @@ static void push_front_worker(grpc_pollset* p, grpc_pollset_worker* worker) {
 
 static void kick_append_error(grpc_error_handle* composite,
                               grpc_error_handle error) {
-  if (GRPC_ERROR_IS_NONE(error)) return;
-  if (GRPC_ERROR_IS_NONE(*composite)) {
+  if (error.ok()) return;
+  if (composite->ok()) {
     *composite = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Kick Failure");
   }
   *composite = grpc_error_add_child(*composite, error);
@@ -818,7 +816,7 @@ static grpc_error_handle pollset_kick_ext(grpc_pollset* p,
     }
   }
 
-  GRPC_LOG_IF_ERROR("pollset_kick_ext", GRPC_ERROR_REF(error));
+  GRPC_LOG_IF_ERROR("pollset_kick_ext", error);
   return error;
 }
 
@@ -893,8 +891,8 @@ static void finish_shutdown(grpc_pollset* pollset) {
 
 static void work_combine_error(grpc_error_handle* composite,
                                grpc_error_handle error) {
-  if (GRPC_ERROR_IS_NONE(error)) return;
-  if (GRPC_ERROR_IS_NONE(*composite)) {
+  if (error.ok()) return;
+  if (composite->ok()) {
     *composite = GRPC_ERROR_CREATE_FROM_STATIC_STRING("pollset_work");
   }
   *composite = grpc_error_add_child(*composite, error);
@@ -928,8 +926,8 @@ static grpc_error_handle pollset_work(grpc_pollset* pollset,
         gpr_malloc(sizeof(*worker.wakeup_fd)));
     error = grpc_wakeup_fd_init(&worker.wakeup_fd->fd);
     fork_fd_list_add_wakeup_fd(worker.wakeup_fd);
-    if (!GRPC_ERROR_IS_NONE(error)) {
-      GRPC_LOG_IF_ERROR("pollset_work", GRPC_ERROR_REF(error));
+    if (!error.ok()) {
+      GRPC_LOG_IF_ERROR("pollset_work", error);
       return error;
     }
   }
@@ -1090,7 +1088,7 @@ static grpc_error_handle pollset_work(grpc_pollset* pollset,
     /* If we're forced to re-evaluate polling (via pollset_kick with
        GRPC_POLLSET_REEVALUATE_POLLING_ON_WAKEUP) then we land here and force
        a loop */
-    if (worker.reevaluate_polling_on_wakeup && GRPC_ERROR_IS_NONE(error)) {
+    if (worker.reevaluate_polling_on_wakeup && error.ok()) {
       worker.reevaluate_polling_on_wakeup = 0;
       pollset->kicked_without_pollers = 0;
       if (queued_work || worker.kicked_specifically) {
@@ -1126,7 +1124,7 @@ static grpc_error_handle pollset_work(grpc_pollset* pollset,
     }
   }
   if (worker_hdl) *worker_hdl = nullptr;
-  GRPC_LOG_IF_ERROR("pollset_work", GRPC_ERROR_REF(error));
+  GRPC_LOG_IF_ERROR("pollset_work", error);
   return error;
 }
 

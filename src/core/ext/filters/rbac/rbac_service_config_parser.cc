@@ -597,11 +597,10 @@ RbacServiceConfigParser::ParsePerMethodParams(const ChannelArgs& args,
   }
   grpc_error_handle error =
       GRPC_ERROR_CREATE_FROM_VECTOR("Rbac parser", &error_list);
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     absl::Status status = absl::InvalidArgumentError(
         absl::StrCat("error parsing RBAC method parameters: ",
                      grpc_error_std_string(error)));
-    GRPC_ERROR_UNREF(error);
     return status;
   }
   if (rbac_policies.empty()) return nullptr;

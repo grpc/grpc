@@ -89,11 +89,11 @@ static grpc_error_handle enable_socket_low_latency(SOCKET sock) {
 grpc_error_handle grpc_tcp_prepare_socket(SOCKET sock) {
   grpc_error_handle err;
   err = grpc_tcp_set_non_block(sock);
-  if (!GRPC_ERROR_IS_NONE(err)) return err;
+  if (!err.ok()) return err;
   err = set_dualstack(sock);
-  if (!GRPC_ERROR_IS_NONE(err)) return err;
+  if (!err.ok()) return err;
   err = enable_socket_low_latency(sock);
-  if (!GRPC_ERROR_IS_NONE(err)) return err;
+  if (!err.ok()) return err;
   return GRPC_ERROR_NONE;
 }
 
@@ -131,7 +131,6 @@ static void tcp_free(grpc_tcp* tcp) {
   grpc_winsocket_destroy(tcp->socket);
   gpr_mu_destroy(&tcp->mu);
   grpc_slice_buffer_destroy(&tcp->last_read_buffer);
-  if (tcp->shutting_down) GRPC_ERROR_UNREF(tcp->shutdown_error);
   delete tcp;
 }
 
@@ -184,9 +183,9 @@ static void on_read(void* tcpp, grpc_error_handle error) {
     gpr_log(GPR_INFO, "TCP:%p on_read", tcp);
   }
 
-  (void)GRPC_ERROR_REF(error);
+  (void)error;
 
-  if (GRPC_ERROR_IS_NONE(error)) {
+  if (error.ok()) {
     if (info->wsa_error != 0 && !tcp->shutting_down) {
       char* utf8_message = gpr_format_message(info->wsa_error);
       error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(utf8_message);
@@ -324,14 +323,14 @@ static void on_write(void* tcpp, grpc_error_handle error) {
     gpr_log(GPR_INFO, "TCP:%p on_write", tcp);
   }
 
-  (void)GRPC_ERROR_REF(error);
+  (void)error;
 
   gpr_mu_lock(&tcp->mu);
   cb = tcp->write_cb;
   tcp->write_cb = NULL;
   gpr_mu_unlock(&tcp->mu);
 
-  if (GRPC_ERROR_IS_NONE(error)) {
+  if (error.ok()) {
     if (info->wsa_error != 0) {
       error = GRPC_WSA_ERROR(info->wsa_error, "WSASend");
     } else {
@@ -466,7 +465,6 @@ static void win_shutdown(grpc_endpoint* ep, grpc_error_handle why) {
     tcp->shutting_down = 1;
     tcp->shutdown_error = why;
   } else {
-    GRPC_ERROR_UNREF(why);
   }
   grpc_winsocket_shutdown(tcp->socket);
   gpr_mu_unlock(&tcp->mu);

@@ -57,7 +57,7 @@ namespace {
 
 absl::optional<std::string> ParseHealthCheckConfig(const Json& field,
                                                    grpc_error_handle* error) {
-  GPR_DEBUG_ASSERT(error != nullptr && GRPC_ERROR_IS_NONE(*error));
+  GPR_DEBUG_ASSERT(error != nullptr && error->ok());
   if (field.type() != Json::Type::OBJECT) {
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "field:healthCheckConfig error:should be of type object");
@@ -131,7 +131,7 @@ ClientChannelServiceConfigParser::ParseGlobalParams(const ChannelArgs& /*args*/,
     grpc_error_handle parsing_error = GRPC_ERROR_NONE;
     health_check_service_name =
         ParseHealthCheckConfig(it->second, &parsing_error);
-    if (!GRPC_ERROR_IS_NONE(parsing_error)) {
+    if (!parsing_error.ok()) {
       error_list.push_back(parsing_error);
     }
   }
@@ -141,7 +141,6 @@ ClientChannelServiceConfigParser::ParseGlobalParams(const ChannelArgs& /*args*/,
     absl::Status status = absl::InvalidArgumentError(
         absl::StrCat("error parsing client channel global parameters: ",
                      grpc_error_std_string(error)));
-    GRPC_ERROR_UNREF(error);
     return status;
   }
   return absl::make_unique<ClientChannelGlobalParsedConfig>(
@@ -177,7 +176,6 @@ ClientChannelServiceConfigParser::ParsePerMethodParams(
     absl::Status status = absl::InvalidArgumentError(
         absl::StrCat("error parsing client channel method parameters: ",
                      grpc_error_std_string(error)));
-    GRPC_ERROR_UNREF(error);
     return status;
   }
   return absl::make_unique<ClientChannelMethodParsedConfig>(timeout,

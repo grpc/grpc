@@ -219,10 +219,9 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
       RequestedCall* rc;
       while ((rc = reinterpret_cast<RequestedCall*>(
                   requests_per_cq_[i].Pop())) != nullptr) {
-        server_->FailCall(i, rc, GRPC_ERROR_REF(error));
+        server_->FailCall(i, rc, error);
       }
     }
-    GRPC_ERROR_UNREF(error);
   }
 
   size_t request_queue_count() const override {
@@ -336,9 +335,7 @@ class Server::AllocatingRequestMatcherBase : public RequestMatcherInterface {
 
   void ZombifyPending() override {}
 
-  void KillRequests(grpc_error_handle error) override {
-    GRPC_ERROR_UNREF(error);
-  }
+  void KillRequests(grpc_error_handle /*error*/) override {}
 
   size_t request_queue_count() const override { return 0; }
 
@@ -448,11 +445,9 @@ class ChannelBroadcaster {
   // Broadcasts a shutdown on each channel.
   void BroadcastShutdown(bool send_goaway, grpc_error_handle force_disconnect) {
     for (const RefCountedPtr<Channel>& channel : channels_) {
-      SendShutdown(channel->c_ptr(), send_goaway,
-                   GRPC_ERROR_REF(force_disconnect));
+      SendShutdown(channel->c_ptr(), send_goaway, force_disconnect);
     }
     channels_.clear();  // just for safety against double broadcast
-    GRPC_ERROR_UNREF(force_disconnect);
   }
 
  private:
@@ -701,7 +696,7 @@ void Server::FailCall(size_t cq_idx, RequestedCall* rc,
                       grpc_error_handle error) {
   *rc->call = nullptr;
   rc->initial_metadata->count = 0;
-  GPR_ASSERT(!GRPC_ERROR_IS_NONE(error));
+  GPR_ASSERT(!error.ok());
   grpc_cq_end_op(cqs_[cq_idx], rc->tag, error, DoneRequestEvent, rc,
                  &rc->completion);
 }
@@ -740,14 +735,13 @@ void Server::MaybeFinishShutdown() {
 
 void Server::KillPendingWorkLocked(grpc_error_handle error) {
   if (started_) {
-    unregistered_request_matcher_->KillRequests(GRPC_ERROR_REF(error));
+    unregistered_request_matcher_->KillRequests(error);
     unregistered_request_matcher_->ZombifyPending();
     for (std::unique_ptr<RegisteredMethod>& rm : registered_methods_) {
-      rm->matcher->KillRequests(GRPC_ERROR_REF(error));
+      rm->matcher->KillRequests(error);
       rm->matcher->ZombifyPending();
     }
   }
-  GRPC_ERROR_UNREF(error);
 }
 
 std::vector<RefCountedPtr<Channel>> Server::GetChannelsLocked() const {
@@ -1114,8 +1108,7 @@ void Server::ChannelData::AcceptStream(void* arg, grpc_transport* /*transport*/,
   grpc_call_element* elem =
       grpc_call_stack_element(grpc_call_get_call_stack(call), 0);
   auto* calld = static_cast<Server::CallData*>(elem->call_data);
-  if (!GRPC_ERROR_IS_NONE(error)) {
-    GRPC_ERROR_UNREF(error);
+  if (!error.ok()) {
     calld->FailCallCreation();
     return;
   }
@@ -1185,7 +1178,6 @@ Server::CallData::CallData(grpc_call_element* elem,
 
 Server::CallData::~CallData() {
   GPR_ASSERT(state_.load(std::memory_order_relaxed) != CallState::PENDING);
-  GRPC_ERROR_UNREF(recv_initial_metadata_error_);
   grpc_metadata_array_destroy(&initial_metadata_);
   grpc_byte_buffer_destroy(payload_);
 }
@@ -1264,7 +1256,7 @@ void Server::CallData::PublishNewRpc(void* arg, grpc_error_handle error) {
   auto* chand = static_cast<Server::ChannelData*>(call_elem->channel_data);
   RequestMatcherInterface* rm = calld->matcher_;
   Server* server = rm->server();
-  if (!GRPC_ERROR_IS_NONE(error) || server->ShutdownCalled()) {
+  if (!error.ok() || server->ShutdownCalled()) {
     calld->state_.store(CallState::ZOMBIED, std::memory_order_relaxed);
     calld->KillZombie();
     return;
@@ -1328,7 +1320,7 @@ void Server::CallData::RecvInitialMetadataBatchComplete(
     void* arg, grpc_error_handle error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
   auto* calld = static_cast<Server::CallData*>(elem->call_data);
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     gpr_log(GPR_DEBUG, "Failed call creation: %s",
             grpc_error_std_string(error).c_str());
     calld->FailCallCreation();
@@ -1360,13 +1352,13 @@ void Server::CallData::RecvInitialMetadataReady(void* arg,
                                                 grpc_error_handle error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
   CallData* calld = static_cast<CallData*>(elem->call_data);
-  if (GRPC_ERROR_IS_NONE(error)) {
+  if (error.ok()) {
     calld->path_ = calld->recv_initial_metadata_->Take(HttpPathMetadata());
     auto* host =
         calld->recv_initial_metadata_->get_pointer(HttpAuthorityMetadata());
     if (host != nullptr) calld->host_.emplace(host->Ref());
   } else {
-    (void)GRPC_ERROR_REF(error);
+    (void)error;
   }
   auto op_deadline = calld->recv_initial_metadata_->get(GrpcTimeoutMetadata());
   if (op_deadline.has_value()) {
@@ -1379,8 +1371,7 @@ void Server::CallData::RecvInitialMetadataReady(void* arg,
     grpc_error_handle src_error = error;
     error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
         "Missing :authority or :path", &src_error, 1);
-    GRPC_ERROR_UNREF(src_error);
-    calld->recv_initial_metadata_error_ = GRPC_ERROR_REF(error);
+    calld->recv_initial_metadata_error_ = error;
   }
   grpc_closure* closure = calld->original_recv_initial_metadata_ready_;
   calld->original_recv_initial_metadata_ready_ = nullptr;
@@ -1398,7 +1389,7 @@ void Server::CallData::RecvTrailingMetadataReady(void* arg,
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
   CallData* calld = static_cast<CallData*>(elem->call_data);
   if (calld->original_recv_initial_metadata_ready_ != nullptr) {
-    calld->recv_trailing_metadata_error_ = GRPC_ERROR_REF(error);
+    calld->recv_trailing_metadata_error_ = error;
     calld->seen_recv_trailing_metadata_ready_ = true;
     GRPC_CLOSURE_INIT(&calld->recv_trailing_metadata_ready_,
                       RecvTrailingMetadataReady, elem,
@@ -1408,9 +1399,7 @@ void Server::CallData::RecvTrailingMetadataReady(void* arg,
                             "until after recv_initial_metadata_ready");
     return;
   }
-  error =
-      grpc_error_add_child(GRPC_ERROR_REF(error),
-                           GRPC_ERROR_REF(calld->recv_initial_metadata_error_));
+  error = grpc_error_add_child(error, calld->recv_initial_metadata_error_);
   Closure::Run(DEBUG_LOCATION, calld->original_recv_trailing_metadata_ready_,
                error);
 }

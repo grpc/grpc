@@ -559,7 +559,7 @@ void XdsClusterManagerLb::ClusterChild::DeactivateLocked() {
 void XdsClusterManagerLb::ClusterChild::OnDelayedRemovalTimer(
     void* arg, grpc_error_handle error) {
   ClusterChild* self = static_cast<ClusterChild*>(arg);
-  (void)GRPC_ERROR_REF(error);  // Ref owned by the lambda
+  (void)error;  // Ref owned by the lambda
   self->xds_cluster_manager_policy_->work_serializer()->Run(
       [self, error]() { self->OnDelayedRemovalTimerLocked(error); },
       DEBUG_LOCATION);
@@ -568,11 +568,10 @@ void XdsClusterManagerLb::ClusterChild::OnDelayedRemovalTimer(
 void XdsClusterManagerLb::ClusterChild::OnDelayedRemovalTimerLocked(
     grpc_error_handle error) {
   delayed_removal_timer_callback_pending_ = false;
-  if (GRPC_ERROR_IS_NONE(error) && !shutdown_) {
+  if (error.ok() && !shutdown_) {
     xds_cluster_manager_policy_->children_.erase(name_);
   }
   Unref(DEBUG_LOCATION, "ClusterChild+timer");
-  GRPC_ERROR_UNREF(error);
 }
 
 //

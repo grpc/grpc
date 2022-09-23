@@ -816,13 +816,13 @@ void OutlierDetectionLb::EjectionTimer::Orphan() {
 void OutlierDetectionLb::EjectionTimer::OnTimer(void* arg,
                                                 grpc_error_handle error) {
   auto* self = static_cast<EjectionTimer*>(arg);
-  (void)GRPC_ERROR_REF(error);  // ref owned by lambda
+  (void)error;  // ref owned by lambda
   self->parent_->work_serializer()->Run(
       [self, error]() { self->OnTimerLocked(error); }, DEBUG_LOCATION);
 }
 
 void OutlierDetectionLb::EjectionTimer::OnTimerLocked(grpc_error_handle error) {
-  if (GRPC_ERROR_IS_NONE(error) && timer_pending_) {
+  if (error.ok() && timer_pending_) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
       gpr_log(GPR_INFO, "[outlier_detection_lb %p] ejection timer running",
               parent_.get());
@@ -1005,7 +1005,6 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked(grpc_error_handle error) {
         MakeOrphanable<EjectionTimer>(parent_, Timestamp::Now());
   }
   Unref(DEBUG_LOCATION, "Timer");
-  GRPC_ERROR_UNREF(error);
 }
 
 //

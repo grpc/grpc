@@ -1119,7 +1119,7 @@ static void tcp_handle_read(void* arg /* grpc_tcp */, grpc_error_handle error) {
   }
   tcp->read_mu.Lock();
   grpc_error_handle tcp_read_error;
-  if (GPR_LIKELY(GRPC_ERROR_IS_NONE(error))) {
+  if (GPR_LIKELY(error.ok())) {
     maybe_make_read_slices(tcp);
     if (!tcp_do_read(tcp, &tcp_read_error)) {
       /* We've consumed the edge, request a new one */
@@ -1130,7 +1130,7 @@ static void tcp_handle_read(void* arg /* grpc_tcp */, grpc_error_handle error) {
     }
     tcp_trace_read(tcp, tcp_read_error);
   } else {
-    tcp_read_error = GRPC_ERROR_REF(error);
+    tcp_read_error = error;
     grpc_slice_buffer_reset_and_unref(tcp->incoming_buffer);
     grpc_slice_buffer_reset_and_unref(&tcp->last_read_buffer);
   }
@@ -1471,7 +1471,7 @@ static void tcp_handle_error(void* arg /* grpc_tcp */,
             grpc_error_std_string(error).c_str());
   }
 
-  if (!GRPC_ERROR_IS_NONE(error) ||
+  if (!error.ok() ||
       static_cast<bool>(gpr_atm_acq_load(&tcp->stop_error_notification))) {
     /* We aren't going to register to hear on error anymore, so it is safe to
      * unref. */
@@ -1789,7 +1789,7 @@ static void tcp_handle_write(void* arg /* grpc_tcp */,
   grpc_tcp* tcp = static_cast<grpc_tcp*>(arg);
   grpc_closure* cb;
 
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     cb = tcp->write_cb;
     tcp->write_cb = nullptr;
     if (tcp->current_zerocopy_send != nullptr) {
@@ -1797,7 +1797,7 @@ static void tcp_handle_write(void* arg /* grpc_tcp */,
                                       "handle_write_err");
       tcp->current_zerocopy_send = nullptr;
     }
-    grpc_core::Closure::Run(DEBUG_LOCATION, cb, GRPC_ERROR_REF(error));
+    grpc_core::Closure::Run(DEBUG_LOCATION, cb, error);
     TCP_UNREF(tcp, "write");
     return;
   }
@@ -1811,7 +1811,7 @@ static void tcp_handle_write(void* arg /* grpc_tcp */,
     }
     notify_on_write(tcp);
     // tcp_flush does not populate error if it has returned false.
-    GPR_DEBUG_ASSERT(GRPC_ERROR_IS_NONE(error));
+    GPR_DEBUG_ASSERT(error.ok());
   } else {
     cb = tcp->write_cb;
     tcp->write_cb = nullptr;

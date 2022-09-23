@@ -420,7 +420,6 @@ static void test_connect(size_t num_connects,
                 grpc_error_std_string(err).c_str());
         ASSERT_TRUE(test_dst_addrs);
         dst_addrs->addrs[dst_idx].addr.len = 0;
-        GRPC_ERROR_UNREF(err);
       }
       ASSERT_GT(num_tested, 0);
     }

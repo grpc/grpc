@@ -566,14 +566,14 @@ void PriorityLb::ChildPriority::DeactivationTimer::Orphan() {
 void PriorityLb::ChildPriority::DeactivationTimer::OnTimer(
     void* arg, grpc_error_handle error) {
   auto* self = static_cast<DeactivationTimer*>(arg);
-  (void)GRPC_ERROR_REF(error);  // ref owned by lambda
+  (void)error;  // ref owned by lambda
   self->child_priority_->priority_policy_->work_serializer()->Run(
       [self, error]() { self->OnTimerLocked(error); }, DEBUG_LOCATION);
 }
 
 void PriorityLb::ChildPriority::DeactivationTimer::OnTimerLocked(
     grpc_error_handle error) {
-  if (GRPC_ERROR_IS_NONE(error) && timer_pending_) {
+  if (error.ok() && timer_pending_) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
       gpr_log(GPR_INFO,
               "[priority_lb %p] child %s (%p): deactivation timer fired, "
@@ -585,7 +585,6 @@ void PriorityLb::ChildPriority::DeactivationTimer::OnTimerLocked(
     child_priority_->priority_policy_->DeleteChild(child_priority_.get());
   }
   Unref(DEBUG_LOCATION, "Timer");
-  GRPC_ERROR_UNREF(error);
 }
 
 //
@@ -630,14 +629,14 @@ void PriorityLb::ChildPriority::FailoverTimer::Orphan() {
 void PriorityLb::ChildPriority::FailoverTimer::OnTimer(
     void* arg, grpc_error_handle error) {
   auto* self = static_cast<FailoverTimer*>(arg);
-  (void)GRPC_ERROR_REF(error);  // ref owned by lambda
+  (void)error;  // ref owned by lambda
   self->child_priority_->priority_policy_->work_serializer()->Run(
       [self, error]() { self->OnTimerLocked(error); }, DEBUG_LOCATION);
 }
 
 void PriorityLb::ChildPriority::FailoverTimer::OnTimerLocked(
     grpc_error_handle error) {
-  if (GRPC_ERROR_IS_NONE(error) && timer_pending_) {
+  if (error.ok() && timer_pending_) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
       gpr_log(GPR_INFO,
               "[priority_lb %p] child %s (%p): failover timer fired, "
@@ -652,7 +651,6 @@ void PriorityLb::ChildPriority::FailoverTimer::OnTimerLocked(
         nullptr);
   }
   Unref(DEBUG_LOCATION, "Timer");
-  GRPC_ERROR_UNREF(error);
 }
 
 //

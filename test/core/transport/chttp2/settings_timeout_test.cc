@@ -211,7 +211,7 @@ class Client {
       gpr_log(GPR_INFO, "OnEventDone(): %s",
               grpc_error_std_string(error).c_str());
       EventState* state = static_cast<EventState*>(arg);
-      state->error_ = GRPC_ERROR_REF(error);
+      state->error_ = error;
       gpr_atm_rel_store(&state->done_atm_, 1);
     }
 
