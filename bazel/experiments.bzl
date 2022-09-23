@@ -41,6 +41,12 @@ EXPERIMENTS = {
             "tcp_rcv_lowat",
             "tcp_read_chunks",
         ],
+        "hpack_test": [
+            "periodic_resource_quota_reclamation",
+        ],
+        "promise_test": [
+            "periodic_resource_quota_reclamation",
+        ],
         "resource_quota_test": [
             "memory_pressure_controller",
             "periodic_resource_quota_reclamation",

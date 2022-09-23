@@ -48,7 +48,7 @@ static DWORD deadline_to_millis_timeout(grpc_core::Timestamp deadline) {
   if (deadline == grpc_core::Timestamp::InfFuture()) {
     return INFINITE;
   }
-  grpc_core::Timestamp now = grpc_core::ExecCtx::Get()->Now();
+  grpc_core::Timestamp now = grpc_core::Timestamp::Now();
   if (deadline < now) return 0;
   grpc_core::Duration timeout = deadline - now;
   if (timeout.millis() > std::numeric_limits<DWORD>::max()) return INFINITE;

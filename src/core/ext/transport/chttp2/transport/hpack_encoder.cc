@@ -33,7 +33,6 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder_table.h"
 #include "src/core/ext/transport/chttp2/transport/varint.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/validate_metadata.h"
 #include "src/core/lib/transport/timeout_encoding.h"
 
@@ -519,7 +518,7 @@ void HPackCompressor::Framer::EncodeRepeatingSliceValue(
 }
 
 void HPackCompressor::Framer::Encode(GrpcTimeoutMetadata, Timestamp deadline) {
-  Timeout timeout = Timeout::FromDuration(deadline - ExecCtx::Get()->Now());
+  Timeout timeout = Timeout::FromDuration(deadline - Timestamp::Now());
   for (auto it = compressor_->previous_timeouts_.begin();
        it != compressor_->previous_timeouts_.end(); ++it) {
     double ratio = timeout.RatioVersus(it->timeout);
