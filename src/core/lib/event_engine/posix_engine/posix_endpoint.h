@@ -223,7 +223,8 @@ class TcpZerocopySendCtx {
   // Simply associate this send record (and the underlying sent data buffers)
   // with the implicit sequence number for this zerocopy sendmsg().
   void AssociateSeqWithSendRecordLocked(uint32_t seq,
-                                        TcpZerocopySendRecord* record) {
+                                        TcpZerocopySendRecord* record)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     ctx_lookup_.emplace(seq, record);
   }
 
@@ -252,9 +253,9 @@ class TcpZerocopySendCtx {
   // max_sends_ tcp_write() instances with zerocopy enabled in flight at the
   // same time.
   void PutSendRecord(TcpZerocopySendRecord* record) {
+    grpc_core::MutexLock lock(&mu_);
     GPR_DEBUG_ASSERT(record >= send_records_ &&
                      record < send_records_ + max_sends_);
-    grpc_core::MutexLock lock(&mu_);
     PutSendRecordLocked(record);
   }
 
@@ -390,7 +391,8 @@ class TcpZerocopySendCtx {
              // check this state after the sendmsg.
   };
 
-  TcpZerocopySendRecord* ReleaseSendRecordLocked(uint32_t seq) {
+  TcpZerocopySendRecord* ReleaseSendRecordLocked(uint32_t seq)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     auto iter = ctx_lookup_.find(seq);
     GPR_DEBUG_ASSERT(iter != ctx_lookup_.end());
     TcpZerocopySendRecord* record = iter->second;
@@ -398,7 +400,8 @@ class TcpZerocopySendCtx {
     return record;
   }
 
-  TcpZerocopySendRecord* TryGetSendRecordLocked() {
+  TcpZerocopySendRecord* TryGetSendRecordLocked()
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     if (shutdown_.load(std::memory_order_acquire)) {
       return nullptr;
     }
@@ -409,7 +412,8 @@ class TcpZerocopySendCtx {
     return free_send_records_[free_send_records_size_];
   }
 
-  void PutSendRecordLocked(TcpZerocopySendRecord* record) {
+  void PutSendRecordLocked(TcpZerocopySendRecord* record)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     GPR_DEBUG_ASSERT(free_send_records_size_ < max_sends_);
     free_send_records_[free_send_records_size_] = record;
     free_send_records_size_++;
