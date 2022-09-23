@@ -318,30 +318,32 @@ class XdsClientTest : public ::testing::Test {
     absl::string_view v2_type_url() const override {
       return ResourceStruct::TypeUrlV2();
     }
-    absl::StatusOr<XdsResourceType::DecodeResult> Decode(
+    XdsResourceType::DecodeResult Decode(
         const XdsResourceType::DecodeContext& /*context*/,
         absl::string_view serialized_resource, bool /*is_v2*/) const override {
       auto json = Json::Parse(serialized_resource);
-      if (!json.ok()) return json.status();
-      absl::StatusOr<ResourceStruct> foo = LoadFromJson<ResourceStruct>(*json);
       XdsResourceType::DecodeResult result;
-      if (!foo.ok()) {
-        auto it = json->object_value().find("name");
-        if (it == json->object_value().end()) {
-          return absl::InvalidArgumentError(
-              "cannot determine name for invalid resource");
-        }
-        result.name = it->second.string_value();
-        result.resource = foo.status();
+      if (!json.ok()) {
+        result.resource = json.status();
       } else {
-        result.name = foo->name;
-        auto resource = absl::make_unique<typename XdsResourceTypeImpl<
-            XdsTestResourceType<ResourceStruct>,
-            ResourceStruct>::ResourceDataSubclass>();
-        resource->resource = std::move(*foo);
-        result.resource = std::move(resource);
+        absl::StatusOr<ResourceStruct> foo =
+            LoadFromJson<ResourceStruct>(*json);
+        if (!foo.ok()) {
+          auto it = json->object_value().find("name");
+          if (it != json->object_value().end()) {
+            result.name = it->second.string_value();
+          }
+          result.resource = foo.status();
+        } else {
+          result.name = foo->name;
+          auto resource = absl::make_unique<typename XdsResourceTypeImpl<
+              XdsTestResourceType<ResourceStruct>,
+              ResourceStruct>::ResourceDataSubclass>();
+          resource->resource = std::move(*foo);
+          result.resource = std::move(resource);
+        }
       }
-      return std::move(result);
+      return result;
     }
     void InitUpbSymtab(upb_DefPool* /*symtab*/) const override {}
 

@@ -726,6 +726,7 @@ libs:
   - src/core/lib/compression/compression_internal.h
   - src/core/lib/compression/message_compress.h
   - src/core/lib/config/core_configuration.h
+  - src/core/lib/debug/event_log.h
   - src/core/lib/debug/stats.h
   - src/core/lib/debug/stats_data.h
   - src/core/lib/debug/trace.h
@@ -741,7 +742,6 @@ libs:
   - src/core/lib/event_engine/posix_engine/timer.h
   - src/core/lib/event_engine/posix_engine/timer_heap.h
   - src/core/lib/event_engine/posix_engine/timer_manager.h
-  - src/core/lib/event_engine/promise.h
   - src/core/lib/event_engine/socket_notifier.h
   - src/core/lib/event_engine/thread_pool.h
   - src/core/lib/event_engine/time_util.h
@@ -766,6 +766,7 @@ libs:
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/overload.h
   - src/core/lib/gprpp/packed_table.h
+  - src/core/lib/gprpp/per_cpu.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
   - src/core/lib/gprpp/single_set_ptr.h
@@ -775,6 +776,7 @@ libs:
   - src/core/lib/gprpp/time.h
   - src/core/lib/gprpp/time_averaged_stats.h
   - src/core/lib/gprpp/unique_type_name.h
+  - src/core/lib/gprpp/validation_errors.h
   - src/core/lib/gprpp/work_serializer.h
   - src/core/lib/handshaker/proxy_mapper.h
   - src/core/lib/handshaker/proxy_mapper_registry.h
@@ -1438,6 +1440,7 @@ libs:
   - src/core/lib/compression/compression_internal.cc
   - src/core/lib/compression/message_compress.cc
   - src/core/lib/config/core_configuration.cc
+  - src/core/lib/debug/event_log.cc
   - src/core/lib/debug/stats.cc
   - src/core/lib/debug/stats_data.cc
   - src/core/lib/debug/trace.cc
@@ -1467,6 +1470,7 @@ libs:
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/gprpp/time_averaged_stats.cc
+  - src/core/lib/gprpp/validation_errors.cc
   - src/core/lib/gprpp/work_serializer.cc
   - src/core/lib/handshaker/proxy_mapper_registry.cc
   - src/core/lib/http/format_request.cc
@@ -1924,6 +1928,7 @@ libs:
   - src/core/lib/compression/compression_internal.h
   - src/core/lib/compression/message_compress.h
   - src/core/lib/config/core_configuration.h
+  - src/core/lib/debug/event_log.h
   - src/core/lib/debug/stats.h
   - src/core/lib/debug/stats_data.h
   - src/core/lib/debug/trace.h
@@ -1939,7 +1944,6 @@ libs:
   - src/core/lib/event_engine/posix_engine/timer.h
   - src/core/lib/event_engine/posix_engine/timer_heap.h
   - src/core/lib/event_engine/posix_engine/timer_manager.h
-  - src/core/lib/event_engine/promise.h
   - src/core/lib/event_engine/socket_notifier.h
   - src/core/lib/event_engine/thread_pool.h
   - src/core/lib/event_engine/time_util.h
@@ -1964,6 +1968,7 @@ libs:
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/overload.h
   - src/core/lib/gprpp/packed_table.h
+  - src/core/lib/gprpp/per_cpu.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
   - src/core/lib/gprpp/single_set_ptr.h
@@ -1973,6 +1978,7 @@ libs:
   - src/core/lib/gprpp/time.h
   - src/core/lib/gprpp/time_averaged_stats.h
   - src/core/lib/gprpp/unique_type_name.h
+  - src/core/lib/gprpp/validation_errors.h
   - src/core/lib/gprpp/work_serializer.h
   - src/core/lib/handshaker/proxy_mapper.h
   - src/core/lib/handshaker/proxy_mapper_registry.h
@@ -2277,6 +2283,7 @@ libs:
   - src/core/lib/compression/compression_internal.cc
   - src/core/lib/compression/message_compress.cc
   - src/core/lib/config/core_configuration.cc
+  - src/core/lib/debug/event_log.cc
   - src/core/lib/debug/stats.cc
   - src/core/lib/debug/stats_data.cc
   - src/core/lib/debug/trace.cc
@@ -2306,6 +2313,7 @@ libs:
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/gprpp/time_averaged_stats.cc
+  - src/core/lib/gprpp/validation_errors.cc
   - src/core/lib/gprpp/work_serializer.cc
   - src/core/lib/handshaker/proxy_mapper_registry.cc
   - src/core/lib/http/format_request.cc
@@ -5138,11 +5146,13 @@ targets:
   language: c++
   headers:
   - src/core/lib/event_engine/common_closures.h
+  - src/core/lib/gprpp/notification.h
   src:
   - test/core/event_engine/common_closures_test.cc
   deps:
-  - grpc
-  - grpc_test_util_unsecure
+  - absl/functional:any_invocable
+  - absl/status:statusor
+  - gpr
 - name: completion_queue_threading_test
   gtest: true
   build: test
@@ -9737,6 +9747,7 @@ targets:
   - src/core/lib/iomgr/socket_mutator.cc
   - test/core/event_engine/posix/tcp_posix_socket_utils_test.cc
   deps:
+  - absl/cleanup:cleanup
   - grpc_test_util
   platforms:
   - linux
@@ -10472,6 +10483,15 @@ targets:
   - absl/strings:strings
   - absl/types:variant
   uses_polling: false
+- name: validation_errors_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gprpp/validation_errors_test.cc
+  deps:
+  - grpc_test_util
 - name: varint_test
   gtest: true
   build: test

@@ -86,7 +86,6 @@ end
 
 env_append 'CPPFLAGS', '-DGPR_BACKWARDS_COMPATIBILITY_MODE'
 env_append 'CPPFLAGS', '-DGRPC_XDS_USER_AGENT_NAME_SUFFIX="\"RUBY\""'
-env_append 'CPPFLAGS', '-DGRPC_RUBY_WINDOWS_UCRT' if windows_ucrt
 
 require_relative '../../lib/grpc/version'
 env_append 'CPPFLAGS', '-DGRPC_XDS_USER_AGENT_VERSION_SUFFIX="\"' + GRPC::VERSION + '\""'
@@ -111,6 +110,7 @@ unless windows
   exit 1 unless $? == 0
 end
 
+$CFLAGS << ' -DGRPC_RUBY_WINDOWS_UCRT' if windows_ucrt
 $CFLAGS << ' -I' + File.join(grpc_root, 'include')
 
 ext_export_file = File.join(grpc_root, 'src', 'ruby', 'ext', 'grpc', 'ext-export')
