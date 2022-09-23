@@ -42,12 +42,12 @@ grpc_cc_library(
     srcs = ["fake_handshaker_server.cc"],
     hdrs = ["fake_handshaker_server.h"],
     language = "C++",
+    visibility = ["//visibility:public"],
     deps = [
         "handshaker_proto",
         "transport_security_common_proto",
         "//:grpc++",
     ],
-    visibility = ["//visibility:public"],
 )
 
 grpc_cc_binary(
