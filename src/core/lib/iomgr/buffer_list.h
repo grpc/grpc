@@ -147,7 +147,7 @@ class TracedBuffer {
  public:
   /* Phony shutdown function */
   static void Shutdown(TracedBuffer** /*head*/, void* /*remaining*/,
-                       grpc_error_handle shutdown_err) {}
+                       grpc_error_handle /*shutdown_err*/) {}
 };
 #endif /* GRPC_LINUX_ERRQUEUE */
 
