@@ -90,138 +90,141 @@ struct RbacConfig {
             }
           };
 
-          std::string name;
-          bool invert_match = false;
-          absl::optional<std::string> exact_match;
-          absl::optional<std::string> prefix_match;
-          absl::optional<std::string> suffix_match;
-          absl::optional<std::string> contains_match;
-          absl::optional<SafeRegexMatch> safe_regex_match;
-          absl::optional<RangeMatch> range_match;
-          absl::optional<bool> present_match;
+          HeaderMatcher matcher;
 
           static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
+            // All fields handled in JsonPostLoad().
             static const auto* loader =
-                JsonObjectLoader<HeaderMatch>()
-                    .Field("name", &HeaderMatch::name)
-                    .OptionalField("invertMatch", &HeaderMatch::invert_match)
-                    .OptionalField("exactMatch", &HeaderMatch::exact_match)
-                    .OptionalField("prefixMatch", &HeaderMatch::prefix_match)
-                    .OptionalField("suffixMatch", &HeaderMatch::suffix_match)
-                    .OptionalField("containsMatch",
-                                   &HeaderMatch::contains_match)
-                    .OptionalField("safeRegexMatch",
-                                   &HeaderMatch::safe_regex_match)
-                    .OptionalField("rangeMatch", &HeaderMatch::range_match)
-                    .OptionalField("presentMatch", &HeaderMatch::present_match)
-                    .Finish();
+                JsonObjectLoader<HeaderMatch>().Finish();
             return loader;
           }
 
-          void JsonPostLoad(const Json&, const JsonArgs&,
+          void JsonPostLoad(const Json& json, const JsonArgs& args,
                             ValidationErrors* errors) {
-            size_t num_matchers =
-                exact_match.has_value() + prefix_match.has_value() +
-                suffix_match.has_value() + contains_match.has_value() +
-                safe_regex_match.has_value() + range_match.has_value() +
-                present_match.has_value();
-            if (num_matchers != 1) {
-              errors->AddError(
-                  absl::StrCat("expected exactly one header match type, found ",
-                               num_matchers));
+            const size_t original_error_size = errors->size();
+            std::string name = LoadJsonObjectField<std::string>(
+                                   json.object_value(), args, "name", errors)
+                                   .value_or("");
+            bool invert_match =
+                LoadJsonObjectField<bool>(json.object_value(), args,
+                                          "invertMatch", errors,
+                                          /*required=*/false)
+                    .value_or(false);
+            auto set_header_matcher =
+                [&](absl::StatusOr<HeaderMatcher> header_matcher) {
+                  if (header_matcher.ok()) {
+                    matcher = *header_matcher;
+                  } else {
+                    errors->AddError(header_matcher.status().message());
+                  }
+                };
+            auto check_match = [&](absl::string_view field_name,
+                                   HeaderMatcher::Type type) {
+              auto match = LoadJsonObjectField<std::string>(
+                  json.object_value(), args, field_name, errors,
+                  /*required=*/false);
+              if (match.has_value()) {
+                set_header_matcher(HeaderMatcher::Create(
+                    name, type, *match, 0, 0, false, invert_match));
+                return true;
+              }
+              return false;
+            };
+            if (check_match("exactMatch", HeaderMatcher::Type::kExact) ||
+                check_match("prefixMatch", HeaderMatcher::Type::kPrefix) ||
+                check_match("suffixMatch", HeaderMatcher::Type::kSuffix) ||
+                check_match("containsMatch", HeaderMatcher::Type::kContains)) {
+              return;
             }
-          }
-
-          HeaderMatcher MakeHeaderMatcher() const {
-            HeaderMatcher::Type type;
-            absl::string_view match;
-            int64_t range_start = 0;
-            int64_t range_end = 0;
-            bool present = false;
-            if (exact_match.has_value()) {
-              type = HeaderMatcher::Type::kExact;
-              match = *exact_match;
-            } else if (prefix_match.has_value()) {
-              type = HeaderMatcher::Type::kPrefix;
-              match = *prefix_match;
-            } else if (suffix_match.has_value()) {
-              type = HeaderMatcher::Type::kSuffix;
-              match = *suffix_match;
-            } else if (contains_match.has_value()) {
-              type = HeaderMatcher::Type::kContains;
-              match = *contains_match;
-            } else if (safe_regex_match.has_value()) {
-              type = HeaderMatcher::Type::kSafeRegex;
-              match = safe_regex_match->regex;
-            } else if (range_match.has_value()) {
-              type = HeaderMatcher::Type::kRange;
-              range_start = range_match->start;
-              range_end = range_match->end;
-            } else {
-              GPR_ASSERT(present_match.has_value());
-              type = HeaderMatcher::Type::kPresent;
-              present = *present_match;
+            auto present_match = LoadJsonObjectField<bool>(
+                json.object_value(), args, "presentMatch", errors,
+                /*required=*/false);
+            if (present_match.has_value()) {
+              set_header_matcher(
+                  HeaderMatcher::Create(name, HeaderMatcher::Type::kPresent, "",
+                                        0, 0, *present_match, invert_match));
+              return;
             }
-            return HeaderMatcher::Create(name, type, match, range_start,
-                                         range_end, present, invert_match)
-                .value();
+            auto regex_match = LoadJsonObjectField<SafeRegexMatch>(
+                json.object_value(), args, "safeRegexMatch", errors,
+                /*required=*/false);
+            if (regex_match.has_value()) {
+              set_header_matcher(HeaderMatcher::Create(
+                  name, HeaderMatcher::Type::kSafeRegex, regex_match->regex, 0,
+                  0, false, invert_match));
+              return;
+            }
+            auto range_match = LoadJsonObjectField<RangeMatch>(
+                json.object_value(), args, "rangeMatch", errors,
+                /*required=*/false);
+            if (range_match.has_value()) {
+              set_header_matcher(HeaderMatcher::Create(
+                  name, HeaderMatcher::Type::kRange, "", range_match->start,
+                  range_match->end, invert_match));
+              return;
+            }
+            if (errors->size() == original_error_size) {
+              errors->AddError("no valid matcher found");
+            }
           }
         };
 
         struct StringMatch {
-          bool ignore_case = false;
-          absl::optional<std::string> exact;
-          absl::optional<std::string> prefix;
-          absl::optional<std::string> suffix;
-          absl::optional<std::string> contains;
-          absl::optional<SafeRegexMatch> safe_regex;
+          StringMatcher matcher;
 
           static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
+            // All fields handled in JsonPostLoad().
             static const auto* loader =
-                JsonObjectLoader<StringMatch>()
-                    .OptionalField("ignoreCase", &StringMatch::ignore_case)
-                    .OptionalField("exact", &StringMatch::exact)
-                    .OptionalField("prefix", &StringMatch::prefix)
-                    .OptionalField("suffix", &StringMatch::suffix)
-                    .OptionalField("contains", &StringMatch::contains)
-                    .OptionalField("safeRegex", &StringMatch::safe_regex)
-                    .Finish();
+                JsonObjectLoader<StringMatch>().Finish();
             return loader;
           }
 
-          void JsonPostLoad(const Json&, const JsonArgs&,
+          void JsonPostLoad(const Json& json, const JsonArgs& args,
                             ValidationErrors* errors) {
-            size_t num_matchers = exact.has_value() + prefix.has_value() +
-                                  suffix.has_value() + contains.has_value() +
-                                  safe_regex.has_value();
-            if (num_matchers != 1) {
-              errors->AddError(
-                  absl::StrCat("expected exactly one string match type, found ",
-                               num_matchers));
+            const size_t original_error_size = errors->size();
+            bool ignore_case =
+                LoadJsonObjectField<bool>(json.object_value(), args,
+                                          "ignoreCase", errors,
+                                          /*required=*/false)
+                    .value_or(false);
+            auto set_string_matcher =
+                [&](absl::StatusOr<StringMatcher> string_matcher) {
+                  if (string_matcher.ok()) {
+                    matcher = *string_matcher;
+                  } else {
+                    errors->AddError(string_matcher.status().message());
+                  }
+                };
+            auto check_match = [&](absl::string_view field_name,
+                                   StringMatcher::Type type) {
+              auto match = LoadJsonObjectField<std::string>(
+                  json.object_value(), args, field_name, errors,
+                  /*required=*/false);
+              if (match.has_value()) {
+                set_string_matcher(
+                    StringMatcher::Create(type, *match, ignore_case));
+                return true;
+              }
+              return false;
+            };
+            if (check_match("exact", StringMatcher::Type::kExact) ||
+                check_match("prefix", StringMatcher::Type::kPrefix) ||
+                check_match("suffix", StringMatcher::Type::kSuffix) ||
+                check_match("contains", StringMatcher::Type::kContains)) {
+              return;
             }
-          }
-
-          StringMatcher MakeStringMatcher() const {
-            StringMatcher::Type type;
-            absl::string_view match;
-            if (exact.has_value()) {
-              type = StringMatcher::Type::kExact;
-              match = *exact;
-            } else if (prefix.has_value()) {
-              type = StringMatcher::Type::kPrefix;
-              match = *prefix;
-            } else if (suffix.has_value()) {
-              type = StringMatcher::Type::kSuffix;
-              match = *suffix;
-            } else if (contains.has_value()) {
-              type = StringMatcher::Type::kContains;
-              match = *contains;
-            } else {
-              GPR_ASSERT(safe_regex.has_value());
-              type = StringMatcher::Type::kSafeRegex;
-              match = safe_regex->regex;
+            auto regex_match = LoadJsonObjectField<SafeRegexMatch>(
+                json.object_value(), args, "safeRegex", errors,
+                /*required=*/false);
+            if (regex_match.has_value()) {
+              set_string_matcher(
+                  StringMatcher::Create(StringMatcher::Type::kSafeRegex,
+                                        regex_match->regex, ignore_case));
+              return;
             }
-            return StringMatcher::Create(type, match, ignore_case).value();
+            if (errors->size() == original_error_size) {
+              errors->AddError("no valid matcher found");
+            }
           }
         };
 
@@ -337,12 +340,11 @@ struct RbacConfig {
               return Rbac::Permission::MakeAnyPermission();
             }
             if (header.has_value()) {
-              return Rbac::Permission::MakeHeaderPermission(
-                  header->MakeHeaderMatcher());
+              return Rbac::Permission::MakeHeaderPermission(header->matcher);
             }
             if (url_path.has_value()) {
               return Rbac::Permission::MakePathPermission(
-                  url_path->path.MakeStringMatcher());
+                  url_path->path.matcher);
             }
             if (destination_ip.has_value()) {
               return Rbac::Permission::MakeDestIpPermission(
@@ -357,7 +359,7 @@ struct RbacConfig {
             }
             if (requested_server_name.has_value()) {
               return Rbac::Permission::MakeReqServerNamePermission(
-                  requested_server_name->MakeStringMatcher());
+                  requested_server_name->matcher);
             }
             if (and_rules.has_value()) {
               return Rbac::Permission::MakeAndPermission(
@@ -410,7 +412,7 @@ struct RbacConfig {
             Rbac::Principal MakePrincipal() const {
               if (principal_name.has_value()) {
                 return Rbac::Principal::MakeAuthenticatedPrincipal(
-                    principal_name->MakeStringMatcher());
+                    principal_name->matcher);
               }
               // No principalName found. Match for all users.
               return Rbac::Principal::MakeAnyPrincipal();
@@ -498,12 +500,10 @@ struct RbacConfig {
                   remote_ip->MakeCidrRange());
             }
             if (header.has_value()) {
-              return Rbac::Principal::MakeHeaderPrincipal(
-                  header->MakeHeaderMatcher());
+              return Rbac::Principal::MakeHeaderPrincipal(header->matcher);
             }
             if (url_path.has_value()) {
-              return Rbac::Principal::MakePathPrincipal(
-                  url_path->path.MakeStringMatcher());
+              return Rbac::Principal::MakePathPrincipal(url_path->path.matcher);
             }
             if (metadata.has_value()) {
               return Rbac::Principal::MakeMetadataPrincipal(metadata->invert);
