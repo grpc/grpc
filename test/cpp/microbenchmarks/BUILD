@@ -395,6 +395,11 @@ grpc_cc_test(
     srcs = ["bm_work_queue.cc"],
     args = grpc_benchmark_args(),
     external_deps = ["benchmark"],
+    tags = [
+        "manual",
+        "no_windows",
+        "notap",
+    ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
