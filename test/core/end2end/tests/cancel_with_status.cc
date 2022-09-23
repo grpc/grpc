@@ -20,6 +20,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <string>
+
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/propagation_bits.h>
 #include <grpc/slice.h>

@@ -16,12 +16,18 @@
 
 #include "src/core/lib/transport/call_fragments.h"
 
+#include <algorithm>
+#include <memory>
+#include <vector>
+
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
+#include <grpc/event_engine/memory_allocator.h>
+
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
-#include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/transport/transport.h"
 #include "test/core/promise/test_context.h"
 #include "test/core/util/test_config.h"
 

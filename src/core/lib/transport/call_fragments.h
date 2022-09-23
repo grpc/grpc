@@ -17,9 +17,13 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stdint.h>
+
 #include <new>
+#include <utility>
 
 #include "absl/status/status.h"
+#include "absl/types/optional.h"
 
 #include <grpc/status.h>
 
