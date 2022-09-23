@@ -47,7 +47,7 @@ std::string GetNextSendMessage();
 
 // Waits until the use_count of the event engine shared_ptr has reached 1
 // and returns.
-void WaitForPendingTasks(std::shared_ptr<EventEngine>&& engine);
+void WaitForSingleOwner(std::shared_ptr<EventEngine>&& engine);
 
 // A helper method to exchange data between two endpoints. It is assumed
 // that both endpoints are connected. The data (specified as a string) is

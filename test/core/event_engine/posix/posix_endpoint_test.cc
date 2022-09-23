@@ -26,6 +26,7 @@
 #include <gtest/gtest.h>
 
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_split.h"
 
 #include <grpc/event_engine/event_engine.h>
 
@@ -59,7 +60,7 @@ using ::grpc_event_engine::experimental::Poller;
 using ::grpc_event_engine::experimental::PosixEventEngine;
 using ::grpc_event_engine::experimental::PosixOracleEventEngine;
 using ::grpc_event_engine::experimental::URIToResolvedAddress;
-using ::grpc_event_engine::experimental::WaitForPendingTasks;
+using ::grpc_event_engine::experimental::WaitForSingleOwner;
 using Endpoint = ::grpc_event_engine::experimental::EventEngine::Endpoint;
 using Listener = ::grpc_event_engine::experimental::EventEngine::Listener;
 using namespace std::chrono_literals;
@@ -69,21 +70,16 @@ constexpr int kNumConnections = 10;
 constexpr int kNumExchangedMessages = 100;
 std::atomic<int> g_num_active_connections{0};
 
-EventEngine* GetOracleEE() {
-  static EventEngine* oracle_ee = new PosixOracleEventEngine();
-  return oracle_ee;
-}
+struct Connection {
+  std::unique_ptr<EventEngine::Endpoint> client_endpoint;
+  std::unique_ptr<EventEngine::Endpoint> server_endpoint;
+};
 
-std::list<std::tuple<std::unique_ptr<EventEngine::Endpoint>,
-                     std::unique_ptr<EventEngine::Endpoint>>>
-CreateConnectedEndpoints(PosixEventPoller* poller, bool is_zero_copy_enabled,
-                         int num_connections,
-                         std::shared_ptr<EventEngine> posix_ee) {
-  EXPECT_NE(GetOracleEE(), nullptr);
-  EXPECT_NE(poller, nullptr);
-  std::list<std::tuple<std::unique_ptr<EventEngine::Endpoint>,
-                       std::unique_ptr<EventEngine::Endpoint>>>
-      connections;
+std::list<Connection> CreateConnectedEndpoints(
+    PosixEventPoller& poller, bool is_zero_copy_enabled, int num_connections,
+    std::shared_ptr<EventEngine> posix_ee,
+    std::shared_ptr<EventEngine> oracle_ee) {
+  std::list<Connection> connections;
   auto memory_quota = absl::make_unique<grpc_core::MemoryQuota>("bar");
   std::string target_addr = absl::StrCat(
       "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die()));
@@ -108,7 +104,7 @@ CreateConnectedEndpoints(PosixEventPoller* poller, bool is_zero_copy_enabled,
                     kMinMessageSize);
   }
   ChannelArgsEndpointConfig config(args);
-  auto listener = GetOracleEE()->CreateListener(
+  auto listener = oracle_ee->CreateListener(
       std::move(accept_cb),
       [](absl::Status status) { ASSERT_TRUE(status.ok()); }, config,
       absl::make_unique<grpc_core::MemoryQuota>("foo"));
@@ -121,22 +117,21 @@ CreateConnectedEndpoints(PosixEventPoller* poller, bool is_zero_copy_enabled,
   for (int i = 0; i < num_connections; ++i) {
     int client_fd = ConnectToServerOrDie(resolved_addr);
     EventHandle* handle =
-        poller->CreateHandle(client_fd, "test", poller->CanTrackErrors());
+        poller.CreateHandle(client_fd, "test", poller.CanTrackErrors());
     EXPECT_NE(handle, nullptr);
     server_signal->WaitForNotification();
     EXPECT_NE(server_endpoint, nullptr);
     ++g_num_active_connections;
-    connections.push_back(
-        std::make_tuple<std::unique_ptr<Endpoint>, std::unique_ptr<Endpoint>>(
-            CreatePosixEndpoint(handle,
-                                PosixEngineClosure::TestOnlyToClosure(
-                                    [poller](absl::Status /*status*/) {
-                                      if (--g_num_active_connections == 0) {
-                                        poller->Kick();
-                                      }
-                                    }),
-                                posix_ee, config),
-            std::move(server_endpoint)));
+    connections.push_back(Connection{
+        CreatePosixEndpoint(handle,
+                            PosixEngineClosure::TestOnlyToClosure(
+                                [&poller](absl::Status /*status*/) {
+                                  if (--g_num_active_connections == 0) {
+                                    poller.Kick();
+                                  }
+                                }),
+                            posix_ee, config),
+        std::move(server_endpoint)});
     delete server_signal;
     server_signal = new grpc_core::Notification();
   }
@@ -146,23 +141,8 @@ CreateConnectedEndpoints(PosixEventPoller* poller, bool is_zero_copy_enabled,
 
 }  // namespace
 
-class TestParam {
- public:
-  TestParam(std::string poller, bool is_zero_copy_enabled)
-      : poller_(std::move(poller)),
-        is_zero_copy_enabled_(is_zero_copy_enabled) {}
-
-  std::string Poller() const { return poller_; }
-  bool IsZeroCopyEnabled() const { return is_zero_copy_enabled_; }
-
- private:
-  std::string poller_;
-  bool is_zero_copy_enabled_;
-};
-
-std::string TestScenarioName(const ::testing::TestParamInfo<TestParam>& info) {
-  return absl::StrCat("poller_type_", info.param.Poller(),
-                      "_is_zero_copy_enabled_", info.param.IsZeroCopyEnabled());
+std::string TestScenarioName(const ::testing::TestParamInfo<bool>& info) {
+  return absl::StrCat("is_zero_copy_enabled_", info.param);
 }
 
 // A helper class to drive the polling of Fds. It repeatedly calls the Work(..)
@@ -203,21 +183,23 @@ class Worker : public grpc_core::DualRefCounted<Worker> {
     Unref();
   }
   std::shared_ptr<EventEngine> engine_;
+  // The poller is not owned by the Worker. Rather it is owned by the test
+  // which creates the worker instance.
   PosixEventPoller* poller_;
   grpc_core::Notification signal;
 };
 
-class PosixEndpointTest : public ::testing::TestWithParam<TestParam> {
+class PosixEndpointTest : public ::testing::TestWithParam<bool> {
   void SetUp() override {
+    oracle_ee_ = std::make_shared<PosixOracleEventEngine>();
     posix_ee_ = std::make_shared<PosixEventEngine>();
     scheduler_ =
         absl::make_unique<grpc_event_engine::posix_engine::TestScheduler>(
             posix_ee_.get());
     EXPECT_NE(scheduler_, nullptr);
-    GPR_GLOBAL_CONFIG_SET(grpc_poll_strategy, GetParam().Poller().c_str());
     poller_ = GetDefaultPoller(scheduler_.get());
     if (poller_ != nullptr) {
-      EXPECT_EQ(poller_->Name(), GetParam().Poller());
+      gpr_log(GPR_INFO, "Using poller: %s", poller_->Name().c_str());
     }
   }
 
@@ -225,7 +207,8 @@ class PosixEndpointTest : public ::testing::TestWithParam<TestParam> {
     if (poller_ != nullptr) {
       poller_->Shutdown();
     }
-    WaitForPendingTasks(std::move(posix_ee_));
+    WaitForSingleOwner(std::move(posix_ee_));
+    WaitForSingleOwner(std::move(oracle_ee_));
   }
 
  public:
@@ -233,12 +216,15 @@ class PosixEndpointTest : public ::testing::TestWithParam<TestParam> {
 
   std::shared_ptr<EventEngine> GetPosixEE() { return posix_ee_; }
 
+  std::shared_ptr<EventEngine> GetOracleEE() { return oracle_ee_; }
+
   PosixEventPoller* PosixPoller() { return poller_; }
 
  private:
   PosixEventPoller* poller_;
   std::unique_ptr<TestScheduler> scheduler_;
   std::shared_ptr<EventEngine> posix_ee_;
+  std::shared_ptr<EventEngine> oracle_ee_;
 };
 
 TEST_P(PosixEndpointTest, ConnectExchangeBidiDataTransferTest) {
@@ -248,13 +234,13 @@ TEST_P(PosixEndpointTest, ConnectExchangeBidiDataTransferTest) {
   Worker* worker = new Worker(GetPosixEE(), PosixPoller());
   worker->Start();
   {
-    auto connections = CreateConnectedEndpoints(
-        PosixPoller(), GetParam().IsZeroCopyEnabled(), 1, GetPosixEE());
+    auto connections = CreateConnectedEndpoints(*PosixPoller(), GetParam(), 1,
+                                                GetPosixEE(), GetOracleEE());
     auto it = connections.begin();
-    auto client_endpoint = std::move(std::get<0>(*it));
-    auto server_endpoint = std::move(std::get<1>(*it));
-    EXPECT_TRUE(client_endpoint != nullptr);
-    EXPECT_TRUE(server_endpoint != nullptr);
+    auto client_endpoint = std::move((*it).client_endpoint);
+    auto server_endpoint = std::move((*it).server_endpoint);
+    EXPECT_NE(client_endpoint, nullptr);
+    EXPECT_NE(server_endpoint, nullptr);
     connections.erase(it);
 
     // Alternate message exchanges between client -- server and server --
@@ -283,9 +269,8 @@ TEST_P(PosixEndpointTest, MultipleIPv6ConnectionsToOneOracleListenerTest) {
   }
   Worker* worker = new Worker(GetPosixEE(), PosixPoller());
   worker->Start();
-  auto connections =
-      CreateConnectedEndpoints(PosixPoller(), GetParam().IsZeroCopyEnabled(),
-                               kNumConnections, GetPosixEE());
+  auto connections = CreateConnectedEndpoints(
+      *PosixPoller(), GetParam(), kNumConnections, GetPosixEE(), GetOracleEE());
   std::vector<std::thread> threads;
   // Create one thread for each connection. For each connection, create
   // 2 more worker threads: to exchange and verify bi-directional data transfer.
@@ -294,10 +279,10 @@ TEST_P(PosixEndpointTest, MultipleIPv6ConnectionsToOneOracleListenerTest) {
     // For each connection, simulate a parallel bi-directional data transfer.
     // All bi-directional transfers are run in parallel across all connections.
     auto it = connections.begin();
-    auto client_endpoint = std::move(std::get<0>(*it));
-    auto server_endpoint = std::move(std::get<1>(*it));
-    EXPECT_TRUE(client_endpoint != nullptr);
-    EXPECT_TRUE(server_endpoint != nullptr);
+    auto client_endpoint = std::move((*it).client_endpoint);
+    auto server_endpoint = std::move((*it).server_endpoint);
+    EXPECT_NE(client_endpoint, nullptr);
+    EXPECT_NE(server_endpoint, nullptr);
     connections.erase(it);
     threads.emplace_back([client_endpoint = std::move(client_endpoint),
                           server_endpoint = std::move(server_endpoint)]() {
@@ -335,18 +320,22 @@ TEST_P(PosixEndpointTest, MultipleIPv6ConnectionsToOneOracleListenerTest) {
   worker->Wait();
 }
 
-INSTANTIATE_TEST_SUITE_P(
-    PosixEndpoint, PosixEndpointTest,
-    ::testing::ValuesIn({TestParam(std::string("epoll1"), false),
-                         TestParam(std::string("epoll1"), true),
-                         TestParam(std::string("poll"), false),
-                         TestParam(std::string("poll"), true)}),
-    &TestScenarioName);
+// Test with zero copy enabled and disabled.
+INSTANTIATE_TEST_SUITE_P(PosixEndpoint, PosixEndpointTest,
+                         ::testing::ValuesIn({false, true}), &TestScenarioName);
 
 }  // namespace posix_engine
 }  // namespace grpc_event_engine
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
+  grpc_core::UniquePtr<char> poll_strategy =
+      GPR_GLOBAL_CONFIG_GET(grpc_poll_strategy);
+  GPR_GLOBAL_CONFIG_GET(grpc_poll_strategy);
+  auto strings = absl::StrSplit(poll_strategy.get(), ',');
+  if (std::find(strings.begin(), strings.end(), "none") != strings.end()) {
+    // Skip the test entirely if poll strategy is none.
+    return 0;
+  }
   return RUN_ALL_TESTS();
 }

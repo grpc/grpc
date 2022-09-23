@@ -21,6 +21,9 @@
 #include <memory>
 #include <unordered_map>
 
+#include "absl/base/thread_annotations.h"
+#include "absl/container/flat_hash_map.h"
+
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/slice_buffer.h>
@@ -31,6 +34,7 @@
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/posix_engine/traced_buffer_list.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/port.h"
 
 namespace grpc_event_engine {
@@ -48,11 +52,27 @@ class TcpZerocopySendRecord {
  public:
   TcpZerocopySendRecord() { buf_.Clear(); };
 
-  ~TcpZerocopySendRecord() { AssertEmpty(); }
+  ~TcpZerocopySendRecord() { DebugAssertEmpty(); }
 
-  // Given the slices that we wish to send, and the current offset into the
-  //   slice buffer (indicating which have already been sent), populate an iovec
-  //   array that will be used for a zerocopy enabled sendmsg().
+  // TcpZerocopySendRecord contains a slice buffer holding the slices to be
+  // sent. Given the slices that we wish to send, and the current offset into
+  // the slice buffer (indicating which have already been sent), populate an
+  // iovec array that will be used for a zerocopy enabled sendmsg().
+  //   unwind_slice_idx - input/output parameter. It indicates the index of last
+  //   slice whose contents were partially sent in the previous sendmsg. After
+  //   this function returns, it gets updated to to a new offset
+  //   depending on the number of bytes which are decided to be sent in the
+  //   current sendmsg.
+  //   unwind_byte_idx - input/output parameter. It indicates the byte offset
+  //   within the last slice whose contents were partially sent in the previous
+  //   sendmsg. After this function returns, it gets updated to a new offset
+  //   depending on the number of bytes which are decided to be sent in the
+  //   current sendmsg.
+  //   sending_length - total number of bytes to be sent in the current sendmsg.
+  //   iov - An iovec array containing the bytes to be sent in the current
+  //   sendmsg.
+  //  Returns: the number of entries in the iovec array.
+  //
   msg_iovlen_type PopulateIovs(size_t* unwind_slice_idx,
                                size_t* unwind_byte_idx, size_t* sending_length,
                                iovec* iov);
@@ -76,7 +96,7 @@ class TcpZerocopySendRecord {
   // Reset this structure for a new tcp_write() with zerocopy.
   void PrepareForSends(
       grpc_event_engine::experimental::SliceBuffer& slices_to_send) {
-    AssertEmpty();
+    DebugAssertEmpty();
     out_offset_.slice_idx = 0;
     out_offset_.byte_idx = 0;
     buf_.Swap(slices_to_send);
@@ -104,7 +124,7 @@ class TcpZerocopySendRecord {
     size_t byte_idx = 0;
   };
 
-  void AssertEmpty() {
+  void DebugAssertEmpty() {
     GPR_DEBUG_ASSERT(buf_.Count() == 0);
     GPR_DEBUG_ASSERT(buf_.Length() == 0);
     GPR_DEBUG_ASSERT(ref_.load(std::memory_order_relaxed) == 0);
@@ -130,7 +150,7 @@ class TcpZerocopySendCtx {
   static constexpr size_t kDefaultSendBytesThreshold = 16 * 1024;  // 16KB
 
   explicit TcpZerocopySendCtx(
-      int max_sends = kDefaultMaxSends,
+      bool zerocopy_enabled, int max_sends = kDefaultMaxSends,
       size_t send_bytes_threshold = kDefaultSendBytesThreshold)
       : max_sends_(max_sends),
         free_send_records_size_(max_sends),
@@ -144,11 +164,13 @@ class TcpZerocopySendCtx {
       gpr_free(free_send_records_);
       gpr_log(GPR_INFO, "Disabling TCP TX zerocopy due to memory pressure.\n");
       memory_limited_ = true;
+      enabled_ = false;
     } else {
       for (int idx = 0; idx < max_sends_; ++idx) {
         new (send_records_ + idx) TcpZerocopySendRecord();
         free_send_records_[idx] = send_records_ + idx;
       }
+      enabled_ = zerocopy_enabled;
     }
   }
 
@@ -176,7 +198,7 @@ class TcpZerocopySendCtx {
   void NoteSend(TcpZerocopySendRecord* record) {
     record->Ref();
     {
-      absl::MutexLock guard(&lock_);
+      grpc_core::MutexLock lock(&mu_);
       is_in_write_ = true;
       AssociateSeqWithSendRecordLocked(last_send_, record);
     }
@@ -207,7 +229,7 @@ class TcpZerocopySendCtx {
 
   // Get a send record for a send that we wish to do with zerocopy.
   TcpZerocopySendRecord* GetSendRecord() {
-    absl::MutexLock guard(&lock_);
+    grpc_core::MutexLock lock(&mu_);
     return TryGetSendRecordLocked();
   }
 
@@ -221,7 +243,7 @@ class TcpZerocopySendCtx {
   // buffers for this sendmsg()) is received from the kernel - or, in case
   // sendmsg() was unsuccessful to begin with.
   TcpZerocopySendRecord* ReleaseSendRecord(uint32_t seq) {
-    absl::MutexLock guard(&lock_);
+    grpc_core::MutexLock lock(&mu_);
     return ReleaseSendRecordLocked(seq);
   }
 
@@ -232,7 +254,7 @@ class TcpZerocopySendCtx {
   void PutSendRecord(TcpZerocopySendRecord* record) {
     GPR_DEBUG_ASSERT(record >= send_records_ &&
                      record < send_records_ + max_sends_);
-    absl::MutexLock guard(&lock_);
+    grpc_core::MutexLock lock(&mu_);
     PutSendRecordLocked(record);
   }
 
@@ -243,16 +265,11 @@ class TcpZerocopySendCtx {
   // Indicates that there are no inflight tcp_write() instances with zerocopy
   // enabled.
   bool AllSendRecordsEmpty() {
-    absl::MutexLock guard(&lock_);
+    grpc_core::MutexLock lock(&mu_);
     return free_send_records_size_ == max_sends_;
   }
 
   bool Enabled() const { return enabled_; }
-
-  void SetEnabled(bool enabled) {
-    GPR_DEBUG_ASSERT(!enabled || !MemoryLimited());
-    enabled_ = enabled;
-  }
 
   // Only use zerocopy if we are sending at least this many bytes. The
   // additional overhead of reading the error queue for notifications means that
@@ -289,7 +306,7 @@ class TcpZerocopySendCtx {
   // Please refer to the STATE TRANSITION DIAGRAM below for more details.
   //
   bool UpdateZeroCopyOptMemStateAfterFree() {
-    absl::MutexLock guard(&lock_);
+    grpc_core::MutexLock lock(&mu_);
     if (is_in_write_) {
       zcopy_enobuf_state_ = OptMemState::kCheck;
       return false;
@@ -329,7 +346,7 @@ class TcpZerocopySendCtx {
   // Please refer to the STATE TRANSITION DIAGRAM below for more details.
   //
   bool UpdateZeroCopyOptMemStateAfterSend(bool seen_enobuf) {
-    absl::MutexLock guard(&lock_);
+    grpc_core::MutexLock lock(&mu_);
     is_in_write_ = false;
     if (seen_enobuf) {
       if (zcopy_enobuf_state_ == OptMemState::kCheck) {
@@ -398,28 +415,29 @@ class TcpZerocopySendCtx {
     free_send_records_size_++;
   }
 
-  TcpZerocopySendRecord* send_records_;
-  TcpZerocopySendRecord** free_send_records_;
+  TcpZerocopySendRecord* send_records_ ABSL_GUARDED_BY(mu_);
+  TcpZerocopySendRecord** free_send_records_ ABSL_GUARDED_BY(mu_);
   int max_sends_;
-  int free_send_records_size_;
-  absl::Mutex lock_;
+  int free_send_records_size_ ABSL_GUARDED_BY(mu_);
+  grpc_core::Mutex mu_;
   uint32_t last_send_ = 0;
   std::atomic<bool> shutdown_{false};
   bool enabled_ = false;
   size_t threshold_bytes_ = kDefaultSendBytesThreshold;
-  std::unordered_map<uint32_t, TcpZerocopySendRecord*> ctx_lookup_;
+  absl::flat_hash_map<uint32_t, TcpZerocopySendRecord*> ctx_lookup_
+      ABSL_GUARDED_BY(mu_);
   bool memory_limited_ = false;
-  bool is_in_write_ = false;
-  OptMemState zcopy_enobuf_state_ = OptMemState::kOpen;
+  bool is_in_write_ ABSL_GUARDED_BY(mu_) = false;
+  OptMemState zcopy_enobuf_state_ ABSL_GUARDED_BY(mu_) = OptMemState::kOpen;
 };
 
-class PosixEndpointImpl {
+class PosixEndpointImpl : public grpc_core::RefCounted<PosixEndpointImpl> {
  public:
   PosixEndpointImpl(
       EventHandle* handle, PosixEngineClosure* on_done,
       std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine,
       const PosixTcpOptions& options);
-  ~PosixEndpointImpl();
+  ~PosixEndpointImpl() override;
   void Read(
       absl::AnyInvocable<void(absl::Status)> on_read,
       grpc_event_engine::experimental::SliceBuffer* buffer,
@@ -442,12 +460,6 @@ class PosixEndpointImpl {
   void MaybeShutdown(absl::Status why);
 
  private:
-  void Ref() { ref_count_.fetch_add(1, std::memory_order_relaxed); }
-  void Unref() {
-    if (ref_count_.fetch_sub(1, std::memory_order_acq_rel) == 1) {
-      delete this;
-    }
-  }
   void UpdateRcvLowat() ABSL_EXCLUSIVE_LOCKS_REQUIRED(read_mu_);
   void HandleWrite(absl::Status status);
   void HandleError(absl::Status status);
@@ -471,14 +483,14 @@ class PosixEndpointImpl {
                            ssize_t* sent_length, int* saved_errno,
                            int additional_flags);
 #ifdef GRPC_LINUX_ERRQUEUE
-  // Reads \a cmsg to process zerocopy control messages.
   bool ProcessErrors();
+  // Reads a cmsg to process zerocopy control messages.
   void ProcessZerocopy(struct cmsghdr* cmsg);
-  // Reads \a cmsg to derive timestamps from the control messages.
+  // Reads a cmsg to derive timestamps from the control messages.
   struct cmsghdr* ProcessTimestamp(msghdr* msg, struct cmsghdr* cmsg);
-#endif
-  absl::Mutex read_mu_;
-  absl::Mutex traced_buffer_mu_;
+#endif  // GRPC_LINUX_ERRQUEUE
+  grpc_core::Mutex read_mu_;
+  grpc_core::Mutex traced_buffer_mu_;
   PosixSocketWrapper sock_;
   int fd_;
   bool is_first_read_ = true;
@@ -508,7 +520,7 @@ class PosixEndpointImpl {
   PosixEngineClosure* on_write_ = nullptr;
   PosixEngineClosure* on_error_ = nullptr;
   PosixEngineClosure* on_done_ = nullptr;
-  absl::AnyInvocable<void(absl::Status)> read_cb_;
+  absl::AnyInvocable<void(absl::Status)> read_cb_ ABSL_GUARDED_BY(read_mu_);
   absl::AnyInvocable<void(absl::Status)> write_cb_;
 
   grpc_event_engine::experimental::EventEngine::ResolvedAddress peer_address_;
@@ -537,7 +549,8 @@ class PosixEndpointImpl {
   // A hint from upper layers specifying the minimum number of bytes that need
   // to be read to make meaningful progress.
   int min_progress_size_ = 1;
-  TracedBufferList traced_buffers_;
+  TracedBufferList traced_buffers_ ABSL_GUARDED_BY(traced_buffer_mu_);
+  // The handle is owned by the PosixEndpointImpl object.
   EventHandle* handle_;
   PosixEventPoller* poller_;
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine_;
@@ -625,7 +638,8 @@ class PosixEndpoint
 
 // Create a PosixEndpoint.
 // A shared_ptr of the EventEngine is passed to the endpoint to ensure that
-// the event engine is alive for the lifetime of the endpoint.
+// the event engine is alive for the lifetime of the endpoint. The ownership
+// of the EventHandle is transferred to the endpoint.
 std::unique_ptr<PosixEndpoint> CreatePosixEndpoint(
     EventHandle* handle, PosixEngineClosure* on_shutdown,
     std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine,

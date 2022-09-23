@@ -358,9 +358,8 @@ void PosixEndpointImpl::UpdateRcvLowat() {
   static constexpr int kRcvLowatMax = 16 * 1024 * 1024;
   static constexpr int kRcvLowatThreshold = 16 * 1024;
 
-  int remaining = std::min(static_cast<int>(incoming_buffer_->Length()),
-                           min_progress_size_);
-  remaining = std::min(remaining, kRcvLowatMax);
+  int remaining = std::min({static_cast<int>(incoming_buffer_->Length()),
+                            kRcvLowatMax, min_progress_size_});
 
   // Setting SO_RCVLOWAT for small quantities does not save on CPU.
   if (remaining < kRcvLowatThreshold) {
@@ -413,14 +412,12 @@ void PosixEndpointImpl::MaybeMakeReadSlices() {
           extra_wanted -= kBigAlloc;
           incoming_buffer_->AppendIndexed(
               Slice(memory_owner_.MakeSlice(kBigAlloc)));
-          // GRPC_STATS_INC_TCP_READ_ALLOC_64K();
         }
       } else {
         while (extra_wanted > 0) {
           extra_wanted -= kSmallAlloc;
           incoming_buffer_->AppendIndexed(
               Slice(memory_owner_.MakeSlice(kSmallAlloc)));
-          // GRPC_STATS_INC_TCP_READ_ALLOC_8K();
         }
       }
       MaybePostReclaimer();
@@ -471,8 +468,8 @@ void PosixEndpointImpl::HandleRead(absl::Status status) {
 void PosixEndpointImpl::Read(absl::AnyInvocable<void(absl::Status)> on_read,
                              SliceBuffer* buffer,
                              const EventEngine::Endpoint::ReadArgs* args) {
-  GPR_ASSERT(read_cb_ == nullptr);
   read_mu_.Lock();
+  GPR_ASSERT(read_cb_ == nullptr);
   read_cb_ = std::move(on_read);
   incoming_buffer_ = buffer;
   incoming_buffer_->Clear();
@@ -483,7 +480,7 @@ void PosixEndpointImpl::Read(absl::AnyInvocable<void(absl::Status)> on_read,
   } else {
     min_progress_size_ = 1;
   }
-  Ref();
+  Ref().release();
   if (is_first_read_) {
     // Endpoint read called for the very first time. Register read callback
     // with the polling engine.
@@ -664,7 +661,7 @@ struct cmsghdr* PosixEndpointImpl::ProcessTimestamp(msghdr* msg,
   // protect the traced buffer list. A lock free list might be better. Using a
   // simple mutex for now.
   {
-    absl::MutexLock lock(&traced_buffer_mu_);
+    grpc_core::MutexLock lock(&traced_buffer_mu_);
     traced_buffers_.ProcessTimestamp(serr, opt_stats, tss);
   }
   return next_cmsg;
@@ -730,7 +727,7 @@ bool PosixEndpointImpl::WriteWithTimestamps(struct msghdr* msg,
   return true;
 }
 
-#else
+#else   // GRPC_LINUX_ERRQUEUE
 TcpZerocopySendRecord* PosixEndpointImpl::TcpGetSendZerocopyRecord(
     SliceBuffer& /*buf*/) {
   return nullptr;
@@ -749,7 +746,7 @@ bool PosixEndpointImpl::WriteWithTimestamps(struct msghdr* /*msg*/,
                                             int /*additional_flags*/) {
   GPR_ASSERT(false && "Write with timestamps not supported for this platform");
 }
-#endif /* GRPC_LINUX_ERRQUEUE */
+#endif  // GRPC_LINUX_ERRQUEUE
 
 void PosixEndpointImpl::UnrefMaybePutZerocopySendRecord(
     TcpZerocopySendRecord* record) {
@@ -1011,7 +1008,7 @@ void PosixEndpointImpl::Write(
                           ? TcpFlushZerocopy(zerocopy_send_record, status)
                           : TcpFlush(status);
   if (!flush_result) {
-    Ref();
+    Ref().release();
     write_cb_ = std::move(on_writable);
     current_zerocopy_send_ = zerocopy_send_record;
     handle_->NotifyOnWrite(on_write_);
@@ -1059,24 +1056,23 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
   bytes_read_this_round_ = 0;
   min_read_chunk_size_ = options.tcp_min_read_chunk_size;
   max_read_chunk_size_ = options.tcp_max_read_chunk_size;
-  tcp_zerocopy_send_ctx_ = absl::make_unique<TcpZerocopySendCtx>(
-      options.tcp_tx_zerocopy_max_simultaneous_sends,
-      options.tcp_tx_zerocopy_send_bytes_threshold);
-  frame_size_tuning_enabled_ = grpc_core::IsTcpFrameSizeTuningEnabled();
-  if (options.tcp_tx_zero_copy_enabled &&
-      !tcp_zerocopy_send_ctx_->MemoryLimited() && poller_->CanTrackErrors()) {
+  bool zerocopy_enabled =
+      options.tcp_tx_zero_copy_enabled && poller_->CanTrackErrors();
 #ifdef GRPC_LINUX_ERRQUEUE
+  if (zerocopy_enabled) {
     const int enable = 1;
     auto err =
         setsockopt(fd_, SOL_SOCKET, SO_ZEROCOPY, &enable, sizeof(enable));
-    if (err == 0) {
-      tcp_zerocopy_send_ctx_->SetEnabled(true);
-    } else {
+    if (err != 0) {
+      zerocopy_enabled = false;
       gpr_log(GPR_ERROR, "Failed to set zerocopy options on the socket.");
     }
-#endif
   }
-
+#endif
+  tcp_zerocopy_send_ctx_ = absl::make_unique<TcpZerocopySendCtx>(
+      zerocopy_enabled, options.tcp_tx_zerocopy_max_simultaneous_sends,
+      options.tcp_tx_zerocopy_send_bytes_threshold);
+  frame_size_tuning_enabled_ = grpc_core::IsTcpFrameSizeTuningEnabled();
 #ifdef GRPC_HAVE_TCP_INQ
   int one = 1;
   if (setsockopt(fd_, SOL_TCP, TCP_INQ, &one, sizeof(one)) == 0) {
@@ -1087,7 +1083,7 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
   }
 #else
   inq_capable_ = false;
-#endif /* GRPC_HAVE_TCP_INQ */
+#endif  // GRPC_HAVE_TCP_INQ
 
   on_read_ = PosixEngineClosure::ToPermanentClosure(
       [this](absl::Status status) { HandleRead(std::move(status)); });
@@ -1098,7 +1094,7 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
 
   // Start being notified on errors if poller can track errors.
   if (poller_->CanTrackErrors()) {
-    Ref();
+    Ref().release();
     handle_->NotifyOnError(on_error_);
   }
 }
@@ -1106,8 +1102,7 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
 std::unique_ptr<PosixEndpoint> CreatePosixEndpoint(
     EventHandle* handle, PosixEngineClosure* on_shutdown,
     std::shared_ptr<EventEngine> engine, const EndpointConfig& config) {
-  GPR_ASSERT(handle != nullptr);
-  GPR_ASSERT(engine != nullptr);
+  GPR_DEBUG_ASSERT(handle != nullptr);
   return absl::make_unique<PosixEndpoint>(handle, on_shutdown,
                                           std::move(engine), config);
 }

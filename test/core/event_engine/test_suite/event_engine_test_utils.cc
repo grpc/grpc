@@ -76,9 +76,7 @@ std::string GetNextSendMessage() {
   return tmp_s;
 }
 
-// Waits until the use_count of the event engine shared_ptr has reached 1
-// and returns.
-void WaitForPendingTasks(std::shared_ptr<EventEngine>&& engine) {
+void WaitForSingleOwner(std::shared_ptr<EventEngine>&& engine) {
   while (engine.use_count() > 1) {
     absl::SleepFor(absl::Milliseconds(100));
   }
