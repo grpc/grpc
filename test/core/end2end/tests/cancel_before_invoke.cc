@@ -27,6 +27,7 @@
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/experiments/experiments.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/test_config.h"
@@ -160,7 +161,10 @@ static void test_cancel_before_invoke(grpc_end2end_test_config config,
   error = grpc_call_start_batch(c, ops, test_ops, tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(tag(1), grpc_core::CqVerifier::AnyStatus());
+  // Filter based stack tracks this as a failed op, promise based stack tracks
+  // it as a successful one with a failed request. The latter probably makes
+  // more sense, but tracking them independently until filter stack removal.
+  cqv.Expect(tag(1), grpc_core::IsPromiseBasedClientCallEnabled());
   cqv.Verify();
 
   GPR_ASSERT(status == GRPC_STATUS_CANCELLED);
