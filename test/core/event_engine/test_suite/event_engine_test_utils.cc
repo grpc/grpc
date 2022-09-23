@@ -16,6 +16,7 @@
 
 #include <cstring>
 #include <memory>
+#include <random>
 #include <string>
 #include <utility>
 
@@ -23,7 +24,6 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/synchronization/mutex.h"
-#include "absl/time/time.h"
 
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/event_engine.h>
@@ -35,6 +35,7 @@
 
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
+#include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/uri/uri_parser.h"
 
@@ -43,6 +44,43 @@ using Listener = ::grpc_event_engine::experimental::EventEngine::Listener;
 
 namespace grpc_event_engine {
 namespace experimental {
+
+namespace {
+
+constexpr int kMinMessageSize = 1024;
+constexpr int kMaxMessageSize = 4096;
+
+}  // namespace
+
+// Returns a random message with bounded length.
+std::string GetNextSendMessage() {
+  static const char alphanum[] =
+      "0123456789"
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+      "abcdefghijklmnopqrstuvwxyz";
+  static std::random_device rd;
+  static std::seed_seq seed{rd()};
+  static std::mt19937 gen(seed);
+  static std::uniform_real_distribution<> dis(kMinMessageSize, kMaxMessageSize);
+  static grpc_core::Mutex g_mu;
+  std::string tmp_s;
+  int len;
+  {
+    grpc_core::MutexLock lock(&g_mu);
+    len = dis(gen);
+  }
+  tmp_s.reserve(len);
+  for (int i = 0; i < len; ++i) {
+    tmp_s += alphanum[rand() % (sizeof(alphanum) - 1)];
+  }
+  return tmp_s;
+}
+
+void WaitForSingleOwner(std::shared_ptr<EventEngine>&& engine) {
+  while (engine.use_count() > 1) {
+    absl::SleepFor(absl::Milliseconds(100));
+  }
+}
 
 EventEngine::ResolvedAddress URIToResolvedAddress(std::string address_str) {
   grpc_resolved_address addr;
@@ -76,8 +114,8 @@ absl::Status SendValidatePayload(std::string data, Endpoint* send_endpoint,
                                  Endpoint* receive_endpoint) {
   GPR_ASSERT(receive_endpoint != nullptr && send_endpoint != nullptr);
   int num_bytes_written = data.size();
-  Promise<bool> read_promise;
-  Promise<bool> write_promise;
+  grpc_core::Notification read_signal;
+  grpc_core::Notification write_signal;
   SliceBuffer read_slice_buf;
   SliceBuffer read_store_buf;
   SliceBuffer write_slice_buf;
@@ -92,12 +130,12 @@ absl::Status SendValidatePayload(std::string data, Endpoint* send_endpoint,
   EventEngine::Endpoint::ReadArgs args = {num_bytes_written};
   std::function<void(absl::Status)> read_cb;
   read_cb = [receive_endpoint, &read_slice_buf, &read_store_buf, &read_cb,
-             &read_promise, &args](absl::Status status) {
+             &read_signal, &args](absl::Status status) {
     GPR_ASSERT(status.ok());
     if (read_slice_buf.Length() == static_cast<size_t>(args.read_hint_bytes)) {
       read_slice_buf.MoveFirstNBytesIntoSliceBuffer(read_slice_buf.Length(),
                                                     read_store_buf);
-      read_promise.Set(true);
+      read_signal.Notify();
       return;
     }
     args.read_hint_bytes -= read_slice_buf.Length();
@@ -109,20 +147,18 @@ absl::Status SendValidatePayload(std::string data, Endpoint* send_endpoint,
   receive_endpoint->Read(read_cb, &read_slice_buf, &args);
   // Start asynchronous writing at the send_endpoint.
   send_endpoint->Write(
-      [&write_promise](absl::Status status) {
+      [&write_signal](absl::Status status) {
         GPR_ASSERT(status.ok());
-        write_promise.Set(true);
+        write_signal.Notify();
       },
       &write_slice_buf, nullptr);
-  // Wait for async write to complete.
-  GPR_ASSERT(write_promise.Get() == true);
-  // Wait for async read to complete.
-  GPR_ASSERT(read_promise.Get() == true);
+  write_signal.WaitForNotification();
+  read_signal.WaitForNotification();
   // Check if data written == data read
   std::string data_read = ExtractSliceBufferIntoString(&read_store_buf);
   if (data != data_read) {
-    std::cout << "Data written = " << data << std::endl;
-    std::cout << "Data read = " << data_read << std::endl;
+    gpr_log(GPR_INFO, "Data written = %s", data.c_str());
+    gpr_log(GPR_INFO, "Data read = %s", data_read.c_str());
     return absl::CancelledError("Data read != Data written");
   }
   return absl::OkStatus();

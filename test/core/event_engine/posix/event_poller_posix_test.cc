@@ -16,8 +16,6 @@
 #include <ostream>
 
 #include "absl/functional/any_invocable.h"
-#include "absl/time/time.h"
-#include "absl/types/variant.h"
 
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.h"
@@ -55,10 +53,10 @@
 #include "src/core/lib/event_engine/posix_engine/event_poller_posix_default.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
-#include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h"
-#include "src/core/lib/event_engine/promise.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/gprpp/global_config.h"
+#include "src/core/lib/gprpp/notification.h"
+#include "test/core/event_engine/posix/posix_engine_test_utils.h"
 #include "test/core/util/port.h"
 
 GPR_GLOBAL_CONFIG_DECLARE_STRING(grpc_poll_strategy);
@@ -83,39 +81,11 @@ namespace grpc_event_engine {
 namespace posix_engine {
 
 using ::grpc_event_engine::experimental::Poller;
-using ::grpc_event_engine::experimental::Promise;
 using ::grpc_event_engine::experimental::SelfDeletingClosure;
 using ::grpc_event_engine::posix_engine::PosixEventPoller;
 using namespace std::chrono_literals;
 
 namespace {
-
-class TestScheduler : public Scheduler {
- public:
-  explicit TestScheduler(experimental::EventEngine* engine) : engine_(engine) {}
-  TestScheduler() : engine_(nullptr){};
-  void ChangeCurrentEventEngine(experimental::EventEngine* engine) {
-    engine_ = engine;
-  }
-  void Run(experimental::EventEngine::Closure* closure) override {
-    if (engine_ != nullptr) {
-      engine_->Run(closure);
-    } else {
-      closure->Run();
-    }
-  }
-
-  void Run(absl::AnyInvocable<void()> cb) override {
-    if (engine_ != nullptr) {
-      engine_->Run(std::move(cb));
-    } else {
-      cb();
-    }
-  }
-
- private:
-  experimental::EventEngine* engine_;
-};
 
 absl::Status SetSocketSendBuf(int fd, int buffer_size_bytes) {
   return 0 == setsockopt(fd, SOL_SOCKET, SO_SNDBUF, &buffer_size_bytes,
@@ -676,14 +646,14 @@ class Worker : public grpc_core::DualRefCounted<Worker> {
     }
     WeakRef().release();
   }
-  void Orphan() override { promise.Set(true); }
+  void Orphan() override { signal.Notify(); }
   void Start() {
     // Start executing Work(..).
     scheduler_->Run([this]() { Work(); });
   }
 
   void Wait() {
-    EXPECT_TRUE(promise.Get());
+    signal.WaitForNotification();
     WeakUnref();
   }
 
@@ -705,7 +675,7 @@ class Worker : public grpc_core::DualRefCounted<Worker> {
   }
   Scheduler* scheduler_;
   PosixEventPoller* poller_;
-  Promise<bool> promise;
+  grpc_core::Notification signal;
   std::vector<WakeupFdHandle*> handles_;
 };
 

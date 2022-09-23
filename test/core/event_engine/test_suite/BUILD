@@ -126,7 +126,7 @@ grpc_cc_library(
         "cpu:10",
         "no_windows",
     ],
-    visibility = ["@grpc:public"],
+    visibility = ["//test:__subpackages__"],
     deps = [
         ":conformance_test_base_lib",
         "//:grpc",

@@ -68,7 +68,7 @@ class SliceBuffer {
     return *this;
   }
 
-  // Swap the contents of this SliceBuffer with the contents of another.
+  /// Swap the contents of this SliceBuffer with the contents of another.
   void Swap(SliceBuffer& other) {
     grpc_slice_buffer_swap(&slice_buffer_, &other.slice_buffer_);
   }

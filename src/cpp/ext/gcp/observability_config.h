@@ -20,6 +20,7 @@
 #include <string>
 
 #include "absl/status/statusor.h"
+#include "absl/types/optional.h"
 
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
@@ -29,49 +30,39 @@ namespace internal {
 
 struct GcpObservabilityConfig {
   struct CloudLogging {
-    bool disabled = false;
-
     static const grpc_core::JsonLoaderInterface* JsonLoader(
         const grpc_core::JsonArgs&) {
       static const auto* loader =
-          grpc_core::JsonObjectLoader<CloudLogging>()
-              .OptionalField("disabled", &CloudLogging::disabled)
-              .Finish();
+          grpc_core::JsonObjectLoader<CloudLogging>().Finish();
       return loader;
     }
   };
 
   struct CloudMonitoring {
-    bool disabled = false;
-
     static const grpc_core::JsonLoaderInterface* JsonLoader(
         const grpc_core::JsonArgs&) {
       static const auto* loader =
-          grpc_core::JsonObjectLoader<CloudMonitoring>()
-              .OptionalField("disabled", &CloudMonitoring::disabled)
-              .Finish();
+          grpc_core::JsonObjectLoader<CloudMonitoring>().Finish();
       return loader;
     }
   };
 
   struct CloudTrace {
-    bool disabled = false;
     float sampling_rate = 0;
 
     static const grpc_core::JsonLoaderInterface* JsonLoader(
         const grpc_core::JsonArgs&) {
       static const auto* loader =
           grpc_core::JsonObjectLoader<CloudTrace>()
-              .OptionalField("disabled", &CloudTrace::disabled)
               .OptionalField("sampling_rate", &CloudTrace::sampling_rate)
               .Finish();
       return loader;
     }
   };
 
-  CloudLogging cloud_logging;
-  CloudMonitoring cloud_monitoring;
-  CloudTrace cloud_trace;
+  absl::optional<CloudLogging> cloud_logging;
+  absl::optional<CloudMonitoring> cloud_monitoring;
+  absl::optional<CloudTrace> cloud_trace;
   std::string project_id;
 
   static const grpc_core::JsonLoaderInterface* JsonLoader(

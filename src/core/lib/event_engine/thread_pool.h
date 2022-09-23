@@ -21,6 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <atomic>
 #include <memory>
 #include <queue>
 
@@ -88,12 +89,19 @@ class ThreadPool final : public grpc_event_engine::experimental::Forkable {
     explicit State(int reserve_threads) : queue(reserve_threads) {}
     Queue queue;
     ThreadCount thread_count;
+    // After pool creation we use this to rate limit creation of threads to one
+    // at a time.
+    std::atomic<bool> currently_starting_one_thread{false};
   };
 
   using StatePtr = std::shared_ptr<State>;
 
   static void ThreadFunc(StatePtr state);
-  static void StartThread(StatePtr state);
+  // Start a new thread; throttled indicates whether the State::starting_thread
+  // variable is being used to throttle this threads creation against others or
+  // not: at thread pool startup we start several threads concurrently, but
+  // after that we only start one at a time.
+  static void StartThread(StatePtr state, bool throttled);
   void Postfork();
 
   const int reserve_threads_;
