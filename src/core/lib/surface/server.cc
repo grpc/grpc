@@ -1357,8 +1357,6 @@ void Server::CallData::RecvInitialMetadataReady(void* arg,
     auto* host =
         calld->recv_initial_metadata_->get_pointer(HttpAuthorityMetadata());
     if (host != nullptr) calld->host_.emplace(host->Ref());
-  } else {
-    (void)error;
   }
   auto op_deadline = calld->recv_initial_metadata_->get(GrpcTimeoutMetadata());
   if (op_deadline.has_value()) {

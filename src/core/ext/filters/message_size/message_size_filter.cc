@@ -224,8 +224,6 @@ static void recv_message_ready(void* user_data, grpc_error_handle error) {
         GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_RESOURCE_EXHAUSTED);
     error = grpc_error_add_child(error, new_error);
     calld->error = error;
-  } else {
-    (void)error;
   }
   // Invoke the next callback.
   grpc_closure* closure = calld->next_recv_message_ready;

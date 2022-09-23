@@ -130,8 +130,6 @@ static void OnOpen(void* arg, grpc_error_handle error) {
             connect->read_stream, connect->write_stream,
             connect->addr_name.c_str(), connect->stream_handle);
       }
-    } else {
-      (void)error;
     }
     gpr_mu_unlock(&connect->mu);
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, error);

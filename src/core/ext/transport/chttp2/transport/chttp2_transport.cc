@@ -2339,8 +2339,6 @@ static void read_action(void* tp, grpc_error_handle error) {
 static void read_action_locked(void* tp, grpc_error_handle error) {
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(tp);
 
-  (void)error;
-
   grpc_error_handle err = error;
   if (!err.ok()) {
     err = grpc_error_set_int(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(

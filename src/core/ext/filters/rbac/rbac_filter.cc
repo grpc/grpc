@@ -107,8 +107,6 @@ void RbacFilter::CallData::RecvInitialMetadataReady(void* user_data,
       error = grpc_error_set_int(error, GRPC_ERROR_INT_GRPC_STATUS,
                                  GRPC_STATUS_PERMISSION_DENIED);
     }
-  } else {
-    (void)error;
   }
   grpc_closure* closure = calld->original_recv_initial_metadata_ready_;
   calld->original_recv_initial_metadata_ready_ = nullptr;
