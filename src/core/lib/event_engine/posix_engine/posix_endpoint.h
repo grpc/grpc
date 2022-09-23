@@ -540,7 +540,9 @@ class PosixEndpointImpl : public grpc_core::RefCounted<PosixEndpointImpl> {
   // byte sent.
   int bytes_counter_ = -1;
   // True if timestamping options are set on the socket.
+#ifdef GRPC_LINUX_ERRQUEUE
   bool socket_ts_enabled_ = false;
+#endif  // GRPC_LINUX_ERRQUEUE
   // Cache whether we can set timestamping options
   bool ts_capable_ = true;
   // Set to 1 if we do not want to be notified on errors anymore.
