@@ -856,7 +856,6 @@ void grpc_resolver_dns_ares_shutdown() {
   if (grpc_core::UseAresDnsResolver()) {
     address_sorting_shutdown();
     grpc_ares_cleanup();
-    grpc_core::ResetDNSResolver(nullptr);  // delete the resolver
   }
 }
 
