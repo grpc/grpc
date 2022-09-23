@@ -141,17 +141,18 @@ TEST(Init, repeatedly_blocking) {
 
 TEST(Init, TimerManagerHoldsLastInit) {
   grpc_init();
-  grpc_core::Notification n;
   // the temporary engine is deleted immediately, and the callback owns a copy.
-  grpc_event_engine::experimental::GetDefaultEventEngine()->RunAfter(
+  auto engine = grpc_event_engine::experimental::GetDefaultEventEngine();
+  engine->RunAfter(
       std::chrono::seconds(1),
-      [&n, engine = grpc_event_engine::experimental::GetDefaultEventEngine()] {
+      [engine = grpc_event_engine::experimental::GetDefaultEventEngine()] {
         grpc_core::ApplicationCallbackExecCtx app_exec_ctx;
         grpc_core::ExecCtx exec_ctx;
         grpc_shutdown();
-        n.Notify();
       });
-  n.WaitForNotification();
+  while (engine.use_count() != 1) {
+    absl::SleepFor(absl::Microseconds(15));
+  }
 }
 
 int main(int argc, char** argv) {
