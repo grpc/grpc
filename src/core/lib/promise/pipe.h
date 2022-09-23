@@ -41,6 +41,12 @@ class Center;
 template <typename T>
 struct Pipe;
 
+// Result of Pipe::Next - represents a received value.
+// If has_value() is false, the pipe was closed by the time we polled for the
+// next value. No value was received, nor will there ever be.
+// This type is movable but not copyable.
+// Once the final move is destroyed the pipe will ack the read and unblock the
+// send.
 template <typename T>
 class NextResult final {
  public:
@@ -192,9 +198,14 @@ class Center {
     [](T) {}(std::move(value_));
     value_state_ = ValueState::kEmpty;
   }
+  // State of value_.
   enum class ValueState : uint8_t {
+    // No value is set, it's possible to send.
     kEmpty,
+    // Value has been pushed but not acked, it's possible to receive.
     kReady,
+    // Value has been received and acked, we can unblock senders and transition
+    // to empty.
     kAcked,
   };
   static const char* ValueStateName(ValueState state) {
@@ -217,7 +228,7 @@ class Center {
   // 0 => recv is closed.
   // 1 ref each for PipeReceiver, Next, and NextResult.
   uint8_t recv_refs_ : 2;
-  // True iff there is a value in the pipe.
+  // Current state of the value.
   ValueState value_state_ : 2;
   IntraActivityWaiter on_empty_;
   IntraActivityWaiter on_full_;
