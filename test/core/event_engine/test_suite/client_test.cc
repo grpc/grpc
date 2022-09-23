@@ -60,7 +60,7 @@ constexpr int kNumExchangedMessages = 100;
 // and verify that the connection fails.
 TEST_F(EventEngineClientTest, ConnectToNonExistentListenerTest) {
   grpc_core::ExecCtx ctx;
-  std::shared_ptr<EventEngine> test_ee(std::move(this->NewEventEngine()));
+  std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
   grpc_core::Notification signal;
   auto memory_quota = absl::make_unique<grpc_core::MemoryQuota>("bar");
   std::string target_addr = absl::StrCat(
@@ -88,7 +88,7 @@ TEST_F(EventEngineClientTest, ConnectToNonExistentListenerTest) {
 TEST_F(EventEngineClientTest, ConnectExchangeBidiDataTransferTest) {
   grpc_core::ExecCtx ctx;
   auto oracle_ee = this->NewOracleEventEngine();
-  std::shared_ptr<EventEngine> test_ee(std::move(this->NewEventEngine()));
+  std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
   auto memory_quota = absl::make_unique<grpc_core::MemoryQuota>("bar");
   std::string target_addr = absl::StrCat(
       "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die()));
@@ -166,7 +166,7 @@ TEST_F(EventEngineClientTest, MultipleIPv6ConnectionsToOneOracleListenerTest) {
   static constexpr int kNumListenerAddresses = 10;  // N
   static constexpr int kNumConnections = 10;        // M
   auto oracle_ee = this->NewOracleEventEngine();
-  auto test_ee = this->NewEventEngine();
+  std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
   auto memory_quota = absl::make_unique<grpc_core::MemoryQuota>("bar");
   {
     std::unique_ptr<EventEngine::Endpoint> server_endpoint;
@@ -210,7 +210,10 @@ TEST_F(EventEngineClientTest, MultipleIPv6ConnectionsToOneOracleListenerTest) {
       // Create a test EventEngine client endpoint and connect to a one of the
       // addresses bound to the oracle listener. Verify that the connection
       // succeeds.
-      ChannelArgsEndpointConfig config;
+      grpc_core::ChannelArgs args;
+      auto quota = grpc_core::ResourceQuota::Default();
+      args = args.Set(GRPC_ARG_RESOURCE_QUOTA, quota);
+      ChannelArgsEndpointConfig config(args);
       test_ee->Connect(
           [&client_endpoint,
            &client_signal](absl::StatusOr<std::unique_ptr<Endpoint>> status) {

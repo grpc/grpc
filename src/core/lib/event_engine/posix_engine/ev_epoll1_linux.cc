@@ -435,9 +435,6 @@ bool Epoll1Poller::ProcessEpollEvents(int max_epoll_events_to_handle,
     struct epoll_event* ev = &g_epoll_set_.events[c];
     void* data_ptr = ev->data.ptr;
     if (data_ptr == wakeup_fd_.get()) {
-      std::cout << "Consumed Kick in " << std::this_thread::get_id()
-                << std::endl;
-      fflush(stdout);
       GPR_ASSERT(wakeup_fd_->ConsumeWakeup().ok());
       was_kicked = true;
     } else {

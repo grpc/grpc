@@ -77,7 +77,8 @@ grpc_cc_library(
 grpc_cc_test(
     name = "posix_event_engine_test",
     srcs = ["posix_event_engine_test.cc"],
-    uses_polling = False,
+    uses_event_engine = True,
+    uses_polling = True,
     deps = [
         ":client",
         ":oracle_event_engine_posix",
