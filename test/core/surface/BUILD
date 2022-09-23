@@ -95,6 +95,7 @@ grpc_cc_test(
         "//test/core/end2end:cq_verifier",
         "//test/core/util:grpc_test_util",
     ],
+    tags = ["lame_client_test"],
 )
 
 grpc_cc_test(

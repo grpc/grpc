@@ -47,6 +47,9 @@ EXPERIMENTS = {
         "hpack_test": [
             "periodic_resource_quota_reclamation",
         ],
+        "lame_client_test": [
+            "promise_based_client_call",
+        ],
         "promise_test": [
             "periodic_resource_quota_reclamation",
         ],
