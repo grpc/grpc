@@ -1301,7 +1301,7 @@ TEST_F(GrpcToolTest, CallMaxRecvMessageSizeSmall) {
   std::stringstream output_stream;
   const std::string server_address = SetUpServer();
   // Test input "grpc_cli call localhost:10000 Echo "message: 'Hello'
-  // --max_recv_msg_size=5"
+  // --max_recv_msg_size=4"
   const char* argv[] = {"grpc_cli", "call", server_address.c_str(),
                         "grpc.testing.EchoTestService.Echo",
                         "message: 'Hello'"};
@@ -1322,7 +1322,7 @@ TEST_F(GrpcToolTest, CallMaxRecvMessageSizeEnough) {
   std::stringstream output_stream;
   const std::string server_address = SetUpServer();
   // Test input "grpc_cli call localhost:10000 Echo "message: 'Hello'
-  // --max_recv_msg_size=5"
+  // --max_recv_msg_size=1048576"
   const char* argv[] = {"grpc_cli", "call", server_address.c_str(),
                         "grpc.testing.EchoTestService.Echo",
                         "message: 'Hello'"};
