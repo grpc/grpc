@@ -94,7 +94,7 @@ DEFINE_PROTO_FUZZER(const binder_transport_fuzzer::Input& input) {
     grpc_server_shutdown_and_notify(server, cq, tag(0xdead));
     grpc_server_cancel_all_calls(server);
     grpc_core::Timestamp deadline =
-        grpc_core::ExecCtx::Get()->Now() + grpc_core::Duration::Seconds(5);
+        grpc_core::Timestamp::Now() + grpc_core::Duration::Seconds(5);
     for (int i = 0; i <= requested_calls; i++) {
       // A single grpc_completion_queue_next might not be sufficient for getting
       // the tag from shutdown, because we might potentially get blocked by
@@ -110,7 +110,7 @@ DEFINE_PROTO_FUZZER(const binder_transport_fuzzer::Input& input) {
                                         nullptr);
         grpc_core::ExecCtx::Get()->InvalidateNow();
       } while (ev.type != GRPC_OP_COMPLETE &&
-               grpc_core::ExecCtx::Get()->Now() < deadline);
+               grpc_core::Timestamp::Now() < deadline);
       GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
     }
     grpc_completion_queue_shutdown(cq);
@@ -120,7 +120,7 @@ DEFINE_PROTO_FUZZER(const binder_transport_fuzzer::Input& input) {
                                         nullptr);
         grpc_core::ExecCtx::Get()->InvalidateNow();
       } while (ev.type != GRPC_QUEUE_SHUTDOWN &&
-               grpc_core::ExecCtx::Get()->Now() < deadline);
+               grpc_core::Timestamp::Now() < deadline);
       GPR_ASSERT(ev.type == GRPC_QUEUE_SHUTDOWN);
     }
     grpc_server_destroy(server);

@@ -53,6 +53,7 @@ void RegisterOpenCensusPlugin() {
   RpcClientReceivedBytesPerRpc();
   RpcClientRoundtripLatency();
   RpcClientServerLatency();
+  RpcClientStartedRpcs();
   RpcClientSentMessagesPerRpc();
   RpcClientReceivedMessagesPerRpc();
   RpcClientRetriesPerCall();
@@ -62,6 +63,7 @@ void RegisterOpenCensusPlugin() {
   RpcServerSentBytesPerRpc();
   RpcServerReceivedBytesPerRpc();
   RpcServerServerLatency();
+  RpcServerStartedRpcs();
   RpcServerSentMessagesPerRpc();
   RpcServerReceivedMessagesPerRpc();
 }
@@ -123,6 +125,9 @@ ABSL_CONST_INIT const absl::string_view kRpcClientRoundtripLatencyMeasureName =
 ABSL_CONST_INIT const absl::string_view kRpcClientServerLatencyMeasureName =
     "grpc.io/client/server_latency";
 
+ABSL_CONST_INIT const absl::string_view kRpcClientStartedRpcsMeasureName =
+    "grpc.io/client/started_rpcs";
+
 ABSL_CONST_INIT const absl::string_view kRpcClientRetriesPerCallMeasureName =
     "grpc.io/client/retries_per_call";
 
@@ -151,4 +156,7 @@ ABSL_CONST_INIT const absl::string_view
 
 ABSL_CONST_INIT const absl::string_view kRpcServerServerLatencyMeasureName =
     "grpc.io/server/server_latency";
+
+ABSL_CONST_INIT const absl::string_view kRpcServerStartedRpcsMeasureName =
+    "grpc.io/server/started_rpcs";
 }  // namespace grpc
