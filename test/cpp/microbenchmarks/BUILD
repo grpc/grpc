@@ -389,3 +389,23 @@ grpc_cc_test(
     ],
     deps = [":callback_streaming_ping_pong_h"],
 )
+
+grpc_cc_test(
+    name = "bm_work_queue",
+    srcs = ["bm_work_queue.cc"],
+    args = grpc_benchmark_args(),
+    external_deps = ["benchmark"],
+    tags = [
+        "manual",
+        "no_windows",
+        "notap",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:common_event_engine_closures",
+        "//:event_engine_work_queue",
+        "//:gpr",
+        "//test/core/util:grpc_test_util",
+    ],
+)

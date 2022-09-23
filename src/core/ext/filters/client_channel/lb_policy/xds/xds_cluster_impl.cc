@@ -713,9 +713,8 @@ const JsonLoaderInterface* XdsClusterImplLbConfig::JsonLoader(const JsonArgs&) {
           .Field("clusterName", &XdsClusterImplLbConfig::cluster_name_)
           .OptionalField("edsServiceName",
                          &XdsClusterImplLbConfig::eds_service_name_)
-          // FIXME: merge in the other PR
-          //.OptionalField("lrsLoadReportingServer",
-          //               &DiscoveryMechanism::lrs_load_reporting_server)
+          .OptionalField("lrsLoadReportingServer",
+                         &XdsClusterImplLbConfig::lrs_load_reporting_server_)
           .OptionalField("maxConcurrentRequests",
                          &XdsClusterImplLbConfig::max_concurrent_requests_)
           .Finish();
@@ -725,22 +724,6 @@ const JsonLoaderInterface* XdsClusterImplLbConfig::JsonLoader(const JsonArgs&) {
 void XdsClusterImplLbConfig::JsonPostLoad(const Json& json,
                                           const JsonArgs& args,
                                           ValidationErrors* errors) {
-  // LRS load reporting server name.
-  auto it = json.object_value().find("lrsLoadReportingServer");
-  if (it != json.object_value().end()) {
-    ValidationErrors::ScopedField field(errors, ".lrsLoadReportingServer");
-    if (it->second.type() != Json::Type::OBJECT) {
-      errors->AddError("is not an object");
-    } else {
-      auto xds_server =
-          LoadFromJson<GrpcXdsBootstrap::GrpcXdsServer>(it->second);
-      if (!xds_server.ok()) {
-        errors->AddError(xds_server.status().ToString());
-      } else {
-        lrs_load_reporting_server_ = std::move(*xds_server);
-      }
-    }
-  }
   // Parse "childPolicy" field.
   {
     ValidationErrors::ScopedField field(errors, ".childPolicy");

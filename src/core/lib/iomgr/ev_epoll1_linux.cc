@@ -48,7 +48,6 @@
 
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/iomgr/block_annotate.h"
@@ -462,8 +461,8 @@ static void fd_has_errors(grpc_fd* fd) { fd->error_closure->SetReady(); }
  * Pollset Definitions
  */
 
-static GPR_THREAD_LOCAL(grpc_pollset*) g_current_thread_pollset;
-static GPR_THREAD_LOCAL(grpc_pollset_worker*) g_current_thread_worker;
+static thread_local grpc_pollset* g_current_thread_pollset;
+static thread_local grpc_pollset_worker* g_current_thread_worker;
 
 /* The designated poller */
 static gpr_atm g_active_poller;
@@ -633,7 +632,7 @@ static void pollset_shutdown(grpc_pollset* pollset, grpc_closure* closure) {
 
 static int poll_deadline_to_millis_timeout(grpc_core::Timestamp millis) {
   if (millis == grpc_core::Timestamp::InfFuture()) return -1;
-  int64_t delta = (millis - grpc_core::ExecCtx::Get()->Now()).millis();
+  int64_t delta = (millis - grpc_core::Timestamp::Now()).millis();
   if (delta > INT_MAX) {
     return INT_MAX;
   } else if (delta < 0) {

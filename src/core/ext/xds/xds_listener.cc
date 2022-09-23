@@ -25,6 +25,7 @@
 
 #include "absl/memory/memory.h"
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
@@ -1061,39 +1062,41 @@ void MaybeLogListener(const XdsResourceType::DecodeContext& context,
 
 }  // namespace
 
-absl::StatusOr<XdsResourceType::DecodeResult> XdsListenerResourceType::Decode(
+XdsResourceType::DecodeResult XdsListenerResourceType::Decode(
     const XdsResourceType::DecodeContext& context,
     absl::string_view serialized_resource, bool is_v2) const {
+  DecodeResult result;
   // Parse serialized proto.
   auto* resource = envoy_config_listener_v3_Listener_parse(
       serialized_resource.data(), serialized_resource.size(), context.arena);
   if (resource == nullptr) {
-    return absl::InvalidArgumentError("Can't parse Listener resource.");
+    result.resource =
+        absl::InvalidArgumentError("Can't parse Listener resource.");
+    return result;
   }
   MaybeLogListener(context, resource);
   // Validate resource.
-  DecodeResult result;
   result.name =
       UpbStringToStdString(envoy_config_listener_v3_Listener_name(resource));
   auto listener = LdsResourceParse(context, resource, is_v2);
   if (!listener.ok()) {
     if (GRPC_TRACE_FLAG_ENABLED(*context.tracer)) {
       gpr_log(GPR_ERROR, "[xds_client %p] invalid Listener %s: %s",
-              context.client, result.name.c_str(),
+              context.client, result.name->c_str(),
               listener.status().ToString().c_str());
     }
     result.resource = listener.status();
   } else {
     if (GRPC_TRACE_FLAG_ENABLED(*context.tracer)) {
       gpr_log(GPR_INFO, "[xds_client %p] parsed Listener %s: %s",
-              context.client, result.name.c_str(),
+              context.client, result.name->c_str(),
               listener->ToString().c_str());
     }
     auto resource = absl::make_unique<ResourceDataSubclass>();
     resource->resource = std::move(*listener);
     result.resource = std::move(resource);
   }
-  return std::move(result);
+  return result;
 }
 
 }  // namespace grpc_core
