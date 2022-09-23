@@ -18,16 +18,10 @@
 
 #include "src/core/ext/filters/message_size/message_size_filter.h"
 
-#include <algorithm>
-#include <map>
+#include <cstdint>
 #include <new>
-#include <string>
-#include <utility>
-#include <vector>
 
 #include "absl/memory/memory.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
 #include <grpc/impl/codegen/grpc_types.h>
@@ -38,7 +32,6 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"

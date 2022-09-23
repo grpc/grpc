@@ -26,7 +26,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
 #include "src/core/lib/channel/channel_args.h"

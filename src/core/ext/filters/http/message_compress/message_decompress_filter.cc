@@ -20,9 +20,9 @@
 
 #include "src/core/ext/filters/http/message_compress/message_decompress_filter.h"
 
-#include <stdint.h>
 #include <string.h>
 
+#include <cstdint>
 #include <new>
 
 #include "absl/strings/str_cat.h"
