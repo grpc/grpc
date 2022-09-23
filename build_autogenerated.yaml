@@ -726,6 +726,7 @@ libs:
   - src/core/lib/compression/compression_internal.h
   - src/core/lib/compression/message_compress.h
   - src/core/lib/config/core_configuration.h
+  - src/core/lib/debug/event_log.h
   - src/core/lib/debug/stats.h
   - src/core/lib/debug/stats_data.h
   - src/core/lib/debug/trace.h
@@ -765,6 +766,7 @@ libs:
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/overload.h
   - src/core/lib/gprpp/packed_table.h
+  - src/core/lib/gprpp/per_cpu.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
   - src/core/lib/gprpp/single_set_ptr.h
@@ -1438,6 +1440,7 @@ libs:
   - src/core/lib/compression/compression_internal.cc
   - src/core/lib/compression/message_compress.cc
   - src/core/lib/config/core_configuration.cc
+  - src/core/lib/debug/event_log.cc
   - src/core/lib/debug/stats.cc
   - src/core/lib/debug/stats_data.cc
   - src/core/lib/debug/trace.cc
@@ -1925,6 +1928,7 @@ libs:
   - src/core/lib/compression/compression_internal.h
   - src/core/lib/compression/message_compress.h
   - src/core/lib/config/core_configuration.h
+  - src/core/lib/debug/event_log.h
   - src/core/lib/debug/stats.h
   - src/core/lib/debug/stats_data.h
   - src/core/lib/debug/trace.h
@@ -1964,6 +1968,7 @@ libs:
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/overload.h
   - src/core/lib/gprpp/packed_table.h
+  - src/core/lib/gprpp/per_cpu.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
   - src/core/lib/gprpp/single_set_ptr.h
@@ -2278,6 +2283,7 @@ libs:
   - src/core/lib/compression/compression_internal.cc
   - src/core/lib/compression/message_compress.cc
   - src/core/lib/config/core_configuration.cc
+  - src/core/lib/debug/event_log.cc
   - src/core/lib/debug/stats.cc
   - src/core/lib/debug/stats_data.cc
   - src/core/lib/debug/trace.cc
@@ -9741,6 +9747,7 @@ targets:
   - src/core/lib/iomgr/socket_mutator.cc
   - test/core/event_engine/posix/tcp_posix_socket_utils_test.cc
   deps:
+  - absl/cleanup:cleanup
   - grpc_test_util
   platforms:
   - linux

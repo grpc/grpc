@@ -2101,6 +2101,7 @@ add_library(grpc
   src/core/lib/compression/compression_internal.cc
   src/core/lib/compression/message_compress.cc
   src/core/lib/config/core_configuration.cc
+  src/core/lib/debug/event_log.cc
   src/core/lib/debug/stats.cc
   src/core/lib/debug/stats_data.cc
   src/core/lib/debug/trace.cc
@@ -2710,6 +2711,7 @@ add_library(grpc_unsecure
   src/core/lib/compression/compression_internal.cc
   src/core/lib/compression/message_compress.cc
   src/core/lib/config/core_configuration.cc
+  src/core/lib/debug/event_log.cc
   src/core/lib/debug/stats.cc
   src/core/lib/debug/stats_data.cc
   src/core/lib/debug/trace.cc
@@ -17754,6 +17756,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(tcp_posix_socket_utils_test
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
+    absl::cleanup
     grpc_test_util
   )
 
