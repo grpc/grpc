@@ -29,9 +29,9 @@
 #include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/executor/threaded_executor.h"
 #include "src/core/lib/event_engine/poller.h"
-#include "src/core/lib/event_engine/promise.h"
 #include "src/core/lib/event_engine/windows/iocp.h"
 #include "src/core/lib/event_engine/windows/win_socket.h"
+#include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/iomgr/error.h"
 #include "test/core/event_engine/windows/create_sockpair.h"
 
@@ -41,7 +41,6 @@ using ::grpc_event_engine::experimental::CreateSockpair;
 using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::IOCP;
 using ::grpc_event_engine::experimental::Poller;
-using ::grpc_event_engine::experimental::Promise;
 using ::grpc_event_engine::experimental::SelfDeletingClosure;
 using ::grpc_event_engine::experimental::ThreadedExecutor;
 using ::grpc_event_engine::experimental::WinSocket;
@@ -58,8 +57,8 @@ TEST_F(IOCPTest, ClientReceivesNotificationOfServerSend) {
       static_cast<WinSocket*>(iocp.Watch(sockpair[0]));
   WinSocket* wrapped_server_socket =
       static_cast<WinSocket*>(iocp.Watch(sockpair[1]));
-  Promise<bool> read_called{false};
-  Promise<bool> write_called{false};
+  grpc_core::Notification read_called;
+  grpc_core::Notification write_called;
   DWORD flags = 0;
   AnyInvocableClosure* on_read;
   AnyInvocableClosure* on_write;
@@ -84,7 +83,7 @@ TEST_F(IOCPTest, ClientReceivesNotificationOfServerSend) {
       gpr_log(GPR_DEBUG, "Notified on read");
       EXPECT_GE(wrapped_client_socket->read_info()->bytes_transferred(), 10);
       EXPECT_STREQ(read_wsabuf.buf, "hello!");
-      read_called.Set(true);
+      read_called.Notify();
     });
     wrapped_client_socket->NotifyOnRead(on_read);
   }
@@ -109,25 +108,25 @@ TEST_F(IOCPTest, ClientReceivesNotificationOfServerSend) {
     }
     on_write = new AnyInvocableClosure([&write_called] {
       gpr_log(GPR_DEBUG, "Notified on write");
-      write_called.Set(true);
+      write_called.Notify();
     });
     wrapped_server_socket->NotifyOnWrite(on_write);
   }
   // Doing work for WSASend
-  auto work_result = iocp.Work(std::chrono::seconds(10));
-  ASSERT_TRUE(absl::holds_alternative<Poller::Events>(work_result));
-  Poller::Events closures = absl::get<Poller::Events>(work_result);
-  ASSERT_EQ(closures.size(), 1);
-  executor.Run(closures[0]);
+  bool cb_invoked = false;
+  auto work_result = iocp.Work(std::chrono::seconds(10),
+                               [&cb_invoked]() { cb_invoked = true; });
+  ASSERT_TRUE(work_result == Poller::WorkResult::kOk);
+  ASSERT_TRUE(cb_invoked);
   // Doing work for WSARecv
-  work_result = iocp.Work(std::chrono::seconds(10));
-  ASSERT_TRUE(absl::holds_alternative<Poller::Events>(work_result));
-  closures = absl::get<Poller::Events>(work_result);
-  ASSERT_EQ(closures.size(), 1);
-  executor.Run(closures[0]);
+  cb_invoked = false;
+  work_result = iocp.Work(std::chrono::seconds(10),
+                          [&cb_invoked]() { cb_invoked = true; });
+  ASSERT_TRUE(work_result == Poller::WorkResult::kOk);
+  ASSERT_TRUE(cb_invoked);
   // wait for the callbacks to run
-  ASSERT_TRUE(read_called.WaitWithTimeout(absl::Seconds(10)));
-  ASSERT_TRUE(write_called.WaitWithTimeout(absl::Seconds(10)));
+  read_called.WaitForNotification();
+  write_called.WaitForNotification();
 
   delete on_read;
   delete on_write;
@@ -144,7 +143,7 @@ TEST_F(IOCPTest, IocpWorkTimeoutDueToNoNotificationRegistered) {
   CreateSockpair(sockpair, iocp.GetDefaultSocketFlags());
   WinSocket* wrapped_client_socket =
       static_cast<WinSocket*>(iocp.Watch(sockpair[0]));
-  Promise<bool> read_called{false};
+  grpc_core::Notification read_called;
   DWORD flags = 0;
   AnyInvocableClosure* on_read;
   {
@@ -169,7 +168,7 @@ TEST_F(IOCPTest, IocpWorkTimeoutDueToNoNotificationRegistered) {
       gpr_log(GPR_DEBUG, "Notified on read");
       EXPECT_GE(wrapped_client_socket->read_info()->bytes_transferred(), 10);
       EXPECT_STREQ(read_wsabuf.buf, "hello!");
-      read_called.Set(true);
+      read_called.Notify();
     });
   }
   {
@@ -185,15 +184,16 @@ TEST_F(IOCPTest, IocpWorkTimeoutDueToNoNotificationRegistered) {
                          &write_overlapped, NULL);
     EXPECT_EQ(status, 0);
   }
-  // IOCP::Work without any notification callbacks should return no Events.
-  auto work_result = iocp.Work(std::chrono::seconds(2));
-  ASSERT_TRUE(absl::holds_alternative<Poller::Events>(work_result));
-  Poller::Events closures = absl::get<Poller::Events>(work_result);
-  ASSERT_EQ(closures.size(), 0);
+  // IOCP::Work without any notification callbacks should still return Ok.
+  bool cb_invoked = false;
+  auto work_result = iocp.Work(std::chrono::seconds(2),
+                               [&cb_invoked]() { cb_invoked = true; });
+  ASSERT_TRUE(work_result == Poller::WorkResult::kOk);
+  ASSERT_TRUE(cb_invoked);
   // register the closure, which should trigger it immediately.
   wrapped_client_socket->NotifyOnRead(on_read);
   // wait for the callbacks to run
-  ASSERT_TRUE(read_called.WaitWithTimeout(absl::Seconds(10)));
+  read_called.WaitForNotification();
 
   delete on_read;
   wrapped_client_socket->MaybeShutdown(absl::OkStatus());
@@ -203,11 +203,14 @@ TEST_F(IOCPTest, IocpWorkTimeoutDueToNoNotificationRegistered) {
 TEST_F(IOCPTest, KickWorks) {
   ThreadedExecutor executor{2};
   IOCP iocp(&executor);
-  Promise<bool> kicked{false};
+  grpc_core::Notification kicked;
   executor.Run([&iocp, &kicked] {
-    Poller::WorkResult result = iocp.Work(std::chrono::seconds(30));
-    ASSERT_TRUE(absl::holds_alternative<Poller::Kicked>(result));
-    kicked.Set(true);
+    bool cb_invoked = false;
+    Poller::WorkResult result = iocp.Work(
+        std::chrono::seconds(30), [&cb_invoked]() { cb_invoked = true; });
+    ASSERT_TRUE(result == Poller::WorkResult::kKicked);
+    ASSERT_FALSE(cb_invoked);
+    kicked.Notify();
   });
   executor.Run([&iocp] {
     // give the worker thread a chance to start
@@ -215,7 +218,7 @@ TEST_F(IOCPTest, KickWorks) {
     iocp.Kick();
   });
   // wait for the callbacks to run
-  ASSERT_TRUE(kicked.WaitWithTimeout(absl::Seconds(10)));
+  kicked.WaitForNotification();
 }
 
 TEST_F(IOCPTest, KickThenShutdownCasusesNextWorkerToBeKicked) {
@@ -227,14 +230,21 @@ TEST_F(IOCPTest, KickThenShutdownCasusesNextWorkerToBeKicked) {
   // kick twice
   iocp.Kick();
   iocp.Kick();
+  bool cb_invoked = false;
   // Assert the next two WorkResults are kicks
-  auto result = iocp.Work(std::chrono::milliseconds(1));
-  ASSERT_TRUE(absl::holds_alternative<Poller::Kicked>(result));
-  result = iocp.Work(std::chrono::milliseconds(1));
-  ASSERT_TRUE(absl::holds_alternative<Poller::Kicked>(result));
+  auto result = iocp.Work(std::chrono::milliseconds(1),
+                          [&cb_invoked]() { cb_invoked = true; });
+  ASSERT_TRUE(result == Poller::WorkResult::kKicked);
+  ASSERT_FALSE(cb_invoked);
+  result = iocp.Work(std::chrono::milliseconds(1),
+                     [&cb_invoked]() { cb_invoked = true; });
+  ASSERT_TRUE(result == Poller::WorkResult::kKicked);
+  ASSERT_FALSE(cb_invoked);
   // followed by a DeadlineExceeded
-  result = iocp.Work(std::chrono::milliseconds(1));
-  ASSERT_TRUE(absl::holds_alternative<Poller::DeadlineExceeded>(result));
+  result = iocp.Work(std::chrono::milliseconds(1),
+                     [&cb_invoked]() { cb_invoked = true; });
+  ASSERT_TRUE(result == Poller::WorkResult::kDeadlineExceeded);
+  ASSERT_FALSE(cb_invoked);
 }
 
 TEST_F(IOCPTest, CrashOnWatchingAClosedSocket) {
@@ -270,13 +280,8 @@ TEST_F(IOCPTest, StressTestThousandsOfSockets) {
       std::thread iocp_worker([&iocp, &executor] {
         Poller::WorkResult result;
         do {
-          result = iocp.Work(std::chrono::seconds(1));
-          if (absl::holds_alternative<Poller::Events>(result)) {
-            for (auto& event : absl::get<Poller::Events>(result)) {
-              executor.Run(event);
-            }
-          }
-        } while (!absl::holds_alternative<Poller::DeadlineExceeded>(result));
+          result = iocp.Work(std::chrono::seconds(1), []() {});
+        } while (result != Poller::WorkResult::kDeadlineExceeded);
       });
       for (int i = 0; i < sockets_per_thread; i++) {
         SOCKET sockpair[2];

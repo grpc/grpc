@@ -28,7 +28,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "envoy/config/endpoint/v3/endpoint.upbdefs.h"
 #include "upb/def.h"
@@ -129,9 +128,9 @@ class XdsEndpointResourceType
     return "envoy.api.v2.ClusterLoadAssignment";
   }
 
-  absl::StatusOr<DecodeResult> Decode(
-      const XdsResourceType::DecodeContext& context,
-      absl::string_view serialized_resource, bool is_v2) const override;
+  DecodeResult Decode(const XdsResourceType::DecodeContext& context,
+                      absl::string_view serialized_resource,
+                      bool is_v2) const override;
 
   void InitUpbSymtab(upb_DefPool* symtab) const override {
     envoy_config_endpoint_v3_ClusterLoadAssignment_getmsgdef(symtab);

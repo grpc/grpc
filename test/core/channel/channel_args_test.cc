@@ -124,6 +124,48 @@ TEST(ChannelArgsTest, ToAndFromC) {
   gpr_free(ptr);
 }
 
+// shared_ptrs in ChannelArgs must support enable_shared_from_this
+class ShareableObject : public std::enable_shared_from_this<ShareableObject> {
+ public:
+  explicit ShareableObject(int n) : n(n) {}
+  int n;
+  static int ChannelArgsCompare(const ShareableObject* a,
+                                const ShareableObject* b) {
+    return a->n - b->n;
+  }
+  static absl::string_view ChannelArgName() { return "grpc.test"; }
+};
+
+TEST(ChannelArgsTest, StoreAndRetrieveSharedPtr) {
+  std::shared_ptr<ShareableObject> copied_obj;
+  {
+    ChannelArgs channel_args;
+    auto shared_obj = std::make_shared<ShareableObject>(42);
+    EXPECT_TRUE(shared_obj.unique());
+    channel_args = channel_args.SetObject(shared_obj);
+    EXPECT_FALSE(shared_obj.unique());
+    copied_obj = channel_args.GetObjectRef<ShareableObject>();
+    EXPECT_EQ(copied_obj->n, 42);
+    // Refs: p, copied_obj, and ChannelArgs
+    EXPECT_EQ(3, copied_obj.use_count());
+  }
+  // The p and ChannelArgs are deleted.
+  EXPECT_TRUE(copied_obj.unique());
+  EXPECT_EQ(copied_obj->n, 42);
+}
+
+TEST(ChannelArgsTest, RetrieveRawPointerFromStoredSharedPtr) {
+  ChannelArgs channel_args;
+  auto shared_obj = std::make_shared<ShareableObject>(42);
+  EXPECT_TRUE(shared_obj.unique());
+  channel_args = channel_args.SetObject(shared_obj);
+  EXPECT_FALSE(shared_obj.unique());
+  ShareableObject* raw_obj = channel_args.GetObject<ShareableObject>();
+  EXPECT_EQ(raw_obj->n, 42);
+  // Refs: p and ChannelArgs
+  EXPECT_EQ(2, shared_obj.use_count());
+}
+
 }  // namespace grpc_core
 
 TEST(GrpcChannelArgsTest, Create) {

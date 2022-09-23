@@ -94,11 +94,11 @@ class TestDNSResolver : public grpc_core::DNSResolver {
       last_resolution_time = now;
     }
     // For correct time diff comparisons, make sure that any subsequent calls
-    // to grpc_core::ExecCtx::Get()->Now() on this thread don't return a time
+    // to grpc_core::Timestamp::Now() on this thread don't return a time
     // which is earlier than that returned by the call(s) to
     // gpr_now(GPR_CLOCK_MONOTONIC) within this function. This is important
     // because the resolver's last_resolution_timestamp_ will be taken from
-    // grpc_core::ExecCtx::Get()->Now() right after this returns.
+    // grpc_core::Timestamp::Now() right after this returns.
     grpc_core::ExecCtx::Get()->InvalidateNow();
     return result;
   }
@@ -115,6 +115,8 @@ class TestDNSResolver : public grpc_core::DNSResolver {
       grpc_pollset_set* /* interested_parties */,
       absl::string_view /* name_server */) override {
     GetDefaultEventEngine()->Run([on_resolved] {
+      grpc_core::ApplicationCallbackExecCtx app_exec_ctx;
+      grpc_core::ExecCtx exec_ctx;
       on_resolved(absl::UnimplementedError(
           "The Testing DNS resolver does not support looking up SRV records"));
     });
@@ -128,6 +130,8 @@ class TestDNSResolver : public grpc_core::DNSResolver {
       absl::string_view /* name_server */) override {
     // Not supported
     GetDefaultEventEngine()->Run([on_resolved] {
+      grpc_core::ApplicationCallbackExecCtx app_exec_ctx;
+      grpc_core::ExecCtx exec_ctx;
       on_resolved(absl::UnimplementedError(
           "The Testing DNS resolver does not support looking up TXT records"));
     });
@@ -164,11 +168,11 @@ static grpc_ares_request* test_dns_lookup_ares(
   }
   last_resolution_time = now;
   // For correct time diff comparisons, make sure that any subsequent calls
-  // to grpc_core::ExecCtx::Get()->Now() on this thread don't return a time
+  // to grpc_core::Timestamp::Now() on this thread don't return a time
   // which is earlier than that returned by the call(s) to
   // gpr_now(GPR_CLOCK_MONOTONIC) within this function. This is important
   // because the resolver's last_resolution_timestamp_ will be taken from
-  // grpc_core::ExecCtx::Get()->Now() right after this returns.
+  // grpc_core::Timestamp::Now() right after this returns.
   grpc_core::ExecCtx::Get()->InvalidateNow();
   return result;
 }
@@ -217,7 +221,7 @@ static void poll_pollset_until_request_done(iomgr_args* args) {
     if (done) {
       break;
     }
-    grpc_core::Duration time_left = deadline - grpc_core::ExecCtx::Get()->Now();
+    grpc_core::Duration time_left = deadline - grpc_core::Timestamp::Now();
     gpr_log(GPR_DEBUG, "done=%d, time_left=%" PRId64, done, time_left.millis());
     ASSERT_GE(time_left, grpc_core::Duration::Zero());
     grpc_pollset_worker* worker = nullptr;
@@ -243,7 +247,10 @@ class ResultHandler : public grpc_core::Resolver::ResultHandler {
     state_ = state;
   }
 
-  void ReportResult(grpc_core::Resolver::Result /*result*/) override {
+  void ReportResult(grpc_core::Resolver::Result result) override {
+    if (result.result_health_callback != nullptr) {
+      result.result_health_callback(absl::OkStatus());
+    }
     ASSERT_NE(result_cb_, nullptr);
     ASSERT_NE(state_, nullptr);
     ResultCallback cb = result_cb_;

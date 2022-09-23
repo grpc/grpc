@@ -955,6 +955,8 @@ include/grpcpp/generic/generic_stub.h \
 include/grpcpp/grpcpp.h \
 include/grpcpp/health_check_service_interface.h \
 include/grpcpp/impl/call.h \
+include/grpcpp/impl/call_hook.h \
+include/grpcpp/impl/call_op_set_interface.h \
 include/grpcpp/impl/channel_argument_option.h \
 include/grpcpp/impl/client_unary_call.h \
 include/grpcpp/impl/codegen/async_generic_service.h \

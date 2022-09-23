@@ -36,13 +36,10 @@
 #include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/variant.h"
 
 #include <grpc/impl/codegen/connectivity_state.h>
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
@@ -50,21 +47,20 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/json/json.h"
-#include "src/core/lib/json/json_util.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
@@ -78,10 +74,10 @@ TraceFlag grpc_outlier_detection_lb_trace(false, "outlier_detection_lb");
 
 // TODO(donnadionne): Remove once outlier detection is no longer experimental
 bool XdsOutlierDetectionEnabled() {
-  char* value = gpr_getenv("GRPC_EXPERIMENTAL_ENABLE_OUTLIER_DETECTION");
+  auto value = GetEnv("GRPC_EXPERIMENTAL_ENABLE_OUTLIER_DETECTION");
+  if (!value.has_value()) return false;
   bool parsed_value;
-  bool parse_succeeded = gpr_parse_bool_value(value, &parsed_value);
-  gpr_free(value);
+  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
   return parse_succeeded && parsed_value;
 }
 
@@ -126,7 +122,7 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
 
   absl::string_view name() const override { return kOutlierDetection; }
 
-  void UpdateLocked(UpdateArgs args) override;
+  absl::Status UpdateLocked(UpdateArgs args) override;
   void ExitIdleLocked() override;
   void ResetBackoffLocked() override;
 
@@ -297,7 +293,7 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
                                base_ejection_time_in_millis * multiplier_,
                                std::max(base_ejection_time_in_millis,
                                         max_ejection_time_in_millis)));
-        if (change_time < ExecCtx::Get()->Now()) {
+        if (change_time < Timestamp::Now()) {
           Uneject();
           return true;
         }
@@ -595,7 +591,7 @@ void OutlierDetectionLb::ResetBackoffLocked() {
   if (child_policy_ != nullptr) child_policy_->ResetBackoffLocked();
 }
 
-void OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
+absl::Status OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
     gpr_log(GPR_INFO, "[outlier_detection_lb %p] Received update", this);
   }
@@ -616,8 +612,7 @@ void OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
       gpr_log(GPR_INFO, "[outlier_detection_lb %p] starting timer", this);
     }
-    ejection_timer_ =
-        MakeOrphanable<EjectionTimer>(Ref(), ExecCtx::Get()->Now());
+    ejection_timer_ = MakeOrphanable<EjectionTimer>(Ref(), Timestamp::Now());
     for (const auto& p : subchannel_state_map_) {
       p.second->RotateBucket();  // Reset call counters.
     }
@@ -692,7 +687,7 @@ void OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
             "[outlier_detection_lb %p] Updating child policy handler %p", this,
             child_policy_.get());
   }
-  child_policy_->UpdateLocked(std::move(update_args));
+  return child_policy_->UpdateLocked(std::move(update_args));
 }
 
 void OutlierDetectionLb::MaybeUpdatePickerLocked() {
@@ -836,7 +831,7 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked(grpc_error_handle error) {
     std::map<SubchannelState*, double> failure_percentage_ejection_candidates;
     size_t ejected_host_count = 0;
     double success_rate_sum = 0;
-    auto time_now = ExecCtx::Get()->Now();
+    auto time_now = Timestamp::Now();
     auto& config = parent_->config_->outlier_detection_config();
     for (auto& state : parent_->subchannel_state_map_) {
       auto* subchannel_state = state.second.get();
@@ -1007,7 +1002,7 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked(grpc_error_handle error) {
     }
     timer_pending_ = false;
     parent_->ejection_timer_ =
-        MakeOrphanable<EjectionTimer>(parent_, ExecCtx::Get()->Now());
+        MakeOrphanable<EjectionTimer>(parent_, Timestamp::Now());
   }
   Unref(DEBUG_LOCATION, "Timer");
   GRPC_ERROR_UNREF(error);
@@ -1036,95 +1031,35 @@ class OutlierDetectionLbFactory : public LoadBalancingPolicyFactory {
           "configuration. Please use loadBalancingConfig field of service "
           "config instead.");
     }
-    std::vector<std::string> errors;
-    std::vector<grpc_error_handle> error_list;
-    // Outlier detection config
+    ValidationErrors errors;
     OutlierDetectionConfig outlier_detection_config;
-    auto it = json.object_value().find("successRateEjection");
-    if (it != json.object_value().end()) {
-      if (it->second.type() != Json::Type::OBJECT) {
-        errors.emplace_back(
-            "field:successRateEjection error:type must be object");
-      } else {
-        OutlierDetectionConfig::SuccessRateEjection success_config;
-        const Json::Object& object = it->second.object_value();
-        ParseJsonObjectField(object, "stdevFactor",
-                             &success_config.stdev_factor, &error_list,
-                             /*required=*/false);
-        ParseJsonObjectField(object, "enforcementPercentage",
-                             &success_config.enforcement_percentage,
-                             &error_list, /*required=*/false);
-        ParseJsonObjectField(object, "minimumHosts",
-                             &success_config.minimum_hosts, &error_list,
-                             /*required=*/false);
-        ParseJsonObjectField(object, "requestVolume",
-                             &success_config.request_volume, &error_list,
-                             /*required=*/false);
-        outlier_detection_config.success_rate_ejection = success_config;
-      }
-    }
-    it = json.object_value().find("failurePercentageEjection");
-    if (it != json.object_value().end()) {
-      if (it->second.type() != Json::Type::OBJECT) {
-        errors.emplace_back(
-            "field:successRateEjection error:type must be object");
-      } else {
-        OutlierDetectionConfig::FailurePercentageEjection failure_config;
-        const Json::Object& object = it->second.object_value();
-        ParseJsonObjectField(object, "threshold", &failure_config.threshold,
-                             &error_list, /*required=*/false);
-        ParseJsonObjectField(object, "enforcementPercentage",
-                             &failure_config.enforcement_percentage,
-                             &error_list, /*required=*/false);
-        ParseJsonObjectField(object, "minimumHosts",
-                             &failure_config.minimum_hosts, &error_list,
-                             /*required=*/false);
-        ParseJsonObjectField(object, "requestVolume",
-                             &failure_config.request_volume, &error_list,
-                             /*required=*/false);
-        outlier_detection_config.failure_percentage_ejection = failure_config;
-      }
-    }
-    ParseJsonObjectFieldAsDuration(json.object_value(), "interval",
-                                   &outlier_detection_config.interval,
-                                   &error_list, /*required=*/false);
-    ParseJsonObjectFieldAsDuration(json.object_value(), "baseEjectionTime",
-                                   &outlier_detection_config.base_ejection_time,
-                                   &error_list, /*required=*/false);
-    if (!ParseJsonObjectFieldAsDuration(
-            json.object_value(), "maxEjectionTime",
-            &outlier_detection_config.max_ejection_time, &error_list,
-            /*required=*/false)) {
-      outlier_detection_config.max_ejection_time = std::max(
-          outlier_detection_config.base_ejection_time, Duration::Seconds(300));
-    }
-    ParseJsonObjectField(json.object_value(), "maxEjectionPercent",
-                         &outlier_detection_config.max_ejection_percent,
-                         &error_list, /*required=*/false);
     RefCountedPtr<LoadBalancingPolicy::Config> child_policy;
-    it = json.object_value().find("childPolicy");
-    if (it == json.object_value().end()) {
-      errors.emplace_back("field:childPolicy error:required field missing");
-    } else {
-      auto child_policy_config = CoreConfiguration::Get()
-                                     .lb_policy_registry()
-                                     .ParseLoadBalancingConfig(it->second);
-      if (!child_policy_config.ok()) {
-        errors.emplace_back(
-            absl::StrCat("error parsing childPolicy field: ",
-                         child_policy_config.status().message()));
-      } else {
-        child_policy = std::move(*child_policy_config);
+    {
+      ValidationErrors::ScopedField field(
+          &errors, "[\"outlier_detection_experimental\"]");
+      outlier_detection_config =
+          LoadFromJson<OutlierDetectionConfig>(json, JsonArgs(), &errors);
+      // Parse childPolicy manually.
+      {
+        ValidationErrors::ScopedField field(&errors, ".childPolicy");
+        auto it = json.object_value().find("childPolicy");
+        if (it == json.object_value().end()) {
+          errors.AddError("field not present");
+        } else {
+          auto child_policy_config = CoreConfiguration::Get()
+                                         .lb_policy_registry()
+                                         .ParseLoadBalancingConfig(it->second);
+          if (!child_policy_config.ok()) {
+            errors.AddError(child_policy_config.status().message());
+          } else {
+            child_policy = std::move(*child_policy_config);
+          }
+        }
       }
     }
-    for (auto& error : error_list) {
-      errors.emplace_back(grpc_error_std_string(error));
-      GRPC_ERROR_UNREF(error);
-    }
-    if (!errors.empty()) {
-      return absl::InvalidArgumentError(
-          absl::StrCat("outlier_detection_experimental LB policy config: [",
-                       absl::StrJoin(errors, "; "), "]"));
+    if (!errors.ok()) {
+      return errors.status(
+          "errors validating outlier_detection LB policy config");
     }
     return MakeRefCounted<OutlierDetectionLbConfig>(outlier_detection_config,
                                                     std::move(child_policy));
@@ -1132,6 +1067,68 @@ class OutlierDetectionLbFactory : public LoadBalancingPolicyFactory {
 };
 
 }  // namespace
+
+//
+// OutlierDetectionConfig
+//
+
+const JsonLoaderInterface*
+OutlierDetectionConfig::SuccessRateEjection::JsonLoader(const JsonArgs&) {
+  static const auto* loader =
+      JsonObjectLoader<SuccessRateEjection>()
+          .OptionalField("stdevFactor", &SuccessRateEjection::stdev_factor)
+          .OptionalField("enforcementPercentage",
+                         &SuccessRateEjection::enforcement_percentage)
+          .OptionalField("minimumHosts", &SuccessRateEjection::minimum_hosts)
+          .OptionalField("requestVolume", &SuccessRateEjection::request_volume)
+          .Finish();
+  return loader;
+}
+
+const JsonLoaderInterface*
+OutlierDetectionConfig::FailurePercentageEjection::JsonLoader(const JsonArgs&) {
+  static const auto* loader =
+      JsonObjectLoader<FailurePercentageEjection>()
+          .OptionalField("threshold", &FailurePercentageEjection::threshold)
+          .OptionalField("enforcementPercentage",
+                         &FailurePercentageEjection::enforcement_percentage)
+          .OptionalField("minimumHosts",
+                         &FailurePercentageEjection::minimum_hosts)
+          .OptionalField("requestVolume",
+                         &FailurePercentageEjection::request_volume)
+          .Finish();
+  return loader;
+}
+
+const JsonLoaderInterface* OutlierDetectionConfig::JsonLoader(const JsonArgs&) {
+  static const auto* loader =
+      JsonObjectLoader<OutlierDetectionConfig>()
+          .OptionalField("interval", &OutlierDetectionConfig::interval)
+          .OptionalField("baseEjectionTime",
+                         &OutlierDetectionConfig::base_ejection_time)
+          .OptionalField("maxEjectionTime",
+                         &OutlierDetectionConfig::max_ejection_time)
+          .OptionalField("maxEjectionPercent",
+                         &OutlierDetectionConfig::max_ejection_percent)
+          .OptionalField("successRateEjection",
+                         &OutlierDetectionConfig::success_rate_ejection)
+          .OptionalField("failurePercentageEjection",
+                         &OutlierDetectionConfig::failure_percentage_ejection)
+          .Finish();
+  return loader;
+}
+
+void OutlierDetectionConfig::JsonPostLoad(const Json& json, const JsonArgs&,
+                                          ValidationErrors* /*errors*/) {
+  if (json.object_value().find("maxEjectionTime") ==
+      json.object_value().end()) {
+    max_ejection_time = std::max(base_ejection_time, Duration::Seconds(300));
+  }
+}
+
+//
+// Plugin registration
+//
 
 void RegisterOutlierDetectionLbPolicy(CoreConfiguration::Builder* builder) {
   if (XdsOutlierDetectionEnabled()) {

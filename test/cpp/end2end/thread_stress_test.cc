@@ -33,7 +33,7 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
-#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -75,7 +75,7 @@ class CommonStressTest {
   CommonStressTest() : kMaxMessageSize_(8192) {
 #if TARGET_OS_IPHONE
     // Workaround Apple CFStream bug
-    gpr_setenv("grpc_cfstream", "0");
+    grpc_core::SetEnv("grpc_cfstream", "0");
 #endif
   }
   virtual ~CommonStressTest() {}

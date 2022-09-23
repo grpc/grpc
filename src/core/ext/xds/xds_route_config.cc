@@ -55,7 +55,6 @@
 #include "upb/upb.h"
 
 #include <grpc/status.h>
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/xds/upb_utils.h"
@@ -68,8 +67,8 @@
 #include "src/core/ext/xds/xds_routing.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/error.h"
@@ -79,19 +78,19 @@ namespace grpc_core {
 
 // TODO(yashykt): Remove once RBAC is no longer experimental
 bool XdsRbacEnabled() {
-  char* value = gpr_getenv("GRPC_XDS_EXPERIMENTAL_RBAC");
+  auto value = GetEnv("GRPC_XDS_EXPERIMENTAL_RBAC");
+  if (!value.has_value()) return false;
   bool parsed_value;
-  bool parse_succeeded = gpr_parse_bool_value(value, &parsed_value);
-  gpr_free(value);
+  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
   return parse_succeeded && parsed_value;
 }
 
 // TODO(donnadionne): Remove once RLS is no longer experimental
 bool XdsRlsEnabled() {
-  char* value = gpr_getenv("GRPC_EXPERIMENTAL_XDS_RLS_LB");
+  auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_RLS_LB");
+  if (!value.has_value()) return false;
   bool parsed_value;
-  bool parse_succeeded = gpr_parse_bool_value(value, &parsed_value);
-  gpr_free(value);
+  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
   return parse_succeeded && parsed_value;
 }
 
@@ -1113,41 +1112,41 @@ void MaybeLogRouteConfiguration(
 
 }  // namespace
 
-absl::StatusOr<XdsResourceType::DecodeResult>
-XdsRouteConfigResourceType::Decode(
+XdsResourceType::DecodeResult XdsRouteConfigResourceType::Decode(
     const XdsResourceType::DecodeContext& context,
     absl::string_view serialized_resource, bool /*is_v2*/) const {
+  DecodeResult result;
   // Parse serialized proto.
   auto* resource = envoy_config_route_v3_RouteConfiguration_parse(
       serialized_resource.data(), serialized_resource.size(), context.arena);
   if (resource == nullptr) {
-    return absl::InvalidArgumentError(
-        "Can't parse RouteConfiguration resource.");
+    result.resource =
+        absl::InvalidArgumentError("Can't parse RouteConfiguration resource.");
+    return result;
   }
   MaybeLogRouteConfiguration(context, resource);
   // Validate resource.
-  DecodeResult result;
   result.name = UpbStringToStdString(
       envoy_config_route_v3_RouteConfiguration_name(resource));
   auto rds_update = XdsRouteConfigResource::Parse(context, resource);
   if (!rds_update.ok()) {
     if (GRPC_TRACE_FLAG_ENABLED(*context.tracer)) {
       gpr_log(GPR_ERROR, "[xds_client %p] invalid RouteConfiguration %s: %s",
-              context.client, result.name.c_str(),
+              context.client, result.name->c_str(),
               rds_update.status().ToString().c_str());
     }
     result.resource = rds_update.status();
   } else {
     if (GRPC_TRACE_FLAG_ENABLED(*context.tracer)) {
       gpr_log(GPR_INFO, "[xds_client %p] parsed RouteConfiguration %s: %s",
-              context.client, result.name.c_str(),
+              context.client, result.name->c_str(),
               rds_update->ToString().c_str());
     }
     auto resource = absl::make_unique<ResourceDataSubclass>();
     resource->resource = std::move(*rds_update);
     result.resource = std::move(resource);
   }
-  return std::move(result);
+  return result;
 }
 
 }  // namespace grpc_core

@@ -35,7 +35,7 @@ namespace posix_engine {
 
 TEST(TimerManagerTest, StressTest) {
   grpc_core::ExecCtx exec_ctx;
-  auto now = exec_ctx.Now();
+  auto now = grpc_core::Timestamp::Now();
   auto test_deadline = now + grpc_core::Duration::Seconds(15);
   std::vector<Timer> timers;
   constexpr int kTimerCount = 500;
@@ -58,7 +58,7 @@ TEST(TimerManagerTest, StressTest) {
     // Wait for all callbacks to have been called
     while (called.load(std::memory_order_relaxed) < kTimerCount) {
       exec_ctx.InvalidateNow();
-      if (exec_ctx.Now() > test_deadline) {
+      if (grpc_core::Timestamp::Now() > test_deadline) {
         FAIL() << "Deadline exceeded. "
                << called.load(std::memory_order_relaxed) << "/" << kTimerCount
                << " callbacks executed";
