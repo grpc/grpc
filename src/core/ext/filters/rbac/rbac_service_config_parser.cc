@@ -18,17 +18,14 @@
 
 #include "src/core/ext/filters/rbac/rbac_service_config_parser.h"
 
-#include <stdint.h>
-
+#include <cstdint>
 #include <map>
 #include <string>
 
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
-
-#include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/json/json_args.h"
@@ -348,9 +345,9 @@ struct RbacConfig {
                   MakeRbacPermissionList(std::move(rules->rules)));
               return;
             }
-            rules = LoadJsonObjectField<PermissionList>(
-                json.object_value(), args, "orRules", errors,
-                /*required=*/false);
+            rules = LoadJsonObjectField<PermissionList>(json.object_value(),
+                                                        args, "orRules", errors,
+                                                        /*required=*/false);
             if (rules.has_value()) {
               permission = Rbac::Permission::MakeOrPermission(
                   MakeRbacPermissionList(std::move(rules->rules)));
@@ -401,8 +398,8 @@ struct RbacConfig {
           MakeRbacPrincipalList(std::vector<Principal>&& principal_list) {
             std::vector<std::unique_ptr<Rbac::Principal>> principals;
             for (auto& id : principal_list) {
-              principals.emplace_back(absl::make_unique<Rbac::Principal>(
-                  std::move(id.principal)));
+              principals.emplace_back(
+                  absl::make_unique<Rbac::Principal>(std::move(id.principal)));
             }
             return principals;
           }
@@ -490,9 +487,9 @@ struct RbacConfig {
                   MakeRbacPrincipalList(std::move(ids->ids)));
               return;
             }
-            ids = LoadJsonObjectField<PrincipalList>(
-                json.object_value(), args, "orIds", errors,
-                /*required=*/false);
+            ids = LoadJsonObjectField<PrincipalList>(json.object_value(), args,
+                                                     "orIds", errors,
+                                                     /*required=*/false);
             if (ids.has_value()) {
               principal = Rbac::Principal::MakeOrPrincipal(
                   MakeRbacPrincipalList(std::move(ids->ids)));
