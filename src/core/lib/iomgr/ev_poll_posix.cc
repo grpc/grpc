@@ -41,7 +41,6 @@
 
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/murmur_hash.h"
-#include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/block_annotate.h"
@@ -714,8 +713,8 @@ static void fd_end_poll(grpc_fd_watcher* watcher, int got_read, int got_write) {
  * pollset_posix.c
  */
 
-static GPR_THREAD_LOCAL(grpc_pollset*) g_current_thread_poller;
-static GPR_THREAD_LOCAL(grpc_pollset_worker*) g_current_thread_worker;
+static thread_local grpc_pollset* g_current_thread_poller;
+static thread_local grpc_pollset_worker* g_current_thread_worker;
 
 static void remove_worker(grpc_pollset* /*p*/, grpc_pollset_worker* worker) {
   worker->prev->next = worker->next;

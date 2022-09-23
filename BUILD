@@ -1122,17 +1122,10 @@ grpc_cc_library(
         "env",
         "examine_stack",
         "gpr_atm",
-        "gpr_tls",
         "no_destruct",
         "tchar",
         "useful",
     ],
-)
-
-grpc_cc_library(
-    name = "gpr_tls",
-    hdrs = ["src/core/lib/gpr/tls.h"],
-    deps = ["gpr_platform"],
 )
 
 grpc_cc_library(
@@ -1394,10 +1387,7 @@ grpc_cc_library(
     public_hdrs = [
         "src/core/lib/promise/context.h",
     ],
-    deps = [
-        "gpr_platform",
-        "gpr_tls",
-    ],
+    deps = ["gpr_platform"],
 )
 
 grpc_cc_library(
@@ -1676,7 +1666,6 @@ grpc_cc_library(
         "construct_destruct",
         "context",
         "gpr",
-        "gpr_tls",
         "no_destruct",
         "orphanable",
         "poll",
@@ -2228,7 +2217,6 @@ grpc_cc_library(
     deps = [
         "event_engine_base_hdrs",
         "gpr",
-        "gpr_tls",
         "no_destruct",
         "useful",
     ],
@@ -2255,7 +2243,6 @@ grpc_cc_library(
         "gpr",
         "gpr_atm",
         "gpr_spinlock",
-        "gpr_tls",
         "grpc_codegen",
         "grpc_trace",
         "time",
@@ -2325,7 +2312,6 @@ grpc_cc_library(
         "gpr_manual_constructor",
         "gpr_platform",
         "gpr_spinlock",
-        "gpr_tls",
         "grpc_trace",
         "iomgr_port",
         "time",
@@ -2447,6 +2433,27 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "event_engine_work_queue",
+    srcs = [
+        "src/core/lib/event_engine/work_queue.cc",
+    ],
+    hdrs = [
+        "src/core/lib/event_engine/work_queue.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/functional:any_invocable",
+        "absl/types:optional",
+    ],
+    deps = [
+        "common_event_engine_closures",
+        "event_engine_base_hdrs",
+        "gpr",
+        "time",
+    ],
+)
+
+grpc_cc_library(
     name = "event_engine_threaded_executor",
     srcs = [
         "src/core/lib/event_engine/executor/threaded_executor.cc",
@@ -2510,7 +2517,6 @@ grpc_cc_library(
     deps = [
         "forkable",
         "gpr",
-        "gpr_tls",
     ],
 )
 
@@ -2530,7 +2536,6 @@ grpc_cc_library(
         "event_engine_base_hdrs",
         "forkable",
         "gpr",
-        "gpr_tls",
         "grpc_trace",
         "posix_event_engine_timer",
         "time",
@@ -3103,6 +3108,37 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "per_cpu",
+    hdrs = [
+        "src/core/lib/gprpp/per_cpu.h",
+    ],
+    deps = [
+        "exec_ctx",
+        "gpr",
+    ],
+)
+
+grpc_cc_library(
+    name = "event_log",
+    srcs = [
+        "src/core/lib/debug/event_log.cc",
+    ],
+    hdrs = [
+        "src/core/lib/debug/event_log.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/strings",
+        "absl/types:span",
+    ],
+    deps = [
+        "gpr",
+        "gpr_public_hdrs",
+        "per_cpu",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_base",
     srcs = [
         "src/core/lib/address_utils/parse_address.cc",
@@ -3364,6 +3400,7 @@ grpc_cc_library(
         "dual_ref_counted",
         "error",
         "event_engine_common",
+        "event_log",
         "exec_ctx",
         "experiments",
         "gpr",
@@ -3371,7 +3408,6 @@ grpc_cc_library(
         "gpr_manual_constructor",
         "gpr_murmur_hash",
         "gpr_spinlock",
-        "gpr_tls",
         "grpc_public_hdrs",
         "grpc_sockaddr",
         "grpc_trace",
