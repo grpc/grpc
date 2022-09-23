@@ -1797,6 +1797,30 @@ void FilterStackCall::ContextSet(grpc_context_index elem, void* value,
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+// Metadata validation helpers
+
+namespace {
+bool ValidateMetadata(size_t count, grpc_metadata* metadata) {
+  for (size_t i = 0; i < count; i++) {
+    grpc_metadata* md = &metadata[i];
+    if (!GRPC_LOG_IF_ERROR("validate_metadata",
+                           grpc_validate_header_key_is_legal(md->key))) {
+      return false;
+    } else if (!grpc_is_binary_header_internal(md->key) &&
+               !GRPC_LOG_IF_ERROR(
+                   "validate_metadata",
+                   grpc_validate_header_nonbin_value_is_legal(md->value))) {
+      return false;
+    } else if (GRPC_SLICE_LENGTH(md->value) >= UINT32_MAX) {
+      // HTTP2 hpack encoding has a maximum limit.
+      return false;
+    }
+  }
+  return true;
+}
+}  // namespace
+
+///////////////////////////////////////////////////////////////////////////////
 // PromiseBasedCall
 // Will be folded into Call once the promise conversion is done
 
@@ -2204,8 +2228,6 @@ Waker PromiseBasedCall::MakeNonOwningWaker() {
 
 void PromiseBasedCall::CToMetadata(grpc_metadata* metadata, size_t count,
                                    grpc_metadata_batch* b) {
-  // DO NOT SUBMIT
-  // Need to add a ValidateMetadata to the op validation loop.
   for (size_t i = 0; i < count; i++) {
     grpc_metadata* md = &metadata[i];
     auto key = StringViewFromSlice(md->key);
@@ -2476,6 +2498,10 @@ grpc_call_error ClientPromiseBasedCall::ValidateBatch(const grpc_op* ops,
       case GRPC_OP_SEND_INITIAL_METADATA:
         if (!AreInitialMetadataFlagsValid(op.flags)) {
           return GRPC_CALL_ERROR_INVALID_FLAGS;
+        }
+        if (!ValidateMetadata(op.data.send_initial_metadata.count,
+                              op.data.send_initial_metadata.metadata)) {
+          return GRPC_CALL_ERROR_INVALID_METADATA;
         }
         break;
       case GRPC_OP_SEND_MESSAGE:
