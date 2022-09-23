@@ -19,7 +19,7 @@
 #ifndef GRPCPP_IMPL_CODEGEN_CONFIG_H
 #define GRPCPP_IMPL_CODEGEN_CONFIG_H
 
-// IWYU pragma: private, include <grpcpp/support/config.h>
+// IWYU pragma: private
 
 /// TODO(chengyuc): Remove this file after solving compatibility.
 #include <grpcpp/support/config.h>
