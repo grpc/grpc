@@ -21,7 +21,6 @@
 #include "src/core/lib/surface/init.h"
 
 #include <limits.h>
-#include <stdint.h>
 
 #include "absl/base/thread_annotations.h"
 
