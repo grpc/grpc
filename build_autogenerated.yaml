@@ -201,7 +201,6 @@ libs:
   - src/core/lib/gpr/alloc.h
   - src/core/lib/gpr/string.h
   - src/core/lib/gpr/time_precise.h
-  - src/core/lib/gpr/tls.h
   - src/core/lib/gpr/tmpfile.h
   - src/core/lib/gpr/useful.h
   - src/core/lib/gprpp/construct_destruct.h
@@ -5285,7 +5284,6 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/gpr/tls.h
   - src/core/lib/promise/context.h
   src:
   - test/core/promise/context_test.cc
@@ -10213,16 +10211,6 @@ targets:
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
-- name: tls_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/gpr/tls_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: too_many_pings_test
   gtest: true
   build: test

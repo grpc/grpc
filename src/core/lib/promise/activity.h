@@ -31,7 +31,6 @@
 
 #include <grpc/support/log.h>
 
-#include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -203,7 +202,7 @@ class Activity : public Orphanable {
  private:
   // Set during RunLoop to the Activity that's executing.
   // Being set implies that mu_ is held.
-  static GPR_THREAD_LOCAL(Activity*) g_current_activity_;
+  static thread_local Activity* g_current_activity_;
 };
 
 // Owned pointer to one Activity.
