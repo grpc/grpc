@@ -2822,7 +2822,6 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/wakeup_fd_posix.cc
   src/core/lib/json/json_object_loader.cc
   src/core/lib/json/json_reader.cc
-  src/core/lib/json/json_util.cc
   src/core/lib/json/json_writer.cc
   src/core/lib/load_balancing/lb_policy.cc
   src/core/lib/load_balancing/lb_policy_registry.cc
