@@ -550,7 +550,6 @@ static void fd_shutdown(grpc_fd* fd, grpc_error_handle why) {
     shutdown(fd->fd, SHUT_RDWR);
     set_ready_locked(fd, &fd->read_closure);
     set_ready_locked(fd, &fd->write_closure);
-  } else {
   }
   gpr_mu_unlock(&fd->mu);
 }

@@ -460,7 +460,6 @@ static void win_shutdown(grpc_endpoint* ep, grpc_error_handle why) {
   if (!tcp->shutting_down) {
     tcp->shutting_down = 1;
     tcp->shutdown_error = why;
-  } else {
   }
   grpc_winsocket_shutdown(tcp->socket);
   gpr_mu_unlock(&tcp->mu);

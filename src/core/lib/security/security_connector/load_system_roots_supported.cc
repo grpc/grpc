@@ -75,7 +75,6 @@ grpc_slice GetSystemRootCerts() {
         grpc_load_file(kCertFiles[i], 1, &valid_bundle_slice);
     if (error.ok()) {
       return valid_bundle_slice;
-    } else {
     }
   }
   return grpc_empty_slice();
