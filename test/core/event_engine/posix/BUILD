@@ -104,6 +104,9 @@ grpc_cc_test(
     srcs = ["lock_free_event_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
+    tags = [
+        "no_windows",
+    ],
     uses_event_engine = True,
     uses_polling = False,
     deps = [
