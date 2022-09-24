@@ -2781,6 +2781,7 @@ grpc_cc_library(
         "src/core/lib/event_engine/posix_engine/posix_endpoint.h",
     ],
     external_deps = [
+        "absl/base:core_headers",
         "absl/container:flat_hash_map",
         "absl/functional:any_invocable",
         "absl/status",
@@ -2796,6 +2797,7 @@ grpc_cc_library(
         "posix_event_engine_internal_errqueue",
         "posix_event_engine_tcp_socket_utils",
         "posix_event_engine_traced_buffer_list",
+        "ref_counted_ptr",
     ],
 )
 
