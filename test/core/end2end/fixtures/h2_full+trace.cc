@@ -20,6 +20,8 @@
 
 #include <string.h>
 
+#include "absl/types/optional.h"
+
 #include <grpc/grpc.h>
 
 #include "src/core/lib/iomgr/port.h"  // IWYU pragma: keep
@@ -34,9 +36,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/config/config_vars.h"
-#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/iomgr/port.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"

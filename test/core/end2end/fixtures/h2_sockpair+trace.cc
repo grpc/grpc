@@ -18,8 +18,11 @@
 
 #include <string.h>
 
+#include <string>
+
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
 #include <grpc/status.h>
@@ -32,7 +35,6 @@
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/endpoint_pair.h"

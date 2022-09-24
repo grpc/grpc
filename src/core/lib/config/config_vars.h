@@ -23,13 +23,13 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stdint.h>
+
 #include <atomic>
-#include <functional>
 #include <string>
 
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-#include "absl/types/span.h"
 
 namespace grpc_core {
 

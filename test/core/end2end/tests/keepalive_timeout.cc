@@ -19,6 +19,8 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "absl/strings/string_view.h"
+
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/propagation_bits.h>
@@ -30,15 +32,10 @@
 #include "src/core/ext/transport/chttp2/transport/frame_ping.h"
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/port.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/test_config.h"
-
-#ifdef GRPC_POSIX_SOCKET
-#include "src/core/lib/iomgr/ev_posix.h"
-#endif  // GRPC_POSIX_SOCKET
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 

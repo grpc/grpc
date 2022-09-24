@@ -14,7 +14,10 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stdint.h>
+
 #include <atomic>
+#include <string>
 
 #include "src/core/lib/config/config_vars.h"
 
