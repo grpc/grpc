@@ -33,15 +33,10 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/memory.h"
-<<<<<<< HEAD
-=======
-#include "src/core/lib/slice/slice_refcount.h"
->>>>>>> ebc4f236b6390a9b7bd524a93d28eab9c67fa43b
 
-    // Returns a pointer to the first slice in the slice buffer without giving
-    // ownership to or a reference count on that slice.
-    inline grpc_slice*
-    grpc_slice_buffer_peek_first(grpc_slice_buffer* sb) {
+// Returns a pointer to the first slice in the slice buffer without giving
+// ownership to or a reference count on that slice.
+inline grpc_slice* grpc_slice_buffer_peek_first(grpc_slice_buffer* sb) {
   GPR_DEBUG_ASSERT(sb->count > 0);
   return &sb->slices[0];
 }
