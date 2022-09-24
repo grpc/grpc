@@ -52,7 +52,7 @@ namespace posix_engine {
 #ifdef GRPC_POSIX_SOCKET_TCP
 
 #include <sys/socket.h>  // IWYU pragma: keep
-#include <sys/uio.h>     // IWYU pragma: keep
+#include <sys/types.h>     // IWYU pragma: keep
 
 #ifdef GRPC_MSG_IOVLEN_TYPE
 typedef GRPC_MSG_IOVLEN_TYPE msg_iovlen_type;

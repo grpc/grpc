@@ -18,7 +18,6 @@
 
 #include <errno.h>
 #include <limits.h>
-#include <stdint.h>
 
 #include <algorithm>
 #include <cstring>
@@ -51,6 +50,7 @@
 #include <linux/errqueue.h>  // IWYU pragma: keep
 #include <linux/netlink.h>   // IWYU pragma: keep
 #endif
+#include <netinet/in.h>  // IWYU pragma: keep
 
 #ifndef SOL_TCP
 #define SOL_TCP IPPROTO_TCP
