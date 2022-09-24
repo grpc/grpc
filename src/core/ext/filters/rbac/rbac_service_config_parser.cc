@@ -264,6 +264,12 @@ struct RbacConfig {
 
           Rbac::Permission permission;
 
+          // Work around for MSVC bug
+          // https://developercommunity.visualstudio.com/t/C2280-when-modifying-a-vector-containing/377449
+          Permission() = default;
+          Permission(const Permission&) = delete;
+          Permission(Permission&& other) noexcept = default;
+
           static std::vector<std::unique_ptr<Rbac::Permission>>
           MakeRbacPermissionList(std::vector<Permission>&& permission_list) {
             std::vector<std::unique_ptr<Rbac::Permission>> permissions;
@@ -393,6 +399,12 @@ struct RbacConfig {
           };
 
           Rbac::Principal principal;
+
+          // Work around for MSVC bug
+          // https://developercommunity.visualstudio.com/t/C2280-when-modifying-a-vector-containing/377449
+          Principal() = default;
+          Principal(const Principal&) = delete;
+          Principal(Principal&& other) noexcept = default;
 
           static std::vector<std::unique_ptr<Rbac::Principal>>
           MakeRbacPrincipalList(std::vector<Principal>&& principal_list) {
