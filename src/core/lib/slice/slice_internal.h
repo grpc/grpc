@@ -34,11 +34,6 @@
 
 #include "src/core/lib/gprpp/memory.h"
 
-void grpc_slice_buffer_reset_and_unref_internal(grpc_slice_buffer* sb);
-void grpc_slice_buffer_partial_unref_internal(grpc_slice_buffer* sb,
-                                              size_t idx);
-void grpc_slice_buffer_destroy_internal(grpc_slice_buffer* sb);
-
 // Returns a pointer to the first slice in the slice buffer without giving
 // ownership to or a reference count on that slice.
 inline grpc_slice* grpc_slice_buffer_peek_first(grpc_slice_buffer* sb) {

@@ -43,6 +43,7 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_posix.h>
 #include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
@@ -75,7 +76,6 @@
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/insecure/insecure_credentials.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
-#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/server.h"
 #include "src/core/lib/transport/error_utils.h"
@@ -458,7 +458,7 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
         // point this can be removed.
         grpc_endpoint_shutdown(args->endpoint, GRPC_ERROR_NONE);
         grpc_endpoint_destroy(args->endpoint);
-        grpc_slice_buffer_destroy_internal(args->read_buffer);
+        grpc_slice_buffer_destroy(args->read_buffer);
         gpr_free(args->read_buffer);
       }
     } else {
@@ -515,7 +515,7 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
                   grpc_error_std_string(channel_init_err).c_str());
           GRPC_ERROR_UNREF(channel_init_err);
           grpc_transport_destroy(transport);
-          grpc_slice_buffer_destroy_internal(args->read_buffer);
+          grpc_slice_buffer_destroy(args->read_buffer);
           gpr_free(args->read_buffer);
           cleanup_connection = true;
         }
