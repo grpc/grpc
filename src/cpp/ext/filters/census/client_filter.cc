@@ -16,15 +16,13 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/cpp/ext/filters/census/client_filter.h"
 
-#include <grpc/support/port_platform.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <grpc/impl/codegen/gpr_types.h>
-#include <grpc/slice.h>
-#include <grpc/support/log.h>
-#include <grpcpp/support/config.h>
+
 #include <algorithm>
 #include <string>
 #include <utility>
@@ -42,6 +40,13 @@
 #include "opencensus/trace/span.h"
 #include "opencensus/trace/span_context.h"
 #include "opencensus/trace/status_code.h"
+
+#include <grpc/impl/codegen/gpr_types.h>
+#include <grpc/slice.h>
+#include <grpc/support/log.h>
+#include <grpcpp/support/config.h>
+
+#include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -54,7 +59,6 @@
 #include "src/cpp/ext/filters/census/context.h"
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
 #include "src/cpp/ext/filters/census/measures.h"
-#include "src/core/lib/channel/call_tracer.h"
 
 namespace grpc {
 
@@ -116,7 +120,7 @@ OpenCensusCallTracer::OpenCensusCallAttemptTracer::OpenCensusCallAttemptTracer(
     bool is_transparent_retry, bool arena_allocated)
     : parent_(parent),
       arena_allocated_(arena_allocated),
-      context_(CreateCensusContextForCallAttempt(parent_)),
+      context_(parent_->CreateCensusContextForCallAttempt()),
       start_time_(absl::Now()) {
   if (parent_->tracing_enabled_) {
     context_.AddSpanAttribute("previous-rpc-attempts", attempt_num);
@@ -234,15 +238,6 @@ void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordEnd(
   }
 }
 
-CensusContext OpenCensusCallTracer::OpenCensusCallAttemptTracer::
-    CreateCensusContextForCallAttempt(OpenCensusCallTracer* call_tracer) {
-  if (!call_tracer->tracing_enabled_) return CensusContext();
-  GPR_DEBUG_ASSERT(call_tracer->context_.Context().IsValid());
-  return CensusContext(absl::StrCat("Attempt.", call_tracer->method_),
-                       &(call_tracer->context_.Span()),
-                       call_tracer->context_.tags());
-}
-
 //
 // OpenCensusCallTracer
 //
@@ -305,6 +300,13 @@ OpenCensusCallTracer::StartNewAttempt(bool is_transparent_retry) {
   }
   return new OpenCensusCallAttemptTracer(
       this, attempt_num, is_transparent_retry, false /* arena_allocated */);
+}
+
+CensusContext OpenCensusCallTracer::CreateCensusContextForCallAttempt() {
+  if (!tracing_enabled_) return CensusContext();
+  GPR_DEBUG_ASSERT(context_.Context().IsValid());
+  return CensusContext(absl::StrCat("Attempt.", method_), &(context_.Span()),
+                       context_.tags());
 }
 
 }  // namespace grpc
