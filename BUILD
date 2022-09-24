@@ -512,6 +512,7 @@ grpc_cc_library(
         "src/core/plugin_registry/grpc_plugin_registry.cc",
         "src/core/plugin_registry/grpc_plugin_registry_noextra.cc",
     ],
+    defines = ["GRPC_NO_XDS"],
     external_deps = [
         "absl/base:core_headers",
     ],
@@ -4657,6 +4658,7 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
+        "absl/synchronization",
         "absl/types:optional",
         "absl/types:variant",
         "upb_lib",
