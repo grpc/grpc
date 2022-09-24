@@ -11,31 +11,45 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/event_engine/posix_engine/posix_endpoint.h"
 
+#include <errno.h>
+#include <limits.h>
+#include <stdint.h>
+
+#include <algorithm>
+#include <cstring>
 #include <memory>
+#include <string>
 
 #include "absl/functional/any_invocable.h"
+#include "absl/memory/memory.h"
 #include "absl/status/status.h"
-#include "absl/synchronization/mutex.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/types/optional.h"
 
 #include <grpc/event_engine/endpoint_config.h>
+#include <grpc/event_engine/memory_request.h>
 #include <grpc/event_engine/slice.h>
 #include <grpc/event_engine/slice_buffer.h>
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/internal_errqueue.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gprpp/global_config_generic.h"
+#include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 #ifdef GRPC_LINUX_ERRQUEUE
-#include <linux/netlink.h>  // IWYU pragma: keep
+#include <linux/errqueue.h>  // IWYU pragma: keep
+#include <linux/netlink.h>   // IWYU pragma: keep
 #endif
 
 #ifndef SOL_TCP
@@ -321,7 +335,7 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
     }
   }
   if (total_read_bytes < incoming_buffer_->Length()) {
-    incoming_buffer_->RemoveLastNBytesIntoSliceBuffer(
+    incoming_buffer_->MoveLastNBytesIntoSliceBuffer(
         incoming_buffer_->Length() - total_read_bytes, last_read_buffer_);
     // last_read_buffer_.Clear();
   }

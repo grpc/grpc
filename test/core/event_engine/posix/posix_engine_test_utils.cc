@@ -21,7 +21,7 @@ namespace grpc_event_engine {
 namespace posix_engine {
 
 using ResolvedAddress =
-    ::grpc_event_engine::experimental::EventEngine::ResolvedAddress;
+    grpc_event_engine::experimental::EventEngine::ResolvedAddress;
 
 // Creates a client socket and blocks until it connects to the specified
 // server address. The function abort fails upon encountering errors.
