@@ -226,9 +226,9 @@ class XdsRouteConfigResourceType
     return "envoy.api.v2.RouteConfiguration";
   }
 
-  absl::StatusOr<DecodeResult> Decode(
-      const XdsResourceType::DecodeContext& context,
-      absl::string_view serialized_resource, bool /*is_v2*/) const override;
+  DecodeResult Decode(const XdsResourceType::DecodeContext& context,
+                      absl::string_view serialized_resource,
+                      bool /*is_v2*/) const override;
 
   void InitUpbSymtab(upb_DefPool* symtab) const override {
     envoy_config_route_v3_RouteConfiguration_getmsgdef(symtab);

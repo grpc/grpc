@@ -46,6 +46,7 @@
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 #define GRPC_XDS_INITIAL_CONNECT_BACKOFF_SECONDS 1
@@ -162,7 +163,7 @@ class XdsClient::ChannelState::AdsCallState
     XdsClient* xds_client() const { return ads_call_state_->xds_client(); }
 
     AdsCallState* ads_call_state_;
-    const Timestamp update_time_ = ExecCtx::Get()->Now();
+    const Timestamp update_time_ = Timestamp::Now();
     Result result_;
   };
 
@@ -626,7 +627,7 @@ void XdsClient::ChannelState::RetryableCall<T>::StartRetryTimerLocked() {
   if (shutting_down_) return;
   const Timestamp next_attempt_time = backoff_.NextAttemptTime();
   const Duration timeout =
-      std::max(next_attempt_time - ExecCtx::Get()->Now(), Duration::Zero());
+      std::max(next_attempt_time - Timestamp::Now(), Duration::Zero());
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO,
             "[xds_client %p] xds server %s: call attempt failed; "
@@ -732,27 +733,25 @@ void XdsClient::ChannelState::AdsCallState::AdsResponseParser::ParseResource(
   XdsResourceType::DecodeContext context = {
       xds_client(), ads_call_state_->chand()->server_, &grpc_xds_client_trace,
       xds_client()->symtab_.ptr(), arena};
-  absl::StatusOr<XdsResourceType::DecodeResult> decode_result =
+  XdsResourceType::DecodeResult decode_result =
       result_.type->Decode(context, serialized_resource, is_v2);
   // If we didn't already have the resource name from the Resource
   // wrapper, try to get it from the decoding result.
   if (resource_name.empty()) {
-    if (decode_result.ok()) {
-      resource_name = decode_result->name;
+    if (decode_result.name.has_value()) {
+      resource_name = *decode_result.name;
       error_prefix =
           absl::StrCat("resource index ", idx, ": ", resource_name, ": ");
     } else {
       // We don't have any way of determining the resource name, so
       // there's nothing more we can do here.
-      result_.errors.emplace_back(
-          absl::StrCat(error_prefix, decode_result.status().ToString()));
+      result_.errors.emplace_back(absl::StrCat(
+          error_prefix, decode_result.resource.status().ToString()));
       return;
     }
   }
   // If decoding failed, make sure we include the error in the NACK.
-  const absl::Status& decode_status = decode_result.ok()
-                                          ? decode_result->resource.status()
-                                          : decode_result.status();
+  const absl::Status& decode_status = decode_result.resource.status();
   if (!decode_status.ok()) {
     result_.errors.emplace_back(
         absl::StrCat(error_prefix, decode_status.ToString()));
@@ -828,7 +827,7 @@ void XdsClient::ChannelState::AdsCallState::AdsResponseParser::ParseResource(
   // If it didn't change, ignore it.
   if (resource_state.resource != nullptr &&
       result_.type->ResourcesEqual(resource_state.resource.get(),
-                                   decode_result->resource->get())) {
+                                   decode_result.resource->get())) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
       gpr_log(GPR_INFO,
               "[xds_client %p] %s resource %s identical to current, ignoring.",
@@ -838,7 +837,7 @@ void XdsClient::ChannelState::AdsCallState::AdsResponseParser::ParseResource(
     return;
   }
   // Update the resource state.
-  resource_state.resource = std::move(*decode_result->resource);
+  resource_state.resource = std::move(*decode_result.resource);
   resource_state.meta = CreateResourceMetadataAcked(
       std::string(serialized_resource), result_.version, update_time_);
   // Notify watchers.
@@ -1958,7 +1957,7 @@ XdsApi::ClusterLoadReportMap XdsClient::BuildLoadReportSnapshotLocked(
       }
     }
     // Compute load report interval.
-    const Timestamp now = ExecCtx::Get()->Now();
+    const Timestamp now = Timestamp::Now();
     snapshot.load_report_interval = now - load_report.last_report_time;
     load_report.last_report_time = now;
     // Record snapshot.

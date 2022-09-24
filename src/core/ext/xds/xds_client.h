@@ -45,7 +45,6 @@
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/work_serializer.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 namespace grpc_core {
@@ -252,7 +251,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
     std::map<RefCountedPtr<XdsLocalityName>, LocalityState,
              XdsLocalityName::Less>
         locality_stats;
-    Timestamp last_report_time = ExecCtx::Get()->Now();
+    Timestamp last_report_time = Timestamp::Now();
   };
 
   // Load report data.

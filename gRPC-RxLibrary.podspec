@@ -66,5 +66,6 @@ Pod::Spec.new do |s|
 
   s.pod_target_xcconfig = {
     'CLANG_WARN_STRICT_PROTOTYPES' => 'NO',
+    'CLANG_CXX_LANGUAGE_STANDARD' => 'c++14',
   }
 end
