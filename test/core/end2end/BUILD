@@ -261,7 +261,10 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:server1.key",
         "//src/core/tsi/test_creds:server1.pem",
     ],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/types:optional",
+        "gtest",
+    ],
     language = "C++",
     deps = [
         "cq_verifier",
@@ -270,7 +273,6 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc_codegen",
         "//:grpc_public_hdrs",
-        "//:tsi_ssl_credentials",
         "//:useful",
         "//test/core/util:grpc_test_util",
     ],

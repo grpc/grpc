@@ -1623,7 +1623,6 @@ target_link_libraries(gpr
   absl::synchronization
   absl::time
   absl::optional
-  absl::span
   absl::variant
 )
 if(_gRPC_PLATFORM_ANDROID)
@@ -2424,6 +2423,7 @@ target_link_libraries(grpc
   absl::hash
   absl::type_traits
   absl::statusor
+  absl::span
   absl::utility
   gpr
   ${_gRPC_SSL_LIBRARIES}
@@ -2968,6 +2968,7 @@ target_link_libraries(grpc_unsecure
   absl::hash
   absl::type_traits
   absl::statusor
+  absl::span
   absl::utility
   gpr
   address_sorting
@@ -22133,7 +22134,7 @@ generate_pkgconfig(
   "gpr"
   "gRPC platform support library"
   "${gRPC_CORE_VERSION}"
-  "absl_base absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_memory absl_optional absl_random_random absl_span absl_status absl_str_format absl_strings absl_synchronization absl_time absl_variant"
+  "absl_base absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_memory absl_optional absl_random_random absl_status absl_str_format absl_strings absl_synchronization absl_time absl_variant"
   "-lgpr"
   ""
   "gpr.pc")
