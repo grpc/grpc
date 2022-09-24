@@ -5738,6 +5738,7 @@ targets:
   - src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.h
   - src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h
   - src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h
+  - test/core/event_engine/posix/posix_engine_test_utils.h
   src:
   - src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc
   - src/core/lib/event_engine/posix_engine/ev_poll_posix.cc
@@ -5747,6 +5748,7 @@ targets:
   - src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.cc
   - src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.cc
   - test/core/event_engine/posix/event_poller_posix_test.cc
+  - test/core/event_engine/posix/posix_engine_test_utils.cc
   deps:
   - grpc_test_util
   platforms:
