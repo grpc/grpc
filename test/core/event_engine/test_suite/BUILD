@@ -77,6 +77,9 @@ grpc_cc_library(
 grpc_cc_test(
     name = "posix_event_engine_test",
     srcs = ["posix_event_engine_test.cc"],
+    tags = [
+        "no_windows",
+    ],
     uses_event_engine = True,
     uses_polling = True,
     deps = [

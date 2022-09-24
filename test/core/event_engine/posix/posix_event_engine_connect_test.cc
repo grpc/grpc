@@ -203,9 +203,8 @@ TEST(PosixEventEngineTest, IndefiniteConnectCancellationTest) {
   auto memory_quota = absl::make_unique<grpc_core::MemoryQuota>("bar");
   auto connection_handle = posix_ee->Connect(
       [](absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> /*status*/) {
-        ASSERT_FALSE(
-            "The on_connect callback should not have run since the connection "
-            "attempt was cancelled.");
+        FAIL() << "The on_connect callback should not have run since the "
+                  "connection attempt was cancelled.";
       },
       URIToResolvedAddress(target_addr), config,
       memory_quota->CreateMemoryAllocator("conn-2"), 3s);
