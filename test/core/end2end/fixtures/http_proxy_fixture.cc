@@ -59,8 +59,6 @@
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/slice/b64.h"
-#include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_refcount.h"
 #include "test/core/util/port.h"
 
 struct grpc_end2end_http_proxy {
@@ -143,12 +141,12 @@ static void proxy_connection_unref(proxy_connection* conn,
       grpc_endpoint_destroy(conn->server_endpoint);
     }
     grpc_pollset_set_destroy(conn->pollset_set);
-    grpc_slice_buffer_destroy_internal(&conn->client_read_buffer);
-    grpc_slice_buffer_destroy_internal(&conn->client_deferred_write_buffer);
-    grpc_slice_buffer_destroy_internal(&conn->client_write_buffer);
-    grpc_slice_buffer_destroy_internal(&conn->server_read_buffer);
-    grpc_slice_buffer_destroy_internal(&conn->server_deferred_write_buffer);
-    grpc_slice_buffer_destroy_internal(&conn->server_write_buffer);
+    grpc_slice_buffer_destroy(&conn->client_read_buffer);
+    grpc_slice_buffer_destroy(&conn->client_deferred_write_buffer);
+    grpc_slice_buffer_destroy(&conn->client_write_buffer);
+    grpc_slice_buffer_destroy(&conn->server_read_buffer);
+    grpc_slice_buffer_destroy(&conn->server_deferred_write_buffer);
+    grpc_slice_buffer_destroy(&conn->server_write_buffer);
     grpc_http_parser_destroy(&conn->http_parser);
     grpc_http_request_destroy(&conn->http_request);
     gpr_unref(&conn->proxy->users);
@@ -466,7 +464,7 @@ static bool proxy_auth_header_matches(char* proxy_auth_header_val,
   grpc_slice decoded_slice = grpc_base64_decode(proxy_auth_header_val, 0);
   const bool header_matches =
       grpc_slice_str_cmp(decoded_slice, expected_cred) == 0;
-  grpc_slice_unref_internal(decoded_slice);
+  grpc_slice_unref(decoded_slice);
   return header_matches;
 }
 
