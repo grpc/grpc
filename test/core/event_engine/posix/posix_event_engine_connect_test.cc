@@ -46,20 +46,10 @@ using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::PosixEventEngine;
 using ::grpc_event_engine::experimental::PosixOracleEventEngine;
 using ::grpc_event_engine::experimental::URIToResolvedAddress;
+using ::grpc_event_engine::experimental::WaitForSingleOwner;
 using namespace std::chrono_literals;
 
 namespace {
-
-// A global event engine pointer is used to allow for thread leaks at the end of
-// a test. If a shared_ptr is directly used instead of a pointer to a
-// shared_ptr, the destructor may end up running after all the tests finish
-// result in tsan thread leak warnings.
-std::shared_ptr<PosixEventEngine>* g_engine = []() {
-  std::shared_ptr<PosixEventEngine>* engine =
-      new std::shared_ptr<PosixEventEngine>;
-  *engine = std::make_shared<PosixEventEngine>();
-  return engine;
-}();
 
 // Creates a server socket listening for one connection on a specific port. It
 // then creates another client socket connected to the server socket. This fills
@@ -151,6 +141,7 @@ TEST(PosixEventEngineTest, IndefiniteConnectTimeoutOrRstTest) {
   std::string target_addr = absl::StrCat(
       "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die()));
   auto resolved_addr = URIToResolvedAddress(target_addr);
+  std::shared_ptr<EventEngine> posix_ee = std::make_shared<PosixEventEngine>();
   std::string resolved_addr_str =
       SockaddrToString(&resolved_addr, true).value();
   auto sockets = CreateConnectedSockets(resolved_addr);
@@ -161,7 +152,7 @@ TEST(PosixEventEngineTest, IndefiniteConnectTimeoutOrRstTest) {
   args = args.Set(GRPC_ARG_RESOURCE_QUOTA, quota);
   ChannelArgsEndpointConfig config(args);
   auto memory_quota = absl::make_unique<grpc_core::MemoryQuota>("bar");
-  (*g_engine)->Connect(
+  posix_ee->Connect(
       [&signal, &resolved_addr_str](
           absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> status) {
         ASSERT_FALSE(status.ok());
@@ -193,12 +184,14 @@ TEST(PosixEventEngineTest, IndefiniteConnectTimeoutOrRstTest) {
   for (auto sock : *sockets) {
     close(sock);
   }
+  WaitForSingleOwner(std::move(posix_ee));
 }
 
 TEST(PosixEventEngineTest, IndefiniteConnectCancellationTest) {
   std::string target_addr = absl::StrCat(
       "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die()));
   auto resolved_addr = URIToResolvedAddress(target_addr);
+  std::shared_ptr<EventEngine> posix_ee = std::make_shared<PosixEventEngine>();
   std::string resolved_addr_str =
       SockaddrToString(&resolved_addr, true).value();
   auto sockets = CreateConnectedSockets(resolved_addr);
@@ -208,7 +201,7 @@ TEST(PosixEventEngineTest, IndefiniteConnectCancellationTest) {
   args = args.Set(GRPC_ARG_RESOURCE_QUOTA, quota);
   ChannelArgsEndpointConfig config(args);
   auto memory_quota = absl::make_unique<grpc_core::MemoryQuota>("bar");
-  auto connection_handle = (*g_engine)->Connect(
+  auto connection_handle = posix_ee->Connect(
       [](absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> /*status*/) {
         ASSERT_FALSE(
             "The on_connect callback should not have run since the connection "
@@ -216,10 +209,11 @@ TEST(PosixEventEngineTest, IndefiniteConnectCancellationTest) {
       },
       URIToResolvedAddress(target_addr), config,
       memory_quota->CreateMemoryAllocator("conn-2"), 3s);
-  ASSERT_TRUE((*g_engine)->CancelConnect(connection_handle));
+  ASSERT_TRUE(posix_ee->CancelConnect(connection_handle));
   for (auto sock : *sockets) {
     close(sock);
   }
+  WaitForSingleOwner(std::move(posix_ee));
 }
 
 }  // namespace posix_engine
