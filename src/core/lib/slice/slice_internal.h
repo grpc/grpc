@@ -78,14 +78,14 @@ inline absl::string_view StringViewFromSlice(const grpc_slice& slice) {
 
 }  // namespace grpc_core
 
-inline uint32_t grpc_slice_hash_internal(const grpc_slice& s) {
+inline uint32_t grpc_slice_hash(const grpc_slice& s) {
   return absl::HashOf(grpc_core::StringViewFromSlice(s));
 }
 
 namespace grpc_core {
 struct SliceHash {
   std::size_t operator()(const grpc_slice& slice) const {
-    return grpc_slice_hash_internal(slice);
+    return grpc_slice_hash(slice);
   }
 };
 }  // namespace grpc_core
