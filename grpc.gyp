@@ -307,7 +307,6 @@
         'absl/synchronization:synchronization',
         'absl/time:time',
         'absl/types:optional',
-        'absl/types:span',
         'absl/types:variant',
       ],
       'sources': [
@@ -369,6 +368,7 @@
         'absl/hash:hash',
         'absl/meta:type_traits',
         'absl/status:statusor',
+        'absl/types:span',
         'absl/utility:utility',
         'gpr',
         'address_sorting',
@@ -1122,6 +1122,7 @@
         'absl/hash:hash',
         'absl/meta:type_traits',
         'absl/status:statusor',
+        'absl/types:span',
         'absl/utility:utility',
         'gpr',
         'address_sorting',

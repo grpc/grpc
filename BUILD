@@ -1282,7 +1282,6 @@ grpc_cc_library(
         "absl/flags:flag",
         "absl/strings",
         "absl/types:optional",
-        "absl/types:span",
     ],
     deps = [
         "gpr_platform",
