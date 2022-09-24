@@ -31,19 +31,6 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "test/core/util/test_config.h"
 
-static int buffers_are_equal(const unsigned char* buf1,
-                             const unsigned char* buf2, size_t size) {
-  size_t i;
-  for (i = 0; i < size; i++) {
-    if (buf1[i] != buf2[i]) {
-      gpr_log(GPR_ERROR, "buf1 and buf2 differ: buf1[%d] = %x vs buf2[%d] = %x",
-              static_cast<int>(i), buf1[i], static_cast<int>(i), buf2[i]);
-      return 0;
-    }
-  }
-  return 1;
-}
-
 static void test_simple_encode_decode_b64(int url_safe, int multiline) {
   const char* hello = "hello";
   char* hello_b64 =

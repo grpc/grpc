@@ -1460,7 +1460,7 @@ void ClientChannel::UpdateServiceConfigInDataPlaneLocked() {
     filters.push_back(&DynamicTerminationFilter::kFilterVtable);
   }
   RefCountedPtr<DynamicFilters> dynamic_filters =
-      DynamicFilters::Create(new_args.ToC().get(), std::move(filters));
+      DynamicFilters::Create(new_args, std::move(filters));
   GPR_ASSERT(dynamic_filters != nullptr);
   // Grab data plane lock to update service config.
   //
