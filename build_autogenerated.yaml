@@ -751,6 +751,11 @@ libs:
   - src/core/lib/event_engine/posix_engine/timer.h
   - src/core/lib/event_engine/posix_engine/timer_heap.h
   - src/core/lib/event_engine/posix_engine/timer_manager.h
+  - src/core/lib/event_engine/posix_engine/traced_buffer_list.h
+  - src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.h
+  - src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.h
+  - src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h
+  - src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h
   - src/core/lib/event_engine/socket_notifier.h
   - src/core/lib/event_engine/thread_pool.h
   - src/core/lib/event_engine/time_util.h
@@ -1972,6 +1977,11 @@ libs:
   - src/core/lib/event_engine/posix_engine/timer.h
   - src/core/lib/event_engine/posix_engine/timer_heap.h
   - src/core/lib/event_engine/posix_engine/timer_manager.h
+  - src/core/lib/event_engine/posix_engine/traced_buffer_list.h
+  - src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.h
+  - src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.h
+  - src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h
+  - src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h
   - src/core/lib/event_engine/socket_notifier.h
   - src/core/lib/event_engine/thread_pool.h
   - src/core/lib/event_engine/time_util.h
@@ -5767,9 +5777,11 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/event_engine/posix/posix_engine_test_utils.h
   src:
   - test/core/event_engine/posix/event_poller_posix_test.cc
+  - test/core/event_engine/posix/posix_engine_test_utils.cc
   deps:
   - grpc_test_util
   platforms:
@@ -8290,22 +8302,6 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/event_engine/common_closures.h
-  - src/core/lib/event_engine/posix_engine/ev_epoll1_linux.h
-  - src/core/lib/event_engine/posix_engine/ev_poll_posix.h
-  - src/core/lib/event_engine/posix_engine/event_poller.h
-  - src/core/lib/event_engine/posix_engine/event_poller_posix_default.h
-  - src/core/lib/event_engine/posix_engine/internal_errqueue.h
-  - src/core/lib/event_engine/posix_engine/lockfree_event.h
-  - src/core/lib/event_engine/posix_engine/posix_endpoint.h
-  - src/core/lib/event_engine/posix_engine/posix_engine_closure.h
-  - src/core/lib/event_engine/posix_engine/tcp_socket_utils.h
-  - src/core/lib/event_engine/posix_engine/traced_buffer_list.h
-  - src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.h
-  - src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.h
-  - src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h
-  - src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h
-  - src/core/lib/iomgr/socket_mutator.h
   - test/core/event_engine/posix/posix_engine_test_utils.h
   - test/core/event_engine/test_suite/event_engine_test.h
   - test/core/event_engine/test_suite/event_engine_test_utils.h
@@ -8358,7 +8354,6 @@ targets:
   - test/core/event_engine/test_suite/timer_test.cc
   deps:
   - grpc_test_util
-  uses_polling: false
 - name: promise_factory_test
   gtest: true
   build: test
@@ -9813,7 +9808,6 @@ targets:
   src:
   - test/core/event_engine/posix/tcp_posix_socket_utils_test.cc
   deps:
-  - absl/cleanup:cleanup
   - grpc_test_util
   platforms:
   - linux

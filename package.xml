@@ -977,6 +977,15 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/timer_heap.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/timer_manager.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/timer_manager.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/traced_buffer_list.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/traced_buffer_list.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/resolved_address.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/slice.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/slice_buffer.cc" role="src" />

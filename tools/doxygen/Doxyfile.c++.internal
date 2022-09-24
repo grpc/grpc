@@ -1980,6 +1980,15 @@ src/core/lib/event_engine/posix_engine/timer_heap.cc \
 src/core/lib/event_engine/posix_engine/timer_heap.h \
 src/core/lib/event_engine/posix_engine/timer_manager.cc \
 src/core/lib/event_engine/posix_engine/timer_manager.h \
+src/core/lib/event_engine/posix_engine/traced_buffer_list.cc \
+src/core/lib/event_engine/posix_engine/traced_buffer_list.h \
+src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.cc \
+src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.h \
+src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.cc \
+src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.h \
+src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h \
+src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.cc \
+src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h \
 src/core/lib/event_engine/resolved_address.cc \
 src/core/lib/event_engine/slice.cc \
 src/core/lib/event_engine/slice_buffer.cc \
