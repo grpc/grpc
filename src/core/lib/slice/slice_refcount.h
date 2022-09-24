@@ -23,12 +23,6 @@
 
 #include "src/core/lib/slice/slice_refcount_base.h"
 
-namespace grpc_core {
-
-extern uint32_t g_hash_seed;
-
-}  // namespace grpc_core
-
 inline const grpc_slice& grpc_slice_ref_internal(const grpc_slice& slice) {
   if (reinterpret_cast<uintptr_t>(slice.refcount) > 1) {
     slice.refcount->Ref();

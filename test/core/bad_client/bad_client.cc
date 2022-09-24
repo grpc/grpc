@@ -28,7 +28,6 @@
 #include "src/core/ext/filters/http/server/http_server_filter.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/gpr/murmur_hash.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/endpoint_pair.h"

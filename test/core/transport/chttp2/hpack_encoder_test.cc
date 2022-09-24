@@ -345,6 +345,5 @@ int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestGrpcScope grpc_scope;
-  grpc_test_only_set_slice_hash_seed(0);
   return RUN_ALL_TESTS();
 }
