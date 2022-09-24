@@ -572,7 +572,7 @@ bool PosixEndpointImpl::ProcessErrors() {
     } else if (r < 0) {
       return processed_err;
     }
-    if (ABSL_PREDICT_FALSE((msg.msg_flags & MSG_CTRUNC) != 0)) {
+    if (GPR_UNLIKELY((msg.msg_flags & MSG_CTRUNC) != 0)) {
       gpr_log(GPR_ERROR, "Error message was truncated.");
     }
 
