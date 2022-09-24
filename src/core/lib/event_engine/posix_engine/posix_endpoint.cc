@@ -172,7 +172,7 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
   constexpr size_t cmsg_alloc_space =
       CMSG_SPACE(sizeof(scm_timestamping)) + CMSG_SPACE(sizeof(int));
 #else
-  constexpr size_t cmsg_alloc_space = 24  // CMSG_SPACE(sizeof(int))
+  constexpr size_t cmsg_alloc_space = 24;  // CMSG_SPACE(sizeof(int))
 #endif  // GRPC_LINUX_ERRQUEUE
   char cmsgbuf[cmsg_alloc_space];
   for (size_t i = 0; i < iov_len; i++) {
