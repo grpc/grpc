@@ -496,7 +496,14 @@ grpc_slice grpc_slice_dup(grpc_slice a) {
 }
 
 grpc_slice grpc_slice_ref(grpc_slice slice) {
-  return grpc_core::Slice(slice).Ref().TakeCSlice();
+  if (reinterpret_cast<uintptr_t>(slice.refcount) > 1) {
+    slice.refcount->Ref();
+  }
+  return slice;
 }
 
-void grpc_slice_unref(grpc_slice slice) { grpc_core::Slice drop(slice); }
+void grpc_slice_unref(grpc_slice slice) {
+  if (reinterpret_cast<uintptr_t>(slice.refcount) > 1) {
+    slice.refcount->Unref();
+  }
+}
