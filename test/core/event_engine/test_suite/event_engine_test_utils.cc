@@ -14,8 +14,6 @@
 
 #include "test/core/event_engine/test_suite/event_engine_test_utils.h"
 
-#include <sys/socket.h>
-
 #include <memory>
 #include <string>
 #include <utility>
@@ -38,6 +36,8 @@
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/uri/uri_parser.h"
+
+// IWYU pragma: no_include <sys/socket.h>
 
 using Endpoint = ::grpc_event_engine::experimental::EventEngine::Endpoint;
 using Listener = ::grpc_event_engine::experimental::EventEngine::Listener;
