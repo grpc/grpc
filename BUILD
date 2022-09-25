@@ -2926,6 +2926,7 @@ grpc_cc_library(
         "gpr",
         "gpr_platform",
         "slice",
+        "slice_buffer",
         "slice_refcount",
     ],
 )
