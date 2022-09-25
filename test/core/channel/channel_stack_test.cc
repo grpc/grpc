@@ -143,7 +143,7 @@ TEST(ChannelStackTest, CreateChannelStack) {
 
   GRPC_CHANNEL_STACK_UNREF(channel_stack, "done");
 
-  grpc_slice_unref_internal(path);
+  grpc_slice_unref(path);
 }
 
 int main(int argc, char** argv) {

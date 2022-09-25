@@ -46,7 +46,6 @@
 #include "src/core/lib/security/transport/auth_filters.h"  // IWYU pragma: keep
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 
@@ -215,8 +214,8 @@ static void on_md_processing_done(
   }
   // Clean up.
   for (size_t i = 0; i < calld->md.count; i++) {
-    grpc_slice_unref_internal(calld->md.metadata[i].key);
-    grpc_slice_unref_internal(calld->md.metadata[i].value);
+    grpc_slice_unref(calld->md.metadata[i].key);
+    grpc_slice_unref(calld->md.metadata[i].value);
   }
   grpc_metadata_array_destroy(&calld->md);
   GRPC_CALL_STACK_UNREF(calld->owning_call, "server_auth_metadata");
