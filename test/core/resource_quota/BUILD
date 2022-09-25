@@ -78,7 +78,6 @@ grpc_cc_test(
         "absl/memory",
         "gtest",
     ],
-    flaky = True,
     language = "c++",
     uses_event_engine = False,
     uses_polling = False,

@@ -108,7 +108,6 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    flaky = True,  # TODO(b/144705388)
     linkstatic = True,  # Fixes dyld error on MacOS
     shard_count = 50,
     tags = [
@@ -177,7 +176,6 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    flaky = True,  # TODO(b/144705388)
     linkstatic = True,  # Fixes dyld error on MacOS
     tags = [
         "no_test_ios",
@@ -202,7 +200,6 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    flaky = True,
     linkstatic = True,  # Fixes dyld error on MacOS
     shard_count = 15,
     tags = [
@@ -251,7 +248,6 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    flaky = True,
     linkstatic = True,  # Fixes dyld error on MacOS
     shard_count = 5,
     tags = [
@@ -278,7 +274,6 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    flaky = True,
     linkstatic = True,  # Fixes dyld error on MacOS
     tags = [
         "no_test_ios",
@@ -303,7 +298,6 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    flaky = True,  # TODO(b/144705388)
     linkstatic = True,  # Fixes dyld error on MacOS
     shard_count = 10,
     tags = [
@@ -357,7 +351,6 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    flaky = True,  # TODO(b/144705388)
     linkstatic = True,  # Fixes dyld error on MacOS
     shard_count = 10,
     tags = [
