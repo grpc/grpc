@@ -32,7 +32,6 @@
 #include <grpcpp/support/channel_arguments.h>
 
 #include "src/core/lib/gprpp/env.h"
-#include "src/core/lib/gprpp/thd.h"
 #include "test/core/util/fake_udp_and_tcp_server.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"

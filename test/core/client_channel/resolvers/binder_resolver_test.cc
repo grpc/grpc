@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <sys/socket.h>
-
 #include <memory>
 #include <string>
 #include <utility>
@@ -37,6 +35,7 @@
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
 
+#include <sys/socket.h>
 #include <sys/un.h>
 
 #include <grpc/grpc.h>

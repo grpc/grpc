@@ -18,8 +18,6 @@
 #include <thread>
 #include <vector>
 
-#include <gtest/gtest.h>
-
 #include "absl/functional/any_invocable.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
