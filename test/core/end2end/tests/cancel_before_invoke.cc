@@ -163,8 +163,9 @@ static void test_cancel_before_invoke(grpc_end2end_test_config config,
 
   // Filter based stack tracks this as a failed op, promise based stack tracks
   // it as a successful one with a failed request. The latter probably makes
-  // more sense, but tracking them independently until filter stack removal.
-  cqv.Expect(tag(1), grpc_core::IsPromiseBasedClientCallEnabled());
+  // more sense, but since we can't tell from outside which case we have we
+  // accept either.
+  cqv.Expect(tag(1), grpc_core::CqVerifier::AnyStatus());
   cqv.Verify();
 
   GPR_ASSERT(status == GRPC_STATUS_CANCELLED);
