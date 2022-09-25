@@ -31,8 +31,9 @@ grpc_cc_test(
     ],
     deps = [
         "//:common_event_engine_closures",
+        "//:event_engine_base_hdrs",
         "//:gpr_platform",
-        "//:grpc",
+        "//:notification",
     ],
 )
 
@@ -48,6 +49,17 @@ grpc_cc_test(
         "//:gpr",
         "//:gpr_platform",
         "//:grpc_unsecure",
+    ],
+)
+
+grpc_cc_test(
+    name = "thread_pool_test",
+    srcs = ["thread_pool_test.cc"],
+    external_deps = ["gtest"],
+    deps = [
+        "//:event_engine_thread_pool",
+        "//:gpr",
+        "//:notification",
     ],
 )
 
@@ -83,8 +95,7 @@ grpc_cc_test(
     srcs = ["slice_buffer_test.cc"],
     external_deps = ["gtest"],
     deps = [
-        "//:event_engine_common",
-        "//:slice_buffer",
+        "//:event_engine_base_hdrs",
         "//:gpr",
         "//:gpr_platform",
         "//:slice",

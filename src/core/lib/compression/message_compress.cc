@@ -29,8 +29,6 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/slice/slice_refcount.h"
-
 #define OUTPUT_BLOCK_SIZE 1024
 
 static int zlib_body(z_stream* zs, grpc_slice_buffer* input,
@@ -82,7 +80,7 @@ static int zlib_body(z_stream* zs, grpc_slice_buffer* input,
   return 1;
 
 error:
-  grpc_slice_unref_internal(outbuf);
+  grpc_slice_unref(outbuf);
   return 0;
 }
 
@@ -109,7 +107,7 @@ static int zlib_compress(grpc_slice_buffer* input, grpc_slice_buffer* output,
   r = zlib_body(&zs, input, output, deflate) && output->length < input->length;
   if (!r) {
     for (i = count_before; i < output->count; i++) {
-      grpc_slice_unref_internal(output->slices[i]);
+      grpc_slice_unref(output->slices[i]);
     }
     output->count = count_before;
     output->length = length_before;
@@ -133,7 +131,7 @@ static int zlib_decompress(grpc_slice_buffer* input, grpc_slice_buffer* output,
   r = zlib_body(&zs, input, output, inflate);
   if (!r) {
     for (i = count_before; i < output->count; i++) {
-      grpc_slice_unref_internal(output->slices[i]);
+      grpc_slice_unref(output->slices[i]);
     }
     output->count = count_before;
     output->length = length_before;
@@ -145,7 +143,7 @@ static int zlib_decompress(grpc_slice_buffer* input, grpc_slice_buffer* output,
 static int copy(grpc_slice_buffer* input, grpc_slice_buffer* output) {
   size_t i;
   for (i = 0; i < input->count; i++) {
-    grpc_slice_buffer_add(output, grpc_slice_ref_internal(input->slices[i]));
+    grpc_slice_buffer_add(output, grpc_slice_ref(input->slices[i]));
   }
   return 1;
 }

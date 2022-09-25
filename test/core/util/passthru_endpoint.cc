@@ -40,8 +40,6 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/timer.h"
-#include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_refcount.h"
 
 struct passthru_endpoint;
 
@@ -233,14 +231,14 @@ static void do_pending_write_op_locked(half* m, grpc_error_handle error) {
     }
 
     grpc_slice_copy_split(slice, split_length, split1, split2);
-    grpc_slice_unref_internal(slice);
+    grpc_slice_unref(slice);
     // Write a copy of the slice to the destination to be read
     grpc_slice_buffer_add_indexed(dest, split1);
     // Re-insert split2 into source for next iteration.
     if (GPR_SLICE_LENGTH(split2) > 0) {
       grpc_slice_buffer_undo_take_first(slices, split2);
     } else {
-      grpc_slice_unref_internal(split2);
+      grpc_slice_unref(split2);
     }
 
     if (max_readable > 0) {
@@ -352,10 +350,10 @@ void grpc_passthru_endpoint_destroy(passthru_endpoint* p) {
   gpr_mu_destroy(&p->mu);
   grpc_passthru_endpoint_stats_destroy(p->stats);
   delete p->channel_effects;
-  grpc_slice_buffer_destroy_internal(&p->client.read_buffer);
-  grpc_slice_buffer_destroy_internal(&p->server.read_buffer);
-  grpc_slice_buffer_destroy_internal(&p->client.write_buffer);
-  grpc_slice_buffer_destroy_internal(&p->server.write_buffer);
+  grpc_slice_buffer_destroy(&p->client.read_buffer);
+  grpc_slice_buffer_destroy(&p->server.read_buffer);
+  grpc_slice_buffer_destroy(&p->client.write_buffer);
+  grpc_slice_buffer_destroy(&p->server.write_buffer);
   gpr_free(p);
 }
 
@@ -499,7 +497,7 @@ static void sched_next_channel_action_locked(half* m) {
   grpc_timer_init(&m->parent->channel_effects->timer,
                   grpc_core::Duration::Milliseconds(
                       m->parent->channel_effects->actions[0].wait_ms) +
-                      grpc_core::ExecCtx::Get()->Now(),
+                      grpc_core::Timestamp::Now(),
                   GRPC_CLOSURE_CREATE(do_next_sched_channel_action, m,
                                       grpc_schedule_on_exec_ctx));
 }

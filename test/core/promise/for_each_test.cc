@@ -14,6 +14,8 @@
 
 #include "src/core/lib/promise/for_each.h"
 
+#include <stdint.h>
+
 #include <memory>
 
 #include "absl/memory/memory.h"

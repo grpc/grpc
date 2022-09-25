@@ -49,7 +49,6 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/http/httpcli_ssl_credentials.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/json/json.h"
@@ -57,7 +56,6 @@
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/security/util/json_util.h"
-#include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/metadata_batch.h"
@@ -335,7 +333,7 @@ grpc_oauth2_token_fetcher_credentials::GetRequestMetadata(
   if (start_fetch) {
     fetch_oauth2(new grpc_credentials_metadata_request(Ref()), &pollent_,
                  on_oauth2_token_fetcher_http_response,
-                 grpc_core::ExecCtx::Get()->Now() + refresh_threshold);
+                 grpc_core::Timestamp::Now() + refresh_threshold);
   }
   return
       [pending_request]()
@@ -616,8 +614,8 @@ class StsTokenFetcherCredentials
         *body = gpr_strdup(body_str.c_str());
         *body_length = body_str.size();
       }
-      grpc_slice_unref_internal(subject_token);
-      grpc_slice_unref_internal(actor_token);
+      grpc_slice_unref(subject_token);
+      grpc_slice_unref(actor_token);
       return err;
     };
 

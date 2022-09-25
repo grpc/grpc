@@ -165,8 +165,8 @@ void bad_server_thread(void* vargs) {
 
   gpr_mu_lock(args->mu);
   while (!args->stop.load(std::memory_order_acquire)) {
-    grpc_core::Timestamp deadline = grpc_core::ExecCtx::Get()->Now() +
-                                    grpc_core::Duration::Milliseconds(100);
+    grpc_core::Timestamp deadline =
+        grpc_core::Timestamp::Now() + grpc_core::Duration::Milliseconds(100);
 
     grpc_pollset_worker* worker = nullptr;
     if (!GRPC_LOG_IF_ERROR(

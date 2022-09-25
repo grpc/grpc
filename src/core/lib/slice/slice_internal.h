@@ -35,11 +35,6 @@
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/slice/slice_refcount.h"
 
-void grpc_slice_buffer_reset_and_unref_internal(grpc_slice_buffer* sb);
-void grpc_slice_buffer_partial_unref_internal(grpc_slice_buffer* sb,
-                                              size_t idx);
-void grpc_slice_buffer_destroy_internal(grpc_slice_buffer* sb);
-
 // Returns a pointer to the first slice in the slice buffer without giving
 // ownership to or a reference count on that slice.
 inline grpc_slice* grpc_slice_buffer_peek_first(grpc_slice_buffer* sb) {
@@ -64,7 +59,7 @@ grpc_slice grpc_slice_maybe_static_intern(grpc_slice slice,
 uint32_t grpc_static_slice_hash(grpc_slice s);
 int grpc_static_slice_eq(grpc_slice a, grpc_slice b);
 
-inline uint32_t grpc_slice_hash_internal(const grpc_slice& s) {
+inline uint32_t grpc_slice_hash(const grpc_slice& s) {
   return gpr_murmur_hash3(GRPC_SLICE_START_PTR(s), GRPC_SLICE_LENGTH(s),
                           grpc_core::g_hash_seed);
 }
@@ -83,7 +78,7 @@ namespace grpc_core {
 
 struct SliceHash {
   std::size_t operator()(const grpc_slice& slice) const {
-    return grpc_slice_hash_internal(slice);
+    return grpc_slice_hash(slice);
   }
 };
 

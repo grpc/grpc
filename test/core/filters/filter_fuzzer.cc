@@ -34,7 +34,6 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/status.h>
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
@@ -49,9 +48,9 @@
 #include "src/core/lib/channel/channel_stack_builder_impl.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/channel/promise_based_filter.h"
-#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -642,9 +641,9 @@ DEFINE_PROTO_FUZZER(const filter_fuzzer::Msg& msg) {
   }
 
   grpc_test_only_set_slice_hash_seed(0);
-  char* grpc_trace_fuzzer = gpr_getenv("GRPC_TRACE_FUZZER");
-  if (squelch && grpc_trace_fuzzer == nullptr) gpr_set_log_function(dont_log);
-  gpr_free(grpc_trace_fuzzer);
+  if (squelch && !grpc_core::GetEnv("GRPC_TRACE_FUZZER").has_value()) {
+    gpr_set_log_function(dont_log);
+  }
   g_now = {1, 0, GPR_CLOCK_MONOTONIC};
   grpc_core::TestOnlySetProcessEpoch(g_now);
   gpr_now_impl = now_impl;

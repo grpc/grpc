@@ -51,7 +51,6 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
@@ -464,7 +463,7 @@ class ChannelBroadcaster {
 
   static void ShutdownCleanup(void* arg, grpc_error_handle /*error*/) {
     ShutdownCleanupArgs* a = static_cast<ShutdownCleanupArgs*>(arg);
-    grpc_slice_unref_internal(a->slice);
+    grpc_slice_unref(a->slice);
     delete a;
   }
 
@@ -790,7 +789,7 @@ void DonePublishedShutdown(void* /*done_arg*/, grpc_cq_completion* storage) {
 //       connection is NOT closed until the server is done with all those calls.
 //    -- Once there are no more calls in progress, the channel is closed.
 void Server::ShutdownAndNotify(grpc_completion_queue* cq, void* tag) {
-  absl::Notification* await_requests = nullptr;
+  Notification* await_requests = nullptr;
   ChannelBroadcaster broadcaster;
   {
     // Wait for startup to be finished.  Locks mu_global.
@@ -1074,8 +1073,7 @@ Server::ChannelRegisteredMethod* Server::ChannelData::GetRegisteredMethod(
   if (registered_methods_ == nullptr) return nullptr;
   /* TODO(ctiller): unify these two searches */
   /* check for an exact match with host */
-  uint32_t hash =
-      MixHash32(grpc_slice_hash_internal(host), grpc_slice_hash_internal(path));
+  uint32_t hash = MixHash32(grpc_slice_hash(host), grpc_slice_hash(path));
   for (size_t i = 0; i <= registered_method_max_probes_; i++) {
     ChannelRegisteredMethod* rm =
         &(*registered_methods_)[(hash + i) % registered_methods_->size()];
@@ -1086,7 +1084,7 @@ Server::ChannelRegisteredMethod* Server::ChannelData::GetRegisteredMethod(
     return rm;
   }
   /* check for a wildcard method definition (no host set) */
-  hash = MixHash32(0, grpc_slice_hash_internal(path));
+  hash = MixHash32(0, grpc_slice_hash(path));
   for (size_t i = 0; i <= registered_method_max_probes_; i++) {
     ChannelRegisteredMethod* rm =
         &(*registered_methods_)[(hash + i) % registered_methods_->size()];
@@ -1240,9 +1238,8 @@ void Server::CallData::Publish(size_t cq_idx, RequestedCall* rc) {
     case RequestedCall::Type::BATCH_CALL:
       GPR_ASSERT(host_.has_value());
       GPR_ASSERT(path_.has_value());
-      rc->data.batch.details->host = grpc_slice_ref_internal(host_->c_slice());
-      rc->data.batch.details->method =
-          grpc_slice_ref_internal(path_->c_slice());
+      rc->data.batch.details->host = grpc_slice_ref(host_->c_slice());
+      rc->data.batch.details->method = grpc_slice_ref(path_->c_slice());
       rc->data.batch.details->deadline =
           deadline_.as_timespec(GPR_CLOCK_MONOTONIC);
       break;

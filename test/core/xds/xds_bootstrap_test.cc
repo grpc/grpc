@@ -41,8 +41,8 @@
 #include "src/core/ext/xds/certificate_provider_store.h"
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/tmpfile.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json.h"
@@ -57,7 +57,7 @@ namespace testing {
 namespace {
 
 TEST(XdsBootstrapTest, Basic) {
-  gpr_setenv("GRPC_EXPERIMENTAL_XDS_FEDERATION", "true");
+  SetEnv("GRPC_EXPERIMENTAL_XDS_FEDERATION", "true");
   const char* json_str =
       "{"
       "  \"xds_servers\": ["
@@ -193,7 +193,7 @@ TEST(XdsBootstrapTest, Basic) {
                           ::testing::Property(&Json::string_value, "1")))));
   EXPECT_EQ(bootstrap->server_listener_resource_name_template(),
             "example/resource");
-  gpr_unsetenv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
+  UnsetEnv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
 }
 
 TEST(XdsBootstrapTest, ValidWithoutNode) {
@@ -250,7 +250,7 @@ TEST(XdsBootstrapTest, GoogleDefaultCreds) {
   ASSERT_EQ(fwrite(token_str, 1, sizeof(token_str), creds_file),
             sizeof(token_str));
   fclose(creds_file);
-  gpr_setenv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR, creds_file_name);
+  SetEnv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR, creds_file_name);
   gpr_free(creds_file_name);
   // Now run test.
   const char* json_str =
@@ -497,7 +497,7 @@ TEST(XdsBootstrapTest, CertificateProvidersUnrecognizedPluginName) {
 }
 
 TEST(XdsBootstrapTest, AuthorityXdsServerInvalidResourceTemplate) {
-  gpr_setenv("GRPC_EXPERIMENTAL_XDS_FEDERATION", "true");
+  SetEnv("GRPC_EXPERIMENTAL_XDS_FEDERATION", "true");
   const char* json_str =
       "{"
       "  \"xds_servers\": ["
@@ -532,11 +532,11 @@ TEST(XdsBootstrapTest, AuthorityXdsServerInvalidResourceTemplate) {
             ".client_listener_resource_name_template error:"
             "field must begin with \"xdstp://xds.example.com/\"]")
       << bootstrap.status();
-  gpr_unsetenv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
+  UnsetEnv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
 }
 
 TEST(XdsBootstrapTest, AuthorityXdsServerMissingServerUri) {
-  gpr_setenv("GRPC_EXPERIMENTAL_XDS_FEDERATION", "true");
+  SetEnv("GRPC_EXPERIMENTAL_XDS_FEDERATION", "true");
   const char* json_str =
       "{"
       "  \"xds_servers\": ["
@@ -563,7 +563,7 @@ TEST(XdsBootstrapTest, AuthorityXdsServerMissingServerUri) {
       "field:authorities[\"xds.example.com\"].xds_servers[0].server_uri "
       "error:field not present]")
       << bootstrap.status();
-  gpr_unsetenv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
+  UnsetEnv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
 }
 
 class FakeCertificateProviderFactory : public CertificateProviderFactory {
@@ -705,7 +705,7 @@ TEST(XdsBootstrapTest, CertificateProvidersFakePluginEmptyConfig) {
 }
 
 TEST(XdsBootstrapTest, XdsServerToJsonAndParse) {
-  gpr_setenv("GRPC_EXPERIMENTAL_XDS_FEDERATION", "true");
+  SetEnv("GRPC_EXPERIMENTAL_XDS_FEDERATION", "true");
   const char* json_str =
       "    {"
       "      \"server_uri\": \"fake:///lb\","
@@ -726,7 +726,7 @@ TEST(XdsBootstrapTest, XdsServerToJsonAndParse) {
       LoadFromJson<GrpcXdsBootstrap::GrpcXdsServer>(output);
   ASSERT_TRUE(output_xds_server.ok()) << output_xds_server.status();
   EXPECT_EQ(*xds_server, *output_xds_server);
-  gpr_unsetenv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
+  UnsetEnv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
 }
 
 }  // namespace

@@ -97,6 +97,17 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "bm_huffman_decode",
+    srcs = ["bm_huffman_decode.cc"],
+    args = grpc_benchmark_args(),
+    tags = [
+        "no_mac",
+        "no_windows",
+    ],
+    deps = [":helpers"],
+)
+
+grpc_cc_test(
     name = "bm_alarm",
     srcs = ["bm_alarm.cc"],
     args = grpc_benchmark_args(),
@@ -377,4 +388,24 @@ grpc_cc_test(
         "notap",
     ],
     deps = [":callback_streaming_ping_pong_h"],
+)
+
+grpc_cc_test(
+    name = "bm_work_queue",
+    srcs = ["bm_work_queue.cc"],
+    args = grpc_benchmark_args(),
+    external_deps = ["benchmark"],
+    tags = [
+        "manual",
+        "no_windows",
+        "notap",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:common_event_engine_closures",
+        "//:event_engine_work_queue",
+        "//:gpr",
+        "//test/core/util:grpc_test_util",
+    ],
 )

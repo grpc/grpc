@@ -42,6 +42,7 @@ Pod::Spec.new do |s|
     # This is needed by all pods that depend on gRPC-RxLibrary:
     'CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES' => 'YES',
     'CLANG_WARN_STRICT_PROTOTYPES' => 'NO',
+    'CLANG_CXX_LANGUAGE_STANDARD' => 'c++14',
   }
 
   s.ios.deployment_target = '9.0'

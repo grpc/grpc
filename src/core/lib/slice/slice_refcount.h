@@ -19,27 +19,10 @@
 
 #include <stdint.h>
 
-#include <grpc/slice.h>
-
-#include "src/core/lib/slice/slice_refcount_base.h"
-
 namespace grpc_core {
 
 extern uint32_t g_hash_seed;
 
 }  // namespace grpc_core
-
-inline const grpc_slice& grpc_slice_ref_internal(const grpc_slice& slice) {
-  if (reinterpret_cast<uintptr_t>(slice.refcount) > 1) {
-    slice.refcount->Ref();
-  }
-  return slice;
-}
-
-inline void grpc_slice_unref_internal(const grpc_slice& slice) {
-  if (reinterpret_cast<uintptr_t>(slice.refcount) > 1) {
-    slice.refcount->Unref();
-  }
-}
 
 #endif /* GRPC_CORE_LIB_SLICE_SLICE_REFCOUNT_H */

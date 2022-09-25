@@ -20,138 +20,174 @@
 
 #include "src/core/lib/event_engine/thread_pool.h"
 
+#include <memory>
 #include <utility>
+
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
+
+#include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/thd.h"
 
 namespace grpc_event_engine {
 namespace experimental {
 
-ThreadPool::Thread::Thread(ThreadPool* pool)
-    : pool_(pool),
-      thd_(
-          "posix_eventengine_pool",
-          [](void* th) { static_cast<ThreadPool::Thread*>(th)->ThreadFunc(); },
-          this, nullptr, grpc_core::Thread::Options().set_tracked(false)) {
-  thd_.Start();
+namespace {
+// TODO(drfloob): Remove this, and replace it with the WorkQueue* for the
+// current thread (with nullptr indicating not a threadpool thread).
+thread_local bool g_threadpool_thread;
+}  // namespace
+
+void ThreadPool::StartThread(StatePtr state, bool throttled) {
+  state->thread_count.Add();
+  struct ThreadArg {
+    StatePtr state;
+    bool throttled;
+  };
+  grpc_core::Thread(
+      "event_engine",
+      [](void* arg) {
+        std::unique_ptr<ThreadArg> a(static_cast<ThreadArg*>(arg));
+        g_threadpool_thread = true;
+        if (a->throttled) {
+          GPR_ASSERT(a->state->currently_starting_one_thread.exchange(
+              false, std::memory_order_relaxed));
+        }
+        ThreadFunc(a->state);
+      },
+      new ThreadArg{state, throttled}, nullptr,
+      grpc_core::Thread::Options().set_tracked(false).set_joinable(false))
+      .Start();
 }
-ThreadPool::Thread::~Thread() { thd_.Join(); }
 
-void ThreadPool::Thread::ThreadFunc() {
-  pool_->ThreadFunc();
-  // Now that we have killed ourselves, we should reduce the thread count
-  grpc_core::MutexLock lock(&pool_->mu_);
-  pool_->nthreads_--;
-  // Move ourselves to dead list
-  pool_->dead_threads_.push_back(this);
-
-  if (pool_->nthreads_ == 0) {
-    if (pool_->forking_) pool_->fork_cv_.Signal();
-    if (pool_->shutdown_) pool_->shutdown_cv_.Signal();
+void ThreadPool::ThreadFunc(StatePtr state) {
+  while (state->queue.Step()) {
   }
+  state->thread_count.Remove();
 }
 
-void ThreadPool::ThreadFunc() {
-  for (;;) {
-    // Wait until work is available or we are shutting down.
-    grpc_core::ReleasableMutexLock lock(&mu_);
-    if (!forking_ && !shutdown_ && callbacks_.empty()) {
-      // If there are too many threads waiting, then quit this thread
-      if (threads_waiting_ >= reserve_threads_) {
-        break;
-      }
-      threads_waiting_++;
-      cv_.Wait(&mu_);
-      threads_waiting_--;
-    }
-    // a fork could be initiated while the thread was waiting
-    if (forking_) return;
-    // Drain callbacks before considering shutdown to ensure all work
-    // gets completed.
-    if (!callbacks_.empty()) {
-      auto cb = std::move(callbacks_.front());
-      callbacks_.pop();
-      lock.Release();
-      cb();
-    } else if (shutdown_) {
+bool ThreadPool::Queue::Step() {
+  grpc_core::ReleasableMutexLock lock(&mu_);
+  // Wait until work is available or we are shutting down.
+  while (state_ == State::kRunning && callbacks_.empty()) {
+    // If there are too many threads waiting, then quit this thread.
+    // TODO(ctiller): wait some time in this case to be sure.
+    if (threads_waiting_ >= reserve_threads_) return false;
+    threads_waiting_++;
+    cv_.Wait(&mu_);
+    threads_waiting_--;
+  }
+  switch (state_) {
+    case State::kRunning:
       break;
-    }
+    case State::kShutdown:
+    case State::kForking:
+      if (!callbacks_.empty()) break;
+      return false;
   }
+  GPR_ASSERT(!callbacks_.empty());
+  auto callback = std::move(callbacks_.front());
+  callbacks_.pop();
+  lock.Release();
+  callback();
+  return true;
 }
 
 ThreadPool::ThreadPool(int reserve_threads)
-    : shutdown_(false),
-      reserve_threads_(reserve_threads),
-      nthreads_(0),
-      threads_waiting_(0),
-      forking_(false) {
-  grpc_core::MutexLock lock(&mu_);
-  StartNThreadsLocked(reserve_threads_);
-}
-
-void ThreadPool::StartNThreadsLocked(int n) {
-  for (int i = 0; i < n; i++) {
-    nthreads_++;
-    new Thread(this);
+    : reserve_threads_(reserve_threads) {
+  for (int i = 0; i < reserve_threads; i++) {
+    StartThread(state_, /*throttled=*/false);
   }
-}
-
-void ThreadPool::ReapThreads(std::vector<Thread*>* tlist) {
-  for (auto* t : *tlist) delete t;
-  tlist->clear();
 }
 
 ThreadPool::~ThreadPool() {
-  grpc_core::MutexLock lock(&mu_);
-  shutdown_ = true;
-  cv_.SignalAll();
-  while (nthreads_ != 0) {
-    shutdown_cv_.Wait(&mu_);
-  }
-  ReapThreads(&dead_threads_);
+  state_->queue.SetShutdown();
+  // Wait until all threads are exited.
+  // Note that if this is a threadpool thread then we won't exit this thread
+  // until the callstack unwinds a little, so we need to wait for just one
+  // thread running instead of zero.
+  state_->thread_count.BlockUntilThreadCount(g_threadpool_thread ? 1 : 0,
+                                             "shutting down");
 }
 
 void ThreadPool::Add(absl::AnyInvocable<void()> callback) {
+  if (state_->queue.Add(std::move(callback))) {
+    if (!state_->currently_starting_one_thread.exchange(
+            true, std::memory_order_relaxed)) {
+      StartThread(state_, /*throttled=*/true);
+    }
+  }
+}
+
+bool ThreadPool::Queue::Add(absl::AnyInvocable<void()> callback) {
   grpc_core::MutexLock lock(&mu_);
   // Add works to the callbacks list
   callbacks_.push(std::move(callback));
-  // Store the callback for later if we are forking.
-  // TODO(hork): should we block instead?
-  if (forking_) return;
-  // Increase pool size or notify as needed
-  if (threads_waiting_ == 0) {
-    // Kick off a new thread
-    nthreads_++;
-    new Thread(this);
-  } else {
-    cv_.Signal();
+  cv_.Signal();
+  switch (state_) {
+    case State::kRunning:
+    case State::kShutdown:
+      return threads_waiting_ == 0;
+    case State::kForking:
+      return false;
   }
-  // Also use this chance to harvest dead threads
-  if (!dead_threads_.empty()) {
-    ReapThreads(&dead_threads_);
+  GPR_UNREACHABLE_CODE(return false);
+}
+
+void ThreadPool::Queue::SetState(State state) {
+  grpc_core::MutexLock lock(&mu_);
+  if (state == State::kRunning) {
+    GPR_ASSERT(state_ != State::kRunning);
+  } else {
+    GPR_ASSERT(state_ == State::kRunning);
+  }
+  state_ = state;
+  cv_.SignalAll();
+}
+
+void ThreadPool::ThreadCount::Add() {
+  grpc_core::MutexLock lock(&mu_);
+  ++threads_;
+}
+
+void ThreadPool::ThreadCount::Remove() {
+  grpc_core::MutexLock lock(&mu_);
+  --threads_;
+  cv_.Signal();
+}
+
+void ThreadPool::ThreadCount::BlockUntilThreadCount(int threads,
+                                                    const char* why) {
+  grpc_core::MutexLock lock(&mu_);
+  auto last_log = absl::Now();
+  while (threads_ > threads) {
+    // Wait for all threads to exit.
+    // At least once every three seconds (but no faster than once per second in
+    // the event of spurious wakeups) log a message indicating we're waiting to
+    // fork.
+    cv_.WaitWithTimeout(&mu_, absl::Seconds(3));
+    if (threads_ > threads && absl::Now() - last_log > absl::Seconds(1)) {
+      gpr_log(GPR_ERROR, "Waiting for thread pool to idle before %s", why);
+      last_log = absl::Now();
+    }
   }
 }
 
 void ThreadPool::PrepareFork() {
-  grpc_core::MutexLock lock(&mu_);
-  forking_ = true;
-  cv_.SignalAll();
-  while (nthreads_ != 0) {
-    fork_cv_.Wait(&mu_);
+  state_->queue.SetForking();
+  state_->thread_count.BlockUntilThreadCount(0, "forking");
+}
+
+void ThreadPool::PostforkParent() { Postfork(); }
+
+void ThreadPool::PostforkChild() { Postfork(); }
+
+void ThreadPool::Postfork() {
+  state_->queue.Reset();
+  for (int i = 0; i < reserve_threads_; i++) {
+    StartThread(state_, /*throttled=*/false);
   }
-  ReapThreads(&dead_threads_);
-}
-
-void ThreadPool::PostforkParent() {
-  grpc_core::MutexLock lock(&mu_);
-  forking_ = false;
-  StartNThreadsLocked(reserve_threads_);
-}
-
-void ThreadPool::PostforkChild() {
-  grpc_core::MutexLock lock(&mu_);
-  forking_ = false;
-  StartNThreadsLocked(reserve_threads_);
 }
 
 }  // namespace experimental

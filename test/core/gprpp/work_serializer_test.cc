@@ -27,13 +27,13 @@
 
 #include "absl/memory/memory.h"
 #include "absl/synchronization/barrier.h"
-#include "absl/synchronization/notification.h"
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "test/core/util/test_config.h"
 
@@ -206,7 +206,7 @@ TEST(WorkSerializerTest, CallbackDestroysWorkSerializer) {
 TEST(WorkSerializerTest, WorkSerializerDestructionRace) {
   for (int i = 0; i < 1000; ++i) {
     auto lock = std::make_shared<grpc_core::WorkSerializer>();
-    absl::Notification notification;
+    grpc_core::Notification notification;
     std::thread t1([&]() {
       notification.WaitForNotification();
       lock.reset();

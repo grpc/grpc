@@ -156,7 +156,7 @@ void alts_grpc_record_protocol_destroy(alts_grpc_record_protocol* self) {
     self->vtable->destruct(self);
   }
   alts_iovec_record_protocol_destroy(self->iovec_rp);
-  grpc_slice_buffer_destroy_internal(&self->header_sb);
+  grpc_slice_buffer_destroy(&self->header_sb);
   gpr_free(self->header_buf);
   gpr_free(self->iovec_buf);
   gpr_free(self);

@@ -24,7 +24,6 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/string.h"
-#include "src/core/lib/slice/slice_refcount.h"
 
 #define LOG_TEST_NAME(x) gpr_log(GPR_INFO, "%s", x)
 
@@ -33,7 +32,7 @@ static void expect_slice_dump(grpc_slice slice, uint32_t flags,
   char* got = grpc_dump_slice(slice, flags);
   ASSERT_STREQ(got, result);
   gpr_free(got);
-  grpc_slice_unref_internal(slice);
+  grpc_slice_unref(slice);
 }
 
 TEST(SliceStringHelpersTest, DumpSlice) {

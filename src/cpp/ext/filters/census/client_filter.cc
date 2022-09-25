@@ -51,7 +51,6 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
-#include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/cpp/ext/filters/census/context.h"
@@ -114,6 +113,10 @@ OpenCensusCallTracer::OpenCensusCallAttemptTracer::OpenCensusCallAttemptTracer(
       start_time_(absl::Now()) {
   context_.AddSpanAttribute("previous-rpc-attempts", attempt_num);
   context_.AddSpanAttribute("transparent-retry", is_transparent_retry);
+  std::vector<std::pair<opencensus::tags::TagKey, std::string>> tags =
+      context_.tags().tags();
+  tags.emplace_back(ClientMethodTagKey(), std::string(parent_->method_));
+  ::opencensus::stats::Record({{RpcClientStartedRpcs(), 1}}, tags);
 }
 
 void OpenCensusCallTracer::OpenCensusCallAttemptTracer::
@@ -224,7 +227,7 @@ void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordEnd(
 
 OpenCensusCallTracer::OpenCensusCallTracer(const grpc_call_element_args* args)
     : call_context_(args->context),
-      path_(grpc_slice_ref_internal(args->path)),
+      path_(grpc_slice_ref(args->path)),
       method_(GetMethod(path_)),
       arena_(args->arena) {}
 
