@@ -26,7 +26,6 @@ grpc_cc_test(
     srcs = ["common_closures_test.cc"],
     external_deps = [
         "absl/functional:any_invocable",
-        "absl/time",
         "gtest",
     ],
     deps = [
