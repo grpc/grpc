@@ -16,7 +16,7 @@
  *
  */
 
-#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gprpp/env.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -34,28 +34,24 @@
 TEST(EnvTest, SetenvGetenv) {
   const char* name = "FOO";
   const char* value = "BAR";
-  char* retrieved_value;
 
   LOG_TEST_NAME("test_setenv_getenv");
 
-  gpr_setenv(name, value);
-  retrieved_value = gpr_getenv(name);
-  ASSERT_NE(retrieved_value, nullptr);
-  ASSERT_STREQ(value, retrieved_value);
-  gpr_free(retrieved_value);
+  grpc_core::SetEnv(name, value);
+  auto retrieved_value = grpc_core::GetEnv(name);
+  ASSERT_EQ(value, retrieved_value);
 }
 
 TEST(EnvTest, Unsetenv) {
   const char* name = "FOO";
   const char* value = "BAR";
-  char* retrieved_value;
 
   LOG_TEST_NAME("test_unsetenv");
 
-  gpr_setenv(name, value);
-  gpr_unsetenv(name);
-  retrieved_value = gpr_getenv(name);
-  ASSERT_EQ(retrieved_value, nullptr);
+  grpc_core::SetEnv(name, value);
+  grpc_core::UnsetEnv(name);
+  auto retrieved_value = grpc_core::GetEnv(name);
+  ASSERT_FALSE(retrieved_value.has_value());
 }
 
 int main(int argc, char** argv) {

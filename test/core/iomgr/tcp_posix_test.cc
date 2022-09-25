@@ -155,7 +155,7 @@ static size_t fill_socket_partial(int fd, size_t bytes) {
 
 struct read_socket_state {
   grpc_endpoint* ep;
-  int min_progress_size;
+  size_t min_progress_size;
   size_t read_bytes;
   size_t target_read_bytes;
   grpc_slice_buffer incoming;
@@ -269,7 +269,7 @@ static void read_test(size_t num_bytes, size_t slice_size,
   GPR_ASSERT(state.read_bytes == state.target_read_bytes);
   gpr_mu_unlock(g_mu);
 
-  grpc_slice_buffer_destroy_internal(&state.incoming);
+  grpc_slice_buffer_destroy(&state.incoming);
   grpc_endpoint_destroy(ep);
   grpc_resource_quota_unref(
       static_cast<grpc_resource_quota*>(a[1].value.pointer.p));
@@ -333,7 +333,7 @@ static void large_read_test(size_t slice_size, int min_progress_size) {
   GPR_ASSERT(state.read_bytes == state.target_read_bytes);
   gpr_mu_unlock(g_mu);
 
-  grpc_slice_buffer_destroy_internal(&state.incoming);
+  grpc_slice_buffer_destroy(&state.incoming);
   grpc_endpoint_destroy(ep);
   grpc_resource_quota_unref(
       static_cast<grpc_resource_quota*>(a[1].value.pointer.p));
@@ -516,7 +516,7 @@ static void write_test(size_t num_bytes, size_t slice_size,
   }
   gpr_mu_unlock(g_mu);
 
-  grpc_slice_buffer_destroy_internal(&outgoing);
+  grpc_slice_buffer_destroy(&outgoing);
   grpc_endpoint_destroy(ep);
   gpr_free(slices);
   grpc_resource_quota_unref(
@@ -597,7 +597,7 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
   GPR_ASSERT(state.read_bytes == state.target_read_bytes);
   gpr_mu_unlock(g_mu);
 
-  grpc_slice_buffer_destroy_internal(&state.incoming);
+  grpc_slice_buffer_destroy(&state.incoming);
   grpc_tcp_destroy_and_release_fd(ep, &fd, &fd_released_cb);
   grpc_core::ExecCtx::Get()->Flush();
   gpr_mu_lock(g_mu);

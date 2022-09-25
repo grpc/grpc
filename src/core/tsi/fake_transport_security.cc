@@ -481,7 +481,7 @@ static tsi_result fake_zero_copy_grpc_protector_unprotect(
         impl->parsed_frame_size - TSI_FAKE_FRAME_HEADER_SIZE,
         unprotected_slices);
     impl->parsed_frame_size = 0;
-    grpc_slice_buffer_reset_and_unref_internal(&impl->header_sb);
+    grpc_slice_buffer_reset_and_unref(&impl->header_sb);
   }
   if (min_progress_size != nullptr) {
     if (impl->parsed_frame_size > TSI_FAKE_FRAME_HEADER_SIZE) {
@@ -498,8 +498,8 @@ static void fake_zero_copy_grpc_protector_destroy(
   if (self == nullptr) return;
   tsi_fake_zero_copy_grpc_protector* impl =
       reinterpret_cast<tsi_fake_zero_copy_grpc_protector*>(self);
-  grpc_slice_buffer_destroy_internal(&impl->header_sb);
-  grpc_slice_buffer_destroy_internal(&impl->protected_sb);
+  grpc_slice_buffer_destroy(&impl->header_sb);
+  grpc_slice_buffer_destroy(&impl->protected_sb);
   gpr_free(impl);
 }
 

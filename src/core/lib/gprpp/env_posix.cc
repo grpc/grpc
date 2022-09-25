@@ -18,18 +18,30 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/slice.h>
-#include <grpc/slice_buffer.h>
+#ifdef GPR_POSIX_ENV
 
-#include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/slice/slice_internal.h"
+#include <stdlib.h>
 
-void grpc_slice_buffer_destroy(grpc_slice_buffer* sb) {
-  grpc_core::ExecCtx exec_ctx;
-  grpc_slice_buffer_destroy_internal(sb);
+#include "src/core/lib/gprpp/env.h"
+
+namespace grpc_core {
+
+absl::optional<std::string> GetEnv(const char* name) {
+  char* result = getenv(name);
+  if (result == nullptr) return absl::nullopt;
+  return result;
 }
 
-void grpc_slice_buffer_reset_and_unref(grpc_slice_buffer* sb) {
-  grpc_core::ExecCtx exec_ctx;
-  grpc_slice_buffer_reset_and_unref_internal(sb);
+void SetEnv(const char* name, const char* value) {
+  int res = setenv(name, value, 1);
+  if (res != 0) abort();
 }
+
+void UnsetEnv(const char* name) {
+  int res = unsetenv(name);
+  if (res != 0) abort();
+}
+
+}  // namespace grpc_core
+
+#endif /* GPR_POSIX_ENV */

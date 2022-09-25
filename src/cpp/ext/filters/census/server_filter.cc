@@ -106,6 +106,8 @@ void CensusServerCallData::OnDoneRecvInitialMetadataCb(
                           calld->qualified_method_, &calld->context_);
     grpc_census_call_set_context(
         calld->gc_, reinterpret_cast<census_context*>(&calld->context_));
+    ::opencensus::stats::Record({{RpcServerStartedRpcs(), 1}},
+                                {{ServerMethodTagKey(), calld->method_}});
   }
   grpc_core::Closure::Run(DEBUG_LOCATION,
                           calld->initial_on_done_recv_initial_metadata_,

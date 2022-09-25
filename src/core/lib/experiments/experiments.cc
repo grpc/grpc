@@ -46,6 +46,8 @@ const char* const description_new_hpack_huffman_decoder =
     "implementation.";
 const char* const description_event_engine_client =
     "Use EventEngine clients instead of iomgr's grpc_tcp_client";
+const char* const description_monitoring_experiment =
+    "Placeholder experiment to prove/disprove our monitoring is working";
 }  // namespace
 
 namespace grpc_core {
@@ -64,6 +66,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_unconstrained_max_quota_buffer_size, false},
     {"new_hpack_huffman_decoder", description_new_hpack_huffman_decoder, true},
     {"event_engine_client", description_event_engine_client, false},
+    {"monitoring_experiment", description_monitoring_experiment, true},
 };
 
 }  // namespace grpc_core

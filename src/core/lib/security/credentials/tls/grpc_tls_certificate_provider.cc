@@ -44,7 +44,6 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/surface/api_trace.h"
 
 namespace grpc_core {
@@ -120,7 +119,7 @@ gpr_timespec TimeoutSecondsToDeadline(int64_t seconds) {
 
 FileWatcherCertificateProvider::FileWatcherCertificateProvider(
     std::string private_key_path, std::string identity_certificate_path,
-    std::string root_cert_path, unsigned int refresh_interval_sec)
+    std::string root_cert_path, int64_t refresh_interval_sec)
     : private_key_path_(std::move(private_key_path)),
       identity_certificate_path_(std::move(identity_certificate_path)),
       root_cert_path_(std::move(root_cert_path)),
@@ -297,7 +296,7 @@ FileWatcherCertificateProvider::ReadRootCertificatesFromFile(
     return absl::nullopt;
   }
   std::string root_cert(StringViewFromSlice(root_slice));
-  grpc_slice_unref_internal(root_slice);
+  grpc_slice_unref(root_slice);
   return root_cert;
 }
 
@@ -319,7 +318,7 @@ FileWatcherCertificateProvider::ReadIdentityKeyCertPairFromFiles(
     const std::string& identity_certificate_path) {
   struct SliceWrapper {
     grpc_slice slice = grpc_empty_slice();
-    ~SliceWrapper() { grpc_slice_unref_internal(slice); }
+    ~SliceWrapper() { grpc_slice_unref(slice); }
   };
   const int kNumRetryAttempts = 3;
   for (int i = 0; i < kNumRetryAttempts; ++i) {
@@ -402,7 +401,8 @@ absl::StatusOr<bool> PrivateKeyAndCertificateMatch(
   if (cert_chain.empty()) {
     return absl::InvalidArgumentError("Certificate string is empty.");
   }
-  BIO* cert_bio = BIO_new_mem_buf(cert_chain.data(), cert_chain.size());
+  BIO* cert_bio =
+      BIO_new_mem_buf(cert_chain.data(), static_cast<int>(cert_chain.size()));
   if (cert_bio == nullptr) {
     return absl::InvalidArgumentError(
         "Conversion from certificate string to BIO failed.");
@@ -422,7 +422,7 @@ absl::StatusOr<bool> PrivateKeyAndCertificateMatch(
         "Extraction of public key from x.509 certificate failed.");
   }
   BIO* private_key_bio =
-      BIO_new_mem_buf(private_key.data(), private_key.size());
+      BIO_new_mem_buf(private_key.data(), static_cast<int>(private_key.size()));
   if (private_key_bio == nullptr) {
     EVP_PKEY_free(public_evp_pkey);
     return absl::InvalidArgumentError(

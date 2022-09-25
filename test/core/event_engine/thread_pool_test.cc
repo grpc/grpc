@@ -25,24 +25,35 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/notification.h"
+
 namespace grpc_event_engine {
 namespace experimental {
 
 TEST(ThreadPoolTest, CanRunClosure) {
   ThreadPool p(1);
-  absl::Notification n;
+  grpc_core::Notification n;
   p.Add([&n] { n.Notify(); });
   n.WaitForNotification();
 }
 
 TEST(ThreadPoolTest, CanDestroyInsideClosure) {
   auto p = std::make_shared<ThreadPool>(1);
-  p->Add([p]() { std::this_thread::sleep_for(std::chrono::seconds(1)); });
+  grpc_core::Notification n;
+  p->Add([p, &n]() mutable {
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    // This should delete the thread pool and not deadlock
+    p.reset();
+    n.Notify();
+  });
+  // Make sure we're not keeping the thread pool alive from outside the loop
+  p.reset();
+  n.WaitForNotification();
 }
 
 TEST(ThreadPoolTest, CanSurviveFork) {
   ThreadPool p(1);
-  absl::Notification n;
+  grpc_core::Notification n;
   gpr_log(GPR_INFO, "add callback 1");
   p.Add([&n, &p] {
     std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -59,7 +70,7 @@ TEST(ThreadPoolTest, CanSurviveFork) {
   n.WaitForNotification();
   gpr_log(GPR_INFO, "postfork child");
   p.PostforkChild();
-  absl::Notification n2;
+  grpc_core::Notification n2;
   gpr_log(GPR_INFO, "add callback 3");
   p.Add([&n2] {
     gpr_log(GPR_INFO, "notify");
@@ -86,6 +97,21 @@ TEST(ThreadPoolDeathTest, CanDetectStucknessAtFork) {
         p.PrepareFork();
       }(),
       "Waiting for thread pool to idle before forking");
+}
+
+void ScheduleTwiceUntilZero(ThreadPool* p, int n) {
+  if (n == 0) return;
+  p->Add([p, n] {
+    ScheduleTwiceUntilZero(p, n - 1);
+    ScheduleTwiceUntilZero(p, n - 1);
+  });
+}
+
+TEST(ThreadPoolTest, CanStartLotsOfClosures) {
+  ThreadPool p(1);
+  // Our first thread pool implementation tried to create ~1M threads for this
+  // test.
+  ScheduleTwiceUntilZero(&p, 20);
 }
 
 }  // namespace experimental

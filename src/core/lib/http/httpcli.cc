@@ -48,8 +48,6 @@
 #include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
-#include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/handshaker_registry.h"
 #include "src/core/lib/transport/tcp_connect_handshaker.h"
@@ -194,10 +192,10 @@ HttpRequest::~HttpRequest() {
   if (own_endpoint_ && ep_ != nullptr) {
     grpc_endpoint_destroy(ep_);
   }
-  grpc_slice_unref_internal(request_text_);
+  grpc_slice_unref(request_text_);
   grpc_iomgr_unregister_object(&iomgr_obj_);
-  grpc_slice_buffer_destroy_internal(&incoming_);
-  grpc_slice_buffer_destroy_internal(&outgoing_);
+  grpc_slice_buffer_destroy(&incoming_);
+  grpc_slice_buffer_destroy(&outgoing_);
   GRPC_ERROR_UNREF(overall_error_);
   grpc_pollset_set_destroy(pollset_set_);
 }
@@ -290,7 +288,7 @@ void HttpRequest::ContinueDoneWriteAfterScheduleOnExecCtx(
 }
 
 void HttpRequest::StartWrite() {
-  grpc_slice_ref_internal(request_text_);
+  grpc_slice_ref(request_text_);
   grpc_slice_buffer_add(&outgoing_, request_text_);
   Ref().release();  // ref held by pending write
   grpc_endpoint_write(ep_, &outgoing_, &done_write_, nullptr,
@@ -313,7 +311,7 @@ void HttpRequest::OnHandshakeDone(void* arg, grpc_error_handle error) {
     return;
   }
   // Handshake completed, so we own fields in args
-  grpc_slice_buffer_destroy_internal(args->read_buffer);
+  grpc_slice_buffer_destroy(args->read_buffer);
   gpr_free(args->read_buffer);
   req->ep_ = args->endpoint;
   req->handshake_mgr_.reset();
