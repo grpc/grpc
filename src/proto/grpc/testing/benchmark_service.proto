@@ -44,4 +44,7 @@ service BenchmarkService {
 
   //Get the memory usage of process before server is made
   rpc GetBeforeSnapshot(SimpleRequest) returns (MemorySize); 
+
+  //Call gperftool HeapProfilerDump for the server at peak usage
+  rpc MemoryProfilerDump(SimpleRequest) returns (SimpleResponse); 
 }

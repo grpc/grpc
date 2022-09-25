@@ -37,6 +37,10 @@
 #include "test/core/memory_usage/memstats.h"
 #include "test/core/util/test_config.h"
 
+#ifdef GRPC_USE_GPERFTOOLS
+#include "gperftools/heap-profiler.h"
+#endif
+
 class ServerCallbackImpl final
     : public grpc::testing::BenchmarkService::CallbackService {
  public:
@@ -61,6 +65,17 @@ class ServerCallbackImpl final
     reactor->Finish(grpc::Status::OK);
     return reactor;
   }
+  grpc::ServerUnaryReactor* MemoryProfilerDump(
+      grpc::CallbackServerContext* context,
+      const grpc::testing::SimpleRequest* request,
+      grpc::testing::SimpleResponse* response) override {
+#ifdef GRPC_USE_GPERFTOOLS
+    HeapProfilerDump("Server Peak Usage");
+#endif
+    auto* reactor = context->DefaultReactor();
+    reactor->Finish(grpc::Status::OK);
+    return reactor;
+  }
 
  private:
   long before_server_create;
@@ -72,6 +87,7 @@ static void sigint_handler(int /*x*/) { _exit(0); }
 
 ABSL_FLAG(std::string, bind, "", "Bind host:port");
 ABSL_FLAG(bool, secure, false, "Use SSL Credentials");
+ABSL_FLAG(bool, memory_profiling, false, "Run memory profiling");
 
 int main(int argc, char** argv) {
   absl::ParseCommandLine(argc, argv);
@@ -79,6 +95,13 @@ int main(int argc, char** argv) {
   GPR_ASSERT(argc >= 1);
   fake_argv[0] = argv[0];
   grpc::testing::TestEnvironment env(&argc, argv);
+
+// Start gperftools heap profiler
+#ifdef GRPC_USE_GPERFTOOLS
+  if (absl::GetFlag(FLAGS_memory_profiling)) {
+    HeapProfilerStart("/tmp/server.heapprof");
+  }
+#endif
   grpc_init();
   signal(SIGINT, sigint_handler);
   std::string server_address = absl::GetFlag(FLAGS_bind);
@@ -109,5 +132,8 @@ int main(int argc, char** argv) {
 
   // Keep the program running until the server shuts down.
   server->Wait();
+#ifdef GRPC_USE_GPERFTOOLS
+  if (absl::GetFlag(FLAGS_memory_profiling)) HeapProfilerStop();
+#endif
   return 0;
 }
