@@ -268,13 +268,19 @@ class ClientStream : public Orphanable {
   }
 
   void Orphan() override {
-    if (grpc_call_trace.enabled()) {
+    bool finished;
+    {
       MutexLock lock(&mu_);
-      gpr_log(GPR_INFO, "%sDropStream: %s",
-              Activity::current()->DebugTag().c_str(),
-              ActiveOpsString().c_str());
+      if (grpc_call_trace.enabled()) {
+        gpr_log(GPR_INFO, "%sDropStream: %s",
+                Activity::current()->DebugTag().c_str(),
+                ActiveOpsString().c_str());
+      }
+      finished = finished_;
     }
-    if (!finished_) {
+    // If we hadn't already observed the stream to be finished, we need to
+    // cancel it at the transport.
+    if (!finished) {
       IncrementRefCount("shutdown client stream");
       auto* cancel_op =
           GetContext<Arena>()->New<grpc_transport_stream_op_batch>();
@@ -703,7 +709,7 @@ class ClientStream : public Orphanable {
   bool scheduled_push_ ABSL_GUARDED_BY(mu_) = false;
   bool queued_initial_metadata_ ABSL_GUARDED_BY(mu_) = false;
   bool queued_trailing_metadata_ ABSL_GUARDED_BY(mu_) = false;
-  bool finished_ = false;
+  bool finished_ ABSL_GUARDED_BY(mu_) = false;
   CallContext* const call_context_{GetContext<CallContext>()};
   Waker initial_metadata_waker_ ABSL_GUARDED_BY(mu_);
   Waker trailing_metadata_waker_ ABSL_GUARDED_BY(mu_);
