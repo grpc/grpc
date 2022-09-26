@@ -43,7 +43,7 @@ typedef struct {
 
 static void on_metadata_response(void* arg, grpc_error_handle error) {
   synchronizer* sync = static_cast<synchronizer*>(arg);
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     fprintf(stderr, "Fetching token failed: %s\n",
             grpc_error_std_string(error).c_str());
     fflush(stderr);
@@ -103,7 +103,6 @@ int main(int argc, char** argv) {
                                  &sync.on_request_metadata, &error)) {
     // Synchronous response.  Invoke callback directly.
     on_metadata_response(&sync, error);
-    GRPC_ERROR_UNREF(error);
   }
 
   gpr_mu_lock(sync.mu);

@@ -1295,7 +1295,7 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
     CRONET_LOG(GPR_DEBUG, "running: %p  OP_RECV_TRAILING_METADATA", oas);
     grpc_error_handle error = GRPC_ERROR_NONE;
     if (stream_state->state_op_done[OP_CANCEL_ERROR]) {
-      error = GRPC_ERROR_REF(stream_state->cancel_error);
+      error = stream_state->cancel_error;
     } else if (stream_state->state_callback_received[OP_FAILED]) {
       grpc_status_code grpc_error_code =
           cronet_net_error_to_grpc_error(stream_state->net_error);
@@ -1324,16 +1324,16 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
       result = ACTION_TAKEN_NO_CALLBACK;
     }
     stream_state->state_op_done[OP_CANCEL_ERROR] = true;
-    if (GRPC_ERROR_IS_NONE(stream_state->cancel_error)) {
+    if (stream_state->cancel_error.ok()) {
       stream_state->cancel_error =
-          GRPC_ERROR_REF(stream_op->payload->cancel_stream.cancel_error);
+          stream_op->payload->cancel_stream.cancel_error;
     }
   } else if (op_can_be_run(stream_op, s, &oas->state, OP_ON_COMPLETE)) {
     CRONET_LOG(GPR_DEBUG, "running: %p  OP_ON_COMPLETE", oas);
     if (stream_state->state_op_done[OP_CANCEL_ERROR]) {
       if (stream_op->on_complete) {
         grpc_core::ExecCtx::Run(DEBUG_LOCATION, stream_op->on_complete,
-                                GRPC_ERROR_REF(stream_state->cancel_error));
+                                stream_state->cancel_error);
       }
     } else if (stream_state->state_callback_received[OP_FAILED]) {
       if (stream_op->on_complete) {
@@ -1391,10 +1391,7 @@ inline stream_obj::stream_obj(grpc_transport* gt, grpc_stream* gs,
   gpr_mu_init(&mu);
 }
 
-inline stream_obj::~stream_obj() {
-  null_and_maybe_free_read_buffer(this);
-  GRPC_ERROR_UNREF(state.cancel_error);
-}
+inline stream_obj::~stream_obj() { null_and_maybe_free_read_buffer(this); }
 
 static int init_stream(grpc_transport* gt, grpc_stream* gs,
                        grpc_stream_refcount* refcount,

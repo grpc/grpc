@@ -132,7 +132,7 @@ static void session_read_cb(void* arg, /*session */
   ssize_t read_once = 0;
   ssize_t read_total = 0;
 
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     session_shutdown_cb(arg, true);
     return;
   }
@@ -192,7 +192,7 @@ static void listen_cb(void* arg, /*=sv_arg*/
   socklen_t slen = sizeof(ss);
   grpc_fd* listen_em_fd = sv->em_fd;
 
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     listen_shutdown_cb(arg, 1);
     return;
   }
@@ -303,7 +303,7 @@ static void client_session_write(void* arg, /*client */
   int fd = grpc_fd_wrapped_fd(cl->em_fd);
   ssize_t write_once = 0;
 
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     gpr_mu_lock(g_mu);
     client_session_shutdown_cb(arg, 1);
     gpr_mu_unlock(g_mu);

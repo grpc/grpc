@@ -81,7 +81,7 @@ void CallCombiner::TsanClosure(void* arg, grpc_error_handle error) {
   } else {
     lock.reset();
   }
-  Closure::Run(DEBUG_LOCATION, self->original_closure_, GRPC_ERROR_REF(error));
+  Closure::Run(DEBUG_LOCATION, self->original_closure_, error);
   if (lock != nullptr) {
     TSAN_ANNOTATE_RWLOCK_RELEASED(&lock->taken, true);
     bool prev = true;
@@ -192,14 +192,14 @@ void CallCombiner::SetNotifyOnCancel(grpc_closure* closure) {
     grpc_error_handle original_error = DecodeCancelStateError(original_state);
     // If error is set, invoke the cancellation closure immediately.
     // Otherwise, store the new closure.
-    if (!GRPC_ERROR_IS_NONE(original_error)) {
+    if (!original_error.ok()) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_call_combiner_trace)) {
         gpr_log(GPR_INFO,
                 "call_combiner=%p: scheduling notify_on_cancel callback=%p "
                 "for pre-existing cancellation",
                 this, closure);
       }
-      ExecCtx::Run(DEBUG_LOCATION, closure, GRPC_ERROR_REF(original_error));
+      ExecCtx::Run(DEBUG_LOCATION, closure, original_error);
       break;
     } else {
       if (gpr_atm_full_cas(&cancel_state_, original_state,
@@ -233,7 +233,7 @@ void CallCombiner::Cancel(grpc_error_handle error) {
   while (true) {
     gpr_atm original_state = gpr_atm_acq_load(&cancel_state_);
     grpc_error_handle original_error = DecodeCancelStateError(original_state);
-    if (!GRPC_ERROR_IS_NONE(original_error)) {
+    if (!original_error.ok()) {
       internal::StatusFreeHeapPtr(status_ptr);
       break;
     }
@@ -246,7 +246,7 @@ void CallCombiner::Cancel(grpc_error_handle error) {
                   "call_combiner=%p: scheduling notify_on_cancel callback=%p",
                   this, notify_on_cancel);
         }
-        ExecCtx::Run(DEBUG_LOCATION, notify_on_cancel, GRPC_ERROR_REF(error));
+        ExecCtx::Run(DEBUG_LOCATION, notify_on_cancel, error);
       }
       break;
     }

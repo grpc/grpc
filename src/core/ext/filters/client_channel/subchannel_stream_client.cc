@@ -146,7 +146,7 @@ void SubchannelStreamClient::OnRetryTimer(void* arg, grpc_error_handle error) {
   {
     MutexLock lock(&self->mu_);
     self->retry_timer_callback_pending_ = false;
-    if (self->event_handler_ != nullptr && GRPC_ERROR_IS_NONE(error) &&
+    if (self->event_handler_ != nullptr && error.ok() &&
         self->call_state_ == nullptr) {
       if (GPR_UNLIKELY(self->tracer_ != nullptr)) {
         gpr_log(GPR_INFO,
@@ -218,14 +218,12 @@ void SubchannelStreamClient::CallState::StartCallLocked() {
                     this, grpc_schedule_on_exec_ctx);
   call_->SetAfterCallStackDestroy(&after_call_stack_destruction_);
   // Check if creation failed.
-  if (!GRPC_ERROR_IS_NONE(error) ||
-      subchannel_stream_client_->event_handler_ == nullptr) {
+  if (!error.ok() || subchannel_stream_client_->event_handler_ == nullptr) {
     gpr_log(GPR_ERROR,
             "SubchannelStreamClient %p CallState %p: error creating "
             "stream on subchannel (%s); will retry",
             subchannel_stream_client_.get(), this,
             grpc_error_std_string(error).c_str());
-    GRPC_ERROR_UNREF(error);
     CallEndedLocked(/*retry=*/true);
     return;
   }
@@ -240,7 +238,7 @@ void SubchannelStreamClient::CallState::StartCallLocked() {
   send_initial_metadata_.Set(
       HttpPathMetadata(),
       subchannel_stream_client_->event_handler_->GetPathLocked());
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  GPR_ASSERT(error.ok());
   payload_.send_initial_metadata.send_initial_metadata =
       &send_initial_metadata_;
   payload_.send_initial_metadata.peer_string = nullptr;
@@ -418,7 +416,7 @@ void SubchannelStreamClient::CallState::RecvTrailingMetadataReady(
   grpc_status_code status =
       self->recv_trailing_metadata_.get(GrpcStatusMetadata())
           .value_or(GRPC_STATUS_UNKNOWN);
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     grpc_error_get_status(error, Timestamp::InfFuture(), &status,
                           nullptr /* slice */, nullptr /* http_error */,
                           nullptr /* error_string */);
