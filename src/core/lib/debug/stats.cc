@@ -21,18 +21,13 @@
 #include "src/core/lib/debug/stats.h"
 
 #include <inttypes.h>
-#include <string.h>
+#include <stddef.h>
 
 #include <algorithm>
 #include <vector>
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/cpu.h>
-
-#include "src/core/lib/debug/stats_data.h"
 
 namespace grpc_core {
 

@@ -19,6 +19,8 @@
 #include <stdint.h>
 #include <string.h>
 
+#include <algorithm>
+#include <memory>
 #include <string>
 
 #include <grpc/grpc.h>
@@ -26,7 +28,6 @@
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/debug/stats.h"

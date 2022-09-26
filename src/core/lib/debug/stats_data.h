@@ -23,11 +23,15 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stdint.h>
+
 #include <atomic>
+#include <memory>
+
+#include "absl/strings/string_view.h"
 
 #include "src/core/lib/debug/histogram_view.h"
 #include "src/core/lib/gprpp/per_cpu.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 
 namespace grpc_core {
 class HistogramCollector_32768_24;

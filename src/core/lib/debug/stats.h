@@ -21,15 +21,13 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <stddef.h>
+#include <stdint.h>
 
 #include <string>
 #include <vector>
 
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
-
-#include <grpc/support/atm.h>
 
 #include "src/core/lib/debug/histogram_view.h"
 #include "src/core/lib/debug/stats_data.h"

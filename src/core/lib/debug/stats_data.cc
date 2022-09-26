@@ -24,6 +24,8 @@
 
 #include <stdint.h>
 
+#include "absl/memory/memory.h"
+
 namespace grpc_core {
 namespace {
 union DblUint {
