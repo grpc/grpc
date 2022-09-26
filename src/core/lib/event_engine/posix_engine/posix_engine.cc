@@ -33,17 +33,21 @@
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/executor/threaded_executor.h"
-#include "src/core/lib/event_engine/posix_engine/posix_endpoint.h"
 #include "src/core/lib/event_engine/posix_engine/timer.h"
 #include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/event_engine/utils.h"
 #include "src/core/lib/gprpp/sync.h"
+
+#ifdef GRPC_POSIX_SOCKET_TCP
+#include "src/core/lib/event_engine/posix_engine/posix_endpoint.h"
+#endif
 
 using namespace std::chrono_literals;
 
 namespace grpc_event_engine {
 namespace experimental {
 
+#ifdef GRPC_POSIX_SOCKET_TCP
 using grpc_event_engine::posix_engine::CreatePosixEndpoint;
 using grpc_event_engine::posix_engine::EventHandle;
 using grpc_event_engine::posix_engine::PosixEngineClosure;
@@ -260,24 +264,6 @@ void PosixEventEngine::OnConnectFinishInternal(int connection_handle) {
   }
 }
 
-struct PosixEventEngine::ClosureData final : public EventEngine::Closure {
-  absl::AnyInvocable<void()> cb;
-  posix_engine::Timer timer;
-  PosixEventEngine* engine;
-  EventEngine::TaskHandle handle;
-
-  void Run() override {
-    GRPC_EVENT_ENGINE_TRACE("PosixEventEngine:%p executing callback:%s", engine,
-                            HandleToString(handle).c_str());
-    {
-      grpc_core::MutexLock lock(&engine->mu_);
-      engine->known_handles_.erase(handle);
-    }
-    cb();
-    delete this;
-  }
-};
-
 PosixEventEngine::PosixEventEngine(PosixEventPoller* poller)
     : poller_(poller),
       poller_state_(PollerState::kExternal),
@@ -289,12 +275,18 @@ PosixEventEngine::PosixEventEngine()
     : poller_(grpc_event_engine::posix_engine::GetDefaultPoller(this)),
       connection_shards_(std::max(2 * gpr_cpu_num_cores(), 1u)) {
   ++shutdown_ref_;
-  executor_.Run([this]() { PollerWorkInternal(); });
+  if (poller_ != nullptr) {
+    executor_.Run([this]() { PollerWorkInternal(); });
+  }
 }
 
 void PosixEventEngine::PollerWorkInternal() {
   // TODO(vigneshbabu): The timeout specified here is arbitrary. For instance,
   // this can be improved by setting the timeout to the next expiring timer.
+  if (poller_ == nullptr) {
+    std::cout << "Poller is null" << std::endl;
+    fflush(stdout);
+  }
   auto result = poller_->Work(24h, [this]() {
     ++shutdown_ref_;
     executor_.Run([this]() { PollerWorkInternal(); });
@@ -328,6 +320,26 @@ void PosixEventEngine::PollerWorkInternal() {
   }
 }
 
+#endif  // GRPC_POSIX_SOCKET_TCP
+
+struct PosixEventEngine::ClosureData final : public EventEngine::Closure {
+  absl::AnyInvocable<void()> cb;
+  posix_engine::Timer timer;
+  PosixEventEngine* engine;
+  EventEngine::TaskHandle handle;
+
+  void Run() override {
+    GRPC_EVENT_ENGINE_TRACE("PosixEventEngine:%p executing callback:%s", engine,
+                            HandleToString(handle).c_str());
+    {
+      grpc_core::MutexLock lock(&engine->mu_);
+      engine->known_handles_.erase(handle);
+    }
+    cb();
+    delete this;
+  }
+};
+
 PosixEventEngine::~PosixEventEngine() {
   {
     grpc_core::MutexLock lock(&mu_);
@@ -342,6 +354,7 @@ PosixEventEngine::~PosixEventEngine() {
     }
     GPR_ASSERT(GPR_LIKELY(known_handles_.empty()));
   }
+#ifdef GRPC_POSIX_SOCKET_TCP
   // If the poller is external, dont try to shut it down. Otherwise
   // set poller state to PollerState::kShuttingDown.
   if (poller_state_.exchange(PollerState::kShuttingDown) ==
@@ -365,6 +378,7 @@ PosixEventEngine::~PosixEventEngine() {
   }
   // Shutdown the owned poller.
   poller_->Shutdown();
+#endif  // GRPC_POSIX_SOCKET_TCP
 }
 
 bool PosixEventEngine::Cancel(EventEngine::TaskHandle handle) {
@@ -422,6 +436,7 @@ bool PosixEventEngine::IsWorkerThread() {
 }
 
 bool PosixEventEngine::CancelConnect(EventEngine::ConnectionHandle handle) {
+#ifdef GRPC_POSIX_SOCKET_TCP
   int connection_handle = handle.keys[0];
   if (connection_handle <= 0) {
     return false;
@@ -469,12 +484,18 @@ bool PosixEventEngine::CancelConnect(EventEngine::ConnectionHandle handle) {
     delete ac;
   }
   return connection_cancel_success;
+#else   // GRPC_POSIX_SOCKET_TCP
+  GPR_ASSERT(false &&
+             "EventEngine::CancelConnect is not supported on this platform");
+#endif  // GRPC_POSIX_SOCKET_TCP
 }
 
 EventEngine::ConnectionHandle PosixEventEngine::Connect(
     OnConnectCallback on_connect, const ResolvedAddress& addr,
     const EndpointConfig& args, MemoryAllocator memory_allocator,
     Duration timeout) {
+#ifdef GRPC_POSIX_SOCKET_TCP
+  GPR_ASSERT(poller_ != nullptr);
   PosixTcpOptions options = TcpOptionsFromEndpointConfig(args);
   absl::StatusOr<PosixSocketWrapper::PosixSocketCreateResult> socket =
       PosixSocketWrapper::CreateAndPrepareTcpClientSocket(options, addr);
@@ -486,6 +507,9 @@ EventEngine::ConnectionHandle PosixEventEngine::Connect(
   return ConnectInternal((*socket).sock, std::move(on_connect),
                          (*socket).mapped_target_addr,
                          std::move(memory_allocator), options, timeout);
+#else   // GRPC_POSIX_SOCKET_TCP
+  GPR_ASSERT(false && "EventEngine::Connect is not supported on this platform");
+#endif  // GRPC_POSIX_SOCKET_TCP
 }
 
 absl::StatusOr<std::unique_ptr<EventEngine::Listener>>
