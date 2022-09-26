@@ -23,6 +23,7 @@
 
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 #include "upb/arena.h"
 #include "upb/def.h"
 
@@ -55,7 +56,11 @@ class XdsResourceType {
 
   // Result returned by Decode().
   struct DecodeResult {
-    std::string name;
+    // The resource's name, if it can be determined.
+    // If the name is not returned, the resource field should contain a
+    // non-OK status.
+    absl::optional<std::string> name;
+    // The parsed and validated resource, or an error status.
     absl::StatusOr<std::unique_ptr<ResourceData>> resource;
   };
 
@@ -68,13 +73,9 @@ class XdsResourceType {
   virtual absl::string_view v2_type_url() const = 0;
 
   // Decodes and validates a serialized resource proto.
-  // If the resource fails protobuf deserialization, returns non-OK status.
-  // If the deserialized resource fails validation, returns a DecodeResult
-  // whose resource field is set to a non-OK status.
-  // Otherwise, returns a DecodeResult with a valid resource.
-  virtual absl::StatusOr<DecodeResult> Decode(
-      const DecodeContext& context, absl::string_view serialized_resource,
-      bool is_v2) const = 0;
+  virtual DecodeResult Decode(const DecodeContext& context,
+                              absl::string_view serialized_resource,
+                              bool is_v2) const = 0;
 
   // Returns true if r1 and r2 are equal.
   // Must be invoked only on resources returned by this object's Decode()

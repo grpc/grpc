@@ -167,11 +167,11 @@ static void alts_zero_copy_grpc_protector_test_var_destroy(
   if (var == nullptr) {
     return;
   }
-  grpc_slice_buffer_destroy_internal(&var->original_sb);
-  grpc_slice_buffer_destroy_internal(&var->duplicate_sb);
-  grpc_slice_buffer_destroy_internal(&var->staging_sb);
-  grpc_slice_buffer_destroy_internal(&var->protected_sb);
-  grpc_slice_buffer_destroy_internal(&var->unprotected_sb);
+  grpc_slice_buffer_destroy(&var->original_sb);
+  grpc_slice_buffer_destroy(&var->duplicate_sb);
+  grpc_slice_buffer_destroy(&var->staging_sb);
+  grpc_slice_buffer_destroy(&var->protected_sb);
+  grpc_slice_buffer_destroy(&var->unprotected_sb);
   gpr_free(var);
 }
 
@@ -239,7 +239,7 @@ static void seal_unseal_large_buffer(tsi_zero_copy_grpc_protector* sender,
                                 kChannelMaxSize + 1 - kChannelMinSize)) +
                             static_cast<uint32_t>(kChannelMinSize);
     while (var->protected_sb.length > channel_size) {
-      grpc_slice_buffer_reset_and_unref_internal(&var->staging_sb);
+      grpc_slice_buffer_reset_and_unref(&var->staging_sb);
       grpc_slice_buffer_move_first(&var->protected_sb, channel_size,
                                    &var->staging_sb);
       ASSERT_EQ(tsi_zero_copy_grpc_protector_unprotect(

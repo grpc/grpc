@@ -95,7 +95,6 @@
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/service_config/service_config_impl.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -1020,7 +1019,7 @@ LoadBalancingPolicy::PickResult RlsLb::Picker::Pick(PickArgs args) {
     gpr_log(GPR_INFO, "[rlslb %p] picker=%p: request keys: %s",
             lb_policy_.get(), this, key.ToString().c_str());
   }
-  Timestamp now = ExecCtx::Get()->Now();
+  Timestamp now = Timestamp::Now();
   MutexLock lock(&lb_policy_->mu_);
   if (lb_policy_->is_shutdown_) {
     return PickResult::Fail(
@@ -1170,7 +1169,7 @@ RlsLb::Cache::Entry::Entry(RefCountedPtr<RlsLb> lb_policy,
           GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace) ? "CacheEntry" : nullptr),
       lb_policy_(std::move(lb_policy)),
       backoff_state_(MakeCacheEntryBackoff()),
-      min_expiration_time_(ExecCtx::Get()->Now() + kMinExpirationTime),
+      min_expiration_time_(Timestamp::Now() + kMinExpirationTime),
       lru_iterator_(lb_policy_->cache_.lru_list_.insert(
           lb_policy_->cache_.lru_list_.end(), key)) {}
 
@@ -1248,12 +1247,12 @@ void RlsLb::Cache::Entry::ResetBackoff() {
 }
 
 bool RlsLb::Cache::Entry::ShouldRemove() const {
-  Timestamp now = ExecCtx::Get()->Now();
+  Timestamp now = Timestamp::Now();
   return data_expiration_time_ < now && backoff_expiration_time_ < now;
 }
 
 bool RlsLb::Cache::Entry::CanEvict() const {
-  Timestamp now = ExecCtx::Get()->Now();
+  Timestamp now = Timestamp::Now();
   return min_expiration_time_ < now;
 }
 
@@ -1279,7 +1278,7 @@ RlsLb::Cache::Entry::OnRlsResponseLocked(
       backoff_state_ = MakeCacheEntryBackoff();
     }
     backoff_time_ = backoff_state_->NextAttemptTime();
-    Timestamp now = ExecCtx::Get()->Now();
+    Timestamp now = Timestamp::Now();
     backoff_expiration_time_ = now + (backoff_time_ - now) * 2;
     backoff_timer_ = MakeOrphanable<BackoffTimer>(
         Ref(DEBUG_LOCATION, "BackoffTimer"), backoff_time_);
@@ -1288,7 +1287,7 @@ RlsLb::Cache::Entry::OnRlsResponseLocked(
   }
   // Request succeeded, so store the result.
   header_data_ = std::move(response.header_data);
-  Timestamp now = ExecCtx::Get()->Now();
+  Timestamp now = Timestamp::Now();
   data_expiration_time_ = now + lb_policy_->config_->max_age();
   stale_time_ = now + lb_policy_->config_->stale_age();
   status_ = absl::OkStatus();
@@ -1354,7 +1353,7 @@ RlsLb::Cache::Entry::OnRlsResponseLocked(
 //
 
 RlsLb::Cache::Cache(RlsLb* lb_policy) : lb_policy_(lb_policy) {
-  Timestamp now = ExecCtx::Get()->Now();
+  Timestamp now = Timestamp::Now();
   lb_policy_->Ref(DEBUG_LOCATION, "CacheCleanupTimer").release();
   GRPC_CLOSURE_INIT(&timer_callback_, OnCleanupTimer, this, nullptr);
   grpc_timer_init(&cleanup_timer_, now + kCacheCleanupTimerInterval,
@@ -1437,7 +1436,7 @@ void RlsLb::Cache::OnCleanupTimer(void* arg, grpc_error_handle error) {
             ++it;
           }
         }
-        Timestamp now = ExecCtx::Get()->Now();
+        Timestamp now = Timestamp::Now();
         lb_policy.release();
         grpc_timer_init(&cache->cleanup_timer_,
                         now + kCacheCleanupTimerInterval,
@@ -1506,7 +1505,7 @@ void RlsLb::RlsChannel::StateWatcher::OnConnectivityStateChange(
 //
 
 bool RlsLb::RlsChannel::Throttle::ShouldThrottle() {
-  Timestamp now = ExecCtx::Get()->Now();
+  Timestamp now = Timestamp::Now();
   while (!requests_.empty() && now - requests_.front() > window_size_) {
     requests_.pop_front();
   }
@@ -1534,7 +1533,7 @@ bool RlsLb::RlsChannel::Throttle::ShouldThrottle() {
 }
 
 void RlsLb::RlsChannel::Throttle::RegisterResponse(bool success) {
-  Timestamp now = ExecCtx::Get()->Now();
+  Timestamp now = Timestamp::Now();
   requests_.push_back(now);
   if (!success) failures_.push_back(now);
 }
@@ -1714,7 +1713,7 @@ void RlsLb::RlsRequest::StartCallLocked() {
     MutexLock lock(&lb_policy_->mu_);
     if (lb_policy_->is_shutdown_) return;
   }
-  Timestamp now = ExecCtx::Get()->Now();
+  Timestamp now = Timestamp::Now();
   deadline_ = now + lb_policy_->config_->lookup_service_timeout();
   grpc_metadata_array_init(&recv_initial_metadata_);
   grpc_metadata_array_init(&recv_trailing_metadata_);
@@ -1793,7 +1792,7 @@ void RlsLb::RlsRequest::OnRlsCallCompleteLocked(grpc_error_handle error) {
   grpc_byte_buffer_destroy(recv_message_);
   grpc_metadata_array_destroy(&recv_initial_metadata_);
   grpc_metadata_array_destroy(&recv_trailing_metadata_);
-  grpc_slice_unref_internal(status_details_recv_);
+  grpc_slice_unref(status_details_recv_);
   grpc_call_unref(call_);
   call_ = nullptr;
   // Return result to cache.
@@ -1844,7 +1843,7 @@ grpc_byte_buffer* RlsLb::RlsRequest::MakeRequestProto() {
       grpc_lookup_v1_RouteLookupRequest_serialize(req, arena.ptr(), &len);
   grpc_slice send_slice = grpc_slice_from_copied_buffer(buf, len);
   grpc_byte_buffer* byte_buffer = grpc_raw_byte_buffer_create(&send_slice, 1);
-  grpc_slice_unref_internal(send_slice);
+  grpc_slice_unref(send_slice);
   return byte_buffer;
 }
 
@@ -1859,7 +1858,7 @@ RlsLb::ResponseInfo RlsLb::RlsRequest::ParseResponseProto() {
       grpc_lookup_v1_RouteLookupResponse_parse(
           reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(recv_slice)),
           GRPC_SLICE_LENGTH(recv_slice), arena.ptr());
-  grpc_slice_unref_internal(recv_slice);
+  grpc_slice_unref(recv_slice);
   if (response == nullptr) {
     response_info.status = absl::InternalError("cannot parse RLS response");
     return response_info;

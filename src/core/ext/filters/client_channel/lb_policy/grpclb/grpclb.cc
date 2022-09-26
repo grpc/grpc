@@ -135,7 +135,6 @@
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/slice/slice.h"
-#include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
@@ -907,7 +906,7 @@ GrpcLb::BalancerCallState::BalancerCallState(
   const Timestamp deadline =
       grpclb_policy()->lb_call_timeout_ == Duration::Zero()
           ? Timestamp::InfFuture()
-          : ExecCtx::Get()->Now() + grpclb_policy()->lb_call_timeout_;
+          : Timestamp::Now() + grpclb_policy()->lb_call_timeout_;
   lb_call_ = grpc_channel_create_pollset_set_call(
       grpclb_policy()->lb_channel_, nullptr, GRPC_PROPAGATE_DEFAULTS,
       grpclb_policy_->interested_parties(),
@@ -922,7 +921,7 @@ GrpcLb::BalancerCallState::BalancerCallState(
       arena.ptr());
   send_message_payload_ =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
-  grpc_slice_unref_internal(request_payload_slice);
+  grpc_slice_unref(request_payload_slice);
   // Init other data associated with the LB call.
   grpc_metadata_array_init(&lb_initial_metadata_recv_);
   grpc_metadata_array_init(&lb_trailing_metadata_recv_);
@@ -935,7 +934,7 @@ GrpcLb::BalancerCallState::~BalancerCallState() {
   grpc_metadata_array_destroy(&lb_trailing_metadata_recv_);
   grpc_byte_buffer_destroy(send_message_payload_);
   grpc_byte_buffer_destroy(recv_message_payload_);
-  grpc_slice_unref_internal(lb_call_status_details_);
+  grpc_slice_unref(lb_call_status_details_);
 }
 
 void GrpcLb::BalancerCallState::Orphan() {
@@ -1090,7 +1089,7 @@ void GrpcLb::BalancerCallState::SendClientLoadReportLocked() {
       num_calls_finished_known_received, drop_token_counts.get(), arena.ptr());
   send_message_payload_ =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
-  grpc_slice_unref_internal(request_payload_slice);
+  grpc_slice_unref(request_payload_slice);
   // Send the report.
   grpc_op op;
   memset(&op, 0, sizeof(op));
@@ -1293,7 +1292,7 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked() {
       }
     }
   }
-  grpc_slice_unref_internal(response_slice);
+  grpc_slice_unref(response_slice);
   if (!grpclb_policy()->shutting_down_) {
     // Keep listening for serverlist updates.
     grpc_op op;
@@ -1583,7 +1582,7 @@ absl::Status GrpcLb::UpdateLocked(UpdateArgs args) {
   if (is_initial_update) {
     fallback_at_startup_checks_pending_ = true;
     // Start timer.
-    Timestamp deadline = ExecCtx::Get()->Now() + fallback_at_startup_timeout_;
+    Timestamp deadline = Timestamp::Now() + fallback_at_startup_timeout_;
     Ref(DEBUG_LOCATION, "on_fallback_timer").release();  // Ref for callback
     grpc_timer_init(&lb_fallback_timer_, deadline, &lb_on_fallback_);
     // Start watching the channel's connectivity state.  If the channel
@@ -1678,7 +1677,7 @@ void GrpcLb::StartBalancerCallRetryTimerLocked() {
   Timestamp next_try = lb_call_backoff_.NextAttemptTime();
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
     gpr_log(GPR_INFO, "[grpclb %p] Connection to LB server lost...", this);
-    Duration timeout = next_try - ExecCtx::Get()->Now();
+    Duration timeout = next_try - Timestamp::Now();
     if (timeout > Duration::Zero()) {
       gpr_log(GPR_INFO, "[grpclb %p] ... retry_timer_active in %" PRId64 "ms.",
               this, timeout.millis());
@@ -1848,7 +1847,7 @@ void GrpcLb::CreateOrUpdateChildPolicyLocked() {
 
 void GrpcLb::CacheDeletedSubchannelLocked(
     RefCountedPtr<SubchannelInterface> subchannel) {
-  Timestamp deletion_time = ExecCtx::Get()->Now() + subchannel_cache_interval_;
+  Timestamp deletion_time = Timestamp::Now() + subchannel_cache_interval_;
   cached_subchannels_[deletion_time].push_back(std::move(subchannel));
   if (!subchannel_cache_timer_pending_) {
     Ref(DEBUG_LOCATION, "OnSubchannelCacheTimer").release();

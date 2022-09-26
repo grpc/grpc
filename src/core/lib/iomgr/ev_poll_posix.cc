@@ -41,7 +41,6 @@
 
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/murmur_hash.h"
-#include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/block_annotate.h"
@@ -714,8 +713,8 @@ static void fd_end_poll(grpc_fd_watcher* watcher, int got_read, int got_write) {
  * pollset_posix.c
  */
 
-static GPR_THREAD_LOCAL(grpc_pollset*) g_current_thread_poller;
-static GPR_THREAD_LOCAL(grpc_pollset_worker*) g_current_thread_worker;
+static thread_local grpc_pollset* g_current_thread_poller;
+static thread_local grpc_pollset_worker* g_current_thread_worker;
 
 static void remove_worker(grpc_pollset* /*p*/, grpc_pollset_worker* worker) {
   worker->prev->next = worker->next;
@@ -947,7 +946,7 @@ static grpc_error_handle pollset_work(grpc_pollset* pollset,
   while (keep_polling) {
     keep_polling = 0;
     if (!pollset->kicked_without_pollers ||
-        deadline <= grpc_core::ExecCtx::Get()->Now()) {
+        deadline <= grpc_core::Timestamp::Now()) {
       if (!added_worker) {
         push_front_worker(pollset, &worker);
         added_worker = 1;
@@ -1145,7 +1144,7 @@ static void pollset_shutdown(grpc_pollset* pollset, grpc_closure* closure) {
 static int poll_deadline_to_millis_timeout(grpc_core::Timestamp deadline) {
   if (deadline == grpc_core::Timestamp::InfFuture()) return -1;
   if (deadline.is_process_epoch()) return 0;
-  int64_t n = (deadline - grpc_core::ExecCtx::Get()->Now()).millis();
+  int64_t n = (deadline - grpc_core::Timestamp::Now()).millis();
   if (n < 0) return 0;
   if (n > INT_MAX) return -1;
   return static_cast<int>(n);

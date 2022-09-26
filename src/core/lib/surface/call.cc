@@ -66,7 +66,6 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call_test_only.h"
 #include "src/core/lib/surface/channel.h"
@@ -549,7 +548,7 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
     call->final_op_.client.status = nullptr;
     call->final_op_.client.error_string = nullptr;
     GRPC_STATS_INC_CLIENT_CALLS_CREATED();
-    path = grpc_slice_ref_internal(args->path->c_slice());
+    path = grpc_slice_ref(args->path->c_slice());
     call->send_initial_metadata_.Set(HttpPathMetadata(),
                                      std::move(*args->path));
     if (args->authority.has_value()) {
@@ -613,7 +612,7 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
     }
   }
 
-  grpc_slice_unref_internal(path);
+  grpc_slice_unref(path);
 
   return error;
 }
@@ -849,7 +848,7 @@ bool FilterStackCall::PrepareApplicationMetadata(size_t count,
       continue;
     }
     batch->Append(StringViewFromSlice(md->key),
-                  Slice(grpc_slice_ref_internal(md->value)),
+                  Slice(grpc_slice_ref(md->value)),
                   [md](absl::string_view error, const Slice& value) {
                     gpr_log(GPR_DEBUG, "Append error: %s",
                             absl::StrCat("key=", StringViewFromSlice(md->key),
