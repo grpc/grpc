@@ -262,14 +262,13 @@ struct RbacConfig {
             }
           };
 
-          Rbac::Permission permission;
+          std::unique_ptr<Rbac::Permission> permission;
 
           static std::vector<std::unique_ptr<Rbac::Permission>>
           MakeRbacPermissionList(std::vector<Permission>&& permission_list) {
             std::vector<std::unique_ptr<Rbac::Permission>> permissions;
             for (auto& rule : permission_list) {
-              permissions.emplace_back(absl::make_unique<Rbac::Permission>(
-                  std::move(rule.permission)));
+              permissions.emplace_back(std::move(rule.permission));
             }
             return permissions;
           };
@@ -286,79 +285,86 @@ struct RbacConfig {
             auto any = LoadJsonObjectField<bool>(
                 json.object_value(), args, "any", errors, /*required=*/false);
             if (any.has_value()) {
-              permission = Rbac::Permission::MakeAnyPermission();
+              permission = absl::make_unique<Rbac::Permission>(
+                  Rbac::Permission::MakeAnyPermission());
               return;
             }
             auto header = LoadJsonObjectField<HeaderMatch>(
                 json.object_value(), args, "header", errors,
                 /*required=*/false);
             if (header.has_value()) {
-              permission =
-                  Rbac::Permission::MakeHeaderPermission(header->matcher);
+              permission = absl::make_unique<Rbac::Permission>(
+                  Rbac::Permission::MakeHeaderPermission(
+                      std::move(header->matcher)));
               return;
             }
             auto url_path = LoadJsonObjectField<PathMatch>(
                 json.object_value(), args, "urlPath", errors,
                 /*required=*/false);
             if (url_path.has_value()) {
-              permission =
-                  Rbac::Permission::MakePathPermission(url_path->path.matcher);
+              permission = absl::make_unique<Rbac::Permission>(
+                  Rbac::Permission::MakePathPermission(url_path->path.matcher));
               return;
             }
             auto destination_ip = LoadJsonObjectField<CidrRange>(
                 json.object_value(), args, "destinationIp", errors,
                 /*required=*/false);
             if (destination_ip.has_value()) {
-              permission = Rbac::Permission::MakeDestIpPermission(
-                  std::move(destination_ip->cidr_range));
+              permission = absl::make_unique<Rbac::Permission>(
+                  Rbac::Permission::MakeDestIpPermission(
+                      std::move(destination_ip->cidr_range)));
               return;
             }
             auto destination_port = LoadJsonObjectField<uint32_t>(
                 json.object_value(), args, "destinationPort", errors,
                 /*required=*/false);
             if (destination_port.has_value()) {
-              permission =
-                  Rbac::Permission::MakeDestPortPermission(*destination_port);
+              permission = absl::make_unique<Rbac::Permission>(
+                  Rbac::Permission::MakeDestPortPermission(*destination_port));
               return;
             }
             auto metadata = LoadJsonObjectField<Metadata>(
                 json.object_value(), args, "metadata", errors,
                 /*required=*/false);
             if (metadata.has_value()) {
-              permission =
-                  Rbac::Permission::MakeMetadataPermission(metadata->invert);
+              permission = absl::make_unique<Rbac::Permission>(
+                  Rbac::Permission::MakeMetadataPermission(metadata->invert));
               return;
             }
             auto requested_server_name = LoadJsonObjectField<StringMatch>(
                 json.object_value(), args, "requestedServerName", errors,
                 /*required=*/false);
             if (requested_server_name.has_value()) {
-              permission = Rbac::Permission::MakeReqServerNamePermission(
-                  requested_server_name->matcher);
+              permission = absl::make_unique<Rbac::Permission>(
+                  Rbac::Permission::MakeReqServerNamePermission(
+                      std::move(requested_server_name->matcher)));
               return;
             }
             auto rules = LoadJsonObjectField<PermissionList>(
                 json.object_value(), args, "andRules", errors,
                 /*required=*/false);
             if (rules.has_value()) {
-              permission = Rbac::Permission::MakeAndPermission(
-                  MakeRbacPermissionList(std::move(rules->rules)));
+              permission = absl::make_unique<Rbac::Permission>(
+                  Rbac::Permission::MakeAndPermission(
+                      MakeRbacPermissionList(std::move(rules->rules))));
               return;
             }
             rules = LoadJsonObjectField<PermissionList>(json.object_value(),
                                                         args, "orRules", errors,
                                                         /*required=*/false);
             if (rules.has_value()) {
-              permission = Rbac::Permission::MakeOrPermission(
-                  MakeRbacPermissionList(std::move(rules->rules)));
+              permission = absl::make_unique<Rbac::Permission>(
+                  Rbac::Permission::MakeOrPermission(
+                      MakeRbacPermissionList(std::move(rules->rules))));
               return;
             }
             auto not_rule = LoadJsonObjectField<Permission>(
                 json.object_value(), args, "notRule", errors,
                 /*required=*/false);
             if (not_rule.has_value()) {
-              permission = Rbac::Permission::MakeNotPermission(
-                  std::move(not_rule->permission));
+              permission = absl::make_unique<Rbac::Permission>(
+                  Rbac::Permission::MakeNotPermission(
+                      std::move(*not_rule->permission)));
               return;
             }
             if (errors->size() == original_error_size) {
@@ -392,14 +398,13 @@ struct RbacConfig {
             }
           };
 
-          Rbac::Principal principal;
+          std::unique_ptr<Rbac::Principal> principal;
 
           static std::vector<std::unique_ptr<Rbac::Principal>>
           MakeRbacPrincipalList(std::vector<Principal>&& principal_list) {
             std::vector<std::unique_ptr<Rbac::Principal>> principals;
             for (auto& id : principal_list) {
-              principals.emplace_back(
-                  absl::make_unique<Rbac::Principal>(std::move(id.principal)));
+              principals.emplace_back(std::move(id.principal));
             }
             return principals;
           }
@@ -416,7 +421,8 @@ struct RbacConfig {
             auto any = LoadJsonObjectField<bool>(
                 json.object_value(), args, "any", errors, /*required=*/false);
             if (any.has_value()) {
-              principal = Rbac::Principal::MakeAnyPrincipal();
+              principal = absl::make_unique<Rbac::Principal>(
+                  Rbac::Principal::MakeAnyPrincipal());
               return;
             }
             auto authenticated = LoadJsonObjectField<Authenticated>(
@@ -424,11 +430,13 @@ struct RbacConfig {
                 /*required=*/false);
             if (authenticated.has_value()) {
               if (authenticated->principal_name.has_value()) {
-                principal = Rbac::Principal::MakeAuthenticatedPrincipal(
-                    std::move(authenticated->principal_name->matcher));
+                principal = absl::make_unique<Rbac::Principal>(
+                    Rbac::Principal::MakeAuthenticatedPrincipal(
+                        std::move(authenticated->principal_name->matcher)));
               } else {
                 // No principalName found. Match for all users.
-                principal = Rbac::Principal::MakeAnyPrincipal();
+                principal = absl::make_unique<Rbac::Principal>(
+                    Rbac::Principal::MakeAnyPrincipal());
               }
               return;
             }
@@ -436,71 +444,80 @@ struct RbacConfig {
                 json.object_value(), args, "sourceIp", errors,
                 /*required=*/false);
             if (cidr_range.has_value()) {
-              principal = Rbac::Principal::MakeSourceIpPrincipal(
-                  std::move(cidr_range->cidr_range));
+              principal = absl::make_unique<Rbac::Principal>(
+                  Rbac::Principal::MakeSourceIpPrincipal(
+                      std::move(cidr_range->cidr_range)));
               return;
             }
             cidr_range = LoadJsonObjectField<CidrRange>(
                 json.object_value(), args, "directRemoteIp", errors,
                 /*required=*/false);
             if (cidr_range.has_value()) {
-              principal = Rbac::Principal::MakeDirectRemoteIpPrincipal(
-                  std::move(cidr_range->cidr_range));
+              principal = absl::make_unique<Rbac::Principal>(
+                  Rbac::Principal::MakeDirectRemoteIpPrincipal(
+                      std::move(cidr_range->cidr_range)));
               return;
             }
             cidr_range = LoadJsonObjectField<CidrRange>(
                 json.object_value(), args, "remoteIp", errors,
                 /*required=*/false);
             if (cidr_range.has_value()) {
-              principal = Rbac::Principal::MakeRemoteIpPrincipal(
-                  std::move(cidr_range->cidr_range));
+              principal = absl::make_unique<Rbac::Principal>(
+                  Rbac::Principal::MakeRemoteIpPrincipal(
+                      std::move(cidr_range->cidr_range)));
               return;
             }
             auto header = LoadJsonObjectField<HeaderMatch>(
                 json.object_value(), args, "header", errors,
                 /*required=*/false);
             if (header.has_value()) {
-              principal = Rbac::Principal::MakeHeaderPrincipal(header->matcher);
+              principal = absl::make_unique<Rbac::Principal>(
+                  Rbac::Principal::MakeHeaderPrincipal(
+                      std::move(header->matcher)));
               return;
             }
             auto url_path = LoadJsonObjectField<PathMatch>(
                 json.object_value(), args, "urlPath", errors,
                 /*required=*/false);
             if (url_path.has_value()) {
-              principal =
-                  Rbac::Principal::MakePathPrincipal(url_path->path.matcher);
+              principal = absl::make_unique<Rbac::Principal>(
+                  Rbac::Principal::MakePathPrincipal(
+                      std::move(url_path->path.matcher)));
               return;
             }
             auto metadata = LoadJsonObjectField<Metadata>(
                 json.object_value(), args, "metadata", errors,
                 /*required=*/false);
             if (metadata.has_value()) {
-              principal =
-                  Rbac::Principal::MakeMetadataPrincipal(metadata->invert);
+              principal = absl::make_unique<Rbac::Principal>(
+                  Rbac::Principal::MakeMetadataPrincipal(metadata->invert));
               return;
             }
             auto ids = LoadJsonObjectField<PrincipalList>(
                 json.object_value(), args, "andIds", errors,
                 /*required=*/false);
             if (ids.has_value()) {
-              principal = Rbac::Principal::MakeAndPrincipal(
-                  MakeRbacPrincipalList(std::move(ids->ids)));
+              principal = absl::make_unique<Rbac::Principal>(
+                  Rbac::Principal::MakeAndPrincipal(
+                      MakeRbacPrincipalList(std::move(ids->ids))));
               return;
             }
             ids = LoadJsonObjectField<PrincipalList>(json.object_value(), args,
                                                      "orIds", errors,
                                                      /*required=*/false);
             if (ids.has_value()) {
-              principal = Rbac::Principal::MakeOrPrincipal(
-                  MakeRbacPrincipalList(std::move(ids->ids)));
+              principal = absl::make_unique<Rbac::Principal>(
+                  Rbac::Principal::MakeOrPrincipal(
+                      MakeRbacPrincipalList(std::move(ids->ids))));
               return;
             }
             auto not_rule = LoadJsonObjectField<Principal>(
                 json.object_value(), args, "notId", errors,
                 /*required=*/false);
             if (not_rule.has_value()) {
-              principal = Rbac::Principal::MakeNotPrincipal(
-                  std::move(not_rule->principal));
+              principal = absl::make_unique<Rbac::Principal>(
+                  Rbac::Principal::MakeNotPrincipal(
+                      std::move(*not_rule->principal)));
               return;
             }
             if (errors->size() == original_error_size) {
