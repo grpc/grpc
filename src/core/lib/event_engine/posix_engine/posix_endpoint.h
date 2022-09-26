@@ -17,6 +17,8 @@
 
 #include <grpc/support/port_platform.h>
 
+// IWYU pragma: no_include <bits/types/struct_iovec.h>
+
 #include <atomic>
 #include <cstdint>
 #include <memory>
