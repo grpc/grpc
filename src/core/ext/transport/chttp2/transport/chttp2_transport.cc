@@ -81,7 +81,6 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/transport/bdp_estimator.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
@@ -231,9 +230,9 @@ grpc_chttp2_transport::~grpc_chttp2_transport() {
 
   grpc_endpoint_destroy(ep);
 
-  grpc_slice_buffer_destroy_internal(&qbuf);
+  grpc_slice_buffer_destroy(&qbuf);
 
-  grpc_slice_buffer_destroy_internal(&outbuf);
+  grpc_slice_buffer_destroy(&outbuf);
 
   grpc_error_handle error =
       GRPC_ERROR_CREATE_FROM_STATIC_STRING("Transport destroyed");
@@ -243,7 +242,7 @@ grpc_chttp2_transport::~grpc_chttp2_transport() {
   GRPC_ERROR_UNREF(error);
   cl = nullptr;
 
-  grpc_slice_buffer_destroy_internal(&read_buffer);
+  grpc_slice_buffer_destroy(&read_buffer);
   grpc_chttp2_goaway_parser_destroy(&goaway_parser);
 
   for (i = 0; i < STREAM_LIST_COUNT; i++) {
@@ -442,7 +441,7 @@ static void init_keepalive_pings_if_enabled(grpc_chttp2_transport* t) {
     GRPC_CLOSURE_INIT(&t->init_keepalive_ping_locked, init_keepalive_ping, t,
                       grpc_schedule_on_exec_ctx);
     grpc_timer_init(&t->keepalive_ping_timer,
-                    grpc_core::ExecCtx::Get()->Now() + t->keepalive_time,
+                    grpc_core::Timestamp::Now() + t->keepalive_time,
                     &t->init_keepalive_ping_locked);
   } else {
     // Use GRPC_CHTTP2_KEEPALIVE_STATE_DISABLED to indicate there are no
@@ -684,7 +683,7 @@ grpc_chttp2_stream::~grpc_chttp2_stream() {
     GPR_ASSERT(grpc_chttp2_stream_map_find(&t->stream_map, id) == nullptr);
   }
 
-  grpc_slice_buffer_destroy_internal(&frame_storage);
+  grpc_slice_buffer_destroy(&frame_storage);
 
   for (int i = 0; i < STREAM_LIST_COUNT; i++) {
     if (GPR_UNLIKELY(included.is_set(i))) {
@@ -699,7 +698,7 @@ grpc_chttp2_stream::~grpc_chttp2_stream() {
   GPR_ASSERT(recv_initial_metadata_ready == nullptr);
   GPR_ASSERT(recv_message_ready == nullptr);
   GPR_ASSERT(recv_trailing_metadata_finished == nullptr);
-  grpc_slice_buffer_destroy_internal(&flow_controlled_buffer);
+  grpc_slice_buffer_destroy(&flow_controlled_buffer);
   GRPC_ERROR_UNREF(read_closed_error);
   GRPC_ERROR_UNREF(write_closed_error);
   GRPC_CHTTP2_UNREF_TRANSPORT(t, "stream");
@@ -1337,7 +1336,7 @@ static void perform_stream_op_locked(void* stream_op,
           slices + op_payload->send_message.send_message->Count();
       for (grpc_slice* slice = slices; slice != end; slice++) {
         grpc_slice_buffer_add(&s->flow_controlled_buffer,
-                              grpc_slice_ref_internal(*slice));
+                              grpc_slice_ref(*slice));
       }
 
       int64_t notify_offset = s->next_message_end_offset;
@@ -1602,8 +1601,7 @@ class GracefulGoaway : public grpc_core::RefCounted<GracefulGoaway> {
     grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_GOAWAY_SENT);
     Ref().release();  // Ref for the timer
     grpc_timer_init(
-        &timer_,
-        grpc_core::ExecCtx::Get()->Now() + grpc_core::Duration::Seconds(20),
+        &timer_, grpc_core::Timestamp::Now() + grpc_core::Duration::Seconds(20),
         GRPC_CLOSURE_INIT(&on_timer_, OnTimer, this, nullptr));
   }
 
@@ -1796,7 +1794,7 @@ void grpc_chttp2_maybe_complete_recv_initial_metadata(grpc_chttp2_transport* t,
   if (s->recv_initial_metadata_ready != nullptr &&
       s->published_metadata[0] != GRPC_METADATA_NOT_PUBLISHED) {
     if (s->seen_error) {
-      grpc_slice_buffer_reset_and_unref_internal(&s->frame_storage);
+      grpc_slice_buffer_reset_and_unref(&s->frame_storage);
     }
     *s->recv_initial_metadata = std::move(s->initial_metadata_buffer);
     s->recv_initial_metadata->Set(grpc_core::PeerString(), t->peer_string);
@@ -1825,7 +1823,7 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* t,
   // exited out of at any point by returning.
   [&]() {
     if (s->final_metadata_requested && s->seen_error) {
-      grpc_slice_buffer_reset_and_unref_internal(&s->frame_storage);
+      grpc_slice_buffer_reset_and_unref(&s->frame_storage);
       s->recv_message->reset();
     } else {
       if (s->frame_storage.length != 0) {
@@ -1836,7 +1834,7 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* t,
               s, &min_progress_size, &**s->recv_message, s->recv_message_flags);
           if (absl::holds_alternative<grpc_core::Pending>(r)) {
             if (s->read_closed) {
-              grpc_slice_buffer_reset_and_unref_internal(&s->frame_storage);
+              grpc_slice_buffer_reset_and_unref(&s->frame_storage);
               s->recv_message->reset();
               break;
             } else {
@@ -1847,7 +1845,7 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* t,
             error = absl::get<grpc_error_handle>(r);
             if (!GRPC_ERROR_IS_NONE(error)) {
               s->seen_error = true;
-              grpc_slice_buffer_reset_and_unref_internal(&s->frame_storage);
+              grpc_slice_buffer_reset_and_unref(&s->frame_storage);
               break;
             } else {
               if (t->channelz_socket != nullptr) {
@@ -1888,7 +1886,7 @@ void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_chttp2_transport* t,
   if (s->recv_trailing_metadata_finished != nullptr && s->read_closed &&
       s->write_closed) {
     if (s->seen_error || !t->is_client) {
-      grpc_slice_buffer_reset_and_unref_internal(&s->frame_storage);
+      grpc_slice_buffer_reset_and_unref(&s->frame_storage);
     }
     if (s->read_closed && s->frame_storage.length == 0 &&
         s->recv_trailing_metadata_finished != nullptr) {
@@ -2434,7 +2432,7 @@ static void read_action_locked(void* tp, grpc_error_handle error) {
       grpc_timer_cancel(&t->keepalive_ping_timer);
     }
   }
-  grpc_slice_buffer_reset_and_unref_internal(&t->read_buffer);
+  grpc_slice_buffer_reset_and_unref(&t->read_buffer);
 
   if (keep_reading) {
     if (t->num_pending_induced_frames >= DEFAULT_MAX_PENDING_INDUCED_FRAMES) {
@@ -2647,7 +2645,7 @@ static void init_keepalive_ping_locked(void* arg, grpc_error_handle error) {
       GRPC_CLOSURE_INIT(&t->init_keepalive_ping_locked, init_keepalive_ping, t,
                         grpc_schedule_on_exec_ctx);
       grpc_timer_init(&t->keepalive_ping_timer,
-                      grpc_core::ExecCtx::Get()->Now() + t->keepalive_time,
+                      grpc_core::Timestamp::Now() + t->keepalive_time,
                       &t->init_keepalive_ping_locked);
     }
   } else if (error == GRPC_ERROR_CANCELLED) {
@@ -2661,7 +2659,7 @@ static void init_keepalive_ping_locked(void* arg, grpc_error_handle error) {
     GRPC_CLOSURE_INIT(&t->init_keepalive_ping_locked, init_keepalive_ping, t,
                       grpc_schedule_on_exec_ctx);
     grpc_timer_init(&t->keepalive_ping_timer,
-                    grpc_core::ExecCtx::Get()->Now() + t->keepalive_time,
+                    grpc_core::Timestamp::Now() + t->keepalive_time,
                     &t->init_keepalive_ping_locked);
   }
   GRPC_CHTTP2_UNREF_TRANSPORT(t, "init keepalive ping");
@@ -2690,7 +2688,7 @@ static void start_keepalive_ping_locked(void* arg, grpc_error_handle error) {
   GRPC_CLOSURE_INIT(&t->keepalive_watchdog_fired_locked,
                     keepalive_watchdog_fired, t, grpc_schedule_on_exec_ctx);
   grpc_timer_init(&t->keepalive_watchdog_timer,
-                  grpc_core::ExecCtx::Get()->Now() + t->keepalive_timeout,
+                  grpc_core::Timestamp::Now() + t->keepalive_timeout,
                   &t->keepalive_watchdog_fired_locked);
   t->keepalive_ping_started = true;
 }
@@ -2726,7 +2724,7 @@ static void finish_keepalive_ping_locked(void* arg, grpc_error_handle error) {
       GRPC_CLOSURE_INIT(&t->init_keepalive_ping_locked, init_keepalive_ping, t,
                         grpc_schedule_on_exec_ctx);
       grpc_timer_init(&t->keepalive_ping_timer,
-                      grpc_core::ExecCtx::Get()->Now() + t->keepalive_time,
+                      grpc_core::Timestamp::Now() + t->keepalive_time,
                       &t->init_keepalive_ping_locked);
     }
   }

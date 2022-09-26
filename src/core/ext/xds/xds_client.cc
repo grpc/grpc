@@ -46,6 +46,7 @@
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 #define GRPC_XDS_INITIAL_CONNECT_BACKOFF_SECONDS 1
@@ -162,7 +163,7 @@ class XdsClient::ChannelState::AdsCallState
     XdsClient* xds_client() const { return ads_call_state_->xds_client(); }
 
     AdsCallState* ads_call_state_;
-    const Timestamp update_time_ = ExecCtx::Get()->Now();
+    const Timestamp update_time_ = Timestamp::Now();
     Result result_;
   };
 
@@ -626,7 +627,7 @@ void XdsClient::ChannelState::RetryableCall<T>::StartRetryTimerLocked() {
   if (shutting_down_) return;
   const Timestamp next_attempt_time = backoff_.NextAttemptTime();
   const Duration timeout =
-      std::max(next_attempt_time - ExecCtx::Get()->Now(), Duration::Zero());
+      std::max(next_attempt_time - Timestamp::Now(), Duration::Zero());
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO,
             "[xds_client %p] xds server %s: call attempt failed; "
@@ -1956,7 +1957,7 @@ XdsApi::ClusterLoadReportMap XdsClient::BuildLoadReportSnapshotLocked(
       }
     }
     // Compute load report interval.
-    const Timestamp now = ExecCtx::Get()->Now();
+    const Timestamp now = Timestamp::Now();
     snapshot.load_report_interval = now - load_report.last_report_time;
     load_report.last_report_time = now;
     // Record snapshot.

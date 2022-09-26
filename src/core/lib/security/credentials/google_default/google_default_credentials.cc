@@ -66,7 +66,6 @@
 #include "src/core/lib/security/credentials/jwt/jwt_credentials.h"
 #include "src/core/lib/security/credentials/oauth2/oauth2_credentials.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/uri/uri_parser.h"
@@ -218,7 +217,7 @@ static int is_metadata_server_reachable() {
   GPR_ASSERT(uri.ok());  // params are hardcoded
   auto http_request = grpc_core::HttpRequest::Get(
       std::move(*uri), nullptr /* channel args */, &detector.pollent, &request,
-      grpc_core::ExecCtx::Get()->Now() + max_detection_delay,
+      grpc_core::Timestamp::Now() + max_detection_delay,
       GRPC_CLOSURE_CREATE(on_metadata_server_detection_http_response, &detector,
                           grpc_schedule_on_exec_ctx),
       &detector.response,
@@ -367,7 +366,7 @@ static grpc_error_handle create_default_creds_from_path(
 
 end:
   GPR_ASSERT((result == nullptr) + (GRPC_ERROR_IS_NONE(error)) == 1);
-  grpc_slice_unref_internal(creds_data);
+  grpc_slice_unref(creds_data);
   *creds = result;
   return error;
 }

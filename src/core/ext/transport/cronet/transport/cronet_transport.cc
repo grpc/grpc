@@ -54,7 +54,6 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
-#include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/surface/validate_metadata.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
@@ -770,7 +769,7 @@ class CronetMetadataEncoder {
     if (grpc_is_binary_header_internal(key_slice.c_slice())) {
       grpc_slice wire_value = grpc_chttp2_base64_encode(value_slice.c_slice());
       value = grpc_slice_to_c_string(wire_value);
-      grpc_slice_unref_internal(wire_value);
+      grpc_slice_unref(wire_value);
     } else {
       value = grpc_slice_to_c_string(value_slice.c_slice());
     }

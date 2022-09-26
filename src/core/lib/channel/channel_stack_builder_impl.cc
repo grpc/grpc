@@ -72,8 +72,8 @@ ChannelStackBuilderImpl::Build() {
         grpc_channel_stack_destroy(stk);
         gpr_free(stk);
       },
-      channel_stack, stack->data(), stack->size(), final_args.ToC().get(),
-      name(), channel_stack);
+      channel_stack, stack->data(), stack->size(), final_args, name(),
+      channel_stack);
 
   if (!GRPC_ERROR_IS_NONE(error)) {
     grpc_channel_stack_destroy(channel_stack);

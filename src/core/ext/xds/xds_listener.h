@@ -30,7 +30,6 @@
 #include <string>
 #include <vector>
 
-#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "envoy/config/listener/v3/listener.upbdefs.h"

@@ -51,7 +51,6 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/tcp_server.h"
-#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/handshaker.h"
 #include "src/core/lib/transport/handshaker_factory.h"
 #include "src/core/lib/transport/handshaker_registry.h"
@@ -103,10 +102,10 @@ HttpConnectHandshaker::~HttpConnectHandshaker() {
     grpc_endpoint_destroy(endpoint_to_destroy_);
   }
   if (read_buffer_to_destroy_ != nullptr) {
-    grpc_slice_buffer_destroy_internal(read_buffer_to_destroy_);
+    grpc_slice_buffer_destroy(read_buffer_to_destroy_);
     gpr_free(read_buffer_to_destroy_);
   }
-  grpc_slice_buffer_destroy_internal(&write_buffer_);
+  grpc_slice_buffer_destroy(&write_buffer_);
   grpc_http_parser_destroy(&http_parser_);
   grpc_http_response_destroy(&http_response_);
 }
@@ -230,7 +229,7 @@ void HttpConnectHandshaker::OnReadDone(void* arg, grpc_error_handle error) {
                                &handshaker->args_->read_buffer->slices[i + 1],
                                handshaker->args_->read_buffer->count - i - 1);
         grpc_slice_buffer_swap(handshaker->args_->read_buffer, &tmp_buffer);
-        grpc_slice_buffer_destroy_internal(&tmp_buffer);
+        grpc_slice_buffer_destroy(&tmp_buffer);
         break;
       }
     }
@@ -247,7 +246,7 @@ void HttpConnectHandshaker::OnReadDone(void* arg, grpc_error_handle error) {
   // complete (e.g., handling chunked transfer encoding or looking
   // at the Content-Length: header).
   if (handshaker->http_parser_.state != GRPC_HTTP_BODY) {
-    grpc_slice_buffer_reset_and_unref_internal(handshaker->args_->read_buffer);
+    grpc_slice_buffer_reset_and_unref(handshaker->args_->read_buffer);
     grpc_endpoint_read(
         handshaker->args_->endpoint, handshaker->args_->read_buffer,
         GRPC_CLOSURE_INIT(&handshaker->response_read_closure_,
