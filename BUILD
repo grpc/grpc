@@ -3122,8 +3122,11 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/debug/stats_data.h",
     ],
+    external_deps = [
+        "absl/memory",
+        "absl/strings",
+    ],
     deps = [
-        "exec_ctx",
         "gpr_platform",
         "histogram_view",
         "per_cpu",
@@ -3144,7 +3147,6 @@ grpc_cc_library(
     ],
     deps = [
         "gpr",
-        "gpr_atm",
         "histogram_view",
         "no_destruct",
         "stats_data",
