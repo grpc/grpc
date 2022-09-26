@@ -135,6 +135,8 @@ ${SETARCH_CMD} "${PYTHON}" tools/distrib/python/grpcio_tools/setup.py bdist_whee
 if [ "$GRPC_SKIP_TWINE_CHECK" == "" ]
 then
   # Install virtualenv if it isn't already available.
+  # TODO(jtattermusch): cleanup the virtualenv version fallback logic.
+  "${PYTHON}" -m pip install virtualenv
   "${PYTHON}" -m virtualenv venv || { "${PYTHON}" -m pip install virtualenv==20.0.23 && "${PYTHON}" -m virtualenv venv; }
   # Ensure the generated artifacts are valid using "twine check"
   venv/bin/python -m pip install "twine<=2.0"

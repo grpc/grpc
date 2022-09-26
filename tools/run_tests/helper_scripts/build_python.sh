@@ -86,18 +86,6 @@ function toolchain() {
   fi
 }
 
-# Command to invoke the linux command `realpath` or equivalent.
-function script_realpath() {
-  # Find `realpath`
-  if [ -x "$(command -v realpath)" ]; then
-    realpath "$@"
-  else
-    # emulate realpath on mac (avoids using grealpath which needs "brew install coreutils")
-    # TODO(jtattermusch): is using script_realpath really needed?
-    ${PYTHON} -c 'import os; import sys; print(os.path.realpath(sys.argv[1]))' "$1"
-  fi
-}
-
 ####################
 # Script Arguments #
 ####################
@@ -137,7 +125,7 @@ else
   # Instantiate the virtualenv from the Python version passed in.
   $PYTHON -m pip install --user virtualenv==20.0.23
   $PYTHON -m virtualenv "$VENV"
-  VENV_PYTHON=$(script_realpath "$VENV/$VENV_RELATIVE_PYTHON")
+  VENV_PYTHON="$(pwd)/$VENV/$VENV_RELATIVE_PYTHON"
 fi
 
 
