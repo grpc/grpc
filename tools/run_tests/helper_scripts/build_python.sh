@@ -86,17 +86,15 @@ function toolchain() {
   fi
 }
 
-# TODO(jtattermusch): this adds dependency on grealpath on mac
-# (brew install coreutils) for little reason.
 # Command to invoke the linux command `realpath` or equivalent.
 function script_realpath() {
   # Find `realpath`
   if [ -x "$(command -v realpath)" ]; then
     realpath "$@"
-  elif [ -x "$(command -v grealpath)" ]; then
-    grealpath "$@"
   else
-    exit 1
+    # emulate realpath on mac (avoids using grealpath which needs "brew install coreutils")
+    # TODO(jtattermusch): is using script_realpath really needed?
+    ${PYTHON} -c 'import os; import sys; print(os.path.realpath(sys.argv[1]))' "$1"
   fi
 }
 
@@ -137,7 +135,7 @@ if [[ "$(inside_venv)" ]]; then
   VENV_PYTHON="$PYTHON"
 else
   # Instantiate the virtualenv from the Python version passed in.
-  $PYTHON -m pip install --user virtualenv==16.7.9
+  $PYTHON -m pip install --user virtualenv==20.0.23
   $PYTHON -m virtualenv "$VENV"
   VENV_PYTHON=$(script_realpath "$VENV/$VENV_RELATIVE_PYTHON")
 fi
