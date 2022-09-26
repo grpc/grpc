@@ -49,8 +49,6 @@
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/server.h"
 
-extern grpc_core::TraceFlag grpc_call_trace;
-
 typedef void (*grpc_ioreq_completion_func)(grpc_call* call, int success,
                                            void* user_data);
 
