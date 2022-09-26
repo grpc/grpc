@@ -252,7 +252,7 @@ EventEngine::ConnectionHandle PosixEventEngine::ConnectInternal(
   }
   // Start asynchronous connect and return the connection id.
   ac->Start(timeout);
-  return {connection_id, 0};
+  return {static_cast<intptr_t>(connection_id), 0};
 }
 
 void PosixEventEngine::OnConnectFinishInternal(int connection_handle) {
