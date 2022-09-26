@@ -84,8 +84,6 @@ then
   done;
   echo "Setting default ruby version."
   rvm use 2.5.0 --default
-  echo "Installing cocoapods."
-  time gem install cocoapods --version 1.3.1 --no-document
   echo "Updating osx-ssl-certs."
   rvm osx-ssl-certs status all
   rvm osx-ssl-certs update all
