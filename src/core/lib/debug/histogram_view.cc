@@ -22,7 +22,7 @@ namespace grpc_core {
 
 double HistogramView::Count() const {
   double sum = 0;
-  for (size_t i = 0; i < num_buckets; i++) {
+  for (int i = 0; i < num_buckets; i++) {
     sum += buckets[i];
   }
   return sum;

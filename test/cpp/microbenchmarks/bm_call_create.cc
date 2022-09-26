@@ -712,7 +712,7 @@ class IsolatedCallFixture {
     cq_ = grpc_completion_queue_create_for_next(nullptr);
   }
 
-  void Finish(benchmark::State& state) {
+  void Finish(benchmark::State&) {
     grpc_completion_queue_destroy(cq_);
     grpc_channel_destroy(channel_);
   }

@@ -20,6 +20,7 @@
 #include <string.h>
 
 #include <algorithm>
+#include <cstdint>
 #include <memory>
 #include <string>
 
@@ -233,7 +234,7 @@ static void simple_request_body(grpc_end2end_test_config config,
   grpc_call_unref(c);
   grpc_call_unref(s);
 
-  int expected_calls = 1;
+  uint64_t expected_calls = 1;
   if (config.feature_mask & FEATURE_MASK_SUPPORTS_REQUEST_PROXYING) {
     expected_calls *= 2;
   }
