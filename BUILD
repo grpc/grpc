@@ -7782,24 +7782,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc++_core_stats",
-    srcs = [
-        "src/cpp/util/core_stats.cc",
-    ],
-    hdrs = [
-        "src/cpp/util/core_stats.h",
-    ],
-    language = "c++",
-    deps = [
-        "gpr",
-        "gpr_atm",
-        "stats",
-        "stats_data",
-        "//src/proto/grpc/core:stats_proto",
-    ],
-)
-
-grpc_cc_library(
     name = "grpc_opencensus_plugin",
     srcs = [
         "src/cpp/ext/filters/census/channel_filter.cc",

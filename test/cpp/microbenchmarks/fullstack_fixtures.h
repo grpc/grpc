@@ -61,7 +61,10 @@ class FixtureConfiguration {
   }
 };
 
-class BaseFixture : public TrackCounters {};
+class BaseFixture {
+ public:
+  virtual ~BaseFixture() = default;
+};
 
 class FullstackFixture : public BaseFixture {
  public:
@@ -92,13 +95,6 @@ class FullstackFixture : public BaseFixture {
     bool ok;
     while (cq_->Next(&tag, &ok)) {
     }
-  }
-
-  void AddToLabel(std::ostream& out, benchmark::State& state) override {
-    BaseFixture::AddToLabel(out, state);
-    out << " polls/iter:"
-        << static_cast<double>(grpc_get_cq_poll_num(this->cq()->cq())) /
-               state.iterations();
   }
 
   ServerCompletionQueue* cq() { return cq_.get(); }
@@ -226,13 +222,6 @@ class EndpointPairFixture : public BaseFixture {
     }
   }
 
-  void AddToLabel(std::ostream& out, benchmark::State& state) override {
-    BaseFixture::AddToLabel(out, state);
-    out << " polls/iter:"
-        << static_cast<double>(grpc_get_cq_poll_num(this->cq()->cq())) /
-               state.iterations();
-  }
-
   ServerCompletionQueue* cq() { return cq_.get(); }
   std::shared_ptr<Channel> channel() { return channel_; }
 
@@ -274,13 +263,6 @@ class InProcessCHTTP2WithExplicitStats : public EndpointPairFixture {
     if (stats_ != nullptr) {
       grpc_passthru_endpoint_stats_destroy(stats_);
     }
-  }
-
-  void AddToLabel(std::ostream& out, benchmark::State& state) override {
-    EndpointPairFixture::AddToLabel(out, state);
-    out << " writes/iter:"
-        << static_cast<double>(gpr_atm_no_barrier_load(&stats_->num_writes)) /
-               static_cast<double>(state.iterations());
   }
 
  private:
