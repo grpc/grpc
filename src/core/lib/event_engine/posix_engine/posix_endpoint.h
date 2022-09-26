@@ -46,19 +46,23 @@
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 
-namespace grpc_event_engine {
-namespace posix_engine {
-
 #ifdef GRPC_POSIX_SOCKET_TCP
 
 #include <sys/socket.h>  // IWYU pragma: keep
-#include <sys/types.h>     // IWYU pragma: keep
+#include <sys/types.h>   // IWYU pragma: keep
 
 #ifdef GRPC_MSG_IOVLEN_TYPE
 typedef GRPC_MSG_IOVLEN_TYPE msg_iovlen_type;
 #else
 typedef size_t msg_iovlen_type;
 #endif
+
+#endif  //  GRPC_POSIX_SOCKET_TCP
+
+namespace grpc_event_engine {
+namespace posix_engine {
+
+#ifdef GRPC_POSIX_SOCKET_TCP
 
 class TcpZerocopySendRecord {
  public:
