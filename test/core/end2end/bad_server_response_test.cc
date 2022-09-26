@@ -45,7 +45,6 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/tcp_server.h"
-#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/port.h"
@@ -268,8 +267,8 @@ static void start_rpc(int target_port, grpc_status_code expected_status,
 
 static void cleanup_rpc() {
   grpc_event ev;
-  grpc_slice_buffer_destroy_internal(&state.temp_incoming_buffer);
-  grpc_slice_buffer_destroy_internal(&state.outgoing_buffer);
+  grpc_slice_buffer_destroy(&state.temp_incoming_buffer);
+  grpc_slice_buffer_destroy(&state.outgoing_buffer);
   grpc_call_unref(state.call);
   grpc_completion_queue_shutdown(state.cq);
   do {

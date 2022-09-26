@@ -512,6 +512,7 @@ grpc_cc_library(
         "src/core/plugin_registry/grpc_plugin_registry.cc",
         "src/core/plugin_registry/grpc_plugin_registry_noextra.cc",
     ],
+    defines = ["GRPC_NO_XDS"],
     external_deps = [
         "absl/base:core_headers",
     ],
@@ -1848,7 +1849,6 @@ grpc_cc_library(
         "ref_counted_ptr",
         "slice",
         "slice_buffer",
-        "slice_refcount",
         "time",
     ],
 )
@@ -1915,7 +1915,6 @@ grpc_cc_library(
         "ref_counted_ptr",
         "slice",
         "slice_buffer",
-        "slice_refcount",
     ],
 )
 
@@ -1951,7 +1950,6 @@ grpc_cc_library(
         "ref_counted_ptr",
         "resolved_address",
         "slice",
-        "slice_refcount",
         "uri_parser",
     ],
 )
@@ -3216,8 +3214,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/wakeup_fd_posix.cc",
         "src/core/lib/resource_quota/api.cc",
         "src/core/lib/slice/b64.cc",
-        "src/core/lib/slice/slice_api.cc",
-        "src/core/lib/slice/slice_buffer_api.cc",
         "src/core/lib/surface/api_trace.cc",
         "src/core/lib/surface/builtins.cc",
         "src/core/lib/surface/byte_buffer.cc",
@@ -4657,6 +4653,7 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
+        "absl/synchronization",
         "absl/types:optional",
         "absl/types:variant",
         "upb_lib",
@@ -7106,7 +7103,6 @@ grpc_cc_library(
         "orphanable",
         "ref_counted_ptr",
         "resolved_address",
-        "slice",
         "sockaddr_utils",
         "tcp_connect_handshaker",
         "transport_fwd",
@@ -7152,7 +7148,6 @@ grpc_cc_library(
         "ref_counted_ptr",
         "resolved_address",
         "resource_quota",
-        "slice",
         "sockaddr_utils",
         "time",
         "transport_fwd",
