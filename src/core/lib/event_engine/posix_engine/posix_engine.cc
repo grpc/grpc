@@ -283,10 +283,6 @@ PosixEventEngine::PosixEventEngine()
 void PosixEventEngine::PollerWorkInternal() {
   // TODO(vigneshbabu): The timeout specified here is arbitrary. For instance,
   // this can be improved by setting the timeout to the next expiring timer.
-  if (poller_ == nullptr) {
-    std::cout << "Poller is null" << std::endl;
-    fflush(stdout);
-  }
   auto result = poller_->Work(24h, [this]() {
     ++shutdown_ref_;
     executor_.Run([this]() { PollerWorkInternal(); });
