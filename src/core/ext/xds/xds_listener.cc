@@ -535,11 +535,12 @@ DownstreamTlsContextParse(
       envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_common_tls_context(
           downstream_tls_context_proto);
   if (common_tls_context != nullptr) {
-    auto common_context = CommonTlsContext::Parse(context, common_tls_context);
-    if (!common_context.ok()) {
-      errors.emplace_back(common_context.status().message());
-    } else {
-      downstream_tls_context.common_tls_context = std::move(*common_context);
+    ValidationErrors validation_errors;
+    downstream_tls_context.common_tls_context = CommonTlsContext::Parse(
+        context, common_tls_context, &validation_errors);
+    if (!validation_errors.ok()) {
+      errors.emplace_back(
+          validation_errors.status("errors in common_tls_context").message());
     }
   }
   auto* require_client_certificate =

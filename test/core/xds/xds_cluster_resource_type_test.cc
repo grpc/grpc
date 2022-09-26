@@ -171,7 +171,8 @@ TEST_F(ClusterTypeTest, DiscoveryTypeNotPresent) {
   EXPECT_EQ(decode_result.resource.status().code(),
             absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(decode_result.resource.status().message(),
-            "errors parsing CDS resource: [DiscoveryType not found.]")
+            "errors validating Cluster resource: ["
+            "field:type error:unknown discovery type]")
       << decode_result.resource.status();
 }
 
@@ -189,7 +190,8 @@ TEST_F(ClusterTypeTest, EdsClusterConfigMissing) {
   EXPECT_EQ(decode_result.resource.status().code(),
             absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(decode_result.resource.status().message(),
-            "errors parsing CDS resource: [eds_cluster_config not present]")
+            "errors validating Cluster resource: ["
+            "field:eds_cluster_config error:field not present]")
       << decode_result.resource.status();
 }
 
@@ -208,8 +210,8 @@ TEST_F(ClusterTypeTest, EdsConfigSourceMissing) {
   EXPECT_EQ(decode_result.resource.status().code(),
             absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(decode_result.resource.status().message(),
-            "errors parsing CDS resource: ["
-            "eds_cluster_config.eds_config not present]")
+            "errors validating Cluster resource: ["
+            "field:eds_cluster_config.eds_config error:field not present]")
       << decode_result.resource.status();
 }
 
@@ -227,9 +229,10 @@ TEST_F(ClusterTypeTest, EdsConfigSourceWrongType) {
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
             absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(
-      decode_result.resource.status().message(),
-      "errors parsing CDS resource: [EDS ConfigSource is not ADS or SELF.]")
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating Cluster resource: ["
+            "field:eds_cluster_config.eds_config "
+            "error:ConfigSource is not ads or self]")
       << decode_result.resource.status();
 }
 
@@ -274,8 +277,9 @@ TEST_F(ClusterTypeTest, LogicalDnsMissingLoadAssignment) {
   EXPECT_EQ(decode_result.resource.status().code(),
             absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(decode_result.resource.status().message(),
-            "errors parsing CDS resource: ["
-            "load_assignment not present for LOGICAL_DNS cluster]")
+            "errors validating Cluster resource: ["
+            "field:load_assignment "
+            "error:field not present for LOGICAL_DNS cluster]")
       << decode_result.resource.status();
 }
 
@@ -294,9 +298,9 @@ TEST_F(ClusterTypeTest, LogicalDnsMissingLocalities) {
   EXPECT_EQ(decode_result.resource.status().code(),
             absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(decode_result.resource.status().message(),
-            "errors parsing CDS resource: ["
-            "load_assignment for LOGICAL_DNS cluster must have exactly one "
-            "locality, found 0]")
+            "errors validating Cluster resource: ["
+            "field:load_assignment.endpoints error:must contain exactly "
+            "one locality for LOGICAL_DNS cluster, found 0]")
       << decode_result.resource.status();
 }
 
@@ -316,9 +320,9 @@ TEST_F(ClusterTypeTest, LogicalDnsTooManyLocalities) {
   EXPECT_EQ(decode_result.resource.status().code(),
             absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(decode_result.resource.status().message(),
-            "errors parsing CDS resource: ["
-            "load_assignment for LOGICAL_DNS cluster must have exactly one "
-            "locality, found 2]")
+            "errors validating Cluster resource: ["
+            "field:load_assignment.endpoints error:must contain exactly "
+            "one locality for LOGICAL_DNS cluster, found 2]")
       << decode_result.resource.status();
 }
 
@@ -337,9 +341,9 @@ TEST_F(ClusterTypeTest, LogicalDnsLocalityMissingEndpoints) {
   EXPECT_EQ(decode_result.resource.status().code(),
             absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(decode_result.resource.status().message(),
-            "errors parsing CDS resource: ["
-            "locality for LOGICAL_DNS cluster must have exactly one "
-            "endpoint, found 0]")
+            "errors validating Cluster resource: ["
+            "field:load_assignment.endpoints[0].lb_endpoints error:must "
+            "contain exactly one endpoint for LOGICAL_DNS cluster, found 0]")
       << decode_result.resource.status();
 }
 
@@ -360,9 +364,9 @@ TEST_F(ClusterTypeTest, LogicalDnsLocalityTooManyEndpoints) {
   EXPECT_EQ(decode_result.resource.status().code(),
             absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(decode_result.resource.status().message(),
-            "errors parsing CDS resource: ["
-            "locality for LOGICAL_DNS cluster must have exactly one "
-            "endpoint, found 2]")
+            "errors validating Cluster resource: ["
+            "field:load_assignment.endpoints[0].lb_endpoints error:must "
+            "contain exactly one endpoint for LOGICAL_DNS cluster, found 2]")
       << decode_result.resource.status();
 }
 
@@ -381,7 +385,9 @@ TEST_F(ClusterTypeTest, LogicalDnsEndpointMissing) {
   EXPECT_EQ(decode_result.resource.status().code(),
             absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(decode_result.resource.status().message(),
-            "errors parsing CDS resource: [LbEndpoint endpoint field not set]")
+            "errors validating Cluster resource: ["
+            "field:load_assignment.endpoints[0].lb_endpoints[0].endpoint "
+            "error:field not present]")
       << decode_result.resource.status();
 }
 
@@ -403,7 +409,9 @@ TEST_F(ClusterTypeTest, LogicalDnsAddressMissing) {
   EXPECT_EQ(decode_result.resource.status().code(),
             absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(decode_result.resource.status().message(),
-            "errors parsing CDS resource: [Endpoint address field not set]")
+            "errors validating Cluster resource: ["
+            "field:load_assignment.endpoints[0].lb_endpoints[0].endpoint"
+            ".address error:field not present]")
       << decode_result.resource.status();
 }
 
@@ -425,37 +433,14 @@ TEST_F(ClusterTypeTest, LogicalDnsSocketAddressMissing) {
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
             absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(
-      decode_result.resource.status().message(),
-      "errors parsing CDS resource: [Address socket_address field not set]")
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating Cluster resource: ["
+            "field:load_assignment.endpoints[0].lb_endpoints[0].endpoint"
+            ".address.socket_address error:field not present]")
       << decode_result.resource.status();
 }
 
-TEST_F(ClusterTypeTest, LogicalDnsSocketAddressAddressMissing) {
-  Cluster cluster;
-  cluster.set_name("foo");
-  cluster.set_type(cluster.LOGICAL_DNS);
-  cluster.mutable_load_assignment()
-      ->add_endpoints()
-      ->add_lb_endpoints()
-      ->mutable_endpoint()
-      ->mutable_address();
-  std::string serialized_resource;
-  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
-  auto* resource_type = XdsClusterResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
-  ASSERT_TRUE(decode_result.name.has_value());
-  EXPECT_EQ(*decode_result.name, "foo");
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(
-      decode_result.resource.status().message(),
-      "errors parsing CDS resource: [Address socket_address field not set]")
-      << decode_result.resource.status();
-}
-
-TEST_F(ClusterTypeTest, LogicalDnsResolverNameSet) {
+TEST_F(ClusterTypeTest, LogicalDnsSocketAddressInvalid) {
   Cluster cluster;
   cluster.set_name("foo");
   cluster.set_type(cluster.LOGICAL_DNS);
@@ -476,59 +461,14 @@ TEST_F(ClusterTypeTest, LogicalDnsResolverNameSet) {
   EXPECT_EQ(decode_result.resource.status().code(),
             absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(decode_result.resource.status().message(),
-            "errors parsing CDS resource: ["
-            "LOGICAL_DNS clusters must NOT have a custom resolver name set]")
-      << decode_result.resource.status();
-}
-
-TEST_F(ClusterTypeTest, LogicalDnsSocketAddressAddressNotSet) {
-  Cluster cluster;
-  cluster.set_name("foo");
-  cluster.set_type(cluster.LOGICAL_DNS);
-  cluster.mutable_load_assignment()
-      ->add_endpoints()
-      ->add_lb_endpoints()
-      ->mutable_endpoint()
-      ->mutable_address()
-      ->mutable_socket_address();
-  std::string serialized_resource;
-  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
-  auto* resource_type = XdsClusterResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
-  ASSERT_TRUE(decode_result.name.has_value());
-  EXPECT_EQ(*decode_result.name, "foo");
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(
-      decode_result.resource.status().message(),
-      "errors parsing CDS resource: [SocketAddress address field not set]")
-      << decode_result.resource.status();
-}
-
-TEST_F(ClusterTypeTest, LogicalDnsSocketAddressPortNotSet) {
-  Cluster cluster;
-  cluster.set_name("foo");
-  cluster.set_type(cluster.LOGICAL_DNS);
-  auto* socket_address = cluster.mutable_load_assignment()
-                             ->add_endpoints()
-                             ->add_lb_endpoints()
-                             ->mutable_endpoint()
-                             ->mutable_address()
-                             ->mutable_socket_address();
-  socket_address->set_address("server.example.com");
-  std::string serialized_resource;
-  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
-  auto* resource_type = XdsClusterResourceType::Get();
-  auto decode_result = resource_type->Decode(
-      decode_context_, serialized_resource, /*is_v2=*/false);
-  ASSERT_TRUE(decode_result.name.has_value());
-  EXPECT_EQ(*decode_result.name, "foo");
-  EXPECT_EQ(decode_result.resource.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(
-      decode_result.resource.status().message(),
-      "errors parsing CDS resource: [SocketAddress port_value field not set]")
+            "errors validating Cluster resource: ["
+            "field:load_assignment.endpoints[0].lb_endpoints[0].endpoint"
+            ".address.socket_address.address error:field not present; "
+            "field:load_assignment.endpoints[0].lb_endpoints[0].endpoint"
+            ".address.socket_address.port_value error:field not present; "
+            "field:load_assignment.endpoints[0].lb_endpoints[0].endpoint"
+            ".address.socket_address.resolver_name error:LOGICAL_DNS "
+            "clusters must NOT have a custom resolver name set]")
       << decode_result.resource.status();
 }
 
@@ -575,9 +515,11 @@ TEST_F(ClusterTypeTest, AggregateClusterUnparseableProto) {
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
             absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(
-      decode_result.resource.status().message(),
-      "errors parsing CDS resource: [Can't parse aggregate cluster.]")
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating Cluster resource: ["
+            "field:cluster_type.typed_config.value["
+            "envoy.extensions.clusters.aggregate.v3.ClusterConfig] "
+            "error:can't parse aggregate cluster config]")
       << decode_result.resource.status();
 }
 
@@ -648,11 +590,12 @@ TEST_F(LbPolicyTest, LbPolicyRingHashSetMinAndMaxRingSizeToZero) {
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
             absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(
-      decode_result.resource.status().message(),
-      "errors parsing CDS resource: ["
-      "max_ring_size is not in the range of 1 to 8388608.; "
-      "min_ring_size is not in the range of 1 to 8388608.]")
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating Cluster resource: ["
+            "field:ring_hash_lb_config.maximum_ring_size "
+            "error:must be in the range of 1 to 8388608; "
+            "field:ring_hash_lb_config.minimum_ring_size "
+            "error:must be in the range of 1 to 8388608]")
       << decode_result.resource.status();
 }
 
@@ -674,11 +617,12 @@ TEST_F(LbPolicyTest, LbPolicyRingHashSetMinAndMaxRingSizeTooLarge) {
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
             absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(
-      decode_result.resource.status().message(),
-      "errors parsing CDS resource: ["
-      "max_ring_size is not in the range of 1 to 8388608.; "
-      "min_ring_size is not in the range of 1 to 8388608.]")
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating Cluster resource: ["
+            "field:ring_hash_lb_config.maximum_ring_size "
+            "error:must be in the range of 1 to 8388608; "
+            "field:ring_hash_lb_config.minimum_ring_size "
+            "error:must be in the range of 1 to 8388608]")
       << decode_result.resource.status();
 }
 
@@ -700,10 +644,10 @@ TEST_F(LbPolicyTest, LbPolicyRingHashSetMinRingSizeLargerThanMaxRingSize) {
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
             absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(
-      decode_result.resource.status().message(),
-      "errors parsing CDS resource: ["
-      "min_ring_size cannot be greater than max_ring_size.]")
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating Cluster resource: ["
+            "field:ring_hash_lb_config.minimum_ring_size "
+            "error:cannot be greater than maximum_ring_size]")
       << decode_result.resource.status();
 }
 
@@ -724,10 +668,10 @@ TEST_F(LbPolicyTest, LbPolicyRingHashUnsupportedHashFunction) {
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
             absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(
-      decode_result.resource.status().message(),
-      "errors parsing CDS resource: ["
-      "ring hash lb config has invalid hash function.]")
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating Cluster resource: ["
+            "field:ring_hash_lb_config.hash_function "
+            "error:invalid hash function]")
       << decode_result.resource.status();
 }
 
@@ -746,9 +690,9 @@ TEST_F(LbPolicyTest, UnsupportedPolicy) {
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
             absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(
-      decode_result.resource.status().message(),
-      "errors parsing CDS resource: [LB policy is not supported.]")
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating Cluster resource: ["
+            "field:lb_policy error:LB policy is not supported]")
       << decode_result.resource.status();
 }
 
@@ -811,12 +755,13 @@ TEST_F(TlsConfigTest, UnknownCertificateProviderInstance) {
   EXPECT_EQ(*decode_result.name, "foo");
   EXPECT_EQ(decode_result.resource.status().code(),
             absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(
-      decode_result.resource.status().message(),
-      "errors parsing CDS resource: [Error parsing security configuration: "
-      "Error parsing UpstreamTlsContext: Errors parsing CommonTlsContext: "
-      "[Errors parsing CertificateValidationContext: "
-      "Unrecognized certificate provider instance name: fake]]")
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating Cluster resource: ["
+            "field:transport_socket.typed_config.value["
+            "envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext]"
+            ".common_tls_context.validation_context"
+            ".ca_certificate_provider_instance.instance_name "
+            "error:unrecognized certificate provider instance name: fake]")
       << decode_result.resource.status();
 }
 
