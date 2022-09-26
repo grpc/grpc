@@ -264,6 +264,16 @@ struct RbacConfig {
 
           std::unique_ptr<Rbac::Permission> permission;
 
+          Permission() = default;
+          Permission(const Permission&) = delete;
+          Permission& operator=(const Permission&) = delete;
+          Permission(Permission&& other) noexcept
+              : permission(std::move(other.permission)) {}
+          Permission& operator=(Permission&& other) noexcept {
+            permission = std::move(other.permission);
+            return *this;
+          }
+
           static std::vector<std::unique_ptr<Rbac::Permission>>
           MakeRbacPermissionList(std::vector<Permission>&& permission_list) {
             std::vector<std::unique_ptr<Rbac::Permission>> permissions;
@@ -399,6 +409,16 @@ struct RbacConfig {
           };
 
           std::unique_ptr<Rbac::Principal> principal;
+
+          Principal() = default;
+          Principal(const Principal&) = delete;
+          Principal& operator=(const Principal&) = delete;
+          Principal(Principal&& other) noexcept
+              : principal(std::move(other.principal)) {}
+          Principal& operator=(Principal&& other) noexcept {
+            principal = std::move(other.principal);
+            return *this;
+          }
 
           static std::vector<std::unique_ptr<Rbac::Principal>>
           MakeRbacPrincipalList(std::vector<Principal>&& principal_list) {
