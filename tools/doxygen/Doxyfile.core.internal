@@ -1723,6 +1723,8 @@ src/core/lib/compression/message_compress.cc \
 src/core/lib/compression/message_compress.h \
 src/core/lib/config/core_configuration.cc \
 src/core/lib/config/core_configuration.h \
+src/core/lib/debug/event_log.cc \
+src/core/lib/debug/event_log.h \
 src/core/lib/debug/histogram_view.cc \
 src/core/lib/debug/histogram_view.h \
 src/core/lib/debug/stats.cc \
@@ -1805,7 +1807,6 @@ src/core/lib/gpr/time_posix.cc \
 src/core/lib/gpr/time_precise.cc \
 src/core/lib/gpr/time_precise.h \
 src/core/lib/gpr/time_windows.cc \
-src/core/lib/gpr/tls.h \
 src/core/lib/gpr/tmpfile.h \
 src/core/lib/gpr/tmpfile_msys.cc \
 src/core/lib/gpr/tmpfile_posix.cc \
@@ -2205,10 +2206,8 @@ src/core/lib/slice/percent_encoding.cc \
 src/core/lib/slice/percent_encoding.h \
 src/core/lib/slice/slice.cc \
 src/core/lib/slice/slice.h \
-src/core/lib/slice/slice_api.cc \
 src/core/lib/slice/slice_buffer.cc \
 src/core/lib/slice/slice_buffer.h \
-src/core/lib/slice/slice_buffer_api.cc \
 src/core/lib/slice/slice_internal.h \
 src/core/lib/slice/slice_refcount.cc \
 src/core/lib/slice/slice_refcount.h \

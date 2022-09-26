@@ -58,7 +58,6 @@
 #include "src/core/lib/security/transport/secure_endpoint.h"
 #include "src/core/lib/security/transport/tsi_error.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/transport/handshaker.h"
 #include "src/core/lib/transport/handshaker_factory.h"
 #include "src/core/lib/transport/handshaker_registry.h"
@@ -156,11 +155,11 @@ SecurityHandshaker::~SecurityHandshaker() {
     grpc_endpoint_destroy(endpoint_to_destroy_);
   }
   if (read_buffer_to_destroy_ != nullptr) {
-    grpc_slice_buffer_destroy_internal(read_buffer_to_destroy_);
+    grpc_slice_buffer_destroy(read_buffer_to_destroy_);
     gpr_free(read_buffer_to_destroy_);
   }
   gpr_free(handshake_buffer_);
-  grpc_slice_buffer_destroy_internal(&outgoing_);
+  grpc_slice_buffer_destroy(&outgoing_);
   auth_context_.reset(DEBUG_LOCATION, "handshake");
   connector_.reset(DEBUG_LOCATION, "handshake");
 }
@@ -320,7 +319,7 @@ void SecurityHandshaker::OnPeerCheckedInner(grpc_error_handle error) {
       args_->endpoint = grpc_secure_endpoint_create(
           protector, zero_copy_protector, args_->endpoint, &slice,
           args_->args.ToC().get(), 1);
-      grpc_slice_unref_internal(slice);
+      grpc_slice_unref(slice);
     } else {
       args_->endpoint = grpc_secure_endpoint_create(
           protector, zero_copy_protector, args_->endpoint, nullptr,
@@ -407,7 +406,7 @@ grpc_error_handle SecurityHandshaker::OnHandshakeNextDoneLocked(
     // Send data to peer, if needed.
     grpc_slice to_send = grpc_slice_from_copied_buffer(
         reinterpret_cast<const char*>(bytes_to_send), bytes_to_send_size);
-    grpc_slice_buffer_reset_and_unref_internal(&outgoing_);
+    grpc_slice_buffer_reset_and_unref(&outgoing_);
     grpc_slice_buffer_add(&outgoing_, to_send);
     grpc_endpoint_write(
         args_->endpoint, &outgoing_,
@@ -592,7 +591,7 @@ class FailHandshaker : public Handshaker {
     grpc_endpoint_destroy(args->endpoint);
     args->endpoint = nullptr;
     args->args = ChannelArgs();
-    grpc_slice_buffer_destroy_internal(args->read_buffer);
+    grpc_slice_buffer_destroy(args->read_buffer);
     gpr_free(args->read_buffer);
     args->read_buffer = nullptr;
     ExecCtx::Run(DEBUG_LOCATION, on_handshake_done, error);

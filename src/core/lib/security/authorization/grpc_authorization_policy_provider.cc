@@ -35,7 +35,6 @@
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/authorization/grpc_authorization_engine.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_refcount.h"
 
 namespace grpc_core {
 
@@ -71,7 +70,7 @@ absl::StatusOr<std::string> ReadPolicyFromFile(absl::string_view policy_path) {
     return status;
   }
   std::string policy_contents(StringViewFromSlice(policy_slice));
-  grpc_slice_unref_internal(policy_slice);
+  grpc_slice_unref(policy_slice);
   return policy_contents;
 }
 
