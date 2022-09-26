@@ -1942,7 +1942,7 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
   uint32_t test_only_message_flags() override { abort(); }
   uint32_t test_only_encodings_accepted_by_peer() override { abort(); }
   grpc_compression_algorithm compression_for_level(
-      grpc_compression_level level) override {
+      grpc_compression_level) override {
     abort();
   }
 
@@ -2041,8 +2041,9 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
   // Begin work on a completion, recording the tag/closure to notify.
   // Use the op selected in \a ops to determine the index to allocate into.
   // Starts the "StartingBatch" PendingOp immediately.
-  Completion StartCompletion(void* tag, bool is_closure, const grpc_op* ops,
-                             size_t num_ops) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  // Assumes at least one operation in \a ops.
+  Completion StartCompletion(void* tag, bool is_closure, const grpc_op* ops)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   // Add one pending op to the completion, and return it.
   Completion AddOpToCompletion(const Completion& completion, PendingOp reason)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
@@ -2068,6 +2069,7 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
   void RunFinalization(grpc_status_code status, const char* status_details) {
     grpc_call_final_info final_info;
     final_info.stats = *call_context_.call_stats();
+    final_info.final_status = status;
     final_info.error_string = status_details;
     finalization_.Run(&final_info);
   }
@@ -2142,7 +2144,7 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
     PromiseBasedCall* call_ ABSL_GUARDED_BY(mu_);
   };
 
-  static void OnDestroy(void* arg, grpc_error_handle error) {
+  static void OnDestroy(void* arg, grpc_error_handle) {
     auto* call = static_cast<PromiseBasedCall*>(arg);
     ScopedContext context(call);
     call->DeleteThis();
@@ -2257,7 +2259,7 @@ void* PromiseBasedCall::ContextGet(grpc_context_index elem) const {
 }
 
 PromiseBasedCall::Completion PromiseBasedCall::StartCompletion(
-    void* tag, bool is_closure, const grpc_op* ops, size_t num_ops) {
+    void* tag, bool is_closure, const grpc_op* ops) {
   Completion c(BatchSlotForOp(ops[0].op));
   if (grpc_call_trace.enabled()) {
     gpr_log(GPR_INFO, "%sStartCompletion %s tag=%p", DebugTag().c_str(),
@@ -2606,7 +2608,7 @@ grpc_call_error ClientPromiseBasedCall::StartBatch(const grpc_op* ops,
     return validation_result;
   }
   Completion completion =
-      StartCompletion(notify_tag, is_notify_tag_closure, ops, nops);
+      StartCompletion(notify_tag, is_notify_tag_closure, ops);
   CommitBatch(ops, nops, completion);
   Update();
   FinishOpOnCompletion(&completion, PendingOp::kStartingBatch);

@@ -670,7 +670,7 @@ void ClientCallData::StartPromise(Flusher* flusher) {
   promise_ = filter->MakeCallPromise(
       CallArgs{WrapMetadata(send_initial_metadata_batch_->payload
                                 ->send_initial_metadata.send_initial_metadata),
-               server_initial_metadata_latch()},
+               server_initial_metadata_latch(), nullptr, nullptr},
       [this](CallArgs call_args) {
         return MakeNextPromise(std::move(call_args));
       });
@@ -1168,12 +1168,12 @@ void ServerCallData::RecvInitialMetadataReady(grpc_error_handle error) {
   ScopedContext context(this);
   // Construct the promise.
   ChannelFilter* filter = static_cast<ChannelFilter*>(elem()->channel_data);
-  promise_ =
-      filter->MakeCallPromise(CallArgs{WrapMetadata(recv_initial_metadata_),
-                                       server_initial_metadata_latch()},
-                              [this](CallArgs call_args) {
-                                return MakeNextPromise(std::move(call_args));
-                              });
+  promise_ = filter->MakeCallPromise(
+      CallArgs{WrapMetadata(recv_initial_metadata_),
+               server_initial_metadata_latch(), nullptr, nullptr},
+      [this](CallArgs call_args) {
+        return MakeNextPromise(std::move(call_args));
+      });
   // Poll once.
   WakeInsideCombiner(&flusher);
   if (auto* closure =

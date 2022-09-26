@@ -58,10 +58,8 @@ TEST(ClientAuthorityFilterTest, PromiseCompletesImmediatelyAndSetsAuthority) {
   // TODO(ctiller): use Activity here, once it's ready.
   TestContext<Arena> context(arena.get());
   auto promise = filter.MakeCallPromise(
-      CallArgs{
-          ClientMetadataHandle::TestOnlyWrap(&initial_metadata_batch),
-          nullptr,
-      },
+      CallArgs{ClientMetadataHandle::TestOnlyWrap(&initial_metadata_batch),
+               nullptr, nullptr, nullptr},
       [&](CallArgs call_args) {
         EXPECT_EQ(call_args.client_initial_metadata
                       ->get_pointer(HttpAuthorityMetadata())
@@ -92,10 +90,8 @@ TEST(ClientAuthorityFilterTest,
   // TODO(ctiller): use Activity here, once it's ready.
   TestContext<Arena> context(arena.get());
   auto promise = filter.MakeCallPromise(
-      CallArgs{
-          ClientMetadataHandle::TestOnlyWrap(&initial_metadata_batch),
-          nullptr,
-      },
+      CallArgs{ClientMetadataHandle::TestOnlyWrap(&initial_metadata_batch),
+               nullptr, nullptr, nullptr},
       [&](CallArgs call_args) {
         EXPECT_EQ(call_args.client_initial_metadata
                       ->get_pointer(HttpAuthorityMetadata())

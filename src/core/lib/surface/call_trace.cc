@@ -59,21 +59,20 @@ const grpc_channel_filter* PromiseTracingFilterFor(
               },
               grpc_channel_next_op, /* sizeof_call_data: */ 0,
               /* init_call_elem: */
-              [](grpc_call_element* elem, const grpc_call_element_args* args) {
+              [](grpc_call_element*, const grpc_call_element_args*) {
                 return absl::OkStatus();
               },
               grpc_call_stack_ignore_set_pollset_or_pollset_set,
               /* destroy_call_elem: */
-              [](grpc_call_element* elem,
-                 const grpc_call_final_info* final_info,
-                 grpc_closure* then_schedule_closure) {},
+              [](grpc_call_element*, const grpc_call_final_info*,
+                 grpc_closure*) {},
               /* sizeof_channel_data: */ 0, /* init_channel_elem: */
-              [](grpc_channel_element* elem, grpc_channel_element_args* args) {
+              [](grpc_channel_element*, grpc_channel_element_args*) {
                 return absl::OkStatus();
               },
               /* post_init_channel_elem: */
-              [](grpc_channel_stack* stk, grpc_channel_element* elem) {},
-              /* destroy_channel_elem: */ [](grpc_channel_element* elem) {},
+              [](grpc_channel_stack*, grpc_channel_element*) {},
+              /* destroy_channel_elem: */ [](grpc_channel_element*) {},
               grpc_channel_next_get_info, filter->name},
           filter(filter) {}
     const grpc_channel_filter* const filter;
