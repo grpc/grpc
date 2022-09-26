@@ -73,6 +73,8 @@ then
     sleep 3
   done
   [[ "$gpg_recv_keys_success" == 1 ]] || exit 1
+  # fix .rvm directory ownership on kokoro monterey image
+  sudo chown -R "${USER}" ~/.rvm
   rvm get stable # Per https://stackoverflow.com/questions/65477613/rvm-where-is-ruby-3-0-0
   # stop echoing bash commands temporarily to prevent rvm from polluting the logs
   set +x
