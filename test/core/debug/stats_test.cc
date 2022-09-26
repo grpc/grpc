@@ -60,7 +60,7 @@ static int FindExpectedBucket(const HistogramView& h, int value) {
     return 0;
   }
   if (value >= h.bucket_boundaries[h.num_buckets]) {
-    return h.bucket_boundaries[h.num_buckets] - 1;
+    return h.num_buckets - 1;
   }
   return std::upper_bound(h.bucket_boundaries,
                           h.bucket_boundaries + h.num_buckets, value) -
