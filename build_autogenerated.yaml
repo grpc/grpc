@@ -8373,7 +8373,6 @@ targets:
   run: false
   language: c++
   headers:
-  - src/cpp/util/core_stats.h
   - test/cpp/qps/benchmark_config.h
   - test/cpp/qps/client.h
   - test/cpp/qps/driver.h
@@ -8387,7 +8386,6 @@ targets:
   - test/cpp/qps/stats.h
   - test/cpp/qps/usage_timer.h
   src:
-  - src/proto/grpc/core/stats.proto
   - src/proto/grpc/testing/benchmark_service.proto
   - src/proto/grpc/testing/control.proto
   - src/proto/grpc/testing/messages.proto
@@ -8395,7 +8393,6 @@ targets:
   - src/proto/grpc/testing/report_qps_scenario_service.proto
   - src/proto/grpc/testing/stats.proto
   - src/proto/grpc/testing/worker_service.proto
-  - src/cpp/util/core_stats.cc
   - test/cpp/qps/benchmark_config.cc
   - test/cpp/qps/client_async.cc
   - test/cpp/qps/client_callback.cc
@@ -8418,7 +8415,6 @@ targets:
   run: false
   language: c++
   headers:
-  - src/cpp/util/core_stats.h
   - test/cpp/qps/client.h
   - test/cpp/qps/histogram.h
   - test/cpp/qps/interarrival.h
@@ -8428,14 +8424,12 @@ targets:
   - test/cpp/qps/stats.h
   - test/cpp/qps/usage_timer.h
   src:
-  - src/proto/grpc/core/stats.proto
   - src/proto/grpc/testing/benchmark_service.proto
   - src/proto/grpc/testing/control.proto
   - src/proto/grpc/testing/messages.proto
   - src/proto/grpc/testing/payloads.proto
   - src/proto/grpc/testing/stats.proto
   - src/proto/grpc/testing/worker_service.proto
-  - src/cpp/util/core_stats.cc
   - test/cpp/qps/client_async.cc
   - test/cpp/qps/client_callback.cc
   - test/cpp/qps/client_sync.cc
