@@ -4757,6 +4757,7 @@ grpc_cc_library(
         "upb_utils",
         "uri_parser",
         "useful",
+        "validation_errors",
         "work_serializer",
         "xds_client",
         "xds_type_upb",
