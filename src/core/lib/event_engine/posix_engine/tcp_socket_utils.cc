@@ -928,16 +928,15 @@ bool PosixSocketWrapper::SetSocketDualStack() {
   GPR_ASSERT(false && "unimplemented");
 }
 
-static bool PosixSocketWrapper::IsSocketReusePortSupported() {
+bool PosixSocketWrapper::IsSocketReusePortSupported() {
   GPR_ASSERT(false && "unimplemented");
 }
 
-static bool PosixSocketWrapper::IsIpv6LoopbackAvailable() {
+bool PosixSocketWrapper::IsIpv6LoopbackAvailable() {
   GPR_ASSERT(false && "unimplemented");
 }
 
-static absl::StatusOr<PosixSocketWrapper>
-PosixSocketWrapper::CreateDualStackSocket(
+absl::StatusOr<PosixSocketWrapper> PosixSocketWrapper::CreateDualStackSocket(
     std::function<int(int /*domain*/, int /*type*/, int /*protocol*/)>
     /* socket_factory */,
     const experimental::EventEngine::ResolvedAddress& /*addr*/, int /*type*/,
@@ -950,7 +949,6 @@ PosixSocketWrapper::CreateAndPrepareTcpClientSocket(
     const PosixTcpOptions& /*options*/,
     const EventEngine::ResolvedAddress& /*target_addr*/) {
   GPR_ASSERT(false && "unimplemented");
-}
 }
 
 #endif /* GRPC_POSIX_SOCKET_UTILS_COMMON */
