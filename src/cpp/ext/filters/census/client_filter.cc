@@ -46,7 +46,6 @@
 #include <grpc/support/log.h>
 #include <grpcpp/support/config.h>
 
-#include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/gprpp/sync.h"
