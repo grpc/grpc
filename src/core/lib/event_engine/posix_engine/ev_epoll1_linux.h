@@ -57,6 +57,7 @@ class Epoll1Poller : public PosixEventPoller {
   void Kick() override;
   Scheduler* GetScheduler() { return scheduler_; }
   void Shutdown() override;
+  bool CanTrackErrors() const override { return true; }
   ~Epoll1Poller() override;
 
  private:
