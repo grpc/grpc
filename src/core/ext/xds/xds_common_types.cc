@@ -51,12 +51,12 @@ namespace grpc_core {
 
 Duration ParseDuration(const google_protobuf_Duration* proto_duration,
                        ValidationErrors* errors) {
-  uint64_t seconds = google_protobuf_Duration_seconds(proto_duration);
+  int64_t seconds = google_protobuf_Duration_seconds(proto_duration);
   if (seconds < 0 || seconds > 315576000000) {
     ValidationErrors::ScopedField field(errors, ".seconds");
     errors->AddError("value must be in the range [0, 315576000000]");
   }
-  uint32_t nanos = google_protobuf_Duration_nanos(proto_duration);
+  int32_t nanos = google_protobuf_Duration_nanos(proto_duration);
   if (nanos < 0 || nanos > 999999999) {
     ValidationErrors::ScopedField field(errors, ".nanos");
     errors->AddError("value must be in the range [0, 999999999]");
