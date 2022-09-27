@@ -124,7 +124,6 @@ grpc_cc_library(
         "cpu:10",
         "no_windows",
     ],
-    visibility = ["//test:__subpackages__"],
     deps = [
         ":conformance_test_base_lib",
         "//:grpc",
@@ -164,7 +163,6 @@ grpc_cc_library(
     ],
     hdrs = COMMON_HEADERS,
     external_deps = ["gtest"],
-    visibility = ["@grpc:public"],
     deps = [
         "//:grpc",
         "//test/core/util:grpc_test_util",
