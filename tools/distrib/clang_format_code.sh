@@ -24,8 +24,10 @@ if [ "$CLANG_FORMAT_SKIP_DOCKER" == "" ]; then
   # build clang-format docker image
   docker build -t grpc_clang_format tools/dockerfile/grpc_clang_format
 
-  # ensure the CLANG_FORMAT_ROOT is properly set for any CHANGED_FILES
-  CHANGED_FILES=$(printf "$CLANG_FORMAT_ROOT/%s " $CHANGED_FILES)
+  if [ "$CHANGED_FILES" != "" ]; then
+    # ensure the CLANG_FORMAT_ROOT is properly set for any CHANGED_FILES
+    CHANGED_FILES=$(printf "$CLANG_FORMAT_ROOT/%s " $CHANGED_FILES)
+  fi
 
   # run clang-format against the checked out codebase
   # when modifying the checked-out files, the current user will be impersonated
