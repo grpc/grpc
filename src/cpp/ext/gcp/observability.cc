@@ -27,6 +27,7 @@
 #include "absl/types/optional.h"
 #include "opencensus/exporters/stats/stackdriver/stackdriver_exporter.h"
 #include "opencensus/exporters/trace/stackdriver/stackdriver_exporter.h"
+#include "opencensus/stats/stats.h"
 #include "opencensus/trace/sampler.h"
 #include "opencensus/trace/trace_config.h"
 
