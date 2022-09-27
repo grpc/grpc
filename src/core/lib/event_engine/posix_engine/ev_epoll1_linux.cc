@@ -19,6 +19,7 @@
 
 #include <atomic>
 #include <memory>
+#include <thread>
 
 #include "absl/memory/memory.h"
 #include "absl/status/status.h"
