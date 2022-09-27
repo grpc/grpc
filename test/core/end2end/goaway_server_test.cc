@@ -179,7 +179,7 @@ static grpc_ares_request* my_dns_lookup_ares(
                                  query_timeout_ms);
   }
 
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
   gpr_mu_lock(&g_mu);
   if (g_resolve_port < 0) {
     gpr_mu_unlock(&g_mu);

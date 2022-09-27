@@ -158,7 +158,7 @@ void MaxAgeFilter::PostInit() {
   auto* startup =
       new StartupClosure{this->channel_stack()->Ref(), this, grpc_closure{}};
   GRPC_CLOSURE_INIT(&startup->closure, run_startup, startup, nullptr);
-  ExecCtx::Run(DEBUG_LOCATION, &startup->closure, GRPC_ERROR_NONE);
+  ExecCtx::Run(DEBUG_LOCATION, &startup->closure, absl::OkStatus());
 
   auto channel_stack = this->channel_stack()->Ref();
 
@@ -187,7 +187,7 @@ void MaxAgeFilter::PostInit() {
               ExecCtx::Run(
                   DEBUG_LOCATION,
                   GRPC_CLOSURE_CREATE(fn, this->channel_stack(), nullptr),
-                  GRPC_ERROR_NONE);
+                  absl::OkStatus());
               return Immediate(absl::OkStatus());
             },
             // Sleep for the grace period

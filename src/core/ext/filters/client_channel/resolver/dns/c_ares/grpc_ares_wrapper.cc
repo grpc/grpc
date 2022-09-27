@@ -368,7 +368,7 @@ static void on_readable(void* arg, grpc_error_handle error) {
       ares_process_fd(ev_driver->channel, as, ARES_SOCKET_BAD);
     } while (fdn->grpc_polled_fd->IsFdStillReadableLocked());
   } else {
-    // If error is not GRPC_ERROR_NONE, it means the fd has been shutdown or
+    // If error is not absl::OkStatus(), it means the fd has been shutdown or
     // timed out. The pending lookups made on this ev_driver will be cancelled
     // by the following ares_cancel() and the on_done callbacks will be invoked
     // with a status of ARES_ECANCELLED. The remaining file descriptors in this
@@ -392,7 +392,7 @@ static void on_writable(void* arg, grpc_error_handle error) {
   if (error.ok()) {
     ares_process_fd(ev_driver->channel, ARES_SOCKET_BAD, as);
   } else {
-    // If error is not GRPC_ERROR_NONE, it means the fd has been shutdown or
+    // If error is not absl::OkStatus(), it means the fd has been shutdown or
     // timed out. The pending lookups made on this ev_driver will be cancelled
     // by the following ares_cancel() and the on_done callbacks will be invoked
     // with a status of ARES_ECANCELLED. The remaining file descriptors in this
@@ -541,7 +541,7 @@ grpc_error_handle grpc_ares_ev_driver_create_locked(
   (*ev_driver)
       ->polled_fd_factory->ConfigureAresChannelLocked((*ev_driver)->channel);
   (*ev_driver)->query_timeout_ms = query_timeout_ms;
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 static void log_address_sorting_list(const grpc_ares_request* r,
@@ -603,7 +603,7 @@ void grpc_ares_complete_request_locked(grpc_ares_request* r)
   r->ev_driver = nullptr;
   if (r->addresses_out != nullptr && *r->addresses_out != nullptr) {
     grpc_cares_wrapper_address_sorting_sort(r, r->addresses_out->get());
-    r->error = GRPC_ERROR_NONE;
+    r->error = absl::OkStatus();
     // TODO(apolcyn): allow c-ares to return a service config
     // with no addresses along side it
   }
@@ -775,7 +775,7 @@ static void on_txt_done_locked(void* arg, int status, int /*timeouts*/,
   const size_t prefix_len = sizeof(g_service_config_attribute_prefix) - 1;
   struct ares_txt_ext* result = nullptr;
   struct ares_txt_ext* reply = nullptr;
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
   if (status != ARES_SUCCESS) goto fail;
   GRPC_CARES_TRACE_LOG("request:%p on_txt_done_locked name=%s ARES_SUCCESS", r,
                        q->name().c_str());
@@ -857,7 +857,7 @@ grpc_error_handle set_request_dns_server(grpc_ares_request* r,
           "C-ares status is not ARES_SUCCESS: ", ares_strerror(status)));
     }
   }
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 // Common logic for all lookup methods.
@@ -867,7 +867,7 @@ grpc_error_handle grpc_dns_lookup_ares_continued(
     const char* default_port, grpc_pollset_set* interested_parties,
     int query_timeout_ms, std::string* host, std::string* port, bool check_port)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(r->mu) {
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
   /* parse name, splitting it into host and port parts */
   grpc_core::SplitHostPort(name, host, port);
   if (host->empty()) {
@@ -1087,7 +1087,7 @@ grpc_ares_request* grpc_dns_lookup_srv_ares_impl(
   r->balancer_addresses_out = balancer_addresses;
   GRPC_CARES_TRACE_LOG(
       "request:%p c-ares grpc_dns_lookup_srv_ares_impl name=%s", r, name);
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
   // Don't query for SRV records if the target is "localhost"
   if (target_matches_localhost(name)) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_done, error);
@@ -1125,7 +1125,7 @@ grpc_ares_request* grpc_dns_lookup_txt_ares_impl(
   r->service_config_json_out = service_config_json;
   GRPC_CARES_TRACE_LOG(
       "request:%p c-ares grpc_dns_lookup_txt_ares_impl name=%s", r, name);
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
   // Don't query for TXT records if the target is "localhost"
   if (target_matches_localhost(name)) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_done, error);
@@ -1193,12 +1193,12 @@ grpc_error_handle grpc_ares_init(void) {
     return GRPC_ERROR_CREATE_FROM_CPP_STRING(
         absl::StrCat("ares_library_init failed: ", ares_strerror(status)));
   }
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 void grpc_ares_cleanup(void) { ares_library_cleanup(); }
 #else
-grpc_error_handle grpc_ares_init(void) { return GRPC_ERROR_NONE; }
+grpc_error_handle grpc_ares_init(void) { return absl::OkStatus(); }
 void grpc_ares_cleanup(void) {}
 #endif  // GPR_WINDOWS
 

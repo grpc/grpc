@@ -146,7 +146,7 @@ static void read_and_write_test_read_handler(void* data,
      * read_handler are both run inline, we might end up growing the stack
      * beyond the limit. Schedule the read on ExecCtx to avoid this. */
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, &state->read_scheduler,
-                            GRPC_ERROR_NONE);
+                            absl::OkStatus());
   }
 }
 
@@ -179,7 +179,7 @@ static void read_and_write_test_write_handler(void* data,
        * the write_handler are both run inline, we might end up growing the
        * stack beyond the limit. Schedule the write on ExecCtx to avoid this. */
       grpc_core::ExecCtx::Run(DEBUG_LOCATION, &state->write_scheduler,
-                              GRPC_ERROR_NONE);
+                              absl::OkStatus());
       gpr_free(slices);
       return;
     }
@@ -247,7 +247,7 @@ static void read_and_write_test(grpc_endpoint_test_config config,
      for the first iteration as for later iterations. It does the right thing
      even when bytes_written is unsigned. */
   state.bytes_written -= state.current_write_size;
-  read_and_write_test_write_handler(&state, GRPC_ERROR_NONE);
+  read_and_write_test_write_handler(&state, absl::OkStatus());
   grpc_core::ExecCtx::Get()->Flush();
 
   grpc_endpoint_read(state.read_ep, &state.incoming, &state.done_read,

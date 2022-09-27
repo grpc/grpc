@@ -362,7 +362,7 @@ class Subchannel::AsyncWatcherNotifierLocked {
                        delete self;
                      },
                      this, nullptr),
-                 GRPC_ERROR_NONE);
+                 absl::OkStatus());
   }
 
  private:

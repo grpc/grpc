@@ -72,7 +72,7 @@ grpc_error_handle CensusClientCallData::Init(
   args->context[GRPC_CONTEXT_CALL_TRACER].destroy = [](void* tracer) {
     (static_cast<OpenCensusCallTracer*>(tracer))->~OpenCensusCallTracer();
   };
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 void CensusClientCallData::StartTransportStreamOpBatch(

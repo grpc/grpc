@@ -263,7 +263,7 @@ class OrcaProducer::OrcaStreamEventHandler
     // BackendMetricAllocator object.
     void AsyncNotifyWatchersAndDelete() {
       GRPC_CLOSURE_INIT(&closure_, NotifyWatchersInExecCtx, this, nullptr);
-      ExecCtx::Run(DEBUG_LOCATION, &closure_, GRPC_ERROR_NONE);
+      ExecCtx::Run(DEBUG_LOCATION, &closure_, absl::OkStatus());
     }
 
    private:

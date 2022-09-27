@@ -29,6 +29,7 @@
 #include <vector>
 
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
@@ -70,7 +71,6 @@
 
 #include "src/core/ext/transport/inproc/inproc_transport.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/resource_quota/api.h"
@@ -218,7 +218,7 @@ void ServerInterface::BaseAsyncRequest::
   grpc_core::ExecCtx exec_ctx;
   grpc_cq_begin_op(notification_cq_->cq(), this);
   grpc_cq_end_op(
-      notification_cq_->cq(), this, GRPC_ERROR_NONE,
+      notification_cq_->cq(), this, absl::OkStatus(),
       [](void* /*arg*/, grpc_cq_completion* completion) { delete completion; },
       nullptr, new grpc_cq_completion());
 }

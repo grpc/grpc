@@ -692,7 +692,7 @@ static void handshaker_client_destruct(alts_handshaker_client* c) {
           DEBUG_LOCATION,
           GRPC_CLOSURE_CREATE(handshaker_call_unref, client->call,
                               grpc_schedule_on_exec_ctx),
-          GRPC_ERROR_NONE);
+          absl::OkStatus());
     }
   }
 }

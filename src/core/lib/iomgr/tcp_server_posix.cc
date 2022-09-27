@@ -99,7 +99,7 @@ static grpc_error_handle tcp_server_create(grpc_closure* shutdown_complete,
   s->memory_quota = s->options.resource_quota->memory_quota();
   gpr_atm_no_barrier_store(&s->next_pollset_to_assign, 0);
   *server = s;
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 static void finish_shutdown(grpc_tcp_server* s) {
@@ -108,7 +108,7 @@ static void finish_shutdown(grpc_tcp_server* s) {
   gpr_mu_unlock(&s->mu);
   if (s->shutdown_complete != nullptr) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, s->shutdown_complete,
-                            GRPC_ERROR_NONE);
+                            absl::OkStatus());
   }
   gpr_mu_destroy(&s->mu);
   while (s->head) {
@@ -303,8 +303,8 @@ static grpc_error_handle add_wildcard_addrs_to_server(grpc_tcp_server* s,
   grpc_dualstack_mode dsmode;
   grpc_tcp_listener* sp = nullptr;
   grpc_tcp_listener* sp2 = nullptr;
-  grpc_error_handle v6_err = GRPC_ERROR_NONE;
-  grpc_error_handle v4_err = GRPC_ERROR_NONE;
+  grpc_error_handle v6_err;
+  grpc_error_handle v4_err;
   *out_port = -1;
 
   if (grpc_tcp_server_have_ifaddrs() && s->expand_wildcard_addrs) {
@@ -315,17 +315,17 @@ static grpc_error_handle add_wildcard_addrs_to_server(grpc_tcp_server* s,
   grpc_sockaddr_make_wildcards(requested_port, &wild4, &wild6);
   /* Try listening on IPv6 first. */
   if ((v6_err = grpc_tcp_server_add_addr(s, &wild6, port_index, fd_index,
-                                         &dsmode, &sp)) == GRPC_ERROR_NONE) {
+                                         &dsmode, &sp)) == absl::OkStatus()) {
     ++fd_index;
     requested_port = *out_port = sp->port;
     if (dsmode == GRPC_DSMODE_DUALSTACK || dsmode == GRPC_DSMODE_IPV4) {
-      return GRPC_ERROR_NONE;
+      return absl::OkStatus();
     }
   }
   /* If we got a v6-only socket or nothing, try adding 0.0.0.0. */
   grpc_sockaddr_set_port(&wild4, requested_port);
   if ((v4_err = grpc_tcp_server_add_addr(s, &wild4, port_index, fd_index,
-                                         &dsmode, &sp2)) == GRPC_ERROR_NONE) {
+                                         &dsmode, &sp2)) == absl::OkStatus()) {
     *out_port = sp2->port;
     if (sp != nullptr) {
       sp2->is_sibling = 1;
@@ -345,7 +345,7 @@ static grpc_error_handle add_wildcard_addrs_to_server(grpc_tcp_server* s,
               "the environment may not support IPv4: %s",
               grpc_error_std_string(v4_err).c_str());
     }
-    return GRPC_ERROR_NONE;
+    return absl::OkStatus();
   } else {
     grpc_error_handle root_err = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Failed to add any wildcard listeners");
@@ -406,7 +406,7 @@ static grpc_error_handle clone_port(grpc_tcp_listener* listener,
     }
   }
 
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 static grpc_error_handle tcp_server_add_port(grpc_tcp_server* s,
@@ -455,7 +455,7 @@ static grpc_error_handle tcp_server_add_port(grpc_tcp_server* s,
     addr = &addr6_v4mapped;
   }
   if ((err = grpc_tcp_server_add_addr(s, addr, port_index, 0, &dsmode, &sp)) ==
-      GRPC_ERROR_NONE) {
+      absl::OkStatus()) {
     *out_port = sp->port;
   }
   return err;
@@ -552,7 +552,7 @@ static void tcp_server_shutdown_starting_add(grpc_tcp_server* s,
                                              grpc_closure* shutdown_starting) {
   gpr_mu_lock(&s->mu);
   grpc_closure_list_append(&s->shutdown_starting, shutdown_starting,
-                           GRPC_ERROR_NONE);
+                           absl::OkStatus());
   gpr_mu_unlock(&s->mu);
 }
 
