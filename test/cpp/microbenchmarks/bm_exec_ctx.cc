@@ -78,6 +78,7 @@ void BM_ExecCtx_RunCounted(benchmark::State& state) {
     data.cnt = 0;
     state.ResumeTiming();
   }
+  delete data.signal;
   state.SetItemsProcessed(cb_count * state.iterations());
 }
 BENCHMARK(BM_ExecCtx_RunCounted)
