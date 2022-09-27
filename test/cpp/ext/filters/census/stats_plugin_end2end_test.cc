@@ -37,6 +37,7 @@
 #include "src/core/lib/channel/call_tracer.h"
 #include "src/cpp/ext/filters/census/context.h"
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
+#include "src/cpp/ext/filters/census/open_census_call_tracer.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
