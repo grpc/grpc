@@ -300,6 +300,7 @@ class ClientStream : public Orphanable {
 #ifndef NDEBUG
     grpc_stream_ref(&stream_refcount_, reason);
 #else
+    (void)reason;
     grpc_stream_ref(&stream_refcount_);
 #endif
   }
@@ -308,6 +309,7 @@ class ClientStream : public Orphanable {
 #ifndef NDEBUG
     grpc_stream_unref(&stream_refcount_, reason);
 #else
+    (void)reason;
     grpc_stream_unref(&stream_refcount_);
 #endif
   }
