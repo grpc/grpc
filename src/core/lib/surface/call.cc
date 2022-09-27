@@ -2048,6 +2048,15 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
   void Update() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   // Update the promise state once.
   virtual void UpdateOnce() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) = 0;
+  // Accept the stats from the context (call once we have proof the transport is
+  // done with them).
+  // Right now this means that promise based calls do not record correct stats
+  // with census if they are cancelled.
+  // TODO(ctiller): this should be remedied before promise  based calls are
+  // dexperimentalized.
+  void AcceptTransportStatsFromContext() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+    final_stats_ = *call_context_.call_stats();
+  }
 
   grpc_completion_queue* cq() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) { return cq_; }
 
@@ -2059,7 +2068,7 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
   // At the end of the call run any finalization actions.
   void RunFinalization(grpc_status_code status, const char* status_details) {
     grpc_call_final_info final_info;
-    final_info.stats = *call_context_.call_stats();
+    final_info.stats = final_stats_;
     final_info.final_status = status;
     final_info.error_string = status_details;
     finalization_.Run(&final_info);
@@ -2174,6 +2183,7 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
   FragmentAllocator fragment_allocator_ ABSL_GUARDED_BY(mu_);
   NonOwningWakable* non_owning_wakeable_ ABSL_GUARDED_BY(mu_) = nullptr;
   CompletionInfo completion_info_[6];
+  grpc_call_stats final_stats_{};
   CallFinalization finalization_;
 };
 
@@ -2688,6 +2698,7 @@ void ClientPromiseBasedCall::UpdateOnce() {
               }).c_str());
     }
     if (auto* result = absl::get_if<ServerMetadataHandle>(&r)) {
+      AcceptTransportStatsFromContext();
       Finish(std::move(*result));
     }
   }
