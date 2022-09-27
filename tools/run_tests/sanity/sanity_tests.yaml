@@ -31,6 +31,8 @@
 - script: tools/distrib/check_pytype.sh
 - script: tools/codegen/core/gen_grpc_tls_credentials_options.py --test
 - script: tools/distrib/gen_experiments_and_format.sh
+  # Modifies files, quickly. If run in parallel, other tests may fail
+  cpu_cost: 1000
 - script: tools/distrib/clang_format_code.sh
   cpu_cost: 1000
 - script: tools/distrib/clang_tidy_code.sh
