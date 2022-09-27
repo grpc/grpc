@@ -145,11 +145,12 @@ FanoutParameters GetFanoutParameters(benchmark::State& state) {
   FanoutParameters params;
   params.depth = state.range(0);
   params.fanout = state.range(1);
-  // sum of geometric series
-  params.limit =
-      (1 - std::pow(params.fanout, params.depth + 1)) / (1 - params.fanout);
   if (params.depth == 1 || params.fanout == 1) {
     params.limit = std::max(params.depth, params.limit);
+  } else {
+    // sum of geometric series
+    params.limit =
+        (1 - std::pow(params.fanout, params.depth + 1)) / (1 - params.fanout);
   }
   // sanity checking
   GPR_ASSERT(params.limit >= params.fanout * params.depth);
