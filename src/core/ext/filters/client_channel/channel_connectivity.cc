@@ -171,7 +171,7 @@ class StateWatcher : public DualRefCounted<StateWatcher> {
   static void WatchComplete(void* arg, grpc_error_handle error) {
     auto* self = static_cast<StateWatcher*>(arg);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_operation_failures)) {
-      GRPC_LOG_IF_ERROR("watch_completion_error", GRPC_ERROR_REF(error));
+      GRPC_LOG_IF_ERROR("watch_completion_error", error);
     }
     grpc_timer_cancel(&self->timer_);
     self->Unref();
@@ -179,7 +179,7 @@ class StateWatcher : public DualRefCounted<StateWatcher> {
 
   static void TimeoutComplete(void* arg, grpc_error_handle error) {
     auto* self = static_cast<StateWatcher*>(arg);
-    self->timer_fired_ = GRPC_ERROR_IS_NONE(error);
+    self->timer_fired_ = error.ok();
     // If this is a client channel (not a lame channel), cancel the watch.
     ClientChannel* client_channel =
         ClientChannel::GetFromChannel(self->channel_.get());

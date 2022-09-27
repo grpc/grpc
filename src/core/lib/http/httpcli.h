@@ -195,8 +195,7 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
   static void OnRead(void* user_data, grpc_error_handle error) {
     HttpRequest* req = static_cast<HttpRequest*>(user_data);
     ExecCtx::Run(DEBUG_LOCATION,
-                 &req->continue_on_read_after_schedule_on_exec_ctx_,
-                 GRPC_ERROR_REF(error));
+                 &req->continue_on_read_after_schedule_on_exec_ctx_, error);
   }
 
   // Needed since OnRead may be called inline from grpc_endpoint_read
@@ -215,8 +214,7 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
   static void DoneWrite(void* arg, grpc_error_handle error) {
     HttpRequest* req = static_cast<HttpRequest*>(arg);
     ExecCtx::Run(DEBUG_LOCATION,
-                 &req->continue_done_write_after_schedule_on_exec_ctx_,
-                 GRPC_ERROR_REF(error));
+                 &req->continue_done_write_after_schedule_on_exec_ctx_, error);
   }
 
   // Needed since DoneWrite may be called inline from grpc_endpoint_write

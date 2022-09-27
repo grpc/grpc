@@ -1416,7 +1416,6 @@ void RlsLb::Cache::Shutdown() {
 
 void RlsLb::Cache::OnCleanupTimer(void* arg, grpc_error_handle error) {
   Cache* cache = static_cast<Cache*>(arg);
-  (void)GRPC_ERROR_REF(error);
   cache->lb_policy_->work_serializer()->Run(
       [cache, error]() {
         RefCountedPtr<RlsLb> lb_policy(cache->lb_policy_);
@@ -1753,7 +1752,6 @@ void RlsLb::RlsRequest::StartCallLocked() {
 
 void RlsLb::RlsRequest::OnRlsCallComplete(void* arg, grpc_error_handle error) {
   auto* request = static_cast<RlsRequest*>(arg);
-  (void)GRPC_ERROR_REF(error);
   request->lb_policy_->work_serializer()->Run(
       [request, error]() {
         request->OnRlsCallCompleteLocked(error);
@@ -1774,7 +1772,7 @@ void RlsLb::RlsRequest::OnRlsCallCompleteLocked(grpc_error_handle error) {
   }
   // Parse response.
   ResponseInfo response;
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     grpc_status_code code;
     std::string message;
     grpc_error_get_status(error, deadline_, &code, &message,
@@ -2424,9 +2422,8 @@ void RlsLbConfig::JsonPostLoad(const Json& json, const JsonArgs&,
     rls_channel_service_config_ = it->second.Dump();
     auto service_config = MakeRefCounted<ServiceConfigImpl>(
         ChannelArgs(), rls_channel_service_config_, it->second, &child_error);
-    if (!GRPC_ERROR_IS_NONE(child_error)) {
+    if (!child_error.ok()) {
       errors->AddError(grpc_error_std_string(child_error));
-      GRPC_ERROR_UNREF(child_error);
     }
   }
   // Validate childPolicyConfigTargetFieldName.

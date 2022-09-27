@@ -60,21 +60,20 @@ struct call_data {
 
 static void on_complete_for_send(void* arg, grpc_error_handle error) {
   call_data* calld = static_cast<call_data*>(arg);
-  if (GRPC_ERROR_IS_NONE(error)) {
+  if (error.ok()) {
     calld->send_initial_metadata_succeeded = true;
   }
   grpc_core::Closure::Run(DEBUG_LOCATION, calld->original_on_complete_for_send,
-                          GRPC_ERROR_REF(error));
+                          error);
 }
 
 static void recv_initial_metadata_ready(void* arg, grpc_error_handle error) {
   call_data* calld = static_cast<call_data*>(arg);
-  if (GRPC_ERROR_IS_NONE(error)) {
+  if (error.ok()) {
     calld->recv_initial_metadata_succeeded = true;
   }
   grpc_core::Closure::Run(DEBUG_LOCATION,
-                          calld->original_recv_initial_metadata_ready,
-                          GRPC_ERROR_REF(error));
+                          calld->original_recv_initial_metadata_ready, error);
 }
 
 static grpc_error_handle clr_init_call_elem(

@@ -37,6 +37,8 @@ class Scheduler {
   virtual ~Scheduler() = default;
 };
 
+class PosixEventPoller;
+
 class EventHandle {
  public:
   virtual int WrappedFd() = 0;
@@ -79,6 +81,8 @@ class EventHandle {
   virtual void SetHasError() = 0;
   // Returns true if the handle has been shutdown.
   virtual bool IsHandleShutdown() = 0;
+  // Returns the poller which was used to create this handle.
+  virtual PosixEventPoller* Poller() = 0;
   virtual ~EventHandle() = default;
 };
 
@@ -87,6 +91,7 @@ class PosixEventPoller : public grpc_event_engine::experimental::Poller {
   // Return an opaque handle to perform actions on the provided file descriptor.
   virtual EventHandle* CreateHandle(int fd, absl::string_view name,
                                     bool track_err) = 0;
+  virtual bool CanTrackErrors() const = 0;
   virtual std::string Name() = 0;
   // Shuts down and deletes the poller. It is legal to call this function
   // only when no other poller method is in progress. For instance, it is

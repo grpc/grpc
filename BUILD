@@ -2782,6 +2782,44 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "posix_event_engine_endpoint",
+    srcs = [
+        "src/core/lib/event_engine/posix_engine/posix_endpoint.cc",
+    ],
+    hdrs = [
+        "src/core/lib/event_engine/posix_engine/posix_endpoint.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/container:flat_hash_map",
+        "absl/functional:any_invocable",
+        "absl/hash",
+        "absl/memory",
+        "absl/meta:type_traits",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/types:optional",
+    ],
+    deps = [
+        "event_engine_base_hdrs",
+        "experiments",
+        "gpr",
+        "iomgr_port",
+        "memory_quota",
+        "posix_event_engine_closure",
+        "posix_event_engine_event_poller",
+        "posix_event_engine_internal_errqueue",
+        "posix_event_engine_tcp_socket_utils",
+        "posix_event_engine_traced_buffer_list",
+        "ref_counted",
+        "ref_counted_ptr",
+        "resource_quota",
+        "useful",
+    ],
+)
+
+grpc_cc_library(
     name = "event_engine_utils",
     srcs = ["src/core/lib/event_engine/utils.cc"],
     hdrs = ["src/core/lib/event_engine/utils.h"],
@@ -4767,6 +4805,7 @@ grpc_cc_library(
         "upb_utils",
         "uri_parser",
         "useful",
+        "validation_errors",
         "work_serializer",
         "xds_client",
         "xds_type_upb",

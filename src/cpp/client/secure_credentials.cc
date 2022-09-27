@@ -227,19 +227,17 @@ grpc::Status StsCredentialsOptionsFromEnv(StsCredentialsOptions* options) {
   grpc_error_handle error = GRPC_ERROR_NONE;
   grpc::Status status;
   // NOLINTNEXTLINE(clang-diagnostic-unused-lambda-capture)
-  auto cleanup = [&json_string, &error, &status]() {
+  auto cleanup = [&json_string, &status]() {
     grpc_slice_unref(json_string);
-    GRPC_ERROR_UNREF(error);
     return status;
   };
-
   if (!sts_creds_path.has_value()) {
     status = grpc::Status(grpc::StatusCode::NOT_FOUND,
                           "STS_CREDENTIALS environment variable not set.");
     return cleanup();
   }
   error = grpc_load_file(sts_creds_path->c_str(), 1, &json_string);
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     status =
         grpc::Status(grpc::StatusCode::NOT_FOUND, grpc_error_std_string(error));
     return cleanup();

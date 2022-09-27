@@ -240,8 +240,8 @@ struct grpc_pollset_set {
 
 static bool append_error(grpc_error_handle* composite, grpc_error_handle error,
                          const char* desc) {
-  if (GRPC_ERROR_IS_NONE(error)) return true;
-  if (GRPC_ERROR_IS_NONE(*composite)) {
+  if (error.ok()) return true;
+  if (composite->ok()) {
     *composite = GRPC_ERROR_CREATE_FROM_COPIED_STRING(desc);
   }
   *composite = grpc_error_add_child(*composite, error);
@@ -381,7 +381,7 @@ static int fd_wrapped_fd(grpc_fd* fd) { return fd->fd; }
  * shutdown() syscall on that fd) */
 static void fd_shutdown_internal(grpc_fd* fd, grpc_error_handle why,
                                  bool releasing_fd) {
-  if (fd->read_closure->SetShutdown(GRPC_ERROR_REF(why))) {
+  if (fd->read_closure->SetShutdown(why)) {
     if (!releasing_fd) {
       shutdown(fd->fd, SHUT_RDWR);
     } else {
@@ -392,10 +392,9 @@ static void fd_shutdown_internal(grpc_fd* fd, grpc_error_handle why,
         gpr_log(GPR_ERROR, "epoll_ctl failed: %s", strerror(errno));
       }
     }
-    fd->write_closure->SetShutdown(GRPC_ERROR_REF(why));
-    fd->error_closure->SetShutdown(GRPC_ERROR_REF(why));
+    fd->write_closure->SetShutdown(why);
+    fd->error_closure->SetShutdown(why);
   }
-  GRPC_ERROR_UNREF(why);
 }
 
 /* Might be called multiple times */
@@ -421,7 +420,7 @@ static void fd_orphan(grpc_fd* fd, grpc_closure* on_done, int* release_fd,
     close(fd->fd);
   }
 
-  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, GRPC_ERROR_REF(error));
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, error);
 
   grpc_iomgr_unregister_object(&fd->iomgr_object);
   fork_fd_list_remove_grpc_fd(fd);
@@ -515,7 +514,7 @@ static grpc_error_handle pollset_global_init(void) {
   gpr_atm_no_barrier_store(&g_active_poller, 0);
   global_wakeup_fd.read_fd = -1;
   grpc_error_handle err = grpc_wakeup_fd_init(&global_wakeup_fd);
-  if (!GRPC_ERROR_IS_NONE(err)) return err;
+  if (!err.ok()) return err;
   struct epoll_event ev;
   ev.events = static_cast<uint32_t>(EPOLLIN | EPOLLET);
   ev.data.ptr = &global_wakeup_fd;

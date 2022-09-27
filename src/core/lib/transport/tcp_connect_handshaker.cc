@@ -100,7 +100,7 @@ TCPConnectHandshaker::TCPConnectHandshaker(grpc_pollset_set* pollset_set)
   GRPC_CLOSURE_INIT(&connected_, Connected, this, grpc_schedule_on_exec_ctx);
 }
 
-void TCPConnectHandshaker::Shutdown(grpc_error_handle why) {
+void TCPConnectHandshaker::Shutdown(grpc_error_handle /*why*/) {
   // TODO(anramach): After migration to EventEngine, cancel the in-progress
   // TCP connection attempt.
   {
@@ -118,7 +118,6 @@ void TCPConnectHandshaker::Shutdown(grpc_error_handle why) {
       }
     }
   }
-  GRPC_ERROR_UNREF(why);
 }
 
 void TCPConnectHandshaker::DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
@@ -167,15 +166,12 @@ void TCPConnectHandshaker::Connected(void* arg, grpc_error_handle error) {
       static_cast<TCPConnectHandshaker*>(arg));
   {
     MutexLock lock(&self->mu_);
-    if (!GRPC_ERROR_IS_NONE(error) || self->shutdown_) {
-      if (GRPC_ERROR_IS_NONE(error)) {
+    if (!error.ok() || self->shutdown_) {
+      if (error.ok()) {
         error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("tcp handshaker shutdown");
-      } else {
-        error = GRPC_ERROR_REF(error);
       }
       if (self->endpoint_to_destroy_ != nullptr) {
-        grpc_endpoint_shutdown(self->endpoint_to_destroy_,
-                               GRPC_ERROR_REF(error));
+        grpc_endpoint_shutdown(self->endpoint_to_destroy_, error);
       }
       if (!self->shutdown_) {
         self->CleanupArgsForFailureLocked();
@@ -185,7 +181,6 @@ void TCPConnectHandshaker::Connected(void* arg, grpc_error_handle error) {
         // The on_handshake_done_ is already as part of shutdown when
         // connecting So nothing to be done here other than unrefing the
         // error.
-        GRPC_ERROR_UNREF(error);
       }
       return;
     }
