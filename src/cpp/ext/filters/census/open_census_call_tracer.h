@@ -43,6 +43,18 @@
 #include "src/core/lib/transport/transport.h"
 #include "src/cpp/ext/filters/census/context.h"
 
+// TODO(yashykt): This might not be the right place for this channel arg, but we
+// don't have a better place for this right now.
+
+// EXPERIMENTAL. If zero, disables observability tracing and observability
+// logging (not yet implemented) on the client channel, defaults to true. Note
+// that this does not impact metrics/stats collection. This channel arg is
+// intended as a way to avoid cyclic execution of observability logging and
+// trace especially when the sampling rate of RPCs is very high which would
+// generate a lot of data.
+//
+#define GRPC_ARG_ENABLE_OBSERVABILITY "grpc.experimental.enable_observability"
+
 namespace grpc {
 
 class OpenCensusCallTracer : public grpc_core::CallTracer {
