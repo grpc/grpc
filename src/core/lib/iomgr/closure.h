@@ -128,6 +128,8 @@ grpc_closure MakeMemberClosure(T* p, DebugLocation location = DebugLocation()) {
 #ifndef NDEBUG
   out.file_created = location.file();
   out.line_created = location.line();
+#else
+  (void)location;
 #endif
   return out;
 }
@@ -141,6 +143,8 @@ grpc_closure MakeMemberClosure(T* p, DebugLocation location = DebugLocation()) {
 #ifndef NDEBUG
   out.file_created = location.file();
   out.line_created = location.line();
+#else
+  (void)location;
 #endif
   return out;
 }
