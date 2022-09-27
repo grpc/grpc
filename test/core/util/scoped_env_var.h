@@ -27,10 +27,10 @@ namespace testing {
 class ScopedEnvVar {
  public:
   ScopedEnvVar(const char* env_var, const char* value) : env_var_(env_var) {
-    grpc_core::SetEnv(env_var_, value);
+    SetEnv(env_var_, value);
   }
 
-  virtual ~ScopedEnvVar() { grpc_core::UnsetEnv(env_var_); }
+  virtual ~ScopedEnvVar() { UnsetEnv(env_var_); }
 
  private:
   const char* env_var_;
