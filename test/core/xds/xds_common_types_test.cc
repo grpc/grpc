@@ -36,10 +36,9 @@ class XdsCommonTypesTest : public ::testing::Test {
  protected:
   XdsCommonTypesTest()
       : xds_client_(MakeXdsClient()),
-        decode_context_{
-            xds_client_.get(), xds_client_->bootstrap().server(),
-            &xds_common_types_test_trace, upb_def_pool_.ptr(),
-            upb_arena_.ptr()} {}
+        decode_context_{xds_client_.get(), xds_client_->bootstrap().server(),
+                        &xds_common_types_test_trace, upb_def_pool_.ptr(),
+                        upb_arena_.ptr()} {}
 
   static RefCountedPtr<XdsClient> MakeXdsClient() {
     grpc_error_handle error = GRPC_ERROR_NONE;
@@ -145,8 +144,7 @@ class CommonTlsConfigTest : public XdsCommonTypesTest {
     // Deserialize as upb proto.
     const auto* upb_proto =
         envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_parse(
-            serialized_proto.data(), serialized_proto.size(),
-            upb_arena_.ptr());
+            serialized_proto.data(), serialized_proto.size(), upb_arena_.ptr());
     if (upb_proto == nullptr) {
       EXPECT_TRUE(false) << "upb parsing failed";
       return nullptr;
@@ -158,8 +156,8 @@ class CommonTlsConfigTest : public XdsCommonTypesTest {
       const envoy_extensions_transport_sockets_tls_v3_CommonTlsContext*
           upb_proto) {
     ValidationErrors errors;
-    CommonTlsContext common_tls_context = CommonTlsContext::Parse(
-        decode_context_, upb_proto, &errors);
+    CommonTlsContext common_tls_context =
+        CommonTlsContext::Parse(decode_context_, upb_proto, &errors);
     if (!errors.ok()) return errors.status("validation failed");
     return common_tls_context;
   }
@@ -168,10 +166,10 @@ class CommonTlsConfigTest : public XdsCommonTypesTest {
 TEST_F(CommonTlsConfigTest, CaCertProviderInCombinedValidationContext) {
   // Construct proto.
   CommonTlsContextProto common_tls_context_proto;
-  auto* cert_provider = common_tls_context_proto
-                            .mutable_combined_validation_context()
-                            ->mutable_default_validation_context()
-                            ->mutable_ca_certificate_provider_instance();
+  auto* cert_provider =
+      common_tls_context_proto.mutable_combined_validation_context()
+          ->mutable_default_validation_context()
+          ->mutable_ca_certificate_provider_instance();
   cert_provider->set_instance_name("provider1");
   cert_provider->set_certificate_name("cert_name");
   // Convert to upb.
@@ -186,10 +184,9 @@ TEST_F(CommonTlsConfigTest, CaCertProviderInCombinedValidationContext) {
   EXPECT_EQ(common_tls_context->certificate_validation_context
                 .ca_certificate_provider_instance.certificate_name,
             "cert_name");
-  EXPECT_THAT(
-      common_tls_context->certificate_validation_context
-          .match_subject_alt_names,
-      ::testing::ElementsAre());
+  EXPECT_THAT(common_tls_context->certificate_validation_context
+                  .match_subject_alt_names,
+              ::testing::ElementsAre());
   EXPECT_TRUE(common_tls_context->tls_certificate_provider_instance.Empty())
       << common_tls_context->tls_certificate_provider_instance.ToString();
 }
@@ -197,8 +194,7 @@ TEST_F(CommonTlsConfigTest, CaCertProviderInCombinedValidationContext) {
 TEST_F(CommonTlsConfigTest, CaCertProviderInValidationContext) {
   // Construct proto.
   CommonTlsContextProto common_tls_context_proto;
-  auto* cert_provider = common_tls_context_proto
-                            .mutable_validation_context()
+  auto* cert_provider = common_tls_context_proto.mutable_validation_context()
                             ->mutable_ca_certificate_provider_instance();
   cert_provider->set_instance_name("provider1");
   cert_provider->set_certificate_name("cert_name");
@@ -214,10 +210,9 @@ TEST_F(CommonTlsConfigTest, CaCertProviderInValidationContext) {
   EXPECT_EQ(common_tls_context->certificate_validation_context
                 .ca_certificate_provider_instance.certificate_name,
             "cert_name");
-  EXPECT_THAT(
-      common_tls_context->certificate_validation_context
-          .match_subject_alt_names,
-      ::testing::ElementsAre());
+  EXPECT_THAT(common_tls_context->certificate_validation_context
+                  .match_subject_alt_names,
+              ::testing::ElementsAre());
   EXPECT_TRUE(common_tls_context->tls_certificate_provider_instance.Empty())
       << common_tls_context->tls_certificate_provider_instance.ToString();
 }
@@ -242,8 +237,8 @@ TEST_F(CommonTlsConfigTest, ValidationSdsConfigUnsupported) {
 TEST_F(CommonTlsConfigTest, TlsCertProvider) {
   // Construct proto.
   CommonTlsContextProto common_tls_context_proto;
-  auto* cert_provider = common_tls_context_proto
-                            .mutable_tls_certificate_provider_instance();
+  auto* cert_provider =
+      common_tls_context_proto.mutable_tls_certificate_provider_instance();
   cert_provider->set_instance_name("provider1");
   cert_provider->set_certificate_name("cert_name");
   // Convert to upb.
@@ -329,8 +324,7 @@ TEST_F(CommonTlsConfigTest, CustomHandshakerUnuspported) {
 TEST_F(CommonTlsConfigTest, UnknownCertificateProviderInstance) {
   // Construct proto.
   CommonTlsContextProto common_tls_context_proto;
-  auto* cert_provider = common_tls_context_proto
-                            .mutable_validation_context()
+  auto* cert_provider = common_tls_context_proto.mutable_validation_context()
                             ->mutable_ca_certificate_provider_instance();
   cert_provider->set_instance_name("fake");
   cert_provider->set_certificate_name("cert_name");
@@ -474,8 +468,8 @@ TEST_F(CommonTlsConfigTest, ValidationContextUnsupportedFields) {
       common_tls_context_proto.mutable_validation_context();
   validation_context->add_verify_certificate_spki("foo");
   validation_context->add_verify_certificate_hash("bar");
-  validation_context->mutable_require_signed_certificate_timestamp()
-      ->set_value(true);
+  validation_context->mutable_require_signed_certificate_timestamp()->set_value(
+      true);
   validation_context->mutable_crl();
   validation_context->mutable_custom_validator_config();
   // Convert to upb.

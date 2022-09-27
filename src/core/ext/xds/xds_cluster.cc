@@ -128,8 +128,8 @@ absl::optional<CommonTlsContext> UpstreamTlsContextParse(
   ValidationErrors::ScopedField field2(
       errors,
       ".value[envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext]");
-  absl::string_view serialized_upstream_tls_context = UpbStringToAbsl(
-      google_protobuf_Any_value(typed_config));
+  absl::string_view serialized_upstream_tls_context =
+      UpbStringToAbsl(google_protobuf_Any_value(typed_config));
   const auto* upstream_tls_context =
       envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_parse(
           serialized_upstream_tls_context.data(),
@@ -306,8 +306,7 @@ absl::StatusOr<XdsClusterResource> CdsResourceParse(
       absl::string_view type_url = absl::StripPrefix(
           UpbStringToAbsl(google_protobuf_Any_type_url(typed_config)),
           "type.googleapis.com/");
-      if (type_url !=
-          "envoy.extensions.clusters.aggregate.v3.ClusterConfig") {
+      if (type_url != "envoy.extensions.clusters.aggregate.v3.ClusterConfig") {
         ValidationErrors::ScopedField field(&errors, ".type_url");
         errors.AddError(
             absl::StrCat("unknown cluster_type extension: ", type_url));
@@ -317,8 +316,8 @@ absl::StatusOr<XdsClusterResource> CdsResourceParse(
         ValidationErrors::ScopedField field(
             &errors,
             ".value[envoy.extensions.clusters.aggregate.v3.ClusterConfig]");
-        absl::string_view serialized_config = UpbStringToAbsl(
-            google_protobuf_Any_value(typed_config));
+        absl::string_view serialized_config =
+            UpbStringToAbsl(google_protobuf_Any_value(typed_config));
         AggregateClusterParse(context, serialized_config, &cds_update, &errors);
       }
     }

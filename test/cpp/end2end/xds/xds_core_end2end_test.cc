@@ -23,8 +23,8 @@
 #include "absl/strings/str_cat.h"
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
-#include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 #include "test/core/util/scoped_env_var.h"
+#include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 
 namespace grpc {
 namespace testing {

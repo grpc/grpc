@@ -714,8 +714,7 @@ absl::Status RetryPolicyParse(
       ValidationErrors validation_errors;
       max = ParseDuration(max_interval, &validation_errors);
       if (!validation_errors.ok()) {
-        errors.emplace_back(
-            validation_errors.status("max_interval").message());
+        errors.emplace_back(validation_errors.status("max_interval").message());
       }
     } else {
       // if max interval is not set, it is 10x the base.
@@ -859,8 +858,7 @@ absl::StatusOr<XdsRouteConfigResource::Route::RouteAction> RouteActionParse(
       }
       if (duration != nullptr) {
         ValidationErrors validation_errors;
-        route.max_stream_duration =
-            ParseDuration(duration, &validation_errors);
+        route.max_stream_duration = ParseDuration(duration, &validation_errors);
         if (!validation_errors.ok()) {
           return validation_errors.status("max_stream_duration");
         }

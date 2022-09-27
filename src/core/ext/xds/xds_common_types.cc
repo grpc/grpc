@@ -148,9 +148,9 @@ CertificateProviderInstanceParse(
   if (bootstrap.certificate_providers().find(cert_provider.instance_name) ==
       bootstrap.certificate_providers().end()) {
     ValidationErrors::ScopedField field(errors, ".instance_name");
-    errors->AddError(absl::StrCat(
-        "unrecognized certificate provider instance name: ",
-        cert_provider.instance_name));
+    errors->AddError(
+        absl::StrCat("unrecognized certificate provider instance name: ",
+                     cert_provider.instance_name));
   }
   cert_provider.certificate_name = UpbStringToStdString(
       envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProviderInstance_certificate_name(
@@ -173,9 +173,9 @@ CertificateProviderPluginInstanceParse(
   if (bootstrap.certificate_providers().find(cert_provider.instance_name) ==
       bootstrap.certificate_providers().end()) {
     ValidationErrors::ScopedField field(errors, ".instance_name");
-    errors->AddError(absl::StrCat(
-        "unrecognized certificate provider instance name: ",
-        cert_provider.instance_name));
+    errors->AddError(
+        absl::StrCat("unrecognized certificate provider instance name: ",
+                     cert_provider.instance_name));
   }
   cert_provider.certificate_name = UpbStringToStdString(
       envoy_extensions_transport_sockets_tls_v3_CertificateProviderPluginInstance_certificate_name(
@@ -252,8 +252,8 @@ CertificateValidationContextParse(
       envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_ca_certificate_provider_instance(
           certificate_validation_context_proto);
   if (ca_certificate_provider_instance != nullptr) {
-    ValidationErrors::ScopedField field(
-        errors, ".ca_certificate_provider_instance");
+    ValidationErrors::ScopedField field(errors,
+                                        ".ca_certificate_provider_instance");
     certificate_validation_context.ca_certificate_provider_instance =
         CertificateProviderPluginInstanceParse(
             context, ca_certificate_provider_instance, errors);
@@ -313,8 +313,8 @@ CommonTlsContext CommonTlsContext::Parse(
       ValidationErrors::ScopedField field(errors,
                                           ".default_validation_context");
       common_tls_context.certificate_validation_context =
-          CertificateValidationContextParse(
-              context, default_validation_context, errors);
+          CertificateValidationContextParse(context, default_validation_context,
+                                            errors);
     }
     // If after parsing default_validation_context,
     // common_tls_context->certificate_validation_context.ca_certificate_provider_instance
@@ -331,10 +331,9 @@ CommonTlsContext CommonTlsContext::Parse(
         validation_context_certificate_provider_instance != nullptr) {
       ValidationErrors::ScopedField field(
           errors, ".validation_context_certificate_provider_instance");
-      common_tls_context.certificate_validation_context.ca_certificate_provider_instance =
-          CertificateProviderInstanceParse(
-              context, validation_context_certificate_provider_instance,
-              errors);
+      common_tls_context.certificate_validation_context
+          .ca_certificate_provider_instance = CertificateProviderInstanceParse(
+          context, validation_context_certificate_provider_instance, errors);
     }
   } else {
     auto* validation_context =
@@ -357,8 +356,8 @@ CommonTlsContext CommonTlsContext::Parse(
       envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_tls_certificate_provider_instance(
           common_tls_context_proto);
   if (tls_certificate_provider_instance != nullptr) {
-    ValidationErrors::ScopedField field(
-        errors, ".tls_certificate_provider_instance");
+    ValidationErrors::ScopedField field(errors,
+                                        ".tls_certificate_provider_instance");
     common_tls_context.tls_certificate_provider_instance =
         CertificateProviderPluginInstanceParse(
             context, tls_certificate_provider_instance, errors);

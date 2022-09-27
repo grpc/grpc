@@ -99,24 +99,23 @@ TEST_F(OutlierDetectionConfigParsingTest, InvalidValues) {
   auto service_config =
       ServiceConfigImpl::Create(ChannelArgs(), service_config_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(
-      service_config.status().message(),
-      ::testing::HasSubstr(
-          "errors validating outlier_detection LB policy config: ["
-          "field:baseEjectionTime "
-          "error:seconds must be in the range [0, 315576000000]; "
-          "field:childPolicy error:No known policies in list: unknown; "
-          "field:failurePercentageEjection.enforcement_percentage "
-          "error:value must be <= 100; "
-          "field:failurePercentageEjection.threshold "
-          "error:value must be <= 100; "
-          "field:interval "
-          "error:seconds must be in the range [0, 315576000000]; "
-          "field:maxEjectionTime "
-          "error:seconds must be in the range [0, 315576000000]; "
-          "field:max_ejection_percent error:value must be <= 100; "
-          "field:successRateEjection.enforcement_percentage "
-          "error:value must be <= 100]"))
+  EXPECT_THAT(service_config.status().message(),
+              ::testing::HasSubstr(
+                  "errors validating outlier_detection LB policy config: ["
+                  "field:baseEjectionTime "
+                  "error:seconds must be in the range [0, 315576000000]; "
+                  "field:childPolicy error:No known policies in list: unknown; "
+                  "field:failurePercentageEjection.enforcement_percentage "
+                  "error:value must be <= 100; "
+                  "field:failurePercentageEjection.threshold "
+                  "error:value must be <= 100; "
+                  "field:interval "
+                  "error:seconds must be in the range [0, 315576000000]; "
+                  "field:maxEjectionTime "
+                  "error:seconds must be in the range [0, 315576000000]; "
+                  "field:max_ejection_percent error:value must be <= 100; "
+                  "field:successRateEjection.enforcement_percentage "
+                  "error:value must be <= 100]"))
       << service_config.status();
 }
 
@@ -147,11 +146,10 @@ TEST_F(OutlierDetectionConfigParsingTest, MissingChildPolicyField) {
   auto service_config =
       ServiceConfigImpl::Create(ChannelArgs(), service_config_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(
-      service_config.status().message(),
-      ::testing::HasSubstr(
-          "errors validating outlier_detection LB policy config: ["
-          "field:childPolicy error:field not present]"))
+  EXPECT_THAT(service_config.status().message(),
+              ::testing::HasSubstr(
+                  "errors validating outlier_detection LB policy config: ["
+                  "field:childPolicy error:field not present]"))
       << service_config.status();
 }
 

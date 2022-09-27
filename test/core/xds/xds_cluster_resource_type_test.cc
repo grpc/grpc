@@ -41,10 +41,9 @@ class XdsClusterTest : public ::testing::Test {
  protected:
   XdsClusterTest()
       : xds_client_(MakeXdsClient()),
-        decode_context_{
-            xds_client_.get(), xds_client_->bootstrap().server(),
-            &xds_cluster_resource_type_test_trace, upb_def_pool_.ptr(),
-            upb_arena_.ptr()} {}
+        decode_context_{xds_client_.get(), xds_client_->bootstrap().server(),
+                        &xds_cluster_resource_type_test_trace,
+                        upb_def_pool_.ptr(), upb_arena_.ptr()} {}
 
   static RefCountedPtr<XdsClient> MakeXdsClient() {
     grpc_error_handle error = GRPC_ERROR_NONE;
@@ -521,8 +520,9 @@ TEST_F(ClusterTypeTest, AggregateClusterUnparseableProto) {
   cluster.set_name("foo");
   cluster.mutable_cluster_type()->set_name("envoy.clusters.aggregate");
   auto* any = cluster.mutable_cluster_type()->mutable_typed_config();
-  any->set_type_url("type.googleapis.com/"
-                    "envoy.extensions.clusters.aggregate.v3.ClusterConfig");
+  any->set_type_url(
+      "type.googleapis.com/"
+      "envoy.extensions.clusters.aggregate.v3.ClusterConfig");
   any->set_value(std::string("\0", 1));
   std::string serialized_resource;
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
