@@ -42,26 +42,6 @@ namespace posix_engine {
 
 grpc_core::DebugOnlyTraceFlag grpc_event_engine_timer_trace(false, "timer");
 
-namespace {
-class ThreadCollector {
- public:
-  ThreadCollector() = default;
-  ~ThreadCollector();
-
-  void Collect(std::vector<grpc_core::Thread> threads) {
-    GPR_ASSERT(threads_.empty());
-    threads_ = std::move(threads);
-  }
-
- private:
-  std::vector<grpc_core::Thread> threads_;
-};
-
-ThreadCollector::~ThreadCollector() {
-  for (auto& t : threads_) t.Join();
-}
-}  // namespace
-
 void TimerManager::StartThread() {
   ++waiter_count_;
   ++thread_count_;
@@ -69,14 +49,13 @@ void TimerManager::StartThread() {
   thread->self = this;
   thread->thread = grpc_core::Thread(
       "timer_manager", &TimerManager::RunThread, thread, nullptr,
-      grpc_core::Thread::Options().set_tracked(false));
+      grpc_core::Thread::Options().set_tracked(false).set_joinable(false));
   thread->thread.Start();
 }
 
 void TimerManager::RunSomeTimers(
     std::vector<experimental::EventEngine::Closure*> timers) {
   // if there's something to execute...
-  ThreadCollector collector;
   {
     grpc_core::MutexLock lock(&mu_);
     if (shutdown_ || forking_) return;
@@ -102,7 +81,6 @@ void TimerManager::RunSomeTimers(
   }
   {
     grpc_core::MutexLock lock(&mu_);
-    collector.Collect(std::move(completed_threads_));
     // get ready to wait again
     ++waiter_count_;
   }
@@ -217,7 +195,6 @@ void TimerManager::RunThread(void* arg) {
 void TimerManager::Run(grpc_core::Thread thread) {
   MainLoop();
   grpc_core::MutexLock lock(&mu_);
-  completed_threads_.push_back(std::move(thread));
   thread_count_--;
   if (thread_count_ == 0) cv_threadcount_.Signal();
 }
@@ -248,18 +225,16 @@ TimerManager::~TimerManager() {
   if (grpc_event_engine_timer_trace.enabled()) {
     gpr_log(GPR_DEBUG, "TimerManager::%p shutting down", this);
   }
-  ThreadCollector collector;
   grpc_core::MutexLock lock(&mu_);
   shutdown_ = true;
   cv_wait_.SignalAll();
   while (thread_count_ > 0) {
-    cv_threadcount_.Wait(&mu_);
     if (grpc_event_engine_timer_trace.enabled()) {
       gpr_log(GPR_DEBUG, "TimerManager::%p waiting for %zu threads to finish",
               this, thread_count_);
     }
+    cv_threadcount_.Wait(&mu_);
   }
-  collector.Collect(std::move(completed_threads_));
   if (grpc_event_engine_timer_trace.enabled()) {
     gpr_log(GPR_DEBUG, "TimerManager::%p shutdown complete", this);
   }
@@ -277,7 +252,6 @@ void TimerManager::Kick() {
 }
 
 void TimerManager::PrepareFork() {
-  ThreadCollector collector;
   grpc_core::MutexLock lock(&mu_);
   forking_ = true;
   prefork_thread_count_ = thread_count_;
@@ -285,7 +259,6 @@ void TimerManager::PrepareFork() {
   while (thread_count_ > 0) {
     cv_threadcount_.Wait(&mu_);
   }
-  collector.Collect(std::move(completed_threads_));
 }
 
 void TimerManager::PostforkParent() {
