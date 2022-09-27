@@ -431,23 +431,29 @@ absl::StatusOr<XdsClusterResource> CdsResourceParse(
   // default values.
   if (XdsOutlierDetectionEnabled() &&
       envoy_config_cluster_v3_Cluster_has_outlier_detection(cluster)) {
+    ValidationErrors::ScopedField field(&errors, ".outlier_detection");
     OutlierDetectionConfig outlier_detection_update;
     const envoy_config_cluster_v3_OutlierDetection* outlier_detection =
         envoy_config_cluster_v3_Cluster_outlier_detection(cluster);
     const google_protobuf_Duration* duration =
         envoy_config_cluster_v3_OutlierDetection_interval(outlier_detection);
     if (duration != nullptr) {
-      outlier_detection_update.interval = ParseDuration(duration);
+      ValidationErrors::ScopedField field(&errors, ".interval");
+      outlier_detection_update.interval = ParseDuration(duration, &errors);
     }
     duration = envoy_config_cluster_v3_OutlierDetection_base_ejection_time(
         outlier_detection);
     if (duration != nullptr) {
-      outlier_detection_update.base_ejection_time = ParseDuration(duration);
+      ValidationErrors::ScopedField field(&errors, ".base_ejection_time");
+      outlier_detection_update.base_ejection_time =
+          ParseDuration(duration, &errors);
     }
     duration = envoy_config_cluster_v3_OutlierDetection_max_ejection_time(
         outlier_detection);
     if (duration != nullptr) {
-      outlier_detection_update.max_ejection_time = ParseDuration(duration);
+      ValidationErrors::ScopedField field(&errors, ".max_ejection_time");
+      outlier_detection_update.max_ejection_time =
+          ParseDuration(duration, &errors);
     }
     const google_protobuf_UInt32Value* max_ejection_percent =
         envoy_config_cluster_v3_OutlierDetection_max_ejection_percent(
@@ -455,6 +461,10 @@ absl::StatusOr<XdsClusterResource> CdsResourceParse(
     if (max_ejection_percent != nullptr) {
       outlier_detection_update.max_ejection_percent =
           google_protobuf_UInt32Value_value(max_ejection_percent);
+      if (outlier_detection_update.max_ejection_percent > 100) {
+        ValidationErrors::ScopedField field(&errors, ".max_ejection_percent");
+        errors.AddError("value must be <= 100");
+      }
     }
     const google_protobuf_UInt32Value* enforcing_success_rate =
         envoy_config_cluster_v3_OutlierDetection_enforcing_success_rate(
@@ -462,6 +472,10 @@ absl::StatusOr<XdsClusterResource> CdsResourceParse(
     if (enforcing_success_rate != nullptr) {
       uint32_t enforcement_percentage =
           google_protobuf_UInt32Value_value(enforcing_success_rate);
+      if (enforcement_percentage > 100) {
+        ValidationErrors::ScopedField field(&errors, ".enforcing_success_rate");
+        errors.AddError("value must be <= 100");
+      }
       if (enforcement_percentage != 0) {
         OutlierDetectionConfig::SuccessRateEjection success_rate_ejection;
         success_rate_ejection.enforcement_percentage = enforcement_percentage;
@@ -495,6 +509,11 @@ absl::StatusOr<XdsClusterResource> CdsResourceParse(
     if (enforcing_failure_percentage != nullptr) {
       uint32_t enforcement_percentage =
           google_protobuf_UInt32Value_value(enforcing_failure_percentage);
+      if (enforcement_percentage > 100) {
+        ValidationErrors::ScopedField field(&errors,
+                                            ".enforcing_failure_percentage");
+        errors.AddError("value must be <= 100");
+      }
       if (enforcement_percentage != 0) {
         OutlierDetectionConfig::FailurePercentageEjection
             failure_percentage_ejection;
@@ -520,6 +539,11 @@ absl::StatusOr<XdsClusterResource> CdsResourceParse(
         if (threshold != nullptr) {
           failure_percentage_ejection.threshold =
               google_protobuf_UInt32Value_value(threshold);
+          if (enforcement_percentage > 100) {
+            ValidationErrors::ScopedField field(
+                &errors, ".failure_percentage_threshold");
+            errors.AddError("value must be <= 100");
+          }
         }
         outlier_detection_update.failure_percentage_ejection =
             failure_percentage_ejection;

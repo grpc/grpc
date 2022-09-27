@@ -23,6 +23,7 @@
 #include "src/proto/grpc/testing/xds/v3/aggregate_cluster.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/tls.grpc.pb.h"
+#include "test/core/util/scoped_env_var.h"
 #include "test/core/util/test_config.h"
 
 using envoy::config::cluster::v3::Cluster;
@@ -120,8 +121,11 @@ TEST_F(XdsClusterTest, MinimumValidConfig) {
                        ->resource;
   EXPECT_EQ(resource.cluster_type, resource.EDS);
   EXPECT_EQ(resource.eds_service_name, "");
+  // Check defaults.
   EXPECT_EQ(resource.lb_policy, "ROUND_ROBIN");
   EXPECT_FALSE(resource.lrs_load_reporting_server.has_value());
+  EXPECT_EQ(resource.max_concurrent_requests, 1024);
+  EXPECT_FALSE(resource.outlier_detection.has_value());
 }
 
 //
@@ -922,9 +926,226 @@ TEST_F(LrsTest, NotSelfConfigSource) {
       << decode_result.resource.status();
 }
 
+//
+// circuit breaker tests
+//
 
-// FIXME: add tests for OD validation described in
-// https://github.com/grpc/proposal/blob/master/A50-xds-outlier-detection.md#validation
+using CircuitBreakingTest = XdsClusterTest;
+
+TEST_F(CircuitBreakingTest, Valid) {
+  Cluster cluster;
+  cluster.set_name("foo");
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  auto* threshold = cluster.mutable_circuit_breakers()->add_thresholds();
+  threshold->set_priority(envoy::config::cluster::v3::HIGH);  // Ignored.
+  threshold->mutable_max_requests()->set_value(251);
+  threshold = cluster.mutable_circuit_breakers()->add_thresholds();
+  threshold->set_priority(envoy::config::cluster::v3::DEFAULT);
+  threshold->mutable_max_requests()->set_value(1701);
+  threshold = cluster.mutable_circuit_breakers()->add_thresholds();
+  threshold->set_priority(envoy::config::cluster::v3::HIGH);  // Ignored.
+  threshold->mutable_max_requests()->set_value(5049);
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result = resource_type->Decode(
+      decode_context_, serialized_resource, /*is_v2=*/false);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource = static_cast<XdsClusterResourceType::ResourceDataSubclass*>(
+                       decode_result.resource->get())
+                       ->resource;
+  EXPECT_EQ(resource.max_concurrent_requests, 1701);
+}
+
+TEST_F(CircuitBreakingTest, NoDefaultThreshold) {
+  Cluster cluster;
+  cluster.set_name("foo");
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  auto* threshold = cluster.mutable_circuit_breakers()->add_thresholds();
+  threshold->set_priority(envoy::config::cluster::v3::HIGH);  // Ignored.
+  threshold->mutable_max_requests()->set_value(251);
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result = resource_type->Decode(
+      decode_context_, serialized_resource, /*is_v2=*/false);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource = static_cast<XdsClusterResourceType::ResourceDataSubclass*>(
+                       decode_result.resource->get())
+                       ->resource;
+  EXPECT_EQ(resource.max_concurrent_requests, 1024);  // Default.
+}
+
+TEST_F(CircuitBreakingTest, DefaultThresholdWithMaxRequestsUnset) {
+  Cluster cluster;
+  cluster.set_name("foo");
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  auto* threshold = cluster.mutable_circuit_breakers()->add_thresholds();
+  threshold->set_priority(envoy::config::cluster::v3::DEFAULT);
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result = resource_type->Decode(
+      decode_context_, serialized_resource, /*is_v2=*/false);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource = static_cast<XdsClusterResourceType::ResourceDataSubclass*>(
+                       decode_result.resource->get())
+                       ->resource;
+  EXPECT_EQ(resource.max_concurrent_requests, 1024);  // Default.
+}
+
+//
+// outlier detection tests
+//
+
+using OutlierDetectionTest = XdsClusterTest;
+
+TEST_F(OutlierDetectionTest, EnabledWithDefaults) {
+  ScopedExperimentalEnvVar env("GRPC_EXPERIMENTAL_ENABLE_OUTLIER_DETECTION");
+  Cluster cluster;
+  cluster.set_name("foo");
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  cluster.mutable_outlier_detection();
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result = resource_type->Decode(
+      decode_context_, serialized_resource, /*is_v2=*/false);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource = static_cast<XdsClusterResourceType::ResourceDataSubclass*>(
+                       decode_result.resource->get())
+                       ->resource;
+  ASSERT_TRUE(resource.outlier_detection.has_value());
+  EXPECT_EQ(*resource.outlier_detection, OutlierDetectionConfig());
+}
+
+TEST_F(OutlierDetectionTest, NotEnabledWithEnvVarUnset) {
+  Cluster cluster;
+  cluster.set_name("foo");
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  cluster.mutable_outlier_detection();
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result = resource_type->Decode(
+      decode_context_, serialized_resource, /*is_v2=*/false);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource = static_cast<XdsClusterResourceType::ResourceDataSubclass*>(
+                       decode_result.resource->get())
+                       ->resource;
+  ASSERT_FALSE(resource.outlier_detection.has_value());
+}
+
+TEST_F(OutlierDetectionTest, AllFieldsSet) {
+  ScopedExperimentalEnvVar env("GRPC_EXPERIMENTAL_ENABLE_OUTLIER_DETECTION");
+  Cluster cluster;
+  cluster.set_name("foo");
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  auto* outlier_detection = cluster.mutable_outlier_detection();
+  outlier_detection->mutable_interval()->set_seconds(1);
+  outlier_detection->mutable_base_ejection_time()->set_seconds(2);
+  outlier_detection->mutable_max_ejection_time()->set_seconds(3);
+  outlier_detection->mutable_max_ejection_percent()->set_value(20);
+  outlier_detection->mutable_enforcing_success_rate()->set_value(7);
+  outlier_detection->mutable_success_rate_minimum_hosts()->set_value(12);
+  outlier_detection->mutable_success_rate_request_volume()->set_value(31);
+  outlier_detection->mutable_success_rate_stdev_factor()->set_value(251);
+  outlier_detection->mutable_enforcing_failure_percentage()->set_value(9);
+  outlier_detection->mutable_failure_percentage_minimum_hosts()->set_value(3);
+  outlier_detection->mutable_failure_percentage_request_volume()->set_value(75);
+  outlier_detection->mutable_failure_percentage_threshold()->set_value(90);
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result = resource_type->Decode(
+      decode_context_, serialized_resource, /*is_v2=*/false);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource = static_cast<XdsClusterResourceType::ResourceDataSubclass*>(
+                       decode_result.resource->get())
+                       ->resource;
+  ASSERT_TRUE(resource.outlier_detection.has_value());
+  EXPECT_EQ(resource.outlier_detection->interval, Duration::Seconds(1));
+  EXPECT_EQ(resource.outlier_detection->base_ejection_time,
+            Duration::Seconds(2));
+  EXPECT_EQ(resource.outlier_detection->max_ejection_time,
+            Duration::Seconds(3));
+  EXPECT_EQ(resource.outlier_detection->max_ejection_percent, 20);
+  ASSERT_TRUE(resource.outlier_detection->success_rate_ejection.has_value());
+  const auto& success_rate_ejection =
+      *resource.outlier_detection->success_rate_ejection;
+  EXPECT_EQ(success_rate_ejection.stdev_factor, 251);
+  EXPECT_EQ(success_rate_ejection.enforcement_percentage, 7);
+  EXPECT_EQ(success_rate_ejection.minimum_hosts, 12);
+  EXPECT_EQ(success_rate_ejection.request_volume, 31);
+  ASSERT_TRUE(
+      resource.outlier_detection->failure_percentage_ejection.has_value());
+  const auto& failure_percentage_ejection =
+      *resource.outlier_detection->failure_percentage_ejection;
+  EXPECT_EQ(failure_percentage_ejection.threshold, 90);
+  EXPECT_EQ(failure_percentage_ejection.enforcement_percentage, 9);
+  EXPECT_EQ(failure_percentage_ejection.minimum_hosts, 3);
+  EXPECT_EQ(failure_percentage_ejection.request_volume, 75);
+}
+
+TEST_F(OutlierDetectionTest, InvalidValues) {
+  ScopedExperimentalEnvVar env("GRPC_EXPERIMENTAL_ENABLE_OUTLIER_DETECTION");
+  Cluster cluster;
+  cluster.set_name("foo");
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  auto* outlier_detection = cluster.mutable_outlier_detection();
+  outlier_detection->mutable_interval()->set_seconds(-1);
+  outlier_detection->mutable_base_ejection_time()->set_seconds(-2);
+  outlier_detection->mutable_max_ejection_time()->set_seconds(-3);
+  outlier_detection->mutable_max_ejection_percent()->set_value(101);
+  outlier_detection->mutable_enforcing_success_rate()->set_value(101);
+  outlier_detection->mutable_enforcing_failure_percentage()->set_value(101);
+  outlier_detection->mutable_failure_percentage_threshold()->set_value(101);
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result = resource_type->Decode(
+      decode_context_, serialized_resource, /*is_v2=*/false);
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating Cluster resource: ["
+            "field:outlier_detection.base_ejection_time.seconds "
+            "error:value must be in the range [0, 315576000000]; "
+            "field:outlier_detection.enforcing_failure_percentage "
+            "error:value must be <= 100; "
+            "field:outlier_detection.enforcing_success_rate "
+            "error:value must be <= 100; "
+            "field:outlier_detection.failure_percentage_threshold "
+            "error:value must be <= 100; "
+            "field:outlier_detection.interval.seconds "
+            "error:value must be in the range [0, 315576000000]; "
+            "field:outlier_detection.max_ejection_percent "
+            "error:value must be <= 100; "
+            "field:outlier_detection.max_ejection_time.seconds "
+            "error:value must be in the range [0, 315576000000]]")
+      << decode_result.resource.status();
+}
 
 }  // namespace
 }  // namespace testing

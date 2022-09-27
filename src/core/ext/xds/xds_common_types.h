@@ -36,11 +36,8 @@
 
 namespace grpc_core {
 
-inline Duration ParseDuration(const google_protobuf_Duration* proto_duration) {
-  return Duration::FromSecondsAndNanoseconds(
-      google_protobuf_Duration_seconds(proto_duration),
-      google_protobuf_Duration_nanos(proto_duration));
-}
+Duration ParseDuration(const google_protobuf_Duration* proto_duration,
+                       ValidationErrors* errors);
 
 struct CommonTlsContext {
   struct CertificateProviderPluginInstance {

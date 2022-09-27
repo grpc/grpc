@@ -58,6 +58,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/status_helper.h"
+#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/json/json.h"
@@ -315,8 +316,13 @@ HttpConnectionManagerParse(
     const google_protobuf_Duration* duration =
         envoy_config_core_v3_HttpProtocolOptions_max_stream_duration(options);
     if (duration != nullptr) {
+      ValidationErrors validation_errors;
       http_connection_manager.http_max_stream_duration =
-          ParseDuration(duration);
+          ParseDuration(duration, &validation_errors);
+      if (!validation_errors.ok()) {
+        errors.emplace_back(
+            validation_errors.status("max_stream_duration").message());
+      }
     }
   }
   // Parse filters.

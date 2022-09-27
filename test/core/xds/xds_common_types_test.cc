@@ -72,6 +72,68 @@ class XdsCommonTypesTest : public ::testing::Test {
                                      /*transport_factory=*/nullptr);
   }
 
+  RefCountedPtr<XdsClient> xds_client_;
+  upb::DefPool upb_def_pool_;
+  upb::Arena upb_arena_;
+  XdsResourceType::DecodeContext decode_context_;
+};
+
+//
+// ParseDuration() tests
+//
+
+using DurationTest = XdsCommonTypesTest;
+
+TEST_F(DurationTest, Basic) {
+  google_protobuf_Duration* duration_proto =
+      google_protobuf_Duration_new(upb_arena_.ptr());
+  google_protobuf_Duration_set_seconds(duration_proto, 1);
+  google_protobuf_Duration_set_nanos(duration_proto, 2000000);
+  ValidationErrors errors;
+  Duration duration = ParseDuration(duration_proto, &errors);
+  EXPECT_TRUE(errors.ok()) << errors.status("unexpected errors");
+  EXPECT_EQ(duration, Duration::Milliseconds(1002));
+}
+
+TEST_F(DurationTest, NegativeNumbers) {
+  google_protobuf_Duration* duration_proto =
+      google_protobuf_Duration_new(upb_arena_.ptr());
+  google_protobuf_Duration_set_seconds(duration_proto, -1);
+  google_protobuf_Duration_set_nanos(duration_proto, -2);
+  ValidationErrors errors;
+  ParseDuration(duration_proto, &errors);
+  absl::Status status = errors.status("validation failed");
+  EXPECT_EQ(status.message(),
+            "validation failed: ["
+            "field:nanos error:value must be in the range [0, 999999999]; "
+            "field:seconds error:value must be in the range [0, 315576000000]]")
+      << status;
+}
+
+TEST_F(DurationTest, ValuesTooHigh) {
+  google_protobuf_Duration* duration_proto =
+      google_protobuf_Duration_new(upb_arena_.ptr());
+  google_protobuf_Duration_set_seconds(duration_proto, 315576000001);
+  google_protobuf_Duration_set_nanos(duration_proto, 1000000000);
+  ValidationErrors errors;
+  ParseDuration(duration_proto, &errors);
+  absl::Status status = errors.status("validation failed");
+  EXPECT_EQ(status.message(),
+            "validation failed: ["
+            "field:nanos error:value must be in the range [0, 999999999]; "
+            "field:seconds error:value must be in the range [0, 315576000000]]")
+      << status;
+}
+
+//
+// CommonTlsContext tests
+//
+
+class CommonTlsConfigTest : public XdsCommonTypesTest {
+ protected:
+  // For convenience, tests build protos using the protobuf API and then
+  // use this function to convert it to a upb object, which can be
+  // passed to CommonTlsConfig::Parse() for validation.
   const envoy_extensions_transport_sockets_tls_v3_CommonTlsContext*
   ConvertToUpb(CommonTlsContextProto proto) {
     // Serialize the protobuf proto.
@@ -101,14 +163,7 @@ class XdsCommonTypesTest : public ::testing::Test {
     if (!errors.ok()) return errors.status("validation failed");
     return common_tls_context;
   }
-
-  RefCountedPtr<XdsClient> xds_client_;
-  upb::DefPool upb_def_pool_;
-  upb::Arena upb_arena_;
-  XdsResourceType::DecodeContext decode_context_;
 };
-
-using CommonTlsConfigTest = XdsCommonTypesTest;
 
 TEST_F(CommonTlsConfigTest, CaCertProviderInCombinedValidationContext) {
   // Construct proto.

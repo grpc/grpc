@@ -43,6 +43,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/transport/status_conversion.h"
 
@@ -143,8 +144,10 @@ absl::StatusOr<Json> ParseHttpFaultIntoJson(
         envoy_extensions_filters_common_fault_v3_FaultDelay_fixed_delay(
             fault_delay);
     if (delay_duration != nullptr) {
-      fault_injection_policy_json["delay"] =
-          ParseDuration(delay_duration).ToJsonString();
+      ValidationErrors errors;
+      Duration duration = ParseDuration(delay_duration, &errors);
+      if (!errors.ok()) return errors.status("fixed_delay");
+      fault_injection_policy_json["delay"] = duration.ToJsonString();
     }
     // Set the headers if we enabled header delay injection control
     if (envoy_extensions_filters_common_fault_v3_FaultDelay_has_header_delay(
