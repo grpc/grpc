@@ -48,8 +48,6 @@
 #include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
-#include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/handshaker_registry.h"
 #include "src/core/lib/transport/tcp_connect_handshaker.h"
@@ -194,11 +192,10 @@ HttpRequest::~HttpRequest() {
   if (own_endpoint_ && ep_ != nullptr) {
     grpc_endpoint_destroy(ep_);
   }
-  grpc_slice_unref_internal(request_text_);
+  grpc_slice_unref(request_text_);
   grpc_iomgr_unregister_object(&iomgr_obj_);
-  grpc_slice_buffer_destroy_internal(&incoming_);
-  grpc_slice_buffer_destroy_internal(&outgoing_);
-  GRPC_ERROR_UNREF(overall_error_);
+  grpc_slice_buffer_destroy(&incoming_);
+  grpc_slice_buffer_destroy(&outgoing_);
   grpc_pollset_set_destroy(pollset_set_);
 }
 
@@ -241,7 +238,7 @@ void HttpRequest::Orphan() {
 }
 
 void HttpRequest::AppendError(grpc_error_handle error) {
-  if (GRPC_ERROR_IS_NONE(overall_error_)) {
+  if (overall_error_.ok()) {
     overall_error_ =
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Failed HTTP/1 client request");
   }
@@ -260,7 +257,7 @@ void HttpRequest::OnReadInternal(grpc_error_handle error) {
       have_read_byte_ = 1;
       grpc_error_handle err =
           grpc_http_parser_parse(&parser_, incoming_.slices[i], nullptr);
-      if (!GRPC_ERROR_IS_NONE(err)) {
+      if (!err.ok()) {
         Finish(err);
         return;
       }
@@ -269,10 +266,10 @@ void HttpRequest::OnReadInternal(grpc_error_handle error) {
   if (cancelled_) {
     Finish(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
         "HTTP1 request cancelled during read", &overall_error_, 1));
-  } else if (GRPC_ERROR_IS_NONE(error)) {
+  } else if (error.ok()) {
     DoRead();
   } else if (!have_read_byte_) {
-    NextAddress(GRPC_ERROR_REF(error));
+    NextAddress(error);
   } else {
     Finish(grpc_http_parser_eof(&parser_));
   }
@@ -282,15 +279,15 @@ void HttpRequest::ContinueDoneWriteAfterScheduleOnExecCtx(
     void* arg, grpc_error_handle error) {
   RefCountedPtr<HttpRequest> req(static_cast<HttpRequest*>(arg));
   MutexLock lock(&req->mu_);
-  if (GRPC_ERROR_IS_NONE(error) && !req->cancelled_) {
+  if (error.ok() && !req->cancelled_) {
     req->OnWritten();
   } else {
-    req->NextAddress(GRPC_ERROR_REF(error));
+    req->NextAddress(error);
   }
 }
 
 void HttpRequest::StartWrite() {
-  grpc_slice_ref_internal(request_text_);
+  grpc_slice_ref(request_text_);
   grpc_slice_buffer_add(&outgoing_, request_text_);
   Ref().release();  // ref held by pending write
   grpc_endpoint_write(ep_, &outgoing_, &done_write_, nullptr,
@@ -307,13 +304,13 @@ void HttpRequest::OnHandshakeDone(void* arg, grpc_error_handle error) {
   }
   MutexLock lock(&req->mu_);
   req->own_endpoint_ = true;
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     req->handshake_mgr_.reset();
-    req->NextAddress(GRPC_ERROR_REF(error));
+    req->NextAddress(error);
     return;
   }
   // Handshake completed, so we own fields in args
-  grpc_slice_buffer_destroy_internal(args->read_buffer);
+  grpc_slice_buffer_destroy(args->read_buffer);
   gpr_free(args->read_buffer);
   req->ep_ = args->endpoint;
   req->handshake_mgr_.reset();
@@ -358,7 +355,7 @@ void HttpRequest::DoHandshake(const grpc_resolved_address* addr) {
 }
 
 void HttpRequest::NextAddress(grpc_error_handle error) {
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     AppendError(error);
   }
   if (cancelled_) {

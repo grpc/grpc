@@ -31,7 +31,6 @@
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/spinlock.h"
-#include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/time.h"
@@ -216,7 +215,7 @@ static void validate_non_pending_timer(grpc_timer* t) {
  * has last-seen. This is an optimization to prevent the thread from checking
  * shared_mutables.min_timer (which requires acquiring shared_mutables.mu lock,
  * an expensive operation) */
-static GPR_THREAD_LOCAL(int64_t) g_last_seen_min_timer;
+static thread_local int64_t g_last_seen_min_timer;
 
 struct shared_mutables {
   /* The deadline of the next timer due across all timer shards */
@@ -551,8 +550,7 @@ static size_t pop_timers(timer_shard* shard, grpc_core::Timestamp now,
   gpr_mu_lock(&shard->mu);
   while ((timer = pop_one(shard, now))) {
     REMOVE_FROM_HASH_TABLE(timer);
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, timer->closure,
-                            GRPC_ERROR_REF(error));
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, timer->closure, error);
     n++;
   }
   *new_min_deadline = compute_min_deadline(shard);
@@ -657,8 +655,6 @@ static grpc_timer_check_result run_some_expired_timers(
     gpr_mu_unlock(&g_shared_mutables.mu);
     gpr_spinlock_unlock(&g_shared_mutables.checker_mu);
   }
-
-  GRPC_ERROR_UNREF(error);
 
   return result;
 }

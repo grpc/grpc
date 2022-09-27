@@ -512,6 +512,7 @@ grpc_cc_library(
         "src/core/plugin_registry/grpc_plugin_registry.cc",
         "src/core/plugin_registry/grpc_plugin_registry_noextra.cc",
     ],
+    defines = ["GRPC_NO_XDS"],
     external_deps = [
         "absl/base:core_headers",
     ],
@@ -1122,17 +1123,10 @@ grpc_cc_library(
         "env",
         "examine_stack",
         "gpr_atm",
-        "gpr_tls",
         "no_destruct",
         "tchar",
         "useful",
     ],
-)
-
-grpc_cc_library(
-    name = "gpr_tls",
-    hdrs = ["src/core/lib/gpr/tls.h"],
-    deps = ["gpr_platform"],
 )
 
 grpc_cc_library(
@@ -1394,10 +1388,7 @@ grpc_cc_library(
     public_hdrs = [
         "src/core/lib/promise/context.h",
     ],
-    deps = [
-        "gpr_platform",
-        "gpr_tls",
-    ],
+    deps = ["gpr_platform"],
 )
 
 grpc_cc_library(
@@ -1675,7 +1666,6 @@ grpc_cc_library(
         "construct_destruct",
         "context",
         "gpr",
-        "gpr_tls",
         "no_destruct",
         "orphanable",
         "poll",
@@ -1764,7 +1754,10 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "pipe",
-    external_deps = ["absl/types:optional"],
+    external_deps = [
+        "absl/types:optional",
+        "absl/types:variant",
+    ],
     language = "c++",
     public_hdrs = [
         "src/core/lib/promise/pipe.h",
@@ -1856,7 +1849,6 @@ grpc_cc_library(
         "ref_counted_ptr",
         "slice",
         "slice_buffer",
-        "slice_refcount",
         "time",
     ],
 )
@@ -1923,7 +1915,6 @@ grpc_cc_library(
         "ref_counted_ptr",
         "slice",
         "slice_buffer",
-        "slice_refcount",
     ],
 )
 
@@ -1959,7 +1950,6 @@ grpc_cc_library(
         "ref_counted_ptr",
         "resolved_address",
         "slice",
-        "slice_refcount",
         "uri_parser",
     ],
 )
@@ -2223,7 +2213,6 @@ grpc_cc_library(
     deps = [
         "event_engine_base_hdrs",
         "gpr",
-        "gpr_tls",
         "no_destruct",
         "useful",
     ],
@@ -2250,7 +2239,6 @@ grpc_cc_library(
         "gpr",
         "gpr_atm",
         "gpr_spinlock",
-        "gpr_tls",
         "grpc_codegen",
         "grpc_trace",
         "time",
@@ -2320,7 +2308,6 @@ grpc_cc_library(
         "gpr_manual_constructor",
         "gpr_platform",
         "gpr_spinlock",
-        "gpr_tls",
         "grpc_trace",
         "iomgr_port",
         "time",
@@ -2442,6 +2429,27 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "event_engine_work_queue",
+    srcs = [
+        "src/core/lib/event_engine/work_queue.cc",
+    ],
+    hdrs = [
+        "src/core/lib/event_engine/work_queue.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/functional:any_invocable",
+        "absl/types:optional",
+    ],
+    deps = [
+        "common_event_engine_closures",
+        "event_engine_base_hdrs",
+        "gpr",
+        "time",
+    ],
+)
+
+grpc_cc_library(
     name = "event_engine_threaded_executor",
     srcs = [
         "src/core/lib/event_engine/executor/threaded_executor.cc",
@@ -2505,7 +2513,6 @@ grpc_cc_library(
     deps = [
         "forkable",
         "gpr",
-        "gpr_tls",
     ],
 )
 
@@ -2525,7 +2532,6 @@ grpc_cc_library(
         "event_engine_base_hdrs",
         "forkable",
         "gpr",
-        "gpr_tls",
         "grpc_trace",
         "posix_event_engine_timer",
         "time",
@@ -2785,20 +2791,29 @@ grpc_cc_library(
         "absl/base:core_headers",
         "absl/container:flat_hash_map",
         "absl/functional:any_invocable",
+        "absl/hash",
+        "absl/memory",
+        "absl/meta:type_traits",
         "absl/status",
-        "absl/synchronization",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/types:optional",
     ],
     deps = [
         "event_engine_base_hdrs",
         "experiments",
         "gpr",
         "iomgr_port",
+        "memory_quota",
         "posix_event_engine_closure",
         "posix_event_engine_event_poller",
         "posix_event_engine_internal_errqueue",
         "posix_event_engine_tcp_socket_utils",
         "posix_event_engine_traced_buffer_list",
+        "ref_counted",
         "ref_counted_ptr",
+        "resource_quota",
+        "useful",
     ],
 )
 
@@ -2876,6 +2891,7 @@ grpc_cc_library(
         "event_engine_utils",
         "gpr",
         "grpc_trace",
+        "iomgr_port",
         "posix_event_engine_closure",
         "posix_event_engine_endpoint",
         "posix_event_engine_event_poller",
@@ -3134,6 +3150,37 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "per_cpu",
+    hdrs = [
+        "src/core/lib/gprpp/per_cpu.h",
+    ],
+    deps = [
+        "exec_ctx",
+        "gpr",
+    ],
+)
+
+grpc_cc_library(
+    name = "event_log",
+    srcs = [
+        "src/core/lib/debug/event_log.cc",
+    ],
+    hdrs = [
+        "src/core/lib/debug/event_log.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/strings",
+        "absl/types:span",
+    ],
+    deps = [
+        "gpr",
+        "gpr_public_hdrs",
+        "per_cpu",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_base",
     srcs = [
         "src/core/lib/address_utils/parse_address.cc",
@@ -3213,8 +3260,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/wakeup_fd_posix.cc",
         "src/core/lib/resource_quota/api.cc",
         "src/core/lib/slice/b64.cc",
-        "src/core/lib/slice/slice_api.cc",
-        "src/core/lib/slice/slice_buffer_api.cc",
         "src/core/lib/surface/api_trace.cc",
         "src/core/lib/surface/builtins.cc",
         "src/core/lib/surface/byte_buffer.cc",
@@ -3392,6 +3437,7 @@ grpc_cc_library(
         "dual_ref_counted",
         "error",
         "event_engine_common",
+        "event_log",
         "exec_ctx",
         "experiments",
         "gpr",
@@ -3399,7 +3445,6 @@ grpc_cc_library(
         "gpr_manual_constructor",
         "gpr_murmur_hash",
         "gpr_spinlock",
-        "gpr_tls",
         "grpc_public_hdrs",
         "grpc_sockaddr",
         "grpc_trace",
@@ -4654,6 +4699,7 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
+        "absl/synchronization",
         "absl/types:optional",
         "absl/types:variant",
         "upb_lib",
@@ -4757,6 +4803,7 @@ grpc_cc_library(
         "upb_utils",
         "uri_parser",
         "useful",
+        "validation_errors",
         "work_serializer",
         "xds_client",
         "xds_type_upb",
@@ -7103,7 +7150,6 @@ grpc_cc_library(
         "orphanable",
         "ref_counted_ptr",
         "resolved_address",
-        "slice",
         "sockaddr_utils",
         "tcp_connect_handshaker",
         "transport_fwd",
@@ -7149,7 +7195,6 @@ grpc_cc_library(
         "ref_counted_ptr",
         "resolved_address",
         "resource_quota",
-        "slice",
         "sockaddr_utils",
         "time",
         "transport_fwd",

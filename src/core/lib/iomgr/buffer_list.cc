@@ -282,7 +282,6 @@ void TracedBuffer::Shutdown(TracedBuffer** head, void* remaining,
   if (remaining != nullptr) {
     timestamps_callback(remaining, nullptr, shutdown_err);
   }
-  GRPC_ERROR_UNREF(shutdown_err);
 }
 
 void grpc_tcp_set_write_timestamps_callback(

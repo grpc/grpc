@@ -30,7 +30,6 @@
 
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/slice/slice_buffer.h"
-#include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/transport/transport.h"
 
 absl::Status grpc_chttp2_data_parser_begin_frame(uint8_t flags,
@@ -139,7 +138,7 @@ grpc_error_handle grpc_chttp2_data_parser_parse(void* /*parser*/,
                                                 grpc_chttp2_stream* s,
                                                 const grpc_slice& slice,
                                                 int is_last) {
-  grpc_slice_ref_internal(slice);
+  grpc_slice_ref(slice);
   grpc_slice_buffer_add(&s->frame_storage, slice);
   grpc_chttp2_maybe_complete_recv_message(t, s);
 

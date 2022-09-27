@@ -201,7 +201,6 @@ libs:
   - src/core/lib/gpr/alloc.h
   - src/core/lib/gpr/string.h
   - src/core/lib/gpr/time_precise.h
-  - src/core/lib/gpr/tls.h
   - src/core/lib/gpr/tmpfile.h
   - src/core/lib/gpr/useful.h
   - src/core/lib/gprpp/construct_destruct.h
@@ -726,6 +725,7 @@ libs:
   - src/core/lib/compression/compression_internal.h
   - src/core/lib/compression/message_compress.h
   - src/core/lib/config/core_configuration.h
+  - src/core/lib/debug/event_log.h
   - src/core/lib/debug/stats.h
   - src/core/lib/debug/stats_data.h
   - src/core/lib/debug/trace.h
@@ -780,6 +780,7 @@ libs:
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/overload.h
   - src/core/lib/gprpp/packed_table.h
+  - src/core/lib/gprpp/per_cpu.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
   - src/core/lib/gprpp/single_set_ptr.h
@@ -1453,6 +1454,7 @@ libs:
   - src/core/lib/compression/compression_internal.cc
   - src/core/lib/compression/message_compress.cc
   - src/core/lib/config/core_configuration.cc
+  - src/core/lib/debug/event_log.cc
   - src/core/lib/debug/stats.cc
   - src/core/lib/debug/stats_data.cc
   - src/core/lib/debug/trace.cc
@@ -1657,9 +1659,7 @@ libs:
   - src/core/lib/slice/b64.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
-  - src/core/lib/slice/slice_api.cc
   - src/core/lib/slice/slice_buffer.cc
-  - src/core/lib/slice/slice_buffer_api.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/lib/surface/api_trace.cc
@@ -1952,6 +1952,7 @@ libs:
   - src/core/lib/compression/compression_internal.h
   - src/core/lib/compression/message_compress.h
   - src/core/lib/config/core_configuration.h
+  - src/core/lib/debug/event_log.h
   - src/core/lib/debug/stats.h
   - src/core/lib/debug/stats_data.h
   - src/core/lib/debug/trace.h
@@ -2006,6 +2007,7 @@ libs:
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/overload.h
   - src/core/lib/gprpp/packed_table.h
+  - src/core/lib/gprpp/per_cpu.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
   - src/core/lib/gprpp/single_set_ptr.h
@@ -2320,6 +2322,7 @@ libs:
   - src/core/lib/compression/compression_internal.cc
   - src/core/lib/compression/message_compress.cc
   - src/core/lib/config/core_configuration.cc
+  - src/core/lib/debug/event_log.cc
   - src/core/lib/debug/stats.cc
   - src/core/lib/debug/stats_data.cc
   - src/core/lib/debug/trace.cc
@@ -2484,9 +2487,7 @@ libs:
   - src/core/lib/slice/b64.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
-  - src/core/lib/slice/slice_api.cc
   - src/core/lib/slice/slice_buffer.cc
-  - src/core/lib/slice/slice_buffer_api.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/lib/surface/api_trace.cc
@@ -5331,7 +5332,6 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/gpr/tls.h
   - src/core/lib/promise/context.h
   src:
   - test/core/promise/context_test.cc
@@ -7618,6 +7618,10 @@ targets:
   - test/core/event_engine/posix/lock_free_event_test.cc
   deps:
   - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
   uses_polling: false
 - name: log_test
   gtest: true
@@ -8354,6 +8358,10 @@ targets:
   - test/core/event_engine/test_suite/timer_test.cc
   deps:
   - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: promise_factory_test
   gtest: true
   build: test
@@ -10272,16 +10280,6 @@ targets:
   - test/core/util/tracer_util.cc
   deps:
   - grpc_test_util
-- name: tls_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/gpr/tls_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: too_many_pings_test
   gtest: true
   build: test
@@ -10816,6 +10814,17 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
+- name: work_queue_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/event_engine/work_queue.h
+  src:
+  - src/core/lib/event_engine/work_queue.cc
+  - test/core/event_engine/work_queue/work_queue_test.cc
+  deps:
+  - grpc_test_util_unsecure
 - name: work_serializer_test
   gtest: true
   build: test
@@ -11251,6 +11260,20 @@ targets:
   - linux
   - posix
   - mac
+- name: xds_endpoint_resource_type_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - src/proto/grpc/testing/xds/v3/address.proto
+  - src/proto/grpc/testing/xds/v3/base.proto
+  - src/proto/grpc/testing/xds/v3/endpoint.proto
+  - src/proto/grpc/testing/xds/v3/percent.proto
+  - test/core/xds/xds_endpoint_resource_type_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: xds_fault_injection_end2end_test
   gtest: true
   build: test

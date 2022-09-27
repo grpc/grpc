@@ -66,14 +66,13 @@ grpc_error_handle grpc_load_file(const char* filename, int add_null_terminator,
 end:
   *output = result;
   if (file != nullptr) fclose(file);
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     grpc_error_handle error_out =
         grpc_error_set_str(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                                "Failed to load file", &error, 1),
                            GRPC_ERROR_STR_FILENAME,
 
                            filename);
-    GRPC_ERROR_UNREF(error);
     error = error_out;
   }
   GRPC_SCHEDULING_END_BLOCKING_REGION_NO_EXEC_CTX;

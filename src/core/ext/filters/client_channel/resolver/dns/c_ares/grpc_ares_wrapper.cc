@@ -295,7 +295,7 @@ static void on_timeout(void* arg, grpc_error_handle error) {
       "err=%s",
       driver->request, driver, driver->shutting_down,
       grpc_error_std_string(error).c_str());
-  if (!driver->shutting_down && GRPC_ERROR_IS_NONE(error)) {
+  if (!driver->shutting_down && error.ok()) {
     grpc_ares_ev_driver_shutdown_locked(driver);
   }
   grpc_ares_ev_driver_unref(driver);
@@ -321,7 +321,7 @@ static void on_ares_backup_poll_alarm(void* arg, grpc_error_handle error) {
       "err=%s",
       driver->request, driver, driver->shutting_down,
       grpc_error_std_string(error).c_str());
-  if (!driver->shutting_down && GRPC_ERROR_IS_NONE(error)) {
+  if (!driver->shutting_down && error.ok()) {
     fd_node* fdn = driver->fds;
     while (fdn != nullptr) {
       if (!fdn->already_shutdown) {
@@ -363,7 +363,7 @@ static void on_readable(void* arg, grpc_error_handle error) {
   fdn->readable_registered = false;
   GRPC_CARES_TRACE_LOG("request:%p readable on %s", fdn->ev_driver->request,
                        fdn->grpc_polled_fd->GetName());
-  if (GRPC_ERROR_IS_NONE(error)) {
+  if (error.ok()) {
     do {
       ares_process_fd(ev_driver->channel, as, ARES_SOCKET_BAD);
     } while (fdn->grpc_polled_fd->IsFdStillReadableLocked());
@@ -389,7 +389,7 @@ static void on_writable(void* arg, grpc_error_handle error) {
   fdn->writable_registered = false;
   GRPC_CARES_TRACE_LOG("request:%p writable on %s", ev_driver->request,
                        fdn->grpc_polled_fd->GetName());
-  if (GRPC_ERROR_IS_NONE(error)) {
+  if (error.ok()) {
     ares_process_fd(ev_driver->channel, ARES_SOCKET_BAD, as);
   } else {
     // If error is not GRPC_ERROR_NONE, it means the fd has been shutdown or
@@ -603,7 +603,6 @@ void grpc_ares_complete_request_locked(grpc_ares_request* r)
   r->ev_driver = nullptr;
   if (r->addresses_out != nullptr && *r->addresses_out != nullptr) {
     grpc_cares_wrapper_address_sorting_sort(r, r->addresses_out->get());
-    GRPC_ERROR_UNREF(r->error);
     r->error = GRPC_ERROR_NONE;
     // TODO(apolcyn): allow c-ares to return a service config
     // with no addresses along side it
@@ -887,7 +886,7 @@ grpc_error_handle grpc_dns_lookup_ares_continued(
   }
   error = grpc_ares_ev_driver_create_locked(&r->ev_driver, interested_parties,
                                             query_timeout_ms, r);
-  if (!GRPC_ERROR_IS_NONE(error)) return error;
+  if (!error.ok()) return error;
   // If dns_server is specified, use it.
   error = set_request_dns_server(r, dns_server);
   return error;
@@ -1053,7 +1052,7 @@ static grpc_ares_request* grpc_dns_lookup_hostname_ares_impl(
   grpc_error_handle error = grpc_dns_lookup_ares_continued(
       r, dns_server, name, default_port, interested_parties, query_timeout_ms,
       &host, &port, true);
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_done, error);
     return r;
   }
@@ -1100,7 +1099,7 @@ grpc_ares_request* grpc_dns_lookup_srv_ares_impl(
   error = grpc_dns_lookup_ares_continued(r, dns_server, name, nullptr,
                                          interested_parties, query_timeout_ms,
                                          &host, &port, false);
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_done, error);
     return r;
   }
@@ -1138,7 +1137,7 @@ grpc_ares_request* grpc_dns_lookup_txt_ares_impl(
   error = grpc_dns_lookup_ares_continued(r, dns_server, name, nullptr,
                                          interested_parties, query_timeout_ms,
                                          &host, &port, false);
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_done, error);
     return r;
   }

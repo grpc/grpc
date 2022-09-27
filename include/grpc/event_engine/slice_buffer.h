@@ -96,7 +96,7 @@ class SliceBuffer {
 
   /// Removes/deletes the last n bytes in the SliceBuffer and add it to the
   /// other SliceBuffer
-  void RemoveLastNBytesIntoSliceBuffer(size_t n, SliceBuffer& other) {
+  void MoveLastNBytesIntoSliceBuffer(size_t n, SliceBuffer& other) {
     grpc_slice_buffer_trim_end(&slice_buffer_, n, &other.slice_buffer_);
   }
 

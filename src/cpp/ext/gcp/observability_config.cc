@@ -32,7 +32,6 @@
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/transport/error_utils.h"
 
 namespace grpc {
@@ -51,12 +50,12 @@ absl::StatusOr<std::string> GetGcpObservabilityConfigContents() {
     grpc_slice contents;
     grpc_error_handle error =
         grpc_load_file(path->c_str(), /*add_null_terminator=*/true, &contents);
-    if (!GRPC_ERROR_IS_NONE(error)) {
+    if (!error.ok()) {
       return grpc_error_to_absl_status(grpc_error_set_int(
           error, GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_FAILED_PRECONDITION));
     }
     std::string contents_str(grpc_core::StringViewFromSlice(contents));
-    grpc_slice_unref_internal(contents);
+    grpc_slice_unref(contents);
     return std::move(contents_str);
   }
   // Next, try GRPC_OBSERVABILITY_CONFIG env var.
