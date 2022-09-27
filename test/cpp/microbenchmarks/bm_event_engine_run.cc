@@ -146,7 +146,7 @@ FanoutParameters GetFanoutParameters(benchmark::State& state) {
   params.depth = state.range(0);
   params.fanout = state.range(1);
   if (params.depth == 1 || params.fanout == 1) {
-    params.limit = std::max(params.depth, params.limit);
+    params.limit = std::max(params.depth, params.fanout) + 1;
   } else {
     // sum of geometric series
     params.limit =
