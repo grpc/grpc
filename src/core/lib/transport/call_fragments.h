@@ -184,15 +184,8 @@ class FragmentAllocator {
   template <typename T>
   friend class FragmentHandle;
 
-  void Delete(grpc_metadata_batch* p) {
-    p->~grpc_metadata_batch();
-    FreeNode(reinterpret_cast<Node*>(p));
-  }
-
-  void Delete(Message* m) {
-    m->~Message();
-    FreeNode(reinterpret_cast<Node*>(m));
-  }
+  void Delete(grpc_metadata_batch* p);
+  void Delete(Message* m);
 
   Node* AllocateNode();
   void FreeNode(Node* node);

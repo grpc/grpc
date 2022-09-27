@@ -32,4 +32,14 @@ void FragmentAllocator::FreeNode(Node* node) {
   free_list_ = node;
 }
 
+void FragmentAllocator::Delete(grpc_metadata_batch* p) {
+  p->~grpc_metadata_batch();
+  FreeNode(reinterpret_cast<Node*>(p));
+}
+
+void FragmentAllocator::Delete(Message* m) {
+  m->~Message();
+  FreeNode(reinterpret_cast<Node*>(m));
+}
+
 }  // namespace grpc_core
