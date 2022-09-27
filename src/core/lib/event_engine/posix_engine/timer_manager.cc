@@ -16,22 +16,18 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/event_engine/posix_engine/timer_manager.h"
 
-#include <algorithm>
+#include <grpc/support/port_platform.h>
+#include <grpc/impl/codegen/gpr_types.h>
+#include <grpc/support/log.h>
+#include <grpc/support/time.h>
 #include <memory>
 #include <utility>
 
 #include "absl/memory/memory.h"
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
-
-#include <grpc/impl/codegen/gpr_types.h>
-#include <grpc/support/log.h>
-#include <grpc/support/time.h>
-
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/thd.h"
 
@@ -185,14 +181,14 @@ void TimerManager::RunThread(void* arg) {
     gpr_log(GPR_DEBUG, "TimerManager::%p starting thread::%p", thread->self,
             &thread->thread);
   }
-  thread->self->Run(std::move(thread->thread));
+  thread->self->Run();
   if (grpc_event_engine_timer_trace.enabled()) {
     gpr_log(GPR_DEBUG, "TimerManager::%p thread::%p finished", thread->self,
             &thread->thread);
   }
 }
 
-void TimerManager::Run(grpc_core::Thread thread) {
+void TimerManager::Run() {
   MainLoop();
   grpc_core::MutexLock lock(&mu_);
   thread_count_--;
