@@ -149,8 +149,6 @@ absl::optional<CommonTlsContext> UpstreamTlsContextParse(
   }
   if (common_tls_context.certificate_validation_context
           .ca_certificate_provider_instance.instance_name.empty()) {
-    ValidationErrors::ScopedField field(
-        errors, ".certificate_validation_context");
     errors->AddError("no CA certificate provider instance configured");
   }
   return common_tls_context;

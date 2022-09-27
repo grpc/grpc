@@ -56,7 +56,16 @@ class XdsClusterTest : public ::testing::Test {
         "        {\"type\": \"google_default\"}\n"
         "      ]\n"
         "    }\n"
-        "  ]\n"
+        "  ],\n"
+        "  \"certificate_providers\": {\n"
+        "    \"provider1\": {\n"
+        "      \"plugin_name\": \"file_watcher\",\n"
+        "      \"config\": {\n"
+        "        \"certificate_file\": \"/path/to/cert\",\n"
+        "        \"private_key_file\": \"/path/to/key\"\n"
+        "      }\n"
+        "    }\n"
+        "  }\n"
         "}");
     if (!bootstrap.ok()) {
       gpr_log(GPR_ERROR, "Error parsing bootstrap: %s",
@@ -112,7 +121,12 @@ TEST_F(XdsClusterTest, MinimumValidConfig) {
   EXPECT_EQ(resource.cluster_type, resource.EDS);
   EXPECT_EQ(resource.eds_service_name, "");
   EXPECT_EQ(resource.lb_policy, "ROUND_ROBIN");
+  EXPECT_FALSE(resource.lrs_load_reporting_server.has_value());
 }
+
+//
+// cluster type tests
+//
 
 using ClusterTypeTest = XdsClusterTest;
 
@@ -523,6 +537,10 @@ TEST_F(ClusterTypeTest, AggregateClusterUnparseableProto) {
       << decode_result.resource.status();
 }
 
+//
+// LB policy tests
+//
+
 using LbPolicyTest = XdsClusterTest;
 
 TEST_F(LbPolicyTest, LbPolicyRingHash) {
@@ -696,10 +714,12 @@ TEST_F(LbPolicyTest, UnsupportedPolicy) {
       << decode_result.resource.status();
 }
 
+//
+// TLS config tests
+//
+
 using TlsConfigTest = XdsClusterTest;
 
-// FIXME: add
-#if 0
 TEST_F(TlsConfigTest, MinimumValidConfig) {
   Cluster cluster;
   cluster.set_name("foo");
@@ -712,7 +732,7 @@ TEST_F(TlsConfigTest, MinimumValidConfig) {
   auto* validation_context = common_tls_context->mutable_validation_context();
   auto* cert_provider =
       validation_context->mutable_ca_certificate_provider_instance();
-  cert_provider->set_instance_name("fake");
+  cert_provider->set_instance_name("provider1");
   cert_provider->set_certificate_name("cert_name");
   transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
   std::string serialized_resource;
@@ -729,9 +749,18 @@ TEST_F(TlsConfigTest, MinimumValidConfig) {
   EXPECT_EQ(resource.cluster_type, resource.EDS);
   EXPECT_EQ(resource.eds_service_name, "");
   EXPECT_EQ(resource.lb_policy, "ROUND_ROBIN");
+  EXPECT_EQ(resource.common_tls_context.certificate_validation_context
+                .ca_certificate_provider_instance.instance_name,
+            "provider1");
+  EXPECT_EQ(resource.common_tls_context.certificate_validation_context
+                .ca_certificate_provider_instance.certificate_name,
+            "cert_name");
 }
-#endif
 
+// This is just one example of where CommonTlsContext::Parse() will
+// generate an error, to show that we're propagating any such errors
+// correctly.  An exhaustive set of tests for CommonTlsContext::Parse()
+// is in xds_common_types_test.cc.
 TEST_F(TlsConfigTest, UnknownCertificateProviderInstance) {
   Cluster cluster;
   cluster.set_name("foo");
@@ -765,6 +794,133 @@ TEST_F(TlsConfigTest, UnknownCertificateProviderInstance) {
       << decode_result.resource.status();
 }
 
+TEST_F(TlsConfigTest, TransportSocketTypedConfigUnset) {
+  Cluster cluster;
+  cluster.set_name("foo");
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  auto* transport_socket = cluster.mutable_transport_socket();
+  transport_socket->mutable_typed_config()->PackFrom(Cluster());
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result = resource_type->Decode(
+      decode_context_, serialized_resource, /*is_v2=*/false);
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating Cluster resource: ["
+            "field:transport_socket.typed_config.type_url "
+            "error:unrecognized transport socket type: "
+            "envoy.config.cluster.v3.Cluster]")
+      << decode_result.resource.status();
+}
+
+TEST_F(TlsConfigTest, UnknownTransportSocketType) {
+  Cluster cluster;
+  cluster.set_name("foo");
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  auto* transport_socket = cluster.mutable_transport_socket();
+  auto* typed_config = transport_socket->mutable_typed_config();
+  typed_config->PackFrom(UpstreamTlsContext());
+  typed_config->set_value(std::string("\0", 1));
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result = resource_type->Decode(
+      decode_context_, serialized_resource, /*is_v2=*/false);
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating Cluster resource: ["
+            "field:transport_socket.typed_config.value["
+            "envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext] "
+            "error:can't decode UpstreamTlsContext]")
+      << decode_result.resource.status();
+}
+
+TEST_F(TlsConfigTest, CaCertProviderUnset) {
+  Cluster cluster;
+  cluster.set_name("foo");
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  auto* transport_socket = cluster.mutable_transport_socket();
+  auto* typed_config = transport_socket->mutable_typed_config();
+  typed_config->PackFrom(UpstreamTlsContext());
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result = resource_type->Decode(
+      decode_context_, serialized_resource, /*is_v2=*/false);
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating Cluster resource: ["
+            "field:transport_socket.typed_config.value["
+            "envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext]"
+            ".common_tls_context "
+            "error:no CA certificate provider instance configured]")
+      << decode_result.resource.status();
+}
+
+//
+// LRS server tests
+//
+
+using LrsTest = XdsClusterTest;
+
+TEST_F(LrsTest, Valid) {
+  Cluster cluster;
+  cluster.set_name("foo");
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  cluster.mutable_lrs_server()->mutable_self();
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result = resource_type->Decode(
+      decode_context_, serialized_resource, /*is_v2=*/false);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource = static_cast<XdsClusterResourceType::ResourceDataSubclass*>(
+                       decode_result.resource->get())
+                       ->resource;
+  EXPECT_EQ(resource.cluster_type, resource.EDS);
+  EXPECT_EQ(resource.eds_service_name, "");
+  EXPECT_EQ(resource.lb_policy, "ROUND_ROBIN");
+  ASSERT_TRUE(resource.lrs_load_reporting_server.has_value());
+  EXPECT_EQ(*resource.lrs_load_reporting_server,
+            xds_client_->bootstrap().server());
+}
+
+TEST_F(LrsTest, NotSelfConfigSource) {
+  Cluster cluster;
+  cluster.set_name("foo");
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  cluster.mutable_lrs_server()->mutable_ads();
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result = resource_type->Decode(
+      decode_context_, serialized_resource, /*is_v2=*/false);
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating Cluster resource: ["
+            "field:lrs_server error:ConfigSource is not self]")
+      << decode_result.resource.status();
+}
 
 
 // FIXME: add tests for OD validation described in
