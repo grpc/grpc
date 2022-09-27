@@ -2310,6 +2310,7 @@ add_library(grpc
   src/core/lib/surface/call.cc
   src/core/lib/surface/call_details.cc
   src/core/lib/surface/call_log_batch.cc
+  src/core/lib/surface/call_trace.cc
   src/core/lib/surface/channel.cc
   src/core/lib/surface/channel_init.cc
   src/core/lib/surface/channel_ping.cc
@@ -2880,6 +2881,7 @@ add_library(grpc_unsecure
   src/core/lib/surface/call.cc
   src/core/lib/surface/call_details.cc
   src/core/lib/surface/call_log_batch.cc
+  src/core/lib/surface/call_trace.cc
   src/core/lib/surface/channel.cc
   src/core/lib/surface/channel_init.cc
   src/core/lib/surface/channel_ping.cc
@@ -14593,7 +14595,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(posix_endpoint_test
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
-    absl::cleanup
     grpc_test_util
   )
 

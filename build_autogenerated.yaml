@@ -956,6 +956,7 @@ libs:
   - src/core/lib/surface/builtins.h
   - src/core/lib/surface/call.h
   - src/core/lib/surface/call_test_only.h
+  - src/core/lib/surface/call_trace.h
   - src/core/lib/surface/channel.h
   - src/core/lib/surface/channel_init.h
   - src/core/lib/surface/channel_stack_type.h
@@ -1645,6 +1646,7 @@ libs:
   - src/core/lib/surface/call.cc
   - src/core/lib/surface/call_details.cc
   - src/core/lib/surface/call_log_batch.cc
+  - src/core/lib/surface/call_trace.cc
   - src/core/lib/surface/channel.cc
   - src/core/lib/surface/channel_init.cc
   - src/core/lib/surface/channel_ping.cc
@@ -2127,6 +2129,7 @@ libs:
   - src/core/lib/surface/builtins.h
   - src/core/lib/surface/call.h
   - src/core/lib/surface/call_test_only.h
+  - src/core/lib/surface/call_trace.h
   - src/core/lib/surface/channel.h
   - src/core/lib/surface/channel_init.h
   - src/core/lib/surface/channel_stack_type.h
@@ -2450,6 +2453,7 @@ libs:
   - src/core/lib/surface/call.cc
   - src/core/lib/surface/call_details.cc
   - src/core/lib/surface/call_log_batch.cc
+  - src/core/lib/surface/call_trace.cc
   - src/core/lib/surface/channel.cc
   - src/core/lib/surface/channel_init.cc
   - src/core/lib/surface/channel_ping.cc
@@ -8328,7 +8332,6 @@ targets:
   - test/core/event_engine/test_suite/event_engine_test_utils.cc
   - test/core/event_engine/test_suite/oracle_event_engine_posix.cc
   deps:
-  - absl/cleanup:cleanup
   - grpc_test_util
   platforms:
   - linux
