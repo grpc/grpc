@@ -19,7 +19,7 @@
 
 #include <grpcpp/impl/grpc_library.h>
 
-#include "src/core/lib/event_engine/promise.h"
+#include "src/core/lib/gprpp/notification.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
@@ -47,13 +47,13 @@ BENCHMARK(BM_ExecCtx_Run)
 
 struct CountingCbData {
   std::atomic_int cnt{0};
-  grpc_event_engine::experimental::Promise<bool> promise{false};
+  grpc_core::Notification* signal;
   int limit;
 };
 
 void CountingCb(void* arg, grpc_error_handle) {
   auto* data = static_cast<CountingCbData*>(arg);
-  if (++(data->cnt) == data->limit) data->promise.Set(true);
+  if (++(data->cnt) == data->limit) data->signal->Notify();
 }
 
 void BM_ExecCtx_RunCounted(benchmark::State& state) {
@@ -62,6 +62,7 @@ void BM_ExecCtx_RunCounted(benchmark::State& state) {
   int cb_count = state.range(0);
   CountingCbData data;
   data.limit = cb_count;
+  data.signal = new grpc_core::Notification();
   grpc_closure cb;
   GRPC_CLOSURE_INIT(&cb, CountingCb, &data, nullptr);
   grpc_core::ExecCtx exec_ctx;
@@ -70,9 +71,10 @@ void BM_ExecCtx_RunCounted(benchmark::State& state) {
       exec_ctx.Run(DEBUG_LOCATION, &cb, GRPC_ERROR_NONE);
       exec_ctx.Flush();
     }
-    GPR_ASSERT(data.promise.Get());
+    data.signal->WaitForNotification();
     state.PauseTiming();
-    data.promise.Reset();
+    delete data.signal;
+    data.signal = new grpc_core::Notification();
     data.cnt = 0;
     state.ResumeTiming();
   }
