@@ -27,12 +27,14 @@
 #include "absl/types/optional.h"
 #include "opencensus/exporters/stats/stackdriver/stackdriver_exporter.h"
 #include "opencensus/exporters/trace/stackdriver/stackdriver_exporter.h"
+#include "opencensus/stats/stats.h"
 #include "opencensus/trace/sampler.h"
 #include "opencensus/trace/trace_config.h"
 
 #include <grpcpp/opencensus.h>
 #include <grpcpp/support/config.h>
 
+#include "src/cpp/ext/filters/census/grpc_plugin.h"
 #include "src/cpp/ext/gcp/observability_config.h"
 
 namespace grpc {
@@ -46,6 +48,16 @@ constexpr uint32_t kMaxAttributes = 128;
 constexpr uint32_t kMaxAnnotations = 128;
 constexpr uint32_t kMaxMessageEvents = 128;
 constexpr uint32_t kMaxLinks = 128;
+
+void RegisterOpenCensusViewsForGcpObservability() {
+  // Register client default views for GCP observability
+  ClientStartedRpcsCumulative().RegisterForExport();
+  ClientCompletedRpcsCumulative().RegisterForExport();
+  // Register server default views for GCP observability
+  ServerStartedRpcsCumulative().RegisterForExport();
+  ServerCompletedRpcsCumulative().RegisterForExport();
+}
+
 }  // namespace
 
 absl::Status GcpObservabilityInit() {
@@ -54,7 +66,7 @@ absl::Status GcpObservabilityInit() {
     return config.status();
   }
   grpc::RegisterOpenCensusPlugin();
-  grpc::RegisterOpenCensusViewsForExport();
+  RegisterOpenCensusViewsForGcpObservability();
   if (config->cloud_trace.has_value()) {
     opencensus::trace::TraceConfig::SetCurrentTraceParams(
         {kMaxAttributes, kMaxAnnotations, kMaxMessageEvents, kMaxLinks,
