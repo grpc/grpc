@@ -82,7 +82,7 @@ class TimerManager final : public grpc_event_engine::experimental::Forkable {
 
   void StartThread() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   static void RunThread(void* arg);
-  void Run(grpc_core::Thread thread);
+  void Run();
   void MainLoop();
   void RunSomeTimers(std::vector<experimental::EventEngine::Closure*> timers);
   bool WaitUntil(grpc_core::Timestamp next);

@@ -185,14 +185,14 @@ void TimerManager::RunThread(void* arg) {
     gpr_log(GPR_DEBUG, "TimerManager::%p starting thread::%p", thread->self,
             &thread->thread);
   }
-  thread->self->Run(std::move(thread->thread));
+  thread->self->Run();
   if (grpc_event_engine_timer_trace.enabled()) {
     gpr_log(GPR_DEBUG, "TimerManager::%p thread::%p finished", thread->self,
             &thread->thread);
   }
 }
 
-void TimerManager::Run(grpc_core::Thread thread) {
+void TimerManager::Run() {
   MainLoop();
   grpc_core::MutexLock lock(&mu_);
   thread_count_--;
