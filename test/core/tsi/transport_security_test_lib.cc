@@ -71,7 +71,6 @@ static handshaker_args* handshaker_args_create(tsi_test_fixture* fixture,
 
 static void handshaker_args_destroy(handshaker_args* args) {
   gpr_free(args->handshake_buffer);
-  GRPC_ERROR_UNREF(args->error);
   delete args;
 }
 
@@ -375,7 +374,7 @@ static void do_handshaker_next(handshaker_args* args) {
     if (result != TSI_ASYNC) {
       args->error = on_handshake_next_done(
           result, args, bytes_to_send, bytes_to_send_size, handshaker_result);
-      if (!GRPC_ERROR_IS_NONE(args->error)) {
+      if (!args->error.ok()) {
         return;
       }
     }
@@ -395,11 +394,11 @@ void tsi_test_do_handshake(tsi_test_fixture* fixture) {
     client_args->transferred_data = false;
     server_args->transferred_data = false;
     do_handshaker_next(client_args);
-    if (!GRPC_ERROR_IS_NONE(client_args->error)) {
+    if (!client_args->error.ok()) {
       break;
     }
     do_handshaker_next(server_args);
-    if (!GRPC_ERROR_IS_NONE(server_args->error)) {
+    if (!server_args->error.ok()) {
       break;
     }
     GPR_ASSERT(client_args->transferred_data || server_args->transferred_data);

@@ -250,7 +250,6 @@ TEST(GrpcAwsRequestSignerTest, InvalidUrl) {
   GPR_ASSERT(grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION,
                                 &actual_error_description));
   EXPECT_EQ(actual_error_description, "Invalid Aws request url.");
-  GRPC_ERROR_UNREF(error);
 }
 
 TEST(GrpcAwsRequestSignerTest, DuplicateRequestDate) {
@@ -264,7 +263,6 @@ TEST(GrpcAwsRequestSignerTest, DuplicateRequestDate) {
                                 &actual_error_description));
   EXPECT_EQ(actual_error_description,
             "Only one of {date, x-amz-date} can be specified, not both.");
-  GRPC_ERROR_UNREF(error);
 }
 
 }  // namespace testing

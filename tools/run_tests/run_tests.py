@@ -1013,14 +1013,6 @@ class ObjCLanguage(object):
                 shortname='ios-test-cfstream-tests',
                 cpu_cost=1e6,
                 environ=_FORCE_ENVIRON_FOR_WRAPPERS))
-        # TODO(jtattermusch): Create bazel target for the test and remove the test from here
-        # (how does one add the cronet dependency in bazel?)
-        out.append(
-            self.config.job_spec(['src/objective-c/tests/run_one_test.sh'],
-                                 timeout_seconds=60 * 60,
-                                 shortname='ios-test-cronettests',
-                                 cpu_cost=1e6,
-                                 environ={'SCHEME': 'CronetTests'}))
         # TODO(jtattermusch): Create bazel target for the test and remove the test from here.
         out.append(
             self.config.job_spec(['src/objective-c/tests/run_one_test.sh'],

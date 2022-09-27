@@ -188,16 +188,9 @@ struct grpc_tls_certificate_distributor
     // credential reloading.
     std::set<TlsCertificatesWatcherInterface*> identity_cert_watchers;
 
-    ~CertificateInfo() {
-      GRPC_ERROR_UNREF(root_cert_error);
-      GRPC_ERROR_UNREF(identity_cert_error);
-    }
-    void SetRootError(grpc_error_handle error) {
-      GRPC_ERROR_UNREF(root_cert_error);
-      root_cert_error = error;
-    }
+    ~CertificateInfo() {}
+    void SetRootError(grpc_error_handle error) { root_cert_error = error; }
     void SetIdentityError(grpc_error_handle error) {
-      GRPC_ERROR_UNREF(identity_cert_error);
       identity_cert_error = error;
     }
   };
