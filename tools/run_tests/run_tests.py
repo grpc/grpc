@@ -1089,7 +1089,7 @@ class Sanity(object):
 
     def test_specs(self):
         import yaml
-        with open('tools/run_tests/sanity/%s.yaml' % self.config_file, 'r') as f:
+        with open('tools/run_tests/sanity/%s' % self.config_file, 'r') as f:
             environ = {'TEST': 'true'}
             if _is_use_docker_child():
                 environ['CLANG_FORMAT_SKIP_DOCKER'] = 'true'
