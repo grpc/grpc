@@ -73,21 +73,21 @@ class TestFilteringTest(unittest.TestCase):
         for job in filtered_jobs:
             if has_sanity_tests(job):
                 sanity_tests_in_filtered_jobs += 1
-        filtered_jobs = [
-            job for job in filtered_jobs if has_sanity_tests(job)
-        ]
+        filtered_jobs = [job for job in filtered_jobs if has_sanity_tests(job)]
         self.assertEqual(sanity_tests_in_all_jobs,
                          sanity_tests_in_filtered_jobs)
 
         for label in labels:
             for job in filtered_jobs:
-                if has_sanity_tests(job): continue
+                if has_sanity_tests(job):
+                    continue
                 self.assertNotIn(label, job.labels)
 
         jobs_matching_labels = 0
         for label in labels:
             for job in all_jobs:
-                if has_sanity_tests(job): continue
+                if has_sanity_tests(job):
+                    continue
                 if (label in job.labels):
                     jobs_matching_labels += 1
         self.assertEqual(len(filtered_jobs),
