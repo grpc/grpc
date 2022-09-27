@@ -511,7 +511,7 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpClusterError) {
             UnpackCluster(EqCluster(kDefaultClusterName)),
             ClientResourceStatus::NACKED,
             EqUpdateFailureState(
-                ::testing::HasSubstr("DiscoveryType not found"), "2"))));
+                ::testing::HasSubstr("unknown discovery type"), "2"))));
     if (ok) return;  // TEST PASSED!
     gpr_sleep_until(
         grpc_timeout_milliseconds_to_deadline(kFetchIntervalMilliseconds));

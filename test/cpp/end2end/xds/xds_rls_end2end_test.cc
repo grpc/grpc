@@ -26,6 +26,7 @@
 #include "src/proto/grpc/lookup/v1/rls.grpc.pb.h"
 #include "src/proto/grpc/lookup/v1/rls.pb.h"
 #include "src/proto/grpc/lookup/v1/rls_config.pb.h"
+#include "test/core/util/scoped_env_var.h"
 #include "test/cpp/end2end/rls_server.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 
@@ -35,6 +36,8 @@ namespace {
 
 using ::grpc::lookup::v1::RouteLookupClusterSpecifier;
 using ::grpc::lookup::v1::RouteLookupConfig;
+
+using ::grpc_core::testing::ScopedExperimentalEnvVar;
 
 constexpr char kRlsTestKey[] = "test_key";
 constexpr char kRlsTestKey1[] = "key1";
