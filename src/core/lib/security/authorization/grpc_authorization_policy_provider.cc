@@ -62,6 +62,7 @@ StaticDataAuthorizationPolicyProvider::StaticDataAuthorizationPolicyProvider(
                        : nullptr) {}
 
 namespace {
+
 absl::StatusOr<std::string> ReadPolicyFromFile(absl::string_view policy_path) {
   grpc_slice policy_slice = grpc_empty_slice();
   grpc_error_handle error =

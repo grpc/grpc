@@ -19,6 +19,7 @@
 
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 
 #include "src/core/lib/security/authorization/rbac_policy.h"
 
