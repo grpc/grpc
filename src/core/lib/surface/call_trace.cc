@@ -32,27 +32,28 @@ const grpc_channel_filter* PromiseTracingFilterFor(
               [](grpc_channel_element* elem, grpc_core::CallArgs call_args,
                  grpc_core::NextPromiseFactory next_promise_factory)
                   -> grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle> {
-                auto* filter =
+                auto* source_filter =
                     static_cast<const DerivedFilter*>(elem->filter)->filter;
                 gpr_log(
                     GPR_DEBUG,
                     "%sCreateCallPromise[%s]: client_initial_metadata=%s",
-                    Activity::current()->DebugTag().c_str(), filter->name,
+                    Activity::current()->DebugTag().c_str(),
+                    source_filter->name,
                     call_args.client_initial_metadata->DebugString().c_str());
-                return [filter, child = next_promise_factory(
-                                    std::move(call_args))]() mutable {
+                return [source_filter, child = next_promise_factory(
+                                           std::move(call_args))]() mutable {
                   gpr_log(GPR_DEBUG, "%sPollCallPromise[%s]: begin",
                           Activity::current()->DebugTag().c_str(),
-                          filter->name);
+                          source_filter->name);
                   auto r = child();
                   if (auto* p = absl::get_if<ServerMetadataHandle>(&r)) {
                     gpr_log(GPR_DEBUG, "%sPollCallPromise[%s]: done: %s",
                             Activity::current()->DebugTag().c_str(),
-                            filter->name, (*p)->DebugString().c_str());
+                            source_filter->name, (*p)->DebugString().c_str());
                   } else {
                     gpr_log(GPR_DEBUG, "%sPollCallPromise[%s]: <<pending>",
                             Activity::current()->DebugTag().c_str(),
-                            filter->name);
+                            source_filter->name);
                   }
                   return r;
                 };
