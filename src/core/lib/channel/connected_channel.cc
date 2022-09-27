@@ -458,7 +458,9 @@ class ClientStream : public Orphanable {
         }
       }
     }
-    if (absl::exchange(queued_initial_metadata_, false)) {
+    if (server_initial_metadata_state_ ==
+        ServerInitialMetadataState::kReceivedButNotSet) {
+      server_initial_metadata_state_ = ServerInitialMetadataState::kSet;
       server_initial_metadata_latch_->Set(server_initial_metadata_.get());
     }
     if (absl::holds_alternative<Idle>(recv_message_state_)) {
@@ -468,7 +470,8 @@ class ClientStream : public Orphanable {
       }
       push_recv_message();
     }
-    if (!absl::holds_alternative<PipeSender<MessageHandle>::PushType>(
+    if (server_initial_metadata_state_ == ServerInitialMetadataState::kSet &&
+        !absl::holds_alternative<PipeSender<MessageHandle>::PushType>(
             recv_message_state_) &&
         absl::exchange(queued_trailing_metadata_, false)) {
       if (grpc_call_trace.enabled()) {
@@ -521,7 +524,8 @@ class ClientStream : public Orphanable {
     GPR_ASSERT(error == GRPC_ERROR_NONE);
     {
       MutexLock lock(&mu_);
-      queued_initial_metadata_ = true;
+      server_initial_metadata_state_ =
+          ServerInitialMetadataState::kReceivedButNotSet;
       initial_metadata_waker_.Wakeup();
     }
     Unref("initial_metadata_ready");
@@ -621,6 +625,12 @@ class ClientStream : public Orphanable {
   struct Closed {};
   struct SendMessageToTransport {};
 
+  enum class ServerInitialMetadataState : uint8_t {
+    kNotReceived,
+    kReceivedButNotSet,
+    kSet,
+  };
+
   class StreamDeleter {
    public:
     explicit StreamDeleter(ClientStream* impl) : impl_(impl) {}
@@ -658,7 +668,10 @@ class ClientStream : public Orphanable {
     }
     // Results from transport
     std::vector<std::string> queued;
-    if (queued_initial_metadata_) queued.push_back("initial_metadata");
+    if (server_initial_metadata_state_ ==
+        ServerInitialMetadataState::kReceivedButNotSet) {
+      queued.push_back("initial_metadata");
+    }
     if (queued_trailing_metadata_) queued.push_back("trailing_metadata");
     if (!queued.empty()) {
       ops.push_back(absl::StrCat("queued:", absl::StrJoin(queued, ",")));
@@ -708,7 +721,8 @@ class ClientStream : public Orphanable {
   bool push_send_message_ ABSL_GUARDED_BY(mu_) = false;
   bool push_recv_message_ ABSL_GUARDED_BY(mu_) = false;
   bool scheduled_push_ ABSL_GUARDED_BY(mu_) = false;
-  bool queued_initial_metadata_ ABSL_GUARDED_BY(mu_) = false;
+  ServerInitialMetadataState server_initial_metadata_state_
+      ABSL_GUARDED_BY(mu_) = ServerInitialMetadataState::kNotReceived;
   bool queued_trailing_metadata_ ABSL_GUARDED_BY(mu_) = false;
   bool finished_ ABSL_GUARDED_BY(mu_) = false;
   CallContext* const call_context_{GetContext<CallContext>()};
