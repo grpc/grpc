@@ -7328,7 +7328,6 @@ grpc_cc_library(
         "config",
         "gpr",
         "gpr_manual_constructor",
-        "grpc++_base",
         "grpc_base",
         "grpc_health_upb",
         "grpc_insecure_credentials",
