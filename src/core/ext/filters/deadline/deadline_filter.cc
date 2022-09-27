@@ -73,7 +73,7 @@ class TimerState {
     grpc_transport_stream_op_batch* batch = grpc_make_transport_stream_op(
         GRPC_CLOSURE_INIT(&self->closure_, YieldCallCombiner, self, nullptr));
     batch->cancel_stream = true;
-    batch->payload->cancel_stream.cancel_error = GRPC_ERROR_REF(error);
+    batch->payload->cancel_stream.cancel_error = error;
     self->elem_->filter->start_transport_stream_op_batch(self->elem_, batch);
   }
 
@@ -86,7 +86,7 @@ class TimerState {
       error = grpc_error_set_int(
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("Deadline Exceeded"),
           GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_DEADLINE_EXCEEDED);
-      deadline_state->call_combiner->Cancel(GRPC_ERROR_REF(error));
+      deadline_state->call_combiner->Cancel(error);
       GRPC_CLOSURE_INIT(&self->closure_, SendCancelOpInCallCombiner, self,
                         nullptr);
       GRPC_CALL_COMBINER_START(deadline_state->call_combiner, &self->closure_,
@@ -145,7 +145,7 @@ static void recv_trailing_metadata_ready(void* arg, grpc_error_handle error) {
   // Invoke the original callback.
   grpc_core::Closure::Run(DEBUG_LOCATION,
                           deadline_state->original_recv_trailing_metadata_ready,
-                          GRPC_ERROR_REF(error));
+                          error);
 }
 
 // Inject our own recv_trailing_metadata_ready callback into op.
@@ -183,8 +183,7 @@ static void start_timer_after_init(void* arg, grpc_error_handle error) {
     // need to bounce ourselves into it.
     state->in_call_combiner = true;
     GRPC_CALL_COMBINER_START(deadline_state->call_combiner, &state->closure,
-                             GRPC_ERROR_REF(error),
-                             "scheduling deadline timer");
+                             error, "scheduling deadline timer");
     return;
   }
   delete state;
@@ -305,8 +304,7 @@ static void recv_initial_metadata_ready(void* arg, grpc_error_handle error) {
                 .value_or(grpc_core::Timestamp::InfFuture()));
   // Invoke the next callback.
   grpc_core::Closure::Run(DEBUG_LOCATION,
-                          calld->next_recv_initial_metadata_ready,
-                          GRPC_ERROR_REF(error));
+                          calld->next_recv_initial_metadata_ready, error);
 }
 
 // Method for starting a call op for server filter.

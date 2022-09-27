@@ -150,11 +150,10 @@ done:
   if (result) {
     freeaddrinfo(result);
   }
-  if (GRPC_ERROR_IS_NONE(error)) {
+  if (error.ok()) {
     return addresses;
   }
   auto error_result = grpc_error_to_absl_status(error);
-  GRPC_ERROR_UNREF(error);
   return error_result;
 }
 

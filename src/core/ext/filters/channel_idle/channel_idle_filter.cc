@@ -227,7 +227,7 @@ ArenaPromise<ServerMetadataHandle> ChannelIdleFilter::MakeCallPromise(
 
 bool ChannelIdleFilter::StartTransportOp(grpc_transport_op* op) {
   // Catch the disconnect_with_error transport op.
-  if (!GRPC_ERROR_IS_NONE(op->disconnect_with_error)) Shutdown();
+  if (!op->disconnect_with_error.ok()) Shutdown();
   // Pass the op to the next filter.
   return false;
 }

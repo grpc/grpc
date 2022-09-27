@@ -51,7 +51,6 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
-#include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/cpp/ext/filters/census/context.h"
@@ -189,9 +188,8 @@ void OpenCensusCallTracer::OpenCensusCallAttemptTracer::
 }
 
 void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordCancel(
-    grpc_error_handle cancel_error) {
+    grpc_error_handle /*cancel_error*/) {
   status_code_ = absl::StatusCode::kCancelled;
-  GRPC_ERROR_UNREF(cancel_error);
 }
 
 void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordEnd(
@@ -228,7 +226,7 @@ void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordEnd(
 
 OpenCensusCallTracer::OpenCensusCallTracer(const grpc_call_element_args* args)
     : call_context_(args->context),
-      path_(grpc_slice_ref_internal(args->path)),
+      path_(grpc_slice_ref(args->path)),
       method_(GetMethod(path_)),
       arena_(args->arena) {}
 

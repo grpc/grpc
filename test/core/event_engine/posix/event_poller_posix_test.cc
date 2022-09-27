@@ -56,6 +56,7 @@
 #include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/gprpp/global_config.h"
 #include "src/core/lib/gprpp/notification.h"
+#include "test/core/event_engine/posix/posix_engine_test_utils.h"
 #include "test/core/util/port.h"
 
 GPR_GLOBAL_CONFIG_DECLARE_STRING(grpc_poll_strategy);
@@ -84,21 +85,6 @@ using ::grpc_event_engine::posix_engine::PosixEventPoller;
 using namespace std::chrono_literals;
 
 namespace {
-
-class TestScheduler : public Scheduler {
- public:
-  explicit TestScheduler(experimental::EventEngine* engine) : engine_(engine) {}
-  void Run(experimental::EventEngine::Closure* closure) override {
-    engine_->Run(closure);
-  }
-
-  void Run(absl::AnyInvocable<void()> cb) override {
-    engine_->Run(std::move(cb));
-  }
-
- private:
-  experimental::EventEngine* engine_;
-};
 
 absl::Status SetSocketSendBuf(int fd, int buffer_size_bytes) {
   return 0 == setsockopt(fd, SOL_SOCKET, SO_SNDBUF, &buffer_size_bytes,

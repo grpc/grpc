@@ -68,7 +68,6 @@ struct grpc_binder_stream {
   }
 
   ~grpc_binder_stream() {
-    GRPC_ERROR_UNREF(cancel_self_error);
     if (destroy_stream_then_closure != nullptr) {
       grpc_core::ExecCtx::Run(DEBUG_LOCATION, destroy_stream_then_closure,
                               GRPC_ERROR_NONE);

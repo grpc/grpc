@@ -22,10 +22,12 @@
 
 #include <stdint.h>
 
+#include <memory>
 #include <utility>
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/alloc.h"
 
 grpc_core::TraceFlag grpc_trace_channel(false, "channel");
@@ -104,7 +106,7 @@ grpc_call_element* grpc_call_stack_element(grpc_call_stack* call_stack,
 grpc_error_handle grpc_channel_stack_init(
     int initial_refs, grpc_iomgr_cb_func destroy, void* destroy_arg,
     const grpc_channel_filter** filters, size_t filter_count,
-    const grpc_channel_args* channel_args, const char* name,
+    const grpc_core::ChannelArgs& channel_args, const char* name,
     grpc_channel_stack* stack) {
   if (grpc_trace_channel_stack.enabled()) {
     gpr_log(GPR_INFO, "CHANNEL_STACK: init %s", name);
@@ -133,20 +135,19 @@ grpc_error_handle grpc_channel_stack_init(
 
   /* init per-filter data */
   grpc_error_handle first_error = GRPC_ERROR_NONE;
+  auto c_channel_args = channel_args.ToC();
   for (i = 0; i < filter_count; i++) {
     args.channel_stack = stack;
-    args.channel_args = channel_args;
+    args.channel_args = c_channel_args.get();
     args.is_first = i == 0;
     args.is_last = i == (filter_count - 1);
     elems[i].filter = filters[i];
     elems[i].channel_data = user_data;
     grpc_error_handle error =
         elems[i].filter->init_channel_elem(&elems[i], &args);
-    if (!GRPC_ERROR_IS_NONE(error)) {
-      if (GRPC_ERROR_IS_NONE(first_error)) {
+    if (!error.ok()) {
+      if (first_error.ok()) {
         first_error = error;
-      } else {
-        GRPC_ERROR_UNREF(error);
       }
     }
     user_data +=
@@ -204,11 +205,9 @@ grpc_error_handle grpc_call_stack_init(
   for (size_t i = 0; i < count; i++) {
     grpc_error_handle error =
         call_elems[i].filter->init_call_elem(&call_elems[i], elem_args);
-    if (!GRPC_ERROR_IS_NONE(error)) {
-      if (GRPC_ERROR_IS_NONE(first_error)) {
+    if (!error.ok()) {
+      if (first_error.ok()) {
         first_error = error;
-      } else {
-        GRPC_ERROR_UNREF(error);
       }
     }
   }

@@ -235,7 +235,7 @@ static grpc_error_handle add_header(grpc_http_parser* parser) {
   (*hdrs)[(*hdr_count)++] = hdr;
 
 done:
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     gpr_free(hdr.key);
     gpr_free(hdr.value);
   }
@@ -248,7 +248,7 @@ static grpc_error_handle finish_line(grpc_http_parser* parser,
   switch (parser->state) {
     case GRPC_HTTP_FIRST_LINE:
       err = handle_first_line(parser);
-      if (!GRPC_ERROR_IS_NONE(err)) return err;
+      if (!err.ok()) return err;
       parser->state = GRPC_HTTP_HEADERS;
       break;
     case GRPC_HTTP_HEADERS:
@@ -263,7 +263,7 @@ static grpc_error_handle finish_line(grpc_http_parser* parser,
         break;
       } else {
         err = add_header(parser);
-        if (!GRPC_ERROR_IS_NONE(err)) {
+        if (!err.ok()) {
           return err;
         }
       }
@@ -448,7 +448,7 @@ grpc_error_handle grpc_http_parser_parse(grpc_http_parser* parser,
     bool found_body_start = false;
     grpc_error_handle err =
         addbyte(parser, GRPC_SLICE_START_PTR(slice)[i], &found_body_start);
-    if (!GRPC_ERROR_IS_NONE(err)) return err;
+    if (!err.ok()) return err;
     if (found_body_start && start_of_body != nullptr) *start_of_body = i + 1;
   }
   return GRPC_ERROR_NONE;

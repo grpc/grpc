@@ -438,7 +438,11 @@ class PromiseActivity final : public FreestandingActivity,
       MutexLock lock(mu());
       // Check if we were done, and flag done.
       was_done = done_;
-      if (!done_) MarkDone();
+      if (!done_) {
+        ScopedActivity scoped_activity(this);
+        ScopedContext contexts(this);
+        MarkDone();
+      }
     }
     // If we were not done, then call the on_done callback.
     if (!was_done) {

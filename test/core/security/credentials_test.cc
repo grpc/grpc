@@ -518,8 +518,8 @@ class RequestMetadataState : public RefCounted<RequestMetadataState> {
     gpr_log(GPR_INFO, "expected_error: %s",
             grpc_error_std_string(expected_error_).c_str());
     gpr_log(GPR_INFO, "actual_error: %s", grpc_error_std_string(error).c_str());
-    if (GRPC_ERROR_IS_NONE(expected_error_)) {
-      GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+    if (expected_error_.ok()) {
+      GPR_ASSERT(error.ok());
     } else {
       std::string expected_error;
       GPR_ASSERT(grpc_error_get_str(expected_error_, GRPC_ERROR_STR_DESCRIPTION,
@@ -528,14 +528,12 @@ class RequestMetadataState : public RefCounted<RequestMetadataState> {
       GPR_ASSERT(
           grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION, &actual_error));
       GPR_ASSERT(expected_error == actual_error);
-      GRPC_ERROR_UNREF(expected_error_);
     }
     md_.Remove(HttpAuthorityMetadata());
     md_.Remove(HttpPathMetadata());
     gpr_log(GPR_INFO, "expected metadata: %s", expected_.c_str());
     gpr_log(GPR_INFO, "actual metadata: %s", md_.DebugString().c_str());
     GPR_ASSERT(md_.DebugString() == expected_);
-    GRPC_ERROR_UNREF(error);
   }
 
  private:
@@ -2536,7 +2534,6 @@ TEST(CredentialsTest, TestExternalAccountCredsFailureInvalidTokenUrl) {
   auto state = RequestMetadataState::NewInstance(expected_error, {});
   state->RunRequestMetadataTest(&creds, kTestUrlScheme, kTestAuthority,
                                 kTestPath);
-  GRPC_ERROR_UNREF(error);
   ExecCtx::Get()->Flush();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
 }
@@ -2571,7 +2568,6 @@ TEST(CredentialsTest,
   auto state = RequestMetadataState::NewInstance(expected_error, {});
   state->RunRequestMetadataTest(&creds, kTestUrlScheme, kTestAuthority,
                                 kTestPath);
-  GRPC_ERROR_UNREF(error);
   ExecCtx::Get()->Flush();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
 }
@@ -2608,7 +2604,6 @@ TEST(CredentialsTest,
   auto state = RequestMetadataState::NewInstance(expected_error, {});
   state->RunRequestMetadataTest(&creds, kTestUrlScheme, kTestAuthority,
                                 kTestPath);
-  GRPC_ERROR_UNREF(error);
   ExecCtx::Get()->Flush();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
 }
@@ -2634,7 +2629,7 @@ TEST(CredentialsTest, TestUrlExternalAccountCredsSuccessFormatText) {
   grpc_error_handle error = GRPC_ERROR_NONE;
   auto creds = UrlExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  GPR_ASSERT(error.ok());
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       GRPC_ERROR_NONE, "authorization: Bearer token_exchange_access_token");
@@ -2671,7 +2666,7 @@ TEST(CredentialsTest,
   grpc_error_handle error = GRPC_ERROR_NONE;
   auto creds = UrlExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  GPR_ASSERT(error.ok());
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       GRPC_ERROR_NONE, "authorization: Bearer token_exchange_access_token");
@@ -2705,7 +2700,7 @@ TEST(CredentialsTest, TestUrlExternalAccountCredsSuccessFormatJson) {
   grpc_error_handle error = GRPC_ERROR_NONE;
   auto creds = UrlExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  GPR_ASSERT(error.ok());
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       GRPC_ERROR_NONE, "authorization: Bearer token_exchange_access_token");
@@ -2743,7 +2738,6 @@ TEST(CredentialsTest,
   GPR_ASSERT(
       grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION, &actual_error));
   GPR_ASSERT(absl::StartsWith(actual_error, "Invalid credential source url."));
-  GRPC_ERROR_UNREF(error);
 }
 
 TEST(CredentialsTest, TestFileExternalAccountCredsSuccessFormatText) {
@@ -2769,7 +2763,7 @@ TEST(CredentialsTest, TestFileExternalAccountCredsSuccessFormatText) {
   grpc_error_handle error = GRPC_ERROR_NONE;
   auto creds = FileExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  GPR_ASSERT(error.ok());
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       GRPC_ERROR_NONE, "authorization: Bearer token_exchange_access_token");
@@ -2780,7 +2774,6 @@ TEST(CredentialsTest, TestFileExternalAccountCredsSuccessFormatText) {
                                 kTestPath);
   ExecCtx::Get()->Flush();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
-  GRPC_ERROR_UNREF(error);
   gpr_free(subject_token_path);
 }
 
@@ -2815,7 +2808,7 @@ TEST(CredentialsTest, TestFileExternalAccountCredsSuccessFormatJson) {
   grpc_error_handle error = GRPC_ERROR_NONE;
   auto creds = FileExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  GPR_ASSERT(error.ok());
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       GRPC_ERROR_NONE, "authorization: Bearer token_exchange_access_token");
@@ -2826,7 +2819,6 @@ TEST(CredentialsTest, TestFileExternalAccountCredsSuccessFormatJson) {
                                 kTestPath);
   ExecCtx::Get()->Flush();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
-  GRPC_ERROR_UNREF(error);
   gpr_free(subject_token_path);
 }
 
@@ -2850,7 +2842,7 @@ TEST(CredentialsTest, TestFileExternalAccountCredsFailureFileNotFound) {
   grpc_error_handle error = GRPC_ERROR_NONE;
   auto creds = FileExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  GPR_ASSERT(error.ok());
   HttpRequest::SetOverride(httpcli_get_should_not_be_called,
                            httpcli_post_should_not_be_called,
                            httpcli_put_should_not_be_called);
@@ -2863,7 +2855,6 @@ TEST(CredentialsTest, TestFileExternalAccountCredsFailureFileNotFound) {
                                 kTestPath);
   ExecCtx::Get()->Flush();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
-  GRPC_ERROR_UNREF(error);
 }
 
 TEST(CredentialsTest, TestFileExternalAccountCredsFailureInvalidJsonContent) {
@@ -2896,7 +2887,7 @@ TEST(CredentialsTest, TestFileExternalAccountCredsFailureInvalidJsonContent) {
   grpc_error_handle error = GRPC_ERROR_NONE;
   auto creds = FileExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  GPR_ASSERT(error.ok());
   HttpRequest::SetOverride(httpcli_get_should_not_be_called,
                            httpcli_post_should_not_be_called,
                            httpcli_put_should_not_be_called);
@@ -2910,7 +2901,6 @@ TEST(CredentialsTest, TestFileExternalAccountCredsFailureInvalidJsonContent) {
                                 kTestPath);
   ExecCtx::Get()->Flush();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
-  GRPC_ERROR_UNREF(error);
   gpr_free(subject_token_path);
 }
 
@@ -2935,7 +2925,7 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsSuccess) {
   grpc_error_handle error = GRPC_ERROR_NONE;
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  GPR_ASSERT(error.ok());
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       GRPC_ERROR_NONE, "authorization: Bearer token_exchange_access_token");
@@ -2969,7 +2959,7 @@ TEST(CredentialsTest, TestAwsImdsv2ExternalAccountCredsSuccess) {
   grpc_error_handle error = GRPC_ERROR_NONE;
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  GPR_ASSERT(error.ok());
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       GRPC_ERROR_NONE, "authorization: Bearer token_exchange_access_token");
@@ -3005,7 +2995,7 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsSuccessPathRegionEnvKeysUrl) {
   grpc_error_handle error = GRPC_ERROR_NONE;
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  GPR_ASSERT(error.ok());
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       GRPC_ERROR_NONE, "authorization: Bearer token_exchange_access_token");
@@ -3042,7 +3032,7 @@ TEST(CredentialsTest,
   grpc_error_handle error = GRPC_ERROR_NONE;
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  GPR_ASSERT(error.ok());
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       GRPC_ERROR_NONE, "authorization: Bearer token_exchange_access_token");
@@ -3081,7 +3071,7 @@ TEST(CredentialsTest,
   grpc_error_handle error = GRPC_ERROR_NONE;
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  GPR_ASSERT(error.ok());
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       GRPC_ERROR_NONE, "authorization: Bearer token_exchange_access_token");
@@ -3120,7 +3110,7 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsSuccessPathRegionUrlKeysEnv) {
   grpc_error_handle error = GRPC_ERROR_NONE;
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  GPR_ASSERT(error.ok());
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       GRPC_ERROR_NONE, "authorization: Bearer token_exchange_access_token");
@@ -3161,7 +3151,7 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsSuccessPathRegionEnvKeysEnv) {
   grpc_error_handle error = GRPC_ERROR_NONE;
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  GPR_ASSERT(error.ok());
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       GRPC_ERROR_NONE, "authorization: Bearer token_exchange_access_token");
@@ -3206,7 +3196,7 @@ TEST(CredentialsTest,
   grpc_error_handle error = GRPC_ERROR_NONE;
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  GPR_ASSERT(error.ok());
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       GRPC_ERROR_NONE, "authorization: Bearer token_exchange_access_token");
@@ -3251,7 +3241,7 @@ TEST(CredentialsTest,
   grpc_error_handle error = GRPC_ERROR_NONE;
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  GPR_ASSERT(error.ok());
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       GRPC_ERROR_NONE, "authorization: Bearer token_exchange_access_token");
@@ -3295,7 +3285,6 @@ TEST(CredentialsTest,
   GPR_ASSERT(
       grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION, &actual_error));
   GPR_ASSERT(expected_error == actual_error);
-  GRPC_ERROR_UNREF(error);
 }
 
 TEST(CredentialsTest, TestAwsExternalAccountCredsFailureInvalidRegionUrl) {
@@ -3319,7 +3308,7 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsFailureInvalidRegionUrl) {
   grpc_error_handle error = GRPC_ERROR_NONE;
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  GPR_ASSERT(error.ok());
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
   error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
       "Invalid region url: invalid_region_url.");
@@ -3334,7 +3323,6 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsFailureInvalidRegionUrl) {
                                 kTestPath);
   ExecCtx::Get()->Flush();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
-  GRPC_ERROR_UNREF(error);
 }
 
 TEST(CredentialsTest, TestAwsExternalAccountCredsFailureInvalidUrl) {
@@ -3358,7 +3346,7 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsFailureInvalidUrl) {
   grpc_error_handle error = GRPC_ERROR_NONE;
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  GPR_ASSERT(error.ok());
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
   error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Invalid url: invalid_url.");
   grpc_error_handle expected_error =
@@ -3372,7 +3360,6 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsFailureInvalidUrl) {
                                 kTestPath);
   ExecCtx::Get()->Flush();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
-  GRPC_ERROR_UNREF(error);
 }
 
 TEST(CredentialsTest, TestAwsExternalAccountCredsFailureMissingRoleName) {
@@ -3396,7 +3383,7 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsFailureMissingRoleName) {
   grpc_error_handle error = GRPC_ERROR_NONE;
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  GPR_ASSERT(error.ok());
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
   error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
       "Missing role name when retrieving signing keys.");
@@ -3411,7 +3398,6 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsFailureMissingRoleName) {
                                 kTestPath);
   ExecCtx::Get()->Flush();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
-  GRPC_ERROR_UNREF(error);
 }
 
 TEST(CredentialsTest,
@@ -3436,7 +3422,7 @@ TEST(CredentialsTest,
   grpc_error_handle error = GRPC_ERROR_NONE;
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  GPR_ASSERT(error.ok());
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
   error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
       "Creating aws request signer failed.");
@@ -3451,7 +3437,6 @@ TEST(CredentialsTest,
                                 kTestPath);
   ExecCtx::Get()->Flush();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
-  GRPC_ERROR_UNREF(error);
 }
 
 TEST(CredentialsTest, TestExternalAccountCredentialsCreateSuccess) {

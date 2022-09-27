@@ -162,7 +162,7 @@ class TrailingMetadataRecordingFilter {
       TrailingMetadataRecordingFilter::trailing_metadata_available_ =
           *calld->trailing_metadata_available_;
       Closure::Run(DEBUG_LOCATION, calld->original_recv_initial_metadata_ready_,
-                   GRPC_ERROR_REF(error));
+                   error);
     }
 
     static void RecvTrailingMetadataReady(void* arg, grpc_error_handle error) {
@@ -170,8 +170,7 @@ class TrailingMetadataRecordingFilter {
       stream_network_state_ =
           calld->recv_trailing_metadata_->get(GrpcStreamNetworkState());
       Closure::Run(DEBUG_LOCATION,
-                   calld->original_recv_trailing_metadata_ready_,
-                   GRPC_ERROR_REF(error));
+                   calld->original_recv_trailing_metadata_ready_, error);
     }
 
     bool* trailing_metadata_available_ = nullptr;
@@ -361,14 +360,14 @@ class StreamsNotSeenTest : public ::testing::Test {
   }
 
   static void OnWriteDone(void* arg, grpc_error_handle error) {
-    GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+    GPR_ASSERT(error.ok());
     Notification* on_write_done_notification_ = static_cast<Notification*>(arg);
     on_write_done_notification_->Notify();
   }
 
   static void OnReadDone(void* arg, grpc_error_handle error) {
     StreamsNotSeenTest* self = static_cast<StreamsNotSeenTest*>(arg);
-    if (GRPC_ERROR_IS_NONE(error)) {
+    if (error.ok()) {
       {
         MutexLock lock(&self->mu_);
         for (size_t i = 0; i < self->read_buffer_.count; ++i) {

@@ -154,7 +154,7 @@ static void got_port_from_server(void* arg, grpc_error_handle error) {
   int failed = 0;
   grpc_http_response* response = &pr->response;
 
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     failed = 1;
     gpr_log(GPR_DEBUG, "failed port pick from server: retrying [%s]",
             grpc_error_std_string(error).c_str());
