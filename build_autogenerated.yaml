@@ -7968,6 +7968,16 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - grpc_test_util
+- name: outlier_detection_lb_config_parser_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/util/scoped_env_var.h
+  src:
+  - test/core/client_channel/outlier_detection_lb_config_parser_test.cc
+  deps:
+  - grpc_test_util
 - name: overload_test
   gtest: true
   build: test
