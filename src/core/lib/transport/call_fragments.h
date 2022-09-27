@@ -184,10 +184,14 @@ class FragmentAllocator {
   template <typename T>
   friend class FragmentHandle;
 
-  template <typename T>
-  void Delete(T* p) {
-    p->~T();
+  void Delete(grpc_metadata_batch* p) {
+    p->~grpc_metadata_batch();
     FreeNode(reinterpret_cast<Node*>(p));
+  }
+
+  void Delete(Message* m) {
+    m->~Message();
+    FreeNode(reinterpret_cast<Node*>(m));
   }
 
   Node* AllocateNode();
@@ -224,7 +228,7 @@ FragmentHandle<T>::FragmentHandle(const absl::Status& status) {
 }
 
 template <typename T>
-GPR_ATTRIBUTE_NOINLINE void FragmentHandle<T>::DestroyHandle() {
+void FragmentHandle<T>::DestroyHandle() {
   if (allocated_by_allocator_) {
     GetContext<FragmentAllocator>()->Delete(handle_);
   }
