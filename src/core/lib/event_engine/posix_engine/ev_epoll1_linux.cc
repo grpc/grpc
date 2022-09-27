@@ -91,7 +91,7 @@ class Epoll1EventHandle : public EventHandle {
     pending_write_.store(false, std::memory_order_relaxed);
     pending_error_.store(false, std::memory_order_relaxed);
   }
-  Epoll1Poller* Poller() override { return poller_; }
+  Epoll1Poller* Poller() { return poller_; }
   bool SetPendingActions(bool pending_read, bool pending_write,
                          bool pending_error) {
     // Another thread may be executing ExecutePendingActions() at this point
