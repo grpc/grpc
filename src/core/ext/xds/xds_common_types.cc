@@ -19,6 +19,7 @@
 #include "src/core/ext/xds/xds_common_types.h"
 
 #include <stddef.h>
+#include <stdint.h>
 
 #include <algorithm>
 #include <map>
