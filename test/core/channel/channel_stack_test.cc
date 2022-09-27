@@ -39,14 +39,14 @@ static grpc_error_handle channel_init_func(grpc_channel_element* elem,
   EXPECT_TRUE(args->is_first);
   EXPECT_TRUE(args->is_last);
   *static_cast<int*>(elem->channel_data) = 0;
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 static grpc_error_handle call_init_func(
     grpc_call_element* elem, const grpc_call_element_args* /*args*/) {
   ++*static_cast<int*>(elem->channel_data);
   *static_cast<int*>(elem->call_data) = 0;
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 static void channel_destroy_func(grpc_channel_element* /*elem*/) {}

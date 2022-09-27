@@ -114,10 +114,10 @@ grpc_error_handle non_polling_poller_work(grpc_pollset* pollset,
                                           grpc_pollset_worker** worker,
                                           grpc_core::Timestamp deadline) {
   non_polling_poller* npp = reinterpret_cast<non_polling_poller*>(pollset);
-  if (npp->shutdown) return GRPC_ERROR_NONE;
+  if (npp->shutdown) return absl::OkStatus();
   if (npp->kicked_without_poller) {
     npp->kicked_without_poller = false;
-    return GRPC_ERROR_NONE;
+    return absl::OkStatus();
   }
   non_polling_worker w;
   gpr_cv_init(&w.cv);
@@ -139,7 +139,8 @@ grpc_error_handle non_polling_poller_work(grpc_pollset* pollset,
     npp->root = w.next;
     if (&w == npp->root) {
       if (npp->shutdown) {
-        grpc_core::ExecCtx::Run(DEBUG_LOCATION, npp->shutdown, GRPC_ERROR_NONE);
+        grpc_core::ExecCtx::Run(DEBUG_LOCATION, npp->shutdown,
+                                absl::OkStatus());
       }
       npp->root = nullptr;
     }
@@ -148,7 +149,7 @@ grpc_error_handle non_polling_poller_work(grpc_pollset* pollset,
   w.prev->next = w.next;
   gpr_cv_destroy(&w.cv);
   if (worker != nullptr) *worker = nullptr;
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 grpc_error_handle non_polling_poller_kick(
@@ -167,7 +168,7 @@ grpc_error_handle non_polling_poller_kick(
   } else {
     p->kicked_without_poller = true;
   }
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 void non_polling_poller_shutdown(grpc_pollset* pollset, grpc_closure* closure) {
@@ -175,7 +176,7 @@ void non_polling_poller_shutdown(grpc_pollset* pollset, grpc_closure* closure) {
   GPR_ASSERT(closure != nullptr);
   p->shutdown = closure;
   if (p->root == nullptr) {
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, absl::OkStatus());
   } else {
     non_polling_worker* w = p->root;
     do {
@@ -1035,7 +1036,7 @@ static grpc_event cq_next(grpc_completion_queue* cq, gpr_timespec deadline,
     if (!err.ok()) {
       gpr_log(GPR_ERROR, "Completion queue next failed: %s",
               grpc_error_std_string(err).c_str());
-      if (err == GRPC_ERROR_CANCELLED) {
+      if (err == absl::CancelledError()) {
         ret.type = GRPC_QUEUE_SHUTDOWN;
       } else {
         ret.type = GRPC_QUEUE_TIMEOUT;
@@ -1353,7 +1354,7 @@ static void cq_finish_shutdown_callback(grpc_completion_queue* cq) {
   // from a background poller thread.
   grpc_core::Executor::Run(
       GRPC_CLOSURE_CREATE(functor_callback, callback, nullptr),
-      GRPC_ERROR_NONE);
+      absl::OkStatus());
 }
 
 static void cq_shutdown_callback(grpc_completion_queue* cq) {

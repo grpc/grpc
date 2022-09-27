@@ -20,6 +20,7 @@
 #include <map>
 #include <utility>
 
+#include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
@@ -132,10 +133,10 @@ void FileExternalAccountCredentials::RetrieveSubjectToken(
                  "Subject token field must be a string."));
       return;
     }
-    cb(content_it->second.string_value(), GRPC_ERROR_NONE);
+    cb(content_it->second.string_value(), absl::OkStatus());
     return;
   }
-  cb(std::string(content), GRPC_ERROR_NONE);
+  cb(std::string(content), absl::OkStatus());
 }
 
 }  // namespace grpc_core

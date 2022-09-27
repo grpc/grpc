@@ -128,7 +128,7 @@ ClientChannelServiceConfigParser::ParseGlobalParams(const ChannelArgs& /*args*/,
   absl::optional<std::string> health_check_service_name;
   it = json.object_value().find("healthCheckConfig");
   if (it != json.object_value().end()) {
-    grpc_error_handle parsing_error = GRPC_ERROR_NONE;
+    grpc_error_handle parsing_error;
     health_check_service_name =
         ParseHealthCheckConfig(it->second, &parsing_error);
     if (!parsing_error.ok()) {

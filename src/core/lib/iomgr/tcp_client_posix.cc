@@ -94,7 +94,7 @@ void grpc_tcp_client_global_init() {
 static grpc_error_handle prepare_socket(
     const grpc_resolved_address* addr, int fd,
     const grpc_core::PosixTcpOptions& options) {
-  grpc_error_handle err = GRPC_ERROR_NONE;
+  grpc_error_handle err;
 
   GPR_ASSERT(fd >= 0);
 
@@ -193,7 +193,7 @@ static void on_writable(void* acp, grpc_error_handle error) {
 
   if (connect_cancelled) {
     // The callback should not get scheduled in this case.
-    error = GRPC_ERROR_NONE;
+    error = absl::OkStatus();
     goto finish;
   }
 
@@ -306,10 +306,10 @@ grpc_error_handle grpc_tcp_client_prepare_fd(
       memcpy(mapped_addr, addr, sizeof(*mapped_addr));
     }
   }
-  if ((error = prepare_socket(mapped_addr, *fd, options)) != GRPC_ERROR_NONE) {
+  if ((error = prepare_socket(mapped_addr, *fd, options)) != absl::OkStatus()) {
     return error;
   }
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 int64_t grpc_tcp_client_create_from_prepared_fd(
@@ -343,7 +343,7 @@ int64_t grpc_tcp_client_create_from_prepared_fd(
     // Connection already succeded. Return 0 to discourage any cancellation
     // attempts.
     *ep = grpc_tcp_client_create_from_fd(fdobj, options, addr_uri.value());
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, absl::OkStatus());
     return 0;
   }
   if (errno != EWOULDBLOCK && errno != EINPROGRESS) {
@@ -404,7 +404,7 @@ static int64_t tcp_connect(grpc_closure* closure, grpc_endpoint** ep,
   grpc_error_handle error;
   *ep = nullptr;
   if ((error = grpc_tcp_client_prepare_fd(options, addr, &mapped_addr, &fd)) !=
-      GRPC_ERROR_NONE) {
+      absl::OkStatus()) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, error);
     return 0;
   }
@@ -450,7 +450,7 @@ static bool tcp_cancel_connect(int64_t connection_handle) {
     // Shutdown the fd. This would cause on_writable to run as soon as possible.
     // We dont need to pass a custom error here because it wont be used since
     // the on_connect_closure is not run if connect cancellation is successfull.
-    grpc_fd_shutdown(ac->fd, GRPC_ERROR_NONE);
+    grpc_fd_shutdown(ac->fd, absl::OkStatus());
   }
   bool done = (--ac->refs == 0);
   gpr_mu_unlock(&ac->mu);

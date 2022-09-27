@@ -23,6 +23,8 @@
 #include <algorithm>
 #include <new>
 
+#include "absl/status/status.h"
+
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/impl/codegen/grpc_types.h>
@@ -101,7 +103,7 @@ struct call_data {
   grpc_transport_stream_op_batch* recv_initial_metadata_batch;
   grpc_closure* original_recv_initial_metadata_ready;
   grpc_closure recv_initial_metadata_ready;
-  grpc_error_handle recv_initial_metadata_error = GRPC_ERROR_NONE;
+  grpc_error_handle recv_initial_metadata_error;
   grpc_closure recv_trailing_metadata_ready;
   grpc_closure* original_recv_trailing_metadata_ready;
   grpc_error_handle recv_trailing_metadata_error;
@@ -200,7 +202,7 @@ static void on_md_processing_done(
   // If the call was not cancelled while we were in flight, process the result.
   if (gpr_atm_full_cas(&calld->state, static_cast<gpr_atm>(STATE_INIT),
                        static_cast<gpr_atm>(STATE_DONE))) {
-    grpc_error_handle error = GRPC_ERROR_NONE;
+    grpc_error_handle error;
     if (status != GRPC_STATUS_OK) {
       if (error_details == nullptr) {
         error_details = "Authentication metadata processing failed.";
@@ -311,7 +313,7 @@ static void server_auth_start_transport_stream_op_batch(
 static grpc_error_handle server_auth_init_call_elem(
     grpc_call_element* elem, const grpc_call_element_args* args) {
   new (elem->call_data) call_data(elem, *args);
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 /* Destructor for call_data */
@@ -332,7 +334,7 @@ static grpc_error_handle server_auth_init_channel_elem(
   grpc_server_credentials* creds =
       grpc_find_server_credentials_in_args(args->channel_args);
   new (elem->channel_data) channel_data(auth_context, creds);
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 /* Destructor for channel data */

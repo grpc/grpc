@@ -461,7 +461,7 @@ void AwsExternalAccountCredentials::OnRetrieveSigningKeysInternal(
 }
 
 void AwsExternalAccountCredentials::BuildSubjectToken() {
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
   if (signer_ == nullptr) {
     cred_verification_url_ = absl::StrReplaceAll(
         regional_cred_verification_url_, {{"{region}", region_}});
@@ -501,7 +501,7 @@ void AwsExternalAccountCredentials::BuildSubjectToken() {
                       {"headers", Json(headers)}};
   Json subject_token_json(object);
   std::string subject_token = UrlEncode(subject_token_json.Dump());
-  FinishRetrieveSubjectToken(subject_token, GRPC_ERROR_NONE);
+  FinishRetrieveSubjectToken(subject_token, absl::OkStatus());
 }
 
 void AwsExternalAccountCredentials::FinishRetrieveSubjectToken(
@@ -515,7 +515,7 @@ void AwsExternalAccountCredentials::FinishRetrieveSubjectToken(
   if (!error.ok()) {
     cb("", error);
   } else {
-    cb(subject_token, GRPC_ERROR_NONE);
+    cb(subject_token, absl::OkStatus());
   }
 }
 

@@ -98,7 +98,7 @@ class GracefulShutdownTest : public ::testing::Test {
     grpc_endpoint_add_to_pollset(fds_.server, grpc_cq_pollset(cq_));
     GPR_ASSERT(core_server->SetupTransport(transport, nullptr,
                                            core_server->channel_args(),
-                                           nullptr) == GRPC_ERROR_NONE);
+                                           nullptr) == absl::OkStatus());
     grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
     // Start polling on the client
     Notification client_poller_thread_started_notification;

@@ -606,7 +606,7 @@ static void run_poller(void* bp, grpc_error_handle /*error_ignored*/) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
       gpr_log(GPR_INFO, "BACKUP_POLLER:%p reschedule", p);
     }
-    grpc_core::Executor::Run(&p->run_poller, GRPC_ERROR_NONE,
+    grpc_core::Executor::Run(&p->run_poller, absl::OkStatus(),
                              grpc_core::ExecutorType::DEFAULT,
                              grpc_core::ExecutorJobType::LONG);
   }
@@ -649,7 +649,7 @@ static void cover_self(grpc_tcp* tcp) {
     }
     grpc_core::Executor::Run(
         GRPC_CLOSURE_INIT(&p->run_poller, run_poller, p, nullptr),
-        GRPC_ERROR_NONE, grpc_core::ExecutorType::DEFAULT,
+        absl::OkStatus(), grpc_core::ExecutorType::DEFAULT,
         grpc_core::ExecutorJobType::LONG);
   } else {
     old_count = g_uncovered_notifications_pending++;
@@ -1011,7 +1011,7 @@ static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error)
   }
 
   GPR_DEBUG_ASSERT(total_read_bytes > 0);
-  *error = GRPC_ERROR_NONE;
+  *error = absl::OkStatus();
   if (tcp->frame_size_tuning_enabled) {
     // Update min progress size based on the total number of bytes read in
     // this round.
@@ -1176,7 +1176,7 @@ static void tcp_read(grpc_endpoint* ep, grpc_slice_buffer* incoming_buffer,
      * bytes or calls notify_on_read() to be notified when new bytes become
      * available */
     grpc_core::Closure::Run(DEBUG_LOCATION, &tcp->read_done_closure,
-                            GRPC_ERROR_NONE);
+                            absl::OkStatus());
   }
 }
 
@@ -1647,7 +1647,7 @@ static bool do_tcp_flush_zerocopy(grpc_tcp* tcp, TcpZerocopySendRecord* record,
     record->UpdateOffsetForBytesSent(sending_length,
                                      static_cast<size_t>(sent_length));
     if (record->AllSlicesSent()) {
-      *error = GRPC_ERROR_NONE;
+      *error = absl::OkStatus();
       return true;
     }
   }
@@ -1777,7 +1777,7 @@ static bool tcp_flush(grpc_tcp* tcp, grpc_error_handle* error) {
       }
     }
     if (outgoing_slice_idx == tcp->outgoing_buffer->count) {
-      *error = GRPC_ERROR_NONE;
+      *error = absl::OkStatus();
       grpc_slice_buffer_reset_and_unref(tcp->outgoing_buffer);
       return true;
     }
@@ -1828,7 +1828,7 @@ static void tcp_handle_write(void* arg /* grpc_tcp */,
 static void tcp_write(grpc_endpoint* ep, grpc_slice_buffer* buf,
                       grpc_closure* cb, void* arg, int /*max_frame_size*/) {
   grpc_tcp* tcp = reinterpret_cast<grpc_tcp*>(ep);
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
   TcpZerocopySendRecord* zerocopy_send_record = nullptr;
 
   grpc_core::EventLog::Append("tcp-write-outstanding", buf->length);
@@ -1856,7 +1856,7 @@ static void tcp_write(grpc_endpoint* ep, grpc_slice_buffer* buf,
         grpc_fd_is_shutdown(tcp->em_fd)
             ? tcp_annotate_error(GRPC_ERROR_CREATE_FROM_STATIC_STRING("EOF"),
                                  tcp)
-            : GRPC_ERROR_NONE);
+            : absl::OkStatus());
     tcp_shutdown_buffer_list(tcp);
     return;
   }

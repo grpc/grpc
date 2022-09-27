@@ -28,6 +28,7 @@
 #include <utility>
 
 #include "absl/container/inlined_vector.h"
+#include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
@@ -148,7 +149,7 @@ class RetryFilter {
                                 grpc_channel_element_args* args) {
     GPR_ASSERT(args->is_last);
     GPR_ASSERT(elem->filter == &kRetryFilterVtable);
-    grpc_error_handle error = GRPC_ERROR_NONE;
+    grpc_error_handle error;
     new (elem->channel_data) RetryFilter(args->channel_args, &error);
     return error;
   }
@@ -490,9 +491,9 @@ class RetryFilter::CallData {
     bool sent_cancel_stream_ : 1;
     // State for callback processing.
     RefCountedPtr<BatchData> recv_initial_metadata_ready_deferred_batch_;
-    grpc_error_handle recv_initial_metadata_error_ = GRPC_ERROR_NONE;
+    grpc_error_handle recv_initial_metadata_error_;
     RefCountedPtr<BatchData> recv_message_ready_deferred_batch_;
-    grpc_error_handle recv_message_error_ = GRPC_ERROR_NONE;
+    grpc_error_handle recv_message_error_;
     struct OnCompleteDeferredBatch {
       OnCompleteDeferredBatch(RefCountedPtr<BatchData> batch,
                               grpc_error_handle error)
@@ -504,7 +505,7 @@ class RetryFilter::CallData {
     absl::InlinedVector<OnCompleteDeferredBatch, 3>
         on_complete_deferred_batches_;
     RefCountedPtr<BatchData> recv_trailing_metadata_internal_batch_;
-    grpc_error_handle recv_trailing_metadata_error_ = GRPC_ERROR_NONE;
+    grpc_error_handle recv_trailing_metadata_error_;
     bool seen_recv_trailing_metadata_from_surface_ : 1;
     // NOTE: Do not move this next to the metadata bitfields above. That would
     //       save space but will also result in a data race because compiler
@@ -574,7 +575,7 @@ class RetryFilter::CallData {
   CallCombiner* call_combiner_;
   grpc_call_context_element* call_context_;
 
-  grpc_error_handle cancelled_from_surface_ = GRPC_ERROR_NONE;
+  grpc_error_handle cancelled_from_surface_;
 
   RefCountedPtr<CallStackDestructionBarrier> call_stack_destruction_barrier_;
 
@@ -662,7 +663,7 @@ class RetryFilter::CallData::CallStackDestructionBarrier
 
   ~CallStackDestructionBarrier() override {
     // TODO(yashkt) : This can potentially be a Closure::Run
-    ExecCtx::Run(DEBUG_LOCATION, on_call_stack_destruction_, GRPC_ERROR_NONE);
+    ExecCtx::Run(DEBUG_LOCATION, on_call_stack_destruction_, absl::OkStatus());
   }
 
   // Set the closure from the surface.  This closure will be invoked
@@ -900,7 +901,7 @@ void RetryFilter::CallData::CallAttempt::AddClosureForBatch(
   batch->handler_private.extra_arg = lb_call_.get();
   GRPC_CLOSURE_INIT(&batch->handler_private.closure, StartBatchInCallCombiner,
                     batch, grpc_schedule_on_exec_ctx);
-  closures->Add(&batch->handler_private.closure, GRPC_ERROR_NONE, reason);
+  closures->Add(&batch->handler_private.closure, absl::OkStatus(), reason);
 }
 
 void RetryFilter::CallData::CallAttempt::
@@ -1019,7 +1020,7 @@ void RetryFilter::CallData::CallAttempt::AddBatchesForPendingBatches(
                 "internally started recv_trailing_metadata batch pending and "
                 "recv_trailing_metadata started from surface");
           }
-          recv_trailing_metadata_error_ = GRPC_ERROR_NONE;
+          recv_trailing_metadata_error_ = absl::OkStatus();
         }
         // We don't want the fact that we've already started this op internally
         // to prevent us from adding a batch that may contain other ops.
@@ -1233,15 +1234,15 @@ void RetryFilter::CallData::CallAttempt::Abandon() {
         DEBUG_LOCATION,
         "unref internal recv_trailing_metadata_ready batch; attempt abandoned");
   }
-  recv_trailing_metadata_error_ = GRPC_ERROR_NONE;
+  recv_trailing_metadata_error_ = absl::OkStatus();
   recv_initial_metadata_ready_deferred_batch_.reset(
       DEBUG_LOCATION,
       "unref deferred recv_initial_metadata_ready batch; attempt abandoned");
-  recv_initial_metadata_error_ = GRPC_ERROR_NONE;
+  recv_initial_metadata_error_ = absl::OkStatus();
   recv_message_ready_deferred_batch_.reset(
       DEBUG_LOCATION,
       "unref deferred recv_message_ready batch; attempt abandoned");
-  recv_message_error_ = GRPC_ERROR_NONE;
+  recv_message_error_ = absl::OkStatus();
   for (auto& on_complete_deferred_batch : on_complete_deferred_batches_) {
     on_complete_deferred_batch.batch.reset(
         DEBUG_LOCATION, "unref deferred on_complete batch; attempt abandoned");
@@ -1654,7 +1655,7 @@ void RetryFilter::CallData::CallAttempt::BatchData::
         call_attempt_->recv_initial_metadata_error_, closures);
     call_attempt_->recv_initial_metadata_ready_deferred_batch_.reset(
         DEBUG_LOCATION, "resuming deferred recv_initial_metadata_ready");
-    call_attempt_->recv_initial_metadata_error_ = GRPC_ERROR_NONE;
+    call_attempt_->recv_initial_metadata_error_ = absl::OkStatus();
   }
   // Add closure for deferred recv_message_ready.
   if (GPR_UNLIKELY(call_attempt_->recv_message_ready_deferred_batch_ !=
@@ -1663,7 +1664,7 @@ void RetryFilter::CallData::CallAttempt::BatchData::
                                           closures);
     call_attempt_->recv_message_ready_deferred_batch_.reset(
         DEBUG_LOCATION, "resuming deferred recv_message_ready");
-    call_attempt_->recv_message_error_ = GRPC_ERROR_NONE;
+    call_attempt_->recv_message_error_ = absl::OkStatus();
   }
   // Add closures for deferred on_complete callbacks.
   for (auto& on_complete_deferred_batch :
@@ -2087,7 +2088,7 @@ grpc_error_handle RetryFilter::CallData::Init(
     gpr_log(GPR_INFO, "chand=%p calld=%p: created call", chand,
             elem->call_data);
   }
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 void RetryFilter::CallData::Destroy(grpc_call_element* elem,
@@ -2624,7 +2625,7 @@ void RetryFilter::CallData::AddClosureToStartTransparentRetry(
   }
   GRPC_CALL_STACK_REF(owning_call_, "OnRetryTimer");
   GRPC_CLOSURE_INIT(&retry_closure_, StartTransparentRetry, this, nullptr);
-  closures->Add(&retry_closure_, GRPC_ERROR_NONE, "start transparent retry");
+  closures->Add(&retry_closure_, absl::OkStatus(), "start transparent retry");
 }
 
 void RetryFilter::CallData::StartTransparentRetry(void* arg,

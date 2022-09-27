@@ -28,6 +28,7 @@
 #include <string>
 #include <utility>
 
+#include "absl/status/status.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -173,7 +174,7 @@ struct op_state {
   /* User requested RECV_TRAILING_METADATA */
   bool pending_recv_trailing_metadata = false;
   cronet_net_error_code net_error = OK;
-  grpc_error_handle cancel_error = GRPC_ERROR_NONE;
+  grpc_error_handle cancel_error;
   /* data structure for storing data coming from server */
   struct read_state rs;
   /* data structure for storing data going to the server */
@@ -1139,24 +1140,24 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
       grpc_core::ExecCtx::Run(
           DEBUG_LOCATION,
           stream_op->payload->recv_initial_metadata.recv_initial_metadata_ready,
-          GRPC_ERROR_NONE);
+          absl::OkStatus());
     } else if (stream_state->state_callback_received[OP_FAILED]) {
       grpc_core::ExecCtx::Run(
           DEBUG_LOCATION,
           stream_op->payload->recv_initial_metadata.recv_initial_metadata_ready,
-          GRPC_ERROR_NONE);
+          absl::OkStatus());
     } else if (stream_state->state_op_done[OP_RECV_TRAILING_METADATA]) {
       grpc_core::ExecCtx::Run(
           DEBUG_LOCATION,
           stream_op->payload->recv_initial_metadata.recv_initial_metadata_ready,
-          GRPC_ERROR_NONE);
+          absl::OkStatus());
     } else {
       *stream_op->payload->recv_initial_metadata.recv_initial_metadata =
           std::move(oas->s->state.rs.initial_metadata);
       grpc_core::ExecCtx::Run(
           DEBUG_LOCATION,
           stream_op->payload->recv_initial_metadata.recv_initial_metadata_ready,
-          GRPC_ERROR_NONE);
+          absl::OkStatus());
     }
     stream_state->state_op_done[OP_RECV_INITIAL_METADATA] = true;
     result = ACTION_TAKEN_NO_CALLBACK;
@@ -1167,7 +1168,7 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
       CRONET_LOG(GPR_DEBUG, "Stream is cancelled.");
       grpc_core::ExecCtx::Run(
           DEBUG_LOCATION, stream_op->payload->recv_message.recv_message_ready,
-          GRPC_ERROR_NONE);
+          absl::OkStatus());
       stream_state->state_op_done[OP_RECV_MESSAGE] = true;
       oas->state.state_op_done[OP_RECV_MESSAGE] = true;
       result = ACTION_TAKEN_NO_CALLBACK;
@@ -1175,7 +1176,7 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
       CRONET_LOG(GPR_DEBUG, "Stream failed.");
       grpc_core::ExecCtx::Run(
           DEBUG_LOCATION, stream_op->payload->recv_message.recv_message_ready,
-          GRPC_ERROR_NONE);
+          absl::OkStatus());
       stream_state->state_op_done[OP_RECV_MESSAGE] = true;
       oas->state.state_op_done[OP_RECV_MESSAGE] = true;
       result = ACTION_TAKEN_NO_CALLBACK;
@@ -1184,7 +1185,7 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
       CRONET_LOG(GPR_DEBUG, "read stream closed");
       grpc_core::ExecCtx::Run(
           DEBUG_LOCATION, stream_op->payload->recv_message.recv_message_ready,
-          GRPC_ERROR_NONE);
+          absl::OkStatus());
       stream_state->state_op_done[OP_RECV_MESSAGE] = true;
       oas->state.state_op_done[OP_RECV_MESSAGE] = true;
       result = ACTION_TAKEN_NO_CALLBACK;
@@ -1192,7 +1193,7 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
       CRONET_LOG(GPR_DEBUG, "flush read");
       grpc_core::ExecCtx::Run(
           DEBUG_LOCATION, stream_op->payload->recv_message.recv_message_ready,
-          GRPC_ERROR_NONE);
+          absl::OkStatus());
       stream_state->state_op_done[OP_RECV_MESSAGE] = true;
       oas->state.state_op_done[OP_RECV_MESSAGE] = true;
       result = ACTION_TAKEN_NO_CALLBACK;
@@ -1233,7 +1234,7 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
           grpc_core::ExecCtx::Run(
               DEBUG_LOCATION,
               stream_op->payload->recv_message.recv_message_ready,
-              GRPC_ERROR_NONE);
+              absl::OkStatus());
           stream_state->state_op_done[OP_RECV_MESSAGE] = true;
           oas->state.state_op_done[OP_RECV_MESSAGE] = true;
 
@@ -1280,7 +1281,7 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
           std::move(stream_state->rs.read_slice_buffer);
       grpc_core::ExecCtx::Run(
           DEBUG_LOCATION, stream_op->payload->recv_message.recv_message_ready,
-          GRPC_ERROR_NONE);
+          absl::OkStatus());
       stream_state->state_op_done[OP_RECV_MESSAGE] = true;
       oas->state.state_op_done[OP_RECV_MESSAGE] = true;
       /* Do an extra read to trigger on_succeeded() callback in case connection
@@ -1293,7 +1294,7 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
              op_can_be_run(stream_op, s, &oas->state,
                            OP_RECV_TRAILING_METADATA)) {
     CRONET_LOG(GPR_DEBUG, "running: %p  OP_RECV_TRAILING_METADATA", oas);
-    grpc_error_handle error = GRPC_ERROR_NONE;
+    grpc_error_handle error;
     if (stream_state->state_op_done[OP_CANCEL_ERROR]) {
       error = stream_state->cancel_error;
     } else if (stream_state->state_callback_received[OP_FAILED]) {
@@ -1352,7 +1353,7 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
        */
       if (stream_op->on_complete) {
         grpc_core::ExecCtx::Run(DEBUG_LOCATION, stream_op->on_complete,
-                                GRPC_ERROR_NONE);
+                                absl::OkStatus());
       }
     }
     oas->state.state_op_done[OP_ON_COMPLETE] = true;
@@ -1419,21 +1420,21 @@ static void perform_stream_op(grpc_transport* /*gt*/, grpc_stream* gs,
       grpc_core::ExecCtx::Run(
           DEBUG_LOCATION,
           op->payload->recv_initial_metadata.recv_initial_metadata_ready,
-          GRPC_ERROR_CANCELLED);
+          absl::CancelledError());
     }
     if (op->recv_message) {
       grpc_core::ExecCtx::Run(DEBUG_LOCATION,
                               op->payload->recv_message.recv_message_ready,
-                              GRPC_ERROR_CANCELLED);
+                              absl::CancelledError());
     }
     if (op->recv_trailing_metadata) {
       grpc_core::ExecCtx::Run(
           DEBUG_LOCATION,
           op->payload->recv_trailing_metadata.recv_trailing_metadata_ready,
-          GRPC_ERROR_CANCELLED);
+          absl::CancelledError());
     }
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, op->on_complete,
-                            GRPC_ERROR_CANCELLED);
+                            absl::CancelledError());
     return;
   }
   stream_obj* s = reinterpret_cast<stream_obj*>(gs);
@@ -1446,7 +1447,7 @@ static void destroy_stream(grpc_transport* /*gt*/, grpc_stream* gs,
   stream_obj* s = reinterpret_cast<stream_obj*>(gs);
   s->~stream_obj();
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, then_schedule_closure,
-                          GRPC_ERROR_NONE);
+                          absl::OkStatus());
 }
 
 static void destroy_transport(grpc_transport* /*gt*/) {}
