@@ -34,7 +34,6 @@
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/security/authorization/authorization_engine.h"
 #include "src/core/lib/security/authorization/authorization_policy_provider.h"
-#include "src/core/lib/security/authorization/rbac_policy.h"
 #include "src/core/lib/security/authorization/rbac_translator.h"
 
 namespace grpc_core {
