@@ -711,6 +711,10 @@ grpc_cc_library(
     hdrs = [
         "include/grpc/grpc_cronet.h",
     ],
+    deps = [
+        "gpr_public_hdrs",
+        "grpc_base",
+    ],
 )
 
 grpc_cc_library(
