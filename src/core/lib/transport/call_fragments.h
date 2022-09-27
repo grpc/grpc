@@ -224,7 +224,7 @@ FragmentHandle<T>::FragmentHandle(const absl::Status& status) {
 }
 
 template <typename T>
-void FragmentHandle<T>::DestroyHandle() {
+GPR_ATTRIBUTE_NOINLINE void FragmentHandle<T>::DestroyHandle() {
   if (allocated_by_allocator_) {
     GetContext<FragmentAllocator>()->Delete(handle_);
   }
