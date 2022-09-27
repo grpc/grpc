@@ -21,8 +21,6 @@
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 
-#include "src/core/lib/slice/slice_refcount.h"
-
 namespace grpc_event_engine {
 namespace experimental {
 
@@ -43,7 +41,7 @@ void SliceBuffer::Prepend(Slice slice) {
 }
 
 Slice SliceBuffer::RefSlice(size_t index) {
-  return Slice(grpc_slice_ref_internal(slice_buffer_.slices[index]));
+  return Slice(grpc_slice_ref(slice_buffer_.slices[index]));
 }
 
 }  // namespace experimental

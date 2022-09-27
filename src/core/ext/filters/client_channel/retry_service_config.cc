@@ -150,11 +150,10 @@ RetryServiceConfigParser::ParseGlobalParams(const ChannelArgs& /*args*/,
   intptr_t milli_token_ratio = 0;
   grpc_error_handle error =
       ParseRetryThrottling(it->second, &max_milli_tokens, &milli_token_ratio);
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     absl::Status status = absl::InvalidArgumentError(
         absl::StrCat("error parsing retry global parameters: ",
                      grpc_error_std_string(error)));
-    GRPC_ERROR_UNREF(error);
     return status;
   }
   return absl::make_unique<RetryGlobalConfig>(max_milli_tokens,
@@ -308,11 +307,10 @@ RetryServiceConfigParser::ParsePerMethodParams(const ChannelArgs& args,
   grpc_error_handle error = ParseRetryPolicy(
       args, it->second, &max_attempts, &initial_backoff, &max_backoff,
       &backoff_multiplier, &retryable_status_codes, &per_attempt_recv_timeout);
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     absl::Status status = absl::InvalidArgumentError(
         absl::StrCat("error parsing retry method parameters: ",
                      grpc_error_std_string(error)));
-    GRPC_ERROR_UNREF(error);
     return status;
   }
   return absl::make_unique<RetryMethodConfig>(

@@ -118,7 +118,7 @@ typedef struct addr_req {
 static void finish_resolve(void* arg, grpc_error_handle error) {
   addr_req* r = static_cast<addr_req*>(arg);
 
-  if (GRPC_ERROR_IS_NONE(error) && 0 == strcmp(r->addr, "server")) {
+  if (error.ok() && 0 == strcmp(r->addr, "server")) {
     *r->addresses = absl::make_unique<grpc_core::ServerAddressList>();
     grpc_resolved_address fake_resolved_address;
     GPR_ASSERT(
@@ -158,7 +158,7 @@ class FuzzerDNSResolver : public grpc_core::DNSResolver {
    private:
     static void FinishResolve(void* arg, grpc_error_handle error) {
       FuzzerDNSRequest* self = static_cast<FuzzerDNSRequest*>(arg);
-      if (GRPC_ERROR_IS_NONE(error) && self->name_ == "server") {
+      if (error.ok() && self->name_ == "server") {
         std::vector<grpc_resolved_address> addrs;
         grpc_resolved_address addr;
         addr.len = 0;
@@ -269,9 +269,9 @@ typedef struct {
 
 static void do_connect(void* arg, grpc_error_handle error) {
   future_connect* fc = static_cast<future_connect*>(arg);
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     *fc->ep = nullptr;
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, fc->closure, GRPC_ERROR_REF(error));
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, fc->closure, error);
   } else if (g_server != nullptr) {
     grpc_endpoint* client;
     grpc_endpoint* server;

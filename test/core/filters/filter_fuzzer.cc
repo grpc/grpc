@@ -394,8 +394,6 @@ class MainLoop {
       }
 
       bool StartTransportOp(grpc_transport_op* op) override {
-        GRPC_ERROR_UNREF(op->disconnect_with_error);
-        GRPC_ERROR_UNREF(op->goaway_error);
         ExecCtx::Run(DEBUG_LOCATION, op->on_consumed, GRPC_ERROR_NONE);
         return true;
       }

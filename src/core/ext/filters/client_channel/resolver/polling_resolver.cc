@@ -106,7 +106,6 @@ void PollingResolver::ShutdownLocked() {
 
 void PollingResolver::OnNextResolution(void* arg, grpc_error_handle error) {
   auto* self = static_cast<PollingResolver*>(arg);
-  (void)GRPC_ERROR_REF(error);  // ref owned by lambda
   self->work_serializer_->Run(
       [self, error]() { self->OnNextResolutionLocked(error); }, DEBUG_LOCATION);
 }
@@ -119,11 +118,10 @@ void PollingResolver::OnNextResolutionLocked(grpc_error_handle error) {
             this, grpc_error_std_string(error).c_str(), shutdown_);
   }
   have_next_resolution_timer_ = false;
-  if (GRPC_ERROR_IS_NONE(error) && !shutdown_) {
+  if (error.ok() && !shutdown_) {
     StartResolvingLocked();
   }
   Unref(DEBUG_LOCATION, "retry-timer");
-  GRPC_ERROR_UNREF(error);
 }
 
 void PollingResolver::OnRequestComplete(Result result) {

@@ -1410,10 +1410,8 @@
     <file baseinstalldir="/" name="src/core/lib/slice/percent_encoding.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/slice/slice_api.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_buffer.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_buffer.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/slice/slice_buffer_api.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_refcount.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_refcount.h" role="src" />

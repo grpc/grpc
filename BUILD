@@ -512,6 +512,7 @@ grpc_cc_library(
         "src/core/plugin_registry/grpc_plugin_registry.cc",
         "src/core/plugin_registry/grpc_plugin_registry_noextra.cc",
     ],
+    defines = ["GRPC_NO_XDS"],
     external_deps = [
         "absl/base:core_headers",
     ],
@@ -1753,7 +1754,10 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "pipe",
-    external_deps = ["absl/types:optional"],
+    external_deps = [
+        "absl/types:optional",
+        "absl/types:variant",
+    ],
     language = "c++",
     public_hdrs = [
         "src/core/lib/promise/pipe.h",
@@ -1845,7 +1849,6 @@ grpc_cc_library(
         "ref_counted_ptr",
         "slice",
         "slice_buffer",
-        "slice_refcount",
         "time",
     ],
 )
@@ -1912,7 +1915,6 @@ grpc_cc_library(
         "ref_counted_ptr",
         "slice",
         "slice_buffer",
-        "slice_refcount",
     ],
 )
 
@@ -1948,7 +1950,6 @@ grpc_cc_library(
         "ref_counted_ptr",
         "resolved_address",
         "slice",
-        "slice_refcount",
         "uri_parser",
     ],
 )
@@ -2428,6 +2429,27 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "event_engine_work_queue",
+    srcs = [
+        "src/core/lib/event_engine/work_queue.cc",
+    ],
+    hdrs = [
+        "src/core/lib/event_engine/work_queue.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/functional:any_invocable",
+        "absl/types:optional",
+    ],
+    deps = [
+        "common_event_engine_closures",
+        "event_engine_base_hdrs",
+        "gpr",
+        "time",
+    ],
+)
+
+grpc_cc_library(
     name = "event_engine_threaded_executor",
     srcs = [
         "src/core/lib/event_engine/executor/threaded_executor.cc",
@@ -2754,6 +2776,44 @@ grpc_cc_library(
         "gpr",
         "iomgr_port",
         "posix_event_engine_internal_errqueue",
+    ],
+)
+
+grpc_cc_library(
+    name = "posix_event_engine_endpoint",
+    srcs = [
+        "src/core/lib/event_engine/posix_engine/posix_endpoint.cc",
+    ],
+    hdrs = [
+        "src/core/lib/event_engine/posix_engine/posix_endpoint.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/container:flat_hash_map",
+        "absl/functional:any_invocable",
+        "absl/hash",
+        "absl/memory",
+        "absl/meta:type_traits",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/types:optional",
+    ],
+    deps = [
+        "event_engine_base_hdrs",
+        "experiments",
+        "gpr",
+        "iomgr_port",
+        "memory_quota",
+        "posix_event_engine_closure",
+        "posix_event_engine_event_poller",
+        "posix_event_engine_internal_errqueue",
+        "posix_event_engine_tcp_socket_utils",
+        "posix_event_engine_traced_buffer_list",
+        "ref_counted",
+        "ref_counted_ptr",
+        "resource_quota",
+        "useful",
     ],
 )
 
@@ -3192,8 +3252,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/wakeup_fd_posix.cc",
         "src/core/lib/resource_quota/api.cc",
         "src/core/lib/slice/b64.cc",
-        "src/core/lib/slice/slice_api.cc",
-        "src/core/lib/slice/slice_buffer_api.cc",
         "src/core/lib/surface/api_trace.cc",
         "src/core/lib/surface/builtins.cc",
         "src/core/lib/surface/byte_buffer.cc",
@@ -4633,6 +4691,7 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
+        "absl/synchronization",
         "absl/types:optional",
         "absl/types:variant",
         "upb_lib",
@@ -4736,6 +4795,7 @@ grpc_cc_library(
         "upb_utils",
         "uri_parser",
         "useful",
+        "validation_errors",
         "work_serializer",
         "xds_client",
         "xds_type_upb",
@@ -7082,7 +7142,6 @@ grpc_cc_library(
         "orphanable",
         "ref_counted_ptr",
         "resolved_address",
-        "slice",
         "sockaddr_utils",
         "tcp_connect_handshaker",
         "transport_fwd",
@@ -7128,7 +7187,6 @@ grpc_cc_library(
         "ref_counted_ptr",
         "resolved_address",
         "resource_quota",
-        "slice",
         "sockaddr_utils",
         "time",
         "transport_fwd",

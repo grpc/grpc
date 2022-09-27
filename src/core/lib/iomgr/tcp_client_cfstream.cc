@@ -116,7 +116,7 @@ static void OnOpen(void* arg, grpc_error_handle error) {
     gpr_mu_unlock(&connect->mu);
     CFStreamConnectCleanup(connect);
   } else {
-    if (GRPC_ERROR_IS_NONE(error)) {
+    if (error.ok()) {
       CFErrorRef stream_error = CFReadStreamCopyError(connect->read_stream);
       if (stream_error == NULL) {
         stream_error = CFWriteStreamCopyError(connect->write_stream);
@@ -125,13 +125,11 @@ static void OnOpen(void* arg, grpc_error_handle error) {
         error = GRPC_ERROR_CREATE_FROM_CFERROR(stream_error, "connect() error");
         CFRelease(stream_error);
       }
-      if (GRPC_ERROR_IS_NONE(error)) {
+      if (error.ok()) {
         *endpoint = grpc_cfstream_endpoint_create(
             connect->read_stream, connect->write_stream,
             connect->addr_name.c_str(), connect->stream_handle);
       }
-    } else {
-      (void)GRPC_ERROR_REF(error);
     }
     gpr_mu_unlock(&connect->mu);
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, error);
