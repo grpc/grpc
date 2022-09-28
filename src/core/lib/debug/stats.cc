@@ -20,7 +20,6 @@
 
 #include "src/core/lib/debug/stats.h"
 
-#include <inttypes.h>
 #include <stddef.h>
 
 #include <algorithm>

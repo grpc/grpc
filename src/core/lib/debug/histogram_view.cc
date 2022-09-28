@@ -16,8 +16,6 @@
 
 #include "src/core/lib/debug/histogram_view.h"
 
-#include <cstddef>
-
 namespace grpc_core {
 
 double HistogramView::Count() const {
