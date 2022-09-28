@@ -24,6 +24,8 @@
 
 #include <new>
 
+#include "absl/status/status.h"
+
 #include "src/core/lib/gpr/alloc.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/executor.h"
