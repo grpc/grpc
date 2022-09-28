@@ -18,10 +18,6 @@
 
 #include <chrono>
 
-#include <grpc/slice.h>
-
-#include "src/core/lib/slice/slice_refcount_base.h"
-
 namespace grpc_core {
 
 uint32_t g_hash_seed = []() {

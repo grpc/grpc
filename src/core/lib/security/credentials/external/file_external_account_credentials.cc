@@ -28,6 +28,7 @@
 
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 
 namespace grpc_core {

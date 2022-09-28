@@ -22,8 +22,6 @@
 #include <grpcpp/security/tls_certificate_provider.h>
 #include <grpcpp/support/config.h>
 
-#include "src/core/lib/slice/slice.h"
-
 namespace grpc {
 namespace experimental {
 
