@@ -44,7 +44,6 @@
 #include "src/core/lib/event_engine/posix_engine/internal_errqueue.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
@@ -109,17 +108,6 @@ ssize_t TcpSend(int fd, const struct msghdr* msg, int* saved_errno,
 }
 
 #ifdef GRPC_LINUX_ERRQUEUE
-
-#define GRPC_LOG_EVERY_N_SEC(n, format, ...)                                  \
-  do {                                                                        \
-    static std::atomic<gpr_cycle_counter> prev{0};                            \
-    gpr_cycle_counter now = gpr_get_cycle_counter();                          \
-    if ((grpc_core::Timestamp::FromCycleCounterRoundDown(now) -               \
-         grpc_core::Timestamp::FromCycleCounterRoundDown(prev.exchange(now))) \
-            .millis() > (n)*1000) {                                           \
-      gpr_log(GPR_INFO, format, __VA_ARGS__);                                 \
-    }                                                                         \
-  } while (0)
 
 #define CAP_IS_SUPPORTED(cap) (prctl(PR_CAPBSET_READ, (cap), 0) > 0)
 
@@ -942,8 +930,9 @@ bool PosixEndpointImpl::DoFlushZerocopy(TcpZerocopySendRecord* record,
             1,
             "Tx0cp encountered an ENOBUFS error possibly because one or "
             "both of RLIMIT_MEMLOCK or hard memlock ulimit values are too "
-            "small. Current value of RLIMIT_MEMLOCK is %lu and hard memlock "
-            "ulimit is %lu. Consider increasing these values appropriately.",
+            "small for the intended user. Current system value of "
+            "RLIMIT_MEMLOCK is %lu and hard memlock ulimit is %lu. Consider "
+            "increasing these values appropriately for the intended user.",
             GetRLimitMemLockMax(), GetUlimitHardMemLock());
 #endif
       }
@@ -1200,7 +1189,7 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
       zerocopy_enabled = false;
       gpr_log(GPR_ERROR,
               "Tx zero-copy will not be used by gRPC since hard memlock ulimit "
-              "value is not set. Use ultimit -l <value> to set its value.");
+              "value is not set. Use ulimit -l <value> to set its value.");
     } else {
       const int enable = 1;
       if (setsockopt(fd_, SOL_SOCKET, SO_ZEROCOPY, &enable, sizeof(enable)) !=
