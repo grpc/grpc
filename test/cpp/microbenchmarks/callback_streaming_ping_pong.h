@@ -138,7 +138,6 @@ static void BM_CallbackBidiStreaming(benchmark::State& state) {
     BidiClient test{&state, stub_.get(), &cli_ctx, &request, &response};
     test.Await();
   }
-  fixture->Finish(state);
   fixture.reset();
   state.SetBytesProcessed(2 * message_size * max_ping_pongs *
                           state.iterations());

@@ -89,7 +89,6 @@ static void BM_CallbackUnaryPingPong(benchmark::State& state) {
   while (!done) {
     cv.wait(l);
   }
-  fixture->Finish(state);
   fixture.reset();
   state.SetBytesProcessed(request_msgs_size * state.iterations() +
                           response_msgs_size * state.iterations());
