@@ -364,10 +364,34 @@ class TcpZerocopySendCtx {
   //
   // Please refer to the STATE TRANSITION DIAGRAM below for more details.
   //
-  bool UpdateZeroCopyOptMemStateAfterSend(bool seen_enobuf) {
+  // bool UpdateZeroCopyOptMemStateAfterSend(bool seen_enobuf) {
+  //   grpc_core::MutexLock lock(&mu_);
+  //   is_in_write_ = false;
+  //   if (seen_enobuf) {
+  //     if (zcopy_enobuf_state_ == OptMemState::kCheck) {
+  //       zcopy_enobuf_state_ = OptMemState::kOpen;
+  //       return true;
+  //     } else {
+  //       zcopy_enobuf_state_ = OptMemState::kFull;
+  //     }
+  //   } else if (zcopy_enobuf_state_ != OptMemState::kOpen) {
+  //     zcopy_enobuf_state_ = OptMemState::kOpen;
+  //   }
+  //   return false;
+  // }
+  bool UpdateZeroCopyOptMemStateAfterSend(bool seen_enobuf, bool& constrained) {
     grpc_core::MutexLock lock(&mu_);
     is_in_write_ = false;
+    constrained = false;
     if (seen_enobuf) {
+      if (ctx_lookup_.size() == 1) {
+        // There is no un-acked z-copy record. Set constrained to true to
+        // indicate that we are re-source constrained because we're seeing
+        // ENOBUFS even for the first record. This indicates that either
+        // the process does not have hard memlock ulimit or RLIMIT_MEMLOCK
+        // configured correctly.
+        constrained = true;
+      }
       if (zcopy_enobuf_state_ == OptMemState::kCheck) {
         zcopy_enobuf_state_ = OptMemState::kOpen;
         return true;
