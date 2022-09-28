@@ -21,7 +21,6 @@
 #include <vector>
 
 #include <google/protobuf/wrappers.pb.h>
-#include <gtest/gtest.h>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
