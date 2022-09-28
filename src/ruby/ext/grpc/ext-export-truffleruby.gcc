@@ -1,7 +1,0 @@
-grpc_1.0 { 
-  global: 
-    Init_grpc_c;
-    rb_tr_abi_version;
-  local: 
-    *;
-};
