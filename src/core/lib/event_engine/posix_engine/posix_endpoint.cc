@@ -127,10 +127,10 @@ ssize_t TcpSend(int fd, const struct msghdr* msg, int* saved_errno,
 // RAM.
 uint64_t GetUlimitHardMemLock() {
   static uint64_t kUlimitHardMemLock = []() -> uint64_t {
-    if (CAP_IS_SUPPORTED(CAP_SYS_RESOURCE)) {
-      // hard memlock ulimit is ignored for privileged user.
-      return UINT64_MAX;
-    }
+    // if (CAP_IS_SUPPORTED(CAP_SYS_RESOURCE)) {
+    //   // hard memlock ulimit is ignored for privileged user.
+    //   return UINT64_MAX;
+    // }
     // Parses /etc/security/limits.conf file for a line of the following format:
     // * hard memlock <value>
     // It extracts <value> and returns it. A value of UINT64_MAX represents
@@ -142,12 +142,12 @@ uint64_t GetUlimitHardMemLock() {
     static std::string kHardMemlockPrefix = "* hard memlock";
     for (std::string line;
          limits_file.is_open() && getline(limits_file, line);) {
-      if (line.rfind(kHardMemlockPrefix) != 0) {
+      if (line.find(kHardMemlockPrefix) == std::string::npos) {
         continue;
       }
       // Line starts with prefix "* hard memlock". Extract memlock value.
       auto value =
-          line.substr(kHardMemlockPrefix.length() + 2, std::string::npos);
+          line.substr(kHardMemlockPrefix.length() + 1, std::string::npos);
       if (value == "unlimited" || value == "infinity") {
         hard_memlock = UINT64_MAX;
       } else {
@@ -1194,7 +1194,10 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
     }
 
     if (zerocopy_enabled) {
-      gpr_log(GPR_INFO, "Tx-zero copy enabled for gRPC sends.");
+      gpr_log(GPR_INFO,
+              "Tx-zero copy enabled for gRPC sends. RLIMIT_MEMLOCK value = "
+              "%lu, ulimit hard memlock value = %lu",
+              GetRLimitMemLockMax(), GetUlimitHardMemLock());
     }
   }
 #endif  // GRPC_LINUX_ERRQUEUE
