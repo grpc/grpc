@@ -85,7 +85,7 @@ void CensusServerCallData::OnDoneRecvMessageCb(void* user_data,
     ++calld->recv_message_count_;
   }
   grpc_core::Closure::Run(DEBUG_LOCATION, calld->initial_on_done_recv_message_,
-                          GRPC_ERROR_REF(error));
+                          error);
 }
 
 void CensusServerCallData::OnDoneRecvInitialMetadataCb(
@@ -94,7 +94,7 @@ void CensusServerCallData::OnDoneRecvInitialMetadataCb(
   CensusServerCallData* calld =
       reinterpret_cast<CensusServerCallData*>(elem->call_data);
   GPR_ASSERT(calld != nullptr);
-  if (GRPC_ERROR_IS_NONE(error)) {
+  if (error.ok()) {
     grpc_metadata_batch* initial_metadata = calld->recv_initial_metadata_;
     GPR_ASSERT(initial_metadata != nullptr);
     ServerMetadataElements sml;
@@ -106,10 +106,11 @@ void CensusServerCallData::OnDoneRecvInitialMetadataCb(
                           calld->qualified_method_, &calld->context_);
     grpc_census_call_set_context(
         calld->gc_, reinterpret_cast<census_context*>(&calld->context_));
+    ::opencensus::stats::Record({{RpcServerStartedRpcs(), 1}},
+                                {{ServerMethodTagKey(), calld->method_}});
   }
   grpc_core::Closure::Run(DEBUG_LOCATION,
-                          calld->initial_on_done_recv_initial_metadata_,
-                          GRPC_ERROR_REF(error));
+                          calld->initial_on_done_recv_initial_metadata_, error);
 }
 
 void CensusServerCallData::StartTransportStreamOpBatch(

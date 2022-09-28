@@ -32,7 +32,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/surface/init.h"
 #include "test/core/event_engine/test_init.h"
 #include "test/core/util/build.h"
@@ -102,17 +101,9 @@ void RmArg(int i, int* argc, char** argv) {
 void ParseTestArgs(int* argc, char** argv) {
   if (argc == nullptr || *argc <= 1) return;
   // flags to look for and consume
-  const absl::string_view poller_flag{"--poller="};
   const absl::string_view engine_flag{"--engine="};
-  const absl::string_view experiment_flag{"--experiment="};
   int i = 1;
   while (i < *argc) {
-    if (absl::StartsWith(argv[i], poller_flag)) {
-      grpc_core::SetEnv("GRPC_POLL_STRATEGY", argv[i] + poller_flag.length());
-      // remove the spent argv
-      RmArg(i, argc, argv);
-      continue;
-    }
     if (absl::StartsWith(argv[i], engine_flag)) {
       absl::Status engine_set =
           grpc_event_engine::experimental::InitializeTestingEventEngineFactory(
@@ -121,12 +112,6 @@ void ParseTestArgs(int* argc, char** argv) {
         gpr_log(GPR_ERROR, "%s", engine_set.ToString().c_str());
         GPR_ASSERT(false);
       }
-      // remove the spent argv
-      RmArg(i, argc, argv);
-      continue;
-    }
-    if (absl::StartsWith(argv[i], experiment_flag)) {
-      grpc_core::SetEnv("GRPC_EXPERIMENTS", argv[i] + experiment_flag.length());
       // remove the spent argv
       RmArg(i, argc, argv);
       continue;

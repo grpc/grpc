@@ -24,14 +24,17 @@
 #include <utility>
 
 #include "absl/status/statusor.h"
+#include "absl/types/optional.h"
 #include "opencensus/exporters/stats/stackdriver/stackdriver_exporter.h"
 #include "opencensus/exporters/trace/stackdriver/stackdriver_exporter.h"
+#include "opencensus/stats/stats.h"
 #include "opencensus/trace/sampler.h"
 #include "opencensus/trace/trace_config.h"
 
 #include <grpcpp/opencensus.h>
 #include <grpcpp/support/config.h>
 
+#include "src/cpp/ext/filters/census/grpc_plugin.h"
 #include "src/cpp/ext/gcp/observability_config.h"
 
 namespace grpc {
@@ -45,6 +48,16 @@ constexpr uint32_t kMaxAttributes = 128;
 constexpr uint32_t kMaxAnnotations = 128;
 constexpr uint32_t kMaxMessageEvents = 128;
 constexpr uint32_t kMaxLinks = 128;
+
+void RegisterOpenCensusViewsForGcpObservability() {
+  // Register client default views for GCP observability
+  ClientStartedRpcsCumulative().RegisterForExport();
+  ClientCompletedRpcsCumulative().RegisterForExport();
+  // Register server default views for GCP observability
+  ServerStartedRpcsCumulative().RegisterForExport();
+  ServerCompletedRpcsCumulative().RegisterForExport();
+}
+
 }  // namespace
 
 absl::Status GcpObservabilityInit() {
@@ -53,18 +66,18 @@ absl::Status GcpObservabilityInit() {
     return config.status();
   }
   grpc::RegisterOpenCensusPlugin();
-  grpc::RegisterOpenCensusViewsForExport();
-  if (!config->cloud_trace.disabled) {
+  RegisterOpenCensusViewsForGcpObservability();
+  if (config->cloud_trace.has_value()) {
     opencensus::trace::TraceConfig::SetCurrentTraceParams(
         {kMaxAttributes, kMaxAnnotations, kMaxMessageEvents, kMaxLinks,
          opencensus::trace::ProbabilitySampler(
-             config->cloud_trace.sampling_rate)});
+             config->cloud_trace->sampling_rate)});
     opencensus::exporters::trace::StackdriverOptions trace_opts;
     trace_opts.project_id = config->project_id;
     opencensus::exporters::trace::StackdriverExporter::Register(
         std::move(trace_opts));
   }
-  if (!config->cloud_monitoring.disabled) {
+  if (config->cloud_monitoring.has_value()) {
     opencensus::exporters::stats::StackdriverOptions stats_opts;
     stats_opts.project_id = config->project_id;
     opencensus::exporters::stats::StackdriverExporter::Register(

@@ -147,6 +147,8 @@ void grpc_enable_error_creation();
 #define GRPC_ERROR_OOM absl::Status(absl::ResourceExhaustedError(""))
 #define GRPC_ERROR_CANCELLED absl::CancelledError()
 
+// Deprecated: Please do not use these macros.
+// These will be removed once migration is done.
 #define GRPC_ERROR_REF(err) (err)
 #define GRPC_ERROR_UNREF(err) (void)(err)
 
@@ -199,7 +201,7 @@ absl::Status grpc_os_error(const grpc_core::DebugLocation& location, int err,
                            const char* call_name) GRPC_MUST_USE_RESULT;
 
 inline absl::Status grpc_assert_never_ok(absl::Status error) {
-  GPR_ASSERT(!GRPC_ERROR_IS_NONE(error));
+  GPR_ASSERT(!error.ok());
   return error;
 }
 
@@ -246,8 +248,7 @@ bool grpc_log_error(const char* what, grpc_error_handle error, const char* file,
                     int line);
 inline bool grpc_log_if_error(const char* what, grpc_error_handle error,
                               const char* file, int line) {
-  return GRPC_ERROR_IS_NONE(error) ? true
-                                   : grpc_log_error(what, error, file, line);
+  return error.ok() ? true : grpc_log_error(what, error, file, line);
 }
 
 #define GRPC_LOG_IF_ERROR(what, error) \
@@ -261,9 +262,7 @@ class AtomicError {
     error_ = GRPC_ERROR_NONE;
     lock_ = GPR_SPINLOCK_STATIC_INITIALIZER;
   }
-  explicit AtomicError(grpc_error_handle error) {
-    error_ = GRPC_ERROR_REF(error);
-  }
+  explicit AtomicError(grpc_error_handle error) { error_ = error; }
   ~AtomicError() { GRPC_ERROR_UNREF(error_); }
 
   AtomicError(const AtomicError&) = delete;
@@ -272,7 +271,7 @@ class AtomicError {
   /// returns get() == GRPC_ERROR_NONE
   bool ok() {
     gpr_spinlock_lock(&lock_);
-    bool ret = GRPC_ERROR_IS_NONE(error_);
+    bool ret = error_.ok();
     gpr_spinlock_unlock(&lock_);
     return ret;
   }
@@ -286,8 +285,7 @@ class AtomicError {
 
   void set(grpc_error_handle error) {
     gpr_spinlock_lock(&lock_);
-    GRPC_ERROR_UNREF(error_);
-    error_ = GRPC_ERROR_REF(error);
+    error_ = error;
     gpr_spinlock_unlock(&lock_);
   }
 

@@ -24,6 +24,7 @@
 #include <string>
 
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
@@ -106,7 +107,7 @@ class ParseTest : public ::testing::TestWithParam<Test> {
     for (i = 0; i < nslices; i++) {
       grpc_core::ExecCtx exec_ctx;
       auto err = parser_->Parse(slices[i], i == nslices - 1);
-      if (!GRPC_ERROR_IS_NONE(err)) {
+      if (!err.ok()) {
         gpr_log(GPR_ERROR, "Unexpected parse error: %s",
                 grpc_error_std_string(err).c_str());
         abort();

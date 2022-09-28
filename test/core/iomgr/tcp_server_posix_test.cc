@@ -284,7 +284,7 @@ static grpc_error_handle tcp_connect(const test_addr* remote,
   }
   gpr_log(GPR_DEBUG, "wait");
   while (g_nconnects == nconnects_before &&
-         deadline > grpc_core::ExecCtx::Get()->Now()) {
+         deadline > grpc_core::Timestamp::Now()) {
     grpc_pollset_worker* worker = nullptr;
     grpc_error_handle err;
     if ((err = grpc_pollset_work(g_pollset, &worker, deadline)) !=
@@ -420,7 +420,6 @@ static void test_connect(size_t num_connects,
                 grpc_error_std_string(err).c_str());
         ASSERT_TRUE(test_dst_addrs);
         dst_addrs->addrs[dst_idx].addr.len = 0;
-        GRPC_ERROR_UNREF(err);
       }
       ASSERT_GT(num_tested, 0);
     }

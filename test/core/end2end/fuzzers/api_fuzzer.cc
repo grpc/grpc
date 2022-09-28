@@ -118,7 +118,7 @@ typedef struct addr_req {
 static void finish_resolve(void* arg, grpc_error_handle error) {
   addr_req* r = static_cast<addr_req*>(arg);
 
-  if (GRPC_ERROR_IS_NONE(error) && 0 == strcmp(r->addr, "server")) {
+  if (error.ok() && 0 == strcmp(r->addr, "server")) {
     *r->addresses = absl::make_unique<grpc_core::ServerAddressList>();
     grpc_resolved_address fake_resolved_address;
     GPR_ASSERT(
@@ -151,14 +151,14 @@ class FuzzerDNSResolver : public grpc_core::DNSResolver {
         : name_(std::string(name)), on_done_(std::move(on_done)) {
       grpc_timer_init(
           &timer_,
-          grpc_core::Duration::Seconds(1) + grpc_core::ExecCtx::Get()->Now(),
+          grpc_core::Duration::Seconds(1) + grpc_core::Timestamp::Now(),
           GRPC_CLOSURE_CREATE(FinishResolve, this, grpc_schedule_on_exec_ctx));
     }
 
    private:
     static void FinishResolve(void* arg, grpc_error_handle error) {
       FuzzerDNSRequest* self = static_cast<FuzzerDNSRequest*>(arg);
-      if (GRPC_ERROR_IS_NONE(error) && self->name_ == "server") {
+      if (error.ok() && self->name_ == "server") {
         std::vector<grpc_resolved_address> addrs;
         grpc_resolved_address addr;
         addr.len = 0;
@@ -207,6 +207,8 @@ class FuzzerDNSResolver : public grpc_core::DNSResolver {
       grpc_pollset_set* /* interested_parties */,
       absl::string_view /* name_server */) override {
     GetDefaultEventEngine()->Run([on_resolved] {
+      grpc_core::ApplicationCallbackExecCtx app_exec_ctx;
+      grpc_core::ExecCtx exec_ctx;
       on_resolved(absl::UnimplementedError(
           "The Fuzzing DNS resolver does not support looking up SRV records"));
     });
@@ -220,6 +222,8 @@ class FuzzerDNSResolver : public grpc_core::DNSResolver {
       absl::string_view /* name_server */) override {
     // Not supported
     GetDefaultEventEngine()->Run([on_resolved] {
+      grpc_core::ApplicationCallbackExecCtx app_exec_ctx;
+      grpc_core::ExecCtx exec_ctx;
       on_resolved(absl::UnimplementedError(
           "The Fuzing DNS resolver does not support looking up TXT records"));
     });
@@ -242,8 +246,7 @@ grpc_ares_request* my_dns_lookup_ares(
   r->on_done = on_done;
   r->addresses = addresses;
   grpc_timer_init(
-      &r->timer,
-      grpc_core::Duration::Seconds(1) + grpc_core::ExecCtx::Get()->Now(),
+      &r->timer, grpc_core::Duration::Seconds(1) + grpc_core::Timestamp::Now(),
       GRPC_CLOSURE_CREATE(finish_resolve, r, grpc_schedule_on_exec_ctx));
   return nullptr;
 }
@@ -266,9 +269,9 @@ typedef struct {
 
 static void do_connect(void* arg, grpc_error_handle error) {
   future_connect* fc = static_cast<future_connect*>(arg);
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     *fc->ep = nullptr;
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, fc->closure, GRPC_ERROR_REF(error));
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, fc->closure, error);
   } else if (g_server != nullptr) {
     grpc_endpoint* client;
     grpc_endpoint* server;
@@ -308,8 +311,7 @@ static void sched_connect(grpc_closure* closure, grpc_endpoint** ep,
   fc->ep = ep;
   fc->deadline = deadline;
   grpc_timer_init(
-      &fc->timer,
-      grpc_core::Duration::Seconds(1) + grpc_core::ExecCtx::Get()->Now(),
+      &fc->timer, grpc_core::Duration::Seconds(1) + grpc_core::Timestamp::Now(),
       GRPC_CLOSURE_CREATE(do_connect, fc, grpc_schedule_on_exec_ctx));
 }
 

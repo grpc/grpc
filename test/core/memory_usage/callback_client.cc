@@ -28,7 +28,6 @@
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
 #include "absl/strings/string_view.h"
-#include "absl/synchronization/notification.h"
 
 #include <grpc/support/log.h>
 #include <grpcpp/grpcpp.h>
@@ -36,6 +35,7 @@
 #include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/status.h>
 
+#include "src/core/lib/gprpp/notification.h"
 #include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "test/core/memory_usage/memstats.h"
@@ -74,7 +74,7 @@ struct CallParams {
   grpc::testing::SimpleRequest request;
   grpc::testing::SimpleResponse response;
   grpc::testing::MemorySize snapshot_response;
-  absl::Notification done;
+  grpc_core::Notification done;
 };
 
 // Simple Unary RPC to send to confirm connection is open

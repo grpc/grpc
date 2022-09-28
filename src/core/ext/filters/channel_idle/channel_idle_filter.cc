@@ -167,7 +167,7 @@ void MaxAgeFilter::PostInit() {
     max_age_activity_.Set(MakeActivity(
         TrySeq(
             // First sleep until the max connection age
-            Sleep(ExecCtx::Get()->Now() + max_connection_age_),
+            Sleep(Timestamp::Now() + max_connection_age_),
             // Then send a goaway.
             [this] {
               GRPC_CHANNEL_STACK_REF(this->channel_stack(),
@@ -192,7 +192,7 @@ void MaxAgeFilter::PostInit() {
             },
             // Sleep for the grace period
             [this] {
-              return Sleep(ExecCtx::Get()->Now() + max_connection_age_grace_);
+              return Sleep(Timestamp::Now() + max_connection_age_grace_);
             }),
         ExecCtxWakeupScheduler(), [channel_stack, this](absl::Status status) {
           // OnDone -- close the connection if the promise completed
@@ -216,7 +216,7 @@ ArenaPromise<ServerMetadataHandle> ChannelIdleFilter::MakeCallPromise(
 
 bool ChannelIdleFilter::StartTransportOp(grpc_transport_op* op) {
   // Catch the disconnect_with_error transport op.
-  if (!GRPC_ERROR_IS_NONE(op->disconnect_with_error)) Shutdown();
+  if (!op->disconnect_with_error.ok()) Shutdown();
   // Pass the op to the next filter.
   return false;
 }
@@ -246,7 +246,7 @@ void ChannelIdleFilter::StartIdleTimer() {
   auto channel_stack = channel_stack_->Ref();
   auto timeout = client_idle_timeout_;
   auto promise = Loop([timeout, idle_filter_state]() {
-    return TrySeq(Sleep(ExecCtx::Get()->Now() + timeout),
+    return TrySeq(Sleep(Timestamp::Now() + timeout),
                   [idle_filter_state]() -> Poll<LoopCtl<absl::Status>> {
                     if (idle_filter_state->CheckTimer()) {
                       return Continue{};

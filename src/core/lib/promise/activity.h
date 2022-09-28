@@ -31,7 +31,6 @@
 
 #include <grpc/support/log.h>
 
-#include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -203,7 +202,7 @@ class Activity : public Orphanable {
  private:
   // Set during RunLoop to the Activity that's executing.
   // Being set implies that mu_ is held.
-  static GPR_THREAD_LOCAL(Activity*) g_current_activity_;
+  static thread_local Activity* g_current_activity_;
 };
 
 // Owned pointer to one Activity.
@@ -262,7 +261,10 @@ class ActivityContexts : public ContextHolder<Contexts>... {
     explicit ScopedContext(ActivityContexts* contexts)
         : Context<ContextTypeFromHeld<Contexts>>(
               static_cast<ContextHolder<Contexts>*>(contexts)
-                  ->GetContext())... {}
+                  ->GetContext())... {
+      // Silence `unused-but-set-parameter` in case of Contexts = {}
+      (void)contexts;
+    }
   };
 };
 
@@ -435,7 +437,11 @@ class PromiseActivity final : public FreestandingActivity,
       MutexLock lock(mu());
       // Check if we were done, and flag done.
       was_done = done_;
-      if (!done_) MarkDone();
+      if (!done_) {
+        ScopedActivity scoped_activity(this);
+        ScopedContext contexts(this);
+        MarkDone();
+      }
     }
     // If we were not done, then call the on_done callback.
     if (!was_done) {

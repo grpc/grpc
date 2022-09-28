@@ -20,22 +20,14 @@
 
 #include <gtest/gtest.h>
 
-#include "absl/synchronization/notification.h"
-
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/util/test_config.h"
-
-static int g_plugin_state;
-
-static void plugin_init(void) { g_plugin_state = 1; }
-static void plugin_destroy(void) { g_plugin_state = 2; }
-static bool plugin_is_intialized(void) { return g_plugin_state == 1; }
-static bool plugin_is_destroyed(void) { return g_plugin_state == 2; }
 
 static void test(int rounds) {
   int i;
@@ -107,14 +99,6 @@ TEST(Init, mixed_with_thread) {
   EXPECT_FALSE(grpc_is_initialized());
 }
 
-TEST(Init, plugin) {
-  grpc_init();
-  EXPECT_TRUE(plugin_is_intialized());
-  grpc_shutdown_blocking();
-  EXPECT_TRUE(plugin_is_destroyed());
-  EXPECT_FALSE(grpc_is_initialized());
-}
-
 TEST(Init, repeatedly) {
   for (int i = 0; i < 10; i++) {
     grpc_init();
@@ -142,9 +126,11 @@ TEST(Init, repeatedly_blocking) {
 
 TEST(Init, TimerManagerHoldsLastInit) {
   grpc_init();
-  absl::Notification n;
+  grpc_core::Notification n;
   grpc_event_engine::experimental::GetDefaultEventEngine()->RunAfter(
       std::chrono::seconds(1), [&n] {
+        grpc_core::ApplicationCallbackExecCtx app_exec_ctx;
+        grpc_core::ExecCtx exec_ctx;
         grpc_shutdown();
         n.Notify();
       });
@@ -154,6 +140,5 @@ TEST(Init, TimerManagerHoldsLastInit) {
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
-  grpc_register_plugin(plugin_init, plugin_destroy);
   return RUN_ALL_TESTS();
 }

@@ -62,6 +62,9 @@ case $(uname -sm) in
   "Darwin x86_64")
     suffix=darwin-x86_64
     ;;
+  "Darwin arm64")
+    suffix=darwin-arm64
+    ;;
   "MINGW"* | "MSYS_NT"*)
     suffix=windows-x86_64.exe
     ;;

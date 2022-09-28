@@ -66,7 +66,6 @@
 #include "src/core/lib/security/credentials/jwt/jwt_credentials.h"
 #include "src/core/lib/security/credentials/oauth2/oauth2_credentials.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/uri/uri_parser.h"
@@ -171,7 +170,7 @@ static void on_metadata_server_detection_http_response(
     void* user_data, grpc_error_handle error) {
   metadata_server_detector* detector =
       static_cast<metadata_server_detector*>(user_data);
-  if (GRPC_ERROR_IS_NONE(error) && detector->response.status == 200 &&
+  if (error.ok() && detector->response.status == 200 &&
       detector->response.hdr_count > 0) {
     /* Internet providers can return a generic response to all requests, so
        it is necessary to check that metadata header is present also. */
@@ -218,7 +217,7 @@ static int is_metadata_server_reachable() {
   GPR_ASSERT(uri.ok());  // params are hardcoded
   auto http_request = grpc_core::HttpRequest::Get(
       std::move(*uri), nullptr /* channel args */, &detector.pollent, &request,
-      grpc_core::ExecCtx::Get()->Now() + max_detection_delay,
+      grpc_core::Timestamp::Now() + max_detection_delay,
       GRPC_CLOSURE_CREATE(on_metadata_server_detection_http_response, &detector,
                           grpc_schedule_on_exec_ctx),
       &detector.response,
@@ -314,7 +313,7 @@ static grpc_error_handle create_default_creds_from_path(
     goto end;
   }
   error = grpc_load_file(creds_path.c_str(), 0, &creds_data);
-  if (!GRPC_ERROR_IS_NONE(error)) goto end;
+  if (!error.ok()) goto end;
   {
     auto json_or = Json::Parse(grpc_core::StringViewFromSlice(creds_data));
     if (!json_or.ok()) {
@@ -366,8 +365,8 @@ static grpc_error_handle create_default_creds_from_path(
   result = grpc_core::ExternalAccountCredentials::Create(json, {}, &error);
 
 end:
-  GPR_ASSERT((result == nullptr) + (GRPC_ERROR_IS_NONE(error)) == 1);
-  grpc_slice_unref_internal(creds_data);
+  GPR_ASSERT((result == nullptr) + (error.ok()) == 1);
+  grpc_slice_unref(creds_data);
   *creds = result;
   return error;
 }
@@ -402,14 +401,14 @@ static grpc_core::RefCountedPtr<grpc_call_credentials> make_default_call_creds(
   auto path_from_env = grpc_core::GetEnv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR);
   if (path_from_env.has_value()) {
     err = create_default_creds_from_path(*path_from_env, &call_creds);
-    if (GRPC_ERROR_IS_NONE(err)) return call_creds;
+    if (err.ok()) return call_creds;
     *error = grpc_error_add_child(*error, err);
   }
 
   /* Then the well-known file. */
   err = create_default_creds_from_path(
       grpc_get_well_known_google_credentials_file_path(), &call_creds);
-  if (GRPC_ERROR_IS_NONE(err)) return call_creds;
+  if (err.ok()) return call_creds;
   *error = grpc_error_add_child(*error, err);
 
   update_tenancy();
@@ -464,7 +463,6 @@ grpc_channel_credentials* grpc_google_default_credentials_create(
     gpr_log(GPR_ERROR, "Could not create google default credentials: %s",
             grpc_error_std_string(error).c_str());
   }
-  GRPC_ERROR_UNREF(error);
   return result;
 }
 

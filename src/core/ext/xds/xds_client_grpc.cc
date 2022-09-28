@@ -26,6 +26,7 @@
 #include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
+#include "absl/synchronization/mutex.h"
 #include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
@@ -53,7 +54,6 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/transport/error_utils.h"
 
 namespace grpc_core {
@@ -64,29 +64,16 @@ namespace grpc_core {
 
 namespace {
 
-Mutex* g_mu = nullptr;
+Mutex* g_mu = [] {
+  XdsHttpFilterRegistry::Init();
+  XdsClusterSpecifierPluginRegistry::Init();
+  return new Mutex;
+}();
 const grpc_channel_args* g_channel_args ABSL_GUARDED_BY(*g_mu) = nullptr;
 GrpcXdsClient* g_xds_client ABSL_GUARDED_BY(*g_mu) = nullptr;
 char* g_fallback_bootstrap_config ABSL_GUARDED_BY(*g_mu) = nullptr;
 
 }  // namespace
-
-void XdsClientGlobalInit() {
-  g_mu = new Mutex;
-  XdsHttpFilterRegistry::Init();
-  XdsClusterSpecifierPluginRegistry::Init();
-}
-
-// TODO(roth): Find a better way to clear the fallback config that does
-// not require using ABSL_NO_THREAD_SAFETY_ANALYSIS.
-void XdsClientGlobalShutdown() ABSL_NO_THREAD_SAFETY_ANALYSIS {
-  gpr_free(g_fallback_bootstrap_config);
-  g_fallback_bootstrap_config = nullptr;
-  delete g_mu;
-  g_mu = nullptr;
-  XdsHttpFilterRegistry::Shutdown();
-  XdsClusterSpecifierPluginRegistry::Shutdown();
-}
 
 namespace {
 
@@ -103,9 +90,9 @@ absl::StatusOr<std::string> GetBootstrapContents(const char* fallback_config) {
     grpc_slice contents;
     grpc_error_handle error =
         grpc_load_file(path->c_str(), /*add_null_terminator=*/true, &contents);
-    if (!GRPC_ERROR_IS_NONE(error)) return grpc_error_to_absl_status(error);
+    if (!error.ok()) return grpc_error_to_absl_status(error);
     std::string contents_str(StringViewFromSlice(contents));
-    grpc_slice_unref_internal(contents);
+    grpc_slice_unref(contents);
     return contents_str;
   }
   // Next, try GRPC_XDS_BOOTSTRAP_CONFIG env var.
