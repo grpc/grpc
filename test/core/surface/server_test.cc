@@ -18,6 +18,7 @@
 
 #include <stddef.h>
 
+#include <memory>
 #include <string>
 
 #include "absl/status/statusor.h"

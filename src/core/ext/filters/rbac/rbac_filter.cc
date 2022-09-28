@@ -21,6 +21,8 @@
 #include <new>
 #include <utility>
 
+#include "absl/status/status.h"
+
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 
@@ -45,7 +47,7 @@ namespace grpc_core {
 grpc_error_handle RbacFilter::CallData::Init(
     grpc_call_element* elem, const grpc_call_element_args* args) {
   new (elem->call_data) CallData(elem, *args);
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 void RbacFilter::CallData::Destroy(grpc_call_element* elem,
@@ -157,7 +159,7 @@ grpc_error_handle RbacFilter::Init(grpc_channel_element* elem,
       grpc_channel_stack_filter_instance_number(args->channel_stack, elem),
       EvaluateArgs::PerChannelArgs(auth_context,
                                    grpc_transport_get_endpoint(transport)));
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 void RbacFilter::Destroy(grpc_channel_element* elem) {

@@ -223,13 +223,13 @@ class GrpcPolledFdWindows {
       return;
     }
     if (socket_type_ == SOCK_DGRAM) {
-      ScheduleAndNullWriteClosure(GRPC_ERROR_NONE);
+      ScheduleAndNullWriteClosure(absl::OkStatus());
     } else {
       GPR_ASSERT(socket_type_ == SOCK_STREAM);
       int wsa_error_code = 0;
       switch (tcp_write_state_) {
         case WRITE_IDLE:
-          ScheduleAndNullWriteClosure(GRPC_ERROR_NONE);
+          ScheduleAndNullWriteClosure(absl::OkStatus());
           break;
         case WRITE_REQUESTED:
           tcp_write_state_ = WRITE_PENDING;

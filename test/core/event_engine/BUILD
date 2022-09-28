@@ -78,6 +78,19 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "default_engine_methods_test",
+    srcs = ["default_engine_methods_test.cc"],
+    external_deps = ["gtest"],
+    deps = [
+        "//:default_event_engine",
+        "//:event_engine_base_hdrs",
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "smoke_test",
     srcs = ["smoke_test.cc"],
     external_deps = ["gtest"],

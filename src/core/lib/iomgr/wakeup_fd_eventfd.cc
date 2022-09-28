@@ -36,7 +36,7 @@ static grpc_error_handle eventfd_create(grpc_wakeup_fd* fd_info) {
   if (fd_info->read_fd < 0) {
     return GRPC_OS_ERROR(errno, "eventfd");
   }
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 static grpc_error_handle eventfd_consume(grpc_wakeup_fd* fd_info) {
@@ -48,7 +48,7 @@ static grpc_error_handle eventfd_consume(grpc_wakeup_fd* fd_info) {
   if (err < 0 && errno != EAGAIN) {
     return GRPC_OS_ERROR(errno, "eventfd_read");
   }
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 static grpc_error_handle eventfd_wakeup(grpc_wakeup_fd* fd_info) {
@@ -59,7 +59,7 @@ static grpc_error_handle eventfd_wakeup(grpc_wakeup_fd* fd_info) {
   if (err < 0) {
     return GRPC_OS_ERROR(errno, "eventfd_write");
   }
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 static void eventfd_destroy(grpc_wakeup_fd* fd_info) {

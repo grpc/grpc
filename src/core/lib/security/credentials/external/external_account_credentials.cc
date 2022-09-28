@@ -387,7 +387,7 @@ void ExternalAccountCredentials::OnExchangeTokenInternal(
         metadata_req_->response.hdrs[i].value =
             gpr_strdup(ctx_->response.hdrs[i].value);
       }
-      FinishTokenFetch(GRPC_ERROR_NONE);
+      FinishTokenFetch(absl::OkStatus());
     } else {
       ImpersenateServiceAccount();
     }
@@ -525,7 +525,7 @@ void ExternalAccountCredentials::OnImpersenateServiceAccountInternal(
     metadata_req_->response.hdrs[i].value =
         gpr_strdup(ctx_->response.hdrs[i].value);
   }
-  FinishTokenFetch(GRPC_ERROR_NONE);
+  FinishTokenFetch(absl::OkStatus());
 }
 
 void ExternalAccountCredentials::FinishTokenFetch(grpc_error_handle error) {
@@ -555,7 +555,7 @@ grpc_call_credentials* grpc_external_account_credentials_create(
     return nullptr;
   }
   std::vector<std::string> scopes = absl::StrSplit(scopes_string, ',');
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
   auto creds = grpc_core::ExternalAccountCredentials::Create(
                    *json, std::move(scopes), &error)
                    .release();

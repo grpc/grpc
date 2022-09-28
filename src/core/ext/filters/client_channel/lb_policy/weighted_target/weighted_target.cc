@@ -72,7 +72,6 @@ TraceFlag grpc_lb_weighted_target_trace(false, "weighted_target_lb");
 namespace {
 
 using ::grpc_event_engine::experimental::EventEngine;
-using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 
 constexpr absl::string_view kWeightedTarget = "weighted_target_experimental";
 
@@ -212,6 +211,7 @@ class WeightedTargetLb : public LoadBalancingPolicy {
 
       RefCountedPtr<WeightedChild> weighted_child_;
       absl::optional<EventEngine::TaskHandle> timer_handle_;
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine_;
     };
 
     // Methods for dealing with the child policy.
@@ -479,9 +479,10 @@ void WeightedTargetLb::UpdateStateLocked() {
 
 WeightedTargetLb::WeightedChild::DelayedRemovalTimer::DelayedRemovalTimer(
     RefCountedPtr<WeightedTargetLb::WeightedChild> weighted_child)
-    : weighted_child_(std::move(weighted_child)) {
-  timer_handle_ = GetDefaultEventEngine()->RunAfter(
-      kChildRetentionInterval, [self = Ref()]() mutable {
+    : weighted_child_(std::move(weighted_child)),
+      engine_(grpc_event_engine::experimental::GetDefaultEventEngine()) {
+  timer_handle_ =
+      engine_->RunAfter(kChildRetentionInterval, [self = Ref()]() mutable {
         ApplicationCallbackExecCtx app_exec_ctx;
         ExecCtx exec_ctx;
         self->weighted_child_->weighted_target_policy_->work_serializer()->Run(
@@ -499,7 +500,7 @@ void WeightedTargetLb::WeightedChild::DelayedRemovalTimer::Orphan() {
               weighted_child_->weighted_target_policy_.get(),
               weighted_child_.get(), weighted_child_->name_.c_str());
     }
-    GetDefaultEventEngine()->Cancel(*timer_handle_);
+    engine_->Cancel(*timer_handle_);
   }
   Unref();
 }
@@ -746,7 +747,7 @@ class WeightedTargetLbFactory : public LoadBalancingPolicyFactory {
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
       LoadBalancingPolicy::Args args) const override {
     return MakeOrphanable<WeightedTargetLb>(std::move(args));
-  }
+  }  // namespace
 
   absl::string_view name() const override { return kWeightedTarget; }
 
@@ -763,7 +764,7 @@ class WeightedTargetLbFactory : public LoadBalancingPolicyFactory {
     return LoadRefCountedFromJson<WeightedTargetLbConfig>(
         json, JsonArgs(), "errors validating weighted_target LB policy config");
   }
-};
+};  // namespace grpc_core
 
 }  // namespace
 

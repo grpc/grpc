@@ -81,7 +81,6 @@
                     GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(SubchannelCall)))
 
 namespace grpc_core {
-using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 
 TraceFlag grpc_trace_subchannel(false, "subchannel");
 DebugOnlyTraceFlag grpc_trace_subchannel_refcount(false, "subchannel_refcount");
@@ -362,7 +361,7 @@ class Subchannel::AsyncWatcherNotifierLocked {
                        delete self;
                      },
                      this, nullptr),
-                 GRPC_ERROR_NONE);
+                 absl::OkStatus());
   }
 
  private:
@@ -624,7 +623,8 @@ Subchannel::Subchannel(SubchannelKey key,
       args_(args),
       pollset_set_(grpc_pollset_set_create()),
       connector_(std::move(connector)),
-      backoff_(ParseArgsForBackoffValues(args_, &min_connect_timeout_)) {
+      backoff_(ParseArgsForBackoffValues(args_, &min_connect_timeout_)),
+      engine_(grpc_event_engine::experimental::GetDefaultEventEngine()) {
   // A grpc_init is added here to ensure that grpc_shutdown does not happen
   // until the subchannel is destroyed. Subchannels can persist longer than
   // channels because they maybe reused/shared among multiple channels. As a
@@ -761,7 +761,7 @@ void Subchannel::ResetBackoff() {
   MutexLock lock(&mu_);
   backoff_.Reset();
   if (state_ == GRPC_CHANNEL_TRANSIENT_FAILURE &&
-      GetDefaultEventEngine()->Cancel(retry_timer_handle_)) {
+      engine_->Cancel(retry_timer_handle_)) {
     OnRetryTimerLocked();
   } else if (state_ == GRPC_CHANNEL_CONNECTING) {
     next_attempt_time_ = Timestamp::Now();
@@ -910,7 +910,7 @@ void Subchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
             time_until_next_attempt.millis());
     SetConnectivityStateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE,
                                grpc_error_to_absl_status(error));
-    retry_timer_handle_ = GetDefaultEventEngine()->RunAfter(
+    retry_timer_handle_ = engine_->RunAfter(
         time_until_next_attempt,
         [self = WeakRef(DEBUG_LOCATION, "RetryTimer")]() mutable {
           {

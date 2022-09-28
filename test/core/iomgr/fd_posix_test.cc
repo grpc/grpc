@@ -67,8 +67,8 @@ static void create_test_socket(int port, int* socket_fd,
   setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
   /* Reset the size of socket send buffer to the minimal value to facilitate
      buffer filling up and triggering notify_on_write  */
-  ASSERT_EQ(grpc_set_socket_sndbuf(fd, buffer_size_bytes), GRPC_ERROR_NONE);
-  ASSERT_EQ(grpc_set_socket_rcvbuf(fd, buffer_size_bytes), GRPC_ERROR_NONE);
+  ASSERT_EQ(grpc_set_socket_sndbuf(fd, buffer_size_bytes), absl::OkStatus());
+  ASSERT_EQ(grpc_set_socket_rcvbuf(fd, buffer_size_bytes), absl::OkStatus());
   /* Make fd non-blocking */
   flags = fcntl(fd, F_GETFL, 0);
   ASSERT_EQ(fcntl(fd, F_SETFL, flags | O_NONBLOCK), 0);
@@ -357,7 +357,7 @@ static void client_start(client* cl, int port) {
   cl->em_fd = grpc_fd_create(fd, "client", false);
   grpc_pollset_add_fd(g_pollset, cl->em_fd);
 
-  client_session_write(cl, GRPC_ERROR_NONE);
+  client_session_write(cl, absl::OkStatus());
 }
 
 /* Wait for the signal to shutdown a client. */

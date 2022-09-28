@@ -407,7 +407,7 @@ AresClientChannelDNSResolver::AresRequestWrapper::OnResolvedLocked(
       result.addresses = ServerAddressList();
     }
     if (service_config_json_ != nullptr) {
-      grpc_error_handle service_config_error = GRPC_ERROR_NONE;
+      grpc_error_handle service_config_error;
       std::string service_config_string =
           ChooseServiceConfig(service_config_json_, &service_config_error);
       if (!service_config_error.ok()) {
@@ -507,7 +507,7 @@ class AresDNSResolver : public DNSResolver {
         grpc_cancel_ares_request(grpc_ares_request_.get());
       } else {
         completed_ = true;
-        OnDnsLookupDone(this, GRPC_ERROR_CANCELLED);
+        OnDnsLookupDone(this, absl::CancelledError());
       }
       grpc_pollset_set_del_pollset_set(pollset_set_, interested_parties_);
       return true;
@@ -728,12 +728,6 @@ class AresDNSResolver : public DNSResolver {
     const std::function<void(absl::StatusOr<std::string>)> on_resolved_;
   };
 
-  // gets the singleton instance, possibly creating it first
-  static AresDNSResolver* GetOrCreate() {
-    static AresDNSResolver* instance = new AresDNSResolver();
-    return instance;
-  }
-
   TaskHandle LookupHostname(
       std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
           on_resolved,
@@ -811,7 +805,7 @@ class AresDNSResolver : public DNSResolver {
   }
 
   // the previous default DNS resolver, used to delegate blocking DNS calls to
-  DNSResolver* default_resolver_ = GetDNSResolver();
+  std::shared_ptr<DNSResolver> default_resolver_ = GetDNSResolver();
   Mutex mu_;
   grpc_event_engine::experimental::LookupTaskHandleSet open_requests_
       ABSL_GUARDED_BY(mu_);
@@ -852,7 +846,8 @@ void grpc_resolver_dns_ares_init() {
       GRPC_LOG_IF_ERROR("grpc_ares_init() failed", error);
       return;
     }
-    grpc_core::SetDNSResolver(grpc_core::AresDNSResolver::GetOrCreate());
+    grpc_core::ResetDNSResolver(
+        absl::make_unique<grpc_core::AresDNSResolver>());
   }
 }
 

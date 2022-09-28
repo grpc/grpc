@@ -261,7 +261,7 @@ struct grpc_chttp2_transport {
   /** is the transport destroying itself? */
   uint8_t destroying = false;
   /** has the upper layer closed the transport? */
-  grpc_error_handle closed_with_error = GRPC_ERROR_NONE;
+  grpc_error_handle closed_with_error;
 
   /** is there a read request to the endpoint outstanding? */
   uint8_t endpoint_reading = 1;
@@ -309,8 +309,8 @@ struct grpc_chttp2_transport {
   uint32_t write_buffer_size = grpc_core::chttp2::kDefaultWindow;
 
   /** Set to a grpc_error object if a goaway frame is received. By default, set
-   * to GRPC_ERROR_NONE */
-  grpc_error_handle goaway_error = GRPC_ERROR_NONE;
+   * to absl::OkStatus() */
+  grpc_error_handle goaway_error;
 
   grpc_chttp2_sent_goaway_state sent_goaway_state = GRPC_CHTTP2_NO_GOAWAY_SEND;
 
@@ -391,7 +391,7 @@ struct grpc_chttp2_transport {
 
   /* if non-NULL, close the transport with this error when writes are finished
    */
-  grpc_error_handle close_transport_on_writes_finished = GRPC_ERROR_NONE;
+  grpc_error_handle close_transport_on_writes_finished;
 
   /* a list of closures to run after writes are finished */
   grpc_closure_list run_after_write = GRPC_CLOSURE_LIST_INIT;
@@ -527,9 +527,9 @@ struct grpc_chttp2_stream {
   bool eos_sent = false;
 
   /** the error that resulted in this stream being read-closed */
-  grpc_error_handle read_closed_error = GRPC_ERROR_NONE;
+  grpc_error_handle read_closed_error;
   /** the error that resulted in this stream being write-closed */
-  grpc_error_handle write_closed_error = GRPC_ERROR_NONE;
+  grpc_error_handle write_closed_error;
 
   grpc_published_metadata_method published_metadata[2] = {};
   bool final_metadata_requested = false;
@@ -543,7 +543,7 @@ struct grpc_chttp2_stream {
   grpc_core::Timestamp deadline = grpc_core::Timestamp::InfFuture();
 
   /** saw some stream level error */
-  grpc_error_handle forced_close_error = GRPC_ERROR_NONE;
+  grpc_error_handle forced_close_error;
   /** how many header frames have we received? */
   uint8_t header_frames_received = 0;
   /** number of bytes received - reset at end of parse thread execution */

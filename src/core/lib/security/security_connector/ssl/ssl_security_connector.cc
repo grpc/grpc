@@ -71,7 +71,7 @@ grpc_error_handle ssl_check_peer(
   }
   *auth_context =
       grpc_ssl_peer_to_auth_context(peer, GRPC_SSL_TRANSPORT_SECURITY_TYPE);
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 class grpc_ssl_channel_security_connector final
