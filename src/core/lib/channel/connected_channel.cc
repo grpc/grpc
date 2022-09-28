@@ -20,6 +20,8 @@
 
 #include "src/core/lib/channel/connected_channel.h"
 
+#include "absl/status/status.h"
+
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -156,7 +158,7 @@ static grpc_error_handle connected_channel_init_call_elem(
   int r = grpc_transport_init_stream(
       chand->transport, TRANSPORT_STREAM_FROM_CALL_DATA(calld),
       &args->call_stack->refcount, args->server_transport_data, args->arena);
-  return r == 0 ? GRPC_ERROR_NONE
+  return r == 0 ? absl::OkStatus()
                 : GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                       "transport stream initialization failed");
 }
@@ -187,7 +189,7 @@ static grpc_error_handle connected_channel_init_channel_elem(
   GPR_ASSERT(args->is_last);
   cd->transport = grpc_channel_args_find_pointer<grpc_transport>(
       args->channel_args, GRPC_ARG_TRANSPORT);
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 /* Destructor for channel_data */

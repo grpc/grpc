@@ -99,7 +99,7 @@ bool LameClientFilter::StartTransportOp(grpc_transport_op* op) {
                  GRPC_ERROR_CREATE_FROM_STATIC_STRING("lame client channel"));
   }
   if (op->on_consumed != nullptr) {
-    ExecCtx::Run(DEBUG_LOCATION, op->on_consumed, GRPC_ERROR_NONE);
+    ExecCtx::Run(DEBUG_LOCATION, op->on_consumed, absl::OkStatus());
   }
   return true;
 }

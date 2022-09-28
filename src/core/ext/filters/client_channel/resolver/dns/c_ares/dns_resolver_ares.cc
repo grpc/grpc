@@ -407,7 +407,7 @@ AresClientChannelDNSResolver::AresRequestWrapper::OnResolvedLocked(
       result.addresses = ServerAddressList();
     }
     if (service_config_json_ != nullptr) {
-      grpc_error_handle service_config_error = GRPC_ERROR_NONE;
+      grpc_error_handle service_config_error;
       std::string service_config_string =
           ChooseServiceConfig(service_config_json_, &service_config_error);
       if (!service_config_error.ok()) {
@@ -507,7 +507,7 @@ class AresDNSResolver : public DNSResolver {
         grpc_cancel_ares_request(grpc_ares_request_.get());
       } else {
         completed_ = true;
-        OnDnsLookupDone(this, GRPC_ERROR_CANCELLED);
+        OnDnsLookupDone(this, absl::CancelledError());
       }
       grpc_pollset_set_del_pollset_set(pollset_set_, interested_parties_);
       return true;

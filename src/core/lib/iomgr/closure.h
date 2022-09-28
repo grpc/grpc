@@ -45,7 +45,7 @@ typedef struct grpc_closure_list {
 /** gRPC Callback definition.
  *
  * \param arg Arbitrary input.
- * \param error GRPC_ERROR_NONE if no error occurred, otherwise some grpc_error
+ * \param error absl::OkStatus() if no error occurred, otherwise some grpc_error
  *              describing what went wrong.
  *              Error contract: it is not the cb's job to unref this error;
  *              the closure scheduler will do that after the cb returns */

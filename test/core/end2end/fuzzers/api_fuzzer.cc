@@ -125,7 +125,7 @@ static void finish_resolve(void* arg, grpc_error_handle error) {
         grpc_parse_ipv4_hostport("1.2.3.4:5", &fake_resolved_address, false));
     (*r->addresses)
         ->emplace_back(fake_resolved_address, grpc_core::ChannelArgs());
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_done, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_done, absl::OkStatus());
   } else {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_done,
                             GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
@@ -289,7 +289,7 @@ static void do_connect(void* arg, grpc_error_handle error) {
                                     core_server->channel_args(), nullptr)));
     grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
 
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, fc->closure, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, fc->closure, absl::OkStatus());
   } else {
     sched_connect(fc->closure, fc->ep, fc->deadline);
   }

@@ -22,6 +22,7 @@
 
 #include <utility>
 
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/clock.h"
@@ -157,7 +158,7 @@ grpc_error_handle CensusServerCallData::Init(
   GRPC_CLOSURE_INIT(&on_done_recv_message_, OnDoneRecvMessageCb, elem,
                     grpc_schedule_on_exec_ctx);
   auth_context_ = grpc_call_auth_context(gc_);
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 void CensusServerCallData::Destroy(grpc_call_element* /*elem*/,

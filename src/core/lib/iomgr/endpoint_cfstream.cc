@@ -181,7 +181,7 @@ static void ReadAction(void* arg, grpc_error_handle error) {
     if (read_size < static_cast<CFIndex>(len)) {
       grpc_slice_buffer_trim_end(ep->read_slices, len - read_size, nullptr);
     }
-    CallReadCb(ep, GRPC_ERROR_NONE);
+    CallReadCb(ep, absl::OkStatus());
     EP_UNREF(ep, "read");
   }
 }
@@ -219,7 +219,7 @@ static void WriteAction(void* arg, grpc_error_handle error) {
     if (ep->write_slices->length > 0) {
       ep->stream_sync->NotifyOnWrite(&ep->write_action);
     } else {
-      CallWriteCb(ep, GRPC_ERROR_NONE);
+      CallWriteCb(ep, absl::OkStatus());
       EP_UNREF(ep, "write");
     }
 

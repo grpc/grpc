@@ -88,7 +88,7 @@ class GoogleCloud2ProdResolver : public Resolver {
    private:
     static void OnHttpRequestDone(void* arg, grpc_error_handle error);
 
-    // If error is not GRPC_ERROR_NONE, then it's not safe to look at response.
+    // If error is not absl::OkStatus(), then it's not safe to look at response.
     virtual void OnDone(GoogleCloud2ProdResolver* resolver,
                         const grpc_http_response* response,
                         grpc_error_handle error) = 0;

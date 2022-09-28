@@ -389,7 +389,7 @@ void HttpRequest::OnResolved(
   }
   addresses_ = std::move(*addresses_or);
   next_address_ = 0;
-  NextAddress(GRPC_ERROR_NONE);
+  NextAddress(absl::OkStatus());
 }
 
 }  // namespace grpc_core

@@ -30,6 +30,7 @@
 
 #include "absl/base/attributes.h"
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
@@ -341,7 +342,7 @@ void SecurityHandshaker::OnPeerCheckedInner(grpc_error_handle error) {
         MakeChannelzSecurityFromAuthContext(auth_context_.get()));
   }
   // Invoke callback.
-  ExecCtx::Run(DEBUG_LOCATION, on_handshake_done_, GRPC_ERROR_NONE);
+  ExecCtx::Run(DEBUG_LOCATION, on_handshake_done_, absl::OkStatus());
   // Set shutdown to true so that subsequent calls to
   // security_handshaker_shutdown() do nothing.
   is_shutdown_ = true;
@@ -362,13 +363,13 @@ grpc_error_handle SecurityHandshaker::CheckPeerLocked() {
   }
   connector_->check_peer(peer, args_->endpoint, args_->args, &auth_context_,
                          &on_peer_checked_);
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 grpc_error_handle SecurityHandshaker::OnHandshakeNextDoneLocked(
     tsi_result result, const unsigned char* bytes_to_send,
     size_t bytes_to_send_size, tsi_handshaker_result* handshaker_result) {
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
   // Handshaker was shutdown.
   if (is_shutdown_) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Handshaker shutdown");
@@ -459,7 +460,7 @@ grpc_error_handle SecurityHandshaker::DoHandshakerNextLocked(
   if (result == TSI_ASYNC) {
     // Handshaker operating asynchronously. Nothing else to do here;
     // callback will be invoked in a TSI thread.
-    return GRPC_ERROR_NONE;
+    return absl::OkStatus();
   }
   // Handshaker returned synchronously. Invoke callback directly in
   // this thread with our existing exec_ctx.

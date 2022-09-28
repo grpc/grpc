@@ -1690,6 +1690,7 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/promise/exec_ctx_wakeup_scheduler.h",
     ],
+    external_deps = ["absl/status"],
     language = "c++",
     deps = [
         "closure",
@@ -1839,6 +1840,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/container:inlined_vector",
+        "absl/status",
         "absl/strings:str_format",
     ],
     language = "c++",
@@ -1902,6 +1904,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/memory",
+        "absl/status",
         "absl/strings",
         "absl/types:optional",
     ],
@@ -1937,6 +1940,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/memory",
+        "absl/status",
         "absl/status:statusor",
         "absl/strings",
         "absl/types:optional",
@@ -5708,6 +5712,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/memory",
+        "absl/status",
         "absl/status:statusor",
         "absl/strings",
     ],

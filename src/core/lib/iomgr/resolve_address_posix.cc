@@ -55,7 +55,7 @@ class NativeDNSRequest {
           on_done)
       : name_(name), default_port_(default_port), on_done_(std::move(on_done)) {
     GRPC_CLOSURE_INIT(&request_closure_, DoRequestThread, this, nullptr);
-    Executor::Run(&request_closure_, GRPC_ERROR_NONE, ExecutorType::RESOLVER);
+    Executor::Run(&request_closure_, absl::OkStatus(), ExecutorType::RESOLVER);
   }
 
  private:
@@ -158,7 +158,7 @@ NativeDNSResolver::LookupHostnameBlocking(absl::string_view name,
     addr.len = resp->ai_addrlen;
     addresses.push_back(addr);
   }
-  err = GRPC_ERROR_NONE;
+  err = absl::OkStatus();
 done:
   if (result) {
     freeaddrinfo(result);
