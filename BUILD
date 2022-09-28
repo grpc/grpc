@@ -2134,7 +2134,7 @@ grpc_cc_library(
     ],
     deps = [
         "gpr",
-        "grpc_codegen",
+        "grpc_public_hdrs",
         "slice_refcount",
     ],
 )
