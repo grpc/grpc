@@ -133,13 +133,13 @@ uint64_t GetUlimitHardMemLock() {
     }
     // Parses /etc/security/limits.conf file for a line of the following format:
     // * hard memlock <value>
-    // It extracts <value> and returns it. A value of -1 represents unlimited
-    // or infinity. Hard memlock value should be set to allow zerocopy sendmsgs
-    // to succeed. It controls the maximum amount of memory that can be locked
-    // by a socket in RAM.
+    // It extracts <value> and returns it. A value of UINT64_MAX represents
+    // unlimited or infinity. Hard memlock value should be set to allow zerocopy
+    // sendmsgs to succeed. It controls the maximum amount of memory that can be
+    // locked by a socket in RAM.
     std::ifstream limits_file("/etc/security/limits.conf");
     uint64_t hard_memlock = 0;
-    static std::string kHardMemlockPrefix = "*hard memlock";
+    static std::string kHardMemlockPrefix = "* hard memlock";
     for (std::string line;
          limits_file.is_open() && getline(limits_file, line);) {
       if (line.rfind(kHardMemlockPrefix) != 0) {
