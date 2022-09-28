@@ -148,6 +148,7 @@ grpc_proto_fuzzer(
     srcs = ["memory_quota_fuzzer.cc"],
     corpus = "memory_quota_fuzzer_corpus",
     external_deps = [
+        "absl/status",
         "absl/strings",
         "absl/types:optional",
     ],

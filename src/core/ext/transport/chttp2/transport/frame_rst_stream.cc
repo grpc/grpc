@@ -22,6 +22,7 @@
 
 #include <stddef.h>
 
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
@@ -79,7 +80,7 @@ grpc_error_handle grpc_chttp2_rst_stream_parser_begin_frame(
         "invalid rst_stream: length=%d, flags=%02x", length, flags));
   }
   parser->byte = 0;
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 grpc_error_handle grpc_chttp2_rst_stream_parser_parse(void* parser,
@@ -111,7 +112,7 @@ grpc_error_handle grpc_chttp2_rst_stream_parser_parse(void* parser,
               "[chttp2 transport=%p stream=%p] received RST_STREAM(reason=%d)",
               t, s, reason);
     }
-    grpc_error_handle error = GRPC_ERROR_NONE;
+    grpc_error_handle error;
     if (reason != GRPC_HTTP2_NO_ERROR || s->trailing_metadata_buffer.empty()) {
       error = grpc_error_set_int(
           grpc_error_set_str(
@@ -123,5 +124,5 @@ grpc_error_handle grpc_chttp2_rst_stream_parser_parse(void* parser,
     grpc_chttp2_mark_stream_closed(t, s, true, true, error);
   }
 
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }

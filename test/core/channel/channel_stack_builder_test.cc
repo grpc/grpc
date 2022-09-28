@@ -41,12 +41,12 @@ namespace {
 
 grpc_error_handle ChannelInitFunc(grpc_channel_element* /*elem*/,
                                   grpc_channel_element_args* /*args*/) {
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 grpc_error_handle CallInitFunc(grpc_call_element* /*elem*/,
                                const grpc_call_element_args* /*args*/) {
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 void ChannelDestroyFunc(grpc_channel_element* /*elem*/) {}

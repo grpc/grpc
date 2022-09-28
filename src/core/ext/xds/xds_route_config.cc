@@ -72,7 +72,6 @@
 #include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/validation_errors.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/matchers/matchers.h"
 
 namespace grpc_core {
@@ -582,7 +581,7 @@ absl::Status RouteRuntimeFractionParse(
       route->matchers.fraction_per_million = numerator;
     }
   }
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 template <typename ParentType, typename EntryType>

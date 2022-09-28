@@ -147,7 +147,7 @@ class Client {
         grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
         addresses_or->data(), Timestamp::Now() + Duration::Seconds(1));
     ASSERT_TRUE(PollUntilDone(&state, Timestamp::InfFuture()));
-    ASSERT_EQ(GRPC_ERROR_NONE, state.error());
+    ASSERT_EQ(absl::OkStatus(), state.error());
     grpc_pollset_set_destroy(pollset_set);
     grpc_endpoint_add_to_pollset(endpoint_, pollset_);
   }
@@ -170,7 +170,7 @@ class Client {
         retval = false;
         break;
       }
-      if (state.error() != GRPC_ERROR_NONE) break;
+      if (state.error() != absl::OkStatus()) break;
       gpr_log(GPR_INFO, "client read %" PRIuPTR " bytes", read_buffer.length);
       grpc_slice_buffer_reset_and_unref(&read_buffer);
     }
@@ -211,13 +211,13 @@ class Client {
       gpr_log(GPR_INFO, "OnEventDone(): %s",
               grpc_error_std_string(error).c_str());
       EventState* state = static_cast<EventState*>(arg);
-      state->error_ = GRPC_ERROR_REF(error);
+      state->error_ = error;
       gpr_atm_rel_store(&state->done_atm_, 1);
     }
 
     grpc_closure closure_;
     gpr_atm done_atm_ = 0;
-    grpc_error_handle error_ = GRPC_ERROR_NONE;
+    grpc_error_handle error_;
   };
 
   // Returns true if done, or false if deadline exceeded.

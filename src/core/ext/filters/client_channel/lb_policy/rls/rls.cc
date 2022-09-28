@@ -1416,7 +1416,6 @@ void RlsLb::Cache::Shutdown() {
 
 void RlsLb::Cache::OnCleanupTimer(void* arg, grpc_error_handle error) {
   Cache* cache = static_cast<Cache*>(arg);
-  (void)GRPC_ERROR_REF(error);
   cache->lb_policy_->work_serializer()->Run(
       [cache, error]() {
         RefCountedPtr<RlsLb> lb_policy(cache->lb_policy_);
@@ -1424,7 +1423,7 @@ void RlsLb::Cache::OnCleanupTimer(void* arg, grpc_error_handle error) {
           gpr_log(GPR_INFO, "[rlslb %p] cache cleanup timer fired (%s)",
                   cache->lb_policy_, grpc_error_std_string(error).c_str());
         }
-        if (error == GRPC_ERROR_CANCELLED) return;
+        if (error == absl::CancelledError()) return;
         MutexLock lock(&lb_policy->mu_);
         if (lb_policy->is_shutdown_) return;
         for (auto it = cache->map_.begin(); it != cache->map_.end();) {
@@ -1682,7 +1681,7 @@ RlsLb::RlsRequest::RlsRequest(RefCountedPtr<RlsLb> lb_policy, RequestKey key,
       DEBUG_LOCATION,
       GRPC_CLOSURE_INIT(&call_start_cb_, StartCall,
                         Ref(DEBUG_LOCATION, "StartCall").release(), nullptr),
-      GRPC_ERROR_NONE);
+      absl::OkStatus());
 }
 
 RlsLb::RlsRequest::~RlsRequest() { GPR_ASSERT(call_ == nullptr); }
@@ -1753,7 +1752,6 @@ void RlsLb::RlsRequest::StartCallLocked() {
 
 void RlsLb::RlsRequest::OnRlsCallComplete(void* arg, grpc_error_handle error) {
   auto* request = static_cast<RlsRequest*>(arg);
-  (void)GRPC_ERROR_REF(error);
   request->lb_policy_->work_serializer()->Run(
       [request, error]() {
         request->OnRlsCallCompleteLocked(error);
@@ -1774,7 +1772,7 @@ void RlsLb::RlsRequest::OnRlsCallCompleteLocked(grpc_error_handle error) {
   }
   // Parse response.
   ResponseInfo response;
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     grpc_status_code code;
     std::string message;
     grpc_error_get_status(error, deadline_, &code, &message,
@@ -2075,7 +2073,7 @@ void RlsLb::UpdatePickerAsync() {
       GRPC_CLOSURE_CREATE(UpdatePickerCallback,
                           Ref(DEBUG_LOCATION, "UpdatePickerCallback").release(),
                           grpc_schedule_on_exec_ctx),
-      GRPC_ERROR_NONE);
+      absl::OkStatus());
 }
 
 void RlsLb::UpdatePickerCallback(void* arg, grpc_error_handle /*error*/) {
@@ -2420,13 +2418,12 @@ void RlsLbConfig::JsonPostLoad(const Json& json, const JsonArgs&,
   if (it != json.object_value().end()) {
     ValidationErrors::ScopedField field(errors,
                                         ".routeLookupChannelServiceConfig");
-    grpc_error_handle child_error = GRPC_ERROR_NONE;
+    grpc_error_handle child_error;
     rls_channel_service_config_ = it->second.Dump();
     auto service_config = MakeRefCounted<ServiceConfigImpl>(
         ChannelArgs(), rls_channel_service_config_, it->second, &child_error);
-    if (!GRPC_ERROR_IS_NONE(child_error)) {
+    if (!child_error.ok()) {
       errors->AddError(grpc_error_std_string(child_error));
-      GRPC_ERROR_UNREF(child_error);
     }
   }
   // Validate childPolicyConfigTargetFieldName.

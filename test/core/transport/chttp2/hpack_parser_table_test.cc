@@ -21,6 +21,7 @@
 #include <string>
 #include <utility>
 
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "gtest/gtest.h"
 
@@ -121,7 +122,7 @@ TEST(HpackParserTableTest, ManyAdditions) {
     auto memento =
         HPackTable::Memento(std::move(key_slice), std::move(value_slice));
     auto add_err = tbl.Add(std::move(memento));
-    ASSERT_EQ(add_err, GRPC_ERROR_NONE);
+    ASSERT_EQ(add_err, absl::OkStatus());
     AssertIndex(&tbl, 1 + hpack_constants::kLastStaticEntry, key.c_str(),
                 value.c_str());
     if (i) {

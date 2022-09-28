@@ -90,7 +90,7 @@ absl::StatusOr<std::string> GetBootstrapContents(const char* fallback_config) {
     grpc_slice contents;
     grpc_error_handle error =
         grpc_load_file(path->c_str(), /*add_null_terminator=*/true, &contents);
-    if (!GRPC_ERROR_IS_NONE(error)) return grpc_error_to_absl_status(error);
+    if (!error.ok()) return grpc_error_to_absl_status(error);
     std::string contents_str(StringViewFromSlice(contents));
     grpc_slice_unref(contents);
     return contents_str;
@@ -205,7 +205,7 @@ void SetXdsFallbackBootstrapConfig(const char* config) {
 grpc_slice grpc_dump_xds_configs(void) {
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
   auto xds_client = grpc_core::GrpcXdsClient::GetOrCreate(
       grpc_core::ChannelArgs(), "grpc_dump_xds_configs()");
   if (!xds_client.ok()) {

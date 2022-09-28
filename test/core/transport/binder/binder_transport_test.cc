@@ -701,7 +701,7 @@ TEST_F(BinderTransportTest, WireWriterRpcCallErrorPropagates) {
   EXPECT_CALL(GetWireWriter(), RpcCall)
       .WillOnce(Return(absl::OkStatus()))
       .WillOnce(Return(absl::InternalError("WireWriter::RpcCall failed")));
-  EXPECT_CALL(mock_on_complete1, Callback(GRPC_ERROR_NONE));
+  EXPECT_CALL(mock_on_complete1, Callback(absl::OkStatus()));
   EXPECT_CALL(mock_on_complete2,
               Callback(GrpcErrorMessageContains("WireWriter::RpcCall failed")));
 

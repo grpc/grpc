@@ -113,17 +113,17 @@ absl::Status PrepareTcpClientSocket(PosixSocketWrapper sock,
       close(sock.Fd());
     }
   });
-  RETURN_IF_NOT_OK(sock.SetSocketNonBlocking(1));
-  RETURN_IF_NOT_OK(sock.SetSocketCloexec(1));
+  GRPC_RETURN_IF_ERROR(sock.SetSocketNonBlocking(1));
+  GRPC_RETURN_IF_ERROR(sock.SetSocketCloexec(1));
 
   if (reinterpret_cast<const sockaddr*>(addr.address())->sa_family != AF_UNIX) {
     // If its not a unix socket address.
-    RETURN_IF_NOT_OK(sock.SetSocketLowLatency(1));
-    RETURN_IF_NOT_OK(sock.SetSocketReuseAddr(1));
+    GRPC_RETURN_IF_ERROR(sock.SetSocketLowLatency(1));
+    GRPC_RETURN_IF_ERROR(sock.SetSocketReuseAddr(1));
     sock.TrySetSocketTcpUserTimeout(options, true);
   }
-  RETURN_IF_NOT_OK(sock.SetSocketNoSigpipeIfPossible());
-  RETURN_IF_NOT_OK(sock.ApplySocketMutatorInOptions(
+  GRPC_RETURN_IF_ERROR(sock.SetSocketNoSigpipeIfPossible());
+  GRPC_RETURN_IF_ERROR(sock.ApplySocketMutatorInOptions(
       GRPC_FD_CLIENT_CONNECTION_USAGE, options));
   // No errors. Set close_fd to false to ensure the socket is not closed.
   close_fd = false;
