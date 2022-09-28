@@ -468,7 +468,9 @@ with open('src/core/lib/debug/stats_data.cc', 'w') as C:
               (shape.max, shape.buckets, code),
               file=C)
 
-    print("GlobalStats::GlobalStats() : %s {}" % ",".join("%s{0}" % ctr.name for ctr in inst_map['Counter']), file=C)
+    print("GlobalStats::GlobalStats() : %s {}" %
+          ",".join("%s{0}" % ctr.name for ctr in inst_map['Counter']),
+          file=C)
 
     print("HistogramView GlobalStats::histogram(Histogram which) const {",
           file=C)
