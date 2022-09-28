@@ -43,6 +43,7 @@ grpc_cc_library(
         "absl/types:optional",
         "googleapis_trace_grpc_service",
         "googleapis_monitoring_grpc_service",
+        "opencensus-stats",
         "opencensus-trace",
         "opencensus-trace-stackdriver_exporter",
         "opencensus-stats-stackdriver_exporter",

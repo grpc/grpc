@@ -30,6 +30,7 @@
 #include "google/monitoring/v3/metric_service.grpc.pb.h"
 #include "opencensus/exporters/stats/stackdriver/stackdriver_exporter.h"
 #include "opencensus/exporters/trace/stackdriver/stackdriver_exporter.h"
+#include "opencensus/stats/stats.h"
 #include "opencensus/trace/sampler.h"
 #include "opencensus/trace/trace_config.h"
 
@@ -38,6 +39,7 @@
 #include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/config.h>
 
+#include "src/cpp/ext/filters/census/grpc_plugin.h"
 #include "src/cpp/ext/filters/census/open_census_call_tracer.h"
 #include "src/cpp/ext/gcp/observability_config.h"
 
@@ -55,6 +57,16 @@ constexpr uint32_t kMaxLinks = 128;
 
 constexpr char kGoogleStackdriverTraceAddress[] = "cloudtrace.googleapis.com";
 constexpr char kGoogleStackdriverStatsAddress[] = "monitoring.googleapis.com";
+
+void RegisterOpenCensusViewsForGcpObservability() {
+  // Register client default views for GCP observability
+  ClientStartedRpcsCumulative().RegisterForExport();
+  ClientCompletedRpcsCumulative().RegisterForExport();
+  // Register server default views for GCP observability
+  ServerStartedRpcsCumulative().RegisterForExport();
+  ServerCompletedRpcsCumulative().RegisterForExport();
+}
+
 }  // namespace
 
 absl::Status GcpObservabilityInit() {
@@ -63,7 +75,7 @@ absl::Status GcpObservabilityInit() {
     return config.status();
   }
   grpc::RegisterOpenCensusPlugin();
-  grpc::RegisterOpenCensusViewsForExport();
+  RegisterOpenCensusViewsForGcpObservability();
   ChannelArguments args;
   args.SetInt(GRPC_ARG_ENABLE_OBSERVABILITY, 0);
   if (config->cloud_trace.has_value()) {
