@@ -5662,6 +5662,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "resolved_address",
         "server_address",
+        "slice",
         "sockaddr_utils",
         "time",
         "uri_parser",
