@@ -80,7 +80,7 @@ ServiceConfigImpl::ServiceConfigImpl(const ChannelArgs& args,
 
 ServiceConfigImpl::~ServiceConfigImpl() {
   for (auto& p : parsed_method_configs_map_) {
-    grpc_core::CSliceUnref(p.first);
+    CSliceUnref(p.first);
   }
 }
 
@@ -130,7 +130,7 @@ absl::Status ServiceConfigImpl::ParseJsonMethodConfig(const ChannelArgs& args,
                   "field:name error:multiple method configs with same name");
               // The map entry already existed, so we need to unref the
               // key we just created.
-              grpc_core::CSliceUnref(key);
+              CSliceUnref(key);
             } else {
               value = vector_ptr;
             }

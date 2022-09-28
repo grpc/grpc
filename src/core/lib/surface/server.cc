@@ -458,7 +458,7 @@ class ChannelBroadcaster {
 
   static void ShutdownCleanup(void* arg, grpc_error_handle /*error*/) {
     ShutdownCleanupArgs* a = static_cast<ShutdownCleanupArgs*>(arg);
-    grpc_core::CSliceUnref(a->slice);
+    CSliceUnref(a->slice);
     delete a;
   }
 
@@ -1230,8 +1230,8 @@ void Server::CallData::Publish(size_t cq_idx, RequestedCall* rc) {
     case RequestedCall::Type::BATCH_CALL:
       GPR_ASSERT(host_.has_value());
       GPR_ASSERT(path_.has_value());
-      rc->data.batch.details->host = grpc_core::CSliceRef(host_->c_slice());
-      rc->data.batch.details->method = grpc_core::CSliceRef(path_->c_slice());
+      rc->data.batch.details->host = CSliceRef(host_->c_slice());
+      rc->data.batch.details->method = CSliceRef(path_->c_slice());
       rc->data.batch.details->deadline =
           deadline_.as_timespec(GPR_CLOCK_MONOTONIC);
       break;

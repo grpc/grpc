@@ -49,7 +49,7 @@ BANNED_EXCEPT = {
     # use grpc_core::CSlice{Ref,Unref} instead inside core
     # (or prefer grpc_core::Slice!)
     'grpc_slice_ref(': ['src/core/lib/slice/slice.cc'],
-    'grpc_slice_unref(': ['src/core/lib/slice/slice.cc'],    
+    'grpc_slice_unref(': ['src/core/lib/slice/slice.cc'],
     # std::random_device needs /dev/random which is not available on all linuxes that we support.
     # Any usage must be optional and opt-in, so that those platforms can use gRPC without problem.
     'std::random_device': [

@@ -51,7 +51,7 @@ void SliceBuffer::Prepend(Slice slice) {
 }
 
 Slice SliceBuffer::RefSlice(size_t index) const {
-  return Slice(grpc_core::CSliceRef(slice_buffer_.slices[index]));
+  return Slice(CSliceRef(slice_buffer_.slices[index]));
 }
 
 std::string SliceBuffer::JoinIntoString() const {
