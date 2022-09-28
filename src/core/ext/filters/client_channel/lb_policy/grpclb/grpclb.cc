@@ -135,6 +135,7 @@
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
@@ -922,7 +923,7 @@ GrpcLb::BalancerCallState::BalancerCallState(
       arena.ptr());
   send_message_payload_ =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
-  grpc_slice_unref(request_payload_slice);
+  grpc_slice_unref_internal(request_payload_slice);
   // Init other data associated with the LB call.
   grpc_metadata_array_init(&lb_initial_metadata_recv_);
   grpc_metadata_array_init(&lb_trailing_metadata_recv_);
@@ -935,7 +936,7 @@ GrpcLb::BalancerCallState::~BalancerCallState() {
   grpc_metadata_array_destroy(&lb_trailing_metadata_recv_);
   grpc_byte_buffer_destroy(send_message_payload_);
   grpc_byte_buffer_destroy(recv_message_payload_);
-  grpc_slice_unref(lb_call_status_details_);
+  grpc_slice_unref_internal(lb_call_status_details_);
 }
 
 void GrpcLb::BalancerCallState::Orphan() {
@@ -1090,7 +1091,7 @@ void GrpcLb::BalancerCallState::SendClientLoadReportLocked() {
       num_calls_finished_known_received, drop_token_counts.get(), arena.ptr());
   send_message_payload_ =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
-  grpc_slice_unref(request_payload_slice);
+  grpc_slice_unref_internal(request_payload_slice);
   // Send the report.
   grpc_op op;
   memset(&op, 0, sizeof(op));
@@ -1291,7 +1292,7 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked() {
       }
     }
   }
-  grpc_slice_unref(response_slice);
+  grpc_slice_unref_internal(response_slice);
   if (!grpclb_policy()->shutting_down_) {
     // Keep listening for serverlist updates.
     grpc_op op;

@@ -56,6 +56,7 @@
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/security/util/json_util.h"
+#include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/metadata_batch.h"
@@ -611,8 +612,8 @@ class StsTokenFetcherCredentials
         *body = gpr_strdup(body_str.c_str());
         *body_length = body_str.size();
       }
-      grpc_slice_unref(subject_token);
-      grpc_slice_unref(actor_token);
+      grpc_slice_unref_internal(subject_token);
+      grpc_slice_unref_internal(actor_token);
       return err;
     };
 

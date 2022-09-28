@@ -68,6 +68,7 @@
 #include "src/core/lib/service_config/service_config.h"
 #include "src/core/lib/service_config/service_config_call_data.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
@@ -2151,7 +2152,7 @@ RetryFilter::CallData::CallData(RetryFilter* chand,
               .set_max_backoff(retry_policy_ == nullptr
                                    ? Duration::Zero()
                                    : retry_policy_->max_backoff())),
-      path_(grpc_slice_ref(args.path)),
+      path_(grpc_slice_ref_internal(args.path)),
       deadline_(args.deadline),
       arena_(args.arena),
       owning_call_(args.call_stack),
@@ -2169,7 +2170,7 @@ RetryFilter::CallData::CallData(RetryFilter* chand,
 
 RetryFilter::CallData::~CallData() {
   FreeAllCachedSendOpData();
-  grpc_slice_unref(path_);
+  grpc_slice_unref_internal(path_);
   // Make sure there are no remaining pending batches.
   for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
     GPR_ASSERT(pending_batches_[i].batch == nullptr);

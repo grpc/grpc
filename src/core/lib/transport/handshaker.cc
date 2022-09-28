@@ -38,6 +38,7 @@
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/slice/slice_internal.h"
 
 namespace grpc_core {
 
@@ -114,7 +115,7 @@ bool HandshakeManager::CallNextHandshakerLocked(grpc_error_handle error) {
         grpc_endpoint_destroy(args_.endpoint);
         args_.endpoint = nullptr;
         args_.args = ChannelArgs();
-        grpc_slice_buffer_destroy(args_.read_buffer);
+        grpc_slice_buffer_destroy_internal(args_.read_buffer);
         gpr_free(args_.read_buffer);
         args_.read_buffer = nullptr;
       }

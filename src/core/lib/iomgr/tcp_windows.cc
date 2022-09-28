@@ -130,7 +130,7 @@ typedef struct grpc_tcp {
 static void tcp_free(grpc_tcp* tcp) {
   grpc_winsocket_destroy(tcp->socket);
   gpr_mu_destroy(&tcp->mu);
-  grpc_slice_buffer_destroy(&tcp->last_read_buffer);
+  grpc_slice_buffer_destroy_internal(&tcp->last_read_buffer);
   delete tcp;
 }
 
@@ -188,7 +188,7 @@ static void on_read(void* tcpp, grpc_error_handle error) {
       char* utf8_message = gpr_format_message(info->wsa_error);
       error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(utf8_message);
       gpr_free(utf8_message);
-      grpc_slice_buffer_reset_and_unref(tcp->read_slices);
+      grpc_slice_buffer_reset_and_unref_internal(tcp->read_slices);
     } else {
       if (info->bytes_transferred != 0 && !tcp->shutting_down) {
         GPR_ASSERT((size_t)info->bytes_transferred <= tcp->read_slices->length);
@@ -216,7 +216,7 @@ static void on_read(void* tcpp, grpc_error_handle error) {
         if (grpc_tcp_trace.enabled()) {
           gpr_log(GPR_INFO, "TCP:%p unref read_slice", tcp);
         }
-        grpc_slice_buffer_reset_and_unref(tcp->read_slices);
+        grpc_slice_buffer_reset_and_unref_internal(tcp->read_slices);
         error = grpc_error_set_int(
             tcp->shutting_down
                 ? GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
@@ -261,7 +261,7 @@ static void win_read(grpc_endpoint* ep, grpc_slice_buffer* read_slices,
 
   tcp->read_cb = cb;
   tcp->read_slices = read_slices;
-  grpc_slice_buffer_reset_and_unref(read_slices);
+  grpc_slice_buffer_reset_and_unref_internal(read_slices);
   grpc_slice_buffer_swap(read_slices, &tcp->last_read_buffer);
 
   if (tcp->read_slices->length < DEFAULT_TARGET_READ_SIZE / 2 &&
@@ -467,7 +467,7 @@ static void win_shutdown(grpc_endpoint* ep, grpc_error_handle why) {
 
 static void win_destroy(grpc_endpoint* ep) {
   grpc_tcp* tcp = (grpc_tcp*)ep;
-  grpc_slice_buffer_reset_and_unref(&tcp->last_read_buffer);
+  grpc_slice_buffer_reset_and_unref_internal(&tcp->last_read_buffer);
   TCP_UNREF(tcp, "destroy");
 }
 

@@ -55,6 +55,7 @@
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/resource_quota/api.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
@@ -172,11 +173,11 @@ class Client {
       }
       if (state.error() != absl::OkStatus()) break;
       gpr_log(GPR_INFO, "client read %" PRIuPTR " bytes", read_buffer.length);
-      grpc_slice_buffer_reset_and_unref(&read_buffer);
+      grpc_slice_buffer_reset_and_unref_internal(&read_buffer);
     }
     grpc_endpoint_shutdown(endpoint_,
                            GRPC_ERROR_CREATE_FROM_STATIC_STRING("shutdown"));
-    grpc_slice_buffer_destroy(&read_buffer);
+    grpc_slice_buffer_destroy_internal(&read_buffer);
     return retval;
   }
 

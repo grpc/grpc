@@ -49,6 +49,7 @@
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/security/util/json_util.h"
+#include "src/core/lib/slice/slice_refcount.h"
 #include "src/cpp/client/create_channel_internal.h"
 #include "src/cpp/common/secure_auth_context.h"
 
@@ -228,7 +229,7 @@ grpc::Status StsCredentialsOptionsFromEnv(StsCredentialsOptions* options) {
   grpc::Status status;
   // NOLINTNEXTLINE(clang-diagnostic-unused-lambda-capture)
   auto cleanup = [&json_string, &status]() {
-    grpc_slice_unref(json_string);
+    grpc_slice_unref_internal(json_string);
     return status;
   };
   if (!sts_creds_path.has_value()) {

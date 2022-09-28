@@ -18,24 +18,18 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/grpc.h>
-#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
 
-#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/slice/slice_refcount.h"
-#include "src/core/lib/surface/api_trace.h"
+#include "src/core/lib/slice/slice_internal.h"
 
-void grpc_call_details_init(grpc_call_details* details) {
-  GRPC_API_TRACE("grpc_call_details_init(details=%p)", 1, (details));
-  details->method = grpc_empty_slice();
-  details->host = grpc_empty_slice();
+void grpc_slice_buffer_destroy(grpc_slice_buffer* sb) {
+  grpc_core::ExecCtx exec_ctx;
+  grpc_slice_buffer_destroy_internal(sb);
 }
 
-void grpc_call_details_destroy(grpc_call_details* details) {
-  GRPC_API_TRACE("grpc_call_details_destroy(details=%p)", 1, (details));
+void grpc_slice_buffer_reset_and_unref(grpc_slice_buffer* sb) {
   grpc_core::ExecCtx exec_ctx;
-  grpc_slice_unref_internal(details->method);
-  grpc_slice_unref_internal(details->host);
+  grpc_slice_buffer_reset_and_unref_internal(sb);
 }

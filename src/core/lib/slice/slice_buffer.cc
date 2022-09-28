@@ -31,6 +31,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/slice/slice_refcount.h"
 
 namespace grpc_core {
 
@@ -51,7 +52,7 @@ void SliceBuffer::Prepend(Slice slice) {
 }
 
 Slice SliceBuffer::RefSlice(size_t index) const {
-  return Slice(grpc_slice_ref(slice_buffer_.slices[index]));
+  return Slice(grpc_slice_ref_internal(slice_buffer_.slices[index]));
 }
 
 std::string SliceBuffer::JoinIntoString() const {
@@ -119,12 +120,12 @@ void grpc_slice_buffer_init(grpc_slice_buffer* sb) {
   sb->base_slices = sb->slices = sb->inlined;
 }
 
-void grpc_slice_buffer_destroy(grpc_slice_buffer* sb) {
-  grpc_slice_buffer_reset_and_unref(sb);
+void grpc_slice_buffer_destroy_internal(grpc_slice_buffer* sb) {
+  grpc_slice_buffer_reset_and_unref_internal(sb);
   if (sb->base_slices != sb->inlined) {
     gpr_free(sb->base_slices);
     // As a precaution, set sb->base_slices to equal sb->inlined
-    // to prevent a double free attempt if grpc_slice_buffer_destroy
+    // to prevent a double free attempt if grpc_slice_buffer_destroy_internal
     // is invoked two times on the same slice buffer.
     sb->base_slices = sb->slices = sb->inlined;
   }
@@ -180,7 +181,7 @@ void grpc_slice_buffer_add(grpc_slice_buffer* sb, grpc_slice s) {
     back->data.refcounted.length += GRPC_SLICE_LENGTH(s);
     sb->length += GRPC_SLICE_LENGTH(s);
     // Unref the merged slice.
-    grpc_slice_unref(s);
+    grpc_slice_unref_internal(s);
     // early out
     return;
   }
@@ -234,10 +235,10 @@ void grpc_slice_buffer_pop(grpc_slice_buffer* sb) {
   }
 }
 
-void grpc_slice_buffer_reset_and_unref(grpc_slice_buffer* sb) {
+void grpc_slice_buffer_reset_and_unref_internal(grpc_slice_buffer* sb) {
   size_t i;
   for (i = 0; i < sb->count; i++) {
-    grpc_slice_unref(sb->slices[i]);
+    grpc_slice_unref_internal(sb->slices[i]);
   }
 
   sb->count = 0;
@@ -369,13 +370,13 @@ void grpc_slice_buffer_move_first_into_buffer(grpc_slice_buffer* src, size_t n,
       n = 0;
     } else if (slice_len == n) {
       memcpy(dstp, GRPC_SLICE_START_PTR(slice), n);
-      grpc_slice_unref(slice);
+      grpc_slice_unref_internal(slice);
       n = 0;
     } else {
       memcpy(dstp, GRPC_SLICE_START_PTR(slice), slice_len);
       dstp += slice_len;
       n -= slice_len;
-      grpc_slice_unref(slice);
+      grpc_slice_unref_internal(slice);
     }
   }
 }
@@ -411,14 +412,14 @@ void grpc_slice_buffer_trim_end(grpc_slice_buffer* sb, size_t n,
       if (garbage) {
         grpc_slice_buffer_add_indexed(garbage, slice);
       } else {
-        grpc_slice_unref(slice);
+        grpc_slice_unref_internal(slice);
       }
       return;
     } else if (slice_len == n) {
       if (garbage) {
         grpc_slice_buffer_add_indexed(garbage, slice);
       } else {
-        grpc_slice_unref(slice);
+        grpc_slice_unref_internal(slice);
       }
       sb->count = idx;
       return;
@@ -426,7 +427,7 @@ void grpc_slice_buffer_trim_end(grpc_slice_buffer* sb, size_t n,
       if (garbage) {
         grpc_slice_buffer_add_indexed(garbage, slice);
       } else {
-        grpc_slice_unref(slice);
+        grpc_slice_unref_internal(slice);
       }
       n -= slice_len;
       sb->count = idx;
@@ -448,7 +449,7 @@ grpc_slice grpc_slice_buffer_take_first(grpc_slice_buffer* sb) {
 void grpc_slice_buffer_remove_first(grpc_slice_buffer* sb) {
   GPR_DEBUG_ASSERT(sb->count > 0);
   sb->length -= GRPC_SLICE_LENGTH(sb->slices[0]);
-  grpc_slice_unref(sb->slices[0]);
+  grpc_slice_unref_internal(sb->slices[0]);
   sb->slices++;
   if (--sb->count == 0) {
     sb->slices = sb->base_slices;
