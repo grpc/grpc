@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/surface/call_trace.h"
 
 #include "absl/container/flat_hash_map.h"
@@ -29,9 +31,9 @@ const grpc_channel_filter* PromiseTracingFilterFor(
         : grpc_channel_filter{
               /* start_transport_stream_op_batch: */ grpc_call_next_op,
               /* make_call_promise: */
-              [](grpc_channel_element* elem, grpc_core::CallArgs call_args,
-                 grpc_core::NextPromiseFactory next_promise_factory)
-                  -> grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle> {
+              [](grpc_channel_element* elem, CallArgs call_args,
+                 NextPromiseFactory next_promise_factory)
+                  -> ArenaPromise<ServerMetadataHandle> {
                 auto* source_filter =
                     static_cast<const DerivedFilter*>(elem->filter)->filter;
                 gpr_log(

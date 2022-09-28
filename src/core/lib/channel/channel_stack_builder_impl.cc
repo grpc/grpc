@@ -26,12 +26,12 @@
 
 #include "absl/container/flat_hash_map.h"
 #include "absl/status/status.h"
-#include "channel_fwd.h"
 
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/alloc.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/error.h"
