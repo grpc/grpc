@@ -96,19 +96,6 @@ using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::Slice;
 using ::grpc_event_engine::experimental::SliceBuffer;
 
-#define GRPC_LOG_EVERY_N_SEC(n, format, ...)                                  \
-  do {                                                                        \
-    static std::atomic<gpr_cycle_counter> prev{0};                            \
-    gpr_cycle_counter now = gpr_get_cycle_counter();                          \
-    if ((grpc_core::Timestamp::FromCycleCounterRoundDown(now) -               \
-         grpc_core::Timestamp::FromCycleCounterRoundDown(prev.exchange(now))) \
-            .millis() > (n)*1000) {                                           \
-      gpr_log(GPR_INFO, format, __VA_ARGS__);                                 \
-    }                                                                         \
-  } while (0)
-
-#define CAP_IS_SUPPORTED(cap) (prctl(PR_CAPBSET_READ, (cap), 0) > 0)
-
 // A wrapper around sendmsg. It sends \a msg over \a fd and returns the number
 // of bytes sent.
 ssize_t TcpSend(int fd, const struct msghdr* msg, int* saved_errno,
@@ -121,6 +108,19 @@ ssize_t TcpSend(int fd, const struct msghdr* msg, int* saved_errno,
 }
 
 #ifdef GRPC_LINUX_ERRQUEUE
+
+#define GRPC_LOG_EVERY_N_SEC(n, format, ...)                                  \
+  do {                                                                        \
+    static std::atomic<gpr_cycle_counter> prev{0};                            \
+    gpr_cycle_counter now = gpr_get_cycle_counter();                          \
+    if ((grpc_core::Timestamp::FromCycleCounterRoundDown(now) -               \
+         grpc_core::Timestamp::FromCycleCounterRoundDown(prev.exchange(now))) \
+            .millis() > (n)*1000) {                                           \
+      gpr_log(GPR_INFO, format, __VA_ARGS__);                                 \
+    }                                                                         \
+  } while (0)
+
+#define CAP_IS_SUPPORTED(cap) (prctl(PR_CAPBSET_READ, (cap), 0) > 0)
 
 // Ulimit hard memlock controls per socket limit for maximum locked memory in
 // RAM.
