@@ -16,7 +16,6 @@
 
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 
-#include <arpa/inet.h>
 #include <errno.h>
 #include <inttypes.h>
 #include <limits.h>
@@ -33,6 +32,7 @@
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
+#include <arpa/inet.h>  // IWYU pragma: keep
 #ifdef GRPC_LINUX_TCP_H
 #include <linux/tcp.h>
 #else
@@ -47,6 +47,7 @@
 #include <atomic>
 #include <cstring>
 
+#include "absl/cleanup/cleanup.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 
@@ -335,7 +336,8 @@ absl::StatusOr<std::string> SockaddrToString(
   if (ip != nullptr &&
       inet_ntop(addr->sa_family, ip, ntop_buf, sizeof(ntop_buf)) != nullptr) {
     if (sin6_scope_id != 0) {
-      // Enclose sin6_scope_id with the format defined in RFC 6874 section 2.
+      // Enclose sin6_scope_id with the format defined in RFC 6874
+      // section 2.
       std::string host_with_scope =
           absl::StrFormat("%s%%%" PRIu32, ntop_buf, sin6_scope_id);
       out = grpc_core::JoinHostPort(host_with_scope, port);
@@ -346,7 +348,8 @@ absl::StatusOr<std::string> SockaddrToString(
     return absl::InvalidArgumentError(
         absl::StrCat("Unknown sockaddr family: ", addr->sa_family));
   }
-  // This is probably redundant, but we wouldn't want to log the wrong error.
+  // This is probably redundant, but we wouldn't want to log the wrong
+  // error.
   errno = save_errno;
   return out;
 }
@@ -549,8 +552,8 @@ bool PosixSocketWrapper::IsSocketReusePortSupported() {
     int s = socket(AF_INET, SOCK_STREAM, 0);
     if (s < 0) {
       // This might be an ipv6-only environment in which case
-      // 'socket(AF_INET,..)' call would fail. Try creating IPv6 socket in that
-      // case
+      // 'socket(AF_INET,..)' call would fail. Try creating IPv6 socket in
+      // that case
       s = socket(AF_INET6, SOCK_STREAM, 0);
     }
     if (s >= 0) {
@@ -925,16 +928,15 @@ bool PosixSocketWrapper::SetSocketDualStack() {
   GPR_ASSERT(false && "unimplemented");
 }
 
-static bool PosixSocketWrapper::IsSocketReusePortSupported() {
+bool PosixSocketWrapper::IsSocketReusePortSupported() {
   GPR_ASSERT(false && "unimplemented");
 }
 
-static bool PosixSocketWrapper::IsIpv6LoopbackAvailable() {
+bool PosixSocketWrapper::IsIpv6LoopbackAvailable() {
   GPR_ASSERT(false && "unimplemented");
 }
 
-static absl::StatusOr<PosixSocketWrapper>
-PosixSocketWrapper::CreateDualStackSocket(
+absl::StatusOr<PosixSocketWrapper> PosixSocketWrapper::CreateDualStackSocket(
     std::function<int(int /*domain*/, int /*type*/, int /*protocol*/)>
     /* socket_factory */,
     const experimental::EventEngine::ResolvedAddress& /*addr*/, int /*type*/,
@@ -947,7 +949,6 @@ PosixSocketWrapper::CreateAndPrepareTcpClientSocket(
     const PosixTcpOptions& /*options*/,
     const EventEngine::ResolvedAddress& /*target_addr*/) {
   GPR_ASSERT(false && "unimplemented");
-}
 }
 
 #endif /* GRPC_POSIX_SOCKET_UTILS_COMMON */
