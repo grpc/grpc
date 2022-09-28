@@ -3429,6 +3429,7 @@ grpc_cc_library(
         "match",
         "memory_quota",
         "notification",
+        "no_destruct",
         "orphanable",
         "packed_table",
         "percent_encoding",
