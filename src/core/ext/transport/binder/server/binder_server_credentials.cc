@@ -30,8 +30,7 @@ namespace {
 class BinderServerCredentialsImpl final : public ServerCredentials {
  public:
   explicit BinderServerCredentialsImpl(
-      std::shared_ptr<experimental::binder::SecurityPolicy>
-          security_policy)
+      std::shared_ptr<binder::SecurityPolicy> security_policy)
       : security_policy_(security_policy) {}
 #ifdef GPR_SUPPORT_BINDER_TRANSPORT
   int AddPortToServer(const std::string& addr, grpc_server* server) override {
@@ -58,14 +57,13 @@ class BinderServerCredentialsImpl final : public ServerCredentials {
  private:
   bool IsInsecure() const override { return true; }
 
-  std::shared_ptr<experimental::binder::SecurityPolicy> security_policy_;
+  std::shared_ptr<binder::SecurityPolicy> security_policy_;
 };
 
 }  // namespace
 
 std::shared_ptr<ServerCredentials> BinderServerCredentials(
-    std::shared_ptr<experimental::binder::SecurityPolicy>
-        security_policy) {
+    std::shared_ptr<binder::SecurityPolicy> security_policy) {
   GPR_ASSERT(security_policy != nullptr);
   return std::shared_ptr<ServerCredentials>(
       new BinderServerCredentialsImpl(security_policy));

@@ -30,7 +30,7 @@ namespace internal {
 grpc_channel* CreateDirectBinderChannelImplForTesting(
     std::unique_ptr<grpc_binder::Binder> endpoint_binder,
     const grpc_channel_args* args,
-    std::shared_ptr<experimental::binder::SecurityPolicy>
+    std::shared_ptr<::grpc::experimental::binder::SecurityPolicy>
         security_policy);
 
 // Creates a GRPC_CLIENT_CHANNEL channel

@@ -68,8 +68,7 @@ namespace experimental {
 std::shared_ptr<Channel> CreateBinderChannel(
     void* jni_env_void, jobject application, absl::string_view package_name,
     absl::string_view class_name,
-    std::shared_ptr<experimental::binder::SecurityPolicy>
-        security_policy) {
+    std::shared_ptr<binder::SecurityPolicy> security_policy) {
   return CreateCustomBinderChannel(jni_env_void, application, package_name,
                                    class_name, security_policy,
                                    ChannelArguments());
@@ -78,7 +77,7 @@ std::shared_ptr<Channel> CreateBinderChannel(
 std::shared_ptr<Channel> CreateCustomBinderChannel(
     void* jni_env_void, jobject application, absl::string_view package_name,
     absl::string_view class_name,
-    std::shared_ptr<experimental::binder::SecurityPolicy> security_policy,
+    std::shared_ptr<binder::SecurityPolicy> security_policy,
     const ChannelArguments& args) {
   return CreateCustomBinderChannel(
       jni_env_void, application,
@@ -89,17 +88,16 @@ std::shared_ptr<Channel> CreateCustomBinderChannel(
 
 std::shared_ptr<Channel> CreateBinderChannel(
     void* jni_env_void, jobject application, absl::string_view uri,
-    std::shared_ptr<experimental::binder::SecurityPolicy>
-        security_policy) {
+    std::shared_ptr<binder::SecurityPolicy> security_policy) {
   return CreateCustomBinderChannel(jni_env_void, application, uri,
                                    security_policy, ChannelArguments());
 }
 
 std::shared_ptr<Channel> CreateCustomBinderChannel(
     void* jni_env_void, jobject application, absl::string_view uri,
-    std::shared_ptr<experimental::binder::SecurityPolicy> security_policy,
+    std::shared_ptr<binder::SecurityPolicy> security_policy,
     const ChannelArguments& args) {
-  internal::GrpcLibrary init_lib;
+  ::grpc::internal::GrpcLibrary init_lib;
   init_lib.init();
 
   GPR_ASSERT(jni_env_void != nullptr);
@@ -140,9 +138,8 @@ std::shared_ptr<Channel> CreateCustomBinderChannel(
   grpc_binder::GetSecurityPolicySetting()->Set(connection_id, security_policy);
 
   auto channel = CreateChannelInternal(
-      "", internal::CreateClientBinderChannelImpl(new_args),
-      std::vector<
-          std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>());
+      "", ::grpc::internal::CreateClientBinderChannelImpl(new_args),
+      std::vector<std::unique_ptr<ClientInterceptorFactoryInterface>>());
 
   grpc_channel_args_destroy(new_args);
 
@@ -170,7 +167,7 @@ namespace experimental {
 
 std::shared_ptr<Channel> CreateBinderChannel(
     void*, jobject, absl::string_view, absl::string_view,
-    std::shared_ptr<experimental::binder::SecurityPolicy>) {
+    std::shared_ptr<binder::SecurityPolicy>) {
   gpr_log(GPR_ERROR,
           "This APK is compiled with Android API level = %d, which is not "
           "supported. See port_platform.h for supported versions.",
@@ -181,8 +178,7 @@ std::shared_ptr<Channel> CreateBinderChannel(
 
 std::shared_ptr<Channel> CreateCustomBinderChannel(
     void*, jobject, absl::string_view, absl::string_view,
-    std::shared_ptr<experimental::binder::SecurityPolicy>,
-    const ChannelArguments&) {
+    std::shared_ptr<binder::SecurityPolicy>, const ChannelArguments&) {
   gpr_log(GPR_ERROR,
           "This APK is compiled with Android API level = %d, which is not "
           "supported. See port_platform.h for supported versions.",
@@ -193,7 +189,7 @@ std::shared_ptr<Channel> CreateCustomBinderChannel(
 
 std::shared_ptr<Channel> CreateBinderChannel(
     void*, jobject, absl::string_view,
-    std::shared_ptr<experimental::binder::SecurityPolicy>) {
+    std::shared_ptr<binder::SecurityPolicy>) {
   gpr_log(GPR_ERROR,
           "This APK is compiled with Android API level = %d, which is not "
           "supported. See port_platform.h for supported versions.",
@@ -203,8 +199,7 @@ std::shared_ptr<Channel> CreateBinderChannel(
 }
 
 std::shared_ptr<Channel> CreateCustomBinderChannel(
-    void*, jobject, absl::string_view,
-    std::shared_ptr<experimental::binder::SecurityPolicy>,
+    void*, jobject, absl::string_view, std::shared_ptr<binder::SecurityPolicy>,
     const ChannelArguments&) {
   gpr_log(GPR_ERROR,
           "This APK is compiled with Android API level = %d, which is not "
