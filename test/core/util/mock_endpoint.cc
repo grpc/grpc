@@ -83,7 +83,6 @@ static void me_shutdown(grpc_endpoint* ep, grpc_error_handle why) {
     m->on_read = nullptr;
   }
   gpr_mu_unlock(&m->mu);
-  GRPC_ERROR_UNREF(why);
 }
 
 static void me_destroy(grpc_endpoint* ep) {

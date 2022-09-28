@@ -208,9 +208,7 @@ class grpc_local_channel_security_connector final
   }
 
   void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
-                         grpc_error_handle error) override {
-    GRPC_ERROR_UNREF(error);
-  }
+                         grpc_error_handle /*error*/) override {}
 
   grpc_core::ArenaPromise<absl::Status> CheckCallHost(
       absl::string_view host, grpc_auth_context*) override {
@@ -256,9 +254,7 @@ class grpc_local_server_security_connector final
   }
 
   void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
-                         grpc_error_handle error) override {
-    GRPC_ERROR_UNREF(error);
-  }
+                         grpc_error_handle /*error*/) override {}
 
   int cmp(const grpc_security_connector* other) const override {
     return server_security_connector_cmp(

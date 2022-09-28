@@ -259,7 +259,7 @@ static void on_read(void* user_data, grpc_error_handle error) {
     uint8_t* cur = GRPC_SLICE_START_PTR(ep->read_staging_buffer);
     uint8_t* end = GRPC_SLICE_END_PTR(ep->read_staging_buffer);
 
-    if (!GRPC_ERROR_IS_NONE(error)) {
+    if (!error.ok()) {
       grpc_slice_buffer_reset_and_unref(ep->read_buffer);
       call_read_cb(ep, GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                            "Secure read failed", &error, 1));

@@ -548,8 +548,11 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpEndpointError) {
                 kDefaultEdsServiceName, backends_[0]->port(),
                 kDefaultLocalityWeight)),
             ClientResourceStatus::NACKED,
-            EqUpdateFailureState(::testing::HasSubstr("Empty locality"),
-                                 "2"))));
+            EqUpdateFailureState(
+                ::testing::HasSubstr(
+                    "errors parsing EDS resource: ["
+                    "field:endpoints[0].locality error:field not present]"),
+                "2"))));
     if (ok) return;  // TEST PASSED!
     gpr_sleep_until(
         grpc_timeout_milliseconds_to_deadline(kFetchIntervalMilliseconds));

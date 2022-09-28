@@ -48,10 +48,7 @@ PemKeyCertPairList MakeKeyCertPairsType2() {
 class TestCertificatesWatcher
     : public grpc_tls_certificate_distributor::TlsCertificatesWatcherInterface {
  public:
-  ~TestCertificatesWatcher() override {
-    GRPC_ERROR_UNREF(root_cert_error_);
-    GRPC_ERROR_UNREF(identity_cert_error_);
-  }
+  ~TestCertificatesWatcher() override {}
 
   void OnCertificatesChanged(
       absl::optional<absl::string_view> root_certs,
@@ -60,14 +57,12 @@ class TestCertificatesWatcher
       if (!root_certs_.has_value() ||
           (root_certs_.has_value() &&
            std::string(root_certs.value()) != root_certs_.value())) {
-        GRPC_ERROR_UNREF(root_cert_error_);
         root_cert_error_ = GRPC_ERROR_NONE;
       }
       root_certs_.emplace(std::string(root_certs.value()));
     }
     if (key_cert_pairs.has_value()) {
       if (key_cert_pairs != key_cert_pairs_) {
-        GRPC_ERROR_UNREF(identity_cert_error_);
         identity_cert_error_ = GRPC_ERROR_NONE;
         key_cert_pairs_ = key_cert_pairs;
       }
@@ -76,9 +71,7 @@ class TestCertificatesWatcher
 
   void OnError(grpc_error_handle root_cert_error,
                grpc_error_handle identity_cert_error) override {
-    GRPC_ERROR_UNREF(root_cert_error_);
     root_cert_error_ = root_cert_error;
-    GRPC_ERROR_UNREF(identity_cert_error_);
     identity_cert_error_ = identity_cert_error;
   }
 
