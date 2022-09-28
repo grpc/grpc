@@ -71,8 +71,7 @@ namespace {
 using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 
-constexpr Duration kXdsClusterManagerChildRetentionInterval =
-    Duration::Minutes(15);
+constexpr Duration kChildRetentionInterval = Duration::Minutes(15);
 constexpr absl::string_view kXdsClusterManager =
     "xds_cluster_manager_experimental";
 
@@ -548,7 +547,7 @@ void XdsClusterManagerLb::ClusterChild::DeactivateLocked() {
   // Set the child weight to 0 so that future picker won't contain this child.
   // Start a timer to delete the child.
   delayed_removal_timer_handle_ = engine_->RunAfter(
-      kXdsClusterManagerChildRetentionInterval,
+      kChildRetentionInterval,
       [self = Ref(DEBUG_LOCATION, "ClusterChild+timer")]() mutable {
         self->xds_cluster_manager_policy_->work_serializer()->Run(
             [self = std::move(self)]() { self->OnDelayedRemovalTimerLocked(); },
