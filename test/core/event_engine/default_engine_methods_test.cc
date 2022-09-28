@@ -79,7 +79,7 @@ TEST_F(DefaultEngineTest, SharedPtrGlobalEventEngineLifetimesAreValid) {
   int create_count = 0;
   grpc_event_engine::experimental::SetEventEngineFactory([&create_count] {
     ++create_count;
-    return absl::make_unique<FakeEventEngine>();
+    return std::make_unique<FakeEventEngine>();
   });
   std::shared_ptr<EventEngine> ee2;
   {

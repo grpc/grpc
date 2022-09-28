@@ -426,7 +426,7 @@ class Server : public InternallyRefCounted<Server>,
       MaybeFinishShutdown();
       return nullptr;
     }
-    requests_complete_ = absl::make_unique<Notification>();
+    requests_complete_ = std::make_unique<Notification>();
     return requests_complete_.get();
   }
 

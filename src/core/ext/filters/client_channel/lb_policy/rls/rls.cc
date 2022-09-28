@@ -727,7 +727,7 @@ RlsLb::ChildPolicyWrapper::ChildPolicyWrapper(RefCountedPtr<RlsLb> lb_policy,
                                                      : nullptr),
       lb_policy_(lb_policy),
       target_(std::move(target)),
-      picker_(absl::make_unique<QueuePicker>(std::move(lb_policy))) {
+      picker_(std::make_unique<QueuePicker>(std::move(lb_policy))) {
   lb_policy_->child_policy_map_.emplace(target_, this);
 }
 
@@ -808,7 +808,7 @@ void RlsLb::ChildPolicyWrapper::StartUpdate() {
               config.status().ToString().c_str());
     }
     pending_config_.reset();
-    picker_ = absl::make_unique<TransientFailurePicker>(
+    picker_ = std::make_unique<TransientFailurePicker>(
         absl::UnavailableError(config.status().message()));
     child_policy_.reset();
   } else {
@@ -824,7 +824,7 @@ absl::Status RlsLb::ChildPolicyWrapper::MaybeFinishUpdate() {
   if (child_policy_ == nullptr) {
     Args create_args;
     create_args.work_serializer = lb_policy_->work_serializer();
-    create_args.channel_control_helper = absl::make_unique<ChildPolicyHelper>(
+    create_args.channel_control_helper = std::make_unique<ChildPolicyHelper>(
         WeakRef(DEBUG_LOCATION, "ChildPolicyHelper"));
     create_args.args = lb_policy_->channel_args_;
     child_policy_ = MakeOrphanable<ChildPolicyHandler>(std::move(create_args),
@@ -1155,7 +1155,7 @@ void RlsLb::Cache::Entry::BackoffTimer::OnBackoffTimer(
 //
 
 std::unique_ptr<BackOff> MakeCacheEntryBackoff() {
-  return absl::make_unique<BackOff>(
+  return std::make_unique<BackOff>(
       BackOff::Options()
           .set_initial_backoff(kCacheBackoffInitial)
           .set_multiplier(kCacheBackoffMultiplier)
@@ -2139,7 +2139,7 @@ void RlsLb::UpdatePickerLocked() {
     status = absl::UnavailableError("no children available");
   }
   channel_control_helper()->UpdateState(
-      state, status, absl::make_unique<Picker>(Ref(DEBUG_LOCATION, "Picker")));
+      state, status, std::make_unique<Picker>(Ref(DEBUG_LOCATION, "Picker")));
 }
 
 //
@@ -2503,7 +2503,7 @@ class RlsLbFactory : public LoadBalancingPolicyFactory {
 
 void RegisterRlsLbPolicy(CoreConfiguration::Builder* builder) {
   builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
-      absl::make_unique<RlsLbFactory>());
+      std::make_unique<RlsLbFactory>());
 }
 
 }  // namespace grpc_core

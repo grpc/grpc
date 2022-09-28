@@ -193,7 +193,7 @@ Rbac::Permission ParsePermission(const Json::Object& permission_json,
           continue;
         }
         std::vector<grpc_error_handle> permission_error_list;
-        permissions.emplace_back(absl::make_unique<Rbac::Permission>(
+        permissions.emplace_back(std::make_unique<Rbac::Permission>(
             ParsePermission(*permission_json, &permission_error_list)));
         if (!permission_error_list.empty()) {
           error_list->push_back(GRPC_ERROR_CREATE_FROM_VECTOR_AND_CPP_STRING(
@@ -329,7 +329,7 @@ Rbac::Principal ParsePrincipal(const Json::Object& principal_json,
           continue;
         }
         std::vector<grpc_error_handle> principal_error_list;
-        principals.emplace_back(absl::make_unique<Rbac::Principal>(
+        principals.emplace_back(std::make_unique<Rbac::Principal>(
             ParsePrincipal(*principal_json, &principal_error_list)));
         if (!principal_error_list.empty()) {
           error_list->push_back(GRPC_ERROR_CREATE_FROM_VECTOR_AND_CPP_STRING(
@@ -489,7 +489,7 @@ Rbac::Policy ParsePolicy(const Json::Object& policy_json,
         continue;
       }
       std::vector<grpc_error_handle> permission_error_list;
-      permissions.emplace_back(absl::make_unique<Rbac::Permission>(
+      permissions.emplace_back(std::make_unique<Rbac::Permission>(
           ParsePermission(*permission_json, &permission_error_list)));
       if (!permission_error_list.empty()) {
         error_list->push_back(GRPC_ERROR_CREATE_FROM_VECTOR_AND_CPP_STRING(
@@ -509,7 +509,7 @@ Rbac::Policy ParsePolicy(const Json::Object& policy_json,
         continue;
       }
       std::vector<grpc_error_handle> principal_error_list;
-      principals.emplace_back(absl::make_unique<Rbac::Principal>(
+      principals.emplace_back(std::make_unique<Rbac::Principal>(
           ParsePrincipal(*principal_json, &principal_error_list)));
       if (!principal_error_list.empty()) {
         error_list->push_back(GRPC_ERROR_CREATE_FROM_VECTOR_AND_CPP_STRING(
@@ -604,12 +604,12 @@ RbacServiceConfigParser::ParsePerMethodParams(const ChannelArgs& args,
     return status;
   }
   if (rbac_policies.empty()) return nullptr;
-  return absl::make_unique<RbacMethodParsedConfig>(std::move(rbac_policies));
+  return std::make_unique<RbacMethodParsedConfig>(std::move(rbac_policies));
 }
 
 void RbacServiceConfigParser::Register(CoreConfiguration::Builder* builder) {
   builder->service_config_parser()->RegisterParser(
-      absl::make_unique<RbacServiceConfigParser>());
+      std::make_unique<RbacServiceConfigParser>());
 }
 
 size_t RbacServiceConfigParser::ParserIndex() {

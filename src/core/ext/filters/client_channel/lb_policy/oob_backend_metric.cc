@@ -348,7 +348,7 @@ void OrcaProducer::MaybeStartStreamLocked() {
   if (connected_subchannel_ == nullptr) return;
   stream_client_ = MakeOrphanable<SubchannelStreamClient>(
       connected_subchannel_, subchannel_->pollset_set(),
-      absl::make_unique<OrcaStreamEventHandler>(WeakRef(), report_interval_),
+      std::make_unique<OrcaStreamEventHandler>(WeakRef(), report_interval_),
       GRPC_TRACE_FLAG_ENABLED(grpc_orca_client_trace) ? "OrcaClient" : nullptr);
 }
 
@@ -410,7 +410,7 @@ void OrcaWatcher::SetSubchannel(Subchannel* subchannel) {
 std::unique_ptr<SubchannelInterface::DataWatcherInterface>
 MakeOobBackendMetricWatcher(Duration report_interval,
                             std::unique_ptr<OobBackendMetricWatcher> watcher) {
-  return absl::make_unique<OrcaWatcher>(report_interval, std::move(watcher));
+  return std::make_unique<OrcaWatcher>(report_interval, std::move(watcher));
 }
 
 }  // namespace grpc_core

@@ -72,7 +72,7 @@ static void prepare_test(int is_client) {
   grpc_metadata_array_init(&g_state.trailing_metadata_recv);
   g_state.deadline = grpc_timeout_seconds_to_deadline(5);
   g_state.cq = grpc_completion_queue_create_for_next(nullptr);
-  g_state.cqv = absl::make_unique<grpc_core::CqVerifier>(g_state.cq);
+  g_state.cqv = std::make_unique<grpc_core::CqVerifier>(g_state.cq);
   g_state.details = grpc_empty_slice();
   memset(g_state.ops, 0, sizeof(g_state.ops));
 

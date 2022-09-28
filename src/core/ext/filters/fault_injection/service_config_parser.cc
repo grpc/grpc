@@ -168,14 +168,14 @@ FaultInjectionServiceConfigParser::ParsePerMethodParams(const ChannelArgs& args,
     return status;
   }
   if (fault_injection_policies.empty()) return nullptr;
-  return absl::make_unique<FaultInjectionMethodParsedConfig>(
+  return std::make_unique<FaultInjectionMethodParsedConfig>(
       std::move(fault_injection_policies));
 }
 
 void FaultInjectionServiceConfigParser::Register(
     CoreConfiguration::Builder* builder) {
   builder->service_config_parser()->RegisterParser(
-      absl::make_unique<FaultInjectionServiceConfigParser>());
+      std::make_unique<FaultInjectionServiceConfigParser>());
 }
 
 size_t FaultInjectionServiceConfigParser::ParserIndex() {

@@ -92,7 +92,7 @@ absl::StatusOr<std::unique_ptr<WakeupFd>>
 EventFdWakeupFd::CreateEventFdWakeupFd() {
   static bool kIsEventFdWakeupFdSupported = EventFdWakeupFd::IsSupported();
   if (kIsEventFdWakeupFdSupported) {
-    auto event_fd_wakeup_fd = absl::make_unique<EventFdWakeupFd>();
+    auto event_fd_wakeup_fd = std::make_unique<EventFdWakeupFd>();
     auto status = event_fd_wakeup_fd->Init();
     if (status.ok()) {
       return std::unique_ptr<WakeupFd>(std::move(event_fd_wakeup_fd));

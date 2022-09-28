@@ -655,10 +655,10 @@ RefCountedPtr<Handshaker> SecurityHandshakerCreate(
 void SecurityRegisterHandshakerFactories(CoreConfiguration::Builder* builder) {
   builder->handshaker_registry()->RegisterHandshakerFactory(
       false /* at_start */, HANDSHAKER_CLIENT,
-      absl::make_unique<ClientSecurityHandshakerFactory>());
+      std::make_unique<ClientSecurityHandshakerFactory>());
   builder->handshaker_registry()->RegisterHandshakerFactory(
       false /* at_start */, HANDSHAKER_SERVER,
-      absl::make_unique<ServerSecurityHandshakerFactory>());
+      std::make_unique<ServerSecurityHandshakerFactory>());
 }
 
 }  // namespace grpc_core

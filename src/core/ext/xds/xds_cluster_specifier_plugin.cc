@@ -140,7 +140,7 @@ void XdsClusterSpecifierPluginRegistry::RegisterPlugin(
 
 void XdsClusterSpecifierPluginRegistry::Init() {
   g_plugin_registry = new PluginRegistryMap;
-  RegisterPlugin(absl::make_unique<XdsRouteLookupClusterSpecifierPlugin>(),
+  RegisterPlugin(std::make_unique<XdsRouteLookupClusterSpecifierPlugin>(),
                  kXdsRouteLookupClusterSpecifierPluginConfigName);
 }
 

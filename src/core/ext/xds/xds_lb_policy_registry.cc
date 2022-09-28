@@ -272,13 +272,13 @@ absl::StatusOr<Json::Array> XdsLbPolicyRegistry::ConvertXdsLbPolicyConfig(
 XdsLbPolicyRegistry::XdsLbPolicyRegistry() {
   policy_config_factories_.emplace(
       RingHashLbPolicyConfigFactory::Type(),
-      absl::make_unique<RingHashLbPolicyConfigFactory>());
+      std::make_unique<RingHashLbPolicyConfigFactory>());
   policy_config_factories_.emplace(
       RoundRobinLbPolicyConfigFactory::Type(),
-      absl::make_unique<RoundRobinLbPolicyConfigFactory>());
+      std::make_unique<RoundRobinLbPolicyConfigFactory>());
   policy_config_factories_.emplace(
       WrrLocalityLbPolicyConfigFactory::Type(),
-      absl::make_unique<WrrLocalityLbPolicyConfigFactory>());
+      std::make_unique<WrrLocalityLbPolicyConfigFactory>());
 }
 
 XdsLbPolicyRegistry* XdsLbPolicyRegistry::Get() {

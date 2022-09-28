@@ -36,7 +36,7 @@ struct InterpreterOptions {
 
 inline std::unique_ptr<CelExpressionBuilder> CreateCelExpressionBuilder(
     const InterpreterOptions& options) {
-  return absl::make_unique<FlatExprBuilder>();
+  return std::make_unique<FlatExprBuilder>();
 }
 
 }  // namespace mock_cel

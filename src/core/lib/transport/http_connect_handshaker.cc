@@ -394,7 +394,7 @@ class HttpConnectHandshakerFactory : public HandshakerFactory {
 void RegisterHttpConnectHandshaker(CoreConfiguration::Builder* builder) {
   builder->handshaker_registry()->RegisterHandshakerFactory(
       true /* at_start */, HANDSHAKER_CLIENT,
-      absl::make_unique<HttpConnectHandshakerFactory>());
+      std::make_unique<HttpConnectHandshakerFactory>());
 }
 
 }  // namespace grpc_core

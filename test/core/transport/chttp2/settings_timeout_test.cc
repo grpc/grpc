@@ -87,7 +87,7 @@ class ServerThread {
     grpc_server_register_completion_queue(server_, cq_, nullptr);
     grpc_server_start(server_);
     thread_ =
-        absl::make_unique<std::thread>(std::bind(&ServerThread::Serve, this));
+        std::make_unique<std::thread>(std::bind(&ServerThread::Serve, this));
     grpc_resource_quota_unref(
         static_cast<grpc_resource_quota*>(a[1].value.pointer.p));
   }

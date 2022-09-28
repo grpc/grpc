@@ -54,11 +54,11 @@ class BinderTransportTest : public ::testing::Test {
       : arena_(grpc_core::Arena::Create(/* initial_size = */ 1,
                                         g_memory_allocator)),
         transport_(grpc_create_binder_transport_client(
-            absl::make_unique<NiceMock<MockBinder>>(),
+            std::make_unique<NiceMock<MockBinder>>(),
             std::make_shared<
                 grpc::experimental::binder::UntrustedSecurityPolicy>())) {
     auto* gbt = reinterpret_cast<grpc_binder_transport*>(transport_);
-    gbt->wire_writer = absl::make_unique<MockWireWriter>();
+    gbt->wire_writer = std::make_unique<MockWireWriter>();
     GRPC_STREAM_REF_INIT(&ref_, 1, nullptr, nullptr, "phony ref");
   }
 

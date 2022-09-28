@@ -111,13 +111,13 @@ void XdsHttpFilterRegistry::PopulateSymtab(upb_DefPool* symtab) {
 void XdsHttpFilterRegistry::Init() {
   g_filters = new FilterOwnerList;
   g_filter_registry = new FilterRegistryMap;
-  RegisterFilter(absl::make_unique<XdsHttpRouterFilter>(),
+  RegisterFilter(std::make_unique<XdsHttpRouterFilter>(),
                  {kXdsHttpRouterFilterConfigName});
-  RegisterFilter(absl::make_unique<XdsHttpFaultFilter>(),
+  RegisterFilter(std::make_unique<XdsHttpFaultFilter>(),
                  {kXdsHttpFaultFilterConfigName});
-  RegisterFilter(absl::make_unique<XdsHttpRbacFilter>(),
+  RegisterFilter(std::make_unique<XdsHttpRbacFilter>(),
                  {kXdsHttpRbacFilterConfigName});
-  RegisterFilter(absl::make_unique<XdsHttpRbacFilter>(),
+  RegisterFilter(std::make_unique<XdsHttpRbacFilter>(),
                  {kXdsHttpRbacFilterConfigOverrideName});
 }
 

@@ -77,8 +77,8 @@ class FlowControlFuzzer {
  public:
   explicit FlowControlFuzzer(bool enable_bdp) {
     ExecCtx exec_ctx;
-    tfc_ = absl::make_unique<TransportFlowControl>("fuzzer", enable_bdp,
-                                                   &memory_owner_);
+    tfc_ = std::make_unique<TransportFlowControl>("fuzzer", enable_bdp,
+                                                  &memory_owner_);
   }
 
   ~FlowControlFuzzer() {

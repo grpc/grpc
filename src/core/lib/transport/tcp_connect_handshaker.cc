@@ -241,7 +241,7 @@ class TCPConnectHandshakerFactory : public HandshakerFactory {
 void RegisterTCPConnectHandshaker(CoreConfiguration::Builder* builder) {
   builder->handshaker_registry()->RegisterHandshakerFactory(
       true /* at_start */, HANDSHAKER_CLIENT,
-      absl::make_unique<TCPConnectHandshakerFactory>());
+      std::make_unique<TCPConnectHandshakerFactory>());
 }
 
 }  // namespace grpc_core

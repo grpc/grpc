@@ -96,7 +96,7 @@ absl::Status ServiceConfigImpl::ParseJsonMethodConfig(const ChannelArgs& args,
     errors.emplace_back(parsed_configs_or.status().message());
   } else {
     auto parsed_configs =
-        absl::make_unique<ServiceConfigParser::ParsedConfigVector>(
+        std::make_unique<ServiceConfigParser::ParsedConfigVector>(
             std::move(*parsed_configs_or));
     parsed_method_config_vectors_storage_.push_back(std::move(parsed_configs));
     vector_ptr = parsed_method_config_vectors_storage_.back().get();

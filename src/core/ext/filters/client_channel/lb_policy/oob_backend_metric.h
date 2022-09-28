@@ -38,7 +38,7 @@ namespace grpc_core {
 // subchannel like this:
 //   subchannel->AddDataWatcher(
 //       MakeOobBackendMetricWatcher(
-//           absl::make_unique<MyOobBackendMetricWatcherSubclass>(...)));
+//           std::make_unique<MyOobBackendMetricWatcherSubclass>(...)));
 
 class OobBackendMetricWatcher {
  public:

@@ -127,7 +127,7 @@ class ServerAddressWeightAttribute : public ServerAddress::AttributeInterface {
   uint32_t weight() const { return weight_; }
 
   std::unique_ptr<AttributeInterface> Copy() const override {
-    return absl::make_unique<ServerAddressWeightAttribute>(weight_);
+    return std::make_unique<ServerAddressWeightAttribute>(weight_);
   }
 
   int Cmp(const AttributeInterface* other) const override {

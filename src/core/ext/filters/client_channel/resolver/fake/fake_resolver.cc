@@ -362,7 +362,7 @@ class FakeResolverFactory : public ResolverFactory {
 
 void RegisterFakeResolver(CoreConfiguration::Builder* builder) {
   builder->resolver_registry()->RegisterResolverFactory(
-      absl::make_unique<FakeResolverFactory>());
+      std::make_unique<FakeResolverFactory>());
 }
 
 }  // namespace grpc_core

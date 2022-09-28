@@ -29,7 +29,7 @@ namespace grpc_event_engine {
 namespace experimental {
 
 std::unique_ptr<EventEngine> DefaultEventEngineFactory() {
-  return absl::make_unique<WindowsEventEngine>();
+  return std::make_unique<WindowsEventEngine>();
 }
 
 }  // namespace experimental
@@ -41,7 +41,7 @@ namespace grpc_event_engine {
 namespace experimental {
 
 std::unique_ptr<EventEngine> DefaultEventEngineFactory() {
-  return absl::make_unique<PosixEventEngine>();
+  return std::make_unique<PosixEventEngine>();
 }
 
 }  // namespace experimental

@@ -766,7 +766,7 @@ Chttp2ServerListener::~Chttp2ServerListener() {
 void Chttp2ServerListener::Start(
     Server* /*server*/, const std::vector<grpc_pollset*>* /* pollsets */) {
   if (server_->config_fetcher() != nullptr) {
-    auto watcher = absl::make_unique<ConfigFetcherWatcher>(Ref());
+    auto watcher = std::make_unique<ConfigFetcherWatcher>(Ref());
     config_fetcher_watcher_ = watcher.get();
     server_->config_fetcher()->StartWatch(
         grpc_sockaddr_to_string(&resolved_address_, false).value(),

@@ -359,7 +359,7 @@ size_t SumSlice(const Slice& slice) {
 }
 
 TEST(SliceTest, ExternalAsOwned) {
-  auto external_string = absl::make_unique<std::string>(RandomString(1024));
+  auto external_string = std::make_unique<std::string>(RandomString(1024));
   Slice slice = Slice::FromExternalString(*external_string);
   const auto initial_sum = SumSlice(slice);
   Slice owned = slice.AsOwned();

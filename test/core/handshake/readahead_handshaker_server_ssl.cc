@@ -84,7 +84,7 @@ TEST(HandshakeServerWithReadaheadHandshakerTest, MainTest) {
         BuildCoreConfiguration(builder);
         builder->handshaker_registry()->RegisterHandshakerFactory(
             true /* at_start */, grpc_core::HANDSHAKER_SERVER,
-            absl::make_unique<grpc_core::ReadAheadHandshakerFactory>());
+            std::make_unique<grpc_core::ReadAheadHandshakerFactory>());
       });
 
   grpc_init();

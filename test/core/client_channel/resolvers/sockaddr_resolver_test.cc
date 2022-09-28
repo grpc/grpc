@@ -52,7 +52,7 @@ static void test_succeeds(grpc_core::ResolverFactory* factory,
   grpc_core::ResolverArgs args;
   args.uri = std::move(*uri);
   args.work_serializer = *g_work_serializer;
-  args.result_handler = absl::make_unique<ResultHandler>();
+  args.result_handler = std::make_unique<ResultHandler>();
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
       factory->CreateResolver(std::move(args));
   ASSERT_NE(resolver, nullptr);
@@ -75,7 +75,7 @@ static void test_fails(grpc_core::ResolverFactory* factory,
   grpc_core::ResolverArgs args;
   args.uri = std::move(*uri);
   args.work_serializer = *g_work_serializer;
-  args.result_handler = absl::make_unique<ResultHandler>();
+  args.result_handler = std::make_unique<ResultHandler>();
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
       factory->CreateResolver(std::move(args));
   ASSERT_EQ(resolver, nullptr);

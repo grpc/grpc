@@ -119,7 +119,7 @@ static void finish_resolve(void* arg, grpc_error_handle error) {
   addr_req* r = static_cast<addr_req*>(arg);
 
   if (error.ok() && 0 == strcmp(r->addr, "server")) {
-    *r->addresses = absl::make_unique<grpc_core::ServerAddressList>();
+    *r->addresses = std::make_unique<grpc_core::ServerAddressList>();
     grpc_resolved_address fake_resolved_address;
     GPR_ASSERT(
         grpc_parse_ipv4_hostport("1.2.3.4:5", &fake_resolved_address, false));
@@ -823,7 +823,7 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
 
   grpc_event_engine::experimental::SetEventEngineFactory(
       [actions = msg.event_engine_actions()]() {
-        return absl::make_unique<FuzzingEventEngine>(
+        return std::make_unique<FuzzingEventEngine>(
             FuzzingEventEngine::Options(), actions);
       });
   auto engine =
@@ -836,7 +836,7 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
     grpc_core::Executor::SetThreadingAll(false);
   }
   grpc_core::ResetDNSResolver(
-      absl::make_unique<FuzzerDNSResolver>(engine.get()));
+      std::make_unique<FuzzerDNSResolver>(engine.get()));
   grpc_dns_lookup_hostname_ares = my_dns_lookup_ares;
   grpc_cancel_ares_request = my_cancel_ares_request;
 

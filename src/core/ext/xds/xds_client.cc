@@ -880,7 +880,7 @@ XdsClient::ChannelState::AdsCallState::AdsCallState(
           : "/envoy.service.discovery.v2.AggregatedDiscoveryService/"
             "StreamAggregatedResources";
   call_ = chand()->transport_->CreateStreamingCall(
-      method, absl::make_unique<StreamEventHandler>(
+      method, std::make_unique<StreamEventHandler>(
                   // Passing the initial ref here.  This ref will go away when
                   // the StreamEventHandler is destroyed.
                   RefCountedPtr<AdsCallState>(this)));
@@ -1269,7 +1269,7 @@ XdsClient::ChannelState::LrsCallState::LrsCallState(
                            : "/envoy.service.load_stats.v2."
                              "LoadReportingService/StreamLoadStats";
   call_ = chand()->transport_->CreateStreamingCall(
-      method, absl::make_unique<StreamEventHandler>(
+      method, std::make_unique<StreamEventHandler>(
                   // Passing the initial ref here.  This ref will go away when
                   // the StreamEventHandler is destroyed.
                   RefCountedPtr<LrsCallState>(this)));

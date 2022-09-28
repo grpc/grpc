@@ -179,14 +179,14 @@ class UnixAbstractResolverFactory : public ResolverFactory {
 
 void RegisterSockaddrResolver(CoreConfiguration::Builder* builder) {
   builder->resolver_registry()->RegisterResolverFactory(
-      absl::make_unique<IPv4ResolverFactory>());
+      std::make_unique<IPv4ResolverFactory>());
   builder->resolver_registry()->RegisterResolverFactory(
-      absl::make_unique<IPv6ResolverFactory>());
+      std::make_unique<IPv6ResolverFactory>());
 #ifdef GRPC_HAVE_UNIX_SOCKET
   builder->resolver_registry()->RegisterResolverFactory(
-      absl::make_unique<UnixResolverFactory>());
+      std::make_unique<UnixResolverFactory>());
   builder->resolver_registry()->RegisterResolverFactory(
-      absl::make_unique<UnixAbstractResolverFactory>());
+      std::make_unique<UnixAbstractResolverFactory>());
 #endif
 }
 

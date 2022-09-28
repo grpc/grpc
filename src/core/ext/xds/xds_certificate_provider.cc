@@ -189,7 +189,7 @@ void XdsCertificateProvider::ClusterCertificateState::
 void XdsCertificateProvider::ClusterCertificateState::UpdateRootCertWatcher(
     const std::string& cert_name,
     grpc_tls_certificate_distributor* root_cert_distributor) {
-  auto watcher = absl::make_unique<RootCertificatesWatcher>(
+  auto watcher = std::make_unique<RootCertificatesWatcher>(
       xds_certificate_provider_->distributor_, cert_name);
   root_cert_watcher_ = watcher.get();
   root_cert_distributor->WatchTlsCertificates(std::move(watcher),
@@ -199,7 +199,7 @@ void XdsCertificateProvider::ClusterCertificateState::UpdateRootCertWatcher(
 void XdsCertificateProvider::ClusterCertificateState::UpdateIdentityCertWatcher(
     const std::string& cert_name,
     grpc_tls_certificate_distributor* identity_cert_distributor) {
-  auto watcher = absl::make_unique<IdentityCertificatesWatcher>(
+  auto watcher = std::make_unique<IdentityCertificatesWatcher>(
       xds_certificate_provider_->distributor_, cert_name);
   identity_cert_watcher_ = watcher.get();
   identity_cert_distributor->WatchTlsCertificates(
@@ -288,10 +288,10 @@ void XdsCertificateProvider::UpdateRootCertNameAndDistributor(
   MutexLock lock(&mu_);
   auto it = certificate_state_map_.find(cert_name);
   if (it == certificate_state_map_.end()) {
-    it = certificate_state_map_
-             .emplace(cert_name,
-                      absl::make_unique<ClusterCertificateState>(this))
-             .first;
+    it =
+        certificate_state_map_
+            .emplace(cert_name, std::make_unique<ClusterCertificateState>(this))
+            .first;
   }
   it->second->UpdateRootCertNameAndDistributor(cert_name, root_cert_name,
                                                root_cert_distributor);
@@ -313,10 +313,10 @@ void XdsCertificateProvider::UpdateIdentityCertNameAndDistributor(
   MutexLock lock(&mu_);
   auto it = certificate_state_map_.find(cert_name);
   if (it == certificate_state_map_.end()) {
-    it = certificate_state_map_
-             .emplace(cert_name,
-                      absl::make_unique<ClusterCertificateState>(this))
-             .first;
+    it =
+        certificate_state_map_
+            .emplace(cert_name, std::make_unique<ClusterCertificateState>(this))
+            .first;
   }
   it->second->UpdateIdentityCertNameAndDistributor(
       cert_name, identity_cert_name, identity_cert_distributor);
@@ -364,10 +364,10 @@ void XdsCertificateProvider::WatchStatusCallback(std::string cert_name,
   MutexLock lock(&mu_);
   auto it = certificate_state_map_.find(cert_name);
   if (it == certificate_state_map_.end()) {
-    it = certificate_state_map_
-             .emplace(cert_name,
-                      absl::make_unique<ClusterCertificateState>(this))
-             .first;
+    it =
+        certificate_state_map_
+            .emplace(cert_name, std::make_unique<ClusterCertificateState>(this))
+            .first;
   }
   it->second->WatchStatusCallback(cert_name, root_being_watched,
                                   identity_being_watched);

@@ -70,11 +70,10 @@ class Epoll1EventHandle : public EventHandle {
       : fd_(fd),
         list_(this),
         poller_(poller),
-        read_closure_(absl::make_unique<LockfreeEvent>(poller->GetScheduler())),
-        write_closure_(
-            absl::make_unique<LockfreeEvent>(poller->GetScheduler())),
+        read_closure_(std::make_unique<LockfreeEvent>(poller->GetScheduler())),
+        write_closure_(std::make_unique<LockfreeEvent>(poller->GetScheduler())),
         error_closure_(
-            absl::make_unique<LockfreeEvent>(poller->GetScheduler())) {
+            std::make_unique<LockfreeEvent>(poller->GetScheduler())) {
     read_closure_->InitEvent();
     write_closure_->InitEvent();
     error_closure_->InitEvent();

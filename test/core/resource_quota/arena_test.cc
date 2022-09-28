@@ -56,7 +56,7 @@ TEST(ArenaTest, ManagedNew) {
   ExecCtx exec_ctx;
   Arena* arena = Arena::Create(1, g_memory_allocator);
   for (int i = 0; i < 100; i++) {
-    arena->ManagedNew<std::unique_ptr<int>>(absl::make_unique<int>(i));
+    arena->ManagedNew<std::unique_ptr<int>>(std::make_unique<int>(i));
   }
   arena->Destroy();
 }
@@ -157,7 +157,7 @@ TEST(ArenaTest, ConcurrentManagedNew) {
           gpr_event_wait(&a->ev_start, gpr_inf_future(GPR_CLOCK_REALTIME));
           for (size_t i = 0; i < concurrent_test_iterations(); i++) {
             a->arena->ManagedNew<std::unique_ptr<int>>(
-                absl::make_unique<int>(static_cast<int>(i)));
+                std::make_unique<int>(static_cast<int>(i)));
           }
         },
         &args);

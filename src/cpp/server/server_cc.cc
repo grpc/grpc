@@ -827,7 +827,7 @@ class Server::SyncRequestThreadManager : public grpc::ThreadManager {
 
   void AddUnknownSyncMethod() {
     if (has_sync_method_) {
-      unknown_method_ = absl::make_unique<grpc::internal::RpcServiceMethod>(
+      unknown_method_ = std::make_unique<grpc::internal::RpcServiceMethod>(
           "unknown", grpc::internal::RpcMethod::BIDI_STREAMING,
           new grpc::internal::UnknownMethodHandler(kUnknownRpcMethod));
       grpc_core::Server::FromC(server_->server())
@@ -1149,7 +1149,7 @@ void Server::Start(grpc::ServerCompletionQueue** cqs, size_t num_cqs) {
   // explicit one.
   if (health_check_service_ == nullptr && !health_check_service_disabled_ &&
       grpc::DefaultHealthCheckServiceEnabled()) {
-    auto default_hc_service = absl::make_unique<DefaultHealthCheckService>();
+    auto default_hc_service = std::make_unique<DefaultHealthCheckService>();
     auto* hc_service_impl = default_hc_service->GetHealthCheckService();
     health_check_service_ = std::move(default_hc_service);
     RegisterService(nullptr, hc_service_impl);
@@ -1182,7 +1182,7 @@ void Server::Start(grpc::ServerCompletionQueue** cqs, size_t num_cqs) {
   bool unknown_rpc_needed =
       !has_async_generic_service_ && !has_callback_generic_service_;
   if (unknown_rpc_needed && has_callback_methods_) {
-    unimplemented_service_ = absl::make_unique<grpc::CallbackGenericService>();
+    unimplemented_service_ = std::make_unique<grpc::CallbackGenericService>();
     RegisterCallbackGenericService(unimplemented_service_.get());
     unknown_rpc_needed = false;
   }
@@ -1207,7 +1207,7 @@ void Server::Start(grpc::ServerCompletionQueue** cqs, size_t num_cqs) {
   // to deal with the case of thread exhaustion
   if (sync_server_cqs_ != nullptr && !sync_server_cqs_->empty()) {
     resource_exhausted_handler_ =
-        absl::make_unique<grpc::internal::ResourceExhaustedHandler>(
+        std::make_unique<grpc::internal::ResourceExhaustedHandler>(
             kServerThreadpoolExhausted);
   }
 

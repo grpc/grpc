@@ -139,7 +139,7 @@ absl::Status ConnectionManager::BindAndStartListener(
   auto status = event_engine->CreateListener(
       std::move(accept_cb),
       [](absl::Status status) { GPR_ASSERT(status.ok()); }, config,
-      absl::make_unique<grpc_core::MemoryQuota>("foo"));
+      std::make_unique<grpc_core::MemoryQuota>("foo"));
   if (!status.ok()) {
     return status.status();
   }

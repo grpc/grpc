@@ -201,7 +201,7 @@ void TimerManager::Run() {
 bool TimerManager::IsTimerManagerThread() { return g_timer_thread; }
 
 TimerManager::TimerManager() : host_(this) {
-  timer_list_ = absl::make_unique<TimerList>(&host_);
+  timer_list_ = std::make_unique<TimerList>(&host_);
   grpc_core::MutexLock lock(&mu_);
   StartThread();
 }

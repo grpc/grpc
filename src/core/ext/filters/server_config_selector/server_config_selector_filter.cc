@@ -113,7 +113,7 @@ ServerConfigSelectorFilter::ServerConfigSelectorFilter(
       state_(std::make_shared<State>()) {
   GPR_ASSERT(server_config_selector_provider_ != nullptr);
   auto server_config_selector_watcher =
-      absl::make_unique<ServerConfigSelectorWatcher>(state_);
+      std::make_unique<ServerConfigSelectorWatcher>(state_);
   auto config_selector = server_config_selector_provider_->Watch(
       std::move(server_config_selector_watcher));
   MutexLock lock(&state_->mu);

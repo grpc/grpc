@@ -873,7 +873,7 @@ class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
 };
 
 std::unique_ptr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(Mutex* mu) {
-  return absl::make_unique<GrpcPolledFdFactoryWindows>(mu);
+  return std::make_unique<GrpcPolledFdFactoryWindows>(mu);
 }
 
 }  // namespace grpc_core

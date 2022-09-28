@@ -391,7 +391,7 @@ TEST(DnsResolverCooldownTest, MainTest) {
   g_default_dns_lookup_ares = grpc_dns_lookup_hostname_ares;
   grpc_dns_lookup_hostname_ares = test_dns_lookup_ares;
   grpc_core::ResetDNSResolver(
-      absl::make_unique<TestDNSResolver>(grpc_core::GetDNSResolver()));
+      std::make_unique<TestDNSResolver>(grpc_core::GetDNSResolver()));
 
   test_cooldown();
 

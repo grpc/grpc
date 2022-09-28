@@ -445,7 +445,7 @@ class ClientCallData::PollContext {
       };
       // Unique ptr --> release to suppress clang-tidy warnings about allocating
       // in a destructor.
-      auto* p = absl::make_unique<NextPoll>().release();
+      auto* p = std::make_unique<NextPoll>().release();
       p->call_stack = self_->call_stack();
       p->call_data = self_;
       GRPC_CALL_STACK_REF(self_->call_stack(), "re-poll");
@@ -912,7 +912,7 @@ class ServerCallData::PollContext {
         GRPC_CALL_STACK_UNREF(next_poll->call_stack, "re-poll");
         delete next_poll;
       };
-      auto* p = absl::make_unique<NextPoll>().release();
+      auto* p = std::make_unique<NextPoll>().release();
       p->call_stack = self_->call_stack();
       p->call_data = self_;
       GRPC_CALL_STACK_REF(self_->call_stack(), "re-poll");

@@ -67,7 +67,7 @@ Interceptor* OrcaServerInterceptorFactory::CreateServerInterceptor(
 
 void OrcaServerInterceptorFactory::Register(grpc::ServerBuilder* builder) {
   builder->internal_interceptor_creators_.push_back(
-      absl::make_unique<OrcaServerInterceptorFactory>());
+      std::make_unique<OrcaServerInterceptorFactory>());
 }
 
 void EnableCallMetricRecording(grpc::ServerBuilder* builder) {

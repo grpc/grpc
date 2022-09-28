@@ -44,7 +44,7 @@ class XdsLocalityAttribute : public ServerAddress::AttributeInterface {
   }
 
   std::unique_ptr<AttributeInterface> Copy() const override {
-    return absl::make_unique<XdsLocalityAttribute>(locality_name_->Ref());
+    return std::make_unique<XdsLocalityAttribute>(locality_name_->Ref());
   }
 
   int Cmp(const AttributeInterface* other) const override {

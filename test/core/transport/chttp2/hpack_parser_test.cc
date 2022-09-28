@@ -63,7 +63,7 @@ class ParseTest : public ::testing::TestWithParam<Test> {
  public:
   ParseTest() {
     grpc_init();
-    parser_ = absl::make_unique<grpc_core::HPackParser>();
+    parser_ = std::make_unique<grpc_core::HPackParser>();
   }
 
   ~ParseTest() override {

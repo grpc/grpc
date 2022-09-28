@@ -67,7 +67,7 @@ absl::StatusOr<LameClientFilter> LameClientFilter::Create(
 }
 
 LameClientFilter::LameClientFilter(absl::Status error)
-    : error_(std::move(error)), state_(absl::make_unique<State>()) {}
+    : error_(std::move(error)), state_(std::make_unique<State>()) {}
 
 LameClientFilter::State::State()
     : state_tracker("lame_client", GRPC_CHANNEL_SHUTDOWN) {}

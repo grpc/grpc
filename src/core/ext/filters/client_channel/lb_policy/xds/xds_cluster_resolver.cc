@@ -515,7 +515,7 @@ void XdsClusterResolverLb::LogicalDNSDiscoveryMechanism::Start() {
   resolver_ = CoreConfiguration::Get().resolver_registry().CreateResolver(
       target.c_str(), args, parent()->interested_parties(),
       parent()->work_serializer(),
-      absl::make_unique<ResolverResultHandler>(
+      std::make_unique<ResolverResultHandler>(
           Ref(DEBUG_LOCATION, "LogicalDNSDiscoveryMechanism")));
   if (resolver_ == nullptr) {
     parent()->OnResourceDoesNotExist(
@@ -840,12 +840,12 @@ ServerAddressList XdsClusterResolverLb::CreateChildPolicyAddressesLocked() {
                       kHierarchicalPathAttributeKey,
                       MakeHierarchicalPathAttribute(hierarchical_path))
                   .WithAttribute(kXdsLocalityNameAttributeKey,
-                                 absl::make_unique<XdsLocalityAttribute>(
+                                 std::make_unique<XdsLocalityAttribute>(
                                      locality_name->Ref()))
                   .WithAttribute(
                       ServerAddressWeightAttribute::
                           kServerAddressWeightAttributeKey,
-                      absl::make_unique<ServerAddressWeightAttribute>(weight)));
+                      std::make_unique<ServerAddressWeightAttribute>(weight)));
         }
       }
     }
@@ -1015,7 +1015,7 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
         "config");
     channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE, status,
-        absl::make_unique<TransientFailurePicker>(status));
+        std::make_unique<TransientFailurePicker>(status));
     return nullptr;
   }
   return std::move(*config);
@@ -1052,7 +1052,7 @@ XdsClusterResolverLb::CreateChildPolicyLocked(const ChannelArgs& args) {
   lb_policy_args.work_serializer = work_serializer();
   lb_policy_args.args = args;
   lb_policy_args.channel_control_helper =
-      absl::make_unique<Helper>(Ref(DEBUG_LOCATION, "Helper"));
+      std::make_unique<Helper>(Ref(DEBUG_LOCATION, "Helper"));
   OrphanablePtr<LoadBalancingPolicy> lb_policy =
       CoreConfiguration::Get().lb_policy_registry().CreateLoadBalancingPolicy(
           "priority_experimental", std::move(lb_policy_args));
@@ -1294,7 +1294,7 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
 
 void RegisterXdsClusterResolverLbPolicy(CoreConfiguration::Builder* builder) {
   builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
-      absl::make_unique<XdsClusterResolverLbFactory>());
+      std::make_unique<XdsClusterResolverLbFactory>());
 }
 
 }  // namespace grpc_core
