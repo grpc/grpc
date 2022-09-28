@@ -38,12 +38,11 @@ struct PosixEventEngine::ClosureData final : public EventEngine::Closure {
   posix_engine::Timer timer;
   PosixEventEngine* engine;
   EventEngine::TaskHandle handle;
-  std::weak_ptr<bool> engine_spirit;
 
   void Run() override {
     GRPC_EVENT_ENGINE_TRACE("PosixEventEngine:%p executing callback:%s", engine,
                             HandleToString(handle).c_str());
-    if (!engine_spirit.expired()) {
+    {
       grpc_core::MutexLock lock(&engine->mu_);
       engine->known_handles_.erase(handle);
     }
@@ -99,7 +98,6 @@ EventEngine::TaskHandle PosixEventEngine::RunAfterInternal(
   auto* cd = new ClosureData;
   cd->cb = std::move(cb);
   cd->engine = this;
-  cd->engine_spirit = engine_spirit_;
   EventEngine::TaskHandle handle{reinterpret_cast<intptr_t>(cd),
                                  aba_token_.fetch_add(1)};
   grpc_core::MutexLock lock(&mu_);

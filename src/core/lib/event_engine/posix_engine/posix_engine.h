@@ -107,15 +107,11 @@ class PosixEventEngine final : public EventEngine {
   EventEngine::TaskHandle RunAfterInternal(Duration when,
                                            absl::AnyInvocable<void()> cb);
 
-  posix_engine::TimerManager timer_manager_;
-  ThreadedExecutor executor_{2};
-
   grpc_core::Mutex mu_;
   TaskHandleSet known_handles_ ABSL_GUARDED_BY(mu_);
   std::atomic<intptr_t> aba_token_{0};
-  // closures are given weak_ptrs to this object to check if the engine pointers
-  // are still alive
-  std::shared_ptr<bool> engine_spirit_{new bool(true)};
+  posix_engine::TimerManager timer_manager_;
+  ThreadedExecutor executor_{2};
 };
 
 }  // namespace experimental
