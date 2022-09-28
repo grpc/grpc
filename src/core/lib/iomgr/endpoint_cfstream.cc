@@ -147,9 +147,9 @@ static void CallWriteCb(CFStreamEndpoint* ep, grpc_error_handle error) {
 static void ReadAction(void* arg, grpc_error_handle error) {
   CFStreamEndpoint* ep = static_cast<CFStreamEndpoint*>(arg);
   GPR_ASSERT(ep->read_cb != nullptr);
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     grpc_slice_buffer_reset_and_unref(ep->read_slices);
-    CallReadCb(ep, GRPC_ERROR_REF(error));
+    CallReadCb(ep, error);
     EP_UNREF(ep, "read");
     return;
   }
@@ -189,13 +189,12 @@ static void ReadAction(void* arg, grpc_error_handle error) {
 static void WriteAction(void* arg, grpc_error_handle error) {
   CFStreamEndpoint* ep = static_cast<CFStreamEndpoint*>(arg);
   GPR_ASSERT(ep->write_cb != nullptr);
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     grpc_slice_buffer_reset_and_unref(ep->write_slices);
-    CallWriteCb(ep, GRPC_ERROR_REF(error));
+    CallWriteCb(ep, error);
     EP_UNREF(ep, "write");
     return;
   }
-
   grpc_slice slice = grpc_slice_buffer_take_first(ep->write_slices);
   size_t slice_len = GRPC_SLICE_LENGTH(slice);
   CFIndex write_size = CFWriteStreamWrite(

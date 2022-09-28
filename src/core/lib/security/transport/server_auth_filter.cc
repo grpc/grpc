@@ -170,13 +170,13 @@ static void on_md_processing_done_inner(grpc_call_element* elem,
             "response_md in auth metadata processing not supported for now. "
             "Ignoring...");
   }
-  if (GRPC_ERROR_IS_NONE(error)) {
+  if (error.ok()) {
     for (size_t i = 0; i < num_consumed_md; i++) {
       batch->payload->recv_initial_metadata.recv_initial_metadata->Remove(
           grpc_core::StringViewFromSlice(consumed_md[i].key));
     }
   }
-  calld->recv_initial_metadata_error = GRPC_ERROR_REF(error);
+  calld->recv_initial_metadata_error = error;
   grpc_closure* closure = calld->original_recv_initial_metadata_ready;
   calld->original_recv_initial_metadata_ready = nullptr;
   if (calld->seen_recv_trailing_metadata_ready) {
@@ -225,11 +225,10 @@ static void cancel_call(void* arg, grpc_error_handle error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
   call_data* calld = static_cast<call_data*>(elem->call_data);
   // If the result was not already processed, invoke the callback now.
-  if (!GRPC_ERROR_IS_NONE(error) &&
+  if (!error.ok() &&
       gpr_atm_full_cas(&calld->state, static_cast<gpr_atm>(STATE_INIT),
                        static_cast<gpr_atm>(STATE_CANCELLED))) {
-    on_md_processing_done_inner(elem, nullptr, 0, nullptr, 0,
-                                GRPC_ERROR_REF(error));
+    on_md_processing_done_inner(elem, nullptr, 0, nullptr, 0, error);
   }
   GRPC_CALL_STACK_UNREF(calld->owning_call, "cancel_call");
 }
@@ -239,7 +238,7 @@ static void recv_initial_metadata_ready(void* arg, grpc_error_handle error) {
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   call_data* calld = static_cast<call_data*>(elem->call_data);
   grpc_transport_stream_op_batch* batch = calld->recv_initial_metadata_batch;
-  if (GRPC_ERROR_IS_NONE(error)) {
+  if (error.ok()) {
     if (chand->creds != nullptr &&
         chand->creds->auth_metadata_processor().process != nullptr) {
       // We're calling out to the application, so we need to make sure
@@ -268,7 +267,7 @@ static void recv_initial_metadata_ready(void* arg, grpc_error_handle error) {
                              calld->recv_trailing_metadata_error,
                              "continue recv_trailing_metadata_ready");
   }
-  grpc_core::Closure::Run(DEBUG_LOCATION, closure, GRPC_ERROR_REF(error));
+  grpc_core::Closure::Run(DEBUG_LOCATION, closure, error);
 }
 
 static void recv_trailing_metadata_ready(void* user_data,
@@ -276,15 +275,14 @@ static void recv_trailing_metadata_ready(void* user_data,
   grpc_call_element* elem = static_cast<grpc_call_element*>(user_data);
   call_data* calld = static_cast<call_data*>(elem->call_data);
   if (calld->original_recv_initial_metadata_ready != nullptr) {
-    calld->recv_trailing_metadata_error = GRPC_ERROR_REF(err);
+    calld->recv_trailing_metadata_error = err;
     calld->seen_recv_trailing_metadata_ready = true;
     GRPC_CALL_COMBINER_STOP(calld->call_combiner,
                             "deferring recv_trailing_metadata_ready until "
                             "after recv_initial_metadata_ready");
     return;
   }
-  err = grpc_error_add_child(
-      GRPC_ERROR_REF(err), GRPC_ERROR_REF(calld->recv_initial_metadata_error));
+  err = grpc_error_add_child(err, calld->recv_initial_metadata_error);
   grpc_core::Closure::Run(DEBUG_LOCATION,
                           calld->original_recv_trailing_metadata_ready, err);
 }

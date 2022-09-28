@@ -66,7 +66,7 @@ DynamicFilters::Call::Call(Args args, grpc_error_handle* error)
   };
   *error = grpc_call_stack_init(channel_stack_->channel_stack_.get(), 1,
                                 Destroy, this, &call_args);
-  if (GPR_UNLIKELY(!GRPC_ERROR_IS_NONE(*error))) {
+  if (GPR_UNLIKELY(!error->ok())) {
     gpr_log(GPR_ERROR, "error: %s", grpc_error_std_string(*error).c_str());
     return;
   }

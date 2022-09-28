@@ -136,7 +136,6 @@ TEST(FileWatcherConfigTest, WrongTypes) {
                   "field:refresh_interval error:type should be STRING of the "
                   "form given by "
                   "google.proto.Duration.*"));
-  GRPC_ERROR_UNREF(error);
 }
 
 TEST(FileWatcherConfigTest, IdentityCertProvidedButPrivateKeyMissing) {
@@ -154,7 +153,6 @@ TEST(FileWatcherConfigTest, IdentityCertProvidedButPrivateKeyMissing) {
               ::testing::ContainsRegex(
                   "fields \"certificate_file\" and \"private_key_file\" must "
                   "be both set or both unset."));
-  GRPC_ERROR_UNREF(error);
 }
 
 TEST(FileWatcherConfigTest, PrivateKeyProvidedButIdentityCertMissing) {
@@ -172,7 +170,6 @@ TEST(FileWatcherConfigTest, PrivateKeyProvidedButIdentityCertMissing) {
               ::testing::ContainsRegex(
                   "fields \"certificate_file\" and \"private_key_file\" must "
                   "be both set or both unset."));
-  GRPC_ERROR_UNREF(error);
 }
 
 TEST(FileWatcherConfigTest, EmptyJsonObject) {
@@ -186,7 +183,6 @@ TEST(FileWatcherConfigTest, EmptyJsonObject) {
       grpc_error_std_string(error),
       ::testing::ContainsRegex("At least one of \"certificate_file\" and "
                                "\"ca_certificate_file\" must be specified."));
-  GRPC_ERROR_UNREF(error);
 }
 
 }  // namespace

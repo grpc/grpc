@@ -36,8 +36,8 @@ namespace experimental {
 
 class WorkQueueFuzzer {
  public:
-  WorkQueueFuzzer() { CheckEqual(); };
-  ~WorkQueueFuzzer() { CheckEqual(); };
+  WorkQueueFuzzer() { CheckEqual(); }
+  ~WorkQueueFuzzer() { CheckEqual(); }
 
   void Run(const work_queue_fuzzer::Action& action) {
     switch (action.action_type_case()) {
@@ -79,7 +79,7 @@ class WorkQueueFuzzer {
       } break;
       case work_queue_fuzzer::Action::ACTION_TYPE_NOT_SET:
         break;
-    };
+    }
   }
 
  private:

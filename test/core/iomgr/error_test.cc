@@ -49,8 +49,6 @@ TEST(ErrorTest, SetGetInt) {
   error = grpc_error_set_int(error, GRPC_ERROR_INT_HTTP2_ERROR, http);
   EXPECT_TRUE(grpc_error_get_int(error, GRPC_ERROR_INT_HTTP2_ERROR, &i));
   EXPECT_EQ(i, http);
-
-  GRPC_ERROR_UNREF(error);
 }
 
 TEST(ErrorTest, SetGetStr) {
@@ -74,8 +72,6 @@ TEST(ErrorTest, SetGetStr) {
       grpc_error_set_str(error, GRPC_ERROR_STR_GRPC_MESSAGE, "longer message");
   EXPECT_TRUE(grpc_error_get_str(error, GRPC_ERROR_STR_GRPC_MESSAGE, &str));
   EXPECT_EQ(str, "longer message");
-
-  GRPC_ERROR_UNREF(error);
 }
 
 TEST(ErrorTest, CopyAndUnRef) {
@@ -87,8 +83,6 @@ TEST(ErrorTest, CopyAndUnRef) {
   EXPECT_TRUE(grpc_error_get_str(error1, GRPC_ERROR_STR_GRPC_MESSAGE, &str));
   EXPECT_EQ(str, "message");
 
-  // error 1 has two refs
-  (void)GRPC_ERROR_REF(error1);
   // this gives error3 a ref to the new error, and decrements error1 to one ref
   grpc_error_handle error3 =
       grpc_error_set_str(error1, GRPC_ERROR_STR_SYSCALL, "syscall");
@@ -100,9 +94,6 @@ TEST(ErrorTest, CopyAndUnRef) {
   EXPECT_TRUE(!grpc_error_get_str(error1, GRPC_ERROR_STR_SYSCALL, &str));
   EXPECT_TRUE(grpc_error_get_str(error3, GRPC_ERROR_STR_SYSCALL, &str));
   EXPECT_EQ(str, "syscall");
-
-  GRPC_ERROR_UNREF(error1);
-  GRPC_ERROR_UNREF(error3);
 }
 
 TEST(ErrorTest, CreateReferencing) {
@@ -112,9 +103,6 @@ TEST(ErrorTest, CreateReferencing) {
   grpc_error_handle parent =
       GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING("Parent", &child, 1);
   EXPECT_NE(parent, GRPC_ERROR_NONE);
-
-  GRPC_ERROR_UNREF(child);
-  GRPC_ERROR_UNREF(parent);
 }
 
 TEST(ErrorTest, CreateReferencingMany) {
@@ -134,9 +122,7 @@ TEST(ErrorTest, CreateReferencingMany) {
   EXPECT_NE(parent, GRPC_ERROR_NONE);
 
   for (size_t i = 0; i < 3; ++i) {
-    GRPC_ERROR_UNREF(children[i]);
   }
-  GRPC_ERROR_UNREF(parent);
 }
 
 TEST(ErrorTest, PrintErrorString) {
@@ -146,7 +132,6 @@ TEST(ErrorTest, PrintErrorString) {
   error = grpc_error_set_int(error, GRPC_ERROR_INT_SIZE, 666);
   error = grpc_error_set_str(error, GRPC_ERROR_STR_GRPC_MESSAGE, "message");
   // gpr_log(GPR_DEBUG, "%s", grpc_error_std_string(error).c_str());
-  GRPC_ERROR_UNREF(error);
 }
 
 TEST(ErrorTest, PrintErrorStringReference) {
@@ -164,9 +149,7 @@ TEST(ErrorTest, PrintErrorStringReference) {
       GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING("Parent", children, 2);
 
   for (size_t i = 0; i < 2; ++i) {
-    GRPC_ERROR_UNREF(children[i]);
   }
-  GRPC_ERROR_UNREF(parent);
 }
 
 TEST(ErrorTest, TestOsError) {
@@ -181,7 +164,6 @@ TEST(ErrorTest, TestOsError) {
   std::string str;
   EXPECT_TRUE(grpc_error_get_str(error, GRPC_ERROR_STR_SYSCALL, &str));
   EXPECT_EQ(str, syscall);
-  GRPC_ERROR_UNREF(error);
 }
 
 int main(int argc, char** argv) {

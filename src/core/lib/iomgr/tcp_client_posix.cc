@@ -99,23 +99,23 @@ static grpc_error_handle prepare_socket(
   GPR_ASSERT(fd >= 0);
 
   err = grpc_set_socket_nonblocking(fd, 1);
-  if (!GRPC_ERROR_IS_NONE(err)) goto error;
+  if (!err.ok()) goto error;
   err = grpc_set_socket_cloexec(fd, 1);
-  if (!GRPC_ERROR_IS_NONE(err)) goto error;
+  if (!err.ok()) goto error;
   if (!grpc_is_unix_socket(addr)) {
     err = grpc_set_socket_low_latency(fd, 1);
-    if (!GRPC_ERROR_IS_NONE(err)) goto error;
+    if (!err.ok()) goto error;
     err = grpc_set_socket_reuse_addr(fd, 1);
-    if (!GRPC_ERROR_IS_NONE(err)) goto error;
+    if (!err.ok()) goto error;
     err = grpc_set_socket_tcp_user_timeout(fd, options, true /* is_client */);
-    if (!GRPC_ERROR_IS_NONE(err)) goto error;
+    if (!err.ok()) goto error;
   }
   err = grpc_set_socket_no_sigpipe_if_possible(fd);
-  if (!GRPC_ERROR_IS_NONE(err)) goto error;
+  if (!err.ok()) goto error;
 
   err = grpc_apply_socket_mutator_in_args(fd, GRPC_FD_CLIENT_CONNECTION_USAGE,
                                           options);
-  if (!GRPC_ERROR_IS_NONE(err)) goto error;
+  if (!err.ok()) goto error;
 
   goto done;
 
@@ -170,8 +170,6 @@ static void on_writable(void* acp, grpc_error_handle error) {
   std::string addr_str = ac->addr_str;
   grpc_fd* fd;
 
-  (void)GRPC_ERROR_REF(error);
-
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "CLIENT_CONNECT: %s: on_writable: error=%s",
             ac->addr_str.c_str(), grpc_error_std_string(error).c_str());
@@ -187,7 +185,7 @@ static void on_writable(void* acp, grpc_error_handle error) {
   grpc_timer_cancel(&ac->alarm);
 
   gpr_mu_lock(&ac->mu);
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     error =
         grpc_error_set_str(error, GRPC_ERROR_STR_OS_ERROR, "Timeout occurred");
     goto finish;
@@ -261,7 +259,7 @@ finish:
   }
   done = (--ac->refs == 0);
   gpr_mu_unlock(&ac->mu);
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     std::string str;
     bool ret = grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION, &str);
     GPR_ASSERT(ret);
@@ -281,9 +279,6 @@ finish:
   // between the core shutdown mu and the connector mu (b/188239051)
   if (!connect_cancelled) {
     grpc_core::Executor::Run(closure, error);
-  } else if (!GRPC_ERROR_IS_NONE(error)) {
-    // Unref the error here because it is not used.
-    (void)GRPC_ERROR_UNREF(error);
   }
 }
 
@@ -302,7 +297,7 @@ grpc_error_handle grpc_tcp_client_prepare_fd(
   }
   error =
       grpc_create_dualstack_socket(mapped_addr, SOCK_STREAM, 0, &dsmode, fd);
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     return error;
   }
   if (dsmode == GRPC_DSMODE_IPV4) {
