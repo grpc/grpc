@@ -213,6 +213,24 @@ int Histogram_80_10::BucketFor(int value) {
     }
   }
 }
+GlobalStats::GlobalStats()
+    : client_calls_created{0},
+      server_calls_created{0},
+      client_channels_created{0},
+      client_subchannels_created{0},
+      server_channels_created{0},
+      syscall_write{0},
+      syscall_read{0},
+      tcp_read_alloc_8k{0},
+      tcp_read_alloc_64k{0},
+      http2_settings_writes{0},
+      http2_pings_sent{0},
+      http2_writes_begun{0},
+      http2_transport_stalls{0},
+      http2_stream_stalls{0},
+      cq_pluck_creates{0},
+      cq_next_creates{0},
+      cq_callback_creates{0} {}
 HistogramView GlobalStats::histogram(Histogram which) const {
   switch (which) {
     default:

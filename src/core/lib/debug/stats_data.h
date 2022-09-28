@@ -134,6 +134,7 @@ struct GlobalStats {
     kHttp2SendMessageSize,
     COUNT
   };
+  GlobalStats();
   static const absl::string_view counter_name[static_cast<int>(Counter::COUNT)];
   static const absl::string_view
       histogram_name[static_cast<int>(Histogram::COUNT)];
@@ -259,23 +260,23 @@ class GlobalStatsCollector {
 
  private:
   struct Data {
-    std::atomic<uint64_t> client_calls_created;
-    std::atomic<uint64_t> server_calls_created;
-    std::atomic<uint64_t> client_channels_created;
-    std::atomic<uint64_t> client_subchannels_created;
-    std::atomic<uint64_t> server_channels_created;
-    std::atomic<uint64_t> syscall_write;
-    std::atomic<uint64_t> syscall_read;
-    std::atomic<uint64_t> tcp_read_alloc_8k;
-    std::atomic<uint64_t> tcp_read_alloc_64k;
-    std::atomic<uint64_t> http2_settings_writes;
-    std::atomic<uint64_t> http2_pings_sent;
-    std::atomic<uint64_t> http2_writes_begun;
-    std::atomic<uint64_t> http2_transport_stalls;
-    std::atomic<uint64_t> http2_stream_stalls;
-    std::atomic<uint64_t> cq_pluck_creates;
-    std::atomic<uint64_t> cq_next_creates;
-    std::atomic<uint64_t> cq_callback_creates;
+    std::atomic<uint64_t> client_calls_created{0};
+    std::atomic<uint64_t> server_calls_created{0};
+    std::atomic<uint64_t> client_channels_created{0};
+    std::atomic<uint64_t> client_subchannels_created{0};
+    std::atomic<uint64_t> server_channels_created{0};
+    std::atomic<uint64_t> syscall_write{0};
+    std::atomic<uint64_t> syscall_read{0};
+    std::atomic<uint64_t> tcp_read_alloc_8k{0};
+    std::atomic<uint64_t> tcp_read_alloc_64k{0};
+    std::atomic<uint64_t> http2_settings_writes{0};
+    std::atomic<uint64_t> http2_pings_sent{0};
+    std::atomic<uint64_t> http2_writes_begun{0};
+    std::atomic<uint64_t> http2_transport_stalls{0};
+    std::atomic<uint64_t> http2_stream_stalls{0};
+    std::atomic<uint64_t> cq_pluck_creates{0};
+    std::atomic<uint64_t> cq_next_creates{0};
+    std::atomic<uint64_t> cq_callback_creates{0};
     HistogramCollector_32768_24 call_initial_size;
     HistogramCollector_16777216_20 tcp_write_size;
     HistogramCollector_80_10 tcp_write_iov_size;

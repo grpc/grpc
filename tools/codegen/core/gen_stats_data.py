@@ -268,8 +268,10 @@ with open('src/core/lib/debug/stats_data.h', 'w') as H:
     print(file=H)
     print("#include <grpc/support/port_platform.h>", file=H)
     print("#include <atomic>", file=H)
-    print("#include \"src/core/lib/iomgr/exec_ctx.h\"", file=H)
+    print("#include <memory>", file=H)
+    print("#include <stdint.h>", file=H)
     print("#include \"src/core/lib/debug/histogram_view.h\"", file=H)
+    print("#include \"absl/strings/string_view.h\"", file=H)
     print("#include \"src/core/lib/gprpp/per_cpu.h\"", file=H)
     print(file=H)
     print("namespace grpc_core {", file=H)
@@ -319,6 +321,7 @@ with open('src/core/lib/debug/stats_data.h', 'w') as H:
         print("    k%s," % snake_to_pascal(ctr.name), file=H)
     print("    COUNT", file=H)
     print("  };", file=H)
+    print("  GlobalStats();", file=H)
     print(
         "  static const absl::string_view counter_name[static_cast<int>(Counter::COUNT)];",
         file=H)
@@ -362,7 +365,7 @@ with open('src/core/lib/debug/stats_data.h', 'w') as H:
     print(" private:", file=H)
     print("  struct Data {", file=H)
     for ctr in inst_map['Counter']:
-        print("    std::atomic<uint64_t> %s;" % ctr.name, file=H)
+        print("    std::atomic<uint64_t> %s{0};" % ctr.name, file=H)
     for ctr in inst_map['Histogram']:
         print("    HistogramCollector_%d_%d %s;" %
               (ctr.max, ctr.buckets, ctr.name),
@@ -400,6 +403,7 @@ with open('src/core/lib/debug/stats_data.cc', 'w') as C:
     print(file=C)
     print("#include \"src/core/lib/debug/stats_data.h\"", file=C)
     print("#include <stdint.h>", file=C)
+    print("#include \"absl/memory/memory.h\"", file=C)
     print(file=C)
 
     histo_code = []
@@ -463,6 +467,8 @@ with open('src/core/lib/debug/stats_data.cc', 'w') as C:
         print(("int Histogram_%d_%d::BucketFor(int value) {%s}") %
               (shape.max, shape.buckets, code),
               file=C)
+
+    print("GlobalStats::GlobalStats() : %s {}" % ",".join("%s{0}" % ctr.name for ctr in inst_map['Counter']), file=C)
 
     print("HistogramView GlobalStats::histogram(Histogram which) const {",
           file=C)
