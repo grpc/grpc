@@ -18,16 +18,13 @@
 
 #include <errno.h>
 #include <limits.h>
-#include <unistd.h>
 
 #include <algorithm>
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
-#include <iostream>
 #include <memory>
-#include <sstream>
 #include <string>
 
 #include "absl/functional/any_invocable.h"
@@ -35,7 +32,6 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
-#include "absl/strings/str_split.h"
 #include "absl/types/optional.h"
 
 #include <grpc/event_engine/endpoint_config.h>
@@ -48,6 +44,7 @@
 #include "src/core/lib/event_engine/posix_engine/internal_errqueue.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/experiments/experiments.h"
+#include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
@@ -55,13 +52,13 @@
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 #ifdef GRPC_LINUX_ERRQUEUE
-#include <linux/errqueue.h>  // IWYU pragma: keep
-#include <linux/netlink.h>   // IWYU pragma: keep
-#endif
 #include <linux/capability.h>  // IWYU pragma: keep
-#include <netinet/in.h>        // IWYU pragma: keep
+#include <linux/errqueue.h>    // IWYU pragma: keep
+#include <linux/netlink.h>     // IWYU pragma: keep
 #include <sys/prctl.h>         // IWYU pragma: keep
 #include <sys/resource.h>      // IWYU pragma: keep
+#endif
+#include <netinet/in.h>  // IWYU pragma: keep
 
 #ifndef SOL_TCP
 #define SOL_TCP IPPROTO_TCP
@@ -123,6 +120,8 @@ ssize_t TcpSend(int fd, const struct msghdr* msg, int* saved_errno,
   return sent_length;
 }
 
+#ifdef GRPC_LINUX_ERRQUEUE
+
 // Ulimit hard memlock controls per socket limit for maximum locked memory in
 // RAM.
 uint64_t GetUlimitHardMemLock() {
@@ -176,7 +175,6 @@ uint64_t GetRLimitMemLockMax() {
   return kRlimitMemLock;
 }
 
-#ifdef GRPC_LINUX_ERRQUEUE
 // Whether the cmsg received from error queue is of the IPv4 or IPv6 levels.
 bool CmsgIsIpLevel(const cmsghdr& cmsg) {
   return (cmsg.cmsg_level == SOL_IPV6 && cmsg.cmsg_type == IPV6_RECVERR) ||
@@ -919,7 +917,10 @@ bool PosixEndpointImpl::DoFlushZerocopy(TcpZerocopySendRecord* record,
       // this limit, the kernel may return ENOBUFS error. Print a warning
       // message here to allow help with debugging. Grpc should not attempt to
       // raise the limit values.
-      if (constrained) {
+      if (!constrained) {
+        handle_->SetWritable();
+      } else {
+#ifdef GRPC_LINUX_ERRQUEUE
         GRPC_LOG_EVERY_N_SEC(
             1,
             "Tx0cp encountered an ENOBUFS error possibly because one or "
@@ -927,8 +928,7 @@ bool PosixEndpointImpl::DoFlushZerocopy(TcpZerocopySendRecord* record,
             "small. Current value of RLIMIT_MEMLOCK is %lu and hard memlock "
             "ulimit is %lu. Consider increasing these values appropriately.",
             GetRLimitMemLockMax(), GetUlimitHardMemLock());
-      } else {
-        handle_->SetWritable();
+#endif
       }
     }
     if (sent_length < 0) {
