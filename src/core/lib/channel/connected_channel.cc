@@ -427,7 +427,6 @@ class ClientStream : public Orphanable {
           send_message_.send_trailing_metadata = true;
           batch_payload_.send_trailing_metadata.send_trailing_metadata =
               client_trailing_metadata_.get();
-          // DO NOT SUBMIT: figure this field out
           batch_payload_.send_trailing_metadata.sent = nullptr;
         }
         IncrementRefCount("send_message");
