@@ -82,7 +82,7 @@ grpc_core::Poll<grpc_error_handle> grpc_deframe_unprocessed_incoming_frames(
     grpc_chttp2_stream* s, uint32_t* min_progress_size,
     grpc_core::SliceBuffer* stream_out, uint32_t* message_flags) {
   grpc_slice_buffer* slices = &s->frame_storage;
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
 
   if (slices->length < 5) {
     if (min_progress_size != nullptr) *min_progress_size = 5 - slices->length;
@@ -130,7 +130,7 @@ grpc_core::Poll<grpc_error_handle> grpc_deframe_unprocessed_incoming_frames(
     grpc_slice_buffer_move_first(slices, length, stream_out->c_slice_buffer());
   }
 
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 grpc_error_handle grpc_chttp2_data_parser_parse(void* /*parser*/,
@@ -147,8 +147,8 @@ grpc_error_handle grpc_chttp2_data_parser_parse(void* /*parser*/,
         t, s, true, false,
         t->is_client ? GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                            "Data frame with END_STREAM flag received")
-                     : GRPC_ERROR_NONE);
+                     : absl::OkStatus());
   }
 
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }

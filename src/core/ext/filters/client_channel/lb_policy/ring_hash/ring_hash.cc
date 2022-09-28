@@ -280,7 +280,7 @@ class RingHash : public LoadBalancingPolicy {
       void Orphan() override {
         // Hop into ExecCtx, so that we're not holding the data plane mutex
         // while we run control-plane code.
-        ExecCtx::Run(DEBUG_LOCATION, &closure_, GRPC_ERROR_NONE);
+        ExecCtx::Run(DEBUG_LOCATION, &closure_, absl::OkStatus());
       }
 
       // Will be invoked inside of the WorkSerializer.

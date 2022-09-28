@@ -166,7 +166,7 @@ class TestTcpServer {
   }
 
   void OnFdReleased(grpc_error_handle err) {
-    EXPECT_EQ(GRPC_ERROR_NONE, err);
+    EXPECT_EQ(absl::OkStatus(), err);
     experimental::ExternalConnectionAcceptor::NewConnectionParameters p;
     p.listener_fd = listener_fd_;
     p.fd = fd_;

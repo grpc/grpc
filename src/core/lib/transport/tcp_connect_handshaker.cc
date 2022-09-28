@@ -24,6 +24,7 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
@@ -191,7 +192,7 @@ void TCPConnectHandshaker::Connected(void* arg, grpc_error_handle error) {
       grpc_endpoint_add_to_pollset_set(self->args_->endpoint,
                                        self->interested_parties_);
     }
-    self->FinishLocked(GRPC_ERROR_NONE);
+    self->FinishLocked(absl::OkStatus());
   }
 }
 

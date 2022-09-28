@@ -224,7 +224,7 @@ grpc::Status StsCredentialsOptionsFromEnv(StsCredentialsOptions* options) {
   ClearStsCredentialsOptions(options);
   grpc_slice json_string = grpc_empty_slice();
   auto sts_creds_path = grpc_core::GetEnv("STS_CREDENTIALS");
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
   grpc::Status status;
   // NOLINTNEXTLINE(clang-diagnostic-unused-lambda-capture)
   auto cleanup = [&json_string, &status]() {
@@ -432,7 +432,7 @@ void MetadataCredentialsPluginWrapper::Destroy(void* wrapper) {
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   grpc_core::Executor::Run(GRPC_CLOSURE_CREATE(DeleteWrapper, wrapper, nullptr),
-                           GRPC_ERROR_NONE);
+                           absl::OkStatus());
 }
 
 int MetadataCredentialsPluginWrapper::GetMetadata(

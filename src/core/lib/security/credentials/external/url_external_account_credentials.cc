@@ -225,7 +225,7 @@ void UrlExternalAccountCredentials::OnRetrieveSubjectTokenInternal(
     FinishRetrieveSubjectToken(response_it->second.string_value(), error);
     return;
   }
-  FinishRetrieveSubjectToken(std::string(response_body), GRPC_ERROR_NONE);
+  FinishRetrieveSubjectToken(std::string(response_body), absl::OkStatus());
 }
 
 void UrlExternalAccountCredentials::FinishRetrieveSubjectToken(
@@ -239,7 +239,7 @@ void UrlExternalAccountCredentials::FinishRetrieveSubjectToken(
   if (!error.ok()) {
     cb("", error);
   } else {
-    cb(subject_token, GRPC_ERROR_NONE);
+    cb(subject_token, absl::OkStatus());
   }
 }
 

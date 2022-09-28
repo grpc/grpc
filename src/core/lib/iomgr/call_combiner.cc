@@ -39,7 +39,7 @@ grpc_error_handle DecodeCancelStateError(gpr_atm cancel_state) {
   if (cancel_state & kErrorBit) {
     return internal::StatusGetFromHeapPtr(cancel_state & ~kErrorBit);
   }
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 }  // namespace
@@ -209,7 +209,7 @@ void CallCombiner::SetNotifyOnCancel(grpc_closure* closure) {
                   this, closure);
         }
         // If we replaced an earlier closure, invoke the original
-        // closure with GRPC_ERROR_NONE.  This allows callers to clean
+        // closure with absl::OkStatus().  This allows callers to clean
         // up any resources they may be holding for the callback.
         if (original_state != 0) {
           closure = reinterpret_cast<grpc_closure*>(original_state);
@@ -218,7 +218,7 @@ void CallCombiner::SetNotifyOnCancel(grpc_closure* closure) {
                     "call_combiner=%p: scheduling old cancel callback=%p", this,
                     closure);
           }
-          ExecCtx::Run(DEBUG_LOCATION, closure, GRPC_ERROR_NONE);
+          ExecCtx::Run(DEBUG_LOCATION, closure, absl::OkStatus());
         }
         break;
       }
