@@ -19,6 +19,7 @@
 
 #include <new>
 
+#include "absl/status/status.h"
 #include "absl/types/optional.h"
 
 #include <grpc/byte_buffer.h>
@@ -279,7 +280,7 @@ class InjectStatusFilter {
     static grpc_error_handle Init(grpc_call_element* elem,
                                   const grpc_call_element_args* /*args*/) {
       new (elem->call_data) CallData();
-      return GRPC_ERROR_NONE;
+      return absl::OkStatus();
     }
 
     static void Destroy(grpc_call_element* elem,
@@ -323,7 +324,7 @@ class InjectStatusFilter {
 
   static grpc_error_handle Init(grpc_channel_element* /*elem*/,
                                 grpc_channel_element_args* /*args*/) {
-    return GRPC_ERROR_NONE;
+    return absl::OkStatus();
   }
 
   static void Destroy(grpc_channel_element* /*elem*/) {}

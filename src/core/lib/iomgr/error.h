@@ -178,12 +178,12 @@ absl::Status grpc_status_create(absl::StatusCode code, absl::string_view msg,
                      errs)
 
 // Consumes all the errors in the vector and forms a referencing error from
-// them. If the vector is empty, return GRPC_ERROR_NONE.
+// them. If the vector is empty, return absl::OkStatus().
 template <typename VectorType>
 static absl::Status grpc_status_create_from_vector(
     const grpc_core::DebugLocation& location, absl::string_view desc,
     VectorType* error_list) {
-  absl::Status error = GRPC_ERROR_NONE;
+  absl::Status error;
   if (error_list->size() != 0) {
     error = grpc_status_create(absl::StatusCode::kUnknown, desc, location,
                                error_list->size(), error_list->data());
@@ -236,9 +236,9 @@ bool grpc_error_get_str(grpc_error_handle error, grpc_error_strs which,
 /// child error.
 ///
 /// Edge Conditions -
-/// 1) If either of \a src or \a child is GRPC_ERROR_NONE, returns a reference
-/// to the other argument. 2) If both \a src and \a child are GRPC_ERROR_NONE,
-/// returns GRPC_ERROR_NONE. 3) If \a src and \a child point to the same error,
+/// 1) If either of \a src or \a child is absl::OkStatus(), returns a reference
+/// to the other argument. 2) If both \a src and \a child are absl::OkStatus(),
+/// returns absl::OkStatus(). 3) If \a src and \a child point to the same error,
 /// returns a single reference. (Note that, 2 references should have been
 /// received to the error in this case.)
 grpc_error_handle grpc_error_add_child(
@@ -259,7 +259,7 @@ inline bool grpc_log_if_error(const char* what, grpc_error_handle error,
 class AtomicError {
  public:
   AtomicError() {
-    error_ = GRPC_ERROR_NONE;
+    error_ = absl::OkStatus();
     lock_ = GPR_SPINLOCK_STATIC_INITIALIZER;
   }
   explicit AtomicError(grpc_error_handle error) { error_ = error; }
@@ -268,7 +268,7 @@ class AtomicError {
   AtomicError(const AtomicError&) = delete;
   AtomicError& operator=(const AtomicError&) = delete;
 
-  /// returns get() == GRPC_ERROR_NONE
+  /// returns get() == absl::OkStatus()
   bool ok() {
     gpr_spinlock_lock(&lock_);
     bool ret = error_.ok();

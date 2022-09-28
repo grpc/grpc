@@ -27,6 +27,7 @@
 #include <memory>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
@@ -346,7 +347,7 @@ static void on_read(void* user_data, grpc_error_handle error) {
     return;
   }
 
-  call_read_cb(ep, GRPC_ERROR_NONE);
+  call_read_cb(ep, absl::OkStatus());
 }
 
 static void endpoint_read(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
@@ -361,7 +362,7 @@ static void endpoint_read(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
   if (ep->leftover_bytes.count) {
     grpc_slice_buffer_swap(&ep->leftover_bytes, &ep->source_buffer);
     GPR_ASSERT(ep->leftover_bytes.count == 0);
-    on_read(ep, GRPC_ERROR_NONE);
+    on_read(ep, absl::OkStatus());
     return;
   }
 

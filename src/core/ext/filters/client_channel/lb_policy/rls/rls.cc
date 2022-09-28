@@ -1423,7 +1423,7 @@ void RlsLb::Cache::OnCleanupTimer(void* arg, grpc_error_handle error) {
           gpr_log(GPR_INFO, "[rlslb %p] cache cleanup timer fired (%s)",
                   cache->lb_policy_, grpc_error_std_string(error).c_str());
         }
-        if (error == GRPC_ERROR_CANCELLED) return;
+        if (error == absl::CancelledError()) return;
         MutexLock lock(&lb_policy->mu_);
         if (lb_policy->is_shutdown_) return;
         for (auto it = cache->map_.begin(); it != cache->map_.end();) {
@@ -1681,7 +1681,7 @@ RlsLb::RlsRequest::RlsRequest(RefCountedPtr<RlsLb> lb_policy, RequestKey key,
       DEBUG_LOCATION,
       GRPC_CLOSURE_INIT(&call_start_cb_, StartCall,
                         Ref(DEBUG_LOCATION, "StartCall").release(), nullptr),
-      GRPC_ERROR_NONE);
+      absl::OkStatus());
 }
 
 RlsLb::RlsRequest::~RlsRequest() { GPR_ASSERT(call_ == nullptr); }
@@ -2073,7 +2073,7 @@ void RlsLb::UpdatePickerAsync() {
       GRPC_CLOSURE_CREATE(UpdatePickerCallback,
                           Ref(DEBUG_LOCATION, "UpdatePickerCallback").release(),
                           grpc_schedule_on_exec_ctx),
-      GRPC_ERROR_NONE);
+      absl::OkStatus());
 }
 
 void RlsLb::UpdatePickerCallback(void* arg, grpc_error_handle /*error*/) {
@@ -2418,7 +2418,7 @@ void RlsLbConfig::JsonPostLoad(const Json& json, const JsonArgs&,
   if (it != json.object_value().end()) {
     ValidationErrors::ScopedField field(errors,
                                         ".routeLookupChannelServiceConfig");
-    grpc_error_handle child_error = GRPC_ERROR_NONE;
+    grpc_error_handle child_error;
     rls_channel_service_config_ = it->second.Dump();
     auto service_config = MakeRefCounted<ServiceConfigImpl>(
         ChannelArgs(), rls_channel_service_config_, it->second, &child_error);

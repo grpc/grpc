@@ -153,7 +153,7 @@ TEST_F(TimerTest, CancelSomeTimers) {
                                         grpc_core::Duration::Milliseconds(i)),
         GRPC_CLOSURE_CREATE(
             [](void* arg, grpc_error_handle error) {
-              if (error == GRPC_ERROR_CANCELLED) {
+              if (error == absl::CancelledError()) {
                 return;
               }
               std::atomic<int>* timer_fired =

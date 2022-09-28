@@ -400,7 +400,7 @@ class MainLoop {
       }
 
       bool StartTransportOp(grpc_transport_op* op) override {
-        ExecCtx::Run(DEBUG_LOCATION, op->on_consumed, GRPC_ERROR_NONE);
+        ExecCtx::Run(DEBUG_LOCATION, op->on_consumed, absl::OkStatus());
         return true;
       }
     };

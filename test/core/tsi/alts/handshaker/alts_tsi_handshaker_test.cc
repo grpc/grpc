@@ -787,7 +787,7 @@ TEST(AltsTsiHandshakerTest, CheckHandleResponseNullptrHandshaker) {
   {
     grpc_core::ExecCtx exec_ctx;
     alts_handshaker_client_on_status_received_for_testing(
-        client, GRPC_STATUS_OK, GRPC_ERROR_NONE);
+        client, GRPC_STATUS_OK, absl::OkStatus());
   }
   /* Cleanup. */
   grpc_slice_unref(slice);
@@ -821,7 +821,7 @@ TEST(AltsTsiHandshakerTest, CheckHandleResponseNullptrRecvBytes) {
   {
     grpc_core::ExecCtx exec_ctx;
     alts_handshaker_client_on_status_received_for_testing(
-        client, GRPC_STATUS_OK, GRPC_ERROR_NONE);
+        client, GRPC_STATUS_OK, absl::OkStatus());
   }
   /* Cleanup. */
   run_tsi_handshaker_destroy_with_exec_ctx(handshaker);
@@ -857,7 +857,7 @@ TEST(AltsTsiHandshakerTest,
   {
     grpc_core::ExecCtx exec_ctx;
     alts_handshaker_client_on_status_received_for_testing(
-        client, GRPC_STATUS_UNKNOWN, GRPC_ERROR_NONE);
+        client, GRPC_STATUS_UNKNOWN, absl::OkStatus());
   }
   /* Cleanup. */
   grpc_slice_unref(slice);
@@ -894,7 +894,7 @@ TEST(AltsTsiHandshakerTest,
   {
     grpc_core::ExecCtx exec_ctx;
     alts_handshaker_client_on_status_received_for_testing(
-        client, GRPC_STATUS_OK, GRPC_ERROR_NONE);
+        client, GRPC_STATUS_OK, absl::OkStatus());
   }
   /* Cleanup. */
   grpc_slice_unref(slice);
@@ -940,7 +940,7 @@ TEST(AltsTsiHandshakerTest, CheckHandleResponseInvalidResp) {
   {
     grpc_core::ExecCtx exec_ctx;
     alts_handshaker_client_on_status_received_for_testing(
-        client, GRPC_STATUS_OK, GRPC_ERROR_NONE);
+        client, GRPC_STATUS_OK, absl::OkStatus());
   }
   /* Cleanup. */
   run_tsi_handshaker_destroy_with_exec_ctx(handshaker);
@@ -959,7 +959,7 @@ static void check_handle_response_success(void* /*unused*/) {
   {
     grpc_core::ExecCtx exec_ctx;
     alts_handshaker_client_on_status_received_for_testing(
-        cb_event, GRPC_STATUS_OK, GRPC_ERROR_NONE);
+        cb_event, GRPC_STATUS_OK, absl::OkStatus());
   }
   /* Server start. */
   wait(&caller_to_tsi_notification);
@@ -971,7 +971,7 @@ static void check_handle_response_success(void* /*unused*/) {
   {
     grpc_core::ExecCtx exec_ctx;
     alts_handshaker_client_on_status_received_for_testing(
-        cb_event, GRPC_STATUS_OK, GRPC_ERROR_NONE);
+        cb_event, GRPC_STATUS_OK, absl::OkStatus());
   }
 }
 
@@ -1012,7 +1012,7 @@ TEST(AltsTsiHandshakerTest, CheckHandleResponseFailure) {
   {
     grpc_core::ExecCtx exec_ctx;
     alts_handshaker_client_on_status_received_for_testing(
-        client, GRPC_STATUS_OK, GRPC_ERROR_NONE);
+        client, GRPC_STATUS_OK, absl::OkStatus());
   }
   /* Cleanup. */
   run_tsi_handshaker_destroy_with_exec_ctx(handshaker);
@@ -1058,7 +1058,7 @@ TEST(AltsTsiHandshakerTest, CheckHandleResponseAfterShutdown) {
   {
     grpc_core::ExecCtx exec_ctx;
     alts_handshaker_client_on_status_received_for_testing(
-        client, GRPC_STATUS_OK, GRPC_ERROR_NONE);
+        client, GRPC_STATUS_OK, absl::OkStatus());
   }
   /* Cleanup. */
   run_tsi_handshaker_destroy_with_exec_ctx(handshaker);

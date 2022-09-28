@@ -44,10 +44,10 @@ void grpc_stream_destroy(grpc_stream_refcount* refcount) {
        cope with.
        Throw this over to the executor (on a core-owned thread) and process it
        there. */
-    grpc_core::Executor::Run(&refcount->destroy, GRPC_ERROR_NONE);
+    grpc_core::Executor::Run(&refcount->destroy, absl::OkStatus());
   } else {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, &refcount->destroy,
-                            GRPC_ERROR_NONE);
+                            absl::OkStatus());
   }
 }
 
