@@ -41,6 +41,8 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/types:optional",
+        "googleapis_trace_grpc_service",
+        "googleapis_monitoring_grpc_service",
         "opencensus-stats",
         "opencensus-trace",
         "opencensus-trace-stackdriver_exporter",
@@ -54,6 +56,7 @@ grpc_cc_library(
         "//:gpr",
         "//:grpc++_public_hdrs",
         "//:grpc_opencensus_plugin",
+        "//:grpc_public_hdrs",
     ],
 )
 
