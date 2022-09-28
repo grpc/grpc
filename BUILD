@@ -6195,6 +6195,7 @@ grpc_cc_library(
         "json",
         "ref_counted_ptr",
         "slice_refcount",
+        "slice",
         "time",
         "unique_type_name",
         "uri_parser",
