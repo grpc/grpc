@@ -342,12 +342,12 @@ class Server : public InternallyRefCounted<Server>,
     grpc_metadata_batch* recv_initial_metadata_ = nullptr;
     grpc_closure recv_initial_metadata_ready_;
     grpc_closure* original_recv_initial_metadata_ready_;
-    grpc_error_handle recv_initial_metadata_error_ = GRPC_ERROR_NONE;
+    grpc_error_handle recv_initial_metadata_error_;
 
     bool seen_recv_trailing_metadata_ready_ = false;
     grpc_closure recv_trailing_metadata_ready_;
     grpc_closure* original_recv_trailing_metadata_ready_;
-    grpc_error_handle recv_trailing_metadata_error_ = GRPC_ERROR_NONE;
+    grpc_error_handle recv_trailing_metadata_error_;
 
     grpc_closure publish_;
 

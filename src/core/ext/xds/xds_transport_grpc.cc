@@ -177,7 +177,7 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
   grpc_byte_buffer_destroy(self->send_message_payload_);
   self->send_message_payload_ = nullptr;
   // Invoke request handler.
-  self->event_handler_->OnRequestSent(GRPC_ERROR_IS_NONE(error));
+  self->event_handler_->OnRequestSent(error.ok());
   // Drop the ref.
   self->Unref(DEBUG_LOCATION, "OnRequestSent");
 }

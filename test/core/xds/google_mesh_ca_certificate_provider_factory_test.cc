@@ -71,10 +71,10 @@ TEST(GoogleMeshCaConfigTest, Basic) {
       "}";
   auto json = Json::Parse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
   auto config =
       GoogleMeshCaCertificateProviderFactory::Config::Parse(*json, &error);
-  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
+  ASSERT_EQ(error, absl::OkStatus()) << grpc_error_std_string(error);
   EXPECT_EQ(config->endpoint(), "newmeshca.googleapis.com");
   EXPECT_EQ(config->sts_config().token_exchange_service_uri,
             "newsecuretoken.googleapis.com");
@@ -124,10 +124,10 @@ TEST(GoogleMeshCaConfigTest, Defaults) {
       "}";
   auto json = Json::Parse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
   auto config =
       GoogleMeshCaCertificateProviderFactory::Config::Parse(*json, &error);
-  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
+  ASSERT_EQ(error, absl::OkStatus()) << grpc_error_std_string(error);
   EXPECT_EQ(config->endpoint(), "meshca.googleapis.com");
   EXPECT_EQ(config->sts_config().token_exchange_service_uri,
             "securetoken.googleapis.com");
@@ -176,14 +176,13 @@ TEST(GoogleMeshCaConfigTest, WrongExpectedValues) {
       "}";
   auto json = Json::Parse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
   auto config =
       GoogleMeshCaCertificateProviderFactory::Config::Parse(*json, &error);
   EXPECT_THAT(
       grpc_error_std_string(error),
       ::testing::ContainsRegex("field:api_type error:Only GRPC is supported.*"
                                "field:key_type error:Only RSA is supported"));
-  GRPC_ERROR_UNREF(error);
 }
 
 TEST(GoogleMeshCaConfigTest, WrongTypes) {
@@ -219,7 +218,7 @@ TEST(GoogleMeshCaConfigTest, WrongTypes) {
       "}";
   auto json = Json::Parse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
   auto config =
       GoogleMeshCaCertificateProviderFactory::Config::Parse(*json, &error);
   EXPECT_THAT(
@@ -247,7 +246,6 @@ TEST(GoogleMeshCaConfigTest, WrongTypes) {
           "field:key_type error:type should be STRING.*"
           "field:key_size error:failed to parse.*"
           "field:location error:type should be STRING"));
-  GRPC_ERROR_UNREF(error);
 }
 
 TEST(GoogleMeshCaConfigTest, GrpcServicesNotAnArray) {
@@ -263,14 +261,13 @@ TEST(GoogleMeshCaConfigTest, GrpcServicesNotAnArray) {
       "}";
   auto json = Json::Parse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
   auto config =
       GoogleMeshCaCertificateProviderFactory::Config::Parse(*json, &error);
   EXPECT_THAT(
       grpc_error_std_string(error),
       ::testing::ContainsRegex(
           "field:server.*field:grpc_services error:type should be ARRAY"));
-  GRPC_ERROR_UNREF(error);
 }
 
 TEST(GoogleMeshCaConfigTest, GoogleGrpcNotAnObject) {
@@ -288,14 +285,13 @@ TEST(GoogleMeshCaConfigTest, GoogleGrpcNotAnObject) {
       "}";
   auto json = Json::Parse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
   auto config =
       GoogleMeshCaCertificateProviderFactory::Config::Parse(*json, &error);
   EXPECT_THAT(
       grpc_error_std_string(error),
       ::testing::ContainsRegex("field:server.*field:grpc_services.*field:"
                                "google_grpc error:type should be OBJECT"));
-  GRPC_ERROR_UNREF(error);
 }
 
 TEST(GoogleMeshCaConfigTest, CallCredentialsNotAnArray) {
@@ -315,14 +311,13 @@ TEST(GoogleMeshCaConfigTest, CallCredentialsNotAnArray) {
       "}";
   auto json = Json::Parse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
   auto config =
       GoogleMeshCaCertificateProviderFactory::Config::Parse(*json, &error);
   EXPECT_THAT(grpc_error_std_string(error),
               ::testing::ContainsRegex(
                   "field:server.*field:grpc_services.*field:google_grpc.*"
                   "field:call_credentials error:type should be ARRAY"));
-  GRPC_ERROR_UNREF(error);
 }
 
 TEST(GoogleMeshCaConfigTest, StsServiceNotAnObject) {
@@ -344,7 +339,7 @@ TEST(GoogleMeshCaConfigTest, StsServiceNotAnObject) {
       "}";
   auto json = Json::Parse(json_str);
   ASSERT_TRUE(json.ok()) << json.status();
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
   auto config =
       GoogleMeshCaCertificateProviderFactory::Config::Parse(*json, &error);
   EXPECT_THAT(
@@ -352,7 +347,6 @@ TEST(GoogleMeshCaConfigTest, StsServiceNotAnObject) {
       ::testing::ContainsRegex(
           "field:server.*field:grpc_services.*field:google_grpc.*field:"
           "call_credentials.*field:sts_service error:type should be OBJECT"));
-  GRPC_ERROR_UNREF(error);
 }
 
 }  // namespace

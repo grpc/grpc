@@ -531,7 +531,6 @@ class FixedAddressFactory : public LoadBalancingPolicyFactory {
           "errors parsing fixed_address_lb config", &error_list);
       absl::Status status =
           absl::InvalidArgumentError(grpc_error_std_string(error));
-      GRPC_ERROR_UNREF(error);
       return status;
     }
     return MakeRefCounted<FixedAddressConfig>(std::move(address));

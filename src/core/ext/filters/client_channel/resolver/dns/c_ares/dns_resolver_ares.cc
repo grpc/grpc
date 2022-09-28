@@ -407,14 +407,13 @@ AresClientChannelDNSResolver::AresRequestWrapper::OnResolvedLocked(
       result.addresses = ServerAddressList();
     }
     if (service_config_json_ != nullptr) {
-      grpc_error_handle service_config_error = GRPC_ERROR_NONE;
+      grpc_error_handle service_config_error;
       std::string service_config_string =
           ChooseServiceConfig(service_config_json_, &service_config_error);
-      if (!GRPC_ERROR_IS_NONE(service_config_error)) {
+      if (!service_config_error.ok()) {
         result.service_config = absl::UnavailableError(
             absl::StrCat("failed to parse service config: ",
                          grpc_error_std_string(service_config_error)));
-        GRPC_ERROR_UNREF(service_config_error);
       } else if (!service_config_string.empty()) {
         GRPC_CARES_TRACE_LOG("resolver:%p selected service config choice: %s",
                              this, service_config_string.c_str());
@@ -508,7 +507,7 @@ class AresDNSResolver : public DNSResolver {
         grpc_cancel_ares_request(grpc_ares_request_.get());
       } else {
         completed_ = true;
-        OnDnsLookupDone(this, GRPC_ERROR_CANCELLED);
+        OnDnsLookupDone(this, absl::CancelledError());
       }
       grpc_pollset_set_del_pollset_set(pollset_set_, interested_parties_);
       return true;
@@ -618,7 +617,7 @@ class AresDNSResolver : public DNSResolver {
 
     void OnComplete(grpc_error_handle error) override {
       GRPC_CARES_TRACE_LOG("AresHostnameRequest:%p OnComplete", this);
-      if (!GRPC_ERROR_IS_NONE(error)) {
+      if (!error.ok()) {
         on_resolve_address_done_(grpc_error_to_absl_status(error));
         return;
       }
@@ -668,7 +667,7 @@ class AresDNSResolver : public DNSResolver {
 
     void OnComplete(grpc_error_handle error) override {
       GRPC_CARES_TRACE_LOG("AresSRVRequest:%p OnComplete", this);
-      if (!GRPC_ERROR_IS_NONE(error)) {
+      if (!error.ok()) {
         on_resolve_address_done_(grpc_error_to_absl_status(error));
         return;
       }
@@ -716,7 +715,7 @@ class AresDNSResolver : public DNSResolver {
 
     void OnComplete(grpc_error_handle error) override {
       GRPC_CARES_TRACE_LOG("AresSRVRequest:%p OnComplete", this);
-      if (!GRPC_ERROR_IS_NONE(error)) {
+      if (!error.ok()) {
         on_resolved_(grpc_error_to_absl_status(error));
         return;
       }
@@ -849,7 +848,7 @@ void grpc_resolver_dns_ares_init() {
   if (grpc_core::UseAresDnsResolver()) {
     address_sorting_init();
     grpc_error_handle error = grpc_ares_init();
-    if (!GRPC_ERROR_IS_NONE(error)) {
+    if (!error.ok()) {
       GRPC_LOG_IF_ERROR("grpc_ares_init() failed", error);
       return;
     }
