@@ -5754,7 +5754,6 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/memory",
-        "absl/meta:type_traits",
         "absl/random",
         "absl/status",
         "absl/status:statusor",
