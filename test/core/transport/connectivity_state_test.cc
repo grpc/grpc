@@ -18,14 +18,11 @@
 
 #include "src/core/lib/transport/connectivity_state.h"
 
-#include <string.h>
-
-#include <gtest/gtest.h>
+#include "absl/strings/string_view.h"
+#include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
 
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/util/test_config.h"
 #include "test/core/util/tracer_util.h"
 

@@ -40,7 +40,7 @@ class ApiListenerTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
         if config.client_lang == _Lang.PYTHON:
             # gRPC Python versions prior to v1.43.x don't support handling empty
             # RDS update.
-            return not config.version_lt('v1.43.x')
+            return config.version_gte('v1.43.x')
         return True
 
     def test_api_listener(self) -> None:

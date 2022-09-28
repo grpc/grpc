@@ -21,7 +21,6 @@
 
 #include <initializer_list>
 #include <new>
-#include <type_traits>
 #include <utility>
 
 #include "absl/meta/type_traits.h"
@@ -219,7 +218,7 @@ class Table {
 
   // Check if this table has index I.
   template <size_t I>
-      absl::enable_if_t < I<sizeof...(Ts), bool> has() const {
+  absl::enable_if_t<(I < sizeof...(Ts)), bool> has() const {
     return present_bits_.is_set(I);
   }
 
@@ -316,6 +315,14 @@ class Table {
   template <typename F>
   void ForEach(F f) const {
     ForEachImpl(std::move(f), absl::make_index_sequence<sizeof...(Ts)>());
+  }
+
+  // Iterate through each set field in the table if it exists in Vs, in the
+  // order of Vs.
+  template <typename F, typename... Vs>
+  void ForEachIn(F f) const {
+    ForEachImpl(std::move(f),
+                absl::index_sequence<table_detail::IndexOf<Vs, Ts...>()...>());
   }
 
   // Count the number of set fields in the table

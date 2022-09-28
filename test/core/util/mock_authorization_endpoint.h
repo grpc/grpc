@@ -17,6 +17,10 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <string>
+
+#include "absl/strings/string_view.h"
+
 #include "src/core/lib/iomgr/endpoint.h"
 
 namespace grpc_core {

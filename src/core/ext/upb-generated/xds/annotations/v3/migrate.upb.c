@@ -20,7 +20,7 @@ static const upb_MiniTable_Field xds_annotations_v3_MigrateAnnotation__fields[1]
 const upb_MiniTable xds_annotations_v3_MigrateAnnotation_msginit = {
   NULL,
   &xds_annotations_v3_MigrateAnnotation__fields[0],
-  UPB_SIZE(8, 24), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 16), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable_Field xds_annotations_v3_FieldMigrateAnnotation__fields[2] = {
@@ -31,7 +31,7 @@ static const upb_MiniTable_Field xds_annotations_v3_FieldMigrateAnnotation__fiel
 const upb_MiniTable xds_annotations_v3_FieldMigrateAnnotation_msginit = {
   NULL,
   &xds_annotations_v3_FieldMigrateAnnotation__fields[0],
-  UPB_SIZE(16, 40), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 32), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Field xds_annotations_v3_FileMigrateAnnotation__fields[1] = {
@@ -41,7 +41,7 @@ static const upb_MiniTable_Field xds_annotations_v3_FileMigrateAnnotation__field
 const upb_MiniTable xds_annotations_v3_FileMigrateAnnotation_msginit = {
   NULL,
   &xds_annotations_v3_FileMigrateAnnotation__fields[0],
-  UPB_SIZE(8, 24), 1, kUpb_ExtMode_NonExtendable, 0, 255, 0,
+  UPB_SIZE(8, 16), 1, kUpb_ExtMode_NonExtendable, 0, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[3] = {

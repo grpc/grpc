@@ -18,10 +18,16 @@
 
 #include "test/core/util/resolve_localhost_ip46.h"
 
-#include <grpc/support/log.h>
+#include <memory>
+#include <vector>
 
-#include "src/core/lib/iomgr/port.h"
+#include "absl/status/statusor.h"
+
+#include <grpc/support/log.h>
+#include <grpc/support/sync.h>
+
 #include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 
 namespace grpc_core {
@@ -33,7 +39,7 @@ gpr_once g_resolve_localhost_ipv46 = GPR_ONCE_INIT;
 
 void InitResolveLocalhost() {
   absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or =
-      GetDNSResolver()->ResolveNameBlocking("localhost", "https");
+      GetDNSResolver()->LookupHostnameBlocking("localhost", "https");
   GPR_ASSERT(addresses_or.ok());
   for (const auto& addr : *addresses_or) {
     const grpc_sockaddr* sock_addr =

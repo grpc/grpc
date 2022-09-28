@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC Core"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 25.0.0
+PROJECT_NUMBER         = 28.0.0
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -775,7 +775,6 @@ doc/core/combiner-explainer.md \
 doc/core/epoll-polling-engine.md \
 doc/core/grpc-client-server-polling-engine-usage.md \
 doc/core/grpc-cq.md \
-doc/core/grpc-error.md \
 doc/core/grpc-polling-engines.md \
 doc/core/moving-to-c++.md \
 doc/core/pending_api_cleanups.md \

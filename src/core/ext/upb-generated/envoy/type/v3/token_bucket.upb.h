@@ -55,11 +55,15 @@ UPB_INLINE envoy_type_v3_TokenBucket* envoy_type_v3_TokenBucket_parse_ex(const c
   return ret;
 }
 UPB_INLINE char* envoy_type_v3_TokenBucket_serialize(const envoy_type_v3_TokenBucket* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_type_v3_TokenBucket_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_type_v3_TokenBucket_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_type_v3_TokenBucket_serialize_ex(const envoy_type_v3_TokenBucket* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_type_v3_TokenBucket_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_type_v3_TokenBucket_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE void envoy_type_v3_TokenBucket_clear_max_tokens(const envoy_type_v3_TokenBucket* msg) {
   *UPB_PTR_AT(msg, UPB_SIZE(4, 4), uint32_t) = 0;

@@ -25,7 +25,6 @@
 
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/profiling/timers.h"
 
 static void exec_ctx_run(grpc_closure* closure) {
 #ifndef NDEBUG
@@ -37,18 +36,10 @@ static void exec_ctx_run(grpc_closure* closure) {
             closure->line_initiated);
   }
 #endif
-#ifdef GRPC_ERROR_IS_ABSEIL_STATUS
   grpc_error_handle error =
       grpc_core::internal::StatusMoveFromHeapPtr(closure->error_data.error);
   closure->error_data.error = 0;
   closure->cb(closure->cb_arg, std::move(error));
-#else
-  grpc_error_handle error =
-      reinterpret_cast<grpc_error_handle>(closure->error_data.error);
-  closure->error_data.error = 0;
-  closure->cb(closure->cb_arg, error);
-  GRPC_ERROR_UNREF(error);
-#endif
 #ifndef NDEBUG
   if (grpc_trace_closure.enabled()) {
     gpr_log(GPR_DEBUG, "closure %p finished", closure);
@@ -62,13 +53,12 @@ static void exec_ctx_sched(grpc_closure* closure) {
 
 namespace grpc_core {
 
-GPR_THREAD_LOCAL(ExecCtx*) ExecCtx::exec_ctx_;
-GPR_THREAD_LOCAL(ApplicationCallbackExecCtx*)
-ApplicationCallbackExecCtx::callback_exec_ctx_;
+thread_local ExecCtx* ExecCtx::exec_ctx_;
+thread_local ApplicationCallbackExecCtx*
+    ApplicationCallbackExecCtx::callback_exec_ctx_;
 
 bool ExecCtx::Flush() {
   bool did_something = false;
-  GPR_TIMER_SCOPE("grpc_exec_ctx_flush", 0);
   for (;;) {
     if (!grpc_closure_list_empty(closure_list_)) {
       grpc_closure* c = closure_list_.head;
@@ -87,19 +77,10 @@ bool ExecCtx::Flush() {
   return did_something;
 }
 
-Timestamp ExecCtx::Now() {
-  if (!now_is_valid_) {
-    now_ = Timestamp::FromTimespecRoundDown(gpr_now(GPR_CLOCK_MONOTONIC));
-    now_is_valid_ = true;
-  }
-  return now_;
-}
-
 void ExecCtx::Run(const DebugLocation& location, grpc_closure* closure,
                   grpc_error_handle error) {
   (void)location;
   if (closure == nullptr) {
-    GRPC_ERROR_UNREF(error);
     return;
   }
 #ifndef NDEBUG
@@ -118,11 +99,7 @@ void ExecCtx::Run(const DebugLocation& location, grpc_closure* closure,
   closure->run = false;
   GPR_ASSERT(closure->cb != nullptr);
 #endif
-#ifdef GRPC_ERROR_IS_ABSEIL_STATUS
   closure->error_data.error = internal::StatusAllocHeapPtr(error);
-#else
-  closure->error_data.error = reinterpret_cast<intptr_t>(error);
-#endif
   exec_ctx_sched(closure);
 }
 

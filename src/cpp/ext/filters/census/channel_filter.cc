@@ -20,11 +20,13 @@
 
 #include "src/cpp/ext/filters/census/channel_filter.h"
 
+#include "absl/status/status.h"
+
 namespace grpc {
 
 grpc_error_handle CensusChannelData::Init(grpc_channel_element* /*elem*/,
                                           grpc_channel_element_args* /*args*/) {
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 }  // namespace grpc

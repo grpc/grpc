@@ -26,7 +26,7 @@ static const upb_MiniTable_Field envoy_admin_v3_Certificates__fields[1] = {
 const upb_MiniTable envoy_admin_v3_Certificates_msginit = {
   &envoy_admin_v3_Certificates_submsgs[0],
   &envoy_admin_v3_Certificates__fields[0],
-  UPB_SIZE(4, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_admin_v3_Certificate_submsgs[2] = {
@@ -42,7 +42,7 @@ static const upb_MiniTable_Field envoy_admin_v3_Certificate__fields[2] = {
 const upb_MiniTable envoy_admin_v3_Certificate_msginit = {
   &envoy_admin_v3_Certificate_submsgs[0],
   &envoy_admin_v3_Certificate__fields[0],
-  UPB_SIZE(8, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(8, 16), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_admin_v3_CertificateDetails_submsgs[4] = {
@@ -65,7 +65,7 @@ static const upb_MiniTable_Field envoy_admin_v3_CertificateDetails__fields[7] = 
 const upb_MiniTable envoy_admin_v3_CertificateDetails_msginit = {
   &envoy_admin_v3_CertificateDetails_submsgs[0],
   &envoy_admin_v3_CertificateDetails__fields[0],
-  UPB_SIZE(48, 88), 7, kUpb_ExtMode_NonExtendable, 7, 255, 0,
+  UPB_SIZE(48, 80), 7, kUpb_ExtMode_NonExtendable, 7, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_admin_v3_CertificateDetails_OcspDetails_submsgs[2] = {
@@ -81,7 +81,7 @@ static const upb_MiniTable_Field envoy_admin_v3_CertificateDetails_OcspDetails__
 const upb_MiniTable envoy_admin_v3_CertificateDetails_OcspDetails_msginit = {
   &envoy_admin_v3_CertificateDetails_OcspDetails_submsgs[0],
   &envoy_admin_v3_CertificateDetails_OcspDetails__fields[0],
-  UPB_SIZE(12, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Field envoy_admin_v3_SubjectAlternateName__fields[3] = {
@@ -93,7 +93,7 @@ static const upb_MiniTable_Field envoy_admin_v3_SubjectAlternateName__fields[3] 
 const upb_MiniTable envoy_admin_v3_SubjectAlternateName_msginit = {
   NULL,
   &envoy_admin_v3_SubjectAlternateName__fields[0],
-  UPB_SIZE(12, 24), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
+  UPB_SIZE(16, 24), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[5] = {

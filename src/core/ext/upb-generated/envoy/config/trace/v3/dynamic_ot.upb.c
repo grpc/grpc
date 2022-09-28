@@ -29,7 +29,7 @@ static const upb_MiniTable_Field envoy_config_trace_v3_DynamicOtConfig__fields[2
 const upb_MiniTable envoy_config_trace_v3_DynamicOtConfig_msginit = {
   &envoy_config_trace_v3_DynamicOtConfig_submsgs[0],
   &envoy_config_trace_v3_DynamicOtConfig__fields[0],
-  UPB_SIZE(16, 40), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 32), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[1] = {

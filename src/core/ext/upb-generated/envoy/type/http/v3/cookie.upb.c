@@ -28,7 +28,7 @@ static const upb_MiniTable_Field envoy_type_http_v3_Cookie__fields[3] = {
 const upb_MiniTable envoy_type_http_v3_Cookie_msginit = {
   &envoy_type_http_v3_Cookie_submsgs[0],
   &envoy_type_http_v3_Cookie__fields[0],
-  UPB_SIZE(24, 56), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
+  UPB_SIZE(24, 48), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[1] = {

@@ -54,11 +54,15 @@ UPB_INLINE envoy_annotations_ResourceAnnotation* envoy_annotations_ResourceAnnot
   return ret;
 }
 UPB_INLINE char* envoy_annotations_ResourceAnnotation_serialize(const envoy_annotations_ResourceAnnotation* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_annotations_ResourceAnnotation_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_annotations_ResourceAnnotation_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_annotations_ResourceAnnotation_serialize_ex(const envoy_annotations_ResourceAnnotation* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_annotations_ResourceAnnotation_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_annotations_ResourceAnnotation_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE void envoy_annotations_ResourceAnnotation_clear_type(const envoy_annotations_ResourceAnnotation* msg) {
   *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
@@ -84,7 +88,7 @@ UPB_INLINE const envoy_annotations_ResourceAnnotation* envoy_annotations_resourc
 }
 UPB_INLINE void envoy_annotations_set_resource(struct google_protobuf_ServiceOptions* msg, const envoy_annotations_ResourceAnnotation* ext, upb_Arena* arena) {
   const upb_Message_Extension* msg_ext =
-      _upb_Message_Getorcreateext(msg, &envoy_annotations_resource_ext, arena);
+      _upb_Message_GetOrCreateExtension(msg, &envoy_annotations_resource_ext, arena);
   UPB_ASSERT(msg_ext);
   *UPB_PTR_AT(&msg_ext->data, 0, const envoy_annotations_ResourceAnnotation*) = ext;
 }

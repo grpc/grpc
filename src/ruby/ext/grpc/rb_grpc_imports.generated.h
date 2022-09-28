@@ -80,9 +80,6 @@ extern grpc_call_details_init_type grpc_call_details_init_import;
 typedef void(*grpc_call_details_destroy_type)(grpc_call_details* details);
 extern grpc_call_details_destroy_type grpc_call_details_destroy_import;
 #define grpc_call_details_destroy grpc_call_details_destroy_import
-typedef void(*grpc_register_plugin_type)(void (*init)(void), void (*destroy)(void));
-extern grpc_register_plugin_type grpc_register_plugin_import;
-#define grpc_register_plugin grpc_register_plugin_import
 typedef void(*grpc_init_type)(void);
 extern grpc_init_type grpc_init_import;
 #define grpc_init grpc_init_import
@@ -278,7 +275,7 @@ extern grpc_resource_quota_resize_type grpc_resource_quota_resize_import;
 typedef void(*grpc_resource_quota_set_max_threads_type)(grpc_resource_quota* resource_quota, int new_max_threads);
 extern grpc_resource_quota_set_max_threads_type grpc_resource_quota_set_max_threads_import;
 #define grpc_resource_quota_set_max_threads grpc_resource_quota_set_max_threads_import
-typedef grpc_slice(*grpc_dump_xds_configs_type)();
+typedef grpc_slice(*grpc_dump_xds_configs_type)(void);
 extern grpc_dump_xds_configs_type grpc_dump_xds_configs_import;
 #define grpc_dump_xds_configs grpc_dump_xds_configs_import
 typedef const grpc_arg_pointer_vtable*(*grpc_resource_quota_arg_vtable_type)(void);

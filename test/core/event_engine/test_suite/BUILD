@@ -75,15 +75,37 @@ grpc_cc_library(
 # -- EventEngine implementations --
 
 grpc_cc_test(
-    name = "iomgr_event_engine_test",
-    srcs = ["iomgr_event_engine_test.cc"],
+    name = "posix_event_engine_test",
+    srcs = ["posix_event_engine_test.cc"],
     uses_polling = False,
-    deps = ["//test/core/event_engine/test_suite:timer"],
+    deps = [
+        "//:posix_event_engine",
+        "//test/core/event_engine/test_suite:timer",
+    ],
+)
+
+grpc_cc_test(
+    name = "windows_event_engine_test",
+    srcs = ["windows_event_engine_test.cc"],
+    tags = [
+        "bazel_only",
+        "no_linux",
+        "no_mac",
+    ],
+    uses_polling = False,
+    deps = [
+        "//:windows_event_engine",
+        "//test/core/event_engine/test_suite:timer",
+    ],
 )
 
 grpc_cc_test(
     name = "fuzzing_event_engine_test",
     srcs = ["fuzzing_event_engine_test.cc"],
+    tags = [
+        "no_mac",
+        "no_windows",
+    ],
     uses_polling = False,
     deps = [
         "//test/core/event_engine/fuzzing_event_engine",
@@ -99,6 +121,7 @@ grpc_cc_library(
     srcs = ["oracle_event_engine_posix.cc"],
     hdrs = ["oracle_event_engine_posix.h"],
     tags = [
+        "cpu:10",
         "no_windows",
     ],
     deps = [
@@ -117,7 +140,12 @@ grpc_cc_test(
         "no_test_ios",
         "no_windows",
     ],
-    uses_polling = False,
+    # TODO(vignesbabu): This is required because the oracle event engine uses
+    # poll syscall. If uses_polling is set to False, there will be an attempt
+    # to run this test with GRPC_POLL_STRATEGY=none which will hijack the poll
+    # c-wrapper causing the test to fail. A more generic posix oracle event
+    # engine design which doesn't rely on poll is required.
+    uses_polling = True,
     deps = [
         ":client",
         ":oracle_event_engine_posix",
@@ -136,7 +164,6 @@ grpc_cc_library(
     hdrs = COMMON_HEADERS,
     external_deps = ["gtest"],
     deps = [
-        "//:exec_ctx",
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],

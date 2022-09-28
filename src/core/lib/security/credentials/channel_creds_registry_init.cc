@@ -32,6 +32,7 @@
 #include "src/core/lib/security/credentials/channel_creds_registry.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
+#include "src/core/lib/security/credentials/google_default/google_default_credentials.h"  // IWYU pragma: keep
 
 namespace grpc_core {
 

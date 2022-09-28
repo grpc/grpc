@@ -34,6 +34,7 @@
 #include <string.h>
 
 #include "google/protobuf/descriptor.upb.h"
+#include "upb/mini_table.h"
 #include "upb/reflection.h"
 
 /* Must be last. */
@@ -646,6 +647,14 @@ bool upb_FieldDef_IsSubMessage(const upb_FieldDef* f) {
 bool upb_FieldDef_IsString(const upb_FieldDef* f) {
   return upb_FieldDef_CType(f) == kUpb_CType_String ||
          upb_FieldDef_CType(f) == kUpb_CType_Bytes;
+}
+
+bool upb_FieldDef_IsOptional(const upb_FieldDef* f) {
+  return upb_FieldDef_Label(f) == kUpb_Label_Optional;
+}
+
+bool upb_FieldDef_IsRequired(const upb_FieldDef* f) {
+  return upb_FieldDef_Label(f) == kUpb_Label_Required;
 }
 
 bool upb_FieldDef_IsRepeated(const upb_FieldDef* f) {
@@ -2338,8 +2347,7 @@ static void create_fielddef(
   }
 
   if (google_protobuf_FieldDescriptorProto_has_oneof_index(field_proto)) {
-    int oneof_index =
-        google_protobuf_FieldDescriptorProto_oneof_index(field_proto);
+    uint32_t oneof_index = google_protobuf_FieldDescriptorProto_oneof_index(field_proto);
     upb_OneofDef* oneof;
     upb_value v = upb_value_constptr(f);
 

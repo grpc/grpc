@@ -22,7 +22,9 @@
 #include <stddef.h>
 
 #include <deque>
+#include <functional>
 #include <map>
+#include <memory>
 #include <string>
 
 #include "absl/base/thread_annotations.h"
@@ -31,12 +33,12 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/codegen/connectivity_state.h>
-#include <grpc/impl/codegen/grpc_types.h>
 
 #include "src/core/ext/filters/client_channel/client_channel_channelz.h"
 #include "src/core/ext/filters/client_channel/connector.h"
 #include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
 #include "src/core/lib/backoff/backoff.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/gpr/time_precise.h"
@@ -67,7 +69,7 @@ class SubchannelCall;
 class ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
  public:
   ConnectedSubchannel(
-      grpc_channel_stack* channel_stack, const grpc_channel_args* args,
+      grpc_channel_stack* channel_stack, const ChannelArgs& args,
       RefCountedPtr<channelz::SubchannelNode> channelz_subchannel);
   ~ConnectedSubchannel() override;
 
@@ -77,7 +79,7 @@ class ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
   void Ping(grpc_closure* on_initiate, grpc_closure* on_ack);
 
   grpc_channel_stack* channel_stack() const { return channel_stack_; }
-  const grpc_channel_args* args() const { return args_; }
+  const ChannelArgs& args() const { return args_; }
   channelz::SubchannelNode* channelz_subchannel() const {
     return channelz_subchannel_.get();
   }
@@ -86,7 +88,7 @@ class ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
 
  private:
   grpc_channel_stack* channel_stack_;
-  grpc_channel_args* args_;
+  ChannelArgs args_;
   // ref counted pointer to the channelz node in this connected subchannel's
   // owning subchannel.
   RefCountedPtr<channelz::SubchannelNode> channelz_subchannel_;
@@ -224,11 +226,11 @@ class Subchannel : public DualRefCounted<Subchannel> {
   // Creates a subchannel.
   static RefCountedPtr<Subchannel> Create(
       OrphanablePtr<SubchannelConnector> connector,
-      const grpc_resolved_address& address, const grpc_channel_args* args);
+      const grpc_resolved_address& address, const ChannelArgs& args);
 
   // The ctor and dtor are not intended to use directly.
   Subchannel(SubchannelKey key, OrphanablePtr<SubchannelConnector> connector,
-             const grpc_channel_args* args);
+             const ChannelArgs& args);
   ~Subchannel() override;
 
   // Throttles keepalive time to \a new_keepalive_time iff \a new_keepalive_time
@@ -238,7 +240,7 @@ class Subchannel : public DualRefCounted<Subchannel> {
 
   grpc_pollset_set* pollset_set() const { return pollset_set_; }
 
-  const grpc_channel_args* channel_args() const { return args_; }
+  const ChannelArgs& channel_args() const { return args_; }
 
   channelz::SubchannelNode* channelz_node();
 
@@ -278,11 +280,19 @@ class Subchannel : public DualRefCounted<Subchannel> {
   // We do not hold refs to the data producer; the implementation is
   // expected to register itself upon construction and remove itself
   // upon destruction.
-  void AddDataProducer(DataProducerInterface* data_producer)
+  //
+  // Looks up the current data producer for type and invokes get_or_add()
+  // with a pointer to that producer in the map.  The get_or_add() function
+  // can modify the pointed-to value to update the map.  This provides a
+  // way to either re-use an existing producer or register a new one in
+  // a non-racy way.
+  void GetOrAddDataProducer(
+      UniqueTypeName type,
+      std::function<void(DataProducerInterface**)> get_or_add)
       ABSL_LOCKS_EXCLUDED(mu_);
+  // Removes the data producer from the map, if the current producer for
+  // this type is the specified producer.
   void RemoveDataProducer(DataProducerInterface* data_producer)
-      ABSL_LOCKS_EXCLUDED(mu_);
-  DataProducerInterface* GetDataProducer(UniqueTypeName type)
       ABSL_LOCKS_EXCLUDED(mu_);
 
  private:
@@ -372,7 +382,7 @@ class Subchannel : public DualRefCounted<Subchannel> {
   // key_ if overridden by proxy mapper.
   grpc_resolved_address address_for_connect_;
   // Channel args.
-  grpc_channel_args* args_;
+  ChannelArgs args_;
   // pollset_set tracking who's interested in a connection being setup.
   grpc_pollset_set* pollset_set_;
   // Channelz tracking.
@@ -419,6 +429,7 @@ class Subchannel : public DualRefCounted<Subchannel> {
   // Data producer map.
   std::map<UniqueTypeName, DataProducerInterface*> data_producer_map_
       ABSL_GUARDED_BY(mu_);
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine_;
 };
 
 }  // namespace grpc_core

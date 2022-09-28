@@ -1,0 +1,4 @@
+- script: tools/distrib/clang_tidy_code.sh
+  # ClangTidy needs to run exclusively because it uses files under the bazel output
+  # directory and this will be removed by another bazel invocation.
+  cpu_cost: 1000

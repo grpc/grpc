@@ -22,7 +22,7 @@ static const upb_MiniTable_Field google_type_Expr__fields[4] = {
 const upb_MiniTable google_type_Expr_msginit = {
   NULL,
   &google_type_Expr__fields[0],
-  UPB_SIZE(32, 72), 4, kUpb_ExtMode_NonExtendable, 4, 255, 0,
+  UPB_SIZE(32, 64), 4, kUpb_ExtMode_NonExtendable, 4, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[1] = {

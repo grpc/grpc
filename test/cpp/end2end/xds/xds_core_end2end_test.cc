@@ -142,6 +142,8 @@ TEST_P(XdsClientTest, MultipleBadCdsResources) {
   constexpr char kClusterName2[] = "cluster_name_2";
   constexpr char kClusterName3[] = "cluster_name_3";
   CreateAndStartBackends(1);
+  balancer_->ads_service()->set_inject_bad_resources_for_resource_type(
+      kCdsTypeUrl);
   // Add cluster with unsupported type.
   auto cluster = default_cluster_;
   cluster.set_name(kClusterName2);
@@ -178,14 +180,20 @@ TEST_P(XdsClientTest, MultipleBadCdsResources) {
   // Send RPC.
   const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(
+  EXPECT_EQ(
       response_state->error_message,
-      ::testing::ContainsRegex(absl::StrCat(kClusterName2,
-                                            ": validation error.*"
-                                            "DiscoveryType is not valid.*",
-                                            kClusterName3,
-                                            ": validation error.*"
-                                            "DiscoveryType is not valid")));
+      absl::StrCat("xDS response validation errors: ["
+                   "resource index 0: Can't decode Resource proto wrapper; ",
+                   "resource index 1: foo: "
+                   "INVALID_ARGUMENT: Can't parse Cluster resource.; "
+                   "resource index 3: ",
+                   kClusterName2,
+                   ": INVALID_ARGUMENT: errors parsing CDS resource: "
+                   "[DiscoveryType is not valid.]; "
+                   "resource index 4: ",
+                   kClusterName3,
+                   ": INVALID_ARGUMENT: errors parsing CDS resource: "
+                   "[DiscoveryType is not valid.]]"));
   // RPCs for default cluster should succeed.
   std::vector<std::pair<std::string, std::string>> metadata_default_cluster = {
       {"cluster", kDefaultClusterName},
@@ -244,8 +252,7 @@ TEST_P(GlobalXdsClientTest, MultipleChannelsShareXdsClient) {
   // Create second channel and tell it to connect to kNewServerName.
   auto channel2 = CreateChannel(/*failover_timeout_ms=*/0, kNewServerName);
   channel2->GetState(/*try_to_connect=*/true);
-  ASSERT_TRUE(
-      channel2->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100)));
+  ASSERT_TRUE(channel2->WaitForConnected(grpc_timeout_seconds_to_deadline(1)));
   // Make sure there's only one client connected.
   EXPECT_EQ(1UL, balancer_->ads_service()->clients().size());
 }
@@ -269,8 +276,7 @@ TEST_P(
   // Create second channel and tell it to connect to kNewServerName.
   auto channel2 = CreateChannel(/*failover_timeout_ms=*/0, kNewServerName);
   channel2->GetState(/*try_to_connect=*/true);
-  ASSERT_TRUE(
-      channel2->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100)));
+  ASSERT_TRUE(channel2->WaitForConnected(grpc_timeout_seconds_to_deadline(1)));
   // Now, destroy the new channel, send an EDS update to use a different backend
   // and test that the channel switches to that backend.
   channel2.reset();
@@ -305,11 +311,10 @@ TEST_P(GlobalXdsClientTest, MultipleBadLdsResources) {
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::ContainsRegex(absl::StrCat(
-                  kServerName,
-                  ": validation error.*"
-                  "Listener has neither address nor ApiListener.*")));
+  EXPECT_EQ(response_state->error_message,
+            "xDS response validation errors: ["
+            "resource index 0: server.example.com: "
+            "INVALID_ARGUMENT: Listener has neither address nor ApiListener]");
   // Need to create a second channel to subscribe to a second LDS resource.
   auto channel2 = CreateChannel(0, kServerName2);
   auto stub2 = grpc::testing::EchoTestService::NewStub(channel2);
@@ -323,16 +328,13 @@ TEST_P(GlobalXdsClientTest, MultipleBadLdsResources) {
     // Wait for second NACK to be reported to xDS server.
     const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
     ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-    EXPECT_THAT(response_state->error_message,
-                ::testing::ContainsRegex(absl::StrCat(
-                    kServerName,
-                    ": validation error.*"
-                    "Listener has neither address nor ApiListener.*")));
-    EXPECT_THAT(response_state->error_message,
-                ::testing::ContainsRegex(absl::StrCat(
-                    kServerName2,
-                    ": validation error.*"
-                    "Listener has neither address nor ApiListener.*")));
+    EXPECT_EQ(
+        response_state->error_message,
+        "xDS response validation errors: ["
+        "resource index 0: server.other.com: "
+        "INVALID_ARGUMENT: Listener has neither address nor ApiListener; "
+        "resource index 1: server.example.com: "
+        "INVALID_ARGUMENT: Listener has neither address nor ApiListener]");
   }
   // Now start a new channel with a third server name, this one with a
   // valid resource.
@@ -361,13 +363,13 @@ TEST_P(GlobalXdsClientTest, InvalidListenerStillExistsIfPreviouslyCached) {
   auto listener = default_listener_;
   listener.clear_api_listener();
   balancer_->ads_service()->SetLdsResource(listener);
-  const auto response_state = WaitForLdsNack(DEBUG_LOCATION, StatusCode::OK);
+  const auto response_state =
+      WaitForLdsNack(DEBUG_LOCATION, RpcOptions(), StatusCode::OK);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::ContainsRegex(absl::StrCat(
-                  kServerName,
-                  ": validation error.*"
-                  "Listener has neither address nor ApiListener")));
+  EXPECT_EQ(response_state->error_message,
+            "xDS response validation errors: ["
+            "resource index 0: server.example.com: "
+            "INVALID_ARGUMENT: Listener has neither address nor ApiListener]");
   CheckRpcSendOk(DEBUG_LOCATION);
 }
 
@@ -543,9 +545,8 @@ TEST_P(TimeoutTest, EdsServerIgnoresRequest) {
   balancer_->ads_service()->IgnoreResourceType(kEdsTypeUrl);
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      // TODO(roth): Improve this error message as part of
-      // https://github.com/grpc/grpc/issues/22883.
-      "weighted_target: all children report state TRANSIENT_FAILURE",
+      "no children in weighted_target policy: EDS resource eds_service_name "
+      "does not exist",
       RpcOptions().set_timeout_ms(4000));
 }
 
@@ -554,9 +555,8 @@ TEST_P(TimeoutTest, EdsResourceNotPresentInRequest) {
   // by default.
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      // TODO(roth): Improve this error message as part of
-      // https://github.com/grpc/grpc/issues/22883.
-      "weighted_target: all children report state TRANSIENT_FAILURE",
+      "no children in weighted_target policy: EDS resource eds_service_name "
+      "does not exist",
       RpcOptions().set_timeout_ms(4000));
 }
 
@@ -586,11 +586,9 @@ TEST_P(TimeoutTest, EdsSecondResourceNotPresentInRequest) {
       [](const RpcResult& result) {
         if (result.status.ok()) return true;  // Keep going.
         EXPECT_EQ(StatusCode::UNAVAILABLE, result.status.error_code());
-        // TODO(roth): Improve this error message as part of
-        // https://github.com/grpc/grpc/issues/22883.
-        EXPECT_EQ(
-            result.status.error_message(),
-            "weighted_target: all children report state TRANSIENT_FAILURE");
+        EXPECT_EQ(result.status.error_message(),
+                  "no children in weighted_target policy: EDS resource "
+                  "eds_service_name_does_not_exist does not exist");
         return false;
       },
       /*timeout_ms=*/30000,
@@ -1051,10 +1049,12 @@ TEST_P(XdsFederationTest, EdsResourceNameAuthorityUnknown) {
   EchoResponse response;
   grpc::Status status = stub2->Echo(&context, request, &response);
   EXPECT_EQ(status.error_code(), StatusCode::UNAVAILABLE);
-  // TODO(roth): Improve this error message as part of
-  // https://github.com/grpc/grpc/issues/22883.
-  EXPECT_EQ(status.error_message(),
-            "weighted_target: all children report state TRANSIENT_FAILURE");
+  EXPECT_EQ(
+      status.error_message(),
+      "no children in weighted_target policy: EDS watcher error for resource "
+      "xdstp://xds.unknown.com/envoy.config.endpoint.v3.ClusterLoadAssignment/"
+      "edsservice_name (UNAVAILABLE: authority \"xds.unknown.com\" not "
+      "present in bootstrap config)");
   ASSERT_EQ(GRPC_CHANNEL_TRANSIENT_FAILURE, channel2->GetState(false));
 }
 
@@ -1357,7 +1357,7 @@ int main(int argc, char** argv) {
   GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
 #if TARGET_OS_IPHONE
   // Workaround Apple CFStream bug
-  gpr_setenv("grpc_cfstream", "0");
+  grpc_core::SetEnv("grpc_cfstream", "0");
 #endif
   grpc_init();
   const auto result = RUN_ALL_TESTS();

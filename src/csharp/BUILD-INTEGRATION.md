@@ -91,6 +91,15 @@ button](https://stackoverflow.com/a/9770061). Click on it, and choose "Add as
 link". If you do not select this option, Visual Studio will copy files to the
 project directory instead.
 
+Alternatively, you can also specify `AdditionalImportDirs` and provide a list of directories to search for imported .proto files. The directories are searched in the order given.
+
+Eg.
+
+```xml
+  <Protobuf Include="protos/*.proto" ProtoRoot="protos"
+      AdditionalImportDirs="/folder/ouside/project/protos/myapis/;/another/folder/" ... />
+```
+
 #### My .proto files have same filename in different folders
 
 Starting from Grpc.Tools version 2.31, protocol buffers compilation preserves original folder structure for generated files. Eg.
@@ -343,7 +352,7 @@ The following metadata are recognized on the `<Protobuf>` items.
 | Name           | Default   | Value                | Synopsis                         |
 |----------------|-----------|----------------------|----------------------------------|
 | Access         | `public`  | `public`, `internal`               | Generated class access           |
-| AdditionalProtocArguments | | arbitrary cmdline arguments | Extra command line flags passed to `protoc` command |
+| AdditionalProtocArguments | | arbitrary cmdline arguments | Extra command line flags passed to `protoc` command. To specify multiple arguments use semi-colons (;) to separate them. See example below |
 | ProtoCompile   | `true`    | `true`, `false`                    | Pass files to protoc?            |
 | ProtoRoot      | See notes | A directory                        | Common root for set of files     |
 | CompileOutputs | `true`    | `true`, `false`                    | C#-compile generated files?      |
@@ -352,6 +361,7 @@ The following metadata are recognized on the `<Protobuf>` items.
 | GrpcOutputDir  | See notes | A directory                        | Directory for generated gRPC stubs    |
 | GrpcOutputOptions | | arbitrary options                  | Extra options passed to gRPC codegen as `--grpc_opt=opt1,opt2` |
 | GrpcServices   | `both`    | `none`, `client`, `server`, `both` | Generated gRPC stubs             |
+| AdditionalImportDirs | See notes | Directories                        | Specify additional directories in which to search for imports .proto files |
 
 __Notes__
 
@@ -388,6 +398,28 @@ Normally this option should not be used as it's values are already controlled by
 and "GrpcServices" metadata, but it might be useful in situations where you want
 to explicitly pass some otherwise unsupported (e.g. experimental) options to the
 `grpc_csharp_plugin`.
+
+* __AdditionalImportDirs__
+Specify additional directories in which to search for imports in .proto files. The directories are searched in the order given. You may specify directories _outside_ of the 
+project directory. The directories are passed to the `protoc` code generator via the `-I/--proto_path` option
+together with `Protobuf_StandardImportsPath` and `ProtoRoot` directories.
+
+__Specifying multiple values in properties__
+
+Some properties allow you to specify multiple values in a list. The items in a list need to
+be separated by semi-colons (;). This is the syntax that MsBuild uses for lists.
+
+The properties that can have lists of items are: __OutputOptions__, __AdditionalProtocArguments__, __GrpcOutputOptions__, __AdditionalImportDirs__
+
+Example: to specify two additional arguments: ```--plugin=protoc-gen-myplugin=D:\myplugin.exe --myplugin_out=.```
+
+```xml
+  <ItemGroup>
+    <Protobuf Include="proto_root/**/*.proto" ProtoRoot="proto_root"
+              OutputDir="%(RelativeDir)" CompileOutputs="false"
+              AdditionalProtocArguments="--plugin=protoc-gen-myplugin=D:\myplugin.exe;--myplugin_out=." />
+  </ItemGroup>
+```
 
 `grpc_csharp_plugin` command line options
 ---------

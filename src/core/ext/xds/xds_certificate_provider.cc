@@ -59,12 +59,11 @@ class RootCertificatesWatcher
   }
 
   void OnError(grpc_error_handle root_cert_error,
-               grpc_error_handle identity_cert_error) override {
-    if (!GRPC_ERROR_IS_NONE(root_cert_error)) {
+               grpc_error_handle /*identity_cert_error*/) override {
+    if (!root_cert_error.ok()) {
       parent_->SetErrorForCert(cert_name_, root_cert_error /* pass the ref */,
                                absl::nullopt);
     }
-    GRPC_ERROR_UNREF(identity_cert_error);
   }
 
  private:
@@ -93,13 +92,12 @@ class IdentityCertificatesWatcher
     }
   }
 
-  void OnError(grpc_error_handle root_cert_error,
+  void OnError(grpc_error_handle /*root_cert_error*/,
                grpc_error_handle identity_cert_error) override {
-    if (!GRPC_ERROR_IS_NONE(identity_cert_error)) {
+    if (!identity_cert_error.ok()) {
       parent_->SetErrorForCert(cert_name_, absl::nullopt,
                                identity_cert_error /* pass the ref */);
     }
-    GRPC_ERROR_UNREF(root_cert_error);
   }
 
  private:

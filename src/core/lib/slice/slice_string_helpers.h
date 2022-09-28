@@ -27,9 +27,5 @@
 
 /* Calls gpr_dump on a slice. */
 char* grpc_dump_slice(const grpc_slice& slice, uint32_t flags);
-/* Calls gpr_dump on a slice and returns the result as a slice. */
-grpc_slice grpc_dump_slice_to_slice(const grpc_slice& slice, uint32_t flags);
-
-bool grpc_parse_slice_to_uint32(grpc_slice str, uint32_t* result);
 
 #endif /* GRPC_CORE_LIB_SLICE_SLICE_STRING_HELPERS_H */
