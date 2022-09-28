@@ -22,7 +22,6 @@
 #include <string>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "google/api/expr/v1alpha1/syntax.upb.h"

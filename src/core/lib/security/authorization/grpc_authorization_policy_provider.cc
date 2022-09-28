@@ -20,8 +20,6 @@
 
 #include <utility>
 
-#include "absl/memory/memory.h"
-
 #include <grpc/grpc_security.h>
 #include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/slice.h>

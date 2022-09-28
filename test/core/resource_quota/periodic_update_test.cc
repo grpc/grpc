@@ -21,7 +21,6 @@
 #include <thread>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "gtest/gtest.h"
 
 #include <grpc/support/log.h>

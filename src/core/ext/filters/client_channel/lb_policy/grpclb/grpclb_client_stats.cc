@@ -22,8 +22,6 @@
 
 #include <string.h>
 
-#include "absl/memory/memory.h"
-
 #include <grpc/support/atm.h>
 #include <grpc/support/string_util.h>
 

@@ -21,7 +21,6 @@
 #include <string>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "upb/upb.hpp"
 
 #include <grpc/grpc_security_constants.h>

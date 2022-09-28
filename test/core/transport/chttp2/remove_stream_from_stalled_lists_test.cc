@@ -29,8 +29,6 @@
 
 #include <gtest/gtest.h>
 
-#include "absl/memory/memory.h"
-
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>

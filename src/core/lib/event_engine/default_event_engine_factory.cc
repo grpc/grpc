@@ -18,8 +18,6 @@
 
 #include <memory>
 
-#include "absl/memory/memory.h"
-
 #include <grpc/event_engine/event_engine.h>
 
 #ifdef GPR_WINDOWS

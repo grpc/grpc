@@ -20,7 +20,6 @@
 #include <string>
 
 #include "absl/base/attributes.h"
-#include "absl/memory/memory.h"
 #include "absl/types/variant.h"
 
 #include <grpc/status.h>

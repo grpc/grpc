@@ -23,7 +23,6 @@
 #include <memory>
 #include <utility>
 
-#include "absl/memory/memory.h"
 #include "upb/upb.h"
 #include "upb/upb.hpp"
 

@@ -22,8 +22,6 @@
 
 #include <memory>
 
-#include "absl/memory/memory.h"
-
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/propagation_bits.h>
 #include <grpc/slice.h>

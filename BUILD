@@ -910,10 +910,7 @@ grpc_cc_library(
         "include/grpcpp/security/alts_context.h",
         "include/grpcpp/security/alts_util.h",
     ],
-    external_deps = [
-        "absl/memory",
-        "upb_lib",
-    ],
+    external_deps = ["upb_lib"],
     language = "c++",
     standalone = True,
     visibility = ["@grpc:tsi"],
@@ -1899,7 +1896,6 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
-        "absl/memory",
         "absl/status",
         "absl/strings",
         "absl/types:optional",
@@ -1935,7 +1931,6 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
-        "absl/memory",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -2532,7 +2527,6 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
-        "absl/memory",
         "absl/time",
         "absl/types:optional",
     ],
@@ -2617,7 +2611,6 @@ grpc_cc_library(
         "src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.h",
     ],
     external_deps = [
-        "absl/memory",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -2638,7 +2631,6 @@ grpc_cc_library(
         "src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.h",
     ],
     external_deps = [
-        "absl/memory",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -2683,7 +2675,6 @@ grpc_cc_library(
         "absl/base:core_headers",
         "absl/container:inlined_vector",
         "absl/functional:function_ref",
-        "absl/memory",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -3362,7 +3353,6 @@ grpc_cc_library(
         "absl/container:inlined_vector",
         "absl/functional:any_invocable",
         "absl/functional:function_ref",
-        "absl/memory",
         "absl/meta:type_traits",
         "absl/status",
         "absl/status:statusor",
@@ -3581,7 +3571,6 @@ grpc_cc_library(
         "src/core/lib/service_config/service_config_impl.h",
     ],
     external_deps = [
-        "absl/memory",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -3631,7 +3620,6 @@ grpc_cc_library(
         "src/core/lib/resolver/server_address.h",
     ],
     external_deps = [
-        "absl/memory",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -3896,7 +3884,6 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/container:inlined_vector",
-        "absl/memory",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -4003,7 +3990,6 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
-        "absl/memory",
         "absl/status",
         "absl/status:statusor",
         "absl/types:optional",
@@ -4161,7 +4147,6 @@ grpc_cc_library(
         "src/core/ext/filters/message_size/message_size_filter.h",
     ],
     external_deps = [
-        "absl/memory",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -4200,7 +4185,6 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
-        "absl/memory",
         "absl/random",
         "absl/status",
         "absl/status:statusor",
@@ -4238,7 +4222,6 @@ grpc_cc_library(
         "src/core/ext/filters/rbac/rbac_service_config_parser.h",
     ],
     external_deps = [
-        "absl/memory",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -4355,7 +4338,6 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/container:inlined_vector",
-        "absl/memory",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -4430,7 +4412,6 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/hash",
-        "absl/memory",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -4826,10 +4807,7 @@ grpc_cc_library(
     srcs = [
         "src/core/lib/security/credentials/channel_creds_registry_init.cc",
     ],
-    external_deps = [
-        "absl/memory",
-        "absl/strings",
-    ],
+    external_deps = ["absl/strings"],
     language = "c++",
     deps = [
         "channel_creds_registry",
@@ -4871,7 +4849,6 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/xds/cds.cc",
     ],
     external_deps = [
-        "absl/memory",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -4921,7 +4898,6 @@ grpc_cc_library(
     hdrs = [
         "src/core/ext/filters/client_channel/lb_policy/xds/xds.h",
     ],
-    external_deps = ["absl/memory"],
     language = "c++",
     deps = [
         "gpr_platform",
@@ -4937,7 +4913,6 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_resolver.cc",
     ],
     external_deps = [
-        "absl/memory",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -4985,7 +4960,6 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
-        "absl/memory",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -5028,7 +5002,6 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc",
     ],
     external_deps = [
-        "absl/memory",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -5073,7 +5046,6 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/address_filtering.h",
     ],
     external_deps = [
-        "absl/memory",
         "absl/status:statusor",
         "absl/strings",
     ],
@@ -5115,7 +5087,6 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc",
     ],
     external_deps = [
-        "absl/memory",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -5153,7 +5124,6 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/container:inlined_vector",
-        "absl/memory",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -5195,7 +5165,6 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc",
     ],
     external_deps = [
-        "absl/memory",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -5244,7 +5213,6 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.cc",
     ],
     external_deps = [
-        "absl/memory",
         "absl/random",
         "absl/status",
         "absl/status:statusor",
@@ -5288,7 +5256,6 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/priority/priority.cc",
     ],
     external_deps = [
-        "absl/memory",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -5331,7 +5298,6 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc",
     ],
     external_deps = [
-        "absl/memory",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -5583,7 +5549,6 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/functional:bind_front",
-        "absl/memory",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -5627,7 +5592,6 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/container:flat_hash_set",
-        "absl/memory",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -5674,7 +5638,6 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc",
     ],
     external_deps = [
-        "absl/memory",
         "absl/status:statusor",
         "absl/strings",
     ],
@@ -5698,7 +5661,6 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/resolver/binder/binder_resolver.cc",
     ],
     external_deps = [
-        "absl/memory",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -5723,7 +5685,6 @@ grpc_cc_library(
     hdrs = ["src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"],
     external_deps = [
         "absl/base:core_headers",
-        "absl/memory",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -5769,7 +5730,6 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc",
     ],
     external_deps = [
-        "absl/memory",
         "absl/meta:type_traits",
         "absl/random",
         "absl/status",
@@ -5818,7 +5778,6 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/resolver/google_c2p/google_c2p_resolver.cc",
     ],
     external_deps = [
-        "absl/memory",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -6220,7 +6179,6 @@ grpc_cc_library(
         "absl/base:core_headers",
         "absl/container:inlined_vector",
         "absl/functional:bind_front",
-        "absl/memory",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -6390,7 +6348,6 @@ grpc_cc_library(
         "src/core/lib/security/credentials/external/url_external_account_credentials.h",
     ],
     external_deps = [
-        "absl/memory",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -6489,7 +6446,6 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/container:inlined_vector",
-        "absl/memory",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -6702,7 +6658,6 @@ grpc_cc_library(
         "src/core/lib/security/authorization/mock_cel/flat_expr_builder.h",
     ],
     external_deps = [
-        "absl/memory",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -6725,7 +6680,6 @@ grpc_cc_library(
         "src/core/lib/matchers/matchers.h",
     ],
     external_deps = [
-        "absl/memory",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -6751,7 +6705,6 @@ grpc_cc_library(
         "src/core/lib/security/authorization/rbac_policy.h",
     ],
     external_deps = [
-        "absl/memory",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -6782,7 +6735,6 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
-        "absl/memory",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -6835,7 +6787,6 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/container:flat_hash_set",
-        "absl/memory",
         "absl/strings",
         "absl/types:optional",
         "absl/types:span",
@@ -7099,7 +7050,6 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
-        "absl/memory",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -7453,7 +7403,6 @@ grpc_cc_library(
         "src/cpp/server/orca/orca_interceptor.h",
     ],
     external_deps = [
-        "absl/memory",
         "absl/strings",
         "absl/types:optional",
     ],

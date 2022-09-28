@@ -20,8 +20,6 @@
 #include <map>
 #include <utility>
 
-#include "absl/memory/memory.h"
-
 namespace grpc_core {
 
 GrpcAuthorizationEngine::GrpcAuthorizationEngine(Rbac policy)

@@ -21,7 +21,6 @@
 #include <string>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/memory/memory.h"
 
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/closure.h"
