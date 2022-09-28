@@ -115,7 +115,7 @@ class PosixEventEngine final : public EventEngine {
   std::atomic<intptr_t> aba_token_{0};
   // closures are given weak_ptrs to this object to check if the engine pointers
   // are still alive
-  std::shared_ptr<bool> engine_spirit_;
+  std::shared_ptr<bool> engine_spirit_{new bool(true)};
 };
 
 }  // namespace experimental
