@@ -2916,6 +2916,30 @@ grpc_cc_library(
     ],
 )
 
+# DO NOT SUBMIT: probably need to merge this with the rest of iomgr. Keeping separate for now.
+grpc_cc_library(
+    name = "event_engine_iomgr_shims",
+    srcs = [
+        "src/core/lib/iomgr/event_engine_shims/closure.cc",
+        "src/core/lib/iomgr/event_engine_shims/endpoint.cc",
+    ],
+    hdrs = [
+        "src/core/lib/iomgr/event_engine_shims/closure.h",
+        "src/core/lib/iomgr/event_engine_shims/endpoint.h",
+        "src/core/lib/iomgr/event_engine_shims/resolved_address.h",
+    ],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "absl/strings",
+    ],
+    deps = [
+        "event_engine_base_hdrs",
+        "gpr",
+        "gpr_platform",
+        "grpc_base",
+    ],
+)
+
 grpc_cc_library(
     name = "event_engine_common",
     srcs = [
