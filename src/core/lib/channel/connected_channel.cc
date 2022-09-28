@@ -35,7 +35,6 @@
 #include "absl/strings/str_join.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
-#include "absl/utility/utility.h"
 
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/alloc.h>
@@ -351,7 +350,7 @@ class ClientStream : public Orphanable {
       SchedulePush();
     };
 
-    if (!absl::exchange(requested_metadata_, true)) {
+    if (!std::exchange(requested_metadata_, true)) {
       if (grpc_call_trace.enabled()) {
         gpr_log(GPR_INFO, "%sPollConnectedChannel: requesting metadata",
                 Activity::current()->DebugTag().c_str());
@@ -455,7 +454,7 @@ class ClientStream : public Orphanable {
                     recv_message_waker_.ActivityDebugTag().c_str());
           }
           recv_message_state_ = Closed{};
-          absl::exchange(server_to_client_messages_, nullptr)->Close();
+          std::exchange(server_to_client_messages_, nullptr)->Close();
         }
       }
     }
@@ -474,7 +473,7 @@ class ClientStream : public Orphanable {
     if (server_initial_metadata_state_ == ServerInitialMetadataState::kSet &&
         !absl::holds_alternative<PipeSender<MessageHandle>::PushType>(
             recv_message_state_) &&
-        absl::exchange(queued_trailing_metadata_, false)) {
+        std::exchange(queued_trailing_metadata_, false)) {
       if (grpc_call_trace.enabled()) {
         gpr_log(GPR_INFO,
                 "%sPollConnectedChannel: finished request, returning: {%s}; "
@@ -647,7 +646,7 @@ class ClientStream : public Orphanable {
   using StreamPtr = std::unique_ptr<grpc_stream, StreamDeleter>;
 
   void SchedulePush() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-    if (absl::exchange(scheduled_push_, true)) return;
+    if (std::exchange(scheduled_push_, true)) return;
     IncrementRefCount("push");
     ExecCtx::Run(DEBUG_LOCATION, &push_, GRPC_ERROR_NONE);
   }
@@ -790,7 +789,7 @@ class ClientConnectedCallPromise {
   ClientConnectedCallPromise& operator=(const ClientConnectedCallPromise&) =
       delete;
   ClientConnectedCallPromise(ClientConnectedCallPromise&& other) noexcept
-      : impl_(absl::exchange(other.impl_, nullptr)) {}
+      : impl_(std::exchange(other.impl_, nullptr)) {}
   ClientConnectedCallPromise& operator=(
       ClientConnectedCallPromise&& other) noexcept {
     impl_ = std::move(other.impl_);

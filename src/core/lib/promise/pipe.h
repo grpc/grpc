@@ -23,7 +23,6 @@
 
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
-#include "absl/utility/utility.h"
 
 #include <grpc/support/log.h>
 
@@ -261,7 +260,7 @@ class PipeSender {
   }
 
   void Close() {
-    if (auto* center = absl::exchange(center_, nullptr)) center->UnrefSend();
+    if (auto* center = std::exchange(center_, nullptr)) center->UnrefSend();
   }
 
   // Send a single message along the pipe.

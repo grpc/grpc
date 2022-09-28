@@ -26,6 +26,7 @@
 
 #include <algorithm>
 #include <atomic>
+#include <cstdint>
 #include <new>
 #include <string>
 #include <utility>
@@ -41,7 +42,6 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/variant.h"
-#include "absl/utility/utility.h"
 
 #include <grpc/byte_buffer.h>
 #include <grpc/compression.h>
@@ -1978,7 +1978,7 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
     }
 
     uint8_t index() const { return index_; }
-    uint8_t TakeIndex() { return absl::exchange(index_, kNullIndex); }
+    uint8_t TakeIndex() { return std::exchange(index_, kNullIndex); }
     bool has_value() const { return index_ != kNullIndex; }
 
     std::string ToString() const {
@@ -2338,7 +2338,7 @@ void PromiseBasedCall::Update() {
   keep_polling_ = false;
   do {
     UpdateOnce();
-  } while (absl::exchange(keep_polling_, false));
+  } while (std::exchange(keep_polling_, false));
 }
 
 void PromiseBasedCall::ForceImmediateRepoll() { keep_polling_ = true; }
@@ -2621,7 +2621,7 @@ void ClientPromiseBasedCall::PublishInitialMetadata(ServerMetadata* metadata) {
       metadata->Take(GrpcEncodingMetadata()).value_or(GRPC_COMPRESS_NONE);
   server_initial_metadata_ready_.reset();
   GPR_ASSERT(recv_initial_metadata_ != nullptr);
-  PublishMetadataArray(absl::exchange(recv_initial_metadata_, nullptr),
+  PublishMetadataArray(std::exchange(recv_initial_metadata_, nullptr),
                        metadata);
   FinishOpOnCompletion(&recv_initial_metadata_completion_,
                        PendingOp::kReceiveInitialMetadata);
