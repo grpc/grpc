@@ -52,6 +52,7 @@
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 #ifdef GRPC_LINUX_ERRQUEUE
+#include <dirent.h>            // IWYU pragma: keep
 #include <linux/capability.h>  // IWYU pragma: keep
 #include <linux/errqueue.h>    // IWYU pragma: keep
 #include <linux/netlink.h>     // IWYU pragma: keep
@@ -122,39 +123,55 @@ ssize_t TcpSend(int fd, const struct msghdr* msg, int* saved_errno,
 
 #define CAP_IS_SUPPORTED(cap) (prctl(PR_CAPBSET_READ, (cap), 0) > 0)
 
+uint64_t ParseUlimitMemLockFromFile(std::string file_name) {
+  std::ifstream limits_file(file_name);
+  uint64_t hard_memlock = 0;
+  static std::string kHardMemlockPrefix = "* hard memlock";
+  for (std::string line; limits_file.is_open() && getline(limits_file, line);) {
+    if (line.find(kHardMemlockPrefix) == std::string::npos) {
+      continue;
+    }
+    // Line starts with prefix "* hard memlock". Extract memlock value.
+    auto value =
+        line.substr(kHardMemlockPrefix.length() + 1, std::string::npos);
+    if (value == "unlimited" || value == "infinity") {
+      hard_memlock = UINT64_MAX;
+    } else {
+      hard_memlock = std::atoi(value.c_str());
+    }
+    return hard_memlock;
+  }
+  return hard_memlock;
+}
+
 // Ulimit hard memlock controls per socket limit for maximum locked memory in
-// RAM.
+// RAM. Parses all files under  /etc/security/limits.d/ and
+// /etc/security/limits.conf file for a line of the following format:
+// * hard memlock <value>
+// It extracts the first valid <value> and returns it. A value of UINT64_MAX
+// represents unlimited or infinity. Hard memlock value should be set to
+// allow zerocopy sendmsgs to succeed. It controls the maximum amount of
+// memory that can be locked by a socket in RAM.
 uint64_t GetUlimitHardMemLock() {
   static uint64_t kUlimitHardMemLock = []() -> uint64_t {
     if (CAP_IS_SUPPORTED(CAP_SYS_RESOURCE)) {
       // hard memlock ulimit is ignored for privileged user.
       return UINT64_MAX;
     }
-    // Parses /etc/security/limits.conf file for a line of the following format:
-    // * hard memlock <value>
-    // It extracts <value> and returns it. A value of UINT64_MAX represents
-    // unlimited or infinity. Hard memlock value should be set to allow zerocopy
-    // sendmsgs to succeed. It controls the maximum amount of memory that can be
-    // locked by a socket in RAM.
-    std::ifstream limits_file("/etc/security/limits.conf");
-    uint64_t hard_memlock = 0;
-    static std::string kHardMemlockPrefix = "* hard memlock";
-    for (std::string line;
-         limits_file.is_open() && getline(limits_file, line);) {
-      if (line.find(kHardMemlockPrefix) == std::string::npos) {
-        continue;
+    if (auto dir = opendir("/etc/security/limits.d")) {
+      while (auto f = readdir(dir)) {
+        if (f->d_name[0] == '.') {
+          continue;  // Skip everything that starts with a dot
+        }
+        uint64_t hard_memlock = ParseUlimitMemLockFromFile(
+            absl::StrCat("/etc/security/limits.d/", std::string(f->d_name)));
+        if (hard_memlock != 0) {
+          return hard_memlock;
+        }
       }
-      // Line starts with prefix "* hard memlock". Extract memlock value.
-      auto value =
-          line.substr(kHardMemlockPrefix.length() + 1, std::string::npos);
-      if (value == "unlimited" || value == "infinity") {
-        hard_memlock = UINT64_MAX;
-      } else {
-        hard_memlock = std::atoi(value.c_str());
-      }
-      return hard_memlock;
+      closedir(dir);
     }
-    return hard_memlock;
+    return ParseUlimitMemLockFromFile("/etc/security/limits.conf");
   }();
   return kUlimitHardMemLock;
 }
