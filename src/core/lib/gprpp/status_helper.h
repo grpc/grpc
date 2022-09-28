@@ -38,7 +38,7 @@ struct google_rpc_Status;
 struct upb_Arena;
 }
 
-#define RETURN_IF_NOT_OK(expr)          \
+#define GRPC_RETURN_IF_ERROR(expr)      \
   do {                                  \
     const absl::Status status = (expr); \
     if (!status.ok()) return status;    \
