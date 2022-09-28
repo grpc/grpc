@@ -143,7 +143,7 @@ if output != _TEST_EXPECTED:
 # Main loop.
 Config = collections.namedtuple('Config', ['dirs', 'namespaces'])
 
-_CONFIGURATION = (Config(['src/core', 'test/core'], ['grpc_core']),)
+_CONFIGURATION = (Config(['src/core', 'test/core'], ['grpc_core', 'grpc']),)
 
 changed = []
 

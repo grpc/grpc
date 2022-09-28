@@ -249,7 +249,7 @@ class FakeHandshakerService : public HandshakerService::Service {
     explicit ConcurrentRpcsCheck(FakeHandshakerService* parent)
         : parent_(parent) {
       if (parent->expected_max_concurrent_rpcs_ > 0) {
-        grpc::internal::MutexLock lock(
+        internal::MutexLock lock(
             &parent->expected_max_concurrent_rpcs_mu_);
         if (++parent->concurrent_rpcs_ >
             parent->expected_max_concurrent_rpcs_) {
@@ -265,7 +265,7 @@ class FakeHandshakerService : public HandshakerService::Service {
 
     ~ConcurrentRpcsCheck() {
       if (parent_->expected_max_concurrent_rpcs_ > 0) {
-        grpc::internal::MutexLock lock(
+        internal::MutexLock lock(
             &parent_->expected_max_concurrent_rpcs_mu_);
         parent_->concurrent_rpcs_--;
       }
@@ -275,15 +275,15 @@ class FakeHandshakerService : public HandshakerService::Service {
     FakeHandshakerService* parent_;
   };
 
-  grpc::internal::Mutex expected_max_concurrent_rpcs_mu_;
+  internal::Mutex expected_max_concurrent_rpcs_mu_;
   int concurrent_rpcs_ = 0;
   const int expected_max_concurrent_rpcs_;
 };
 
-std::unique_ptr<grpc::Service> CreateFakeHandshakerService(
+std::unique_ptr<Service> CreateFakeHandshakerService(
     int expected_max_concurrent_rpcs) {
-  return std::unique_ptr<grpc::Service>{
-      new grpc::gcp::FakeHandshakerService(expected_max_concurrent_rpcs)};
+  return std::unique_ptr<Service>{
+      new gcp::FakeHandshakerService(expected_max_concurrent_rpcs)};
 }
 
 }  // namespace gcp

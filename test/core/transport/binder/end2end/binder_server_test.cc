@@ -49,7 +49,7 @@ class BinderServerCredentialsImpl final : public ServerCredentials {
               nullptr, std::move(transact_cb));
         },
         std::make_shared<
-            grpc::experimental::binder::UntrustedSecurityPolicy>());
+            experimental::binder::UntrustedSecurityPolicy>());
   }
 
   void SetAuthMetadataProcessor(
@@ -67,19 +67,19 @@ std::shared_ptr<ServerCredentials> BinderServerCredentials() {
   return std::shared_ptr<ServerCredentials>(new BinderServerCredentialsImpl());
 }
 
-std::shared_ptr<grpc::Channel> CreateBinderChannel(
+std::shared_ptr<Channel> CreateBinderChannel(
     std::unique_ptr<grpc_binder::Binder> endpoint_binder) {
-  grpc::internal::GrpcLibrary init_lib;
+  ::grpc::internal::GrpcLibrary init_lib;
   init_lib.init();
 
-  return grpc::CreateChannelInternal(
+  return CreateChannelInternal(
       "",
-      grpc::internal::CreateDirectBinderChannelImplForTesting(
+      ::grpc::internal::CreateDirectBinderChannelImplForTesting(
           std::move(endpoint_binder), nullptr,
           std::make_shared<
-              grpc::experimental::binder::UntrustedSecurityPolicy>()),
+              experimental::binder::UntrustedSecurityPolicy>()),
       std::vector<std::unique_ptr<
-          grpc::experimental::ClientInterceptorFactoryInterface>>());
+          experimental::ClientInterceptorFactoryInterface>>());
 }
 
 }  // namespace testing

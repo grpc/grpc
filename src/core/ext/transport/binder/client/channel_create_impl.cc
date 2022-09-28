@@ -43,7 +43,7 @@ namespace internal {
 grpc_channel* CreateDirectBinderChannelImplForTesting(
     std::unique_ptr<grpc_binder::Binder> endpoint_binder,
     const grpc_channel_args* args,
-    std::shared_ptr<grpc::experimental::binder::SecurityPolicy>
+    std::shared_ptr<experimental::binder::SecurityPolicy>
         security_policy) {
   grpc_core::ExecCtx exec_ctx;
 
