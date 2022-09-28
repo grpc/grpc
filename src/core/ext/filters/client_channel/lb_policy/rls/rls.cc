@@ -1790,7 +1790,7 @@ void RlsLb::RlsRequest::OnRlsCallCompleteLocked(grpc_error_handle error) {
   grpc_byte_buffer_destroy(recv_message_);
   grpc_metadata_array_destroy(&recv_initial_metadata_);
   grpc_metadata_array_destroy(&recv_trailing_metadata_);
-  grpc_core::CSliceUnref(status_details_recv_);
+  CSliceUnref(status_details_recv_);
   grpc_call_unref(call_);
   call_ = nullptr;
   // Return result to cache.
@@ -1841,7 +1841,7 @@ grpc_byte_buffer* RlsLb::RlsRequest::MakeRequestProto() {
       grpc_lookup_v1_RouteLookupRequest_serialize(req, arena.ptr(), &len);
   grpc_slice send_slice = grpc_slice_from_copied_buffer(buf, len);
   grpc_byte_buffer* byte_buffer = grpc_raw_byte_buffer_create(&send_slice, 1);
-  grpc_core::CSliceUnref(send_slice);
+  CSliceUnref(send_slice);
   return byte_buffer;
 }
 
@@ -1856,7 +1856,7 @@ RlsLb::ResponseInfo RlsLb::RlsRequest::ParseResponseProto() {
       grpc_lookup_v1_RouteLookupResponse_parse(
           reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(recv_slice)),
           GRPC_SLICE_LENGTH(recv_slice), arena.ptr());
-  grpc_core::CSliceUnref(recv_slice);
+  CSliceUnref(recv_slice);
   if (response == nullptr) {
     response_info.status = absl::InternalError("cannot parse RLS response");
     return response_info;

@@ -789,7 +789,7 @@ void alts_handshaker_client_set_recv_bytes_for_testing(
   GPR_ASSERT(c != nullptr);
   alts_grpc_handshaker_client* client =
       reinterpret_cast<alts_grpc_handshaker_client*>(c);
-  client->recv_bytes = grpc_core::CSliceRef(*recv_bytes);
+  client->recv_bytes = CSliceRef(*recv_bytes);
 }
 
 void alts_handshaker_client_set_fields_for_testing(

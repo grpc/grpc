@@ -224,7 +224,7 @@ RefCountedPtr<grpc_auth_context> grpc_alts_auth_context_from_tsi_peer(
       rpc_versions_prop->value.data, rpc_versions_prop->value.length);
   bool decode_result =
       grpc_gcp_rpc_protocol_versions_decode(slice, &peer_versions);
-  grpc_core::CSliceUnref(slice);
+  CSliceUnref(slice);
   if (!decode_result) {
     gpr_log(GPR_ERROR, "Invalid peer rpc protocol versions.");
     return nullptr;
