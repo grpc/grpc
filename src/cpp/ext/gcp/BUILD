@@ -41,7 +41,6 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/types:optional",
-        "opencensus-stats",
         "opencensus-trace",
         "opencensus-trace-stackdriver_exporter",
         "opencensus-stats-stackdriver_exporter",
