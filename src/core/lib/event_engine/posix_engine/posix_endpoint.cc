@@ -127,10 +127,10 @@ ssize_t TcpSend(int fd, const struct msghdr* msg, int* saved_errno,
 // RAM.
 uint64_t GetUlimitHardMemLock() {
   static uint64_t kUlimitHardMemLock = []() -> uint64_t {
-    // if (CAP_IS_SUPPORTED(CAP_SYS_RESOURCE)) {
-    //   // hard memlock ulimit is ignored for privileged user.
-    //   return UINT64_MAX;
-    // }
+    if (CAP_IS_SUPPORTED(CAP_SYS_RESOURCE)) {
+      // hard memlock ulimit is ignored for privileged user.
+      return UINT64_MAX;
+    }
     // Parses /etc/security/limits.conf file for a line of the following format:
     // * hard memlock <value>
     // It extracts <value> and returns it. A value of UINT64_MAX represents
