@@ -24,10 +24,12 @@ std::string MakeDebugString(absl::string_view key, absl::string_view value) {
 }
 
 Slice SliceFromBuffer(const Buffer& buffer) {
-  return Slice(grpc_slice_ref(buffer.slice));
+  return Slice(grpc_core::CSliceRef(buffer.slice));
 }
 
-void DestroySliceValue(const Buffer& value) { grpc_slice_unref(value.slice); }
+void DestroySliceValue(const Buffer& value) {
+  grpc_core::CSliceUnref(value.slice);
+}
 
 void DestroyTrivialMemento(const Buffer&) {}
 

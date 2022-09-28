@@ -49,7 +49,9 @@ class OpenSslCachedSession : public SslCachedSession {
     serialized_session_ = slice;
   }
 
-  virtual ~OpenSslCachedSession() { grpc_slice_unref(serialized_session_); }
+  virtual ~OpenSslCachedSession() {
+    grpc_core::CSliceUnref(serialized_session_);
+  }
 
   SslSessionPtr CopySession() const override {
     const unsigned char* data = GRPC_SLICE_START_PTR(serialized_session_);

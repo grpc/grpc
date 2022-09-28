@@ -366,7 +366,7 @@ static grpc_error_handle create_default_creds_from_path(
 
 end:
   GPR_ASSERT((result == nullptr) + (error.ok()) == 1);
-  grpc_slice_unref(creds_data);
+  grpc_core::CSliceUnref(creds_data);
   *creds = result;
   return error;
 }

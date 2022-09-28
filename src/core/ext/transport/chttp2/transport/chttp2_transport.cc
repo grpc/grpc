@@ -1323,7 +1323,7 @@ static void perform_stream_op_locked(void* stream_op,
           slices + op_payload->send_message.send_message->Count();
       for (grpc_slice* slice = slices; slice != end; slice++) {
         grpc_slice_buffer_add(&s->flow_controlled_buffer,
-                              grpc_slice_ref(*slice));
+                              grpc_core::CSliceRef(*slice));
       }
 
       int64_t notify_offset = s->next_message_end_offset;

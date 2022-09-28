@@ -193,7 +193,7 @@ HttpRequest::~HttpRequest() {
   if (own_endpoint_ && ep_ != nullptr) {
     grpc_endpoint_destroy(ep_);
   }
-  grpc_slice_unref(request_text_);
+  grpc_core::CSliceUnref(request_text_);
   grpc_iomgr_unregister_object(&iomgr_obj_);
   grpc_slice_buffer_destroy(&incoming_);
   grpc_slice_buffer_destroy(&outgoing_);
@@ -288,7 +288,7 @@ void HttpRequest::ContinueDoneWriteAfterScheduleOnExecCtx(
 }
 
 void HttpRequest::StartWrite() {
-  grpc_slice_ref(request_text_);
+  grpc_core::CSliceRef(request_text_);
   grpc_slice_buffer_add(&outgoing_, request_text_);
   Ref().release();  // ref held by pending write
   grpc_endpoint_write(ep_, &outgoing_, &done_write_, nullptr,

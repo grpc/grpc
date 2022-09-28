@@ -53,6 +53,7 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/load_file.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/error_utils.h"
 
@@ -92,7 +93,7 @@ absl::StatusOr<std::string> GetBootstrapContents(const char* fallback_config) {
         grpc_load_file(path->c_str(), /*add_null_terminator=*/true, &contents);
     if (!error.ok()) return grpc_error_to_absl_status(error);
     std::string contents_str(StringViewFromSlice(contents));
-    grpc_slice_unref(contents);
+    grpc_core::CSliceUnref(contents);
     return contents_str;
   }
   // Next, try GRPC_XDS_BOOTSTRAP_CONFIG env var.

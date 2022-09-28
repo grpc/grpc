@@ -101,7 +101,7 @@ void FileExternalAccountCredentials::RetrieveSubjectToken(
     HTTPRequestContext* /*ctx*/, const Options& /*options*/,
     std::function<void(std::string, grpc_error_handle)> cb) {
   struct SliceWrapper {
-    ~SliceWrapper() { grpc_slice_unref(slice); }
+    ~SliceWrapper() { grpc_core::CSliceUnref(slice); }
     grpc_slice slice = grpc_empty_slice();
   };
   SliceWrapper content_slice;

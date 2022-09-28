@@ -55,6 +55,7 @@
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/resource_quota/trace.h"
 #include "src/core/lib/security/transport/tsi_error.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/tsi/transport_security_grpc.h"
 #include "src/core/tsi/transport_security_interface.h"
@@ -81,7 +82,7 @@ struct secure_endpoint {
     grpc_slice_buffer_init(&leftover_bytes);
     for (size_t i = 0; i < leftover_nslices; i++) {
       grpc_slice_buffer_add(&leftover_bytes,
-                            grpc_slice_ref(leftover_slices[i]));
+                            grpc_core::CSliceRef(leftover_slices[i]));
     }
     grpc_slice_buffer_init(&output_buffer);
     memory_owner =
@@ -111,8 +112,8 @@ struct secure_endpoint {
     tsi_zero_copy_grpc_protector_destroy(zero_copy_protector);
     grpc_slice_buffer_destroy(&source_buffer);
     grpc_slice_buffer_destroy(&leftover_bytes);
-    grpc_slice_unref(read_staging_buffer);
-    grpc_slice_unref(write_staging_buffer);
+    grpc_core::CSliceUnref(read_staging_buffer);
+    grpc_core::CSliceUnref(write_staging_buffer);
     grpc_slice_buffer_destroy(&output_buffer);
     grpc_slice_buffer_destroy(&protector_staging_buffer);
     gpr_mu_destroy(&protector_mu);
@@ -215,8 +216,8 @@ static void maybe_post_reclaimer(secure_endpoint* ep) {
             ep->write_staging_buffer = grpc_empty_slice();
             ep->write_mu.Unlock();
 
-            grpc_slice_unref(temp_read_slice);
-            grpc_slice_unref(temp_write_slice);
+            grpc_core::CSliceUnref(temp_read_slice);
+            grpc_core::CSliceUnref(temp_write_slice);
             ep->has_posted_reclaimer.exchange(false, std::memory_order_relaxed);
           }
           SECURE_ENDPOINT_UNREF(ep, "benign_reclaimer");

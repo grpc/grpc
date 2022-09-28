@@ -229,10 +229,10 @@ static void WriteAction(void* arg, grpc_error_handle error) {
       gpr_log(GPR_DEBUG, "WRITE %p (peer=%s): %s", ep, ep->peer_string.c_str(),
               dump);
       gpr_free(dump);
-      grpc_slice_unref(trace_slice);
+      grpc_core::CSliceUnref(trace_slice);
     }
   }
-  grpc_slice_unref(slice);
+  grpc_core::CSliceUnref(slice);
 }
 
 static void CFStreamRead(grpc_endpoint* ep, grpc_slice_buffer* slices,
