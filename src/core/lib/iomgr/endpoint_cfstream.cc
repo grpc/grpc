@@ -36,6 +36,7 @@
 #import "src/core/lib/iomgr/endpoint_cfstream.h"
 #include "src/core/lib/iomgr/error_cfstream.h"
 #include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 
