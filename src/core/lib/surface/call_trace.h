@@ -27,4 +27,4 @@ const grpc_channel_filter* PromiseTracingFilterFor(
     const grpc_channel_filter* filter);
 }
 
-#endif
+#endif  // GRPC_CORE_LIB_SURFACE_CALL_TRACE_H

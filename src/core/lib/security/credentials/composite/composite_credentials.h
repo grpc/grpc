@@ -16,9 +16,6 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/transport/call_fragments.h"
 #ifndef GRPC_CORE_LIB_SECURITY_CREDENTIALS_COMPOSITE_COMPOSITE_CREDENTIALS_H
 #define GRPC_CORE_LIB_SECURITY_CREDENTIALS_COMPOSITE_COMPOSITE_CREDENTIALS_H
 
@@ -42,6 +39,7 @@
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
+#include "src/core/lib/transport/call_fragments.h"
 
 /* -- Composite channel credentials. -- */
 

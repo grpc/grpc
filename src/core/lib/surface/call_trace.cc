@@ -16,11 +16,28 @@
 
 #include "src/core/lib/surface/call_trace.h"
 
+#include <functional>
+#include <memory>
+#include <string>
+#include <utility>
+
 #include "absl/container/flat_hash_map.h"
+#include "absl/memory/memory.h"
+#include "absl/meta/type_traits.h"
+#include "absl/status/status.h"
+#include "absl/types/variant.h"
 
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/gprpp/no_destruct.h"
+#include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/promise/activity.h"
+#include "src/core/lib/promise/arena_promise.h"
+#include "src/core/lib/transport/call_fragments.h"
+#include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
 

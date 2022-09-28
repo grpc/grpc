@@ -22,9 +22,9 @@
 
 #include <string.h>
 
+#include <algorithm>
 #include <vector>
 
-#include "absl/container/flat_hash_map.h"
 #include "absl/status/status.h"
 
 #include <grpc/impl/codegen/grpc_types.h>
@@ -33,6 +33,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/surface/call_trace.h"

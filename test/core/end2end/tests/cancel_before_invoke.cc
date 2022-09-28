@@ -27,7 +27,6 @@
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/experiments/experiments.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/test_config.h"
