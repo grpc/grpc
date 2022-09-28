@@ -113,6 +113,9 @@ class PosixEventEngine final : public EventEngine {
   grpc_core::Mutex mu_;
   TaskHandleSet known_handles_ ABSL_GUARDED_BY(mu_);
   std::atomic<intptr_t> aba_token_{0};
+  // closures are given weak_ptrs to this object to check if the engine pointers
+  // are still alive
+  std::shared_ptr<bool> engine_spirit_;
 };
 
 }  // namespace experimental
