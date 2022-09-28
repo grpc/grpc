@@ -25,6 +25,7 @@
 
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/thd.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "test/core/util/test_config.h"
@@ -111,7 +112,7 @@ static void test_too_many_plucks(void) {
 
   for (i = 0; i < GPR_ARRAY_SIZE(tags); i++) {
     ASSERT_TRUE(grpc_cq_begin_op(cc, tags[i]));
-    grpc_cq_end_op(cc, tags[i], GRPC_ERROR_NONE, do_nothing_end_completion,
+    grpc_cq_end_op(cc, tags[i], absl::OkStatus(), do_nothing_end_completion,
                    nullptr, &completions[i]);
   }
 
@@ -163,7 +164,7 @@ static void producer_thread(void* arg) {
   gpr_log(GPR_INFO, "producer %d phase 2", opt->id);
   for (i = 0; i < TEST_THREAD_EVENTS; i++) {
     grpc_core::ExecCtx exec_ctx;
-    grpc_cq_end_op(opt->cc, reinterpret_cast<void*>(1), GRPC_ERROR_NONE,
+    grpc_cq_end_op(opt->cc, reinterpret_cast<void*>(1), absl::OkStatus(),
                    free_completion, nullptr,
                    static_cast<grpc_cq_completion*>(
                        gpr_malloc(sizeof(grpc_cq_completion))));

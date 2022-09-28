@@ -31,7 +31,6 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-#include "absl/utility/utility.h"
 
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/grpc_types.h>
@@ -43,7 +42,6 @@
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/detail/basic_seq.h"
 #include "src/core/lib/promise/latch.h"
-#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/percent_encoding.h"
@@ -121,7 +119,7 @@ ArenaPromise<ServerMetadataHandle> HttpClientFilter::MakeCallPromise(
 
   auto* read_latch = GetContext<Arena>()->New<Latch<ServerMetadata*>>();
   auto* write_latch =
-      absl::exchange(call_args.server_initial_metadata, read_latch);
+      std::exchange(call_args.server_initial_metadata, read_latch);
 
   return CallPushPull(
       Seq(next_promise_factory(std::move(call_args)),

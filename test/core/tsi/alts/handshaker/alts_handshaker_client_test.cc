@@ -25,6 +25,7 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/tsi/alts/handshaker/alts_shared_resource.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker_private.h"
@@ -443,9 +444,9 @@ TEST(AltsHandshakerClientTest, ScheduleRequestSuccessTest) {
   {
     grpc_core::ExecCtx exec_ctx;
     alts_handshaker_client_on_status_received_for_testing(
-        config->client, GRPC_STATUS_OK, GRPC_ERROR_NONE);
+        config->client, GRPC_STATUS_OK, absl::OkStatus());
     alts_handshaker_client_on_status_received_for_testing(
-        config->server, GRPC_STATUS_OK, GRPC_ERROR_NONE);
+        config->server, GRPC_STATUS_OK, absl::OkStatus());
   }
   destroy_config(config);
 }
@@ -500,9 +501,9 @@ TEST(AltsHandshakerClientTest, ScheduleRequestGrpcCallFailureTest) {
   {
     grpc_core::ExecCtx exec_ctx;
     alts_handshaker_client_on_status_received_for_testing(
-        config->client, GRPC_STATUS_OK, GRPC_ERROR_NONE);
+        config->client, GRPC_STATUS_OK, absl::OkStatus());
     alts_handshaker_client_on_status_received_for_testing(
-        config->server, GRPC_STATUS_OK, GRPC_ERROR_NONE);
+        config->server, GRPC_STATUS_OK, absl::OkStatus());
   }
   destroy_config(config);
 }

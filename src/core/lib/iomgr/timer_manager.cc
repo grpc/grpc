@@ -184,8 +184,7 @@ static bool wait_until(grpc_core::Timestamp next) {
         g_timed_waiter_deadline = next;
 
         if (GRPC_TRACE_FLAG_ENABLED(grpc_timer_check_trace)) {
-          grpc_core::Duration wait_time =
-              next - grpc_core::ExecCtx::Get()->Now();
+          grpc_core::Duration wait_time = next - grpc_core::Timestamp::Now();
           gpr_log(GPR_INFO, "sleep for a %" PRId64 " milliseconds",
                   wait_time.millis());
         }

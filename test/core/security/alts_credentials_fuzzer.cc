@@ -24,7 +24,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/security/credentials/alts/alts_credentials.h"
 #include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
 #include "src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h"
@@ -60,11 +60,9 @@ static void read_target_service_accounts(
 }
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
-  char* grpc_trace_fuzzer = gpr_getenv("GRPC_TRACE_FUZZER");
-  if (squelch && grpc_trace_fuzzer == nullptr) {
+  if (squelch && !grpc_core::GetEnv("GRPC_TRACE_FUZZER").has_value()) {
     gpr_set_log_function(dont_log);
   }
-  gpr_free(grpc_trace_fuzzer);
   input_stream inp = {data, data + size};
   grpc_init();
   bool is_on_gcp = grpc_alts_is_running_on_gcp();

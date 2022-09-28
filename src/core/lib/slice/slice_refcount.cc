@@ -18,6 +18,10 @@
 
 #include <chrono>
 
+#include <grpc/slice.h>
+
+#include "src/core/lib/slice/slice_refcount_base.h"
+
 namespace grpc_core {
 
 uint32_t g_hash_seed = []() {
@@ -32,4 +36,17 @@ uint32_t g_hash_seed = []() {
 
 void grpc_test_only_set_slice_hash_seed(uint32_t seed) {
   grpc_core::g_hash_seed = seed;
+}
+
+grpc_slice grpc_slice_ref(grpc_slice slice) {
+  if (reinterpret_cast<uintptr_t>(slice.refcount) > 1) {
+    slice.refcount->Ref();
+  }
+  return slice;
+}
+
+void grpc_slice_unref(grpc_slice slice) {
+  if (reinterpret_cast<uintptr_t>(slice.refcount) > 1) {
+    slice.refcount->Unref();
+  }
 }

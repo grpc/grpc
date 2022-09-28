@@ -39,6 +39,10 @@ class TestScheduler : public Scheduler {
     engine_->Run(closure);
   }
 
+  void Run(absl::AnyInvocable<void()> cb) override {
+    engine_->Run(std::move(cb));
+  }
+
  private:
   std::shared_ptr<EventEngine> engine_;
 };
@@ -57,8 +61,8 @@ TEST(LockFreeEventTest, BasicTest) {
   event.InitEvent();
   grpc_core::MutexLock lock(&mu);
   // Set NotifyOn first and then SetReady
-  event.NotifyOn(IomgrEngineClosure::TestOnlyToClosure(
-      [&mu, &cv](const absl::Status& status) {
+  event.NotifyOn(
+      PosixEngineClosure::TestOnlyToClosure([&mu, &cv](absl::Status status) {
         grpc_core::MutexLock lock(&mu);
         EXPECT_TRUE(status.ok());
         cv.Signal();
@@ -68,8 +72,8 @@ TEST(LockFreeEventTest, BasicTest) {
 
   // SetReady first first and then call NotifyOn
   event.SetReady();
-  event.NotifyOn(IomgrEngineClosure::TestOnlyToClosure(
-      [&mu, &cv](const absl::Status& status) {
+  event.NotifyOn(
+      PosixEngineClosure::TestOnlyToClosure([&mu, &cv](absl::Status status) {
         grpc_core::MutexLock lock(&mu);
         EXPECT_TRUE(status.ok());
         cv.Signal();
@@ -77,8 +81,8 @@ TEST(LockFreeEventTest, BasicTest) {
   EXPECT_FALSE(cv.WaitWithTimeout(&mu, absl::Seconds(10)));
 
   // Set NotifyOn and then call SetShutdown
-  event.NotifyOn(IomgrEngineClosure::TestOnlyToClosure(
-      [&mu, &cv](const absl::Status& status) {
+  event.NotifyOn(
+      PosixEngineClosure::TestOnlyToClosure([&mu, &cv](absl::Status status) {
         grpc_core::MutexLock lock(&mu);
         EXPECT_FALSE(status.ok());
         EXPECT_EQ(status, absl::CancelledError("Shutdown"));
@@ -111,8 +115,8 @@ TEST(LockFreeEventTest, MultiThreadedTest) {
         }
         active++;
         if (thread_id == 0) {
-          event.NotifyOn(IomgrEngineClosure::TestOnlyToClosure(
-              [&mu, &cv, &signalled](const absl::Status& status) {
+          event.NotifyOn(PosixEngineClosure::TestOnlyToClosure(
+              [&mu, &cv, &signalled](absl::Status status) {
                 grpc_core::MutexLock lock(&mu);
                 EXPECT_TRUE(status.ok());
                 signalled = true;

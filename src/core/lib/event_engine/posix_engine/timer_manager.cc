@@ -20,7 +20,6 @@
 
 #include "src/core/lib/event_engine/posix_engine/timer_manager.h"
 
-#include <algorithm>
 #include <memory>
 #include <utility>
 
@@ -32,45 +31,30 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/thd.h"
+
+static thread_local bool g_timer_thread;
 
 namespace grpc_event_engine {
 namespace posix_engine {
 
-namespace {
-class ThreadCollector {
- public:
-  ThreadCollector() = default;
-  ~ThreadCollector();
-
-  void Collect(std::vector<grpc_core::Thread> threads) {
-    GPR_ASSERT(threads_.empty());
-    threads_ = std::move(threads);
-  }
-
- private:
-  std::vector<grpc_core::Thread> threads_;
-};
-
-ThreadCollector::~ThreadCollector() {
-  for (auto& t : threads_) t.Join();
-}
-}  // namespace
+grpc_core::DebugOnlyTraceFlag grpc_event_engine_timer_trace(false, "timer");
 
 void TimerManager::StartThread() {
   ++waiter_count_;
   ++thread_count_;
   auto* thread = new RunThreadArgs();
   thread->self = this;
-  thread->thread =
-      grpc_core::Thread("timer_manager", &TimerManager::RunThread, thread);
+  thread->thread = grpc_core::Thread(
+      "timer_manager", &TimerManager::RunThread, thread, nullptr,
+      grpc_core::Thread::Options().set_tracked(false).set_joinable(false));
   thread->thread.Start();
 }
 
 void TimerManager::RunSomeTimers(
     std::vector<experimental::EventEngine::Closure*> timers) {
   // if there's something to execute...
-  ThreadCollector collector;
   {
     grpc_core::MutexLock lock(&mu_);
     if (shutdown_ || forking_) return;
@@ -87,7 +71,7 @@ void TimerManager::RunSomeTimers(
       // if there's no thread waiting with a timeout, kick an existing untimed
       // waiter so that the next deadline is not missed
       if (!has_timed_waiter_) {
-        cv_.Signal();
+        cv_wait_.Signal();
       }
     }
   }
@@ -96,7 +80,6 @@ void TimerManager::RunSomeTimers(
   }
   {
     grpc_core::MutexLock lock(&mu_);
-    collector.Collect(std::move(completed_threads_));
     // get ready to wait again
     ++waiter_count_;
   }
@@ -150,8 +133,8 @@ bool TimerManager::WaitUntil(grpc_core::Timestamp next) {
       }
     }
 
-    cv_.WaitWithTimeout(&mu_,
-                        absl::Milliseconds((next - host_.Now()).millis()));
+    cv_wait_.WaitWithTimeout(&mu_,
+                             absl::Milliseconds((next - host_.Now()).millis()));
 
     // if this was the timed waiter, then we need to check timers, and flag
     // that there's now no timed waiter... we'll look for a replacement if
@@ -195,15 +178,27 @@ void TimerManager::MainLoop() {
 }
 
 void TimerManager::RunThread(void* arg) {
+  g_timer_thread = true;
   std::unique_ptr<RunThreadArgs> thread(static_cast<RunThreadArgs*>(arg));
-  thread->self->MainLoop();
-  {
-    grpc_core::MutexLock lock(&thread->self->mu_);
-    thread->self->thread_count_--;
-    thread->self->completed_threads_.push_back(std::move(thread->thread));
+  if (grpc_event_engine_timer_trace.enabled()) {
+    gpr_log(GPR_DEBUG, "TimerManager::%p starting thread::%p", thread->self,
+            &thread->thread);
   }
-  thread->self->cv_.Signal();
+  thread->self->Run();
+  if (grpc_event_engine_timer_trace.enabled()) {
+    gpr_log(GPR_DEBUG, "TimerManager::%p thread::%p finished", thread->self,
+            &thread->thread);
+  }
 }
+
+void TimerManager::Run() {
+  MainLoop();
+  grpc_core::MutexLock lock(&mu_);
+  thread_count_--;
+  if (thread_count_ == 0) cv_threadcount_.Signal();
+}
+
+bool TimerManager::IsTimerManagerThread() { return g_timer_thread; }
 
 TimerManager::TimerManager() : host_(this) {
   timer_list_ = absl::make_unique<TimerList>(&host_);
@@ -226,17 +221,21 @@ bool TimerManager::TimerCancel(Timer* timer) {
 }
 
 TimerManager::~TimerManager() {
-  {
-    grpc_core::MutexLock lock(&mu_);
-    shutdown_ = true;
-    cv_.SignalAll();
+  if (grpc_event_engine_timer_trace.enabled()) {
+    gpr_log(GPR_DEBUG, "TimerManager::%p shutting down", this);
   }
-  while (true) {
-    ThreadCollector collector;
-    grpc_core::MutexLock lock(&mu_);
-    collector.Collect(std::move(completed_threads_));
-    if (thread_count_ == 0) break;
-    cv_.Wait(&mu_);
+  grpc_core::MutexLock lock(&mu_);
+  shutdown_ = true;
+  cv_wait_.SignalAll();
+  while (thread_count_ > 0) {
+    if (grpc_event_engine_timer_trace.enabled()) {
+      gpr_log(GPR_DEBUG, "TimerManager::%p waiting for %zu threads to finish",
+              this, thread_count_);
+    }
+    cv_threadcount_.Wait(&mu_);
+  }
+  if (grpc_event_engine_timer_trace.enabled()) {
+    gpr_log(GPR_DEBUG, "TimerManager::%p shutdown complete", this);
   }
 }
 
@@ -248,22 +247,16 @@ void TimerManager::Kick() {
   timed_waiter_deadline_ = grpc_core::Timestamp::InfFuture();
   ++timed_waiter_generation_;
   kicked_ = true;
-  cv_.Signal();
+  cv_wait_.Signal();
 }
 
 void TimerManager::PrepareFork() {
-  {
-    grpc_core::MutexLock lock(&mu_);
-    forking_ = true;
-    prefork_thread_count_ = thread_count_;
-    cv_.SignalAll();
-  }
-  while (true) {
-    grpc_core::MutexLock lock(&mu_);
-    ThreadCollector collector;
-    collector.Collect(std::move(completed_threads_));
-    if (thread_count_ == 0) break;
-    cv_.Wait(&mu_);
+  grpc_core::MutexLock lock(&mu_);
+  forking_ = true;
+  prefork_thread_count_ = thread_count_;
+  cv_wait_.SignalAll();
+  while (thread_count_ > 0) {
+    cv_threadcount_.Wait(&mu_);
   }
 }
 
@@ -273,6 +266,7 @@ void TimerManager::PostforkParent() {
     StartThread();
   }
   prefork_thread_count_ = 0;
+  forking_ = false;
 }
 
 void TimerManager::PostforkChild() {
@@ -281,6 +275,7 @@ void TimerManager::PostforkChild() {
     StartThread();
   }
   prefork_thread_count_ = 0;
+  forking_ = false;
 }
 
 }  // namespace posix_engine

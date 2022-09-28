@@ -125,8 +125,6 @@ class OrcaService::Reactor : public ServerWriteReactor<ByteBuffer>,
   }
 
   bool MaybeScheduleTimer() {
-    grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
-    grpc_core::ExecCtx exec_ctx;
     grpc::internal::MutexLock lock(&timer_mu_);
     if (cancelled_) return false;
     timer_handle_ = engine_->RunAfter(

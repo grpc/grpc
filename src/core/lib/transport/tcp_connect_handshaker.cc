@@ -24,17 +24,20 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
 #include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -48,7 +51,6 @@
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/tcp_server.h"
-#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/handshaker.h"
 #include "src/core/lib/transport/handshaker_factory.h"
 #include "src/core/lib/transport/handshaker_registry.h"
@@ -99,7 +101,7 @@ TCPConnectHandshaker::TCPConnectHandshaker(grpc_pollset_set* pollset_set)
   GRPC_CLOSURE_INIT(&connected_, Connected, this, grpc_schedule_on_exec_ctx);
 }
 
-void TCPConnectHandshaker::Shutdown(grpc_error_handle why) {
+void TCPConnectHandshaker::Shutdown(grpc_error_handle /*why*/) {
   // TODO(anramach): After migration to EventEngine, cancel the in-progress
   // TCP connection attempt.
   {
@@ -117,7 +119,6 @@ void TCPConnectHandshaker::Shutdown(grpc_error_handle why) {
       }
     }
   }
-  GRPC_ERROR_UNREF(why);
 }
 
 void TCPConnectHandshaker::DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
@@ -154,9 +155,11 @@ void TCPConnectHandshaker::DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
   // we don't want to pass args->endpoint directly.
   // Instead pass endpoint_ and swap this endpoint to
   // args endpoint on success.
-  grpc_tcp_client_connect(&connected_, &endpoint_to_destroy_,
-                          interested_parties_, args->args.ToC().get(), &addr_,
-                          args->deadline);
+  // TODO(hork): use EventEngine::Connect if(IsEventEngineClientEnabled())
+  grpc_tcp_client_connect(
+      &connected_, &endpoint_to_destroy_, interested_parties_,
+      grpc_event_engine::experimental::ChannelArgsEndpointConfig(args->args),
+      &addr_, args->deadline);
 }
 
 void TCPConnectHandshaker::Connected(void* arg, grpc_error_handle error) {
@@ -164,24 +167,21 @@ void TCPConnectHandshaker::Connected(void* arg, grpc_error_handle error) {
       static_cast<TCPConnectHandshaker*>(arg));
   {
     MutexLock lock(&self->mu_);
-    if (!GRPC_ERROR_IS_NONE(error) || self->shutdown_) {
-      if (GRPC_ERROR_IS_NONE(error)) {
+    if (!error.ok() || self->shutdown_) {
+      if (error.ok()) {
         error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("tcp handshaker shutdown");
-      } else {
-        error = GRPC_ERROR_REF(error);
       }
       if (self->endpoint_to_destroy_ != nullptr) {
-        grpc_endpoint_shutdown(self->endpoint_to_destroy_,
-                               GRPC_ERROR_REF(error));
+        grpc_endpoint_shutdown(self->endpoint_to_destroy_, error);
       }
       if (!self->shutdown_) {
         self->CleanupArgsForFailureLocked();
         self->shutdown_ = true;
         self->FinishLocked(error);
       } else {
-        // The on_handshake_done_ is already as part of shutdown when connecting
-        // So nothing to be done here other than unrefing the error.
-        GRPC_ERROR_UNREF(error);
+        // The on_handshake_done_ is already as part of shutdown when
+        // connecting So nothing to be done here other than unrefing the
+        // error.
       }
       return;
     }
@@ -192,7 +192,7 @@ void TCPConnectHandshaker::Connected(void* arg, grpc_error_handle error) {
       grpc_endpoint_add_to_pollset_set(self->args_->endpoint,
                                        self->interested_parties_);
     }
-    self->FinishLocked(GRPC_ERROR_NONE);
+    self->FinishLocked(absl::OkStatus());
   }
 }
 
@@ -201,7 +201,7 @@ TCPConnectHandshaker::~TCPConnectHandshaker() {
     grpc_endpoint_destroy(endpoint_to_destroy_);
   }
   if (read_buffer_to_destroy_ != nullptr) {
-    grpc_slice_buffer_destroy_internal(read_buffer_to_destroy_);
+    grpc_slice_buffer_destroy(read_buffer_to_destroy_);
     gpr_free(read_buffer_to_destroy_);
   }
   grpc_pollset_set_destroy(interested_parties_);

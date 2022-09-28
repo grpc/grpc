@@ -206,12 +206,14 @@ PosixOracleEndpoint::PosixOracleEndpoint(int socket_fd)
 }
 
 void PosixOracleEndpoint::Shutdown() {
-  absl::MutexLock lock(&mu_);
-  if (absl::exchange(is_shutdown_, true)) {
+  grpc_core::MutexLock lock(&mu_);
+  if (std::exchange(is_shutdown_, true)) {
     return;
   }
-  read_ops_channel_.Set(ReadOperation());
-  write_ops_channel_.Set(WriteOperation());
+  read_ops_channel_ = ReadOperation();
+  read_op_signal_->Notify();
+  write_ops_channel_ = WriteOperation();
+  write_op_signal_->Notify();
   read_ops_.Join();
   write_ops_.Join();
 }
@@ -228,26 +230,31 @@ PosixOracleEndpoint::~PosixOracleEndpoint() {
 
 void PosixOracleEndpoint::Read(absl::AnyInvocable<void(absl::Status)> on_read,
                                SliceBuffer* buffer, const ReadArgs* args) {
+  grpc_core::MutexLock lock(&mu_);
   GPR_ASSERT(buffer != nullptr);
   int read_hint_bytes =
       args != nullptr ? std::max(1, static_cast<int>(args->read_hint_bytes))
                       : 0;
-  read_ops_channel_.Set(
-      ReadOperation(read_hint_bytes, buffer, std::move(on_read)));
+  read_ops_channel_ =
+      ReadOperation(read_hint_bytes, buffer, std::move(on_read));
+  read_op_signal_->Notify();
 }
 
 void PosixOracleEndpoint::Write(
     absl::AnyInvocable<void(absl::Status)> on_writable, SliceBuffer* data,
     const WriteArgs* /*args*/) {
+  grpc_core::MutexLock lock(&mu_);
   GPR_ASSERT(data != nullptr);
-  write_ops_channel_.Set(WriteOperation(data, std::move(on_writable)));
+  write_ops_channel_ = WriteOperation(data, std::move(on_writable));
+  write_op_signal_->Notify();
 }
 
 void PosixOracleEndpoint::ProcessReadOperations() {
   gpr_log(GPR_INFO, "Starting thread to process read ops ...");
   while (true) {
-    ReadOperation read_op = std::move(read_ops_channel_.Get());
-    read_ops_channel_.Reset();
+    read_op_signal_->WaitForNotification();
+    read_op_signal_ = absl::make_unique<grpc_core::Notification>();
+    auto read_op = std::exchange(read_ops_channel_, ReadOperation());
     if (!read_op.IsValid()) {
       read_op(std::string(), absl::CancelledError("Closed"));
       break;
@@ -266,8 +273,9 @@ void PosixOracleEndpoint::ProcessReadOperations() {
 void PosixOracleEndpoint::ProcessWriteOperations() {
   gpr_log(GPR_INFO, "Starting thread to process write ops ...");
   while (true) {
-    WriteOperation write_op = std::move(write_ops_channel_.Get());
-    write_ops_channel_.Reset();
+    write_op_signal_->WaitForNotification();
+    write_op_signal_ = absl::make_unique<grpc_core::Notification>();
+    auto write_op = std::exchange(write_ops_channel_, WriteOperation());
     if (!write_op.IsValid()) {
       write_op(absl::CancelledError("Closed"));
       break;
@@ -296,9 +304,9 @@ PosixOracleListener::PosixOracleListener(
 }
 
 absl::Status PosixOracleListener::Start() {
-  absl::MutexLock lock(&mu_);
+  grpc_core::MutexLock lock(&mu_);
   GPR_ASSERT(!listener_fds_.empty());
-  if (absl::exchange(is_started_, true)) {
+  if (std::exchange(is_started_, true)) {
     return absl::InternalError("Cannot start listener more than once ...");
   }
   serve_ = grpc_core::Thread(
@@ -312,7 +320,7 @@ absl::Status PosixOracleListener::Start() {
 }
 
 PosixOracleListener::~PosixOracleListener() {
-  absl::MutexLock lock(&mu_);
+  grpc_core::MutexLock lock(&mu_);
   if (!is_started_) {
     serve_.Join();
     return;
@@ -321,7 +329,7 @@ PosixOracleListener::~PosixOracleListener() {
     shutdown(listener_fds_[i], SHUT_RDWR);
   }
   // Send a STOP message over the pipe.
-  write(pipefd_[1], kStopMessage, strlen(kStopMessage));
+  GPR_ASSERT(write(pipefd_[1], kStopMessage, strlen(kStopMessage)) != -1);
   serve_.Join();
   on_shutdown_(absl::OkStatus());
 }
@@ -373,7 +381,7 @@ void PosixOracleListener::HandleIncomingConnections() {
 
 absl::StatusOr<int> PosixOracleListener::Bind(
     const EventEngine::ResolvedAddress& addr) {
-  absl::MutexLock lock(&mu_);
+  grpc_core::MutexLock lock(&mu_);
   int new_socket;
   int opt = -1;
   grpc_resolved_address address = CreateGRPCResolvedAddress(addr);

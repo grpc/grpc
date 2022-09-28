@@ -299,8 +299,8 @@ static void test_leftover(grpc_endpoint_test_config config, size_t slice_size) {
   grpc_endpoint_destroy(f.client_ep);
   grpc_endpoint_destroy(f.server_ep);
 
-  grpc_slice_unref_internal(s);
-  grpc_slice_buffer_destroy_internal(&incoming);
+  grpc_slice_unref(s);
+  grpc_slice_buffer_destroy(&incoming);
 
   clean_up();
 }

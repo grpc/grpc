@@ -40,6 +40,6 @@ lang/ruby:
 - examples/ruby/**
 - src/ruby/**
 
-lang/C#:
+"lang/C#":
 - src/csharp/**
 

@@ -21,6 +21,7 @@
 #include <memory>
 #include <utility>
 
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
 
@@ -140,7 +141,7 @@ class Fuzzer {
                     delete args;
                   },
                   args, nullptr);
-              ExecCtx::Get()->Run(DEBUG_LOCATION, closure, GRPC_ERROR_NONE);
+              ExecCtx::Get()->Run(DEBUG_LOCATION, closure, absl::OkStatus());
             };
             auto pass = MapReclamationPass(cfg.pass());
             WithAllocator(

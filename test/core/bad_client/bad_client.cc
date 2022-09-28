@@ -167,7 +167,7 @@ void grpc_run_client_side_validator(grpc_bad_client_arg* arg, uint32_t flags,
                 "client validator failed; trying additional read "
                 "in case we didn't get all the data");
       }
-      grpc_slice_buffer_destroy_internal(&incoming);
+      grpc_slice_buffer_destroy(&incoming);
     }
     grpc_core::ExecCtx::Get()->Flush();
   }
@@ -186,7 +186,7 @@ void grpc_run_client_side_validator(grpc_bad_client_arg* arg, uint32_t flags,
             .type == GRPC_QUEUE_TIMEOUT);
   }
 
-  grpc_slice_buffer_destroy_internal(&outgoing);
+  grpc_slice_buffer_destroy(&outgoing);
   grpc_core::ExecCtx::Get()->Flush();
 }
 

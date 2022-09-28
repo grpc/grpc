@@ -37,7 +37,6 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/context.h"
-#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/service_config/service_config_call_data.h"
@@ -136,10 +135,9 @@ ArenaPromise<ServerMetadataHandle> ServerConfigSelectorFilter::MakeCallPromise(
   if (!sel.ok()) return Immediate(ServerMetadataHandle(sel.status()));
   auto call_config =
       sel.value()->GetCallConfig(call_args.client_initial_metadata.get());
-  if (!GRPC_ERROR_IS_NONE(call_config.error)) {
+  if (!call_config.error.ok()) {
     auto r = Immediate(ServerMetadataHandle(
         absl::UnavailableError(grpc_error_std_string(call_config.error))));
-    GRPC_ERROR_UNREF(call_config.error);
     return std::move(r);
   }
   auto& ctx = GetContext<

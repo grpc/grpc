@@ -20,7 +20,6 @@
 
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
-#include "absl/utility/utility.h"
 
 #include <grpc/event_engine/event_engine.h>
 
@@ -31,36 +30,42 @@ namespace posix_engine {
 // argument - this is important for the tcp code to function correctly. We need
 // a custom closure type because the default EventEngine::Closure type doesn't
 // provide a way to pass a status when the callback is run.
-class IomgrEngineClosure final
+class PosixEngineClosure final
     : public grpc_event_engine::experimental::EventEngine::Closure {
  public:
-  IomgrEngineClosure() = default;
-  IomgrEngineClosure(absl::AnyInvocable<void(absl::Status)> cb,
+  PosixEngineClosure() = default;
+  PosixEngineClosure(absl::AnyInvocable<void(absl::Status)> cb,
                      bool is_permanent)
       : cb_(std::move(cb)),
         is_permanent_(is_permanent),
         status_(absl::OkStatus()) {}
-  ~IomgrEngineClosure() final = default;
+  ~PosixEngineClosure() final = default;
   void SetStatus(absl::Status status) { status_ = status; }
   void Run() override {
-    cb_(absl::exchange(status_, absl::OkStatus()));
+    // We need to read the is_permanent_ variable before executing the
+    // enclosed callback. This is because a permanent closure may delete this
+    // object within the callback itself and thus reading this variable after
+    // the callback execution is not safe.
     if (!is_permanent_) {
+      cb_(std::exchange(status_, absl::OkStatus()));
       delete this;
+    } else {
+      cb_(std::exchange(status_, absl::OkStatus()));
     }
   }
 
-  // This closure clean doesn't itself up after execution. It is expected to be
-  // cleaned up by the caller at the appropriate time.
-  static IomgrEngineClosure* ToPermanentClosure(
+  // This closure clean doesn't itself up after execution by default. The caller
+  // should take care if its lifetime.
+  static PosixEngineClosure* ToPermanentClosure(
       absl::AnyInvocable<void(absl::Status)> cb) {
-    return new IomgrEngineClosure(std::move(cb), true);
+    return new PosixEngineClosure(std::move(cb), true);
   }
 
   // This closure clean's itself up after execution. It is expected to be
   // used only in tests.
-  static IomgrEngineClosure* TestOnlyToClosure(
+  static PosixEngineClosure* TestOnlyToClosure(
       absl::AnyInvocable<void(absl::Status)> cb) {
-    return new IomgrEngineClosure(std::move(cb), false);
+    return new PosixEngineClosure(std::move(cb), false);
   }
 
  private:

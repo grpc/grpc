@@ -27,7 +27,6 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
-#include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
@@ -44,7 +43,7 @@
 // non-blocking (not polls from resolver, timer thread, etc), and only when the
 // thread is waiting on polls caused by CompletionQueue::AsyncNext (not for
 // picking a port or other reasons).
-static GPR_THREAD_LOCAL(bool) g_is_nonblocking_poll;
+static thread_local bool g_is_nonblocking_poll;
 
 namespace {
 

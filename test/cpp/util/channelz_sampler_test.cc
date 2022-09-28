@@ -26,6 +26,7 @@
 #include <string>
 #include <thread>
 
+#include "absl/strings/str_cat.h"
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
@@ -41,9 +42,10 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
-#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/cpp/server/channelz/channelz_service.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
+#include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/subprocess.h"
 #include "test/cpp/util/test_credentials_provider.h"
@@ -174,6 +176,9 @@ int main(int argc, char** argv) {
   } else {
     g_root = ".";
   }
+
+  /// ensures the target address is unique even if this test is run in parallel
+  server_address = absl::StrCat("0.0.0.0:", grpc_pick_unused_port_or_die());
   int ret = RUN_ALL_TESTS();
   return ret;
 }

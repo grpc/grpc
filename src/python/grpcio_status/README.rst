@@ -5,7 +5,7 @@ Reference package for GRPC Python status proto mapping.
 
 Supported Python Versions
 -------------------------
-Python >= 3.6
+Python >= 3.7
 
 Dependencies
 ------------

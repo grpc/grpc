@@ -82,12 +82,12 @@ static void set_resolve_port(int port) {
 
 namespace {
 
-grpc_core::DNSResolver* g_default_dns_resolver;
-
 class TestDNSResolver : public grpc_core::DNSResolver {
  public:
-  TestDNSResolver()
-      : engine_(grpc_event_engine::experimental::GetDefaultEventEngine()) {}
+  explicit TestDNSResolver(
+      std::shared_ptr<grpc_core::DNSResolver> default_resolver)
+      : default_resolver_(std::move(default_resolver)),
+        engine_(grpc_event_engine::experimental::GetDefaultEventEngine()) {}
   TaskHandle LookupHostname(
       std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
           on_resolved,
@@ -95,9 +95,9 @@ class TestDNSResolver : public grpc_core::DNSResolver {
       grpc_core::Duration timeout, grpc_pollset_set* interested_parties,
       absl::string_view name_server) override {
     if (name != "test") {
-      return g_default_dns_resolver->LookupHostname(
-          std::move(on_resolved), name, default_port, timeout,
-          interested_parties, name_server);
+      return default_resolver_->LookupHostname(std::move(on_resolved), name,
+                                               default_port, timeout,
+                                               interested_parties, name_server);
     }
     MakeDNSRequest(std::move(on_resolved));
     return kNullHandle;
@@ -105,7 +105,7 @@ class TestDNSResolver : public grpc_core::DNSResolver {
 
   absl::StatusOr<std::vector<grpc_resolved_address>> LookupHostnameBlocking(
       absl::string_view name, absl::string_view default_port) override {
-    return g_default_dns_resolver->LookupHostnameBlocking(name, default_port);
+    return default_resolver_->LookupHostnameBlocking(name, default_port);
   }
 
   TaskHandle LookupSRV(
@@ -115,6 +115,8 @@ class TestDNSResolver : public grpc_core::DNSResolver {
       grpc_pollset_set* /* interested_parties */,
       absl::string_view /* name_server */) override {
     engine_->Run([on_resolved] {
+      grpc_core::ApplicationCallbackExecCtx app_exec_ctx;
+      grpc_core::ExecCtx exec_ctx;
       on_resolved(absl::UnimplementedError(
           "The Testing DNS resolver does not support looking up SRV records"));
     });
@@ -128,6 +130,8 @@ class TestDNSResolver : public grpc_core::DNSResolver {
       absl::string_view /* name_server */) override {
     // Not supported
     engine_->Run([on_resolved] {
+      grpc_core::ApplicationCallbackExecCtx app_exec_ctx;
+      grpc_core::ExecCtx exec_ctx;
       on_resolved(absl::UnimplementedError(
           "The Testing DNS resolver does not support looking up TXT records"));
     });
@@ -159,6 +163,7 @@ class TestDNSResolver : public grpc_core::DNSResolver {
                                                  std::move(addrs));
     }
   }
+  std::shared_ptr<grpc_core::DNSResolver> default_resolver_;
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine_;
 };
 
@@ -176,7 +181,7 @@ static grpc_ares_request* my_dns_lookup_ares(
                                  query_timeout_ms);
   }
 
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
   gpr_mu_lock(&g_mu);
   if (g_resolve_port < 0) {
     gpr_mu_unlock(&g_mu);
@@ -210,9 +215,8 @@ int main(int argc, char** argv) {
 
   gpr_mu_init(&g_mu);
   grpc_init();
-  g_default_dns_resolver = grpc_core::GetDNSResolver();
-  auto* resolver = new TestDNSResolver();
-  grpc_core::SetDNSResolver(resolver);
+  grpc_core::ResetDNSResolver(
+      absl::make_unique<TestDNSResolver>(grpc_core::GetDNSResolver()));
   iomgr_dns_lookup_ares = grpc_dns_lookup_hostname_ares;
   iomgr_cancel_ares_request = grpc_cancel_ares_request;
   grpc_dns_lookup_hostname_ares = my_dns_lookup_ares;
@@ -248,28 +252,23 @@ int main(int argc, char** argv) {
 
   std::string addr;
 
-  grpc_channel_args client_args;
-  grpc_arg arg_array[2];
-  arg_array[0].type = GRPC_ARG_INTEGER;
-  arg_array[0].key =
-      const_cast<char*>("grpc.testing.fixed_reconnect_backoff_ms");
-  arg_array[0].value.integer = 1000;
-  /* When this test brings down server1 and then brings up server2,
-   * the targetted server port number changes, and the client channel
-   * needs to re-resolve to pick this up. This test requires that
-   * happen within 10 seconds, but gRPC's DNS resolvers rate limit
-   * resolution attempts to at most once every 30 seconds by default.
-   * So we tweak it for this test. */
-  arg_array[1].type = GRPC_ARG_INTEGER;
-  arg_array[1].key =
-      const_cast<char*>(GRPC_ARG_DNS_MIN_TIME_BETWEEN_RESOLUTIONS_MS);
-  arg_array[1].value.integer = 1000;
-  client_args.args = arg_array;
-  client_args.num_args = 2;
+  auto client_args =
+      grpc_core::ChannelArgs()
+          .Set(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS, 1000)
+          .Set(GRPC_ARG_MAX_RECONNECT_BACKOFF_MS, 1000)
+          .Set(GRPC_ARG_MIN_RECONNECT_BACKOFF_MS, 5000)
+          /* When this test brings down server1 and then brings up server2,
+           * the targetted server port number changes, and the client channel
+           * needs to re-resolve to pick this up. This test requires that
+           * happen within 10 seconds, but gRPC's DNS resolvers rate limit
+           * resolution attempts to at most once every 30 seconds by default.
+           * So we tweak it for this test. */
+          .Set(GRPC_ARG_DNS_MIN_TIME_BETWEEN_RESOLUTIONS_MS, 1000)
+          .ToC();
 
   /* create a channel that picks first amongst the servers */
   grpc_channel_credentials* creds = grpc_insecure_credentials_create();
-  grpc_channel* chan = grpc_channel_create("test", creds, &client_args);
+  grpc_channel* chan = grpc_channel_create("test", creds, client_args.get());
   grpc_channel_credentials_release(creds);
   /* and an initial call to them */
   grpc_slice host = grpc_slice_from_static_string("127.0.0.1");
@@ -448,8 +447,6 @@ int main(int argc, char** argv) {
 
   grpc_completion_queue_destroy(cq);
 
-  grpc_core::SetDNSResolver(g_default_dns_resolver);
-  delete resolver;
   grpc_shutdown();
   gpr_mu_destroy(&g_mu);
 

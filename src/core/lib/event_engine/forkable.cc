@@ -22,58 +22,58 @@
 
 #include "absl/container/flat_hash_set.h"
 
+#include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/sync.h"
 
 namespace grpc_event_engine {
 namespace experimental {
 
 namespace {
-gpr_once g_register_fork_handlers_init = GPR_ONCE_INIT;
-grpc_core::Mutex g_mu;
-absl::flat_hash_set<Forkable*> g_forkables;
+grpc_core::NoDestruct<grpc_core::Mutex> g_mu;
+bool g_registered ABSL_GUARDED_BY(g_mu){false};
+grpc_core::NoDestruct<absl::flat_hash_set<Forkable*>> g_forkables
+    ABSL_GUARDED_BY(g_mu);
 }  // namespace
 
 Forkable::Forkable() { ManageForkable(this); }
 
 Forkable::~Forkable() { StopManagingForkable(this); }
 
-void RegisterForkHandlersOnce(void) {
-  grpc_core::MutexLock lock(&g_mu);
-  pthread_atfork(PrepareFork, PostforkParent, PostforkChild);
-}
-
 void RegisterForkHandlers() {
-  gpr_once_init(&g_register_fork_handlers_init, RegisterForkHandlersOnce);
+  grpc_core::MutexLock lock(g_mu.get());
+  if (!std::exchange(g_registered, true)) {
+    pthread_atfork(PrepareFork, PostforkParent, PostforkChild);
+  }
 };
 
 void PrepareFork() {
-  grpc_core::MutexLock lock(&g_mu);
-  for (auto* forkable : g_forkables) {
+  grpc_core::MutexLock lock(g_mu.get());
+  for (auto* forkable : *g_forkables) {
     forkable->PrepareFork();
   }
 }
 void PostforkParent() {
-  grpc_core::MutexLock lock(&g_mu);
-  for (auto* forkable : g_forkables) {
+  grpc_core::MutexLock lock(g_mu.get());
+  for (auto* forkable : *g_forkables) {
     forkable->PostforkParent();
   }
 }
 
 void PostforkChild() {
-  grpc_core::MutexLock lock(&g_mu);
-  for (auto* forkable : g_forkables) {
+  grpc_core::MutexLock lock(g_mu.get());
+  for (auto* forkable : *g_forkables) {
     forkable->PostforkChild();
   }
 }
 
 void ManageForkable(Forkable* forkable) {
-  grpc_core::MutexLock lock(&g_mu);
-  g_forkables.insert(forkable);
+  grpc_core::MutexLock lock(g_mu.get());
+  g_forkables->insert(forkable);
 }
 
 void StopManagingForkable(Forkable* forkable) {
-  grpc_core::MutexLock lock(&g_mu);
-  g_forkables.erase(forkable);
+  grpc_core::MutexLock lock(g_mu.get());
+  g_forkables->erase(forkable);
 }
 
 }  // namespace experimental

@@ -23,7 +23,7 @@
 #include "src/core/ext/filters/http/server/http_server_filter.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack_builder_impl.h"
-#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
@@ -276,7 +276,7 @@ class MainLoop {
 
   void Run(const filter_fuzzer::Action& action, GlobalObjects* globals) {
     ExecCtx exec_ctx;
-    for (auto id : absl::exchange(wakeups_, {})) {
+    for (auto id : std::exchange(wakeups_, {})) {
       if (auto* call = GetCall(id)) call->Wakeup();
     }
     switch (action.type_case()) {
@@ -398,9 +398,7 @@ class MainLoop {
       }
 
       bool StartTransportOp(grpc_transport_op* op) override {
-        GRPC_ERROR_UNREF(op->disconnect_with_error);
-        GRPC_ERROR_UNREF(op->goaway_error);
-        ExecCtx::Run(DEBUG_LOCATION, op->on_consumed, GRPC_ERROR_NONE);
+        ExecCtx::Run(DEBUG_LOCATION, op->on_consumed, absl::OkStatus());
         return true;
       }
     };
@@ -463,7 +461,7 @@ class MainLoop {
     void RecvInitialMetadata(const filter_fuzzer::Metadata& metadata) {
       if (server_initial_metadata_ == nullptr) {
         LoadMetadata(metadata, &server_initial_metadata_);
-        if (auto* latch = absl::exchange(
+        if (auto* latch = std::exchange(
                 unset_incoming_server_initial_metadata_latch_, nullptr)) {
           ScopedContext context(this);
           latch->Set(server_initial_metadata_.get());
@@ -505,7 +503,7 @@ class MainLoop {
         call_->context_ = this;
       }
       ~ScopedContext() {
-        while (bool step = absl::exchange(continue_, false)) {
+        while (bool step = std::exchange(continue_, false)) {
           call_->Step();
         }
         GPR_ASSERT(call_->context_ == this);
@@ -589,9 +587,9 @@ DEFINE_PROTO_FUZZER(const filter_fuzzer::Msg& msg) {
   }
 
   grpc_test_only_set_slice_hash_seed(0);
-  char* grpc_trace_fuzzer = gpr_getenv("GRPC_TRACE_FUZZER");
-  if (squelch && grpc_trace_fuzzer == nullptr) gpr_set_log_function(dont_log);
-  gpr_free(grpc_trace_fuzzer);
+  if (squelch && !grpc_core::GetEnv("GRPC_TRACE_FUZZER").has_value()) {
+    gpr_set_log_function(dont_log);
+  }
   {
     grpc_core::MutexLock lock(&g_now_mu);
     g_now = {1, 0, GPR_CLOCK_MONOTONIC};

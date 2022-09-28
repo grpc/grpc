@@ -42,7 +42,6 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/channel.h"
@@ -99,9 +98,8 @@ bool LameClientFilter::StartTransportOp(grpc_transport_op* op) {
     ExecCtx::Run(DEBUG_LOCATION, op->send_ping.on_ack,
                  GRPC_ERROR_CREATE_FROM_STATIC_STRING("lame client channel"));
   }
-  GRPC_ERROR_UNREF(op->disconnect_with_error);
   if (op->on_consumed != nullptr) {
-    ExecCtx::Run(DEBUG_LOCATION, op->on_consumed, GRPC_ERROR_NONE);
+    ExecCtx::Run(DEBUG_LOCATION, op->on_consumed, absl::OkStatus());
   }
   return true;
 }

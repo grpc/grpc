@@ -26,8 +26,8 @@
 #include <grpc/slice.h>
 
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/slice/slice_refcount.h"
 #include "test/core/resource_quota/call_checker.h"
+#include "test/core/util/test_config.h"
 
 namespace grpc_core {
 namespace testing {
@@ -70,6 +70,7 @@ TEST(MemoryQuotaTest, CreateAllocatorNoOp) {
 }
 
 TEST(MemoryQuotaTest, CreateObjectFromAllocator) {
+  ExecCtx exec_ctx;
   MemoryQuota memory_quota("foo");
   auto memory_allocator = memory_quota.CreateMemoryAllocator("bar");
   auto object = memory_allocator.MakeUnique<Sized<4096>>();
@@ -113,6 +114,7 @@ TEST(MemoryQuotaTest, ReserveRangeNoPressure) {
   auto memory_allocator = memory_quota.CreateMemoryAllocator("bar");
   size_t total = 0;
   for (int i = 0; i < 10000; i++) {
+    ExecCtx exec_ctx;
     auto n = memory_allocator.Reserve(MemoryRequest(100, 40000));
     EXPECT_EQ(n, 40000);
     total += n;
@@ -125,16 +127,19 @@ TEST(MemoryQuotaTest, MakeSlice) {
   auto memory_allocator = memory_quota.CreateMemoryAllocator("bar");
   std::vector<grpc_slice> slices;
   for (int i = 1; i < 1000; i++) {
+    ExecCtx exec_ctx;
     int min = i;
     int max = 10 * i - 9;
     slices.push_back(memory_allocator.MakeSlice(MemoryRequest(min, max)));
   }
+  ExecCtx exec_ctx;
   for (grpc_slice slice : slices) {
-    grpc_slice_unref_internal(slice);
+    grpc_slice_unref(slice);
   }
 }
 
 TEST(MemoryQuotaTest, ContainerAllocator) {
+  ExecCtx exec_ctx;
   MemoryQuota memory_quota("foo");
   auto memory_allocator = memory_quota.CreateMemoryAllocator("bar");
   Vector<int> vec(&memory_allocator);
@@ -260,10 +265,8 @@ TEST(PressureTrackerTest, ManyThreads) {
 
 }  // namespace grpc_core
 
-// Hook needed to run ExecCtx outside of iomgr.
-void grpc_set_default_iomgr_platform() {}
-
 int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment give_me_a_name(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   gpr_log_verbosity_init();
   return RUN_ALL_TESTS();

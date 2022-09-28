@@ -31,7 +31,6 @@
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/mpscq.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/profiling/timers.h"
 
 struct grpc_closure;
 typedef struct grpc_closure grpc_closure;
@@ -46,7 +45,7 @@ typedef struct grpc_closure_list {
 /** gRPC Callback definition.
  *
  * \param arg Arbitrary input.
- * \param error GRPC_ERROR_NONE if no error occurred, otherwise some grpc_error
+ * \param error absl::OkStatus() if no error occurred, otherwise some grpc_error
  *              describing what went wrong.
  *              Error contract: it is not the cb's job to unref this error;
  *              the closure scheduler will do that after the cb returns */
@@ -196,7 +195,6 @@ inline bool grpc_closure_list_append(grpc_closure_list* closure_list,
                                      grpc_closure* closure,
                                      grpc_error_handle error) {
   if (closure == nullptr) {
-    GRPC_ERROR_UNREF(error);
     return false;
   }
   closure->error_data.error = grpc_core::internal::StatusAllocHeapPtr(error);
@@ -212,7 +210,6 @@ inline void grpc_closure_list_fail_all(grpc_closure_list* list,
           grpc_core::internal::StatusAllocHeapPtr(forced_failure);
     }
   }
-  GRPC_ERROR_UNREF(forced_failure);
 }
 
 /** append all closures from \a src to \a dst and empty \a src. */
@@ -242,7 +239,6 @@ class Closure {
                   grpc_error_handle error) {
     (void)location;
     if (closure == nullptr) {
-      GRPC_ERROR_UNREF(error);
       return;
     }
 #ifndef NDEBUG
@@ -259,7 +255,6 @@ class Closure {
       gpr_log(GPR_DEBUG, "closure %p finished", closure);
     }
 #endif
-    GRPC_ERROR_UNREF(error);
   }
 };
 }  // namespace grpc_core

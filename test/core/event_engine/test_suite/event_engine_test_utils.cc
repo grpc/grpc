@@ -23,7 +23,6 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/synchronization/mutex.h"
-#include "absl/time/time.h"
 
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/event_engine.h>
@@ -35,6 +34,7 @@
 
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
+#include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/uri/uri_parser.h"
 
@@ -76,19 +76,19 @@ absl::Status SendValidatePayload(std::string data, Endpoint* send_endpoint,
                                  Endpoint* receive_endpoint) {
   GPR_ASSERT(receive_endpoint != nullptr && send_endpoint != nullptr);
   int num_bytes_written = data.size();
-  Promise<bool> read_promise;
-  Promise<bool> write_promise;
+  grpc_core::Notification read_signal;
+  grpc_core::Notification write_signal;
   SliceBuffer read_slice_buf;
   SliceBuffer write_slice_buf;
 
   AppendStringToSliceBuffer(&write_slice_buf, data);
   EventEngine::Endpoint::ReadArgs args = {num_bytes_written};
   std::function<void(absl::Status)> read_cb;
-  read_cb = [receive_endpoint, &read_slice_buf, &read_cb, &read_promise,
+  read_cb = [receive_endpoint, &read_slice_buf, &read_cb, &read_signal,
              &args](absl::Status status) {
     GPR_ASSERT(status.ok());
     if (read_slice_buf.Length() == static_cast<size_t>(args.read_hint_bytes)) {
-      read_promise.Set(true);
+      read_signal.Notify();
       return;
     }
     args.read_hint_bytes -= read_slice_buf.Length();
@@ -98,15 +98,13 @@ absl::Status SendValidatePayload(std::string data, Endpoint* send_endpoint,
   receive_endpoint->Read(std::move(read_cb), &read_slice_buf, &args);
   // Start asynchronous writing at the send_endpoint.
   send_endpoint->Write(
-      [&write_promise](absl::Status status) {
+      [&write_signal](absl::Status status) {
         GPR_ASSERT(status.ok());
-        write_promise.Set(true);
+        write_signal.Notify();
       },
       &write_slice_buf, nullptr);
-  // Wait for async write to complete.
-  GPR_ASSERT(write_promise.Get() == true);
-  // Wait for async read to complete.
-  GPR_ASSERT(read_promise.Get() == true);
+  write_signal.WaitForNotification();
+  read_signal.WaitForNotification();
   // Check if data written == data read
   if (data != ExtractSliceBufferIntoString(&read_slice_buf)) {
     return absl::CancelledError("Data read != Data written");
@@ -137,11 +135,11 @@ absl::Status ConnectionManager::BindAndStartListener(
   EventEngine* event_engine = listener_type_oracle ? oracle_event_engine_.get()
                                                    : test_event_engine_.get();
 
+  ChannelArgsEndpointConfig config;
   auto status = event_engine->CreateListener(
       std::move(accept_cb),
-      [](absl::Status status) { GPR_ASSERT(status.ok()); },
-      ChannelArgsEndpointConfig(nullptr),
-      std::make_unique<grpc_core::MemoryQuota>("foo"));
+      [](absl::Status status) { GPR_ASSERT(status.ok()); }, config,
+      absl::make_unique<grpc_core::MemoryQuota>("foo"));
   if (!status.ok()) {
     return status.status();
   }
@@ -174,6 +172,7 @@ ConnectionManager::CreateConnection(std::string target_addr,
       absl::StrCat("connection-", std::to_string(num_processed_connections_++));
   EventEngine* event_engine = client_type_oracle ? oracle_event_engine_.get()
                                                  : test_event_engine_.get();
+  ChannelArgsEndpointConfig config;
   event_engine->Connect(
       [this](absl::StatusOr<std::unique_ptr<Endpoint>> status) {
         if (!status.ok()) {
@@ -184,7 +183,7 @@ ConnectionManager::CreateConnection(std::string target_addr,
           last_in_progress_connection_.SetClientEndpoint(std::move(*status));
         }
       },
-      URIToResolvedAddress(target_addr), ChannelArgsEndpointConfig(nullptr),
+      URIToResolvedAddress(target_addr), config,
       memory_quota_->CreateMemoryAllocator(conn_name), timeout);
 
   auto client_endpoint = last_in_progress_connection_.GetClientEndpoint();
