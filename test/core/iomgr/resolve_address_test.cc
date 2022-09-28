@@ -362,10 +362,11 @@ TEST_F(ResolveAddressTest, UnparseableHostPortsBadLocalhostWithPort) {
 // test doesn't care what the result is, just that we don't crash etc.
 TEST_F(ResolveAddressTest, ImmediateCancel) {
   grpc_core::ExecCtx exec_ctx;
-  auto request_handle = grpc_core::GetDNSResolver()->LookupHostname(
+  auto resolver = grpc_core::GetDNSResolver();
+  auto request_handle = resolver->LookupHostname(
       absl::bind_front(&ResolveAddressTest::DontCare, this), "localhost:1", "1",
       grpc_core::kDefaultDNSRequestTimeout, pollset_set(), "");
-  if (grpc_core::GetDNSResolver()->Cancel(request_handle)) {
+  if (resolver->Cancel(request_handle)) {
     Finish();
   }
   grpc_core::ExecCtx::Get()->Flush();
@@ -375,12 +376,13 @@ TEST_F(ResolveAddressTest, ImmediateCancel) {
 // Attempt to cancel a request after it has completed.
 TEST_F(ResolveAddressTest, CancelDoesNotSucceed) {
   grpc_core::ExecCtx exec_ctx;
-  auto request_handle = grpc_core::GetDNSResolver()->LookupHostname(
+  auto resolver = grpc_core::GetDNSResolver();
+  auto request_handle = resolver->LookupHostname(
       absl::bind_front(&ResolveAddressTest::MustSucceed, this), "localhost:1",
       "1", grpc_core::kDefaultDNSRequestTimeout, pollset_set(), "");
   grpc_core::ExecCtx::Get()->Flush();
   PollPollsetUntilRequestDone();
-  ASSERT_FALSE(grpc_core::GetDNSResolver()->Cancel(request_handle));
+  ASSERT_FALSE(resolver->Cancel(request_handle));
 }
 
 namespace {
@@ -419,12 +421,13 @@ TEST_F(ResolveAddressTest, CancelWithNonResponsiveDNSServer) {
   grpc_ares_test_only_inject_config = InjectNonResponsiveDNSServer;
   // Run the test
   grpc_core::ExecCtx exec_ctx;
-  auto request_handle = grpc_core::GetDNSResolver()->LookupHostname(
+  auto resolver = grpc_core::GetDNSResolver();
+  auto request_handle = resolver->LookupHostname(
       absl::bind_front(&ResolveAddressTest::MustNotBeCalled, this),
       "foo.bar.com:1", "1", grpc_core::kDefaultDNSRequestTimeout, pollset_set(),
       "");
   grpc_core::ExecCtx::Get()->Flush();  // initiate DNS requests
-  ASSERT_TRUE(grpc_core::GetDNSResolver()->Cancel(request_handle));
+  ASSERT_TRUE(resolver->Cancel(request_handle));
   Finish();
   // let cancellation work finish to ensure the callback is not called
   grpc_core::ExecCtx::Get()->Flush();
@@ -483,12 +486,13 @@ TEST_F(ResolveAddressTest, DeleteInterestedPartiesAfterCancellation) {
     // Create a pollset_set, destroyed immediately after cancellation
     std::unique_ptr<PollsetSetWrapper> pss = PollsetSetWrapper::Create();
     // Run the test
-    auto request_handle = grpc_core::GetDNSResolver()->LookupHostname(
+    auto resolver = grpc_core::GetDNSResolver();
+    auto request_handle = resolver->LookupHostname(
         absl::bind_front(&ResolveAddressTest::MustNotBeCalled, this),
         "foo.bar.com:1", "1", grpc_core::kDefaultDNSRequestTimeout,
         pss->pollset_set(), "");
     grpc_core::ExecCtx::Get()->Flush();  // initiate DNS requests
-    ASSERT_TRUE(grpc_core::GetDNSResolver()->Cancel(request_handle));
+    ASSERT_TRUE(resolver->Cancel(request_handle));
   }
   {
     // let cancellation work finish to ensure the callback is not called

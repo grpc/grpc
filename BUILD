@@ -897,11 +897,8 @@ grpc_cc_library(
     ],
     language = "c++",
     standalone = True,
-    tags = ["nofixdeps"],
     visibility = ["@grpc:public"],
-    deps = [
-        "grpc++",
-    ],
+    deps = ["grpc++"],
 )
 
 grpc_cc_library(
@@ -1423,6 +1420,7 @@ grpc_cc_library(
     external_deps = ["absl/status"],
     deps = [
         "activity",
+        "context",
         "default_event_engine",
         "event_engine_base_hdrs",
         "exec_ctx",
@@ -1666,6 +1664,7 @@ grpc_cc_library(
         "absl/strings:str_format",
         "absl/types:optional",
         "absl/types:variant",
+        "absl/utility",
     ],
     language = "c++",
     public_hdrs = [
@@ -2183,10 +2182,7 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/iomgr/error.h",
     ],
-    external_deps = [
-        "absl/status",
-    ],
-    tags = ["nofixdeps"],
+    external_deps = ["absl/status"],
     deps = [
         "gpr",
         "gpr_spinlock",
@@ -2988,9 +2984,13 @@ grpc_cc_library(
     ],
     external_deps = ["absl/functional:any_invocable"],
     deps = [
+        "context",
         "default_event_engine_factory",
         "event_engine_base_hdrs",
+        "event_engine_trace",
         "gpr",
+        "grpc_trace",
+        "no_destruct",
     ],
 )
 
@@ -3370,12 +3370,10 @@ grpc_cc_library(
         "absl/functional:function_ref",
         "absl/memory",
         "absl/meta:type_traits",
-        "absl/random",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
-        "absl/synchronization",
         "absl/time",
         "absl/types:optional",
         "absl/types:variant",
@@ -3384,7 +3382,6 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS + GRPC_PUBLIC_EVENT_ENGINE_HDRS,
-    tags = ["nofixdeps"],
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
         "activity",
@@ -3408,7 +3405,6 @@ grpc_cc_library(
         "default_event_engine",
         "dual_ref_counted",
         "error",
-        "event_engine_common",
         "event_log",
         "exec_ctx",
         "experiments",
@@ -3420,7 +3416,6 @@ grpc_cc_library(
         "grpc_public_hdrs",
         "grpc_sockaddr",
         "grpc_trace",
-        "handshaker_registry",
         "http2_errors",
         "init_internally",
         "iomgr_fwd",
@@ -3449,7 +3444,6 @@ grpc_cc_library(
         "slice_refcount",
         "sockaddr_utils",
         "status_helper",
-        "table",
         "thread_quota",
         "time",
         "transport_fwd",
@@ -4084,6 +4078,7 @@ grpc_cc_library(
         "closure",
         "config",
         "debug_location",
+        "default_event_engine",
         "exec_ctx",
         "exec_ctx_wakeup_scheduler",
         "gpr",

@@ -50,8 +50,6 @@
 namespace grpc_core {
 namespace {
 
-using ::grpc_event_engine::experimental::GetDefaultEventEngine;
-
 class NativeDNSRequest {
  public:
   NativeDNSRequest(
@@ -84,10 +82,8 @@ class NativeDNSRequest {
 
 }  // namespace
 
-NativeDNSResolver* NativeDNSResolver::GetOrCreate() {
-  static NativeDNSResolver* instance = new NativeDNSResolver();
-  return instance;
-}
+NativeDNSResolver::NativeDNSResolver()
+    : engine_(grpc_event_engine::experimental::GetDefaultEventEngine()) {}
 
 DNSResolver::TaskHandle NativeDNSResolver::LookupHostname(
     std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
@@ -167,7 +163,7 @@ DNSResolver::TaskHandle NativeDNSResolver::LookupSRV(
     absl::string_view /* name */, Duration /* deadline */,
     grpc_pollset_set* /* interested_parties */,
     absl::string_view /* name_server */) {
-  GetDefaultEventEngine()->Run([on_resolved] {
+  engine_->Run([on_resolved] {
     ApplicationCallbackExecCtx app_exec_ctx;
     ExecCtx exec_ctx;
     on_resolved(absl::UnimplementedError(
@@ -182,7 +178,7 @@ DNSResolver::TaskHandle NativeDNSResolver::LookupTXT(
     grpc_pollset_set* /* interested_parties */,
     absl::string_view /* name_server */) {
   // Not supported
-  GetDefaultEventEngine()->Run([on_resolved] {
+  engine_->Run([on_resolved] {
     ApplicationCallbackExecCtx app_exec_ctx;
     ExecCtx exec_ctx;
     on_resolved(absl::UnimplementedError(
