@@ -3428,7 +3428,6 @@ grpc_cc_library(
         "notification",
         "orphanable",
         "packed_table",
-        "percent_encoding",
         "pipe",
         "poll",
         "pollset_set",
