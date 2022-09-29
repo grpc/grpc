@@ -2177,7 +2177,10 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/iomgr/error.h",
     ],
-    external_deps = ["absl/status"],
+    external_deps = [
+        "absl/status",
+        "absl/strings:str_format",
+    ],
     deps = [
         "gpr",
         "gpr_spinlock",
