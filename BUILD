@@ -2984,6 +2984,9 @@ grpc_cc_library(
     ],
     external_deps = ["absl/functional:any_invocable"],
     deps = [
+        "channel_args",
+        "channel_args_preconditioning",
+        "config",
         "context",
         "default_event_engine_factory",
         "event_engine_base_hdrs",

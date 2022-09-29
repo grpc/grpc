@@ -34,6 +34,7 @@
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/codegen/grpc_types.h>
 
 #include "src/core/lib/avl/avl.h"
@@ -170,6 +171,9 @@ template <typename T>
 struct WrapInSharedPtr
     : std::integral_constant<
           bool, std::is_base_of<std::enable_shared_from_this<T>, T>::value> {};
+template <>
+struct WrapInSharedPtr<grpc_event_engine::experimental::EventEngine>
+    : std::true_type {};
 template <typename T, typename Ignored = void /* for SFINAE */>
 struct GetObjectImpl;
 // std::shared_ptr implementation
@@ -213,7 +217,11 @@ template <typename T>
 struct ChannelArgNameTraits<std::shared_ptr<T>> {
   static absl::string_view ChannelArgName() { return T::ChannelArgName(); }
 };
-
+// Specialization for the EventEngine
+template <>
+struct ChannelArgNameTraits<grpc_event_engine::experimental::EventEngine> {
+  static absl::string_view ChannelArgName() { return GRPC_ARG_EVENT_ENGINE; }
+};
 class ChannelArgs {
  public:
   class Pointer {
