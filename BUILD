@@ -3445,6 +3445,27 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "load_file",
+    srcs = [
+        "src/core/lib/gprpp/load_file.cc",
+    ],
+    hdrs = [
+        "src/core/lib/gprpp/load_file.h",
+    ],
+    external_deps = [
+        "absl/cleanup",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+    ],
+    language = "c++",
+    deps = [
+        "gpr",
+        "slice",
+    ],
+)
+
+grpc_cc_library(
     name = "http2_errors",
     hdrs = [
         "src/core/lib/transport/http2_errors.h",
