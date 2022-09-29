@@ -31,7 +31,6 @@
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/memory/memory.h"
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
 
@@ -426,7 +425,7 @@ class Server : public InternallyRefCounted<Server>,
       MaybeFinishShutdown();
       return nullptr;
     }
-    requests_complete_ = absl::make_unique<Notification>();
+    requests_complete_ = std::make_unique<Notification>();
     return requests_complete_.get();
   }
 

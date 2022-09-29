@@ -73,7 +73,7 @@ class RlsTest : public XdsEnd2endTest {
   };
 
   RlsTest() {
-    rls_server_ = absl::make_unique<RlsServerThread>(this);
+    rls_server_ = std::make_unique<RlsServerThread>(this);
     rls_server_->Start();
   }
 

@@ -25,7 +25,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -51,6 +50,7 @@
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/gprpp/work_serializer.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_args.h"
@@ -408,11 +408,11 @@ void XdsClusterManagerLb::UpdateStateLocked() {
       }
       child_picker = MakeRefCounted<ChildPickerWrapper>(
           cluster_name,
-          absl::make_unique<QueuePicker>(Ref(DEBUG_LOCATION, "QueuePicker")));
+          std::make_unique<QueuePicker>(Ref(DEBUG_LOCATION, "QueuePicker")));
     }
   }
   std::unique_ptr<SubchannelPicker> picker =
-      absl::make_unique<ClusterPicker>(std::move(cluster_map));
+      std::make_unique<ClusterPicker>(std::move(cluster_map));
   absl::Status status;
   if (connectivity_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
     status = absl::Status(absl::StatusCode::kUnavailable,
@@ -480,7 +480,7 @@ XdsClusterManagerLb::ClusterChild::CreateChildPolicyLocked(
       xds_cluster_manager_policy_->work_serializer();
   lb_policy_args.args = args;
   lb_policy_args.channel_control_helper =
-      absl::make_unique<Helper>(this->Ref(DEBUG_LOCATION, "Helper"));
+      std::make_unique<Helper>(this->Ref(DEBUG_LOCATION, "Helper"));
   OrphanablePtr<LoadBalancingPolicy> lb_policy =
       MakeOrphanable<ChildPolicyHandler>(std::move(lb_policy_args),
                                          &grpc_xds_cluster_manager_lb_trace);
@@ -549,6 +549,8 @@ void XdsClusterManagerLb::ClusterChild::DeactivateLocked() {
   delayed_removal_timer_handle_ = engine_->RunAfter(
       kChildRetentionInterval,
       [self = Ref(DEBUG_LOCATION, "ClusterChild+timer")]() mutable {
+        ApplicationCallbackExecCtx application_exec_ctx;
+        ExecCtx exec_ctx;
         self->xds_cluster_manager_policy_->work_serializer()->Run(
             [self = std::move(self)]() { self->OnDelayedRemovalTimerLocked(); },
             DEBUG_LOCATION);
@@ -688,7 +690,7 @@ class XdsClusterManagerLbFactory : public LoadBalancingPolicyFactory {
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
       LoadBalancingPolicy::Args args) const override {
     return MakeOrphanable<XdsClusterManagerLb>(std::move(args));
-  }  // namespace
+  }
 
   absl::string_view name() const override { return kXdsClusterManager; }
 
@@ -706,13 +708,13 @@ class XdsClusterManagerLbFactory : public LoadBalancingPolicyFactory {
         json, JsonArgs(),
         "errors validating xds_cluster_manager LB policy config");
   }
-};  // namespace grpc_core
+};
 
 }  // namespace
 
 void RegisterXdsClusterManagerLbPolicy(CoreConfiguration::Builder* builder) {
   builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
-      absl::make_unique<XdsClusterManagerLbFactory>());
+      std::make_unique<XdsClusterManagerLbFactory>());
 }
 
 }  // namespace grpc_core

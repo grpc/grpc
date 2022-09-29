@@ -17,19 +17,23 @@
  */
 
 #include <signal.h>
-#include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
-#include <string.h>
 #include <time.h>
 
+#include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
+#include <grpc/support/sync.h>
 #ifndef _WIN32
 /* This is for _exit() below, which is temporary. */
 #include <unistd.h>
 #endif
 
-#include <grpc/support/alloc.h>
+#include <string>
+
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 

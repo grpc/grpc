@@ -1024,7 +1024,6 @@ Pod::Spec.new do |s|
                       'src/cpp/server/async_generic_service.cc',
                       'src/cpp/server/channel_argument_option.cc',
                       'src/cpp/server/create_default_thread_pool.cc',
-                      'src/cpp/server/dynamic_thread_pool.cc',
                       'src/cpp/server/dynamic_thread_pool.h',
                       'src/cpp/server/external_connection_acceptor_impl.cc',
                       'src/cpp/server/external_connection_acceptor_impl.h',

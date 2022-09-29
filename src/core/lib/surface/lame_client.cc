@@ -23,7 +23,6 @@
 #include <memory>
 #include <utility>
 
-#include "absl/memory/memory.h"
 #include "absl/status/statusor.h"
 
 #include <grpc/grpc.h>
@@ -69,7 +68,7 @@ absl::StatusOr<LameClientFilter> LameClientFilter::Create(
 }
 
 LameClientFilter::LameClientFilter(absl::Status error)
-    : error_(std::move(error)), state_(absl::make_unique<State>()) {}
+    : error_(std::move(error)), state_(std::make_unique<State>()) {}
 
 LameClientFilter::State::State()
     : state_tracker("lame_client", GRPC_CHANNEL_SHUTDOWN) {}

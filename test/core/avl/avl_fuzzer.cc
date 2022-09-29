@@ -12,6 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <stdlib.h>
+
+#include <algorithm>
+#include <map>
+#include <utility>
+
 #include "src/core/lib/avl/avl.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/avl/avl_fuzzer.pb.h"

@@ -48,6 +48,7 @@
 #include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/handshaker_registry.h"
 #include "src/core/lib/transport/tcp_connect_handshaker.h"
@@ -193,7 +194,7 @@ HttpRequest::~HttpRequest() {
   if (own_endpoint_ && ep_ != nullptr) {
     grpc_endpoint_destroy(ep_);
   }
-  grpc_slice_unref(request_text_);
+  CSliceUnref(request_text_);
   grpc_iomgr_unregister_object(&iomgr_obj_);
   grpc_slice_buffer_destroy(&incoming_);
   grpc_slice_buffer_destroy(&outgoing_);
@@ -288,7 +289,7 @@ void HttpRequest::ContinueDoneWriteAfterScheduleOnExecCtx(
 }
 
 void HttpRequest::StartWrite() {
-  grpc_slice_ref(request_text_);
+  CSliceRef(request_text_);
   grpc_slice_buffer_add(&outgoing_, request_text_);
   Ref().release();  // ref held by pending write
   grpc_endpoint_write(ep_, &outgoing_, &done_write_, nullptr,

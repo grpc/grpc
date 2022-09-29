@@ -584,7 +584,7 @@ void RunResolvesRelevantRecordsTest(
   std::unique_ptr<grpc_core::testing::FakeUdpAndTcpServer>
       fake_non_responsive_dns_server;
   if (absl::GetFlag(FLAGS_inject_broken_nameserver_list) == "True") {
-    fake_non_responsive_dns_server = absl::make_unique<
+    fake_non_responsive_dns_server = std::make_unique<
         grpc_core::testing::FakeUdpAndTcpServer>(
         grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::
             kWaitForClientToSendFirstBytes,

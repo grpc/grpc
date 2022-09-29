@@ -2831,7 +2831,6 @@ libs:
   - src/cpp/server/async_generic_service.cc
   - src/cpp/server/channel_argument_option.cc
   - src/cpp/server/create_default_thread_pool.cc
-  - src/cpp/server/dynamic_thread_pool.cc
   - src/cpp/server/external_connection_acceptor_impl.cc
   - src/cpp/server/health/default_health_check_service.cc
   - src/cpp/server/health/health_check_service.cc
@@ -3194,7 +3193,6 @@ libs:
   - src/cpp/server/async_generic_service.cc
   - src/cpp/server/channel_argument_option.cc
   - src/cpp/server/create_default_thread_pool.cc
-  - src/cpp/server/dynamic_thread_pool.cc
   - src/cpp/server/external_connection_acceptor_impl.cc
   - src/cpp/server/health/default_health_check_service.cc
   - src/cpp/server/health/health_check_service.cc
@@ -4375,7 +4373,6 @@ targets:
   - src/cpp/server/async_generic_service.cc
   - src/cpp/server/channel_argument_option.cc
   - src/cpp/server/create_default_thread_pool.cc
-  - src/cpp/server/dynamic_thread_pool.cc
   - src/cpp/server/external_connection_acceptor_impl.cc
   - src/cpp/server/health/default_health_check_service.cc
   - src/cpp/server/health/health_check_service.cc
@@ -5551,7 +5548,6 @@ targets:
   - src/cpp/server/async_generic_service.cc
   - src/cpp/server/channel_argument_option.cc
   - src/cpp/server/create_default_thread_pool.cc
-  - src/cpp/server/dynamic_thread_pool.cc
   - src/cpp/server/external_connection_acceptor_impl.cc
   - src/cpp/server/health/default_health_check_service.cc
   - src/cpp/server/health/health_check_service.cc
@@ -5584,7 +5580,6 @@ targets:
   - test/core/event_engine/endpoint_config_test.cc
   deps:
   - grpc
-  - grpc_test_util_unsecure
   uses_polling: false
 - name: endpoint_pair_test
   gtest: true
@@ -5957,7 +5952,6 @@ targets:
   - src/cpp/server/async_generic_service.cc
   - src/cpp/server/channel_argument_option.cc
   - src/cpp/server/create_default_thread_pool.cc
-  - src/cpp/server/dynamic_thread_pool.cc
   - src/cpp/server/external_connection_acceptor_impl.cc
   - src/cpp/server/health/default_health_check_service.cc
   - src/cpp/server/health/health_check_service.cc
@@ -9858,12 +9852,32 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - src/core/lib/event_engine/handle_containers.h
+  - src/core/lib/gpr/murmur_hash.h
+  - src/core/lib/slice/slice.h
+  - src/core/lib/slice/slice_buffer.h
+  - src/core/lib/slice/slice_internal.h
+  - src/core/lib/slice/slice_refcount.h
+  - src/core/lib/slice/slice_refcount_base.h
+  - src/core/lib/slice/slice_string_helpers.h
   src:
+  - src/core/lib/event_engine/resolved_address.cc
+  - src/core/lib/event_engine/slice.cc
+  - src/core/lib/event_engine/slice_buffer.cc
+  - src/core/lib/gpr/murmur_hash.cc
+  - src/core/lib/slice/slice.cc
+  - src/core/lib/slice/slice_buffer.cc
+  - src/core/lib/slice/slice_refcount.cc
+  - src/core/lib/slice/slice_string_helpers.cc
   - test/core/event_engine/slice_buffer_test.cc
   deps:
-  - grpc
-  - grpc_test_util_unsecure
+  - absl/container:flat_hash_set
+  - absl/functional:any_invocable
+  - absl/hash:hash
+  - absl/status:statusor
+  - absl/utility:utility
+  - gpr
 - name: test_core_gpr_time_test
   gtest: true
   build: test
@@ -10367,7 +10381,6 @@ targets:
   - src/cpp/server/async_generic_service.cc
   - src/cpp/server/channel_argument_option.cc
   - src/cpp/server/create_default_thread_pool.cc
-  - src/cpp/server/dynamic_thread_pool.cc
   - src/cpp/server/external_connection_acceptor_impl.cc
   - src/cpp/server/health/default_health_check_service.cc
   - src/cpp/server/health/health_check_service.cc
@@ -10645,7 +10658,6 @@ targets:
   - src/cpp/server/async_generic_service.cc
   - src/cpp/server/channel_argument_option.cc
   - src/cpp/server/create_default_thread_pool.cc
-  - src/cpp/server/dynamic_thread_pool.cc
   - src/cpp/server/external_connection_acceptor_impl.cc
   - src/cpp/server/health/default_health_check_service.cc
   - src/cpp/server/health/health_check_service.cc
@@ -10754,7 +10766,6 @@ targets:
   - src/cpp/server/async_generic_service.cc
   - src/cpp/server/channel_argument_option.cc
   - src/cpp/server/create_default_thread_pool.cc
-  - src/cpp/server/dynamic_thread_pool.cc
   - src/cpp/server/external_connection_acceptor_impl.cc
   - src/cpp/server/health/default_health_check_service.cc
   - src/cpp/server/health/health_check_service.cc
