@@ -89,7 +89,8 @@ grpc_core::ChannelArgs EnsureEventEngineInChannelArgs(
 }
 }  // namespace
 
-void RegisterEventEngine(grpc_core::CoreConfiguration::Builder* builder) {
+void RegisterEventEngineChannelArgPreconditioning(
+    grpc_core::CoreConfiguration::Builder* builder) {
   builder->channel_args_preconditioning()->RegisterStage(
       grpc_event_engine::experimental::EnsureEventEngineInChannelArgs);
 }

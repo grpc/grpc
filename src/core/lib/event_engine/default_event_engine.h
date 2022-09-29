@@ -43,7 +43,8 @@ void ResetDefaultEventEngine();
 
 /// On ingress, ensure that an EventEngine exists in channel args via
 /// preconditioning.
-void RegisterEventEngine(grpc_core::CoreConfiguration::Builder* builder);
+void RegisterEventEngineChannelArgPreconditioning(
+    grpc_core::CoreConfiguration::Builder* builder);
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

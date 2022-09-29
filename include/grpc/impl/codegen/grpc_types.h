@@ -457,7 +457,7 @@ typedef struct {
  * channel arg. Int valued, milliseconds. Defaults to 10 minutes.*/
 #define GRPC_ARG_SERVER_CONFIG_CHANGE_DRAIN_GRACE_TIME_MS \
   "grpc.experimental.server_config_change_drain_grace_time_ms"
-/** EventEngine shared_pointer */
+/** EXPERIMENTAL: EventEngine shared_pointer */
 #define GRPC_ARG_EVENT_ENGINE "grpc.event_engine"
 /** \} */
 

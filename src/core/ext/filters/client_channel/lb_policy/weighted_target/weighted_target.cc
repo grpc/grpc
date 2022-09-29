@@ -42,6 +42,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -209,6 +210,8 @@ class WeightedTargetLb : public LoadBalancingPolicy {
 
       RefCountedPtr<WeightedChild> weighted_child_;
       absl::optional<EventEngine::TaskHandle> timer_handle_;
+      // TODO(hork): retrieve this from the channel when that machinery is ready
+      std::shared_ptr<EventEngine> event_engine_;
     };
 
     // Methods for dealing with the child policy.
@@ -476,17 +479,16 @@ void WeightedTargetLb::UpdateStateLocked() {
 
 WeightedTargetLb::WeightedChild::DelayedRemovalTimer::DelayedRemovalTimer(
     RefCountedPtr<WeightedTargetLb::WeightedChild> weighted_child)
-    : weighted_child_(std::move(weighted_child)) {
-  timer_handle_ =
-      weighted_child_->weighted_target_policy_->channel_args()
-          .GetObject<EventEngine>()
-          ->RunAfter(kChildRetentionInterval, [self = Ref()]() mutable {
-            ApplicationCallbackExecCtx app_exec_ctx;
-            ExecCtx exec_ctx;
-            self->weighted_child_->weighted_target_policy_->work_serializer()
-                ->Run([self = std::move(self)] { self->OnTimerLocked(); },
-                      DEBUG_LOCATION);
-          });
+    : weighted_child_(std::move(weighted_child)),
+      event_engine_(grpc_event_engine::experimental::GetDefaultEventEngine()) {
+  timer_handle_ = event_engine_->RunAfter(
+      kChildRetentionInterval, [self = Ref()]() mutable {
+        ApplicationCallbackExecCtx app_exec_ctx;
+        ExecCtx exec_ctx;
+        self->weighted_child_->weighted_target_policy_->work_serializer()->Run(
+            [self = std::move(self)] { self->OnTimerLocked(); },
+            DEBUG_LOCATION);
+      });
 }
 
 void WeightedTargetLb::WeightedChild::DelayedRemovalTimer::Orphan() {
@@ -498,9 +500,7 @@ void WeightedTargetLb::WeightedChild::DelayedRemovalTimer::Orphan() {
               weighted_child_->weighted_target_policy_.get(),
               weighted_child_.get(), weighted_child_->name_.c_str());
     }
-    weighted_child_->weighted_target_policy_->channel_args()
-        .GetObject<EventEngine>()
-        ->Cancel(*timer_handle_);
+    event_engine_->Cancel(*timer_handle_);
   }
   Unref();
 }
