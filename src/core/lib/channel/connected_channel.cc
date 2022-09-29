@@ -550,6 +550,10 @@ class ClientStream : public Orphanable {
     {
       MutexLock lock(&mu_);
       if (error != GRPC_ERROR_NONE) {
+        // Note that we're in error here, the call will be closed by the
+        // transport in a moment, and we'll return from the promise with an
+        // error - so we don't need to do any extra work to close out pipes or
+        // the like.
         send_message_state_ = Closed{};
       }
       if (!absl::holds_alternative<Closed>(send_message_state_)) {
