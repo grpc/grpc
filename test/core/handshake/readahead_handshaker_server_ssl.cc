@@ -18,7 +18,6 @@
 
 #include <memory>
 
-#include "absl/memory/memory.h"
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>

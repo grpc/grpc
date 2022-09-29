@@ -15,8 +15,6 @@
 
 #include <gtest/gtest.h>
 
-#include "absl/memory/memory.h"
-
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/event_engine/posix_engine/posix_engine.h"
