@@ -1896,7 +1896,7 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
 
   // Wakeable methods
   void Wakeup() override {
-    grpc_event_engine::experimental::GetDefaultEventEngine()->Run([this] {
+    channel()->event_engine()->Run([this] {
       ApplicationCallbackExecCtx app_exec_ctx;
       ExecCtx exec_ctx;
       {
@@ -1914,17 +1914,17 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
       fn();
     } else {
       InternalRef("in_context");
-      grpc_event_engine::experimental::GetDefaultEventEngine()->Run(
-          [this, fn = std::move(fn)]() mutable {
-            ExecCtx exec_ctx;
-            {
-              ScopedContext activity_context(this);
-              MutexLock lock(&mu_);
-              fn();
-              Update();
-            }
-            InternalUnref("in_context");
-          });
+      channel()->event_engine()->Run([this, fn = std::move(fn)]() mutable {
+        ApplicationCallbackExecCtx app_exec_ctx;
+        ExecCtx exec_ctx;
+        {
+          ScopedContext activity_context(this);
+          MutexLock lock(&mu_);
+          fn();
+          Update();
+        }
+        InternalUnref("in_context");
+      });
     }
   }
 
