@@ -135,7 +135,7 @@ static int64_t tcp_connect(grpc_closure* on_done, grpc_endpoint** endpoint,
   GUID guid = WSAID_CONNECTEX;
   DWORD ioctl_num_bytes;
   grpc_winsocket_callback_info* info;
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_error_handle error;
   async_connect* ac = NULL;
   absl::StatusOr<std::string> addr_uri;
 

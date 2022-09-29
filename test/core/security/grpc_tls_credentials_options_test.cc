@@ -431,9 +431,9 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
 TEST_F(GrpcTlsCredentialsOptionsTest,
        ClientOptionsWithCertWatcherProviderOnDeletedFiles) {
   // Create temporary files and copy cert data into it.
-  auto tmp_root_cert = absl::make_unique<TmpFile>(root_cert_);
-  auto tmp_identity_key = absl::make_unique<TmpFile>(private_key_);
-  auto tmp_identity_cert = absl::make_unique<TmpFile>(cert_chain_);
+  auto tmp_root_cert = std::make_unique<TmpFile>(root_cert_);
+  auto tmp_identity_key = std::make_unique<TmpFile>(private_key_);
+  auto tmp_identity_cert = std::make_unique<TmpFile>(cert_chain_);
   // Create ClientOptions using FileWatcherCertificateProvider.
   auto options = MakeRefCounted<grpc_tls_credentials_options>();
   auto provider = MakeRefCounted<FileWatcherCertificateProvider>(

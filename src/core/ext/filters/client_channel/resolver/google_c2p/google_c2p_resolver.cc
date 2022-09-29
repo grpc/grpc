@@ -25,7 +25,6 @@
 #include <string>
 #include <utility>
 
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -88,7 +87,7 @@ class GoogleCloud2ProdResolver : public Resolver {
    private:
     static void OnHttpRequestDone(void* arg, grpc_error_handle error);
 
-    // If error is not GRPC_ERROR_NONE, then it's not safe to look at response.
+    // If error is not absl::OkStatus(), then it's not safe to look at response.
     virtual void OnDone(GoogleCloud2ProdResolver* resolver,
                         const grpc_http_response* response,
                         grpc_error_handle error) = 0;
@@ -453,9 +452,9 @@ class ExperimentalGoogleCloud2ProdResolverFactory : public ResolverFactory {
 
 void RegisterCloud2ProdResolver(CoreConfiguration::Builder* builder) {
   builder->resolver_registry()->RegisterResolverFactory(
-      absl::make_unique<GoogleCloud2ProdResolverFactory>());
+      std::make_unique<GoogleCloud2ProdResolverFactory>());
   builder->resolver_registry()->RegisterResolverFactory(
-      absl::make_unique<ExperimentalGoogleCloud2ProdResolverFactory>());
+      std::make_unique<ExperimentalGoogleCloud2ProdResolverFactory>());
 }
 
 }  // namespace grpc_core

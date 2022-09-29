@@ -38,7 +38,6 @@
 #include <string>
 #include <utility>
 
-#include "absl/memory/memory.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
 
@@ -93,7 +92,7 @@ class ContainerBackedMapImpl : public CelMap {
 
   static std::unique_ptr<CelMap> Create(
       absl::Span<std::pair<CelValue, CelValue>> /*key_values*/) {
-    return absl::make_unique<ContainerBackedMapImpl>();
+    return std::make_unique<ContainerBackedMapImpl>();
   }
 };
 

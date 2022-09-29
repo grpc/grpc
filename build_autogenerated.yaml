@@ -2819,7 +2819,6 @@ libs:
   - src/cpp/server/async_generic_service.cc
   - src/cpp/server/channel_argument_option.cc
   - src/cpp/server/create_default_thread_pool.cc
-  - src/cpp/server/dynamic_thread_pool.cc
   - src/cpp/server/external_connection_acceptor_impl.cc
   - src/cpp/server/health/default_health_check_service.cc
   - src/cpp/server/health/health_check_service.cc
@@ -3183,7 +3182,6 @@ libs:
   - src/cpp/server/async_generic_service.cc
   - src/cpp/server/channel_argument_option.cc
   - src/cpp/server/create_default_thread_pool.cc
-  - src/cpp/server/dynamic_thread_pool.cc
   - src/cpp/server/external_connection_acceptor_impl.cc
   - src/cpp/server/health/default_health_check_service.cc
   - src/cpp/server/health/health_check_service.cc
@@ -3648,7 +3646,6 @@ targets:
 - name: activity_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - src/core/lib/gprpp/atomic_utils.h
@@ -4364,7 +4361,6 @@ targets:
   - src/cpp/server/async_generic_service.cc
   - src/cpp/server/channel_argument_option.cc
   - src/cpp/server/create_default_thread_pool.cc
-  - src/cpp/server/dynamic_thread_pool.cc
   - src/cpp/server/external_connection_acceptor_impl.cc
   - src/cpp/server/health/default_health_check_service.cc
   - src/cpp/server/health/health_check_service.cc
@@ -5001,7 +4997,6 @@ targets:
 - name: client_lb_end2end_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - src/cpp/server/orca/orca_interceptor.h
@@ -5330,6 +5325,15 @@ targets:
   - linux
   - posix
   - mac
+- name: default_engine_methods_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/event_engine/default_engine_methods_test.cc
+  deps:
+  - grpc_test_util
 - name: delegating_channel_test
   gtest: true
   build: test
@@ -5522,7 +5526,6 @@ targets:
   - src/cpp/server/async_generic_service.cc
   - src/cpp/server/channel_argument_option.cc
   - src/cpp/server/create_default_thread_pool.cc
-  - src/cpp/server/dynamic_thread_pool.cc
   - src/cpp/server/external_connection_acceptor_impl.cc
   - src/cpp/server/health/default_health_check_service.cc
   - src/cpp/server/health/health_check_service.cc
@@ -5556,7 +5559,6 @@ targets:
   - test/core/event_engine/endpoint_config_test.cc
   deps:
   - grpc
-  - grpc_test_util_unsecure
   uses_polling: false
 - name: endpoint_pair_test
   gtest: true
@@ -5842,6 +5844,7 @@ targets:
   - absl/functional:any_invocable
   - absl/meta:type_traits
   - absl/status:statusor
+  - absl/utility:utility
   - gpr
   - upb
   uses_polling: false
@@ -5930,7 +5933,6 @@ targets:
   - src/cpp/server/async_generic_service.cc
   - src/cpp/server/channel_argument_option.cc
   - src/cpp/server/create_default_thread_pool.cc
-  - src/cpp/server/dynamic_thread_pool.cc
   - src/cpp/server/external_connection_acceptor_impl.cc
   - src/cpp/server/health/default_health_check_service.cc
   - src/cpp/server/health/health_check_service.cc
@@ -6707,6 +6709,7 @@ targets:
 - name: grpc_tls_certificate_provider_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/core/util/cmdline.h
@@ -8065,7 +8068,6 @@ targets:
 - name: periodic_update_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - src/core/ext/upb-generated/google/protobuf/any.upb.h
@@ -8838,7 +8840,6 @@ targets:
 - name: secure_endpoint_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - test/core/iomgr/endpoint_tests.h
@@ -9885,12 +9886,32 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - src/core/lib/event_engine/handle_containers.h
+  - src/core/lib/gpr/murmur_hash.h
+  - src/core/lib/slice/slice.h
+  - src/core/lib/slice/slice_buffer.h
+  - src/core/lib/slice/slice_internal.h
+  - src/core/lib/slice/slice_refcount.h
+  - src/core/lib/slice/slice_refcount_base.h
+  - src/core/lib/slice/slice_string_helpers.h
   src:
+  - src/core/lib/event_engine/resolved_address.cc
+  - src/core/lib/event_engine/slice.cc
+  - src/core/lib/event_engine/slice_buffer.cc
+  - src/core/lib/gpr/murmur_hash.cc
+  - src/core/lib/slice/slice.cc
+  - src/core/lib/slice/slice_buffer.cc
+  - src/core/lib/slice/slice_refcount.cc
+  - src/core/lib/slice/slice_string_helpers.cc
   - test/core/event_engine/slice_buffer_test.cc
   deps:
-  - grpc
-  - grpc_test_util_unsecure
+  - absl/container:flat_hash_set
+  - absl/functional:any_invocable
+  - absl/hash:hash
+  - absl/status:statusor
+  - absl/utility:utility
+  - gpr
 - name: test_core_gpr_time_test
   gtest: true
   build: test
@@ -10194,7 +10215,6 @@ targets:
 - name: timer_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers: []
   src:
@@ -10264,7 +10284,6 @@ targets:
 - name: too_many_pings_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
@@ -10394,7 +10413,6 @@ targets:
   - src/cpp/server/async_generic_service.cc
   - src/cpp/server/channel_argument_option.cc
   - src/cpp/server/create_default_thread_pool.cc
-  - src/cpp/server/dynamic_thread_pool.cc
   - src/cpp/server/external_connection_acceptor_impl.cc
   - src/cpp/server/health/default_health_check_service.cc
   - src/cpp/server/health/health_check_service.cc
@@ -10673,7 +10691,6 @@ targets:
   - src/cpp/server/async_generic_service.cc
   - src/cpp/server/channel_argument_option.cc
   - src/cpp/server/create_default_thread_pool.cc
-  - src/cpp/server/dynamic_thread_pool.cc
   - src/cpp/server/external_connection_acceptor_impl.cc
   - src/cpp/server/health/default_health_check_service.cc
   - src/cpp/server/health/health_check_service.cc
@@ -10783,7 +10800,6 @@ targets:
   - src/cpp/server/async_generic_service.cc
   - src/cpp/server/channel_argument_option.cc
   - src/cpp/server/create_default_thread_pool.cc
-  - src/cpp/server/dynamic_thread_pool.cc
   - src/cpp/server/external_connection_acceptor_impl.cc
   - src/cpp/server/health/default_health_check_service.cc
   - src/cpp/server/health/health_check_service.cc
@@ -10823,7 +10839,6 @@ targets:
 - name: work_serializer_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers: []
   src:
@@ -10971,7 +10986,6 @@ targets:
 - name: xds_cluster_type_end2end_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - test/cpp/end2end/connection_attempt_injector.h
@@ -11030,7 +11044,6 @@ targets:
 - name: xds_core_end2end_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - test/cpp/end2end/counted_service.h
@@ -11194,7 +11207,6 @@ targets:
 - name: xds_end2end_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - test/cpp/end2end/counted_service.h
@@ -11272,7 +11284,6 @@ targets:
 - name: xds_fault_injection_end2end_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - test/cpp/end2end/counted_service.h
@@ -11416,7 +11427,6 @@ targets:
 - name: xds_outlier_detection_end2end_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - test/cpp/end2end/counted_service.h
@@ -11475,7 +11485,6 @@ targets:
 - name: xds_ring_hash_end2end_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - test/cpp/end2end/connection_attempt_injector.h
@@ -11593,7 +11602,6 @@ targets:
 - name: xds_routing_end2end_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - test/cpp/end2end/counted_service.h

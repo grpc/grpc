@@ -31,7 +31,6 @@
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -412,9 +411,9 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::Start(
 void Chttp2ServerListener::ActiveConnection::HandshakingState::OnTimeout(
     void* arg, grpc_error_handle error) {
   HandshakingState* self = static_cast<HandshakingState*>(arg);
-  // Note that we may be called with GRPC_ERROR_NONE when the timer fires
+  // Note that we may be called with absl::OkStatus() when the timer fires
   // or with an error indicating that the timer system is being shut down.
-  if (error != GRPC_ERROR_CANCELLED) {
+  if (error != absl::CancelledError()) {
     grpc_transport_op* op = grpc_make_transport_op(nullptr);
     op->disconnect_with_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Did not receive HTTP/2 settings before handshake timeout");
@@ -455,7 +454,7 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
         // before destroying them, even if we know that there are no
         // pending read/write callbacks.  This should be fixed, at which
         // point this can be removed.
-        grpc_endpoint_shutdown(args->endpoint, GRPC_ERROR_NONE);
+        grpc_endpoint_shutdown(args->endpoint, absl::OkStatus());
         grpc_endpoint_destroy(args->endpoint);
         grpc_slice_buffer_destroy(args->read_buffer);
         gpr_free(args->read_buffer);
@@ -675,7 +674,7 @@ grpc_error_handle Chttp2ServerListener::Create(
   // The bulk of this method is inside of a lambda to make cleanup
   // easier without using goto.
   grpc_error_handle error = [&]() {
-    grpc_error_handle error = GRPC_ERROR_NONE;
+    grpc_error_handle error;
     // Create Chttp2ServerListener.
     listener = new Chttp2ServerListener(server, args, args_modifier);
     error = grpc_tcp_server_create(
@@ -706,7 +705,7 @@ grpc_error_handle Chttp2ServerListener::Create(
     }
     // Register with the server only upon success
     server->AddListener(OrphanablePtr<Server::ListenerInterface>(listener));
-    return GRPC_ERROR_NONE;
+    return absl::OkStatus();
   }();
   if (!error.ok()) {
     if (listener != nullptr) {
@@ -738,7 +737,7 @@ grpc_error_handle Chttp2ServerListener::CreateWithAcceptor(
   TcpServerFdHandler** arg_val = args.GetPointer<TcpServerFdHandler*>(name);
   *arg_val = grpc_tcp_server_create_fd_handler(listener->tcp_server_);
   server->AddListener(OrphanablePtr<Server::ListenerInterface>(listener));
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 Chttp2ServerListener::Chttp2ServerListener(
@@ -757,7 +756,7 @@ Chttp2ServerListener::~Chttp2ServerListener() {
   // may do a synchronous unref.
   ExecCtx::Get()->Flush();
   if (on_destroy_done_ != nullptr) {
-    ExecCtx::Run(DEBUG_LOCATION, on_destroy_done_, GRPC_ERROR_NONE);
+    ExecCtx::Run(DEBUG_LOCATION, on_destroy_done_, absl::OkStatus());
     ExecCtx::Get()->Flush();
   }
 }
@@ -766,7 +765,7 @@ Chttp2ServerListener::~Chttp2ServerListener() {
 void Chttp2ServerListener::Start(
     Server* /*server*/, const std::vector<grpc_pollset*>* /* pollsets */) {
   if (server_->config_fetcher() != nullptr) {
-    auto watcher = absl::make_unique<ConfigFetcherWatcher>(Ref());
+    auto watcher = std::make_unique<ConfigFetcherWatcher>(Ref());
     config_fetcher_watcher_ = watcher.get();
     server_->config_fetcher()->StartWatch(
         grpc_sockaddr_to_string(&resolved_address_, false).value(),
@@ -822,7 +821,7 @@ void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
           GRPC_ERROR_CREATE_FROM_CPP_STRING(args_result.status().ToString()));
       return;
     }
-    grpc_error_handle error = GRPC_ERROR_NONE;
+    grpc_error_handle error;
     args = self->args_modifier_(*args_result, &error);
     if (!error.ok()) {
       gpr_log(GPR_DEBUG, "Closing connection: %s",
@@ -857,7 +856,7 @@ void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
     }
   }
   if (connection != nullptr) {
-    endpoint_cleanup(GRPC_ERROR_NONE);
+    endpoint_cleanup(absl::OkStatus());
   } else {
     connection_ref->Start(std::move(listener_ref), tcp, args);
   }
@@ -923,7 +922,7 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
   absl::string_view parsed_addr_unprefixed{parsed_addr};
   // Using lambda to avoid use of goto.
   grpc_error_handle error = [&]() {
-    grpc_error_handle error = GRPC_ERROR_NONE;
+    grpc_error_handle error;
     if (absl::ConsumePrefix(&parsed_addr_unprefixed, kUnixUriPrefix)) {
       resolved_or = grpc_resolve_unix_domain_address(parsed_addr_unprefixed);
     } else if (absl::ConsumePrefix(&parsed_addr_unprefixed,
@@ -973,7 +972,7 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
       gpr_log(GPR_INFO, "WARNING: %s", grpc_error_std_string(error).c_str());
       // we managed to bind some addresses: continue without error
     }
-    return GRPC_ERROR_NONE;
+    return absl::OkStatus();
   }();  // lambda end
   if (!error.ok()) *port_num = 0;
   return error;
@@ -1005,7 +1004,7 @@ ChannelArgs ModifyArgsForConnection(const ChannelArgs& args,
 int grpc_server_add_http2_port(grpc_server* server, const char* addr,
                                grpc_server_credentials* creds) {
   grpc_core::ExecCtx exec_ctx;
-  grpc_error_handle err = GRPC_ERROR_NONE;
+  grpc_error_handle err;
   grpc_core::RefCountedPtr<grpc_server_security_connector> sc;
   int port_num = 0;
   grpc_core::Server* core_server = grpc_core::Server::FromC(server);

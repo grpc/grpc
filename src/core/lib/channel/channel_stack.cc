@@ -134,7 +134,7 @@ grpc_error_handle grpc_channel_stack_init(
                                              sizeof(grpc_channel_element));
 
   /* init per-filter data */
-  grpc_error_handle first_error = GRPC_ERROR_NONE;
+  grpc_error_handle first_error;
   auto c_channel_args = channel_args.ToC();
   for (i = 0; i < filter_count; i++) {
     args.channel_stack = stack;
@@ -194,7 +194,7 @@ grpc_error_handle grpc_call_stack_init(
               GPR_ROUND_UP_TO_ALIGNMENT_SIZE(count * sizeof(grpc_call_element));
 
   /* init per-filter data */
-  grpc_error_handle first_error = GRPC_ERROR_NONE;
+  grpc_error_handle first_error;
   for (size_t i = 0; i < count; i++) {
     call_elems[i].filter = channel_elems[i].filter;
     call_elems[i].channel_data = channel_elems[i].channel_data;

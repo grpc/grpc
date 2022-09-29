@@ -14,13 +14,10 @@
 
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h"
 
-#include <stdlib.h>
-#include <string.h>
+#include <memory>
 
-#include <thread>
-
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
+#include "absl/status/statusor.h"
+#include "gtest/gtest.h"
 
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.h"
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.h"

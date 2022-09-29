@@ -42,6 +42,33 @@ grpc_cc_test(
     ],
 )
 
+grpc_cc_test(
+    name = "bm_exec_ctx",
+    srcs = ["bm_exec_ctx.cc"],
+    args = ["--benchmark_min_time=0.3"],
+    external_deps = [
+        "benchmark",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [":helpers"],
+)
+
+grpc_cc_test(
+    name = "bm_event_engine_run",
+    size = "small",
+    srcs = ["bm_event_engine_run.cc"],
+    args = ["--benchmark_min_time=0.3"],
+    external_deps = [
+        "benchmark",
+    ],
+    uses_polling = False,
+    deps = [
+        ":helpers",
+        "//:common_event_engine_closures",
+    ],
+)
+
 grpc_cc_library(
     name = "helpers",
     testonly = 1,
@@ -216,7 +243,6 @@ grpc_cc_test(
         "bm_fullstack_streaming_ping_pong.cc",
     ],
     args = grpc_benchmark_args(),
-    flaky = True,
     tags = [
         "no_mac",  # to emulate "excluded_poll_engines: poll"
         "no_windows",

@@ -243,7 +243,6 @@ grpc_cc_test(
     name = "activity_test",
     srcs = ["activity_test.cc"],
     external_deps = ["gtest"],
-    flaky = True,
     language = "c++",
     tags = ["promise_test"],
     uses_event_engine = False,
