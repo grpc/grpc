@@ -3646,6 +3646,7 @@ targets:
 - name: activity_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - src/core/lib/gprpp/atomic_utils.h
@@ -4997,6 +4998,7 @@ targets:
 - name: client_lb_end2end_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - src/cpp/server/orca/orca_interceptor.h
@@ -6707,7 +6709,6 @@ targets:
 - name: grpc_tls_certificate_provider_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - test/core/util/cmdline.h
@@ -8066,6 +8067,7 @@ targets:
 - name: periodic_update_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - src/core/ext/upb-generated/google/protobuf/any.upb.h
@@ -8786,6 +8788,7 @@ targets:
 - name: secure_endpoint_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/core/iomgr/endpoint_tests.h
@@ -10161,6 +10164,7 @@ targets:
 - name: timer_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers: []
   src:
@@ -10230,6 +10234,7 @@ targets:
 - name: too_many_pings_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
@@ -10785,6 +10790,7 @@ targets:
 - name: work_serializer_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers: []
   src:
@@ -10932,6 +10938,7 @@ targets:
 - name: xds_cluster_type_end2end_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/cpp/end2end/connection_attempt_injector.h
@@ -10990,6 +10997,7 @@ targets:
 - name: xds_core_end2end_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/cpp/end2end/counted_service.h
@@ -11153,6 +11161,7 @@ targets:
 - name: xds_end2end_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/cpp/end2end/counted_service.h
@@ -11230,6 +11239,7 @@ targets:
 - name: xds_fault_injection_end2end_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/cpp/end2end/counted_service.h
@@ -11373,6 +11383,7 @@ targets:
 - name: xds_outlier_detection_end2end_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/cpp/end2end/counted_service.h
@@ -11431,6 +11442,7 @@ targets:
 - name: xds_ring_hash_end2end_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/cpp/end2end/connection_attempt_injector.h
@@ -11548,6 +11560,7 @@ targets:
 - name: xds_routing_end2end_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/cpp/end2end/counted_service.h

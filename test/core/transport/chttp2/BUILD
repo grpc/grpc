@@ -261,6 +261,7 @@ grpc_cc_test(
     timeout = "long",  # Required for internal test infrastructure (cl/325757166)
     srcs = ["too_many_pings_test.cc"],
     external_deps = ["gtest"],
+    flaky = True,
     shard_count = 7,
     deps = [
         "//:gpr",
