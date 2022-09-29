@@ -23,7 +23,6 @@
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
-#include <fstream>
 #include <memory>
 #include <string>
 
@@ -32,6 +31,7 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
 #include <grpc/event_engine/endpoint_config.h>
@@ -45,6 +45,7 @@
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/load_file.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
@@ -111,25 +112,39 @@ ssize_t TcpSend(int fd, const struct msghdr* msg, int* saved_errno,
 
 #define CAP_IS_SUPPORTED(cap) (prctl(PR_CAPBSET_READ, (cap), 0) > 0)
 
+// Remove spaces and newline characters from the end of a string.
+void rtrim(std::string& s) {
+  s.erase(std::find_if(s.rbegin(), s.rend(),
+                       [](unsigned char ch) { return !std::isspace(ch); })
+              .base(),
+          s.end());
+}
+
 uint64_t ParseUlimitMemLockFromFile(std::string file_name) {
-  std::ifstream limits_file(file_name);
-  uint64_t hard_memlock = 0;
   static std::string kHardMemlockPrefix = "* hard memlock";
-  for (std::string line; limits_file.is_open() && getline(limits_file, line);) {
-    if (line.find(kHardMemlockPrefix) == std::string::npos) {
-      continue;
-    }
-    // Line starts with prefix "* hard memlock". Extract memlock value.
-    auto value =
-        line.substr(kHardMemlockPrefix.length() + 1, std::string::npos);
-    if (value == "unlimited" || value == "infinity") {
-      hard_memlock = UINT64_MAX;
-    } else {
-      hard_memlock = std::atoi(value.c_str());
-    }
-    return hard_memlock;
+  auto result = grpc_core::GrpcLoadFile(file_name, false);
+  if (!result.ok()) {
+    return 0;
   }
-  return hard_memlock;
+  std::string file_contents(reinterpret_cast<const char*>((*result).begin()),
+                            (*result).length());
+  // Find start position containing prefix.
+  size_t start = file_contents.find(kHardMemlockPrefix);
+  if (start == std::string::npos) {
+    return 0;
+  }
+  // Find position of next newline after prefix.
+  size_t end = file_contents.find(start, '\n');
+  // Extract substring between prefix and next newline.
+  auto memlock_value_string = file_contents.substr(
+      start + kHardMemlockPrefix.length() + 1, end - start);
+  rtrim(memlock_value_string);
+  if (memlock_value_string == "unlimited" ||
+      memlock_value_string == "infinity") {
+    return UINT64_MAX;
+  } else {
+    return std::atoi(memlock_value_string.c_str());
+  }
 }
 
 // Ulimit hard memlock controls per socket limit for maximum locked memory in
@@ -141,7 +156,7 @@ uint64_t ParseUlimitMemLockFromFile(std::string file_name) {
 // allow zerocopy sendmsgs to succeed. It controls the maximum amount of
 // memory that can be locked by a socket in RAM.
 uint64_t GetUlimitHardMemLock() {
-  static uint64_t kUlimitHardMemLock = []() -> uint64_t {
+  static const uint64_t kUlimitHardMemLock = []() -> uint64_t {
     if (CAP_IS_SUPPORTED(CAP_SYS_RESOURCE)) {
       // hard memlock ulimit is ignored for privileged user.
       return UINT64_MAX;
@@ -166,7 +181,7 @@ uint64_t GetUlimitHardMemLock() {
 
 // RLIMIT_MEMLOCK controls per process limit for maximum locked memory in RAM.
 uint64_t GetRLimitMemLockMax() {
-  static uint64_t kRlimitMemLock = []() -> uint64_t {
+  static const uint64_t kRlimitMemLock = []() -> uint64_t {
     if (CAP_IS_SUPPORTED(CAP_SYS_RESOURCE)) {
       // RLIMIT_MEMLOCK is ignored for privileged user.
       return UINT64_MAX;

@@ -2802,6 +2802,7 @@ grpc_cc_library(
         "experiments",
         "gpr",
         "iomgr_port",
+        "load_file",
         "memory_quota",
         "posix_event_engine_closure",
         "posix_event_engine_event_poller",
@@ -3471,6 +3472,27 @@ grpc_cc_library(
         "uri_parser",
         "useful",
         "work_serializer",
+    ],
+)
+
+grpc_cc_library(
+    name = "load_file",
+    srcs = [
+        "src/core/lib/gprpp/load_file.cc",
+    ],
+    hdrs = [
+        "src/core/lib/gprpp/load_file.h",
+    ],
+    external_deps = [
+        "absl/cleanup",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+    ],
+    language = "c++",
+    deps = [
+        "gpr",
+        "slice",
     ],
 )
 
