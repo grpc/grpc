@@ -548,6 +548,8 @@ void XdsClusterManagerLb::ClusterChild::DeactivateLocked() {
   delayed_removal_timer_handle_ = engine_->RunAfter(
       kChildRetentionInterval,
       [self = Ref(DEBUG_LOCATION, "ClusterChild+timer")]() mutable {
+        ApplicationCallbackExecCtx application_exec_ctx;
+        ExecCtx exec_ctx;
         self->xds_cluster_manager_policy_->work_serializer()->Run(
             [self = std::move(self)]() { self->OnDelayedRemovalTimerLocked(); },
             DEBUG_LOCATION);
@@ -687,7 +689,7 @@ class XdsClusterManagerLbFactory : public LoadBalancingPolicyFactory {
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
       LoadBalancingPolicy::Args args) const override {
     return MakeOrphanable<XdsClusterManagerLb>(std::move(args));
-  }  // namespace
+  }
 
   absl::string_view name() const override { return kXdsClusterManager; }
 
@@ -705,7 +707,7 @@ class XdsClusterManagerLbFactory : public LoadBalancingPolicyFactory {
         json, JsonArgs(),
         "errors validating xds_cluster_manager LB policy config");
   }
-};  // namespace grpc_core
+};
 
 }  // namespace
 
