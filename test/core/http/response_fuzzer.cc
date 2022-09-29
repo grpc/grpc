@@ -20,9 +20,10 @@
 #include <string.h>
 
 #include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
+#include <grpc/slice.h>
 
 #include "src/core/lib/http/parser.h"
+#include "src/core/lib/iomgr/error.h"
 
 bool squelch = true;
 bool leak_check = true;

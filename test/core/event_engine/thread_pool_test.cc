@@ -14,13 +14,11 @@
 
 #include "src/core/lib/event_engine/thread_pool.h"
 
-#include <atomic>
+#include <stdlib.h>
+
 #include <chrono>
 #include <thread>
 
-#include <gtest/gtest.h>
-
-#include "absl/synchronization/notification.h"
 #include "gtest/gtest.h"
 
 #include <grpc/support/log.h>

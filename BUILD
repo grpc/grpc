@@ -243,7 +243,6 @@ GRPCXX_SRCS = [
     "src/cpp/server/async_generic_service.cc",
     "src/cpp/server/channel_argument_option.cc",
     "src/cpp/server/create_default_thread_pool.cc",
-    "src/cpp/server/dynamic_thread_pool.cc",
     "src/cpp/server/external_connection_acceptor_impl.cc",
     "src/cpp/server/health/default_health_check_service.cc",
     "src/cpp/server/health/health_check_service.cc",
@@ -2179,7 +2178,10 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/iomgr/error.h",
     ],
-    external_deps = ["absl/status"],
+    external_deps = [
+        "absl/status",
+        "absl/strings:str_format",
+    ],
     deps = [
         "gpr",
         "gpr_spinlock",
@@ -2918,17 +2920,22 @@ grpc_cc_library(
         "src/core/lib/event_engine/slice_buffer.cc",
     ],
     hdrs = [
+        "include/grpc/event_engine/slice.h",
+        "include/grpc/event_engine/slice_buffer.h",
         "src/core/lib/event_engine/handle_containers.h",
     ],
     external_deps = [
         "absl/container:flat_hash_set",
         "absl/hash",
+        "absl/strings",
+        "absl/utility",
     ],
     deps = [
         "event_engine_base_hdrs",
         "gpr",
         "gpr_platform",
         "slice",
+        "slice_buffer",
         "slice_refcount",
     ],
 )
