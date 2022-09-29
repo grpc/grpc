@@ -20,7 +20,6 @@
 
 #include <gtest/gtest.h>
 
-#include "absl/memory/memory.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 

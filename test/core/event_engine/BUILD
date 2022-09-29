@@ -82,7 +82,6 @@ grpc_cc_test(
     srcs = ["default_engine_methods_test.cc"],
     external_deps = [
         "absl/functional:any_invocable",
-        "absl/memory",
         "absl/status",
         "absl/status:statusor",
         "absl/time",
