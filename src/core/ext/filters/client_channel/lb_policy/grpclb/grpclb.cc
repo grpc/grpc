@@ -105,7 +105,6 @@
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -302,7 +301,6 @@ class GrpcLb : public LoadBalancingPolicy {
     bool client_load_report_is_due_ = false;
     // The closure used for the completion of sending the load report.
     grpc_closure client_load_report_done_closure_;
-    std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine_;
   };
 
   class SubchannelWrapper : public DelegatingSubchannel {
@@ -557,6 +555,8 @@ class GrpcLb : public LoadBalancingPolicy {
   RefCountedPtr<FakeResolverResponseGenerator> response_generator_;
   // Parent channelz node.
   RefCountedPtr<channelz::ChannelNode> parent_channelz_node_;
+
+  std::shared_ptr<EventEngine> event_engine_;
 
   // The data associated with the current LB call. It holds a ref to this LB
   // policy. It's initialized every time we query for backends. It's reset to
@@ -886,8 +886,7 @@ GrpcLb::BalancerCallState::BalancerCallState(
     : InternallyRefCounted<BalancerCallState>(
           GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace) ? "BalancerCallState"
                                                      : nullptr),
-      grpclb_policy_(std::move(parent_grpclb_policy)),
-      engine_(grpc_event_engine::experimental::GetDefaultEventEngine()) {
+      grpclb_policy_(std::move(parent_grpclb_policy)) {
   GPR_ASSERT(grpclb_policy_ != nullptr);
   GPR_ASSERT(!grpclb_policy()->shutting_down_);
   // Init the LB call. Note that the LB call will progress every time there's
@@ -945,7 +944,8 @@ void GrpcLb::BalancerCallState::Orphan() {
   // call, then the following cancellation will be a no-op.
   grpc_call_cancel_internal(lb_call_);
   if (client_load_report_handle_.has_value() &&
-      engine_->Cancel(client_load_report_handle_.value())) {
+      grpclb_policy()->event_engine_->Cancel(
+          client_load_report_handle_.value())) {
     Unref(DEBUG_LOCATION, "client_load_report cancelled");
   }
   // Note that the initial ref is hold by lb_on_balancer_status_received_
@@ -1030,8 +1030,8 @@ void GrpcLb::BalancerCallState::StartQuery() {
 }
 
 void GrpcLb::BalancerCallState::ScheduleNextClientLoadReportLocked() {
-  client_load_report_handle_ =
-      engine_->RunAfter(client_stats_report_interval_, [this] {
+  client_load_report_handle_ = grpclb_policy()->event_engine_->RunAfter(
+      client_stats_report_interval_, [this] {
         ApplicationCallbackExecCtx callback_exec_ctx;
         ExecCtx exec_ctx;
         grpclb_policy()->work_serializer()->Run(
@@ -1464,6 +1464,7 @@ GrpcLb::GrpcLb(Args args)
     : LoadBalancingPolicy(std::move(args)),
       server_name_(GetServerNameFromChannelArgs(channel_args())),
       response_generator_(MakeRefCounted<FakeResolverResponseGenerator>()),
+      event_engine_(channel_args().GetObjectRef<EventEngine>()),
       lb_call_timeout_(std::max(
           Duration::Zero(),
           channel_args()
