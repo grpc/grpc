@@ -23,7 +23,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -239,7 +238,7 @@ absl::Status XdsWrrLocalityLb::UpdateLocked(UpdateArgs args) {
         child_config.status().ToString()));
     channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE, status,
-        absl::make_unique<TransientFailurePicker>(status));
+        std::make_unique<TransientFailurePicker>(status));
     return status;
   }
   // Create child policy if needed (i.e., on first update).
@@ -266,7 +265,7 @@ OrphanablePtr<LoadBalancingPolicy> XdsWrrLocalityLb::CreateChildPolicyLocked(
   lb_policy_args.work_serializer = work_serializer();
   lb_policy_args.args = args;
   lb_policy_args.channel_control_helper =
-      absl::make_unique<Helper>(this->Ref(DEBUG_LOCATION, "Helper"));
+      std::make_unique<Helper>(this->Ref(DEBUG_LOCATION, "Helper"));
   auto lb_policy =
       CoreConfiguration::Get().lb_policy_registry().CreateLoadBalancingPolicy(
           "weighted_target_experimental", std::move(lb_policy_args));
@@ -352,7 +351,7 @@ class XdsWrrLocalityLbFactory : public LoadBalancingPolicyFactory {
 
 void RegisterXdsWrrLocalityLbPolicy(CoreConfiguration::Builder* builder) {
   builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
-      absl::make_unique<XdsWrrLocalityLbFactory>());
+      std::make_unique<XdsWrrLocalityLbFactory>());
 }
 
 }  // namespace grpc_core
