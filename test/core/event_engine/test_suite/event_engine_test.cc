@@ -30,6 +30,6 @@ void SetEventEngineFactories(
     std::function<
         std::unique_ptr<grpc_event_engine::experimental::EventEngine>()>
         oracle_ee_factory) {
-  testing::AddGlobalTestEnvironment(
-      new EventEngineTestEnvironment(factory, oracle_ee_factory));
+  testing::AddGlobalTestEnvironment(new EventEngineTestEnvironment(
+      std::move(factory), std::move(oracle_ee_factory)));
 }

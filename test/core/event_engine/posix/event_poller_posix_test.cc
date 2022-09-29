@@ -61,6 +61,7 @@
 
 GPR_GLOBAL_CONFIG_DECLARE_STRING(grpc_poll_strategy);
 
+using ::grpc_event_engine::experimental::PosixEventEngine;
 using ::grpc_event_engine::posix_engine::PosixEventPoller;
 
 static gpr_mu g_mu;
@@ -369,24 +370,17 @@ void WaitAndShutdown(server* sv, client* cl) {
   gpr_mu_unlock(&g_mu);
 }
 
-std::string TestScenarioName(
-    const ::testing::TestParamInfo<std::string>& info) {
-  return info.param;
-}
-
-class EventPollerTest : public ::testing::TestWithParam<std::string> {
+class EventPollerTest : public ::testing::Test {
   void SetUp() override {
-    engine_ =
-        absl::make_unique<grpc_event_engine::experimental::PosixEventEngine>();
-    EXPECT_NE(engine_, nullptr);
     scheduler_ =
-        absl::make_unique<grpc_event_engine::posix_engine::TestScheduler>(
-            engine_.get());
+        absl::make_unique<grpc_event_engine::posix_engine::TestScheduler>();
     EXPECT_NE(scheduler_, nullptr);
-    GPR_GLOBAL_CONFIG_SET(grpc_poll_strategy, GetParam().c_str());
     g_event_poller = GetDefaultPoller(scheduler_.get());
+    engine_ = PosixEventEngine::MakeTestOnlyPosixEventEngine(g_event_poller);
+    EXPECT_NE(engine_, nullptr);
+    scheduler_->ChangeCurrentEventEngine(engine_.get());
     if (g_event_poller != nullptr) {
-      EXPECT_EQ(g_event_poller->Name(), GetParam());
+      gpr_log(GPR_INFO, "Using poller: %s", g_event_poller->Name().c_str());
     }
   }
 
@@ -400,14 +394,14 @@ class EventPollerTest : public ::testing::TestWithParam<std::string> {
   TestScheduler* Scheduler() { return scheduler_.get(); }
 
  private:
-  std::unique_ptr<grpc_event_engine::experimental::PosixEventEngine> engine_;
+  std::shared_ptr<grpc_event_engine::experimental::PosixEventEngine> engine_;
   std::unique_ptr<grpc_event_engine::posix_engine::TestScheduler> scheduler_;
 };
 
 // Test grpc_fd. Start an upload server and client, upload a stream of bytes
 // from the client to the server, and verify that the total number of sent
 // bytes is equal to the total number of received bytes.
-TEST_P(EventPollerTest, TestEventPollerHandle) {
+TEST_F(EventPollerTest, TestEventPollerHandle) {
   server sv;
   client cl;
   int port;
@@ -449,7 +443,7 @@ void SecondReadCallback(FdChangeData* fdc, absl::Status /*status*/) {
 // Note that we have two different but almost identical callbacks above -- the
 // point is to have two different function pointers and two different data
 // pointers and make sure that changing both really works.
-TEST_P(EventPollerTest, TestEventPollerHandleChange) {
+TEST_F(EventPollerTest, TestEventPollerHandleChange) {
   EventHandle* em_fd;
   FdChangeData a, b;
   int flags;
@@ -685,7 +679,7 @@ class Worker : public grpc_core::DualRefCounted<Worker> {
 // immediately and schedule the wait for the next read event. A new read event
 // is also generated for each fd in parallel after the previous one is
 // processed.
-TEST_P(EventPollerTest, TestMultipleHandles) {
+TEST_F(EventPollerTest, TestMultipleHandles) {
   static constexpr int kNumHandles = 100;
   static constexpr int kNumWakeupsPerHandle = 100;
   if (g_event_poller == nullptr) {
@@ -696,11 +690,6 @@ TEST_P(EventPollerTest, TestMultipleHandles) {
   worker->Start();
   worker->Wait();
 }
-
-INSTANTIATE_TEST_SUITE_P(PosixEventPoller, EventPollerTest,
-                         ::testing::ValuesIn({std::string("epoll1"),
-                                              std::string("poll")}),
-                         &TestScenarioName);
 
 }  // namespace
 }  // namespace posix_engine

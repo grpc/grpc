@@ -38,7 +38,8 @@ class EventEngineTestEnvironment : public testing::Environment {
       std::function<
           std::unique_ptr<grpc_event_engine::experimental::EventEngine>()>
           oracle_factory)
-      : factory_(factory), oracle_factory_(oracle_factory) {}
+      : factory_(std::move(factory)),
+        oracle_factory_(std::move(oracle_factory)) {}
 
   void SetUp() override {
     g_ee_factory = &factory_;
