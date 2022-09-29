@@ -21,10 +21,7 @@
 
 #include <gtest/gtest.h>
 
-#include <grpc/grpc.h>
-#include <grpc/slice.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/tmpfile.h"
 #include "test/core/util/test_config.h"
