@@ -4961,7 +4961,6 @@ grpc_cc_library(
         "grpc_base",
         "grpc_client_channel",
         "grpc_lb_address_filtering",
-        "grpc_lb_policy_ring_hash",
         "grpc_lb_xds_attributes",
         "grpc_lb_xds_channel_args",
         "grpc_outlier_detection_header",
