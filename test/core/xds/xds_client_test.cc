@@ -29,7 +29,6 @@
 #include <string>
 
 #include <google/protobuf/any.pb.h>
-#include <google/protobuf/message.h>
 #include <google/protobuf/struct.pb.h>
 #include <google/protobuf/stubs/status.h>
 #include <google/protobuf/unknown_field_set.h>
@@ -59,6 +58,8 @@
 #include "src/proto/grpc/testing/xds/v3/discovery.pb.h"
 #include "test/core/util/test_config.h"
 #include "test/core/xds/xds_transport_fake.h"
+
+// IWYU pragma: no_include <google/protobuf/message.h>
 
 using envoy::service::discovery::v3::DiscoveryRequest;
 using envoy::service::discovery::v3::DiscoveryResponse;
