@@ -22,6 +22,8 @@
 #include <inttypes.h>
 #include <string.h>
 
+#include "absl/strings/str_format.h"
+
 #include <grpc/impl/codegen/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -69,22 +71,17 @@ namespace {
 #ifdef GPR_WINDOWS
 std::string StrError(int err) { return strerror(err); }
 #else
-// strerror() is not threadsafe so we can't use it here.
-// Instead, we use strerror_r() which is threadsafe but not entirely portable:
-// two versions exist in the wild - the GNU version and the XSI version.
-#if (_POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE >= 600) && !_GNU_SOURCE
 std::string StrError(int err) {
+  struct Finish {
+    static std::string Run(char* buf, int err, int r) {
+      if (r == 0) return buf;
+      return absl::StrFormat("strerror_r(%d) failed: %d", err, r);
+    }
+    static std::string Run(char*, int, const char* r) { return r; }
+  };
   char buf[256];
-  int r = strerror_r(err, buf, sizeof(buf));
-  if (r == 0) return buf;
-  return absl::StrFormat("strerror_r(%d) failed: %d", err, r);
+  return Finish::Run(buf, err, strerror_r(err, buf, sizeof(buf)));
 }
-#else
-std::string StrError(int err) {
-  char buf[256];
-  return strerror_r(err, buf, sizeof(buf));
-}
-#endif  // _POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE >= 600
 #endif  // !GPR_WINDOWS
 }  // namespace
 
