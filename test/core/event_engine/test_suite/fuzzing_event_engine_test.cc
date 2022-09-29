@@ -66,7 +66,7 @@ int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   SetEventEngineFactories(
       []() {
-        return absl::make_unique<
+        return std::make_unique<
             grpc_event_engine::experimental::ThreadedFuzzingEventEngine>();
       },
       nullptr);

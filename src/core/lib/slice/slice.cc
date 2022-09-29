@@ -494,3 +494,9 @@ grpc_slice grpc_slice_dup(grpc_slice a) {
          GRPC_SLICE_LENGTH(a));
   return copy;
 }
+
+grpc_slice grpc_slice_ref(grpc_slice slice) {
+  return grpc_core::CSliceRef(slice);
+}
+
+void grpc_slice_unref(grpc_slice slice) { grpc_core::CSliceUnref(slice); }

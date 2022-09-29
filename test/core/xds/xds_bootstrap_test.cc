@@ -716,7 +716,7 @@ int main(int argc, char** argv) {
       [](grpc_core::CoreConfiguration::Builder* builder) {
         builder->certificate_provider_registry()
             ->RegisterCertificateProviderFactory(
-                absl::make_unique<
+                std::make_unique<
                     grpc_core::testing::FakeCertificateProviderFactory>());
       });
   grpc_init();

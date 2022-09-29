@@ -82,7 +82,7 @@ TEST_F(EventEngineClientTest, ConnectToNonExistentListenerTest) {
   grpc_core::ExecCtx ctx;
   auto test_ee = this->NewEventEngine();
   grpc_core::Notification signal;
-  auto memory_quota = absl::make_unique<grpc_core::MemoryQuota>("bar");
+  auto memory_quota = std::make_unique<grpc_core::MemoryQuota>("bar");
   std::string target_addr = absl::StrCat(
       "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die()));
   // Create a test EventEngine client endpoint and connect to a non existent
@@ -107,7 +107,7 @@ TEST_F(EventEngineClientTest, ConnectExchangeBidiDataTransferTest) {
   grpc_core::ExecCtx ctx;
   auto oracle_ee = this->NewOracleEventEngine();
   auto test_ee = this->NewEventEngine();
-  auto memory_quota = absl::make_unique<grpc_core::MemoryQuota>("bar");
+  auto memory_quota = std::make_unique<grpc_core::MemoryQuota>("bar");
   std::string target_addr = absl::StrCat(
       "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die()));
   std::unique_ptr<EventEngine::Endpoint> client_endpoint;
@@ -127,7 +127,7 @@ TEST_F(EventEngineClientTest, ConnectExchangeBidiDataTransferTest) {
   auto status = oracle_ee->CreateListener(
       std::move(accept_cb),
       [](absl::Status status) { GPR_ASSERT(status.ok()); }, config,
-      absl::make_unique<grpc_core::MemoryQuota>("foo"));
+      std::make_unique<grpc_core::MemoryQuota>("foo"));
   EXPECT_TRUE(status.ok());
 
   std::unique_ptr<Listener> listener = std::move(*status);
@@ -176,7 +176,7 @@ TEST_F(EventEngineClientTest, MultipleIPv6ConnectionsToOneOracleListenerTest) {
   static constexpr int kNumConnections = 10;        // M
   auto oracle_ee = this->NewOracleEventEngine();
   auto test_ee = this->NewEventEngine();
-  auto memory_quota = absl::make_unique<grpc_core::MemoryQuota>("bar");
+  auto memory_quota = std::make_unique<grpc_core::MemoryQuota>("bar");
   std::unique_ptr<EventEngine::Endpoint> server_endpoint;
   // Notifications can only be fired once, so they are newed every loop
   grpc_core::Notification* server_signal = new grpc_core::Notification();
@@ -195,7 +195,7 @@ TEST_F(EventEngineClientTest, MultipleIPv6ConnectionsToOneOracleListenerTest) {
   auto status = oracle_ee->CreateListener(
       std::move(accept_cb),
       [](absl::Status status) { GPR_ASSERT(status.ok()); }, config,
-      absl::make_unique<grpc_core::MemoryQuota>("foo"));
+      std::make_unique<grpc_core::MemoryQuota>("foo"));
   EXPECT_TRUE(status.ok());
   std::unique_ptr<Listener> listener = std::move(*status);
 

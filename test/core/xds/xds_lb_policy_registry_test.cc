@@ -514,7 +514,7 @@ int main(int argc, char** argv) {
   grpc_core::CoreConfiguration::RegisterBuilder(
       [](grpc_core::CoreConfiguration::Builder* builder) {
         builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
-            absl::make_unique<grpc_core::testing::CustomLbPolicyFactory>());
+            std::make_unique<grpc_core::testing::CustomLbPolicyFactory>());
       });
 
   grpc_init();

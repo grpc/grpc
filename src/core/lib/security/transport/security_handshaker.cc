@@ -29,7 +29,6 @@
 #include <string>
 
 #include "absl/base/attributes.h"
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
@@ -58,6 +57,7 @@
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/transport/secure_endpoint.h"
 #include "src/core/lib/security/transport/tsi_error.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/handshaker.h"
 #include "src/core/lib/transport/handshaker_factory.h"
@@ -320,7 +320,7 @@ void SecurityHandshaker::OnPeerCheckedInner(grpc_error_handle error) {
       args_->endpoint = grpc_secure_endpoint_create(
           protector, zero_copy_protector, args_->endpoint, &slice,
           args_->args.ToC().get(), 1);
-      grpc_slice_unref(slice);
+      CSliceUnref(slice);
     } else {
       args_->endpoint = grpc_secure_endpoint_create(
           protector, zero_copy_protector, args_->endpoint, nullptr,
@@ -655,10 +655,10 @@ RefCountedPtr<Handshaker> SecurityHandshakerCreate(
 void SecurityRegisterHandshakerFactories(CoreConfiguration::Builder* builder) {
   builder->handshaker_registry()->RegisterHandshakerFactory(
       false /* at_start */, HANDSHAKER_CLIENT,
-      absl::make_unique<ClientSecurityHandshakerFactory>());
+      std::make_unique<ClientSecurityHandshakerFactory>());
   builder->handshaker_registry()->RegisterHandshakerFactory(
       false /* at_start */, HANDSHAKER_SERVER,
-      absl::make_unique<ServerSecurityHandshakerFactory>());
+      std::make_unique<ServerSecurityHandshakerFactory>());
 }
 
 }  // namespace grpc_core

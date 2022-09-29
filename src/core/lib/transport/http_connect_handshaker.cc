@@ -27,7 +27,6 @@
 #include <string>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
@@ -394,7 +393,7 @@ class HttpConnectHandshakerFactory : public HandshakerFactory {
 void RegisterHttpConnectHandshaker(CoreConfiguration::Builder* builder) {
   builder->handshaker_registry()->RegisterHandshakerFactory(
       true /* at_start */, HANDSHAKER_CLIENT,
-      absl::make_unique<HttpConnectHandshakerFactory>());
+      std::make_unique<HttpConnectHandshakerFactory>());
 }
 
 }  // namespace grpc_core

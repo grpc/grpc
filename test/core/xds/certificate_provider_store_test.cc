@@ -116,7 +116,7 @@ TEST_F(CertificateProviderStoreTest, Basic) {
       },
       [=] {
         auto fake_factory_2 =
-            absl::make_unique<FakeCertificateProviderFactory2>();
+            std::make_unique<FakeCertificateProviderFactory2>();
         // Set up store
         CertificateProviderStore::PluginDefinitionMap map = {
             {"fake_plugin_1",

@@ -180,8 +180,7 @@ void grpc_set_default_iomgr_platform() {
   }
   grpc_tcp_client_global_init();
   grpc_set_timer_impl(&grpc_generic_timer_vtable);
-  grpc_core::ResetDNSResolver(
-      absl::make_unique<grpc_core::NativeDNSResolver>());
+  grpc_core::ResetDNSResolver(std::make_unique<grpc_core::NativeDNSResolver>());
 }
 
 bool grpc_iomgr_run_in_background() {

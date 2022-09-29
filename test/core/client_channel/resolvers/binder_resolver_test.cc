@@ -112,7 +112,7 @@ class BinderResolverTest : public ::testing::Test {
     grpc_core::ResolverArgs args;
     args.uri = std::move(*uri);
     args.result_handler =
-        absl::make_unique<BinderResolverTest::ResultHandler>(expected_path);
+        std::make_unique<BinderResolverTest::ResultHandler>(expected_path);
     grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
         factory_->CreateResolver(std::move(args));
     ASSERT_TRUE(resolver != nullptr);
@@ -127,8 +127,7 @@ class BinderResolverTest : public ::testing::Test {
     ASSERT_TRUE(uri.ok()) << uri.status().ToString();
     grpc_core::ResolverArgs args;
     args.uri = std::move(*uri);
-    args.result_handler =
-        absl::make_unique<BinderResolverTest::ResultHandler>();
+    args.result_handler = std::make_unique<BinderResolverTest::ResultHandler>();
     grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
         factory_->CreateResolver(std::move(args));
     EXPECT_TRUE(resolver == nullptr);

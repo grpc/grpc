@@ -26,6 +26,8 @@
 
 #include "absl/memory/memory.h"
 
+#include "src/core/lib/slice/slice.h"
+
 // OpenSSL invalidates SSL_SESSION on SSL destruction making it pointless
 // to cache sessions. The workaround is to serialize (relatively expensive)
 // session into binary blob and re-create it from blob on every handshake.
@@ -49,7 +51,9 @@ class OpenSslCachedSession : public SslCachedSession {
     serialized_session_ = slice;
   }
 
-  virtual ~OpenSslCachedSession() { grpc_slice_unref(serialized_session_); }
+  virtual ~OpenSslCachedSession() {
+    grpc_core::CSliceUnref(serialized_session_);
+  }
 
   SslSessionPtr CopySession() const override {
     const unsigned char* data = GRPC_SLICE_START_PTR(serialized_session_);
@@ -69,7 +73,7 @@ class OpenSslCachedSession : public SslCachedSession {
 
 std::unique_ptr<SslCachedSession> SslCachedSession::Create(
     SslSessionPtr session) {
-  return absl::make_unique<OpenSslCachedSession>(std::move(session));
+  return std::make_unique<OpenSslCachedSession>(std::move(session));
 }
 
 }  // namespace tsi

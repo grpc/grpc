@@ -77,7 +77,7 @@ class TestParser1 : public ServiceConfigParser::Parser {
       if (value == -1) {
         return absl::InvalidArgumentError(InvalidValueErrorMessage());
       }
-      return absl::make_unique<TestParsedConfig1>(value);
+      return std::make_unique<TestParsedConfig1>(value);
     }
     return nullptr;
   }
@@ -109,7 +109,7 @@ class TestParser2 : public ServiceConfigParser::Parser {
       if (value == -1) {
         return absl::InvalidArgumentError(InvalidValueErrorMessage());
       }
-      return absl::make_unique<TestParsedConfig1>(value);
+      return std::make_unique<TestParsedConfig1>(value);
     }
     return nullptr;
   }
@@ -155,9 +155,9 @@ class ServiceConfigTest : public ::testing::Test {
     builder_ = std::make_unique<CoreConfiguration::WithSubstituteBuilder>(
         [](CoreConfiguration::Builder* builder) {
           builder->service_config_parser()->RegisterParser(
-              absl::make_unique<TestParser1>());
+              std::make_unique<TestParser1>());
           builder->service_config_parser()->RegisterParser(
-              absl::make_unique<TestParser2>());
+              std::make_unique<TestParser2>());
         });
     EXPECT_EQ(CoreConfiguration::Get().service_config_parser().GetParserIndex(
                   "test_parser_1"),
@@ -411,9 +411,9 @@ TEST(ServiceConfigParserTest, DoubleRegistration) {
       CoreConfiguration::WithSubstituteBuilder builder(
           [](CoreConfiguration::Builder* builder) {
             builder->service_config_parser()->RegisterParser(
-                absl::make_unique<ErrorParser>("xyzabc"));
+                std::make_unique<ErrorParser>("xyzabc"));
             builder->service_config_parser()->RegisterParser(
-                absl::make_unique<ErrorParser>("xyzabc"));
+                std::make_unique<ErrorParser>("xyzabc"));
           }),
       "xyzabc.*already registered");
 }
@@ -425,9 +425,9 @@ class ErroredParsersScopingTest : public ::testing::Test {
     builder_ = std::make_unique<CoreConfiguration::WithSubstituteBuilder>(
         [](CoreConfiguration::Builder* builder) {
           builder->service_config_parser()->RegisterParser(
-              absl::make_unique<ErrorParser>("ep1"));
+              std::make_unique<ErrorParser>("ep1"));
           builder->service_config_parser()->RegisterParser(
-              absl::make_unique<ErrorParser>("ep2"));
+              std::make_unique<ErrorParser>("ep2"));
         });
     EXPECT_EQ(
         CoreConfiguration::Get().service_config_parser().GetParserIndex("ep1"),
@@ -756,7 +756,7 @@ class RetryParserTest : public ::testing::Test {
     builder_ = std::make_unique<CoreConfiguration::WithSubstituteBuilder>(
         [](CoreConfiguration::Builder* builder) {
           builder->service_config_parser()->RegisterParser(
-              absl::make_unique<internal::RetryServiceConfigParser>());
+              std::make_unique<internal::RetryServiceConfigParser>());
         });
     EXPECT_EQ(CoreConfiguration::Get().service_config_parser().GetParserIndex(
                   "retry"),
@@ -1450,7 +1450,7 @@ class MessageSizeParserTest : public ::testing::Test {
     builder_ = std::make_unique<CoreConfiguration::WithSubstituteBuilder>(
         [](CoreConfiguration::Builder* builder) {
           builder->service_config_parser()->RegisterParser(
-              absl::make_unique<MessageSizeParser>());
+              std::make_unique<MessageSizeParser>());
         });
     EXPECT_EQ(CoreConfiguration::Get().service_config_parser().GetParserIndex(
                   "message_size"),

@@ -27,7 +27,7 @@ namespace testing {
 
 namespace {
 std::unique_ptr<ServerBuilder> DefaultCreateQpsServerBuilder() {
-  return absl::make_unique<ServerBuilder>();
+  return std::make_unique<ServerBuilder>();
 }
 
 std::function<std::unique_ptr<ServerBuilder>()> g_create_qps_server_builder =
