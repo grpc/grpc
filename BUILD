@@ -5320,7 +5320,6 @@ grpc_cc_library(
         "channel_args",
         "config",
         "debug_location",
-        "default_event_engine",
         "gpr",
         "grpc_base",
         "grpc_client_channel",
